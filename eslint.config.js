@@ -36,4 +36,15 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
     },
   },
+  {
+    // Plain Node demo/utility scripts (run with `node scripts/*.mjs`).
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        fetch: 'readonly',
+        process: 'readonly',
+      },
+    },
+  },
 );
