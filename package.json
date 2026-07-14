@@ -14,11 +14,15 @@
   ],
   "scripts": {
     "dev": "npm run build -w @hy3-clinic/shared && concurrently -n server,web -c blue,green \"npm run dev -w @hy3-clinic/server\" \"npm run dev -w @hy3-clinic/web\"",
+    "dev:server": "npm run build -w @hy3-clinic/shared && npm run dev -w @hy3-clinic/server",
+    "dev:web": "npm run dev -w @hy3-clinic/web",
     "build": "npm run build --workspaces --if-present",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "pretest": "npm run build -w @hy3-clinic/shared",
-    "test": "npm run test --workspaces --if-present"
+    "test": "npm run test --workspaces --if-present",
+    "demo:offline": "node scripts/demo-offline.mjs",
+    "demo:http": "node scripts/smoke.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
