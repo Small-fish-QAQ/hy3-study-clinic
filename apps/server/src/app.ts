@@ -8,8 +8,9 @@ import type { LlmProvider } from './llm/provider.js';
 import type { Repositories } from './repositories/index.js';
 import type { Clock } from './util/ids.js';
 import { systemClock } from './util/ids.js';
-import { createMaterialService } from './services/materials.js';
+import { createServices } from './services/index.js';
 import { registerMaterialRoutes } from './routes/materials.js';
+import { registerStudyRoutes } from './routes/study.js';
 
 export interface AppDeps {
   repos: Repositories;
@@ -35,9 +36,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
 
   const clock = deps.clock ?? systemClock;
   const providerName = deps.provider.name;
-  const services = {
-    materials: createMaterialService({ repos: deps.repos, clock }),
-  };
+  const services = createServices({ repos: deps.repos, provider: deps.provider, clock });
 
   // Central error handler: converts known errors into structured API errors
   // and never leaks stack traces, secrets, or raw payloads to the client.
@@ -98,6 +97,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   app.get('/api/config', async () => ({ provider: providerName }));
 
   registerMaterialRoutes(app, services.materials);
+  registerStudyRoutes(app, services);
 
   return app;
 }
