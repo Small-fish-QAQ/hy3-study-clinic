@@ -4,13 +4,15 @@ import { migrate } from './db/migrate.js';
 import { createRepositories } from './repositories/index.js';
 import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
+import { createProvider } from './llm/factory.js';
 
 const config = loadConfig();
 const db = openDatabase(config.databasePath);
 migrate(db);
 const repos = createRepositories(db);
+const provider = createProvider(config);
 
-const app = buildApp({ repos, logger: true, providerName: config.provider });
+const app = buildApp({ repos, provider, logger: true });
 app.addHook('onClose', async () => {
   db.close();
 });

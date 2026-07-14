@@ -13,5 +13,6 @@ export * from './domain/quiz.js';
 export * from './domain/grading.js';
 export * from './domain/mistake.js';
 export * from './domain/errors.js';
+export * from './provider/payloads.js';
 
 export { SAMPLE_MATERIAL_CONTENT, SAMPLE_MATERIAL_TITLE } from './sampleMaterial.js';

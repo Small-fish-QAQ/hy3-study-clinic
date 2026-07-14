@@ -3,6 +3,8 @@ import { ZodError } from 'zod';
 import { ApiErrorCode } from '@hy3-clinic/shared';
 import { AppError, statusForErrorCode } from './errors.js';
 import { IngestionError } from './ingestion/ingest.js';
+import { ProviderError } from './llm/errors.js';
+import type { LlmProvider } from './llm/provider.js';
 import type { Repositories } from './repositories/index.js';
 import type { Clock } from './util/ids.js';
 import { systemClock } from './util/ids.js';
@@ -11,10 +13,9 @@ import { registerMaterialRoutes } from './routes/materials.js';
 
 export interface AppDeps {
   repos: Repositories;
+  provider: LlmProvider;
   clock?: Clock;
   logger?: boolean;
-  /** Provider name to expose (never the key). Defaults to 'fake'. */
-  providerName?: 'fake' | 'hy3';
 }
 
 export function buildApp(deps: AppDeps): FastifyInstance {
@@ -33,7 +34,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   });
 
   const clock = deps.clock ?? systemClock;
-  const providerName = deps.providerName ?? 'fake';
+  const providerName = deps.provider.name;
   const services = {
     materials: createMaterialService({ repos: deps.repos, clock }),
   };
@@ -51,6 +52,12 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       reply
         .status(statusForErrorCode(error.code))
         .send({ error: { code: error.code, message: error.message } });
+      return;
+    }
+    if (error instanceof ProviderError) {
+      reply
+        .status(statusForErrorCode(error.code))
+        .send({ error: { code: error.code, message: error.message, details: error.details } });
       return;
     }
     if (error instanceof ZodError) {
