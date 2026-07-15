@@ -3,6 +3,7 @@ import type {
   ProposedQuestion,
   PublicQuiz,
   Question,
+  QuestionType,
   Quiz,
   QuizConfig,
   SourceBlock,
@@ -28,6 +29,8 @@ export interface AssembleContext {
   quizId: string;
   blocks: SourceBlock[];
   concepts: Concept[];
+  allowedTypes?: readonly QuestionType[];
+  allowedConceptIds?: readonly string[];
 }
 
 export interface AssembleResult {
@@ -50,6 +53,14 @@ export function assembleQuestions(
   const conceptById = new Map(ctx.concepts.map((c) => [c.id, c]));
 
   for (const p of proposed) {
+    if (ctx.allowedTypes && !ctx.allowedTypes.includes(p.type)) {
+      rejected.push({ stem: p.stem, reason: `未请求的题型:${p.type}` });
+      continue;
+    }
+    if (ctx.allowedConceptIds && !ctx.allowedConceptIds.includes(p.conceptId)) {
+      rejected.push({ stem: p.stem, reason: `非目标概念:${p.conceptId}` });
+      continue;
+    }
     const concept = conceptById.get(p.conceptId);
     if (!concept) {
       rejected.push({ stem: p.stem, reason: `未知概念:${p.conceptId}` });
@@ -135,6 +146,7 @@ export function createQuizService({ repos, provider, clock, analysis }: QuizServ
         quizId,
         blocks,
         concepts,
+        allowedTypes: config.types,
       });
 
       if (questions.length === 0) {

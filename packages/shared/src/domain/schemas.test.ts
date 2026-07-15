@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { QuestionSchema } from './quiz.js';
+import { ProposedQuestionSchema } from '../provider/payloads.js';
 import { AnswerSchema } from './grading.js';
 import { MasteryStateSchema } from './mistake.js';
 import { ApiErrorSchema } from './errors.js';
@@ -70,6 +71,40 @@ describe('QuestionSchema', () => {
     expect(QuestionSchema.parse(sa)).toBeTruthy();
   });
 
+  it('rejects duplicate correct option ids', () => {
+    const bad = { ...validSingleChoice, correctOptionIds: ['A', 'A'] };
+    expect(QuestionSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it('rejects choice questions carrying short-answer fields', () => {
+    const bad = {
+      ...validSingleChoice,
+      expectedAnswer: '不应出现',
+      rubric: { keyPoints: ['不应出现'] },
+    };
+    expect(QuestionSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it('rejects short-answer questions carrying choice fields', () => {
+    const bad = {
+      id: 'q4',
+      quizId: 'quiz1',
+      index: 3,
+      type: 'short_answer' as const,
+      stem: '简述工作记忆。',
+      options: validSingleChoice.options,
+      correctOptionIds: ['A'],
+      expectedAnswer: '容量有限。',
+      rubric: { keyPoints: ['容量有限'] },
+      conceptId: 'c1',
+      conceptName: '工作记忆',
+      grounding: baseGrounding,
+      explanation: '...',
+      points: 2,
+    };
+    expect(QuestionSchema.safeParse(bad).success).toBe(false);
+  });
+
   it('rejects short_answer without a rubric', () => {
     const bad = {
       id: 'q3',
@@ -132,5 +167,49 @@ describe('ApiErrorSchema', () => {
 
   it('rejects an unknown error code', () => {
     expect(ApiErrorSchema.safeParse({ error: { code: 'WAT', message: 'x' } }).success).toBe(false);
+  });
+});
+
+describe('ProposedQuestionSchema', () => {
+  const base = {
+    stem: '工作记忆容量如何?',
+    conceptId: 'c1',
+    blockId: 'b1',
+    quote: '工作记忆',
+    explanation: '依据原文。',
+  };
+
+  it('rejects duplicate proposed correct option ids', () => {
+    const bad = {
+      ...base,
+      type: 'multiple_choice' as const,
+      options: validSingleChoice.options,
+      correctOptionIds: ['A', 'A'],
+    };
+    expect(ProposedQuestionSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it('rejects proposed choice questions carrying short-answer fields', () => {
+    const bad = {
+      ...base,
+      type: 'single_choice' as const,
+      options: validSingleChoice.options,
+      correctOptionIds: ['A'],
+      expectedAnswer: '不应出现',
+      rubricKeyPoints: ['不应出现'],
+    };
+    expect(ProposedQuestionSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it('rejects proposed short answers carrying choice fields', () => {
+    const bad = {
+      ...base,
+      type: 'short_answer' as const,
+      options: validSingleChoice.options,
+      correctOptionIds: ['A'],
+      expectedAnswer: '容量有限。',
+      rubricKeyPoints: ['容量有限'],
+    };
+    expect(ProposedQuestionSchema.safeParse(bad).success).toBe(false);
   });
 });

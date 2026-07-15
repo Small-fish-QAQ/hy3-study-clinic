@@ -171,13 +171,22 @@ export class Hy3Provider implements LlmProvider {
     if (opts?.signal?.aborted) throw ProviderError.cancelled();
 
     const controller = new AbortController();
+    let timedOut = false;
     const onAbort = () => controller.abort();
+    const timer = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, this.config.timeoutMs);
     opts?.signal?.addEventListener('abort', onAbort, { once: true });
-    const timer = setTimeout(() => controller.abort(), this.config.timeoutMs);
 
-    let response: Response;
+    const abortError = (): ProviderError => {
+      if (opts?.signal?.aborted) return ProviderError.cancelled();
+      if (timedOut) return ProviderError.timeout(this.config.timeoutMs);
+      return ProviderError.cancelled();
+    };
+
     try {
-      response = await this.fetchImpl(
+      const response = await this.fetchImpl(
         `${this.config.baseUrl.replace(/\/$/, '')}/chat/completions`,
         {
           method: 'POST',
@@ -193,32 +202,35 @@ export class Hy3Provider implements LlmProvider {
           signal: controller.signal,
         },
       );
-    } catch {
-      // Distinguish our timeout / external cancel from network failure.
-      if (controller.signal.aborted) {
-        if (opts?.signal?.aborted) throw ProviderError.cancelled();
-        throw ProviderError.timeout(this.config.timeoutMs);
+
+      if (!response.ok) {
+        throw ProviderError.http(response.status);
       }
+
+      let data: ChatCompletionResponse;
+      try {
+        data = (await response.json()) as ChatCompletionResponse;
+      } catch {
+        if (controller.signal.aborted) throw abortError();
+        throw ProviderError.invalidOutput('响应不是合法 JSON。');
+      }
+
+      // The timeout/cancellation budget covers the complete body read, not
+      // merely the arrival of response headers.
+      if (controller.signal.aborted) throw abortError();
+
+      const content = data.choices?.[0]?.message?.content;
+      if (typeof content !== 'string' || content.trim().length === 0) {
+        throw ProviderError.invalidOutput('响应缺少 message.content。');
+      }
+      return content;
+    } catch (err) {
+      if (err instanceof ProviderError) throw err;
+      if (controller.signal.aborted) throw abortError();
       throw ProviderError.network();
     } finally {
       clearTimeout(timer);
       opts?.signal?.removeEventListener('abort', onAbort);
     }
-
-    if (!response.ok) {
-      throw ProviderError.http(response.status);
-    }
-
-    let data: ChatCompletionResponse;
-    try {
-      data = (await response.json()) as ChatCompletionResponse;
-    } catch {
-      throw ProviderError.invalidOutput('响应不是合法 JSON。');
-    }
-    const content = data.choices?.[0]?.message?.content;
-    if (typeof content !== 'string' || content.length === 0) {
-      throw ProviderError.invalidOutput('响应缺少 message.content。');
-    }
-    return content;
   }
 }

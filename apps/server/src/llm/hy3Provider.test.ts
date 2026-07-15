@@ -173,3 +173,45 @@ describe('Hy3Provider error mapping', () => {
     );
   });
 });
+
+describe('Hy3Provider response-body cancellation', () => {
+  function responseWithHangingBody(signal: AbortSignal): Response {
+    return {
+      ok: true,
+      status: 200,
+      json: () =>
+        new Promise<never>((_resolve, reject) => {
+          const rejectAbort = () =>
+            reject(Object.assign(new Error('aborted while reading body'), { name: 'AbortError' }));
+          if (signal.aborted) rejectAbort();
+          else signal.addEventListener('abort', rejectAbort, { once: true });
+        }),
+    } as unknown as Response;
+  }
+
+  it('keeps the timeout active while reading the response body', async () => {
+    const fetchImpl = vi.fn(async (_url: string, init?: RequestInit) => {
+      return responseWithHangingBody(init!.signal as AbortSignal);
+    }) as unknown as typeof fetch;
+
+    const provider = makeProvider(fetchImpl, 20);
+    await expect(
+      provider.analyzeConcepts({ materialTitle: SAMPLE_MATERIAL_TITLE, blocks }),
+    ).rejects.toMatchObject({ code: 'PROVIDER_TIMEOUT' });
+  });
+
+  it('keeps external cancellation active while reading the response body', async () => {
+    const controller = new AbortController();
+    const fetchImpl = vi.fn(async (_url: string, init?: RequestInit) => {
+      return responseWithHangingBody(init!.signal as AbortSignal);
+    }) as unknown as typeof fetch;
+
+    const provider = makeProvider(fetchImpl);
+    const pending = provider.analyzeConcepts(
+      { materialTitle: SAMPLE_MATERIAL_TITLE, blocks },
+      { signal: controller.signal },
+    );
+    setTimeout(() => controller.abort(), 10);
+    await expect(pending).rejects.toMatchObject({ code: 'REQUEST_CANCELLED' });
+  });
+});

@@ -69,7 +69,9 @@ export function ImportView({ material, concepts, onImported, onAnalyzed }: Impor
       <section className="card">
         <h2>导入学习资料</h2>
         <p className="muted small">
-          支持粘贴文本或选择 .md / .txt 文件(≤10 万字)。资料仅保存在本机 SQLite,不会上传到第三方。
+          支持粘贴文本或选择 .md / .txt 文件(≤10 万字)。学习记录保存在本机 SQLite;使用在线 Hy3
+          模式时,分析、出题与简答判分所需的数据会发送到你配置的 HY3_BASE_URL。fake
+          模式不会向外发送数据。
         </p>
         {importAction.error ? <Banner kind="error">{importAction.error}</Banner> : null}
         {fileError ? <Banner kind="error">{fileError}</Banner> : null}
@@ -126,7 +128,9 @@ export function ImportView({ material, concepts, onImported, onAnalyzed }: Impor
               <span className="pill">{material.blocks.length} 个源块</span>
             </h2>
             <div className="row">
-              {analyzeAction.loading ? (
+              {concepts.length > 0 ? (
+                <span className="muted small">概念已分析;重新导入资料可重置。</span>
+              ) : analyzeAction.loading ? (
                 <>
                   <Loading label="正在分析概念…" />
                   <button type="button" onClick={analyzeAction.cancel}>
@@ -135,7 +139,7 @@ export function ImportView({ material, concepts, onImported, onAnalyzed }: Impor
                 </>
               ) : (
                 <button type="button" className="primary" onClick={() => void doAnalyze()}>
-                  {concepts.length > 0 ? '重新分析概念' : '分析核心概念'}
+                  分析核心概念
                 </button>
               )}
             </div>

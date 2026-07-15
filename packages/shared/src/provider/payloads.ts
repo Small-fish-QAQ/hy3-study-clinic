@@ -53,7 +53,19 @@ export const ProposedQuestionSchema = z
           message: 'short_answer requires expectedAnswer and rubricKeyPoints',
         });
       }
+      if (q.options !== undefined || q.correctOptionIds !== undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'short_answer must not define choice fields',
+        });
+      }
       return;
+    }
+    if (q.expectedAnswer !== undefined || q.rubricKeyPoints !== undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'choice questions must not define short-answer fields',
+      });
     }
     if (!q.options || !q.correctOptionIds) {
       ctx.addIssue({
@@ -65,6 +77,12 @@ export const ProposedQuestionSchema = z
     const ids = new Set(q.options.map((o) => o.id));
     if (ids.size !== q.options.length) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'option ids must be unique' });
+    }
+    if (new Set(q.correctOptionIds).size !== q.correctOptionIds.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'correctOptionIds must be unique',
+      });
     }
     for (const id of q.correctOptionIds) {
       if (!ids.has(id)) {

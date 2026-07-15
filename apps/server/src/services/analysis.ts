@@ -16,8 +16,9 @@ export interface AnalysisServiceDeps {
 export function createAnalysisService({ repos, provider, clock }: AnalysisServiceDeps) {
   return {
     /**
-     * Run concept analysis for a material and persist the verified concepts
-     * (replacing any previous analysis).
+     * Run concept analysis once for a material and persist verified concepts.
+     * Existing concepts are returned unchanged so quizzes, mistakes and
+     * mastery rows never become orphaned by regenerated concept IDs.
      *
      * Every model-proposed concept must pass deterministic grounding
      * verification; concepts whose quote cannot be located are DROPPED, and
@@ -26,6 +27,9 @@ export function createAnalysisService({ repos, provider, clock }: AnalysisServic
     async analyze(materialId: string, opts?: ProviderCallOptions): Promise<Concept[]> {
       const material = repos.materials.get(materialId);
       if (!material) throw notFound(`学习资料不存在:${materialId}`);
+      const existing = repos.materials.getConcepts(materialId);
+      if (existing.length > 0) return existing;
+
       const blocks = repos.materials.getBlocks(materialId);
 
       const payload = await provider.analyzeConcepts(
@@ -65,7 +69,7 @@ export function createAnalysisService({ repos, provider, clock }: AnalysisServic
       }
 
       repos.materials.replaceConcepts(materialId, concepts);
-      return concepts;
+      return repos.materials.getConcepts(materialId);
     },
 
     /** Stored concepts for a material (may be empty before analysis). */

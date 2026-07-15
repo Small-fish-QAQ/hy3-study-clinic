@@ -76,6 +76,22 @@ describe('Flow A: material → analysis → grounded quiz', () => {
     }
   });
 
+  it('returns the existing concept set on repeated analysis so dependent ids stay stable', async () => {
+    const { materialId } = await importSample();
+    const first = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/materials/${materialId}/analyze`,
+    });
+    const second = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/materials/${materialId}/analyze`,
+    });
+
+    expect(first.statusCode).toBe(200);
+    expect(second.statusCode).toBe(200);
+    expect(second.json().concepts).toEqual(first.json().concepts);
+  });
+
   it('generates a quiz whose questions never leak answers and carry verified grounding', async () => {
     const { materialId } = await importSample();
     const quiz = await generateQuiz(materialId);

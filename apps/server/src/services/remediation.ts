@@ -89,6 +89,8 @@ export function createRemediationService({ repos, provider, clock }: Remediation
         quizId,
         blocks,
         concepts,
+        allowedTypes: ['single_choice', 'short_answer'],
+        allowedConceptIds: limited,
       });
       if (questions.length === 0) {
         throw new AppError(
