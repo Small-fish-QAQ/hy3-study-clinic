@@ -21,7 +21,7 @@ POST /api/quizzes { materialId, config }
        → 201 { quiz }
 ```
 
-关键点:**模型输出在落库前必须同时通过 Zod Schema 与引文验证两道关卡**;客户端永远拿不到答案与评分要点。
+关键点:**模型输出在落库前必须同时通过 Zod Schema 与引文验证两道关卡**;客户端在提交判分前拿不到答案与评分要点,判分后返回完整题目用于结果讲解。
 
 ## 2. 引文验证:信任边界
 
@@ -43,7 +43,7 @@ POST /api/quizzes { materialId, config }
 - **FakeProvider** — 纯函数式、确定性、离线。所有引文逐字复制自真实源块,因此必然通过引文验证。选项乱序用内容哈希做种子(可复现)。可选模拟延迟以便观察加载/取消状态。
 - **Hy3Provider** — OpenAI 兼容 `chat/completions` 适配器。端点/模型/密钥全部来自服务器环境变量。
 
-有界修复(`Hy3Provider.complete`):初次请求 → 若 Zod 校验失败,携带具体校验错误发起**一次**修复请求 → 仍失败则抛 `PROVIDER_INVALID_OUTPUT`。测试断言此路径恰好触发 2 次网络调用,杜绝无界重试。
+有界修复(`Hy3Provider.complete`):初次请求 → 若 JSON 提取或 Zod 校验失败,携带具体错误发起**一次**修复请求 → 仍失败则抛 `PROVIDER_INVALID_OUTPUT`。测试断言此路径恰好触发 2 次网络调用,杜绝无界重试。
 
 ## 4. 判分与掌握度
 
@@ -56,9 +56,9 @@ POST /api/quizzes { materialId, config }
 
 `services/remediation.ts` 的目标选择完全确定性:
 
-1. 优先级 1:有未解决错题的概念,按错题数降序;
-2. 优先级 2:掌握度 < 0.7 且无未解决错题的概念;
-3. 最多 4 个概念,每概念 2 题。
+1. 只选择当前仍有未解决错题的概念,按未解决错题数降序、概念 ID 打破平局;
+2. 每轮最多选择 3 个概念;没有未解决错题时直接拒绝生成;
+3. 每个概念必须恰好保留 1 道单选题和 1 道简答题,因此每轮共 2–6 题。
 
 生成的每道康复题通过 `sourceMistakeIds` 链接到它所复测的错题。判分时(`grading.ts` 的 `persistOutcomes`),若某道康复题答对,则**精确解决**其 `sourceMistakeIds` 指向的错题——形成"错 → 练 → 解决"的闭环。
 
