@@ -7,6 +7,8 @@ Hy3 Study Clinic is a traceable study workflow built around **learning material 
 
 ## Demo
 
+https://github.com/user-attachments/assets/13acc199-9212-433b-bee3-802a8e90a854
+
 **[Watch the full demo video (under 2 minutes)](docs/assets/hy3-study-clinic-demo.mp4)**
 
 Verified locally: **1:38.834**. The walkthrough covers both end-to-end learning workflows, evidence panels, hybrid grading, remediation, resolved mistakes, and historical weighted mastery. Material history management is documented in the accompanying screenshots.
