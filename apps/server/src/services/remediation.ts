@@ -1,5 +1,5 @@
-import type { Quiz, QuizConfig, QuestionType } from '@hy3-clinic/shared';
-import { ApiErrorCode, WEAK_MASTERY_THRESHOLD } from '@hy3-clinic/shared';
+import type { Question, Quiz, QuizConfig } from '@hy3-clinic/shared';
+import { ApiErrorCode } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import type { LlmProvider, ProviderCallOptions, RemediationTarget } from '../llm/provider.js';
 import type { Repositories } from '../repositories/index.js';
@@ -13,18 +13,18 @@ export interface RemediationServiceDeps {
   clock: Clock;
 }
 
-/** Max weak concepts targeted per remediation round. */
-const MAX_TARGETS = 4;
+/** At most three currently-open concepts are targeted per remediation round. */
+const MAX_TARGETS = 3;
 const QUESTIONS_PER_CONCEPT = 2;
+const REQUIRED_QUESTION_TYPES = ['single_choice', 'short_answer'] as const;
 
 export function createRemediationService({ repos, provider, clock }: RemediationServiceDeps) {
   return {
     /**
-     * Generate a remediation quiz from the learner's ACTUAL weaknesses:
-     * concepts with open mistakes first (most mistakes first), topped up
-     * with low-mastery concepts. Every generated question is linked back to
-     * the open mistakes it re-tests via sourceMistakeIds, so a correct
-     * answer later resolves exactly those mistakes.
+     * Generate a remediation quiz only from concepts with currently open
+     * mistakes (most mistakes first). Every generated question is linked
+     * back to the open mistakes it re-tests via sourceMistakeIds, so a
+     * correct answer later resolves exactly those mistakes.
      */
     async generate(materialId: string, opts?: ProviderCallOptions): Promise<Quiz> {
       const material = repos.materials.get(materialId);
@@ -41,7 +41,8 @@ export function createRemediationService({ repos, provider, clock }: Remediation
         mistakesByConcept.set(mistake.conceptId, list);
       }
 
-      // Priority 1: concepts with open mistakes (most open mistakes first).
+      // Concepts with open mistakes, most open mistakes first. The id
+      // tie-breaker keeps selection deterministic across runs.
       const targetIds: string[] = [...mistakesByConcept.keys()]
         .filter((id) => conceptById.has(id))
         .sort((a, b) => {
@@ -49,20 +50,9 @@ export function createRemediationService({ repos, provider, clock }: Remediation
           return diff !== 0 ? diff : a.localeCompare(b);
         });
 
-      // Priority 2: low-mastery concepts without open mistakes.
-      for (const state of repos.mastery.listByMaterial(materialId)) {
-        if (targetIds.length >= MAX_TARGETS) break;
-        if (state.mastery < WEAK_MASTERY_THRESHOLD && !targetIds.includes(state.conceptId)) {
-          if (conceptById.has(state.conceptId)) targetIds.push(state.conceptId);
-        }
-      }
-
       const limited = targetIds.slice(0, MAX_TARGETS);
       if (limited.length === 0) {
-        throw new AppError(
-          ApiErrorCode.ValidationError,
-          '当前没有未解决的错题或薄弱概念,无需生成康复练习。先完成一次测验吧。',
-        );
+        throw new AppError(ApiErrorCode.ValidationError, '当前没有未解决的错题,无需生成康复练习。');
       }
 
       const targets: RemediationTarget[] = limited.map((conceptId) => {
@@ -85,20 +75,37 @@ export function createRemediationService({ repos, provider, clock }: Remediation
       );
 
       const quizId = newId('qz');
-      const { questions, rejected } = assembleQuestions(payload.questions, {
+      const { questions: assembledQuestions, rejected } = assembleQuestions(payload.questions, {
         quizId,
         blocks,
         concepts,
-        allowedTypes: ['single_choice', 'short_answer'],
+        allowedTypes: REQUIRED_QUESTION_TYPES,
         allowedConceptIds: limited,
       });
-      if (questions.length === 0) {
+
+      // Provider schema validation guarantees valid individual question
+      // shapes, while this service enforces the remediation product rule:
+      // exactly the first grounded question of each required type per target.
+      const selectedQuestions: Question[] = [];
+      const missing: Array<{ conceptId: string; type: (typeof REQUIRED_QUESTION_TYPES)[number] }> =
+        [];
+      for (const conceptId of limited) {
+        for (const type of REQUIRED_QUESTION_TYPES) {
+          const question = assembledQuestions.find(
+            (candidate) => candidate.conceptId === conceptId && candidate.type === type,
+          );
+          if (question) selectedQuestions.push(question);
+          else missing.push({ conceptId, type });
+        }
+      }
+      if (missing.length > 0) {
         throw new AppError(
           ApiErrorCode.GroundingFailed,
-          '康复练习题目均未通过原文引证校验,请重试。',
-          { rejected },
+          '康复练习未能为每个未解决概念生成完整的单选题和简答题,请重试。',
+          { missing, rejected },
         );
       }
+      const questions = selectedQuestions.map((question, index) => ({ ...question, index }));
 
       // Link each question to the open mistakes of its concept and count the
       // remediation attempt on those mistakes.
@@ -113,16 +120,8 @@ export function createRemediationService({ repos, provider, clock }: Remediation
 
       const config: QuizConfig = {
         difficulty: 'medium',
-        types: [...new Set<QuestionType>(questionsWithSources.map((q) => q.type))],
-        countPerType: Math.min(
-          5,
-          Math.max(
-            1,
-            Math.ceil(
-              questionsWithSources.length / new Set(questionsWithSources.map((q) => q.type)).size,
-            ),
-          ),
-        ),
+        types: [...REQUIRED_QUESTION_TYPES],
+        countPerType: limited.length,
       };
 
       const quiz: Quiz = {

@@ -1,10 +1,17 @@
 import { vi } from 'vitest';
 
 export interface MockRoute {
-  method: 'GET' | 'POST';
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   pattern: RegExp;
   /** Return the JSON body (and optional status) for a matched request. */
-  handler: (body: unknown, url: string) => { status?: number; body: unknown } | 'never';
+  handler: (
+    body: unknown,
+    url: string,
+    init?: RequestInit,
+  ) =>
+    | { status?: number; body?: unknown }
+    | 'never'
+    | Promise<{ status?: number; body?: unknown } | 'never'>;
 }
 
 export interface FetchCall {
@@ -21,31 +28,37 @@ export interface FetchCall {
 export function installFetchMock(routes: MockRoute[]): { calls: FetchCall[] } {
   const calls: FetchCall[] = [];
 
-  const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const url = String(input);
-    const method = (init?.method ?? 'GET').toUpperCase();
-    const rawBody = typeof init?.body === 'string' ? init.body : undefined;
-    const body = rawBody ? (JSON.parse(rawBody) as unknown) : undefined;
-    calls.push({ method, url, body });
+  const fetchMock = vi.fn(
+    async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const url = String(input);
+      const method = (init?.method ?? 'GET').toUpperCase();
+      const rawBody = typeof init?.body === 'string' ? init.body : undefined;
+      const body = rawBody ? (JSON.parse(rawBody) as unknown) : undefined;
+      calls.push({ method, url, body });
 
-    const route = routes.find((r) => r.method === method && r.pattern.test(url));
-    if (!route) {
-      return Promise.resolve(
-        makeResponse(404, {
-          error: { code: 'NOT_FOUND', message: `未匹配的测试路由:${method} ${url}` },
-        }),
-      );
-    }
-    const result = route.handler(body, url);
-    if (result === 'never') {
-      return new Promise<Response>((_resolve, reject) => {
-        init?.signal?.addEventListener('abort', () => {
-          reject(new DOMException('Aborted', 'AbortError'));
+      const route = routes.find((r) => r.method === method && r.pattern.test(url));
+      if (!route) {
+        return Promise.resolve(
+          makeResponse(404, {
+            error: { code: 'NOT_FOUND', message: `未匹配的测试路由:${method} ${url}` },
+          }),
+        );
+      }
+      const result = await route.handler(body, url, init);
+      if (result === 'never') {
+        return new Promise<Response>((_resolve, reject) => {
+          if (init?.signal?.aborted) {
+            reject(new DOMException('Aborted', 'AbortError'));
+            return;
+          }
+          init?.signal?.addEventListener('abort', () => {
+            reject(new DOMException('Aborted', 'AbortError'));
+          });
         });
-      });
-    }
-    return Promise.resolve(makeResponse(result.status ?? 200, result.body));
-  });
+      }
+      return Promise.resolve(makeResponse(result.status ?? 200, result.body));
+    },
+  );
 
   vi.stubGlobal('fetch', fetchMock);
   return { calls };

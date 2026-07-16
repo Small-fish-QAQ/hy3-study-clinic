@@ -47,6 +47,15 @@ export const material = {
   blocks,
 };
 
+export const materialSummary = {
+  id: material.material.id,
+  title: material.material.title,
+  sourceType: material.material.sourceType,
+  charCount: material.material.charCount,
+  blockCount: blocks.length,
+  createdAt: material.material.createdAt,
+};
+
 export const concepts: Concept[] = [
   {
     id: 'con_0',

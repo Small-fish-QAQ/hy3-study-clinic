@@ -53,7 +53,7 @@ export interface SubmissionResponse {
 }
 
 async function request<T>(
-  method: 'GET' | 'POST',
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
   url: string,
   body?: unknown,
   signal?: AbortSignal,
@@ -85,6 +85,7 @@ async function request<T>(
     }
     throw new ApiClientError(code, message, response.status);
   }
+  if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
 }
 
@@ -92,15 +93,28 @@ export const api = {
   health: () => request<{ status: string }>('GET', '/api/health'),
   config: () => request<{ provider: 'fake' | 'hy3' }>('GET', '/api/config'),
 
-  sampleMaterial: () =>
-    request<{ title: string; content: string; filename: string }>('GET', '/api/sample-material'),
+  sampleMaterial: (signal?: AbortSignal) =>
+    request<{ title: string; content: string; filename: string }>(
+      'GET',
+      '/api/sample-material',
+      undefined,
+      signal,
+    ),
 
-  importMaterial: (input: { content: string; title?: string; filename?: string }) =>
-    request<MaterialWithBlocks>('POST', '/api/materials', input),
+  importMaterial: (
+    input: { content: string; title?: string; filename?: string },
+    signal?: AbortSignal,
+  ) => request<MaterialWithBlocks>('POST', '/api/materials', input, signal),
 
   listMaterials: () => request<{ materials: MaterialSummary[] }>('GET', '/api/materials'),
 
   getMaterial: (id: string) => request<MaterialWithBlocks>('GET', `/api/materials/${id}`),
+
+  renameMaterial: (id: string, title: string, signal?: AbortSignal) =>
+    request<{ material: Material }>('PATCH', `/api/materials/${id}`, { title }, signal),
+
+  deleteMaterial: (id: string, signal?: AbortSignal) =>
+    request<void>('DELETE', `/api/materials/${id}`, undefined, signal),
 
   analyze: (materialId: string, signal?: AbortSignal) =>
     request<{ concepts: Concept[] }>(

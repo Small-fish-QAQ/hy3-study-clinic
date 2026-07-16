@@ -27,6 +27,17 @@ const CITATION_RULES = [
 
 const JSON_RULES = '仅输出一个 JSON 对象,不要输出任何解释性文字或 Markdown 代码块。';
 
+const SEMANTIC_GRADING_RULES = [
+  '判分步骤与规则:',
+  '1. 逐个、独立判断每个 rubricKeyPoint;覆盖以学生答案是否在语义上表达同一事实为准,不得要求字面相同。',
+  '2. 比较前要规范化常见等价表达:阿拉伯数字与中文数字按同一数值处理;在题目或资料未另行限定时,3 天/三天、7 天/一周、30 天/一个月、当天/学习当天均是常见等价表达。',
+  '3. studentAnswer 中额外且不矛盾的细节,不得使已经语义覆盖的评分要点变为未覆盖;无资料支持的额外细节可在 feedback 中单独指出。',
+  '4. 只有题目明确要求精确复现、数量或顺序时,额外但不矛盾的细节才可导致 score 小幅扣分;不得因此移除真正覆盖的 matchedKeyPointIndexes,也不得在所有要点都已覆盖时仅因额外细节大幅扣分。',
+  '5. 不得自动接受矛盾答案:如果学生明确否定、曲解或同时给出与某要点冲突的说法,不得仅凭关键词将该要点标记为覆盖。',
+  '6. score 主要反映评分要点的语义覆盖与准确性;matchedKeyPointIndexes、score 和 feedback 必须彼此一致。',
+  '7. confidence 表示对本次判断可靠性的置信度。输出前检查索引、score、feedback 与 confidence 是否内部一致;如果存在无法确定的等价关系、矛盾或内部不一致,必须降低 confidence,不得给出高置信度。',
+].join('\n');
+
 function wrapUntrustedJson(label: string, value: unknown): { guard: string; body: string } {
   const delimiter = `${label}_${randomUUID().replaceAll('-', '')}`;
   return {
@@ -138,9 +149,11 @@ export function shortAnswerGradingMessages(
         wrapped.guard,
         wrapped.body,
         '',
-        'rubricKeyPoints 的数组索引从 0 开始。请判断 studentAnswer 覆盖了哪些要点。',
+        'rubricKeyPoints 的数组索引从 0 开始。请按以下规则判断 studentAnswer 覆盖了哪些要点。',
+        SEMANTIC_GRADING_RULES,
         '输出 JSON,格式:',
         '{"matchedKeyPointIndexes":[0],"score":0.0,"confidence":0.0,"feedback":"中文评语(≤200字)"}',
+        'matchedKeyPointIndexes 只能包含有效索引,必须升序、无重复。输出对象必须且只能包含 matchedKeyPointIndexes、score、confidence、feedback 这四个字段。',
         'score 与 confidence 都在 [0,1] 区间;feedback 不得添加资料之外的引文。',
         JSON_RULES,
       ].join('\n'),
@@ -158,7 +171,7 @@ export function remediationMessages(
   const targetList = targets
     .map(
       (t) =>
-        `- conceptId: ${t.concept.id} | 名称: ${t.concept.name} | 未掌握次数: ${t.openMistakeCount} | 曾答错的题:${t.missedStems.join('/') || '无记录'}`,
+        `- conceptId: ${t.concept.id} | 名称: ${t.concept.name} | 未解决错题数: ${t.openMistakeCount} | 曾答错的题:${t.missedStems.join('/') || '无记录'}`,
     )
     .join('\n');
 
@@ -170,12 +183,18 @@ export function remediationMessages(
     {
       role: 'user',
       content: [
-        `学生在下面学习资料的以下概念上出过错,请针对每个概念出 ${questionsPerConcept} 道巩固题(单选或简答),换一个角度考查,避免与原题雷同:`,
+        `学生在下面学习资料的以下概念上有未解决错题,请针对每个概念严格生成 ${questionsPerConcept} 道巩固题,换一个角度考查,避免与原题雷同:`,
         targetList,
         '',
         wrapped.body,
         '',
-        '输出 JSON,格式与出题接口相同:{"questions":[...]}(字段:type/stem/options/correctOptionIds/expectedAnswer/rubricKeyPoints/conceptId/blockId/quote/explanation)。',
+        '数量与题型要求:每个概念恰好生成 1 道 single_choice 和 1 道 short_answer,不得缺少、重复或为某个概念生成更多题目。',
+        '只允许生成 single_choice 或 short_answer。每道题必须严格使用下列两种互斥结构之一:',
+        '单选题:{"type":"single_choice","stem":"题干","options":[{"id":"A","text":"选项A"},{"id":"B","text":"选项B"},{"id":"C","text":"选项C"},{"id":"D","text":"选项D"}],"correctOptionIds":["B"],"conceptId":"来自上面薄弱概念列表","blockId":"来源块id","quote":"逐字原文","explanation":"解析"}',
+        '简答题:{"type":"short_answer","stem":"题干","expectedAnswer":"参考答案","rubricKeyPoints":["评分要点1"],"conceptId":"来自上面薄弱概念列表","blockId":"来源块id","quote":"逐字原文","explanation":"解析"}',
+        '重要:单选题不得出现 expectedAnswer 或 rubricKeyPoints;简答题不得出现 options 或 correctOptionIds。不适用字段必须完全省略,不得输出空字符串、空数组或 null。',
+        '单选题 options 的 id 必须是无标点的大写单字母 A-H,correctOptionIds 必须引用这些 id。',
+        '最终输出格式:{"questions":[上述题目对象]}。',
         CITATION_RULES,
         JSON_RULES,
       ].join('\n'),

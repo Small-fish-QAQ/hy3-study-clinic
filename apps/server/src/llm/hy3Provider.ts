@@ -6,7 +6,7 @@ import {
   type QuizGenerationPayload,
   type RubricGrade,
 } from '@hy3-clinic/shared';
-import type { ZodSchema } from 'zod';
+import type { ZodType, ZodTypeDef } from 'zod';
 import { ProviderError } from './errors.js';
 import { extractJson, JsonExtractionError } from './json.js';
 import {
@@ -119,7 +119,7 @@ export class Hy3Provider implements LlmProvider {
    */
   private async complete<T>(
     messages: ChatMessage[],
-    schema: ZodSchema<T>,
+    schema: ZodType<T, ZodTypeDef, unknown>,
     opts?: ProviderCallOptions,
   ): Promise<T> {
     const raw = await this.chat(messages, opts);
@@ -148,7 +148,7 @@ export class Hy3Provider implements LlmProvider {
 
   private tryParse<T>(
     raw: string,
-    schema: ZodSchema<T>,
+    schema: ZodType<T, ZodTypeDef, unknown>,
   ): { ok: true; value: T } | { ok: false; error: string } {
     let json: unknown;
     try {

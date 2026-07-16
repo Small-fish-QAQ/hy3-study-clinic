@@ -52,16 +52,25 @@ export function QuizView({
 
   const generateAction = useAsyncAction();
   const submitAction = useAsyncAction();
+  const isRemediation = quiz?.kind === 'remediation';
+  const remediationConceptCount = isRemediation
+    ? (quiz.targetConceptIds?.length ?? new Set(quiz.questions.map((q) => q.conceptId)).size)
+    : 0;
+  const remediationQuestionTypes = isRemediation
+    ? Array.from(new Set(quiz.questions.map((q) => q.type)))
+    : [];
 
   function toggleType(type: QuestionType) {
     setTypes((prev) => (prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]));
   }
 
   async function doGenerate() {
-    const config: QuizConfig = { difficulty, types, countPerType };
-    const result = await generateAction.run((signal) =>
-      api.generateQuiz(materialId, config, signal),
-    );
+    const result = await generateAction.run((signal) => {
+      if (isRemediation) return api.remediation(materialId, signal);
+
+      const config: QuizConfig = { difficulty, types, countPerType };
+      return api.generateQuiz(materialId, config, signal);
+    });
     if (result) {
       setAnswers({});
       onQuizGenerated(result.quiz);
@@ -121,60 +130,81 @@ export function QuizView({
   return (
     <div className="stack">
       <section className="card">
-        <h2>配置测验</h2>
-        {!hasConcepts ? (
-          <Banner kind="info">
-            尚未分析概念。生成测验时会自动先分析,也可以先到「导入」页手动分析。
-          </Banner>
-        ) : null}
-        <div className="stack">
-          <div className="field">
-            <label htmlFor="difficulty">难度</label>
-            <select
-              id="difficulty"
-              value={difficulty}
-              onChange={(e) => setDifficulty(e.target.value as Difficulty)}
-            >
-              {(Object.keys(DIFFICULTY_LABELS) as Difficulty[]).map((d) => (
-                <option key={d} value={d}>
-                  {DIFFICULTY_LABELS[d]}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label>题型(至少选择一种)</label>
-            <div className="row">
-              {(Object.keys(TYPE_LABELS) as QuestionType[]).map((type) => (
-                <label key={type} className="pill" style={{ cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    style={{ width: 'auto' }}
-                    checked={types.includes(type)}
-                    onChange={() => toggleType(type)}
-                  />
+        <h2>{isRemediation ? '康复练习' : '配置测验'}</h2>
+        {isRemediation ? (
+          <div className="stack">
+            <p style={{ margin: 0 }}>
+              根据 {remediationConceptCount} 个未解决概念自动生成 {quiz.questions.length} 道康复题
+            </p>
+            <p className="muted small" style={{ margin: 0 }}>
+              每个概念 1 道单选题 + 1 道简答题，最多 3 个概念。
+            </p>
+            <div className="row" aria-label="生成的康复题型">
+              <span className="muted small">题型</span>
+              {remediationQuestionTypes.map((type) => (
+                <span key={type} className="pill">
                   {TYPE_LABELS[type]}
-                </label>
+                </span>
               ))}
             </div>
           </div>
-          <div className="field">
-            <label htmlFor="count">每种题型数量:{countPerType}</label>
-            <input
-              id="count"
-              type="range"
-              min={1}
-              max={5}
-              value={countPerType}
-              onChange={(e) => setCountPerType(Number(e.target.value))}
-            />
-          </div>
-        </div>
+        ) : (
+          <>
+            {!hasConcepts ? (
+              <Banner kind="info">
+                尚未分析概念。生成测验时会自动先分析,也可以先到「导入」页手动分析。
+              </Banner>
+            ) : null}
+            <div className="stack">
+              <div className="field">
+                <label htmlFor="difficulty">难度</label>
+                <select
+                  id="difficulty"
+                  value={difficulty}
+                  onChange={(e) => setDifficulty(e.target.value as Difficulty)}
+                >
+                  {(Object.keys(DIFFICULTY_LABELS) as Difficulty[]).map((d) => (
+                    <option key={d} value={d}>
+                      {DIFFICULTY_LABELS[d]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label>题型(至少选择一种)</label>
+                <div className="row">
+                  {(Object.keys(TYPE_LABELS) as QuestionType[]).map((type) => (
+                    <label key={type} className="pill" style={{ cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        style={{ width: 'auto' }}
+                        checked={types.includes(type)}
+                        onChange={() => toggleType(type)}
+                      />
+                      {TYPE_LABELS[type]}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="field">
+                <label htmlFor="count">每种题型数量:{countPerType}</label>
+                <input
+                  id="count"
+                  type="range"
+                  min={1}
+                  max={5}
+                  value={countPerType}
+                  onChange={(e) => setCountPerType(Number(e.target.value))}
+                />
+              </div>
+            </div>
+          </>
+        )}
         {generateAction.error ? <Banner kind="error">{generateAction.error}</Banner> : null}
         <div className="row">
           {generateAction.loading ? (
             <>
-              <Loading label="正在生成测验…" />
+              <Loading label={isRemediation ? '正在重新生成康复练习…' : '正在生成测验…'} />
               <button type="button" onClick={generateAction.cancel}>
                 取消
               </button>
@@ -183,10 +213,10 @@ export function QuizView({
             <button
               type="button"
               className="primary"
-              disabled={types.length === 0}
+              disabled={!isRemediation && types.length === 0}
               onClick={() => void doGenerate()}
             >
-              {quiz ? '重新生成测验' : '生成测验'}
+              {isRemediation ? '重新生成康复练习' : quiz ? '重新生成测验' : '生成测验'}
             </button>
           )}
         </div>

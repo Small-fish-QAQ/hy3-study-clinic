@@ -83,6 +83,12 @@ button.ghost {
   padding: 0.35rem 0.5rem;
 }
 
+button.ghost.danger {
+  background: transparent;
+  border-color: transparent;
+  color: var(--danger);
+}
+
 textarea,
 input,
 select {
@@ -390,6 +396,35 @@ nav.tabs button:disabled {
   font-size: 0.78rem;
   color: var(--text-muted);
   margin-bottom: 0.25rem;
+}
+
+.history-material-main {
+  flex: 1;
+  min-width: min(18rem, 100%);
+}
+
+.history-actions {
+  gap: 0.2rem;
+}
+
+.history-actions button {
+  padding: 0.35rem 0.55rem;
+}
+
+.history-rename-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.history-rename-editor .row {
+  gap: 0.35rem;
+}
+
+.history-rename-editor input {
+  flex: 1;
+  min-width: min(14rem, 100%);
 }
 
 .meter {

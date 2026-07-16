@@ -24,10 +24,17 @@ export function SourceEvidencePanel({
 }: SourceEvidencePanelProps) {
   const [open, setOpen] = useState(defaultOpen);
   const block = blocks.find((b) => b.id === grounding.blockId);
+  const panelId = `evidence-${grounding.blockId}-${grounding.startOffset}-${grounding.endOffset}`;
 
   if (!open) {
     return (
-      <button type="button" className="ghost small" onClick={() => setOpen(true)}>
+      <button
+        type="button"
+        className="ghost small"
+        aria-expanded={false}
+        aria-controls={panelId}
+        onClick={() => setOpen(true)}
+      >
         查看原文依据
       </button>
     );
@@ -35,10 +42,16 @@ export function SourceEvidencePanel({
 
   if (!block) {
     return (
-      <div className="evidence">
+      <div className="evidence" id={panelId}>
         <div className="evidence-head">
           <span>原文依据</span>
-          <button type="button" className="ghost small" onClick={() => setOpen(false)}>
+          <button
+            type="button"
+            className="ghost small"
+            aria-expanded
+            aria-controls={panelId}
+            onClick={() => setOpen(false)}
+          >
             收起
           </button>
         </div>
@@ -54,7 +67,7 @@ export function SourceEvidencePanel({
   const headingPath = block.headingPath.join(' / ');
 
   return (
-    <div className="evidence">
+    <div className="evidence" id={panelId}>
       <div className="evidence-head">
         <span>
           原文依据{headingPath ? ` · ${headingPath}` : ''}
@@ -63,7 +76,13 @@ export function SourceEvidencePanel({
             ? `(该引文在源块中出现 ${grounding.occurrenceCount} 次,高亮第一处)`
             : ''}
         </span>
-        <button type="button" className="ghost small" onClick={() => setOpen(false)}>
+        <button
+          type="button"
+          className="ghost small"
+          aria-expanded
+          aria-controls={panelId}
+          onClick={() => setOpen(false)}
+        >
           收起
         </button>
       </div>

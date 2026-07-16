@@ -73,6 +73,9 @@ export function MistakesView({
           </div>
         </div>
         {remediationError ? <Banner kind="error">{remediationError}</Banner> : null}
+        {data && openCount === 0 && data.mistakes.length > 0 ? (
+          <Banner kind="empty">当前没有未解决的错题，无需生成康复练习。</Banner>
+        ) : null}
         {data && data.weakConcepts.length > 0 ? (
           <div className="row">
             {data.weakConcepts.map((c) => (
@@ -90,7 +93,9 @@ export function MistakesView({
         <Banner kind="error">{error}</Banner>
       ) : !data || data.mistakes.length === 0 ? (
         <Banner kind="empty">
-          {statusFilter === 'open' ? '没有未解决的错题,棒!' : '还没有错题记录。先做一次测验吧。'}
+          {statusFilter === 'open'
+            ? '当前没有未解决的错题，无需生成康复练习。'
+            : '还没有错题记录，当前无需生成康复练习。先做一次测验吧。'}
         </Banner>
       ) : (
         data.mistakes.map((mistake) => <MistakeCard key={mistake.id} mistake={mistake} />)
@@ -114,7 +119,7 @@ function MistakeCard({ mistake }: { mistake: MistakeRecord }) {
             <span className="pill">已练习 {mistake.remediationCount} 次</span>
           ) : null}
         </h3>
-        <span className="muted small">得分 {Math.round(mistake.score * 100)}%</span>
+        <span className="muted small">原始得分 {Math.round(mistake.score * 100)}%</span>
       </div>
       <p style={{ whiteSpace: 'pre-wrap' }}>{question.stem}</p>
 

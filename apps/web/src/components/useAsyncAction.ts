@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiClientError } from '../api.js';
 
 export interface AsyncActionState {
@@ -19,6 +19,16 @@ export function useAsyncAction(): AsyncActionState & {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      controllerRef.current?.abort();
+      controllerRef.current = null;
+    };
+  }, []);
 
   const run = useCallback(async <T>(fn: (signal: AbortSignal) => Promise<T>) => {
     controllerRef.current?.abort();
@@ -28,23 +38,28 @@ export function useAsyncAction(): AsyncActionState & {
     setError(null);
     try {
       const result = await fn(controller.signal);
+      if (controller.signal.aborted || controllerRef.current !== controller) return null;
       return result;
     } catch (err) {
-      if (err instanceof ApiClientError && err.code === 'ABORTED') {
+      if (controller.signal.aborted || (err instanceof ApiClientError && err.code === 'ABORTED')) {
         return null; // cancelled by the user — quiet return to idle
       }
-      setError(err instanceof Error ? err.message : String(err));
+      if (mountedRef.current && controllerRef.current === controller) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
       return null;
     } finally {
       if (controllerRef.current === controller) {
         controllerRef.current = null;
-        setLoading(false);
+        if (mountedRef.current) setLoading(false);
       }
     }
   }, []);
 
   const cancel = useCallback(() => {
     controllerRef.current?.abort();
+    controllerRef.current = null;
+    if (mountedRef.current) setLoading(false);
   }, []);
 
   const clearError = useCallback(() => setError(null), []);

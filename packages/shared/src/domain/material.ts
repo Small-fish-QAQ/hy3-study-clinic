@@ -77,6 +77,21 @@ export const MaterialSchema = z.object({
 });
 export type Material = z.infer<typeof MaterialSchema>;
 
+/** Maximum length accepted when a learner renames an existing material. */
+export const MATERIAL_TITLE_MAX_LENGTH = 120;
+
+/** Runtime contract for PATCH /api/materials/:id. */
+export const UpdateMaterialTitleRequestSchema = z
+  .object({
+    title: z
+      .string()
+      .trim()
+      .min(1, '资料标题不能为空。')
+      .max(MATERIAL_TITLE_MAX_LENGTH, `资料标题不能超过 ${MATERIAL_TITLE_MAX_LENGTH} 个字符。`),
+  })
+  .strict();
+export type UpdateMaterialTitleRequest = z.infer<typeof UpdateMaterialTitleRequestSchema>;
+
 /** A key concept extracted from the material, with verified grounding. */
 export const ConceptSchema = z.object({
   id: z.string().min(1),

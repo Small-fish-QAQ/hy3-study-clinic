@@ -1,6 +1,19 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { SAMPLE_MATERIAL_CONTENT, type PublicQuiz, type Question } from '@hy3-clinic/shared';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  SAMPLE_MATERIAL_CONTENT,
+  type Concept,
+  type PublicQuiz,
+  type Question,
+} from '@hy3-clinic/shared';
 import { buildTestApp, type TestApp } from '../testing/testApp.js';
+import {
+  makeBlock,
+  makeMaterial,
+  makeMistake,
+  makeQuestion,
+  makeQuiz,
+  T0,
+} from '../testing/fixtures.js';
 
 /**
  * End-to-end integration tests for both core flows, entirely in fake mode
@@ -192,6 +205,134 @@ describe('Flow B: submission → grading → mistakes → remediation → master
     return { materialId, quiz, questions: body.questions, grading: body.grading };
   }
 
+  async function analyzeConcepts(materialId: string): Promise<Concept[]> {
+    const response = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/materials/${materialId}/analyze`,
+    });
+    expect(response.statusCode).toBe(200);
+    return response.json().concepts as Concept[];
+  }
+
+  function insertConceptMistake(
+    materialId: string,
+    concept: Concept,
+    suffix: string,
+    status: 'open' | 'resolved',
+  ): void {
+    const questionId = `que_${suffix}`;
+    const quizId = `qz_${suffix}`;
+    const question = makeQuestion({
+      id: questionId,
+      quizId,
+      conceptId: concept.id,
+      conceptName: concept.name,
+      grounding: concept.grounding,
+    });
+    ctx.repos.mistakes.insert(
+      makeMistake({
+        id: `mis_${suffix}`,
+        materialId,
+        quizId,
+        questionId,
+        conceptId: concept.id,
+        conceptName: concept.name,
+        question,
+        userAnswer: {
+          questionId,
+          type: 'single_choice',
+          selectedOptionIds: ['B'],
+        },
+        status,
+        resolvedAt: status === 'resolved' ? T0 : null,
+      }),
+    );
+  }
+
+  it('keeps semantically equivalent rubric points covered despite extra intervals', async () => {
+    const stem = '资料中列举的常见间隔重复安排是怎样的？请按顺序写出。';
+    const expectedAnswer = '学习当天复习一次，三天后一次，一周后一次，一个月后再一次。';
+    const rubricKeyPoints = ['当天一次', '三天后一次', '一周后一次', '一个月后一次'];
+    const studentAnswer =
+      '学习后当天复习，之后分别在 1 天后、3 天后、7 天后、14 天后和 30 天后再次复习。';
+    const block = makeBlock({
+      content: expectedAnswer,
+      startOffset: 0,
+      endOffset: expectedAnswer.length,
+    });
+    const question = makeQuestion({
+      id: 'que_semantic_intervals',
+      quizId: 'qz_semantic_intervals',
+      type: 'short_answer',
+      stem,
+      options: undefined,
+      correctOptionIds: undefined,
+      expectedAnswer,
+      rubric: { keyPoints: rubricKeyPoints },
+      grounding: {
+        blockId: block.id,
+        quote: expectedAnswer,
+        startOffset: 0,
+        endOffset: expectedAnswer.length,
+        occurrenceCount: 1,
+        reanchored: false,
+      },
+      explanation: '资料按顺序列出了四个间隔。',
+      points: 2,
+      sourceMistakeIds: [],
+    });
+    const quiz = makeQuiz({
+      id: 'qz_semantic_intervals',
+      kind: 'remediation',
+      config: { difficulty: 'medium', types: ['short_answer'], countPerType: 1 },
+      questions: [question],
+      targetConceptIds: [question.conceptId],
+    });
+    ctx.repos.materials.insertWithBlocks(
+      makeMaterial({ content: expectedAnswer, charCount: expectedAnswer.length }),
+      [block],
+    );
+    ctx.repos.quizzes.insert(quiz);
+    const gradeShortAnswer = vi.spyOn(ctx.provider, 'gradeShortAnswer').mockResolvedValue({
+      matchedKeyPointIndexes: [0, 1, 2, 3],
+      score: 0.9,
+      confidence: 0.95,
+      feedback: '四个评分要点均已覆盖;1 天后和 14 天后属于额外安排。',
+    });
+
+    const response = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/quizzes/${quiz.id}/submissions`,
+      payload: {
+        answers: [{ questionId: question.id, type: 'short_answer', text: studentAnswer }],
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(gradeShortAnswer.mock.calls[0]![0]).toEqual({
+      stem,
+      expectedAnswer,
+      rubricKeyPoints,
+      quote: expectedAnswer,
+      answerText: studentAnswer,
+    });
+    const grading = response.json().grading;
+    const grade = grading.grades[0];
+    expect(grade.matchedKeyPoints).toEqual(rubricKeyPoints);
+    expect(grade.missedKeyPoints).toEqual([]);
+    expect(grade).toMatchObject({
+      correct: true,
+      awardedPoints: 1.8,
+      maxPoints: 2,
+      normalizedScore: 0.9,
+      confidence: 0.95,
+      needsReview: false,
+    });
+    expect(grade.feedback).toContain('1 天后和 14 天后');
+    expect(grading.totalAwarded).toBe(1.8);
+    expect(grading.totalPossible).toBe(2);
+  });
+
   it('grades objective questions deterministically and short answers by rubric, labelling gradedBy', async () => {
     const { grading, questions } = await submitWithMistakes(0);
 
@@ -269,13 +410,27 @@ describe('Flow B: submission → grading → mistakes → remediation → master
     const remediation = remRes.json().quiz as PublicQuiz;
     expect(remediation.kind).toBe('remediation');
     expect(remediation.targetConceptIds!.length).toBeGreaterThan(0);
+    expect(remediation.targetConceptIds!.length).toBeLessThanOrEqual(3);
+    expect(remediation.questions).toHaveLength(remediation.targetConceptIds!.length * 2);
+    expect(remediation.config.types).toEqual(['single_choice', 'short_answer']);
+    expect(remediation.config.countPerType).toBe(remediation.targetConceptIds!.length);
 
     const mistakesBefore = await ctx.app.inject({
       method: 'GET',
       url: `/api/materials/${materialId}/mistakes?status=open`,
     });
     const openBefore = mistakesBefore.json().mistakes.length;
+    const openConceptIds = new Set<string>(
+      mistakesBefore.json().mistakes.map((mistake: { conceptId: string }) => mistake.conceptId),
+    );
     const targetIds = new Set(remediation.targetConceptIds);
+    for (const conceptId of targetIds) expect(openConceptIds.has(conceptId)).toBe(true);
+    for (const conceptId of targetIds) {
+      const types = remediation.questions
+        .filter((question) => question.conceptId === conceptId)
+        .map((question) => question.type);
+      expect(new Set(types)).toEqual(new Set(['single_choice', 'short_answer']));
+    }
     for (const q of remediation.questions) {
       expect(targetIds.has(q.conceptId)).toBe(true);
     }
@@ -327,14 +482,128 @@ describe('Flow B: submission → grading → mistakes → remediation → master
     }
   });
 
-  it('refuses remediation when there are no weaknesses yet', async () => {
+  it('excludes a resolved low-mastery concept when another concept remains open', async () => {
     const { materialId } = await importSample();
+    const [resolvedConcept, openConcept] = await analyzeConcepts(materialId);
+    expect(resolvedConcept).toBeDefined();
+    expect(openConcept).toBeDefined();
+    insertConceptMistake(materialId, resolvedConcept!, 'resolved_concept', 'resolved');
+    insertConceptMistake(materialId, openConcept!, 'open_concept', 'open');
+    ctx.repos.mastery.upsert({
+      materialId,
+      conceptId: resolvedConcept!.id,
+      conceptName: resolvedConcept!.name,
+      mastery: 0.55,
+      attempts: 2,
+      correctCount: 1,
+      lastScore: 1,
+      updatedAt: T0,
+    });
+
+    const generateRemediation = ctx.provider.generateRemediation.bind(ctx.provider);
+    const generateSpy = vi
+      .spyOn(ctx.provider, 'generateRemediation')
+      .mockImplementation(async (input, options) => {
+        const payload = await generateRemediation(input, options);
+        return {
+          questions: payload.questions.flatMap((question) => [
+            { ...question, stem: `首个有效：${question.stem}` },
+            { ...question, stem: `多余有效：${question.stem}` },
+          ]),
+        };
+      });
+
+    const response = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/materials/${materialId}/remediation`,
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(generateSpy).toHaveBeenCalledTimes(1);
+    const [providerInput] = generateSpy.mock.calls[0]!;
+    expect(providerInput.targets.map((target) => target.concept.id)).toEqual([openConcept!.id]);
+    expect(providerInput.targets[0]!.openMistakeCount).toBe(1);
+
+    const remediation = response.json().quiz as PublicQuiz;
+    expect(remediation.targetConceptIds).toEqual([openConcept!.id]);
+    expect(remediation.questions).toHaveLength(2);
+    expect(remediation.questions.map((question) => question.type)).toEqual([
+      'single_choice',
+      'short_answer',
+    ]);
+    expect(remediation.questions.every((question) => question.conceptId === openConcept!.id)).toBe(
+      true,
+    );
+    expect(remediation.questions.every((question) => question.stem.startsWith('首个有效：'))).toBe(
+      true,
+    );
+    expect(remediation.config).toEqual({
+      difficulty: 'medium',
+      types: ['single_choice', 'short_answer'],
+      countPerType: 1,
+    });
+
+    const storedQuiz = ctx.repos.quizzes.get(remediation.id)!;
+    expect(storedQuiz.questions.map((question) => question.index)).toEqual([0, 1]);
+    expect(
+      storedQuiz.questions.every((question) =>
+        question.sourceMistakeIds?.includes('mis_open_concept'),
+      ),
+    ).toBe(true);
+    expect(ctx.repos.mistakes.get('mis_open_concept')?.remediationCount).toBe(1);
+    expect(ctx.repos.mistakes.get('mis_resolved_concept')?.remediationCount).toBe(0);
+  });
+
+  it('returns a structured failure when a target lacks either required question type', async () => {
+    const { materialId } = await importSample();
+    const [concept] = await analyzeConcepts(materialId);
+    expect(concept).toBeDefined();
+    insertConceptMistake(materialId, concept!, 'incomplete_pair', 'open');
+
+    const generateRemediation = ctx.provider.generateRemediation.bind(ctx.provider);
+    vi.spyOn(ctx.provider, 'generateRemediation').mockImplementation(async (input, options) => {
+      const payload = await generateRemediation(input, options);
+      return {
+        questions: payload.questions.filter((question) => question.type === 'single_choice'),
+      };
+    });
+
+    const response = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/materials/${materialId}/remediation`,
+    });
+
+    expect(response.statusCode).toBe(422);
+    expect(response.json().error.code).toBe('GROUNDING_FAILED');
+    expect(response.json().error.details.missing).toEqual([
+      { conceptId: concept!.id, type: 'short_answer' },
+    ]);
+    expect(ctx.repos.mistakes.get('mis_incomplete_pair')?.remediationCount).toBe(0);
+  });
+
+  it('refuses remediation when no mistakes are open, even if historical mastery is low', async () => {
+    const { materialId } = await importSample();
+    const [concept] = await analyzeConcepts(materialId);
+    expect(concept).toBeDefined();
+    ctx.repos.mastery.upsert({
+      materialId,
+      conceptId: concept!.id,
+      conceptName: concept!.name,
+      mastery: 0.2,
+      attempts: 1,
+      correctCount: 0,
+      lastScore: 0,
+      updatedAt: T0,
+    });
+    const generateSpy = vi.spyOn(ctx.provider, 'generateRemediation');
     const res = await ctx.app.inject({
       method: 'POST',
       url: `/api/materials/${materialId}/remediation`,
     });
     expect(res.statusCode).toBe(400);
     expect(res.json().error.code).toBe('VALIDATION_ERROR');
+    expect(res.json().error.message).toContain('没有未解决的错题');
+    expect(generateSpy).not.toHaveBeenCalled();
   });
 
   it('rejects answers for questions outside the quiz', async () => {

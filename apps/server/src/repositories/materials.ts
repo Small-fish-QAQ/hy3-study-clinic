@@ -96,6 +96,8 @@ export function createMaterialsRepo(db: SqliteDb) {
     `INSERT INTO concepts (id, material_id, name, summary, importance, grounding, created_at)
      VALUES (@id, @materialId, @name, @summary, @importance, @grounding, @createdAt)`,
   );
+  const updateTitleStmt = db.prepare('UPDATE materials SET title = ? WHERE id = ?');
+  const deleteMaterialStmt = db.prepare('DELETE FROM materials WHERE id = ?');
 
   const insertWithBlocks = db.transaction((material: Material, blocks: SourceBlock[]) => {
     insertMaterialStmt.run(material);
@@ -128,6 +130,13 @@ export function createMaterialsRepo(db: SqliteDb) {
     }
   });
 
+  // The material row is the root of the verified ON DELETE CASCADE graph.
+  // Keeping the root delete inside an explicit transaction makes the rollback
+  // boundary clear and lets SQLite undo every cascade if any delete fails.
+  const deleteMaterial = db.transaction((materialId: string): boolean => {
+    return deleteMaterialStmt.run(materialId).changes === 1;
+  });
+
   return {
     insertWithBlocks(material: Material, blocks: SourceBlock[]): void {
       MaterialSchema.parse(material);
@@ -139,6 +148,16 @@ export function createMaterialsRepo(db: SqliteDb) {
       const row = db.prepare('SELECT * FROM materials WHERE id = ?').get(id) as
         MaterialRow | undefined;
       return row ? rowToMaterial(row) : undefined;
+    },
+
+    updateTitle(id: string, title: string): Material | undefined {
+      if (updateTitleStmt.run(title, id).changes === 0) return undefined;
+      const row = db.prepare('SELECT * FROM materials WHERE id = ?').get(id) as MaterialRow;
+      return rowToMaterial(row);
+    },
+
+    delete(id: string): boolean {
+      return deleteMaterial(id);
     },
 
     list(): MaterialSummary[] {

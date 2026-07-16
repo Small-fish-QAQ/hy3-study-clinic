@@ -1,5 +1,11 @@
-import type { Material, SourceBlock, SourceType } from '@hy3-clinic/shared';
+import {
+  UpdateMaterialTitleRequestSchema,
+  type Material,
+  type SourceBlock,
+  type SourceType,
+} from '@hy3-clinic/shared';
 import type { Repositories } from '../repositories/index.js';
+import { notFound } from '../errors.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
 import { deriveTitle, ingestSource, sourceTypeForFilename } from '../ingestion/ingest.js';
@@ -54,6 +60,17 @@ export function createMaterialService({ repos, clock }: MaterialServiceDeps) {
       const material = repos.materials.get(id);
       if (!material) return undefined;
       return { material, blocks: repos.materials.getBlocks(id) };
+    },
+
+    updateTitle(id: string, title: string): Material {
+      const input = UpdateMaterialTitleRequestSchema.parse({ title });
+      const material = repos.materials.updateTitle(id, input.title);
+      if (!material) throw notFound(`学习资料不存在:${id}`);
+      return material;
+    },
+
+    delete(id: string): void {
+      if (!repos.materials.delete(id)) throw notFound(`学习资料不存在:${id}`);
     },
 
     list() {

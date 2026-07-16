@@ -29,7 +29,109 @@ export const ProposedOptionSchema = z.object({
   text: z.string().min(1).max(300),
 });
 
-export const ProposedQuestionSchema = z
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function normalizeLooseOptionId(value: unknown): unknown {
+  if (typeof value !== 'string') return value;
+  const match = value
+    .trim()
+    .toUpperCase()
+    .match(/^(?:OPTION|选项)?\s*([A-H])(?:[\s.)、:：-]*)$/u);
+  return match?.[1] ?? value;
+}
+
+/**
+ * Normalize harmless model-format variations before strict validation.
+ *
+ * Hy3 may occasionally emit choice labels such as "1"/"2" or "A."/"B.",
+ * and may include empty placeholder fields for the other question kind. We
+ * canonicalize unique option labels by their stable array order and remove
+ * only EMPTY inapplicable fields. Non-empty conflicting fields still fail the
+ * strict schema below.
+ */
+function normalizeProposedQuestion(value: unknown): unknown {
+  if (!isRecord(value)) return value;
+  const question: Record<string, unknown> = { ...value };
+
+  if (Array.isArray(question.options)) {
+    const options = question.options;
+    const rawIds = options.map((option) =>
+      isRecord(option) && typeof option.id === 'string' ? option.id.trim() : null,
+    );
+    const canCanonicalize =
+      options.length <= 8 &&
+      rawIds.every((id): id is string => Boolean(id)) &&
+      new Set(rawIds).size === rawIds.length;
+
+    if (canCanonicalize) {
+      const aliases = new Map<string, string>();
+      question.options = options.map((option, index) => {
+        if (!isRecord(option)) return option;
+        const rawId = rawIds[index]!;
+        const canonicalId = String.fromCharCode('A'.charCodeAt(0) + index);
+        aliases.set(rawId, canonicalId);
+        aliases.set(rawId.toUpperCase(), canonicalId);
+        const loose = normalizeLooseOptionId(rawId);
+        if (typeof loose === 'string') aliases.set(loose, canonicalId);
+        return { ...option, id: canonicalId };
+      });
+
+      if (Array.isArray(question.correctOptionIds)) {
+        question.correctOptionIds = question.correctOptionIds.map((id) => {
+          if (typeof id !== 'string') return id;
+          const rawId = id.trim();
+          const loose = normalizeLooseOptionId(rawId);
+          return (
+            aliases.get(rawId) ??
+            aliases.get(rawId.toUpperCase()) ??
+            (typeof loose === 'string' ? (aliases.get(loose) ?? loose) : loose)
+          );
+        });
+      }
+    } else {
+      question.options = options.map((option) =>
+        isRecord(option) ? { ...option, id: normalizeLooseOptionId(option.id) } : option,
+      );
+      if (Array.isArray(question.correctOptionIds)) {
+        question.correctOptionIds = question.correctOptionIds.map(normalizeLooseOptionId);
+      }
+    }
+  }
+
+  if (question.type === 'short_answer') {
+    if (
+      question.options === null ||
+      (Array.isArray(question.options) && question.options.length === 0)
+    ) {
+      delete question.options;
+    }
+    if (
+      question.correctOptionIds === null ||
+      (Array.isArray(question.correctOptionIds) && question.correctOptionIds.length === 0)
+    ) {
+      delete question.correctOptionIds;
+    }
+  } else if (question.type === 'single_choice' || question.type === 'multiple_choice') {
+    if (
+      question.expectedAnswer === null ||
+      (typeof question.expectedAnswer === 'string' && question.expectedAnswer.trim() === '')
+    ) {
+      delete question.expectedAnswer;
+    }
+    if (
+      question.rubricKeyPoints === null ||
+      (Array.isArray(question.rubricKeyPoints) && question.rubricKeyPoints.length === 0)
+    ) {
+      delete question.rubricKeyPoints;
+    }
+  }
+
+  return question;
+}
+
+const StrictProposedQuestionSchema = z
   .object({
     type: QuestionTypeSchema,
     stem: z.string().min(1).max(500),
@@ -99,6 +201,11 @@ export const ProposedQuestionSchema = z
       });
     }
   });
+
+export const ProposedQuestionSchema = z.preprocess(
+  normalizeProposedQuestion,
+  StrictProposedQuestionSchema,
+);
 export type ProposedQuestion = z.infer<typeof ProposedQuestionSchema>;
 
 export const QuizGenerationPayloadSchema = z.object({

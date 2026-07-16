@@ -4,6 +4,7 @@ import { ProposedQuestionSchema } from '../provider/payloads.js';
 import { AnswerSchema } from './grading.js';
 import { MasteryStateSchema } from './mistake.js';
 import { ApiErrorSchema } from './errors.js';
+import { MATERIAL_TITLE_MAX_LENGTH, UpdateMaterialTitleRequestSchema } from './material.js';
 
 const baseGrounding = {
   blockId: 'b1',
@@ -211,5 +212,72 @@ describe('ProposedQuestionSchema', () => {
       rubricKeyPoints: ['容量有限'],
     };
     expect(ProposedQuestionSchema.safeParse(bad).success).toBe(false);
+  });
+});
+
+describe('ProposedQuestionSchema provider normalization', () => {
+  const common = {
+    stem: '工作记忆的容量如何?',
+    conceptId: 'con_1',
+    blockId: 'blk_1',
+    quote: '工作记忆容量有限。',
+    explanation: '依据原文判断。',
+  };
+
+  it('canonicalizes unique loose choice ids and removes empty short-answer placeholders', () => {
+    const parsed = ProposedQuestionSchema.parse({
+      ...common,
+      type: 'single_choice',
+      options: [
+        { id: '1', text: '有限' },
+        { id: '2', text: '无限' },
+      ],
+      correctOptionIds: ['1'],
+      expectedAnswer: '',
+      rubricKeyPoints: [],
+    });
+
+    expect(parsed.options?.map((option) => option.id)).toEqual(['A', 'B']);
+    expect(parsed.correctOptionIds).toEqual(['A']);
+    expect(parsed.expectedAnswer).toBeUndefined();
+    expect(parsed.rubricKeyPoints).toBeUndefined();
+  });
+
+  it('removes empty choice placeholders from a short-answer question', () => {
+    const parsed = ProposedQuestionSchema.parse({
+      ...common,
+      type: 'short_answer',
+      options: [],
+      correctOptionIds: [],
+      expectedAnswer: '工作记忆容量有限。',
+      rubricKeyPoints: ['指出容量有限'],
+    });
+
+    expect(parsed.options).toBeUndefined();
+    expect(parsed.correctOptionIds).toBeUndefined();
+  });
+});
+
+describe('UpdateMaterialTitleRequestSchema', () => {
+  it('trims a non-empty title', () => {
+    expect(UpdateMaterialTitleRequestSchema.parse({ title: '  新标题  ' })).toEqual({
+      title: '新标题',
+    });
+  });
+
+  it('rejects blank and overlong titles', () => {
+    expect(UpdateMaterialTitleRequestSchema.safeParse({ title: '   ' }).success).toBe(false);
+    expect(
+      UpdateMaterialTitleRequestSchema.safeParse({
+        title: 'x'.repeat(MATERIAL_TITLE_MAX_LENGTH + 1),
+      }).success,
+    ).toBe(false);
+  });
+
+  it('rejects unexpected fields', () => {
+    expect(
+      UpdateMaterialTitleRequestSchema.safeParse({ title: '新标题', content: '不允许修改' })
+        .success,
+    ).toBe(false);
   });
 });
