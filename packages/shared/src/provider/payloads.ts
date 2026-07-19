@@ -1,5 +1,7 @@
 import { z } from 'zod';
-import { ImportanceSchema, QuestionTypeSchema } from '../domain/material.js';
+import { DifficultySchema, ImportanceSchema, QuestionTypeSchema } from '../domain/material.js';
+import { GraphRelationSchema } from '../domain/graph.js';
+import { PlanStrategySchema } from '../domain/plan.js';
 
 /**
  * Structured payloads that LLM providers must return.
@@ -212,3 +214,56 @@ export const QuizGenerationPayloadSchema = z.object({
   questions: z.array(ProposedQuestionSchema).min(1).max(30),
 });
 export type QuizGenerationPayload = z.infer<typeof QuizGenerationPayloadSchema>;
+
+/**
+ * Evidence as PROPOSED by a model: block reference plus exact quote.
+ * The server verifies every quote and computes offsets itself.
+ */
+export const ProposedEvidenceSchema = z.object({
+  blockId: z.string().min(1),
+  quote: z.string().min(1).max(500),
+});
+export type ProposedEvidence = z.infer<typeof ProposedEvidenceSchema>;
+
+/** One candidate concept-graph edge proposed by a provider. */
+export const ProposedGraphEdgeSchema = z.object({
+  sourceConceptId: z.string().min(1),
+  targetConceptId: z.string().min(1),
+  relation: GraphRelationSchema,
+  explanation: z.string().min(1).max(500),
+  evidence: z.array(ProposedEvidenceSchema).min(1).max(3),
+});
+export type ProposedGraphEdge = z.infer<typeof ProposedGraphEdgeSchema>;
+
+/** Structured provider output for graph-edge proposal. */
+export const GraphProposalPayloadSchema = z.object({
+  edges: z.array(ProposedGraphEdgeSchema).min(1).max(60),
+});
+export type GraphProposalPayload = z.infer<typeof GraphProposalPayloadSchema>;
+
+/** One target concept of a proposed remediation plan. */
+export const ProposedPlanTargetSchema = z.object({
+  conceptId: z.string().min(1),
+  reason: z.string().min(1).max(500),
+  evidence: z.array(ProposedEvidenceSchema).min(1).max(3),
+});
+export type ProposedPlanTarget = z.infer<typeof ProposedPlanTargetSchema>;
+
+/** One ordered step of a proposed remediation plan. */
+export const ProposedPlanStepSchema = z.object({
+  description: z.string().min(1).max(500),
+  conceptId: z.string().min(1).nullable().optional(),
+});
+export type ProposedPlanStep = z.infer<typeof ProposedPlanStepSchema>;
+
+/** Structured provider output for remediation-plan proposal. */
+export const RemediationPlanProposalPayloadSchema = z.object({
+  summary: z.string().min(1).max(600),
+  weaknessHypothesis: z.string().min(1).max(600),
+  strategy: PlanStrategySchema,
+  difficulty: DifficultySchema,
+  questionTypes: z.array(QuestionTypeSchema).min(1).max(3),
+  steps: z.array(ProposedPlanStepSchema).min(1).max(6),
+  targets: z.array(ProposedPlanTargetSchema).min(1).max(4),
+});
+export type RemediationPlanProposalPayload = z.infer<typeof RemediationPlanProposalPayloadSchema>;

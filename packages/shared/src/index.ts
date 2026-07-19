@@ -9,6 +9,9 @@ export {
 } from './mastery.js';
 
 export * from './domain/material.js';
+export * from './domain/workspace.js';
+export * from './domain/graph.js';
+export * from './domain/plan.js';
 export * from './domain/quiz.js';
 export * from './domain/grading.js';
 export * from './domain/mistake.js';

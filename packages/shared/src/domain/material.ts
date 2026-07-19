@@ -8,9 +8,27 @@ export type QuestionType = z.infer<typeof QuestionTypeSchema>;
 export const DifficultySchema = z.enum(['easy', 'medium', 'hard']);
 export type Difficulty = z.infer<typeof DifficultySchema>;
 
-/** How a material was imported. */
-export const SourceTypeSchema = z.enum(['paste', 'md', 'txt']);
+/** How a document was imported. */
+export const SourceTypeSchema = z.enum(['paste', 'md', 'txt', 'pdf', 'docx']);
 export type SourceType = z.infer<typeof SourceTypeSchema>;
+
+/** Media types accepted for document ingestion. */
+export const MediaTypeSchema = z.enum([
+  'text/plain',
+  'text/markdown',
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]);
+export type MediaType = z.infer<typeof MediaTypeSchema>;
+
+/**
+ * Parsing outcome for a persisted document. Parsing failures are NEVER
+ * persisted as empty documents — a failed parse rejects the whole import,
+ * so persisted statuses only distinguish clean parses from parses that
+ * produced visible extraction warnings.
+ */
+export const ParseStatusSchema = z.enum(['parsed', 'parsed_with_warnings']);
+export type ParseStatus = z.infer<typeof ParseStatusSchema>;
 
 /** Concept importance, as judged by the analysis step. */
 export const ImportanceSchema = z.enum(['high', 'medium', 'low']);
@@ -58,6 +76,8 @@ export const SourceBlockSchema = z.object({
   heading: z.string().nullable(),
   /** Full heading path, e.g. ["记忆的类型", "工作记忆"]. */
   headingPath: z.array(z.string()),
+  /** 1-based page number for paginated sources (PDF); null otherwise. */
+  pageNumber: z.number().int().positive().nullable(),
   content: z.string().min(1),
   /** Offsets into the normalized material content (UTF-16 code units). */
   startOffset: z.number().int().nonnegative(),
@@ -65,15 +85,32 @@ export const SourceBlockSchema = z.object({
 });
 export type SourceBlock = z.infer<typeof SourceBlockSchema>;
 
-/** An imported study material. */
+/**
+ * An imported study document. Every document belongs to exactly one course
+ * workspace; legacy single-material records were migrated into per-material
+ * compatibility workspaces.
+ */
 export const MaterialSchema = z.object({
   id: z.string().min(1),
+  workspaceId: z.string().min(1),
   title: z.string().min(1).max(200),
   sourceType: SourceTypeSchema,
+  /** Media type of the original upload (null for legacy rows before backfill). */
+  mediaType: MediaTypeSchema.nullable(),
+  /** Original uploaded filename, when the document came from a file. */
+  originalFilename: z.string().max(255).nullable(),
   /** Normalized content (LF line endings). */
   content: z.string().min(1),
   charCount: z.number().int().positive(),
+  parseStatus: ParseStatusSchema,
+  /** Total pages for paginated sources (PDF); null otherwise. */
+  pageCount: z.number().int().positive().nullable(),
+  /** Human-readable extraction warnings produced by the parser. */
+  extractionWarnings: z.array(z.string().max(500)).max(50),
+  /** Version tag of the parser that produced the stored text. */
+  parserVersion: z.string().max(80).nullable(),
   createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
 });
 export type Material = z.infer<typeof MaterialSchema>;
 
