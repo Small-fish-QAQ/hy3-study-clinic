@@ -25,8 +25,16 @@ export function createRemediationService({ repos, provider, clock }: Remediation
      * mistakes (most mistakes first). Every generated question is linked
      * back to the open mistakes it re-tests via sourceMistakeIds, so a
      * correct answer later resolves exactly those mistakes.
+     *
+     * `allowedConceptIds` (used when launching from an accepted remediation
+     * plan) restricts the deterministic target selection to those concepts;
+     * selection order and limits are unchanged.
      */
-    async generate(materialId: string, opts?: ProviderCallOptions): Promise<Quiz> {
+    async generate(
+      materialId: string,
+      opts?: ProviderCallOptions,
+      allowedConceptIds?: readonly string[],
+    ): Promise<Quiz> {
       const material = repos.materials.get(materialId);
       if (!material) throw notFound(`学习资料不存在:${materialId}`);
       const blocks = repos.materials.getBlocks(materialId);
@@ -36,6 +44,7 @@ export function createRemediationService({ repos, provider, clock }: Remediation
       const openMistakes = repos.mistakes.listOpenByMaterial(materialId);
       const mistakesByConcept = new Map<string, typeof openMistakes>();
       for (const mistake of openMistakes) {
+        if (allowedConceptIds && !allowedConceptIds.includes(mistake.conceptId)) continue;
         const list = mistakesByConcept.get(mistake.conceptId) ?? [];
         list.push(mistake);
         mistakesByConcept.set(mistake.conceptId, list);

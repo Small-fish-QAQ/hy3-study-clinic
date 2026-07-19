@@ -26,6 +26,7 @@ const app = buildApp({
   repos,
   provider,
   logger: true,
+  providerModel: config.hy3Model,
 });
 
 app.addHook('onClose', async () => {

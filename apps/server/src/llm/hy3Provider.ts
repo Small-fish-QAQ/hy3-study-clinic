@@ -1,9 +1,13 @@
 import {
   ConceptAnalysisPayloadSchema,
+  GraphProposalPayloadSchema,
   QuizGenerationPayloadSchema,
+  RemediationPlanProposalPayloadSchema,
   RubricGradeSchema,
   type ConceptAnalysisPayload,
+  type GraphProposalPayload,
   type QuizGenerationPayload,
+  type RemediationPlanProposalPayload,
   type RubricGrade,
 } from '@hy3-clinic/shared';
 import type { ZodType, ZodTypeDef } from 'zod';
@@ -11,17 +15,21 @@ import { ProviderError } from './errors.js';
 import { extractJson, JsonExtractionError } from './json.js';
 import {
   conceptAnalysisMessages,
+  graphProposalMessages,
   quizGenerationMessages,
   remediationMessages,
+  remediationPlanMessages,
   shortAnswerGradingMessages,
   type ChatMessage,
 } from './prompts.js';
 import type {
   ConceptAnalysisInput,
+  GraphProposalInput,
   LlmProvider,
   ProviderCallOptions,
   QuizGenerationInput,
   RemediationInput,
+  RemediationPlanInput,
   ShortAnswerGradingInput,
 } from './provider.js';
 
@@ -107,6 +115,28 @@ export class Hy3Provider implements LlmProvider {
         input.questionsPerConcept,
       ),
       QuizGenerationPayloadSchema,
+      opts,
+    );
+  }
+
+  async proposeGraphEdges(
+    input: GraphProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<GraphProposalPayload> {
+    return this.complete(
+      graphProposalMessages(input.workspaceName, input.blocks, input.concepts, input.maxEdges),
+      GraphProposalPayloadSchema,
+      opts,
+    );
+  }
+
+  async proposeRemediationPlan(
+    input: RemediationPlanInput,
+    opts?: ProviderCallOptions,
+  ): Promise<RemediationPlanProposalPayload> {
+    return this.complete(
+      remediationPlanMessages(input),
+      RemediationPlanProposalPayloadSchema,
       opts,
     );
   }

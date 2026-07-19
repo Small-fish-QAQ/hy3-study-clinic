@@ -1,7 +1,8 @@
-import type { SourceBlock, Concept, QuizConfig } from '@hy3-clinic/shared';
+import type { Concept, QuizConfig, SourceBlock } from '@hy3-clinic/shared';
+import { GRAPH_RELATIONS } from '@hy3-clinic/shared';
 import { randomUUID } from 'node:crypto';
 import { wrapSourceBlocks } from '../grounding/wrapSource.js';
-import type { RemediationTarget } from './provider.js';
+import type { RemediationPlanInput, RemediationTarget } from './provider.js';
 
 /**
  * Chinese prompt builders for the Hy3 provider.
@@ -195,6 +196,115 @@ export function remediationMessages(
         '重要:单选题不得出现 expectedAnswer 或 rubricKeyPoints;简答题不得出现 options 或 correctOptionIds。不适用字段必须完全省略,不得输出空字符串、空数组或 null。',
         '单选题 options 的 id 必须是无标点的大写单字母 A-H,correctOptionIds 必须引用这些 id。',
         '最终输出格式:{"questions":[上述题目对象]}。',
+        CITATION_RULES,
+        JSON_RULES,
+      ].join('\n'),
+    },
+  ];
+}
+
+const RELATION_TEXT: Record<string, string> = {
+  prerequisite: 'prerequisite(先修:先理解 source 才能理解 target)',
+  part_of: 'part_of(组成:source 是 target 的组成部分)',
+  contrasts_with: 'contrasts_with(对比:source 与 target 需要对比区分)',
+  causes: 'causes(因果:source 导致/影响 target)',
+  applies_to: 'applies_to(应用:source 可应用于 target)',
+  example_of: 'example_of(示例:source 是 target 的具体例子)',
+};
+
+export function graphProposalMessages(
+  _workspaceName: string,
+  blocks: SourceBlock[],
+  concepts: Concept[],
+  maxEdges: number,
+): ChatMessage[] {
+  const wrapped = wrapSourceBlocks(blocks);
+  const conceptList = concepts
+    .map((c) => `- conceptId: ${c.id} | 名称: ${c.name} | 关联块: ${c.grounding.blockId}`)
+    .join('\n');
+  const relationList = GRAPH_RELATIONS.map((r) => `- ${RELATION_TEXT[r]}`).join('\n');
+
+  return [
+    {
+      role: 'system',
+      content: `你是一位严谨的中文知识图谱构建专家,只在给定概念之间提出有原文依据的关系,绝不编造。${wrapped.guard}`,
+    },
+    {
+      role: 'user',
+      content: [
+        `请基于下面的学习资料,为已有概念提出概念间关系(最多 ${maxEdges} 条)。`,
+        '',
+        '可用概念(sourceConceptId 与 targetConceptId 必须使用下列 conceptId,禁止发明新概念):',
+        conceptList,
+        '',
+        '允许的关系类型(relation 字段只能取这些值):',
+        relationList,
+        '',
+        wrapped.body,
+        '',
+        '输出 JSON,格式:',
+        '{"edges":[{"sourceConceptId":"...","targetConceptId":"...","relation":"prerequisite","explanation":"一句话中文说明(≤200字)","evidence":[{"blockId":"来源块id","quote":"从该块原文逐字复制的一句话"}]}]}',
+        '要求:',
+        '1. source 与 target 必须不同;prerequisite 与 part_of 关系不得构成环;',
+        '2. 每条边必须给出 1-3 条 evidence,每条 evidence 的 quote 必须逐字来自对应 blockId 的原文;',
+        '3. 不要输出重复的 (source, target, relation) 组合;',
+        '4. 宁缺毋滥:没有原文依据的关系不要输出。',
+        CITATION_RULES,
+        JSON_RULES,
+      ].join('\n'),
+    },
+  ];
+}
+
+export function remediationPlanMessages(input: RemediationPlanInput): ChatMessage[] {
+  const wrapped = wrapSourceBlocks(input.blocks);
+  const conceptLine = (c: Concept, label: string) =>
+    `- ${label} | conceptId: ${c.id} | 名称: ${c.name} | 关联块: ${c.grounding.blockId}`;
+  const conceptList = [
+    conceptLine(input.selected, '选中概念'),
+    ...input.prerequisites.map((c) => conceptLine(c, '直接前置')),
+    ...input.neighbors.map((n) =>
+      conceptLine(n.concept, `图谱邻居(${n.relation}/${n.direction === 'in' ? '入边' : '出边'})`),
+    ),
+  ].join('\n');
+
+  const learner = wrapUntrustedJson('LEARNER_STATE', {
+    masteryStates: input.masteryStates.map((m) => ({
+      conceptId: m.conceptId,
+      mastery: m.mastery,
+      attempts: m.attempts,
+      lastScore: m.lastScore,
+    })),
+    openMistakes: input.openMistakes,
+    usedQuestionTypes: input.usedQuestionTypes,
+  });
+
+  return [
+    {
+      role: 'system',
+      content: `你是一位严谨的中文学习教练,负责为薄弱概念制定有原文依据的康复计划。你只能提出计划,不能修改掌握度、错题状态或学习历史。${wrapped.guard}`,
+    },
+    {
+      role: 'user',
+      content: [
+        `请为选中概念「${input.selected.name}」制定一份有界康复计划。`,
+        '',
+        '可用概念(targets 与 steps 中的 conceptId 只能取下列 conceptId):',
+        conceptList,
+        '',
+        learner.guard,
+        learner.body,
+        '',
+        wrapped.body,
+        '',
+        '输出 JSON,格式:',
+        '{"summary":"计划概述(≤200字)","weaknessHypothesis":"薄弱点/误解假设(≤200字)","strategy":"review|contrast|worked_example|retrieval_practice|prerequisite_repair|application_practice","difficulty":"easy|medium|hard","questionTypes":["single_choice","short_answer"],"steps":[{"description":"步骤说明","conceptId":"可选"}],"targets":[{"conceptId":"...","reason":"为何选择该概念(≤200字)","evidence":[{"blockId":"来源块id","quote":"逐字原文"}]}]}',
+        '要求:',
+        '1. targets 数量 1-4,必须包含选中概念本身或其直接前置概念;',
+        '2. steps 数量 1-6,按执行顺序排列;',
+        '3. 每个 target 的 evidence 必须为 1-3 条逐字引文;',
+        '4. questionTypes 只能取 single_choice、multiple_choice、short_answer;',
+        '5. 只输出计划本身,不要试图声明掌握度变化或解决错题。',
         CITATION_RULES,
         JSON_RULES,
       ].join('\n'),

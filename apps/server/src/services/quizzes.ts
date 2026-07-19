@@ -121,11 +121,16 @@ export function createQuizService({ repos, provider, clock, analysis }: QuizServ
      * Generate a quiz for a material. Runs concept analysis automatically if
      * it has not been done yet. All questions are grounding-verified before
      * persistence; a quiz with zero surviving questions fails structured.
+     *
+     * `options.targetConceptIds` (used when launching focused practice from
+     * an accepted remediation plan) restricts both the concepts offered to
+     * the provider and the concepts accepted back.
      */
     async generate(
       materialId: string,
       config: QuizConfig,
       opts?: ProviderCallOptions,
+      options?: { targetConceptIds?: readonly string[] },
     ): Promise<Quiz> {
       const material = repos.materials.get(materialId);
       if (!material) throw notFound(`学习资料不存在:${materialId}`);
@@ -136,8 +141,16 @@ export function createQuizService({ repos, provider, clock, analysis }: QuizServ
         concepts = await analysis.analyze(materialId, opts);
       }
 
+      const targetIds = options?.targetConceptIds;
+      const offeredConcepts = targetIds
+        ? concepts.filter((c) => targetIds.includes(c.id))
+        : concepts;
+      if (offeredConcepts.length === 0) {
+        throw new AppError(ApiErrorCode.ValidationError, '目标概念不属于该资料,无法出题。');
+      }
+
       const payload = await provider.generateQuiz(
-        { materialTitle: material.title, blocks, concepts, config },
+        { materialTitle: material.title, blocks, concepts: offeredConcepts, config },
         opts,
       );
 
@@ -147,6 +160,7 @@ export function createQuizService({ repos, provider, clock, analysis }: QuizServ
         blocks,
         concepts,
         allowedTypes: config.types,
+        ...(targetIds ? { allowedConceptIds: targetIds } : {}),
       });
 
       if (questions.length === 0) {
@@ -163,6 +177,7 @@ export function createQuizService({ repos, provider, clock, analysis }: QuizServ
         kind: 'standard',
         config,
         questions,
+        ...(targetIds ? { targetConceptIds: [...targetIds] } : {}),
         createdAt: clock.now().toISOString(),
       };
       repos.quizzes.insert(quiz);

@@ -1,20 +1,27 @@
 import {
   clamp01,
   fnv1a32,
+  type Concept,
   type ConceptAnalysisPayload,
+  type GraphProposalPayload,
   type ProposedConcept,
+  type ProposedGraphEdge,
   type ProposedQuestion,
+  type QuestionType,
   type QuizGenerationPayload,
+  type RemediationPlanProposalPayload,
   type RubricGrade,
   type SourceBlock,
 } from '@hy3-clinic/shared';
 import { ProviderError } from './errors.js';
 import type {
   ConceptAnalysisInput,
+  GraphProposalInput,
   LlmProvider,
   ProviderCallOptions,
   QuizGenerationInput,
   RemediationInput,
+  RemediationPlanInput,
   ShortAnswerGradingInput,
 } from './provider.js';
 
@@ -202,6 +209,196 @@ export class FakeProvider implements LlmProvider {
       }
     }
     return { questions };
+  }
+
+  /**
+   * Deterministic, realistic concept-graph proposal. Edges are a pure
+   * function of the ordered concept list; every evidence quote is copied
+   * verbatim from a real workspace block, so local validation accepts them.
+   */
+  async proposeGraphEdges(
+    input: GraphProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<GraphProposalPayload> {
+    await this.gate(opts);
+    const concepts = input.concepts;
+    const blockById = new Map(input.blocks.map((b) => [b.id, b]));
+    const edges: ProposedGraphEdge[] = [];
+
+    const evidenceFor = (concept: Concept, variant = 0) => {
+      const block = blockById.get(concept.grounding.blockId);
+      const quote = block ? pickQuote(block, variant) : concept.grounding.quote;
+      return [{ blockId: concept.grounding.blockId, quote }];
+    };
+
+    // 1. Reading-order prerequisite chain (acyclic by construction).
+    for (let i = 0; i + 1 < concepts.length && edges.length < input.maxEdges; i++) {
+      const source = concepts[i]!;
+      const target = concepts[i + 1]!;
+      edges.push({
+        sourceConceptId: source.id,
+        targetConceptId: target.id,
+        relation: 'prerequisite',
+        explanation: `按资料展开顺序,先理解「${source.name}」才能理解「${target.name}」。`,
+        evidence: evidenceFor(target),
+      });
+    }
+
+    // 2. Every third concept is treated as part of the opening topic.
+    for (let i = 2; i < concepts.length && edges.length < input.maxEdges; i += 3) {
+      const part = concepts[i]!;
+      const whole = concepts[0]!;
+      edges.push({
+        sourceConceptId: part.id,
+        targetConceptId: whole.id,
+        relation: 'part_of',
+        explanation: `「${part.name}」是「${whole.name}」主题下的组成部分。`,
+        evidence: evidenceFor(part, 1),
+      });
+    }
+
+    // 3. A contrast pair, a causal link, and an example link when available.
+    if (concepts.length >= 3 && edges.length < input.maxEdges) {
+      const [a, b] = [concepts[1]!, concepts[2]!];
+      edges.push({
+        sourceConceptId: a.id,
+        targetConceptId: b.id,
+        relation: 'contrasts_with',
+        explanation: `资料分别描述了「${a.name}」与「${b.name}」,二者可对比理解。`,
+        evidence: evidenceFor(a, 1),
+      });
+    }
+    if (concepts.length >= 4 && edges.length < input.maxEdges) {
+      const [cause, effect] = [concepts[0]!, concepts[3]!];
+      edges.push({
+        sourceConceptId: cause.id,
+        targetConceptId: effect.id,
+        relation: 'causes',
+        explanation: `依据资料,「${cause.name}」会影响「${effect.name}」的效果。`,
+        evidence: evidenceFor(effect, 1),
+      });
+    }
+    if (concepts.length >= 5 && edges.length < input.maxEdges) {
+      const [example, general] = [concepts[concepts.length - 1]!, concepts[1]!];
+      edges.push({
+        sourceConceptId: example.id,
+        targetConceptId: general.id,
+        relation: 'example_of',
+        explanation: `「${example.name}」可视为「${general.name}」的一个具体应用示例。`,
+        evidence: evidenceFor(example, 2),
+      });
+    }
+
+    if (edges.length === 0 && concepts.length >= 2) {
+      const [a, b] = [concepts[0]!, concepts[1]!];
+      edges.push({
+        sourceConceptId: a.id,
+        targetConceptId: b.id,
+        relation: 'applies_to',
+        explanation: `「${a.name}」的内容可应用于「${b.name}」。`,
+        evidence: evidenceFor(a),
+      });
+    }
+
+    return { edges: edges.slice(0, Math.min(input.maxEdges, 60)) };
+  }
+
+  /**
+   * Deterministic remediation-plan proposal built only from the bounded
+   * planner input: weak prerequisites first, otherwise focused retrieval
+   * practice on the selected concept.
+   */
+  async proposeRemediationPlan(
+    input: RemediationPlanInput,
+    opts?: ProviderCallOptions,
+  ): Promise<RemediationPlanProposalPayload> {
+    await this.gate(opts);
+    const blockById = new Map(input.blocks.map((b) => [b.id, b]));
+    const masteryByConcept = new Map(input.masteryStates.map((m) => [m.conceptId, m]));
+    const openByConcept = new Map<string, number>();
+    for (const mistake of input.openMistakes) {
+      openByConcept.set(mistake.conceptId, (openByConcept.get(mistake.conceptId) ?? 0) + 1);
+    }
+
+    const evidenceFor = (concept: Concept) => {
+      const block = blockById.get(concept.grounding.blockId);
+      const quote = block ? pickQuote(block) : concept.grounding.quote;
+      return [{ blockId: concept.grounding.blockId, quote }];
+    };
+
+    const weakPrereqs = input.prerequisites
+      .filter((p) => {
+        const mastery = masteryByConcept.get(p.id)?.mastery;
+        return (openByConcept.get(p.id) ?? 0) > 0 || (mastery !== undefined && mastery < 0.7);
+      })
+      .slice(0, 2);
+
+    const selectedOpen = openByConcept.get(input.selected.id) ?? 0;
+    const selectedMastery = masteryByConcept.get(input.selected.id)?.mastery;
+
+    const targets = [
+      {
+        conceptId: input.selected.id,
+        reason:
+          selectedOpen > 0
+            ? `「${input.selected.name}」目前有 ${selectedOpen} 道未解决错题,需要针对性巩固。`
+            : `「${input.selected.name}」的掌握度尚不稳定,建议围绕原文依据重新梳理。`,
+        evidence: evidenceFor(input.selected),
+      },
+      ...weakPrereqs.map((prereq) => ({
+        conceptId: prereq.id,
+        reason: `前置概念「${prereq.name}」薄弱,可能是「${input.selected.name}」出错的根源。`,
+        evidence: evidenceFor(prereq),
+      })),
+    ].slice(0, 4);
+
+    const strategy =
+      weakPrereqs.length > 0
+        ? 'prerequisite_repair'
+        : selectedOpen > 0
+          ? 'retrieval_practice'
+          : 'review';
+
+    const difficulty =
+      selectedMastery === undefined || selectedMastery < 0.4
+        ? 'easy'
+        : selectedMastery < 0.75
+          ? 'medium'
+          : 'hard';
+
+    const preferredTypes: QuestionType[] = ['single_choice', 'short_answer'];
+    const usedSupported = input.usedQuestionTypes.filter((t) => preferredTypes.includes(t));
+    const questionTypes = usedSupported.length > 0 ? [...new Set(usedSupported)] : preferredTypes;
+
+    const steps = [
+      {
+        description: `重读「${input.selected.name}」的原文依据,对照引文确认自己的理解。`,
+        conceptId: input.selected.id,
+      },
+      ...weakPrereqs.map((prereq) => ({
+        description: `先修复前置概念「${prereq.name}」:阅读其原文段落并完成针对练习。`,
+        conceptId: prereq.id,
+      })),
+      {
+        description: '完成本计划附带的检索练习并提交判分,系统将据此更新错题与掌握度。',
+        conceptId: input.selected.id,
+      },
+    ].slice(0, 6);
+
+    return {
+      summary: `围绕「${input.selected.name}」的${
+        weakPrereqs.length > 0 ? '前置修复' : '定向巩固'
+      }计划:共 ${targets.length} 个目标概念、${steps.length} 个步骤。`,
+      weaknessHypothesis:
+        selectedOpen > 0
+          ? `学习者在「${input.selected.name}」上反复出错(${selectedOpen} 道未解决错题),可能混淆了原文中的关键限定条件。`
+          : `学习者对「${input.selected.name}」的掌握度证据不足,尚未形成稳定理解。`,
+      strategy,
+      difficulty,
+      questionTypes,
+      steps,
+      targets,
+    };
   }
 }
 

@@ -11,18 +11,22 @@ import { systemClock } from './util/ids.js';
 import { createServices } from './services/index.js';
 import { registerMaterialRoutes } from './routes/materials.js';
 import { registerStudyRoutes } from './routes/study.js';
+import { registerWorkspaceRoutes } from './routes/workspaces.js';
 
 export interface AppDeps {
   repos: Repositories;
   provider: LlmProvider;
   clock?: Clock;
   logger?: boolean;
+  /** Model identifier recorded as graph provider metadata (hy3 only). */
+  providerModel?: string | undefined;
 }
 
 export function buildApp(deps: AppDeps): FastifyInstance {
   const app = Fastify({
-    // Generous enough for the 100k-char source limit encoded as JSON.
-    bodyLimit: 8 * 1024 * 1024,
+    // Generous enough for the 100k-char source limit encoded as JSON and for
+    // base64-encoded PDF/DOCX uploads (10 MB decoded → ~13.7 MB encoded).
+    bodyLimit: 16 * 1024 * 1024,
     logger: deps.logger
       ? {
           level: 'info',
@@ -36,7 +40,12 @@ export function buildApp(deps: AppDeps): FastifyInstance {
 
   const clock = deps.clock ?? systemClock;
   const providerName = deps.provider.name;
-  const services = createServices({ repos: deps.repos, provider: deps.provider, clock });
+  const services = createServices({
+    repos: deps.repos,
+    provider: deps.provider,
+    clock,
+    providerModel: deps.providerModel,
+  });
 
   // Central error handler: converts known errors into structured API errors
   // and never leaks stack traces, secrets, or raw payloads to the client.
@@ -98,6 +107,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
 
   registerMaterialRoutes(app, services.materials);
   registerStudyRoutes(app, services);
+  registerWorkspaceRoutes(app, services);
 
   return app;
 }
