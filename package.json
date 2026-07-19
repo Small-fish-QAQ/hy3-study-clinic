@@ -22,7 +22,8 @@
     "pretest": "npm run build -w @hy3-clinic/shared",
     "test": "npm run test --workspaces --if-present",
     "demo:offline": "node scripts/demo-offline.mjs",
-    "demo:http": "node scripts/smoke.mjs"
+    "demo:http": "node scripts/smoke.mjs",
+    "demo:graph": "node scripts/smoke-graph.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

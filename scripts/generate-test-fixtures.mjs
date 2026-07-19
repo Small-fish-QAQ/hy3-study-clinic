@@ -11,10 +11,7 @@ import { writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const here = join(
-  dirname(fileURLToPath(import.meta.url)),
-  '../apps/server/src/testing/files',
-);
+const here = join(dirname(fileURLToPath(import.meta.url)), '../apps/server/src/testing/files');
 
 // ---------------------------------------------------------------------------
 // Minimal 2-page PDF with real text streams (WinAnsi / ASCII only).
