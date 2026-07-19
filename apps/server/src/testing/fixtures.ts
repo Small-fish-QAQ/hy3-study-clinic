@@ -6,6 +6,7 @@ import type {
   Quiz,
   SourceBlock,
   VerifiedGrounding,
+  Workspace,
 } from '@hy3-clinic/shared';
 
 /** Deterministic domain-object builders shared by server tests. */
@@ -27,11 +28,31 @@ export function makeGrounding(overrides: Partial<VerifiedGrounding> = {}): Verif
 export function makeMaterial(overrides: Partial<Material> = {}): Material {
   return {
     id: 'mat_1',
+    workspaceId: 'ws_1',
     title: '认知科学入门:记忆与学习',
     sourceType: 'paste',
+    mediaType: 'text/plain',
+    originalFilename: null,
     content: '# 记忆的类型\n\n工作记忆的容量十分有限。',
     charCount: 20,
+    parseStatus: 'parsed',
+    pageCount: null,
+    extractionWarnings: [],
+    parserVersion: 'text-v1',
     createdAt: T0,
+    updatedAt: T0,
+    ...overrides,
+  };
+}
+
+export function makeWorkspace(overrides: Partial<Workspace> = {}): Workspace {
+  return {
+    id: 'ws_1',
+    name: '认知科学课程',
+    description: null,
+    activeGraphVersionId: null,
+    createdAt: T0,
+    updatedAt: T0,
     ...overrides,
   };
 }
@@ -43,6 +64,7 @@ export function makeBlock(overrides: Partial<SourceBlock> = {}): SourceBlock {
     index: 0,
     heading: '记忆的类型',
     headingPath: ['记忆的类型'],
+    pageNumber: null,
     content: '工作记忆的容量十分有限。',
     startOffset: 9,
     endOffset: 21,

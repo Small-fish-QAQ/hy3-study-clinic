@@ -111,9 +111,119 @@ const MIGRATIONS: Migration[] = [
       );
     `,
   },
+  {
+    version: 2,
+    name: 'course_workspaces_and_documents',
+    // Adds course workspaces and multi-document metadata. Every legacy
+    // material receives its own compatibility workspace (name = its title),
+    // so old single-material data stays fully readable. No learning data is
+    // deleted or rewritten.
+    up: `
+      CREATE TABLE workspaces (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT,
+        active_graph_version_id TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+
+      ALTER TABLE materials ADD COLUMN workspace_id TEXT REFERENCES workspaces(id) ON DELETE CASCADE;
+      ALTER TABLE materials ADD COLUMN media_type TEXT;
+      ALTER TABLE materials ADD COLUMN original_filename TEXT;
+      ALTER TABLE materials ADD COLUMN parse_status TEXT NOT NULL DEFAULT 'parsed'
+        CHECK (parse_status IN ('parsed', 'parsed_with_warnings'));
+      ALTER TABLE materials ADD COLUMN page_count INTEGER;
+      ALTER TABLE materials ADD COLUMN extraction_warnings TEXT NOT NULL DEFAULT '[]';
+      ALTER TABLE materials ADD COLUMN parser_version TEXT;
+      ALTER TABLE materials ADD COLUMN original_data BLOB;
+      ALTER TABLE materials ADD COLUMN updated_at TEXT;
+
+      ALTER TABLE source_blocks ADD COLUMN page_number INTEGER;
+
+      INSERT INTO workspaces (id, name, description, active_graph_version_id, created_at, updated_at)
+      SELECT 'ws_legacy_' || m.id, m.title, NULL, NULL, m.created_at, m.created_at
+      FROM materials m
+      WHERE m.workspace_id IS NULL;
+
+      UPDATE materials SET workspace_id = 'ws_legacy_' || id WHERE workspace_id IS NULL;
+      UPDATE materials SET updated_at = created_at WHERE updated_at IS NULL;
+      UPDATE materials SET parser_version = 'text-v1' WHERE parser_version IS NULL;
+      UPDATE materials
+      SET media_type = CASE source_type
+        WHEN 'md' THEN 'text/markdown'
+        ELSE 'text/plain'
+      END
+      WHERE media_type IS NULL;
+
+      CREATE INDEX idx_materials_workspace ON materials(workspace_id);
+    `,
+  },
+  {
+    version: 3,
+    name: 'concept_graph_and_remediation_plans',
+    // Adds versioned evidence-grounded concept-graph storage and accepted
+    // remediation plans. Edges cascade away with their concepts; edge
+    // evidence cascades away with its source blocks. The active-version
+    // pointer lives on workspaces (kept consistent transactionally in the
+    // repository layer; no circular FK).
+    up: `
+      CREATE TABLE graph_versions (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        status TEXT NOT NULL CHECK (status IN ('generating', 'ready', 'failed')),
+        provider TEXT NOT NULL,
+        provider_model TEXT,
+        validation_summary TEXT,
+        error_message TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_graph_versions_workspace ON graph_versions(workspace_id);
+
+      CREATE TABLE graph_edges (
+        id TEXT PRIMARY KEY,
+        graph_version_id TEXT NOT NULL REFERENCES graph_versions(id) ON DELETE CASCADE,
+        source_concept_id TEXT NOT NULL REFERENCES concepts(id) ON DELETE CASCADE,
+        target_concept_id TEXT NOT NULL REFERENCES concepts(id) ON DELETE CASCADE,
+        relation TEXT NOT NULL CHECK (relation IN
+          ('prerequisite', 'part_of', 'contrasts_with', 'causes', 'applies_to', 'example_of')),
+        explanation TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_graph_edges_version ON graph_edges(graph_version_id);
+      CREATE INDEX idx_graph_edges_source ON graph_edges(source_concept_id);
+      CREATE INDEX idx_graph_edges_target ON graph_edges(target_concept_id);
+
+      CREATE TABLE graph_edge_evidence (
+        id TEXT PRIMARY KEY,
+        edge_id TEXT NOT NULL REFERENCES graph_edges(id) ON DELETE CASCADE,
+        block_id TEXT NOT NULL REFERENCES source_blocks(id) ON DELETE CASCADE,
+        idx INTEGER NOT NULL,
+        quote TEXT NOT NULL,
+        start_offset INTEGER NOT NULL,
+        end_offset INTEGER NOT NULL,
+        occurrence_count INTEGER NOT NULL,
+        reanchored INTEGER NOT NULL CHECK (reanchored IN (0, 1))
+      );
+      CREATE INDEX idx_graph_edge_evidence_edge ON graph_edge_evidence(edge_id);
+      CREATE INDEX idx_graph_edge_evidence_block ON graph_edge_evidence(block_id);
+
+      CREATE TABLE remediation_plans (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        concept_id TEXT NOT NULL REFERENCES concepts(id) ON DELETE CASCADE,
+        payload TEXT NOT NULL,
+        provider TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+      CREATE UNIQUE INDEX idx_remediation_plans_concept
+        ON remediation_plans(workspace_id, concept_id);
+    `,
+  },
 ];
 
-export function migrate(db: SqliteDb): void {
+export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
       version INTEGER PRIMARY KEY,
@@ -127,7 +237,8 @@ export function migrate(db: SqliteDb): void {
     .get() as { v: number };
   const currentVersion = appliedRow.v;
 
-  const pending = MIGRATIONS.filter((m) => m.version > currentVersion).sort(
+  const ceiling = options.toVersion ?? Number.POSITIVE_INFINITY;
+  const pending = MIGRATIONS.filter((m) => m.version > currentVersion && m.version <= ceiling).sort(
     (a, b) => a.version - b.version,
   );
 

@@ -94,7 +94,14 @@ export function segmentContent(content: string): RawSegment[] {
 }
 
 /** Segment a material's content into persisted SourceBlocks. */
-export function segmentMaterial(materialId: string, content: string): SourceBlock[] {
+export function segmentMaterial(
+  materialId: string,
+  content: string,
+  options: {
+    /** Page spans over `content` (PDF sources); blocks inside a span get its page number. */
+    pageSpans?: Array<{ pageNumber: number; startOffset: number; endOffset: number }>;
+  } = {},
+): SourceBlock[] {
   const raw = segmentContent(content);
   if (raw.length === 0) {
     throw new IngestionError(
@@ -108,12 +115,20 @@ export function segmentMaterial(materialId: string, content: string): SourceBloc
       `源材料切分出 ${raw.length} 个段落,超过上限 ${MAX_BLOCKS}。`,
     );
   }
+  const spans = options.pageSpans ?? [];
+  const pageFor = (offset: number): number | null => {
+    for (const span of spans) {
+      if (offset >= span.startOffset && offset < span.endOffset) return span.pageNumber;
+    }
+    return null;
+  };
   return raw.map((seg, index) => ({
     id: blockId(materialId, index, seg.content),
     materialId,
     index,
     heading: seg.heading,
     headingPath: seg.headingPath,
+    pageNumber: pageFor(seg.startOffset),
     content: seg.content,
     startOffset: seg.startOffset,
     endOffset: seg.endOffset,

@@ -10,6 +10,7 @@ import {
   makeMistake,
   makeQuestion,
   makeQuiz,
+  makeWorkspace,
   T0,
 } from '../testing/fixtures.js';
 import type { GradingResult, Submission } from '@hy3-clinic/shared';
@@ -21,6 +22,8 @@ beforeEach(() => {
   db = openDatabase(':memory:');
   migrate(db);
   repos = createRepositories(db);
+  // Documents now always belong to a workspace; seed the default fixture one.
+  repos.workspaces.insert(makeWorkspace());
 });
 
 interface PopulatedMaterialIds {

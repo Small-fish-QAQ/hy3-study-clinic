@@ -102,6 +102,45 @@ export function createMistakesRepo(db: SqliteDb) {
       return rows.map(rowToMistake);
     },
 
+    /** Open mistakes for any concept of any document in a workspace. */
+    listOpenByWorkspace(workspaceId: string): MistakeRecord[] {
+      const rows = db
+        .prepare(
+          `SELECT mi.* FROM mistakes mi
+           JOIN materials m ON m.id = mi.material_id
+           WHERE m.workspace_id = ? AND mi.status = 'open'
+           ORDER BY mi.created_at DESC, mi.id DESC`,
+        )
+        .all(workspaceId) as MistakeRow[];
+      return rows.map(rowToMistake);
+    },
+
+    /** Open/resolved mistake counts per concept across a workspace. */
+    countsByConceptForWorkspace(
+      workspaceId: string,
+    ): Map<string, { open: number; resolved: number }> {
+      const rows = db
+        .prepare(
+          `SELECT mi.concept_id,
+                  SUM(CASE WHEN mi.status = 'open' THEN 1 ELSE 0 END) AS open_count,
+                  SUM(CASE WHEN mi.status = 'resolved' THEN 1 ELSE 0 END) AS resolved_count
+           FROM mistakes mi
+           JOIN materials m ON m.id = mi.material_id
+           WHERE m.workspace_id = ?
+           GROUP BY mi.concept_id`,
+        )
+        .all(workspaceId) as Array<{
+        concept_id: string;
+        open_count: number;
+        resolved_count: number;
+      }>;
+      const map = new Map<string, { open: number; resolved: number }>();
+      for (const row of rows) {
+        map.set(row.concept_id, { open: row.open_count, resolved: row.resolved_count });
+      }
+      return map;
+    },
+
     get(id: string): MistakeRecord | undefined {
       const row = db.prepare('SELECT * FROM mistakes WHERE id = ?').get(id) as
         MistakeRow | undefined;
@@ -190,6 +229,19 @@ export function createMasteryRepo(db: SqliteDb) {
           'SELECT * FROM mastery_states WHERE material_id = ? ORDER BY mastery ASC, concept_name ASC',
         )
         .all(materialId) as MasteryRow[];
+      return rows.map(rowToMastery);
+    },
+
+    /** Mastery rows for every concept of every document in a workspace. */
+    listByWorkspace(workspaceId: string): MasteryState[] {
+      const rows = db
+        .prepare(
+          `SELECT ms.* FROM mastery_states ms
+           JOIN materials m ON m.id = ms.material_id
+           WHERE m.workspace_id = ?
+           ORDER BY ms.mastery ASC, ms.concept_name ASC`,
+        )
+        .all(workspaceId) as MasteryRow[];
       return rows.map(rowToMastery);
     },
 

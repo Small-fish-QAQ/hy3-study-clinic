@@ -6,7 +6,7 @@ import { buildApp } from '../app.js';
 import { FakeProvider } from '../llm/fakeProvider.js';
 import type { LlmProvider } from '../llm/provider.js';
 import { fixedClock } from '../util/ids.js';
-import { T0 } from './fixtures.js';
+import { makeWorkspace, T0 } from './fixtures.js';
 
 export interface TestApp {
   app: FastifyInstance;
@@ -20,6 +20,9 @@ export function buildTestApp(options: { provider?: LlmProvider } = {}): TestApp 
   const db = openDatabase(':memory:');
   migrate(db);
   const repos = createRepositories(db);
+  // Documents always belong to a workspace; seed the default fixture one so
+  // tests may insert `makeMaterial()` rows directly through the repos.
+  repos.workspaces.insert(makeWorkspace());
   const provider = options.provider ?? new FakeProvider();
   const app = buildApp({ repos, provider, clock: fixedClock(T0) });
   app.addHook('onClose', async () => {

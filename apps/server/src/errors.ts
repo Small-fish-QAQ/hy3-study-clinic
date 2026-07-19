@@ -25,6 +25,7 @@ export function statusForErrorCode(code: ApiErrorCodeValue): number {
     case ApiErrorCode.UnsupportedFile:
     case ApiErrorCode.BinaryInput:
       return 415;
+    case ApiErrorCode.ParseFailed:
     case ApiErrorCode.GroundingFailed:
       return 422;
     case ApiErrorCode.RequestCancelled:

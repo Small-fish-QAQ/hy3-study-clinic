@@ -1,5 +1,7 @@
 import type { SqliteDb } from '../db/database.js';
 import { createMaterialsRepo, type MaterialsRepo } from './materials.js';
+import { createWorkspacesRepo, type WorkspacesRepo } from './workspaces.js';
+import { createGraphRepo, type GraphRepo } from './graph.js';
 import {
   createQuizzesRepo,
   createSubmissionsRepo,
@@ -14,7 +16,9 @@ import {
 } from './mistakes.js';
 
 export interface Repositories {
+  workspaces: WorkspacesRepo;
   materials: MaterialsRepo;
+  graph: GraphRepo;
   quizzes: QuizzesRepo;
   submissions: SubmissionsRepo;
   mistakes: MistakesRepo;
@@ -23,7 +27,9 @@ export interface Repositories {
 
 export function createRepositories(db: SqliteDb): Repositories {
   return {
+    workspaces: createWorkspacesRepo(db),
     materials: createMaterialsRepo(db),
+    graph: createGraphRepo(db),
     quizzes: createQuizzesRepo(db),
     submissions: createSubmissionsRepo(db),
     mistakes: createMistakesRepo(db),
