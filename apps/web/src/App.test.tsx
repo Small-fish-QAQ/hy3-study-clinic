@@ -271,8 +271,8 @@ describe('App shell', () => {
     installFetchMock(baseRoutes);
     render(<App />);
     expect(await screen.findByText(/离线模式/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '② 出题作答' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: '④ 错题本' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '练习' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '错题' })).toBeDisabled();
     expect(screen.getByText(/还没有导入资料/)).toBeInTheDocument();
   });
 });
@@ -645,16 +645,16 @@ describe('Material recovery', () => {
     render(<App />);
 
     await screen.findByRole('button', { name: `当前资料：${material.material.title}` });
-    await user.click(screen.getByRole('button', { name: '② 出题作答' }));
+    await user.click(screen.getByRole('button', { name: '练习' }));
     await user.click(screen.getByRole('button', { name: '生成测验' }));
     await screen.findByRole('button', { name: '提交并判分' });
     await user.click(screen.getByRole('radio', { name: /工作记忆的容量十分有限/ }));
     await user.type(screen.getByLabelText('第 2 题作答'), '容量有限');
     await user.click(screen.getByRole('button', { name: '提交并判分' }));
     expect(await screen.findByText('60 分')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '③ 判分结果' })).toBeEnabled();
+    expect(screen.getByRole('tab', { name: '判分结果' })).toBeEnabled();
 
-    await user.click(screen.getByRole('button', { name: '① 导入资料' }));
+    await user.click(screen.getByRole('button', { name: '资料库' }));
     await user.click(
       screen.getByRole('button', {
         name: `永久删除：${material.material.title}（记录 …${material.material.id.slice(-6)}）`,
@@ -671,10 +671,10 @@ describe('Material recovery', () => {
     expect(
       screen.queryByRole('heading', { name: new RegExp(material.material.title) }),
     ).not.toBeInTheDocument();
-    for (const tabName of ['② 出题作答', '③ 判分结果', '④ 错题本', '⑤ 综合掌握度（历史加权）']) {
+    for (const tabName of ['练习', '错题', '学习进展']) {
       expect(screen.getByRole('button', { name: tabName })).toBeDisabled();
     }
-    expect(screen.getByRole('button', { name: '① 导入资料' })).toHaveClass('active');
+    expect(screen.getByRole('button', { name: '资料库' })).toHaveClass('active');
   });
 
   it('aborts current work and ignores a late response after deleting that material', async () => {
@@ -786,8 +786,8 @@ describe('Material recovery', () => {
     expect(
       screen.getByRole('button', { name: '打开资料：删除后保留的历史资料' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '② 出题作答' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: '① 导入资料' })).toHaveClass('active');
+    expect(screen.getByRole('button', { name: '练习' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '资料库' })).toHaveClass('active');
     expect(window.localStorage.getItem(LAST_MATERIAL_ID_KEY)).toBeNull();
   });
 
@@ -844,7 +844,7 @@ describe('Material recovery', () => {
     ).toBeInTheDocument();
     expect(screen.getByText(blocks[0]!.content)).toBeInTheDocument();
     expect(screen.getByText('核心概念(1)')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '② 出题作答' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '练习' })).toBeEnabled();
     expect(window.localStorage.getItem(LAST_MATERIAL_ID_KEY)).toBe(material.material.id);
     expect(
       calls.some((call) => call.method === 'GET' && call.url.endsWith('/api/materials/mat_1')),
@@ -873,7 +873,7 @@ describe('Material recovery', () => {
       }),
     ).toBeInTheDocument();
     await waitFor(() => expect(window.localStorage.getItem(LAST_MATERIAL_ID_KEY)).toBeNull());
-    expect(screen.getByRole('button', { name: '② 出题作答' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '练习' })).toBeDisabled();
     expect(calls.some((call) => call.url.includes('/api/materials/mat_stale'))).toBe(false);
   });
 
@@ -891,13 +891,13 @@ describe('Material recovery', () => {
     expect(await screen.findByText('源块预览')).toBeInTheDocument();
     expect(screen.getByText('核心概念(1)')).toBeInTheDocument();
     expect(window.localStorage.getItem(LAST_MATERIAL_ID_KEY)).toBe(material.material.id);
-    expect(screen.getByRole('button', { name: '② 出题作答' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '练习' })).toBeEnabled();
 
-    await user.click(screen.getByRole('button', { name: '④ 错题本' }));
+    await user.click(screen.getByRole('button', { name: '错题' }));
     expect(await screen.findByText('工作记忆 · 1 个未解决')).toBeInTheDocument();
     expect(screen.getByText(mistakes[0]!.question.stem)).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: '⑤ 综合掌握度（历史加权）' }));
+    await user.click(screen.getByRole('button', { name: '学习进展' }));
     expect(
       await screen.findByRole('heading', { name: '综合掌握度（历史加权）' }),
     ).toBeInTheDocument();
@@ -917,7 +917,7 @@ describe('Material recovery', () => {
     expect(await screen.findByText('暂无历史资料。导入后会显示在这里。')).toBeInTheDocument();
     expect(screen.getByLabelText('资料内容')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '导入并切分' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: '② 出题作答' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '练习' })).toBeDisabled();
   });
 });
 
@@ -936,7 +936,7 @@ describe('Import flow', () => {
     expect(importCall).toBeDefined();
     expect((importCall!.body as { filename: string }).filename).toBe('sample.md');
     // Flow tabs unlocked.
-    expect(screen.getByRole('button', { name: '② 出题作答' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '练习' })).toBeEnabled();
     expect(window.localStorage.getItem(LAST_MATERIAL_ID_KEY)).toBe(material.material.id);
   });
 
@@ -1014,7 +1014,7 @@ describe('Concept analysis', () => {
 describe('Quiz flow', () => {
   async function generateQuiz(user: ReturnType<typeof userEvent.setup>) {
     await importSample(user);
-    await user.click(screen.getByRole('button', { name: '② 出题作答' }));
+    await user.click(screen.getByRole('button', { name: '练习' }));
     await user.click(screen.getByRole('button', { name: '生成测验' }));
     await screen.findByRole('button', { name: '提交并判分' });
   }
@@ -1073,7 +1073,7 @@ describe('Quiz flow', () => {
     render(<App />);
     await importSample(user);
 
-    await user.click(screen.getByRole('button', { name: '② 出题作答' }));
+    await user.click(screen.getByRole('button', { name: '练习' }));
     await user.click(screen.getByRole('button', { name: '生成测验' }));
     expect(await screen.findByText('正在生成测验…')).toBeInTheDocument();
     await waitFor(() => expect(generationRequest.signal).toBeDefined());
@@ -1115,7 +1115,7 @@ describe('Quiz flow', () => {
     render(<App />);
     await importSample(user);
 
-    await user.click(screen.getByRole('button', { name: '② 出题作答' }));
+    await user.click(screen.getByRole('button', { name: '练习' }));
     await user.click(screen.getByRole('button', { name: '生成测验' }));
     expect(await screen.findByText(/不符合约定格式/)).toBeInTheDocument();
   });
@@ -1128,7 +1128,7 @@ describe('Mistake notebook and mastery', () => {
     render(<App />);
     await importSample(user);
 
-    await user.click(screen.getByRole('button', { name: '④ 错题本' }));
+    await user.click(screen.getByRole('button', { name: '错题' }));
     expect(await screen.findByText('工作记忆 · 1 个未解决')).toBeInTheDocument();
     expect(screen.getByText(mistakes[0]!.question.stem)).toBeInTheDocument();
     // Status appears both in the filter dropdown and on the mistake card.
@@ -1163,7 +1163,7 @@ describe('Mistake notebook and mastery', () => {
     render(<App />);
     await importSample(user);
 
-    await user.click(screen.getByRole('button', { name: '④ 错题本' }));
+    await user.click(screen.getByRole('button', { name: '错题' }));
     await user.selectOptions(await screen.findByLabelText('筛选状态'), 'all');
 
     const card = (await screen.findByText(resolvedMistake.question.stem)).closest('section');
@@ -1187,7 +1187,7 @@ describe('Mistake notebook and mastery', () => {
     render(<App />);
     await importSample(user);
 
-    await user.click(screen.getByRole('button', { name: '④ 错题本' }));
+    await user.click(screen.getByRole('button', { name: '错题' }));
 
     expect(await screen.findByText('当前没有未解决的错题，无需生成康复练习。')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '生成康复练习' })).toBeDisabled();
@@ -1211,7 +1211,7 @@ describe('Mistake notebook and mastery', () => {
     const user = userEvent.setup();
     render(<App />);
     await importSample(user);
-    await user.click(screen.getByRole('button', { name: '④ 错题本' }));
+    await user.click(screen.getByRole('button', { name: '错题' }));
     await user.click(await screen.findByRole('button', { name: '生成康复练习' }));
 
     expect(await screen.findByText('根据 1 个未解决概念自动生成 2 道康复题')).toBeInTheDocument();
@@ -1271,12 +1271,12 @@ describe('Mistake notebook and mastery', () => {
     render(<App />);
 
     await screen.findByRole('button', { name: `当前资料：${material.material.title}` });
-    await user.click(screen.getByRole('button', { name: '④ 错题本' }));
+    await user.click(screen.getByRole('button', { name: '错题' }));
     await screen.findByText('工作记忆 · 1 个未解决');
     await user.click(screen.getByRole('button', { name: '生成康复练习' }));
     await waitFor(() => expect(remediationRequest.signal).toBeDefined());
 
-    await user.click(screen.getByRole('button', { name: '① 导入资料' }));
+    await user.click(screen.getByRole('button', { name: '资料库' }));
     expect(remediationRequest.signal?.aborted).toBe(true);
     await user.click(screen.getByRole('button', { name: '打开资料：康复取消后打开的资料' }));
     expect(
@@ -1288,7 +1288,7 @@ describe('Mistake notebook and mastery', () => {
       await lateRemediation.promise;
     });
 
-    expect(screen.getByRole('button', { name: '① 导入资料' })).toHaveClass('active');
+    expect(screen.getByRole('button', { name: '资料库' })).toHaveClass('active');
     expect(screen.getByRole('heading', { name: /康复取消后打开的资料/ })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: '康复练习' })).not.toBeInTheDocument();
     expect(screen.queryByText(remediationQuiz.questions[0]!.stem)).not.toBeInTheDocument();
@@ -1328,7 +1328,7 @@ describe('Mistake notebook and mastery', () => {
     render(<App />);
     await importSample(user);
 
-    await user.click(screen.getByRole('button', { name: '⑤ 综合掌握度（历史加权）' }));
+    await user.click(screen.getByRole('button', { name: '学习进展' }));
     expect(
       await screen.findByRole('heading', { name: '综合掌握度（历史加权）' }),
     ).toBeInTheDocument();

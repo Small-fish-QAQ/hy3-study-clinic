@@ -13,11 +13,7 @@ import type {
 } from '@hy3-clinic/shared';
 import { api, ApiClientError } from '../api.js';
 import { Banner, Loading } from '../components/ui.js';
-import {
-  ConceptGraph,
-  GraphLegend,
-  RELATION_LABELS as RELATION_TEXT,
-} from '../components/ConceptGraph.js';
+import { ConceptGraph, RELATION_LABELS as RELATION_TEXT } from '../components/ConceptGraph.js';
 import { ConceptDetailPanel, EdgeDetailPanel } from '../components/DetailPanels.js';
 import { useAsyncAction } from '../components/useAsyncAction.js';
 
@@ -51,7 +47,7 @@ interface WorkspaceData {
 
 /**
  * 学习图谱工作台 — the three coordinated areas of the upgraded product:
- * 课程空间与文档(左)· 个人学习图谱(中)· 证据与辅导详情(右)。
+ * 资料面板(左,可折叠)· 个人学习图谱(中,填满剩余空间)· 检查器(右,可折叠)。
  *
  * Stale-response protection: every workspace-scoped request captures the
  * current epoch; switching or deleting a workspace (or unmounting) bumps the
@@ -73,6 +69,9 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
 
   const [newWorkspaceName, setNewWorkspaceName] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
+  const [generationSummary, setGenerationSummary] = useState<string | null>(null);
+  const [leftCollapsed, setLeftCollapsed] = useState(false);
+  const [rightCollapsed, setRightCollapsed] = useState(false);
 
   const epochRef = useRef(0);
   const mountedRef = useRef(true);
@@ -189,6 +188,7 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
     setSelectedEdgeId(null);
     setPlan(null);
     setActionError(null);
+    setGenerationSummary(null);
     if (workspaceId) writeLastWorkspaceId(workspaceId);
   }
 
@@ -330,9 +330,14 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
   async function handleGenerateGraph() {
     if (!activeWorkspaceId) return;
     const workspaceId = activeWorkspaceId;
+    setGenerationSummary(null);
     const result = await graphAction.run((signal) => api.generateGraph(workspaceId, signal));
     if (result && activeWorkspaceId === workspaceId) {
       setSelectedEdgeId(null);
+      const accepted = result.version.validationSummary?.acceptedCount ?? result.edges.length;
+      setGenerationSummary(
+        `已构建 ${data?.concepts.length ?? 0} 个概念与 ${result.edges.length} 条关系;${accepted} 条关系已通过本地证据验证。`,
+      );
       await loadWorkspaceData(workspaceId);
     }
   }
@@ -345,6 +350,7 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
     );
     if (result && activeWorkspaceId === workspaceId) {
       setSelectedEdgeId(null);
+      setGenerationSummary(null);
       await loadWorkspaceData(workspaceId);
     }
   }
@@ -381,195 +387,229 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
     () => new Map((data?.concepts ?? []).map((c) => [c.id, c.name])),
     [data],
   );
+  const planTargetIds = useMemo(() => new Set(plan?.targets.map((t) => t.conceptId) ?? []), [plan]);
   const selectedConcept = data?.concepts.find((c) => c.id === selectedNodeId) ?? null;
   const selectedEdge = data?.edges.find((e) => e.id === selectedEdgeId) ?? null;
   const weakCount = (data?.overlay ?? []).filter((s) => s.treatAsWeak).length;
   const summary = data?.version?.validationSummary ?? null;
+  const hasGraph = data !== null && data.concepts.length > 0;
+  const anyAttempts = (data?.overlay ?? []).some((s) => s.attempts > 0);
 
   return (
-    <section className="graph-workspace">
-      <aside className="workspace-panel" aria-label="课程空间与文档">
-        <h2>课程空间</h2>
-        {workspacesError ? <Banner kind="error">{workspacesError}</Banner> : null}
-        {workspacesLoading ? <Loading label="加载课程空间…" /> : null}
-        <ul className="workspace-list">
-          {workspaces.map((ws) => (
-            <li key={ws.id}>
-              <button
-                type="button"
-                className={ws.id === activeWorkspaceId ? 'active' : ''}
-                onClick={() => switchWorkspace(ws.id)}
-              >
-                {ws.name}
-                <span className="small muted">
-                  {' '}
-                  {ws.documentCount} 文档 · {ws.conceptCount} 概念
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-        {!workspacesLoading && workspaces.length === 0 ? (
-          <Banner kind="empty">还没有课程空间。先创建一个,然后导入学习文档。</Banner>
-        ) : null}
-        <div className="workspace-create">
-          <label htmlFor="new-workspace-name">新建课程空间</label>
-          <input
-            id="new-workspace-name"
-            value={newWorkspaceName}
-            placeholder="例如:认知科学导论"
-            onChange={(e) => setNewWorkspaceName(e.target.value)}
-          />
+    <section
+      className={`graph-workspace ${leftCollapsed ? 'left-collapsed' : ''} ${
+        rightCollapsed ? 'right-collapsed' : ''
+      }`}
+    >
+      {leftCollapsed ? (
+        <div className="panel-rail left">
           <button
             type="button"
-            disabled={createAction.loading || newWorkspaceName.trim().length === 0}
-            onClick={() => void handleCreateWorkspace()}
+            className="rail-toggle"
+            aria-label="展开资料面板"
+            title="展开资料面板"
+            onClick={() => setLeftCollapsed(false)}
           >
-            创建
+            »
           </button>
-          {createAction.error ? <Banner kind="error">{createAction.error}</Banner> : null}
         </div>
-
-        {activeWorkspaceId && data ? (
-          <>
-            <h3>文档({data.documents.length})</h3>
-            <ul className="document-list">
-              {data.documents.map((doc) => (
-                <li key={doc.id} className="document-item">
-                  <div>
-                    <strong>{doc.title}</strong>
-                    <p className="small muted">
-                      {SOURCE_TYPE_TEXT[doc.sourceType] ?? doc.sourceType}
-                      {doc.pageCount ? ` · ${doc.pageCount} 页` : ''} · {doc.blockCount} 段 ·{' '}
-                      {doc.parseStatus === 'parsed_with_warnings' ? '解析有警告' : '解析成功'} ·{' '}
-                      {doc.conceptCount} 概念
-                    </p>
-                    {doc.extractionWarnings.length > 0 ? (
-                      <details className="small">
-                        <summary>{doc.extractionWarnings.length} 条提取警告</summary>
-                        <ul>
-                          {doc.extractionWarnings.map((w, i) => (
-                            <li key={i}>{w}</li>
-                          ))}
-                        </ul>
-                      </details>
-                    ) : null}
-                  </div>
-                  <div className="document-actions">
-                    {doc.conceptCount === 0 ? (
-                      <button
-                        type="button"
-                        className="small"
-                        disabled={analyzeAction.loading}
-                        onClick={() => void handleAnalyze(doc.id)}
-                      >
-                        提取概念
-                      </button>
-                    ) : null}
-                    {doc.sourceType === 'pdf' || doc.sourceType === 'docx' ? (
-                      <button
-                        type="button"
-                        className="ghost small"
-                        disabled={documentAction.loading}
-                        onClick={() => void handleReprocessDocument(doc.id)}
-                      >
-                        重新解析
-                      </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      className="ghost small danger"
-                      disabled={documentAction.loading}
-                      onClick={() => void handleDeleteDocument(doc.id)}
-                    >
-                      删除
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-            {analyzeAction.loading ? (
-              <p>
-                <Loading label="Hy3 正在提取概念…" />{' '}
-                <button type="button" className="ghost small" onClick={analyzeAction.cancel}>
-                  取消
+      ) : (
+        <aside className="workspace-panel" aria-label="课程空间与文档">
+          <div className="panel-head">
+            <h2>资料库</h2>
+            <button
+              type="button"
+              className="rail-toggle"
+              aria-label="折叠资料面板"
+              title="折叠资料面板"
+              onClick={() => setLeftCollapsed(true)}
+            >
+              «
+            </button>
+          </div>
+          {workspacesError ? <Banner kind="error">{workspacesError}</Banner> : null}
+          {workspacesLoading ? <Loading label="加载课程空间…" /> : null}
+          <ul className="workspace-list">
+            {workspaces.map((ws) => (
+              <li key={ws.id}>
+                <button
+                  type="button"
+                  className={ws.id === activeWorkspaceId ? 'active' : ''}
+                  onClick={() => switchWorkspace(ws.id)}
+                >
+                  {ws.name}
+                  <span className="small muted">
+                    {' '}
+                    {ws.documentCount} 文档 · {ws.conceptCount} 概念
+                  </span>
                 </button>
-              </p>
-            ) : null}
-            {analyzeAction.error ? <Banner kind="error">{analyzeAction.error}</Banner> : null}
-            {documentAction.error ? <Banner kind="error">{documentAction.error}</Banner> : null}
-
-            <AddDocumentForm
-              loading={addDocAction.loading}
-              error={addDocAction.error}
-              onCancel={addDocAction.cancel}
-              onAddText={(content, title) => void handleAddText(content, title)}
-              onAddFile={(file) => void handleAddFile(file)}
+              </li>
+            ))}
+          </ul>
+          {!workspacesLoading && workspaces.length === 0 ? (
+            <Banner kind="empty">还没有课程空间。先创建一个,然后导入学习文档。</Banner>
+          ) : null}
+          <div className="workspace-create">
+            <label htmlFor="new-workspace-name">新建课程空间</label>
+            <input
+              id="new-workspace-name"
+              value={newWorkspaceName}
+              placeholder="例如:认知科学导论"
+              onChange={(e) => setNewWorkspaceName(e.target.value)}
             />
+            <button
+              type="button"
+              className="primary"
+              disabled={createAction.loading || newWorkspaceName.trim().length === 0}
+              onClick={() => void handleCreateWorkspace()}
+            >
+              创建
+            </button>
+            {createAction.error ? <Banner kind="error">{createAction.error}</Banner> : null}
+          </div>
 
-            <h3>概念图谱</h3>
-            <p className="small">
-              {data.version
-                ? `当前版本:${data.version.id.slice(0, 11)}…(${data.version.status})`
-                : '还没有生成图谱。'}
-            </p>
-            {summary ? (
-              <p className="small muted">
-                候选 {summary.candidateCount} 条 · 采纳 {summary.acceptedCount} 条 · 拒绝{' '}
-                {summary.rejectedCount} 条
-                {summary.duplicateCount > 0 ? ` · 去重 ${summary.duplicateCount} 条` : ''}
-                {summary.pruned ? '(已因文档变更修剪)' : ''}
-              </p>
-            ) : null}
-            <p>
-              <button
-                type="button"
-                disabled={graphAction.loading || data.concepts.length < 2}
-                onClick={() => void handleGenerateGraph()}
-              >
-                {data.version ? '重新生成图谱' : '生成概念图谱'}
-              </button>{' '}
-              {graphAction.loading ? (
-                <>
-                  <Loading label="Hy3 正在提出概念关系…" />{' '}
-                  <button type="button" className="ghost small" onClick={graphAction.cancel}>
-                    取消
-                  </button>
-                </>
-              ) : null}
-            </p>
-            {data.concepts.length < 2 ? (
-              <p className="small muted">生成图谱前,请先为文档提取概念(至少 2 个)。</p>
-            ) : null}
-            {graphAction.error ? <Banner kind="error">{graphAction.error}</Banner> : null}
-            {data.versions.length > 1 ? (
-              <details className="small">
-                <summary>历史版本({data.versions.length})</summary>
-                <ul>
-                  {data.versions.map((v) => (
-                    <li key={v.id}>
-                      {v.id.slice(0, 11)}… · {v.status}
-                      {v.id === data.workspace.activeGraphVersionId ? '(当前)' : null}
-                      {v.status === 'ready' && v.id !== data.workspace.activeGraphVersionId ? (
+          {activeWorkspaceId && data ? (
+            <>
+              <h3>文档({data.documents.length})</h3>
+              <ul className="document-list">
+                {data.documents.map((doc) => (
+                  <li key={doc.id} className="document-item">
+                    <div>
+                      <strong>{doc.title}</strong>
+                      <p className="small muted">
+                        {SOURCE_TYPE_TEXT[doc.sourceType] ?? doc.sourceType}
+                        {doc.pageCount ? ` · ${doc.pageCount} 页` : ''} · {doc.blockCount} 段 ·{' '}
+                        {doc.parseStatus === 'parsed_with_warnings' ? '解析有警告' : '解析成功'} ·{' '}
+                        {doc.conceptCount} 概念
+                      </p>
+                      {doc.extractionWarnings.length > 0 ? (
+                        <details className="small">
+                          <summary>{doc.extractionWarnings.length} 条提取警告</summary>
+                          <ul>
+                            {doc.extractionWarnings.map((w, i) => (
+                              <li key={i}>{w}</li>
+                            ))}
+                          </ul>
+                        </details>
+                      ) : null}
+                    </div>
+                    <div className="document-actions">
+                      {doc.conceptCount === 0 ? (
+                        <button
+                          type="button"
+                          className="small"
+                          disabled={analyzeAction.loading}
+                          onClick={() => void handleAnalyze(doc.id)}
+                        >
+                          提取概念
+                        </button>
+                      ) : null}
+                      {doc.sourceType === 'pdf' || doc.sourceType === 'docx' ? (
                         <button
                           type="button"
                           className="ghost small"
-                          onClick={() => void handleActivateVersion(v.id)}
+                          disabled={documentAction.loading}
+                          onClick={() => void handleReprocessDocument(doc.id)}
                         >
-                          启用
+                          重新解析
                         </button>
                       ) : null}
-                    </li>
-                  ))}
-                </ul>
-              </details>
-            ) : null}
-          </>
-        ) : null}
-        {activeWorkspaceId && dataLoading && !data ? <Loading label="加载课程空间数据…" /> : null}
-        {dataError ? <Banner kind="error">{dataError}</Banner> : null}
-        {actionError ? <Banner kind="error">{actionError}</Banner> : null}
-      </aside>
+                      <button
+                        type="button"
+                        className="ghost small danger"
+                        disabled={documentAction.loading}
+                        onClick={() => void handleDeleteDocument(doc.id)}
+                      >
+                        删除
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              {analyzeAction.loading ? (
+                <p>
+                  <Loading label="Hy3 正在提取概念…" />{' '}
+                  <button type="button" className="ghost small" onClick={analyzeAction.cancel}>
+                    取消
+                  </button>
+                </p>
+              ) : null}
+              {analyzeAction.error ? <Banner kind="error">{analyzeAction.error}</Banner> : null}
+              {documentAction.error ? <Banner kind="error">{documentAction.error}</Banner> : null}
+
+              <AddDocumentForm
+                loading={addDocAction.loading}
+                error={addDocAction.error}
+                onCancel={addDocAction.cancel}
+                onAddText={(content, title) => void handleAddText(content, title)}
+                onAddFile={(file) => void handleAddFile(file)}
+              />
+
+              <h3>概念图谱</h3>
+              <p className="small muted">
+                {data.version
+                  ? `当前版本:${data.version.id.slice(0, 11)}…(${data.version.status})`
+                  : '还没有生成图谱。'}
+              </p>
+              {summary ? (
+                <p className="small muted">
+                  候选 {summary.candidateCount} 条 · 采纳 {summary.acceptedCount} 条 · 拒绝{' '}
+                  {summary.rejectedCount} 条
+                  {summary.duplicateCount > 0 ? ` · 去重 ${summary.duplicateCount} 条` : ''}
+                  {summary.pruned ? '(已因文档变更修剪)' : ''}
+                </p>
+              ) : null}
+              <p>
+                <button
+                  type="button"
+                  className="primary"
+                  disabled={graphAction.loading || data.concepts.length < 2}
+                  onClick={() => void handleGenerateGraph()}
+                >
+                  {data.version ? '重新生成图谱' : '生成概念图谱'}
+                </button>{' '}
+                {graphAction.loading ? (
+                  <>
+                    <Loading label="Hy3 正在提出概念关系…" />{' '}
+                    <button type="button" className="ghost small" onClick={graphAction.cancel}>
+                      取消
+                    </button>
+                  </>
+                ) : null}
+              </p>
+              {data.concepts.length < 2 ? (
+                <p className="small muted">生成图谱前,请先为文档提取概念(至少 2 个)。</p>
+              ) : null}
+              {graphAction.error ? <Banner kind="error">{graphAction.error}</Banner> : null}
+              {data.versions.length > 1 ? (
+                <details className="small">
+                  <summary>历史版本({data.versions.length})</summary>
+                  <ul>
+                    {data.versions.map((v) => (
+                      <li key={v.id}>
+                        {v.id.slice(0, 11)}… · {v.status}
+                        {v.id === data.workspace.activeGraphVersionId ? '(当前)' : null}
+                        {v.status === 'ready' && v.id !== data.workspace.activeGraphVersionId ? (
+                          <button
+                            type="button"
+                            className="ghost small"
+                            onClick={() => void handleActivateVersion(v.id)}
+                          >
+                            启用
+                          </button>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              ) : null}
+            </>
+          ) : null}
+          {activeWorkspaceId && dataLoading && !data ? <Loading label="加载课程空间数据…" /> : null}
+          {dataError ? <Banner kind="error">{dataError}</Banner> : null}
+          {actionError ? <Banner kind="error">{actionError}</Banner> : null}
+        </aside>
+      )}
 
       <div className="graph-area" aria-label="个人学习图谱">
         <div className="graph-area-head">
@@ -577,15 +617,59 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
           {data && weakCount > 0 ? (
             <span className="pill weak">薄弱概念 {weakCount} 个</span>
           ) : null}
+          {generationSummary ? (
+            <p className="generation-summary" role="status">
+              {generationSummary}
+              <button
+                type="button"
+                className="ghost small"
+                aria-label="关闭生成摘要"
+                onClick={() => setGenerationSummary(null)}
+              >
+                ✕
+              </button>
+            </p>
+          ) : null}
         </div>
         {!activeWorkspaceId ? (
           <Banner kind="empty">选择或创建一个课程空间,查看你的学习图谱。</Banner>
         ) : dataLoading && !data ? (
-          <Loading label="加载图谱…" />
+          <div className="graph-skeleton" aria-hidden="true">
+            <Loading label="加载图谱…" />
+          </div>
         ) : data && data.concepts.length === 0 ? (
-          <Banner kind="empty">先导入文档并提取概念,然后生成图谱。</Banner>
+          <GraphOnboarding
+            data={data}
+            anyAttempts={anyAttempts}
+            weakCount={weakCount}
+            analyzeLoading={analyzeAction.loading}
+            graphLoading={graphAction.loading}
+            onAnalyzeFirst={() => {
+              const target = data.documents.find((doc) => doc.conceptCount === 0);
+              if (target) void handleAnalyze(target.id);
+            }}
+            onGenerate={() => void handleGenerateGraph()}
+          />
         ) : data ? (
           <>
+            {data.version === null && data.concepts.length >= 2 ? (
+              <div className="graph-cta-banner">
+                <span>概念已就绪,还没有关系图谱。</span>
+                <button
+                  type="button"
+                  className="primary"
+                  disabled={graphAction.loading}
+                  onClick={() => void handleGenerateGraph()}
+                >
+                  {graphAction.loading ? '正在生成…' : '生成学习图谱'}
+                </button>
+                {graphAction.loading ? (
+                  <button type="button" className="ghost small" onClick={graphAction.cancel}>
+                    取消
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
             <ConceptGraph
               concepts={data.concepts}
               edges={data.edges}
@@ -594,31 +678,16 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
               selectedEdgeId={selectedEdgeId}
               onSelectNode={selectNode}
               onSelectEdge={selectEdge}
+              versionId={data.version?.id ?? null}
+              planTargetIds={planTargetIds}
+              refitKey={`${leftCollapsed ? 'L' : 'l'}${rightCollapsed ? 'R' : 'r'}`}
+              summary={{
+                documentCount: data.documents.length,
+                weakCount,
+                acceptedCount: summary?.acceptedCount ?? null,
+                rejectedCount: summary?.rejectedCount ?? null,
+              }}
             />
-            <GraphLegend />
-            {data.edges.length > 0 ? (
-              <details className="edge-list small">
-                <summary>关系列表({data.edges.length})— 键盘可访问的选择方式</summary>
-                <ul>
-                  {data.edges.map((edge) => (
-                    <li key={edge.id}>
-                      <button
-                        type="button"
-                        className={`ghost small ${selectedEdgeId === edge.id ? 'active' : ''}`}
-                        onClick={() => selectEdge(edge.id)}
-                      >
-                        {conceptNameById.get(edge.sourceConceptId) ?? edge.sourceConceptId} —
-                        {RELATION_TEXT[edge.relation]}→{' '}
-                        {conceptNameById.get(edge.targetConceptId) ?? edge.targetConceptId}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </details>
-            ) : null}
-            {data.version === null && data.concepts.length >= 2 ? (
-              <Banner kind="info">概念已就绪,还没有关系图谱 — 点击左侧“生成概念图谱”。</Banner>
-            ) : null}
             {data.version?.status === 'failed' ? (
               <Banner kind="error">
                 最近一次图谱生成失败:{data.version.errorMessage ?? '原因未知'}。原有图谱未受影响。
@@ -634,38 +703,156 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
         ) : null}
       </div>
 
-      <aside className="detail-area" aria-label="证据与辅导详情">
-        {selectedConcept && data ? (
-          <ConceptDetailPanel
-            concept={selectedConcept}
-            blocks={data.blocks}
-            documents={data.documents}
-            state={overlayByConcept.get(selectedConcept.id)}
-            edges={data.edges}
-            conceptNameById={conceptNameById}
-            plan={plan}
-            planLoading={planAction.loading}
-            planError={planAction.error}
-            launchLoading={launchAction.loading}
-            onGeneratePlan={() => void handleGeneratePlan()}
-            onCancelPlan={planAction.cancel}
-            onLaunchPlan={(p) => void handleLaunchPlan(p)}
-          />
-        ) : selectedEdge && data ? (
-          <EdgeDetailPanel
-            edge={selectedEdge}
-            blocks={data.blocks}
-            documents={data.documents}
-            conceptNameById={conceptNameById}
-          />
-        ) : (
-          <Banner kind="empty">
-            在图谱中选择一个概念或一条关系,这里会显示它的原文依据、学习状态与康复计划。
-          </Banner>
-        )}
-        {launchAction.error ? <Banner kind="error">{launchAction.error}</Banner> : null}
-      </aside>
+      {rightCollapsed ? (
+        <div className="panel-rail right">
+          <button
+            type="button"
+            className="rail-toggle"
+            aria-label="展开详情面板"
+            title="展开详情面板"
+            onClick={() => setRightCollapsed(false)}
+          >
+            «
+          </button>
+        </div>
+      ) : (
+        <aside className="detail-area" aria-label="证据与辅导详情">
+          <div className="panel-head">
+            <h2>详情</h2>
+            <button
+              type="button"
+              className="rail-toggle"
+              aria-label="折叠详情面板"
+              title="折叠详情面板"
+              onClick={() => setRightCollapsed(true)}
+            >
+              »
+            </button>
+          </div>
+          {selectedConcept && data ? (
+            <ConceptDetailPanel
+              concept={selectedConcept}
+              blocks={data.blocks}
+              documents={data.documents}
+              state={overlayByConcept.get(selectedConcept.id)}
+              edges={data.edges}
+              conceptNameById={conceptNameById}
+              plan={plan}
+              planLoading={planAction.loading}
+              planError={planAction.error}
+              launchLoading={launchAction.loading}
+              onGeneratePlan={() => void handleGeneratePlan()}
+              onCancelPlan={planAction.cancel}
+              onLaunchPlan={(p) => void handleLaunchPlan(p)}
+            />
+          ) : selectedEdge && data ? (
+            <EdgeDetailPanel
+              edge={selectedEdge}
+              blocks={data.blocks}
+              documents={data.documents}
+              conceptNameById={conceptNameById}
+            />
+          ) : (
+            <Banner kind="empty">
+              在图谱中选择一个概念或一条关系,这里会显示它的原文依据、学习状态与康复计划。
+            </Banner>
+          )}
+          {launchAction.error ? <Banner kind="error">{launchAction.error}</Banner> : null}
+          {hasGraph && data && data.edges.length > 0 ? (
+            <details className="edge-list small">
+              <summary>关系列表({data.edges.length})— 键盘可访问的选择方式</summary>
+              <ul>
+                {data.edges.map((edge) => (
+                  <li key={edge.id}>
+                    <button
+                      type="button"
+                      className={`ghost small ${selectedEdgeId === edge.id ? 'active' : ''}`}
+                      onClick={() => selectEdge(edge.id)}
+                    >
+                      {conceptNameById.get(edge.sourceConceptId) ?? edge.sourceConceptId} —
+                      {RELATION_TEXT[edge.relation]}→{' '}
+                      {conceptNameById.get(edge.targetConceptId) ?? edge.targetConceptId}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : null}
+        </aside>
+      )}
     </section>
+  );
+}
+
+/**
+ * Staged onboarding shown before any concepts exist. Completion marks come
+ * from real persisted state only — no fake progress.
+ */
+function GraphOnboarding({
+  data,
+  anyAttempts,
+  weakCount,
+  analyzeLoading,
+  graphLoading,
+  onAnalyzeFirst,
+  onGenerate,
+}: {
+  data: WorkspaceData;
+  anyAttempts: boolean;
+  weakCount: number;
+  analyzeLoading: boolean;
+  graphLoading: boolean;
+  onAnalyzeFirst: () => void;
+  onGenerate: () => void;
+}) {
+  const hasDocuments = data.documents.length > 0;
+  const hasConcepts = data.concepts.length > 0;
+  const hasGraph = data.version?.status === 'ready';
+  const stages: Array<{ label: string; done: boolean }> = [
+    { label: '添加课程资料', done: hasDocuments },
+    { label: '提取核心概念', done: hasConcepts },
+    { label: '生成个人学习图谱', done: hasGraph },
+    { label: '完成诊断练习', done: anyAttempts },
+    { label: '查看薄弱路径并开始补救', done: hasGraph && anyAttempts && weakCount === 0 },
+  ];
+
+  return (
+    <div className="graph-onboarding" aria-label="学习图谱引导">
+      <h3>从课程资料到个人学习图谱</h3>
+      <ol className="onboarding-stages">
+        {stages.map((stage, index) => (
+          <li key={stage.label} className={stage.done ? 'done' : ''}>
+            <span className="stage-marker" aria-hidden="true">
+              {stage.done ? '✓' : index + 1}
+            </span>
+            <span>{stage.label}</span>
+            {stage.done ? <span className="visually-hidden">(已完成)</span> : null}
+          </li>
+        ))}
+      </ol>
+      {!hasDocuments ? (
+        <p className="onboarding-cta">
+          <span>先在左侧「资料库」添加课程文档(支持粘贴文本、Markdown、TXT、PDF、DOCX)。</span>
+        </p>
+      ) : !hasConcepts ? (
+        <p className="onboarding-cta">
+          <button
+            type="button"
+            className="primary"
+            disabled={analyzeLoading}
+            onClick={onAnalyzeFirst}
+          >
+            {analyzeLoading ? '正在提取概念…' : '提取核心概念'}
+          </button>
+        </p>
+      ) : (
+        <p className="onboarding-cta">
+          <button type="button" className="primary" disabled={graphLoading} onClick={onGenerate}>
+            {graphLoading ? '正在生成…' : '生成学习图谱'}
+          </button>
+        </p>
+      )}
+    </div>
   );
 }
 

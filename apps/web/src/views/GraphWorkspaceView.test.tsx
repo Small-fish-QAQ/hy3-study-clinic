@@ -129,7 +129,7 @@ describe('学习图谱工作台 — workspace and document area', () => {
     renderView();
     await user.type(await screen.findByLabelText('新建课程空间'), '新课程');
     await user.click(screen.getByRole('button', { name: '创建' }));
-    expect(await screen.findByText(/先导入文档并提取概念/)).toBeInTheDocument();
+    expect(await screen.findByLabelText('学习图谱引导')).toBeInTheDocument();
     expect(window.localStorage.getItem(LAST_WORKSPACE_KEY)).toBe('ws_new');
   });
 
@@ -211,7 +211,9 @@ describe('学习图谱工作台 — graph area', () => {
       },
     ]);
     renderView();
-    expect(await screen.findByText(/先导入文档并提取概念,然后生成图谱/)).toBeInTheDocument();
+    const onboarding = await screen.findByLabelText('学习图谱引导');
+    expect(within(onboarding).getByText('添加课程资料')).toBeInTheDocument();
+    expect(within(onboarding).getByText('生成个人学习图谱')).toBeInTheDocument();
   });
 
   it('surfaces a failed generation without hiding the previous graph', async () => {
@@ -280,10 +282,11 @@ describe('学习图谱工作台 — detail area and planner', () => {
 
     const panel = await screen.findByLabelText('概念详情:工作记忆');
     expect(within(panel).getByText('容量有限的短时加工系统。')).toBeInTheDocument();
-    expect(within(panel).getAllByText('本地已验证').length).toBeGreaterThanOrEqual(1);
     expect(within(panel).getByText(/未解决错题 1 道/)).toBeInTheDocument();
     expect(within(panel).getByText(/本概念 → 间隔重复/)).toBeInTheDocument();
-    // Verified quote renders inside the evidence panel.
+    // Verified quotes live in the 原文证据 inspector tab.
+    await user.click(within(panel).getByRole('tab', { name: '原文证据' }));
+    expect(within(panel).getAllByText('本地已验证').length).toBeGreaterThanOrEqual(1);
     await user.click(within(panel).getAllByRole('button', { name: '查看原文依据' })[0]!);
     expect(within(panel).getByText('工作记忆的容量十分有限')).toBeInTheDocument();
     expect(within(panel).getByText(/引文校验仅证明文字确实出现在来源位置/)).toBeInTheDocument();
@@ -305,6 +308,7 @@ describe('学习图谱工作台 — detail area and planner', () => {
     expect(
       within(panel).getByText(/先理解工作记忆的限制,才能理解间隔重复为何有效。/),
     ).toBeInTheDocument();
+    await user.click(within(panel).getByRole('tab', { name: '原文证据' }));
     expect(within(panel).getByRole('button', { name: '查看原文依据' })).toBeInTheDocument();
   });
 
@@ -329,6 +333,8 @@ describe('学习图谱工作台 — detail area and planner', () => {
     ]);
     renderView({ onLaunchQuiz });
     await selectWorkingMemoryNode();
+    const panel = await screen.findByLabelText('概念详情:工作记忆');
+    await user.click(within(panel).getByRole('tab', { name: '学习计划' }));
 
     await user.click(await screen.findByRole('button', { name: '生成康复计划' }));
     const planCard = await screen.findByLabelText('已接受的康复计划');
@@ -371,6 +377,8 @@ describe('学习图谱工作台 — detail area and planner', () => {
     ]);
     renderView();
     await selectWorkingMemoryNode();
+    const panel = await screen.findByLabelText('概念详情:工作记忆');
+    await user.click(within(panel).getByRole('tab', { name: '学习计划' }));
     // Accepted plan loads automatically for the selected concept.
     await screen.findByLabelText('已接受的康复计划');
 
@@ -393,6 +401,11 @@ describe('学习图谱工作台 — detail area and planner', () => {
     ]);
     renderView();
     await selectWorkingMemoryNode();
+    await user.click(
+      within(await screen.findByLabelText('概念详情:工作记忆')).getByRole('tab', {
+        name: '学习计划',
+      }),
+    );
     await user.click(await screen.findByRole('button', { name: '生成康复计划' }));
     expect(screen.getByText(/Hy3 正在生成康复计划/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '取消' }));
@@ -417,6 +430,11 @@ describe('学习图谱工作台 — detail area and planner', () => {
     ]);
     renderView();
     await selectWorkingMemoryNode();
+    await user.click(
+      within(await screen.findByLabelText('概念详情:工作记忆')).getByRole('tab', {
+        name: '学习计划',
+      }),
+    );
     await user.click(await screen.findByRole('button', { name: '生成康复计划' }));
 
     // Switch selection to the other node while the plan request is pending.
@@ -428,6 +446,47 @@ describe('学习图谱工作台 — detail area and planner', () => {
     await waitFor(() => {
       expect(screen.queryByLabelText('已接受的康复计划')).not.toBeInTheDocument();
     });
+  });
+});
+
+describe('学习图谱工作台 — panel collapse', () => {
+  it('collapses and re-expands both side panels while the graph stays mounted', async () => {
+    openSavedWorkspace();
+    const user = userEvent.setup();
+    installFetchMock(baseRoutes());
+    renderView();
+    await screen.findByTestId('concept-graph');
+
+    await user.click(screen.getByRole('button', { name: '折叠资料面板' }));
+    expect(screen.queryByLabelText('课程空间与文档')).not.toBeInTheDocument();
+    expect(screen.getByTestId('concept-graph')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '展开资料面板' }));
+    expect(screen.getByLabelText('课程空间与文档')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '折叠详情面板' }));
+    expect(screen.queryByLabelText('证据与辅导详情')).not.toBeInTheDocument();
+    expect(screen.getByTestId('concept-graph')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '展开详情面板' }));
+    expect(screen.getByLabelText('证据与辅导详情')).toBeInTheDocument();
+  });
+
+  it('shows a success summary after graph generation', async () => {
+    openSavedWorkspace();
+    const user = userEvent.setup();
+    installFetchMock([
+      ...baseRoutes(),
+      {
+        method: 'POST',
+        pattern: /\/api\/workspaces\/ws_1\/graph$/,
+        handler: () => ({ status: 201, body: { version: graphVersion, edges: graphEdges } }),
+      },
+    ]);
+    renderView();
+    await user.click(await screen.findByRole('button', { name: '重新生成图谱' }));
+    const status = await screen.findByRole('status');
+    expect(status).toHaveTextContent('已构建 2 个概念与 1 条关系;1 条关系已通过本地证据验证。');
+    await user.click(screen.getByRole('button', { name: '关闭生成摘要' }));
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 });
 
@@ -487,13 +546,13 @@ describe('学习图谱工作台 — stale workspace switches', () => {
 
     // While ws_1 detail hangs, the user opens ws_2.
     await user.click(await screen.findByRole('button', { name: /第二课程/ }));
-    expect(await screen.findByText(/先导入文档并提取概念/)).toBeInTheDocument();
+    expect(await screen.findByLabelText('学习图谱引导')).toBeInTheDocument();
 
     // The stale ws_1 response resolves now — it must not replace ws_2 data.
     resolveFirstDetail({ status: 200, body: { workspace, documents: [documentSummary] } });
     await waitFor(() => {
       expect(screen.queryByText(documentSummary.title)).not.toBeInTheDocument();
     });
-    expect(screen.getByText(/先导入文档并提取概念/)).toBeInTheDocument();
+    expect(screen.getByLabelText('学习图谱引导')).toBeInTheDocument();
   });
 });

@@ -20,13 +20,24 @@ type Tab = 'import' | 'graph' | 'quiz' | 'results' | 'mistakes' | 'mastery';
 
 const LAST_MATERIAL_ID_STORAGE_KEY = 'hy3-clinic:last-material-id';
 
-const TAB_LABELS: Record<Tab, string> = {
-  import: '① 导入资料',
-  graph: '🧭 学习图谱工作台',
-  quiz: '② 出题作答',
-  results: '③ 判分结果',
-  mistakes: '④ 错题本',
-  mastery: '⑤ 综合掌握度（历史加权）',
+/** Module navigation: 练习 covers both answering (quiz) and results. */
+type Module = 'import' | 'graph' | 'practice' | 'mistakes' | 'mastery';
+
+const MODULE_LABELS: Record<Module, string> = {
+  import: '资料库',
+  graph: '学习图谱',
+  practice: '练习',
+  mistakes: '错题',
+  mastery: '学习进展',
+};
+
+const MODULE_OF_TAB: Record<Tab, Module> = {
+  import: 'import',
+  graph: 'graph',
+  quiz: 'practice',
+  results: 'practice',
+  mistakes: 'mistakes',
+  mastery: 'mastery',
 };
 
 export function App() {
@@ -309,15 +320,39 @@ export function App() {
     setTab(nextTab);
   }
 
+  function handleModuleChange(module: Module) {
+    handleTabChange(module === 'practice' ? 'quiz' : module);
+  }
+
   const materialReady = material !== null && !deletingCurrentMaterial;
+  const activeModule = MODULE_OF_TAB[tab];
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${tab === 'graph' ? 'module-graph' : ''}`}>
       <header className="app-header">
         <div>
           <h1>Hy3 智学诊所</h1>
-          <p className="app-subtitle">证据可溯源的出题 · 判分 · 错题康复练习</p>
+          <p className="app-subtitle">
+            从课程资料构建可验证的个人学习图谱,并根据薄弱知识规划补救路径
+          </p>
         </div>
+        <nav className="tabs" aria-label="主导航">
+          {(Object.keys(MODULE_LABELS) as Module[]).map((module) => {
+            const needsMaterial = module !== 'import' && module !== 'graph';
+            const disabled = needsMaterial && (!materialReady || openingMaterialId !== null);
+            return (
+              <button
+                key={module}
+                type="button"
+                className={activeModule === module ? 'active' : ''}
+                disabled={disabled}
+                onClick={() => handleModuleChange(module)}
+              >
+                {MODULE_LABELS[module]}
+              </button>
+            );
+          })}
+        </nav>
         {provider ? (
           <span className={`provider-badge ${provider}`}>
             {provider === 'fake' ? '离线模式(Fake Provider,无需 API Key)' : 'Hy3 在线模式'}
@@ -325,32 +360,35 @@ export function App() {
         ) : null}
       </header>
 
-      <nav className="tabs" aria-label="主导航">
-        {(Object.keys(TAB_LABELS) as Tab[]).map((t) => {
-          const needsMaterial = t !== 'import' && t !== 'graph';
-          const needsResult = t === 'results';
-          const disabled =
-            (needsMaterial && (!materialReady || openingMaterialId !== null)) ||
-            (needsResult && !result);
-          return (
-            <button
-              key={t}
-              type="button"
-              className={tab === t ? 'active' : ''}
-              disabled={disabled}
-              onClick={() => handleTabChange(t)}
-            >
-              {TAB_LABELS[t]}
-            </button>
-          );
-        })}
-      </nav>
-
       {remediationAction.error && tab !== 'mistakes' ? (
         <Banner kind="error">{remediationAction.error}</Banner>
       ) : null}
 
-      <main>
+      <main className={tab === 'graph' ? 'main-graph' : 'main-scroll'}>
+        {activeModule === 'practice' ? (
+          <div className="practice-switch" role="tablist" aria-label="练习子页">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'quiz'}
+              className={tab === 'quiz' ? 'active' : ''}
+              onClick={() => handleTabChange('quiz')}
+            >
+              出题作答
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'results'}
+              className={tab === 'results' ? 'active' : ''}
+              disabled={!result}
+              onClick={() => handleTabChange('results')}
+            >
+              判分结果
+            </button>
+          </div>
+        ) : null}
+
         {tab === 'import' ? (
           <ImportView
             material={material}

@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom/vitest';
+import { act } from '@testing-library/react';
 
 /**
  * jsdom shims required by @xyflow/react (React Flow) — per the library's
@@ -12,7 +13,10 @@ class ResizeObserverMock {
   }
   observe(target: Element) {
     // Deferred so React finishes committing before React Flow measures;
-    // skipped entirely when the element has already been unmounted.
+    // skipped entirely when the element has already been unmounted. The
+    // callback triggers React Flow store updates (node measurement), so it
+    // must run inside act() — this is the environment "firing an event",
+    // exactly what act() is for, not a warning suppression.
     queueMicrotask(() => {
       if (!target.isConnected) return;
       const contentRect = {
@@ -26,10 +30,12 @@ class ResizeObserverMock {
         bottom: 600,
         toJSON: () => ({}),
       };
-      this.callback(
-        [{ target, contentRect } as unknown as ResizeObserverEntry],
-        this as unknown as ResizeObserver,
-      );
+      act(() => {
+        this.callback(
+          [{ target, contentRect } as unknown as ResizeObserverEntry],
+          this as unknown as ResizeObserver,
+        );
+      });
     });
   }
   unobserve() {}
@@ -49,6 +55,25 @@ if (typeof globalThis.ResizeObserver === 'undefined') {
 }
 if (typeof (globalThis as Record<string, unknown>).DOMMatrixReadOnly === 'undefined') {
   (globalThis as Record<string, unknown>).DOMMatrixReadOnly = DOMMatrixReadOnlyMock;
+}
+
+// jsdom lacks matchMedia; report reduced motion so viewport animations run
+// synchronously in tests (the app honors prefers-reduced-motion anyway).
+if (typeof window.matchMedia === 'undefined') {
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    writable: true,
+    value: (query: string) => ({
+      matches: query.includes('prefers-reduced-motion'),
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }),
+  });
 }
 
 // React Flow reads element sizes; give jsdom elements a non-zero box.
