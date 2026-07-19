@@ -11,14 +11,14 @@ Everything the model proposes — concepts, questions, graph edges, plan reasons
 
 The primary journey (fully covered by the fake-provider smoke script, `npm run demo:graph`):
 
-1. Create or open a **course workspace** (学习图谱工作台 tab).
+1. Create or open a **course workspace** (学习图谱 module; the app shell offers 资料库 · 学习图谱 · 练习 · 错题 · 学习进展).
 2. Add one or more learning documents — pasted text, `.md`, `.txt`, `.pdf`, or `.docx` — with per-document parsing status, page counts, and visible extraction warnings.
 3. Parsing preserves **source provenance**: stable block IDs, character offsets, heading paths, and (for PDF) page numbers.
 4. Extract grounded concepts per document (existing pipeline).
 5. Ask Hy3 to propose typed relationships between the existing concepts (`prerequisite`, `part_of`, `contrasts_with`, `causes`, `applies_to`, `example_of`), each with verbatim source evidence.
 6. Local validation accepts only edges whose concepts exist in the workspace, whose relations are in the controlled vocabulary, whose evidence quotes verify exactly, and whose `prerequisite`/`part_of` structure stays acyclic — the result is persisted as a **versioned graph**; a failed generation never touches the previously active version.
-7. The interactive graph shows each concept with its deterministic learner state (`unassessed` / `weak` / `developing` / `stable`), open-mistake badges, and typed edges with a legend.
-8. Selecting a node shows its verified quotes (with document, page, and section locations), mastery, attempts, mistakes, and relationships; selecting an edge shows its relation, explanation, and verified evidence.
+7. The interactive graph fills the workspace between two collapsible panels and offers three layout modes — 网络视图 (default deterministic d3-force network), 依赖视图 (layered prerequisite hierarchy), and 薄弱路径 (weak concepts plus their prerequisite path and neighbors). Nodes show learner state (`unassessed` / `weak` / `developing` / `stable`), mastery percentage, and open-mistake badges; hovering highlights a node's neighborhood with a tooltip; in-canvas overlays provide concept search, 适配视图 / 重新布局 actions, edge-label and unassessed-concept toggles, a legend, and a live graph summary. Dragged node positions persist per graph version in `localStorage`; 重新布局 clears them. An empty workspace shows a staged onboarding path driven by real persisted state.
+8. Selecting a node opens the inspector (概览 · 原文证据 · 学习计划 tabs) with verified quotes (document, page, and section locations), mastery, attempts, mistakes, and relationships; selecting an edge (on canvas or via the keyboard-accessible relationship list) shows its relation, explanation, and verified evidence. Double-clicking a node enters 聚焦邻域 (one- or two-hop) with a 返回全图 control.
 9. A weak concept can request a **remediation plan** — bounded input, controlled strategy/difficulty vocabularies, engine-supported question types only, and evidence-cited target reasons — validated locally before acceptance; invalid plans never replace an accepted plan, and accepting a plan writes **no** learning state.
 10. Launching an accepted plan reuses the existing remediation engine when targets still have open mistakes, or preconfigures a focused practice quiz otherwise. Scoring, mistake resolution, and mastery updates flow through the unchanged deterministic pipeline.
 
@@ -190,7 +190,8 @@ The SQLite schema is migrated in place (numbered, run-once, idempotent to re-run
 | --- | --- | --- |
 | [`unpdf`](https://github.com/unjs/unpdf) | server | Actively maintained serverless build of Mozilla PDF.js for text extraction. Per-page text (needed for page provenance), no native dependencies, no worker configuration, no execution of embedded scripts, no OCR. |
 | [`mammoth`](https://github.com/mwilliamson/mammoth.js) | server | The standard maintained DOCX text extractor. Reads only `word/document.xml` (macros/scripts/media ignored), emits a constrained HTML that we convert deterministically to Markdown-style text so headings survive as section provenance, and reports conversion warnings we surface to the learner. |
-| [`@xyflow/react`](https://github.com/xyflow/xyflow) (React Flow 12) | web | Small, actively maintained, React-18-compatible interactive graph renderer with built-in pan/zoom and node/edge selection. Layout is computed locally with a deterministic longest-path algorithm — no layout dependency, no randomness, safe for dozens of concepts, long labels, and disconnected nodes. |
+| [`@xyflow/react`](https://github.com/xyflow/xyflow) (React Flow 12) | web | Small, actively maintained, React-18-compatible interactive graph renderer with built-in pan/zoom, node dragging, and node/edge selection. |
+| [`d3-force`](https://github.com/d3/d3-force) | web | Standard, tiny force-simulation library used per the official React Flow force-layout guidance. The 网络视图 layout runs a bounded number of synchronous ticks with positions seeded from concept-ID hashes and d3-force's deterministic LCG, so layouts are reproducible, never animate indefinitely, and never consume background CPU. |
 
 The committed binary test fixtures (`apps/server/src/testing/files/`) are tiny self-authored files regenerated by `node scripts/generate-test-fixtures.mjs`.
 
