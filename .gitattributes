@@ -5,3 +5,4 @@
 *.ico binary
 *.woff binary
 *.woff2 binary
+apps/server/src/testing/files/*.pdf binary
