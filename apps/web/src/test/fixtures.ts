@@ -1,11 +1,17 @@
 import type {
   Concept,
+  ConceptLearnerState,
+  DocumentSummary,
   GradingResult,
+  GraphEdge,
+  GraphVersion,
   MasteryState,
   MistakeRecord,
   PublicQuiz,
   Question,
+  RemediationPlan,
   SourceBlock,
+  Workspace,
 } from '@hy3-clinic/shared';
 
 /** Deterministic web-test fixtures matching the shared schemas. */
@@ -19,6 +25,7 @@ export const blocks: SourceBlock[] = [
     index: 0,
     heading: '记忆的三种类型',
     headingPath: ['记忆的三种类型'],
+    pageNumber: null,
     content: '工作记忆的容量十分有限,一般一次只能同时保持大约四个组块。',
     startOffset: 10,
     endOffset: 39,
@@ -29,6 +36,7 @@ export const blocks: SourceBlock[] = [
     index: 1,
     heading: '间隔重复',
     headingPath: ['间隔重复'],
+    pageNumber: null,
     content: '与其把复习集中在一次完成,不如把同样的时间分散到多次进行。',
     startOffset: 45,
     endOffset: 73,
@@ -38,11 +46,19 @@ export const blocks: SourceBlock[] = [
 export const material = {
   material: {
     id: 'mat_1',
+    workspaceId: 'ws_1',
     title: '认知科学入门:记忆与学习',
     sourceType: 'md' as const,
+    mediaType: 'text/markdown' as const,
+    originalFilename: null,
     content: `# 认知科学入门\n\n${blocks[0]!.content}\n\n${blocks[1]!.content}`,
     charCount: 80,
+    parseStatus: 'parsed' as const,
+    pageCount: null,
+    extractionWarnings: [] as string[],
+    parserVersion: 'text-v1',
     createdAt: T0,
+    updatedAt: T0,
   },
   blocks,
 };
@@ -210,3 +226,175 @@ export const mastery: MasteryState[] = [
     updatedAt: T0,
   },
 ];
+
+// --- 学习图谱工作台 fixtures ---
+
+export const workspace: Workspace = {
+  id: 'ws_1',
+  name: '认知科学课程',
+  description: null,
+  activeGraphVersionId: 'gv_1',
+  createdAt: T0,
+  updatedAt: T0,
+};
+
+export const workspaceSummary = {
+  ...workspace,
+  documentCount: 1,
+  conceptCount: 2,
+};
+
+export const documentSummary: DocumentSummary = {
+  id: 'mat_1',
+  workspaceId: 'ws_1',
+  title: material.material.title,
+  sourceType: 'md',
+  mediaType: 'text/markdown',
+  originalFilename: null,
+  charCount: material.material.charCount,
+  blockCount: blocks.length,
+  conceptCount: 2,
+  parseStatus: 'parsed',
+  pageCount: null,
+  extractionWarnings: [],
+  parserVersion: 'text-v1',
+  createdAt: T0,
+  updatedAt: T0,
+};
+
+export const graphConcepts: Concept[] = [
+  concepts[0]!,
+  {
+    id: 'con_1',
+    materialId: 'mat_1',
+    name: '间隔重复',
+    summary: '把复习分散到多次进行的策略。',
+    importance: 'high',
+    grounding: {
+      blockId: 'blk_1',
+      quote: '与其把复习集中在一次完成,不如把同样的时间分散到多次进行。',
+      startOffset: 0,
+      endOffset: 28,
+      occurrenceCount: 1,
+      reanchored: false,
+    },
+    createdAt: T0,
+  },
+];
+
+export const graphVersion: GraphVersion = {
+  id: 'gv_1',
+  workspaceId: 'ws_1',
+  status: 'ready',
+  provider: 'fake',
+  providerModel: null,
+  validationSummary: {
+    candidateCount: 2,
+    acceptedCount: 1,
+    rejectedCount: 1,
+    duplicateCount: 0,
+    droppedEvidenceCount: 0,
+    rejected: [
+      {
+        sourceConceptId: 'con_0',
+        targetConceptId: 'con_x',
+        relation: 'causes',
+        reason: '未知概念:con_x',
+      },
+    ],
+  },
+  errorMessage: null,
+  createdAt: T0,
+  updatedAt: T0,
+};
+
+export const graphEdges: GraphEdge[] = [
+  {
+    id: 'ge_1',
+    graphVersionId: 'gv_1',
+    sourceConceptId: 'con_0',
+    targetConceptId: 'con_1',
+    relation: 'prerequisite',
+    explanation: '先理解工作记忆的限制,才能理解间隔重复为何有效。',
+    evidence: [
+      {
+        blockId: 'blk_1',
+        quote: '与其把复习集中在一次完成,不如把同样的时间分散到多次进行。',
+        startOffset: 0,
+        endOffset: 28,
+        occurrenceCount: 1,
+        reanchored: false,
+      },
+    ],
+    createdAt: T0,
+  },
+];
+
+export const overlayStates: ConceptLearnerState[] = [
+  {
+    conceptId: 'con_0',
+    conceptName: '工作记忆',
+    materialId: 'mat_1',
+    state: 'weak',
+    mastery: 0.47,
+    hasEnoughActivity: false,
+    attempts: 2,
+    correctCount: 1,
+    lastScore: 0.7,
+    lastActivityAt: T0,
+    openMistakes: 1,
+    resolvedMistakes: 0,
+    treatAsWeak: true,
+    prerequisiteConceptIds: [],
+  },
+  {
+    conceptId: 'con_1',
+    conceptName: '间隔重复',
+    materialId: 'mat_1',
+    state: 'unassessed',
+    mastery: null,
+    hasEnoughActivity: false,
+    attempts: 0,
+    correctCount: 0,
+    lastScore: null,
+    lastActivityAt: null,
+    openMistakes: 0,
+    resolvedMistakes: 0,
+    treatAsWeak: false,
+    prerequisiteConceptIds: ['con_0'],
+  },
+];
+
+export const remediationPlan: RemediationPlan = {
+  id: 'plan_1',
+  workspaceId: 'ws_1',
+  conceptId: 'con_0',
+  summary: '围绕「工作记忆」的定向巩固计划:共 1 个目标概念、2 个步骤。',
+  weaknessHypothesis: '学习者可能混淆了工作记忆容量的具体限制。',
+  strategy: 'retrieval_practice',
+  difficulty: 'medium',
+  questionTypes: ['single_choice', 'short_answer'],
+  steps: [
+    { index: 0, description: '重读「工作记忆」的原文依据。', conceptId: 'con_0' },
+    { index: 1, description: '完成检索练习并提交判分。', conceptId: 'con_0' },
+  ],
+  targets: [
+    {
+      conceptId: 'con_0',
+      conceptName: '工作记忆',
+      reason: '「工作记忆」目前有 1 道未解决错题,需要针对性巩固。',
+      evidence: [
+        {
+          blockId: 'blk_0',
+          quote: '工作记忆的容量十分有限',
+          startOffset: 0,
+          endOffset: 11,
+          occurrenceCount: 1,
+          reanchored: false,
+        },
+      ],
+    },
+  ],
+  provider: 'fake',
+  createdAt: T0,
+};

@@ -9,18 +9,20 @@ import {
 } from './api.js';
 import { useAsyncAction } from './components/useAsyncAction.js';
 import { ImportView } from './views/ImportView.js';
+import { GraphWorkspaceView } from './views/GraphWorkspaceView.js';
 import { QuizView } from './views/QuizView.js';
 import { ResultsView } from './views/ResultsView.js';
 import { MistakesView } from './views/MistakesView.js';
 import { MasteryView } from './views/MasteryView.js';
 import { Banner } from './components/ui.js';
 
-type Tab = 'import' | 'quiz' | 'results' | 'mistakes' | 'mastery';
+type Tab = 'import' | 'graph' | 'quiz' | 'results' | 'mistakes' | 'mastery';
 
 const LAST_MATERIAL_ID_STORAGE_KEY = 'hy3-clinic:last-material-id';
 
 const TAB_LABELS: Record<Tab, string> = {
   import: '① 导入资料',
+  graph: '🧭 学习图谱工作台',
   quiz: '② 出题作答',
   results: '③ 判分结果',
   mistakes: '④ 错题本',
@@ -268,6 +270,40 @@ export function App() {
     }
   }
 
+  /**
+   * Launch an assessment produced by an accepted remediation plan: open the
+   * quiz's document (blocks are needed for evidence display), then jump to
+   * the answering tab. Guarded by the same request epoch as manual opens so
+   * a late load can never clobber a newer selection.
+   */
+  async function handleLaunchFromPlan(launchedQuiz: PublicQuiz) {
+    const requestId = ++materialRequestRef.current;
+    remediationAction.cancel();
+    setOpeningMaterialId(launchedQuiz.materialId);
+    try {
+      const [restored, storedConcepts] = await Promise.all([
+        api.getMaterial(launchedQuiz.materialId),
+        api.getConcepts(launchedQuiz.materialId),
+      ]);
+      if (materialRequestRef.current !== requestId) return;
+      activeMaterialIdRef.current = launchedQuiz.materialId;
+      setMaterial(restored);
+      setConcepts(storedConcepts.concepts);
+      setQuiz(launchedQuiz);
+      setResult(null);
+      setLastAnswers([]);
+      setTab('quiz');
+      writeLastMaterialId(launchedQuiz.materialId);
+    } catch (error) {
+      if (materialRequestRef.current !== requestId) return;
+      setHistoryError(`无法打开康复练习:${errorMessage(error)}`);
+    } finally {
+      if (materialRequestRef.current === requestId) {
+        setOpeningMaterialId(null);
+      }
+    }
+  }
+
   function handleTabChange(nextTab: Tab) {
     if (nextTab !== tab && remediationAction.loading) remediationAction.cancel();
     setTab(nextTab);
@@ -291,7 +327,7 @@ export function App() {
 
       <nav className="tabs" aria-label="主导航">
         {(Object.keys(TAB_LABELS) as Tab[]).map((t) => {
-          const needsMaterial = t !== 'import';
+          const needsMaterial = t !== 'import' && t !== 'graph';
           const needsResult = t === 'results';
           const disabled =
             (needsMaterial && (!materialReady || openingMaterialId !== null)) ||
@@ -332,6 +368,13 @@ export function App() {
             onOpenMaterial={(materialId) => void handleOpenMaterial(materialId)}
             onRenameMaterial={handleRenameMaterial}
             onDeleteMaterial={handleDeleteMaterial}
+          />
+        ) : null}
+
+        {tab === 'graph' ? (
+          <GraphWorkspaceView
+            refreshKey={refreshKey}
+            onLaunchQuiz={(launchedQuiz) => void handleLaunchFromPlan(launchedQuiz)}
           />
         ) : null}
 

@@ -1,14 +1,21 @@
 import type {
   ApiErrorCodeValue,
   Concept,
+  ConceptLearnerState,
+  DocumentSummary,
   GradingResult,
+  GraphEdge,
+  GraphVersion,
   Material,
   MasteryState,
   MistakeRecord,
   PublicQuiz,
   Question,
   QuizConfig,
+  RemediationPlan,
   SourceBlock,
+  Workspace,
+  WorkspaceSummary,
 } from '@hy3-clinic/shared';
 
 /** Normalized client-side API error (mirrors the server's structured body). */
@@ -25,6 +32,7 @@ export class ApiClientError extends Error {
 
 export interface MaterialSummary {
   id: string;
+  workspaceId?: string;
   title: string;
   sourceType: string;
   charCount: number;
@@ -50,6 +58,22 @@ export interface MasteryResponse {
 export interface SubmissionResponse {
   grading: GradingResult;
   questions: Question[];
+}
+
+export interface WorkspaceGraphResponse {
+  version: GraphVersion | null;
+  edges: GraphEdge[];
+  concepts: Concept[];
+}
+
+export interface GraphGenerationResponse {
+  version: GraphVersion;
+  edges: GraphEdge[];
+}
+
+export interface PlanLaunchResponse {
+  quiz: PublicQuiz;
+  mode: 'remediation' | 'practice';
 }
 
 async function request<T>(
@@ -157,4 +181,112 @@ export const api = {
 
   mastery: (materialId: string) =>
     request<MasteryResponse>('GET', `/api/materials/${materialId}/mastery`),
+
+  // --- Course workspaces, documents, concept graph, planner ---
+
+  createWorkspace: (input: { name: string; description?: string }, signal?: AbortSignal) =>
+    request<{ workspace: Workspace }>('POST', '/api/workspaces', input, signal),
+
+  listWorkspaces: (signal?: AbortSignal) =>
+    request<{ workspaces: WorkspaceSummary[] }>('GET', '/api/workspaces', undefined, signal),
+
+  getWorkspace: (id: string, signal?: AbortSignal) =>
+    request<{ workspace: Workspace; documents: DocumentSummary[] }>(
+      'GET',
+      `/api/workspaces/${id}`,
+      undefined,
+      signal,
+    ),
+
+  deleteWorkspace: (id: string, signal?: AbortSignal) =>
+    request<void>('DELETE', `/api/workspaces/${id}`, undefined, signal),
+
+  addDocument: (
+    workspaceId: string,
+    input:
+      | { kind: 'text'; content: string; title?: string; filename?: string }
+      | { kind: 'file'; filename: string; dataBase64: string; title?: string },
+    signal?: AbortSignal,
+  ) =>
+    request<MaterialWithBlocks>('POST', `/api/workspaces/${workspaceId}/documents`, input, signal),
+
+  deleteDocument: (workspaceId: string, documentId: string, signal?: AbortSignal) =>
+    request<void>(
+      'DELETE',
+      `/api/workspaces/${workspaceId}/documents/${documentId}`,
+      undefined,
+      signal,
+    ),
+
+  reprocessDocument: (workspaceId: string, documentId: string, signal?: AbortSignal) =>
+    request<MaterialWithBlocks>(
+      'POST',
+      `/api/workspaces/${workspaceId}/documents/${documentId}/reprocess`,
+      undefined,
+      signal,
+    ),
+
+  getWorkspaceGraph: (workspaceId: string, signal?: AbortSignal) =>
+    request<WorkspaceGraphResponse>(
+      'GET',
+      `/api/workspaces/${workspaceId}/graph`,
+      undefined,
+      signal,
+    ),
+
+  generateGraph: (workspaceId: string, signal?: AbortSignal) =>
+    request<GraphGenerationResponse>(
+      'POST',
+      `/api/workspaces/${workspaceId}/graph`,
+      undefined,
+      signal,
+    ),
+
+  listGraphVersions: (workspaceId: string, signal?: AbortSignal) =>
+    request<{ versions: GraphVersion[] }>(
+      'GET',
+      `/api/workspaces/${workspaceId}/graph/versions`,
+      undefined,
+      signal,
+    ),
+
+  activateGraphVersion: (workspaceId: string, versionId: string, signal?: AbortSignal) =>
+    request<{ version: GraphVersion }>(
+      'POST',
+      `/api/workspaces/${workspaceId}/graph/versions/${versionId}/activate`,
+      undefined,
+      signal,
+    ),
+
+  learnerOverlay: (workspaceId: string, signal?: AbortSignal) =>
+    request<{ states: ConceptLearnerState[] }>(
+      'GET',
+      `/api/workspaces/${workspaceId}/overlay`,
+      undefined,
+      signal,
+    ),
+
+  generatePlan: (workspaceId: string, conceptId: string, signal?: AbortSignal) =>
+    request<{ plan: RemediationPlan }>(
+      'POST',
+      `/api/workspaces/${workspaceId}/concepts/${conceptId}/plan`,
+      undefined,
+      signal,
+    ),
+
+  getPlan: (workspaceId: string, conceptId: string, signal?: AbortSignal) =>
+    request<{ plan: RemediationPlan | null }>(
+      'GET',
+      `/api/workspaces/${workspaceId}/concepts/${conceptId}/plan`,
+      undefined,
+      signal,
+    ),
+
+  launchPlan: (workspaceId: string, planId: string, signal?: AbortSignal) =>
+    request<PlanLaunchResponse>(
+      'POST',
+      `/api/workspaces/${workspaceId}/plans/${planId}/launch`,
+      undefined,
+      signal,
+    ),
 };
