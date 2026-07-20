@@ -99,7 +99,19 @@ export function createAlignmentService({ repos, provider, clock }: AlignmentServ
     candidate: LocalCandidate,
     at: string,
   ): AlignmentProposal {
-    const displayName = preferredDisplayName(candidate.source.name, candidate.target.name);
+    // Compare the CURRENT display names of the two canonical groups (not the
+    // raw pair names): when three spelling variants merge pairwise, a later
+    // concatenated/concatenated merge must not clobber the well-formed name
+    // an earlier merge already chose.
+    const displayOf = (conceptId: string, fallback: string): string => {
+      const member = repos.alignment.getMemberBySource(conceptId);
+      if (!member) return fallback;
+      return repos.alignment.getCanonical(member.canonicalConceptId)?.displayName ?? fallback;
+    };
+    const displayName = preferredDisplayName(
+      displayOf(candidate.source.id, candidate.source.name),
+      displayOf(candidate.target.id, candidate.target.name),
+    );
     const proposal: AlignmentProposal = {
       id: newId('alp'),
       workspaceId,

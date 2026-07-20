@@ -420,3 +420,48 @@ describe('alignment local validation of provider output', () => {
     expect(reasons.some((r) => r.includes('校验'))).toBe(true);
   });
 });
+
+describe('auto-accept display name across pairwise merge orders', () => {
+  it('keeps the well-formed spelling even when concatenated variants merge first', async () => {
+    // Concept ids are chosen so the candidate sort merges the two
+    // concatenated variants BEFORE the well-formed one joins the group.
+    const ctx = buildTestApp();
+    const { makeMaterial, makeBlock, makeConcept, makeGrounding } =
+      await import('../testing/fixtures.js');
+    ctx.repos.materials.insertWithBlocks(makeMaterial(), [
+      makeBlock({ content: 'Spaced repetition improves retention. 间隔重复能提升保持率。' }),
+    ]);
+    ctx.repos.materials.replaceConcepts('mat_1', [
+      makeConcept({
+        id: 'con_a',
+        name: 'Spacedrepetition',
+        grounding: makeGrounding({ quote: '间隔重复能提升保持率。', endOffset: 11 }),
+      }),
+      makeConcept({
+        id: 'con_b',
+        name: 'Spacedrepetition',
+        grounding: makeGrounding({ quote: '间隔重复能提升保持率。', endOffset: 11 }),
+      }),
+      makeConcept({
+        id: 'con_z',
+        name: 'Spaced repetition',
+        grounding: makeGrounding({ quote: '间隔重复能提升保持率。', endOffset: 11 }),
+      }),
+    ]);
+    const { createServices } = await import('./index.js');
+    const { fixedClock } = await import('../util/ids.js');
+    const services = createServices({
+      repos: ctx.repos,
+      provider: ctx.provider,
+      clock: fixedClock('2026-01-01T00:00:00.000Z'),
+    });
+
+    const run = await services.alignment.propose('ws_1');
+    expect(run.autoAccepted.length).toBeGreaterThanOrEqual(2);
+    const overview = services.alignment.overview('ws_1');
+    const merged = overview.canonical.find((c) => c.members.length === 3)!;
+    expect(merged).toBeDefined();
+    expect(merged.displayName).toBe('Spaced repetition');
+    await ctx.app.close();
+  });
+});
