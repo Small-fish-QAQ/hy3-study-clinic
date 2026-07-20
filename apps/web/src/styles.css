@@ -922,12 +922,13 @@ main.main-graph {
   gap: var(--space-2);
 }
 
-/* Sits below the search/toolbar row so it never collides with controls. */
+/* Sits below the search/toolbar row and never intercepts graph input. */
 .graph-weak-path-banner {
-  margin-top: 3.1rem;
+  margin-top: 4.4rem;
   max-width: min(72%, 520px);
   color: var(--text-muted);
   font-size: 0.82rem;
+  pointer-events: none;
 }
 
 .graph-summary {
