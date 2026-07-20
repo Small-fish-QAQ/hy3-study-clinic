@@ -158,6 +158,21 @@ describe('学习图谱工作台 — workspace and document area', () => {
     expect(screen.getByText(/第 3 页未提取到文本/)).toBeInTheDocument();
   });
 
+  it('re-clicking the already-active workspace keeps the loaded graph intact', async () => {
+    openSavedWorkspace();
+    installFetchMock(baseRoutes());
+    const user = userEvent.setup();
+    renderView();
+    await screen.findByTestId('concept-graph');
+    // Regression: this used to clear `data` without re-triggering the load
+    // effect, leaving the graph area permanently blank.
+    await user.click(screen.getByRole('button', { name: /认知科学课程/ }));
+    expect(screen.getByTestId('concept-graph')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(document.querySelectorAll('.react-flow__node').length).toBeGreaterThan(0);
+    });
+  });
+
   it('adds a pasted-text document and reloads the workspace', async () => {
     openSavedWorkspace();
     const user = userEvent.setup();
