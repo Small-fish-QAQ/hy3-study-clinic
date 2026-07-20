@@ -6,6 +6,7 @@ export const POINTS_BY_TYPE: Record<QuestionType, number> = {
   single_choice: 1,
   multiple_choice: 2,
   short_answer: 2,
+  concept_comparison: 3,
 };
 
 /** A short-answer answer counts as "correct" at or above this score. */

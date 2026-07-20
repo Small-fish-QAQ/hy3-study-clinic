@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Answer, Concept, PublicQuiz } from '@hy3-clinic/shared';
+import type { Answer, Concept, PublicQuiz, SourceBlock } from '@hy3-clinic/shared';
 import {
   ApiClientError,
   api,
@@ -40,6 +40,13 @@ const MODULE_OF_TAB: Record<Tab, Module> = {
   mastery: 'mastery',
 };
 
+/** Evidence context of a workspace-scoped (adaptive) assessment. */
+interface AssessmentContext {
+  workspaceId: string;
+  blocks: SourceBlock[];
+  documentTitles: Map<string, string>;
+}
+
 export function App() {
   const [tab, setTab] = useState<Tab>('import');
   const [provider, setProvider] = useState<'fake' | 'hy3' | null>(null);
@@ -53,9 +60,11 @@ export function App() {
   const [quiz, setQuiz] = useState<PublicQuiz | null>(null);
   const [result, setResult] = useState<SubmissionResponse | null>(null);
   const [lastAnswers, setLastAnswers] = useState<Answer[]>([]);
+  const [assessment, setAssessment] = useState<AssessmentContext | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const materialRequestRef = useRef(0);
   const activeMaterialIdRef = useRef<string | null>(null);
+  const activeAssessmentWorkspaceRef = useRef<string | null>(null);
   const remediationAction = useAsyncAction();
 
   useEffect(() => {
@@ -134,10 +143,12 @@ export function App() {
   function handleImported(imported: MaterialWithBlocks) {
     materialRequestRef.current += 1;
     activeMaterialIdRef.current = imported.material.id;
+    activeAssessmentWorkspaceRef.current = null;
     remediationAction.cancel();
     remediationAction.clearError();
     setMaterial(imported);
     setConcepts([]);
+    setAssessment(null);
     setRecentMaterials((items) => [
       toMaterialSummary(imported),
       ...items.filter((item) => item.id !== imported.material.id),
@@ -170,8 +181,10 @@ export function App() {
       if (materialRequestRef.current !== requestId) return;
 
       activeMaterialIdRef.current = materialId;
+      activeAssessmentWorkspaceRef.current = null;
       setMaterial(restored);
       setConcepts(storedConcepts.concepts);
+      setAssessment(null);
       setQuiz(null);
       setResult(null);
       setLastAnswers([]);
@@ -261,7 +274,12 @@ export function App() {
     submissionResult: SubmissionResponse,
     answers: Answer[],
   ) {
-    if (activeMaterialIdRef.current !== gradedQuiz.materialId) return;
+    if (gradedQuiz.materialId === null) {
+      // Workspace assessment: only accept while its context is still active.
+      if (activeAssessmentWorkspaceRef.current !== (gradedQuiz.workspaceId ?? null)) return;
+    } else if (activeMaterialIdRef.current !== gradedQuiz.materialId) {
+      return;
+    }
     setQuiz(gradedQuiz);
     setResult(submissionResult);
     setLastAnswers(answers);
@@ -282,29 +300,66 @@ export function App() {
   }
 
   /**
-   * Launch an assessment produced by an accepted remediation plan: open the
-   * quiz's document (blocks are needed for evidence display), then jump to
-   * the answering tab. Guarded by the same request epoch as manual opens so
-   * a late load can never clobber a newer selection.
+   * Launch an assessment produced by a plan, the daily queue, or a Tutor
+   * activity. Document-scoped quizzes open the quiz's document (blocks are
+   * needed for evidence display); workspace-scoped assessments load the
+   * evidence blocks of every workspace document instead. Both paths are
+   * guarded by the request epoch so a late load can never clobber a newer
+   * selection.
    */
   async function handleLaunchFromPlan(launchedQuiz: PublicQuiz) {
     const requestId = ++materialRequestRef.current;
     remediationAction.cancel();
-    setOpeningMaterialId(launchedQuiz.materialId);
+
+    if (launchedQuiz.materialId === null) {
+      const workspaceId = launchedQuiz.workspaceId ?? null;
+      if (!workspaceId) return;
+      setOpeningMaterialId('workspace-assessment');
+      try {
+        const detail = await api.getWorkspace(workspaceId);
+        const blockLists = await Promise.all(
+          detail.documents.map((doc) => api.getMaterial(doc.id).then((m) => m.blocks)),
+        );
+        if (materialRequestRef.current !== requestId) return;
+        activeAssessmentWorkspaceRef.current = workspaceId;
+        setAssessment({
+          workspaceId,
+          blocks: blockLists.flat(),
+          documentTitles: new Map(detail.documents.map((doc) => [doc.id, doc.title])),
+        });
+        setQuiz(launchedQuiz);
+        setResult(null);
+        setLastAnswers([]);
+        setTab('quiz');
+      } catch (error) {
+        if (materialRequestRef.current !== requestId) return;
+        setHistoryError(`无法打开课程空间评估:${errorMessage(error)}`);
+      } finally {
+        if (materialRequestRef.current === requestId) {
+          setOpeningMaterialId(null);
+        }
+      }
+      return;
+    }
+
+    const launchedMaterialId = launchedQuiz.materialId;
+    setOpeningMaterialId(launchedMaterialId);
     try {
       const [restored, storedConcepts] = await Promise.all([
-        api.getMaterial(launchedQuiz.materialId),
-        api.getConcepts(launchedQuiz.materialId),
+        api.getMaterial(launchedMaterialId),
+        api.getConcepts(launchedMaterialId),
       ]);
       if (materialRequestRef.current !== requestId) return;
-      activeMaterialIdRef.current = launchedQuiz.materialId;
+      activeMaterialIdRef.current = launchedMaterialId;
+      activeAssessmentWorkspaceRef.current = null;
+      setAssessment(null);
       setMaterial(restored);
       setConcepts(storedConcepts.concepts);
       setQuiz(launchedQuiz);
       setResult(null);
       setLastAnswers([]);
       setTab('quiz');
-      writeLastMaterialId(launchedQuiz.materialId);
+      writeLastMaterialId(launchedMaterialId);
     } catch (error) {
       if (materialRequestRef.current !== requestId) return;
       setHistoryError(`无法打开康复练习:${errorMessage(error)}`);
@@ -325,6 +380,8 @@ export function App() {
   }
 
   const materialReady = material !== null && !deletingCurrentMaterial;
+  const assessmentActive = assessment !== null && quiz !== null && quiz.materialId === null;
+  const practiceBlocks = assessmentActive ? assessment.blocks : (material?.blocks ?? []);
   const activeModule = MODULE_OF_TAB[tab];
 
   return (
@@ -339,7 +396,11 @@ export function App() {
         <nav className="tabs" aria-label="主导航">
           {(Object.keys(MODULE_LABELS) as Module[]).map((module) => {
             const needsMaterial = module !== 'import' && module !== 'graph';
-            const disabled = needsMaterial && (!materialReady || openingMaterialId !== null);
+            const practiceViaAssessment = module === 'practice' && assessmentActive;
+            const disabled =
+              needsMaterial &&
+              !practiceViaAssessment &&
+              (!materialReady || openingMaterialId !== null);
             return (
               <button
                 key={module}
@@ -416,14 +477,15 @@ export function App() {
           />
         ) : null}
 
-        {tab === 'quiz' && material ? (
+        {tab === 'quiz' && (material || assessmentActive) ? (
           <QuizView
-            materialId={material.material.id}
-            blocks={material.blocks}
+            materialId={assessmentActive ? null : (material?.material.id ?? null)}
+            blocks={practiceBlocks}
             hasConcepts={concepts.length > 0}
             quiz={quiz}
+            documentTitles={assessmentActive ? assessment.documentTitles : undefined}
             onQuizGenerated={(q) => {
-              if (activeMaterialIdRef.current !== q.materialId) return;
+              if (q.materialId !== null && activeMaterialIdRef.current !== q.materialId) return;
               setQuiz(q);
               setResult(null);
             }}
@@ -431,12 +493,12 @@ export function App() {
           />
         ) : null}
 
-        {tab === 'results' && material && quiz && result ? (
+        {tab === 'results' && quiz && result && (material || assessmentActive) ? (
           <ResultsView
             quiz={quiz}
             result={result}
             answers={lastAnswers}
-            blocks={material.blocks}
+            blocks={practiceBlocks}
             onRemediate={() => void doRemediation()}
             remediationLoading={remediationAction.loading}
           />

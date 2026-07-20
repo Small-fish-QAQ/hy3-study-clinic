@@ -302,7 +302,12 @@ describe('materials repository', () => {
     expect(db.pragma('foreign_keys', { simple: true })).toBe(1);
     expect(references('source_blocks')).toEqual(['material_id->materials.id:CASCADE']);
     expect(references('concepts')).toEqual(['material_id->materials.id:CASCADE']);
-    expect(references('quizzes')).toEqual(['material_id->materials.id:CASCADE']);
+    // Deliberate schema extension (migration 5): workspace-scoped adaptive
+    // assessments made quizzes reference workspaces as well.
+    expect(references('quizzes')).toEqual([
+      'material_id->materials.id:CASCADE',
+      'workspace_id->workspaces.id:CASCADE',
+    ]);
     expect(references('questions')).toEqual(['quiz_id->quizzes.id:CASCADE']);
     expect(references('submissions')).toEqual(['quiz_id->quizzes.id:CASCADE']);
     expect(references('grading_results')).toEqual([

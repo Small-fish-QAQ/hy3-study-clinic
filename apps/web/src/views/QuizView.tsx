@@ -8,16 +8,20 @@ import type {
   QuizConfig,
   SourceBlock,
 } from '@hy3-clinic/shared';
+import { isTextAnswerType } from '@hy3-clinic/shared';
 import { api, type SubmissionResponse } from '../api.js';
 import { Banner, Loading } from '../components/ui.js';
 import { SourceEvidencePanel } from '../components/SourceEvidencePanel.js';
 import { useAsyncAction } from '../components/useAsyncAction.js';
 
 export interface QuizViewProps {
-  materialId: string;
+  /** Owning document; null for workspace-scoped (adaptive) assessments. */
+  materialId: string | null;
   blocks: SourceBlock[];
   hasConcepts: boolean;
   quiz: PublicQuiz | null;
+  /** Titles for source-document badges on cross-document questions. */
+  documentTitles?: Map<string, string>;
   onQuizGenerated: (quiz: PublicQuiz) => void;
   onGraded: (quiz: PublicQuiz, result: SubmissionResponse, answers: Answer[]) => void;
 }
@@ -26,6 +30,20 @@ const TYPE_LABELS: Record<QuestionType, string> = {
   single_choice: '单选题',
   multiple_choice: '多选题',
   short_answer: '简答题',
+  concept_comparison: '概念对比题',
+};
+
+/** Types offered by the per-document generation form (comparison questions
+ * only come from workspace assessments, which provide cross-document evidence). */
+const CONFIGURABLE_TYPES: QuestionType[] = ['single_choice', 'multiple_choice', 'short_answer'];
+
+const ASSESSMENT_MODE_LABELS: Record<string, string> = {
+  diagnostic: '诊断评估',
+  concept_practice: '概念练习',
+  prerequisite_repair: '前置修复',
+  cross_document: '跨文档综合',
+  review: '复习检测',
+  misconception_check: '误区判别',
 };
 
 const DIFFICULTY_LABELS: Record<Difficulty, string> = {
@@ -42,6 +60,7 @@ export function QuizView({
   blocks,
   hasConcepts,
   quiz,
+  documentTitles,
   onQuizGenerated,
   onGraded,
 }: QuizViewProps) {
@@ -53,18 +72,29 @@ export function QuizView({
   const generateAction = useAsyncAction();
   const submitAction = useAsyncAction();
   const isRemediation = quiz?.kind === 'remediation';
+  const isAssessment = quiz?.kind === 'adaptive';
   const remediationConceptCount = isRemediation
     ? (quiz.targetConceptIds?.length ?? new Set(quiz.questions.map((q) => q.conceptId)).size)
     : 0;
   const remediationQuestionTypes = isRemediation
     ? Array.from(new Set(quiz.questions.map((q) => q.type)))
     : [];
+  const blockDocTitle = useMemo(() => {
+    const byBlock = new Map<string, string>();
+    if (!documentTitles) return byBlock;
+    for (const block of blocks) {
+      const title = documentTitles.get(block.materialId);
+      if (title) byBlock.set(block.id, title);
+    }
+    return byBlock;
+  }, [blocks, documentTitles]);
 
   function toggleType(type: QuestionType) {
     setTypes((prev) => (prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]));
   }
 
   async function doGenerate() {
+    if (materialId === null) return;
     const result = await generateAction.run((signal) => {
       if (isRemediation) return api.remediation(materialId, signal);
 
@@ -105,7 +135,7 @@ export function QuizView({
   async function doSubmit() {
     if (!quiz) return;
     const payload: Answer[] = quiz.questions.map((q) => {
-      if (q.type === 'short_answer') {
+      if (isTextAnswerType(q.type)) {
         return { questionId: q.id, type: q.type, text: answers[q.id]?.text ?? '' };
       }
       return {
@@ -123,15 +153,32 @@ export function QuizView({
     return quiz.questions.filter((q) => {
       const a = answers[q.id];
       if (!a) return false;
-      return q.type === 'short_answer' ? a.text.trim().length > 0 : a.selectedOptionIds.length > 0;
+      return isTextAnswerType(q.type) ? a.text.trim().length > 0 : a.selectedOptionIds.length > 0;
     }).length;
   }, [answers, quiz]);
 
   return (
     <div className="stack">
       <section className="card">
-        <h2>{isRemediation ? '康复练习' : '配置测验'}</h2>
-        {isRemediation ? (
+        <h2>
+          {isAssessment
+            ? `课程空间评估 · ${ASSESSMENT_MODE_LABELS[quiz?.assessmentMode ?? ''] ?? '综合评估'}`
+            : isRemediation
+              ? '康复练习'
+              : '配置测验'}
+        </h2>
+        {isAssessment && quiz ? (
+          <div className="stack">
+            <p style={{ margin: 0 }}>
+              共 {quiz.questions.length} 道题,覆盖{' '}
+              {new Set(quiz.questions.map((q) => q.conceptId)).size} 个概念
+              {documentTitles && documentTitles.size > 1 ? `,证据来自多份文档` : ''}。
+            </p>
+            <p className="muted small" style={{ margin: 0 }}>
+              题目由课程空间的学习状态生成;答案与评分要点在判分前不会发送到浏览器。
+            </p>
+          </div>
+        ) : isRemediation && quiz ? (
           <div className="stack">
             <p style={{ margin: 0 }}>
               根据 {remediationConceptCount} 个未解决概念自动生成 {quiz.questions.length} 道康复题
@@ -173,7 +220,7 @@ export function QuizView({
               <div className="field">
                 <label>题型(至少选择一种)</label>
                 <div className="row">
-                  {(Object.keys(TYPE_LABELS) as QuestionType[]).map((type) => (
+                  {CONFIGURABLE_TYPES.map((type) => (
                     <label key={type} className="pill" style={{ cursor: 'pointer' }}>
                       <input
                         type="checkbox"
@@ -201,25 +248,27 @@ export function QuizView({
           </>
         )}
         {generateAction.error ? <Banner kind="error">{generateAction.error}</Banner> : null}
-        <div className="row">
-          {generateAction.loading ? (
-            <>
-              <Loading label={isRemediation ? '正在重新生成康复练习…' : '正在生成测验…'} />
-              <button type="button" onClick={generateAction.cancel}>
-                取消
+        {!isAssessment ? (
+          <div className="row">
+            {generateAction.loading ? (
+              <>
+                <Loading label={isRemediation ? '正在重新生成康复练习…' : '正在生成测验…'} />
+                <button type="button" onClick={generateAction.cancel}>
+                  取消
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                className="primary"
+                disabled={materialId === null || (!isRemediation && types.length === 0)}
+                onClick={() => void doGenerate()}
+              >
+                {isRemediation ? '重新生成康复练习' : quiz ? '重新生成测验' : '生成测验'}
               </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              className="primary"
-              disabled={!isRemediation && types.length === 0}
-              onClick={() => void doGenerate()}
-            >
-              {isRemediation ? '重新生成康复练习' : quiz ? '重新生成测验' : '生成测验'}
-            </button>
-          )}
-        </div>
+            )}
+          </div>
+        ) : null}
       </section>
 
       {quiz ? (
@@ -239,14 +288,25 @@ export function QuizView({
                   <strong>
                     第 {i + 1} 题 · {TYPE_LABELS[question.type]}
                   </strong>
-                  <span className="pill">{question.conceptName}</span>
+                  <span className="row" style={{ gap: '0.35rem' }}>
+                    <span className="pill">{question.conceptName}</span>
+                    {questionDocTitles(question, blockDocTitle).map((title) => (
+                      <span key={title} className="pill doc-badge" title={`证据来源:${title}`}>
+                        {title}
+                      </span>
+                    ))}
+                  </span>
                 </div>
                 <p style={{ whiteSpace: 'pre-wrap', marginTop: '0.4rem' }}>{question.stem}</p>
 
-                {question.type === 'short_answer' ? (
+                {isTextAnswerType(question.type) ? (
                   <textarea
-                    rows={3}
-                    placeholder="在此作答……"
+                    rows={question.type === 'concept_comparison' ? 5 : 3}
+                    placeholder={
+                      question.type === 'concept_comparison'
+                        ? '请综合多份资料的表述作答……'
+                        : '在此作答……'
+                    }
                     value={answers[question.id]?.text ?? ''}
                     onChange={(e) => setText(question, e.target.value)}
                     aria-label={`第 ${i + 1} 题作答`}
@@ -274,6 +334,13 @@ export function QuizView({
                 )}
 
                 <SourceEvidencePanel grounding={question.grounding} blocks={blocks} />
+                {(question.supplementaryEvidence ?? []).map((evidence, evidenceIndex) => (
+                  <SourceEvidencePanel
+                    key={`${evidence.blockId}-${evidenceIndex}`}
+                    grounding={evidence}
+                    blocks={blocks}
+                  />
+                ))}
               </div>
             ))}
           </div>
@@ -298,4 +365,17 @@ export function QuizView({
       )}
     </div>
   );
+}
+
+/** Distinct source-document titles of a question's evidence (bounded). */
+function questionDocTitles(question: PublicQuestion, blockDocTitle: Map<string, string>): string[] {
+  const titles = new Set<string>();
+  const primary = blockDocTitle.get(question.grounding.blockId);
+  if (primary) titles.add(primary);
+  for (const evidence of question.supplementaryEvidence ?? []) {
+    const title = blockDocTitle.get(evidence.blockId);
+    if (title) titles.add(title);
+  }
+  // Badges only add signal when evidence spans more than one document.
+  return titles.size > 1 ? [...titles].slice(0, 3) : [];
 }

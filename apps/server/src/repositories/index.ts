@@ -2,6 +2,11 @@ import type { SqliteDb } from '../db/database.js';
 import { createMaterialsRepo, type MaterialsRepo } from './materials.js';
 import { createWorkspacesRepo, type WorkspacesRepo } from './workspaces.js';
 import { createGraphRepo, type GraphRepo } from './graph.js';
+import { createAlignmentRepo, type AlignmentRepo } from './alignment.js';
+import { createBlueprintsRepo, type BlueprintsRepo } from './blueprints.js';
+import { createMisconceptionsRepo, type MisconceptionsRepo } from './misconceptions.js';
+import { createReviewRepo, type ReviewRepo } from './review.js';
+import { createTutorRepo, type TutorRepo } from './tutor.js';
 import {
   createQuizzesRepo,
   createSubmissionsRepo,
@@ -19,6 +24,11 @@ export interface Repositories {
   workspaces: WorkspacesRepo;
   materials: MaterialsRepo;
   graph: GraphRepo;
+  alignment: AlignmentRepo;
+  blueprints: BlueprintsRepo;
+  misconceptions: MisconceptionsRepo;
+  review: ReviewRepo;
+  tutor: TutorRepo;
   quizzes: QuizzesRepo;
   submissions: SubmissionsRepo;
   mistakes: MistakesRepo;
@@ -30,6 +40,11 @@ export function createRepositories(db: SqliteDb): Repositories {
     workspaces: createWorkspacesRepo(db),
     materials: createMaterialsRepo(db),
     graph: createGraphRepo(db),
+    alignment: createAlignmentRepo(db),
+    blueprints: createBlueprintsRepo(db),
+    misconceptions: createMisconceptionsRepo(db),
+    review: createReviewRepo(db),
+    tutor: createTutorRepo(db),
     quizzes: createQuizzesRepo(db),
     submissions: createSubmissionsRepo(db),
     mistakes: createMistakesRepo(db),

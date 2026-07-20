@@ -1,9 +1,15 @@
 import {
   clamp01,
   fnv1a32,
+  normalizeConceptKey,
+  type AlignmentProposalPayload,
+  type AssessmentProposalPayload,
   type Concept,
   type ConceptAnalysisPayload,
   type GraphProposalPayload,
+  type MisconceptionProposalPayload,
+  type ProposedAlignment,
+  type ProposedAssessmentItem,
   type ProposedConcept,
   type ProposedGraphEdge,
   type ProposedQuestion,
@@ -12,17 +18,22 @@ import {
   type RemediationPlanProposalPayload,
   type RubricGrade,
   type SourceBlock,
+  type TutorStepPayload,
 } from '@hy3-clinic/shared';
 import { ProviderError } from './errors.js';
 import type {
+  AlignmentProposalInput,
+  AssessmentProposalInput,
   ConceptAnalysisInput,
   GraphProposalInput,
   LlmProvider,
+  MisconceptionProposalInput,
   ProviderCallOptions,
   QuizGenerationInput,
   RemediationInput,
   RemediationPlanInput,
   ShortAnswerGradingInput,
+  TutorStepInput,
 } from './provider.js';
 
 /**
@@ -400,6 +411,349 @@ export class FakeProvider implements LlmProvider {
       targets,
     };
   }
+
+  /**
+   * Deterministic alignment proposal: judges each locally-pruned candidate
+   * pair by its normalized keys and languages. Bilingual pairs and malformed
+   * concatenations become merge proposals; unrelated-looking pairs are
+   * proposed as related_but_distinct. Evidence quotes are copied verbatim
+   * from the concepts' own grounded blocks, so local validation accepts them.
+   */
+  async proposeConceptAlignment(
+    input: AlignmentProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<AlignmentProposalPayload> {
+    await this.gate(opts);
+    const blockById = new Map(input.blocks.map((b) => [b.id, b]));
+    const proposals: ProposedAlignment[] = [];
+
+    const evidenceOf = (concept: Concept) => {
+      const block = blockById.get(concept.grounding.blockId);
+      const quote = block ? pickQuote(block) : concept.grounding.quote;
+      return { blockId: concept.grounding.blockId, quote };
+    };
+
+    for (const candidate of input.candidates.slice(0, 30)) {
+      const { source, target } = candidate;
+      const sourceKey = normalizeConceptKey(source.name);
+      const targetKey = normalizeConceptKey(target.name);
+      const crossLanguage =
+        candidate.sourceLanguage !== candidate.targetLanguage &&
+        candidate.sourceLanguage !== 'unknown' &&
+        candidate.targetLanguage !== 'unknown';
+
+      let relation: ProposedAlignment['relation'];
+      let canonicalName: string;
+      let rationale: string;
+
+      if (sourceKey === targetKey) {
+        relation = 'alias';
+        canonicalName = cleanerName(source.name, target.name);
+        rationale = `「${source.name}」与「${target.name}」规范化后完全一致,是同一概念的书写变体。`;
+      } else if (sourceKey.includes(targetKey) || targetKey.includes(sourceKey)) {
+        relation = 'equivalent';
+        canonicalName = cleanerName(source.name, target.name);
+        rationale = `「${source.name}」与「${target.name}」的名称高度重合,较短者疑似另一方的残缺拼写,应合并为同一概念。`;
+      } else if (crossLanguage) {
+        relation = 'equivalent';
+        canonicalName = candidate.sourceLanguage === 'zh' ? source.name : target.name;
+        rationale = `「${source.name}」与「${target.name}」是同一概念的中英文表述,资料中的描述互相对应。`;
+      } else {
+        relation = 'related_but_distinct';
+        canonicalName = target.name;
+        rationale = `「${source.name}」与「${target.name}」相关但含义不同,建议保留为两个概念。`;
+      }
+
+      proposals.push({
+        sourceConceptId: source.id,
+        targetConceptId: target.id,
+        relation,
+        canonicalName: canonicalName.slice(0, 80),
+        rationale,
+        evidence: [evidenceOf(source), evidenceOf(target)].slice(0, 2),
+        sourceLanguage: candidate.sourceLanguage,
+        targetLanguage: candidate.targetLanguage,
+      });
+    }
+    return { proposals };
+  }
+
+  /**
+   * Deterministic workspace-assessment proposal. Targets with aligned
+   * siblings in other documents get a cross-document concept_comparison item
+   * whose evidence spans both documents; other targets get grounded
+   * single-document items. misconception_check mode produces one
+   * discriminating single_choice whose distractor restates the hypothesis.
+   */
+  async proposeAssessment(
+    input: AssessmentProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<AssessmentProposalPayload> {
+    await this.gate(opts);
+    const blockById = new Map(input.blocks.map((b) => [b.id, b]));
+    const items: ProposedAssessmentItem[] = [];
+    const blockOf = (concept: Concept): SourceBlock | undefined =>
+      blockById.get(concept.grounding.blockId);
+
+    if (input.mode === 'misconception_check' && input.misconception) {
+      const target = input.targets[0];
+      if (target) {
+        const block = blockOf(target.concept) ?? input.blocks[0]!;
+        const quote = pickQuote(block);
+        const seed = fnv1a32(`${block.id}:mc:${input.misconception.id}`);
+        const optionTexts = [quote, `资料认为:${input.misconception.hypothesis.slice(0, 160)}`];
+        const order = seededOrder(optionTexts.length, seed);
+        const options = order.map((origIdx, pos) => ({
+          id: LETTERS[pos]!,
+          text: optionTexts[origIdx]!,
+        }));
+        items.push({
+          blueprint: {
+            conceptIds: [target.concept.id],
+            questionType: 'single_choice',
+            difficulty: 'medium',
+            learningObjective: `判别学习者是否存在「${target.concept.name}」的疑似误区。`,
+            reasoningSteps: [
+              { description: '对照原文判断哪种说法与资料一致。', evidenceIndexes: [0] },
+            ],
+          },
+          question: {
+            type: 'single_choice',
+            stem: `关于「${target.concept.name}」,以下哪项说法与资料一致?(判别练习)`,
+            options,
+            correctOptionIds: [LETTERS[order.indexOf(0)]!],
+            conceptId: target.concept.id,
+            blockId: block.id,
+            quote,
+            explanation: `依据资料原文:「${quote}」`,
+          },
+          extraEvidence: [],
+        });
+      }
+      return { items };
+    }
+
+    for (const target of input.targets) {
+      if (items.length >= input.questionCount) break;
+      const block = blockOf(target.concept);
+      if (!block) continue;
+
+      const sibling = target.alignedSiblings.find(
+        (s) => s.concept.materialId !== target.concept.materialId && blockOf(s.concept),
+      );
+
+      if (
+        sibling &&
+        input.allowedTypes.includes('concept_comparison') &&
+        (input.mode === 'cross_document' || input.mode === 'diagnostic' || input.mode === 'review')
+      ) {
+        const siblingBlock = blockOf(sibling.concept)!;
+        const quoteA = pickQuote(block);
+        const quoteB = pickQuote(siblingBlock);
+        items.push({
+          blueprint: {
+            conceptIds: [target.concept.id, sibling.concept.id],
+            questionType: 'concept_comparison',
+            difficulty: 'medium',
+            learningObjective: `综合《${target.documentTitle}》与《${sibling.documentTitle}》,贯通理解「${target.concept.name}」。`,
+            reasoningSteps: [
+              {
+                description: `从《${target.documentTitle}》提取该概念的定义要点。`,
+                evidenceIndexes: [0],
+              },
+              {
+                description: `对照《${sibling.documentTitle}》的表述,归纳两处资料的共同点或差异。`,
+                evidenceIndexes: [1],
+              },
+            ],
+          },
+          question: {
+            type: 'concept_comparison',
+            stem: `「${target.concept.name}」在《${target.documentTitle}》与《${sibling.documentTitle}》中均有描述。请结合两份资料,说明两处表述的共同要点,以及各自补充了什么信息。`,
+            expectedAnswer: `${quoteA}${quoteB}`.slice(0, 900),
+            rubricKeyPoints: [quoteA.slice(0, 80), quoteB.slice(0, 80)],
+            conceptId: target.concept.id,
+            blockId: block.id,
+            quote: quoteA,
+            explanation: `两份资料分别指出:「${quoteA.slice(0, 100)}」与「${quoteB.slice(0, 100)}」。`,
+          },
+          extraEvidence: [{ blockId: siblingBlock.id, quote: quoteB }],
+        });
+        continue;
+      }
+
+      const type: QuestionType = input.allowedTypes.includes('single_choice')
+        ? items.length % 2 === 0
+          ? 'single_choice'
+          : input.allowedTypes.includes('short_answer')
+            ? 'short_answer'
+            : 'single_choice'
+        : (input.allowedTypes[0] ?? 'single_choice');
+      const question = buildQuestion(
+        type,
+        { id: target.concept.id, name: target.concept.name },
+        block,
+        { difficulty: 'medium', variant: items.length },
+      );
+      items.push({
+        blueprint: {
+          conceptIds: [target.concept.id],
+          questionType: type,
+          difficulty: 'medium',
+          learningObjective: `检验「${target.concept.name}」的原文理解。`,
+          reasoningSteps: [{ description: '依据原文判断或复述概念要点。', evidenceIndexes: [0] }],
+        },
+        question,
+        extraEvidence: [],
+      });
+    }
+    return { items };
+  }
+
+  /**
+   * Deterministic misconception proposal: a substantive wrong answer yields
+   * a tentative hypothesis; a blank answer declines (no evidence of a
+   * misunderstanding — just no answer).
+   */
+  async proposeMisconception(
+    input: MisconceptionProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<MisconceptionProposalPayload> {
+    await this.gate(opts);
+    const selected = input.learnerSelectedOptionIds
+      .map((id) => input.options.find((o) => o.id === id)?.text)
+      .filter((v): v is string => v !== undefined);
+    const wroteText = (input.learnerText ?? '').trim().length > 0;
+
+    if (selected.length === 0 && !wroteText) {
+      return {
+        applicable: false,
+        category: 'unknown',
+        hypothesis: '学习者未作答,暂无可判断的误区证据。',
+        evidence: [],
+      };
+    }
+
+    const picked = selected[0] ?? (input.learnerText ?? '').slice(0, 60);
+    const category = selected.length > 0 ? 'definition_confusion' : 'undergeneralization';
+    return {
+      applicable: true,
+      category,
+      hypothesis:
+        selected.length > 0
+          ? `学习者可能把「${input.conceptName}」理解成了:${picked.slice(0, 120)}。与原文表述不符,需通过判别练习确认。`
+          : `学习者对「${input.conceptName}」的表述遗漏了原文的关键限定,可能只掌握了部分含义,需判别确认。`,
+      evidence: [{ blockId: input.blockId, quote: input.sourceQuote }],
+    };
+  }
+
+  /**
+   * Deterministic bounded Tutor policy: inspect state → inspect the graph
+   * neighborhood → look at mistakes or the review queue → retrieve evidence
+   * → finalize a plan with a recommended activity. Pure function of the
+   * observation count and the compact state summary.
+   */
+  async proposeTutorStep(
+    input: TutorStepInput,
+    opts?: ProviderCallOptions,
+  ): Promise<TutorStepPayload> {
+    await this.gate(opts);
+    const step = input.observations.length;
+    const conceptId = input.selected.id;
+
+    if (step === 0 && input.remainingToolCalls > 0) {
+      return {
+        action: 'call_tool',
+        tool: 'inspect_learning_state',
+        arguments: { conceptId },
+        purpose: `查看「${input.selected.name}」当前的掌握度、错题与复习状态。`,
+      };
+    }
+    if (step === 1 && input.remainingToolCalls > 0) {
+      return {
+        action: 'call_tool',
+        tool: 'get_graph_neighborhood',
+        arguments: { conceptId },
+        purpose: '检查图谱邻域,寻找薄弱的前置概念。',
+      };
+    }
+    if (step === 2 && input.remainingToolCalls > 0) {
+      if (input.stateSummary.openMistakes > 0) {
+        return {
+          action: 'call_tool',
+          tool: 'inspect_open_mistakes',
+          arguments: { conceptId },
+          purpose: '查看未解决错题,定位反复出错的点。',
+        };
+      }
+      if (
+        input.stateSummary.proposedMisconceptions + input.stateSummary.confirmedMisconceptions >
+        0
+      ) {
+        return {
+          action: 'call_tool',
+          tool: 'inspect_misconceptions',
+          arguments: { conceptId },
+          purpose: '查看该概念的误区假设及其状态。',
+        };
+      }
+      return {
+        action: 'call_tool',
+        tool: 'inspect_review_queue',
+        arguments: {},
+        purpose: '查看复习队列,判断遗忘风险。',
+      };
+    }
+    if (step === 3 && input.remainingToolCalls > 0) {
+      return {
+        action: 'call_tool',
+        tool: 'search_source_blocks',
+        arguments: { query: input.selected.name.slice(0, 40), limit: 5 },
+        purpose: `检索与「${input.selected.name}」相关的多文档原文依据。`,
+      };
+    }
+
+    const strategy = input.stateSummary.openMistakes > 0 ? 'retrieval_practice' : 'review';
+    const activityMode =
+      input.stateSummary.confirmedMisconceptions > 0
+        ? 'misconception_check'
+        : input.stateSummary.openMistakes > 0
+          ? 'concept_practice'
+          : 'cross_document';
+    return {
+      action: 'finalize',
+      plan: {
+        summary: `围绕「${input.selected.name}」的定向学习计划:先复核原文依据,再完成针对练习。`,
+        weaknessHypothesis:
+          input.stateSummary.openMistakes > 0
+            ? `「${input.selected.name}」存在 ${input.stateSummary.openMistakes} 道未解决错题,可能混淆了原文中的关键限定条件。`
+            : `「${input.selected.name}」的掌握证据不足或临近遗忘,需要一次检索式巩固。`,
+        strategy,
+        difficulty: (input.stateSummary.mastery ?? 0.5) < 0.4 ? 'easy' : 'medium',
+        questionTypes: ['single_choice', 'short_answer'],
+        steps: [
+          {
+            description: `重读「${input.selected.name}」的原文段落,对照引文确认理解。`,
+            conceptId,
+          },
+          { description: '完成推荐的练习活动并提交判分。', conceptId },
+        ],
+        targets: [
+          {
+            conceptId,
+            reason:
+              input.stateSummary.openMistakes > 0
+                ? `「${input.selected.name}」有未解决错题,需要针对性巩固。`
+                : `「${input.selected.name}」的长期记忆状态需要一次主动检索来巩固。`,
+            evidence: [
+              { blockId: input.selected.grounding.blockId, quote: input.selected.grounding.quote },
+            ],
+          },
+        ],
+      },
+      activity: { mode: activityMode, conceptIds: [conceptId] },
+    };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -409,6 +763,22 @@ export class FakeProvider implements LlmProvider {
 function deriveName(content: string): string {
   const first = sentences(content)[0] ?? content;
   return first.replace(/[\s,。!?;:、,.!?;:]/gu, '').slice(0, 16);
+}
+
+/**
+ * Deterministically pick the better display name of a pair: Chinese beats
+ * Latin (product language), a spaced multi-word name beats a concatenated
+ * one, then the shorter name wins (ties break lexicographically).
+ */
+function cleanerName(a: string, b: string): string {
+  const aCjk = /[一-鿿]/u.test(a);
+  const bCjk = /[一-鿿]/u.test(b);
+  if (aCjk !== bCjk) return aCjk ? a : b;
+  const aSpaced = a.includes(' ');
+  const bSpaced = b.includes(' ');
+  if (aSpaced !== bSpaced) return aSpaced ? a : b;
+  if (a.length !== b.length) return a.length < b.length ? a : b;
+  return a < b ? a : b;
 }
 
 function summarize(content: string): string {

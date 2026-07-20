@@ -2,6 +2,10 @@ import { z } from 'zod';
 import { DifficultySchema, ImportanceSchema, QuestionTypeSchema } from '../domain/material.js';
 import { GraphRelationSchema } from '../domain/graph.js';
 import { PlanStrategySchema } from '../domain/plan.js';
+import { AlignmentLanguageSchema, AlignmentRelationSchema } from '../domain/alignment.js';
+import { AssessmentModeSchema } from '../domain/blueprint.js';
+import { MisconceptionCategorySchema } from '../domain/misconception.js';
+import { TutorToolNameSchema } from '../domain/tutor.js';
 
 /**
  * Structured payloads that LLM providers must return.
@@ -102,7 +106,7 @@ function normalizeProposedQuestion(value: unknown): unknown {
     }
   }
 
-  if (question.type === 'short_answer') {
+  if (question.type === 'short_answer' || question.type === 'concept_comparison') {
     if (
       question.options === null ||
       (Array.isArray(question.options) && question.options.length === 0)
@@ -150,17 +154,17 @@ const StrictProposedQuestionSchema = z
     explanation: z.string().min(1).max(1000),
   })
   .superRefine((q, ctx) => {
-    if (q.type === 'short_answer') {
+    if (q.type === 'short_answer' || q.type === 'concept_comparison') {
       if (!q.expectedAnswer || !q.rubricKeyPoints) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'short_answer requires expectedAnswer and rubricKeyPoints',
+          message: `${q.type} requires expectedAnswer and rubricKeyPoints`,
         });
       }
       if (q.options !== undefined || q.correctOptionIds !== undefined) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'short_answer must not define choice fields',
+          message: `${q.type} must not define choice fields`,
         });
       }
       return;
@@ -267,3 +271,121 @@ export const RemediationPlanProposalPayloadSchema = z.object({
   targets: z.array(ProposedPlanTargetSchema).min(1).max(4),
 });
 export type RemediationPlanProposalPayload = z.infer<typeof RemediationPlanProposalPayloadSchema>;
+
+// ---------------------------------------------------------------------------
+// Concept alignment
+// ---------------------------------------------------------------------------
+
+/** One provider-proposed alignment between two EXISTING source concepts. */
+export const ProposedAlignmentSchema = z.object({
+  sourceConceptId: z.string().min(1),
+  targetConceptId: z.string().min(1),
+  relation: AlignmentRelationSchema,
+  /** Proposed canonical display name for merging relations. */
+  canonicalName: z.string().min(1).max(80),
+  rationale: z.string().min(1).max(400),
+  /** Evidence quotes copied verbatim from source blocks (verified locally). */
+  evidence: z.array(ProposedEvidenceSchema).max(2),
+  sourceLanguage: AlignmentLanguageSchema.optional(),
+  targetLanguage: AlignmentLanguageSchema.optional(),
+});
+export type ProposedAlignment = z.infer<typeof ProposedAlignmentSchema>;
+
+/** Structured provider output for concept-alignment proposal. */
+export const AlignmentProposalPayloadSchema = z.object({
+  proposals: z.array(ProposedAlignmentSchema).max(30),
+});
+export type AlignmentProposalPayload = z.infer<typeof AlignmentProposalPayloadSchema>;
+
+// ---------------------------------------------------------------------------
+// Workspace assessment (blueprint + question pairs)
+// ---------------------------------------------------------------------------
+
+/** Blueprint part of one proposed assessment item. */
+export const ProposedBlueprintSchema = z.object({
+  /** Source concepts this item targets (validated against the workspace). */
+  conceptIds: z.array(z.string().min(1)).min(1).max(3),
+  questionType: QuestionTypeSchema,
+  difficulty: DifficultySchema,
+  learningObjective: z.string().min(1).max(300),
+  /** Expected reasoning steps; indexes reference the item's evidence order. */
+  reasoningSteps: z
+    .array(
+      z.object({
+        description: z.string().min(1).max(300),
+        evidenceIndexes: z.array(z.number().int().nonnegative()).max(4),
+      }),
+    )
+    .min(1)
+    .max(4),
+});
+export type ProposedBlueprint = z.infer<typeof ProposedBlueprintSchema>;
+
+/**
+ * One proposed assessment item: a blueprint plus its concrete question.
+ * The question's own (blockId, quote) is evidence index 0; `extraEvidence`
+ * continues the index order (1, 2, …). Cross-document items must draw
+ * verified evidence from at least two distinct documents.
+ */
+export const ProposedAssessmentItemSchema = z.object({
+  blueprint: ProposedBlueprintSchema,
+  question: ProposedQuestionSchema,
+  extraEvidence: z.array(ProposedEvidenceSchema).max(3),
+});
+export type ProposedAssessmentItem = z.infer<typeof ProposedAssessmentItemSchema>;
+
+/** Structured provider output for workspace assessment generation. */
+export const AssessmentProposalPayloadSchema = z.object({
+  items: z.array(ProposedAssessmentItemSchema).min(1).max(8),
+});
+export type AssessmentProposalPayload = z.infer<typeof AssessmentProposalPayloadSchema>;
+
+// ---------------------------------------------------------------------------
+// Misconception hypothesis
+// ---------------------------------------------------------------------------
+
+/**
+ * Structured provider output when asked whether a wrong answer suggests a
+ * misconception. `applicable: false` means "no clear hypothesis" — the
+ * model is never forced to invent a category for every mistake.
+ */
+export const MisconceptionProposalPayloadSchema = z.object({
+  applicable: z.boolean(),
+  category: MisconceptionCategorySchema,
+  hypothesis: z.string().min(1).max(400),
+  evidence: z.array(ProposedEvidenceSchema).max(2),
+});
+export type MisconceptionProposalPayload = z.infer<typeof MisconceptionProposalPayloadSchema>;
+
+// ---------------------------------------------------------------------------
+// Tutor step
+// ---------------------------------------------------------------------------
+
+/** Tutor decision: call one whitelisted read-only tool… */
+export const TutorToolCallStepSchema = z.object({
+  action: z.literal('call_tool'),
+  tool: TutorToolNameSchema,
+  /** Tool arguments; validated against the tool's own schema locally. */
+  arguments: z.record(z.unknown()),
+  /** Concise, display-safe purpose (shown on the timeline after review). */
+  purpose: z.string().min(1).max(200),
+});
+export type TutorToolCallStep = z.infer<typeof TutorToolCallStepSchema>;
+
+/** …or finalize with a plan plus a recommended activity. */
+export const TutorFinalizeStepSchema = z.object({
+  action: z.literal('finalize'),
+  plan: RemediationPlanProposalPayloadSchema,
+  activity: z.object({
+    mode: AssessmentModeSchema,
+    conceptIds: z.array(z.string().min(1)).min(1).max(3),
+  }),
+});
+export type TutorFinalizeStep = z.infer<typeof TutorFinalizeStepSchema>;
+
+/** Structured provider output for one bounded Tutor iteration. */
+export const TutorStepPayloadSchema = z.discriminatedUnion('action', [
+  TutorToolCallStepSchema,
+  TutorFinalizeStepSchema,
+]);
+export type TutorStepPayload = z.infer<typeof TutorStepPayloadSchema>;

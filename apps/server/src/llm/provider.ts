@@ -1,15 +1,25 @@
 import type {
+  AlignmentLanguage,
+  AlignmentProposalPayload,
+  AssessmentMode,
+  AssessmentProposalPayload,
   Concept,
   ConceptAnalysisPayload,
   GraphProposalPayload,
   GraphRelation,
   MasteryState,
+  MisconceptionProposalPayload,
+  MisconceptionRecord,
+  Option,
   QuestionType,
   QuizConfig,
   QuizGenerationPayload,
   RemediationPlanProposalPayload,
+  ReviewItem,
   RubricGrade,
   SourceBlock,
+  TutorStepPayload,
+  TutorToolName,
 } from '@hy3-clinic/shared';
 
 /** Options threaded through every provider call. */
@@ -95,6 +105,94 @@ export interface RemediationPlanInput {
   usedQuestionTypes: QuestionType[];
 }
 
+/** One locally-generated alignment candidate pair offered to the provider. */
+export interface AlignmentCandidate {
+  source: Concept;
+  target: Concept;
+  sourceDocumentTitle: string;
+  targetDocumentTitle: string;
+  sourceLanguage: AlignmentLanguage;
+  targetLanguage: AlignmentLanguage;
+  /** Deterministic signals that produced this candidate (display strings). */
+  signals: string[];
+}
+
+export interface AlignmentProposalInput {
+  workspaceName: string;
+  /** Bounded, locally-pruned candidate pairs (never all-pairs). */
+  candidates: AlignmentCandidate[];
+  /** Source blocks the model may cite evidence from. */
+  blocks: SourceBlock[];
+}
+
+/** One weak/target concept summary for assessment generation. */
+export interface AssessmentTargetSummary {
+  concept: Concept;
+  documentTitle: string;
+  /** Aligned sibling concepts (same canonical group) in OTHER documents. */
+  alignedSiblings: Array<{ concept: Concept; documentTitle: string }>;
+  mastery: number | null;
+  openMistakes: number;
+}
+
+export interface AssessmentProposalInput {
+  workspaceName: string;
+  mode: AssessmentMode;
+  targets: AssessmentTargetSummary[];
+  /** Source blocks of every involved document (evidence space). */
+  blocks: SourceBlock[];
+  /** Question types the assessment may use. */
+  allowedTypes: QuestionType[];
+  questionCount: number;
+  /** Misconception to discriminate (misconception_check mode only). */
+  misconception: MisconceptionRecord | null;
+}
+
+export interface MisconceptionProposalInput {
+  conceptName: string;
+  stem: string;
+  options: Option[];
+  correctOptionIds: string[];
+  expectedAnswer: string | null;
+  learnerSelectedOptionIds: string[];
+  learnerText: string | null;
+  /** Verified source quote the question was grounded in. */
+  sourceQuote: string;
+  blockId: string;
+}
+
+/** One prior validated observation shown back to the Tutor model. */
+export interface TutorObservation {
+  iteration: number;
+  tool: TutorToolName;
+  purpose: string;
+  /** Locally-composed bounded JSON summary of the validated tool result. */
+  resultSummary: string;
+}
+
+export interface TutorStepInput {
+  workspaceName: string;
+  selected: Concept;
+  /** Compact learner-state summary (deterministic local data). */
+  stateSummary: {
+    mastery: number | null;
+    attempts: number;
+    openMistakes: number;
+    proposedMisconceptions: number;
+    confirmedMisconceptions: number;
+    reviewDue: boolean;
+  };
+  /** Tool catalog: names plus one-line usage descriptions. */
+  tools: Array<{ name: TutorToolName; description: string }>;
+  observations: TutorObservation[];
+  remainingIterations: number;
+  remainingToolCalls: number;
+  /** Concept ids the final plan/activity may reference. */
+  allowedConceptIds: string[];
+  /** Review items of the workspace concepts (bounded, read-only). */
+  reviewItems: Pick<ReviewItem, 'conceptId' | 'dueAt' | 'lastRating'>[];
+}
+
 /**
  * Narrow interface every LLM backend implements. All methods return
  * Zod-validated payloads; implementations must never throw raw HTTP errors —
@@ -128,4 +226,21 @@ export interface LlmProvider {
     input: RemediationPlanInput,
     opts?: ProviderCallOptions,
   ): Promise<RemediationPlanProposalPayload>;
+  /** Propose alignments between bounded, locally-pruned candidate pairs. */
+  proposeConceptAlignment(
+    input: AlignmentProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<AlignmentProposalPayload>;
+  /** Propose blueprint+question pairs for a workspace assessment. */
+  proposeAssessment(
+    input: AssessmentProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<AssessmentProposalPayload>;
+  /** Propose (or decline) a misconception hypothesis for one wrong answer. */
+  proposeMisconception(
+    input: MisconceptionProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<MisconceptionProposalPayload>;
+  /** One bounded Tutor iteration: call a whitelisted tool or finalize. */
+  proposeTutorStep(input: TutorStepInput, opts?: ProviderCallOptions): Promise<TutorStepPayload>;
 }

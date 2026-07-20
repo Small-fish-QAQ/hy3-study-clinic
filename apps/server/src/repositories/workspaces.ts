@@ -48,6 +48,11 @@ export function createWorkspacesRepo(db: SqliteDb) {
    *    reference concepts/evidence of any workspace document, so this is the
    *    only rule that guarantees no dangling plan references. Plans are cheap
    *    to regenerate and carry no learning history.
+   * 4. canonical concepts whose LAST member concept was cascade-deleted are
+   *    removed (documented policy: a canonical concept survives while at
+   *    least one backing document remains; deleting the final backing
+   *    document removes it). Canonical concepts still backed by other
+   *    documents are untouched.
    */
   function cleanupWorkspaceDerivedData(
     workspaceId: string,
@@ -58,6 +63,12 @@ export function createWorkspacesRepo(db: SqliteDb) {
       `DELETE FROM graph_edges
        WHERE graph_version_id IN (SELECT id FROM graph_versions WHERE workspace_id = ?)
          AND id NOT IN (SELECT edge_id FROM graph_edge_evidence)`,
+    ).run(workspaceId);
+
+    db.prepare(
+      `DELETE FROM canonical_concepts
+       WHERE workspace_id = ?
+         AND id NOT IN (SELECT canonical_concept_id FROM canonical_members)`,
     ).run(workspaceId);
 
     const versions = db

@@ -1,17 +1,13 @@
 import {
   ApiErrorCode,
-  MAX_PLAN_TARGETS,
-  MAX_PLAN_TARGET_EVIDENCE,
   type Concept,
-  type PlanTarget,
   type Quiz,
   type QuizConfig,
   type QuestionType,
   type RemediationPlan,
-  type VerifiedGrounding,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
-import { verifyGrounding } from '../grounding/verify.js';
+import { validatePlanProposal } from './planValidation.js';
 import type {
   LlmProvider,
   PlanNeighbor,
@@ -151,61 +147,17 @@ export function createPlannerService({
       );
 
       // ---- Local deterministic validation (fail closed, keep old plan) ----
+      // Shared with the Tutor finalize path so both flows enforce identical
+      // rules (see services/planValidation.ts).
       const conceptById = new Map(
         repos.materials.getConceptsByWorkspace(workspaceId).map((c) => [c.id, c]),
       );
-      const rejectedTargets: Array<{ conceptId: string; reason: string }> = [];
-      const targets: PlanTarget[] = [];
-      const seenTargets = new Set<string>();
-
-      for (const target of proposal.targets.slice(0, MAX_PLAN_TARGETS)) {
-        if (seenTargets.has(target.conceptId)) continue;
-        const concept = conceptById.get(target.conceptId);
-        if (!concept) {
-          rejectedTargets.push({
-            conceptId: target.conceptId,
-            reason: '未知概念或不属于该课程空间',
-          });
-          continue;
-        }
-        const evidence: VerifiedGrounding[] = [];
-        for (const proposed of target.evidence.slice(0, MAX_PLAN_TARGET_EVIDENCE)) {
-          const verification = verifyGrounding(blocks, {
-            blockId: proposed.blockId,
-            quote: proposed.quote,
-          });
-          if (verification.ok) evidence.push(verification.grounding);
-        }
-        if (evidence.length === 0) {
-          rejectedTargets.push({ conceptId: target.conceptId, reason: '理由缺少可验证的原文依据' });
-          continue;
-        }
-        seenTargets.add(target.conceptId);
-        targets.push({
-          conceptId: concept.id,
-          conceptName: concept.name,
-          reason: target.reason,
-          evidence,
-        });
-      }
-
-      const prerequisiteIds = new Set(prerequisites.map((p) => p.id));
-      const central = targets.some(
-        (t) => t.conceptId === selected.id || prerequisiteIds.has(t.conceptId),
-      );
-      if (targets.length === 0 || !central) {
-        throw new AppError(
-          ApiErrorCode.GroundingFailed,
-          '康复计划未通过本地校验(目标概念或原文依据不合法),已保留原有计划。请重试。',
-          { rejectedTargets },
-        );
-      }
-
-      const steps = proposal.steps.map((step, index) => ({
-        index,
-        description: step.description,
-        conceptId: step.conceptId && conceptById.has(step.conceptId) ? step.conceptId : null,
-      }));
+      const { targets, steps } = validatePlanProposal(proposal, {
+        conceptById,
+        blocks,
+        selectedId: selected.id,
+        prerequisiteIds: new Set(prerequisites.map((p) => p.id)),
+      });
 
       const plan: RemediationPlan = {
         id: newId('plan'),

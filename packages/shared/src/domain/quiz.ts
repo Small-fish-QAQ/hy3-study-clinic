@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import { DifficultySchema, QuestionTypeSchema, VerifiedGroundingSchema } from './material.js';
+import {
+  DifficultySchema,
+  isTextAnswerType,
+  QuestionTypeSchema,
+  VerifiedGroundingSchema,
+} from './material.js';
 
 /** Requested quiz shape. */
 export const QuizConfigSchema = z.object({
@@ -42,29 +47,38 @@ export const QuestionSchema = z
       .array(z.string().regex(/^[A-H]$/))
       .min(1)
       .optional(),
-    /** Present for short_answer. */
+    /** Present for text-answered types (short_answer / concept_comparison). */
     expectedAnswer: z.string().min(1).max(2000).optional(),
     rubric: RubricSchema.optional(),
     conceptId: z.string().min(1),
     conceptName: z.string().min(1),
     grounding: VerifiedGroundingSchema,
+    /**
+     * Additional verified evidence beyond the primary grounding. Used by
+     * cross-document questions, where evidence spans several documents.
+     */
+    supplementaryEvidence: z.array(VerifiedGroundingSchema).max(3).optional(),
+    /** Blueprint this question was generated from (workspace assessments). */
+    blueprintId: z.string().optional(),
+    /** Misconception this question discriminates (misconception_check). */
+    misconceptionId: z.string().optional(),
     explanation: z.string().min(1).max(2000),
     points: z.number().positive(),
     /** For remediation questions: the mistakes this question re-tests. */
     sourceMistakeIds: z.array(z.string()).optional(),
   })
   .superRefine((q, ctx) => {
-    if (q.type === 'short_answer') {
+    if (isTextAnswerType(q.type)) {
       if (!q.expectedAnswer || !q.rubric) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'short_answer questions require expectedAnswer and rubric',
+          message: `${q.type} questions require expectedAnswer and rubric`,
         });
       }
       if (q.options !== undefined || q.correctOptionIds !== undefined) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'short_answer questions must not define choice fields',
+          message: `${q.type} questions must not define choice fields`,
         });
       }
       return;
@@ -115,19 +129,45 @@ export const QuestionSchema = z
   });
 export type Question = z.infer<typeof QuestionSchema>;
 
-export const QuizKindSchema = z.enum(['standard', 'remediation']);
+/**
+ * Quiz kinds. `standard`/`remediation` are single-document flows keyed to a
+ * material; `adaptive` marks a workspace-scoped assessment generated from
+ * validated question blueprints (possibly cross-document).
+ */
+export const QuizKindSchema = z.enum(['standard', 'remediation', 'adaptive']);
 export type QuizKind = z.infer<typeof QuizKindSchema>;
 
-export const QuizSchema = z.object({
-  id: z.string().min(1),
-  materialId: z.string().min(1),
-  kind: QuizKindSchema,
-  config: QuizConfigSchema,
-  questions: z.array(QuestionSchema).min(1),
-  /** For remediation quizzes: the weak concepts being targeted. */
-  targetConceptIds: z.array(z.string()).optional(),
-  createdAt: z.string().datetime(),
-});
+export const QuizSchema = z
+  .object({
+    id: z.string().min(1),
+    /** Owning document; null for workspace-scoped (adaptive) assessments. */
+    materialId: z.string().min(1).nullable(),
+    /** Owning workspace; set for adaptive assessments. */
+    workspaceId: z.string().min(1).nullable().optional(),
+    kind: QuizKindSchema,
+    /** Assessment mode for adaptive quizzes (diagnostic, review, …). */
+    assessmentMode: z.string().max(40).optional(),
+    config: QuizConfigSchema,
+    questions: z.array(QuestionSchema).min(1),
+    /** For remediation quizzes: the weak concepts being targeted. */
+    targetConceptIds: z.array(z.string()).optional(),
+    createdAt: z.string().datetime(),
+  })
+  .superRefine((quiz, ctx) => {
+    if (quiz.kind === 'adaptive') {
+      if (!quiz.workspaceId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'adaptive quizzes require workspaceId',
+        });
+      }
+    } else if (!quiz.materialId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `${quiz.kind} quizzes require materialId`,
+      });
+    }
+  });
 export type Quiz = z.infer<typeof QuizSchema>;
 
 /**
@@ -144,14 +184,18 @@ export const PublicQuestionSchema = z.object({
   conceptId: z.string(),
   conceptName: z.string(),
   grounding: VerifiedGroundingSchema,
+  supplementaryEvidence: z.array(VerifiedGroundingSchema).max(3).optional(),
+  blueprintId: z.string().optional(),
   points: z.number().positive(),
 });
 export type PublicQuestion = z.infer<typeof PublicQuestionSchema>;
 
 export const PublicQuizSchema = z.object({
   id: z.string(),
-  materialId: z.string(),
+  materialId: z.string().nullable(),
+  workspaceId: z.string().nullable().optional(),
   kind: QuizKindSchema,
+  assessmentMode: z.string().max(40).optional(),
   config: QuizConfigSchema,
   questions: z.array(PublicQuestionSchema).min(1),
   targetConceptIds: z.array(z.string()).optional(),

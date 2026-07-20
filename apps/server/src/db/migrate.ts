@@ -4,6 +4,14 @@ interface Migration {
   version: number;
   name: string;
   up: string;
+  /**
+   * True when the migration rebuilds a table (CREATE new → copy → DROP old →
+   * RENAME). Foreign keys must be disabled around such migrations per the
+   * documented SQLite ALTER TABLE procedure; migrate() then verifies
+   * referential integrity with `PRAGMA foreign_key_check` INSIDE the
+   * transaction, so an inconsistent rebuild rolls back completely.
+   */
+  rebuildsTables?: boolean;
 }
 
 /**
@@ -221,6 +229,202 @@ const MIGRATIONS: Migration[] = [
         ON remediation_plans(workspace_id, concept_id);
     `,
   },
+  {
+    version: 4,
+    name: 'canonical_concept_alignment',
+    // Canonical cross-document concept alignment. Source concepts are NEVER
+    // rewritten: canonical concepts + memberships form a separate alignment
+    // layer, and proposals stay auditable after every decision. Memberships
+    // cascade away with their source concept (document deletion); canonical
+    // concepts left without members are cleaned up by the repository layer
+    // under an explicit documented policy.
+    up: `
+      CREATE TABLE canonical_concepts (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        display_name TEXT NOT NULL,
+        normalized_key TEXT NOT NULL,
+        description TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_canonical_concepts_workspace ON canonical_concepts(workspace_id);
+
+      CREATE TABLE canonical_members (
+        source_concept_id TEXT PRIMARY KEY REFERENCES concepts(id) ON DELETE CASCADE,
+        canonical_concept_id TEXT NOT NULL REFERENCES canonical_concepts(id) ON DELETE CASCADE,
+        original_name TEXT NOT NULL,
+        material_id TEXT NOT NULL,
+        language TEXT NOT NULL CHECK (language IN ('zh', 'en', 'mixed', 'unknown')),
+        via_proposal_id TEXT,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_canonical_members_canonical ON canonical_members(canonical_concept_id);
+
+      CREATE TABLE alignment_proposals (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        source_concept_id TEXT NOT NULL REFERENCES concepts(id) ON DELETE CASCADE,
+        target_concept_id TEXT NOT NULL REFERENCES concepts(id) ON DELETE CASCADE,
+        relation TEXT NOT NULL CHECK (relation IN
+          ('equivalent', 'alias', 'broader', 'narrower', 'related_but_distinct')),
+        proposed_canonical_name TEXT NOT NULL,
+        rationale TEXT NOT NULL,
+        evidence TEXT NOT NULL,
+        origin TEXT NOT NULL CHECK (origin IN ('local_rule', 'provider')),
+        status TEXT NOT NULL CHECK (status IN ('proposed', 'accepted', 'rejected', 'kept_separate')),
+        source_language TEXT NOT NULL,
+        target_language TEXT NOT NULL,
+        provider TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        decided_at TEXT
+      );
+      CREATE INDEX idx_alignment_proposals_workspace ON alignment_proposals(workspace_id);
+      CREATE UNIQUE INDEX idx_alignment_proposals_pair
+        ON alignment_proposals(workspace_id, source_concept_id, target_concept_id, relation);
+    `,
+  },
+  {
+    version: 5,
+    name: 'workspace_assessments_and_blueprints',
+    // Workspace-scoped (cross-document) assessments. The quizzes table is
+    // rebuilt so material_id becomes nullable and workspace_id / assessment
+    // metadata are added — following the documented SQLite 12-step procedure
+    // (new table → copy → drop → rename) with foreign keys disabled around
+    // the transaction and an integrity check before commit (see migrate()).
+    // Every existing quiz row is copied verbatim; nothing is dropped.
+    rebuildsTables: true,
+    up: `
+      CREATE TABLE quizzes_rebuilt (
+        id TEXT PRIMARY KEY,
+        material_id TEXT REFERENCES materials(id) ON DELETE CASCADE,
+        workspace_id TEXT REFERENCES workspaces(id) ON DELETE CASCADE,
+        kind TEXT NOT NULL,
+        assessment_mode TEXT,
+        config TEXT NOT NULL,
+        target_concept_ids TEXT,
+        created_at TEXT NOT NULL,
+        CHECK (material_id IS NOT NULL OR workspace_id IS NOT NULL)
+      );
+      INSERT INTO quizzes_rebuilt (id, material_id, workspace_id, kind, assessment_mode, config, target_concept_ids, created_at)
+      SELECT id, material_id, NULL, kind, NULL, config, target_concept_ids, created_at FROM quizzes;
+      DROP TABLE quizzes;
+      ALTER TABLE quizzes_rebuilt RENAME TO quizzes;
+      CREATE INDEX idx_quizzes_material ON quizzes(material_id);
+      CREATE INDEX idx_quizzes_workspace ON quizzes(workspace_id);
+
+      CREATE TABLE question_blueprints (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        quiz_id TEXT REFERENCES quizzes(id) ON DELETE CASCADE,
+        payload TEXT NOT NULL,
+        scope TEXT NOT NULL CHECK (scope IN ('single_document', 'cross_document')),
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_question_blueprints_workspace ON question_blueprints(workspace_id);
+      CREATE INDEX idx_question_blueprints_quiz ON question_blueprints(quiz_id);
+    `,
+  },
+  {
+    version: 6,
+    name: 'misconception_hypotheses',
+    // Explicit misconception lifecycle. Records keep full audit linkage to
+    // the originating question/quiz; deleting a source document cascades away
+    // its concepts' hypotheses (the concept itself is gone), while quiz
+    // deletion does NOT erase records (no FK on quiz ids by design — the
+    // question snapshot lives in the payload for audit).
+    up: `
+      CREATE TABLE misconceptions (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        concept_id TEXT NOT NULL REFERENCES concepts(id) ON DELETE CASCADE,
+        status TEXT NOT NULL CHECK (status IN ('proposed', 'confirmed', 'rejected', 'resolved')),
+        category TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_misconceptions_workspace ON misconceptions(workspace_id);
+      CREATE INDEX idx_misconceptions_concept ON misconceptions(concept_id);
+    `,
+  },
+  {
+    version: 7,
+    name: 'review_scheduling',
+    // Long-term review state, separate from mastery by design. Items cascade
+    // away with their concept; events are the immutable audit trail.
+    up: `
+      CREATE TABLE review_items (
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        concept_id TEXT NOT NULL REFERENCES concepts(id) ON DELETE CASCADE,
+        concept_name TEXT NOT NULL,
+        stability REAL NOT NULL CHECK (stability > 0),
+        difficulty REAL NOT NULL CHECK (difficulty >= 1 AND difficulty <= 10),
+        due_at TEXT NOT NULL,
+        last_reviewed_at TEXT NOT NULL,
+        interval_days REAL NOT NULL CHECK (interval_days >= 0),
+        review_count INTEGER NOT NULL CHECK (review_count > 0),
+        lapse_count INTEGER NOT NULL CHECK (lapse_count >= 0),
+        last_rating TEXT NOT NULL CHECK (last_rating IN ('again', 'hard', 'good', 'easy')),
+        scheduler_version TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY (workspace_id, concept_id)
+      );
+      CREATE INDEX idx_review_items_due ON review_items(workspace_id, due_at);
+
+      CREATE TABLE review_events (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        concept_id TEXT NOT NULL,
+        quiz_id TEXT,
+        rating TEXT NOT NULL CHECK (rating IN ('again', 'hard', 'good', 'easy')),
+        score REAL NOT NULL CHECK (score >= 0 AND score <= 1),
+        interval_days REAL NOT NULL,
+        due_at TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_review_events_workspace ON review_events(workspace_id, concept_id);
+    `,
+  },
+  {
+    version: 8,
+    name: 'tutor_runs_and_events',
+    // Bounded Tutor persistence: runs plus their safe timeline events.
+    // Hidden chain-of-thought is never persisted — events store only the
+    // locally-composed summaries that were shown to the learner.
+    up: `
+      CREATE TABLE tutor_runs (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        concept_id TEXT NOT NULL REFERENCES concepts(id) ON DELETE CASCADE,
+        concept_name TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'cancelled', 'failed', 'interrupted')),
+        iterations INTEGER NOT NULL DEFAULT 0,
+        tool_call_count INTEGER NOT NULL DEFAULT 0,
+        accepted_evidence TEXT NOT NULL DEFAULT '[]',
+        plan_id TEXT,
+        activity TEXT,
+        error_message TEXT,
+        provider TEXT NOT NULL,
+        provider_model TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_tutor_runs_workspace ON tutor_runs(workspace_id);
+
+      CREATE TABLE tutor_events (
+        id TEXT PRIMARY KEY,
+        run_id TEXT NOT NULL REFERENCES tutor_runs(id) ON DELETE CASCADE,
+        seq INTEGER NOT NULL,
+        kind TEXT NOT NULL,
+        summary TEXT NOT NULL,
+        detail TEXT,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_tutor_events_run ON tutor_events(run_id, seq);
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {
@@ -246,14 +450,29 @@ export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): voi
     'INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)',
   );
 
+  const needsFkOff = pending.some((m) => m.rebuildsTables === true);
+
   const applyAll = db.transaction((migrations: Migration[]) => {
     for (const migration of migrations) {
       db.exec(migration.up);
       insertMigration.run(migration.version, migration.name, new Date().toISOString());
     }
+    if (needsFkOff) {
+      // Table rebuilds ran with FK enforcement off; verify referential
+      // integrity before committing so a bad rebuild rolls back entirely.
+      const violations = db.prepare('PRAGMA foreign_key_check').all();
+      if (violations.length > 0) {
+        throw new Error(`迁移后外键校验失败:${JSON.stringify(violations.slice(0, 5))}`);
+      }
+    }
   });
 
-  applyAll(pending);
+  if (needsFkOff) db.pragma('foreign_keys = OFF');
+  try {
+    applyAll(pending);
+  } finally {
+    if (needsFkOff) db.pragma('foreign_keys = ON');
+  }
 }
 
 export const LATEST_MIGRATION_VERSION = MIGRATIONS[MIGRATIONS.length - 1]!.version;

@@ -97,7 +97,9 @@ export function toPublicQuiz(quiz: Quiz): PublicQuiz {
   return {
     id: quiz.id,
     materialId: quiz.materialId,
+    ...(quiz.workspaceId !== undefined ? { workspaceId: quiz.workspaceId } : {}),
     kind: quiz.kind,
+    ...(quiz.assessmentMode ? { assessmentMode: quiz.assessmentMode } : {}),
     config: quiz.config,
     ...(quiz.targetConceptIds ? { targetConceptIds: quiz.targetConceptIds } : {}),
     createdAt: quiz.createdAt,
@@ -110,6 +112,8 @@ export function toPublicQuiz(quiz: Quiz): PublicQuiz {
       conceptId: q.conceptId,
       conceptName: q.conceptName,
       grounding: q.grounding,
+      ...(q.supplementaryEvidence ? { supplementaryEvidence: q.supplementaryEvidence } : {}),
+      ...(q.blueprintId ? { blueprintId: q.blueprintId } : {}),
       points: q.points,
     })),
   };

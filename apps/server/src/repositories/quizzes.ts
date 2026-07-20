@@ -12,8 +12,10 @@ import type { SqliteDb } from '../db/database.js';
 
 interface QuizRow {
   id: string;
-  material_id: string;
+  material_id: string | null;
+  workspace_id: string | null;
   kind: string;
+  assessment_mode: string | null;
   config: string;
   target_concept_ids: string | null;
   created_at: string;
@@ -28,8 +30,8 @@ interface QuestionRow {
 
 export function createQuizzesRepo(db: SqliteDb) {
   const insertQuizStmt = db.prepare(
-    `INSERT INTO quizzes (id, material_id, kind, config, target_concept_ids, created_at)
-     VALUES (@id, @materialId, @kind, @config, @targetConceptIds, @createdAt)`,
+    `INSERT INTO quizzes (id, material_id, workspace_id, kind, assessment_mode, config, target_concept_ids, created_at)
+     VALUES (@id, @materialId, @workspaceId, @kind, @assessmentMode, @config, @targetConceptIds, @createdAt)`,
   );
   const insertQuestionStmt = db.prepare(
     `INSERT INTO questions (id, quiz_id, idx, payload) VALUES (@id, @quizId, @index, @payload)`,
@@ -39,7 +41,9 @@ export function createQuizzesRepo(db: SqliteDb) {
     insertQuizStmt.run({
       id: quiz.id,
       materialId: quiz.materialId,
+      workspaceId: quiz.workspaceId ?? null,
       kind: quiz.kind,
+      assessmentMode: quiz.assessmentMode ?? null,
       config: JSON.stringify(quiz.config),
       targetConceptIds: quiz.targetConceptIds ? JSON.stringify(quiz.targetConceptIds) : null,
       createdAt: quiz.createdAt,
@@ -73,7 +77,11 @@ export function createQuizzesRepo(db: SqliteDb) {
       return QuizSchema.parse({
         id: row.id,
         materialId: row.material_id,
+        // Legacy rows have no workspace; omit the key so their hydrated shape
+        // is unchanged from before the workspace-assessment upgrade.
+        ...(row.workspace_id !== null ? { workspaceId: row.workspace_id } : {}),
         kind: row.kind,
+        ...(row.assessment_mode ? { assessmentMode: row.assessment_mode } : {}),
         config: JSON.parse(row.config),
         questions: loadQuestions(row.id),
         targetConceptIds: row.target_concept_ids

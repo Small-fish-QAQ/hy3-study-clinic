@@ -168,3 +168,89 @@ describe('migration from a representative pre-upgrade database', () => {
     expect(repos.workspaces.list()).toHaveLength(1);
   });
 });
+
+describe('migration from a pre-adaptive (schema v3) database', () => {
+  let db: SqliteDb;
+  let repos: Repositories;
+
+  beforeEach(() => {
+    db = openDatabase(':memory:');
+    // Seed the v1 legacy data, upgrade only to v3 (the previous checkpoint),
+    // then run the full adaptive-learning upgrade (v4 … latest).
+    seedLegacyDatabase(db);
+    migrate(db, { toVersion: 3 });
+    migrate(db);
+    repos = createRepositories(db);
+  });
+
+  it('rebuilds the quizzes table without losing rows or FK integrity', () => {
+    const quiz = repos.quizzes.get('qz_old');
+    expect(quiz).toBeDefined();
+    expect(quiz!.materialId).toBe('mat_old');
+    expect(quiz!.workspaceId).toBeUndefined();
+    expect(quiz!.questions).toHaveLength(1);
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+  });
+
+  it('keeps every learning record readable after the adaptive upgrade', () => {
+    expect(repos.materials.get('mat_old')).toBeDefined();
+    expect(repos.materials.getBlocks('mat_old')).toHaveLength(1);
+    expect(repos.materials.getConcepts('mat_old')).toHaveLength(1);
+    expect(repos.mistakes.listByMaterial('mat_old')).toHaveLength(1);
+    expect(repos.mastery.get('mat_old', 'con_old')!.mastery).toBeCloseTo(0.35);
+  });
+
+  it('creates the new adaptive tables empty and usable', () => {
+    for (const table of [
+      'canonical_concepts',
+      'canonical_members',
+      'alignment_proposals',
+      'question_blueprints',
+      'misconceptions',
+      'review_items',
+      'review_events',
+      'tutor_runs',
+      'tutor_events',
+    ]) {
+      const row = db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number };
+      expect(row.n, table).toBe(0);
+    }
+    // Baseline canonical creation works over migrated concepts.
+    const workspaceId = repos.materials.get('mat_old')!.workspaceId;
+    repos.alignment.ensureBaseline(
+      workspaceId,
+      repos.materials.getConceptsByWorkspace(workspaceId),
+      '2026-01-01T00:00:00.000Z',
+    );
+    expect(repos.alignment.listCanonical(workspaceId)).toHaveLength(1);
+  });
+
+  it('rolls back the whole batch when a migration fails mid-way', () => {
+    const fresh = openDatabase(':memory:');
+    seedLegacyDatabase(fresh);
+    migrate(fresh, { toVersion: 3 });
+    // Sabotage: pre-create a table migration 4 wants to create.
+    fresh.exec('CREATE TABLE canonical_concepts (id TEXT PRIMARY KEY)');
+    expect(() => migrate(fresh)).toThrow();
+    // Nothing after v3 was applied; data is intact.
+    const version = fresh
+      .prepare('SELECT COALESCE(MAX(version), 0) AS v FROM schema_migrations')
+      .get() as { v: number };
+    expect(version.v).toBe(3);
+    const quizzes = fresh.prepare('SELECT COUNT(*) AS n FROM quizzes').get() as { n: number };
+    expect(quizzes.n).toBe(1);
+    fresh.close();
+  });
+
+  it('re-enables foreign key enforcement after the rebuild migration', () => {
+    expect(db.pragma('foreign_keys', { simple: true })).toBe(1);
+    expect(() =>
+      db
+        .prepare(
+          `INSERT INTO quizzes (id, material_id, workspace_id, kind, config, created_at)
+           VALUES ('qz_bad', 'mat_missing', NULL, 'standard', '{}', '2026-01-01T00:00:00.000Z')`,
+        )
+        .run(),
+    ).toThrow(/FOREIGN KEY/);
+  });
+});

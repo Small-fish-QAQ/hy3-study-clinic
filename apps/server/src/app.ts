@@ -47,6 +47,11 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     providerModel: deps.providerModel,
   });
 
+  // Restart policy: a Tutor run can only legitimately be `running` while its
+  // request is in flight, so any leftover from a previous process is marked
+  // interrupted here. Interrupted runs never altered learning state.
+  deps.repos.tutor.markInterruptedRuns(clock.now().toISOString());
+
   // Central error handler: converts known errors into structured API errors
   // and never leaks stack traces, secrets, or raw payloads to the client.
   app.setErrorHandler((error, request, reply) => {

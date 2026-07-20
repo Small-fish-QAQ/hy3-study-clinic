@@ -15,6 +15,11 @@ export * from './domain/plan.js';
 export * from './domain/quiz.js';
 export * from './domain/grading.js';
 export * from './domain/mistake.js';
+export * from './domain/alignment.js';
+export * from './domain/blueprint.js';
+export * from './domain/misconception.js';
+export * from './domain/review.js';
+export * from './domain/tutor.js';
 export * from './domain/errors.js';
 export * from './provider/payloads.js';
 

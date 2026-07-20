@@ -57,14 +57,15 @@ export function registerStudyRoutes(app: FastifyInstance, services: Services): v
       ...(typeof request.body === 'object' && request.body !== null ? request.body : {}),
       quizId: id,
     });
-    const result = await services.grading.grade(body, {
+    const { result, stateChanges } = await services.grading.grade(body, {
       signal: requestSignal(request, reply),
     });
     // After grading, the full questions (with answers/rubrics) are revealed
-    // so the client can render explanations and evidence.
+    // so the client can render explanations and evidence. `stateChanges` is
+    // the deterministic summary of every learning-state effect.
     const quiz = services.quizzes.get(id);
     reply.status(201);
-    return { grading: result, questions: quiz.questions };
+    return { grading: result, stateChanges, questions: quiz.questions };
   });
 
   app.get('/api/materials/:id/mistakes', async (request) => {

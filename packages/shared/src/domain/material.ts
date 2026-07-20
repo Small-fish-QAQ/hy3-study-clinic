@@ -1,8 +1,25 @@
 import { z } from 'zod';
 
-/** Question types supported by the clinic. */
-export const QuestionTypeSchema = z.enum(['single_choice', 'multiple_choice', 'short_answer']);
+/**
+ * Question types supported by the clinic. `concept_comparison` asks the
+ * learner to compare/contrast two aligned concepts in free text; it is fully
+ * wired end-to-end (generation, rubric grading, persistence, display, tests)
+ * and shares the short-answer answering/grading pipeline.
+ */
+export const QuestionTypeSchema = z.enum([
+  'single_choice',
+  'multiple_choice',
+  'short_answer',
+  'concept_comparison',
+]);
 export type QuestionType = z.infer<typeof QuestionTypeSchema>;
+
+/** Question types answered as free text and graded via the semantic rubric. */
+export const TEXT_ANSWER_TYPES: readonly QuestionType[] = ['short_answer', 'concept_comparison'];
+
+export function isTextAnswerType(type: QuestionType): boolean {
+  return TEXT_ANSWER_TYPES.includes(type);
+}
 
 /** Quiz difficulty levels. */
 export const DifficultySchema = z.enum(['easy', 'medium', 'hard']);

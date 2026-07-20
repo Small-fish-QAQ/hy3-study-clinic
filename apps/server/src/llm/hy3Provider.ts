@@ -1,36 +1,52 @@
 import {
+  AlignmentProposalPayloadSchema,
+  AssessmentProposalPayloadSchema,
   ConceptAnalysisPayloadSchema,
   GraphProposalPayloadSchema,
+  MisconceptionProposalPayloadSchema,
   QuizGenerationPayloadSchema,
   RemediationPlanProposalPayloadSchema,
   RubricGradeSchema,
+  TutorStepPayloadSchema,
+  type AlignmentProposalPayload,
+  type AssessmentProposalPayload,
   type ConceptAnalysisPayload,
   type GraphProposalPayload,
+  type MisconceptionProposalPayload,
   type QuizGenerationPayload,
   type RemediationPlanProposalPayload,
   type RubricGrade,
+  type TutorStepPayload,
 } from '@hy3-clinic/shared';
 import type { ZodType, ZodTypeDef } from 'zod';
 import { ProviderError } from './errors.js';
 import { extractJson, JsonExtractionError } from './json.js';
 import {
+  alignmentProposalMessages,
+  assessmentProposalMessages,
   conceptAnalysisMessages,
   graphProposalMessages,
+  misconceptionProposalMessages,
   quizGenerationMessages,
   remediationMessages,
   remediationPlanMessages,
   shortAnswerGradingMessages,
+  tutorStepMessages,
   type ChatMessage,
 } from './prompts.js';
 import type {
+  AlignmentProposalInput,
+  AssessmentProposalInput,
   ConceptAnalysisInput,
   GraphProposalInput,
   LlmProvider,
+  MisconceptionProposalInput,
   ProviderCallOptions,
   QuizGenerationInput,
   RemediationInput,
   RemediationPlanInput,
   ShortAnswerGradingInput,
+  TutorStepInput,
 } from './provider.js';
 
 export interface Hy3ProviderConfig {
@@ -139,6 +155,38 @@ export class Hy3Provider implements LlmProvider {
       RemediationPlanProposalPayloadSchema,
       opts,
     );
+  }
+
+  async proposeConceptAlignment(
+    input: AlignmentProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<AlignmentProposalPayload> {
+    return this.complete(alignmentProposalMessages(input), AlignmentProposalPayloadSchema, opts);
+  }
+
+  async proposeAssessment(
+    input: AssessmentProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<AssessmentProposalPayload> {
+    return this.complete(assessmentProposalMessages(input), AssessmentProposalPayloadSchema, opts);
+  }
+
+  async proposeMisconception(
+    input: MisconceptionProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<MisconceptionProposalPayload> {
+    return this.complete(
+      misconceptionProposalMessages(input),
+      MisconceptionProposalPayloadSchema,
+      opts,
+    );
+  }
+
+  async proposeTutorStep(
+    input: TutorStepInput,
+    opts?: ProviderCallOptions,
+  ): Promise<TutorStepPayload> {
+    return this.complete(tutorStepMessages(input), TutorStepPayloadSchema, opts);
   }
 
   /**
