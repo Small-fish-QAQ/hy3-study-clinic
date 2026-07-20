@@ -148,3 +148,6 @@ data/
 *.sqlite-journal
 *.sqlite-wal
 *.sqlite-shm
+
+# Generated evaluation reports (regenerate with npm run eval:fake / eval:hy3)
+eval/reports/

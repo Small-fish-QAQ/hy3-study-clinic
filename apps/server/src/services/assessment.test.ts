@@ -187,6 +187,69 @@ describe('cross-document assessment generation', () => {
     }
   });
 
+  it('correct adaptive practice answers resolve the open mistakes they re-test', async () => {
+    // Seed open mistakes with a failed diagnostic.
+    const failed = await setup.ctx.app.inject({
+      method: 'POST',
+      url: `/api/workspaces/${setup.workspaceId}/assessments`,
+      payload: { mode: 'diagnostic' },
+    });
+    const failedQuiz = failed.json().quiz as {
+      id: string;
+      questions: Array<{ id: string; type: string }>;
+    };
+    await setup.ctx.app.inject({
+      method: 'POST',
+      url: `/api/quizzes/${failedQuiz.id}/submissions`,
+      payload: {
+        answers: failedQuiz.questions.map((q) =>
+          q.type === 'single_choice' || q.type === 'multiple_choice'
+            ? { questionId: q.id, type: q.type, selectedOptionIds: [] }
+            : { questionId: q.id, type: q.type, text: '' },
+        ),
+      },
+    });
+    const withMistakes = (
+      await setup.ctx.app.inject({
+        method: 'GET',
+        url: `/api/workspaces/${setup.workspaceId}/overlay`,
+      })
+    ).json().states as Array<{ conceptId: string; openMistakes: number }>;
+    const weak = withMistakes.find((s) => s.openMistakes > 0)!;
+    expect(weak).toBeDefined();
+
+    // Targeted practice on the weak concept, answered from the server key.
+    const practice = await setup.ctx.app.inject({
+      method: 'POST',
+      url: `/api/workspaces/${setup.workspaceId}/assessments`,
+      payload: { mode: 'concept_practice', conceptIds: [weak.conceptId] },
+    });
+    const practiceQuiz = practice.json().quiz as { id: string };
+    const full = setup.ctx.repos.quizzes.get(practiceQuiz.id)!;
+    expect(full.questions.some((q) => (q.sourceMistakeIds?.length ?? 0) > 0)).toBe(true);
+    const graded = await setup.ctx.app.inject({
+      method: 'POST',
+      url: `/api/quizzes/${practiceQuiz.id}/submissions`,
+      payload: {
+        answers: full.questions.map((q) =>
+          q.correctOptionIds
+            ? { questionId: q.id, type: q.type, selectedOptionIds: q.correctOptionIds }
+            : { questionId: q.id, type: q.type, text: q.expectedAnswer! },
+        ),
+      },
+    });
+    expect(graded.json().stateChanges.mistakesResolved).toBeGreaterThan(0);
+    const after = (
+      await setup.ctx.app.inject({
+        method: 'GET',
+        url: `/api/workspaces/${setup.workspaceId}/overlay`,
+      })
+    ).json().states as Array<{ conceptId: string; openMistakes: number }>;
+    expect(after.find((s) => s.conceptId === weak.conceptId)!.openMistakes).toBeLessThan(
+      weak.openMistakes,
+    );
+  });
+
   it('schedules review items only after graded completion', async () => {
     const before = await setup.ctx.app.inject({
       method: 'GET',

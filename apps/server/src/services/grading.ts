@@ -193,9 +193,13 @@ export function createGradingService({
         };
         repos.mistakes.insert(mistake);
         mistakesCreated++;
-      } else if (quiz.kind === 'remediation' && grade.correct) {
-        // Documented rule: a correct remediation answer resolves exactly the
-        // mistakes this question was generated from.
+      } else if (
+        (quiz.kind === 'remediation' || quiz.kind === 'adaptive') &&
+        grade.correct
+      ) {
+        // Documented rule: a correct answer on a remediation question — or on
+        // an adaptive practice question generated over the same open
+        // mistakes — resolves exactly the mistakes it re-tested.
         for (const mistakeId of question.sourceMistakeIds ?? []) {
           const existing = repos.mistakes.get(mistakeId);
           if (existing && existing.status === 'open') {

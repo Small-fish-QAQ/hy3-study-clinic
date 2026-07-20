@@ -268,6 +268,19 @@ export function createAssessmentService({
       const blueprints: QuestionBlueprint[] = [];
       const rejected: Array<{ stem: string; reason: string }> = [];
 
+      // Documented rule (mirrors remediation quizzes): practice-oriented
+      // assessment questions re-test the open mistakes of their concept, so
+      // a correct answer later resolves exactly those mistakes. Discriminating
+      // questions (misconception_check) stay focused on the hypothesis.
+      const openMistakesByConcept = new Map<string, string[]>();
+      if (request.mode !== 'misconception_check') {
+        for (const mistake of repos.mistakes.listOpenByWorkspace(workspaceId)) {
+          const list = openMistakesByConcept.get(mistake.conceptId) ?? [];
+          if (list.length < 10) list.push(mistake.id);
+          openMistakesByConcept.set(mistake.conceptId, list);
+        }
+      }
+
       for (const item of payload.items.slice(0, questionCount)) {
         const q = item.question;
         const rejectItem = (reason: string) => rejected.push({ stem: q.stem, reason });
@@ -371,6 +384,9 @@ export function createAssessmentService({
           ...(evidence.length > 1 ? { supplementaryEvidence: evidence.slice(1) } : {}),
           blueprintId: blueprint.id,
           ...(misconceptionTarget ? { misconceptionId: misconceptionTarget } : {}),
+          ...((openMistakesByConcept.get(concept.id)?.length ?? 0) > 0
+            ? { sourceMistakeIds: openMistakesByConcept.get(concept.id) }
+            : {}),
           explanation: q.explanation,
           points: POINTS_BY_TYPE[q.type],
           ...(q.options ? { options: q.options } : {}),

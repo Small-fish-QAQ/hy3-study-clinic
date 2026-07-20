@@ -23,7 +23,10 @@
     "test": "npm run test --workspaces --if-present",
     "demo:offline": "node scripts/demo-offline.mjs",
     "demo:http": "node scripts/smoke.mjs",
-    "demo:graph": "node scripts/smoke-graph.mjs"
+    "demo:graph": "node scripts/smoke-graph.mjs",
+    "demo:adaptive": "node scripts/smoke-adaptive.mjs",
+    "eval:fake": "node eval/run-fake.mjs",
+    "eval:hy3": "node eval/run-hy3.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

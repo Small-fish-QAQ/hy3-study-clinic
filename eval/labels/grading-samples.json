@@ -1,0 +1,28 @@
+{
+  "description": "Hand-authored short-answer grading samples. Written by the repository author (2026-07); NOT model-generated. Used by eval:hy3 to measure grading agreement; eval:fake only checks structural validity of grades.",
+  "samples": [
+    {
+      "stem": "请根据资料,简述「工作记忆」的容量特点。",
+      "expectedAnswer": "工作记忆容量有限,一次只能保持大约四个组块。",
+      "rubricKeyPoints": ["容量有限", "大约四个组块"],
+      "quote": "工作记忆是容量有限的短时信息加工系统。它一次只能保持大约四个组块的信息,超出容量的内容会被迅速丢失。",
+      "answers": [
+        {
+          "text": "工作记忆的容量是有限的,大概一次只能装下四个组块左右。",
+          "humanMatchedKeyPointIndexes": [0, 1],
+          "humanCorrect": true
+        },
+        {
+          "text": "容量有限。",
+          "humanMatchedKeyPointIndexes": [0],
+          "humanCorrect": false
+        },
+        {
+          "text": "工作记忆容量无限大,可以记住任何数量的信息。",
+          "humanMatchedKeyPointIndexes": [],
+          "humanCorrect": false
+        }
+      ]
+    }
+  ]
+}

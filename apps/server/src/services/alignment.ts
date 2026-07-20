@@ -76,16 +76,30 @@ export function createAlignmentService({ repos, provider, clock }: AlignmentServ
     return new Map(repos.materials.listByWorkspace(workspaceId).map((m) => [m.id, m.title]));
   }
 
+  /**
+   * Deterministic display-name choice for auto-accepted alias pairs:
+   * Chinese beats Latin, a spaced multi-word name beats a concatenated one
+   * ("Spaced repetition" over "Spacedrepetition"), then the shorter name
+   * wins with a lexicographic tie-break.
+   */
+  function preferredDisplayName(a: string, b: string): string {
+    const aCjk = /[一-鿿]/u.test(a);
+    const bCjk = /[一-鿿]/u.test(b);
+    if (aCjk !== bCjk) return aCjk ? a : b;
+    const aSpaced = a.includes(' ');
+    const bSpaced = b.includes(' ');
+    if (aSpaced !== bSpaced) return aSpaced ? a : b;
+    if (a.length !== b.length) return a.length < b.length ? a : b;
+    return a < b ? a : b;
+  }
+
   /** Persist one accepted local-rule alias proposal and merge immediately. */
   function autoAcceptCandidate(
     workspaceId: string,
     candidate: LocalCandidate,
     at: string,
   ): AlignmentProposal {
-    const displayName =
-      candidate.target.name.length <= candidate.source.name.length
-        ? candidate.target.name
-        : candidate.source.name;
+    const displayName = preferredDisplayName(candidate.source.name, candidate.target.name);
     const proposal: AlignmentProposal = {
       id: newId('alp'),
       workspaceId,

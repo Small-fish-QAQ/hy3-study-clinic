@@ -121,6 +121,9 @@ describe('alignment proposal round', () => {
     const merged = canonical.find((c) => c.members.length === 2)!;
     expect(merged.materialIds).toHaveLength(2);
     expect(merged.aliases.length).toBeGreaterThanOrEqual(1);
+    // The well-formed spaced spelling wins over the malformed concatenation.
+    expect(merged.displayName).toBe('Spaced repetition');
+    expect(merged.aliases).toContain('Spacedrepetition');
   });
 
   it('is idempotent: a second round proposes nothing new', async () => {
