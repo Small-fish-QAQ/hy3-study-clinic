@@ -174,6 +174,10 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
   }, [activeWorkspaceId, refreshKey, loadWorkspaceData]);
 
   function switchWorkspace(workspaceId: string | null) {
+    // Re-clicking the active workspace must not blank it: clearing `data`
+    // while activeWorkspaceId stays identical would never re-trigger the
+    // load effect, leaving the graph area empty until a full reload.
+    if (workspaceId !== null && workspaceId === activeWorkspaceId) return;
     epochRef.current += 1;
     planAction.cancel();
     graphAction.cancel();

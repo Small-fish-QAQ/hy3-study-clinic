@@ -3,15 +3,15 @@ import {
   Background,
   Controls,
   Handle,
-  MarkerType,
   Panel,
   Position,
   ReactFlow,
   ReactFlowProvider,
   useNodesInitialized,
   useReactFlow,
-  type Edge as FlowEdge,
+  useStore,
   type Node as FlowNode,
+  type NodeChange,
   type NodeProps,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -22,46 +22,39 @@ import {
   degreeByConcept,
   degreeScale,
   estimateNodeSize,
+  hashId,
   loadSavedPositions,
   neighborhoodConceptIds,
   savePositions,
-  weakPathConceptIds,
+  weakPathSubgraph,
   type LayoutMode,
 } from './graph/layout.js';
+import {
+  EdgeMarkerDefs,
+  FloatingLearningEdge,
+  type EdgeEmphasis,
+  type LearningFlowEdge,
+} from './graph/FloatingLearningEdge.js';
+import { planEdgeLanes, planNodeEdgeOrder } from './graph/edgeRouting.js';
+import { RELATION_COLORS, RELATION_DASH, RELATION_LABELS } from './graph/relationStyle.js';
 
 /**
  * Interactive personal learning graph (Obsidian-style exploration).
  *
  * Rendering stays on @xyflow/react (React Flow 12); the default 网络视图
  * layout is computed by d3-force in a bounded synchronous pass (see
- * graph/layout.ts). Nodes are draggable; dragged positions are kept per
- * graph version in localStorage and never snap back. 重新布局 clears them
- * and re-runs the deterministic simulation.
+ * graph/layout.ts). Node dragging is fully controlled: position changes are
+ * applied continuously during the gesture (applyNodeChanges-equivalent for
+ * position changes) and persisted to localStorage once on drag stop.
+ * Edges are floating, obstacle-aware paths (see graph/FloatingLearningEdge).
+ *
+ * State layers are kept strictly separate: semantic data → visibility →
+ * deterministic layout → saved positions → active drag positions → edge
+ * geometry → hover → selection → viewport. Hover and selection only restyle;
+ * they can never re-run layout, refit the viewport, or move nodes.
  */
 
-export const RELATION_LABELS: Record<GraphRelation, string> = {
-  prerequisite: '先修',
-  part_of: '组成',
-  contrasts_with: '对比',
-  causes: '因果',
-  applies_to: '应用',
-  example_of: '示例',
-};
-
-const RELATION_COLORS: Record<GraphRelation, string> = {
-  prerequisite: '#2f5fe0',
-  part_of: '#7c3aed',
-  contrasts_with: '#d97706',
-  causes: '#c2504d',
-  applies_to: '#0d9488',
-  example_of: '#64748b',
-};
-
-/** Dash patterns keep relation types distinguishable without color alone. */
-const RELATION_DASH: Partial<Record<GraphRelation, string>> = {
-  contrasts_with: '7 5',
-  example_of: '2 4',
-};
+export { RELATION_LABELS } from './graph/relationStyle.js';
 
 const STATE_LABELS: Record<ConceptLearnerState['state'], string> = {
   unassessed: '未评估',
@@ -138,7 +131,6 @@ function ConceptNode({ data, selected }: NodeProps<FlowNode<ConceptNodeData>>) {
         .filter(Boolean)
         .join(' ')}
       style={{ '--node-scale': scale } as CSSProperties}
-      title={data.name}
       aria-label={`概念 ${data.name}(${
         data.state === 'unknown' ? '学习状态未加载' : STATE_LABELS[data.state]
       }${data.openMistakes > 0 ? `,${data.openMistakes} 道未解决错题` : ''})`}
@@ -166,6 +158,7 @@ function ConceptNode({ data, selected }: NodeProps<FlowNode<ConceptNodeData>>) {
 }
 
 const nodeTypes = { concept: ConceptNode };
+const edgeTypes = { floating: FloatingLearningEdge };
 
 interface TooltipState {
   conceptId: string;
@@ -181,25 +174,68 @@ export function ConceptGraph(props: ConceptGraphProps) {
   );
 }
 
-/** Fits the viewport once per trigger change, only after nodes are measured. */
+const FIT_VIEW_OPTIONS = { padding: 0.18, maxZoom: 1.35 };
+const FIT_MAX_ATTEMPTS = 5;
+
+/**
+ * Fits the viewport exactly once per graph-state key (`trigger`).
+ *
+ * The fit only runs after React Flow reports initialized (measured) nodes
+ * AND a non-zero canvas, is deferred through two animation frames so pan/zoom
+ * and dimensions are committed, verifies that React Flow actually applied it
+ * (bounded retries otherwise), and ignores stale callbacks once a newer
+ * trigger takes over. Hover, selection, and dragging never change `trigger`,
+ * so they can never cause a fit.
+ */
 function AutoFit({ trigger }: { trigger: string }) {
   const nodesInitialized = useNodesInitialized();
+  const canvasReady = useStore((state) => state.width > 0 && state.height > 0);
   const { fitView } = useReactFlow();
-  const appliedRef = useRef<string | null>(null);
+  const doneRef = useRef<string | null>(null);
+  const epochRef = useRef(0);
 
   useEffect(() => {
-    if (!nodesInitialized) return;
-    if (appliedRef.current === trigger) return;
-    appliedRef.current = trigger;
-    void fitView({ padding: 0.18, maxZoom: 1.35, duration: motionDuration(220) });
-  }, [nodesInitialized, trigger, fitView]);
+    if (!nodesInitialized || !canvasReady) return;
+    if (doneRef.current === trigger) return;
+    const epoch = ++epochRef.current;
+    const frames: number[] = [];
+    let attempts = 0;
+    const attempt = () => {
+      if (epochRef.current !== epoch) return;
+      attempts += 1;
+      void fitView({ ...FIT_VIEW_OPTIONS, duration: motionDuration(220) }).then((applied) => {
+        if (epochRef.current !== epoch) return;
+        if (applied || attempts >= FIT_MAX_ATTEMPTS) {
+          doneRef.current = trigger;
+        } else {
+          frames.push(requestAnimationFrame(attempt));
+        }
+      });
+    };
+    frames.push(
+      requestAnimationFrame(() => {
+        frames.push(requestAnimationFrame(attempt));
+      }),
+    );
+    return () => {
+      for (const frame of frames) cancelAnimationFrame(frame);
+    };
+  }, [nodesInitialized, canvasReady, trigger, fitView]);
 
+  // Window resizes re-fit; panel collapse/expand arrives via `trigger`.
   useEffect(() => {
+    let raf = 0;
     const onResize = () => {
-      void fitView({ padding: 0.18, maxZoom: 1.35, duration: motionDuration(120) });
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        void fitView({ ...FIT_VIEW_OPTIONS, duration: motionDuration(120) });
+      });
     };
     window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', onResize);
+    };
   }, [fitView]);
 
   return null;
@@ -226,6 +262,7 @@ function ConceptGraphInner({
   const [showUnassessed, setShowUnassessed] = useState(true);
   const [focus, setFocus] = useState<{ rootId: string; hops: 1 | 2 } | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [hoveredEdgeId, setHoveredEdgeId] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [flashNodeId, setFlashNodeId] = useState<string | null>(null);
@@ -233,17 +270,62 @@ function ConceptGraphInner({
   const [savedPositions, setSavedPositions] = useState<Record<string, { x: number; y: number }>>(
     () => (versionId ? loadSavedPositions(versionId) : {}),
   );
+  /** Live positions of nodes while (and after) a drag gesture, pre-save. */
+  const [dragPositions, setDragPositions] = useState<Record<string, { x: number; y: number }>>({});
+  /**
+   * Measured node dimensions fed back from React Flow. Applying dimension
+   * changes onto our controlled node objects is required for React Flow to
+   * consider the flow initialized (useNodesInitialized → initial fit) —
+   * position and dimension changes together are the applyNodeChanges
+   * contract for this derived-node design.
+   */
+  const [measuredSizes, setMeasuredSizes] = useState<
+    Record<string, { width: number; height: number }>
+  >({});
+  const draggingRef = useRef(false);
 
-  // Version switches load that version's saved positions and drop focus state.
+  // Tooltip positions stream through one rAF so pointer movement costs at
+  // most one state update per frame; the frame is cancelled on unmount and
+  // whenever the graph version changes (no stale delayed work).
+  const tooltipFrameRef = useRef(0);
+  const pendingTooltipRef = useRef<TooltipState | null>(null);
+  const scheduleTooltip = useCallback((next: TooltipState | null) => {
+    pendingTooltipRef.current = next;
+    if (tooltipFrameRef.current) return;
+    tooltipFrameRef.current = requestAnimationFrame(() => {
+      tooltipFrameRef.current = 0;
+      setTooltip(pendingTooltipRef.current);
+    });
+  }, []);
+  useEffect(
+    () => () => {
+      cancelAnimationFrame(tooltipFrameRef.current);
+    },
+    [],
+  );
+
+  // The search flash is transient; the timer is cleaned up on re-trigger,
+  // version switch, and unmount.
+  useEffect(() => {
+    if (!flashNodeId) return;
+    const timer = window.setTimeout(() => setFlashNodeId(null), 1300);
+    return () => window.clearTimeout(timer);
+  }, [flashNodeId]);
+
+  // Version switches load that version's saved positions and drop all
+  // transient interaction state (focus, hover, tooltip, live drags).
   const versionRef = useRef(versionId);
   useEffect(() => {
     if (versionRef.current === versionId) return;
     versionRef.current = versionId;
     setSavedPositions(versionId ? loadSavedPositions(versionId) : {});
+    setDragPositions({});
     setFocus(null);
     setHoveredNodeId(null);
-    setTooltip(null);
-  }, [versionId]);
+    setHoveredEdgeId(null);
+    setFlashNodeId(null);
+    scheduleTooltip(null);
+  }, [versionId, scheduleTooltip]);
 
   const conceptIds = useMemo(() => new Set(concepts.map((c) => c.id)), [concepts]);
   const validEdges = useMemo(
@@ -253,43 +335,71 @@ function ConceptGraphInner({
   );
   const degree = useMemo(() => degreeByConcept(concepts, validEdges), [concepts, validEdges]);
 
-  /** Which concepts are visible under the current mode/focus/toggles. */
-  const visibleIds = useMemo(() => {
+  /** 薄弱路径 minimal remediation subgraph (nodes + allowed edges). */
+  const weakSubgraph = useMemo(
+    () => weakPathSubgraph(concepts, validEdges, overlay),
+    [concepts, validEdges, overlay],
+  );
+
+  /**
+   * Which concepts are visible under the current mode/focus/toggles —
+   * WITHOUT the selection carve-out, so selecting a node can never change
+   * this set (and therefore can never re-fit or re-layout the graph).
+   */
+  const coreVisibleIds = useMemo(() => {
     let ids: Set<string>;
     if (focus) {
       ids = neighborhoodConceptIds(focus.rootId, validEdges, focus.hops);
     } else if (layoutMode === 'weak-path') {
-      const weakSet = weakPathConceptIds(concepts, validEdges, overlay);
-      ids = weakSet.size > 0 ? weakSet : new Set(concepts.map((c) => c.id));
+      ids =
+        weakSubgraph.conceptIds.size > 0
+          ? new Set(weakSubgraph.conceptIds)
+          : new Set(concepts.map((c) => c.id));
     } else {
       ids = new Set(concepts.map((c) => c.id));
     }
     if (!showUnassessed) {
       for (const concept of concepts) {
         const state = overlay.get(concept.id)?.state ?? 'unassessed';
-        // Never hide the selected or focused concept out from under the user.
-        if (
-          state === 'unassessed' &&
-          concept.id !== selectedNodeId &&
-          concept.id !== focus?.rootId
-        ) {
+        if (state === 'unassessed' && concept.id !== focus?.rootId) {
           ids.delete(concept.id);
         }
       }
     }
     return ids;
-  }, [concepts, validEdges, overlay, layoutMode, focus, showUnassessed, selectedNodeId]);
+  }, [concepts, validEdges, overlay, layoutMode, focus, showUnassessed, weakSubgraph]);
+
+  /** Never hide the selected concept out from under the user. */
+  const visibleIds = useMemo(() => {
+    if (!selectedNodeId || coreVisibleIds.has(selectedNodeId) || !conceptIds.has(selectedNodeId)) {
+      return coreVisibleIds;
+    }
+    const ids = new Set(coreVisibleIds);
+    ids.add(selectedNodeId);
+    return ids;
+  }, [coreVisibleIds, selectedNodeId, conceptIds]);
 
   const visibleConcepts = useMemo(
     () => concepts.filter((c) => visibleIds.has(c.id)),
     [concepts, visibleIds],
   );
-  const visibleEdges = useMemo(
+  const visibleEdges = useMemo(() => {
+    const base = validEdges.filter(
+      (e) => visibleIds.has(e.sourceConceptId) && visibleIds.has(e.targetConceptId),
+    );
+    // 薄弱路径 additionally drops relations that are not part of the
+    // remediation path (contrast/example/application/causal edges).
+    if (layoutMode === 'weak-path' && !focus && weakSubgraph.conceptIds.size > 0) {
+      return base.filter((e) => weakSubgraph.edgeIds.has(e.id));
+    }
+    return base;
+  }, [validEdges, visibleIds, layoutMode, focus, weakSubgraph]);
+
+  /** Estimated node sizes: layout collision + pre-measurement edge fallback. */
+  const estimatedSizes = useMemo(
     () =>
-      validEdges.filter(
-        (e) => visibleIds.has(e.sourceConceptId) && visibleIds.has(e.targetConceptId),
-      ),
-    [validEdges, visibleIds],
+      new Map(visibleConcepts.map((c) => [c.id, estimateNodeSize(c.name, degree.get(c.id) ?? 0)])),
+    [visibleConcepts, degree],
   );
 
   /** Deterministic base layout for the visible subgraph. */
@@ -297,13 +407,10 @@ function ConceptGraphInner({
     if (layoutMode === 'dependency' && !focus) {
       return computeDependencyLayout(visibleConcepts, visibleEdges);
     }
-    const sizes = new Map(
-      visibleConcepts.map((c) => [c.id, estimateNodeSize(c.name, degree.get(c.id) ?? 0)]),
-    );
-    return computeForceLayout(visibleConcepts, visibleEdges, sizes);
+    return computeForceLayout(visibleConcepts, visibleEdges, estimatedSizes);
     // relayoutNonce forces a fresh simulation on 重新布局.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleConcepts, visibleEdges, layoutMode, focus, degree, relayoutNonce]);
+  }, [visibleConcepts, visibleEdges, layoutMode, focus, estimatedSizes, relayoutNonce]);
 
   /** Neighborhood emphasis: hovered node wins, then selected node/edge. */
   const emphasis = useMemo(() => {
@@ -339,7 +446,12 @@ function ConceptGraphInner({
         return {
           id: concept.id,
           type: 'concept' as const,
-          position: savedPositions[concept.id] ?? basePositions.get(concept.id) ?? { x: 0, y: 0 },
+          position: dragPositions[concept.id] ??
+            savedPositions[concept.id] ??
+            basePositions.get(concept.id) ?? { x: 0, y: 0 },
+          // Measured dimensions round-trip through onNodesChange; without
+          // them React Flow never reports the flow as initialized.
+          measured: measuredSizes[concept.id],
           selected: selectedNodeId === concept.id,
           className: dimmed ? 'dimmed' : emphasis.active ? 'emphasized' : '',
           data: {
@@ -359,6 +471,8 @@ function ConceptGraphInner({
       overlay,
       basePositions,
       savedPositions,
+      dragPositions,
+      measuredSizes,
       selectedNodeId,
       emphasis,
       degree,
@@ -367,55 +481,144 @@ function ConceptGraphInner({
     ],
   );
 
-  const flowEdges = useMemo<FlowEdge[]>(
-    () =>
-      visibleEdges.map((edge) => {
-        const color = RELATION_COLORS[edge.relation];
-        const isSelected = selectedEdgeId === edge.id;
-        const related = emphasis.active && emphasis.edges.has(edge.id);
-        const dimmed = emphasis.active && !related && !isSelected;
-        const showLabel = showEdgeLabels || isSelected || related;
-        // Thickness reflects the number of locally verified evidence quotes.
-        const evidenceWidth = 1.4 + Math.min(edge.evidence.length, 3) * 0.4;
-        return {
-          id: edge.id,
-          source: edge.sourceConceptId,
-          target: edge.targetConceptId,
-          selected: isSelected,
-          label: showLabel ? RELATION_LABELS[edge.relation] : undefined,
-          // Straight lines read best in the force-directed network (Obsidian
-          // style); the layered dependency view keeps smooth curves.
-          type: layoutMode === 'dependency' && !focus ? 'default' : 'straight',
-          className: [
-            'graph-edge',
-            `relation-${edge.relation}`,
-            dimmed ? 'dimmed' : '',
-            related ? 'related' : '',
-          ]
-            .filter(Boolean)
-            .join(' '),
-          style: {
-            stroke: color,
-            strokeWidth: isSelected ? evidenceWidth + 1.6 : evidenceWidth,
-            strokeDasharray: RELATION_DASH[edge.relation],
-            opacity: dimmed ? 0.16 : 1,
-          },
-          labelStyle: { fill: color, fontSize: 11, fontWeight: 600 },
-          labelBgStyle: { fill: 'var(--surface, #fff)', fillOpacity: 0.9 },
-          ...(edge.relation === 'contrasts_with'
-            ? {}
-            : {
-                markerEnd: {
-                  type: MarkerType.ArrowClosed,
-                  color,
-                  width: 16,
-                  height: 16,
-                },
-              }),
-        };
-      }),
-    [visibleEdges, selectedEdgeId, emphasis, showEdgeLabels, layoutMode, focus],
+  /**
+   * Controlled-node change handler — the applyNodeChanges equivalent for
+   * this derived-node design. Position changes stream into the dragPositions
+   * layer (continuously during a gesture); dimension changes stream into
+   * measuredSizes so React Flow sees an initialized flow. Selection stays
+   * driven by the explicit selection props.
+   */
+  const handleNodesChange = useCallback((changes: NodeChange<FlowNode<ConceptNodeData>>[]) => {
+    setDragPositions((current) => {
+      let next: Record<string, { x: number; y: number }> | null = null;
+      for (const change of changes) {
+        if (change.type === 'position' && change.position) {
+          next ??= { ...current };
+          next[change.id] = { x: change.position.x, y: change.position.y };
+        }
+      }
+      return next ?? current;
+    });
+    setMeasuredSizes((current) => {
+      let next: Record<string, { width: number; height: number }> | null = null;
+      for (const change of changes) {
+        if (change.type === 'dimensions' && change.dimensions) {
+          const existing = current[change.id];
+          if (
+            existing &&
+            existing.width === change.dimensions.width &&
+            existing.height === change.dimensions.height
+          ) {
+            continue;
+          }
+          next ??= { ...current };
+          next[change.id] = { ...change.dimensions };
+        }
+      }
+      return next ?? current;
+    });
+  }, []);
+
+  const handleNodeDragStart = useCallback(() => {
+    draggingRef.current = true;
+    setHoveredNodeId(null);
+    scheduleTooltip(null);
+  }, [scheduleTooltip]);
+
+  /** Persist final positions once per gesture; live values hand over. */
+  const handleNodeDragStop = useCallback(
+    (
+      _event: unknown,
+      _node: FlowNode<ConceptNodeData>,
+      draggedNodes: FlowNode<ConceptNodeData>[],
+    ) => {
+      draggingRef.current = false;
+      const moved = draggedNodes.length > 0 ? draggedNodes : [_node];
+      setSavedPositions((current) => {
+        const next = { ...current };
+        for (const dragged of moved) {
+          next[dragged.id] = { x: dragged.position.x, y: dragged.position.y };
+        }
+        if (versionId) savePositions(versionId, next);
+        return next;
+      });
+      setDragPositions((current) => {
+        const next = { ...current };
+        for (const dragged of moved) delete next[dragged.id];
+        return next;
+      });
+    },
+    [versionId],
   );
+
+  const lanePlans = useMemo(() => planEdgeLanes(visibleEdges), [visibleEdges]);
+  const incidentByNode = useMemo(() => planNodeEdgeOrder(visibleEdges), [visibleEdges]);
+  const routeMode =
+    layoutMode === 'dependency' && !focus ? ('dependency' as const) : ('network' as const);
+
+  const flowEdges = useMemo<LearningFlowEdge[]>(() => {
+    const list = visibleEdges.map((edge) => {
+      const isSelected = selectedEdgeId === edge.id;
+      const related = (emphasis.active && emphasis.edges.has(edge.id)) || hoveredEdgeId === edge.id;
+      const dimmed = emphasis.active && !related && !isSelected;
+      const endpointSelected =
+        selectedNodeId === edge.sourceConceptId || selectedNodeId === edge.targetConceptId;
+      const edgeEmphasis: EdgeEmphasis = isSelected
+        ? 'selected'
+        : related
+          ? 'related'
+          : dimmed
+            ? 'dimmed'
+            : 'normal';
+      const plan = lanePlans.get(edge.id);
+      return {
+        id: edge.id,
+        source: edge.sourceConceptId,
+        target: edge.targetConceptId,
+        type: 'floating' as const,
+        selected: isSelected,
+        className: [
+          'graph-edge',
+          `relation-${edge.relation}`,
+          dimmed ? 'dimmed' : '',
+          related ? 'related' : '',
+        ]
+          .filter(Boolean)
+          .join(' '),
+        data: {
+          relation: edge.relation,
+          labelText: RELATION_LABELS[edge.relation],
+          // Labels stay hidden by default; they appear for the selected
+          // edge, the hovered edge, edges of the selected concept, or the
+          // explicit 显示关系标签 toggle — never on plain node hover.
+          showLabel: showEdgeLabels || isSelected || hoveredEdgeId === edge.id || endpointSelected,
+          emphasis: edgeEmphasis,
+          evidenceCount: edge.evidence.length,
+          lane: plan?.lane ?? 0,
+          laneCount: plan?.laneCount ?? 1,
+          mode: routeMode,
+          incidentByNode,
+          fallbackSizes: estimatedSizes,
+        },
+      };
+    });
+    // Paint quiet edges first, related ones above them, the selected edge
+    // last — still beneath every node card (edges live in the lower SVG).
+    const paintRank = (edge: LearningFlowEdge) =>
+      edge.selected ? 2 : edge.data?.emphasis === 'related' ? 1 : 0;
+    return list.sort((a, b) => paintRank(a) - paintRank(b));
+  }, [
+    visibleEdges,
+    selectedEdgeId,
+    selectedNodeId,
+    emphasis,
+    hoveredEdgeId,
+    showEdgeLabels,
+    lanePlans,
+    incidentByNode,
+    estimatedSizes,
+    routeMode,
+  ]);
 
   const searchMatches = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -425,7 +628,8 @@ function ConceptGraphInner({
 
   const centerOnConcept = useCallback(
     (conceptId: string) => {
-      const pos = savedPositions[conceptId] ?? basePositions.get(conceptId);
+      const pos =
+        dragPositions[conceptId] ?? savedPositions[conceptId] ?? basePositions.get(conceptId);
       if (!pos) return;
       const size = estimateNodeSize(
         concepts.find((c) => c.id === conceptId)?.name ?? '',
@@ -436,7 +640,7 @@ function ConceptGraphInner({
         duration: motionDuration(300),
       });
     },
-    [savedPositions, basePositions, concepts, degree, setCenter, getZoom],
+    [dragPositions, savedPositions, basePositions, concepts, degree, setCenter, getZoom],
   );
 
   const handleSearchPick = useCallback(
@@ -451,15 +655,25 @@ function ConceptGraphInner({
 
   const handleRelayout = useCallback(() => {
     setSavedPositions({});
+    setDragPositions({});
     if (versionId) savePositions(versionId, {});
     setRelayoutNonce((n) => n + 1);
   }, [versionId]);
 
   const { fitView } = useReactFlow();
   const handleFit = useCallback(() => {
-    void fitView({ padding: 0.18, maxZoom: 1.35, duration: motionDuration(220) });
+    void fitView({ ...FIT_VIEW_OPTIONS, duration: motionDuration(220) });
   }, [fitView]);
 
+  /**
+   * One automatic fit per meaningful graph state. Built from the CORE
+   * visible set (mode, focus, toggles, data) — hover, selection, and drags
+   * are structurally unable to change this key.
+   */
+  const visibleSetKey = useMemo(() => {
+    const ids = [...coreVisibleIds].sort().join('§');
+    return `${coreVisibleIds.size}:${hashId(ids).toString(36)}`;
+  }, [coreVisibleIds]);
   const fitTrigger = [
     versionId ?? 'none',
     layoutMode,
@@ -467,7 +681,7 @@ function ConceptGraphInner({
     showUnassessed ? 'u1' : 'u0',
     relayoutNonce,
     refitKey ?? '',
-    visibleConcepts.length,
+    visibleSetKey,
   ].join('|');
 
   const focusName = focus ? concepts.find((c) => c.id === focus.rootId)?.name : null;
@@ -476,12 +690,26 @@ function ConceptGraphInner({
     [concepts, overlay],
   );
 
+  /** 薄弱路径 caption info (and the "identical to full graph" explanation). */
+  const weakPathInfo =
+    layoutMode === 'weak-path' && !focus && weakSubgraph.conceptIds.size > 0
+      ? {
+          nodeCount: visibleConcepts.length,
+          totalCount: concepts.length,
+          coversAll:
+            visibleConcepts.length === concepts.length && visibleEdges.length === validEdges.length,
+          truncated: weakSubgraph.truncated,
+        }
+      : null;
+
   return (
     <div className="graph-canvas" data-testid="concept-graph" ref={canvasRef}>
       <ReactFlow
         nodes={flowNodes}
         edges={flowEdges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        onNodesChange={handleNodesChange}
         minZoom={0.15}
         maxZoom={2}
         nodesConnectable={false}
@@ -493,25 +721,22 @@ function ConceptGraphInner({
           setFocus({ rootId: node.id, hops: 1 });
           onSelectNode(node.id);
         }}
-        onNodeDragStop={(_, node) => {
-          setSavedPositions((current) => {
-            const next = { ...current, [node.id]: { x: node.position.x, y: node.position.y } };
-            if (versionId) savePositions(versionId, next);
-            return next;
-          });
-        }}
+        onNodeDragStart={handleNodeDragStart}
+        onNodeDragStop={handleNodeDragStop}
         onNodeMouseEnter={(event, node) => {
+          if (draggingRef.current) return;
           setHoveredNodeId(node.id);
           const rect = canvasRef.current?.getBoundingClientRect();
-          setTooltip({
+          scheduleTooltip({
             conceptId: node.id,
             x: event.clientX - (rect?.left ?? 0) + 14,
             y: event.clientY - (rect?.top ?? 0) + 14,
           });
         }}
         onNodeMouseMove={(event, node) => {
+          if (draggingRef.current) return;
           const rect = canvasRef.current?.getBoundingClientRect();
-          setTooltip({
+          scheduleTooltip({
             conceptId: node.id,
             x: event.clientX - (rect?.left ?? 0) + 14,
             y: event.clientY - (rect?.top ?? 0) + 14,
@@ -519,8 +744,12 @@ function ConceptGraphInner({
         }}
         onNodeMouseLeave={() => {
           setHoveredNodeId(null);
-          setTooltip(null);
+          scheduleTooltip(null);
         }}
+        onEdgeMouseEnter={(_, edge) => {
+          if (!draggingRef.current) setHoveredEdgeId(edge.id);
+        }}
+        onEdgeMouseLeave={() => setHoveredEdgeId(null)}
         onEdgeClick={(_, edge) => onSelectEdge(edge.id)}
         onPaneClick={() => {
           onSelectNode(null);
@@ -528,6 +757,7 @@ function ConceptGraphInner({
         }}
       >
         <AutoFit trigger={fitTrigger} />
+        <EdgeMarkerDefs />
         <Background gap={26} size={1.4} />
         <Controls showInteractive={false} position="bottom-right" />
 
@@ -642,6 +872,19 @@ function ConceptGraphInner({
           </Panel>
         ) : null}
 
+        {weakPathInfo ? (
+          <Panel
+            position="top-center"
+            className="graph-overlay graph-weak-path-banner"
+            aria-label="薄弱路径说明"
+          >
+            {weakPathInfo.coversAll
+              ? '当前最小补救路径恰好覆盖整个图谱:每个概念都是薄弱概念或位于其先修路径上。'
+              : `薄弱路径:显示 ${weakPathInfo.nodeCount}/${weakPathInfo.totalCount} 个概念(薄弱概念 + 最短先修路径 + 有限上下文)。`}
+            {weakPathInfo.truncated ? ' 已按节点预算截断。' : ''}
+          </Panel>
+        ) : null}
+
         <Panel position="bottom-left" className="graph-overlay graph-legend-panel">
           <GraphLegend />
         </Panel>
@@ -684,7 +927,14 @@ function GraphTooltip({
   if (!concept) return null;
   const state = overlay.get(concept.id);
   return (
-    <div className="graph-tooltip" role="tooltip" style={{ left: tooltip.x, top: tooltip.y }}>
+    <div
+      className="graph-tooltip"
+      role="tooltip"
+      // pointer-events none also lives in CSS; inline here so the purely
+      // informational tooltip can never intercept hover/drag input even if
+      // stylesheets fail to load (this was a flicker class of bug).
+      style={{ left: tooltip.x, top: tooltip.y, pointerEvents: 'none' }}
+    >
       <strong>{concept.name}</strong>
       <span>
         {STATE_LABELS[state?.state ?? 'unassessed']}

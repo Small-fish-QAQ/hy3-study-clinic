@@ -110,20 +110,24 @@ export function computeForceLayout(
       'link',
       forceLink<SimNode, SimulationLinkDatum<SimNode>>(links)
         .id((n) => n.id)
-        .distance(190)
-        .strength(0.55),
+        // Longer links + stronger repulsion than the defaults give edge
+        // routing room to work with: readable paths, fewer node-on-edge
+        // collisions, still compact enough for one fitView.
+        .distance(215)
+        .strength(0.5),
     )
-    .force('charge', forceManyBody<SimNode>().strength(-460))
+    .force('charge', forceManyBody<SimNode>().strength(-560))
     .force(
       // Rectangular nodes: collide on the circumscribed circle so two
-      // rectangles can never overlap, plus breathing room for labels.
+      // rectangles can never overlap, plus breathing room for labels and
+      // likely edge corridors.
       'collide',
       forceCollide<SimNode>()
-        .radius((n) => Math.hypot(n.size.width / 2, n.size.height / 2) + 14)
+        .radius((n) => Math.hypot(n.size.width / 2, n.size.height / 2) + 24)
         .iterations(2),
     )
-    .force('x', forceX<SimNode>(0).strength(0.06))
-    .force('y', forceY<SimNode>(0).strength(0.08))
+    .force('x', forceX<SimNode>(0).strength(0.055))
+    .force('y', forceY<SimNode>(0).strength(0.07))
     .stop();
 
   // Bounded synchronous convergence — never a background timer.
@@ -201,49 +205,151 @@ export function computeDependencyLayout(
   return positions;
 }
 
+/** Deterministic budgets for the 薄弱路径 subgraph. */
+export interface WeakPathLimits {
+  /** Shortest-path prerequisite ancestors kept per weak concept. */
+  maxPrereqAncestorsPerWeak: number;
+  /** Direct part_of wholes (essential context) kept per weak concept. */
+  maxPartOfParentsPerWeak: number;
+  /** Direct prerequisite dependents kept per weak concept. */
+  maxDependentsPerWeak: number;
+  /** Hard cap for the whole subgraph (weak concepts always survive). */
+  maxTotalNodes: number;
+}
+
+export const WEAK_PATH_LIMITS: WeakPathLimits = {
+  maxPrereqAncestorsPerWeak: 4,
+  maxPartOfParentsPerWeak: 1,
+  maxDependentsPerWeak: 2,
+  maxTotalNodes: 40,
+};
+
+export interface WeakPathSubgraph {
+  conceptIds: Set<string>;
+  edgeIds: Set<string>;
+  /** True when a node budget cut prerequisite paths or dependents. */
+  truncated: boolean;
+}
+
 /**
- * 薄弱路径 subset: weak concepts, their transitive prerequisite ancestors
- * (the repair path), and their direct neighbors for context.
+ * 薄弱路径: a minimal remediation-oriented subgraph, not a neighborhood dump.
+ *
+ * Included, in deterministic priority order:
+ *   1. every weak concept;
+ *   2. shortest prerequisite paths from each weak concept toward its
+ *      foundational ancestors (BFS over incoming prerequisite edges,
+ *      bounded per weak concept);
+ *   3. the direct part_of whole of each weak concept (bounded) — the
+ *      structural context a learner needs to place the weak part;
+ *   4. a small bounded number of direct prerequisite dependents, so the
+ *      learner sees what unlocks once the weakness is repaired.
+ *
+ * Only prerequisite and part_of edges between included concepts are kept.
+ * contrasts_with / example_of / applies_to / causes never define the path
+ * and are excluded even when both endpoints are visible. Ties are broken by
+ * the input concept order and edge IDs, so the result is stable.
  */
-export function weakPathConceptIds(
+export function weakPathSubgraph(
   concepts: Concept[],
   edges: GraphEdge[],
   overlay: Map<string, ConceptLearnerState>,
-): Set<string> {
-  const idSet = new Set(concepts.map((c) => c.id));
-  const weak = new Set(concepts.filter((c) => overlay.get(c.id)?.treatAsWeak).map((c) => c.id));
-  const result = new Set(weak);
-
-  // Transitive prerequisite ancestors of weak concepts.
-  const prereqParents = new Map<string, string[]>();
-  for (const edge of edges) {
-    if (edge.relation !== 'prerequisite') continue;
-    if (!idSet.has(edge.sourceConceptId) || !idSet.has(edge.targetConceptId)) continue;
-    const list = prereqParents.get(edge.targetConceptId) ?? [];
-    list.push(edge.sourceConceptId);
-    prereqParents.set(edge.targetConceptId, list);
+  limits: WeakPathLimits = WEAK_PATH_LIMITS,
+): WeakPathSubgraph {
+  const conceptOrder = new Map(concepts.map((c, i) => [c.id, i]));
+  const valid = edges.filter(
+    (e) => conceptOrder.has(e.sourceConceptId) && conceptOrder.has(e.targetConceptId),
+  );
+  const weak = concepts.filter((c) => overlay.get(c.id)?.treatAsWeak).map((c) => c.id);
+  if (weak.length === 0) {
+    return { conceptIds: new Set(), edgeIds: new Set(), truncated: false };
   }
-  const queue = [...weak];
-  while (queue.length > 0) {
-    const id = queue.pop()!;
-    for (const parent of prereqParents.get(id) ?? []) {
-      if (!result.has(parent)) {
-        result.add(parent);
-        queue.push(parent);
+
+  const byIdThenOrder = (aId: string, aEdge: string, bId: string, bEdge: string): number => {
+    const orderDiff = (conceptOrder.get(aId) ?? 0) - (conceptOrder.get(bId) ?? 0);
+    return orderDiff !== 0 ? orderDiff : aEdge.localeCompare(bEdge);
+  };
+
+  // Sorted adjacency for deterministic traversal.
+  const prereqParents = new Map<string, Array<{ id: string; edgeId: string }>>();
+  const prereqChildren = new Map<string, Array<{ id: string; edgeId: string }>>();
+  const partOfWholes = new Map<string, Array<{ id: string; edgeId: string }>>();
+  for (const edge of valid) {
+    if (edge.relation === 'prerequisite') {
+      const parents = prereqParents.get(edge.targetConceptId) ?? [];
+      parents.push({ id: edge.sourceConceptId, edgeId: edge.id });
+      prereqParents.set(edge.targetConceptId, parents);
+      const children = prereqChildren.get(edge.sourceConceptId) ?? [];
+      children.push({ id: edge.targetConceptId, edgeId: edge.id });
+      prereqChildren.set(edge.sourceConceptId, children);
+    } else if (edge.relation === 'part_of') {
+      // source is the part; target is the whole that gives it context.
+      const wholes = partOfWholes.get(edge.sourceConceptId) ?? [];
+      wholes.push({ id: edge.targetConceptId, edgeId: edge.id });
+      partOfWholes.set(edge.sourceConceptId, wholes);
+    }
+  }
+  for (const map of [prereqParents, prereqChildren, partOfWholes]) {
+    for (const list of map.values()) {
+      list.sort((a, b) => byIdThenOrder(a.id, a.edgeId, b.id, b.edgeId));
+    }
+  }
+
+  const included = new Set(weak);
+  let truncated = false;
+  const tryInclude = (id: string): boolean => {
+    if (included.has(id)) return true;
+    if (included.size >= limits.maxTotalNodes) {
+      truncated = true;
+      return false;
+    }
+    included.add(id);
+    return true;
+  };
+
+  // 2. Shortest prerequisite repair paths (BFS up = nearest ancestors first).
+  for (const weakId of weak) {
+    let added = 0;
+    const visited = new Set([weakId]);
+    const queue = [weakId];
+    while (queue.length > 0 && added < limits.maxPrereqAncestorsPerWeak) {
+      const current = queue.shift()!;
+      for (const parent of prereqParents.get(current) ?? []) {
+        if (visited.has(parent.id)) continue;
+        visited.add(parent.id);
+        if (added >= limits.maxPrereqAncestorsPerWeak) break;
+        if (!tryInclude(parent.id)) break;
+        added += 1;
+        queue.push(parent.id);
       }
     }
   }
 
-  // Direct neighbors (any relation) for context.
-  for (const edge of edges) {
-    if (weak.has(edge.sourceConceptId) && idSet.has(edge.targetConceptId)) {
-      result.add(edge.targetConceptId);
-    }
-    if (weak.has(edge.targetConceptId) && idSet.has(edge.sourceConceptId)) {
-      result.add(edge.sourceConceptId);
+  // 3. Direct part_of wholes for structural context.
+  for (const weakId of weak) {
+    for (const whole of (partOfWholes.get(weakId) ?? []).slice(0, limits.maxPartOfParentsPerWeak)) {
+      tryInclude(whole.id);
     }
   }
-  return result;
+
+  // 4. Bounded direct dependents (what the weak concept unlocks).
+  for (const weakId of weak) {
+    for (const child of (prereqChildren.get(weakId) ?? []).slice(0, limits.maxDependentsPerWeak)) {
+      tryInclude(child.id);
+    }
+  }
+
+  // Only remediation-relevant relations between included concepts survive.
+  const edgeIds = new Set(
+    valid
+      .filter(
+        (e) =>
+          (e.relation === 'prerequisite' || e.relation === 'part_of') &&
+          included.has(e.sourceConceptId) &&
+          included.has(e.targetConceptId),
+      )
+      .map((e) => e.id),
+  );
+  return { conceptIds: included, edgeIds, truncated };
 }
 
 /** One- or two-hop neighborhood of a focus concept (聚焦邻域). */

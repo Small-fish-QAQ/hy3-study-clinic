@@ -9,7 +9,7 @@ import {
   loadSavedPositions,
   neighborhoodConceptIds,
   savePositions,
-  weakPathConceptIds,
+  weakPathSubgraph,
 } from './graph/layout';
 import { graphConcepts, graphEdges, overlayStates, T0 } from '../test/fixtures';
 
@@ -108,12 +108,17 @@ describe('graph layout (deterministic)', () => {
     }
   });
 
-  it('selects weak concepts, prerequisite ancestors, and neighbors for 薄弱路径', () => {
-    // con_0 is weak; con_1 is its direct neighbor; con_2 is unrelated.
-    const ids = weakPathConceptIds(concepts, graphEdges, overlay);
-    expect(ids.has('con_0')).toBe(true);
-    expect(ids.has('con_1')).toBe(true);
-    expect(ids.has('con_2')).toBe(false);
+  it('selects weak concepts, repair paths, and bounded dependents for 薄弱路径', () => {
+    // Deliberate behavior change (defect fix): 薄弱路径 is now a minimal
+    // remediation subgraph instead of a full any-relation neighborhood.
+    // con_0 is weak; con_1 is its direct prerequisite dependent (kept, with
+    // its edge); con_2 is unrelated and excluded.
+    const sub = weakPathSubgraph(concepts, graphEdges, overlay);
+    expect(sub.conceptIds.has('con_0')).toBe(true);
+    expect(sub.conceptIds.has('con_1')).toBe(true);
+    expect(sub.conceptIds.has('con_2')).toBe(false);
+    expect(sub.edgeIds.has('ge_1')).toBe(true);
+    expect(sub.truncated).toBe(false);
   });
 
   it('computes one- and two-hop neighborhoods', () => {
@@ -145,8 +150,9 @@ describe('ConceptGraph toolbar and layout modes', () => {
     expect(screen.getByLabelText('图谱概要')).toHaveTextContent(
       '文档 1 · 概念 3 · 关系 1 · 薄弱 1',
     );
-    // Edge labels are opt-in.
-    expect(document.querySelector('.react-flow__edge-text')).toBeNull();
+    // Edge labels are opt-in (they now render as HTML pills on the routed
+    // path via EdgeLabelRenderer — a deliberate change from SVG edge text).
+    expect(document.querySelector('.edge-label-pill')).toBeNull();
   });
 
   it('shows edge labels after the explicit toggle', async () => {
@@ -154,7 +160,7 @@ describe('ConceptGraph toolbar and layout modes', () => {
     renderGraph();
     await user.click(await screen.findByRole('button', { name: '显示关系标签' }));
     await waitFor(() => {
-      expect(document.querySelector('.react-flow__edge-text')).not.toBeNull();
+      expect(document.querySelector('.edge-label-pill')).not.toBeNull();
     });
     expect(screen.getByRole('button', { name: '隐藏关系标签' })).toHaveAttribute(
       'aria-pressed',
@@ -223,7 +229,9 @@ describe('ConceptGraph hover, selection, and focus', () => {
       expect(nodeWrapper('提取练习').className).toContain('dimmed');
     });
     expect(nodeWrapper('间隔重复').className).not.toContain('dimmed');
-    const tooltip = screen.getByRole('tooltip');
+    // Tooltip position updates flow through one requestAnimationFrame, so
+    // the tooltip appears on the next frame rather than synchronously.
+    const tooltip = await screen.findByRole('tooltip');
     expect(tooltip).toHaveTextContent('工作记忆');
     expect(tooltip).toHaveTextContent('薄弱 · 掌握 47%');
     expect(tooltip).toHaveTextContent('关系 1 条 · 未解决错题 1 道');
