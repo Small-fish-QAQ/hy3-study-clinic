@@ -3,9 +3,9 @@
 [![CI](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml/badge.svg)](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-Hy3 Study Clinic is an **evidence-grounded personal learning workspace**. A learner organizes one or more course documents (pasted text, Markdown, TXT, PDF, DOCX) inside a course workspace, extracts grounded concepts, and lets Hy3 propose a **typed, evidence-cited concept graph** between those concepts. Deterministic local code validates every proposed relationship against the source text before anything is persisted. The learner's own mastery and mistake state is overlaid on the graph, weak concepts can request a **bounded, evidence-cited remediation plan**, and an accepted plan launches the existing deterministic quiz → grading → mistake-resolution → mastery pipeline.
+Hy3 Study Clinic builds a **verifiable personal learning graph** from course materials, **aligns concepts across documents** (including bilingual and malformed duplicates), **diagnoses learning gaps**, and uses a **bounded Hy3 tutor** to plan evidence-grounded adaptive learning. A learner organizes one or more course documents (pasted text, Markdown, TXT, PDF, DOCX) inside a course workspace, extracts grounded concepts, aligns them into canonical workspace concepts, and lets Hy3 propose a **typed, evidence-cited concept graph**. Deterministic local code validates every proposal against the source text before anything is persisted. Mastery, mistakes, tentative misconception hypotheses, and review status are overlaid on the graph; a bounded Tutor session inspects local state through a read-only tool whitelist and produces a validated learning plan; cross-document activities update mistakes, misconceptions, mastery, and review scheduling through deterministic local rules; and a daily learning queue brings the learner back at the right time.
 
-Everything the model proposes — concepts, questions, graph edges, plan reasons — carries `(blockId, exact quote)` citations that the server re-verifies with exact string matching before acceptance. Grading arithmetic, mistake lifecycle, mastery math, graph validation, and persistence remain local and deterministic. The complete workflow runs offline with the deterministic fake provider; the same contracts drive the real Hy3 provider when configured.
+Everything the model proposes — concepts, alignments, questions, graph edges, plan reasons, misconception hypotheses — carries `(blockId, exact quote)` citations that the server re-verifies with exact string matching before acceptance. Grading arithmetic, mistake lifecycle, misconception transitions, mastery math, review scheduling, graph and alignment acceptance, tool execution, budgets, and persistence remain local and deterministic. The complete workflow runs offline with the deterministic fake provider; the same runtime-validated contracts drive the real Hy3 provider when configured.
 
 ## The evidence-grounded learning workspace
 
@@ -23,6 +23,16 @@ The primary journey (fully covered by the fake-provider smoke script, `npm run d
 10. Launching an accepted plan reuses the existing remediation engine when targets still have open mistakes, or preconfigures a focused practice quiz otherwise. Scoring, mistake resolution, and mastery updates flow through the unchanged deterministic pipeline.
 
 Pre-upgrade single-material data remains fully readable: the migration gives every legacy material its own compatibility workspace and deletes nothing.
+
+### The adaptive learning loop
+
+On top of the workspace journey above, the adaptive upgrade (fully covered by `npm run demo:adaptive`) closes the loop:
+
+11. **Align concepts across documents** — deterministic local candidates (normalized keys, malformed concatenations, shared blocks/headings, bilingual summary overlap) feed a bounded Hy3 proposal round; exact-normalization aliases are auto-accepted by a documented local rule, everything else waits for review in the 概念对齐 panel (accept with name repair / keep separate / reject). The graph then renders **one canonical node** per aligned group, with aliases and all source documents in the inspector; original concepts, evidence, and learning history stay untouched underneath.
+12. **Run a diagnostic assessment** — a workspace-scoped quiz generated from validated question blueprints; cross-document questions (including the fully wired `concept_comparison` type) must carry verified evidence from at least two documents, and the client payload never contains answers, rubrics, or expected reasoning steps.
+13. **See misconception hypotheses** — a substantive wrong answer may create a *proposed* hypothesis (可能的误区 · 待确认). Only a discriminating question can locally *confirm* or *reject* it, and only later correct performance *resolves* a confirmed one. The model can never set these states.
+14. **Start a bounded Tutor session** from a weak node: a safe timeline streams live (state inspected → neighborhood inspected → tools requested and locally validated → evidence accepted → gap identified → strategy selected → plan accepted), the run is persisted and cancellable, and the final plan is validated by the same code path as the remediation planner before the recommended activity can be launched.
+15. **Review on schedule** — every graded activity advances a local FSRS-style scheduler (stability/difficulty/due date, kept strictly separate from mastery), and the 今日学习 daily queue orders overdue reviews, confirmed misconception repair, open mistakes, weak prerequisites, and due-today items by explicit deterministic priorities.
 
 ## Demo
 
@@ -100,20 +110,24 @@ Additional evidence: [successful 100-point remediation result](docs/assets/05-hy
 
 ## What Hy3 does
 
-The real `hy3` provider implements six model-backed tasks through an OpenAI-compatible `chat/completions` API:
+The real `hy3` provider implements ten model-backed tasks through an OpenAI-compatible `chat/completions` API:
 
 - extract concepts with proposed `{ blockId, quote }` evidence;
 - generate grounded standard quiz questions and explanations;
 - generate grounded remediation questions for selected open-mistake concepts;
 - semantically grade nonblank short answers against rubric points, returning a normalized score, matched points, confidence, and feedback;
 - propose typed concept-graph edges between **existing** concepts, each with 1–3 verbatim evidence quotes;
-- propose a bounded remediation plan (summary, weakness hypothesis, controlled strategy and difficulty, engine-supported question types, ordered steps, evidence-cited targets) from a locally bounded input.
+- propose a bounded remediation plan (summary, weakness hypothesis, controlled strategy and difficulty, engine-supported question types, ordered steps, evidence-cited targets) from a locally bounded input;
+- propose **concept alignments** (equivalent / alias / broader / narrower / related_but_distinct) between locally-pruned candidate pairs only, with a repaired canonical name and evidence;
+- propose **workspace assessment items** — a validated question blueprint (target concepts, difficulty, learning objective, evidence-mapped reasoning steps) plus its concrete question, including cross-document `concept_comparison` items with evidence from several documents;
+- propose (or explicitly decline) a **misconception hypothesis** for one wrong answer, with a controlled category and tentative wording;
+- drive one bounded **Tutor step** at a time: select a whitelisted read-only tool with validated arguments, or finalize a plan plus a recommended activity.
 
 Source blocks are wrapped in fresh per-request delimiters, labelled with stable block IDs, and explicitly marked as untrusted data rather than instructions. Short-answer grading inputs are fenced in the same way. Model output is JSON-extracted and checked against runtime schemas. If the model content cannot be extracted as valid JSON or fails its schema, the provider makes **one** structured repair request; a second failure returns a structured error. Transport, timeout, and later grounding failures are not retried by that repair loop.
 
 After schema validation, the server checks every proposed citation using exact string matching. It computes offsets itself, records repeated occurrences, narrowly re-anchors a quote only when there is one unambiguous alternative block, and rejects unsafe or missing evidence. This verifies that the cited text exists at the recorded location; it does not independently prove the semantic truth of every generated explanation.
 
-Hy3 does **not** perform objective scoring, total-score arithmetic, remediation target selection, mistake lifecycle management, mastery math, graph validation or activation, plan acceptance, document parsing, or SQLite persistence. The model can never directly modify mastery, resolve or close mistakes, delete history, or mutate persistent learning state — plans and graphs it proposes are data that local code validates, persists, and acts on.
+Hy3 does **not** perform objective scoring, total-score arithmetic, remediation target selection, mistake lifecycle management, misconception state transitions, mastery math, review scheduling, graph or alignment validation or acceptance, tool execution, plan acceptance, document parsing, or SQLite persistence. The model can never directly modify mastery, resolve or close mistakes, confirm/reject/resolve misconceptions, set review dates, accept concept merges, delete history, or mutate persistent learning state — everything it proposes is data that local code validates, persists, and acts on.
 
 ## What remains deterministic and local
 
@@ -135,6 +149,13 @@ The application keeps control-flow and record-keeping decisions outside the mode
 | Persistence and recovery | Stores records in SQLite; restores the last selected material and workspace, their blocks/concepts/graph, while keeping mistake and mastery records available through scoped APIs. |
 | Material management | Searches history, renames records, and transactionally deletes a document with its dependent learning data, graph edges, and workspace plans. |
 | Request safety | Propagates cancellation and ignores superseded or late UI responses, including responses for a workspace, document, graph version, selection, or plan that was switched or deleted. |
+| Alignment acceptance | Generates candidates deterministically (never all-pairs), auto-accepts only exact-normalization aliases under a documented tested rule, verifies proposal evidence, restricts proposals to locally-offered pairs, executes merges as transactional set unions (cycles impossible), and keeps every decision auditable. |
+| Blueprint validation | Confirms blueprint concepts/documents belong to the workspace, verifies every evidence quote, computes `cross_document` scope from **verified** evidence only (a false multi-document claim is rejected), checks reasoning-step/evidence consistency, and strips answers, rubrics, and reasoning steps from client payloads. |
+| Tutor execution | Validates every tool request against a typed whitelist with strict argument schemas, enforces workspace isolation and explicit budgets (6 iterations / 12 tool calls / 3 plan targets / 8 blocks per search / 20 evidence records), composes every timeline event locally, and validates the final plan through the shared planner validator. Failed, cancelled, or interrupted runs change no learning state. |
+| Misconception lifecycle | Owns the `proposed → confirmed/rejected → resolved` state machine; only graded discriminating questions trigger transitions, illegal transitions are rejected, and terminal records stay auditable. |
+| Review scheduling | Advances a local FSRS-style scheduler (stability, difficulty, due date, lapse count) only from completed graded events, keeps it strictly separate from mastery, and versions the scheduler state. |
+| Daily queue | Orders overdue reviews (most overdue first), confirmed misconception repair, open mistakes, weak prerequisites, and due-today reviews by explicit deterministic priorities — facts only, no invented time estimates. |
+| Source retrieval | A bounded local BM25-style lexical search (CJK bigrams + Latin words) plus graph-neighborhood expansion; bounded query/result/excerpt sizes, exact source locations, workspace isolation, no SQL/filesystem/network access. |
 
 Historical weighted mastery uses the transparent local formula:
 
@@ -176,6 +197,51 @@ plus mastery value, attempt/correct counts, last score and activity time, open/r
 - **Local acceptance rules**: every target must be a workspace concept; the selected concept or one of its direct prerequisites must remain central; target evidence is re-verified against the source; an invalid proposal fails with a structured error and the previously accepted plan is kept. One accepted plan is stored per (workspace, concept).
 - **Launch**: if plan targets still have open mistakes, the existing remediation engine runs on the document with the most open targeted mistakes, restricted to plan targets (questions stay linked to the mistakes they re-test). Otherwise a focused practice quiz is preconfigured from the plan's difficulty and question types. Either way the existing deterministic grading/mistake/mastery pipeline is unchanged, and the plan itself never writes learning state.
 
+## Canonical cross-document concept alignment
+
+- **Layered model** — source concept mentions (the original per-document rows) are never destroyed or rewritten. A separate alignment layer maps every source concept into exactly one **canonical workspace concept**; merging is a transactional union of two canonical groups, so cycles are impossible by construction. Aliases are the distinct member names; every proposal (accepted, rejected, or kept separate) stays auditable.
+- **Deterministic candidates first** — normalized-key equality (NFKC + casefold + whitespace/punctuation strip + safe plural folding), malformed-concatenation containment (`Workingmemoryhas` ⊃ `workingmemory`), shared evidence blocks, identical headings across documents, Latin token overlap, bilingual summary-bigram overlap, and previously accepted alias knowledge. The bounded candidate list (≤30 pairs) is all Hy3 ever sees — never all pairs.
+- **One tested auto-accept rule** — only exact normalized-key equality is auto-accepted (as `alias`, origin `local_rule`), with the display name chosen deterministically (Chinese over Latin, spaced over concatenated, then shorter). Every semantic merge requires review.
+- **Local validation of proposals** — concepts must exist in the workspace, the pair must have been locally offered, self-alignment is rejected, evidence quotes must verify exactly, duplicates are dropped. Rejected model output is reported with reasons, never persisted as accepted.
+- **Deletion policy** — memberships cascade away with their source concepts; a canonical concept survives while at least one backing document remains and is removed with its last member.
+- **Display** — the graph renders one node per canonical group (anchored on a stable representative source concept, so saved positions and selection keep working); edges are re-anchored and deduplicated; learner overlays aggregate member states with the same thresholds as the server. All of this is a pure client-side projection — no second source of truth.
+
+## Cross-document assessment
+
+- **Question blueprints** — every workspace assessment question is generated together with a blueprint recording target canonical concepts, source concepts, source documents, type, difficulty, learning objective, evidence-mapped expected reasoning steps, scope, and grading method. Blueprints are persisted for audit; reasoning steps stay server-side.
+- **Honest cross-document scope** — `cross_document` is computed locally from the documents of the **verified** evidence; a question claiming to span documents without verified multi-document evidence is rejected (`concept_comparison` requires it).
+- **`concept_comparison`** is a fully wired new question type: generated with evidence from at least two documents, answered as free text, graded through the existing semantic-rubric path, persisted, displayed with per-document evidence badges, and covered by tests. Existing `single_choice`/`multiple_choice`/`short_answer` behavior is unchanged.
+- **Exact attribution** — grading keys every question to **its own concept's document** (never an arbitrary quiz-level document): mistakes, mastery, misconceptions, and review items all land on the right concept and document, while blueprints retain the canonical- and document-level trace. Assessment modes: `diagnostic`, `concept_practice`, `prerequisite_repair`, `cross_document`, `review`, `misconception_check`.
+- **Closing the loop** — practice-oriented assessment questions link to the open mistakes of their concept, so a correct answer resolves exactly those mistakes (the same rule remediation quizzes always had). Every graded submission returns a deterministic `stateChanges` summary (concepts and documents assessed, mistakes created/resolved, misconception transitions, mastery movements, review scheduling, recommended next step) that the results view renders.
+
+## Bounded Hy3 Tutor
+
+- **Tool whitelist** (read-only, workspace-scoped, strict Zod argument schemas): `inspect_learning_state`, `inspect_concept`, `inspect_canonical_aliases`, `get_graph_neighborhood`, `get_prerequisite_path`, `search_source_blocks`, `read_source_block`, `inspect_open_mistakes`, `inspect_misconceptions`, `inspect_review_queue`. Tools cannot touch the filesystem, run SQL or shell commands, make HTTP requests, or mutate any state; out-of-workspace references fail closed before execution.
+- **Explicit budgets** — at most 6 planning iterations, 12 executed tool calls, 3 final plan targets, 8 blocks per search, 20 retained evidence records, and a bounded observation size; no recursion, no sub-agents, no unbounded retries. A model that never finalizes fails the run with zero state changes.
+- **Safe timeline** — the run streams NDJSON events (`session_started`, `state_inspected`, `neighborhood_inspected`, `tool_requested/validated/rejected`, `evidence_accepted/rejected`, `gap_identified`, `strategy_selected`, `plan_accepted`, `session_completed/cancelled/failed`) whose summaries are composed by local code. Chain-of-thought, raw prompts, and raw model output are never exposed or persisted.
+- **Final plan** — validated by the same shared validator as the remediation planner (workspace concepts only, centrality, exact-quote evidence) and persisted through the existing plan store, together with a recommended activity (`mode` + concept ids) the UI can launch in one click.
+- **Run persistence** — every run (status, iterations, tool calls, accepted evidence, plan, activity, error) and its timeline events are persisted and inspectable; client disconnects mark the run `cancelled`; runs left `running` by a dead process are marked `interrupted` on startup. No non-completed run ever alters mastery, mistakes, misconceptions, or review state.
+
+## Misconception hypotheses
+
+- One wrong answer is **never** a diagnosis. A substantive wrong answer on a workspace assessment may create a *proposed* hypothesis (bounded to 2 per submission, provider output schema-validated, evidence verified, tentative wording enforced in the UI: 可能的误区 · 待确认).
+- The deterministic state machine is `proposed → confirmed | rejected` (decided **only** by a graded discriminating question: wrong confirms, correct rejects) and `confirmed → resolved` (a later correct discriminating answer). `rejected`/`resolved` are terminal and stay auditable; illegal transitions are refused; the model cannot set any state.
+- The Tutor ranks confirmed misconceptions above one-off proposals; rejected hypotheses never drive the daily queue.
+
+## Review scheduling and the daily queue
+
+- **Separate concerns** — mastery answers "how well has understanding been demonstrated"; review scheduling answers "when should this concept be reviewed". Neither overwrites the other.
+- **Local FSRS-style scheduler** (documented deliberately as a compact local implementation instead of a new dependency): per-concept stability and difficulty, deterministic score→rating mapping (`again < 0.6 ≤ hard < 0.75 ≤ good < 0.9 ≤ easy`), growth on success, collapse + lapse count on `again`, versioned state, immutable review events, fixed-clock tests. Only completed graded events advance it.
+- **今日学习 daily queue** — overdue reviews (most overdue first), confirmed misconception repair, open mistakes, weak prerequisites of weak concepts, then due-today reviews; one concept appears once; reasons state facts (counts, overdue days) with no invented time estimates.
+
+## Bounded local source retrieval
+
+Retrieval is a small deterministic module, not a vector database: NFKC-normalized CJK character bigrams plus Latin word tokens scored BM25-style over the workspace's blocks, with graph-neighborhood expansion appended and everything bounded (query ≤200 chars, ≤8 results, ≤240-char excerpts with exact offsets). SQLite FTS5 was deliberately not used because its default tokenizers do not segment CJK text; at dozens of blocks per workspace, scoring on the fly is simpler and consistent. Retrieved text is data only — documents containing instruction-like text ("Ignore all previous instructions…") flow through search results verbatim with zero effect on state, and every prompt fences source material as untrusted data.
+
+## Evaluation
+
+`eval/` contains small original bilingual fixtures (including malformed names, conflicting claims, and prompt-injection text), hand-authored labels (explicitly not model-generated), and two runners: `npm run eval:fake` (offline; 31 structural checks over provenance, alignment, blueprints, budgets, misconception/review transitions, retrieval bounds, injection defenses, and state invariants) and `npm run eval:hy3` (optional; requires explicit real credentials, refuses to run without them, and measures schema first-pass success, grounding acceptance, label agreement, cross-document answerability, Tutor-step validity, and latency). See [eval/README.md](eval/README.md).
+
 ## Database migrations
 
 The SQLite schema is migrated in place (numbered, run-once, idempotent to re-run):
@@ -183,6 +249,13 @@ The SQLite schema is migrated in place (numbered, run-once, idempotent to re-run
 1. `initial_schema` — original tables.
 2. `course_workspaces_and_documents` — adds `workspaces`, document metadata columns on `materials` (media type, filename, parse status, page count, warnings, parser version, original bytes, `updated_at`), and `page_number` on `source_blocks`. Every existing material receives its own compatibility workspace named after its title. No learning data is deleted or rewritten; migration from a populated pre-upgrade database is covered by tests.
 3. `concept_graph_and_remediation_plans` — adds `graph_versions`, `graph_edges` (FK-cascaded to concepts), `graph_edge_evidence` (FK-cascaded to source blocks), and `remediation_plans` (unique per workspace + concept).
+4. `canonical_concept_alignment` — adds `canonical_concepts`, `canonical_members` (one per source concept, FK-cascaded), and auditable `alignment_proposals`.
+5. `workspace_assessments_and_blueprints` — rebuilds `quizzes` per the documented SQLite table-rebuild procedure (all rows copied; `material_id` becomes nullable, `workspace_id`/`assessment_mode` added; foreign keys disabled around the transaction with a `foreign_key_check` before commit so a bad rebuild rolls back completely) and adds `question_blueprints`.
+6. `misconception_hypotheses` — adds `misconceptions` with full audit payloads.
+7. `review_scheduling` — adds `review_items` (per workspace + concept) and immutable `review_events`.
+8. `tutor_runs_and_events` — adds `tutor_runs` and their safe timeline `tutor_events`.
+
+Migration from populated v1 and v3 databases (including rollback on a mid-batch failure and FK re-enablement) is covered by tests; deleting one document preserves canonical concepts still backed by other documents, and deleting the last backing document removes them under the documented policy.
 
 ## New production dependencies
 
@@ -213,7 +286,7 @@ packages/shared ── runtime Zod schemas, domain types, provider payloads,
 - [`apps/web`](apps/web) contains the interactive learning-workspace (workspace/documents · interactive graph · evidence/tutor detail), import, quiz, results, mistake, mastery, evidence, and history-management UI.
 - [`apps/server`](apps/server) contains Fastify routes, ingestion and document parsing, grounding verification, graph validation, grading/remediation/planner services, provider adapters, repositories, and migrations.
 - [`packages/shared`](packages/shared) contains the cross-workspace runtime schemas and deterministic domain utilities.
-- SQLite stores workspaces, materials (documents), blocks, concepts, graph versions/edges/evidence, remediation plans, quizzes, submissions, grading results, mistakes, and mastery. The browser talks only to the server; it never calls Hy3 directly.
+- SQLite stores workspaces, materials (documents), blocks, concepts, canonical concepts/members/alignment proposals, graph versions/edges/evidence, remediation plans, question blueprints, quizzes, submissions, grading results, mistakes, mastery, misconceptions, review items/events, and Tutor runs/events. The browser talks only to the server; it never calls Hy3 directly.
 
 For a deeper request-lifecycle description, see [Architecture & Design Notes](docs/ARCHITECTURE.md).
 
@@ -277,6 +350,9 @@ The tracked [`.env.example`](.env.example) defines the complete configuration co
 | `npm run demo:offline` | Run both flows in-process with the offline fake provider after a build (repeatable offline; generated content/order may vary between runs). |
 | `npm run demo:http` | Drive both original flows over HTTP while `npm run dev:server` is running. |
 | `npm run demo:graph` | Drive the complete workspace → documents (MD/PDF/DOCX) → concepts → graph → overlay → plan → remediation workflow over HTTP while the server is running; `node scripts/smoke-graph.mjs verify <workspaceId> <conceptId>` re-checks persistence after a restart. |
+| `npm run demo:adaptive` | Drive the complete adaptive workflow over HTTP (multi-document import with bilingual duplicates → alignment → canonical graph → diagnostic assessment → misconception proposal + discriminating confirmation → bounded Tutor timeline → recommended practice → deterministic mistake/mastery/misconception/review updates → daily queue); `node scripts/smoke-adaptive.mjs verify <workspaceId> <conceptId> <runId>` re-checks persistence after a restart. |
+| `npm run eval:fake` | Offline structural evaluation (31 checks) after a build; writes `eval/reports/eval-fake.{json,md}`. |
+| `npm run eval:hy3` | Optional real-provider evaluation; requires explicit `HY3_*` credentials and refuses to run without them. |
 
 The web production bundle is emitted under `apps/web/dist` and can be served by a static host alongside the API.
 
@@ -301,18 +377,20 @@ Permanent deletion requires a confirmation that identifies the record and states
 
 ## Testing
 
-`npm test` was run against the current working tree on **2026-07-20**:
+`npm test` was run against the current working tree on **2026-07-21**:
 
 | Workspace | Test files | Tests | Result |
 | --- | ---: | ---: | --- |
-| `packages/shared` | 4 | 52 | Passed |
-| `apps/server` | 24 | 212 | Passed |
-| `apps/web` | 3 | 61 | Passed |
-| **Overall** | **31** | **325** | **Passed** |
+| `packages/shared` | 5 | 65 | Passed |
+| `apps/server` | 33 | 291 | Passed |
+| `apps/web` | 14 | 205 | Passed |
+| **Overall** | **52** | **561** | **Passed** |
 
 Regression coverage includes exact grounding and source fencing; structured Hy3 output and bounded repair (including graph-edge and plan proposals); semantic-grading equivalence rules; deterministic objective grading; resolved-concept exclusion and exact remediation pairs; no-open-mistake behavior; persistence recovery; rename/delete confirmation and failure handling; transactional rollback and cascade deletion; provider timeout/cancellation; and stale-response suppression after navigation, material switching, or deletion.
 
-Upgrade coverage adds: workspace/document/graph/plan schema bounds; PDF/DOCX/malformed-file ingestion with page and heading provenance; migration from a representative populated pre-upgrade database; the graph validation matrix (unknown/cross-workspace concepts, self-links, duplicates, invalid evidence, per-relation cycles, partial acceptance, edge budgets); the graph generation lifecycle (failed generation preserving the active version, version activation, retention); deterministic learner-overlay states; planner acceptance/rejection semantics (invalid plans keep the accepted plan; accepting writes no learning state) and both launch modes; document deletion pruning graph edges without dangling references; and the new frontend's states, node/edge selection, evidence display, planner lifecycle, cancellation, and stale-response suppression.
+Upgrade coverage adds: workspace/document/graph/plan schema bounds; PDF/DOCX/malformed-file ingestion with page and heading provenance; migration from representative populated pre-upgrade databases (v1 and v3, including rollback and FK re-enablement); the graph validation matrix; the graph generation lifecycle; deterministic learner-overlay states; planner acceptance/rejection semantics and both launch modes; document deletion pruning graph edges without dangling references; and the graph frontend's states, selection, evidence display, planner lifecycle, cancellation, and stale-response suppression.
+
+Adaptive coverage adds: alignment candidate signals and the exhaustive misconception transition matrix (shared package); alignment auto-accept/review/decide/rename/deletion-policy flows plus hostile-provider rejection (unoffered pairs, unknown concepts, self-alignment, fabricated evidence); cross-document blueprint validation (false multi-document claims, unsupported types, fabricated evidence, answer-leak prevention), per-concept document attribution, review scheduling only after graded completion, and adaptive mistake resolution; the review scheduler (fixed clock: initial scheduling, lapse, monotone growth, clamps, invalid ratings, day boundaries); retrieval bounds and injection neutrality; Tutor tool whitelist/argument/workspace-isolation/read-only guarantees, budget exhaustion, hostile tool calls, plan-validation fail-closed, target caps, cancellation, interrupted-run marking, NDJSON streaming, and end-to-end injection resistance; and the adaptive frontend (canonical node collapsing and overlay aggregation, alignment review with name repair, daily-queue launches, Tutor timeline streaming/cancellation/stale suppression, misconception and review display, and the state-change results card).
 
 ## CodeBuddy collaboration
 
@@ -340,15 +418,21 @@ CodeBuddy Code was connected to Hy3 through Tencent Cloud TokenHub and used for 
 ## Limitations
 
 - Reopening a material restores its source and concepts, but not historical quiz, submission, or result screens; there is no material-scoped read API for those histories.
-- Remediation processes at most three currently open concepts per round, and quizzes remain scoped to one document: launching a plan whose targets span multiple documents runs on the document with the most open targeted mistakes first.
+- Per-document remediation processes at most three currently open concepts per round; workspace assessments are bounded to 8 questions and 6 target concepts.
 - Unsubmitted answers live only in React state and are not persisted.
 - Permanent deletion has no recycle bin or undo; document reprocessing intentionally resets that document's extraction-dependent learning data after confirmation.
-- Mastery is a simple exponential moving-average heuristic, not a cognitive diagnosis; the learner-state thresholds (0.7 weak / 0.85 stable / 3 attempts) are deterministic product choices, not calibrated psychometrics. There is no spaced-repetition scheduling (no FSRS) and no review-needed state.
+- Mastery is a simple exponential moving-average heuristic, not a cognitive diagnosis; the learner-state thresholds (0.7 weak / 0.85 stable / 3 attempts) are deterministic product choices, not calibrated psychometrics.
+- **Semantic concept alignment can be wrong** — normalized-key auto-accept is safe by construction, but model-proposed merges are hypotheses the learner must review; a wrong accepted merge can be mitigated by renaming but there is currently no unmerge operation (the underlying source concepts and history remain intact).
+- **Misconception hypotheses require confirmation** — a proposed hypothesis is tentative by definition, one discriminating question is a pragmatic (not psychometrically validated) decision rule, and hypothesis quality depends on the provider.
+- **Review scheduling is not proof of learning** — the local FSRS-style model estimates forgetting risk with fixed constants; it is not calibrated to the individual learner, and there is no per-item manual rescheduling.
+- **Bounded Tutor plans may be incomplete** — the Tutor sees at most its budgeted tool observations; it can miss context, and a run that exhausts its budgets fails without a plan (by design).
 - No OCR: image-only PDFs (or pages) yield structured errors or per-page warnings. DOCX has no page numbers (section headings are the provenance); PDFs have no reliable heading structure (pages are the provenance).
-- Strict citation verification can reject otherwise schema-valid model output and require regeneration; the structured-output repair attempt does not repair downstream grounding failures. A generated graph can contain fewer edges than proposed when invalid candidates are rejected.
-- Exact-quote verification proves citation location, not semantic entailment — for quiz explanations, graph relationships, and plan reasons alike. A standard quiz can also contain fewer questions than requested if invalid questions are rejected but at least one valid question survives.
+- No vector database and no generic RAG: retrieval is bounded lexical scoring plus graph expansion; recall is limited by exact-ish term overlap (CJK bigrams mitigate segmentation but not synonymy).
+- Strict citation verification can reject otherwise schema-valid model output and require regeneration; the structured-output repair attempt does not repair downstream grounding failures. Generated graphs, quizzes, and assessments can contain fewer items than requested when invalid candidates are rejected.
+- Exact-quote verification proves citation location, not semantic entailment — for quiz explanations, graph relationships, alignment rationales, misconception hypotheses, and plan reasons alike.
 - Edge routing and crossing minimization are deterministic and bounded (small candidate sets, a bounded pair-improvement phase, and a bounded layout refinement — not an exhaustive global solver): dense or pathological arrangements can retain edge-edge crossings (the casing under-stroke keeps them legible), and a node dragged directly on top of the only corridor between two others can still force a route across a card. Manual node positions saved in one layout mode are reused by the other modes (by design, per graph version).
 - Legacy PDF/DOCX documents imported before the upgrade cannot be reprocessed (no stored original bytes); re-import them instead.
+- Evaluation fixtures and labels are deliberately small; `eval:hy3` results depend on the configured model/API and are indicative, not benchmarks. Generated content and ordering may vary between runs even in fake mode — only local scoring and state rules are deterministic.
 
 ## License
 
