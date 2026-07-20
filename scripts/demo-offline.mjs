@@ -3,6 +3,10 @@
  * Offline end-to-end demo: runs BOTH core flows in-process against the real
  * server application (in-memory SQLite + deterministic fake provider).
  *
+ * 保证的是"流程可离线复现":整个工作流可以在离线环境下重复运行。本地判分
+ * 规则(客观题判分、EMA 掌握度)是确定性的;但具体生成内容与排序(概念顺序、
+ * 选中的薄弱概念、生成的题目)在两次运行之间可能变化,不承诺逐字节一致的输出。
+ *
  * Prerequisite: `npm run build` (imports the compiled server from dist/).
  * Run: `node scripts/demo-offline.mjs`
  */
@@ -113,4 +117,4 @@ for (const m of mastery) {
 }
 
 await app.close();
-console.log('\n两条闭环全部离线完成:无网络、无 API Key、结果可复现。');
+console.log('\n两条闭环均可在无网络、无 API Key 的环境下重复运行;具体生成内容与排序可能变化。');
