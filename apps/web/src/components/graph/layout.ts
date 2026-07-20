@@ -9,6 +9,7 @@ import {
   type SimulationNodeDatum,
 } from 'd3-force';
 import type { Concept, ConceptLearnerState, GraphEdge } from '@hy3-clinic/shared';
+import { segmentIntersectsRect, segmentsIntersect, type Point } from './edgeGeometry.js';
 
 /**
  * Deterministic graph layouts for the personal learning graph.
@@ -134,13 +135,259 @@ export function computeForceLayout(
   const ticks = Math.min(300, 120 + concepts.length * 4);
   for (let i = 0; i < ticks; i++) simulation.tick();
 
+  // Crossing-aware local refinement of the settled force layout (bounded,
+  // deterministic). Runs only here — i.e. only for freshly generated
+  // automatic network positions; saved manual positions are layered on top
+  // of (and are never fed into) this function.
+  const centers = new Map<string, Point>(
+    nodes.map((node) => [node.id, { x: node.x ?? 0, y: node.y ?? 0 }]),
+  );
+  const refined = refineNetworkLayout(
+    centers,
+    new Map(nodes.map((node) => [node.id, node.size])),
+    edges.filter((e) => idSet.has(e.sourceConceptId) && idSet.has(e.targetConceptId)),
+  );
+
   for (const node of nodes) {
+    const center = refined.get(node.id) ?? { x: node.x ?? 0, y: node.y ?? 0 };
     positions.set(node.id, {
-      x: (node.x ?? 0) - node.size.width / 2,
-      y: (node.y ?? 0) - node.size.height / 2,
+      x: center.x - node.size.width / 2,
+      y: center.y - node.size.height / 2,
     });
   }
   return positions;
+}
+
+interface LayoutEdgeLike {
+  sourceConceptId: string;
+  targetConceptId: string;
+}
+
+/** Straight-line layout score used by the local refinement (proxy for the
+ * router: node-edge intersections weigh above crossings, both far above
+ * length, so refinement removes structural problems without scattering the
+ * layout). */
+function layoutScore(
+  centers: ReadonlyMap<string, Point>,
+  sizes: ReadonlyMap<string, NodeSize>,
+  edges: readonly LayoutEdgeLike[],
+): number {
+  let score = 0;
+  for (let i = 0; i < edges.length; i++) {
+    const a = edges[i]!;
+    const a1 = centers.get(a.sourceConceptId)!;
+    const a2 = centers.get(a.targetConceptId)!;
+    score += Math.hypot(a2.x - a1.x, a2.y - a1.y) * 0.35;
+    for (const [nodeId, center] of centers) {
+      if (nodeId === a.sourceConceptId || nodeId === a.targetConceptId) continue;
+      const size = sizes.get(nodeId) ?? { width: 160, height: 56 };
+      const rect = {
+        x: center.x - size.width / 2,
+        y: center.y - size.height / 2,
+        width: size.width,
+        height: size.height,
+      };
+      if (segmentIntersectsRect(a1, a2, rect, 6)) score += 1400;
+    }
+    for (let j = i + 1; j < edges.length; j++) {
+      const b = edges[j]!;
+      const shared =
+        a.sourceConceptId === b.sourceConceptId ||
+        a.sourceConceptId === b.targetConceptId ||
+        a.targetConceptId === b.sourceConceptId ||
+        a.targetConceptId === b.targetConceptId;
+      if (shared) continue;
+      const b1 = centers.get(b.sourceConceptId)!;
+      const b2 = centers.get(b.targetConceptId)!;
+      if (segmentsIntersect(a1, a2, b1, b2)) score += 900;
+    }
+  }
+  return score;
+}
+
+/** Circumscribed-circle radius used for the no-overlap constraint. */
+function circumRadius(size: NodeSize): number {
+  return Math.hypot(size.width / 2, size.height / 2);
+}
+
+/**
+ * Bounded deterministic crossing-aware refinement of a freshly generated
+ * network layout (Part of the ELK/Graphviz-inspired cleanup, without
+ * replacing the force layout): nodes involved in straight-line edge
+ * crossings or node-edge intersections try a small set of nudges and swaps;
+ * a move is accepted only when it strictly reduces the global score AND
+ * keeps node separation, per-node displacement, and overall compactness.
+ *
+ * Input and output are node CENTERS. The input map is never mutated.
+ */
+export function refineNetworkLayout(
+  centers: ReadonlyMap<string, Point>,
+  sizes: ReadonlyMap<string, NodeSize>,
+  edges: readonly LayoutEdgeLike[],
+): Map<string, Point> {
+  const result = new Map<string, Point>();
+  for (const [id, point] of centers) result.set(id, { x: point.x, y: point.y });
+  const valid = edges.filter(
+    (e) => centers.has(e.sourceConceptId) && centers.has(e.targetConceptId),
+  );
+  if (valid.length < 2 || centers.size < 3) return result;
+
+  const original = new Map<string, Point>(
+    [...centers].map(([id, point]) => [id, { x: point.x, y: point.y }]),
+  );
+  const ids = [...centers.keys()];
+  const bounds = {
+    minX: Math.min(...ids.map((id) => centers.get(id)!.x)) - 60,
+    maxX: Math.max(...ids.map((id) => centers.get(id)!.x)) + 60,
+    minY: Math.min(...ids.map((id) => centers.get(id)!.y)) - 60,
+    maxY: Math.max(...ids.map((id) => centers.get(id)!.y)) + 60,
+  };
+
+  const sizeOf = (id: string): NodeSize => sizes.get(id) ?? { width: 160, height: 56 };
+  const placementOk = (movedIds: string[]): boolean => {
+    for (const id of movedIds) {
+      const point = result.get(id)!;
+      if (
+        point.x < bounds.minX ||
+        point.x > bounds.maxX ||
+        point.y < bounds.minY ||
+        point.y > bounds.maxY
+      ) {
+        return false;
+      }
+      const home = original.get(id)!;
+      if (Math.hypot(point.x - home.x, point.y - home.y) > 300) return false;
+      const radius = circumRadius(sizeOf(id));
+      for (const otherId of ids) {
+        if (otherId === id) continue;
+        const other = result.get(otherId)!;
+        if (
+          Math.hypot(point.x - other.x, point.y - other.y) <
+          radius + circumRadius(sizeOf(otherId)) + 12
+        ) {
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
+  const NUDGES: Point[] = [
+    { x: 1, y: 0 },
+    { x: -1, y: 0 },
+    { x: 0, y: 1 },
+    { x: 0, y: -1 },
+    { x: 0.707, y: 0.707 },
+    { x: -0.707, y: 0.707 },
+    { x: 0.707, y: -0.707 },
+    { x: -0.707, y: -0.707 },
+  ];
+  const RADII = [40, 80];
+  const MAX_PASSES = 2;
+  const MAX_NODES_PER_PASS = 8;
+
+  let score = layoutScore(result, sizes, valid);
+  for (let pass = 0; pass < MAX_PASSES; pass++) {
+    // Rank nodes by how many crossing/intersection problems involve them.
+    const involvement = new Map<string, number>(ids.map((id) => [id, 0]));
+    for (let i = 0; i < valid.length; i++) {
+      const a = valid[i]!;
+      const a1 = result.get(a.sourceConceptId)!;
+      const a2 = result.get(a.targetConceptId)!;
+      for (const id of ids) {
+        if (id === a.sourceConceptId || id === a.targetConceptId) continue;
+        const size = sizeOf(id);
+        const rect = {
+          x: result.get(id)!.x - size.width / 2,
+          y: result.get(id)!.y - size.height / 2,
+          width: size.width,
+          height: size.height,
+        };
+        if (segmentIntersectsRect(a1, a2, rect, 6)) {
+          involvement.set(id, (involvement.get(id) ?? 0) + 1);
+        }
+      }
+      for (let j = i + 1; j < valid.length; j++) {
+        const b = valid[j]!;
+        const endpoints = [
+          a.sourceConceptId,
+          a.targetConceptId,
+          b.sourceConceptId,
+          b.targetConceptId,
+        ];
+        if (new Set(endpoints).size < 4) continue;
+        const b1 = result.get(b.sourceConceptId)!;
+        const b2 = result.get(b.targetConceptId)!;
+        if (segmentsIntersect(a1, a2, b1, b2)) {
+          for (const id of endpoints) involvement.set(id, (involvement.get(id) ?? 0) + 1);
+        }
+      }
+    }
+    const involved = ids
+      .filter((id) => (involvement.get(id) ?? 0) > 0)
+      .sort((a, b) => (involvement.get(b) ?? 0) - (involvement.get(a) ?? 0) || a.localeCompare(b))
+      .slice(0, MAX_NODES_PER_PASS);
+    if (involved.length === 0) break;
+
+    let improvedInPass = false;
+    for (const id of involved) {
+      const before = { ...result.get(id)! };
+      let best: { score: number; apply: () => void; revert: () => void } | null = null;
+
+      for (const radius of RADII) {
+        for (const direction of NUDGES) {
+          const candidate = {
+            x: before.x + direction.x * radius,
+            y: before.y + direction.y * radius,
+          };
+          result.set(id, candidate);
+          if (placementOk([id])) {
+            const candidateScore = layoutScore(result, sizes, valid);
+            if (candidateScore < score - 1e-6 && (best === null || candidateScore < best.score)) {
+              best = {
+                score: candidateScore,
+                apply: () => result.set(id, candidate),
+                revert: () => result.set(id, before),
+              };
+            }
+          }
+          result.set(id, before);
+        }
+      }
+      for (const otherId of involved) {
+        if (otherId <= id) continue;
+        const otherBefore = { ...result.get(otherId)! };
+        result.set(id, otherBefore);
+        result.set(otherId, before);
+        if (placementOk([id, otherId])) {
+          const candidateScore = layoutScore(result, sizes, valid);
+          if (candidateScore < score - 1e-6 && (best === null || candidateScore < best.score)) {
+            best = {
+              score: candidateScore,
+              apply: () => {
+                result.set(id, otherBefore);
+                result.set(otherId, before);
+              },
+              revert: () => {
+                result.set(id, before);
+                result.set(otherId, otherBefore);
+              },
+            };
+          }
+        }
+        result.set(id, before);
+        result.set(otherId, otherBefore);
+      }
+
+      if (best !== null) {
+        best.apply();
+        score = best.score;
+        improvedInPass = true;
+      }
+    }
+    if (!improvedInPass) break;
+  }
+  return result;
 }
 
 /**
@@ -186,11 +433,21 @@ export function computeDependencyLayout(
     byLayer.set(l, list);
   }
 
+  // Layered crossing minimization: bounded barycenter sweeps re-order nodes
+  // WITHIN their layer (never across layers, so prerequisite direction is
+  // untouched). A final guard keeps the original order if the sweeps did
+  // not strictly reduce prerequisite-edge crossings.
+  const prereqEdges = edges.filter(
+    (e) =>
+      e.relation === 'prerequisite' && idSet.has(e.sourceConceptId) && idSet.has(e.targetConceptId),
+  );
+  const ordered = orderLayersByBarycenter(byLayer, prereqEdges, layerOf);
+
   const positions = new Map<string, { x: number; y: number }>();
   const COL_WIDTH = 250;
   const ROW_HEIGHT = 170;
   const MAX_PER_ROW = 6;
-  for (const [l, members] of [...byLayer.entries()].sort((a, b) => a[0] - b[0])) {
+  for (const [l, members] of [...ordered.entries()].sort((a, b) => a[0] - b[0])) {
     members.forEach((id, i) => {
       const row = Math.floor(i / MAX_PER_ROW);
       const col = i % MAX_PER_ROW;
@@ -203,6 +460,114 @@ export function computeDependencyLayout(
     });
   }
   return positions;
+}
+
+interface DirectedEdgeLike {
+  sourceConceptId: string;
+  targetConceptId: string;
+}
+
+/**
+ * Count crossings between same-span prerequisite edges of a layered order
+ * (the standard layered-crossing measure: two edges whose sources share a
+ * layer and whose targets share a layer cross when their orders invert).
+ */
+export function countLayeredCrossings(
+  order: ReadonlyMap<number, readonly string[]>,
+  edges: readonly DirectedEdgeLike[],
+  layerOf: ReadonlyMap<string, number>,
+): number {
+  const index = new Map<string, number>();
+  for (const members of order.values()) {
+    members.forEach((id, i) => index.set(id, i));
+  }
+  let crossings = 0;
+  for (let i = 0; i < edges.length; i++) {
+    for (let j = i + 1; j < edges.length; j++) {
+      const a = edges[i]!;
+      const b = edges[j]!;
+      if (
+        layerOf.get(a.sourceConceptId) !== layerOf.get(b.sourceConceptId) ||
+        layerOf.get(a.targetConceptId) !== layerOf.get(b.targetConceptId)
+      ) {
+        continue;
+      }
+      const s = (index.get(a.sourceConceptId) ?? 0) - (index.get(b.sourceConceptId) ?? 0);
+      const t = (index.get(a.targetConceptId) ?? 0) - (index.get(b.targetConceptId) ?? 0);
+      if (s * t < 0) crossings += 1;
+    }
+  }
+  return crossings;
+}
+
+/**
+ * Bounded deterministic barycenter ordering (ELK-layered-inspired): four
+ * alternating downward/upward sweeps order each layer's members by the mean
+ * current index of their prerequisite neighbors in the sweep direction.
+ * Nodes without neighbors keep their relative position; ties break by
+ * current index, then concept ID. Input arrays are not mutated.
+ */
+export function orderLayersByBarycenter(
+  byLayer: ReadonlyMap<number, readonly string[]>,
+  prereqEdges: readonly DirectedEdgeLike[],
+  layerOf: ReadonlyMap<string, number>,
+): Map<number, string[]> {
+  const order = new Map<number, string[]>();
+  for (const [layer, members] of byLayer) order.set(layer, [...members]);
+  const layers = [...order.keys()].sort((a, b) => a - b);
+  if (layers.length < 2 || prereqEdges.length === 0) return order;
+
+  const parents = new Map<string, string[]>();
+  const children = new Map<string, string[]>();
+  for (const edge of prereqEdges) {
+    const p = parents.get(edge.targetConceptId) ?? [];
+    p.push(edge.sourceConceptId);
+    parents.set(edge.targetConceptId, p);
+    const c = children.get(edge.sourceConceptId) ?? [];
+    c.push(edge.targetConceptId);
+    children.set(edge.sourceConceptId, c);
+  }
+
+  const before = countLayeredCrossings(order, prereqEdges, layerOf);
+  const SWEEPS = 4;
+  for (let sweep = 0; sweep < SWEEPS; sweep++) {
+    const goingDown = sweep % 2 === 0;
+    const sequence = goingDown ? layers : [...layers].reverse();
+    for (const layer of sequence) {
+      const index = new Map<string, number>();
+      for (const members of order.values()) members.forEach((id, i) => index.set(id, i));
+      const members = order.get(layer)!;
+      const keyed = members.map((id, currentIndex) => {
+        const neighbors = (goingDown ? parents : children).get(id) ?? [];
+        const positions = neighbors
+          .map((n) => index.get(n))
+          .filter((v): v is number => v !== undefined);
+        const barycenter =
+          positions.length > 0
+            ? positions.reduce((sum, v) => sum + v, 0) / positions.length
+            : currentIndex;
+        return { id, currentIndex, barycenter };
+      });
+      keyed.sort(
+        (a, b) =>
+          a.barycenter - b.barycenter ||
+          a.currentIndex - b.currentIndex ||
+          a.id.localeCompare(b.id),
+      );
+      order.set(
+        layer,
+        keyed.map((k) => k.id),
+      );
+    }
+  }
+
+  // Keep the sweep result only when it strictly reduced crossings.
+  if (countLayeredCrossings(order, prereqEdges, layerOf) >= before) {
+    const original = new Map<number, string[]>();
+    for (const [layer, members] of byLayer) original.set(layer, [...members]);
+    return original;
+  }
+  return order;
 }
 
 /** Deterministic budgets for the 薄弱路径 subgraph. */
