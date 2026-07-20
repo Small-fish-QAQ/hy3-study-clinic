@@ -80,7 +80,15 @@ export function createTutorService({ repos, provider, clock, providerModel }: Tu
       conceptId: string,
       opts: TutorSessionOptions = {},
     ): Promise<TutorSessionResult> {
-      const selected = requireWorkspaceConcept(workspaceId, conceptId);
+      const source = requireWorkspaceConcept(workspaceId, conceptId);
+      // The session speaks the workspace-level (canonical) name of the
+      // selected concept so the timeline matches the canonical graph.
+      const member = repos.alignment.getMemberBySource(source.id);
+      const displayName =
+        (member && repos.alignment.getCanonical(member.canonicalConceptId)?.displayName) ??
+        source.name;
+      const selected: Concept =
+        displayName === source.name ? source : { ...source, name: displayName };
       const workspace = repos.workspaces.get(workspaceId)!;
       const startedAt = clock.now().toISOString();
 

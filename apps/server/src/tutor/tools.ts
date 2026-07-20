@@ -60,6 +60,18 @@ function requireWorkspaceConcept(ctx: TutorToolContext, conceptId: string): Conc
   return concept;
 }
 
+/**
+ * Workspace-level display name of a concept: the canonical display name when
+ * the concept has an alignment membership, else its own extracted name.
+ * Timeline summaries use this so the Tutor speaks the same names the
+ * canonical graph shows (aliases stay inspectable via the aliases tool).
+ */
+function displayNameOf(ctx: TutorToolContext, concept: Concept): string {
+  const member = ctx.repos.alignment.getMemberBySource(concept.id);
+  if (!member) return concept.name;
+  return ctx.repos.alignment.getCanonical(member.canonicalConceptId)?.displayName ?? concept.name;
+}
+
 /** Raised when tool arguments fail validation (never executes the tool). */
 export class ToolValidationError extends Error {
   constructor(message: string) {
@@ -77,6 +89,7 @@ const TOOLS: Record<TutorToolName, ToolDefinition> = {
     argsSchema: ConceptArg,
     execute(ctx, args) {
       const concept = requireWorkspaceConcept(ctx, args.conceptId as string);
+      const displayName = displayNameOf(ctx, concept);
       const mastery = ctx.repos.mastery.get(concept.materialId, concept.id);
       const mistakes = ctx.repos.mistakes
         .countsByConceptForWorkspace(ctx.workspaceId)
@@ -86,7 +99,7 @@ const TOOLS: Record<TutorToolName, ToolDefinition> = {
         .get(concept.id) ?? { conceptId: concept.id, proposed: 0, confirmed: 0 };
       const review = ctx.repos.review.get(ctx.workspaceId, concept.id);
       return {
-        summary: `已检查「${concept.name}」的学习状态:掌握度 ${
+        summary: `已检查「${displayName}」的学习状态:掌握度 ${
           mastery ? Math.round(mastery.mastery * 100) + '%' : '未评估'
         },未解决错题 ${mistakes.open} 道。`,
         semanticEvent: 'state_inspected',
@@ -113,7 +126,7 @@ const TOOLS: Record<TutorToolName, ToolDefinition> = {
       const concept = requireWorkspaceConcept(ctx, args.conceptId as string);
       const material = ctx.repos.materials.get(concept.materialId);
       return {
-        summary: `已查看概念「${concept.name}」的定义与出处。`,
+        summary: `已查看概念「${displayNameOf(ctx, concept)}」的定义与出处。`,
         data: {
           conceptId: concept.id,
           name: concept.name,
@@ -185,12 +198,13 @@ const TOOLS: Record<TutorToolName, ToolDefinition> = {
           const mastery = masteryByConcept.get(otherId)?.mastery ?? null;
           const open = mistakeCounts.get(otherId)?.open ?? 0;
           const weak = open > 0 || (mastery !== null && mastery < 0.7);
+          const otherDisplay = displayNameOf(ctx, other);
           if (edge.relation === 'prerequisite' && isIn && weak) {
-            weakPrerequisites.push(other.name);
+            weakPrerequisites.push(otherDisplay);
           }
           neighbors.push({
             conceptId: other.id,
-            name: other.name,
+            name: otherDisplay,
             relation: edge.relation,
             direction: isIn ? 'in' : 'out',
             mastery,
@@ -200,7 +214,7 @@ const TOOLS: Record<TutorToolName, ToolDefinition> = {
         }
       }
       return {
-        summary: `已检查「${concept.name}」的图谱邻域:${neighbors.length} 个直接邻居${
+        summary: `已检查「${displayNameOf(ctx, concept)}」的图谱邻域:${neighbors.length} 个直接邻居${
           weakPrerequisites.length > 0 ? `,发现薄弱前置:${weakPrerequisites.join('、')}` : ''
         }。`,
         semanticEvent: 'neighborhood_inspected',
@@ -240,10 +254,11 @@ const TOOLS: Record<TutorToolName, ToolDefinition> = {
               const mastery = masteryByConcept.get(prereq.id)?.mastery ?? null;
               const open = mistakeCounts.get(prereq.id)?.open ?? 0;
               const weak = open > 0 || (mastery !== null && mastery < 0.7);
-              if (weak) weakPrerequisites.push(prereq.name);
+              const prereqDisplay = displayNameOf(ctx, prereq);
+              if (weak) weakPrerequisites.push(prereqDisplay);
               path.push({
                 conceptId: prereq.id,
-                name: prereq.name,
+                name: prereqDisplay,
                 depth,
                 mastery,
                 openMistakes: open,
@@ -256,7 +271,7 @@ const TOOLS: Record<TutorToolName, ToolDefinition> = {
         }
       }
       return {
-        summary: `已追溯「${concept.name}」的前置链:${path.length} 个前置概念${
+        summary: `已追溯「${displayNameOf(ctx, concept)}」的前置链:${path.length} 个前置概念${
           weakPrerequisites.length > 0 ? `,其中薄弱:${weakPrerequisites.join('、')}` : ''
         }。`,
         resultCount: path.length,
