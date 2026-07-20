@@ -1039,6 +1039,36 @@ main.main-graph {
 }
 
 /*
+ * Edge casing: every edge paints a slightly wider under-stroke in the
+ * graph-canvas background color beneath its semantic colored stroke, so the
+ * upper edge of an unavoidable crossing visually bridges the lower one.
+ * The token tracks the canvas surface (theme-ready — no hardcoded white).
+ */
+:root {
+  --graph-edge-casing: var(--surface);
+}
+
+.learning-edge-casing {
+  stroke: var(--graph-edge-casing);
+}
+
+.learning-edge-group {
+  transition: opacity 0.15s ease;
+}
+
+.learning-edge {
+  transition: stroke-width 0.15s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .learning-edge-group,
+  .learning-edge,
+  .react-flow__edge {
+    transition: none;
+  }
+}
+
+/*
  * Relation labels live in React Flow's HTML edge-label layer. They are
  * purely informational: pointer-events none so they can never intercept
  * hover/drag input (a previous flicker source), above edge strokes but

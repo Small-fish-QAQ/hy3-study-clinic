@@ -3,8 +3,25 @@
  *
  * Scope: graphs with dozens of nodes. Every route is chosen from a small
  * candidate set (direct line, gentle clockwise/counter-clockwise quadratic
- * offsets) scored against non-endpoint node rectangles. There is no global
- * solver and no randomness — identical input always yields identical paths.
+ * offsets, vertical-tangent cubics in dependency mode) scored against
+ * non-endpoint node rectangles and — when a route context is provided —
+ * against the already-planned routes of other edges. There is no unbounded
+ * solver and no randomness: identical input always yields identical paths.
+ *
+ * Cost model, in strict priority order (each tier dominates realistic sums
+ * of the tiers below it at this graph scale):
+ *   1. crossing a non-endpoint card (NODE_HIT_PENALTY) — effectively
+ *      forbidden; terminating inside a card cannot happen at all because
+ *      endpoints are boundary anchors clamped outside rounded corners by
+ *      construction (see edgeGeometry.boundaryPoint / shiftAlongSide);
+ *   2. a proper edge-edge crossing (CROSSING_PENALTY) — very high, but a
+ *      dozen crossings still cost less than one card intersection;
+ *   3. long near-parallel congestion (OVERLAP_PENALTY_PER_PX beyond a free
+ *      run) — high for long shared corridors;
+ *   4. a relation label landing on a card (LABEL_PENALTY) — high;
+ *   5. excessive bend (|offset| × BEND_PENALTY_PER_PX) — moderate;
+ *   6. path length (direct distance) — low;
+ *   7. a 0.01 side bias — deterministic candidate order on exact ties.
  */
 import {
   boundaryPoint,
@@ -22,8 +39,16 @@ import {
   type Rect,
   type Side,
 } from './edgeGeometry.js';
+import { comparePathPair, polylineIntersectsRect, routedPolyline, CLARITY_SAMPLES } from './graphClarity.js';
 
 export type RouteMode = 'network' | 'dependency';
+
+/** Already-planned sibling routes a candidate is scored against. */
+export interface RouteContextEdge {
+  polyline: readonly Point[];
+  /** Rects of endpoint nodes shared with the edge being routed (fan region). */
+  sharedRects: readonly Rect[];
+}
 
 export interface RouteRequest {
   source: Rect;
@@ -39,6 +64,11 @@ export interface RouteRequest {
   sourceSlot?: { rank: number; count: number };
   targetSlot?: { rank: number; count: number };
   mode: RouteMode;
+  /**
+   * Other edges' current routes (same-pair lanes excluded by the caller).
+   * Absent during drag: the fast per-edge path skips crossing penalties.
+   */
+  context?: readonly RouteContextEdge[];
 }
 
 export interface RoutedEdge {
@@ -46,11 +76,15 @@ export interface RoutedEdge {
   path: string;
   sourcePoint: Point;
   targetPoint: Point;
+  /** [] → straight, [c] → quadratic, [c1, c2] → cubic. */
+  controlPoints: Point[];
   sourceSide: Side;
   targetSide: Side;
   /** Anchor for the relation label, on the actual routed path. */
   labelX: number;
   labelY: number;
+  /** Path fraction the label sits at (parallel edges use distinct fractions). */
+  labelT: number;
   kind: 'straight' | 'quadratic' | 'cubic';
 }
 
@@ -63,7 +97,22 @@ export const OBSTACLE_MARGIN = 10;
  */
 const SAMPLES = 28;
 const LANE_SPACING = 46;
-const DETOUR_OFFSETS = [44, -44, 84, -84, 132, -132];
+/**
+ * Escalating detour bows. The far offsets exist for corridor cases — a
+ * single-column dependency layout, or a diagonal whose both gentle-bow
+ * corridors are walled off by measured cards — where only a wide swing
+ * clears every card; the bend penalty keeps them a last resort.
+ */
+const DETOUR_OFFSETS = [44, -44, 84, -84, 132, -132, 200, -200, 280, -280, 380, -380];
+
+const NODE_HIT_PENALTY = 10000;
+const CROSSING_PENALTY = 700;
+const OVERLAP_PENALTY_PER_PX = 2.2;
+const OVERLAP_FREE_RUN = 24;
+const LABEL_PENALTY = 300;
+const BEND_PENALTY_PER_PX = 0.8;
+/** Falling back to the geometric off-side of a lane pair costs this much. */
+const LANE_FLIP_PENALTY = 140;
 
 interface Candidate {
   control: Point | null;
@@ -77,6 +126,13 @@ function perpendicular(from: Point, to: Point): Point {
   return { x: -dy / length, y: dx / length };
 }
 
+/**
+ * Card-hit count for a quadratic candidate. The curve is reduced to a
+ * bounded polyline and tested SEGMENT-wise against each rect: point
+ * sampling alone lets a shallow corner graze slip between samples of a long
+ * curve, while the chord-vs-curve error at this curvature is far below a
+ * pixel — so segment testing is effectively exact.
+ */
 function curveHits(
   p0: Point,
   control: Point,
@@ -84,14 +140,12 @@ function curveHits(
   obstacles: Rect[],
   margin: number,
 ): number {
+  const points: Point[] = [p0];
+  for (let i = 1; i < SAMPLES; i++) points.push(quadraticPoint(p0, control, p1, i / SAMPLES));
+  points.push(p1);
   let hits = 0;
   for (const rect of obstacles) {
-    for (let i = 1; i < SAMPLES; i++) {
-      if (pointInRect(quadraticPoint(p0, control, p1, i / SAMPLES), rect, margin)) {
-        hits += 1;
-        break;
-      }
-    }
+    if (polylineIntersectsRect(points, rect, margin)) hits += 1;
   }
   return hits;
 }
@@ -106,9 +160,36 @@ function straightHits(p0: Point, p1: Point, obstacles: Rect[], margin: number): 
 
 function labelPenalty(labelPoint: Point, obstacles: Rect[]): number {
   for (const rect of obstacles) {
-    if (pointInRect(labelPoint, rect, 4)) return 300;
+    if (pointInRect(labelPoint, rect, 4)) return LABEL_PENALTY;
   }
   return 0;
+}
+
+/**
+ * Crossing/congestion cost of a candidate polyline against the routes that
+ * are already planned. Same sampling as the clarity evaluator so improvement
+ * passes and metrics can never disagree about a crossing.
+ */
+function contextPenalty(
+  polyline: readonly Point[],
+  context: readonly RouteContextEdge[] | undefined,
+): number {
+  if (!context || context.length === 0) return 0;
+  let penalty = 0;
+  for (const other of context) {
+    const report = comparePathPair(polyline, other.polyline, {
+      sharedNodeRects: other.sharedRects,
+    });
+    penalty += report.crossings.length * CROSSING_PENALTY;
+    const excess = report.overlapLength - OVERLAP_FREE_RUN;
+    if (excess > 0) penalty += excess * OVERLAP_PENALTY_PER_PX;
+  }
+  return penalty;
+}
+
+/** Parallel edges place labels at distinct path fractions (lane-spread). */
+function labelFraction(lane: number): number {
+  return clamp(0.5 + lane * 0.14, 0.3, 0.7);
 }
 
 function anchorsFor(
@@ -146,7 +227,8 @@ function anchorsFor(
 /**
  * Route one edge. Straight when unobstructed and unlaned; otherwise the
  * least-disruptive gentle quadratic (or, in dependency mode, a restrained
- * vertical-tangent cubic). Bounded work: O(candidates × obstacles × samples).
+ * vertical-tangent cubic). Bounded work: O(candidates × (obstacles × samples
+ * + context edges × samples²)).
  */
 export function routeEdge(request: RouteRequest): RoutedEdge {
   const { source, target, obstacles, lane, mode } = request;
@@ -169,11 +251,22 @@ export function routeEdge(request: RouteRequest): RoutedEdge {
   );
 
   const laneOffset = lane * LANE_SPACING;
-  const candidates: Candidate[] = [];
+  const labelT = labelFraction(lane);
+  interface AimedCandidate extends Candidate {
+    aimed: ReturnType<typeof anchorsFor> | null;
+  }
+  const candidates: AimedCandidate[] = [];
   const direct = straightHits(fromPoint, toPoint, obstacles, OBSTACLE_MARGIN);
   const directLength = distance(fromPoint, toPoint);
   if (laneOffset === 0) {
-    candidates.push({ control: null, score: direct * 1000 + directLength });
+    candidates.push({
+      control: null,
+      aimed: null,
+      score:
+        direct * NODE_HIT_PENALTY +
+        directLength +
+        contextPenalty([fromPoint, toPoint], request.context),
+    });
   }
 
   // Canonical perpendicular (sorted by position, not edge direction) keeps
@@ -196,22 +289,36 @@ export function routeEdge(request: RouteRequest): RoutedEdge {
           { offset: laneOffset, penalty: 0 },
           { offset: laneOffset * 1.8, penalty: 0 },
           { offset: laneOffset * 2.6, penalty: 0 },
-          { offset: -laneOffset * 1.4, penalty: 140 },
-          { offset: -laneOffset * 2.2, penalty: 140 },
+          { offset: -laneOffset * 1.4, penalty: LANE_FLIP_PENALTY },
+          { offset: -laneOffset * 2.2, penalty: LANE_FLIP_PENALTY },
         ]
       : DETOUR_OFFSETS.map((offset) => ({ offset, penalty: 0 }));
+  // Each curved candidate is scored on its FINAL geometry: the endpoints are
+  // re-aimed at the candidate's own control point first, so the curve that
+  // is hit-tested and crossing-scored is exactly the curve that would be
+  // rendered (a center-aimed approximation can clear a card corner that the
+  // re-aimed final curve clips).
   for (const { offset, penalty } of laneCandidates) {
     const control = { x: mid.x + perp.x * offset, y: mid.y + perp.y * offset };
-    const hits = curveHits(fromPoint, control, toPoint, obstacles, OBSTACLE_MARGIN);
-    const labelPoint = quadraticPoint(fromPoint, control, toPoint, 0.5);
+    const aimed = anchorsFor(source, target, control, control, request);
+    const hits = curveHits(aimed.fromPoint, control, aimed.toPoint, obstacles, OBSTACLE_MARGIN);
+    const labelPoint = quadraticPoint(aimed.fromPoint, control, aimed.toPoint, labelT);
+    const polyline = request.context
+      ? routedPolyline(
+          { sourcePoint: aimed.fromPoint, targetPoint: aimed.toPoint, controlPoints: [control] },
+          CLARITY_SAMPLES,
+        )
+      : [];
     candidates.push({
       control,
+      aimed,
       score:
-        hits * 1000 +
-        directLength +
-        Math.abs(offset) * 0.8 +
+        hits * NODE_HIT_PENALTY +
+        distance(aimed.fromPoint, aimed.toPoint) +
+        Math.abs(offset) * BEND_PENALTY_PER_PX +
         penalty +
         labelPenalty(labelPoint, obstacles) +
+        contextPenalty(polyline, request.context) +
         // Deterministic tiny bias keeps candidate order stable on ties.
         (offset < 0 ? 0.01 : 0),
     });
@@ -223,22 +330,26 @@ export function routeEdge(request: RouteRequest): RoutedEdge {
   }
 
   if (best.control === null) {
+    const label = {
+      x: fromPoint.x + (toPoint.x - fromPoint.x) * labelT,
+      y: fromPoint.y + (toPoint.y - fromPoint.y) * labelT,
+    };
     return {
       path: `M ${round(fromPoint.x)},${round(fromPoint.y)} L ${round(toPoint.x)},${round(toPoint.y)}`,
       sourcePoint: fromPoint,
       targetPoint: toPoint,
+      controlPoints: [],
       sourceSide: from.side,
       targetSide: to.side,
-      labelX: round(mid.x),
-      labelY: round(mid.y),
+      labelX: round(label.x),
+      labelY: round(label.y),
+      labelT,
       kind: 'straight',
     };
   }
 
-  // Re-aim the endpoints at the control point so the curve enters the
-  // boundary along its own tangent instead of the center-to-center line.
-  const aimed = anchorsFor(source, target, best.control, best.control, request);
-  const label = quadraticPoint(aimed.fromPoint, best.control, aimed.toPoint, 0.5);
+  const aimed = best.aimed!;
+  const label = quadraticPoint(aimed.fromPoint, best.control, aimed.toPoint, labelT);
   return {
     path:
       `M ${round(aimed.fromPoint.x)},${round(aimed.fromPoint.y)} ` +
@@ -246,15 +357,22 @@ export function routeEdge(request: RouteRequest): RoutedEdge {
       `${round(aimed.toPoint.x)},${round(aimed.toPoint.y)}`,
     sourcePoint: aimed.fromPoint,
     targetPoint: aimed.toPoint,
+    controlPoints: [best.control],
     sourceSide: aimed.from.side,
     targetSide: aimed.to.side,
     labelX: round(label.x),
     labelY: round(label.y),
+    labelT,
     kind: 'quadratic',
   };
 }
 
-/** Restrained vertical-tangent cubic for the layered dependency view. */
+/**
+ * Restrained vertical-tangent cubic for the layered dependency view, with
+ * escalating sideways bows so long spanning edges swing around card columns
+ * instead of threading through them. Returns null (network-router fallback)
+ * only when every bounded cubic candidate still hits a card.
+ */
 function routeDependency(
   request: RouteRequest,
   sourceCenter: Point,
@@ -295,33 +413,69 @@ function routeDependency(
 
   const stem = clamp(Math.abs(toPoint.y - fromPoint.y) / 2, 24, 90);
   const laneShift = lane * LANE_SPACING;
-  const c1 = { x: fromPoint.x + laneShift, y: fromPoint.y + (goingDown ? stem : -stem) };
-  const c2 = { x: toPoint.x + laneShift, y: toPoint.y + (goingDown ? -stem : stem) };
+  // Same-side escalations first; opposite-side shifts pay the flip penalty.
+  const shiftCandidates: Array<{ shift: number; penalty: number }> =
+    laneShift !== 0
+      ? [
+          { shift: laneShift, penalty: 0 },
+          { shift: laneShift * 1.8, penalty: 0 },
+          { shift: laneShift * 2.6, penalty: 0 },
+          { shift: laneShift * 3.6, penalty: 0 },
+          { shift: -laneShift * 1.4, penalty: LANE_FLIP_PENALTY },
+          { shift: -laneShift * 2.2, penalty: LANE_FLIP_PENALTY },
+        ]
+      : [0, 70, -70, 130, -130, 190, -190, 250, -250].map((shift) => ({ shift, penalty: 0 }));
 
-  let hits = 0;
-  for (const rect of obstacles) {
+  const labelT = labelFraction(lane);
+  let best: { c1: Point; c2: Point; score: number; hits: number } | null = null;
+  for (const { shift, penalty } of shiftCandidates) {
+    const c1 = { x: fromPoint.x + shift, y: fromPoint.y + (goingDown ? stem : -stem) };
+    const c2 = { x: toPoint.x + shift, y: toPoint.y + (goingDown ? -stem : stem) };
+    // Segment-wise card testing, same rationale as curveHits.
+    const samplePoints: Point[] = [fromPoint];
     for (let i = 1; i < SAMPLES; i++) {
-      if (pointInRect(cubicPoint(fromPoint, c1, c2, toPoint, i / SAMPLES), rect, OBSTACLE_MARGIN)) {
-        hits += 1;
-        break;
-      }
+      samplePoints.push(cubicPoint(fromPoint, c1, c2, toPoint, i / SAMPLES));
     }
+    samplePoints.push(toPoint);
+    let hits = 0;
+    for (const rect of obstacles) {
+      if (polylineIntersectsRect(samplePoints, rect, OBSTACLE_MARGIN)) hits += 1;
+    }
+    const polyline = request.context
+      ? routedPolyline(
+          { sourcePoint: fromPoint, targetPoint: toPoint, controlPoints: [c1, c2] },
+          CLARITY_SAMPLES,
+        )
+      : [];
+    const labelPoint = cubicPoint(fromPoint, c1, c2, toPoint, labelT);
+    const score =
+      hits * NODE_HIT_PENALTY +
+      Math.abs(shift) * BEND_PENALTY_PER_PX +
+      penalty +
+      labelPenalty(labelPoint, obstacles) +
+      contextPenalty(polyline, request.context) +
+      (shift < 0 ? 0.01 : 0);
+    if (best === null || score < best.score) best = { c1, c2, score, hits };
   }
-  // A blocked layered path falls back to the network router's detours.
-  if (hits > 0 && lane === 0) return null;
 
-  const label = cubicPoint(fromPoint, c1, c2, toPoint, 0.5);
+  // Every bounded cubic still crosses a card → let the network router try
+  // its quadratic detours instead of threading a column.
+  if (best === null || best.hits > 0) return null;
+
+  const label = cubicPoint(fromPoint, best.c1, best.c2, toPoint, labelT);
   return {
     path:
       `M ${round(fromPoint.x)},${round(fromPoint.y)} ` +
-      `C ${round(c1.x)},${round(c1.y)} ${round(c2.x)},${round(c2.y)} ` +
+      `C ${round(best.c1.x)},${round(best.c1.y)} ${round(best.c2.x)},${round(best.c2.y)} ` +
       `${round(toPoint.x)},${round(toPoint.y)}`,
     sourcePoint: fromPoint,
     targetPoint: toPoint,
+    controlPoints: [best.c1, best.c2],
     sourceSide: fromRaw.side,
     targetSide: toRaw.side,
     labelX: round(label.x),
     labelY: round(label.y),
+    labelT,
     kind: 'cubic',
   };
 }
@@ -331,7 +485,7 @@ function round(value: number): number {
 }
 
 // ---------------------------------------------------------------------------
-// Lane + slot planning (static, from the semantic edge list)
+// Lane + port planning
 // ---------------------------------------------------------------------------
 
 export interface EdgeLike {
@@ -356,7 +510,7 @@ export function planEdgeLanes(edges: readonly EdgeLike[]): Map<string, LanePlan>
   const byPair = new Map<string, EdgeLike[]>();
   for (const edge of edges) {
     const [a, b] = [edge.sourceConceptId, edge.targetConceptId].sort();
-    const key = `${a} ${b}`;
+    const key = `${a} ${b}`;
     const list = byPair.get(key) ?? [];
     list.push(edge);
     byPair.set(key, list);
@@ -375,15 +529,13 @@ export interface IncidentEdge {
   edgeId: string;
   /** The concept at the other end of this incident edge. */
   otherId: string;
+  relation: string;
 }
 
 /**
- * Static per-node incident-edge order: for every concept, its edges sorted
- * by (relation, id). Slot ranks derived from this order never change while
- * the semantic edge set is stable, so attachment points cannot jitter
- * between renders. The live side grouping (which of these edges currently
- * share one node side) is a pure function of node geometry on top of this
- * fixed order.
+ * Incident edges per concept in a deterministic base order. Which edges
+ * touch a node is static; their per-side order is geometric and computed by
+ * assignSidePorts from current node positions.
  */
 export function planNodeEdgeOrder(edges: readonly EdgeLike[]): Map<string, IncidentEdge[]> {
   const byNode = new Map<string, EdgeLike[]>();
@@ -402,30 +554,75 @@ export function planNodeEdgeOrder(edges: readonly EdgeLike[]): Map<string, Incid
       list.map((e) => ({
         edgeId: e.id,
         otherId: e.sourceConceptId === nodeId ? e.targetConceptId : e.sourceConceptId,
+        relation: e.relation,
       })),
     );
   }
   return order;
 }
 
+export interface PortAssignment {
+  side: Side;
+  rank: number;
+  count: number;
+}
+
 /**
- * Rank of `edgeId` among the incident edges of one node that currently
- * attach to the same side, given each sibling's current side. Order comes
- * from the static incident list, so ranks are deterministic and stable.
+ * Geometry-aware port ordering for one node (crossing-free last mile).
+ *
+ * Every incident edge is grouped by the side its opposite endpoint currently
+ * faces, then ordered within the side by the ANGULAR order of that opposite
+ * endpoint — left→right on top/bottom sides, top→bottom on left/right sides.
+ * The angular key (tangent from the side's normal) matches the raw
+ * boundary-anchor order exactly, so slot shifts can never invert the
+ * approach order of neighboring edges: two incoming edges keep their
+ * geometric left/right order into the final segment.
+ *
+ * Deterministic tie-breaking: angular key → opposite concept ID → relation →
+ * edge ID. The assignment is a pure function of current geometry: ranks only
+ * change when two opposite endpoints actually swap angular order (at which
+ * moment their slots are adjacent), so small pointer movement cannot make an
+ * edge oscillate between slots.
  */
-export function sideSlotFor(
-  incident: readonly IncidentEdge[],
-  sideByEdgeId: ReadonlyMap<string, Side>,
-  edgeId: string,
-): { rank: number; count: number } {
-  const mySide = sideByEdgeId.get(edgeId);
-  if (mySide === undefined) return { rank: 0, count: 1 };
-  let rank = 0;
-  let count = 0;
-  for (const entry of incident) {
-    if (sideByEdgeId.get(entry.edgeId) !== mySide) continue;
-    if (entry.edgeId === edgeId) rank = count;
-    count += 1;
+export function assignSidePorts(
+  nodeRect: Rect,
+  siblings: readonly IncidentEdge[],
+  rectFor: (conceptId: string) => Rect,
+): Map<string, PortAssignment> {
+  const center = rectCenter(nodeRect);
+  interface Entry extends IncidentEdge {
+    side: Side;
+    key: number;
   }
-  return { rank, count: Math.max(count, 1) };
+  const entries: Entry[] = siblings.map((sibling) => {
+    const other = rectCenter(rectFor(sibling.otherId));
+    const bp = boundaryPoint(nodeRect, other);
+    const dx = Number.isFinite(other.x) ? other.x - center.x : 0;
+    const dy = Number.isFinite(other.y) ? other.y - center.y : 0;
+    const key =
+      bp.side === 'top' || bp.side === 'bottom'
+        ? dx / Math.max(Math.abs(dy), 1e-6)
+        : dy / Math.max(Math.abs(dx), 1e-6);
+    return { ...sibling, side: bp.side, key };
+  });
+  const bySide = new Map<Side, Entry[]>();
+  for (const entry of entries) {
+    const list = bySide.get(entry.side) ?? [];
+    list.push(entry);
+    bySide.set(entry.side, list);
+  }
+  const result = new Map<string, PortAssignment>();
+  for (const [side, list] of bySide) {
+    list.sort(
+      (a, b) =>
+        a.key - b.key ||
+        a.otherId.localeCompare(b.otherId) ||
+        a.relation.localeCompare(b.relation) ||
+        a.edgeId.localeCompare(b.edgeId),
+    );
+    list.forEach((entry, rank) => {
+      result.set(entry.edgeId, { side, rank, count: list.length });
+    });
+  }
+  return result;
 }

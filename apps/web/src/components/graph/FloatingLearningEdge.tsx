@@ -9,18 +9,28 @@ import {
   type EdgeProps,
 } from '@xyflow/react';
 import type { GraphRelation } from '@hy3-clinic/shared';
-import { boundaryPoint, rectCenter, sanitizeRect, type Rect, type Side } from './edgeGeometry.js';
-import { routeEdge, sideSlotFor, type IncidentEdge, type RouteMode } from './edgeRouting.js';
+import { sanitizeRect, type Rect } from './edgeGeometry.js';
+import { assignSidePorts, routeEdge, type IncidentEdge, type RouteMode } from './edgeRouting.js';
+import { polylineIntersectsRect } from './graphClarity.js';
+import type { GraphRoutePlan } from './routePlan.js';
 import { markerId, RELATION_COLORS, RELATION_DASH, relationHasDirection } from './relationStyle.js';
 
 /**
  * Floating, obstacle-aware learning edge.
  *
- * Endpoints are dynamic node-boundary intersections computed from measured
- * React Flow node geometry (no fixed top/bottom handles); paths detour
- * around non-endpoint cards; parallel and reciprocal edges get deterministic
- * lanes; high-degree nodes spread their attachment points over the side via
- * stable slots. Geometry recomputes only when node positions, dimensions, or
+ * At rest, every edge renders its route from the shared crossing-minimized
+ * plan (see routePlan.ts) that ConceptGraph recomputes when geometry
+ * meaningfully changes. During a drag — detected purely from geometry: the
+ * edge's endpoints (or a card overlapping its planned path) have moved away
+ * from the plan's snapshot — the edge falls back to fast local routing:
+ * boundary endpoints follow the pointer in real time, obstacle avoidance
+ * stays live, and no whole-graph optimization runs per pointer event. One
+ * fresh plan on drag stop converges everything again.
+ *
+ * Every visible edge renders as a casing pair: a slightly wider under-stroke
+ * in the canvas background color beneath the semantic colored stroke, so
+ * unavoidable crossings stay legible (the upper edge visually bridges the
+ * lower one). Geometry recomputes only when node positions, dimensions, or
  * the semantic edge set change — hover and selection restyle without
  * rerouting.
  */
@@ -36,10 +46,12 @@ export interface LearningEdgeData extends Record<string, unknown> {
   lane: number;
   laneCount: number;
   mode: RouteMode;
-  /** Shared static incident-edge order per concept (see planNodeEdgeOrder). */
+  /** Shared static incident-edge lists per concept (see planNodeEdgeOrder). */
   incidentByNode: ReadonlyMap<string, IncidentEdge[]>;
   /** Shared estimated sizes — fallback before React Flow measures a node. */
   fallbackSizes: ReadonlyMap<string, { width: number; height: number }>;
+  /** Shared crossing-minimized route plan for the current stable geometry. */
+  routePlan: GraphRoutePlan | null;
 }
 
 export type LearningFlowEdge = FlowEdge<LearningEdgeData>;
@@ -50,6 +62,9 @@ const EMPHASIS_OPACITY: Record<EdgeEmphasis, number> = {
   selected: 1,
   dimmed: 0.13,
 };
+
+/** Casing under-stroke extra width (px) on top of the colored stroke. */
+const CASING_EXTRA_WIDTH = 2.1;
 
 const FALLBACK_RECT: Rect = { x: 0, y: 0, width: 160, height: 56 };
 const EMPTY_SIZES: ReadonlyMap<string, { width: number; height: number }> = new Map();
@@ -97,6 +112,16 @@ function rectOf(
   );
 }
 
+function rectsAlmostEqual(a: Rect | undefined, b: Rect, epsilon = 0.5): boolean {
+  if (!a) return false;
+  return (
+    Math.abs(a.x - b.x) <= epsilon &&
+    Math.abs(a.y - b.y) <= epsilon &&
+    Math.abs(a.width - b.width) <= epsilon &&
+    Math.abs(a.height - b.height) <= epsilon
+  );
+}
+
 function FloatingLearningEdgeComponent({
   id,
   source,
@@ -114,22 +139,44 @@ function FloatingLearningEdgeComponent({
   const mode: RouteMode = data?.mode ?? 'network';
   const incidentByNode = data?.incidentByNode;
   const fallbackSizes = data?.fallbackSizes ?? EMPTY_SIZES;
+  const routePlan = data?.routePlan ?? null;
 
   const routed = useMemo(() => {
     const lookup = store.getState().nodeLookup as unknown as NodeLookupShape;
     const sourceRect = rectOf(lookup.get(source), source, fallbackSizes);
     const targetRect = rectOf(lookup.get(target), target, fallbackSizes);
 
-    // Live side of every sibling edge at each endpoint → stable slot ranks.
+    // Stable geometry → the shared crossing-minimized plan is authoritative.
+    const planned = routePlan?.routes.get(id);
+    if (
+      planned &&
+      rectsAlmostEqual(routePlan!.rects.get(source), sourceRect) &&
+      rectsAlmostEqual(routePlan!.rects.get(target), targetRect)
+    ) {
+      // A node being dragged across this edge's planned path forces a live
+      // local reroute (dodge); everything else keeps its planned route.
+      let blocked = false;
+      for (const [nodeId, node] of lookup) {
+        if (nodeId === source || nodeId === target) continue;
+        const live = rectOf(node, nodeId, fallbackSizes);
+        if (rectsAlmostEqual(routePlan!.rects.get(nodeId), live)) continue;
+        if (polylineIntersectsRect(planned.polyline, live, 4)) {
+          blocked = true;
+          break;
+        }
+      }
+      if (!blocked) return planned.route;
+    }
+
+    // Fast local routing (drag frames, pre-measurement, plan misses):
+    // geometry-aware ports and obstacle avoidance, no crossing optimization.
     const slotFor = (nodeId: string, nodeRect: Rect) => {
       const incident = incidentByNode?.get(nodeId);
       if (!incident || incident.length <= 1) return undefined;
-      const sides = new Map<string, Side>();
-      for (const entry of incident) {
-        const other = rectOf(lookup.get(entry.otherId), entry.otherId, fallbackSizes);
-        sides.set(entry.edgeId, boundaryPoint(nodeRect, rectCenter(other)).side);
-      }
-      return sideSlotFor(incident, sides, id);
+      const ports = assignSidePorts(nodeRect, incident, (conceptId) =>
+        rectOf(lookup.get(conceptId), conceptId, fallbackSizes),
+      );
+      return ports.get(id);
     };
 
     const obstacles: Rect[] = [];
@@ -149,7 +196,18 @@ function FloatingLearningEdgeComponent({
     });
     // geometryKey covers every lookup-derived input (positions + sizes).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [geometryKey, source, target, id, lane, mode, incidentByNode, fallbackSizes, store]);
+  }, [
+    geometryKey,
+    source,
+    target,
+    id,
+    lane,
+    mode,
+    incidentByNode,
+    fallbackSizes,
+    routePlan,
+    store,
+  ]);
 
   if (!sourceNode || !targetNode || !data) return null;
 
@@ -163,19 +221,31 @@ function FloatingLearningEdgeComponent({
 
   return (
     <>
-      <BaseEdge
-        id={id}
-        path={routed.path}
-        markerEnd={marker}
-        className={`learning-edge relation-${relation} emphasis-${emphasis}`}
-        style={{
-          stroke: color,
-          strokeWidth,
-          strokeDasharray: RELATION_DASH[relation],
-          opacity: EMPHASIS_OPACITY[emphasis],
-          transition: 'opacity 0.15s ease, stroke-width 0.15s ease',
-        }}
-      />
+      <g
+        className={`learning-edge-group emphasis-${emphasis}`}
+        style={{ opacity: EMPHASIS_OPACITY[emphasis] }}
+      >
+        <path
+          d={routed.path}
+          className="learning-edge-casing"
+          fill="none"
+          strokeWidth={strokeWidth + CASING_EXTRA_WIDTH}
+          strokeDasharray={RELATION_DASH[relation]}
+          strokeLinecap="round"
+          aria-hidden="true"
+        />
+        <BaseEdge
+          id={id}
+          path={routed.path}
+          markerEnd={marker}
+          className={`learning-edge relation-${relation} emphasis-${emphasis}`}
+          style={{
+            stroke: color,
+            strokeWidth,
+            strokeDasharray: RELATION_DASH[relation],
+          }}
+        />
+      </g>
       {data.showLabel ? (
         <EdgeLabelRenderer>
           <div

@@ -1,5 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Concept, ConceptLearnerState, GraphEdge } from '@hy3-clinic/shared';
 import { ConceptGraph } from './ConceptGraph';
@@ -386,6 +388,86 @@ describe('薄弱路径 mode (defect 5)', () => {
     await user.selectOptions(screen.getByLabelText('布局模式'), 'network');
     expect(JSON.stringify(edgesProp)).toBe(snapshot);
     expect(loadSavedPositions('gv_1')).toEqual({ con_0: { x: 50, y: 60 } });
+  });
+});
+
+describe('edge casing and crossing legibility', () => {
+  it('renders a casing under-stroke beneath each colored stroke on the same path', async () => {
+    renderGraph();
+    await waitForInitialFit();
+    await waitFor(() => {
+      expect(document.querySelector('.learning-edge')).not.toBeNull();
+      expect(document.querySelector('.learning-edge-casing')).not.toBeNull();
+    });
+    const casing = document.querySelector<SVGPathElement>('.learning-edge-casing')!;
+    const main = document.querySelector<SVGPathElement>('.learning-edge')!;
+    // Identical geometry: the casing is the same routed path, only wider.
+    expect(casing.getAttribute('d')).toBe(main.getAttribute('d'));
+    // The casing paints first (beneath the colored stroke and its marker).
+    expect(casing.compareDocumentPosition(main) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(Number(casing.getAttribute('stroke-width'))).toBeGreaterThan(
+      Number.parseFloat(main.style.strokeWidth),
+    );
+  });
+
+  it('takes its color from the theme token, not a hardcoded background', async () => {
+    renderGraph();
+    await waitForInitialFit();
+    await waitFor(() => {
+      expect(document.querySelector('.learning-edge-casing')).not.toBeNull();
+    });
+    const casing = document.querySelector<SVGPathElement>('.learning-edge-casing')!;
+    // No inline stroke: the color comes from the stylesheet token so themes
+    // can restyle the canvas without touching the component.
+    expect(casing.getAttribute('stroke')).toBeNull();
+    expect(casing.style.stroke).toBe('');
+    const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
+    expect(css).toContain('--graph-edge-casing');
+    expect(css).toMatch(/\.learning-edge-casing\s*\{[^}]*var\(--graph-edge-casing\)/);
+    // Casing transitions are declared with a reduced-motion override.
+    expect(css).toMatch(/prefers-reduced-motion[^}]*\{[^{]*\.learning-edge-group/s);
+  });
+
+  it('keeps nodes above all edge strokes and the selected edge painted last', async () => {
+    renderGraph({ edges: [...graphEdges, causesEdge], selectedEdgeId: 'ge_1' });
+    await waitForInitialFit();
+    await waitFor(() => {
+      expect(document.querySelectorAll('.react-flow__edge').length).toBe(2);
+    });
+    // React Flow paints the edge SVG layer before the node layer; none of
+    // our edges may opt into an elevated z-index layer above the cards.
+    const edgesLayer = document.querySelector('.react-flow__edges')!;
+    const nodesLayer = document.querySelector('.react-flow__nodes')!;
+    expect(
+      edgesLayer.compareDocumentPosition(nodesLayer) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    for (const edge of document.querySelectorAll<HTMLElement>('.react-flow__edge')) {
+      expect(edge.style.zIndex === '' || edge.style.zIndex === '0').toBe(true);
+    }
+    // Paint order within the edge layer: the selected edge renders last.
+    const rendered = [...document.querySelectorAll('.react-flow__edge')];
+    expect(rendered[rendered.length - 1]!.getAttribute('data-id')).toBe('ge_1');
+  });
+
+  it('hover restyles edges without rerouting them', async () => {
+    renderGraph();
+    await waitForInitialFit();
+    const pathD = () =>
+      document.querySelector<SVGPathElement>('.learning-edge')?.getAttribute('d') ?? '';
+    await waitFor(() => {
+      expect(pathD()).not.toBe('');
+    });
+    const before = pathD();
+    fireEvent.mouseEnter(nodeWrapper('工作记忆'), { clientX: 30, clientY: 30 });
+    await waitFor(() => {
+      expect(nodeWrapper('提取练习').className).toContain('dimmed');
+    });
+    expect(pathD()).toBe(before);
+    fireEvent.mouseLeave(nodeWrapper('工作记忆'));
+    await waitFor(() => {
+      expect(nodeWrapper('提取练习').className).not.toContain('dimmed');
+    });
+    expect(pathD()).toBe(before);
   });
 });
 

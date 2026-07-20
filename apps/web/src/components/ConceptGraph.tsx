@@ -36,6 +36,8 @@ import {
   type LearningFlowEdge,
 } from './graph/FloatingLearningEdge.js';
 import { planEdgeLanes, planNodeEdgeOrder } from './graph/edgeRouting.js';
+import { planGraphRoutes, type GraphRoutePlan } from './graph/routePlan.js';
+import type { Rect } from './graph/edgeGeometry.js';
 import { RELATION_COLORS, RELATION_DASH, RELATION_LABELS } from './graph/relationStyle.js';
 
 /**
@@ -283,6 +285,13 @@ function ConceptGraphInner({
     Record<string, { width: number; height: number }>
   >({});
   const draggingRef = useRef(false);
+  /**
+   * Drag-gesture flag as STATE (draggingRef stays for event handlers): while
+   * true, the global route plan is frozen — per-frame routing happens
+   * locally in each connected edge, and one bounded cleanup plan runs on
+   * drag stop.
+   */
+  const [dragActive, setDragActive] = useState(false);
 
   // Tooltip positions stream through one rAF so pointer movement costs at
   // most one state update per frame; the frame is cancelled on unmount and
@@ -324,6 +333,8 @@ function ConceptGraphInner({
     setHoveredNodeId(null);
     setHoveredEdgeId(null);
     setFlashNodeId(null);
+    setDragActive(false);
+    draggingRef.current = false;
     scheduleTooltip(null);
   }, [versionId, scheduleTooltip]);
 
@@ -521,6 +532,7 @@ function ConceptGraphInner({
 
   const handleNodeDragStart = useCallback(() => {
     draggingRef.current = true;
+    setDragActive(true);
     setHoveredNodeId(null);
     scheduleTooltip(null);
   }, [scheduleTooltip]);
@@ -533,6 +545,7 @@ function ConceptGraphInner({
       draggedNodes: FlowNode<ConceptNodeData>[],
     ) => {
       draggingRef.current = false;
+      setDragActive(false);
       const moved = draggedNodes.length > 0 ? draggedNodes : [_node];
       setSavedPositions((current) => {
         const next = { ...current };
@@ -555,6 +568,63 @@ function ConceptGraphInner({
   const incidentByNode = useMemo(() => planNodeEdgeOrder(visibleEdges), [visibleEdges]);
   const routeMode =
     layoutMode === 'dependency' && !focus ? ('dependency' as const) : ('network' as const);
+
+  /** Node rects the route planner sees — same resolution as flowNodes. */
+  const routingRects = useMemo(() => {
+    const rects = new Map<string, Rect>();
+    for (const concept of visibleConcepts) {
+      const position = dragPositions[concept.id] ??
+        savedPositions[concept.id] ??
+        basePositions.get(concept.id) ?? { x: 0, y: 0 };
+      const size = measuredSizes[concept.id] ??
+        estimatedSizes.get(concept.id) ?? { width: 160, height: 56 };
+      rects.set(concept.id, {
+        x: position.x,
+        y: position.y,
+        width: size.width,
+        height: size.height,
+      });
+    }
+    return rects;
+  }, [
+    visibleConcepts,
+    dragPositions,
+    savedPositions,
+    basePositions,
+    measuredSizes,
+    estimatedSizes,
+  ]);
+
+  /**
+   * Plan trigger: a stable fingerprint of node geometry that freezes to a
+   * constant during drag gestures, so the global planner reruns only when
+   * geometry meaningfully changes (layout, relayout, visible-set or mode
+   * change, measurement, completed drag) — never per pointer frame, never
+   * on hover or selection.
+   */
+  const routeGeometryKey = useMemo(() => {
+    if (dragActive) return 'drag';
+    let key = '';
+    for (const [id, rect] of routingRects) {
+      key += `${id}:${rect.x.toFixed(1)},${rect.y.toFixed(1)},${rect.width.toFixed(1)}x${rect.height.toFixed(1)};`;
+    }
+    return key;
+  }, [dragActive, routingRects]);
+
+  /** Shared crossing-minimized route plan (bounded, deterministic). */
+  const routePlan = useMemo<GraphRoutePlan | null>(() => {
+    if (visibleEdges.length === 0) return null;
+    return planGraphRoutes({
+      rects: routingRects,
+      edges: visibleEdges,
+      lanePlans,
+      mode: routeMode,
+    });
+    // routingRects is deliberately represented by routeGeometryKey, which
+    // freezes while a drag is active (edges route locally per frame; one
+    // cleanup plan runs on drag stop with the final geometry).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeGeometryKey, visibleEdges, lanePlans, routeMode]);
 
   const flowEdges = useMemo<LearningFlowEdge[]>(() => {
     const list = visibleEdges.map((edge) => {
@@ -599,6 +669,7 @@ function ConceptGraphInner({
           mode: routeMode,
           incidentByNode,
           fallbackSizes: estimatedSizes,
+          routePlan,
         },
       };
     });
@@ -618,6 +689,7 @@ function ConceptGraphInner({
     incidentByNode,
     estimatedSizes,
     routeMode,
+    routePlan,
   ]);
 
   const searchMatches = useMemo(() => {
