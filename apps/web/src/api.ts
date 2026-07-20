@@ -1,19 +1,31 @@
 import type {
+  AlignmentProposal,
   ApiErrorCodeValue,
+  AssessmentMode,
+  CanonicalConcept,
+  CanonicalConceptView,
   Concept,
   ConceptLearnerState,
+  DailyQueueItem,
   DocumentSummary,
   GradingResult,
   GraphEdge,
   GraphVersion,
   Material,
   MasteryState,
+  MisconceptionRecord,
+  MisconceptionStatus,
   MistakeRecord,
+  PublicBlueprint,
   PublicQuiz,
   Question,
   QuizConfig,
   RemediationPlan,
+  ReviewItem,
   SourceBlock,
+  SubmissionStateChanges,
+  TutorEvent,
+  TutorRun,
   Workspace,
   WorkspaceSummary,
 } from '@hy3-clinic/shared';
@@ -57,8 +69,38 @@ export interface MasteryResponse {
 
 export interface SubmissionResponse {
   grading: GradingResult;
+  stateChanges?: SubmissionStateChanges;
   questions: Question[];
 }
+
+export interface AlignmentOverviewResponse {
+  canonical: CanonicalConceptView[];
+  pendingProposals: AlignmentProposal[];
+  decidedProposals: AlignmentProposal[];
+}
+
+export interface AlignmentProposeResponse {
+  autoAccepted: AlignmentProposal[];
+  created: AlignmentProposal[];
+  rejected: Array<{
+    sourceConceptId: string | null;
+    targetConceptId: string | null;
+    reason: string;
+  }>;
+  candidateCount: number;
+}
+
+export interface AssessmentResponse {
+  quiz: PublicQuiz;
+  blueprints: PublicBlueprint[];
+  rejected: Array<{ stem: string; reason: string }>;
+}
+
+/** One parsed NDJSON line of the Tutor timeline stream. */
+export type TutorStreamLine =
+  | { kind: 'event'; event: TutorEvent }
+  | { kind: 'run'; run: TutorRun }
+  | { kind: 'error'; message: string };
 
 export interface WorkspaceGraphResponse {
   version: GraphVersion | null;
@@ -289,4 +331,178 @@ export const api = {
       undefined,
       signal,
     ),
+
+  // --- Concept alignment ---
+
+  alignmentOverview: (workspaceId: string, signal?: AbortSignal) =>
+    request<AlignmentOverviewResponse>(
+      'GET',
+      `/api/workspaces/${workspaceId}/alignment`,
+      undefined,
+      signal,
+    ),
+
+  proposeAlignment: (workspaceId: string, signal?: AbortSignal) =>
+    request<AlignmentProposeResponse>(
+      'POST',
+      `/api/workspaces/${workspaceId}/alignment/propose`,
+      undefined,
+      signal,
+    ),
+
+  decideAlignment: (
+    workspaceId: string,
+    proposalId: string,
+    decision: 'accept' | 'reject' | 'keep-separate',
+    body?: { canonicalName?: string },
+    signal?: AbortSignal,
+  ) =>
+    request<AlignmentOverviewResponse>(
+      'POST',
+      `/api/workspaces/${workspaceId}/alignment/proposals/${proposalId}/${decision}`,
+      decision === 'accept' ? (body ?? {}) : undefined,
+      signal,
+    ),
+
+  renameCanonical: (
+    workspaceId: string,
+    canonicalId: string,
+    displayName: string,
+    signal?: AbortSignal,
+  ) =>
+    request<{ canonical: CanonicalConcept }>(
+      'PATCH',
+      `/api/workspaces/${workspaceId}/canonical/${canonicalId}`,
+      { displayName },
+      signal,
+    ),
+
+  // --- Workspace assessments, misconceptions, review, daily queue ---
+
+  createAssessment: (
+    workspaceId: string,
+    input: { mode: AssessmentMode; conceptIds?: string[]; misconceptionId?: string },
+    signal?: AbortSignal,
+  ) =>
+    request<AssessmentResponse>(
+      'POST',
+      `/api/workspaces/${workspaceId}/assessments`,
+      input,
+      signal,
+    ),
+
+  misconceptions: (workspaceId: string, status?: MisconceptionStatus, signal?: AbortSignal) =>
+    request<{ misconceptions: MisconceptionRecord[] }>(
+      'GET',
+      `/api/workspaces/${workspaceId}/misconceptions${status ? `?status=${status}` : ''}`,
+      undefined,
+      signal,
+    ),
+
+  reviewItems: (workspaceId: string, signal?: AbortSignal) =>
+    request<{ items: ReviewItem[] }>(
+      'GET',
+      `/api/workspaces/${workspaceId}/review`,
+      undefined,
+      signal,
+    ),
+
+  dailyQueue: (workspaceId: string, signal?: AbortSignal) =>
+    request<{ items: DailyQueueItem[] }>(
+      'GET',
+      `/api/workspaces/${workspaceId}/queue`,
+      undefined,
+      signal,
+    ),
+
+  // --- Bounded Hy3 Tutor ---
+
+  listTutorRuns: (workspaceId: string, signal?: AbortSignal) =>
+    request<{ runs: TutorRun[] }>(
+      'GET',
+      `/api/workspaces/${workspaceId}/tutor/runs`,
+      undefined,
+      signal,
+    ),
+
+  getTutorRun: (workspaceId: string, runId: string, signal?: AbortSignal) =>
+    request<{ run: TutorRun; events: TutorEvent[] }>(
+      'GET',
+      `/api/workspaces/${workspaceId}/tutor/runs/${runId}`,
+      undefined,
+      signal,
+    ),
+
+  /**
+   * Start a Tutor session and stream its NDJSON timeline. `onLine` receives
+   * each parsed line as it arrives; the promise settles when the stream ends
+   * (or rejects on network failure/abort). Malformed lines are skipped.
+   */
+  streamTutorSession: async (
+    workspaceId: string,
+    conceptId: string,
+    onLine: (line: TutorStreamLine) => void,
+    signal?: AbortSignal,
+  ): Promise<void> => {
+    let response: Response;
+    try {
+      response = await fetch(`/api/workspaces/${workspaceId}/tutor`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ conceptId }),
+        signal: signal ?? null,
+      });
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        throw new ApiClientError('ABORTED', '请求已取消。');
+      }
+      throw new ApiClientError('NETWORK_ERROR', '无法连接服务器,请确认后端已启动。');
+    }
+    if (!response.ok) {
+      let message = `请求失败(${response.status})。`;
+      try {
+        const data = (await response.json()) as { error?: { message?: string } };
+        if (data.error?.message) message = data.error.message;
+      } catch {
+        // keep default
+      }
+      throw new ApiClientError('INTERNAL', message, response.status);
+    }
+    if (!response.body) {
+      throw new ApiClientError('NETWORK_ERROR', '浏览器不支持流式响应。');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    const emit = (chunk: string) => {
+      buffer += chunk;
+      let newline = buffer.indexOf('\n');
+      while (newline >= 0) {
+        const line = buffer.slice(0, newline).trim();
+        buffer = buffer.slice(newline + 1);
+        if (line.length > 0) {
+          try {
+            onLine(JSON.parse(line) as TutorStreamLine);
+          } catch {
+            // Skip malformed lines; the persisted run remains authoritative.
+          }
+        }
+        newline = buffer.indexOf('\n');
+      }
+    };
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (value) emit(decoder.decode(value, { stream: true }));
+        if (done) break;
+      }
+      emit(decoder.decode());
+    } catch (err) {
+      if (signal?.aborted || (err instanceof DOMException && err.name === 'AbortError')) {
+        throw new ApiClientError('ABORTED', '请求已取消。');
+      }
+      throw new ApiClientError('NETWORK_ERROR', '时间线流中断。');
+    }
+  },
 };

@@ -1494,3 +1494,299 @@ button.danger {
     border-radius: var(--radius-lg);
   }
 }
+
+/* --- Adaptive learning upgrade: alignment / tutor / queue / results ------- */
+
+.pill.review-due {
+  background: #fff4e0;
+  color: #9a5b00;
+  border-color: #ffd9a0;
+}
+
+.pill.doc-badge {
+  background: var(--primary-weak);
+  color: var(--primary);
+  border-color: #c6ceff;
+  max-width: 11rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.alignment-toggle .badge-count {
+  margin-left: 0.35rem;
+  background: var(--danger);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.75rem;
+}
+
+/* Alignment review: an overlay drawer above the graph, graph stays mounted. */
+.graph-area {
+  position: relative;
+}
+
+.alignment-panel {
+  position: absolute;
+  top: 2.4rem;
+  left: 0;
+  z-index: 32;
+  width: min(430px, 94%);
+  max-height: calc(100% - 3rem);
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: var(--space-3);
+}
+
+.alignment-proposals {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.alignment-proposal {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  background: var(--surface-weak);
+}
+
+.alignment-pair {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  margin: 0 0 0.2rem;
+}
+
+.alignment-summaries {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.alignment-summaries p {
+  margin: 0;
+  padding: 0.35rem 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.alignment-quote {
+  margin: 0.3rem 0;
+  padding: 0.25rem 0.6rem;
+  border-left: 3px solid var(--primary);
+  background: var(--surface);
+}
+
+.alignment-name-edit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.4rem 0;
+}
+
+.alignment-name-edit input {
+  flex: 1;
+  min-width: 0;
+}
+
+.relation-tag.relation-equivalent,
+.relation-tag.relation-alias {
+  background: var(--success-weak);
+  color: var(--success);
+}
+
+.relation-tag.relation-broader,
+.relation-tag.relation-narrower {
+  background: var(--primary-weak);
+  color: var(--primary);
+}
+
+.relation-tag.relation-related_but_distinct {
+  background: var(--surface-weak);
+  color: var(--muted);
+}
+
+.canonical-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.canonical-list li {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.65rem;
+}
+
+.canonical-meta {
+  margin: 0.1rem 0 0.4rem;
+}
+
+/* Daily learning queue (left panel). */
+.daily-queue {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.55rem 0.65rem;
+  margin-bottom: var(--space-3);
+  background: var(--surface-weak);
+}
+
+.daily-queue h3 {
+  margin: 0 0 0.35rem;
+}
+
+.queue-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.queue-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.queue-item-info {
+  min-width: 0;
+}
+
+.queue-item-info p {
+  margin: 0.1rem 0 0;
+}
+
+.pill.queue-kind {
+  font-size: 0.72rem;
+  margin-right: 0.35rem;
+}
+
+.pill.queue-kind.overdue_review,
+.pill.queue-kind.due_review {
+  background: #fff4e0;
+  color: #9a5b00;
+  border-color: #ffd9a0;
+}
+
+.pill.queue-kind.misconception_repair {
+  background: var(--danger-weak);
+  color: var(--danger);
+}
+
+.pill.queue-kind.open_mistakes {
+  background: var(--danger-weak);
+  color: var(--danger);
+}
+
+.pill.queue-kind.weak_prerequisite {
+  background: var(--primary-weak);
+  color: var(--primary);
+}
+
+/* Tutor timeline (inspector). */
+.tutor-panel {
+  border-top: 1px solid var(--border);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+}
+
+.tutor-panel h4 {
+  margin: 0 0 0.4rem;
+}
+
+.tutor-timeline {
+  list-style: none;
+  margin: 0.4rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+}
+
+.tutor-event {
+  display: flex;
+  gap: 0.45rem;
+  align-items: baseline;
+}
+
+.tutor-event-icon {
+  flex: 0 0 1.1rem;
+  text-align: center;
+  color: var(--muted);
+}
+
+.tutor-event.kind-gap_identified .tutor-event-icon,
+.tutor-event.kind-tool_rejected .tutor-event-icon,
+.tutor-event.kind-session_failed .tutor-event-icon,
+.tutor-event.kind-evidence_rejected .tutor-event-icon {
+  color: var(--danger);
+}
+
+.tutor-event.kind-plan_accepted .tutor-event-icon,
+.tutor-event.kind-session_completed .tutor-event-icon,
+.tutor-event.kind-evidence_accepted .tutor-event-icon {
+  color: var(--success);
+}
+
+.pill.tool-pill {
+  font-family: var(--mono, monospace);
+  font-size: 0.72rem;
+  margin-left: 0.3rem;
+}
+
+.tutor-run-summary {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.65rem;
+  background: var(--surface-weak);
+}
+
+/* Misconception list (inspector). */
+.misconception-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.pill.misconception-status.proposed {
+  background: #fff4e0;
+  color: #9a5b00;
+  border-color: #ffd9a0;
+}
+
+.pill.misconception-status.confirmed {
+  background: var(--danger-weak);
+  color: var(--danger);
+}
+
+.pill.misconception-status.rejected,
+.pill.misconception-status.resolved {
+  background: var(--surface-weak);
+  color: var(--muted);
+}
+
+/* Grading state-change summary. */
+.state-changes .state-change-list {
+  margin: 0.3rem 0;
+  padding-left: 1.2rem;
+}

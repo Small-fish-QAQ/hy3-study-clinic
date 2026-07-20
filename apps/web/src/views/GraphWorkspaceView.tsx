@@ -1,13 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
+  CanonicalConceptView,
   Concept,
   ConceptLearnerState,
+  DailyQueueItem,
   DocumentSummary,
   GraphEdge,
   GraphVersion,
+  MisconceptionRecord,
   PublicQuiz,
   RemediationPlan,
+  ReviewItem,
   SourceBlock,
+  TutorActivity,
   Workspace,
   WorkspaceSummary,
 } from '@hy3-clinic/shared';
@@ -15,6 +20,10 @@ import { api, ApiClientError } from '../api.js';
 import { Banner, Loading } from '../components/ui.js';
 import { ConceptGraph, RELATION_LABELS as RELATION_TEXT } from '../components/ConceptGraph.js';
 import { ConceptDetailPanel, EdgeDetailPanel } from '../components/DetailPanels.js';
+import { AlignmentPanel } from '../components/AlignmentPanel.js';
+import { DailyQueue } from '../components/DailyQueue.js';
+import { TutorPanel } from '../components/TutorPanel.js';
+import { aggregateOverlay, buildCanonicalDisplayGraph } from '../components/graph/canonicalView.js';
 import { useAsyncAction } from '../components/useAsyncAction.js';
 
 const LAST_WORKSPACE_KEY = 'hy3-clinic:last-workspace-id';
@@ -29,7 +38,7 @@ const SOURCE_TYPE_TEXT: Record<string, string> = {
 
 export interface GraphWorkspaceViewProps {
   /** Launch an assessment quiz produced by a plan (App opens the quiz tab). */
-  onLaunchQuiz: (quiz: PublicQuiz, mode: 'remediation' | 'practice') => void;
+  onLaunchQuiz: (quiz: PublicQuiz, mode: 'remediation' | 'practice' | 'assessment') => void;
   /** Bumped by App after grading so learner overlays refresh. */
   refreshKey: number;
 }
@@ -43,6 +52,11 @@ interface WorkspaceData {
   blocks: SourceBlock[];
   overlay: ConceptLearnerState[];
   versions: GraphVersion[];
+  canonical: CanonicalConceptView[];
+  pendingAlignmentCount: number;
+  misconceptions: MisconceptionRecord[];
+  reviewItems: ReviewItem[];
+  queue: DailyQueueItem[];
 }
 
 /**
@@ -66,6 +80,9 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [plan, setPlan] = useState<RemediationPlan | null>(null);
+  const [alignmentOpen, setAlignmentOpen] = useState(false);
+  const [tutorPathIds, setTutorPathIds] = useState<ReadonlySet<string>>(new Set());
+  const [startingQueueConceptId, setStartingQueueConceptId] = useState<string | null>(null);
 
   const [newWorkspaceName, setNewWorkspaceName] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
@@ -83,6 +100,7 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
   const graphAction = useAsyncAction();
   const planAction = useAsyncAction();
   const launchAction = useAsyncAction();
+  const assessmentAction = useAsyncAction();
 
   useEffect(() => {
     mountedRef.current = true;
@@ -118,12 +136,17 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
       setDataLoading(true);
       setDataError(null);
       try {
-        const [detail, graph, overlay, versions] = await Promise.all([
-          api.getWorkspace(workspaceId),
-          api.getWorkspaceGraph(workspaceId),
-          api.learnerOverlay(workspaceId),
-          api.listGraphVersions(workspaceId),
-        ]);
+        const [detail, graph, overlay, versions, alignment, misconceptions, review, queue] =
+          await Promise.all([
+            api.getWorkspace(workspaceId),
+            api.getWorkspaceGraph(workspaceId),
+            api.learnerOverlay(workspaceId),
+            api.listGraphVersions(workspaceId),
+            api.alignmentOverview(workspaceId),
+            api.misconceptions(workspaceId),
+            api.reviewItems(workspaceId),
+            api.dailyQueue(workspaceId),
+          ]);
         const blockLists = await Promise.all(
           detail.documents.map((doc) => api.getMaterial(doc.id).then((m) => m.blocks)),
         );
@@ -137,6 +160,11 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
           blocks: blockLists.flat(),
           overlay: overlay.states,
           versions: versions.versions,
+          canonical: alignment.canonical,
+          pendingAlignmentCount: alignment.pendingProposals.length,
+          misconceptions: misconceptions.misconceptions,
+          reviewItems: review.items,
+          queue: queue.items,
         });
       } catch (error) {
         if (!mountedRef.current || epochRef.current !== epoch) return;
@@ -185,6 +213,7 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
     analyzeAction.cancel();
     documentAction.cancel();
     launchAction.cancel();
+    assessmentAction.cancel();
     setActiveWorkspaceId(workspaceId);
     setData(null);
     setDataError(null);
@@ -193,6 +222,9 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
     setPlan(null);
     setActionError(null);
     setGenerationSummary(null);
+    setAlignmentOpen(false);
+    setTutorPathIds(new Set());
+    setStartingQueueConceptId(null);
     if (workspaceId) writeLastWorkspaceId(workspaceId);
   }
 
@@ -383,21 +415,152 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
     }
   }
 
+  /** Launch a workspace assessment (queue items / Tutor activities). */
+  async function launchAssessment(
+    input: { mode: TutorActivity['mode']; conceptIds?: string[]; misconceptionId?: string },
+    busyConceptId: string | null,
+  ) {
+    if (!activeWorkspaceId) return;
+    const workspaceId = activeWorkspaceId;
+    setStartingQueueConceptId(busyConceptId);
+    try {
+      const result = await assessmentAction.run((signal) =>
+        api.createAssessment(workspaceId, input, signal),
+      );
+      if (result && activeWorkspaceId === workspaceId) {
+        onLaunchQuiz(result.quiz, 'assessment');
+      }
+    } finally {
+      setStartingQueueConceptId(null);
+    }
+  }
+
+  function handleStartQueueItem(item: DailyQueueItem) {
+    if (item.kind === 'misconception_repair' && item.misconceptionId) {
+      void launchAssessment(
+        { mode: 'misconception_check', misconceptionId: item.misconceptionId },
+        item.conceptId,
+      );
+      return;
+    }
+    const mode: TutorActivity['mode'] =
+      item.kind === 'overdue_review' || item.kind === 'due_review'
+        ? 'review'
+        : item.kind === 'weak_prerequisite'
+          ? 'prerequisite_repair'
+          : 'concept_practice';
+    void launchAssessment(
+      mode === 'review' ? { mode } : { mode, conceptIds: [item.conceptId] },
+      item.conceptId,
+    );
+  }
+
+  function handleStartTutorActivity(activity: TutorActivity) {
+    if (activity.mode === 'misconception_check') {
+      // The Tutor recommends checking the concept's open hypothesis; pick the
+      // oldest actionable one deterministically.
+      const target = (data?.misconceptions ?? [])
+        .filter(
+          (m) =>
+            activity.conceptIds.includes(m.conceptId) &&
+            (m.status === 'proposed' || m.status === 'confirmed'),
+        )
+        .sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0];
+      if (target) {
+        void launchAssessment(
+          { mode: 'misconception_check', misconceptionId: target.id },
+          activity.conceptIds[0] ?? null,
+        );
+        return;
+      }
+      void launchAssessment(
+        { mode: 'concept_practice', conceptIds: activity.conceptIds },
+        activity.conceptIds[0] ?? null,
+      );
+      return;
+    }
+    void launchAssessment(
+      activity.mode === 'review' || activity.mode === 'diagnostic'
+        ? { mode: activity.mode }
+        : { mode: activity.mode, conceptIds: activity.conceptIds },
+      activity.conceptIds[0] ?? null,
+    );
+  }
+
+  /** Refetch the accepted plan after a Tutor session persisted one. */
+  const refreshPlanForSelection = useCallback(() => {
+    if (!activeWorkspaceId || !selectedNodeId) return;
+    const epoch = epochRef.current;
+    const conceptId = selectedNodeId;
+    void api
+      .getPlan(activeWorkspaceId, conceptId)
+      .then((result) => {
+        if (!mountedRef.current || epochRef.current !== epoch) return;
+        setPlan((current) => (selectedNodeId === conceptId ? result.plan : current));
+      })
+      .catch(() => {
+        /* best-effort refresh */
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeWorkspaceId, selectedNodeId]);
+
   const overlayByConcept = useMemo(
     () => new Map((data?.overlay ?? []).map((s) => [s.conceptId, s])),
     [data],
   );
-  const conceptNameById = useMemo(
-    () => new Map((data?.concepts ?? []).map((c) => [c.id, c.name])),
+  /** Canonical display projection: one node per aligned concept group. */
+  const displayGraph = useMemo(
+    () =>
+      buildCanonicalDisplayGraph(data?.concepts ?? [], data?.edges ?? [], data?.canonical ?? []),
     [data],
   );
-  const planTargetIds = useMemo(() => new Set(plan?.targets.map((t) => t.conceptId) ?? []), [plan]);
-  const selectedConcept = data?.concepts.find((c) => c.id === selectedNodeId) ?? null;
-  const selectedEdge = data?.edges.find((e) => e.id === selectedEdgeId) ?? null;
-  const weakCount = (data?.overlay ?? []).filter((s) => s.treatAsWeak).length;
+  const displayOverlay = useMemo(
+    () => aggregateOverlay(overlayByConcept, displayGraph),
+    [overlayByConcept, displayGraph],
+  );
+  const conceptNameById = useMemo(
+    () => new Map(displayGraph.concepts.map((c) => [c.id, c.name])),
+    [displayGraph],
+  );
+  const misconceptionsByConcept = useMemo(() => {
+    const map = new Map<string, MisconceptionRecord[]>();
+    for (const record of data?.misconceptions ?? []) {
+      const representative = displayGraph.representativeByConcept.get(record.conceptId);
+      if (!representative) continue;
+      const list = map.get(representative) ?? [];
+      list.push(record);
+      map.set(representative, list);
+    }
+    return map;
+  }, [data, displayGraph]);
+  const reviewByConcept = useMemo(() => {
+    const map = new Map<string, ReviewItem>();
+    for (const item of data?.reviewItems ?? []) {
+      const representative = displayGraph.representativeByConcept.get(item.conceptId);
+      if (representative && !map.has(representative)) map.set(representative, item);
+    }
+    return map;
+  }, [data, displayGraph]);
+  const highlightIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const target of plan?.targets ?? []) {
+      ids.add(displayGraph.representativeByConcept.get(target.conceptId) ?? target.conceptId);
+    }
+    for (const id of tutorPathIds) {
+      ids.add(displayGraph.representativeByConcept.get(id) ?? id);
+    }
+    return ids;
+  }, [plan, tutorPathIds, displayGraph]);
+  const selectedConcept = displayGraph.concepts.find((c) => c.id === selectedNodeId) ?? null;
+  const selectedEdge = displayGraph.edges.find((e) => e.id === selectedEdgeId) ?? null;
+  const weakCount = [...displayOverlay.values()].filter((s) => s.treatAsWeak).length;
   const summary = data?.version?.validationSummary ?? null;
   const hasGraph = data !== null && data.concepts.length > 0;
   const anyAttempts = (data?.overlay ?? []).some((s) => s.attempts > 0);
+  const dueReviewCount = useMemo(() => {
+    const now = Date.now();
+    return (data?.reviewItems ?? []).filter((item) => new Date(item.dueAt).getTime() <= now).length;
+  }, [data]);
 
   return (
     <section
@@ -474,6 +637,14 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
 
           {activeWorkspaceId && data ? (
             <>
+              <DailyQueue
+                items={data.queue}
+                loading={dataLoading}
+                error={assessmentAction.error}
+                startingConceptId={startingQueueConceptId}
+                onStartItem={handleStartQueueItem}
+              />
+
               <h3>文档({data.documents.length})</h3>
               <ul className="document-list">
                 {data.documents.map((doc) => (
@@ -621,6 +792,21 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
           {data && weakCount > 0 ? (
             <span className="pill weak">薄弱概念 {weakCount} 个</span>
           ) : null}
+          {data && dueReviewCount > 0 ? (
+            <span className="pill review-due">待复习 {dueReviewCount} 个</span>
+          ) : null}
+          {data && data.documents.length > 1 ? (
+            <button
+              type="button"
+              className={`ghost small alignment-toggle ${alignmentOpen ? 'active' : ''}`}
+              onClick={() => setAlignmentOpen((open) => !open)}
+            >
+              概念对齐
+              {data.pendingAlignmentCount > 0 ? (
+                <span className="badge-count">{data.pendingAlignmentCount} 待审</span>
+              ) : null}
+            </button>
+          ) : null}
           {generationSummary ? (
             <p className="generation-summary" role="status">
               {generationSummary}
@@ -635,6 +821,18 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
             </p>
           ) : null}
         </div>
+        {alignmentOpen && data && activeWorkspaceId ? (
+          <AlignmentPanel
+            workspaceId={activeWorkspaceId}
+            concepts={data.concepts}
+            blocks={data.blocks}
+            documents={data.documents}
+            onClose={() => setAlignmentOpen(false)}
+            onChanged={() => {
+              if (activeWorkspaceId) void loadWorkspaceData(activeWorkspaceId);
+            }}
+          />
+        ) : null}
         {!activeWorkspaceId ? (
           <Banner kind="empty">选择或创建一个课程空间,查看你的学习图谱。</Banner>
         ) : dataLoading && !data ? (
@@ -675,15 +873,15 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
               </div>
             ) : null}
             <ConceptGraph
-              concepts={data.concepts}
-              edges={data.edges}
-              overlay={overlayByConcept}
+              concepts={displayGraph.concepts}
+              edges={displayGraph.edges}
+              overlay={displayOverlay}
               selectedNodeId={selectedNodeId}
               selectedEdgeId={selectedEdgeId}
               onSelectNode={selectNode}
               onSelectEdge={selectEdge}
               versionId={data.version?.id ?? null}
-              planTargetIds={planTargetIds}
+              planTargetIds={highlightIds}
               refitKey={`${leftCollapsed ? 'L' : 'l'}${rightCollapsed ? 'R' : 'r'}`}
               summary={{
                 documentCount: data.documents.length,
@@ -734,27 +932,45 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
             </button>
           </div>
           {selectedConcept && data ? (
-            <ConceptDetailPanel
-              concept={selectedConcept}
-              blocks={data.blocks}
-              documents={data.documents}
-              state={overlayByConcept.get(selectedConcept.id)}
-              edges={data.edges}
-              conceptNameById={conceptNameById}
-              plan={plan}
-              planLoading={planAction.loading}
-              planError={planAction.error}
-              launchLoading={launchAction.loading}
-              onGeneratePlan={() => void handleGeneratePlan()}
-              onCancelPlan={planAction.cancel}
-              onLaunchPlan={(p) => void handleLaunchPlan(p)}
-            />
+            <>
+              <ConceptDetailPanel
+                concept={selectedConcept}
+                blocks={data.blocks}
+                documents={data.documents}
+                state={displayOverlay.get(selectedConcept.id)}
+                edges={displayGraph.edges}
+                conceptNameById={conceptNameById}
+                canonical={displayGraph.canonicalByRepresentative.get(selectedConcept.id)}
+                misconceptions={misconceptionsByConcept.get(selectedConcept.id) ?? []}
+                reviewItem={reviewByConcept.get(selectedConcept.id)}
+                plan={plan}
+                planLoading={planAction.loading}
+                planError={planAction.error}
+                launchLoading={launchAction.loading}
+                onGeneratePlan={() => void handleGeneratePlan()}
+                onCancelPlan={planAction.cancel}
+                onLaunchPlan={(p) => void handleLaunchPlan(p)}
+              />
+              {activeWorkspaceId ? (
+                <TutorPanel
+                  workspaceId={activeWorkspaceId}
+                  conceptId={selectedConcept.id}
+                  conceptName={selectedConcept.name}
+                  onPathChange={setTutorPathIds}
+                  onStartActivity={handleStartTutorActivity}
+                  onPlanAccepted={refreshPlanForSelection}
+                />
+              ) : null}
+            </>
           ) : selectedEdge && data ? (
             <EdgeDetailPanel
               edge={selectedEdge}
               blocks={data.blocks}
               documents={data.documents}
               conceptNameById={conceptNameById}
+              mergedEdgeCount={
+                displayGraph.underlyingEdgesByDisplayEdge.get(selectedEdge.id)?.length ?? 1
+              }
             />
           ) : (
             <Banner kind="empty">
@@ -762,11 +978,14 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
             </Banner>
           )}
           {launchAction.error ? <Banner kind="error">{launchAction.error}</Banner> : null}
-          {hasGraph && data && data.edges.length > 0 ? (
+          {assessmentAction.error && selectedConcept ? (
+            <Banner kind="error">{assessmentAction.error}</Banner>
+          ) : null}
+          {hasGraph && data && displayGraph.edges.length > 0 ? (
             <details className="edge-list small">
-              <summary>关系列表({data.edges.length})— 键盘可访问的选择方式</summary>
+              <summary>关系列表({displayGraph.edges.length})— 键盘可访问的选择方式</summary>
               <ul>
-                {data.edges.map((edge) => (
+                {displayGraph.edges.map((edge) => (
                   <li key={edge.id}>
                     <button
                       type="button"

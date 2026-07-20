@@ -398,3 +398,184 @@ export const remediationPlan: RemediationPlan = {
   provider: 'fake',
   createdAt: T0,
 };
+
+// --- Adaptive-learning fixtures (alignment / tutor / queue / misconceptions) ---
+
+export const alignmentProposal = {
+  id: 'alp_1',
+  workspaceId: 'ws_1',
+  sourceConceptId: 'con_0',
+  targetConceptId: 'con_1',
+  relation: 'equivalent' as const,
+  proposedCanonicalName: '工作记忆',
+  rationale: '两个概念是同一事物的中英文表述。',
+  evidence: [
+    {
+      blockId: 'blk_0',
+      quote: '工作记忆的容量十分有限',
+      startOffset: 0,
+      endOffset: 11,
+      occurrenceCount: 1,
+      reanchored: false,
+    },
+  ],
+  origin: 'provider' as const,
+  status: 'proposed' as const,
+  sourceLanguage: 'zh' as const,
+  targetLanguage: 'en' as const,
+  provider: 'fake',
+  createdAt: T0,
+  decidedAt: null,
+};
+
+export const canonicalViews = [
+  {
+    id: 'can_1',
+    workspaceId: 'ws_1',
+    displayName: '工作记忆',
+    normalizedKey: '工作记忆',
+    description: null,
+    createdAt: T0,
+    updatedAt: T0,
+    members: [
+      {
+        sourceConceptId: 'con_0',
+        canonicalConceptId: 'can_1',
+        originalName: '工作记忆',
+        materialId: 'mat_1',
+        language: 'zh' as const,
+        viaProposalId: null,
+        createdAt: T0,
+      },
+    ],
+    aliases: [] as string[],
+    materialIds: ['mat_1'],
+  },
+];
+
+export const queueItems = [
+  {
+    kind: 'overdue_review' as const,
+    conceptId: 'con_0',
+    conceptName: '工作记忆',
+    misconceptionId: null,
+    reason: '复习已过期 2 天(上次评级:good)。',
+    overdueDays: 2,
+  },
+  {
+    kind: 'misconception_repair' as const,
+    conceptId: 'con_1',
+    conceptName: '间隔重复',
+    misconceptionId: 'mc_1',
+    reason: '已确认的误区待修复:可能把间隔重复理解成了集中复习。',
+    overdueDays: 0,
+  },
+];
+
+export const misconceptionRecord = {
+  id: 'mc_1',
+  workspaceId: 'ws_1',
+  conceptId: 'con_1',
+  conceptName: '间隔重复',
+  originBlueprintId: null,
+  originQuestionId: 'que_1',
+  originQuizId: 'qz_1',
+  learnerAnswer: {
+    questionId: 'que_1',
+    type: 'single_choice' as const,
+    selectedOptionIds: ['B'],
+  },
+  evidence: [] as never[],
+  category: 'definition_confusion' as const,
+  hypothesis: '学习者可能把「间隔重复」理解成了集中复习,需通过判别练习确认。',
+  provider: 'fake',
+  status: 'confirmed' as const,
+  decidedByQuizId: 'qz_2',
+  createdAt: T0,
+  updatedAt: T0,
+};
+
+export const tutorEvents = [
+  {
+    id: 'tev_0',
+    runId: 'tut_1',
+    seq: 0,
+    kind: 'session_started' as const,
+    summary: 'Hy3 辅导会话开始:围绕「工作记忆」制定学习计划。',
+    createdAt: T0,
+  },
+  {
+    id: 'tev_1',
+    runId: 'tut_1',
+    seq: 1,
+    kind: 'state_inspected' as const,
+    summary: '已检查「工作记忆」的学习状态:掌握度 47%,未解决错题 1 道。',
+    detail: { toolName: 'inspect_learning_state' as const, valid: true },
+    createdAt: T0,
+  },
+  {
+    id: 'tev_2',
+    runId: 'tut_1',
+    seq: 2,
+    kind: 'plan_accepted' as const,
+    summary: '学习计划通过本地校验。',
+    detail: { conceptIds: ['con_0'], evidenceCount: 1 },
+    createdAt: T0,
+  },
+  {
+    id: 'tev_3',
+    runId: 'tut_1',
+    seq: 3,
+    kind: 'session_completed' as const,
+    summary: '辅导会话完成,可以开始推荐的学习活动。',
+    createdAt: T0,
+  },
+];
+
+export const tutorRun = {
+  id: 'tut_1',
+  workspaceId: 'ws_1',
+  conceptId: 'con_0',
+  conceptName: '工作记忆',
+  status: 'completed' as const,
+  iterations: 3,
+  toolCallCount: 2,
+  acceptedEvidence: [
+    {
+      blockId: 'blk_0',
+      quote: '工作记忆的容量十分有限',
+      startOffset: 0,
+      endOffset: 11,
+      occurrenceCount: 1,
+      reanchored: false,
+    },
+  ],
+  planId: 'plan_1',
+  activity: { mode: 'concept_practice' as const, conceptIds: ['con_0'] },
+  errorMessage: null,
+  provider: 'fake',
+  providerModel: null,
+  createdAt: T0,
+  updatedAt: T0,
+};
+
+export const stateChanges = {
+  assessedConceptIds: ['con_0'],
+  documentIds: ['mat_1'],
+  mistakesCreated: 1,
+  mistakesResolved: 0,
+  misconceptionsProposed: 1,
+  misconceptionsConfirmed: 0,
+  misconceptionsRejected: 0,
+  misconceptionsResolved: 0,
+  masteryChanges: [{ conceptId: 'con_0', conceptName: '工作记忆', before: 0.5, after: 0.44 }],
+  reviewScheduled: [
+    {
+      conceptId: 'con_0',
+      conceptName: '工作记忆',
+      rating: 'again',
+      dueAt: '2026-01-01T12:00:00.000Z',
+    },
+  ],
+  recommendedNextStep: '本次产生了 1 道错题,建议在图谱中查看薄弱概念并生成康复计划。',
+};

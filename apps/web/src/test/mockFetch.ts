@@ -71,3 +71,36 @@ function makeResponse(status: number, body: unknown): Response {
     json: async () => body,
   } as Response;
 }
+
+/**
+ * Default (empty) routes for the adaptive-learning data the graph workspace
+ * loads alongside the graph: alignment overview, misconceptions, review
+ * items, and the daily queue. Tests append these unless they exercise the
+ * feature explicitly.
+ */
+export function adaptiveDataRoutes(workspaceId = 'ws_1'): MockRoute[] {
+  return [
+    {
+      method: 'GET',
+      pattern: new RegExp(`/api/workspaces/${workspaceId}/alignment$`),
+      handler: () => ({
+        body: { canonical: [], pendingProposals: [], decidedProposals: [] },
+      }),
+    },
+    {
+      method: 'GET',
+      pattern: new RegExp(`/api/workspaces/${workspaceId}/misconceptions$`),
+      handler: () => ({ body: { misconceptions: [] } }),
+    },
+    {
+      method: 'GET',
+      pattern: new RegExp(`/api/workspaces/${workspaceId}/review$`),
+      handler: () => ({ body: { items: [] } }),
+    },
+    {
+      method: 'GET',
+      pattern: new RegExp(`/api/workspaces/${workspaceId}/queue$`),
+      handler: () => ({ body: { items: [] } }),
+    },
+  ];
+}

@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GraphWorkspaceView } from './GraphWorkspaceView';
-import { installFetchMock, type MockRoute } from '../test/mockFetch';
+import { adaptiveDataRoutes, installFetchMock, type MockRoute } from '../test/mockFetch';
 import {
   documentSummary,
   graphConcepts,
@@ -23,6 +23,20 @@ afterEach(() => {
 });
 
 const LAST_WORKSPACE_KEY = 'hy3-clinic:last-workspace-id';
+
+/**
+ * Install a fetch mock with the view's routes plus empty adaptive-data
+ * defaults (alignment/misconceptions/review/queue) for every workspace id
+ * the suite uses. Test-specific routes come first, so they always win.
+ */
+function installViewMock(routes: MockRoute[]): ReturnType<typeof installFetchMock> {
+  return installFetchMock([
+    ...routes,
+    ...adaptiveDataRoutes('ws_1'),
+    ...adaptiveDataRoutes('ws_new'),
+    ...adaptiveDataRoutes('ws_2'),
+  ]);
+}
 
 function baseRoutes(): MockRoute[] {
   return [
@@ -78,7 +92,7 @@ function openSavedWorkspace() {
 
 describe('学习图谱工作台 — workspace and document area', () => {
   it('shows the empty state when no workspaces exist', async () => {
-    installFetchMock([
+    installViewMock([
       {
         method: 'GET',
         pattern: /\/api\/workspaces$/,
@@ -94,7 +108,7 @@ describe('学习图谱工作台 — workspace and document area', () => {
   it('creates a workspace and opens it', async () => {
     const user = userEvent.setup();
     const created = { ...workspace, id: 'ws_new', name: '新课程', activeGraphVersionId: null };
-    installFetchMock([
+    installViewMock([
       {
         method: 'GET',
         pattern: /\/api\/workspaces$/,
@@ -142,7 +156,7 @@ describe('学习图谱工作台 — workspace and document area', () => {
       parseStatus: 'parsed_with_warnings' as const,
       extractionWarnings: ['第 3 页未提取到文本(可能是扫描图片页;未启用 OCR)。'],
     };
-    installFetchMock([
+    installViewMock([
       ...baseRoutes().filter((r) => !r.pattern.test('/api/workspaces/ws_1')),
       {
         method: 'GET',
@@ -160,7 +174,7 @@ describe('学习图谱工作台 — workspace and document area', () => {
 
   it('re-clicking the already-active workspace keeps the loaded graph intact', async () => {
     openSavedWorkspace();
-    installFetchMock(baseRoutes());
+    installViewMock(baseRoutes());
     const user = userEvent.setup();
     renderView();
     await screen.findByTestId('concept-graph');
@@ -177,7 +191,7 @@ describe('学习图谱工作台 — workspace and document area', () => {
     openSavedWorkspace();
     const user = userEvent.setup();
     const addDocument = vi.fn(() => ({ status: 201, body: material }));
-    installFetchMock([
+    installViewMock([
       ...baseRoutes(),
       { method: 'POST', pattern: /\/api\/workspaces\/ws_1\/documents$/, handler: addDocument },
     ]);
@@ -192,7 +206,7 @@ describe('学习图谱工作台 — workspace and document area', () => {
 describe('学习图谱工作台 — graph area', () => {
   it('renders nodes with learner-state overlay, weak emphasis, and a legend', async () => {
     openSavedWorkspace();
-    installFetchMock(baseRoutes());
+    installViewMock(baseRoutes());
     renderView();
 
     const graph = await screen.findByTestId('concept-graph');
@@ -212,7 +226,7 @@ describe('学习图谱工作台 — graph area', () => {
 
   it('shows the empty graph state before any concepts exist', async () => {
     openSavedWorkspace();
-    installFetchMock([
+    installViewMock([
       ...baseRoutes().filter((r) => !r.pattern.test('/api/workspaces/ws_1/graph')),
       {
         method: 'GET',
@@ -239,7 +253,7 @@ describe('学习图谱工作台 — graph area', () => {
       status: 'failed' as const,
       errorMessage: '模型提出的概念关系均未通过本地校验,原有图谱保持不变。',
     };
-    installFetchMock([
+    installViewMock([
       ...baseRoutes().filter((r) => !r.pattern.test('/api/workspaces/ws_1/graph')),
       {
         method: 'GET',
@@ -265,7 +279,7 @@ describe('学习图谱工作台 — graph area', () => {
       status: 201,
       body: { version: graphVersion, edges: graphEdges },
     }));
-    installFetchMock([
+    installViewMock([
       ...baseRoutes(),
       { method: 'POST', pattern: /\/api\/workspaces\/ws_1\/graph$/, handler: generate },
     ]);
@@ -291,7 +305,7 @@ describe('学习图谱工作台 — detail area and planner', () => {
   it('shows concept evidence, learner state, and relationships on node selection', async () => {
     openSavedWorkspace();
     const user = userEvent.setup();
-    installFetchMock(baseRoutes());
+    installViewMock(baseRoutes());
     renderView();
     await selectWorkingMemoryNode();
 
@@ -310,7 +324,7 @@ describe('学习图谱工作台 — detail area and planner', () => {
   it('shows edge details with relation, explanation, and verified evidence', async () => {
     openSavedWorkspace();
     const user = userEvent.setup();
-    installFetchMock(baseRoutes());
+    installViewMock(baseRoutes());
     renderView();
     await screen.findByTestId('concept-graph');
 
@@ -333,7 +347,7 @@ describe('学习图谱工作台 — detail area and planner', () => {
     const onLaunchQuiz = vi.fn();
     const generatePlan = vi.fn(() => ({ status: 201, body: { plan: remediationPlan } }));
     const launch = vi.fn(() => ({ status: 201, body: { quiz, mode: 'practice' } }));
-    installFetchMock([
+    installViewMock([
       ...baseRoutes(),
       {
         method: 'POST',
@@ -366,7 +380,7 @@ describe('学习图谱工作台 — detail area and planner', () => {
     openSavedWorkspace();
     const user = userEvent.setup();
     let calls = 0;
-    installFetchMock([
+    installViewMock([
       ...baseRoutes().filter((r) => !(r.method === 'GET' && r.pattern.source.includes('plan'))),
       {
         method: 'GET',
@@ -406,7 +420,7 @@ describe('学习图谱工作台 — detail area and planner', () => {
   it('supports cancelling plan generation and returning to idle', async () => {
     openSavedWorkspace();
     const user = userEvent.setup();
-    installFetchMock([
+    installViewMock([
       ...baseRoutes(),
       {
         method: 'POST',
@@ -432,7 +446,7 @@ describe('学习图谱工作台 — detail area and planner', () => {
     openSavedWorkspace();
     const user = userEvent.setup();
     let resolvePlan: (value: { status: number; body: unknown }) => void = () => {};
-    installFetchMock([
+    installViewMock([
       ...baseRoutes(),
       {
         method: 'POST',
@@ -468,7 +482,7 @@ describe('学习图谱工作台 — panel collapse', () => {
   it('collapses and re-expands both side panels while the graph stays mounted', async () => {
     openSavedWorkspace();
     const user = userEvent.setup();
-    installFetchMock(baseRoutes());
+    installViewMock(baseRoutes());
     renderView();
     await screen.findByTestId('concept-graph');
 
@@ -488,7 +502,7 @@ describe('学习图谱工作台 — panel collapse', () => {
   it('shows a success summary after graph generation', async () => {
     openSavedWorkspace();
     const user = userEvent.setup();
-    installFetchMock([
+    installViewMock([
       ...baseRoutes(),
       {
         method: 'POST',
@@ -511,7 +525,7 @@ describe('学习图谱工作台 — stale workspace switches', () => {
     const summaries = [workspaceSummary, { ...ws2, documentCount: 0, conceptCount: 0 }];
     let resolveFirstDetail: (value: { status: number; body: unknown }) => void = () => {};
     window.localStorage.setItem(LAST_WORKSPACE_KEY, 'ws_1');
-    installFetchMock([
+    installViewMock([
       {
         method: 'GET',
         pattern: /\/api\/workspaces$/,
@@ -569,5 +583,297 @@ describe('学习图谱工作台 — stale workspace switches', () => {
       expect(screen.queryByText(documentSummary.title)).not.toBeInTheDocument();
     });
     expect(screen.getByLabelText('学习图谱引导')).toBeInTheDocument();
+  });
+});
+
+describe('学习图谱工作台 — 自适应学习升级', () => {
+  const secondDocument = {
+    ...documentSummary,
+    id: 'mat_2',
+    title: 'English notes',
+  };
+  const enConcept = {
+    ...graphConcepts[0]!,
+    id: 'con_en',
+    materialId: 'mat_2',
+    name: 'Working memory',
+  };
+  const mergedCanonical = [
+    {
+      id: 'can_1',
+      workspaceId: 'ws_1',
+      displayName: '工作记忆',
+      normalizedKey: '工作记忆',
+      description: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      members: [
+        {
+          sourceConceptId: 'con_0',
+          canonicalConceptId: 'can_1',
+          originalName: '工作记忆',
+          materialId: 'mat_1',
+          language: 'zh' as const,
+          viaProposalId: null,
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+        {
+          sourceConceptId: 'con_en',
+          canonicalConceptId: 'can_1',
+          originalName: 'Working memory',
+          materialId: 'mat_2',
+          language: 'en' as const,
+          viaProposalId: 'alp_1',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+      aliases: ['Working memory'],
+      materialIds: ['mat_1', 'mat_2'],
+    },
+    {
+      id: 'can_2',
+      workspaceId: 'ws_1',
+      displayName: '间隔重复',
+      normalizedKey: '间隔重复',
+      description: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      members: [
+        {
+          sourceConceptId: 'con_1',
+          canonicalConceptId: 'can_2',
+          originalName: '间隔重复',
+          materialId: 'mat_1',
+          language: 'zh' as const,
+          viaProposalId: null,
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+      aliases: [] as string[],
+      materialIds: ['mat_1'],
+    },
+  ];
+
+  function adaptiveRoutes(): MockRoute[] {
+    return [
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1$/,
+        handler: () => ({
+          body: { workspace, documents: [documentSummary, secondDocument] },
+        }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/graph$/,
+        handler: () => ({
+          body: {
+            version: graphVersion,
+            edges: graphEdges,
+            concepts: [...graphConcepts, enConcept],
+          },
+        }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/materials\/mat_2$/,
+        handler: () => ({
+          body: { ...material, material: { ...material.material, id: 'mat_2' } },
+        }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/alignment$/,
+        handler: () => ({
+          body: {
+            canonical: mergedCanonical,
+            pendingProposals: [
+              {
+                id: 'alp_2',
+                workspaceId: 'ws_1',
+                sourceConceptId: 'con_1',
+                targetConceptId: 'con_en',
+                relation: 'related_but_distinct',
+                proposedCanonicalName: '间隔重复',
+                rationale: '相关但不同。',
+                evidence: [],
+                origin: 'provider',
+                status: 'proposed',
+                sourceLanguage: 'zh',
+                targetLanguage: 'en',
+                provider: 'fake',
+                createdAt: '2026-01-01T00:00:00.000Z',
+                decidedAt: null,
+              },
+            ],
+            decidedProposals: [],
+          },
+        }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/queue$/,
+        handler: () => ({
+          body: {
+            items: [
+              {
+                kind: 'open_mistakes',
+                conceptId: 'con_0',
+                conceptName: '工作记忆',
+                misconceptionId: null,
+                reason: '有 1 道未解决错题。',
+                overdueDays: 0,
+              },
+            ],
+          },
+        }),
+      },
+      ...baseRoutes().filter((r) => !r.pattern.test('/api/workspaces/ws_1')),
+    ];
+  }
+
+  it('renders ONE canonical node for aligned concepts and exposes aliases in the inspector', async () => {
+    openSavedWorkspace();
+    installViewMock(adaptiveRoutes());
+    const user = userEvent.setup();
+    renderView();
+
+    // The merged pair renders once (canonical name), not twice.
+    const canvas = await screen.findByLabelText('个人学习图谱');
+    await waitFor(() => {
+      expect(within(canvas).getAllByText('工作记忆').length).toBeGreaterThan(0);
+    });
+    expect(within(canvas).queryByText('Working memory')).not.toBeInTheDocument();
+
+    // Selecting the canonical node shows aliases and both documents.
+    await user.click(within(canvas).getAllByText('工作记忆')[0]!);
+    const inspector = await screen.findByLabelText('概念详情:工作记忆');
+    expect(within(inspector).getByText(/别名:Working memory/)).toBeInTheDocument();
+    expect(within(inspector).getByText(/来自 2 份文档/)).toBeInTheDocument();
+  });
+
+  it('shows the pending-alignment badge and opens the review panel', async () => {
+    openSavedWorkspace();
+    installViewMock(adaptiveRoutes());
+    const user = userEvent.setup();
+    renderView();
+
+    const toggle = await screen.findByRole('button', { name: /概念对齐/ });
+    expect(toggle).toHaveTextContent('1 待审');
+    await user.click(toggle);
+    expect(await screen.findByRole('dialog', { name: '概念对齐审核' })).toBeInTheDocument();
+    expect(await screen.findByText('相关但不同')).toBeInTheDocument();
+  });
+
+  it('launches a workspace assessment from the daily queue', async () => {
+    openSavedWorkspace();
+    const onLaunchQuiz = vi.fn();
+    const adaptiveQuiz = {
+      ...quiz,
+      id: 'qz_adaptive',
+      materialId: null,
+      workspaceId: 'ws_1',
+      kind: 'adaptive' as const,
+      assessmentMode: 'concept_practice',
+    };
+    const { calls } = installViewMock([
+      {
+        method: 'POST',
+        pattern: /\/api\/workspaces\/ws_1\/assessments$/,
+        handler: () => ({
+          status: 201,
+          body: { quiz: adaptiveQuiz, blueprints: [], rejected: [] },
+        }),
+      },
+      ...adaptiveRoutes(),
+    ]);
+    const user = userEvent.setup();
+    renderView({ onLaunchQuiz });
+
+    const queueArea = await screen.findByLabelText('今日学习队列');
+    await user.click(within(queueArea).getByRole('button', { name: '开始' }));
+    await waitFor(() => expect(onLaunchQuiz).toHaveBeenCalled());
+    expect(onLaunchQuiz.mock.calls[0]![0].kind).toBe('adaptive');
+    expect(onLaunchQuiz.mock.calls[0]![1]).toBe('assessment');
+    const post = calls.find((c) => c.method === 'POST' && c.url.includes('/assessments'));
+    expect(post?.body).toEqual({ mode: 'concept_practice', conceptIds: ['con_0'] });
+  });
+
+  it('keeps misconception and review info in the inspector overview', async () => {
+    openSavedWorkspace();
+    installViewMock([
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/misconceptions$/,
+        handler: () => ({
+          body: {
+            misconceptions: [
+              {
+                id: 'mc_1',
+                workspaceId: 'ws_1',
+                conceptId: 'con_0',
+                conceptName: '工作记忆',
+                originBlueprintId: null,
+                originQuestionId: 'que_1',
+                originQuizId: 'qz_1',
+                learnerAnswer: {
+                  questionId: 'que_1',
+                  type: 'single_choice',
+                  selectedOptionIds: ['B'],
+                },
+                evidence: [],
+                category: 'definition_confusion',
+                hypothesis: '学习者可能混淆了容量限制的具体数值。',
+                provider: 'fake',
+                status: 'proposed',
+                decidedByQuizId: null,
+                createdAt: '2026-01-01T00:00:00.000Z',
+                updatedAt: '2026-01-01T00:00:00.000Z',
+              },
+            ],
+          },
+        }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/review$/,
+        handler: () => ({
+          body: {
+            items: [
+              {
+                workspaceId: 'ws_1',
+                conceptId: 'con_0',
+                conceptName: '工作记忆',
+                stability: 3,
+                difficulty: 5,
+                dueAt: '2026-01-04T00:00:00.000Z',
+                lastReviewedAt: '2026-01-01T00:00:00.000Z',
+                intervalDays: 3,
+                reviewCount: 1,
+                lapseCount: 0,
+                lastRating: 'good',
+                schedulerVersion: 'local-fsrs-v1',
+                createdAt: '2026-01-01T00:00:00.000Z',
+                updatedAt: '2026-01-01T00:00:00.000Z',
+              },
+            ],
+          },
+        }),
+      },
+      ...baseRoutes(),
+    ]);
+    const user = userEvent.setup();
+    renderView();
+
+    const canvas = await screen.findByLabelText('个人学习图谱');
+    await waitFor(() => {
+      expect(within(canvas).getAllByText('工作记忆').length).toBeGreaterThan(0);
+    });
+    await user.click(within(canvas).getAllByText('工作记忆')[0]!);
+    const inspector = await screen.findByLabelText(/概念详情:工作记忆/);
+    expect(within(inspector).getByText('待确认')).toBeInTheDocument();
+    expect(within(inspector).getByText(/学习者可能混淆了容量限制/)).toBeInTheDocument();
+    expect(within(inspector).getByText(/下次复习/)).toBeInTheDocument();
+    expect(within(inspector).getByText(/误区仅为假设/)).toBeInTheDocument();
   });
 });

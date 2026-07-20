@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import type {
+  CanonicalConceptView,
   Concept,
   ConceptLearnerState,
   DocumentSummary,
   GraphEdge,
+  MisconceptionRecord,
   RemediationPlan,
+  ReviewItem,
   SourceBlock,
   VerifiedGrounding,
 } from '@hy3-clinic/shared';
@@ -13,7 +16,7 @@ import { Banner, Loading, MasteryMeter } from './ui.js';
 import { RELATION_LABELS } from './ConceptGraph.js';
 
 /**
- * Right-hand inspector: 概览 · 原文证据 · 学习计划.
+ * Right-hand inspector: 概览(含误区/复习) · 原文证据 · 学习计划.
  *
  * Labels distinguish provenance explicitly:
  * - 「模型提出」 marks model-proposed content (explanations, plan reasons);
@@ -21,6 +24,8 @@ import { RELATION_LABELS } from './ConceptGraph.js';
  * Exact-quote verification proves the quote exists at the cited position in
  * the source; it does not by itself prove the semantic relationship — the UI
  * copy preserves that distinction (kept as a compact disclosure note).
+ * Misconception wording is always tentative until locally confirmed:
+ * 可能的误区 · 待确认 / 已确认 / 已排除 / 已解除.
  */
 
 const STATE_TEXT: Record<ConceptLearnerState['state'], string> = {
@@ -28,6 +33,13 @@ const STATE_TEXT: Record<ConceptLearnerState['state'], string> = {
   weak: '薄弱',
   developing: '进步中',
   stable: '稳固',
+};
+
+const MISCONCEPTION_STATUS_TEXT: Record<MisconceptionRecord['status'], string> = {
+  proposed: '待确认',
+  confirmed: '已确认',
+  rejected: '已排除',
+  resolved: '已解除',
 };
 
 const STRATEGY_TEXT: Record<RemediationPlan['strategy'], string> = {
@@ -137,6 +149,12 @@ export interface ConceptDetailPanelProps {
   state: ConceptLearnerState | undefined;
   edges: GraphEdge[];
   conceptNameById: Map<string, string>;
+  /** Canonical group of the concept (aliases, member documents). */
+  canonical?: CanonicalConceptView | undefined;
+  /** Misconception hypotheses of this concept (all statuses, bounded). */
+  misconceptions?: MisconceptionRecord[];
+  /** Long-term review state (undefined before the first graded activity). */
+  reviewItem?: ReviewItem | undefined;
   plan: RemediationPlan | null;
   planLoading: boolean;
   planError: string | null;
@@ -153,6 +171,9 @@ export function ConceptDetailPanel({
   state,
   edges,
   conceptNameById,
+  canonical,
+  misconceptions = [],
+  reviewItem,
   plan,
   planLoading,
   planError,
@@ -169,15 +190,44 @@ export function ConceptDetailPanel({
 
   const incoming = edges.filter((e) => e.targetConceptId === concept.id);
   const outgoing = edges.filter((e) => e.sourceConceptId === concept.id);
+  const proposedCount = misconceptions.filter((m) => m.status === 'proposed').length;
+  const confirmedCount = misconceptions.filter((m) => m.status === 'confirmed').length;
+  const reviewDue = reviewItem ? new Date(reviewItem.dueAt).getTime() <= Date.now() : false;
+  const memberDocuments = canonical
+    ? canonical.materialIds
+        .map((id) => documents.find((d) => d.id === id)?.title ?? id)
+        .filter(Boolean)
+    : [];
 
   return (
     <div className="detail-panel" aria-label={`概念详情:${concept.name}`}>
       <div className="inspector-head">
-        <h3>{concept.name}</h3>
+        <h3>{canonical?.displayName ?? concept.name}</h3>
         {state ? (
           <span className={`state-pill ${state.state}`}>{STATE_TEXT[state.state]}</span>
         ) : null}
+        {confirmedCount > 0 ? (
+          <span className="pill wrong" title="已确认的误区">
+            误区 {confirmedCount}
+          </span>
+        ) : proposedCount > 0 ? (
+          <span className="pill" title="可能的误区(待确认)">
+            疑似误区 {proposedCount}
+          </span>
+        ) : null}
+        {reviewDue ? (
+          <span className="pill review-due" title="复习已到期">
+            待复习
+          </span>
+        ) : null}
       </div>
+      {canonical && (canonical.aliases.length > 0 || canonical.materialIds.length > 1) ? (
+        <p className="small muted canonical-meta">
+          {canonical.aliases.length > 0 ? <>别名:{canonical.aliases.join('、')} · </> : null}
+          来自 {canonical.materialIds.length} 份文档
+          {memberDocuments.length > 0 ? `(${memberDocuments.join('、')})` : ''}
+        </p>
+      ) : null}
       <InspectorTabs active={tab} onChange={setTab} planAvailable />
 
       {tab === 'overview' ? (
@@ -210,6 +260,38 @@ export function ConceptDetailPanel({
             ) : (
               <p className="small muted">学习状态数据不可用。</p>
             )}
+          </section>
+          {misconceptions.length > 0 ? (
+            <section aria-label="可能的误区">
+              <h4>可能的误区</h4>
+              <ul className="misconception-list small">
+                {misconceptions.map((record) => (
+                  <li key={record.id} className={`misconception-item ${record.status}`}>
+                    <span className={`pill misconception-status ${record.status}`}>
+                      {MISCONCEPTION_STATUS_TEXT[record.status]}
+                    </span>{' '}
+                    <span className="pill model">模型假设</span> {record.hypothesis}
+                  </li>
+                ))}
+              </ul>
+              <p className="small muted">误区仅为假设;只有判别练习的作答结果才会确认或排除它。</p>
+            </section>
+          ) : null}
+          <section aria-label="复习安排">
+            <h4>复习安排</h4>
+            {reviewItem ? (
+              <p className="small">
+                <span className="pill deterministic">本地调度</span> 下次复习:
+                {formatDue(reviewItem.dueAt)} · 已复习 {reviewItem.reviewCount} 次
+                {reviewItem.lapseCount > 0 ? ` · 遗忘 ${reviewItem.lapseCount} 次` : ''}
+                {reviewDue ? ' · 已到期' : ''}
+              </p>
+            ) : (
+              <p className="small muted">完成一次判分后,系统会按遗忘风险安排复习时间。</p>
+            )}
+            <p className="small muted">
+              复习时间与掌握度相互独立:前者估计遗忘风险,后者汇总作答表现。
+            </p>
           </section>
           <section aria-label="概念关系">
             <h4>概念关系</h4>
@@ -337,11 +419,26 @@ function RelationRow({
   );
 }
 
+/** Compact due-date formatting for the review section (local time). */
+function formatDue(iso: string): string {
+  const due = new Date(iso);
+  const now = new Date();
+  const diffDays = Math.floor((due.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
+  const date = `${due.getFullYear()}-${String(due.getMonth() + 1).padStart(2, '0')}-${String(
+    due.getDate(),
+  ).padStart(2, '0')}`;
+  if (diffDays < 0) return `${date}(已过期 ${-diffDays} 天)`;
+  if (diffDays === 0) return `${date}(今天)`;
+  return `${date}(${diffDays} 天后)`;
+}
+
 export interface EdgeDetailPanelProps {
   edge: GraphEdge;
   blocks: SourceBlock[];
   documents: DocumentSummary[];
   conceptNameById: Map<string, string>;
+  /** How many underlying edges the canonical view collapsed into this one. */
+  mergedEdgeCount?: number;
 }
 
 export function EdgeDetailPanel({
@@ -349,6 +446,7 @@ export function EdgeDetailPanel({
   blocks,
   documents,
   conceptNameById,
+  mergedEdgeCount = 1,
 }: EdgeDetailPanelProps) {
   const [tab, setTab] = useState<InspectorTab>('overview');
   useEffect(() => {
@@ -378,6 +476,7 @@ export function EdgeDetailPanel({
           <p className="small">
             <span className="pill deterministic">本地已验证</span> 该关系的 {edge.evidence.length}{' '}
             条引文均通过本地证据校验。
+            {mergedEdgeCount > 1 ? `(概念对齐后合并了 ${mergedEdgeCount} 条同类关系)` : ''}
           </p>
         </div>
       ) : null}

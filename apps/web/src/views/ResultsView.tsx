@@ -1,4 +1,12 @@
-import type { Answer, PublicQuiz, Question, QuestionGrade, SourceBlock } from '@hy3-clinic/shared';
+import type {
+  Answer,
+  PublicQuiz,
+  Question,
+  QuestionGrade,
+  SourceBlock,
+  SubmissionStateChanges,
+} from '@hy3-clinic/shared';
+import { isTextAnswerType } from '@hy3-clinic/shared';
 import type { SubmissionResponse } from '../api.js';
 import { Banner, GradedByPill } from '../components/ui.js';
 import { SourceEvidencePanel } from '../components/SourceEvidencePanel.js';
@@ -12,7 +20,7 @@ export interface ResultsViewProps {
   remediationLoading: boolean;
 }
 
-/** 判分结果视图:总分、逐题判定、判分方式标签、依据与讲解(Flow B)。 */
+/** 判分结果视图:总分、逐题判定、判分方式标签、状态变化与依据讲解。 */
 export function ResultsView({
   quiz,
   result,
@@ -21,11 +29,12 @@ export function ResultsView({
   onRemediate,
   remediationLoading,
 }: ResultsViewProps) {
-  const { grading, questions } = result;
+  const { grading, questions, stateChanges } = result;
   const questionById = new Map<string, Question>(questions.map((q) => [q.id, q]));
   const answerById = new Map(answers.map((a) => [a.questionId, a]));
   const scorePct = Math.round(grading.overallScore * 100);
   const wrongCount = grading.grades.filter((g) => !g.correct).length;
+  const isAssessment = quiz.kind === 'adaptive';
 
   return (
     <div className="stack">
@@ -46,7 +55,7 @@ export function ResultsView({
             <span className="pill wrong">待巩固 {wrongCount} 题</span>
           </div>
         </div>
-        {wrongCount > 0 ? (
+        {wrongCount > 0 && !isAssessment ? (
           <div className="row" style={{ marginTop: '0.75rem' }}>
             <button
               type="button"
@@ -58,10 +67,13 @@ export function ResultsView({
             </button>
             <span className="muted small">错题已记入错题本,可稍后在「错题本」页处理。</span>
           </div>
-        ) : (
+        ) : null}
+        {wrongCount === 0 && !stateChanges ? (
           <Banner kind="info">全部答对!可以到「掌握度」页查看进展。</Banner>
-        )}
+        ) : null}
       </section>
+
+      {stateChanges ? <StateChangesCard changes={stateChanges} /> : null}
 
       {grading.grades.map((grade, i) => {
         const question = questionById.get(grade.questionId);
@@ -78,6 +90,62 @@ export function ResultsView({
         );
       })}
     </div>
+  );
+}
+
+/**
+ * Deterministic explanation of what this graded submission changed:
+ * concepts/documents assessed, mistakes, misconception transitions, mastery
+ * movement, review scheduling, and the recommended next step.
+ */
+function StateChangesCard({ changes }: { changes: SubmissionStateChanges }) {
+  const misconceptionParts = [
+    changes.misconceptionsProposed > 0 ? `新增疑似误区 ${changes.misconceptionsProposed} 个` : null,
+    changes.misconceptionsConfirmed > 0 ? `确认误区 ${changes.misconceptionsConfirmed} 个` : null,
+    changes.misconceptionsRejected > 0 ? `排除误区 ${changes.misconceptionsRejected} 个` : null,
+    changes.misconceptionsResolved > 0 ? `解除误区 ${changes.misconceptionsResolved} 个` : null,
+  ].filter((v): v is string => v !== null);
+
+  return (
+    <section className="card state-changes" aria-label="本次判分引起的状态变化">
+      <h3>学习状态变化</h3>
+      <p className="small muted">
+        以下变化全部由本地确定性规则计算:评估 {changes.assessedConceptIds.length} 个概念,证据来自{' '}
+        {changes.documentIds.length} 份文档。
+      </p>
+      <ul className="small state-change-list">
+        <li>
+          错题:新增 {changes.mistakesCreated} 道
+          {changes.mistakesResolved > 0 ? ` · 解决 ${changes.mistakesResolved} 道` : ''}
+        </li>
+        {misconceptionParts.length > 0 ? <li>误区:{misconceptionParts.join(' · ')}</li> : null}
+        {changes.masteryChanges.length > 0 ? (
+          <li>
+            掌握度:
+            {changes.masteryChanges
+              .map(
+                (m) =>
+                  `${m.conceptName} ${m.before === null ? '—' : Math.round(m.before * 100) + '%'} → ${Math.round(
+                    m.after * 100,
+                  )}%`,
+              )
+              .join(';')}
+          </li>
+        ) : null}
+        {changes.reviewScheduled.length > 0 ? (
+          <li>
+            复习安排:
+            {changes.reviewScheduled
+              .map((r) => `${r.conceptName}(${r.rating})→ ${r.dueAt.slice(0, 10)}`)
+              .join(';')}
+          </li>
+        ) : null}
+      </ul>
+      <p className="small">
+        <strong>建议下一步:</strong>
+        {changes.recommendedNextStep}
+      </p>
+    </section>
   );
 }
 
@@ -117,7 +185,7 @@ function QuestionResult({
       </div>
       <p style={{ whiteSpace: 'pre-wrap' }}>{question.stem}</p>
 
-      {question.type !== 'short_answer' ? (
+      {!isTextAnswerType(question.type) ? (
         <div>
           {(question.options ?? []).map((option) => {
             const isCorrect = correctSet.has(option.id);
@@ -176,6 +244,14 @@ function QuestionResult({
         {question.explanation}
       </p>
       <SourceEvidencePanel grounding={question.grounding} blocks={blocks} defaultOpen />
+      {(question.supplementaryEvidence ?? []).map((evidence, i) => (
+        <SourceEvidencePanel
+          key={`${evidence.blockId}-${i}`}
+          grounding={evidence}
+          blocks={blocks}
+          defaultOpen
+        />
+      ))}
     </section>
   );
 }
