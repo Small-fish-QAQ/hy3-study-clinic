@@ -39,7 +39,12 @@ import {
   type Rect,
   type Side,
 } from './edgeGeometry.js';
-import { comparePathPair, polylineIntersectsRect, routedPolyline, CLARITY_SAMPLES } from './graphClarity.js';
+import {
+  comparePathPair,
+  polylineIntersectsRect,
+  routedPolyline,
+  CLARITY_SAMPLES,
+} from './graphClarity.js';
 
 export type RouteMode = 'network' | 'dependency';
 
