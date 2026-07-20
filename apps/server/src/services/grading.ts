@@ -193,10 +193,7 @@ export function createGradingService({
         };
         repos.mistakes.insert(mistake);
         mistakesCreated++;
-      } else if (
-        (quiz.kind === 'remediation' || quiz.kind === 'adaptive') &&
-        grade.correct
-      ) {
+      } else if ((quiz.kind === 'remediation' || quiz.kind === 'adaptive') && grade.correct) {
         // Documented rule: a correct answer on a remediation question — or on
         // an adaptive practice question generated over the same open
         // mistakes — resolves exactly the mistakes it re-tested.

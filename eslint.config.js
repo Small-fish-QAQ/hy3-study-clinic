@@ -37,14 +37,17 @@ export default tseslint.config(
     },
   },
   {
-    // Plain Node demo/utility scripts (run with `node scripts/*.mjs`).
-    files: ['scripts/**/*.mjs'],
+    // Plain Node demo/evaluation scripts (run with `node scripts/*.mjs` /
+    // `node eval/*.mjs`).
+    files: ['scripts/**/*.mjs', 'eval/**/*.mjs'],
     languageOptions: {
       globals: {
         console: 'readonly',
         fetch: 'readonly',
         process: 'readonly',
         Buffer: 'readonly',
+        TextEncoder: 'readonly',
+        TextDecoder: 'readonly',
       },
     },
   },

@@ -154,7 +154,9 @@ await measure('alignment_agreement', async () => {
   const labels = JSON.parse(readFileSync(join(evalDir, 'labels', 'alignment-pairs.json'), 'utf8'));
   const all = [...conceptsA, ...conceptsB];
   const findByName = (name) =>
-    all.find((c) => c.name.toLowerCase().replace(/\s+/g, '') === name.toLowerCase().replace(/\s+/g, ''));
+    all.find(
+      (c) => c.name.toLowerCase().replace(/\s+/g, '') === name.toLowerCase().replace(/\s+/g, ''),
+    );
   const candidates = [];
   const expectations = [];
   for (const pair of labels.pairs) {
@@ -164,8 +166,10 @@ await measure('alignment_agreement', async () => {
     candidates.push({
       source,
       target,
-      sourceDocumentTitle: source.materialId === 'mat_eval_a' ? '认知负荷与工作记忆' : 'Memory notes',
-      targetDocumentTitle: target.materialId === 'mat_eval_a' ? '认知负荷与工作记忆' : 'Memory notes',
+      sourceDocumentTitle:
+        source.materialId === 'mat_eval_a' ? '认知负荷与工作记忆' : 'Memory notes',
+      targetDocumentTitle:
+        target.materialId === 'mat_eval_a' ? '认知负荷与工作记忆' : 'Memory notes',
       sourceLanguage: /[一-鿿]/u.test(source.name) ? 'zh' : 'en',
       targetLanguage: /[一-鿿]/u.test(target.name) ? 'zh' : 'en',
       signals: ['label_pair'],
@@ -189,7 +193,8 @@ await measure('alignment_agreement', async () => {
         (p.sourceConceptId === candidate.target.id && p.targetConceptId === candidate.source.id),
     );
     const modelSaysMerge =
-      proposal !== undefined && (proposal.relation === 'equivalent' || proposal.relation === 'alias');
+      proposal !== undefined &&
+      (proposal.relation === 'equivalent' || proposal.relation === 'alias');
     const humanSaysMerge = expectations[i] === 'merge';
     if (modelSaysMerge === humanSaysMerge) agree += 1;
     detail.push({

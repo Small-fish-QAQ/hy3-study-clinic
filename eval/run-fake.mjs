@@ -25,10 +25,7 @@ import { FakeProvider } from '../apps/server/dist/llm/fakeProvider.js';
 import { buildApp } from '../apps/server/dist/app.js';
 import { wrapSourceBlocks } from '../apps/server/dist/grounding/wrapSource.js';
 import { searchSourceBlocks } from '../apps/server/dist/retrieval/lexical.js';
-import {
-  scheduleFirst,
-  scheduleNext,
-} from '../apps/server/dist/review/scheduler.js';
+import { scheduleFirst, scheduleNext } from '../apps/server/dist/review/scheduler.js';
 
 const evalDir = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => readFileSync(join(evalDir, 'fixtures', name), 'utf8');
@@ -204,7 +201,10 @@ section('3. 跨文档评估蓝图(cross-document blueprint validation)');
   const crossBlueprints = (creation.body.blueprints ?? []).filter(
     (b) => b.scope === 'cross_document',
   );
-  check('跨文档评估生成成功且蓝图标注 cross_document', creation.status === 201 && crossBlueprints.length > 0);
+  check(
+    '跨文档评估生成成功且蓝图标注 cross_document',
+    creation.status === 201 && crossBlueprints.length > 0,
+  );
   check(
     '跨文档蓝图的证据确实来自至少两份文档(本地验证后计算)',
     crossBlueprints.every((b) => b.sourceDocumentIds.length >= 2),
@@ -326,7 +326,10 @@ section('6. 复习调度(review transitions, fixed clock)');
     'good',
     now,
   );
-  check('首次评级产生正的间隔与到期时间', first.intervalDays > 0 && first.dueAt > now.toISOString());
+  check(
+    '首次评级产生正的间隔与到期时间',
+    first.intervalDays > 0 && first.dueAt > now.toISOString(),
+  );
   check('遗忘(again)显著缩短稳定度', lapse.stability < first.stability && lapse.isLapse);
   check('连续成功单调延长间隔', growth.stability > first.stability);
 
@@ -408,9 +411,8 @@ section('8. 提示注入防御(prompt-injection defenses)');
     '包含注入文本的资料跑完整个辅导流程后,学习状态零变化',
     JSON.stringify(overlayBefore) === JSON.stringify(overlayAfter) && run.status === 'completed',
   );
-  const misconceptions = (
-    await ctx.call('GET', `/api/workspaces/${workspace.id}/misconceptions`)
-  ).body.misconceptions;
+  const misconceptions = (await ctx.call('GET', `/api/workspaces/${workspace.id}/misconceptions`))
+    .body.misconceptions;
   check('注入文本未能确认任何误区或删除任何数据', misconceptions.length === 0);
   await ctx.app.close();
 }
@@ -472,13 +474,17 @@ const md = [
   ).flatMap(([sectionName, sectionChecks]) => [
     `## ${sectionName}`,
     '',
-    ...sectionChecks.map((c) => `- ${c.passed ? '✅' : '❌'} ${c.name}${c.detail ? `(${c.detail})` : ''}`),
+    ...sectionChecks.map(
+      (c) => `- ${c.passed ? '✅' : '❌'} ${c.name}${c.detail ? `(${c.detail})` : ''}`,
+    ),
     '',
   ]),
 ].join('\n');
 writeFileSync(join(reportsDir, 'eval-fake.md'), `${md}\n`);
 
-console.log(`\n评测完成:${passed}/${checks.length} 项通过。报告已写入 eval/reports/eval-fake.{json,md}`);
+console.log(
+  `\n评测完成:${passed}/${checks.length} 项通过。报告已写入 eval/reports/eval-fake.{json,md}`,
+);
 if (failed > 0) {
   process.exitCode = 1;
 }

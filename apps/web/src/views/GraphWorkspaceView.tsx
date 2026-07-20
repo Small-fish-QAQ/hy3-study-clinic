@@ -501,7 +501,6 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
       .catch(() => {
         /* best-effort refresh */
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeWorkspaceId, selectedNodeId]);
 
   const overlayByConcept = useMemo(
