@@ -225,7 +225,11 @@ await measure('grading_agreement', async () => {
       const grade = await provider.gradeShortAnswer({
         stem: sample.stem,
         expectedAnswer: sample.expectedAnswer,
-        rubricKeyPoints: sample.rubricKeyPoints,
+        // Hand-authored labels use the legacy string form; they normalize to
+        // required points exactly like persisted legacy rubrics do.
+        rubricKeyPoints: sample.rubricKeyPoints.map((point) =>
+          typeof point === 'string' ? { text: point, required: true } : point,
+        ),
         quote: sample.quote,
         answerText: answer.text,
       });

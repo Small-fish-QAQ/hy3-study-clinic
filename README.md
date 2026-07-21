@@ -50,8 +50,8 @@ Verified locally: **1:38.834**. The walkthrough covers both original end-to-end 
 2. Local ingestion validates and splits the material into stable source blocks.
 3. Hy3 analyzes core concepts and returns a quotation plus source-block reference for each one.
 4. Hy3 generates questions, explanations, and exact-quote citations from the material.
-5. Single- and multiple-choice questions are graded deterministically; nonblank short answers use Hy3 semantic rubric grading.
-6. The result view shows scores, answer explanations, grading provenance, rubric feedback, and traceable source evidence.
+5. Single- and multiple-choice questions are graded deterministically; nonblank short answers use Hy3 semantic rubric grading over **required/optional rubric points** — only points the question wording explicitly requests can reduce the score, while optional enrichment appears as 可补充 feedback.
+6. The result view shows scores, coverage-derived status badges (正确 / 基本正确 / 部分正确 / 需巩固), answer explanations, grading provenance, 1-based rubric feedback, and traceable source evidence.
 
 ### Flow B — Mistake remediation
 
@@ -115,7 +115,7 @@ The real `hy3` provider implements ten model-backed tasks through an OpenAI-comp
 - extract concepts with proposed `{ blockId, quote }` evidence;
 - generate grounded standard quiz questions and explanations;
 - generate grounded remediation questions for selected open-mistake concepts;
-- semantically grade nonblank short answers against rubric points, returning a normalized score, matched points, confidence, and feedback;
+- semantically grade nonblank short answers against classified rubric points, reporting full/partial coverage per point plus confidence and feedback (the numeric score is recomputed locally from required-point coverage);
 - propose typed concept-graph edges between **existing** concepts, each with 1–3 verbatim evidence quotes;
 - propose a bounded remediation plan (summary, weakness hypothesis, controlled strategy and difficulty, engine-supported question types, ordered steps, evidence-cited targets) from a locally bounded input;
 - propose **concept alignments** (equivalent / alias / broader / narrower / related_but_distinct) between locally-pruned candidate pairs only, with a repaired canonical name and evidence;
@@ -143,6 +143,8 @@ The application keeps control-flow and record-keeping decisions outside the mode
 | Learner-state overlay | Derives `unassessed`/`weak`/`developing`/`stable` per concept from existing mastery and mistake rows only (no second source of truth, no invented confidence values). |
 | Plan validation | Verifies every plan target exists in the workspace, keeps the selected concept (or a direct prerequisite) central, re-verifies target evidence quotes, restricts question types to the assessment engine, and keeps the previous accepted plan on any failure. Accepting a plan writes no learning state. |
 | Objective grading | Single choice uses exact equality; multiple choice uses exact set equality with no partial credit. Blank short answers receive a deterministic zero. |
+| Rubric alignment | Classifies every short-answer rubric point as required (explicitly requested by the question) or optional enrichment; providers propose the classification, but local validation demotes unrequested evaluative points (advantages/drawbacks/comparisons), promotes stem-requested ones, requires evidence grounding for required points, repairs all-optional rubrics, deduplicates normalized points, and rejects rubrics with no groundable required point. Legacy string rubrics load as required points. |
+| Short-answer scoring | Computes the score deterministically from REQUIRED-point coverage only — `(full + 0.5 × partial) / required` — so missing optional enrichment can never reduce the score, and neither the model's holistic score nor its confidence sets the awarded points. Status badges derive from the same coverage: full → 正确, ≥ 0.6 → 基本正确, > 0 → 部分正确, 0 → 需巩固. |
 | Score calculation | Maps normalized question scores to points and totals all awarded/possible points locally. |
 | Mistake lifecycle | Creates open mistakes below the `0.6` threshold and resolves the exact source mistakes linked to a correct remediation answer. |
 | Remediation scope | Selects up to three open-mistake concepts and enforces exactly one single-choice plus one short-answer question per concept; a plan launch restricts selection to plan targets. |
@@ -154,7 +156,7 @@ The application keeps control-flow and record-keeping decisions outside the mode
 | Tutor execution | Validates every tool request against a typed whitelist with strict argument schemas, enforces workspace isolation and explicit budgets (6 iterations / 12 tool calls / 3 plan targets / 8 blocks per search / 20 evidence records), composes every timeline event locally, and validates the final plan through the shared planner validator. Failed, cancelled, or interrupted runs change no learning state. |
 | Misconception lifecycle | Owns the `proposed → confirmed/rejected → resolved` state machine; only graded discriminating questions trigger transitions, illegal transitions are rejected, and terminal records stay auditable. |
 | Review scheduling | Advances a local FSRS-style scheduler (stability, difficulty, due date, lapse count) only from completed graded events, keeps it strictly separate from mastery, and versions the scheduler state. |
-| Daily queue | Orders overdue reviews (most overdue first), confirmed misconception repair, open mistakes, weak prerequisites, and due-today reviews by explicit deterministic priorities — facts only, no invented time estimates. |
+| Daily queue | Orders overdue reviews (most overdue first), confirmed misconception repair, open mistakes, weak prerequisites, and due-today reviews by explicit deterministic priorities — facts only, no invented time estimates. The empty state explains these sources and offers the real workspace diagnostic assessment once concepts exist. |
 | Source retrieval | A bounded local BM25-style lexical search (CJK bigrams + Latin words) plus graph-neighborhood expansion; bounded query/result/excerpt sizes, exact source locations, workspace isolation, no SQL/filesystem/network access. |
 
 Historical weighted mastery uses the transparent local formula:
@@ -381,16 +383,18 @@ Permanent deletion requires a confirmation that identifies the record and states
 
 | Workspace | Test files | Tests | Result |
 | --- | ---: | ---: | --- |
-| `packages/shared` | 5 | 65 | Passed |
-| `apps/server` | 33 | 291 | Passed |
-| `apps/web` | 14 | 205 | Passed |
-| **Overall** | **52** | **561** | **Passed** |
+| `packages/shared` | 5 | 74 | Passed |
+| `apps/server` | 34 | 318 | Passed |
+| `apps/web` | 14 | 229 | Passed |
+| **Overall** | **53** | **621** | **Passed** |
 
 Regression coverage includes exact grounding and source fencing; structured Hy3 output and bounded repair (including graph-edge and plan proposals); semantic-grading equivalence rules; deterministic objective grading; resolved-concept exclusion and exact remediation pairs; no-open-mistake behavior; persistence recovery; rename/delete confirmation and failure handling; transactional rollback and cascade deletion; provider timeout/cancellation; and stale-response suppression after navigation, material switching, or deletion.
 
 Upgrade coverage adds: workspace/document/graph/plan schema bounds; PDF/DOCX/malformed-file ingestion with page and heading provenance; migration from representative populated pre-upgrade databases (v1 and v3, including rollback and FK re-enablement); the graph validation matrix; the graph generation lifecycle; deterministic learner-overlay states; planner acceptance/rejection semantics and both launch modes; document deletion pruning graph edges without dangling references; and the graph frontend's states, selection, evidence display, planner lifecycle, cancellation, and stale-response suppression.
 
 Adaptive coverage adds: alignment candidate signals and the exhaustive misconception transition matrix (shared package); alignment auto-accept/review/decide/rename/deletion-policy flows plus hostile-provider rejection (unoffered pairs, unknown concepts, self-alignment, fabricated evidence); cross-document blueprint validation (false multi-document claims, unsupported types, fabricated evidence, answer-leak prevention), per-concept document attribution, review scheduling only after graded completion, and adaptive mistake resolution; the review scheduler (fixed clock: initial scheduling, lapse, monotone growth, clamps, invalid ratings, day boundaries); retrieval bounds and injection neutrality; Tutor tool whitelist/argument/workspace-isolation/read-only guarantees, budget exhaustion, hostile tool calls, plan-validation fail-closed, target caps, cancellation, interrupted-run marking, NDJSON streaming, and end-to-end injection resistance; and the adaptive frontend (canonical node collapsing and overlay aggregation, alignment review with name repair, daily-queue launches, Tutor timeline streaming/cancellation/stale suppression, misconception and review display, and the state-change results card).
+
+Grading-correctness coverage adds: rubric back-compat parsing (legacy strings load as required points; all-optional rubrics promote) and graded-status classification thresholds (shared package); stem-aspect alignment, evidence grounding, zero-required repair/rejection, and deduplication of proposed rubric points; deterministic required-coverage scoring (full/partial credit, out-of-range index tolerance, optional points carrying zero score-reducing weight); end-to-end submissions where missing optional enrichment keeps full credit and creates no mistake, and partial required coverage earns deterministic partial credit; the results UI (1-based 要点 numbering, 可补充 rendering without error markers, 正确/基本正确/部分正确/需巩固 badges); and assessment-launch states (immediate disabled aria-busy feedback on the daily queue, Tutor recommendation and empty-state diagnostic, single-activity guarantee under rapid clicks, failure recovery, stale-completion suppression after workspace or concept switches, and queue refetch after graded completion).
 
 ## CodeBuddy collaboration
 
