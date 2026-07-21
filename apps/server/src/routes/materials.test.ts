@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { SAMPLE_MATERIAL_TITLE } from '@hy3-clinic/shared';
 import { buildTestApp, type TestApp } from '../testing/testApp.js';
@@ -20,6 +23,9 @@ beforeEach(() => {
 afterEach(async () => {
   await ctx.app.close();
 });
+
+const filesDir = join(dirname(fileURLToPath(import.meta.url)), '../testing/files');
+const fixtureB64 = (name: string) => readFileSync(join(filesDir, name)).toString('base64');
 
 interface SeededLearningRecords {
   conceptId: string;
@@ -217,6 +223,214 @@ describe('POST /api/materials', () => {
     });
     expect(res.statusCode).toBe(400);
     expect(res.json().error.code).toBe('VALIDATION_ERROR');
+  });
+});
+
+describe('POST /api/materials (file imports)', () => {
+  it('imports a text PDF with page provenance, a compat workspace, and stored original bytes', async () => {
+    const res = await ctx.app.inject({
+      method: 'POST',
+      url: '/api/materials',
+      payload: { filename: 'memory.pdf', dataBase64: fixtureB64('sample.pdf') },
+    });
+    expect(res.statusCode).toBe(201);
+    const { material, blocks } = res.json();
+    expect(material.sourceType).toBe('pdf');
+    expect(material.mediaType).toBe('application/pdf');
+    expect(material.originalFilename).toBe('memory.pdf');
+    expect(material.parseStatus).toBe('parsed');
+    expect(material.pageCount).toBe(2);
+    expect(blocks.length).toBeGreaterThanOrEqual(2);
+    // Page provenance survives the material-library path.
+    expect(blocks[0].pageNumber).toBe(1);
+    expect(blocks.at(-1).pageNumber).toBe(2);
+    // Slice invariant is preserved through the API.
+    expect(material.content.slice(blocks[0].startOffset, blocks[0].endOffset)).toBe(
+      blocks[0].content,
+    );
+    // Every material belongs to a workspace: the legacy surface auto-creates one.
+    expect(ctx.repos.workspaces.get(material.workspaceId)).toBeDefined();
+    // Original bytes are stored so 重新解析 (reprocess) keeps working.
+    expect(ctx.repos.materials.getOriginalData(material.id)?.length).toBeGreaterThan(0);
+  });
+
+  it('lists and reopens an imported PDF like any other history material', async () => {
+    const created = await ctx.app.inject({
+      method: 'POST',
+      url: '/api/materials',
+      payload: { filename: 'memory.pdf', dataBase64: fixtureB64('sample.pdf') },
+    });
+    const id = created.json().material.id;
+
+    const list = await ctx.app.inject({ method: 'GET', url: '/api/materials' });
+    expect(list.json().materials).toHaveLength(1);
+    expect(list.json().materials[0]).toMatchObject({ id, sourceType: 'pdf' });
+
+    const reopened = await ctx.app.inject({ method: 'GET', url: `/api/materials/${id}` });
+    expect(reopened.statusCode).toBe(200);
+    expect(reopened.json().blocks).toEqual(created.json().blocks);
+  });
+
+  it('feeds an imported PDF straight into concept analysis with verified grounding', async () => {
+    const created = await ctx.app.inject({
+      method: 'POST',
+      url: '/api/materials',
+      payload: { filename: 'memory.pdf', dataBase64: fixtureB64('sample.pdf') },
+    });
+    const { material, blocks } = created.json();
+
+    const analyzed = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/materials/${material.id}/analyze`,
+    });
+    expect(analyzed.statusCode).toBe(200);
+    const { concepts } = analyzed.json();
+    expect(concepts.length).toBeGreaterThanOrEqual(1);
+    for (const concept of concepts) {
+      const block = (blocks as Array<{ id: string; content: string }>).find(
+        (b) => b.id === concept.grounding.blockId,
+      );
+      expect(block).toBeDefined();
+      expect(block!.content.slice(concept.grounding.startOffset, concept.grounding.endOffset)).toBe(
+        concept.grounding.quote,
+      );
+    }
+  });
+
+  it('imports a DOCX with heading provenance', async () => {
+    const res = await ctx.app.inject({
+      method: 'POST',
+      url: '/api/materials',
+      payload: { filename: '讲义.docx', dataBase64: fixtureB64('sample.docx') },
+    });
+    expect(res.statusCode).toBe(201);
+    const { material, blocks } = res.json();
+    expect(material.sourceType).toBe('docx');
+    expect(material.pageCount).toBeNull();
+    const headingPaths = (blocks as Array<{ headingPath: string[] }>).map((b) => b.headingPath);
+    expect(headingPaths).toContainEqual(['记忆的科学']);
+    expect(headingPaths).toContainEqual(['记忆的科学', '间隔重复']);
+  });
+
+  it('accepts .md and .txt files sent base64 through the file payload', async () => {
+    const md = await ctx.app.inject({
+      method: 'POST',
+      url: '/api/materials',
+      payload: {
+        filename: 'notes.md',
+        dataBase64: Buffer.from('# 标题\n\n正文段落。', 'utf8').toString('base64'),
+      },
+    });
+    expect(md.statusCode).toBe(201);
+    expect(md.json().material.sourceType).toBe('md');
+    expect(md.json().material.parserVersion).toBe('text-v1');
+
+    const txt = await ctx.app.inject({
+      method: 'POST',
+      url: '/api/materials',
+      payload: {
+        filename: 'notes.txt',
+        dataBase64: Buffer.from('纯文本内容。', 'utf8').toString('base64'),
+      },
+    });
+    expect(txt.statusCode).toBe(201);
+    expect(txt.json().material.sourceType).toBe('txt');
+  });
+
+  it('honours an explicit title override for file imports', async () => {
+    const res = await ctx.app.inject({
+      method: 'POST',
+      url: '/api/materials',
+      payload: {
+        filename: 'memory.pdf',
+        dataBase64: fixtureB64('sample.pdf'),
+        title: '  认知科学讲义  ',
+      },
+    });
+    expect(res.statusCode).toBe(201);
+    expect(res.json().material.title).toBe('认知科学讲义');
+  });
+
+  it('rejects malformed PDF/DOCX with 422 and persists nothing at all', async () => {
+    const workspacesBefore = ctx.repos.workspaces.list();
+    for (const [filename, fixture] of [
+      ['broken.pdf', 'malformed.pdf'],
+      ['broken.docx', 'malformed.docx'],
+    ] as const) {
+      const res = await ctx.app.inject({
+        method: 'POST',
+        url: '/api/materials',
+        payload: { filename, dataBase64: fixtureB64(fixture) },
+      });
+      expect(res.statusCode).toBe(422);
+      expect(res.json().error.code).toBe('PARSE_FAILED');
+    }
+    // Transactional failure: no material, no blocks, and no orphan
+    // auto-created compatibility workspace.
+    expect(ctx.repos.materials.list()).toEqual([]);
+    expect(ctx.repos.workspaces.list()).toEqual(workspacesBefore);
+  });
+
+  it('rejects a text-free (scanned-style) PDF with an actionable OCR message', async () => {
+    const workspacesBefore = ctx.repos.workspaces.list();
+    const res = await ctx.app.inject({
+      method: 'POST',
+      url: '/api/materials',
+      payload: { filename: 'scanned.pdf', dataBase64: fixtureB64('empty.pdf') },
+    });
+    expect(res.statusCode).toBe(422);
+    expect(res.json().error.code).toBe('PARSE_FAILED');
+    expect(res.json().error.message).toContain('OCR');
+    expect(res.json().error.message).toContain('扫描');
+    expect(ctx.repos.materials.list()).toEqual([]);
+    expect(ctx.repos.workspaces.list()).toEqual(workspacesBefore);
+  });
+
+  it('rejects unsupported upload extensions with 415', async () => {
+    const res = await ctx.app.inject({
+      method: 'POST',
+      url: '/api/materials',
+      payload: { filename: 'slides.pptx', dataBase64: fixtureB64('sample.pdf') },
+    });
+    expect(res.statusCode).toBe(415);
+    expect(res.json().error.code).toBe('UNSUPPORTED_FILE');
+  });
+
+  it('rejects oversized uploads with 413 before parsing', async () => {
+    const big = Buffer.alloc(10 * 1024 * 1024 + 16, 0x25).toString('base64');
+    const res = await ctx.app.inject({
+      method: 'POST',
+      url: '/api/materials',
+      payload: { filename: 'big.pdf', dataBase64: big },
+    });
+    expect(res.statusCode).toBe(413);
+    expect(res.json().error.code).toBe('SOURCE_TOO_LARGE');
+    expect(ctx.repos.materials.list()).toEqual([]);
+  });
+
+  it('rejects a mismatched extension/content pair via magic bytes', async () => {
+    const res = await ctx.app.inject({
+      method: 'POST',
+      url: '/api/materials',
+      payload: { filename: 'fake.pdf', dataBase64: fixtureB64('sample.docx') },
+    });
+    expect(res.statusCode).toBe(422);
+    expect(res.json().error.code).toBe('PARSE_FAILED');
+    expect(ctx.repos.materials.list()).toEqual([]);
+  });
+
+  it('leaves no orphan workspace behind when segmentation rejects a text import', async () => {
+    const workspacesBefore = ctx.repos.workspaces.list();
+    // ≤100k chars but more than MAX_BLOCKS (2000) paragraphs.
+    const res = await ctx.app.inject({
+      method: 'POST',
+      url: '/api/materials',
+      payload: { content: Array.from({ length: 2001 }, (_, i) => `段${i}`).join('\n\n') },
+    });
+    expect(res.statusCode).toBe(413);
+    expect(res.json().error.code).toBe('SOURCE_TOO_LARGE');
+    expect(ctx.repos.materials.list()).toEqual([]);
+    expect(ctx.repos.workspaces.list()).toEqual(workspacesBefore);
   });
 });
 

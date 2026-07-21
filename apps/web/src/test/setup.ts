@@ -76,6 +76,31 @@ if (typeof window.matchMedia === 'undefined') {
   });
 }
 
+// jsdom implements FileReader but not the promise-based Blob read methods
+// (blob.text() / blob.arrayBuffer()), which the file-import flows use to
+// read picked files. Bridge the missing methods through FileReader.
+function readBlobWith<T extends string | ArrayBuffer>(
+  blob: Blob,
+  start: (reader: FileReader) => void,
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as T);
+    reader.onerror = () => reject(reader.error ?? new Error('blob read failed'));
+    start(reader);
+  });
+}
+if (typeof globalThis.Blob.prototype.text !== 'function') {
+  globalThis.Blob.prototype.text = function (this: Blob) {
+    return readBlobWith<string>(this, (reader) => reader.readAsText(this));
+  };
+}
+if (typeof globalThis.Blob.prototype.arrayBuffer !== 'function') {
+  globalThis.Blob.prototype.arrayBuffer = function (this: Blob) {
+    return readBlobWith<ArrayBuffer>(this, (reader) => reader.readAsArrayBuffer(this));
+  };
+}
+
 // React Flow reads element sizes; give jsdom elements a non-zero box.
 Object.defineProperties(globalThis.HTMLElement.prototype, {
   offsetHeight: {

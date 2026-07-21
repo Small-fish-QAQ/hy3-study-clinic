@@ -1,6 +1,7 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { MAX_DOCUMENT_FILE_BYTES } from '@hy3-clinic/shared';
 import { App } from './App';
 import type { MaterialSummary } from './api';
 import { installFetchMock, type MockRoute } from './test/mockFetch';
@@ -958,6 +959,244 @@ describe('Import flow', () => {
     await user.type(await screen.findByLabelText('资料内容'), '一些内容');
     await user.click(screen.getByRole('button', { name: '导入并切分' }));
     expect(await screen.findByText(/源材料为空/)).toBeInTheDocument();
+  });
+});
+
+describe('File import (PDF/DOCX)', () => {
+  const FILE_INPUT_LABEL = '选择 .md、.txt、.pdf 或 .docx 文件';
+  const PDF_BYTES = '%PDF-1.4 fake fixture body';
+
+  const pdfMaterial = {
+    material: {
+      ...material.material,
+      title: '认知科学讲义',
+      sourceType: 'pdf',
+      mediaType: 'application/pdf',
+      originalFilename: 'lecture.pdf',
+      pageCount: 2,
+    },
+    blocks: material.blocks,
+  };
+
+  function pickFile(file: File) {
+    fireEvent.change(screen.getByLabelText(FILE_INPUT_LABEL), { target: { files: [file] } });
+  }
+
+  function pdfFile(name = 'lecture.pdf'): File {
+    return new File([PDF_BYTES], name, { type: 'application/pdf' });
+  }
+
+  function routesWithImportHandler(handler: MockRoute['handler']): MockRoute[] {
+    return [
+      ...baseRoutes.filter((r) => !(r.method === 'POST' && r.pattern.test('/api/materials'))),
+      { method: 'POST', pattern: /\/api\/materials$/, handler },
+    ];
+  }
+
+  it('shows the supported formats, the OCR limitation, and the full accept list', async () => {
+    installFetchMock(baseRoutes);
+    render(<App />);
+
+    expect(
+      await screen.findByText(/支持粘贴文本及 Markdown、TXT、PDF、DOCX 文件。/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/暂不支持纯扫描图片型 PDF;PDF 中需要包含可提取文本。/),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText(FILE_INPUT_LABEL)).toHaveAttribute(
+      'accept',
+      '.md,.markdown,.txt,.pdf,.docx',
+    );
+  });
+
+  it('stages a PDF with its type, imports it as base64 with a title override, and opens it', async () => {
+    const { calls } = installFetchMock(
+      routesWithImportHandler(() => ({ status: 201, body: pdfMaterial })),
+    );
+    const user = userEvent.setup();
+    render(<App />);
+
+    await screen.findByRole('button', { name: '选择文件' });
+    pickFile(pdfFile());
+
+    expect(await screen.findByText('lecture.pdf(PDF,待导入)')).toBeInTheDocument();
+    expect(screen.getByText('导入后在服务器解析并切分')).toBeInTheDocument();
+    expect(screen.getByLabelText('资料内容')).toHaveValue('');
+    expect(screen.getByRole('button', { name: '移除文件' })).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('标题(可选)'), '认知科学讲义');
+    await user.click(screen.getByRole('button', { name: '导入并切分' }));
+    await screen.findByText('源块预览');
+
+    const importCall = calls.find((c) => c.method === 'POST' && c.url.endsWith('/api/materials'));
+    expect(importCall).toBeDefined();
+    const body = importCall!.body as { filename: string; dataBase64: string; title: string };
+    expect(body.filename).toBe('lecture.pdf');
+    expect(body.title).toBe('认知科学讲义');
+    expect(atob(body.dataBase64)).toBe(PDF_BYTES);
+    expect(importCall!.body).not.toHaveProperty('content');
+
+    // The imported PDF becomes the current material and a history entry.
+    expect(screen.getByRole('button', { name: '当前资料：认知科学讲义' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '练习' })).toBeEnabled();
+    expect(window.localStorage.getItem(LAST_MATERIAL_ID_KEY)).toBe(material.material.id);
+    // Staging is cleared after a successful import.
+    expect(screen.queryByRole('button', { name: '移除文件' })).not.toBeInTheDocument();
+  });
+
+  it('shows an importing state, blocks duplicate submissions, and supports cancel', async () => {
+    const importRequest: { signal?: AbortSignal } = {};
+    const { calls } = installFetchMock(
+      routesWithImportHandler((_body, _url, init) => {
+        if (init?.signal) importRequest.signal = init.signal;
+        return 'never';
+      }),
+    );
+    const user = userEvent.setup();
+    render(<App />);
+
+    await screen.findByRole('button', { name: '选择文件' });
+    pickFile(pdfFile());
+    await screen.findByText('lecture.pdf(PDF,待导入)');
+    await user.click(screen.getByRole('button', { name: '导入并切分' }));
+
+    const importing = await screen.findByRole('button', { name: '导入中…' });
+    expect(importing).toBeDisabled();
+    expect(screen.getByRole('button', { name: '选择文件' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '载入示例资料' })).toBeDisabled();
+    expect(screen.getByLabelText('资料内容')).toBeDisabled();
+    expect(screen.getByLabelText('标题(可选)')).toBeDisabled();
+
+    // A second click on the disabled button must not fire another request.
+    await user.click(importing);
+    expect(
+      calls.filter((c) => c.method === 'POST' && c.url.endsWith('/api/materials')),
+    ).toHaveLength(1);
+
+    await user.click(screen.getByRole('button', { name: '取消' }));
+    expect(await screen.findByRole('button', { name: '导入并切分' })).toBeEnabled();
+    expect(importRequest.signal?.aborted).toBe(true);
+    // Cancellation is quiet and keeps the staged file for a retry.
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByText('lecture.pdf(PDF,待导入)')).toBeInTheDocument();
+  });
+
+  it('restores the controls and keeps the staged file when the server rejects a scanned PDF', async () => {
+    installFetchMock(
+      routesWithImportHandler(() => ({
+        status: 422,
+        body: {
+          error: {
+            code: 'PARSE_FAILED',
+            message: 'PDF 中没有可提取的文本(可能是纯扫描件;本产品未启用 OCR),已拒绝导入。',
+          },
+        },
+      })),
+    );
+    const user = userEvent.setup();
+    render(<App />);
+
+    await screen.findByRole('button', { name: '选择文件' });
+    pickFile(pdfFile('scan.pdf'));
+    await screen.findByText('scan.pdf(PDF,待导入)');
+    await user.click(screen.getByRole('button', { name: '导入并切分' }));
+
+    expect(await screen.findByText(/可能是纯扫描件/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '导入并切分' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '选择文件' })).toBeEnabled();
+    expect(screen.getByText('scan.pdf(PDF,待导入)')).toBeInTheDocument();
+    // Nothing was imported: no history entry, no saved selection.
+    expect(screen.getByText('暂无历史资料。导入后会显示在这里。')).toBeInTheDocument();
+    expect(window.localStorage.getItem(LAST_MATERIAL_ID_KEY)).toBeNull();
+  });
+
+  it('rejects unsupported and oversized files locally without any request', async () => {
+    const { calls } = installFetchMock(baseRoutes);
+    render(<App />);
+
+    await screen.findByRole('button', { name: '选择文件' });
+    pickFile(new File(['slides'], 'slides.pptx'));
+    expect(
+      await screen.findByText('不支持的文件类型:仅接受 .md、.txt、.pdf 与 .docx 文件。'),
+    ).toBeInTheDocument();
+
+    pickFile(new File([new ArrayBuffer(MAX_DOCUMENT_FILE_BYTES + 1)], 'big.pdf'));
+    expect(await screen.findByText(/文件过大/)).toBeInTheDocument();
+
+    expect(calls.filter((c) => c.method === 'POST')).toHaveLength(0);
+    expect(screen.getByRole('button', { name: '导入并切分' })).toBeDisabled();
+    expect(screen.queryByText(/待导入/)).not.toBeInTheDocument();
+  });
+
+  it('still loads a picked markdown file into the editable textarea and imports it as text', async () => {
+    const { calls } = installFetchMock(baseRoutes);
+    const user = userEvent.setup();
+    render(<App />);
+
+    await screen.findByRole('button', { name: '选择文件' });
+    pickFile(new File(['# 笔记\n\n第一段。'], 'notes.md', { type: 'text/markdown' }));
+
+    await waitFor(() =>
+      expect(screen.getByLabelText('资料内容')).toHaveValue('# 笔记\n\n第一段。'),
+    );
+    expect(screen.getByText('notes.md')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '导入并切分' }));
+    await screen.findByText('源块预览');
+
+    const importCall = calls.find((c) => c.method === 'POST' && c.url.endsWith('/api/materials'));
+    expect(importCall!.body).toMatchObject({ content: '# 笔记\n\n第一段。', filename: 'notes.md' });
+    expect(importCall!.body).not.toHaveProperty('dataBase64');
+  });
+
+  it('aborts a pending PDF import when deleting the current material and ignores its late response', async () => {
+    const lateImportedMaterial = {
+      ...pdfMaterial,
+      material: { ...pdfMaterial.material, id: 'mat_late_pdf', title: '不应出现的晚到 PDF' },
+    };
+    const lateImport = deferred<{ status: number; body: typeof lateImportedMaterial }>();
+    const importRequest: { signal?: AbortSignal } = {};
+    window.localStorage.setItem(LAST_MATERIAL_ID_KEY, material.material.id);
+    const server = managedHistoryRoutes([materialSummary]);
+    installFetchMock([
+      ...server.routes.filter(
+        (route) => !(route.method === 'POST' && route.pattern.test('/api/materials')),
+      ),
+      {
+        method: 'POST',
+        pattern: /\/api\/materials$/,
+        handler: (_body, _url, init) => {
+          if (init?.signal) importRequest.signal = init.signal;
+          return lateImport.promise;
+        },
+      },
+    ]);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const user = userEvent.setup();
+    render(<App />);
+
+    await screen.findByRole('button', { name: `当前资料：${material.material.title}` });
+    pickFile(pdfFile());
+    await screen.findByText('lecture.pdf(PDF,待导入)');
+    await user.click(screen.getByRole('button', { name: '导入并切分' }));
+    await waitFor(() => expect(importRequest.signal).toBeDefined());
+
+    await user.click(
+      screen.getByRole('button', {
+        name: `永久删除：${material.material.title}（记录 …${material.material.id.slice(-6)}）`,
+      }),
+    );
+    await waitFor(() => expect(window.localStorage.getItem(LAST_MATERIAL_ID_KEY)).toBeNull());
+    expect(importRequest.signal?.aborted).toBe(true);
+
+    await act(async () => {
+      lateImport.resolve({ status: 201, body: lateImportedMaterial });
+      await lateImport.promise;
+    });
+
+    expect(screen.queryByText('不应出现的晚到 PDF')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '练习' })).toBeDisabled();
+    expect(window.localStorage.getItem(LAST_MATERIAL_ID_KEY)).toBeNull();
   });
 });
 
