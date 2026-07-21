@@ -22,10 +22,48 @@ export const OptionSchema = z.object({
 });
 export type Option = z.infer<typeof OptionSchema>;
 
-/** Rubric for short-answer grading. */
-export const RubricSchema = z.object({
-  keyPoints: z.array(z.string().min(1).max(300)).min(1).max(6),
+/**
+ * One short-answer scoring criterion.
+ *
+ * `required` records the contract between the question wording and the
+ * rubric: a point is required only when the question explicitly requests it
+ * (or it is logically necessary to satisfy the question). Required points
+ * drive the score; optional points are enrichment feedback (可补充) whose
+ * absence never reduces the score.
+ */
+export const RubricPointSchema = z.object({
+  text: z.string().min(1).max(300),
+  required: z.boolean(),
 });
+export type RubricPoint = z.infer<typeof RubricPointSchema>;
+
+/**
+ * Rubric for short-answer grading.
+ *
+ * Backward compatibility: rubrics persisted before the required/optional
+ * split stored plain strings. They load as required points, because the old
+ * schema treated every key point as a scoring criterion. A rubric whose
+ * points are all optional could never score anything, so parsing promotes
+ * every point to required in that case (again matching the old semantics;
+ * generation-side validation prevents new all-optional rubrics).
+ */
+export const RubricSchema = z
+  .object({
+    keyPoints: z
+      .array(
+        z.preprocess(
+          (point) => (typeof point === 'string' ? { text: point, required: true } : point),
+          RubricPointSchema,
+        ),
+      )
+      .min(1)
+      .max(6),
+  })
+  .transform((rubric) =>
+    rubric.keyPoints.some((p) => p.required)
+      ? rubric
+      : { keyPoints: rubric.keyPoints.map((p) => ({ ...p, required: true })) },
+  );
 export type Rubric = z.infer<typeof RubricSchema>;
 
 /**

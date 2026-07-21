@@ -309,10 +309,11 @@ describe('Flow B: submission → grading → mistakes → remediation → master
     });
 
     expect(response.statusCode).toBe(201);
+    // Legacy string rubric points load as REQUIRED points (back-compat).
     expect(gradeShortAnswer.mock.calls[0]![0]).toEqual({
       stem,
       expectedAnswer,
-      rubricKeyPoints,
+      rubricKeyPoints: rubricKeyPoints.map((text) => ({ text, required: true })),
       quote: expectedAnswer,
       answerText: studentAnswer,
     });
@@ -320,17 +321,168 @@ describe('Flow B: submission → grading → mistakes → remediation → master
     const grade = grading.grades[0];
     expect(grade.matchedKeyPoints).toEqual(rubricKeyPoints);
     expect(grade.missedKeyPoints).toEqual([]);
+    // Score is computed deterministically from required coverage (all four
+    // required points fully covered → full credit), NOT from the model's
+    // holistic 0.9 — semantically equivalent extra intervals cannot deduct.
     expect(grade).toMatchObject({
       correct: true,
-      awardedPoints: 1.8,
+      awardedPoints: 2,
       maxPoints: 2,
-      normalizedScore: 0.9,
+      normalizedScore: 1,
       confidence: 0.95,
       needsReview: false,
     });
     expect(grade.feedback).toContain('1 天后和 14 天后');
-    expect(grading.totalAwarded).toBe(1.8);
+    expect(grading.totalAwarded).toBe(2);
     expect(grading.totalPossible).toBe(2);
+  });
+
+  it('never deducts for missing OPTIONAL rubric points and creates no mistake for them', async () => {
+    const stem = '请简述文档中 Chunk 实现的五个等级里的前两个等级及其做法。';
+    const content =
+      '固定长度:纯代码,每 N 字符切、重叠 M。快但易切断语义。递归分隔符:按优先级逐层切。';
+    const block = makeBlock({ content, startOffset: 0, endOffset: content.length });
+    const question = makeQuestion({
+      id: 'que_chunk_levels',
+      quizId: 'qz_chunk_levels',
+      type: 'short_answer',
+      stem,
+      options: undefined,
+      correctOptionIds: undefined,
+      expectedAnswer: content,
+      rubric: {
+        keyPoints: [
+          { text: '固定长度:每 N 字符切、重叠 M', required: true },
+          { text: '递归分隔符:按优先级逐层切', required: true },
+          { text: '快但易切断语义', required: false },
+        ],
+      },
+      grounding: {
+        blockId: block.id,
+        quote: content,
+        startOffset: 0,
+        endOffset: content.length,
+        occurrenceCount: 1,
+        reanchored: false,
+      },
+      explanation: '资料列出了前两个等级及其做法。',
+      points: 2,
+      sourceMistakeIds: [],
+    });
+    const quiz = makeQuiz({
+      id: 'qz_chunk_levels',
+      config: { difficulty: 'medium', types: ['short_answer'], countPerType: 1 },
+      questions: [question],
+    });
+    ctx.repos.materials.insertWithBlocks(makeMaterial({ content, charCount: content.length }), [
+      block,
+    ]);
+    ctx.repos.quizzes.insert(quiz);
+    // The model matches both required points but not the optional drawback,
+    // and reports a deflated holistic score — which must NOT drive points.
+    vi.spyOn(ctx.provider, 'gradeShortAnswer').mockResolvedValue({
+      matchedKeyPointIndexes: [0, 1],
+      partialKeyPointIndexes: [],
+      score: 0.67,
+      confidence: 0.9,
+      feedback: '两个等级及其做法均已说明。',
+    });
+
+    const response = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/quizzes/${quiz.id}/submissions`,
+      payload: {
+        answers: [
+          {
+            questionId: question.id,
+            type: 'short_answer',
+            text: '1. 固定长度:纯代码,每 N 字符切,重叠 M。\n2. 递归分隔符:按优先级逐层切。',
+          },
+        ],
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    const body = response.json();
+    const grade = body.grading.grades[0];
+    expect(grade).toMatchObject({
+      correct: true,
+      awardedPoints: 2,
+      maxPoints: 2,
+      normalizedScore: 1,
+    });
+    expect(grade.missedKeyPoints).toEqual([]);
+    expect(grade.enrichmentKeyPoints).toEqual(['快但易切断语义']);
+    // Full required coverage → no mistake solely for missing enrichment.
+    expect(body.stateChanges.mistakesCreated).toBe(0);
+  });
+
+  it('awards deterministic partial credit for partially covered required points', async () => {
+    const stem = '说明固定长度切分的做法。';
+    const content = '固定长度:纯代码,每 N 字符切、重叠 M。';
+    const block = makeBlock({ content, startOffset: 0, endOffset: content.length });
+    const question = makeQuestion({
+      id: 'que_partial_required',
+      quizId: 'qz_partial_required',
+      type: 'short_answer',
+      stem,
+      options: undefined,
+      correctOptionIds: undefined,
+      expectedAnswer: content,
+      rubric: {
+        keyPoints: [
+          { text: '每 N 字符切', required: true },
+          { text: '重叠 M', required: true },
+        ],
+      },
+      grounding: {
+        blockId: block.id,
+        quote: content,
+        startOffset: 0,
+        endOffset: content.length,
+        occurrenceCount: 1,
+        reanchored: false,
+      },
+      explanation: '资料说明了做法。',
+      points: 2,
+      sourceMistakeIds: [],
+    });
+    const quiz = makeQuiz({
+      id: 'qz_partial_required',
+      config: { difficulty: 'medium', types: ['short_answer'], countPerType: 1 },
+      questions: [question],
+    });
+    ctx.repos.materials.insertWithBlocks(makeMaterial({ content, charCount: content.length }), [
+      block,
+    ]);
+    ctx.repos.quizzes.insert(quiz);
+    vi.spyOn(ctx.provider, 'gradeShortAnswer').mockResolvedValue({
+      matchedKeyPointIndexes: [0],
+      partialKeyPointIndexes: [1],
+      score: 0.9,
+      confidence: 0.9,
+      feedback: '切分方式正确,但重叠设置只说了一半。',
+    });
+
+    const response = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/quizzes/${quiz.id}/submissions`,
+      payload: {
+        answers: [{ questionId: question.id, type: 'short_answer', text: '每 N 字符切,有重叠。' }],
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    const grade = response.json().grading.grades[0];
+    // (1 full + 0.5 partial) / 2 required = 0.75 — model's 0.9 is ignored.
+    expect(grade).toMatchObject({
+      correct: true,
+      awardedPoints: 1.5,
+      maxPoints: 2,
+      normalizedScore: 0.75,
+    });
+    expect(grade.partialKeyPoints).toEqual(['重叠 M']);
+    expect(grade.missedKeyPoints).toEqual([]);
   });
 
   it('grades objective questions deterministically and short answers by rubric, labelling gradedBy', async () => {

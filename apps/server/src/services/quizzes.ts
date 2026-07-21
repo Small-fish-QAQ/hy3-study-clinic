@@ -6,12 +6,14 @@ import type {
   QuestionType,
   Quiz,
   QuizConfig,
+  Rubric,
   SourceBlock,
 } from '@hy3-clinic/shared';
 import { ApiErrorCode } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import { verifyGrounding } from '../grounding/verify.js';
 import { POINTS_BY_TYPE } from '../grading/score.js';
+import { alignRubricToQuestion } from '../grading/rubricAlignment.js';
 import type { LlmProvider, ProviderCallOptions } from '../llm/provider.js';
 import type { AnalysisService } from './analysis.js';
 import type { Repositories } from '../repositories/index.js';
@@ -71,6 +73,20 @@ export function assembleQuestions(
       rejected.push({ stem: p.stem, reason: verification.message });
       continue;
     }
+    // Question-rubric alignment: providers classify points as
+    // required/optional, but local validation enforces the contract
+    // (unrequested evaluative points demoted, required points grounded,
+    // zero-required rubrics repaired or rejected).
+    let rubric: Rubric | undefined;
+    if (p.rubricKeyPoints) {
+      const evidenceText = ctx.blocks.find((b) => b.id === p.blockId)?.content ?? p.quote;
+      const aligned = alignRubricToQuestion(p.stem, p.rubricKeyPoints, [evidenceText]);
+      if (!aligned.ok) {
+        rejected.push({ stem: p.stem, reason: aligned.message });
+        continue;
+      }
+      rubric = { keyPoints: aligned.keyPoints };
+    }
     const question: Question = {
       id: newId('que'),
       quizId: ctx.quizId,
@@ -85,7 +101,7 @@ export function assembleQuestions(
       ...(p.options ? { options: p.options } : {}),
       ...(p.correctOptionIds ? { correctOptionIds: p.correctOptionIds } : {}),
       ...(p.expectedAnswer ? { expectedAnswer: p.expectedAnswer } : {}),
-      ...(p.rubricKeyPoints ? { rubric: { keyPoints: p.rubricKeyPoints } } : {}),
+      ...(rubric ? { rubric } : {}),
     };
     questions.push(question);
   }

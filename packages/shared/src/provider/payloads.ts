@@ -35,6 +35,22 @@ export const ProposedOptionSchema = z.object({
   text: z.string().min(1).max(300),
 });
 
+/**
+ * One proposed rubric point. Providers must classify each point:
+ * `required: true` — explicitly requested by the question wording and
+ * score-relevant; `required: false` — enrichment whose absence can never
+ * reduce the score. Plain strings (the pre-split provider format) are
+ * accepted and default to required, matching the old semantics.
+ */
+export const ProposedRubricPointSchema = z.preprocess(
+  (point) => (typeof point === 'string' ? { text: point, required: true } : point),
+  z.object({
+    text: z.string().min(1).max(200),
+    required: z.boolean(),
+  }),
+);
+export type ProposedRubricPoint = z.infer<typeof ProposedRubricPointSchema>;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -147,7 +163,7 @@ const StrictProposedQuestionSchema = z
       .min(1)
       .optional(),
     expectedAnswer: z.string().min(1).max(1000).optional(),
-    rubricKeyPoints: z.array(z.string().min(1).max(200)).min(1).max(6).optional(),
+    rubricKeyPoints: z.array(ProposedRubricPointSchema).min(1).max(6).optional(),
     conceptId: z.string().min(1),
     blockId: z.string().min(1),
     quote: z.string().min(1).max(500),

@@ -118,7 +118,10 @@ describe('FakeProvider.gradeShortAnswer', () => {
   const gradingInput = {
     stem: '请根据资料,简述「间隔重复」的要点。',
     expectedAnswer: '把复习分散到多次进行,安排在即将遗忘的临界点附近。',
-    rubricKeyPoints: ['复习应分散到多次进行', '复习安排在即将遗忘的临界点附近'],
+    rubricKeyPoints: [
+      { text: '复习应分散到多次进行', required: true },
+      { text: '复习安排在即将遗忘的临界点附近', required: true },
+    ],
     quote: '与其把复习集中在一次完成,不如把同样的时间分散到多次进行。',
   };
 
@@ -129,7 +132,7 @@ describe('FakeProvider.gradeShortAnswer', () => {
     });
     expect(() => RubricGradeSchema.parse(grade)).not.toThrow();
     expect(grade.matchedKeyPointIndexes).toEqual([0, 1]);
-    expect(grade.score).toBeGreaterThan(0.8);
+    expect(grade.score).toBe(1);
   });
 
   it('gives low score to an empty/unrelated answer', async () => {
@@ -143,6 +146,30 @@ describe('FakeProvider.gradeShortAnswer', () => {
     const a = await provider.gradeShortAnswer({ ...gradingInput, answerText: '分散复习多次进行' });
     const b = await provider.gradeShortAnswer({ ...gradingInput, answerText: '分散复习多次进行' });
     expect(a).toEqual(b);
+  });
+
+  it('never reduces the score for missing OPTIONAL points', async () => {
+    const grade = await provider.gradeShortAnswer({
+      ...gradingInput,
+      rubricKeyPoints: [
+        ...gradingInput.rubricKeyPoints,
+        { text: '间隔重复实施起来比较麻烦', required: false },
+      ],
+      answerText: '间隔重复要求把复习分散到多次进行,并且每次安排在即将遗忘的临界点附近效果最好。',
+    });
+    expect(grade.score).toBe(1);
+    expect(grade.feedback).toContain('可补充');
+    expect(grade.feedback).toContain('不影响得分');
+  });
+
+  it('awards partial credit for partially covered required points', async () => {
+    const grade = await provider.gradeShortAnswer({
+      ...gradingInput,
+      answerText: '把复习分散到多次进行。',
+    });
+    expect(grade.matchedKeyPointIndexes).toEqual([0]);
+    expect(grade.score).toBeLessThan(1);
+    expect(grade.score).toBeGreaterThanOrEqual(0.5);
   });
 });
 

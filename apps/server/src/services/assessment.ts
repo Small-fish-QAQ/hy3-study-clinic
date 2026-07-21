@@ -10,11 +10,13 @@ import {
   type Question,
   type QuestionType,
   type Quiz,
+  type Rubric,
   type VerifiedGrounding,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import { verifyGrounding } from '../grounding/verify.js';
 import { POINTS_BY_TYPE } from '../grading/score.js';
+import { alignRubricToQuestion } from '../grading/rubricAlignment.js';
 import type {
   AssessmentProposalInput,
   AssessmentTargetSummary,
@@ -372,6 +374,22 @@ export function createAssessmentService({
           createdAt,
         };
 
+        // Question-rubric alignment (same contract as single-document
+        // quizzes): required points must be requested by the stem and
+        // grounded in the verified evidence blocks of THIS question.
+        let rubric: Rubric | undefined;
+        if (q.rubricKeyPoints) {
+          const evidenceTexts = evidence.map(
+            (e) => blocks.find((b) => b.id === e.blockId)?.content ?? e.quote,
+          );
+          const aligned = alignRubricToQuestion(q.stem, q.rubricKeyPoints, evidenceTexts);
+          if (!aligned.ok) {
+            rejectItem(aligned.message);
+            continue;
+          }
+          rubric = { keyPoints: aligned.keyPoints };
+        }
+
         const question: Question = {
           id: newId('que'),
           quizId,
@@ -392,7 +410,7 @@ export function createAssessmentService({
           ...(q.options ? { options: q.options } : {}),
           ...(q.correctOptionIds ? { correctOptionIds: q.correctOptionIds } : {}),
           ...(q.expectedAnswer ? { expectedAnswer: q.expectedAnswer } : {}),
-          ...(q.rubricKeyPoints ? { rubric: { keyPoints: q.rubricKeyPoints } } : {}),
+          ...(rubric ? { rubric } : {}),
         };
 
         questions.push(question);

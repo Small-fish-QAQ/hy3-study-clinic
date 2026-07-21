@@ -150,7 +150,12 @@ export const fullQuestions: Question[] = [
     type: 'short_answer',
     stem: '请根据资料,简述「工作记忆」的要点。',
     expectedAnswer: '工作记忆容量有限,一次约四个组块。',
-    rubric: { keyPoints: ['容量有限', '约四个组块'] },
+    rubric: {
+      keyPoints: [
+        { text: '容量有限', required: true },
+        { text: '约四个组块', required: true },
+      ],
+    },
     conceptId: 'con_0',
     conceptName: '工作记忆',
     grounding: concepts[0]!.grounding,

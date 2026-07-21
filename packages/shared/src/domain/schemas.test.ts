@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { QuestionSchema } from './quiz.js';
+import { QuestionSchema, RubricSchema } from './quiz.js';
 import { ProposedQuestionSchema } from '../provider/payloads.js';
-import { AnswerSchema } from './grading.js';
+import { AnswerSchema, classifyGradeStatus, RubricGradeSchema } from './grading.js';
 import { MasteryStateSchema } from './mistake.js';
 import { ApiErrorSchema } from './errors.js';
 import { MATERIAL_TITLE_MAX_LENGTH, UpdateMaterialTitleRequestSchema } from './material.js';
@@ -121,6 +121,93 @@ describe('QuestionSchema', () => {
       points: 2,
     };
     expect(QuestionSchema.safeParse(bad).success).toBe(false);
+  });
+});
+
+describe('RubricSchema back-compat and required/optional model', () => {
+  it('loads legacy string key points as required points', () => {
+    const rubric = RubricSchema.parse({ keyPoints: ['容量有限', '约四个组块'] });
+    expect(rubric.keyPoints).toEqual([
+      { text: '容量有限', required: true },
+      { text: '约四个组块', required: true },
+    ]);
+  });
+
+  it('accepts the new typed form and preserves optional flags', () => {
+    const rubric = RubricSchema.parse({
+      keyPoints: [
+        { text: '每 N 字符切', required: true },
+        { text: '快但易切断语义', required: false },
+      ],
+    });
+    expect(rubric.keyPoints[1]).toEqual({ text: '快但易切断语义', required: false });
+  });
+
+  it('accepts mixed legacy and typed points', () => {
+    const rubric = RubricSchema.parse({
+      keyPoints: ['容量有限', { text: '补充说明', required: false }],
+    });
+    expect(rubric.keyPoints).toEqual([
+      { text: '容量有限', required: true },
+      { text: '补充说明', required: false },
+    ]);
+  });
+
+  it('promotes an all-optional rubric to required (zero required weight is unusable)', () => {
+    const rubric = RubricSchema.parse({
+      keyPoints: [
+        { text: 'a要点', required: false },
+        { text: 'b要点', required: false },
+      ],
+    });
+    expect(rubric.keyPoints.every((p) => p.required)).toBe(true);
+  });
+});
+
+describe('RubricGradeSchema', () => {
+  const base = { matchedKeyPointIndexes: [0], score: 0.8, confidence: 0.9, feedback: '不错。' };
+
+  it('accepts a legacy grade without partialKeyPointIndexes', () => {
+    expect(RubricGradeSchema.parse(base).partialKeyPointIndexes).toBeUndefined();
+  });
+
+  it('accepts partial coverage indexes', () => {
+    expect(
+      RubricGradeSchema.parse({ ...base, partialKeyPointIndexes: [1] }).partialKeyPointIndexes,
+    ).toEqual([1]);
+  });
+});
+
+describe('classifyGradeStatus', () => {
+  it('keeps choice questions binary', () => {
+    expect(classifyGradeStatus({ type: 'single_choice', correct: true, normalizedScore: 1 })).toBe(
+      'correct',
+    );
+    expect(classifyGradeStatus({ type: 'single_choice', correct: false, normalizedScore: 0 })).toBe(
+      'insufficient',
+    );
+  });
+
+  it('classifies short answers from required coverage', () => {
+    const sa = (normalizedScore: number) =>
+      classifyGradeStatus({
+        type: 'short_answer',
+        correct: normalizedScore >= 0.6,
+        normalizedScore,
+      });
+    expect(sa(1)).toBe('correct');
+    expect(sa(1 / 3 + 2 / 3)).toBe('correct'); // float accumulation still full
+    expect(sa(0.75)).toBe('mostly_correct');
+    expect(sa(0.67)).toBe('mostly_correct');
+    expect(sa(0.5)).toBe('partial');
+    expect(sa(0.25)).toBe('partial');
+    expect(sa(0)).toBe('insufficient');
+  });
+
+  it('a materially partial score is never labelled fully correct', () => {
+    expect(
+      classifyGradeStatus({ type: 'short_answer', correct: true, normalizedScore: 0.67 }),
+    ).not.toBe('correct');
   });
 });
 

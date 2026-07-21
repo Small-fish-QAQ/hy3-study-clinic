@@ -1,5 +1,5 @@
-import type { Answer, Question, QuestionType } from '@hy3-clinic/shared';
-import { clamp01, roundTo } from '@hy3-clinic/shared';
+import type { Answer, Question, QuestionType, RubricPoint } from '@hy3-clinic/shared';
+import { clamp01, roundTo, SHORT_ANSWER_PASS } from '@hy3-clinic/shared';
 
 /** Default point weights per question type (deterministic, documented). */
 export const POINTS_BY_TYPE: Record<QuestionType, number> = {
@@ -9,10 +9,16 @@ export const POINTS_BY_TYPE: Record<QuestionType, number> = {
   concept_comparison: 3,
 };
 
-/** A short-answer answer counts as "correct" at or above this score. */
-export const SHORT_ANSWER_PASS = 0.6;
+/**
+ * A short-answer answer counts as "correct" at or above this score.
+ * Defined in @hy3-clinic/shared (the results UI derives status badges from
+ * the same threshold); re-exported here for the server-side scoring code.
+ */
+export { SHORT_ANSWER_PASS };
 /** Grades below this confidence are flagged for human review. */
 export const REVIEW_CONFIDENCE = 0.6;
+/** Credit a partially covered required point earns (documented, tested). */
+export const PARTIAL_CREDIT = 0.5;
 
 export interface ObjectiveOutcome {
   correct: boolean;
@@ -53,6 +59,46 @@ export function gradeObjective(question: Question, answer: Answer): ObjectiveOut
 /** Map a model rubric score in [0,1] to awarded points for a short answer. */
 export function shortAnswerPoints(question: Question, score: number): number {
   return roundTo(question.points * clamp01(score));
+}
+
+export interface RequiredCoverageOutcome {
+  /** Deterministic score: (full + PARTIAL_CREDIT × partial) / required. */
+  score: number;
+  requiredCount: number;
+  fullyCovered: number;
+  partiallyCovered: number;
+}
+
+/**
+ * Deterministically score a short answer from the coverage of REQUIRED
+ * rubric points only. Optional (enrichment) points never enter the
+ * numerator or denominator, so their absence cannot reduce the score.
+ * Indexes outside the rubric are ignored; an index in both lists counts as
+ * fully covered. RubricSchema guarantees at least one required point.
+ */
+export function requiredCoverageScore(
+  keyPoints: readonly RubricPoint[],
+  matchedIndexes: readonly number[],
+  partialIndexes: readonly number[] = [],
+): RequiredCoverageOutcome {
+  const matched = new Set(matchedIndexes.filter((i) => i >= 0 && i < keyPoints.length));
+  const partial = new Set(
+    partialIndexes.filter((i) => i >= 0 && i < keyPoints.length && !matched.has(i)),
+  );
+  let requiredCount = 0;
+  let fullyCovered = 0;
+  let partiallyCovered = 0;
+  keyPoints.forEach((point, i) => {
+    if (!point.required) return;
+    requiredCount++;
+    if (matched.has(i)) fullyCovered++;
+    else if (partial.has(i)) partiallyCovered++;
+  });
+  const score =
+    requiredCount === 0
+      ? 0
+      : clamp01((fullyCovered + PARTIAL_CREDIT * partiallyCovered) / requiredCount);
+  return { score, requiredCount, fullyCovered, partiallyCovered };
 }
 
 export interface Totals {

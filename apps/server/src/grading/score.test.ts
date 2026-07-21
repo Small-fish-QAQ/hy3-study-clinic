@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeTotals, gradeObjective } from './score.js';
+import { computeTotals, gradeObjective, requiredCoverageScore } from './score.js';
 import { makeQuestion } from '../testing/fixtures.js';
 
 describe('gradeObjective', () => {
@@ -59,6 +59,64 @@ describe('gradeObjective', () => {
     expect(
       gradeObjective(q, { questionId: q.id, type: 'single_choice', selectedOptionIds: [] }).correct,
     ).toBe(false);
+  });
+});
+
+describe('requiredCoverageScore', () => {
+  const points = [
+    { text: '每 N 字符切', required: true },
+    { text: '重叠 M', required: true },
+    { text: '快但易切断语义', required: false },
+  ];
+
+  it('gives full score when all required points are covered, optional missing', () => {
+    const outcome = requiredCoverageScore(points, [0, 1]);
+    expect(outcome).toEqual({ score: 1, requiredCount: 2, fullyCovered: 2, partiallyCovered: 0 });
+  });
+
+  it('missing optional points never reduce the score (zero score-reducing weight)', () => {
+    expect(requiredCoverageScore(points, [0, 1, 2]).score).toBe(1);
+    expect(requiredCoverageScore(points, [0, 1]).score).toBe(1);
+  });
+
+  it('awards partial credit for partially covered required points', () => {
+    const outcome = requiredCoverageScore(points, [0], [1]);
+    expect(outcome).toEqual({
+      score: 0.75,
+      requiredCount: 2,
+      fullyCovered: 1,
+      partiallyCovered: 1,
+    });
+  });
+
+  it('scores partial required coverage below full', () => {
+    expect(requiredCoverageScore(points, [0]).score).toBe(0.5);
+    expect(requiredCoverageScore(points, []).score).toBe(0);
+  });
+
+  it('normalizes weights over the required count only', () => {
+    const many = [
+      { text: 'a要点', required: true },
+      { text: 'b要点', required: true },
+      { text: 'c要点', required: true },
+      { text: 'd补充', required: false },
+      { text: 'e补充', required: false },
+    ];
+    expect(requiredCoverageScore(many, [0, 1]).score).toBeCloseTo(2 / 3, 10);
+  });
+
+  it('ignores out-of-range indexes and double-counted partials', () => {
+    const outcome = requiredCoverageScore(points, [0, 9], [0, -1, 7]);
+    expect(outcome).toEqual({
+      score: 0.5,
+      requiredCount: 2,
+      fullyCovered: 1,
+      partiallyCovered: 0,
+    });
+  });
+
+  it('covering only the optional point earns nothing', () => {
+    expect(requiredCoverageScore(points, [2]).score).toBe(0);
   });
 });
 

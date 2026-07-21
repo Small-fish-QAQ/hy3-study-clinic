@@ -1,15 +1,35 @@
 import type {
   Answer,
+  GradeStatus,
   PublicQuiz,
   Question,
   QuestionGrade,
   SourceBlock,
   SubmissionStateChanges,
 } from '@hy3-clinic/shared';
-import { isTextAnswerType } from '@hy3-clinic/shared';
+import { classifyGradeStatus, isTextAnswerType } from '@hy3-clinic/shared';
 import type { SubmissionResponse } from '../api.js';
 import { Banner, GradedByPill } from '../components/ui.js';
 import { SourceEvidencePanel } from '../components/SourceEvidencePanel.js';
+
+/**
+ * Status badge derived from required-criterion coverage (thresholds live in
+ * shared classifyGradeStatus): full required coverage → 正确; passed but
+ * incomplete → 基本正确; some coverage → 部分正确; none → 需巩固.
+ */
+const STATUS_TEXT: Record<GradeStatus, string> = {
+  correct: '正确',
+  mostly_correct: '基本正确',
+  partial: '部分正确',
+  insufficient: '需巩固',
+};
+
+const STATUS_PILL: Record<GradeStatus, string> = {
+  correct: 'correct',
+  mostly_correct: 'mostly',
+  partial: 'mostly',
+  insufficient: 'wrong',
+};
 
 export interface ResultsViewProps {
   quiz: PublicQuiz;
@@ -164,15 +184,14 @@ function QuestionResult({
 }) {
   const selected = new Set(answer?.selectedOptionIds ?? []);
   const correctSet = new Set(question.correctOptionIds ?? []);
+  const status = classifyGradeStatus(grade);
 
   return (
     <section className="card">
       <div className="row between">
         <h3>
           第 {index + 1} 题{' '}
-          <span className={`pill ${grade.correct ? 'correct' : 'wrong'}`}>
-            {grade.correct ? '正确' : '需巩固'}
-          </span>{' '}
+          <span className={`pill ${STATUS_PILL[status]}`}>{STATUS_TEXT[status]}</span>{' '}
           <GradedByPill gradedBy={grade.gradedBy} />
           {grade.confidence !== undefined ? (
             <span className="pill">置信度 {Math.round(grade.confidence * 100)}%</span>
@@ -218,12 +237,30 @@ function QuestionResult({
           {question.rubric ? (
             <div className="block-preview">
               <div className="heading-path">评分要点</div>
-              <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
-                {question.rubric.keyPoints.map((point) => {
-                  const hit = grade.matchedKeyPoints?.includes(point) ?? false;
+              <ul className="rubric-points" style={{ margin: 0, paddingLeft: '1.2rem' }}>
+                {question.rubric.keyPoints.map((point, i) => {
+                  const hit = grade.matchedKeyPoints?.includes(point.text) ?? false;
+                  const partial = !hit && (grade.partialKeyPoints?.includes(point.text) ?? false);
+                  // Optional points are enrichment: their absence is shown as
+                  // 可补充, never as a red error marker.
+                  const state = hit
+                    ? 'hit'
+                    : partial
+                      ? 'partial'
+                      : point.required
+                        ? 'missed'
+                        : 'enrichment';
+                  const marker = hit ? '✓' : partial ? '△' : point.required ? '✗' : '○';
                   return (
-                    <li key={point} className={hit ? '' : 'muted'}>
-                      {hit ? '✓' : '✗'} {point}
+                    <li key={`${i}-${point.text}`} className={`rubric-point ${state}`}>
+                      <span aria-hidden="true">{marker}</span> 要点 {i + 1}:{point.text}
+                      {!point.required ? <span className="pill enrichment">可补充</span> : null}
+                      {partial ? <span className="small muted">(部分覆盖)</span> : null}
+                      {state === 'hit' || state === 'missed' ? (
+                        <span className="visually-hidden">
+                          {state === 'hit' ? '(已覆盖)' : '(未覆盖)'}
+                        </span>
+                      ) : null}
                     </li>
                   );
                 })}

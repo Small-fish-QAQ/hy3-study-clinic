@@ -1,4 +1,4 @@
-import type { Concept, QuizConfig, SourceBlock } from '@hy3-clinic/shared';
+import type { Concept, QuizConfig, RubricPoint, SourceBlock } from '@hy3-clinic/shared';
 import { GRAPH_RELATIONS } from '@hy3-clinic/shared';
 import { randomUUID } from 'node:crypto';
 import { wrapSourceBlocks } from '../grounding/wrapSource.js';
@@ -35,6 +35,14 @@ const CITATION_RULES = [
 
 const JSON_RULES = '仅输出一个 JSON 对象,不要输出任何解释性文字或 Markdown 代码块。';
 
+const RUBRIC_RULES = [
+  '简答题评分要点(rubricKeyPoints)规则:',
+  '1. 每个要点必须标注 required:根据题干措辞判断,题目明确要求或答对必需的内容才是 required:true;参考答案中额外的优点、缺点、局限、举例或扩展说明必须是 required:false;',
+  '2. 例如题目只问「做法」时,做法要点 required:true,优缺点要点 required:false;题目问「做法及缺点」时,缺点要点也必须 required:true;「比较优缺点」时比较与优缺点均 required:true;「列出并解释」时列出与解释均 required:true;',
+  '3. 参考答案可以比最低正确答案更丰富,但不得把参考答案的每句话都设为必答;至少 1 个要点 required:true;',
+  '4. required:true 的要点必须能从原文中找到依据。',
+].join('\n');
+
 const SEMANTIC_GRADING_RULES = [
   '判分步骤与规则:',
   '1. 逐个、独立判断每个 rubricKeyPoint;覆盖以学生答案是否在语义上表达同一事实为准,不得要求字面相同。',
@@ -42,8 +50,10 @@ const SEMANTIC_GRADING_RULES = [
   '3. studentAnswer 中额外且不矛盾的细节,不得使已经语义覆盖的评分要点变为未覆盖;无资料支持的额外细节可在 feedback 中单独指出。',
   '4. 只有题目明确要求精确复现、数量或顺序时,额外但不矛盾的细节才可导致 score 小幅扣分;不得因此移除真正覆盖的 matchedKeyPointIndexes,也不得在所有要点都已覆盖时仅因额外细节大幅扣分。',
   '5. 不得自动接受矛盾答案:如果学生明确否定、曲解或同时给出与某要点冲突的说法,不得仅凭关键词将该要点标记为覆盖。',
-  '6. score 主要反映评分要点的语义覆盖与准确性;matchedKeyPointIndexes、score 和 feedback 必须彼此一致。',
-  '7. confidence 表示对本次判断可靠性的置信度。输出前检查索引、score、feedback 与 confidence 是否内部一致;如果存在无法确定的等价关系、矛盾或内部不一致,必须降低 confidence,不得给出高置信度。',
+  '6. 评分要点分为两类:required:true 是题目明确要求的必答要点,score 只由它们的覆盖情况决定;required:false 是补充信息,学生未提及绝不得因此降低 score,只能在 feedback 中以「可补充」的方式温和提及。',
+  '7. 每个要点独立判定覆盖程度:完整语义覆盖计入 matchedKeyPointIndexes;只覆盖了一部分计入 partialKeyPointIndexes;未覆盖或与要点矛盾则两个数组都不包含它。',
+  '8. score = (完整覆盖的必答要点数 + 0.5 × 部分覆盖的必答要点数) ÷ 必答要点总数;matchedKeyPointIndexes、partialKeyPointIndexes、score 和 feedback 必须彼此一致。',
+  '9. confidence 表示对本次判断可靠性的置信度。输出前检查索引、score、feedback 与 confidence 是否内部一致;如果存在无法确定的等价关系、矛盾或内部不一致,必须降低 confidence,不得给出高置信度。',
 ].join('\n');
 
 function wrapUntrustedJson(label: string, value: unknown): { guard: string; body: string } {
@@ -122,8 +132,9 @@ export function quizGenerationMessages(
         wrapped.body,
         '',
         '输出 JSON,格式:',
-        '{"questions":[{"type":"single_choice|multiple_choice|short_answer","stem":"题干","options":[{"id":"A","text":"..."}],"correctOptionIds":["A"],"expectedAnswer":"简答参考答案","rubricKeyPoints":["要点1"],"conceptId":"来自上面列表","blockId":"来源块id","quote":"从该块原文逐字复制的一句话","explanation":"解析"}]}',
+        '{"questions":[{"type":"single_choice|multiple_choice|short_answer","stem":"题干","options":[{"id":"A","text":"..."}],"correctOptionIds":["A"],"expectedAnswer":"简答参考答案","rubricKeyPoints":[{"text":"评分要点","required":true}],"conceptId":"来自上面列表","blockId":"来源块id","quote":"从该块原文逐字复制的一句话","explanation":"解析"}]}',
         '选择题选项 id 使用大写字母 A-H;简答题不要 options 字段。',
+        RUBRIC_RULES,
         CITATION_RULES,
         JSON_RULES,
       ].join('\n'),
@@ -134,7 +145,7 @@ export function quizGenerationMessages(
 export function shortAnswerGradingMessages(
   stem: string,
   expectedAnswer: string,
-  rubricKeyPoints: string[],
+  rubricKeyPoints: RubricPoint[],
   quote: string,
   answerText: string,
 ): ChatMessage[] {
@@ -157,11 +168,11 @@ export function shortAnswerGradingMessages(
         wrapped.guard,
         wrapped.body,
         '',
-        'rubricKeyPoints 的数组索引从 0 开始。请按以下规则判断 studentAnswer 覆盖了哪些要点。',
+        'rubricKeyPoints 的数组索引从 0 开始,matchedKeyPointIndexes 与 partialKeyPointIndexes 使用这些 0 基索引;但 feedback 中提及要点时必须使用从 1 开始的编号(如「要点1」)或直接引用要点内容。请按以下规则判断 studentAnswer 覆盖了哪些要点。',
         SEMANTIC_GRADING_RULES,
         '输出 JSON,格式:',
-        '{"matchedKeyPointIndexes":[0],"score":0.0,"confidence":0.0,"feedback":"中文评语(≤200字)"}',
-        'matchedKeyPointIndexes 只能包含有效索引,必须升序、无重复。输出对象必须且只能包含 matchedKeyPointIndexes、score、confidence、feedback 这四个字段。',
+        '{"matchedKeyPointIndexes":[0],"partialKeyPointIndexes":[],"score":0.0,"confidence":0.0,"feedback":"中文评语(≤200字)"}',
+        'matchedKeyPointIndexes 与 partialKeyPointIndexes 只能包含有效索引,必须升序、无重复,且同一索引不得同时出现在两个数组中。输出对象必须且只能包含 matchedKeyPointIndexes、partialKeyPointIndexes、score、confidence、feedback 这五个字段。',
         'score 与 confidence 都在 [0,1] 区间;feedback 不得添加资料之外的引文。',
         JSON_RULES,
       ].join('\n'),
@@ -199,9 +210,10 @@ export function remediationMessages(
         '数量与题型要求:每个概念恰好生成 1 道 single_choice 和 1 道 short_answer,不得缺少、重复或为某个概念生成更多题目。',
         '只允许生成 single_choice 或 short_answer。每道题必须严格使用下列两种互斥结构之一:',
         '单选题:{"type":"single_choice","stem":"题干","options":[{"id":"A","text":"选项A"},{"id":"B","text":"选项B"},{"id":"C","text":"选项C"},{"id":"D","text":"选项D"}],"correctOptionIds":["B"],"conceptId":"来自上面薄弱概念列表","blockId":"来源块id","quote":"逐字原文","explanation":"解析"}',
-        '简答题:{"type":"short_answer","stem":"题干","expectedAnswer":"参考答案","rubricKeyPoints":["评分要点1"],"conceptId":"来自上面薄弱概念列表","blockId":"来源块id","quote":"逐字原文","explanation":"解析"}',
+        '简答题:{"type":"short_answer","stem":"题干","expectedAnswer":"参考答案","rubricKeyPoints":[{"text":"评分要点","required":true}],"conceptId":"来自上面薄弱概念列表","blockId":"来源块id","quote":"逐字原文","explanation":"解析"}',
         '重要:单选题不得出现 expectedAnswer 或 rubricKeyPoints;简答题不得出现 options 或 correctOptionIds。不适用字段必须完全省略,不得输出空字符串、空数组或 null。',
         '单选题 options 的 id 必须是无标点的大写单字母 A-H,correctOptionIds 必须引用这些 id。',
+        RUBRIC_RULES,
         '最终输出格式:{"questions":[上述题目对象]}。',
         CITATION_RULES,
         JSON_RULES,
@@ -425,13 +437,14 @@ export function assessmentProposalMessages(input: AssessmentProposalInput): Chat
         wrapped.body,
         '',
         '输出 JSON,格式:',
-        '{"items":[{"blueprint":{"conceptIds":["..."],"questionType":"single_choice|multiple_choice|short_answer|concept_comparison","difficulty":"easy|medium|hard","learningObjective":"考查目标(不超过120字)","reasoningSteps":[{"description":"作答应完成的推理步骤","evidenceIndexes":[0]}]},"question":{"type":"...","stem":"...","conceptId":"...","blockId":"...","quote":"...","explanation":"...","options":[],"correctOptionIds":[],"expectedAnswer":"...","rubricKeyPoints":[]},"extraEvidence":[{"blockId":"另一文档的来源块id","quote":"逐字原文"}]}]}',
+        '{"items":[{"blueprint":{"conceptIds":["..."],"questionType":"single_choice|multiple_choice|short_answer|concept_comparison","difficulty":"easy|medium|hard","learningObjective":"考查目标(不超过120字)","reasoningSteps":[{"description":"作答应完成的推理步骤","evidenceIndexes":[0]}]},"question":{"type":"...","stem":"...","conceptId":"...","blockId":"...","quote":"...","explanation":"...","options":[],"correctOptionIds":[],"expectedAnswer":"...","rubricKeyPoints":[{"text":"评分要点","required":true}]},"extraEvidence":[{"blockId":"另一文档的来源块id","quote":"逐字原文"}]}]}',
         '要求:',
         '1. question 的 (blockId, quote) 是第 0 条证据,extraEvidence 依次是第 1、2 条;reasoningSteps 的 evidenceIndexes 引用这些序号;',
         '2. concept_comparison 题必须提供至少 1 条来自不同文档的 extraEvidence,并要求学习者综合两份资料作答;',
         '3. 单选题不得出现 expectedAnswer 或 rubricKeyPoints;简答/对比题不得出现 options 或 correctOptionIds;不适用字段必须完全省略;',
         '4. 选项 id 使用大写字母 A-H;',
         '5. 每道题的答案必须能仅凭给出的证据推出,不得依赖资料之外的知识。',
+        RUBRIC_RULES,
         CITATION_RULES,
         JSON_RULES,
       ].join('\n'),

@@ -16,6 +16,7 @@ import { notFound } from '../errors.js';
 import {
   computeTotals,
   gradeObjective,
+  requiredCoverageScore,
   REVIEW_CONFIDENCE,
   SHORT_ANSWER_PASS,
   shortAnswerPoints,
@@ -60,6 +61,7 @@ export function createGradingService({
   ): Promise<QuestionGrade> {
     if (isTextAnswerType(question.type)) {
       const rubric = question.rubric!;
+      const points = rubric.keyPoints;
       const answerText = (answer.text ?? '').trim();
 
       // Blank answers never reach the model: deterministic zero.
@@ -72,7 +74,8 @@ export function createGradingService({
           awardedPoints: 0,
           maxPoints: question.points,
           normalizedScore: 0,
-          missedKeyPoints: rubric.keyPoints,
+          missedKeyPoints: points.filter((p) => p.required).map((p) => p.text),
+          enrichmentKeyPoints: points.filter((p) => !p.required).map((p) => p.text),
           feedback: '未作答。',
           needsReview: false,
         };
@@ -82,20 +85,35 @@ export function createGradingService({
         {
           stem: question.stem,
           expectedAnswer: question.expectedAnswer!,
-          rubricKeyPoints: rubric.keyPoints,
+          rubricKeyPoints: points,
           quote: question.grounding.quote,
           answerText,
         },
         opts,
       );
-      const awardedPoints = shortAnswerPoints(question, grade.score);
-      const correct = grade.score >= SHORT_ANSWER_PASS;
-      const matchedKeyPoints = grade.matchedKeyPointIndexes
-        .map((i) => rubric.keyPoints[i])
-        .filter((v): v is string => v !== undefined);
-      const missedKeyPoints = rubric.keyPoints.filter(
-        (_, i) => !grade.matchedKeyPointIndexes.includes(i),
+      // Deterministic scoring: only REQUIRED points enter the score. The
+      // model judges semantic coverage per point; missing optional
+      // enrichment can never reduce the score, and the model's holistic
+      // score/confidence never set the awarded points directly.
+      const matchedSet = new Set(
+        grade.matchedKeyPointIndexes.filter((i) => i >= 0 && i < points.length),
       );
+      const partialSet = new Set(
+        (grade.partialKeyPointIndexes ?? []).filter(
+          (i) => i >= 0 && i < points.length && !matchedSet.has(i),
+        ),
+      );
+      const coverage = requiredCoverageScore(points, [...matchedSet], [...partialSet]);
+      const awardedPoints = shortAnswerPoints(question, coverage.score);
+      const correct = coverage.score >= SHORT_ANSWER_PASS;
+      const matchedKeyPoints = points.filter((_, i) => matchedSet.has(i)).map((p) => p.text);
+      const partialKeyPoints = points.filter((_, i) => partialSet.has(i)).map((p) => p.text);
+      const missedKeyPoints = points
+        .filter((p, i) => p.required && !matchedSet.has(i) && !partialSet.has(i))
+        .map((p) => p.text);
+      const enrichmentKeyPoints = points
+        .filter((p, i) => !p.required && !matchedSet.has(i) && !partialSet.has(i))
+        .map((p) => p.text);
       return {
         questionId: question.id,
         type: question.type,
@@ -103,9 +121,11 @@ export function createGradingService({
         correct,
         awardedPoints,
         maxPoints: question.points,
-        normalizedScore: grade.score,
+        normalizedScore: coverage.score,
         matchedKeyPoints,
         missedKeyPoints,
+        partialKeyPoints,
+        enrichmentKeyPoints,
         confidence: grade.confidence,
         feedback: grade.feedback,
         needsReview: grade.confidence < REVIEW_CONFIDENCE,

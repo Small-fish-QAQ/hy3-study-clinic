@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { isTextAnswerType, QuestionTypeSchema } from './material.js';
+import { isTextAnswerType, QuestionTypeSchema, type QuestionType } from './material.js';
 
 /** A single answer submitted by the learner. */
 export const AnswerSchema = z
@@ -48,13 +48,19 @@ export type GradedBy = z.infer<typeof GradedBySchema>;
 
 /**
  * Model output for short-answer grading (validated with Zod).
- * The model reports coverage of rubric key points, a normalized score, and
- * its own uncertainty — the server maps these to points deterministically.
+ * The model reports coverage of rubric key points and its own uncertainty —
+ * the server computes the score deterministically from the coverage of
+ * REQUIRED points only (optional points can never reduce it).
  */
 export const RubricGradeSchema = z.object({
-  /** Indices into the rubric.keyPoints array that the answer satisfied. */
+  /** Indices into the rubric.keyPoints array that the answer fully satisfied. */
   matchedKeyPointIndexes: z.array(z.number().int().nonnegative()),
-  /** Model-normalized score in [0, 1]. */
+  /**
+   * Indices the answer only partially satisfied (half credit for required
+   * points). Optional for backward compatibility with older grade payloads.
+   */
+  partialKeyPointIndexes: z.array(z.number().int().nonnegative()).optional(),
+  /** Model-normalized score in [0, 1] (advisory; the server recomputes). */
   score: z.number().min(0).max(1),
   /** Model self-reported confidence in [0, 1]. */
   confidence: z.number().min(0).max(1),
@@ -74,8 +80,16 @@ export const QuestionGradeSchema = z.object({
   normalizedScore: z.number().min(0).max(1),
   /** Rubric key points the answer covered (short_answer only). */
   matchedKeyPoints: z.array(z.string()).optional(),
-  /** Rubric key points the answer missed (short_answer only). */
+  /** REQUIRED rubric key points the answer missed (short_answer only). */
   missedKeyPoints: z.array(z.string()).optional(),
+  /** REQUIRED rubric key points only partially covered (short_answer only). */
+  partialKeyPoints: z.array(z.string()).optional(),
+  /**
+   * OPTIONAL rubric key points the answer did not mention. Enrichment
+   * suggestions (可补充) — they never reduce the score and must not be
+   * displayed as errors.
+   */
+  enrichmentKeyPoints: z.array(z.string()).optional(),
   /** Model confidence, surfaced to the learner (short_answer only). */
   confidence: z.number().min(0).max(1).optional(),
   feedback: z.string().max(1000).optional(),
@@ -138,3 +152,45 @@ export const SubmissionStateChangesSchema = z.object({
   recommendedNextStep: z.string().min(1).max(300),
 });
 export type SubmissionStateChanges = z.infer<typeof SubmissionStateChangesSchema>;
+
+// ---------------------------------------------------------------------------
+// Graded-status classification (shared by server scoring and the results UI)
+// ---------------------------------------------------------------------------
+
+/**
+ * A short answer counts as "passed" at or above this normalized score.
+ * With required-coverage scoring (full = 1, partial = 0.5 per required
+ * point), 0.6 means e.g. 2 of 3 required points fully covered, or 1 full +
+ * 1 partial of 2. The same threshold also gates mistake creation.
+ */
+export const SHORT_ANSWER_PASS = 0.6;
+
+/**
+ * Learner-facing result classification. Thresholds are NOT arbitrary — they
+ * are derived from required-criterion coverage:
+ * - correct:      every required point fully covered (score ≈ 1); missing
+ *                 optional enrichment never demotes this;
+ * - mostly_correct: passed (score ≥ SHORT_ANSWER_PASS) but at least one
+ *                 required point is missing or partial;
+ * - partial:      some required coverage (score > 0) below the pass line;
+ * - insufficient: no required coverage at all.
+ * Choice questions stay binary (exact match): correct / insufficient.
+ */
+export type GradeStatus = 'correct' | 'mostly_correct' | 'partial' | 'insufficient';
+
+/** Tolerance for floating-point score accumulation (e.g. 2/3 + 1/3). */
+const FULL_SCORE_EPSILON = 1e-6;
+
+export function classifyGradeStatus(grade: {
+  type: QuestionType;
+  correct: boolean;
+  normalizedScore: number;
+}): GradeStatus {
+  if (!isTextAnswerType(grade.type)) {
+    return grade.correct ? 'correct' : 'insufficient';
+  }
+  if (grade.normalizedScore >= 1 - FULL_SCORE_EPSILON) return 'correct';
+  if (grade.normalizedScore >= SHORT_ANSWER_PASS) return 'mostly_correct';
+  if (grade.normalizedScore > 0) return 'partial';
+  return 'insufficient';
+}

@@ -81,7 +81,7 @@ describe('prompt trust boundaries', () => {
     const messages = shortAnswerGradingMessages(
       '题目中的指令也不可信',
       '参考答案',
-      ['要点一'],
+      [{ text: '要点一', required: true }],
       '资料原文',
       injectedAnswer,
     );
@@ -104,7 +104,9 @@ describe('prompt trust boundaries', () => {
   it('requires semantic rubric coverage for equivalent interval expressions', () => {
     const stem = '资料中列举的常见间隔重复安排是怎样的？请按顺序写出。';
     const expectedAnswer = '学习当天复习一次，三天后一次，一周后一次，一个月后再一次。';
-    const rubricKeyPoints = ['当天一次', '三天后一次', '一周后一次', '一个月后一次'];
+    const rubricKeyPoints = ['当天一次', '三天后一次', '一周后一次', '一个月后一次'].map(
+      (text) => ({ text, required: true }),
+    );
     const studentAnswer =
       '学习后当天复习，之后分别在 1 天后、3 天后、7 天后、14 天后和 30 天后再次复习。';
     const messages = shortAnswerGradingMessages(
@@ -122,7 +124,7 @@ describe('prompt trust boundaries', () => {
     const data = JSON.parse(content.slice(open + delimiter.length, close).trim()) as {
       stem: string;
       expectedAnswer: string;
-      rubricKeyPoints: string[];
+      rubricKeyPoints: Array<{ text: string; required: boolean }>;
       studentAnswer: string;
     };
 
@@ -137,6 +139,11 @@ describe('prompt trust boundaries', () => {
     expect(content).toContain('无资料支持的额外细节可在 feedback 中单独指出');
     expect(content).toContain('不得自动接受矛盾答案');
     expect(content).toContain('内部不一致,必须降低 confidence');
-    expect(content).toContain('必须且只能包含 matchedKeyPointIndexes、score、confidence、feedback');
+    expect(content).toContain('学生未提及绝不得因此降低 score');
+    expect(content).toContain('partialKeyPointIndexes');
+    expect(content).toContain('feedback 中提及要点时必须使用从 1 开始的编号');
+    expect(content).toContain(
+      '必须且只能包含 matchedKeyPointIndexes、partialKeyPointIndexes、score、confidence、feedback',
+    );
   });
 });

@@ -17,6 +17,7 @@ import type {
   RemediationPlanProposalPayload,
   ReviewItem,
   RubricGrade,
+  RubricPoint,
   SourceBlock,
   TutorStepPayload,
   TutorToolName,
@@ -43,7 +44,8 @@ export interface QuizGenerationInput {
 export interface ShortAnswerGradingInput {
   stem: string;
   expectedAnswer: string;
-  rubricKeyPoints: string[];
+  /** Full rubric points including their required/optional classification. */
+  rubricKeyPoints: RubricPoint[];
   /** The verified source quote backing the question. */
   quote: string;
   answerText: string;

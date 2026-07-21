@@ -13,6 +13,7 @@ import {
   type ProposedConcept,
   type ProposedGraphEdge,
   type ProposedQuestion,
+  type ProposedRubricPoint,
   type QuestionType,
   type QuizGenerationPayload,
   type RemediationPlanProposalPayload,
@@ -21,6 +22,7 @@ import {
   type TutorStepPayload,
 } from '@hy3-clinic/shared';
 import { ProviderError } from './errors.js';
+import { alignPointToStem, charCoverageRatio } from '../grading/rubricAlignment.js';
 import type {
   AlignmentProposalInput,
   AssessmentProposalInput,
@@ -180,21 +182,28 @@ export class FakeProvider implements LlmProvider {
     await this.gate(opts);
     const answer = input.answerText.trim();
     const matched: number[] = [];
+    const partial: number[] = [];
     input.rubricKeyPoints.forEach((point, i) => {
-      if (keyPointCovered(answer, point)) matched.push(i);
+      const ratio = charCoverageRatio(point.text, answer);
+      if (ratio >= 0.6) matched.push(i);
+      else if (ratio >= 0.35) partial.push(i);
     });
-    const total = input.rubricKeyPoints.length;
-    const coverage = total === 0 ? 0 : matched.length / total;
-    const lengthFactor = clamp01(answer.length / Math.max(12, input.expectedAnswer.length * 0.5));
-    const score = clamp01(coverage * 0.8 + Math.min(coverage, lengthFactor) * 0.2);
+    // Advisory score mirrors the server's deterministic rule: coverage of
+    // REQUIRED points only; optional enrichment never reduces it.
+    const required = input.rubricKeyPoints.filter((p) => p.required);
+    const requiredFull = matched.filter((i) => input.rubricKeyPoints[i]!.required).length;
+    const requiredPartial = partial.filter((i) => input.rubricKeyPoints[i]!.required).length;
+    const score =
+      required.length === 0 ? 0 : clamp01((requiredFull + 0.5 * requiredPartial) / required.length);
     // More confident at the extremes (clearly right / clearly wrong).
     const confidence = clamp01(0.6 + Math.abs(score - 0.5) * 0.6);
 
     return {
       matchedKeyPointIndexes: matched,
+      partialKeyPointIndexes: partial,
       score,
       confidence,
-      feedback: buildFeedback(matched, input.rubricKeyPoints),
+      feedback: buildFeedback(matched, partial, input.rubricKeyPoints),
     };
   }
 
@@ -571,7 +580,10 @@ export class FakeProvider implements LlmProvider {
             type: 'concept_comparison',
             stem: `「${target.concept.name}」在《${target.documentTitle}》与《${sibling.documentTitle}》中均有描述。请结合两份资料,说明两处表述的共同要点,以及各自补充了什么信息。`,
             expectedAnswer: `${quoteA}${quoteB}`.slice(0, 900),
-            rubricKeyPoints: [quoteA.slice(0, 80), quoteB.slice(0, 80)],
+            rubricKeyPoints: [
+              { text: quoteA.slice(0, 80), required: true },
+              { text: quoteB.slice(0, 80), required: true },
+            ],
             conceptId: target.concept.id,
             blockId: block.id,
             quote: quoteA,
@@ -809,12 +821,13 @@ function buildQuestion(
   };
 
   if (type === 'short_answer') {
+    const stem = `${prefix}请根据资料,简述「${concept.name}」的要点。`;
     return {
       ...base,
       type: 'short_answer',
-      stem: `${prefix}请根据资料,简述「${concept.name}」的要点。`,
+      stem,
       expectedAnswer: summarize(block.content),
-      rubricKeyPoints: rubricFrom(block, concept.name),
+      rubricKeyPoints: rubricFrom(block, concept.name, stem),
     };
   }
 
@@ -868,25 +881,49 @@ function buildDistractors(conceptName: string, difficulty: 'easy' | 'medium' | '
   return difficulty === 'easy' ? pool.slice(0, 2) : pool;
 }
 
-function rubricFrom(block: SourceBlock, conceptName: string): string[] {
+function rubricFrom(block: SourceBlock, conceptName: string, stem: string): ProposedRubricPoint[] {
   const points = sentences(block.content).slice(0, 3);
-  if (points.length === 0) return [`能说明「${conceptName}」的核心含义`];
-  return points.map((p) => p.slice(0, 80));
+  if (points.length === 0) return [{ text: `能说明「${conceptName}」的核心含义`, required: true }];
+  // Question-aligned classification: evaluative sentences (advantages,
+  // drawbacks, comparisons) are only required when the stem requests them.
+  return points.map((p) => {
+    const text = p.slice(0, 80);
+    return { text, required: alignPointToStem(stem, { text, required: true }) };
+  });
 }
 
-function keyPointCovered(answer: string, keyPoint: string): boolean {
-  // Coverage heuristic: share of the key point's distinct meaningful
-  // characters present in the answer. Deterministic; suits CJK text.
-  const chars = Array.from(new Set(Array.from(keyPoint.replace(/[\s,。!?;:、,.!?;:]/gu, ''))));
-  if (chars.length === 0) return false;
-  const hit = chars.filter((c) => answer.includes(c)).length;
-  return hit / chars.length >= 0.6;
-}
-
-function buildFeedback(matched: number[], keyPoints: string[]): string {
+function buildFeedback(
+  matched: number[],
+  partial: number[],
+  keyPoints: ProposedRubricPoint[],
+): string {
   if (keyPoints.length === 0) return '暂无评分要点。';
-  if (matched.length === keyPoints.length) return '回答覆盖了全部要点,表述准确。';
-  if (matched.length === 0) return `回答未覆盖关键要点。建议围绕:${keyPoints.join('、')}。`;
-  const missed = keyPoints.filter((_, i) => !matched.includes(i));
-  return `已覆盖部分要点,仍需补充:${missed.join('、')}。`;
+  const covered = new Set([...matched, ...partial]);
+  const requiredMissing = keyPoints
+    .filter((p, i) => p.required && !covered.has(i))
+    .map((p) => p.text);
+  const requiredPartial = partial
+    .filter((i) => keyPoints[i]!.required)
+    .map((i) => keyPoints[i]!.text);
+  const optionalMissing = keyPoints
+    .filter((p, i) => !p.required && !covered.has(i))
+    .map((p) => p.text);
+
+  const parts: string[] = [];
+  if (requiredMissing.length === 0 && requiredPartial.length === 0) {
+    parts.push('回答覆盖了题目要求的全部要点,表述准确。');
+  } else if (
+    requiredPartial.length === 0 &&
+    keyPoints.every((p, i) => !p.required || !covered.has(i))
+  ) {
+    parts.push(`回答未覆盖题目要求的关键要点。建议围绕:${requiredMissing.join('、')}。`);
+  } else {
+    if (requiredMissing.length > 0) parts.push(`仍需补充:${requiredMissing.join('、')}。`);
+    if (requiredPartial.length > 0)
+      parts.push(`以下要点只覆盖了一部分:${requiredPartial.join('、')}。`);
+  }
+  if (optionalMissing.length > 0) {
+    parts.push(`可补充(不影响得分):${optionalMissing.join('、')}。`);
+  }
+  return parts.join('');
 }

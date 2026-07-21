@@ -406,6 +406,36 @@ main.main-graph {
   border-color: #f1c4cd;
 }
 
+/* 基本正确 / 部分正确 — passed-or-partial required coverage, amber. */
+.pill.mostly {
+  background: var(--warning-weak);
+  color: var(--warning);
+  border-color: #e7d6a8;
+}
+
+/* 可补充 enrichment marker — informational, never an error color. */
+.pill.enrichment {
+  background: var(--surface-2);
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+.rubric-point.hit {
+  color: var(--success);
+}
+
+.rubric-point.partial {
+  color: var(--warning);
+}
+
+.rubric-point.missed {
+  color: var(--danger);
+}
+
+.rubric-point.enrichment {
+  color: var(--text-muted);
+}
+
 .pill.weak {
   background: var(--state-weak-bg);
   color: var(--state-weak);
