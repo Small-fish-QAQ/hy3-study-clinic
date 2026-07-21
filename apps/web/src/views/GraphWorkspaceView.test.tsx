@@ -801,6 +801,173 @@ describe('学习图谱工作台 — 自适应学习升级', () => {
     expect(post?.body).toEqual({ mode: 'concept_practice', conceptIds: ['con_0'] });
   });
 
+  it('shows an immediate launch state and creates exactly one activity for rapid clicks', async () => {
+    openSavedWorkspace();
+    const onLaunchQuiz = vi.fn();
+    const adaptiveQuiz = {
+      ...quiz,
+      id: 'qz_adaptive',
+      materialId: null,
+      workspaceId: 'ws_1',
+      kind: 'adaptive' as const,
+    };
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const { calls } = installViewMock([
+      {
+        method: 'POST',
+        pattern: /\/api\/workspaces\/ws_1\/assessments$/,
+        handler: async () => {
+          await gate;
+          return { status: 201, body: { quiz: adaptiveQuiz, blueprints: [], rejected: [] } };
+        },
+      },
+      ...adaptiveRoutes(),
+    ]);
+    renderView({ onLaunchQuiz });
+
+    const queueArea = await screen.findByLabelText('今日学习队列');
+    const start = within(queueArea).getByRole('button', { name: '开始' });
+    // Two rapid clicks in the same tick: the ref guard admits only one.
+    fireEvent.click(start);
+    fireEvent.click(start);
+
+    const busy = await within(queueArea).findByRole('button', { name: '启动中…' });
+    expect(busy).toBeDisabled();
+    expect(busy).toHaveAttribute('aria-busy', 'true');
+    fireEvent.click(busy);
+
+    release();
+    await waitFor(() => expect(onLaunchQuiz).toHaveBeenCalledTimes(1));
+    expect(calls.filter((c) => c.method === 'POST' && c.url.includes('/assessments'))).toHaveLength(
+      1,
+    );
+    // The button returns to its idle label after completion.
+    expect(await within(queueArea).findByRole('button', { name: '开始' })).toBeEnabled();
+  });
+
+  it('restores the launch button and surfaces an actionable error when creation fails', async () => {
+    openSavedWorkspace();
+    const onLaunchQuiz = vi.fn();
+    installViewMock([
+      {
+        method: 'POST',
+        pattern: /\/api\/workspaces\/ws_1\/assessments$/,
+        handler: () => ({
+          status: 502,
+          body: { error: { code: 'PROVIDER_ERROR', message: '生成评估失败,请稍后重试。' } },
+        }),
+      },
+      ...adaptiveRoutes(),
+    ]);
+    const user = userEvent.setup();
+    renderView({ onLaunchQuiz });
+
+    const queueArea = await screen.findByLabelText('今日学习队列');
+    await user.click(within(queueArea).getByRole('button', { name: '开始' }));
+    expect(await within(queueArea).findByText(/生成评估失败/)).toBeInTheDocument();
+    expect(onLaunchQuiz).not.toHaveBeenCalled();
+    expect(within(queueArea).getByRole('button', { name: '开始' })).toBeEnabled();
+  });
+
+  it('ignores a stale assessment completion after switching workspaces', async () => {
+    openSavedWorkspace();
+    const onLaunchQuiz = vi.fn();
+    const otherSummary = { ...workspaceSummary, id: 'ws_2', name: '第二课程' };
+    const otherWorkspace = { ...workspace, id: 'ws_2', name: '第二课程' };
+    installViewMock([
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces$/,
+        handler: () => ({ body: { workspaces: [workspaceSummary, otherSummary] } }),
+      },
+      {
+        method: 'POST',
+        pattern: /\/api\/workspaces\/ws_1\/assessments$/,
+        handler: () => 'never',
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_2$/,
+        handler: () => ({ body: { workspace: otherWorkspace, documents: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_2\/graph$/,
+        handler: () => ({ body: { version: null, edges: [], concepts: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_2\/graph\/versions$/,
+        handler: () => ({ body: { versions: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_2\/overlay$/,
+        handler: () => ({ body: { states: [] } }),
+      },
+      ...adaptiveRoutes(),
+    ]);
+    const user = userEvent.setup();
+    renderView({ onLaunchQuiz });
+
+    const queueArea = await screen.findByLabelText('今日学习队列');
+    await user.click(within(queueArea).getByRole('button', { name: '开始' }));
+    await within(queueArea).findByRole('button', { name: '启动中…' });
+
+    // Switching workspaces aborts the launch; no late navigation happens.
+    await user.click(screen.getByRole('button', { name: /第二课程/ }));
+    await screen.findByText('文档(0)');
+    expect(onLaunchQuiz).not.toHaveBeenCalled();
+  });
+
+  it('offers the real diagnostic assessment from the empty queue and prevents duplicates', async () => {
+    openSavedWorkspace();
+    const onLaunchQuiz = vi.fn();
+    const adaptiveQuiz = {
+      ...quiz,
+      id: 'qz_diag',
+      materialId: null,
+      workspaceId: 'ws_1',
+      kind: 'adaptive' as const,
+      assessmentMode: 'diagnostic',
+    };
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const { calls } = installViewMock([
+      {
+        method: 'POST',
+        pattern: /\/api\/workspaces\/ws_1\/assessments$/,
+        handler: async () => {
+          await gate;
+          return { status: 201, body: { quiz: adaptiveQuiz, blueprints: [], rejected: [] } };
+        },
+      },
+      ...baseRoutes(),
+    ]);
+    renderView({ onLaunchQuiz });
+
+    const queueArea = await screen.findByLabelText('今日学习队列');
+    expect(await within(queueArea).findByText(/今天暂无待办/)).toBeInTheDocument();
+    const diagnose = within(queueArea).getByRole('button', { name: '开始诊断评估' });
+    fireEvent.click(diagnose);
+    fireEvent.click(diagnose);
+
+    const busy = await within(queueArea).findByRole('button', { name: '正在生成诊断评估…' });
+    expect(busy).toBeDisabled();
+
+    release();
+    await waitFor(() => expect(onLaunchQuiz).toHaveBeenCalledTimes(1));
+    const posts = calls.filter((c) => c.method === 'POST' && c.url.includes('/assessments'));
+    expect(posts).toHaveLength(1);
+    expect(posts[0]!.body).toEqual({ mode: 'diagnostic' });
+    expect(onLaunchQuiz.mock.calls[0]![1]).toBe('assessment');
+  });
+
   it('keeps misconception and review info in the inspector overview', async () => {
     openSavedWorkspace();
     installViewMock([

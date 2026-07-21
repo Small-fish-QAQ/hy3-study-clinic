@@ -34,6 +34,8 @@ export interface TutorPanelProps {
   workspaceId: string;
   conceptId: string;
   conceptName: string;
+  /** True while the recommended activity of this panel is being created. */
+  activityLaunching: boolean;
   /** Reports the concept ids of the accepted plan for graph highlighting. */
   onPathChange: (conceptIds: ReadonlySet<string>) => void;
   /** Launches the recommended activity of a completed run. */
@@ -55,6 +57,7 @@ export function TutorPanel({
   workspaceId,
   conceptId,
   conceptName,
+  activityLaunching,
   onPathChange,
   onStartActivity,
   onPlanAccepted,
@@ -197,9 +200,13 @@ export function TutorPanel({
               <button
                 type="button"
                 className="primary"
+                disabled={activityLaunching}
+                aria-busy={activityLaunching}
                 onClick={() => onStartActivity(run.activity!)}
               >
-                开始推荐活动:{ACTIVITY_TEXT[run.activity.mode]}
+                {activityLaunching
+                  ? '正在创建练习…'
+                  : `开始推荐活动:${ACTIVITY_TEXT[run.activity.mode]}`}
               </button>
             </p>
           ) : null}
@@ -208,7 +215,12 @@ export function TutorPanel({
           ) : null}
           {phase === 'done' ? (
             <p>
-              <button type="button" className="ghost small" onClick={() => void startSession()}>
+              <button
+                type="button"
+                className="ghost small"
+                disabled={activityLaunching}
+                onClick={() => void startSession()}
+              >
                 重新启动辅导
               </button>
             </p>

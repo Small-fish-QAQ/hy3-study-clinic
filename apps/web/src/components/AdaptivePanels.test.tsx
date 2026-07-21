@@ -125,17 +125,32 @@ describe('AlignmentPanel', () => {
 });
 
 describe('DailyQueue', () => {
+  interface QueueOverrides {
+    items?: typeof queueItems | [];
+    launchBusy?: boolean;
+    startingConceptId?: string | null;
+    diagnosticStarting?: boolean;
+    canDiagnose?: boolean;
+    onStartItem?: ReturnType<typeof vi.fn>;
+    onStartDiagnostic?: ReturnType<typeof vi.fn>;
+  }
+
+  function queueProps(overrides: QueueOverrides = {}) {
+    return {
+      items: overrides.items ?? queueItems,
+      loading: false,
+      error: null,
+      launchBusy: overrides.launchBusy ?? false,
+      startingConceptId: overrides.startingConceptId ?? null,
+      diagnosticStarting: overrides.diagnosticStarting ?? false,
+      canDiagnose: overrides.canDiagnose ?? true,
+      onStartItem: overrides.onStartItem ?? vi.fn(),
+      onStartDiagnostic: overrides.onStartDiagnostic ?? vi.fn(),
+    };
+  }
+
   it('renders deterministic queue items with kinds, reasons and start actions', () => {
-    const onStartItem = vi.fn();
-    render(
-      <DailyQueue
-        items={queueItems}
-        loading={false}
-        error={null}
-        startingConceptId={null}
-        onStartItem={onStartItem}
-      />,
-    );
+    render(<DailyQueue {...queueProps()} />);
     expect(screen.getByText('到期复习')).toBeInTheDocument();
     expect(screen.getByText('误区修复')).toBeInTheDocument();
     expect(screen.getByText(/复习已过期 2 天/)).toBeInTheDocument();
@@ -146,28 +161,47 @@ describe('DailyQueue', () => {
   it('starts the clicked item and shows the empty state when done for today', async () => {
     const user = userEvent.setup();
     const onStartItem = vi.fn();
-    const { rerender } = render(
-      <DailyQueue
-        items={queueItems}
-        loading={false}
-        error={null}
-        startingConceptId={null}
-        onStartItem={onStartItem}
-      />,
-    );
+    const { rerender } = render(<DailyQueue {...queueProps({ onStartItem })} />);
     await user.click(screen.getAllByRole('button', { name: '开始' })[1]!);
     expect(onStartItem).toHaveBeenCalledWith(queueItems[1]);
 
-    rerender(
-      <DailyQueue
-        items={[]}
-        loading={false}
-        error={null}
-        startingConceptId={null}
-        onStartItem={onStartItem}
-      />,
+    rerender(<DailyQueue {...queueProps({ items: [], onStartItem })} />);
+    expect(screen.getByText(/今天暂无待办/)).toBeInTheDocument();
+    expect(screen.getByText(/完成一次练习、诊断评估或辅导活动后/)).toBeInTheDocument();
+  });
+
+  it('disables every start button and shows 启动中 while a launch is pending', () => {
+    render(<DailyQueue {...queueProps({ launchBusy: true, startingConceptId: 'con_1' })} />);
+    const starting = screen.getByRole('button', { name: '启动中…' });
+    expect(starting).toBeDisabled();
+    expect(starting).toHaveAttribute('aria-busy', 'true');
+    for (const button of screen.getAllByRole('button', { name: '开始' })) {
+      expect(button).toBeDisabled();
+    }
+  });
+
+  it('offers the real diagnostic assessment from the empty state', async () => {
+    const user = userEvent.setup();
+    const onStartDiagnostic = vi.fn();
+    render(<DailyQueue {...queueProps({ items: [], onStartDiagnostic })} />);
+    await user.click(screen.getByRole('button', { name: '开始诊断评估' }));
+    expect(onStartDiagnostic).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('任务从哪里来?')).toBeInTheDocument();
+  });
+
+  it('shows a loading diagnostic button that cannot be double-clicked', () => {
+    render(
+      <DailyQueue {...queueProps({ items: [], launchBusy: true, diagnosticStarting: true })} />,
     );
-    expect(screen.getByText(/今天没有排队的学习任务/)).toBeInTheDocument();
+    const button = screen.getByRole('button', { name: '正在生成诊断评估…' });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-busy', 'true');
+  });
+
+  it('hides the diagnostic action when the workspace has no concepts yet', () => {
+    render(<DailyQueue {...queueProps({ items: [], canDiagnose: false })} />);
+    expect(screen.queryByRole('button', { name: /诊断评估/ })).not.toBeInTheDocument();
+    expect(screen.getByText(/先在下方添加文档并提取概念/)).toBeInTheDocument();
   });
 });
 
@@ -186,6 +220,7 @@ describe('TutorPanel', () => {
   }
 
   function renderPanel(handlers: {
+    activityLaunching?: boolean;
     onPathChange?: (ids: ReadonlySet<string>) => void;
     onStartActivity?: (activity: TutorActivity) => void;
     onPlanAccepted?: () => void;
@@ -195,6 +230,7 @@ describe('TutorPanel', () => {
         workspaceId="ws_1"
         conceptId="con_0"
         conceptName="工作记忆"
+        activityLaunching={handlers.activityLaunching ?? false}
         onPathChange={handlers.onPathChange ?? (() => {})}
         onStartActivity={handlers.onStartActivity ?? (() => {})}
         onPlanAccepted={handlers.onPlanAccepted ?? (() => {})}
@@ -283,6 +319,7 @@ describe('TutorPanel', () => {
         workspaceId="ws_1"
         conceptId="con_1"
         conceptName="间隔重复"
+        activityLaunching={false}
         onPathChange={() => {}}
         onStartActivity={() => {}}
         onPlanAccepted={() => {}}
@@ -305,5 +342,56 @@ describe('TutorPanel', () => {
     renderPanel({});
     await user.click(screen.getByRole('button', { name: /启动辅导/ }));
     expect(await screen.findByText(/辅导会话失败:测试错误/)).toBeInTheDocument();
+  });
+
+  it('shows an immediate, non-clickable loading state while the activity launches', async () => {
+    const user = userEvent.setup();
+    const lines = [
+      ...tutorEvents.map((event) => ({ kind: 'event', event })),
+      { kind: 'run', run: tutorRun },
+    ];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ndjsonResponse(lines)),
+    );
+    const { rerender } = renderPanel({});
+    await user.click(screen.getByRole('button', { name: /启动辅导/ }));
+    await screen.findByText(/辅导会话完成/);
+    expect(
+      screen.getByRole('button', { name: /开始推荐活动:前置修复练习|开始推荐活动/ }),
+    ).toBeEnabled();
+
+    // Parent enters the pending launch state → the button flips to a stable
+    // loading label, is disabled and marked busy; restart is blocked too.
+    rerender(
+      <TutorPanel
+        workspaceId="ws_1"
+        conceptId="con_0"
+        conceptName="工作记忆"
+        activityLaunching={true}
+        onPathChange={() => {}}
+        onStartActivity={() => {}}
+        onPlanAccepted={() => {}}
+      />,
+    );
+    const launching = screen.getByRole('button', { name: '正在创建练习…' });
+    expect(launching).toBeDisabled();
+    expect(launching).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByRole('button', { name: '重新启动辅导' })).toBeDisabled();
+
+    // Failure/completion returns the button to its idle label.
+    rerender(
+      <TutorPanel
+        workspaceId="ws_1"
+        conceptId="con_0"
+        conceptName="工作记忆"
+        activityLaunching={false}
+        onPathChange={() => {}}
+        onStartActivity={() => {}}
+        onPlanAccepted={() => {}}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /开始推荐活动/ })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '重新启动辅导' })).toBeEnabled();
   });
 });

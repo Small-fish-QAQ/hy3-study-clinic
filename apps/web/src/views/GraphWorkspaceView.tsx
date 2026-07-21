@@ -59,6 +59,12 @@ interface WorkspaceData {
   queue: DailyQueueItem[];
 }
 
+/** One in-flight assessment launch: which surface started it, keyed for UI. */
+interface PendingLaunch {
+  surface: 'queue' | 'tutor' | 'diagnostic';
+  key: string;
+}
+
 /**
  * 学习图谱工作台 — the three coordinated areas of the upgraded product:
  * 资料面板(左,可折叠)· 个人学习图谱(中,填满剩余空间)· 检查器(右,可折叠)。
@@ -82,7 +88,7 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
   const [plan, setPlan] = useState<RemediationPlan | null>(null);
   const [alignmentOpen, setAlignmentOpen] = useState(false);
   const [tutorPathIds, setTutorPathIds] = useState<ReadonlySet<string>>(new Set());
-  const [startingQueueConceptId, setStartingQueueConceptId] = useState<string | null>(null);
+  const [pendingLaunch, setPendingLaunch] = useState<PendingLaunch | null>(null);
 
   const [newWorkspaceName, setNewWorkspaceName] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
@@ -92,6 +98,13 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
 
   const epochRef = useRef(0);
   const mountedRef = useRef(true);
+  /** Ref twin of pendingLaunch: duplicate clicks in the same tick see it. */
+  const pendingLaunchRef = useRef<PendingLaunch | null>(null);
+  /** Ref twin of selectedNodeId for staleness checks after awaits. */
+  const selectedNodeIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    selectedNodeIdRef.current = selectedNodeId;
+  }, [selectedNodeId]);
 
   const createAction = useAsyncAction();
   const addDocAction = useAsyncAction();
@@ -224,7 +237,8 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
     setGenerationSummary(null);
     setAlignmentOpen(false);
     setTutorPathIds(new Set());
-    setStartingQueueConceptId(null);
+    pendingLaunchRef.current = null;
+    setPendingLaunch(null);
     if (workspaceId) writeLastWorkspaceId(workspaceId);
   }
 
@@ -236,6 +250,11 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
       setPlan(null);
       planAction.cancel();
       planAction.clearError();
+      // A Tutor-recommended launch belongs to the concept it was started
+      // from; switching concepts cancels it instead of navigating late.
+      if (pendingLaunchRef.current?.surface === 'tutor') {
+        assessmentAction.cancel();
+      }
       if (!conceptId || !activeWorkspaceId) return;
       const epoch = epochRef.current;
       void api
@@ -415,31 +434,42 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
     }
   }
 
-  /** Launch a workspace assessment (queue items / Tutor activities). */
+  /**
+   * Launch a workspace assessment (queue items / Tutor activities / the
+   * empty-state diagnostic). One launch at a time: the ref guard makes rapid
+   * repeated clicks a no-op, so only one activity is ever created. A late
+   * completion is dropped after workspace switch/unmount (epoch) or when the
+   * caller's own staleness check fails (e.g. Tutor concept changed).
+   */
   async function launchAssessment(
     input: { mode: TutorActivity['mode']; conceptIds?: string[]; misconceptionId?: string },
-    busyConceptId: string | null,
+    pending: PendingLaunch,
+    isStale?: () => boolean,
   ) {
-    if (!activeWorkspaceId) return;
+    if (!activeWorkspaceId || pendingLaunchRef.current !== null) return;
     const workspaceId = activeWorkspaceId;
-    setStartingQueueConceptId(busyConceptId);
+    const epoch = epochRef.current;
+    pendingLaunchRef.current = pending;
+    setPendingLaunch(pending);
     try {
       const result = await assessmentAction.run((signal) =>
         api.createAssessment(workspaceId, input, signal),
       );
-      if (result && activeWorkspaceId === workspaceId) {
+      if (result && mountedRef.current && epochRef.current === epoch && !(isStale?.() ?? false)) {
         onLaunchQuiz(result.quiz, 'assessment');
       }
     } finally {
-      setStartingQueueConceptId(null);
+      pendingLaunchRef.current = null;
+      if (mountedRef.current && epochRef.current === epoch) setPendingLaunch(null);
     }
   }
 
   function handleStartQueueItem(item: DailyQueueItem) {
+    const pending: PendingLaunch = { surface: 'queue', key: item.conceptId };
     if (item.kind === 'misconception_repair' && item.misconceptionId) {
       void launchAssessment(
         { mode: 'misconception_check', misconceptionId: item.misconceptionId },
-        item.conceptId,
+        pending,
       );
       return;
     }
@@ -451,11 +481,24 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
           : 'concept_practice';
     void launchAssessment(
       mode === 'review' ? { mode } : { mode, conceptIds: [item.conceptId] },
-      item.conceptId,
+      pending,
     );
   }
 
+  /** Launch the standalone workspace diagnostic from the empty daily queue. */
+  function handleStartDiagnostic() {
+    void launchAssessment({ mode: 'diagnostic' }, { surface: 'diagnostic', key: 'diagnostic' });
+  }
+
   function handleStartTutorActivity(activity: TutorActivity) {
+    // The recommendation belongs to the currently selected concept; if the
+    // selection changes while the activity is being created, drop the launch.
+    const conceptAtLaunch = selectedNodeIdRef.current;
+    const isStale = () => selectedNodeIdRef.current !== conceptAtLaunch;
+    const pending: PendingLaunch = {
+      surface: 'tutor',
+      key: activity.conceptIds[0] ?? 'tutor',
+    };
     if (activity.mode === 'misconception_check') {
       // The Tutor recommends checking the concept's open hypothesis; pick the
       // oldest actionable one deterministically.
@@ -469,13 +512,15 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
       if (target) {
         void launchAssessment(
           { mode: 'misconception_check', misconceptionId: target.id },
-          activity.conceptIds[0] ?? null,
+          pending,
+          isStale,
         );
         return;
       }
       void launchAssessment(
         { mode: 'concept_practice', conceptIds: activity.conceptIds },
-        activity.conceptIds[0] ?? null,
+        pending,
+        isStale,
       );
       return;
     }
@@ -483,7 +528,8 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
       activity.mode === 'review' || activity.mode === 'diagnostic'
         ? { mode: activity.mode }
         : { mode: activity.mode, conceptIds: activity.conceptIds },
-      activity.conceptIds[0] ?? null,
+      pending,
+      isStale,
     );
   }
 
@@ -640,8 +686,12 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
                 items={data.queue}
                 loading={dataLoading}
                 error={assessmentAction.error}
-                startingConceptId={startingQueueConceptId}
+                launchBusy={pendingLaunch !== null}
+                startingConceptId={pendingLaunch?.surface === 'queue' ? pendingLaunch.key : null}
+                diagnosticStarting={pendingLaunch?.surface === 'diagnostic'}
+                canDiagnose={data.concepts.length > 0}
                 onStartItem={handleStartQueueItem}
+                onStartDiagnostic={handleStartDiagnostic}
               />
 
               <h3>文档({data.documents.length})</h3>
@@ -955,6 +1005,7 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
                   workspaceId={activeWorkspaceId}
                   conceptId={selectedConcept.id}
                   conceptName={selectedConcept.name}
+                  activityLaunching={pendingLaunch?.surface === 'tutor'}
                   onPathChange={setTutorPathIds}
                   onStartActivity={handleStartTutorActivity}
                   onPlanAccepted={refreshPlanForSelection}
