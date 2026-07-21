@@ -1,5 +1,6 @@
 import {
   UpdateMaterialTitleRequestSchema,
+  type DocumentFilePayload,
   type Material,
   type MediaType,
   type SourceBlock,
@@ -11,7 +12,12 @@ import { notFound } from '../errors.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
 import { deriveTitle, ingestSource, sourceTypeForFilename } from '../ingestion/ingest.js';
-import { TEXT_PARSER_VERSION } from '../ingestion/documents.js';
+import {
+  decodeUpload,
+  parseBinaryUpload,
+  uploadKindForFilename,
+  TEXT_PARSER_VERSION,
+} from '../ingestion/documents.js';
 import { segmentMaterial } from '../ingestion/segment.js';
 
 export interface CreateMaterialInput {
@@ -37,67 +43,141 @@ const MEDIA_TYPE_FOR_TEXT: Record<'paste' | 'md' | 'txt', MediaType> = {
 };
 
 export function createMaterialService({ repos, clock }: MaterialServiceDeps) {
-  return {
-    /**
-     * Validate, normalize, segment, and persist a new text material.
-     *
-     * Compatibility path: this legacy entry point (paste / .md / .txt without
-     * an explicit workspace) creates a dedicated workspace named after the
-     * material — the same representation the migration gives pre-upgrade
-     * records — so every document always belongs to a workspace.
-     */
-    create(input: CreateMaterialInput, workspaceId?: string): MaterialWithBlocks {
-      const sourceType: SourceType = input.filename
-        ? sourceTypeForFilename(input.filename)
-        : 'paste';
-      const normalized = ingestSource(input.content, { sourceType });
-
-      const id = newId('mat');
-      const now = clock.now().toISOString();
-      const title =
-        input.title && input.title.trim().length > 0
-          ? input.title.trim().slice(0, 100)
-          : deriveTitle(normalized.content);
-
-      let targetWorkspaceId = workspaceId;
-      if (!targetWorkspaceId) {
-        const workspace: Workspace = {
-          id: newId('ws'),
-          name: title.slice(0, 120),
-          description: null,
-          activeGraphVersionId: null,
-          createdAt: now,
-          updatedAt: now,
-        };
-        repos.workspaces.insert(workspace);
-        targetWorkspaceId = workspace.id;
-      } else if (!repos.workspaces.get(targetWorkspaceId)) {
-        throw notFound(`课程空间不存在:${targetWorkspaceId}`);
+  /**
+   * Resolve the workspace a new material belongs to.
+   *
+   * Compatibility path: without an explicit workspace (material-library
+   * import), a dedicated workspace named after the material is created — the
+   * same representation the migration gives pre-upgrade records — so every
+   * document always belongs to a workspace.
+   *
+   * Call this only after every validation/segmentation step that can throw,
+   * so a rejected import never leaves an orphan auto-created workspace.
+   */
+  function resolveTargetWorkspace(title: string, now: string, workspaceId?: string): string {
+    if (workspaceId) {
+      if (!repos.workspaces.get(workspaceId)) {
+        throw notFound(`课程空间不存在:${workspaceId}`);
       }
+      return workspaceId;
+    }
+    const workspace: Workspace = {
+      id: newId('ws'),
+      name: title.slice(0, 120),
+      description: null,
+      activeGraphVersionId: null,
+      createdAt: now,
+      updatedAt: now,
+    };
+    repos.workspaces.insert(workspace);
+    return workspace.id;
+  }
 
-      const material: Material = {
-        id,
-        workspaceId: targetWorkspaceId,
-        title,
-        sourceType,
-        mediaType:
-          sourceType === 'pdf' || sourceType === 'docx' ? null : MEDIA_TYPE_FOR_TEXT[sourceType],
-        originalFilename: input.filename?.trim() || null,
-        content: normalized.content,
-        charCount: normalized.charCount,
-        parseStatus: 'parsed',
-        pageCount: null,
-        extractionWarnings: [],
-        parserVersion: TEXT_PARSER_VERSION,
-        createdAt: now,
-        updatedAt: now,
-      };
-      const blocks = segmentMaterial(id, normalized.content);
+  /** Validate, normalize, segment, and persist a new text material. */
+  function create(input: CreateMaterialInput, workspaceId?: string): MaterialWithBlocks {
+    const sourceType: SourceType = input.filename ? sourceTypeForFilename(input.filename) : 'paste';
+    const normalized = ingestSource(input.content, { sourceType });
 
-      repos.materials.insertWithBlocks(material, blocks);
-      repos.workspaces.touch(targetWorkspaceId, now);
-      return { material, blocks };
-    },
+    const id = newId('mat');
+    const now = clock.now().toISOString();
+    const title =
+      input.title && input.title.trim().length > 0
+        ? input.title.trim().slice(0, 100)
+        : deriveTitle(normalized.content);
+
+    const blocks = segmentMaterial(id, normalized.content);
+    const targetWorkspaceId = resolveTargetWorkspace(title, now, workspaceId);
+
+    const material: Material = {
+      id,
+      workspaceId: targetWorkspaceId,
+      title,
+      sourceType,
+      mediaType:
+        sourceType === 'pdf' || sourceType === 'docx' ? null : MEDIA_TYPE_FOR_TEXT[sourceType],
+      originalFilename: input.filename?.trim() || null,
+      content: normalized.content,
+      charCount: normalized.charCount,
+      parseStatus: 'parsed',
+      pageCount: null,
+      extractionWarnings: [],
+      parserVersion: TEXT_PARSER_VERSION,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    repos.materials.insertWithBlocks(material, blocks);
+    repos.workspaces.touch(targetWorkspaceId, now);
+    return { material, blocks };
+  }
+
+  /**
+   * Validate, decode, parse, and persist an uploaded file (.md / .txt /
+   * .pdf / .docx as base64). This is the single authoritative ingestion path
+   * for binary documents — the workspace document upload and the
+   * material-library import both land here.
+   *
+   * Binary uploads are magic-byte-checked and parsed with provenance (PDF
+   * page spans, DOCX headings) and persisted together with the original
+   * bytes (needed for reprocessing). A parsing failure rejects the request —
+   * nothing is persisted.
+   */
+  async function createFromUpload(
+    input: DocumentFilePayload,
+    workspaceId?: string,
+  ): Promise<MaterialWithBlocks> {
+    const kind = uploadKindForFilename(input.filename);
+    const buffer = decodeUpload(input.dataBase64);
+
+    if (kind.sourceType !== 'pdf' && kind.sourceType !== 'docx') {
+      // Text file uploaded as base64: decode and reuse the text path.
+      return create(
+        { content: buffer.toString('utf8'), title: input.title, filename: input.filename },
+        workspaceId,
+      );
+    }
+
+    const parsed = await parseBinaryUpload(kind.sourceType, buffer);
+    // Reuse the shared size/emptiness limits on the EXTRACTED text.
+    const normalized = ingestSource(parsed.content, { sourceType: kind.sourceType });
+
+    const id = newId('mat');
+    const now = clock.now().toISOString();
+    const title =
+      input.title && input.title.trim().length > 0
+        ? input.title.trim().slice(0, 100)
+        : deriveTitle(normalized.content) || input.filename.slice(0, 80);
+
+    const blocks = segmentMaterial(id, normalized.content, {
+      ...(parsed.pageSpans ? { pageSpans: parsed.pageSpans } : {}),
+    });
+    const targetWorkspaceId = resolveTargetWorkspace(title, now, workspaceId);
+
+    const material: Material = {
+      id,
+      workspaceId: targetWorkspaceId,
+      title,
+      sourceType: kind.sourceType,
+      mediaType: kind.mediaType,
+      originalFilename: input.filename.trim(),
+      content: normalized.content,
+      charCount: normalized.charCount,
+      parseStatus: parsed.warnings.length > 0 ? 'parsed_with_warnings' : 'parsed',
+      pageCount: parsed.pageCount,
+      extractionWarnings: parsed.warnings.slice(0, 50),
+      parserVersion: parsed.parserVersion,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    repos.materials.insertWithBlocks(material, blocks, buffer);
+    repos.workspaces.touch(targetWorkspaceId, now);
+    return { material, blocks };
+  }
+
+  return {
+    create,
+    createFromUpload,
 
     get(id: string): MaterialWithBlocks | undefined {
       const material = repos.materials.get(id);

@@ -86,6 +86,21 @@ export const UpdateWorkspaceRequestSchema = z
 export type UpdateWorkspaceRequest = z.infer<typeof UpdateWorkspaceRequestSchema>;
 
 /**
+ * Base64 file payload shared by every upload surface: workspace document
+ * upload (`kind: 'file'`) and the material-library import (POST
+ * /api/materials with `dataBase64`). The server re-validates extension,
+ * magic bytes, and decoded size before parsing.
+ */
+export const DocumentFilePayloadSchema = z
+  .object({
+    filename: z.string().min(1).max(255),
+    dataBase64: z.string().min(1).max(MAX_DOCUMENT_FILE_BASE64_CHARS),
+    title: z.string().max(200).optional(),
+  })
+  .strict();
+export type DocumentFilePayload = z.infer<typeof DocumentFilePayloadSchema>;
+
+/**
  * Runtime contract for POST /api/workspaces/:id/documents.
  *
  * Text-like sources (paste / .md / .txt) are sent as plain text; binary
@@ -101,13 +116,6 @@ export const AddDocumentRequestSchema = z.discriminatedUnion('kind', [
       filename: z.string().max(255).optional(),
     })
     .strict(),
-  z
-    .object({
-      kind: z.literal('file'),
-      filename: z.string().min(1).max(255),
-      dataBase64: z.string().min(1).max(MAX_DOCUMENT_FILE_BASE64_CHARS),
-      title: z.string().max(200).optional(),
-    })
-    .strict(),
+  DocumentFilePayloadSchema.extend({ kind: z.literal('file') }),
 ]);
 export type AddDocumentRequest = z.infer<typeof AddDocumentRequestSchema>;

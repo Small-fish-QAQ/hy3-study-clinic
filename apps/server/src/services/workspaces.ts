@@ -12,8 +12,8 @@ import type { Repositories } from '../repositories/index.js';
 import { AppError, notFound } from '../errors.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
-import { deriveTitle, ingestSource } from '../ingestion/ingest.js';
-import { decodeUpload, parseBinaryUpload, uploadKindForFilename } from '../ingestion/documents.js';
+import { ingestSource } from '../ingestion/ingest.js';
+import { parseBinaryUpload } from '../ingestion/documents.js';
 import { segmentMaterial } from '../ingestion/segment.js';
 import type { MaterialService, MaterialWithBlocks } from './materials.js';
 
@@ -83,9 +83,10 @@ export function createWorkspaceService({ repos, clock, materials }: WorkspaceSer
      * Add a document to a workspace.
      *
      * Text sources reuse the legacy ingestion path; binary uploads (.pdf /
-     * .docx) are decoded, magic-byte-checked, parsed with provenance, and
-     * persisted together with the original bytes (needed for reprocessing).
-     * A parsing failure rejects the request — nothing is persisted.
+     * .docx) go through the material service's shared upload path (decode,
+     * magic-byte check, parse with provenance, persist together with the
+     * original bytes). A parsing failure rejects the request — nothing is
+     * persisted.
      */
     async addDocument(
       workspaceId: string,
@@ -100,55 +101,7 @@ export function createWorkspaceService({ repos, clock, materials }: WorkspaceSer
         );
       }
 
-      const kind = uploadKindForFilename(request.filename);
-      const buffer = decodeUpload(request.dataBase64);
-
-      if (kind.sourceType !== 'pdf' && kind.sourceType !== 'docx') {
-        // Text file uploaded as base64: decode and reuse the text path.
-        return materials.create(
-          {
-            content: buffer.toString('utf8'),
-            title: request.title,
-            filename: request.filename,
-          },
-          workspaceId,
-        );
-      }
-
-      const parsed = await parseBinaryUpload(kind.sourceType, buffer);
-      // Reuse the shared size/emptiness limits on the EXTRACTED text.
-      const normalized = ingestSource(parsed.content, { sourceType: kind.sourceType });
-
-      const id = newId('mat');
-      const now = clock.now().toISOString();
-      const title =
-        request.title && request.title.trim().length > 0
-          ? request.title.trim().slice(0, 100)
-          : deriveTitle(normalized.content) || request.filename.slice(0, 80);
-
-      const material: Material = {
-        id,
-        workspaceId,
-        title,
-        sourceType: kind.sourceType,
-        mediaType: kind.mediaType,
-        originalFilename: request.filename.trim(),
-        content: normalized.content,
-        charCount: normalized.charCount,
-        parseStatus: parsed.warnings.length > 0 ? 'parsed_with_warnings' : 'parsed',
-        pageCount: parsed.pageCount,
-        extractionWarnings: parsed.warnings.slice(0, 50),
-        parserVersion: parsed.parserVersion,
-        createdAt: now,
-        updatedAt: now,
-      };
-      const blocks = segmentMaterial(id, normalized.content, {
-        ...(parsed.pageSpans ? { pageSpans: parsed.pageSpans } : {}),
-      });
-
-      repos.materials.insertWithBlocks(material, blocks, buffer);
-      repos.workspaces.touch(workspaceId, now);
-      return { material, blocks };
+      return materials.createFromUpload(request, workspaceId);
     },
 
     /**
