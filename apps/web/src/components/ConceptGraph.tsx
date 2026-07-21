@@ -53,7 +53,12 @@ import { RELATION_COLORS, RELATION_DASH, RELATION_LABELS } from './graph/relatio
  * State layers are kept strictly separate: semantic data → visibility →
  * deterministic layout → saved positions → active drag positions → edge
  * geometry → hover → selection → viewport. Hover and selection only restyle;
- * they can never re-run layout, refit the viewport, or move nodes.
+ * they can never re-run layout, refit the viewport, or move nodes. During an
+ * active drag the streamed gesture positions are the single highest-priority
+ * geometry source: a semantic-data refresh may update node data but never
+ * coordinates. If the dragged concept itself disappears mid-gesture
+ * (canonical merge/deletion), the drag aborts safely — see the
+ * canonical-membership effect below.
  */
 
 export { RELATION_LABELS } from './graph/relationStyle.js';
@@ -272,6 +277,16 @@ function ConceptGraphInner({
   const [savedPositions, setSavedPositions] = useState<Record<string, { x: number; y: number }>>(
     () => (versionId ? loadSavedPositions(versionId) : {}),
   );
+  /**
+   * Mirror of savedPositions for gesture handlers: drag stop must compute the
+   * next map synchronously and persist it exactly once — persisting inside a
+   * setState updater would run the localStorage write twice under
+   * StrictMode's double-invoked updaters.
+   */
+  const savedPositionsRef = useRef(savedPositions);
+  useEffect(() => {
+    savedPositionsRef.current = savedPositions;
+  }, [savedPositions]);
   /** Live positions of nodes while (and after) a drag gesture, pre-save. */
   const [dragPositions, setDragPositions] = useState<Record<string, { x: number; y: number }>>({});
   /**
@@ -285,6 +300,14 @@ function ConceptGraphInner({
     Record<string, { width: number; height: number }>
   >({});
   const draggingRef = useRef(false);
+  /**
+   * The active drag gesture's node ids (origin first). Powers the
+   * canonical-membership policy: when the dragged concept's id disappears
+   * mid-gesture (merge/deletion), React Flow aborts the drag internally
+   * without ever firing onNodeDragStop, so the component must release its
+   * own transient drag state (see the effect below conceptIds).
+   */
+  const activeDragRef = useRef<{ originId: string; ids: string[] } | null>(null);
   /**
    * Drag-gesture flag as STATE (draggingRef stays for event handlers): while
    * true, the global route plan is frozen — per-frame routing happens
@@ -327,7 +350,9 @@ function ConceptGraphInner({
   useEffect(() => {
     if (versionRef.current === versionId) return;
     versionRef.current = versionId;
-    setSavedPositions(versionId ? loadSavedPositions(versionId) : {});
+    const loaded = versionId ? loadSavedPositions(versionId) : {};
+    savedPositionsRef.current = loaded;
+    setSavedPositions(loaded);
     setDragPositions({});
     setFocus(null);
     setHoveredNodeId(null);
@@ -335,10 +360,39 @@ function ConceptGraphInner({
     setFlashNodeId(null);
     setDragActive(false);
     draggingRef.current = false;
+    activeDragRef.current = null;
     scheduleTooltip(null);
   }, [versionId, scheduleTooltip]);
 
   const conceptIds = useMemo(() => new Set(concepts.map((c) => c.id)), [concepts]);
+
+  /**
+   * Canonical-membership change during an active drag: if the dragged
+   * concept's id leaves the concept set mid-gesture (canonical merge or
+   * deletion), React Flow latches an internal abort and never fires
+   * onNodeDragStop. Explicit policy — release all transient drag state so
+   * hover, tooltips and route planning resume; persist nothing for removed
+   * ids; and drop the gesture's unpersisted positions so a re-created id
+   * renders from saved/base layout again, never from a stale mid-drag
+   * coordinate. Semantic-only refreshes (same membership) are unaffected.
+   */
+  useEffect(() => {
+    const gesture = activeDragRef.current;
+    if (!gesture || conceptIds.has(gesture.originId)) return;
+    activeDragRef.current = null;
+    draggingRef.current = false;
+    setDragActive(false);
+    setDragPositions((current) => {
+      let next: Record<string, { x: number; y: number }> | null = null;
+      for (const id of gesture.ids) {
+        if (id in current) {
+          next ??= { ...current };
+          delete next[id];
+        }
+      }
+      return next ?? current;
+    });
+  }, [conceptIds]);
   const validEdges = useMemo(
     () =>
       edges.filter((e) => conceptIds.has(e.sourceConceptId) && conceptIds.has(e.targetConceptId)),
@@ -499,69 +553,103 @@ function ConceptGraphInner({
    * measuredSizes so React Flow sees an initialized flow. Selection stays
    * driven by the explicit selection props.
    */
-  const handleNodesChange = useCallback((changes: NodeChange<FlowNode<ConceptNodeData>>[]) => {
-    setDragPositions((current) => {
-      let next: Record<string, { x: number; y: number }> | null = null;
-      for (const change of changes) {
-        if (change.type === 'position' && change.position) {
+  const handleNodesChange = useCallback(
+    (changes: NodeChange<FlowNode<ConceptNodeData>>[]) => {
+      setDragPositions((current) => {
+        let next: Record<string, { x: number; y: number }> | null = null;
+        for (const change of changes) {
+          if (change.type !== 'position' || !change.position) continue;
+          // Trailing gesture events can still reference a concept removed
+          // while it was being dragged (canonical merge); those must not
+          // resurrect a position entry for an id that no longer exists.
+          if (!conceptIds.has(change.id)) continue;
+          // Auto-pan runs on an async rAF loop: one last in-gesture tick
+          // (dragging: true) can land AFTER drag stop already persisted the
+          // final position. Applying it would leave the rendered node away
+          // from the persisted coordinate, so in-gesture changes are only
+          // valid while a gesture is actually active. Keyboard moves
+          // (dragging: false) are unaffected.
+          if (change.dragging && !draggingRef.current) continue;
           next ??= { ...current };
           next[change.id] = { x: change.position.x, y: change.position.y };
         }
-      }
-      return next ?? current;
-    });
-    setMeasuredSizes((current) => {
-      let next: Record<string, { width: number; height: number }> | null = null;
-      for (const change of changes) {
-        if (change.type === 'dimensions' && change.dimensions) {
-          const existing = current[change.id];
-          if (
-            existing &&
-            existing.width === change.dimensions.width &&
-            existing.height === change.dimensions.height
-          ) {
-            continue;
+        return next ?? current;
+      });
+      setMeasuredSizes((current) => {
+        let next: Record<string, { width: number; height: number }> | null = null;
+        for (const change of changes) {
+          if (change.type === 'dimensions' && change.dimensions) {
+            const existing = current[change.id];
+            if (
+              existing &&
+              existing.width === change.dimensions.width &&
+              existing.height === change.dimensions.height
+            ) {
+              continue;
+            }
+            next ??= { ...current };
+            next[change.id] = { ...change.dimensions };
           }
-          next ??= { ...current };
-          next[change.id] = { ...change.dimensions };
         }
-      }
-      return next ?? current;
-    });
-  }, []);
+        return next ?? current;
+      });
+    },
+    [conceptIds],
+  );
 
-  const handleNodeDragStart = useCallback(() => {
-    draggingRef.current = true;
-    setDragActive(true);
-    setHoveredNodeId(null);
-    scheduleTooltip(null);
-  }, [scheduleTooltip]);
+  const handleNodeDragStart = useCallback(
+    (
+      _event: unknown,
+      node: FlowNode<ConceptNodeData>,
+      draggedNodes: FlowNode<ConceptNodeData>[],
+    ) => {
+      activeDragRef.current = {
+        originId: node.id,
+        ids: draggedNodes.length > 0 ? draggedNodes.map((dragged) => dragged.id) : [node.id],
+      };
+      draggingRef.current = true;
+      setDragActive(true);
+      setHoveredNodeId(null);
+      scheduleTooltip(null);
+    },
+    [scheduleTooltip],
+  );
 
   /** Persist final positions once per gesture; live values hand over. */
   const handleNodeDragStop = useCallback(
     (
       _event: unknown,
-      _node: FlowNode<ConceptNodeData>,
+      _node: FlowNode<ConceptNodeData> | undefined,
       draggedNodes: FlowNode<ConceptNodeData>[],
     ) => {
+      activeDragRef.current = null;
       draggingRef.current = false;
       setDragActive(false);
-      const moved = draggedNodes.length > 0 ? draggedNodes : [_node];
-      setSavedPositions((current) => {
-        const next = { ...current };
-        for (const dragged of moved) {
-          next[dragged.id] = { x: dragged.position.x, y: dragged.position.y };
-        }
-        if (versionId) savePositions(versionId, next);
-        return next;
-      });
+      // A gesture can also end after its concept vanished mid-drag
+      // (canonical merge/deletion): React Flow then reports no surviving
+      // node at all. Persist only concepts that still exist — never a
+      // removed id, and never a phantom entry for an undefined node.
+      const moved = (draggedNodes.length > 0 ? draggedNodes : _node ? [_node] : []).filter(
+        (dragged) => conceptIds.has(dragged.id),
+      );
+      if (moved.length === 0) return;
+      // Computed outside the state updater and persisted exactly once —
+      // updaters must stay pure (StrictMode double-invokes them, which
+      // would double-write localStorage).
+      const next = { ...savedPositionsRef.current };
+      for (const dragged of moved) {
+        next[dragged.id] = { x: dragged.position.x, y: dragged.position.y };
+      }
+      savedPositionsRef.current = next;
+      setSavedPositions(next);
+      if (versionId) savePositions(versionId, next);
       setDragPositions((current) => {
-        const next = { ...current };
-        for (const dragged of moved) delete next[dragged.id];
-        return next;
+        const cleaned = { ...current };
+        for (const dragged of moved) delete cleaned[dragged.id];
+        return cleaned;
       });
     },
-    [versionId],
+    [versionId, conceptIds],
   );
 
   const lanePlans = useMemo(() => planEdgeLanes(visibleEdges), [visibleEdges]);
@@ -726,6 +814,7 @@ function ConceptGraphInner({
   );
 
   const handleRelayout = useCallback(() => {
+    savedPositionsRef.current = {};
     setSavedPositions({});
     setDragPositions({});
     if (versionId) savePositions(versionId, {});
