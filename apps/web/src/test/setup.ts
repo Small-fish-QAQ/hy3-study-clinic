@@ -80,7 +80,6 @@ if (typeof window.matchMedia === 'undefined') {
 // (blob.text() / blob.arrayBuffer()), which the file-import flows use to
 // read picked files. Bridge the missing methods through FileReader.
 function readBlobWith<T extends string | ArrayBuffer>(
-  blob: Blob,
   start: (reader: FileReader) => void,
 ): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -92,12 +91,12 @@ function readBlobWith<T extends string | ArrayBuffer>(
 }
 if (typeof globalThis.Blob.prototype.text !== 'function') {
   globalThis.Blob.prototype.text = function (this: Blob) {
-    return readBlobWith<string>(this, (reader) => reader.readAsText(this));
+    return readBlobWith<string>((reader) => reader.readAsText(this));
   };
 }
 if (typeof globalThis.Blob.prototype.arrayBuffer !== 'function') {
   globalThis.Blob.prototype.arrayBuffer = function (this: Blob) {
-    return readBlobWith<ArrayBuffer>(this, (reader) => reader.readAsArrayBuffer(this));
+    return readBlobWith<ArrayBuffer>((reader) => reader.readAsArrayBuffer(this));
   };
 }
 
