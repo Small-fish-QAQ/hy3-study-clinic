@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import {
+  DocumentFilePayloadSchema,
   SAMPLE_MATERIAL_CONTENT,
   SAMPLE_MATERIAL_TITLE,
   UpdateMaterialTitleRequestSchema,
@@ -17,7 +18,17 @@ const MaterialIdParamsSchema = z.object({ id: z.string().min(1) });
 
 export function registerMaterialRoutes(app: FastifyInstance, materials: MaterialService): void {
   app.post('/api/materials', async (request, reply) => {
-    const body = CreateMaterialBodySchema.parse(request.body);
+    const raw = request.body;
+    // File imports (.md/.txt/.pdf/.docx sent as base64) are distinguished
+    // from pasted/read text by the presence of `dataBase64`; both shapes
+    // stay schema-validated and share the workspace document ingestion path.
+    if (typeof raw === 'object' && raw !== null && 'dataBase64' in raw) {
+      const body = DocumentFilePayloadSchema.parse(raw);
+      const created = await materials.createFromUpload(body);
+      reply.status(201).send(created);
+      return;
+    }
+    const body = CreateMaterialBodySchema.parse(raw);
     const created = materials.create(body);
     reply.status(201).send(created);
   });

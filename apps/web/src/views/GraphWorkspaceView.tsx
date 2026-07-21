@@ -25,6 +25,12 @@ import { DailyQueue } from '../components/DailyQueue.js';
 import { TutorPanel } from '../components/TutorPanel.js';
 import { aggregateOverlay, buildCanonicalDisplayGraph } from '../components/graph/canonicalView.js';
 import { useAsyncAction } from '../components/useAsyncAction.js';
+import {
+  UPLOAD_ACCEPT,
+  UPLOAD_OCR_LIMIT_TEXT,
+  fileToBase64,
+  uploadValidationError,
+} from '../upload.js';
 
 const LAST_WORKSPACE_KEY = 'hy3-clinic:last-workspace-id';
 
@@ -311,8 +317,11 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
     const lower = file.name.toLowerCase();
     const isBinary = lower.endsWith('.pdf') || lower.endsWith('.docx');
     const result = await addDocAction.run(async (signal) => {
+      // Same pre-flight rules as the material library; the server re-checks.
+      const validationError = uploadValidationError(file);
+      if (validationError) throw new Error(validationError);
       if (isBinary) {
-        const dataBase64 = arrayBufferToBase64(await file.arrayBuffer());
+        const dataBase64 = await fileToBase64(file);
         return api.addDocument(
           workspaceId,
           { kind: 'file', filename: file.name, dataBase64 },
@@ -1180,7 +1189,7 @@ function AddDocumentForm({
           <input
             ref={fileInputRef}
             type="file"
-            accept=".md,.markdown,.txt,.pdf,.docx"
+            accept={UPLOAD_ACCEPT}
             aria-label="上传文档文件(.md / .txt / .pdf / .docx)"
             disabled={loading}
             onChange={(e) => {
@@ -1191,6 +1200,7 @@ function AddDocumentForm({
           />
           上传文件(.md / .txt / .pdf / .docx,≤10MB)
         </label>
+        <p className="muted small">{UPLOAD_OCR_LIMIT_TEXT}</p>
         {loading ? (
           <>
             <Loading label="正在导入文档…" />
@@ -1203,16 +1213,6 @@ function AddDocumentForm({
       {error ? <Banner kind="error">{error}</Banner> : null}
     </div>
   );
-}
-
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
-  return btoa(binary);
 }
 
 function readLastWorkspaceId(): string | null {

@@ -168,7 +168,9 @@ export const api = {
     ),
 
   importMaterial: (
-    input: { content: string; title?: string; filename?: string },
+    input:
+      | { content: string; title?: string; filename?: string }
+      | { filename: string; dataBase64: string; title?: string },
     signal?: AbortSignal,
   ) => request<MaterialWithBlocks>('POST', '/api/materials', input, signal),
 

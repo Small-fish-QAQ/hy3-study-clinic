@@ -52,14 +52,14 @@ export function looksBinary(raw: string): boolean {
   return control / sampleLength > 0.1;
 }
 
-/** Resolve a filename's extension to a supported SourceType, or throw. */
+/** Resolve a filename's extension to a supported text SourceType, or throw. */
 export function sourceTypeForFilename(filename: string): SourceType {
   const match = /\.([a-z0-9]+)$/i.exec(filename.trim());
   const ext = match?.[1]?.toLowerCase();
   if (!ext || !(ext in SUPPORTED_EXTENSIONS)) {
     throw new IngestionError(
       ApiErrorCode.UnsupportedFile,
-      `不支持的文件类型:仅接受 .md 与 .txt 文件`,
+      '不支持的文件类型:文本内容仅接受 .md 与 .txt 文件;PDF 与 DOCX 请以文件形式上传。',
     );
   }
   return SUPPORTED_EXTENSIONS[ext]!;

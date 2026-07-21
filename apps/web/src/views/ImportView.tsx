@@ -4,6 +4,16 @@ import { api, type MaterialSummary, type MaterialWithBlocks } from '../api.js';
 import { Banner, Loading } from '../components/ui.js';
 import { SourceEvidencePanel } from '../components/SourceEvidencePanel.js';
 import { useAsyncAction } from '../components/useAsyncAction.js';
+import {
+  UPLOAD_ACCEPT,
+  UPLOAD_FORMATS_TEXT,
+  UPLOAD_KIND_LABELS,
+  UPLOAD_OCR_LIMIT_TEXT,
+  fileToBase64,
+  isBinaryUploadKind,
+  uploadKindOf,
+  uploadValidationError,
+} from '../upload.js';
 
 export interface ImportViewProps {
   material: MaterialWithBlocks | null;
@@ -64,6 +74,10 @@ export function ImportView({
 }: ImportViewProps) {
   const [content, setContent] = useState('');
   const [filename, setFilename] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<{ file: File; kind: 'pdf' | 'docx' } | null>(
+    null,
+  );
+  const [title, setTitle] = useState('');
   const [fileError, setFileError] = useState<string | null>(null);
   const [historyQuery, setHistoryQuery] = useState('');
   const [historyExpanded, setHistoryExpanded] = useState(false);
@@ -104,6 +118,7 @@ export function ImportView({
     setFileError(null);
     const sample = await importAction.run((signal) => api.sampleMaterial(signal));
     if (sample) {
+      setSelectedFile(null);
       setContent(sample.content);
       setFilename(sample.filename);
     }
@@ -111,24 +126,64 @@ export function ImportView({
 
   async function onFileChange(files: FileList | null) {
     const file = files?.[0];
+    // Reset the input so picking the same file again re-triggers onChange.
+    if (fileRef.current) fileRef.current.value = '';
     if (!file) return;
-    const lower = file.name.toLowerCase();
-    if (!lower.endsWith('.md') && !lower.endsWith('.markdown') && !lower.endsWith('.txt')) {
-      setFileError('仅支持 .md 与 .txt 文件。');
+    const kind = uploadKindOf(file.name);
+    const validationError = uploadValidationError(file);
+    if (validationError || kind === null) {
+      setFileError(validationError);
       return;
     }
     setFileError(null);
+    if (isBinaryUploadKind(kind)) {
+      // PDF/DOCX are parsed server-side: stage the file for import.
+      setSelectedFile({ file, kind });
+      setContent('');
+      setFilename(file.name);
+      return;
+    }
     const text = await file.text();
+    setSelectedFile(null);
     setContent(text);
     setFilename(file.name);
   }
 
+  function removeSelectedFile() {
+    setSelectedFile(null);
+    setFilename(null);
+    setFileError(null);
+  }
+
   async function doImport() {
     setFileError(null);
-    const payload: { content: string; filename?: string } = { content };
-    if (filename) payload.filename = filename;
-    const imported = await importAction.run((signal) => api.importMaterial(payload, signal));
-    if (imported) onImported(imported);
+    const staged = selectedFile;
+    const trimmedTitle = title.trim();
+    const imported = await importAction.run(async (signal) => {
+      if (staged) {
+        const dataBase64 = await fileToBase64(staged.file);
+        return api.importMaterial(
+          {
+            filename: staged.file.name,
+            dataBase64,
+            ...(trimmedTitle ? { title: trimmedTitle } : {}),
+          },
+          signal,
+        );
+      }
+      const payload: { content: string; filename?: string; title?: string } = { content };
+      if (filename) payload.filename = filename;
+      if (trimmedTitle) payload.title = trimmedTitle;
+      return api.importMaterial(payload, signal);
+    });
+    if (imported) {
+      if (staged) {
+        setSelectedFile(null);
+        setFilename(null);
+      }
+      setTitle('');
+      onImported(imported);
+    }
   }
 
   async function doAnalyze() {
@@ -370,12 +425,27 @@ export function ImportView({
       <section className="card">
         <h2>导入学习资料</h2>
         <p className="muted small">
-          支持粘贴文本或选择 .md / .txt 文件(≤10 万字)。学习记录保存在本机 SQLite;使用在线 Hy3
+          {UPLOAD_FORMATS_TEXT}
+          {UPLOAD_OCR_LIMIT_TEXT}单个文件不超过 10MB,提取文本不超过 10 万字。
+        </p>
+        <p className="muted small">
+          学习记录保存在本机 SQLite;使用在线 Hy3
           模式时,分析、出题与简答判分所需的数据会发送到你配置的 HY3_BASE_URL。fake
           模式不会向外发送数据。
         </p>
         {importAction.error ? <Banner kind="error">{importAction.error}</Banner> : null}
         {fileError ? <Banner kind="error">{fileError}</Banner> : null}
+        <div className="field">
+          <label htmlFor="material-title">标题(可选)</label>
+          <input
+            id="material-title"
+            value={title}
+            maxLength={100}
+            placeholder="默认取文首标题或文件名"
+            disabled={materialOpening || materialManagementActive || importAction.loading}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+        </div>
         <div className="field">
           <label htmlFor="material-content">资料内容</label>
           <textarea
@@ -383,10 +453,11 @@ export function ImportView({
             rows={10}
             placeholder="在此粘贴学习资料(Markdown 或纯文本)……"
             value={content}
-            disabled={materialOpening || materialManagementActive}
+            disabled={materialOpening || materialManagementActive || importAction.loading}
             onChange={(e) => {
               setContent(e.target.value);
               setFilename(null);
+              setSelectedFile(null);
             }}
           />
         </div>
@@ -394,7 +465,7 @@ export function ImportView({
           <div className="row">
             <button
               type="button"
-              disabled={materialOpening || materialManagementActive}
+              disabled={materialOpening || materialManagementActive || importAction.loading}
               onClick={() => fileRef.current?.click()}
             >
               选择文件
@@ -402,23 +473,39 @@ export function ImportView({
             <input
               ref={fileRef}
               type="file"
-              accept=".md,.markdown,.txt"
-              disabled={materialOpening || materialManagementActive}
+              accept={UPLOAD_ACCEPT}
+              disabled={materialOpening || materialManagementActive || importAction.loading}
               style={{ display: 'none' }}
               onChange={(e) => void onFileChange(e.target.files)}
-              aria-label="选择 .md 或 .txt 文件"
+              aria-label="选择 .md、.txt、.pdf 或 .docx 文件"
             />
             <button
               type="button"
-              disabled={materialOpening || materialManagementActive}
+              disabled={materialOpening || materialManagementActive || importAction.loading}
               onClick={() => void loadSample()}
             >
               载入示例资料
             </button>
-            <span className="muted small">{filename ?? (content ? '(粘贴文本)' : '')}</span>
+            <span className="muted small">
+              {selectedFile
+                ? `${selectedFile.file.name}(${UPLOAD_KIND_LABELS[selectedFile.kind]},待导入)`
+                : (filename ?? (content ? '(粘贴文本)' : ''))}
+            </span>
+            {selectedFile ? (
+              <button
+                type="button"
+                className="ghost small"
+                disabled={importAction.loading}
+                onClick={removeSelectedFile}
+              >
+                移除文件
+              </button>
+            ) : null}
           </div>
           <div className="row">
-            <span className="muted small">{content.length} 字</span>
+            <span className="muted small">
+              {selectedFile ? '导入后在服务器解析并切分' : `${content.length} 字`}
+            </span>
             <button
               type="button"
               className="primary"
@@ -426,12 +513,17 @@ export function ImportView({
                 materialOpening ||
                 materialManagementActive ||
                 importAction.loading ||
-                content.trim().length === 0
+                (content.trim().length === 0 && !selectedFile)
               }
               onClick={() => void doImport()}
             >
               {importAction.loading ? '导入中…' : '导入并切分'}
             </button>
+            {importAction.loading ? (
+              <button type="button" onClick={importAction.cancel}>
+                取消
+              </button>
+            ) : null}
           </div>
         </div>
       </section>
