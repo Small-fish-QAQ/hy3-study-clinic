@@ -92,6 +92,43 @@ Object.defineProperties(globalThis.HTMLElement.prototype, {
   },
 });
 
+/**
+ * Keep getBoundingClientRect consistent with the element sizes above. jsdom
+ * returns an all-zero rect, and React Flow's node-drag auto-pan measures the
+ * flow pane with getBoundingClientRect at drag start: a 0×0 pane makes every
+ * in-canvas pointer read as "past the pane edge", so each drag starts a
+ * requestAnimationFrame pan loop that keeps moving the dragged node
+ * (±autoPanSpeed ÷ zoom per frame, e.g. exactly +100,+100/frame at the
+ * clamped 0.15 min-zoom) while the pointer is parked. Those asynchronous
+ * position updates land outside act() and intermittently commit only at the
+ * next act flush — breaking any test that compares node geometry across a
+ * rerender. With a realistic pane box, pointers inside the canvas stay out
+ * of the 40px auto-pan margin and dragged nodes move exactly as far as the
+ * dispatched pointer events say. Only explicit PIXEL inline sizes shrink the
+ * box: React Flow's own container carries inline `width/height: 100%`, which
+ * must mean "fill the (mocked 800×600) canvas", not parseFloat('100%') = a
+ * 100px pane that would re-trigger auto-pan. Drag coordinate math is
+ * unchanged (left/top stay 0). SVG elements keep jsdom's default (getBBox
+ * below).
+ */
+const inlinePixelSize = (value: string): number | null =>
+  /^\d+(\.\d+)?px$/.test(value) ? parseFloat(value) : null;
+globalThis.HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement): DOMRect {
+  const width = inlinePixelSize(this.style.width) ?? 800;
+  const height = inlinePixelSize(this.style.height) ?? 600;
+  return {
+    x: 0,
+    y: 0,
+    top: 0,
+    left: 0,
+    right: width,
+    bottom: height,
+    width,
+    height,
+    toJSON: () => ({}),
+  } as DOMRect;
+};
+
 (globalThis.SVGElement.prototype as unknown as { getBBox: () => DOMRect }).getBBox = () =>
   ({ x: 0, y: 0, width: 0, height: 0 }) as DOMRect;
 

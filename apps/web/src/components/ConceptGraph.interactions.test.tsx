@@ -48,23 +48,28 @@ const causesEdge: GraphEdge = {
   targetConceptId: 'con_1',
 };
 
+/** One canonical element builder, so rerenders exercise real prop refreshes. */
+function graphElement(overrides: Partial<Parameters<typeof ConceptGraph>[0]> = {}) {
+  return (
+    <ConceptGraph
+      concepts={overrides.concepts ?? concepts}
+      edges={overrides.edges ?? graphEdges}
+      overlay={overrides.overlay ?? overlay}
+      selectedNodeId={overrides.selectedNodeId ?? null}
+      selectedEdgeId={overrides.selectedEdgeId ?? null}
+      onSelectNode={overrides.onSelectNode ?? vi.fn()}
+      onSelectEdge={overrides.onSelectEdge ?? vi.fn()}
+      versionId={overrides.versionId ?? 'gv_1'}
+      planTargetIds={overrides.planTargetIds}
+      summary={overrides.summary ?? null}
+    />
+  );
+}
+
 function renderGraph(props: Partial<Parameters<typeof ConceptGraph>[0]> = {}) {
   const onSelectNode = vi.fn();
   const onSelectEdge = vi.fn();
-  const view = render(
-    <ConceptGraph
-      concepts={props.concepts ?? concepts}
-      edges={props.edges ?? graphEdges}
-      overlay={props.overlay ?? overlay}
-      selectedNodeId={props.selectedNodeId ?? null}
-      selectedEdgeId={props.selectedEdgeId ?? null}
-      onSelectNode={props.onSelectNode ?? onSelectNode}
-      onSelectEdge={props.onSelectEdge ?? onSelectEdge}
-      versionId={props.versionId ?? 'gv_1'}
-      planTargetIds={props.planTargetIds}
-      summary={props.summary ?? null}
-    />,
-  );
+  const view = render(graphElement({ onSelectNode, onSelectEdge, ...props }));
   return { onSelectNode, onSelectEdge, view };
 }
 
@@ -106,6 +111,59 @@ async function waitForInitialFit(): Promise<string> {
     { timeout: 4000 },
   );
   return viewportTransform();
+}
+
+/**
+ * Starts a real pointer drag on a node and GUARANTEES the gesture ends: the
+ * terminating mouseUp fires even when an assertion inside `body` throws. An
+ * un-terminated d3-drag gesture leaves its mousemove/mouseup listeners on
+ * the window; the next test's mouseup (user-event constructs events whose
+ * `view` is null) then crashes inside d3-drag's nodrag.js and pollutes an
+ * unrelated test. mouseDown lands on the node wrapper; moves target the
+ * window, mirroring React Flow's real listener setup. React Flow consumes
+ * the first movement to pass the drag threshold and initialize the gesture,
+ * so continuous position changes flow from the second move on.
+ */
+async function withNodeDrag(
+  name: string,
+  body: (drag: {
+    moveTo: (clientX: number, clientY: number) => void;
+    start: string;
+  }) => Promise<void> | void,
+): Promise<void> {
+  const wrapper = nodeWrapper(name);
+  const start = wrapper.style.transform;
+  let last = { x: 100, y: 100 };
+  fireEvent.mouseDown(wrapper, { button: 0, clientX: last.x, clientY: last.y });
+  try {
+    await body({
+      start,
+      moveTo: (clientX: number, clientY: number) => {
+        last = { x: clientX, y: clientY };
+        fireEvent.mouseMove(window, { clientX, clientY, buttons: 1 });
+      },
+    });
+  } finally {
+    fireEvent.mouseUp(window, { clientX: last.x, clientY: last.y });
+  }
+}
+
+/** Multi-step drag that waits for each streamed position to render. */
+async function dragNode(name: string, dx: number, dy: number, steps = 3): Promise<string[]> {
+  const during: string[] = [];
+  await withNodeDrag(name, async ({ moveTo, start }) => {
+    // Threshold-consuming first movement (gesture initialization).
+    moveTo(104, 103);
+    for (let i = 1; i <= steps; i++) {
+      moveTo(104 + (dx * i) / steps, 103 + (dy * i) / steps);
+      await waitFor(() => {
+        // The controlled node must follow BEFORE the pointer is released.
+        expect(nodeWrapper(name).style.transform).not.toBe(during[during.length - 1] ?? start);
+      });
+      during.push(nodeWrapper(name).style.transform);
+    }
+  });
+  return during;
 }
 
 describe('hover stability (defects 1 & 3)', () => {
@@ -176,54 +234,27 @@ describe('hover stability (defects 1 & 3)', () => {
 });
 
 describe('controlled real-time dragging (defect 2)', () => {
-  async function dragNode(name: string, dx: number, dy: number, steps = 3) {
-    const wrapper = nodeWrapper(name);
-    const start = wrapper.style.transform;
-    fireEvent.mouseDown(wrapper, { button: 0, clientX: 100, clientY: 100 });
-    // Threshold-consuming first movement (gesture initialization).
-    fireEvent.mouseMove(window, { clientX: 104, clientY: 103, buttons: 1 });
-    const during: string[] = [];
-    for (let i = 1; i <= steps; i++) {
-      fireEvent.mouseMove(window, {
-        clientX: 104 + (dx * i) / steps,
-        clientY: 103 + (dy * i) / steps,
-        buttons: 1,
-      });
-      await waitFor(() => {
-        // The controlled node must follow BEFORE the pointer is released.
-        expect(nodeWrapper(name).style.transform).not.toBe(during[during.length - 1] ?? start);
-      });
-      during.push(nodeWrapper(name).style.transform);
-    }
-    fireEvent.mouseUp(window, { clientX: 104 + dx, clientY: 103 + dy });
-    return during;
-  }
-
   it('applies position changes continuously and persists only on drag stop', async () => {
     renderGraph();
     await waitForInitialFit();
-    const before = nodeWrapper('工作记忆').style.transform;
+    await withNodeDrag('工作记忆', async ({ moveTo, start }) => {
+      // React Flow consumes the first movement to pass the drag threshold
+      // and initialize the gesture; continuous position changes flow from
+      // the second pointer movement on (matching a real pointer stream).
+      moveTo(120, 115);
+      moveTo(140, 130);
+      await waitFor(() => {
+        expect(nodeWrapper('工作记忆').style.transform).not.toBe(start);
+      });
+      // Mid-drag: in-memory position moved, nothing persisted yet.
+      const midDrag = nodeWrapper('工作记忆').style.transform;
+      expect(loadSavedPositions('gv_1')).toEqual({});
 
-    const wrapper = nodeWrapper('工作记忆');
-    fireEvent.mouseDown(wrapper, { button: 0, clientX: 100, clientY: 100 });
-    // React Flow consumes the first movement to pass the drag threshold and
-    // initialize the gesture; continuous position changes flow from the
-    // second pointer movement on (matching a real pointer stream).
-    fireEvent.mouseMove(window, { clientX: 120, clientY: 115, buttons: 1 });
-    fireEvent.mouseMove(window, { clientX: 140, clientY: 130, buttons: 1 });
-    await waitFor(() => {
-      expect(nodeWrapper('工作记忆').style.transform).not.toBe(before);
+      moveTo(180, 160);
+      await waitFor(() => {
+        expect(nodeWrapper('工作记忆').style.transform).not.toBe(midDrag);
+      });
     });
-    // Mid-drag: in-memory position moved, nothing persisted yet.
-    const midDrag = nodeWrapper('工作记忆').style.transform;
-    expect(loadSavedPositions('gv_1')).toEqual({});
-
-    fireEvent.mouseMove(window, { clientX: 180, clientY: 160, buttons: 1 });
-    await waitFor(() => {
-      expect(nodeWrapper('工作记忆').style.transform).not.toBe(midDrag);
-    });
-
-    fireEvent.mouseUp(window, { clientX: 180, clientY: 160 });
     await waitFor(() => {
       const saved = loadSavedPositions('gv_1');
       expect(Object.keys(saved)).toContain('con_0');
@@ -251,33 +282,19 @@ describe('controlled real-time dragging (defect 2)', () => {
   it('a semantic-data refresh mid-drag cannot snap the node back', async () => {
     const { view } = renderGraph();
     await waitForInitialFit();
-    const start = nodeWrapper('工作记忆').style.transform;
-    const wrapper = nodeWrapper('工作记忆');
-    fireEvent.mouseDown(wrapper, { button: 0, clientX: 100, clientY: 100 });
-    fireEvent.mouseMove(window, { clientX: 118, clientY: 112, buttons: 1 });
-    fireEvent.mouseMove(window, { clientX: 160, clientY: 150, buttons: 1 });
-    await waitFor(() => {
-      expect(nodeWrapper('工作记忆').style.transform).not.toBe(start);
-    });
-    const midDrag = nodeWrapper('工作记忆').style.transform;
+    await withNodeDrag('工作记忆', async ({ moveTo, start }) => {
+      moveTo(118, 112);
+      moveTo(160, 150);
+      await waitFor(() => {
+        expect(nodeWrapper('工作记忆').style.transform).not.toBe(start);
+      });
+      const midDrag = nodeWrapper('工作记忆').style.transform;
 
-    // Simulate a stale-layout hazard: the overlay refetch produces a new
-    // Map identity (as after grading refresh) while the drag is active.
-    view.rerender(
-      <ConceptGraph
-        concepts={concepts}
-        edges={graphEdges}
-        overlay={new Map(overlay)}
-        selectedNodeId={null}
-        selectedEdgeId={null}
-        onSelectNode={vi.fn()}
-        onSelectEdge={vi.fn()}
-        versionId="gv_1"
-        summary={null}
-      />,
-    );
-    expect(nodeWrapper('工作记忆').style.transform).toBe(midDrag);
-    fireEvent.mouseUp(window, { clientX: 160, clientY: 150 });
+      // Simulate a stale-layout hazard: the overlay refetch produces a new
+      // Map identity (as after grading refresh) while the drag is active.
+      view.rerender(graphElement({ overlay: new Map(overlay) }));
+      expect(nodeWrapper('工作记忆').style.transform).toBe(midDrag);
+    });
   });
 
   it('restores saved positions on mount and 重新布局 clears them', async () => {
@@ -292,6 +309,186 @@ describe('controlled real-time dragging (defect 2)', () => {
     expect(loadSavedPositions('gv_1')).toEqual({});
     await waitFor(() => {
       expect(nodeWrapper('工作记忆').style.transform).not.toContain('translate(333px,222px)');
+    });
+  });
+});
+
+describe('semantic-only refresh during active drag', () => {
+  /** Overlay rebuilt with fresh identities and one concept's state patched. */
+  function overlayWith(
+    conceptId: string,
+    patch: Partial<ConceptLearnerState>,
+  ): Map<string, ConceptLearnerState> {
+    return new Map(
+      [...overlay.entries()].map(([id, state]) =>
+        id === conceptId ? [id, { ...state, ...patch }] : [id, { ...state }],
+      ),
+    );
+  }
+
+  interface RefreshCase {
+    label: string;
+    overrides: () => Partial<Parameters<typeof ConceptGraph>[0]>;
+    /** Node label after the refresh (alias promotion renames the card). */
+    labelAfter?: string;
+    /** Proves the semantic payload applied while the geometry held still. */
+    check?: (node: () => HTMLElement) => void;
+  }
+
+  const cases: RefreshCase[] = [
+    {
+      label: 'mastery change after grading',
+      overrides: () => ({ overlay: overlayWith('con_0', { mastery: 0.87 }) }),
+      check: (node) => expect(node().textContent).toContain('87%'),
+    },
+    {
+      label: 'open-mistake count change',
+      overrides: () => ({ overlay: overlayWith('con_0', { openMistakes: 5 }) }),
+      check: (node) => expect(node().querySelector('.mistake-badge')?.textContent).toBe('5'),
+    },
+    {
+      label: 'review metadata change (activity becomes sufficient)',
+      overrides: () => ({
+        overlay: overlayWith('con_0', { hasEnoughActivity: true, lastScore: 0.9 }),
+      }),
+      check: (node) => expect(node().textContent).not.toContain('证据不足'),
+    },
+    {
+      label: 'learner-state transition 薄弱 → 进步中',
+      overrides: () => ({
+        overlay: overlayWith('con_0', { state: 'developing', treatAsWeak: false }),
+      }),
+      check: (node) => expect(node().textContent).toContain('进步中'),
+    },
+    {
+      // Misconception counts render outside the graph canvas: after a
+      // misconception refresh the graph itself receives value-identical
+      // props with fresh identities — which must be geometry-inert too.
+      label: 'misconception metadata refresh (identity-only props)',
+      overrides: () => ({
+        concepts: concepts.map((c) => ({ ...c })),
+        edges: graphEdges.map((e) => ({ ...e })),
+        overlay: new Map(overlay),
+      }),
+    },
+    {
+      label: 'Tutor-path highlight change',
+      overrides: () => ({ planTargetIds: new Set(['con_0']) }),
+      // The plan-target emphasis renders on the inner concept card.
+      check: (node) =>
+        expect(node().querySelector('.concept-node')?.className).toContain('plan-target'),
+    },
+    {
+      label: 'alias metadata change with unchanged canonical membership',
+      overrides: () => ({
+        concepts: concepts.map((c) =>
+          c.id === 'con_0' ? { ...c, name: '工作记忆(短时记忆)' } : { ...c },
+        ),
+      }),
+      labelAfter: '工作记忆(短时记忆)',
+      check: (node) => expect(node().textContent).toContain('工作记忆(短时记忆)'),
+    },
+  ];
+
+  it.each(cases)('$label keeps the dragged node exactly in place', async (refresh) => {
+    const { view } = renderGraph();
+    await waitForInitialFit();
+    const labelNow = () => refresh.labelAfter ?? '工作记忆';
+    await withNodeDrag('工作记忆', async ({ moveTo, start }) => {
+      moveTo(118, 112);
+      moveTo(160, 150);
+      await waitFor(() => {
+        expect(nodeWrapper('工作记忆').style.transform).not.toBe(start);
+      });
+      const midDrag = nodeWrapper('工作记忆').style.transform;
+      view.rerender(graphElement(refresh.overrides()));
+      // The refresh may update node data but never coordinates.
+      expect(nodeWrapper(labelNow()).style.transform).toBe(midDrag);
+      refresh.check?.(() => nodeWrapper(labelNow()));
+    });
+    // Exactly one persistence write on drag stop, at the rendered position.
+    await waitFor(() => {
+      const saved = loadSavedPositions('gv_1');
+      expect(Object.keys(saved)).toEqual(['con_0']);
+      expect(nodeWrapper(labelNow()).style.transform).toBe(
+        `translate(${saved.con_0!.x}px,${saved.con_0!.y}px)`,
+      );
+    });
+  });
+});
+
+describe('canonical-membership change during active drag', () => {
+  /**
+   * Explicit policy (mirrored in ConceptGraph): when the dragged concept's
+   * id leaves the concept set mid-gesture (canonical merge or deletion),
+   * the drag aborts safely — transient drag state is released, nothing is
+   * persisted for removed ids, and the abandoned in-gesture position is
+   * dropped so a re-created id renders from the deterministic layout again.
+   */
+  const conceptsWithoutDragged = () => concepts.filter((c) => c.id !== 'con_0');
+
+  it('aborts cleanly when the dragged concept is merged away and movement continues', async () => {
+    const { view } = renderGraph();
+    await waitForInitialFit();
+    let base = '';
+    await withNodeDrag('工作记忆', async ({ moveTo, start }) => {
+      base = start;
+      moveTo(118, 112);
+      moveTo(160, 150);
+      await waitFor(() => {
+        expect(nodeWrapper('工作记忆').style.transform).not.toBe(start);
+      });
+      // Canonical merge removes the dragged concept; the edge referencing
+      // it is filtered out with it.
+      view.rerender(graphElement({ concepts: conceptsWithoutDragged() }));
+      expect(screen.queryByText('工作记忆')).not.toBeInTheDocument();
+      // Movement after the removal must be inert and crash-free.
+      moveTo(220, 200);
+      expect(screen.queryByText('工作记忆')).not.toBeInTheDocument();
+    });
+    // Nothing was persisted for the removed concept.
+    expect(loadSavedPositions('gv_1')).toEqual({});
+    // Transient drag state is fully released: hover responds again.
+    fireEvent.mouseEnter(nodeWrapper('间隔重复'), { clientX: 20, clientY: 20 });
+    await screen.findByRole('tooltip');
+    fireEvent.mouseLeave(nodeWrapper('间隔重复'));
+    await waitFor(() => {
+      expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+    });
+    // A re-created id renders from the deterministic base layout again,
+    // never from the abandoned mid-drag position.
+    view.rerender(graphElement());
+    await waitFor(() => {
+      expect(nodeWrapper('工作记忆').style.transform).toBe(base);
+    });
+  });
+
+  it('releasing the pointer right after the merge persists nothing and keeps the graph alive', async () => {
+    const { view } = renderGraph();
+    await waitForInitialFit();
+    let base = '';
+    await withNodeDrag('工作记忆', async ({ moveTo, start }) => {
+      base = start;
+      moveTo(118, 112);
+      moveTo(160, 150);
+      await waitFor(() => {
+        expect(nodeWrapper('工作记忆').style.transform).not.toBe(start);
+      });
+      view.rerender(graphElement({ concepts: conceptsWithoutDragged() }));
+      // The helper's finally releases the pointer with no further movement:
+      // React Flow ends the gesture with no surviving dragged node.
+    });
+    expect(loadSavedPositions('gv_1')).toEqual({});
+    expect(nodeWrapper('间隔重复')).toBeInTheDocument();
+    // Restoring the concept renders the deterministic layout position and
+    // the next gesture works normally after the aborted one.
+    view.rerender(graphElement());
+    await waitFor(() => {
+      expect(nodeWrapper('工作记忆').style.transform).toBe(base);
+    });
+    await dragNode('工作记忆', 60, 40);
+    await waitFor(() => {
+      expect(Object.keys(loadSavedPositions('gv_1'))).toContain('con_0');
     });
   });
 });

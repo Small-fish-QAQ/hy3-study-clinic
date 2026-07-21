@@ -735,7 +735,6 @@ describe('学习图谱工作台 — 自适应学习升级', () => {
   it('renders ONE canonical node for aligned concepts and exposes aliases in the inspector', async () => {
     openSavedWorkspace();
     installViewMock(adaptiveRoutes());
-    const user = userEvent.setup();
     renderView();
 
     // The merged pair renders once (canonical name), not twice.
@@ -746,7 +745,10 @@ describe('学习图谱工作台 — 自适应学习升级', () => {
     expect(within(canvas).queryByText('Working memory')).not.toBeInTheDocument();
 
     // Selecting the canonical node shows aliases and both documents.
-    await user.click(within(canvas).getAllByText('工作记忆')[0]!);
+    // Canvas clicks use fireEvent (as elsewhere in this file): user-event
+    // constructs events whose own `view` is null, which crashes React
+    // Flow's d3-drag mousedown listener in jsdom.
+    fireEvent.click(within(canvas).getAllByText('工作记忆')[0]!);
     const inspector = await screen.findByLabelText('概念详情:工作记忆');
     expect(within(inspector).getByText(/别名:Working memory/)).toBeInTheDocument();
     expect(within(inspector).getByText(/来自 2 份文档/)).toBeInTheDocument();
@@ -862,14 +864,14 @@ describe('学习图谱工作台 — 自适应学习升级', () => {
       },
       ...baseRoutes(),
     ]);
-    const user = userEvent.setup();
     renderView();
 
     const canvas = await screen.findByLabelText('个人学习图谱');
     await waitFor(() => {
       expect(within(canvas).getAllByText('工作记忆').length).toBeGreaterThan(0);
     });
-    await user.click(within(canvas).getAllByText('工作记忆')[0]!);
+    // Canvas clicks use fireEvent — see the canonical-node test above.
+    fireEvent.click(within(canvas).getAllByText('工作记忆')[0]!);
     const inspector = await screen.findByLabelText(/概念详情:工作记忆/);
     expect(within(inspector).getByText('待确认')).toBeInTheDocument();
     expect(within(inspector).getByText(/学习者可能混淆了容量限制/)).toBeInTheDocument();
