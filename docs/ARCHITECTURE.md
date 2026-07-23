@@ -83,7 +83,8 @@ POST /api/quizzes { materialId, config }
 1. 上传统一走 base64 JSON(≤10MB 解码后),先校验扩展名,再校验魔数(`%PDF-` / ZIP `PK`),不匹配即 422;
 2. PDF 用 `unpdf`(PDF.js serverless 构建)逐页抽取文本,拼接后记录每页在归一化全文中的偏移区间,分段后的块按区间赋 `pageNumber`;无文本页产生可见警告,整份无文本 → `PARSE_FAILED`(绝不落成"空文档");
 3. DOCX 用 `mammoth` 只读 `word/document.xml`(忽略宏/脚本/媒体),产出的受限 HTML 由本地确定性转换器变为 Markdown 风格文本 —— 标题变成 `#` 行,交给既有分段器后自然获得 headingPath 溯源;
-4. 所有块保持不变量 `content.slice(startOffset, endOffset) === block.content`。
+4. 解析输出在**计算页区间/偏移之前**做保守清洗(`sanitizeParsedText`):移除 NUL(真实世界的 Chrome/Skia PDF 会把无法反查 Unicode 的项目符号/箭头字形在 ToUnicode CMap 中显式映射为 `<0000>`,PDF.js 会原样输出)、其余 C0/C1 控制字符、DEL、软连字符、游离 BOM、Unicode 非字符与未配对代理项;换页符等行分隔伪字符归一为换行;中文、emoji(含 ZWJ 序列)、标点、制表符与换行原样保留。二进制嗅探(`looksBinary`)只作用于原始粘贴/`.md`/`.txt` 字节,绝不作用于 PDF/DOCX 解析输出 —— 否则合法文档会因个别提取伪字符被整体误判为二进制而拒绝导入;
+5. 所有块保持不变量 `content.slice(startOffset, endOffset) === block.content`。
 
 资料库(legacy 单资料入口,`POST /api/materials`)与课程空间文档上传共用同一条 `createFromUpload` 摄取路径:同一解析器、同一扩展名/魔数/大小校验与同一套错误文案。从资料库导入的文件会像旧资料一样落入自动创建的同名兼容空间,页码/标题溯源与原始字节(供重新解析)全部保留;任何校验或解析失败都发生在首次写库之前,不会留下空资料或孤儿兼容空间。两个入口都不支持 OCR:纯扫描图片型 PDF 会被结构化拒绝。
 
