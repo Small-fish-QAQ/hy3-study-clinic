@@ -297,6 +297,35 @@ describe('POST /api/materials (file imports)', () => {
     }
   });
 
+  it('imports a Chrome/Skia-style PDF whose bullets extract as U+0000 artifacts (regression)', async () => {
+    // Mirrors the real-world failure with Weknora学习(2).pdf: the composite
+    // font's ToUnicode CMap maps bullet glyphs to <0000>, unpdf emits NUL,
+    // and the import used to be rejected as "binary" by the raw-text sniffer.
+    const res = await ctx.app.inject({
+      method: 'POST',
+      url: '/api/materials',
+      payload: { filename: 'Weknora学习(2).pdf', dataBase64: fixtureB64('artifacts.pdf') },
+    });
+    expect(res.statusCode).toBe(201);
+    const { material, blocks } = res.json();
+    expect(material.sourceType).toBe('pdf');
+    expect(material.pageCount).toBe(2);
+    // Useful Chinese text and emoji are preserved…
+    expect(material.content).toContain('知识');
+    expect(material.content).toContain('😀');
+    // …while extractor artifacts never reach stored text.
+    expect(material.content).not.toContain(String.fromCharCode(0));
+    for (const block of blocks as Array<{ content: string }>) {
+      expect(block.content).not.toContain(String.fromCharCode(0));
+    }
+    // Page provenance and the slice invariant survive sanitation.
+    expect(blocks[0].pageNumber).toBe(1);
+    expect(blocks.at(-1).pageNumber).toBe(2);
+    expect(material.content.slice(blocks[0].startOffset, blocks[0].endOffset)).toBe(
+      blocks[0].content,
+    );
+  });
+
   it('imports a DOCX with heading provenance', async () => {
     const res = await ctx.app.inject({
       method: 'POST',

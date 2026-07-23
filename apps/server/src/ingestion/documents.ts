@@ -5,7 +5,7 @@ import {
   type MediaType,
   type SourceType,
 } from '@hy3-clinic/shared';
-import { IngestionError, looksBinary, normalizeText } from './ingest.js';
+import { IngestionError, looksBinary, normalizeText, sanitizeParsedText } from './ingest.js';
 
 /**
  * Binary document extraction (PDF / DOCX) with provenance.
@@ -17,6 +17,10 @@ import { IngestionError, looksBinary, normalizeText } from './ingest.js';
  *   reads document.xml — macros/scripts/media are ignored entirely;
  * - a parse that yields no usable text is a structured PARSE_FAILED error,
  *   never a silently-empty document;
+ * - extracted text is conservatively sanitized (sanitizeParsedText) BEFORE
+ *   page spans are computed, so extractor artifacts (e.g. U+0000 emitted for
+ *   unmapped Chrome/Skia glyphs) never reach stored text; the raw-byte
+ *   binary sniffer (looksBinary) applies to .md/.txt uploads only;
  * - per-page provenance is preserved for PDFs (page spans over the joined,
  *   normalized text); DOCX headings survive as Markdown-style headings so the
  *   existing segmenter records heading paths;
@@ -131,7 +135,10 @@ export async function parsePdf(buffer: Buffer): Promise<ParsedBinaryDocument> {
 
   for (let i = 0; i < pageTexts.length; i++) {
     const pageNumber = i + 1;
-    const normalized = normalizeText(pageTexts[i] ?? '').trim();
+    // Sanitize BEFORE computing spans: extractor artifacts (e.g. unmapped
+    // Chrome/Skia bullet glyphs emitted as U+0000) must never reach stored
+    // text, and span offsets must index into the stored (sanitized) text.
+    const normalized = normalizeText(sanitizeParsedText(pageTexts[i] ?? '')).trim();
     if (normalized.length === 0) {
       warnings.push(`第 ${pageNumber} 页未提取到文本(可能是扫描图片页;未启用 OCR)。`);
       continue;
@@ -185,7 +192,7 @@ export async function parseDocx(buffer: Buffer): Promise<ParsedBinaryDocument> {
     );
   }
 
-  const content = normalizeText(docxHtmlToText(html));
+  const content = normalizeText(sanitizeParsedText(docxHtmlToText(html)));
   if (content.trim().length === 0) {
     throw new IngestionError(ApiErrorCode.ParseFailed, 'DOCX 中没有可提取的文本,已拒绝导入。');
   }

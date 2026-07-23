@@ -7,6 +7,7 @@ import { IngestionError } from './ingest.js';
 import {
   decodeUpload,
   docxHtmlToText,
+  parseBinaryUpload,
   parseDocx,
   parsePdf,
   uploadKindForFilename,
@@ -16,6 +17,7 @@ import { segmentMaterial } from './segment.js';
 const filesDir = join(dirname(fileURLToPath(import.meta.url)), '../testing/files');
 const samplePdf = () => readFileSync(join(filesDir, 'sample.pdf'));
 const sampleDocx = () => readFileSync(join(filesDir, 'sample.docx'));
+const artifactsPdf = () => readFileSync(join(filesDir, 'artifacts.pdf'));
 
 describe('uploadKindForFilename', () => {
   it('maps supported extensions to source/media types', () => {
@@ -99,6 +101,57 @@ describe('parsePdf', () => {
     await expect(parsePdf(malformed)).rejects.toMatchObject({
       code: ApiErrorCode.ParseFailed,
     });
+  });
+
+  it('sanitizes Chrome/Skia extraction artifacts (ToUnicode → U+0000) with exact provenance', async () => {
+    // artifacts.pdf is a self-authored fixture replicating the structure of
+    // the real-world failure (Weknora学习(2).pdf): a Type0/Identity-H
+    // composite font whose ToUnicode CMap maps bullet glyph CIDs to <0000>,
+    // so unpdf emits NUL characters inside valid Chinese text.
+    const parsed = await parsePdf(artifactsPdf());
+    expect(parsed.pageCount).toBe(2);
+    expect(parsed.warnings).toEqual([]);
+
+    // Useful text survives: CJK, latin and emoji.
+    expect(parsed.content).toContain('知识');
+    expect(parsed.content).toContain('memory retrieval');
+    expect(parsed.content).toContain('😀');
+    expect(parsed.content).toContain('过时');
+    expect(parsed.content).toContain('example');
+
+    // Extractor artifacts never reach parsed content.
+    expect(parsed.content).not.toContain(String.fromCharCode(0));
+    expect(parsed.content).not.toContain(String.fromCharCode(0xad));
+
+    // Page spans are computed over the SANITIZED text and stay exact.
+    expect(parsed.pageSpans).toHaveLength(2);
+    const [span1, span2] = parsed.pageSpans!;
+    const page1 = parsed.content.slice(span1!.startOffset, span1!.endOffset);
+    const page2 = parsed.content.slice(span2!.startOffset, span2!.endOffset);
+    expect(page1).toContain('知识');
+    expect(page1).not.toContain('过时');
+    expect(page2).toContain('example');
+
+    const blocks = segmentMaterial('mat_artifacts', parsed.content, {
+      pageSpans: parsed.pageSpans!,
+    });
+    expect(blocks[0]!.pageNumber).toBe(1);
+    expect(blocks[blocks.length - 1]!.pageNumber).toBe(2);
+    for (const block of blocks) {
+      expect(parsed.content.slice(block.startOffset, block.endOffset)).toBe(block.content);
+      expect(block.content).not.toContain(String.fromCharCode(0));
+    }
+  });
+});
+
+describe('parseBinaryUpload (text branch)', () => {
+  it('keeps raw binary detection strict for .md/.txt uploads', async () => {
+    const junk = Buffer.from([0x50, 0x4b, 0x00, 0x03, 0x04, 0x00, 0x01, 0x02]);
+    for (const sourceType of ['md', 'txt'] as const) {
+      await expect(parseBinaryUpload(sourceType, junk)).rejects.toMatchObject({
+        code: ApiErrorCode.BinaryInput,
+      });
+    }
   });
 });
 

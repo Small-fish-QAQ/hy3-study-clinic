@@ -7,6 +7,7 @@ import { buildTestApp, type TestApp } from '../testing/testApp.js';
 const filesDir = join(dirname(fileURLToPath(import.meta.url)), '../testing/files');
 const samplePdfB64 = () => readFileSync(join(filesDir, 'sample.pdf')).toString('base64');
 const sampleDocxB64 = () => readFileSync(join(filesDir, 'sample.docx')).toString('base64');
+const artifactsPdfB64 = () => readFileSync(join(filesDir, 'artifacts.pdf')).toString('base64');
 
 describe('workspace CRUD', () => {
   let ctx: TestApp;
@@ -119,6 +120,25 @@ describe('document ingestion routes', () => {
     expect(material.pageCount).toBe(2);
     expect(material.parserVersion).toBe('pdf-unpdf-v1');
     expect(blocks.length).toBeGreaterThanOrEqual(2);
+    expect(blocks[0].pageNumber).toBe(1);
+    expect(blocks[blocks.length - 1].pageNumber).toBe(2);
+  });
+
+  it('imports a Chrome/Skia-style PDF with NUL extraction artifacts (regression)', async () => {
+    // The workspace surface (学习图谱) must accept the same real-world PDFs
+    // as the material library: extractor artifacts are sanitized, not
+    // mistaken for binary input.
+    const response = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/workspaces/${workspaceId}/documents`,
+      payload: { kind: 'file', filename: 'Weknora学习(2).pdf', dataBase64: artifactsPdfB64() },
+    });
+    expect(response.statusCode).toBe(201);
+    const { material, blocks } = response.json();
+    expect(material.sourceType).toBe('pdf');
+    expect(material.pageCount).toBe(2);
+    expect(material.content).toContain('知识');
+    expect(material.content).not.toContain(String.fromCharCode(0));
     expect(blocks[0].pageNumber).toBe(1);
     expect(blocks[blocks.length - 1].pageNumber).toBe(2);
   });

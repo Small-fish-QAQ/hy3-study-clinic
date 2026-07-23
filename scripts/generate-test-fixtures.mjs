@@ -65,6 +65,75 @@ function buildEmptyPdf() {
 }
 
 // ---------------------------------------------------------------------------
+// 2-page PDF replicating the Chrome/Skia structure behind a real-world
+// import failure: a Type0 / Identity-H composite font whose ToUnicode CMap
+// explicitly maps unmapped glyph CIDs (list bullets) to <0000>, which makes
+// PDF.js emit U+0000 inside valid Chinese text. Also maps CJK, an emoji
+// (surrogate pair) and a soft hyphen so sanitation is exercised through the
+// real parser. Latin text uses plain Helvetica alongside, as Skia does.
+// ---------------------------------------------------------------------------
+function buildArtifactsPdf() {
+  // CID 0001 -> U+0000 (bullet artifact), 0002..0005 -> 知识过时,
+  // 0006 -> U+1F600 (emoji), 0007 -> U+00AD (soft hyphen), 0008 -> space.
+  const cmap = `/CIDInit /ProcSet findresource begin
+12 dict begin
+begincmap
+/CIDSystemInfo << /Registry (Adobe) /Ordering (UCS) /Supplement 0 >> def
+/CMapName /Adobe-Identity-UCS def
+/CMapType 2 def
+1 begincodespacerange
+<0000> <FFFF>
+endcodespacerange
+8 beginbfchar
+<0001> <0000>
+<0002> <77E5>
+<0003> <8BC6>
+<0004> <8FC7>
+<0005> <65F6>
+<0006> <D83DDE00>
+<0007> <00AD>
+<0008> <0020>
+endbfchar
+endcmap
+CMap defined
+end
+end
+`;
+
+  // Page 1: three bullet CIDs + space + 知识, latin line, emoji line.
+  const page1 = [
+    'BT /F2 12 Tf 72 720 Td <000100010001000800020003> Tj ET',
+    'BT /F1 12 Tf 72 700 Td (memory retrieval) Tj ET',
+    'BT /F2 12 Tf 72 680 Td <0006> Tj ET',
+  ].join('\n');
+  // Page 2: 过时, then a soft-hyphen artifact inside "example".
+  const page2 = [
+    'BT /F2 12 Tf 72 720 Td <00040005> Tj ET',
+    'BT 72 700 Td /F1 12 Tf (spaced repetition exam) Tj /F2 12 Tf <0007> Tj /F1 12 Tf (ple) Tj ET',
+  ].join('\n');
+
+  const objects = [];
+  objects[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+  objects[2] = '<< /Type /Pages /Kids [3 0 R 5 0 R] /Count 2 >>';
+  objects[3] =
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 7 0 R /F2 8 0 R >> >> >>';
+  objects[4] = `<< /Length ${page1.length} >>\nstream\n${page1}\nendstream`;
+  objects[5] =
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 7 0 R /F2 8 0 R >> >> >>';
+  objects[6] = `<< /Length ${page2.length} >>\nstream\n${page2}\nendstream`;
+  objects[7] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>';
+  objects[8] =
+    '<< /Type /Font /Subtype /Type0 /BaseFont /Hy3Artifact /Encoding /Identity-H /DescendantFonts [9 0 R] /ToUnicode 10 0 R >>';
+  objects[9] =
+    '<< /Type /Font /Subtype /CIDFontType2 /BaseFont /Hy3Artifact /CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> /FontDescriptor 11 0 R /CIDToGIDMap /Identity /DW 1000 >>';
+  objects[10] = `<< /Length ${cmap.length} >>\nstream\n${cmap}endstream`;
+  objects[11] =
+    '<< /Type /FontDescriptor /FontName /Hy3Artifact /Flags 4 /FontBBox [0 0 1000 1000] /ItalicAngle 0 /Ascent 800 /Descent -200 /CapHeight 700 /StemV 80 >>';
+
+  return serializePdf(objects);
+}
+
+// ---------------------------------------------------------------------------
 // Minimal DOCX (zip with the three required parts) built with jszip
 // (transitive dependency of mammoth; used here at generation time only).
 // ---------------------------------------------------------------------------
@@ -120,6 +189,9 @@ writeFileSync(join(here, 'sample.pdf'), pdf);
 const emptyPdf = buildEmptyPdf();
 writeFileSync(join(here, 'empty.pdf'), emptyPdf);
 
+const artifactsPdf = buildArtifactsPdf();
+writeFileSync(join(here, 'artifacts.pdf'), artifactsPdf);
+
 // Malformed variants: right extensions, wrong bytes / truncated container.
 writeFileSync(join(here, 'malformed.pdf'), Buffer.from('%PDF-1.4\nthis is not a real pdf body'));
 writeFileSync(join(here, 'malformed.docx'), Buffer.from('PKbroken-zip-payload', 'latin1'));
@@ -130,5 +202,6 @@ writeFileSync(join(here, 'sample.docx'), docx);
 console.log('fixtures written:', {
   pdf: pdf.length,
   emptyPdf: emptyPdf.length,
+  artifactsPdf: artifactsPdf.length,
   docx: docx.length,
 });

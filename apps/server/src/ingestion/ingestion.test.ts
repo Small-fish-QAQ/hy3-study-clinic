@@ -7,6 +7,7 @@ import {
   looksBinary,
   MAX_SOURCE_CHARS,
   normalizeText,
+  sanitizeParsedText,
   sourceTypeForFilename,
 } from './ingest.js';
 import { segmentContent, segmentMaterial } from './segment.js';
@@ -36,6 +37,71 @@ describe('looksBinary', () => {
 
   it('accepts normal Chinese markdown', () => {
     expect(looksBinary(SAMPLE_MATERIAL_CONTENT)).toBe(false);
+  });
+});
+
+describe('sanitizeParsedText', () => {
+  // Escape-free artifact constants (mirrors what extractors actually emit).
+  const NUL = String.fromCharCode(0);
+
+  it('removes NUL bullet artifacts while preserving the surrounding CJK text', () => {
+    // Chrome/Skia PDFs map unmapped list-bullet glyphs to U+0000 (three per
+    // bullet in the reported document) — exactly what unpdf then emits.
+    expect(sanitizeParsedText(`${NUL}${NUL}${NUL} 知识过时(训练截止后的事不知)`)).toBe(
+      ' 知识过时(训练截止后的事不知)',
+    );
+  });
+
+  it('removes controls, DEL, C1, soft hyphens, stray BOMs and noncharacters', () => {
+    const input = [
+      'exam',
+      String.fromCharCode(0xad), // soft hyphen inside a word
+      'ple ',
+      String.fromCharCode(0x01), // C0 control
+      String.fromCharCode(0x7f), // DEL
+      String.fromCharCode(0x92), // C1 control
+      String.fromCharCode(0xfeff), // stray BOM
+      String.fromCharCode(0xfdd0), // noncharacter
+      String.fromCharCode(0xfffe), // U+FFFE
+      String.fromCharCode(0xffff), // U+FFFF
+      String.fromCodePoint(0x1fffe), // supplementary-plane noncharacter
+      '终点',
+    ].join('');
+    expect(sanitizeParsedText(input)).toBe('example 终点');
+  });
+
+  it('normalizes line-break artifacts (FF, VT, NEL, LS, PS) to newlines', () => {
+    const input = [
+      '第一行',
+      String.fromCharCode(0x0c),
+      '第二行',
+      String.fromCharCode(0x0b),
+      '第三行',
+      String.fromCharCode(0x85),
+      '第四行',
+      String.fromCharCode(0x2028),
+      '第五行',
+      String.fromCharCode(0x2029),
+      '第六行',
+    ].join('');
+    expect(sanitizeParsedText(input)).toBe('第一行\n第二行\n第三行\n第四行\n第五行\n第六行');
+  });
+
+  it('drops unpaired surrogate halves but keeps valid emoji and ZWJ sequences', () => {
+    const loneHigh = String.fromCharCode(0xd83d);
+    const loneLow = String.fromCharCode(0xde00);
+    expect(sanitizeParsedText(`前${loneHigh}后${loneLow}续 😀 👨‍👩‍👧`)).toBe('前后续 😀 👨‍👩‍👧');
+  });
+
+  it('keeps tabs, newlines, CR, NBSP and punctuation unchanged', () => {
+    const text = `甲\t乙\n丙\r丁${String.fromCharCode(0xa0)}— "引号",句号。`;
+    expect(sanitizeParsedText(text)).toBe(text);
+  });
+
+  it('is idempotent', () => {
+    const once = sanitizeParsedText(`a${String.fromCharCode(0)}b${String.fromCharCode(0x0c)}c`);
+    expect(once).toBe('ab\nc');
+    expect(sanitizeParsedText(once)).toBe(once);
   });
 });
 
@@ -74,6 +140,26 @@ describe('ingestSource', () => {
     const result = ingestSource('第一行\r\n第二行\r\n', { sourceType: 'paste' });
     expect(result.content).toBe('第一行\n第二行');
     expect(result.charCount).toBe(7);
+  });
+
+  it('keeps raw binary detection strict for every raw text source type', () => {
+    const junk = `PK${String.fromCharCode(0)}${String.fromCharCode(3)}${String.fromCharCode(4)}`;
+    for (const sourceType of ['paste', 'md', 'txt'] as const) {
+      expect(() => ingestSource(junk, { sourceType })).toThrowError(/二进制/);
+    }
+  });
+
+  it('does not run the raw-bytes binary sniffer on parsed PDF/DOCX content', () => {
+    // PDF/DOCX content reaches ingestSource as parser output that was already
+    // cleaned by sanitizeParsedText; the shared size/emptiness limits still
+    // apply, but the raw-byte sniff must not reject valid parsed documents.
+    const parsed = '知识过时 memory retrieval 😀';
+    expect(ingestSource(parsed, { sourceType: 'pdf' }).content).toBe(parsed);
+    expect(ingestSource(parsed, { sourceType: 'docx' }).content).toBe(parsed);
+    expect(() => ingestSource('', { sourceType: 'pdf' })).toThrowError(/为空/);
+    expect(() =>
+      ingestSource('学'.repeat(MAX_SOURCE_CHARS + 1), { sourceType: 'pdf' }),
+    ).toThrowError(/过长/);
   });
 });
 
