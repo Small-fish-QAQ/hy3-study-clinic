@@ -64,13 +64,20 @@ export function SourceEvidencePanel({
   const before = block.content.slice(0, grounding.startOffset);
   const quote = block.content.slice(grounding.startOffset, grounding.endOffset);
   const after = block.content.slice(grounding.endOffset);
-  const headingPath = block.headingPath.join(' / ');
+  // Provenance shown beside the title: heading path (Markdown/DOCX) and/or
+  // page number (PDF) — same wording as the graph inspector's evidence cards.
+  const location = [
+    block.headingPath.join(' / '),
+    block.pageNumber ? `第 ${block.pageNumber} 页` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <div className="evidence" id={panelId}>
       <div className="evidence-head">
         <span>
-          原文依据{headingPath ? ` · ${headingPath}` : ''}
+          原文依据{location ? ` · ${location}` : ''}
           {grounding.reanchored ? '(已自动校正到正确源块)' : ''}
           {grounding.occurrenceCount > 1
             ? `(该引文在源块中出现 ${grounding.occurrenceCount} 次,高亮第一处)`

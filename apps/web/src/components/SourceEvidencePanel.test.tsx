@@ -50,6 +50,29 @@ describe('SourceEvidencePanel', () => {
     expect(screen.getByText(/已自动校正到正确源块/)).toBeInTheDocument();
   });
 
+  it('cites the PDF page number when the block carries page provenance', () => {
+    const pdfBlocks = [{ ...blocks[0]!, heading: null, headingPath: [], pageNumber: 3 }];
+    render(
+      <SourceEvidencePanel grounding={concepts[0]!.grounding} blocks={pdfBlocks} defaultOpen />,
+    );
+    expect(screen.getByText(/原文依据 · 第 3 页/)).toBeInTheDocument();
+  });
+
+  it('shows heading path and page number together when both exist', () => {
+    const paginatedBlocks = [{ ...blocks[0]!, pageNumber: 2 }];
+    render(
+      <SourceEvidencePanel
+        grounding={concepts[0]!.grounding}
+        blocks={paginatedBlocks}
+        defaultOpen
+      />,
+    );
+    expect(screen.getByText(/· 第 2 页/)).toBeInTheDocument();
+    expect(
+      screen.getByText(new RegExp(`${blocks[0]!.headingPath.join(' / ')} · 第 2 页`)),
+    ).toBeInTheDocument();
+  });
+
   it('exposes collapsed state and aria-expanded/aria-controls before interaction', () => {
     render(<SourceEvidencePanel grounding={concepts[0]!.grounding} blocks={blocks} />);
     const toggle = screen.getByRole('button', { name: '查看原文依据' });
