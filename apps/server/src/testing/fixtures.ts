@@ -65,6 +65,7 @@ export function makeBlock(overrides: Partial<SourceBlock> = {}): SourceBlock {
     heading: '记忆的类型',
     headingPath: ['记忆的类型'],
     pageNumber: null,
+    pageEnd: null,
     content: '工作记忆的容量十分有限。',
     startOffset: 9,
     endOffset: 21,

@@ -247,4 +247,29 @@ describe('segmentMaterial', () => {
   it('rejects documents with no body paragraphs', () => {
     expect(() => segmentMaterial('mat_x', '# 只有标题\n\n## 另一个标题')).toThrowError(/正文/);
   });
+
+  it('leaves page provenance null without page spans', () => {
+    const blocks = segmentMaterial('mat_x', '第一段。\n\n第二段。');
+    for (const block of blocks) {
+      expect(block.pageNumber).toBeNull();
+      expect(block.pageEnd).toBeNull();
+    }
+  });
+
+  it('assigns exact single-page and cross-page ranges from spans', () => {
+    // Page 1 owns the first paragraph and the start of the second; page 2
+    // owns the rest — the second block must record the 1–2 range.
+    const content = '第一页的段落。\n\n跨页段落前半部分接后半部分在第二页。\n\n第二页的段落。';
+    const splitAt = content.indexOf('接后半');
+    const blocks = segmentMaterial('mat_x', content, {
+      pageSpans: [
+        { pageNumber: 1, startOffset: 0, endOffset: splitAt },
+        { pageNumber: 2, startOffset: splitAt, endOffset: content.length },
+      ],
+    });
+    expect(blocks).toHaveLength(3);
+    expect(blocks[0]).toMatchObject({ pageNumber: 1, pageEnd: 1 });
+    expect(blocks[1]).toMatchObject({ pageNumber: 1, pageEnd: 2 });
+    expect(blocks[2]).toMatchObject({ pageNumber: 2, pageEnd: 2 });
+  });
 });

@@ -98,7 +98,7 @@ export function segmentMaterial(
   materialId: string,
   content: string,
   options: {
-    /** Page spans over `content` (PDF sources); blocks inside a span get its page number. */
+    /** Page spans over `content` (PDF sources); blocks receive the page range they overlap. */
     pageSpans?: Array<{ pageNumber: number; startOffset: number; endOffset: number }>;
   } = {},
 ): SourceBlock[] {
@@ -122,15 +122,23 @@ export function segmentMaterial(
     }
     return null;
   };
-  return raw.map((seg, index) => ({
-    id: blockId(materialId, index, seg.content),
-    materialId,
-    index,
-    heading: seg.heading,
-    headingPath: seg.headingPath,
-    pageNumber: pageFor(seg.startOffset),
-    content: seg.content,
-    startOffset: seg.startOffset,
-    endOffset: seg.endOffset,
-  }));
+  return raw.map((seg, index) => {
+    const pageNumber = pageFor(seg.startOffset);
+    // End page from the block's LAST content character; a block whose text
+    // continues onto later pages (repaired cross-page paragraph) records its
+    // full page range instead of silently claiming a single page.
+    const pageEnd = pageNumber !== null ? pageFor(seg.endOffset - 1) : null;
+    return {
+      id: blockId(materialId, index, seg.content),
+      materialId,
+      index,
+      heading: seg.heading,
+      headingPath: seg.headingPath,
+      pageNumber,
+      pageEnd: pageEnd ?? pageNumber,
+      content: seg.content,
+      startOffset: seg.startOffset,
+      endOffset: seg.endOffset,
+    };
+  });
 }

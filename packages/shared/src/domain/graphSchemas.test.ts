@@ -75,7 +75,25 @@ describe('workspace and document schemas', () => {
       endOffset: 2,
     });
     expect(block.pageNumber).toBeNull();
+    // Legacy payloads without pageEnd (pre-page-range rows) default to null.
+    expect(block.pageEnd).toBeNull();
     expect(() => SourceBlockSchema.parse({ ...block, pageNumber: 0 })).toThrow();
+  });
+
+  it('accepts page-range provenance and rejects non-positive page ends', () => {
+    const base = {
+      id: 'blk_1',
+      materialId: 'mat_1',
+      index: 0,
+      heading: '章节',
+      headingPath: ['章节'],
+      pageNumber: 2,
+      content: '内容',
+      startOffset: 0,
+      endOffset: 2,
+    };
+    expect(SourceBlockSchema.parse({ ...base, pageEnd: 3 }).pageEnd).toBe(3);
+    expect(() => SourceBlockSchema.parse({ ...base, pageEnd: 0 })).toThrow();
   });
 
   it('rejects invalid workspace names and oversized uploads at the contract layer', () => {

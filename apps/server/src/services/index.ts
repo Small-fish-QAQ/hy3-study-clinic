@@ -12,6 +12,7 @@ import { createGraphService, type GraphService } from './graph.js';
 import { createPlannerService, type PlannerService } from './planner.js';
 import { createAlignmentService, type AlignmentService } from './alignment.js';
 import { createAssessmentService, type AssessmentService } from './assessment.js';
+import { createAttemptsService, type AttemptsService } from './attempts.js';
 import { createMisconceptionsService, type MisconceptionsService } from './misconceptions.js';
 import { createReviewService, type ReviewService } from './review.js';
 import { createQueueService, type QueueService } from './queue.js';
@@ -29,6 +30,7 @@ export interface Services {
   planner: PlannerService;
   alignment: AlignmentService;
   assessment: AssessmentService;
+  attempts: AttemptsService;
   misconceptions: MisconceptionsService;
   review: ReviewService;
   queue: QueueService;
@@ -57,6 +59,7 @@ export function createServices({ repos, provider, clock, providerModel }: Servic
   const planner = createPlannerService({ repos, provider, clock, quizzes, remediation });
   const alignment = createAlignmentService({ repos, provider, clock });
   const assessment = createAssessmentService({ repos, provider, clock, misconceptions });
+  const attempts = createAttemptsService({ repos });
   const queue = createQueueService({ repos, clock });
   const tutor = createTutorService({ repos, provider, clock, providerModel });
   return {
@@ -71,6 +74,7 @@ export function createServices({ repos, provider, clock, providerModel }: Servic
     planner,
     alignment,
     assessment,
+    attempts,
     misconceptions,
     review,
     queue,

@@ -54,6 +54,15 @@ POST /api/quizzes { materialId, config }
 - **总分**:确定性求和 + 归一化(`computeTotals`)。
 - **掌握度**(`shared/mastery.ts`):指数移动平均 `m' = clamp01(m + 0.3 × (score − m))`,初始 0.5。数据库层再加 `CHECK (mastery BETWEEN 0 AND 1)` 双保险。
 
+### 判分快照与测验历史(completed-attempt history)
+
+一次成功判分即一份**不可变快照**:题目(含判分后揭示的答案与评分要点)、作答、逐题判分、总分本就以只插入方式持久化在 `quizzes/questions`、`submissions`、`grading_results`;迁移 v10 再补上两个历史上只存在于 HTTP 响应中的字段——判分 Provider(`fake`/`hy3`)与确定性 `stateChanges` 汇总(写一次即锁定,`recordStateChanges` 不覆盖已有值)。
+
+- **只读回放**:`GET /api/workspaces/:id/attempts`(最近 50 条,`created_at DESC, id DESC` 确定性排序)与 `GET /api/workspaces/:id/attempts/:attemptId`(`services/attempts.ts`)只读取持久化行,不调用 Provider,也不触碰掌握度/错题/误区/复习状态——这些副作用只在提交判分时发生一次(`attempts.test.ts` 用全表 dump 断言重复读取零写入)。
+- **空间归属**:普通/康复测验经其文档解析所属空间(`COALESCE(quiz.workspace_id, material.workspace_id)`),课程空间评估直接携带;跨空间读取与不存在的记录一样返回 404。
+- **前端**:练习模块第三个子页「测验历史」(`QuizHistoryView`)复用 `ResultsView`(`readOnly` 隐藏主动流程按钮),证据面板使用详情响应返回的**当前**源块。
+- **诚实降级**:升级前的旧判分行两列为 NULL → 显示「判分模式未记录」与「未保存状态变化明细」,绝不回填、绝不重跑 Hy3;文档被删除或重新解析后,引用的源块缺失 → 明确标注原文不可用,仅展示题目内持久化的验证引文;普通测验的历史记录随其文档删除而级联清除(与错题/掌握度同一生命周期),课程空间评估的记录则在文档删除后依然可回看。
+
 ## 5. 康复闭环
 
 `services/remediation.ts` 的目标选择完全确定性:
@@ -81,9 +90,9 @@ POST /api/quizzes { materialId, config }
 文档解析管线(`ingestion/documents.ts`):
 
 1. 上传统一走 base64 JSON(≤10MB 解码后),先校验扩展名,再校验魔数(`%PDF-` / ZIP `PK`),不匹配即 422;
-2. PDF 用 `unpdf`(PDF.js serverless 构建)逐页抽取文本,拼接后记录每页在归一化全文中的偏移区间,分段后的块按区间赋 `pageNumber`;无文本页产生可见警告,整份无文本 → `PARSE_FAILED`(绝不落成"空文档");
+2. PDF 不再把页面拍平成纯文本:`pdfLayout.ts` 从 `unpdf`(PDF.js serverless 构建)取**带坐标/字号的文本项**,分阶段确定性重建 —— 基线聚类还原视觉行(阅读顺序稳定)→ 全文档统计(正文字号、换行行距、正文右边界)→ 依据跨页重复 + 页边位置移除页眉/页脚与纯页码行(字号达到标题级的行绝不移除)→ 字号分层识别标题并输出为 `#` Markdown 标题(块因此获得 headingPath)→ 证据门控的视觉换行修复(行距 + 行宽 + "下一行首个不可拆单元放不下"的 kinsoku 判定;中日韩直接拼接、拉丁词补空格、行尾连字符去除)→ 恢复被 ToUnicode `<0000>` 吞掉的列表项目符号(`- ` 项)→ 保守表格行(仅当大间隙跨行对齐才用 ` | ` 分隔,否则保持可读行序)→ 输出 Markdown 风格文本与**逐页精确字符区间**。分段后的块按区间赋 `pageNumber`–`pageEnd` 页码范围(跨页修复的段落两值不同);无文本页产生可见警告,整份无文本 → `PARSE_FAILED`(绝不落成"空文档");
 3. DOCX 用 `mammoth` 只读 `word/document.xml`(忽略宏/脚本/媒体),产出的受限 HTML 由本地确定性转换器变为 Markdown 风格文本 —— 标题变成 `#` 行,交给既有分段器后自然获得 headingPath 溯源;
-4. 解析输出在**计算页区间/偏移之前**做保守清洗(`sanitizeParsedText`):移除 NUL(真实世界的 Chrome/Skia PDF 会把无法反查 Unicode 的项目符号/箭头字形在 ToUnicode CMap 中显式映射为 `<0000>`,PDF.js 会原样输出)、其余 C0/C1 控制字符、DEL、软连字符、游离 BOM、Unicode 非字符与未配对代理项;换页符等行分隔伪字符归一为换行;中文、emoji(含 ZWJ 序列)、标点、制表符与换行原样保留。二进制嗅探(`looksBinary`)只作用于原始粘贴/`.md`/`.txt` 字节,绝不作用于 PDF/DOCX 解析输出 —— 否则合法文档会因个别提取伪字符被整体误判为二进制而拒绝导入;
+4. 解析输出在**计算页区间/偏移之前**做保守清洗(PDF 管线逐行执行 `sanitizeParsedText` 与字形归一):移除 NUL(真实世界的 Chrome/Skia PDF 会把无法反查 Unicode 的项目符号/箭头字形在 ToUnicode CMap 中显式映射为 `<0000>`,PDF.js 会原样输出;行首的此类字形先被识别为列表标记再清洗)、其余 C0/C1 控制字符、DEL、软连字符、游离 BOM、Unicode 非字符与未配对代理项;换页符等行分隔伪字符归一为换行;康熙部首区(U+2F00–U+2FD5,经 NFKC)与部首补充区中无歧义的简化部首形被归一回统一表意文字(⼀→一、⻚→页),否则搜索与逐字引文校验会因码位差异失败;中文、emoji(含 ZWJ 序列)、标点、制表符与换行原样保留。二进制嗅探(`looksBinary`)只作用于原始粘贴/`.md`/`.txt` 字节,绝不作用于 PDF/DOCX 解析输出 —— 否则合法文档会因个别提取伪字符被整体误判为二进制而拒绝导入;
 5. 所有块保持不变量 `content.slice(startOffset, endOffset) === block.content`。
 
 资料库(legacy 单资料入口,`POST /api/materials`)与课程空间文档上传共用同一条 `createFromUpload` 摄取路径:同一解析器、同一扩展名/魔数/大小校验与同一套错误文案。从资料库导入的文件会像旧资料一样落入自动创建的同名兼容空间,页码/标题溯源与原始字节(供重新解析)全部保留;任何校验或解析失败都发生在首次写库之前,不会留下空资料或孤儿兼容空间。两个入口都不支持 OCR:纯扫描图片型 PDF 会被结构化拒绝。

@@ -13,6 +13,7 @@ const PlanParams = z.object({ id: z.string().min(1), planId: z.string().min(1) }
 const ProposalParams = z.object({ id: z.string().min(1), proposalId: z.string().min(1) });
 const CanonicalParams = z.object({ id: z.string().min(1), canonicalId: z.string().min(1) });
 const RunParams = z.object({ id: z.string().min(1), runId: z.string().min(1) });
+const AttemptParams = z.object({ id: z.string().min(1), attemptId: z.string().min(1) });
 const TutorStartBody = z.object({ conceptId: z.string().min(1) }).strict();
 
 /**
@@ -187,6 +188,18 @@ export function registerWorkspaceRoutes(app: FastifyInstance, services: Services
       blueprints: services.assessment.publicBlueprints(result.quiz.id),
       rejected: result.rejected,
     };
+  });
+
+  // --- Completed-quiz history (read-only; never grades, never mutates) ---
+
+  app.get('/api/workspaces/:id/attempts', async (request) => {
+    const { id } = WorkspaceIdParams.parse(request.params);
+    return { attempts: services.attempts.listByWorkspace(id) };
+  });
+
+  app.get('/api/workspaces/:id/attempts/:attemptId', async (request) => {
+    const { id, attemptId } = AttemptParams.parse(request.params);
+    return services.attempts.get(id, attemptId);
   });
 
   // --- Misconceptions ---

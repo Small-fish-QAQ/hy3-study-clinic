@@ -38,6 +38,13 @@ export interface ResultsViewProps {
   blocks: SourceBlock[];
   onRemediate: () => void;
   remediationLoading: boolean;
+  /**
+   * True when replaying a persisted completed attempt from history: the
+   * grades shown are the immutable original, so active-flow actions
+   * (generating remediation practice) are hidden. Nothing in this view ever
+   * re-grades either way — it only renders the result it was given.
+   */
+  readOnly?: boolean;
 }
 
 /** 判分结果视图:总分、逐题判定、判分方式标签、状态变化与依据讲解。 */
@@ -48,6 +55,7 @@ export function ResultsView({
   blocks,
   onRemediate,
   remediationLoading,
+  readOnly = false,
 }: ResultsViewProps) {
   const { grading, questions, stateChanges } = result;
   const questionById = new Map<string, Question>(questions.map((q) => [q.id, q]));
@@ -75,7 +83,7 @@ export function ResultsView({
             <span className="pill wrong">待巩固 {wrongCount} 题</span>
           </div>
         </div>
-        {wrongCount > 0 && !isAssessment ? (
+        {wrongCount > 0 && !isAssessment && !readOnly ? (
           <div className="row" style={{ marginTop: '0.75rem' }}>
             <button
               type="button"

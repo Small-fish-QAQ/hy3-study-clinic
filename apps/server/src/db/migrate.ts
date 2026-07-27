@@ -425,6 +425,33 @@ const MIGRATIONS: Migration[] = [
       CREATE INDEX idx_tutor_events_run ON tutor_events(run_id, seq);
     `,
   },
+  {
+    version: 9,
+    name: 'source_block_page_ranges',
+    // Layout-aware PDF ingestion can repair a paragraph that visually spans a
+    // page break, so a block may end on a later page than it starts. Legacy
+    // rows keep page_end NULL (their blocks were page-bounded by
+    // construction, so NULL means "single page", never a hidden span) — no
+    // provenance is fabricated for existing data.
+    up: `
+      ALTER TABLE source_blocks ADD COLUMN page_end INTEGER;
+    `,
+  },
+  {
+    version: 10,
+    name: 'completed_attempt_snapshots',
+    // Durable completed-quiz history. Quizzes, submissions and grading
+    // results were already persisted immutably; this records the two pieces
+    // that used to live only in the HTTP response: which provider graded the
+    // attempt ('fake' | 'hy3') and the deterministic learning-state-change
+    // summary computed at submission time. Both stay NULL for attempts graded
+    // before this upgrade — history rendering shows an honest "not recorded"
+    // fallback instead of fabricating data.
+    up: `
+      ALTER TABLE grading_results ADD COLUMN provider TEXT;
+      ALTER TABLE grading_results ADD COLUMN state_changes TEXT;
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

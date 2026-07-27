@@ -121,21 +121,36 @@ export class FakeProvider implements LlmProvider {
     await this.gate(opts);
     const blocks = bodyBlocks(input.blocks);
     const seen = new Set<string>();
-    const concepts: ProposedConcept[] = [];
+    const candidates: { name: string; block: SourceBlock }[] = [];
 
     for (const block of blocks) {
       const name = (block.heading ?? deriveName(block.content)).slice(0, 40);
       if (name.length === 0 || seen.has(name)) continue;
       seen.add(name);
-      concepts.push({
-        name,
-        summary: summarize(block.content),
-        importance: concepts.length < 3 ? 'high' : concepts.length < 6 ? 'medium' : 'low',
-        blockId: block.id,
-        quote: pickQuote(block),
-      });
-      if (concepts.length >= 8) break;
+      candidates.push({ name, block });
     }
+
+    // Representative document coverage: when there are more candidate
+    // sections than the concept budget, sample them evenly across the WHOLE
+    // document (deterministic stride) instead of only the leading pages.
+    const MAX_CONCEPTS = 8;
+    let picked = candidates;
+    if (candidates.length > MAX_CONCEPTS) {
+      const strided: typeof candidates = [];
+      for (let i = 0; i < MAX_CONCEPTS; i++) {
+        const index = Math.round((i * (candidates.length - 1)) / (MAX_CONCEPTS - 1));
+        strided.push(candidates[index]!);
+      }
+      picked = [...new Map(strided.map((c) => [c.name, c])).values()];
+    }
+
+    const concepts: ProposedConcept[] = picked.map((candidate, position) => ({
+      name: candidate.name,
+      summary: summarize(candidate.block.content),
+      importance: position < 3 ? 'high' : position < 6 ? 'medium' : 'low',
+      blockId: candidate.block.id,
+      quote: pickQuote(candidate.block),
+    }));
 
     if (concepts.length === 0) {
       const first = input.blocks[0]!;

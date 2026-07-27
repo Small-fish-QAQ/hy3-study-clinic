@@ -37,7 +37,8 @@ const TYPE_LABELS: Record<QuestionType, string> = {
  * only come from workspace assessments, which provide cross-document evidence). */
 const CONFIGURABLE_TYPES: QuestionType[] = ['single_choice', 'multiple_choice', 'short_answer'];
 
-const ASSESSMENT_MODE_LABELS: Record<string, string> = {
+/** 评估模式的中文标签(练习页与测验历史共用)。 */
+export const ASSESSMENT_MODE_LABELS: Record<string, string> = {
   diagnostic: '诊断评估',
   concept_practice: '概念练习',
   prerequisite_repair: '前置修复',

@@ -1,0 +1,69 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R 5 0 R 7 0 R] /Count 3 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 9 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 560 >>
+stream
+BT /F1 24 Tf 60 700 Td (Chapter One) Tj ET
+BT /F1 12 Tf 60 660 Td (Working memory keeps only a small number of items active at once and this basic) Tj ET
+BT /F1 12 Tf 60 644 Td (limit shapes how people study.) Tj ET
+BT /F1 12 Tf 60 618 Td (Reviews should therefore come in short spaced sessions.) Tj ET
+BT /F1 16 Tf 60 580 Td (Detail Section) Tj ET
+BT /F1 12 Tf 60 544 Td (Spaced repetition schedules each review just before the learner would truly for-) Tj ET
+BT /F1 12 Tf 60 528 Td (get the studied material.) Tj ET
+BT /F1 8 Tf 60 30 Td (Study Notes 1) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 9 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 377 >>
+stream
+BT /F1 12 Tf 60 700 Td (Method) Tj ET
+BT /F1 12 Tf 300 700 Td (Speed) Tj ET
+BT /F1 12 Tf 60 680 Td (Flat) Tj ET
+BT /F1 12 Tf 300 680 Td (slow) Tj ET
+BT /F1 12 Tf 60 660 Td (Graph) Tj ET
+BT /F1 12 Tf 300 660 Td (fast) Tj ET
+BT /F1 12 Tf 60 120 Td (Retrieval practice strengthens long term memory more than passive review because) Tj ET
+BT /F1 8 Tf 60 30 Td (Study Notes 2) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 8 0 R /Resources << /Font << /F1 9 0 R >> >> >>
+endobj
+8 0 obj
+<< /Length 117 >>
+stream
+BT /F1 12 Tf 60 700 Td (the act of recall rewires the memory trace.) Tj ET
+BT /F1 8 Tf 60 30 Td (Study Notes 3) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000127 00000 n 
+0000000253 00000 n 
+0000000864 00000 n 
+0000000990 00000 n 
+0000001418 00000 n 
+0000001544 00000 n 
+0000001712 00000 n 
+trailer
+<< /Size 10 /Root 1 0 R >>
+startxref
+1782
+%%EOF

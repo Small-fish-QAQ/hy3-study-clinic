@@ -12,15 +12,16 @@ import { ImportView } from './views/ImportView.js';
 import { GraphWorkspaceView } from './views/GraphWorkspaceView.js';
 import { QuizView } from './views/QuizView.js';
 import { ResultsView } from './views/ResultsView.js';
+import { QuizHistoryView } from './views/QuizHistoryView.js';
 import { MistakesView } from './views/MistakesView.js';
 import { MasteryView } from './views/MasteryView.js';
 import { Banner } from './components/ui.js';
 
-type Tab = 'import' | 'graph' | 'quiz' | 'results' | 'mistakes' | 'mastery';
+type Tab = 'import' | 'graph' | 'quiz' | 'results' | 'history' | 'mistakes' | 'mastery';
 
 const LAST_MATERIAL_ID_STORAGE_KEY = 'hy3-clinic:last-material-id';
 
-/** Module navigation: 练习 covers both answering (quiz) and results. */
+/** Module navigation: 练习 covers answering (quiz), results and history. */
 type Module = 'import' | 'graph' | 'practice' | 'mistakes' | 'mastery';
 
 const MODULE_LABELS: Record<Module, string> = {
@@ -36,6 +37,7 @@ const MODULE_OF_TAB: Record<Tab, Module> = {
   graph: 'graph',
   quiz: 'practice',
   results: 'practice',
+  history: 'practice',
   mistakes: 'mistakes',
   mastery: 'mastery',
 };
@@ -447,6 +449,15 @@ export function App() {
             >
               判分结果
             </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'history'}
+              className={tab === 'history' ? 'active' : ''}
+              onClick={() => handleTabChange('history')}
+            >
+              测验历史
+            </button>
           </div>
         ) : null}
 
@@ -501,6 +512,14 @@ export function App() {
             blocks={practiceBlocks}
             onRemediate={() => void doRemediation()}
             remediationLoading={remediationAction.loading}
+          />
+        ) : null}
+
+        {tab === 'history' && (material || assessmentActive) ? (
+          <QuizHistoryView
+            workspaceId={
+              assessmentActive ? assessment.workspaceId : (material?.material.workspaceId ?? null)
+            }
           />
         ) : null}
 

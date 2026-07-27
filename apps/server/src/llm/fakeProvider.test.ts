@@ -70,6 +70,25 @@ describe('FakeProvider.analyzeConcepts', () => {
     expect(names).toContain('记忆的三种类型');
     expect(names).toContain('间隔重复');
   });
+
+  it('samples sections across the whole document when there are more than eight', async () => {
+    // 14 single-paragraph sections: representative coverage must reach the
+    // document tail instead of stopping after the first eight sections.
+    const content = Array.from(
+      { length: 14 },
+      (_, i) => `## 第${i + 1}节标题\n\n第${i + 1}节的正文内容,用于覆盖度测试。`,
+    ).join('\n\n');
+    const manyBlocks = segmentMaterial('mat_many', content);
+    const payload = await provider.analyzeConcepts({ materialTitle: '覆盖', blocks: manyBlocks });
+
+    expect(payload.concepts.length).toBeLessThanOrEqual(8);
+    const names = payload.concepts.map((c) => c.name);
+    expect(names).toContain('第1节标题');
+    expect(names).toContain('第14节标题');
+
+    const again = await provider.analyzeConcepts({ materialTitle: '覆盖', blocks: manyBlocks });
+    expect(again).toEqual(payload);
+  });
 });
 
 describe('FakeProvider.generateQuiz', () => {

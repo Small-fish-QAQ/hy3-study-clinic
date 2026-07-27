@@ -118,7 +118,7 @@ describe('document ingestion routes', () => {
     expect(material.mediaType).toBe('application/pdf');
     expect(material.originalFilename).toBe('memory.pdf');
     expect(material.pageCount).toBe(2);
-    expect(material.parserVersion).toBe('pdf-unpdf-v1');
+    expect(material.parserVersion).toBe('pdf-layout-v2');
     expect(blocks.length).toBeGreaterThanOrEqual(2);
     expect(blocks[0].pageNumber).toBe(1);
     expect(blocks[blocks.length - 1].pageNumber).toBe(2);

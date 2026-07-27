@@ -58,6 +58,16 @@ describe('SourceEvidencePanel', () => {
     expect(screen.getByText(/原文依据 · 第 3 页/)).toBeInTheDocument();
   });
 
+  it('cites the full page range when a block spans pages', () => {
+    const pdfBlocks = [
+      { ...blocks[0]!, heading: null, headingPath: [], pageNumber: 2, pageEnd: 3 },
+    ];
+    render(
+      <SourceEvidencePanel grounding={concepts[0]!.grounding} blocks={pdfBlocks} defaultOpen />,
+    );
+    expect(screen.getByText(/原文依据 · 第 2–3 页/)).toBeInTheDocument();
+  });
+
   it('shows heading path and page number together when both exist', () => {
     const paginatedBlocks = [{ ...blocks[0]!, pageNumber: 2 }];
     render(

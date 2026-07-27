@@ -56,6 +56,27 @@ describe('ResultsView — 学习状态变化', () => {
     expect(screen.queryByRole('button', { name: /针对错题生成康复练习/ })).not.toBeInTheDocument();
     expect(screen.getByText(/建议下一步/)).toBeInTheDocument();
   });
+
+  it('hides active-flow actions in read-only history mode while keeping the full result', () => {
+    render(
+      <ResultsView
+        quiz={quiz}
+        result={{ grading, questions: fullQuestions, stateChanges }}
+        answers={[{ questionId: 'que_2', type: 'short_answer', text: '容量有限' }]}
+        blocks={blocks}
+        onRemediate={() => {}}
+        remediationLoading={false}
+        readOnly
+      />,
+    );
+    // The fixture grading has one wrong answer on a standard quiz — the
+    // remediation launcher would normally appear, but history replay is
+    // strictly read-only.
+    expect(screen.queryByRole('button', { name: /针对错题生成康复练习/ })).not.toBeInTheDocument();
+    expect(screen.getByText('判分结果')).toBeInTheDocument();
+    expect(screen.getByText('你的回答')).toBeInTheDocument();
+    expect(screen.getByLabelText('本次判分引起的状态变化')).toBeInTheDocument();
+  });
 });
 
 describe('ResultsView — 评分要点与结果徽标', () => {

@@ -12,7 +12,7 @@ import type {
   VerifiedGrounding,
 } from '@hy3-clinic/shared';
 import { SourceEvidencePanel } from './SourceEvidencePanel.js';
-import { Banner, Loading, MasteryMeter } from './ui.js';
+import { Banner, formatPageRange, Loading, MasteryMeter } from './ui.js';
 import { RELATION_LABELS } from './ConceptGraph.js';
 
 /**
@@ -96,7 +96,7 @@ function EvidenceList({
         const doc = block ? documents.find((d) => d.id === block.materialId) : undefined;
         const location = [
           doc ? `文档《${doc.title}》` : null,
-          block?.pageNumber ? `第 ${block.pageNumber} 页` : null,
+          block ? formatPageRange(block.pageNumber, block.pageEnd) : null,
           block && block.headingPath.length > 0 ? block.headingPath.join(' / ') : null,
         ]
           .filter(Boolean)

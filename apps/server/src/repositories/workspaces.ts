@@ -138,8 +138,8 @@ export function createWorkspacesRepo(db: SqliteDb) {
       });
 
       const insertBlock = db.prepare(
-        `INSERT INTO source_blocks (id, material_id, idx, heading, heading_path, page_number, content, start_offset, end_offset)
-         VALUES (@id, @materialId, @index, @heading, @headingPath, @pageNumber, @content, @startOffset, @endOffset)`,
+        `INSERT INTO source_blocks (id, material_id, idx, heading, heading_path, page_number, page_end, content, start_offset, end_offset)
+         VALUES (@id, @materialId, @index, @heading, @headingPath, @pageNumber, @pageEnd, @content, @startOffset, @endOffset)`,
       );
       for (const block of blocks) {
         insertBlock.run({
@@ -149,6 +149,7 @@ export function createWorkspacesRepo(db: SqliteDb) {
           heading: block.heading,
           headingPath: JSON.stringify(block.headingPath),
           pageNumber: block.pageNumber,
+          pageEnd: block.pageEnd,
           content: block.content,
           startOffset: block.startOffset,
           endOffset: block.endOffset,

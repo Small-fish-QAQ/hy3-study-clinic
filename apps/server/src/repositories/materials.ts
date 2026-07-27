@@ -42,6 +42,7 @@ interface BlockRow {
   heading: string | null;
   heading_path: string;
   page_number: number | null;
+  page_end: number | null;
   content: string;
   start_offset: number;
   end_offset: number;
@@ -88,6 +89,7 @@ function rowToBlock(row: BlockRow): SourceBlock {
     heading: row.heading,
     headingPath: JSON.parse(row.heading_path) as string[],
     pageNumber: row.page_number,
+    pageEnd: row.page_end,
     content: row.content,
     startOffset: row.start_offset,
     endOffset: row.end_offset,
@@ -114,8 +116,8 @@ export function createMaterialsRepo(db: SqliteDb) {
              @parserVersion, @createdAt, @updatedAt, @originalData)`,
   );
   const insertBlockStmt = db.prepare(
-    `INSERT INTO source_blocks (id, material_id, idx, heading, heading_path, page_number, content, start_offset, end_offset)
-     VALUES (@id, @materialId, @index, @heading, @headingPath, @pageNumber, @content, @startOffset, @endOffset)`,
+    `INSERT INTO source_blocks (id, material_id, idx, heading, heading_path, page_number, page_end, content, start_offset, end_offset)
+     VALUES (@id, @materialId, @index, @heading, @headingPath, @pageNumber, @pageEnd, @content, @startOffset, @endOffset)`,
   );
   const insertConceptStmt = db.prepare(
     `INSERT INTO concepts (id, material_id, name, summary, importance, grounding, created_at)
@@ -152,6 +154,7 @@ export function createMaterialsRepo(db: SqliteDb) {
       heading: block.heading,
       headingPath: JSON.stringify(block.headingPath),
       pageNumber: block.pageNumber,
+      pageEnd: block.pageEnd,
       content: block.content,
       startOffset: block.startOffset,
       endOffset: block.endOffset,

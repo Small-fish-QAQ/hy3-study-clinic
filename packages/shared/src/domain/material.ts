@@ -93,8 +93,15 @@ export const SourceBlockSchema = z.object({
   heading: z.string().nullable(),
   /** Full heading path, e.g. ["记忆的类型", "工作记忆"]. */
   headingPath: z.array(z.string()),
-  /** 1-based page number for paginated sources (PDF); null otherwise. */
+  /** 1-based page the block starts on, for paginated sources (PDF); null otherwise. */
   pageNumber: z.number().int().positive().nullable(),
+  /**
+   * 1-based page the block ends on. Equal to `pageNumber` for single-page
+   * blocks, greater when a block spans pages. Null for non-paginated sources
+   * and for legacy rows persisted before page-range provenance existed
+   * (legacy PDF blocks were page-bounded, so null never hides a real span).
+   */
+  pageEnd: z.number().int().positive().nullable().default(null),
   content: z.string().min(1),
   /** Offsets into the normalized material content (UTF-16 code units). */
   startOffset: z.number().int().nonnegative(),

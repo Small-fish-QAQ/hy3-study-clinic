@@ -1,5 +1,16 @@
 import type { ReactNode } from 'react';
 
+/**
+ * Human label for a block's page provenance: `第 3 页`, or `第 3–5 页` when a
+ * block spans pages (layout-aware PDF ingestion can join a paragraph across
+ * a page break). Null when the source is not paginated.
+ */
+export function formatPageRange(pageNumber: number | null, pageEnd: number | null): string | null {
+  if (pageNumber === null) return null;
+  if (pageEnd !== null && pageEnd > pageNumber) return `第 ${pageNumber}–${pageEnd} 页`;
+  return `第 ${pageNumber} 页`;
+}
+
 export function Banner({
   kind,
   children,

@@ -5,7 +5,7 @@ import { createRepositories, type Repositories } from '../repositories/index.js'
 import { buildApp } from '../app.js';
 import { FakeProvider } from '../llm/fakeProvider.js';
 import type { LlmProvider } from '../llm/provider.js';
-import { fixedClock } from '../util/ids.js';
+import { fixedClock, type Clock } from '../util/ids.js';
 import { makeWorkspace, T0 } from './fixtures.js';
 
 export interface TestApp {
@@ -16,7 +16,7 @@ export interface TestApp {
 }
 
 /** Build a fully-wired app on an in-memory database with a fixed clock. */
-export function buildTestApp(options: { provider?: LlmProvider } = {}): TestApp {
+export function buildTestApp(options: { provider?: LlmProvider; clock?: Clock } = {}): TestApp {
   const db = openDatabase(':memory:');
   migrate(db);
   const repos = createRepositories(db);
@@ -24,7 +24,7 @@ export function buildTestApp(options: { provider?: LlmProvider } = {}): TestApp 
   // tests may insert `makeMaterial()` rows directly through the repos.
   repos.workspaces.insert(makeWorkspace());
   const provider = options.provider ?? new FakeProvider();
-  const app = buildApp({ repos, provider, clock: fixedClock(T0) });
+  const app = buildApp({ repos, provider, clock: options.clock ?? fixedClock(T0) });
   app.addHook('onClose', async () => {
     db.close();
   });

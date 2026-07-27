@@ -14,6 +14,7 @@ export * from './domain/graph.js';
 export * from './domain/plan.js';
 export * from './domain/quiz.js';
 export * from './domain/grading.js';
+export * from './domain/attempt.js';
 export * from './domain/mistake.js';
 export * from './domain/alignment.js';
 export * from './domain/blueprint.js';

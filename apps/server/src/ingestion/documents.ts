@@ -6,6 +6,9 @@ import {
   type SourceType,
 } from '@hy3-clinic/shared';
 import { IngestionError, looksBinary, normalizeText, sanitizeParsedText } from './ingest.js';
+import { analyzePdfLayout, type PdfPageInput, type PageSpan } from './pdfLayout.js';
+
+export type { PageSpan } from './pdfLayout.js';
 
 /**
  * Binary document extraction (PDF / DOCX) with provenance.
@@ -17,26 +20,24 @@ import { IngestionError, looksBinary, normalizeText, sanitizeParsedText } from '
  *   reads document.xml — macros/scripts/media are ignored entirely;
  * - a parse that yields no usable text is a structured PARSE_FAILED error,
  *   never a silently-empty document;
+ * - PDFs are NOT flattened to plain page text: positioned text items flow
+ *   through the layout-aware reconstruction in pdfLayout.ts (line rebuild,
+ *   repeated header/footer removal, heading recognition, visual-wrap repair,
+ *   conservative table rows), which emits Markdown-style text plus exact
+ *   per-page character spans;
  * - extracted text is conservatively sanitized (sanitizeParsedText) BEFORE
  *   page spans are computed, so extractor artifacts (e.g. U+0000 emitted for
  *   unmapped Chrome/Skia glyphs) never reach stored text; the raw-byte
  *   binary sniffer (looksBinary) applies to .md/.txt uploads only;
- * - per-page provenance is preserved for PDFs (page spans over the joined,
- *   normalized text); DOCX headings survive as Markdown-style headings so the
- *   existing segmenter records heading paths;
+ * - per-page provenance is preserved for PDFs (page spans over the emitted
+ *   text); PDF headings and DOCX headings survive as Markdown-style headings
+ *   so the existing segmenter records heading paths;
  * - extraction warnings are collected and persisted, shown in the UI.
  */
 
-export const PDF_PARSER_VERSION = 'pdf-unpdf-v1';
+export const PDF_PARSER_VERSION = 'pdf-layout-v2';
 export const DOCX_PARSER_VERSION = 'docx-mammoth-v1';
 export const TEXT_PARSER_VERSION = 'text-v1';
-
-/** Span of one source page inside the joined normalized content. */
-export interface PageSpan {
-  pageNumber: number;
-  startOffset: number;
-  endOffset: number;
-}
 
 export interface ParsedBinaryDocument {
   /** Normalized text (LF endings) ready for segmentation. */
@@ -107,20 +108,44 @@ function hasZipMagic(buffer: Buffer): boolean {
   return buffer.length >= 4 && buffer[0] === 0x50 && buffer[1] === 0x4b;
 }
 
-/** Parse a PDF into normalized text with per-page spans. */
+/** Parse a PDF into layout-reconstructed text with per-page spans. */
 export async function parsePdf(buffer: Buffer): Promise<ParsedBinaryDocument> {
   if (!hasPdfMagic(buffer)) {
     throw new IngestionError(ApiErrorCode.ParseFailed, '文件不是有效的 PDF(缺少 PDF 文件头)。');
   }
 
   let totalPages: number;
-  let pageTexts: string[];
+  const pages: PdfPageInput[] = [];
   try {
-    const { getDocumentProxy, extractText } = await import('unpdf');
+    const { getDocumentProxy } = await import('unpdf');
     const pdf = await getDocumentProxy(new Uint8Array(buffer));
-    const extracted = await extractText(pdf, { mergePages: false });
-    totalPages = extracted.totalPages;
-    pageTexts = extracted.text;
+    totalPages = pdf.numPages;
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+      const page = await pdf.getPage(pageNumber);
+      const viewport = page.getViewport({ scale: 1 });
+      const content = await page.getTextContent();
+      const items = [];
+      for (const item of content.items) {
+        if (!('str' in item) || typeof item.str !== 'string') continue;
+        // transform = [a, b, c, d, e, f]; (e, f) is the baseline origin and
+        // hypot(c, d) the effective font size in device space.
+        const [, , c, d, e, f] = item.transform as number[];
+        items.push({
+          str: item.str,
+          x: e ?? 0,
+          y: f ?? 0,
+          width: item.width,
+          height: item.height,
+          fontSize: Math.hypot(c ?? 0, d ?? 0),
+        });
+      }
+      pages.push({
+        pageNumber,
+        width: viewport.width,
+        height: viewport.height,
+        items,
+      });
+    }
   } catch {
     throw new IngestionError(
       ApiErrorCode.ParseFailed,
@@ -128,33 +153,11 @@ export async function parsePdf(buffer: Buffer): Promise<ParsedBinaryDocument> {
     );
   }
 
-  const warnings: string[] = [];
-  const pageSpans: PageSpan[] = [];
-  const parts: string[] = [];
-  let cursor = 0;
+  // Layout analysis sanitizes per reconstructed line (artifact glyphs never
+  // reach emitted text), so spans index the exact stored text.
+  const layout = analyzePdfLayout(pages);
 
-  for (let i = 0; i < pageTexts.length; i++) {
-    const pageNumber = i + 1;
-    // Sanitize BEFORE computing spans: extractor artifacts (e.g. unmapped
-    // Chrome/Skia bullet glyphs emitted as U+0000) must never reach stored
-    // text, and span offsets must index into the stored (sanitized) text.
-    const normalized = normalizeText(sanitizeParsedText(pageTexts[i] ?? '')).trim();
-    if (normalized.length === 0) {
-      warnings.push(`第 ${pageNumber} 页未提取到文本(可能是扫描图片页;未启用 OCR)。`);
-      continue;
-    }
-    if (parts.length > 0) cursor += 2; // '\n\n' separator
-    pageSpans.push({
-      pageNumber,
-      startOffset: cursor,
-      endOffset: cursor + normalized.length,
-    });
-    parts.push(normalized);
-    cursor += normalized.length;
-  }
-
-  const content = parts.join('\n\n');
-  if (content.trim().length === 0) {
+  if (layout.text.trim().length === 0) {
     throw new IngestionError(
       ApiErrorCode.ParseFailed,
       'PDF 中没有可提取的文本(可能是纯扫描件;本产品未启用 OCR),已拒绝导入。',
@@ -162,10 +165,10 @@ export async function parsePdf(buffer: Buffer): Promise<ParsedBinaryDocument> {
   }
 
   return {
-    content,
+    content: layout.text,
     pageCount: totalPages,
-    pageSpans,
-    warnings,
+    pageSpans: layout.pageSpans,
+    warnings: layout.warnings,
     parserVersion: PDF_PARSER_VERSION,
   };
 }

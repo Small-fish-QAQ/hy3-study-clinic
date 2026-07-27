@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import type { Concept } from '@hy3-clinic/shared';
 import { api, type MaterialSummary, type MaterialWithBlocks } from '../api.js';
-import { Banner, Loading } from '../components/ui.js';
+import { Banner, formatPageRange, Loading } from '../components/ui.js';
 import { SourceEvidencePanel } from '../components/SourceEvidencePanel.js';
 import { useAsyncAction } from '../components/useAsyncAction.js';
 import {
@@ -590,7 +590,7 @@ export function ImportView({
                 #{block.index}
                 {block.headingPath.length > 0
                   ? ` · ${block.headingPath.join(' / ')}`
-                  : ' · (无标题)'}
+                  : ` · ${formatPageRange(block.pageNumber, block.pageEnd) ?? '(无标题)'}`}
               </div>
               <div style={{ whiteSpace: 'pre-wrap' }}>{block.content}</div>
             </div>

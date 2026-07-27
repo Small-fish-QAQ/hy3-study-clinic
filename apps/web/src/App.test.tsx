@@ -15,6 +15,7 @@ import {
   mastery,
   mistakes,
   quiz,
+  stateChanges,
 } from './test/fixtures';
 
 afterEach(() => {
@@ -923,6 +924,41 @@ describe('Material recovery', () => {
 });
 
 describe('Import flow', () => {
+  it('falls back to page-range titles for PDF blocks without headings', async () => {
+    const pdfMaterial = {
+      material: {
+        ...material.material,
+        title: '布局解析的讲义',
+        sourceType: 'pdf' as const,
+        mediaType: 'application/pdf' as const,
+      },
+      blocks: [
+        { ...blocks[0]!, heading: null, headingPath: [], pageNumber: 2, pageEnd: 3 },
+        { ...blocks[1]!, heading: null, headingPath: [], pageNumber: 4, pageEnd: 4 },
+      ],
+    };
+    installFetchMock([
+      ...baseRoutes.filter(
+        (route) => !(route.method === 'POST' && route.pattern.test('/api/materials')),
+      ),
+      {
+        method: 'POST',
+        pattern: /\/api\/materials$/,
+        handler: () => ({ status: 201, body: pdfMaterial }),
+      },
+    ]);
+    const user = userEvent.setup();
+    render(<App />);
+
+    await importSample(user);
+
+    // No heading path recovered → deterministic page-based fallback labels,
+    // never a bare "(无标题)" when page provenance exists.
+    expect(screen.getByText(/#0 · 第 2–3 页/)).toBeInTheDocument();
+    expect(screen.getByText(/#1 · 第 4 页/)).toBeInTheDocument();
+    expect(screen.queryByText(/无标题/)).not.toBeInTheDocument();
+  });
+
   it('loads the sample, imports it, and previews source blocks', async () => {
     const { calls } = installFetchMock(baseRoutes);
     const user = userEvent.setup();
@@ -1292,6 +1328,73 @@ describe('Quiz flow', () => {
     const submitCall = calls.find((c) => c.url.includes('/submissions'));
     const submitted = submitCall!.body as { answers: Array<{ questionId: string }> };
     expect(submitted.answers).toHaveLength(2);
+  });
+
+  it('reopens the completed result read-only from 测验历史 after navigating away', async () => {
+    const attemptSummary = {
+      id: 'grd_1',
+      quizId: 'qz_1',
+      workspaceId: 'ws_1',
+      kind: 'standard' as const,
+      materialId: 'mat_1',
+      materialTitle: material.material.title,
+      questionCount: 2,
+      totalAwarded: 1.8,
+      totalPossible: 3,
+      overallScore: 0.6,
+      provider: 'fake' as const,
+      completedAt: material.material.createdAt,
+    };
+    const { calls } = installFetchMock([
+      ...baseRoutes,
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/attempts$/,
+        handler: () => ({ body: { attempts: [attemptSummary] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/attempts\/grd_1$/,
+        handler: () => ({
+          body: {
+            summary: attemptSummary,
+            quiz,
+            questions: fullQuestions,
+            answers: [
+              { questionId: 'que_1', type: 'single_choice', selectedOptionIds: ['A'] },
+              { questionId: 'que_2', type: 'short_answer', text: '容量有限' },
+            ],
+            grading,
+            stateChanges,
+            blocks,
+          },
+        }),
+      },
+    ]);
+    const user = userEvent.setup();
+    render(<App />);
+    await generateQuiz(user);
+
+    await user.click(screen.getByRole('radio', { name: /工作记忆的容量十分有限/ }));
+    await user.type(screen.getByLabelText('第 2 题作答'), '容量有限');
+    await user.click(screen.getByRole('button', { name: '提交并判分' }));
+    await screen.findByText('60 分');
+
+    // Leave the result screen entirely, then come back through history.
+    await user.click(screen.getByRole('button', { name: '错题' }));
+    await user.click(screen.getByRole('button', { name: '练习' }));
+    await user.click(screen.getByRole('tab', { name: '测验历史' }));
+    await user.click(await screen.findByRole('button', { name: /查看历史结果:/ }));
+
+    expect(await screen.findByText('历史结果(只读)')).toBeInTheDocument();
+    expect(screen.getByText('60 分')).toBeInTheDocument();
+    expect(screen.getByText('模型评分')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '提交并判分' })).not.toBeInTheDocument();
+
+    // Reopening graded history never grades again: the only grading POST is
+    // the original submission.
+    const gradingPosts = calls.filter((c) => c.method === 'POST' && c.url.includes('/submissions'));
+    expect(gradingPosts).toHaveLength(1);
   });
 
   it('supports cancelling a slow generation and returning to idle', async () => {

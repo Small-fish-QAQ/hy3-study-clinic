@@ -65,4 +65,34 @@ describe('migrations', () => {
     ).toThrow();
     db.close();
   });
+
+  it('adds nullable page_end to source_blocks (migration 9)', () => {
+    const db = openDatabase(':memory:');
+    migrate(db);
+    const columns = (
+      db.prepare("PRAGMA table_info('source_blocks')").all() as Array<{
+        name: string;
+        notnull: number;
+      }>
+    ).filter((c) => c.name === 'page_end');
+    expect(columns).toHaveLength(1);
+    expect(columns[0]!.notnull).toBe(0);
+    db.close();
+  });
+
+  it('adds nullable provider and state_changes to grading_results (migration 10)', () => {
+    const db = openDatabase(':memory:');
+    migrate(db);
+    const columns = (
+      db.prepare("PRAGMA table_info('grading_results')").all() as Array<{
+        name: string;
+        notnull: number;
+      }>
+    ).filter((c) => c.name === 'provider' || c.name === 'state_changes');
+    expect(columns.map((c) => c.name).sort()).toEqual(['provider', 'state_changes']);
+    for (const column of columns) {
+      expect(column.notnull, column.name).toBe(0);
+    }
+    db.close();
+  });
 });

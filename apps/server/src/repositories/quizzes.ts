@@ -1,12 +1,18 @@
 import {
+  AttemptProviderSchema,
   GradingResultSchema,
   QuestionSchema,
+  QuizKindSchema,
   QuizSchema,
   SubmissionSchema,
+  SubmissionStateChangesSchema,
+  type AttemptProvider,
+  type CompletedAttemptSummary,
   type GradingResult,
   type Question,
   type Quiz,
   type Submission,
+  type SubmissionStateChanges,
 } from '@hy3-clinic/shared';
 import type { SqliteDb } from '../db/database.js';
 
@@ -114,6 +120,35 @@ interface GradingRow {
   quiz_id: string;
   payload: string;
   created_at: string;
+  provider: string | null;
+  state_changes: string | null;
+}
+
+/** Joined row backing one completed-attempt history entry. */
+interface AttemptListRow {
+  id: string;
+  quiz_id: string;
+  payload: string;
+  created_at: string;
+  provider: string | null;
+  kind: string;
+  assessment_mode: string | null;
+  material_id: string | null;
+  material_title: string | null;
+  attempt_workspace_id: string;
+}
+
+/** A grading result plus the attempt metadata persisted alongside it. */
+export interface AttemptRecord {
+  grading: GradingResult;
+  provider: AttemptProvider | null;
+  stateChanges: SubmissionStateChanges | null;
+}
+
+/** Parse the persisted provider tag; unknown/legacy values read as null. */
+function parseProvider(raw: string | null): AttemptProvider | null {
+  const parsed = AttemptProviderSchema.safeParse(raw);
+  return parsed.success ? parsed.data : null;
 }
 
 export function createSubmissionsRepo(db: SqliteDb) {
@@ -143,17 +178,85 @@ export function createSubmissionsRepo(db: SqliteDb) {
       });
     },
 
-    insertGradingResult(result: GradingResult): void {
+    insertGradingResult(result: GradingResult, provider?: AttemptProvider): void {
       GradingResultSchema.parse(result);
       db.prepare(
-        `INSERT INTO grading_results (id, submission_id, quiz_id, payload, created_at)
-         VALUES (@id, @submissionId, @quizId, @payload, @createdAt)`,
+        `INSERT INTO grading_results (id, submission_id, quiz_id, payload, created_at, provider)
+         VALUES (@id, @submissionId, @quizId, @payload, @createdAt, @provider)`,
       ).run({
         id: result.id,
         submissionId: result.submissionId,
         quizId: result.quizId,
         payload: JSON.stringify(result),
         createdAt: result.createdAt,
+        provider: provider ?? null,
+      });
+    },
+
+    /**
+     * Record the deterministic state-change summary of a graded submission.
+     * Write-once by design: the snapshot describes what the ORIGINAL grading
+     * changed, so an existing value is never overwritten.
+     */
+    recordStateChanges(gradingResultId: string, stateChanges: SubmissionStateChanges): void {
+      SubmissionStateChangesSchema.parse(stateChanges);
+      db.prepare(
+        `UPDATE grading_results SET state_changes = @stateChanges
+         WHERE id = @id AND state_changes IS NULL`,
+      ).run({ id: gradingResultId, stateChanges: JSON.stringify(stateChanges) });
+    },
+
+    /** One grading result plus its persisted attempt metadata. */
+    getAttemptRecord(id: string): AttemptRecord | undefined {
+      const row = db.prepare('SELECT * FROM grading_results WHERE id = ?').get(id) as
+        GradingRow | undefined;
+      if (!row) return undefined;
+      return {
+        grading: GradingResultSchema.parse(JSON.parse(row.payload)),
+        provider: parseProvider(row.provider),
+        stateChanges: row.state_changes
+          ? SubmissionStateChangesSchema.parse(JSON.parse(row.state_changes))
+          : null,
+      };
+    },
+
+    /**
+     * Completed (graded) attempts of one workspace, newest first. Standard
+     * and remediation quizzes resolve their workspace through the owning
+     * document; workspace assessments carry it directly. Ordering is
+     * deterministic: created_at DESC with the id as a tie-breaker.
+     */
+    listCompletedByWorkspace(workspaceId: string, limit: number): CompletedAttemptSummary[] {
+      const rows = db
+        .prepare(
+          `SELECT gr.id, gr.quiz_id, gr.payload, gr.created_at, gr.provider,
+                  q.kind, q.assessment_mode, q.material_id, m.title AS material_title,
+                  COALESCE(q.workspace_id, m.workspace_id) AS attempt_workspace_id
+           FROM grading_results gr
+           JOIN quizzes q ON q.id = gr.quiz_id
+           LEFT JOIN materials m ON m.id = q.material_id
+           WHERE COALESCE(q.workspace_id, m.workspace_id) = ?
+           ORDER BY gr.created_at DESC, gr.id DESC
+           LIMIT ?`,
+        )
+        .all(workspaceId, limit) as AttemptListRow[];
+      return rows.map((row) => {
+        const grading = GradingResultSchema.parse(JSON.parse(row.payload));
+        return {
+          id: row.id,
+          quizId: row.quiz_id,
+          workspaceId: row.attempt_workspace_id,
+          kind: QuizKindSchema.parse(row.kind),
+          ...(row.assessment_mode ? { assessmentMode: row.assessment_mode } : {}),
+          materialId: row.material_id,
+          materialTitle: row.material_title,
+          questionCount: grading.grades.length,
+          totalAwarded: grading.totalAwarded,
+          totalPossible: grading.totalPossible,
+          overallScore: grading.overallScore,
+          provider: parseProvider(row.provider),
+          completedAt: row.created_at,
+        };
       });
     },
 

@@ -105,6 +105,31 @@ describe('Flow A: material → analysis → grounded quiz', () => {
     expect(second.json().concepts).toEqual(first.json().concepts);
   });
 
+  it('gives a fresh import of the same content a fresh analysis (no stale reuse)', async () => {
+    const first = await importSample();
+    await ctx.app.inject({ method: 'POST', url: `/api/materials/${first.materialId}/analyze` });
+
+    const second = await importSample();
+    expect(second.materialId).not.toBe(first.materialId);
+
+    // The re-imported material starts without concepts; its analysis is a
+    // new run producing concepts bound to ITS blocks, not the old ones.
+    const before = await ctx.app.inject({
+      method: 'GET',
+      url: `/api/materials/${second.materialId}/concepts`,
+    });
+    expect(before.json().concepts).toEqual([]);
+
+    const analyzed = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/materials/${second.materialId}/analyze`,
+    });
+    expect(analyzed.statusCode).toBe(200);
+    for (const concept of analyzed.json().concepts) {
+      expect(concept.materialId).toBe(second.materialId);
+    }
+  });
+
   it('generates a quiz whose questions never leak answers and carry verified grounding', async () => {
     const { materialId } = await importSample();
     const quiz = await generateQuiz(materialId);

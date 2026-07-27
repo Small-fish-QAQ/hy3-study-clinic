@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { SourceBlock, VerifiedGrounding } from '@hy3-clinic/shared';
+import { formatPageRange } from './ui.js';
 
 export interface SourceEvidencePanelProps {
   grounding: VerifiedGrounding;
@@ -64,11 +65,11 @@ export function SourceEvidencePanel({
   const before = block.content.slice(0, grounding.startOffset);
   const quote = block.content.slice(grounding.startOffset, grounding.endOffset);
   const after = block.content.slice(grounding.endOffset);
-  // Provenance shown beside the title: heading path (Markdown/DOCX) and/or
-  // page number (PDF) — same wording as the graph inspector's evidence cards.
+  // Provenance shown beside the title: heading path (Markdown/DOCX/PDF)
+  // and/or page range (PDF) — same wording as the graph inspector's cards.
   const location = [
     block.headingPath.join(' / '),
-    block.pageNumber ? `第 ${block.pageNumber} 页` : '',
+    formatPageRange(block.pageNumber, block.pageEnd) ?? '',
   ]
     .filter(Boolean)
     .join(' · ');

@@ -326,7 +326,7 @@ export function createGradingService({
       };
 
       repos.submissions.insertSubmission(submission);
-      repos.submissions.insertGradingResult(result);
+      repos.submissions.insertGradingResult(result, provider.name);
       const outcomes = persistOutcomes(quiz, grades, answersById, createdAt);
 
       // Deterministic misconception transitions (discriminating questions
@@ -363,6 +363,10 @@ export function createGradingService({
         ...withoutNextStep,
         recommendedNextStep: nextStepText(withoutNextStep),
       };
+      // Completed-attempt snapshot: the deterministic summary above is part
+      // of the durable history record, so reopening this result later can
+      // replay it without recomputing (or re-triggering) anything.
+      repos.submissions.recordStateChanges(result.id, stateChanges);
 
       return { result, stateChanges };
     },

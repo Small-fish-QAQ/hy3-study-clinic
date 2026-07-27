@@ -134,6 +134,75 @@ end
 }
 
 // ---------------------------------------------------------------------------
+// 3-page PDF exercising the layout-aware reconstruction through the real
+// parser: font-size-tiered headings, repeated page-counter footers, wrapped
+// paragraphs (including a hyphenated wrap and one crossing a page break), and
+// an aligned two-column table. ASCII/Helvetica only — CJK layout cases are
+// covered by item-level unit tests.
+// ---------------------------------------------------------------------------
+function buildLayoutPdf() {
+  const t = (x, y, size, text) => `BT /F1 ${size} Tf ${x} ${y} Td (${text}) Tj ET`;
+
+  const page1 = [
+    t(60, 700, 24, 'Chapter One'),
+    t(
+      60,
+      660,
+      12,
+      'Working memory keeps only a small number of items active at once and this basic',
+    ),
+    t(60, 644, 12, 'limit shapes how people study.'),
+    t(60, 618, 12, 'Reviews should therefore come in short spaced sessions.'),
+    t(60, 580, 16, 'Detail Section'),
+    t(
+      60,
+      544,
+      12,
+      'Spaced repetition schedules each review just before the learner would truly for-',
+    ),
+    t(60, 528, 12, 'get the studied material.'),
+    t(60, 30, 8, 'Study Notes 1'),
+  ].join('\n');
+
+  const page2 = [
+    t(60, 700, 12, 'Method'),
+    t(300, 700, 12, 'Speed'),
+    t(60, 680, 12, 'Flat'),
+    t(300, 680, 12, 'slow'),
+    t(60, 660, 12, 'Graph'),
+    t(300, 660, 12, 'fast'),
+    t(
+      60,
+      120,
+      12,
+      'Retrieval practice strengthens long term memory more than passive review because',
+    ),
+    t(60, 30, 8, 'Study Notes 2'),
+  ].join('\n');
+
+  const page3 = [
+    t(60, 700, 12, 'the act of recall rewires the memory trace.'),
+    t(60, 30, 8, 'Study Notes 3'),
+  ].join('\n');
+
+  const objects = [];
+  objects[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+  objects[2] = '<< /Type /Pages /Kids [3 0 R 5 0 R 7 0 R] /Count 3 >>';
+  objects[3] =
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 9 0 R >> >> >>';
+  objects[4] = `<< /Length ${page1.length} >>\nstream\n${page1}\nendstream`;
+  objects[5] =
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 9 0 R >> >> >>';
+  objects[6] = `<< /Length ${page2.length} >>\nstream\n${page2}\nendstream`;
+  objects[7] =
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 8 0 R /Resources << /Font << /F1 9 0 R >> >> >>';
+  objects[8] = `<< /Length ${page3.length} >>\nstream\n${page3}\nendstream`;
+  objects[9] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>';
+
+  return serializePdf(objects);
+}
+
+// ---------------------------------------------------------------------------
 // Minimal DOCX (zip with the three required parts) built with jszip
 // (transitive dependency of mammoth; used here at generation time only).
 // ---------------------------------------------------------------------------
@@ -183,25 +252,50 @@ async function buildDocx() {
   });
 }
 
-const pdf = buildPdf();
-writeFileSync(join(here, 'sample.pdf'), pdf);
+// Optional name filter: `node scripts/generate-test-fixtures.mjs layout`
+// regenerates only the named fixtures (avoids touching unrelated binaries).
+const only = process.argv.slice(2);
+const wanted = (name) => only.length === 0 || only.includes(name);
+const written = {};
 
-const emptyPdf = buildEmptyPdf();
-writeFileSync(join(here, 'empty.pdf'), emptyPdf);
+if (wanted('sample')) {
+  const pdf = buildPdf();
+  writeFileSync(join(here, 'sample.pdf'), pdf);
+  written.pdf = pdf.length;
+}
 
-const artifactsPdf = buildArtifactsPdf();
-writeFileSync(join(here, 'artifacts.pdf'), artifactsPdf);
+if (wanted('empty')) {
+  const emptyPdf = buildEmptyPdf();
+  writeFileSync(join(here, 'empty.pdf'), emptyPdf);
+  written.emptyPdf = emptyPdf.length;
+}
 
-// Malformed variants: right extensions, wrong bytes / truncated container.
-writeFileSync(join(here, 'malformed.pdf'), Buffer.from('%PDF-1.4\nthis is not a real pdf body'));
-writeFileSync(join(here, 'malformed.docx'), Buffer.from('PKbroken-zip-payload', 'latin1'));
+if (wanted('artifacts')) {
+  const artifactsPdf = buildArtifactsPdf();
+  writeFileSync(join(here, 'artifacts.pdf'), artifactsPdf);
+  written.artifactsPdf = artifactsPdf.length;
+}
 
-const docx = await buildDocx();
-writeFileSync(join(here, 'sample.docx'), docx);
+if (wanted('layout')) {
+  const layoutPdf = buildLayoutPdf();
+  writeFileSync(join(here, 'layout.pdf'), layoutPdf);
+  written.layoutPdf = layoutPdf.length;
+}
 
-console.log('fixtures written:', {
-  pdf: pdf.length,
-  emptyPdf: emptyPdf.length,
-  artifactsPdf: artifactsPdf.length,
-  docx: docx.length,
-});
+if (wanted('malformed')) {
+  // Malformed variants: right extensions, wrong bytes / truncated container.
+  writeFileSync(join(here, 'malformed.pdf'), Buffer.from('%PDF-1.4\nthis is not a real pdf body'));
+  writeFileSync(
+    join(here, 'malformed.docx'),
+    Buffer.from('PK\x03\x04broken-zip-payload', 'latin1'),
+  );
+  written.malformed = true;
+}
+
+if (wanted('docx')) {
+  const docx = await buildDocx();
+  writeFileSync(join(here, 'sample.docx'), docx);
+  written.docx = docx.length;
+}
+
+console.log('fixtures written:', written);

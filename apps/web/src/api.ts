@@ -4,6 +4,8 @@ import type {
   AssessmentMode,
   CanonicalConcept,
   CanonicalConceptView,
+  CompletedAttemptDetail,
+  CompletedAttemptSummary,
   Concept,
   ConceptLearnerState,
   DailyQueueItem,
@@ -390,6 +392,24 @@ export const api = {
       'POST',
       `/api/workspaces/${workspaceId}/assessments`,
       input,
+      signal,
+    ),
+
+  // --- Completed-quiz history (read-only) ---
+
+  listAttempts: (workspaceId: string, signal?: AbortSignal) =>
+    request<{ attempts: CompletedAttemptSummary[] }>(
+      'GET',
+      `/api/workspaces/${workspaceId}/attempts`,
+      undefined,
+      signal,
+    ),
+
+  getAttempt: (workspaceId: string, attemptId: string, signal?: AbortSignal) =>
+    request<CompletedAttemptDetail>(
+      'GET',
+      `/api/workspaces/${workspaceId}/attempts/${attemptId}`,
+      undefined,
       signal,
     ),
 
