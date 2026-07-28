@@ -241,6 +241,7 @@ export const workspace: Workspace = {
   name: '认知科学课程',
   description: null,
   activeGraphVersionId: 'gv_1',
+  origin: 'manual',
   createdAt: T0,
   updatedAt: T0,
 };

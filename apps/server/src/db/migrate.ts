@@ -452,6 +452,23 @@ const MIGRATIONS: Migration[] = [
       ALTER TABLE grading_results ADD COLUMN state_changes TEXT;
     `,
   },
+  {
+    version: 11,
+    name: 'workspace_origin',
+    // Persisted, immutable workspace origin. New rows record how they were
+    // created ('manual' via POST /api/workspaces, 'material_import' for the
+    // auto-created per-import compatibility workspace of a 资料库 import);
+    // the origin decides the deletion lifecycle (an import workspace is
+    // retired together with its final document). Every pre-existing row —
+    // including migration-2 legacy compatibility workspaces — keeps the
+    // honest default 'unknown': their origin was never recorded, so they are
+    // conservatively preserved and never auto-deleted. No existing data is
+    // rewritten or reclassified.
+    up: `
+      ALTER TABLE workspaces ADD COLUMN origin TEXT NOT NULL DEFAULT 'unknown'
+        CHECK (origin IN ('manual', 'material_import', 'unknown'));
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

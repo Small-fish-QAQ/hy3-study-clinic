@@ -1,5 +1,6 @@
 import {
   UpdateMaterialTitleRequestSchema,
+  type DocumentDeletionResult,
   type DocumentFilePayload,
   type Material,
   type MediaType,
@@ -66,6 +67,9 @@ export function createMaterialService({ repos, clock }: MaterialServiceDeps) {
       name: title.slice(0, 120),
       description: null,
       activeGraphVersionId: null,
+      // Auto-created for this import: the workspace is retired together with
+      // its final document (see workspaces repo deleteDocumentTx).
+      origin: 'material_import',
       createdAt: now,
       updatedAt: now,
     };
@@ -192,12 +196,19 @@ export function createMaterialService({ repos, clock }: MaterialServiceDeps) {
       return material;
     },
 
-    delete(id: string): void {
+    delete(id: string): DocumentDeletionResult {
       const material = repos.materials.get(id);
       if (!material) throw notFound(`学习资料不存在:${id}`);
       // Route through the workspace-aware delete so graph edges / plans that
-      // depend on this document are cleaned up in the same transaction.
-      repos.workspaces.deleteDocument(id, material.workspaceId, clock.now().toISOString());
+      // depend on this document are cleaned up in the same transaction — and
+      // so the final document of an import-created workspace retires the
+      // workspace with it.
+      const outcome = repos.workspaces.deleteDocument(
+        id,
+        material.workspaceId,
+        clock.now().toISOString(),
+      );
+      return { workspaceId: material.workspaceId, workspaceDeleted: outcome.workspaceDeleted };
     },
 
     list() {

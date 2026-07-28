@@ -24,6 +24,17 @@ The primary journey (fully covered by the fake-provider smoke script, `npm run d
 
 Pre-upgrade single-material data remains fully readable: the migration gives every legacy material its own compatibility workspace and deletes nothing.
 
+### Managing documents and course spaces
+
+Every course space records how it was created (`origin`), and that decides its deletion lifecycle:
+
+- **资料库 imports** auto-create a same-named course space per material (`material_import`). Deleting such a document permanently removes it with its blocks, concepts, dependent graph edges, quizzes, mistakes, and mastery — and when it is the **final document**, the auto-created course space is retired **in the same server transaction**, together with its remaining space-level records (assessment score history, review progress, blueprints). No empty `0 文档 · 0 概念` shell is left behind, and no second deletion step is needed; the confirmation dialog states this before anything happens.
+- **Manually created course spaces** (`manual`, via 学习图谱's 新建课程空间) are deliberate containers: deleting any document — including the final one — keeps the space listed everywhere with honest zero counts, preserving its space-level assessment history for when documents are added again.
+- **Pre-upgrade spaces** (`unknown`, including the migration-created legacy compatibility spaces) are conservatively preserved exactly like manual ones — their origin was never recorded, so nothing is guessed and nothing is auto-deleted.
+- **删除课程空间** (the ✕ action next to each entry in the 学习图谱 sidebar) remains the explicit way to retire any course space regardless of origin: all remaining documents, concepts, graphs, quizzes **including completed-attempt history**, mistakes, mastery, misconceptions, review progress, and tutor records are cascade-deleted in one transaction after an explicit confirmation. Use it to clean up empty historical spaces created before this upgrade. If the deleted space owned the currently open material or assessment, the app clears that selection and falls back to a remaining course space (or the normal empty state).
+
+Empty course spaces are never hidden or filtered: an entry disappears only when it is actually deleted (by you, or together with the final document of a 资料库 import), and both 资料库 and 学习图谱 always reflect the same server-persisted state.
+
 ### The adaptive learning loop
 
 On top of the workspace journey above, the adaptive upgrade (fully covered by `npm run demo:adaptive`) closes the loop:

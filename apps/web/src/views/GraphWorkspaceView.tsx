@@ -47,6 +47,12 @@ export interface GraphWorkspaceViewProps {
   onLaunchQuiz: (quiz: PublicQuiz, mode: 'remediation' | 'practice' | 'assessment') => void;
   /** Bumped by App after grading so learner overlays refresh. */
   refreshKey: number;
+  /**
+   * Notified after the server confirmed a course-space deletion, so App can
+   * reconcile state that referenced it (open material, assessment context,
+   * material history list).
+   */
+  onWorkspaceDeleted?: (workspaceId: string) => void;
 }
 
 interface WorkspaceData {
@@ -80,7 +86,11 @@ interface PendingLaunch {
  * epoch so late responses can never overwrite newer state. Selection-scoped
  * requests (plan fetch/generation) additionally verify the selected concept.
  */
-export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceViewProps) {
+export function GraphWorkspaceView({
+  onLaunchQuiz,
+  refreshKey,
+  onWorkspaceDeleted,
+}: GraphWorkspaceViewProps) {
   const [workspaces, setWorkspaces] = useState<WorkspaceSummary[]>([]);
   const [workspacesLoading, setWorkspacesLoading] = useState(true);
   const [workspacesError, setWorkspacesError] = useState<string | null>(null);
@@ -116,6 +126,7 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
   const addDocAction = useAsyncAction();
   const analyzeAction = useAsyncAction();
   const documentAction = useAsyncAction();
+  const deleteWorkspaceAction = useAsyncAction();
   const graphAction = useAsyncAction();
   const planAction = useAsyncAction();
   const launchAction = useAsyncAction();
@@ -129,22 +140,32 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
     };
   }, []);
 
+  /**
+   * Monotonic id of workspace-list requests: only the LATEST response may
+   * update the list, so a slow earlier GET can never resurrect an entry that
+   * a later mutation (for example a course-space deletion) already removed.
+   */
+  const workspacesFetchSeq = useRef(0);
+
   const loadWorkspaces = useCallback(async () => {
     const epoch = epochRef.current;
+    const fetchId = ++workspacesFetchSeq.current;
+    const isCurrent = () =>
+      mountedRef.current && epochRef.current === epoch && workspacesFetchSeq.current === fetchId;
     setWorkspacesLoading(true);
     setWorkspacesError(null);
     try {
       const result = await api.listWorkspaces();
-      if (!mountedRef.current || epochRef.current !== epoch) return null;
+      if (!isCurrent()) return null;
       setWorkspaces(result.workspaces);
       return result.workspaces;
     } catch (error) {
-      if (mountedRef.current && epochRef.current === epoch) {
+      if (isCurrent()) {
         setWorkspacesError(errorMessage(error));
       }
       return null;
     } finally {
-      if (mountedRef.current && epochRef.current === epoch) setWorkspacesLoading(false);
+      if (isCurrent()) setWorkspacesLoading(false);
     }
   }, []);
 
@@ -295,6 +316,47 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
     switchWorkspace(result.workspace.id);
   }
 
+  /**
+   * Delete an entire course space (documents, concepts, graph, quizzes and
+   * attempt history, mistakes, mastery, review progress, tutor records — the
+   * server cascades all of it). Deleting a document never removes its course
+   * space; THIS is the explicit way to retire one. The list/App state is
+   * only updated after the server confirmed the deletion; a 404 means it was
+   * already gone, which reaches the same goal state.
+   */
+  async function handleDeleteWorkspace(target: WorkspaceSummary) {
+    if (deleteWorkspaceAction.loading) return;
+    const scope =
+      target.documentCount > 0 || target.conceptCount > 0
+        ? `其中的 ${target.documentCount} 个文档、${target.conceptCount} 个概念,以及全部图谱、测验与成绩历史、错题、掌握度、复习进度和辅导记录都会被永久删除。`
+        : '该课程空间已没有文档;它的历史测验成绩、复习进度等剩余记录(如有)也会一并删除。';
+    if (!window.confirm(`删除课程空间「${target.name}」?\n\n${scope}\n\n此操作无法恢复。`)) {
+      return;
+    }
+    const wasActive = activeWorkspaceId === target.id;
+    const result = await deleteWorkspaceAction.run(async (signal) => {
+      try {
+        await api.deleteWorkspace(target.id, signal);
+      } catch (error) {
+        // Already deleted (for example in another tab): the goal state is
+        // reached, so continue with the local cleanup instead of failing.
+        if (error instanceof ApiClientError && error.status === 404) return true;
+        throw error;
+      }
+      return true;
+    });
+    if (!result) return;
+
+    clearLastWorkspaceId(target.id);
+    if (wasActive) switchWorkspace(null);
+    const remaining = await loadWorkspaces();
+    if (wasActive && remaining && remaining.length > 0) {
+      // Fall back to the most recently updated remaining course space.
+      switchWorkspace(remaining[0]!.id);
+    }
+    onWorkspaceDeleted?.(target.id);
+  }
+
   async function handleAddText(content: string, title: string) {
     if (!activeWorkspaceId || !content.trim()) return;
     const workspaceId = activeWorkspaceId;
@@ -343,23 +405,44 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
     const result = await analyzeAction.run((signal) => api.analyze(documentId, signal));
     if (result && activeWorkspaceId === workspaceId) {
       await loadWorkspaceData(workspaceId);
+      // The sidebar summaries include a concept count — keep them in step.
+      await loadWorkspaces();
     }
   }
 
   async function handleDeleteDocument(documentId: string) {
-    if (!activeWorkspaceId) return;
-    if (
-      !window.confirm(
-        '删除文档将同时删除它的源块、概念、相关图谱关系、测验与错题记录,且不可恢复。确定删除?',
-      )
-    ) {
+    if (!activeWorkspaceId || !data) return;
+    const workspaceId = activeWorkspaceId;
+    // An import-created workspace is retired together with its FINAL
+    // document (server-side, one transaction) — the confirmation must say
+    // so. Manual and legacy/unknown workspaces are always preserved.
+    const retiresWorkspace =
+      data.workspace.origin === 'material_import' && data.documents.length === 1;
+    const confirmText = retiresWorkspace
+      ? '删除文档将同时删除它的源块、概念、相关图谱关系、测验与错题记录,且不可恢复。\n\n这是该课程空间中的最后一个文档,而该课程空间由资料库导入自动创建:课程空间将随文档一并删除,包括其测验与成绩历史、复习进度等全部剩余记录。确定删除?'
+      : '删除文档将同时删除它的源块、概念、相关图谱关系、测验与错题记录,且不可恢复。课程空间本身会保留,之后可以继续添加文档。确定删除?';
+    if (!window.confirm(confirmText)) {
       return;
     }
-    const workspaceId = activeWorkspaceId;
     const result = await documentAction.run((signal) =>
-      api.deleteDocument(workspaceId, documentId, signal).then(() => true),
+      api.deleteDocument(workspaceId, documentId, signal),
     );
-    if (result && activeWorkspaceId === workspaceId) {
+    if (!result) return;
+
+    if (result.workspaceDeleted) {
+      // Server-confirmed: the import workspace went with its final document.
+      // Same reconciliation as an explicit course-space deletion.
+      clearLastWorkspaceId(workspaceId);
+      if (activeWorkspaceId === workspaceId) switchWorkspace(null);
+      const remaining = await loadWorkspaces();
+      if (remaining && remaining.length > 0) {
+        switchWorkspace(remaining[0]!.id);
+      }
+      onWorkspaceDeleted?.(workspaceId);
+      return;
+    }
+
+    if (activeWorkspaceId === workspaceId) {
       if (selectedNodeId || selectedEdgeId) {
         setSelectedNodeId(null);
         setSelectedEdgeId(null);
@@ -652,10 +735,10 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
           {workspacesLoading ? <Loading label="加载课程空间…" /> : null}
           <ul className="workspace-list">
             {workspaces.map((ws) => (
-              <li key={ws.id}>
+              <li key={ws.id} className="workspace-item">
                 <button
                   type="button"
-                  className={ws.id === activeWorkspaceId ? 'active' : ''}
+                  className={`workspace-open ${ws.id === activeWorkspaceId ? 'active' : ''}`}
                   onClick={() => switchWorkspace(ws.id)}
                 >
                   {ws.name}
@@ -664,9 +747,22 @@ export function GraphWorkspaceView({ onLaunchQuiz, refreshKey }: GraphWorkspaceV
                     {ws.documentCount} 文档 · {ws.conceptCount} 概念
                   </span>
                 </button>
+                <button
+                  type="button"
+                  className="ghost small danger workspace-delete"
+                  aria-label={`删除课程空间:${ws.name}`}
+                  title={`删除课程空间:${ws.name}`}
+                  disabled={deleteWorkspaceAction.loading}
+                  onClick={() => void handleDeleteWorkspace(ws)}
+                >
+                  ✕
+                </button>
               </li>
             ))}
           </ul>
+          {deleteWorkspaceAction.error ? (
+            <Banner kind="error">删除课程空间失败:{deleteWorkspaceAction.error}</Banner>
+          ) : null}
           {!workspacesLoading && workspaces.length === 0 ? (
             <Banner kind="empty">还没有课程空间。先创建一个,然后导入学习文档。</Banner>
           ) : null}
@@ -1228,6 +1324,22 @@ function writeLastWorkspaceId(id: string): void {
     window.localStorage.setItem(LAST_WORKSPACE_KEY, id);
   } catch {
     // Storage can be unavailable; the workspace simply is not restored.
+  }
+}
+
+/**
+ * Forget the saved 学习图谱 workspace selection if it points at
+ * `expectedId`. Exported for App: a 资料库 deletion can retire the
+ * document's import-created workspace, and a stale saved id must not survive
+ * it.
+ */
+export function clearLastWorkspaceId(expectedId: string): void {
+  try {
+    if (window.localStorage.getItem(LAST_WORKSPACE_KEY) === expectedId) {
+      window.localStorage.removeItem(LAST_WORKSPACE_KEY);
+    }
+  } catch {
+    // Treat unavailable storage like an absent saved selection.
   }
 }
 

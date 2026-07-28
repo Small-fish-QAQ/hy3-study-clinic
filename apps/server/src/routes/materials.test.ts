@@ -588,7 +588,7 @@ describe('PATCH /api/materials/:id', () => {
 });
 
 describe('DELETE /api/materials/:id', () => {
-  it('returns 204 and removes a fully populated material without affecting another', async () => {
+  it('removes a fully populated material (and its import workspace) without affecting another', async () => {
     const first = await ctx.app.inject({
       method: 'POST',
       url: '/api/materials',
@@ -617,8 +617,18 @@ describe('DELETE /api/materials/:id', () => {
       url: `/api/materials/${firstBody.material.id}`,
     });
 
-    expect(response.statusCode).toBe(204);
-    expect(response.body).toBe('');
+    expect(response.statusCode).toBe(200);
+    // Both materials were 资料库 imports: deleting the only document of the
+    // first one retires its auto-created workspace in the same transaction.
+    expect(response.json()).toEqual({
+      workspaceId: firstBody.material.workspaceId,
+      workspaceDeleted: true,
+    });
+    expect(
+      ctx.db
+        .prepare('SELECT COUNT(*) AS n FROM workspaces WHERE id = ?')
+        .get(firstBody.material.workspaceId),
+    ).toMatchObject({ n: 0 });
     expect(ctx.repos.materials.get(firstBody.material.id)).toBeUndefined();
     expect(ctx.repos.materials.getBlocks(firstBody.material.id)).toEqual([]);
     expect(ctx.repos.materials.getConcept(deletedRecords.conceptId)).toBeUndefined();

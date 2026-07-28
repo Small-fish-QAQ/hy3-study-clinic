@@ -37,10 +37,38 @@ describe('workspace and document schemas', () => {
         name: '认知科学',
         description: null,
         activeGraphVersionId: null,
+        origin: 'manual',
         createdAt: T,
         updatedAt: T,
       }),
     ).not.toThrow();
+
+    // The origin is a controlled enum: every creation path must declare one
+    // ('manual' | 'material_import' | 'unknown'), nothing else parses.
+    for (const origin of ['manual', 'material_import', 'unknown'] as const) {
+      expect(() =>
+        WorkspaceSchema.parse({
+          id: 'ws_1',
+          name: '认知科学',
+          description: null,
+          activeGraphVersionId: null,
+          origin,
+          createdAt: T,
+          updatedAt: T,
+        }),
+      ).not.toThrow();
+    }
+    expect(() =>
+      WorkspaceSchema.parse({
+        id: 'ws_1',
+        name: '认知科学',
+        description: null,
+        activeGraphVersionId: null,
+        origin: 'legacy_guessed',
+        createdAt: T,
+        updatedAt: T,
+      }),
+    ).toThrow();
 
     expect(() =>
       MaterialSchema.parse({

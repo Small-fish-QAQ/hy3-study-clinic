@@ -274,7 +274,8 @@ describe('alignment decisions', () => {
       method: 'DELETE',
       url: `/api/workspaces/${setup.workspaceId}/documents/${setup.docBId}`,
     });
-    expect(deleteB.statusCode).toBe(204);
+    expect(deleteB.statusCode).toBe(200);
+    expect(deleteB.json()).toEqual({ workspaceId: setup.workspaceId, workspaceDeleted: false });
 
     let overview = await setup.ctx.app.inject({
       method: 'GET',
@@ -291,7 +292,11 @@ describe('alignment decisions', () => {
       method: 'DELETE',
       url: `/api/workspaces/${setup.workspaceId}/documents/${setup.docAId}`,
     });
-    expect(deleteA.statusCode).toBe(204);
+    // The workspace was created manually, so even the final document leaves
+    // it in place (only import-created workspaces retire with their last
+    // document).
+    expect(deleteA.statusCode).toBe(200);
+    expect(deleteA.json()).toEqual({ workspaceId: setup.workspaceId, workspaceDeleted: false });
     overview = await setup.ctx.app.inject({
       method: 'GET',
       url: `/api/workspaces/${setup.workspaceId}/alignment`,

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GraphWorkspaceView } from './GraphWorkspaceView';
@@ -180,7 +180,7 @@ describe('学习图谱工作台 — workspace and document area', () => {
     await screen.findByTestId('concept-graph');
     // Regression: this used to clear `data` without re-triggering the load
     // effect, leaving the graph area permanently blank.
-    await user.click(screen.getByRole('button', { name: /认知科学课程/ }));
+    await user.click(screen.getByRole('button', { name: /^认知科学课程/ }));
     expect(screen.getByTestId('concept-graph')).toBeInTheDocument();
     await waitFor(() => {
       expect(document.querySelectorAll('.react-flow__node').length).toBeGreaterThan(0);
@@ -624,7 +624,7 @@ describe('学习图谱工作台 — stale workspace switches', () => {
     renderView();
 
     // While ws_1 detail hangs, the user opens ws_2.
-    await user.click(await screen.findByRole('button', { name: /第二课程/ }));
+    await user.click(await screen.findByRole('button', { name: /^第二课程/ }));
     expect(await screen.findByLabelText('学习图谱引导')).toBeInTheDocument();
 
     // The stale ws_1 response resolves now — it must not replace ws_2 data.
@@ -968,7 +968,7 @@ describe('学习图谱工作台 — 自适应学习升级', () => {
     await within(queueArea).findByRole('button', { name: '启动中…' });
 
     // Switching workspaces aborts the launch; no late navigation happens.
-    await user.click(screen.getByRole('button', { name: /第二课程/ }));
+    await user.click(screen.getByRole('button', { name: /^第二课程/ }));
     await screen.findByText('文档(0)');
     expect(onLaunchQuiz).not.toHaveBeenCalled();
   });
@@ -1094,5 +1094,561 @@ describe('学习图谱工作台 — 自适应学习升级', () => {
     expect(within(inspector).getByText(/学习者可能混淆了容量限制/)).toBeInTheDocument();
     expect(within(inspector).getByText(/下次复习/)).toBeInTheDocument();
     expect(within(inspector).getByText(/误区仅为假设/)).toBeInTheDocument();
+  });
+});
+
+/**
+ * 删除课程空间 — the explicit way to retire a course space (including the
+ * empty historical ones left behind after their documents were deleted in
+ * 资料库). The UI must only update after server-confirmed success, clean up
+ * the active selection, and stay immune to stale list responses.
+ */
+describe('学习图谱工作台 — course-space deletion', () => {
+  const ghost = {
+    ...workspaceSummary,
+    id: 'ws_2',
+    name: '历史课程',
+    activeGraphVersionId: null,
+    documentCount: 0,
+    conceptCount: 0,
+  };
+
+  it('declining the confirmation sends no request and keeps the entry', async () => {
+    const user = userEvent.setup();
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const { calls } = installViewMock([
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces$/,
+        handler: () => ({ body: { workspaces: [workspaceSummary, ghost] } }),
+      },
+    ]);
+    renderView();
+
+    await user.click(await screen.findByRole('button', { name: '删除课程空间:历史课程' }));
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(confirm.mock.calls[0]![0]).toContain('删除课程空间「历史课程」');
+    expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(0);
+    expect(screen.getByText('历史课程')).toBeInTheDocument();
+  });
+
+  it('extracting concepts refreshes the sidebar concept count immediately', async () => {
+    const user = userEvent.setup();
+    openSavedWorkspace();
+    let analyzed = false;
+    installViewMock([
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces$/,
+        handler: () => ({
+          body: { workspaces: [{ ...workspaceSummary, conceptCount: analyzed ? 2 : 0 }] },
+        }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1$/,
+        handler: () => ({
+          body: {
+            workspace,
+            documents: [{ ...documentSummary, conceptCount: analyzed ? 2 : 0 }],
+          },
+        }),
+      },
+      {
+        method: 'POST',
+        pattern: /\/api\/materials\/mat_1\/analyze$/,
+        handler: () => {
+          analyzed = true;
+          return { body: { concepts: graphConcepts } };
+        },
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/graph$/,
+        handler: () => ({
+          body: { version: null, edges: [], concepts: analyzed ? graphConcepts : [] },
+        }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/graph\/versions$/,
+        handler: () => ({ body: { versions: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/overlay$/,
+        handler: () => ({ body: { states: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/materials\/mat_1$/,
+        handler: () => ({ body: material }),
+      },
+    ]);
+    renderView();
+
+    expect(await screen.findByText(/1 文档 · 0 概念/)).toBeInTheDocument();
+    await user.click((await screen.findAllByRole('button', { name: '提取概念' }))[0]!);
+    expect(await screen.findByText(/1 文档 · 2 概念/)).toBeInTheDocument();
+  });
+
+  it('deletes an empty historical course space and refreshes the list (the ghost-entry scenario)', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const onWorkspaceDeleted = vi.fn();
+    let live = [workspaceSummary, ghost];
+    const { calls } = installViewMock([
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces$/,
+        handler: () => ({ body: { workspaces: live } }),
+      },
+      {
+        method: 'DELETE',
+        pattern: /\/api\/workspaces\/ws_2$/,
+        handler: () => {
+          live = live.filter((w) => w.id !== 'ws_2');
+          return { status: 204 };
+        },
+      },
+    ]);
+    render(
+      <GraphWorkspaceView
+        refreshKey={0}
+        onLaunchQuiz={() => {}}
+        onWorkspaceDeleted={onWorkspaceDeleted}
+      />,
+    );
+
+    expect(await screen.findByText('历史课程')).toBeInTheDocument();
+    expect(screen.getByText(/0 文档 · 0 概念/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '删除课程空间:历史课程' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('历史课程')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('认知科学课程')).toBeInTheDocument();
+    expect(calls.some((c) => c.method === 'DELETE' && /\/api\/workspaces\/ws_2$/.test(c.url))).toBe(
+      true,
+    );
+    expect(onWorkspaceDeleted).toHaveBeenCalledWith('ws_2');
+  });
+
+  it('deleting the active course space clears it and falls back to the remaining one', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const onWorkspaceDeleted = vi.fn();
+    openSavedWorkspace();
+    let live = [workspaceSummary, ghost];
+    installViewMock([
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces$/,
+        handler: () => ({ body: { workspaces: live } }),
+      },
+      {
+        method: 'DELETE',
+        pattern: /\/api\/workspaces\/ws_1$/,
+        handler: () => {
+          live = live.filter((w) => w.id !== 'ws_1');
+          return { status: 204 };
+        },
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_2$/,
+        handler: () => ({
+          body: { workspace: { ...workspace, id: 'ws_2', name: '历史课程' }, documents: [] },
+        }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_2\/graph$/,
+        handler: () => ({ body: { version: null, edges: [], concepts: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_2\/graph\/versions$/,
+        handler: () => ({ body: { versions: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_2\/overlay$/,
+        handler: () => ({ body: { states: [] } }),
+      },
+      ...baseRoutes(),
+    ]);
+    render(
+      <GraphWorkspaceView
+        refreshKey={0}
+        onLaunchQuiz={() => {}}
+        onWorkspaceDeleted={onWorkspaceDeleted}
+      />,
+    );
+
+    // The active workspace loaded its graph before deletion.
+    expect(await screen.findByLabelText('个人学习图谱')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '重新生成图谱' })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: '删除课程空间:认知科学课程' }));
+
+    // Falls back to the remaining course space and shows its (empty) state.
+    await waitFor(() => {
+      expect(screen.queryByText('认知科学课程')).not.toBeInTheDocument();
+    });
+    expect(await screen.findByLabelText('学习图谱引导')).toBeInTheDocument();
+    expect(window.localStorage.getItem(LAST_WORKSPACE_KEY)).toBe('ws_2');
+    expect(onWorkspaceDeleted).toHaveBeenCalledWith('ws_1');
+  });
+
+  it('deleting the only course space clears the saved id and shows the empty state', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    openSavedWorkspace();
+    let live = [{ ...workspaceSummary, documentCount: 0, conceptCount: 0 }];
+    installViewMock([
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces$/,
+        handler: () => ({ body: { workspaces: live } }),
+      },
+      {
+        method: 'DELETE',
+        pattern: /\/api\/workspaces\/ws_1$/,
+        handler: () => {
+          live = [];
+          return { status: 204 };
+        },
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1$/,
+        handler: () => ({ body: { workspace, documents: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/graph$/,
+        handler: () => ({ body: { version: null, edges: [], concepts: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/graph\/versions$/,
+        handler: () => ({ body: { versions: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/overlay$/,
+        handler: () => ({ body: { states: [] } }),
+      },
+    ]);
+    renderView();
+
+    expect(await screen.findByText(/0 文档 · 0 概念/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '删除课程空间:认知科学课程' }));
+
+    expect(await screen.findByText(/还没有课程空间/)).toBeInTheDocument();
+    expect(screen.getByText(/选择或创建一个课程空间/)).toBeInTheDocument();
+    expect(window.localStorage.getItem(LAST_WORKSPACE_KEY)).toBeNull();
+  });
+
+  it('a failed deletion keeps the entry and reports the error honestly', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const onWorkspaceDeleted = vi.fn();
+    const { calls } = installViewMock([
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces$/,
+        handler: () => ({ body: { workspaces: [workspaceSummary, ghost] } }),
+      },
+      {
+        method: 'DELETE',
+        pattern: /\/api\/workspaces\/ws_2$/,
+        handler: () => ({
+          status: 500,
+          body: { error: { code: 'INTERNAL', message: '数据库繁忙' } },
+        }),
+      },
+    ]);
+    render(
+      <GraphWorkspaceView
+        refreshKey={0}
+        onLaunchQuiz={() => {}}
+        onWorkspaceDeleted={onWorkspaceDeleted}
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: '删除课程空间:历史课程' }));
+
+    expect(await screen.findByText(/删除课程空间失败:数据库繁忙/)).toBeInTheDocument();
+    expect(screen.getByText('历史课程')).toBeInTheDocument();
+    expect(onWorkspaceDeleted).not.toHaveBeenCalled();
+    // No refresh happened after the failure — one initial list load only.
+    expect(
+      calls.filter((c) => c.method === 'GET' && /\/api\/workspaces$/.test(c.url)),
+    ).toHaveLength(1);
+  });
+
+  it('treats a 404 as already deleted and still cleans up', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const onWorkspaceDeleted = vi.fn();
+    let listCalls = 0;
+    installViewMock([
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces$/,
+        handler: () => {
+          listCalls += 1;
+          return {
+            body: { workspaces: listCalls === 1 ? [workspaceSummary, ghost] : [workspaceSummary] },
+          };
+        },
+      },
+      {
+        method: 'DELETE',
+        pattern: /\/api\/workspaces\/ws_2$/,
+        handler: () => ({
+          status: 404,
+          body: { error: { code: 'NOT_FOUND', message: '课程空间不存在:ws_2' } },
+        }),
+      },
+    ]);
+    render(
+      <GraphWorkspaceView
+        refreshKey={0}
+        onLaunchQuiz={() => {}}
+        onWorkspaceDeleted={onWorkspaceDeleted}
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: '删除课程空间:历史课程' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('历史课程')).not.toBeInTheDocument();
+    });
+    expect(screen.queryByText(/删除课程空间失败/)).not.toBeInTheDocument();
+    expect(onWorkspaceDeleted).toHaveBeenCalledWith('ws_2');
+  });
+
+  it('a slow earlier list response can never resurrect deleted course spaces', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const ghostB = { ...ghost, id: 'ws_3', name: '历史课程B' };
+    let live = [workspaceSummary, ghost, ghostB];
+    let listCalls = 0;
+    let releaseStaleList: (() => void) | null = null;
+    const staleGate = new Promise<void>((resolve) => {
+      releaseStaleList = resolve;
+    });
+    installViewMock([
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces$/,
+        handler: async () => {
+          listCalls += 1;
+          if (listCalls === 2) {
+            // The refresh triggered by the FIRST deletion stalls and returns
+            // a stale snapshot that still contains both ghosts.
+            const staleSnapshot = [workspaceSummary, ghost, ghostB];
+            await staleGate;
+            return { body: { workspaces: staleSnapshot } };
+          }
+          return { body: { workspaces: live } };
+        },
+      },
+      {
+        method: 'DELETE',
+        pattern: /\/api\/workspaces\/(ws_2|ws_3)$/,
+        handler: (_body, url) => {
+          const id = url.endsWith('ws_2') ? 'ws_2' : 'ws_3';
+          live = live.filter((w) => w.id !== id);
+          return { status: 204 };
+        },
+      },
+    ]);
+    renderView();
+
+    await screen.findByText('历史课程');
+    await user.click(screen.getByRole('button', { name: '删除课程空间:历史课程' }));
+    // Second deletion while the first refresh is still in flight.
+    await user.click(await screen.findByRole('button', { name: '删除课程空间:历史课程B' }));
+    await waitFor(() => {
+      expect(screen.queryByText('历史课程B')).not.toBeInTheDocument();
+    });
+
+    // Now the stale response (still listing both ghosts) finally arrives.
+    releaseStaleList!();
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.queryByText('历史课程')).not.toBeInTheDocument();
+    expect(screen.queryByText('历史课程B')).not.toBeInTheDocument();
+    expect(screen.getByText('认知科学课程')).toBeInTheDocument();
+  });
+});
+
+/**
+ * Document deletion inside 学习图谱, per workspace origin: an import-created
+ * course space retires together with its FINAL document (server-confirmed
+ * via the structured deletion result) and the view reconciles exactly like
+ * an explicit course-space deletion; a manual course space is preserved
+ * with honest zero counts.
+ */
+describe('学习图谱工作台 — document deletion lifecycle', () => {
+  it('retires an import course space with its final document and cleans up the selection', async () => {
+    const user = userEvent.setup();
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const onWorkspaceDeleted = vi.fn();
+    openSavedWorkspace();
+    const importWs = {
+      ...workspace,
+      activeGraphVersionId: null,
+      origin: 'material_import' as const,
+    };
+    let live = [{ ...workspaceSummary, ...importWs, conceptCount: 0 }];
+    installViewMock([
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces$/,
+        handler: () => ({ body: { workspaces: live } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1$/,
+        handler: () => ({ body: { workspace: importWs, documents: [documentSummary] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/graph$/,
+        handler: () => ({ body: { version: null, edges: [], concepts: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/graph\/versions$/,
+        handler: () => ({ body: { versions: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/overlay$/,
+        handler: () => ({ body: { states: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/materials\/mat_1$/,
+        handler: () => ({ body: material }),
+      },
+      {
+        method: 'DELETE',
+        pattern: /\/api\/workspaces\/ws_1\/documents\/mat_1$/,
+        handler: () => {
+          live = [];
+          return { body: { workspaceId: 'ws_1', workspaceDeleted: true } };
+        },
+      },
+    ]);
+    render(
+      <GraphWorkspaceView
+        refreshKey={0}
+        onLaunchQuiz={() => {}}
+        onWorkspaceDeleted={onWorkspaceDeleted}
+      />,
+    );
+
+    await screen.findByText('文档(1)');
+    await user.click(screen.getByRole('button', { name: '删除' }));
+    // The confirmation says the auto-created course space goes with the
+    // final document — including its remaining history.
+    expect(confirm.mock.calls[0]![0]).toContain('课程空间将随文档一并删除');
+
+    // Server-confirmed retirement: the entry disappears, the view falls
+    // back to the empty state, and nothing keeps referencing ws_1.
+    expect(await screen.findByText(/还没有课程空间/)).toBeInTheDocument();
+    expect(screen.queryByText('认知科学课程')).not.toBeInTheDocument();
+    expect(window.localStorage.getItem(LAST_WORKSPACE_KEY)).toBeNull();
+    expect(onWorkspaceDeleted).toHaveBeenCalledWith('ws_1');
+  });
+
+  it('keeps a manual course space (zero counts) after its final document is deleted', async () => {
+    const user = userEvent.setup();
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const onWorkspaceDeleted = vi.fn();
+    openSavedWorkspace();
+    const manualWs = { ...workspace, activeGraphVersionId: null };
+    let deleted = false;
+    installViewMock([
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces$/,
+        handler: () => ({
+          body: {
+            workspaces: [
+              {
+                ...workspaceSummary,
+                activeGraphVersionId: null,
+                documentCount: deleted ? 0 : 1,
+                conceptCount: 0,
+              },
+            ],
+          },
+        }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1$/,
+        handler: () => ({
+          body: { workspace: manualWs, documents: deleted ? [] : [documentSummary] },
+        }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/graph$/,
+        handler: () => ({ body: { version: null, edges: [], concepts: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/graph\/versions$/,
+        handler: () => ({ body: { versions: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/overlay$/,
+        handler: () => ({ body: { states: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/materials\/mat_1$/,
+        handler: () => ({ body: material }),
+      },
+      {
+        method: 'DELETE',
+        pattern: /\/api\/workspaces\/ws_1\/documents\/mat_1$/,
+        handler: () => {
+          deleted = true;
+          return { body: { workspaceId: 'ws_1', workspaceDeleted: false } };
+        },
+      },
+    ]);
+    render(
+      <GraphWorkspaceView
+        refreshKey={0}
+        onLaunchQuiz={() => {}}
+        onWorkspaceDeleted={onWorkspaceDeleted}
+      />,
+    );
+
+    await screen.findByText('文档(1)');
+    await user.click(screen.getByRole('button', { name: '删除' }));
+    // Manual workspace: the confirmation promises the space survives.
+    expect(confirm.mock.calls[0]![0]).toContain('课程空间本身会保留');
+
+    // The workspace stays selected and listed with corrected counts.
+    expect(await screen.findByText('文档(0)')).toBeInTheDocument();
+    expect(screen.getByText('认知科学课程')).toBeInTheDocument();
+    expect(screen.getByText(/0 文档 · 0 概念/)).toBeInTheDocument();
+    expect(window.localStorage.getItem(LAST_WORKSPACE_KEY)).toBe('ws_1');
+    expect(onWorkspaceDeleted).not.toHaveBeenCalled();
   });
 });

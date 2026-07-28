@@ -2,6 +2,7 @@ import {
   CreateWorkspaceRequestSchema,
   UpdateWorkspaceRequestSchema,
   type AddDocumentRequest,
+  type DocumentDeletionResult,
   type DocumentSummary,
   type Material,
   type Workspace,
@@ -52,6 +53,9 @@ export function createWorkspaceService({ repos, clock, materials }: WorkspaceSer
         name: parsed.name,
         description: parsed.description?.length ? parsed.description : null,
         activeGraphVersionId: null,
+        // Deliberately created by the learner: preserved even when its final
+        // document is deleted (unlike auto-created import workspaces).
+        origin: 'manual',
         createdAt: now,
         updatedAt: now,
       };
@@ -160,10 +164,20 @@ export function createWorkspaceService({ repos, clock, materials }: WorkspaceSer
       return { material: updated, blocks };
     },
 
-    /** Delete one document and all dependent data (explicit + transactional). */
-    deleteDocument(workspaceId: string, documentId: string): void {
+    /**
+     * Delete one document and all dependent data (explicit + transactional).
+     * When the document was the final one of a `material_import` workspace,
+     * the workspace is retired in the same transaction; the structured
+     * result reports it so clients can reconcile their state.
+     */
+    deleteDocument(workspaceId: string, documentId: string): DocumentDeletionResult {
       requireDocument(workspaceId, documentId);
-      repos.workspaces.deleteDocument(documentId, workspaceId, clock.now().toISOString());
+      const outcome = repos.workspaces.deleteDocument(
+        documentId,
+        workspaceId,
+        clock.now().toISOString(),
+      );
+      return { workspaceId, workspaceDeleted: outcome.workspaceDeleted };
     },
 
     listDocuments(workspaceId: string): DocumentSummary[] {

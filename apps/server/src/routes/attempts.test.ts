@@ -336,17 +336,23 @@ describe('workspace scoping and failure modes', () => {
     const submitted = await submitQuiz(ctx, quiz);
 
     const del = await ctx.app.inject({ method: 'DELETE', url: `/api/materials/${materialId}` });
-    expect(del.statusCode).toBe(204);
+    expect(del.statusCode).toBe(200);
+    // The sample was a 资料库 import, so its auto-created workspace is
+    // retired together with its final document (new lifecycle).
+    expect(del.json()).toEqual({ workspaceId, workspaceDeleted: true });
 
     // Same lifecycle as mistakes/mastery: a document deletion removes the
-    // learning records bound to it. The list stays honest (no ghost rows)…
+    // learning records bound to it — no orphan rows survive anywhere.
+    const gradingRows = ctx.db
+      .prepare('SELECT COUNT(*) AS n FROM grading_results WHERE id = ?')
+      .get(submitted.grading.id) as { n: number };
+    expect(gradingRows.n).toBe(0);
+    // The workspace itself is gone, so its history endpoints honestly 404.
     const list = await ctx.app.inject({
       method: 'GET',
       url: `/api/workspaces/${workspaceId}/attempts`,
     });
-    expect(list.statusCode).toBe(200);
-    expect(list.json().attempts).toEqual([]);
-    // …and the detail read reports the record as gone.
+    expect(list.statusCode).toBe(404);
     const detail = await ctx.app.inject({
       method: 'GET',
       url: `/api/workspaces/${workspaceId}/attempts/${submitted.grading.id}`,
@@ -396,7 +402,10 @@ describe('workspace assessments and deleted sources', () => {
       method: 'DELETE',
       url: `/api/workspaces/${workspaceId}/documents/${documentId}`,
     });
-    expect(del.statusCode).toBe(204);
+    // Manually created workspace: preserved together with its assessment
+    // history even after its final document is gone.
+    expect(del.statusCode).toBe(200);
+    expect(del.json()).toEqual({ workspaceId, workspaceDeleted: false });
 
     const list = await ctx.app.inject({
       method: 'GET',

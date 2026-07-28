@@ -17,6 +17,25 @@ export const MAX_DOCUMENT_FILE_BASE64_CHARS =
   Math.ceil((MAX_DOCUMENT_FILE_BYTES + 1024 * 1024) / 3) * 4 + 4;
 
 /**
+ * How a course workspace came into existence. Persisted once at creation and
+ * immutable afterwards; it decides the workspace's deletion lifecycle:
+ *
+ * - `manual`: explicitly created by the learner (POST /api/workspaces). The
+ *   workspace is a deliberate container — deleting its final document keeps
+ *   it (and its workspace-scoped assessment history) for future documents.
+ * - `material_import`: auto-created behind the scenes for a 资料库 import
+ *   (POST /api/materials without a workspace). An implementation detail of
+ *   that import — deleting its final document retires the workspace with it,
+ *   in the same transaction.
+ * - `unknown`: persisted before origins existed (including migration-created
+ *   legacy compatibility workspaces). Origin cannot be reconstructed
+ *   honestly, so these are conservatively preserved like `manual` and stay
+ *   manually deletable.
+ */
+export const WorkspaceOriginSchema = z.enum(['manual', 'material_import', 'unknown']);
+export type WorkspaceOrigin = z.infer<typeof WorkspaceOriginSchema>;
+
+/**
  * A course workspace: the organizational unit that groups one or more source
  * documents, their concepts, the evidence-grounded concept graph, and
  * remediation plans. Learner state (attempts, mistakes, mastery) stays keyed
@@ -28,6 +47,7 @@ export const WorkspaceSchema = z.object({
   description: z.string().max(500).nullable(),
   /** Currently active concept-graph version (null before first generation). */
   activeGraphVersionId: z.string().nullable(),
+  origin: WorkspaceOriginSchema,
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -84,6 +104,19 @@ export const UpdateWorkspaceRequestSchema = z
   })
   .strict();
 export type UpdateWorkspaceRequest = z.infer<typeof UpdateWorkspaceRequestSchema>;
+
+/**
+ * Structured result of deleting a document (DELETE /api/materials/:id and
+ * DELETE /api/workspaces/:id/documents/:docId). `workspaceDeleted` is true
+ * only when the deleted document was the final one of a `material_import`
+ * workspace, which is then retired in the same transaction — the client uses
+ * this to reconcile workspace-scoped state without guessing.
+ */
+export const DocumentDeletionResultSchema = z.object({
+  workspaceId: z.string().min(1),
+  workspaceDeleted: z.boolean(),
+});
+export type DocumentDeletionResult = z.infer<typeof DocumentDeletionResultSchema>;
 
 /**
  * Base64 file payload shared by every upload surface: workspace document

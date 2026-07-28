@@ -234,8 +234,16 @@ export function ImportView({
     renameAction.clearError();
     deleteAction.clearError();
     const suffix = recent.id.slice(-6);
+    // The server retires an import-created course space together with its
+    // final document (one transaction); user-created and legacy spaces stay.
+    // The confirmation states which of the two will actually happen.
+    const removesWorkspace =
+      recent.workspaceOrigin === 'material_import' && recent.workspaceDocumentCount === 1;
+    const lifecycleNote = removesWorkspace
+      ? '这是其课程空间（由导入自动创建）中唯一的文档：该课程空间将随之一并删除，包括其中的图谱、测验与成绩历史、复习进度等全部学习记录，不会留下空的课程空间。'
+      : '删除文档不会删除它所属的课程空间；若要移除整个课程空间，请到「学习图谱」左侧列表中删除。';
     const confirmed = window.confirm(
-      `永久删除以下资料及其全部相关学习记录？\n\n标题：${recent.title}\n创建时间：${formatLocalDateTime(recent.createdAt)}\n记录：…${suffix}\n\n此操作无法恢复。`,
+      `永久删除以下资料及其全部相关学习记录？\n\n标题：${recent.title}\n创建时间：${formatLocalDateTime(recent.createdAt)}\n记录：…${suffix}\n\n此操作无法恢复。${lifecycleNote}`,
     );
     if (!confirmed) return;
 

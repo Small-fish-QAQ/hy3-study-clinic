@@ -25,6 +25,7 @@ afterEach(() => {
 });
 
 const LAST_MATERIAL_ID_KEY = 'hy3-clinic:last-material-id';
+const LAST_WORKSPACE_ID_KEY = 'hy3-clinic:last-workspace-id';
 
 const baseRoutes: MockRoute[] = [
   { method: 'GET', pattern: /\/api\/config$/, handler: () => ({ body: { provider: 'fake' } }) },
@@ -209,8 +210,12 @@ function managedHistoryRoutes(
             body: { error: { code: 'NOT_FOUND', message: '资料不存在。' } },
           };
         }
-        storedMaterials.splice(index, 1);
-        return { status: 204 };
+        const [removed] = storedMaterials.splice(index, 1);
+        // Real server semantics: an import-created workspace retires with
+        // its final document; these base fixtures model a manual workspace.
+        return {
+          body: { workspaceId: removed!.workspaceId ?? 'ws_1', workspaceDeleted: false },
+        };
       },
     },
   ];
@@ -1684,5 +1689,299 @@ describe('Mistake notebook and mastery', () => {
       expect(row).toHaveTextContent(`${percentage}%`);
       expect(row).toHaveTextContent(status);
     }
+  });
+});
+
+/**
+ * Course-space lifecycle across 资料库 and 学习图谱 (App-level integration).
+ *
+ * Server semantics under test (mirrored by the stateful mock exactly like the
+ * real backend behaves): 资料库 imports live in auto-created per-material
+ * course spaces (`origin: 'material_import'`), which retire together with
+ * their final document; manual and legacy/unknown spaces are preserved with
+ * honest zero counts and stay removable via the explicit 删除课程空间
+ * action, which cascades their materials away. The App must keep every view
+ * consistent without a reload and never fire an analysis/generation/provider
+ * request during any of it.
+ */
+describe('Course-space lifecycle across 资料库 and 学习图谱', () => {
+  interface WorkspaceState {
+    id: string;
+    name: string;
+    origin: 'manual' | 'material_import' | 'unknown';
+    documentCount: number;
+    conceptCount: number;
+  }
+
+  function workspaceLifecycleRoutes(
+    initialMaterials: Array<MaterialSummary & { workspaceId: string }>,
+    initialWorkspaces: WorkspaceState[],
+  ) {
+    const storedMaterials = initialMaterials.map((item) => ({ ...item }));
+    const storedWorkspaces = initialWorkspaces.map((item) => ({ ...item }));
+    const summaries = () =>
+      storedWorkspaces.map((ws) => ({
+        ...ws,
+        description: null,
+        activeGraphVersionId: null,
+        createdAt: materialSummary.createdAt,
+        updatedAt: materialSummary.createdAt,
+      }));
+
+    const routes: MockRoute[] = [
+      { method: 'GET', pattern: /\/api\/config$/, handler: () => ({ body: { provider: 'fake' } }) },
+      {
+        method: 'GET',
+        pattern: /\/api\/materials$/,
+        handler: () => ({ body: { materials: storedMaterials.map((item) => ({ ...item })) } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/materials\/[^/?]+$/,
+        handler: (_body, url) => {
+          const id = materialIdFromUrl(url);
+          const summary = storedMaterials.find((item) => item.id === id);
+          if (!summary) {
+            return { status: 404, body: { error: { code: 'NOT_FOUND', message: '资料不存在。' } } };
+          }
+          const details = materialDetails(summary);
+          return {
+            body: {
+              ...details,
+              material: { ...details.material, workspaceId: summary.workspaceId },
+            },
+          };
+        },
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/materials\/[^/?]+\/concepts$/,
+        handler: () => ({ body: { concepts: [] } }),
+      },
+      {
+        method: 'DELETE',
+        pattern: /\/api\/materials\/[^/?]+$/,
+        handler: (_body, url) => {
+          const id = materialIdFromUrl(url);
+          const index = storedMaterials.findIndex((item) => item.id === id);
+          if (index < 0) {
+            return { status: 404, body: { error: { code: 'NOT_FOUND', message: '资料不存在。' } } };
+          }
+          const [removed] = storedMaterials.splice(index, 1);
+          // Real server semantics: an import-created course space retires
+          // with its final document; every other origin is preserved with
+          // corrected counts.
+          const wsIndex = storedWorkspaces.findIndex((item) => item.id === removed!.workspaceId);
+          const ws = storedWorkspaces[wsIndex];
+          let workspaceDeleted = false;
+          if (ws) {
+            ws.documentCount = Math.max(0, ws.documentCount - 1);
+            ws.conceptCount = 0;
+            if (ws.origin === 'material_import' && ws.documentCount === 0) {
+              storedWorkspaces.splice(wsIndex, 1);
+              workspaceDeleted = true;
+            }
+          }
+          return { body: { workspaceId: removed!.workspaceId, workspaceDeleted } };
+        },
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces$/,
+        handler: () => ({ body: { workspaces: summaries() } }),
+      },
+      {
+        method: 'DELETE',
+        pattern: /\/api\/workspaces\/[^/?]+$/,
+        handler: (_body, url) => {
+          const id = decodeURIComponent(url.match(/\/api\/workspaces\/([^/?]+)/)?.[1] ?? '');
+          const index = storedWorkspaces.findIndex((item) => item.id === id);
+          if (index < 0) {
+            return {
+              status: 404,
+              body: { error: { code: 'NOT_FOUND', message: `课程空间不存在:${id}` } },
+            };
+          }
+          storedWorkspaces.splice(index, 1);
+          // Cascade: the workspace's materials disappear with it.
+          for (let i = storedMaterials.length - 1; i >= 0; i -= 1) {
+            if (storedMaterials[i]!.workspaceId === id) storedMaterials.splice(i, 1);
+          }
+          return { status: 204 };
+        },
+      },
+    ];
+    return {
+      routes,
+      materials: () => storedMaterials.map((item) => ({ ...item })),
+      workspaces: () => storedWorkspaces.map((item) => ({ ...item })),
+    };
+  }
+
+  it('deleting a 资料库 import retires its auto-created course space in one step; legacy shells stay manually deletable', async () => {
+    const user = userEvent.setup();
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    // The exact motivating workflow: one import document in its auto-created
+    // course space, next to two pre-upgrade empty shells of unknown origin
+    // (what the user's real database accumulated under the old lifecycle).
+    const matA = {
+      ...materialSummary,
+      id: 'mat_a',
+      title: '课程A',
+      workspaceId: 'ws_a',
+      workspaceOrigin: 'material_import' as const,
+      workspaceDocumentCount: 1,
+    };
+    const server = workspaceLifecycleRoutes(
+      [matA],
+      [
+        { id: 'ws_a', name: '课程A', origin: 'material_import', documentCount: 1, conceptCount: 3 },
+        { id: 'ws_old1', name: '历史课程1', origin: 'unknown', documentCount: 0, conceptCount: 0 },
+        { id: 'ws_old2', name: '历史课程2', origin: 'unknown', documentCount: 0, conceptCount: 0 },
+      ],
+    );
+    const { calls } = installFetchMock(server.routes);
+    // The retired workspace was also the saved 学习图谱 selection — the
+    // deletion must forget it so a later visit cannot try to restore it.
+    window.localStorage.setItem(LAST_WORKSPACE_ID_KEY, 'ws_a');
+    render(<App />);
+
+    // 资料库: the import is listed, then deleted. The confirmation states
+    // that the auto-created course space goes with it.
+    expect(await screen.findByText('课程A')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /永久删除：课程A/ }));
+    expect(confirm.mock.calls[0]![0]).toContain('该课程空间将随之一并删除');
+    await waitFor(() => {
+      expect(screen.queryByText('课程A')).not.toBeInTheDocument();
+    });
+    expect(server.materials()).toHaveLength(0);
+    // The course space was retired server-side in the same operation.
+    expect(server.workspaces().some((w) => w.id === 'ws_a')).toBe(false);
+    expect(window.localStorage.getItem(LAST_WORKSPACE_ID_KEY)).toBeNull();
+
+    // 学习图谱: no ghost entry for the import — and no second deletion step.
+    // Only the pre-existing unknown-origin shells remain…
+    await user.click(screen.getByRole('button', { name: '学习图谱' }));
+    expect(await screen.findByText('历史课程1')).toBeInTheDocument();
+    expect(screen.getByText('历史课程2')).toBeInTheDocument();
+    expect(screen.queryByText('课程A')).not.toBeInTheDocument();
+    expect(screen.getAllByText(/0 文档 · 0 概念/)).toHaveLength(2);
+
+    // …and those stay manually deletable via the explicit action.
+    await user.click(screen.getByRole('button', { name: '删除课程空间:历史课程1' }));
+    await waitFor(() => {
+      expect(screen.queryByText('历史课程1')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('历史课程2')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '删除课程空间:历史课程2' }));
+    await waitFor(() => {
+      expect(screen.queryByText('历史课程2')).not.toBeInTheDocument();
+    });
+    expect(await screen.findByText(/还没有课程空间/)).toBeInTheDocument();
+
+    // Navigating away and back must not resurrect anything.
+    await user.click(screen.getByRole('button', { name: '资料库' }));
+    expect(await screen.findByText(/暂无历史资料/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '学习图谱' }));
+    expect(await screen.findByText(/还没有课程空间/)).toBeInTheDocument();
+    expect(screen.queryByText('课程A')).not.toBeInTheDocument();
+    expect(screen.queryByText(/历史课程/)).not.toBeInTheDocument();
+
+    // Deletion and refresh only — never an analysis/generation/provider
+    // call: one material DELETE + two workspace DELETEs.
+    expect(calls.filter((c) => c.method === 'POST')).toHaveLength(0);
+    expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(3);
+  });
+
+  it('reconciles a server-confirmed deletion even when navigation aborts the request mid-flight', async () => {
+    // The real-browser race behind this test: the DELETE response resolves,
+    // but the user has already left 资料库, unmounting the view and aborting
+    // the action's signal. Aborting cannot undo a server-confirmed deletion,
+    // so the retired import workspace (and its saved selection) must still
+    // be reconciled.
+    const user = userEvent.setup();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const matA = {
+      ...materialSummary,
+      id: 'mat_a',
+      title: '课程A',
+      workspaceId: 'ws_a',
+      workspaceOrigin: 'material_import' as const,
+      workspaceDocumentCount: 1,
+    };
+    const server = workspaceLifecycleRoutes(
+      [matA],
+      [{ id: 'ws_a', name: '课程A', origin: 'material_import', documentCount: 1, conceptCount: 1 }],
+    );
+    let releaseDelete: (() => void) | null = null;
+    const deleteGate = new Promise<void>((resolve) => {
+      releaseDelete = resolve;
+    });
+    const gatedRoutes: MockRoute[] = server.routes.map((route) =>
+      route.method === 'DELETE' && route.pattern.test('/api/materials/mat_a')
+        ? {
+            ...route,
+            handler: async (body, url, init) => {
+              await deleteGate;
+              return route.handler(body, url, init);
+            },
+          }
+        : route,
+    );
+    installFetchMock(gatedRoutes);
+    window.localStorage.setItem(LAST_WORKSPACE_ID_KEY, 'ws_a');
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: /永久删除：课程A/ }));
+    // Navigate away while the DELETE is still in flight — this unmounts
+    // 资料库 and aborts the action's signal.
+    await user.click(screen.getByRole('button', { name: '学习图谱' }));
+    releaseDelete!();
+
+    // The response is server truth: the workspace retired with its final
+    // document, so the saved selection is forgotten and nothing resurrects.
+    await waitFor(() => {
+      expect(window.localStorage.getItem(LAST_WORKSPACE_ID_KEY)).toBeNull();
+    });
+    expect(server.materials()).toHaveLength(0);
+    expect(server.workspaces().some((w) => w.id === 'ws_a')).toBe(false);
+    await user.click(screen.getByRole('button', { name: '资料库' }));
+    expect(await screen.findByText(/暂无历史资料/)).toBeInTheDocument();
+  });
+
+  it('deleting the course space that owns the open material clears every dependent view', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const matA = { ...materialSummary, id: 'mat_a', title: '课程A', workspaceId: 'ws_a' };
+    const server = workspaceLifecycleRoutes(
+      [matA],
+      [{ id: 'ws_a', name: '课程A', origin: 'unknown', documentCount: 1, conceptCount: 2 }],
+    );
+    installFetchMock(server.routes);
+    render(<App />);
+
+    // Open the historical material so it becomes the active selection.
+    await user.click(await screen.findByRole('button', { name: /打开资料：课程A/ }));
+    await waitFor(() => {
+      expect(window.localStorage.getItem(LAST_MATERIAL_ID_KEY)).toBe('mat_a');
+    });
+    expect(screen.getByRole('button', { name: '练习' })).toBeEnabled();
+
+    // Delete its course space in 学习图谱.
+    await user.click(screen.getByRole('button', { name: '学习图谱' }));
+    await user.click(await screen.findByRole('button', { name: '删除课程空间:课程A' }));
+    expect(await screen.findByText(/还没有课程空间/)).toBeInTheDocument();
+
+    // The open material, its saved restore id, and the history list are gone;
+    // material-dependent modules are unreachable again.
+    expect(window.localStorage.getItem(LAST_MATERIAL_ID_KEY)).toBeNull();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '练习' })).toBeDisabled();
+    });
+    expect(screen.getByRole('button', { name: '错题' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '学习进展' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: '资料库' }));
+    expect(await screen.findByText(/暂无历史资料/)).toBeInTheDocument();
+    expect(screen.getByText(/还没有导入资料/)).toBeInTheDocument();
   });
 });

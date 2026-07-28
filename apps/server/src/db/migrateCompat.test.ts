@@ -150,6 +150,19 @@ describe('migration from a representative pre-upgrade database', () => {
     expect(workspaces[0]!.activeGraphVersionId).toBeNull();
   });
 
+  it("gives every pre-origin workspace the honest 'unknown' origin (never auto-deleted)", () => {
+    // The migration-created legacy compatibility workspace was persisted
+    // before origins existed; its true origin is not reconstructed or
+    // guessed — it stays 'unknown' and is therefore conservatively
+    // preserved when its final document is deleted.
+    const workspace = repos.workspaces.list()[0]!;
+    expect(workspace.origin).toBe('unknown');
+
+    const outcome = repos.workspaces.deleteDocument('mat_old', workspace.id, T);
+    expect(outcome).toEqual({ deleted: true, workspaceDeleted: false });
+    expect(repos.workspaces.get(workspace.id)).toBeDefined();
+  });
+
   it('keeps the legacy material readable with backfilled document metadata', () => {
     const material = repos.materials.get('mat_old');
     expect(material).toBeDefined();

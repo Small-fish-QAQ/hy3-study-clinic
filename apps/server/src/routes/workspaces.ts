@@ -72,10 +72,12 @@ export function registerWorkspaceRoutes(app: FastifyInstance, services: Services
     return services.workspaces.reprocessDocument(id, docId);
   });
 
-  app.delete('/api/workspaces/:id/documents/:docId', async (request, reply) => {
+  // Returns the structured deletion result (200) instead of a bare 204 —
+  // deleting the final document of a `material_import` workspace retires the
+  // workspace in the same transaction, and the client must learn about it.
+  app.delete('/api/workspaces/:id/documents/:docId', async (request) => {
     const { id, docId } = DocumentParams.parse(request.params);
-    services.workspaces.deleteDocument(id, docId);
-    return reply.status(204).send();
+    return services.workspaces.deleteDocument(id, docId);
   });
 
   // --- Concept graph ---

@@ -13,6 +13,7 @@ interface WorkspaceRow {
   name: string;
   description: string | null;
   active_graph_version_id: string | null;
+  origin: string;
   created_at: string;
   updated_at: string;
 }
@@ -23,15 +24,23 @@ function rowToWorkspace(row: WorkspaceRow): Workspace {
     name: row.name,
     description: row.description,
     activeGraphVersionId: row.active_graph_version_id,
+    origin: row.origin,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   });
 }
 
+/** Outcome of the transactional document delete (see deleteDocumentTx). */
+export interface DocumentDeletionOutcome {
+  deleted: boolean;
+  /** True when the final document retired its `material_import` workspace. */
+  workspaceDeleted: boolean;
+}
+
 export function createWorkspacesRepo(db: SqliteDb) {
   const insertStmt = db.prepare(
-    `INSERT INTO workspaces (id, name, description, active_graph_version_id, created_at, updated_at)
-     VALUES (@id, @name, @description, @activeGraphVersionId, @createdAt, @updatedAt)`,
+    `INSERT INTO workspaces (id, name, description, active_graph_version_id, origin, created_at, updated_at)
+     VALUES (@id, @name, @description, @activeGraphVersionId, @origin, @createdAt, @updatedAt)`,
   );
   const getStmt = db.prepare('SELECT * FROM workspaces WHERE id = ?');
 
@@ -100,13 +109,38 @@ export function createWorkspacesRepo(db: SqliteDb) {
     db.prepare('DELETE FROM remediation_plans WHERE workspace_id = ?').run(workspaceId);
   }
 
-  const deleteDocumentTx = db.transaction((materialId: string, workspaceId: string, at: string) => {
-    const deleted = db.prepare('DELETE FROM materials WHERE id = ?').run(materialId).changes === 1;
-    if (!deleted) return false;
-    cleanupWorkspaceDerivedData(workspaceId, at, `文档已删除:${materialId}`);
-    db.prepare('UPDATE workspaces SET updated_at = ? WHERE id = ?').run(at, workspaceId);
-    return true;
-  });
+  const deleteDocumentTx = db.transaction(
+    (materialId: string, workspaceId: string, at: string): DocumentDeletionOutcome => {
+      const deleted =
+        db.prepare('DELETE FROM materials WHERE id = ?').run(materialId).changes === 1;
+      if (!deleted) return { deleted: false, workspaceDeleted: false };
+      cleanupWorkspaceDerivedData(workspaceId, at, `文档已删除:${materialId}`);
+
+      // Final-document rule, re-checked INSIDE the transaction so concurrent
+      // imports cannot race it: a workspace auto-created for a 资料库 import
+      // is an implementation detail of that import — when its last document
+      // goes, the workspace (and its remaining workspace-scoped rows, via
+      // verified FK cascades) is retired with it. Manually created and
+      // legacy/unknown-origin workspaces are always preserved.
+      const workspace = db
+        .prepare('SELECT origin FROM workspaces WHERE id = ?')
+        .get(workspaceId) as { origin: string } | undefined;
+      const remaining = (
+        db
+          .prepare('SELECT COUNT(*) AS n FROM materials WHERE workspace_id = ?')
+          .get(workspaceId) as {
+          n: number;
+        }
+      ).n;
+      if (workspace?.origin === 'material_import' && remaining === 0) {
+        db.prepare('DELETE FROM workspaces WHERE id = ?').run(workspaceId);
+        return { deleted: true, workspaceDeleted: true };
+      }
+
+      db.prepare('UPDATE workspaces SET updated_at = ? WHERE id = ?').run(at, workspaceId);
+      return { deleted: true, workspaceDeleted: false };
+    },
+  );
 
   const reprocessDocumentTx = db.transaction(
     (material: Material, blocks: SourceBlock[], at: string) => {
@@ -169,6 +203,7 @@ export function createWorkspacesRepo(db: SqliteDb) {
         name: workspace.name,
         description: workspace.description,
         activeGraphVersionId: workspace.activeGraphVersionId,
+        origin: workspace.origin,
         createdAt: workspace.createdAt,
         updatedAt: workspace.updatedAt,
       });
@@ -270,10 +305,13 @@ export function createWorkspacesRepo(db: SqliteDb) {
      * Delete one document plus all dependent data in a single transaction:
      * blocks/concepts/quizzes/mistakes/mastery via verified FK cascades,
      * graph edges via concept cascade, edge evidence via block cascade, then
-     * the explicit derived-data cleanup documented above.
+     * the explicit derived-data cleanup documented above. If the deleted
+     * document was the final one of a `material_import` workspace, the
+     * workspace itself is retired in the same transaction (see
+     * deleteDocumentTx) and the outcome reports it.
      */
-    deleteDocument(materialId: string, workspaceId: string, at: string): boolean {
-      return deleteDocumentTx(materialId, workspaceId, at) as boolean;
+    deleteDocument(materialId: string, workspaceId: string, at: string): DocumentDeletionOutcome {
+      return deleteDocumentTx(materialId, workspaceId, at) as DocumentDeletionOutcome;
     },
 
     /** Replace a document's extracted content and blocks (see transaction doc). */

@@ -16,6 +16,10 @@ export interface MaterialSummary {
   charCount: number;
   blockCount: number;
   createdAt: string;
+  /** Origin of the owning workspace — decides the deletion lifecycle. */
+  workspaceOrigin: 'manual' | 'material_import' | 'unknown';
+  /** Documents currently in the owning workspace (including this one). */
+  workspaceDocumentCount: number;
 }
 
 interface MaterialRow {
@@ -235,11 +239,21 @@ export function createMaterialsRepo(db: SqliteDb) {
       const rows = db
         .prepare(
           `SELECT m.id, m.workspace_id, m.title, m.source_type, m.char_count, m.created_at,
-                  (SELECT COUNT(*) FROM source_blocks b WHERE b.material_id = m.id) AS block_count
+                  (SELECT COUNT(*) FROM source_blocks b WHERE b.material_id = m.id) AS block_count,
+                  w.origin AS workspace_origin,
+                  (SELECT COUNT(*) FROM materials m2 WHERE m2.workspace_id = m.workspace_id)
+                    AS workspace_document_count
            FROM materials m
+           JOIN workspaces w ON w.id = m.workspace_id
            ORDER BY m.created_at DESC, m.id DESC`,
         )
-        .all() as Array<MaterialRow & { block_count: number }>;
+        .all() as Array<
+        MaterialRow & {
+          block_count: number;
+          workspace_origin: MaterialSummary['workspaceOrigin'];
+          workspace_document_count: number;
+        }
+      >;
       return rows.map((row) => ({
         id: row.id,
         workspaceId: row.workspace_id,
@@ -248,6 +262,8 @@ export function createMaterialsRepo(db: SqliteDb) {
         charCount: row.char_count,
         blockCount: row.block_count,
         createdAt: row.created_at,
+        workspaceOrigin: row.workspace_origin,
+        workspaceDocumentCount: row.workspace_document_count,
       }));
     },
 

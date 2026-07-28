@@ -767,6 +767,24 @@ main.main-graph {
   background: var(--primary-weak);
 }
 
+.workspace-item {
+  display: flex;
+  align-items: stretch;
+  gap: 0.3rem;
+}
+
+.workspace-item .workspace-open {
+  flex: 1;
+  min-width: 0;
+}
+
+.workspace-list .workspace-item .workspace-delete {
+  width: auto;
+  flex: 0 0 auto;
+  align-self: center;
+  padding: 0.2rem 0.45rem;
+}
+
 .workspace-create {
   display: flex;
   flex-direction: column;

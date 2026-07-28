@@ -51,6 +51,7 @@ export function makeWorkspace(overrides: Partial<Workspace> = {}): Workspace {
     name: '认知科学课程',
     description: null,
     activeGraphVersionId: null,
+    origin: 'manual',
     createdAt: T0,
     updatedAt: T0,
     ...overrides,

@@ -50,10 +50,12 @@ export function registerMaterialRoutes(app: FastifyInstance, materials: Material
     return { material: materials.updateTitle(id, title) };
   });
 
-  app.delete('/api/materials/:id', async (request, reply) => {
+  // Returns the structured deletion result (200) instead of a bare 204: the
+  // client needs to know whether the document's auto-created import
+  // workspace was retired with it to reconcile workspace-scoped state.
+  app.delete('/api/materials/:id', async (request) => {
     const { id } = MaterialIdParamsSchema.parse(request.params);
-    materials.delete(id);
-    return reply.status(204).send();
+    return materials.delete(id);
   });
 
   // Built-in self-authored sample document (original content, Apache-2.0).

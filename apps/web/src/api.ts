@@ -9,6 +9,7 @@ import type {
   Concept,
   ConceptLearnerState,
   DailyQueueItem,
+  DocumentDeletionResult,
   DocumentSummary,
   GradingResult,
   GraphEdge,
@@ -29,6 +30,7 @@ import type {
   TutorEvent,
   TutorRun,
   Workspace,
+  WorkspaceOrigin,
   WorkspaceSummary,
 } from '@hy3-clinic/shared';
 
@@ -52,6 +54,10 @@ export interface MaterialSummary {
   charCount: number;
   blockCount: number;
   createdAt: string;
+  /** Origin of the owning workspace (decides the deletion lifecycle). */
+  workspaceOrigin?: WorkspaceOrigin;
+  /** Documents currently in the owning workspace (including this one). */
+  workspaceDocumentCount?: number;
 }
 
 export interface MaterialWithBlocks {
@@ -184,7 +190,7 @@ export const api = {
     request<{ material: Material }>('PATCH', `/api/materials/${id}`, { title }, signal),
 
   deleteMaterial: (id: string, signal?: AbortSignal) =>
-    request<void>('DELETE', `/api/materials/${id}`, undefined, signal),
+    request<DocumentDeletionResult>('DELETE', `/api/materials/${id}`, undefined, signal),
 
   analyze: (materialId: string, signal?: AbortSignal) =>
     request<{ concepts: Concept[] }>(
@@ -257,7 +263,7 @@ export const api = {
     request<MaterialWithBlocks>('POST', `/api/workspaces/${workspaceId}/documents`, input, signal),
 
   deleteDocument: (workspaceId: string, documentId: string, signal?: AbortSignal) =>
-    request<void>(
+    request<DocumentDeletionResult>(
       'DELETE',
       `/api/workspaces/${workspaceId}/documents/${documentId}`,
       undefined,

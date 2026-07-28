@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Answer, Concept, PublicQuiz, SourceBlock } from '@hy3-clinic/shared';
+import type {
+  Answer,
+  Concept,
+  DocumentDeletionResult,
+  PublicQuiz,
+  SourceBlock,
+} from '@hy3-clinic/shared';
 import {
   ApiClientError,
   api,
@@ -9,7 +15,7 @@ import {
 } from './api.js';
 import { useAsyncAction } from './components/useAsyncAction.js';
 import { ImportView } from './views/ImportView.js';
-import { GraphWorkspaceView } from './views/GraphWorkspaceView.js';
+import { GraphWorkspaceView, clearLastWorkspaceId } from './views/GraphWorkspaceView.js';
 import { QuizView } from './views/QuizView.js';
 import { ResultsView } from './views/ResultsView.js';
 import { QuizHistoryView } from './views/QuizHistoryView.js';
@@ -67,6 +73,13 @@ export function App() {
   const materialRequestRef = useRef(0);
   const activeMaterialIdRef = useRef<string | null>(null);
   const activeAssessmentWorkspaceRef = useRef<string | null>(null);
+  /** Ref twin of `material` so callbacks never act on a stale closure. */
+  const materialRef = useRef<MaterialWithBlocks | null>(null);
+  useEffect(() => {
+    materialRef.current = material;
+  }, [material]);
+  /** Monotonic id of history-list refreshes (take-latest, see below). */
+  const historyRefreshRef = useRef(0);
   const remediationAction = useAsyncAction();
 
   useEffect(() => {
@@ -88,7 +101,11 @@ export function App() {
         const history = await api.listMaterials();
         if (!alive || materialRequestRef.current !== requestId) return;
 
-        setRecentMaterials(history.materials);
+        // A concurrent refresh (for example after a course-space deletion)
+        // is newer than this initial load; never overwrite its list.
+        if (historyRefreshRef.current === 0) {
+          setRecentMaterials(history.materials);
+        }
         setHistoryLoading(false);
 
         const savedId = readLastMaterialId();
@@ -237,16 +254,14 @@ export function App() {
       remediationAction.clearError();
     }
 
+    let outcome: DocumentDeletionResult;
     try {
-      await api.deleteMaterial(materialId, signal);
-      if (signal.aborted) {
-        if (deletingCurrent && activeMaterialIdRef.current === null) {
-          activeMaterialIdRef.current = materialId;
-        }
-        setDeletingCurrentMaterial(false);
-        return;
-      }
+      outcome = await api.deleteMaterial(materialId, signal);
     } catch (error) {
+      // No response — the deletion may or may not have reached the server
+      // (a genuine cancel rejects with ABORTED before any response). Restore
+      // the optimistic state; a truly deleted entry heals on next open
+      // (404 → dropped with an explanatory message).
       if (deletingCurrent && activeMaterialIdRef.current === null) {
         activeMaterialIdRef.current = materialId;
       }
@@ -254,10 +269,30 @@ export function App() {
       throw error;
     }
 
+    // A resolved response is server truth: the material — and, when
+    // reported, its auto-created import workspace — is gone. Reconcile even
+    // if the signal was aborted meanwhile (for example by navigating away
+    // mid-request): aborting cannot undo a server-confirmed deletion.
     setRecentMaterials((items) => items.filter((item) => item.id !== materialId));
     clearLastMaterialId(materialId);
     setHistoryError(null);
     setDeletingCurrentMaterial(false);
+
+    if (outcome.workspaceDeleted) {
+      // The document's auto-created course space retired with it (server
+      // confirmed, same transaction): forget the saved 学习图谱 selection
+      // and drop a workspace-scoped assessment context that pointed at it,
+      // so nothing can resurrect or reference the deleted space.
+      clearLastWorkspaceId(outcome.workspaceId);
+      if (activeAssessmentWorkspaceRef.current === outcome.workspaceId) {
+        activeAssessmentWorkspaceRef.current = null;
+        setAssessment(null);
+        setQuiz(null);
+        setResult(null);
+        setLastAnswers([]);
+      }
+    }
+
     if (!deletingCurrent || activeMaterialIdRef.current !== null) return;
 
     setMaterial(null);
@@ -269,6 +304,52 @@ export function App() {
     setHistoryLoading(false);
     setRefreshKey((key) => key + 1);
     setTab('import');
+  }
+
+  /**
+   * A course space was deleted in 学习图谱 (server-confirmed). Its materials
+   * were cascade-deleted with it, so every piece of state that referenced the
+   * workspace must be dropped here: the open material and its quiz/result
+   * context, a workspace-scoped assessment context, and the 资料库 history
+   * list (reloaded from the server as the single source of truth).
+   */
+  function handleWorkspaceDeleted(workspaceId: string) {
+    if (activeAssessmentWorkspaceRef.current === workspaceId) {
+      activeAssessmentWorkspaceRef.current = null;
+      setAssessment(null);
+      setQuiz(null);
+      setResult(null);
+      setLastAnswers([]);
+    }
+
+    const openMaterial = materialRef.current;
+    if (openMaterial && openMaterial.material.workspaceId === workspaceId) {
+      materialRequestRef.current += 1;
+      activeMaterialIdRef.current = null;
+      remediationAction.cancel();
+      remediationAction.clearError();
+      clearLastMaterialId(openMaterial.material.id);
+      setMaterial(null);
+      setConcepts([]);
+      setQuiz(null);
+      setResult(null);
+      setLastAnswers([]);
+      setOpeningMaterialId(null);
+      setRefreshKey((key) => key + 1);
+    }
+
+    const refreshId = ++historyRefreshRef.current;
+    void api
+      .listMaterials()
+      .then((history) => {
+        if (historyRefreshRef.current !== refreshId) return;
+        setRecentMaterials(history.materials);
+        setHistoryLoading(false);
+      })
+      .catch(() => {
+        // Keep the current list; opening a removed entry already heals it
+        // (404 → the entry is dropped with an explanatory message).
+      });
   }
 
   function handleGraded(
@@ -485,6 +566,7 @@ export function App() {
           <GraphWorkspaceView
             refreshKey={refreshKey}
             onLaunchQuiz={(launchedQuiz) => void handleLaunchFromPlan(launchedQuiz)}
+            onWorkspaceDeleted={handleWorkspaceDeleted}
           />
         ) : null}
 
@@ -578,10 +660,15 @@ function errorMessage(error: unknown): string {
 function toMaterialSummary({ material, blocks }: MaterialWithBlocks): MaterialSummary {
   return {
     id: material.id,
+    workspaceId: material.workspaceId,
     title: material.title,
     sourceType: material.sourceType,
     charCount: material.charCount,
     blockCount: blocks.length,
     createdAt: material.createdAt,
+    // A 资料库 import always lands in a freshly auto-created workspace
+    // holding exactly this document (the server list reports the same).
+    workspaceOrigin: 'material_import',
+    workspaceDocumentCount: 1,
   };
 }
