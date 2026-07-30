@@ -7,6 +7,20 @@ Hy3 Study Clinic builds a **verifiable personal learning graph** from course mat
 
 Everything the model proposes — concepts, alignments, questions, graph edges, plan reasons, misconception hypotheses — carries `(blockId, exact quote)` citations that the server re-verifies with exact string matching before acceptance. Grading arithmetic, mistake lifecycle, misconception transitions, mastery math, review scheduling, graph and alignment acceptance, tool execution, budgets, and persistence remain local and deterministic. The complete workflow runs offline with the deterministic fake provider; the same runtime-validated contracts drive the real Hy3 provider when configured.
 
+This is not an "upload text and generate a quiz" application. It closes two learning loops: **course materials → verifiable personal learning graph**, and **diagnostic weakness → grading → remediation → state update → graph-grounded tutoring**. Hy3 does bounded semantic work (extraction, grounded generation, semantic grading, relationship and plan proposals, a constrained tutoring tool loop); deterministic local code owns validation, scoring rules, persistence, and every final state transition.
+
+## Demo
+
+[![Personal learning graph with locally verified source evidence](docs/assets/02-learning-graph-evidence.png)](docs/assets/hy3-study-clinic-demo.mp4)
+
+**▶ [Watch the full demo video (1:53, silent MP4)](docs/assets/hy3-study-clinic-demo.mp4)**
+
+The final demo (verified locally: **1:53**, 1920×1200) tells one continuous story:
+
+course material → multi-document import with provenance → Hy3 concept extraction → locally validated personal learning graph → source-evidence inspection → diagnostic assessment → deterministic objective grading plus Hy3 rubric-based semantic grading → mistake notebook → targeted remediation quiz → score improvement from 81 to 100 → mistake resolved → persistent mastery and learning-progress update → graph-grounded Hy3 tutoring with prerequisite repair.
+
+The same workflows are reproducible offline: `npm run demo:graph` and `npm run demo:adaptive` drive them end to end with the fake provider. Screenshot evidence for each stage is in [Evidence](#evidence).
+
 ## The evidence-grounded learning workspace
 
 The primary journey (fully covered by the fake-provider smoke script, `npm run demo:graph`):
@@ -45,14 +59,6 @@ On top of the workspace journey above, the adaptive upgrade (fully covered by `n
 14. **Start a bounded Tutor session** from a weak node: a safe timeline streams live (state inspected → neighborhood inspected → tools requested and locally validated → evidence accepted → gap identified → strategy selected → plan accepted), the run is persisted and cancellable, and the final plan is validated by the same code path as the remediation planner before the recommended activity can be launched.
 15. **Review on schedule** — every graded activity advances a local FSRS-style scheduler (stability/difficulty/due date, kept strictly separate from mastery), and the 今日学习 daily queue orders overdue reviews, confirmed misconception repair, open mistakes, weak prerequisites, and due-today items by explicit deterministic priorities.
 
-## Demo
-
-https://github.com/user-attachments/assets/13acc199-9212-433b-bee3-802a8e90a854
-
-**[Watch the full demo video (under 2 minutes)](docs/assets/hy3-study-clinic-demo.mp4)**
-
-Verified locally: **1:38.834**. The walkthrough covers both original end-to-end learning workflows, evidence panels, hybrid grading, remediation, resolved mistakes, and historical weighted mastery. Material history management is documented in the accompanying screenshots. (The video predates the learning-workspace upgrade; the workspace/graph/planner workflow is demonstrated by `npm run demo:graph`.)
-
 ## Core workflows
 
 ### Flow A — Grounded quiz and grading
@@ -86,47 +92,43 @@ Every successfully graded submission is a durable, immutable snapshot: the quest
 
 ## Evidence
 
-The screenshots are grouped by what they verify. They show the Chinese-language UI used in the final demo.
+The screenshots are grouped by what they verify, in a reviewer-friendly narrative order. They show the Chinese-language UI used in the final demo.
 
-### Grounded quiz and grading
+### Materials, provenance, and the learning graph
 
-![Grounded concept analysis with source evidence](docs/assets/01-hy3-grounded-analysis.png)
+![PDF source evidence with page-level provenance for an extracted concept](docs/assets/01-pdf-page-evidence.png)
 
-_Grounded concept analysis with source evidence — each visible concept includes an exact quotation and a source-block reference._
+_Multi-document course workspace with PDF import — the 原文证据 panel cites the exact quotation and its page-level location, proving extracted concepts retain block- and page-level provenance to the imported source._
 
-![Generated quiz with traceable evidence](docs/assets/02-hy3-generated-quiz.png)
+![Personal learning graph with a selected concept, typed relationships, and locally verified source evidence](docs/assets/02-learning-graph-evidence.png)
 
-_Generated quiz with traceable evidence — questions expose their cited source passage without exposing answer keys before submission._
+_The personal learning graph — a selected concept shows its typed relationships and verbatim source evidence; every edge shown survived local validation (existing concepts, controlled relations, exact-quote verification, acyclic prerequisite structure) before being persisted as a graph version._
 
-![Deterministic objective grading plus Hy3 semantic grading](docs/assets/03-hy3-grading-result.png)
+### Graph-grounded tutoring
 
-_Deterministic objective grading plus Hy3 semantic grading — the result view labels grading provenance and shows explanations and evidence._
+![Bounded Hy3 tutor session with a safe timeline: learning-state, graph-neighborhood, and prerequisite-path inspection leading to an accepted prerequisite_repair plan](docs/assets/03-hy3-graph-tutoring.png)
 
-### Mistake remediation and mastery
+_Graph-grounded Hy3 tutoring — the safe timeline shows the bounded tool loop inspecting learning state, the graph neighborhood, and the prerequisite path; the accepted evidence and the `prerequisite_repair` plan are validated locally, and the recommended activity is directly launchable. This is a constrained, read-only tool loop with explicit budgets — not an autonomous agent._
 
-![Remediation generated from an unresolved concept](docs/assets/04-hy3-remediation-quiz.png)
+### Assessment and Hy3 grading
 
-_Remediation generated from an unresolved concept — the quiz is explicitly scoped to the learner's open mistake concepts._
+![Diagnostic assessment result showing an 81-point score and the deterministic learner-state changes](docs/assets/04-assessment-result-overview.png)
 
-![Rubric points, feedback, confidence, and source evidence](docs/assets/06-hy3-semantic-grading.png)
+_Diagnostic assessment result — the 81-point total is computed locally, and the state-change summary shows exactly which mistakes, mastery values, and review items the deterministic pipeline updated._
 
-_Hy3 semantic grading — visible rubric points, feedback, confidence, and source evidence make the short-answer judgment reviewable._
+![Hy3 rubric-based short-answer grading with per-point classification, confidence, and evidence-grounded feedback](docs/assets/05-hy3-rubric-grading.png)
 
-![Resolved mistake and no-open-mistakes state](docs/assets/07-hy3-mistakes-resolved.png)
+_Hy3 semantic short-answer grading — rubric points are classified as required or optional enrichment, with confidence and evidence-grounded feedback; the awarded score is recomputed locally from required-point coverage, not taken from the model._
 
-_Resolved mistake and no-open-mistakes state — the mistake is marked resolved and remediation generation is disabled._
+### Remediation and persistent learner state
 
-![Recent score versus historical weighted mastery](docs/assets/08-hy3-mastery.png)
+![Mistake notebook showing a previously open RAG mistake marked resolved after remediation](docs/assets/06-remediation-resolved.png)
 
-_Recent score versus historical weighted mastery — the UI keeps the latest result separate from the deterministic historical estimate._
+_Remediation completed — the previously unresolved RAG mistake is marked resolved. Only a correctly answered remediation question linked to that mistake can resolve it; the model cannot close mistakes._
 
-### Material history
+![Learning-progress view separating the recent score from historical weighted mastery](docs/assets/07-learning-progress.png)
 
-![Searchable material history with management actions](docs/assets/09-material-history-management.png)
-
-_Searchable material history — persisted records provide open, rename, and permanent-delete actions._
-
-Additional evidence: [successful 100-point remediation result](docs/assets/05-hy3-remediation-result.png).
+_Persistent learning progress — the recent score is kept separate from historical weighted mastery, which is updated by the transparent local formula and survives restarts in SQLite._
 
 ## What Hy3 does
 
@@ -210,7 +212,7 @@ For every workspace concept the server derives, deterministically and only from 
 - `stable` — no open mistakes, mastery `≥ 0.85`, and at least 3 graded attempts;
 - `developing` — everything in between;
 
-plus mastery value, attempt/correct counts, last score and activity time, open/resolved mistake counts, an "enough supporting activity" flag (≥3 attempts), and direct prerequisite concepts from the active graph. There are no probabilistic confidence values and no spaced-repetition scheduling (no FSRS).
+plus mastery value, attempt/correct counts, last score and activity time, open/resolved mistake counts, an "enough supporting activity" flag (≥3 attempts), and direct prerequisite concepts from the active graph. The overlay contains no probabilistic confidence values; review scheduling lives in the separate local FSRS-style scheduler (see below), never inside this overlay.
 
 ## Remediation planning
 
@@ -382,7 +384,7 @@ The web production bundle is emitted under `apps/web/dist` and can be served by 
 
 ## Persistence and material management
 
-Learning records are stored locally in SQLite and remain available after a browser refresh. The browser stores only the last selected material ID in `localStorage`; on startup it verifies that ID against SQLite-backed history, then restores the material, source blocks, and persisted concepts. Mistakes and mastery remain available through their material-scoped APIs.
+Learning records are stored locally in SQLite and remain available after a browser refresh. The browser keeps only lightweight UI state in `localStorage` (the last selected material ID and manually dragged graph-node positions per graph version); on startup it verifies the stored selection against SQLite-backed history, then restores the material, source blocks, and persisted concepts. Mistakes and mastery remain available through their material-scoped APIs.
 
 Recent-material history provides search by title, displayed creation time, or record suffix, plus explicit open, inline rename, and permanent-delete actions. Renaming changes only the trimmed title and preserves the material ID and learning records.
 
@@ -401,14 +403,14 @@ Permanent deletion requires a confirmation that identifies the record and states
 
 ## Testing
 
-`npm test` was run against the current working tree on **2026-07-21**:
+`npm test` was run against the current working tree on **2026-07-30**:
 
 | Workspace | Test files | Tests | Result |
 | --- | ---: | ---: | --- |
-| `packages/shared` | 5 | 74 | Passed |
-| `apps/server` | 34 | 318 | Passed |
-| `apps/web` | 14 | 229 | Passed |
-| **Overall** | **53** | **621** | **Passed** |
+| `packages/shared` | 5 | 75 | Passed |
+| `apps/server` | 36 | 404 | Passed |
+| `apps/web` | 16 | 274 | Passed |
+| **Overall** | **57** | **753** | **Passed** |
 
 Regression coverage includes exact grounding and source fencing; structured Hy3 output and bounded repair (including graph-edge and plan proposals); semantic-grading equivalence rules; deterministic objective grading; resolved-concept exclusion and exact remediation pairs; no-open-mistake behavior; persistence recovery; rename/delete confirmation and failure handling; transactional rollback and cascade deletion; provider timeout/cancellation; and stale-response suppression after navigation, material switching, or deletion.
 
@@ -430,16 +432,16 @@ CodeBuddy Code was connected to Hy3 through Tencent Cloud TokenHub and used for 
 
 | Submission claim | Implementation | Evidence | Relevant tests |
 | --- | --- | --- | --- |
-| Hy3 used throughout final workflows | [`hy3Provider.ts`](apps/server/src/llm/hy3Provider.ts), [`provider.ts`](apps/server/src/llm/provider.ts) | [Full demo](docs/assets/hy3-study-clinic-demo.mp4), screenshots [01](docs/assets/01-hy3-grounded-analysis.png), [02](docs/assets/02-hy3-generated-quiz.png), [06](docs/assets/06-hy3-semantic-grading.png) | [`hy3Provider.test.ts`](apps/server/src/llm/hy3Provider.test.ts), [`flows.test.ts`](apps/server/src/routes/flows.test.ts) |
-| Interactive frontend | [`App.tsx`](apps/web/src/App.tsx), [`views`](apps/web/src/views) | [Full demo](docs/assets/hy3-study-clinic-demo.mp4), screenshots 01–09 above | [`App.test.tsx`](apps/web/src/App.test.tsx) |
-| Grounded concept analysis | [`analysis.ts`](apps/server/src/services/analysis.ts), [`verify.ts`](apps/server/src/grounding/verify.ts) | [Screenshot 01](docs/assets/01-hy3-grounded-analysis.png) | [`verify.test.ts`](apps/server/src/grounding/verify.test.ts), [`flows.test.ts`](apps/server/src/routes/flows.test.ts) |
-| Generated grounded quiz | [`quizzes.ts`](apps/server/src/services/quizzes.ts), [`prompts.ts`](apps/server/src/llm/prompts.ts) | [Screenshot 02](docs/assets/02-hy3-generated-quiz.png) | [`flows.test.ts`](apps/server/src/routes/flows.test.ts), [`quizzes.test.ts`](apps/server/src/services/quizzes.test.ts) |
-| Hybrid grading | [`grading.ts`](apps/server/src/services/grading.ts), [`score.ts`](apps/server/src/grading/score.ts) | Screenshots [03](docs/assets/03-hy3-grading-result.png) and [06](docs/assets/06-hy3-semantic-grading.png) | [`score.test.ts`](apps/server/src/grading/score.test.ts), [`flows.test.ts`](apps/server/src/routes/flows.test.ts) |
-| Mistake remediation | [`remediation.ts`](apps/server/src/services/remediation.ts), [`grading.ts`](apps/server/src/services/grading.ts) | Screenshots [04](docs/assets/04-hy3-remediation-quiz.png) and [07](docs/assets/07-hy3-mistakes-resolved.png) | [`flows.test.ts`](apps/server/src/routes/flows.test.ts) |
-| Second end-to-end flow | [`study.ts`](apps/server/src/routes/study.ts), [`MistakesView.tsx`](apps/web/src/views/MistakesView.tsx) | [Full demo](docs/assets/hy3-study-clinic-demo.mp4), screenshots [04](docs/assets/04-hy3-remediation-quiz.png), [07](docs/assets/07-hy3-mistakes-resolved.png), [08](docs/assets/08-hy3-mastery.png) | [`flows.test.ts`](apps/server/src/routes/flows.test.ts), [`App.test.tsx`](apps/web/src/App.test.tsx) |
-| Local persistence and history | [`database.ts`](apps/server/src/db/database.ts), [`materials.ts`](apps/server/src/repositories/materials.ts), [`App.tsx`](apps/web/src/App.tsx) | [Screenshot 09](docs/assets/09-material-history-management.png) | [`repos.test.ts`](apps/server/src/repositories/repos.test.ts), [`apps/server/src/routes/materials.test.ts`](apps/server/src/routes/materials.test.ts), [`apps/server/src/services/materials.test.ts`](apps/server/src/services/materials.test.ts), [`App.test.tsx`](apps/web/src/App.test.tsx) |
-| Under-two-minute demo | [`docs/assets`](docs/assets) | [1:38.834 demo](docs/assets/hy3-study-clinic-demo.mp4) | Local container-duration inspection |
-| Open-source reproducibility | [`package.json`](package.json), [`.env.example`](.env.example), [`ci.yml`](.github/workflows/ci.yml), [`fakeProvider.ts`](apps/server/src/llm/fakeProvider.ts) | [Full demo](docs/assets/hy3-study-clinic-demo.mp4) | 226 passing tests across all workspaces |
+| Hy3 used throughout final workflows | [`hy3Provider.ts`](apps/server/src/llm/hy3Provider.ts), [`provider.ts`](apps/server/src/llm/provider.ts) | [Full demo](docs/assets/hy3-study-clinic-demo.mp4), screenshots [03](docs/assets/03-hy3-graph-tutoring.png), [05](docs/assets/05-hy3-rubric-grading.png) | [`hy3Provider.test.ts`](apps/server/src/llm/hy3Provider.test.ts), [`flows.test.ts`](apps/server/src/routes/flows.test.ts) |
+| Interactive frontend | [`App.tsx`](apps/web/src/App.tsx), [`views`](apps/web/src/views) | [Full demo](docs/assets/hy3-study-clinic-demo.mp4), screenshots 01–07 above | [`App.test.tsx`](apps/web/src/App.test.tsx) |
+| Grounded concept extraction with page-level provenance | [`analysis.ts`](apps/server/src/services/analysis.ts), [`verify.ts`](apps/server/src/grounding/verify.ts) | [Screenshot 01](docs/assets/01-pdf-page-evidence.png) | [`verify.test.ts`](apps/server/src/grounding/verify.test.ts), [`flows.test.ts`](apps/server/src/routes/flows.test.ts) |
+| Locally validated concept graph | [`graph.ts`](apps/server/src/services/graph.ts) | [Screenshot 02](docs/assets/02-learning-graph-evidence.png) | [`graph.test.ts`](apps/server/src/services/graph.test.ts) |
+| Bounded graph-grounded Tutor and prerequisite planning | [`tutor.ts`](apps/server/src/services/tutor.ts), [`planner.ts`](apps/server/src/services/planner.ts), [`planValidation.ts`](apps/server/src/services/planValidation.ts) | [Screenshot 03](docs/assets/03-hy3-graph-tutoring.png) | [`tutor.test.ts`](apps/server/src/services/tutor.test.ts), [`planner.test.ts`](apps/server/src/services/planner.test.ts) |
+| Hybrid grading (deterministic objective + Hy3 rubric grading) | [`grading.ts`](apps/server/src/services/grading.ts), [`score.ts`](apps/server/src/grading/score.ts) | Screenshots [04](docs/assets/04-assessment-result-overview.png) and [05](docs/assets/05-hy3-rubric-grading.png) | [`score.test.ts`](apps/server/src/grading/score.test.ts), [`flows.test.ts`](apps/server/src/routes/flows.test.ts) |
+| Mistake remediation closing the loop | [`remediation.ts`](apps/server/src/services/remediation.ts), [`grading.ts`](apps/server/src/services/grading.ts) | Screenshots [04](docs/assets/04-assessment-result-overview.png) and [06](docs/assets/06-remediation-resolved.png) | [`flows.test.ts`](apps/server/src/routes/flows.test.ts) |
+| Persistent learner state and mastery | [`database.ts`](apps/server/src/db/database.ts), [`study.ts`](apps/server/src/routes/study.ts), [`MistakesView.tsx`](apps/web/src/views/MistakesView.tsx) | [Screenshot 07](docs/assets/07-learning-progress.png) | [`repos.test.ts`](apps/server/src/repositories/repos.test.ts), [`flows.test.ts`](apps/server/src/routes/flows.test.ts), [`App.test.tsx`](apps/web/src/App.test.tsx) |
+| Under-two-minute demo | [`docs/assets`](docs/assets) | [1:53 demo](docs/assets/hy3-study-clinic-demo.mp4) | Local container-duration inspection |
+| Open-source reproducibility | [`package.json`](package.json), [`.env.example`](.env.example), [`ci.yml`](.github/workflows/ci.yml), [`fakeProvider.ts`](apps/server/src/llm/fakeProvider.ts) | [Full demo](docs/assets/hy3-study-clinic-demo.mp4) | The full offline suite (see [Testing](#testing)) |
 
 ## Limitations
 
