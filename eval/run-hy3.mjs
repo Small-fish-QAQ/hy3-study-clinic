@@ -19,8 +19,9 @@
  * Writes eval/reports/eval-hy3.json and eval/reports/eval-hy3.md.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, URL } from 'node:url';
 import { config as loadDotenv } from 'dotenv';
 import { Hy3Provider } from '../apps/server/dist/llm/hy3Provider.js';
 import { segmentMaterial } from '../apps/server/dist/ingestion/segment.js';
@@ -42,6 +43,27 @@ if (!baseUrl || !apiKey || !model) {
     ].join('\n'),
   );
   process.exit(1);
+}
+
+// Run provenance: bind the report to the exact source version and runtime.
+// Publication (eval:evidence) refuses reports without it or with a dirty tree.
+const repoRoot = join(evalDir, '..');
+const git = (...args) => execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8' }).trim();
+let gitInfo = null;
+try {
+  gitInfo = {
+    commit: git('rev-parse', 'HEAD'),
+    branch: git('rev-parse', '--abbrev-ref', 'HEAD'),
+    worktreeState: git('status', '--porcelain') === '' ? 'clean' : 'dirty',
+  };
+} catch {
+  gitInfo = null;
+}
+let endpointHost = null;
+try {
+  endpointHost = new URL(baseUrl).hostname;
+} catch {
+  endpointHost = null;
 }
 
 // Instrumented fetch: counts requests and accumulates latency per phase.
@@ -334,10 +356,32 @@ await measure('tutor_first_step', async () => {
 
 // --- Report -----------------------------------------------------------------
 const executedAt = new Date().toISOString();
+const totals = {
+  operations: results.length,
+  passed: results.filter((r) => r.ok).length,
+  failed: results.filter((r) => !r.ok).length,
+  skippedChecks: results.filter((r) => typeof r.skipped === 'string').map((r) => r.name),
+  requests: results.reduce((sum, r) => sum + (r.requests ?? 0), 0),
+  latencyMs: results.reduce((sum, r) => sum + (r.latencyMs ?? 0), 0),
+  wallMs: results.reduce((sum, r) => sum + (r.wallMs ?? 0), 0),
+};
 const summary = {
   suite: 'eval:hy3',
   executedAt,
+  // This script constructs Hy3Provider directly and aborts without real
+  // credentials; no fake-provider code path exists here.
+  provider: 'hy3',
+  fakeFallback: false,
   model,
+  endpointHost,
+  node: process.version,
+  osFamily: process.platform,
+  git: gitInfo,
+  totals,
+  overall:
+    results.length > 0 && results.every((r) => r.ok && typeof r.skipped !== 'string')
+      ? 'passed'
+      : 'failed',
   note: '指标依赖所配置的模型与 API;样本量很小,结果仅供粗略参考,不构成基准测试。',
   results,
 };
@@ -347,7 +391,9 @@ writeFileSync(join(reportsDir, 'eval-hy3.json'), `${JSON.stringify(summary, null
 const md = [
   '# Hy3 Study Clinic — 真实 Hy3 评测报告(eval:hy3)',
   '',
-  `执行时间:${executedAt} · 模型:${model}`,
+  `执行时间:${executedAt} · 模型:${model} · 提交:${
+    gitInfo ? `${gitInfo.commit.slice(0, 7)}(${gitInfo.worktreeState})` : '未知'
+  } · 总体:${summary.overall}`,
   '',
   '样本量很小,指标仅供粗略参考;数值依赖所配置的模型与 API。',
   '',

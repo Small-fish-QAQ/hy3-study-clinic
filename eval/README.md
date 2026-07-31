@@ -9,8 +9,9 @@ eval/
   fixtures/   小型、自创、合法的评测资料(中文/英文/双语/含冲突表述/含注入文本)
   labels/     人工标注文件(由仓库作者手工编写,非模型生成)
   reports/    运行时生成的 JSON 与 Markdown 报告(不入库)
-  run-fake.mjs  离线结构化评测(无网络、无 API Key)
-  run-hy3.mjs   可选的真实 Hy3 评测(需要显式凭证)
+  run-fake.mjs        离线结构化评测(无网络、无 API Key)
+  run-hy3.mjs         可选的真实 Hy3 评测(需要显式凭证)
+  export-evidence.mjs 从真实评测的原始报告导出净化后的公开证据
 ```
 
 ## 离线结构化评测
@@ -44,10 +45,31 @@ HY3_BASE_URL=… HY3_API_KEY=… HY3_MODEL=… npm run eval:hy3
 - **需要显式真实凭证**;缺少凭证时脚本直接拒绝运行,绝不静默退回 Fake Provider。
 - 普通测试与 CI 永远不会执行本脚本。
 - 度量:各操作的首轮 Schema 成功率与修复占用、引文验证通过率、与人工标注的对齐一致率与判分一致率、跨文档题目真实性、Tutor 首步合法性、请求次数与耗时。
+- 原始报告同时记录运行出处:Git 提交号、分支、工作区干净/脏状态、`provider: "hy3"`、`fakeFallback: false`、模型名、端点主机名(仅主机名,不含路径、查询串或凭证)、Node 版本与操作系统家族,以及总体通过/失败结论。
+
+## 公开在线验证证据(eval:evidence)
+
+```bash
+npm run eval:hy3        # 先在干净工作区完成一次真实评测
+npm run eval:evidence   # 再导出净化后的公开证据
+```
+
+`export-evidence.mjs` 读取 gitignore 的原始报告,派生出可入库的公开证据
+`docs/evidence/hy3-online-verification.{md,json}`(两个文件由同一净化对象生成)。
+发布是**失败关闭**的,以下任一情况都会拒绝导出:
+
+- 报告不是 `eval:hy3` 套件、`provider` 不是 `hy3`、或 `fakeFallback` 不为 `false`(Fake 报告不可能被发布为真实证据);
+- 缺少完整的 Git 出处,或评测运行在脏工作区上(证据必须绑定唯一提交);
+- 任一操作失败、被跳过、缺失、重复或未知(失败保持失败,不完整不算通过);
+- 对齐没有可比对、跨文档没有真正的多文档题目、或 Tutor 首步不在受控动作内;
+- 派生结果或渲染后的 Markdown 未通过凭证/本地路径扫描(含与本机已配置凭证值的包含性比对;扫描结果只报告位置与规则,绝不回显命中内容)。
+
+公开证据仅包含白名单化的聚合指标——逐样本 `detail`、提示词与模型原文从不进入公开文件。
+入库的证据文件由 `apps/server/src/eval/evidence.ts` 的同一套校验与渲染逻辑测试保护。
 
 ## 人工标注与局限
 
 - `labels/*.json` 由仓库作者在编写夹具时手工标注(文件头注明),**不是**由模型生成——避免"模型出题模型改"的循环验证。
 - 样本量很小(对齐 4 对、判分 3 例),真实评测结果仅供粗略参考,不构成基准测试;数值依赖所配置的模型与 API。
 - `eval:fake` 检查的是结构与安全边界,不衡量生成内容的教学质量。
-- `eval:hy3` 在开发过程中(2026-07-21)使用开发者本地 `.env` 中配置的真实端点执行过一次,六项操作全部通过(概念分析首轮 Schema 成功、引文验证 7/7 通过、对齐与判分与人工标注一致、跨文档题目 2 题中 1 题真实跨文档、Tutor 首步合法)。报告不入库(`eval/reports/` 已被 gitignore),仓库中不含任何真实凭证;在你自己的凭证下重新运行即可复现同类报告。
+- `eval:hy3` 的最新真实执行以入库的净化证据为准:见 [docs/evidence/hy3-online-verification.md](../docs/evidence/hy3-online-verification.md)(内含被评测的确切提交号、模型、端点主机名与全部聚合指标)。原始报告不入库(`eval/reports/` 已被 gitignore),仓库中不含任何真实凭证;在你自己的凭证下重新运行 `eval:hy3` + `eval:evidence` 即可复现同类证据。

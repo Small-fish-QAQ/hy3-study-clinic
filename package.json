@@ -26,7 +26,8 @@
     "demo:graph": "node scripts/smoke-graph.mjs",
     "demo:adaptive": "node scripts/smoke-adaptive.mjs",
     "eval:fake": "node eval/run-fake.mjs",
-    "eval:hy3": "node eval/run-hy3.mjs"
+    "eval:hy3": "node eval/run-hy3.mjs",
+    "eval:evidence": "node eval/export-evidence.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
