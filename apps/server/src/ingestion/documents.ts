@@ -11,13 +11,15 @@ import { analyzePdfLayout, type PdfPageInput, type PageSpan } from './pdfLayout.
 export type { PageSpan } from './pdfLayout.js';
 
 /**
- * Binary document extraction (PDF / DOCX) with provenance.
+ * File upload extraction (Markdown / TXT / PDF / DOCX) with provenance.
  *
  * Design rules (see docs/ARCHITECTURE.md):
- * - files are validated by extension AND magic bytes AND decoded size;
- * - extraction NEVER executes embedded content: unpdf (PDF.js) is used with
- *   scripting disabled semantics (text extraction only) and mammoth only
- *   reads document.xml — macros/scripts/media are ignored entirely;
+ * - all file uploads are validated by supported extension and decoded size;
+ *   PDF/DOCX also require matching magic bytes, while text files are
+ *   binary-sniffed;
+ * - extraction never executes document code: unpdf (PDF.js) is used for text
+ *   extraction, while Mammoth's HTML output is converted to text and embedded
+ *   image output is discarded;
  * - a parse that yields no usable text is a structured PARSE_FAILED error,
  *   never a silently-empty document;
  * - PDFs are NOT flattened to plain page text: positioned text items flow

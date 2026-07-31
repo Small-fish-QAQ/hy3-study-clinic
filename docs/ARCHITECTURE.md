@@ -1,184 +1,436 @@
-# 架构与设计说明 / Architecture & Design Notes
+# Architecture and Design Notes
 
-本文档补充 [README](../README.md) 中的架构概览,面向想深入理解或扩展本项目的开发者。
+This document expands the [Hy3 Study Clinic README](../README.md) for maintainers who need to understand or extend the system. It describes the shipped product, not a proposed rewrite.
 
-## 1. 请求生命周期(以出题为例)
+## 1. System boundaries
 
+```text
+React/Vite client
+      | JSON APIs and NDJSON Tutor events
+      v
+Fastify server
+      |-- request and domain validation (Zod)
+      |-- ingestion, grounding, grading, graph, and learning services
+      |-- repositories and numbered SQLite migrations
+      `-- LlmProvider
+             |-- FakeProvider (offline development/tests)
+             `-- Hy3Provider (OpenAI-compatible chat/completions)
+
+packages/shared
+      `-- runtime schemas, domain contracts, payload types, mastery utilities
 ```
+
+There are three ownership rules:
+
+1. Hy3 may propose semantic data, but it cannot accept its own output or mutate persistent learner state.
+2. Local services validate schemas, IDs, evidence, scopes, budgets, and state transitions before repositories write anything.
+3. Routes and React components coordinate transport and presentation; domain rules live in services, validators, repositories, and shared pure functions.
+
+The browser never receives server-only answers/rubrics before grading and never calls Hy3 directly.
+
+## 2. Request lifecycle
+
+A standard quiz request illustrates the model boundary:
+
+```text
 POST /api/quizzes { materialId, config }
-  │
-  ├─ Zod 校验请求体(QuizConfigSchema)——失败 → 400 VALIDATION_ERROR
-  │
-  ├─ QuizService.generate
-  │    ├─ 取材料与源块;若无概念则先 AnalysisService.analyze
-  │    ├─ provider.generateQuiz(wrapSourceBlocks(blocks) 包裹的不可信数据)
-  │    │    └─ (Hy3) fetch → 超时/取消 → 安全 JSON 提取 → Zod 校验 → 一次有界修复
-  │    ├─ assembleQuestions:逐题 verifyGrounding —— 找不到引文的题目被丢弃
-  │    │    └─ 全部被丢弃 → 422 GROUNDING_FAILED
-  │    └─ 组装 Quiz(服务器计算偏移量、分配 points)并持久化
-  │
-  └─ toPublicQuiz —— 剥离 correctOptionIds / expectedAnswer / rubric
-       → 201 { quiz }
+  |
+  |-- validate request with QuizConfigSchema
+  |     `-- invalid -> 400 VALIDATION_ERROR
+  |
+  |-- QuizService.generate
+  |     |-- load the material and source blocks
+  |     |-- analyze concepts first when none exist
+  |     |-- provider.generateQuiz(wrapSourceBlocks(blocks), ...)
+  |     |     `-- Hy3: fetch -> timeout/cancellation -> JSON extraction
+  |     |               -> Zod validation -> at most one schema-repair request
+  |     |-- assembleQuestions -> verifyGrounding for every candidate
+  |     |     `-- no surviving question -> 422 GROUNDING_FAILED
+  |     `-- compute offsets/points locally and persist transactionally
+  |
+  `-- toPublicQuiz removes answers and rubrics -> 201 { quiz }
 ```
 
-关键点:**模型输出在落库前必须同时通过 Zod Schema 与引文验证两道关卡**;客户端在提交判分前拿不到答案与评分要点,判分后返回完整题目用于结果讲解。
+Provider output must pass both runtime schema validation and downstream domain/grounding validation. A successful schema is necessary, not sufficient.
 
-## 2. 引文验证:信任边界
+The same layering is used for graph generation, alignment, assessment blueprints, misconception hypotheses, remediation planning, and Tutor steps.
 
-`grounding/verify.ts` 是模型输出与持久化数据之间的信任边界。模型只提供 `(blockId, quote)`:
+## 3. Exact-quote grounding
 
-1. 去除引文首尾空白(唯一的规范化,不做模糊匹配);
-2. 在指定源块内用精确字符串搜索定位,**服务器自行计算 UTF-16 偏移量**;
-3. 重复处理:
-   - 块内重复 → 锚定第一处,记录 `occurrenceCount`(歧义保持可见);
-   - 指定块内找不到、但在**恰好一个**其他块中**恰好出现一次** → 安全重锚(`reanchored: true`);
-   - 其他情况(跨多块、候选块内重复、完全找不到)→ 拒绝(fail closed)。
+`apps/server/src/grounding/verify.ts` is the trust boundary between model-proposed evidence and stored evidence. A provider supplies only `(blockId, quote)`; local code owns location data.
 
-绝不采信模型给出的偏移量、页码、行号,也绝不编造引用。
+1. Trim leading/trailing quote whitespace. This is the only textual normalization; there is no fuzzy matching.
+2. Search the claimed block with exact string matching and compute UTF-16 offsets locally.
+3. If the quote occurs more than once in that block, anchor the first occurrence and retain `occurrenceCount` so ambiguity remains visible.
+4. If it is absent from the claimed block, re-anchor only when exactly one other eligible block contains exactly one occurrence; mark `reanchored: true`.
+5. Reject zero, repeated cross-block, or otherwise ambiguous matches.
 
-## 3. Provider 抽象
+The server never trusts provider-supplied offsets, page numbers, or line numbers and never invents a quotation.
 
-`LlmProvider` 是窄接口(6 个方法:概念分析、出题、简答判分、康复出题、图谱关系提议、康复计划提议),两个实现:
+Exact quotation validation proves that text exists at the recorded source position. It does **not** independently establish the complete semantic truth or entailment of a concept, relation, explanation, hypothesis, or plan reason. The UI therefore distinguishes model proposals from locally verified source location.
 
-- **FakeProvider** — 纯函数式、确定性、离线。所有引文逐字复制自真实源块,因此必然通过引文验证。选项乱序用内容哈希做种子(对相同输入可复现,已被单元测试覆盖)。可选模拟延迟以便观察加载/取消状态。注意区分:Provider 函数本身对相同输入是确定性的、本地判分规则是确定性的,但**端到端离线工作流**(demo:offline 等)只承诺"流程可离线复现"——概念顺序、选中的薄弱概念、生成题目等具体内容在两次运行之间可能变化,不承诺逐字节一致的输出。
-- **Hy3Provider** — OpenAI 兼容 `chat/completions` 适配器。端点/模型/密钥全部来自服务器环境变量。
+Source blocks are wrapped with fresh request-specific delimiters and explicitly labelled untrusted data. Student answers are fenced for grading in the same way. This reduces injection risk but is not presented as a proof of prompt-injection immunity.
 
-有界修复(`Hy3Provider.complete`):初次请求 → 若 JSON 提取或 Zod 校验失败,携带具体错误发起**一次**修复请求 → 仍失败则抛 `PROVIDER_INVALID_OUTPUT`。测试断言此路径恰好触发 2 次网络调用,杜绝无界重试。
+## 4. Provider contract
 
-## 4. 判分与掌握度
+`LlmProvider` is a narrow interface with ten methods shared by `FakeProvider` and `Hy3Provider`:
 
-- **客观题**(`grading/score.ts`):单选=键相等;多选=精确集合匹配(不给部分分,便于向学习者解释)。完全确定性。
-- **评分要点契约**(`grading/rubricAlignment.ts`):每个简答评分要点带 `required` 标记——只有题干**明确要求**(或答对必需)的内容才是必答要点;参考答案中额外的优缺点、局限、举例是可补充要点,缺失**不扣分**。Provider 负责分类,但本地对齐校验不信任其声明:未被题干要求的评价性要点(优点/缺点/比较)降级为可补充;题干明确要求时(如「做法及缺点」)反向提升为必答;必答要点必须有原文字符覆盖依据;全可补充的评分表修复为必答(旧语义),无任何可依据必答项的评分表整题拒绝;规范化去重。旧数据兼容:历史字符串要点在解析时全部按必答加载,无需数据库迁移。
-- **简答题**(`services/grading.ts`):空答直接 0 分(不调用模型);否则 `provider.gradeShortAnswer` 逐要点报告完整/部分覆盖,**分数由本地确定性计算**:`(完整覆盖必答数 + 0.5 × 部分覆盖必答数) ÷ 必答总数`——模型的整体分数与置信度都不直接决定得分,可补充要点缺失不可能降低分数。`gradedBy` 标注来源,低置信度置 `needsReview`。
-- **结果徽标**(`shared/domain/grading.ts` 的 `classifyGradeStatus`,阈值即必答覆盖率):全部必答覆盖 → 正确;≥ 0.6(既有及格/错题阈值)→ 基本正确;> 0 → 部分正确;0 → 需巩固。客观题保持二元。用户可见的要点编号从 1 开始(内部索引仍为 0 基)。
-- **总分**:确定性求和 + 归一化(`computeTotals`)。
-- **掌握度**(`shared/mastery.ts`):指数移动平均 `m' = clamp01(m + 0.3 × (score − m))`,初始 0.5。数据库层再加 `CHECK (mastery BETWEEN 0 AND 1)` 双保险。
+1. `analyzeConcepts`;
+2. `generateQuiz`;
+3. `gradeShortAnswer`;
+4. `generateRemediation`;
+5. `proposeGraphEdges`;
+6. `proposeRemediationPlan`;
+7. `proposeConceptAlignment`;
+8. `proposeAssessment`;
+9. `proposeMisconception`; and
+10. `proposeTutorStep`.
 
-### 判分快照与测验历史(completed-attempt history)
+Every method receives an optional `AbortSignal` and returns a Zod-validated payload. Implementations expose normalized `ProviderError` failures rather than raw transport errors.
 
-一次成功判分即一份**不可变快照**:题目(含判分后揭示的答案与评分要点)、作答、逐题判分、总分本就以只插入方式持久化在 `quizzes/questions`、`submissions`、`grading_results`;迁移 v10 再补上两个历史上只存在于 HTTP 响应中的字段——判分 Provider(`fake`/`hy3`)与确定性 `stateChanges` 汇总(写一次即锁定,`recordStateChanges` 不覆盖已有值)。
+### FakeProvider
 
-- **只读回放**:`GET /api/workspaces/:id/attempts`(最近 50 条,`created_at DESC, id DESC` 确定性排序)与 `GET /api/workspaces/:id/attempts/:attemptId`(`services/attempts.ts`)只读取持久化行,不调用 Provider,也不触碰掌握度/错题/误区/复习状态——这些副作用只在提交判分时发生一次(`attempts.test.ts` 用全表 dump 断言重复读取零写入)。
-- **空间归属**:普通/康复测验经其文档解析所属空间(`COALESCE(quiz.workspace_id, material.workspace_id)`),课程空间评估直接携带;跨空间读取与不存在的记录一样返回 404。
-- **前端**:练习模块第三个子页「测验历史」(`QuizHistoryView`)复用 `ResultsView`(`readOnly` 隐藏主动流程按钮),证据面板使用详情响应返回的**当前**源块。
-- **诚实降级**:升级前的旧判分行两列为 NULL → 显示「判分模式未记录」与「未保存状态变化明细」,绝不回填、绝不重跑 Hy3;文档被删除或重新解析后,引用的源块缺失 → 明确标注原文不可用,仅展示题目内持久化的验证引文;普通测验的历史记录随其文档删除而级联清除(与错题/掌握度同一生命周期),课程空间评估的记录则在文档删除后依然可回看。
+The fake provider is offline and deterministic for identical inputs. It copies evidence verbatim from supplied blocks and uses content-hash seeds where ordering is required. A configurable delay supports loading/cancellation tests.
 
-## 5. 康复闭环
+The complete workflow can be repeated offline, but this does not promise byte-identical output between runs. Workflows create new IDs and state, which can alter later inputs, selected weak concepts, and generated ordering. The guarantee is deterministic provider behavior for identical input plus deterministic local scoring and transition rules.
 
-`services/remediation.ts` 的目标选择完全确定性:
+### Hy3Provider
 
-1. 只选择当前仍有未解决错题的概念,按未解决错题数降序、概念 ID 打破平局;
-2. 每轮最多选择 3 个概念;没有未解决错题时直接拒绝生成;
-3. 每个概念必须恰好保留 1 道单选题和 1 道简答题,因此每轮共 2–6 题。
+The real adapter calls an OpenAI-compatible `chat/completions` endpoint. Base URL, model, key, and timeout come only from server environment configuration.
 
-生成的每道康复题通过 `sourceMistakeIds` 链接到它所复测的错题。判分时(`grading.ts` 的 `persistOutcomes`),若某道康复题答对,则**精确解决**其 `sourceMistakeIds` 指向的错题——形成"错 → 练 → 解决"的闭环。
+`Hy3Provider.complete` performs one initial request. If JSON extraction or Zod validation fails, it may make exactly one structured repair request containing the validation error. A second failure becomes `PROVIDER_INVALID_OUTPUT`. Transport errors, cancellation, timeout, and later evidence/domain rejection do not enter that repair loop.
 
-## 6. 取消传播
+Credentials remain server-side, authorization headers are redacted, and no configured endpoint/model/key is supplied by the repository.
 
-`util/requestSignal.ts` 监听**响应流**的 `close`(而非请求流——请求流在 body 解析后立即关闭,会误取消每个带 body 的请求)。当客户端在响应写完前断开时,`AbortSignal` 触发,贯通到 Provider 的 `fetch`,取消在途模型调用。`routes/realSocket.test.ts` 用真实 socket 回归此问题(`fastify.inject` 无法复现)。
+## 5. Grading and mastery
 
-## 7. 数据库
+### Objective grading
 
-`better-sqlite3`(N-API,Windows/Linux 预编译二进制,覆盖 Node 20/24)。迁移带版本号且可重复执行(`migrate.test.ts` 验证重复运行是幂等的)。仓储层在写入与读回时都做 Zod 校验,确保库中数据始终符合域模型。
+`grading/score.ts` is deterministic:
 
-升级迁移:v2 增加课程空间(workspaces)与文档元数据列,并为每条旧资料创建同名兼容空间(不删除、不改写任何学习数据;`migrateCompat.test.ts` 用带数据的 v1 库验证);v3 增加图谱版本/边/依据与康复计划表。级联链路是有意设计:概念删除 → 关联边级联删除;源块删除 → 边依据级联删除;空间删除 → 全部级联。
+- single choice requires exact option-ID equality;
+- multiple choice requires exact set equality and gives no partial credit; and
+- a blank short answer receives zero without a provider call.
 
-## 8. 课程空间与多文档解析
+Total awarded and possible points are calculated locally.
 
-一个课程空间(workspace)聚合多份文档、概念、版本化图谱与已接受的康复计划;学习状态(作答/错题/掌握度)仍以文档与概念为准,空间只做聚合视图。
+### Rubric contract
 
-文档解析管线(`ingestion/documents.ts`):
+Each short-answer rubric point is classified as `required` or optional enrichment. Only information explicitly requested by the question, or necessary to answer it, can reduce the score.
 
-1. 上传统一走 base64 JSON(≤10MB 解码后),先校验扩展名,再校验魔数(`%PDF-` / ZIP `PK`),不匹配即 422;
-2. PDF 不再把页面拍平成纯文本:`pdfLayout.ts` 从 `unpdf`(PDF.js serverless 构建)取**带坐标/字号的文本项**,分阶段确定性重建 —— 基线聚类还原视觉行(阅读顺序稳定)→ 全文档统计(正文字号、换行行距、正文右边界)→ 依据跨页重复 + 页边位置移除页眉/页脚与纯页码行(字号达到标题级的行绝不移除)→ 字号分层识别标题并输出为 `#` Markdown 标题(块因此获得 headingPath)→ 证据门控的视觉换行修复(行距 + 行宽 + "下一行首个不可拆单元放不下"的 kinsoku 判定;中日韩直接拼接、拉丁词补空格、行尾连字符去除)→ 恢复被 ToUnicode `<0000>` 吞掉的列表项目符号(`- ` 项)→ 保守表格行(仅当大间隙跨行对齐才用 ` | ` 分隔,否则保持可读行序)→ 输出 Markdown 风格文本与**逐页精确字符区间**。分段后的块按区间赋 `pageNumber`–`pageEnd` 页码范围(跨页修复的段落两值不同);无文本页产生可见警告,整份无文本 → `PARSE_FAILED`(绝不落成"空文档");
-3. DOCX 用 `mammoth` 只读 `word/document.xml`(忽略宏/脚本/媒体),产出的受限 HTML 由本地确定性转换器变为 Markdown 风格文本 —— 标题变成 `#` 行,交给既有分段器后自然获得 headingPath 溯源;
-4. 解析输出在**计算页区间/偏移之前**做保守清洗(PDF 管线逐行执行 `sanitizeParsedText` 与字形归一):移除 NUL(真实世界的 Chrome/Skia PDF 会把无法反查 Unicode 的项目符号/箭头字形在 ToUnicode CMap 中显式映射为 `<0000>`,PDF.js 会原样输出;行首的此类字形先被识别为列表标记再清洗)、其余 C0/C1 控制字符、DEL、软连字符、游离 BOM、Unicode 非字符与未配对代理项;换页符等行分隔伪字符归一为换行;康熙部首区(U+2F00–U+2FD5,经 NFKC)与部首补充区中无歧义的简化部首形被归一回统一表意文字(⼀→一、⻚→页),否则搜索与逐字引文校验会因码位差异失败;中文、emoji(含 ZWJ 序列)、标点、制表符与换行原样保留。二进制嗅探(`looksBinary`)只作用于原始粘贴/`.md`/`.txt` 字节,绝不作用于 PDF/DOCX 解析输出 —— 否则合法文档会因个别提取伪字符被整体误判为二进制而拒绝导入;
-5. 所有块保持不变量 `content.slice(startOffset, endOffset) === block.content`。
+The provider proposes classifications, but `grading/rubricAlignment.ts` validates them locally:
 
-资料库(legacy 单资料入口,`POST /api/materials`)与课程空间文档上传共用同一条 `createFromUpload` 摄取路径:同一解析器、同一扩展名/魔数/大小校验与同一套错误文案。从资料库导入的文件会像旧资料一样落入自动创建的同名兼容空间,页码/标题溯源与原始字节(供重新解析)全部保留;任何校验或解析失败都发生在首次写库之前,不会留下空资料或孤儿兼容空间。两个入口都不支持 OCR:纯扫描图片型 PDF 会被结构化拒绝。
+- unrequested evaluative aspects such as advantages, drawbacks, or comparisons are demoted to optional;
+- an aspect explicitly requested by the stem is promoted to required;
+- required points need source-evidence support;
+- normalized duplicates are removed;
+- an all-optional rubric is repaired to preserve legacy required semantics; and
+- a rubric with no groundable required point is rejected.
 
-破坏性操作是显式且事务化的:删除文档依赖已验证的 FK 级联,并在同一事务里清理"失去全部依据的边"、给受影响的图谱版本写入可见的 `pruned` 标记、作废整个空间的康复计划;重新解析(reprocess)从存储的原始字节重跑当前解析器,并在同一事务里重置该文档的提取衍生数据(块/概念/测验/错题/掌握度)。UI 在执行前弹出明确的确认文案。
+Historical string-only rubric rows load as required points without a migration.
 
-文档与课程空间的生命周期由持久化的、创建后不可变的 `workspaces.origin` 决定(迁移 11 追加,受 CHECK 约束):`manual`(学习图谱中显式创建)与 `unknown`(升级前的旧行,包括迁移 2 生成的 legacy 兼容空间——真实来源无法重建,诚实保留默认值,绝不猜测改写)的空间在删除文档(包括最后一个文档)后**永不**被自动删除——空间连同其空间级学习记录(课程空间评估的成绩历史、复习事件等)保留,并在所有视图中以真实的 `0 文档 · 0 概念` 计数出现;既不隐藏也不自动清理。`material_import`(资料库导入时自动创建的每资料兼容空间)是该次导入的实现细节:删除其**最后一个**文档时,同一事务内(在事务中重新检查剩余文档数,杜绝并发导入竞态)连同空间及其剩余空间级记录一并级联删除,不留 `0 文档 · 0 概念` 空壳。两个文档删除端点(`DELETE /api/materials/:id`、`DELETE /api/workspaces/:id/documents/:docId`)因此从 204 改为返回结构化结果 `{ workspaceId, workspaceDeleted }`(200),前端据此如实同步:确认文案按 origin/是否最后一个文档准确说明空间去留,空间被随之删除时清理已保存的图谱选中、评估上下文与本地存储。
+### Short-answer score
 
-移除整个课程空间仍是一个独立的显式操作(对任何 origin 都可用,也是清理升级前遗留空壳的方式):学习图谱侧边栏每个条目旁的「删除课程空间」(✕)在确认后调用 `DELETE /api/workspaces/:id`,一个事务内通过已验证的 FK 级联删除全部文档、源块、概念、图谱版本/边/依据、测验与完成历史、错题、掌握度、对齐与规范概念、误区假设、复习条目/事件、辅导记录与蓝图。前端只在服务器确认(204;404 视为"已删除")后更新:刷新空间列表(带 take-latest 守卫,晚到的旧列表响应不会复活已删条目),若删除的是当前空间则清空图谱/选中/计划状态并回退到最近更新的剩余空间;App 层同步清理引用该空间的打开资料、评估上下文与资料库历史列表。
+Hy3 reports full/partial/missing coverage, confidence, and feedback per rubric point. Local code computes the award from required points only:
 
-## 9. 概念图谱:生成、校验与版本化
+```text
+score = (full required + 0.5 * partial required) / required count
+```
 
-`graph/validate.ts` 是模型输出与持久化图谱之间的信任边界,逐条独立判定候选边(一条无效不牵连其余):
+Optional enrichment has zero score-reducing weight. Provider confidence may set a review flag but never sets points. The shared status classifier uses the same required coverage: all required -> correct; at least 0.6 -> basically correct; greater than zero -> partially correct; zero -> needs reinforcement.
 
-- 两端概念必须存在且属于本空间(跨空间引用单独标注拒因);
-- 禁止自环;关系必须取自受控枚举(prerequisite / part_of / contrasts_with / causes / applies_to / example_of);
-- 每条依据引文走既有 `verifyGrounding` 精确校验,失败的依据被丢弃,全部失败则拒绝该边;
-- 归一化去重 (source, target, relation);`prerequisite` 与 `part_of` 分别做环检测(按候选顺序,闭环边被拒);
-- 全局边数预算(120)。
+### Historical mastery
 
-生成生命周期(`services/graph.ts`):每次生成先落一行 `generating` 版本;provider 失败或全部候选被拒 → 版本标记 `failed`(记录校验摘要),**当前激活图谱不受影响**;有边通过 → 在**一个事务**里写边+依据、置 `ready`、切换空间的激活指针、按保留窗口(10)清理旧版本。历史 `ready` 版本可再次激活(同样事务化)。
+Mastery is a separate deterministic exponential moving average:
 
-学习状态叠加(`learnerOverlay`)只读既有 mastery/mistake 行,派生确定性状态:无作答 → `unassessed`;有未解决错题或掌握度 < 0.7 → `weak`;无未解决错题且掌握度 ≥ 0.85 且作答 ≥ 3 次 → `stable`;其余 → `developing`。不引入第二个真相源,不虚构置信度,不做 FSRS。
+```text
+m' = clamp01(m + 0.3 * (score - m))
+```
 
-## 10. 受约束的康复计划
+Each concept starts at `0.5`. A service averages that concept's question scores once per submission before applying one update. SQLite also constrains stored mastery to `[0, 1]`. This is a product heuristic, not a cognitive diagnosis.
 
-规划输入在本地裁剪:选中概念 + 直接前置(≤5)+ 直接邻居(≤8)+ 相关文档源块 + 相关概念的掌握度行 + 未解决错题(≤10,仅题干)+ 已见题型。模型返回结构化计划(概述 / 薄弱假设 / 受控策略与难度 / 引擎支持的题型 / 1–6 步骤 / 1–4 个带逐字依据的目标)。
+## 6. Completed-attempt snapshots
 
-本地验收(`services/planner.ts`):目标必须是本空间概念;选中概念或其直接前置必须仍是计划中心;目标依据逐条重新走引文校验;验收失败抛结构化错误且**保留原有已接受计划**;每个 (空间, 概念) 只保留一份已接受计划。接受计划不写任何学习状态 —— 模型不能改掌握度、不能解决错题、不能预写历史。
+A successful submission is an immutable snapshot across `quizzes/questions`, `submissions`, and `grading_results`: revealed questions/rubrics, learner answers, per-question grades, totals, provider, and deterministic `stateChanges`.
 
-启动计划:若目标概念仍有未解决错题,按"未解决目标错题最多的文档"(id 平局)复用既有康复引擎,并把目标过滤传入(题目仍与其复测的错题精确关联);否则用计划的难度/题型预配置一次聚焦练习(复用既有出题引擎的 targetConceptIds 通道)。判分、错题解决、掌握度更新全部走原确定性管线。
+Migration 10 added nullable `provider` and `state_changes` fields to preserve response-only data for new attempts. `recordStateChanges` is write-once and does not overwrite a snapshot.
 
-## 11. 前端:学习图谱工作台
+- `GET /api/workspaces/:id/attempts` returns the latest 50 attempts using deterministic `created_at DESC, id DESC` ordering.
+- `GET /api/workspaces/:id/attempts/:attemptId` returns one workspace-scoped snapshot.
+- Reads call no provider and update no mastery, mistakes, misconceptions, or review state.
+- The React history view reuses `ResultsView` in read-only mode.
 
-应用外壳为全视口布局:顶栏模块导航(资料库 · 学习图谱 · 练习 · 错题 · 学习进展),学习图谱工作台占满剩余高度。三个协同区域:左侧资料面板(可折叠;课程空间、文档类型/解析状态/页数/警告、概念与图谱操作),中间交互式图谱(`@xyflow/react` 渲染;默认 **网络视图** 用 `d3-force` 做本地确定性力导向布局 —— 初始位置由概念 ID 哈希播种、同步跑有界 tick 后冻结,绝不后台耗 CPU;另有 **依赖视图**(最长路径分层)与 **薄弱路径**(最小补救子图,见下)两种模式。画布内浮层提供概念搜索、适配视图、关系标签与未评估概念开关、图例与图谱概要;悬停高亮邻域并显示提示卡;双击进入聚焦邻域。空空间显示由真实状态驱动的分步引导),右侧检查器(可折叠;概览 · 原文证据 · 学习计划 三个标签页;概览含学习状态与出入关系,原文证据是带位置信息的证据卡,学习计划含生成/启动操作;键盘可达的关系列表保留在此)。UI 用「模型提出」与「本地已验证」标签区分内容来源,引文校验说明收纳为可展开的备注:引文校验只证明"出现在原文该处",不等于语义蕴含。
+Historical attempts with null provider/state-change columns are labelled "not recorded" rather than reconstructed. When a cited live block has been deleted or reprocessed, replay retains the persisted quotation and labels the live source unavailable.
 
-### 图谱交互与边渲染架构
+Document-scoped quiz history follows that document's cascade lifecycle. Workspace-assessment history can remain available after one contributing document is deleted, with quote-only evidence where necessary.
 
-状态分层严格分离:语义图数据 → 可见性过滤 → 确定性布局位置 → 已保存手动位置 → 活动拖拽位置 → 边几何 → 悬停 → 选中 → 视口。悬停与选中只做样式强调(透明度/类名),结构上不可能触发布局重算、fitView 或位置变化。
+## 7. Mistake remediation
 
-- **受控拖拽**:节点数组由数据派生(memo),`onNodesChange` 等价于 `applyNodeChanges` —— 位置变更连续写入独立的 dragPositions 层(拖拽全程实时跟随),尺寸变更回写到受控节点(React Flow 依赖它报告 `nodesInitialized`);释放时一次性持久化到 `localStorage`(绝不在移动过程中写,持久化在状态更新器之外计算、每次手势恰好写一次),数据刷新在拖拽中到达也不会让节点弹回;手势结束后迟到的拖拽位置事件(如自动平移循环的最后一帧)会被忽略,渲染位置与持久化位置保持一致。若正在拖拽的概念因规范化合并或删除而消失,手势按显式策略安全中止:临时拖拽状态立即释放(悬停、提示与路由规划恢复),绝不为已消失的 ID 持久化位置,该手势未保存的移动被丢弃——之后重新出现的同名 ID 回到确定性布局位置,而不是残留的拖拽中坐标。
-- **一次性自动适配**(`AutoFit`):每个"图谱状态键"(版本 | 布局模式 | 聚焦 | 开关 | 面板折叠 | 核心可见集)只 fit 一次;仅在节点完成测量且画布非零后,经两帧 rAF 延迟执行,并验证 React Flow 确实应用(有界重试);过期回调按纪元丢弃。选中/悬停/拖拽无法改变状态键。
-- **薄弱路径**(`weakPathSubgraph`):每个薄弱概念 + BFS 最短先修修复路径(每概念有界)+ 直接 part_of 整体(上下文)+ 有界的直接先修依赖者;仅保留被含概念之间的 prerequisite/part_of 边,contrasts_with / example_of / applies_to / causes 一律排除;总节点预算截断时薄弱概念始终保留;当最小路径恰好覆盖全图时,UI 给出说明。
-- **浮动避障边与交叉最小化**(`graph/edgeGeometry.ts` + `graph/edgeRouting.ts` + `graph/routePlan.ts` + `graph/graphClarity.ts` + `graph/FloatingLearningEdge.tsx`):端点是"节点中心连线与实测卡片边界的交点"(圆角处收敛到直边),随拖拽逐帧更新。高度数节点的连接点按**几何角序**摊开成槽位:同一侧的边按对端概念的角度排序(上下侧从左到右、左右侧从上到下),平局依次按对端概念 ID → 关系 → 边 ID 打破——相邻边进入节点的左右次序与几何一致,共享节点的边呈有序扇形收束,末段不再互相交叉;槽位是当前几何的纯函数,只有对端真正换位时次序才变化,不会抖动。稳定几何下所有路径来自 `planGraphRoutes` 的**全图确定性规划**:按边 ID 稳定顺序贪心选路,候选(直线/轻柔二次曲线/依赖视图竖直切线三次曲线)按分层代价打分——穿非端点卡片(实际禁止)» 边-边交叉 » 长距离近平行拥挤 » 标签落卡 » 弯曲 » 长度;共享端点的边在共享节点附近有豁免扇区,同对概念的平行/往复车道不计交叉。随后运行**有界改进阶段**(≤3 轮):按稳定顺序重访交叉边对、用全量上下文重新选路,仅当全局度量分严格下降才接受,无改进即提前停止。规划只在几何"有意义变化"时重算(初始布局/重新布局/可见子图变化/布局模式切换/拖拽结束);拖拽期间每帧只做连接边的快速局部选路(含避障),其余边保持既有路径(被拖动卡片压到的路径会即时局部让路),悬停与选中永不触发重算。`graphClarity.ts` 是纯几何求值器(交叉数/末段共点交叉/穿卡数/近平行拥挤/总长度),仅用于开发与测试回归,不是面向用户的产品指标。网络布局在 d3-force 收敛后、fitView 之前做**有界交叉感知微调**(仅对新生成的自动布局;不动用户手动保存的位置):对涉及交叉的节点尝试小步平移与互换,只接受严格改善且保持节点间距、位移上限与整体紧凑度的移动。依赖视图分层后用**有界重心(barycenter)扫描**(4 趟、平局保持原序)减少层间交叉,且仅当严格减少时采用,方向与分层不变。每条可见边渲染为**双描边**:下层是画布底色的托底描边(设计令牌 `--graph-edge-casing`,随主题变化),上层是语义彩色描边——不可避免的交叉处上层边自然"桥接"下层边,保持可读;透明度分级(默认 0.42/邻域 0.8/选中 1.0/无关 0.13)作用于整组,动画尊重 prefers-reduced-motion。
-- **视觉层级**:默认边低饱和低透明(0.42),悬停邻域 0.8,选中 1.0,无关 0.13;箭头是每种关系两枚(普通 7px/选中 9px)的稳定 `<marker>`,尖端精确落在目标边界,contrasts_with 保持虚线且无箭头;边(含托底描边)永远画在节点卡片之下(选中边只在边层内提升),关系标签是 `pointer-events: none` 的小药丸,默认隐藏,悬停该边/选中该边/选中端点概念/显式开关时出现;标签锚点按车道分散在路径的不同分数处,全图规划还会把标签从交叉点和相邻标签处做有界推移,避免多枚标签压在同一交叉区域。
+`services/remediation.ts` selects targets locally:
 
-失效响应防护沿用请求纪元(epoch)模式:切换/删除空间、改变选中节点或边、重启规划、离开视图都会推进纪元或取消在途请求,迟到的响应绝不覆盖较新的空间、文档列表、图谱版本、选中项、计划或康复配置。
+1. only concepts with currently open mistakes;
+2. descending open-mistake count, with concept ID as a stable tie-breaker;
+3. no more than three concepts per round; and
+4. exactly one single-choice and one short-answer question per target, yielding 2-6 questions.
 
-## 12. 规范概念对齐层(canonical alignment)
+No open mistakes means generation is rejected and the UI action is disabled.
 
-对齐是**叠加层**而不是重写:`concepts` 表永不因对齐被修改;`canonical_concepts` + `canonical_members`(每个源概念恰好一行)构成从源概念到规范概念的多对一映射;合并 = 两个规范组的集合并(事务内移动成员行、删除空组),因此**环在结构上不可能出现**。所有提议(含本地规则自动接受的)都持久化在 `alignment_proposals` 中,accepted / rejected / kept_separate 永久可审计。
+Each remediation question stores `sourceMistakeIds`. On grading, a correct answer resolves exactly those linked mistakes. An incorrect remediation answer can create a new open mistake. Resolved concepts do not re-enter remediation merely because historical mastery remains low.
 
-候选生成完全本地且有界(≤30 对,绝不 all-pairs 交给模型):规范化键相等(NFKC + 大小写折叠 + 去空白标点 + 安全单复数折叠)、畸形拼接包含(`workingmemoryhas ⊃ workingmemory`)、共享证据块、跨文档同标题、拉丁词元重叠、双语摘要二元组重叠、既往接受的别名知识。**唯一的自动接受规则**是规范化键完全相等(alias / local_rule),显示名按"中文 > 带空格 > 更短"确定;其余一律进入人工审核。模型提议的本地校验:概念必须存在于本空间、概念对必须在本地候选列表中、不得自我对齐、证据必须逐字通过验证、重复丢弃。
+Plan-launched remediation uses the same engine and rules, filtered to the accepted plan targets. There is no parallel grading or mistake lifecycle.
 
-删除策略:成员随源概念级联删除;仍有其他文档支撑的规范概念保留;最后一个支撑文档删除时,规范概念随之删除(工作区清理函数负责,文档删除事务内执行)。
+## 8. Document ingestion and provenance
 
-前端把该层投影为**规范显示图**(`canonicalView.ts` 纯函数):每组渲染一个节点(锚定在稳定代表源概念上,保留位置持久化与选中语义)、边重锚定并去重(组内边丢弃、underlying 边保留给检查器)、学习状态按成员聚合(阈值与服务端一致)。没有第二事实来源。
+The material library and workspace document endpoint share `createFromUpload`, so they use the same parser, limits, provenance, and errors.
 
-## 13. 课程空间评估与蓝图(workspace assessments)
+### Inputs and limits
 
-`quizzes` 经表重建迁移后支持 `material_id` 为空 + `workspace_id`(kind = `adaptive`)。每道评估题都携带一份**蓝图**(`question_blueprints`):目标规范概念、源概念、源文档、题型、难度、考查目标、证据映射的预期推理步骤、范围与判分方式。关键规则:
+- Pasted text uses the text ingestion path.
+- `.md`, `.txt`, `.pdf`, and `.docx` file uploads use base64 JSON and are limited to 10 MB after decoding.
+- Every file is checked against its extension. PDF and DOCX also require matching magic bytes (`%PDF-` or ZIP `PK`); Markdown/TXT bytes pass a binary-content check instead.
+- Invalid, oversized, malformed, and text-free inputs fail before the first database write.
 
-- `cross_document` 范围由**验证后的证据**所属文档数计算,绝不采信模型声明;`concept_comparison`(新题型,简答式语义判分)必须真实跨文档,否则拒绝;
-- 蓝图的推理步骤留在服务端,客户端载荷与普通测验一样剥离答案/评分要点;
-- 判分归因到**每道题自身概念所在的文档**(错题、掌握度、复习项都落在正确文档上),而不是任意"测验主文档";
-- 面向练习的评估题挂接其概念的未解决错题(`sourceMistakeIds`),答对即精确解决(与康复练习同一规则);
-- 每次判分返回确定性的 `stateChanges` 汇总(涉及概念/文档、错题增减、误区转换、掌握度变化、复习安排、建议下一步),由本地代码在持久化时计算。
+Binary sniffing applies only to raw text-like bytes. Parsed PDF/DOCX text is sanitized instead, preventing valid documents with extractor artifacts from being misclassified as binary.
 
-## 14. 有界 Hy3 辅导(bounded tutor)
+### PDF layout reconstruction
 
-Tutor 是"每轮一个决定"的受限循环:模型每轮只能(a)从**只读工具白名单**中选一个工具并给出参数,或(b)finalize 一份计划 + 推荐活动。本地代码拥有全部执行权:
+`pdfLayout.ts` uses positioned PDF.js text items from `unpdf` rather than flattening pages immediately. The deterministic stages are:
 
-- 工具(10 个)全部 workspace 作用域、严格 Zod 参数、越权引用在执行前失败;实现只调用仓储读方法——没有 SQL 字符串、文件系统、网络与任何状态修改;
-- 显式预算:6 轮规划 / 12 次工具调用 / 3 个计划目标 / 每次检索 8 块 / 保留 20 条证据 / 观察载荷限长;预算耗尽 → 会话失败且零状态变化;
-- 时间线事件全部由本地代码撰写(工具名、目的、验证结果、证据数),经 NDJSON 流式返回并持久化(`tutor_runs` + `tutor_events`);隐藏思维链、原始 prompt、原始模型输出永不出现也永不落库;
-- 最终计划复用与康复规划器**同一份**校验器(`planValidation.ts`),经由既有 plan 存储持久化;推荐活动只是 `{mode, conceptIds}` 数据,由前端显式调用评估接口启动;
-- 重启策略:completed/cancelled/failed 保持原状可审计;进程死亡遗留的 running 在服务启动时标记为 interrupted;任何未完成会话都不改变掌握度/错题/误区/复习状态。
+1. cluster baselines into stable visual lines;
+2. derive body font size, line spacing, and right-margin statistics;
+3. remove repeated page-margin headers/footers and bare page-number lines, while preserving heading-sized text;
+4. infer heading tiers from font-size differences and emit Markdown headings;
+5. repair evidence-supported visual wraps for CJK and Latin text, including hyphenation and line-fit constraints;
+6. recover line-leading list bullets that some ToUnicode maps expose as U+0000;
+7. insert ` | ` separators only for conservatively detected aligned table rows; and
+8. return normalized text plus exact per-page character spans.
 
-## 15. 误区假设状态机(misconceptions)
+Paragraphs can cross a repaired page boundary, so blocks store `pageNumber` through nullable `pageEnd`. Image-only pages produce warnings; a document with no extractable text returns `PARSE_FAILED`. There is no OCR.
 
-单次答错**不是**诊断。状态机由本地代码独占:`proposed →(判别题答错)confirmed`、`proposed →(判别题答对)rejected`、`confirmed →(后续判别答对)resolved`;rejected/resolved 是终态,非法转换抛错。提议阶段模型只能输出 `{applicable, category, hypothesis, evidence}`(可明确拒答 applicable=false,不强行归类),本地验证证据后以 proposed 落库(每次提交 ≤2 条)。UI 措辞固定为试探性:可能的误区 · 待确认 / 已确认 / 已排除 / 已解除。Tutor 读取时确认误区优先于一次性假设;rejected 永不进入每日队列。
+### DOCX conversion
 
-## 16. 复习调度与每日队列(review scheduling)
+`mammoth` converts DOCX XML into constrained HTML, and the local `docxHtmlToText` converter preserves heading/list/table text as Markdown-style input for the existing segmenter. Macros and scripts are not executed. Mammoth's default image conversion can read and encode embedded image data, but the local converter discards the resulting `<img>` output.
 
-复习状态与掌握度**双轨并行**:掌握度回答"表现如何",复习调度回答"何时再见"。调度器是刻意选择的本地紧凑 FSRS 风格实现(约百行、常量显式、固定时钟可测,零供应链面),状态 =(stability, difficulty),评级由分数确定性映射(again <0.6≤ hard <0.75≤ good <0.9≤ easy);成功增长、again 塌缩并计 lapse;`review_items` 记当前状态(带 scheduler_version),`review_events` 是不可变审计流。**只有判分完成的学习事件**推进调度;Tutor 只读。每日队列的优先级完全显式:逾期复习(最逾期优先)→ 已确认误区修复 → 未解决错题 → 薄弱前置 → 今日到期;每概念最多出现一次;理由只陈述事实,不编造时间估计。
+DOCX has heading-path provenance but no reliable page numbers.
 
-## 17. 有界本地检索(bounded retrieval)
+### Parsed-text sanitation
 
-`retrieval/lexical.ts` 是纯函数 BM25 风格评分器:NFKC 折叠后,CJK 按字符二元组、拉丁按小写词元;不引入向量库、不建索引表(每空间几十块的规模下即时评分更简单一致),也刻意不用 SQLite FTS5(unicode61 分词器不切分 CJK)。图谱邻域扩展把选中概念相邻边的证据块补进结果尾部(标记 graph_expansion)。全部输入输出有界:查询 ≤200 字、结果 ≤8、摘录 ≤240 字且带精确偏移;隔离靠作用域(调用方只传入单一课程空间的块)。检索到的文本只是数据——资料中的指令样文本原样出现在结果里,对系统状态零影响(提示层再由 wrapSourceBlocks 围栏声明为不可信数据)。
+Sanitation runs before offsets/page spans are finalized. It removes NUL and unsafe control artifacts, soft hyphens, noncharacters, stray BOMs, and unpaired surrogates; separator-like controls become newlines. Unambiguous Kangxi-radical variants are normalized back to unified ideographs so search and exact evidence validation use the same code points. CJK, emoji (including ZWJ sequences), ordinary punctuation, tabs, and newlines are preserved.
+
+Every stored source block maintains:
+
+```text
+document.content.slice(block.startOffset, block.endOffset) === block.content
+```
+
+Blocks also carry stable content-derived IDs, heading paths, and optional PDF page ranges. Parser warnings/version, media type, filename, and page count are stored on the document. PDF/DOCX documents also retain their original upload bytes; text documents retain normalized content instead.
+
+## 9. Workspace and document lifecycle
+
+A workspace groups documents, source concepts, canonical concepts, graph versions, and accepted plans. Attempts, mistakes, and mastery remain keyed to their actual documents/concepts; workspace views aggregate them.
+
+`workspaces.origin` is immutable and controls final-document deletion:
+
+- `manual`: explicitly created in the learning-graph UI. Deleting the final document preserves the empty workspace and its workspace-level history.
+- `material_import`: auto-created for a material-library import. Deleting its final document retires the workspace and remaining workspace-level rows in the same transaction.
+- `unknown`: pre-migration rows whose creation path cannot be reconstructed. They are conservatively preserved like manual workspaces.
+
+Both document-delete endpoints return `{ workspaceId, workspaceDeleted }`, allowing the frontend to clear stale selections only after the server commits.
+
+Explicit workspace deletion is available for every origin. After confirmation, `DELETE /api/workspaces/:id` cascades documents, blocks, concepts, graph data, quizzes/history, mistakes, mastery, alignments, misconceptions, review data, Tutor data, and blueprints in one transaction. A missing workspace is treated as already deleted by the UI.
+
+Reprocessing reruns the current parser from stored original bytes for PDF/DOCX, or reruns text ingestion and segmentation from stored normalized content for pasted text, Markdown, and TXT. It deliberately resets that document's extraction-derived blocks, concepts, quizzes, mistakes, and mastery, prunes graph evidence/edges, and invalidates workspace plans in one confirmed transaction. Legacy binary documents imported before original-byte storage cannot be reprocessed and must be re-imported.
+
+Deleting one document prunes graph edges that lose concepts or all evidence, marks affected versions `pruned`, and invalidates plans that might cite it. Canonical groups survive while another source concept backs them.
+
+## 10. Database and migrations
+
+`better-sqlite3` runs with foreign keys enabled. Repositories validate domain objects on writes and reads. Multi-row operations use explicit transactions, and migrations are recorded in `schema_migrations`.
+
+The 11 shipped migrations are:
+
+1. `initial_schema` - original materials, blocks, concepts, quizzes, grading, mistakes, and mastery.
+2. `course_workspaces_and_documents` - workspaces, document metadata/original bytes, and source-block page numbers; every legacy material receives a compatibility workspace without learning-data deletion.
+3. `concept_graph_and_remediation_plans` - graph versions/edges/evidence and accepted plans.
+4. `canonical_concept_alignment` - canonical concepts, one membership per source concept, and auditable proposals.
+5. `workspace_assessments_and_blueprints` - nullable material/workspace assessments and question blueprints; rebuilds the quiz table using the documented SQLite foreign-key procedure.
+6. `misconception_hypotheses` - misconception records and audit payloads.
+7. `review_scheduling` - current review items and immutable review events.
+8. `tutor_runs_and_events` - bounded Tutor run state and safe timeline events.
+9. `source_block_page_ranges` - nullable page-end values for cross-page PDF paragraphs.
+10. `completed_attempt_snapshots` - provider and deterministic state-change snapshots on grading results.
+11. `workspace_origin` - immutable `manual | material_import | unknown` origin used by deletion policy; existing rows remain honestly `unknown`.
+
+Table-rebuild migrations disable foreign keys only around the controlled rebuild, run `foreign_key_check` before commit, and restore enforcement even after failure. Tests cover idempotence, populated v1 and v3 upgrades, all-or-nothing rollback, and data preservation.
+
+## 11. Concept graph and plans
+
+### Graph validation/versioning
+
+`graph/validate.ts` evaluates candidate edges independently:
+
+- endpoints must be existing concepts in the workspace;
+- self-links and cross-workspace references are rejected;
+- relation must be in the controlled six-value enum;
+- each evidence quote passes `verifyGrounding`;
+- normalized `(source, target, relation)` duplicates are removed;
+- `prerequisite` and `part_of` candidates are checked for cycles; and
+- the global accepted-edge budget is 120.
+
+Each generation starts as a persisted `generating` version. Provider failure or zero surviving edges marks it `failed` and leaves the active graph untouched. Success writes edges/evidence, marks `ready`, switches the active pointer, and enforces the ten-version retention window in one transaction. A historical ready version can be reactivated transactionally.
+
+### Learner overlay
+
+The overlay derives one state from existing mastery/mistake rows:
+
+- `unassessed`: no graded attempts;
+- `weak`: an open mistake or mastery below 0.7;
+- `stable`: no open mistake, mastery at least 0.85, and at least three attempts;
+- `developing`: everything else.
+
+It also returns mastery, counts, latest activity, and direct prerequisites. It stores no probabilistic confidence and does not duplicate review-scheduler state.
+
+### Remediation-plan validation
+
+Planner input is bounded to the selected concept, at most five direct prerequisites, at most eight other neighbors, involved source blocks, relevant mastery, at most ten open-mistake stems, and previously used question types.
+
+A proposal contains a summary, tentative weakness hypothesis, controlled strategy/difficulty, supported question types, 1-6 steps, and 1-4 evidence-cited targets. Local validation requires workspace concepts, centrality around the selected concept/direct prerequisite, supported types, and exact source evidence. A failed proposal preserves the previous accepted plan. Accepting a plan changes no learner state.
+
+## 12. Graph frontend and geometry
+
+The full-height learning workspace has a collapsible document panel, React Flow graph canvas, and collapsible evidence/plan inspector. It offers deterministic network, dependency, and weak-path layouts.
+
+Graph state is layered deliberately:
+
+```text
+semantic graph -> visibility -> deterministic layout -> saved positions
+               -> active drag positions -> edge geometry -> hover -> selection -> viewport
+```
+
+Hover/selection change style only and cannot rerun layout, routing, or fit-to-view.
+
+### Layout and persistence
+
+- Network positions use bounded synchronous `d3-force` ticks seeded from concept-ID hashes; no simulation runs in the background.
+- Dependency layout uses longest-path layers plus four bounded barycenter sweeps, accepting only strict crossing improvement.
+- Weak-path view keeps every weak node, bounded shortest prerequisite repair paths, direct `part_of` context, and a small number of prerequisite dependents. It excludes contrast/example/application/causal edges and reports when the minimal view covers the whole graph.
+- Controlled drag state updates connected edges per frame. One bounded global route cleanup runs on release, and positions persist once per gesture in `localStorage` by graph version.
+- If a dragged canonical node disappears through alignment/deletion, the gesture ends without persisting a stale ID.
+- `AutoFit` runs once per meaningful graph-state key after nodes are measured. Stale animation-frame callbacks are discarded by epoch.
+
+### Edge routing
+
+`edgeGeometry.ts`, `edgeRouting.ts`, `routePlan.ts`, and `FloatingLearningEdge.tsx` implement deterministic floating edges:
+
+- endpoints intersect measured card boundaries and move during drag;
+- high-degree attachment slots are ordered by opposite-endpoint geometry with stable ID/relation tie-breakers;
+- parallel and reciprocal relations use separate lanes;
+- route candidates include straight, quadratic, and dependency-view cubic paths;
+- scoring prioritizes avoiding non-endpoint cards, then crossings, congestion, label/card overlap, bends, and length;
+- a bounded improvement pass revisits crossing pairs only when the global metric strictly improves;
+- network layout receives a bounded crossing-aware local refinement before first fit; and
+- canvas-colored casing strokes keep unavoidable crossings legible.
+
+`graphClarity.ts` is a pure test/development metric, not a user-facing quality claim. Routing is bounded, not an exhaustive global solver; dense or pathological arrangements can retain crossings.
+
+## 13. Canonical cross-document alignment
+
+Alignment is an overlay, never a rewrite of source concepts. `canonical_concepts` and `canonical_members` form a many-to-one mapping with exactly one membership per source concept. A merge is a transactional union of two groups, so cycles are impossible by construction. Accepted, rejected, and kept-separate decisions remain auditable.
+
+Candidates are generated locally and capped at 30 pairs. Signals include normalized-key equality, malformed concatenation containment, shared blocks/headings, Latin token overlap, bilingual summary bigrams, and accepted alias knowledge. Hy3 never receives an unbounded all-pairs set.
+
+Only exact normalized-key equality is auto-accepted as an alias under a tested local rule. Display-name selection is deterministic. All semantic merges wait for review, and provider proposals must reference an offered pair, existing concepts, and verified evidence.
+
+The frontend projects canonical groups into one displayed node, reanchors/deduplicates edges, and aggregates the existing learner overlay. Original concepts, citations, and history remain the underlying source of truth. There is currently no unmerge operation.
+
+## 14. Workspace assessment blueprints
+
+Each adaptive assessment question has a server-side blueprint: target canonical/source concepts, document, type, difficulty, objective, evidence-mapped reasoning steps, scope, and grading method.
+
+- Cross-document scope is computed from documents represented by **verified** evidence, never trusted from a provider flag.
+- `concept_comparison` requires evidence from at least two documents and uses the semantic short-answer path.
+- Expected answers, rubrics, and reasoning steps are removed from client payloads.
+- Mistakes, mastery, misconceptions, and review items are attributed to each question's own source concept/document rather than an arbitrary quiz-level document.
+- Practice-oriented questions link open `sourceMistakeIds`, so a correct answer uses the same exact-resolution rule as remediation.
+- Every graded submission returns a locally computed `stateChanges` summary after persistence.
+
+## 15. Bounded Hy3 Tutor
+
+One Tutor iteration permits exactly one of two provider decisions: request one whitelisted read-only tool with strict arguments, or finalize a plan and recommended activity.
+
+The ten tools are `inspect_learning_state`, `inspect_concept`, `inspect_canonical_aliases`, `get_graph_neighborhood`, `get_prerequisite_path`, `search_source_blocks`, `read_source_block`, `inspect_open_mistakes`, `inspect_misconceptions`, and `inspect_review_queue`.
+
+Tools are workspace-scoped repository reads. They cannot execute SQL strings, access the filesystem/network, or modify state. Unknown/out-of-workspace references fail before execution.
+
+Budgets are explicit:
+
+- six planning iterations;
+- twelve executed tool calls;
+- three final plan targets;
+- eight blocks per search;
+- twenty retained evidence records; and
+- bounded observation payloads.
+
+The server composes every streamed/persisted timeline event. It exposes tool purpose, validation outcome, and evidence counts, not chain-of-thought, raw prompts, or raw model output.
+
+The final plan uses the same validator/store as ordinary remediation planning. A recommended activity is data (`mode` and concept IDs) that the frontend must explicitly launch. Completed, cancelled, failed, and interrupted runs remain auditable; a process restart changes stranded `running` rows to `interrupted`. No incomplete run changes learner state.
+
+## 16. Misconceptions, review, and retrieval
+
+### Misconception state machine
+
+One wrong answer is not a diagnosis. A provider may propose or decline a bounded tentative hypothesis with controlled category and verified evidence. Local code owns:
+
+```text
+proposed --wrong discriminating answer--> confirmed
+proposed --correct discriminating answer--> rejected
+confirmed --later correct discriminating answer--> resolved
+```
+
+`rejected` and `resolved` are terminal. Illegal transitions fail. At most two proposals can be created per submission, and the UI uses explicitly tentative wording until confirmation.
+
+### Review scheduling and daily queue
+
+Review state is separate from mastery. A compact local FSRS-style scheduler stores stability, difficulty, due date, lapse count, versioned current items, and immutable events. Score-to-rating mapping and constants are explicit and fixed-clock tested. Only completed graded events advance it; Tutor reads cannot.
+
+The daily queue prioritizes overdue reviews, confirmed misconception repair, open mistakes, weak prerequisites, then due-today review. A concept appears once, and reasons report facts rather than invented time estimates.
+
+### Bounded lexical retrieval
+
+`retrieval/lexical.ts` tokenizes NFKC-normalized CJK bigrams and lowercase Latin words and scores blocks BM25-style. Graph-neighbor evidence can be appended as an explicit expansion. Query length, result count, excerpt length, and offsets are bounded; callers pass only one workspace's blocks.
+
+There is no vector database. SQLite FTS5 was not used because its default tokenizer does not segment CJK appropriately and current workspaces contain only dozens of blocks. Retrieved instruction-like text remains untrusted data and has no state-changing capability.
+
+## 17. Cancellation, stale responses, and recovery
+
+`requestSignal.ts` watches the response stream `close` event. Watching the request stream would cancel normal body-bearing requests after parsing. The signal reaches provider `fetch` and remains active while the response body is read; real-socket tests cover behavior that `fastify.inject` cannot reproduce.
+
+Frontend asynchronous workflows use abort controllers plus request epochs/take-latest identities. Switching or deleting a workspace/document, changing graph selection, restarting a plan, or leaving a view invalidates older work. Late responses cannot replace newer documents, graph versions, selection, plans, Tutor events, assessments, or history.
+
+Transactions protect material/block creation, concept replacement, quiz insertion, grading side effects, migrations, graph activation, plan storage, deletion, and reprocessing. A failed AI request never overwrites previously valid data.
+
+## 18. Production dependencies added for the upgrade
+
+| Dependency | Scope | Rationale |
+| --- | --- | --- |
+| [`unpdf`](https://github.com/unjs/unpdf) | server | Maintained serverless PDF.js distribution exposing positioned text items needed for deterministic layout reconstruction and page provenance, without native binaries or OCR. |
+| [`mammoth`](https://github.com/mwilliamson/mammoth.js) | server | Maintained DOCX-to-HTML converter whose structural output can be reduced locally to text/headings/lists/tables; image output is discarded and no document code is executed. |
+| [`@xyflow/react`](https://github.com/xyflow/xyflow) | web | Maintained React 18 graph renderer with accessible pan/zoom, selection, and controlled dragging. |
+| [`d3-force`](https://github.com/d3/d3-force) | web | Small standard force-layout library used for bounded, hash-seeded synchronous network layout. |
+
+No vector database, graph database, orchestration framework, authentication layer, microservice, or new backend language was introduced.
+
+## 19. Known architectural limits
+
+- PDF fidelity depends on the file's text layer. There is no OCR, and rotated/multi-column text, diagrams, complex tables, and text in images are not reconstructed.
+- Header/footer removal, visual-wrap repair, heading recognition, and table detection are conservative heuristics and can misclassify pathological documents.
+- DOCX does not provide stable page provenance; embedded image content is discarded.
+- Grounding can reject semantically reasonable output when an exact quote is unavailable or ambiguous.
+- Alignment review has no unmerge operation, though underlying source concepts/history remain intact.
+- Completed history is limited to 50 attempts per workspace and has no edit/export/pagination workflow.
+- Lexical retrieval can miss synonyms; the graph/Tutor/assessment/remediation budgets can omit useful context.
+- Review scheduling and mastery are transparent heuristics, not psychometrically calibrated models.
+- Deterministic bounded graph routing can retain crossings in dense arrangements.
+- Permanent deletion and confirmed reprocessing are irreversible.
+
+Verification commands, test counts, migration coverage, public evidence, and reviewer mappings are maintained separately in [Verification and Reviewer Evidence](VERIFICATION.md).

@@ -211,10 +211,10 @@ const METRIC_WHITELIST: Record<ExpectedOperation, string[]> = {
 };
 
 export const EVIDENCE_LIMITATIONS = [
-  '样本量很小(小型自建夹具与人工标注,数量见上方各操作指标),结果仅供粗略参考,不构成基准测试;数值依赖所配置的模型与 API。',
-  '对齐一致率只统计本次运行中模型提取概念名与标注对得上的概念对(comparablePairs),未对上的标注对不计入。',
-  '本报告证明引用的文本在声称的源位置真实存在并通过了本地结构校验;精确引文验证不能独立证明生成解释的完整语义蕴含。',
-  '原始报告(eval/reports/)保持 gitignore,本文件由导出器从原始报告派生并做脱敏;端点仅保留主机名,凭证与本地路径一律不发布。',
+  'The sample is deliberately small (original fixtures and hand-authored labels; counts are shown in the operation metrics). Results are indicative, not a benchmark, and depend on the configured model and API.',
+  'Alignment agreement includes only labelled pairs whose concept names were extracted in this run (comparablePairs); unmatched labelled pairs are outside the denominator.',
+  'This record proves that cited text exists at the claimed source position and passed local structural validation. Exact quotation verification does not independently prove complete semantic entailment.',
+  'The raw report under eval/reports/ is gitignored. This record is a sanitized derivation that publishes only the endpoint hostname; credentials and local paths are never included.',
 ] as const;
 
 export function deriveEvidence(raw: unknown, opts: { generatedAt: string }): PublicEvidence {
@@ -262,7 +262,7 @@ export function deriveEvidence(raw: unknown, opts: { generatedAt: string }): Pub
     provider: 'hy3',
     fakeFallback: false,
     failClosed:
-      'eval/run-hy3.mjs 在缺少 HY3_BASE_URL/HY3_API_KEY/HY3_MODEL 时直接拒绝运行并以非零码退出;脚本内不存在 Fake Provider 代码路径,不可能静默退回 Fake。',
+      'eval/run-hy3.mjs exits non-zero when HY3_BASE_URL, HY3_API_KEY, or HY3_MODEL is missing. The script has no FakeProvider code path and cannot silently fall back.',
     model: report.model,
     endpointHost: report.endpointHost,
     executedAt: report.executedAt,
@@ -279,7 +279,7 @@ export function deriveEvidence(raw: unknown, opts: { generatedAt: string }): Pub
     limitations: [...EVIDENCE_LIMITATIONS],
     reproduce: [
       'npm run build',
-      'npm run eval:hy3   # 需要你自己的真实 HY3_* 凭证;缺失即拒绝运行',
+      'npm run eval:hy3   # requires your own real HY3_* credentials; missing values fail closed',
       'npm run eval:evidence',
     ],
     generatedBy: 'eval/export-evidence.mjs',
@@ -354,6 +354,10 @@ function formatSeconds(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
+function formatCount(count: number, singular: string): string {
+  return `${count} ${singular}${count === 1 ? '' : 's'}`;
+}
+
 function metricText(op: EvidenceOperation): string {
   const parts = Object.entries(op.metrics).map(([key, value]) => `${key}=${String(value)}`);
   return parts.join(', ');
@@ -382,7 +386,7 @@ export function renderEvidenceMarkdown(evidence: PublicEvidence): string {
     `| Executed at (UTC) | ${evidence.executedAt} |`,
     `| Evidence generated at (UTC) | ${evidence.generatedAt} |`,
     `| Runtime | Node.js ${evidence.environment.node} on ${evidence.environment.osFamily} |`,
-    `| Requests | ${evidence.totals.requests} total, ${evidence.totals.boundedRepairCalls} bounded repair call(s), provider latency ${formatSeconds(evidence.totals.latencyMs)} |`,
+    `| Requests | ${evidence.totals.requests} total, ${formatCount(evidence.totals.boundedRepairCalls, 'bounded repair call')}, provider latency ${formatSeconds(evidence.totals.latencyMs)} |`,
     '',
     '## Operations',
     '',
@@ -410,7 +414,7 @@ export function renderEvidenceMarkdown(evidence: PublicEvidence): string {
     ...evidence.reproduce,
     '```',
     '',
-    '完整数值见同目录的 `hy3-online-verification.json`(与本文件由同一净化对象生成)。',
+    'The complete sanitized aggregates are in `hy3-online-verification.json` in this directory; both files are generated from the same validated object.',
   ];
   return `${lines.join('\n')}\n`;
 }

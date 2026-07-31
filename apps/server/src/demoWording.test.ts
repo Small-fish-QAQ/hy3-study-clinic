@@ -39,7 +39,7 @@ describe('offline demo wording', () => {
     expect(readme).not.toContain('结果可复现');
     expect(readme).toContain('may vary between runs');
     const architecture = read('docs/ARCHITECTURE.md');
-    expect(architecture).toContain('流程可离线复现');
-    expect(architecture).toContain('不承诺逐字节一致的输出');
+    expect(architecture).toContain('workflow can be repeated offline');
+    expect(architecture).toContain('does not promise byte-identical output');
   });
 });

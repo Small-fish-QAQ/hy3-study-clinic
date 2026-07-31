@@ -10,7 +10,7 @@
 | --- | --- |
 | Overall result | **passed** (6/6 operations) |
 | Provider | `hy3` (real online API) |
-| Fake fallback | `false` — eval/run-hy3.mjs 在缺少 HY3_BASE_URL/HY3_API_KEY/HY3_MODEL 时直接拒绝运行并以非零码退出;脚本内不存在 Fake Provider 代码路径,不可能静默退回 Fake。 |
+| Fake fallback | `false` — eval/run-hy3.mjs exits non-zero when HY3_BASE_URL, HY3_API_KEY, or HY3_MODEL is missing. The script has no FakeProvider code path and cannot silently fall back. |
 | Model | `hy3` |
 | Endpoint host | `tokenhub.tencentmaas.com` |
 | Source commit | `46d34f288d6c619d396ee5f39e12cb33249161da` |
@@ -18,7 +18,7 @@
 | Executed at (UTC) | 2026-07-31T04:28:21.661Z |
 | Evidence generated at (UTC) | 2026-07-31T04:32:32.265Z |
 | Runtime | Node.js v24.14.1 on win32 |
-| Requests | 9 total, 1 bounded repair call(s), provider latency 43.6s |
+| Requests | 9 total, 1 bounded repair call, provider latency 43.6s |
 
 ## Operations
 
@@ -40,17 +40,17 @@
 
 ## What this does not prove
 
-- 样本量很小(小型自建夹具与人工标注,数量见上方各操作指标),结果仅供粗略参考,不构成基准测试;数值依赖所配置的模型与 API。
-- 对齐一致率只统计本次运行中模型提取概念名与标注对得上的概念对(comparablePairs),未对上的标注对不计入。
-- 本报告证明引用的文本在声称的源位置真实存在并通过了本地结构校验;精确引文验证不能独立证明生成解释的完整语义蕴含。
-- 原始报告(eval/reports/)保持 gitignore,本文件由导出器从原始报告派生并做脱敏;端点仅保留主机名,凭证与本地路径一律不发布。
+- The sample is deliberately small (original fixtures and hand-authored labels; counts are shown in the operation metrics). Results are indicative, not a benchmark, and depend on the configured model and API.
+- Alignment agreement includes only labelled pairs whose concept names were extracted in this run (comparablePairs); unmatched labelled pairs are outside the denominator.
+- This record proves that cited text exists at the claimed source position and passed local structural validation. Exact quotation verification does not independently prove complete semantic entailment.
+- The raw report under eval/reports/ is gitignored. This record is a sanitized derivation that publishes only the endpoint hostname; credentials and local paths are never included.
 
 ## Reproduce
 
 ```bash
 npm run build
-npm run eval:hy3   # 需要你自己的真实 HY3_* 凭证;缺失即拒绝运行
+npm run eval:hy3   # requires your own real HY3_* credentials; missing values fail closed
 npm run eval:evidence
 ```
 
-完整数值见同目录的 `hy3-online-verification.json`(与本文件由同一净化对象生成)。
+The complete sanitized aggregates are in `hy3-online-verification.json` in this directory; both files are generated from the same validated object.
