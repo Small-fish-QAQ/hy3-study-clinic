@@ -1,0 +1,122 @@
+{
+  "title": "Hy3 Study Clinic — Real Hy3 Online Verification",
+  "suite": "eval:hy3",
+  "overall": "passed",
+  "provider": "hy3",
+  "fakeFallback": false,
+  "failClosed": "eval/run-hy3.mjs 在缺少 HY3_BASE_URL/HY3_API_KEY/HY3_MODEL 时直接拒绝运行并以非零码退出;脚本内不存在 Fake Provider 代码路径,不可能静默退回 Fake。",
+  "model": "hy3",
+  "endpointHost": "tokenhub.tencentmaas.com",
+  "executedAt": "2026-07-31T04:28:21.661Z",
+  "generatedAt": "2026-07-31T04:32:32.265Z",
+  "environment": {
+    "node": "v24.14.1",
+    "osFamily": "win32"
+  },
+  "source": {
+    "commit": "46d34f288d6c619d396ee5f39e12cb33249161da",
+    "shortCommit": "46d34f2",
+    "branch": "main",
+    "worktreeState": "clean"
+  },
+  "totals": {
+    "operations": 6,
+    "passed": 6,
+    "failed": 0,
+    "requests": 9,
+    "boundedRepairCalls": 1,
+    "latencyMs": 43615,
+    "wallMs": 43663
+  },
+  "operations": [
+    {
+      "name": "concept_analysis",
+      "ok": true,
+      "requests": 1,
+      "boundedRepairCalls": 0,
+      "latencyMs": 4767,
+      "wallMs": 4777,
+      "metrics": {
+        "proposed": 4,
+        "groundingAccepted": 4,
+        "groundingAcceptanceRate": 1,
+        "firstPassSchema": true
+      }
+    },
+    {
+      "name": "concept_analysis_doc_b",
+      "ok": true,
+      "requests": 1,
+      "boundedRepairCalls": 0,
+      "latencyMs": 3977,
+      "wallMs": 3981,
+      "metrics": {
+        "proposed": 3,
+        "groundingAccepted": 3
+      }
+    },
+    {
+      "name": "alignment_agreement",
+      "ok": true,
+      "requests": 1,
+      "boundedRepairCalls": 0,
+      "latencyMs": 1842,
+      "wallMs": 1847,
+      "metrics": {
+        "comparablePairs": 1,
+        "agreement": 1,
+        "agreementRate": 1
+      }
+    },
+    {
+      "name": "grading_agreement",
+      "ok": true,
+      "requests": 3,
+      "boundedRepairCalls": 0,
+      "latencyMs": 6946,
+      "wallMs": 6951,
+      "metrics": {
+        "samples": 3,
+        "correctnessAgreement": 1,
+        "keyPointExactMatch": 1
+      }
+    },
+    {
+      "name": "cross_document_assessment",
+      "ok": true,
+      "requests": 2,
+      "boundedRepairCalls": 1,
+      "latencyMs": 23844,
+      "wallMs": 23865,
+      "metrics": {
+        "items": 2,
+        "itemsWithVerifiedPrimaryEvidence": 2,
+        "itemsTrulyCrossDocument": 2
+      }
+    },
+    {
+      "name": "tutor_first_step",
+      "ok": true,
+      "requests": 1,
+      "boundedRepairCalls": 0,
+      "latencyMs": 2239,
+      "wallMs": 2242,
+      "metrics": {
+        "action": "call_tool",
+        "tool": "inspect_learning_state"
+      }
+    }
+  ],
+  "limitations": [
+    "样本量很小(小型自建夹具与人工标注,数量见上方各操作指标),结果仅供粗略参考,不构成基准测试;数值依赖所配置的模型与 API。",
+    "对齐一致率只统计本次运行中模型提取概念名与标注对得上的概念对(comparablePairs),未对上的标注对不计入。",
+    "本报告证明引用的文本在声称的源位置真实存在并通过了本地结构校验;精确引文验证不能独立证明生成解释的完整语义蕴含。",
+    "原始报告(eval/reports/)保持 gitignore,本文件由导出器从原始报告派生并做脱敏;端点仅保留主机名,凭证与本地路径一律不发布。"
+  ],
+  "reproduce": [
+    "npm run build",
+    "npm run eval:hy3   # 需要你自己的真实 HY3_* 凭证;缺失即拒绝运行",
+    "npm run eval:evidence"
+  ],
+  "generatedBy": "eval/export-evidence.mjs"
+}
