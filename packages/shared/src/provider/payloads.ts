@@ -395,6 +395,8 @@ export const TutorFinalizeStepSchema = z.object({
   activity: z.object({
     mode: AssessmentModeSchema,
     conceptIds: z.array(z.string().min(1)).min(1).max(3),
+    /** Required when mode is misconception_check (from the offered list). */
+    misconceptionId: z.string().min(1).optional(),
   }),
 });
 export type TutorFinalizeStep = z.infer<typeof TutorFinalizeStepSchema>;

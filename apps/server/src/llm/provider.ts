@@ -166,7 +166,8 @@ export interface MisconceptionProposalInput {
 /** One prior validated observation shown back to the Tutor model. */
 export interface TutorObservation {
   iteration: number;
-  tool: TutorToolName;
+  /** Executed tool, or 'plan_validation' for a rejected-finalize feedback. */
+  tool: TutorToolName | 'plan_validation';
   purpose: string;
   /** Locally-composed bounded JSON summary of the validated tool result. */
   resultSummary: string;
@@ -193,6 +194,14 @@ export interface TutorStepInput {
   allowedConceptIds: string[];
   /** Review items of the workspace concepts (bounded, read-only). */
   reviewItems: Pick<ReviewItem, 'conceptId' | 'dueAt' | 'lastRating'>[];
+  /**
+   * Activity modes that are executable RIGHT NOW for the selected concept
+   * (computed by the deterministic launch resolver). The final activity.mode
+   * must come from this list.
+   */
+  launchableModes: Array<{ mode: AssessmentMode; note: string }>;
+  /** Actionable misconception ids usable with misconception_check (bounded). */
+  actionableMisconceptions: Array<{ id: string; conceptId: string }>;
 }
 
 /**

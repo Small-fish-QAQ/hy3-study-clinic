@@ -33,6 +33,14 @@ export interface Repositories {
   submissions: SubmissionsRepo;
   mistakes: MistakesRepo;
   mastery: MasteryRepo;
+  /**
+   * Run `fn` inside ONE database transaction spanning any repository writes
+   * it performs. better-sqlite3 transactions are synchronous, so the block
+   * executes atomically relative to every other statement on this
+   * connection — a throw rolls back every write. Never run provider/network
+   * work inside `fn`.
+   */
+  transaction<T>(fn: () => T): T;
 }
 
 export function createRepositories(db: SqliteDb): Repositories {
@@ -49,5 +57,8 @@ export function createRepositories(db: SqliteDb): Repositories {
     submissions: createSubmissionsRepo(db),
     mistakes: createMistakesRepo(db),
     mastery: createMasteryRepo(db),
+    transaction<T>(fn: () => T): T {
+      return db.transaction(fn)();
+    },
   };
 }

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CreateAssessmentRequestSchema } from './blueprint.js';
 
 /**
  * Review scheduling — long-term memory state, kept strictly separate from
@@ -92,5 +93,12 @@ export const DailyQueueItemSchema = z.object({
   reason: z.string().min(1).max(200),
   /** Days overdue for review items (0 for non-review kinds). */
   overdueDays: z.number().nonnegative(),
+  /**
+   * Server-resolved assessment request that launches this item. Computed at
+   * queue-composition time by the activity launch resolver, so every listed
+   * item is launchable when returned; the assessment service revalidates at
+   * launch. Clients send it verbatim and never re-derive modes.
+   */
+  launch: CreateAssessmentRequestSchema,
 });
 export type DailyQueueItem = z.infer<typeof DailyQueueItemSchema>;

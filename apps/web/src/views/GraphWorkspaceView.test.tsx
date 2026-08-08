@@ -12,6 +12,7 @@ import {
   overlayStates,
   remediationPlan,
   quiz,
+  tutorRun,
   workspace,
   workspaceSummary,
 } from '../test/fixtures';
@@ -773,6 +774,7 @@ describe('学习图谱工作台 — 自适应学习升级', () => {
                 misconceptionId: null,
                 reason: '有 1 道未解决错题。',
                 overdueDays: 0,
+                launch: { mode: 'concept_practice', conceptIds: ['con_0'] },
               },
             ],
           },
@@ -1650,5 +1652,147 @@ describe('学习图谱工作台 — document deletion lifecycle', () => {
     expect(screen.getByText(/0 文档 · 0 概念/)).toBeInTheDocument();
     expect(window.localStorage.getItem(LAST_WORKSPACE_KEY)).toBe('ws_1');
     expect(onWorkspaceDeleted).not.toHaveBeenCalled();
+  });
+});
+
+describe('学习图谱工作台 — Tutor activity launch (server-owned)', () => {
+  function ndjsonResponse(lines: unknown[]): Response {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (const line of lines) {
+          controller.enqueue(encoder.encode(`${JSON.stringify(line)}\n`));
+        }
+        controller.close();
+      },
+    });
+    return { ok: true, status: 200, body: stream } as unknown as Response;
+  }
+
+  it('launches through POST /tutor/runs/:id/activity and surfaces an honest adjustment', async () => {
+    openSavedWorkspace();
+    const onLaunchQuiz = vi.fn();
+    const adaptiveQuiz = {
+      ...quiz,
+      id: 'qz_tutor',
+      materialId: null,
+      workspaceId: 'ws_1',
+      kind: 'adaptive' as const,
+    };
+    const { calls } = installViewMock([
+      {
+        method: 'POST',
+        pattern: /\/api\/workspaces\/ws_1\/tutor\/runs\/tut_1\/activity$/,
+        handler: () => ({
+          status: 201,
+          body: {
+            quiz: adaptiveQuiz,
+            blueprints: [],
+            rejected: [],
+            launchedMode: 'concept_practice',
+            adjusted: {
+              originalMode: 'cross_document',
+              reason: '目标概念还没有已确认的跨文档对齐,无法构造真正的多文档证据。',
+            },
+          },
+        }),
+      },
+      ...baseRoutes(),
+    ]);
+    // Wrap the route-table mock: NDJSON stream for the tutor session POST,
+    // everything else delegates to the table (which keeps recording calls).
+    const tableFetch = globalThis.fetch;
+    vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (/\/api\/workspaces\/ws_1\/tutor$/.test(url) && (init?.method ?? 'GET') === 'POST') {
+        return Promise.resolve(
+          ndjsonResponse([
+            {
+              kind: 'run',
+              run: {
+                ...tutorRun,
+                // A legacy-style recommendation that is stale at launch time.
+                activity: { mode: 'cross_document' as const, conceptIds: ['con_0'] },
+              },
+            },
+          ]),
+        );
+      }
+      return tableFetch(input, init);
+    });
+
+    renderView({ onLaunchQuiz });
+    const canvas = await screen.findByLabelText('个人学习图谱');
+    await waitFor(() => {
+      expect(within(canvas).getAllByText('工作记忆').length).toBeGreaterThan(0);
+    });
+    fireEvent.click(within(canvas).getAllByText('工作记忆')[0]!);
+
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: /启动辅导/ }));
+    await user.click(await screen.findByRole('button', { name: /开始推荐活动/ }));
+    await waitFor(() => expect(onLaunchQuiz).toHaveBeenCalled());
+    expect(onLaunchQuiz.mock.calls[0]![0].kind).toBe('adaptive');
+
+    // The launch went through the server-owned route with NO client-assembled
+    // mode parameters (the old misconception/state bridge is gone).
+    const post = calls.find(
+      (c) => c.method === 'POST' && c.url.includes('/tutor/runs/tut_1/activity'),
+    );
+    expect(post).toBeTruthy();
+    expect(post!.body).toBeUndefined();
+
+    // The deterministic adjustment is surfaced honestly.
+    expect(await screen.findByText(/推荐活动已按当前状态调整.*已改为概念练习/)).toBeInTheDocument();
+  });
+});
+
+describe('学习图谱工作台 — stale plan responses', () => {
+  it('a late plan response for a previously selected concept never lands on the new selection', async () => {
+    openSavedWorkspace();
+    let releasePlanA: () => void = () => {};
+    const planAGate = new Promise<void>((resolve) => {
+      releasePlanA = resolve;
+    });
+    installViewMock([
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/concepts\/con_0\/plan$/,
+        handler: async () => {
+          await planAGate;
+          return { body: { plan: remediationPlan } };
+        },
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/concepts\/con_1\/plan$/,
+        handler: () => ({ body: { plan: null } }),
+      },
+      ...baseRoutes(),
+    ]);
+    renderView();
+
+    const canvas = await screen.findByLabelText('个人学习图谱');
+    await waitFor(() => {
+      expect(within(canvas).getAllByText('工作记忆').length).toBeGreaterThan(0);
+    });
+    // Select A (plan request parks on the gate), then quickly select B.
+    fireEvent.click(within(canvas).getAllByText('工作记忆')[0]!);
+    fireEvent.click(within(canvas).getAllByText('间隔重复')[0]!);
+    const inspector = await screen.findByLabelText('概念详情:间隔重复');
+
+    // A's late response arrives AFTER the selection moved to B.
+    releasePlanA();
+    await act(async () => {
+      await Promise.resolve();
+    });
+    // B's panel must never display A's accepted plan: the plan tab still
+    // offers fresh generation and does not show A's summary.
+    const user = userEvent.setup();
+    await user.click(within(inspector).getByRole('tab', { name: '学习计划' }));
+    expect(
+      await within(inspector).findByRole('button', { name: '生成康复计划' }),
+    ).toBeInTheDocument();
+    expect(within(inspector).queryByText(/围绕「工作记忆」的定向巩固计划/)).not.toBeInTheDocument();
   });
 });

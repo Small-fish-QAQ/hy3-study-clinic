@@ -469,6 +469,7 @@ export const queueItems = [
     misconceptionId: null,
     reason: '复习已过期 2 天(上次评级:good)。',
     overdueDays: 2,
+    launch: { mode: 'review' as const, conceptIds: ['con_0'] },
   },
   {
     kind: 'misconception_repair' as const,
@@ -477,6 +478,7 @@ export const queueItems = [
     misconceptionId: 'mc_1',
     reason: '已确认的误区待修复:可能把间隔重复理解成了集中复习。',
     overdueDays: 0,
+    launch: { mode: 'misconception_check' as const, misconceptionId: 'mc_1' },
   },
 ];
 

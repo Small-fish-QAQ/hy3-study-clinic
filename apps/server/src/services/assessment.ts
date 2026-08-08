@@ -15,6 +15,7 @@ import {
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import { verifyGrounding } from '../grounding/verify.js';
+import { endOfToday } from './activityLaunch.js';
 import { POINTS_BY_TYPE } from '../grading/score.js';
 import { alignRubricToQuestion } from '../grading/rubricAlignment.js';
 import type {
@@ -142,9 +143,30 @@ export function createAssessmentService({
     }
 
     if (mode === 'review') {
+      const now = clock.now().getTime();
+      if (conceptIds && conceptIds.length > 0) {
+        // Named review targets (queue items / Tutor recommendations) follow
+        // the queue's advertised semantics: anything due by the END of today
+        // may be reviewed slightly early. Unnamed review keeps strict due-now.
+        const endOfDay = endOfToday(clock.now()).getTime();
+        const targets: Concept[] = [];
+        for (const conceptId of conceptIds) {
+          const item = repos.review.get(workspaceId, conceptId);
+          if (!item || new Date(item.dueAt).getTime() > endOfDay) continue;
+          const concept = repos.materials.getConcept(conceptId);
+          const material = concept ? repos.materials.get(concept.materialId) : undefined;
+          if (concept && material && material.workspaceId === workspaceId) {
+            targets.push(concept);
+          }
+        }
+        if (targets.length === 0) {
+          throw new AppError(ApiErrorCode.ValidationError, '目标概念今天没有到期的复习安排。');
+        }
+        return { targets: targets.slice(0, 4), misconceptionTarget: null };
+      }
       const due = repos.review
         .listByWorkspace(workspaceId)
-        .filter((item) => new Date(item.dueAt).getTime() <= clock.now().getTime());
+        .filter((item) => new Date(item.dueAt).getTime() <= now);
       if (due.length === 0) {
         throw new AppError(ApiErrorCode.ValidationError, '当前没有到期的复习概念。');
       }

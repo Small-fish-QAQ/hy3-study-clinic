@@ -95,25 +95,83 @@ export function createRemediationService({ repos, provider, clock }: Remediation
       // Provider schema validation guarantees valid individual question
       // shapes, while this service enforces the remediation product rule:
       // exactly the first grounded question of each required type per target.
-      const selectedQuestions: Question[] = [];
-      const missing: Array<{ conceptId: string; type: (typeof REQUIRED_QUESTION_TYPES)[number] }> =
-        [];
-      for (const conceptId of limited) {
-        for (const type of REQUIRED_QUESTION_TYPES) {
-          const question = assembledQuestions.find(
-            (candidate) => candidate.conceptId === conceptId && candidate.type === type,
+      const pickQuestions = (
+        pool: Question[],
+      ): {
+        selected: Map<string, Question>;
+        missing: Array<{ conceptId: string; type: (typeof REQUIRED_QUESTION_TYPES)[number] }>;
+      } => {
+        const selected = new Map<string, Question>();
+        const missing: Array<{
+          conceptId: string;
+          type: (typeof REQUIRED_QUESTION_TYPES)[number];
+        }> = [];
+        for (const conceptId of limited) {
+          for (const type of REQUIRED_QUESTION_TYPES) {
+            const question = pool.find(
+              (candidate) => candidate.conceptId === conceptId && candidate.type === type,
+            );
+            if (question) selected.set(`${conceptId}:${type}`, question);
+            else missing.push({ conceptId, type });
+          }
+        }
+        return { selected, missing };
+      };
+
+      let picked = pickQuestions(assembledQuestions);
+      let retryRejected: Array<{ stem: string; reason: string }> = [];
+
+      // Targeted bounded repair (one round): when required pieces are missing
+      // or failed grounding, re-request ONLY the incomplete targets and fill
+      // ONLY the missing (concept, type) slots. Already-valid questions are
+      // kept verbatim, and every retry question passes the identical
+      // grounding/business validation — the learning contract is never
+      // weakened, only repaired.
+      if (picked.missing.length > 0) {
+        const missingConceptIds = [...new Set(picked.missing.map((m) => m.conceptId))];
+        const retryTargets = targets.filter((t) => missingConceptIds.includes(t.concept.id));
+        try {
+          const retryPayload = await provider.generateRemediation(
+            {
+              materialTitle: material.title,
+              blocks,
+              targets: retryTargets,
+              questionsPerConcept: QUESTIONS_PER_CONCEPT,
+            },
+            opts,
           );
-          if (question) selectedQuestions.push(question);
-          else missing.push({ conceptId, type });
+          const retryResult = assembleQuestions(retryPayload.questions, {
+            quizId,
+            blocks,
+            concepts,
+            allowedTypes: REQUIRED_QUESTION_TYPES,
+            allowedConceptIds: missingConceptIds,
+          });
+          retryRejected = retryResult.rejected;
+          const pool = [...picked.selected.values()];
+          for (const slot of picked.missing) {
+            const replacement = retryResult.questions.find(
+              (candidate) => candidate.conceptId === slot.conceptId && candidate.type === slot.type,
+            );
+            if (replacement) pool.push(replacement);
+          }
+          picked = pickQuestions(pool);
+        } catch {
+          // The retry is best-effort repair; the original honest failure below
+          // reports the still-missing pieces.
         }
       }
-      if (missing.length > 0) {
+
+      if (picked.missing.length > 0) {
         throw new AppError(
           ApiErrorCode.GroundingFailed,
-          '康复练习未能为每个未解决概念生成完整的单选题和简答题,请重试。',
-          { missing, rejected },
+          '康复练习未能为每个未解决概念生成完整的单选题和简答题(已尝试一次定向补生),请重试。',
+          { missing: picked.missing, rejected: [...rejected, ...retryRejected] },
         );
       }
+      const selectedQuestions = limited.flatMap((conceptId) =>
+        REQUIRED_QUESTION_TYPES.map((type) => picked.selected.get(`${conceptId}:${type}`)!),
+      );
       const questions = selectedQuestions.map((question, index) => ({ ...question, index }));
 
       // Link each question to the open mistakes of its concept and count the

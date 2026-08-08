@@ -492,11 +492,14 @@ export function misconceptionProposalMessages(input: MisconceptionProposalInput)
 
 export function tutorStepMessages(input: TutorStepInput): ChatMessage[] {
   const toolList = input.tools.map((t) => `- ${t.name}: ${t.description}`).join('\n');
+  const modeList = input.launchableModes.map((m) => `- ${m.mode}:${m.note}`).join('\n');
+  const modeEnum = input.launchableModes.map((m) => m.mode).join('|');
   const state = wrapUntrustedJson('LEARNER_STATE', {
     selectedConcept: { id: input.selected.id, name: input.selected.name },
     stateSummary: input.stateSummary,
     reviewItems: input.reviewItems,
     allowedConceptIds: input.allowedConceptIds,
+    actionableMisconceptions: input.actionableMisconceptions,
   });
   const observations = wrapUntrustedJson(
     'OBSERVATIONS',
@@ -526,6 +529,9 @@ export function tutorStepMessages(input: TutorStepInput): ChatMessage[] {
         '可用工具(只读,tool 字段只能取这些名称):',
         toolList,
         '',
+        '当前可执行的推荐活动模式(activity.mode 只能取这些值,其他模式在当前状态下无法启动):',
+        modeList,
+        '',
         state.guard,
         state.body,
         '',
@@ -534,12 +540,13 @@ export function tutorStepMessages(input: TutorStepInput): ChatMessage[] {
         '',
         '请输出下一步动作,二选一:',
         '调用工具:{"action":"call_tool","tool":"工具名","arguments":{"按各工具说明填写":"..."},"purpose":"一句话说明调用目的(不超过80字,将展示给学习者)"}',
-        '结束规划:{"action":"finalize","plan":{"summary":"...","weaknessHypothesis":"...","strategy":"review|contrast|worked_example|retrieval_practice|prerequisite_repair|application_practice","difficulty":"easy|medium|hard","questionTypes":["single_choice","short_answer"],"steps":[{"description":"...","conceptId":"可选"}],"targets":[{"conceptId":"...","reason":"...","evidence":[{"blockId":"来源块id","quote":"逐字原文"}]}]},"activity":{"mode":"diagnostic|concept_practice|prerequisite_repair|cross_document|review|misconception_check","conceptIds":["..."]}}',
+        `结束规划:{"action":"finalize","plan":{"summary":"...","weaknessHypothesis":"...","strategy":"review|contrast|worked_example|retrieval_practice|prerequisite_repair|application_practice","difficulty":"easy|medium|hard","questionTypes":["single_choice","short_answer"],"steps":[{"description":"...","conceptId":"可选"}],"targets":[{"conceptId":"...","reason":"...","evidence":[{"blockId":"来源块id","quote":"逐字原文"}]}]},"activity":{"mode":"${modeEnum}","conceptIds":["..."],"misconceptionId":"仅 misconception_check 模式必填,取自 actionableMisconceptions"}}`,
         '要求:',
         '1. plan.targets 与 activity.conceptIds 只能使用 allowedConceptIds 中列出的概念;',
         '2. evidence 的 quote 必须逐字复制自工具观察结果中出现过的原文;',
-        '3. 信息足够时尽早 finalize,不要为了用完预算而调用工具;',
-        '4. 剩余轮次为 1 时必须 finalize。',
+        '3. activity.mode 必须取自上面列出的可执行模式;选 misconception_check 时必须同时给出列表中的 misconceptionId,其余模式不要输出该字段;',
+        '4. 信息足够时尽早 finalize,不要为了用完预算而调用工具;',
+        '5. 剩余轮次为 1 时必须 finalize。',
         JSON_RULES,
       ].join('\n'),
     },

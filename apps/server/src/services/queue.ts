@@ -2,6 +2,7 @@ import type { DailyQueueItem } from '@hy3-clinic/shared';
 import { WEAK_MASTERY_THRESHOLD } from '@hy3-clinic/shared';
 import { notFound } from '../errors.js';
 import { overdueDays } from '../review/scheduler.js';
+import { resolveActivityLaunch } from './activityLaunch.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 
@@ -38,10 +39,31 @@ export function createQueueService({ repos, clock }: QueueServiceDeps) {
 
       const items: DailyQueueItem[] = [];
       const usedConcepts = new Set<string>();
-      const push = (item: DailyQueueItem) => {
+      /**
+       * Attach the server-resolved launch request before listing an item:
+       * every queue entry must be executable at composition time (the
+       * resolver may deterministically substitute a safe mode, e.g. a weak
+       * prerequisite without prerequisites of its own practices directly).
+       * Items whose launch cannot be resolved at all are not listed.
+       */
+      const push = (item: Omit<DailyQueueItem, 'launch'>): void => {
         if (items.length >= MAX_QUEUE_ITEMS || usedConcepts.has(item.conceptId)) return;
+        const intendedMode =
+          item.kind === 'overdue_review' || item.kind === 'due_review'
+            ? 'review'
+            : item.kind === 'misconception_repair'
+              ? 'misconception_check'
+              : item.kind === 'weak_prerequisite'
+                ? 'prerequisite_repair'
+                : 'concept_practice';
+        const resolved = resolveActivityLaunch(repos, clock, workspaceId, {
+          mode: intendedMode,
+          conceptIds: [item.conceptId],
+          ...(item.misconceptionId ? { misconceptionId: item.misconceptionId } : {}),
+        });
+        if (!resolved) return;
         usedConcepts.add(item.conceptId);
-        items.push(item);
+        items.push({ ...item, launch: resolved.launch });
       };
 
       // 1. Overdue reviews, most overdue first.

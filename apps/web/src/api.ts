@@ -104,6 +104,14 @@ export interface AssessmentResponse {
   rejected: Array<{ stem: string; reason: string }>;
 }
 
+/** Response of the server-owned Tutor activity launch. */
+export interface TutorActivityLaunchResponse extends AssessmentResponse {
+  /** Mode actually launched (after any deterministic adjustment). */
+  launchedMode: AssessmentMode;
+  /** Set when the persisted recommendation was substituted at launch time. */
+  adjusted: { originalMode: AssessmentMode; reason: string } | null;
+}
+
 /** One parsed NDJSON line of the Tutor timeline stream. */
 export type TutorStreamLine =
   | { kind: 'event'; event: TutorEvent }
@@ -457,6 +465,20 @@ export const api = {
     request<{ run: TutorRun; events: TutorEvent[] }>(
       'GET',
       `/api/workspaces/${workspaceId}/tutor/runs/${runId}`,
+      undefined,
+      signal,
+    ),
+
+  /**
+   * Launch the recommended activity of a completed Tutor run. The server
+   * reloads the persisted recommendation, revalidates it against current
+   * state, and constructs the mode-specific assessment itself — the client
+   * never assembles launch parameters.
+   */
+  launchTutorActivity: (workspaceId: string, runId: string, signal?: AbortSignal) =>
+    request<TutorActivityLaunchResponse>(
+      'POST',
+      `/api/workspaces/${workspaceId}/tutor/runs/${runId}/activity`,
       undefined,
       signal,
     ),

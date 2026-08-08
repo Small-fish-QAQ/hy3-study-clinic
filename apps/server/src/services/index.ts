@@ -61,7 +61,7 @@ export function createServices({ repos, provider, clock, providerModel }: Servic
   const assessment = createAssessmentService({ repos, provider, clock, misconceptions });
   const attempts = createAttemptsService({ repos });
   const queue = createQueueService({ repos, clock });
-  const tutor = createTutorService({ repos, provider, clock, providerModel });
+  const tutor = createTutorService({ repos, provider, clock, assessment, providerModel });
   return {
     materials,
     workspaces,

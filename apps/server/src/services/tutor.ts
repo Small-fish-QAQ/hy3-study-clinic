@@ -1,13 +1,15 @@
 import {
+  ApiErrorCode,
   TUTOR_LIMITS,
   type Concept,
   type RemediationPlan,
+  type TutorActivity,
   type TutorEvent,
   type TutorEventKind,
   type TutorRun,
   type VerifiedGrounding,
 } from '@hy3-clinic/shared';
-import { notFound } from '../errors.js';
+import { AppError, notFound } from '../errors.js';
 import { ProviderError } from '../llm/errors.js';
 import type {
   LlmProvider,
@@ -25,12 +27,20 @@ import {
   ToolValidationError,
   type TutorToolContext,
 } from '../tutor/tools.js';
+import {
+  findActionableMisconception,
+  launchableTutorModes,
+  resolveActivityLaunch,
+} from './activityLaunch.js';
+import type { AssessmentCreation, AssessmentService } from './assessment.js';
 import { validatePlanProposal } from './planValidation.js';
 
 export interface TutorServiceDeps {
   repos: Repositories;
   provider: LlmProvider;
   clock: Clock;
+  /** Assessment engine used to launch a completed run's activity. */
+  assessment: AssessmentService;
   providerModel?: string | undefined;
 }
 
@@ -57,7 +67,13 @@ export interface TutorSessionResult {
  * through the SAME validator as the remediation planner. A run that fails,
  * is cancelled, or is interrupted changes no learning state whatsoever.
  */
-export function createTutorService({ repos, provider, clock, providerModel }: TutorServiceDeps) {
+export function createTutorService({
+  repos,
+  provider,
+  clock,
+  assessment,
+  providerModel,
+}: TutorServiceDeps) {
   function requireWorkspaceConcept(workspaceId: string, conceptId: string): Concept {
     if (!repos.workspaces.get(workspaceId)) throw notFound(`课程空间不存在:${workspaceId}`);
     const concept = repos.materials.getConcept(conceptId);
@@ -143,6 +159,8 @@ export function createTutorService({ repos, provider, clock, providerModel }: Tu
         .getConceptsByWorkspace(workspaceId)
         .map((c) => c.id);
       let gapEmitted = false;
+      /** One bounded grounding-specific repair round for the final plan. */
+      let groundingRepairUsed = false;
 
       const buildStepInput = (): TutorStepInput => {
         const mastery = repos.mastery.get(selected.materialId, selected.id);
@@ -153,6 +171,7 @@ export function createTutorService({ repos, provider, clock, providerModel }: Tu
           .countsByConceptForWorkspace(workspaceId)
           .get(selected.id) ?? { conceptId: selected.id, proposed: 0, confirmed: 0 };
         const review = repos.review.get(workspaceId, selected.id);
+        const actionable = findActionableMisconception(repos, workspaceId, [selected.id]);
         return {
           workspaceName: workspace.name,
           selected,
@@ -173,6 +192,12 @@ export function createTutorService({ repos, provider, clock, providerModel }: Tu
             .listByWorkspace(workspaceId)
             .slice(0, 10)
             .map((i) => ({ conceptId: i.conceptId, dueAt: i.dueAt, lastRating: i.lastRating })),
+          // Executability contract: only these modes may be recommended, so a
+          // completed run can never surface a predictably dead activity.
+          launchableModes: launchableTutorModes(repos, clock, workspaceId, selected.id),
+          actionableMisconceptions: actionable
+            ? [{ id: actionable.id, conceptId: actionable.conceptId }]
+            : [],
         };
       };
 
@@ -264,13 +289,48 @@ export function createTutorService({ repos, provider, clock, providerModel }: Tu
           );
           const blocks = repos.materials.getBlocksByWorkspace(workspaceId);
 
-          const { targets, steps, droppedEvidenceCount } = validatePlanProposal(step.plan, {
-            conceptById,
-            blocks,
-            selectedId: selected.id,
-            prerequisiteIds,
-            maxTargets: TUTOR_LIMITS.maxTargetConcepts,
-          });
+          let validated;
+          try {
+            validated = validatePlanProposal(step.plan, {
+              conceptById,
+              blocks,
+              selectedId: selected.id,
+              prerequisiteIds,
+              maxTargets: TUTOR_LIMITS.maxTargetConcepts,
+            });
+          } catch (error) {
+            // Real sessions showed plan-evidence fragility: allow exactly ONE
+            // grounding-specific repair round. The rejection details become an
+            // observation, the model may finalize again, and full validation
+            // reruns. A second failure (or no remaining iteration) fails
+            // closed exactly as before.
+            if (
+              error instanceof AppError &&
+              !groundingRepairUsed &&
+              run.iterations < TUTOR_LIMITS.maxIterations
+            ) {
+              groundingRepairUsed = true;
+              const rejected =
+                (error.details as { rejectedTargets?: unknown } | undefined)?.rejectedTargets ?? [];
+              emit('evidence_rejected', '计划依据未通过原文校验,已要求模型修正后重新提交计划。', {
+                valid: false,
+              });
+              observations.push({
+                iteration: run.iterations,
+                tool: 'plan_validation',
+                purpose: '计划校验失败反馈',
+                resultSummary: boundObservation({
+                  planValidationError: error.message,
+                  rejectedTargets: rejected,
+                  instruction:
+                    '最终计划未通过本地校验。请重新 finalize:每个 target 的 evidence 必须逐字复制自工具观察结果中出现过的原文。',
+                }),
+              });
+              continue;
+            }
+            throw error;
+          }
+          const { targets, steps, droppedEvidenceCount } = validated;
 
           const acceptedEvidence: VerifiedGrounding[] = targets
             .flatMap((t) => t.evidence)
@@ -286,13 +346,33 @@ export function createTutorService({ repos, provider, clock, providerModel }: Tu
             });
           }
 
+          // Executability contract: the model's recommendation is validated
+          // against current state and deterministically downgraded when its
+          // preconditions do not hold. A completed run therefore never
+          // surfaces an activity that predictably cannot launch.
           const activityConceptIds = step.activity.conceptIds
             .filter((id) => conceptById.has(id))
             .slice(0, TUTOR_LIMITS.maxTargetConcepts);
-          const activity =
-            activityConceptIds.length > 0
-              ? { mode: step.activity.mode, conceptIds: activityConceptIds }
-              : { mode: step.activity.mode, conceptIds: [selected.id] };
+          const requested: TutorActivity = {
+            mode: step.activity.mode,
+            conceptIds: activityConceptIds.length > 0 ? activityConceptIds : [selected.id],
+            ...(step.activity.misconceptionId
+              ? { misconceptionId: step.activity.misconceptionId }
+              : {}),
+          };
+          const resolved = resolveActivityLaunch(repos, clock, workspaceId, requested);
+          const activity: TutorActivity = resolved
+            ? {
+                mode: resolved.launch.mode,
+                conceptIds:
+                  resolved.launch.conceptIds && resolved.launch.conceptIds.length > 0
+                    ? [...resolved.launch.conceptIds]
+                    : requested.conceptIds,
+                ...(resolved.launch.misconceptionId
+                  ? { misconceptionId: resolved.launch.misconceptionId }
+                  : {}),
+              }
+            : { mode: 'concept_practice', conceptIds: [selected.id] };
 
           emit(
             'strategy_selected',
@@ -320,6 +400,17 @@ export function createTutorService({ repos, provider, clock, providerModel }: Tu
             conceptIds: targets.map((t) => t.conceptId),
             evidenceCount: acceptedEvidence.length,
           });
+          if (resolved?.adjusted) {
+            emit(
+              'activity_adjusted',
+              `推荐活动「${resolved.adjusted.originalMode}」当前不可执行(${resolved.adjusted.reason}),已调整为「${activity.mode}」。`,
+              {
+                originalMode: resolved.adjusted.originalMode,
+                adjustedMode: activity.mode,
+                conceptIds: activity.conceptIds,
+              },
+            );
+          }
 
           save({
             status: 'completed',
@@ -359,6 +450,47 @@ export function createTutorService({ repos, provider, clock, providerModel }: Tu
       const run = repos.tutor.getRun(runId);
       if (!run || run.workspaceId !== workspaceId) throw notFound(`辅导会话不存在:${runId}`);
       return { run, events: repos.tutor.listEvents(runId) };
+    },
+
+    /**
+     * Launch the recommended activity of a completed run, server-side.
+     *
+     * The persisted recommendation is re-resolved against CURRENT state at
+     * click time, and the mode-specific assessment request is constructed
+     * here — the client never assembles mode parameters. When state drifted
+     * since finalize (or for legacy runs persisted before finalize-time
+     * validation), the resolver's deterministic fallback is applied and
+     * reported honestly instead of surfacing a predictable launch error.
+     */
+    async launchActivity(
+      workspaceId: string,
+      runId: string,
+      opts?: ProviderCallOptions,
+    ): Promise<{
+      creation: AssessmentCreation;
+      launchedMode: TutorActivity['mode'];
+      adjusted: { originalMode: TutorActivity['mode']; reason: string } | null;
+    }> {
+      const { run } = this.getRun(workspaceId, runId);
+      if (run.status !== 'completed' || !run.activity) {
+        throw new AppError(
+          ApiErrorCode.ValidationError,
+          '该辅导会话没有可启动的推荐活动(仅已完成的会话可启动)。',
+        );
+      }
+      const resolved = resolveActivityLaunch(repos, clock, workspaceId, run.activity);
+      if (!resolved) {
+        throw new AppError(
+          ApiErrorCode.ValidationError,
+          '课程空间中已没有可用概念,无法启动推荐活动。请先提取概念。',
+        );
+      }
+      const creation = await assessment.create(workspaceId, resolved.launch, opts);
+      return {
+        creation,
+        launchedMode: resolved.launch.mode,
+        adjusted: resolved.adjusted,
+      };
     },
 
     listRuns(workspaceId: string): TutorRun[] {

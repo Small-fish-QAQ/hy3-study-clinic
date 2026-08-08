@@ -10,7 +10,7 @@ import { buildApp } from '../app.js';
 import { FakeProvider } from '../llm/fakeProvider.js';
 import { fixedClock } from '../util/ids.js';
 import { buildTestApp, type TestApp } from '../testing/testApp.js';
-import { makeWorkspace, T0 } from '../testing/fixtures.js';
+import { makeMistake, makeQuestion, makeWorkspace, T0 } from '../testing/fixtures.js';
 
 const filesDir = join(dirname(fileURLToPath(import.meta.url)), '../testing/files');
 const samplePdfB64 = () => readFileSync(join(filesDir, 'sample.pdf')).toString('base64');
@@ -914,5 +914,217 @@ describe('course-space lifecycle after document deletion', () => {
         rmSync(`${dbPath}${suffix}`, { force: true });
       }
     }
+  });
+});
+
+describe('queue launch sweep and named-review semantics (Phase 0)', () => {
+  const DOC = [
+    '# 概念零',
+    '',
+    '概念零是最基础的内容。它先于其他内容出现。',
+    '',
+    '# 概念一',
+    '',
+    '概念一建立在概念零之上。理解它需要先掌握概念零。',
+    '',
+    '# 概念二',
+    '',
+    '概念二展开了新的主题。它与概念一相互对照。',
+    '',
+    '# 概念三',
+    '',
+    '概念三讨论应用场景。它把前面的内容用于实践。',
+    '',
+    '# 概念四',
+    '',
+    '概念四给出具体例子。这些例子帮助理解全局。',
+    '',
+    '# 概念五',
+    '',
+    '概念五总结全部内容。它需要前面的知识作为基础。',
+  ].join('\n');
+
+  let ctx: TestApp;
+  let workspaceId: string;
+  let materialId: string;
+  let conceptIds: string[];
+
+  beforeEach(async () => {
+    ctx = buildTestApp();
+    const ws = await ctx.app.inject({
+      method: 'POST',
+      url: '/api/workspaces',
+      payload: { name: '队列可执行性' },
+    });
+    workspaceId = ws.json().workspace.id;
+    const doc = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/workspaces/${workspaceId}/documents`,
+      payload: { kind: 'text', content: DOC },
+    });
+    materialId = doc.json().material.id;
+    const analyzed = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/materials/${materialId}/analyze`,
+    });
+    conceptIds = (analyzed.json().concepts as Array<{ id: string }>).map((c) => c.id);
+    expect(conceptIds.length).toBeGreaterThanOrEqual(6);
+    const graph = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/workspaces/${workspaceId}/graph`,
+    });
+    expect(graph.statusCode).toBe(201);
+  });
+
+  function seedReview(conceptId: string, dueAt: string): void {
+    const concept = ctx.repos.materials.getConcept(conceptId)!;
+    ctx.repos.review.upsert({
+      workspaceId,
+      conceptId,
+      conceptName: concept.name,
+      stability: 1,
+      difficulty: 5,
+      dueAt,
+      lastReviewedAt: T0,
+      intervalDays: 1,
+      reviewCount: 1,
+      lapseCount: 0,
+      lastRating: 'good',
+      schedulerVersion: 'local-fsrs-v1',
+      createdAt: T0,
+      updatedAt: T0,
+    });
+  }
+
+  it('unnamed review launch keeps strict due-now semantics', async () => {
+    // Only a later-today review exists: generic review must still refuse…
+    seedReview(conceptIds[3]!, new Date(Date.parse(T0) + 6 * 3600 * 1000).toISOString());
+    const generic = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/workspaces/${workspaceId}/assessments`,
+      payload: { mode: 'review' },
+    });
+    expect(generic.statusCode).toBe(400);
+    expect(generic.json().error.message).toContain('当前没有到期的复习概念');
+
+    // …while naming the concept follows the queue's advertised semantics.
+    const named = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/workspaces/${workspaceId}/assessments`,
+      payload: { mode: 'review', conceptIds: [conceptIds[3]!] },
+    });
+    expect(named.statusCode).toBe(201);
+
+    // Naming a concept with no eligible schedule fails with the honest reason.
+    const wrong = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/workspaces/${workspaceId}/assessments`,
+      payload: { mode: 'review', conceptIds: [conceptIds[5]!] },
+    });
+    expect(wrong.statusCode).toBe(400);
+    expect(wrong.json().error.message).toContain('目标概念今天没有到期的复习安排');
+  });
+
+  it('EVERY returned queue item launches immediately with its server-resolved payload', async () => {
+    // c4 stays unnamed: it enters the queue as c5's weak prerequisite via
+    // the graph edge alone, with no direct seeding of its own.
+    const [c0, c1, c2, c3, , c5] = conceptIds as [string, string, string, string, string, string];
+    const conceptOf = (id: string) => ctx.repos.materials.getConcept(id)!;
+
+    // Tier 3: open mistake on c0.
+    ctx.repos.mistakes.insert(
+      makeMistake({
+        id: 'mis_sweep_0',
+        materialId,
+        conceptId: c0,
+        conceptName: conceptOf(c0).name,
+        question: makeQuestion({ conceptId: c0, conceptName: conceptOf(c0).name }),
+      }),
+    );
+    // Tier 2: confirmed misconception on c1.
+    ctx.repos.misconceptions.insert({
+      id: 'mc_sweep_1',
+      workspaceId,
+      conceptId: c1,
+      conceptName: conceptOf(c1).name,
+      originBlueprintId: null,
+      originQuestionId: 'que_sweep',
+      originQuizId: 'qz_sweep',
+      learnerAnswer: { questionId: 'que_sweep', type: 'single_choice', selectedOptionIds: ['B'] },
+      evidence: [],
+      category: 'definition_confusion',
+      hypothesis: '可能混淆了概念一与概念零。',
+      provider: 'fake',
+      status: 'confirmed',
+      decidedByQuizId: null,
+      createdAt: T0,
+      updatedAt: T0,
+    });
+    // Tier 1: overdue review on c2; tier 5: due later today on c3.
+    seedReview(c2, new Date(Date.parse(T0) - 24 * 3600 * 1000).toISOString());
+    seedReview(c3, new Date(Date.parse(T0) + 6 * 3600 * 1000).toISOString());
+    // Tier 4: c5 weak (low mastery) → its prerequisite c4 needs work.
+    ctx.repos.mastery.upsert({
+      materialId,
+      conceptId: c5,
+      conceptName: conceptOf(c5).name,
+      mastery: 0.4,
+      attempts: 1,
+      correctCount: 0,
+      lastScore: 0.4,
+      updatedAt: T0,
+    });
+
+    const queueRes = await ctx.app.inject({
+      method: 'GET',
+      url: `/api/workspaces/${workspaceId}/queue`,
+    });
+    const items = queueRes.json().items as Array<{
+      kind: string;
+      conceptId: string;
+      launch: { mode: string; conceptIds?: string[]; misconceptionId?: string };
+    }>;
+    // All five tiers are present…
+    expect(items.map((i) => i.kind)).toEqual([
+      'overdue_review',
+      'misconception_repair',
+      'open_mistakes',
+      'weak_prerequisite',
+      'due_review',
+    ]);
+    // …and EVERY item's server-resolved launch request succeeds right now.
+    for (const item of items) {
+      const res = await ctx.app.inject({
+        method: 'POST',
+        url: `/api/workspaces/${workspaceId}/assessments`,
+        payload: item.launch,
+      });
+      expect(res.statusCode, `${item.kind}:${item.conceptId}`).toBe(201);
+    }
+  });
+
+  it('the tutor run-activity route launches server-side and reports adjustments', async () => {
+    const tutorRes = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/workspaces/${workspaceId}/tutor`,
+      payload: { conceptId: conceptIds[1]! },
+    });
+    const runLine = tutorRes.body
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line) as { kind: string; run?: { id: string; status: string } })
+      .find((l) => l.kind === 'run');
+    expect(runLine?.run?.status).toBe('completed');
+
+    const launched = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/workspaces/${workspaceId}/tutor/runs/${runLine!.run!.id}/activity`,
+    });
+    expect(launched.statusCode).toBe(201);
+    const body = launched.json();
+    expect(body.quiz.kind).toBe('adaptive');
+    expect(body.launchedMode).toBeTruthy();
+    // A fresh run's recommendation launches without adjustment.
+    expect(body.adjusted).toBeNull();
   });
 });

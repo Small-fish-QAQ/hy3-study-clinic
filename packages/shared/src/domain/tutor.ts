@@ -68,6 +68,7 @@ export const TutorEventKindSchema = z.enum([
   'gap_identified',
   'misconception_inspected',
   'strategy_selected',
+  'activity_adjusted',
   'plan_accepted',
   'session_cancelled',
   'session_failed',
@@ -94,6 +95,10 @@ export const TutorEventSchema = z.object({
       resultCount: z.number().int().nonnegative().optional(),
       iteration: z.number().int().nonnegative().optional(),
       valid: z.boolean().optional(),
+      /** activity_adjusted: the mode the model originally recommended. */
+      originalMode: z.string().max(40).optional(),
+      /** activity_adjusted: the deterministically substituted mode. */
+      adjustedMode: z.string().max(40).optional(),
     })
     .optional(),
   createdAt: z.string().datetime(),
@@ -104,6 +109,12 @@ export type TutorEvent = z.infer<typeof TutorEventSchema>;
 export const TutorActivitySchema = z.object({
   mode: AssessmentModeSchema,
   conceptIds: z.array(z.string().min(1)).min(1).max(3),
+  /**
+   * Concrete misconception bound to a misconception_check activity. Resolved
+   * and validated server-side at finalize time; older runs without it remain
+   * valid history and are re-resolved at launch time.
+   */
+  misconceptionId: z.string().min(1).optional(),
 });
 export type TutorActivity = z.infer<typeof TutorActivitySchema>;
 

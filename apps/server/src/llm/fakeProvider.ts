@@ -3,6 +3,7 @@ import {
   fnv1a32,
   normalizeConceptKey,
   type AlignmentProposalPayload,
+  type AssessmentMode,
   type AssessmentProposalPayload,
   type Concept,
   type ConceptAnalysisPayload,
@@ -741,12 +742,27 @@ export class FakeProvider implements LlmProvider {
     }
 
     const strategy = input.stateSummary.openMistakes > 0 ? 'retrieval_practice' : 'review';
-    const activityMode =
-      input.stateSummary.confirmedMisconceptions > 0
-        ? 'misconception_check'
-        : input.stateSummary.openMistakes > 0
-          ? 'concept_practice'
-          : 'cross_document';
+    // Deterministic policy over the modes the resolver marked launchable:
+    // misconception repair first, then mistake practice, then the richest
+    // remaining launchable mode. Falls back to concept_practice (always
+    // launchable while the selected concept exists).
+    const launchable = new Set(input.launchableModes.map((m) => m.mode));
+    const boundMisconception = input.actionableMisconceptions[0];
+    let activityMode: AssessmentMode = 'concept_practice';
+    if (launchable.has('misconception_check') && boundMisconception) {
+      activityMode = 'misconception_check';
+    } else if (input.stateSummary.openMistakes > 0 && launchable.has('concept_practice')) {
+      activityMode = 'concept_practice';
+    } else {
+      const preference: AssessmentMode[] = [
+        'cross_document',
+        'review',
+        'prerequisite_repair',
+        'concept_practice',
+        'diagnostic',
+      ];
+      activityMode = preference.find((mode) => launchable.has(mode)) ?? 'concept_practice';
+    }
     return {
       action: 'finalize',
       plan: {
@@ -778,7 +794,13 @@ export class FakeProvider implements LlmProvider {
           },
         ],
       },
-      activity: { mode: activityMode, conceptIds: [conceptId] },
+      activity: {
+        mode: activityMode,
+        conceptIds: [conceptId],
+        ...(activityMode === 'misconception_check' && boundMisconception
+          ? { misconceptionId: boundMisconception.id }
+          : {}),
+      },
     };
   }
 }

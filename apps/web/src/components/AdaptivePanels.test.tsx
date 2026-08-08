@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { TutorActivity } from '@hy3-clinic/shared';
+import type { TutorRun } from '@hy3-clinic/shared';
 import { AlignmentPanel } from './AlignmentPanel';
 import { DailyQueue } from './DailyQueue';
 import { TutorPanel } from './TutorPanel';
@@ -222,7 +222,7 @@ describe('TutorPanel', () => {
   function renderPanel(handlers: {
     activityLaunching?: boolean;
     onPathChange?: (ids: ReadonlySet<string>) => void;
-    onStartActivity?: (activity: TutorActivity) => void;
+    onStartActivity?: (run: TutorRun) => void;
     onPlanAccepted?: () => void;
   }) {
     return render(
@@ -260,7 +260,12 @@ describe('TutorPanel', () => {
     expect(onPathChange).toHaveBeenLastCalledWith(new Set(['con_0']));
 
     await user.click(screen.getByRole('button', { name: /开始推荐活动/ }));
-    expect(onStartActivity).toHaveBeenCalledWith(tutorRun.activity);
+    // The panel hands the full run to the parent — the launch itself is
+    // server-owned (POST …/tutor/runs/:runId/activity), so the client never
+    // assembles mode-specific parameters from the activity.
+    expect(onStartActivity).toHaveBeenCalledWith(
+      expect.objectContaining({ id: tutorRun.id, activity: tutorRun.activity }),
+    );
   });
 
   it('supports cancelling a running session', async () => {

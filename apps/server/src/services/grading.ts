@@ -11,8 +11,8 @@ import type {
   SubmissionRequest,
   SubmissionStateChanges,
 } from '@hy3-clinic/shared';
-import { INITIAL_MASTERY, isTextAnswerType, updateMastery } from '@hy3-clinic/shared';
-import { notFound } from '../errors.js';
+import { INITIAL_MASTERY, isTextAnswerType, updateMastery, ApiErrorCode } from '@hy3-clinic/shared';
+import { AppError, notFound } from '../errors.js';
 import {
   computeTotals,
   gradeObjective,
@@ -275,16 +275,48 @@ export function createGradingService({
 
   return {
     /**
-     * Grade a submission end-to-end. Objective questions are graded
-     * deterministically; text answers via the provider rubric path. Nothing
-     * is persisted until every question has been graded, so a provider
-     * failure leaves no partial state behind. After persisting outcomes the
-     * deterministic misconception transitions and review scheduling run, and
-     * everything that changed is reported in `stateChanges`.
+     * Grade a submission end-to-end.
+     *
+     * Ordering contract (state safety):
+     * 1. duplicate/stale preflight (friendly fast failure, no provider cost);
+     * 2. ALL provider/network work — question grading and misconception
+     *    proposals — completes first and writes nothing;
+     * 3. ONE database transaction applies the complete learner-state write
+     *    set (submission, grading result, mistakes, mastery, misconception
+     *    transitions + proposals, review scheduling, state-change snapshot).
+     *    The duplicate and stale checks are re-run INSIDE the transaction, so
+     *    concurrent or retried submissions of the same quiz apply learner
+     *    state at most once, and a mid-write failure rolls everything back.
      */
     async grade(request: SubmissionRequest, opts?: ProviderCallOptions): Promise<GradeOutcome> {
       const quiz = repos.quizzes.get(request.quizId);
       if (!quiz) throw notFound(`测验不存在:${request.quizId}`);
+
+      const duplicateError = () =>
+        new AppError(
+          ApiErrorCode.DuplicateSubmission,
+          '该测验已提交并判分,不能重复提交。请在测验历史中查看已有结果。',
+          { quizId: quiz.id },
+        );
+      const ensureQuizConceptsExist = (): void => {
+        const missing = [
+          ...new Set(
+            quiz.questions
+              .filter((q) => repos.materials.getConcept(q.conceptId) === undefined)
+              .map((q) => q.conceptId),
+          ),
+        ];
+        if (missing.length > 0) {
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            '该测验引用的内容已被删除或重新解析,无法提交判分。请重新生成练习。学习状态未受影响。',
+            { missingConceptIds: missing },
+          );
+        }
+      };
+
+      if (repos.submissions.hasResultForQuiz(quiz.id)) throw duplicateError();
+      ensureQuizConceptsExist();
 
       const answersById = new Map<string, Answer>();
       for (const answer of request.answers) {
@@ -325,15 +357,9 @@ export function createGradingService({
         createdAt,
       };
 
-      repos.submissions.insertSubmission(submission);
-      repos.submissions.insertGradingResult(result, provider.name);
-      const outcomes = persistOutcomes(quiz, grades, answersById, createdAt);
-
-      // Deterministic misconception transitions (discriminating questions
-      // decide; the model cannot), then bounded model-side proposals for
-      // wrong answers of workspace assessments.
-      const transitions = misconceptions.applyGradedTransitions(quiz, grades, createdAt);
-      const proposed = await misconceptions.proposeFromWrongAnswers(
+      // Bounded model-side misconception proposals for wrong answers of
+      // workspace assessments — provider work only, no writes yet.
+      const proposalRecords = await misconceptions.collectProposalsFromWrongAnswers(
         quiz,
         grades,
         answersById,
@@ -341,32 +367,65 @@ export function createGradingService({
         opts,
       );
 
-      // Review scheduling: only completed graded events reach the scheduler.
-      const reviewScheduled = review.recordGradedOutcomes(quiz, outcomes.conceptScores, createdAt);
+      const stateChanges = repos.transaction((): SubmissionStateChanges => {
+        // Authoritative rechecks: state may have changed while the provider
+        // calls above were in flight, and a concurrent submission may have
+        // won the race. Throwing here rolls back every write of this block.
+        if (repos.submissions.hasResultForQuiz(quiz.id)) throw duplicateError();
+        ensureQuizConceptsExist();
 
-      const documentIds = [
-        ...new Set([...outcomes.conceptScores.values()].map((c) => c.materialId)),
-      ];
-      const withoutNextStep: Omit<SubmissionStateChanges, 'recommendedNextStep'> = {
-        assessedConceptIds: [...outcomes.conceptScores.keys()].slice(0, 20),
-        documentIds: documentIds.slice(0, 10),
-        mistakesCreated: outcomes.mistakesCreated,
-        mistakesResolved: outcomes.mistakesResolved,
-        misconceptionsProposed: proposed,
-        misconceptionsConfirmed: transitions.confirmed,
-        misconceptionsRejected: transitions.rejected,
-        misconceptionsResolved: transitions.resolved,
-        masteryChanges: outcomes.masteryChanges.slice(0, 20),
-        reviewScheduled: reviewScheduled.slice(0, 20),
-      };
-      const stateChanges: SubmissionStateChanges = {
-        ...withoutNextStep,
-        recommendedNextStep: nextStepText(withoutNextStep),
-      };
-      // Completed-attempt snapshot: the deterministic summary above is part
-      // of the durable history record, so reopening this result later can
-      // replay it without recomputing (or re-triggering) anything.
-      repos.submissions.recordStateChanges(result.id, stateChanges);
+        repos.submissions.insertSubmission(submission);
+        repos.submissions.insertGradingResult(result, provider.name);
+        const outcomes = persistOutcomes(quiz, grades, answersById, createdAt);
+        if (outcomes.conceptScores.size === 0) {
+          // Unreachable while the stale check above holds; keeps "zero valid
+          // assessed concepts can never report normal success" as a hard
+          // invariant even if a future path bypasses the check.
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            '本次提交没有关联到任何现存概念,判分已中止,学习状态未改变。',
+          );
+        }
+
+        // Deterministic misconception transitions (discriminating questions
+        // decide; the model cannot), then the pre-collected bounded proposals.
+        const transitions = misconceptions.applyGradedTransitions(quiz, grades, createdAt);
+        for (const record of proposalRecords) {
+          repos.misconceptions.insert(record);
+        }
+
+        // Review scheduling: only completed graded events reach the scheduler.
+        const reviewScheduled = review.recordGradedOutcomes(
+          quiz,
+          outcomes.conceptScores,
+          createdAt,
+        );
+
+        const documentIds = [
+          ...new Set([...outcomes.conceptScores.values()].map((c) => c.materialId)),
+        ];
+        const withoutNextStep: Omit<SubmissionStateChanges, 'recommendedNextStep'> = {
+          assessedConceptIds: [...outcomes.conceptScores.keys()].slice(0, 20),
+          documentIds: documentIds.slice(0, 10),
+          mistakesCreated: outcomes.mistakesCreated,
+          mistakesResolved: outcomes.mistakesResolved,
+          misconceptionsProposed: proposalRecords.length,
+          misconceptionsConfirmed: transitions.confirmed,
+          misconceptionsRejected: transitions.rejected,
+          misconceptionsResolved: transitions.resolved,
+          masteryChanges: outcomes.masteryChanges.slice(0, 20),
+          reviewScheduled: reviewScheduled.slice(0, 20),
+        };
+        const composed: SubmissionStateChanges = {
+          ...withoutNextStep,
+          recommendedNextStep: nextStepText(withoutNextStep),
+        };
+        // Completed-attempt snapshot: the deterministic summary above is part
+        // of the durable history record, so reopening this result later can
+        // replay it without recomputing (or re-triggering) anything.
+        repos.submissions.recordStateChanges(result.id, composed);
+        return composed;
+      });
 
       return { result, stateChanges };
     },

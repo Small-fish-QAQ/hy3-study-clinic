@@ -236,7 +236,15 @@ async function runFullWorkflow() {
     return { questionId: q.id, type: q.type, selectedOptionIds: [correct.id] };
   });
   const graded = await send('POST', `/api/quizzes/${launch.quiz.id}/submissions`, { answers });
-  const rerun = await send('POST', `/api/quizzes/${launch.quiz.id}/submissions`, { answers });
+  // Amendment C (2026-08): the same quiz can no longer be graded twice — the
+  // grading transaction applies learner state at most once and a duplicate
+  // submission is rejected with 409 DUPLICATE_SUBMISSION.
+  const rerunResponse = await fetch(base + `/api/quizzes/${launch.quiz.id}/submissions`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ answers }),
+  });
+  const rerunBody = await rerunResponse.json();
   console.log(
     '12. remediation graded: overall =',
     graded.grading.overallScore,
@@ -244,9 +252,16 @@ async function runFullWorkflow() {
     [...new Set(graded.grading.grades.map((g) => g.gradedBy))].join('+'),
   );
   console.log(
-    '13. deterministic scoring: identical resubmission score =',
-    rerun.grading.overallScore === graded.grading.overallScore,
+    '13. duplicate-submission guard: status =',
+    rerunResponse.status,
+    '| code =',
+    rerunBody.error?.code,
+    '| once-only =',
+    rerunResponse.status === 409 && rerunBody.error?.code === 'DUPLICATE_SUBMISSION',
   );
+  if (rerunResponse.status !== 409) {
+    throw new Error('duplicate submission was not rejected with 409');
+  }
 
   // ---- 14-15. Mistake resolution + mastery movement ----
   overlay = await get(`/api/workspaces/${workspace.id}/overlay`);

@@ -253,19 +253,22 @@ async function runFullWorkflow() {
     searchEvents.length > 0 ? `yes (${searchEvents[0].summary.slice(0, 40)}…)` : 'not this run',
   );
 
-  // ---- 14-15. Cross-document activity from the tutor recommendation ----
-  const activity = tutorRun.activity ?? { mode: 'concept_practice', conceptIds: [weak.conceptId] };
-  const activityInput =
-    activity.mode === 'review' || activity.mode === 'diagnostic'
-      ? { mode: activity.mode }
-      : activity.mode === 'misconception_check'
-        ? { mode: 'concept_practice', conceptIds: activity.conceptIds }
-        : { mode: activity.mode, conceptIds: activity.conceptIds };
-  const practice = await send('POST', `/api/workspaces/${workspace.id}/assessments`, activityInput);
+  // ---- 14-15. Launch the tutor-recommended activity (server-owned route) ----
+  // The server reloads the persisted recommendation, revalidates it against
+  // current state, and constructs the launch itself. A completed run's
+  // activity must be launchable — this asserts the executability contract.
+  const practice = await send(
+    'POST',
+    `/api/workspaces/${workspace.id}/tutor/runs/${tutorRun.id}/activity`,
+    undefined,
+  );
   console.log(
     '14. tutor-recommended activity:',
-    activity.mode,
-    '→ quiz with',
+    tutorRun.activity?.mode,
+    '→ launched as',
+    practice.launchedMode,
+    practice.adjusted ? `(adjusted: ${practice.adjusted.reason})` : '(no adjustment)',
+    '| quiz with',
     practice.quiz.questions.length,
     'questions',
   );

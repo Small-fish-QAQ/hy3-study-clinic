@@ -3,6 +3,7 @@ import type {
   CanonicalConceptView,
   Concept,
   ConceptLearnerState,
+  CreateAssessmentRequest,
   DailyQueueItem,
   DocumentSummary,
   GraphEdge,
@@ -12,7 +13,7 @@ import type {
   RemediationPlan,
   ReviewItem,
   SourceBlock,
-  TutorActivity,
+  TutorRun,
   Workspace,
   WorkspaceSummary,
 } from '@hy3-clinic/shared';
@@ -22,7 +23,7 @@ import { ConceptGraph, RELATION_LABELS as RELATION_TEXT } from '../components/Co
 import { ConceptDetailPanel, EdgeDetailPanel } from '../components/DetailPanels.js';
 import { AlignmentPanel } from '../components/AlignmentPanel.js';
 import { DailyQueue } from '../components/DailyQueue.js';
-import { TutorPanel } from '../components/TutorPanel.js';
+import { ACTIVITY_TEXT, TutorPanel } from '../components/TutorPanel.js';
 import { aggregateOverlay, buildCanonicalDisplayGraph } from '../components/graph/canonicalView.js';
 import { useAsyncAction } from '../components/useAsyncAction.js';
 import {
@@ -108,6 +109,8 @@ export function GraphWorkspaceView({
 
   const [newWorkspaceName, setNewWorkspaceName] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
+  /** Honest note when a Tutor recommendation was adjusted at launch time. */
+  const [activityNotice, setActivityNotice] = useState<string | null>(null);
   const [generationSummary, setGenerationSummary] = useState<string | null>(null);
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
@@ -261,6 +264,7 @@ export function GraphWorkspaceView({
     setSelectedEdgeId(null);
     setPlan(null);
     setActionError(null);
+    setActivityNotice(null);
     setGenerationSummary(null);
     setAlignmentOpen(false);
     setTutorPathIds(new Set());
@@ -273,8 +277,12 @@ export function GraphWorkspaceView({
   const selectNode = useCallback(
     (conceptId: string | null) => {
       setSelectedNodeId(conceptId);
+      // Synchronous ref update: the staleness guard below must see the newest
+      // selection even before React commits the state change.
+      selectedNodeIdRef.current = conceptId;
       setSelectedEdgeId(null);
       setPlan(null);
+      setActivityNotice(null);
       planAction.cancel();
       planAction.clearError();
       // A Tutor-recommended launch belongs to the concept it was started
@@ -288,7 +296,10 @@ export function GraphWorkspaceView({
         .getPlan(activeWorkspaceId, conceptId)
         .then((result) => {
           if (!mountedRef.current || epochRef.current !== epoch) return;
-          // Ignore if the user has already selected a different node.
+          // Late responses may not cross concept selections: only the plan of
+          // the concept that is STILL selected may land (a fast A→B switch
+          // must never leave A's plan on B's panel).
+          if (selectedNodeIdRef.current !== conceptId) return;
           setPlan((current) => current ?? result.plan);
         })
         .catch(() => {
@@ -534,7 +545,7 @@ export function GraphWorkspaceView({
    * caller's own staleness check fails (e.g. Tutor concept changed).
    */
   async function launchAssessment(
-    input: { mode: TutorActivity['mode']; conceptIds?: string[]; misconceptionId?: string },
+    input: CreateAssessmentRequest,
     pending: PendingLaunch,
     isStale?: () => boolean,
   ) {
@@ -557,24 +568,9 @@ export function GraphWorkspaceView({
   }
 
   function handleStartQueueItem(item: DailyQueueItem) {
-    const pending: PendingLaunch = { surface: 'queue', key: item.conceptId };
-    if (item.kind === 'misconception_repair' && item.misconceptionId) {
-      void launchAssessment(
-        { mode: 'misconception_check', misconceptionId: item.misconceptionId },
-        pending,
-      );
-      return;
-    }
-    const mode: TutorActivity['mode'] =
-      item.kind === 'overdue_review' || item.kind === 'due_review'
-        ? 'review'
-        : item.kind === 'weak_prerequisite'
-          ? 'prerequisite_repair'
-          : 'concept_practice';
-    void launchAssessment(
-      mode === 'review' ? { mode } : { mode, conceptIds: [item.conceptId] },
-      pending,
-    );
+    // The server resolved the launch request when composing the queue; the
+    // client sends it verbatim and never re-derives modes or parameters.
+    void launchAssessment(item.launch, { surface: 'queue', key: item.conceptId });
   }
 
   /** Launch the standalone workspace diagnostic from the empty daily queue. */
@@ -582,47 +578,48 @@ export function GraphWorkspaceView({
     void launchAssessment({ mode: 'diagnostic' }, { surface: 'diagnostic', key: 'diagnostic' });
   }
 
-  function handleStartTutorActivity(activity: TutorActivity) {
+  /**
+   * Launch the recommended activity of a completed Tutor run through the
+   * server-owned route: the backend revalidates the persisted recommendation
+   * against CURRENT state and constructs the launch itself. When it had to
+   * adjust the mode, the substitution is surfaced honestly.
+   */
+  function handleStartTutorActivity(run: TutorRun) {
+    if (!activeWorkspaceId || pendingLaunchRef.current !== null) return;
+    const workspaceId = activeWorkspaceId;
+    const runId = run.id;
     // The recommendation belongs to the currently selected concept; if the
     // selection changes while the activity is being created, drop the launch.
     const conceptAtLaunch = selectedNodeIdRef.current;
     const isStale = () => selectedNodeIdRef.current !== conceptAtLaunch;
     const pending: PendingLaunch = {
       surface: 'tutor',
-      key: activity.conceptIds[0] ?? 'tutor',
+      key: run.activity?.conceptIds[0] ?? 'tutor',
     };
-    if (activity.mode === 'misconception_check') {
-      // The Tutor recommends checking the concept's open hypothesis; pick the
-      // oldest actionable one deterministically.
-      const target = (data?.misconceptions ?? [])
-        .filter(
-          (m) =>
-            activity.conceptIds.includes(m.conceptId) &&
-            (m.status === 'proposed' || m.status === 'confirmed'),
-        )
-        .sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0];
-      if (target) {
-        void launchAssessment(
-          { mode: 'misconception_check', misconceptionId: target.id },
-          pending,
-          isStale,
+    const epoch = epochRef.current;
+    pendingLaunchRef.current = pending;
+    setPendingLaunch(pending);
+    setActivityNotice(null);
+    void (async () => {
+      try {
+        const result = await assessmentAction.run((signal) =>
+          api.launchTutorActivity(workspaceId, runId, signal),
         );
-        return;
+        if (result && mountedRef.current && epochRef.current === epoch && !isStale()) {
+          if (result.adjusted) {
+            setActivityNotice(
+              `推荐活动已按当前状态调整:${result.adjusted.reason}已改为${
+                ACTIVITY_TEXT[result.launchedMode]
+              }。`,
+            );
+          }
+          onLaunchQuiz(result.quiz, 'assessment');
+        }
+      } finally {
+        pendingLaunchRef.current = null;
+        if (mountedRef.current && epochRef.current === epoch) setPendingLaunch(null);
       }
-      void launchAssessment(
-        { mode: 'concept_practice', conceptIds: activity.conceptIds },
-        pending,
-        isStale,
-      );
-      return;
-    }
-    void launchAssessment(
-      activity.mode === 'review' || activity.mode === 'diagnostic'
-        ? { mode: activity.mode }
-        : { mode: activity.mode, conceptIds: activity.conceptIds },
-      pending,
-      isStale,
-    );
+    })();
   }
 
   /** Refetch the accepted plan after a Tutor session persisted one. */
@@ -1133,6 +1130,7 @@ export function GraphWorkspaceView({
             </Banner>
           )}
           {launchAction.error ? <Banner kind="error">{launchAction.error}</Banner> : null}
+          {activityNotice ? <Banner kind="info">{activityNotice}</Banner> : null}
           {assessmentAction.error && selectedConcept ? (
             <Banner kind="error">{assessmentAction.error}</Banner>
           ) : null}

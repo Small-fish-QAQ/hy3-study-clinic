@@ -15,13 +15,14 @@ const EVENT_ICONS: Partial<Record<TutorEvent['kind'], string>> = {
   gap_identified: '⚠',
   misconception_inspected: '?',
   strategy_selected: '★',
+  activity_adjusted: '⚠',
   plan_accepted: '✓',
   session_cancelled: '⏹',
   session_failed: '✕',
   session_completed: '✓',
 };
 
-const ACTIVITY_TEXT: Record<TutorActivity['mode'], string> = {
+export const ACTIVITY_TEXT: Record<TutorActivity['mode'], string> = {
   diagnostic: '诊断评估',
   concept_practice: '概念练习',
   prerequisite_repair: '前置修复练习',
@@ -38,8 +39,12 @@ export interface TutorPanelProps {
   activityLaunching: boolean;
   /** Reports the concept ids of the accepted plan for graph highlighting. */
   onPathChange: (conceptIds: ReadonlySet<string>) => void;
-  /** Launches the recommended activity of a completed run. */
-  onStartActivity: (activity: TutorActivity) => void;
+  /**
+   * Launches the recommended activity of a completed run. The launch itself
+   * is server-owned (POST …/tutor/runs/:runId/activity): the backend
+   * revalidates the persisted recommendation and builds the request.
+   */
+  onStartActivity: (run: TutorRun) => void;
   /** Notifies the parent so the accepted plan can be refetched. */
   onPlanAccepted: () => void;
 }
@@ -202,7 +207,7 @@ export function TutorPanel({
                 className="primary"
                 disabled={activityLaunching}
                 aria-busy={activityLaunching}
-                onClick={() => onStartActivity(run.activity!)}
+                onClick={() => onStartActivity(run)}
               >
                 {activityLaunching
                   ? '正在创建练习…'

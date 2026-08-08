@@ -433,3 +433,206 @@ describe('tutor budgets and safety against a hostile model', () => {
     expect(after).toEqual(before); // …with zero effect on state.
   });
 });
+
+describe('activity executability contract', () => {
+  let step: ((input: TutorStepInput) => TutorStepPayload) | null = null;
+
+  class ScriptedTutorProvider extends FakeProvider {
+    override async proposeTutorStep(
+      input: TutorStepInput,
+      _opts?: ProviderCallOptions,
+    ): Promise<TutorStepPayload> {
+      return step ? step(input) : super.proposeTutorStep(input);
+    }
+  }
+
+  let setup: Setup;
+  let services: Services;
+
+  beforeEach(async () => {
+    step = null;
+    setup = await setupWorkspace(new ScriptedTutorProvider());
+    services = createServices({
+      repos: setup.ctx.repos,
+      provider: setup.ctx.provider,
+      clock: fixedClock('2026-01-01T00:00:00.000Z'),
+    });
+  });
+
+  function finalizeWith(activity: {
+    mode:
+      | 'diagnostic'
+      | 'concept_practice'
+      | 'prerequisite_repair'
+      | 'cross_document'
+      | 'review'
+      | 'misconception_check';
+    conceptIds: string[];
+  }): (input: TutorStepInput) => TutorStepPayload {
+    return (input) => ({
+      action: 'finalize',
+      plan: {
+        summary: '计划',
+        weaknessHypothesis: '假设',
+        strategy: 'review',
+        difficulty: 'easy',
+        questionTypes: ['single_choice'],
+        steps: [{ description: '复习', conceptId: input.selected.id }],
+        targets: [
+          {
+            conceptId: input.selected.id,
+            reason: '目标',
+            evidence: [
+              { blockId: input.selected.grounding.blockId, quote: input.selected.grounding.quote },
+            ],
+          },
+        ],
+      },
+      activity,
+    });
+  }
+
+  it('the model is only offered currently launchable modes', async () => {
+    let seen: TutorStepInput | null = null;
+    step = (input) => {
+      seen = input;
+      return finalizeWith({ mode: 'concept_practice', conceptIds: [input.selected.id] })(input);
+    };
+    await services.tutor.runSession(setup.workspaceId, setup.conceptId, {});
+    const offered = (seen! as TutorStepInput).launchableModes.map((m) => m.mode);
+    // Single document, no alignment, nothing due, no misconceptions:
+    expect(offered).toContain('concept_practice');
+    expect(offered).toContain('diagnostic');
+    expect(offered).not.toContain('cross_document');
+    expect(offered).not.toContain('review');
+    expect(offered).not.toContain('misconception_check');
+  });
+
+  it('downgrades an unlaunchable cross_document recommendation with an auditable event', async () => {
+    step = (input) =>
+      finalizeWith({ mode: 'cross_document', conceptIds: [input.selected.id] })(input);
+    const events: TutorEvent[] = [];
+    const { run } = await services.tutor.runSession(setup.workspaceId, setup.conceptId, {
+      onEvent: (e) => events.push(e),
+    });
+
+    expect(run.status).toBe('completed');
+    // Invariant: a completed run's persisted activity is launchable NOW.
+    expect(run.activity!.mode).toBe('concept_practice');
+    const adjusted = events.find((e) => e.kind === 'activity_adjusted');
+    expect(adjusted).toBeTruthy();
+    expect(adjusted!.detail).toMatchObject({
+      originalMode: 'cross_document',
+      adjustedMode: 'concept_practice',
+    });
+    expect(adjusted!.summary).toContain('跨文档对齐');
+  });
+
+  it('every newly completed run can immediately launch its activity', async () => {
+    const { run } = await services.tutor.runSession(setup.workspaceId, setup.conceptId, {});
+    expect(run.status).toBe('completed');
+    const launched = await services.tutor.launchActivity(setup.workspaceId, run.id);
+    expect(launched.adjusted).toBeNull();
+    expect(launched.creation.quiz.kind).toBe('adaptive');
+    expect(launched.creation.quiz.questions.length).toBeGreaterThan(0);
+  });
+
+  it('launchActivity honestly adjusts a legacy run whose recommendation is stale', async () => {
+    // A pre-contract run persisted an unlaunchable cross_document activity
+    // (exactly what the real dogfood database contains).
+    const legacyRunId = 'tut_legacy';
+    setup.ctx.repos.tutor.insertRun({
+      id: legacyRunId,
+      workspaceId: setup.workspaceId,
+      conceptId: setup.conceptId,
+      conceptName: setup.conceptName,
+      status: 'completed',
+      iterations: 5,
+      toolCallCount: 4,
+      acceptedEvidence: [],
+      planId: null,
+      activity: { mode: 'cross_document', conceptIds: [setup.conceptId] },
+      errorMessage: null,
+      provider: 'fake',
+      providerModel: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    });
+    const launched = await services.tutor.launchActivity(setup.workspaceId, legacyRunId);
+    expect(launched.launchedMode).toBe('concept_practice');
+    expect(launched.adjusted).toMatchObject({ originalMode: 'cross_document' });
+    expect(launched.creation.quiz.kind).toBe('adaptive');
+  });
+
+  it('rejects launching an incomplete or unknown run', async () => {
+    await expect(services.tutor.launchActivity(setup.workspaceId, 'tut_nope')).rejects.toThrow(
+      /辅导会话不存在/,
+    );
+  });
+
+  it('one bounded grounding repair lets a fixable plan complete; a second failure fails closed', async () => {
+    let finalizes = 0;
+    step = (input) => {
+      const sawRepairFeedback = input.observations.some((o) => o.tool === 'plan_validation');
+      finalizes++;
+      return {
+        action: 'finalize',
+        plan: {
+          summary: '计划',
+          weaknessHypothesis: '假设',
+          strategy: 'review',
+          difficulty: 'easy',
+          questionTypes: ['single_choice'],
+          steps: [{ description: '复习' }],
+          targets: [
+            {
+              conceptId: input.selected.id,
+              reason: '目标',
+              evidence: [
+                {
+                  blockId: input.selected.grounding.blockId,
+                  // First attempt fabricates the quote; after the repair
+                  // feedback the model copies it verbatim.
+                  quote: sawRepairFeedback ? input.selected.grounding.quote : '编造的引文不存在。',
+                },
+              ],
+            },
+          ],
+        },
+        activity: { mode: 'concept_practice', conceptIds: [input.selected.id] },
+      };
+    };
+    const events: TutorEvent[] = [];
+    const { run } = await services.tutor.runSession(setup.workspaceId, setup.conceptId, {
+      onEvent: (e) => events.push(e),
+    });
+    expect(finalizes).toBe(2);
+    expect(run.status).toBe('completed');
+    expect(run.planId).toBeTruthy();
+    expect(events.some((e) => e.kind === 'evidence_rejected')).toBe(true);
+
+    // A model that never fixes its evidence still fails closed (one retry only).
+    step = (input) => ({
+      action: 'finalize',
+      plan: {
+        summary: '计划',
+        weaknessHypothesis: '假设',
+        strategy: 'review',
+        difficulty: 'easy',
+        questionTypes: ['single_choice'],
+        steps: [{ description: '复习' }],
+        targets: [
+          {
+            conceptId: input.selected.id,
+            reason: '目标',
+            evidence: [{ blockId: input.selected.grounding.blockId, quote: '永远编造的引文。' }],
+          },
+        ],
+      },
+      activity: { mode: 'concept_practice', conceptIds: [input.selected.id] },
+    });
+    const second = await services.tutor.runSession(setup.workspaceId, setup.conceptId, {});
+    expect(second.run.status).toBe('failed');
+    expect(second.run.planId).toBeNull();
+  });
+});

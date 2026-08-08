@@ -129,18 +129,23 @@ export function createMisconceptionsService({ repos, provider, clock }: Misconce
      * Bounded provider-backed proposal step for wrong answers of workspace
      * (adaptive) assessments. The model may only PROPOSE (category +
      * hypothesis + evidence); local code validates evidence against real
-     * source blocks and persists at most MAX_PROPOSALS_PER_SUBMISSION
-     * records with status 'proposed'. Provider failures are swallowed —
-     * grading output must never depend on this step.
+     * source blocks and returns at most MAX_PROPOSALS_PER_SUBMISSION records
+     * with status 'proposed'. Provider failures are swallowed — grading
+     * output must never depend on this step.
+     *
+     * This method performs NO database writes: it runs the provider calls and
+     * evidence verification only, so the grading service can execute it
+     * BEFORE opening its write transaction and insert the returned records
+     * inside that transaction (no model calls inside a transaction).
      */
-    async proposeFromWrongAnswers(
+    async collectProposalsFromWrongAnswers(
       quiz: Quiz,
       grades: QuestionGrade[],
       answersById: Map<string, Answer>,
       at: string,
       opts?: ProviderCallOptions,
-    ): Promise<number> {
-      if (quiz.kind !== 'adaptive' || !quiz.workspaceId) return 0;
+    ): Promise<MisconceptionRecord[]> {
+      if (quiz.kind !== 'adaptive' || !quiz.workspaceId) return [];
       const workspaceId = quiz.workspaceId;
       const questionById = new Map(quiz.questions.map((q) => [q.id, q]));
 
@@ -153,7 +158,7 @@ export function createMisconceptionsService({ repos, provider, clock }: Misconce
         );
       });
 
-      let created = 0;
+      const records: MisconceptionRecord[] = [];
       for (const grade of wrong.slice(0, MAX_PROPOSALS_PER_SUBMISSION)) {
         const question = questionById.get(grade.questionId)!;
         const concept = repos.materials.getConcept(question.conceptId);
@@ -191,7 +196,7 @@ export function createMisconceptionsService({ repos, provider, clock }: Misconce
             if (verification.ok) evidence.push(verification.grounding);
           }
 
-          const record: MisconceptionRecord = {
+          records.push({
             id: newId('mc'),
             workspaceId,
             conceptId: concept.id,
@@ -208,15 +213,13 @@ export function createMisconceptionsService({ repos, provider, clock }: Misconce
             decidedByQuizId: null,
             createdAt: at,
             updatedAt: at,
-          };
-          repos.misconceptions.insert(record);
-          created++;
+          });
         } catch {
           // Proposal is best-effort; grading already succeeded.
           continue;
         }
       }
-      return created;
+      return records;
     },
   };
 }

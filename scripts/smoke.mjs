@@ -1,5 +1,5 @@
 /** End-to-end smoke test of both flows against a running dev server. */
-const base = 'http://127.0.0.1:8787';
+const base = process.env.SMOKE_BASE ?? 'http://127.0.0.1:8787';
 const j = async (r) => {
   const b = await r.json();
   if (!r.ok) throw new Error(r.status + ' ' + JSON.stringify(b));

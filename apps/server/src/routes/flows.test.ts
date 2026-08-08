@@ -8,6 +8,8 @@ import {
 import { buildTestApp, type TestApp } from '../testing/testApp.js';
 import {
   makeBlock,
+  makeConcept,
+  makeGrounding,
   makeMaterial,
   makeMistake,
   makeQuestion,
@@ -317,6 +319,13 @@ describe('Flow B: submission → grading → mistakes → remediation → master
       makeMaterial({ content: expectedAnswer, charCount: expectedAnswer.length }),
       [block],
     );
+    // The stale-assessment guard requires every quiz concept to exist; give
+    // the fixture quiz its real concept row (question uses con_1/mat_1).
+    ctx.repos.materials.replaceConcepts('mat_1', [
+      makeConcept({
+        grounding: makeGrounding({ quote: expectedAnswer, endOffset: expectedAnswer.length }),
+      }),
+    ]);
     ctx.repos.quizzes.insert(quiz);
     const gradeShortAnswer = vi.spyOn(ctx.provider, 'gradeShortAnswer').mockResolvedValue({
       matchedKeyPointIndexes: [0, 1, 2, 3],
@@ -402,6 +411,8 @@ describe('Flow B: submission → grading → mistakes → remediation → master
     ctx.repos.materials.insertWithBlocks(makeMaterial({ content, charCount: content.length }), [
       block,
     ]);
+    // Stale-assessment guard: the fixture quiz's concept must exist.
+    ctx.repos.materials.replaceConcepts('mat_1', [makeConcept()]);
     ctx.repos.quizzes.insert(quiz);
     // The model matches both required points but not the optional drawback,
     // and reports a deflated holistic score — which must NOT drive points.
@@ -480,6 +491,8 @@ describe('Flow B: submission → grading → mistakes → remediation → master
     ctx.repos.materials.insertWithBlocks(makeMaterial({ content, charCount: content.length }), [
       block,
     ]);
+    // Stale-assessment guard: the fixture quiz's concept must exist.
+    ctx.repos.materials.replaceConcepts('mat_1', [makeConcept()]);
     ctx.repos.quizzes.insert(quiz);
     vi.spyOn(ctx.provider, 'gradeShortAnswer').mockResolvedValue({
       matchedKeyPointIndexes: [0],

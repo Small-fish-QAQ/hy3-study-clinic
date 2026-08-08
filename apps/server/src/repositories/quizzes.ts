@@ -178,6 +178,17 @@ export function createSubmissionsRepo(db: SqliteDb) {
       });
     },
 
+    /**
+     * Whether the quiz already has a grading result. Used as the
+     * transaction-local duplicate-submission recheck: better-sqlite3
+     * transactions are synchronous, so check-then-insert inside one
+     * transaction cannot interleave with another submission.
+     */
+    hasResultForQuiz(quizId: string): boolean {
+      const row = db.prepare('SELECT 1 FROM grading_results WHERE quiz_id = ? LIMIT 1').get(quizId);
+      return row !== undefined;
+    },
+
     insertGradingResult(result: GradingResult, provider?: AttemptProvider): void {
       GradingResultSchema.parse(result);
       db.prepare(

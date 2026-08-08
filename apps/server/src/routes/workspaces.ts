@@ -270,6 +270,28 @@ export function registerWorkspaceRoutes(app: FastifyInstance, services: Services
     return { runs: services.tutor.listRuns(id) };
   });
 
+  /**
+   * Launch the recommended activity of a completed Tutor run. The server
+   * reloads the persisted recommendation, re-resolves executability against
+   * CURRENT state, constructs the mode-specific assessment request itself,
+   * and reports any deterministic adjustment honestly. Clients never
+   * assemble mode parameters for Tutor activities.
+   */
+  app.post('/api/workspaces/:id/tutor/runs/:runId/activity', async (request, reply) => {
+    const { id, runId } = RunParams.parse(request.params);
+    const result = await services.tutor.launchActivity(id, runId, {
+      signal: requestSignal(request, reply),
+    });
+    reply.status(201);
+    return {
+      quiz: toPublicQuiz(result.creation.quiz),
+      blueprints: services.assessment.publicBlueprints(result.creation.quiz.id),
+      rejected: result.creation.rejected,
+      launchedMode: result.launchedMode,
+      adjusted: result.adjusted,
+    };
+  });
+
   app.get('/api/workspaces/:id/tutor/runs/:runId', async (request) => {
     const { id, runId } = RunParams.parse(request.params);
     return services.tutor.getRun(id, runId);
