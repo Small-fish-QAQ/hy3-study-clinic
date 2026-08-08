@@ -1796,3 +1796,102 @@ describe('学习图谱工作台 — stale plan responses', () => {
     expect(within(inspector).queryByText(/围绕「工作记忆」的定向巩固计划/)).not.toBeInTheDocument();
   });
 });
+
+describe('学习图谱工作台 — 资料映射 (Phase 1)', () => {
+  const mappingFixture = {
+    materialId: 'mat_1',
+    title: '认知科学入门:记忆与学习',
+    totals: {
+      blockCount: 10,
+      charCount: 4200,
+      conceptCount: 2,
+      mappedSectionCount: 1,
+      sectionCount: 2,
+      anchoredBlockCount: 2,
+      anchoredCharCount: 700,
+    },
+    sections: [
+      {
+        key: 'sec_0_abc',
+        title: '记忆的类型',
+        fromHeading: true,
+        blockCount: 5,
+        charCount: 2100,
+        conceptCount: 2,
+        anchoredBlockCount: 2,
+        anchoredCharCount: 700,
+        mapped: true,
+      },
+      {
+        key: 'sec_1_def',
+        title: '睡眠与巩固',
+        fromHeading: true,
+        blockCount: 5,
+        charCount: 2100,
+        conceptCount: 0,
+        anchoredBlockCount: 0,
+        anchoredCharCount: 0,
+        mapped: false,
+      },
+    ],
+  };
+
+  it('shows honest mapping facts and deepens an unmapped section additively', async () => {
+    openSavedWorkspace();
+    const analyzeCalls: unknown[] = [];
+    const { calls } = installViewMock([
+      {
+        method: 'GET',
+        pattern: /\/api\/materials\/mat_1\/mapping$/,
+        handler: () => ({ body: mappingFixture }),
+      },
+      {
+        method: 'POST',
+        pattern: /\/api\/materials\/mat_1\/analyze$/,
+        handler: (body) => {
+          analyzeCalls.push(body);
+          return {
+            body: {
+              concepts: graphConcepts,
+              extraction: {
+                sections: [
+                  {
+                    key: 'sec_1_def',
+                    title: '睡眠与巩固',
+                    charCount: 2100,
+                    status: 'extracted',
+                    conceptsAdded: 2,
+                  },
+                ],
+                conceptsAdded: 2,
+                conceptTotal: 4,
+                capReached: false,
+              },
+            },
+          };
+        },
+      },
+      ...baseRoutes(),
+    ]);
+    const user = userEvent.setup();
+    renderView();
+
+    await screen.findByText('个人学习图谱');
+    await user.click(screen.getByText('资料映射'));
+
+    // Honest wording: mapping/anchoring facts plus the explicit caveat.
+    expect(await screen.findByText(/已映射 1\/2 小节/)).toBeInTheDocument();
+    expect(screen.getByText(/引用锚点覆盖 2\/10 段/)).toBeInTheDocument();
+    expect(screen.getByText(/不代表小节内容已被完整覆盖/)).toBeInTheDocument();
+    expect(screen.getByText('未映射')).toBeInTheDocument();
+
+    // Deepening the unmapped section sends the SECTION-targeted analyze.
+    await user.click(screen.getByRole('button', { name: '继续提取' }));
+    await waitFor(() => expect(analyzeCalls.length).toBe(1));
+    expect(analyzeCalls[0]).toEqual({ section: 'sec_1_def' });
+    // The run summary is surfaced.
+    expect(await screen.findByText(/新增 2 个概念/)).toBeInTheDocument();
+    const post = calls.find((c) => c.method === 'POST' && c.url.includes('/analyze'));
+    expect(post).toBeTruthy();
+  });
+});

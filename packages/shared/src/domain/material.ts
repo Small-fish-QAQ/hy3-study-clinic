@@ -164,3 +164,10 @@ export const ConceptSchema = z.object({
   createdAt: z.string().datetime(),
 });
 export type Concept = z.infer<typeof ConceptSchema>;
+
+/**
+ * Safety ceiling on concepts per document. Section-aware extraction stops
+ * ACCEPTING new concepts at this bound (remaining sections stay visibly
+ * unmapped). A tunable guard against runaway extraction — not a target.
+ */
+export const MAX_CONCEPTS_PER_DOCUMENT = 40;

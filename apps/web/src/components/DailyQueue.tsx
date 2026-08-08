@@ -7,6 +7,7 @@ const KIND_TEXT: Record<DailyQueueItem['kind'], string> = {
   open_mistakes: '错题巩固',
   weak_prerequisite: '前置修复',
   due_review: '今日复习',
+  unassessed_next: '继续学习',
 };
 
 export interface DailyQueueProps {

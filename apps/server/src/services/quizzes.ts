@@ -158,7 +158,7 @@ export function createQuizService({ repos, provider, clock, analysis }: QuizServ
 
       let concepts = repos.materials.getConcepts(materialId);
       if (concepts.length === 0) {
-        concepts = await analysis.analyze(materialId, opts);
+        concepts = (await analysis.analyze(materialId, opts)).concepts;
       }
 
       const targetIds = options?.targetConceptIds;

@@ -133,16 +133,20 @@ export class FakeProvider implements LlmProvider {
 
     // Representative document coverage: when there are more candidate
     // sections than the concept budget, sample them evenly across the WHOLE
-    // document (deterministic stride) instead of only the leading pages.
-    const MAX_CONCEPTS = 8;
+    // input (deterministic stride) instead of only the leading pages. The
+    // budget is an upper bound (size-aware, section extraction) — small
+    // inputs legitimately yield fewer concepts, never padded duplicates.
+    const budget = Math.min(8, input.maxConcepts ?? 8);
     let picked = candidates;
-    if (candidates.length > MAX_CONCEPTS) {
+    if (candidates.length > budget && budget > 1) {
       const strided: typeof candidates = [];
-      for (let i = 0; i < MAX_CONCEPTS; i++) {
-        const index = Math.round((i * (candidates.length - 1)) / (MAX_CONCEPTS - 1));
+      for (let i = 0; i < budget; i++) {
+        const index = Math.round((i * (candidates.length - 1)) / (budget - 1));
         strided.push(candidates[index]!);
       }
       picked = [...new Map(strided.map((c) => [c.name, c])).values()];
+    } else if (candidates.length > budget) {
+      picked = candidates.slice(0, budget);
     }
 
     const concepts: ProposedConcept[] = picked.map((candidate, position) => ({
@@ -153,7 +157,7 @@ export class FakeProvider implements LlmProvider {
       quote: pickQuote(candidate.block),
     }));
 
-    if (concepts.length === 0) {
+    if (concepts.length === 0 && input.maxConcepts === undefined) {
       const first = input.blocks[0]!;
       concepts.push({
         name: input.materialTitle.slice(0, 40) || '核心内容',

@@ -189,6 +189,20 @@ export function createMaterialsRepo(db: SqliteDb) {
     }
   });
 
+  const addConcepts = db.transaction((concepts: Concept[]) => {
+    for (const concept of concepts) {
+      insertConceptStmt.run({
+        id: concept.id,
+        materialId: concept.materialId,
+        name: concept.name,
+        summary: concept.summary,
+        importance: concept.importance,
+        grounding: JSON.stringify(concept.grounding),
+        createdAt: concept.createdAt,
+      });
+    }
+  });
+
   // The material row is the root of the verified ON DELETE CASCADE graph.
   // Keeping the root delete inside an explicit transaction makes the rollback
   // boundary clear and lets SQLite undo every cascade if any delete fails.
@@ -306,6 +320,16 @@ export function createMaterialsRepo(db: SqliteDb) {
     replaceConcepts(materialId: string, concepts: Concept[]): void {
       concepts.forEach((c) => ConceptSchema.parse(c));
       replaceConcepts(materialId, concepts);
+    },
+
+    /**
+     * Append concepts WITHOUT touching existing rows. Additive deepening
+     * depends on this: existing concept ids (and everything keyed to them —
+     * quizzes, mistakes, mastery, graph edges, alignment) stay stable.
+     */
+    addConcepts(concepts: Concept[]): void {
+      concepts.forEach((c) => ConceptSchema.parse(c));
+      addConcepts(concepts);
     },
 
     getConcepts(materialId: string): Concept[] {

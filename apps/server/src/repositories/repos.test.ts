@@ -451,3 +451,28 @@ describe('mastery repository', () => {
     ).toThrow();
   });
 });
+
+describe('additive concept append', () => {
+  it('addConcepts appends without touching existing rows', () => {
+    const db = openDatabase(':memory:');
+    migrate(db);
+    const localRepos = createRepositories(db);
+    localRepos.workspaces.insert(makeWorkspace());
+    const material = makeMaterial();
+    localRepos.materials.insertWithBlocks(material, [makeBlock()]);
+    localRepos.materials.replaceConcepts(material.id, [makeConcept()]);
+    const before = localRepos.materials.getConcepts(material.id);
+
+    localRepos.materials.addConcepts([
+      makeConcept({ id: 'con_added', name: '追加概念', createdAt: '2026-01-02T00:00:00.000Z' }),
+    ]);
+    const after = localRepos.materials.getConcepts(material.id);
+    expect(after).toHaveLength(before.length + 1);
+    const byId = new Map(after.map((c) => [c.id, c]));
+    for (const concept of before) {
+      expect(byId.get(concept.id)).toEqual(concept);
+    }
+    expect(byId.get('con_added')?.name).toBe('追加概念');
+    db.close();
+  });
+});

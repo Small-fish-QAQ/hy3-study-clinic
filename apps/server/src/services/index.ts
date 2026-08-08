@@ -16,6 +16,7 @@ import { createAttemptsService, type AttemptsService } from './attempts.js';
 import { createMisconceptionsService, type MisconceptionsService } from './misconceptions.js';
 import { createReviewService, type ReviewService } from './review.js';
 import { createQueueService, type QueueService } from './queue.js';
+import { createMappingService, type MappingService } from './mapping.js';
 import { createTutorService, type TutorService } from './tutor.js';
 
 export interface Services {
@@ -34,6 +35,7 @@ export interface Services {
   misconceptions: MisconceptionsService;
   review: ReviewService;
   queue: QueueService;
+  mapping: MappingService;
   tutor: TutorService;
 }
 
@@ -61,6 +63,7 @@ export function createServices({ repos, provider, clock, providerModel }: Servic
   const assessment = createAssessmentService({ repos, provider, clock, misconceptions });
   const attempts = createAttemptsService({ repos });
   const queue = createQueueService({ repos, clock });
+  const mapping = createMappingService({ repos });
   const tutor = createTutorService({ repos, provider, clock, assessment, providerModel });
   return {
     materials,
@@ -78,6 +81,7 @@ export function createServices({ repos, provider, clock, providerModel }: Servic
     misconceptions,
     review,
     queue,
+    mapping,
     tutor,
   };
 }

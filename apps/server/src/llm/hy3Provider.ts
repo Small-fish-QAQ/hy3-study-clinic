@@ -85,7 +85,10 @@ export class Hy3Provider implements LlmProvider {
     opts?: ProviderCallOptions,
   ): Promise<ConceptAnalysisPayload> {
     return this.complete(
-      conceptAnalysisMessages(input.materialTitle, input.blocks),
+      conceptAnalysisMessages(input.materialTitle, input.blocks, {
+        ...(input.sectionTitle !== undefined ? { sectionTitle: input.sectionTitle } : {}),
+        ...(input.maxConcepts !== undefined ? { maxConcepts: input.maxConcepts } : {}),
+      }),
       ConceptAnalysisPayloadSchema,
       opts,
     );

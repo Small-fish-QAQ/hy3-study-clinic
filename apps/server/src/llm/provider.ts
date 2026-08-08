@@ -32,6 +32,14 @@ export interface ProviderCallOptions {
 export interface ConceptAnalysisInput {
   materialTitle: string;
   blocks: SourceBlock[];
+  /**
+   * Section-aware extraction: the section these blocks belong to (display
+   * title) and the size-aware UPPER bound on concepts. When set, the prompt
+   * asks for 0..maxConcepts and explicitly allows an empty result; absent,
+   * the legacy whole-document 3–8 wording applies.
+   */
+  sectionTitle?: string;
+  maxConcepts?: number;
 }
 
 export interface QuizGenerationInput {

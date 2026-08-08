@@ -25,8 +25,13 @@ export const ProposedConceptSchema = z.object({
 });
 export type ProposedConcept = z.infer<typeof ProposedConceptSchema>;
 
+/**
+ * Concept-extraction output. An EMPTY list is legal: a thin section may
+ * genuinely contain nothing worth extracting (the caller decides whether a
+ * fully-empty document-level result is an error).
+ */
 export const ConceptAnalysisPayloadSchema = z.object({
-  concepts: z.array(ProposedConceptSchema).min(1).max(12),
+  concepts: z.array(ProposedConceptSchema).max(12),
 });
 export type ConceptAnalysisPayload = z.infer<typeof ConceptAnalysisPayloadSchema>;
 

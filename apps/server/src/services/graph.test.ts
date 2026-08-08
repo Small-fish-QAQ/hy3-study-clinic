@@ -231,3 +231,48 @@ describe('graph service lifecycle', () => {
     expect(withPrereq.length).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe('graph proposal context bounding (Phase 1)', () => {
+  it('large workspaces send evidence-centred blocks to the provider, not the whole corpus', async () => {
+    // Heading-less paragraphs: the outline falls back to synthetic windows
+    // and the fake provider derives distinct concept names per paragraph.
+    const paragraphs: string[] = [];
+    for (let i = 0; i < 140; i++) {
+      paragraphs.push(`第${i}段:这一段包含一个足够长的说明,用来把文档撑到超过上下文预算的规模。`);
+      paragraphs.push('');
+    }
+    const ctx = buildTestApp();
+    const ws = await ctx.app.inject({
+      method: 'POST',
+      url: '/api/workspaces',
+      payload: { name: '大文档图谱' },
+    });
+    const workspaceId = ws.json().workspace.id as string;
+    const doc = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/workspaces/${workspaceId}/documents`,
+      payload: { kind: 'text', content: paragraphs.join('\n') },
+    });
+    const materialId = doc.json().material.id as string;
+    await ctx.app.inject({ method: 'POST', url: `/api/materials/${materialId}/analyze` });
+    expect(ctx.repos.materials.getConcepts(materialId).length).toBeGreaterThanOrEqual(2);
+
+    let promptBlockCount = 0;
+    const original = ctx.provider.proposeGraphEdges.bind(ctx.provider);
+    ctx.provider.proposeGraphEdges = async (input, opts) => {
+      promptBlockCount = input.blocks.length;
+      return original(input, opts);
+    };
+    const generated = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/workspaces/${workspaceId}/graph`,
+    });
+    expect(generated.statusCode).toBe(201);
+    const totalBlocks = ctx.repos.materials.getBlocks(materialId).length;
+    expect(totalBlocks).toBeGreaterThan(120);
+    expect(promptBlockCount).toBeGreaterThan(0);
+    expect(promptBlockCount).toBeLessThan(totalBlocks);
+    // Accepted edges still verified against the FULL corpus.
+    expect(generated.json().edges.length).toBeGreaterThan(0);
+  });
+});

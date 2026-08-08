@@ -84,9 +84,16 @@ describe('Hy3Provider bounded repair', () => {
   });
 
   it('repairs a schema-valid-but-wrong payload once', async () => {
+    // NOTE: an EMPTY concepts array is deliberately legal since the
+    // section-aware extraction upgrade (a thin section may yield nothing),
+    // so the invalid first payload violates the importance enum instead.
     const fetchImpl = vi
       .fn()
-      .mockResolvedValueOnce(jsonResponse('{"concepts":[]}')) // fails min(1)
+      .mockResolvedValueOnce(
+        jsonResponse(
+          '{"concepts":[{"name":"X","summary":"y","importance":"CRITICAL","blockId":"blk_0","quote":"工作记忆的容量十分有限。"}]}',
+        ),
+      )
       .mockResolvedValueOnce(
         jsonResponse(
           '{"concepts":[{"name":"X","summary":"y","importance":"low","blockId":"blk_0","quote":"工作记忆的容量十分有限。"}]}',

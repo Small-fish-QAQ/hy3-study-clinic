@@ -182,20 +182,39 @@ export function createAssessmentService({
       return { targets, misconceptionTarget: null };
     }
 
-    // diagnostic: one representative source concept per canonical group.
+    // diagnostic: one representative source concept per canonical group,
+    // preferring UNASSESSED and important groups so a diagnostic keeps
+    // advancing into new course content instead of always re-testing the
+    // first six groups. Deterministic: unassessed first, then importance,
+    // then canonical id.
     repos.alignment.ensureBaseline(
       workspaceId,
       repos.materials.getConceptsByWorkspace(workspaceId),
       clock.now().toISOString(),
     );
+    const masteryConceptIds = new Set(
+      repos.mastery.listByWorkspace(workspaceId).map((m) => m.conceptId),
+    );
+    const importanceRank: Record<string, number> = { high: 0, medium: 1, low: 2 };
     const groups = repos.alignment.listCanonical(workspaceId);
-    const targets: Concept[] = [];
-    for (const group of groups) {
-      if (targets.length >= MAX_TARGETS) break;
-      const member = group.members[0];
-      const concept = member ? repos.materials.getConcept(member.sourceConceptId) : undefined;
-      if (concept) targets.push(concept);
-    }
+    const ranked = groups
+      .map((group) => {
+        const member = group.members[0];
+        const concept = member ? repos.materials.getConcept(member.sourceConceptId) : undefined;
+        if (!concept) return null;
+        const unassessed = group.members.every((m) => !masteryConceptIds.has(m.sourceConceptId));
+        return { concept, unassessed, canonicalId: group.id };
+      })
+      .filter(
+        (v): v is { concept: Concept; unassessed: boolean; canonicalId: string } => v !== null,
+      )
+      .sort(
+        (a, b) =>
+          Number(b.unassessed) - Number(a.unassessed) ||
+          importanceRank[a.concept.importance]! - importanceRank[b.concept.importance]! ||
+          a.canonicalId.localeCompare(b.canonicalId),
+      );
+    const targets: Concept[] = ranked.slice(0, MAX_TARGETS).map((entry) => entry.concept);
     if (targets.length === 0) {
       throw new AppError(ApiErrorCode.ValidationError, '请先为课程空间中的文档提取概念。');
     }

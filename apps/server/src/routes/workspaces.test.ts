@@ -918,30 +918,37 @@ describe('course-space lifecycle after document deletion', () => {
 });
 
 describe('queue launch sweep and named-review semantics (Phase 0)', () => {
+  // Each section must be substantial enough (≥ MIN_SECTION_CHARS) that the
+  // deterministic outline keeps six separate sections, so the size-aware
+  // extraction yields one concept per section.
+  const sectionBody = (name: string): string =>
+    `${name}的核心内容如下:它先给出严格定义,再解释适用条件与边界情况,然后通过两个对照示例演示正误用法,并总结与相邻概念的联系。`.repeat(
+      8,
+    );
   const DOC = [
     '# 概念零',
     '',
-    '概念零是最基础的内容。它先于其他内容出现。',
+    sectionBody('概念零'),
     '',
     '# 概念一',
     '',
-    '概念一建立在概念零之上。理解它需要先掌握概念零。',
+    sectionBody('概念一'),
     '',
     '# 概念二',
     '',
-    '概念二展开了新的主题。它与概念一相互对照。',
+    sectionBody('概念二'),
     '',
     '# 概念三',
     '',
-    '概念三讨论应用场景。它把前面的内容用于实践。',
+    sectionBody('概念三'),
     '',
     '# 概念四',
     '',
-    '概念四给出具体例子。这些例子帮助理解全局。',
+    sectionBody('概念四'),
     '',
     '# 概念五',
     '',
-    '概念五总结全部内容。它需要前面的知识作为基础。',
+    sectionBody('概念五'),
   ].join('\n');
 
   let ctx: TestApp;
@@ -1126,5 +1133,126 @@ describe('queue launch sweep and named-review semantics (Phase 0)', () => {
     expect(body.launchedMode).toBeTruthy();
     // A fresh run's recommendation launches without adjustment.
     expect(body.adjusted).toBeNull();
+  });
+});
+
+describe('course progression (Phase 1)', () => {
+  // Sections sized past MIN_SECTION_CHARS so the outline keeps three
+  // sections and extraction grounds one concept in each.
+  const progressionBody = (name: string): string =>
+    `${name}部分详细展开:先明确它要解决的问题与前提假设,再逐步给出操作方式和注意事项,并用一个完整例子演示从头到尾的做法,最后归纳常见误区与检查要点。`.repeat(
+      4,
+    );
+  const DOC = [
+    '# 基础概念',
+    '',
+    progressionBody('基础概念'),
+    '',
+    '# 进阶方法',
+    '',
+    progressionBody('进阶方法'),
+    '',
+    '# 综合应用',
+    '',
+    progressionBody('综合应用'),
+  ].join('\n');
+
+  let ctx: TestApp;
+  let workspaceId: string;
+  let materialId: string;
+  let conceptIds: string[];
+
+  beforeEach(async () => {
+    ctx = buildTestApp();
+    const ws = await ctx.app.inject({
+      method: 'POST',
+      url: '/api/workspaces',
+      payload: { name: '课程推进' },
+    });
+    workspaceId = ws.json().workspace.id;
+    const doc = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/workspaces/${workspaceId}/documents`,
+      payload: { kind: 'text', content: DOC },
+    });
+    materialId = doc.json().material.id;
+    const analyzed = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/materials/${materialId}/analyze`,
+    });
+    conceptIds = (analyzed.json().concepts as Array<{ id: string }>).map((c) => c.id);
+    expect(conceptIds.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('a fresh workspace queues unassessed concepts and every item launches', async () => {
+    const res = await ctx.app.inject({
+      method: 'GET',
+      url: `/api/workspaces/${workspaceId}/queue`,
+    });
+    const items = res.json().items as Array<{
+      kind: string;
+      conceptId: string;
+      launch: { mode: string; conceptIds?: string[] };
+    }>;
+    expect(items.length).toBeGreaterThanOrEqual(3);
+    expect(items.every((i) => i.kind === 'unassessed_next')).toBe(true);
+    for (const item of items) {
+      const launch = await ctx.app.inject({
+        method: 'POST',
+        url: `/api/workspaces/${workspaceId}/assessments`,
+        payload: item.launch,
+      });
+      expect(launch.statusCode, item.conceptId).toBe(201);
+    }
+  });
+
+  it('assessed concepts leave the progression tier; importance ranks the rest', async () => {
+    const concept = ctx.repos.materials.getConcept(conceptIds[0]!)!;
+    ctx.repos.mastery.upsert({
+      materialId,
+      conceptId: concept.id,
+      conceptName: concept.name,
+      mastery: 0.9,
+      attempts: 3,
+      correctCount: 3,
+      lastScore: 0.9,
+      updatedAt: T0,
+    });
+    const res = await ctx.app.inject({
+      method: 'GET',
+      url: `/api/workspaces/${workspaceId}/queue`,
+    });
+    const items = res.json().items as Array<{ kind: string; conceptId: string }>;
+    expect(items.every((i) => i.kind === 'unassessed_next')).toBe(true);
+    expect(items.map((i) => i.conceptId)).not.toContain(concept.id);
+  });
+
+  it('diagnostic target selection prefers unassessed concepts over the first groups', async () => {
+    // Assess every concept except the LAST one; the old first-N selection
+    // would still test the leading groups — the new selection must include
+    // the unassessed concept.
+    const unassessedId = conceptIds[conceptIds.length - 1]!;
+    for (const conceptId of conceptIds) {
+      if (conceptId === unassessedId) continue;
+      const concept = ctx.repos.materials.getConcept(conceptId)!;
+      ctx.repos.mastery.upsert({
+        materialId,
+        conceptId,
+        conceptName: concept.name,
+        mastery: 0.8,
+        attempts: 2,
+        correctCount: 2,
+        lastScore: 0.8,
+        updatedAt: T0,
+      });
+    }
+    const res = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/workspaces/${workspaceId}/assessments`,
+      payload: { mode: 'diagnostic' },
+    });
+    expect(res.statusCode).toBe(201);
+    const targetConceptIds = res.json().quiz.targetConceptIds as string[];
+    expect(targetConceptIds).toContain(unassessedId);
   });
 });

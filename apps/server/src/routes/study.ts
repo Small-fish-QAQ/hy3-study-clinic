@@ -7,6 +7,8 @@ import { requestSignal } from '../util/requestSignal.js';
 
 const IdParams = z.object({ id: z.string().min(1) });
 
+const AnalyzeBody = z.object({ section: z.string().min(1).optional() }).strict();
+
 const GenerateQuizBody = z.object({
   materialId: z.string().min(1),
   config: QuizConfigSchema,
@@ -24,10 +26,20 @@ export function registerStudyRoutes(app: FastifyInstance, services: Services): v
 
   app.post('/api/materials/:id/analyze', async (request, reply) => {
     const { id } = IdParams.parse(request.params);
-    const concepts = await services.analysis.analyze(id, {
-      signal: requestSignal(request, reply),
-    });
-    return { concepts };
+    const body = AnalyzeBody.parse(request.body ?? {});
+    const outcome = await services.analysis.analyze(
+      id,
+      { signal: requestSignal(request, reply) },
+      body.section ? { section: body.section } : undefined,
+    );
+    // `extraction` reports the per-section outcome of THIS run (initial or
+    // deepen); it is null when concepts already existed and nothing ran.
+    return { concepts: outcome.concepts, extraction: outcome.extraction };
+  });
+
+  app.get('/api/materials/:id/mapping', async (request) => {
+    const { id } = IdParams.parse(request.params);
+    return services.mapping.documentMapping(id);
   });
 
   app.get('/api/materials/:id/concepts', async (request) => {

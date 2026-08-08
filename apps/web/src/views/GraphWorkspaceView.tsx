@@ -17,7 +17,7 @@ import type {
   Workspace,
   WorkspaceSummary,
 } from '@hy3-clinic/shared';
-import { api, ApiClientError } from '../api.js';
+import { api, ApiClientError, type DocumentMapping } from '../api.js';
 import { Banner, Loading } from '../components/ui.js';
 import { ConceptGraph, RELATION_LABELS as RELATION_TEXT } from '../components/ConceptGraph.js';
 import { ConceptDetailPanel, EdgeDetailPanel } from '../components/DetailPanels.js';
@@ -112,6 +112,13 @@ export function GraphWorkspaceView({
   /** Honest note when a Tutor recommendation was adjusted at launch time. */
   const [activityNotice, setActivityNotice] = useState<string | null>(null);
   const [generationSummary, setGenerationSummary] = useState<string | null>(null);
+  /** Outcome summary of the latest extraction run (initial or deepen). */
+  const [extractionNotice, setExtractionNotice] = useState<string | null>(null);
+  /** Document whose 资料映射 disclosure is open, plus its loaded mapping. */
+  const [mappingDoc, setMappingDoc] = useState<string | null>(null);
+  const [mapping, setMapping] = useState<DocumentMapping | null>(null);
+  const [mappingLoading, setMappingLoading] = useState(false);
+  const [deepeningSection, setDeepeningSection] = useState<string | null>(null);
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
 
@@ -266,6 +273,10 @@ export function GraphWorkspaceView({
     setActionError(null);
     setActivityNotice(null);
     setGenerationSummary(null);
+    setExtractionNotice(null);
+    setMappingDoc(null);
+    setMapping(null);
+    setDeepeningSection(null);
     setAlignmentOpen(false);
     setTutorPathIds(new Set());
     pendingLaunchRef.current = null;
@@ -410,15 +421,55 @@ export function GraphWorkspaceView({
     }
   }
 
-  async function handleAnalyze(documentId: string) {
+  async function handleAnalyze(documentId: string, section?: string) {
     if (!activeWorkspaceId) return;
     const workspaceId = activeWorkspaceId;
-    const result = await analyzeAction.run((signal) => api.analyze(documentId, signal));
-    if (result && activeWorkspaceId === workspaceId) {
-      await loadWorkspaceData(workspaceId);
-      // The sidebar summaries include a concept count — keep them in step.
-      await loadWorkspaces();
+    if (section) setDeepeningSection(section);
+    try {
+      const result = await analyzeAction.run((signal) => api.analyze(documentId, signal, section));
+      if (result && activeWorkspaceId === workspaceId) {
+        if (result.extraction) {
+          const failed = result.extraction.sections.filter((s) => s.status === 'failed').length;
+          setExtractionNotice(
+            `本次提取:新增 ${result.extraction.conceptsAdded} 个概念(共 ${result.extraction.conceptTotal} 个)` +
+              `${failed > 0 ? `;${failed} 个小节提取失败,可稍后重试` : ''}` +
+              `${result.extraction.capReached ? ';已达单文档概念上限,剩余小节未提取' : ''}。`,
+          );
+        }
+        await loadWorkspaceData(workspaceId);
+        // The sidebar summaries include a concept count — keep them in step.
+        await loadWorkspaces();
+        if (mappingDoc === documentId) await loadMapping(documentId);
+      }
+    } finally {
+      if (section) setDeepeningSection(null);
     }
+  }
+
+  /** Lazily load the structural mapping of one document (资料映射). */
+  async function loadMapping(documentId: string) {
+    const epoch = epochRef.current;
+    setMappingLoading(true);
+    try {
+      const mapping = await api.documentMapping(documentId);
+      if (mountedRef.current && epochRef.current === epoch) {
+        setMappingDoc(documentId);
+        setMapping(mapping);
+      }
+    } catch {
+      if (mountedRef.current && epochRef.current === epoch) setMapping(null);
+    } finally {
+      if (mountedRef.current && epochRef.current === epoch) setMappingLoading(false);
+    }
+  }
+
+  function toggleMapping(documentId: string) {
+    if (mappingDoc === documentId) {
+      setMappingDoc(null);
+      setMapping(null);
+      return;
+    }
+    void loadMapping(documentId);
   }
 
   async function handleDeleteDocument(documentId: string) {
@@ -818,6 +869,58 @@ export function GraphWorkspaceView({
                           </ul>
                         </details>
                       ) : null}
+                      {doc.conceptCount > 0 ? (
+                        <details
+                          className="small"
+                          open={mappingDoc === doc.id}
+                          onToggle={(event) => {
+                            const open = (event.target as HTMLDetailsElement).open;
+                            if (open && mappingDoc !== doc.id) void loadMapping(doc.id);
+                            if (!open && mappingDoc === doc.id) toggleMapping(doc.id);
+                          }}
+                        >
+                          <summary>资料映射</summary>
+                          {mappingDoc === doc.id && mapping ? (
+                            <div aria-label={`资料映射:${doc.title}`}>
+                              <p className="small muted">
+                                已映射 {mapping.totals.mappedSectionCount}/
+                                {mapping.totals.sectionCount} 小节 · 概念{' '}
+                                {mapping.totals.conceptCount} 个 · 引用锚点覆盖{' '}
+                                {mapping.totals.anchoredBlockCount}/{mapping.totals.blockCount} 段
+                              </p>
+                              <p className="small muted">
+                                映射指小节是否已有取证概念,不代表小节内容已被完整覆盖。
+                              </p>
+                              <ul className="small">
+                                {mapping.sections.map((section) => (
+                                  <li key={section.key}>
+                                    {section.title} · {section.conceptCount} 概念
+                                    {section.mapped ? null : (
+                                      <>
+                                        {' '}
+                                        <span className="pill">未映射</span>{' '}
+                                        <button
+                                          type="button"
+                                          className="ghost small"
+                                          disabled={analyzeAction.loading}
+                                          aria-busy={deepeningSection === section.key}
+                                          onClick={() => void handleAnalyze(doc.id, section.key)}
+                                        >
+                                          {deepeningSection === section.key
+                                            ? '正在提取…'
+                                            : '继续提取'}
+                                        </button>
+                                      </>
+                                    )}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ) : mappingDoc === doc.id && mappingLoading ? (
+                            <Loading label="加载映射…" />
+                          ) : null}
+                        </details>
+                      ) : null}
                     </div>
                     <div className="document-actions">
                       {doc.conceptCount === 0 ? (
@@ -854,12 +957,13 @@ export function GraphWorkspaceView({
               </ul>
               {analyzeAction.loading ? (
                 <p>
-                  <Loading label="Hy3 正在提取概念…" />{' '}
+                  <Loading label="Hy3 正在分节提取概念…" />{' '}
                   <button type="button" className="ghost small" onClick={analyzeAction.cancel}>
                     取消
                   </button>
                 </p>
               ) : null}
+              {extractionNotice ? <Banner kind="info">{extractionNotice}</Banner> : null}
               {analyzeAction.error ? <Banner kind="error">{analyzeAction.error}</Banner> : null}
               {documentAction.error ? <Banner kind="error">{documentAction.error}</Banner> : null}
 

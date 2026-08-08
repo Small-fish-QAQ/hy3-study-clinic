@@ -36,6 +36,9 @@ export interface GraphGenerationResult {
   edges: GraphEdge[];
 }
 
+/** Above this many workspace blocks the proposal prompt is context-bounded. */
+export const GRAPH_CONTEXT_BLOCK_LIMIT = 120;
+
 export function createGraphService({ repos, provider, clock, providerModel }: GraphServiceDeps) {
   function requireWorkspace(workspaceId: string) {
     const workspace = repos.workspaces.get(workspaceId);
@@ -65,7 +68,33 @@ export function createGraphService({ repos, provider, clock, providerModel }: Gr
           '生成图谱前,请先为课程空间中的文档提取至少 2 个概念。',
         );
       }
-      const blocks = repos.materials.getBlocksByWorkspace(workspaceId);
+      const allBlocks = repos.materials.getBlocksByWorkspace(workspaceId);
+      // Context bounding for large workspaces: the proposal prompt gets the
+      // evidence-bearing blocks (every concept's grounded block plus its
+      // immediate neighbours for context) instead of the whole corpus. The
+      // VALIDATOR still verifies quotes against ALL workspace blocks, so
+      // nothing about acceptance rules changes — only the prompt size.
+      let blocks = allBlocks;
+      if (allBlocks.length > GRAPH_CONTEXT_BLOCK_LIMIT) {
+        const wanted = new Set<string>();
+        const byMaterial = new Map<string, typeof allBlocks>();
+        for (const block of allBlocks) {
+          const list = byMaterial.get(block.materialId) ?? [];
+          list.push(block);
+          byMaterial.set(block.materialId, list);
+        }
+        for (const concept of concepts) {
+          const grounded = allBlocks.find((b) => b.id === concept.grounding.blockId);
+          if (!grounded) continue;
+          const siblings = byMaterial.get(grounded.materialId) ?? [];
+          const at = siblings.findIndex((b) => b.id === grounded.id);
+          for (const neighbour of siblings.slice(Math.max(0, at - 1), at + 2)) {
+            wanted.add(neighbour.id);
+          }
+        }
+        blocks = allBlocks.filter((b) => wanted.has(b.id));
+        if (blocks.length === 0) blocks = allBlocks.slice(0, GRAPH_CONTEXT_BLOCK_LIMIT);
+      }
 
       const now = clock.now().toISOString();
       const version: GraphVersion = {
@@ -104,7 +133,7 @@ export function createGraphService({ repos, provider, clock, providerModel }: Gr
 
       const { accepted, summary } = validateProposedEdges(payload.edges, {
         workspaceConcepts: concepts,
-        blocks,
+        blocks: allBlocks,
         conceptExistsElsewhere: (conceptId) => repos.materials.getConcept(conceptId) !== undefined,
       });
 

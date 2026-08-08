@@ -15,13 +15,34 @@ async function setupWorkspaceWithGraph(ctx: TestApp) {
     payload: { name: '认知科学课程' },
   });
   const workspaceId = ws.json().workspace.id as string;
+  // Sections need real size so the deterministic outline keeps them separate
+  // and the size-aware extraction grounds one concept per section.
+  const filler = (name: string): string =>
+    `${name}相关的背景说明:这里补充足够的正文内容,帮助读者理解上下文并支撑切分预算。`.repeat(14);
   const doc = await ctx.app.inject({
     method: 'POST',
     url: `/api/workspaces/${workspaceId}/documents`,
     payload: {
       kind: 'text',
-      content:
-        '# 工作记忆\n\n工作记忆的容量十分有限。它一次只能保持大约四个组块。\n\n# 长时记忆\n\n长时记忆通过巩固过程形成,睡眠对巩固十分重要。\n\n# 间隔重复\n\n间隔重复通过在遗忘边缘复习来提升长期保持率。',
+      content: [
+        '# 工作记忆',
+        '',
+        '工作记忆的容量十分有限。它一次只能保持大约四个组块。',
+        '',
+        filler('工作记忆'),
+        '',
+        '# 长时记忆',
+        '',
+        '长时记忆通过巩固过程形成,睡眠对巩固十分重要。',
+        '',
+        filler('长时记忆'),
+        '',
+        '# 间隔重复',
+        '',
+        '间隔重复通过在遗忘边缘复习来提升长期保持率。',
+        '',
+        filler('间隔重复'),
+      ].join('\n'),
       title: '记忆基础',
     },
   });

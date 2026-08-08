@@ -104,6 +104,52 @@ export interface AssessmentResponse {
   rejected: Array<{ stem: string; reason: string }>;
 }
 
+/** Per-section outcome of one extraction run (initial or deepen). */
+export interface SectionExtractionReport {
+  key: string;
+  title: string;
+  charCount: number;
+  status: 'extracted' | 'empty' | 'failed' | 'skipped_existing' | 'skipped_cap';
+  conceptsAdded: number;
+}
+
+export interface AnalyzeResponse {
+  concepts: Concept[];
+  /** Null when concepts already existed and no extraction ran. */
+  extraction: {
+    sections: SectionExtractionReport[];
+    conceptsAdded: number;
+    conceptTotal: number;
+    capReached: boolean;
+  } | null;
+}
+
+/** Structural mapping of one document — mapping/anchoring facts only. */
+export interface DocumentMapping {
+  materialId: string;
+  title: string;
+  totals: {
+    blockCount: number;
+    charCount: number;
+    conceptCount: number;
+    mappedSectionCount: number;
+    sectionCount: number;
+    anchoredBlockCount: number;
+    anchoredCharCount: number;
+  };
+  sections: Array<{
+    key: string;
+    title: string;
+    fromHeading: boolean;
+    blockCount: number;
+    charCount: number;
+    conceptCount: number;
+    anchoredBlockCount: number;
+    anchoredCharCount: number;
+    mapped: boolean;
+  }>;
+}
+
 /** Response of the server-owned Tutor activity launch. */
 export interface TutorActivityLaunchResponse extends AssessmentResponse {
   /** Mode actually launched (after any deterministic adjustment). */
@@ -200,13 +246,17 @@ export const api = {
   deleteMaterial: (id: string, signal?: AbortSignal) =>
     request<DocumentDeletionResult>('DELETE', `/api/materials/${id}`, undefined, signal),
 
-  analyze: (materialId: string, signal?: AbortSignal) =>
-    request<{ concepts: Concept[] }>(
+  analyze: (materialId: string, signal?: AbortSignal, section?: string) =>
+    request<AnalyzeResponse>(
       'POST',
       `/api/materials/${materialId}/analyze`,
-      undefined,
+      section ? { section } : undefined,
       signal,
     ),
+
+  /** Structural mapping of one document (sections, concepts, anchors). */
+  documentMapping: (materialId: string, signal?: AbortSignal) =>
+    request<DocumentMapping>('GET', `/api/materials/${materialId}/mapping`, undefined, signal),
 
   getConcepts: (materialId: string) =>
     request<{ concepts: Concept[] }>('GET', `/api/materials/${materialId}/concepts`),

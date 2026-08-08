@@ -79,6 +79,7 @@ export const QueueItemKindSchema = z.enum([
   'open_mistakes',
   'weak_prerequisite',
   'due_review',
+  'unassessed_next',
 ]);
 export type QueueItemKind = z.infer<typeof QueueItemKindSchema>;
 

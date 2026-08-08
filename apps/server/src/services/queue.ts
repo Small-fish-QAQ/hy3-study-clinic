@@ -174,6 +174,57 @@ export function createQueueService({ repos, clock }: QueueServiceDeps) {
         });
       }
 
+      // 6. Course progression: unassessed concepts, so newly extracted
+      // content is actually reachable. Importance first, prerequisite-ready
+      // (no weak/unassessed prerequisite in the active graph) before blocked,
+      // then stable concept-id order.
+      const importanceRank: Record<string, number> = { high: 0, medium: 1, low: 2 };
+      const masteryByConcept = new Map(
+        repos.mastery.listByWorkspace(workspaceId).map((m) => [m.conceptId, m]),
+      );
+      const openCounts = repos.mistakes.countsByConceptForWorkspace(workspaceId);
+      const prereqsByTarget = new Map<string, string[]>();
+      const activeVersionId = repos.workspaces.get(workspaceId)!.activeGraphVersionId;
+      if (activeVersionId) {
+        for (const edge of repos.graph.getEdges(activeVersionId)) {
+          if (edge.relation !== 'prerequisite') continue;
+          const list = prereqsByTarget.get(edge.targetConceptId) ?? [];
+          list.push(edge.sourceConceptId);
+          prereqsByTarget.set(edge.targetConceptId, list);
+        }
+      }
+      const prereqReady = (conceptId: string): boolean =>
+        (prereqsByTarget.get(conceptId) ?? []).every((prereqId) => {
+          const mastery = masteryByConcept.get(prereqId);
+          const open = openCounts.get(prereqId)?.open ?? 0;
+          return open === 0 && mastery !== undefined && mastery.mastery >= WEAK_MASTERY_THRESHOLD;
+        });
+      const unassessed = repos.materials
+        .getConceptsByWorkspace(workspaceId)
+        .filter(
+          (concept) =>
+            !masteryByConcept.has(concept.id) && (openCounts.get(concept.id)?.open ?? 0) === 0,
+        )
+        .map((concept) => ({ concept, ready: prereqReady(concept.id) }))
+        .sort(
+          (a, b) =>
+            importanceRank[a.concept.importance]! - importanceRank[b.concept.importance]! ||
+            Number(b.ready) - Number(a.ready) ||
+            a.concept.id.localeCompare(b.concept.id),
+        );
+      for (const { concept, ready } of unassessed) {
+        push({
+          kind: 'unassessed_next',
+          conceptId: concept.id,
+          conceptName: concept.name,
+          misconceptionId: null,
+          reason: ready
+            ? '尚未评估的概念,可以开始学习。'
+            : '尚未评估的概念;其前置概念还不稳固,可先从前置开始。',
+          overdueDays: 0,
+        });
+      }
+
       return items;
     },
   };

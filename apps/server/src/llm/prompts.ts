@@ -69,8 +69,18 @@ ${delimiter}`,
 export function conceptAnalysisMessages(
   _materialTitle: string,
   blocks: SourceBlock[],
+  options: { sectionTitle?: string; maxConcepts?: number } = {},
 ): ChatMessage[] {
   const wrapped = wrapSourceBlocks(blocks);
+  const sectionLine = options.sectionTitle
+    ? `当前提供的是资料中「${options.sectionTitle}」一节的内容。`
+    : '';
+  const budgetLine = options.maxConcepts
+    ? [
+        `请从这部分内容中提炼 0-${options.maxConcepts} 个真正重要的概念。`,
+        '内容单薄或没有新概念时,宁可少提甚至不提(输出空数组),不得为凑数而拆分、重复或编造概念。',
+      ].join('')
+    : '请分析下面的学习资料,提炼 3-8 个最重要的概念。';
   return [
     {
       role: 'system',
@@ -79,7 +89,7 @@ export function conceptAnalysisMessages(
     {
       role: 'user',
       content: [
-        '请分析下面的学习资料,提炼 3-8 个最重要的概念。',
+        [sectionLine, budgetLine].filter(Boolean).join(''),
         '',
         wrapped.body,
         '',
