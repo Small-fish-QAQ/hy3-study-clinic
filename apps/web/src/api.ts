@@ -8,12 +8,14 @@ import type {
   CompletedAttemptSummary,
   Concept,
   ConceptLearnerState,
+  ConceptLesson,
   DailyQueueItem,
   DocumentDeletionResult,
   DocumentSummary,
   GradingResult,
   GraphEdge,
   GraphVersion,
+  LessonDirective,
   Material,
   MasteryState,
   MisconceptionRecord,
@@ -389,6 +391,29 @@ export const api = {
       'GET',
       `/api/workspaces/${workspaceId}/concepts/${conceptId}/plan`,
       undefined,
+      signal,
+    ),
+
+  // --- Concept lesson cards (teaching enrichment) ---
+
+  getLesson: (workspaceId: string, conceptId: string, signal?: AbortSignal) =>
+    request<{ lesson: ConceptLesson | null }>(
+      'GET',
+      `/api/workspaces/${workspaceId}/concepts/${conceptId}/lesson`,
+      undefined,
+      signal,
+    ),
+
+  generateLesson: (
+    workspaceId: string,
+    conceptId: string,
+    directive?: LessonDirective,
+    signal?: AbortSignal,
+  ) =>
+    request<{ lesson: ConceptLesson }>(
+      'POST',
+      `/api/workspaces/${workspaceId}/concepts/${conceptId}/lesson`,
+      directive ? { directive } : {},
       signal,
     ),
 

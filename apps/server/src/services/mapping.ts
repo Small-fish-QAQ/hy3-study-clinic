@@ -63,6 +63,14 @@ export function createMappingService({ repos }: MappingServiceDeps) {
         for (const evidence of edge.evidence) anchored.add(evidence.blockId);
       }
     }
+    for (const lesson of repos.lessons.listByMaterial(materialId)) {
+      for (const section of lesson.content.sections) {
+        for (const segment of section.segments) {
+          if (segment.anchor) anchored.add(segment.anchor.blockId);
+        }
+      }
+      for (const conflict of lesson.conflicts) anchored.add(conflict.sourceQuote.blockId);
+    }
     return anchored;
   }
 

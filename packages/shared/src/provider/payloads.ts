@@ -4,6 +4,7 @@ import { GraphRelationSchema } from '../domain/graph.js';
 import { PlanStrategySchema } from '../domain/plan.js';
 import { AlignmentLanguageSchema, AlignmentRelationSchema } from '../domain/alignment.js';
 import { AssessmentModeSchema } from '../domain/blueprint.js';
+import { LessonSectionKindSchema } from '../domain/lesson.js';
 import { MisconceptionCategorySchema } from '../domain/misconception.js';
 import { TutorToolNameSchema } from '../domain/tutor.js';
 
@@ -377,6 +378,46 @@ export const MisconceptionProposalPayloadSchema = z.object({
   evidence: z.array(ProposedEvidenceSchema).max(2),
 });
 export type MisconceptionProposalPayload = z.infer<typeof MisconceptionProposalPayloadSchema>;
+
+// ---------------------------------------------------------------------------
+// Concept lesson (teaching enrichment)
+// ---------------------------------------------------------------------------
+
+/**
+ * One PROPOSED lesson segment. `anchor` is optional: the model includes it
+ * ONLY where the course text directly supports the sentence, quoting
+ * verbatim. The server verifies every anchor; a failed anchor is dropped and
+ * the segment becomes (labeled) AI teaching — provenance is never
+ * model-certified.
+ */
+export const ProposedLessonSegmentSchema = z.object({
+  text: z.string().min(1).max(600),
+  anchor: ProposedEvidenceSchema.optional(),
+});
+export type ProposedLessonSegment = z.infer<typeof ProposedLessonSegmentSchema>;
+
+export const ProposedLessonSectionSchema = z.object({
+  kind: LessonSectionKindSchema,
+  segments: z.array(ProposedLessonSegmentSchema).min(1).max(10),
+});
+export type ProposedLessonSection = z.infer<typeof ProposedLessonSectionSchema>;
+
+/** Structured provider output for concept-lesson generation. */
+export const ConceptLessonPayloadSchema = z.object({
+  sections: z.array(ProposedLessonSectionSchema).min(1).max(6),
+  /** Where the course text differs from common presentation (quote required). */
+  conflicts: z
+    .array(
+      z.object({
+        claim: z.string().min(1).max(300),
+        blockId: z.string().min(1),
+        quote: z.string().min(1).max(500),
+      }),
+    )
+    .max(3)
+    .default([]),
+});
+export type ConceptLessonPayload = z.infer<typeof ConceptLessonPayloadSchema>;
 
 // ---------------------------------------------------------------------------
 // Tutor step

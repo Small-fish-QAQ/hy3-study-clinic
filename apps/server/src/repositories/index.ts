@@ -2,6 +2,7 @@ import type { SqliteDb } from '../db/database.js';
 import { createMaterialsRepo, type MaterialsRepo } from './materials.js';
 import { createWorkspacesRepo, type WorkspacesRepo } from './workspaces.js';
 import { createGraphRepo, type GraphRepo } from './graph.js';
+import { createLessonsRepo, type LessonsRepo } from './lessons.js';
 import { createAlignmentRepo, type AlignmentRepo } from './alignment.js';
 import { createBlueprintsRepo, type BlueprintsRepo } from './blueprints.js';
 import { createMisconceptionsRepo, type MisconceptionsRepo } from './misconceptions.js';
@@ -33,6 +34,7 @@ export interface Repositories {
   submissions: SubmissionsRepo;
   mistakes: MistakesRepo;
   mastery: MasteryRepo;
+  lessons: LessonsRepo;
   /**
    * Run `fn` inside ONE database transaction spanning any repository writes
    * it performs. better-sqlite3 transactions are synchronous, so the block
@@ -57,6 +59,7 @@ export function createRepositories(db: SqliteDb): Repositories {
     submissions: createSubmissionsRepo(db),
     mistakes: createMistakesRepo(db),
     mastery: createMasteryRepo(db),
+    lessons: createLessonsRepo(db),
     transaction<T>(fn: () => T): T {
       return db.transaction(fn)();
     },

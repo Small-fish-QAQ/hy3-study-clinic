@@ -1189,6 +1189,7 @@ export function GraphWorkspaceView({
           {selectedConcept && data ? (
             <>
               <ConceptDetailPanel
+                workspaceId={activeWorkspaceId ?? ''}
                 concept={selectedConcept}
                 blocks={data.blocks}
                 documents={data.documents}

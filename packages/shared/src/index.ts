@@ -20,6 +20,7 @@ export * from './domain/alignment.js';
 export * from './domain/blueprint.js';
 export * from './domain/misconception.js';
 export * from './domain/review.js';
+export * from './domain/lesson.js';
 export * from './domain/tutor.js';
 export * from './domain/errors.js';
 export * from './provider/payloads.js';

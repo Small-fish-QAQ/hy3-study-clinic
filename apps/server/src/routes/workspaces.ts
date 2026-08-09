@@ -132,6 +132,28 @@ export function registerWorkspaceRoutes(app: FastifyInstance, services: Services
     return { plan: services.planner.getPlan(id, conceptId) };
   });
 
+  // --- Concept lesson cards (teaching enrichment; display-layer only) ---
+
+  app.get('/api/workspaces/:id/concepts/:conceptId/lesson', async (request) => {
+    const { id, conceptId } = ConceptParams.parse(request.params);
+    return { lesson: services.lessons.get(id, conceptId) };
+  });
+
+  /**
+   * Generate (or regenerate, optionally with a fixed directive) the lesson
+   * card of one concept. Viewing/generating lessons never changes mastery,
+   * mistakes, misconceptions, or review state, and a failed regeneration
+   * preserves the previous valid card.
+   */
+  app.post('/api/workspaces/:id/concepts/:conceptId/lesson', async (request, reply) => {
+    const { id, conceptId } = ConceptParams.parse(request.params);
+    const lesson = await services.lessons.generate(id, conceptId, request.body, {
+      signal: requestSignal(request, reply),
+    });
+    reply.status(201);
+    return { lesson };
+  });
+
   app.post('/api/workspaces/:id/plans/:planId/launch', async (request, reply) => {
     const { id, planId } = PlanParams.parse(request.params);
     const result = await services.planner.launch(id, planId, {

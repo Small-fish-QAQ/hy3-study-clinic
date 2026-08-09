@@ -7,6 +7,7 @@ import {
   type AssessmentProposalPayload,
   type Concept,
   type ConceptAnalysisPayload,
+  type ConceptLessonPayload,
   type GraphProposalPayload,
   type MisconceptionProposalPayload,
   type ProposedAlignment,
@@ -28,6 +29,7 @@ import type {
   AlignmentProposalInput,
   AssessmentProposalInput,
   ConceptAnalysisInput,
+  ConceptLessonInput,
   GraphProposalInput,
   LlmProvider,
   MisconceptionProposalInput,
@@ -640,6 +642,68 @@ export class FakeProvider implements LlmProvider {
       });
     }
     return { items };
+  }
+
+  /**
+   * Deterministic lesson card: teaches from the concept's own block. The
+   * first explanation segment anchors the concept's verbatim source sentence
+   * (verifies locally); every other segment is deliberately unanchored AI
+   * teaching, so offline demos exercise BOTH provenance classes. Directives
+   * vary the wording deterministically. No conflicts are fabricated.
+   */
+  async generateConceptLesson(
+    input: ConceptLessonInput,
+    opts?: ProviderCallOptions,
+  ): Promise<ConceptLessonPayload> {
+    await this.gate(opts);
+    const concept = input.concept;
+    const block = input.blocks.find((b) => b.id === concept.grounding.blockId) ?? input.blocks[0]!;
+    const quote = pickQuote(block);
+    const styled =
+      input.directive === 'more_intuitive'
+        ? '换一种更直观的说法:可以把它想象成日常生活中反复出现的场景,先抓住整体印象再看细节。'
+        : input.directive === 'more_examples'
+          ? '再看一个具体例子:先确定条件,再套用概念的定义,一步步检查结论是否成立。'
+          : input.directive === 'deeper'
+            ? '更进一步:从机制上看,它成立依赖于前提条件;当前提变化时,结论的适用范围也随之改变。'
+            : `围绕「${concept.name}」,先记住课程给出的定义,再把它放进具体情境中理解。`;
+
+    const neighborNote =
+      input.neighbors.length > 0
+        ? `在本课程的图谱中,它与「${input.neighbors[0]!.name}」等概念相关联,学习时可以对照理解。`
+        : '它在本课程中相对独立,先单独吃透定义即可。';
+
+    return {
+      sections: [
+        {
+          kind: 'explanation',
+          segments: [
+            {
+              text: `课程资料这样界定「${concept.name}」:${quote}`,
+              anchor: { blockId: block.id, quote },
+            },
+            { text: `${concept.summary}${styled}` },
+          ],
+        },
+        {
+          kind: 'worked_example',
+          segments: [
+            {
+              text: `一个练习思路:先用自己的话复述「${concept.name}」的定义,再找一个资料之外的场景检验这个定义是否仍然说得通。`,
+            },
+          ],
+        },
+        {
+          kind: 'misconception_warning',
+          segments: [
+            {
+              text: `常见误区:把「${concept.name}」当成孤立的名词去背,而不是回到它的适用条件。${neighborNote}`,
+            },
+          ],
+        },
+      ],
+      conflicts: [],
+    };
   }
 
   /**

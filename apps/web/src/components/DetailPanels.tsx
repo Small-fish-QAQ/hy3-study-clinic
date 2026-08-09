@@ -12,6 +12,7 @@ import type {
   VerifiedGrounding,
 } from '@hy3-clinic/shared';
 import { SourceEvidencePanel } from './SourceEvidencePanel.js';
+import { LessonCard } from './LessonCard.js';
 import { Banner, formatPageRange, Loading, MasteryMeter } from './ui.js';
 import { RELATION_LABELS } from './ConceptGraph.js';
 
@@ -63,10 +64,11 @@ const QUESTION_TYPE_TEXT: Record<string, string> = {
   short_answer: '简答题',
 };
 
-type InspectorTab = 'overview' | 'evidence' | 'plan';
+type InspectorTab = 'overview' | 'lesson' | 'evidence' | 'plan';
 
 const TAB_TEXT: Record<InspectorTab, string> = {
   overview: '概览',
+  lesson: '讲解',
   evidence: '原文证据',
   plan: '学习计划',
 };
@@ -116,14 +118,19 @@ function InspectorTabs({
   active,
   onChange,
   planAvailable,
+  lessonAvailable = false,
 }: {
   active: InspectorTab;
   onChange: (tab: InspectorTab) => void;
   planAvailable: boolean;
+  lessonAvailable?: boolean;
 }) {
-  const tabs: InspectorTab[] = planAvailable
-    ? ['overview', 'evidence', 'plan']
-    : ['overview', 'evidence'];
+  const tabs: InspectorTab[] = [
+    'overview',
+    ...(lessonAvailable ? (['lesson'] as InspectorTab[]) : []),
+    'evidence',
+    ...(planAvailable ? (['plan'] as InspectorTab[]) : []),
+  ];
   return (
     <div className="inspector-tabs" role="tablist" aria-label="详情标签页">
       {tabs.map((tab) => (
@@ -143,6 +150,8 @@ function InspectorTabs({
 }
 
 export interface ConceptDetailPanelProps {
+  /** Workspace scope for lesson fetch/generation (讲解 tab). */
+  workspaceId: string;
   concept: Concept;
   blocks: SourceBlock[];
   documents: DocumentSummary[];
@@ -165,6 +174,7 @@ export interface ConceptDetailPanelProps {
 }
 
 export function ConceptDetailPanel({
+  workspaceId,
   concept,
   blocks,
   documents,
@@ -228,7 +238,19 @@ export function ConceptDetailPanel({
           {memberDocuments.length > 0 ? `(${memberDocuments.join('、')})` : ''}
         </p>
       ) : null}
-      <InspectorTabs active={tab} onChange={setTab} planAvailable />
+      <InspectorTabs active={tab} onChange={setTab} planAvailable lessonAvailable />
+
+      {tab === 'lesson' ? (
+        <div className="inspector-body">
+          <LessonCard
+            workspaceId={workspaceId}
+            conceptId={concept.id}
+            conceptName={canonical?.displayName ?? concept.name}
+            blocks={blocks}
+            documents={documents}
+          />
+        </div>
+      ) : null}
 
       {tab === 'overview' ? (
         <div className="inspector-body">

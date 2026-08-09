@@ -5,6 +5,7 @@ import { wrapSourceBlocks } from '../grounding/wrapSource.js';
 import type {
   AlignmentProposalInput,
   AssessmentProposalInput,
+  ConceptLessonInput,
   MisconceptionProposalInput,
   RemediationPlanInput,
   RemediationTarget,
@@ -494,6 +495,61 @@ export function misconceptionProposalMessages(input: MisconceptionProposalInput)
         '1. 只有当错误模式明确指向某种具体误解时才 applicable=true;空白作答、随机猜测、笔误一律 applicable=false;',
         '2. hypothesis 必须是可以被一道判别题证实或排除的具体说法;',
         '3. 不要给出治疗建议,不要试图修改任何学习状态。',
+        JSON_RULES,
+      ].join('\n'),
+    },
+  ];
+}
+
+const LESSON_DIRECTIVE_TEXT: Record<string, string> = {
+  more_intuitive: '本次重写要求:用更直观的类比和生活化例子来讲解,减少术语密度。',
+  more_examples: '本次重写要求:提供更多、更具体的例子,包括一个完整的分步示例。',
+  deeper: '本次重写要求:讲得更深入,补充推导、机制层面的解释和边界条件。',
+};
+
+export function conceptLessonMessages(input: ConceptLessonInput): ChatMessage[] {
+  const wrapped = wrapSourceBlocks(input.blocks);
+  const neighborList =
+    input.neighbors.length > 0
+      ? input.neighbors
+          .map((n) => `- ${n.direction === 'in' ? '←' : '→'} ${n.relation}: ${n.name}`)
+          .join('\n')
+      : '(当前图谱中没有相关概念)';
+  const directive = input.directive ? LESSON_DIRECTIVE_TEXT[input.directive] : null;
+
+  return [
+    {
+      role: 'system',
+      content: [
+        '你是一位耐心而严谨的中文老师,负责为课程资料中已确认的概念撰写讲解卡片。',
+        '课程资料决定这门课的范围、定义、记号和考核依据;你可以运用自己的知识把概念讲清楚,但讲解只是学习辅助,不是资料原文,也永远不会成为判分依据。',
+        '你不能声明或修改任何学习状态。',
+        wrapped.guard,
+      ].join(''),
+    },
+    {
+      role: 'user',
+      content: [
+        `请为概念「${input.concept.name}」写一张讲解卡片。`,
+        `课程对它的说明:${input.concept.summary}`,
+        `出处:《${input.documentTitle}》${input.sectionTitle ? `「${input.sectionTitle}」一节` : ''};课程原文依据:「${input.concept.grounding.quote}」`,
+        '',
+        '图谱中的相关概念(讲联系时可以提到,但不要展开教它们):',
+        neighborList,
+        '',
+        ...(directive ? [directive, ''] : []),
+        wrapped.body,
+        '',
+        '输出 JSON,格式:',
+        '{"sections":[{"kind":"explanation|intuition|worked_example|misconception_warning|contrast|application","segments":[{"text":"一段讲解(≤300字)","anchor":{"blockId":"来源块id","quote":"逐字原文"}}]}],"conflicts":[{"claim":"常见表述(≤150字)","blockId":"来源块id","quote":"资料的不同说法,逐字原文"}]}',
+        '内容要求:',
+        '1. 第一个 section 必须是 explanation:按这门课的定义把概念讲透,再逐步展开;',
+        '2. 酌情补充 intuition(直观理解/类比)、worked_example(完整的分步例子)、misconception_warning(常见误区及为什么错)、contrast(与易混概念的区别)、application(实际应用);内容单薄的类型宁可省略,不要凑数;',
+        '3. 每个 segment 是一小段独立可读的话;整卡不超过 6 个 section,每个 section 不超过 10 个 segment;',
+        '溯源要求(最重要):',
+        '4. 只有当某句话的内容能被资料原文直接支撑时,才给该 segment 加 anchor,quote 必须从对应 blockId 的围栏原文中逐字复制;',
+        '5. 超出资料的讲解(背景知识、类比、例子、推导)一律不要加 anchor——这是允许且正常的,系统会把它明确标注为「AI 辅助讲解」;绝不允许为超出资料的内容编造 anchor;',
+        '6. 如果资料的定义、记号或结论与该概念的常见表述不同,在 conflicts 中列出:claim 写常见表述,quote 逐字引用资料的说法;没有冲突就输出空数组;课程考核一律以资料为准;',
         JSON_RULES,
       ].join('\n'),
     },

@@ -5,8 +5,10 @@ import type {
   AssessmentProposalPayload,
   Concept,
   ConceptAnalysisPayload,
+  ConceptLessonPayload,
   GraphProposalPayload,
   GraphRelation,
+  LessonDirective,
   MasteryState,
   MisconceptionProposalPayload,
   MisconceptionRecord,
@@ -171,6 +173,29 @@ export interface MisconceptionProposalInput {
   blockId: string;
 }
 
+/** Graph neighbour offered as lesson context (names/relations only). */
+export interface LessonNeighbor {
+  name: string;
+  relation: GraphRelation;
+  direction: 'in' | 'out';
+}
+
+export interface ConceptLessonInput {
+  concept: Concept;
+  documentTitle: string;
+  /** Section the concept's grounded block belongs to (display title). */
+  sectionTitle: string | null;
+  /**
+   * Bounded context blocks: the concept's own section plus lexical-retrieval
+   * hits. The model may anchor segments ONLY to these blocks.
+   */
+  blocks: SourceBlock[];
+  /** Direct graph neighbours (bounded), for connection teaching. */
+  neighbors: LessonNeighbor[];
+  /** Optional single-turn regeneration directive. */
+  directive?: LessonDirective;
+}
+
 /** One prior validated observation shown back to the Tutor model. */
 export interface TutorObservation {
   iteration: number;
@@ -260,6 +285,11 @@ export interface LlmProvider {
     input: MisconceptionProposalInput,
     opts?: ProviderCallOptions,
   ): Promise<MisconceptionProposalPayload>;
+  /** Generate a teaching lesson card for one course-confirmed concept. */
+  generateConceptLesson(
+    input: ConceptLessonInput,
+    opts?: ProviderCallOptions,
+  ): Promise<ConceptLessonPayload>;
   /** One bounded Tutor iteration: call a whitelisted tool or finalize. */
   proposeTutorStep(input: TutorStepInput, opts?: ProviderCallOptions): Promise<TutorStepPayload>;
 }

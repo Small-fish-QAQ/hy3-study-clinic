@@ -2,6 +2,7 @@ import {
   AlignmentProposalPayloadSchema,
   AssessmentProposalPayloadSchema,
   ConceptAnalysisPayloadSchema,
+  ConceptLessonPayloadSchema,
   GraphProposalPayloadSchema,
   MisconceptionProposalPayloadSchema,
   QuizGenerationPayloadSchema,
@@ -11,6 +12,7 @@ import {
   type AlignmentProposalPayload,
   type AssessmentProposalPayload,
   type ConceptAnalysisPayload,
+  type ConceptLessonPayload,
   type GraphProposalPayload,
   type MisconceptionProposalPayload,
   type QuizGenerationPayload,
@@ -25,6 +27,7 @@ import {
   alignmentProposalMessages,
   assessmentProposalMessages,
   conceptAnalysisMessages,
+  conceptLessonMessages,
   graphProposalMessages,
   misconceptionProposalMessages,
   quizGenerationMessages,
@@ -38,6 +41,7 @@ import type {
   AlignmentProposalInput,
   AssessmentProposalInput,
   ConceptAnalysisInput,
+  ConceptLessonInput,
   GraphProposalInput,
   LlmProvider,
   MisconceptionProposalInput,
@@ -183,6 +187,13 @@ export class Hy3Provider implements LlmProvider {
       MisconceptionProposalPayloadSchema,
       opts,
     );
+  }
+
+  async generateConceptLesson(
+    input: ConceptLessonInput,
+    opts?: ProviderCallOptions,
+  ): Promise<ConceptLessonPayload> {
+    return this.complete(conceptLessonMessages(input), ConceptLessonPayloadSchema, opts);
   }
 
   async proposeTutorStep(

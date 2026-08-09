@@ -469,6 +469,34 @@ const MIGRATIONS: Migration[] = [
         CHECK (origin IN ('manual', 'material_import', 'unknown'));
     `,
   },
+  {
+    version: 12,
+    name: 'concept_lessons',
+    // Teaching-enrichment layer: one current lesson card per concept.
+    // `content` is the validated JSON lesson (typed sections of segments;
+    // segments carry a server-VERIFIED anchor when — and only when — their
+    // proposed quote passed exact-quote verification); `conflicts` records
+    // course-vs-common-presentation differences, each with a verified source
+    // quote. Lessons are display-layer teaching material: they are never
+    // grading truth and never mutate learner state, and they cascade away
+    // with their concept (document deletion/reprocess) by design. Purely
+    // additive — no existing table or row changes.
+    up: `
+      CREATE TABLE concept_lessons (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        concept_id TEXT NOT NULL UNIQUE REFERENCES concepts(id) ON DELETE CASCADE,
+        content TEXT NOT NULL,
+        conflicts TEXT NOT NULL DEFAULT '[]',
+        provider TEXT NOT NULL,
+        provider_model TEXT,
+        prompt_version TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_concept_lessons_workspace ON concept_lessons(workspace_id);
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {
