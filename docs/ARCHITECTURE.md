@@ -73,7 +73,7 @@ Source blocks are wrapped with fresh request-specific delimiters and explicitly 
 
 ## 4. Provider contract
 
-`LlmProvider` is a narrow interface with ten methods shared by `FakeProvider` and `Hy3Provider`:
+`LlmProvider` is a narrow interface with eleven methods shared by `FakeProvider` and `Hy3Provider`:
 
 1. `analyzeConcepts`;
 2. `generateQuiz`;
@@ -83,8 +83,9 @@ Source blocks are wrapped with fresh request-specific delimiters and explicitly 
 6. `proposeRemediationPlan`;
 7. `proposeConceptAlignment`;
 8. `proposeAssessment`;
-9. `proposeMisconception`; and
-10. `proposeTutorStep`.
+9. `proposeMisconception`;
+10. `proposeTutorStep`; and
+11. `generateConceptLesson`.
 
 Every method receives an optional `AbortSignal` and returns a Zod-validated payload. Implementations expose normalized `ProviderError` failures rather than raw transport errors.
 
@@ -149,6 +150,24 @@ m' = clamp01(m + 0.3 * (score - m))
 
 Each concept starts at `0.5`. A service averages that concept's question scores once per submission before applying one update. SQLite also constrains stored mastery to `[0, 1]`. This is a product heuristic, not a cognitive diagnosis.
 
+### Grading state safety
+
+Grading is atomic and idempotent below the route layer:
+
+1. every provider call — question grading and the bounded misconception proposals — completes FIRST and writes nothing;
+2. one database transaction then applies the complete learner-state write set (submission, grading result, mistakes, mastery, misconception transitions and proposals, review scheduling, and the state-change snapshot);
+3. inside that transaction the service re-checks two invariants: the quiz has no grading result yet (a duplicate or concurrent submission gets `409 DUPLICATE_SUBMISSION`; learner state is applied at most once), and every question's concept still exists (a stale pending quiz whose document was deleted or reprocessed is rejected with zero state mutation instead of dishonestly reporting success).
+
+A mid-write failure rolls the whole set back; the quiz remains submittable after the fault clears.
+
+### Concept extraction (section-aware, additive)
+
+`ingestion/sections.ts` derives a deterministic section outline from the persisted blocks (no section table): consecutive blocks group at the first heading level that actually varies (`# 标题` + `## 小节` documents group at H2), undersized groups merge forward, oversized groups split at block boundaries, and documents without usable headings fall back to deterministic synthetic character windows — never a whole-document one-shot for long inputs.
+
+`AnalysisService` extracts per section, sequentially and cancellably, with a size-aware UPPER bound per call (a thin section may legitimately produce zero concepts; nothing is padded to a minimum). Verified concepts are APPENDED per section, so a mid-run provider failure keeps every already-accepted section; failed sections are reported and retryable. A document small enough to be a single section keeps the legacy whole-document behavior. `MAX_CONCEPTS_PER_DOCUMENT` (40) is a visible safety ceiling — skipped sections are reported, never silently dropped. Section-targeted deepening (`POST /api/materials/:id/analyze` with `{section}`) appends deduplicated (normalized-key) concepts and NEVER modifies existing concept rows, so every id that quizzes, mistakes, mastery, graph edges, and alignment reference stays stable.
+
+`GET /api/materials/:id/mapping` reports structural mapping only: per-section block/char counts, grounded-concept counts, and which blocks are cited by at least one verified anchor (concept groundings, active-graph edge evidence, lesson anchors). Mapping means "this section has at least one grounded concept" — it is NOT a claim of semantic course coverage, and the UI says so. Semantic recall is measured separately in the evaluation suite against hand-authored must-find labels.
+
 ## 6. Completed-attempt snapshots
 
 A successful submission is an immutable snapshot across `quizzes/questions`, `submissions`, and `grading_results`: revealed questions/rubrics, learner answers, per-question grades, totals, provider, and deterministic `stateChanges`.
@@ -173,7 +192,7 @@ Document-scoped quiz history follows that document's cascade lifecycle. Workspac
 3. no more than three concepts per round; and
 4. exactly one single-choice and one short-answer question per target, yielding 2-6 questions.
 
-No open mistakes means generation is rejected and the UI action is disabled.
+No open mistakes means generation is rejected and the UI action is disabled. When a round is missing a required grounded question piece, the service performs ONE bounded targeted retry — re-requesting only the incomplete targets and filling only the missing (concept, type) slots under the identical grounding validation — and fails honestly with structured details if pieces are still missing. The learning contract (one grounded single-choice plus one grounded short answer per target) is never weakened.
 
 Each remediation question stores `sourceMistakeIds`. On grading, a correct answer resolves exactly those linked mistakes. An incorrect remediation answer can create a new open mistake. Resolved concepts do not re-enter remediation merely because historical mastery remains low.
 
@@ -247,7 +266,7 @@ Deleting one document prunes graph edges that lose concepts or all evidence, mar
 
 `better-sqlite3` runs with foreign keys enabled. Repositories validate domain objects on writes and reads. Multi-row operations use explicit transactions, and migrations are recorded in `schema_migrations`.
 
-The 11 shipped migrations are:
+The 12 shipped migrations are:
 
 1. `initial_schema` - original materials, blocks, concepts, quizzes, grading, mistakes, and mastery.
 2. `course_workspaces_and_documents` - workspaces, document metadata/original bytes, and source-block page numbers; every legacy material receives a compatibility workspace without learning-data deletion.
@@ -260,6 +279,7 @@ The 11 shipped migrations are:
 9. `source_block_page_ranges` - nullable page-end values for cross-page PDF paragraphs.
 10. `completed_attempt_snapshots` - provider and deterministic state-change snapshots on grading results.
 11. `workspace_origin` - immutable `manual | material_import | unknown` origin used by deletion policy; existing rows remain honestly `unknown`.
+12. `concept_lessons` - one current teaching lesson card per concept (verified segment anchors and conflicts inside validated JSON); purely additive, cascades with its concept.
 
 Table-rebuild migrations disable foreign keys only around the controlled rebuild, run `foreign_key_check` before commit, and restore enforcement even after failure. Tests cover idempotence, populated v1 and v3 upgrades, all-or-nothing rollback, and data preservation.
 
@@ -373,7 +393,23 @@ Budgets are explicit:
 
 The server composes every streamed/persisted timeline event. It exposes tool purpose, validation outcome, and evidence counts, not chain-of-thought, raw prompts, or raw model output.
 
-The final plan uses the same validator/store as ordinary remediation planning. A recommended activity is data (`mode` and concept IDs) that the frontend must explicitly launch. Completed, cancelled, failed, and interrupted runs remain auditable; a process restart changes stranded `running` rows to `interrupted`. No incomplete run changes learner state.
+The final plan uses the same validator/store as ordinary remediation planning, with one bounded grounding-specific repair round: when plan evidence fails verification, the rejection details are fed back as an observation and the model may finalize once more before the run fails closed. Completed, cancelled, failed, and interrupted runs remain auditable; a process restart changes stranded `running` rows to `interrupted`. No incomplete run changes learner state.
+
+### Activity executability contract
+
+An `AssessmentMode` being a legal enum value never made it executable; `services/activityLaunch.ts` is the single deterministic authority on launchability, consumed three times:
+
+1. **Tutor finalize** — the model is offered ONLY currently-launchable modes (with one-line preconditions, plus actionable misconception ids); its chosen activity is validated again locally and, when its preconditions do not hold, deterministically downgraded along `concept_practice(selected)` → `diagnostic` with an auditable `activity_adjusted` timeline event recording the original mode and reason. Every newly completed run's persisted activity is launchable at completion time.
+2. **Queue composition** — every daily-queue item carries the server-resolved launch request (`item.launch`); clients send it verbatim and never re-derive modes. Items whose launch cannot be resolved are not listed. The previously dead "due later today" review tier now launches, because review with NAMED concepts accepts anything due by the end of today (matching the queue's own wording), while unnamed review keeps strict due-now semantics.
+3. **Launch time** — `POST /api/workspaces/:id/tutor/runs/:runId/activity` reloads the persisted recommendation, re-resolves it against CURRENT state, constructs the mode-specific assessment request server-side, and reports any adjustment honestly (legacy runs persisted before this contract launch through the same route). The assessment service's own per-mode target selection remains the final gate.
+
+Per-mode preconditions: `cross_document` requires an accepted cross-document alignment sibling for a target (two documents merely existing is not capability); `review` requires eligible review items as above; `misconception_check` binds a concrete actionable hypothesis id (resolved server-side; the activity schema carries it); `prerequisite_repair` requires a real prerequisite edge in the active graph; `concept_practice`/`diagnostic` require existing concepts.
+
+## 15b. Concept lesson cards (teaching enrichment)
+
+Lessons make the clinic teach, with provenance the model cannot forge. One current `concept_lessons` row per concept stores up to six typed sections (`explanation`, `intuition`, `worked_example`, `misconception_warning`, `contrast`, `application`) of small segments. Provenance is decided deterministically per segment: a segment whose proposed `(blockId, quote)` anchor passes the SAME `verifyGrounding` used everywhere else renders as 课程资料/本地已验证 with its expandable quote; a segment without a verified anchor renders as AI 辅助讲解(非资料原文) — the model may use its own knowledge to explain a course-confirmed concept, and that is labeled, never hidden. Failed anchors are dropped (the text survives as AI teaching); the model can never self-certify provenance.
+
+Where the course text differs from the common presentation of a concept, a conflict entry pairs the model's claim with a VERIFIED source quote; unverifiable conflicts are dropped whole, and the UI states that course assessment always follows the source. Generation context is bounded (own section blocks, ≤8 lexical-retrieval hits, graph-neighbour names/relations); three fixed regeneration directives (更直观 / 更多例子 / 更深入) rerun the same validated pipeline — there is no free-form chat. Lessons are display-layer teaching material only: generating or reading them writes zero mastery/mistake/misconception/review state, they never feed rubrics, a failed regeneration preserves the previous valid card, and rows cascade away with their concept.
 
 ## 16. Misconceptions, review, and retrieval
 
@@ -407,7 +443,7 @@ There is no vector database. SQLite FTS5 was not used because its default tokeni
 
 Frontend asynchronous workflows use abort controllers plus request epochs/take-latest identities. Switching or deleting a workspace/document, changing graph selection, restarting a plan, or leaving a view invalidates older work. Late responses cannot replace newer documents, graph versions, selection, plans, Tutor events, assessments, or history.
 
-Transactions protect material/block creation, concept replacement, quiz insertion, grading side effects, migrations, graph activation, plan storage, deletion, and reprocessing. A failed AI request never overwrites previously valid data.
+Transactions protect material/block creation, concept replacement and additive appends, quiz insertion, the complete grading learner-state write set (with in-transaction duplicate and stale-quiz rechecks — see "Grading state safety"), migrations, graph activation, plan storage, lesson upserts, deletion, and reprocessing. A failed AI request never overwrites previously valid data.
 
 ## 18. Production dependencies added for the upgrade
 
@@ -426,6 +462,8 @@ No vector database, graph database, orchestration framework, authentication laye
 - Header/footer removal, visual-wrap repair, heading recognition, and table detection are conservative heuristics and can misclassify pathological documents.
 - DOCX does not provide stable page provenance; embedded image content is discarded.
 - Grounding can reject semantically reasonable output when an exact quote is unavailable or ambiguous.
+- Structural document mapping reports which sections have grounded concepts and which blocks are cited by verified anchors; it never measures semantic coverage, and a "mapped" section may still contain uncaptured ideas. Semantic recall lives in the evaluation suite against hand-authored labels.
+- Lesson cards may contain model teaching that goes beyond the uploaded text; it is labeled AI 辅助讲解(非资料原文) and is never grading evidence, but its factual quality depends on the configured model and should be read critically. Section-aware extraction and lesson quality are bounded by the size-aware budgets and the 40-concepts-per-document ceiling.
 - Alignment review has no unmerge operation, though underlying source concepts/history remain intact.
 - Completed history is limited to 50 attempts per workspace and has no edit/export/pagination workflow.
 - Lexical retrieval can miss synonyms; the graph/Tutor/assessment/remediation budgets can omit useful context.

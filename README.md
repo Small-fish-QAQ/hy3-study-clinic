@@ -34,22 +34,23 @@ The same workflows run offline with the fake provider through `npm run demo:grap
 ### Course materials to a verifiable learning graph
 
 1. Create a course workspace and add one or more documents. PDF/DOCX parsing preserves stable source blocks, character offsets, heading paths, and PDF page ranges.
-2. Hy3 extracts concepts with `(blockId, exact quote)` evidence.
+2. Hy3 extracts concepts section by section along a deterministic document outline (with a synthetic-window fallback for weak headings), under size-aware budgets — a thin section may honestly yield nothing, and long documents are no longer compressed into one 3-8-concept pass. Every concept carries `(blockId, exact quote)` evidence, and 资料映射 shows which sections are mapped, with per-section additive deepening that never regenerates existing concept ids.
 3. Deterministic candidate generation and bounded Hy3 proposals align equivalent concepts across documents. Only exact normalized aliases are auto-accepted; semantic merges require learner review.
 4. Hy3 proposes typed graph relations from a controlled vocabulary: `prerequisite`, `part_of`, `contrasts_with`, `causes`, `applies_to`, and `example_of`.
 5. Local validation rejects unknown concepts, cross-workspace references, invalid relations, fabricated evidence, duplicates, and prerequisite/part-of cycles before a versioned graph is persisted.
 6. The learner explores network, dependency, and weak-path views, with mastery, mistakes, and review state overlaid on canonical concepts. Every accepted concept and edge remains traceable to source evidence.
+7. Each concept can open a 讲解 lesson card: typed teaching sections (explanation, intuition, worked example, misconception warnings, contrasts, applications) whose provenance is decided per segment by the server — verified course quotes are labeled 课程资料/本地已验证, everything else is honestly labeled AI 辅助讲解(非资料原文) and never becomes grading evidence. Where the course text differs from the common presentation, the conflict is shown with a verified quote and the source wins.
 
-Failed graph or plan generation never overwrites the last valid version.
+Failed graph, plan, or lesson generation never overwrites the last valid version.
 
 ### Diagnostic weakness to verified remediation
 
 1. A workspace diagnostic assessment uses validated question blueprints. A question marked cross-document must have verified evidence from at least two documents.
 2. Objective answers are graded locally. Hy3 classifies short-answer rubric coverage, while local code recomputes the awarded score from required-point coverage.
 3. Low scores create open mistakes. A substantive wrong answer may create a tentative misconception hypothesis, but only later discriminating answers can confirm, reject, or resolve it.
-4. Remediation re-tests at most three concepts with open mistakes. A correct remediation answer resolves exactly the linked source mistakes.
-5. Local rules update historical mastery and a separate FSRS-style review schedule.
-6. A bounded Tutor session can inspect only whitelisted, read-only workspace state. Its final evidence-grounded plan is locally validated before the learner may launch the recommended activity.
+4. Remediation re-tests at most three concepts with open mistakes. A correct remediation answer resolves exactly the linked source mistakes. A round missing a required grounded question piece gets ONE targeted regeneration of only the missing pieces before failing honestly.
+5. Local rules update historical mastery and a separate FSRS-style review schedule. Grading applies its complete learner-state write set in one transaction; duplicate or concurrent submissions of the same quiz apply state at most once (409), and a stale pending quiz whose content was deleted or reprocessed is rejected with zero state change.
+6. A bounded Tutor session can inspect only whitelisted, read-only workspace state. The Tutor is offered only activity modes that are executable in the current state; its recommendation is validated at completion (deterministically downgraded with a visible timeline note when preconditions fail) and launched server-side with launch-time revalidation — every 开始 button the product shows corresponds to an activity that actually starts. The daily queue works the same way, and after remediation it advances into unassessed concepts so newly extracted content is reachable.
 
 Completed quizzes are retained as immutable, read-only history. Opening a historical result never regenerates, regrades, or reapplies learning-state changes.
 
@@ -116,7 +117,8 @@ This is integration evidence, not a benchmark. Exact quotation validation proves
 | Typed graph relations | Known IDs, relation vocabulary, evidence, cycles, version acceptance |
 | Cross-document alignments | Candidate bounds, exact-alias rule, review decisions, canonical persistence |
 | Assessment blueprints and misconception hypotheses | Evidence-derived scope, lifecycle transitions, persistence |
-| Remediation and Tutor plans | Tool execution, budgets, plan validation, activity launch |
+| Lesson-card teaching content and conflict claims | Segment-level provenance (verified anchors vs labeled AI teaching), conflict-quote verification, assessment isolation |
+| Remediation and Tutor plans | Tool execution, budgets, plan validation, activity launchability + launch |
 | Semantic rationales | Mistakes, mastery, review scheduling, permissions, all final mutations |
 
 All important real-provider output uses runtime-validated structured contracts. Important output is never extracted with ad hoc regular expressions. A schema/JSON failure receives at most one bounded repair request; grounding failures remain failures.
@@ -200,16 +202,16 @@ See [Architecture & Design Notes](docs/ARCHITECTURE.md) for request lifecycles, 
 
 ## Verification summary
 
-The immutable final tagged release and this post-tag documentation audit both pass 59 test files / 771 tests:
+The immutable `issue-4-final` tag passed 59 test files / 771 tests. The current pre-dogfood upgrade (activity executability + state safety, section-aware extraction with 资料映射, concept lesson cards, extended evaluation) passes 66 test files / 839 tests:
 
 | Workspace | Test files | Tests |
 | --- | ---: | ---: |
 | shared | 5 | 75 |
-| server | 38 | 422 |
-| web | 16 | 274 |
-| **Total** | **59** | **771** |
+| server | 44 | 484 |
+| web | 17 | 280 |
+| **Total** | **66** | **839** |
 
-CI runs build, lint, and tests on Ubuntu Node 20, Ubuntu Node 24, and Windows Node 24. The tagged release is green in [CI run 30604963718](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/runs/30604963718). `eval:fake` passes 31/31 structural checks. See [Verification](docs/VERIFICATION.md) for exact commands, migration/integration coverage, the evidence-to-requirement matrix, and the limits of each smoke script.
+CI runs build, lint, and tests on Ubuntu Node 20, Ubuntu Node 24, and Windows Node 24. `eval:fake` passes 44/44 structural checks, now including activity-executability sweeps, grading state safety, must-find semantic-recall labels, and lesson-provenance invariants. See [Verification](docs/VERIFICATION.md) for exact commands, migration/integration coverage, the evidence-to-requirement matrix, and the limits of each smoke script. The 30–45 minute human study protocol for the upgrade is [docs/DOGFOOD.md](docs/DOGFOOD.md).
 
 Tests never call the real Hy3 API.
 
@@ -227,6 +229,8 @@ CodeBuddy confirmed, but did not author, the component's existing native button 
 
 - PDF import requires an embedded text layer; there is no OCR. Complex multi-column layouts, rotated text, diagrams, and image text are not reconstructed. DOCX provenance has section headings but no page numbers.
 - Exact-quote verification establishes location, not semantic entailment. Strict grounding may reject otherwise schema-valid output.
+- 资料映射 reports structural mapping and anchor coverage, never semantic course coverage: a mapped section may still contain uncaptured ideas. Section budgets and the 40-concepts-per-document ceiling bound extraction depth.
+- Lesson cards may teach beyond the uploaded text; such segments are explicitly labeled AI 辅助讲解(非资料原文), are never grading evidence, and their factual quality depends on the configured model.
 - Mastery and review scheduling are transparent local heuristics, not calibrated cognitive diagnoses. Misconception records remain hypotheses until graded evidence changes their state.
 - Semantic alignment can be wrong and has no unmerge operation; source concepts and history remain intact underneath.
 - Tutor context, graph generation, assessments, remediation, history, and retrieval are deliberately bounded. Dense graph layouts can retain crossings, and lexical retrieval can miss synonyms.

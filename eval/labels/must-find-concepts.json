@@ -1,0 +1,17 @@
+{
+  "note": "Hand-authored by the repository author together with the fixtures (never model-generated). Each list names the concepts a correct extraction of that fixture MUST find. Semantic-recall measurement compares normalized concept keys (normalizeConceptKey) with bidirectional containment, so 「间隔重复(Spaced repetition)」 matches the label 「间隔重复」. Raw concept COUNT is never the metric — recall against these labels is.",
+  "fixtures": {
+    "cognitive-load-zh.md": ["工作记忆", "认知负荷", "组块化", "Spaced repetition"],
+    "memory-practice-en.md": ["Working memory", "Spacedrepetition", "Retrieval practice"],
+    "long-sectioned-zh.md": [
+      "主动回忆",
+      "间隔效应",
+      "交错练习",
+      "精细加工",
+      "双重编码",
+      "元认知监控",
+      "测试效应",
+      "睡眠巩固"
+    ]
+  }
+}

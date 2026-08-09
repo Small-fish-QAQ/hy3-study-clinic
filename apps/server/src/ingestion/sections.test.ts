@@ -138,3 +138,25 @@ describe('conceptBudgetFor', () => {
     expect(conceptBudgetFor(large)).toBeLessThanOrEqual(8);
   });
 });
+
+describe('title + subsection documents', () => {
+  it('descends to the first VARYING heading level (# title / ## sections)', () => {
+    // Every block shares the document H1; sections live at H2.
+    const blocks: SourceBlock[] = [];
+    for (let s = 0; s < 6; s++) {
+      for (let p = 0; p < 12; p++) {
+        blocks.push({
+          ...block(s * 12 + p, `${PARA}(${s}-${p})`, null),
+          heading: `小节${s}`,
+          headingPath: ['总标题', `小节${s}`],
+        });
+      }
+    }
+    const sections = computeSections(blocks);
+    expect(sections.length).toBeGreaterThan(1);
+    expect(sections.every((s) => s.fromHeading)).toBe(true);
+    expect(sections[0]!.title).toContain('小节');
+    const covered = sections.flatMap((s) => s.blocks.map((b) => b.id));
+    expect(covered).toEqual(blocks.map((b) => b.id));
+  });
+});

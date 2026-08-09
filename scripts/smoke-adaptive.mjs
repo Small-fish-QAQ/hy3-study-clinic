@@ -301,6 +301,24 @@ async function runFullWorkflow() {
     [...new Set(practiceGrading.grading.grades.map((g) => g.gradedBy))].join('+'),
   );
 
+  // ---- 15b. Lesson card with segment-level, server-verified provenance ----
+  const lessonRes = await send(
+    'POST',
+    `/api/workspaces/${workspace.id}/concepts/${weak.conceptId}/lesson`,
+    {},
+  );
+  const lessonSegments = lessonRes.lesson.content.sections.flatMap((s) => s.segments);
+  const lessonAnchored = lessonSegments.filter((s) => s.anchor).length;
+  console.log(
+    '15b. lesson card:',
+    lessonRes.lesson.content.sections.length,
+    'sections |',
+    `${lessonAnchored}/${lessonSegments.length} segments course-source-backed (rest labeled AI teaching)`,
+  );
+  if (lessonAnchored === 0 || lessonAnchored === lessonSegments.length) {
+    throw new Error('lesson card must contain BOTH provenance classes in the fake demo');
+  }
+
   // ---- 16-19. Deterministic state updates ----
   console.log(
     '16. mistakes: created',

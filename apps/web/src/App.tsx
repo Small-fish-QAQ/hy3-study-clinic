@@ -471,7 +471,7 @@ export function App() {
     <div className={`app-shell ${tab === 'graph' ? 'module-graph' : ''}`}>
       <header className="app-header">
         <div>
-          <h1>Hy3 智学诊所</h1>
+          <h1>Hy3 Study Clinic</h1>
           <p className="app-subtitle">
             从课程资料构建可验证的个人学习图谱,并根据薄弱知识规划补救路径
           </p>

@@ -13,6 +13,8 @@
  * - short-answer grading agreement with grading-samples.json;
  * - cross-document assessment local-validation acceptance;
  * - Tutor first-step validity (whitelisted tool or finalize);
+ * - long-document semantic recall against hand-authored must-find labels;
+ * - lesson anchor/conflict verification;
  * - request counts and wall-clock latency per operation.
  *
  * Prerequisite: `npm run build`. Run: `npm run eval:hy3`.
@@ -26,7 +28,9 @@ import { config as loadDotenv } from 'dotenv';
 import { Hy3Provider } from '../apps/server/dist/llm/hy3Provider.js';
 import { segmentMaterial } from '../apps/server/dist/ingestion/segment.js';
 import { ingestSource } from '../apps/server/dist/ingestion/ingest.js';
+import { computeSections, conceptBudgetFor } from '../apps/server/dist/ingestion/sections.js';
 import { verifyGrounding } from '../apps/server/dist/grounding/verify.js';
+import { normalizeConceptKey } from '../packages/shared/dist/index.js';
 
 const evalDir = dirname(fileURLToPath(import.meta.url));
 loadDotenv({ path: join(evalDir, '..', '.env') });
@@ -346,11 +350,108 @@ await measure('tutor_first_step', async () => {
     remainingToolCalls: 12,
     allowedConceptIds: conceptsA.map((c) => c.id),
     reviewItems: [],
+    // Executability contract: the model may only recommend modes the local
+    // resolver marked launchable for the current state.
+    launchableModes: [
+      { mode: 'concept_practice', note: '围绕目标概念的针对练习。' },
+      { mode: 'diagnostic', note: '对课程空间做一次诊断评估。' },
+    ],
+    actionableMisconceptions: [],
   });
   return {
     action: step.action,
     tool: step.action === 'call_tool' ? step.tool : null,
     schemaValid: true, // schema validation happened inside the provider
+  };
+});
+
+// --- 6. Long-document semantic recall against hand-authored labels ----------
+await measure('semantic_recall', async () => {
+  const blocks = blocksOf('long-sectioned-zh.md', 'mat_eval_long');
+  const sections = computeSections(blocks);
+  const labels = JSON.parse(
+    readFileSync(join(evalDir, 'labels', 'must-find-concepts.json'), 'utf8'),
+  ).fixtures['long-sectioned-zh.md'];
+  const names = [];
+  let proposed = 0;
+  let groundingAccepted = 0;
+
+  for (const section of sections) {
+    const payload = await provider.analyzeConcepts({
+      materialTitle: '学习科学方法讲义(长文档评测夹具)',
+      sectionTitle: section.title,
+      blocks: section.blocks,
+      maxConcepts: conceptBudgetFor(section),
+    });
+    proposed += payload.concepts.length;
+    for (const concept of payload.concepts) {
+      if (verifyGrounding(section.blocks, { blockId: concept.blockId, quote: concept.quote }).ok) {
+        groundingAccepted += 1;
+        names.push(concept.name);
+      }
+    }
+  }
+
+  const keys = names.map(normalizeConceptKey);
+  const recalledLabels = labels.filter((label) => {
+    const labelKey = normalizeConceptKey(label);
+    return keys.some((key) => key.includes(labelKey) || labelKey.includes(key));
+  });
+  const requests = phaseStats.get('semantic_recall')?.requests ?? 0;
+  return {
+    sectionCount: sections.length,
+    proposed,
+    groundingAccepted,
+    mustFind: labels.length,
+    recalled: recalledLabels.length,
+    recallRate: Number((recalledLabels.length / labels.length).toFixed(3)),
+    firstPassSchema: requests === sections.length,
+    detail: {
+      recalledLabels,
+      missingLabels: labels.filter((label) => !recalledLabels.includes(label)),
+    },
+  };
+});
+
+// --- 7. Lesson generation: anchored teaching with honest provenance ---------
+await measure('lesson_generation', async () => {
+  const concept = conceptsA[0];
+  if (!concept) return { skipped: '没有可用概念。' };
+  const payload = await provider.generateConceptLesson({
+    concept,
+    documentTitle: '认知负荷与工作记忆',
+    sectionTitle: null,
+    blocks: blocksA,
+    neighbors: [],
+  });
+  // Mirror of the server-side deterministic validation: count how many
+  // proposed anchors/conflict quotes actually verify against real blocks.
+  let segments = 0;
+  let anchoredProposed = 0;
+  let anchorsVerified = 0;
+  for (const sectionPayload of payload.sections) {
+    for (const segment of sectionPayload.segments) {
+      segments += 1;
+      if (segment.anchor) {
+        anchoredProposed += 1;
+        if (verifyGrounding(blocksA, segment.anchor).ok) anchorsVerified += 1;
+      }
+    }
+  }
+  let conflictsVerified = 0;
+  for (const conflict of payload.conflicts) {
+    if (verifyGrounding(blocksA, { blockId: conflict.blockId, quote: conflict.quote }).ok) {
+      conflictsVerified += 1;
+    }
+  }
+  return {
+    sections: payload.sections.length,
+    segments,
+    anchoredProposed,
+    anchorsVerified,
+    conflicts: payload.conflicts.length,
+    conflictsVerified,
+    firstPassSchema: (phaseStats.get('lesson_generation')?.requests ?? 1) === 1,
   };
 });
 

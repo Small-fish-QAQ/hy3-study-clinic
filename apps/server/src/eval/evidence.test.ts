@@ -188,6 +188,54 @@ describe('validateForPublication', () => {
       validateForPublication(mutate((r) => (resultsOf(r)[5].action = 'delete_everything'))),
     ).toThrow(/受控白名单/u);
   });
+
+  it('accepts and validates the optional semantic-recall and lesson operations', () => {
+    const raw = mutate((r) => {
+      resultsOf(r).push(
+        {
+          name: 'semantic_recall',
+          ok: true,
+          requests: 3,
+          latencyMs: 9000,
+          wallMs: 9300,
+          sectionCount: 3,
+          proposed: 12,
+          groundingAccepted: 10,
+          mustFind: 8,
+          recalled: 7,
+          recallRate: 0.875,
+          firstPassSchema: true,
+          detail: { missingLabels: ['不得公开的标签明细'] },
+        },
+        {
+          name: 'lesson_generation',
+          ok: true,
+          requests: 1,
+          latencyMs: 3000,
+          wallMs: 3100,
+          sections: 3,
+          segments: 5,
+          anchoredProposed: 2,
+          anchorsVerified: 2,
+          conflicts: 0,
+          conflictsVerified: 0,
+          firstPassSchema: true,
+        },
+      );
+    });
+    expect(() => validateForPublication(raw)).not.toThrow();
+
+    const evidence = deriveEvidence(raw, { generatedAt: '2026-08-09T05:00:00.000Z' });
+    expect(evidence.operations.map((operation) => operation.name)).toEqual([
+      ...EXPECTED_OPERATIONS,
+      'semantic_recall',
+      'lesson_generation',
+    ]);
+    const recall = evidence.operations.find((operation) => operation.name === 'semantic_recall')!;
+    expect(recall.boundedRepairCalls).toBe(0);
+    expect(recall.metrics).toMatchObject({ mustFind: 8, recalled: 7, recallRate: 0.875 });
+    expect(JSON.stringify(evidence)).not.toContain('不得公开的标签明细');
+  });
 });
 
 describe('deriveEvidence', () => {

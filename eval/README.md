@@ -23,7 +23,7 @@ npm run build
 npm run eval:fake
 ```
 
-The runner starts the real server application in process with in-memory SQLite and executes 31 checks:
+The runner starts the real server application in process with in-memory SQLite and executes 44 checks:
 
 - provenance retention: exact block offsets, concept evidence anchored to source blocks, and robust malformed-text ingestion;
 - canonical alignment: exact-normalization auto-acceptance, review for semantic merges, rejection of unauthorized proposals, and source-graph preservation;
@@ -32,8 +32,12 @@ The runner starts the real server application in process with in-memory SQLite a
 - misconception transitions: `proposed -> confirmed -> resolved` plus rejection of illegal transitions;
 - review scheduling: fixed-clock initial scheduling, lapse, growth, and independence from mastery;
 - retrieval bounds: result caps, exact source positions, and workspace isolation;
-- prompt-injection defenses: source fencing and zero learning-state mutation after processing injection-like fixture text; and
-- state invariants: mastery bounds and database foreign-key integrity.
+- prompt-injection defenses: source fencing and zero learning-state mutation after processing injection-like fixture text;
+- state invariants: mastery bounds and database foreign-key integrity;
+- activity executability: a completed Tutor run's recommendation launches immediately, stale legacy recommendations are deterministically adjusted (never a predictable 422), and EVERY daily-queue item launches;
+- grading state safety: duplicate submissions apply learner state at most once (409), and stale quizzes referencing deleted concepts are rejected with zero state mutation;
+- course understanding: long documents split into multiple sections, structural mapping reconciles exactly with source blocks/concepts, must-find semantic recall is measured against `labels/must-find-concepts.json` (never raw concept count), and additive deepening keeps existing concept rows byte-identical; and
+- lesson provenance: cards contain both verified-anchor segments and labeled AI-teaching segments, every anchor reproduces exactly at its recorded offsets, and generating/reading lessons (including over injection-laced fixtures) changes zero learner state.
 
 The assertions cover normalized structural invariants. `FakeProvider` methods are deterministic for identical input, but complete workflow runs can generate new IDs and later inputs, so the evaluation does not require byte-identical content or ordering between runs.
 
@@ -51,7 +55,7 @@ HY3_BASE_URL=... HY3_API_KEY=... HY3_MODEL=... npm run eval:hy3
 - The suite measures first-pass schema success and bounded repair use, evidence acceptance, alignment/grading agreement with hand-authored labels, genuine cross-document evidence, Tutor first-step validity, request counts, and latency.
 - The raw report records Git commit, branch, clean/dirty state, `provider: "hy3"`, `fakeFallback: false`, configured model, endpoint hostname only (no path/query/credentials), Node.js version, OS family, and overall result.
 
-The six expected operations are:
+The six backward-compatible required operations are:
 
 1. concept extraction for fixture document A;
 2. concept extraction for fixture document B;
@@ -59,6 +63,13 @@ The six expected operations are:
 4. grading agreement;
 5. cross-document assessment; and
 6. Tutor first step.
+
+Two optional operations were added with the pre-dogfood upgrade:
+
+7. `semantic_recall` runs section-aware extraction over `long-sectioned-zh.md`, verifies every accepted quote locally, and reports recall against the hand-authored `must-find-concepts.json` labels; and
+8. `lesson_generation` generates a lesson card for a grounded fixture concept and measures how many proposed anchors and conflict quotes verify against real blocks.
+
+They are OPTIONAL for evidence publication so reports produced by the original six-operation suite (including the committed record) remain valid. When either optional operation is present it must succeed like every other operation. Semantic recall reports its measured rate; an operation completing does not imply 100% recall or prove teaching quality.
 
 Both concept-analysis operations measure grounded extracted concepts; neither measures graph relationships.
 
@@ -93,7 +104,7 @@ Only whitelisted aggregate metrics are public. Per-sample `detail`, prompts, stu
 
 ## Labels and limits
 
-- `labels/*.json` was written by the repository author while creating the fixtures and is explicitly marked as hand-authored. This avoids circular "model writes the answer key and grades itself" evidence.
+- `labels/*.json` was written by the repository author while creating the fixtures and is explicitly marked as hand-authored. This avoids circular "model writes the answer key and grades itself" evidence. `labels/must-find-concepts.json` lists the concepts a correct extraction of each fixture MUST find; semantic recall against these labels — never raw concept count — is the course-understanding metric, measured structurally offline and semantically with the real provider.
 - The sample is deliberately small: four alignment labels and three grading answers. Real-provider rates are indicative, model/API-dependent, and not a benchmark.
 - `eval:fake` validates structure and safety boundaries, not teaching quality.
 - Exact quotation validation proves location, not complete semantic entailment.

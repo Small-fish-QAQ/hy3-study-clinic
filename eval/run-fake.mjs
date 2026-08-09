@@ -445,6 +445,231 @@ section('9. 状态不变量(state invariants)');
 }
 
 // ---------------------------------------------------------------------------
+section('10. 活动可执行性(activity executability)');
+{
+  const ctx = buildEvalApp();
+  // Single document, no mistakes: exactly the state that used to make the
+  // Tutor recommend an unlaunchable cross_document activity.
+  const { workspace } = await setupWorkspace(ctx, ['cognitive-load-zh.md']);
+  await ctx.call('POST', `/api/workspaces/${workspace.id}/graph`);
+  const concept = ctx.repos.materials.getConceptsByWorkspace(workspace.id)[0];
+
+  const tutorRes = await ctx.app.inject({
+    method: 'POST',
+    url: `/api/workspaces/${workspace.id}/tutor`,
+    payload: { conceptId: concept.id },
+  });
+  const runLine = tutorRes.body
+    .trim()
+    .split('\n')
+    .map((line) => JSON.parse(line))
+    .find((l) => l.kind === 'run');
+  check(
+    '辅导会话完成并持久化推荐活动',
+    runLine?.run?.status === 'completed' && runLine.run.activity,
+  );
+
+  const launched = await ctx.call(
+    'POST',
+    `/api/workspaces/${workspace.id}/tutor/runs/${runLine.run.id}/activity`,
+  );
+  check(
+    '已完成会话的推荐活动可以立即启动(服务端构造并复验)',
+    launched.status === 201 && launched.body.quiz.kind === 'adaptive',
+    `mode=${launched.body.launchedMode ?? '?'}`,
+  );
+
+  // A legacy-style stale recommendation (the real dogfood database contains
+  // exactly this) is honestly ADJUSTED at launch instead of failing.
+  ctx.repos.tutor.insertRun({
+    id: 'tut_legacy_eval',
+    workspaceId: workspace.id,
+    conceptId: concept.id,
+    conceptName: concept.name,
+    status: 'completed',
+    iterations: 5,
+    toolCallCount: 4,
+    acceptedEvidence: [],
+    planId: null,
+    activity: { mode: 'cross_document', conceptIds: [concept.id] },
+    errorMessage: null,
+    provider: 'fake',
+    providerModel: null,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  });
+  const legacy = await ctx.call(
+    'POST',
+    `/api/workspaces/${workspace.id}/tutor/runs/tut_legacy_eval/activity`,
+  );
+  check(
+    '过期的历史推荐被确定性降级并诚实报告,而不是 422',
+    legacy.status === 201 &&
+      legacy.body.adjusted !== null &&
+      legacy.body.adjusted.originalMode === 'cross_document',
+    `adjusted→${legacy.body.launchedMode}`,
+  );
+
+  const queue = (await ctx.call('GET', `/api/workspaces/${workspace.id}/queue`)).body.items;
+  let queueLaunchable = queue.length > 0;
+  for (const item of queue) {
+    const res = await ctx.call('POST', `/api/workspaces/${workspace.id}/assessments`, item.launch);
+    if (res.status !== 201) queueLaunchable = false;
+  }
+  check('每日队列的每一项都能立即启动(含课程推进层)', queueLaunchable, `items=${queue.length}`);
+  await ctx.app.close();
+}
+
+// ---------------------------------------------------------------------------
+section('11. 判分状态安全(grading state safety)');
+{
+  const ctx = buildEvalApp();
+  const { docs } = await setupWorkspace(ctx, ['cognitive-load-zh.md']);
+  const materialId = docs[0].material.id;
+  const quiz = (
+    await ctx.call('POST', '/api/quizzes', {
+      materialId,
+      config: { difficulty: 'easy', types: ['single_choice'], countPerType: 2 },
+    })
+  ).body.quiz;
+  const answers = quiz.questions.map((q) => ({
+    questionId: q.id,
+    type: q.type,
+    selectedOptionIds: [q.options[0].id],
+  }));
+  const first = await ctx.call('POST', `/api/quizzes/${quiz.id}/submissions`, { answers });
+  const dup = await ctx.call('POST', `/api/quizzes/${quiz.id}/submissions`, { answers });
+  const submissionCount = ctx.db.prepare('SELECT COUNT(*) AS n FROM submissions').get().n;
+  check(
+    '同一测验的重复提交被拒绝,学习状态只应用一次',
+    first.status === 201 && dup.status === 409 && dup.body.error.code === 'DUPLICATE_SUBMISSION',
+    `submissions=${submissionCount}`,
+  );
+
+  const stale = (
+    await ctx.call('POST', '/api/quizzes', {
+      materialId,
+      config: { difficulty: 'easy', types: ['single_choice'], countPerType: 1 },
+    })
+  ).body.quiz;
+  // Deleting the concepts cascades their own state rows; snapshot AFTER the
+  // deletion so the check isolates what the SUBMISSION changes (nothing).
+  ctx.db.prepare('DELETE FROM concepts WHERE material_id = ?').run(materialId);
+  const stateBefore = ['mistakes', 'mastery_states', 'review_items']
+    .map((t) => ctx.db.prepare(`SELECT COUNT(*) AS n FROM ${t}`).get().n)
+    .join(',');
+  const staleRes = await ctx.call('POST', `/api/quizzes/${stale.id}/submissions`, {
+    answers: stale.questions.map((q) => ({
+      questionId: q.id,
+      type: q.type,
+      selectedOptionIds: [],
+    })),
+  });
+  const stateAfter = ['mistakes', 'mastery_states', 'review_items']
+    .map((t) => ctx.db.prepare(`SELECT COUNT(*) AS n FROM ${t}`).get().n)
+    .join(',');
+  check(
+    '引用已删除概念的过期测验被拒绝,零学习状态变化',
+    staleRes.status === 400 && stateBefore === stateAfter,
+  );
+  await ctx.app.close();
+}
+
+// ---------------------------------------------------------------------------
+section('12. 课程理解:结构映射与语义召回(mapping & semantic recall)');
+{
+  const { normalizeConceptKey } = await import('../packages/shared/dist/index.js');
+  const labels = JSON.parse(
+    readFileSync(join(evalDir, 'labels', 'must-find-concepts.json'), 'utf8'),
+  );
+  const ctx = buildEvalApp();
+  const { workspace, docs } = await setupWorkspace(ctx, ['long-sectioned-zh.md']);
+  const materialId = docs[0].material.id;
+
+  const mapping = (await ctx.call('GET', `/api/materials/${materialId}/mapping`)).body;
+  check(
+    '长文档被切分为多个小节(不再是整篇一次抽取)',
+    mapping.totals.sectionCount > 1,
+    `sections=${mapping.totals.sectionCount}`,
+  );
+  const blockSum = mapping.sections.reduce((n, s) => n + s.blockCount, 0);
+  const conceptSum = mapping.sections.reduce((n, s) => n + s.conceptCount, 0);
+  check(
+    '结构映射与源数据完全对账(段落数、概念数)',
+    blockSum === mapping.totals.blockCount && conceptSum === mapping.totals.conceptCount,
+  );
+
+  const concepts = ctx.repos.materials.getConceptsByWorkspace(workspace.id);
+  const keys = concepts.map((c) => normalizeConceptKey(c.name));
+  const mustFind = labels.fixtures['long-sectioned-zh.md'];
+  const found = mustFind.filter((label) => {
+    const labelKey = normalizeConceptKey(label);
+    return keys.some((key) => key.includes(labelKey) || labelKey.includes(key));
+  });
+  check(
+    '必找概念召回(人工标注 must-find 标签,而非概念数量)',
+    found.length / mustFind.length >= 0.75,
+    `recall=${found.length}/${mustFind.length}`,
+  );
+
+  // Additive deepen never mutates existing rows.
+  const before = JSON.stringify(ctx.repos.materials.getConcepts(materialId));
+  const unmapped = mapping.sections.find((s) => !s.mapped);
+  if (unmapped) {
+    await ctx.call('POST', `/api/materials/${materialId}/analyze`, { section: unmapped.key });
+  }
+  const afterConcepts = ctx.repos.materials.getConcepts(materialId);
+  const beforeList = JSON.parse(before);
+  const afterById = new Map(afterConcepts.map((c) => [c.id, c]));
+  check(
+    '追加提取保持既有概念行完全不变(ID 稳定)',
+    beforeList.every((c) => JSON.stringify(afterById.get(c.id)) === JSON.stringify(c)),
+  );
+  await ctx.app.close();
+}
+
+// ---------------------------------------------------------------------------
+section('13. 讲解卡片与来源标注(lesson provenance)');
+{
+  const ctx = buildEvalApp();
+  const { workspace } = await setupWorkspace(ctx, ['recursion-injection.md']);
+  const concept = ctx.repos.materials.getConceptsByWorkspace(workspace.id)[0];
+  const stateTables = ['mastery_states', 'mistakes', 'misconceptions', 'review_items'];
+  const stateBefore = stateTables
+    .map((t) => ctx.db.prepare(`SELECT COUNT(*) AS n FROM ${t}`).get().n)
+    .join(',');
+
+  const generated = await ctx.call(
+    'POST',
+    `/api/workspaces/${workspace.id}/concepts/${concept.id}/lesson`,
+    {},
+  );
+  const lesson = generated.body.lesson;
+  const blocks = ctx.repos.materials.getBlocksByWorkspace(workspace.id);
+  const segments = lesson.content.sections.flatMap((s) => s.segments);
+  const anchored = segments.filter((s) => s.anchor);
+  check(
+    '讲解卡片同时包含已验证原文段与标注的 AI 讲解段',
+    anchored.length > 0 && segments.some((s) => !s.anchor),
+    `anchored=${anchored.length}/${segments.length}`,
+  );
+  check(
+    '每个已验证锚点的引文都能在真实源块中精确复原',
+    anchored.every((s) => {
+      const block = blocks.find((b) => b.id === s.anchor.blockId);
+      return (
+        block && block.content.slice(s.anchor.startOffset, s.anchor.endOffset) === s.anchor.quote
+      );
+    }),
+  );
+  const stateAfter = stateTables
+    .map((t) => ctx.db.prepare(`SELECT COUNT(*) AS n FROM ${t}`).get().n)
+    .join(',');
+  check('生成/阅读讲解(含注入文本资料)零学习状态变化', stateBefore === stateAfter);
+  await ctx.app.close();
+}
+
+// ---------------------------------------------------------------------------
 const passed = checks.filter((c) => c.passed).length;
 const failed = checks.length - passed;
 const summary = {

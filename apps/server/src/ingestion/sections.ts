@@ -10,8 +10,8 @@ import { fnv1a32 } from '@hy3-clinic/shared';
  * stable without persistence.
  *
  * Strategy:
- * 1. group consecutive blocks by their TOP-LEVEL heading (headingPath[0]);
- *    blocks before any heading form a leading group;
+ * 1. group consecutive blocks at the first heading depth that actually
+ *    varies; blocks before any heading form a leading group;
  * 2. if the heading structure is absent or degenerate (fewer than two
  *    distinct groups for a document large enough to need splitting), fall
  *    back to deterministic synthetic windows over the block sequence with a
@@ -48,10 +48,28 @@ function charsOf(blocks: SourceBlock[]): number {
   return blocks.reduce((sum, block) => sum + block.content.length, 0);
 }
 
-function groupByTopHeading(blocks: SourceBlock[]): RawGroup[] {
+/**
+ * Depth at which heading paths start to VARY. A document written as
+ * `# 标题` + `## 小节` shares its single H1 across every block, so grouping
+ * must descend to the H2 level; flat `#`-per-section documents group at
+ * depth 0. Deterministic for unchanged content.
+ */
+function groupingDepth(blocks: SourceBlock[]): number {
+  const paths = blocks.map((b) => b.headingPath).filter((p) => p.length > 0);
+  if (paths.length === 0) return 0;
+  let depth = 0;
+  for (;;) {
+    const values = new Set(paths.map((p) => p[depth] ?? null));
+    if (values.size !== 1 || values.has(null)) return depth;
+    if (!paths.some((p) => p.length > depth + 1)) return depth;
+    depth++;
+  }
+}
+
+function groupByTopHeading(blocks: SourceBlock[], depth: number): RawGroup[] {
   const groups: RawGroup[] = [];
   for (const block of blocks) {
-    const top = block.headingPath[0] ?? null;
+    const top = block.headingPath[depth] ?? null;
     const last = groups[groups.length - 1];
     if (last && last.title === top) {
       last.blocks.push(block);
@@ -160,11 +178,11 @@ export function computeSections(blocks: SourceBlock[]): DocumentSection[] {
     return [toSection({ title: blocks[0]!.headingPath[0] ?? null, blocks: [...blocks] }, 0)];
   }
 
-  const headingGroups = groupByTopHeading(blocks);
+  const headingGroups = groupByTopHeading(blocks, groupingDepth(blocks));
   const distinctTitles = new Set(
     headingGroups.map((g) => g.title).filter((t): t is string => t !== null),
   );
-  // Degenerate structure (Amendment D): no or a single top-level heading over
+  // Degenerate structure (Amendment D): no or a single useful heading over
   // a document that needs splitting → deterministic synthetic windows.
   const useSynthetic = distinctTitles.size < 2;
   const groups = useSynthetic

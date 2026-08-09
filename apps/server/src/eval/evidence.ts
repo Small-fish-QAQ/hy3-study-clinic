@@ -30,11 +30,25 @@ export const EXPECTED_OPERATIONS = [
 
 export type ExpectedOperation = (typeof EXPECTED_OPERATIONS)[number];
 
+/**
+ * Operations added AFTER the original six-operation contract. They are known
+ * and publishable when present, but their absence never invalidates a report
+ * — the committed pre-upgrade evidence remains provenance-complete.
+ */
+export const OPTIONAL_OPERATIONS = ['semantic_recall', 'lesson_generation'] as const;
+
+export type OptionalOperation = (typeof OPTIONAL_OPERATIONS)[number];
+export type KnownOperation = ExpectedOperation | OptionalOperation;
+
 /** Provider calls each operation needs when no bounded repair happens. */
-function minimumRequests(name: ExpectedOperation, result: Record<string, unknown>): number {
+function minimumRequests(name: KnownOperation, result: Record<string, unknown>): number {
   if (name === 'grading_agreement') {
     const samples = result.samples;
     return typeof samples === 'number' && samples > 0 ? samples : 1;
+  }
+  if (name === 'semantic_recall') {
+    const sectionCount = result.sectionCount;
+    return typeof sectionCount === 'number' && sectionCount > 0 ? sectionCount : 1;
   }
   return 1;
 }
@@ -112,8 +126,9 @@ export function validateForPublication(raw: unknown): RawHy3Report {
   for (const name of EXPECTED_OPERATIONS) {
     if (!byName.has(name)) reasons.push(`缺少必需的操作 ${name}。`);
   }
+  const knownOperations: readonly string[] = [...EXPECTED_OPERATIONS, ...OPTIONAL_OPERATIONS];
   for (const result of report.results) {
-    if (!(EXPECTED_OPERATIONS as readonly string[]).includes(result.name)) {
+    if (!knownOperations.includes(result.name)) {
       reasons.push(`未知操作 ${result.name} 不在评测契约内。`);
     }
     if (!result.ok) {
@@ -153,13 +168,29 @@ export function validateForPublication(raw: unknown): RawHy3Report {
   if (tutor && tutor.action !== 'call_tool' && tutor.action !== 'finalize') {
     reasons.push('tutor_first_step 的动作不在受控白名单(call_tool | finalize)内。');
   }
+  const lesson = byName.get('lesson_generation');
+  if (lesson && (asNumber(lesson.sections) ?? 0) < 1) {
+    reasons.push('lesson_generation 没有生成任何讲解 section。');
+  }
+  const semanticRecall = byName.get('semantic_recall');
+  if (semanticRecall) {
+    if ((asNumber(semanticRecall.sectionCount) ?? 0) < 2) {
+      reasons.push('semantic_recall 没有真正执行多小节长文档提取。');
+    }
+    if ((asNumber(semanticRecall.mustFind) ?? 0) < 1) {
+      reasons.push('semantic_recall 没有人工 must-find 标签。');
+    }
+    if ((asNumber(semanticRecall.groundingAccepted) ?? 0) < 1) {
+      reasons.push('semantic_recall 没有任何通过本地引文验证的概念。');
+    }
+  }
 
   if (reasons.length > 0) throw new EvidenceValidationError(reasons);
   return report;
 }
 
 export interface EvidenceOperation {
-  name: ExpectedOperation;
+  name: KnownOperation;
   ok: boolean;
   requests: number;
   boundedRepairCalls: number;
@@ -197,7 +228,7 @@ export interface PublicEvidence {
 }
 
 /** Copies only the named numeric/string aggregate fields — never `detail`. */
-const METRIC_WHITELIST: Record<ExpectedOperation, string[]> = {
+const METRIC_WHITELIST: Record<KnownOperation, string[]> = {
   concept_analysis: ['proposed', 'groundingAccepted', 'groundingAcceptanceRate', 'firstPassSchema'],
   concept_analysis_doc_b: ['proposed', 'groundingAccepted'],
   alignment_agreement: ['comparablePairs', 'agreement', 'agreementRate'],
@@ -208,6 +239,24 @@ const METRIC_WHITELIST: Record<ExpectedOperation, string[]> = {
     'itemsTrulyCrossDocument',
   ],
   tutor_first_step: ['action', 'tool'],
+  semantic_recall: [
+    'sectionCount',
+    'proposed',
+    'groundingAccepted',
+    'mustFind',
+    'recalled',
+    'recallRate',
+    'firstPassSchema',
+  ],
+  lesson_generation: [
+    'sections',
+    'segments',
+    'anchoredProposed',
+    'anchorsVerified',
+    'conflicts',
+    'conflictsVerified',
+    'firstPassSchema',
+  ],
 };
 
 export const EVIDENCE_LIMITATIONS = [
@@ -220,7 +269,11 @@ export const EVIDENCE_LIMITATIONS = [
 export function deriveEvidence(raw: unknown, opts: { generatedAt: string }): PublicEvidence {
   const report = validateForPublication(raw);
 
-  const operations: EvidenceOperation[] = EXPECTED_OPERATIONS.map((name) => {
+  const publishedNames: KnownOperation[] = [
+    ...EXPECTED_OPERATIONS,
+    ...OPTIONAL_OPERATIONS.filter((name) => report.results.some((r) => r.name === name)),
+  ];
+  const operations: EvidenceOperation[] = publishedNames.map((name) => {
     const result = report.results.find((r) => r.name === name) as RawHy3Result;
     const metrics: Record<string, number | string | boolean> = {};
     for (const key of METRIC_WHITELIST[name]) {

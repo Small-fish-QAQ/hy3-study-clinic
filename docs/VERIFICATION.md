@@ -42,16 +42,18 @@ The immutable final tag passed all three jobs in [CI run 30604963718](https://gi
 
 ## Verified baseline
 
-The immutable final tag and a fresh 2026-07-31 verification of this post-tag documentation audit produced the same totals:
+The immutable final tag passed 59 files / 771 tests. The 2026-08 pre-dogfood upgrade (activity executability + state safety, section-aware extraction with structural mapping, concept lesson cards, extended evaluation) verifies at:
 
 | Workspace | Test files | Tests | Result |
 | --- | ---: | ---: | --- |
 | `packages/shared` | 5 | 75 | Passed |
-| `apps/server` | 38 | 422 | Passed |
-| `apps/web` | 16 | 274 | Passed |
-| **Overall** | **59** | **771** | **Passed** |
+| `apps/server` | 44 | 484 | Passed |
+| `apps/web` | 17 | 280 | Passed |
+| **Overall** | **66** | **839** | **Passed** |
 
-`npm run eval:fake` passed 31/31 structural checks. It covers provenance, alignment, cross-document blueprint scope, Tutor budgets, misconception transitions, review scheduling, retrieval isolation, prompt-injection defenses, mastery bounds, and database foreign-key integrity.
+`npm run eval:fake` passed 44/44 structural checks. It covers provenance, alignment, cross-document blueprint scope, Tutor budgets, misconception transitions, review scheduling, retrieval isolation, prompt-injection defenses, mastery bounds, database foreign-key integrity, and — added with the upgrade — activity executability (Tutor and every queue item launch immediately; stale legacy recommendations adjust deterministically), grading state safety (once-only submissions, stale-quiz rejection with zero state mutation), course-understanding checks (section splitting, mapping reconciliation, hand-labeled must-find recall, additive-deepen ID stability), and lesson provenance (verified anchors reproduce exactly; zero learner-state writes).
+
+Deliberate behavior changes in the upgrade, each with updated tests: duplicate submissions of one quiz now return `409 DUPLICATE_SUBMISSION` (learner state applies at most once; the graph smoke asserts this instead of double-grading); pending quizzes whose concepts were deleted/reprocessed are rejected instead of dishonestly succeeding; remediation performs one targeted regeneration of missing required pieces before failing; an empty concept-extraction payload is schema-legal (thin sections may yield nothing); and small fixture documents in several suites grew to realistic section sizes required by size-aware extraction budgets.
 
 All automated tests and CI use the fake provider. They never require or contact the real Hy3 API.
 
@@ -91,9 +93,7 @@ The restart checks verify persisted documents, active graph data, learner state,
 
 ## Migration verification
 
-The server suite contains 19 direct migration tests: six current-schema/idempotence tests and thirteen compatibility tests. They cover:
-
-- applying all 11 migrations and re-running them safely;
+The server suite covers all 12 migrations directly: applying them from scratch and re-running them safely;
 - populated v1 -> current migration without deleting source, quiz, grading, mistake, mastery, or history rows;
 - honest `unknown` origin for workspaces whose historical creation path cannot be reconstructed;
 - populated v3 -> current migration, including the SQLite quiz-table rebuild;
@@ -102,7 +102,7 @@ The server suite contains 19 direct migration tests: six current-schema/idempote
 - all-or-nothing rollback after a forced migration failure; and
 - conservative legacy workspace/document deletion behavior.
 
-Route and repository tests add transaction, cascade, cross-workspace isolation, legacy request compatibility, and historical-result degradation coverage.
+Route and repository tests add transaction, cascade, cross-workspace isolation, legacy request compatibility, and historical-result degradation coverage. Migration 12 (`concept_lessons`) is additive; a direct populated-v11 regression verifies that migration 12 creates the lesson table without changing an existing concept row, while the lessons service suite covers lesson cascade and provenance. A real pre-upgrade database copy was also migrated v11 -> v12 during upgrade verification with clean foreign keys, intact history, and an honest deterministic adjustment when launching a pre-upgrade Tutor recommendation.
 
 ## Real Hy3 evaluation
 
@@ -114,6 +114,8 @@ HY3_BASE_URL=... HY3_API_KEY=... HY3_MODEL=... npm run eval:hy3
 ```
 
 On PowerShell, set those values in the environment or a local `.env` before running the command. Missing credentials cause a non-zero exit; there is no fake-provider fallback path.
+
+The suite runs the six original operations plus two optional upgrade operations: `semantic_recall` (section-aware extraction of the long fixture against hand-authored must-find labels) and `lesson_generation`. A 2026-08-09 local run of the extended suite completed 8/8 operations without schema/grounding failures: semantic recall was 7/8 (87.5%) with 7/7 extracted concepts grounded, and lesson anchors verified 3/3 on the first pass. These are small-fixture diagnostics, not teaching-quality or human-study claims. The raw report stays gitignored, and the COMMITTED sanitized evidence below remains the six-operation record of the tagged release — it was intentionally not regenerated.
 
 The raw Markdown/JSON reports are written under ignored `eval/reports/`. They include run provenance and per-operation detail and must not be committed. See [eval/README.md](../eval/README.md) for the schema, metrics, and fail-closed publication rules.
 

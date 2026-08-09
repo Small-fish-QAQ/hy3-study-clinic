@@ -41,6 +41,7 @@ describe('migrations', () => {
       'grading_results',
       'mistakes',
       'mastery_states',
+      'concept_lessons',
     ]) {
       expect(tables).toContain(expected);
     }
@@ -93,6 +94,45 @@ describe('migrations', () => {
     for (const column of columns) {
       expect(column.notnull, column.name).toBe(0);
     }
+    db.close();
+  });
+
+  it('upgrades a populated v11 database to additive concept lessons without changing existing rows', () => {
+    const db = openDatabase(':memory:');
+    migrate(db, { toVersion: 11 });
+    db.prepare(
+      `INSERT INTO workspaces (id, name, created_at, updated_at)
+       VALUES ('ws_v11', '迁移兼容空间', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z')`,
+    ).run();
+    db.prepare(
+      `INSERT INTO materials
+         (id, title, source_type, content, char_count, created_at, workspace_id)
+       VALUES
+         ('mat_v11', '迁移兼容资料', 'paste', '课程原文', 4,
+          '2026-01-01T00:00:00.000Z', 'ws_v11')`,
+    ).run();
+    db.prepare(
+      `INSERT INTO concepts
+         (id, material_id, name, summary, importance, grounding, created_at)
+       VALUES
+         ('con_v11', 'mat_v11', '原有概念', '原有摘要', 'high',
+          '{"blockId":"blk_v11","quote":"课程原文","startOffset":0,"endOffset":4}',
+          '2026-01-01T00:00:00.000Z')`,
+    ).run();
+
+    migrate(db);
+
+    expect(db.prepare('SELECT name FROM concepts WHERE id = ?').get('con_v11')).toEqual({
+      name: '原有概念',
+    });
+    const lessonTable = db
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'concept_lessons'")
+      .get();
+    expect(lessonTable).toEqual({ name: 'concept_lessons' });
+    const version = db
+      .prepare('SELECT COALESCE(MAX(version), 0) AS v FROM schema_migrations')
+      .get() as { v: number };
+    expect(version.v).toBe(12);
     db.close();
   });
 });
