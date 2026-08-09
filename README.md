@@ -7,15 +7,26 @@ Hy3 Study Clinic turns a learner's course documents into a **verifiable personal
 
 Hy3 performs the semantic work: concept extraction, grounded question generation, semantic rubric grading, relationship and alignment proposals, misconception hypotheses, and bounded tutoring decisions. Deterministic local code validates citations and IDs, computes scores, controls every learning-state transition, and persists the accepted result in SQLite. The model never directly changes mastery, closes mistakes, accepts alignments, sets review dates, or deletes history.
 
+## Product status
+
+### Implemented current product
+
+The workflow, screenshots, API, architecture, limitations, and verification results in this README describe the code that exists today: document workspaces, SourceBlocks, concepts, graph exploration, grounded lessons and assessments, mistakes, mastery, misconceptions, review scheduling, and bounded launchable Tutor activities. The current graph-led application is reliable but still largely learner-steered.
+
+### Designed next Agent architecture — not implemented
+
+The next product direction is a mixed-initiative, user-governed Learning Execution Agent. Its Learning Contract, learner-visible Curriculum, accepted versioned StudyPlan, flexible SessionAgenda, conversational StudySession, Coverage/Risk Ledger, and adversarial-readiness loop are design targets, not shipped capabilities. The one authoritative specification is [Learning Execution Agent Product Design](docs/STUDY_CLINIC_AGENT_PRODUCT_DESIGN.md); [Project Evolution](docs/PROJECT_EVOLUTION.md) explains how real dogfood led to it. Implementation belongs to a separate future task.
+
 ## Reviewer quick links
 
 - **[Watch the final demo](docs/assets/hy3-study-clinic-demo.mp4)**: 1:53, silent H.264 MP4, 1920x1200.
 - **[Review the real Hy3 online-verification record](docs/evidence/hy3-online-verification.md)**: sanitized, commit-pinned aggregates from the complete six-operation `eval:hy3` suite.
 - **[Read the architecture and trust boundaries](docs/ARCHITECTURE.md)**.
 - **[Reproduce the verification results](docs/VERIFICATION.md)**.
+- **[Review the authoritative next-product design](docs/STUDY_CLINIC_AGENT_PRODUCT_DESIGN.md)** and **[project evolution](docs/PROJECT_EVOLUTION.md)**; both clearly distinguish design from implemented behavior.
 - **[Inspect the final tagged release](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/tag/issue-4-final)** and **[upstream submission PR #77](https://github.com/Tencent-Hunyuan/Hy3/pull/77)**.
 
-The immutable `issue-4-final` tag points to `c67ac6d`. The real-provider evaluation ran from its direct parent, clean commit `46d34f2`; the tagged child publishes only the sanitized record, its regression guard, and documentation. This post-tag audit changes documentation and reviewer surfaces only; it does not move the final tag or change the evaluated product workflow.
+The immutable `issue-4-final` tag points to `c67ac6d`. The real-provider evaluation ran from its direct parent, clean commit `46d34f2`; the tagged child publishes only the sanitized record, its regression guard, and documentation. Later main commits contain the separately identified post-award improvements and next-product design; they do not move or reinterpret that historical checkpoint.
 
 ## Demo
 
@@ -176,7 +187,7 @@ HY3_MODEL=your-model-name
 | `npm run demo:http` | Exercise the original HTTP flows against a running server. |
 | `npm run demo:graph` | Exercise the document -> graph -> overlay -> plan -> remediation workflow. |
 | `npm run demo:adaptive` | Exercise alignment -> assessment -> Tutor -> learner-state -> daily-queue workflow. |
-| `npm run eval:fake` | Run 31 offline structural checks and write ignored reports. |
+| `npm run eval:fake` | Run 44 offline structural checks and write ignored reports. |
 | `npm run eval:hy3` | Run the optional real-provider evaluation; explicit credentials are mandatory. |
 | `npm run eval:evidence` | Publish sanitized evidence from a successful real-provider report. |
 
@@ -198,7 +209,7 @@ packages/shared -- Zod schemas, domain types, payloads, and deterministic utilit
 
 The browser never calls Hy3 directly. SQLite holds course workspaces, documents, blocks, source concepts, canonical alignment groups, graph versions, plans, assessments, completed attempts, mistakes, mastery, misconception hypotheses, review events, and Tutor runs. The browser retains only lightweight selection and graph-position preferences.
 
-See [Architecture & Design Notes](docs/ARCHITECTURE.md) for request lifecycles, grounding rules, all 11 migrations, document deletion/reprocessing behavior, graph routing, provider contracts, learner-state machines, cancellation, and dependency rationale.
+See [Architecture & Design Notes](docs/ARCHITECTURE.md) for request lifecycles, grounding rules, all 12 migrations, document deletion/reprocessing behavior, graph routing, provider contracts, learner-state machines, cancellation, and dependency rationale. It documents the implemented current system; the next Agent architecture is documented separately and is not yet implemented.
 
 ## Verification summary
 
