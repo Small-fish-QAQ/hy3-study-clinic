@@ -112,7 +112,7 @@ export function createMaterialService({ repos, clock }: MaterialServiceDeps) {
 
     repos.materials.insertWithBlocks(material, blocks);
     repos.workspaces.touch(targetWorkspaceId, now);
-    return { material, blocks };
+    return { material: repos.materials.get(id)!, blocks: repos.materials.getBlocks(id) };
   }
 
   /**
@@ -176,7 +176,7 @@ export function createMaterialService({ repos, clock }: MaterialServiceDeps) {
 
     repos.materials.insertWithBlocks(material, blocks, buffer);
     repos.workspaces.touch(targetWorkspaceId, now);
-    return { material, blocks };
+    return { material: repos.materials.get(id)!, blocks: repos.materials.getBlocks(id) };
   }
 
   return {

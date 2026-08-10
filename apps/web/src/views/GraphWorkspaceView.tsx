@@ -519,7 +519,7 @@ export function GraphWorkspaceView({
     if (!activeWorkspaceId) return;
     if (
       !window.confirm(
-        '重新解析会用当前解析器重建文本与段落,并清空该文档已有的概念、图谱关系、测验、错题与掌握度记录。确定继续?',
+        '重新解析会创建并启用新的资料版本。旧版本的概念、测验与学习记录会保留在历史中;当前路线与图谱需要基于新版本重新验证。确定继续?',
       )
     ) {
       return;

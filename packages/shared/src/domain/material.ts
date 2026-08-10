@@ -88,6 +88,11 @@ export type VerifiedGrounding = z.infer<typeof VerifiedGroundingSchema>;
 export const SourceBlockSchema = z.object({
   id: z.string().min(1),
   materialId: z.string().min(1),
+  /**
+   * Exact immutable owner for revision-aware rows. Optional/null preserves
+   * honest hydration of pre-lineage fixtures and historical snapshots.
+   */
+  materialRevisionId: z.string().min(1).nullable().optional(),
   index: z.number().int().nonnegative(),
   /** Heading text of the section this block belongs to (null for plain text). */
   heading: z.string().nullable(),
@@ -117,6 +122,11 @@ export type SourceBlock = z.infer<typeof SourceBlockSchema>;
 export const MaterialSchema = z.object({
   id: z.string().min(1),
   workspaceId: z.string().min(1),
+  /** Active extraction pointer; optional for legacy fixtures and snapshots. */
+  activeRevisionId: z.string().min(1).nullable().optional(),
+  /** Retirement is recoverable history, distinct from destructive purge. */
+  availability: z.enum(['active', 'retired']).optional(),
+  retiredAt: z.string().datetime().nullable().optional(),
   title: z.string().min(1).max(200),
   sourceType: SourceTypeSchema,
   /** Media type of the original upload (null for legacy rows before backfill). */
@@ -138,6 +148,222 @@ export const MaterialSchema = z.object({
 });
 export type Material = z.infer<typeof MaterialSchema>;
 
+/** Learner-meaningful role of one stable logical Material in a Course. */
+export const MaterialRoleSchema = z.enum([
+  'course_material',
+  'supplementary_reference',
+  'past_exam',
+  'exercise_sheet',
+  'question_set',
+]);
+export type MaterialRole = z.infer<typeof MaterialRoleSchema>;
+
+/** Honest migration sentinels; accepted Contract scope still uses MaterialRoleSchema. */
+export const StoredMaterialRoleSchema = z.enum([
+  ...MaterialRoleSchema.options,
+  'excluded',
+  'unknown',
+]);
+export type StoredMaterialRole = z.infer<typeof StoredMaterialRoleSchema>;
+
+/**
+ * Role assignments are versioned independently from extraction revisions.
+ * Confirming a role grants scope authority only; it never validates claims,
+ * answers, or rubrics contained in the Material.
+ */
+export const MaterialRoleAssignmentStatusSchema = z.enum([
+  'proposed',
+  'learner_confirmed',
+  'superseded',
+  'withdrawn',
+]);
+export type MaterialRoleAssignmentStatus = z.infer<typeof MaterialRoleAssignmentStatusSchema>;
+
+export const MaterialRoleAssignmentSchema = z
+  .object({
+    id: z.string().min(1),
+    materialId: z.string().min(1),
+    version: z.number().int().positive(),
+    predecessorId: z.string().min(1).nullable(),
+    role: StoredMaterialRoleSchema,
+    status: MaterialRoleAssignmentStatusSchema,
+    proposedBy: z.enum(['learner', 'local', 'model']),
+    learnerConfirmedAt: z.string().datetime().nullable(),
+    createdAt: z.string().datetime(),
+  })
+  .strict()
+  .superRefine((assignment, ctx) => {
+    if (assignment.status === 'learner_confirmed' && !assignment.learnerConfirmedAt) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['learnerConfirmedAt'],
+        message: 'a learner-confirmed material role requires confirmation time',
+      });
+    }
+    if (
+      assignment.status === 'learner_confirmed' &&
+      (assignment.role === 'unknown' || assignment.role === 'excluded')
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['role'],
+        message: 'learner-confirmed scope requires a learner-meaningful material role',
+      });
+    }
+  });
+export type MaterialRoleAssignment = z.infer<typeof MaterialRoleAssignmentSchema>;
+
+/** Immutable extraction revision lifecycle; active selection is a local pointer. */
+export const MaterialRevisionStatusSchema = z.enum([
+  'candidate',
+  'ready',
+  'active',
+  'superseded',
+  'retired',
+  'failed',
+]);
+export type MaterialRevisionStatus = z.infer<typeof MaterialRevisionStatusSchema>;
+
+export const MaterialRevisionSchema = z
+  .object({
+    id: z.string().min(1),
+    /** Stable logical identity; this is the ID used by Learning Contract scope. */
+    materialId: z.string().min(1),
+    revision: z.number().int().positive(),
+    predecessorRevisionId: z.string().min(1).nullable(),
+    status: MaterialRevisionStatusSchema,
+    sourceType: SourceTypeSchema,
+    mediaType: MediaTypeSchema.nullable(),
+    originalFilename: z.string().max(255).nullable(),
+    normalizedContent: z.string().min(1).nullable(),
+    charCount: z.number().int().nonnegative().nullable(),
+    parseStatus: ParseStatusSchema.nullable(),
+    pageCount: z.number().int().positive().nullable(),
+    extractionWarnings: z.array(z.string().max(500)).max(50),
+    parserVersion: z.string().max(80).nullable(),
+    /** Null for honest legacy revisions whose parser/extraction identity is unknown. */
+    parserFingerprint: z.string().min(1).max(200).nullable(),
+    sourceFingerprint: z.string().min(1).max(200).nullable(),
+    originalAssetFingerprint: z.string().min(1).max(200).nullable(),
+    createdAt: z.string().datetime(),
+    activatedAt: z.string().datetime().nullable(),
+    retiredAt: z.string().datetime().nullable(),
+    failureCode: z.string().min(1).max(100).nullable(),
+    failureMessage: z.string().min(1).max(1000).nullable(),
+  })
+  .strict()
+  .superRefine((revision, ctx) => {
+    if (revision.status === 'active' && (!revision.normalizedContent || !revision.parseStatus)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'an active material revision requires validated normalized content',
+      });
+    }
+    if (revision.status === 'failed' && !revision.failureMessage) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['failureMessage'],
+        message: 'a failed material revision requires a failure message',
+      });
+    }
+  });
+export type MaterialRevision = z.infer<typeof MaterialRevisionSchema>;
+
+export const ParserAttemptStatusSchema = z.enum([
+  'queued',
+  'running',
+  'succeeded',
+  'failed',
+  'interrupted',
+  'cancelled',
+  'outcome_unknown',
+]);
+export type ParserAttemptStatus = z.infer<typeof ParserAttemptStatusSchema>;
+
+export const MaterialParserAttemptSchema = z
+  .object({
+    id: z.string().min(1),
+    materialId: z.string().min(1),
+    candidateRevisionId: z.string().min(1).nullable(),
+    status: ParserAttemptStatusSchema,
+    parserVersion: z.string().max(80).nullable(),
+    parserFingerprint: z.string().min(1).max(200).nullable(),
+    startedAt: z.string().datetime().nullable(),
+    completedAt: z.string().datetime().nullable(),
+    errorMessage: z.string().min(1).max(1000).nullable(),
+  })
+  .strict();
+export type MaterialParserAttempt = z.infer<typeof MaterialParserAttemptSchema>;
+
+/** Normalized source structure owned by one exact MaterialRevision. */
+export const StructuralUnitKindSchema = z.enum([
+  'document',
+  'chapter',
+  'section',
+  'paragraph',
+  'page',
+  'table',
+  'formula',
+  'figure',
+  'other',
+]);
+export type StructuralUnitKind = z.infer<typeof StructuralUnitKindSchema>;
+
+export const NormalizedStructuralUnitSchema = z
+  .object({
+    id: z.string().min(1),
+    materialRevisionId: z.string().min(1),
+    parentUnitId: z.string().min(1).nullable(),
+    kind: StructuralUnitKindSchema,
+    index: z.number().int().nonnegative(),
+    title: z.string().min(1).max(300).nullable(),
+    content: z.string(),
+    sourceLocator: z.string().min(1).max(500).nullable(),
+    derivation: z.enum(['source_text', 'parser_derived', 'ocr_derived']),
+    confidence: z.number().min(0).max(1).nullable(),
+  })
+  .strict();
+export type NormalizedStructuralUnit = z.infer<typeof NormalizedStructuralUnitSchema>;
+
+/** SourceBlock-compatible projection with immutable revision ownership. */
+export const SourceBlockRevisionSchema = SourceBlockSchema.extend({
+  materialRevisionId: z.string().min(1),
+  structuralUnitId: z.string().min(1).nullable(),
+  revisionFingerprint: z.string().min(1).max(200),
+}).strict();
+export type SourceBlockRevision = z.infer<typeof SourceBlockRevisionSchema>;
+
+export const MaterialLineageMethodSchema = z.enum(['exact', 'near_exact', 'semantic', 'manual']);
+export type MaterialLineageMethod = z.infer<typeof MaterialLineageMethodSchema>;
+
+export const MaterialRevisionLineageSchema = z
+  .object({
+    id: z.string().min(1),
+    materialId: z.string().min(1),
+    fromRevisionId: z.string().min(1),
+    toRevisionId: z.string().min(1),
+    method: MaterialLineageMethodSchema,
+    confidence: z.number().min(0).max(1).nullable(),
+    status: z.enum(['proposed', 'accepted', 'rejected', 'uncertain']),
+    actor: z.string().min(1).max(100),
+    createdAt: z.string().datetime(),
+  })
+  .strict();
+export type MaterialRevisionLineage = z.infer<typeof MaterialRevisionLineageSchema>;
+
+export const MaterialLineageItemSchema = z
+  .object({
+    id: z.string().min(1),
+    lineageId: z.string().min(1),
+    entityKind: z.enum(['source_block', 'concept', 'structural_unit']),
+    fromEntityId: z.string().min(1),
+    toEntityId: z.string().min(1),
+    matchKind: MaterialLineageMethodSchema,
+    confidence: z.number().min(0).max(1).nullable(),
+  })
+  .strict();
+export type MaterialLineageItem = z.infer<typeof MaterialLineageItemSchema>;
+
 /** Maximum length accepted when a learner renames an existing material. */
 export const MATERIAL_TITLE_MAX_LENGTH = 120;
 
@@ -157,6 +383,8 @@ export type UpdateMaterialTitleRequest = z.infer<typeof UpdateMaterialTitleReque
 export const ConceptSchema = z.object({
   id: z.string().min(1),
   materialId: z.string().min(1),
+  /** New concepts are revision-owned; legacy records may not carry this field. */
+  materialRevisionId: z.string().min(1).nullable().optional(),
   name: z.string().min(1).max(80),
   summary: z.string().min(1).max(1000),
   importance: ImportanceSchema,

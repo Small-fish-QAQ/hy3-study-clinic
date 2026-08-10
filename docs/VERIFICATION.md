@@ -42,14 +42,14 @@ The immutable final tag passed all three jobs in [CI run 30604963718](https://gi
 
 ## Verified baseline
 
-The immutable final tag passed 59 files / 771 tests. The 2026-08 pre-dogfood upgrade (activity executability + state safety, section-aware extraction with structural mapping, concept lesson cards, extended evaluation) verifies at:
+The immutable final tag passed 59 files / 771 tests. The current implementation, including the post-award reliability work and durable Agent foundations, verifies at:
 
 | Workspace | Test files | Tests | Result |
 | --- | ---: | ---: | --- |
-| `packages/shared` | 5 | 75 | Passed |
-| `apps/server` | 44 | 484 | Passed |
+| `packages/shared` | 6 | 89 | Passed |
+| `apps/server` | 46 | 498 | Passed |
 | `apps/web` | 17 | 280 | Passed |
-| **Overall** | **66** | **839** | **Passed** |
+| **Overall** | **69** | **867** | **Passed** |
 
 `npm run eval:fake` passed 44/44 structural checks. It covers provenance, alignment, cross-document blueprint scope, Tutor budgets, misconception transitions, review scheduling, retrieval isolation, prompt-injection defenses, mastery bounds, database foreign-key integrity, and — added with the upgrade — activity executability (Tutor and every queue item launch immediately; stale legacy recommendations adjust deterministically), grading state safety (once-only submissions, stale-quiz rejection with zero state mutation), course-understanding checks (section splitting, mapping reconciliation, hand-labeled must-find recall, additive-deepen ID stability), and lesson provenance (verified anchors reproduce exactly; zero learner-state writes).
 
@@ -93,7 +93,7 @@ The restart checks verify persisted documents, active graph data, learner state,
 
 ## Migration verification
 
-The server suite covers all 12 migrations directly: applying them from scratch and re-running them safely;
+The server suite covers all 14 migrations directly: applying them from scratch and re-running them safely;
 - populated v1 -> current migration without deleting source, quiz, grading, mistake, mastery, or history rows;
 - honest `unknown` origin for workspaces whose historical creation path cannot be reconstructed;
 - populated v3 -> current migration, including the SQLite quiz-table rebuild;
@@ -102,7 +102,7 @@ The server suite covers all 12 migrations directly: applying them from scratch a
 - all-or-nothing rollback after a forced migration failure; and
 - conservative legacy workspace/document deletion behavior.
 
-Route and repository tests add transaction, cascade, cross-workspace isolation, legacy request compatibility, and historical-result degradation coverage. Migration 12 (`concept_lessons`) is additive; a direct populated-v11 regression verifies that migration 12 creates the lesson table without changing an existing concept row, while the lessons service suite covers lesson cascade and provenance. A real pre-upgrade database copy was also migrated v11 -> v12 during upgrade verification with clean foreign keys, intact history, and an honest deterministic adjustment when launching a pre-upgrade Tutor recommendation.
+Route and repository tests add transaction, cascade, cross-workspace isolation, legacy request compatibility, and historical-result degradation coverage. Migration 12 (`concept_lessons`) is additive; a direct populated-v11 regression verifies that migration 12 creates the lesson table without changing an existing concept row. Migrations 13-14 additionally verify honest revision-1 adoption without invented fingerprints, preservation of existing learning history, active-revision foreign keys, source-authority separation, operation idempotency/fencing/orphan recovery, and optional cost-policy semantics. A real pre-upgrade database copy was also migrated v11 -> v12 during upgrade verification with clean foreign keys, intact history, and an honest deterministic adjustment when launching a pre-upgrade Tutor recommendation.
 
 ## Real Hy3 evaluation
 

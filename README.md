@@ -13,9 +13,9 @@ Hy3 performs the semantic work: concept extraction, grounded question generation
 
 The workflow, screenshots, API, architecture, limitations, and verification results in this README describe the code that exists today: document workspaces, SourceBlocks, concepts, graph exploration, grounded lessons and assessments, mistakes, mastery, misconceptions, review scheduling, and bounded launchable Tutor activities. The current graph-led application is reliable but still largely learner-steered.
 
-### Designed next Agent architecture — not implemented
+### Agent architecture implementation status
 
-The next product direction is a mixed-initiative, user-governed Learning Execution Agent. Its Learning Contract, learner-visible Curriculum, accepted versioned StudyPlan, flexible SessionAgenda, conversational StudySession, Coverage/Risk Ledger, and adversarial-readiness loop are design targets, not shipped capabilities. The one authoritative specification is [Learning Execution Agent Product Design](docs/STUDY_CLINIC_AGENT_PRODUCT_DESIGN.md); [Project Evolution](docs/PROJECT_EVOLUTION.md) explains how real dogfood led to it. Implementation belongs to a separate future task.
+The next product direction is a mixed-initiative, user-governed Learning Execution Agent. Durable foundations are now implemented: logical materials have immutable extraction revisions, source/premise authority is independent from learner scope, consequential operations have local idempotency and fencing, and model calls have persistent attempt/cache/cost telemetry. The learner-facing Learning Contract, Curriculum, accepted StudyPlan, SessionAgenda, conversational StudySession, and evidence-gated execution loop remain design targets at this checkpoint. The one authoritative specification is [Learning Execution Agent Product Design](docs/STUDY_CLINIC_AGENT_PRODUCT_DESIGN.md); [Project Evolution](docs/PROJECT_EVOLUTION.md) explains how real dogfood led to it.
 
 ## Reviewer quick links
 
@@ -209,18 +209,18 @@ packages/shared -- Zod schemas, domain types, payloads, and deterministic utilit
 
 The browser never calls Hy3 directly. SQLite holds course workspaces, documents, blocks, source concepts, canonical alignment groups, graph versions, plans, assessments, completed attempts, mistakes, mastery, misconception hypotheses, review events, and Tutor runs. The browser retains only lightweight selection and graph-position preferences.
 
-See [Architecture & Design Notes](docs/ARCHITECTURE.md) for request lifecycles, grounding rules, all 12 migrations, document deletion/reprocessing behavior, graph routing, provider contracts, learner-state machines, cancellation, and dependency rationale. It documents the implemented current system; the next Agent architecture is documented separately and is not yet implemented.
+See [Architecture & Design Notes](docs/ARCHITECTURE.md) for request lifecycles, grounding rules, all 14 migrations, document deletion/reprocessing behavior, graph routing, provider contracts, learner-state machines, cancellation, and dependency rationale. It documents implemented current behavior; the authoritative design separately identifies which Agent capabilities remain to be built.
 
 ## Verification summary
 
-The immutable `issue-4-final` tag passed 59 test files / 771 tests. The current pre-dogfood upgrade (activity executability + state safety, section-aware extraction with 资料映射, concept lesson cards, extended evaluation) passes 66 test files / 839 tests:
+The immutable `issue-4-final` tag passed 59 test files / 771 tests. The current implementation, including the post-award reliability work and durable Agent foundations, passes 69 test files / 867 tests:
 
 | Workspace | Test files | Tests |
 | --- | ---: | ---: |
-| shared | 5 | 75 |
-| server | 44 | 484 |
+| shared | 6 | 89 |
+| server | 46 | 498 |
 | web | 17 | 280 |
-| **Total** | **66** | **839** |
+| **Total** | **69** | **867** |
 
 CI runs build, lint, and tests on Ubuntu Node 20, Ubuntu Node 24, and Windows Node 24. `eval:fake` passes 44/44 structural checks, now including activity-executability sweeps, grading state safety, must-find semantic-recall labels, and lesson-provenance invariants. See [Verification](docs/VERIFICATION.md) for exact commands, migration/integration coverage, the evidence-to-requirement matrix, and the limits of each smoke script. The 30–45 minute human study protocol for the upgrade is [docs/DOGFOOD.md](docs/DOGFOOD.md).
 
@@ -245,7 +245,7 @@ CodeBuddy confirmed, but did not author, the component's existing native button 
 - Mastery and review scheduling are transparent local heuristics, not calibrated cognitive diagnoses. Misconception records remain hypotheses until graded evidence changes their state.
 - Semantic alignment can be wrong and has no unmerge operation; source concepts and history remain intact underneath.
 - Tutor context, graph generation, assessments, remediation, history, and retrieval are deliberately bounded. Dense graph layouts can retain crossings, and lexical retrieval can miss synonyms.
-- Permanent deletion has no recycle bin. Reprocessing intentionally resets one document's extraction-dependent learning data after confirmation.
+- Permanent deletion has no recycle bin. Reprocessing stages and activates an immutable extraction revision while retaining earlier source artifacts and longitudinal learning history; failed parsing leaves the prior active revision unchanged.
 - The fake evaluation checks structure and safety boundaries, not teaching quality. The real evaluation uses small fixtures and depends on the configured model/API.
 
 Detailed format, graph, history, scheduling, and parser limitations are documented beside their implementation in [Architecture & Design Notes](docs/ARCHITECTURE.md).

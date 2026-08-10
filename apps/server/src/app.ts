@@ -51,6 +51,10 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   // request is in flight, so any leftover from a previous process is marked
   // interrupted here. Interrupted runs never altered learning state.
   deps.repos.tutor.markInterruptedRuns(clock.now().toISOString());
+  // Durable Agent operations cannot still have a live worker after this
+  // process starts. Preserve sent attempts as outcome_unknown and make the
+  // command retryable under a new physical attempt/fencing token.
+  deps.repos.operations.recoverRunningAfterRestart(clock.now().toISOString());
 
   // Central error handler: converts known errors into structured API errors
   // and never leaks stack traces, secrets, or raw payloads to the client.

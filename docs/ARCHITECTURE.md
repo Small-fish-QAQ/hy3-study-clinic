@@ -258,7 +258,7 @@ Both document-delete endpoints return `{ workspaceId, workspaceDeleted }`, allow
 
 Explicit workspace deletion is available for every origin. After confirmation, `DELETE /api/workspaces/:id` cascades documents, blocks, concepts, graph data, quizzes/history, mistakes, mastery, alignments, misconceptions, review data, Tutor data, and blueprints in one transaction. A missing workspace is treated as already deleted by the UI.
 
-Reprocessing reruns the current parser from stored original bytes for PDF/DOCX, or reruns text ingestion and segmentation from stored normalized content for pasted text, Markdown, and TXT. It deliberately resets that document's extraction-derived blocks, concepts, quizzes, mistakes, and mastery, prunes graph evidence/edges, and invalidates workspace plans in one confirmed transaction. Legacy binary documents imported before original-byte storage cannot be reprocessed and must be re-imported.
+Reprocessing reruns the current parser from stored original bytes for PDF/DOCX, or reruns text ingestion and segmentation from stored normalized content for pasted text, Markdown, and TXT. `materials.id` remains the stable logical identity. The service stages a new immutable `MaterialRevision` and revision-owned SourceBlocks, then activates it transactionally only after parsing and structural validation succeed. Earlier revisions, concepts, quizzes, attempts, mistakes, mastery, and other longitudinal history remain stored; ordinary current-state reads select artifacts owned by the active revision. Exact truth-authority records tied to the replaced revision become stale rather than being rewritten. A parser failure is recorded and leaves the prior active revision unchanged. Legacy binary documents imported before original-byte storage cannot be reprocessed and must be re-imported.
 
 Deleting one document prunes graph edges that lose concepts or all evidence, marks affected versions `pruned`, and invalidates plans that might cite it. Canonical groups survive while another source concept backs them.
 
@@ -266,7 +266,7 @@ Deleting one document prunes graph edges that lose concepts or all evidence, mar
 
 `better-sqlite3` runs with foreign keys enabled. Repositories validate domain objects on writes and reads. Multi-row operations use explicit transactions, and migrations are recorded in `schema_migrations`.
 
-The 12 shipped migrations are:
+The 14 shipped migrations are:
 
 1. `initial_schema` - original materials, blocks, concepts, quizzes, grading, mistakes, and mastery.
 2. `course_workspaces_and_documents` - workspaces, document metadata/original bytes, and source-block page numbers; every legacy material receives a compatibility workspace without learning-data deletion.
@@ -280,6 +280,8 @@ The 12 shipped migrations are:
 10. `completed_attempt_snapshots` - provider and deterministic state-change snapshots on grading results.
 11. `workspace_origin` - immutable `manual | material_import | unknown` origin used by deletion policy; existing rows remain honestly `unknown`.
 12. `concept_lessons` - one current teaching lesson card per concept (verified segment anchors and conflicts inside validated JSON); purely additive, cascades with its concept.
+13. `material_revision_lineage_and_source_authority` - immutable material revisions, revision-owned source artifacts, material roles, lineage, parser attempts, and independently admitted truth/premise authority. Historical rows become revision 1 without fabricated parser or content fingerprints.
+14. `durable_agent_operations_and_cost_telemetry` - local idempotent operations, leases and fencing, ordered events, unique terminal results, logical model calls, physical attempts, usage/cost records, validated cache entries, and optional cost policies. No policy row means no monetary cap.
 
 Table-rebuild migrations disable foreign keys only around the controlled rebuild, run `foreign_key_check` before commit, and restore enforcement even after failure. Tests cover idempotence, populated v1 and v3 upgrades, all-or-nothing rollback, and data preservation.
 
@@ -443,7 +445,7 @@ There is no vector database. SQLite FTS5 was not used because its default tokeni
 
 Frontend asynchronous workflows use abort controllers plus request epochs/take-latest identities. Switching or deleting a workspace/document, changing graph selection, restarting a plan, or leaving a view invalidates older work. Late responses cannot replace newer documents, graph versions, selection, plans, Tutor events, assessments, or history.
 
-Transactions protect material/block creation, concept replacement and additive appends, quiz insertion, the complete grading learner-state write set (with in-transaction duplicate and stale-quiz rechecks — see "Grading state safety"), migrations, graph activation, plan storage, lesson upserts, deletion, and reprocessing. A failed AI request never overwrites previously valid data.
+Transactions protect material/revision activation, block creation, concept replacement and additive appends, quiz insertion, the complete grading learner-state write set (with in-transaction duplicate and stale-quiz rechecks — see "Grading state safety"), migrations, graph activation, plan storage, lesson upserts, deletion, and reprocessing. Consequential Agent operations additionally persist command identity, expected fingerprints, leases, monotonically increasing fencing tokens, and one terminal result. A failed AI request never overwrites previously valid data.
 
 ## 18. Production dependencies added for the upgrade
 
@@ -469,6 +471,6 @@ No vector database, graph database, orchestration framework, authentication laye
 - Lexical retrieval can miss synonyms; the graph/Tutor/assessment/remediation budgets can omit useful context.
 - Review scheduling and mastery are transparent heuristics, not psychometrically calibrated models.
 - Deterministic bounded graph routing can retain crossings in dense arrangements.
-- Permanent deletion and confirmed reprocessing are irreversible.
+- Permanent deletion is irreversible. Reprocessing retains immutable prior revisions and longitudinal history, but activating a new revision changes which source artifacts ordinary current-state workflows use.
 
 Verification commands, test counts, migration coverage, public evidence, and reviewer mappings are maintained separately in [Verification and Reviewer Evidence](VERIFICATION.md).

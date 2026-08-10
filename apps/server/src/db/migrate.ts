@@ -497,6 +497,362 @@ const MIGRATIONS: Migration[] = [
       CREATE INDEX idx_concept_lessons_workspace ON concept_lessons(workspace_id);
     `,
   },
+  {
+    version: 13,
+    name: 'material_revision_lineage_and_source_authority',
+    // Materials remain the stable learner-facing identity. Existing extraction
+    // columns stay as an active-revision compatibility projection while every
+    // source artifact is assigned to an immutable revision. Legacy rows become
+    // revision 1 without inventing parser or content fingerprints.
+    up: `
+      CREATE TABLE material_revisions (
+        id TEXT PRIMARY KEY,
+        material_id TEXT NOT NULL REFERENCES materials(id) ON DELETE CASCADE,
+        revision_number INTEGER NOT NULL CHECK (revision_number > 0),
+        predecessor_revision_id TEXT REFERENCES material_revisions(id),
+        status TEXT NOT NULL CHECK (status IN ('candidate', 'ready', 'active', 'failed', 'retired')),
+        source_type TEXT NOT NULL,
+        media_type TEXT,
+        original_filename TEXT,
+        content TEXT NOT NULL,
+        char_count INTEGER NOT NULL CHECK (char_count > 0),
+        parse_status TEXT CHECK (parse_status IS NULL OR parse_status IN ('parsed', 'parsed_with_warnings')),
+        page_count INTEGER,
+        extraction_warnings TEXT NOT NULL DEFAULT '[]',
+        parser_version TEXT,
+        parser_fingerprint TEXT,
+        content_fingerprint TEXT,
+        original_data BLOB,
+        failure_code TEXT,
+        failure_message TEXT,
+        created_at TEXT NOT NULL,
+        activated_at TEXT,
+        UNIQUE (material_id, revision_number)
+      );
+      CREATE INDEX idx_material_revisions_material
+        ON material_revisions(material_id, revision_number DESC);
+      CREATE INDEX idx_material_revisions_status
+        ON material_revisions(material_id, status);
+
+      ALTER TABLE materials ADD COLUMN active_revision_id TEXT REFERENCES material_revisions(id);
+      ALTER TABLE materials ADD COLUMN availability TEXT NOT NULL DEFAULT 'active'
+        CHECK (availability IN ('active', 'retired'));
+      ALTER TABLE materials ADD COLUMN retired_at TEXT;
+
+      INSERT INTO material_revisions (
+        id, material_id, revision_number, predecessor_revision_id, status,
+        source_type, media_type, original_filename, content, char_count,
+        parse_status, page_count, extraction_warnings, parser_version,
+        parser_fingerprint, content_fingerprint, original_data, failure_code,
+        failure_message, created_at, activated_at
+      )
+      SELECT
+        'rev_legacy_' || id, id, 1, NULL, 'active', source_type, media_type,
+        original_filename, content, char_count, parse_status, page_count,
+        extraction_warnings, parser_version, NULL, NULL, original_data, NULL,
+        NULL, created_at, COALESCE(updated_at, created_at)
+      FROM materials;
+
+      UPDATE materials SET active_revision_id = 'rev_legacy_' || id;
+
+      ALTER TABLE source_blocks ADD COLUMN material_revision_id TEXT REFERENCES material_revisions(id);
+      UPDATE source_blocks
+        SET material_revision_id = 'rev_legacy_' || material_id
+        WHERE material_revision_id IS NULL;
+      CREATE INDEX idx_source_blocks_revision
+        ON source_blocks(material_revision_id, idx);
+
+      ALTER TABLE concepts ADD COLUMN material_revision_id TEXT REFERENCES material_revisions(id);
+      UPDATE concepts
+        SET material_revision_id = 'rev_legacy_' || material_id
+        WHERE material_revision_id IS NULL;
+      CREATE INDEX idx_concepts_revision
+        ON concepts(material_revision_id, created_at, id);
+
+      CREATE TABLE material_parser_attempts (
+        id TEXT PRIMARY KEY,
+        material_id TEXT NOT NULL REFERENCES materials(id) ON DELETE CASCADE,
+        revision_id TEXT REFERENCES material_revisions(id) ON DELETE SET NULL,
+        status TEXT NOT NULL CHECK (status IN
+          ('running', 'succeeded', 'failed', 'interrupted', 'outcome_unknown')),
+        parser_version TEXT,
+        parser_fingerprint TEXT,
+        error_code TEXT,
+        error_message TEXT,
+        started_at TEXT NOT NULL,
+        finished_at TEXT
+      );
+      CREATE INDEX idx_material_parser_attempts_material
+        ON material_parser_attempts(material_id, started_at DESC);
+
+      CREATE TABLE normalized_structural_units (
+        id TEXT PRIMARY KEY,
+        material_revision_id TEXT NOT NULL REFERENCES material_revisions(id) ON DELETE CASCADE,
+        parent_id TEXT REFERENCES normalized_structural_units(id) ON DELETE CASCADE,
+        unit_type TEXT NOT NULL CHECK (unit_type IN
+          ('document', 'chapter', 'section', 'paragraph', 'page', 'table', 'formula', 'figure', 'other')),
+        idx INTEGER NOT NULL CHECK (idx >= 0),
+        title TEXT,
+        start_offset INTEGER,
+        end_offset INTEGER,
+        page_number INTEGER,
+        metadata TEXT NOT NULL DEFAULT '{}',
+        UNIQUE (material_revision_id, idx, unit_type)
+      );
+      CREATE INDEX idx_structural_units_revision
+        ON normalized_structural_units(material_revision_id, idx);
+
+      CREATE TABLE material_role_versions (
+        id TEXT PRIMARY KEY,
+        material_id TEXT NOT NULL REFERENCES materials(id) ON DELETE CASCADE,
+        version INTEGER NOT NULL CHECK (version > 0),
+        predecessor_id TEXT REFERENCES material_role_versions(id),
+        role TEXT NOT NULL CHECK (role IN
+          ('course_material', 'supplementary_reference', 'past_exam',
+           'exercise_sheet', 'question_set', 'excluded', 'unknown')),
+        scope_included INTEGER NOT NULL CHECK (scope_included IN (0, 1)),
+        learner_confirmed INTEGER NOT NULL CHECK (learner_confirmed IN (0, 1)),
+        actor TEXT NOT NULL,
+        reason TEXT,
+        created_at TEXT NOT NULL,
+        UNIQUE (material_id, version)
+      );
+      CREATE INDEX idx_material_role_versions_material
+        ON material_role_versions(material_id, version DESC);
+
+      INSERT INTO material_role_versions (
+        id, material_id, version, predecessor_id, role, scope_included,
+        learner_confirmed, actor, reason, created_at
+      )
+      SELECT 'role_legacy_' || id, id, 1, NULL, 'unknown', 0, 0,
+        'migration', 'Historical role was not recorded.', created_at
+      FROM materials;
+
+      CREATE TABLE material_revision_lineage (
+        id TEXT PRIMARY KEY,
+        material_id TEXT NOT NULL REFERENCES materials(id) ON DELETE CASCADE,
+        from_revision_id TEXT NOT NULL REFERENCES material_revisions(id) ON DELETE CASCADE,
+        to_revision_id TEXT NOT NULL REFERENCES material_revisions(id) ON DELETE CASCADE,
+        method TEXT NOT NULL CHECK (method IN ('exact', 'near_exact', 'semantic', 'manual')),
+        confidence REAL CHECK (confidence IS NULL OR (confidence >= 0 AND confidence <= 1)),
+        status TEXT NOT NULL CHECK (status IN ('proposed', 'accepted', 'rejected', 'uncertain')),
+        actor TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE (from_revision_id, to_revision_id, method)
+      );
+
+      CREATE TABLE material_lineage_items (
+        id TEXT PRIMARY KEY,
+        lineage_id TEXT NOT NULL REFERENCES material_revision_lineage(id) ON DELETE CASCADE,
+        entity_kind TEXT NOT NULL CHECK (entity_kind IN ('source_block', 'concept', 'structural_unit')),
+        from_entity_id TEXT NOT NULL,
+        to_entity_id TEXT NOT NULL,
+        match_kind TEXT NOT NULL CHECK (match_kind IN ('exact', 'near_exact', 'semantic', 'manual')),
+        confidence REAL CHECK (confidence IS NULL OR (confidence >= 0 AND confidence <= 1)),
+        UNIQUE (lineage_id, entity_kind, from_entity_id, to_entity_id)
+      );
+
+      CREATE TABLE truth_authority_records (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        logical_source_id TEXT NOT NULL,
+        material_id TEXT REFERENCES materials(id) ON DELETE SET NULL,
+        material_revision_id TEXT REFERENCES material_revisions(id) ON DELETE SET NULL,
+        version INTEGER NOT NULL CHECK (version > 0),
+        predecessor_id TEXT REFERENCES truth_authority_records(id),
+        premise_scope TEXT NOT NULL,
+        policy_basis TEXT NOT NULL,
+        validation_state TEXT NOT NULL CHECK (validation_state IN
+          ('candidate', 'validated', 'rejected', 'stale')),
+        conflict_state TEXT NOT NULL CHECK (conflict_state IN
+          ('none', 'unresolved', 'resolved')),
+        actor TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE (logical_source_id, version)
+      );
+      CREATE INDEX idx_truth_authority_workspace
+        ON truth_authority_records(workspace_id, validation_state);
+
+      CREATE TABLE truth_authority_claims (
+        id TEXT PRIMARY KEY,
+        authority_record_id TEXT NOT NULL REFERENCES truth_authority_records(id) ON DELETE CASCADE,
+        source_block_id TEXT NOT NULL REFERENCES source_blocks(id),
+        claim TEXT NOT NULL,
+        quote TEXT NOT NULL,
+        start_offset INTEGER NOT NULL CHECK (start_offset >= 0),
+        end_offset INTEGER NOT NULL CHECK (end_offset > start_offset),
+        occurrence_count INTEGER NOT NULL CHECK (occurrence_count > 0),
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_truth_authority_claims_record
+        ON truth_authority_claims(authority_record_id);
+
+      CREATE TABLE truth_authority_events (
+        id TEXT PRIMARY KEY,
+        authority_record_id TEXT NOT NULL REFERENCES truth_authority_records(id) ON DELETE CASCADE,
+        seq INTEGER NOT NULL CHECK (seq > 0),
+        event_type TEXT NOT NULL,
+        actor TEXT NOT NULL,
+        payload TEXT NOT NULL DEFAULT '{}',
+        created_at TEXT NOT NULL,
+        UNIQUE (authority_record_id, seq)
+      );
+    `,
+  },
+  {
+    version: 14,
+    name: 'durable_agent_operations_and_cost_telemetry',
+    // Lightweight local runtime only: consequential commands, physical model
+    // attempts, usage, and cache identity are durable without introducing a
+    // second queue or workflow system. A missing cost policy means no cap.
+    up: `
+      CREATE TABLE agent_operations (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        command_id TEXT NOT NULL UNIQUE,
+        idempotency_key TEXT NOT NULL,
+        logical_operation_id TEXT NOT NULL UNIQUE,
+        operation_type TEXT NOT NULL,
+        expected_fingerprint TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN
+          ('queued', 'running', 'completed', 'failed', 'cancelled', 'interrupted')),
+        lease_owner TEXT,
+        lease_expires_at TEXT,
+        fencing_token INTEGER NOT NULL DEFAULT 0 CHECK (fencing_token >= 0),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE (workspace_id, idempotency_key)
+      );
+      CREATE INDEX idx_agent_operations_workspace_status
+        ON agent_operations(workspace_id, status, created_at);
+      CREATE INDEX idx_agent_operations_lease
+        ON agent_operations(status, lease_expires_at);
+
+      CREATE TABLE agent_operation_events (
+        id TEXT PRIMARY KEY,
+        operation_id TEXT NOT NULL REFERENCES agent_operations(id) ON DELETE CASCADE,
+        seq INTEGER NOT NULL CHECK (seq >= 0),
+        fencing_token INTEGER NOT NULL CHECK (fencing_token >= 0),
+        kind TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE (operation_id, seq)
+      );
+      CREATE INDEX idx_agent_operation_events_operation
+        ON agent_operation_events(operation_id, seq);
+
+      CREATE TABLE agent_operation_results (
+        operation_id TEXT PRIMARY KEY REFERENCES agent_operations(id) ON DELETE CASCADE,
+        fencing_token INTEGER NOT NULL CHECK (fencing_token >= 1),
+        status TEXT NOT NULL CHECK (status IN ('completed', 'failed', 'cancelled')),
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+
+      CREATE TABLE model_logical_calls (
+        id TEXT PRIMARY KEY,
+        operation_id TEXT REFERENCES agent_operations(id) ON DELETE SET NULL,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        study_session_id TEXT,
+        learning_unit_id TEXT,
+        assessment_id TEXT,
+        operation_type TEXT NOT NULL,
+        cache_key TEXT,
+        cache_status TEXT NOT NULL CHECK (cache_status IN
+          ('not_checked', 'hit', 'miss', 'bypassed')),
+        prompt_fingerprint TEXT,
+        schema_fingerprint TEXT,
+        policy_fingerprint TEXT,
+        source_fingerprint TEXT,
+        status TEXT NOT NULL CHECK (status IN ('open', 'completed', 'failed', 'cancelled')),
+        created_at TEXT NOT NULL,
+        completed_at TEXT
+      );
+      CREATE INDEX idx_model_logical_calls_workspace
+        ON model_logical_calls(workspace_id, created_at);
+      CREATE INDEX idx_model_logical_calls_operation
+        ON model_logical_calls(operation_id);
+
+      CREATE TABLE model_call_attempts (
+        id TEXT PRIMARY KEY,
+        logical_call_id TEXT NOT NULL REFERENCES model_logical_calls(id) ON DELETE CASCADE,
+        attempt_number INTEGER NOT NULL CHECK (attempt_number >= 1),
+        attempt_kind TEXT NOT NULL CHECK (attempt_kind IN
+          ('original', 'repair', 'retry', 'fallback')),
+        fencing_token INTEGER NOT NULL CHECK (fencing_token >= 1),
+        provider TEXT NOT NULL,
+        model TEXT,
+        status TEXT NOT NULL CHECK (status IN
+          ('queued', 'sent', 'completed', 'failed', 'cancelled', 'interrupted', 'outcome_unknown')),
+        started_at TEXT NOT NULL,
+        sent_at TEXT,
+        first_token_at TEXT,
+        completed_at TEXT,
+        latency_ms INTEGER CHECK (latency_ms IS NULL OR latency_ms >= 0),
+        time_to_first_token_ms INTEGER CHECK (time_to_first_token_ms IS NULL OR time_to_first_token_ms >= 0),
+        error_code TEXT,
+        error_message TEXT,
+        UNIQUE (logical_call_id, attempt_number)
+      );
+      CREATE INDEX idx_model_call_attempts_logical
+        ON model_call_attempts(logical_call_id, attempt_number);
+
+      CREATE TABLE model_usage_records (
+        id TEXT PRIMARY KEY,
+        attempt_id TEXT NOT NULL UNIQUE REFERENCES model_call_attempts(id) ON DELETE CASCADE,
+        input_tokens INTEGER CHECK (input_tokens IS NULL OR input_tokens >= 0),
+        output_tokens INTEGER CHECK (output_tokens IS NULL OR output_tokens >= 0),
+        reasoning_tokens INTEGER CHECK (reasoning_tokens IS NULL OR reasoning_tokens >= 0),
+        cache_read_tokens INTEGER CHECK (cache_read_tokens IS NULL OR cache_read_tokens >= 0),
+        cache_write_tokens INTEGER CHECK (cache_write_tokens IS NULL OR cache_write_tokens >= 0),
+        estimated_cost_microunits INTEGER CHECK
+          (estimated_cost_microunits IS NULL OR estimated_cost_microunits >= 0),
+        currency TEXT,
+        pricing_source TEXT,
+        pricing_version TEXT,
+        recorded_at TEXT NOT NULL
+      );
+
+      CREATE TABLE semantic_cache_entries (
+        cache_key TEXT PRIMARY KEY,
+        operation_type TEXT NOT NULL,
+        workspace_id TEXT REFERENCES workspaces(id) ON DELETE CASCADE,
+        result_payload TEXT NOT NULL,
+        provider TEXT,
+        model TEXT,
+        prompt_fingerprint TEXT,
+        schema_fingerprint TEXT,
+        policy_fingerprint TEXT,
+        source_fingerprint TEXT,
+        validation_fingerprint TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        expires_at TEXT,
+        invalidated_at TEXT,
+        hit_count INTEGER NOT NULL DEFAULT 0 CHECK (hit_count >= 0),
+        last_hit_at TEXT
+      );
+      CREATE INDEX idx_semantic_cache_workspace
+        ON semantic_cache_entries(workspace_id, operation_type);
+
+      CREATE TABLE cost_policies (
+        id TEXT PRIMARY KEY,
+        policy_key TEXT NOT NULL UNIQUE,
+        workspace_id TEXT REFERENCES workspaces(id) ON DELETE CASCADE,
+        scope_type TEXT NOT NULL CHECK (scope_type IN ('operation', 'session', 'day', 'course')),
+        scope_key TEXT NOT NULL,
+        limit_microunits INTEGER NOT NULL CHECK (limit_microunits >= 0),
+        currency TEXT NOT NULL,
+        on_exceed TEXT NOT NULL CHECK (on_exceed IN
+          ('confirm', 'cache_only', 'lower_cost_or_confirm', 'refuse')),
+        enabled INTEGER NOT NULL CHECK (enabled IN (0, 1)),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_cost_policies_workspace
+        ON cost_policies(workspace_id, scope_type, scope_key);
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

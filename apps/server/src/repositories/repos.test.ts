@@ -204,9 +204,18 @@ describe('materials repository', () => {
     const block = makeBlock();
     repos.materials.insertWithBlocks(material, [block]);
 
-    expect(repos.materials.get(material.id)).toEqual(material);
-    expect(repos.materials.getBlocks(material.id)).toEqual([block]);
-    expect(repos.materials.getBlock(block.id)).toEqual(block);
+    const stored = repos.materials.get(material.id)!;
+    expect(stored).toMatchObject(material);
+    expect(stored.activeRevisionId).toMatch(/^rev_/);
+    expect(stored.availability).toBe('active');
+    expect(stored.retiredAt).toBeNull();
+    expect(repos.materials.getBlocks(material.id)).toEqual([
+      { ...block, materialRevisionId: stored.activeRevisionId },
+    ]);
+    expect(repos.materials.getBlock(block.id)).toEqual({
+      ...block,
+      materialRevisionId: stored.activeRevisionId,
+    });
 
     const summaries = repos.materials.list();
     expect(summaries).toHaveLength(1);
@@ -300,8 +309,14 @@ describe('materials repository', () => {
         .sort();
 
     expect(db.pragma('foreign_keys', { simple: true })).toBe(1);
-    expect(references('source_blocks')).toEqual(['material_id->materials.id:CASCADE']);
-    expect(references('concepts')).toEqual(['material_id->materials.id:CASCADE']);
+    expect(references('source_blocks')).toEqual([
+      'material_id->materials.id:CASCADE',
+      'material_revision_id->material_revisions.id:NO ACTION',
+    ]);
+    expect(references('concepts')).toEqual([
+      'material_id->materials.id:CASCADE',
+      'material_revision_id->material_revisions.id:NO ACTION',
+    ]);
     // Deliberate schema extension (migration 5): workspace-scoped adaptive
     // assessments made quizzes reference workspaces as well.
     expect(references('quizzes')).toEqual([

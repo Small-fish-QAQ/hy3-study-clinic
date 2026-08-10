@@ -100,6 +100,11 @@ export function segmentMaterial(
   options: {
     /** Page spans over `content` (PDF sources); blocks receive the page range they overlap. */
     pageSpans?: Array<{ pageNumber: number; startOffset: number; endOffset: number }>;
+    /**
+     * Revision-specific identity seed. The block still belongs to materialId,
+     * but identical content in a successor revision must receive a distinct ID.
+     */
+    idSeed?: string;
   } = {},
 ): SourceBlock[] {
   const raw = segmentContent(content);
@@ -129,7 +134,7 @@ export function segmentMaterial(
     // full page range instead of silently claiming a single page.
     const pageEnd = pageNumber !== null ? pageFor(seg.endOffset - 1) : null;
     return {
-      id: blockId(materialId, index, seg.content),
+      id: blockId(options.idSeed ?? materialId, index, seg.content),
       materialId,
       index,
       heading: seg.heading,

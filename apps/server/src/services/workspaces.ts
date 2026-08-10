@@ -1,5 +1,6 @@
 import {
   CreateWorkspaceRequestSchema,
+  fnv1a32,
   UpdateWorkspaceRequestSchema,
   type AddDocumentRequest,
   type DocumentDeletionResult,
@@ -109,14 +110,15 @@ export function createWorkspaceService({ repos, clock, materials }: WorkspaceSer
     },
 
     /**
-     * Re-extract a document from its stored original source with the current
-     * parser. DESTRUCTIVE for dependent data of this document (blocks,
-     * concepts, quizzes, mistakes, mastery) and for workspace plans/graph
-     * edges that referenced it — all replaced/removed in one transaction.
+     * Re-extract into a staged immutable revision, then activate it. Parser
+     * work happens before the transaction. Failure records an attempt and
+     * leaves the previous active revision and longitudinal history intact.
      */
     async reprocessDocument(workspaceId: string, documentId: string): Promise<MaterialWithBlocks> {
       const existing = requireDocument(workspaceId, documentId);
       const now = clock.now().toISOString();
+      const parserAttemptId = newId('parse');
+      const revisionId = newId('rev');
 
       let content: string;
       let pageCount: number | null = null;
@@ -124,44 +126,81 @@ export function createWorkspaceService({ repos, clock, materials }: WorkspaceSer
         null;
       let warnings: string[] = [];
       let parserVersion: string;
+      let originalData: Buffer | null = null;
 
-      if (existing.sourceType === 'pdf' || existing.sourceType === 'docx') {
-        const original = repos.materials.getOriginalData(documentId);
-        if (!original) {
-          throw new AppError(
-            ApiErrorCode.ValidationError,
-            '该文档没有保存原始文件,无法重新解析(旧版本导入的文档仅支持文本内容)。',
-          );
+      try {
+        if (existing.sourceType === 'pdf' || existing.sourceType === 'docx') {
+          const original = repos.materials.getOriginalData(documentId);
+          if (!original) {
+            throw new AppError(
+              ApiErrorCode.ValidationError,
+              '该文档没有保存原始文件,无法重新解析(旧版本导入的文档仅支持文本内容)。',
+            );
+          }
+          originalData = original;
+          const parsed = await parseBinaryUpload(existing.sourceType, original);
+          content = parsed.content;
+          pageCount = parsed.pageCount;
+          pageSpans = parsed.pageSpans;
+          warnings = parsed.warnings;
+          parserVersion = parsed.parserVersion;
+        } else {
+          content = existing.content;
+          parserVersion = existing.parserVersion ?? 'text-v1';
         }
-        const parsed = await parseBinaryUpload(existing.sourceType, original);
-        content = parsed.content;
-        pageCount = parsed.pageCount;
-        pageSpans = parsed.pageSpans;
-        warnings = parsed.warnings;
-        parserVersion = parsed.parserVersion;
-      } else {
-        // Text sources: stored normalized content IS the original text.
-        content = existing.content;
-        parserVersion = existing.parserVersion ?? 'text-v1';
+
+        const normalized = ingestSource(content, { sourceType: existing.sourceType });
+        const updated: Material = {
+          ...existing,
+          content: normalized.content,
+          charCount: normalized.charCount,
+          parseStatus: warnings.length > 0 ? 'parsed_with_warnings' : 'parsed',
+          pageCount,
+          extractionWarnings: warnings.slice(0, 50),
+          parserVersion,
+          updatedAt: now,
+        };
+        const blocks = segmentMaterial(documentId, normalized.content, {
+          ...(pageSpans ? { pageSpans } : {}),
+          idSeed: revisionId,
+        });
+        const contentFingerprint = fnv1a32(normalized.content).toString(16).padStart(8, '0');
+        const parserFingerprint = fnv1a32(
+          JSON.stringify({ parserVersion, sourceType: existing.sourceType }),
+        )
+          .toString(16)
+          .padStart(8, '0');
+
+        repos.materialRevisions.stage({
+          revisionId,
+          material: updated,
+          blocks,
+          originalData,
+          parserFingerprint,
+          contentFingerprint,
+          parserAttemptId,
+          createdAt: now,
+        });
+        repos.materialRevisions.activate(documentId, revisionId, now);
+        return {
+          material: repos.materials.get(documentId)!,
+          blocks: repos.materials.getBlocks(documentId),
+        };
+      } catch (error) {
+        if (!repos.materialRevisions.get(revisionId)) {
+          repos.materialRevisions.recordFailedAttempt({
+            id: parserAttemptId,
+            materialId: documentId,
+            parserVersion: existing.parserVersion,
+            parserFingerprint: null,
+            errorCode: error instanceof AppError ? error.code : null,
+            errorMessage: error instanceof Error ? error.message : String(error),
+            startedAt: now,
+            finishedAt: clock.now().toISOString(),
+          });
+        }
+        throw error;
       }
-
-      const normalized = ingestSource(content, { sourceType: existing.sourceType });
-      const updated: Material = {
-        ...existing,
-        content: normalized.content,
-        charCount: normalized.charCount,
-        parseStatus: warnings.length > 0 ? 'parsed_with_warnings' : 'parsed',
-        pageCount,
-        extractionWarnings: warnings.slice(0, 50),
-        parserVersion,
-        updatedAt: now,
-      };
-      const blocks = segmentMaterial(documentId, normalized.content, {
-        ...(pageSpans ? { pageSpans } : {}),
-      });
-
-      repos.workspaces.reprocessDocument(updated, blocks, now);
-      return { material: updated, blocks };
     },
 
     /**

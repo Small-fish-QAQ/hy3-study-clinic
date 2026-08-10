@@ -9,6 +9,14 @@ export {
 } from './mastery.js';
 
 export * from './domain/material.js';
+export * from './domain/learningContract.js';
+export * from './domain/sourceAuthority.js';
+export * from './domain/curriculum.js';
+export * from './domain/studyPlan.js';
+export * from './domain/sessionAgenda.js';
+export * from './domain/studySession.js';
+export * from './domain/coverageRisk.js';
+export * from './domain/telemetry.js';
 export * from './domain/workspace.js';
 export * from './domain/graph.js';
 export * from './domain/plan.js';

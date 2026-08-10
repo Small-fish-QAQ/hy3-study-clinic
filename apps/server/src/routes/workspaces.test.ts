@@ -218,7 +218,7 @@ describe('document ingestion routes', () => {
     expect(response.statusCode).toBe(422);
   });
 
-  it('reprocesses a PDF document destructively and reports it', async () => {
+  it('activates a successor PDF revision without deleting prior extraction history', async () => {
     const imported = (
       await ctx.app.inject({
         method: 'POST',
@@ -228,7 +228,15 @@ describe('document ingestion routes', () => {
     ).json();
     const docId = imported.material.id as string;
     await ctx.app.inject({ method: 'POST', url: `/api/materials/${docId}/analyze` });
-    expect(ctx.repos.materials.getConcepts(docId).length).toBeGreaterThan(0);
+    const oldConcepts = ctx.repos.materials.getConcepts(docId);
+    expect(oldConcepts.length).toBeGreaterThan(0);
+    const oldRevision = ctx.repos.materialRevisions.getActive(docId)!;
+    const oldBlockIds = ctx.repos.materials.getBlocks(docId).map((block) => block.id);
+    const rolesBefore = ctx.db
+      .prepare(
+        'SELECT id, role, learner_confirmed FROM material_role_versions WHERE material_id = ?',
+      )
+      .all(docId);
 
     const reprocessed = await ctx.app.inject({
       method: 'POST',
@@ -239,9 +247,58 @@ describe('document ingestion routes', () => {
     expect(material.id).toBe(docId);
     expect(material.pageCount).toBe(2);
     expect(blocks.length).toBeGreaterThanOrEqual(2);
-    // Dependent extraction data was explicitly reset.
+    const revisions = ctx.repos.materialRevisions.list(docId);
+    expect(revisions).toHaveLength(2);
+    expect(revisions[0]!.status).toBe('active');
+    expect(revisions[0]!.predecessorRevisionId).toBe(oldRevision.id);
+    expect(revisions[1]!.status).toBe('retired');
+    expect(revisions[1]!.id).toBe(oldRevision.id);
+    expect(blocks.map((block: { id: string }) => block.id)).not.toEqual(oldBlockIds);
+    // The active projection has no concepts until re-analysis, but old rows
+    // and role/scope identity remain immutable and inspectable.
     expect(ctx.repos.materials.getConcepts(docId)).toHaveLength(0);
+    expect(
+      ctx.db.prepare('SELECT COUNT(*) AS n FROM concepts WHERE material_id = ?').get(docId),
+    ).toEqual({ n: oldConcepts.length });
+    expect(
+      ctx.db
+        .prepare(
+          'SELECT id, role, learner_confirmed FROM material_role_versions WHERE material_id = ?',
+        )
+        .all(docId),
+    ).toEqual(rolesBefore);
     expect(ctx.repos.materials.getBlocks(docId).length).toBe(blocks.length);
+  });
+
+  it('records a failed reprocess attempt and preserves the prior active revision', async () => {
+    const imported = (
+      await ctx.app.inject({
+        method: 'POST',
+        url: `/api/workspaces/${workspaceId}/documents`,
+        payload: { kind: 'file', filename: 'memory.pdf', dataBase64: samplePdfB64() },
+      })
+    ).json();
+    const docId = imported.material.id as string;
+    const activeBefore = ctx.repos.materialRevisions.getActive(docId)!;
+    const blocksBefore = ctx.repos.materials.getBlocks(docId);
+    ctx.db
+      .prepare('UPDATE material_revisions SET original_data = NULL WHERE id = ?')
+      .run(activeBefore.id);
+
+    const response = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/workspaces/${workspaceId}/documents/${docId}/reprocess`,
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(ctx.repos.materialRevisions.getActive(docId)!.id).toBe(activeBefore.id);
+    expect(ctx.repos.materialRevisions.list(docId)).toHaveLength(1);
+    expect(ctx.repos.materials.getBlocks(docId)).toEqual(blocksBefore);
+    expect(
+      ctx.db
+        .prepare('SELECT status, revision_id FROM material_parser_attempts WHERE material_id = ?')
+        .get(docId),
+    ).toEqual({ status: 'failed', revision_id: null });
   });
 
   it('deleting a document prunes graph edges that referenced its concepts', async () => {

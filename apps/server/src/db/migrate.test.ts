@@ -42,6 +42,15 @@ describe('migrations', () => {
       'mistakes',
       'mastery_states',
       'concept_lessons',
+      'material_revisions',
+      'material_role_versions',
+      'truth_authority_records',
+      'agent_operations',
+      'model_logical_calls',
+      'model_call_attempts',
+      'model_usage_records',
+      'semantic_cache_entries',
+      'cost_policies',
     ]) {
       expect(tables).toContain(expected);
     }
@@ -132,7 +141,69 @@ describe('migrations', () => {
     const version = db
       .prepare('SELECT COALESCE(MAX(version), 0) AS v FROM schema_migrations')
       .get() as { v: number };
-    expect(version.v).toBe(12);
+    expect(version.v).toBe(LATEST_MIGRATION_VERSION);
+    db.close();
+  });
+
+  it('upgrades populated v12 materials into honest revision-1 lineage', () => {
+    const db = openDatabase(':memory:');
+    migrate(db, { toVersion: 12 });
+    db.prepare(
+      `INSERT INTO workspaces (id, name, origin, created_at, updated_at)
+       VALUES ('ws_v12', 'Course', 'manual', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z')`,
+    ).run();
+    db.prepare(
+      `INSERT INTO materials
+         (id, title, source_type, content, char_count, created_at, workspace_id,
+          parse_status, extraction_warnings, parser_version, updated_at)
+       VALUES ('mat_v12', 'Legacy material', 'paste', 'legacy truth', 12,
+         '2026-01-01T00:00:00.000Z', 'ws_v12', 'parsed', '[]', NULL,
+         '2026-01-01T00:00:00.000Z')`,
+    ).run();
+    db.prepare(
+      `INSERT INTO source_blocks
+         (id, material_id, idx, heading_path, content, start_offset, end_offset)
+       VALUES ('blk_v12', 'mat_v12', 0, '[]', 'legacy truth', 0, 12)`,
+    ).run();
+    db.prepare(
+      `INSERT INTO concepts
+         (id, material_id, name, summary, importance, grounding, created_at)
+       VALUES ('con_v12', 'mat_v12', 'Legacy', 'Legacy summary', 'high',
+         '{"blockId":"blk_v12","quote":"legacy truth","startOffset":0,"endOffset":12,"occurrenceCount":1,"reanchored":false}',
+         '2026-01-01T00:00:00.000Z')`,
+    ).run();
+
+    migrate(db);
+
+    const revision = db
+      .prepare(
+        `SELECT id, revision_number, status, parser_version, parser_fingerprint,
+                content_fingerprint
+         FROM material_revisions WHERE material_id = 'mat_v12'`,
+      )
+      .get();
+    expect(revision).toEqual({
+      id: 'rev_legacy_mat_v12',
+      revision_number: 1,
+      status: 'active',
+      parser_version: null,
+      parser_fingerprint: null,
+      content_fingerprint: null,
+    });
+    expect(
+      db.prepare(`SELECT active_revision_id FROM materials WHERE id = 'mat_v12'`).get(),
+    ).toEqual({ active_revision_id: 'rev_legacy_mat_v12' });
+    expect(
+      db.prepare(`SELECT material_revision_id FROM source_blocks WHERE id = 'blk_v12'`).get(),
+    ).toEqual({ material_revision_id: 'rev_legacy_mat_v12' });
+    expect(
+      db.prepare(`SELECT material_revision_id FROM concepts WHERE id = 'con_v12'`).get(),
+    ).toEqual({ material_revision_id: 'rev_legacy_mat_v12' });
+    expect(db.prepare(`SELECT role, learner_confirmed FROM material_role_versions`).get()).toEqual({
+      role: 'unknown',
+      learner_confirmed: 0,
+    });
+    expect(db.pragma('foreign_key_check')).toEqual([]);
     db.close();
   });
 });

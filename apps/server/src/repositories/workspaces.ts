@@ -1,8 +1,6 @@
 import {
   WorkspaceSchema,
   type DocumentSummary,
-  type Material,
-  type SourceBlock,
   type Workspace,
   type WorkspaceSummary,
 } from '@hy3-clinic/shared';
@@ -142,59 +140,6 @@ export function createWorkspacesRepo(db: SqliteDb) {
     },
   );
 
-  const reprocessDocumentTx = db.transaction(
-    (material: Material, blocks: SourceBlock[], at: string) => {
-      // Destructive by design (documented + confirmed in the UI): reprocessing
-      // re-extracts text, so old blocks/concepts/questions no longer describe
-      // the stored content. Learning artifacts tied to the OLD extraction are
-      // removed explicitly; other documents' data is untouched.
-      db.prepare('DELETE FROM source_blocks WHERE material_id = ?').run(material.id);
-      db.prepare('DELETE FROM concepts WHERE material_id = ?').run(material.id);
-      db.prepare('DELETE FROM quizzes WHERE material_id = ?').run(material.id);
-      db.prepare('DELETE FROM mistakes WHERE material_id = ?').run(material.id);
-      db.prepare('DELETE FROM mastery_states WHERE material_id = ?').run(material.id);
-
-      db.prepare(
-        `UPDATE materials SET content = @content, char_count = @charCount,
-           parse_status = @parseStatus, page_count = @pageCount,
-           extraction_warnings = @extractionWarnings, parser_version = @parserVersion,
-           updated_at = @updatedAt
-         WHERE id = @id`,
-      ).run({
-        id: material.id,
-        content: material.content,
-        charCount: material.charCount,
-        parseStatus: material.parseStatus,
-        pageCount: material.pageCount,
-        extractionWarnings: JSON.stringify(material.extractionWarnings),
-        parserVersion: material.parserVersion,
-        updatedAt: material.updatedAt,
-      });
-
-      const insertBlock = db.prepare(
-        `INSERT INTO source_blocks (id, material_id, idx, heading, heading_path, page_number, page_end, content, start_offset, end_offset)
-         VALUES (@id, @materialId, @index, @heading, @headingPath, @pageNumber, @pageEnd, @content, @startOffset, @endOffset)`,
-      );
-      for (const block of blocks) {
-        insertBlock.run({
-          id: block.id,
-          materialId: block.materialId,
-          index: block.index,
-          heading: block.heading,
-          headingPath: JSON.stringify(block.headingPath),
-          pageNumber: block.pageNumber,
-          pageEnd: block.pageEnd,
-          content: block.content,
-          startOffset: block.startOffset,
-          endOffset: block.endOffset,
-        });
-      }
-
-      cleanupWorkspaceDerivedData(material.workspaceId, at, `文档已重新解析:${material.id}`);
-      db.prepare('UPDATE workspaces SET updated_at = ? WHERE id = ?').run(at, material.workspaceId);
-    },
-  );
-
   return {
     insert(workspace: Workspace): void {
       WorkspaceSchema.parse(workspace);
@@ -220,7 +165,8 @@ export function createWorkspacesRepo(db: SqliteDb) {
           `SELECT w.*,
              (SELECT COUNT(*) FROM materials m WHERE m.workspace_id = w.id) AS document_count,
              (SELECT COUNT(*) FROM concepts c JOIN materials m ON m.id = c.material_id
-                WHERE m.workspace_id = w.id) AS concept_count
+                WHERE m.workspace_id = w.id
+                  AND c.material_revision_id = m.active_revision_id) AS concept_count
            FROM workspaces w
            ORDER BY w.updated_at DESC, w.id DESC`,
         )
@@ -259,8 +205,10 @@ export function createWorkspacesRepo(db: SqliteDb) {
           `SELECT m.id, m.workspace_id, m.title, m.source_type, m.media_type,
                   m.original_filename, m.char_count, m.parse_status, m.page_count,
                   m.extraction_warnings, m.parser_version, m.created_at, m.updated_at,
-             (SELECT COUNT(*) FROM source_blocks b WHERE b.material_id = m.id) AS block_count,
-             (SELECT COUNT(*) FROM concepts c WHERE c.material_id = m.id) AS concept_count
+             (SELECT COUNT(*) FROM source_blocks b
+                WHERE b.material_revision_id = m.active_revision_id) AS block_count,
+             (SELECT COUNT(*) FROM concepts c
+                WHERE c.material_revision_id = m.active_revision_id) AS concept_count
            FROM materials m
            WHERE m.workspace_id = ?
            ORDER BY m.created_at ASC, m.id ASC`,
@@ -312,11 +260,6 @@ export function createWorkspacesRepo(db: SqliteDb) {
      */
     deleteDocument(materialId: string, workspaceId: string, at: string): DocumentDeletionOutcome {
       return deleteDocumentTx(materialId, workspaceId, at) as DocumentDeletionOutcome;
-    },
-
-    /** Replace a document's extracted content and blocks (see transaction doc). */
-    reprocessDocument(material: Material, blocks: SourceBlock[], at: string): void {
-      reprocessDocumentTx(material, blocks, at);
     },
   };
 }

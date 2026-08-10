@@ -19,6 +19,7 @@ import { createQueueService, type QueueService } from './queue.js';
 import { createMappingService, type MappingService } from './mapping.js';
 import { createLessonsService, type LessonsService } from './lessons.js';
 import { createTutorService, type TutorService } from './tutor.js';
+import { createSourceAuthorityService, type SourceAuthorityService } from './sourceAuthority.js';
 
 export interface Services {
   materials: MaterialService;
@@ -39,6 +40,7 @@ export interface Services {
   mapping: MappingService;
   lessons: LessonsService;
   tutor: TutorService;
+  sourceAuthority: SourceAuthorityService;
 }
 
 export interface ServiceDeps {
@@ -68,6 +70,10 @@ export function createServices({ repos, provider, clock, providerModel }: Servic
   const mapping = createMappingService({ repos });
   const lessons = createLessonsService({ repos, provider, clock, providerModel });
   const tutor = createTutorService({ repos, provider, clock, assessment, providerModel });
+  const sourceAuthority = createSourceAuthorityService({
+    sourceAuthority: repos.sourceAuthority,
+    clock,
+  });
   return {
     materials,
     workspaces,
@@ -87,5 +93,6 @@ export function createServices({ repos, provider, clock, providerModel }: Servic
     mapping,
     lessons,
     tutor,
+    sourceAuthority,
   };
 }
