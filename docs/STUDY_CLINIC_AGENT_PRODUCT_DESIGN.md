@@ -59,7 +59,7 @@ For every major capability, the Agent test is:
 
 | Capability | Persistent state read/written | Trigger and executed action | Local verification | Manual orchestration removed |
 | --- | --- | --- | --- | --- |
-| Contract formation | Course scope and draft/accepted Contract versions | Course setup or learner goal change; calculate feasibility and propose a typed Contract | Schema, deadline/time arithmetic, source scope, learner confirmation | Re-explaining the goal, deadline, depth, and constraints every session |
+| Contract formation | Stable subject scope, logical Material identities/roles, and draft/accepted Contract versions | Course setup or learner-level goal/scope change; calculate feasibility and propose a typed Contract | Schema, deadline/time arithmetic, stable material scope, learner confirmation | Re-explaining the goal, deadline, depth, and constraints every session |
 | Curriculum | Active material revisions, SourceBlocks, Concepts, Graph, exam observations; immutable Curriculum candidate/active pointer | Material intake or deliberate refresh; propose hierarchy and bind existing IDs | Known IDs, hierarchy, evidence, bounds, dedupe, cycle and scope checks | Manually reconstructing the whole course structure |
 | StudyPlan | Accepted Contract and Curriculum, learner state, risk ledger; immutable plan versions and separate progress | Contract acceptance or meaningful replan trigger; propose an executable route and time budget | Feasibility, prerequisites, launchability, completion rules, version/diff, learner acceptance | Maintaining the original route and deciding the long-term order |
 | Pace/risk | PaceBaseline, planned/actual activity time, remaining effort; pace status/events | Session completion, milestone, or budget change; recompute deterministic schedule risk | Reliable-time sufficiency, policy/version, threshold and reason code | Detecting deadline drift and recalculating feasibility |
@@ -67,12 +67,12 @@ For every major capability, the Agent test is:
 | Detour and return | Agenda, route stack, transcript, origin/resume item | Learner asks to explore; push detour, execute bounded teaching, then restore route | Origin exists, detour is scoped, no plan mutation, stale-route revalidation | Remembering where the planned journey was interrupted |
 | Formal checkpoint | Unit objectives, assessment policy, attempt history; existing quiz/result plus progression decision | Plan milestone, direct learner request, or repair completion | Existing assessment/grading/transactional safety and formal-evidence rules | Deciding when confidence should be tested rather than discussed |
 | Completion/progression | Contract-specific criteria, formal evidence, mistakes, reviews, synthesis; append-only decision | New valid formal evidence or explicit defer; reconcile unit state and next action | Rule version, evidence IDs, no duplicate application, transaction, audit event | Remembering what was actually verified and whether to continue |
-| Coverage/Risk Ledger | Sources, mappings, Curriculum, exams, formal evidence, AI candidates; typed risk entries and resolutions | Intake, mapping, exam analysis, evidence, scan, source revision | Provenance class, authority, known IDs, dedupe, status transitions; no completeness claim | Tracking omissions, exam risks, and unverified supplements across sessions |
+| Coverage/Risk Ledger | Sources, mappings, Curriculum, exams, formal evidence, AI candidates; typed risk entries and resolutions | Intake, mapping, exam analysis, evidence, scan, source revision | Provenance, separate scope/truth authority, known IDs, dedupe, status transitions; no completeness claim | Tracking omissions, exam risks, and unverified supplements across sessions |
 | Meaningful replan | Contract, accepted plan, progress, time, risks; successor proposal and diff | Deadline/goal/scope change or strong repeated evidence/risk signal | Trigger threshold, bounded changes, old plan preserved, explicit acceptance | Detecting drift and rebuilding a route without losing history |
-| Adversarial readiness | Scope, objectives, Blueprint, risk candidates, existing evidence; scan/check records and formal results | Readiness gate or learner challenge request | Candidate authority, scope, evidence, question validation, grading isolation | Inventing fair ways to test representation and transfer gaps |
+| Adversarial readiness | Scope, objectives, Blueprint, risk candidates, existing evidence; scan/check records and formal results | Readiness gate or learner challenge request | Separate scope/truth authority, evidence, question validation, grading isolation | Inventing fair ways to test representation and transfer gaps |
 | Goal outcome | Accepted Contract/Plan, completion/readiness evidence, deferred/blocked risks; immutable outcome | Criteria satisfied, learner finishes with gaps/abandons, deadline closure, or successor activation | Outcome policy, evidence/gap snapshot, learner authority where required | Deciding whether the goal actually ended and remembering unresolved gaps |
 | Source revision | Material/revision bytes, parser results, lineage, historical evidence; candidate/active revision pointers | Add, reprocess, remove/retire, or improve extraction | Parser/schema/grounding checks, lineage uncertainty, no automatic completion transfer | Rebuilding materials without losing the longitudinal record |
-| Cost control | Cache, operation ledger, course/session IDs, budget policy; logical calls and physical attempts | Every semantic operation | Usage parsing, attempt accounting, cap enforcement, cache fingerprint | Guessing whether a study session is affordable or wasteful |
+| Cost control | Cache, operation ledger, course/session IDs, and optional learner/operator spending policy; logical calls and physical attempts | Every semantic operation | Usage parsing, attempt accounting, configured-cap enforcement, cache fingerprint | Guessing whether a study session is affordable or wasteful |
 
 If a proposed feature cannot name its state, trigger, action, verifier, and removed orchestration burden, it is either ordinary Tutor conversation or should be cut.
 
@@ -99,7 +99,7 @@ Deterministic software owns:
 - formal state mutation, transactions, idempotency, and stale checks;
 - risk aggregation and status reconciliation;
 - route restoration after a detour;
-- operation budgets, telemetry, and cache validity.
+- runtime/operation safety bounds, telemetry, cache validity, and any explicitly configured spending policy.
 
 Hy3 owns semantic work:
 
@@ -372,13 +372,19 @@ Prefer orthogonal fields over one overloaded mode enum:
 | deadline | optional | Date/time and timezone; absence means open-ended |
 | studyBudget | yes | Available minutes per day/week, session preference, and known unavailable periods |
 | desiredDepth | yes | pass-oriented, working fluency, high-performance, or deep/transfer; labels may evolve |
-| courseScope | yes | Stable learner-language subject boundaries plus included material revision IDs/roles and explicit exclusions; it does not depend on version-local Curriculum node IDs |
+| courseScope | yes | Stable learner-language subject boundaries plus included logical Material IDs, learner-confirmed role assignments (value plus audit/version identity), and explicit exclusions; it contains no parser/extraction revision IDs or version-local Curriculum node IDs |
 | learnerSelfReport | optional | Prior study, confidence, known strengths/gaps; evidence class is self-report only |
 | examContext | optional | Exam date, intended scope, supplied question sets, permitted formats, constraints |
 | riskTolerance | optional | What may be deferred and how much unresolved risk is acceptable |
 | status/version | yes | `draft`, `proposed`, `learner_confirmed`, `active`, `closed`, `superseded`, or `withdrawn`; immutable version plus an active pointer |
 
 “Systematic,” “exam sprint,” “deep study,” “review,” and “gap repair” are useful setup presets, not necessarily durable domain enums. A preset populates visible fields; the learner edits those fields before acceptance. Gap repair is often a response strategy, not an enduring intent.
+
+`courseScope` records learner intention over stable, learner-meaningful Material identity: “this textbook belongs to the course,” “this artifact is a past exam,” “this reference is supplementary,” or “exclude this Material.” Exact MaterialRevision IDs, parser/extraction fingerprints, SourceBlock revisions, lineage mappings, and active-revision pointers are execution identities. They belong to Curriculum, StudyPlan/source-context fingerprints, risk reconciliation, and evidence provenance—not to the Contract.
+
+Reprocessing or improving extraction for the same logical Material therefore never creates a successor Contract by itself. It may stale downstream mappings and require a successor Curriculum, StudyPlan reconciliation/replan, or fresh evidence. Adding/removing a logical Material or changing its learner-confirmed role requires a successor Contract only when that change alters the accepted learner-level intention or study scope.
+
+Contract confirmation grants **scope authority** only: it decides what the learner intends to study. It does not verify any factual claim, expected answer, rubric premise, or model-generated supplement inside that scope. Truth and assessment-premise authority follow the separate rules in §15.
 
 ### Material effect
 
@@ -405,7 +411,7 @@ This is the canonical persisted enum. Only the learner confirms. `draft` and `pr
 
 When an active Plan already exists, a confirmed successor Contract remains pending activation while the old active Contract/Plan pair stays executable. Accepting a compatible successor Plan atomically activates the successor pair, records predecessor links, terminates the old pair as specified under Goal / Plan outcome, and recomposes the Agenda. A generation failure or learner rejection leaves the old pair active. Withdrawing applies only before activation; stopping an active goal uses an `abandoned` GoalOutcome rather than rewriting the Contract as withdrawn.
 
-A new material/exam scope, deadline, target, or sustained budget change creates a successor proposal. Curriculum mappings are derived after Contract confirmation and live in Curriculum/Plan versions, not inside the Contract’s stable scope.
+A learner-level logical-material/role/exam-scope change, deadline change, target change, or sustained study-time-budget change may create a successor proposal. Reprocessing the same logical Material does not. Curriculum mappings and their exact MaterialRevision/SourceBlock bindings are derived after Contract confirmation and live in Curriculum/Plan versions, not inside the Contract’s stable scope.
 
 ## 9. Curriculum
 
@@ -431,6 +437,10 @@ A LearningUnit references, rather than duplicates:
 - prerequisite units;
 - synthesis memberships;
 - source/exam/risk ledger references.
+
+Each Curriculum version binds the Contract’s stable logical-Material scope to an explicit set of accepted MaterialRevision IDs, SourceBlock revisions, parser/extraction fingerprints, and mapping results. Activating a new revision for the same Material may produce a successor Curriculum or reconciliation, but it does not redefine learner intention or require a successor Contract. Exact revision binding preserves provenance even though Contract scope remains stable.
+
+A learner may include a topic or supplement in scope before authoritative source truth exists. The Curriculum may represent that objective with an explicit truth-unverified/advisory status, but inclusion never promotes AI Teaching or an AI Risk Candidate into Course Truth. Such an objective may be taught and probed nonblockingly until the independent truth-authority process in §15 succeeds.
 
 ### Separation from adjacent objects
 
@@ -464,6 +474,7 @@ StudyPlan is the learner-accepted executable route toward one accepted Learning 
 A plan version contains:
 
 - contractVersionId and curriculumVersionId;
+- the exact execution-source-manifest fingerprint inherited from that Curriculum;
 - ordered phases and plan items;
 - rationale and estimated minutes;
 - target depth and objectives;
@@ -476,9 +487,9 @@ A plan version contains:
 
 A plan item contains the stable intended work. Mutable progress—started, completed, repair-needed, deferred, or obsolete—lives in separate event/decision records so the accepted plan snapshot remains diffable.
 
-Before acceptance, the learner can edit scope, order, time allocation, depth, and explicit deferrals through typed draft commands such as add, remove-with-reason, reorder, resize-time, change-depth, and defer. Known IDs, prerequisites, Contract scope, time feasibility, completion policy, and risk are revalidated after every edit. Editing a draft does not mutate the previously accepted Plan.
+Before acceptance, the learner can edit route inclusion within the accepted Contract, order, time allocation, depth, and explicit deferrals through typed draft commands such as add, remove-with-reason, reorder, resize-time, change-depth, and defer. Known IDs, prerequisites, Contract scope, time feasibility, completion policy, and risk are revalidated after every edit. A draft edit that would change stable learner intention, logical-Material membership, or material role must instead create a linked successor Contract/Plan proposal. Editing a Plan draft does not mutate either the Contract or the previously accepted Plan.
 
-Acceptance validation performs a known-scope accounting check: every required in-scope Curriculum unit and objective is included, or appears in a learner-visible explicit defer/exclude record with reason and risk. A plan that silently omits known required work is invalid.
+Acceptance validation performs a known-scope accounting check: every required in-scope Curriculum unit and objective is included, or appears in a learner-visible explicit defer/exclude record with reason and risk. A plan that silently omits known required work is invalid. Scope inclusion is not truth validation: truth-unverified objectives retain that label and cannot acquire blocking completion criteria merely by appearing in an accepted Plan.
 
 ### Pace baseline
 
@@ -501,7 +512,9 @@ candidate → proposed → accepted → superseded
 candidate/proposed → rejected
 ~~~
 
-Hy3 may propose. Local code validates. The learner accepts. There is exactly one accepted active route per Contract unless the learner deliberately pauses it. A failure never overwrites the accepted plan.
+Hy3 may propose. Local code validates. The learner accepts. There is exactly one accepted StudyPlan per active Contract until that Plan is superseded or closed. A failure never overwrites the accepted Plan.
+
+Pausing study is execution state, not a StudyPlan-version state. The immutable Plan remains `accepted`, and the Course execution projection, active Agenda, and/or StudySession records the pause. Resume revalidates the accepted Contract/Plan, exact Curriculum/execution-source-manifest fingerprint, launchability, and route origin before continuing or visibly recomposing the Agenda. Pause/resume alone never creates a Plan version.
 
 For a successor Contract, Plan acceptance and Contract activation use the atomic pair handoff defined above; an accepted Plan can never remain active against a different active Contract version.
 
@@ -588,6 +601,8 @@ item: queued → active → completed
 
 Agenda history is auditable but can be edited fluidly. “I have 20 minutes” recomposes today’s items and reports the impact; it does not rewrite the Plan.
 
+`paused` and `abandoned` above are Agenda/execution states only. They are not StudyPlan-version states and do not change the accepted Plan pointer.
+
 ## 12. Mixed-initiative learner controls
 
 The Agent owns the default route. The learner owns intention.
@@ -630,7 +645,7 @@ If a detour becomes a sustained objective, Hy3 may propose a successor plan. Loc
 
 ### G. Meaningful Replan
 
-Deadline, goal, sustained time budget, material/exam scope, repeated formal evidence, synthesis failure, strong prerequisite failure, or meaningful coverage risk may create a replan proposal. Ordinary agenda movement does not.
+Deadline, goal, sustained study-time budget, learner-level logical-material/role/exam scope, revision-driven route invalidation, repeated formal evidence, synthesis failure, strong prerequisite failure, or meaningful coverage risk may create a replan proposal. Reprocessing the same logical Material does not create a successor Contract, and ordinary agenda movement does not create a replan.
 
 ### Explicit transition model
 
@@ -644,7 +659,9 @@ Deadline, goal, sustained time budget, material/exam scope, repeated formal evid
 | return_pending | origin.stale_or_blocked | Recompose agenda and explain | none unless a separate replan is proposed | on_route |
 | on_route or detour_active | learner.agenda_inserted | Insert/reorder and show time impact | none | same |
 | on_route or detour_active | learner.deep_dive | Attach depth overlay | none | same |
-| any active | learner.defer | Persist visible gap and risk | item progress deferred, accepted snapshot unchanged | on_route or paused |
+| any active | learner.defer | Persist visible gap and risk | item progress deferred, accepted snapshot unchanged | on_route or execution_paused |
+| any active | learner.pause | Persist Course/Agenda/Session execution pause; interrupt or detach the active attempt safely; preserve route stack | none; accepted Plan remains `accepted` | execution_paused |
+| execution_paused | learner.resume | Revalidate Contract/Plan/Curriculum/execution-source-manifest versions, route origin, and launchability; resume or visibly recompose | none unless a separate replan is proposed | on_route |
 | detour_active | learner.promote | Create successor-plan proposal/diff | none until acceptance | detour_active |
 | any active | replan.triggered | Create bounded proposal sidecar | none; current route continues | same route state + proposal pending |
 | any + proposal pending | learner.accepted | Atomically activate successor Contract/Plan pair where applicable, invalidate/rebase route frames, and recompose agenda | successor becomes active | on_route |
@@ -697,7 +714,8 @@ Persist:
 - safe tool/action events;
 - provider attempt and cost links;
 - rolling summary versions;
-- current route stack and agenda position.
+- current route stack and agenda position;
+- Course/Agenda/Session execution pause/resume events, without changing the accepted StudyPlan.
 
 After restart, an orphaned running attempt becomes interrupted. The learner can retry idempotently from the last completed watermark. Never pretend the exact provider generation can resume unless the provider supports a verified continuation contract.
 
@@ -724,7 +742,7 @@ A summary is a derived, replaceable cache with:
 
 - sessionId and summary version;
 - throughExchangeSeq watermark;
-- Contract/Plan/Agenda/Curriculum/material-revision fingerprints;
+- stable Contract-scope fingerprint plus Contract/Plan/Agenda/Curriculum versions and the exact execution-source manifest fingerprint (MaterialRevision, SourceBlock revision, parser/extraction identity);
 - learner questions and unresolved confusion;
 - explanations tried and learner reactions;
 - provisional conversational understanding, explicitly non-formal;
@@ -737,7 +755,7 @@ Normal turns do not trigger a hidden second call: the terminal Tutor response ma
 
 ### Staleness and cancellation
 
-Every asynchronous turn carries course, material revision, Contract, Plan, Agenda, Session, and transcript watermark expectations. Before finalization, local code rechecks them. A stale turn may remain visible as interrupted history but cannot execute actions or update the current summary.
+Every asynchronous turn carries the stable Course/Contract-scope identity separately from exact MaterialRevision/source-manifest, Contract, Plan, Agenda, Session, and transcript-watermark expectations. Before finalization, local code rechecks them. A stale turn may remain visible as interrupted history but cannot execute actions or update the current summary.
 
 Client take-latest epochs, AbortSignal propagation, request disconnect handling, and workspace/session identity checks extend the current cancellation model.
 
@@ -745,13 +763,29 @@ Client take-latest epochs, AbortSignal propagation, request disconnect handling,
 
 Three authority classes are mandatory.
 
+### Scope authority is not truth authority
+
+Two independent authority axes apply:
+
+- **Scope authority** determines which topics, objectives, logical Materials, and material roles belong to what the learner intends to study. The learner authoritatively confirms this axis through the Learning Contract and later governed scope changes.
+- **Truth / assessment-premise authority** determines whether a factual claim, expected answer, rubric premise, or blocking assessment basis is sufficiently verified to affect formal progression. Learner confirmation of a topic, objective, Material, role, Curriculum unit, or Plan item is never sufficient for this axis.
+
+| Scope status | Truth/premise status | Permitted behavior |
+| --- | --- | --- |
+| In scope | Independently verified | Teach; use as a blocking formal premise when the accepted completion policy permits |
+| In scope | Unverified/model-only | Clearly labeled AI Teaching, route inclusion, risk tracking, and advisory/nonblocking probes only |
+| Out of scope | Independently verified source claim | Preserve provenance and show as out-of-scope context/risk; do not make it a required route or blocking criterion until scope is confirmed |
+| Out of scope | Unverified/model-only | Risk/supplement candidate only |
+
+A separately validated authoritative-source addition is distinct from Contract acceptance. It records the logical source, exact accepted MaterialRevision and SourceBlock/claim provenance, admitted premise scope, authority policy/basis, validation result, conflict status, actor, and audit/version history. The source evidence and important model output still pass the existing grounding, schema, ID, and domain checks. Exact quotation establishes occurrence at the claimed location, not complete semantic entailment; ambiguous or conflicting premises remain nonblocking until the authority policy resolves them. Learner scope confirmation alone can never create this record or promote model prose.
+
 ### A. COURSE TRUTH
 
-Verified, material-derived course-specific content:
+Verified, material-derived course-specific content from a source admitted by the separate truth-authority policy:
 
 - terminology and notation;
 - claims and definitions;
-- examples and explicit scope;
+- examples and source-stated applicability/boundaries;
 - assessment premises where applicable.
 
 Every claim used as grounded course truth retains SourceBlock and material-revision provenance. Exact quotation proves location, not full semantic entailment.
@@ -778,7 +812,7 @@ Model-generated hypotheses:
 - possible exam variations;
 - transfer or integration risks.
 
-Candidates enter the Coverage/Risk Ledger as unresolved with origin/model/prompt version. They become course truth only through verified source evidence or an explicit authoritative addition process. They may justify a learner-visible check without being asserted as fact.
+Candidates enter the Coverage/Risk Ledger as unresolved with origin/model/prompt version. They become eligible Course Truth only through independently verified source evidence under the truth-authority policy or the separately validated authoritative-source addition process above. Learner acceptance into study scope does not perform that promotion. Candidates may justify a learner-visible advisory check without being asserted as fact.
 
 If AI teaching conflicts with verified course truth, course truth wins for this Course. The product may disclose the conflict and broader convention; it must not silently rewrite the course.
 
@@ -787,10 +821,10 @@ If AI teaching conflicts with verified course truth, course truth wins for this 
 Authority is constrained before generation, not assigned only after text appears:
 
 - teaching may use Course Truth and clearly labeled AI Teaching;
-- ordinary course assessment premises and required answers use Course Truth;
+- ordinary course assessment premises and required answers use independently authorized Course Truth;
 - risk scans may output AI Risk Candidates;
 - a risk candidate may select an advisory probe, but cannot become a blocking completion premise by prompt fiat;
-- plan/risk rationales cite the authority class of every premise.
+- Plan/risk rationales record scope authority and truth/premise authority separately for every premise.
 
 ### Segment provenance and conflicts
 
@@ -798,13 +832,13 @@ Teaching artifacts use structured segments. A source-backed segment carries serv
 
 If a required course-grounded claim has invalid evidence, the operation receives at most one bounded targeted repair or fails. An optional invalid citation may be dropped or relabeled AI Teaching only when local policy confirms that the segment is optional, contains no course-specific assessment premise, and the label is honest; otherwise it is removed.
 
-If two verified course sources conflict, preserve and show both claims and provenance. A declared Course/Contract authority rule or learner-confirmed resolution may choose the premise used for assessment. Without one, the area remains a source-conflict risk and no model silently chooses the winner.
+If two verified course sources conflict, preserve and show both claims and provenance. The learner may identify the intended course convention or preferred route, but formal assessment remains blocked until a separate versioned truth-authority policy chooses among already verified sources and records its basis. The learner cannot resolve a source conflict by validating unsupported model prose. Without an eligible policy decision, the area remains a source-conflict risk and no model silently chooses the winner.
 
 ### Admissibility tiers for checks
 
-1. Blocking formal evidence: answer/rubric premises are grounded in Course Truth or in a learner-confirmed authoritative scope addition that has gone through Contract/Curriculum versioning.
+1. Blocking formal evidence: every state-crediting answer/rubric premise is grounded in independently authorized Course Truth, including any separately admitted and validated authoritative source. Being present in the Contract, Curriculum, or Plan is necessary for scope but insufficient for truth authority.
 2. Derived representation evidence: an alternate representation is locally or formally validated as equivalent to grounded Course Truth; it may affect the specifically declared robustness criterion.
-3. AI-only supplement/adversarial probe: useful as advisory diagnostic history and a Risk Ledger update, but nonblocking; it cannot complete a required objective, prevent an otherwise valid required completion, or mutate mastery until authoritative scope is established.
+3. AI-only teaching/supplement/adversarial probe: it may be inside learner-confirmed scope and is useful as advisory diagnostic history and a Risk Ledger update, but is nonblocking; it cannot complete a required objective, prevent otherwise valid completion, or mutate mastery unless its premises later gain independent truth authority and a new tier-1/2 formal activity is performed. Old tier-3 results are never retroactively promoted.
 
 ## 16. Formal evidence boundary
 
@@ -818,6 +852,8 @@ The system distinguishes three channels:
 
 “懂了,” confident prose, Tutor approval, time spent, content viewed, or an informal correct answer never completes a LearningUnit.
 
+Persisting a formally presented attempt is not sufficient to make it state-crediting evidence. Only tier-1 or validated tier-2 premises may enter the existing grading-to-progression mutation path. Tier-3 probes may retain answers, feedback, and diagnostic history, but their result is non-state-changing even when the learner requested or accepted the topic.
+
 Formal evidence reuses and extends the current reliable machinery:
 
 - public quizzes omit answers/rubrics;
@@ -830,7 +866,7 @@ Formal evidence reuses and extends the current reliable machinery:
 
 New LearningUnit progression is intentionally reconciled after valid grading commits. A unique reconciliation record keyed by gradingResultId + completionPolicyVersion + unit/objective scope transitions from reconciliation_pending to applied or rejected/stale. It is independently retryable and idempotent. A stale Plan, completion-policy bug, or progression write failure must not roll back or discard an otherwise valid immutable grading result.
 
-Each formal evidence record identifies assessment kind, primary objective ID, explicitly scored secondary objective IDs if any, difficulty/depth, representation kind, source scope, Contract/Plan/Curriculum versions, grading result, and evidence limitations. Every state-crediting question has one primary objective. Contextual appearance of another concept earns it no completion credit unless a separate explicit rubric point and validated attribution exists. This prevents broad questions from overcrediting many objectives.
+Each formal evidence record identifies assessment kind, primary objective ID, explicitly scored secondary objective IDs if any, difficulty/depth, representation kind, stable learner scope, exact premise-authority claim IDs and MaterialRevision/SourceBlock provenance, admissibility tier, Contract/Plan/Curriculum/source-manifest versions, grading result, and evidence limitations. Every state-crediting question has one primary objective. Contextual appearance of another concept earns it no completion credit unless a separate explicit rubric point and validated attribution exists. This prevents broad questions from overcrediting many objectives.
 
 The model never writes mastery or completion.
 
@@ -867,6 +903,8 @@ A versioned policy can require:
 
 Policies are Contract-sensitive. A pass sprint, a 95+ target, and deep study do not share one universal threshold. Policy presets remain visible and testable; arbitrary model-authored thresholds are rejected.
 
+No Contract or completion policy can override admissibility. Every blocking criterion must be satisfied by tier-1 or validated tier-2 evidence; an in-scope but truth-unverified objective may remain a visible route goal, but its tier-3 probe cannot block or complete formal progression.
+
 ### Decision outcomes
 
 - complete: all required criteria satisfied;
@@ -888,7 +926,7 @@ Levels:
 - course/goal synthesis: apply the intended outcome across major areas;
 - transfer synthesis: use knowledge in a changed surface context.
 
-Synthesis is a formal activity when it affects progression. Generation references only known objectives, concepts, evidence scopes, and allowed representations. Local code validates breadth, source scope, question structure, and grading contracts.
+Synthesis is a formal activity when it affects progression. Generation references only known objectives, concepts, evidence scopes, and allowed representations. Local code validates breadth, learner scope, independent truth/premise authority, exact source provenance, question structure, and grading contracts.
 
 A synthesis failure:
 
@@ -909,13 +947,15 @@ A replan is a successor proposal to an accepted StudyPlan. It is not routine age
 - deadline or target-outcome change;
 - sustained available-time change beyond a configured tolerance;
 - deterministic PaceBaseline status remaining at_risk across the configured persistence window;
-- learner-confirmed course/exam scope change;
+- learner-confirmed stable logical-Material/role/topic/exam scope change;
 - repeated formal evidence that changes time/depth assumptions;
 - synthesis failure spanning multiple units;
 - strong prerequisite failure that blocks several items;
-- material revision that invalidates route mappings;
+- active MaterialRevision/source-manifest change that invalidates route mappings;
 - meaningful unresolved coverage/readiness risk;
 - learner promotion of a detour into a long-term objective.
+
+The trigger determines which aggregate changes. A learner-level intention, logical-Material membership, or role/scope change may require a successor Contract plus compatible Curriculum/Plan. A new parser/extraction revision of the same logical Material keeps the Contract unchanged and may instead require a successor Curriculum and StudyPlan under that Contract. Reconciliation must never disguise revision churn as learner intent.
 
 ### Ineligible by themselves
 
@@ -968,8 +1008,9 @@ These categories are facets, not a single forced status. A topic may be present,
 
 Each entry has:
 
-- stable ID, course and active material-revision scope;
-- category/facets and authority class;
+- stable ID plus stable Course/Contract/topic/objective/logical-Material scope identity;
+- revision-bound observations with exact active MaterialRevision/SourceBlock/source-manifest provenance and reconciliation status;
+- category/facets, scope-authority status, and truth/premise-authority status as separate fields;
 - referenced source, Curriculum, concept, exam observation, objective, or evidence IDs;
 - origin: deterministic, source, learner, exam observation, or model candidate;
 - status: open, acknowledged, planned, checking, resolved, rejected, deferred, stale;
@@ -986,7 +1027,8 @@ Each entry has:
 - AI candidates remain candidates.
 - Unknown IDs or invalid evidence are rejected.
 - Normalized duplicates merge provenance without losing history.
-- Source/Contract/Curriculum revision changes mark affected entries stale for reconciliation.
+- Contract/Curriculum/source-manifest changes mark affected observations stale for reconciliation while preserving a stable risk identity where the underlying learner-scope concern remains the same.
+- Learner scope confirmation can move an entry into planned/in-scope state but cannot resolve truth-unverified status or authorize a blocking premise.
 - Risk aggregation is deterministic and bounded.
 - Ordinary learning continues if a semantic risk scan is unavailable.
 
@@ -1004,7 +1046,7 @@ Unknown unknowns have no ledger row until detected. The UI must explain this lim
 
 An Exam/Question Blueprint is a lightweight, versioned analysis of supplied past exams, exercise sheets, or question sets. It is separate from the existing assessment-generation QuestionBlueprint.
 
-Each input has a learner-confirmed material role: course_material, supplementary_reference, past_exam, exercise_sheet, or question_set. The role is versioned and controls authority. A past exam is Course Truth about what that artifact asked and how it represented the task; it is not automatically Course Truth for every embedded answer/claim and is not silently added to ordinary course scope. Changing a role creates a new role-assignment version, stales affected Blueprint/Curriculum/risk mappings, and proposes reconciliation without deleting history.
+Each logical Material has a learner-confirmed role assignment: course_material, supplementary_reference, past_exam, exercise_sheet, or question_set. The assignment is versioned independently from parser revisions and constrains scope and how evidence may be considered; it does not verify every embedded claim or answer. A past exam is Course Truth about what that verified artifact asked and how it represented the task, but not automatically Course Truth for every embedded answer/claim, and it is not silently added to ordinary course scope. Reprocessing the same Material preserves its role assignment. Changing a role creates a new role-assignment version, stales affected Blueprint/Curriculum/risk mappings, and requires Contract reconciliation or a successor only when learner-level intention/scope changes.
 
 ### Observations
 
@@ -1030,7 +1072,7 @@ Observed frequency means only “frequency in these supplied artifacts.” It mu
 - Curriculum: observed topics/abilities map to units; unmapped observations create risks.
 - StudyPlan: priority/time and checkpoint mix may change after confirmation.
 - Coverage/Risk Ledger: observed-but-unplanned representations or combinations remain open.
-- Completion: high-score policies may require more observed representation coverage.
+- Completion: high-score policies may require more observed representation coverage only through admissible tier-1/2 premises.
 - Examiner Mode: the Blueprint calibrates fair formats and combinations without bounding all possible future questions.
 
 Hy3 proposes semantic mappings. Local code validates question IDs, source locations, counts, controlled enums, and duplicate observations.
@@ -1056,7 +1098,7 @@ Candidate types include:
 - unfamiliar-but-standard representation;
 - standard-course knowledge not expanded in supplied material.
 
-Output is a typed set of AI Risk Candidates with scope, rationale, expected diagnostic value, proposed evidence kind, difficulty, and provenance to the inputs that motivated it. Local validation rejects unknown entities, out-of-scope claims represented as course truth, duplicates, invalid evidence, and budget overflow.
+Output is a typed set of AI Risk Candidates with scope, rationale, expected diagnostic value, proposed evidence kind, difficulty, and provenance to the inputs that motivated it. Local validation rejects unknown entities, any AI candidate represented as Course Truth without independent premise authority even when it is in learner scope, duplicates, invalid evidence, technical/runtime bound overflow, and any configured spending-policy violation.
 
 The scan changes no mastery or completion. Failure marks risk analysis unavailable/stale and does not block normal learning.
 
@@ -1074,7 +1116,7 @@ Local policy combines:
 - prior evidence strength and representation diversity;
 - observed exam formats;
 - candidate validation/confidence;
-- remaining cost and time budget.
+- remaining configured cost budget, if any, plus the learner’s time budget.
 
 For a 95+ goal, selection is broader and more aggressive. Deep study emphasizes transfer and integration. A short pass sprint prioritizes high-value in-scope risks and explicitly defers the rest.
 
@@ -1089,7 +1131,7 @@ Evidence kinds include:
 - integration;
 - high-difficulty stability.
 
-The assessment pipeline validates source/authority labels, admissibility tier, known IDs, scope, answer secrecy, rubrics, grounding where course truth is claimed, and launchability. Grading uses the formal boundary. Successful tier 1 or validated tier 2 evidence can satisfy the explicitly declared higher-depth criterion. Tier 3 results remain advisory/nonblocking. Failure:
+The assessment pipeline independently validates scope authority, truth/premise authority, admissibility tier, exact premise provenance, known IDs, answer secrecy, rubrics, grounding, and launchability; it never trusts the model’s own authority label. Grading uses the formal boundary. Successful tier 1 or validated tier 2 evidence can satisfy the explicitly declared higher-depth criterion. Tier 3 results remain advisory/nonblocking. Failure:
 
 - creates or updates a specific risk/gap;
 - proposes targeted repair;
@@ -1118,7 +1160,7 @@ Material
 
 Every adapter emits typed warnings, partial/failure status, parser/version metadata, original-asset identity, and derivation provenance. OCR text is explicitly marked OCR-derived with confidence/region metadata. A table or formula is not claimed as structured if only flattened text survived.
 
-Material role is stored independently from parser result and confirmed before semantic use. Parser output never decides whether a document is course material, a past exam, an exercise sheet, a question set, or a supplementary reference.
+Material role is stored against stable logical Material identity, independently from parser result, and confirmed before semantic use. Parser output or revision activation never creates or changes that learner-confirmed role. The role constrains scope/evidence eligibility but does not itself grant truth authority to embedded claims, answers, or model interpretations.
 
 ### Priority roadmap
 
@@ -1235,9 +1277,13 @@ One logical call may have a failed original and one schema-repair attempt; billi
 
 ### Budget behavior
 
-Budgets may be set per operation, session, day, or Course. Before a call, local policy estimates worst-case spend and either permits, asks for confirmation, uses a cache/lower-cost configured option if policy already allows it, or declines.
+Monetary cost caps are an optional learner/operator policy. They are distinct from the learner’s study-time budget and from mandatory technical bounds such as context size, output size, attempt count, timeout, and concurrency. Usage, cache, latency, provider/model, logical-call, and physical-attempt telemetry is recorded regardless of whether a monetary cap exists.
 
-When a cap is reached:
+If no monetary cap is configured, Study Clinic invents no arbitrary product-level spending ceiling: model-dependent capabilities run under their normal product/runtime limits. If a cap is configured per operation, Session, day, or Course, local policy estimates worst-case spend and may permit, ask for confirmation, use an already-authorized cache or semantically equivalent lower-cost configured option, or temporarily decline.
+
+Cost optimization must never silently weaken educational correctness, grounding, truth/admissibility requirements, formal-evidence guarantees, or the coherent execution loop. A cheaper option/fallback is allowed only when its capability contract and quality/authority requirements remain satisfied. Otherwise the product asks for confirmation or refuses visibly rather than silently degrading the result.
+
+When a configured cap is reached:
 
 - local/cached lessons, evidence, plans, agenda edits, reviews, and history remain usable;
 - no valid state is downgraded;
@@ -1269,13 +1315,15 @@ Future implementation appends explicit migrations after the current twelve. Exac
 | Aggregate | Core records |
 | --- | --- |
 | Material lineage | material_revisions, material_role_versions, normalized_structural_units, source_block revisions, lineage/retirement mappings, active pointer, parser attempts |
-| Learning Contract | immutable contract_versions, acceptance/withdrawal events, workspace active pointer |
-| Curriculum | immutable curriculum_versions, nodes/unit mappings/synthesis groups, validation results, active pointer |
-| StudyPlan | immutable study_plan_versions/items, proposal trigger, acceptance, machine diff, PaceBaseline; separate plan_progress_events/current projection |
-| SessionAgenda | agendas/items, item origin/launch spec/time, agenda events, active pointer |
-| StudySession | sessions, exchanges, turns, turn events, summaries/watermarks, route-stack events |
-| Formal progression | objective evidence links, progression_reconciliations, progression_decisions, completion-policy versions, GoalOutcomes |
-| Coverage/Risk | risk entries, facets, provenance links, resolution/history events |
+| Learning Contract | immutable contract_versions with stable subject/logical-Material/role-assignment scope references and no MaterialRevision IDs; acceptance/withdrawal events; workspace active pointer |
+| Course execution | active/paused execution-status projection and pause/resume events; accepted Contract/Plan pointers remain unchanged by pause alone |
+| Source authority | versioned truth_authority_records with logical source, exact accepted revision/claim provenance, admitted premise scope, policy/basis, validation/conflict state, actor, and audit history; separate from Contract scope acceptance |
+| Curriculum | immutable curriculum_versions, exact execution-source manifests, nodes/unit mappings/synthesis groups, validation results, active pointer |
+| StudyPlan | immutable study_plan_versions/items, execution-source-manifest fingerprint, proposal trigger, acceptance, machine diff, PaceBaseline; separate plan_progress_events/current projection |
+| SessionAgenda | agendas/items, item origin/launch spec/time, execution pause/resume and agenda events, active pointer |
+| StudySession | sessions, exchanges, turns, turn events, summaries/watermarks, route-stack and execution pause/resume events |
+| Formal progression | objective evidence and premise-authority/admissibility links, progression_reconciliations, progression_decisions, completion-policy versions, GoalOutcomes |
+| Coverage/Risk | stable risk identities, separate scope/truth authority fields, revision-bound provenance, resolution/reconciliation history events |
 | Exam Blueprint | source artifact versions, question observations, typed Blueprint versions and mappings |
 | Adversarial readiness | scans, candidate risks, selections/checks, evidence links |
 | Agent runtime | commands/operations, idempotency keys, expected-version fingerprints, lease owner/expiry/fencing token, audit events, correlations |
@@ -1288,6 +1336,10 @@ Future implementation appends explicit migrations after the current twelve. Exac
 - Current projections are rebuildable from accepted snapshots and append-only decisions/events.
 - Each accepted state mutation is atomic within its aggregate boundary. Existing grading commits its valid attempt and learner-state effects first; progression reconciliation commits separately and retryably so a progression fault cannot invalidate grading.
 - Contract/Plan successor activation is one explicit cross-aggregate transaction because mismatched active pointers are never valid.
+- Activating or reprocessing a MaterialRevision cannot mutate stable Contract scope; it stales/reconciles downstream execution-source manifests.
+- Learner acceptance of a topic, Material, role, Curriculum, or Plan grants scope authority only and cannot create Course Truth or a blocking assessment premise.
+- Pausing execution leaves the accepted StudyPlan snapshot, status, and pointer unchanged; resume revalidates downstream execution context.
+- Cost telemetry is unconditional; monetary cap enforcement occurs only under an explicit learner/operator policy and never relaxes grounding, truth authority, or formal evidence.
 - Historical evidence references immutable snapshots/revisions, not only live cascading entities.
 - Unknown legacy metadata stays null/unknown rather than fabricated.
 - Foreign-key rebuild migrations run integrity checks and compatibility fixtures.
@@ -1334,6 +1386,7 @@ Add focused services for:
 - Exam Blueprint observation;
 - blind-spot scan/readiness selection;
 - source revision/lineage;
+- independent source/premise truth-authority validation;
 - durable operation/audit/idempotency;
 - semantic cache and cost telemetry.
 
@@ -1353,7 +1406,7 @@ Extend the existing narrow contract with operation-specific methods such as:
 - proposeAdversarialRisks;
 - proposeAdversarialCheck.
 
-Every important output has a shared Zod schema, controlled enums, hard bounds, and downstream local ID/evidence validation. One bounded JSON/schema repair remains the default. Grounding, scope, permissions, cost caps, or domain failures do not become infinite repair loops.
+Every important output has a shared Zod schema, controlled enums, hard bounds, and downstream local ID/evidence validation. One bounded JSON/schema repair remains the default. Grounding, scope, permissions, configured cost caps, or domain failures do not become infinite repair loops.
 
 Important provider output is never extracted with fragile regular expressions. Balanced transport parsing may locate a JSON payload, but the payload is unusable until schema and domain validation succeed.
 
@@ -1398,7 +1451,7 @@ Illustrative resources:
 Consequential requests carry:
 
 - commandId/idempotency key;
-- expected Contract/Curriculum/Plan/Agenda/Session/material-revision versions;
+- expected stable Contract-scope version separately from Curriculum/Plan/Agenda/Session versions and the exact execution-source-manifest fingerprint;
 - actor intent and typed command;
 - client correlation ID where applicable.
 
@@ -1430,7 +1483,7 @@ Course Home also opens the full draft/accepted StudyPlan editor and history: ite
 
 ### Course Materials
 
-Course Materials is a Course Home subview, not a new primary product center. It handles import, learner-confirmed material roles, active/prior revisions, parser attempts/warnings, uncertain or skipped regions, provenance, reprocess/activate/retire actions, and source-scope impact. Destructive purge is visually and operationally distinct from retirement.
+Course Materials is a Course Home subview, not a new primary product center. It visibly separates stable logical Material membership/learner-confirmed role from active/prior parser revisions and independent truth-authority status. It handles import, parser attempts/warnings, uncertain or skipped regions, provenance, reprocess/activate/retire actions, and downstream source-manifest impact. Reprocessing never appears as a learner-intention change; destructive purge is visually and operationally distinct from retirement.
 
 ### Study Session
 
@@ -1468,7 +1521,7 @@ Contains:
 - synthesis and adversarial-readiness evidence;
 - session/operation cost and audit views.
 
-Progress contains the full Coverage/Risk Ledger inspector: provenance chain, authority/admissibility, status history, stale reason, acknowledge/defer/reject/resolve actions, and linked Plan/evidence. Course Home shows only its bounded summary.
+Progress contains the full Coverage/Risk Ledger inspector: provenance chain, separate scope and truth/premise authority, admissibility, status history, stale reason, acknowledge/defer/reject/resolve actions, and linked Plan/evidence. Course Home shows only its bounded summary.
 
 ### Explore
 
@@ -1485,6 +1538,7 @@ The graph can start a detour or propose an agenda item, but it does not own the 
 Use consistent badges:
 
 - Course truth / locally verified anchor;
+- in learner scope / truth unverified;
 - AI teaching;
 - AI risk candidate;
 - informal;
@@ -1500,23 +1554,26 @@ Current document reprocessing deletes extraction-dependent state. That is incomp
 
 ### Target model
 
-1. Material is the learner’s document identity.
+1. Material is the stable learner-meaningful document identity; Contract scope and role assignments reference this identity, not an extraction revision.
 2. MaterialRevision is immutable original bytes/text plus parser/version/result metadata.
 3. Normalized structural units and SourceBlocks belong to a revision.
-4. A candidate revision is parsed, mapped, and validated without affecting the active revision.
-5. Activation changes the current pointer only after validation.
-6. Deterministic exact/near-exact lineage proposes old→new block/concept mappings.
-7. Hy3 may propose semantic lineage, but local validation and learner-visible uncertainty apply.
-8. Old evidence remains attached to the old revision.
-9. First-release safe default: no active mastery, LearningUnit completion, or blocking readiness decision transfers automatically, even for exact lineage. Old evidence remains visible through lineage; affected current units require new formal evidence. A future separately designed and evaluated transfer policy may relax this only with versioned rules and explicit audit.
-10. Removing a document retires it from active scope rather than cascading away Course history. Permanent purge is a separate explicit destructive action.
+4. A material-role assignment is versioned independently from MaterialRevision and survives reprocessing of the same logical Material.
+5. A candidate revision is parsed, mapped, and validated without affecting the active revision or Contract scope.
+6. Activation changes the execution-source pointer only after validation and stales dependent Curriculum/Plan/context/risk/authority manifests; it never creates a successor Contract by itself.
+7. Deterministic exact/near-exact lineage proposes old→new block/concept mappings.
+8. Hy3 may propose semantic lineage, but local validation and learner-visible uncertainty apply.
+9. Old evidence remains attached to the old revision.
+10. Truth-authority records remain tied to their exact admitted revision/claims; a successor revision requires explicit reconciliation and cannot inherit blocking authority merely from lineage.
+11. First-release safe default: no active mastery, LearningUnit completion, or blocking readiness decision transfers automatically, even for exact lineage. Old evidence remains visible through lineage; affected current units require new formal evidence. A future separately designed and evaluated transfer policy may relax this only with versioned rules and explicit audit.
+12. Retiring a document removes it from active execution-source availability rather than cascading away Course history. It does not silently rewrite the stable Contract; the resulting unavailable/out-of-scope condition remains visible until the learner accepts a scope successor. Permanent purge is a separate explicit destructive action.
 
 ### Revision effects
 
-- New document: add a revision/source scope; propose Curriculum/risk/plan effects.
-- Reprocess: stage new revision; preserve active old version on failure.
-- Extraction improvement: retain both results and lineage; do not silently upgrade evidence.
-- Remove: active Curriculum/Plan mappings become stale or out-of-scope; historical attempts remain inspectable.
+- New document: create a logical Material and initial revision outside accepted Contract scope until the learner assigns a role/inclusion; a genuine accepted learner-scope change may create a successor Contract, then Curriculum/risk/Plan effects.
+- Reprocess: stage a new revision for the same logical Material, preserve the active old version on failure, leave the Contract untouched, and reconcile exact downstream execution manifests after activation.
+- Extraction improvement: retain both results and lineage; do not silently upgrade evidence, truth authority, or Contract intention.
+- Role change: create a role-assignment version independent of parsing; reconcile the Contract and require a successor when accepted learner-level scope/intention changes.
+- Remove/retire: make active Curriculum/Plan/source-authority mappings stale or unavailable while leaving stable Contract/history inspectable; only learner-confirmed scope change supersedes the Contract.
 - Curriculum successor: old unit decisions remain tied to the old version; mapped evidence may be referenced, never rewritten.
 
 Exact quote re-anchoring proves location, not equivalence of the surrounding semantic claim. Exact lineage therefore transfers history/display linkage only under the initial policy, never active completion.
@@ -1536,11 +1593,12 @@ Existing rows become revision 1 with honest parser/source metadata. Existing att
 | Rolling summary | Use recent raw exchanges and last valid compatible summary; regenerate later |
 | Agenda item becomes stale | Revalidate, block or replace with a semantically valid visible fallback; never launch an impossible action |
 | Formal assessment generation | No evidence and no state change; preserve prior state |
+| Truth/premise-authority validation | Keep the topic teachable/advisory where in scope, but create no blocking evidence or progression mutation |
 | Grading timeout/failure | No partial persistent learning-state mutation |
 | Risk scan | Do not block ordinary learning; mark coverage analysis stale/unavailable |
 | Exam Blueprint | Preserve prior version and raw supplied artifacts |
 | Adversarial generation/check | Do not downgrade valid evidence; expose unavailable check |
-| Cost cap | Cached/local study and history continue; pause model-dependent actions |
+| Configured cost cap | Cached/local study and history continue; pause model-dependent actions visibly without weakening evidence or grounding rules |
 | Source parse/revision | Preserve active revision and valid downstream artifacts |
 | Learner detour | Preserve origin and return stack; if origin stales, recompose visibly |
 | Client disconnect/navigation | Abort where appropriate or detach; fence late results by version |
@@ -1554,10 +1612,12 @@ Every persistent subsystem requires migration, repository, service, API, and fro
 
 ### Deterministic domain tests
 
-- Contract validation, feasibility, presets, versions, and acceptance;
+- Contract validation, feasibility, presets, versions, and acceptance, including rejection of MaterialRevision/SourceBlock/parser-fingerprint coupling;
+- stable logical-Material/role scope surviving same-Material reprocessing with no successor Contract, while genuine learner-level inclusion/exclusion/role change follows Contract successor rules;
 - atomic successor Contract/Plan activation with the old pair executable on failure/rejection;
-- Curriculum hierarchy, known IDs, evidence, cycles, bounds, candidate activation;
+- Curriculum hierarchy, known IDs, evidence, cycles, bounds, exact execution-source manifest, candidate activation, and revision-driven staleness;
 - StudyPlan feasibility, immutable snapshots, diffs, acceptance, progress projection, and rejection of silently omitted known-scope objectives;
+- execution pause/resume leaving the accepted Plan status/snapshot/pointer unchanged, creating no Plan version, and safely revalidating/recomposing on resume;
 - PaceBaseline actual-time rollups, unknown/on-track/at-risk thresholds, reason codes, and drift-trigger qualification;
 - terminal GoalOutcome rules, including deadline expiry and explicit finished-with-gaps;
 - Agenda composition, time bounds, launchability, insert/defer/reorder;
@@ -1565,13 +1625,14 @@ Every persistent subsystem requires migration, repository, service, API, and fro
 - completion policy variants and non-regression of simpler evidence;
 - synthesis failure isolation;
 - replan trigger qualification and rejected/accepted behavior;
-- all Risk Ledger facets, provenance, dedupe, resolution, and stale reconciliation;
+- all Risk Ledger facets, stable identity, scope/truth authority separation, revision provenance, dedupe, resolution, and stale reconciliation;
 - Exam Blueprint counts/wording with no probability claims;
 - adversarial candidate/check scope and evidence isolation;
-- AI-only advisory-check non-authority and accepted-supplement activation;
-- material-role isolation and role-change reconciliation;
-- cost/cache keys, logical/physical attempts, cap behavior;
-- source-revision lineage and history preservation.
+- learner acceptance of an AI-suggested topic into scope leaving its claims tier 3/nonblocking, with no retroactive promotion of old probes;
+- separately validated authoritative-source admission, source-conflict blocking, and tier-1/2 premise eligibility;
+- material-role isolation, role-change reconciliation, and proof that a learner-confirmed role does not authorize embedded answers/rubrics;
+- cost/cache keys, logical/physical attempts, unconditional telemetry, no-cap default behavior, and configured-cap confirmation/safe-substitution/refusal;
+- source-revision lineage, truth-authority staleness, downstream manifest reconciliation, and history preservation;
 - weak-heading synthetic-window extraction, size-aware budgets, and legitimate zero-concept sections;
 - segment-level lesson provenance, invalid required-claim repair/failure, and source-source conflicts;
 - targeted Tutor grounding repair and targeted remediation missing-piece repair without contract relaxation;
@@ -1586,6 +1647,7 @@ Every persistent subsystem requires migration, repository, service, API, and fro
 - late provider response after Course/Plan/Session switch;
 - stop versus navigation-detach;
 - process restart/orphan recovery;
+- restart while execution is paused preserving the accepted route and resumable origin;
 - lease takeover/fencing that rejects late old-worker finalization and records outcome_unknown attempts;
 - failure between each transaction write;
 - candidate generation failure preserving active version;
@@ -1599,7 +1661,7 @@ Every persistent subsystem requires migration, repository, service, API, and fro
 - structured parse and one bounded repair;
 - unknown IDs/relations/evidence;
 - prompt-injection source wrapping;
-- invalid risk authority and out-of-scope adversarial content;
+- invalid risk authority, in-scope AI claims mislabeled as Course Truth, and out-of-scope adversarial content;
 - usage absent/partial/present;
 - cancellation and timeout;
 - no real API in ordinary tests.
@@ -1608,6 +1670,7 @@ Every persistent subsystem requires migration, repository, service, API, and fro
 
 - Course Home next-action rationale;
 - visual authority/formal/informal distinctions;
+- visual distinction between learner scope and independently verified truth authority;
 - free-text detour and route return;
 - nested detour stack cleanup across defer, stop, stale origin, and Plan supersession;
 - direct checkpoint/defer/promote/replan diff flows;
@@ -1628,6 +1691,8 @@ Evaluation separates:
 3. learner behavior/usability;
 4. learning outcomes;
 5. cost and latency.
+
+There are two deliberately different evaluation moments. The required post-Phase-4 product/dogfood gate in §38 tests whether the core execution interaction is usable and removes enough manual orchestration to justify further complexity. It is not the later same-model ablation, human outcome evaluation, or delayed-retention study, and it cannot establish educational effectiveness.
 
 ### Measures
 
@@ -1695,7 +1760,11 @@ Failure to outperform Plain Hy3 means cut or simplify the scaffold, not add more
 
 ## 36. Smallest coherent implementation scope
 
-The smallest coherent first Agent release is not every roadmap feature. It must still close one truthful execution loop:
+This section defines a **release-level coherent integration target**. It is not implementation authorization, a single-task scope, permission to land all items in one Codex change, or a substitute for the phase gates below. Each phase and implementation slice requires separate future authorization, review, validation, and a focused task.
+
+The post-Phase-4 core is intentionally dogfooded before the release target is complete. Full sophistication for items 11 and 12, and the rest of Phase 5, proceed only after the required product/dogfood gate; its outcome may simplify or narrow them without weakening the approved authority, evidence, or learner-control invariants.
+
+The smallest coherent first Agent release is not every roadmap feature. As a release target, it must still close one truthful execution loop:
 
 1. existing Workspace treated as Course;
 2. safe MaterialRevision foundation for newly processed content;
@@ -1741,6 +1810,7 @@ This document authorizes no implementation. A separate future task must approve 
 ### Phase 1 — durable foundations
 
 - material revision lineage;
+- stable logical-Material/role scope records separated from revision-bound source/premise truth-authority records;
 - command/event/idempotency/version fencing;
 - cost/cache schema;
 - shared Contract/Curriculum/Plan/Agenda contracts;
@@ -1763,6 +1833,7 @@ Exit: learner can inspect and accept a bounded route and every item is launchabl
 - persisted StudySession/turns/summary;
 - Agenda composition;
 - detour/return, insert, deep dive, direct checkpoint, defer;
+- Course/Agenda/Session execution pause/resume with unchanged accepted Plan;
 - cancellation, stale, restart, and resume.
 
 Exit: a learner can freely interrupt and return without Plan drift.
@@ -1776,7 +1847,47 @@ Exit: a learner can freely interrupt and return without Plan drift.
 
 Exit: conversation cannot complete units; formal evidence deterministically drives the next action.
 
+### Required Product/Dogfood Gate — after Phase 4, before Phase 5
+
+Phase 5 must not begin merely because Phases 1–4 compile or pass automated tests. First, representative real dogfood must exercise the coherent core loop:
+
+~~~text
+Learning Contract
+→ Curriculum
+→ accepted StudyPlan
+→ dynamic SessionAgenda
+→ conversational StudySession
+→ mixed-initiative detour and return
+→ formal evidence
+→ deterministic completion or targeted repair
+→ meaningful replan proposal, diff, and learner acceptance/rejection
+~~~
+
+The gate combines deterministic state/audit inspection, forced restart/stale/rejection/failure scenarios, observed learner sessions with realistic course material, intervention/bypass logs, and concise learner debriefs. The protocol pre-registers its task-success, route-recovery, manual-intervention, bypass, and acceptable-friction criteria before sessions; thresholds are not invented after seeing results.
+
+Gate questions and exit criteria:
+
+1. Can the learner start or resume without manually reconstructing the goal, accepted Plan, prior position, or unresolved work?
+2. Is the next action—and why it is next—understandable without asking the Tutor to reconstruct the route?
+3. Can the learner detour freely and reliably return, with zero silent Plan mutation or route drift?
+4. Do UI state and persisted audit records keep Tutor conversation/informal checks separate from formal evidence and progression, with zero conversation-to-mastery leakage?
+5. Does the Plan/Agenda separation help the learner understand long-term route versus current work, rather than feel like duplicate bureaucracy?
+6. Can at least one qualified meaningful replan proceed through trigger, proposal, diff, rejection or acceptance, and route recovery with less manual orchestration than rebuilding the plan in ordinary chat?
+7. Do provider failure, restart, stale context, rejected proposals, and interrupted sessions recover without losing the accepted route, fabricating completion, or stranding the learner?
+8. Does the learner repeatedly bypass the scaffold or switch to general chat? Record the task and reason rather than treating departure as generic dropout.
+9. Is interaction friction—setup, confirmation, navigation, and state explanation—acceptable relative to the remembering, next-action, return, and replanning work removed?
+
+Safety/evidence-boundary violations, unrecoverable route drift, or failure to resume are gate blockers regardless of subjective enthusiasm. The gate records one of three outcomes:
+
+- **GO:** hard invariants pass; observed learners can understand, detour, recover, and replan; the scaffold shows credible orchestration reduction with acceptable friction. Phase 5 may be separately authorized.
+- **GO WITH SIMPLIFICATION:** the core removes useful orchestration but Plan/Agenda/session interaction or state burden is too heavy. Simplify and re-dogfood the affected core, then authorize only a narrowed Phase 5.
+- **STOP/NARROW:** repeated bypass, unacceptable friction, no credible orchestration reduction, unsafe state leakage, or route/recovery failure means broad Phase 5 does not proceed. Preserve the reliable substrate and narrow or remove the scaffold behavior that failed.
+
+This gate establishes product usability and orchestration value only. It does not prove delayed retention, mastery validity, transfer, exam outcomes, or educational effectiveness. A GO result is not itself authorization to implement Phase 5; implementation remains a separate task.
+
 ### Phase 5 — risk, exams, and adversarial readiness
+
+This phase is conditional on a recorded gate outcome and separate implementation authorization.
 
 - Exam/Question Blueprint;
 - semantic risk scan;
@@ -1790,7 +1901,7 @@ Exit: risks remain provenance-bearing candidates; harder failure does not erase 
 - gated PPTX, OCR/image pilots;
 - Markdown/KaTeX rendering;
 - same-model ablation, human review, delayed retention;
-- cost/usability dogfood and thesis falsification.
+- continued cost/usability measurement and formal thesis falsification after the earlier product gate.
 
 Exit: only fixture-verified formats are claimed; product value is measured rather than inferred.
 
@@ -1803,6 +1914,7 @@ This map is for a later implementation task.
 Add focused modules under packages/shared/src/domain:
 
 - learningContract.ts;
+- sourceAuthority.ts;
 - curriculum.ts;
 - studyPlan.ts;
 - sessionAgenda.ts;
@@ -1828,7 +1940,7 @@ Reuse or extend:
 - apps/server/src/tutor/tools.ts;
 - apps/server/src/util/requestSignal.ts.
 
-Add focused services for Contract, Curriculum, StudyPlan, Agenda, StudySession/context, progression, risk, exam observation, readiness, replan, revision, operations, cache, and telemetry. Register them in services/index.ts. Do not place orchestration in routes/workspaces.ts.
+Add focused services for Contract, source/premise truth authority, Curriculum, StudyPlan, Agenda, StudySession/context, progression, risk, exam observation, readiness, replan, revision, operations, cache, and telemetry. Register them in services/index.ts. Do not place orchestration in routes/workspaces.ts.
 
 ### Provider
 
@@ -1863,7 +1975,7 @@ Add transcript, Agenda, Contract/Plan acceptance/diff, Curriculum, risk, synthes
 
 ### Tests/evaluation
 
-Extend shared schema/back-compat tests, migrate.test.ts, migrateCompat.test.ts, repository/service/route tests, socket cancellation tests, frontend stale-operation tests, and eval/run-fake.mjs. Add a separate same-model ablation harness; never use real Hy3 in ordinary tests.
+Extend shared schema/back-compat tests, migrate.test.ts, migrateCompat.test.ts, repository/service/route tests, socket cancellation tests, frontend stale-operation tests, and eval/run-fake.mjs. Add the pre-Phase-5 dogfood protocol/instrumentation separately from the later same-model ablation harness; never use real Hy3 in ordinary tests.
 
 ## 40. Unresolved product hypotheses
 
