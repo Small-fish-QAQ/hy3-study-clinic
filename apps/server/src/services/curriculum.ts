@@ -1,0 +1,549 @@
+import {
+  AcceptCurriculumRequestSchema,
+  ApiErrorCode,
+  CurriculumHierarchyViewSchema,
+  CurriculumHistoryResponseSchema,
+  CurriculumProposalResponseSchema,
+  ExecutionSourceManifestSchema,
+  ProposeCurriculumRequestSchema,
+  RejectCurriculumRequestSchema,
+  fnv1a32,
+  type AcceptCurriculumRequest,
+  type Curriculum,
+  type CurriculumHierarchyView,
+  type CurriculumHistoryResponse,
+  type CurriculumProposalResponse,
+  type ExecutionSourceManifest,
+  type LearningContract,
+  type ProposeCurriculumRequest,
+  type RejectCurriculumRequest,
+} from '@hy3-clinic/shared';
+import { AppError, notFound } from '../errors.js';
+import type {
+  CurriculumContractContext,
+  CurriculumOutlineItem,
+  CurriculumProposalInput,
+  LlmProvider,
+  ProviderCallOptions,
+} from '../llm/provider.js';
+import type { Repositories } from '../repositories/index.js';
+import type { SourceAuthorityBundle } from '../repositories/sourceAuthority.js';
+import type { Clock } from '../util/ids.js';
+import { newId } from '../util/ids.js';
+import type { CourseCommandService } from './courseCommands.js';
+import { createCoverageRiskAgentService } from './coverageRisksAgent.js';
+import {
+  assertValidMaterializedCurriculum,
+  materializeCurriculumProposal,
+} from './curriculumValidation.js';
+
+/** HTTP/service request: the server, never the client, resolves exact revisions. */
+export const ProposeCurriculumCommandRequestSchema = ProposeCurriculumRequestSchema.omit({
+  executionSourceManifest: true,
+}).strict();
+export type ProposeCurriculumCommandRequest = Omit<
+  ProposeCurriculumRequest,
+  'executionSourceManifest'
+>;
+
+const CURRICULUM_LIMITS = {
+  maxNodes: 1999,
+  maxObjectives: 30_000,
+  maxSynthesisGroups: 200,
+} as const;
+
+interface CurriculumServiceDeps {
+  repos: Repositories;
+  provider: LlmProvider;
+  clock: Clock;
+  commands: CourseCommandService;
+  providerModel?: string | null;
+}
+
+function manifestFingerprint(revisions: ExecutionSourceManifest['revisions']): string {
+  return `manifest_${fnv1a32(JSON.stringify(revisions)).toString(16).padStart(8, '0')}`;
+}
+
+function requireContract(
+  repos: Repositories,
+  workspaceId: string,
+  contractId: string,
+  expectedVersion: number,
+): LearningContract {
+  const contract = repos.learningContracts.get(contractId);
+  if (!contract || contract.workspaceId !== workspaceId) {
+    throw notFound('Learning Contract not found.');
+  }
+  if (contract.version !== expectedVersion) {
+    throw new AppError(ApiErrorCode.VersionConflict, 'Learning Contract version is stale.');
+  }
+  if (contract.status !== 'learner_confirmed' && contract.status !== 'active') {
+    throw new AppError(
+      ApiErrorCode.ValidationError,
+      'Curriculum proposal requires a learner-confirmed Learning Contract.',
+    );
+  }
+  return contract;
+}
+
+/**
+ * Resolve stable learner scope to the exact current extraction identity used
+ * by one Curriculum proposal. Reprocessing changes this manifest, never the
+ * Contract's stable Material identity.
+ */
+export function buildCurriculumExecutionContext(
+  repos: Repositories,
+  contract: LearningContract,
+): {
+  manifest: ExecutionSourceManifest;
+  contractContext: CurriculumContractContext;
+  outline: CurriculumOutlineItem[];
+  blocks: ReturnType<Repositories['materials']['getBlocksByWorkspace']>;
+  authorityBundles: SourceAuthorityBundle[];
+} {
+  const materials = new Map(
+    repos.materials
+      .listByWorkspace(contract.workspaceId)
+      .map((material) => [material.id, material]),
+  );
+  const revisions: ExecutionSourceManifest['revisions'] = [];
+  const outline: CurriculumOutlineItem[] = [];
+  const blocks = [] as ReturnType<Repositories['materials']['getBlocksByWorkspace']>;
+  const authorityBundles: SourceAuthorityBundle[] = [];
+  const authorityIds = new Set<string>();
+  const contextMaterials: CurriculumContractContext['materials'] = [];
+
+  for (const scoped of contract.courseScope.materials) {
+    const material = materials.get(scoped.materialId);
+    if (!material) {
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        `Scoped Material not found: ${scoped.materialId}`,
+      );
+    }
+    const role = repos.materialRoles.get(scoped.materialRoleAssignmentId);
+    const currentRole = repos.materialRoles.getCurrent(scoped.materialId);
+    if (
+      !role ||
+      role.materialId !== scoped.materialId ||
+      role.version !== scoped.materialRoleAssignmentVersion ||
+      role.role !== scoped.role ||
+      role.status !== 'learner_confirmed' ||
+      currentRole?.id !== role.id
+    ) {
+      throw new AppError(
+        ApiErrorCode.VersionConflict,
+        `Material role assignment is stale or unconfirmed: ${scoped.materialId}`,
+      );
+    }
+    contextMaterials.push({ ...scoped, title: material.title });
+    if (scoped.disposition === 'excluded') continue;
+    if (material.availability !== 'active') {
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        `Scoped Material is retired: ${material.id}`,
+      );
+    }
+    const revision = repos.materialRevisions.getActive(material.id);
+    if (!revision || revision.status !== 'active' || material.activeRevisionId !== revision.id) {
+      throw new AppError(
+        ApiErrorCode.VersionConflict,
+        `Scoped Material has no current active revision: ${material.id}`,
+      );
+    }
+    const materialBlocks = repos.materials.getBlocks(material.id);
+    if (
+      materialBlocks.length === 0 ||
+      materialBlocks.some((block) => block.materialRevisionId !== revision.id)
+    ) {
+      throw new AppError(
+        ApiErrorCode.VersionConflict,
+        `Scoped Material SourceBlocks do not match its active revision: ${material.id}`,
+      );
+    }
+    revisions.push({
+      materialId: material.id,
+      materialRevisionId: revision.id,
+      parserVersion: revision.parserVersion,
+      parserFingerprint: revision.parserFingerprint,
+      sourceBlockRevisionIds: materialBlocks.map((block) => block.id),
+    });
+    for (const block of materialBlocks) {
+      blocks.push(block);
+      outline.push({
+        structuralUnitId: null,
+        materialId: material.id,
+        materialRevisionId: revision.id,
+        parentStructuralUnitId: null,
+        kind: block.heading ? 'section' : 'paragraph',
+        index: block.index,
+        title: block.heading,
+        sourceBlockIds: [block.id],
+      });
+      for (const bundle of repos.sourceAuthority.findEligibleByBlock(
+        contract.workspaceId,
+        revision.id,
+        block.id,
+      )) {
+        if (authorityIds.has(bundle.record.id)) continue;
+        authorityIds.add(bundle.record.id);
+        authorityBundles.push(bundle);
+      }
+    }
+  }
+
+  if (revisions.length === 0) {
+    throw new AppError(
+      ApiErrorCode.ValidationError,
+      'Curriculum proposal requires at least one included active Material.',
+    );
+  }
+  const manifest = ExecutionSourceManifestSchema.parse({
+    fingerprint: manifestFingerprint(revisions),
+    revisions,
+  });
+  return {
+    manifest,
+    outline,
+    blocks,
+    authorityBundles,
+    contractContext: {
+      contractVersionId: contract.id,
+      intent: contract.intent,
+      targetOutcome: {
+        description: contract.targetOutcome.description,
+        targetScore: contract.targetOutcome.targetScore,
+      },
+      desiredDepth: contract.desiredDepth,
+      subjectBoundaries: contract.courseScope.subjectBoundaries,
+      materials: contextMaterials,
+      includedTopics: contract.courseScope.includedTopics,
+      excludedTopics: contract.courseScope.excludedTopics,
+    },
+  };
+}
+
+function manifestsEqual(left: ExecutionSourceManifest, right: ExecutionSourceManifest): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+export function curriculumHierarchy(curriculum: Curriculum): CurriculumHierarchyView {
+  const children = new Map<string | null, Curriculum['nodes']>();
+  const byId = new Map(curriculum.nodes.map((node) => [node.id, node]));
+  for (const node of curriculum.nodes) {
+    const siblings = children.get(node.parentId) ?? [];
+    siblings.push(node);
+    children.set(node.parentId, siblings);
+  }
+  children.forEach((siblings) =>
+    siblings.sort((a, b) => a.index - b.index || a.id.localeCompare(b.id)),
+  );
+  const depthOf = (node: Curriculum['nodes'][number]): number => {
+    let depth = 0;
+    let parent = node.parentId ? byId.get(node.parentId) : undefined;
+    const seen = new Set([node.id]);
+    while (parent && !seen.has(parent.id)) {
+      seen.add(parent.id);
+      depth += 1;
+      parent = parent.parentId ? byId.get(parent.parentId) : undefined;
+    }
+    return depth;
+  };
+  const breadcrumbs = (node: Curriculum['nodes'][number]): string[] => {
+    const titles = [node.title];
+    let parent = node.parentId ? byId.get(node.parentId) : undefined;
+    while (parent) {
+      titles.unshift(parent.title);
+      parent = parent.parentId ? byId.get(parent.parentId) : undefined;
+    }
+    return titles;
+  };
+  return CurriculumHierarchyViewSchema.parse({
+    curriculumId: curriculum.id,
+    curriculumVersion: curriculum.version,
+    status: curriculum.status,
+    rootNodeIds: (children.get(null) ?? []).map((node) => node.id),
+    nodes: curriculum.nodes.map((node) => ({
+      id: node.id,
+      parentId: node.parentId,
+      childIds: (children.get(node.id) ?? []).map((child) => child.id),
+      kind: node.kind,
+      index: node.index,
+      depth: depthOf(node),
+      title: node.title,
+      breadcrumbTitles: breadcrumbs(node),
+      learningUnit: node.learningUnit,
+      sourceReferences: node.sourceReferences,
+      mappedPlanItemIds: [],
+      progressState: null,
+    })),
+    synthesisGroups: curriculum.synthesisGroups,
+    validation: curriculum.validation,
+    executionSourceManifest: curriculum.executionSourceManifest,
+  });
+}
+
+export function createCurriculumService({
+  repos,
+  provider,
+  clock,
+  commands,
+  providerModel,
+}: CurriculumServiceDeps) {
+  const coverageRisks = createCoverageRiskAgentService({ repos, clock });
+  function requireCurriculum(workspaceId: string, id: string): Curriculum {
+    const curriculum = repos.curricula.get(id);
+    if (!curriculum || curriculum.workspaceId !== workspaceId)
+      throw notFound('Curriculum not found.');
+    return curriculum;
+  }
+
+  function detail(workspaceId: string, curriculumId: string): CurriculumProposalResponse {
+    const curriculum = requireCurriculum(workspaceId, curriculumId);
+    return CurriculumProposalResponseSchema.parse({
+      curriculum,
+      hierarchy: curriculumHierarchy(curriculum),
+      retainedAcceptedCurriculumId: repos.courseExecution.get(workspaceId).activeCurriculumId,
+    });
+  }
+
+  function history(workspaceId: string): CurriculumHistoryResponse {
+    if (!repos.workspaces.get(workspaceId)) throw notFound('Course not found.');
+    const items = repos.curricula.list(workspaceId);
+    const state = repos.courseExecution.get(workspaceId);
+    return CurriculumHistoryResponseSchema.parse({
+      workspaceId,
+      acceptedCurriculumId: state.activeCurriculumId,
+      proposedCurriculumId:
+        [...items].reverse().find((item) => item.status === 'proposed')?.id ?? null,
+      items: items.map((item) => ({
+        id: item.id,
+        version: item.version,
+        predecessorId: item.predecessorId,
+        contractVersionId: item.contractVersionId,
+        status: item.status,
+        title: item.nodes.find((node) => node.kind === 'course')?.title ?? 'Course',
+        learningUnitCount: item.nodes.filter((node) => node.kind === 'learning_unit').length,
+        unmappedStructuralUnitCount: item.validation.unmappedStructuralUnitIds.length,
+        validationValid: item.validation.valid,
+        executionSourceManifestFingerprint: item.executionSourceManifest.fingerprint,
+        createdAt: item.createdAt,
+        acceptedAt: item.acceptedAt,
+      })),
+    });
+  }
+
+  async function propose(
+    input: ProposeCurriculumCommandRequest,
+    opts?: ProviderCallOptions,
+  ): Promise<CurriculumProposalResponse> {
+    const parsed = ProposeCurriculumCommandRequestSchema.parse(input);
+    const workspace = repos.workspaces.get(parsed.command.workspaceId);
+    if (!workspace) throw notFound('Course not found.');
+    const contract = requireContract(
+      repos,
+      parsed.command.workspaceId,
+      parsed.contractId,
+      parsed.expectedContractVersion,
+    );
+    const context = buildCurriculumExecutionContext(repos, contract);
+    const claim = commands.begin(parsed.command, 'propose_curriculum', {
+      contractId: contract.id,
+      contractVersion: contract.version,
+      predecessorCurriculumId: parsed.predecessorCurriculumId,
+      expectedActiveCurriculumId: parsed.expectedActiveCurriculumId,
+      manifestFingerprint: context.manifest.fingerprint,
+    });
+    if (claim.replayPayload !== undefined) {
+      return CurriculumProposalResponseSchema.parse(claim.replayPayload);
+    }
+    const activeState = repos.courseExecution.get(parsed.command.workspaceId);
+    if (activeState.activeCurriculumId !== parsed.expectedActiveCurriculumId) {
+      commands.fail(claim, new Error('Active Curriculum pointer is stale.'));
+      throw new AppError(ApiErrorCode.VersionConflict, 'Active Curriculum pointer is stale.');
+    }
+    const priorVersions = repos.curricula.list(parsed.command.workspaceId);
+    const latest = priorVersions.at(-1);
+    if (parsed.predecessorCurriculumId !== (latest?.id ?? null)) {
+      commands.fail(claim, new Error('Curriculum predecessor is stale.'));
+      throw new AppError(ApiErrorCode.VersionConflict, 'Curriculum predecessor is stale.');
+    }
+    const concepts = repos.materials
+      .getConceptsByWorkspace(parsed.command.workspaceId)
+      .filter((concept) => context.blocks.some((block) => block.id === concept.grounding.blockId));
+    const graphEdges = workspace.activeGraphVersionId
+      ? repos.graph
+          .getEdges(workspace.activeGraphVersionId)
+          .filter(
+            (edge) =>
+              concepts.some((concept) => concept.id === edge.sourceConceptId) &&
+              concepts.some((concept) => concept.id === edge.targetConceptId),
+          )
+      : [];
+    const providerInput: CurriculumProposalInput = {
+      workspaceName: workspace.name,
+      contract: context.contractContext,
+      executionSourceManifest: context.manifest,
+      outline: context.outline,
+      concepts,
+      graphEdges,
+      allowedCanonicalConceptIds: [],
+      blocks: context.blocks,
+      limits: CURRICULUM_LIMITS,
+    };
+    try {
+      const payload = await provider.proposeCurriculum(providerInput, opts);
+      const materialized = materializeCurriculumProposal(payload, {
+        workspaceId: parsed.command.workspaceId,
+        courseTitle: workspace.name,
+        executionSourceManifest: context.manifest,
+        blocks: context.blocks,
+        concepts,
+        graphEdges,
+        structuralUnitOwners: new Map(),
+        canonicalConceptIds: new Set(),
+        authorityBundles: context.authorityBundles,
+        isAuthorityBlockingEligible: (id) => repos.sourceAuthority.isBlockingEligible(id),
+      });
+      assertValidMaterializedCurriculum(materialized);
+      const now = clock.now().toISOString();
+      const curriculum: Curriculum = {
+        id: newId('curriculum'),
+        workspaceId: parsed.command.workspaceId,
+        contractVersionId: contract.id,
+        version: (latest?.version ?? 0) + 1,
+        predecessorId: latest?.id ?? null,
+        status: 'proposed',
+        executionSourceManifest: context.manifest,
+        nodes: materialized.nodes,
+        synthesisGroups: materialized.synthesisGroups,
+        validation: materialized.validation,
+        provider: provider.name,
+        providerModel: provider.name === 'hy3' ? (providerModel ?? null) : null,
+        createdAt: now,
+        acceptedAt: null,
+      };
+      return commands.complete(claim, () => {
+        repos.curricula.createManifest(
+          newId('manifest'),
+          curriculum.workspaceId,
+          curriculum.executionSourceManifest,
+          now,
+        );
+        const stored = repos.curricula.createVersion(curriculum, {
+          id: newId('curriculum_evt'),
+          eventType: 'proposed',
+          actor: parsed.command.actor,
+          payload: { contractId: contract.id, manifestFingerprint: context.manifest.fingerprint },
+          createdAt: now,
+        });
+        coverageRisks.seedCurriculum(contract, stored);
+        return CurriculumProposalResponseSchema.parse({
+          curriculum: stored,
+          hierarchy: curriculumHierarchy(stored),
+          retainedAcceptedCurriculumId: activeState.activeCurriculumId,
+        });
+      });
+    } catch (error) {
+      commands.fail(claim, error);
+      throw error;
+    }
+  }
+
+  function accept(input: AcceptCurriculumRequest): CurriculumProposalResponse {
+    const parsed = AcceptCurriculumRequestSchema.parse(input);
+    const current = requireCurriculum(parsed.command.workspaceId, parsed.curriculumId);
+    if (
+      current.version !== parsed.expectedVersion ||
+      current.contractVersionId !== parsed.expectedContractId ||
+      current.executionSourceManifest.fingerprint !==
+        parsed.expectedExecutionSourceManifestFingerprint
+    ) {
+      throw new AppError(ApiErrorCode.VersionConflict, 'Curriculum acceptance identity is stale.');
+    }
+    const claim = commands.begin(parsed.command, 'accept_curriculum', {
+      curriculumId: current.id,
+      version: current.version,
+      contractId: current.contractVersionId,
+      manifestFingerprint: current.executionSourceManifest.fingerprint,
+    });
+    if (claim.replayPayload !== undefined) {
+      return CurriculumProposalResponseSchema.parse(claim.replayPayload);
+    }
+    try {
+      const contract = repos.learningContracts.get(current.contractVersionId);
+      if (
+        !contract ||
+        contract.workspaceId !== current.workspaceId ||
+        (contract.status !== 'learner_confirmed' && contract.status !== 'active')
+      ) {
+        throw new AppError(
+          ApiErrorCode.VersionConflict,
+          'Curriculum Contract is no longer eligible.',
+        );
+      }
+      const context = buildCurriculumExecutionContext(repos, contract);
+      if (!manifestsEqual(context.manifest, current.executionSourceManifest)) {
+        throw new AppError(ApiErrorCode.VersionConflict, 'Curriculum source manifest is stale.');
+      }
+      return commands.complete(claim, () => {
+        const accepted = repos.curricula.accept(current.id, clock.now().toISOString(), {
+          id: newId('curriculum_evt'),
+          eventType: 'accepted',
+          actor: parsed.command.actor,
+          payload: { acceptanceBasis: parsed.acceptanceBasis },
+          createdAt: clock.now().toISOString(),
+        });
+        return CurriculumProposalResponseSchema.parse({
+          curriculum: accepted,
+          hierarchy: curriculumHierarchy(accepted),
+          retainedAcceptedCurriculumId: repos.courseExecution.get(current.workspaceId)
+            .activeCurriculumId,
+        });
+      });
+    } catch (error) {
+      commands.fail(claim, error);
+      throw error;
+    }
+  }
+
+  function reject(input: RejectCurriculumRequest): CurriculumProposalResponse {
+    const parsed = RejectCurriculumRequestSchema.parse(input);
+    const current = requireCurriculum(parsed.command.workspaceId, parsed.curriculumId);
+    if (current.version !== parsed.expectedVersion) {
+      throw new AppError(ApiErrorCode.VersionConflict, 'Curriculum rejection identity is stale.');
+    }
+    const claim = commands.begin(parsed.command, 'reject_curriculum', {
+      curriculumId: current.id,
+      version: current.version,
+      status: current.status,
+    });
+    if (claim.replayPayload !== undefined) {
+      return CurriculumProposalResponseSchema.parse(claim.replayPayload);
+    }
+    try {
+      return commands.complete(claim, () => {
+        const rejected = repos.curricula.reject(current.id, parsed.reason, {
+          id: newId('curriculum_evt'),
+          eventType: 'rejected',
+          actor: parsed.command.actor,
+          payload: {},
+          createdAt: clock.now().toISOString(),
+        });
+        return CurriculumProposalResponseSchema.parse({
+          curriculum: rejected,
+          hierarchy: curriculumHierarchy(rejected),
+          retainedAcceptedCurriculumId: repos.courseExecution.get(current.workspaceId)
+            .activeCurriculumId,
+        });
+      });
+    } catch (error) {
+      commands.fail(claim, error);
+      throw error;
+    }
+  }
+
+  return { detail, history, propose, accept, reject };
+}
+
+export type CurriculumService = ReturnType<typeof createCurriculumService>;

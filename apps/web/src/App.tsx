@@ -21,17 +21,19 @@ import { ResultsView } from './views/ResultsView.js';
 import { QuizHistoryView } from './views/QuizHistoryView.js';
 import { MistakesView } from './views/MistakesView.js';
 import { MasteryView } from './views/MasteryView.js';
+import { AgentCourseWorkspace } from './views/AgentCourseWorkspace.js';
 import { Banner } from './components/ui.js';
 
-type Tab = 'import' | 'graph' | 'quiz' | 'results' | 'history' | 'mistakes' | 'mastery';
+type Tab = 'import' | 'course' | 'graph' | 'quiz' | 'results' | 'history' | 'mistakes' | 'mastery';
 
 const LAST_MATERIAL_ID_STORAGE_KEY = 'hy3-clinic:last-material-id';
 
 /** Module navigation: 练习 covers answering (quiz), results and history. */
-type Module = 'import' | 'graph' | 'practice' | 'mistakes' | 'mastery';
+type Module = 'import' | 'course' | 'graph' | 'practice' | 'mistakes' | 'mastery';
 
 const MODULE_LABELS: Record<Module, string> = {
   import: '资料库',
+  course: '课程执行',
   graph: '学习图谱',
   practice: '练习',
   mistakes: '错题',
@@ -40,6 +42,7 @@ const MODULE_LABELS: Record<Module, string> = {
 
 const MODULE_OF_TAB: Record<Tab, Module> = {
   import: 'import',
+  course: 'course',
   graph: 'graph',
   quiz: 'practice',
   results: 'practice',
@@ -57,6 +60,9 @@ interface AssessmentContext {
 
 export function App() {
   const [tab, setTab] = useState<Tab>('import');
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null | undefined>(
+    undefined,
+  );
   const [provider, setProvider] = useState<'fake' | 'hy3' | null>(null);
   const [material, setMaterial] = useState<MaterialWithBlocks | null>(null);
   const [concepts, setConcepts] = useState<Concept[]>([]);
@@ -478,7 +484,7 @@ export function App() {
         </div>
         <nav className="tabs" aria-label="主导航">
           {(Object.keys(MODULE_LABELS) as Module[]).map((module) => {
-            const needsMaterial = module !== 'import' && module !== 'graph';
+            const needsMaterial = module !== 'import' && module !== 'course' && module !== 'graph';
             const practiceViaAssessment = module === 'practice' && assessmentActive;
             const disabled =
               needsMaterial &&
@@ -567,6 +573,19 @@ export function App() {
             refreshKey={refreshKey}
             onLaunchQuiz={(launchedQuiz) => void handleLaunchFromPlan(launchedQuiz)}
             onWorkspaceDeleted={handleWorkspaceDeleted}
+            selectedWorkspaceId={selectedWorkspaceId}
+            onWorkspaceSelected={setSelectedWorkspaceId}
+          />
+        ) : null}
+
+        {tab === 'course' ? (
+          <AgentCourseWorkspace
+            workspaceId={selectedWorkspaceId ?? null}
+            onWorkspaceChange={setSelectedWorkspaceId}
+            onOpenMaterials={() => handleTabChange('import')}
+            onOpenExplore={() => handleTabChange('graph')}
+            onOpenProgress={(view) => handleTabChange(view)}
+            onLaunchQuiz={(launchedQuiz) => void handleLaunchFromPlan(launchedQuiz)}
           />
         ) : null}
 

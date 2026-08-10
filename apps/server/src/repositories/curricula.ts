@@ -1,0 +1,467 @@
+import {
+  CurriculumSchema,
+  ExecutionSourceManifestSchema,
+  type Curriculum,
+  type ExecutionSourceManifest,
+} from '@hy3-clinic/shared';
+import type { SqliteDb } from '../db/database.js';
+
+interface CurriculumRow {
+  id: string;
+  workspace_id: string;
+  contract_id: string;
+  manifest_fingerprint: string;
+  version: number;
+  predecessor_id: string | null;
+  status: Curriculum['status'];
+  payload: string;
+  created_at: string;
+  accepted_at: string | null;
+}
+
+interface ManifestRow {
+  id: string;
+  workspace_id: string;
+  fingerprint: string;
+  payload: string;
+  created_at: string;
+}
+
+export interface StoredExecutionSourceManifest {
+  id: string;
+  workspaceId: string;
+  manifest: ExecutionSourceManifest;
+  createdAt: string;
+}
+
+export interface CurriculumEventInput {
+  id: string;
+  eventType: string;
+  actor: string;
+  payload: unknown;
+  createdAt: string;
+}
+
+function hydrate(row: CurriculumRow): Curriculum {
+  return CurriculumSchema.parse({
+    ...(JSON.parse(row.payload) as object),
+    id: row.id,
+    workspaceId: row.workspace_id,
+    contractVersionId: row.contract_id,
+    version: row.version,
+    predecessorId: row.predecessor_id,
+    status: row.status,
+    createdAt: row.created_at,
+    acceptedAt: row.accepted_at,
+  });
+}
+
+function hydrateManifest(row: ManifestRow): StoredExecutionSourceManifest {
+  return {
+    id: row.id,
+    workspaceId: row.workspace_id,
+    manifest: ExecutionSourceManifestSchema.parse(JSON.parse(row.payload) as unknown),
+    createdAt: row.created_at,
+  };
+}
+
+export function createCurriculaRepo(db: SqliteDb) {
+  function get(id: string): Curriculum | undefined {
+    const row = db.prepare('SELECT * FROM curriculum_versions WHERE id = ?').get(id) as
+      CurriculumRow | undefined;
+    return row ? hydrate(row) : undefined;
+  }
+
+  function getManifest(workspaceId: string, fingerprint: string) {
+    const row = db
+      .prepare(
+        `SELECT * FROM execution_source_manifests
+         WHERE workspace_id = ? AND fingerprint = ?`,
+      )
+      .get(workspaceId, fingerprint) as ManifestRow | undefined;
+    return row ? hydrateManifest(row) : undefined;
+  }
+
+  function appendEvent(curriculumId: string, event: CurriculumEventInput): void {
+    const seq = (
+      db
+        .prepare(
+          `SELECT COALESCE(MAX(seq), 0) + 1 AS n
+           FROM curriculum_events WHERE curriculum_id = ?`,
+        )
+        .get(curriculumId) as { n: number }
+    ).n;
+    db.prepare(
+      `INSERT INTO curriculum_events
+         (id, curriculum_id, seq, event_type, actor, payload, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      event.id,
+      curriculumId,
+      seq,
+      event.eventType,
+      event.actor,
+      JSON.stringify(event.payload),
+      event.createdAt,
+    );
+  }
+
+  const createManifestTx = db.transaction(
+    (id: string, workspaceId: string, input: ExecutionSourceManifest, createdAt: string) => {
+      const manifest = ExecutionSourceManifestSchema.parse(input);
+      const existing = getManifest(workspaceId, manifest.fingerprint);
+      if (existing) {
+        if (JSON.stringify(existing.manifest) !== JSON.stringify(manifest)) {
+          throw new Error('Execution-source fingerprint collision.');
+        }
+        return existing;
+      }
+      const materialIds = new Set<string>();
+      for (const revision of manifest.revisions) {
+        if (materialIds.has(revision.materialId)) {
+          throw new Error('Execution-source manifest repeats a Material.');
+        }
+        materialIds.add(revision.materialId);
+        const owner = db
+          .prepare(
+            `SELECT m.workspace_id, mr.material_id
+             FROM material_revisions mr JOIN materials m ON m.id = mr.material_id
+             WHERE mr.id = ? AND mr.material_id = ?`,
+          )
+          .get(revision.materialRevisionId, revision.materialId) as
+          { workspace_id: string; material_id: string } | undefined;
+        if (!owner || owner.workspace_id !== workspaceId) {
+          throw new Error('Execution-source revision is outside this Course.');
+        }
+        if (
+          new Set(revision.sourceBlockRevisionIds).size !== revision.sourceBlockRevisionIds.length
+        ) {
+          throw new Error('Execution-source manifest repeats a SourceBlock.');
+        }
+        for (const blockId of revision.sourceBlockRevisionIds) {
+          const block = db
+            .prepare(
+              `SELECT 1 FROM source_blocks
+               WHERE id = ? AND material_id = ? AND material_revision_id = ?`,
+            )
+            .get(blockId, revision.materialId, revision.materialRevisionId);
+          if (!block) throw new Error('Execution-source block does not belong to its revision.');
+        }
+      }
+
+      db.prepare(
+        `INSERT INTO execution_source_manifests
+           (id, workspace_id, fingerprint, payload, created_at)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(id, workspaceId, manifest.fingerprint, JSON.stringify(manifest), createdAt);
+      const insertRevision = db.prepare(
+        `INSERT INTO execution_source_manifest_revisions
+           (manifest_id, material_id, material_revision_id, parser_version, parser_fingerprint)
+         VALUES (?, ?, ?, ?, ?)`,
+      );
+      const insertBlock = db.prepare(
+        `INSERT INTO execution_source_manifest_blocks
+           (manifest_id, material_revision_id, source_block_id) VALUES (?, ?, ?)`,
+      );
+      for (const revision of manifest.revisions) {
+        insertRevision.run(
+          id,
+          revision.materialId,
+          revision.materialRevisionId,
+          revision.parserVersion,
+          revision.parserFingerprint,
+        );
+        for (const blockId of revision.sourceBlockRevisionIds) {
+          insertBlock.run(id, revision.materialRevisionId, blockId);
+        }
+      }
+      return getManifest(workspaceId, manifest.fingerprint)!;
+    },
+  );
+
+  function validateCurriculum(curriculum: Curriculum, manifestId: string): void {
+    if (!curriculum.validation.valid && curriculum.status === 'accepted') {
+      throw new Error('Invalid Curriculum cannot be accepted.');
+    }
+    const contract = db
+      .prepare('SELECT workspace_id FROM learning_contract_versions WHERE id = ?')
+      .get(curriculum.contractVersionId) as { workspace_id: string } | undefined;
+    if (!contract || contract.workspace_id !== curriculum.workspaceId) {
+      throw new Error('Curriculum Contract does not belong to this Course.');
+    }
+    const manifest = db
+      .prepare('SELECT fingerprint FROM execution_source_manifests WHERE id = ?')
+      .get(manifestId) as { fingerprint: string } | undefined;
+    if (!manifest || manifest.fingerprint !== curriculum.executionSourceManifest.fingerprint) {
+      throw new Error('Curriculum execution-source manifest is inconsistent.');
+    }
+
+    const nodeIds = new Set(curriculum.nodes.map((node) => node.id));
+    if (nodeIds.size !== curriculum.nodes.length)
+      throw new Error('Curriculum node IDs must be unique.');
+    const roots = curriculum.nodes.filter((node) => node.parentId === null);
+    if (roots.length !== 1 || roots[0]?.kind !== 'course') {
+      throw new Error('Curriculum must have one Course root.');
+    }
+    for (const node of curriculum.nodes) {
+      if (node.parentId !== null && !nodeIds.has(node.parentId)) {
+        throw new Error(`Unknown Curriculum parent: ${node.parentId}`);
+      }
+      const seen = new Set<string>([node.id]);
+      let parentId = node.parentId;
+      while (parentId) {
+        if (seen.has(parentId)) throw new Error('Curriculum hierarchy contains a cycle.');
+        seen.add(parentId);
+        parentId =
+          curriculum.nodes.find((candidate) => candidate.id === parentId)?.parentId ?? null;
+      }
+      for (const ref of node.sourceReferences) {
+        const source = db
+          .prepare(
+            `SELECT 1 FROM execution_source_manifest_revisions
+             WHERE manifest_id = ? AND material_id = ? AND material_revision_id = ?`,
+          )
+          .get(manifestId, ref.materialId, ref.materialRevisionId);
+        if (!source) throw new Error('Curriculum source reference is outside its manifest.');
+        if (ref.sourceBlockId) {
+          const block = db
+            .prepare(
+              `SELECT 1 FROM execution_source_manifest_blocks mb
+               JOIN source_blocks b ON b.id = mb.source_block_id
+               WHERE mb.manifest_id = ? AND mb.source_block_id = ?
+                 AND b.material_id = ? AND b.material_revision_id = ?`,
+            )
+            .get(manifestId, ref.sourceBlockId, ref.materialId, ref.materialRevisionId);
+          if (!block) throw new Error('Curriculum SourceBlock is outside its manifest.');
+        }
+        if (ref.structuralUnitId) {
+          const structuralUnit = db
+            .prepare(
+              `SELECT 1 FROM normalized_structural_units
+               WHERE id = ? AND material_revision_id = ?`,
+            )
+            .get(ref.structuralUnitId, ref.materialRevisionId);
+          if (!structuralUnit) {
+            throw new Error('Curriculum structural unit has the wrong revision owner.');
+          }
+        }
+      }
+      if (!node.learningUnit) continue;
+      for (const conceptId of [
+        ...node.learningUnit.conceptIds,
+        ...node.learningUnit.canonicalConceptIds,
+      ]) {
+        const concept = db
+          .prepare(
+            `SELECT 1 FROM concepts c JOIN execution_source_manifest_revisions r
+               ON r.material_revision_id = c.material_revision_id
+             WHERE r.manifest_id = ? AND c.id = ?`,
+          )
+          .get(manifestId, conceptId);
+        if (!concept) throw new Error(`Unknown or out-of-manifest Concept: ${conceptId}`);
+      }
+      for (const relationId of node.learningUnit.graphRelationIds) {
+        if (!db.prepare('SELECT 1 FROM graph_edges WHERE id = ?').get(relationId)) {
+          throw new Error(`Unknown graph relation: ${relationId}`);
+        }
+      }
+      for (const objective of node.learningUnit.objectives) {
+        for (const authorityId of objective.truthAuthorityRecordIds) {
+          const authority = db
+            .prepare(
+              `SELECT a.validation_state, a.conflict_state, a.workspace_id,
+                      EXISTS(
+                        SELECT 1 FROM execution_source_manifest_revisions mr
+                        WHERE mr.manifest_id = ?
+                          AND mr.material_revision_id = a.material_revision_id
+                      ) AS in_manifest
+               FROM truth_authority_records a WHERE a.id = ?`,
+            )
+            .get(manifestId, authorityId) as
+            | {
+                validation_state: string;
+                conflict_state: string;
+                workspace_id: string;
+                in_manifest: number;
+              }
+            | undefined;
+          if (!authority) throw new Error(`Unknown truth-authority record: ${authorityId}`);
+          if (authority.workspace_id !== curriculum.workspaceId || authority.in_manifest !== 1) {
+            throw new Error('Curriculum truth authority is outside its Course source manifest.');
+          }
+          if (
+            objective.truthPremiseStatus === 'independently_verified' &&
+            (authority.validation_state !== 'validated' ||
+              authority.conflict_state === 'unresolved')
+          ) {
+            throw new Error(
+              'Verified Curriculum objective requires valid, unconflicted authority.',
+            );
+          }
+        }
+      }
+    }
+  }
+
+  const createVersionTx = db.transaction(
+    (curriculumInput: Curriculum, event: CurriculumEventInput): Curriculum => {
+      const curriculum = CurriculumSchema.parse(curriculumInput);
+      if (curriculum.status === 'accepted') {
+        throw new Error('Persist a Curriculum proposal before accepting it.');
+      }
+      const manifest = getManifest(
+        curriculum.workspaceId,
+        curriculum.executionSourceManifest.fingerprint,
+      );
+      if (
+        !manifest ||
+        JSON.stringify(manifest.manifest) !== JSON.stringify(curriculum.executionSourceManifest)
+      ) {
+        throw new Error('Curriculum requires its exact persisted execution-source manifest.');
+      }
+      validateCurriculum(curriculum, manifest.id);
+      const latest = db
+        .prepare(
+          `SELECT id, version FROM curriculum_versions
+           WHERE workspace_id = ? ORDER BY version DESC LIMIT 1`,
+        )
+        .get(curriculum.workspaceId) as { id: string; version: number } | undefined;
+      if (
+        curriculum.predecessorId !== (latest?.id ?? null) ||
+        curriculum.version !== (latest?.version ?? 0) + 1
+      ) {
+        throw new Error('Curriculum predecessor or version is stale.');
+      }
+      db.prepare(
+        `INSERT INTO curriculum_versions
+           (id, workspace_id, contract_id, manifest_id, manifest_fingerprint,
+            version, predecessor_id, status, validation_valid, payload, created_at, accepted_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        curriculum.id,
+        curriculum.workspaceId,
+        curriculum.contractVersionId,
+        manifest.id,
+        manifest.manifest.fingerprint,
+        curriculum.version,
+        curriculum.predecessorId,
+        curriculum.status,
+        curriculum.validation.valid ? 1 : 0,
+        JSON.stringify(curriculum),
+        curriculum.createdAt,
+        curriculum.acceptedAt,
+      );
+
+      const insertNode = db.prepare(
+        `INSERT INTO curriculum_node_index
+           (curriculum_id, node_id, parent_node_id, kind, idx, title)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      );
+      const insertRef = db.prepare(
+        `INSERT INTO curriculum_node_source_refs
+           (curriculum_id, node_id, ordinal, material_id, material_revision_id,
+            structural_unit_id, source_block_id, source_block_revision_fingerprint)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      );
+      const insertObjective = db.prepare(
+        `INSERT INTO curriculum_objective_index
+           (curriculum_id, learning_unit_id, objective_id, truth_premise_status)
+         VALUES (?, ?, ?, ?)`,
+      );
+      const insertAuthority = db.prepare(
+        `INSERT INTO curriculum_objective_authority
+           (curriculum_id, objective_id, authority_record_id) VALUES (?, ?, ?)`,
+      );
+      for (const node of curriculum.nodes) {
+        insertNode.run(curriculum.id, node.id, node.parentId, node.kind, node.index, node.title);
+      }
+      for (const node of curriculum.nodes) {
+        node.sourceReferences.forEach((ref, index) => {
+          insertRef.run(
+            curriculum.id,
+            node.id,
+            index,
+            ref.materialId,
+            ref.materialRevisionId,
+            ref.structuralUnitId,
+            ref.sourceBlockId,
+            ref.sourceBlockRevisionFingerprint,
+          );
+        });
+        for (const objective of node.learningUnit?.objectives ?? []) {
+          insertObjective.run(curriculum.id, node.id, objective.id, objective.truthPremiseStatus);
+          for (const authorityId of objective.truthAuthorityRecordIds) {
+            insertAuthority.run(curriculum.id, objective.id, authorityId);
+          }
+        }
+      }
+      appendEvent(curriculum.id, event);
+      return get(curriculum.id)!;
+    },
+  );
+
+  const acceptTx = db.transaction((id: string, acceptedAt: string, event: CurriculumEventInput) => {
+    const current = get(id);
+    if (!current || current.status !== 'proposed' || !current.validation.valid) {
+      throw new Error('Only a valid proposed Curriculum may be accepted.');
+    }
+    const accepted = CurriculumSchema.parse({ ...current, status: 'accepted', acceptedAt });
+    const changed = db
+      .prepare(
+        `UPDATE curriculum_versions
+         SET status = 'accepted', accepted_at = ?, payload = ?
+         WHERE id = ? AND status = 'proposed' AND validation_valid = 1`,
+      )
+      .run(acceptedAt, JSON.stringify(accepted), id).changes;
+    if (changed !== 1) throw new Error('Curriculum proposal changed concurrently.');
+    appendEvent(id, event);
+    return get(id)!;
+  });
+
+  const rejectTx = db.transaction(
+    (id: string, reason: string, event: CurriculumEventInput): Curriculum => {
+      const current = get(id);
+      if (
+        !current ||
+        (current.status !== 'candidate' &&
+          current.status !== 'proposed' &&
+          current.status !== 'accepted')
+      ) {
+        throw new Error('Only a pending Curriculum version may be rejected.');
+      }
+      const active = db
+        .prepare('SELECT 1 FROM course_execution_state WHERE active_curriculum_id = ?')
+        .get(id);
+      if (active) throw new Error('The active Curriculum cannot be rejected in place.');
+      const rejected = CurriculumSchema.parse({ ...current, status: 'rejected' });
+      const changed = db
+        .prepare(
+          `UPDATE curriculum_versions SET status = 'rejected', payload = ?
+           WHERE id = ? AND status = ?`,
+        )
+        .run(JSON.stringify(rejected), id, current.status).changes;
+      if (changed !== 1) throw new Error('Curriculum changed concurrently.');
+      appendEvent(id, { ...event, payload: { reason, detail: event.payload } });
+      return get(id)!;
+    },
+  );
+
+  return {
+    get,
+    getManifest,
+    createManifest: createManifestTx,
+    createVersion: createVersionTx,
+    accept: acceptTx,
+    reject: rejectTx,
+
+    list(workspaceId: string): Curriculum[] {
+      return (
+        db
+          .prepare(`SELECT * FROM curriculum_versions WHERE workspace_id = ? ORDER BY version ASC`)
+          .all(workspaceId) as CurriculumRow[]
+      ).map(hydrate);
+    },
+  };
+}
+
+export type CurriculaRepo = ReturnType<typeof createCurriculaRepo>;

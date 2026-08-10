@@ -853,6 +853,409 @@ const MIGRATIONS: Migration[] = [
         ON cost_policies(workspace_id, scope_type, scope_key);
     `,
   },
+  {
+    version: 15,
+    name: 'accepted_course_execution_route',
+    // Aggregate payloads preserve exact versioned contracts while normalized
+    // indexes enforce cross-aggregate scope, provenance, launchability, and
+    // atomic route-pointer invariants. Existing courses receive no invented
+    // Contract, Curriculum, Plan, Agenda, or active execution pointer.
+    up: `
+      ALTER TABLE material_role_versions ADD COLUMN status TEXT NOT NULL DEFAULT 'proposed'
+        CHECK (status IN ('proposed', 'learner_confirmed', 'superseded', 'withdrawn'));
+      ALTER TABLE material_role_versions ADD COLUMN proposed_by TEXT NOT NULL DEFAULT 'local'
+        CHECK (proposed_by IN ('learner', 'local', 'model'));
+      ALTER TABLE material_role_versions ADD COLUMN learner_confirmed_at TEXT;
+
+      CREATE TABLE learning_contract_versions (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        version INTEGER NOT NULL CHECK (version > 0),
+        predecessor_id TEXT REFERENCES learning_contract_versions(id),
+        status TEXT NOT NULL CHECK (status IN
+          ('draft', 'proposed', 'learner_confirmed', 'active', 'closed', 'superseded', 'withdrawn')),
+        payload TEXT NOT NULL,
+        learner_confirmed_at TEXT,
+        created_at TEXT NOT NULL,
+        UNIQUE (workspace_id, version)
+      );
+      CREATE INDEX idx_learning_contract_workspace_status
+        ON learning_contract_versions(workspace_id, status, version DESC);
+
+      CREATE TABLE learning_contract_material_scope (
+        contract_id TEXT NOT NULL REFERENCES learning_contract_versions(id) ON DELETE CASCADE,
+        material_id TEXT NOT NULL REFERENCES materials(id),
+        material_role_assignment_id TEXT NOT NULL REFERENCES material_role_versions(id),
+        material_role_assignment_version INTEGER NOT NULL CHECK (material_role_assignment_version > 0),
+        role TEXT NOT NULL CHECK (role IN
+          ('course_material', 'supplementary_reference', 'past_exam', 'exercise_sheet', 'question_set')),
+        disposition TEXT NOT NULL CHECK (disposition IN ('included', 'excluded')),
+        PRIMARY KEY (contract_id, material_id)
+      );
+      CREATE INDEX idx_contract_material_scope_material
+        ON learning_contract_material_scope(material_id, contract_id);
+
+      CREATE TABLE learning_contract_events (
+        id TEXT PRIMARY KEY,
+        contract_id TEXT NOT NULL REFERENCES learning_contract_versions(id) ON DELETE CASCADE,
+        seq INTEGER NOT NULL CHECK (seq > 0),
+        event_type TEXT NOT NULL,
+        actor TEXT NOT NULL,
+        payload TEXT NOT NULL DEFAULT '{}',
+        created_at TEXT NOT NULL,
+        UNIQUE (contract_id, seq)
+      );
+
+      CREATE TABLE learning_contract_feasibility_snapshots (
+        id TEXT PRIMARY KEY,
+        contract_id TEXT NOT NULL REFERENCES learning_contract_versions(id) ON DELETE CASCADE,
+        policy_version TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        computed_at TEXT NOT NULL,
+        UNIQUE (contract_id, policy_version, computed_at)
+      );
+
+      CREATE TABLE execution_source_manifests (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        fingerprint TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE (workspace_id, fingerprint)
+      );
+
+      CREATE TABLE execution_source_manifest_revisions (
+        manifest_id TEXT NOT NULL REFERENCES execution_source_manifests(id) ON DELETE CASCADE,
+        material_id TEXT NOT NULL REFERENCES materials(id),
+        material_revision_id TEXT NOT NULL REFERENCES material_revisions(id),
+        parser_version TEXT,
+        parser_fingerprint TEXT,
+        PRIMARY KEY (manifest_id, material_id)
+      );
+
+      CREATE TABLE execution_source_manifest_blocks (
+        manifest_id TEXT NOT NULL REFERENCES execution_source_manifests(id) ON DELETE CASCADE,
+        material_revision_id TEXT NOT NULL REFERENCES material_revisions(id),
+        source_block_id TEXT NOT NULL REFERENCES source_blocks(id),
+        PRIMARY KEY (manifest_id, source_block_id)
+      );
+
+      CREATE TABLE curriculum_versions (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        contract_id TEXT NOT NULL REFERENCES learning_contract_versions(id),
+        manifest_id TEXT NOT NULL REFERENCES execution_source_manifests(id),
+        manifest_fingerprint TEXT NOT NULL,
+        version INTEGER NOT NULL CHECK (version > 0),
+        predecessor_id TEXT REFERENCES curriculum_versions(id),
+        status TEXT NOT NULL CHECK (status IN
+          ('candidate', 'proposed', 'accepted', 'rejected', 'failed', 'superseded')),
+        validation_valid INTEGER NOT NULL CHECK (validation_valid IN (0, 1)),
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        accepted_at TEXT,
+        UNIQUE (workspace_id, version)
+      );
+      CREATE INDEX idx_curriculum_workspace_status
+        ON curriculum_versions(workspace_id, status, version DESC);
+
+      CREATE TABLE curriculum_node_index (
+        curriculum_id TEXT NOT NULL REFERENCES curriculum_versions(id) ON DELETE CASCADE,
+        node_id TEXT NOT NULL,
+        parent_node_id TEXT,
+        kind TEXT NOT NULL CHECK (kind IN ('course', 'chapter', 'section', 'learning_unit')),
+        idx INTEGER NOT NULL CHECK (idx >= 0),
+        title TEXT NOT NULL,
+        PRIMARY KEY (curriculum_id, node_id)
+      );
+      CREATE INDEX idx_curriculum_nodes_parent
+        ON curriculum_node_index(curriculum_id, parent_node_id, idx);
+
+      CREATE TABLE curriculum_node_source_refs (
+        curriculum_id TEXT NOT NULL,
+        node_id TEXT NOT NULL,
+        ordinal INTEGER NOT NULL CHECK (ordinal >= 0),
+        material_id TEXT NOT NULL REFERENCES materials(id),
+        material_revision_id TEXT NOT NULL REFERENCES material_revisions(id),
+        structural_unit_id TEXT REFERENCES normalized_structural_units(id),
+        source_block_id TEXT REFERENCES source_blocks(id),
+        source_block_revision_fingerprint TEXT,
+        PRIMARY KEY (curriculum_id, node_id, ordinal),
+        FOREIGN KEY (curriculum_id, node_id)
+          REFERENCES curriculum_node_index(curriculum_id, node_id) ON DELETE CASCADE
+      );
+
+      CREATE TABLE curriculum_objective_index (
+        curriculum_id TEXT NOT NULL,
+        learning_unit_id TEXT NOT NULL,
+        objective_id TEXT NOT NULL,
+        truth_premise_status TEXT NOT NULL CHECK (truth_premise_status IN
+          ('independently_verified', 'unverified', 'conflicted', 'not_applicable')),
+        PRIMARY KEY (curriculum_id, objective_id),
+        FOREIGN KEY (curriculum_id, learning_unit_id)
+          REFERENCES curriculum_node_index(curriculum_id, node_id) ON DELETE CASCADE
+      );
+
+      CREATE TABLE curriculum_objective_authority (
+        curriculum_id TEXT NOT NULL,
+        objective_id TEXT NOT NULL,
+        authority_record_id TEXT NOT NULL REFERENCES truth_authority_records(id),
+        PRIMARY KEY (curriculum_id, objective_id, authority_record_id),
+        FOREIGN KEY (curriculum_id, objective_id)
+          REFERENCES curriculum_objective_index(curriculum_id, objective_id) ON DELETE CASCADE
+      );
+
+      CREATE TABLE curriculum_events (
+        id TEXT PRIMARY KEY,
+        curriculum_id TEXT NOT NULL REFERENCES curriculum_versions(id) ON DELETE CASCADE,
+        seq INTEGER NOT NULL CHECK (seq > 0),
+        event_type TEXT NOT NULL,
+        actor TEXT NOT NULL,
+        payload TEXT NOT NULL DEFAULT '{}',
+        created_at TEXT NOT NULL,
+        UNIQUE (curriculum_id, seq)
+      );
+
+      CREATE TABLE study_plan_versions (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        contract_id TEXT NOT NULL REFERENCES learning_contract_versions(id),
+        curriculum_id TEXT NOT NULL REFERENCES curriculum_versions(id),
+        manifest_fingerprint TEXT NOT NULL,
+        version INTEGER NOT NULL CHECK (version > 0),
+        predecessor_id TEXT REFERENCES study_plan_versions(id),
+        status TEXT NOT NULL CHECK (status IN
+          ('candidate', 'proposed', 'accepted', 'rejected', 'superseded', 'closed')),
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        learner_accepted_at TEXT,
+        UNIQUE (workspace_id, version)
+      );
+      CREATE INDEX idx_study_plan_workspace_status
+        ON study_plan_versions(workspace_id, status, version DESC);
+
+      CREATE TABLE study_plan_items (
+        plan_id TEXT NOT NULL REFERENCES study_plan_versions(id) ON DELETE CASCADE,
+        plan_item_id TEXT NOT NULL,
+        idx INTEGER NOT NULL CHECK (idx >= 0),
+        kind TEXT NOT NULL,
+        curriculum_learning_unit_id TEXT,
+        objective_ids TEXT NOT NULL,
+        completion_requirements TEXT NOT NULL,
+        PRIMARY KEY (plan_id, plan_item_id),
+        UNIQUE (plan_id, idx)
+      );
+
+      CREATE TABLE study_plan_deferrals (
+        plan_id TEXT NOT NULL REFERENCES study_plan_versions(id) ON DELETE CASCADE,
+        curriculum_learning_unit_id TEXT NOT NULL,
+        objective_ids TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        risk_ids TEXT NOT NULL,
+        PRIMARY KEY (plan_id, curriculum_learning_unit_id)
+      );
+
+      CREATE TABLE study_plan_launch_validations (
+        plan_id TEXT NOT NULL,
+        plan_item_id TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN ('launchable', 'revalidation_required', 'blocked')),
+        capability TEXT NOT NULL,
+        resource_id TEXT,
+        reason TEXT,
+        source_fingerprint TEXT NOT NULL,
+        validated_at TEXT NOT NULL,
+        PRIMARY KEY (plan_id, plan_item_id),
+        FOREIGN KEY (plan_id, plan_item_id)
+          REFERENCES study_plan_items(plan_id, plan_item_id) ON DELETE CASCADE
+      );
+
+      CREATE TABLE pace_baselines (
+        id TEXT PRIMARY KEY,
+        plan_id TEXT NOT NULL UNIQUE REFERENCES study_plan_versions(id) ON DELETE CASCADE,
+        contract_id TEXT NOT NULL REFERENCES learning_contract_versions(id),
+        policy_version TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+
+      CREATE TABLE study_plan_progress (
+        plan_id TEXT NOT NULL,
+        plan_item_id TEXT NOT NULL,
+        state TEXT NOT NULL CHECK (state IN
+          ('not_started', 'started', 'completed', 'repair_needed', 'deferred', 'obsolete')),
+        version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY (plan_id, plan_item_id),
+        FOREIGN KEY (plan_id, plan_item_id)
+          REFERENCES study_plan_items(plan_id, plan_item_id) ON DELETE CASCADE
+      );
+
+      CREATE TABLE study_plan_progress_events (
+        id TEXT PRIMARY KEY,
+        plan_id TEXT NOT NULL,
+        plan_item_id TEXT NOT NULL,
+        seq INTEGER NOT NULL CHECK (seq > 0),
+        from_state TEXT,
+        to_state TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE (plan_id, plan_item_id, seq),
+        FOREIGN KEY (plan_id, plan_item_id)
+          REFERENCES study_plan_items(plan_id, plan_item_id) ON DELETE CASCADE
+      );
+
+      CREATE TABLE study_plan_events (
+        id TEXT PRIMARY KEY,
+        plan_id TEXT NOT NULL REFERENCES study_plan_versions(id) ON DELETE CASCADE,
+        seq INTEGER NOT NULL CHECK (seq > 0),
+        event_type TEXT NOT NULL,
+        actor TEXT NOT NULL,
+        payload TEXT NOT NULL DEFAULT '{}',
+        created_at TEXT NOT NULL,
+        UNIQUE (plan_id, seq)
+      );
+
+      CREATE TABLE session_agendas (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        contract_id TEXT NOT NULL REFERENCES learning_contract_versions(id),
+        curriculum_id TEXT NOT NULL REFERENCES curriculum_versions(id),
+        plan_id TEXT NOT NULL REFERENCES study_plan_versions(id),
+        manifest_fingerprint TEXT NOT NULL,
+        version INTEGER NOT NULL CHECK (version > 0),
+        status TEXT NOT NULL CHECK (status IN ('draft', 'active', 'completed', 'paused', 'abandoned')),
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE (workspace_id, version)
+      );
+
+      CREATE TABLE session_agenda_items (
+        agenda_id TEXT NOT NULL REFERENCES session_agendas(id) ON DELETE CASCADE,
+        agenda_item_id TEXT NOT NULL,
+        idx INTEGER NOT NULL CHECK (idx >= 0),
+        linked_plan_item_id TEXT,
+        kind TEXT NOT NULL,
+        state TEXT NOT NULL,
+        launch_status TEXT NOT NULL CHECK (launch_status IN
+          ('launchable', 'revalidation_required', 'blocked')),
+        launch_capability TEXT NOT NULL,
+        launch_resource_id TEXT,
+        launch_reason TEXT,
+        PRIMARY KEY (agenda_id, agenda_item_id),
+        UNIQUE (agenda_id, idx)
+      );
+
+      CREATE TABLE session_agenda_events (
+        id TEXT PRIMARY KEY,
+        agenda_id TEXT NOT NULL REFERENCES session_agendas(id) ON DELETE CASCADE,
+        seq INTEGER NOT NULL CHECK (seq > 0),
+        event_type TEXT NOT NULL,
+        actor TEXT NOT NULL,
+        payload TEXT NOT NULL DEFAULT '{}',
+        created_at TEXT NOT NULL,
+        UNIQUE (agenda_id, seq)
+      );
+
+      CREATE TABLE coverage_risk_entries (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        contract_id TEXT NOT NULL REFERENCES learning_contract_versions(id),
+        stable_scope_fingerprint TEXT NOT NULL,
+        material_id TEXT REFERENCES materials(id),
+        objective_id TEXT,
+        origin TEXT NOT NULL CHECK (origin IN
+          ('deterministic', 'source', 'learner', 'exam_observation', 'model_candidate')),
+        status TEXT NOT NULL CHECK (status IN
+          ('open', 'acknowledged', 'planned', 'checking', 'resolved', 'rejected', 'deferred', 'stale')),
+        truth_premise_status TEXT NOT NULL CHECK (truth_premise_status IN
+          ('independently_verified', 'unverified', 'conflicted', 'not_applicable')),
+        payload TEXT NOT NULL,
+        first_observed_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_coverage_risk_workspace_status
+        ON coverage_risk_entries(workspace_id, status, updated_at DESC);
+
+      CREATE TABLE coverage_risk_observations (
+        risk_id TEXT NOT NULL REFERENCES coverage_risk_entries(id) ON DELETE CASCADE,
+        observation_id TEXT NOT NULL,
+        material_revision_id TEXT REFERENCES material_revisions(id),
+        source_block_id TEXT REFERENCES source_blocks(id),
+        source_block_revision_fingerprint TEXT,
+        manifest_fingerprint TEXT,
+        reconciliation_status TEXT NOT NULL CHECK (reconciliation_status IN
+          ('current', 'pending', 'stale', 'reconciled')),
+        payload TEXT NOT NULL,
+        observed_at TEXT NOT NULL,
+        PRIMARY KEY (risk_id, observation_id)
+      );
+
+      CREATE TABLE coverage_risk_authority_links (
+        risk_id TEXT NOT NULL REFERENCES coverage_risk_entries(id) ON DELETE CASCADE,
+        authority_record_id TEXT NOT NULL REFERENCES truth_authority_records(id),
+        PRIMARY KEY (risk_id, authority_record_id)
+      );
+
+      CREATE TABLE coverage_risk_events (
+        id TEXT PRIMARY KEY,
+        risk_id TEXT NOT NULL REFERENCES coverage_risk_entries(id) ON DELETE CASCADE,
+        seq INTEGER NOT NULL CHECK (seq > 0),
+        event_type TEXT NOT NULL,
+        actor TEXT NOT NULL,
+        payload TEXT NOT NULL DEFAULT '{}',
+        created_at TEXT NOT NULL,
+        UNIQUE (risk_id, seq)
+      );
+
+      CREATE TABLE course_execution_state (
+        workspace_id TEXT PRIMARY KEY REFERENCES workspaces(id) ON DELETE CASCADE,
+        active_contract_id TEXT REFERENCES learning_contract_versions(id),
+        active_curriculum_id TEXT REFERENCES curriculum_versions(id),
+        accepted_plan_id TEXT REFERENCES study_plan_versions(id),
+        active_agenda_id TEXT REFERENCES session_agendas(id),
+        execution_status TEXT NOT NULL DEFAULT 'stopped'
+          CHECK (execution_status IN ('active', 'paused', 'stopped')),
+        route_validation_status TEXT NOT NULL DEFAULT 'unconfigured'
+          CHECK (route_validation_status IN ('unconfigured', 'valid', 'revalidation_required', 'blocked')),
+        version INTEGER NOT NULL DEFAULT 0 CHECK (version >= 0),
+        updated_at TEXT NOT NULL,
+        CHECK (
+          (active_contract_id IS NULL AND active_curriculum_id IS NULL
+            AND accepted_plan_id IS NULL AND active_agenda_id IS NULL
+            AND execution_status = 'stopped' AND route_validation_status = 'unconfigured')
+          OR
+          (active_contract_id IS NOT NULL AND active_curriculum_id IS NOT NULL
+            AND accepted_plan_id IS NOT NULL AND active_agenda_id IS NOT NULL)
+        )
+      );
+
+      CREATE TABLE course_execution_events (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        seq INTEGER NOT NULL CHECK (seq > 0),
+        event_type TEXT NOT NULL,
+        actor TEXT NOT NULL,
+        expected_version INTEGER NOT NULL CHECK (expected_version >= 0),
+        resulting_version INTEGER NOT NULL CHECK (resulting_version > expected_version),
+        payload TEXT NOT NULL DEFAULT '{}',
+        created_at TEXT NOT NULL,
+        UNIQUE (workspace_id, seq)
+      );
+
+      CREATE TRIGGER mark_course_route_stale_after_material_revision_change
+      AFTER UPDATE OF active_revision_id ON materials
+      WHEN OLD.active_revision_id IS NOT NEW.active_revision_id
+      BEGIN
+        UPDATE course_execution_state
+        SET route_validation_status = 'revalidation_required',
+            version = version + 1,
+            updated_at = COALESCE(NEW.updated_at, updated_at)
+        WHERE workspace_id = NEW.workspace_id
+          AND active_contract_id IS NOT NULL;
+      END;
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

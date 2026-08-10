@@ -100,3 +100,47 @@ export const CoverageRiskEntrySchema = z
     }
   });
 export type CoverageRiskEntry = z.infer<typeof CoverageRiskEntrySchema>;
+
+/** Bounded learner-visible projection used on Course Home. */
+export const CoverageRiskHighlightSchema = z
+  .object({
+    id: z.string().min(1),
+    claim: z.string().min(1).max(1000),
+    uncertainty: z.string().min(1).max(1000),
+    severity: z.enum(['low', 'medium', 'high', 'critical']),
+    status: CoverageRiskStatusSchema,
+    facets: z.array(CoverageRiskFacetSchema).min(1).max(20),
+    scopeAuthorityStatus: ScopeAuthorityStatusSchema,
+    truthPremiseStatus: TruthPremiseStatusSchema,
+    materialId: z.string().min(1).nullable(),
+    curriculumNodeId: z.string().min(1).nullable(),
+    isCurrent: z.boolean(),
+  })
+  .strict();
+export type CoverageRiskHighlight = z.infer<typeof CoverageRiskHighlightSchema>;
+
+export const CoverageRiskSummarySchema = z
+  .object({
+    openCount: z.number().int().nonnegative(),
+    deferredCount: z.number().int().nonnegative(),
+    staleCount: z.number().int().nonnegative(),
+    highestOpenSeverity: z.enum(['low', 'medium', 'high', 'critical']).nullable(),
+    deterministicMappingGapCount: z.number().int().nonnegative(),
+    explicitDeferralCount: z.number().int().nonnegative(),
+    highlights: z.array(CoverageRiskHighlightSchema).max(20),
+    analysisState: z.enum(['available', 'stale', 'unavailable']),
+    computedAt: z.string().datetime(),
+  })
+  .strict();
+export type CoverageRiskSummary = z.infer<typeof CoverageRiskSummarySchema>;
+
+export const CoverageRiskHistoryViewSchema = z
+  .object({
+    workspaceId: z.string().min(1),
+    contractVersionId: z.string().min(1),
+    executionSourceManifestFingerprint: z.string().min(1).max(200).nullable(),
+    entries: z.array(CoverageRiskEntrySchema).max(2000),
+    summary: CoverageRiskSummarySchema,
+  })
+  .strict();
+export type CoverageRiskHistoryView = z.infer<typeof CoverageRiskHistoryViewSchema>;

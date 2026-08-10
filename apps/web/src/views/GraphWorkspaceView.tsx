@@ -54,6 +54,9 @@ export interface GraphWorkspaceViewProps {
    * material history list).
    */
   onWorkspaceDeleted?: (workspaceId: string) => void;
+  /** Optional App-owned Course selection shared with Course Home. */
+  selectedWorkspaceId?: string | null;
+  onWorkspaceSelected?: (workspaceId: string | null) => void;
 }
 
 interface WorkspaceData {
@@ -91,6 +94,8 @@ export function GraphWorkspaceView({
   onLaunchQuiz,
   refreshKey,
   onWorkspaceDeleted,
+  selectedWorkspaceId,
+  onWorkspaceSelected,
 }: GraphWorkspaceViewProps) {
   const [workspaces, setWorkspaces] = useState<WorkspaceSummary[]>([]);
   const [workspacesLoading, setWorkspacesLoading] = useState(true);
@@ -232,57 +237,76 @@ export function GraphWorkspaceView({
     [loadWorkspaces],
   );
 
+  const switchWorkspace = useCallback(
+    (workspaceId: string | null) => {
+      // Re-clicking the active workspace must not blank it: clearing `data`
+      // while activeWorkspaceId stays identical would never re-trigger the
+      // load effect, leaving the graph area empty until a full reload.
+      if (workspaceId !== null && workspaceId === activeWorkspaceId) return;
+      epochRef.current += 1;
+      planAction.cancel();
+      graphAction.cancel();
+      addDocAction.cancel();
+      analyzeAction.cancel();
+      documentAction.cancel();
+      launchAction.cancel();
+      assessmentAction.cancel();
+      setActiveWorkspaceId(workspaceId);
+      onWorkspaceSelected?.(workspaceId);
+      setData(null);
+      setDataError(null);
+      setSelectedNodeId(null);
+      setSelectedEdgeId(null);
+      setPlan(null);
+      setActionError(null);
+      setActivityNotice(null);
+      setGenerationSummary(null);
+      setExtractionNotice(null);
+      setMappingDoc(null);
+      setMapping(null);
+      setDeepeningSection(null);
+      setAlignmentOpen(false);
+      setTutorPathIds(new Set());
+      pendingLaunchRef.current = null;
+      setPendingLaunch(null);
+      if (workspaceId) writeLastWorkspaceId(workspaceId);
+    },
+    [
+      activeWorkspaceId,
+      addDocAction.cancel,
+      analyzeAction.cancel,
+      assessmentAction.cancel,
+      documentAction.cancel,
+      graphAction.cancel,
+      launchAction.cancel,
+      onWorkspaceSelected,
+      planAction.cancel,
+    ],
+  );
+
   /** Initial load + restore last opened workspace. */
   useEffect(() => {
     void (async () => {
       const list = await loadWorkspaces();
       if (!list) return;
-      const saved = readLastWorkspaceId();
+      const saved = selectedWorkspaceId === undefined ? readLastWorkspaceId() : selectedWorkspaceId;
       const target = saved && list.some((w) => w.id === saved) ? saved : null;
       if (target) {
         setActiveWorkspaceId(target);
       }
     })();
-  }, [loadWorkspaces]);
+  }, [loadWorkspaces, selectedWorkspaceId]);
+
+  useEffect(() => {
+    if (selectedWorkspaceId === undefined || selectedWorkspaceId === activeWorkspaceId) return;
+    switchWorkspace(selectedWorkspaceId);
+  }, [selectedWorkspaceId, activeWorkspaceId, switchWorkspace]);
 
   /** (Re)load workspace data on switch and after grading refreshes. */
   useEffect(() => {
     if (!activeWorkspaceId) return;
     void loadWorkspaceData(activeWorkspaceId);
   }, [activeWorkspaceId, refreshKey, loadWorkspaceData]);
-
-  function switchWorkspace(workspaceId: string | null) {
-    // Re-clicking the active workspace must not blank it: clearing `data`
-    // while activeWorkspaceId stays identical would never re-trigger the
-    // load effect, leaving the graph area empty until a full reload.
-    if (workspaceId !== null && workspaceId === activeWorkspaceId) return;
-    epochRef.current += 1;
-    planAction.cancel();
-    graphAction.cancel();
-    addDocAction.cancel();
-    analyzeAction.cancel();
-    documentAction.cancel();
-    launchAction.cancel();
-    assessmentAction.cancel();
-    setActiveWorkspaceId(workspaceId);
-    setData(null);
-    setDataError(null);
-    setSelectedNodeId(null);
-    setSelectedEdgeId(null);
-    setPlan(null);
-    setActionError(null);
-    setActivityNotice(null);
-    setGenerationSummary(null);
-    setExtractionNotice(null);
-    setMappingDoc(null);
-    setMapping(null);
-    setDeepeningSection(null);
-    setAlignmentOpen(false);
-    setTutorPathIds(new Set());
-    pendingLaunchRef.current = null;
-    setPendingLaunch(null);
-    if (workspaceId) writeLastWorkspaceId(workspaceId);
-  }
 
   /** Selecting a node clears edge selection and loads its accepted plan. */
   const selectNode = useCallback(

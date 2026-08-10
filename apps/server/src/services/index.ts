@@ -20,6 +20,24 @@ import { createMappingService, type MappingService } from './mapping.js';
 import { createLessonsService, type LessonsService } from './lessons.js';
 import { createTutorService, type TutorService } from './tutor.js';
 import { createSourceAuthorityService, type SourceAuthorityService } from './sourceAuthority.js';
+import { createCourseCommandService, type CourseCommandService } from './courseCommands.js';
+import { createMaterialRoleService, type MaterialRoleService } from './materialRoles.js';
+import {
+  createLearningContractService,
+  type LearningContractService,
+} from './learningContracts.js';
+import { createCurriculumService, type CurriculumService } from './curriculum.js';
+import { createStudyPlanAgentService, type StudyPlanAgentService } from './studyPlansAgent.js';
+import {
+  createSessionAgendaAgentService,
+  type SessionAgendaAgentService,
+} from './sessionAgendasAgent.js';
+import { createCourseExecutionService, type CourseExecutionService } from './courseExecution.js';
+import { createCourseOverviewService, type CourseOverviewService } from './courseOverview.js';
+import {
+  createCourseActionLaunchService,
+  type CourseActionLaunchService,
+} from './courseActionLaunch.js';
 
 export interface Services {
   materials: MaterialService;
@@ -41,6 +59,15 @@ export interface Services {
   lessons: LessonsService;
   tutor: TutorService;
   sourceAuthority: SourceAuthorityService;
+  courseCommands: CourseCommandService;
+  materialRoles: MaterialRoleService;
+  learningContracts: LearningContractService;
+  curriculum: CurriculumService;
+  studyPlansAgent: StudyPlanAgentService;
+  sessionAgendasAgent: SessionAgendaAgentService;
+  courseExecution: CourseExecutionService;
+  courseOverview: CourseOverviewService;
+  courseActionLaunch: CourseActionLaunchService;
 }
 
 export interface ServiceDeps {
@@ -74,6 +101,41 @@ export function createServices({ repos, provider, clock, providerModel }: Servic
     sourceAuthority: repos.sourceAuthority,
     clock,
   });
+  const courseCommands = createCourseCommandService({ repos, clock });
+  const materialRoles = createMaterialRoleService({ repos, clock, commands: courseCommands });
+  const learningContracts = createLearningContractService({
+    repos,
+    clock,
+    commands: courseCommands,
+  });
+  const curriculum = createCurriculumService({
+    repos,
+    provider,
+    clock,
+    commands: courseCommands,
+    providerModel,
+  });
+  const studyPlansAgent = createStudyPlanAgentService({
+    repos,
+    provider,
+    clock,
+    commands: courseCommands,
+    providerModel,
+  });
+  const sessionAgendasAgent = createSessionAgendaAgentService({ repos, clock });
+  const courseExecution = createCourseExecutionService({
+    repos,
+    clock,
+    commands: courseCommands,
+    agendas: sessionAgendasAgent,
+  });
+  const courseOverview = createCourseOverviewService({ repos, clock });
+  const courseActionLaunch = createCourseActionLaunchService({
+    repos,
+    clock,
+    commands: courseCommands,
+    assessment,
+  });
   return {
     materials,
     workspaces,
@@ -94,5 +156,14 @@ export function createServices({ repos, provider, clock, providerModel }: Servic
     lessons,
     tutor,
     sourceAuthority,
+    courseCommands,
+    materialRoles,
+    learningContracts,
+    curriculum,
+    studyPlansAgent,
+    sessionAgendasAgent,
+    courseExecution,
+    courseOverview,
+    courseActionLaunch,
   };
 }

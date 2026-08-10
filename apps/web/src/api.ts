@@ -35,6 +35,41 @@ import type {
   WorkspaceOrigin,
   WorkspaceSummary,
 } from '@hy3-clinic/shared';
+import {
+  CourseActionLaunchResultSchema,
+  CourseExecutionOverviewResponseSchema,
+  CurriculumHistoryResponseSchema,
+  CurriculumProposalResponseSchema,
+  LearningContractDetailResponseSchema,
+  LearningContractHistoryResponseSchema,
+  MaterialRoleAssignmentSchema,
+  MaterialRoleHistoryResponseSchema,
+  StudyPlanDecisionResponseSchema,
+  StudyPlanHistoryResponseSchema,
+  StudyPlanProposalResponseSchema,
+  type AcceptCurriculumRequest,
+  type ApplyStudyPlanDraftEditRequest,
+  type ConfirmMaterialRoleRequest,
+  type CourseActionLaunchResult,
+  type CourseExecutionOverviewResponse,
+  type CreateLearningContractDraftRequest,
+  type CurriculumHistoryResponse,
+  type CurriculumProposalResponse,
+  type DecideStudyPlanRequest,
+  type LearningContractDetailResponse,
+  type LearningContractHistoryResponse,
+  type MaterialRoleAssignment,
+  type MaterialRoleHistoryResponse,
+  type ProposeMaterialRoleRequest,
+  type ProposeStudyPlanRequest,
+  type RejectCurriculumRequest,
+  type StudyPlanHistoryResponse,
+  type StudyPlanProposalResponse,
+  type TransitionLearningContractRequest,
+  type UpdateLearningContractDraftRequest,
+  type ProposeCurriculumRequest,
+  type LaunchCourseActionRequest,
+} from '@hy3-clinic/shared';
 
 /** Normalized client-side API error (mirrors the server's structured body). */
 export class ApiClientError extends Error {
@@ -219,6 +254,25 @@ async function request<T>(
   return (await response.json()) as T;
 }
 
+interface RuntimeSchema<T> {
+  parse(value: unknown): T;
+}
+
+async function requestParsed<T>(
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
+  url: string,
+  schema: RuntimeSchema<T>,
+  body?: unknown,
+  signal?: AbortSignal,
+): Promise<T> {
+  const value = await request<unknown>(method, url, body, signal);
+  try {
+    return schema.parse(value);
+  } catch {
+    throw new ApiClientError('INTERNAL', '服务端返回了不兼容的课程执行数据。');
+  }
+}
+
 export const api = {
   health: () => request<{ status: string }>('GET', '/api/health'),
   config: () => request<{ provider: 'fake' | 'hy3' }>('GET', '/api/config'),
@@ -335,6 +389,262 @@ export const api = {
       'POST',
       `/api/workspaces/${workspaceId}/documents/${documentId}/reprocess`,
       undefined,
+      signal,
+    ),
+
+  // --- Learning execution: stable material roles and accepted route ---
+
+  materialRoleHistory: (
+    workspaceId: string,
+    documentId: string,
+    signal?: AbortSignal,
+  ): Promise<MaterialRoleHistoryResponse> =>
+    requestParsed(
+      'GET',
+      `/api/workspaces/${workspaceId}/documents/${documentId}/role`,
+      MaterialRoleHistoryResponseSchema,
+      undefined,
+      signal,
+    ),
+
+  proposeMaterialRole: (
+    workspaceId: string,
+    documentId: string,
+    input: ProposeMaterialRoleRequest,
+    signal?: AbortSignal,
+  ): Promise<MaterialRoleAssignment> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/documents/${documentId}/role/proposals`,
+      MaterialRoleAssignmentSchema,
+      input,
+      signal,
+    ),
+
+  confirmMaterialRole: (
+    workspaceId: string,
+    documentId: string,
+    assignmentId: string,
+    input: ConfirmMaterialRoleRequest,
+    signal?: AbortSignal,
+  ): Promise<MaterialRoleAssignment> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/documents/${documentId}/role/${assignmentId}/confirm`,
+      MaterialRoleAssignmentSchema,
+      input,
+      signal,
+    ),
+
+  courseExecution: (
+    workspaceId: string,
+    signal?: AbortSignal,
+  ): Promise<CourseExecutionOverviewResponse> =>
+    requestParsed(
+      'GET',
+      `/api/workspaces/${workspaceId}/execution`,
+      CourseExecutionOverviewResponseSchema,
+      undefined,
+      signal,
+    ),
+
+  learningContractHistory: (
+    workspaceId: string,
+    signal?: AbortSignal,
+  ): Promise<LearningContractHistoryResponse> =>
+    requestParsed(
+      'GET',
+      `/api/workspaces/${workspaceId}/contracts`,
+      LearningContractHistoryResponseSchema,
+      undefined,
+      signal,
+    ),
+
+  learningContract: (
+    workspaceId: string,
+    contractId: string,
+    signal?: AbortSignal,
+  ): Promise<LearningContractDetailResponse> =>
+    requestParsed(
+      'GET',
+      `/api/workspaces/${workspaceId}/contracts/${contractId}`,
+      LearningContractDetailResponseSchema,
+      undefined,
+      signal,
+    ),
+
+  createLearningContract: (
+    workspaceId: string,
+    input: CreateLearningContractDraftRequest,
+    signal?: AbortSignal,
+  ): Promise<LearningContractDetailResponse> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/contracts`,
+      LearningContractDetailResponseSchema,
+      input,
+      signal,
+    ),
+
+  updateLearningContract: (
+    workspaceId: string,
+    contractId: string,
+    input: UpdateLearningContractDraftRequest,
+    signal?: AbortSignal,
+  ): Promise<LearningContractDetailResponse> =>
+    requestParsed(
+      'PATCH',
+      `/api/workspaces/${workspaceId}/contracts/${contractId}`,
+      LearningContractDetailResponseSchema,
+      input,
+      signal,
+    ),
+
+  transitionLearningContract: (
+    workspaceId: string,
+    contractId: string,
+    input: TransitionLearningContractRequest,
+    signal?: AbortSignal,
+  ): Promise<LearningContractDetailResponse> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/contracts/${contractId}/transition`,
+      LearningContractDetailResponseSchema,
+      input,
+      signal,
+    ),
+
+  curriculumHistory: (
+    workspaceId: string,
+    signal?: AbortSignal,
+  ): Promise<CurriculumHistoryResponse> =>
+    requestParsed(
+      'GET',
+      `/api/workspaces/${workspaceId}/curricula`,
+      CurriculumHistoryResponseSchema,
+      undefined,
+      signal,
+    ),
+
+  curriculum: (
+    workspaceId: string,
+    curriculumId: string,
+    signal?: AbortSignal,
+  ): Promise<CurriculumProposalResponse> =>
+    requestParsed(
+      'GET',
+      `/api/workspaces/${workspaceId}/curricula/${curriculumId}`,
+      CurriculumProposalResponseSchema,
+      undefined,
+      signal,
+    ),
+
+  proposeCurriculum: (
+    workspaceId: string,
+    input: Omit<ProposeCurriculumRequest, 'executionSourceManifest'>,
+    signal?: AbortSignal,
+  ): Promise<CurriculumProposalResponse> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/curricula/proposals`,
+      CurriculumProposalResponseSchema,
+      input,
+      signal,
+    ),
+
+  acceptCurriculum: (
+    workspaceId: string,
+    curriculumId: string,
+    input: AcceptCurriculumRequest,
+    signal?: AbortSignal,
+  ): Promise<CurriculumProposalResponse> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/curricula/${curriculumId}/accept`,
+      CurriculumProposalResponseSchema,
+      input,
+      signal,
+    ),
+
+  rejectCurriculum: (
+    workspaceId: string,
+    curriculumId: string,
+    input: RejectCurriculumRequest,
+    signal?: AbortSignal,
+  ): Promise<CurriculumProposalResponse> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/curricula/${curriculumId}/reject`,
+      CurriculumProposalResponseSchema,
+      input,
+      signal,
+    ),
+
+  studyPlanHistory: (
+    workspaceId: string,
+    signal?: AbortSignal,
+  ): Promise<StudyPlanHistoryResponse> =>
+    requestParsed(
+      'GET',
+      `/api/workspaces/${workspaceId}/study-plans`,
+      StudyPlanHistoryResponseSchema,
+      undefined,
+      signal,
+    ),
+
+  proposeStudyPlan: (
+    workspaceId: string,
+    input: ProposeStudyPlanRequest,
+    signal?: AbortSignal,
+  ): Promise<StudyPlanProposalResponse> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/study-plans/proposals`,
+      StudyPlanProposalResponseSchema,
+      input,
+      signal,
+    ),
+
+  editStudyPlan: (
+    workspaceId: string,
+    planId: string,
+    input: ApplyStudyPlanDraftEditRequest,
+    signal?: AbortSignal,
+  ): Promise<StudyPlanProposalResponse> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/study-plans/${planId}/edits`,
+      StudyPlanProposalResponseSchema,
+      input,
+      signal,
+    ),
+
+  decideStudyPlan: (
+    workspaceId: string,
+    planId: string,
+    input: DecideStudyPlanRequest,
+    signal?: AbortSignal,
+  ) =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/study-plans/${planId}/decision`,
+      StudyPlanDecisionResponseSchema,
+      input,
+      signal,
+    ),
+
+  launchAgendaItem: (
+    workspaceId: string,
+    agendaId: string,
+    agendaItemId: string,
+    input: LaunchCourseActionRequest,
+    signal?: AbortSignal,
+  ): Promise<CourseActionLaunchResult> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/agendas/${agendaId}/items/${agendaItemId}/launch`,
+      CourseActionLaunchResultSchema,
+      input,
       signal,
     ),
 

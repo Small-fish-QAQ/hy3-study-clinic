@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CourseExecutionCommandEnvelopeSchema } from './learningContract.js';
 import { TruthPremiseStatusSchema } from './sourceAuthority.js';
 
 export const ExecutionSourceRevisionSchema = z
@@ -159,3 +160,148 @@ export const CurriculumSchema = z
     }
   });
 export type Curriculum = z.infer<typeof CurriculumSchema>;
+
+export const ProposeCurriculumRequestSchema = z
+  .object({
+    command: CourseExecutionCommandEnvelopeSchema,
+    contractId: z.string().min(1),
+    expectedContractVersion: z.number().int().positive(),
+    executionSourceManifest: ExecutionSourceManifestSchema,
+    predecessorCurriculumId: z.string().min(1).nullable(),
+    expectedActiveCurriculumId: z.string().min(1).nullable(),
+  })
+  .strict();
+export type ProposeCurriculumRequest = z.infer<typeof ProposeCurriculumRequestSchema>;
+
+export const AcceptCurriculumRequestSchema = z
+  .object({
+    command: CourseExecutionCommandEnvelopeSchema,
+    curriculumId: z.string().min(1),
+    expectedVersion: z.number().int().positive(),
+    expectedContractId: z.string().min(1),
+    expectedExecutionSourceManifestFingerprint: z.string().min(1).max(200),
+    acceptanceBasis: z.enum(['learner_review', 'explicit_local_policy']),
+  })
+  .strict()
+  .superRefine((request, ctx) => {
+    if (request.acceptanceBasis === 'learner_review' && request.command.actor !== 'learner') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['command', 'actor'],
+        message: 'learner review acceptance requires the learner actor',
+      });
+    }
+  });
+export type AcceptCurriculumRequest = z.infer<typeof AcceptCurriculumRequestSchema>;
+
+export const RejectCurriculumRequestSchema = z
+  .object({
+    command: CourseExecutionCommandEnvelopeSchema,
+    curriculumId: z.string().min(1),
+    expectedVersion: z.number().int().positive(),
+    reason: z.string().min(1).max(500),
+  })
+  .strict();
+export type RejectCurriculumRequest = z.infer<typeof RejectCurriculumRequestSchema>;
+
+/** Flat, deterministic hierarchy projection for clients; domain nodes remain canonical. */
+export const CurriculumHierarchyNodeViewSchema = z
+  .object({
+    id: z.string().min(1),
+    parentId: z.string().min(1).nullable(),
+    childIds: z.array(z.string().min(1)).max(1000),
+    kind: CurriculumNodeKindSchema,
+    index: z.number().int().nonnegative(),
+    depth: z.number().int().nonnegative().max(10),
+    title: z.string().min(1).max(300),
+    breadcrumbTitles: z.array(z.string().min(1).max(300)).max(10),
+    learningUnit: CurriculumLearningUnitSchema.nullable(),
+    sourceReferences: z.array(CurriculumSourceReferenceSchema).max(100),
+    mappedPlanItemIds: z.array(z.string().min(1)).max(100),
+    progressState: z
+      .enum(['not_started', 'started', 'completed', 'repair_needed', 'deferred', 'obsolete'])
+      .nullable(),
+  })
+  .strict();
+export type CurriculumHierarchyNodeView = z.infer<typeof CurriculumHierarchyNodeViewSchema>;
+
+export const CurriculumHierarchyViewSchema = z
+  .object({
+    curriculumId: z.string().min(1),
+    curriculumVersion: z.number().int().positive(),
+    status: CurriculumStatusSchema,
+    rootNodeIds: z.array(z.string().min(1)).min(1).max(100),
+    nodes: z.array(CurriculumHierarchyNodeViewSchema).min(1).max(2000),
+    synthesisGroups: z.array(CurriculumSynthesisGroupSchema).max(200),
+    validation: CurriculumValidationSchema,
+    executionSourceManifest: ExecutionSourceManifestSchema,
+  })
+  .strict()
+  .superRefine((view, ctx) => {
+    const ids = new Set(view.nodes.map((node) => node.id));
+    for (const id of view.rootNodeIds) {
+      if (!ids.has(id)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['rootNodeIds'],
+          message: `unknown Curriculum root node: ${id}`,
+        });
+      }
+    }
+    for (const [index, node] of view.nodes.entries()) {
+      if (node.parentId !== null && !ids.has(node.parentId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['nodes', index, 'parentId'],
+          message: `unknown Curriculum parent node: ${node.parentId}`,
+        });
+      }
+      for (const childId of node.childIds) {
+        if (!ids.has(childId)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['nodes', index, 'childIds'],
+            message: `unknown Curriculum child node: ${childId}`,
+          });
+        }
+      }
+    }
+  });
+export type CurriculumHierarchyView = z.infer<typeof CurriculumHierarchyViewSchema>;
+
+export const CurriculumHistoryItemSchema = z
+  .object({
+    id: z.string().min(1),
+    version: z.number().int().positive(),
+    predecessorId: z.string().min(1).nullable(),
+    contractVersionId: z.string().min(1),
+    status: CurriculumStatusSchema,
+    title: z.string().min(1).max(300),
+    learningUnitCount: z.number().int().nonnegative(),
+    unmappedStructuralUnitCount: z.number().int().nonnegative(),
+    validationValid: z.boolean(),
+    executionSourceManifestFingerprint: z.string().min(1).max(200),
+    createdAt: z.string().datetime(),
+    acceptedAt: z.string().datetime().nullable(),
+  })
+  .strict();
+export type CurriculumHistoryItem = z.infer<typeof CurriculumHistoryItemSchema>;
+
+export const CurriculumHistoryResponseSchema = z
+  .object({
+    workspaceId: z.string().min(1),
+    acceptedCurriculumId: z.string().min(1).nullable(),
+    proposedCurriculumId: z.string().min(1).nullable(),
+    items: z.array(CurriculumHistoryItemSchema).max(500),
+  })
+  .strict();
+export type CurriculumHistoryResponse = z.infer<typeof CurriculumHistoryResponseSchema>;
+
+export const CurriculumProposalResponseSchema = z
+  .object({
+    curriculum: CurriculumSchema,
+    hierarchy: CurriculumHierarchyViewSchema,
+    retainedAcceptedCurriculumId: z.string().min(1).nullable(),
+  })
+  .strict();
+export type CurriculumProposalResponse = z.infer<typeof CurriculumProposalResponseSchema>;

@@ -3,20 +3,24 @@ import {
   AssessmentProposalPayloadSchema,
   ConceptAnalysisPayloadSchema,
   ConceptLessonPayloadSchema,
+  CurriculumProposalPayloadSchema,
   GraphProposalPayloadSchema,
   MisconceptionProposalPayloadSchema,
   QuizGenerationPayloadSchema,
   RemediationPlanProposalPayloadSchema,
+  StudyPlanProposalPayloadSchema,
   RubricGradeSchema,
   TutorStepPayloadSchema,
   type AlignmentProposalPayload,
   type AssessmentProposalPayload,
   type ConceptAnalysisPayload,
   type ConceptLessonPayload,
+  type CurriculumProposalPayload,
   type GraphProposalPayload,
   type MisconceptionProposalPayload,
   type QuizGenerationPayload,
   type RemediationPlanProposalPayload,
+  type StudyPlanProposalPayload,
   type RubricGrade,
   type TutorStepPayload,
 } from '@hy3-clinic/shared';
@@ -28,12 +32,14 @@ import {
   assessmentProposalMessages,
   conceptAnalysisMessages,
   conceptLessonMessages,
+  curriculumProposalMessages,
   graphProposalMessages,
   misconceptionProposalMessages,
   quizGenerationMessages,
   remediationMessages,
   remediationPlanMessages,
   shortAnswerGradingMessages,
+  studyPlanProposalMessages,
   tutorStepMessages,
   type ChatMessage,
 } from './prompts.js';
@@ -42,6 +48,7 @@ import type {
   AssessmentProposalInput,
   ConceptAnalysisInput,
   ConceptLessonInput,
+  CurriculumProposalInput,
   GraphProposalInput,
   LlmProvider,
   MisconceptionProposalInput,
@@ -50,6 +57,7 @@ import type {
   RemediationInput,
   RemediationPlanInput,
   ShortAnswerGradingInput,
+  StudyPlanProposalInput,
   TutorStepInput,
 } from './provider.js';
 
@@ -201,6 +209,20 @@ export class Hy3Provider implements LlmProvider {
     opts?: ProviderCallOptions,
   ): Promise<TutorStepPayload> {
     return this.complete(tutorStepMessages(input), TutorStepPayloadSchema, opts);
+  }
+
+  async proposeCurriculum(
+    input: CurriculumProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<CurriculumProposalPayload> {
+    return this.complete(curriculumProposalMessages(input), CurriculumProposalPayloadSchema, opts);
+  }
+
+  async proposeStudyPlan(
+    input: StudyPlanProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<StudyPlanProposalPayload> {
+    return this.complete(studyPlanProposalMessages(input), StudyPlanProposalPayloadSchema, opts);
   }
 
   /**

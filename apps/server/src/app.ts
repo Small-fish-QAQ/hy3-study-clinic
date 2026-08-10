@@ -12,6 +12,7 @@ import { createServices } from './services/index.js';
 import { registerMaterialRoutes } from './routes/materials.js';
 import { registerStudyRoutes } from './routes/study.js';
 import { registerWorkspaceRoutes } from './routes/workspaces.js';
+import { registerAgentCourseRoutes } from './routes/agentCourse.js';
 
 export interface AppDeps {
   repos: Repositories;
@@ -117,6 +118,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   registerMaterialRoutes(app, services.materials);
   registerStudyRoutes(app, services);
   registerWorkspaceRoutes(app, services);
+  registerAgentCourseRoutes(app, services);
 
   return app;
 }

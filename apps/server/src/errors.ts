@@ -29,6 +29,7 @@ export function statusForErrorCode(code: ApiErrorCodeValue): number {
     case ApiErrorCode.GroundingFailed:
       return 422;
     case ApiErrorCode.DuplicateSubmission:
+    case ApiErrorCode.VersionConflict:
       return 409;
     case ApiErrorCode.RequestCancelled:
       return 499;

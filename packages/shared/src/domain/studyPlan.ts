@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DesiredDepthSchema } from './learningContract.js';
+import { CourseExecutionCommandEnvelopeSchema, DesiredDepthSchema } from './learningContract.js';
 import { EvidenceAdmissibilityTierSchema } from './sourceAuthority.js';
 
 export const StudyPlanStatusSchema = z.enum([
@@ -172,3 +172,174 @@ export const StudyPlanProgressStateSchema = z.enum([
   'obsolete',
 ]);
 export type StudyPlanProgressState = z.infer<typeof StudyPlanProgressStateSchema>;
+
+export const ProposeStudyPlanRequestSchema = z
+  .object({
+    command: CourseExecutionCommandEnvelopeSchema,
+    contractId: z.string().min(1),
+    expectedContractVersion: z.number().int().positive(),
+    curriculumId: z.string().min(1),
+    expectedCurriculumVersion: z.number().int().positive(),
+    expectedExecutionSourceManifestFingerprint: z.string().min(1).max(200),
+    predecessorStudyPlanId: z.string().min(1).nullable(),
+    expectedAcceptedStudyPlanId: z.string().min(1).nullable(),
+    proposalTrigger: z.string().min(1).max(500),
+  })
+  .strict();
+export type ProposeStudyPlanRequest = z.infer<typeof ProposeStudyPlanRequestSchema>;
+
+export const StudyPlanDraftEditSchema = z
+  .discriminatedUnion('kind', [
+    z
+      .object({
+        kind: z.literal('add_unit'),
+        curriculumLearningUnitId: z.string().min(1),
+        afterPlanItemId: z.string().min(1).nullable(),
+        estimatedMinutes: z.number().int().positive(),
+        targetDepth: DesiredDepthSchema,
+        reason: z.string().min(1).max(500),
+      })
+      .strict(),
+    z
+      .object({
+        kind: z.literal('remove_with_reason'),
+        planItemId: z.string().min(1),
+        reason: z.string().min(1).max(500),
+        riskIds: z.array(z.string().min(1)).min(1).max(20),
+      })
+      .strict(),
+    z
+      .object({
+        kind: z.literal('reorder'),
+        planItemId: z.string().min(1),
+        afterPlanItemId: z.string().min(1).nullable(),
+      })
+      .strict(),
+    z
+      .object({
+        kind: z.literal('resize_time'),
+        planItemId: z.string().min(1),
+        estimatedMinutes: z.number().int().positive(),
+        reason: z.string().min(1).max(500),
+      })
+      .strict(),
+    z
+      .object({
+        kind: z.literal('change_depth'),
+        planItemId: z.string().min(1),
+        targetDepth: DesiredDepthSchema,
+        reason: z.string().min(1).max(500),
+      })
+      .strict(),
+    z
+      .object({
+        kind: z.literal('defer'),
+        curriculumLearningUnitId: z.string().min(1),
+        objectiveIds: z.array(z.string().min(1)).max(30),
+        reason: z.string().min(1).max(500),
+        riskIds: z.array(z.string().min(1)).min(1).max(20),
+      })
+      .strict(),
+    z
+      .object({
+        kind: z.literal('restore_deferral'),
+        curriculumLearningUnitId: z.string().min(1),
+        afterPlanItemId: z.string().min(1).nullable(),
+      })
+      .strict(),
+  ])
+  .superRefine((edit, ctx) => {
+    if (edit.kind === 'reorder' && edit.afterPlanItemId === edit.planItemId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['afterPlanItemId'],
+        message: 'a Plan item cannot be ordered after itself',
+      });
+    }
+  });
+export type StudyPlanDraftEdit = z.infer<typeof StudyPlanDraftEditSchema>;
+
+export const ApplyStudyPlanDraftEditRequestSchema = z
+  .object({
+    command: CourseExecutionCommandEnvelopeSchema,
+    studyPlanId: z.string().min(1),
+    expectedVersion: z.number().int().positive(),
+    expectedContractId: z.string().min(1),
+    expectedCurriculumId: z.string().min(1),
+    expectedExecutionSourceManifestFingerprint: z.string().min(1).max(200),
+    edit: StudyPlanDraftEditSchema,
+  })
+  .strict();
+export type ApplyStudyPlanDraftEditRequest = z.infer<typeof ApplyStudyPlanDraftEditRequestSchema>;
+
+export const DecideStudyPlanRequestSchema = z
+  .object({
+    command: CourseExecutionCommandEnvelopeSchema,
+    studyPlanId: z.string().min(1),
+    expectedVersion: z.number().int().positive(),
+    expectedContractId: z.string().min(1),
+    expectedCurriculumId: z.string().min(1),
+    expectedExecutionSourceManifestFingerprint: z.string().min(1).max(200),
+    decision: z.enum(['accept', 'reject']),
+    reason: z.string().min(1).max(500).nullable(),
+  })
+  .strict()
+  .superRefine((request, ctx) => {
+    if (request.command.actor !== 'learner') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['command', 'actor'],
+        message: 'only the learner may accept or reject a StudyPlan',
+      });
+    }
+    if (request.decision === 'reject' && !request.reason) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['reason'],
+        message: 'Plan rejection requires a reason',
+      });
+    }
+  });
+export type DecideStudyPlanRequest = z.infer<typeof DecideStudyPlanRequestSchema>;
+
+export const StudyPlanHistoryItemSchema = z
+  .object({
+    id: z.string().min(1),
+    version: z.number().int().positive(),
+    predecessorId: z.string().min(1).nullable(),
+    contractVersionId: z.string().min(1),
+    curriculumVersionId: z.string().min(1),
+    status: StudyPlanStatusSchema,
+    proposalTrigger: z.string().min(1).max(500),
+    itemCount: z.number().int().nonnegative(),
+    deferredUnitCount: z.number().int().nonnegative(),
+    projectedMinutes: z.number().int().nonnegative(),
+    feasibilityState: StudyPlanFeasibilitySchema.shape.state,
+    executionSourceManifestFingerprint: z.string().min(1).max(200),
+    learnerAcceptedAt: z.string().datetime().nullable(),
+    createdAt: z.string().datetime(),
+  })
+  .strict();
+export type StudyPlanHistoryItem = z.infer<typeof StudyPlanHistoryItemSchema>;
+
+export const StudyPlanHistoryResponseSchema = z
+  .object({
+    workspaceId: z.string().min(1),
+    acceptedStudyPlanId: z.string().min(1).nullable(),
+    proposedStudyPlanId: z.string().min(1).nullable(),
+    items: z.array(StudyPlanHistoryItemSchema).max(500),
+  })
+  .strict();
+export type StudyPlanHistoryResponse = z.infer<typeof StudyPlanHistoryResponseSchema>;
+
+export const StudyPlanProposalResponseSchema = z
+  .object({
+    studyPlan: StudyPlanSchema,
+    retainedAcceptedStudyPlanId: z.string().min(1).nullable(),
+    knownScopeAccounted: z.boolean(),
+    launchabilityValid: z.boolean(),
+    validationErrors: z.array(z.string().min(1).max(500)).max(100),
+    validationWarnings: z.array(z.string().min(1).max(500)).max(100),
+  })
+  .strict();
+export type StudyPlanProposalResponse = z.infer<typeof StudyPlanProposalResponseSchema>;

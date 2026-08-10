@@ -389,6 +389,38 @@ export function createSourceAuthorityRepo(db: SqliteDb) {
         .get(authorityRecordId) as { eligible: number };
       return row.eligible === 1;
     },
+
+    findEligibleByBlock(
+      workspaceId: string,
+      materialRevisionId: string,
+      sourceBlockId: string,
+    ): SourceAuthorityBundle[] {
+      const rows = db
+        .prepare(
+          `SELECT DISTINCT r.*
+           FROM truth_authority_records r
+           JOIN truth_authority_claims c ON c.authority_record_id = r.id
+           JOIN material_revisions mr ON mr.id = r.material_revision_id
+           JOIN materials m ON m.id = r.material_id
+           JOIN source_blocks b ON b.id = c.source_block_id
+           WHERE r.workspace_id = ?
+             AND r.material_revision_id = ?
+             AND c.source_block_id = ?
+             AND b.material_revision_id = r.material_revision_id
+             AND r.validation_state = 'validated'
+             AND r.conflict_state IN ('none', 'resolved')
+             AND mr.status = 'active'
+             AND m.availability = 'active'
+             AND m.active_revision_id = mr.id
+           ORDER BY r.logical_source_id, r.version DESC, r.id`,
+        )
+        .all(workspaceId, materialRevisionId, sourceBlockId) as RecordRow[];
+      return rows.map((row) => ({
+        record: toRecord(row),
+        claims: getClaims(row.id),
+        events: getEvents(row.id),
+      }));
+    },
   };
 }
 

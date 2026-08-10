@@ -1,4 +1,9 @@
-import type { Material, SourceBlock } from '@hy3-clinic/shared';
+import {
+  NormalizedStructuralUnitSchema,
+  type Material,
+  type NormalizedStructuralUnit,
+  type SourceBlock,
+} from '@hy3-clinic/shared';
 import type { SqliteDb } from '../db/database.js';
 import { newId } from '../util/ids.js';
 
@@ -48,6 +53,20 @@ interface RevisionRow {
   failure_message: string | null;
   created_at: string;
   activated_at: string | null;
+}
+
+interface StructuralUnitRow {
+  id: string;
+  material_revision_id: string;
+  parent_id: string | null;
+  unit_type: NormalizedStructuralUnit['kind'];
+  idx: number;
+  title: string | null;
+  start_offset: number | null;
+  end_offset: number | null;
+  page_number: number | null;
+  metadata: string;
+  revision_content: string;
 }
 
 function hydrate(row: RevisionRow): MaterialRevisionRecord {
@@ -314,6 +333,62 @@ export function createMaterialRevisionsRepo(db: SqliteDb) {
         .prepare('SELECT original_data FROM material_revisions WHERE id = ?')
         .get(revisionId) as { original_data: Buffer | null } | undefined;
       return row?.original_data ?? null;
+    },
+
+    getStructuralUnits(revisionId: string): NormalizedStructuralUnit[] {
+      const rows = db
+        .prepare(
+          `SELECT u.*, r.content AS revision_content
+           FROM normalized_structural_units u
+           JOIN material_revisions r ON r.id = u.material_revision_id
+           WHERE u.material_revision_id = ?
+           ORDER BY u.idx ASC, u.id ASC`,
+        )
+        .all(revisionId) as StructuralUnitRow[];
+      return rows.map((row) => {
+        const metadata = JSON.parse(row.metadata) as Record<string, unknown>;
+        const hasOffsets =
+          row.start_offset !== null &&
+          row.end_offset !== null &&
+          row.start_offset >= 0 &&
+          row.end_offset >= row.start_offset &&
+          row.end_offset <= row.revision_content.length;
+        const storedContent = typeof metadata.content === 'string' ? metadata.content : '';
+        const sourceLocator =
+          typeof metadata.sourceLocator === 'string' && metadata.sourceLocator.length > 0
+            ? metadata.sourceLocator
+            : row.page_number !== null
+              ? `page:${row.page_number}`
+              : hasOffsets
+                ? `offsets:${row.start_offset}-${row.end_offset}`
+                : null;
+        const derivation =
+          metadata.derivation === 'source_text' ||
+          metadata.derivation === 'parser_derived' ||
+          metadata.derivation === 'ocr_derived'
+            ? metadata.derivation
+            : 'parser_derived';
+        const confidence =
+          typeof metadata.confidence === 'number' &&
+          metadata.confidence >= 0 &&
+          metadata.confidence <= 1
+            ? metadata.confidence
+            : null;
+        return NormalizedStructuralUnitSchema.parse({
+          id: row.id,
+          materialRevisionId: row.material_revision_id,
+          parentUnitId: row.parent_id,
+          kind: row.unit_type,
+          index: row.idx,
+          title: row.title,
+          content: hasOffsets
+            ? row.revision_content.slice(row.start_offset!, row.end_offset!)
+            : storedContent,
+          sourceLocator,
+          derivation,
+          confidence,
+        });
+      });
     },
 
     stage(input: StageMaterialRevisionInput): MaterialRevisionRecord {

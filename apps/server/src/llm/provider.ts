@@ -6,10 +6,15 @@ import type {
   Concept,
   ConceptAnalysisPayload,
   ConceptLessonPayload,
+  CurriculumProposalPayload,
+  DesiredDepth,
+  ExecutionSourceManifest,
+  GraphEdge,
   GraphProposalPayload,
   GraphRelation,
   LessonDirective,
   MasteryState,
+  MaterialRole,
   MisconceptionProposalPayload,
   MisconceptionRecord,
   Option,
@@ -21,6 +26,10 @@ import type {
   RubricGrade,
   RubricPoint,
   SourceBlock,
+  StructuralUnitKind,
+  StudyPlanFeasibility,
+  StudyPlanItemKind,
+  StudyPlanProposalPayload,
   TutorStepPayload,
   TutorToolName,
 } from '@hy3-clinic/shared';
@@ -237,6 +246,119 @@ export interface TutorStepInput {
   actionableMisconceptions: Array<{ id: string; conceptId: string }>;
 }
 
+/** Stable learner intent shown to Curriculum/StudyPlan proposal operations. */
+export interface CurriculumContractContext {
+  contractVersionId: string;
+  intent: string;
+  targetOutcome: {
+    description: string;
+    targetScore: number | null;
+  };
+  desiredDepth: DesiredDepth;
+  subjectBoundaries: string[];
+  materials: Array<{
+    materialId: string;
+    title: string;
+    materialRoleAssignmentId: string;
+    materialRoleAssignmentVersion: number;
+    role: MaterialRole;
+    disposition: 'included' | 'excluded';
+  }>;
+  includedTopics: string[];
+  excludedTopics: string[];
+}
+
+/** Deterministic source-outline entry offered to Curriculum proposal. */
+export interface CurriculumOutlineItem {
+  /** Null when no honest normalized structural-unit identity exists yet. */
+  structuralUnitId: string | null;
+  materialId: string;
+  materialRevisionId: string;
+  parentStructuralUnitId: string | null;
+  kind: StructuralUnitKind;
+  index: number;
+  title: string | null;
+  sourceBlockIds: string[];
+}
+
+export interface CurriculumProposalInput {
+  workspaceName: string;
+  contract: CurriculumContractContext;
+  /** Exact immutable extraction identity; separate from stable Contract scope. */
+  executionSourceManifest: ExecutionSourceManifest;
+  outline: CurriculumOutlineItem[];
+  /** Existing Concepts remain the only concept universe. */
+  concepts: Concept[];
+  /** Accepted active graph relations are optional supporting structure. */
+  graphEdges: GraphEdge[];
+  allowedCanonicalConceptIds: string[];
+  /** Bounded evidence space. Every proposed quote must come from these blocks. */
+  blocks: SourceBlock[];
+  limits: {
+    maxNodes: number;
+    maxObjectives: number;
+    maxSynthesisGroups: number;
+  };
+}
+
+export interface StudyPlanContractContext extends CurriculumContractContext {
+  deadline: { at: string; timeZone: string } | null;
+  studyBudget: {
+    minutesPerDay: number | null;
+    minutesPerWeek: number | null;
+    preferredSessionMinutes: number | null;
+  };
+  allowExplicitDeferral: boolean;
+}
+
+/** Accepted Curriculum projection; truth eligibility was already derived locally. */
+export interface StudyPlanCurriculumUnit {
+  id: string;
+  title: string;
+  objectiveIds: string[];
+  objectiveSummaries: Array<{ id: string; title: string; description: string }>;
+  prerequisiteUnitIds: string[];
+  /** Only these objectives may be offered blocking formal requirements locally. */
+  blockingEligibleObjectiveIds: string[];
+  synthesisGroupIds: string[];
+}
+
+export interface StudyPlanLearnerState {
+  curriculumLearningUnitId: string;
+  state: 'unassessed' | 'in_progress' | 'formally_supported' | 'repair_needed' | 'deferred';
+  observedMinutes: number | null;
+  openMistakes: number;
+}
+
+export interface StudyPlanLaunchCapability {
+  curriculumLearningUnitId: string;
+  allowedItemKinds: StudyPlanItemKind[];
+  launchableAssessmentModes: AssessmentMode[];
+}
+
+export interface StudyPlanProposalInput {
+  workspaceName: string;
+  contract: StudyPlanContractContext;
+  curriculumVersionId: string;
+  executionSourceManifestFingerprint: string;
+  units: StudyPlanCurriculumUnit[];
+  synthesisGroups: Array<{
+    id: string;
+    title: string;
+    level: 'section' | 'chapter' | 'course' | 'transfer';
+    learningUnitIds: string[];
+    objectiveIds: string[];
+  }>;
+  /** Deterministic learner state; conversation and self-report are not evidence. */
+  learnerState: StudyPlanLearnerState[];
+  requiredLearningUnitIds: string[];
+  allowedItemKinds: StudyPlanItemKind[];
+  allowedDepths: DesiredDepth[];
+  launchCapabilities: StudyPlanLaunchCapability[];
+  /** Result of local deadline/time arithmetic, never recalculated by the model. */
+  feasibility: StudyPlanFeasibility;
+}
+
 /**
  * Narrow interface every LLM backend implements. All methods return
  * Zod-validated payloads; implementations must never throw raw HTTP errors —
@@ -292,4 +414,14 @@ export interface LlmProvider {
   ): Promise<ConceptLessonPayload>;
   /** One bounded Tutor iteration: call a whitelisted tool or finalize. */
   proposeTutorStep(input: TutorStepInput, opts?: ProviderCallOptions): Promise<TutorStepPayload>;
+  /** Propose learner-visible Curriculum semantics; local code validates and versions it. */
+  proposeCurriculum(
+    input: CurriculumProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<CurriculumProposalPayload>;
+  /** Propose an executable route; local code owns feasibility, policy, and acceptance. */
+  proposeStudyPlan(
+    input: StudyPlanProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<StudyPlanProposalPayload>;
 }

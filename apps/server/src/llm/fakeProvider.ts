@@ -8,19 +8,23 @@ import {
   type Concept,
   type ConceptAnalysisPayload,
   type ConceptLessonPayload,
+  type CurriculumProposalPayload,
   type GraphProposalPayload,
   type MisconceptionProposalPayload,
   type ProposedAlignment,
   type ProposedAssessmentItem,
   type ProposedConcept,
+  type ProposedCurriculumNode,
   type ProposedGraphEdge,
   type ProposedQuestion,
   type ProposedRubricPoint,
+  type ProposedStudyPlanItem,
   type QuestionType,
   type QuizGenerationPayload,
   type RemediationPlanProposalPayload,
   type RubricGrade,
   type SourceBlock,
+  type StudyPlanProposalPayload,
   type TutorStepPayload,
 } from '@hy3-clinic/shared';
 import { ProviderError } from './errors.js';
@@ -30,6 +34,7 @@ import type {
   AssessmentProposalInput,
   ConceptAnalysisInput,
   ConceptLessonInput,
+  CurriculumProposalInput,
   GraphProposalInput,
   LlmProvider,
   MisconceptionProposalInput,
@@ -38,6 +43,7 @@ import type {
   RemediationInput,
   RemediationPlanInput,
   ShortAnswerGradingInput,
+  StudyPlanProposalInput,
   TutorStepInput,
 } from './provider.js';
 
@@ -740,6 +746,312 @@ export class FakeProvider implements LlmProvider {
           ? `学习者可能把「${input.conceptName}」理解成了:${picked.slice(0, 120)}。与原文表述不符,需通过判别练习确认。`
           : `学习者对「${input.conceptName}」的表述遗漏了原文的关键限定,可能只掌握了部分含义,需判别确认。`,
       evidence: [{ blockId: input.blockId, quote: input.sourceQuote }],
+    };
+  }
+
+  async proposeCurriculum(
+    input: CurriculumProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<CurriculumProposalPayload> {
+    await this.gate(opts);
+    const maxNodes = Math.min(input.limits.maxNodes, 1999);
+    const maxObjectives = Math.min(input.limits.maxObjectives, 30_000);
+    if (maxNodes < 3 || maxObjectives < 1) {
+      throw ProviderError.invalidOutput(
+        'Curriculum limits cannot represent one complete hierarchy',
+      );
+    }
+
+    const manifestMaterialIds = new Set(
+      input.executionSourceManifest.revisions.map((revision) => revision.materialId),
+    );
+    const manifestBlockIds = new Set(
+      input.executionSourceManifest.revisions.flatMap(
+        (revision) => revision.sourceBlockRevisionIds,
+      ),
+    );
+    const scopedMaterials = input.contract.materials.filter(
+      (material) =>
+        material.disposition === 'included' && manifestMaterialIds.has(material.materialId),
+    );
+    const allowedBlocks = input.blocks.filter((block) => manifestBlockIds.has(block.id));
+    const materialBudget = Math.min(
+      scopedMaterials.length,
+      maxObjectives,
+      Math.max(0, Math.floor((maxNodes - 1) / 2)),
+    );
+    const materials = scopedMaterials.slice(0, materialBudget);
+    if (materials.length === 0) {
+      throw ProviderError.invalidOutput(
+        'Curriculum proposal requires an included manifested Material',
+      );
+    }
+
+    const nodes: ProposedCurriculumNode[] = [
+      {
+        key: 'chapter-course-materials',
+        parentKey: null,
+        kind: 'chapter',
+        index: 0,
+        title: input.workspaceName.slice(0, 300) || 'Course materials',
+        structuralUnitIds: [],
+        sourceEvidence: [],
+        conceptIds: [],
+        canonicalConceptIds: [],
+        objectives: [],
+        prerequisiteUnitKeys: [],
+        graphRelationIds: [],
+      },
+    ];
+    const unitByConceptId = new Map<string, ProposedCurriculumNode>();
+    const learningUnits: ProposedCurriculumNode[] = [];
+    let remainingUnitSlots = Math.min(maxObjectives, maxNodes - 1 - materials.length);
+
+    for (const [materialIndex, material] of materials.entries()) {
+      const sectionKey = `section-${materialIndex + 1}`;
+      const materialOutline = input.outline
+        .filter((item) => item.materialId === material.materialId)
+        .sort(
+          (a, b) =>
+            a.index - b.index || (a.structuralUnitId ?? '').localeCompare(b.structuralUnitId ?? ''),
+        );
+      nodes.push({
+        key: sectionKey,
+        parentKey: 'chapter-course-materials',
+        kind: 'section',
+        index: materialIndex,
+        title: material.title.slice(0, 300),
+        structuralUnitIds: materialOutline
+          .map((item) => item.structuralUnitId)
+          .filter((id): id is string => id !== null)
+          .slice(0, 500),
+        sourceEvidence: [],
+        conceptIds: [],
+        canonicalConceptIds: [],
+        objectives: [],
+        prerequisiteUnitKeys: [],
+        graphRelationIds: [],
+      });
+
+      const remainingMaterials = materials.length - materialIndex;
+      const slotsForMaterial = Math.max(
+        1,
+        Math.floor(remainingUnitSlots / Math.max(1, remainingMaterials)),
+      );
+      const candidates = materialOutline.filter(
+        (item) => item.kind !== 'document' && item.sourceBlockIds.length > 0,
+      );
+      const selected = (candidates.length > 0 ? candidates : materialOutline.slice(0, 1)).slice(
+        0,
+        slotsForMaterial,
+      );
+      const seeds =
+        selected.length > 0
+          ? selected
+          : [
+              {
+                structuralUnitId: null,
+                title: material.title,
+                sourceBlockIds: allowedBlocks
+                  .filter((block) => block.materialId === material.materialId)
+                  .map((block) => block.id),
+              },
+            ];
+
+      for (const [unitIndex, seed] of seeds.entries()) {
+        if (remainingUnitSlots <= 0) break;
+        const blockIds = new Set(seed.sourceBlockIds);
+        const sourceBlock =
+          allowedBlocks.find((block) => blockIds.has(block.id)) ??
+          allowedBlocks.find((block) => block.materialId === material.materialId);
+        const concepts = input.concepts
+          .filter(
+            (concept) =>
+              concept.materialId === material.materialId &&
+              (blockIds.size === 0 || blockIds.has(concept.grounding.blockId)),
+          )
+          .slice(0, 30);
+        const unitNumber = learningUnits.length + 1;
+        const unitKey = `unit-${unitNumber}`;
+        const title = (seed.title || concepts[0]?.name || material.title).slice(0, 300);
+        const evidence = sourceBlock
+          ? [{ blockId: sourceBlock.id, quote: pickQuote(sourceBlock) }]
+          : [];
+        const unit: ProposedCurriculumNode = {
+          key: unitKey,
+          parentKey: sectionKey,
+          kind: 'learning_unit',
+          index: unitIndex,
+          title,
+          structuralUnitIds: materialOutline
+            .filter(
+              (item) =>
+                seed.structuralUnitId !== null &&
+                (item.structuralUnitId === seed.structuralUnitId ||
+                  item.parentStructuralUnitId === seed.structuralUnitId),
+            )
+            .map((item) => item.structuralUnitId)
+            .filter((id): id is string => id !== null)
+            .slice(0, 500),
+          sourceEvidence: evidence,
+          conceptIds: concepts.map((concept) => concept.id),
+          canonicalConceptIds: [],
+          objectives: [
+            {
+              key: `objective-${unitNumber}`,
+              title: `Understand ${title}`.slice(0, 300),
+              description: `Explain and apply the central ideas in ${title}.`.slice(0, 1000),
+              evidence,
+            },
+          ],
+          prerequisiteUnitKeys: [],
+          graphRelationIds: [],
+        };
+        for (const concept of concepts) unitByConceptId.set(concept.id, unit);
+        learningUnits.push(unit);
+        nodes.push(unit);
+        remainingUnitSlots -= 1;
+      }
+    }
+
+    for (const edge of input.graphEdges) {
+      if (edge.relation !== 'prerequisite') continue;
+      const prerequisite = unitByConceptId.get(edge.sourceConceptId);
+      const dependent = unitByConceptId.get(edge.targetConceptId);
+      if (!prerequisite || !dependent || prerequisite.key === dependent.key) continue;
+      if (!dependent.prerequisiteUnitKeys.includes(prerequisite.key)) {
+        dependent.prerequisiteUnitKeys.push(prerequisite.key);
+      }
+      if (!dependent.graphRelationIds.includes(edge.id)) dependent.graphRelationIds.push(edge.id);
+    }
+
+    return {
+      nodes,
+      synthesisGroups:
+        learningUnits.length >= 2 && input.limits.maxSynthesisGroups > 0
+          ? [
+              {
+                key: 'synthesis-course-1',
+                title: 'Connect the course foundations',
+                level: 'course',
+                learningUnitKeys: learningUnits.map((unit) => unit.key).slice(0, 50),
+                objectiveKeys: learningUnits
+                  .flatMap((unit) => unit.objectives.map((objective) => objective.key))
+                  .slice(0, 100),
+              },
+            ]
+          : [],
+    };
+  }
+
+  async proposeStudyPlan(
+    input: StudyPlanProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<StudyPlanProposalPayload> {
+    await this.gate(opts);
+    const unitById = new Map(input.units.map((unit) => [unit.id, unit]));
+    const requiredIds = [...new Set(input.requiredLearningUnitIds)].filter((id) =>
+      unitById.has(id),
+    );
+    const required = new Set(requiredIds);
+    const orderedIds: string[] = [];
+    const pending = new Set(requiredIds);
+    while (pending.size > 0) {
+      const ready = requiredIds.filter((id) => {
+        if (!pending.has(id)) return false;
+        const unit = unitById.get(id)!;
+        return unit.prerequisiteUnitIds.every(
+          (prerequisiteId) => !required.has(prerequisiteId) || !pending.has(prerequisiteId),
+        );
+      });
+      const selected = ready[0] ?? requiredIds.find((id) => pending.has(id));
+      if (!selected) break;
+      pending.delete(selected);
+      orderedIds.push(selected);
+    }
+
+    const allowedDepth = input.allowedDepths.includes(input.contract.desiredDepth)
+      ? input.contract.desiredDepth
+      : input.allowedDepths[0];
+    if (!allowedDepth) throw ProviderError.invalidOutput('StudyPlan requires an allowed depth');
+
+    const items: ProposedStudyPlanItem[] = [];
+    const deferrals: StudyPlanProposalPayload['deferrals'] = [];
+    const routeGateByUnitId = new Map<string, string>();
+    for (const unitId of orderedIds) {
+      const unit = unitById.get(unitId)!;
+      const capability = input.launchCapabilities.find(
+        (candidate) => candidate.curriculumLearningUnitId === unitId,
+      );
+      const allowedKinds = (capability?.allowedItemKinds ?? []).filter((kind) =>
+        input.allowedItemKinds.includes(kind),
+      );
+      const primaryKind = allowedKinds.includes('teach_unit')
+        ? 'teach_unit'
+        : allowedKinds.includes('informal_check')
+          ? 'informal_check'
+          : allowedKinds.includes('formal_checkpoint') &&
+              (capability?.launchableAssessmentModes.length ?? 0) > 0
+            ? 'formal_checkpoint'
+            : null;
+      if (!primaryKind) {
+        if (input.contract.allowExplicitDeferral) {
+          deferrals.push({
+            curriculumLearningUnitId: unitId,
+            objectiveIds: unit.objectiveIds,
+            reason: 'No currently launchable route item is available.',
+          });
+          continue;
+        }
+        throw ProviderError.invalidOutput(`No launchable StudyPlan item for ${unitId}`);
+      }
+
+      const itemKey = `item-${items.length + 1}`;
+      const prerequisiteItemKeys = unit.prerequisiteUnitIds
+        .map((prerequisiteId) => routeGateByUnitId.get(prerequisiteId))
+        .filter((key): key is string => Boolean(key));
+      items.push({
+        key: itemKey,
+        phase: 'Core route',
+        kind: primaryKind,
+        curriculumLearningUnitId: unit.id,
+        rationale: `Advance the accepted objective set for ${unit.title}.`,
+        estimatedMinutes: primaryKind === 'teach_unit' ? 25 : 10,
+        targetDepth: allowedDepth,
+        objectiveIds: unit.objectiveIds,
+        prerequisiteItemKeys,
+      });
+      routeGateByUnitId.set(unit.id, itemKey);
+
+      if (
+        primaryKind !== 'formal_checkpoint' &&
+        allowedKinds.includes('formal_checkpoint') &&
+        (capability?.launchableAssessmentModes.length ?? 0) > 0 &&
+        unit.blockingEligibleObjectiveIds.length > 0
+      ) {
+        const checkpointKey = `item-${items.length + 1}`;
+        items.push({
+          key: checkpointKey,
+          phase: 'Core route',
+          kind: 'formal_checkpoint',
+          curriculumLearningUnitId: unit.id,
+          rationale: `Formally check eligible objectives for ${unit.title}.`,
+          estimatedMinutes: 10,
+          targetDepth: allowedDepth,
+          objectiveIds: unit.blockingEligibleObjectiveIds,
+          prerequisiteItemKeys: [itemKey],
+        });
+        routeGateByUnitId.set(unit.id, checkpointKey);
+      }
+    }
+
+    if (items.length === 0) {
+      throw ProviderError.invalidOutput('StudyPlan proposal requires at least one executable item');
+    }
+    return {
+      rationale: 'Follow prerequisites first, then teach and formally check eligible objectives.',
+      items,
+      deferrals,
     };
   }
 

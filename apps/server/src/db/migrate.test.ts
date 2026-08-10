@@ -51,6 +51,13 @@ describe('migrations', () => {
       'model_usage_records',
       'semantic_cache_entries',
       'cost_policies',
+      'learning_contract_versions',
+      'execution_source_manifests',
+      'curriculum_versions',
+      'study_plan_versions',
+      'session_agendas',
+      'coverage_risk_entries',
+      'course_execution_state',
     ]) {
       expect(tables).toContain(expected);
     }
@@ -202,6 +209,36 @@ describe('migrations', () => {
     expect(db.prepare(`SELECT role, learner_confirmed FROM material_role_versions`).get()).toEqual({
       role: 'unknown',
       learner_confirmed: 0,
+    });
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+    db.close();
+  });
+
+  it('upgrades a populated v14 database without fabricating Agent execution state', () => {
+    const db = openDatabase(':memory:');
+    migrate(db, { toVersion: 14 });
+    db.prepare(
+      `INSERT INTO workspaces (id, name, origin, created_at, updated_at)
+       VALUES ('ws_v14', 'Existing course', 'manual', ?, ?)`,
+    ).run('2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z');
+    db.prepare(
+      `INSERT INTO materials
+         (id, workspace_id, title, source_type, content, char_count,
+          parse_status, extraction_warnings, created_at, updated_at)
+       VALUES ('mat_v14', 'ws_v14', 'Existing material', 'paste', 'truth', 5,
+         'parsed', '[]', ?, ?)`,
+    ).run('2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z');
+
+    migrate(db);
+
+    expect(db.prepare(`SELECT title FROM materials WHERE id = 'mat_v14'`).get()).toEqual({
+      title: 'Existing material',
+    });
+    expect(db.prepare('SELECT COUNT(*) AS count FROM learning_contract_versions').get()).toEqual({
+      count: 0,
+    });
+    expect(db.prepare('SELECT COUNT(*) AS count FROM course_execution_state').get()).toEqual({
+      count: 0,
     });
     expect(db.pragma('foreign_key_check')).toEqual([]);
     db.close();

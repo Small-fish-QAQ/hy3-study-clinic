@@ -12,6 +12,13 @@ import { createReviewRepo, type ReviewRepo } from './review.js';
 import { createTutorRepo, type TutorRepo } from './tutor.js';
 import { createOperationsRepo, type OperationsRepo } from './operations.js';
 import { createTelemetryRepo, type TelemetryRepo } from './telemetry.js';
+import { createMaterialRolesRepo, type MaterialRolesRepo } from './materialRoles.js';
+import { createLearningContractsRepo, type LearningContractsRepo } from './learningContracts.js';
+import { createCurriculaRepo, type CurriculaRepo } from './curricula.js';
+import { createStudyPlansRepo, type StudyPlansRepo } from './studyPlans.js';
+import { createSessionAgendasRepo, type SessionAgendasRepo } from './sessionAgendas.js';
+import { createCoverageRisksRepo, type CoverageRisksRepo } from './coverageRisks.js';
+import { createCourseExecutionRepo, type CourseExecutionRepo } from './courseExecution.js';
 import {
   createQuizzesRepo,
   createSubmissionsRepo,
@@ -38,6 +45,13 @@ export interface Repositories {
   tutor: TutorRepo;
   operations: OperationsRepo;
   telemetry: TelemetryRepo;
+  materialRoles: MaterialRolesRepo;
+  learningContracts: LearningContractsRepo;
+  curricula: CurriculaRepo;
+  studyPlans: StudyPlansRepo;
+  sessionAgendas: SessionAgendasRepo;
+  coverageRisks: CoverageRisksRepo;
+  courseExecution: CourseExecutionRepo;
   quizzes: QuizzesRepo;
   submissions: SubmissionsRepo;
   mistakes: MistakesRepo;
@@ -67,6 +81,13 @@ export function createRepositories(db: SqliteDb): Repositories {
     tutor: createTutorRepo(db),
     operations: createOperationsRepo(db),
     telemetry: createTelemetryRepo(db),
+    materialRoles: createMaterialRolesRepo(db),
+    learningContracts: createLearningContractsRepo(db),
+    curricula: createCurriculaRepo(db),
+    studyPlans: createStudyPlansRepo(db),
+    sessionAgendas: createSessionAgendasRepo(db),
+    coverageRisks: createCoverageRisksRepo(db),
+    courseExecution: createCourseExecutionRepo(db),
     quizzes: createQuizzesRepo(db),
     submissions: createSubmissionsRepo(db),
     mistakes: createMistakesRepo(db),

@@ -146,3 +146,160 @@ export const LearningContractSchema = z
     }
   });
 export type LearningContract = z.infer<typeof LearningContractSchema>;
+
+/** Common identity for consequential Course-execution commands. */
+export const CourseExecutionCommandEnvelopeSchema = z
+  .object({
+    commandId: z.string().min(1).max(200),
+    idempotencyKey: z.string().min(1).max(200),
+    workspaceId: z.string().min(1),
+    actor: z.enum(['learner', 'local']),
+  })
+  .strict();
+export type CourseExecutionCommandEnvelope = z.infer<typeof CourseExecutionCommandEnvelopeSchema>;
+
+/** Editable learner intention. It contains stable Material identity only. */
+export const LearningContractDraftFieldsSchema = z
+  .object({
+    intent: z.string().min(1).max(500),
+    targetOutcome: ContractTargetOutcomeSchema,
+    deadline: ContractDeadlineSchema.nullable(),
+    studyBudget: ContractStudyBudgetSchema,
+    desiredDepth: DesiredDepthSchema,
+    courseScope: ContractCourseScopeSchema,
+    learnerSelfReport: LearnerSelfReportSchema.nullable(),
+    examContext: ContractExamContextSchema.nullable(),
+    riskTolerance: ContractRiskToleranceSchema.nullable(),
+  })
+  .strict();
+export type LearningContractDraftFields = z.infer<typeof LearningContractDraftFieldsSchema>;
+
+export const ContractFeasibilityReasonCodeSchema = z.enum([
+  'deadline_absent',
+  'effort_unknown',
+  'budget_unknown',
+  'sufficient_slack',
+  'low_slack',
+  'insufficient_time',
+  'deadline_elapsed',
+  'unavailable_periods_reduce_capacity',
+]);
+export type ContractFeasibilityReasonCode = z.infer<typeof ContractFeasibilityReasonCodeSchema>;
+
+/** Deterministic time arithmetic; null means unknown, never zero-by-default. */
+export const LearningContractFeasibilitySchema = z
+  .object({
+    state: z.enum(['feasible', 'at_risk', 'infeasible', 'unknown']),
+    deadlineAt: z.string().datetime().nullable(),
+    availableMinutes: z.number().int().nonnegative().nullable(),
+    projectedMinutes: z.number().int().nonnegative().nullable(),
+    slackMinutes: z.number().int().nullable(),
+    reasonCodes: z.array(ContractFeasibilityReasonCodeSchema).min(1).max(20),
+    assumptions: z.array(z.string().min(1).max(500)).max(50),
+    policyVersion: z.string().min(1).max(100),
+    computedAt: z.string().datetime(),
+  })
+  .strict()
+  .superRefine((feasibility, ctx) => {
+    if (
+      feasibility.availableMinutes !== null &&
+      feasibility.projectedMinutes !== null &&
+      feasibility.slackMinutes !== feasibility.availableMinutes - feasibility.projectedMinutes
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['slackMinutes'],
+        message: 'known slack must equal available minus projected minutes',
+      });
+    }
+    if (
+      (feasibility.availableMinutes === null || feasibility.projectedMinutes === null) &&
+      feasibility.slackMinutes !== null
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['slackMinutes'],
+        message: 'slack must be unknown when either input is unknown',
+      });
+    }
+  });
+export type LearningContractFeasibility = z.infer<typeof LearningContractFeasibilitySchema>;
+
+export const CreateLearningContractDraftRequestSchema = z
+  .object({
+    command: CourseExecutionCommandEnvelopeSchema,
+    fields: LearningContractDraftFieldsSchema,
+    predecessorContractId: z.string().min(1).nullable(),
+    expectedActiveContractId: z.string().min(1).nullable(),
+  })
+  .strict();
+export type CreateLearningContractDraftRequest = z.infer<
+  typeof CreateLearningContractDraftRequestSchema
+>;
+
+export const UpdateLearningContractDraftRequestSchema = z
+  .object({
+    command: CourseExecutionCommandEnvelopeSchema,
+    contractId: z.string().min(1),
+    expectedVersion: z.number().int().positive(),
+    fields: LearningContractDraftFieldsSchema,
+  })
+  .strict();
+export type UpdateLearningContractDraftRequest = z.infer<
+  typeof UpdateLearningContractDraftRequestSchema
+>;
+
+export const TransitionLearningContractRequestSchema = z
+  .object({
+    command: CourseExecutionCommandEnvelopeSchema,
+    contractId: z.string().min(1),
+    expectedVersion: z.number().int().positive(),
+    transition: z.enum(['propose', 'confirm', 'withdraw']),
+  })
+  .strict()
+  .superRefine((request, ctx) => {
+    if (request.transition === 'confirm' && request.command.actor !== 'learner') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['command', 'actor'],
+        message: 'only the learner may confirm a Learning Contract',
+      });
+    }
+  });
+export type TransitionLearningContractRequest = z.infer<
+  typeof TransitionLearningContractRequestSchema
+>;
+
+export const LearningContractDetailResponseSchema = z
+  .object({
+    contract: LearningContractSchema,
+    feasibility: LearningContractFeasibilitySchema,
+  })
+  .strict();
+export type LearningContractDetailResponse = z.infer<typeof LearningContractDetailResponseSchema>;
+
+export const LearningContractHistoryItemSchema = z
+  .object({
+    id: z.string().min(1),
+    version: z.number().int().positive(),
+    predecessorId: z.string().min(1).nullable(),
+    status: LearningContractStatusSchema,
+    intent: z.string().min(1).max(500),
+    targetDescription: z.string().min(1).max(500),
+    deadlineAt: z.string().datetime().nullable(),
+    desiredDepth: DesiredDepthSchema,
+    learnerConfirmedAt: z.string().datetime().nullable(),
+    createdAt: z.string().datetime(),
+  })
+  .strict();
+export type LearningContractHistoryItem = z.infer<typeof LearningContractHistoryItemSchema>;
+
+export const LearningContractHistoryResponseSchema = z
+  .object({
+    workspaceId: z.string().min(1),
+    activeContractId: z.string().min(1).nullable(),
+    pendingContractId: z.string().min(1).nullable(),
+    items: z.array(LearningContractHistoryItemSchema).max(500),
+  })
+  .strict();
+export type LearningContractHistoryResponse = z.infer<typeof LearningContractHistoryResponseSchema>;
