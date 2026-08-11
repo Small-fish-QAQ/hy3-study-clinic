@@ -389,6 +389,17 @@ describe('CourseHomeView action and authority rendering', () => {
     expect(props.onLaunchNext).toHaveBeenCalledWith(props.overview!.nextAction);
   });
 
+  it('uses the primary Continue action to enter Study when the Course shell provides it', async () => {
+    const props = homeProps(overview('launchable'));
+    const onOpenStudySession = vi.fn();
+    const user = userEvent.setup();
+    render(<CourseHomeView {...props} onOpenStudySession={onOpenStudySession} />);
+
+    await user.click(screen.getByRole('button', { name: '继续学习' }));
+    expect(onOpenStudySession).toHaveBeenCalledOnce();
+    expect(props.onLaunchNext).not.toHaveBeenCalled();
+  });
+
   it('keeps learner scope authority visibly separate from truth authority', () => {
     render(<CourseHomeView {...homeProps(overview('launchable'))} />);
 

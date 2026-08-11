@@ -794,6 +794,7 @@ export function AgentCourseWorkspace({
           onAcceptStudyPlan={() => void decidePlan('accept')}
           onRejectStudyPlan={() => void decidePlan('reject')}
           onLaunchNext={() => void launchNext()}
+          onOpenStudySession={() => setView('session')}
           onOpenMaterials={() => setMaterialsOpen(true)}
         />
       ) : view === 'curriculum' ? (
