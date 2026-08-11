@@ -31,6 +31,10 @@ import {
   validateAndMaterializeStudyPlanProposal,
   validateStudyPlanScopeAccounting,
 } from './studyPlanValidation.js';
+import {
+  enforceAgentCostPolicies,
+  runTrackedAgentProviderOperation,
+} from './agentProviderRuntime.js';
 
 interface StudyPlanAgentDeps {
   repos: Repositories;
@@ -274,6 +278,7 @@ export function createStudyPlanAgentService({
       predecessorStudyPlanId: parsed.predecessorStudyPlanId,
       acceptedStudyPlanId: parsed.expectedAcceptedStudyPlanId,
       proposalTrigger: parsed.proposalTrigger,
+      confirmedCostPolicyIds: parsed.confirmedCostPolicyIds ?? [],
     });
     if (claim.replayPayload !== undefined) {
       return StudyPlanProposalResponseSchema.parse(claim.replayPayload);
@@ -301,7 +306,31 @@ export function createStudyPlanAgentService({
         curriculum,
         workspace.name,
       );
-      const proposal = await provider.proposeStudyPlan(providerContext.input, opts);
+      const policyFingerprint = enforceAgentCostPolicies(repos, {
+        workspaceId: parsed.command.workspaceId,
+        operationType: 'propose_study_plan',
+        studySessionId: null,
+        at: clock.now().toISOString(),
+        confirmedPolicyIds: parsed.confirmedCostPolicyIds ?? [],
+      });
+      const proposal = await runTrackedAgentProviderOperation({
+        repos,
+        clock,
+        provider,
+        providerModel: provider.name === 'hy3' ? (providerModel ?? null) : null,
+        operationId: claim.operationId,
+        fencingToken: claim.fencingToken,
+        workspaceId: parsed.command.workspaceId,
+        studySessionId: null,
+        learningUnitId: null,
+        assessmentId: null,
+        operationType: 'propose_study_plan',
+        schemaFingerprint: 'study-plan-proposal-v1',
+        policyFingerprint,
+        sourceFingerprint: curriculum.executionSourceManifest.fingerprint,
+        providerOptions: opts,
+        invoke: (options) => provider.proposeStudyPlan(providerContext.input, options),
+      });
       const now = clock.now().toISOString();
       const materialized = validateAndMaterializeStudyPlanProposal({
         repos,

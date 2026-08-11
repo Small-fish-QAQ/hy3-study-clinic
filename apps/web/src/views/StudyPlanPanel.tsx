@@ -5,6 +5,7 @@ import type {
   StudyPlanHistoryItem,
 } from '@hy3-clinic/shared';
 import { Banner } from '../components/ui.js';
+import { StudyPlanDiffList } from './StudyPlanDiffList.js';
 
 const KIND_TEXT: Record<StudyPlan['items'][number]['kind'], string> = {
   teach_unit: '学习单元',
@@ -157,13 +158,7 @@ export function StudyPlanPanel({
       {plan.diff.length > 0 ? (
         <details className="small">
           <summary>与前一版本的差异（{plan.diff.length}）</summary>
-          <ul>
-            {plan.diff.map((operation, index) => (
-              <li key={`${operation.kind}-${operation.planItemId ?? index}`}>
-                {operation.kind}：{operation.reason}
-              </li>
-            ))}
-          </ul>
+          <StudyPlanDiffList changes={plan.diff} />
         </details>
       ) : null}
 

@@ -26,6 +26,7 @@ import {
   type SourceBlock,
   type StudyPlanProposalPayload,
   type TutorStepPayload,
+  type TutorTurnPayload,
 } from '@hy3-clinic/shared';
 import { ProviderError } from './errors.js';
 import { alignPointToStem, charCoverageRatio } from '../grading/rubricAlignment.js';
@@ -45,6 +46,7 @@ import type {
   ShortAnswerGradingInput,
   StudyPlanProposalInput,
   TutorStepInput,
+  TutorTurnInput,
 } from './provider.js';
 
 /**
@@ -622,13 +624,16 @@ export class FakeProvider implements LlmProvider {
         continue;
       }
 
-      const type: QuestionType = input.allowedTypes.includes('single_choice')
-        ? items.length % 2 === 0
-          ? 'single_choice'
-          : input.allowedTypes.includes('short_answer')
-            ? 'short_answer'
-            : 'single_choice'
-        : (input.allowedTypes[0] ?? 'single_choice');
+      const type: QuestionType =
+        input.mode === 'concept_practice' && input.allowedTypes.includes('short_answer')
+          ? 'short_answer'
+          : input.allowedTypes.includes('single_choice')
+            ? items.length % 2 === 0
+              ? 'single_choice'
+              : input.allowedTypes.includes('short_answer')
+                ? 'short_answer'
+                : 'single_choice'
+            : (input.allowedTypes[0] ?? 'single_choice');
       const question = buildQuestion(
         type,
         { id: target.concept.id, name: target.concept.name },
@@ -1045,6 +1050,43 @@ export class FakeProvider implements LlmProvider {
       }
     }
 
+    const synthesisGroup = input.synthesisGroups.find((group) => {
+      if (!input.allowedItemKinds.includes('synthesis') || group.learningUnitIds.length < 2) {
+        return false;
+      }
+      const anchorId = group.learningUnitIds[0];
+      const capability = input.launchCapabilities.find(
+        (candidate) => candidate.curriculumLearningUnitId === anchorId,
+      );
+      return Boolean(
+        capability?.allowedItemKinds.includes('synthesis') &&
+        group.learningUnitIds.every((unitId) => routeGateByUnitId.has(unitId)),
+      );
+    });
+    if (synthesisGroup) {
+      const anchorId = synthesisGroup.learningUnitIds[0]!;
+      const objectiveIds = synthesisGroup.objectiveIds
+        .filter((objectiveId) =>
+          synthesisGroup.learningUnitIds.some((unitId) =>
+            unitById.get(unitId)?.objectiveIds.includes(objectiveId),
+          ),
+        )
+        .slice(0, 30);
+      items.push({
+        key: `item-${items.length + 1}`,
+        phase: 'Synthesis checkpoint',
+        kind: 'synthesis',
+        curriculumLearningUnitId: anchorId,
+        rationale: `Integrate the linked units in ${synthesisGroup.title}.`,
+        estimatedMinutes: 20,
+        targetDepth: allowedDepth,
+        objectiveIds,
+        prerequisiteItemKeys: synthesisGroup.learningUnitIds
+          .map((unitId) => routeGateByUnitId.get(unitId))
+          .filter((key): key is string => Boolean(key)),
+      });
+    }
+
     if (items.length === 0) {
       throw ProviderError.invalidOutput('StudyPlan proposal requires at least one executable item');
     }
@@ -1181,6 +1223,27 @@ export class FakeProvider implements LlmProvider {
           ? { misconceptionId: boundMisconception.id }
           : {}),
       },
+    };
+  }
+
+  async respondToTutorTurn(
+    input: TutorTurnInput,
+    opts?: ProviderCallOptions,
+  ): Promise<TutorTurnPayload> {
+    await this.gate(opts);
+    const focus = input.session.currentAgendaItem?.reason ?? 'the current study goal';
+    const question = input.learnerMessage.trim();
+    return {
+      text: `Let us work from ${focus}. You asked: ${question}. State the part that feels least clear, then we can test that understanding with one concrete example.`,
+      summaryDelta: {
+        learnerQuestions: [question.slice(0, 500)],
+        unresolvedConfusion: [],
+        explanationsTried: [`Responded to the learner question about ${focus}`.slice(0, 500)],
+        learnerReactions: [],
+        openActions: [],
+        safetyFlags: [],
+      },
+      suggestedActions: [],
     };
   }
 }

@@ -232,7 +232,7 @@ describe('lesson generation and provenance', () => {
     expect(learnerStateCounts(s.ctx)).toEqual(before);
   });
 
-  it('lessons cascade away with their document', async () => {
+  it('retiring a material preserves lesson history and provenance', async () => {
     await s.ctx.app.inject({
       method: 'POST',
       url: `/api/workspaces/${s.workspaceId}/concepts/${s.conceptId}/lesson`,
@@ -248,7 +248,14 @@ describe('lesson generation and provenance', () => {
     expect(del.statusCode).toBe(200);
     expect(
       (s.ctx.db.prepare('SELECT COUNT(*) AS n FROM concept_lessons').get() as { n: number }).n,
-    ).toBe(0);
+    ).toBe(1);
+    expect(
+      (
+        s.ctx.db.prepare('SELECT availability FROM materials WHERE id = ?').get(s.materialId) as {
+          availability: string;
+        }
+      ).availability,
+    ).toBe('retired');
   });
 
   it('scopes lessons to the workspace and 404s foreign concepts', async () => {

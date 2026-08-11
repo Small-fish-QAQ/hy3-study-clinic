@@ -46,6 +46,11 @@ export interface GradeOutcome {
   stateChanges: SubmissionStateChanges;
 }
 
+interface GradeOptions extends ProviderCallOptions {
+  /** Re-evaluated inside the transaction after any provider work completes. */
+  stateCreditResolver?: () => ReadonlySet<string>;
+}
+
 export function createGradingService({
   repos,
   provider,
@@ -258,6 +263,9 @@ export function createGradingService({
 
   /** Deterministic recommended next step derived only from recorded outcomes. */
   function nextStepText(changes: Omit<SubmissionStateChanges, 'recommendedNextStep'>): string {
+    if (changes.assessedConceptIds.length === 0) {
+      return 'Advisory assessment recorded; formal learner state was not changed.';
+    }
     if (changes.misconceptionsConfirmed > 0) {
       return '本次作答确认了一个误区假设,建议优先完成针对该误区的巩固练习。';
     }
@@ -288,7 +296,7 @@ export function createGradingService({
      *    concurrent or retried submissions of the same quiz apply learner
      *    state at most once, and a mid-write failure rolls everything back.
      */
-    async grade(request: SubmissionRequest, opts?: ProviderCallOptions): Promise<GradeOutcome> {
+    async grade(request: SubmissionRequest, opts?: GradeOptions): Promise<GradeOutcome> {
       const quiz = repos.quizzes.get(request.quizId);
       if (!quiz) throw notFound(`测验不存在:${request.quizId}`);
 
@@ -359,9 +367,13 @@ export function createGradingService({
 
       // Bounded model-side misconception proposals for wrong answers of
       // workspace assessments — provider work only, no writes yet.
+      const initiallyCreditableIds = opts?.stateCreditResolver?.();
+      const initiallyCreditableGrades = initiallyCreditableIds
+        ? grades.filter((grade) => initiallyCreditableIds.has(grade.questionId))
+        : grades;
       const proposalRecords = await misconceptions.collectProposalsFromWrongAnswers(
         quiz,
-        grades,
+        initiallyCreditableGrades,
         answersById,
         createdAt,
         opts,
@@ -376,8 +388,12 @@ export function createGradingService({
 
         repos.submissions.insertSubmission(submission);
         repos.submissions.insertGradingResult(result, provider.name);
-        const outcomes = persistOutcomes(quiz, grades, answersById, createdAt);
-        if (outcomes.conceptScores.size === 0) {
+        const currentCreditableIds = opts?.stateCreditResolver?.();
+        const stateCreditingGrades = currentCreditableIds
+          ? grades.filter((grade) => currentCreditableIds.has(grade.questionId))
+          : grades;
+        const outcomes = persistOutcomes(quiz, stateCreditingGrades, answersById, createdAt);
+        if (outcomes.conceptScores.size === 0 && !opts?.stateCreditResolver) {
           // Unreachable while the stale check above holds; keeps "zero valid
           // assessed concepts can never report normal success" as a hard
           // invariant even if a future path bypasses the check.
@@ -389,8 +405,15 @@ export function createGradingService({
 
         // Deterministic misconception transitions (discriminating questions
         // decide; the model cannot), then the pre-collected bounded proposals.
-        const transitions = misconceptions.applyGradedTransitions(quiz, grades, createdAt);
-        for (const record of proposalRecords) {
+        const transitions = misconceptions.applyGradedTransitions(
+          quiz,
+          stateCreditingGrades,
+          createdAt,
+        );
+        const retainedProposals = proposalRecords.filter((candidate) =>
+          stateCreditingGrades.some((grade) => grade.questionId === candidate.originQuestionId),
+        );
+        for (const record of retainedProposals) {
           repos.misconceptions.insert(record);
         }
 
@@ -409,7 +432,7 @@ export function createGradingService({
           documentIds: documentIds.slice(0, 10),
           mistakesCreated: outcomes.mistakesCreated,
           mistakesResolved: outcomes.mistakesResolved,
-          misconceptionsProposed: proposalRecords.length,
+          misconceptionsProposed: retainedProposals.length,
           misconceptionsConfirmed: transitions.confirmed,
           misconceptionsRejected: transitions.rejected,
           misconceptionsResolved: transitions.resolved,

@@ -173,6 +173,91 @@ export function createSessionAgendasRepo(db: SqliteDb) {
   return {
     get,
     create: createTx,
+    appendEvent,
+
+    update(
+      input: SessionAgenda,
+      expectedVersion: number,
+      event: SessionAgendaEventInput,
+    ): SessionAgenda {
+      const agenda = SessionAgendaSchema.parse(input);
+      const current = get(agenda.id);
+      if (!current || current.version !== expectedVersion) {
+        throw new Error('SessionAgenda version is stale.');
+      }
+      if (agenda.version !== expectedVersion + 1) {
+        throw new Error('SessionAgenda update must advance version by one.');
+      }
+      if (
+        agenda.workspaceId !== current.workspaceId ||
+        agenda.contractVersionId !== current.contractVersionId ||
+        agenda.curriculumVersionId !== current.curriculumVersionId ||
+        agenda.studyPlanVersionId !== current.studyPlanVersionId ||
+        agenda.executionSourceManifestFingerprint !== current.executionSourceManifestFingerprint ||
+        agenda.createdAt !== current.createdAt
+      ) {
+        throw new Error('SessionAgenda route identity is immutable.');
+      }
+      if (new Set(agenda.items.map((item) => item.id)).size !== agenda.items.length) {
+        throw new Error('SessionAgenda item IDs must be unique.');
+      }
+      if (new Set(agenda.items.map((item) => item.index)).size !== agenda.items.length) {
+        throw new Error('SessionAgenda item indexes must be unique.');
+      }
+      if (agenda.currentItemId && !agenda.items.some((item) => item.id === agenda.currentItemId)) {
+        throw new Error('SessionAgenda current item is unknown.');
+      }
+      const currentIds = new Set(current.items.map((item) => item.id));
+      const nextIds = new Set(agenda.items.map((item) => item.id));
+      if ([...currentIds].some((id) => !nextIds.has(id))) {
+        throw new Error('Dynamic Agenda updates cannot erase historical items.');
+      }
+
+      const changed = db
+        .prepare(
+          `UPDATE session_agendas
+           SET version = ?, status = ?, payload = ?, updated_at = ?
+           WHERE id = ? AND version = ?`,
+        )
+        .run(
+          agenda.version,
+          agenda.status,
+          JSON.stringify(agenda),
+          agenda.updatedAt,
+          agenda.id,
+          expectedVersion,
+        ).changes;
+      if (changed !== 1) throw new Error('SessionAgenda changed concurrently.');
+
+      const upsertItem = db.prepare(
+        `INSERT INTO session_agenda_items
+           (agenda_id, agenda_item_id, idx, linked_plan_item_id, kind, state,
+            launch_status, launch_capability, launch_resource_id, launch_reason)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(agenda_id, agenda_item_id) DO UPDATE SET
+           state = excluded.state,
+           launch_status = excluded.launch_status,
+           launch_capability = excluded.launch_capability,
+           launch_resource_id = excluded.launch_resource_id,
+           launch_reason = excluded.launch_reason`,
+      );
+      for (const item of agenda.items) {
+        upsertItem.run(
+          agenda.id,
+          item.id,
+          item.index,
+          item.linkedPlanItemId,
+          item.kind,
+          item.state,
+          item.launch.status,
+          item.launch.capability,
+          item.launch.resourceId,
+          item.launch.reason,
+        );
+      }
+      appendEvent(agenda.id, event);
+      return get(agenda.id)!;
+    },
 
     list(workspaceId: string): SessionAgenda[] {
       return (

@@ -158,7 +158,7 @@ describe('migration from a representative pre-upgrade database', () => {
     const workspace = repos.workspaces.list()[0]!;
     expect(workspace.origin).toBe('unknown');
 
-    const outcome = repos.workspaces.deleteDocument('mat_old', workspace.id, T);
+    const outcome = repos.workspaces.purgeDocument('mat_old', workspace.id, T);
     expect(outcome).toEqual({ deleted: true, workspaceDeleted: false });
     expect(repos.workspaces.get(workspace.id)).toBeDefined();
   });

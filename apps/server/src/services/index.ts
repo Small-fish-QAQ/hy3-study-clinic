@@ -38,6 +38,11 @@ import {
   createCourseActionLaunchService,
   type CourseActionLaunchService,
 } from './courseActionLaunch.js';
+import {
+  createFormalProgressionService,
+  type FormalProgressionService,
+} from './formalProgression.js';
+import { createStudySessionService, type StudySessionService } from './studySessions.js';
 
 export interface Services {
   materials: MaterialService;
@@ -68,6 +73,8 @@ export interface Services {
   courseExecution: CourseExecutionService;
   courseOverview: CourseOverviewService;
   courseActionLaunch: CourseActionLaunchService;
+  formalProgression: FormalProgressionService;
+  studySessions: StudySessionService;
 }
 
 export interface ServiceDeps {
@@ -79,8 +86,12 @@ export interface ServiceDeps {
 }
 
 export function createServices({ repos, provider, clock, providerModel }: ServiceDeps): Services {
-  const materials = createMaterialService({ repos, clock });
-  const workspaces = createWorkspaceService({ repos, clock, materials });
+  const sourceAuthority = createSourceAuthorityService({
+    sourceAuthority: repos.sourceAuthority,
+    clock,
+  });
+  const materials = createMaterialService({ repos, clock, sourceAuthority });
+  const workspaces = createWorkspaceService({ repos, clock, materials, sourceAuthority });
   const analysis = createAnalysisService({ repos, provider, clock });
   const quizzes = createQuizService({ repos, provider, clock, analysis });
   const misconceptions = createMisconceptionsService({ repos, provider, clock });
@@ -97,10 +108,6 @@ export function createServices({ repos, provider, clock, providerModel }: Servic
   const mapping = createMappingService({ repos });
   const lessons = createLessonsService({ repos, provider, clock, providerModel });
   const tutor = createTutorService({ repos, provider, clock, assessment, providerModel });
-  const sourceAuthority = createSourceAuthorityService({
-    sourceAuthority: repos.sourceAuthority,
-    clock,
-  });
   const courseCommands = createCourseCommandService({ repos, clock });
   const materialRoles = createMaterialRoleService({ repos, clock, commands: courseCommands });
   const learningContracts = createLearningContractService({
@@ -114,6 +121,7 @@ export function createServices({ repos, provider, clock, providerModel }: Servic
     clock,
     commands: courseCommands,
     providerModel,
+    sourceAuthority,
   });
   const studyPlansAgent = createStudyPlanAgentService({
     repos,
@@ -130,11 +138,27 @@ export function createServices({ repos, provider, clock, providerModel }: Servic
     agendas: sessionAgendasAgent,
   });
   const courseOverview = createCourseOverviewService({ repos, clock });
+  const formalProgression = createFormalProgressionService({
+    repos,
+    progression: repos.formalProgression,
+    commands: courseCommands,
+    clock,
+  });
   const courseActionLaunch = createCourseActionLaunchService({
     repos,
     clock,
     commands: courseCommands,
     assessment,
+    formalProgression,
+    provider,
+    providerModel,
+  });
+  const studySessions = createStudySessionService({
+    repos,
+    provider,
+    providerModel,
+    clock,
+    replanning: formalProgression,
   });
   return {
     materials,
@@ -165,5 +189,7 @@ export function createServices({ repos, provider, clock, providerModel }: Servic
     courseExecution,
     courseOverview,
     courseActionLaunch,
+    formalProgression,
+    studySessions,
   };
 }

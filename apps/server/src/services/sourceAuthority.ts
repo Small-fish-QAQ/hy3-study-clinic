@@ -1,4 +1,11 @@
-import { ApiErrorCode, ProposedGroundingSchema } from '@hy3-clinic/shared';
+import {
+  ApiErrorCode,
+  ProposedGroundingSchema,
+  SourceAuthorityPolicyBasisSchema,
+  SourceAuthorityValidationActorSchema,
+  type SourceAuthorityValidationActor,
+  type SourceBlock,
+} from '@hy3-clinic/shared';
 import { z } from 'zod';
 import { AppError, notFound } from '../errors.js';
 import { verifyGrounding } from '../grounding/verify.js';
@@ -10,25 +17,6 @@ import type {
 } from '../repositories/sourceAuthority.js';
 import { newId, type Clock } from '../util/ids.js';
 
-const ValidationActorSchema = z.enum(['local_validator', 'operator']);
-export type SourceAuthorityValidationActor = z.infer<typeof ValidationActorSchema>;
-
-const PolicyBasisSchema = z
-  .object({
-    policyVersion: z.string().min(1).max(100),
-    premiseKind: z.enum([
-      'claim',
-      'definition',
-      'expected_answer',
-      'rubric_point',
-      'notation',
-      'representation_equivalence',
-      'source_stated_boundary',
-    ]),
-    basis: z.string().min(1).max(1000),
-  })
-  .strict();
-
 const CreateCandidateSchema = z
   .object({
     workspaceId: z.string().min(1),
@@ -36,11 +24,11 @@ const CreateCandidateSchema = z
     materialId: z.string().min(1),
     materialRevisionId: z.string().min(1),
     premiseScope: z.string().min(1).max(500),
-    policyBasis: PolicyBasisSchema,
+    policyBasis: SourceAuthorityPolicyBasisSchema,
     predecessorId: z.string().min(1).nullable().default(null),
     expectedVersion: z.number().int().positive().optional(),
     conflictState: z.enum(['none', 'unresolved']).default('none'),
-    actor: ValidationActorSchema,
+    actor: SourceAuthorityValidationActorSchema,
     claims: z
       .array(
         z
@@ -82,6 +70,38 @@ export interface SourceAuthorityServiceDeps {
   clock: Clock;
 }
 
+type VerbatimAssessmentPremiseKind = 'expected_answer' | 'rubric_point';
+
+function sentenceLikeSpans(content: string): string[] {
+  return content
+    .split(/(?<=[。！？!?；;])/u)
+    .map((span) => span.trim())
+    .filter((span) => span.length >= 4 && span.length <= 500);
+}
+
+/**
+ * Exact source strings that existing assessment generation can safely reuse.
+ * These are occurrence claims only: no paraphrase or semantic entailment is
+ * introduced by the local validator.
+ */
+function verbatimClaimsForBlock(
+  block: SourceBlock,
+  premiseKind: VerbatimAssessmentPremiseKind,
+): string[] {
+  const spans = sentenceLikeSpans(block.content);
+  const candidates =
+    premiseKind === 'expected_answer'
+      ? [
+          ...spans.filter((span) => span.length <= 120),
+          spans.slice(0, 2).join('').slice(0, 200),
+          block.content.trim().slice(0, 120),
+        ]
+      : [...spans.slice(0, 3).map((span) => span.slice(0, 80))];
+  return [...new Set(candidates.map((claim) => claim.trim()))]
+    .filter((claim) => claim.length >= 4 && block.content.includes(claim))
+    .slice(0, 10);
+}
+
 /**
  * Independent truth/premise admission. There is deliberately no Contract,
  * Curriculum, Plan, or material-role acceptance dependency here: learner
@@ -98,7 +118,7 @@ export function createSourceAuthorityService({
   }
 
   function requireActor(actor: unknown): SourceAuthorityValidationActor {
-    const parsed = ValidationActorSchema.safeParse(actor);
+    const parsed = SourceAuthorityValidationActorSchema.safeParse(actor);
     if (!parsed.success) {
       throw new AppError(
         ApiErrorCode.ValidationError,
@@ -219,6 +239,106 @@ export function createSourceAuthorityService({
   }
 
   return {
+    /**
+     * Admit only exact strings from an active revision for assessment
+     * premises whose question asks the learner to identify or reproduce what
+     * the source states. This independent local-validator path is idempotent
+     * and never depends on Contract, role, Curriculum, or Plan acceptance.
+     */
+    ensureVerbatimAssessmentAuthority(
+      workspaceId: string,
+      materialId: string,
+      materialRevisionId: string,
+    ): SourceAuthorityBundle[] {
+      const revision = sourceAuthority.getRevisionContext(
+        workspaceId,
+        materialId,
+        materialRevisionId,
+      );
+      if (
+        !revision ||
+        revision.materialAvailability !== 'active' ||
+        revision.revisionStatus !== 'active'
+      ) {
+        throw new AppError(
+          ApiErrorCode.ValidationError,
+          'Verbatim truth admission requires the active MaterialRevision.',
+        );
+      }
+
+      const admitted: SourceAuthorityBundle[] = [];
+      for (const block of revision.blocks) {
+        for (const premiseKind of ['expected_answer', 'rubric_point'] as const) {
+          const logicalSourceId = `local-verbatim:${materialRevisionId}:${block.id}:${premiseKind}`;
+          const existing = sourceAuthority.listHistory(logicalSourceId).at(-1);
+          if (existing) {
+            admitted.push(existing);
+            continue;
+          }
+
+          const now = clock.now().toISOString();
+          const claims: Array<Omit<SourceAuthorityClaim, 'authorityRecordId'>> = [];
+          for (const claim of verbatimClaimsForBlock(block, premiseKind)) {
+            const verification = verifyGrounding(revision.blocks, {
+              blockId: block.id,
+              quote: claim,
+            });
+            if (!verification.ok || verification.grounding.blockId !== block.id) continue;
+            claims.push({
+              id: newId('tac'),
+              sourceBlockId: block.id,
+              claim,
+              quote: verification.grounding.quote,
+              startOffset: verification.grounding.startOffset,
+              endOffset: verification.grounding.endOffset,
+              occurrenceCount: verification.grounding.occurrenceCount,
+              createdAt: now,
+            });
+          }
+          if (claims.length === 0) continue;
+
+          admitted.push(
+            sourceAuthority.createVersion({
+              id: newId('ta'),
+              workspaceId,
+              logicalSourceId,
+              materialId,
+              materialRevisionId,
+              predecessorId: null,
+              premiseScope: `verbatim-source:${block.id}`,
+              policyBasis: {
+                policyVersion: 'local-verbatim-source-v1',
+                premiseKind,
+                basis:
+                  'Exact source occurrence only; model paraphrase and semantic entailment are not admitted.',
+              },
+              validationState: 'validated',
+              conflictState: 'none',
+              actor: 'local_validator',
+              createdAt: now,
+              updatedAt: now,
+              claims,
+              event: {
+                id: newId('tae'),
+                eventType: 'verbatim_source_validated',
+                actor: 'local_validator',
+                payload: {
+                  materialId,
+                  materialRevisionId,
+                  sourceBlockId: block.id,
+                  premiseKind,
+                  claimCount: claims.length,
+                  limitation: 'occurrence_only',
+                },
+                createdAt: now,
+              },
+            }),
+          );
+        }
+      }
+      return admitted;
+    },
+
     createCandidate(input: unknown): SourceAuthorityBundle {
       let parsed: z.output<typeof CreateCandidateSchema>;
       try {
@@ -228,7 +348,8 @@ export function createSourceAuthorityService({
           typeof input === 'object' &&
           input !== null &&
           'actor' in input &&
-          !ValidationActorSchema.safeParse((input as { actor: unknown }).actor).success
+          !SourceAuthorityValidationActorSchema.safeParse((input as { actor: unknown }).actor)
+            .success
         ) {
           requireActor((input as { actor: unknown }).actor);
         }
@@ -310,7 +431,7 @@ export function createSourceAuthorityService({
         materialRevisionId: parsed.materialRevisionId,
         predecessorId: parsed.predecessorId,
         premiseScope: parsed.premiseScope,
-        policyBasis: JSON.stringify(parsed.policyBasis),
+        policyBasis: parsed.policyBasis,
         validationState: 'candidate',
         conflictState: parsed.conflictState,
         actor: parsed.actor,

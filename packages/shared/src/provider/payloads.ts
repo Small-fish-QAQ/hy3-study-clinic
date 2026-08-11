@@ -716,3 +716,43 @@ export const TutorStepPayloadSchema = z.discriminatedUnion('action', [
   TutorFinalizeStepSchema,
 ]);
 export type TutorStepPayload = z.infer<typeof TutorStepPayloadSchema>;
+
+// ---------------------------------------------------------------------------
+// StudySession conversational Tutor turn
+// ---------------------------------------------------------------------------
+
+/** Advisory only: local command handlers decide whether any suggestion is executable. */
+export const TutorTurnSuggestedActionSchema = z.enum([
+  'detour',
+  'agenda_insert',
+  'deep_dive',
+  'direct_checkpoint',
+  'defer',
+  'promote_to_plan',
+]);
+export type TutorTurnSuggestedAction = z.infer<typeof TutorTurnSuggestedActionSchema>;
+
+const TutorTurnSummaryDeltaSchema = z
+  .object({
+    learnerQuestions: z.array(z.string().min(1).max(500)).max(10),
+    unresolvedConfusion: z.array(z.string().min(1).max(500)).max(10),
+    explanationsTried: z.array(z.string().min(1).max(500)).max(10),
+    learnerReactions: z.array(z.string().min(1).max(500)).max(10),
+    openActions: z.array(z.string().min(1).max(500)).max(10),
+    safetyFlags: z.array(z.string().min(1).max(300)).max(10),
+  })
+  .strict();
+export type TutorTurnSummaryDelta = z.infer<typeof TutorTurnSummaryDeltaSchema>;
+
+/**
+ * Conversational output is deliberately non-authoritative. It cannot create
+ * evidence, grade work, alter learner state, or issue a durable command.
+ */
+export const TutorTurnPayloadSchema = z
+  .object({
+    text: z.string().min(1).max(8000),
+    summaryDelta: TutorTurnSummaryDeltaSchema,
+    suggestedActions: z.array(TutorTurnSuggestedActionSchema).max(6),
+  })
+  .strict();
+export type TutorTurnPayload = z.infer<typeof TutorTurnPayloadSchema>;

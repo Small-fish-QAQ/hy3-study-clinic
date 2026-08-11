@@ -55,6 +55,7 @@ describe('Hy3Provider happy path', () => {
 
 describe('Hy3Provider bounded repair', () => {
   it('retries exactly once on invalid output, then succeeds', async () => {
+    const onRepairAttempt = vi.fn();
     const fetchImpl = vi
       .fn()
       .mockResolvedValueOnce(jsonResponse('这不是 JSON'))
@@ -65,12 +66,16 @@ describe('Hy3Provider bounded repair', () => {
       ) as unknown as typeof fetch;
 
     const provider = makeProvider(fetchImpl);
-    const payload = await provider.analyzeConcepts({
-      materialTitle: SAMPLE_MATERIAL_TITLE,
-      blocks,
-    });
+    const payload = await provider.analyzeConcepts(
+      {
+        materialTitle: SAMPLE_MATERIAL_TITLE,
+        blocks,
+      },
+      { onRepairAttempt },
+    );
     expect(payload.concepts).toHaveLength(1);
     expect((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(2);
+    expect(onRepairAttempt).toHaveBeenCalledTimes(1);
   });
 
   it('fails with PROVIDER_INVALID_OUTPUT after the repair also fails (no unbounded retry)', async () => {

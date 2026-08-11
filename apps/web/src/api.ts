@@ -69,7 +69,38 @@ import {
   type UpdateLearningContractDraftRequest,
   type ProposeCurriculumRequest,
   type LaunchCourseActionRequest,
+  StudySessionDetailResponseSchema,
+  StudyTurnEventSchema,
+  StartStudySessionResponseSchema,
+  SubmitTutorTurnResponseSchema,
+  MixedInitiativeCommandResponseSchema,
+  SessionExecutionCommandResponseSchema,
+  StudySessionSchema,
+  type StartStudySessionRequest,
+  type StartStudySessionResponse,
+  type StudySessionDetailResponse,
+  type SubmitTutorTurnRequest,
+  type SubmitTutorTurnResponse,
+  type MixedInitiativeCommandRequest,
+  type MixedInitiativeCommandResponse,
+  type SessionExecutionCommandRequest,
+  type SessionExecutionCommandResponse,
+  type StudySession,
+  type StudyTurnEvent,
+  FormalProgressionOverviewSchema,
+  ProgressionReconciliationResponseSchema,
+  ReplanTriggerSchema,
+  GoalOutcomeSchema,
+  type FormalProgressionOverview,
+  type ProgressionReconciliationResponse,
+  type QualifyReplanTriggerRequest,
+  type ProposeQualifiedReplanRequest,
+  type RecordGoalOutcomeRequest,
+  type ReconcileProgressionRequest,
+  type ReplanTrigger,
+  type GoalOutcome,
 } from '@hy3-clinic/shared';
+import { z } from 'zod';
 
 /** Normalized client-side API error (mirrors the server's structured body). */
 export class ApiClientError extends Error {
@@ -257,6 +288,13 @@ async function request<T>(
 interface RuntimeSchema<T> {
   parse(value: unknown): T;
 }
+
+const StudySessionListResponseSchema = z.object({ sessions: z.array(StudySessionSchema) }).strict();
+
+export type StudyTurnStreamLine =
+  | { kind: 'event'; event: StudyTurnEvent }
+  | { kind: 'terminal'; result: SubmitTutorTurnResponse }
+  | { kind: 'error'; message: string };
 
 async function requestParsed<T>(
   method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
@@ -647,6 +685,272 @@ export const api = {
       input,
       signal,
     ),
+
+  // --- Persistent conversational Study Sessions ---
+
+  listStudySessions: (
+    workspaceId: string,
+    signal?: AbortSignal,
+  ): Promise<{ sessions: StudySession[] }> =>
+    requestParsed(
+      'GET',
+      `/api/workspaces/${workspaceId}/study-sessions`,
+      StudySessionListResponseSchema,
+      undefined,
+      signal,
+    ),
+
+  startStudySession: (
+    workspaceId: string,
+    input: StartStudySessionRequest,
+    signal?: AbortSignal,
+  ): Promise<StartStudySessionResponse> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/study-sessions`,
+      StartStudySessionResponseSchema,
+      input,
+      signal,
+    ),
+
+  getStudySession: (
+    workspaceId: string,
+    sessionId: string,
+    signal?: AbortSignal,
+  ): Promise<StudySessionDetailResponse> =>
+    requestParsed(
+      'GET',
+      `/api/workspaces/${workspaceId}/study-sessions/${sessionId}`,
+      StudySessionDetailResponseSchema,
+      undefined,
+      signal,
+    ),
+
+  submitTutorTurn: (
+    workspaceId: string,
+    sessionId: string,
+    input: SubmitTutorTurnRequest,
+    signal?: AbortSignal,
+  ): Promise<SubmitTutorTurnResponse> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/study-sessions/${sessionId}/turns`,
+      SubmitTutorTurnResponseSchema,
+      input,
+      signal,
+    ),
+
+  streamTutorTurn: async (
+    workspaceId: string,
+    sessionId: string,
+    input: SubmitTutorTurnRequest,
+    onLine: (line: StudyTurnStreamLine) => void,
+    signal?: AbortSignal,
+  ): Promise<SubmitTutorTurnResponse> => {
+    let response: Response;
+    try {
+      response = await fetch(
+        `/api/workspaces/${workspaceId}/study-sessions/${sessionId}/turns/stream`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(input),
+          signal: signal ?? null,
+        },
+      );
+    } catch (error) {
+      if (signal?.aborted || (error instanceof DOMException && error.name === 'AbortError')) {
+        throw new ApiClientError('ABORTED', 'Tutor turn cancelled.');
+      }
+      throw new ApiClientError('NETWORK_ERROR', 'Unable to connect to the StudySession stream.');
+    }
+    if (!response.ok) {
+      throw new ApiClientError(
+        'INTERNAL',
+        `StudySession turn failed (${response.status}).`,
+        response.status,
+      );
+    }
+    if (!response.body) {
+      throw new ApiClientError(
+        'NETWORK_ERROR',
+        'This browser cannot read the StudySession stream.',
+      );
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let terminal: SubmitTutorTurnResponse | null = null;
+    const emit = (chunk: string): void => {
+      buffer += chunk;
+      let newline = buffer.indexOf('\n');
+      while (newline >= 0) {
+        const raw = buffer.slice(0, newline).trim();
+        buffer = buffer.slice(newline + 1);
+        if (raw) {
+          const value = JSON.parse(raw) as unknown;
+          const envelope = z
+            .discriminatedUnion('kind', [
+              z.object({ kind: z.literal('event'), event: StudyTurnEventSchema }).strict(),
+              z
+                .object({ kind: z.literal('terminal'), result: SubmitTutorTurnResponseSchema })
+                .strict(),
+              z.object({ kind: z.literal('error'), message: z.string().min(1) }).strict(),
+            ])
+            .parse(value) as StudyTurnStreamLine;
+          onLine(envelope);
+          if (envelope.kind === 'terminal') terminal = envelope.result;
+          if (envelope.kind === 'error') throw new ApiClientError('INTERNAL', envelope.message);
+        }
+        newline = buffer.indexOf('\n');
+      }
+    };
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (value) emit(decoder.decode(value, { stream: true }));
+        if (done) break;
+      }
+      emit(`${decoder.decode()}\n`);
+    } catch (error) {
+      if (error instanceof ApiClientError) throw error;
+      if (signal?.aborted || (error instanceof DOMException && error.name === 'AbortError')) {
+        throw new ApiClientError('ABORTED', 'Tutor turn cancelled.');
+      }
+      throw new ApiClientError('NETWORK_ERROR', 'StudySession stream was interrupted.');
+    }
+    if (!terminal) {
+      throw new ApiClientError(
+        'NETWORK_ERROR',
+        'StudySession stream ended without a terminal result.',
+      );
+    }
+    return terminal;
+  },
+
+  studySessionCommand: (
+    workspaceId: string,
+    sessionId: string,
+    input: MixedInitiativeCommandRequest,
+    signal?: AbortSignal,
+  ): Promise<MixedInitiativeCommandResponse> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/study-sessions/${sessionId}/commands`,
+      MixedInitiativeCommandResponseSchema,
+      input,
+      signal,
+    ),
+
+  pauseStudySession: (
+    workspaceId: string,
+    sessionId: string,
+    input: SessionExecutionCommandRequest,
+    signal?: AbortSignal,
+  ): Promise<SessionExecutionCommandResponse> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/study-sessions/${sessionId}/pause`,
+      SessionExecutionCommandResponseSchema,
+      input,
+      signal,
+    ),
+
+  resumeStudySession: (
+    workspaceId: string,
+    sessionId: string,
+    input: SessionExecutionCommandRequest,
+    signal?: AbortSignal,
+  ): Promise<SessionExecutionCommandResponse> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/study-sessions/${sessionId}/resume`,
+      SessionExecutionCommandResponseSchema,
+      input,
+      signal,
+    ),
+
+  stopStudySession: (
+    workspaceId: string,
+    sessionId: string,
+    input: SessionExecutionCommandRequest,
+    signal?: AbortSignal,
+  ): Promise<SessionExecutionCommandResponse> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/study-sessions/${sessionId}/stop`,
+      SessionExecutionCommandResponseSchema,
+      input,
+      signal,
+    ),
+
+  // --- Formal progression: evidence and reconciliation remain local authority ---
+
+  formalProgression: (
+    workspaceId: string,
+    signal?: AbortSignal,
+  ): Promise<FormalProgressionOverview> =>
+    requestParsed(
+      'GET',
+      `/api/workspaces/${workspaceId}/progression`,
+      FormalProgressionOverviewSchema,
+      undefined,
+      signal,
+    ),
+
+  reconcileProgression: (
+    workspaceId: string,
+    input: ReconcileProgressionRequest,
+    signal?: AbortSignal,
+  ): Promise<ProgressionReconciliationResponse> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/progression/reconcile`,
+      ProgressionReconciliationResponseSchema,
+      input,
+      signal,
+    ),
+
+  qualifyReplanTrigger: (
+    workspaceId: string,
+    input: QualifyReplanTriggerRequest,
+    signal?: AbortSignal,
+  ): Promise<ReplanTrigger> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/replans/triggers`,
+      z.object({ trigger: ReplanTriggerSchema }).strict(),
+      input,
+      signal,
+    ).then((response) => response.trigger),
+
+  proposeQualifiedReplan: (
+    workspaceId: string,
+    triggerId: string,
+    input: ProposeQualifiedReplanRequest,
+    signal?: AbortSignal,
+  ) =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/replans/${triggerId}/proposal`,
+      StudyPlanProposalResponseSchema,
+      input,
+      signal,
+    ),
+
+  recordGoalOutcome: (
+    workspaceId: string,
+    input: RecordGoalOutcomeRequest,
+    signal?: AbortSignal,
+  ): Promise<GoalOutcome> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/goal-outcomes`,
+      z.object({ outcome: GoalOutcomeSchema }).strict(),
+      input,
+      signal,
+    ).then((response) => response.outcome),
 
   getWorkspaceGraph: (workspaceId: string, signal?: AbortSignal) =>
     request<WorkspaceGraphResponse>(

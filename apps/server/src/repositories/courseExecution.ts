@@ -1,5 +1,6 @@
 import {
   CurriculumSchema,
+  GoalOutcomeSchema,
   LearningContractSchema,
   SessionAgendaSchema,
   StudyPlanSchema,
@@ -41,6 +42,33 @@ export interface ActivateCourseRouteInput {
   acceptedAt: string;
   /** Test-only transaction probe; production callers leave this undefined. */
   beforePointerSwap?: () => void;
+}
+
+export interface TransitionCourseExecutionInput {
+  workspaceId: string;
+  expectedVersion: number;
+  expectedAcceptedPlanId: string;
+  expectedAgendaId: string;
+  transition: 'pause' | 'resume' | 'stop';
+  eventId: string;
+  reason: string | null;
+  actor: 'learner';
+  at: string;
+}
+
+export interface TerminateCourseRouteInput {
+  workspaceId: string;
+  expectedStateVersion: number;
+  expectedContractId: string;
+  expectedCurriculumId: string;
+  expectedPlanId: string;
+  expectedAgendaId: string;
+  eventId: string;
+  actor: 'learner' | 'local';
+  outcomeId: string;
+  outcomeStatus: 'achieved' | 'finished_with_gaps' | 'expired_unfinished' | 'abandoned';
+  reason: string;
+  terminatedAt: string;
 }
 
 interface StateRow {
@@ -159,7 +187,13 @@ export function createCourseExecutionRepo(db: SqliteDb) {
     const curriculum = readCurriculum(input.curriculumId);
     const plan = readPlan(input.planId);
     const agenda = readAgenda(input.agendaId);
-    if (contract.workspaceId !== input.workspaceId || contract.status !== 'learner_confirmed') {
+    const reusesActiveContract = current.activeContractId === contract.id;
+    const reusesActiveCurriculum = current.activeCurriculumId === curriculum.id;
+    if (
+      contract.workspaceId !== input.workspaceId ||
+      (contract.status !== 'learner_confirmed' &&
+        !(reusesActiveContract && contract.status === 'active'))
+    ) {
       throw new Error('Route activation requires a learner-confirmed Contract in this Course.');
     }
     if (
@@ -204,10 +238,18 @@ export function createCourseExecutionRepo(db: SqliteDb) {
         'Successor StudyPlan must identify the currently accepted Plan as predecessor.',
       );
     }
-    if (current.activeContractId && contract.predecessorId !== current.activeContractId) {
+    if (
+      current.activeContractId &&
+      !reusesActiveContract &&
+      contract.predecessorId !== current.activeContractId
+    ) {
       throw new Error('Successor Contract must identify the active Contract as predecessor.');
     }
-    if (current.activeCurriculumId && curriculum.predecessorId !== current.activeCurriculumId) {
+    if (
+      current.activeCurriculumId &&
+      !reusesActiveCurriculum &&
+      curriculum.predecessorId !== current.activeCurriculumId
+    ) {
       throw new Error('Successor Curriculum must identify the active Curriculum as predecessor.');
     }
 
@@ -364,13 +406,13 @@ export function createCourseExecutionRepo(db: SqliteDb) {
         updatedAt: input.acceptedAt,
       });
 
-      if (current.activeContractId) {
+      if (current.activeContractId && current.activeContractId !== contract.id) {
         const oldContract = readContract(current.activeContractId);
         db.prepare(
           `UPDATE learning_contract_versions SET status = 'superseded', payload = ? WHERE id = ?`,
         ).run(JSON.stringify({ ...oldContract, status: 'superseded' }), oldContract.id);
       }
-      if (current.activeCurriculumId) {
+      if (current.activeCurriculumId && current.activeCurriculumId !== input.curriculumId) {
         const oldCurriculum = readCurriculum(current.activeCurriculumId);
         db.prepare(
           `UPDATE curriculum_versions SET status = 'superseded', payload = ? WHERE id = ?`,
@@ -378,6 +420,42 @@ export function createCourseExecutionRepo(db: SqliteDb) {
       }
       if (current.acceptedPlanId) {
         const oldPlan = readPlan(current.acceptedPlanId);
+        const evidenceIds = (
+          db
+            .prepare(
+              `SELECT e.id FROM formal_evidence_records e
+               JOIN formal_question_contracts q ON q.id = e.formal_question_contract_id
+               WHERE q.contract_id = ? AND q.plan_id = ? ORDER BY e.created_at, e.id`,
+            )
+            .all(oldPlan.contractVersionId, oldPlan.id) as Array<{ id: string }>
+        ).map((row) => row.id);
+        const unresolvedRiskIds = (
+          db
+            .prepare(
+              `SELECT id FROM coverage_risk_entries
+               WHERE contract_id = ? AND status NOT IN ('resolved', 'rejected', 'stale')
+               ORDER BY first_observed_at, id`,
+            )
+            .all(oldPlan.contractVersionId) as Array<{ id: string }>
+        ).map((row) => row.id);
+        const supersededOutcome = GoalOutcomeSchema.parse({
+          id: `goal_outcome_${input.eventId}`,
+          workspaceId: input.workspaceId,
+          contractVersionId: oldPlan.contractVersionId,
+          studyPlanVersionId: oldPlan.id,
+          status: 'superseded',
+          formalEvidenceIds: evidenceIds,
+          unresolvedRiskIds,
+          reason: `Superseded by learner-accepted StudyPlan ${plan.id}.`,
+          actor: 'learner',
+          createdAt: input.acceptedAt,
+        });
+        db.prepare(
+          `INSERT OR IGNORE INTO goal_outcomes
+             (id, workspace_id, contract_id, plan_id, status, payload, created_at)
+           VALUES (@id, @workspaceId, @contractVersionId, @studyPlanVersionId,
+             @status, @payload, @createdAt)`,
+        ).run({ ...supersededOutcome, payload: JSON.stringify(supersededOutcome) });
         db.prepare(
           `UPDATE study_plan_versions SET status = 'superseded', payload = ? WHERE id = ?`,
         ).run(JSON.stringify({ ...oldPlan, status: 'superseded' }), oldPlan.id);
@@ -447,9 +525,217 @@ export function createCourseExecutionRepo(db: SqliteDb) {
     },
   );
 
+  const terminateRouteTx = db.transaction(
+    (input: TerminateCourseRouteInput): CourseExecutionState => {
+      const current = get(input.workspaceId);
+      if (
+        current.version !== input.expectedStateVersion ||
+        current.activeContractId !== input.expectedContractId ||
+        current.activeCurriculumId !== input.expectedCurriculumId ||
+        current.acceptedPlanId !== input.expectedPlanId ||
+        current.activeAgendaId !== input.expectedAgendaId
+      ) {
+        throw new Error('Course execution route is stale.');
+      }
+      const contract = readContract(input.expectedContractId);
+      const plan = readPlan(input.expectedPlanId);
+      const agenda = readAgenda(input.expectedAgendaId);
+      if (
+        contract.status !== 'active' ||
+        plan.status !== 'accepted' ||
+        agenda.status === 'abandoned'
+      ) {
+        throw new Error('Only the current active route may be terminated.');
+      }
+
+      const closedContract = LearningContractSchema.parse({ ...contract, status: 'closed' });
+      const closedPlan = StudyPlanSchema.parse({ ...plan, status: 'closed' });
+      const closedAgenda = SessionAgendaSchema.parse({
+        ...agenda,
+        status: 'abandoned',
+        currentItemId: null,
+        items: agenda.items.map((item) =>
+          item.state === 'queued' || item.state === 'active'
+            ? { ...item, state: 'cancelled' as const }
+            : item,
+        ),
+        updatedAt: input.terminatedAt,
+      });
+      db.prepare(
+        `UPDATE learning_contract_versions SET status = 'closed', payload = ?
+         WHERE id = ? AND status = 'active'`,
+      ).run(JSON.stringify(closedContract), contract.id);
+      db.prepare(
+        `UPDATE study_plan_versions SET status = 'closed', payload = ?
+         WHERE id = ? AND status = 'accepted'`,
+      ).run(JSON.stringify(closedPlan), plan.id);
+      db.prepare(
+        `UPDATE session_agendas SET status = 'abandoned', payload = ?, updated_at = ?
+         WHERE id = ?`,
+      ).run(JSON.stringify(closedAgenda), input.terminatedAt, agenda.id);
+      db.prepare(
+        `UPDATE session_agenda_items SET state = 'cancelled'
+         WHERE agenda_id = ? AND state IN ('queued', 'active')`,
+      ).run(agenda.id);
+
+      const openSessions = db
+        .prepare(
+          `SELECT id FROM study_sessions
+           WHERE workspace_id = ? AND plan_id = ? AND status IN ('active', 'paused', 'interrupted')`,
+        )
+        .all(input.workspaceId, plan.id) as Array<{ id: string }>;
+      for (const sessionRow of openSessions) {
+        const row = db.prepare('SELECT * FROM study_sessions WHERE id = ?').get(sessionRow.id) as {
+          version: number;
+        };
+        db.prepare(
+          `UPDATE study_sessions
+           SET status = 'abandoned', route_state = 'on_route', current_agenda_item_id = NULL,
+               version = ?, updated_at = ? WHERE id = ?`,
+        ).run(row.version + 1, input.terminatedAt, sessionRow.id);
+        db.prepare(
+          `UPDATE study_session_turns SET status = 'interrupted',
+             error_message = 'Course goal terminated before this turn completed.',
+             completed_at = ?
+           WHERE session_id = ? AND status IN ('queued', 'running')`,
+        ).run(input.terminatedAt, sessionRow.id);
+      }
+
+      const resultingVersion = current.version + 1;
+      const changed = db
+        .prepare(
+          `UPDATE course_execution_state
+           SET active_contract_id = NULL, active_curriculum_id = NULL,
+               accepted_plan_id = NULL, active_agenda_id = NULL,
+               execution_status = 'stopped', route_validation_status = 'unconfigured',
+               version = ?, updated_at = ?
+           WHERE workspace_id = ? AND version = ?`,
+        )
+        .run(resultingVersion, input.terminatedAt, input.workspaceId, current.version).changes;
+      if (changed !== 1) throw new Error('Course execution state changed concurrently.');
+      const seq = (
+        db
+          .prepare(
+            `SELECT COALESCE(MAX(seq), 0) + 1 AS n
+             FROM course_execution_events WHERE workspace_id = ?`,
+          )
+          .get(input.workspaceId) as { n: number }
+      ).n;
+      db.prepare(
+        `INSERT INTO course_execution_events
+           (id, workspace_id, seq, event_type, actor, expected_version,
+            resulting_version, payload, created_at)
+         VALUES (?, ?, ?, 'goal_terminal', ?, ?, ?, ?, ?)`,
+      ).run(
+        input.eventId,
+        input.workspaceId,
+        seq,
+        input.actor,
+        input.expectedStateVersion,
+        resultingVersion,
+        JSON.stringify({
+          outcomeId: input.outcomeId,
+          status: input.outcomeStatus,
+          reason: input.reason,
+          contractId: contract.id,
+          planId: plan.id,
+        }),
+        input.terminatedAt,
+      );
+      return get(input.workspaceId);
+    },
+  );
+
+  const transitionExecutionTx = db.transaction(
+    (input: TransitionCourseExecutionInput): CourseExecutionState => {
+      const current = get(input.workspaceId);
+      if (
+        current.version !== input.expectedVersion ||
+        current.acceptedPlanId !== input.expectedAcceptedPlanId ||
+        current.activeAgendaId !== input.expectedAgendaId
+      ) {
+        throw new Error('Course execution transition is stale.');
+      }
+      if (input.transition === 'pause' && current.executionStatus !== 'active') {
+        throw new Error('Only active Course execution can pause.');
+      }
+      if (input.transition === 'resume' && current.executionStatus !== 'paused') {
+        throw new Error('Only paused Course execution can resume.');
+      }
+      if (input.transition === 'stop' && current.executionStatus === 'stopped') {
+        throw new Error('Course execution is already stopped.');
+      }
+      if (input.transition === 'resume' && current.routeValidationStatus !== 'valid') {
+        throw new Error('A stale Course route must be revalidated before resume.');
+      }
+      const plan = readPlan(input.expectedAcceptedPlanId);
+      if (plan.status !== 'accepted') {
+        throw new Error('Execution transitions require the same accepted StudyPlan.');
+      }
+      const nextStatus: CourseExecutionStatus =
+        input.transition === 'pause'
+          ? 'paused'
+          : input.transition === 'resume'
+            ? 'active'
+            : 'stopped';
+      const resultingVersion = current.version + 1;
+      const changed = db
+        .prepare(
+          `UPDATE course_execution_state
+           SET execution_status = ?, version = ?, updated_at = ?
+           WHERE workspace_id = ? AND version = ? AND accepted_plan_id = ? AND active_agenda_id = ?`,
+        )
+        .run(
+          nextStatus,
+          resultingVersion,
+          input.at,
+          input.workspaceId,
+          current.version,
+          input.expectedAcceptedPlanId,
+          input.expectedAgendaId,
+        ).changes;
+      if (changed !== 1) throw new Error('Course execution changed concurrently.');
+      const seq = (
+        db
+          .prepare(
+            `SELECT COALESCE(MAX(seq), 0) + 1 AS n
+             FROM course_execution_events WHERE workspace_id = ?`,
+          )
+          .get(input.workspaceId) as { n: number }
+      ).n;
+      db.prepare(
+        `INSERT INTO course_execution_events
+           (id, workspace_id, seq, event_type, actor, expected_version,
+            resulting_version, payload, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        input.eventId,
+        input.workspaceId,
+        seq,
+        input.transition === 'pause'
+          ? 'execution_paused'
+          : input.transition === 'resume'
+            ? 'execution_resumed'
+            : 'execution_stopped',
+        input.actor,
+        current.version,
+        resultingVersion,
+        JSON.stringify({
+          acceptedPlanId: input.expectedAcceptedPlanId,
+          agendaId: input.expectedAgendaId,
+          reason: input.reason,
+        }),
+        input.at,
+      );
+      return get(input.workspaceId);
+    },
+  );
+
   return {
     get,
     activateRoute: activateRouteTx,
+    terminateRoute: terminateRouteTx,
+    transitionExecution: transitionExecutionTx,
   };
 }
 

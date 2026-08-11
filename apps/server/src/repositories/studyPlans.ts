@@ -233,11 +233,20 @@ export function createStudyPlansRepo(db: SqliteDb) {
            WHERE workspace_id = ? ORDER BY version DESC LIMIT 1`,
         )
         .get(plan.workspaceId) as { id: string; version: number } | undefined;
-      if (
-        plan.predecessorId !== (latest?.id ?? null) ||
-        plan.version !== (latest?.version ?? 0) + 1
-      ) {
-        throw new Error('StudyPlan predecessor or version is stale.');
+      if (plan.version !== (latest?.version ?? 0) + 1) {
+        throw new Error('StudyPlan version is stale.');
+      }
+      if (plan.predecessorId !== null) {
+        const predecessor = get(plan.predecessorId);
+        if (
+          !predecessor ||
+          predecessor.workspaceId !== plan.workspaceId ||
+          predecessor.version >= plan.version
+        ) {
+          throw new Error('StudyPlan predecessor is invalid.');
+        }
+      } else if (latest) {
+        throw new Error('A successor StudyPlan requires an explicit predecessor.');
       }
       const launchByItem = new Map(
         launchInput.map((entry) => [
@@ -404,6 +413,37 @@ export function createStudyPlansRepo(db: SqliteDb) {
 
   return {
     get,
+
+    listLaunchValidations(planId: string): PlanLaunchValidation[] {
+      return (
+        db
+          .prepare(
+            `SELECT plan_item_id, status, capability, resource_id, reason,
+                    source_fingerprint, validated_at
+             FROM study_plan_launch_validations
+             WHERE plan_id = ? ORDER BY plan_item_id`,
+          )
+          .all(planId) as Array<{
+          plan_item_id: string;
+          status: AgendaLaunchCapability['status'];
+          capability: string;
+          resource_id: string | null;
+          reason: string | null;
+          source_fingerprint: string;
+          validated_at: string;
+        }>
+      ).map((row) => ({
+        planItemId: row.plan_item_id,
+        launch: AgendaLaunchCapabilitySchema.parse({
+          status: row.status,
+          capability: row.capability,
+          resourceId: row.resource_id,
+          reason: row.reason,
+        }),
+        sourceFingerprint: row.source_fingerprint,
+        validatedAt: row.validated_at,
+      }));
+    },
     createVersion: createVersionTx,
     reject: rejectTx,
     updateProgress: updateProgressTx,

@@ -99,6 +99,7 @@ let repos: Repositories;
 let provider: ControlledCurriculumProvider;
 let curriculum: CurriculumService;
 let contract: LearningContract;
+let commands: ReturnType<typeof createCourseCommandService>;
 
 function command(id: string, actor: 'learner' | 'local' = 'local') {
   return { commandId: id, idempotencyKey: id, workspaceId: 'ws_1', actor } as const;
@@ -170,7 +171,7 @@ beforeEach(() => {
       }),
     ],
   );
-  const commands = createCourseCommandService({ repos, clock });
+  commands = createCourseCommandService({ repos, clock });
   const roles = createMaterialRoleService({ repos, clock, commands });
   const roleProposal = roles.propose({
     command: command('role-propose'),
@@ -203,7 +204,16 @@ beforeEach(() => {
     transition: 'confirm',
   }).contract;
   provider = new ControlledCurriculumProvider();
-  curriculum = createCurriculumService({ repos, provider, clock, commands });
+  curriculum = createCurriculumService({
+    repos,
+    provider,
+    clock,
+    commands,
+    sourceAuthority: createSourceAuthorityService({
+      sourceAuthority: repos.sourceAuthority,
+      clock,
+    }),
+  });
 });
 
 describe('Curriculum proposal and authority boundaries', () => {
@@ -243,46 +253,49 @@ describe('Curriculum proposal and authority boundaries', () => {
     expect(JSON.stringify(contract.courseScope)).not.toContain('materialRevisionId');
   });
 
-  it('keeps learner scope unverified until separate validated truth authority exists', async () => {
-    const first = await curriculum.propose(proposalRequest('curriculum-unverified'));
-    expect(
-      first.curriculum.nodes.find((node) => node.learningUnit)?.learningUnit?.objectives[0],
-    ).toMatchObject({ truthPremiseStatus: 'unverified', truthAuthorityRecordIds: [] });
-    const rejected = curriculum.reject({
-      command: command('curriculum-reject', 'learner'),
-      curriculumId: first.curriculum.id,
-      expectedVersion: first.curriculum.version,
-      reason: 'Add independently validated authority first.',
-    }).curriculum;
-
-    const authorityService = createSourceAuthorityService({
-      sourceAuthority: repos.sourceAuthority,
-      clock,
-    });
+  it('keeps learner scope separate while a local validator admits exact source statements', async () => {
     const revision = repos.materialRevisions.getActive('mat_1')!;
-    const candidate = authorityService.createCandidate({
-      workspaceId: 'ws_1',
-      logicalSourceId: 'material:mat_1',
-      materialId: 'mat_1',
-      materialRevisionId: revision.id,
-      premiseScope: 'Working memory capacity',
-      policyBasis: {
-        policyVersion: 'source-authority-v1',
-        premiseKind: 'claim',
-        basis: 'Exact accepted source quotation verified locally.',
-      },
-      actor: 'local_validator',
-      claims: [{ claim: QUOTE, grounding: { blockId: 'blk_1', quote: QUOTE } }],
-    });
-    authorityService.validate(candidate.record.id, candidate.record.version, 'operator');
+    expect(repos.sourceAuthority.findEligibleByBlock('ws_1', revision.id, 'blk_1')).toEqual([]);
 
-    const second = await curriculum.propose(proposalRequest('curriculum-verified', rejected.id));
+    const proposed = await curriculum.propose(proposalRequest('curriculum-verified'));
     expect(
-      second.curriculum.nodes.find((node) => node.learningUnit)?.learningUnit?.objectives[0],
+      proposed.curriculum.nodes.find((node) => node.learningUnit)?.learningUnit?.objectives[0],
     ).toMatchObject({
       truthPremiseStatus: 'independently_verified',
-      truthAuthorityRecordIds: [expect.any(String)],
+      truthAuthorityRecordIds: [expect.any(String), expect.any(String)],
     });
+    const admitted = repos.sourceAuthority.findEligibleByBlock('ws_1', revision.id, 'blk_1');
+    expect(admitted.every((bundle) => bundle.record.actor === 'local_validator')).toBe(true);
+    expect(
+      admitted.flatMap((bundle) => bundle.claims).every((claim) => claim.claim === claim.quote),
+    ).toBe(true);
+  });
+
+  it('links ordinary Fake Curriculum premises to exact locally admitted source claims', async () => {
+    const fake = createCurriculumService({
+      repos,
+      provider: new FakeProvider(),
+      clock,
+      commands,
+      sourceAuthority: createSourceAuthorityService({
+        sourceAuthority: repos.sourceAuthority,
+        clock,
+      }),
+    });
+
+    const proposed = await fake.propose(proposalRequest('curriculum-fake-authority'));
+    const objectives = proposed.curriculum.nodes.flatMap(
+      (node) => node.learningUnit?.objectives ?? [],
+    );
+
+    expect(objectives).not.toHaveLength(0);
+    expect(
+      objectives.every((objective) => objective.truthPremiseStatus === 'independently_verified'),
+    ).toBe(true);
+    expect(objectives.every((objective) => objective.truthAuthorityRecordIds.length >= 2)).toBe(
+      true,
+    );
+    expect(objectives.some((objective) => objective.title.startsWith('Understand '))).toBe(true);
   });
 
   it('rejects a client-fabricated manifest and resolves provider context locally', async () => {
@@ -303,11 +316,41 @@ describe('Curriculum proposal and authority boundaries', () => {
     );
   });
 
+  it('enforces an explicitly configured operation cap before a Curriculum provider call', async () => {
+    repos.telemetry.upsertCostPolicy({
+      id: 'curriculum_cost_policy',
+      policyKey: 'curriculum-cost-policy',
+      workspaceId: 'ws_1',
+      scopeType: 'operation',
+      scopeKey: 'propose_curriculum',
+      limitMicrounits: 0,
+      currency: 'USD',
+      onExceed: 'refuse',
+      enabled: true,
+      createdAt: T0,
+      updatedAt: T0,
+    });
+
+    await expect(curriculum.propose(proposalRequest('curriculum-cost-refused'))).rejects.toThrow(
+      'does not permit another provider operation',
+    );
+    expect(provider.calls).toBe(0);
+    expect(repos.telemetry.usageSummary('ws_1')).toMatchObject({
+      logicalCalls: 0,
+      physicalAttempts: 0,
+    });
+  });
+
   it('preserves an accepted Curriculum when successor generation fails', async () => {
     const proposal = proposalRequest('curriculum-first');
     const first = await curriculum.propose(proposal);
     expect(await curriculum.propose(proposal)).toEqual(first);
     expect(provider.calls).toBe(1);
+    expect(repos.telemetry.usageSummary('ws_1')).toMatchObject({
+      logicalCalls: 1,
+      physicalAttempts: 1,
+      attemptsWithKnownCost: 0,
+    });
     const acceptance = {
       command: command('curriculum-accept', 'learner'),
       curriculumId: first.curriculum.id,

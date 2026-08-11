@@ -1,0 +1,1907 @@
+import {
+  ApiErrorCode,
+  AuthorityPremiseKindSchema,
+  CompletionPolicySchema,
+  FormalEvidenceRecordSchema,
+  FormalProgressionOverviewSchema,
+  FormalQuestionContractSchema,
+  GoalOutcomeSchema,
+  isStateCreditingAdmissibility,
+  ProgressionReconciliationResponseSchema,
+  QualifyReplanTriggerRequestSchema,
+  ProposeQualifiedReplanRequestSchema,
+  ReconcileProgressionRequestSchema,
+  RecordGoalOutcomeRequestSchema,
+  ReplanTriggerSchema,
+  type CompletionPolicy,
+  type CoverageRiskEntry,
+  type Curriculum,
+  type FormalAssessmentPremiseBinding,
+  type FormalAssessmentPremiseKind,
+  type FormalEvidenceRecord,
+  type FormalQuestionContract,
+  type GoalOutcome,
+  type ProgressionDecision,
+  type ProgressionReconciliation,
+  type Question,
+  type ReplanTrigger,
+  type StudyPlan,
+  type StudyPlanDiffOperation,
+  type StudyPlanItem,
+} from '@hy3-clinic/shared';
+import { AppError, notFound } from '../errors.js';
+import type { Repositories } from '../repositories/index.js';
+import type { FormalProgressionRepo } from '../repositories/formalProgression.js';
+import type { SourceAuthorityBundle } from '../repositories/sourceAuthority.js';
+import type { Clock } from '../util/ids.js';
+import { newId } from '../util/ids.js';
+import { commandFingerprint } from './courseCommands.js';
+import type { CourseCommandService } from './courseCommands.js';
+import { resolveLaunchForPlanItem } from './studyPlanValidation.js';
+
+interface FormalProgressionDeps {
+  repos: Repositories;
+  progression: FormalProgressionRepo;
+  commands: CourseCommandService;
+  clock: Clock;
+}
+
+function learningUnits(curriculum: Curriculum) {
+  return curriculum.nodes.filter((node) => node.kind === 'learning_unit' && node.learningUnit);
+}
+
+function policyFor(
+  contract: ReturnType<Repositories['learningContracts']['get']>,
+): CompletionPolicy {
+  if (!contract) throw new Error('Learning Contract is unavailable.');
+  const desiredDepth = contract.desiredDepth;
+  return CompletionPolicySchema.parse({
+    id: `completion:${contract.id}`,
+    version: 1,
+    contractVersionId: contract.id,
+    desiredDepth,
+    minimumEligibleEvidenceCount: desiredDepth === 'deep_transfer' ? 2 : 1,
+    minimumScore:
+      desiredDepth === 'pass_oriented' ? 0.6 : desiredDepth === 'high_performance' ? 0.75 : 0.7,
+    requireSynthesis: desiredDepth === 'deep_transfer',
+    permittedTiers: ['tier_1_authorized_truth', 'tier_2_validated_representation'],
+    createdAt: contract.createdAt,
+  });
+}
+
+function unitFor(curriculum: Curriculum, id: string) {
+  return learningUnits(curriculum).find((node) => node.id === id);
+}
+
+interface RequiredAssessmentPremise {
+  premiseKey: string;
+  premiseKind: FormalAssessmentPremiseKind;
+  premiseFingerprint: string;
+  admittedClaim: string;
+  exactAuthorityKind: 'expected_answer' | 'rubric_point';
+}
+
+function normalizedPremise(value: string): string {
+  return value.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+}
+
+function requiredAssessmentPremises(question: Question): RequiredAssessmentPremise[] {
+  if (question.options && question.correctOptionIds) {
+    const answerFingerprintInput = {
+      type: question.type,
+      stem: question.stem,
+      options: question.options,
+      correctOptionIds: question.correctOptionIds,
+    };
+    return question.correctOptionIds.map((optionId) => {
+      const option = question.options!.find((candidate) => candidate.id === optionId)!;
+      return {
+        premiseKey: `choice_answer:${optionId}`,
+        premiseKind: 'choice_answer',
+        premiseFingerprint: commandFingerprint({ ...answerFingerprintInput, optionId }),
+        admittedClaim: option.text,
+        exactAuthorityKind: 'expected_answer',
+      };
+    });
+  }
+
+  const premises: RequiredAssessmentPremise[] = [];
+  if (question.expectedAnswer) {
+    premises.push({
+      premiseKey: 'expected_answer',
+      premiseKind: 'expected_answer',
+      premiseFingerprint: commandFingerprint({
+        type: question.type,
+        stem: question.stem,
+        expectedAnswer: question.expectedAnswer,
+      }),
+      admittedClaim: question.expectedAnswer,
+      exactAuthorityKind: 'expected_answer',
+    });
+  }
+  question.rubric?.keyPoints.forEach((point, index) => {
+    if (!point.required) return;
+    premises.push({
+      premiseKey: `rubric_point:${index}`,
+      premiseKind: 'rubric_point',
+      premiseFingerprint: commandFingerprint({
+        type: question.type,
+        stem: question.stem,
+        rubricPointIndex: index,
+        rubricPoint: point,
+      }),
+      admittedClaim: point.text,
+      exactAuthorityKind: 'rubric_point',
+    });
+  });
+  return premises;
+}
+
+function authorityPremiseKind(bundle: SourceAuthorityBundle) {
+  return AuthorityPremiseKindSchema.safeParse(bundle.record.policyBasis.premiseKind).success
+    ? bundle.record.policyBasis.premiseKind
+    : null;
+}
+
+function authorityKindPermitsPremise(
+  bundle: SourceAuthorityBundle,
+  premise: RequiredAssessmentPremise,
+): boolean {
+  const kind = authorityPremiseKind(bundle);
+  return kind === premise.exactAuthorityKind || kind === 'representation_equivalence';
+}
+
+function buildAssessmentPremiseBindings(input: {
+  repos: Repositories;
+  authorityIds: string[];
+  question: Question;
+  relevantBlockIds: Set<string>;
+}): {
+  required: RequiredAssessmentPremise[];
+  bindings: FormalAssessmentPremiseBinding[];
+  usesRepresentationEquivalence: boolean;
+} {
+  const required = requiredAssessmentPremises(input.question);
+  const candidates = input.authorityIds
+    .map((authorityId) => input.repos.sourceAuthority.getBundle(authorityId))
+    .filter((bundle): bundle is SourceAuthorityBundle => Boolean(bundle))
+    .filter((bundle) => input.repos.sourceAuthority.isBlockingEligible(bundle.record.id))
+    .sort((left, right) => left.record.id.localeCompare(right.record.id));
+  let usesRepresentationEquivalence = false;
+  const bindings: FormalAssessmentPremiseBinding[] = [];
+  for (const premise of required) {
+    const match = candidates.flatMap((bundle) =>
+      authorityKindPermitsPremise(bundle, premise)
+        ? bundle.claims
+            .filter(
+              (claim) =>
+                input.relevantBlockIds.has(claim.sourceBlockId) &&
+                normalizedPremise(claim.claim) === normalizedPremise(premise.admittedClaim),
+            )
+            .map((claim) => ({ bundle, claim }))
+        : [],
+    )[0];
+    if (!match) continue;
+    if (authorityPremiseKind(match.bundle) === 'representation_equivalence') {
+      usesRepresentationEquivalence = true;
+    }
+    bindings.push({
+      id: newId('premise_binding'),
+      premiseKey: premise.premiseKey,
+      premiseKind: premise.premiseKind,
+      premiseFingerprint: premise.premiseFingerprint,
+      truthAuthorityRecordId: match.bundle.record.id,
+      truthAuthorityClaimIds: [match.claim.id],
+    });
+  }
+  return { required, bindings, usesRepresentationEquivalence };
+}
+
+function contractHasCurrentPremiseAuthority(
+  repos: Repositories,
+  contract: FormalQuestionContract,
+): boolean {
+  if (!isStateCreditingAdmissibility(contract.admissibilityTier)) return false;
+  const quiz = repos.quizzes.get(contract.quizId);
+  const question = quiz?.questions.find((candidate) => candidate.id === contract.questionId);
+  const curriculum = repos.curricula.get(contract.curriculumVersionId);
+  const unit = curriculum ? unitFor(curriculum, contract.curriculumLearningUnitId) : undefined;
+  const objective = unit?.learningUnit?.objectives.find(
+    (candidate) => candidate.id === contract.primaryObjectiveId,
+  );
+  if (!question || !objective || (question.options && question.correctOptionIds)) return false;
+  const required = requiredAssessmentPremises(question);
+  if (
+    required.length === 0 ||
+    contract.assessmentPremiseBindings.length !== required.length ||
+    contract.assessmentPremiseBindings.some((binding) => {
+      const premise = required.find((candidate) => candidate.premiseKey === binding.premiseKey);
+      if (!premise || premise.premiseFingerprint !== binding.premiseFingerprint) return true;
+      if (!objective.truthAuthorityRecordIds.includes(binding.truthAuthorityRecordId)) return true;
+      const bundle = repos.sourceAuthority.getBundle(binding.truthAuthorityRecordId);
+      if (
+        !bundle ||
+        !repos.sourceAuthority.isBlockingEligible(bundle.record.id) ||
+        !authorityKindPermitsPremise(bundle, premise)
+      ) {
+        return true;
+      }
+      const claimsById = new Map(bundle.claims.map((claim) => [claim.id, claim]));
+      return binding.truthAuthorityClaimIds.some((claimId) => {
+        const claim = claimsById.get(claimId);
+        return (
+          !claim ||
+          normalizedPremise(claim.claim) !== normalizedPremise(premise.admittedClaim) ||
+          !contract.provenance.some(
+            (item) =>
+              item.sourceBlockId === claim.sourceBlockId &&
+              item.truthAuthorityClaimIds.includes(claimId),
+          )
+        );
+      });
+    })
+  ) {
+    return false;
+  }
+  const usesRepresentationEquivalence = contract.assessmentPremiseBindings.some((binding) => {
+    const bundle = repos.sourceAuthority.getBundle(binding.truthAuthorityRecordId);
+    return bundle ? authorityPremiseKind(bundle) === 'representation_equivalence' : false;
+  });
+  if (
+    (contract.admissibilityTier === 'tier_2_validated_representation') !==
+    usesRepresentationEquivalence
+  ) {
+    return false;
+  }
+  return (
+    contract.provenance.length > 0 &&
+    contract.provenance.every((item) => {
+      const eligibleClaimIds = new Set(
+        repos.sourceAuthority
+          .findEligibleByBlock(contract.workspaceId, item.materialRevisionId, item.sourceBlockId)
+          .flatMap((bundle) => bundle.claims.map((claim) => claim.id)),
+      );
+      return (
+        item.truthAuthorityClaimIds.length > 0 &&
+        item.truthAuthorityClaimIds.every((claimId) => eligibleClaimIds.has(claimId))
+      );
+    })
+  );
+}
+
+function clonePlanItems(plan: StudyPlan) {
+  return plan.items.map((item) => ({
+    ...item,
+    objectiveIds: [...item.objectiveIds],
+    prerequisitePlanItemIds: [...item.prerequisitePlanItemIds],
+    completionRequirements: item.completionRequirements.map((requirement) => ({
+      ...requirement,
+      objectiveIds: [...requirement.objectiveIds],
+    })),
+  }));
+}
+
+const DEPTH_ORDER: StudyPlanItem['targetDepth'][] = [
+  'pass_oriented',
+  'working_fluency',
+  'high_performance',
+  'deep_transfer',
+];
+
+function nextDepth(depth: StudyPlanItem['targetDepth']): StudyPlanItem['targetDepth'] {
+  return DEPTH_ORDER[Math.min(DEPTH_ORDER.indexOf(depth) + 1, DEPTH_ORDER.length - 1)]!;
+}
+
+function setPlanItemOrder(items: StudyPlanItem[]): void {
+  items.forEach((item, index) => {
+    item.index = index;
+  });
+}
+
+function movePlanItem(items: StudyPlanItem[], itemId: string, toIndex: number): boolean {
+  const fromIndex = items.findIndex((item) => item.id === itemId);
+  if (fromIndex < 0) return false;
+  const [item] = items.splice(fromIndex, 1);
+  items.splice(Math.max(0, Math.min(toIndex, items.length)), 0, item!);
+  setPlanItemOrder(items);
+  return fromIndex !== toIndex;
+}
+
+function diffReplanItems(
+  previous: StudyPlan,
+  items: StudyPlanItem[],
+  reason: string,
+): StudyPlanDiffOperation[] {
+  const beforeById = new Map(previous.items.map((item) => [item.id, item]));
+  const afterIds = new Set(items.map((item) => item.id));
+  const changes: StudyPlanDiffOperation[] = [];
+  for (const item of items) {
+    const before = beforeById.get(item.id);
+    if (!before) {
+      changes.push({
+        kind: 'added',
+        planItemId: item.id,
+        curriculumLearningUnitId: item.curriculumLearningUnitId,
+        beforeIndex: null,
+        afterIndex: item.index,
+        beforeMinutes: null,
+        afterMinutes: item.estimatedMinutes,
+        beforeDepth: null,
+        afterDepth: item.targetDepth,
+        reason,
+      });
+      continue;
+    }
+    if (before.index !== item.index) {
+      changes.push({
+        kind: 'reordered',
+        planItemId: item.id,
+        curriculumLearningUnitId: item.curriculumLearningUnitId,
+        beforeIndex: before.index,
+        afterIndex: item.index,
+        beforeMinutes: before.estimatedMinutes,
+        afterMinutes: item.estimatedMinutes,
+        beforeDepth: before.targetDepth,
+        afterDepth: item.targetDepth,
+        reason,
+      });
+    }
+    if (before.estimatedMinutes !== item.estimatedMinutes) {
+      changes.push({
+        kind: 'resized',
+        planItemId: item.id,
+        curriculumLearningUnitId: item.curriculumLearningUnitId,
+        beforeIndex: before.index,
+        afterIndex: item.index,
+        beforeMinutes: before.estimatedMinutes,
+        afterMinutes: item.estimatedMinutes,
+        beforeDepth: before.targetDepth,
+        afterDepth: item.targetDepth,
+        reason,
+      });
+    }
+    if (before.targetDepth !== item.targetDepth) {
+      changes.push({
+        kind: 'depth_changed',
+        planItemId: item.id,
+        curriculumLearningUnitId: item.curriculumLearningUnitId,
+        beforeIndex: before.index,
+        afterIndex: item.index,
+        beforeMinutes: before.estimatedMinutes,
+        afterMinutes: item.estimatedMinutes,
+        beforeDepth: before.targetDepth,
+        afterDepth: item.targetDepth,
+        reason,
+      });
+    }
+  }
+  for (const item of previous.items) {
+    if (afterIds.has(item.id)) continue;
+    changes.push({
+      kind: 'removed',
+      planItemId: item.id,
+      curriculumLearningUnitId: item.curriculumLearningUnitId,
+      beforeIndex: item.index,
+      afterIndex: null,
+      beforeMinutes: item.estimatedMinutes,
+      afterMinutes: null,
+      beforeDepth: item.targetDepth,
+      afterDepth: null,
+      reason,
+    });
+  }
+  return changes;
+}
+
+/**
+ * Formal-evidence linkage and retryable progression reconciliation. The
+ * existing grading service remains the first durable transaction; this
+ * service can fail and be retried without regrading or mutating mastery twice.
+ */
+export function createFormalProgressionService({
+  repos,
+  progression,
+  commands,
+  clock,
+}: FormalProgressionDeps) {
+  function stateCreditingQuestionIdsForQuiz(quizId: string): string[] | null {
+    const contracts = progression.listQuestionContractsForQuiz(quizId);
+    if (contracts.length === 0) return null;
+    return contracts
+      .filter((contract) => {
+        const route = repos.courseExecution.get(contract.workspaceId);
+        return (
+          route.routeValidationStatus === 'valid' &&
+          (route.executionStatus === 'active' || route.executionStatus === 'paused') &&
+          route.activeContractId === contract.contractVersionId &&
+          route.activeCurriculumId === contract.curriculumVersionId &&
+          route.acceptedPlanId === contract.studyPlanVersionId &&
+          contractHasCurrentPremiseAuthority(repos, contract)
+        );
+      })
+      .map((contract) => contract.questionId);
+  }
+
+  function registerAssessmentContracts(input: {
+    workspaceId: string;
+    quizId: string;
+    studySessionId?: string | null;
+    agendaId: string;
+    agendaItemId: string;
+    assessmentKind: FormalQuestionContract['assessmentKind'];
+    contractVersionId: string;
+    curriculumVersionId: string;
+    studyPlanVersionId: string;
+    executionSourceManifestFingerprint: string;
+  }): FormalQuestionContract[] {
+    const curriculum = repos.curricula.get(input.curriculumVersionId);
+    const contract = repos.learningContracts.get(input.contractVersionId);
+    const plan = repos.studyPlans.get(input.studyPlanVersionId);
+    const quiz = repos.quizzes.get(input.quizId);
+    if (!curriculum || !contract || !plan || !quiz) {
+      throw new AppError(ApiErrorCode.VersionConflict, 'Formal assessment route is incomplete.');
+    }
+    const agenda = repos.sessionAgendas.get(input.agendaId);
+    const agendaItem = agenda?.items.find((item) => item.id === input.agendaItemId);
+    const planItem = plan.items.find((item) => item.id === agendaItem?.linkedPlanItemId);
+    const fallbackUnit = learningUnits(curriculum).find((node) =>
+      node.learningUnit?.conceptIds.includes(quiz.questions[0]?.conceptId ?? ''),
+    );
+    const unitId = planItem?.curriculumLearningUnitId ?? fallbackUnit?.id;
+    if (!unitId) {
+      throw new AppError(ApiErrorCode.ValidationError, 'Formal assessment has no LearningUnit.');
+    }
+    const unit = unitFor(curriculum, unitId);
+    if (!unit?.learningUnit) {
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        'Formal assessment LearningUnit is unknown.',
+      );
+    }
+    const objectiveIds = planItem?.objectiveIds.length
+      ? planItem.objectiveIds
+      : unit.learningUnit.objectives.map((objective) => objective.id);
+    const targetDepth = planItem?.targetDepth ?? contract.desiredDepth;
+    const difficulty = quiz.config.difficulty;
+    const synthesisGroup =
+      input.assessmentKind === 'synthesis' && planItem?.kind === 'synthesis'
+        ? curriculum.synthesisGroups.find(
+            (group) =>
+              group.learningUnitIds.includes(unit.id) &&
+              planItem.objectiveIds.every((objectiveId) =>
+                group.objectiveIds.includes(objectiveId),
+              ),
+          )
+        : undefined;
+    const synthesisMappings = quiz.questions.map((question) => {
+      if (!synthesisGroup || !planItem) return null;
+      const matchingUnits = learningUnits(curriculum).filter(
+        (candidate) =>
+          synthesisGroup.learningUnitIds.includes(candidate.id) &&
+          candidate.learningUnit!.conceptIds.includes(question.conceptId),
+      );
+      if (matchingUnits.length !== 1) return null;
+      const matchingUnit = matchingUnits[0]!;
+      const matchingObjectives = matchingUnit.learningUnit!.objectives.filter(
+        (objective) =>
+          planItem.objectiveIds.includes(objective.id) &&
+          synthesisGroup.objectiveIds.includes(objective.id),
+      );
+      if (matchingObjectives.length !== 1) return null;
+      return { unit: matchingUnit, objective: matchingObjectives[0]! };
+    });
+    const synthesisBreadthVerified =
+      input.assessmentKind !== 'synthesis' ||
+      (Boolean(synthesisGroup) &&
+        synthesisMappings.every((mapping) => mapping !== null) &&
+        new Set(synthesisMappings.map((mapping) => mapping?.unit.id)).size >= 2);
+    // Existing quiz questions identify a concept and grounding block, but do
+    // not carry a locally validated Curriculum objective ID. A Plan item with
+    // more than one objective therefore cannot safely attribute a question by
+    // position. Synthesis is the narrow exception: concept ownership must map
+    // every question to exactly one group unit and one objective, and the quiz
+    // must cover at least two distinct units before any question can earn
+    // state credit.
+    const ordinaryObjectiveAttributionVerified = objectiveIds.length === 1;
+    const output = quiz.questions.map((question, index) => {
+      const synthesisMapping = synthesisMappings[index];
+      const questionUnit = synthesisMapping?.unit ?? unit;
+      const objectiveId =
+        synthesisMapping?.objective.id ?? objectiveIds[index % objectiveIds.length]!;
+      const objective = questionUnit.learningUnit!.objectives.find(
+        (candidate) => candidate.id === objectiveId,
+      );
+      if (!objective)
+        throw new AppError(ApiErrorCode.ValidationError, 'Assessment objective is unknown.');
+      const objectiveAttributionVerified =
+        input.assessmentKind === 'synthesis'
+          ? Boolean(synthesisMapping) && synthesisBreadthVerified
+          : ordinaryObjectiveAttributionVerified;
+      // Formal authority follows the question's actual verified evidence
+      // blocks. A different authorized block elsewhere in the unit cannot
+      // authorize this question's hidden scoring premises.
+      const relevantBlockIds = new Set([
+        question.grounding.blockId,
+        ...(question.supplementaryEvidence ?? []).map((item) => item.blockId),
+      ]);
+      const refs = questionUnit.sourceReferences
+        .filter(
+          (reference) =>
+            reference.sourceBlockId !== null && relevantBlockIds.has(reference.sourceBlockId),
+        )
+        .slice(0, 20);
+      const premiseResolution = buildAssessmentPremiseBindings({
+        repos,
+        authorityIds: objective.truthAuthorityRecordIds,
+        question,
+        relevantBlockIds,
+      });
+      const boundClaimIds = new Set(
+        premiseResolution.bindings.flatMap((binding) => binding.truthAuthorityClaimIds),
+      );
+      const allProvenance = refs.map((reference) => ({
+        materialId: reference.materialId,
+        materialRevisionId: reference.materialRevisionId,
+        sourceBlockId: reference.sourceBlockId!,
+        sourceBlockRevisionFingerprint: reference.sourceBlockRevisionFingerprint,
+        truthAuthorityClaimIds: [...boundClaimIds].filter((claimId) =>
+          objective.truthAuthorityRecordIds.some((authorityId) =>
+            repos.sourceAuthority
+              .getBundle(authorityId)
+              ?.claims.some(
+                (claim) => claim.id === claimId && claim.sourceBlockId === reference.sourceBlockId,
+              ),
+          ),
+        ),
+      }));
+      const premiseBindingsComplete =
+        premiseResolution.required.length > 0 &&
+        premiseResolution.bindings.length === premiseResolution.required.length;
+      // A correct option alone does not authorize the false/classification
+      // premise of every distractor. Phases 1-4 have no independently
+      // validated full-option classification authority, so choice questions
+      // remain advisory even when the correct option has exact source truth.
+      const fullChoiceClassificationAuthorized = !(question.options && question.correctOptionIds);
+      const authorizedProvenance = allProvenance.filter(
+        (item) => item.truthAuthorityClaimIds.length > 0,
+      );
+      const tier =
+        objectiveAttributionVerified &&
+        objective.truthPremiseStatus === 'independently_verified' &&
+        premiseBindingsComplete &&
+        fullChoiceClassificationAuthorized &&
+        authorizedProvenance.length > 0
+          ? premiseResolution.usesRepresentationEquivalence
+            ? 'tier_2_validated_representation'
+            : 'tier_1_authorized_truth'
+          : 'tier_3_advisory';
+      const provenance = tier === 'tier_3_advisory' ? allProvenance : authorizedProvenance;
+      return FormalQuestionContractSchema.parse({
+        id: newId('formal_contract'),
+        workspaceId: input.workspaceId,
+        quizId: input.quizId,
+        questionId: question.id,
+        studySessionId: input.studySessionId ?? null,
+        agendaItemId: input.agendaItemId,
+        assessmentKind: input.assessmentKind,
+        primaryObjectiveId: objective.id,
+        scoredSecondaryObjectiveIds: [],
+        curriculumLearningUnitId: questionUnit.id,
+        difficulty,
+        targetDepth,
+        representation:
+          input.assessmentKind === 'synthesis'
+            ? 'synthesis'
+            : question.type === 'short_answer'
+              ? 'explanation'
+              : 'recognition',
+        admissibilityTier: tier,
+        stableScopeFingerprint: commandFingerprint(contract.courseScope),
+        contractVersionId: contract.id,
+        curriculumVersionId: curriculum.id,
+        studyPlanVersionId: plan.id,
+        executionSourceManifestFingerprint: input.executionSourceManifestFingerprint,
+        provenance,
+        assessmentPremiseBindings: premiseResolution.bindings,
+        limitations:
+          tier === 'tier_3_advisory'
+            ? [
+                !fullChoiceClassificationAuthorized
+                  ? 'Choice-question state credit requires independently validated classification authority for the full option set; correct-option truth alone is insufficient.'
+                  : input.assessmentKind === 'synthesis' && !synthesisBreadthVerified
+                    ? 'Synthesis state credit requires unambiguous objective attribution across at least two Curriculum LearningUnits; narrow or ambiguous results are advisory only.'
+                    : objectiveAttributionVerified
+                      ? 'One or more scoring answer/options/rubric premises lack an explicit independently authorized binding; result is advisory only.'
+                      : 'The question has no validated one-to-one objective attribution; result is advisory only.',
+              ]
+            : [],
+        createdAt: clock.now().toISOString(),
+      });
+    });
+    return progression.insertQuestionContracts(output);
+  }
+
+  function createPolicy(contractId: string): CompletionPolicy {
+    const existing = progression.latestCompletionPolicy(contractId);
+    if (existing) return existing;
+    const contract = repos.learningContracts.get(contractId);
+    if (!contract) throw notFound('Learning Contract not found.');
+    return progression.insertCompletionPolicy(policyFor(contract));
+  }
+
+  function projectDecisionToExecutionRoute(
+    plan: StudyPlan,
+    curriculum: Curriculum,
+    formalContract: FormalQuestionContract,
+    policy: CompletionPolicy,
+    unitId: string,
+    decisionKind: ProgressionDecision['kind'],
+    nextState: ProgressionDecision['nextState'],
+    decisionId: string,
+    at: string,
+  ): void {
+    const route = repos.courseExecution.get(plan.workspaceId);
+    if (route.acceptedPlanId !== plan.id || !route.activeAgendaId) return;
+    const agenda = repos.sessionAgendas.get(route.activeAgendaId);
+    if (!agenda || agenda.studyPlanVersionId !== plan.id) return;
+    const executedAgendaItem = agenda.items.find(
+      (item) =>
+        item.id === formalContract.agendaItemId &&
+        item.learningUnitId === unitId &&
+        item.state !== 'cancelled',
+    );
+    if (!executedAgendaItem) return;
+
+    const relevantPlanItems = plan.items.filter((item) => item.curriculumLearningUnitId === unitId);
+    const executedPlanItem = executedAgendaItem.linkedPlanItemId
+      ? relevantPlanItems.find((item) => item.id === executedAgendaItem.linkedPlanItemId)
+      : undefined;
+    const planState =
+      nextState === 'deferred'
+        ? ('deferred' as const)
+        : decisionKind === 'targeted_repair' || nextState === 'repair_needed'
+          ? ('repair_needed' as const)
+          : decisionKind === 'complete'
+            ? ('completed' as const)
+            : ('started' as const);
+    if (executedPlanItem) {
+      const current = repos.studyPlans
+        .listProgress(plan.id)
+        .find((item) => item.planItemId === executedPlanItem.id);
+      if (current && current.state !== planState && current.state !== 'completed') {
+        repos.studyPlans.updateProgress(
+          plan.id,
+          executedPlanItem.id,
+          current.version,
+          planState,
+          newId('plan_progress_evt'),
+          `Formal progression decision ${decisionId} for Agenda item ${formalContract.agendaItemId}.`,
+          at,
+        );
+      }
+    }
+
+    let items = agenda.items.map((item) => {
+      if (item.id !== executedAgendaItem.id) return item;
+      return {
+        ...item,
+        state: nextState === 'deferred' ? ('deferred' as const) : ('completed' as const),
+      };
+    });
+
+    let preferredNextId: string | null = null;
+    if (nextState === 'repair_needed' || decisionKind === 'targeted_repair') {
+      const existingRepair = items.find(
+        (item) =>
+          item.kind === 'targeted_repair' &&
+          item.learningUnitId === unitId &&
+          item.state !== 'completed' &&
+          item.state !== 'cancelled' &&
+          item.state !== 'deferred',
+      );
+      if (existingRepair) {
+        preferredNextId = existingRepair.id;
+      } else {
+        const planItem =
+          executedPlanItem ??
+          relevantPlanItems.find((item) => item.kind === 'formal_checkpoint') ??
+          relevantPlanItems[0];
+        if (planItem) {
+          let launch = resolveLaunchForPlanItem(repos, clock, plan.workspaceId, curriculum, {
+            kind: 'targeted_repair',
+            curriculumLearningUnitId: unitId,
+            objectiveIds: planItem.objectiveIds,
+          });
+          if (launch.status !== 'launchable') {
+            // A synthesis/transfer gap may exist without an open question-level
+            // mistake. Keep repair launchable through a bounded unit checkpoint.
+            launch = resolveLaunchForPlanItem(repos, clock, plan.workspaceId, curriculum, {
+              kind: 'formal_checkpoint',
+              curriculumLearningUnitId: unitId,
+              objectiveIds: planItem.objectiveIds,
+            });
+          }
+          const repairItem = {
+            id: newId('agenda_item'),
+            index: Math.max(-1, ...items.map((item) => item.index)) + 1,
+            kind: 'targeted_repair' as const,
+            origin: 'open_repair' as const,
+            reason: `Targeted repair required by formal decision ${decisionId}.`,
+            estimatedMinutes: Math.max(5, Math.min(30, planItem.estimatedMinutes)),
+            linkedPlanItemId: planItem.id,
+            learningUnitId: unitId,
+            priority: 'high' as const,
+            state: launch.status === 'launchable' ? ('queued' as const) : ('blocked' as const),
+            launch,
+            displacedAgendaItemIds: [executedAgendaItem.id],
+            timeImpactMinutes: Math.max(5, Math.min(30, planItem.estimatedMinutes)),
+          };
+          items = [...items, repairItem];
+          preferredNextId = launch.status === 'launchable' ? repairItem.id : null;
+        }
+      }
+    }
+    const requiredSynthesisId =
+      policy.requireSynthesis && nextState !== 'complete'
+        ? (items.find(
+            (item) =>
+              item.kind === 'synthesis' &&
+              item.learningUnitId === unitId &&
+              item.state === 'queued' &&
+              item.launch.status === 'launchable',
+          )?.id ?? null)
+        : null;
+    const nextItemId =
+      preferredNextId ??
+      requiredSynthesisId ??
+      items.find((item) => item.state === 'queued' && item.launch.status === 'launchable')?.id ??
+      null;
+    const updatedAgenda = repos.sessionAgendas.update(
+      {
+        ...agenda,
+        version: agenda.version + 1,
+        items,
+        currentItemId: nextItemId,
+        updatedAt: at,
+      },
+      agenda.version,
+      {
+        id: newId('agenda_event'),
+        eventType: 'formal_progression_applied',
+        actor: 'local',
+        payload: {
+          decisionId,
+          unitId,
+          nextState,
+          executedAgendaItemId: formalContract.agendaItemId,
+          linkedPlanItemId: executedPlanItem?.id ?? null,
+          completionPolicyId: policy.id,
+          currentItemId: nextItemId,
+        },
+        createdAt: at,
+      },
+    );
+    for (const session of repos.studySessions
+      .list(plan.workspaceId)
+      .filter(
+        (candidate) =>
+          candidate.sessionAgendaId === agenda.id &&
+          (candidate.status === 'active' || candidate.status === 'paused'),
+      )) {
+      repos.studySessions.update(
+        {
+          ...session,
+          version: session.version + 1,
+          currentAgendaItemId: updatedAgenda.currentItemId,
+          updatedAt: at,
+        },
+        session.version,
+      );
+    }
+  }
+
+  function reconcile(
+    workspaceId: string,
+    gradingResultId: string,
+    expected?: { studyPlanId: string; manifestFingerprint: string },
+  ): ReturnType<typeof ProgressionReconciliationResponseSchema.parse> {
+    const result = repos.submissions.getGradingResult(gradingResultId);
+    if (!result) throw notFound('Grading result not found.');
+    const quiz = repos.quizzes.get(result.quizId);
+    if (!quiz || (quiz.workspaceId && quiz.workspaceId !== workspaceId)) {
+      throw notFound('Grading result not found.');
+    }
+    const contracts = progression.listQuestionContractsForQuiz(quiz.id);
+    if (contracts.length === 0) {
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        'Grading result has no formal Agent contract.',
+      );
+    }
+    if (
+      expected &&
+      contracts.some(
+        (contract) =>
+          contract.studyPlanVersionId !== expected.studyPlanId ||
+          contract.executionSourceManifestFingerprint !== expected.manifestFingerprint,
+      )
+    ) {
+      throw new AppError(ApiErrorCode.VersionConflict, 'Formal evidence context is stale.');
+    }
+    const acceptedRouteChanged = Boolean(
+      expected && repos.courseExecution.get(workspaceId).acceptedPlanId !== expected.studyPlanId,
+    );
+    const evidence: FormalEvidenceRecord[] = [];
+    const decisions: ProgressionDecision[] = [];
+    const reconciliations: ProgressionReconciliation[] = [];
+    const replanTriggers: ReplanTrigger[] = [];
+    const currentlyCreditableQuestionIds = new Set(stateCreditingQuestionIdsForQuiz(quiz.id) ?? []);
+    const grouped = new Map<string, FormalQuestionContract[]>();
+    for (const contract of contracts) {
+      grouped.set(contract.curriculumLearningUnitId, [
+        ...(grouped.get(contract.curriculumLearningUnitId) ?? []),
+        contract,
+      ]);
+      const grade = result.grades.find((candidate) => candidate.questionId === contract.questionId);
+      if (!grade) continue;
+      const record = FormalEvidenceRecordSchema.parse({
+        id: newId('evidence'),
+        formalQuestionContractId: contract.id,
+        gradingResultId,
+        questionId: contract.questionId,
+        primaryObjectiveId: contract.primaryObjectiveId,
+        curriculumLearningUnitId: contract.curriculumLearningUnitId,
+        admissibilityTier: contract.admissibilityTier,
+        normalizedScore: grade.normalizedScore,
+        correct: grade.correct,
+        needsReview: grade.needsReview,
+        stateCreditable: currentlyCreditableQuestionIds.has(contract.questionId),
+        assessmentPremiseBindingIds: contract.assessmentPremiseBindings.map(
+          (binding) => binding.id,
+        ),
+        limitations: currentlyCreditableQuestionIds.has(contract.questionId)
+          ? contract.limitations
+          : [
+              ...contract.limitations,
+              ...(isStateCreditingAdmissibility(contract.admissibilityTier)
+                ? ['Premise authority is no longer current; result is advisory only.']
+                : []),
+            ],
+        createdAt: clock.now().toISOString(),
+      });
+      try {
+        evidence.push(progression.insertEvidence(record));
+      } catch (error) {
+        const prior = progression
+          .listEvidenceForGrading(gradingResultId)
+          .find((item) => item.formalQuestionContractId === contract.id);
+        if (prior) evidence.push(prior);
+        else throw error;
+      }
+    }
+
+    for (const [unitId, unitContracts] of grouped) {
+      const first = unitContracts[0]!;
+      const policy = createPolicy(first.contractVersionId);
+      const now = clock.now().toISOString();
+      const reconciliation = progression.createReconciliation({
+        id: newId('reconcile'),
+        workspaceId,
+        gradingResultId,
+        curriculumVersionId: first.curriculumVersionId,
+        studyPlanVersionId: first.studyPlanVersionId,
+        curriculumLearningUnitId: unitId,
+        completionPolicyId: policy.id,
+        completionPolicyVersion: policy.version,
+        status: 'reconciliation_pending',
+        decisionId: null,
+        reason: null,
+        createdAt: now,
+        updatedAt: now,
+      });
+      if (acceptedRouteChanged && reconciliation.status === 'reconciliation_pending') {
+        reconciliations.push(
+          progression.updateReconciliation({
+            ...reconciliation,
+            status: 'stale',
+            reason:
+              'Accepted StudyPlan changed after grading; evidence is retained but cannot mutate the successor route.',
+            updatedAt: now,
+          }),
+        );
+        continue;
+      }
+      if (reconciliation.status !== 'reconciliation_pending') {
+        reconciliations.push(reconciliation);
+        if (reconciliation.decisionId) {
+          const prior = progression.getDecision(reconciliation.decisionId);
+          if (prior) decisions.push(prior);
+        }
+        continue;
+      }
+
+      const unitEvidence = progression.listEvidenceForPlanUnit(
+        workspaceId,
+        first.curriculumVersionId,
+        first.studyPlanVersionId,
+        unitId,
+      );
+      const eligible = unitEvidence.filter(
+        (item) => item.stateCreditable && isStateCreditingAdmissibility(item.admissibilityTier),
+      );
+      if (eligible.length === 0) {
+        reconciliations.push(
+          progression.rejectReconciliation(
+            reconciliation.id,
+            'No independently admissible evidence; tier-3 results remain advisory.',
+            now,
+          ),
+        );
+        continue;
+      }
+      const passed = eligible.filter((item) => item.normalizedScore >= policy.minimumScore);
+      const failed = eligible.some((item) => item.normalizedScore < policy.minimumScore);
+      const failedEvidence = eligible.filter((item) => item.normalizedScore < policy.minimumScore);
+      const plan = repos.studyPlans.get(first.studyPlanVersionId);
+      const routeCurriculum = repos.curricula.get(first.curriculumVersionId);
+      if (!plan || !routeCurriculum) {
+        throw new AppError(
+          ApiErrorCode.VersionConflict,
+          'Formal progression route is no longer available.',
+        );
+      }
+      const blockingObjectiveIds = new Set(
+        plan.items
+          .filter((item) => item.curriculumLearningUnitId === unitId)
+          .flatMap((item) =>
+            item.completionRequirements
+              .filter((requirement) => requirement.blocking)
+              .flatMap((requirement) => requirement.objectiveIds),
+          ),
+      );
+      const passedObjectiveIds = new Set(passed.map((item) => item.primaryObjectiveId));
+      const blockingObjectivesSatisfied = [...blockingObjectiveIds].every((objectiveId) =>
+        passedObjectiveIds.has(objectiveId),
+      );
+      const synthesisRequired = policy.requireSynthesis;
+      const synthesisEvidence = eligible.filter((item) =>
+        unitContracts.some(
+          (candidate) =>
+            candidate.questionId === item.questionId && candidate.representation === 'synthesis',
+        ),
+      );
+      const synthesisSatisfied = !synthesisRequired || synthesisEvidence.length > 0;
+      const failedSynthesis = synthesisEvidence.some(
+        (item) => item.normalizedScore < policy.minimumScore,
+      );
+      const kind = failedSynthesis
+        ? 'targeted_repair'
+        : passed.length >= policy.minimumEligibleEvidenceCount &&
+            synthesisSatisfied &&
+            blockingObjectivesSatisfied
+          ? 'complete'
+          : failed
+            ? 'targeted_repair'
+            : 'continue';
+      const prior = progression.getUnitProgress(workspaceId, first.curriculumVersionId, unitId);
+      const preserveCompleted = prior.state === 'complete' && kind !== 'complete';
+      const nextState = preserveCompleted
+        ? 'complete'
+        : kind === 'complete'
+          ? 'complete'
+          : kind === 'targeted_repair'
+            ? 'repair_needed'
+            : 'in_progress';
+      const reasonCodes = preserveCompleted
+        ? failedSynthesis
+          ? ['prior_completion_preserved', 'synthesis_transfer_gap']
+          : ['prior_completion_preserved']
+        : kind === 'complete'
+          ? ['eligible_evidence_satisfied']
+          : failed
+            ? ['eligible_evidence_below_policy']
+            : synthesisRequired && !synthesisSatisfied
+              ? ['synthesis_required']
+              : !blockingObjectivesSatisfied
+                ? ['blocking_objective_evidence_missing']
+                : ['insufficient_eligible_evidence'];
+      if (failedSynthesis) {
+        const synthesisContract = unitContracts.find(
+          (candidate) => candidate.assessmentKind === 'synthesis',
+        );
+        const curriculum = repos.curricula.get(first.curriculumVersionId);
+        const curriculumUnit = curriculum ? unitFor(curriculum, unitId) : undefined;
+        const objective = curriculumUnit?.learningUnit?.objectives.find(
+          (candidate) => candidate.id === synthesisContract?.primaryObjectiveId,
+        );
+        if (synthesisContract && objective) {
+          const firstProvenance = synthesisContract.provenance[0] ?? null;
+          const riskId = `risk_synthesis_${commandFingerprint({
+            contractId: first.contractVersionId,
+            unitId,
+          })}`;
+          if (!repos.coverageRisks.get(riskId)) {
+            const risk: CoverageRiskEntry = {
+              id: riskId,
+              workspaceId,
+              contractVersionId: first.contractVersionId,
+              stableScopeFingerprint: synthesisContract.stableScopeFingerprint,
+              materialId: firstProvenance?.materialId ?? null,
+              topicId: null,
+              objectiveId: objective.id,
+              facets: ['formally_assessed', 'transfer_integration_risk'],
+              scopeAuthorityStatus: 'in_scope',
+              truthPremiseStatus: objective.truthPremiseStatus,
+              truthAuthorityRecordIds: objective.truthAuthorityRecordIds,
+              referencedCurriculumNodeIds: [unitId],
+              referencedConceptIds: curriculumUnit?.learningUnit?.conceptIds ?? [],
+              referencedEvidenceIds: synthesisEvidence.slice(0, 50).map((item) => item.id),
+              origin: 'deterministic',
+              status: 'planned',
+              severity: 'high',
+              priority: 80,
+              contractSensitive: true,
+              claim: `Synthesis gap: ${objective.title}`,
+              uncertainty:
+                'Formal synthesis evidence did not satisfy the current completion policy; a bounded targeted repair is required.',
+              observations: firstProvenance
+                ? [
+                    {
+                      id: newId('risk_observation'),
+                      materialRevisionId: firstProvenance.materialRevisionId,
+                      sourceBlockId: firstProvenance.sourceBlockId,
+                      sourceBlockRevisionFingerprint:
+                        firstProvenance.sourceBlockRevisionFingerprint,
+                      executionSourceManifestFingerprint:
+                        synthesisContract.executionSourceManifestFingerprint,
+                      reconciliationStatus: 'current',
+                      observedAt: now,
+                      lastVerifiedAt: now,
+                    },
+                  ]
+                : [],
+              resolutionEvidenceIds: [],
+              learnerDecisionId: null,
+              provider: null,
+              providerModel: null,
+              promptVersion: null,
+              firstObservedAt: now,
+              updatedAt: now,
+            };
+            repos.coverageRisks.create(risk, {
+              id: newId('risk_evt'),
+              eventType: 'formal_synthesis_gap_recorded',
+              actor: 'local',
+              payload: {
+                gradingResultId,
+                reconciliationId: reconciliation.id,
+                targetedRepairRequired: true,
+              },
+              createdAt: now,
+            });
+          }
+        }
+      }
+      const automaticTriggerKind = failedSynthesis
+        ? ('synthesis_failure' as const)
+        : failedEvidence.length >= 2
+          ? ('repeated_formal_evidence' as const)
+          : unitContracts.some((candidate) => candidate.assessmentKind === 'targeted_repair') &&
+              failedEvidence.length > 0
+            ? ('strong_prerequisite_failure' as const)
+            : null;
+      if (automaticTriggerKind) {
+        const affectedPlanItemIds =
+          plan?.items
+            .filter((item) => item.curriculumLearningUnitId === unitId)
+            .map((item) => item.id) ?? [];
+        replanTriggers.push(
+          progression.insertReplanTrigger({
+            id: newId('replan_trigger'),
+            workspaceId,
+            acceptedStudyPlanId: first.studyPlanVersionId,
+            kind: automaticTriggerKind,
+            status: 'qualified',
+            evidenceIds: failedEvidence.slice(0, 100).map((item) => item.id),
+            reason:
+              automaticTriggerKind === 'synthesis_failure'
+                ? `Formal synthesis failed for LearningUnit ${unitId}.`
+                : automaticTriggerKind === 'strong_prerequisite_failure'
+                  ? `Formal prerequisite repair failed for LearningUnit ${unitId}.`
+                  : `Repeated formal evidence remains below policy for LearningUnit ${unitId}.`,
+            facts: {
+              qualifyingOccurrences: Math.max(1, failedEvidence.length),
+              affectedLearningUnitIds: [unitId],
+              affectedPlanItemIds,
+              observedMinutesPerWeek: null,
+              sourceManifestFingerprint: first.executionSourceManifestFingerprint,
+              learnerConfirmedChange: false,
+            },
+            proposedStudyPlanId: null,
+            createdAt: now,
+            updatedAt: now,
+          }),
+        );
+      }
+      const progressDecision: ProgressionDecision = {
+        id: newId('progression'),
+        workspaceId,
+        curriculumLearningUnitId: unitId,
+        completionPolicyId: policy.id,
+        completionPolicyVersion: policy.version,
+        kind,
+        priorState: prior.state,
+        nextState,
+        evidenceIds: eligible.map((item) => item.id),
+        reasonCodes,
+        createdAt: now,
+      };
+      const applied = repos.transaction(() => {
+        const result = progression.applyDecision(
+          reconciliation.id,
+          progressDecision,
+          prior.version,
+        );
+        projectDecisionToExecutionRoute(
+          plan,
+          routeCurriculum,
+          first,
+          policy,
+          unitId,
+          result.decision.kind,
+          result.decision.nextState,
+          result.decision.id,
+          now,
+        );
+        return result;
+      });
+      reconciliations.push(applied.reconciliation);
+      decisions.push(applied.decision);
+    }
+    return ProgressionReconciliationResponseSchema.parse({
+      reconciliations,
+      decisions,
+      evidence,
+      replanTriggers,
+    });
+  }
+
+  function reconcileCommand(input: unknown) {
+    const parsed = ReconcileProgressionRequestSchema.parse(input);
+    const claim = commands.begin(parsed.command, 'reconcile_progression', {
+      gradingResultId: parsed.gradingResultId,
+      expectedStudyPlanId: parsed.expectedStudyPlanId,
+      expectedExecutionSourceManifestFingerprint: parsed.expectedExecutionSourceManifestFingerprint,
+    });
+    if (claim.replayPayload !== undefined)
+      return ProgressionReconciliationResponseSchema.parse(claim.replayPayload);
+    try {
+      return commands.complete(claim, () =>
+        reconcile(parsed.command.workspaceId, parsed.gradingResultId, {
+          studyPlanId: parsed.expectedStudyPlanId,
+          manifestFingerprint: parsed.expectedExecutionSourceManifestFingerprint,
+        }),
+      );
+    } catch (error) {
+      commands.fail(claim, error);
+      throw error;
+    }
+  }
+
+  function reconcileAfterGrading(gradingResultId: string) {
+    const result = repos.submissions.getGradingResult(gradingResultId);
+    if (!result) throw notFound('Grading result not found.');
+    const quiz = repos.quizzes.get(result.quizId);
+    if (!quiz) throw notFound('Quiz not found.');
+    if (progression.listQuestionContractsForQuiz(quiz.id).length === 0) return null;
+    const workspaceId =
+      quiz.workspaceId ??
+      (quiz.materialId ? repos.materials.get(quiz.materialId)?.workspaceId : undefined);
+    if (!workspaceId) throw new Error('Formal assessment workspace is unavailable.');
+    const questionContract = progression.listQuestionContractsForQuiz(quiz.id)[0]!;
+    return repos.transaction(() =>
+      reconcile(workspaceId, gradingResultId, {
+        studyPlanId: questionContract.studyPlanVersionId,
+        manifestFingerprint: questionContract.executionSourceManifestFingerprint,
+      }),
+    );
+  }
+
+  function retryContextForGrading(gradingResultId: string) {
+    const result = repos.submissions.getGradingResult(gradingResultId);
+    if (!result) return null;
+    const contract = progression.listQuestionContractsForQuiz(result.quizId)[0];
+    return contract
+      ? {
+          gradingResultId,
+          expectedStudyPlanId: contract.studyPlanVersionId,
+          expectedExecutionSourceManifestFingerprint: contract.executionSourceManifestFingerprint,
+        }
+      : null;
+  }
+
+  function qualifyReplanTrigger(input: unknown): ReplanTrigger {
+    const parsed = QualifyReplanTriggerRequestSchema.parse(input);
+    const claim = commands.begin(parsed.command, 'qualify_replan_trigger', {
+      acceptedStudyPlanId: parsed.expectedAcceptedStudyPlanId,
+      kind: parsed.kind,
+      evidenceIds: parsed.evidenceIds,
+      reason: parsed.reason,
+      facts: parsed.facts,
+    });
+    if (claim.replayPayload !== undefined) return ReplanTriggerSchema.parse(claim.replayPayload);
+    try {
+      const state = repos.courseExecution.get(parsed.command.workspaceId);
+      if (state.acceptedPlanId !== parsed.expectedAcceptedStudyPlanId) {
+        throw new AppError(ApiErrorCode.VersionConflict, 'Accepted StudyPlan pointer is stale.');
+      }
+      const plan = repos.studyPlans.get(parsed.expectedAcceptedStudyPlanId);
+      if (!plan || plan.status !== 'accepted') throw notFound('Accepted StudyPlan not found.');
+      const curriculum = repos.curricula.get(plan.curriculumVersionId);
+      const contract = repos.learningContracts.get(plan.contractVersionId);
+      if (!curriculum || !contract) {
+        throw new AppError(ApiErrorCode.VersionConflict, 'Accepted route context is incomplete.');
+      }
+      const learnerAuthoritative = new Set([
+        'deadline_or_target_change',
+        'sustained_study_time_change',
+        'learner_scope_change',
+        'promoted_detour',
+      ]).has(parsed.kind);
+      if (learnerAuthoritative && parsed.command.actor !== 'learner') {
+        throw new AppError(
+          ApiErrorCode.ValidationError,
+          'This replan trigger requires explicit learner authority.',
+        );
+      }
+
+      const units = new Map(learningUnits(curriculum).map((unit) => [unit.id, unit]));
+      const planItems = new Map(plan.items.map((item) => [item.id, item]));
+      const suppliedUnitIds = [...new Set(parsed.facts.affectedLearningUnitIds)];
+      const suppliedItemIds = [...new Set(parsed.facts.affectedPlanItemIds)];
+      for (const unitId of suppliedUnitIds) {
+        if (!units.has(unitId)) {
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            `Unknown affected LearningUnit: ${unitId}`,
+          );
+        }
+      }
+      for (const itemId of suppliedItemIds) {
+        const item = planItems.get(itemId);
+        if (!item) {
+          throw new AppError(ApiErrorCode.ValidationError, `Unknown affected Plan item: ${itemId}`);
+        }
+        if (
+          suppliedUnitIds.length > 0 &&
+          item.curriculumLearningUnitId &&
+          !suppliedUnitIds.includes(item.curriculumLearningUnitId)
+        ) {
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            `Affected Plan item ${itemId} is outside the declared LearningUnit scope.`,
+          );
+        }
+      }
+
+      const evidenceIds = [...new Set(parsed.evidenceIds)];
+      const evidence = evidenceIds.map((evidenceId) => {
+        const record = progression.getEvidence(evidenceId);
+        const questionContract = record
+          ? progression.getQuestionContract(record.formalQuestionContractId)
+          : undefined;
+        if (
+          !record ||
+          !questionContract ||
+          questionContract.workspaceId !== parsed.command.workspaceId ||
+          questionContract.contractVersionId !== plan.contractVersionId ||
+          questionContract.curriculumVersionId !== plan.curriculumVersionId ||
+          questionContract.studyPlanVersionId !== plan.id ||
+          questionContract.executionSourceManifestFingerprint !==
+            plan.executionSourceManifestFingerprint
+        ) {
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            `Replan evidence is absent or outside the accepted route: ${evidenceId}`,
+          );
+        }
+        return { record, questionContract };
+      });
+      const evidenceKinds = new Set([
+        'repeated_formal_evidence',
+        'synthesis_failure',
+        'strong_prerequisite_failure',
+      ]);
+      if (evidenceKinds.has(parsed.kind) && evidence.length === 0) {
+        throw new AppError(
+          ApiErrorCode.ValidationError,
+          `${parsed.kind} requires current formal evidence.`,
+        );
+      }
+      const eligibleEvidence = evidence.filter(
+        ({ record }) =>
+          record.stateCreditable && isStateCreditingAdmissibility(record.admissibilityTier),
+      );
+      const evidenceUnitIds = [
+        ...new Set(eligibleEvidence.map(({ record }) => record.curriculumLearningUnitId)),
+      ];
+      const affectedLearningUnitIds =
+        evidenceKinds.has(parsed.kind) && evidenceUnitIds.length > 0
+          ? evidenceUnitIds
+          : suppliedUnitIds;
+      const affectedPlanItemIds =
+        suppliedItemIds.length > 0
+          ? suppliedItemIds
+          : plan.items
+              .filter((item) =>
+                item.curriculumLearningUnitId
+                  ? affectedLearningUnitIds.includes(item.curriculumLearningUnitId)
+                  : false,
+              )
+              .map((item) => item.id);
+      for (const itemId of affectedPlanItemIds) {
+        const unitId = planItems.get(itemId)?.curriculumLearningUnitId;
+        if (
+          unitId &&
+          affectedLearningUnitIds.length > 0 &&
+          !affectedLearningUnitIds.includes(unitId)
+        ) {
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            `Affected Plan item ${itemId} does not match the locally verified evidence scope.`,
+          );
+        }
+      }
+
+      let qualifyingOccurrences = parsed.facts.qualifyingOccurrences;
+      let qualifies = false;
+      if (parsed.kind === 'deadline_or_target_change') {
+        qualifyingOccurrences = parsed.facts.learnerConfirmedChange ? 1 : 0;
+        qualifies = parsed.facts.learnerConfirmedChange;
+      } else if (parsed.kind === 'sustained_study_time_change') {
+        const currentWeekly =
+          contract.studyBudget.minutesPerWeek ??
+          (contract.studyBudget.minutesPerDay === null
+            ? null
+            : contract.studyBudget.minutesPerDay * 7);
+        const observed = parsed.facts.observedMinutesPerWeek;
+        const materiallyChanged =
+          observed !== null &&
+          (currentWeekly === null ||
+            Math.abs(observed - currentWeekly) >= Math.max(30, currentWeekly * 0.2));
+        qualifies =
+          parsed.facts.learnerConfirmedChange &&
+          materiallyChanged &&
+          parsed.facts.qualifyingOccurrences >= 2;
+      } else if (parsed.kind === 'persistent_pace_risk') {
+        const progress = new Map(
+          repos.studyPlans.listProgress(plan.id).map((item) => [item.planItemId, item.state]),
+        );
+        const nowMs = clock.now().getTime();
+        const missedMilestones =
+          plan.paceBaseline?.milestones.filter(
+            (milestone) =>
+              new Date(milestone.at).getTime() <= nowMs &&
+              milestone.throughPlanItemId !== null &&
+              progress.get(milestone.throughPlanItemId) !== 'completed',
+          ).length ?? 0;
+        qualifyingOccurrences =
+          (plan.feasibility.state === 'at_risk' || plan.feasibility.state === 'infeasible'
+            ? 1
+            : 0) + missedMilestones;
+        qualifies = qualifyingOccurrences >= 2;
+      } else if (parsed.kind === 'learner_scope_change') {
+        qualifyingOccurrences = parsed.facts.learnerConfirmedChange ? 1 : 0;
+        qualifies = parsed.facts.learnerConfirmedChange && affectedLearningUnitIds.length > 0;
+      } else if (parsed.kind === 'promoted_detour') {
+        qualifyingOccurrences = parsed.facts.learnerConfirmedChange ? 1 : 0;
+        qualifies = parsed.facts.learnerConfirmedChange && affectedLearningUnitIds.length === 1;
+      } else if (parsed.kind === 'repeated_formal_evidence') {
+        qualifyingOccurrences = eligibleEvidence.length;
+        qualifies = qualifyingOccurrences >= 2;
+      } else if (parsed.kind === 'synthesis_failure') {
+        const policy = policyFor(contract);
+        const failures = eligibleEvidence.filter(
+          ({ record, questionContract }) =>
+            questionContract.assessmentKind === 'synthesis' &&
+            record.normalizedScore < policy.minimumScore,
+        );
+        qualifyingOccurrences = failures.length;
+        qualifies = failures.length > 0;
+      } else if (parsed.kind === 'strong_prerequisite_failure') {
+        const policy = policyFor(contract);
+        const failedUnitIds = new Set(
+          eligibleEvidence
+            .filter(({ record }) => record.normalizedScore < policy.minimumScore)
+            .map(({ record }) => record.curriculumLearningUnitId),
+        );
+        const prerequisiteFailures = [...failedUnitIds].filter((unitId) =>
+          [...units.values()].some((unit) =>
+            unit.learningUnit!.prerequisiteUnitIds.includes(unitId),
+          ),
+        );
+        qualifyingOccurrences = prerequisiteFailures.length;
+        qualifies = prerequisiteFailures.length > 0;
+      } else if (parsed.kind === 'source_manifest_change') {
+        qualifyingOccurrences =
+          parsed.facts.sourceManifestFingerprint !== null &&
+          parsed.facts.sourceManifestFingerprint !== plan.executionSourceManifestFingerprint
+            ? 1
+            : 0;
+        qualifies = qualifyingOccurrences === 1;
+      }
+      const facts = {
+        ...parsed.facts,
+        qualifyingOccurrences,
+        affectedLearningUnitIds,
+        affectedPlanItemIds,
+      };
+      const now = clock.now().toISOString();
+      return commands.complete(claim, () =>
+        progression.insertReplanTrigger({
+          id: newId('replan_trigger'),
+          workspaceId: parsed.command.workspaceId,
+          acceptedStudyPlanId: parsed.expectedAcceptedStudyPlanId,
+          kind: parsed.kind,
+          status: qualifies ? 'qualified' : 'candidate',
+          evidenceIds,
+          reason: parsed.reason,
+          facts,
+          proposedStudyPlanId: null,
+          createdAt: now,
+          updatedAt: now,
+        }),
+      );
+    } catch (error) {
+      commands.fail(claim, error);
+      throw error;
+    }
+  }
+
+  function proposeQualifiedReplan(input: unknown) {
+    const parsed = ProposeQualifiedReplanRequestSchema.parse(input);
+    const claim = commands.begin(parsed.command, 'propose_replan', {
+      triggerId: parsed.triggerId,
+      expectedAcceptedStudyPlanId: parsed.expectedAcceptedStudyPlanId,
+    });
+    if (claim.replayPayload !== undefined)
+      return claim.replayPayload as { trigger: ReplanTrigger; studyPlan: StudyPlan };
+    try {
+      const trigger = progression.getReplanTrigger(parsed.triggerId);
+      const currentState = repos.courseExecution.get(parsed.command.workspaceId);
+      if (!trigger || trigger.workspaceId !== parsed.command.workspaceId)
+        throw notFound('Replan trigger not found.');
+      if (trigger.status !== 'qualified')
+        throw new AppError(
+          ApiErrorCode.ValidationError,
+          'Only a qualified replan trigger may produce a proposal.',
+        );
+      if (
+        currentState.acceptedPlanId !== parsed.expectedAcceptedStudyPlanId ||
+        trigger.acceptedStudyPlanId !== parsed.expectedAcceptedStudyPlanId
+      ) {
+        throw new AppError(ApiErrorCode.VersionConflict, 'Accepted StudyPlan pointer is stale.');
+      }
+      const accepted = repos.studyPlans.get(parsed.expectedAcceptedStudyPlanId);
+      if (!accepted || accepted.status !== 'accepted')
+        throw new AppError(
+          ApiErrorCode.VersionConflict,
+          'Accepted StudyPlan is no longer executable.',
+        );
+      if (trigger.kind === 'deadline_or_target_change' || trigger.kind === 'learner_scope_change') {
+        throw new AppError(
+          ApiErrorCode.ValidationError,
+          'This trigger changes learner intention and requires a successor Learning Contract before a StudyPlan can be proposed.',
+        );
+      }
+      const latest = repos.studyPlans.list(parsed.command.workspaceId).at(-1) ?? accepted;
+      const items = clonePlanItems(accepted);
+      let curriculum = repos.curricula.get(accepted.curriculumVersionId);
+      if (!curriculum) {
+        throw new AppError(ApiErrorCode.VersionConflict, 'Replan Curriculum is unavailable.');
+      }
+      if (trigger.kind === 'source_manifest_change') {
+        const targetFingerprint = trigger.facts.sourceManifestFingerprint;
+        const compatible = [...repos.curricula.list(parsed.command.workspaceId)]
+          .reverse()
+          .find(
+            (candidate) =>
+              candidate.status === 'accepted' &&
+              candidate.contractVersionId === accepted.contractVersionId &&
+              candidate.executionSourceManifest.fingerprint === targetFingerprint,
+          );
+        if (!compatible) {
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            'Source-manifest replanning requires a learner-accepted compatible Curriculum; the prior route was preserved.',
+          );
+        }
+        curriculum = compatible;
+      }
+      const contract = repos.learningContracts.get(accepted.contractVersionId);
+      if (!contract) {
+        throw new AppError(
+          ApiErrorCode.VersionConflict,
+          'Replan Learning Contract is unavailable.',
+        );
+      }
+      const affectedIds = new Set(trigger.facts.affectedPlanItemIds);
+      const affectedUnits = new Set(trigger.facts.affectedLearningUnitIds);
+      const targetItem = () =>
+        items.find((item) => affectedIds.has(item.id)) ??
+        items.find(
+          (item) =>
+            item.curriculumLearningUnitId !== null &&
+            affectedUnits.has(item.curriculumLearningUnitId),
+        );
+
+      let deferrals = accepted.deferrals.map((deferral) => ({
+        ...deferral,
+        objectiveIds: [...deferral.objectiveIds],
+        riskIds: [...deferral.riskIds],
+      }));
+      if (trigger.kind === 'promoted_detour') {
+        let target = targetItem();
+        if (!target) {
+          const unitId = trigger.facts.affectedLearningUnitIds[0]!;
+          const unit = learningUnits(curriculum).find((candidate) => candidate.id === unitId);
+          if (!unit?.learningUnit) {
+            throw new AppError(
+              ApiErrorCode.ValidationError,
+              'The promoted detour is not represented by the accepted Curriculum.',
+            );
+          }
+          target = {
+            id: newId('plan_item'),
+            index: 0,
+            phase: 'Promoted detour',
+            kind: 'teach_unit',
+            curriculumLearningUnitId: unit.id,
+            rationale: trigger.reason,
+            estimatedMinutes: Math.max(10, contract.studyBudget.preferredSessionMinutes ?? 20),
+            targetDepth: contract.desiredDepth,
+            objectiveIds: unit.learningUnit.objectives.map((objective) => objective.id),
+            prerequisitePlanItemIds: [],
+            completionPolicy: null,
+            completionRequirements: [],
+          };
+          items.unshift(target);
+          deferrals = deferrals.filter((deferral) => deferral.curriculumLearningUnitId !== unit.id);
+          setPlanItemOrder(items);
+        } else if (!movePlanItem(items, target.id, 0)) {
+          const deepened = nextDepth(target.targetDepth);
+          target.targetDepth = deepened;
+          target.estimatedMinutes = Math.min(240, target.estimatedMinutes + 10);
+        }
+      } else if (trigger.kind === 'repeated_formal_evidence') {
+        const target = targetItem();
+        if (!target) {
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            'Formal evidence has no current Plan item.',
+          );
+        }
+        const evidence = trigger.evidenceIds
+          .map((id) => progression.getEvidence(id))
+          .filter((record): record is FormalEvidenceRecord => Boolean(record));
+        const policy = policyFor(contract);
+        const hasFailure = evidence.some((record) => record.normalizedScore < policy.minimumScore);
+        target.estimatedMinutes = hasFailure
+          ? Math.min(240, target.estimatedMinutes + 10)
+          : Math.max(5, Math.floor(target.estimatedMinutes * 0.8));
+        if (hasFailure) movePlanItem(items, target.id, 0);
+      } else if (
+        trigger.kind === 'synthesis_failure' ||
+        trigger.kind === 'strong_prerequisite_failure'
+      ) {
+        const target =
+          (trigger.kind === 'synthesis_failure'
+            ? items.find(
+                (item) =>
+                  item.kind === 'synthesis' &&
+                  item.curriculumLearningUnitId &&
+                  affectedUnits.has(item.curriculumLearningUnitId),
+              )
+            : undefined) ?? targetItem();
+        if (!target) {
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            'Repair trigger has no current Plan item.',
+          );
+        }
+        target.estimatedMinutes = Math.min(240, target.estimatedMinutes + 10);
+        movePlanItem(items, target.id, 0);
+      } else if (
+        trigger.kind === 'sustained_study_time_change' ||
+        trigger.kind === 'persistent_pace_risk'
+      ) {
+        const target = targetItem();
+        if (target) movePlanItem(items, target.id, 0);
+      }
+      setPlanItemOrder(items);
+
+      const projectedMinutes = items.reduce((sum, item) => sum + item.estimatedMinutes, 0);
+      let availableMinutes = accepted.feasibility.availableMinutes;
+      if (
+        trigger.kind === 'sustained_study_time_change' &&
+        trigger.facts.observedMinutesPerWeek !== null
+      ) {
+        const remainingWeeks = contract.deadline
+          ? Math.max(
+              1,
+              Math.ceil(
+                (new Date(contract.deadline.at).getTime() - clock.now().getTime()) /
+                  (7 * 24 * 60 * 60 * 1000),
+              ),
+            )
+          : 1;
+        availableMinutes = trigger.facts.observedMinutesPerWeek * remainingWeeks;
+      }
+      const slackMinutes = availableMinutes === null ? null : availableMinutes - projectedMinutes;
+      const feasibilityState =
+        availableMinutes === null
+          ? accepted.feasibility.state
+          : slackMinutes! < 0
+            ? ('infeasible' as const)
+            : slackMinutes! < Math.max(30, projectedMinutes * 0.1)
+              ? ('at_risk' as const)
+              : ('feasible' as const);
+      const feasibility = {
+        projectedMinutes,
+        availableMinutes,
+        slackMinutes,
+        state: feasibilityState,
+        assumptions: [
+          ...accepted.feasibility.assumptions,
+          `Recomputed for ${trigger.kind}: ${trigger.reason}`,
+        ].slice(-50),
+      };
+      const diff = diffReplanItems(accepted, items, trigger.reason);
+      if (
+        trigger.kind === 'sustained_study_time_change' ||
+        trigger.kind === 'persistent_pace_risk'
+      ) {
+        diff.push({
+          kind: 'schedule_changed',
+          planItemId: null,
+          curriculumLearningUnitId: null,
+          beforeIndex: null,
+          afterIndex: null,
+          beforeMinutes: accepted.feasibility.availableMinutes,
+          afterMinutes: feasibility.availableMinutes,
+          beforeDepth: null,
+          afterDepth: null,
+          reason: trigger.reason,
+        });
+      }
+      if (trigger.kind === 'source_manifest_change') {
+        diff.push({
+          kind: 'source_rebound',
+          planItemId: null,
+          curriculumLearningUnitId: null,
+          beforeIndex: null,
+          afterIndex: null,
+          beforeMinutes: null,
+          afterMinutes: null,
+          beforeDepth: null,
+          afterDepth: null,
+          reason: trigger.reason,
+        });
+      }
+      if (diff.length === 0) {
+        throw new AppError(
+          ApiErrorCode.ValidationError,
+          'The qualified trigger produced no meaningful executable route change.',
+        );
+      }
+      const now = clock.now().toISOString();
+      const latestVersion = latest.version + 1;
+      const planId = newId('study_plan');
+      const plan: StudyPlan = {
+        ...accepted,
+        id: planId,
+        curriculumVersionId: curriculum.id,
+        executionSourceManifestFingerprint: curriculum.executionSourceManifest.fingerprint,
+        version: latestVersion,
+        predecessorId: accepted.id,
+        proposalTrigger: trigger.reason,
+        status: 'proposed',
+        rationale: `Deterministic successor proposal for ${trigger.kind}: ${trigger.reason}`,
+        items,
+        deferrals,
+        feasibility,
+        diff,
+        paceBaseline: accepted.paceBaseline
+          ? {
+              ...accepted.paceBaseline,
+              id: newId('pace'),
+              studyPlanVersionId: planId,
+              explicitSlackMinutes: Math.max(0, feasibility.slackMinutes ?? 0),
+              expectedSessionCadencePerWeek:
+                trigger.kind === 'sustained_study_time_change' &&
+                trigger.facts.observedMinutesPerWeek !== null &&
+                contract.studyBudget.preferredSessionMinutes
+                  ? Math.max(
+                      1,
+                      trigger.facts.observedMinutesPerWeek /
+                        contract.studyBudget.preferredSessionMinutes,
+                    )
+                  : accepted.paceBaseline.expectedSessionCadencePerWeek,
+              estimateSource:
+                trigger.kind === 'sustained_study_time_change'
+                  ? ('learner' as const)
+                  : accepted.paceBaseline.estimateSource,
+            }
+          : null,
+        learnerAcceptedAt: null,
+        createdAt: now,
+      };
+      const launches = items.map((item) => ({
+        planItemId: item.id,
+        launch: resolveLaunchForPlanItem(
+          repos,
+          clock,
+          parsed.command.workspaceId,
+          curriculum,
+          item,
+        ),
+        sourceFingerprint: plan.executionSourceManifestFingerprint,
+        validatedAt: now,
+      }));
+      if (launches.some((item) => item.launch.status !== 'launchable')) {
+        throw new AppError(
+          ApiErrorCode.ValidationError,
+          'Replan proposal contains an action that is no longer launchable.',
+        );
+      }
+      const stored = commands.complete(claim, () => {
+        const created = repos.studyPlans.createVersion(plan, launches, {
+          id: newId('plan_evt'),
+          eventType: 'replan_proposed',
+          actor: parsed.command.actor,
+          payload: { triggerId: trigger.id, predecessorId: accepted.id },
+          createdAt: now,
+        });
+        const updatedTrigger = progression.updateReplanTrigger({
+          ...trigger,
+          status: 'proposal_created',
+          proposedStudyPlanId: created.id,
+          updatedAt: now,
+        });
+        return { trigger: updatedTrigger, studyPlan: created };
+      });
+      return stored;
+    } catch (error) {
+      commands.fail(claim, error);
+      throw error;
+    }
+  }
+
+  function recordGoalOutcome(input: unknown): GoalOutcome {
+    const parsed = RecordGoalOutcomeRequestSchema.parse(input);
+    const claim = commands.begin(parsed.command, 'record_goal_outcome', {
+      expectedCourseExecutionVersion: parsed.expectedCourseExecutionVersion,
+      contractId: parsed.expectedContractVersionId,
+      curriculumId: parsed.expectedCurriculumVersionId,
+      planId: parsed.expectedStudyPlanVersionId,
+      agendaId: parsed.expectedAgendaVersionId,
+      status: parsed.status,
+    });
+    if (claim.replayPayload !== undefined) return GoalOutcomeSchema.parse(claim.replayPayload);
+    try {
+      const state = repos.courseExecution.get(parsed.command.workspaceId);
+      if (
+        state.version !== parsed.expectedCourseExecutionVersion ||
+        state.activeContractId !== parsed.expectedContractVersionId ||
+        state.activeCurriculumId !== parsed.expectedCurriculumVersionId ||
+        state.acceptedPlanId !== parsed.expectedStudyPlanVersionId ||
+        state.activeAgendaId !== parsed.expectedAgendaVersionId
+      ) {
+        throw new AppError(ApiErrorCode.VersionConflict, 'Course route is stale.');
+      }
+      const plan = repos.studyPlans.get(parsed.expectedStudyPlanVersionId);
+      if (!plan || plan.status !== 'accepted')
+        throw new AppError(ApiErrorCode.VersionConflict, 'Accepted StudyPlan is unavailable.');
+      const contract = repos.learningContracts.get(parsed.expectedContractVersionId);
+      if (!contract || contract.workspaceId !== parsed.command.workspaceId) {
+        throw new AppError(ApiErrorCode.VersionConflict, 'Learning Contract is unavailable.');
+      }
+      const now = clock.now().toISOString();
+      if (parsed.status === 'achieved') {
+        const incomplete = plan.items.some(
+          (item) =>
+            item.curriculumLearningUnitId !== null &&
+            progression.getUnitProgress(
+              parsed.command.workspaceId,
+              parsed.expectedCurriculumVersionId,
+              item.curriculumLearningUnitId,
+            ).state !== 'complete',
+        );
+        if (incomplete || plan.deferrals.length > 0)
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            'Goal cannot be marked achieved while required work remains incomplete or deferred.',
+          );
+      }
+      if (parsed.status === 'expired_unfinished') {
+        if (!contract.deadline || now < contract.deadline.at) {
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            'An expired_unfinished outcome requires a configured deadline that has elapsed.',
+          );
+        }
+      }
+      for (const riskId of parsed.unresolvedRiskIds) {
+        const risk = repos.coverageRisks.get(riskId);
+        if (
+          !risk ||
+          risk.workspaceId !== parsed.command.workspaceId ||
+          risk.contractVersionId !== parsed.expectedContractVersionId ||
+          ['resolved', 'rejected'].includes(risk.status)
+        ) {
+          throw notFound(`Current unresolved Coverage risk ${riskId} not found.`);
+        }
+      }
+      const outcome: GoalOutcome = {
+        id: newId('goal_outcome'),
+        workspaceId: parsed.command.workspaceId,
+        contractVersionId: parsed.expectedContractVersionId,
+        studyPlanVersionId: parsed.expectedStudyPlanVersionId,
+        status: parsed.status,
+        formalEvidenceIds: repos.formalProgression
+          .listEvidenceForRoute(parsed.expectedContractVersionId, parsed.expectedStudyPlanVersionId)
+          .map((item) => item.id),
+        unresolvedRiskIds: parsed.unresolvedRiskIds,
+        reason: parsed.reason,
+        actor: parsed.command.actor,
+        createdAt: now,
+      };
+      return commands.complete(claim, () => {
+        const stored = progression.insertGoalOutcome(outcome);
+        repos.courseExecution.terminateRoute({
+          workspaceId: parsed.command.workspaceId,
+          expectedStateVersion: parsed.expectedCourseExecutionVersion,
+          expectedContractId: parsed.expectedContractVersionId,
+          expectedCurriculumId: parsed.expectedCurriculumVersionId,
+          expectedPlanId: parsed.expectedStudyPlanVersionId,
+          expectedAgendaId: parsed.expectedAgendaVersionId,
+          eventId: newId('course_evt'),
+          actor: parsed.command.actor,
+          outcomeId: stored.id,
+          outcomeStatus: parsed.status,
+          reason: stored.reason,
+          terminatedAt: now,
+        });
+        return stored;
+      });
+    } catch (error) {
+      commands.fail(claim, error);
+      throw error;
+    }
+  }
+
+  function overview(workspaceId: string) {
+    return FormalProgressionOverviewSchema.parse({
+      evidence: progression.listEvidenceForWorkspace(workspaceId),
+      reconciliations: progression.listReconciliationsForWorkspace(workspaceId),
+      decisions: progression.listDecisionsForWorkspace(workspaceId),
+      replanTriggers: progression.listReplanTriggers(workspaceId),
+      goalOutcomes: progression.listGoalOutcomes(workspaceId),
+    });
+  }
+
+  return {
+    stateCreditingQuestionIdsForQuiz,
+    registerAssessmentContracts,
+    reconcile,
+    reconcileCommand,
+    reconcileAfterGrading,
+    retryContextForGrading,
+    qualifyReplanTrigger,
+    proposeQualifiedReplan,
+    recordGoalOutcome,
+    overview,
+  };
+}
+
+export type FormalProgressionService = ReturnType<typeof createFormalProgressionService>;

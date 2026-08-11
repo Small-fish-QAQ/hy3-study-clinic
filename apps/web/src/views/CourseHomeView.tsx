@@ -27,6 +27,18 @@ const FEASIBILITY_TEXT: Record<
   unknown: '尚无法估算',
 };
 
+function formatDeadline(at: string, timeZone: string): string {
+  return new Intl.DateTimeFormat('zh-CN', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date(at));
+}
+
 export interface CourseHomeViewProps {
   courseName: string;
   overview: CourseExecutionOverview | null;
@@ -43,6 +55,7 @@ export interface CourseHomeViewProps {
   onAcceptStudyPlan: () => void;
   onRejectStudyPlan: () => void;
   onLaunchNext: (action: CourseNextAction) => void;
+  onOpenStudySession?: () => void;
   onOpenMaterials: () => void;
 }
 
@@ -63,6 +76,7 @@ export function CourseHomeView({
   onAcceptStudyPlan,
   onRejectStudyPlan,
   onLaunchNext,
+  onOpenStudySession,
   onOpenMaterials,
 }: CourseHomeViewProps) {
   if (loading && !overview) return <Loading label="加载课程执行状态…" />;
@@ -75,6 +89,7 @@ export function CourseHomeView({
   const plan = overview.proposedStudyPlan ?? overview.acceptedStudyPlan;
   const feasibility = overview.contractFeasibility;
   const next = overview.nextAction;
+  const formalProgress = overview.formalProgress;
 
   return (
     <div className="stack" aria-label={`${courseName}课程主页`}>
@@ -93,6 +108,39 @@ export function CourseHomeView({
           </button>
         </div>
 
+        {contract ? (
+          <div className="progress-band" aria-label="目标与正式进度">
+            <p className="small">
+              <strong>截止时间：</strong>{' '}
+              {contract.deadline ? (
+                <time dateTime={contract.deadline.at}>
+                  {formatDeadline(contract.deadline.at, contract.deadline.timeZone)}（
+                  {contract.deadline.timeZone}）
+                </time>
+              ) : (
+                '未设置'
+              )}
+            </p>
+            <p className="small">
+              <strong>正式路线进度：</strong> 已完成 {formalProgress.completedPlanItemCount} /{' '}
+              {formalProgress.planItemCount}
+              {formalProgress.startedPlanItemCount > 0
+                ? ` · 进行中 ${formalProgress.startedPlanItemCount}`
+                : ''}
+              {formalProgress.repairNeededPlanItemCount > 0
+                ? ` · 待修复 ${formalProgress.repairNeededPlanItemCount}`
+                : ''}
+              {formalProgress.deferredPlanItemCount > 0
+                ? ` · 已延期 ${formalProgress.deferredPlanItemCount}`
+                : ''}
+            </p>
+            <p className="small muted">
+              可计入状态的正式证据 {formalProgress.stateCreditingEvidenceCount} · 仅供参考的证据{' '}
+              {formalProgress.advisoryEvidenceCount}
+            </p>
+          </div>
+        ) : null}
+
         {next ? (
           <div className="block-preview" aria-label="下一步">
             <strong>下一步：{next.item.reason}</strong>
@@ -105,7 +153,7 @@ export function CourseHomeView({
                 type="button"
                 className="primary"
                 disabled={busyAction !== null}
-                onClick={() => onLaunchNext(next)}
+                onClick={() => (onOpenStudySession ? onOpenStudySession() : onLaunchNext(next))}
               >
                 {busyAction === 'launch-next' ? '正在重新验证…' : '继续学习'}
               </button>
@@ -179,16 +227,16 @@ export function CourseHomeView({
       <section className="card" aria-label="课程结构状态">
         <div className="row between">
           <h3>课程结构</h3>
-          {overview.acceptedCurriculum || overview.proposedCurriculum ? (
+          {overview.planningCurriculum || overview.proposedCurriculum ? (
             <button type="button" onClick={onOpenCurriculum}>
               查看完整结构
             </button>
           ) : null}
         </div>
-        {overview.acceptedCurriculum || overview.proposedCurriculum ? (
+        {overview.planningCurriculum || overview.proposedCurriculum ? (
           <p className="small muted">
-            当前版本 {(overview.proposedCurriculum ?? overview.acceptedCurriculum)!.version} ·{' '}
-            {(overview.proposedCurriculum ?? overview.acceptedCurriculum)!.status}
+            当前版本 {(overview.proposedCurriculum ?? overview.planningCurriculum)!.version} ·{' '}
+            {(overview.proposedCurriculum ?? overview.planningCurriculum)!.status}
           </p>
         ) : overview.capabilities.canProposeCurriculum ? (
           <button

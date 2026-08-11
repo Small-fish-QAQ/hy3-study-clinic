@@ -109,7 +109,11 @@ beforeEach(() => {
     materialRevisionId: revision.id,
     predecessorId: null,
     premiseScope: 'verified-objective',
-    policyBasis: JSON.stringify({ policyVersion: 'truth-v1', basis: 'exact-source' }),
+    policyBasis: {
+      policyVersion: 'truth-v1',
+      premiseKind: 'claim',
+      basis: 'exact-source',
+    },
     validationState: 'validated',
     conflictState: 'none',
     actor: 'local_validator',
@@ -348,6 +352,11 @@ describe('StudyPlan proposal and accepted Course route', () => {
     expect(provider.calls).toBe(1);
     expect(provider.inTransaction).toBe(false);
     expect(replay.studyPlan.id).toBe(first.studyPlan.id);
+    expect(repos.telemetry.usageSummary('ws_1')).toMatchObject({
+      logicalCalls: 1,
+      physicalAttempts: 1,
+      attemptsWithKnownCost: 0,
+    });
     expect(repos.studyPlans.list('ws_1')).toHaveLength(1);
     expect(provider.input?.launchCapabilities[0]?.allowedItemKinds).toContain('formal_checkpoint');
     expect(provider.input?.contract.materials[0]).not.toHaveProperty('materialRevisionId');

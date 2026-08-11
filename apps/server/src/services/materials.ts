@@ -1,4 +1,5 @@
 import {
+  ApiErrorCode,
   UpdateMaterialTitleRequestSchema,
   type DocumentDeletionResult,
   type DocumentFilePayload,
@@ -9,7 +10,7 @@ import {
   type Workspace,
 } from '@hy3-clinic/shared';
 import type { Repositories } from '../repositories/index.js';
-import { notFound } from '../errors.js';
+import { AppError, notFound } from '../errors.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
 import { deriveTitle, ingestSource, sourceTypeForFilename } from '../ingestion/ingest.js';
@@ -20,6 +21,7 @@ import {
   TEXT_PARSER_VERSION,
 } from '../ingestion/documents.js';
 import { segmentMaterial } from '../ingestion/segment.js';
+import type { SourceAuthorityService } from './sourceAuthority.js';
 
 export interface CreateMaterialInput {
   content: string;
@@ -35,6 +37,7 @@ export interface MaterialWithBlocks {
 export interface MaterialServiceDeps {
   repos: Repositories;
   clock: Clock;
+  sourceAuthority: Pick<SourceAuthorityService, 'ensureVerbatimAssessmentAuthority'>;
 }
 
 const MEDIA_TYPE_FOR_TEXT: Record<'paste' | 'md' | 'txt', MediaType> = {
@@ -43,7 +46,7 @@ const MEDIA_TYPE_FOR_TEXT: Record<'paste' | 'md' | 'txt', MediaType> = {
   txt: 'text/plain',
 };
 
-export function createMaterialService({ repos, clock }: MaterialServiceDeps) {
+export function createMaterialService({ repos, clock, sourceAuthority }: MaterialServiceDeps) {
   /**
    * Resolve the workspace a new material belongs to.
    *
@@ -67,8 +70,8 @@ export function createMaterialService({ repos, clock }: MaterialServiceDeps) {
       name: title.slice(0, 120),
       description: null,
       activeGraphVersionId: null,
-      // Auto-created for this import: the workspace is retired together with
-      // its final document (see workspaces repo deleteDocumentTx).
+      // Auto-created for this import. Material retirement preserves this
+      // Course shell and its longitudinal history.
       origin: 'material_import',
       createdAt: now,
       updatedAt: now,
@@ -111,8 +114,14 @@ export function createMaterialService({ repos, clock }: MaterialServiceDeps) {
     };
 
     repos.materials.insertWithBlocks(material, blocks);
+    const stored = repos.materials.get(id)!;
+    sourceAuthority.ensureVerbatimAssessmentAuthority(
+      targetWorkspaceId,
+      id,
+      stored.activeRevisionId!,
+    );
     repos.workspaces.touch(targetWorkspaceId, now);
-    return { material: repos.materials.get(id)!, blocks: repos.materials.getBlocks(id) };
+    return { material: stored, blocks: repos.materials.getBlocks(id) };
   }
 
   /**
@@ -175,8 +184,14 @@ export function createMaterialService({ repos, clock }: MaterialServiceDeps) {
     };
 
     repos.materials.insertWithBlocks(material, blocks, buffer);
+    const stored = repos.materials.get(id)!;
+    sourceAuthority.ensureVerbatimAssessmentAuthority(
+      targetWorkspaceId,
+      id,
+      stored.activeRevisionId!,
+    );
     repos.workspaces.touch(targetWorkspaceId, now);
-    return { material: repos.materials.get(id)!, blocks: repos.materials.getBlocks(id) };
+    return { material: stored, blocks: repos.materials.getBlocks(id) };
   }
 
   return {
@@ -199,16 +214,12 @@ export function createMaterialService({ repos, clock }: MaterialServiceDeps) {
     delete(id: string): DocumentDeletionResult {
       const material = repos.materials.get(id);
       if (!material) throw notFound(`学习资料不存在:${id}`);
-      // Route through the workspace-aware delete so graph edges / plans that
-      // depend on this document are cleaned up in the same transaction — and
-      // so the final document of an import-created workspace retires the
-      // workspace with it.
-      const outcome = repos.workspaces.deleteDocument(
-        id,
-        material.workspaceId,
-        clock.now().toISOString(),
-      );
-      return { workspaceId: material.workspaceId, workspaceDeleted: outcome.workspaceDeleted };
+      // Retire the stable Material without cascading through revisions or
+      // longitudinal learning history.
+      if (!repos.materialRevisions.retire(id, clock.now().toISOString())) {
+        throw new AppError(ApiErrorCode.VersionConflict, 'Material is already retired.');
+      }
+      return { workspaceId: material.workspaceId, workspaceDeleted: false };
     },
 
     list() {

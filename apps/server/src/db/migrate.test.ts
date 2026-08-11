@@ -58,6 +58,11 @@ describe('migrations', () => {
       'session_agendas',
       'coverage_risk_entries',
       'course_execution_state',
+      'study_sessions',
+      'study_session_turns',
+      'study_session_exchanges',
+      'study_turn_events',
+      'study_session_summaries',
     ]) {
       expect(tables).toContain(expected);
     }

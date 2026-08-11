@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react';
 
-export type AgentCourseView = 'home' | 'curriculum' | 'progress' | 'explore';
+export type AgentCourseView = 'home' | 'session' | 'curriculum' | 'progress' | 'explore';
 
 const VIEW_LABELS: Record<AgentCourseView, string> = {
   home: '课程主页',
   curriculum: '课程结构',
   progress: '学习进展',
   explore: '探索',
+  session: 'Study Session',
 };
 
 export interface AgentCourseShellProps {
@@ -16,7 +17,7 @@ export interface AgentCourseShellProps {
   children: ReactNode;
 }
 
-/** Pure Phase-2 shell. App owns Course selection, navigation, and async state. */
+/** Course shell. App owns Course selection, navigation, and async state. */
 export function AgentCourseShell({
   activeView,
   courseName,

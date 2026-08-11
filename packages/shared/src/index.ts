@@ -16,6 +16,7 @@ export * from './domain/curriculum.js';
 export * from './domain/studyPlan.js';
 export * from './domain/sessionAgenda.js';
 export * from './domain/studySession.js';
+export * from './domain/formalProgression.js';
 export * from './domain/coverageRisk.js';
 export * from './domain/telemetry.js';
 export * from './domain/workspace.js';

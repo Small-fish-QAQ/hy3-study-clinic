@@ -7,11 +7,16 @@ import {
   type LaunchCourseActionRequest,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
-import type { ProviderCallOptions } from '../llm/provider.js';
+import type { LlmProvider, ProviderCallOptions } from '../llm/provider.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import type { AssessmentService } from './assessment.js';
+import {
+  enforceAgentCostPolicies,
+  runTrackedAgentProviderOperation,
+} from './agentProviderRuntime.js';
 import type { CourseCommandService } from './courseCommands.js';
+import type { FormalProgressionService } from './formalProgression.js';
 import { toPublicQuiz } from './quizzes.js';
 import { resolveLaunchForPlanItem } from './studyPlanValidation.js';
 
@@ -20,6 +25,9 @@ interface CourseActionLaunchDeps {
   clock: Clock;
   commands: CourseCommandService;
   assessment: AssessmentService;
+  formalProgression: FormalProgressionService;
+  provider: LlmProvider;
+  providerModel?: string | null;
 }
 
 export function createCourseActionLaunchService({
@@ -27,6 +35,9 @@ export function createCourseActionLaunchService({
   clock,
   commands,
   assessment,
+  formalProgression,
+  provider,
+  providerModel = null,
 }: CourseActionLaunchDeps) {
   async function launch(
     input: LaunchCourseActionRequest,
@@ -40,6 +51,8 @@ export function createCourseActionLaunchService({
       expectedContractId: parsed.expectedContractId,
       expectedStudyPlanId: parsed.expectedStudyPlanId,
       expectedExecutionSourceManifestFingerprint: parsed.expectedExecutionSourceManifestFingerprint,
+      studySessionId: parsed.studySessionId ?? null,
+      confirmedCostPolicyIds: parsed.confirmedCostPolicyIds ?? [],
     });
     if (claim.replayPayload !== undefined) {
       return CourseActionLaunchResultSchema.parse(claim.replayPayload);
@@ -51,6 +64,8 @@ export function createCourseActionLaunchService({
         throw notFound('SessionAgenda not found.');
       }
       if (
+        state.executionStatus !== 'active' ||
+        state.routeValidationStatus !== 'valid' ||
         state.activeAgendaId !== agenda.id ||
         state.activeContractId !== parsed.expectedContractId ||
         state.acceptedPlanId !== parsed.expectedStudyPlanId ||
@@ -61,6 +76,21 @@ export function createCourseActionLaunchService({
         throw new AppError(ApiErrorCode.VersionConflict, 'Course action context is stale.', {
           currentState: state,
         });
+      }
+      const studySession = parsed.studySessionId
+        ? repos.studySessions.get(parsed.studySessionId)
+        : undefined;
+      if (
+        parsed.studySessionId &&
+        (!studySession ||
+          studySession.workspaceId !== parsed.command.workspaceId ||
+          studySession.contractVersionId !== parsed.expectedContractId ||
+          studySession.studyPlanVersionId !== parsed.expectedStudyPlanId ||
+          studySession.sessionAgendaId !== parsed.agendaId ||
+          studySession.executionSourceManifestFingerprint !==
+            parsed.expectedExecutionSourceManifestFingerprint)
+      ) {
+        throw new AppError(ApiErrorCode.VersionConflict, 'StudySession launch context is stale.');
       }
       const item = agenda.items.find((candidate) => candidate.id === parsed.agendaItemId);
       if (!item) throw notFound('SessionAgenda item not found.');
@@ -135,20 +165,114 @@ export function createCourseActionLaunchService({
         const request = CreateAssessmentRequestSchema.parse(
           JSON.parse(currentLaunch.resourceId ?? '{}') as unknown,
         );
-        const creation = await assessment.create(parsed.command.workspaceId, request, opts);
         const assessmentKind =
           item.kind === 'due_review'
             ? 'due_review'
             : item.kind === 'targeted_repair'
               ? 'targeted_repair'
-              : 'formal_checkpoint';
+              : item.kind === 'synthesis'
+                ? 'synthesis'
+                : 'formal_checkpoint';
+        const operationType =
+          assessmentKind === 'synthesis'
+            ? 'propose_synthesis_assessment'
+            : 'propose_formal_assessment';
+        const policyFingerprint = enforceAgentCostPolicies(repos, {
+          workspaceId: parsed.command.workspaceId,
+          operationType,
+          studySessionId: parsed.studySessionId ?? null,
+          at: clock.now().toISOString(),
+          confirmedPolicyIds: parsed.confirmedCostPolicyIds ?? [],
+        });
+        const creation = await runTrackedAgentProviderOperation({
+          repos,
+          clock,
+          provider,
+          providerModel: provider.name === 'hy3' ? providerModel : null,
+          operationId: claim.operationId,
+          fencingToken: claim.fencingToken,
+          workspaceId: parsed.command.workspaceId,
+          studySessionId: parsed.studySessionId ?? null,
+          learningUnitId: item.learningUnitId,
+          assessmentId: null,
+          operationType,
+          schemaFingerprint: 'formal-assessment-proposal-v1',
+          policyFingerprint,
+          sourceFingerprint: parsed.expectedExecutionSourceManifestFingerprint,
+          providerOptions: opts,
+          invoke: (options) => assessment.prepare(parsed.command.workspaceId, request, options),
+        });
         const response = CourseActionLaunchResultSchema.parse({
           kind: 'assessment',
           agendaItemId: item.id,
           quiz: toPublicQuiz(creation.quiz),
           assessmentKind,
         });
-        return commands.complete(claim, () => response);
+        return commands.complete(claim, () => {
+          const currentState = repos.courseExecution.get(parsed.command.workspaceId);
+          const currentAgenda = repos.sessionAgendas.get(parsed.agendaId);
+          const currentPlan = repos.studyPlans.get(parsed.expectedStudyPlanId);
+          const currentCurriculum = currentState.activeCurriculumId
+            ? repos.curricula.get(currentState.activeCurriculumId)
+            : undefined;
+          const currentItem = currentAgenda?.items.find(
+            (candidate) => candidate.id === parsed.agendaItemId,
+          );
+          const currentPlanItem = currentItem?.linkedPlanItemId
+            ? currentPlan?.items.find((candidate) => candidate.id === currentItem.linkedPlanItemId)
+            : undefined;
+          if (
+            currentState.executionStatus !== 'active' ||
+            currentState.routeValidationStatus !== 'valid' ||
+            currentState.activeAgendaId !== parsed.agendaId ||
+            currentState.activeContractId !== parsed.expectedContractId ||
+            currentState.acceptedPlanId !== parsed.expectedStudyPlanId ||
+            !currentAgenda ||
+            currentAgenda.version !== parsed.expectedAgendaVersion ||
+            currentAgenda.executionSourceManifestFingerprint !==
+              parsed.expectedExecutionSourceManifestFingerprint ||
+            !currentPlan ||
+            !currentCurriculum ||
+            !currentItem ||
+            !currentPlanItem
+          ) {
+            throw new AppError(
+              ApiErrorCode.VersionConflict,
+              'Course action context changed while the assessment was generated.',
+            );
+          }
+          const finalLaunch = resolveLaunchForPlanItem(
+            repos,
+            clock,
+            parsed.command.workspaceId,
+            currentCurriculum,
+            currentPlanItem,
+          );
+          if (
+            finalLaunch.status !== 'launchable' ||
+            finalLaunch.capability !== 'assessment' ||
+            finalLaunch.capability !== currentItem.launch.capability
+          ) {
+            throw new AppError(
+              ApiErrorCode.VersionConflict,
+              'Assessment action is no longer launchable.',
+            );
+          }
+          assessment.persist(creation);
+          formalProgression.registerAssessmentContracts({
+            workspaceId: parsed.command.workspaceId,
+            quizId: creation.quiz.id,
+            studySessionId: parsed.studySessionId ?? null,
+            agendaId: currentAgenda.id,
+            agendaItemId: currentItem.id,
+            assessmentKind,
+            contractVersionId: currentPlan.contractVersionId,
+            curriculumVersionId: currentPlan.curriculumVersionId,
+            studyPlanVersionId: currentPlan.id,
+            executionSourceManifestFingerprint: currentPlan.executionSourceManifestFingerprint,
+          });
+          return response;
+        });
       }
 
       return commands.complete(claim, () =>

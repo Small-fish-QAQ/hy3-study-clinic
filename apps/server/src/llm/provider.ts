@@ -31,6 +31,9 @@ import type {
   StudyPlanItemKind,
   StudyPlanProposalPayload,
   TutorStepPayload,
+  TutorTurnPayload,
+  StudyExchange,
+  StudySessionSummary,
   TutorToolName,
 } from '@hy3-clinic/shared';
 
@@ -38,6 +41,8 @@ import type {
 export interface ProviderCallOptions {
   /** Abort signal from the HTTP request (client cancellation). */
   signal?: AbortSignal | undefined;
+  /** Internal telemetry hook: a schema repair is a new physical request. */
+  onRepairAttempt?: (() => void) | undefined;
 }
 
 export interface ConceptAnalysisInput {
@@ -246,6 +251,63 @@ export interface TutorStepInput {
   actionableMisconceptions: Array<{ id: string; conceptId: string }>;
 }
 
+/** Bounded, non-authoritative context for a conversational StudySession turn. */
+export interface TutorTurnInput {
+  workspaceName: string;
+  learnerMessage: string;
+  session: {
+    id: string;
+    routeState: 'on_route' | 'detour_active' | 'return_pending' | 'execution_paused';
+    currentAgendaItemId: string | null;
+    currentAgendaItem: { kind: string; reason: string; learningUnitId: string | null } | null;
+  };
+  summary: Pick<
+    StudySessionSummary,
+    | 'learnerQuestions'
+    | 'unresolvedConfusions'
+    | 'explanationsTried'
+    | 'provisionalUnderstanding'
+    | 'openActions'
+    | 'safetyFlags'
+  > | null;
+  /** Bounded, revision-pinned teaching context for the current LearningUnit. */
+  currentUnit: {
+    id: string;
+    title: string;
+    conceptIds: string[];
+    objectives: Array<{
+      id: string;
+      title: string;
+      description: string;
+      truthPremiseStatus: string;
+      truthAuthorityRecordIds: string[];
+    }>;
+    prerequisiteUnitIds: string[];
+    sourceTruth: Array<{
+      blockId: string;
+      materialId: string;
+      materialRevisionId: string;
+      heading: string | null;
+      contentExcerpt: string;
+    }>;
+  } | null;
+  learnerState: {
+    formalEvidence: Array<{
+      id: string;
+      primaryObjectiveId: string;
+      normalizedScore: number;
+      admissibilityTier: string;
+      stateCreditable: boolean;
+    }>;
+    openMistakes: Array<{ id: string; conceptId: string; score: number; feedback: string | null }>;
+    misconceptions: Array<{ id: string; conceptId: string; status: string; hypothesis: string }>;
+    reviews: Array<{ conceptId: string; dueAt: string; lastRating: string }>;
+    mastery: Array<{ conceptId: string; mastery: number; attempts: number }>;
+    riskIds: string[];
+  };
+  recentExchanges: Array<Pick<StudyExchange, 'role' | 'content' | 'channel'>>;
+}
+
 /** Stable learner intent shown to Curriculum/StudyPlan proposal operations. */
 export interface CurriculumContractContext {
   contractVersionId: string;
@@ -414,6 +476,8 @@ export interface LlmProvider {
   ): Promise<ConceptLessonPayload>;
   /** One bounded Tutor iteration: call a whitelisted tool or finalize. */
   proposeTutorStep(input: TutorStepInput, opts?: ProviderCallOptions): Promise<TutorStepPayload>;
+  /** Generate non-authoritative conversational guidance for a StudySession turn. */
+  respondToTutorTurn(input: TutorTurnInput, opts?: ProviderCallOptions): Promise<TutorTurnPayload>;
   /** Propose learner-visible Curriculum semantics; local code validates and versions it. */
   proposeCurriculum(
     input: CurriculumProposalInput,

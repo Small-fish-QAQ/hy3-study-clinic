@@ -18,11 +18,13 @@ import { ingestSource } from '../ingestion/ingest.js';
 import { parseBinaryUpload } from '../ingestion/documents.js';
 import { segmentMaterial } from '../ingestion/segment.js';
 import type { MaterialService, MaterialWithBlocks } from './materials.js';
+import type { SourceAuthorityService } from './sourceAuthority.js';
 
 export interface WorkspaceServiceDeps {
   repos: Repositories;
   clock: Clock;
   materials: MaterialService;
+  sourceAuthority: Pick<SourceAuthorityService, 'ensureVerbatimAssessmentAuthority'>;
 }
 
 export interface WorkspaceDetail {
@@ -30,7 +32,12 @@ export interface WorkspaceDetail {
   documents: DocumentSummary[];
 }
 
-export function createWorkspaceService({ repos, clock, materials }: WorkspaceServiceDeps) {
+export function createWorkspaceService({
+  repos,
+  clock,
+  materials,
+  sourceAuthority,
+}: WorkspaceServiceDeps) {
   function requireWorkspace(id: string): Workspace {
     const workspace = repos.workspaces.get(id);
     if (!workspace) throw notFound(`课程空间不存在:${id}`);
@@ -54,8 +61,8 @@ export function createWorkspaceService({ repos, clock, materials }: WorkspaceSer
         name: parsed.name,
         description: parsed.description?.length ? parsed.description : null,
         activeGraphVersionId: null,
-        // Deliberately created by the learner: preserved even when its final
-        // document is deleted (unlike auto-created import workspaces).
+        // Deliberately created by the learner. Ordinary Material retirement
+        // preserves this Course and its longitudinal history.
         origin: 'manual',
         createdAt: now,
         updatedAt: now,
@@ -182,6 +189,7 @@ export function createWorkspaceService({ repos, clock, materials }: WorkspaceSer
           createdAt: now,
         });
         repos.materialRevisions.activate(documentId, revisionId, now);
+        sourceAuthority.ensureVerbatimAssessmentAuthority(workspaceId, documentId, revisionId);
         return {
           material: repos.materials.get(documentId)!,
           blocks: repos.materials.getBlocks(documentId),
@@ -203,20 +211,13 @@ export function createWorkspaceService({ repos, clock, materials }: WorkspaceSer
       }
     },
 
-    /**
-     * Delete one document and all dependent data (explicit + transactional).
-     * When the document was the final one of a `material_import` workspace,
-     * the workspace is retired in the same transaction; the structured
-     * result reports it so clients can reconcile their state.
-     */
+    /** Retire one stable Material while preserving revisions and learning history. */
     deleteDocument(workspaceId: string, documentId: string): DocumentDeletionResult {
       requireDocument(workspaceId, documentId);
-      const outcome = repos.workspaces.deleteDocument(
-        documentId,
-        workspaceId,
-        clock.now().toISOString(),
-      );
-      return { workspaceId, workspaceDeleted: outcome.workspaceDeleted };
+      if (!repos.materialRevisions.retire(documentId, clock.now().toISOString())) {
+        throw new AppError(ApiErrorCode.VersionConflict, 'Material is already retired.');
+      }
+      return { workspaceId, workspaceDeleted: false };
     },
 
     listDocuments(workspaceId: string): DocumentSummary[] {

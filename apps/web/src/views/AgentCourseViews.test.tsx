@@ -163,6 +163,7 @@ function overview(launchStatus: 'launchable' | 'blocked'): CourseExecutionOvervi
   const activeAgenda = agenda(launchStatus);
   return {
     workspaceId: 'ws_1',
+    courseExecutionVersion: 1,
     setupStage: 'route_active',
     executionStatus: 'active',
     activeContract: contract(),
@@ -179,11 +180,22 @@ function overview(launchStatus: 'launchable' | 'blocked'): CourseExecutionOvervi
       computedAt: AT,
     },
     acceptedCurriculum: null,
+    planningCurriculum: null,
     proposedCurriculum: null,
     curriculumHierarchy: null,
+    activeCurriculumHierarchy: null,
     acceptedStudyPlan: plan(),
     proposedStudyPlan: null,
     activeAgenda,
+    formalProgress: {
+      planItemCount: 1,
+      completedPlanItemCount: 0,
+      startedPlanItemCount: 0,
+      repairNeededPlanItemCount: 0,
+      deferredPlanItemCount: 0,
+      stateCreditingEvidenceCount: 0,
+      advisoryEvidenceCount: 0,
+    },
     nextAction: {
       agendaId: activeAgenda.id,
       agendaVersion: activeAgenda.version,
@@ -381,6 +393,27 @@ describe('CourseHomeView action and authority rendering', () => {
     expect(screen.queryByText('事实依据已独立验证')).not.toBeInTheDocument();
   });
 
+  it('shows the Contract deadline and deterministic formal progress counts', () => {
+    const value = overview('launchable');
+    value.formalProgress = {
+      planItemCount: 5,
+      completedPlanItemCount: 2,
+      startedPlanItemCount: 1,
+      repairNeededPlanItemCount: 1,
+      deferredPlanItemCount: 1,
+      stateCreditingEvidenceCount: 3,
+      advisoryEvidenceCount: 2,
+    };
+
+    render(<CourseHomeView {...homeProps(value)} />);
+
+    const progress = screen.getByLabelText('目标与正式进度');
+    expect(progress).toHaveTextContent('截止时间：');
+    expect(progress).toHaveTextContent('Asia/Shanghai');
+    expect(progress).toHaveTextContent('已完成 2 / 5 · 进行中 1 · 待修复 1 · 已延期 1');
+    expect(progress).toHaveTextContent('可计入状态的正式证据 3 · 仅供参考的证据 2');
+  });
+
   it('forwards enabled Plan edits instead of rendering a dead control', async () => {
     const value = overview('launchable');
     value.activeContract = null;
@@ -429,6 +462,57 @@ describe('StudyPlanPanel decisions', () => {
     await user.click(screen.getByRole('button', { name: '拒绝提案' }));
     expect(onAccept).toHaveBeenCalledOnce();
     expect(onReject).toHaveBeenCalledOnce();
+  });
+
+  it('renders the complete persisted route diff instead of only its rationale', () => {
+    const proposed = plan('proposed');
+    proposed.diff = [
+      {
+        kind: 'reordered',
+        planItemId: 'plan_item_2',
+        curriculumLearningUnitId: 'unit_2',
+        beforeIndex: 1,
+        afterIndex: 0,
+        beforeMinutes: 25,
+        afterMinutes: 35,
+        beforeDepth: 'high_performance',
+        afterDepth: 'deep_transfer',
+        reason: 'Prioritize repair before new material.',
+      },
+      {
+        kind: 'deferred',
+        planItemId: null,
+        curriculumLearningUnitId: 'unit_3',
+        beforeIndex: 2,
+        afterIndex: null,
+        beforeMinutes: 20,
+        afterMinutes: null,
+        reason: 'Preserve the accepted deadline.',
+      },
+    ];
+
+    render(
+      <StudyPlanPanel
+        plan={proposed}
+        history={[]}
+        canEdit={false}
+        canAccept
+        busyAction={null}
+        launchByPlanItemId={{}}
+        onEdit={vi.fn()}
+        onAccept={vi.fn()}
+        onReject={vi.fn()}
+        onLaunchItem={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/order 2 -> 1/)).toHaveTextContent('minutes 25 -> 35');
+    expect(screen.getByText(/order 2 -> 1/)).toHaveTextContent(
+      'depth high_performance -> deep_transfer',
+    );
+    expect(screen.getByText(/Preserve the accepted deadline/)).toHaveTextContent(
+      'LearningUnit unit_3',
+    );
   });
 });
 

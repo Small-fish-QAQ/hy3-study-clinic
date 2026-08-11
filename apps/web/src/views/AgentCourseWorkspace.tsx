@@ -21,6 +21,8 @@ import { useAsyncAction } from '../components/useAsyncAction.js';
 import { AgentCourseShell, type AgentCourseView } from './AgentCourseShell.js';
 import { CourseHomeView } from './CourseHomeView.js';
 import { CurriculumView } from './CurriculumView.js';
+import { StudySessionView } from './StudySessionView.js';
+import { FormalProgressView } from './FormalProgressView.js';
 
 const ROLE_LABELS: Record<MaterialRole, string> = {
   course_material: '课程主资料',
@@ -514,10 +516,7 @@ export function AgentCourseWorkspace({
   async function proposePlan(): Promise<void> {
     if (!workspaceId || !overview) return;
     const contract = overview.pendingContract ?? overview.activeContract;
-    const curriculum =
-      overview.proposedCurriculum?.status === 'accepted'
-        ? overview.proposedCurriculum
-        : overview.acceptedCurriculum;
+    const curriculum = overview.planningCurriculum;
     if (!contract || !curriculum) return;
     await runAction(
       'propose-plan',
@@ -717,6 +716,7 @@ export function AgentCourseWorkspace({
           onConfirmContract={() => void transitionContract()}
           onProposeCurriculum={() => void proposeCurriculum()}
           onOpenCurriculum={() => setView('curriculum')}
+          onOpenStudySession={() => setView('session')}
           onProposeStudyPlan={() => void proposePlan()}
           onEditStudyPlan={(edit) => void editPlan(edit)}
           onAcceptStudyPlan={() => void decidePlan('accept')}
@@ -738,8 +738,39 @@ export function AgentCourseWorkspace({
           onReject={() => void decideCurriculum('reject')}
           onSelectHistory={(id) => void selectCurriculumHistory(id)}
         />
+      ) : view === 'session' ? (
+        <StudySessionView
+          workspaceId={workspaceId}
+          curriculumUnits={(overview?.activeCurriculumHierarchy?.nodes ?? [])
+            .filter((node) => node.kind === 'learning_unit')
+            .map((node) => ({ id: node.id, title: node.title }))}
+          route={
+            overview?.activeContract &&
+            overview.acceptedCurriculum &&
+            overview.acceptedStudyPlan &&
+            overview.activeAgenda
+              ? {
+                  contractVersionId: overview.activeContract.id,
+                  curriculumVersionId: overview.acceptedCurriculum.id,
+                  studyPlanVersionId: overview.acceptedStudyPlan.id,
+                  sessionAgendaId: overview.activeAgenda.id,
+                  executionVersion: overview.courseExecutionVersion,
+                }
+              : null
+          }
+          onSessionChanged={() => void refresh()}
+          onLaunchQuiz={onLaunchQuiz}
+        />
       ) : (
-        <ProgressLanding onOpen={onOpenProgress} />
+        <FormalProgressView
+          workspaceId={workspaceId}
+          overview={overview}
+          command={(prefix) => command(workspaceId, prefix)}
+          onAcceptProposedPlan={() => void decidePlan('accept')}
+          onRejectProposedPlan={() => void decidePlan('reject')}
+          onCourseChanged={() => void refresh()}
+          onOpenProgress={onOpenProgress}
+        />
       )}
     </AgentCourseShell>
   );
@@ -976,7 +1007,11 @@ function ContractEditor({
   );
 }
 
-function ProgressLanding({ onOpen }: { onOpen: AgentCourseWorkspaceProps['onOpenProgress'] }) {
+export function ProgressLanding({
+  onOpen,
+}: {
+  onOpen: AgentCourseWorkspaceProps['onOpenProgress'];
+}) {
   return (
     <div className="progress-landing" aria-label="学习进展">
       <section>

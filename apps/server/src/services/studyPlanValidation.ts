@@ -114,8 +114,34 @@ export function resolveLaunchForPlanItem(
       return assessmentCapability(repos, clock, workspaceId, 'prerequisite_repair', conceptIds);
     case 'due_review':
       return assessmentCapability(repos, clock, workspaceId, 'review', conceptIds);
-    case 'synthesis':
-      return assessmentCapability(repos, clock, workspaceId, 'cross_document', conceptIds);
+    case 'synthesis': {
+      const group = curriculum.synthesisGroups.find(
+        (candidate) =>
+          Boolean(item.curriculumLearningUnitId) &&
+          candidate.learningUnitIds.includes(item.curriculumLearningUnitId!) &&
+          item.objectiveIds.every((objectiveId) => candidate.objectiveIds.includes(objectiveId)),
+      );
+      if (!group || group.learningUnitIds.length < 2) {
+        return {
+          status: 'blocked',
+          capability: 'assessment',
+          resourceId: null,
+          reason: 'Synthesis requires a validated multi-unit Curriculum synthesis group.',
+        };
+      }
+      const synthesisConceptIds = learningUnits(curriculum)
+        .filter((candidate) => group.learningUnitIds.includes(candidate.id))
+        .flatMap((candidate) => candidate.learningUnit.conceptIds)
+        .filter((id, index, all) => all.indexOf(id) === index)
+        .slice(0, 3);
+      return assessmentCapability(
+        repos,
+        clock,
+        workspaceId,
+        'concept_practice',
+        synthesisConceptIds,
+      );
+    }
     case 'informal_check':
       return {
         status: 'blocked',
@@ -401,7 +427,20 @@ export function validateAndMaterializeStudyPlanProposal(input: {
     for (const objectiveId of item.objectiveIds) {
       const owner = objectives.get(objectiveId);
       if (!owner) errors.push(`Unknown Curriculum objective: ${objectiveId}`);
-      if (unit && owner?.unit.id !== unit.id) {
+      const synthesisGroup =
+        item.kind === 'synthesis' && unit
+          ? curriculum.synthesisGroups.find(
+              (group) =>
+                group.learningUnitIds.includes(unit.id) &&
+                item.objectiveIds.every((id) => group.objectiveIds.includes(id)),
+            )
+          : undefined;
+      if (
+        unit &&
+        owner &&
+        owner.unit.id !== unit.id &&
+        !synthesisGroup?.learningUnitIds.includes(owner.unit.id)
+      ) {
         errors.push(`Objective ${objectiveId} does not belong to LearningUnit ${unit.id}.`);
       }
       if (unit) {

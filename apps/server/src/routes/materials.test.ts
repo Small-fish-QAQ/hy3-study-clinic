@@ -618,28 +618,27 @@ describe('DELETE /api/materials/:id', () => {
     });
 
     expect(response.statusCode).toBe(200);
-    // Both materials were 资料库 imports: deleting the only document of the
-    // first one retires its auto-created workspace in the same transaction.
+    // Retirement preserves the import workspace and every longitudinal row.
     expect(response.json()).toEqual({
       workspaceId: firstBody.material.workspaceId,
-      workspaceDeleted: true,
+      workspaceDeleted: false,
     });
     expect(
       ctx.db
         .prepare('SELECT COUNT(*) AS n FROM workspaces WHERE id = ?')
         .get(firstBody.material.workspaceId),
-    ).toMatchObject({ n: 0 });
-    expect(ctx.repos.materials.get(firstBody.material.id)).toBeUndefined();
-    expect(ctx.repos.materials.getBlocks(firstBody.material.id)).toEqual([]);
-    expect(ctx.repos.materials.getConcept(deletedRecords.conceptId)).toBeUndefined();
-    expect(ctx.repos.quizzes.get(deletedRecords.quizId)).toBeUndefined();
-    expect(ctx.repos.quizzes.get(deletedRecords.remediationQuizId)).toBeUndefined();
-    expect(ctx.repos.quizzes.getQuestion(deletedRecords.questionId)).toBeUndefined();
-    expect(ctx.repos.quizzes.getQuestion(deletedRecords.remediationQuestionId)).toBeUndefined();
-    expect(ctx.repos.submissions.getSubmission(deletedRecords.submissionId)).toBeUndefined();
-    expect(ctx.repos.submissions.getGradingResult(deletedRecords.gradingResultId)).toBeUndefined();
-    expect(ctx.repos.mistakes.get(deletedRecords.mistakeId)).toBeUndefined();
-    expect(ctx.repos.mastery.get(firstBody.material.id, deletedRecords.conceptId)).toBeUndefined();
+    ).toMatchObject({ n: 1 });
+    expect(ctx.repos.materials.get(firstBody.material.id)?.availability).toBe('retired');
+    expect(ctx.repos.materials.getBlocks(firstBody.material.id)).toHaveLength(1);
+    expect(ctx.repos.materials.getConcept(deletedRecords.conceptId)).toBeDefined();
+    expect(ctx.repos.quizzes.get(deletedRecords.quizId)).toBeDefined();
+    expect(ctx.repos.quizzes.get(deletedRecords.remediationQuizId)).toBeDefined();
+    expect(ctx.repos.quizzes.getQuestion(deletedRecords.questionId)).toBeDefined();
+    expect(ctx.repos.quizzes.getQuestion(deletedRecords.remediationQuestionId)).toBeDefined();
+    expect(ctx.repos.submissions.getSubmission(deletedRecords.submissionId)).toBeDefined();
+    expect(ctx.repos.submissions.getGradingResult(deletedRecords.gradingResultId)).toBeDefined();
+    expect(ctx.repos.mistakes.get(deletedRecords.mistakeId)).toBeDefined();
+    expect(ctx.repos.mastery.get(firstBody.material.id, deletedRecords.conceptId)).toBeDefined();
     expect(ctx.db.pragma('foreign_key_check')).toEqual([]);
 
     expect(ctx.repos.materials.get(retainedBody.material.id)).toBeDefined();

@@ -282,10 +282,9 @@ export function createMaterialsRepo(db: SqliteDb) {
     }
   });
 
-  // The material row is the root of the verified ON DELETE CASCADE graph.
-  // Keeping the root delete inside an explicit transaction makes the rollback
-  // boundary clear and lets SQLite undo every cascade if any delete fails.
-  const deleteMaterial = db.transaction((materialId: string): boolean => {
+  // Destructive purge is an internal maintenance primitive, distinct from the
+  // learner-facing retirement path. No product route exposes this operation.
+  const purgeMaterial = db.transaction((materialId: string): boolean => {
     return deleteMaterialStmt.run(materialId).changes === 1;
   });
 
@@ -329,8 +328,8 @@ export function createMaterialsRepo(db: SqliteDb) {
       return rowToMaterial(row);
     },
 
-    delete(id: string): boolean {
-      return deleteMaterial(id);
+    purge(id: string): boolean {
+      return purgeMaterial(id);
     },
 
     list(): MaterialSummary[] {
@@ -344,6 +343,7 @@ export function createMaterialsRepo(db: SqliteDb) {
                     AS workspace_document_count
            FROM materials m
            JOIN workspaces w ON w.id = m.workspace_id
+           WHERE m.availability = 'active'
            ORDER BY m.created_at DESC, m.id DESC`,
         )
         .all() as Array<

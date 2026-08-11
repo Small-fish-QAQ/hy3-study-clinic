@@ -71,7 +71,11 @@ beforeEach(() => {
     materialRevisionId: revisionId,
     predecessorId: null,
     premiseScope: 'working-memory-capacity',
-    policyBasis: JSON.stringify({ policyVersion: 'truth-v1', basis: 'exact-source' }),
+    policyBasis: {
+      policyVersion: 'truth-v1',
+      premiseKind: 'claim',
+      basis: 'exact-source',
+    },
     validationState: 'validated',
     conflictState: 'none',
     actor: 'local_validator',
@@ -673,6 +677,61 @@ describe('accepted Course execution persistence', () => {
 
     expect(() => activate(route, predecessors)).toThrow(/stale/);
     expect(repos.courseExecution.get('ws_1')).toEqual(accepted);
+  });
+
+  it('pauses and resumes execution without changing the accepted Plan lifecycle or pointer', () => {
+    const predecessors = routePredecessors();
+    const route = stageRoute('pause_resume', 1, predecessors);
+    const active = activate(route, predecessors);
+
+    const paused = repos.courseExecution.transitionExecution({
+      workspaceId: 'ws_1',
+      expectedVersion: active.version,
+      expectedAcceptedPlanId: route.plan.id,
+      expectedAgendaId: route.agenda.id,
+      transition: 'pause',
+      eventId: 'pause_event',
+      reason: 'Learner is taking a break.',
+      actor: 'learner',
+      at: T2,
+    });
+    expect(paused).toMatchObject({
+      acceptedPlanId: route.plan.id,
+      executionStatus: 'paused',
+      version: active.version + 1,
+    });
+    expect(repos.studyPlans.get(route.plan.id)?.status).toBe('accepted');
+
+    const resumed = repos.courseExecution.transitionExecution({
+      workspaceId: 'ws_1',
+      expectedVersion: paused.version,
+      expectedAcceptedPlanId: route.plan.id,
+      expectedAgendaId: route.agenda.id,
+      transition: 'resume',
+      eventId: 'resume_event',
+      reason: null,
+      actor: 'learner',
+      at: T3,
+    });
+    expect(resumed).toMatchObject({
+      acceptedPlanId: route.plan.id,
+      executionStatus: 'active',
+      version: paused.version + 1,
+    });
+    expect(repos.studyPlans.get(route.plan.id)?.status).toBe('accepted');
+    expect(() =>
+      repos.courseExecution.transitionExecution({
+        workspaceId: 'ws_1',
+        expectedVersion: paused.version,
+        expectedAcceptedPlanId: route.plan.id,
+        expectedAgendaId: route.agenda.id,
+        transition: 'pause',
+        eventId: 'stale_pause_event',
+        reason: null,
+        actor: 'learner',
+        at: T3,
+      }),
+    ).toThrow('stale');
   });
 
   it('marks execution source stale after reprocessing without rewriting Contract intention', () => {

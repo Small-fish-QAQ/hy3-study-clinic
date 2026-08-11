@@ -166,6 +166,7 @@ export const ProposeCurriculumRequestSchema = z
     command: CourseExecutionCommandEnvelopeSchema,
     contractId: z.string().min(1),
     expectedContractVersion: z.number().int().positive(),
+    confirmedCostPolicyIds: z.array(z.string().min(1)).max(20).optional(),
     executionSourceManifest: ExecutionSourceManifestSchema,
     predecessorCurriculumId: z.string().min(1).nullable(),
     expectedActiveCurriculumId: z.string().min(1).nullable(),

@@ -76,7 +76,7 @@ function normalize(value: string): string {
 }
 
 function authorityStatus(
-  objective: { title: string; description: string },
+  _objective: { title: string; description: string },
   evidence: VerifiedGrounding[],
   ctx: CurriculumValidationContext,
 ): { status: TruthPremiseStatus; authorityIds: string[] } {
@@ -90,12 +90,15 @@ function authorityStatus(
       (candidate) => candidate.materialRevisionId === record.materialRevisionId,
     );
     if (!revision) return false;
+    // `truthPremiseStatus` describes the exact cited source premises, never
+    // the model-authored objective title or description. A locally admitted
+    // verbatim claim may support formal premise binding while the learner-
+    // visible instructional wording remains ordinary AI-authored structure.
     return bundle.claims.some(
       (claim) =>
         revision.sourceBlockRevisionIds.includes(claim.sourceBlockId) &&
         evidenceKeys.has(`${claim.sourceBlockId}\u0000${claim.quote}`) &&
-        (normalize(claim.claim) === normalize(objective.description) ||
-          normalize(claim.claim) === normalize(objective.title)),
+        normalize(claim.claim) === normalize(claim.quote),
     );
   });
   const conflicted = matched.filter((bundle) => bundle.record.conflictState === 'unresolved');

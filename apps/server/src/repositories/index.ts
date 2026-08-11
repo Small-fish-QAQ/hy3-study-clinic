@@ -19,6 +19,8 @@ import { createStudyPlansRepo, type StudyPlansRepo } from './studyPlans.js';
 import { createSessionAgendasRepo, type SessionAgendasRepo } from './sessionAgendas.js';
 import { createCoverageRisksRepo, type CoverageRisksRepo } from './coverageRisks.js';
 import { createCourseExecutionRepo, type CourseExecutionRepo } from './courseExecution.js';
+import { createFormalProgressionRepo, type FormalProgressionRepo } from './formalProgression.js';
+import { createStudySessionsRepo, type StudySessionsRepo } from './studySessions.js';
 import {
   createQuizzesRepo,
   createSubmissionsRepo,
@@ -52,6 +54,8 @@ export interface Repositories {
   sessionAgendas: SessionAgendasRepo;
   coverageRisks: CoverageRisksRepo;
   courseExecution: CourseExecutionRepo;
+  formalProgression: FormalProgressionRepo;
+  studySessions: StudySessionsRepo;
   quizzes: QuizzesRepo;
   submissions: SubmissionsRepo;
   mistakes: MistakesRepo;
@@ -88,6 +92,8 @@ export function createRepositories(db: SqliteDb): Repositories {
     sessionAgendas: createSessionAgendasRepo(db),
     coverageRisks: createCoverageRisksRepo(db),
     courseExecution: createCourseExecutionRepo(db),
+    formalProgression: createFormalProgressionRepo(db),
+    studySessions: createStudySessionsRepo(db),
     quizzes: createQuizzesRepo(db),
     submissions: createSubmissionsRepo(db),
     mistakes: createMistakesRepo(db),

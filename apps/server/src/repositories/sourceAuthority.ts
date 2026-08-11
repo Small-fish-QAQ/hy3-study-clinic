@@ -1,54 +1,29 @@
-import { SourceBlockSchema, type SourceBlock } from '@hy3-clinic/shared';
+import {
+  SourceAuthorityBundleSchema,
+  SourceAuthorityClaimSchema,
+  SourceAuthorityEventSchema,
+  SourceAuthorityRecordSchema,
+  SourceBlockSchema,
+  type SourceAuthorityBundle,
+  type SourceAuthorityClaim,
+  type SourceAuthorityEvent,
+  type SourceAuthorityPolicyBasis,
+  type SourceAuthorityRecord,
+  type SourceAuthorityValidationActor,
+  type SourceBlock,
+  type TruthAuthorityConflictState,
+  type TruthAuthorityValidationState,
+} from '@hy3-clinic/shared';
 import type { SqliteDb } from '../db/database.js';
 
-export type AuthorityValidationState = 'candidate' | 'validated' | 'rejected' | 'stale';
-export type AuthorityConflictState = 'none' | 'unresolved' | 'resolved';
-
-export interface SourceAuthorityRecord {
-  id: string;
-  workspaceId: string;
-  logicalSourceId: string;
-  materialId: string | null;
-  materialRevisionId: string | null;
-  version: number;
-  predecessorId: string | null;
-  premiseScope: string;
-  /** Structured JSON owned by the service (policy version, kind, and basis). */
-  policyBasis: string;
-  validationState: AuthorityValidationState;
-  conflictState: AuthorityConflictState;
-  actor: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface SourceAuthorityClaim {
-  id: string;
-  authorityRecordId: string;
-  sourceBlockId: string;
-  claim: string;
-  quote: string;
-  startOffset: number;
-  endOffset: number;
-  occurrenceCount: number;
-  createdAt: string;
-}
-
-export interface SourceAuthorityEvent {
-  id: string;
-  authorityRecordId: string;
-  seq: number;
-  eventType: string;
-  actor: string;
-  payload: unknown;
-  createdAt: string;
-}
-
-export interface SourceAuthorityBundle {
-  record: SourceAuthorityRecord;
-  claims: SourceAuthorityClaim[];
-  events: SourceAuthorityEvent[];
-}
+export type AuthorityValidationState = TruthAuthorityValidationState;
+export type AuthorityConflictState = TruthAuthorityConflictState;
+export type {
+  SourceAuthorityBundle,
+  SourceAuthorityClaim,
+  SourceAuthorityEvent,
+  SourceAuthorityRecord,
+};
 
 export interface AuthorityRevisionContext {
   workspaceId: string;
@@ -119,10 +94,10 @@ export interface CreateAuthorityVersionInput {
   materialRevisionId: string;
   predecessorId: string | null;
   premiseScope: string;
-  policyBasis: string;
+  policyBasis: SourceAuthorityPolicyBasis;
   validationState: AuthorityValidationState;
   conflictState: AuthorityConflictState;
-  actor: string;
+  actor: SourceAuthorityValidationActor;
   createdAt: string;
   updatedAt: string;
   claims: Array<Omit<SourceAuthorityClaim, 'authorityRecordId'>>;
@@ -130,7 +105,7 @@ export interface CreateAuthorityVersionInput {
 }
 
 function toRecord(row: RecordRow): SourceAuthorityRecord {
-  return {
+  return SourceAuthorityRecordSchema.parse({
     id: row.id,
     workspaceId: row.workspace_id,
     logicalSourceId: row.logical_source_id,
@@ -139,17 +114,17 @@ function toRecord(row: RecordRow): SourceAuthorityRecord {
     version: row.version,
     predecessorId: row.predecessor_id,
     premiseScope: row.premise_scope,
-    policyBasis: row.policy_basis,
+    policyBasis: JSON.parse(row.policy_basis) as unknown,
     validationState: row.validation_state,
     conflictState: row.conflict_state,
     actor: row.actor,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-  };
+  });
 }
 
 function toClaim(row: ClaimRow): SourceAuthorityClaim {
-  return {
+  return SourceAuthorityClaimSchema.parse({
     id: row.id,
     authorityRecordId: row.authority_record_id,
     sourceBlockId: row.source_block_id,
@@ -159,11 +134,11 @@ function toClaim(row: ClaimRow): SourceAuthorityClaim {
     endOffset: row.end_offset,
     occurrenceCount: row.occurrence_count,
     createdAt: row.created_at,
-  };
+  });
 }
 
 function toEvent(row: EventRow): SourceAuthorityEvent {
-  return {
+  return SourceAuthorityEventSchema.parse({
     id: row.id,
     authorityRecordId: row.authority_record_id,
     seq: row.seq,
@@ -171,7 +146,7 @@ function toEvent(row: EventRow): SourceAuthorityEvent {
     actor: row.actor,
     payload: JSON.parse(row.payload) as unknown,
     createdAt: row.created_at,
-  };
+  });
 }
 
 function toBlock(row: BlockRow): SourceBlock {
@@ -257,7 +232,7 @@ export function createSourceAuthorityRepo(db: SqliteDb) {
       }
 
       const version = (latest?.version ?? 0) + 1;
-      insertRecord.run({ ...input, version });
+      insertRecord.run({ ...input, version, policyBasis: JSON.stringify(input.policyBasis) });
       for (const claim of input.claims) {
         insertClaim.run({ ...claim, authorityRecordId: input.id });
       }
@@ -267,11 +242,11 @@ export function createSourceAuthorityRepo(db: SqliteDb) {
         seq: 1,
         payload: JSON.stringify(input.event.payload ?? {}),
       });
-      return {
+      return SourceAuthorityBundleSchema.parse({
         record: getRecord(input.id)!,
         claims: getClaims(input.id),
         events: getEvents(input.id),
-      };
+      });
     },
   );
 
@@ -282,7 +257,13 @@ export function createSourceAuthorityRepo(db: SqliteDb) {
 
     getBundle(id: string): SourceAuthorityBundle | undefined {
       const record = getRecord(id);
-      return record ? { record, claims: getClaims(id), events: getEvents(id) } : undefined;
+      return record
+        ? SourceAuthorityBundleSchema.parse({
+            record,
+            claims: getClaims(id),
+            events: getEvents(id),
+          })
+        : undefined;
     },
 
     listHistory(logicalSourceId: string): SourceAuthorityBundle[] {
@@ -291,11 +272,13 @@ export function createSourceAuthorityRepo(db: SqliteDb) {
           'SELECT * FROM truth_authority_records WHERE logical_source_id = ? ORDER BY version',
         )
         .all(logicalSourceId) as RecordRow[];
-      return rows.map((row) => ({
-        record: toRecord(row),
-        claims: getClaims(row.id),
-        events: getEvents(row.id),
-      }));
+      return rows.map((row) =>
+        SourceAuthorityBundleSchema.parse({
+          record: toRecord(row),
+          claims: getClaims(row.id),
+          events: getEvents(row.id),
+        }),
+      );
     },
 
     createVersion(input: CreateAuthorityVersionInput): SourceAuthorityBundle {
@@ -415,11 +398,13 @@ export function createSourceAuthorityRepo(db: SqliteDb) {
            ORDER BY r.logical_source_id, r.version DESC, r.id`,
         )
         .all(workspaceId, materialRevisionId, sourceBlockId) as RecordRow[];
-      return rows.map((row) => ({
-        record: toRecord(row),
-        claims: getClaims(row.id),
-        events: getEvents(row.id),
-      }));
+      return rows.map((row) =>
+        SourceAuthorityBundleSchema.parse({
+          record: toRecord(row),
+          claims: getClaims(row.id),
+          events: getEvents(row.id),
+        }),
+      );
     },
   };
 }

@@ -1806,6 +1806,253 @@ button.danger {
   background: var(--surface-weak);
 }
 
+/* Persistent Study Session: conversation is explicitly separate from formal evidence. */
+.study-session,
+.study-session-empty {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.study-session-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.study-session-header h3 {
+  margin: 0;
+}
+
+.study-session-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.study-transcript {
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.study-transcript-list {
+  flex: 1;
+  padding: var(--space-3);
+  overflow-y: auto;
+}
+
+.study-exchange {
+  max-width: 86%;
+  margin: 0 0 var(--space-3);
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-weak);
+}
+
+.study-exchange.learner {
+  margin-left: auto;
+  background: var(--primary-weak);
+  border-color: #c6ceff;
+}
+
+.study-exchange.local_system {
+  max-width: 100%;
+  padding: 0.4rem 0.55rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.study-exchange p {
+  margin: 0.25rem 0 0;
+  white-space: pre-wrap;
+}
+
+.study-composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.study-composer textarea {
+  min-width: 0;
+  resize: vertical;
+}
+
+.study-session-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.study-session-sidebar section {
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-weak);
+}
+
+.study-session-sidebar h4 {
+  margin: 0 0 var(--space-2);
+}
+
+.study-agenda-list {
+  max-height: 18rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.study-agenda-item {
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.study-agenda-item:first-child {
+  border-top: 0;
+}
+
+.study-agenda-item[aria-current='step'] {
+  padding-left: 0.55rem;
+  border-left: 3px solid var(--primary);
+}
+
+.study-agenda-item strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.study-agenda-item p {
+  margin: 0.25rem 0 0;
+}
+
+.study-session-controls {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-2);
+}
+
+.formal-progress {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.formal-progress-header,
+.progress-band > .row.between {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.formal-progress-header h2,
+.progress-band h3,
+.progress-band h4 {
+  margin-top: 0;
+}
+
+.progress-band {
+  border-top: 1px solid var(--border);
+  padding: var(--space-3) 0;
+}
+
+.progress-table {
+  display: grid;
+  gap: 1px;
+  border: 1px solid var(--border);
+  background: var(--border);
+}
+
+.progress-row {
+  display: grid;
+  grid-template-columns:
+    minmax(120px, 1.2fr) minmax(120px, 1fr) minmax(90px, 0.8fr) minmax(180px, 2fr)
+    minmax(120px, 1fr);
+  gap: var(--space-2);
+  align-items: center;
+  padding: 0.55rem 0.65rem;
+  background: var(--surface);
+  overflow-wrap: anywhere;
+}
+
+.progression-state.complete,
+.reconciliation.applied {
+  background: var(--success-weak);
+  color: var(--success);
+}
+
+.progression-state.repair_needed,
+.reconciliation.rejected,
+.reconciliation.stale {
+  background: var(--danger-weak);
+  color: var(--danger);
+}
+
+.progression-state.deferred,
+.reconciliation.reconciliation_pending {
+  background: #fff4e0;
+  color: #9a5b00;
+  border-color: #ffd9a0;
+}
+
+.replan-record,
+.goal-outcome,
+.replan-decision,
+.goal-outcome-form {
+  border: 1px solid var(--border);
+  background: var(--surface-weak);
+  padding: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.replan-record p,
+.goal-outcome p {
+  margin-bottom: 0;
+}
+
+.goal-outcome-form {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.goal-outcome-form label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+@media (max-width: 760px) {
+  .study-session-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .study-transcript {
+    min-height: 420px;
+  }
+
+  .study-session-header {
+    flex-direction: column;
+  }
+
+  .formal-progress-header {
+    flex-direction: column;
+  }
+
+  .progress-row {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+}
+
 /* Misconception list (inspector). */
 .misconception-list {
   list-style: none;

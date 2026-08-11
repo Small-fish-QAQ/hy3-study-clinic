@@ -11,6 +11,7 @@ import {
   StudyPlanProposalPayloadSchema,
   RubricGradeSchema,
   TutorStepPayloadSchema,
+  TutorTurnPayloadSchema,
   type AlignmentProposalPayload,
   type AssessmentProposalPayload,
   type ConceptAnalysisPayload,
@@ -23,6 +24,7 @@ import {
   type StudyPlanProposalPayload,
   type RubricGrade,
   type TutorStepPayload,
+  type TutorTurnPayload,
 } from '@hy3-clinic/shared';
 import type { ZodType, ZodTypeDef } from 'zod';
 import { ProviderError } from './errors.js';
@@ -41,6 +43,7 @@ import {
   shortAnswerGradingMessages,
   studyPlanProposalMessages,
   tutorStepMessages,
+  tutorTurnMessages,
   type ChatMessage,
 } from './prompts.js';
 import type {
@@ -59,6 +62,7 @@ import type {
   ShortAnswerGradingInput,
   StudyPlanProposalInput,
   TutorStepInput,
+  TutorTurnInput,
 } from './provider.js';
 
 export interface Hy3ProviderConfig {
@@ -211,6 +215,13 @@ export class Hy3Provider implements LlmProvider {
     return this.complete(tutorStepMessages(input), TutorStepPayloadSchema, opts);
   }
 
+  async respondToTutorTurn(
+    input: TutorTurnInput,
+    opts?: ProviderCallOptions,
+  ): Promise<TutorTurnPayload> {
+    return this.complete(tutorTurnMessages(input), TutorTurnPayloadSchema, opts);
+  }
+
   async proposeCurriculum(
     input: CurriculumProposalInput,
     opts?: ProviderCallOptions,
@@ -253,6 +264,8 @@ export class Hy3Provider implements LlmProvider {
         ].join('\n'),
       },
     ];
+    if (opts?.signal?.aborted) throw ProviderError.cancelled();
+    opts?.onRepairAttempt?.();
     const repaired = await this.chat(repairMessages, opts);
     const second = this.tryParse(repaired, schema);
     if (second.ok) return second.value;

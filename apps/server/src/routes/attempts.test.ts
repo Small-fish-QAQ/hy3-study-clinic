@@ -330,34 +330,31 @@ describe('workspace scoping and failure modes', () => {
     }
   });
 
-  it('drops document-quiz attempts together with their deleted document (existing lifecycle)', async () => {
+  it('preserves document-quiz attempts when their source is retired', async () => {
     const { materialId, workspaceId } = await importSample(ctx);
     const quiz = await generateQuiz(ctx, materialId);
     const submitted = await submitQuiz(ctx, quiz);
 
     const del = await ctx.app.inject({ method: 'DELETE', url: `/api/materials/${materialId}` });
     expect(del.statusCode).toBe(200);
-    // The sample was a 资料库 import, so its auto-created workspace is
-    // retired together with its final document (new lifecycle).
-    expect(del.json()).toEqual({ workspaceId, workspaceDeleted: true });
+    expect(del.json()).toEqual({ workspaceId, workspaceDeleted: false });
 
-    // Same lifecycle as mistakes/mastery: a document deletion removes the
-    // learning records bound to it — no orphan rows survive anywhere.
+    // Source retirement does not cascade longitudinal learning records.
     const gradingRows = ctx.db
       .prepare('SELECT COUNT(*) AS n FROM grading_results WHERE id = ?')
       .get(submitted.grading.id) as { n: number };
-    expect(gradingRows.n).toBe(0);
-    // The workspace itself is gone, so its history endpoints honestly 404.
+    expect(gradingRows.n).toBe(1);
     const list = await ctx.app.inject({
       method: 'GET',
       url: `/api/workspaces/${workspaceId}/attempts`,
     });
-    expect(list.statusCode).toBe(404);
+    expect(list.statusCode).toBe(200);
+    expect(list.json().attempts).toHaveLength(1);
     const detail = await ctx.app.inject({
       method: 'GET',
       url: `/api/workspaces/${workspaceId}/attempts/${submitted.grading.id}`,
     });
-    expect(detail.statusCode).toBe(404);
+    expect(detail.statusCode).toBe(200);
   });
 });
 
@@ -427,9 +424,8 @@ describe('workspace assessments and deleted sources', () => {
     });
     expect(res.statusCode).toBe(200);
     const detail = CompletedAttemptDetailSchema.parse(res.json());
-    // The live source blocks are gone — none are fabricated — while the
-    // persisted questions still carry their original verified quotes.
-    expect(detail.blocks).toEqual([]);
+    // Retired source blocks remain inspectable and retain their provenance.
+    expect(detail.blocks.length).toBeGreaterThan(0);
     expect(detail.grading).toEqual(submitted.grading);
     for (const question of detail.questions) {
       expect(question.grounding.quote.length).toBeGreaterThan(0);

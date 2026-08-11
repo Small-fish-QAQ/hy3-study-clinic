@@ -77,9 +77,21 @@ export function createCourseOverviewService({ repos, clock }: CourseOverviewDeps
         ) ?? null;
     const acceptedCurriculum = state.activeCurriculumId
       ? (repos.curricula.get(state.activeCurriculumId) ?? null)
-      : ([...curricula].reverse().find((item) => item.status === 'accepted') ?? null);
+      : null;
+    const selectedContract = pendingContract ?? activeContract;
+    const planningCurriculum = selectedContract
+      ? ([...curricula]
+          .reverse()
+          .find(
+            (item) => item.status === 'accepted' && item.contractVersionId === selectedContract.id,
+          ) ?? null)
+      : null;
     const proposedCurriculum =
-      [...curricula].reverse().find((item) => item.status === 'proposed') ?? null;
+      [...curricula]
+        .reverse()
+        .find(
+          (item) => item.status === 'proposed' && item.contractVersionId === selectedContract?.id,
+        ) ?? null;
     const acceptedStudyPlan = state.acceptedPlanId
       ? (repos.studyPlans.get(state.acceptedPlanId) ?? null)
       : null;
@@ -88,13 +100,19 @@ export function createCourseOverviewService({ repos, clock }: CourseOverviewDeps
     const activeAgenda = state.activeAgendaId
       ? (repos.sessionAgendas.get(state.activeAgendaId) ?? null)
       : null;
+    const planProgress = acceptedStudyPlan
+      ? repos.studyPlans.listProgress(acceptedStudyPlan.id)
+      : [];
+    const routeEvidence =
+      activeContract && acceptedStudyPlan
+        ? repos.formalProgression.listEvidenceForRoute(activeContract.id, acceptedStudyPlan.id)
+        : [];
     const currentAgendaItem = activeAgenda
       ? (activeAgenda.items.find((item) => item.id === activeAgenda.currentItemId) ??
         activeAgenda.items.find((item) => item.state === 'queued') ??
         null)
       : null;
-    const selectedContract = pendingContract ?? activeContract;
-    const selectedCurriculum = proposedCurriculum ?? acceptedCurriculum;
+    const selectedCurriculum = proposedCurriculum ?? planningCurriculum;
     const risks = selectedContract
       ? repos.coverageRisks.list(workspaceId, selectedContract.id)
       : repos.coverageRisks.list(workspaceId);
@@ -102,7 +120,7 @@ export function createCourseOverviewService({ repos, clock }: CourseOverviewDeps
     const setupStage: CourseExecutionOverview['setupStage'] = activeStudyStage(
       activeContract,
       pendingContract,
-      acceptedCurriculum,
+      planningCurriculum,
       proposedCurriculum,
       acceptedStudyPlan,
       proposedStudyPlan,
@@ -112,17 +130,32 @@ export function createCourseOverviewService({ repos, clock }: CourseOverviewDeps
       workspaceId,
       setupStage,
       executionStatus: state.executionStatus,
+      courseExecutionVersion: state.version,
       activeContract,
       pendingContract,
       contractFeasibility: selectedContract
         ? (repos.learningContracts.getLatestFeasibility(selectedContract.id) ?? null)
         : null,
       acceptedCurriculum,
+      planningCurriculum,
       proposedCurriculum,
       curriculumHierarchy: selectedCurriculum ? curriculumHierarchy(selectedCurriculum) : null,
+      activeCurriculumHierarchy: acceptedCurriculum
+        ? curriculumHierarchy(acceptedCurriculum)
+        : null,
       acceptedStudyPlan,
       proposedStudyPlan,
       activeAgenda,
+      formalProgress: {
+        planItemCount: acceptedStudyPlan?.items.length ?? 0,
+        completedPlanItemCount: planProgress.filter((item) => item.state === 'completed').length,
+        startedPlanItemCount: planProgress.filter((item) => item.state === 'started').length,
+        repairNeededPlanItemCount: planProgress.filter((item) => item.state === 'repair_needed')
+          .length,
+        deferredPlanItemCount: planProgress.filter((item) => item.state === 'deferred').length,
+        stateCreditingEvidenceCount: routeEvidence.filter((item) => item.stateCreditable).length,
+        advisoryEvidenceCount: routeEvidence.filter((item) => !item.stateCreditable).length,
+      },
       nextAction:
         activeAgenda && currentAgendaItem
           ? {
@@ -141,7 +174,7 @@ export function createCourseOverviewService({ repos, clock }: CourseOverviewDeps
         canAcceptCurriculum:
           proposedCurriculum?.validation.valid === true && proposedCurriculum.status === 'proposed',
         canProposeStudyPlan:
-          acceptedCurriculum !== null &&
+          planningCurriculum !== null &&
           (selectedContract?.status === 'learner_confirmed' ||
             selectedContract?.status === 'active'),
         canEditStudyPlan: proposedStudyPlan?.status === 'proposed',

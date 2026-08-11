@@ -36,6 +36,11 @@ import {
   assertValidMaterializedCurriculum,
   materializeCurriculumProposal,
 } from './curriculumValidation.js';
+import {
+  enforceAgentCostPolicies,
+  runTrackedAgentProviderOperation,
+} from './agentProviderRuntime.js';
+import type { SourceAuthorityService } from './sourceAuthority.js';
 
 /** HTTP/service request: the server, never the client, resolves exact revisions. */
 export const ProposeCurriculumCommandRequestSchema = ProposeCurriculumRequestSchema.omit({
@@ -58,6 +63,7 @@ interface CurriculumServiceDeps {
   clock: Clock;
   commands: CourseCommandService;
   providerModel?: string | null;
+  sourceAuthority: Pick<SourceAuthorityService, 'ensureVerbatimAssessmentAuthority'>;
 }
 
 function manifestFingerprint(revisions: ExecutionSourceManifest['revisions']): string {
@@ -289,6 +295,7 @@ export function createCurriculumService({
   clock,
   commands,
   providerModel,
+  sourceAuthority,
 }: CurriculumServiceDeps) {
   const coverageRisks = createCoverageRiskAgentService({ repos, clock });
   function requireCurriculum(workspaceId: string, id: string): Curriculum {
@@ -346,6 +353,19 @@ export function createCurriculumService({
       parsed.contractId,
       parsed.expectedContractVersion,
     );
+    // Backfill Materials created before local-verbatim authority admission.
+    // This local validator establishes exact source occurrence independently
+    // of learner Contract, role, Curriculum, or Plan acceptance.
+    for (const scope of contract.courseScope.materials) {
+      if (scope.disposition !== 'included') continue;
+      const revision = repos.materialRevisions.getActive(scope.materialId);
+      if (!revision) continue;
+      sourceAuthority.ensureVerbatimAssessmentAuthority(
+        contract.workspaceId,
+        scope.materialId,
+        revision.id,
+      );
+    }
     const context = buildCurriculumExecutionContext(repos, contract);
     const claim = commands.begin(parsed.command, 'propose_curriculum', {
       contractId: contract.id,
@@ -353,6 +373,7 @@ export function createCurriculumService({
       predecessorCurriculumId: parsed.predecessorCurriculumId,
       expectedActiveCurriculumId: parsed.expectedActiveCurriculumId,
       manifestFingerprint: context.manifest.fingerprint,
+      confirmedCostPolicyIds: parsed.confirmedCostPolicyIds ?? [],
     });
     if (claim.replayPayload !== undefined) {
       return CurriculumProposalResponseSchema.parse(claim.replayPayload);
@@ -392,7 +413,31 @@ export function createCurriculumService({
       limits: CURRICULUM_LIMITS,
     };
     try {
-      const payload = await provider.proposeCurriculum(providerInput, opts);
+      const policyFingerprint = enforceAgentCostPolicies(repos, {
+        workspaceId: parsed.command.workspaceId,
+        operationType: 'propose_curriculum',
+        studySessionId: null,
+        at: clock.now().toISOString(),
+        confirmedPolicyIds: parsed.confirmedCostPolicyIds ?? [],
+      });
+      const payload = await runTrackedAgentProviderOperation({
+        repos,
+        clock,
+        provider,
+        providerModel: provider.name === 'hy3' ? (providerModel ?? null) : null,
+        operationId: claim.operationId,
+        fencingToken: claim.fencingToken,
+        workspaceId: parsed.command.workspaceId,
+        studySessionId: null,
+        learningUnitId: null,
+        assessmentId: null,
+        operationType: 'propose_curriculum',
+        schemaFingerprint: 'curriculum-proposal-v1',
+        policyFingerprint,
+        sourceFingerprint: context.manifest.fingerprint,
+        providerOptions: opts,
+        invoke: (options) => provider.proposeCurriculum(providerInput, options),
+      });
       const materialized = materializeCurriculumProposal(payload, {
         workspaceId: parsed.command.workspaceId,
         courseTitle: workspace.name,

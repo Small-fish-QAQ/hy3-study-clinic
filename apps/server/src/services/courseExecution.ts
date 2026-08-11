@@ -6,6 +6,7 @@ import {
   type ActiveCourseRoute,
   type DecideStudyPlanRequest,
   type StudyPlan,
+  type StudyPlanProgressState,
   type StudyPlanDecisionResponse,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
@@ -67,6 +68,72 @@ function requireProposedPlan(repos: Repositories, request: DecideStudyPlanReques
   return plan;
 }
 
+function compatiblePlanItem(
+  before: StudyPlan['items'][number],
+  after: StudyPlan['items'][number],
+): boolean {
+  return (
+    before.id === after.id &&
+    before.kind === after.kind &&
+    before.curriculumLearningUnitId === after.curriculumLearningUnitId &&
+    before.targetDepth === after.targetDepth &&
+    JSON.stringify([...before.objectiveIds].sort()) ===
+      JSON.stringify([...after.objectiveIds].sort()) &&
+    JSON.stringify(before.completionPolicy) === JSON.stringify(after.completionPolicy) &&
+    JSON.stringify(before.completionRequirements) === JSON.stringify(after.completionRequirements)
+  );
+}
+
+function carryCompatiblePlanProgress(
+  repos: Repositories,
+  predecessor: StudyPlan | null,
+  successor: StudyPlan,
+  at: string,
+): void {
+  if (
+    !predecessor ||
+    successor.predecessorId !== predecessor.id ||
+    successor.contractVersionId !== predecessor.contractVersionId ||
+    successor.curriculumVersionId !== predecessor.curriculumVersionId ||
+    successor.executionSourceManifestFingerprint !== predecessor.executionSourceManifestFingerprint
+  ) {
+    return;
+  }
+  const priorProgress = new Map(
+    repos.studyPlans.listProgress(predecessor.id).map((item) => [item.planItemId, item]),
+  );
+  const priorItems = new Map(predecessor.items.map((item) => [item.id, item]));
+  for (const item of successor.items) {
+    const priorItem = priorItems.get(item.id);
+    const prior = priorProgress.get(item.id);
+    if (!prior || !priorItem || !compatiblePlanItem(priorItem, item)) continue;
+    const state = prior.state as StudyPlanProgressState;
+    if (state !== 'completed' || !item.curriculumLearningUnitId) continue;
+    const hasStateCreditingEvidence = repos.formalProgression
+      .listEvidenceForPlanUnit(
+        predecessor.workspaceId,
+        predecessor.curriculumVersionId,
+        predecessor.id,
+        item.curriculumLearningUnitId,
+      )
+      .some((record) => record.stateCreditable);
+    if (!hasStateCreditingEvidence) continue;
+    const current = repos.studyPlans
+      .listProgress(successor.id)
+      .find((entry) => entry.planItemId === item.id);
+    if (!current || current.state === state) continue;
+    repos.studyPlans.updateProgress(
+      successor.id,
+      item.id,
+      current.version,
+      state,
+      newId('plan_progress_carry'),
+      `Carried compatible progress from predecessor StudyPlan ${predecessor.id}.`,
+      at,
+    );
+  }
+}
+
 export function createCourseExecutionService({
   repos,
   clock,
@@ -106,6 +173,14 @@ export function createCourseExecutionService({
             payload: { reason: parsed.reason },
             createdAt: clock.now().toISOString(),
           });
+          const replanTrigger = repos.formalProgression.findReplanTriggerByProposedPlan(plan.id);
+          if (replanTrigger) {
+            repos.formalProgression.updateReplanTrigger({
+              ...replanTrigger,
+              status: 'resolved',
+              updatedAt: clock.now().toISOString(),
+            });
+          }
           return StudyPlanDecisionResponseSchema.parse({
             decision: 'rejected',
             decidedPlan: rejected,
@@ -133,6 +208,10 @@ export function createCourseExecutionService({
         );
       }
       const response = commands.complete(claim, () => {
+        const predecessor = before.acceptedPlanId
+          ? (repos.studyPlans.get(before.acceptedPlanId) ?? null)
+          : null;
+        carryCompatiblePlanProgress(repos, predecessor, plan, clock.now().toISOString());
         const draftAgenda = agendas.composeDraft(contract, curriculum, plan);
         const storedAgenda = repos.sessionAgendas.create(draftAgenda, {
           id: newId('agenda_evt'),
@@ -156,6 +235,14 @@ export function createCourseExecutionService({
           actor: 'learner',
           acceptedAt: clock.now().toISOString(),
         });
+        const replanTrigger = repos.formalProgression.findReplanTriggerByProposedPlan(plan.id);
+        if (replanTrigger) {
+          repos.formalProgression.updateReplanTrigger({
+            ...replanTrigger,
+            status: 'resolved',
+            updatedAt: clock.now().toISOString(),
+          });
+        }
         const installed = readActiveRoute(repos, parsed.command.workspaceId);
         if (!installed) throw new Error('Accepted Course route was not installed.');
         return StudyPlanDecisionResponseSchema.parse({

@@ -118,13 +118,24 @@ export type PaceBaseline = z.infer<typeof PaceBaselineSchema>;
 
 export const StudyPlanDiffOperationSchema = z
   .object({
-    kind: z.enum(['added', 'removed', 'reordered', 'resized', 'depth_changed', 'deferred']),
+    kind: z.enum([
+      'added',
+      'removed',
+      'reordered',
+      'resized',
+      'depth_changed',
+      'deferred',
+      'schedule_changed',
+      'source_rebound',
+    ]),
     planItemId: z.string().min(1).nullable(),
     curriculumLearningUnitId: z.string().min(1).nullable(),
     beforeIndex: z.number().int().nonnegative().nullable(),
     afterIndex: z.number().int().nonnegative().nullable(),
     beforeMinutes: z.number().int().nonnegative().nullable(),
     afterMinutes: z.number().int().nonnegative().nullable(),
+    beforeDepth: DesiredDepthSchema.nullable().optional(),
+    afterDepth: DesiredDepthSchema.nullable().optional(),
     reason: z.string().min(1).max(500),
   })
   .strict();
@@ -178,6 +189,7 @@ export const ProposeStudyPlanRequestSchema = z
     command: CourseExecutionCommandEnvelopeSchema,
     contractId: z.string().min(1),
     expectedContractVersion: z.number().int().positive(),
+    confirmedCostPolicyIds: z.array(z.string().min(1)).max(20).optional(),
     curriculumId: z.string().min(1),
     expectedCurriculumVersion: z.number().int().positive(),
     expectedExecutionSourceManifestFingerprint: z.string().min(1).max(200),

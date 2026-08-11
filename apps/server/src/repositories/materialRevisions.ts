@@ -266,7 +266,6 @@ export function createMaterialRevisionsRepo(db: SqliteDb) {
       db.prepare(
         'UPDATE workspaces SET active_graph_version_id = NULL, updated_at = ? WHERE id = ?',
       ).run(at, material.workspace_id);
-
       const staleRecords = db
         .prepare(
           `SELECT id FROM truth_authority_records
@@ -298,6 +297,51 @@ export function createMaterialRevisionsRepo(db: SqliteDb) {
       );
     },
   );
+
+  const retireMaterial = db.transaction((materialId: string, at: string): boolean => {
+    const material = db
+      .prepare("SELECT workspace_id FROM materials WHERE id = ? AND availability = 'active'")
+      .get(materialId) as { workspace_id: string } | undefined;
+    if (!material) return false;
+    db.prepare(
+      `UPDATE materials SET availability = 'retired', retired_at = ?, updated_at = ?
+       WHERE id = ? AND availability = 'active'`,
+    ).run(at, at, materialId);
+    db.prepare(
+      'UPDATE workspaces SET active_graph_version_id = NULL, updated_at = ? WHERE id = ?',
+    ).run(at, material.workspace_id);
+    db.prepare(
+      `UPDATE course_execution_state
+       SET route_validation_status = 'revalidation_required', version = version + 1, updated_at = ?
+       WHERE workspace_id = ? AND active_contract_id IS NOT NULL`,
+    ).run(at, material.workspace_id);
+
+    const authorityIds = db
+      .prepare(
+        `SELECT id FROM truth_authority_records
+         WHERE material_id = ? AND validation_state = 'validated'`,
+      )
+      .all(materialId) as Array<{ id: string }>;
+    for (const record of authorityIds) {
+      db.prepare(
+        `UPDATE truth_authority_records
+         SET validation_state = 'stale', updated_at = ? WHERE id = ?`,
+      ).run(at, record.id);
+      const seq = (
+        db
+          .prepare(
+            'SELECT COALESCE(MAX(seq), 0) + 1 AS n FROM truth_authority_events WHERE authority_record_id = ?',
+          )
+          .get(record.id) as { n: number }
+      ).n;
+      db.prepare(
+        `INSERT INTO truth_authority_events
+           (id, authority_record_id, seq, event_type, actor, payload, created_at)
+         VALUES (?, ?, ?, 'material_retired', 'system', ?, ?)`,
+      ).run(newId('tae'), record.id, seq, JSON.stringify({ materialId }), at);
+    }
+    return true;
+  });
 
   return {
     get(id: string): MaterialRevisionRecord | undefined {
@@ -421,14 +465,7 @@ export function createMaterialRevisionsRepo(db: SqliteDb) {
     },
 
     retire(materialId: string, at: string): boolean {
-      return (
-        db
-          .prepare(
-            `UPDATE materials SET availability = 'retired', retired_at = ?, updated_at = ?
-             WHERE id = ? AND availability = 'active'`,
-          )
-          .run(at, at, materialId).changes === 1
-      );
+      return retireMaterial(materialId, at);
     },
   };
 }

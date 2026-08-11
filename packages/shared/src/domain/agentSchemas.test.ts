@@ -15,7 +15,7 @@ import {
   StudyExchangeSchema,
   StudyPlanSchema,
   StudyPlanStatusSchema,
-  TruthAuthorityRecordSchema,
+  SourceAuthorityBundleSchema,
   isStateCreditingAdmissibility,
 } from '../index.js';
 
@@ -137,38 +137,72 @@ describe('Material lineage and role assignment', () => {
 });
 
 describe('scope authority and truth authority separation', () => {
-  const provenance = {
-    materialId: 'mat_1',
-    materialRevisionId: 'mrev_1',
-    sourceBlockId: 'blk_1',
-    sourceBlockRevisionFingerprint: 'block_fp_1',
-    quote: 'P(A|B) is conditional probability.',
-    startOffset: 0,
-    endOffset: 34,
-    admittedClaim: 'Definition of conditional probability',
-  };
-
-  it('requires independently validated provenance for verified authority', () => {
+  it('matches the persisted authority bundle and excludes learner scope actors', () => {
     const record = {
       id: 'auth_1',
       workspaceId: 'ws_1',
       logicalSourceId: 'mat_1',
+      materialId: 'mat_1',
+      materialRevisionId: 'mrev_1',
       version: 1,
       predecessorId: null,
-      premiseKind: 'definition',
       premiseScope: 'Conditional probability definition',
-      policyVersion: 'truth-v1',
-      basis: 'Exact accepted source passage and local validation',
+      policyBasis: {
+        policyVersion: 'truth-v1',
+        premiseKind: 'definition',
+        basis: 'Exact accepted source passage and local validation',
+      },
       validationState: 'validated',
       conflictState: 'none',
-      provenance: [provenance],
       actor: 'local_validator',
       createdAt: T0,
-      validatedAt: T0,
+      updatedAt: T0,
     };
-    expect(TruthAuthorityRecordSchema.safeParse(record).success).toBe(true);
+    const bundle = {
+      record,
+      claims: [
+        {
+          id: 'claim_1',
+          authorityRecordId: record.id,
+          sourceBlockId: 'blk_1',
+          claim: 'Definition of conditional probability',
+          quote: 'P(A|B) is conditional probability.',
+          startOffset: 0,
+          endOffset: 34,
+          occurrenceCount: 1,
+          createdAt: T0,
+        },
+      ],
+      events: [
+        {
+          id: 'event_1',
+          authorityRecordId: record.id,
+          seq: 1,
+          eventType: 'validated',
+          actor: 'operator',
+          payload: {},
+          createdAt: T0,
+        },
+      ],
+    };
+    expect(SourceAuthorityBundleSchema.safeParse(bundle).success).toBe(true);
     expect(
-      TruthAuthorityRecordSchema.safeParse({ ...record, conflictState: 'unresolved' }).success,
+      SourceAuthorityBundleSchema.safeParse({
+        ...bundle,
+        record: { ...record, actor: 'learner_source_selection' },
+      }).success,
+    ).toBe(false);
+    expect(
+      SourceAuthorityBundleSchema.safeParse({
+        ...bundle,
+        events: [{ ...bundle.events[0], actor: 'learner' }],
+      }).success,
+    ).toBe(false);
+    expect(
+      SourceAuthorityBundleSchema.safeParse({
+        ...bundle,
+        record: { ...record, conflictState: 'unresolved' },
+      }).success,
     ).toBe(false);
   });
 

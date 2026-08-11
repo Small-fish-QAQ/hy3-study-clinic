@@ -272,12 +272,12 @@ describe('materials repository', () => {
     expect(relatedCounts(deleted)).toEqual(POPULATED_COUNTS);
     expect(relatedCounts(retained)).toEqual(POPULATED_COUNTS);
 
-    expect(repos.materials.delete(deleted.materialId)).toBe(true);
+    expect(repos.materials.purge(deleted.materialId)).toBe(true);
 
     expect(relatedCounts(deleted)).toEqual(EMPTY_COUNTS);
     expect(relatedCounts(retained)).toEqual(POPULATED_COUNTS);
     expect(db.pragma('foreign_key_check')).toEqual([]);
-    expect(repos.materials.delete('mat_missing')).toBe(false);
+    expect(repos.materials.purge('mat_missing')).toBe(false);
   });
 
   it('rolls back the entire cascade when deletion fails', () => {
@@ -291,7 +291,7 @@ describe('materials repository', () => {
       END;
     `);
 
-    expect(() => repos.materials.delete(material.materialId)).toThrow(/forced delete failure/);
+    expect(() => repos.materials.purge(material.materialId)).toThrow(/forced delete failure/);
     expect(relatedCounts(material)).toEqual(POPULATED_COUNTS);
     expect(db.pragma('foreign_key_check')).toEqual([]);
   });

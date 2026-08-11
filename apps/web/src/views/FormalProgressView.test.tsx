@@ -1,0 +1,380 @@
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type {
+  CourseExecutionOverview,
+  FormalProgressionOverview,
+  ReplanTrigger,
+} from '@hy3-clinic/shared';
+import { api } from '../api.js';
+import { FormalProgressView } from './FormalProgressView.js';
+
+vi.mock('../api.js', () => ({
+  api: {
+    formalProgression: vi.fn(),
+    reconcileProgression: vi.fn(),
+    proposeQualifiedReplan: vi.fn(),
+    recordGoalOutcome: vi.fn(),
+  },
+}));
+
+const progression: FormalProgressionOverview = {
+  evidence: [
+    {
+      id: 'evidence_1',
+      formalQuestionContractId: 'contract_question_1',
+      gradingResultId: 'grade_1',
+      questionId: 'question_1',
+      primaryObjectiveId: 'objective_1',
+      curriculumLearningUnitId: 'unit_1',
+      admissibilityTier: 'tier_2_validated_representation',
+      normalizedScore: 0.8,
+      correct: true,
+      needsReview: false,
+      stateCreditable: true,
+      assessmentPremiseBindingIds: ['binding_1'],
+      limitations: [],
+      createdAt: '2026-08-10T00:00:00.000Z',
+    },
+  ],
+  reconciliations: [
+    {
+      id: 'rec_1',
+      workspaceId: 'ws_1',
+      gradingResultId: 'grade_1',
+      curriculumVersionId: 'curriculum_1',
+      studyPlanVersionId: 'plan_1',
+      curriculumLearningUnitId: 'unit_1',
+      completionPolicyId: 'policy_1',
+      completionPolicyVersion: 1,
+      status: 'applied',
+      decisionId: 'decision_1',
+      reason: null,
+      createdAt: '2026-08-10T00:00:00.000Z',
+      updatedAt: '2026-08-10T00:00:00.000Z',
+    },
+  ],
+  decisions: [
+    {
+      id: 'decision_1',
+      workspaceId: 'ws_1',
+      curriculumLearningUnitId: 'unit_1',
+      completionPolicyId: 'policy_1',
+      completionPolicyVersion: 1,
+      kind: 'complete',
+      priorState: 'in_progress',
+      nextState: 'complete',
+      evidenceIds: ['evidence_1'],
+      reasonCodes: ['sufficient_admissible_evidence'],
+      createdAt: '2026-08-10T00:00:00.000Z',
+    },
+  ],
+  replanTriggers: [],
+  goalOutcomes: [],
+};
+
+describe('FormalProgressView', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('shows only formal evidence and local reconciliation states', async () => {
+    vi.mocked(api.formalProgression).mockResolvedValue(progression);
+    render(
+      <FormalProgressView
+        workspaceId="ws_1"
+        overview={null}
+        command={() => ({
+          commandId: 'cmd_1',
+          idempotencyKey: 'cmd_1',
+          workspaceId: 'ws_1',
+          actor: 'learner',
+        })}
+        onAcceptProposedPlan={vi.fn()}
+        onRejectProposedPlan={vi.fn()}
+        onCourseChanged={vi.fn()}
+        onOpenProgress={vi.fn()}
+      />,
+    );
+    expect(await screen.findByText('Tier 2 validated')).toBeInTheDocument();
+    expect(screen.getAllByText('complete')).toHaveLength(2);
+    expect(screen.getByText('applied')).toBeInTheDocument();
+    expect(screen.getByText(/Tutor dialogue is not evidence/)).toBeInTheDocument();
+  });
+
+  it('requires an active route before exposing outcome controls', async () => {
+    vi.mocked(api.formalProgression).mockResolvedValue(progression);
+    const user = userEvent.setup();
+    render(
+      <FormalProgressView
+        workspaceId="ws_1"
+        overview={null}
+        command={() => ({
+          commandId: 'cmd_1',
+          idempotencyKey: 'cmd_1',
+          workspaceId: 'ws_1',
+          actor: 'learner',
+        })}
+        onAcceptProposedPlan={vi.fn()}
+        onRejectProposedPlan={vi.fn()}
+        onCourseChanged={vi.fn()}
+        onOpenProgress={vi.fn()}
+      />,
+    );
+    await screen.findByText('Goal outcome');
+    expect(screen.getByText(/active accepted route is required/i)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Attempts' }));
+  });
+
+  it('creates a successor proposal from a qualified trigger without accepting it', async () => {
+    const user = userEvent.setup();
+    const onCourseChanged = vi.fn();
+    const trigger: ReplanTrigger = {
+      id: 'trigger_1',
+      workspaceId: 'ws_1',
+      acceptedStudyPlanId: 'plan_1',
+      kind: 'synthesis_failure',
+      status: 'qualified',
+      evidenceIds: ['evidence_1'],
+      reason: 'Integration needs repair.',
+      facts: {
+        qualifyingOccurrences: 1,
+        affectedLearningUnitIds: ['unit_1'],
+        affectedPlanItemIds: ['plan_item_1'],
+        observedMinutesPerWeek: null,
+        sourceManifestFingerprint: null,
+        learnerConfirmedChange: false,
+      },
+      proposedStudyPlanId: null,
+      createdAt: '2026-08-10T00:00:00.000Z',
+      updatedAt: '2026-08-10T00:00:00.000Z',
+    };
+    vi.mocked(api.formalProgression)
+      .mockResolvedValueOnce({ ...progression, replanTriggers: [trigger] })
+      .mockResolvedValueOnce({
+        ...progression,
+        replanTriggers: [{ ...trigger, status: 'proposal_created', proposedStudyPlanId: 'plan_2' }],
+      });
+    vi.mocked(api.proposeQualifiedReplan).mockResolvedValue({
+      trigger: { ...trigger, status: 'proposal_created', proposedStudyPlanId: 'plan_2' },
+      studyPlan: { id: 'plan_2' },
+    } as unknown as Awaited<ReturnType<typeof api.proposeQualifiedReplan>>);
+
+    render(
+      <FormalProgressView
+        workspaceId="ws_1"
+        overview={
+          {
+            acceptedStudyPlan: { id: 'plan_1' },
+            proposedStudyPlan: null,
+          } as CourseExecutionOverview
+        }
+        command={(prefix) => ({
+          commandId: `${prefix}_1`,
+          idempotencyKey: `${prefix}_1`,
+          workspaceId: 'ws_1',
+          actor: 'learner',
+        })}
+        onAcceptProposedPlan={vi.fn()}
+        onRejectProposedPlan={vi.fn()}
+        onCourseChanged={onCourseChanged}
+        onOpenProgress={vi.fn()}
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Create route proposal' }));
+
+    await waitFor(() =>
+      expect(api.proposeQualifiedReplan).toHaveBeenCalledWith(
+        'ws_1',
+        'trigger_1',
+        expect.objectContaining({
+          triggerId: 'trigger_1',
+          expectedAcceptedStudyPlanId: 'plan_1',
+        }),
+        expect.any(AbortSignal),
+      ),
+    );
+    expect(onCourseChanged).toHaveBeenCalledTimes(1);
+  });
+
+  it('directs Contract-changing triggers to Contract editing without a dead Plan action', async () => {
+    const triggerBase: ReplanTrigger = {
+      id: 'trigger_contract_1',
+      workspaceId: 'ws_1',
+      acceptedStudyPlanId: 'plan_1',
+      kind: 'deadline_or_target_change',
+      status: 'qualified',
+      evidenceIds: [],
+      reason: 'The learner changed the accepted deadline.',
+      facts: {
+        qualifyingOccurrences: 1,
+        affectedLearningUnitIds: [],
+        affectedPlanItemIds: [],
+        observedMinutesPerWeek: null,
+        sourceManifestFingerprint: null,
+        learnerConfirmedChange: true,
+      },
+      proposedStudyPlanId: null,
+      createdAt: '2026-08-10T00:00:00.000Z',
+      updatedAt: '2026-08-10T00:00:00.000Z',
+    };
+    vi.mocked(api.formalProgression).mockResolvedValue({
+      ...progression,
+      replanTriggers: [
+        triggerBase,
+        {
+          ...triggerBase,
+          id: 'trigger_contract_2',
+          kind: 'learner_scope_change',
+          reason: 'The learner changed the accepted scope.',
+        },
+      ],
+    });
+
+    render(
+      <FormalProgressView
+        workspaceId="ws_1"
+        overview={
+          {
+            acceptedStudyPlan: { id: 'plan_1' },
+            proposedStudyPlan: null,
+          } as CourseExecutionOverview
+        }
+        command={(prefix) => ({
+          commandId: `${prefix}_1`,
+          idempotencyKey: `${prefix}_1`,
+          workspaceId: 'ws_1',
+          actor: 'learner',
+        })}
+        onAcceptProposedPlan={vi.fn()}
+        onRejectProposedPlan={vi.fn()}
+        onCourseChanged={vi.fn()}
+        onOpenProgress={vi.fn()}
+      />,
+    );
+
+    expect(
+      await screen.findAllByText(/learner-confirm a successor Learning Contract from Course Home/),
+    ).toHaveLength(2);
+    expect(screen.queryByRole('button', { name: 'Create route proposal' })).not.toBeInTheDocument();
+    expect(api.proposeQualifiedReplan).not.toHaveBeenCalled();
+  });
+
+  it('shows the machine-readable details of a proposed route diff', async () => {
+    vi.mocked(api.formalProgression).mockResolvedValue(progression);
+    render(
+      <FormalProgressView
+        workspaceId="ws_1"
+        overview={
+          {
+            acceptedStudyPlan: { id: 'plan_1' },
+            proposedStudyPlan: {
+              diff: [
+                {
+                  kind: 'resized',
+                  planItemId: 'plan_item_1',
+                  curriculumLearningUnitId: 'unit_1',
+                  beforeIndex: 0,
+                  afterIndex: 0,
+                  beforeMinutes: 20,
+                  afterMinutes: 35,
+                  beforeDepth: 'pass_oriented',
+                  afterDepth: 'working_fluency',
+                  reason: 'Add time for prerequisite repair.',
+                },
+              ],
+            },
+          } as CourseExecutionOverview
+        }
+        command={(prefix) => ({
+          commandId: `${prefix}_1`,
+          idempotencyKey: `${prefix}_1`,
+          workspaceId: 'ws_1',
+          actor: 'learner',
+        })}
+        onAcceptProposedPlan={vi.fn()}
+        onRejectProposedPlan={vi.fn()}
+        onCourseChanged={vi.fn()}
+        onOpenProgress={vi.fn()}
+      />,
+    );
+
+    const change = await screen.findByText(/minutes 20 -> 35/);
+    expect(change).toHaveTextContent('order 1 -> 1');
+    expect(change).toHaveTextContent('depth pass_oriented -> working_fluency');
+    expect(change).toHaveTextContent('LearningUnit unit_1');
+    expect(change).toHaveTextContent('Plan item plan_item_1');
+  });
+
+  it('retries pending reconciliation against the accepted route and refreshes progress', async () => {
+    const user = userEvent.setup();
+    const onCourseChanged = vi.fn();
+    const pending: FormalProgressionOverview = {
+      ...progression,
+      reconciliations: [
+        {
+          ...progression.reconciliations[0]!,
+          status: 'reconciliation_pending',
+          decisionId: null,
+          reason: null,
+        },
+      ],
+      decisions: [],
+    };
+    vi.mocked(api.formalProgression)
+      .mockResolvedValueOnce(pending)
+      .mockResolvedValueOnce(progression);
+    vi.mocked(api.reconcileProgression).mockResolvedValue({
+      reconciliations: progression.reconciliations,
+      decisions: progression.decisions,
+      evidence: progression.evidence,
+      replanTriggers: [],
+    });
+
+    render(
+      <FormalProgressView
+        workspaceId="ws_1"
+        overview={
+          {
+            acceptedStudyPlan: {
+              id: 'plan_1',
+              executionSourceManifestFingerprint: 'manifest-fp',
+            },
+          } as CourseExecutionOverview
+        }
+        command={(prefix) => ({
+          commandId: `${prefix}_1`,
+          idempotencyKey: `${prefix}_1`,
+          workspaceId: 'ws_1',
+          actor: 'learner',
+        })}
+        onAcceptProposedPlan={vi.fn()}
+        onRejectProposedPlan={vi.fn()}
+        onCourseChanged={onCourseChanged}
+        onOpenProgress={vi.fn()}
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Retry reconciliation' }));
+
+    await waitFor(() =>
+      expect(api.reconcileProgression).toHaveBeenCalledWith(
+        'ws_1',
+        {
+          command: {
+            commandId: 'retry_progression_reconciliation_1',
+            idempotencyKey: 'retry_progression_reconciliation_1',
+            workspaceId: 'ws_1',
+            actor: 'learner',
+          },
+          gradingResultId: 'grade_1',
+          expectedStudyPlanId: 'plan_1',
+          expectedExecutionSourceManifestFingerprint: 'manifest-fp',
+        },
+        expect.any(AbortSignal),
+      ),
+    );
+    await waitFor(() => expect(api.formalProgression).toHaveBeenCalledTimes(2));
+    expect(onCourseChanged).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText('applied')).toBeInTheDocument();
+  });
+});

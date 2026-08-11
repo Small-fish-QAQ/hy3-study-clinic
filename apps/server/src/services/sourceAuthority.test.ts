@@ -131,6 +131,16 @@ describe('source truth/premise authority', () => {
     expect(repo.listHistory(LOGICAL_SOURCE_ID)).toEqual([]);
   });
 
+  it('rejects persisted authority rows that do not satisfy the shared runtime contract', () => {
+    const created = service.createCandidate(candidateInput());
+    db.prepare('UPDATE truth_authority_records SET actor = ? WHERE id = ?').run(
+      'learner_source_selection',
+      created.record.id,
+    );
+
+    expect(() => repo.getBundle(created.record.id)).toThrow();
+  });
+
   it('requires the exact MaterialRevision and locally verified revision-owned SourceBlock quote', () => {
     expect(() =>
       service.createCandidate(candidateInput({ materialRevisionId: 'rev_not_active' })),
@@ -230,5 +240,43 @@ describe('source truth/premise authority', () => {
       reason: 'authority_stale',
     });
     expect(service.history(LOGICAL_SOURCE_ID)).toHaveLength(2);
+  });
+
+  it('idempotently admits only exact active-revision text for assessment premises', () => {
+    const active = db
+      .prepare('SELECT active_revision_id FROM materials WHERE id = ?')
+      .get(MATERIAL_ID) as { active_revision_id: string };
+
+    const first = service.ensureVerbatimAssessmentAuthority(
+      'ws_1',
+      MATERIAL_ID,
+      active.active_revision_id,
+    );
+    const second = service.ensureVerbatimAssessmentAuthority(
+      'ws_1',
+      MATERIAL_ID,
+      active.active_revision_id,
+    );
+
+    expect(first).toHaveLength(2);
+    expect(second.map((bundle) => bundle.record.id)).toEqual(
+      first.map((bundle) => bundle.record.id),
+    );
+    expect(first.every((bundle) => service.blockingDecision(bundle.record.id).eligible)).toBe(true);
+    expect(first.flatMap((bundle) => bundle.claims)).not.toHaveLength(0);
+    for (const bundle of first) {
+      expect(bundle.record).toMatchObject({
+        actor: 'local_validator',
+        validationState: 'validated',
+        materialRevisionId: active.active_revision_id,
+      });
+      expect(bundle.events[0]?.eventType).toBe('verbatim_source_validated');
+      for (const claim of bundle.claims) {
+        const block = repo.getRevisionContext('ws_1', MATERIAL_ID, active.active_revision_id)!
+          .blocks[0]!;
+        expect(block.content.slice(claim.startOffset, claim.endOffset)).toBe(claim.claim);
+        expect(claim.quote).toBe(claim.claim);
+      }
+    }
   });
 });

@@ -109,8 +109,10 @@ export function createAlignmentRepo(db: SqliteDb) {
   function membersOfCanonical(canonicalId: string): CanonicalMember[] {
     const rows = db
       .prepare(
-        `SELECT * FROM canonical_members WHERE canonical_concept_id = ?
-         ORDER BY created_at ASC, source_concept_id ASC`,
+        `SELECT cm.* FROM canonical_members cm
+         JOIN materials m ON m.id = cm.material_id
+         WHERE cm.canonical_concept_id = ? AND m.availability = 'active'
+         ORDER BY cm.created_at ASC, cm.source_concept_id ASC`,
       )
       .all(canonicalId) as MemberRow[];
     return rows.map(rowToMember);
@@ -214,14 +216,15 @@ export function createAlignmentRepo(db: SqliteDb) {
            ORDER BY created_at ASC, id ASC`,
         )
         .all(workspaceId) as CanonicalRow[];
-      return rows.map((row) => {
+      return rows.flatMap((row) => {
         const canonical = rowToCanonical(row);
         const members = membersOfCanonical(row.id);
+        if (members.length === 0) return [];
         const aliases = [
           ...new Set(members.map((m) => m.originalName).filter((n) => n !== canonical.displayName)),
         ].slice(0, 20);
         const materialIds = [...new Set(members.map((m) => m.materialId))];
-        return { ...canonical, members, aliases, materialIds };
+        return [{ ...canonical, members, aliases, materialIds }];
       });
     },
 

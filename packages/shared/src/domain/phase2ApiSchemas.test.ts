@@ -376,6 +376,7 @@ describe('Phase 2 read models and atomic route results', () => {
       workspaceId: 'ws_1',
       setupStage: 'route_active',
       executionStatus: 'active',
+      courseExecutionVersion: 1,
       activeContract: contract,
       pendingContract: null,
       contractFeasibility: {
@@ -390,11 +391,22 @@ describe('Phase 2 read models and atomic route results', () => {
         computedAt: T0,
       },
       acceptedCurriculum: curriculum,
+      planningCurriculum: curriculum,
       proposedCurriculum: null,
       curriculumHierarchy: hierarchy,
+      activeCurriculumHierarchy: hierarchy,
       acceptedStudyPlan: plan,
       proposedStudyPlan: null,
       activeAgenda: agenda,
+      formalProgress: {
+        planItemCount: 1,
+        completedPlanItemCount: 0,
+        startedPlanItemCount: 0,
+        repairNeededPlanItemCount: 0,
+        deferredPlanItemCount: 0,
+        stateCreditingEvidenceCount: 0,
+        advisoryEvidenceCount: 0,
+      },
       nextAction: {
         agendaId: agenda.id,
         agendaVersion: 1,
@@ -430,6 +442,18 @@ describe('Phase 2 read models and atomic route results', () => {
     expect(CourseExecutionOverviewSchema.safeParse(overview).success).toBe(true);
     expect(
       CourseExecutionOverviewSchema.safeParse({ ...overview, acceptedStudyPlan: null }).success,
+    ).toBe(false);
+    expect(
+      CourseExecutionOverviewSchema.safeParse({
+        ...overview,
+        planningCurriculum: { ...curriculum, contractVersionId: 'lc_other' },
+      }).success,
+    ).toBe(false);
+    expect(
+      CourseExecutionOverviewSchema.safeParse({
+        ...overview,
+        acceptedCurriculum: { ...curriculum, id: 'curriculum_other' },
+      }).success,
     ).toBe(false);
   });
 

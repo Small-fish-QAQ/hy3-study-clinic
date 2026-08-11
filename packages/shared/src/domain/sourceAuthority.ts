@@ -46,55 +46,52 @@ export type TruthAuthorityValidationState = z.infer<typeof TruthAuthorityValidat
 export const TruthAuthorityConflictStateSchema = z.enum(['none', 'unresolved', 'resolved']);
 export type TruthAuthorityConflictState = z.infer<typeof TruthAuthorityConflictStateSchema>;
 
-/** Exact immutable provenance of one admitted factual or assessment premise. */
-export const AuthorityPremiseProvenanceSchema = z
+/** Only an independent validator/operator can create a truth-authority version. */
+export const SourceAuthorityValidationActorSchema = z.enum(['local_validator', 'operator']);
+export type SourceAuthorityValidationActor = z.infer<typeof SourceAuthorityValidationActorSchema>;
+
+/** System is event-only; it can stale authority but cannot author a record. */
+export const SourceAuthorityEventActorSchema = z.enum(['local_validator', 'operator', 'system']);
+export type SourceAuthorityEventActor = z.infer<typeof SourceAuthorityEventActorSchema>;
+
+export const SourceAuthorityPolicyBasisSchema = z
   .object({
-    materialId: z.string().min(1),
-    materialRevisionId: z.string().min(1),
-    sourceBlockId: z.string().min(1),
-    sourceBlockRevisionFingerprint: z.string().min(1).max(200),
-    quote: z.string().min(1).max(2000),
-    startOffset: z.number().int().nonnegative(),
-    endOffset: z.number().int().positive(),
-    /** The bounded claim this evidence is permitted to support. */
-    admittedClaim: z.string().min(1).max(1000),
+    policyVersion: z.string().min(1).max(100),
+    premiseKind: AuthorityPremiseKindSchema,
+    basis: z.string().min(1).max(1000),
   })
-  .strict()
-  .refine((value) => value.endOffset > value.startOffset, {
-    path: ['endOffset'],
-    message: 'endOffset must be greater than startOffset',
-  });
-export type AuthorityPremiseProvenance = z.infer<typeof AuthorityPremiseProvenanceSchema>;
+  .strict();
+export type SourceAuthorityPolicyBasis = z.infer<typeof SourceAuthorityPolicyBasisSchema>;
 
 /**
- * Versioned authority is created only by an independent validation process.
- * No Contract, Curriculum, or Plan acceptance command creates this record.
+ * Versioned authority metadata. Exact evidence remains in separate claims so
+ * every claim keeps its revision-owned SourceBlock identity and offsets.
  */
-export const TruthAuthorityRecordSchema = z
+export const SourceAuthorityRecordSchema = z
   .object({
     id: z.string().min(1),
     workspaceId: z.string().min(1),
     logicalSourceId: z.string().min(1),
+    /** Null only after destructive source removal preserved historical audit. */
+    materialId: z.string().min(1).nullable(),
+    materialRevisionId: z.string().min(1).nullable(),
     version: z.number().int().positive(),
     predecessorId: z.string().min(1).nullable(),
-    premiseKind: AuthorityPremiseKindSchema,
     premiseScope: z.string().min(1).max(500),
-    policyVersion: z.string().min(1).max(100),
-    basis: z.string().min(1).max(1000),
+    policyBasis: SourceAuthorityPolicyBasisSchema,
     validationState: TruthAuthorityValidationStateSchema,
     conflictState: TruthAuthorityConflictStateSchema,
-    provenance: z.array(AuthorityPremiseProvenanceSchema).min(1).max(10),
-    actor: z.enum(['local_validator', 'operator', 'learner_source_selection']),
+    actor: SourceAuthorityValidationActorSchema,
     createdAt: z.string().datetime(),
-    validatedAt: z.string().datetime().nullable(),
+    updatedAt: z.string().datetime(),
   })
   .strict()
   .superRefine((record, ctx) => {
-    if (record.validationState === 'validated' && !record.validatedAt) {
+    if ((record.materialId === null) !== (record.materialRevisionId === null)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ['validatedAt'],
-        message: 'validated authority requires validation time',
+        path: ['materialRevisionId'],
+        message: 'material and revision provenance must be present or absent together',
       });
     }
     if (record.conflictState === 'unresolved' && record.validationState === 'validated') {
@@ -105,4 +102,65 @@ export const TruthAuthorityRecordSchema = z
       });
     }
   });
-export type TruthAuthorityRecord = z.infer<typeof TruthAuthorityRecordSchema>;
+export type SourceAuthorityRecord = z.infer<typeof SourceAuthorityRecordSchema>;
+
+export const SourceAuthorityClaimSchema = z
+  .object({
+    id: z.string().min(1),
+    authorityRecordId: z.string().min(1),
+    sourceBlockId: z.string().min(1),
+    claim: z.string().min(1).max(1000),
+    quote: z.string().min(1).max(2000),
+    startOffset: z.number().int().nonnegative(),
+    endOffset: z.number().int().positive(),
+    occurrenceCount: z.number().int().positive(),
+    createdAt: z.string().datetime(),
+  })
+  .strict()
+  .refine((claim) => claim.endOffset > claim.startOffset, {
+    path: ['endOffset'],
+    message: 'endOffset must be greater than startOffset',
+  });
+export type SourceAuthorityClaim = z.infer<typeof SourceAuthorityClaimSchema>;
+
+export const SourceAuthorityEventSchema = z
+  .object({
+    id: z.string().min(1),
+    authorityRecordId: z.string().min(1),
+    seq: z.number().int().positive(),
+    eventType: z.string().min(1).max(100),
+    actor: SourceAuthorityEventActorSchema,
+    payload: z.unknown(),
+    createdAt: z.string().datetime(),
+  })
+  .strict();
+export type SourceAuthorityEvent = z.infer<typeof SourceAuthorityEventSchema>;
+
+export const SourceAuthorityBundleSchema = z
+  .object({
+    record: SourceAuthorityRecordSchema,
+    claims: z.array(SourceAuthorityClaimSchema).max(10),
+    events: z.array(SourceAuthorityEventSchema).max(1000),
+  })
+  .strict()
+  .superRefine((bundle, ctx) => {
+    bundle.claims.forEach((claim, index) => {
+      if (claim.authorityRecordId !== bundle.record.id) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['claims', index, 'authorityRecordId'],
+          message: 'claim belongs to a different authority record',
+        });
+      }
+    });
+    bundle.events.forEach((event, index) => {
+      if (event.authorityRecordId !== bundle.record.id) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['events', index, 'authorityRecordId'],
+          message: 'event belongs to a different authority record',
+        });
+      }
+    });
+  });
+export type SourceAuthorityBundle = z.infer<typeof SourceAuthorityBundleSchema>;

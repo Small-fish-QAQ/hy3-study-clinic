@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { SessionAgendaSchema } from './sessionAgenda.js';
 
 export const StudySessionStatusSchema = z.enum([
   'active',
@@ -156,3 +157,119 @@ export const StudySessionSchema = z
   })
   .strict();
 export type StudySession = z.infer<typeof StudySessionSchema>;
+
+/** Start only against the exact currently accepted execution route. */
+export const StartStudySessionRequestSchema = z
+  .object({
+    contractVersionId: z.string().min(1),
+    curriculumVersionId: z.string().min(1),
+    studyPlanVersionId: z.string().min(1),
+    sessionAgendaId: z.string().min(1),
+    expectedCourseExecutionVersion: z.number().int().nonnegative(),
+  })
+  .strict();
+export type StartStudySessionRequest = z.infer<typeof StartStudySessionRequestSchema>;
+
+export const StartStudySessionResponseSchema = z.object({ session: StudySessionSchema }).strict();
+export type StartStudySessionResponse = z.infer<typeof StartStudySessionResponseSchema>;
+
+export const StudySessionDetailResponseSchema = z
+  .object({
+    session: StudySessionSchema,
+    agenda: SessionAgendaSchema,
+    turns: z.array(StudyTurnSchema),
+    exchanges: z.array(StudyExchangeSchema),
+    /** Durable ordered event replay for reconnecting clients. */
+    turnEvents: z.array(StudyTurnEventSchema),
+    latestSummary: StudySessionSummarySchema.nullable(),
+  })
+  .strict();
+export type StudySessionDetailResponse = z.infer<typeof StudySessionDetailResponseSchema>;
+
+export const SubmitTutorTurnRequestSchema = z
+  .object({
+    commandId: z.string().min(1),
+    expectedSessionVersion: z.number().int().positive(),
+    content: z.string().min(1).max(20000),
+    /** Explicit acknowledgements for configured confirm-style monetary policies. */
+    confirmedCostPolicyIds: z.array(z.string().min(1)).max(20).optional(),
+  })
+  .strict();
+export type SubmitTutorTurnRequest = z.infer<typeof SubmitTutorTurnRequestSchema>;
+
+export const SubmitTutorTurnResponseSchema = z
+  .object({
+    session: StudySessionSchema,
+    turn: StudyTurnSchema,
+    exchanges: z.array(StudyExchangeSchema),
+    events: z.array(StudyTurnEventSchema),
+  })
+  .strict();
+export type SubmitTutorTurnResponse = z.infer<typeof SubmitTutorTurnResponseSchema>;
+
+export const MixedInitiativeCommandRequestSchema = z
+  .object({
+    commandId: z.string().min(1),
+    expectedSessionVersion: z.number().int().positive(),
+    kind: z.enum([
+      'detour',
+      'return',
+      'agenda_insert',
+      'deep_dive',
+      'direct_checkpoint',
+      'defer',
+      'promote_to_plan',
+    ]),
+    targetAgendaItemId: z.string().min(1).nullable(),
+    /** Optional learner-selected Curriculum target for a bounded detour/insert. */
+    targetLearningUnitId: z.string().min(1).nullable().optional(),
+    requestedMinutes: z.number().int().min(1).max(240).optional(),
+    reason: z.string().min(1).max(500),
+  })
+  .strict();
+export type MixedInitiativeCommandRequest = z.infer<typeof MixedInitiativeCommandRequestSchema>;
+
+export const StudySessionCommandEffectSchema = z
+  .object({
+    kind: MixedInitiativeCommandRequestSchema.shape.kind,
+    affectedAgendaItemId: z.string().min(1).nullable(),
+    /** A durable successor proposal; it never changes the accepted Plan by itself. */
+    planChangeRequest: z
+      .object({
+        predecessorStudyPlanId: z.string().min(1),
+        targetLearningUnitId: z.string().min(1).nullable(),
+        reason: z.string().min(1).max(500),
+        replanTriggerId: z.string().min(1),
+        proposedStudyPlanId: z.string().min(1),
+      })
+      .strict()
+      .nullable(),
+  })
+  .strict();
+export type StudySessionCommandEffect = z.infer<typeof StudySessionCommandEffectSchema>;
+
+export const MixedInitiativeCommandResponseSchema = z
+  .object({
+    session: StudySessionSchema,
+    agenda: SessionAgendaSchema,
+    effect: StudySessionCommandEffectSchema,
+  })
+  .strict();
+export type MixedInitiativeCommandResponse = z.infer<typeof MixedInitiativeCommandResponseSchema>;
+
+export const SessionExecutionCommandRequestSchema = z
+  .object({
+    commandId: z.string().min(1),
+    expectedSessionVersion: z.number().int().positive(),
+  })
+  .strict();
+export type SessionExecutionCommandRequest = z.infer<typeof SessionExecutionCommandRequestSchema>;
+
+export const SessionExecutionCommandResponseSchema = z
+  .object({
+    session: StudySessionSchema,
+    agenda: SessionAgendaSchema,
+    courseExecutionVersion: z.number().int().nonnegative(),
+  })
+  .strict();
+export type SessionExecutionCommandResponse = z.infer<typeof SessionExecutionCommandResponseSchema>;

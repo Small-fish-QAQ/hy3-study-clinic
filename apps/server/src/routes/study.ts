@@ -69,15 +69,54 @@ export function registerStudyRoutes(app: FastifyInstance, services: Services): v
       ...(typeof request.body === 'object' && request.body !== null ? request.body : {}),
       quizId: id,
     });
+    const stateCreditingQuestionIds =
+      services.formalProgression.stateCreditingQuestionIdsForQuiz(id);
     const { result, stateChanges } = await services.grading.grade(body, {
       signal: requestSignal(request, reply),
+      ...(stateCreditingQuestionIds === null
+        ? {}
+        : {
+            stateCreditResolver: () =>
+              new Set(services.formalProgression.stateCreditingQuestionIdsForQuiz(id) ?? []),
+          }),
     });
+    let progression:
+      | { status: 'not_applicable' }
+      | { status: 'reconciled'; reconciliationIds: string[]; gradingResultId: string }
+      | {
+          status: 'reconciliation_pending';
+          reason: string;
+          retry: {
+            gradingResultId: string;
+            expectedStudyPlanId: string;
+            expectedExecutionSourceManifestFingerprint: string;
+          } | null;
+        };
+    try {
+      const reconciled = services.formalProgression.reconcileAfterGrading(result.id);
+      progression = reconciled
+        ? {
+            status: 'reconciled',
+            reconciliationIds: reconciled.reconciliations.map((item) => item.id),
+            gradingResultId: result.id,
+          }
+        : { status: 'not_applicable' };
+    } catch {
+      // Grading is already durable. Agent projection failure must not regrade
+      // or roll back mastery/mistake/review state; the explicit retry command
+      // can reconcile this grading result later.
+      progression = {
+        status: 'reconciliation_pending',
+        reason: 'Formal progression reconciliation can be retried without regrading.',
+        retry: services.formalProgression.retryContextForGrading(result.id),
+      };
+    }
     // After grading, the full questions (with answers/rubrics) are revealed
     // so the client can render explanations and evidence. `stateChanges` is
     // the deterministic summary of every learning-state effect.
     const quiz = services.quizzes.get(id);
     reply.status(201);
-    return { grading: result, stateChanges, questions: quiz.questions };
+    return { grading: result, stateChanges, questions: quiz.questions, progression };
   });
 
   app.get('/api/materials/:id/mistakes', async (request) => {

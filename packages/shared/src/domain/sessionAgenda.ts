@@ -154,6 +154,8 @@ export const LaunchCourseActionRequestSchema = z
     expectedContractId: z.string().min(1),
     expectedStudyPlanId: z.string().min(1),
     expectedExecutionSourceManifestFingerprint: z.string().min(1).max(200),
+    studySessionId: z.string().min(1).optional(),
+    confirmedCostPolicyIds: z.array(z.string().min(1)).max(20).optional(),
   })
   .strict();
 export type LaunchCourseActionRequest = z.infer<typeof LaunchCourseActionRequestSchema>;
@@ -164,7 +166,7 @@ export const CourseActionLaunchResultSchema = z.discriminatedUnion('kind', [
       kind: z.literal('assessment'),
       agendaItemId: z.string().min(1),
       quiz: PublicQuizSchema,
-      assessmentKind: z.enum(['formal_checkpoint', 'due_review', 'targeted_repair']),
+      assessmentKind: z.enum(['formal_checkpoint', 'due_review', 'targeted_repair', 'synthesis']),
     })
     .strict(),
   z
@@ -288,21 +290,44 @@ export const CourseHomeCapabilitiesSchema = z
   .strict();
 export type CourseHomeCapabilities = z.infer<typeof CourseHomeCapabilitiesSchema>;
 
+/** Deterministic route/evidence counts for the Course Home progress strip. */
+export const CourseFormalProgressSummarySchema = z
+  .object({
+    planItemCount: z.number().int().nonnegative(),
+    completedPlanItemCount: z.number().int().nonnegative(),
+    startedPlanItemCount: z.number().int().nonnegative(),
+    repairNeededPlanItemCount: z.number().int().nonnegative(),
+    deferredPlanItemCount: z.number().int().nonnegative(),
+    stateCreditingEvidenceCount: z.number().int().nonnegative(),
+    advisoryEvidenceCount: z.number().int().nonnegative(),
+  })
+  .strict();
+export type CourseFormalProgressSummary = z.infer<typeof CourseFormalProgressSummarySchema>;
+
 /** Bounded, version-consistent read model for Course Home. */
 export const CourseExecutionOverviewSchema = z
   .object({
     workspaceId: z.string().min(1),
     setupStage: CourseSetupStageSchema,
     executionStatus: CourseExecutionStatusSchema,
+    /** Optimistic-concurrency token for commands against the accepted route. */
+    courseExecutionVersion: z.number().int().nonnegative(),
     activeContract: LearningContractSchema.nullable(),
     pendingContract: LearningContractSchema.nullable(),
     contractFeasibility: LearningContractFeasibilitySchema.nullable(),
+    /** Curriculum owned by the currently executable accepted route. */
     acceptedCurriculum: CurriculumSchema.nullable(),
+    /** Accepted Curriculum compatible with the Contract currently being planned. */
+    planningCurriculum: CurriculumSchema.nullable(),
     proposedCurriculum: CurriculumSchema.nullable(),
+    /** Hierarchy for the currently selected proposal/planning Curriculum. */
     curriculumHierarchy: CurriculumHierarchyViewSchema.nullable(),
+    /** Hierarchy for the executable route; never substituted by a successor candidate. */
+    activeCurriculumHierarchy: CurriculumHierarchyViewSchema.nullable(),
     acceptedStudyPlan: StudyPlanSchema.nullable(),
     proposedStudyPlan: StudyPlanSchema.nullable(),
     activeAgenda: SessionAgendaSchema.nullable(),
+    formalProgress: CourseFormalProgressSummarySchema,
     nextAction: CourseNextActionSchema.nullable(),
     riskSummary: CoverageRiskSummarySchema,
     capabilities: CourseHomeCapabilitiesSchema,
@@ -342,6 +367,39 @@ export const CourseExecutionOverviewSchema = z
           message: 'Course Home active Contract/Plan pair is incompatible',
         });
       }
+      if (
+        !overview.acceptedCurriculum ||
+        overview.acceptedStudyPlan.curriculumVersionId !== overview.acceptedCurriculum.id
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['acceptedCurriculum'],
+          message: 'Course Home accepted Curriculum must belong to the executable Plan',
+        });
+      }
+    }
+    const planningContract = overview.pendingContract ?? overview.activeContract;
+    if (
+      overview.planningCurriculum &&
+      (!planningContract ||
+        overview.planningCurriculum.status !== 'accepted' ||
+        overview.planningCurriculum.contractVersionId !== planningContract.id)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['planningCurriculum'],
+        message: 'planning Curriculum must be accepted for the Contract currently being planned',
+      });
+    }
+    if (
+      overview.proposedCurriculum &&
+      (!planningContract || overview.proposedCurriculum.contractVersionId !== planningContract.id)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['proposedCurriculum'],
+        message: 'proposed Curriculum must belong to the Contract currently being planned',
+      });
     }
     if (overview.nextAction && !overview.activeAgenda) {
       ctx.addIssue({

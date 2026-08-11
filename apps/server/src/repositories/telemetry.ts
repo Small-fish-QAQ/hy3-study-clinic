@@ -91,6 +91,11 @@ export interface CostPolicy {
   updatedAt: string;
 }
 
+export interface UsageScope {
+  scopeType: CostPolicy['scopeType'];
+  scopeKey: string;
+}
+
 interface LogicalCallRow {
   id: string;
   operation_id: string | null;
@@ -275,6 +280,47 @@ function rowToCostPolicy(row: CostPolicyRow): CostPolicy {
 
 /** Logical-call, physical-attempt, usage, cache, and optional cap storage. */
 export function createTelemetryRepo(db: SqliteDb) {
+  const usageSummaryForWhere = (
+    workspaceId: string,
+    where: string,
+    params: unknown[],
+  ): {
+    logicalCalls: number;
+    physicalAttempts: number;
+    cacheHits: number;
+    inputTokens: number;
+    outputTokens: number;
+    reasoningTokens: number;
+    estimatedCostMicrounits: number;
+    attemptsWithKnownCost: number;
+  } =>
+    db
+      .prepare(
+        `SELECT
+           COUNT(DISTINCT lc.id) AS logicalCalls,
+           COUNT(DISTINCT a.id) AS physicalAttempts,
+           COUNT(DISTINCT CASE WHEN lc.cache_status = 'hit' THEN lc.id END) AS cacheHits,
+           COALESCE(SUM(u.input_tokens), 0) AS inputTokens,
+           COALESCE(SUM(u.output_tokens), 0) AS outputTokens,
+           COALESCE(SUM(u.reasoning_tokens), 0) AS reasoningTokens,
+           COALESCE(SUM(u.estimated_cost_microunits), 0) AS estimatedCostMicrounits,
+           COUNT(u.estimated_cost_microunits) AS attemptsWithKnownCost
+         FROM model_logical_calls lc
+         LEFT JOIN model_call_attempts a ON a.logical_call_id = lc.id
+         LEFT JOIN model_usage_records u ON u.attempt_id = a.id
+         WHERE lc.workspace_id = ? AND ${where}`,
+      )
+      .get(workspaceId, ...params) as {
+      logicalCalls: number;
+      physicalAttempts: number;
+      cacheHits: number;
+      inputTokens: number;
+      outputTokens: number;
+      reasoningTokens: number;
+      estimatedCostMicrounits: number;
+      attemptsWithKnownCost: number;
+    };
+
   const cacheLookupTx = db.transaction(
     (
       cacheKey: string,
@@ -475,32 +521,22 @@ export function createTelemetryRepo(db: SqliteDb) {
       estimatedCostMicrounits: number;
       attemptsWithKnownCost: number;
     } {
-      return db
-        .prepare(
-          `SELECT
-             COUNT(DISTINCT lc.id) AS logicalCalls,
-             COUNT(DISTINCT a.id) AS physicalAttempts,
-             COUNT(DISTINCT CASE WHEN lc.cache_status = 'hit' THEN lc.id END) AS cacheHits,
-             COALESCE(SUM(u.input_tokens), 0) AS inputTokens,
-             COALESCE(SUM(u.output_tokens), 0) AS outputTokens,
-             COALESCE(SUM(u.reasoning_tokens), 0) AS reasoningTokens,
-             COALESCE(SUM(u.estimated_cost_microunits), 0) AS estimatedCostMicrounits,
-             COUNT(u.estimated_cost_microunits) AS attemptsWithKnownCost
-           FROM model_logical_calls lc
-           LEFT JOIN model_call_attempts a ON a.logical_call_id = lc.id
-           LEFT JOIN model_usage_records u ON u.attempt_id = a.id
-           WHERE lc.workspace_id = ?`,
-        )
-        .get(workspaceId) as {
-        logicalCalls: number;
-        physicalAttempts: number;
-        cacheHits: number;
-        inputTokens: number;
-        outputTokens: number;
-        reasoningTokens: number;
-        estimatedCostMicrounits: number;
-        attemptsWithKnownCost: number;
-      };
+      return usageSummaryForWhere(workspaceId, '1 = 1', []);
+    },
+
+    usageSummaryForScope(workspaceId: string, scope: UsageScope) {
+      switch (scope.scopeType) {
+        case 'operation':
+          return usageSummaryForWhere(workspaceId, 'lc.operation_type = ?', [scope.scopeKey]);
+        case 'session':
+          return usageSummaryForWhere(workspaceId, 'lc.study_session_id = ?', [scope.scopeKey]);
+        case 'day':
+          return usageSummaryForWhere(workspaceId, 'substr(lc.created_at, 1, 10) = ?', [
+            scope.scopeKey,
+          ]);
+        case 'course':
+          return usageSummaryForWhere(workspaceId, '1 = 1', []);
+      }
     },
 
     putCache(entry: Omit<SemanticCacheEntry, 'hitCount' | 'lastHitAt'>): boolean {

@@ -1256,6 +1256,228 @@ const MIGRATIONS: Migration[] = [
       END;
     `,
   },
+  {
+    version: 16,
+    name: 'durable_study_sessions',
+    // StudySession owns conversational execution state. Conversation and
+    // provisional Tutor output remain separate from formal learner state.
+    up: `
+      CREATE TABLE study_sessions (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        contract_id TEXT NOT NULL REFERENCES learning_contract_versions(id),
+        curriculum_id TEXT NOT NULL REFERENCES curriculum_versions(id),
+        plan_id TEXT NOT NULL REFERENCES study_plan_versions(id),
+        agenda_id TEXT NOT NULL REFERENCES session_agendas(id),
+        manifest_fingerprint TEXT NOT NULL,
+        version INTEGER NOT NULL CHECK (version > 0),
+        status TEXT NOT NULL CHECK (status IN
+          ('active', 'paused', 'completed', 'abandoned', 'interrupted')),
+        route_state TEXT NOT NULL CHECK (route_state IN
+          ('on_route', 'detour_active', 'return_pending', 'execution_paused')),
+        current_agenda_item_id TEXT,
+        route_stack TEXT NOT NULL,
+        transcript_watermark INTEGER NOT NULL DEFAULT 0 CHECK (transcript_watermark >= 0),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_study_sessions_workspace_status
+        ON study_sessions(workspace_id, status, updated_at DESC);
+
+      CREATE TABLE study_session_turns (
+        id TEXT PRIMARY KEY,
+        session_id TEXT NOT NULL REFERENCES study_sessions(id) ON DELETE CASCADE,
+        seq INTEGER NOT NULL CHECK (seq >= 0),
+        command_id TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN
+          ('queued', 'running', 'completed', 'failed', 'interrupted', 'cancelled')),
+        context_manifest TEXT NOT NULL,
+        logical_call_id TEXT,
+        error_message TEXT,
+        created_at TEXT NOT NULL,
+        completed_at TEXT,
+        UNIQUE (session_id, seq)
+      );
+      CREATE INDEX idx_study_session_turns_session_status
+        ON study_session_turns(session_id, status, seq);
+
+      CREATE TABLE study_session_exchanges (
+        id TEXT PRIMARY KEY,
+        session_id TEXT NOT NULL REFERENCES study_sessions(id) ON DELETE CASCADE,
+        turn_id TEXT NOT NULL REFERENCES study_session_turns(id) ON DELETE CASCADE,
+        seq INTEGER NOT NULL CHECK (seq >= 0),
+        role TEXT NOT NULL CHECK (role IN ('learner', 'tutor', 'local_system')),
+        content TEXT NOT NULL,
+        channel TEXT NOT NULL CHECK (channel IN
+          ('conversation', 'informal_check', 'operation_notice')),
+        created_at TEXT NOT NULL,
+        UNIQUE (session_id, seq)
+      );
+      CREATE INDEX idx_study_session_exchanges_turn
+        ON study_session_exchanges(turn_id, seq);
+
+      CREATE TABLE study_turn_events (
+        id TEXT PRIMARY KEY,
+        session_id TEXT NOT NULL REFERENCES study_sessions(id) ON DELETE CASCADE,
+        turn_id TEXT NOT NULL REFERENCES study_session_turns(id) ON DELETE CASCADE,
+        seq INTEGER NOT NULL CHECK (seq >= 0),
+        kind TEXT NOT NULL CHECK (kind IN
+          ('queued', 'started', 'content_delta', 'action_proposed', 'action_rejected',
+           'completed', 'failed', 'interrupted', 'cancelled')),
+        provisional INTEGER NOT NULL CHECK (provisional IN (0, 1)),
+        content TEXT,
+        created_at TEXT NOT NULL,
+        UNIQUE (turn_id, seq)
+      );
+      CREATE INDEX idx_study_turn_events_session_turn
+        ON study_turn_events(session_id, turn_id, seq);
+
+      CREATE TABLE study_session_summaries (
+        id TEXT PRIMARY KEY,
+        session_id TEXT NOT NULL REFERENCES study_sessions(id) ON DELETE CASCADE,
+        version INTEGER NOT NULL CHECK (version > 0),
+        through_exchange_seq INTEGER NOT NULL CHECK (through_exchange_seq >= 0),
+        context_fingerprint TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE (session_id, version)
+      );
+      CREATE INDEX idx_study_session_summaries_latest
+        ON study_session_summaries(session_id, version DESC);
+    `,
+  },
+  {
+    version: 17,
+    name: 'formal_evidence_progression_and_replans',
+    // Formal evidence is an immutable assessment contract plus a retryable
+    // reconciliation projection. It never replaces the existing grading
+    // transaction or treats learner scope confirmation as truth authority.
+    up: `
+      CREATE TABLE formal_question_contracts (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        quiz_id TEXT NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+        question_id TEXT NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+        study_session_id TEXT REFERENCES study_sessions(id),
+        agenda_item_id TEXT NOT NULL,
+        learning_unit_id TEXT NOT NULL,
+        primary_objective_id TEXT NOT NULL,
+        admissibility_tier TEXT NOT NULL CHECK (admissibility_tier IN
+          ('tier_1_authorized_truth', 'tier_2_validated_representation', 'tier_3_advisory')),
+        contract_id TEXT NOT NULL REFERENCES learning_contract_versions(id),
+        curriculum_id TEXT NOT NULL REFERENCES curriculum_versions(id),
+        plan_id TEXT NOT NULL REFERENCES study_plan_versions(id),
+        manifest_fingerprint TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE (quiz_id, question_id)
+      );
+      CREATE INDEX idx_formal_question_contracts_workspace
+        ON formal_question_contracts(workspace_id, created_at DESC);
+
+      CREATE TABLE formal_evidence_records (
+        id TEXT PRIMARY KEY,
+        formal_question_contract_id TEXT NOT NULL REFERENCES formal_question_contracts(id) ON DELETE CASCADE,
+        grading_result_id TEXT NOT NULL REFERENCES grading_results(id) ON DELETE CASCADE,
+        question_id TEXT NOT NULL,
+        primary_objective_id TEXT NOT NULL,
+        learning_unit_id TEXT NOT NULL,
+        admissibility_tier TEXT NOT NULL CHECK (admissibility_tier IN
+          ('tier_1_authorized_truth', 'tier_2_validated_representation', 'tier_3_advisory')),
+        state_creditable INTEGER NOT NULL CHECK (state_creditable IN (0, 1)),
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE (formal_question_contract_id, grading_result_id)
+      );
+      CREATE INDEX idx_formal_evidence_grading
+        ON formal_evidence_records(grading_result_id, created_at);
+      CREATE INDEX idx_formal_evidence_unit
+        ON formal_evidence_records(learning_unit_id, created_at);
+
+      CREATE TABLE completion_policy_versions (
+        id TEXT PRIMARY KEY,
+        contract_id TEXT NOT NULL REFERENCES learning_contract_versions(id) ON DELETE CASCADE,
+        version INTEGER NOT NULL CHECK (version > 0),
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE (contract_id, version)
+      );
+
+      CREATE TABLE progression_reconciliations (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        grading_result_id TEXT NOT NULL REFERENCES grading_results(id) ON DELETE CASCADE,
+        curriculum_id TEXT NOT NULL REFERENCES curriculum_versions(id),
+        plan_id TEXT NOT NULL REFERENCES study_plan_versions(id),
+        learning_unit_id TEXT NOT NULL,
+        completion_policy_id TEXT NOT NULL,
+        completion_policy_version INTEGER NOT NULL CHECK (completion_policy_version > 0),
+        status TEXT NOT NULL CHECK (status IN
+          ('reconciliation_pending', 'applied', 'rejected', 'stale')),
+        decision_id TEXT,
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE (grading_result_id, completion_policy_id, completion_policy_version, learning_unit_id)
+      );
+      CREATE INDEX idx_progression_reconciliation_workspace
+        ON progression_reconciliations(workspace_id, status, updated_at DESC);
+
+       CREATE TABLE progression_decisions (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        learning_unit_id TEXT NOT NULL,
+        completion_policy_id TEXT NOT NULL,
+        completion_policy_version INTEGER NOT NULL CHECK (completion_policy_version > 0),
+        kind TEXT NOT NULL,
+        prior_state TEXT NOT NULL,
+         next_state TEXT NOT NULL,
+         payload TEXT NOT NULL,
+         created_at TEXT NOT NULL
+       );
+
+      CREATE TABLE learning_unit_progress (
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        curriculum_id TEXT NOT NULL REFERENCES curriculum_versions(id),
+        learning_unit_id TEXT NOT NULL,
+        state TEXT NOT NULL CHECK (state IN
+          ('not_started', 'in_progress', 'complete', 'repair_needed', 'deferred')),
+        version INTEGER NOT NULL CHECK (version >= 0),
+        last_decision_id TEXT REFERENCES progression_decisions(id),
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY (workspace_id, curriculum_id, learning_unit_id)
+      );
+
+      CREATE TABLE replan_triggers (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        accepted_plan_id TEXT NOT NULL REFERENCES study_plan_versions(id),
+        kind TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN
+          ('candidate', 'qualified', 'dismissed', 'proposal_created', 'resolved')),
+        proposed_plan_id TEXT REFERENCES study_plan_versions(id),
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_replan_triggers_workspace
+        ON replan_triggers(workspace_id, status, updated_at DESC);
+
+      CREATE TABLE goal_outcomes (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        contract_id TEXT NOT NULL REFERENCES learning_contract_versions(id),
+        plan_id TEXT NOT NULL REFERENCES study_plan_versions(id),
+        status TEXT NOT NULL CHECK (status IN
+          ('achieved', 'finished_with_gaps', 'expired_unfinished', 'abandoned', 'superseded')),
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE (contract_id, plan_id)
+      );
+      CREATE INDEX idx_goal_outcomes_workspace
+        ON goal_outcomes(workspace_id, created_at DESC);
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

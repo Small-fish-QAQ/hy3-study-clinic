@@ -221,6 +221,287 @@ export function createAssessmentService({
     return { targets, misconceptionTarget: null };
   }
 
+  /** Generate and validate an assessment without mutating persistent state. */
+  async function prepare(
+    workspaceId: string,
+    input: unknown,
+    opts?: ProviderCallOptions,
+  ): Promise<AssessmentCreation> {
+    const workspace = requireWorkspace(workspaceId);
+    const request = CreateAssessmentRequestSchema.parse(input);
+    const { targets, misconceptionTarget } = selectTargets(
+      workspaceId,
+      request.mode,
+      request.conceptIds ? [...request.conceptIds] : undefined,
+      request.misconceptionId,
+    );
+
+    // Canonical membership → aligned siblings in other documents.
+    repos.alignment.ensureBaseline(
+      workspaceId,
+      repos.materials.getConceptsByWorkspace(workspaceId),
+      clock.now().toISOString(),
+    );
+    const titles = new Map(
+      repos.materials.listByWorkspace(workspaceId).map((m) => [m.id, m.title]),
+    );
+    const masteryByConcept = new Map(
+      repos.mastery.listByWorkspace(workspaceId).map((m) => [m.conceptId, m]),
+    );
+    const mistakeCounts = repos.mistakes.countsByConceptForWorkspace(workspaceId);
+
+    const targetSummaries: AssessmentTargetSummary[] = targets.map((concept) => {
+      const member = repos.alignment.getMemberBySource(concept.id);
+      const siblings = member
+        ? repos.alignment
+            .getMembers(member.canonicalConceptId)
+            .filter((m) => m.sourceConceptId !== concept.id)
+            .map((m) => repos.materials.getConcept(m.sourceConceptId))
+            .filter((c): c is Concept => c !== undefined)
+            .map((c) => ({ concept: c, documentTitle: titles.get(c.materialId) ?? c.materialId }))
+        : [];
+      return {
+        concept,
+        documentTitle: titles.get(concept.materialId) ?? concept.materialId,
+        alignedSiblings: siblings.slice(0, 3),
+        mastery: masteryByConcept.get(concept.id)?.mastery ?? null,
+        openMistakes: mistakeCounts.get(concept.id)?.open ?? 0,
+      };
+    });
+
+    const involvedMaterialIds = new Set<string>();
+    for (const summary of targetSummaries) {
+      involvedMaterialIds.add(summary.concept.materialId);
+      for (const sibling of summary.alignedSiblings) {
+        involvedMaterialIds.add(sibling.concept.materialId);
+      }
+    }
+    const blocks = [...involvedMaterialIds].flatMap((id) => repos.materials.getBlocks(id));
+    const allowedTypes = TYPES_BY_MODE[request.mode];
+    const questionCount =
+      request.mode === 'misconception_check'
+        ? 1
+        : Math.min(MAX_ASSESSMENT_QUESTIONS, Math.max(3, targetSummaries.length));
+
+    const providerInput: AssessmentProposalInput = {
+      workspaceName: workspace.name,
+      mode: request.mode,
+      targets: targetSummaries,
+      blocks,
+      allowedTypes,
+      questionCount,
+      misconception: misconceptionTarget ? misconceptions.get(misconceptionTarget) : null,
+    };
+    const payload = await provider.proposeAssessment(providerInput, opts);
+
+    // ---- Local deterministic validation of every item ----
+    const allowedConceptIds = new Set<string>();
+    for (const summary of targetSummaries) {
+      allowedConceptIds.add(summary.concept.id);
+      for (const sibling of summary.alignedSiblings) allowedConceptIds.add(sibling.concept.id);
+    }
+    const conceptById = new Map(
+      repos.materials.getConceptsByWorkspace(workspaceId).map((c) => [c.id, c]),
+    );
+
+    const quizId = newId('qz');
+    const createdAt = clock.now().toISOString();
+    const questions: Question[] = [];
+    const blueprints: QuestionBlueprint[] = [];
+    const rejected: Array<{ stem: string; reason: string }> = [];
+
+    // Documented rule (mirrors remediation quizzes): practice-oriented
+    // assessment questions re-test the open mistakes of their concept, so
+    // a correct answer later resolves exactly those mistakes. Discriminating
+    // questions (misconception_check) stay focused on the hypothesis.
+    const openMistakesByConcept = new Map<string, string[]>();
+    if (request.mode !== 'misconception_check') {
+      for (const mistake of repos.mistakes.listOpenByWorkspace(workspaceId)) {
+        const list = openMistakesByConcept.get(mistake.conceptId) ?? [];
+        if (list.length < 10) list.push(mistake.id);
+        openMistakesByConcept.set(mistake.conceptId, list);
+      }
+    }
+
+    for (const item of payload.items.slice(0, questionCount)) {
+      const q = item.question;
+      const rejectItem = (reason: string) => rejected.push({ stem: q.stem, reason });
+
+      if (!allowedTypes.includes(q.type) || q.type !== item.blueprint.questionType) {
+        rejectItem(`题型不允许或与蓝图不一致:${q.type}`);
+        continue;
+      }
+      const invalidConcept = item.blueprint.conceptIds.find((id) => !allowedConceptIds.has(id));
+      if (invalidConcept !== undefined) {
+        rejectItem(`蓝图目标概念不在本次评估范围内:${invalidConcept}`);
+        continue;
+      }
+      if (!item.blueprint.conceptIds.includes(q.conceptId)) {
+        rejectItem('题目概念不在蓝图目标概念中。');
+        continue;
+      }
+      const concept = conceptById.get(q.conceptId);
+      if (!concept) {
+        rejectItem(`未知概念:${q.conceptId}`);
+        continue;
+      }
+
+      // Evidence chain: question quote is index 0, extraEvidence follows.
+      const primary = verifyGrounding(blocks, { blockId: q.blockId, quote: q.quote });
+      if (!primary.ok) {
+        rejectItem(primary.message);
+        continue;
+      }
+      const evidence: VerifiedGrounding[] = [primary.grounding];
+      let droppedEvidence = false;
+      for (const extra of item.extraEvidence.slice(0, 3)) {
+        const verification = verifyGrounding(blocks, extra);
+        if (verification.ok) evidence.push(verification.grounding);
+        else droppedEvidence = true;
+      }
+
+      const blockMaterial = (blockId: string) =>
+        blocks.find((b) => b.id === blockId)?.materialId ?? null;
+      const documentIds = [
+        ...new Set(
+          evidence.map((e) => blockMaterial(e.blockId)).filter((v): v is string => v !== null),
+        ),
+      ];
+      const scope = documentIds.length >= 2 ? 'cross_document' : 'single_document';
+      if (q.type === 'concept_comparison' && scope !== 'cross_document') {
+        rejectItem('概念对比题必须使用来自至少两份文档的有效证据。');
+        continue;
+      }
+
+      const stepInvalid = item.blueprint.reasoningSteps.some((step) =>
+        step.evidenceIndexes.some((index) => index >= evidence.length),
+      );
+      if (stepInvalid) {
+        if (droppedEvidence) {
+          rejectItem('推理步骤引用的证据未通过原文校验。');
+          continue;
+        }
+        rejectItem('推理步骤引用了不存在的证据序号。');
+        continue;
+      }
+
+      const canonicalIds = [
+        ...new Set(
+          item.blueprint.conceptIds
+            .map((id) => repos.alignment.getMemberBySource(id)?.canonicalConceptId)
+            .filter((v): v is string => v !== undefined),
+        ),
+      ];
+      const blueprint: QuestionBlueprint = {
+        id: newId('bp'),
+        workspaceId,
+        targetCanonicalConceptIds:
+          canonicalIds.length > 0 ? canonicalIds.slice(0, 3) : ['unaligned'],
+        sourceConceptIds: [...item.blueprint.conceptIds],
+        sourceDocumentIds: documentIds,
+        questionType: q.type,
+        difficulty: item.blueprint.difficulty,
+        learningObjective: item.blueprint.learningObjective,
+        expectedReasoningSteps: item.blueprint.reasoningSteps.map((step) => ({
+          description: step.description,
+          evidenceIndexes: [...step.evidenceIndexes],
+        })),
+        misconceptionId: misconceptionTarget,
+        evidence,
+        scope,
+        gradingMethod: gradingMethodForType(q.type),
+        validationState: 'accepted',
+        createdAt,
+      };
+
+      // Question-rubric alignment (same contract as single-document
+      // quizzes): required points must be requested by the stem and
+      // grounded in the verified evidence blocks of THIS question.
+      let rubric: Rubric | undefined;
+      if (q.rubricKeyPoints) {
+        const evidenceTexts = evidence.map(
+          (e) => blocks.find((b) => b.id === e.blockId)?.content ?? e.quote,
+        );
+        const aligned = alignRubricToQuestion(q.stem, q.rubricKeyPoints, evidenceTexts);
+        if (!aligned.ok) {
+          rejectItem(aligned.message);
+          continue;
+        }
+        rubric = { keyPoints: aligned.keyPoints };
+      }
+
+      const question: Question = {
+        id: newId('que'),
+        quizId,
+        index: questions.length,
+        type: q.type,
+        stem: q.stem,
+        conceptId: concept.id,
+        conceptName: concept.name,
+        grounding: primary.grounding,
+        ...(evidence.length > 1 ? { supplementaryEvidence: evidence.slice(1) } : {}),
+        blueprintId: blueprint.id,
+        ...(misconceptionTarget ? { misconceptionId: misconceptionTarget } : {}),
+        ...((openMistakesByConcept.get(concept.id)?.length ?? 0) > 0
+          ? { sourceMistakeIds: openMistakesByConcept.get(concept.id) }
+          : {}),
+        explanation: q.explanation,
+        points: POINTS_BY_TYPE[q.type],
+        ...(q.options ? { options: q.options } : {}),
+        ...(q.correctOptionIds ? { correctOptionIds: q.correctOptionIds } : {}),
+        ...(q.expectedAnswer ? { expectedAnswer: q.expectedAnswer } : {}),
+        ...(rubric ? { rubric } : {}),
+      };
+
+      questions.push(question);
+      blueprints.push(blueprint);
+    }
+
+    if (questions.length === 0) {
+      throw new AppError(
+        ApiErrorCode.GroundingFailed,
+        '生成的评估题均未通过本地校验(概念、题型或证据不合法),请重试。',
+        { rejected },
+      );
+    }
+    if (
+      request.mode === 'cross_document' &&
+      !blueprints.some((b) => b.scope === 'cross_document')
+    ) {
+      throw new AppError(
+        ApiErrorCode.GroundingFailed,
+        '跨文档评估未能生成任何真正使用多文档证据的题目,请重试。',
+        { rejected },
+      );
+    }
+
+    const quiz: Quiz = {
+      id: quizId,
+      materialId: null,
+      workspaceId,
+      kind: 'adaptive',
+      assessmentMode: request.mode,
+      config: {
+        difficulty: 'medium',
+        types: [...new Set(questions.map((q) => q.type))].slice(0, 3),
+        countPerType: Math.max(1, Math.min(5, questions.length)),
+      },
+      questions,
+      targetConceptIds: [...new Set(questions.map((q) => q.conceptId))],
+      createdAt,
+    };
+    return { quiz, blueprints, rejected };
+  }
+
+  /** Persist one already validated assessment. Callers own the outer transaction. */
+  function persist(creation: AssessmentCreation): AssessmentCreation {
+    repos.quizzes.insert(creation.quiz);
+    for (const blueprint of creation.blueprints) {
+      repos.blueprints.insert(blueprint, creation.quiz.id);
+    }
+    return creation;
+  }
+
   return {
     /** Generate, validate, and persist one workspace assessment. */
     async create(
@@ -228,276 +509,11 @@ export function createAssessmentService({
       input: unknown,
       opts?: ProviderCallOptions,
     ): Promise<AssessmentCreation> {
-      const workspace = requireWorkspace(workspaceId);
-      const request = CreateAssessmentRequestSchema.parse(input);
-      const { targets, misconceptionTarget } = selectTargets(
-        workspaceId,
-        request.mode,
-        request.conceptIds ? [...request.conceptIds] : undefined,
-        request.misconceptionId,
-      );
-
-      // Canonical membership → aligned siblings in other documents.
-      repos.alignment.ensureBaseline(
-        workspaceId,
-        repos.materials.getConceptsByWorkspace(workspaceId),
-        clock.now().toISOString(),
-      );
-      const titles = new Map(
-        repos.materials.listByWorkspace(workspaceId).map((m) => [m.id, m.title]),
-      );
-      const masteryByConcept = new Map(
-        repos.mastery.listByWorkspace(workspaceId).map((m) => [m.conceptId, m]),
-      );
-      const mistakeCounts = repos.mistakes.countsByConceptForWorkspace(workspaceId);
-
-      const targetSummaries: AssessmentTargetSummary[] = targets.map((concept) => {
-        const member = repos.alignment.getMemberBySource(concept.id);
-        const siblings = member
-          ? repos.alignment
-              .getMembers(member.canonicalConceptId)
-              .filter((m) => m.sourceConceptId !== concept.id)
-              .map((m) => repos.materials.getConcept(m.sourceConceptId))
-              .filter((c): c is Concept => c !== undefined)
-              .map((c) => ({ concept: c, documentTitle: titles.get(c.materialId) ?? c.materialId }))
-          : [];
-        return {
-          concept,
-          documentTitle: titles.get(concept.materialId) ?? concept.materialId,
-          alignedSiblings: siblings.slice(0, 3),
-          mastery: masteryByConcept.get(concept.id)?.mastery ?? null,
-          openMistakes: mistakeCounts.get(concept.id)?.open ?? 0,
-        };
-      });
-
-      const involvedMaterialIds = new Set<string>();
-      for (const summary of targetSummaries) {
-        involvedMaterialIds.add(summary.concept.materialId);
-        for (const sibling of summary.alignedSiblings) {
-          involvedMaterialIds.add(sibling.concept.materialId);
-        }
-      }
-      const blocks = [...involvedMaterialIds].flatMap((id) => repos.materials.getBlocks(id));
-      const allowedTypes = TYPES_BY_MODE[request.mode];
-      const questionCount =
-        request.mode === 'misconception_check'
-          ? 1
-          : Math.min(MAX_ASSESSMENT_QUESTIONS, Math.max(3, targetSummaries.length));
-
-      const providerInput: AssessmentProposalInput = {
-        workspaceName: workspace.name,
-        mode: request.mode,
-        targets: targetSummaries,
-        blocks,
-        allowedTypes,
-        questionCount,
-        misconception: misconceptionTarget ? misconceptions.get(misconceptionTarget) : null,
-      };
-      const payload = await provider.proposeAssessment(providerInput, opts);
-
-      // ---- Local deterministic validation of every item ----
-      const allowedConceptIds = new Set<string>();
-      for (const summary of targetSummaries) {
-        allowedConceptIds.add(summary.concept.id);
-        for (const sibling of summary.alignedSiblings) allowedConceptIds.add(sibling.concept.id);
-      }
-      const conceptById = new Map(
-        repos.materials.getConceptsByWorkspace(workspaceId).map((c) => [c.id, c]),
-      );
-
-      const quizId = newId('qz');
-      const createdAt = clock.now().toISOString();
-      const questions: Question[] = [];
-      const blueprints: QuestionBlueprint[] = [];
-      const rejected: Array<{ stem: string; reason: string }> = [];
-
-      // Documented rule (mirrors remediation quizzes): practice-oriented
-      // assessment questions re-test the open mistakes of their concept, so
-      // a correct answer later resolves exactly those mistakes. Discriminating
-      // questions (misconception_check) stay focused on the hypothesis.
-      const openMistakesByConcept = new Map<string, string[]>();
-      if (request.mode !== 'misconception_check') {
-        for (const mistake of repos.mistakes.listOpenByWorkspace(workspaceId)) {
-          const list = openMistakesByConcept.get(mistake.conceptId) ?? [];
-          if (list.length < 10) list.push(mistake.id);
-          openMistakesByConcept.set(mistake.conceptId, list);
-        }
-      }
-
-      for (const item of payload.items.slice(0, questionCount)) {
-        const q = item.question;
-        const rejectItem = (reason: string) => rejected.push({ stem: q.stem, reason });
-
-        if (!allowedTypes.includes(q.type) || q.type !== item.blueprint.questionType) {
-          rejectItem(`题型不允许或与蓝图不一致:${q.type}`);
-          continue;
-        }
-        const invalidConcept = item.blueprint.conceptIds.find((id) => !allowedConceptIds.has(id));
-        if (invalidConcept !== undefined) {
-          rejectItem(`蓝图目标概念不在本次评估范围内:${invalidConcept}`);
-          continue;
-        }
-        if (!item.blueprint.conceptIds.includes(q.conceptId)) {
-          rejectItem('题目概念不在蓝图目标概念中。');
-          continue;
-        }
-        const concept = conceptById.get(q.conceptId);
-        if (!concept) {
-          rejectItem(`未知概念:${q.conceptId}`);
-          continue;
-        }
-
-        // Evidence chain: question quote is index 0, extraEvidence follows.
-        const primary = verifyGrounding(blocks, { blockId: q.blockId, quote: q.quote });
-        if (!primary.ok) {
-          rejectItem(primary.message);
-          continue;
-        }
-        const evidence: VerifiedGrounding[] = [primary.grounding];
-        let droppedEvidence = false;
-        for (const extra of item.extraEvidence.slice(0, 3)) {
-          const verification = verifyGrounding(blocks, extra);
-          if (verification.ok) evidence.push(verification.grounding);
-          else droppedEvidence = true;
-        }
-
-        const blockMaterial = (blockId: string) =>
-          blocks.find((b) => b.id === blockId)?.materialId ?? null;
-        const documentIds = [
-          ...new Set(
-            evidence.map((e) => blockMaterial(e.blockId)).filter((v): v is string => v !== null),
-          ),
-        ];
-        const scope = documentIds.length >= 2 ? 'cross_document' : 'single_document';
-        if (q.type === 'concept_comparison' && scope !== 'cross_document') {
-          rejectItem('概念对比题必须使用来自至少两份文档的有效证据。');
-          continue;
-        }
-
-        const stepInvalid = item.blueprint.reasoningSteps.some((step) =>
-          step.evidenceIndexes.some((index) => index >= evidence.length),
-        );
-        if (stepInvalid) {
-          if (droppedEvidence) {
-            rejectItem('推理步骤引用的证据未通过原文校验。');
-            continue;
-          }
-          rejectItem('推理步骤引用了不存在的证据序号。');
-          continue;
-        }
-
-        const canonicalIds = [
-          ...new Set(
-            item.blueprint.conceptIds
-              .map((id) => repos.alignment.getMemberBySource(id)?.canonicalConceptId)
-              .filter((v): v is string => v !== undefined),
-          ),
-        ];
-        const blueprint: QuestionBlueprint = {
-          id: newId('bp'),
-          workspaceId,
-          targetCanonicalConceptIds:
-            canonicalIds.length > 0 ? canonicalIds.slice(0, 3) : ['unaligned'],
-          sourceConceptIds: [...item.blueprint.conceptIds],
-          sourceDocumentIds: documentIds,
-          questionType: q.type,
-          difficulty: item.blueprint.difficulty,
-          learningObjective: item.blueprint.learningObjective,
-          expectedReasoningSteps: item.blueprint.reasoningSteps.map((step) => ({
-            description: step.description,
-            evidenceIndexes: [...step.evidenceIndexes],
-          })),
-          misconceptionId: misconceptionTarget,
-          evidence,
-          scope,
-          gradingMethod: gradingMethodForType(q.type),
-          validationState: 'accepted',
-          createdAt,
-        };
-
-        // Question-rubric alignment (same contract as single-document
-        // quizzes): required points must be requested by the stem and
-        // grounded in the verified evidence blocks of THIS question.
-        let rubric: Rubric | undefined;
-        if (q.rubricKeyPoints) {
-          const evidenceTexts = evidence.map(
-            (e) => blocks.find((b) => b.id === e.blockId)?.content ?? e.quote,
-          );
-          const aligned = alignRubricToQuestion(q.stem, q.rubricKeyPoints, evidenceTexts);
-          if (!aligned.ok) {
-            rejectItem(aligned.message);
-            continue;
-          }
-          rubric = { keyPoints: aligned.keyPoints };
-        }
-
-        const question: Question = {
-          id: newId('que'),
-          quizId,
-          index: questions.length,
-          type: q.type,
-          stem: q.stem,
-          conceptId: concept.id,
-          conceptName: concept.name,
-          grounding: primary.grounding,
-          ...(evidence.length > 1 ? { supplementaryEvidence: evidence.slice(1) } : {}),
-          blueprintId: blueprint.id,
-          ...(misconceptionTarget ? { misconceptionId: misconceptionTarget } : {}),
-          ...((openMistakesByConcept.get(concept.id)?.length ?? 0) > 0
-            ? { sourceMistakeIds: openMistakesByConcept.get(concept.id) }
-            : {}),
-          explanation: q.explanation,
-          points: POINTS_BY_TYPE[q.type],
-          ...(q.options ? { options: q.options } : {}),
-          ...(q.correctOptionIds ? { correctOptionIds: q.correctOptionIds } : {}),
-          ...(q.expectedAnswer ? { expectedAnswer: q.expectedAnswer } : {}),
-          ...(rubric ? { rubric } : {}),
-        };
-
-        questions.push(question);
-        blueprints.push(blueprint);
-      }
-
-      if (questions.length === 0) {
-        throw new AppError(
-          ApiErrorCode.GroundingFailed,
-          '生成的评估题均未通过本地校验(概念、题型或证据不合法),请重试。',
-          { rejected },
-        );
-      }
-      if (
-        request.mode === 'cross_document' &&
-        !blueprints.some((b) => b.scope === 'cross_document')
-      ) {
-        throw new AppError(
-          ApiErrorCode.GroundingFailed,
-          '跨文档评估未能生成任何真正使用多文档证据的题目,请重试。',
-          { rejected },
-        );
-      }
-
-      const quiz: Quiz = {
-        id: quizId,
-        materialId: null,
-        workspaceId,
-        kind: 'adaptive',
-        assessmentMode: request.mode,
-        config: {
-          difficulty: 'medium',
-          types: [...new Set(questions.map((q) => q.type))].slice(0, 3),
-          countPerType: Math.max(1, Math.min(5, questions.length)),
-        },
-        questions,
-        targetConceptIds: [...new Set(questions.map((q) => q.conceptId))],
-        createdAt,
-      };
-      repos.quizzes.insert(quiz);
-      for (const blueprint of blueprints) {
-        repos.blueprints.insert(blueprint, quizId);
-      }
-
-      return { quiz, blueprints, rejected };
+      return persist(await prepare(workspaceId, input, opts));
     },
+
+    prepare,
+    persist,
 
     /** Public blueprint projections of one quiz (no reasoning steps). */
     publicBlueprints(quizId: string): PublicBlueprint[] {

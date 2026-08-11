@@ -28,7 +28,7 @@ function rowToWorkspace(row: WorkspaceRow): Workspace {
   });
 }
 
-/** Outcome of the transactional document delete (see deleteDocumentTx). */
+/** Outcome of the internal transactional document purge (see purgeDocumentTx). */
 export interface DocumentDeletionOutcome {
   deleted: boolean;
   /** True when the final document retired its `material_import` workspace. */
@@ -107,7 +107,7 @@ export function createWorkspacesRepo(db: SqliteDb) {
     db.prepare('DELETE FROM remediation_plans WHERE workspace_id = ?').run(workspaceId);
   }
 
-  const deleteDocumentTx = db.transaction(
+  const purgeDocumentTx = db.transaction(
     (materialId: string, workspaceId: string, at: string): DocumentDeletionOutcome => {
       const deleted =
         db.prepare('DELETE FROM materials WHERE id = ?').run(materialId).changes === 1;
@@ -163,10 +163,12 @@ export function createWorkspacesRepo(db: SqliteDb) {
       const rows = db
         .prepare(
           `SELECT w.*,
-             (SELECT COUNT(*) FROM materials m WHERE m.workspace_id = w.id) AS document_count,
+             (SELECT COUNT(*) FROM materials m
+                WHERE m.workspace_id = w.id AND m.availability = 'active') AS document_count,
              (SELECT COUNT(*) FROM concepts c JOIN materials m ON m.id = c.material_id
-                WHERE m.workspace_id = w.id
-                  AND c.material_revision_id = m.active_revision_id) AS concept_count
+                 WHERE m.workspace_id = w.id
+                   AND m.availability = 'active'
+                   AND c.material_revision_id = m.active_revision_id) AS concept_count
            FROM workspaces w
            ORDER BY w.updated_at DESC, w.id DESC`,
         )
@@ -210,7 +212,7 @@ export function createWorkspacesRepo(db: SqliteDb) {
              (SELECT COUNT(*) FROM concepts c
                 WHERE c.material_revision_id = m.active_revision_id) AS concept_count
            FROM materials m
-           WHERE m.workspace_id = ?
+           WHERE m.workspace_id = ? AND m.availability = 'active'
            ORDER BY m.created_at ASC, m.id ASC`,
         )
         .all(workspaceId) as Array<{
@@ -250,16 +252,18 @@ export function createWorkspacesRepo(db: SqliteDb) {
     },
 
     /**
-     * Delete one document plus all dependent data in a single transaction:
+     * Internal destructive purge for migration and repository maintenance.
+     * Product deletion routes retire Materials and never call this method.
+     * Purge removes one document plus all dependent data in one transaction:
      * blocks/concepts/quizzes/mistakes/mastery via verified FK cascades,
      * graph edges via concept cascade, edge evidence via block cascade, then
      * the explicit derived-data cleanup documented above. If the deleted
      * document was the final one of a `material_import` workspace, the
      * workspace itself is retired in the same transaction (see
-     * deleteDocumentTx) and the outcome reports it.
+     * purgeDocumentTx) and the outcome reports it.
      */
-    deleteDocument(materialId: string, workspaceId: string, at: string): DocumentDeletionOutcome {
-      return deleteDocumentTx(materialId, workspaceId, at) as DocumentDeletionOutcome;
+    purgeDocument(materialId: string, workspaceId: string, at: string): DocumentDeletionOutcome {
+      return purgeDocumentTx(materialId, workspaceId, at) as DocumentDeletionOutcome;
     },
   };
 }
