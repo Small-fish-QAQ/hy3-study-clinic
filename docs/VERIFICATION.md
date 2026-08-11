@@ -40,22 +40,17 @@ CI executes `npm ci`, build, lint, and tests on:
 
 The immutable final tag passed all three jobs in [CI run 30604963718](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/runs/30604963718).
 
-## Verified baseline
+## Current-state verification
 
-The immutable final tag passed 59 files / 771 tests. The current implementation, including the post-award reliability work and durable Agent foundations, verifies at:
+The immutable final tag's historical results remain recorded in the release lineage above. Do not use those historical file or test totals as a claim about the current implementation. Run the standard commands from this document against the checked-out revision to obtain current results.
 
-| Workspace | Test files | Tests | Result |
-| --- | ---: | ---: | --- |
-| `packages/shared` | 6 | 89 | Passed |
-| `apps/server` | 46 | 498 | Passed |
-| `apps/web` | 17 | 280 | Passed |
-| **Overall** | **69** | **867** | **Passed** |
+`npm run eval:fake` covers provenance, alignment, cross-document blueprint scope, Tutor budgets, misconception transitions, review scheduling, retrieval isolation, prompt-injection defenses, mastery bounds, database foreign-key integrity, activity executability, grading state safety, course-understanding fixtures, and lesson provenance. It is deterministic and writes its reports under ignored `eval/reports/`.
 
-`npm run eval:fake` passed 44/44 structural checks. It covers provenance, alignment, cross-document blueprint scope, Tutor budgets, misconception transitions, review scheduling, retrieval isolation, prompt-injection defenses, mastery bounds, database foreign-key integrity, and — added with the upgrade — activity executability (Tutor and every queue item launch immediately; stale legacy recommendations adjust deterministically), grading state safety (once-only submissions, stale-quiz rejection with zero state mutation), course-understanding checks (section splitting, mapping reconciliation, hand-labeled must-find recall, additive-deepen ID stability), and lesson provenance (verified anchors reproduce exactly; zero learner-state writes).
+The server and shared suites also cover the implemented Phase 1-4 route: MaterialRevision lineage and source authority; Contract/Curriculum/StudyPlan/Agenda validation and atomic activation; durable StudySession lifecycle, idempotency, transcript recovery, and mixed-initiative controls; and formal-evidence progression, replan candidates, and goal outcomes. Web suites cover the corresponding Course Home, Curriculum, Study Session, and Progress surfaces.
 
-Deliberate behavior changes in the upgrade, each with updated tests: duplicate submissions of one quiz now return `409 DUPLICATE_SUBMISSION` (learner state applies at most once; the graph smoke asserts this instead of double-grading); pending quizzes whose concepts were deleted/reprocessed are rejected instead of dishonestly succeeding; remediation performs one targeted regeneration of missing required pieces before failing; an empty concept-extraction payload is schema-legal (thin sections may yield nothing); and small fixture documents in several suites grew to realistic section sizes required by size-aware extraction budgets.
+Deliberate behavior changes in the upgrade, each with updated tests: duplicate submissions of one quiz now return `409 DUPLICATE_SUBMISSION` (learner state applies at most once; the graph smoke asserts this instead of double-grading); pending quizzes whose required concepts are no longer available are rejected instead of dishonestly succeeding; material/document removal retires the source while preserving revisions and longitudinal history; remediation performs one targeted regeneration of missing required pieces before failing; an empty concept-extraction payload is schema-legal (thin sections may yield nothing); and small fixture documents in several suites grew to realistic section sizes required by size-aware extraction budgets.
 
-All automated tests and CI use the fake provider. They never require or contact the real Hy3 API.
+Application and integration tests use the fake provider by default. Hy3 provider-contract tests inject a mocked `fetch`; ordinary automated tests and CI never require or contact the real Hy3 API.
 
 ## End-to-end smoke workflows
 
@@ -87,22 +82,22 @@ node scripts/smoke-graph.mjs verify <workspaceId> <conceptId>
 node scripts/smoke-adaptive.mjs verify <workspaceId> <conceptId> <runId>
 ```
 
-The restart checks verify persisted documents, active graph data, learner state, accepted plans, canonical alignment, misconception/review state, daily-queue data, and completed Tutor runs.
+The restart checks verify persisted documents, active graph data, learner state, accepted plans, canonical alignment, misconception/review state, daily-queue data, and completed Tutor runs. The Phase 3 StudySession endpoints additionally persist detail, events, exchanges, and summaries for reload after an interrupted or detached client.
 
 `demo:http` is a lightweight observational smoke script. It fails on HTTP errors, but some displayed booleans and remediation counts are logs rather than strict assertions. Use the Vitest suite, `eval:fake`, and the graph/adaptive workflows for invariant claims; do not treat `ALL FLOWS OK` by itself as proof that every logged semantic condition passed.
 
 ## Migration verification
 
-The server suite covers all 14 migrations directly: applying them from scratch and re-running them safely;
+The server suite covers all 17 migrations directly: applying them from scratch and re-running them safely;
 - populated v1 -> current migration without deleting source, quiz, grading, mistake, mastery, or history rows;
 - honest `unknown` origin for workspaces whose historical creation path cannot be reconstructed;
 - populated v3 -> current migration, including the SQLite quiz-table rebuild;
 - nullable provider/state-change fields for historical completed attempts, without fabricated backfill;
 - foreign-key integrity and re-enablement after table rebuilds;
 - all-or-nothing rollback after a forced migration failure; and
-- conservative legacy workspace/document deletion behavior.
+- conservative legacy migration behavior plus current material/document retirement and explicit workspace-deletion behavior.
 
-Route and repository tests add transaction, cascade, cross-workspace isolation, legacy request compatibility, and historical-result degradation coverage. Migration 12 (`concept_lessons`) is additive; a direct populated-v11 regression verifies that migration 12 creates the lesson table without changing an existing concept row. Migrations 13-14 additionally verify honest revision-1 adoption without invented fingerprints, preservation of existing learning history, active-revision foreign keys, source-authority separation, operation idempotency/fencing/orphan recovery, and optional cost-policy semantics. A real pre-upgrade database copy was also migrated v11 -> v12 during upgrade verification with clean foreign keys, intact history, and an honest deterministic adjustment when launching a pre-upgrade Tutor recommendation.
+Route and repository tests add transaction, cascade, cross-workspace isolation, legacy request compatibility, and historical-result degradation coverage. Migration 12 (`concept_lessons`) is additive; a direct populated-v11 regression verifies that migration 12 creates the lesson table without changing an existing concept row. Migrations 13-14 verify honest revision-1 adoption without invented fingerprints, preservation of existing learning history, active-revision foreign keys, source-authority separation, operation idempotency/fencing/orphan recovery, and optional cost-policy persistence. Migration 15 verifies the accepted Course route and revalidation after source revision. Migration 16 verifies durable StudySession persistence and Agenda mutation invariants. Migration 17 verifies formal evidence, progression, replan, and goal-outcome persistence. A real pre-upgrade database copy was also migrated v11 -> v12 during upgrade verification with clean foreign keys, intact history, and an honest deterministic adjustment when launching a pre-upgrade Tutor recommendation.
 
 ## Real Hy3 evaluation
 

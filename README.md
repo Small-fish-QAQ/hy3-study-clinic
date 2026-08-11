@@ -11,11 +11,11 @@ Hy3 performs the semantic work: concept extraction, grounded question generation
 
 ### Implemented current product
 
-The workflow, screenshots, API, architecture, limitations, and verification results in this README describe the code that exists today: document workspaces, SourceBlocks, concepts, graph exploration, grounded lessons and assessments, mistakes, mastery, misconceptions, review scheduling, and bounded launchable Tutor activities. The current graph-led application is reliable but still largely learner-steered.
+Hy3 Study Clinic now supports both the original graph-led learning workflows and an evidence-gated course-execution loop. Implemented behavior includes document workspaces, immutable material revisions, SourceBlocks, concepts, graph exploration, grounded lessons and assessments, mistakes, mastery, misconceptions, review scheduling, learner-confirmed Contracts, Curricula, accepted StudyPlans, SessionAgendas, StudySessions, formal progression, and bounded replanning. The graph remains useful supporting infrastructure; Course Home, Study Session, Curriculum, Progress, and Explore are the learner-facing course workflow.
 
 ### Agent architecture implementation status
 
-The next product direction is a mixed-initiative, user-governed Learning Execution Agent. Durable foundations are now implemented: logical materials have immutable extraction revisions, source/premise authority is independent from learner scope, consequential operations have local idempotency and fencing, and model calls have persistent attempt/cache/cost telemetry. The learner-facing Learning Contract, Curriculum, accepted StudyPlan, SessionAgenda, conversational StudySession, and evidence-gated execution loop remain design targets at this checkpoint. The one authoritative specification is [Learning Execution Agent Product Design](docs/STUDY_CLINIC_AGENT_PRODUCT_DESIGN.md); [Project Evolution](docs/PROJECT_EVOLUTION.md) explains how real dogfood led to it.
+Phases 1-4 of the Learning Execution Agent are implemented. Phase 1 provides material-revision lineage, independent source/premise authority, idempotent fenced operations, and durable model-call telemetry. Phase 2 adds learner-confirmed Contracts, validated Curriculum and StudyPlan proposals, atomic accepted-route activation, and SessionAgenda composition. Phase 3 adds durable StudySessions, bounded Tutor context, transcript events, pause/resume/stop, and learner-controlled detours. Phase 4 adds formal-evidence reconciliation, progression state, deterministic replan triggers, successor-plan proposals, and goal outcomes. The authoritative [Learning Execution Agent Product Design](docs/STUDY_CLINIC_AGENT_PRODUCT_DESIGN.md) remains the source for future scope: its Phase 5 work is conditional on the required product/dogfood gate and separate authorization.
 
 ## Reviewer quick links
 
@@ -60,10 +60,20 @@ Failed graph, plan, or lesson generation never overwrites the last valid version
 2. Objective answers are graded locally. Hy3 classifies short-answer rubric coverage, while local code recomputes the awarded score from required-point coverage.
 3. Low scores create open mistakes. A substantive wrong answer may create a tentative misconception hypothesis, but only later discriminating answers can confirm, reject, or resolve it.
 4. Remediation re-tests at most three concepts with open mistakes. A correct remediation answer resolves exactly the linked source mistakes. A round missing a required grounded question piece gets ONE targeted regeneration of only the missing pieces before failing honestly.
-5. Local rules update historical mastery and a separate FSRS-style review schedule. Grading applies its complete learner-state write set in one transaction; duplicate or concurrent submissions of the same quiz apply state at most once (409), and a stale pending quiz whose content was deleted or reprocessed is rejected with zero state change.
+5. Local rules update historical mastery and a separate FSRS-style review schedule. Grading applies its complete learner-state write set in one transaction; duplicate or concurrent submissions of the same quiz apply state at most once (409), and a stale pending quiz whose required concepts are no longer available is rejected with zero state change.
 6. A bounded Tutor session can inspect only whitelisted, read-only workspace state. The Tutor is offered only activity modes that are executable in the current state; its recommendation is validated at completion (deterministically downgraded with a visible timeline note when preconditions fail) and launched server-side with launch-time revalidation — every 开始 button the product shows corresponds to an activity that actually starts. The daily queue works the same way, and after remediation it advances into unassessed concepts so newly extracted content is reachable.
 
 Completed quizzes are retained as immutable, read-only history. Opening a historical result never regenerates, regrades, or reapplies learning-state changes.
+
+Removing a material from the active course normally retires its stable logical identity rather than deleting its revisions, source provenance, assessments, or longitudinal learner history. Retired material is hidden from active material lists and can force route revalidation. Explicit workspace deletion is the separate destructive operation and may cascade the workspace's course data.
+
+### Accepted course execution
+
+1. The learner confirms a versioned Learning Contract over stable logical materials and role assignments. Material revisions and source blocks are execution identities, not Contract scope.
+2. Hy3 may propose a Curriculum and StudyPlan, but local code validates known IDs, source evidence, manifest freshness, route coverage, feasibility, authority eligibility, and launchability. The learner accepts or rejects consequential candidates.
+3. Acceptance atomically installs one compatible Contract, Curriculum, StudyPlan, and SessionAgenda route. A failed or rejected successor leaves the prior accepted route intact.
+4. A StudySession persists Tutor turns, exchanges, summaries, route-stack frames, and agenda edits. Pause, resume, and stop change execution state without rewriting the accepted StudyPlan snapshot or pointer.
+5. Conversation is not formal evidence. Formal assessments and deterministic reconciliation alone can advance objective and unit progression; replan candidates remain proposals until learner acceptance.
 
 ## Evidence
 
@@ -131,6 +141,9 @@ This is integration evidence, not a benchmark. Exact quotation validation proves
 | Lesson-card teaching content and conflict claims | Segment-level provenance (verified anchors vs labeled AI teaching), conflict-quote verification, assessment isolation |
 | Remediation and Tutor plans | Tool execution, budgets, plan validation, activity launchability + launch |
 | Semantic rationales | Mistakes, mastery, review scheduling, permissions, all final mutations |
+| Curriculum and StudyPlan proposals | Contract scope, source-manifest freshness, hierarchy, coverage, feasibility, launchability, route activation |
+| Tutor turns and StudySession summaries | Persistent transcript/event lifecycle, route version checks, pause/resume/stop, formal-evidence separation |
+| Replan suggestions | Trigger qualification, successor lineage, learner decision, atomic route replacement |
 
 All important real-provider output uses runtime-validated structured contracts. Important output is never extracted with ad hoc regular expressions. A schema/JSON failure receives at most one bounded repair request; grounding failures remain failures.
 
@@ -187,7 +200,7 @@ HY3_MODEL=your-model-name
 | `npm run demo:http` | Exercise the original HTTP flows against a running server. |
 | `npm run demo:graph` | Exercise the document -> graph -> overlay -> plan -> remediation workflow. |
 | `npm run demo:adaptive` | Exercise alignment -> assessment -> Tutor -> learner-state -> daily-queue workflow. |
-| `npm run eval:fake` | Run 44 offline structural checks and write ignored reports. |
+| `npm run eval:fake` | Run the deterministic offline structural evaluation and write ignored reports. |
 | `npm run eval:hy3` | Run the optional real-provider evaluation; explicit credentials are mandatory. |
 | `npm run eval:evidence` | Publish sanitized evidence from a successful real-provider report. |
 
@@ -207,22 +220,15 @@ apps/server (Fastify)
 packages/shared -- Zod schemas, domain types, payloads, and deterministic utilities
 ```
 
-The browser never calls Hy3 directly. SQLite holds course workspaces, documents, blocks, source concepts, canonical alignment groups, graph versions, plans, assessments, completed attempts, mistakes, mastery, misconception hypotheses, review events, and Tutor runs. The browser retains only lightweight selection and graph-position preferences.
+The browser never calls Hy3 directly. SQLite holds course workspaces, logical materials and immutable revisions, source blocks, source authority, Contracts, Curricula, StudyPlans, SessionAgendas, StudySessions, formal progression records, graph versions, assessments, completed attempts, mistakes, mastery, misconception hypotheses, review events, operations, and model-call telemetry. The browser retains only lightweight selection and graph-position preferences.
 
-See [Architecture & Design Notes](docs/ARCHITECTURE.md) for request lifecycles, grounding rules, all 14 migrations, document deletion/reprocessing behavior, graph routing, provider contracts, learner-state machines, cancellation, and dependency rationale. It documents implemented current behavior; the authoritative design separately identifies which Agent capabilities remain to be built.
+See [Architecture & Design Notes](docs/ARCHITECTURE.md) for request lifecycles, grounding rules, all 17 migrations, document deletion/reprocessing behavior, accepted-route lifecycle, formal progression, graph routing, provider contracts, learner-state machines, cancellation, and dependency rationale. It documents implemented current behavior; the authoritative design separately identifies the gated Phase 5 work that remains future scope.
 
 ## Verification summary
 
-The immutable `issue-4-final` tag passed 59 test files / 771 tests. The current implementation, including the post-award reliability work and durable Agent foundations, passes 69 test files / 867 tests:
+The immutable `issue-4-final` tag has a historical verification record. Current test files and test totals are intentionally not duplicated here because they change as the implementation evolves. Run the commands in [Verification](docs/VERIFICATION.md) against the checked-out revision for current results.
 
-| Workspace | Test files | Tests |
-| --- | ---: | ---: |
-| shared | 6 | 89 |
-| server | 46 | 498 |
-| web | 17 | 280 |
-| **Total** | **69** | **867** |
-
-CI runs build, lint, and tests on Ubuntu Node 20, Ubuntu Node 24, and Windows Node 24. `eval:fake` passes 44/44 structural checks, now including activity-executability sweeps, grading state safety, must-find semantic-recall labels, and lesson-provenance invariants. See [Verification](docs/VERIFICATION.md) for exact commands, migration/integration coverage, the evidence-to-requirement matrix, and the limits of each smoke script. The 30–45 minute human study protocol for the upgrade is [docs/DOGFOOD.md](docs/DOGFOOD.md).
+CI runs build, lint, and tests on Ubuntu Node 20, Ubuntu Node 24, and Windows Node 24. `eval:fake` exercises deterministic structural boundaries, including activity executability, grading state safety, semantic-recall fixtures, and lesson provenance. See [Verification](docs/VERIFICATION.md) for exact commands, migration/integration coverage, the evidence-to-requirement matrix, and the limits of each smoke script. The human product/dogfood protocol is maintained separately in [docs/DOGFOOD.md](docs/DOGFOOD.md).
 
 Tests never call the real Hy3 API.
 
@@ -245,7 +251,7 @@ CodeBuddy confirmed, but did not author, the component's existing native button 
 - Mastery and review scheduling are transparent local heuristics, not calibrated cognitive diagnoses. Misconception records remain hypotheses until graded evidence changes their state.
 - Semantic alignment can be wrong and has no unmerge operation; source concepts and history remain intact underneath.
 - Tutor context, graph generation, assessments, remediation, history, and retrieval are deliberately bounded. Dense graph layouts can retain crossings, and lexical retrieval can miss synonyms.
-- Permanent deletion has no recycle bin. Reprocessing stages and activates an immutable extraction revision while retaining earlier source artifacts and longitudinal learning history; failed parsing leaves the prior active revision unchanged.
+- Material/document retirement is non-destructive to immutable revisions, source provenance, assessments, and longitudinal learning history, but there is no automatic unretire operation. Reprocessing stages and activates an immutable extraction revision while retaining earlier source artifacts and history; failed parsing leaves the prior active revision unchanged. Explicit workspace deletion is irreversible and has no recycle bin.
 - The fake evaluation checks structure and safety boundaries, not teaching quality. The real evaluation uses small fixtures and depends on the configured model/API.
 
 Detailed format, graph, history, scheduling, and parser limitations are documented beside their implementation in [Architecture & Design Notes](docs/ARCHITECTURE.md).

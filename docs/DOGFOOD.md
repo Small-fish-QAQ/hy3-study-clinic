@@ -1,36 +1,86 @@
-# Hy3 Study Clinic — Human Dogfood Protocol (30–45 minutes)
+# Hy3 Study Clinic - Post-Phase-4 Human Dogfood Gate
 
-This protocol evaluates the pre-dogfood upgrade (activity executability, section-aware extraction with 资料映射, and lesson-card teaching) against real study needs. Run it AFTER `npm run dev` with either provider; the real Hy3 provider is strongly recommended for teaching-quality judgments. Nothing in this document reports results — it is the script for a human session, and no human outcome has been recorded yet.
+Status: protocol only. No human result or gate decision has been recorded.
 
-## Preparation (before opening the app)
+This gate evaluates whether the Learning Execution Agent's core scaffold is usable and removes enough learner orchestration to justify later investment. It does not prove learning effectiveness, delayed retention, exam coverage, or semantic completeness. Phase 5 and Phase 6 remain out of scope.
 
-1. Pick a REAL course document you personally study: 10–25 pages, with headings, ideally containing at least one formula/procedure-heavy section. PDF, DOCX, Markdown, or pasted text.
-2. On paper (outside the app), write the 10–15 concepts you believe this document must yield. This list is your personal must-find label set — write it BEFORE import so the comparison stays honest.
-3. Have a strong general-purpose AI assistant open in another window for side-by-side teaching comparisons.
+## Safe local setup
 
-## Session script
+Use Node.js 20 or newer. Routine dogfood can use the deterministic Fake provider and consumes no Hy3 quota:
 
-1. **Import & extraction** — create a course space, add the document, run 提取概念. Note total time and whether the progress/summary wording is understandable.
-2. **Mapping** — open 资料映射 under the document. Compare the mapped sections and extracted concepts against your pre-written list. For 1–2 sections marked 未映射 (or thin ones), press 继续提取 and check what appears. Record every concept from your list that is still missing afterwards.
-3. **Lesson cards** — open 讲解 for 4–5 concepts, including the formula/procedure-heavy one. Read fully. Check: does the explanation teach (not merely restate)? Are 课程资料/本地已验证 labels only on text the source really supports (spot-check the expanded quotes)? Try one directive (更多例子 or 更深入). If the course defines something unusually, is a conflict shown with a verified quote?
-4. **Compare with a general assistant** — ask the assistant to explain the same 2–3 concepts. Judge: where is the clinic's card better (course-specific definitions/notation/scope), where is it worse (depth, fluency, follow-ups)?
-5. **Diagnostic & queue** — generate the graph, run 诊断评估 from 今日学习, answer honestly and get some questions wrong. Then follow 3–4 queue items of different kinds (错题巩固 / 复习 / 前置修复 / 继续学习), launching each with its 开始 button.
-6. **Tutor** — on a weak concept, run the Tutor and press 开始推荐活动. Complete the launched activity.
-7. **Remediation & history** — finish a remediation round until at least one mistake resolves; reopen the attempt from 测验历史.
+```bash
+npm ci
+npm run build
+npm run dev
+```
 
-## Record (severity in brackets)
+Use a disposable course workspace or a backed-up database when intentionally testing interruption and restart behavior. Keep the server terminal visible so operation failures are observable. A real provider may be used later for teaching-quality judgment, but it is not required for the execution-scaffold gate.
 
-- [critical] any 开始/推荐活动 button that fails to launch, and the exact message;
-- [critical] any lesson segment labeled 课程资料/本地已验证 whose expanded quote does not actually support the sentence;
-- [major] materially wrong AI teaching (even when correctly labeled AI 辅助讲解);
-- [major] concepts from your pre-written list still missing after deepening;
-- [minor] latency pain points (extraction, lesson generation), graph clutter at the new concept counts, confusing wording;
-- where the clinic beat the general assistant, and where it lost;
-- every moment you WANTED to ask a free-form follow-up question the card could not answer;
-- every moment you wanted the app to decide the next step for you (sequencing), rather than picking from the queue.
+Before starting, choose one real document-supported study goal that can be attempted in 30-60 minutes. Record the intended outcome, available time, and the route you would otherwise have managed manually in a general chat.
 
-## Decision gates for the reserved adaptive layer (Phase 3)
+## Core-loop protocol
 
-- **Build Phase 3** if activities were reliable AND lessons were useful, but the recorded follow-up/sequencing moments show the static loop is the binding constraint.
-- **Defer or redesign Phase 3** if teaching quality (not orchestration) remains the main gap, or if lessons + queue already sustained a full session comfortably.
-- **Add the semantic coverage-unit layer** only if 资料映射 repeatedly called sections "mapped" that you experienced as uncovered.
+1. Create or select a Course and assign stable material roles.
+2. Draft and learner-confirm the Learning Contract. Check the deterministic time/deadline feasibility and its assumptions.
+3. Generate and inspect the Curriculum. Confirm that its hierarchy references the existing course material and concepts rather than inventing a second concept set.
+4. Generate and inspect the StudyPlan. Verify rationale, estimates, completion requirements, explicit deferrals, and the learner-visible diff before accepting it.
+5. Accept the route and open Course Home. Without reconstructing the plan manually, state what the next action is and why it is next.
+6. Start a StudySession. Ask at least three natural follow-ups, including a request for another explanation or example.
+7. Detour to another topic, optionally create one nested detour, then return. Confirm the original route is restored or visibly revalidated.
+8. Insert a short Agenda item or deep dive. Confirm this changes today's execution context without creating or silently rewriting an accepted StudyPlan version.
+9. Launch a direct formal checkpoint where available. Confirm Tutor conversation remains visually informal and only the formal assessment can record progression evidence.
+10. Produce both a passing and a failing formal result where practical. Observe evidence recorded, reconciliation, completion/continue/repair state, and verify that harder failure does not erase independently valid lower-level evidence.
+11. Defer one item. Confirm it remains a visible gap/risk and is not shown as completed.
+12. Trigger one meaningful replan using a supported deterministic trigger, such as a sustained time change, accepted scope change, synthesis/prerequisite failure, source-manifest change, or promotion of a detour. Inspect the predecessor/successor diff. Reject once and confirm the current route survives; then accept a valid successor and confirm atomic handoff.
+
+## Recovery probes
+
+Run at least three of these during the same course:
+
+- navigate away during a Tutor response, then return; navigation alone must not mean Stop;
+- explicitly Stop or cancel a turn and verify no fabricated Tutor result or formal evidence appears;
+- pause and resume; the accepted StudyPlan must remain `accepted` with the same pointer/version;
+- restart the server with a session available, then resume without reconstructing the route;
+- submit the same consequential command twice and verify it does not double-apply;
+- change source execution state, then resume and confirm stale context is blocked/recomposed rather than used silently;
+- reject a Curriculum, StudyPlan, or replan candidate and confirm the prior valid active route remains usable.
+
+Inspect persisted history through the Progress views and existing assessment history. Server-side SQLite records and operation events may be inspected read-only when diagnosing a failure; do not edit them to make a run appear successful.
+
+## What to record
+
+Record timestamps and concise notes for:
+
+- every moment the learner had to reconstruct or manually remember the route;
+- whether the next action and its reason were understandable;
+- detour depth, return success, and any route drift;
+- formal assessments launched, evidence/reconciliation state, and repair outcomes;
+- Plan proposals accepted/rejected and the usefulness of their diffs;
+- manual interventions needed to recover from cancellation, restart, stale state, or rejection;
+- any dead learner-visible action;
+- any Tutor prose or informal check that appeared to grant formal completion;
+- any learner scope decision that appeared to create factual/rubric authority;
+- every time the learner bypassed the scaffold for a general chat, and why;
+- interaction friction that cost more effort than the orchestration it removed.
+
+## Gate questions
+
+- Can a learner start or resume without reconstructing the plan manually?
+- Does the system make the next action understandable?
+- Can the learner detour freely and reliably return?
+- Does formal evidence remain distinct from Tutor conversation?
+- Does Plan/Agenda separation feel useful rather than bureaucratic?
+- Does meaningful replanning require less manual orchestration than ordinary chat?
+- Are major failures, restarts, and rejections recoverable without route drift?
+- Does the learner repeatedly bypass the scaffold and return to general chat?
+- Is interaction friction acceptable relative to the orchestration removed?
+
+## Gate outcome
+
+After real observed human use, record one outcome in a separate dated dogfood report or issue:
+
+- **GO to Phase 5**: the scaffold is usable, route recovery is reliable, and orchestration reduction justifies the added machinery;
+- **GO WITH SIMPLIFICATION**: the core loop helps, but specific state, controls, or surfaces should be removed or collapsed before expansion;
+- **STOP/NARROW**: the scaffold does not remove enough orchestration, is routinely bypassed, or creates unacceptable friction.
+
+Do not mark the gate from automated tests alone. Same-model ablation, human evaluation, and delayed-retention work remain later evaluation tasks.

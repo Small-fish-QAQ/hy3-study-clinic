@@ -156,7 +156,7 @@ Grading is atomic and idempotent below the route layer:
 
 1. every provider call — question grading and the bounded misconception proposals — completes FIRST and writes nothing;
 2. one database transaction then applies the complete learner-state write set (submission, grading result, mistakes, mastery, misconception transitions and proposals, review scheduling, and the state-change snapshot);
-3. inside that transaction the service re-checks two invariants: the quiz has no grading result yet (a duplicate or concurrent submission gets `409 DUPLICATE_SUBMISSION`; learner state is applied at most once), and every question's concept still exists (a stale pending quiz whose document was deleted or reprocessed is rejected with zero state mutation instead of dishonestly reporting success).
+3. inside that transaction the service re-checks two invariants: the quiz has no grading result yet (a duplicate or concurrent submission gets `409 DUPLICATE_SUBMISSION`; learner state is applied at most once), and every question's concept still exists (a stale pending quiz whose required concepts are no longer available is rejected with zero state mutation instead of dishonestly reporting success).
 
 A mid-write failure rolls the whole set back; the quiz remains submittable after the fault clears.
 
@@ -179,9 +179,9 @@ Migration 10 added nullable `provider` and `state_changes` fields to preserve re
 - Reads call no provider and update no mastery, mistakes, misconceptions, or review state.
 - The React history view reuses `ResultsView` in read-only mode.
 
-Historical attempts with null provider/state-change columns are labelled "not recorded" rather than reconstructed. When a cited live block has been deleted or reprocessed, replay retains the persisted quotation and labels the live source unavailable.
+Historical attempts with null provider/state-change columns are labelled "not recorded" rather than reconstructed. When a cited source is retired or is no longer the active revision after reprocessing, replay retains the persisted quotation and labels the live source unavailable or stale.
 
-Document-scoped quiz history follows that document's cascade lifecycle. Workspace-assessment history can remain available after one contributing document is deleted, with quote-only evidence where necessary.
+Normal material/document retirement preserves document-scoped quiz history, grading, learner state, immutable revisions, and persisted quotations; current-source reads may label the source unavailable or stale. Explicit workspace deletion is the separate destructive path and cascades workspace-scoped history.
 
 ## 7. Mistake remediation
 
@@ -248,25 +248,25 @@ Blocks also carry stable content-derived IDs, heading paths, and optional PDF pa
 
 A workspace groups documents, source concepts, canonical concepts, graph versions, and accepted plans. Attempts, mistakes, and mastery remain keyed to their actual documents/concepts; workspace views aggregate them.
 
-`workspaces.origin` is immutable and controls final-document deletion:
+`workspaces.origin` is immutable creation provenance; it does not make ordinary document removal destructive:
 
-- `manual`: explicitly created in the learning-graph UI. Deleting the final document preserves the empty workspace and its workspace-level history.
-- `material_import`: auto-created for a material-library import. Deleting its final document retires the workspace and remaining workspace-level rows in the same transaction.
+- `manual`: explicitly created in the learning-graph UI. Retiring its final document preserves the empty workspace and its workspace-level history.
+- `material_import`: auto-created for a material-library import. Retiring its final document also preserves the workspace and its history; the material is simply no longer active.
 - `unknown`: pre-migration rows whose creation path cannot be reconstructed. They are conservatively preserved like manual workspaces.
 
-Both document-delete endpoints return `{ workspaceId, workspaceDeleted }`, allowing the frontend to clear stale selections only after the server commits.
+Both document-removal endpoints retire the stable Material, preserve its revisions and longitudinal history, and return `{ workspaceId, workspaceDeleted: false }`, allowing the frontend to clear stale selections only after the server commits.
 
 Explicit workspace deletion is available for every origin. After confirmation, `DELETE /api/workspaces/:id` cascades documents, blocks, concepts, graph data, quizzes/history, mistakes, mastery, alignments, misconceptions, review data, Tutor data, and blueprints in one transaction. A missing workspace is treated as already deleted by the UI.
 
-Reprocessing reruns the current parser from stored original bytes for PDF/DOCX, or reruns text ingestion and segmentation from stored normalized content for pasted text, Markdown, and TXT. `materials.id` remains the stable logical identity. The service stages a new immutable `MaterialRevision` and revision-owned SourceBlocks, then activates it transactionally only after parsing and structural validation succeed. Earlier revisions, concepts, quizzes, attempts, mistakes, mastery, and other longitudinal history remain stored; ordinary current-state reads select artifacts owned by the active revision. Exact truth-authority records tied to the replaced revision become stale rather than being rewritten. A parser failure is recorded and leaves the prior active revision unchanged. Legacy binary documents imported before original-byte storage cannot be reprocessed and must be re-imported.
+Reprocessing reruns the current parser from stored original bytes for PDF/DOCX, or reruns text ingestion and segmentation from stored normalized content for pasted text, Markdown, and TXT. `materials.id` remains the stable logical identity. The service stages a new immutable `MaterialRevision` and revision-owned SourceBlocks, then activates it transactionally only after parsing and structural validation succeed. Earlier revisions, concepts, quizzes, attempts, mistakes, mastery, and other longitudinal history remain stored; ordinary current-state reads select artifacts owned by the active revision. Exact truth-authority records tied to the replaced revision become stale rather than being rewritten, and an accepted route is marked `revalidation_required` before another Tutor turn or action may launch. The stable Learning Contract is not versioned merely because extraction changed. A parser failure is recorded and leaves the prior active revision and route unchanged. Legacy binary documents imported before original-byte storage cannot be reprocessed and must be re-imported.
 
-Deleting one document prunes graph edges that lose concepts or all evidence, marks affected versions `pruned`, and invalidates plans that might cite it. Canonical groups survive while another source concept backs them.
+Retiring one document clears the active graph pointer, marks dependent source-authority records stale, and requires accepted-route revalidation. Immutable revisions, concepts, graph history, assessments, and learner state remain inspectable; current active-material reads exclude the retired source. Canonical groups remain backed by their surviving source concepts where available.
 
 ## 10. Database and migrations
 
 `better-sqlite3` runs with foreign keys enabled. Repositories validate domain objects on writes and reads. Multi-row operations use explicit transactions, and migrations are recorded in `schema_migrations`.
 
-The 14 shipped migrations are:
+The 17 shipped migrations are:
 
 1. `initial_schema` - original materials, blocks, concepts, quizzes, grading, mistakes, and mastery.
 2. `course_workspaces_and_documents` - workspaces, document metadata/original bytes, and source-block page numbers; every legacy material receives a compatibility workspace without learning-data deletion.
@@ -282,8 +282,22 @@ The 14 shipped migrations are:
 12. `concept_lessons` - one current teaching lesson card per concept (verified segment anchors and conflicts inside validated JSON); purely additive, cascades with its concept.
 13. `material_revision_lineage_and_source_authority` - immutable material revisions, revision-owned source artifacts, material roles, lineage, parser attempts, and independently admitted truth/premise authority. Historical rows become revision 1 without fabricated parser or content fingerprints.
 14. `durable_agent_operations_and_cost_telemetry` - local idempotent operations, leases and fencing, ordered events, unique terminal results, logical model calls, physical attempts, usage/cost records, validated cache entries, and optional cost policies. No policy row means no monetary cap.
+15. `accepted_course_execution_route` - Learning Contract, Curriculum, StudyPlan, SessionAgenda, coverage-risk, and atomic accepted-route persistence.
+16. `durable_study_sessions` - StudySessions, turns, exchanges, summaries, events, and route-stack persistence.
+17. `formal_evidence_progression_and_replans` - formal evidence links, objective/unit progression, replan triggers, and goal outcomes.
 
 Table-rebuild migrations disable foreign keys only around the controlled rebuild, run `foreign_key_check` before commit, and restore enforcement even after failure. Tests cover idempotence, populated v1 and v3 upgrades, all-or-nothing rollback, and data preservation.
+
+### Implemented Learning Execution Agent: Phases 1-4
+
+The current implementation closes one bounded course-execution loop. It does not treat the design document as a claim that later Phase 5 capabilities exist.
+
+- **Phase 1: durable foundations.** A logical Material owns immutable revisions and revision-owned SourceBlocks. Learner material-role assignments are separate from parsing. Source authority is distinct from learner scope; accepted model output is runtime-validated; consequential commands are durable, idempotent, leased, and fenced; model logical calls, physical attempts, cache identity, and optional cost policies are persisted.
+- **Phase 2: accepted route.** A learner-confirmed Learning Contract contains stable logical Material/role scope, never a MaterialRevision. Curriculum manifests bind exact active revisions and blocks. A proposed StudyPlan is locally checked for hierarchy, objective coverage/deferral, feasibility, authority, and launchability. Accepting a compatible route atomically activates the Contract, Curriculum, Plan, and a composed Agenda; a successor failure or rejection preserves the active route.
+- **Phase 3: conversational execution.** A StudySession is a durable conversation and route container, separate from the accepted Plan. It records turns, exchanges, summaries, events, current Agenda item, and nested detour frames. Tutor context is bounded to the accepted source manifest. Pause, resume, and stop are versioned execution transitions; stale routes are rejected rather than silently resumed. Tutor events may be delivered as persisted NDJSON as well as retrieved from session detail.
+- **Phase 4: evidence-gated progression and replanning.** Formal assessment contracts bind a quiz to the accepted route. Local reconciliation records objective evidence, unit progression, next actions, and deterministic reason codes. Conversation does not create formal completion. Pace/risk qualification may create a bounded successor-plan proposal; it cannot replace the accepted route without the learner's decision. Goal outcomes preserve the evidence and gap snapshot that led to closure or abandonment.
+
+The route API is split by responsibility: `agentCourse.ts` owns Contract, Curriculum, StudyPlan, accepted-route, coverage-risk, and Agenda-action endpoints; `studySessions.ts` owns StudySession lifecycle and Tutor-turn endpoints; `formalProgression.ts` owns progression, replan, and goal-outcome endpoints. Route handlers parse requests and delegate to services; repositories preserve the durable invariants.
 
 ## 11. Concept graph and plans
 
@@ -337,7 +351,7 @@ Hover/selection change style only and cannot rerun layout, routing, or fit-to-vi
 - Dependency layout uses longest-path layers plus four bounded barycenter sweeps, accepting only strict crossing improvement.
 - Weak-path view keeps every weak node, bounded shortest prerequisite repair paths, direct `part_of` context, and a small number of prerequisite dependents. It excludes contrast/example/application/causal edges and reports when the minimal view covers the whole graph.
 - Controlled drag state updates connected edges per frame. One bounded global route cleanup runs on release, and positions persist once per gesture in `localStorage` by graph version.
-- If a dragged canonical node disappears through alignment/deletion, the gesture ends without persisting a stale ID.
+- If a dragged canonical node disappears through alignment or explicit workspace deletion, the gesture ends without persisting a stale ID.
 - `AutoFit` runs once per meaningful graph-state key after nodes are measured. Stale animation-frame callbacks are discarded by epoch.
 
 ### Edge routing
@@ -471,6 +485,6 @@ No vector database, graph database, orchestration framework, authentication laye
 - Lexical retrieval can miss synonyms; the graph/Tutor/assessment/remediation budgets can omit useful context.
 - Review scheduling and mastery are transparent heuristics, not psychometrically calibrated models.
 - Deterministic bounded graph routing can retain crossings in dense arrangements.
-- Permanent deletion is irreversible. Reprocessing retains immutable prior revisions and longitudinal history, but activating a new revision changes which source artifacts ordinary current-state workflows use.
+- Material/document retirement is non-destructive to immutable revisions and longitudinal history, although the current API has no automatic unretire operation. Reprocessing retains immutable prior revisions and history, but activating a new revision changes which source artifacts ordinary current-state workflows use. Explicit workspace deletion is irreversible and cascades its course data.
 
 Verification commands, test counts, migration coverage, public evidence, and reviewer mappings are maintained separately in [Verification and Reviewer Evidence](VERIFICATION.md).
