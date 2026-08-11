@@ -22,7 +22,9 @@ import { AgentCourseShell, type AgentCourseView } from './AgentCourseShell.js';
 import { CourseHomeView } from './CourseHomeView.js';
 import { CurriculumView } from './CurriculumView.js';
 import { StudySessionView } from './StudySessionView.js';
-import { FormalProgressView } from './FormalProgressView.js';
+import { CourseMaterialsView } from './CourseMaterialsView.js';
+import { CourseProgressView } from './CourseProgressView.js';
+import { GraphWorkspaceView } from './GraphWorkspaceView.js';
 
 const ROLE_LABELS: Record<MaterialRole, string> = {
   course_material: '课程主资料',
@@ -64,10 +66,9 @@ interface MaterialScopeChoice {
 export interface AgentCourseWorkspaceProps {
   workspaceId: string | null;
   onWorkspaceChange: (workspaceId: string | null) => void;
-  onOpenMaterials: () => void;
-  onOpenExplore: () => void;
-  onOpenProgress: (view: 'history' | 'mistakes' | 'mastery') => void;
   onLaunchQuiz: (quiz: PublicQuiz) => void;
+  refreshKey: number;
+  onWorkspaceDeleted?: (workspaceId: string) => void;
 }
 
 let fallbackCommandSequence = 0;
@@ -124,12 +125,12 @@ function initialForm(contract: LearningContract | null): ContractFormState {
 export function AgentCourseWorkspace({
   workspaceId,
   onWorkspaceChange,
-  onOpenMaterials,
-  onOpenExplore,
-  onOpenProgress,
   onLaunchQuiz,
+  refreshKey,
+  onWorkspaceDeleted,
 }: AgentCourseWorkspaceProps) {
   const [view, setView] = useState<AgentCourseView>('home');
+  const [materialsOpen, setMaterialsOpen] = useState(false);
   const [workspaces, setWorkspaces] = useState<WorkspaceSummary[]>([]);
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [overview, setOverview] = useState<CourseExecutionOverview | null>(null);
@@ -143,9 +144,11 @@ export function AgentCourseWorkspace({
   const [editingContractId, setEditingContractId] = useState<string | null>(null);
   const [contractForm, setContractForm] = useState<ContractFormState>(() => initialForm(null));
   const [materialChoices, setMaterialChoices] = useState<Record<string, MaterialScopeChoice>>({});
+  const [newCourseName, setNewCourseName] = useState('');
   const loadEpoch = useRef(0);
   const workspaceIdRef = useRef(workspaceId);
   const action = useAsyncAction();
+  const progressRemediationAction = useAsyncAction();
 
   useEffect(() => {
     workspaceIdRef.current = workspaceId;
@@ -220,6 +223,35 @@ export function AgentCourseWorkspace({
     if (signal?.aborted) return;
     setOverview(execution.overview);
     setHierarchy(execution.overview.curriculumHierarchy);
+  }
+
+  async function refreshCourse(): Promise<void> {
+    const targetWorkspaceId = workspaceIdRef.current;
+    if (!targetWorkspaceId) return;
+    const controller = new AbortController();
+    await loadCourse(targetWorkspaceId, controller.signal);
+  }
+
+  async function createCourse(): Promise<void> {
+    const name = newCourseName.trim();
+    if (!name) return;
+    setBusyAction('create-course');
+    const created = await action.run((signal) => api.createWorkspace({ name }, signal));
+    setBusyAction(null);
+    if (!created) return;
+    setNewCourseName('');
+    setMaterialsOpen(false);
+    setView('home');
+    onWorkspaceChange(created.workspace.id);
+  }
+
+  async function remediateMaterial(materialId: string): Promise<void> {
+    const capturedWorkspaceId = workspaceId;
+    const response = await progressRemediationAction.run((signal) =>
+      api.remediation(materialId, signal),
+    );
+    if (!response || capturedWorkspaceId !== workspaceIdRef.current) return;
+    onLaunchQuiz(response.quiz);
   }
 
   async function runAction<T>(
@@ -629,8 +661,8 @@ export function AgentCourseWorkspace({
       async (result, signal) => {
         if (result.kind === 'assessment') onLaunchQuiz(result.quiz);
         if (result.kind === 'lesson') {
-          setNotice('学习单元已通过当前资料重新验证并启动。');
-          onOpenExplore();
+          setNotice('当前学习内容已重新验证，可以在学习页继续。');
+          setView('session');
         }
         if (result.kind === 'blocked') setNotice(result.reason);
         await refresh(signal);
@@ -650,10 +682,7 @@ export function AgentCourseWorkspace({
   }
 
   function changeView(next: AgentCourseView): void {
-    if (next === 'explore') {
-      onOpenExplore();
-      return;
-    }
+    setMaterialsOpen(false);
     setView(next);
   }
 
@@ -665,13 +694,19 @@ export function AgentCourseWorkspace({
     >
       <div className="course-picker row">
         <label>
-          课程空间
+          当前课程
           <select
-            aria-label="课程空间"
+            aria-label="当前课程"
             value={workspaceId ?? ''}
-            onChange={(event) => onWorkspaceChange(event.target.value || null)}
+            onChange={(event) => {
+              action.cancel();
+              progressRemediationAction.cancel();
+              setMaterialsOpen(false);
+              setView('home');
+              onWorkspaceChange(event.target.value || null);
+            }}
           >
-            <option value="">请选择</option>
+            <option value="">选择课程</option>
             {workspaces.map((workspace) => (
               <option key={workspace.id} value={workspace.id}>
                 {workspace.name}
@@ -687,12 +722,50 @@ export function AgentCourseWorkspace({
 
       {!workspaceId ? (
         loading ? (
-          <Loading label="加载课程空间…" />
+          <Loading label="加载课程…" />
         ) : (
-          <Banner kind="empty">选择课程空间，或在探索中创建课程并添加资料。</Banner>
+          <section className="no-course-state" aria-label="选择或创建课程">
+            <p className="eyebrow">开始学习</p>
+            <h2>选择一门课程</h2>
+            <p className="muted">
+              课程会保存资料、学习目标、当前路线和正式进展。请从上方选择已有课程，或现在创建一门课程。
+            </p>
+            <form
+              className="course-create-inline row"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void createCourse();
+              }}
+            >
+              <label>
+                <span className="sr-only">新课程名称</span>
+                <input
+                  aria-label="新课程名称"
+                  value={newCourseName}
+                  placeholder="例如：认知科学导论"
+                  onChange={(event) => setNewCourseName(event.target.value)}
+                />
+              </label>
+              <button
+                type="submit"
+                className="primary"
+                disabled={action.loading || newCourseName.trim().length === 0}
+              >
+                创建课程
+              </button>
+            </form>
+          </section>
         )
       ) : loading && !overview ? (
-        <Loading label="加载课程执行状态…" />
+        <Loading label="加载课程状态…" />
+      ) : materialsOpen ? (
+        <CourseMaterialsView
+          workspaceId={workspaceId}
+          documents={documents}
+          roleHistory={roleHistory}
+          onChanged={refreshCourse}
+          onBack={() => setMaterialsOpen(false)}
+        />
       ) : contractEditorOpen && overview ? (
         <ContractEditor
           documents={documents}
@@ -716,13 +789,12 @@ export function AgentCourseWorkspace({
           onConfirmContract={() => void transitionContract()}
           onProposeCurriculum={() => void proposeCurriculum()}
           onOpenCurriculum={() => setView('curriculum')}
-          onOpenStudySession={() => setView('session')}
           onProposeStudyPlan={() => void proposePlan()}
           onEditStudyPlan={(edit) => void editPlan(edit)}
           onAcceptStudyPlan={() => void decidePlan('accept')}
           onRejectStudyPlan={() => void decidePlan('reject')}
           onLaunchNext={() => void launchNext()}
-          onOpenMaterials={onOpenMaterials}
+          onOpenMaterials={() => setMaterialsOpen(true)}
         />
       ) : view === 'curriculum' ? (
         <CurriculumView
@@ -761,15 +833,34 @@ export function AgentCourseWorkspace({
           onSessionChanged={() => void refresh()}
           onLaunchQuiz={onLaunchQuiz}
         />
-      ) : (
-        <FormalProgressView
+      ) : view === 'progress' ? (
+        <CourseProgressView
           workspaceId={workspaceId}
+          documents={documents}
           overview={overview}
+          refreshKey={refreshKey}
           command={(prefix) => command(workspaceId, prefix)}
           onAcceptProposedPlan={() => void decidePlan('accept')}
           onRejectProposedPlan={() => void decidePlan('reject')}
           onCourseChanged={() => void refresh()}
-          onOpenProgress={onOpenProgress}
+          onRemediate={(materialId) => void remediateMaterial(materialId)}
+          remediationLoading={progressRemediationAction.loading}
+          remediationError={progressRemediationAction.error}
+        />
+      ) : (
+        <GraphWorkspaceView
+          refreshKey={refreshKey}
+          selectedWorkspaceId={workspaceId}
+          onWorkspaceSelected={(nextWorkspaceId) => {
+            if (nextWorkspaceId !== workspaceId) onWorkspaceChange(nextWorkspaceId);
+          }}
+          onWorkspaceDeleted={onWorkspaceDeleted}
+          onLaunchQuiz={(quiz) => onLaunchQuiz(quiz)}
+          onOpenMaterials={() => {
+            setView('home');
+            setMaterialsOpen(true);
+          }}
+          courseLocked
         />
       )}
     </AgentCourseShell>
@@ -1004,31 +1095,5 @@ function ContractEditor({
         {busy ? '正在保存…' : '保存约定草稿'}
       </button>
     </form>
-  );
-}
-
-export function ProgressLanding({
-  onOpen,
-}: {
-  onOpen: AgentCourseWorkspaceProps['onOpenProgress'];
-}) {
-  return (
-    <div className="progress-landing" aria-label="学习进展">
-      <section>
-        <h2>学习进展</h2>
-        <p className="muted">正式测验、错题和掌握记录来自现有确定性学习状态。</p>
-      </section>
-      <div className="progress-links">
-        <button type="button" onClick={() => onOpen('history')}>
-          正式测验记录
-        </button>
-        <button type="button" onClick={() => onOpen('mistakes')}>
-          错题与修复
-        </button>
-        <button type="button" onClick={() => onOpen('mastery')}>
-          掌握状态
-        </button>
-      </div>
-    </div>
   );
 }

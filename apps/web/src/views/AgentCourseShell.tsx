@@ -3,11 +3,11 @@ import type { ReactNode } from 'react';
 export type AgentCourseView = 'home' | 'session' | 'curriculum' | 'progress' | 'explore';
 
 const VIEW_LABELS: Record<AgentCourseView, string> = {
-  home: '课程主页',
+  home: '主页',
+  session: '学习',
   curriculum: '课程结构',
-  progress: '学习进展',
+  progress: '进展',
   explore: '探索',
-  session: 'Study Session',
 };
 
 export interface AgentCourseShellProps {
@@ -17,7 +17,7 @@ export interface AgentCourseShellProps {
   children: ReactNode;
 }
 
-/** Course shell. App owns Course selection, navigation, and async state. */
+/** The single learner-facing navigation model for a selected Course. */
 export function AgentCourseShell({
   activeView,
   courseName,
@@ -25,27 +25,31 @@ export function AgentCourseShell({
   children,
 }: AgentCourseShellProps) {
   return (
-    <section className="agent-course-shell" aria-label="课程执行工作区">
-      <div className="row between">
+    <section className="agent-course-shell" aria-label="课程学习空间">
+      <div className="agent-course-heading row between">
         <div>
           <h2 style={{ marginBottom: 0 }}>{courseName ?? '选择课程空间'}</h2>
           <p className="small muted" style={{ marginTop: 0 }}>
-            {courseName ? '按已确认目标执行学习路线' : '选择或创建课程空间后建立学习目标与路线'}
+            {courseName
+              ? '按当前目标继续学习，随时查看进展与课程依据'
+              : '选择或创建课程后开始建立学习目标'}
           </p>
         </div>
-        <nav className="tabs" aria-label="课程导航">
-          {(Object.keys(VIEW_LABELS) as AgentCourseView[]).map((view) => (
-            <button
-              key={view}
-              type="button"
-              className={activeView === view ? 'active' : ''}
-              aria-current={activeView === view ? 'page' : undefined}
-              onClick={() => onViewChange(view)}
-            >
-              {VIEW_LABELS[view]}
-            </button>
-          ))}
-        </nav>
+        {courseName ? (
+          <nav className="course-nav" aria-label="课程导航">
+            {(Object.keys(VIEW_LABELS) as AgentCourseView[]).map((view) => (
+              <button
+                key={view}
+                type="button"
+                className={activeView === view ? 'active' : ''}
+                aria-current={activeView === view ? 'page' : undefined}
+                onClick={() => onViewChange(view)}
+              >
+                {VIEW_LABELS[view]}
+              </button>
+            ))}
+          </nav>
+        ) : null}
       </div>
       <div className="agent-course-content">{children}</div>
     </section>

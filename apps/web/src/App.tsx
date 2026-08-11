@@ -28,16 +28,16 @@ type Tab = 'import' | 'course' | 'graph' | 'quiz' | 'results' | 'history' | 'mis
 
 const LAST_MATERIAL_ID_STORAGE_KEY = 'hy3-clinic:last-material-id';
 
-/** Module navigation: 练习 covers answering (quiz), results and history. */
+/** Compatibility destinations. The selected Course owns the primary journey. */
 type Module = 'import' | 'course' | 'graph' | 'practice' | 'mistakes' | 'mastery';
 
 const MODULE_LABELS: Record<Module, string> = {
-  import: '资料库',
-  course: '课程执行',
-  graph: '学习图谱',
-  practice: '练习',
-  mistakes: '错题',
-  mastery: '学习进展',
+  import: '课程资料',
+  course: '课程',
+  graph: '探索',
+  practice: '测验',
+  mistakes: '错题与修复',
+  mastery: '掌握与复习',
 };
 
 const MODULE_OF_TAB: Record<Tab, Module> = {
@@ -59,7 +59,7 @@ interface AssessmentContext {
 }
 
 export function App() {
-  const [tab, setTab] = useState<Tab>('import');
+  const [tab, setTab] = useState<Tab>('course');
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null | undefined>(
     undefined,
   );
@@ -476,36 +476,48 @@ export function App() {
   return (
     <div className={`app-shell ${tab === 'graph' ? 'module-graph' : ''}`}>
       <header className="app-header">
-        <div>
+        <div className="app-branding">
           <h1>Hy3 Study Clinic</h1>
-          <p className="app-subtitle">
-            从课程资料构建可验证的个人学习图谱,并根据薄弱知识规划补救路径
-          </p>
+          <p className="app-subtitle">以课程为中心的证据驱动学习空间</p>
         </div>
-        <nav className="tabs" aria-label="主导航">
-          {(Object.keys(MODULE_LABELS) as Module[]).map((module) => {
-            const needsMaterial = module !== 'import' && module !== 'course' && module !== 'graph';
-            const practiceViaAssessment = module === 'practice' && assessmentActive;
-            const disabled =
-              needsMaterial &&
-              !practiceViaAssessment &&
-              (!materialReady || openingMaterialId !== null);
-            return (
-              <button
-                key={module}
-                type="button"
-                className={activeModule === module ? 'active' : ''}
-                disabled={disabled}
-                onClick={() => handleModuleChange(module)}
-              >
-                {MODULE_LABELS[module]}
-              </button>
-            );
-          })}
+        <nav className="primary-nav" aria-label="主导航">
+          <button
+            type="button"
+            className={activeModule === 'course' ? 'active' : ''}
+            onClick={() => handleModuleChange('course')}
+          >
+            课程
+          </button>
         </nav>
+        <details className="legacy-tools" open={tab !== 'course'}>
+          <summary>更多工具</summary>
+          <nav className="legacy-nav" aria-label="兼容工具">
+            {(Object.keys(MODULE_LABELS) as Module[])
+              .filter((module) => module !== 'course')
+              .map((module) => {
+                const needsMaterial = module !== 'import' && module !== 'graph';
+                const practiceViaAssessment = module === 'practice' && assessmentActive;
+                const disabled =
+                  needsMaterial &&
+                  !practiceViaAssessment &&
+                  (!materialReady || openingMaterialId !== null);
+                return (
+                  <button
+                    key={module}
+                    type="button"
+                    className={activeModule === module ? 'active' : ''}
+                    disabled={disabled}
+                    onClick={() => handleModuleChange(module)}
+                  >
+                    {MODULE_LABELS[module]}
+                  </button>
+                );
+              })}
+          </nav>
+        </details>
         {provider ? (
           <span className={`provider-badge ${provider}`}>
-            {provider === 'fake' ? '离线模式(Fake Provider,无需 API Key)' : 'Hy3 在线模式'}
+            {provider === 'fake' ? '离线 · 模拟模式' : 'Hy3 在线'}
           </span>
         ) : null}
       </header>
@@ -582,10 +594,9 @@ export function App() {
           <AgentCourseWorkspace
             workspaceId={selectedWorkspaceId ?? null}
             onWorkspaceChange={setSelectedWorkspaceId}
-            onOpenMaterials={() => handleTabChange('import')}
-            onOpenExplore={() => handleTabChange('graph')}
-            onOpenProgress={(view) => handleTabChange(view)}
             onLaunchQuiz={(launchedQuiz) => void handleLaunchFromPlan(launchedQuiz)}
+            refreshKey={refreshKey}
+            onWorkspaceDeleted={handleWorkspaceDeleted}
           />
         ) : null}
 

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type {
@@ -11,6 +11,10 @@ import type {
 import { CourseHomeView, type CourseHomeViewProps } from './CourseHomeView.js';
 import { CurriculumView } from './CurriculumView.js';
 import { StudyPlanPanel } from './StudyPlanPanel.js';
+import { AgentCourseShell } from './AgentCourseShell.js';
+import { CourseMaterialsView } from './CourseMaterialsView.js';
+import { CourseProgressView } from './CourseProgressView.js';
+import { api } from '../api.js';
 
 const AT = '2026-08-10T08:00:00.000Z';
 
@@ -372,7 +376,7 @@ describe('CourseHomeView action and authority rendering', () => {
   it('does not render a start command for a blocked next action', () => {
     render(<CourseHomeView {...homeProps(overview('blocked'))} />);
 
-    expect(screen.getByText('Source manifest must be revalidated.')).toBeInTheDocument();
+    expect(screen.getByText('课程资料已有变化，需要重新验证当前学习路线。')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '继续学习' })).not.toBeInTheDocument();
   });
 
@@ -408,10 +412,10 @@ describe('CourseHomeView action and authority rendering', () => {
     render(<CourseHomeView {...homeProps(value)} />);
 
     const progress = screen.getByLabelText('目标与正式进度');
-    expect(progress).toHaveTextContent('截止时间：');
+    expect(progress).toHaveTextContent('截止时间');
     expect(progress).toHaveTextContent('Asia/Shanghai');
     expect(progress).toHaveTextContent('已完成 2 / 5 · 进行中 1 · 待修复 1 · 已延期 1');
-    expect(progress).toHaveTextContent('可计入状态的正式证据 3 · 仅供参考的证据 2');
+    expect(screen.getByText('可计入状态的正式证据 3 · 仅供参考的证据 2')).toBeInTheDocument();
   });
 
   it('forwards enabled Plan edits instead of rendering a dead control', async () => {
@@ -506,13 +510,9 @@ describe('StudyPlanPanel decisions', () => {
       />,
     );
 
-    expect(screen.getByText(/order 2 -> 1/)).toHaveTextContent('minutes 25 -> 35');
-    expect(screen.getByText(/order 2 -> 1/)).toHaveTextContent(
-      'depth high_performance -> deep_transfer',
-    );
-    expect(screen.getByText(/Preserve the accepted deadline/)).toHaveTextContent(
-      'LearningUnit unit_3',
-    );
+    expect(screen.getByText(/顺序 2 → 1/)).toHaveTextContent('时长 25 → 35 分钟');
+    expect(screen.getByText(/顺序 2 → 1/)).toHaveTextContent('深度 高水平表现 → 深入迁移');
+    expect(screen.getByText(/Preserve the accepted deadline/)).toHaveTextContent('学习单元 unit_3');
   });
 });
 
@@ -557,5 +557,132 @@ describe('CurriculumView truth and validation states', () => {
 
     expect(screen.getByText('该候选版本未通过本地结构校验，不能接受。')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '接受课程结构' })).toBeDisabled();
+  });
+});
+
+describe('consolidated Course product shell', () => {
+  it('offers one learner-facing Course navigation model with Chinese Study naming', () => {
+    render(
+      <AgentCourseShell activeView="home" courseName="Probability" onViewChange={vi.fn()}>
+        <p>Course content</p>
+      </AgentCourseShell>,
+    );
+
+    const navigation = screen.getByRole('navigation', { name: '课程导航' });
+    expect(
+      within(navigation)
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['主页', '学习', '课程结构', '进展', '探索']);
+    expect(within(navigation).queryByText('Study Session')).not.toBeInTheDocument();
+    expect(within(navigation).queryByText('课程执行')).not.toBeInTheDocument();
+  });
+
+  it('keeps Course Materials actionable when the Course has no documents', () => {
+    render(
+      <CourseMaterialsView
+        workspaceId="ws_1"
+        documents={[]}
+        roleHistory={{}}
+        onChanged={vi.fn()}
+        onBack={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/这门课程还没有资料，这是新课程的正常状态/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '添加文本资料' })).toBeDisabled();
+    expect(screen.getByLabelText('上传课程资料')).toBeInTheDocument();
+  });
+
+  it('consolidates assessments, mistakes, reviews, and route history under Progress', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(api, 'reviewItems').mockResolvedValue({ items: [] });
+    vi.spyOn(api, 'listAttempts').mockResolvedValue({ attempts: [] });
+    const progressOverview = overview('launchable');
+    progressOverview.contractHistory = [
+      {
+        id: 'contract_history_1',
+        version: 1,
+        predecessorId: null,
+        status: 'active',
+        intent: 'Prepare for the exam',
+        targetDescription: '通过期末考试',
+        deadlineAt: null,
+        desiredDepth: 'working_fluency',
+        learnerConfirmedAt: AT,
+        createdAt: AT,
+      },
+    ];
+    progressOverview.curriculumHistory = [
+      {
+        id: 'curriculum_history_1',
+        version: 1,
+        predecessorId: null,
+        contractVersionId: 'contract_history_1',
+        status: 'accepted',
+        title: '概率论',
+        learningUnitCount: 4,
+        unmappedStructuralUnitCount: 0,
+        validationValid: true,
+        executionSourceManifestFingerprint: 'manifest_1',
+        createdAt: AT,
+        acceptedAt: AT,
+      },
+    ];
+    progressOverview.studyPlanHistory = [
+      {
+        id: 'plan_history_1',
+        version: 1,
+        predecessorId: null,
+        contractVersionId: 'contract_history_1',
+        curriculumVersionId: 'curriculum_history_1',
+        status: 'accepted',
+        proposalTrigger: 'Initial route',
+        itemCount: 4,
+        deferredUnitCount: 1,
+        projectedMinutes: 90,
+        feasibilityState: 'feasible',
+        executionSourceManifestFingerprint: 'manifest_1',
+        learnerAcceptedAt: AT,
+        createdAt: AT,
+      },
+    ];
+    render(
+      <CourseProgressView
+        workspaceId="ws_1"
+        documents={[]}
+        overview={progressOverview}
+        refreshKey={0}
+        command={(prefix) => ({
+          commandId: `${prefix}_1`,
+          idempotencyKey: `${prefix}_1`,
+          workspaceId: 'ws_1',
+          actor: 'learner',
+        })}
+        onAcceptProposedPlan={vi.fn()}
+        onRejectProposedPlan={vi.fn()}
+        onCourseChanged={vi.fn()}
+        onRemediate={vi.fn()}
+        remediationLoading={false}
+        remediationError={null}
+      />,
+    );
+
+    const navigation = screen.getByRole('navigation', { name: '进展分类' });
+    expect(within(navigation).getByRole('tab', { name: '测验记录' })).toBeInTheDocument();
+    expect(within(navigation).getByRole('tab', { name: '错题与修复' })).toBeInTheDocument();
+    expect(within(navigation).getByRole('tab', { name: '掌握与复习' })).toBeInTheDocument();
+    expect(screen.getByText('学习目标与路线历史')).toBeInTheDocument();
+    await user.click(screen.getByText('学习目标与路线历史'));
+    expect(screen.getByText(/版本 1 · 通过期末考试/)).toBeInTheDocument();
+    expect(screen.getByText(/版本 1 · 概率论/)).toBeInTheDocument();
+    expect(screen.getByText(/4 项 · 预计 90 分钟 · 1 项延期/)).toBeInTheDocument();
+
+    await user.click(within(navigation).getByRole('tab', { name: '测验记录' }));
+    expect(await screen.findByText(/还没有已完成的测验/)).toBeInTheDocument();
+    await user.click(within(navigation).getByRole('tab', { name: '错题与修复' }));
+    expect(
+      screen.getByText(/课程还没有资料，因此暂时没有可汇总的错题或掌握记录/),
+    ).toBeInTheDocument();
   });
 });

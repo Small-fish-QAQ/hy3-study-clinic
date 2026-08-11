@@ -20,12 +20,12 @@ Before starting, choose one real document-supported study goal that can be attem
 
 ## Core-loop protocol
 
-1. Create or select a Course and assign stable material roles.
+1. Create or select a Course, then add and review source material through `主页 > 课程资料`. Assign stable material roles as part of the Course setup.
 2. Draft and learner-confirm the Learning Contract. Check the deterministic time/deadline feasibility and its assumptions.
 3. Generate and inspect the Curriculum. Confirm that its hierarchy references the existing course material and concepts rather than inventing a second concept set.
 4. Generate and inspect the StudyPlan. Verify rationale, estimates, completion requirements, explicit deferrals, and the learner-visible diff before accepting it.
-5. Accept the route and open Course Home. Without reconstructing the plan manually, state what the next action is and why it is next.
-6. Start a StudySession. Ask at least three natural follow-ups, including a request for another explanation or example.
+5. Accept the route and return to `主页`. Without reconstructing the plan manually, state what the dominant next action is and why it is next.
+6. Open `学习` and start or resume the current StudySession. Ask at least three natural follow-ups, including a request for another explanation or example.
 7. Detour to another topic, optionally create one nested detour, then return. Confirm the original route is restored or visibly revalidated.
 8. Insert a short Agenda item or deep dive. Confirm this changes today's execution context without creating or silently rewriting an accepted StudyPlan version.
 9. Launch a direct formal checkpoint where available. Confirm Tutor conversation remains visually informal and only the formal assessment can record progression evidence.
@@ -45,7 +45,7 @@ Run at least three of these during the same course:
 - change source execution state, then resume and confirm stale context is blocked/recomposed rather than used silently;
 - reject a Curriculum, StudyPlan, or replan candidate and confirm the prior valid active route remains usable.
 
-Inspect persisted history through the Progress views and existing assessment history. Server-side SQLite records and operation events may be inspected read-only when diagnosing a failure; do not edit them to make a run appear successful.
+Inspect formal progression, assessment history, mistakes, reviews, and route history through `进展`. Use `探索` only when graph relationships or source evidence help the learning task. Server-side SQLite records and operation events may be inspected read-only when diagnosing a failure; do not edit them to make a run appear successful.
 
 ## What to record
 

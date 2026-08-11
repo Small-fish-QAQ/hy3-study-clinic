@@ -11,7 +11,15 @@ Hy3 performs the semantic work: concept extraction, grounded question generation
 
 ### Implemented current product
 
-Hy3 Study Clinic now supports both the original graph-led learning workflows and an evidence-gated course-execution loop. Implemented behavior includes document workspaces, immutable material revisions, SourceBlocks, concepts, graph exploration, grounded lessons and assessments, mistakes, mastery, misconceptions, review scheduling, learner-confirmed Contracts, Curricula, accepted StudyPlans, SessionAgendas, StudySessions, formal progression, and bounded replanning. The graph remains useful supporting infrastructure; Course Home, Study Session, Curriculum, Progress, and Explore are the learner-facing course workflow.
+Hy3 Study Clinic presents the implemented Phase 1-4 capabilities as one Course-centered learning journey. After selecting a Course, the learner moves through `主页 / 学习 / 课程结构 / 进展 / 探索`; Course Home explains the current goal and one next action, while technical evidence and version history remain available through intentional disclosures. Implemented behavior includes document workspaces, immutable material revisions, SourceBlocks, concepts, graph exploration, grounded lessons and assessments, mistakes, mastery, misconceptions, review scheduling, learner-confirmed Contracts, Curricula, accepted StudyPlans, SessionAgendas, StudySessions, formal progression, and bounded replanning.
+
+### Learner-facing product shell
+
+- The global shell is primarily for selecting or switching the current Course. It does not expose the implementation's execution subsystems as peer applications.
+- `主页` is the orientation surface and owns Course Materials. It shows the current goal, formal progress, relevant time information, a bounded agenda, actionable exceptions, and one dominant next action.
+- `学习` is the transcript-first daily workspace. Current unit and agenda context stay compact; detours and other mixed-initiative controls are progressively disclosed; formal checkpoints remain visually distinct from informal Tutor conversation.
+- `课程结构` presents the accepted hierarchy and current location. `进展` consolidates formal progression, assessments, mistakes and repair, mastery and reviews, plus Contract/Curriculum/Plan history. `探索` retains the full concept graph as an optional advanced workspace.
+- Compatibility tools remain behind compact secondary access for existing workflows and bookmarks. Their learner destinations map as follows: materials to `主页 > 课程资料`, assessments to `学习` or `进展 > 测验记录`, mistakes to `进展 > 错题与修复`, legacy learning progress to `进展`, and the learning graph to `探索`.
 
 ### Agent architecture implementation status
 
@@ -67,12 +75,12 @@ Completed quizzes are retained as immutable, read-only history. Opening a histor
 
 Removing a material from the active course normally retires its stable logical identity rather than deleting its revisions, source provenance, assessments, or longitudinal learner history. Retired material is hidden from active material lists and can force route revalidation. Explicit workspace deletion is the separate destructive operation and may cascade the workspace's course data.
 
-### Accepted course execution
+### Accepted Course journey
 
 1. The learner confirms a versioned Learning Contract over stable logical materials and role assignments. Material revisions and source blocks are execution identities, not Contract scope.
 2. Hy3 may propose a Curriculum and StudyPlan, but local code validates known IDs, source evidence, manifest freshness, route coverage, feasibility, authority eligibility, and launchability. The learner accepts or rejects consequential candidates.
 3. Acceptance atomically installs one compatible Contract, Curriculum, StudyPlan, and SessionAgenda route. A failed or rejected successor leaves the prior accepted route intact.
-4. A StudySession persists Tutor turns, exchanges, summaries, route-stack frames, and agenda edits. Pause, resume, and stop change execution state without rewriting the accepted StudyPlan snapshot or pointer.
+4. The learner opens `学习`; its durable StudySession persists Tutor turns, exchanges, summaries, route-stack frames, and agenda edits. Pause, resume, and stop change execution state without rewriting the accepted StudyPlan snapshot or pointer.
 5. Conversation is not formal evidence. Formal assessments and deterministic reconciliation alone can advance objective and unit progression; replan candidates remain proposals until learner acceptance.
 
 ## Evidence

@@ -26,6 +26,15 @@ export interface CurriculumViewProps {
   onSelectHistory: (curriculumId: string) => void;
 }
 
+const CURRICULUM_STATUS_TEXT: Record<string, string> = {
+  candidate: '候选版本',
+  proposed: '待确认',
+  accepted: '已接受',
+  rejected: '已拒绝',
+  failed: '生成失败',
+  superseded: '已由新版本替代',
+};
+
 /** Learner-visible hierarchy over existing Concepts and exact source provenance. */
 export function CurriculumView({
   hierarchy,
@@ -50,7 +59,8 @@ export function CurriculumView({
           <div>
             <h2 style={{ marginBottom: 0 }}>课程结构</h2>
             <p className="small muted" style={{ marginTop: 0 }}>
-              课程结构组织现有概念与来源，不宣称材料内容已被完整覆盖。
+              课程结构回答“我正在学什么，以及它们如何组织起来”。它引用现有概念与课程资料，
+              不宣称材料内容已被完整覆盖。
             </p>
           </div>
           {canPropose ? (
@@ -67,7 +77,7 @@ export function CurriculumView({
         {hierarchy ? (
           <p className="small">
             <span className="pill">版本 {hierarchy.curriculumVersion}</span>{' '}
-            <span className="pill">{hierarchy.status}</span>{' '}
+            <span className="pill">{CURRICULUM_STATUS_TEXT[hierarchy.status] ?? '已记录'}</span>{' '}
             <span className="pill deterministic">精确资料版本清单</span>
           </p>
         ) : null}
@@ -118,10 +128,23 @@ export function CurriculumView({
                           {objective.title}
                         </p>
                       ))}
-                      <p className="muted">
-                        引用概念 {node.learningUnit.conceptIds.length} 个 · 来源锚点{' '}
-                        {node.sourceReferences.length} 个
-                      </p>
+                      {node.progressState ? (
+                        <p>
+                          <span className="pill">{progressLabel(node.progressState)}</span>
+                        </p>
+                      ) : null}
+                      <details className="small technical-details">
+                        <summary>查看课程依据</summary>
+                        <p className="muted">
+                          引用概念 {node.learningUnit.conceptIds.length} 个 · 来源锚点{' '}
+                          {node.sourceReferences.length} 个
+                        </p>
+                        {node.learningUnit.prerequisiteUnitIds.length > 0 ? (
+                          <p className="muted">
+                            先修单元 {node.learningUnit.prerequisiteUnitIds.join('、')}
+                          </p>
+                        ) : null}
+                      </details>
                     </div>
                   ) : null}
                 </li>
@@ -157,7 +180,8 @@ export function CurriculumView({
                   className="ghost small"
                   onClick={() => onSelectHistory(item.id)}
                 >
-                  版本 {item.version} · {item.status} · {item.learningUnitCount} 个学习单元
+                  版本 {item.version} · {CURRICULUM_STATUS_TEXT[item.status] ?? '已记录'} ·{' '}
+                  {item.learningUnitCount} 个学习单元
                 </button>
               </li>
             ))}
@@ -166,4 +190,16 @@ export function CurriculumView({
       ) : null}
     </div>
   );
+}
+
+function progressLabel(value: NonNullable<CurriculumHierarchyNodeView['progressState']>): string {
+  const labels: Record<typeof value, string> = {
+    not_started: '未开始',
+    started: '学习中',
+    completed: '已完成',
+    repair_needed: '需要修复',
+    deferred: '已延期',
+    obsolete: '已失效',
+  };
+  return labels[value] ?? value;
 }

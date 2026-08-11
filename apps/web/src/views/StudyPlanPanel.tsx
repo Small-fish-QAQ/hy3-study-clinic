@@ -17,6 +17,35 @@ const KIND_TEXT: Record<StudyPlan['items'][number]['kind'], string> = {
   adversarial_readiness: '挑战性准备检查',
 };
 
+const PLAN_STATUS_TEXT: Record<string, string> = {
+  candidate: '候选路线',
+  proposed: '待确认',
+  accepted: '已接受',
+  rejected: '已拒绝',
+  superseded: '已由新路线替代',
+  closed: '已结束',
+};
+
+const FEASIBILITY_TEXT: Record<string, string> = {
+  feasible: '时间可行',
+  at_risk: '时间存在风险',
+  infeasible: '时间不足',
+  unknown: '等待估算',
+};
+
+const DEPTH_TEXT: Record<string, string> = {
+  pass_oriented: '通过评估',
+  working_fluency: '熟练运用',
+  high_performance: '高水平表现',
+  deep_transfer: '深入迁移',
+};
+
+const ADMISSIBILITY_TEXT: Record<string, string> = {
+  tier_1_authorized_truth: '已验证课程依据',
+  tier_2_validated_representation: '已验证的表示方式',
+  tier_3_advisory: '仅供学习参考',
+};
+
 export interface StudyPlanPanelProps {
   plan: StudyPlan;
   history: StudyPlanHistoryItem[];
@@ -49,11 +78,12 @@ export function StudyPlanPanel({
         <div>
           <h3 style={{ marginBottom: 0 }}>学习路线</h3>
           <p className="small muted" style={{ marginTop: 0 }}>
-            版本 {plan.version} · {plan.status} · {plan.feasibility.projectedMinutes} 分钟
+            版本 {plan.version} · {PLAN_STATUS_TEXT[plan.status] ?? '已记录'} ·{' '}
+            {plan.feasibility.projectedMinutes} 分钟
           </p>
         </div>
         <span className={`pill ${plan.feasibility.state === 'infeasible' ? 'wrong' : ''}`}>
-          {plan.feasibility.state}
+          {FEASIBILITY_TEXT[plan.feasibility.state] ?? '等待估算'}
         </span>
       </div>
 
@@ -82,14 +112,15 @@ export function StudyPlanPanel({
               </div>
               <p className="small">{item.rationale}</p>
               <p className="small muted">
-                深度 {item.targetDepth} · 目标 {item.objectiveIds.length} 项
+                深度 {DEPTH_TEXT[item.targetDepth] ?? '已设置'} · 目标 {item.objectiveIds.length} 项
               </p>
               {item.completionRequirements.map((requirement) => (
                 <p key={requirement.id} className="small">
                   <span className={requirement.blocking ? 'pill deterministic' : 'pill'}>
                     {requirement.blocking ? '正式完成条件' : '非阻断检查'}
                   </span>{' '}
-                  {requirement.description} · {requirement.admissibilityTier}
+                  {requirement.description} ·{' '}
+                  {ADMISSIBILITY_TEXT[requirement.admissibilityTier] ?? '证据规则已记录'}
                 </p>
               ))}
 
@@ -184,8 +215,8 @@ export function StudyPlanPanel({
           <ol>
             {history.map((item) => (
               <li key={item.id}>
-                版本 {item.version} · {item.status} · {item.projectedMinutes} 分钟 ·{' '}
-                {item.proposalTrigger}
+                版本 {item.version} · {PLAN_STATUS_TEXT[item.status] ?? '已记录'} ·{' '}
+                {item.projectedMinutes} 分钟 · {item.proposalTrigger}
               </li>
             ))}
           </ol>

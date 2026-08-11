@@ -86,13 +86,19 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
+async function openStudyControls(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+  await user.click(await screen.findByText('调整本次学习'));
+}
+
+async function openAgenda(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+  await user.click(await screen.findByText(/^本次安排/));
+}
+
 describe('StudySessionView', () => {
   it('does not offer session operations until a course workspace is selected', () => {
     render(<StudySessionView workspaceId={null} route={null} />);
 
-    expect(
-      screen.getByText('Select a course workspace to begin a study session.'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('请先选择课程，再进入学习。')).toBeInTheDocument();
   });
 
   it('starts only against the accepted route and persisted execution version', async () => {
@@ -114,7 +120,7 @@ describe('StudySessionView', () => {
       />,
     );
 
-    await user.click(await screen.findByRole('button', { name: 'Start study session' }));
+    await user.click(await screen.findByRole('button', { name: '开始学习' }));
 
     await waitFor(() =>
       expect(api.startStudySession).toHaveBeenCalledWith(
@@ -173,7 +179,8 @@ describe('StudySessionView', () => {
     vi.spyOn(window, 'prompt').mockReturnValue('Check my understanding');
 
     render(<StudySessionView workspaceId="ws_1" route={null} onLaunchQuiz={onLaunchQuiz} />);
-    await user.click(await screen.findByRole('button', { name: 'Formal checkpoint' }));
+    await openStudyControls(user);
+    await user.click(await screen.findByRole('button', { name: '发起正式评估' }));
 
     await waitFor(() => expect(api.launchAgendaItem).toHaveBeenCalled());
     expect(onLaunchQuiz).toHaveBeenCalledWith(expect.objectContaining({ id: 'quiz_1' }));
@@ -237,8 +244,9 @@ describe('StudySessionView', () => {
         ]}
       />,
     );
-    await user.selectOptions(await screen.findByLabelText('Detour target'), 'unit_2');
-    await user.click(screen.getByRole('button', { name: 'Detour' }));
+    await openStudyControls(user);
+    await user.selectOptions(await screen.findByLabelText('想探索的学习单元'), 'unit_2');
+    await user.click(screen.getByRole('button', { name: '临时探索' }));
 
     await waitFor(() =>
       expect(api.studySessionCommand).toHaveBeenCalledWith(
@@ -252,9 +260,11 @@ describe('StudySessionView', () => {
         expect.any(AbortSignal),
       ),
     );
-    expect(
-      screen.getByRole('listitem', { name: 'Explore Bayes., current, active' }),
-    ).toHaveAttribute('aria-current', 'step');
+    await openAgenda(user);
+    expect(screen.getByRole('listitem', { name: 'Explore Bayes.，当前，进行中' })).toHaveAttribute(
+      'aria-current',
+      'step',
+    );
   });
 
   it('enables Plan promotion only for the active current learner detour LearningUnit', async () => {
@@ -281,8 +291,9 @@ describe('StudySessionView', () => {
     });
 
     render(<StudySessionView workspaceId="ws_1" route={null} />);
+    await openStudyControls(userEvent.setup());
 
-    expect(await screen.findByRole('button', { name: 'Promote to plan' })).toBeEnabled();
+    expect(await screen.findByRole('button', { name: '纳入长期路线' })).toBeEnabled();
   });
 
   it('disables Plan promotion outside a concrete active learner detour', async () => {
@@ -290,7 +301,8 @@ describe('StudySessionView', () => {
     vi.mocked(api.getStudySession).mockResolvedValue(detail);
 
     const { unmount } = render(<StudySessionView workspaceId="ws_1" route={null} />);
-    expect(await screen.findByRole('button', { name: 'Promote to plan' })).toBeDisabled();
+    await openStudyControls(userEvent.setup());
+    expect(await screen.findByRole('button', { name: '纳入长期路线' })).toBeDisabled();
     unmount();
 
     const detourWithoutUnit = {
@@ -305,7 +317,8 @@ describe('StudySessionView', () => {
     });
 
     render(<StudySessionView workspaceId="ws_1" route={null} />);
-    expect(await screen.findByRole('button', { name: 'Promote to plan' })).toBeDisabled();
+    await openStudyControls(userEvent.setup());
+    expect(await screen.findByRole('button', { name: '纳入长期路线' })).toBeDisabled();
   });
 
   it('shows an inserted activity as current and restores the prior Agenda route', async () => {
@@ -388,10 +401,12 @@ describe('StudySessionView', () => {
       .mockReturnValueOnce('Return after the inserted review.');
 
     render(<StudySessionView workspaceId="ws_1" route={null} />);
-    await user.click(await screen.findByRole('button', { name: 'Insert activity' }));
+    await openStudyControls(user);
+    await user.click(await screen.findByRole('button', { name: '插入短活动' }));
+    await openAgenda(user);
 
     const insertedRow = await screen.findByRole('listitem', {
-      name: 'Review the confusing example., current, active',
+      name: 'Review the confusing example.，当前，进行中',
     });
     expect(insertedRow).toHaveAttribute('aria-current', 'step');
     expect(api.studySessionCommand).toHaveBeenNthCalledWith(
@@ -406,14 +421,14 @@ describe('StudySessionView', () => {
       expect.any(AbortSignal),
     );
 
-    await user.click(screen.getByRole('button', { name: 'Return to route' }));
+    await user.click(screen.getByRole('button', { name: '返回原学习路线' }));
     await waitFor(() =>
       expect(
-        screen.getByRole('listitem', { name: 'Learn the current unit., current, active' }),
+        screen.getByRole('listitem', { name: 'Learn the current unit.，当前，进行中' }),
       ).toHaveAttribute('aria-current', 'step'),
     );
     expect(
-      screen.getByRole('listitem', { name: 'Review the confusing example., completed' }),
+      screen.getByRole('listitem', { name: 'Review the confusing example.，已完成' }),
     ).not.toHaveAttribute('aria-current');
     expect(api.studySessionCommand).toHaveBeenNthCalledWith(
       2,
@@ -428,7 +443,7 @@ describe('StudySessionView', () => {
     );
   });
 
-  it('uses the durable turn stream and renders only the validated terminal exchange', async () => {
+  it('renders validated Tutor prose without inferring formal completion from it', async () => {
     const user = userEvent.setup();
     vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });
     vi.mocked(api.getStudySession).mockResolvedValue(detail);
@@ -488,7 +503,7 @@ describe('StudySessionView', () => {
             turnId: 'turn_1',
             seq: 1,
             role: 'tutor',
-            content: 'Validated terminal explanation.',
+            content: 'You have completed this unit.',
             channel: 'conversation',
             createdAt: session.updatedAt,
           },
@@ -498,11 +513,16 @@ describe('StudySessionView', () => {
     });
 
     render(<StudySessionView workspaceId="ws_1" route={null} />);
-    const composer = await screen.findByPlaceholderText('Ask about this unit...');
+    const composer = await screen.findByPlaceholderText('输入你的问题或想法…');
     await user.type(composer, 'Why?');
-    await user.click(screen.getByRole('button', { name: 'Send' }));
+    await user.click(screen.getByRole('button', { name: '发送' }));
 
-    expect(await screen.findByText('Validated terminal explanation.')).toBeInTheDocument();
-    expect(screen.getByText('Latest turn: completed')).toBeInTheDocument();
+    expect(await screen.findByText('You have completed this unit.')).toBeInTheDocument();
+    expect(screen.getByText('Why?')).toBeInTheDocument();
+    expect(screen.queryByText('started')).not.toBeInTheDocument();
+    await openAgenda(user);
+    expect(
+      screen.getByRole('listitem', { name: 'Learn the current unit.，当前，进行中' }),
+    ).toHaveAttribute('aria-current', 'step');
   });
 });

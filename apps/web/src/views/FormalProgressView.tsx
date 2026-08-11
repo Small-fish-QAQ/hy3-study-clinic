@@ -20,9 +20,9 @@ export interface FormalProgressViewProps {
 }
 
 const tierLabel: Record<string, string> = {
-  tier_1_authorized_truth: 'Tier 1 authorized',
-  tier_2_validated_representation: 'Tier 2 validated',
-  tier_3_advisory: 'Tier 3 advisory',
+  tier_1_authorized_truth: '已验证课程依据',
+  tier_2_validated_representation: '已验证的表示方式',
+  tier_3_advisory: '仅供参考',
 };
 
 const CONTRACT_SUCCESSOR_TRIGGER_KINDS = new Set([
@@ -185,42 +185,40 @@ export function FormalProgressView({
     onCourseChanged();
   }
 
-  if (!workspaceId)
-    return <Banner kind="empty">Select a course workspace to inspect formal progress.</Banner>;
-  if (loading && !progression) return <Loading label="Loading formal progress..." />;
+  if (!workspaceId) return <Banner kind="empty">请先选择课程，再查看正式进展。</Banner>;
+  if (loading && !progression) return <Loading label="加载正式进展…" />;
 
   return (
-    <section className="formal-progress stack" aria-label="Formal learning progress">
+    <section className="formal-progress stack" aria-label="正式学习进展">
       {error ? <Banner kind="error">{error}</Banner> : null}
       {action.error ? <Banner kind="error">{action.error}</Banner> : null}
       <header className="formal-progress-header">
         <div>
-          <h2>Formal progress</h2>
+          <h2>正式进展</h2>
           <p className="muted">
-            Only locally reconciled, admissible evidence can affect this view. Tutor dialogue is not
-            evidence.
+            只有经过本地核对并符合规则的证据，才能影响正式进展。Tutor 对话不是正式证据。
           </p>
         </div>
         <div className="row">
           <button type="button" onClick={() => onOpenProgress('history')}>
-            Attempts
+            测验记录
           </button>
           <button type="button" onClick={() => onOpenProgress('mistakes')}>
-            Repairs
+            错题与修复
           </button>
           <button type="button" onClick={() => onOpenProgress('mastery')}>
-            Mastery
+            掌握与复习
           </button>
           <button type="button" onClick={() => void refresh()} disabled={loading}>
-            Refresh
+            刷新
           </button>
         </div>
       </header>
 
-      <section className="progress-band" aria-label="Evidence admissibility">
-        <h3>Evidence and admissibility</h3>
+      <section className="progress-band" aria-label="正式证据与可计入状态">
+        <h3>正式证据与可计入状态</h3>
         {(progression?.evidence.length ?? 0) === 0 ? (
-          <p className="muted">No formal evidence has been recorded.</p>
+          <p className="muted">还没有正式证据，这是尚未完成正式评估时的正常状态。</p>
         ) : null}
         <div className="progress-table" role="table">
           {(progression?.evidence ?? [])
@@ -229,25 +227,21 @@ export function FormalProgressView({
             .map((evidence) => (
               <div className="progress-row" role="row" key={evidence.id}>
                 <span>{evidence.curriculumLearningUnitId}</span>
-                <span>{tierLabel[evidence.admissibilityTier] ?? evidence.admissibilityTier}</span>
+                <span>{tierLabel[evidence.admissibilityTier] ?? '证据级别已记录'}</span>
                 <span>{Math.round(evidence.normalizedScore * 100)}%</span>
-                <span>{evidence.stateCreditable ? 'Creditable' : 'Advisory only'}</span>
+                <span>{evidence.stateCreditable ? '可计入正式进展' : '仅供参考'}</span>
                 <span>
-                  {evidence.needsReview
-                    ? 'Needs review'
-                    : evidence.correct
-                      ? 'Correct'
-                      : 'Incorrect'}
+                  {evidence.needsReview ? '需要复核' : evidence.correct ? '通过' : '未通过'}
                 </span>
               </div>
             ))}
         </div>
       </section>
 
-      <section className="progress-band" aria-label="Unit completion">
-        <h3>Unit completion and repair</h3>
+      <section className="progress-band" aria-label="学习单元完成与修复">
+        <h3>学习单元完成与修复</h3>
         {unitIds.length === 0 ? (
-          <p className="muted">Units will appear after formal evidence is reconciled.</p>
+          <p className="muted">正式证据核对后，学习单元状态会显示在这里。</p>
         ) : null}
         <div className="progress-table" role="table">
           {unitIds.map((unitId) => {
@@ -256,20 +250,22 @@ export function FormalProgressView({
               <div className="progress-row" role="row" key={unitId}>
                 <strong>{unitId}</strong>
                 <span className={`pill progression-state ${decision?.nextState ?? 'not_started'}`}>
-                  {decision?.nextState?.replaceAll('_', ' ') ?? 'not started'}
+                  {decision?.nextState ? progressionStateLabel(decision.nextState) : '未开始'}
                 </span>
-                <span>{decision?.kind.replaceAll('_', ' ') ?? 'awaiting reconciliation'}</span>
-                <span>{decision?.reasonCodes.join(', ') ?? 'No formal decision yet'}</span>
+                <span>{decision?.kind ? progressionKindLabel(decision.kind) : '等待核对'}</span>
+                <span>
+                  {decision?.reasonCodes.map(progressionReasonLabel).join('、') ?? '还没有正式决定'}
+                </span>
               </div>
             );
           })}
         </div>
       </section>
 
-      <section className="progress-band" aria-label="Reconciliation state">
-        <h3>Reconciliation</h3>
+      <section className="progress-band" aria-label="正式结果核对">
+        <h3>正式结果核对</h3>
         {(progression?.reconciliations.length ?? 0) === 0 ? (
-          <p className="muted">No grading result is awaiting reconciliation.</p>
+          <p className="muted">没有等待核对的判分结果。</p>
         ) : null}
         <div className="progress-table" role="table">
           {(progression?.reconciliations ?? [])
@@ -279,10 +275,10 @@ export function FormalProgressView({
               <div className="progress-row" role="row" key={item.id}>
                 <span>{item.curriculumLearningUnitId}</span>
                 <span className={`pill reconciliation ${item.status}`}>
-                  {item.status.replaceAll('_', ' ')}
+                  {reconciliationLabel(item.status)}
                 </span>
-                <span>{item.reason ?? 'Local reconciliation pending'}</span>
-                <span>{item.decisionId ?? 'No decision'}</span>
+                <span>{item.reason ?? '等待本地核对'}</span>
+                <span>{item.decisionId ?? '尚无决定'}</span>
                 {item.status === 'reconciliation_pending' &&
                 overview?.acceptedStudyPlan?.id === item.studyPlanVersionId ? (
                   <button
@@ -290,7 +286,7 @@ export function FormalProgressView({
                     disabled={action.loading}
                     onClick={() => void retryReconciliation(item.gradingResultId)}
                   >
-                    Retry reconciliation
+                    重新核对
                   </button>
                 ) : null}
               </div>
@@ -298,10 +294,10 @@ export function FormalProgressView({
         </div>
       </section>
 
-      <section className="progress-band" aria-label="Qualified replans">
-        <h3>Replan changes</h3>
+      <section className="progress-band" aria-label="学习路线调整">
+        <h3>学习路线调整</h3>
         {(progression?.replanTriggers.length ?? 0) === 0 ? (
-          <p className="muted">No qualified replan trigger is active.</p>
+          <p className="muted">当前没有需要调整学习路线的条件。</p>
         ) : null}
         {(progression?.replanTriggers ?? [])
           .slice(-12)
@@ -309,19 +305,18 @@ export function FormalProgressView({
           .map((trigger) => (
             <article className="replan-record" key={trigger.id}>
               <div className="row between">
-                <strong>{trigger.kind.replaceAll('_', ' ')}</strong>
-                <span className="pill">{trigger.status.replaceAll('_', ' ')}</span>
+                <strong>{replanKindLabel(trigger.kind)}</strong>
+                <span className="pill">{replanStatusLabel(trigger.status)}</span>
               </div>
               <p>{trigger.reason}</p>
               <p className="small muted">
-                Affected units: {trigger.facts.affectedLearningUnitIds.join(', ') || 'none'} |
-                occurrences: {trigger.facts.qualifyingOccurrences}
+                受影响单元：{trigger.facts.affectedLearningUnitIds.join('、') || '无'} · 达标次数：
+                {trigger.facts.qualifyingOccurrences}
               </p>
               {trigger.status === 'qualified' &&
               CONTRACT_SUCCESSOR_TRIGGER_KINDS.has(trigger.kind) ? (
                 <Banner kind="info">
-                  Update and learner-confirm a successor Learning Contract from Course Home before
-                  proposing its StudyPlan.
+                  请先回到课程主页更新并确认新的学习目标，再提出后续路线。
                 </Banner>
               ) : null}
               {trigger.status === 'qualified' &&
@@ -333,50 +328,48 @@ export function FormalProgressView({
                   disabled={action.loading}
                   onClick={() => void createReplanProposal(trigger.id)}
                 >
-                  Create route proposal
+                  提出路线调整
                 </button>
               ) : null}
             </article>
           ))}
         {overview?.proposedStudyPlan ? (
           <div className="replan-decision">
-            <h4>Proposed route diff</h4>
+            <h4>待确认的路线变化</h4>
             {overview.proposedStudyPlan.diff.length === 0 ? (
-              <p className="muted">The proposed route has no recorded item diff.</p>
+              <p className="muted">这份路线没有记录项目变化。</p>
             ) : (
               <StudyPlanDiffList changes={overview.proposedStudyPlan.diff} />
             )}
             <div className="row">
               <button type="button" className="primary" onClick={onAcceptProposedPlan}>
-                Accept route
+                接受路线调整
               </button>
               <button type="button" onClick={onRejectProposedPlan}>
-                Reject route
+                拒绝路线调整
               </button>
             </div>
           </div>
         ) : null}
       </section>
 
-      <section className="progress-band" aria-label="Goal outcome">
-        <h3>Goal outcome</h3>
+      <section className="progress-band" aria-label="学习目标结果">
+        <h3>学习目标结果</h3>
         {(progression?.goalOutcomes ?? [])
           .slice(-5)
           .reverse()
           .map((outcome) => (
             <article className="goal-outcome" key={outcome.id}>
-              <strong>{outcome.status.replaceAll('_', ' ')}</strong>
+              <strong>{goalOutcomeLabel(outcome.status)}</strong>
               <p>{outcome.reason}</p>
               <p className="small muted">
-                Formal evidence: {outcome.formalEvidenceIds.length}; unresolved risks:{' '}
+                正式证据：{outcome.formalEvidenceIds.length} · 未解决风险：
                 {outcome.unresolvedRiskIds.length}
               </p>
             </article>
           ))}
         {!routeReady ? (
-          <Banner kind="info">
-            An active accepted route is required to record a goal outcome.
-          </Banner>
+          <Banner kind="info">需要先有正在执行的已接受路线，才能记录学习目标结果。</Banner>
         ) : null}
         {routeReady ? (
           <form
@@ -387,19 +380,19 @@ export function FormalProgressView({
             }}
           >
             <label>
-              Status
+              结果
               <select
                 value={outcomeStatus}
                 onChange={(event) => setOutcomeStatus(event.target.value as typeof outcomeStatus)}
               >
-                <option value="achieved">Achieved</option>
-                <option value="finished_with_gaps">Finished with gaps</option>
-                <option value="expired_unfinished">Expired unfinished</option>
-                <option value="abandoned">Abandoned</option>
+                <option value="achieved">已达成</option>
+                <option value="finished_with_gaps">完成但保留缺口</option>
+                <option value="expired_unfinished">到期未完成</option>
+                <option value="abandoned">主动停止</option>
               </select>
             </label>
             <label>
-              Reason
+              说明
               <textarea
                 required
                 value={outcomeReason}
@@ -409,12 +402,9 @@ export function FormalProgressView({
             </label>
             {outcomeStatus === 'finished_with_gaps' ? (
               <fieldset className="goal-outcome-risks">
-                <legend>Unresolved risks</legend>
+                <legend>未解决风险</legend>
                 {outcomeRisks.length === 0 ? (
-                  <Banner kind="info">
-                    No current named risk is available. Record or defer a specific gap before
-                    finishing with gaps.
-                  </Banner>
+                  <Banner kind="info">当前没有可选的具体风险。请先记录或延期一个明确缺口。</Banner>
                 ) : null}
                 {outcomeRisks.map((risk) => (
                   <label key={risk.id}>
@@ -441,11 +431,96 @@ export function FormalProgressView({
               className="primary"
               disabled={action.loading || outcomeReason.trim().length === 0}
             >
-              Record outcome
+              记录学习目标结果
             </button>
           </form>
         ) : null}
       </section>
     </section>
   );
+}
+
+function progressionStateLabel(value: string): string {
+  const labels: Record<string, string> = {
+    not_started: '未开始',
+    in_progress: '学习中',
+    complete: '已完成',
+    completed: '已完成',
+    repair_needed: '需要修复',
+    deferred: '已延期',
+    blocked: '暂时受阻',
+  };
+  return labels[value] ?? value;
+}
+
+function progressionKindLabel(value: string): string {
+  const labels: Record<string, string> = {
+    complete: '完成决定',
+    continue: '继续学习',
+    targeted_repair: '定向修复',
+    deferred: '延期',
+    replan_candidate: '建议调整路线',
+  };
+  return labels[value] ?? '正式进展已更新';
+}
+
+function progressionReasonLabel(value: string): string {
+  const labels: Record<string, string> = {
+    prior_completion_preserved: '保留既有完成状态',
+    synthesis_transfer_gap: '综合迁移仍有缺口',
+    eligible_evidence_satisfied: '正式证据已满足要求',
+    sufficient_admissible_evidence: '可采纳的正式证据已满足要求',
+    eligible_evidence_below_policy: '正式结果尚未达到要求',
+    synthesis_required: '仍需完成综合评估',
+    blocking_objective_evidence_missing: '关键目标缺少正式证据',
+    insufficient_eligible_evidence: '正式证据仍不足',
+  };
+  return labels[value] ?? '请查看正式证据详情';
+}
+
+function goalOutcomeLabel(value: string): string {
+  const labels: Record<string, string> = {
+    achieved: '目标已达成',
+    finished_with_gaps: '已结束，但仍有缺口',
+    expired_unfinished: '到期未完成',
+    abandoned: '已终止',
+  };
+  return labels[value] ?? '结果已记录';
+}
+
+function reconciliationLabel(value: string): string {
+  const labels: Record<string, string> = {
+    reconciliation_pending: '等待核对',
+    applied: '已计入进展',
+    reconciled: '已核对',
+    stale: '状态已过期',
+    rejected: '已拒绝',
+  };
+  return labels[value] ?? value;
+}
+
+function replanKindLabel(value: string): string {
+  const labels: Record<string, string> = {
+    deadline_or_target_change: '目标或截止时间变化',
+    sustained_study_time_change: '可用学习时间持续变化',
+    persistent_pace_risk: '持续进度风险',
+    learner_scope_change: '学习范围变化',
+    repeated_formal_evidence: '多次正式结果提示需要调整',
+    synthesis_failure: '综合练习暴露缺口',
+    strong_prerequisite_failure: '先修内容仍未通过',
+    source_manifest_change: '课程资料需要重新核对',
+    promoted_detour: '临时探索已纳入学习路线',
+  };
+  return labels[value] ?? '路线调整条件';
+}
+
+function replanStatusLabel(value: string): string {
+  const labels: Record<string, string> = {
+    candidate: '等待条件核对',
+    qualified: '已满足条件',
+    dismissed: '无需调整',
+    proposal_created: '待确认',
+    resolved: '已处理',
+  };
+  return labels[value] ?? '已记录';
 }

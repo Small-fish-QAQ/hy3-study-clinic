@@ -92,6 +92,77 @@ function openSavedWorkspace() {
 }
 
 describe('学习图谱工作台 — workspace and document area', () => {
+  it('keeps the graph primary in embedded Explore and removes Course management controls', async () => {
+    const user = userEvent.setup();
+    installViewMock(baseRoutes());
+    render(
+      <GraphWorkspaceView
+        refreshKey={0}
+        selectedWorkspaceId="ws_1"
+        onWorkspaceSelected={vi.fn()}
+        onLaunchQuiz={vi.fn()}
+        courseLocked
+      />,
+    );
+
+    expect(await screen.findByRole('heading', { name: '探索' })).toBeInTheDocument();
+    expect(screen.getAllByLabelText('个人学习图谱').length).toBeGreaterThan(0);
+    expect(screen.queryByText('每日学习队列')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('新建课程')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '展开资料面板' }));
+    expect(await screen.findByText(documentSummary.title)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '删除' })).not.toBeInTheDocument();
+    expect(screen.queryByText('添加课程资料')).not.toBeInTheDocument();
+  });
+
+  it('routes an empty embedded Explore back to Course Materials', async () => {
+    const user = userEvent.setup();
+    const onOpenMaterials = vi.fn();
+    const emptyWorkspace = { ...workspace, activeGraphVersionId: null };
+    installViewMock([
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces$/,
+        handler: () => ({ body: { workspaces: [workspaceSummary] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1$/,
+        handler: () => ({ body: { workspace: emptyWorkspace, documents: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/graph$/,
+        handler: () => ({ body: { version: null, edges: [], concepts: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/graph\/versions$/,
+        handler: () => ({ body: { versions: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/overlay$/,
+        handler: () => ({ body: { states: [] } }),
+      },
+    ]);
+    render(
+      <GraphWorkspaceView
+        refreshKey={0}
+        selectedWorkspaceId="ws_1"
+        onOpenMaterials={onOpenMaterials}
+        onLaunchQuiz={vi.fn()}
+        courseLocked
+      />,
+    );
+
+    expect(await screen.findByText(/请先从主页添加课程资料/)).toBeInTheDocument();
+    expect(screen.queryByText(/左侧「资料库」/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '前往课程资料' }));
+    expect(onOpenMaterials).toHaveBeenCalledOnce();
+  });
+
   it('shows the empty state when no workspaces exist', async () => {
     installViewMock([
       {
@@ -101,9 +172,9 @@ describe('学习图谱工作台 — workspace and document area', () => {
       },
     ]);
     renderView();
-    expect(await screen.findByText(/还没有课程空间/)).toBeInTheDocument();
+    expect(await screen.findByText(/还没有课程。先创建一门课程/)).toBeInTheDocument();
     expect(screen.getByText(/选择或创建一个课程空间/)).toBeInTheDocument();
-    expect(screen.getByLabelText('新建课程空间')).toBeInTheDocument();
+    expect(screen.getByLabelText('新建课程')).toBeInTheDocument();
   });
 
   it('creates a workspace and opens it', async () => {
@@ -142,7 +213,7 @@ describe('学习图谱工作台 — workspace and document area', () => {
       },
     ]);
     renderView();
-    await user.type(await screen.findByLabelText('新建课程空间'), '新课程');
+    await user.type(await screen.findByLabelText('新建课程'), '新课程');
     await user.click(screen.getByRole('button', { name: '创建' }));
     expect(await screen.findByLabelText('学习图谱引导')).toBeInTheDocument();
     expect(window.localStorage.getItem(LAST_WORKSPACE_KEY)).toBe('ws_new');
@@ -1189,9 +1260,9 @@ describe('学习图谱工作台 — course-space deletion', () => {
     ]);
     renderView();
 
-    expect(await screen.findByText(/1 文档 · 0 概念/)).toBeInTheDocument();
+    expect(await screen.findByText(/1 份资料 · 0 个概念/)).toBeInTheDocument();
     await user.click((await screen.findAllByRole('button', { name: '提取概念' }))[0]!);
-    expect(await screen.findByText(/1 文档 · 2 概念/)).toBeInTheDocument();
+    expect(await screen.findByText(/1 份资料 · 2 个概念/)).toBeInTheDocument();
   });
 
   it('deletes an empty historical course space and refreshes the list (the ghost-entry scenario)', async () => {
@@ -1223,7 +1294,7 @@ describe('学习图谱工作台 — course-space deletion', () => {
     );
 
     expect(await screen.findByText('历史课程')).toBeInTheDocument();
-    expect(screen.getByText(/0 文档 · 0 概念/)).toBeInTheDocument();
+    expect(screen.getByText(/0 份资料 · 0 个概念/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '删除课程空间:历史课程' }));
 
     await waitFor(() => {
@@ -1347,10 +1418,10 @@ describe('学习图谱工作台 — course-space deletion', () => {
     ]);
     renderView();
 
-    expect(await screen.findByText(/0 文档 · 0 概念/)).toBeInTheDocument();
+    expect(await screen.findByText(/0 份资料 · 0 个概念/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '删除课程空间:认知科学课程' }));
 
-    expect(await screen.findByText(/还没有课程空间/)).toBeInTheDocument();
+    expect(await screen.findByText(/还没有课程。先创建一门课程/)).toBeInTheDocument();
     expect(screen.getByText(/选择或创建一个课程空间/)).toBeInTheDocument();
     expect(window.localStorage.getItem(LAST_WORKSPACE_KEY)).toBeNull();
   });
@@ -1384,7 +1455,7 @@ describe('学习图谱工作台 — course-space deletion', () => {
 
     await user.click(await screen.findByRole('button', { name: '删除课程空间:历史课程' }));
 
-    expect(await screen.findByText(/删除课程空间失败:数据库繁忙/)).toBeInTheDocument();
+    expect(await screen.findByText(/删除课程失败:数据库繁忙/)).toBeInTheDocument();
     expect(screen.getByText('历史课程')).toBeInTheDocument();
     expect(onWorkspaceDeleted).not.toHaveBeenCalled();
     // No refresh happened after the failure — one initial list load only.
@@ -1431,7 +1502,7 @@ describe('学习图谱工作台 — course-space deletion', () => {
     await waitFor(() => {
       expect(screen.queryByText('历史课程')).not.toBeInTheDocument();
     });
-    expect(screen.queryByText(/删除课程空间失败/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/删除课程失败/)).not.toBeInTheDocument();
     expect(onWorkspaceDeleted).toHaveBeenCalledWith('ws_2');
   });
 
@@ -1567,7 +1638,7 @@ describe('学习图谱工作台 — document deletion lifecycle', () => {
 
     // Server-confirmed retirement: the entry disappears, the view falls
     // back to the empty state, and nothing keeps referencing ws_1.
-    expect(await screen.findByText(/还没有课程空间/)).toBeInTheDocument();
+    expect(await screen.findByText(/还没有课程。先创建一门课程/)).toBeInTheDocument();
     expect(screen.queryByText('认知科学课程')).not.toBeInTheDocument();
     expect(window.localStorage.getItem(LAST_WORKSPACE_KEY)).toBeNull();
     expect(onWorkspaceDeleted).toHaveBeenCalledWith('ws_1');
@@ -1649,7 +1720,7 @@ describe('学习图谱工作台 — document deletion lifecycle', () => {
     // The workspace stays selected and listed with corrected counts.
     expect(await screen.findByText('文档(0)')).toBeInTheDocument();
     expect(screen.getByText('认知科学课程')).toBeInTheDocument();
-    expect(screen.getByText(/0 文档 · 0 概念/)).toBeInTheDocument();
+    expect(screen.getByText(/0 份资料 · 0 个概念/)).toBeInTheDocument();
     expect(window.localStorage.getItem(LAST_WORKSPACE_KEY)).toBe('ws_1');
     expect(onWorkspaceDeleted).not.toHaveBeenCalled();
   });

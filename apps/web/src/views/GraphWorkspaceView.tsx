@@ -57,6 +57,10 @@ export interface GraphWorkspaceViewProps {
   /** Optional App-owned Course selection shared with Course Home. */
   selectedWorkspaceId?: string | null;
   onWorkspaceSelected?: (workspaceId: string | null) => void;
+  /** Course shell already owns selection and navigation. */
+  courseLocked?: boolean;
+  /** Course-scoped path back to material management when Explore is empty. */
+  onOpenMaterials?: () => void;
 }
 
 interface WorkspaceData {
@@ -96,6 +100,8 @@ export function GraphWorkspaceView({
   onWorkspaceDeleted,
   selectedWorkspaceId,
   onWorkspaceSelected,
+  courseLocked = false,
+  onOpenMaterials,
 }: GraphWorkspaceViewProps) {
   const [workspaces, setWorkspaces] = useState<WorkspaceSummary[]>([]);
   const [workspacesLoading, setWorkspacesLoading] = useState(true);
@@ -124,7 +130,7 @@ export function GraphWorkspaceView({
   const [mapping, setMapping] = useState<DocumentMapping | null>(null);
   const [mappingLoading, setMappingLoading] = useState(false);
   const [deepeningSection, setDeepeningSection] = useState<string | null>(null);
-  const [leftCollapsed, setLeftCollapsed] = useState(false);
+  const [leftCollapsed, setLeftCollapsed] = useState(courseLocked);
   const [rightCollapsed, setRightCollapsed] = useState(false);
 
   const epochRef = useRef(0);
@@ -773,7 +779,7 @@ export function GraphWorkspaceView({
 
   return (
     <section
-      className={`graph-workspace ${leftCollapsed ? 'left-collapsed' : ''} ${
+      className={`graph-workspace ${courseLocked ? 'course-locked' : ''} ${leftCollapsed ? 'left-collapsed' : ''} ${
         rightCollapsed ? 'right-collapsed' : ''
       }`}
     >
@@ -792,7 +798,7 @@ export function GraphWorkspaceView({
       ) : (
         <aside className="workspace-panel" aria-label="课程空间与文档">
           <div className="panel-head">
-            <h2>资料库</h2>
+            <h2>{courseLocked ? '探索工具' : '课程与资料'}</h2>
             <button
               type="button"
               className="rail-toggle"
@@ -803,73 +809,79 @@ export function GraphWorkspaceView({
               «
             </button>
           </div>
-          {workspacesError ? <Banner kind="error">{workspacesError}</Banner> : null}
-          {workspacesLoading ? <Loading label="加载课程空间…" /> : null}
-          <ul className="workspace-list">
-            {workspaces.map((ws) => (
-              <li key={ws.id} className="workspace-item">
+          {!courseLocked ? (
+            <>
+              {workspacesError ? <Banner kind="error">{workspacesError}</Banner> : null}
+              {workspacesLoading ? <Loading label="加载课程…" /> : null}
+              <ul className="workspace-list">
+                {workspaces.map((ws) => (
+                  <li key={ws.id} className="workspace-item">
+                    <button
+                      type="button"
+                      className={`workspace-open ${ws.id === activeWorkspaceId ? 'active' : ''}`}
+                      onClick={() => switchWorkspace(ws.id)}
+                    >
+                      {ws.name}
+                      <span className="small muted">
+                        {' '}
+                        {ws.documentCount} 份资料 · {ws.conceptCount} 个概念
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="ghost small danger workspace-delete"
+                      aria-label={`删除课程空间:${ws.name}`}
+                      title={`删除课程空间:${ws.name}`}
+                      disabled={deleteWorkspaceAction.loading}
+                      onClick={() => void handleDeleteWorkspace(ws)}
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              {deleteWorkspaceAction.error ? (
+                <Banner kind="error">删除课程失败:{deleteWorkspaceAction.error}</Banner>
+              ) : null}
+              {!workspacesLoading && workspaces.length === 0 ? (
+                <Banner kind="empty">还没有课程。先创建一门课程，然后添加学习资料。</Banner>
+              ) : null}
+              <div className="workspace-create">
+                <label htmlFor="new-workspace-name">新建课程</label>
+                <input
+                  id="new-workspace-name"
+                  value={newWorkspaceName}
+                  placeholder="例如:认知科学导论"
+                  onChange={(e) => setNewWorkspaceName(e.target.value)}
+                />
                 <button
                   type="button"
-                  className={`workspace-open ${ws.id === activeWorkspaceId ? 'active' : ''}`}
-                  onClick={() => switchWorkspace(ws.id)}
+                  className="primary"
+                  disabled={createAction.loading || newWorkspaceName.trim().length === 0}
+                  onClick={() => void handleCreateWorkspace()}
                 >
-                  {ws.name}
-                  <span className="small muted">
-                    {' '}
-                    {ws.documentCount} 文档 · {ws.conceptCount} 概念
-                  </span>
+                  创建
                 </button>
-                <button
-                  type="button"
-                  className="ghost small danger workspace-delete"
-                  aria-label={`删除课程空间:${ws.name}`}
-                  title={`删除课程空间:${ws.name}`}
-                  disabled={deleteWorkspaceAction.loading}
-                  onClick={() => void handleDeleteWorkspace(ws)}
-                >
-                  ✕
-                </button>
-              </li>
-            ))}
-          </ul>
-          {deleteWorkspaceAction.error ? (
-            <Banner kind="error">删除课程空间失败:{deleteWorkspaceAction.error}</Banner>
+                {createAction.error ? <Banner kind="error">{createAction.error}</Banner> : null}
+              </div>
+            </>
           ) : null}
-          {!workspacesLoading && workspaces.length === 0 ? (
-            <Banner kind="empty">还没有课程空间。先创建一个,然后导入学习文档。</Banner>
-          ) : null}
-          <div className="workspace-create">
-            <label htmlFor="new-workspace-name">新建课程空间</label>
-            <input
-              id="new-workspace-name"
-              value={newWorkspaceName}
-              placeholder="例如:认知科学导论"
-              onChange={(e) => setNewWorkspaceName(e.target.value)}
-            />
-            <button
-              type="button"
-              className="primary"
-              disabled={createAction.loading || newWorkspaceName.trim().length === 0}
-              onClick={() => void handleCreateWorkspace()}
-            >
-              创建
-            </button>
-            {createAction.error ? <Banner kind="error">{createAction.error}</Banner> : null}
-          </div>
 
           {activeWorkspaceId && data ? (
             <>
-              <DailyQueue
-                items={data.queue}
-                loading={dataLoading}
-                error={assessmentAction.error}
-                launchBusy={pendingLaunch !== null}
-                startingConceptId={pendingLaunch?.surface === 'queue' ? pendingLaunch.key : null}
-                diagnosticStarting={pendingLaunch?.surface === 'diagnostic'}
-                canDiagnose={data.concepts.length > 0}
-                onStartItem={handleStartQueueItem}
-                onStartDiagnostic={handleStartDiagnostic}
-              />
+              {!courseLocked ? (
+                <DailyQueue
+                  items={data.queue}
+                  loading={dataLoading}
+                  error={assessmentAction.error}
+                  launchBusy={pendingLaunch !== null}
+                  startingConceptId={pendingLaunch?.surface === 'queue' ? pendingLaunch.key : null}
+                  diagnosticStarting={pendingLaunch?.surface === 'diagnostic'}
+                  canDiagnose={data.concepts.length > 0}
+                  onStartItem={handleStartQueueItem}
+                  onStartDiagnostic={handleStartDiagnostic}
+                />
+              ) : null}
 
               <h3>文档({data.documents.length})</h3>
               <ul className="document-list">
@@ -922,18 +934,25 @@ export function GraphWorkspaceView({
                                     {section.mapped ? null : (
                                       <>
                                         {' '}
-                                        <span className="pill">未映射</span>{' '}
-                                        <button
-                                          type="button"
-                                          className="ghost small"
-                                          disabled={analyzeAction.loading}
-                                          aria-busy={deepeningSection === section.key}
-                                          onClick={() => void handleAnalyze(doc.id, section.key)}
-                                        >
-                                          {deepeningSection === section.key
-                                            ? '正在提取…'
-                                            : '继续提取'}
-                                        </button>
+                                        <span className="pill">未映射</span>
+                                        {!courseLocked ? (
+                                          <>
+                                            {' '}
+                                            <button
+                                              type="button"
+                                              className="ghost small"
+                                              disabled={analyzeAction.loading}
+                                              aria-busy={deepeningSection === section.key}
+                                              onClick={() =>
+                                                void handleAnalyze(doc.id, section.key)
+                                              }
+                                            >
+                                              {deepeningSection === section.key
+                                                ? '正在提取…'
+                                                : '继续提取'}
+                                            </button>
+                                          </>
+                                        ) : null}
                                       </>
                                     )}
                                   </li>
@@ -946,36 +965,38 @@ export function GraphWorkspaceView({
                         </details>
                       ) : null}
                     </div>
-                    <div className="document-actions">
-                      {doc.conceptCount === 0 ? (
+                    {!courseLocked ? (
+                      <div className="document-actions">
+                        {doc.conceptCount === 0 ? (
+                          <button
+                            type="button"
+                            className="small"
+                            disabled={analyzeAction.loading}
+                            onClick={() => void handleAnalyze(doc.id)}
+                          >
+                            提取概念
+                          </button>
+                        ) : null}
+                        {doc.sourceType === 'pdf' || doc.sourceType === 'docx' ? (
+                          <button
+                            type="button"
+                            className="ghost small"
+                            disabled={documentAction.loading}
+                            onClick={() => void handleReprocessDocument(doc.id)}
+                          >
+                            重新解析
+                          </button>
+                        ) : null}
                         <button
                           type="button"
-                          className="small"
-                          disabled={analyzeAction.loading}
-                          onClick={() => void handleAnalyze(doc.id)}
-                        >
-                          提取概念
-                        </button>
-                      ) : null}
-                      {doc.sourceType === 'pdf' || doc.sourceType === 'docx' ? (
-                        <button
-                          type="button"
-                          className="ghost small"
+                          className="ghost small danger"
                           disabled={documentAction.loading}
-                          onClick={() => void handleReprocessDocument(doc.id)}
+                          onClick={() => void handleDeleteDocument(doc.id)}
                         >
-                          重新解析
+                          删除
                         </button>
-                      ) : null}
-                      <button
-                        type="button"
-                        className="ghost small danger"
-                        disabled={documentAction.loading}
-                        onClick={() => void handleDeleteDocument(doc.id)}
-                      >
-                        删除
-                      </button>
-                    </div>
+                      </div>
+                    ) : null}
                   </li>
                 ))}
               </ul>
@@ -991,18 +1012,20 @@ export function GraphWorkspaceView({
               {analyzeAction.error ? <Banner kind="error">{analyzeAction.error}</Banner> : null}
               {documentAction.error ? <Banner kind="error">{documentAction.error}</Banner> : null}
 
-              <AddDocumentForm
-                loading={addDocAction.loading}
-                error={addDocAction.error}
-                onCancel={addDocAction.cancel}
-                onAddText={(content, title) => void handleAddText(content, title)}
-                onAddFile={(file) => void handleAddFile(file)}
-              />
+              {!courseLocked ? (
+                <AddDocumentForm
+                  loading={addDocAction.loading}
+                  error={addDocAction.error}
+                  onCancel={addDocAction.cancel}
+                  onAddText={(content, title) => void handleAddText(content, title)}
+                  onAddFile={(file) => void handleAddFile(file)}
+                />
+              ) : null}
 
               <h3>概念图谱</h3>
               <p className="small muted">
                 {data.version
-                  ? `当前版本:${data.version.id.slice(0, 11)}…(${data.version.status})`
+                  ? `当前版本:${data.version.id.slice(0, 11)}…(${graphVersionStatusLabel(data.version.status)})`
                   : '还没有生成图谱。'}
               </p>
               {summary ? (
@@ -1041,7 +1064,7 @@ export function GraphWorkspaceView({
                   <ul>
                     {data.versions.map((v) => (
                       <li key={v.id}>
-                        {v.id.slice(0, 11)}… · {v.status}
+                        {v.id.slice(0, 11)}… · {graphVersionStatusLabel(v.status)}
                         {v.id === data.workspace.activeGraphVersionId ? '(当前)' : null}
                         {v.status === 'ready' && v.id !== data.workspace.activeGraphVersionId ? (
                           <button
@@ -1067,7 +1090,12 @@ export function GraphWorkspaceView({
 
       <div className="graph-area" aria-label="个人学习图谱">
         <div className="graph-area-head">
-          <h2>个人学习图谱</h2>
+          <div>
+            <h2>{courseLocked ? '探索' : '个人学习图谱'}</h2>
+            {courseLocked ? (
+              <p className="small muted">查看概念关系与课程依据，不会改变当前学习路线。</p>
+            ) : null}
+          </div>
           {data && weakCount > 0 ? (
             <span className="pill weak">薄弱概念 {weakCount} 个</span>
           ) : null}
@@ -1125,6 +1153,8 @@ export function GraphWorkspaceView({
             weakCount={weakCount}
             analyzeLoading={analyzeAction.loading}
             graphLoading={graphAction.loading}
+            courseLocked={courseLocked}
+            onOpenMaterials={onOpenMaterials}
             onAnalyzeFirst={() => {
               const target = data.documents.find((doc) => doc.conceptCount === 0);
               if (target) void handleAnalyze(target.id);
@@ -1299,6 +1329,8 @@ function GraphOnboarding({
   weakCount,
   analyzeLoading,
   graphLoading,
+  courseLocked,
+  onOpenMaterials,
   onAnalyzeFirst,
   onGenerate,
 }: {
@@ -1307,6 +1339,8 @@ function GraphOnboarding({
   weakCount: number;
   analyzeLoading: boolean;
   graphLoading: boolean;
+  courseLocked: boolean;
+  onOpenMaterials?: () => void;
   onAnalyzeFirst: () => void;
   onGenerate: () => void;
 }) {
@@ -1337,7 +1371,16 @@ function GraphOnboarding({
       </ol>
       {!hasDocuments ? (
         <p className="onboarding-cta">
-          <span>先在左侧「资料库」添加课程文档(支持粘贴文本、Markdown、TXT、PDF、DOCX)。</span>
+          <span>
+            {courseLocked
+              ? '请先从主页添加课程资料，之后即可在这里提取概念并生成学习图谱。'
+              : '先在左侧「课程资料」添加课程文档(支持粘贴文本、Markdown、TXT、PDF、DOCX)。'}
+          </span>
+          {courseLocked && onOpenMaterials ? (
+            <button type="button" className="primary" onClick={onOpenMaterials}>
+              前往课程资料
+            </button>
+          ) : null}
         </p>
       ) : !hasConcepts ? (
         <p className="onboarding-cta">
@@ -1359,6 +1402,15 @@ function GraphOnboarding({
       )}
     </div>
   );
+}
+
+function graphVersionStatusLabel(value: GraphVersion['status']): string {
+  const labels: Record<GraphVersion['status'], string> = {
+    generating: '生成中',
+    ready: '可用',
+    failed: '生成失败',
+  };
+  return labels[value];
 }
 
 function AddDocumentForm({

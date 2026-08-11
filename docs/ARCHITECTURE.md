@@ -299,6 +299,24 @@ The current implementation closes one bounded course-execution loop. It does not
 
 The route API is split by responsibility: `agentCourse.ts` owns Contract, Curriculum, StudyPlan, accepted-route, coverage-risk, and Agenda-action endpoints; `studySessions.ts` owns StudySession lifecycle and Tutor-turn endpoints; `formalProgression.ts` owns progression, replan, and goal-outcome endpoints. Route handlers parse requests and delegate to services; repositories preserve the durable invariants.
 
+### Frontend product shell
+
+The frontend projects those domain boundaries into one selected-Course journey rather than exposing each subsystem as a top-level application:
+
+```text
+Course selection
+└── current Course
+    ├── 主页
+    ├── 学习
+    ├── 课程结构
+    ├── 进展
+    └── 探索
+```
+
+`AgentCourseWorkspace` owns the Course selection and the single Course navigation model. Course Home composes the bounded overview into one next action, a short Agenda, learner-actionable exceptions, and secondary disclosures. Course Materials is a Home subview over the existing document APIs. `学习` renders the durable StudySession as a transcript-first interaction while retaining formal/informal evidence boundaries. `CourseProgressView` consolidates formal progression, assessment history, mistakes and remediation, mastery/reviews, and bounded Contract/Curriculum/StudyPlan history. Embedded `GraphWorkspaceView` keeps the selected Course fixed, collapses its management panel by default, and remains the advanced `探索` workspace.
+
+The prior Library, Practice, Mistakes, progress, and graph views are reused rather than cloned. Compatibility access remains secondary in `App`; the selected Course is the primary product context. This shell is presentation-only: it does not infer completion from prose, change source authority, rewrite Plan/Agenda ownership, or modify persistence and provider contracts.
+
 ## 11. Concept graph and plans
 
 ### Graph validation/versioning

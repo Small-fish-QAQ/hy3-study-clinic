@@ -7,24 +7,24 @@ import { Banner, Loading } from '../components/ui.js';
 import { StudyPlanPanel } from './StudyPlanPanel.js';
 
 const SETUP_TEXT: Record<CourseExecutionOverview['setupStage'], string> = {
-  contract_required: '建立学习约定',
-  contract_review: '确认学习约定',
-  curriculum_required: '生成课程结构',
-  curriculum_review: '审阅课程结构',
-  plan_required: '生成学习路线',
-  plan_review: '审阅学习路线',
-  route_active: '路线已启用',
-  goal_closed: '本轮目标已结束',
+  contract_required: '先明确这次学习要达到什么目标',
+  contract_review: '学习目标等待你的确认',
+  curriculum_required: '目标已确认，可以整理课程结构',
+  curriculum_review: '课程结构等待你的审阅',
+  plan_required: '课程结构已就绪，可以规划学习路线',
+  plan_review: '学习路线等待你的接受',
+  route_active: '学习路线已启用',
+  goal_closed: '本轮学习目标已结束',
 };
 
 const FEASIBILITY_TEXT: Record<
   NonNullable<CourseExecutionOverview['contractFeasibility']>['state'],
   string
 > = {
-  feasible: '时间可行',
-  at_risk: '时间存在风险',
-  infeasible: '按当前约束不可行',
-  unknown: '尚无法估算',
+  feasible: '按当前时间安排可行',
+  at_risk: '当前时间安排存在风险',
+  infeasible: '按当前时间安排难以完成',
+  unknown: '还没有足够信息估算时间',
 };
 
 function formatDeadline(at: string, timeZone: string): string {
@@ -79,228 +79,298 @@ export function CourseHomeView({
   onOpenStudySession,
   onOpenMaterials,
 }: CourseHomeViewProps) {
-  if (loading && !overview) return <Loading label="加载课程执行状态…" />;
+  if (loading && !overview) return <Loading label="加载课程状态…" />;
   if (error && !overview) return <Banner kind="error">{error}</Banner>;
   if (!overview) {
-    return <Banner kind="empty">课程执行状态暂不可用。现有资料与图谱仍可从探索区访问。</Banner>;
+    return (
+      <Banner kind="empty">
+        暂时无法读取课程状态。课程资料不会因此改变，请稍后重试或先检查课程资料。
+      </Banner>
+    );
   }
 
   const contract = overview.activeContract ?? overview.pendingContract;
   const plan = overview.proposedStudyPlan ?? overview.acceptedStudyPlan;
   const feasibility = overview.contractFeasibility;
   const next = overview.nextAction;
-  const formalProgress = overview.formalProgress;
+  const progress = overview.formalProgress;
+  const agendaItems = overview.activeAgenda?.items
+    .filter((item) => !['completed', 'cancelled', 'deferred'].includes(item.state))
+    .sort((left, right) => left.index - right.index)
+    .slice(0, 3);
+  const actionableRisks = overview.riskSummary.highlights.filter(
+    (risk) =>
+      risk.isCurrent &&
+      risk.status !== 'resolved' &&
+      risk.status !== 'rejected' &&
+      (risk.severity === 'critical' || risk.severity === 'high' || risk.status === 'stale'),
+  );
+
+  const setupAction = (() => {
+    switch (overview.setupStage) {
+      case 'contract_required':
+        return { label: '设置学习目标', onClick: onCreateContract, busy: false };
+      case 'contract_review':
+        return {
+          label: contract?.status === 'draft' ? '提交学习目标' : '确认学习目标',
+          onClick: onConfirmContract,
+          busy: busyAction === 'confirm-contract',
+        };
+      case 'curriculum_required':
+        return {
+          label: '生成课程结构',
+          onClick: onProposeCurriculum,
+          busy: busyAction === 'propose-curriculum',
+        };
+      case 'curriculum_review':
+        return { label: '查看并审阅课程结构', onClick: onOpenCurriculum, busy: false };
+      case 'plan_required':
+        return {
+          label: '生成学习路线',
+          onClick: onProposeStudyPlan,
+          busy: busyAction === 'propose-plan',
+        };
+      case 'plan_review':
+        return {
+          label: '接受学习路线',
+          onClick: onAcceptStudyPlan,
+          busy: busyAction === 'accept-plan',
+        };
+      case 'goal_closed':
+        return { label: '设置新的学习目标', onClick: onCreateContract, busy: false };
+      case 'route_active':
+        return null;
+    }
+  })();
 
   return (
-    <div className="stack" aria-label={`${courseName}课程主页`}>
+    <div className="course-home stack" aria-label={`${courseName}课程主页`}>
       {error ? <Banner kind="error">{error}</Banner> : null}
 
-      <section className="card" aria-label="课程执行概览">
-        <div className="row between">
+      <section className="course-home-hero" aria-label="课程概览">
+        <div className="course-home-title row between">
           <div>
-            <h2 style={{ marginBottom: 0 }}>{courseName}</h2>
-            <p className="small muted" style={{ marginTop: 0 }}>
-              {SETUP_TEXT[overview.setupStage]}
-            </p>
+            <p className="eyebrow">当前课程</p>
+            <h2>{courseName}</h2>
+            <p className="muted">{SETUP_TEXT[overview.setupStage]}</p>
           </div>
-          <button type="button" className="ghost" onClick={onOpenMaterials}>
+          <button type="button" onClick={onOpenMaterials}>
             课程资料
           </button>
         </div>
 
         {contract ? (
-          <div className="progress-band" aria-label="目标与正式进度">
-            <p className="small">
-              <strong>截止时间：</strong>{' '}
-              {contract.deadline ? (
-                <time dateTime={contract.deadline.at}>
-                  {formatDeadline(contract.deadline.at, contract.deadline.timeZone)}（
-                  {contract.deadline.timeZone}）
-                </time>
-              ) : (
-                '未设置'
-              )}
-            </p>
-            <p className="small">
-              <strong>正式路线进度：</strong> 已完成 {formalProgress.completedPlanItemCount} /{' '}
-              {formalProgress.planItemCount}
-              {formalProgress.startedPlanItemCount > 0
-                ? ` · 进行中 ${formalProgress.startedPlanItemCount}`
-                : ''}
-              {formalProgress.repairNeededPlanItemCount > 0
-                ? ` · 待修复 ${formalProgress.repairNeededPlanItemCount}`
-                : ''}
-              {formalProgress.deferredPlanItemCount > 0
-                ? ` · 已延期 ${formalProgress.deferredPlanItemCount}`
-                : ''}
-            </p>
-            <p className="small muted">
-              可计入状态的正式证据 {formalProgress.stateCreditingEvidenceCount} · 仅供参考的证据{' '}
-              {formalProgress.advisoryEvidenceCount}
-            </p>
+          <div className="course-state-grid" aria-label="目标与正式进度">
+            <div>
+              <span className="small muted">本轮目标</span>
+              <strong>{contract.targetOutcome.description}</strong>
+            </div>
+            <div>
+              <span className="small muted">正式进度</span>
+              <strong>
+                已完成 {progress.completedPlanItemCount} / {progress.planItemCount}
+                {progress.startedPlanItemCount > 0
+                  ? ` · 进行中 ${progress.startedPlanItemCount}`
+                  : ''}
+                {progress.repairNeededPlanItemCount > 0
+                  ? ` · 待修复 ${progress.repairNeededPlanItemCount}`
+                  : ''}
+                {progress.deferredPlanItemCount > 0
+                  ? ` · 已延期 ${progress.deferredPlanItemCount}`
+                  : ''}
+              </strong>
+            </div>
+            <div>
+              <span className="small muted">截止时间</span>
+              <strong>
+                {contract.deadline ? (
+                  <time dateTime={contract.deadline.at}>
+                    {formatDeadline(contract.deadline.at, contract.deadline.timeZone)}（
+                    {contract.deadline.timeZone}）
+                  </time>
+                ) : (
+                  '未设置'
+                )}
+              </strong>
+            </div>
           </div>
         ) : null}
 
         {next ? (
-          <div className="block-preview" aria-label="下一步">
-            <strong>下一步：{next.item.reason}</strong>
-            <p className="small muted">{next.whyNext}</p>
-            <p className="small">
-              预计 {next.item.estimatedMinutes} 分钟 · {next.item.launch.capability}
-            </p>
+          <div className="next-action" aria-label="下一步">
+            <div>
+              <p className="eyebrow">下一步</p>
+              <h3>{next.item.reason}</h3>
+              <p>{next.whyNext}</p>
+              <p className="small muted">预计 {next.item.estimatedMinutes} 分钟</p>
+            </div>
             {next.item.launch.status === 'launchable' ? (
               <button
                 type="button"
-                className="primary"
+                className="primary course-primary-cta"
                 disabled={busyAction !== null}
                 onClick={() => (onOpenStudySession ? onOpenStudySession() : onLaunchNext(next))}
               >
                 {busyAction === 'launch-next' ? '正在重新验证…' : '继续学习'}
               </button>
             ) : (
-              <Banner kind="info">
-                {next.item.launch.reason ?? '该动作需要重新验证后才能启动。'}
-              </Banner>
+              <Banner kind="info">{launchBlockReason(next.item.launch.reason)}</Banner>
             )}
           </div>
-        ) : overview.setupStage === 'route_active' ? (
-          <Banner kind="info">当前没有可启动动作。系统需要重新组合今日安排。</Banner>
-        ) : null}
+        ) : setupAction ? (
+          <div className="next-action setup-action" aria-label="下一步">
+            <div>
+              <p className="eyebrow">下一步</p>
+              <h3>{SETUP_TEXT[overview.setupStage]}</h3>
+              <p className="muted">完成这一步后，系统才能给出可靠的后续学习动作。</p>
+            </div>
+            <button
+              type="button"
+              className="primary course-primary-cta"
+              disabled={busyAction !== null}
+              onClick={setupAction.onClick}
+            >
+              {setupAction.busy ? '正在处理…' : setupAction.label}
+            </button>
+          </div>
+        ) : (
+          <Banner kind="info">
+            当前没有可启动的学习动作。请在进展中检查待修复内容，或重新打开课程资料验证来源。
+          </Banner>
+        )}
       </section>
 
-      <section className="card" aria-label="学习约定">
-        <div className="row between">
-          <h3>学习约定</h3>
-          {contract ? (
-            <span className="pill">
-              版本 {contract.version} · {contract.status}
-            </span>
+      {agendaItems && agendaItems.length > 0 ? (
+        <section className="today-work" aria-label="今天的学习">
+          <div className="section-heading">
+            <p className="eyebrow">今天</p>
+            <h3>本次学习安排</h3>
+          </div>
+          <ol>
+            {agendaItems.map((item) => (
+              <li
+                key={item.id}
+                aria-current={item.id === overview.activeAgenda?.currentItemId ? 'step' : undefined}
+              >
+                <span>{item.reason}</span>
+                <span className="small muted">约 {item.estimatedMinutes} 分钟</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
+
+      {actionableRisks.length > 0 || progress.repairNeededPlanItemCount > 0 ? (
+        <section className="important-exceptions" aria-label="需要关注">
+          <h3>需要关注</h3>
+          {progress.repairNeededPlanItemCount > 0 ? (
+            <p>有 {progress.repairNeededPlanItemCount} 项正式学习结果需要修复。</p>
           ) : null}
-        </div>
-        {contract ? (
-          <>
-            <p>{contract.intent}</p>
-            <p className="small">
-              目标：{contract.targetOutcome.description} · 深度：{contract.desiredDepth}
+          {actionableRisks.map((risk) => (
+            <p key={risk.id}>
+              <span className={`pill ${risk.severity === 'critical' ? 'wrong' : ''}`}>
+                {risk.status === 'stale' ? '需要重新验证' : '优先处理'}
+              </span>{' '}
+              {risk.claim}
             </p>
+          ))}
+        </section>
+      ) : null}
+
+      <details className="course-detail-disclosure">
+        <summary>学习目标与时间安排</summary>
+        {contract ? (
+          <div className="detail-content">
+            <p>{contract.intent}</p>
             <p className="small">
               <span className="pill">学习范围已确认</span>{' '}
               <span className="pill model">不等于事实或评分依据已验证</span>
             </p>
-            {feasibility ? (
-              <p className="small">
-                <strong>{FEASIBILITY_TEXT[feasibility.state]}</strong>
-                {feasibility.slackMinutes !== null
-                  ? ` · 余量 ${feasibility.slackMinutes} 分钟`
-                  : ''}
-              </p>
+            {feasibility ? <p>{FEASIBILITY_TEXT[feasibility.state]}</p> : null}
+            <p className="small muted">
+              可计入状态的正式证据 {progress.stateCreditingEvidenceCount} · 仅供参考的证据{' '}
+              {progress.advisoryEvidenceCount}
+            </p>
+            {overview.capabilities.canEditContract ? (
+              <button type="button" onClick={onEditContract} disabled={busyAction !== null}>
+                编辑学习目标
+              </button>
             ) : null}
-            <div className="row">
-              {overview.capabilities.canEditContract ? (
-                <button type="button" disabled={busyAction !== null} onClick={onEditContract}>
-                  编辑约定草稿
-                </button>
-              ) : null}
-              {overview.capabilities.canConfirmContract ? (
-                <button
-                  type="button"
-                  className="primary"
-                  disabled={busyAction !== null}
-                  onClick={onConfirmContract}
-                >
-                  {busyAction === 'confirm-contract'
-                    ? '正在保存…'
-                    : contract.status === 'draft'
-                      ? '提交约定提案'
-                      : '确认学习约定'}
-                </button>
-              ) : null}
-            </div>
-          </>
+          </div>
         ) : (
-          <button type="button" className="primary" onClick={onCreateContract}>
-            建立学习约定
-          </button>
+          <p className="muted">设置学习目标后，这里会显示范围、时间预算和可行性。</p>
         )}
-      </section>
+      </details>
 
-      <section className="card" aria-label="课程结构状态">
-        <div className="row between">
-          <h3>课程结构</h3>
+      <details className="course-detail-disclosure">
+        <summary>课程结构与版本</summary>
+        <div className="detail-content">
           {overview.planningCurriculum || overview.proposedCurriculum ? (
-            <button type="button" onClick={onOpenCurriculum}>
-              查看完整结构
-            </button>
-          ) : null}
+            <>
+              <p>
+                当前课程结构版本{' '}
+                {(overview.proposedCurriculum ?? overview.planningCurriculum)!.version}
+              </p>
+              <button type="button" onClick={onOpenCurriculum}>
+                查看完整课程结构
+              </button>
+            </>
+          ) : (
+            <p className="muted">确认学习目标后即可生成课程结构。</p>
+          )}
         </div>
-        {overview.planningCurriculum || overview.proposedCurriculum ? (
-          <p className="small muted">
-            当前版本 {(overview.proposedCurriculum ?? overview.planningCurriculum)!.version} ·{' '}
-            {(overview.proposedCurriculum ?? overview.planningCurriculum)!.status}
-          </p>
-        ) : overview.capabilities.canProposeCurriculum ? (
-          <button
-            type="button"
-            className="primary"
-            disabled={busyAction !== null}
-            onClick={onProposeCurriculum}
-          >
-            {busyAction === 'propose-curriculum' ? '正在生成…' : '生成课程结构'}
-          </button>
-        ) : (
-          <p className="small muted">先确认学习约定，再生成课程结构。</p>
-        )}
-      </section>
+      </details>
 
       {plan ? (
-        <StudyPlanPanel
-          plan={plan}
-          history={overview.studyPlanHistory}
-          canEdit={overview.capabilities.canEditStudyPlan}
-          canAccept={overview.capabilities.canAcceptStudyPlan}
-          busyAction={busyAction}
-          launchByPlanItemId={{}}
-          onEdit={onEditStudyPlan}
-          onAccept={onAcceptStudyPlan}
-          onReject={onRejectStudyPlan}
-          onLaunchItem={() => {}}
-        />
-      ) : (
-        <section className="card" aria-label="学习路线">
-          <h3>学习路线</h3>
-          {overview.capabilities.canProposeStudyPlan ? (
-            <button
-              type="button"
-              className="primary"
-              disabled={busyAction !== null}
-              onClick={onProposeStudyPlan}
-            >
-              {busyAction === 'propose-plan' ? '正在规划…' : '生成学习路线'}
-            </button>
-          ) : (
-            <p className="small muted">课程结构通过审阅后可生成学习路线。</p>
-          )}
-        </section>
-      )}
+        <details className="course-detail-disclosure" open={plan.status === 'proposed'}>
+          <summary>{plan.status === 'proposed' ? '待确认的学习路线' : '完整学习路线'}</summary>
+          <StudyPlanPanel
+            plan={plan}
+            history={overview.studyPlanHistory}
+            canEdit={overview.capabilities.canEditStudyPlan}
+            canAccept={overview.capabilities.canAcceptStudyPlan}
+            busyAction={busyAction}
+            launchByPlanItemId={{}}
+            onEdit={onEditStudyPlan}
+            onAccept={onAcceptStudyPlan}
+            onReject={onRejectStudyPlan}
+            onLaunchItem={() => {}}
+          />
+        </details>
+      ) : null}
 
-      <section className="card" aria-label="风险与延期">
-        <h3>风险与延期</h3>
-        <p className="small">
-          未解决 {overview.riskSummary.openCount} · 明确延期{' '}
-          {overview.riskSummary.explicitDeferralCount}
-          {overview.riskSummary.staleCount > 0
-            ? ` · 待重新核对 ${overview.riskSummary.staleCount}`
-            : ''}
-        </p>
-        {overview.riskSummary.highlights.map((risk) => (
-          <p key={risk.id} className="small">
-            <span className={`pill ${risk.severity === 'critical' ? 'wrong' : ''}`}>
-              {risk.severity}
-            </span>{' '}
-            {risk.claim} · <span className="muted">{risk.uncertainty}</span>
-          </p>
-        ))}
-      </section>
+      {overview.riskSummary.openCount > 0 || overview.riskSummary.explicitDeferralCount > 0 ? (
+        <details className="course-detail-disclosure">
+          <summary>全部延期与风险记录</summary>
+          <div className="detail-content">
+            <p>
+              未解决 {overview.riskSummary.openCount} · 明确延期{' '}
+              {overview.riskSummary.explicitDeferralCount} · 待重新核对{' '}
+              {overview.riskSummary.staleCount}
+            </p>
+            {overview.riskSummary.highlights.map((risk) => (
+              <p key={risk.id} className="small">
+                {risk.claim} · <span className="muted">{risk.uncertainty}</span>
+              </p>
+            ))}
+          </div>
+        </details>
+      ) : null}
     </div>
   );
+}
+
+function launchBlockReason(value: string | null): string {
+  if (!value) return '当前内容需要重新验证，暂时不能继续。';
+  const labels: Record<string, string> = {
+    'Source manifest must be revalidated.': '课程资料已有变化，需要重新验证当前学习路线。',
+    'This LearningUnit has no current source Concept for lesson launch.':
+      '当前学习单元缺少可用的课程概念，暂时不能开始讲解。',
+    'Synthesis requires a validated multi-unit Curriculum synthesis group.':
+      '综合评估需要经过验证的跨单元课程结构。',
+    'Conversational informal checks become launchable in Phase 3.':
+      '这项非正式检查当前需要在学习对话中进行。',
+    'Adversarial readiness is intentionally deferred until Phase 5.': '这项检查当前尚不可用。',
+  };
+  return labels[value] ?? '当前学习内容需要重新验证，请检查课程资料或路线状态。';
 }

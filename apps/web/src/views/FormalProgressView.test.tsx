@@ -94,10 +94,12 @@ describe('FormalProgressView', () => {
         onOpenProgress={vi.fn()}
       />,
     );
-    expect(await screen.findByText('Tier 2 validated')).toBeInTheDocument();
-    expect(screen.getAllByText('complete')).toHaveLength(2);
-    expect(screen.getByText('applied')).toBeInTheDocument();
-    expect(screen.getByText(/Tutor dialogue is not evidence/)).toBeInTheDocument();
+    expect(await screen.findByText('已验证的表示方式')).toBeInTheDocument();
+    expect(screen.getAllByText('完成决定')).toHaveLength(1);
+    expect(screen.getByText('可采纳的正式证据已满足要求')).toBeInTheDocument();
+    expect(screen.queryByText('sufficient_admissible_evidence')).not.toBeInTheDocument();
+    expect(screen.getByText('已计入进展')).toBeInTheDocument();
+    expect(screen.getByText(/Tutor 对话不是正式证据/)).toBeInTheDocument();
   });
 
   it('requires an active route before exposing outcome controls', async () => {
@@ -119,9 +121,9 @@ describe('FormalProgressView', () => {
         onOpenProgress={vi.fn()}
       />,
     );
-    await screen.findByText('Goal outcome');
-    expect(screen.getByText(/active accepted route is required/i)).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Attempts' }));
+    await screen.findByText('学习目标结果');
+    expect(screen.getByText(/需要先有正在执行的已接受路线/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '测验记录' }));
   });
 
   it('creates a successor proposal from a qualified trigger without accepting it', async () => {
@@ -180,7 +182,7 @@ describe('FormalProgressView', () => {
       />,
     );
 
-    await user.click(await screen.findByRole('button', { name: 'Create route proposal' }));
+    await user.click(await screen.findByRole('button', { name: '提出路线调整' }));
 
     await waitFor(() =>
       expect(api.proposeQualifiedReplan).toHaveBeenCalledWith(
@@ -252,9 +254,7 @@ describe('FormalProgressView', () => {
       />,
     );
 
-    expect(
-      await screen.findAllByText(/learner-confirm a successor Learning Contract from Course Home/),
-    ).toHaveLength(2);
+    expect(await screen.findAllByText(/请先回到课程主页更新并确认新的学习目标/)).toHaveLength(2);
     expect(screen.queryByRole('button', { name: 'Create route proposal' })).not.toBeInTheDocument();
     expect(api.proposeQualifiedReplan).not.toHaveBeenCalled();
   });
@@ -298,11 +298,11 @@ describe('FormalProgressView', () => {
       />,
     );
 
-    const change = await screen.findByText(/minutes 20 -> 35/);
-    expect(change).toHaveTextContent('order 1 -> 1');
-    expect(change).toHaveTextContent('depth pass_oriented -> working_fluency');
-    expect(change).toHaveTextContent('LearningUnit unit_1');
-    expect(change).toHaveTextContent('Plan item plan_item_1');
+    const change = await screen.findByText(/时长 20 → 35 分钟/);
+    expect(change).toHaveTextContent('顺序 1 → 1');
+    expect(change).toHaveTextContent('深度 通过评估 → 熟练运用');
+    expect(change).toHaveTextContent('学习单元 unit_1');
+    expect(change).toHaveTextContent('路线项目 plan_item_1');
   });
 
   it('retries pending reconciliation against the accepted route and refreshes progress', async () => {
@@ -354,7 +354,7 @@ describe('FormalProgressView', () => {
       />,
     );
 
-    await user.click(await screen.findByRole('button', { name: 'Retry reconciliation' }));
+    await user.click(await screen.findByRole('button', { name: '重新核对' }));
 
     await waitFor(() =>
       expect(api.reconcileProgression).toHaveBeenCalledWith(
@@ -375,6 +375,6 @@ describe('FormalProgressView', () => {
     );
     await waitFor(() => expect(api.formalProgression).toHaveBeenCalledTimes(2));
     expect(onCourseChanged).toHaveBeenCalledTimes(1);
-    expect(await screen.findByText('applied')).toBeInTheDocument();
+    expect(await screen.findByText('已计入进展')).toBeInTheDocument();
   });
 });

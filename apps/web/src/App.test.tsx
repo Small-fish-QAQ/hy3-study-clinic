@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MAX_DOCUMENT_FILE_BYTES } from '@hy3-clinic/shared';
@@ -273,14 +273,34 @@ async function importSample(user: ReturnType<typeof userEvent.setup>) {
   await screen.findByText('源块预览');
 }
 
+async function renderAppAtMaterials() {
+  const rendered = render(<App />);
+  const user = userEvent.setup();
+  await user.click(await screen.findByText('更多工具'));
+  await user.click(screen.getByRole('button', { name: '课程资料' }));
+  return rendered;
+}
+
 describe('App shell', () => {
-  it('shows the offline provider badge and disables flow tabs before import', async () => {
-    installFetchMock(baseRoutes);
+  it('opens on Course selection with one primary product entry', async () => {
+    installFetchMock([
+      ...baseRoutes,
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces$/,
+        handler: () => ({ body: { workspaces: [] } }),
+      },
+    ]);
     render(<App />);
-    expect(await screen.findByText(/离线模式/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '练习' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: '错题' })).toBeDisabled();
-    expect(screen.getByText(/还没有导入资料/)).toBeInTheDocument();
+    expect(await screen.findByText(/离线 · 模拟模式/)).toBeInTheDocument();
+    const primaryNav = screen.getByRole('navigation', { name: '主导航' });
+    expect(within(primaryNav).getAllByRole('button')).toHaveLength(1);
+    expect(within(primaryNav).getByRole('button', { name: '课程' })).toHaveClass('active');
+    expect(within(primaryNav).queryByRole('button', { name: '进展' })).not.toBeInTheDocument();
+    expect(within(primaryNav).queryByRole('button', { name: '探索' })).not.toBeInTheDocument();
+    expect(screen.getByText('更多工具').closest('details')).not.toHaveAttribute('open');
+    expect(screen.getByRole('heading', { name: '选择一门课程' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '创建课程' })).toBeDisabled();
   });
 });
 
@@ -292,7 +312,7 @@ describe('Material recovery', () => {
     };
     installFetchMock(routesWithHistory([targetMaterial]));
 
-    render(<App />);
+    await renderAppAtMaterials();
 
     const openButton = await screen.findByRole('button', {
       name: `打开资料：${targetMaterial.title}`,
@@ -343,7 +363,7 @@ describe('Material recovery', () => {
     installFetchMock(routesWithHistory(historyMaterials));
     const user = userEvent.setup();
 
-    render(<App />);
+    await renderAppAtMaterials();
 
     expect(
       await screen.findByRole('button', { name: `当前资料：${material.material.title}` }),
@@ -396,7 +416,7 @@ describe('Material recovery', () => {
     const server = managedHistoryRoutes([historical]);
     const { calls } = installFetchMock(server.routes);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
 
     await user.click(
       await screen.findByRole('button', {
@@ -430,7 +450,7 @@ describe('Material recovery', () => {
     const server = managedHistoryRoutes([materialSummary]);
     installFetchMock(server.routes);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
 
     await user.click(
       await screen.findByRole('button', {
@@ -462,7 +482,7 @@ describe('Material recovery', () => {
     });
     const { calls } = installFetchMock(server.routes);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
 
     await user.click(
       await screen.findByRole('button', {
@@ -493,7 +513,7 @@ describe('Material recovery', () => {
     const server = managedHistoryRoutes([historical]);
     const { calls } = installFetchMock(server.routes);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
 
     await user.click(
       await screen.findByRole('button', {
@@ -519,7 +539,7 @@ describe('Material recovery', () => {
     const server = managedHistoryRoutes([historical]);
     installFetchMock(server.routes);
     const user = userEvent.setup();
-    const firstRender = render(<App />);
+    const firstRender = await renderAppAtMaterials();
 
     await user.click(
       await screen.findByRole('button', {
@@ -534,7 +554,7 @@ describe('Material recovery', () => {
 
     firstRender.unmount();
     installFetchMock(server.routes);
-    render(<App />);
+    await renderAppAtMaterials();
 
     expect(
       await screen.findByRole('button', { name: '打开资料：API 持久化后的标题' }),
@@ -559,7 +579,7 @@ describe('Material recovery', () => {
     const { calls } = installFetchMock(server.routes);
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
 
     const deleteButton = await screen.findByRole('button', {
       name: '永久删除：准备永久删除的资料（记录 …111111）',
@@ -597,7 +617,7 @@ describe('Material recovery', () => {
     const { calls } = installFetchMock(server.routes);
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
 
     await user.click(
       await screen.findByRole('button', {
@@ -622,7 +642,7 @@ describe('Material recovery', () => {
     const { calls } = installFetchMock(server.routes);
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
 
     await user.click(
       await screen.findByRole('button', {
@@ -649,10 +669,10 @@ describe('Material recovery', () => {
     installFetchMock(server.routes);
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
 
     await screen.findByRole('button', { name: `当前资料：${material.material.title}` });
-    await user.click(screen.getByRole('button', { name: '练习' }));
+    await user.click(screen.getByRole('button', { name: '测验' }));
     await user.click(screen.getByRole('button', { name: '生成测验' }));
     await screen.findByRole('button', { name: '提交并判分' });
     await user.click(screen.getByRole('radio', { name: /工作记忆的容量十分有限/ }));
@@ -661,7 +681,7 @@ describe('Material recovery', () => {
     expect(await screen.findByText('60 分')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: '判分结果' })).toBeEnabled();
 
-    await user.click(screen.getByRole('button', { name: '资料库' }));
+    await user.click(screen.getByRole('button', { name: '课程资料' }));
     await user.click(
       screen.getByRole('button', {
         name: `永久删除：${material.material.title}（记录 …${material.material.id.slice(-6)}）`,
@@ -678,10 +698,10 @@ describe('Material recovery', () => {
     expect(
       screen.queryByRole('heading', { name: new RegExp(material.material.title) }),
     ).not.toBeInTheDocument();
-    for (const tabName of ['练习', '错题', '学习进展']) {
+    for (const tabName of ['测验', '错题与修复', '掌握与复习']) {
       expect(screen.getByRole('button', { name: tabName })).toBeDisabled();
     }
-    expect(screen.getByRole('button', { name: '资料库' })).toHaveClass('active');
+    expect(screen.getByRole('button', { name: '课程资料' })).toHaveClass('active');
   });
 
   it('aborts current work and ignores a late response after deleting that material', async () => {
@@ -704,7 +724,7 @@ describe('Material recovery', () => {
     installFetchMock(server.routes);
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
 
     await screen.findByRole('button', { name: `当前资料：${material.material.title}` });
     await user.click(screen.getByRole('button', { name: '分析核心概念' }));
@@ -769,7 +789,7 @@ describe('Material recovery', () => {
     ]);
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
 
     await screen.findByRole('button', { name: `当前资料：${material.material.title}` });
     await user.type(screen.getByLabelText('资料内容'), '等待中的新资料');
@@ -793,8 +813,8 @@ describe('Material recovery', () => {
     expect(
       screen.getByRole('button', { name: '打开资料：删除后保留的历史资料' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '练习' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: '资料库' })).toHaveClass('active');
+    expect(screen.getByRole('button', { name: '测验' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '课程资料' })).toHaveClass('active');
     expect(window.localStorage.getItem(LAST_MATERIAL_ID_KEY)).toBeNull();
   });
 
@@ -814,7 +834,7 @@ describe('Material recovery', () => {
     };
     const server = managedHistoryRoutes([first, second]);
     installFetchMock(server.routes);
-    render(<App />);
+    await renderAppAtMaterials();
 
     const firstDelete = await screen.findByRole('button', {
       name: '永久删除：同名学习资料（记录 …aaa111）',
@@ -844,14 +864,14 @@ describe('Material recovery', () => {
     window.localStorage.setItem(LAST_MATERIAL_ID_KEY, material.material.id);
     const { calls } = installFetchMock(routesWithHistory());
 
-    render(<App />);
+    await renderAppAtMaterials();
 
     expect(
       await screen.findByRole('heading', { name: new RegExp(material.material.title) }),
     ).toBeInTheDocument();
     expect(screen.getByText(blocks[0]!.content)).toBeInTheDocument();
     expect(screen.getByText('核心概念(1)')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '练习' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '测验' })).toBeEnabled();
     expect(window.localStorage.getItem(LAST_MATERIAL_ID_KEY)).toBe(material.material.id);
     expect(
       calls.some((call) => call.method === 'GET' && call.url.endsWith('/api/materials/mat_1')),
@@ -872,7 +892,7 @@ describe('Material recovery', () => {
     window.localStorage.setItem(LAST_MATERIAL_ID_KEY, 'mat_stale');
     const { calls } = installFetchMock(routesWithHistory());
 
-    render(<App />);
+    await renderAppAtMaterials();
 
     expect(
       await screen.findByRole('button', {
@@ -880,14 +900,14 @@ describe('Material recovery', () => {
       }),
     ).toBeInTheDocument();
     await waitFor(() => expect(window.localStorage.getItem(LAST_MATERIAL_ID_KEY)).toBeNull());
-    expect(screen.getByRole('button', { name: '练习' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '测验' })).toBeDisabled();
     expect(calls.some((call) => call.url.includes('/api/materials/mat_stale'))).toBe(false);
   });
 
   it('opens a historical material and continues into mistakes and mastery', async () => {
     const { calls } = installFetchMock(routesWithHistory());
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
 
     await user.click(
       await screen.findByRole('button', {
@@ -898,13 +918,13 @@ describe('Material recovery', () => {
     expect(await screen.findByText('源块预览')).toBeInTheDocument();
     expect(screen.getByText('核心概念(1)')).toBeInTheDocument();
     expect(window.localStorage.getItem(LAST_MATERIAL_ID_KEY)).toBe(material.material.id);
-    expect(screen.getByRole('button', { name: '练习' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '测验' })).toBeEnabled();
 
-    await user.click(screen.getByRole('button', { name: '错题' }));
+    await user.click(screen.getByRole('button', { name: '错题与修复' }));
     expect(await screen.findByText('工作记忆 · 1 个未解决')).toBeInTheDocument();
     expect(screen.getByText(mistakes[0]!.question.stem)).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: '学习进展' }));
+    await user.click(screen.getByRole('button', { name: '掌握与复习' }));
     expect(
       await screen.findByRole('heading', { name: '综合掌握度（历史加权）' }),
     ).toBeInTheDocument();
@@ -919,12 +939,12 @@ describe('Material recovery', () => {
   it('shows an explicit empty-history state while keeping import available', async () => {
     installFetchMock(baseRoutes);
 
-    render(<App />);
+    await renderAppAtMaterials();
 
     expect(await screen.findByText('暂无历史资料。导入后会显示在这里。')).toBeInTheDocument();
     expect(screen.getByLabelText('资料内容')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '导入并切分' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: '练习' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '测验' })).toBeDisabled();
   });
 });
 
@@ -953,7 +973,7 @@ describe('Import flow', () => {
       },
     ]);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
 
     await importSample(user);
 
@@ -967,7 +987,7 @@ describe('Import flow', () => {
   it('loads the sample, imports it, and previews source blocks', async () => {
     const { calls } = installFetchMock(baseRoutes);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
 
     await importSample(user);
 
@@ -978,7 +998,7 @@ describe('Import flow', () => {
     expect(importCall).toBeDefined();
     expect((importCall!.body as { filename: string }).filename).toBe('sample.md');
     // Flow tabs unlocked.
-    expect(screen.getByRole('button', { name: '练习' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '测验' })).toBeEnabled();
     expect(window.localStorage.getItem(LAST_MATERIAL_ID_KEY)).toBe(material.material.id);
   });
 
@@ -995,7 +1015,7 @@ describe('Import flow', () => {
       },
     ]);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
 
     await user.type(await screen.findByLabelText('资料内容'), '一些内容');
     await user.click(screen.getByRole('button', { name: '导入并切分' }));
@@ -1036,7 +1056,7 @@ describe('File import (PDF/DOCX)', () => {
 
   it('shows the supported formats, the OCR limitation, and the full accept list', async () => {
     installFetchMock(baseRoutes);
-    render(<App />);
+    await renderAppAtMaterials();
 
     expect(
       await screen.findByText(/支持粘贴文本及 Markdown、TXT、PDF、DOCX 文件。/),
@@ -1055,7 +1075,7 @@ describe('File import (PDF/DOCX)', () => {
       routesWithImportHandler(() => ({ status: 201, body: pdfMaterial })),
     );
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
 
     await screen.findByRole('button', { name: '选择文件' });
     pickFile(pdfFile());
@@ -1079,7 +1099,7 @@ describe('File import (PDF/DOCX)', () => {
 
     // The imported PDF becomes the current material and a history entry.
     expect(screen.getByRole('button', { name: '当前资料：认知科学讲义' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '练习' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '测验' })).toBeEnabled();
     expect(window.localStorage.getItem(LAST_MATERIAL_ID_KEY)).toBe(material.material.id);
     // Staging is cleared after a successful import.
     expect(screen.queryByRole('button', { name: '移除文件' })).not.toBeInTheDocument();
@@ -1094,7 +1114,7 @@ describe('File import (PDF/DOCX)', () => {
       }),
     );
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
 
     await screen.findByRole('button', { name: '选择文件' });
     pickFile(pdfFile());
@@ -1135,7 +1155,7 @@ describe('File import (PDF/DOCX)', () => {
       })),
     );
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
 
     await screen.findByRole('button', { name: '选择文件' });
     pickFile(pdfFile('scan.pdf'));
@@ -1153,7 +1173,7 @@ describe('File import (PDF/DOCX)', () => {
 
   it('rejects unsupported and oversized files locally without any request', async () => {
     const { calls } = installFetchMock(baseRoutes);
-    render(<App />);
+    await renderAppAtMaterials();
 
     await screen.findByRole('button', { name: '选择文件' });
     pickFile(new File(['slides'], 'slides.pptx'));
@@ -1172,7 +1192,7 @@ describe('File import (PDF/DOCX)', () => {
   it('still loads a picked markdown file into the editable textarea and imports it as text', async () => {
     const { calls } = installFetchMock(baseRoutes);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
 
     await screen.findByRole('button', { name: '选择文件' });
     pickFile(new File(['# 笔记\n\n第一段。'], 'notes.md', { type: 'text/markdown' }));
@@ -1214,7 +1234,7 @@ describe('File import (PDF/DOCX)', () => {
     ]);
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
 
     await screen.findByRole('button', { name: `当前资料：${material.material.title}` });
     pickFile(pdfFile());
@@ -1236,7 +1256,7 @@ describe('File import (PDF/DOCX)', () => {
     });
 
     expect(screen.queryByText('不应出现的晚到 PDF')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '练习' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '测验' })).toBeDisabled();
     expect(window.localStorage.getItem(LAST_MATERIAL_ID_KEY)).toBeNull();
   });
 });
@@ -1245,7 +1265,7 @@ describe('Concept analysis', () => {
   it('analyzes and renders concepts with evidence', async () => {
     installFetchMock(baseRoutes);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
     await importSample(user);
 
     await user.click(screen.getByRole('button', { name: '分析核心概念' }));
@@ -1270,7 +1290,7 @@ describe('Concept analysis', () => {
       },
     ]);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
     await importSample(user);
 
     await user.click(screen.getByRole('button', { name: '分析核心概念' }));
@@ -1294,7 +1314,7 @@ describe('Concept analysis', () => {
 describe('Quiz flow', () => {
   async function generateQuiz(user: ReturnType<typeof userEvent.setup>) {
     await importSample(user);
-    await user.click(screen.getByRole('button', { name: '练习' }));
+    await user.click(screen.getByRole('button', { name: '测验' }));
     await user.click(screen.getByRole('button', { name: '生成测验' }));
     await screen.findByRole('button', { name: '提交并判分' });
   }
@@ -1302,7 +1322,7 @@ describe('Quiz flow', () => {
   it('generates a quiz and supports answering both question types', async () => {
     installFetchMock(baseRoutes);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
     await generateQuiz(user);
 
     expect(screen.getByText(quiz.questions[0]!.stem)).toBeInTheDocument();
@@ -1317,7 +1337,7 @@ describe('Quiz flow', () => {
   it('submits answers and shows grading with gradedBy labels', async () => {
     const { calls } = installFetchMock(baseRoutes);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
     await generateQuiz(user);
 
     await user.click(screen.getByRole('radio', { name: /工作记忆的容量十分有限/ }));
@@ -1377,7 +1397,7 @@ describe('Quiz flow', () => {
       },
     ]);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
     await generateQuiz(user);
 
     await user.click(screen.getByRole('radio', { name: /工作记忆的容量十分有限/ }));
@@ -1386,8 +1406,8 @@ describe('Quiz flow', () => {
     await screen.findByText('60 分');
 
     // Leave the result screen entirely, then come back through history.
-    await user.click(screen.getByRole('button', { name: '错题' }));
-    await user.click(screen.getByRole('button', { name: '练习' }));
+    await user.click(screen.getByRole('button', { name: '错题与修复' }));
+    await user.click(screen.getByRole('button', { name: '测验' }));
     await user.click(screen.getByRole('tab', { name: '测验历史' }));
     await user.click(await screen.findByRole('button', { name: /查看历史结果:/ }));
 
@@ -1417,10 +1437,10 @@ describe('Quiz flow', () => {
       },
     ]);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
     await importSample(user);
 
-    await user.click(screen.getByRole('button', { name: '练习' }));
+    await user.click(screen.getByRole('button', { name: '测验' }));
     await user.click(screen.getByRole('button', { name: '生成测验' }));
     expect(await screen.findByText('正在生成测验…')).toBeInTheDocument();
     await waitFor(() => expect(generationRequest.signal).toBeDefined());
@@ -1459,10 +1479,10 @@ describe('Quiz flow', () => {
       },
     ]);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
     await importSample(user);
 
-    await user.click(screen.getByRole('button', { name: '练习' }));
+    await user.click(screen.getByRole('button', { name: '测验' }));
     await user.click(screen.getByRole('button', { name: '生成测验' }));
     expect(await screen.findByText(/不符合约定格式/)).toBeInTheDocument();
   });
@@ -1472,10 +1492,10 @@ describe('Mistake notebook and mastery', () => {
   it('lists mistakes with status and weak concepts', async () => {
     installFetchMock(baseRoutes);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
     await importSample(user);
 
-    await user.click(screen.getByRole('button', { name: '错题' }));
+    await user.click(screen.getByRole('button', { name: '错题与修复' }));
     expect(await screen.findByText('工作记忆 · 1 个未解决')).toBeInTheDocument();
     expect(screen.getByText(mistakes[0]!.question.stem)).toBeInTheDocument();
     // Status appears both in the filter dropdown and on the mistake card.
@@ -1507,10 +1527,10 @@ describe('Mistake notebook and mastery', () => {
       },
     ]);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
     await importSample(user);
 
-    await user.click(screen.getByRole('button', { name: '错题' }));
+    await user.click(screen.getByRole('button', { name: '错题与修复' }));
     await user.selectOptions(await screen.findByLabelText('筛选状态'), 'all');
 
     const card = (await screen.findByText(resolvedMistake.question.stem)).closest('section');
@@ -1531,10 +1551,10 @@ describe('Mistake notebook and mastery', () => {
       },
     ]);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
     await importSample(user);
 
-    await user.click(screen.getByRole('button', { name: '错题' }));
+    await user.click(screen.getByRole('button', { name: '错题与修复' }));
 
     expect(await screen.findByText('当前没有未解决的错题，无需生成康复练习。')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '生成康复练习' })).toBeDisabled();
@@ -1556,9 +1576,9 @@ describe('Mistake notebook and mastery', () => {
       },
     ]);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
     await importSample(user);
-    await user.click(screen.getByRole('button', { name: '错题' }));
+    await user.click(screen.getByRole('button', { name: '错题与修复' }));
     await user.click(await screen.findByRole('button', { name: '生成康复练习' }));
 
     expect(await screen.findByText('根据 1 个未解决概念自动生成 2 道康复题')).toBeInTheDocument();
@@ -1615,15 +1635,15 @@ describe('Mistake notebook and mastery', () => {
       },
     ]);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
 
     await screen.findByRole('button', { name: `当前资料：${material.material.title}` });
-    await user.click(screen.getByRole('button', { name: '错题' }));
+    await user.click(screen.getByRole('button', { name: '错题与修复' }));
     await screen.findByText('工作记忆 · 1 个未解决');
     await user.click(screen.getByRole('button', { name: '生成康复练习' }));
     await waitFor(() => expect(remediationRequest.signal).toBeDefined());
 
-    await user.click(screen.getByRole('button', { name: '资料库' }));
+    await user.click(screen.getByRole('button', { name: '课程资料' }));
     expect(remediationRequest.signal?.aborted).toBe(true);
     await user.click(screen.getByRole('button', { name: '打开资料：康复取消后打开的资料' }));
     expect(
@@ -1635,7 +1655,7 @@ describe('Mistake notebook and mastery', () => {
       await lateRemediation.promise;
     });
 
-    expect(screen.getByRole('button', { name: '资料库' })).toHaveClass('active');
+    expect(screen.getByRole('button', { name: '课程资料' })).toHaveClass('active');
     expect(screen.getByRole('heading', { name: /康复取消后打开的资料/ })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: '康复练习' })).not.toBeInTheDocument();
     expect(screen.queryByText(remediationQuiz.questions[0]!.stem)).not.toBeInTheDocument();
@@ -1672,10 +1692,10 @@ describe('Mistake notebook and mastery', () => {
       },
     ]);
     const user = userEvent.setup();
-    render(<App />);
+    await renderAppAtMaterials();
     await importSample(user);
 
-    await user.click(screen.getByRole('button', { name: '学习进展' }));
+    await user.click(screen.getByRole('button', { name: '掌握与复习' }));
     expect(
       await screen.findByRole('heading', { name: '综合掌握度（历史加权）' }),
     ).toBeInTheDocument();
@@ -1844,7 +1864,7 @@ describe('Course-space lifecycle across 资料库 and 学习图谱', () => {
     // The retired workspace was also the saved 学习图谱 selection — the
     // deletion must forget it so a later visit cannot try to restore it.
     window.localStorage.setItem(LAST_WORKSPACE_ID_KEY, 'ws_a');
-    render(<App />);
+    await renderAppAtMaterials();
 
     // 资料库: the import is listed, then deleted. The confirmation states
     // that the auto-created course space goes with it.
@@ -1861,11 +1881,11 @@ describe('Course-space lifecycle across 资料库 and 学习图谱', () => {
 
     // 学习图谱: no ghost entry for the import — and no second deletion step.
     // Only the pre-existing unknown-origin shells remain…
-    await user.click(screen.getByRole('button', { name: '学习图谱' }));
+    await user.click(screen.getByRole('button', { name: '探索' }));
     expect(await screen.findByText('历史课程1')).toBeInTheDocument();
     expect(screen.getByText('历史课程2')).toBeInTheDocument();
     expect(screen.queryByText('课程A')).not.toBeInTheDocument();
-    expect(screen.getAllByText(/0 文档 · 0 概念/)).toHaveLength(2);
+    expect(screen.getAllByText(/0 份资料 · 0 个概念/)).toHaveLength(2);
 
     // …and those stay manually deletable via the explicit action.
     await user.click(screen.getByRole('button', { name: '删除课程空间:历史课程1' }));
@@ -1877,13 +1897,13 @@ describe('Course-space lifecycle across 资料库 and 学习图谱', () => {
     await waitFor(() => {
       expect(screen.queryByText('历史课程2')).not.toBeInTheDocument();
     });
-    expect(await screen.findByText(/还没有课程空间/)).toBeInTheDocument();
+    expect(await screen.findByText(/还没有课程。先创建一门课程/)).toBeInTheDocument();
 
     // Navigating away and back must not resurrect anything.
-    await user.click(screen.getByRole('button', { name: '资料库' }));
+    await user.click(screen.getByRole('button', { name: '课程资料' }));
     expect(await screen.findByText(/暂无历史资料/)).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: '学习图谱' }));
-    expect(await screen.findByText(/还没有课程空间/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '探索' }));
+    expect(await screen.findByText(/还没有课程。先创建一门课程/)).toBeInTheDocument();
     expect(screen.queryByText('课程A')).not.toBeInTheDocument();
     expect(screen.queryByText(/历史课程/)).not.toBeInTheDocument();
 
@@ -1930,12 +1950,12 @@ describe('Course-space lifecycle across 资料库 and 学习图谱', () => {
     );
     installFetchMock(gatedRoutes);
     window.localStorage.setItem(LAST_WORKSPACE_ID_KEY, 'ws_a');
-    render(<App />);
+    await renderAppAtMaterials();
 
     await user.click(await screen.findByRole('button', { name: /永久删除：课程A/ }));
     // Navigate away while the DELETE is still in flight — this unmounts
     // 资料库 and aborts the action's signal.
-    await user.click(screen.getByRole('button', { name: '学习图谱' }));
+    await user.click(screen.getByRole('button', { name: '探索' }));
     releaseDelete!();
 
     // The response is server truth: the workspace retired with its final
@@ -1945,7 +1965,7 @@ describe('Course-space lifecycle across 资料库 and 学习图谱', () => {
     });
     expect(server.materials()).toHaveLength(0);
     expect(server.workspaces().some((w) => w.id === 'ws_a')).toBe(false);
-    await user.click(screen.getByRole('button', { name: '资料库' }));
+    await user.click(screen.getByRole('button', { name: '课程资料' }));
     expect(await screen.findByText(/暂无历史资料/)).toBeInTheDocument();
   });
 
@@ -1958,29 +1978,29 @@ describe('Course-space lifecycle across 资料库 and 学习图谱', () => {
       [{ id: 'ws_a', name: '课程A', origin: 'unknown', documentCount: 1, conceptCount: 2 }],
     );
     installFetchMock(server.routes);
-    render(<App />);
+    await renderAppAtMaterials();
 
     // Open the historical material so it becomes the active selection.
     await user.click(await screen.findByRole('button', { name: /打开资料：课程A/ }));
     await waitFor(() => {
       expect(window.localStorage.getItem(LAST_MATERIAL_ID_KEY)).toBe('mat_a');
     });
-    expect(screen.getByRole('button', { name: '练习' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '测验' })).toBeEnabled();
 
     // Delete its course space in 学习图谱.
-    await user.click(screen.getByRole('button', { name: '学习图谱' }));
+    await user.click(screen.getByRole('button', { name: '探索' }));
     await user.click(await screen.findByRole('button', { name: '删除课程空间:课程A' }));
-    expect(await screen.findByText(/还没有课程空间/)).toBeInTheDocument();
+    expect(await screen.findByText(/还没有课程。先创建一门课程/)).toBeInTheDocument();
 
     // The open material, its saved restore id, and the history list are gone;
     // material-dependent modules are unreachable again.
     expect(window.localStorage.getItem(LAST_MATERIAL_ID_KEY)).toBeNull();
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: '练习' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: '测验' })).toBeDisabled();
     });
-    expect(screen.getByRole('button', { name: '错题' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: '学习进展' })).toBeDisabled();
-    await user.click(screen.getByRole('button', { name: '资料库' }));
+    expect(screen.getByRole('button', { name: '错题与修复' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '掌握与复习' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: '课程资料' }));
     expect(await screen.findByText(/暂无历史资料/)).toBeInTheDocument();
     expect(screen.getByText(/还没有导入资料/)).toBeInTheDocument();
   });
