@@ -381,6 +381,32 @@ function hierarchy(valid = true): CurriculumHierarchyView {
   };
 }
 
+function largeHierarchy(): CurriculumHierarchyView {
+  const value = hierarchy();
+  const section = value.nodes.find((node) => node.id === 'section_1')!;
+  const template = value.nodes.find((node) => node.id === 'unit_1')!;
+  const units = Array.from({ length: 277 }, (_, index) => ({
+    ...template,
+    id: `large_unit_${index + 1}`,
+    index,
+    title: `Large course unit ${index + 1}`,
+    breadcrumbTitles: ['Probability', 'Conditional probability', `Large course unit ${index + 1}`],
+    learningUnit: {
+      ...template.learningUnit!,
+      objectives: [
+        {
+          ...template.learningUnit!.objectives[0]!,
+          id: `large_objective_${index + 1}`,
+          title: `Large course objective ${index + 1}`,
+        },
+      ],
+    },
+  }));
+  section.childIds = units.map((unit) => unit.id);
+  value.nodes = [value.nodes[0]!, section, ...units];
+  return value;
+}
+
 describe('CourseHomeView action and authority rendering', () => {
   it('does not render a start command for a blocked next action', () => {
     render(<CourseHomeView {...homeProps(overview('blocked'))} />);
@@ -537,7 +563,48 @@ describe('StudyPlanPanel decisions', () => {
 });
 
 describe('CurriculumView truth and validation states', () => {
-  it('distinguishes independently verified objectives from in-scope unverified teaching', () => {
+  it('keeps a large structure at major-part level until the learner expands it', async () => {
+    const user = userEvent.setup();
+    render(
+      <CurriculumView
+        hierarchy={largeHierarchy()}
+        history={[]}
+        loading={false}
+        error={null}
+        canPropose={false}
+        canAccept
+        busyAction={null}
+        onPropose={vi.fn()}
+        onAccept={vi.fn()}
+        onReject={vi.fn()}
+        onSelectHistory={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('277 个学习单元 · 277 个学习目标')).toBeInTheDocument();
+    expect(screen.queryByText('Large course unit 1')).not.toBeInTheDocument();
+    expect(screen.queryByText('Large course unit 277')).not.toBeInTheDocument();
+
+    const expandSection = screen.getByRole('button', { name: '查看内容（277 个单元）' });
+    expect(expandSection).toHaveAttribute('aria-expanded', 'false');
+    expect(expandSection).toHaveAttribute('aria-controls');
+    await user.click(expandSection);
+
+    expect(expandSection).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText('Large course unit 1')).toBeInTheDocument();
+    expect(screen.getByText('Large course unit 12')).toBeInTheDocument();
+    expect(screen.queryByText('Large course unit 13')).not.toBeInTheDocument();
+    expect(screen.queryByText('Large course unit 277')).not.toBeInTheDocument();
+
+    const showRemaining = screen.getByRole('button', { name: '显示其余 265 个学习单元' });
+    expect(showRemaining).toHaveAttribute('aria-expanded', 'false');
+    await user.click(showRemaining);
+    expect(showRemaining).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText('Large course unit 277')).toBeInTheDocument();
+  });
+
+  it('distinguishes objective truth authority after expanding the relevant part', async () => {
+    const user = userEvent.setup();
     render(
       <CurriculumView
         hierarchy={hierarchy()}
@@ -554,14 +621,17 @@ describe('CurriculumView truth and validation states', () => {
       />,
     );
 
+    expect(screen.queryByText('事实依据已独立验证')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '查看内容（2 个单元）' }));
     expect(screen.getByText('事实依据已独立验证')).toBeInTheDocument();
     expect(screen.getByText('在学习范围内 · 事实依据未验证')).toBeInTheDocument();
   });
 
-  it('renders the persisted parent-child structure as a nested outline', () => {
+  it('renders the persisted parent-child structure on expansion without fabricating current state', async () => {
     const value = hierarchy();
     value.nodes.find((node) => node.id === 'unit_1')!.mappedPlanItemIds = ['plan_item_1'];
     value.nodes.find((node) => node.id === 'unit_1')!.progressState = 'started';
+    const user = userEvent.setup();
     render(
       <CurriculumView
         hierarchy={value}
@@ -579,11 +649,14 @@ describe('CurriculumView truth and validation states', () => {
     );
 
     const outline = screen.getByRole('list', { name: '课程层级' });
-    const courseNode = within(outline).getByRole('heading', { name: 'Probability' }).closest('li');
     const sectionNode = within(outline)
       .getByRole('heading', { name: 'Conditional probability' })
       .closest('li');
-    expect(courseNode).toContainElement(sectionNode);
+    expect(screen.getByText('Verified source objective')).toHaveTextContent(
+      'Verified source objective',
+    );
+    expect(screen.getByText('正在学习')).toBeInTheDocument();
+    await user.click(within(sectionNode!).getByRole('button', { name: '查看内容（2 个单元）' }));
     expect(sectionNode).toContainElement(
       within(outline).getByRole('heading', { name: 'Verified source objective' }).closest('li'),
     );
@@ -593,6 +666,75 @@ describe('CurriculumView truth and validation states', () => {
         .getByRole('heading', { name: 'Verified source objective' })
         .closest('article'),
     ).toHaveAttribute('aria-current', 'step');
+  });
+
+  it('keeps exact revision provenance subordinate and states the quote limitation', async () => {
+    const value = hierarchy();
+    value.nodes.find((node) => node.id === 'unit_1')!.sourceReferences = [
+      {
+        materialId: 'material_1',
+        materialRevisionId: 'revision_1',
+        structuralUnitId: 'structural_1',
+        sourceBlockId: 'source_block_1',
+        sourceBlockRevisionFingerprint: 'source_block_fingerprint_1',
+      },
+    ];
+    const user = userEvent.setup();
+    render(
+      <CurriculumView
+        hierarchy={value}
+        history={[]}
+        loading={false}
+        error={null}
+        canPropose={false}
+        canAccept
+        busyAction={null}
+        onPropose={vi.fn()}
+        onAccept={vi.fn()}
+        onReject={vi.fn()}
+        onSelectHistory={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('manifest_1')).not.toBeVisible();
+    const courseBasis = screen.getByText('课程依据与精确版本');
+    await user.click(courseBasis);
+    expect(screen.getByText('manifest_1')).toBeInTheDocument();
+    expect(screen.getByText('block_1')).toBeInTheDocument();
+    expect(screen.getByText(/不单独证明完整语义蕴含/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '查看内容（2 个单元）' }));
+    await user.click(screen.getByText('课程依据（1）'));
+    expect(screen.getByText(/来源块 source_block_1/)).toBeInTheDocument();
+    expect(screen.getByText(/来源块修订 source_block_fingerprint_1/)).toBeInTheDocument();
+  });
+
+  it('reports malformed duplicate and cyclic links without mounting repeated branches', () => {
+    const value = hierarchy();
+    value.nodes.push({ ...value.nodes.find((node) => node.id === 'unit_1')! });
+    value.nodes.find((node) => node.id === 'section_1')!.childIds.push('course_1');
+    value.nodes.find((node) => node.id === 'unit_2')!.parentId = 'missing_section';
+
+    render(
+      <CurriculumView
+        hierarchy={value}
+        history={[]}
+        loading={false}
+        error={null}
+        canPropose={false}
+        canAccept
+        busyAction={null}
+        onPropose={vi.fn()}
+        onAccept={vi.fn()}
+        onReject={vi.fn()}
+        onSelectHistory={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/发现重复节点 ID：unit_1/)).toBeInTheDocument();
+    expect(screen.getByText(/发现循环层级：course_1/)).toBeInTheDocument();
+    expect(screen.getByText(/部分父节点不存在：missing_section/)).toBeInTheDocument();
+    expect(screen.getByText('学习单元').closest('div')).toHaveTextContent('学习单元2');
   });
 
   it('keeps the Curriculum page context visible while the outline is loading', () => {
@@ -637,6 +779,52 @@ describe('CurriculumView truth and validation states', () => {
 
     expect(screen.getByText('该候选版本未通过本地结构校验，不能接受。')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '接受课程结构' })).toBeDisabled();
+  });
+
+  it('preserves proposal acceptance, rejection, and version-history selection', async () => {
+    const onAccept = vi.fn();
+    const onReject = vi.fn();
+    const onSelectHistory = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <CurriculumView
+        hierarchy={hierarchy()}
+        history={[
+          {
+            id: 'curriculum_history_1',
+            version: 1,
+            predecessorId: null,
+            contractVersionId: 'contract_1',
+            status: 'accepted',
+            title: 'Probability',
+            learningUnitCount: 2,
+            unmappedStructuralUnitCount: 0,
+            validationValid: true,
+            executionSourceManifestFingerprint: 'manifest_1',
+            createdAt: AT,
+            acceptedAt: AT,
+          },
+        ]}
+        loading={false}
+        error={null}
+        canPropose={false}
+        canAccept
+        busyAction={null}
+        onPropose={vi.fn()}
+        onAccept={onAccept}
+        onReject={onReject}
+        onSelectHistory={onSelectHistory}
+      />,
+    );
+
+    expect(screen.getByText('当前已接受版本 1')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '接受课程结构' }));
+    await user.click(screen.getByRole('button', { name: '拒绝候选版本' }));
+    await user.click(screen.getByText('版本历史（1）'));
+    await user.click(screen.getByRole('button', { name: /版本 1/ }));
+    expect(onAccept).toHaveBeenCalledOnce();
+    expect(onReject).toHaveBeenCalledOnce();
+    expect(onSelectHistory).toHaveBeenCalledWith('curriculum_history_1');
   });
 });
 
@@ -706,6 +894,52 @@ describe('consolidated Course product shell', () => {
     expect(onOpenMaterials).toHaveBeenCalledTimes(1);
     await user.click(within(secondary).getByRole('button', { name: '兼容与高级工具' }));
     expect(onOpenAdvancedTools).toHaveBeenCalledTimes(1);
+  });
+
+  it('presents Settings as the active system destination without selecting a Course view', async () => {
+    const user = userEvent.setup();
+    const onOpenSettings = vi.fn();
+    const { rerender } = render(
+      <AgentCourseShell
+        activeView="home"
+        courseId="ws_1"
+        courseName="Probability"
+        courses={[{ id: 'ws_1', name: 'Probability' }]}
+        onCourseChange={vi.fn()}
+        onViewChange={vi.fn()}
+        onOpenSettings={onOpenSettings}
+      >
+        <p>Course content</p>
+      </AgentCourseShell>,
+    );
+
+    await user.click(screen.getByRole('button', { name: '设置' }));
+    expect(onOpenSettings).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <AgentCourseShell
+        activeView="home"
+        courseId="ws_1"
+        courseName="Probability"
+        courses={[{ id: 'ws_1', name: 'Probability' }]}
+        settingsActive
+        onCourseChange={vi.fn()}
+        onViewChange={vi.fn()}
+        onOpenSettings={onOpenSettings}
+      >
+        <p>Settings content</p>
+      </AgentCourseShell>,
+    );
+
+    expect(screen.getByRole('button', { name: '设置' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('button', { name: '主页' })).not.toHaveAttribute('aria-current');
+    expect(
+      screen.getByRole('heading', {
+        level: 1,
+        name: 'Hy3 Study Clinic · Probability · 设置',
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: '设置' })).toBeInTheDocument();
   });
 
   it('persists a compact desktop rail without changing destination semantics', async () => {
@@ -787,6 +1021,50 @@ describe('consolidated Course product shell', () => {
     expect(screen.getByText('Course content').closest('.agent-course-content')).not.toHaveAttribute(
       'inert',
     );
+  });
+
+  it('closes the narrow drawer and moves focus to Settings content', async () => {
+    const user = userEvent.setup();
+    const onOpenSettings = vi.fn();
+    vi.spyOn(window, 'matchMedia').mockImplementation(
+      (query) =>
+        ({
+          matches: query === '(max-width: 767px)',
+          media: query,
+          onchange: null,
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        }) as unknown as MediaQueryList,
+    );
+
+    render(
+      <AgentCourseShell
+        activeView="home"
+        courseId="ws_1"
+        courseName="Probability"
+        courses={[{ id: 'ws_1', name: 'Probability' }]}
+        onCourseChange={vi.fn()}
+        onViewChange={vi.fn()}
+        onOpenSettings={onOpenSettings}
+      >
+        <p>Settings content</p>
+      </AgentCourseShell>,
+    );
+
+    await user.click(screen.getByRole('button', { name: '打开课程导航' }));
+    const sidebar = screen.getByLabelText('课程侧边栏', { selector: 'aside' });
+    const workspace = screen.getByText('Settings content').closest('.agent-course-content');
+    expect(workspace).toHaveAttribute('inert');
+
+    await user.click(within(sidebar).getByRole('button', { name: '设置' }));
+
+    expect(onOpenSettings).toHaveBeenCalledOnce();
+    expect(sidebar).toHaveAttribute('aria-hidden', 'true');
+    expect(workspace).not.toHaveAttribute('inert');
+    expect(workspace).toHaveFocus();
   });
 
   it('keeps Course Materials actionable when the Course has no documents', () => {
