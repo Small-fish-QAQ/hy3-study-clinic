@@ -110,12 +110,26 @@ describe('学习图谱工作台 — workspace and document area', () => {
     expect(screen.queryByText('每日学习队列')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('新建课程')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('证据与辅导详情')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '展开详情面板' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '展开详情面板' })).toBeDisabled();
 
-    await user.click(screen.getByRole('button', { name: '展开资料面板' }));
-    expect(await screen.findByText(documentSummary.title)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '删除' })).not.toBeInTheDocument();
-    expect(screen.queryByText('添加课程资料')).not.toBeInTheDocument();
+    const materialsTrigger = screen.getByRole('button', { name: '资料与版本' });
+    await user.click(materialsTrigger);
+    const materialsPanel = await screen.findByRole('dialog', { name: '课程空间与文档' });
+    expect(within(materialsPanel).getByText(documentSummary.title)).toBeInTheDocument();
+    expect(within(materialsPanel).queryByRole('button', { name: '删除' })).not.toBeInTheDocument();
+    expect(within(materialsPanel).queryByText('添加课程资料')).not.toBeInTheDocument();
+    expect(screen.getByTestId('concept-graph')).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: '课程空间与文档' })).not.toBeInTheDocument();
+    expect(materialsTrigger).toHaveFocus();
+
+    const graph = screen.getByTestId('concept-graph');
+    fireEvent.click(within(graph).getByText('工作记忆'));
+    expect(await screen.findByRole('dialog', { name: '证据与辅导详情' })).toBeInTheDocument();
+    expect(screen.getByTestId('concept-graph')).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: '证据与辅导详情' })).not.toBeInTheDocument();
   });
 
   it('routes an empty embedded Explore back to Course Materials', async () => {

@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react';
 import type {
   CanonicalConceptView,
   Concept,
@@ -133,6 +140,10 @@ export function GraphWorkspaceView({
   const [leftCollapsed, setLeftCollapsed] = useState(courseLocked);
   const [rightCollapsed, setRightCollapsed] = useState(courseLocked);
 
+  const workspaceRootRef = useRef<HTMLElement>(null);
+  const leftPanelCloseRef = useRef<HTMLButtonElement>(null);
+  const rightPanelCloseRef = useRef<HTMLButtonElement>(null);
+  const panelReturnFocusRef = useRef<HTMLElement | null>(null);
   const epochRef = useRef(0);
   const mountedRef = useRef(true);
   /** Ref twin of pendingLaunch: duplicate clicks in the same tick see it. */
@@ -152,6 +163,76 @@ export function GraphWorkspaceView({
   const planAction = useAsyncAction();
   const launchAction = useAsyncAction();
   const assessmentAction = useAsyncAction();
+
+  const restorePanelFocus = useCallback(() => {
+    window.setTimeout(() => {
+      const returnTarget = panelReturnFocusRef.current;
+      if (returnTarget?.isConnected) {
+        returnTarget.focus();
+        return;
+      }
+      const selectedId = selectedNodeIdRef.current;
+      const selectedNode = selectedId
+        ? [...document.querySelectorAll<HTMLElement>('.react-flow__node')].find(
+            (node) => node.dataset.id === selectedId,
+          )
+        : null;
+      (selectedNode ?? workspaceRootRef.current)?.focus();
+    }, 0);
+  }, []);
+
+  const closeCoursePanel = useCallback(
+    (panel: 'left' | 'right', restoreFocus = true) => {
+      if (panel === 'left') setLeftCollapsed(true);
+      else setRightCollapsed(true);
+      if (restoreFocus) restorePanelFocus();
+    },
+    [restorePanelFocus],
+  );
+
+  function containPanelFocus(event: ReactKeyboardEvent<HTMLElement>) {
+    if (event.key !== 'Tab') return;
+    const focusable = [
+      ...event.currentTarget.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [href], [tabindex]:not([tabindex="-1"])',
+      ),
+    ].filter((element) => element.getAttribute('aria-hidden') !== 'true');
+    if (focusable.length === 0) return;
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  useEffect(() => {
+    if (!courseLocked) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      if (!rightCollapsed) {
+        event.preventDefault();
+        closeCoursePanel('right');
+      } else if (!leftCollapsed) {
+        event.preventDefault();
+        closeCoursePanel('left');
+      }
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [closeCoursePanel, courseLocked, leftCollapsed, rightCollapsed]);
+
+  useEffect(() => {
+    if (!courseLocked) return;
+    if (!leftCollapsed) {
+      window.setTimeout(() => leftPanelCloseRef.current?.focus(), 0);
+    } else if (!rightCollapsed) {
+      window.setTimeout(() => rightPanelCloseRef.current?.focus(), 0);
+    }
+  }, [courseLocked, leftCollapsed, rightCollapsed]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -318,7 +399,13 @@ export function GraphWorkspaceView({
   const selectNode = useCallback(
     (conceptId: string | null) => {
       setSelectedNodeId(conceptId);
-      if (conceptId) setRightCollapsed(false);
+      if (conceptId) {
+        if (courseLocked) {
+          panelReturnFocusRef.current = null;
+          setLeftCollapsed(true);
+        }
+        setRightCollapsed(false);
+      }
       // Synchronous ref update: the staleness guard below must see the newest
       // selection even before React commits the state change.
       selectedNodeIdRef.current = conceptId;
@@ -349,15 +436,24 @@ export function GraphWorkspaceView({
         });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeWorkspaceId],
+    [activeWorkspaceId, courseLocked],
   );
 
-  const selectEdge = useCallback((edgeId: string | null) => {
-    setSelectedEdgeId(edgeId);
-    if (edgeId) setRightCollapsed(false);
-    setSelectedNodeId(null);
-    setPlan(null);
-  }, []);
+  const selectEdge = useCallback(
+    (edgeId: string | null) => {
+      setSelectedEdgeId(edgeId);
+      if (edgeId) {
+        if (courseLocked) {
+          panelReturnFocusRef.current = null;
+          setLeftCollapsed(true);
+        }
+        setRightCollapsed(false);
+      }
+      setSelectedNodeId(null);
+      setPlan(null);
+    },
+    [courseLocked],
+  );
 
   async function handleCreateWorkspace() {
     const name = newWorkspaceName.trim();
@@ -781,32 +877,44 @@ export function GraphWorkspaceView({
 
   return (
     <section
+      ref={workspaceRootRef}
+      tabIndex={-1}
       className={`graph-workspace ${courseLocked ? 'course-locked' : ''} ${leftCollapsed ? 'left-collapsed' : ''} ${
         rightCollapsed ? 'right-collapsed' : ''
       }`}
     >
       {leftCollapsed ? (
-        <div className="panel-rail left">
-          <button
-            type="button"
-            className="rail-toggle"
-            aria-label="展开资料面板"
-            title="展开资料面板"
-            onClick={() => setLeftCollapsed(false)}
-          >
-            »
-          </button>
-        </div>
+        courseLocked ? null : (
+          <div className="panel-rail left">
+            <button
+              type="button"
+              className="rail-toggle"
+              aria-label="展开资料面板"
+              title="展开资料面板"
+              onClick={() => setLeftCollapsed(false)}
+            >
+              »
+            </button>
+          </div>
+        )
       ) : (
-        <aside className="workspace-panel" aria-label="课程空间与文档">
+        <aside
+          id="explore-material-panel"
+          className="workspace-panel"
+          aria-label="课程空间与文档"
+          role={courseLocked ? 'dialog' : undefined}
+          aria-modal={courseLocked || undefined}
+          onKeyDown={courseLocked ? containPanelFocus : undefined}
+        >
           <div className="panel-head">
             <h2>{courseLocked ? '图谱资料与版本' : '课程与资料'}</h2>
             <button
               type="button"
+              ref={leftPanelCloseRef}
               className="rail-toggle"
               aria-label="折叠资料面板"
               title="折叠资料面板"
-              onClick={() => setLeftCollapsed(true)}
+              onClick={() => (courseLocked ? closeCoursePanel('left') : setLeftCollapsed(true))}
             >
               «
             </button>
@@ -1090,32 +1198,79 @@ export function GraphWorkspaceView({
         </aside>
       )}
 
+      {courseLocked && (!leftCollapsed || !rightCollapsed) ? (
+        <button
+          type="button"
+          className="graph-panel-backdrop"
+          aria-label="关闭探索面板"
+          onClick={() => {
+            if (!rightCollapsed) closeCoursePanel('right');
+            else closeCoursePanel('left');
+          }}
+        />
+      ) : null}
+
       <div className="graph-area" aria-label="个人学习图谱">
         <div className="graph-area-head">
-          <div>
+          <div className="graph-area-title">
             {courseLocked ? <h3>概念图谱</h3> : <h2>个人学习图谱</h2>}
             {courseLocked ? (
               <p className="small muted">查看概念关系与课程依据，不会改变当前学习路线。</p>
             ) : null}
           </div>
-          {data && weakCount > 0 ? (
-            <span className="pill weak">薄弱概念 {weakCount} 个</span>
-          ) : null}
-          {data && dueReviewCount > 0 ? (
-            <span className="pill review-due">待复习 {dueReviewCount} 个</span>
-          ) : null}
-          {data && data.documents.length > 1 ? (
-            <button
-              type="button"
-              className={`ghost small alignment-toggle ${alignmentOpen ? 'active' : ''}`}
-              onClick={() => setAlignmentOpen((open) => !open)}
-            >
-              概念对齐
-              {data.pendingAlignmentCount > 0 ? (
-                <span className="badge-count">{data.pendingAlignmentCount} 待审</span>
-              ) : null}
-            </button>
-          ) : null}
+          <div className="graph-area-actions">
+            {data && weakCount > 0 ? (
+              <span className="pill weak">薄弱概念 {weakCount} 个</span>
+            ) : null}
+            {data && dueReviewCount > 0 ? (
+              <span className="pill review-due">待复习 {dueReviewCount} 个</span>
+            ) : null}
+            {data && data.documents.length > 1 ? (
+              <button
+                type="button"
+                className={`ghost small alignment-toggle ${alignmentOpen ? 'active' : ''}`}
+                aria-pressed={alignmentOpen}
+                onClick={() => setAlignmentOpen((open) => !open)}
+              >
+                概念对齐
+                {data.pendingAlignmentCount > 0 ? (
+                  <span className="badge-count">{data.pendingAlignmentCount} 待审</span>
+                ) : null}
+              </button>
+            ) : null}
+            {courseLocked && data ? (
+              <button
+                type="button"
+                className="ghost small graph-panel-trigger"
+                aria-expanded={!leftCollapsed}
+                aria-controls="explore-material-panel"
+                onClick={(event) => {
+                  panelReturnFocusRef.current = event.currentTarget;
+                  setRightCollapsed(true);
+                  setLeftCollapsed((collapsed) => !collapsed);
+                }}
+              >
+                资料与版本
+              </button>
+            ) : null}
+            {courseLocked ? (
+              <button
+                type="button"
+                className="ghost small graph-panel-trigger"
+                aria-label="展开详情面板"
+                aria-expanded={!rightCollapsed}
+                aria-controls="explore-detail-panel"
+                disabled={!selectedConcept && !selectedEdge}
+                onClick={(event) => {
+                  panelReturnFocusRef.current = event.currentTarget;
+                  setLeftCollapsed(true);
+                  setRightCollapsed((collapsed) => !collapsed);
+                }}
+              >
+                详情
+              </button>
+            ) : null}
+          </div>
           {generationSummary ? (
             <p className="generation-summary" role="status">
               {generationSummary}
@@ -1217,27 +1372,37 @@ export function GraphWorkspaceView({
       </div>
 
       {rightCollapsed ? (
-        <div className="panel-rail right">
-          <button
-            type="button"
-            className="rail-toggle"
-            aria-label="展开详情面板"
-            title="展开详情面板"
-            onClick={() => setRightCollapsed(false)}
-          >
-            «
-          </button>
-        </div>
+        courseLocked ? null : (
+          <div className="panel-rail right">
+            <button
+              type="button"
+              className="rail-toggle"
+              aria-label="展开详情面板"
+              title="展开详情面板"
+              onClick={() => setRightCollapsed(false)}
+            >
+              «
+            </button>
+          </div>
+        )
       ) : (
-        <aside className="detail-area" aria-label="证据与辅导详情">
+        <aside
+          id="explore-detail-panel"
+          className="detail-area"
+          aria-label="证据与辅导详情"
+          role={courseLocked ? 'dialog' : undefined}
+          aria-modal={courseLocked || undefined}
+          onKeyDown={courseLocked ? containPanelFocus : undefined}
+        >
           <div className="panel-head">
             <h2>详情</h2>
             <button
               type="button"
+              ref={rightPanelCloseRef}
               className="rail-toggle"
               aria-label="折叠详情面板"
               title="折叠详情面板"
-              onClick={() => setRightCollapsed(true)}
+              onClick={() => (courseLocked ? closeCoursePanel('right') : setRightCollapsed(true))}
             >
               »
             </button>
