@@ -475,52 +475,50 @@ export function App() {
 
   return (
     <div className={`app-shell module-${activeModule}`}>
-      <header className="app-header">
-        <div className="app-branding">
-          <h1>Hy3 Study Clinic</h1>
-          <p className="app-subtitle">以课程为中心的证据驱动学习空间</p>
-        </div>
-        <nav className="primary-nav" aria-label="主导航">
-          <button
-            type="button"
-            className={activeModule === 'course' ? 'active' : ''}
-            onClick={() => handleModuleChange('course')}
-          >
-            课程
-          </button>
-        </nav>
-        <details className="legacy-tools" open={tab !== 'course'}>
-          <summary>更多工具</summary>
-          <nav className="legacy-nav" aria-label="兼容工具">
-            {(Object.keys(MODULE_LABELS) as Module[])
-              .filter((module) => module !== 'course')
-              .map((module) => {
-                const needsMaterial = module !== 'import' && module !== 'graph';
-                const practiceViaAssessment = module === 'practice' && assessmentActive;
-                const disabled =
-                  needsMaterial &&
-                  !practiceViaAssessment &&
-                  (!materialReady || openingMaterialId !== null);
-                return (
-                  <button
-                    key={module}
-                    type="button"
-                    className={activeModule === module ? 'active' : ''}
-                    disabled={disabled}
-                    onClick={() => handleModuleChange(module)}
-                  >
-                    {MODULE_LABELS[module]}
-                  </button>
-                );
-              })}
+      {tab !== 'course' ? (
+        <header className="app-header app-utility-header">
+          <div className="app-branding">
+            <h1>Hy3 Study Clinic</h1>
+            <p className="app-subtitle">兼容与高级工具</p>
+          </div>
+          <nav className="primary-nav" aria-label="主导航">
+            <button type="button" onClick={() => handleModuleChange('course')}>
+              返回课程
+            </button>
           </nav>
-        </details>
-        {provider ? (
-          <span className={`provider-badge ${provider}`}>
-            {provider === 'fake' ? '离线 · 模拟模式' : 'Hy3 在线'}
-          </span>
-        ) : null}
-      </header>
+          <details className="legacy-tools" open>
+            <summary>工具导航</summary>
+            <nav className="legacy-nav" aria-label="兼容工具">
+              {(Object.keys(MODULE_LABELS) as Module[])
+                .filter((module) => module !== 'course')
+                .map((module) => {
+                  const needsMaterial = module !== 'import' && module !== 'graph';
+                  const practiceViaAssessment = module === 'practice' && assessmentActive;
+                  const disabled =
+                    needsMaterial &&
+                    !practiceViaAssessment &&
+                    (!materialReady || openingMaterialId !== null);
+                  return (
+                    <button
+                      key={module}
+                      type="button"
+                      className={activeModule === module ? 'active' : ''}
+                      disabled={disabled}
+                      onClick={() => handleModuleChange(module)}
+                    >
+                      {MODULE_LABELS[module]}
+                    </button>
+                  );
+                })}
+            </nav>
+          </details>
+          {provider ? (
+            <span className={`provider-badge ${provider}`}>
+              {provider === 'fake' ? '离线 · 模拟模式' : 'Hy3 在线'}
+            </span>
+          ) : null}
+        </header>
+      ) : null}
 
       {remediationAction.error && tab !== 'mistakes' ? (
         <Banner kind="error">{remediationAction.error}</Banner>
@@ -600,6 +598,8 @@ export function App() {
             onWorkspaceChange={setSelectedWorkspaceId}
             onLaunchQuiz={(launchedQuiz) => void handleLaunchFromPlan(launchedQuiz)}
             refreshKey={refreshKey}
+            provider={provider}
+            onOpenAdvancedTools={() => handleModuleChange('import')}
             onWorkspaceDeleted={handleWorkspaceDeleted}
           />
         ) : null}

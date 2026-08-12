@@ -68,6 +68,8 @@ export interface AgentCourseWorkspaceProps {
   onWorkspaceChange: (workspaceId: string | null) => void;
   onLaunchQuiz: (quiz: PublicQuiz) => void;
   refreshKey: number;
+  provider?: 'fake' | 'hy3' | null;
+  onOpenAdvancedTools?: () => void;
   onWorkspaceDeleted?: (workspaceId: string) => void;
 }
 
@@ -127,6 +129,8 @@ export function AgentCourseWorkspace({
   onWorkspaceChange,
   onLaunchQuiz,
   refreshKey,
+  provider = null,
+  onOpenAdvancedTools,
   onWorkspaceDeleted,
 }: AgentCourseWorkspaceProps) {
   const [view, setView] = useState<AgentCourseView>('home');
@@ -686,36 +690,27 @@ export function AgentCourseWorkspace({
     setView(next);
   }
 
+  function changeCourse(nextWorkspaceId: string | null): void {
+    action.cancel();
+    progressRemediationAction.cancel();
+    setMaterialsOpen(false);
+    setView('home');
+    onWorkspaceChange(nextWorkspaceId);
+  }
+
   return (
     <AgentCourseShell
       activeView={view}
+      courseId={workspaceId}
       courseName={selectedWorkspace?.name ?? null}
+      courses={workspaces.map((workspace) => ({ id: workspace.id, name: workspace.name }))}
+      materialsActive={materialsOpen}
+      provider={provider}
+      onCourseChange={changeCourse}
       onViewChange={changeView}
+      onOpenMaterials={() => setMaterialsOpen(true)}
+      onOpenAdvancedTools={onOpenAdvancedTools}
     >
-      <div className="course-picker row">
-        <label>
-          当前课程
-          <select
-            aria-label="当前课程"
-            value={workspaceId ?? ''}
-            onChange={(event) => {
-              action.cancel();
-              progressRemediationAction.cancel();
-              setMaterialsOpen(false);
-              setView('home');
-              onWorkspaceChange(event.target.value || null);
-            }}
-          >
-            <option value="">选择课程</option>
-            {workspaces.map((workspace) => (
-              <option key={workspace.id} value={workspace.id}>
-                {workspace.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
       {loadError ? <Banner kind="error">{loadError}</Banner> : null}
       {action.error ? <Banner kind="error">{action.error}</Banner> : null}
       {notice ? <Banner kind="info">{notice}</Banner> : null}

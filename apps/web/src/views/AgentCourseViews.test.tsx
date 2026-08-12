@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   CourseExecutionOverview,
   CurriculumHierarchyView,
@@ -17,6 +17,14 @@ import { CourseProgressView } from './CourseProgressView.js';
 import { api } from '../api.js';
 
 const AT = '2026-08-10T08:00:00.000Z';
+
+beforeEach(() => {
+  window.localStorage.clear();
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 function contract(status: LearningContract['status'] = 'active'): LearningContract {
   return {
@@ -574,7 +582,14 @@ describe('CurriculumView truth and validation states', () => {
 describe('consolidated Course product shell', () => {
   it('offers one learner-facing Course navigation model with Chinese Study naming', () => {
     render(
-      <AgentCourseShell activeView="home" courseName="Probability" onViewChange={vi.fn()}>
+      <AgentCourseShell
+        activeView="home"
+        courseId="ws_1"
+        courseName="Probability"
+        courses={[{ id: 'ws_1', name: 'Probability' }]}
+        onCourseChange={vi.fn()}
+        onViewChange={vi.fn()}
+      >
         <p>Course content</p>
       </AgentCourseShell>,
     );
@@ -587,6 +602,110 @@ describe('consolidated Course product shell', () => {
     ).toEqual(['主页', '学习', '课程结构', '进展', '探索']);
     expect(within(navigation).queryByText('Study Session')).not.toBeInTheDocument();
     expect(within(navigation).queryByText('课程执行')).not.toBeInTheDocument();
+    expect(within(navigation).getByRole('button', { name: '主页' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+  });
+
+  it('keeps Course switching and Materials secondary to the five primary destinations', async () => {
+    const user = userEvent.setup();
+    const onCourseChange = vi.fn();
+    const onOpenMaterials = vi.fn();
+    const onOpenAdvancedTools = vi.fn();
+    render(
+      <AgentCourseShell
+        activeView="home"
+        courseId="ws_1"
+        courseName="Probability"
+        courses={[
+          { id: 'ws_1', name: 'Probability' },
+          { id: 'ws_2', name: 'Linear Algebra' },
+        ]}
+        onCourseChange={onCourseChange}
+        onViewChange={vi.fn()}
+        onOpenMaterials={onOpenMaterials}
+        onOpenAdvancedTools={onOpenAdvancedTools}
+      >
+        <p>Course content</p>
+      </AgentCourseShell>,
+    );
+
+    await user.selectOptions(screen.getByRole('combobox', { name: '当前课程' }), 'ws_2');
+    expect(onCourseChange).toHaveBeenCalledWith('ws_2');
+
+    const secondary = screen.getByLabelText('课程辅助入口');
+    await user.click(within(secondary).getByRole('button', { name: '课程资料' }));
+    expect(onOpenMaterials).toHaveBeenCalledTimes(1);
+    await user.click(within(secondary).getByRole('button', { name: '兼容与高级工具' }));
+    expect(onOpenAdvancedTools).toHaveBeenCalledTimes(1);
+  });
+
+  it('persists a compact desktop rail without changing destination semantics', async () => {
+    const user = userEvent.setup();
+    const onViewChange = vi.fn();
+    render(
+      <AgentCourseShell
+        activeView="home"
+        courseId="ws_1"
+        courseName="Probability"
+        courses={[{ id: 'ws_1', name: 'Probability' }]}
+        onCourseChange={vi.fn()}
+        onViewChange={onViewChange}
+      >
+        <p>Course content</p>
+      </AgentCourseShell>,
+    );
+
+    await user.click(screen.getByRole('button', { name: '学习' }));
+    expect(onViewChange).toHaveBeenCalledWith('session');
+    await user.click(screen.getByRole('button', { name: '折叠课程侧边栏' }));
+    expect(screen.getByLabelText('课程侧边栏')).toHaveClass('is-collapsed');
+    expect(screen.getByRole('button', { name: '展开课程侧边栏' })).toBeInTheDocument();
+    expect(window.localStorage.getItem('hy3-clinic:course-sidebar-collapsed')).toBe('true');
+    expect(screen.getByRole('button', { name: '主页' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('opens the narrow Course drawer, closes it with Escape, and restores focus', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(window, 'matchMedia').mockImplementation(
+      (query) =>
+        ({
+          matches: query === '(max-width: 767px)',
+          media: query,
+          onchange: null,
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        }) as unknown as MediaQueryList,
+    );
+
+    render(
+      <AgentCourseShell
+        activeView="home"
+        courseId="ws_1"
+        courseName="Probability"
+        courses={[{ id: 'ws_1', name: 'Probability' }]}
+        onCourseChange={vi.fn()}
+        onViewChange={vi.fn()}
+      >
+        <p>Course content</p>
+      </AgentCourseShell>,
+    );
+
+    const opener = screen.getByRole('button', { name: '打开课程导航' });
+    const sidebar = screen.getByLabelText('课程侧边栏', { selector: 'aside' });
+    expect(sidebar).toHaveAttribute('aria-hidden', 'true');
+    await user.click(opener);
+    expect(opener).toHaveAttribute('aria-expanded', 'true');
+    expect(sidebar).not.toHaveAttribute('aria-hidden');
+    expect(within(sidebar).getByRole('button', { name: '关闭课程导航' })).toHaveFocus();
+
+    await user.keyboard('{Escape}');
+    expect(sidebar).toHaveAttribute('aria-hidden', 'true');
+    expect(opener).toHaveFocus();
   });
 
   it('keeps Course Materials actionable when the Course has no documents', () => {

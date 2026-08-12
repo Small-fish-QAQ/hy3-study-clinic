@@ -276,13 +276,14 @@ async function importSample(user: ReturnType<typeof userEvent.setup>) {
 async function renderAppAtMaterials() {
   const rendered = render(<App />);
   const user = userEvent.setup();
-  await user.click(await screen.findByText('更多工具'));
-  await user.click(screen.getByRole('button', { name: '课程资料' }));
+  await user.click(await screen.findByRole('button', { name: '兼容与高级工具' }));
+  await user.click(await screen.findByRole('button', { name: '课程资料' }));
   return rendered;
 }
 
 describe('App shell', () => {
-  it('opens on Course selection with one primary product entry', async () => {
+  it('opens on Course selection with one persistent Course-first shell', async () => {
+    const user = userEvent.setup();
     installFetchMock([
       ...baseRoutes,
       {
@@ -293,14 +294,18 @@ describe('App shell', () => {
     ]);
     render(<App />);
     expect(await screen.findByText(/离线 · 模拟模式/)).toBeInTheDocument();
-    const primaryNav = screen.getByRole('navigation', { name: '主导航' });
-    expect(within(primaryNav).getAllByRole('button')).toHaveLength(1);
-    expect(within(primaryNav).getByRole('button', { name: '课程' })).toHaveClass('active');
-    expect(within(primaryNav).queryByRole('button', { name: '进展' })).not.toBeInTheDocument();
-    expect(within(primaryNav).queryByRole('button', { name: '探索' })).not.toBeInTheDocument();
-    expect(screen.getByText('更多工具').closest('details')).not.toHaveAttribute('open');
+    const sidebar = screen.getByLabelText('课程侧边栏', { selector: 'aside' });
+    expect(within(sidebar).getByText('Hy3 Study Clinic')).toBeInTheDocument();
+    expect(within(sidebar).getByRole('combobox', { name: '当前课程' })).toHaveValue('');
+    expect(screen.queryByRole('navigation', { name: '课程导航' })).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '选择一门课程' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '创建课程' })).toBeDisabled();
+
+    await user.click(within(sidebar).getByRole('button', { name: '兼容与高级工具' }));
+    expect(screen.getByRole('button', { name: '返回课程' })).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: '兼容工具' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '返回课程' }));
+    expect(screen.getByLabelText('课程侧边栏', { selector: 'aside' })).toBeInTheDocument();
   });
 });
 
