@@ -1,14 +1,15 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  fnv1a32,
   type Curriculum,
   type LearningContract,
   type SessionAgenda,
   type StudyPlan,
 } from '@hy3-clinic/shared';
+import { buildApp } from '../app.js';
 import { openDatabase, type SqliteDb } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
 import { FakeProvider } from '../llm/fakeProvider.js';
+import type { ProviderCallOptions, TutorTurnInput, TutorTurnPayload } from '../llm/provider.js';
 import { createRepositories, type Repositories } from '../repositories/index.js';
 import { makeWorkspace, T0 } from '../testing/fixtures.js';
 import { fixedClock } from '../util/ids.js';
@@ -320,124 +321,122 @@ describe('StudySession service', () => {
     });
   });
 
-  it('retries an interrupted turn as a new physical attempt without duplicating transcript', async () => {
-    const started = service.start('ws_1', {
-      contractVersionId: 'contract_1',
-      curriculumVersionId: 'curriculum_1',
-      studyPlanVersionId: 'plan_1',
-      sessionAgendaId: 'agenda_1',
-      expectedCourseExecutionVersion: 1,
-    }).session;
-    const input = {
-      commandId: 'turn_after_restart',
-      expectedSessionVersion: started.version + 1,
-      content: 'Resume this explanation.',
-    };
-    const operationIdentity = `study-turn:${started.id}:${input.commandId}`;
-    const operation = repos.operations.createOrGet({
-      id: 'op_interrupted_turn',
-      workspaceId: 'ws_1',
-      commandId: operationIdentity,
-      idempotencyKey: operationIdentity,
-      logicalOperationId: operationIdentity,
-      operationType: 'study_session_turn',
-      expectedFingerprint: fnv1a32(JSON.stringify({ sessionId: started.id, ...input }))
-        .toString(16)
-        .padStart(8, '0'),
-      createdAt: T0,
-      updatedAt: T0,
-    }).operation;
-    const claim = repos.operations.claim(operation.id, 'old-worker', T1, T0)!;
-    repos.telemetry.insertLogicalCall({
-      id: 'call_interrupted',
-      operationId: operation.id,
-      workspaceId: 'ws_1',
-      studySessionId: started.id,
-      learningUnitId: null,
-      assessmentId: null,
-      operationType: 'study_session_tutor_turn',
-      cacheKey: null,
-      cacheStatus: 'not_checked',
-      promptFingerprint: null,
-      schemaFingerprint: 'tutor-turn-v1',
-      policyFingerprint: null,
-      sourceFingerprint: 'manifest-1',
-      status: 'open',
-      createdAt: T0,
-      completedAt: null,
+  it('retries a real sent turn after restart without duplicating the logical request', async () => {
+    let providerReached!: () => void;
+    let interruptProvider!: (error: Error) => void;
+    const reachedProvider = new Promise<void>((resolve) => {
+      providerReached = resolve;
     });
-    repos.telemetry.insertAttempt({
-      id: 'attempt_interrupted',
-      logicalCallId: 'call_interrupted',
-      attemptNumber: 1,
-      attemptKind: 'original',
-      provider: 'fake',
-      model: null,
-      fencingToken: claim.fencingToken,
-      status: 'sent',
-      startedAt: T0,
-      sentAt: T0,
-      firstTokenAt: null,
-      completedAt: null,
-      latencyMs: null,
-      timeToFirstTokenMs: null,
-      errorCode: null,
-      errorMessage: null,
+    class InterruptedProvider extends FakeProvider {
+      override async respondToTutorTurn(
+        _input: TutorTurnInput,
+        _opts?: ProviderCallOptions,
+      ): Promise<TutorTurnPayload> {
+        providerReached();
+        return new Promise<TutorTurnPayload>((_resolve, reject) => {
+          interruptProvider = reject;
+        });
+      }
+    }
+
+    const firstApp = buildApp({
+      repos,
+      provider: new InterruptedProvider(),
+      clock: fixedClock(T1),
     });
-    repos.studySessions.insertTurn({
-      id: 'study_turn_interrupted',
-      sessionId: started.id,
-      seq: 0,
-      commandId: input.commandId,
-      status: 'running',
-      contextManifest: {
-        fingerprint: 'old-context',
-        contractScopeFingerprint: 'old-scope',
+    const startResponse = await firstApp.inject({
+      method: 'POST',
+      url: '/api/workspaces/ws_1/study-sessions',
+      payload: {
         contractVersionId: 'contract_1',
         curriculumVersionId: 'curriculum_1',
         studyPlanVersionId: 'plan_1',
-        sessionAgendaVersionId: 'agenda_1:v1',
-        studySessionVersion: 1,
-        executionSourceManifestFingerprint: 'manifest-1',
-        transcriptWatermark: 0,
-        sourceBlockRevisionIds: [],
-        formalEvidenceIds: [],
-        riskIds: [],
+        sessionAgendaId: 'agenda_1',
+        expectedCourseExecutionVersion: 1,
       },
-      logicalCallId: 'call_interrupted',
-      errorMessage: null,
-      createdAt: T0,
-      completedAt: null,
     });
-    repos.studySessions.insertExchange({
-      id: 'exchange_interrupted_learner',
-      sessionId: started.id,
-      turnId: 'study_turn_interrupted',
-      seq: 0,
-      role: 'learner',
-      content: input.content,
-      channel: 'conversation',
-      createdAt: T0,
+    expect(startResponse.statusCode).toBe(201);
+    const started = startResponse.json<{ session: { id: string; version: number } }>().session;
+    const input = {
+      commandId: 'turn_after_restart',
+      expectedSessionVersion: started.version,
+      content: 'Resume this explanation.',
+    };
+    const firstRequest = firstApp.inject({
+      method: 'POST',
+      url: `/api/workspaces/ws_1/study-sessions/${started.id}/turns`,
+      payload: input,
     });
-    repos.studySessions.update(
-      { ...started, version: 2, transcriptWatermark: 1, updatedAt: T0 },
-      started.version,
-    );
-    repos.studySessions.markInterruptedTurns(T1);
-    repos.operations.recoverRunningAfterRestart(T1);
+    await reachedProvider;
 
-    const completed = await service.submitTurn('ws_1', started.id, input);
+    const reserved = repos.studySessions.get(started.id)!;
+    const originalTurn = repos.studySessions.getTurnByCommand(started.id, input.commandId)!;
+    const logicalCallId = originalTurn.logicalCallId!;
+    expect(reserved).toMatchObject({ version: started.version + 1, transcriptWatermark: 1 });
+    expect(originalTurn.contextManifest).toMatchObject({
+      studySessionVersion: started.version,
+      transcriptWatermark: 0,
+    });
+    expect(repos.telemetry.listAttempts(logicalCallId)).toMatchObject([
+      { attemptNumber: 1, status: 'sent', fencingToken: 1 },
+    ]);
 
-    expect(completed.turn.id).toBe('study_turn_interrupted');
+    const restartedApp = buildApp({ repos, provider: new FakeProvider(), clock: fixedClock(T1) });
+    expect(repos.studySessions.getTurn(originalTurn.id)).toMatchObject({ status: 'interrupted' });
+    expect(repos.telemetry.listAttempts(logicalCallId)).toMatchObject([
+      { attemptNumber: 1, status: 'outcome_unknown', fencingToken: 1 },
+    ]);
+
+    const changedRetry = await restartedApp.inject({
+      method: 'POST',
+      url: `/api/workspaces/ws_1/study-sessions/${started.id}/turns`,
+      payload: { ...input, content: 'Changed retry content.' },
+    });
+    expect(changedRetry.statusCode).toBe(409);
+    expect(repos.studySessions.getTurn(originalTurn.id)).toMatchObject({
+      status: 'interrupted',
+      contextManifest: originalTurn.contextManifest,
+    });
+    expect(repos.telemetry.listAttempts(logicalCallId)).toHaveLength(1);
+
+    const retryResponse = await restartedApp.inject({
+      method: 'POST',
+      url: `/api/workspaces/ws_1/study-sessions/${started.id}/turns`,
+      payload: input,
+    });
+    expect(retryResponse.statusCode).toBe(200);
+    const completed = retryResponse.json<{ turn: { id: string } }>();
+    expect(completed.turn.id).toBe(originalTurn.id);
     expect(repos.studySessions.listTurns(started.id)).toHaveLength(1);
     expect(repos.studySessions.listExchanges(started.id).map((item) => item.role)).toEqual([
       'learner',
       'tutor',
     ]);
-    expect(repos.telemetry.listAttempts('call_interrupted')).toMatchObject([
-      { attemptNumber: 1, status: 'outcome_unknown' },
-      { attemptNumber: 2, attemptKind: 'retry', status: 'completed' },
+    expect(repos.studySessions.get(started.id)).toMatchObject({
+      version: started.version + 2,
+      transcriptWatermark: 2,
+    });
+    expect(repos.telemetry.listAttempts(logicalCallId)).toMatchObject([
+      { attemptNumber: 1, status: 'outcome_unknown', fencingToken: 1 },
+      { attemptNumber: 2, attemptKind: 'retry', status: 'completed', fencingToken: 2 },
     ]);
+
+    const staleFreshTurn = await restartedApp.inject({
+      method: 'POST',
+      url: `/api/workspaces/ws_1/study-sessions/${started.id}/turns`,
+      payload: {
+        commandId: 'fresh_turn_with_stale_version',
+        expectedSessionVersion: started.version,
+        content: 'This is a distinct logical request.',
+      },
+    });
+    expect(staleFreshTurn.statusCode).toBe(409);
+    expect(repos.studySessions.listTurns(started.id)).toHaveLength(1);
+
+    interruptProvider(new Error('Simulated process exit.'));
+    expect((await firstRequest).statusCode).toBe(500);
+    expect(repos.studySessions.listExchanges(started.id)).toHaveLength(2);
+    await Promise.all([firstApp.close(), restartedApp.close()]);
   });
 
   it('persists detour/return and pause/resume without changing the accepted Plan', () => {

@@ -407,6 +407,60 @@ export function createStudySessionService({
       return SubmitTutorTurnResponseSchema.parse(previous.payload);
     if (previous)
       throw operationFailure('The prior StudySession turn did not complete.', created.operation.id);
+
+    const interruptedTurn = repos.studySessions.getTurnByCommand(session.id, parsed.commandId);
+    const sessionExchanges = repos.studySessions.listExchanges(session.id);
+    const turnExchanges = interruptedTurn
+      ? sessionExchanges.filter((exchange) => exchange.turnId === interruptedTurn.id)
+      : [];
+    const retryExchange = turnExchanges.find((exchange) => exchange.role === 'learner');
+    const priorLogicalCall = interruptedTurn?.logicalCallId
+      ? repos.telemetry.getLogicalCall(interruptedTurn.logicalCallId)
+      : undefined;
+    const priorAttempts = interruptedTurn?.logicalCallId
+      ? repos.telemetry.listAttempts(interruptedTurn.logicalCallId)
+      : [];
+    const priorAttempt = priorAttempts.at(-1);
+    const recoveryEvent = repos.operations.listEvents(created.operation.id).at(-1);
+    const latestTurn = repos.studySessions.listTurns(session.id).at(-1);
+    const latestExchange = sessionExchanges.at(-1);
+    const recoveredInterruptedRetry = Boolean(
+      interruptedTurn &&
+      !created.created &&
+      created.operation.status === 'interrupted' &&
+      created.operation.leaseOwner === null &&
+      created.operation.leaseExpiresAt === null &&
+      interruptedTurn.status === 'interrupted' &&
+      interruptedTurn.commandId === parsed.commandId &&
+      latestTurn?.id === interruptedTurn.id &&
+      turnExchanges.length === 1 &&
+      retryExchange &&
+      retryExchange.content === parsed.content &&
+      retryExchange.channel === 'conversation' &&
+      latestExchange?.id === retryExchange.id &&
+      interruptedTurn.contextManifest.studySessionVersion === parsed.expectedSessionVersion &&
+      interruptedTurn.contextManifest.transcriptWatermark === retryExchange.seq &&
+      session.version === parsed.expectedSessionVersion + 1 &&
+      session.transcriptWatermark === retryExchange.seq + 1 &&
+      priorLogicalCall?.operationId === created.operation.id &&
+      priorLogicalCall.studySessionId === session.id &&
+      priorLogicalCall.operationType === 'study_session_tutor_turn' &&
+      priorLogicalCall.status === 'open' &&
+      priorAttempt &&
+      (priorAttempt.status === 'interrupted' || priorAttempt.status === 'outcome_unknown') &&
+      priorAttempt.fencingToken === created.operation.fencingToken &&
+      recoveryEvent?.kind === 'operation_interrupted' &&
+      recoveryEvent.fencingToken === created.operation.fencingToken,
+    );
+    if (
+      (interruptedTurn && !recoveredInterruptedRetry) ||
+      (!interruptedTurn && created.operation.status === 'interrupted')
+    ) {
+      throw operationFailure(
+        'The interrupted StudySession turn does not own the durable retry state.',
+        created.operation.id,
+      );
+    }
     const owner = newId('worker');
     const claim = repos.operations.claim(
       created.operation.id,
@@ -419,6 +473,14 @@ export function createStudySessionService({
         'This StudySession turn is already in progress.',
         created.operation.id,
       );
+    const ownedInterruptedRetry = Boolean(
+      recoveredInterruptedRetry &&
+      claim.fencingToken === created.operation.fencingToken + 1 &&
+      ownsOperation(repos, claim.id, owner, claim.fencingToken, now.toISOString()),
+    );
+    if (recoveredInterruptedRetry && !ownedInterruptedRetry) {
+      throw operationFailure('The interrupted StudySession turn lost retry ownership.', claim.id);
+    }
 
     let policyFingerprint: string | null = null;
     try {
@@ -446,21 +508,6 @@ export function createStudySessionService({
 
     // Telemetry is unconditional. Unknown provider usage/cost remains NULL;
     // absence of a monetary policy never suppresses logical/physical counts.
-    const interruptedTurn = repos.studySessions.getTurnByCommand(session.id, parsed.commandId);
-    const retryExchange = interruptedTurn
-      ? repos.studySessions
-          .listExchanges(session.id)
-          .find((exchange) => exchange.turnId === interruptedTurn.id && exchange.role === 'learner')
-      : undefined;
-    if (interruptedTurn && interruptedTurn.status !== 'interrupted') {
-      throw operationFailure('The prior StudySession turn is not retryable.', claim.id);
-    }
-    if (interruptedTurn && (!retryExchange || retryExchange.content !== parsed.content)) {
-      throw new AppError(
-        ApiErrorCode.VersionConflict,
-        'The interrupted Tutor turn has no matching durable learner exchange.',
-      );
-    }
     const logicalCallId = interruptedTurn?.logicalCallId ?? newId('llm_call');
     let attemptId = newId('llm_attempt');
     let attemptNumber = interruptedTurn
@@ -582,7 +629,6 @@ export function createStudySessionService({
       ? {
           ...interruptedTurn,
           status: 'running',
-          contextManifest: contextManifest(session, interruptedTurn.seq, currentAgendaItem),
           logicalCallId,
           errorMessage: null,
           completedAt: null,
@@ -637,7 +683,14 @@ export function createStudySessionService({
       repos.transaction(() => {
         const current = requireSession(repos, workspaceId, sessionId);
         requireCurrentRoute(repos, current);
-        if (current.status !== 'active' || current.version !== parsed.expectedSessionVersion) {
+        const expectedDurableVersion = ownedInterruptedRetry
+          ? parsed.expectedSessionVersion + 1
+          : parsed.expectedSessionVersion;
+        if (
+          current.status !== 'active' ||
+          current.version !== expectedDurableVersion ||
+          (ownedInterruptedRetry && current.transcriptWatermark !== learnerExchange.seq + 1)
+        ) {
           throw new AppError(
             ApiErrorCode.VersionConflict,
             'StudySession turn became stale before it started.',
@@ -650,17 +703,19 @@ export function createStudySessionService({
         }
         repos.studySessions.insertTurnEvent(event('queued', false, null));
         repos.studySessions.insertTurnEvent(event('started', true, null));
-        // Reserve the next transcript sequence before the provider call. This
-        // makes concurrent browser submissions deterministically stale.
-        repos.studySessions.update(
-          {
-            ...session,
-            version: session.version + 1,
-            transcriptWatermark: learnerExchange.seq + 1,
-            updatedAt: turnCreatedAt,
-          },
-          session.version,
-        );
+        if (!ownedInterruptedRetry) {
+          // Reserve the next transcript sequence before the provider call. This
+          // makes concurrent browser submissions deterministically stale.
+          repos.studySessions.update(
+            {
+              ...current,
+              version: current.version + 1,
+              transcriptWatermark: learnerExchange.seq + 1,
+              updatedAt: turnCreatedAt,
+            },
+            current.version,
+          );
+        }
       });
       events.slice(0, 2).forEach((value) => onEvent?.(value));
     } catch (error) {
@@ -736,7 +791,10 @@ export function createStudySessionService({
       const response = repos.transaction(() => {
         const current = requireSession(repos, workspaceId, sessionId);
         requireCurrentRoute(repos, current);
-        if (current.status !== 'active' || current.version !== session.version + 1) {
+        const reservedSessionVersion = ownedInterruptedRetry
+          ? session.version
+          : session.version + 1;
+        if (current.status !== 'active' || current.version !== reservedSessionVersion) {
           throw new AppError(
             ApiErrorCode.VersionConflict,
             'StudySession changed while the Tutor was responding.',
