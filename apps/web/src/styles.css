@@ -1,33 +1,36 @@
 /* ---------------------------------------------------------------------------
- * Hy3 Study Clinic design tokens
- * Restrained research-workspace aesthetic: neutral surfaces, strong type,
- * blue/violet accent, controlled semantic learning-state colors.
+ * Hy3 Study Clinic workspace tokens
+ * Neutral, independent visual roles shared by the shell and Course surfaces.
  * ------------------------------------------------------------------------- */
 
 :root {
   color-scheme: light;
 
   /* Surfaces */
-  --bg: #f5f6fa;
-  --surface: #ffffff;
-  --surface-2: #eef0f6;
-  --surface-3: #e4e7f0;
+  --bg: #f2f4f1;
+  --surface: #fbfcfb;
+  --surface-raised: #ffffff;
+  --surface-2: #e9ede9;
+  --surface-3: #dce2dd;
+  --surface-weak: var(--surface-2);
 
   /* Text */
-  --text: #1c2430;
-  --text-muted: #5b6472;
-  --text-faint: #8a92a3;
+  --text: #19211d;
+  --text-muted: #59645e;
+  --text-faint: #7d8781;
+  --muted: var(--text-muted);
 
   /* Borders */
-  --border: #d9dde8;
-  --border-strong: #b9c0d0;
+  --border: #d5dbd6;
+  --border-strong: #adb8b0;
+  --separator: #e2e6e2;
 
   /* Accent (product) */
-  --primary: #3d51d3;
-  --primary-strong: #2f41b4;
-  --primary-weak: #e7eaff;
-  --violet: #7c3aed;
-  --violet-weak: #f0e9fd;
+  --primary: #285f53;
+  --primary-strong: #1e4b42;
+  --primary-weak: #e1eeea;
+  --violet: #62528f;
+  --violet-weak: #eeeaf7;
 
   /* Semantic learning states */
   --state-weak: #c2504d;
@@ -48,16 +51,24 @@
   --warning-weak: #fbf1d8;
 
   /* Rhythm */
-  --radius-sm: 7px;
-  --radius: 10px;
-  --radius-lg: 14px;
+  --radius-sm: 5px;
+  --radius: 8px;
+  --radius-lg: 10px;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
   --space-5: 1.5rem;
-  --shadow-sm: 0 1px 2px rgba(20, 27, 45, 0.07);
-  --shadow: 0 1px 2px rgba(20, 27, 45, 0.06), 0 6px 20px rgba(20, 27, 45, 0.07);
+  --space-6: 2rem;
+  --control-height-sm: 30px;
+  --control-height: 36px;
+  --sidebar-expanded: 220px;
+  --sidebar-collapsed: 60px;
+  --content-width: 1120px;
+  --content-wide: 1180px;
+  --shadow-sm: 0 1px 2px rgba(25, 33, 29, 0.06);
+  --shadow: 0 8px 24px rgba(25, 33, 29, 0.1);
+  --focus-ring: #397d6e;
   --transition: 0.16s ease;
 
   font-family:
@@ -67,7 +78,8 @@
     'PingFang SC',
     'Microsoft YaHei',
     sans-serif;
-  line-height: 1.6;
+  line-height: 1.55;
+  letter-spacing: 0;
   color: var(--text);
   background: var(--bg);
 }
@@ -80,10 +92,28 @@ html,
 body,
 #root {
   height: 100%;
+  min-height: 0;
 }
 
 body {
   margin: 0;
+  overflow: hidden;
+  background: var(--bg);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-width: 0;
+  isolation: isolate;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  line-height: 1.25;
+  letter-spacing: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -113,11 +143,13 @@ body {
 button {
   font: inherit;
   cursor: pointer;
+  min-height: var(--control-height);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--surface-raised);
   color: var(--text);
-  padding: 0.45rem 0.9rem;
+  padding: 0.4rem 0.75rem;
+  line-height: 1.25;
   transition:
     background var(--transition),
     border-color var(--transition),
@@ -127,6 +159,7 @@ button {
 
 button:hover:not(:disabled) {
   border-color: var(--primary);
+  background: var(--primary-weak);
 }
 
 button:focus-visible,
@@ -135,13 +168,14 @@ select:focus-visible,
 textarea:focus-visible,
 summary:focus-visible,
 a:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
 }
 
 button:disabled {
-  opacity: 0.5;
+  opacity: 0.48;
   cursor: not-allowed;
+  filter: saturate(0.35);
 }
 
 button.primary {
@@ -176,6 +210,7 @@ button.ghost.danger {
 
 button.small,
 .small button {
+  min-height: var(--control-height-sm);
   font-size: 0.85rem;
 }
 
@@ -184,10 +219,11 @@ input,
 select {
   font: inherit;
   color: var(--text);
-  background: var(--surface);
+  background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 0.5rem 0.65rem;
+  min-height: var(--control-height);
+  padding: 0.4rem 0.6rem;
   width: 100%;
 }
 
@@ -207,7 +243,13 @@ a {
 .app-shell {
   display: flex;
   flex-direction: column;
+  width: 100%;
   height: 100vh;
+  height: 100dvh;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg);
 }
 
 .app-header {
@@ -217,15 +259,16 @@ a {
   flex-wrap: wrap;
   gap: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--border);
-  background: var(--surface);
-  padding: 0.6rem 1.1rem;
+  min-height: 54px;
+  background: var(--surface-raised);
+  padding: 0.45rem 1rem;
   flex: none;
 }
 
 .app-header h1 {
   margin: 0;
   font-size: 1.15rem;
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
 }
 
 .app-subtitle {
@@ -324,22 +367,62 @@ a {
 
 main.main-scroll {
   flex: 1;
+  min-width: 0;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   padding: var(--space-4) var(--space-4) 4rem;
 }
 
 main.main-scroll > * {
-  max-width: 1080px;
+  max-width: var(--content-width);
   margin-left: auto;
   margin-right: auto;
 }
 
+main.main-course {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+main.main-course > * {
+  min-width: 0;
+}
+
 main.main-graph {
   flex: 1;
+  min-width: 0;
   min-height: 0;
   display: flex;
+  overflow: hidden;
   padding: var(--space-3);
+}
+
+.agent-course-shell {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: var(--space-4);
+}
+
+.agent-course-heading {
+  flex: none;
+}
+
+.agent-course-content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .practice-switch {
@@ -367,7 +450,7 @@ main.main-graph {
 /* --- Generic pieces ------------------------------------------------------ */
 
 .card {
-  background: var(--surface);
+  background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);

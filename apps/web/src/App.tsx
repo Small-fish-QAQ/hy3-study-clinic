@@ -474,7 +474,7 @@ export function App() {
   const activeModule = MODULE_OF_TAB[tab];
 
   return (
-    <div className={`app-shell ${tab === 'graph' ? 'module-graph' : ''}`}>
+    <div className={`app-shell module-${activeModule}`}>
       <header className="app-header">
         <div className="app-branding">
           <h1>Hy3 Study Clinic</h1>
@@ -526,7 +526,11 @@ export function App() {
         <Banner kind="error">{remediationAction.error}</Banner>
       ) : null}
 
-      <main className={tab === 'graph' ? 'main-graph' : 'main-scroll'}>
+      <main
+        className={
+          tab === 'graph' ? 'main-graph' : tab === 'course' ? 'main-course' : 'main-scroll'
+        }
+      >
         {activeModule === 'practice' ? (
           <div className="practice-switch" role="tablist" aria-label="练习子页">
             <button
