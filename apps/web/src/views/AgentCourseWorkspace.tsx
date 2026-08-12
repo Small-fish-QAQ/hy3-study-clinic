@@ -18,13 +18,18 @@ import type {
 import { api, ApiClientError } from '../api.js';
 import { Banner, Loading } from '../components/ui.js';
 import { useAsyncAction } from '../components/useAsyncAction.js';
-import { AgentCourseShell, type AgentCourseView } from './AgentCourseShell.js';
+import {
+  AgentCourseShell,
+  readSidebarCollapsedPreference,
+  type AgentCourseView,
+} from './AgentCourseShell.js';
 import { CourseHomeView } from './CourseHomeView.js';
 import { CurriculumView } from './CurriculumView.js';
 import { StudySessionView } from './StudySessionView.js';
 import { CourseMaterialsView } from './CourseMaterialsView.js';
 import { CourseProgressView } from './CourseProgressView.js';
 import { GraphWorkspaceView } from './GraphWorkspaceView.js';
+import { SettingsView } from './SettingsView.js';
 
 const ROLE_LABELS: Record<MaterialRole, string> = {
   course_material: '课程主资料',
@@ -138,6 +143,8 @@ export function AgentCourseWorkspace({
 }: AgentCourseWorkspaceProps) {
   const [view, setView] = useState<AgentCourseView>('home');
   const [materialsOpen, setMaterialsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarCollapsedPreference);
   const [workspaces, setWorkspaces] = useState<WorkspaceSummary[]>([]);
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [overview, setOverview] = useState<CourseExecutionOverview | null>(null);
@@ -248,6 +255,7 @@ export function AgentCourseWorkspace({
     if (!created) return;
     setNewCourseName('');
     setMaterialsOpen(false);
+    setSettingsOpen(false);
     setView('home');
     onWorkspaceChange(created.workspace.id);
   }
@@ -727,6 +735,7 @@ export function AgentCourseWorkspace({
 
   function changeView(next: AgentCourseView): void {
     setMaterialsOpen(false);
+    setSettingsOpen(false);
     setView(next);
   }
 
@@ -734,6 +743,7 @@ export function AgentCourseWorkspace({
     action.cancel();
     progressRemediationAction.cancel();
     setMaterialsOpen(false);
+    setSettingsOpen(false);
     setView('home');
     onWorkspaceChange(nextWorkspaceId);
   }
@@ -745,17 +755,33 @@ export function AgentCourseWorkspace({
       courseName={selectedWorkspace?.name ?? null}
       courses={workspaces.map((workspace) => ({ id: workspace.id, name: workspace.name }))}
       materialsActive={materialsOpen}
+      settingsActive={settingsOpen}
       provider={provider}
+      sidebarCollapsed={sidebarCollapsed}
       onCourseChange={changeCourse}
       onViewChange={changeView}
-      onOpenMaterials={() => setMaterialsOpen(true)}
+      onOpenMaterials={() => {
+        setSettingsOpen(false);
+        setMaterialsOpen(true);
+      }}
+      onOpenSettings={() => {
+        setMaterialsOpen(false);
+        setSettingsOpen(true);
+      }}
       onOpenAdvancedTools={onOpenAdvancedTools}
+      onSidebarCollapsedChange={setSidebarCollapsed}
     >
       {loadError ? <Banner kind="error">{loadError}</Banner> : null}
       {action.error ? <Banner kind="error">{action.error}</Banner> : null}
       {notice ? <Banner kind="info">{notice}</Banner> : null}
 
-      {!workspaceId ? (
+      {settingsOpen ? (
+        <SettingsView
+          provider={provider}
+          sidebarDefaultCollapsed={sidebarCollapsed}
+          onSidebarDefaultCollapsedChange={setSidebarCollapsed}
+        />
+      ) : !workspaceId ? (
         loading ? (
           <Loading label="加载课程…" />
         ) : (

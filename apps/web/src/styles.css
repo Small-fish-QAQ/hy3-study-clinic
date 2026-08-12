@@ -440,12 +440,23 @@ a {
 }
 
 .app-utility-header .app-branding {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  column-gap: var(--space-2);
   min-width: 0;
   padding-left: var(--space-3);
   border-left: 1px solid var(--border);
 }
 
+.app-utility-brand-mark {
+  grid-row: 1 / span 2;
+  align-self: center;
+  width: 24px;
+  height: 24px;
+}
+
 .app-utility-header .app-branding h1 {
+  grid-column: 2;
   overflow: hidden;
   font-size: 0.92rem;
   font-weight: 650;
@@ -454,6 +465,7 @@ a {
 }
 
 .app-utility-kicker {
+  grid-column: 2;
   margin: 0 0 0.05rem;
   color: var(--text-faint);
   font-size: 0.68rem;
@@ -554,7 +566,7 @@ main.main-graph {
   overflow-x: hidden;
   overflow-y: auto;
   border-right: 1px solid var(--border);
-  background: #f7f7f6;
+  background: #f8f9f7;
   transition:
     width var(--transition),
     flex-basis var(--transition),
@@ -570,7 +582,7 @@ main.main-graph {
   display: flex;
   align-items: center;
   min-height: 56px;
-  padding: 0 var(--space-3);
+  padding: 0 0.85rem;
   border-bottom: 1px solid var(--separator);
 }
 
@@ -578,22 +590,21 @@ main.main-graph {
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: var(--space-2);
+  gap: 0.55rem;
 }
 
 .course-brand-mark {
   display: inline-grid;
-  flex: 0 0 32px;
-  width: 32px;
-  height: 32px;
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
   place-items: center;
-  border: 1px solid #abc1ba;
-  border-radius: var(--radius);
-  background: var(--primary-weak);
-  color: var(--primary-strong);
-  font-size: 0.78rem;
-  font-weight: 750;
-  letter-spacing: -0.02em;
+}
+
+.course-brand-mark img {
+  display: block;
+  width: 26px;
+  height: 26px;
 }
 
 .course-brand-copy {
@@ -604,13 +615,15 @@ main.main-graph {
 }
 
 .course-brand-copy strong {
-  font-size: 0.92rem;
+  font-family: Georgia, 'Times New Roman', 'Songti SC', serif;
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
 .course-brand-copy small {
-  margin-top: 0.15rem;
+  margin-top: 0.08rem;
   color: var(--text-muted);
-  font-size: 0.72rem;
+  font-size: 0.6rem;
 }
 
 .course-sidebar-mobile-close {
@@ -658,24 +671,27 @@ main.main-graph {
 
 .course-sidebar-nav button,
 .course-sidebar-secondary button,
+.course-sidebar-footer button,
 .course-sidebar-collapse {
   display: flex;
   width: 100%;
-  min-height: 38px;
+  min-height: 36px;
   align-items: center;
   justify-content: flex-start;
   gap: 0.65rem;
-  padding: 0.4rem 0.65rem;
+  padding: 0.35rem 0.65rem;
   overflow: hidden;
   border-color: transparent;
   background: transparent;
   color: var(--text-muted);
   text-align: left;
   white-space: nowrap;
+  font-size: 0.84rem;
 }
 
 .course-sidebar-nav button:hover:not(:disabled),
 .course-sidebar-secondary button:hover:not(:disabled),
+.course-sidebar-footer button:hover:not(:disabled),
 .course-sidebar-collapse:hover:not(:disabled) {
   border-color: transparent;
   background: var(--surface-2);
@@ -683,8 +699,9 @@ main.main-graph {
 }
 
 .course-sidebar-nav button.active,
-.course-sidebar-secondary button.active {
-  background: #e9ebe9;
+.course-sidebar-secondary button.active,
+.course-sidebar-footer button.active {
+  background: #e8edeb;
   color: var(--text);
   font-weight: 650;
 }
@@ -698,6 +715,11 @@ main.main-graph {
   border-radius: 0 2px 2px 0;
   background: var(--primary);
   content: '';
+}
+
+.course-sidebar-footer button.active {
+  color: var(--text);
+  font-weight: 650;
 }
 
 .course-sidebar-nav button,
@@ -740,6 +762,20 @@ main.main-graph {
   border-top: 1px solid var(--separator);
 }
 
+.course-sidebar-footer button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.65rem;
+  overflow: hidden;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-muted);
+  text-align: left;
+  white-space: nowrap;
+}
+
 .course-provider-status {
   display: flex;
   min-height: 34px;
@@ -759,7 +795,11 @@ main.main-graph {
 }
 
 .course-provider-status.fake .course-provider-dot {
-  background: var(--warning);
+  background: #4d8979;
+}
+
+.course-provider-status.unavailable .course-provider-dot {
+  background: var(--text-faint);
 }
 
 .course-sidebar-collapse .course-shell-icon {
@@ -767,7 +807,8 @@ main.main-graph {
 }
 
 .course-sidebar.is-collapsed .course-sidebar-brand-row {
-  padding-inline: 13px;
+  justify-content: center;
+  padding-inline: 0;
 }
 
 .course-sidebar.is-collapsed .course-brand-copy,
@@ -800,10 +841,221 @@ main.main-graph {
 
 .course-sidebar.is-collapsed .course-sidebar-nav button,
 .course-sidebar.is-collapsed .course-sidebar-secondary button,
+.course-sidebar.is-collapsed .course-sidebar-footer button,
 .course-sidebar.is-collapsed .course-sidebar-collapse {
   justify-content: center;
   gap: 0;
   padding-inline: 0;
+}
+
+/* --- Settings ----------------------------------------------------------- */
+
+.settings-view {
+  display: grid;
+  width: 100%;
+  max-width: 1024px !important;
+  gap: var(--space-6);
+  padding-block: var(--space-2) var(--space-6);
+}
+
+.settings-page-intro {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 42rem;
+}
+
+.settings-page-intro > * {
+  margin: 0;
+}
+
+.settings-page-intro h2 {
+  font-family: Georgia, 'Times New Roman', 'Songti SC', serif;
+  font-size: 1.55rem;
+  font-weight: 700;
+}
+
+.settings-section {
+  display: grid;
+  gap: var(--space-4);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--separator);
+}
+
+.settings-section-heading,
+.settings-status-strip,
+.settings-preference-row,
+.settings-action-row {
+  display: flex;
+  align-items: center;
+}
+
+.settings-section-heading {
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.settings-section-heading h3,
+.settings-section-heading p,
+.settings-status-strip p {
+  margin: 0;
+}
+
+.settings-section-heading h3 {
+  font-size: 1rem;
+}
+
+.settings-section-heading p,
+.settings-status-strip p {
+  margin-top: 0.2rem;
+  font-size: 0.82rem;
+}
+
+.settings-runtime-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.settings-runtime-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-faint);
+}
+
+.settings-runtime-badge.fake .settings-runtime-dot {
+  background: #4d8979;
+}
+
+.settings-runtime-badge.hy3 .settings-runtime-dot {
+  background: var(--success);
+}
+
+.settings-status-strip {
+  min-height: 76px;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: 0.9rem 1.1rem;
+  border-left: 3px solid var(--primary);
+  background: #f4f7f5;
+}
+
+.settings-action-row {
+  flex: none;
+  gap: var(--space-2);
+}
+
+.settings-connection-result {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem var(--space-4);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.settings-connection-result strong {
+  color: var(--success);
+}
+
+.settings-connection-result small {
+  grid-column: 1 / -1;
+}
+
+.settings-preference-row {
+  min-height: 64px;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: 0.5rem 0;
+  cursor: pointer;
+}
+
+.settings-preference-copy {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.settings-preference-copy small {
+  color: var(--text-muted);
+}
+
+.settings-preference-row input[role='switch'] {
+  position: relative;
+  flex: 0 0 38px;
+  width: 38px;
+  min-height: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  appearance: none;
+  background: var(--surface-3);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.settings-preference-row input[role='switch']::after {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(23, 24, 23, 0.22);
+  content: '';
+  transition: transform var(--transition);
+}
+
+.settings-preference-row input[role='switch']:checked {
+  background: var(--primary);
+}
+
+.settings-preference-row input[role='switch']:checked::after {
+  transform: translateX(16px);
+}
+
+.settings-disclosure {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.settings-disclosure > summary {
+  width: fit-content;
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.settings-diagnostics {
+  display: grid;
+  max-width: 46rem;
+  gap: var(--space-4);
+  padding-top: var(--space-4);
+}
+
+.settings-diagnostics dl {
+  display: grid;
+  margin: 0;
+}
+
+.settings-diagnostics dl > div {
+  display: grid;
+  grid-template-columns: minmax(9rem, 0.35fr) 1fr;
+  gap: var(--space-4);
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--separator);
+}
+
+.settings-diagnostics dt,
+.settings-diagnostics dd,
+.settings-diagnostics p {
+  margin: 0;
+}
+
+.settings-diagnostics dd {
+  color: var(--text);
 }
 
 .course-sidebar.is-collapsed .course-provider-status {
@@ -4268,7 +4520,8 @@ button.danger {
 
 .progress-summary-list {
   display: grid;
-  gap: 0.35rem;
+  align-content: start;
+  border-top: 1px solid var(--separator);
 }
 
 .progress-summary-list button {
@@ -4276,10 +4529,18 @@ button.danger {
   justify-content: space-between;
   gap: var(--space-3);
   width: 100%;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
+  min-height: 47px;
+  padding: 0.55rem 0.65rem;
+  border: 0;
+  border-bottom: 1px solid var(--separator);
+  border-radius: 0;
+  background: transparent;
   text-align: left;
+}
+
+.progress-summary-list button:hover:not(:disabled) {
+  border-color: var(--separator);
+  background: var(--surface-2);
 }
 
 .progress-summary-list span {
@@ -4333,7 +4594,7 @@ button.danger {
 
 /* Curriculum is a hierarchy, not a field of unrelated cards. */
 .curriculum-workspace {
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
 .curriculum-workspace .supporting-page-intro > .row {
@@ -4342,6 +4603,125 @@ button.danger {
 
 .curriculum-workspace .supporting-page-intro > .row > div {
   min-width: 0;
+}
+
+.curriculum-page-intro {
+  display: grid;
+  gap: var(--space-4);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--separator);
+}
+
+.curriculum-page-heading h2,
+.curriculum-page-heading p {
+  margin-top: 0;
+}
+
+.curriculum-page-heading h2 {
+  margin-bottom: 0.35rem;
+  font-family: Georgia, 'Times New Roman', 'Songti SC', serif;
+  font-size: 1.45rem;
+}
+
+.curriculum-page-heading p:last-child {
+  max-width: 40rem;
+  margin-bottom: 0;
+}
+
+.curriculum-version-overview {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(28rem, 1fr);
+  gap: var(--space-4) var(--space-6);
+  align-items: center;
+  padding: 0.8rem 1rem;
+  background: #f5f7f5;
+}
+
+.curriculum-version-identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem var(--space-2);
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
+.curriculum-version-identity strong {
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.curriculum-version-identity span:last-child {
+  flex-basis: 100%;
+}
+
+.curriculum-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+.curriculum-counts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.curriculum-counts > div {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.curriculum-counts dt {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
+.curriculum-counts dd {
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', 'Songti SC', serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.curriculum-current-location {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: var(--space-2);
+  margin: 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--separator);
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
+.curriculum-current-location strong {
+  color: var(--text);
+}
+
+.curriculum-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding-bottom: var(--space-3);
+}
+
+.curriculum-section-heading h3,
+.curriculum-section-heading p {
+  margin-top: 0;
+}
+
+.curriculum-section-heading h3 {
+  margin-bottom: 0;
+  font-size: 1.05rem;
+}
+
+.curriculum-section-heading > p {
+  margin-bottom: 0;
+  font-size: 0.78rem;
 }
 
 .curriculum-version-context {
@@ -4430,6 +4810,74 @@ button.danger {
   position: relative;
   padding: var(--space-3) var(--space-2);
   border-bottom: 1px solid var(--border);
+}
+
+.curriculum-node.is-major > .curriculum-node-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3) var(--space-5);
+  padding: 1rem 0;
+}
+
+.curriculum-node.is-major .curriculum-node-heading,
+.curriculum-node.is-major .curriculum-major-summary {
+  grid-column: 1;
+}
+
+.curriculum-node.is-major .curriculum-expand-button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+}
+
+.curriculum-major-summary {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.curriculum-major-summary p {
+  margin: 0;
+}
+
+.curriculum-major-counts {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
+.curriculum-major-focus {
+  max-width: 54rem;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.curriculum-major-focus span {
+  margin-right: var(--space-2);
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.curriculum-expand-button,
+.curriculum-show-all-units {
+  width: fit-content;
+  color: var(--primary);
+}
+
+.curriculum-node-children {
+  padding-bottom: var(--space-2);
+}
+
+.curriculum-show-all-units {
+  margin: var(--space-2) 0 var(--space-3) var(--space-6);
+}
+
+.curriculum-current-note {
+  color: var(--primary);
+  font-size: 0.74rem;
+  font-weight: 650;
 }
 
 .curriculum-node.kind-course > .curriculum-node-content {
@@ -4607,6 +5055,94 @@ button.danger {
   grid-column: 1 / -1;
 }
 
+.curriculum-course-basis-content {
+  max-width: 54rem;
+  padding-bottom: var(--space-3);
+}
+
+.curriculum-manifest-summary,
+.curriculum-manifest-list,
+.curriculum-source-reference-list {
+  margin: var(--space-3) 0 0;
+}
+
+.curriculum-manifest-list,
+.curriculum-source-reference-list {
+  display: grid;
+  gap: var(--space-3);
+  padding-left: 1.25rem;
+}
+
+.curriculum-manifest-list h4 {
+  margin: 0 0 var(--space-2);
+}
+
+.curriculum-manifest-list dl {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.curriculum-manifest-list dl > div {
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.curriculum-manifest-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Shared learner-facing intros and compact empty states. */
+.course-page-intro {
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--separator);
+}
+
+.course-page-intro > .eyebrow,
+.course-page-intro > .muted,
+.course-page-summary {
+  margin-top: 0;
+}
+
+.course-page-intro > .muted,
+.course-page-summary {
+  max-width: 48rem;
+  margin-bottom: 0;
+}
+
+.course-page-summary {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.course-empty-state {
+  display: grid;
+  max-width: 38rem;
+  gap: 0.3rem;
+  padding: var(--space-5) 0;
+}
+
+.course-empty-state.compact {
+  padding: var(--space-3) 0;
+}
+
+.course-empty-state strong,
+.course-empty-state p {
+  margin: 0;
+}
+
+.course-empty-state p,
+.study-session-empty-next {
+  color: var(--text-muted);
+}
+
+.material-empty-state {
+  border-top: 1px solid var(--separator);
+  border-bottom: 1px solid var(--separator);
+}
+
 .curriculum-decision-bar {
   position: sticky;
   bottom: 0;
@@ -4697,6 +5233,10 @@ button.danger {
     grid-template-columns: 1fr;
   }
 
+  .curriculum-version-overview {
+    grid-template-columns: 1fr;
+  }
+
   .material-import-grid .span-2 {
     grid-column: auto;
   }
@@ -4784,6 +5324,63 @@ button.danger {
 
   .material-import-grid .span-2 {
     grid-column: auto;
+  }
+
+  .settings-view {
+    gap: var(--space-5);
+    padding-block: 0 var(--space-5);
+  }
+
+  .settings-page-intro h2 {
+    font-size: 1.35rem;
+  }
+
+  .settings-section-heading,
+  .settings-status-strip,
+  .settings-preference-row,
+  .curriculum-section-heading {
+    align-items: flex-start;
+  }
+
+  .settings-section-heading,
+  .settings-status-strip,
+  .curriculum-section-heading {
+    flex-direction: column;
+  }
+
+  .settings-action-row,
+  .settings-action-row .primary {
+    width: 100%;
+  }
+
+  .settings-diagnostics dl > div {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
+
+  .curriculum-version-overview {
+    padding: var(--space-3);
+  }
+
+  .curriculum-counts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .curriculum-current-location {
+    display: grid;
+  }
+
+  .curriculum-node.is-major > .curriculum-node-content {
+    grid-template-columns: 1fr;
+  }
+
+  .curriculum-node.is-major .curriculum-expand-button {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .curriculum-major-focus {
+    white-space: normal;
   }
 
   .next-action,

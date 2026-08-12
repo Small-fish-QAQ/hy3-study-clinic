@@ -312,8 +312,10 @@ async function requestParsed<T>(
 }
 
 export const api = {
-  health: () => request<{ status: string }>('GET', '/api/health'),
-  config: () => request<{ provider: 'fake' | 'hy3' }>('GET', '/api/config'),
+  health: (signal?: AbortSignal) =>
+    request<{ status: string }>('GET', '/api/health', undefined, signal),
+  config: (signal?: AbortSignal) =>
+    request<{ provider: 'fake' | 'hy3' }>('GET', '/api/config', undefined, signal),
 
   sampleMaterial: (signal?: AbortSignal) =>
     request<{ title: string; content: string; filename: string }>(

@@ -34,11 +34,15 @@ export interface AgentCourseShellProps {
   courseName: string | null;
   courses: CourseOption[];
   materialsActive?: boolean;
+  settingsActive?: boolean;
   provider?: 'fake' | 'hy3' | null;
+  sidebarCollapsed?: boolean;
   onCourseChange: (courseId: string | null) => void;
   onViewChange: (view: AgentCourseView) => void;
   onOpenMaterials?: () => void;
+  onOpenSettings?: () => void;
   onOpenAdvancedTools?: () => void;
+  onSidebarCollapsedChange?: (collapsed: boolean) => void;
   children: ReactNode;
 }
 
@@ -49,14 +53,18 @@ export function AgentCourseShell({
   courseName,
   courses,
   materialsActive = false,
+  settingsActive = false,
   provider = null,
+  sidebarCollapsed,
   onCourseChange,
   onViewChange,
   onOpenMaterials,
+  onOpenSettings,
   onOpenAdvancedTools,
+  onSidebarCollapsedChange,
   children,
 }: AgentCourseShellProps) {
-  const [collapsed, setCollapsed] = useState(readCollapsedPreference);
+  const [localCollapsed, setLocalCollapsed] = useState(readSidebarCollapsedPreference);
   const [narrow, setNarrow] = useState(() => window.matchMedia?.(NARROW_QUERY).matches ?? false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
@@ -64,9 +72,9 @@ export function AgentCourseShell({
   const mobileCloseRef = useRef<HTMLButtonElement>(null);
   const workspaceBodyRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    writeCollapsedPreference(collapsed);
-  }, [collapsed]);
+  const collapsed = sidebarCollapsed ?? localCollapsed;
+
+  useEffect(() => writeSidebarCollapsedPreference(collapsed), [collapsed]);
 
   useEffect(() => {
     const query = window.matchMedia?.(NARROW_QUERY);
@@ -132,12 +140,18 @@ export function AgentCourseShell({
 
   useEffect(() => {
     setMobileOpen(false);
-  }, [activeView, courseId, materialsActive]);
+  }, [activeView, courseId, materialsActive, settingsActive]);
 
-  const destinationLabel = materialsActive ? '课程资料' : VIEW_LABELS[activeView];
-  const destinationDescription = materialsActive
-    ? '课程来源、角色与处理状态'
-    : VIEW_DESCRIPTIONS[activeView];
+  const destinationLabel = settingsActive
+    ? '设置'
+    : materialsActive
+      ? '课程资料'
+      : VIEW_LABELS[activeView];
+  const destinationDescription = settingsActive
+    ? '连接、工作区偏好与应用信息'
+    : materialsActive
+      ? '课程来源、角色与处理状态'
+      : VIEW_DESCRIPTIONS[activeView];
   const visuallyCollapsed = collapsed && !narrow;
 
   function closeMobile(returnFocus = true): void {
@@ -157,6 +171,11 @@ export function AgentCourseShell({
     }
   }
 
+  function updateCollapsed(next: boolean): void {
+    if (sidebarCollapsed === undefined) setLocalCollapsed(next);
+    onSidebarCollapsedChange?.(next);
+  }
+
   function selectCourse(nextCourseId: string | null): void {
     onCourseChange(nextCourseId);
     if (narrow) {
@@ -167,6 +186,14 @@ export function AgentCourseShell({
 
   function openMaterials(): void {
     onOpenMaterials?.();
+    if (narrow) {
+      setMobileOpen(false);
+      focusDestination();
+    }
+  }
+
+  function openSettings(): void {
+    onOpenSettings?.();
     if (narrow) {
       setMobileOpen(false);
       focusDestination();
@@ -220,11 +247,11 @@ export function AgentCourseShell({
         <div className="course-sidebar-brand-row">
           <div className="course-sidebar-brand" aria-label="Hy3 Study Clinic">
             <span className="course-brand-mark" aria-hidden="true">
-              H3
+              <img src="/brand-mark.svg" alt="" />
             </span>
             <span className="course-brand-copy">
               <strong>Hy3 Study Clinic</strong>
-              <small>学习工作区</small>
+              <small>Guided learning workspace</small>
             </span>
           </div>
           <button
@@ -260,7 +287,7 @@ export function AgentCourseShell({
             className="course-context-compact"
             aria-label={`切换课程，当前：${courseName ?? '未选择'}`}
             title={courseName ?? '选择课程'}
-            onClick={() => setCollapsed(false)}
+            onClick={() => updateCollapsed(false)}
           >
             <ShellIcon name="course" />
           </button>
@@ -270,7 +297,7 @@ export function AgentCourseShell({
           <nav className="course-sidebar-nav" aria-label="课程导航">
             <span className="course-sidebar-section-label">学习空间</span>
             {(Object.keys(VIEW_LABELS) as AgentCourseView[]).map((view) => {
-              const selected = !materialsActive && activeView === view;
+              const selected = !materialsActive && !settingsActive && activeView === view;
               return (
                 <button
                   key={view}
@@ -319,25 +346,52 @@ export function AgentCourseShell({
 
         <div className="course-sidebar-spacer" />
 
-        <div className="course-sidebar-footer">
-          {provider ? (
-            <div
-              className={`course-provider-status ${provider}`}
-              aria-label={provider === 'fake' ? '离线模拟模式' : 'Hy3 在线'}
-              title={provider === 'fake' ? '离线模拟模式' : 'Hy3 在线'}
+        <div className="course-sidebar-footer" aria-label="系统">
+          <div
+            className={`course-provider-status ${provider ?? 'unavailable'}`}
+            aria-label={
+              provider === 'fake'
+                ? '本地模拟模式'
+                : provider === 'hy3'
+                  ? 'Hy3 在线模式'
+                  : '服务状态不可用'
+            }
+            title={
+              provider === 'fake'
+                ? '本地模拟模式'
+                : provider === 'hy3'
+                  ? 'Hy3 在线模式'
+                  : '服务状态不可用'
+            }
+          >
+            <span className="course-provider-dot" aria-hidden="true" />
+            <span className="course-nav-label">
+              {provider === 'fake'
+                ? '本地模拟模式'
+                : provider === 'hy3'
+                  ? 'Hy3 在线模式'
+                  : '服务不可用'}
+            </span>
+          </div>
+          {onOpenSettings ? (
+            <button
+              type="button"
+              className={settingsActive ? 'active' : ''}
+              aria-current={settingsActive ? 'page' : undefined}
+              aria-label={visuallyCollapsed ? '设置' : undefined}
+              title={visuallyCollapsed ? '设置' : undefined}
+              onClick={openSettings}
             >
-              <span className="course-provider-dot" aria-hidden="true" />
-              <span className="course-nav-label">
-                {provider === 'fake' ? '离线 · 模拟模式' : 'Hy3 在线'}
-              </span>
-            </div>
+              <ShellIcon name="settings" />
+              <span className="course-nav-label">设置</span>
+            </button>
           ) : null}
           <button
             type="button"
             className="course-sidebar-collapse"
             aria-label={collapsed ? '展开课程侧边栏' : '折叠课程侧边栏'}
             title={collapsed ? '展开侧边栏' : '折叠侧边栏'}
-            onClick={() => setCollapsed((current) => !current)}
+            onClick={() => updateCollapsed(!collapsed)}
           >
             <ShellIcon name="collapse" />
             <span className="course-nav-label">折叠侧边栏</span>
@@ -348,15 +402,17 @@ export function AgentCourseShell({
       <div className="course-workspace">
         <header className="course-workspace-header">
           <div>
-            <p>{courseName ?? 'Hy3 Study Clinic'}</p>
-            <h2>{courseId ? destinationLabel : '选择课程'}</h2>
+            <p>{settingsActive ? 'Hy3 Study Clinic' : (courseName ?? 'Hy3 Study Clinic')}</p>
+            <h2>{settingsActive || courseId ? destinationLabel : '选择课程'}</h2>
           </div>
-          <span>{courseId ? destinationDescription : '选择或创建课程后开始学习'}</span>
+          <span>
+            {settingsActive || courseId ? destinationDescription : '选择或创建课程后开始学习'}
+          </span>
         </header>
         <div
           ref={workspaceBodyRef}
           className="agent-course-content"
-          aria-label={courseId ? destinationLabel : '选择课程'}
+          aria-label={settingsActive || courseId ? destinationLabel : '选择课程'}
           tabIndex={-1}
         >
           {children}
@@ -367,7 +423,14 @@ export function AgentCourseShell({
 }
 
 type ShellIconName =
-  AgentCourseView | 'course' | 'materials' | 'advanced' | 'menu' | 'close' | 'collapse';
+  | AgentCourseView
+  | 'course'
+  | 'materials'
+  | 'settings'
+  | 'advanced'
+  | 'menu'
+  | 'close'
+  | 'collapse';
 
 const ICON_PATHS: Record<ShellIconName, string> = {
   home: 'M3 10.5 12 3l9 7.5v9a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H4.5A1.5 1.5 0 0 1 3 19.5z',
@@ -378,6 +441,8 @@ const ICON_PATHS: Record<ShellIconName, string> = {
     'M6 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5ZM18 13.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5ZM8.2 9.2l7.6 5.6M16.5 6 8 7.5',
   course: 'M4 5.5 12 2l8 3.5v11L12 20l-8-3.5zm0 0 8 3.5 8-3.5M12 9v11',
   materials: 'M6 3h8l4 4v14H6zm8 0v5h4M9 12h6m-6 4h6',
+  settings:
+    'M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm7.4 3.5a7.8 7.8 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a8.8 8.8 0 0 0-1.8-1l-.4-2.6h-4L10.3 6a8.8 8.8 0 0 0-1.8 1L6.1 6l-2 3.4 2 1.6a7.8 7.8 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a8.8 8.8 0 0 0 1.8 1l.4 2.6h4l.4-2.6a8.8 8.8 0 0 0 1.8-1l2.4 1 2-3.4-2-1.6a7.8 7.8 0 0 0 .1-1Z',
   advanced: 'M5 12a1.5 1.5 0 1 0 0 .01M12 12a1.5 1.5 0 1 0 0 .01M19 12a1.5 1.5 0 1 0 0 .01',
   menu: 'M4 7h16M4 12h16M4 17h16',
   close: 'm6 6 12 12M18 6 6 18',
@@ -392,7 +457,7 @@ function ShellIcon({ name }: { name: ShellIconName }) {
   );
 }
 
-function readCollapsedPreference(): boolean {
+export function readSidebarCollapsedPreference(): boolean {
   try {
     return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true';
   } catch {
@@ -400,7 +465,7 @@ function readCollapsedPreference(): boolean {
   }
 }
 
-function writeCollapsedPreference(collapsed: boolean): void {
+export function writeSidebarCollapsedPreference(collapsed: boolean): void {
   try {
     window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(collapsed));
   } catch {

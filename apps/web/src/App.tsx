@@ -511,8 +511,9 @@ export function App() {
               </button>
             </nav>
             <div className="app-branding">
+              <img className="app-utility-brand-mark" src="/brand-mark.svg" alt="" />
               <p className="app-utility-kicker">Hy3 Study Clinic</p>
-              <h1>兼容与高级工具</h1>
+              <h1>高级工具</h1>
             </div>
           </div>
           <div className="app-utility-controls">
