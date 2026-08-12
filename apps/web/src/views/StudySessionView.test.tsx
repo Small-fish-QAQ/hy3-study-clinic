@@ -147,11 +147,23 @@ beforeEach(() => {
 });
 
 async function openStudyControls(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+  await openInspector(user, '安排');
   await user.click(await screen.findByText('调整本次学习'));
 }
 
 async function openAgenda(user: ReturnType<typeof userEvent.setup>): Promise<void> {
-  await user.click(await screen.findByText(/^本次安排/));
+  await openInspector(user, '安排');
+}
+
+async function openInspector(
+  user: ReturnType<typeof userEvent.setup>,
+  tabName: '安排' | '上下文' | '来源' | '证据' | '活动' | '产物',
+): Promise<void> {
+  if (!screen.queryByRole('button', { name: '关闭学习上下文' })) {
+    await user.click(await screen.findByRole('button', { name: /学习上下文/ }));
+  }
+  const tab = await screen.findByRole('tab', { name: tabName });
+  if (tab.getAttribute('aria-selected') !== 'true') await user.click(tab);
 }
 
 describe('StudySessionView', () => {
@@ -237,6 +249,7 @@ describe('StudySessionView', () => {
   });
 
   it('keeps dialogue in the transcript and separates the formal evidence boundary', async () => {
+    const user = userEvent.setup();
     vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });
     vi.mocked(api.getStudySession).mockResolvedValue({
       ...detail,
@@ -248,6 +261,7 @@ describe('StudySessionView', () => {
     const transcript = await screen.findByRole('log', { name: '学习对话记录' });
     expect(transcript).toContainElement(screen.getByRole('article', { name: '你，对话' }));
     expect(transcript).toContainElement(screen.getByRole('article', { name: 'Hy3 Tutor，对话' }));
+    await openInspector(user, '证据');
     expect(screen.getByRole('region', { name: '正式证据边界' })).toHaveTextContent(
       '普通 Tutor 对话和非正式检查不会改变掌握状态',
     );
@@ -277,6 +291,125 @@ describe('StudySessionView', () => {
 
     expect(streamSignal?.aborted).toBe(true);
     expect(await screen.findByRole('button', { name: '发送' })).toBeDisabled();
+  });
+
+  it('opens the contextual inspector and presents only available session data across tabs', async () => {
+    const user = userEvent.setup();
+    const startedEvent = {
+      id: 'event_started_1',
+      sessionId: session.id,
+      turnId: completedTutorResponse.turn.id,
+      seq: 0,
+      kind: 'started' as const,
+      provisional: true,
+      content: null,
+      createdAt: session.updatedAt,
+    };
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });
+    vi.mocked(api.getStudySession).mockResolvedValue({
+      ...detail,
+      turns: [
+        {
+          ...completedTutorResponse.turn,
+          contextManifest: {
+            ...completedTutorResponse.turn.contextManifest,
+            sourceBlockRevisionIds: ['source_revision_1', 'source_revision_2'],
+            formalEvidenceIds: ['formal_evidence_1'],
+          },
+        },
+      ],
+      turnEvents: [startedEvent],
+    });
+
+    render(<StudySessionView workspaceId="ws_1" courseName="Probability" route={currentRoute} />);
+    await openInspector(user, '安排');
+
+    expect(screen.getByRole('complementary', { name: '学习上下文' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('listitem', { name: 'Learn the current unit.，当前，进行中' }),
+    ).toHaveAttribute('aria-current', 'step');
+
+    await user.click(screen.getByRole('tab', { name: '上下文' }));
+    expect(screen.getByText('Probability')).toBeInTheDocument();
+    expect(screen.getByText('当前已接受且版本化的路线')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: '来源' }));
+    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByText(/进入上下文不代表内容为真/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: '证据' }));
+    expect(screen.getByText(/1 条既有正式证据记录/)).toBeInTheDocument();
+    expect(screen.getByText(/评分耐久性与进展对账保持分离/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: '活动' }));
+    expect(screen.getByText('Tutor 开始回应')).toBeInTheDocument();
+    expect(screen.getByText('临时事件，不具状态权限')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: '产物' }));
+    expect(screen.getByText(/没有暴露独立的学习产物/)).toBeInTheDocument();
+  });
+
+  it('supports inspector tab keys, Escape, and focus restoration', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });
+    vi.mocked(api.getStudySession).mockResolvedValue(detail);
+
+    render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    const trigger = await screen.findByRole('button', { name: /学习上下文/ });
+    await user.click(trigger);
+    expect(await screen.findByRole('button', { name: '关闭学习上下文' })).toHaveFocus();
+
+    const agendaTab = screen.getByRole('tab', { name: '安排' });
+    await user.click(agendaTab);
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('tab', { name: '上下文' })).toHaveAttribute('aria-selected', 'true');
+    await waitFor(() => expect(screen.getByRole('tab', { name: '上下文' })).toHaveFocus());
+
+    await user.keyboard('{Escape}');
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: '关闭学习上下文' })).not.toBeInTheDocument(),
+    );
+    await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
+  it('uses modal inspector semantics and an inert Study surface below the desktop threshold', async () => {
+    const user = userEvent.setup();
+    const matchMedia = vi.spyOn(window, 'matchMedia').mockImplementation(
+      (query) =>
+        ({
+          matches: query === '(max-width: 1279px)',
+          media: query,
+          onchange: null,
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        }) as unknown as MediaQueryList,
+    );
+    try {
+      vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });
+      vi.mocked(api.getStudySession).mockResolvedValue(detail);
+
+      const { container } = render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+      const trigger = await screen.findByRole('button', { name: /学习上下文/ });
+      await user.click(trigger);
+
+      expect(await screen.findByRole('dialog', { name: '学习上下文' })).toHaveAttribute(
+        'aria-modal',
+        'true',
+      );
+      await waitFor(() =>
+        expect(container.querySelector('.study-session-primary')).toHaveAttribute('inert'),
+      );
+      await user.keyboard('{Escape}');
+      await waitFor(() =>
+        expect(container.querySelector('.study-session-primary')).not.toHaveAttribute('inert'),
+      );
+      await waitFor(() => expect(trigger).toHaveFocus());
+    } finally {
+      matchMedia.mockRestore();
+    }
   });
 
   it('launches a direct checkpoint through the normal agenda assessment callback', async () => {
@@ -323,7 +456,7 @@ describe('StudySessionView', () => {
     render(
       <StudySessionView workspaceId="ws_1" route={currentRoute} onLaunchQuiz={onLaunchQuiz} />,
     );
-    await openStudyControls(user);
+    await user.click(await screen.findByRole('button', { name: '正式评估可用' }));
     await user.click(await screen.findByRole('button', { name: '发起正式评估' }));
 
     await waitFor(() => expect(api.launchAgendaItem).toHaveBeenCalled());

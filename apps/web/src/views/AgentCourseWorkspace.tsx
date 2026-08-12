@@ -809,6 +809,7 @@ export function AgentCourseWorkspace({
       ) : view === 'session' ? (
         <StudySessionView
           workspaceId={workspaceId}
+          courseName={selectedWorkspace?.name ?? '课程'}
           curriculumUnits={(overview?.activeCurriculumHierarchy?.nodes ?? [])
             .filter((node) => node.kind === 'learning_unit')
             .map((node) => ({ id: node.id, title: node.title }))}
