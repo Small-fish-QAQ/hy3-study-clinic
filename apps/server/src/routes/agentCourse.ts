@@ -70,10 +70,26 @@ export function registerAgentCourseRoutes(app: FastifyInstance, services: Servic
     const params = RoleConfirmParams.parse(request.params);
     const body = ConfirmMaterialRoleRequestSchema.parse(request.body);
     assertWorkspace(body, params.id);
-    const assignment = services.materialRoles.confirm(body);
-    if (assignment.materialId !== params.docId || assignment.id !== params.assignmentId) {
-      throw new z.ZodError([]);
+    if (body.assignmentId !== params.assignmentId) {
+      throw new z.ZodError([
+        {
+          code: z.ZodIssueCode.custom,
+          path: ['assignmentId'],
+          message: 'assignment does not match route assignment',
+        },
+      ]);
     }
+    const roleHistory = services.materialRoles.history(params.id, params.docId);
+    if (!roleHistory.history.some((assignment) => assignment.id === params.assignmentId)) {
+      throw new z.ZodError([
+        {
+          code: z.ZodIssueCode.custom,
+          path: ['assignmentId'],
+          message: 'assignment does not belong to route Material',
+        },
+      ]);
+    }
+    const assignment = services.materialRoles.confirm(body);
     return { assignment };
   });
 
