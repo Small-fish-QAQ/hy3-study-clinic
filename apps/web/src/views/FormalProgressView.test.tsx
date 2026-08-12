@@ -126,6 +126,51 @@ describe('FormalProgressView', () => {
     await user.click(screen.getByRole('button', { name: '测验记录' }));
   });
 
+  it('does not default or allow achieved while accepted-route work is deferred', async () => {
+    vi.mocked(api.formalProgression).mockResolvedValue(progression);
+    render(
+      <FormalProgressView
+        workspaceId="ws_1"
+        overview={
+          {
+            activeContract: { id: 'contract_1' },
+            acceptedCurriculum: { id: 'curriculum_1' },
+            acceptedStudyPlan: { id: 'plan_1', deferrals: [] },
+            activeAgenda: {
+              id: 'agenda_1',
+              items: [
+                {
+                  linkedPlanItemId: 'plan_item_2',
+                  learningUnitId: 'unit_1',
+                  state: 'deferred',
+                },
+              ],
+            },
+            formalProgress: {
+              repairNeededPlanItemCount: 0,
+              deferredPlanItemCount: 1,
+            },
+            riskSummary: { highlights: [] },
+          } as unknown as CourseExecutionOverview
+        }
+        command={() => ({
+          commandId: 'cmd_1',
+          idempotencyKey: 'cmd_1',
+          workspaceId: 'ws_1',
+          actor: 'learner',
+        })}
+        onAcceptProposedPlan={vi.fn()}
+        onRejectProposedPlan={vi.fn()}
+        onCourseChanged={vi.fn()}
+        onOpenProgress={vi.fn()}
+      />,
+    );
+
+    const selector = await screen.findByRole('combobox');
+    expect(selector).toHaveValue('');
+    expect(screen.getByRole('option', { name: '已达成' })).toBeDisabled();
+  });
+
   it('creates a successor proposal from a qualified trigger without accepting it', async () => {
     const user = userEvent.setup();
     const onCourseChanged = vi.fn();

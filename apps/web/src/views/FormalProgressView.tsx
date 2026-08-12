@@ -30,6 +30,8 @@ const CONTRACT_SUCCESSOR_TRIGGER_KINDS = new Set([
   'learner_scope_change',
 ]);
 
+type GoalOutcomeStatus = 'achieved' | 'finished_with_gaps' | 'expired_unfinished' | 'abandoned';
+
 /** Formal evidence and local reconciliation, intentionally separate from Tutor prose. */
 export function FormalProgressView({
   workspaceId,
@@ -43,9 +45,7 @@ export function FormalProgressView({
   const [progression, setProgression] = useState<FormalProgressionOverview | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [outcomeStatus, setOutcomeStatus] = useState<
-    'achieved' | 'finished_with_gaps' | 'expired_unfinished' | 'abandoned'
-  >('achieved');
+  const [outcomeStatus, setOutcomeStatus] = useState<GoalOutcomeStatus | ''>('');
   const [outcomeReason, setOutcomeReason] = useState('');
   const [selectedRiskIds, setSelectedRiskIds] = useState<string[]>([]);
   const epoch = useRef(0);
@@ -74,6 +74,7 @@ export function FormalProgressView({
   useEffect(() => {
     const controller = new AbortController();
     setProgression(null);
+    setOutcomeStatus('');
     setOutcomeReason('');
     setSelectedRiskIds([]);
     void refresh(controller.signal);
@@ -104,10 +105,62 @@ export function FormalProgressView({
     overview.acceptedStudyPlan &&
     overview.activeAgenda,
   );
+  const blockingAgendaItems =
+    overview?.activeAgenda?.items.filter(
+      (item) =>
+        item.linkedPlanItemId !== null &&
+        ['queued', 'active', 'deferred', 'blocked'].includes(item.state),
+    ) ?? [];
+  const hasCurrentOutcomeBlockers =
+    blockingAgendaItems.length > 0 ||
+    (overview?.formalProgress?.repairNeededPlanItemCount ?? 0) > 0 ||
+    (overview?.formalProgress?.deferredPlanItemCount ?? 0) > 0;
+  const deferredUnitIds = new Set(
+    blockingAgendaItems
+      .filter((item) => item.state === 'deferred')
+      .map((item) => item.learningUnitId)
+      .filter((unitId): unitId is string => unitId !== null),
+  );
+  const repairUnitIds = new Set(
+    blockingAgendaItems
+      .filter((item) => item.state === 'blocked')
+      .map((item) => item.learningUnitId)
+      .filter((unitId): unitId is string => unitId !== null),
+  );
+  const planDeferralRiskIds = new Set(
+    overview?.acceptedStudyPlan?.deferrals?.flatMap((deferral) => deferral.riskIds) ?? [],
+  );
+  const matchesCurrentOutcomeGap = (
+    risk: NonNullable<CourseExecutionOverview['riskSummary']>['highlights'][number],
+  ): boolean => {
+    if (planDeferralRiskIds.has(risk.id)) return true;
+    if (risk.curriculumNodeId === null) return false;
+    if (
+      deferredUnitIds.has(risk.curriculumNodeId) &&
+      risk.facets.includes('intentionally_deferred')
+    ) {
+      return true;
+    }
+    return (
+      repairUnitIds.has(risk.curriculumNodeId) &&
+      (risk.facets.includes('formally_assessed') ||
+        risk.facets.includes('prerequisite_risk') ||
+        risk.facets.includes('transfer_integration_risk'))
+    );
+  };
   const outcomeRisks =
     overview?.riskSummary?.highlights.filter(
-      (risk) => risk.isCurrent && risk.status !== 'resolved' && risk.status !== 'rejected',
+      (risk) =>
+        risk.isCurrent &&
+        risk.status !== 'resolved' &&
+        risk.status !== 'rejected' &&
+        risk.status !== 'stale' &&
+        matchesCurrentOutcomeGap(risk),
     ) ?? [];
+
+  useEffect(() => {
+    if (outcomeStatus === 'achieved' && hasCurrentOutcomeBlockers) setOutcomeStatus('');
+  }, [hasCurrentOutcomeBlockers, outcomeStatus]);
 
   async function recordOutcome(): Promise<void> {
     if (
@@ -120,7 +173,11 @@ export function FormalProgressView({
       return;
     const reason = outcomeReason.trim();
     const unresolvedRiskIds = selectedRiskIds;
-    if (!reason || (outcomeStatus === 'finished_with_gaps' && unresolvedRiskIds.length === 0))
+    if (
+      !outcomeStatus ||
+      !reason ||
+      (outcomeStatus === 'finished_with_gaps' && unresolvedRiskIds.length === 0)
+    )
       return;
     const result = await action.run((signal) =>
       api.recordGoalOutcome(
@@ -382,10 +439,16 @@ export function FormalProgressView({
             <label>
               结果
               <select
+                required
                 value={outcomeStatus}
                 onChange={(event) => setOutcomeStatus(event.target.value as typeof outcomeStatus)}
               >
-                <option value="achieved">已达成</option>
+                <option value="" disabled>
+                  请选择结果
+                </option>
+                <option value="achieved" disabled={hasCurrentOutcomeBlockers}>
+                  已达成
+                </option>
                 <option value="finished_with_gaps">完成但保留缺口</option>
                 <option value="expired_unfinished">到期未完成</option>
                 <option value="abandoned">主动停止</option>
@@ -429,7 +492,7 @@ export function FormalProgressView({
             <button
               type="submit"
               className="primary"
-              disabled={action.loading || outcomeReason.trim().length === 0}
+              disabled={action.loading || !outcomeStatus || outcomeReason.trim().length === 0}
             >
               记录学习目标结果
             </button>

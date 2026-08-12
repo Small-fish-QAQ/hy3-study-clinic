@@ -1085,6 +1085,186 @@ describe('formal progression service', () => {
     );
   });
 
+  it('rejects achieved after a real defer and closes finished_with_gaps with the exact gap once', () => {
+    const grade = insertGrade('goal_outcome_defer', 1);
+    services.formalProgression.registerAssessmentContracts({
+      workspaceId: 'ws_1',
+      quizId: grade.quizId,
+      agendaId: 'agenda_1',
+      agendaItemId: 'agenda_item_1',
+      assessmentKind: 'formal_checkpoint',
+      contractVersionId: 'contract_1',
+      curriculumVersionId: 'curriculum_1',
+      studyPlanVersionId: 'plan_1',
+      executionSourceManifestFingerprint: 'manifest-fp',
+    });
+    services.formalProgression.reconcileAfterGrading(grade.gradingResultId);
+
+    const execution = repos.courseExecution.get('ws_1');
+    const session = services.studySessions.start('ws_1', {
+      contractVersionId: 'contract_1',
+      curriculumVersionId: 'curriculum_1',
+      studyPlanVersionId: 'plan_1',
+      sessionAgendaId: 'agenda_1',
+      expectedCourseExecutionVersion: execution.version,
+    }).session;
+    expect(session.currentAgendaItemId).toBe('agenda_item_2');
+    const deferred = services.studySessions.command('ws_1', session.id, {
+      commandId: 'defer_goal_outcome_work',
+      expectedSessionVersion: session.version,
+      kind: 'defer',
+      targetAgendaItemId: 'agenda_item_2',
+      reason: 'Close the current goal without this accepted-route activity.',
+    });
+    const risk = repos.coverageRisks.list('ws_1', 'contract_1')[0]!;
+    expect(deferred.agenda.items.find((item) => item.id === 'agenda_item_2')).toMatchObject({
+      state: 'deferred',
+    });
+    expect(repos.studyPlans.listProgress('plan_1')).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ planItemId: 'plan_item_1', state: 'completed' }),
+        expect.objectContaining({ planItemId: 'plan_item_2', state: 'deferred' }),
+      ]),
+    );
+    expect(risk).toMatchObject({
+      status: 'deferred',
+      facets: ['intentionally_deferred'],
+      referencedCurriculumNodeIds: ['unit_1'],
+    });
+
+    const activeState = repos.courseExecution.get('ws_1');
+    expect(() =>
+      services.formalProgression.recordGoalOutcome({
+        command: command('invalid_achieved_after_defer', 'learner'),
+        expectedCourseExecutionVersion: activeState.version,
+        expectedContractVersionId: 'contract_1',
+        expectedCurriculumVersionId: 'curriculum_1',
+        expectedStudyPlanVersionId: 'plan_1',
+        expectedAgendaVersionId: 'agenda_1',
+        status: 'achieved',
+        unresolvedRiskIds: [],
+        reason: 'Incorrectly claim unqualified achievement.',
+      }),
+    ).toThrow('required work remains incomplete or deferred');
+    expect(repos.courseExecution.get('ws_1')).toMatchObject({
+      acceptedPlanId: 'plan_1',
+      activeAgendaId: 'agenda_1',
+      executionStatus: 'active',
+      version: activeState.version,
+    });
+    expect(repos.studyPlans.get('plan_1')?.status).toBe('accepted');
+    expect(
+      repos.sessionAgendas.get('agenda_1')?.items.find((item) => item.id === 'agenda_item_2'),
+    ).toMatchObject({ state: 'deferred' });
+    expect(repos.coverageRisks.get(risk.id)).toMatchObject({ status: 'deferred' });
+    expect(repos.formalProgression.getGoalOutcomeForRoute('contract_1', 'plan_1')).toBeUndefined();
+
+    expect(() =>
+      services.formalProgression.recordGoalOutcome({
+        command: command('invalid_unrelated_gap', 'learner'),
+        expectedCourseExecutionVersion: activeState.version,
+        expectedContractVersionId: 'contract_1',
+        expectedCurriculumVersionId: 'curriculum_1',
+        expectedStudyPlanVersionId: 'plan_1',
+        expectedAgendaVersionId: 'agenda_1',
+        status: 'finished_with_gaps',
+        unresolvedRiskIds: ['missing_risk'],
+        reason: 'Try to name a different gap.',
+      }),
+    ).toThrow('not found');
+
+    const request = {
+      command: command('finish_with_deferred_gap', 'learner'),
+      expectedCourseExecutionVersion: activeState.version,
+      expectedContractVersionId: 'contract_1',
+      expectedCurriculumVersionId: 'curriculum_1',
+      expectedStudyPlanVersionId: 'plan_1',
+      expectedAgendaVersionId: 'agenda_1',
+      status: 'finished_with_gaps' as const,
+      unresolvedRiskIds: [risk.id],
+      reason: 'Learner intentionally closes with the named deferred activity.',
+    };
+    const outcome = services.formalProgression.recordGoalOutcome(request);
+    const replay = services.formalProgression.recordGoalOutcome(request);
+    expect(replay).toEqual(outcome);
+    expect(outcome).toMatchObject({
+      status: 'finished_with_gaps',
+      unresolvedRiskIds: [risk.id],
+      reason: request.reason,
+      actor: 'learner',
+    });
+    expect(repos.formalProgression.listGoalOutcomes('ws_1')).toEqual([outcome]);
+    expect(repos.courseExecution.get('ws_1')).toMatchObject({
+      acceptedPlanId: null,
+      activeAgendaId: null,
+      executionStatus: 'stopped',
+      version: activeState.version + 1,
+    });
+    expect(repos.studyPlans.get('plan_1')?.status).toBe('closed');
+    expect(repos.studySessions.get(session.id)?.status).toBe('abandoned');
+    expect(
+      (
+        db
+          .prepare(
+            `SELECT COUNT(*) AS n FROM course_execution_events
+           WHERE workspace_id = ? AND event_type = 'goal_terminal'`,
+          )
+          .get('ws_1') as { n: number }
+      ).n,
+    ).toBe(1);
+  });
+
+  it('records legitimate achieved only after every required accepted-route item is complete', () => {
+    for (const [suffix, agendaItemId] of [
+      ['goal_achieved_first', 'agenda_item_1'],
+      ['goal_achieved_second', 'agenda_item_2'],
+    ] as const) {
+      const grade = insertGrade(suffix, 1);
+      services.formalProgression.registerAssessmentContracts({
+        workspaceId: 'ws_1',
+        quizId: grade.quizId,
+        agendaId: 'agenda_1',
+        agendaItemId,
+        assessmentKind: 'formal_checkpoint',
+        contractVersionId: 'contract_1',
+        curriculumVersionId: 'curriculum_1',
+        studyPlanVersionId: 'plan_1',
+        executionSourceManifestFingerprint: 'manifest-fp',
+      });
+      services.formalProgression.reconcileAfterGrading(grade.gradingResultId);
+    }
+    expect(repos.studyPlans.listProgress('plan_1').map((item) => item.state)).toEqual([
+      'completed',
+      'completed',
+    ]);
+    expect(repos.sessionAgendas.get('agenda_1')?.items.map((item) => item.state)).toEqual([
+      'completed',
+      'completed',
+    ]);
+
+    const state = repos.courseExecution.get('ws_1');
+    const request = {
+      command: command('legitimate_achieved', 'learner'),
+      expectedCourseExecutionVersion: state.version,
+      expectedContractVersionId: 'contract_1',
+      expectedCurriculumVersionId: 'curriculum_1',
+      expectedStudyPlanVersionId: 'plan_1',
+      expectedAgendaVersionId: 'agenda_1',
+      status: 'achieved' as const,
+      unresolvedRiskIds: [],
+      reason: 'All required accepted-route work is complete.',
+    };
+    const outcome = services.formalProgression.recordGoalOutcome(request);
+    expect(services.formalProgression.recordGoalOutcome(request)).toEqual(outcome);
+    expect(outcome).toMatchObject({ status: 'achieved', unresolvedRiskIds: [] });
+    expect(repos.formalProgression.listGoalOutcomes('ws_1')).toHaveLength(1);
+    expect(repos.courseExecution.get('ws_1')).toMatchObject({
+      acceptedPlanId: null,
+      executionStatus: 'stopped',
+      version: state.version + 1,
+    });
+  });
+
   it('projects completion only to the executed checkpoint among same-unit actions', () => {
     const actions = installSameUnitFormalActions();
     const grade = insertGrade('scoped_checkpoint_projection', 1);

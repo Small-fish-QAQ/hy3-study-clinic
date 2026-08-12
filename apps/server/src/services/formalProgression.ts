@@ -1890,6 +1890,8 @@ export function createFormalProgressionService({
       planId: parsed.expectedStudyPlanVersionId,
       agendaId: parsed.expectedAgendaVersionId,
       status: parsed.status,
+      unresolvedRiskIds: parsed.unresolvedRiskIds,
+      reason: parsed.reason,
     });
     if (claim.replayPayload !== undefined) return GoalOutcomeSchema.parse(claim.replayPayload);
     try {
@@ -1910,18 +1912,56 @@ export function createFormalProgressionService({
       if (!contract || contract.workspaceId !== parsed.command.workspaceId) {
         throw new AppError(ApiErrorCode.VersionConflict, 'Learning Contract is unavailable.');
       }
+      const agenda = repos.sessionAgendas.get(parsed.expectedAgendaVersionId);
+      if (
+        !agenda ||
+        agenda.contractVersionId !== contract.id ||
+        agenda.curriculumVersionId !== parsed.expectedCurriculumVersionId ||
+        agenda.studyPlanVersionId !== plan.id
+      ) {
+        throw new AppError(ApiErrorCode.VersionConflict, 'Session Agenda is unavailable.');
+      }
       const now = clock.now().toISOString();
+      const progressByPlanItemId = new Map(
+        repos.studyPlans.listProgress(plan.id).map((item) => [item.planItemId, item.state]),
+      );
+      const planItemsById = new Map(plan.items.map((item) => [item.id, item]));
+      const unfinishedPlanItemIds = new Set(
+        plan.items
+          .filter((item) => {
+            const progress = progressByPlanItemId.get(item.id);
+            return progress !== 'completed' && progress !== 'obsolete';
+          })
+          .map((item) => item.id),
+      );
+      for (const item of agenda.items) {
+        if (
+          item.linkedPlanItemId &&
+          planItemsById.has(item.linkedPlanItemId) &&
+          ['queued', 'active', 'deferred', 'blocked'].includes(item.state)
+        ) {
+          unfinishedPlanItemIds.add(item.linkedPlanItemId);
+        }
+      }
+      const incompleteUnitIds = new Set(
+        plan.items
+          .map((item) => item.curriculumLearningUnitId)
+          .filter((unitId): unitId is string => unitId !== null)
+          .filter(
+            (unitId) =>
+              progression.getUnitProgress(
+                parsed.command.workspaceId,
+                parsed.expectedCurriculumVersionId,
+                unitId,
+              ).state !== 'complete',
+          ),
+      );
       if (parsed.status === 'achieved') {
-        const incomplete = plan.items.some(
-          (item) =>
-            item.curriculumLearningUnitId !== null &&
-            progression.getUnitProgress(
-              parsed.command.workspaceId,
-              parsed.expectedCurriculumVersionId,
-              item.curriculumLearningUnitId,
-            ).state !== 'complete',
-        );
-        if (incomplete || plan.deferrals.length > 0)
+        if (
+          incompleteUnitIds.size > 0 ||
+          unfinishedPlanItemIds.size > 0 ||
+          plan.deferrals.length > 0
+        )
           throw new AppError(
             ApiErrorCode.ValidationError,
             'Goal cannot be marked achieved while required work remains incomplete or deferred.',
@@ -1935,15 +1975,108 @@ export function createFormalProgressionService({
           );
         }
       }
-      for (const riskId of parsed.unresolvedRiskIds) {
+      const selectedRiskIds = new Set(parsed.unresolvedRiskIds);
+      if (selectedRiskIds.size !== parsed.unresolvedRiskIds.length) {
+        throw new AppError(
+          ApiErrorCode.ValidationError,
+          'Goal outcome risk identities must be unique.',
+        );
+      }
+      const selectedRisks: CoverageRiskEntry[] = [];
+      for (const riskId of selectedRiskIds) {
         const risk = repos.coverageRisks.get(riskId);
         if (
           !risk ||
           risk.workspaceId !== parsed.command.workspaceId ||
           risk.contractVersionId !== parsed.expectedContractVersionId ||
-          ['resolved', 'rejected'].includes(risk.status)
+          ['resolved', 'rejected', 'stale'].includes(risk.status)
         ) {
           throw notFound(`Current unresolved Coverage risk ${riskId} not found.`);
+        }
+        selectedRisks.push(risk);
+      }
+      if (parsed.status === 'finished_with_gaps') {
+        const severityRank = ['low', 'medium', 'high', 'critical'] as const;
+        const maximumSeverity = contract.riskTolerance?.maximumUnresolvedPriority ?? null;
+        if (
+          maximumSeverity &&
+          selectedRisks.some(
+            (risk) => severityRank.indexOf(risk.severity) > severityRank.indexOf(maximumSeverity),
+          )
+        ) {
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            'A selected unresolved risk exceeds the accepted Contract risk tolerance.',
+          );
+        }
+        const hasDeferredWork =
+          plan.deferrals.length > 0 ||
+          [...unfinishedPlanItemIds].some(
+            (itemId) => progressByPlanItemId.get(itemId) === 'deferred',
+          );
+        if (hasDeferredWork && !contract.riskTolerance?.allowExplicitDeferral) {
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            'The accepted Contract does not allow closing with deferred work.',
+          );
+        }
+
+        const riskCoversPlanItem = (risk: CoverageRiskEntry, planItemId: string): boolean => {
+          const item = planItemsById.get(planItemId);
+          if (!item) return false;
+          const scopedToItem =
+            (item.curriculumLearningUnitId !== null &&
+              (risk.topicId === item.curriculumLearningUnitId ||
+                risk.referencedCurriculumNodeIds.includes(item.curriculumLearningUnitId))) ||
+            (risk.objectiveId !== null && item.objectiveIds.includes(risk.objectiveId));
+          if (!scopedToItem) return false;
+          const state = progressByPlanItemId.get(planItemId);
+          if (state === 'deferred') return risk.facets.includes('intentionally_deferred');
+          if (state === 'repair_needed') {
+            return (
+              risk.facets.includes('formally_assessed') ||
+              risk.facets.includes('prerequisite_risk') ||
+              risk.facets.includes('transfer_integration_risk')
+            );
+          }
+          return false;
+        };
+        const eligibleRiskIds = new Set(
+          repos.coverageRisks
+            .list(parsed.command.workspaceId, contract.id)
+            .filter((risk) => !['resolved', 'rejected', 'stale'].includes(risk.status))
+            .filter(
+              (risk) =>
+                [...unfinishedPlanItemIds].some((itemId) => riskCoversPlanItem(risk, itemId)) ||
+                plan.deferrals.some((deferral) => deferral.riskIds.includes(risk.id)),
+            )
+            .map((risk) => risk.id),
+        );
+        const selectedExactlyMatchesCurrentGaps =
+          eligibleRiskIds.size > 0 &&
+          selectedRiskIds.size === eligibleRiskIds.size &&
+          [...eligibleRiskIds].every((riskId) => selectedRiskIds.has(riskId));
+        const everyUnfinishedItemIsNamed = [...unfinishedPlanItemIds].every((itemId) =>
+          selectedRisks.some((risk) => riskCoversPlanItem(risk, itemId)),
+        );
+        const everyPlanDeferralIsNamed = plan.deferrals.every((deferral) =>
+          deferral.riskIds.some((riskId) => selectedRiskIds.has(riskId)),
+        );
+        const everyIncompleteUnitIsNamed = [...incompleteUnitIds].every((unitId) =>
+          selectedRisks.some(
+            (risk) => risk.topicId === unitId || risk.referencedCurriculumNodeIds.includes(unitId),
+          ),
+        );
+        if (
+          !selectedExactlyMatchesCurrentGaps ||
+          !everyUnfinishedItemIsNamed ||
+          !everyPlanDeferralIsNamed ||
+          !everyIncompleteUnitIsNamed
+        ) {
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            'finished_with_gaps must name exactly the current unfinished accepted-route gaps.',
+          );
         }
       }
       const outcome: GoalOutcome = {
