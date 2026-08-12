@@ -439,6 +439,102 @@ describe('StudySession service', () => {
     await Promise.all([firstApp.close(), restartedApp.close()]);
   });
 
+  it('recovers an expired sent turn on identical retry without restarting the process', async () => {
+    let providerReached!: () => void;
+    let expireOldWorker!: (error: Error) => void;
+    const reachedProvider = new Promise<void>((resolve) => {
+      providerReached = resolve;
+    });
+    class ExpiringProvider extends FakeProvider {
+      calls = 0;
+
+      override async respondToTutorTurn(
+        input: TutorTurnInput,
+        opts?: ProviderCallOptions,
+      ): Promise<TutorTurnPayload> {
+        this.calls += 1;
+        if (this.calls > 1) return super.respondToTutorTurn(input, opts);
+        providerReached();
+        return new Promise<TutorTurnPayload>((_resolve, reject) => {
+          expireOldWorker = reject;
+        });
+      }
+    }
+
+    let now = new Date(T0);
+    const provider = new ExpiringProvider();
+    const app = buildApp({ repos, provider, clock: { now: () => new Date(now) } });
+    const startResponse = await app.inject({
+      method: 'POST',
+      url: '/api/workspaces/ws_1/study-sessions',
+      payload: {
+        contractVersionId: 'contract_1',
+        curriculumVersionId: 'curriculum_1',
+        studyPlanVersionId: 'plan_1',
+        sessionAgendaId: 'agenda_1',
+        expectedCourseExecutionVersion: 1,
+      },
+    });
+    const started = startResponse.json<{ session: { id: string; version: number } }>().session;
+    const input = {
+      commandId: 'turn_after_live_lease_expiry',
+      expectedSessionVersion: started.version,
+      content: 'Retry this exact learner turn after the lease expires.',
+    };
+    const firstRequest = app.inject({
+      method: 'POST',
+      url: `/api/workspaces/ws_1/study-sessions/${started.id}/turns`,
+      payload: input,
+    });
+    await reachedProvider;
+    const originalTurn = repos.studySessions.getTurnByCommand(started.id, input.commandId)!;
+    const logicalCallId = originalTurn.logicalCallId!;
+    const operationId = repos.telemetry.getLogicalCall(logicalCallId)!.operationId!;
+    expect(repos.operations.get(operationId)).toMatchObject({
+      status: 'running',
+      fencingToken: 1,
+    });
+    expect(repos.telemetry.listAttempts(logicalCallId)).toMatchObject([
+      { attemptNumber: 1, status: 'sent', fencingToken: 1 },
+    ]);
+
+    now = new Date('2026-01-01T00:06:00.000Z');
+    const retryResponse = await app.inject({
+      method: 'POST',
+      url: `/api/workspaces/ws_1/study-sessions/${started.id}/turns`,
+      payload: input,
+    });
+
+    expect(retryResponse.statusCode).toBe(200);
+    expect(provider.calls).toBe(2);
+    expect(repos.studySessions.listTurns(started.id)).toHaveLength(1);
+    expect(repos.studySessions.listExchanges(started.id).map((exchange) => exchange.role)).toEqual([
+      'learner',
+      'tutor',
+    ]);
+    expect(repos.telemetry.listAttempts(logicalCallId)).toMatchObject([
+      { attemptNumber: 1, status: 'outcome_unknown', fencingToken: 1 },
+      { attemptNumber: 2, attemptKind: 'retry', status: 'completed', fencingToken: 2 },
+    ]);
+    expect(repos.operations.listEvents(operationId)).toMatchObject([
+      { kind: 'operation_interrupted', payload: { reason: 'lease_expired' }, fencingToken: 1 },
+    ]);
+    expect(repos.operations.get(operationId)).toMatchObject({
+      status: 'completed',
+      fencingToken: 2,
+      leaseOwner: null,
+    });
+
+    expireOldWorker(new Error('Late result from expired worker.'));
+    expect((await firstRequest).statusCode).toBe(500);
+    expect(repos.operations.getResult(operationId)).toMatchObject({
+      status: 'completed',
+      fencingToken: 2,
+    });
+    expect(repos.studySessions.listExchanges(started.id)).toHaveLength(2);
+    await app.close();
+  });
+
   it('persists detour/return and pause/resume without changing the accepted Plan', () => {
     let session = service.start('ws_1', {
       contractVersionId: 'contract_1',

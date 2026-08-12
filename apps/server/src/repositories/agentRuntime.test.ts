@@ -239,6 +239,46 @@ describe('durable agent operations repository', () => {
     expect(repos.operations.getResult('op_1')).toBeUndefined();
   });
 
+  it('recovers an expired lease only after exact operation identity matches', () => {
+    const first = createOperation();
+    repos.operations.claim('op_1', 'worker-old', T1, T0);
+
+    expect(() =>
+      repos.operations.createOrGet({
+        ...first.operation,
+        id: 'op_changed',
+        expectedFingerprint: 'contract:2/source:changed',
+        createdAt: T2,
+        updatedAt: T2,
+      }),
+    ).toThrow(/Idempotency key/);
+    expect(repos.operations.get('op_1')).toMatchObject({
+      status: 'running',
+      leaseOwner: 'worker-old',
+      fencingToken: 1,
+    });
+    expect(repos.operations.listEvents('op_1')).toEqual([]);
+
+    const retry = repos.operations.createOrGet({
+      ...first.operation,
+      id: 'op_retry',
+      createdAt: T2,
+      updatedAt: T2,
+    });
+    expect(retry).toMatchObject({
+      created: false,
+      operation: {
+        id: 'op_1',
+        status: 'interrupted',
+        leaseOwner: null,
+        fencingToken: 1,
+      },
+    });
+    expect(repos.operations.listEvents('op_1')).toMatchObject([
+      { kind: 'operation_interrupted', payload: { reason: 'lease_expired' }, fencingToken: 1 },
+    ]);
+  });
+
   it('interrupts every prior-process running operation at startup even before lease expiry', () => {
     createOperation();
     repos.operations.claim('op_1', 'previous-process', T2, T0);

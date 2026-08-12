@@ -131,6 +131,87 @@ export function createOperationsRepo(db: SqliteDb) {
   const getRow = (id: string): OperationRow | undefined =>
     db.prepare('SELECT * FROM agent_operations WHERE id = ?').get(id) as OperationRow | undefined;
 
+  function recoverOperation(
+    operation: OperationRow,
+    at: string,
+    reason: 'lease_expired' | 'process_restart',
+  ): void {
+    const turnRows = db
+      .prepare(
+        `SELECT t.id, t.session_id
+         FROM study_session_turns t
+         JOIN model_logical_calls lc ON lc.id = t.logical_call_id
+         WHERE lc.operation_id = ? AND t.status IN ('queued', 'running')
+         ORDER BY t.session_id, t.seq`,
+      )
+      .all(operation.id) as Array<{ id: string; session_id: string }>;
+    for (const turn of turnRows) {
+      const changed = db
+        .prepare(
+          `UPDATE study_session_turns
+           SET status = 'interrupted', completed_at = COALESCE(completed_at, ?),
+               error_message = COALESCE(error_message, ?)
+           WHERE id = ? AND status IN ('queued', 'running')`,
+        )
+        .run(
+          at,
+          reason === 'process_restart'
+            ? 'Server restart interrupted this StudySession turn.'
+            : 'Worker lease expired before this StudySession turn completed.',
+          turn.id,
+        ).changes;
+      if (changed !== 1) continue;
+      const nextTurnEventSeq = (
+        db
+          .prepare(
+            `SELECT COALESCE(MAX(seq), -1) + 1 AS seq
+             FROM study_turn_events WHERE turn_id = ?`,
+          )
+          .get(turn.id) as { seq: number }
+      ).seq;
+      db.prepare(
+        `INSERT INTO study_turn_events
+           (id, session_id, turn_id, seq, kind, provisional, content, created_at)
+         VALUES (?, ?, ?, ?, 'interrupted', 0, ?, ?)`,
+      ).run(newId('study_event'), turn.session_id, turn.id, nextTurnEventSeq, reason, at);
+    }
+    db.prepare(
+      `UPDATE model_call_attempts
+       SET status = CASE WHEN status = 'sent' THEN 'outcome_unknown' ELSE 'interrupted' END,
+           completed_at = COALESCE(completed_at, ?),
+           error_code = COALESCE(error_code, 'PROCESS_ORPHANED'),
+           error_message = COALESCE(error_message, 'Worker lease expired before a result was durably observed.')
+       WHERE logical_call_id IN
+         (SELECT id FROM model_logical_calls WHERE operation_id = ?)
+         AND status IN ('queued', 'sent')`,
+    ).run(at, operation.id);
+    const changed = db
+      .prepare(
+        `UPDATE agent_operations
+         SET status = 'interrupted', lease_owner = NULL, lease_expires_at = NULL, updated_at = ?
+         WHERE id = ? AND status = 'running' AND fencing_token = ?`,
+      )
+      .run(at, operation.id, operation.fencing_token).changes;
+    if (changed !== 1) throw new Error('Operation ownership changed during recovery.');
+    const next = db
+      .prepare(
+        'SELECT COALESCE(MAX(seq), -1) + 1 AS seq FROM agent_operation_events WHERE operation_id = ?',
+      )
+      .get(operation.id) as { seq: number };
+    db.prepare(
+      `INSERT INTO agent_operation_events
+         (id, operation_id, seq, fencing_token, kind, payload, created_at)
+       VALUES (?, ?, ?, ?, 'operation_interrupted', ?, ?)`,
+    ).run(
+      newId('opevt'),
+      operation.id,
+      next.seq,
+      operation.fencing_token,
+      JSON.stringify({ reason }),
+      at,
+    );
+  }
+
   const createOrGetTx = db.transaction(
     (operation: AgentOperation): { operation: AgentOperation; created: boolean } => {
       const byIdempotency = db
@@ -141,7 +222,14 @@ export function createOperationsRepo(db: SqliteDb) {
         if (!sameIdentity(existing, operation)) {
           throw new Error('Idempotency key was already used for a different operation identity.');
         }
-        return { operation: existing, created: false };
+        if (
+          byIdempotency.status === 'running' &&
+          byIdempotency.lease_expires_at !== null &&
+          byIdempotency.lease_expires_at <= operation.updatedAt
+        ) {
+          recoverOperation(byIdempotency, operation.updatedAt, 'lease_expired');
+        }
+        return { operation: rowToOperation(getRow(existing.id)!), created: false };
       }
 
       const identityCollision = db
@@ -299,38 +387,7 @@ export function createOperationsRepo(db: SqliteDb) {
       )
       .all(includeUnexpired ? 1 : 0, at) as OperationRow[];
     for (const operation of expired) {
-      db.prepare(
-        `UPDATE model_call_attempts
-         SET status = CASE WHEN status = 'sent' THEN 'outcome_unknown' ELSE 'interrupted' END,
-             completed_at = COALESCE(completed_at, ?),
-             error_code = COALESCE(error_code, 'PROCESS_ORPHANED'),
-             error_message = COALESCE(error_message, 'Worker lease expired before a result was durably observed.')
-         WHERE logical_call_id IN
-           (SELECT id FROM model_logical_calls WHERE operation_id = ?)
-           AND status IN ('queued', 'sent')`,
-      ).run(at, operation.id);
-      db.prepare(
-        `UPDATE agent_operations
-         SET status = 'interrupted', lease_owner = NULL, lease_expires_at = NULL, updated_at = ?
-         WHERE id = ? AND status = 'running' AND fencing_token = ?`,
-      ).run(at, operation.id, operation.fencing_token);
-      const next = db
-        .prepare(
-          'SELECT COALESCE(MAX(seq), -1) + 1 AS seq FROM agent_operation_events WHERE operation_id = ?',
-        )
-        .get(operation.id) as { seq: number };
-      db.prepare(
-        `INSERT INTO agent_operation_events
-           (id, operation_id, seq, fencing_token, kind, payload, created_at)
-         VALUES (?, ?, ?, ?, 'operation_interrupted', ?, ?)`,
-      ).run(
-        newId('opevt'),
-        operation.id,
-        next.seq,
-        operation.fencing_token,
-        JSON.stringify({ reason: 'lease_expired' }),
-        at,
-      );
+      recoverOperation(operation, at, includeUnexpired ? 'process_restart' : 'lease_expired');
     }
     return expired.length;
   });
