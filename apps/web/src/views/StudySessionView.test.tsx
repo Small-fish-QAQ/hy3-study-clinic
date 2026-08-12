@@ -90,6 +90,58 @@ const currentRoute = {
   executionVersion: 4,
 };
 
+const completedTutorResponse = {
+  session: { ...session, version: 2, transcriptWatermark: 2 },
+  turn: {
+    id: 'turn_1',
+    sessionId: session.id,
+    seq: 0,
+    commandId: 'tutor_turn_original',
+    status: 'completed' as const,
+    contextManifest: {
+      fingerprint: 'context-1',
+      contractScopeFingerprint: 'scope-1',
+      contractVersionId: session.contractVersionId,
+      curriculumVersionId: session.curriculumVersionId,
+      studyPlanVersionId: session.studyPlanVersionId,
+      sessionAgendaVersionId: `${session.sessionAgendaId}:v1`,
+      studySessionVersion: session.version,
+      executionSourceManifestFingerprint: session.executionSourceManifestFingerprint,
+      transcriptWatermark: 0,
+      sourceBlockRevisionIds: [],
+      formalEvidenceIds: [],
+      riskIds: [],
+    },
+    logicalCallId: 'call_1',
+    errorMessage: null,
+    createdAt: session.createdAt,
+    completedAt: session.updatedAt,
+  },
+  exchanges: [
+    {
+      id: 'exchange_learner_1',
+      sessionId: session.id,
+      turnId: 'turn_1',
+      seq: 0,
+      role: 'learner' as const,
+      content: 'Why?',
+      channel: 'conversation' as const,
+      createdAt: session.createdAt,
+    },
+    {
+      id: 'exchange_tutor_1',
+      sessionId: session.id,
+      turnId: 'turn_1',
+      seq: 1,
+      role: 'tutor' as const,
+      content: 'Because the current unit depends on this prerequisite.',
+      channel: 'conversation' as const,
+      createdAt: session.updatedAt,
+    },
+  ],
+  events: [],
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -573,5 +625,186 @@ describe('StudySessionView', () => {
     expect(
       screen.getByRole('listitem', { name: 'Learn the current unit.，当前，进行中' }),
     ).toHaveAttribute('aria-current', 'step');
+  });
+
+  it('retries an indeterminate Tutor turn with the exact original identity and one transcript submission', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });
+    vi.mocked(api.getStudySession).mockResolvedValue(detail);
+    const firstAttempt = vi.fn().mockRejectedValue(
+      Object.assign(new Error('StudySession stream was interrupted.'), {
+        code: 'NETWORK_ERROR',
+      }),
+    );
+    let resolveRetry: ((response: typeof completedTutorResponse) => void) | undefined;
+    const retryInFlight = new Promise<typeof completedTutorResponse>((resolve) => {
+      resolveRetry = resolve;
+    });
+    vi.mocked(api.streamTutorTurn)
+      .mockImplementationOnce(firstAttempt)
+      .mockReturnValueOnce(retryInFlight);
+
+    render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    const composer = await screen.findByPlaceholderText('输入你的问题或想法…');
+    await user.type(composer, ' Why? ');
+    await user.click(screen.getByRole('button', { name: '发送' }));
+
+    const interruptedCall = await waitFor(() => {
+      expect(firstAttempt).toHaveBeenCalledTimes(1);
+      return vi.mocked(api.streamTutorTurn).mock.calls[0];
+    });
+    expect(interruptedCall?.[0]).toBe('ws_1');
+    expect(interruptedCall?.[1]).toBe(session.id);
+    const originalInput = interruptedCall?.[2];
+    expect(originalInput).toEqual({
+      commandId: expect.stringMatching(/^tutor_turn_/),
+      expectedSessionVersion: 1,
+      content: 'Why?',
+    });
+    expect(await screen.findByText(/Tutor 请求尚未确认完成，原提问已保留：/)).toBeInTheDocument();
+
+    await user.clear(composer);
+    await user.type(composer, 'changed after interruption');
+    await user.click(screen.getByRole('button', { name: '重试此条提问' }));
+    await waitFor(() => expect(api.streamTutorTurn).toHaveBeenCalledTimes(2));
+    const retryButton = screen.getByRole('button', { name: '重试此条提问' });
+    expect(retryButton).toBeDisabled();
+    await user.click(retryButton);
+    expect(api.streamTutorTurn).toHaveBeenCalledTimes(2);
+    resolveRetry?.({
+      ...completedTutorResponse,
+      turn: { ...completedTutorResponse.turn, commandId: originalInput!.commandId },
+    });
+
+    const retryCall = vi.mocked(api.streamTutorTurn).mock.calls[1];
+    expect(retryCall?.[0]).toBe(interruptedCall?.[0]);
+    expect(retryCall?.[1]).toBe(interruptedCall?.[1]);
+    const retryInput = retryCall?.[2];
+    expect(retryInput).toEqual(originalInput);
+    expect(screen.getByText('Why?')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Because the current unit depends on this prerequisite.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Tutor 请求尚未确认完成，原提问已保留：/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '重试此条提问' })).not.toBeInTheDocument();
+    expect(screen.getByDisplayValue('changed after interruption')).toBeInTheDocument();
+    expect(screen.getAllByText('Why?')).toHaveLength(1);
+
+    vi.mocked(api.streamTutorTurn).mockImplementationOnce(
+      async (_workspaceId, _sessionId, input) => ({
+        ...completedTutorResponse,
+        session: { ...session, version: 3, transcriptWatermark: 4 },
+        turn: {
+          ...completedTutorResponse.turn,
+          id: 'turn_2',
+          commandId: input.commandId,
+        },
+        exchanges: completedTutorResponse.exchanges.map((exchange) => ({
+          ...exchange,
+          id: `${exchange.id}_next`,
+          turnId: 'turn_2',
+          content: exchange.role === 'learner' ? 'changed after interruption' : 'Next answer',
+        })),
+      }),
+    );
+    await user.click(screen.getByRole('button', { name: '发送' }));
+    await waitFor(() => expect(api.streamTutorTurn).toHaveBeenCalledTimes(3));
+    const newTurnInput = vi.mocked(api.streamTutorTurn).mock.calls[2]?.[2];
+    expect(newTurnInput).toEqual({
+      commandId: expect.stringMatching(/^tutor_turn_/),
+      expectedSessionVersion: 2,
+      content: 'changed after interruption',
+    });
+    expect(newTurnInput?.commandId).not.toBe(originalInput?.commandId);
+  });
+
+  it('generates one command for a normal successful turn and leaves no retry handle', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });
+    vi.mocked(api.getStudySession).mockResolvedValue(detail);
+    const firstAttempt = vi.fn().mockResolvedValue(completedTutorResponse);
+    vi.mocked(api.streamTutorTurn).mockImplementation(firstAttempt);
+
+    render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    const composer = await screen.findByPlaceholderText('输入你的问题或想法…');
+    await user.type(composer, 'Why?');
+    await user.click(screen.getByRole('button', { name: '发送' }));
+    await waitFor(() => expect(api.streamTutorTurn).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole('button', { name: '重试此条提问' })).not.toBeInTheDocument();
+
+    const nextResponse = {
+      ...completedTutorResponse,
+      session: { ...session, version: 3, transcriptWatermark: 4 },
+      turn: { ...completedTutorResponse.turn, id: 'turn_2', commandId: 'tutor_turn_next' },
+      exchanges: completedTutorResponse.exchanges.map((exchange) => ({
+        ...exchange,
+        id: `${exchange.id}_next`,
+        turnId: 'turn_2',
+        content: exchange.role === 'learner' ? 'Next question' : 'Next answer',
+      })),
+    };
+    vi.mocked(api.streamTutorTurn).mockResolvedValueOnce(nextResponse);
+    await user.type(composer, 'Next question');
+    await user.click(screen.getByRole('button', { name: '发送' }));
+    await waitFor(() => expect(api.streamTutorTurn).toHaveBeenCalledTimes(2));
+    const calls = vi.mocked(api.streamTutorTurn).mock.calls;
+    expect(calls[1]?.[2]).toEqual({
+      commandId: expect.stringMatching(/^tutor_turn_/),
+      expectedSessionVersion: 2,
+      content: 'Next question',
+    });
+    expect(calls[1]?.[2]).not.toEqual(calls[0]?.[2]);
+  });
+
+  it('clears a definitive Tutor rejection instead of offering a blind replay', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });
+    vi.mocked(api.getStudySession).mockResolvedValue(detail);
+    vi.mocked(api.streamTutorTurn).mockRejectedValue(
+      Object.assign(new Error('StudySession version conflict.'), { code: 'VERSION_CONFLICT' }),
+    );
+
+    render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    const composer = await screen.findByPlaceholderText('输入你的问题或想法…');
+    await user.type(composer, 'Why?');
+    await user.click(screen.getByRole('button', { name: '发送' }));
+
+    await waitFor(() =>
+      expect(screen.getByText('StudySession version conflict.')).toBeInTheDocument(),
+    );
+    expect(screen.queryByRole('button', { name: '重试此条提问' })).not.toBeInTheDocument();
+  });
+
+  it('drops an interrupted retry when the accepted route changes', async () => {
+    const user = userEvent.setup();
+    const successorRoute = {
+      ...currentRoute,
+      contractVersionId: 'contract_2',
+      executionVersion: 5,
+    };
+    const successorSession = { ...session, id: 'session_2', contractVersionId: 'contract_2' };
+    vi.mocked(api.listStudySessions).mockImplementation(async () => ({
+      sessions: [session, successorSession],
+    }));
+    vi.mocked(api.getStudySession).mockImplementation(async (_workspaceId, sessionId) =>
+      sessionId === successorSession.id ? { ...detail, session: successorSession } : detail,
+    );
+    vi.mocked(api.streamTutorTurn).mockRejectedValue(
+      Object.assign(new Error('StudySession stream was interrupted.'), {
+        code: 'NETWORK_ERROR',
+      }),
+    );
+
+    const { rerender } = render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    const composer = await screen.findByPlaceholderText('输入你的问题或想法…');
+    await user.type(composer, 'Why?');
+    await user.click(screen.getByRole('button', { name: '发送' }));
+    expect(await screen.findByRole('button', { name: '重试此条提问' })).toBeInTheDocument();
+
+    rerender(<StudySessionView workspaceId="ws_1" route={successorRoute} />);
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: '重试此条提问' })).not.toBeInTheDocument(),
+    );
+    expect(api.streamTutorTurn).toHaveBeenCalledTimes(1);
   });
 });

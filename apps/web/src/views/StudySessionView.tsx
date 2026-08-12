@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   MixedInitiativeCommandRequest,
   PublicQuiz,
+  SubmitTutorTurnRequest,
+  SubmitTutorTurnResponse,
   StudyExchange,
   StudySession,
   StudySessionDetailResponse,
@@ -33,6 +35,33 @@ function commandId(prefix: string): string {
   return `${prefix}_${globalThis.crypto?.randomUUID?.() ?? `${Date.now()}_${commandSequence}`}`;
 }
 
+interface PendingTutorTurn {
+  readonly workspaceId: string;
+  readonly sessionId: string;
+  readonly route: Readonly<StudySessionRoute>;
+  readonly input: Readonly<SubmitTutorTurnRequest>;
+}
+
+function isIndeterminateTutorFailure(error: unknown): boolean {
+  return (
+    typeof error === 'object' && error !== null && 'code' in error && error.code === 'NETWORK_ERROR'
+  );
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function sameRoute(left: Readonly<StudySessionRoute>, right: StudySessionRoute): boolean {
+  return (
+    left.contractVersionId === right.contractVersionId &&
+    left.curriculumVersionId === right.curriculumVersionId &&
+    left.studyPlanVersionId === right.studyPlanVersionId &&
+    left.sessionAgendaId === right.sessionAgendaId &&
+    left.executionVersion === right.executionVersion
+  );
+}
+
 /**
  * The persisted conversation surface. It deliberately renders exchanges as
  * conversation, not as evidence or mastery state; formal progression remains
@@ -50,13 +79,20 @@ export function StudySessionView({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [composer, setComposer] = useState('');
   const [detourLearningUnitId, setDetourLearningUnitId] = useState('');
+  const [pendingTutorTurn, setPendingTutorTurn] = useState<PendingTutorTurn | null>(null);
+  const [tutorLoading, setTutorLoading] = useState(false);
+  const [tutorError, setTutorError] = useState<string | null>(null);
   const epoch = useRef(0);
+  const tutorEpoch = useRef(0);
+  const tutorController = useRef<AbortController | null>(null);
   const action = useAsyncAction();
   const routeContractVersionId = route?.contractVersionId;
   const routeCurriculumVersionId = route?.curriculumVersionId;
   const routeStudyPlanVersionId = route?.studyPlanVersionId;
   const routeSessionAgendaId = route?.sessionAgendaId;
   const routeExecutionVersion = route?.executionVersion;
+  const currentSessionId = detail?.session.id;
+  const busy = action.loading || tutorLoading || Boolean(pendingTutorTurn);
 
   const loadSession = useCallback(
     async (targetWorkspaceId: string, sessionId: string, signal: AbortSignal) => {
@@ -80,6 +116,12 @@ export function StudySessionView({
   useEffect(() => {
     const controller = new AbortController();
     const requestEpoch = ++epoch.current;
+    tutorEpoch.current += 1;
+    tutorController.current?.abort();
+    tutorController.current = null;
+    setPendingTutorTurn(null);
+    setTutorLoading(false);
+    setTutorError(null);
     setDetail(null);
     setComposer('');
     setDetourLearningUnitId('');
@@ -117,6 +159,9 @@ export function StudySessionView({
     return () => {
       controller.abort();
       epoch.current += 1;
+      tutorEpoch.current += 1;
+      tutorController.current?.abort();
+      tutorController.current = null;
     };
   }, [
     loadSession,
@@ -126,6 +171,27 @@ export function StudySessionView({
     routeSessionAgendaId,
     routeStudyPlanVersionId,
     workspaceId,
+  ]);
+
+  useEffect(() => {
+    setPendingTutorTurn((current) => {
+      if (!current) return null;
+      const stillCurrent =
+        current.sessionId === currentSessionId &&
+        current.route.contractVersionId === routeContractVersionId &&
+        current.route.curriculumVersionId === routeCurriculumVersionId &&
+        current.route.studyPlanVersionId === routeStudyPlanVersionId &&
+        current.route.sessionAgendaId === routeSessionAgendaId &&
+        current.route.executionVersion === routeExecutionVersion;
+      return stillCurrent ? current : null;
+    });
+  }, [
+    currentSessionId,
+    routeContractVersionId,
+    routeCurriculumVersionId,
+    routeExecutionVersion,
+    routeSessionAgendaId,
+    routeStudyPlanVersionId,
   ]);
 
   function replaceSession(session: StudySession, agenda = detail?.agenda): void {
@@ -154,35 +220,21 @@ export function StudySessionView({
     await loadSession(workspaceId, response.session.id, controller.signal);
   }
 
-  async function submitTurn(): Promise<void> {
-    const content = composer.trim();
-    if (!workspaceId || !detail || !content || detail.session.status !== 'active') return;
-    const sessionId = detail.session.id;
-    const expectedVersion = detail.session.version;
-    setComposer('');
-    const response = await action.run((signal) =>
-      api.streamTutorTurn(
-        workspaceId,
-        sessionId,
-        { commandId: commandId('tutor_turn'), expectedSessionVersion: expectedVersion, content },
-        (line) => {
-          if (line.kind !== 'event') return;
-          setDetail((current) => {
-            if (!current || current.session.id !== sessionId) return current;
-            if (current.turnEvents.some((event) => event.id === line.event.id)) return current;
-            return { ...current, turnEvents: [...current.turnEvents, line.event] };
-          });
-        },
-        signal,
-      ),
+  function canRetryTutorTurn(candidate: PendingTutorTurn | null): candidate is PendingTutorTurn {
+    return Boolean(
+      candidate &&
+      workspaceId &&
+      route &&
+      detail &&
+      candidate.workspaceId === workspaceId &&
+      candidate.sessionId === detail.session.id &&
+      sameRoute(candidate.route, route),
     );
-    if (!response || detail.session.id !== sessionId) {
-      const controller = new AbortController();
-      await loadSession(workspaceId, sessionId, controller.signal);
-      return;
-    }
+  }
+
+  function applyTutorResponse(request: PendingTutorTurn, response: SubmitTutorTurnResponse): void {
     setDetail((current) =>
-      current?.session.id === sessionId
+      current?.session.id === request.sessionId
         ? {
             ...current,
             session: response.session,
@@ -202,7 +254,97 @@ export function StudySessionView({
           }
         : current,
     );
+    setPendingTutorTurn(null);
+    setTutorError(null);
     onSessionChanged?.();
+  }
+
+  async function sendTutorTurn(request: PendingTutorTurn): Promise<void> {
+    if (tutorController.current) return;
+    const requestEpoch = ++tutorEpoch.current;
+    const controller = new AbortController();
+    tutorController.current = controller;
+    setTutorLoading(true);
+    setTutorError(null);
+    try {
+      const response = await api.streamTutorTurn(
+        request.workspaceId,
+        request.sessionId,
+        request.input,
+        (line) => {
+          if (requestEpoch !== tutorEpoch.current || line.kind !== 'event') return;
+          setDetail((current) => {
+            if (!current || current.session.id !== request.sessionId) return current;
+            if (current.turnEvents.some((event) => event.id === line.event.id)) return current;
+            return { ...current, turnEvents: [...current.turnEvents, line.event] };
+          });
+        },
+        controller.signal,
+      );
+      if (requestEpoch !== tutorEpoch.current || controller.signal.aborted) return;
+      applyTutorResponse(request, response);
+    } catch (error) {
+      if (requestEpoch !== tutorEpoch.current || controller.signal.aborted) return;
+      if (isIndeterminateTutorFailure(error)) {
+        setPendingTutorTurn(request);
+      } else {
+        setPendingTutorTurn(null);
+      }
+      setTutorError(errorMessage(error));
+    } finally {
+      if (tutorController.current === controller) {
+        tutorController.current = null;
+        setTutorLoading(false);
+      }
+    }
+  }
+
+  async function submitTurn(): Promise<void> {
+    const content = composer.trim();
+    if (
+      !workspaceId ||
+      !route ||
+      !detail ||
+      !content ||
+      detail.session.status !== 'active' ||
+      pendingTutorTurn ||
+      tutorController.current
+    )
+      return;
+    const request: PendingTutorTurn = Object.freeze({
+      workspaceId,
+      sessionId: detail.session.id,
+      route: Object.freeze({ ...route }),
+      input: Object.freeze({
+        commandId: commandId('tutor_turn'),
+        expectedSessionVersion: detail.session.version,
+        content,
+      }),
+    });
+    setComposer('');
+    await sendTutorTurn(request);
+  }
+
+  async function retryTutorTurn(): Promise<void> {
+    const request = pendingTutorTurn;
+    if (!canRetryTutorTurn(request)) {
+      setPendingTutorTurn(null);
+      return;
+    }
+    await sendTutorTurn(request);
+  }
+
+  function abandonTutorRetry(): void {
+    tutorEpoch.current += 1;
+    tutorController.current?.abort();
+    tutorController.current = null;
+    setTutorLoading(false);
+    setPendingTutorTurn(null);
+    setTutorError(null);
+  }
+
+  function cancelTutorTurn(): void {
+    abandonTutorRetry();
   }
 
   async function mixedCommand(
@@ -343,6 +485,7 @@ export function StudySessionView({
     <div className="study-session" aria-label="学习">
       {loadError ? <Banner kind="error">{loadError}</Banner> : null}
       {action.error ? <Banner kind="error">{action.error}</Banner> : null}
+      {tutorError ? <Banner kind="error">{tutorError}</Banner> : null}
       <header className="study-session-header">
         <div>
           <p className="eyebrow">当前学习</p>
@@ -354,17 +497,27 @@ export function StudySessionView({
         </div>
         <div className="row">
           {active ? (
-            <button type="button" onClick={() => void lifecycle('pause')}>
+            <button type="button" disabled={busy} onClick={() => void lifecycle('pause')}>
               暂停
             </button>
           ) : null}
           {session.status === 'paused' ? (
-            <button type="button" className="primary" onClick={() => void lifecycle('resume')}>
+            <button
+              type="button"
+              className="primary"
+              disabled={busy}
+              onClick={() => void lifecycle('resume')}
+            >
               继续
             </button>
           ) : null}
           {active || session.status === 'paused' ? (
-            <button type="button" className="danger" onClick={() => void lifecycle('stop')}>
+            <button
+              type="button"
+              className="danger"
+              disabled={busy}
+              onClick={() => void lifecycle('stop')}
+            >
               结束本次学习
             </button>
           ) : null}
@@ -388,7 +541,7 @@ export function StudySessionView({
             <span className="sr-only">向 Tutor 提问</span>
             <textarea
               value={composer}
-              disabled={!active || action.loading}
+              disabled={!active || action.loading || tutorLoading}
               onChange={(event) => setComposer(event.target.value)}
               placeholder={active ? '输入你的问题或想法…' : '继续本次学习后才能发送消息。'}
               rows={3}
@@ -396,15 +549,38 @@ export function StudySessionView({
             <button
               type="button"
               className="primary"
-              disabled={!active || action.loading || composer.trim().length === 0}
+              disabled={
+                !active || busy || Boolean(pendingTutorTurn) || composer.trim().length === 0
+              }
               onClick={() => void submitTurn()}
             >
               发送
             </button>
-            {action.loading ? (
-              <button type="button" onClick={action.cancel}>
+            {tutorLoading && !pendingTutorTurn ? (
+              <button type="button" onClick={cancelTutorTurn}>
                 取消生成
               </button>
+            ) : null}
+            {canRetryTutorTurn(pendingTutorTurn) ? (
+              <div className="study-retry" role="status">
+                <p>
+                  Tutor 请求尚未确认完成，原提问已保留：<q>{pendingTutorTurn.input.content}</q>
+                </p>
+                <div className="row">
+                  <button
+                    type="button"
+                    className="primary"
+                    disabled={tutorLoading}
+                    aria-busy={tutorLoading}
+                    onClick={() => void retryTutorTurn()}
+                  >
+                    重试此条提问
+                  </button>
+                  <button type="button" onClick={abandonTutorRetry}>
+                    放弃重试
+                  </button>
+                </div>
+              </div>
             ) : null}
           </label>
         </section>
@@ -425,7 +601,7 @@ export function StudySessionView({
                 <p className="small">{session.routeStack.at(-1)?.reason}</p>
                 <button
                   type="button"
-                  disabled={!active || action.loading}
+                  disabled={!active || busy}
                   onClick={() => void mixedCommand('return')}
                 >
                   返回原学习路线
@@ -472,7 +648,7 @@ export function StudySessionView({
                 <span>想探索的学习单元</span>
                 <select
                   value={detourLearningUnitId}
-                  disabled={!active || action.loading}
+                  disabled={!active || busy}
                   onChange={(event) => setDetourLearningUnitId(event.target.value)}
                 >
                   <option value="">当前学习单元</option>
@@ -487,7 +663,7 @@ export function StudySessionView({
             <div className="study-session-controls">
               <button
                 type="button"
-                disabled={!active || action.loading}
+                disabled={!active || busy}
                 onClick={() => void mixedCommand('detour')}
               >
                 临时探索
@@ -508,21 +684,21 @@ export function StudySessionView({
               </button>
               <button
                 type="button"
-                disabled={!active || action.loading || !directCheckpointItem}
+                disabled={!active || busy || !directCheckpointItem}
                 onClick={() => void mixedCommand('direct_checkpoint', directCheckpointItem?.id)}
               >
                 发起正式评估
               </button>
               <button
                 type="button"
-                disabled={!active || action.loading}
+                disabled={!active || busy}
                 onClick={() => void mixedCommand('defer')}
               >
                 延期当前内容
               </button>
               <button
                 type="button"
-                disabled={action.loading || !canPromoteCurrentDetour}
+                disabled={busy || !canPromoteCurrentDetour}
                 onClick={() => void mixedCommand('promote_to_plan')}
               >
                 纳入长期路线
