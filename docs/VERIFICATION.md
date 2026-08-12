@@ -48,6 +48,14 @@ The immutable final tag's historical results remain recorded in the release line
 
 The server and shared suites also cover the implemented Phase 1-4 route: MaterialRevision lineage and source authority; Contract/Curriculum/StudyPlan/Agenda validation and atomic activation; durable StudySession lifecycle, idempotency, transcript recovery, and mixed-initiative controls; and formal-evidence progression, replan candidates, and goal outcomes. Web suites cover the Course selection shell, Course Home primary action, Course Materials, Curriculum, Chinese-named `学习` workspace, consolidated Progress destination, and embedded Explore graph. They also assert legacy-destination consolidation, useful empty states, formal/informal separation, prose-independent completion state, request cancellation, stale responses, and Course/document switching safety.
 
+Post-red-team correctness regressions exercise the production boundaries rather than only constructing repository state:
+
+- a real HTTP Tutor request reserves a turn, reaches a sent provider attempt, is recovered after application restart, and completes an identical retry as one logical learner turn with two fenced physical attempts;
+- a separate live-process HTTP test advances the clock beyond the operation lease, performs demand-driven recovery on the identical retry, records the old sent attempt as `outcome_unknown`, and proves the late old worker cannot replace the fencing-token-2 result;
+- repository tests prove that changed operation identity/fingerprint is rejected before expired-lease recovery, and that successor activation atomically closes predecessor sessions, unfinished turns, logical calls, and operations while preserving rollback behavior;
+- the StudySession view selects only active/paused sessions matching the current Contract, Curriculum, StudyPlan, and SessionAgenda IDs, and reloads after route/version changes; and
+- Material-role route tests send mismatched URL/body and URL/assignment identities, assert unchanged role histories and operation/result tables, then prove the correctly addressed request still succeeds.
+
 Deliberate behavior changes in the upgrade, each with updated tests: duplicate submissions of one quiz now return `409 DUPLICATE_SUBMISSION` (learner state applies at most once; the graph smoke asserts this instead of double-grading); pending quizzes whose required concepts are no longer available are rejected instead of dishonestly succeeding; material/document removal retires the source while preserving revisions and longitudinal history; remediation performs one targeted regeneration of missing required pieces before failing; an empty concept-extraction payload is schema-legal (thin sections may yield nothing); and small fixture documents in several suites grew to realistic section sizes required by size-aware extraction budgets.
 
 Application and integration tests use the fake provider by default. Hy3 provider-contract tests inject a mocked `fetch`; ordinary automated tests and CI never require or contact the real Hy3 API.
@@ -82,7 +90,7 @@ node scripts/smoke-graph.mjs verify <workspaceId> <conceptId>
 node scripts/smoke-adaptive.mjs verify <workspaceId> <conceptId> <runId>
 ```
 
-The restart checks verify persisted documents, active graph data, learner state, accepted plans, canonical alignment, misconception/review state, daily-queue data, and completed Tutor runs. The Phase 3 StudySession endpoints additionally persist detail, events, exchanges, and summaries for reload after an interrupted or detached client.
+The restart checks verify persisted documents, active graph data, learner state, accepted plans, canonical alignment, misconception/review state, daily-queue data, and completed Tutor runs. The Phase 3 StudySession endpoints additionally persist detail, events, exchanges, and summaries for reload after an interrupted or detached client. The server integration suite, rather than these observational smoke scripts, proves the reachable reserve -> sent -> restart -> identical-retry sequence and the corresponding logical/physical attempt accounting.
 
 `demo:http` is a lightweight observational smoke script. It fails on HTTP errors, but some displayed booleans and remediation counts are logs rather than strict assertions. Use the Vitest suite, `eval:fake`, and the graph/adaptive workflows for invariant claims; do not treat `ALL FLOWS OK` by itself as proof that every logged semantic condition passed.
 
