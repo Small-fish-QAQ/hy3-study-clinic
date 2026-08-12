@@ -269,3 +269,30 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
     expect(createContract).not.toHaveBeenCalled();
   });
 });
+
+describe('Course Settings navigation continuity', () => {
+  it('keeps the same selected Course and system destination when opened from Explore', async () => {
+    vi.spyOn(api, 'materialRoleHistory').mockResolvedValue(roleHistory(strandedProposal));
+    const user = userEvent.setup();
+    renderWorkspace();
+
+    const courseSelector = await screen.findByRole('combobox', { name: '当前课程' });
+    expect(courseSelector).toHaveValue(workspace.id);
+    await user.click(screen.getByRole('button', { name: '探索' }));
+    expect(screen.getByLabelText('课程学习空间')).toHaveClass('view-explore');
+
+    await user.click(screen.getByRole('button', { name: '设置' }));
+    const shell = screen.getByLabelText('课程学习空间');
+    expect(courseSelector).toHaveValue(workspace.id);
+    expect(screen.getByRole('navigation', { name: '课程导航' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '设置' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('button', { name: '探索' })).not.toHaveAttribute('aria-current');
+    expect(shell).toHaveClass('view-settings');
+    expect(shell).not.toHaveClass('view-explore');
+    expect(screen.getByLabelText('课程连续性')).toHaveTextContent(workspace.name);
+
+    await user.click(screen.getByRole('button', { name: '主页' }));
+    expect(screen.queryByRole('heading', { name: '设置' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '主页' })).toHaveAttribute('aria-current', 'page');
+  });
+});

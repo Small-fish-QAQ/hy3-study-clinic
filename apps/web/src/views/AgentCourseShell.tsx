@@ -202,7 +202,9 @@ export function AgentCourseShell({
 
   return (
     <section
-      className={`agent-course-shell view-${materialsActive ? 'materials' : activeView}`}
+      className={`agent-course-shell view-${
+        settingsActive ? 'settings' : materialsActive ? 'materials' : activeView
+      }`}
       aria-label="课程学习空间"
     >
       <h1 className="sr-only">

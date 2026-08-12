@@ -356,7 +356,7 @@ export function GraphWorkspaceView({
       setTutorPathIds(new Set());
       pendingLaunchRef.current = null;
       setPendingLaunch(null);
-      if (workspaceId) writeLastWorkspaceId(workspaceId);
+      if (workspaceId) rememberLastWorkspaceId(workspaceId);
     },
     [
       activeWorkspaceId,
@@ -1657,7 +1657,7 @@ function AddDocumentForm({
   );
 }
 
-function readLastWorkspaceId(): string | null {
+export function readLastWorkspaceId(): string | null {
   try {
     return window.localStorage.getItem(LAST_WORKSPACE_KEY);
   } catch {
@@ -1665,9 +1665,10 @@ function readLastWorkspaceId(): string | null {
   }
 }
 
-function writeLastWorkspaceId(id: string): void {
+export function rememberLastWorkspaceId(id: string | null): void {
   try {
-    window.localStorage.setItem(LAST_WORKSPACE_KEY, id);
+    if (id) window.localStorage.setItem(LAST_WORKSPACE_KEY, id);
+    else window.localStorage.removeItem(LAST_WORKSPACE_KEY);
   } catch {
     // Storage can be unavailable; the workspace simply is not restored.
   }

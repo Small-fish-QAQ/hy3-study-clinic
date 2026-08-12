@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type {
   Answer,
   Concept,
@@ -15,7 +15,12 @@ import {
 } from './api.js';
 import { useAsyncAction } from './components/useAsyncAction.js';
 import { ImportView } from './views/ImportView.js';
-import { GraphWorkspaceView, clearLastWorkspaceId } from './views/GraphWorkspaceView.js';
+import {
+  GraphWorkspaceView,
+  clearLastWorkspaceId,
+  readLastWorkspaceId,
+  rememberLastWorkspaceId,
+} from './views/GraphWorkspaceView.js';
 import { QuizView } from './views/QuizView.js';
 import { ResultsView } from './views/ResultsView.js';
 import { QuizHistoryView } from './views/QuizHistoryView.js';
@@ -63,8 +68,8 @@ interface AssessmentContext {
 
 export function App() {
   const [tab, setTab] = useState<Tab>('course');
-  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null | undefined>(
-    undefined,
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(
+    readLastWorkspaceId,
   );
   const [provider, setProvider] = useState<'fake' | 'hy3' | null>(null);
   const [material, setMaterial] = useState<MaterialWithBlocks | null>(null);
@@ -293,6 +298,7 @@ export function App() {
       // and drop a workspace-scoped assessment context that pointed at it,
       // so nothing can resurrect or reference the deleted space.
       clearLastWorkspaceId(outcome.workspaceId);
+      setSelectedWorkspaceId((current) => (current === outcome.workspaceId ? null : current));
       if (activeAssessmentWorkspaceRef.current === outcome.workspaceId) {
         activeAssessmentWorkspaceRef.current = null;
         setAssessment(null);
@@ -323,6 +329,8 @@ export function App() {
    * list (reloaded from the server as the single source of truth).
    */
   function handleWorkspaceDeleted(workspaceId: string) {
+    clearLastWorkspaceId(workspaceId);
+    setSelectedWorkspaceId((current) => (current === workspaceId ? null : current));
     if (activeAssessmentWorkspaceRef.current === workspaceId) {
       activeAssessmentWorkspaceRef.current = null;
       setAssessment(null);
@@ -360,6 +368,11 @@ export function App() {
         // (404 → the entry is dropped with an explanatory message).
       });
   }
+
+  const handleWorkspaceSelected = useCallback((workspaceId: string | null): void => {
+    rememberLastWorkspaceId(workspaceId);
+    setSelectedWorkspaceId(workspaceId);
+  }, []);
 
   function handleGraded(
     gradedQuiz: PublicQuiz,
@@ -633,14 +646,14 @@ export function App() {
             onLaunchQuiz={(launchedQuiz) => void handleLaunchFromPlan(launchedQuiz)}
             onWorkspaceDeleted={handleWorkspaceDeleted}
             selectedWorkspaceId={selectedWorkspaceId}
-            onWorkspaceSelected={setSelectedWorkspaceId}
+            onWorkspaceSelected={handleWorkspaceSelected}
           />
         ) : null}
 
         {tab === 'course' ? (
           <AgentCourseWorkspace
             workspaceId={selectedWorkspaceId ?? null}
-            onWorkspaceChange={setSelectedWorkspaceId}
+            onWorkspaceChange={handleWorkspaceSelected}
             onLaunchQuiz={(launchedQuiz) => void handleLaunchFromPlan(launchedQuiz)}
             refreshKey={refreshKey}
             provider={provider}
