@@ -481,21 +481,52 @@ export function StudySessionView({
     currentAgendaItem.origin === 'learner_detour' &&
     currentAgendaItem.learningUnitId,
   );
+  const orderedAgenda = [...detail.agenda.items].sort((left, right) => left.index - right.index);
+  const currentAgendaPosition = currentAgendaItem
+    ? orderedAgenda.findIndex((item) => item.id === currentAgendaItem.id) + 1
+    : 0;
+  const resolvedAgendaItems = orderedAgenda.filter(
+    (item) => item.state === 'completed' || item.state === 'deferred' || item.state === 'cancelled',
+  ).length;
   return (
     <div className="study-session" aria-label="学习">
-      {loadError ? <Banner kind="error">{loadError}</Banner> : null}
-      {action.error ? <Banner kind="error">{action.error}</Banner> : null}
-      {tutorError ? <Banner kind="error">{tutorError}</Banner> : null}
+      {loadError || action.error ? (
+        <div className="study-session-alerts" aria-label="学习状态">
+          {loadError ? <Banner kind="error">{loadError}</Banner> : null}
+          {action.error ? <Banner kind="error">{action.error}</Banner> : null}
+        </div>
+      ) : null}
       <header className="study-session-header">
-        <div>
+        <div className="study-session-heading">
           <p className="eyebrow">当前学习</p>
           <h3>{currentLearningUnit?.title ?? currentAgendaItem?.reason ?? '学习'}</h3>
-          <p className="small muted">
-            {currentAgendaItem?.reason ?? '等待选择下一项学习内容'}
-            {currentAgendaItem ? ` · 约 ${currentAgendaItem.estimatedMinutes} 分钟` : ''}
-          </p>
+          <div className="study-session-meta" aria-label="当前学习位置">
+            <span>{currentAgendaItem?.reason ?? '等待选择下一项学习内容'}</span>
+            {currentAgendaItem ? <span>约 {currentAgendaItem.estimatedMinutes} 分钟</span> : null}
+            {orderedAgenda.length > 0 ? (
+              <span>
+                安排 {currentAgendaPosition || resolvedAgendaItems}/{orderedAgenda.length}
+              </span>
+            ) : null}
+          </div>
+          {session.routeStack.length > 0 ? (
+            <div className="route-return-cue compact" role="status">
+              <span className="pill">临时探索</span>
+              <span>{session.routeStack.at(-1)?.reason}</span>
+              <button
+                type="button"
+                disabled={!active || busy}
+                onClick={() => void mixedCommand('return')}
+              >
+                返回原学习路线
+              </button>
+            </div>
+          ) : null}
         </div>
-        <div className="row">
+        <div className="study-session-lifecycle" aria-label="本次学习控制">
+          <span className={`session-status ${session.status}`}>
+            {sessionStatusLabel(session.status)}
+          </span>
           {active ? (
             <button type="button" disabled={busy} onClick={() => void lifecycle('pause')}>
               暂停
@@ -526,43 +557,45 @@ export function StudySessionView({
 
       <div className="study-session-layout">
         <section className="study-transcript" aria-label="Tutor 对话">
-          <div className="study-transcript-list">
-            {detail.exchanges.length === 0 ? (
-              <div className="transcript-empty">
-                <p>从当前目标开始提问。</p>
-                <p className="small muted">可以要求换一种解释、举例，或说明哪里没有理解。</p>
+          <div
+            className="study-transcript-list"
+            role="log"
+            aria-label="学习对话记录"
+            aria-live="polite"
+            aria-relevant="additions text"
+          >
+            <div className="study-transcript-inner">
+              {detail.exchanges.length === 0 ? (
+                <div className="transcript-empty">
+                  <p>从当前目标开始提问。</p>
+                  <p className="small muted">可以要求换一种解释、举例，或说明哪里没有理解。</p>
+                </div>
+              ) : null}
+              {detail.exchanges.map((exchange) => (
+                <Exchange key={exchange.id} exchange={exchange} />
+              ))}
+              {tutorLoading ? (
+                <div className="study-tutor-stream" role="status" aria-live="polite">
+                  <span className="study-tutor-avatar" aria-hidden="true">
+                    H3
+                  </span>
+                  <div>
+                    <strong>Hy3 Tutor</strong>
+                    <p>Tutor 正在组织这次回应…</p>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+          <div className="study-composer-dock">
+            {tutorError ? (
+              <div className="study-operation-notice error" role="alert">
+                <strong>这次 Tutor 请求未完成</strong>
+                <span>{tutorError}</span>
               </div>
             ) : null}
-            {detail.exchanges.map((exchange) => (
-              <Exchange key={exchange.id} exchange={exchange} />
-            ))}
-          </div>
-          <label className="study-composer">
-            <span className="sr-only">向 Tutor 提问</span>
-            <textarea
-              value={composer}
-              disabled={!active || action.loading || tutorLoading}
-              onChange={(event) => setComposer(event.target.value)}
-              placeholder={active ? '输入你的问题或想法…' : '继续本次学习后才能发送消息。'}
-              rows={3}
-            />
-            <button
-              type="button"
-              className="primary"
-              disabled={
-                !active || busy || Boolean(pendingTutorTurn) || composer.trim().length === 0
-              }
-              onClick={() => void submitTurn()}
-            >
-              发送
-            </button>
-            {tutorLoading && !pendingTutorTurn ? (
-              <button type="button" onClick={cancelTutorTurn}>
-                取消生成
-              </button>
-            ) : null}
             {canRetryTutorTurn(pendingTutorTurn) ? (
-              <div className="study-retry" role="status">
+              <div className="study-retry" role="alert">
                 <p>
                   Tutor 请求尚未确认完成，原提问已保留：<q>{pendingTutorTurn.input.content}</q>
                 </p>
@@ -582,64 +615,110 @@ export function StudySessionView({
                 </div>
               </div>
             ) : null}
-          </label>
-        </section>
-
-        <aside className="study-session-sidebar">
-          <section className="current-learning-context">
-            <p className="eyebrow">当前目标</p>
-            <h4>{currentLearningUnit?.title ?? currentAgendaItem?.reason ?? '等待学习内容'}</h4>
-            {currentAgendaItem ? (
-              <p className="small muted">
-                {agendaKindLabel(currentAgendaItem.kind)} · 约 {currentAgendaItem.estimatedMinutes}{' '}
-                分钟
-              </p>
-            ) : null}
-            {session.routeStack.length > 0 ? (
-              <div className="route-return-cue">
-                <span className="pill">临时探索</span>
-                <p className="small">{session.routeStack.at(-1)?.reason}</p>
+            <div className="study-composer">
+              <label htmlFor="study-tutor-composer" className="sr-only">
+                向 Tutor 提问
+              </label>
+              <textarea
+                id="study-tutor-composer"
+                value={composer}
+                disabled={!active || action.loading || tutorLoading}
+                onChange={(event) => setComposer(event.target.value)}
+                placeholder={active ? '输入你的问题或想法…' : '继续本次学习后才能发送消息。'}
+                rows={3}
+              />
+              <div className="study-composer-actions">
+                <span className="small muted">Enter 换行</span>
                 <button
                   type="button"
-                  disabled={!active || busy}
-                  onClick={() => void mixedCommand('return')}
+                  className="primary study-send-control"
+                  aria-label={tutorLoading ? '停止生成' : '发送'}
+                  aria-busy={tutorLoading}
+                  disabled={
+                    tutorLoading
+                      ? false
+                      : !active || busy || Boolean(pendingTutorTurn) || composer.trim().length === 0
+                  }
+                  onClick={tutorLoading ? cancelTutorTurn : () => void submitTurn()}
                 >
-                  返回原学习路线
+                  {tutorLoading ? '停止' : '发送'}
                 </button>
               </div>
-            ) : null}
-            {currentTurn?.status === 'running' ? (
-              <p className="small muted">Tutor 正在回应…</p>
+            </div>
+          </div>
+        </section>
+
+        <aside className="study-session-sidebar" aria-label="本次学习上下文">
+          <section className="current-learning-context" aria-label="本次学习进度">
+            <div className="row between">
+              <p className="eyebrow">本次学习</p>
+              <span className="small muted">
+                {resolvedAgendaItems}/{orderedAgenda.length} 已处理
+              </span>
+            </div>
+            <h4>{currentLearningUnit?.title ?? currentAgendaItem?.reason ?? '等待学习内容'}</h4>
+            <p className="small muted">
+              {currentAgendaItem
+                ? `${agendaKindLabel(currentAgendaItem.kind)} · ${agendaStateLabel(currentAgendaItem.state)}`
+                : '等待选择下一项学习内容'}
+            </p>
+            {currentTurn?.status === 'running' || tutorLoading ? (
+              <p className="small study-current-operation">Tutor 回应进行中</p>
             ) : null}
           </section>
 
           <details className="session-disclosure" aria-label="本次学习安排">
             <summary>本次安排（{detail.agenda.items.length} 项）</summary>
             <ol className="study-agenda-list">
-              {[...detail.agenda.items]
-                .sort((left, right) => left.index - right.index)
-                .map((item) => {
-                  const current = item.id === session.currentAgendaItemId;
-                  return (
-                    <li
-                      key={item.id}
-                      className="study-agenda-item"
-                      aria-current={current ? 'step' : undefined}
-                      aria-label={`${item.reason}，${current ? '当前，' : ''}${agendaStateLabel(item.state)}`}
-                    >
-                      <div className="row between">
-                        <strong>{item.reason}</strong>
-                        {current ? <span className="pill">当前</span> : null}
-                      </div>
-                      <p className="small muted">
-                        {agendaKindLabel(item.kind)} · {item.estimatedMinutes} 分钟 ·{' '}
-                        {agendaStateLabel(item.state)}
-                      </p>
-                    </li>
-                  );
-                })}
+              {orderedAgenda.map((item) => {
+                const current = item.id === session.currentAgendaItemId;
+                return (
+                  <li
+                    key={item.id}
+                    className="study-agenda-item"
+                    aria-current={current ? 'step' : undefined}
+                    aria-label={`${item.reason}，${current ? '当前，' : ''}${agendaStateLabel(item.state)}`}
+                  >
+                    <div className="row between">
+                      <strong>{item.reason}</strong>
+                      {current ? <span className="pill">当前</span> : null}
+                    </div>
+                    <p className="small muted">
+                      {agendaKindLabel(item.kind)} · {item.estimatedMinutes} 分钟 ·{' '}
+                      {agendaStateLabel(item.state)}
+                    </p>
+                  </li>
+                );
+              })}
             </ol>
           </details>
+
+          <section className="formal-checkpoint-entry" aria-label="正式证据边界">
+            <div className="formal-checkpoint-heading">
+              <span className="formal-checkpoint-icon" aria-hidden="true">
+                ✓
+              </span>
+              <div>
+                <p className="eyebrow">正式评估</p>
+                <h4>进入可影响进展的独立活动</h4>
+              </div>
+            </div>
+            <p className="small">
+              普通 Tutor
+              对话和非正式检查不会改变掌握状态。只有单独发起、完成并通过本地校验的正式评估，才可能形成进展证据。
+            </p>
+            <button
+              type="button"
+              className="primary"
+              disabled={!active || busy || !directCheckpointItem}
+              onClick={() => void mixedCommand('direct_checkpoint', directCheckpointItem?.id)}
+            >
+              发起正式评估
+            </button>
+            {!directCheckpointItem ? (
+              <p className="small muted">当前安排中还没有可发起的正式评估。</p>
+            ) : null}
+          </section>
 
           <details className="session-disclosure">
             <summary>调整本次学习</summary>
@@ -684,13 +763,6 @@ export function StudySessionView({
               </button>
               <button
                 type="button"
-                disabled={!active || busy || !directCheckpointItem}
-                onClick={() => void mixedCommand('direct_checkpoint', directCheckpointItem?.id)}
-              >
-                发起正式评估
-              </button>
-              <button
-                type="button"
                 disabled={!active || busy}
                 onClick={() => void mixedCommand('defer')}
               >
@@ -704,10 +776,6 @@ export function StudySessionView({
                 纳入长期路线
               </button>
             </div>
-            <p className="small formal-boundary">
-              <span className="pill deterministic">正式评估</span>{' '}
-              只有单独发起并完成的正式评估，才可能形成进展证据。
-            </p>
           </details>
           {detail.latestSummary ? (
             <details className="session-disclosure">
@@ -719,9 +787,9 @@ export function StudySessionView({
               ))}
             </details>
           ) : null}
-          <Banner kind="info">
+          <div className="study-evidence-note">
             Tutor 对话和非正式检查用于学习反馈，不是正式证据，也不会直接改变掌握状态。
-          </Banner>
+          </div>
         </aside>
       </div>
     </div>
@@ -731,11 +799,32 @@ export function StudySessionView({
 function Exchange({ exchange }: { exchange: StudyExchange }) {
   const label =
     exchange.role === 'learner' ? '你' : exchange.role === 'tutor' ? 'Hy3 Tutor' : '学习记录';
+  const channelLabel =
+    exchange.channel === 'informal_check'
+      ? '非正式检查'
+      : exchange.channel === 'operation_notice'
+        ? '学习状态'
+        : '对话';
   return (
-    <article className={`study-exchange ${exchange.role} ${exchange.channel}`}>
-      <strong>{label}</strong>
-      <p>{exchange.content}</p>
-      {exchange.channel === 'informal_check' ? <span className="pill">非正式检查</span> : null}
+    <article
+      className={`study-exchange ${exchange.role} ${exchange.channel}`}
+      aria-label={`${label}，${channelLabel}`}
+    >
+      <header className="study-exchange-header">
+        {exchange.role === 'tutor' ? (
+          <span className="study-tutor-avatar" aria-hidden="true">
+            H3
+          </span>
+        ) : null}
+        <strong>{label}</strong>
+        {exchange.channel === 'informal_check' ? (
+          <span className="study-channel-label informal">非正式 · 不计入进展</span>
+        ) : null}
+        {exchange.channel === 'operation_notice' ? (
+          <span className="study-channel-label">状态</span>
+        ) : null}
+      </header>
+      <div className="study-exchange-content">{exchange.content}</div>
     </article>
   );
 }
@@ -784,4 +873,15 @@ function agendaStateLabel(state: string): string {
     blocked: '暂时受阻',
   };
   return labels[state] ?? state;
+}
+
+function sessionStatusLabel(status: StudySession['status']): string {
+  const labels: Record<StudySession['status'], string> = {
+    active: '学习中',
+    paused: '已暂停',
+    completed: '已完成',
+    abandoned: '已结束',
+    interrupted: '已中断',
+  };
+  return labels[status];
 }

@@ -126,7 +126,8 @@ h4 {
   }
 }
 
-.visually-hidden {
+.visually-hidden,
+.sr-only {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -2298,103 +2299,403 @@ button.danger {
   background: var(--surface-weak);
 }
 
-/* Persistent Study Session: conversation is explicitly separate from formal evidence. */
-.study-session,
+/* Persistent Study Session: transcript-first composition with local scroll ownership. */
+.view-session .agent-course-content {
+  display: flex;
+  overflow: hidden;
+  padding: 0;
+  scrollbar-gutter: auto;
+}
+
+.view-session .agent-course-content > * {
+  flex: 1;
+  max-width: none;
+  margin: 0;
+}
+
+.study-session {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface-raised);
+}
+
 .study-session-empty {
-  max-width: 1180px;
-  margin: 0 auto;
+  max-width: 760px;
+  margin: var(--space-6) auto;
+}
+
+.study-session-alerts {
+  display: grid;
+  flex: none;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-5) 0;
+}
+
+.study-session-alerts .banner {
+  margin: 0;
 }
 
 .study-session-header {
   display: flex;
+  flex: none;
+  min-width: 0;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--space-3);
-  padding-bottom: var(--space-3);
-  border-bottom: 1px solid var(--border);
+  gap: var(--space-5);
+  padding: 1rem var(--space-5);
+  border-bottom: 1px solid var(--separator);
+  background: var(--surface-raised);
 }
 
+.study-session-heading {
+  min-width: 0;
+}
+
+.study-session-header .eyebrow,
 .study-session-header h3 {
   margin: 0;
 }
 
+.study-session-header h3 {
+  margin-top: 0.15rem;
+  overflow-wrap: anywhere;
+  font-size: 1.12rem;
+}
+
+.study-session-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.7rem;
+  margin-top: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.study-session-meta span + span::before {
+  margin-right: 0.7rem;
+  color: var(--border-strong);
+  content: '·';
+}
+
+.study-session-lifecycle {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.study-session-lifecycle button {
+  min-height: var(--control-height-sm);
+  padding: 0.3rem 0.65rem;
+  font-size: 0.78rem;
+}
+
+.study-session-lifecycle button.danger {
+  border-color: transparent;
+  background: transparent;
+  color: var(--danger);
+}
+
+.session-status {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  padding: 0 0.55rem;
+  border-radius: 999px;
+  background: var(--success-weak);
+  color: var(--success);
+  font-size: 0.74rem;
+  font-weight: 650;
+}
+
+.session-status.paused,
+.session-status.interrupted {
+  background: var(--warning-weak);
+  color: var(--warning);
+}
+
+.session-status.completed,
+.session-status.abandoned {
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+
 .study-session-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
-  gap: var(--space-3);
-  margin-top: var(--space-3);
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(270px, 300px);
+  overflow: hidden;
 }
 
 .study-transcript {
-  min-height: 520px;
   display: flex;
+  min-width: 0;
+  min-height: 0;
   flex-direction: column;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
+  overflow: hidden;
+  border-right: 1px solid var(--separator);
+  background: var(--surface-raised);
 }
 
 .study-transcript-list {
   flex: 1;
-  padding: var(--space-3);
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.study-transcript-inner {
+  width: min(100%, 920px);
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 2rem clamp(1.25rem, 4vw, 2.75rem) 3rem;
 }
 
 .study-exchange {
-  max-width: 86%;
-  margin: 0 0 var(--space-3);
-  padding: 0.6rem 0.7rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface-weak);
+  width: 100%;
+  max-width: none;
+  margin: 0 0 2.1rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.study-exchange-header {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.study-exchange.tutor .study-exchange-header strong {
+  color: var(--text);
+}
+
+.study-tutor-avatar {
+  display: inline-grid;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid #b8cec6;
+  border-radius: 50%;
+  background: var(--primary-weak);
+  color: var(--primary-strong);
+  font-size: 0.62rem;
+  font-weight: 750;
+}
+
+.study-exchange-content {
+  color: var(--text);
+  font-size: 0.98rem;
+  line-height: 1.78;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 .study-exchange.learner {
+  width: fit-content;
+  max-width: min(78%, 720px);
   margin-left: auto;
-  background: var(--primary-weak);
-  border-color: #c6ceff;
+  padding: 0.75rem 0.95rem;
+  border: 1px solid var(--separator);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.study-exchange.learner .study-exchange-header {
+  justify-content: flex-end;
+  margin-bottom: 0.3rem;
+}
+
+.study-exchange.learner .study-exchange-content {
+  line-height: 1.65;
+}
+
+.study-exchange.informal_check {
+  padding: 0.9rem 1rem;
+  border-left: 3px solid var(--warning);
+  background: var(--warning-weak);
+}
+
+.study-channel-label {
+  padding: 0.12rem 0.4rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+
+.study-channel-label.informal {
+  background: #f4e5b7;
+  color: #785300;
 }
 
 .study-exchange.local_system {
-  max-width: 100%;
-  padding: 0.4rem 0.55rem;
-  color: var(--muted);
+  max-width: 760px;
+  margin-right: auto;
+  margin-left: auto;
+  padding: 0.65rem 0;
+  border-top: 1px solid var(--separator);
+  border-bottom: 1px solid var(--separator);
+  color: var(--text-muted);
   font-size: 0.85rem;
 }
 
-.study-exchange p {
-  margin: 0.25rem 0 0;
-  white-space: pre-wrap;
+.study-exchange.local_system .study-exchange-content {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.study-tutor-stream {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-muted);
+}
+
+.study-tutor-stream p {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+}
+
+.study-tutor-stream .study-tutor-avatar {
+  animation: study-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes study-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.study-composer-dock {
+  flex: none;
+  border-top: 1px solid var(--separator);
+  background: color-mix(in srgb, var(--surface-raised) 94%, var(--bg));
+  padding: var(--space-3) clamp(1.25rem, 4vw, 2.75rem) var(--space-4);
+}
+
+.study-composer,
+.study-operation-notice,
+.study-retry {
+  width: min(100%, 920px);
+  margin-right: auto;
+  margin-left: auto;
 }
 
 .study-composer {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--space-2);
-  padding: var(--space-3);
-  border-top: 1px solid var(--border);
+  padding: 0.65rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  box-shadow: 0 5px 18px rgba(25, 33, 29, 0.07);
+}
+
+.study-composer:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-weak);
 }
 
 .study-composer textarea {
   min-width: 0;
+  min-height: 58px;
+  max-height: 180px;
+  padding: 0.2rem 0.25rem;
   resize: vertical;
+  border: 0;
+  background: transparent;
+  line-height: 1.55;
+}
+
+.study-composer textarea:focus-visible,
+.study-composer textarea:focus {
+  outline: 0;
+}
+
+.study-composer-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.study-send-control {
+  min-width: 78px;
+}
+
+.study-operation-notice,
+.study-retry {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  padding: 0.65rem 0.8rem;
+  border: 1px solid #e8cf92;
+  border-radius: var(--radius-sm);
+  background: var(--warning-weak);
+  color: #6d4d0a;
+  font-size: 0.82rem;
+}
+
+.study-operation-notice span {
+  overflow-wrap: anywhere;
+}
+
+.study-retry p {
+  margin: 0;
+}
+
+.study-retry q {
+  font-weight: 650;
 }
 
 .study-session-sidebar {
   display: flex;
+  min-height: 0;
   flex-direction: column;
   gap: var(--space-3);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-4);
+  background: #f7f8f6;
 }
 
 .study-session-sidebar section {
-  padding: var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface-weak);
+  padding: 0 0 var(--space-3);
+  border: 0;
+  border-bottom: 1px solid var(--separator);
+  border-radius: 0;
+  background: transparent;
+}
+
+.study-session-sidebar h4,
+.study-session-sidebar p {
+  margin-top: 0;
 }
 
 .study-session-sidebar h4 {
-  margin: 0 0 var(--space-2);
+  margin-bottom: var(--space-2);
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+
+.study-current-operation {
+  color: var(--primary);
+  font-weight: 650;
 }
 
 .study-agenda-list {
@@ -2432,6 +2733,78 @@ button.danger {
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--space-2);
+}
+
+.formal-checkpoint-entry {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) !important;
+  border: 1px solid #c9b66b !important;
+  border-radius: var(--radius) !important;
+  background: #fffaf0 !important;
+}
+
+.formal-checkpoint-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.formal-checkpoint-heading h4,
+.formal-checkpoint-heading p,
+.formal-checkpoint-entry > p {
+  margin: 0;
+}
+
+.formal-checkpoint-icon {
+  display: inline-grid;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid #b49a35;
+  border-radius: 50%;
+  color: #745b00;
+  font-weight: 800;
+}
+
+.study-evidence-note {
+  padding: var(--space-3);
+  border-left: 3px solid var(--border-strong);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.route-return-cue.compact {
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: 0.55rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #dec77d;
+  border-radius: var(--radius-sm);
+  background: var(--warning-weak);
+  color: #694a06;
+  font-size: 0.76rem;
+}
+
+.route-return-cue.compact > span:not(.pill) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.route-return-cue.compact button {
+  flex: none;
+  min-height: 28px;
+  padding: 0.25rem 0.55rem;
+  background: var(--surface-raised);
+  font-size: 0.72rem;
 }
 
 .formal-progress {
@@ -2524,15 +2897,56 @@ button.danger {
 
 @media (max-width: 760px) {
   .study-session-layout {
-    grid-template-columns: 1fr;
+    display: block;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   .study-transcript {
-    min-height: 420px;
+    height: max(500px, calc(100dvh - 250px));
+    border-right: 0;
+    border-bottom: 1px solid var(--separator);
   }
 
   .study-session-header {
     flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-3);
+  }
+
+  .study-session-lifecycle {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .study-session-meta span + span::before {
+    display: none;
+  }
+
+  .route-return-cue.compact {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .route-return-cue.compact > span:not(.pill) {
+    flex: 1 1 12rem;
+    white-space: normal;
+  }
+
+  .study-transcript-inner {
+    padding: var(--space-5) var(--space-3) var(--space-6);
+  }
+
+  .study-composer-dock {
+    padding: var(--space-2) var(--space-3) var(--space-3);
+  }
+
+  .study-exchange.learner {
+    max-width: 88%;
+  }
+
+  .study-session-sidebar {
+    overflow: visible;
   }
 
   .formal-progress-header {
@@ -2547,11 +2961,19 @@ button.danger {
 
 @media (max-width: 1023px) and (min-width: 768px) {
   .study-session-layout {
-    grid-template-columns: 1fr;
+    display: block;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   .study-transcript {
-    min-height: 440px;
+    height: max(560px, calc(100dvh - 220px));
+    border-right: 0;
+    border-bottom: 1px solid var(--separator);
+  }
+
+  .study-session-sidebar {
+    overflow: visible;
   }
 }
 

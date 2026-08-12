@@ -236,6 +236,49 @@ describe('StudySessionView', () => {
     );
   });
 
+  it('keeps dialogue in the transcript and separates the formal evidence boundary', async () => {
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });
+    vi.mocked(api.getStudySession).mockResolvedValue({
+      ...detail,
+      exchanges: completedTutorResponse.exchanges,
+    });
+
+    render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+
+    const transcript = await screen.findByRole('log', { name: '学习对话记录' });
+    expect(transcript).toContainElement(screen.getByRole('article', { name: '你，对话' }));
+    expect(transcript).toContainElement(screen.getByRole('article', { name: 'Hy3 Tutor，对话' }));
+    expect(screen.getByRole('region', { name: '正式证据边界' })).toHaveTextContent(
+      '普通 Tutor 对话和非正式检查不会改变掌握状态',
+    );
+  });
+
+  it('uses one Send or Stop locus and aborts the active Tutor stream', async () => {
+    const user = userEvent.setup();
+    let streamSignal: AbortSignal | undefined;
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });
+    vi.mocked(api.getStudySession).mockResolvedValue(detail);
+    vi.mocked(api.streamTutorTurn).mockImplementation(
+      async (_workspaceId, _sessionId, _input, _onLine, signal) => {
+        streamSignal = signal;
+        return await new Promise<never>(() => undefined);
+      },
+    );
+
+    render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    const composer = await screen.findByLabelText('向 Tutor 提问');
+    await user.type(composer, 'Explain this step.');
+    await user.click(screen.getByRole('button', { name: '发送' }));
+
+    const stop = await screen.findByRole('button', { name: '停止生成' });
+    expect(screen.queryByRole('button', { name: '发送' })).not.toBeInTheDocument();
+    expect(composer).toBeDisabled();
+    await user.click(stop);
+
+    expect(streamSignal?.aborted).toBe(true);
+    expect(await screen.findByRole('button', { name: '发送' })).toBeDisabled();
+  });
+
   it('launches a direct checkpoint through the normal agenda assessment callback', async () => {
     const user = userEvent.setup();
     const onLaunchQuiz = vi.fn();
