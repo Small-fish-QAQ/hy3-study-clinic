@@ -1417,7 +1417,10 @@ describe('Quiz flow', () => {
     // Leave the result screen entirely, then come back through history.
     await user.click(screen.getByRole('button', { name: '错题与修复' }));
     await user.click(screen.getByRole('button', { name: '测验' }));
-    await user.click(screen.getByRole('tab', { name: '测验历史' }));
+    screen.getByRole('tab', { name: '出题作答' }).focus();
+    await user.keyboard('{End}');
+    await vi.waitFor(() => expect(screen.getByRole('tab', { name: '测验历史' })).toHaveFocus());
+    expect(screen.getByRole('tab', { name: '测验历史' })).toHaveAttribute('aria-selected', 'true');
     await user.click(await screen.findByRole('button', { name: /查看历史结果:/ }));
 
     expect(await screen.findByText('历史结果(只读)')).toBeInTheDocument();

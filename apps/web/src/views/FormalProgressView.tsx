@@ -285,22 +285,29 @@ export function FormalProgressView({
         {(progression?.evidence.length ?? 0) === 0 ? (
           <p className="muted">还没有正式证据，这是尚未完成正式评估时的正常状态。</p>
         ) : null}
-        <div className="progress-table" role="table">
+        <div className="progress-table" role="table" aria-label="正式证据记录">
+          <div className="progress-row progress-head" role="row">
+            <span role="columnheader">学习单元</span>
+            <span role="columnheader">证据级别</span>
+            <span role="columnheader">结果</span>
+            <span role="columnheader">状态效力</span>
+            <span role="columnheader">核对状态</span>
+          </div>
           {(progression?.evidence ?? [])
             .slice(-25)
             .reverse()
             .map((evidence) => (
               <div className="progress-row" role="row" key={evidence.id}>
-                <span className="progress-unit-name">
+                <span className="progress-unit-name" role="cell">
                   <strong>
                     {unitTitleById.get(evidence.curriculumLearningUnitId) ?? '学习单元'}
                   </strong>
                   <span className="small muted">{evidence.curriculumLearningUnitId}</span>
                 </span>
-                <span>{tierLabel[evidence.admissibilityTier] ?? '证据级别已记录'}</span>
-                <span>{Math.round(evidence.normalizedScore * 100)}%</span>
-                <span>{evidence.stateCreditable ? '可计入正式进展' : '仅供参考'}</span>
-                <span>
+                <span role="cell">{tierLabel[evidence.admissibilityTier] ?? '证据级别已记录'}</span>
+                <span role="cell">{Math.round(evidence.normalizedScore * 100)}%</span>
+                <span role="cell">{evidence.stateCreditable ? '可计入正式进展' : '仅供参考'}</span>
+                <span role="cell">
                   {evidence.needsReview ? '需要复核' : evidence.correct ? '通过' : '未通过'}
                 </span>
               </div>
@@ -313,20 +320,32 @@ export function FormalProgressView({
         {unitIds.length === 0 ? (
           <p className="muted">正式证据核对后，学习单元状态会显示在这里。</p>
         ) : null}
-        <div className="progress-table" role="table">
+        <div className="progress-table" role="table" aria-label="学习单元进展决定">
+          <div className="progress-row progress-head progress-row-four" role="row">
+            <span role="columnheader">学习单元</span>
+            <span role="columnheader">当前状态</span>
+            <span role="columnheader">决定</span>
+            <span role="columnheader">本地核对理由</span>
+          </div>
           {unitIds.map((unitId) => {
             const decision = latestDecisionByUnit.get(unitId);
             return (
-              <div className="progress-row" role="row" key={unitId}>
-                <span className="progress-unit-name">
+              <div className="progress-row progress-row-four" role="row" key={unitId}>
+                <span className="progress-unit-name" role="cell">
                   <strong>{unitTitleById.get(unitId) ?? '学习单元'}</strong>
                   <span className="small muted">{unitId}</span>
                 </span>
-                <span className={`pill progression-state ${decision?.nextState ?? 'not_started'}`}>
-                  {decision?.nextState ? progressionStateLabel(decision.nextState) : '未开始'}
+                <span role="cell">
+                  <span
+                    className={`pill progression-state ${decision?.nextState ?? 'not_started'}`}
+                  >
+                    {decision?.nextState ? progressionStateLabel(decision.nextState) : '未开始'}
+                  </span>
                 </span>
-                <span>{decision?.kind ? progressionKindLabel(decision.kind) : '等待核对'}</span>
-                <span>
+                <span role="cell">
+                  {decision?.kind ? progressionKindLabel(decision.kind) : '等待核对'}
+                </span>
+                <span role="cell">
                   {decision?.reasonCodes.map(progressionReasonLabel).join('、') ?? '还没有正式决定'}
                 </span>
               </div>
@@ -340,31 +359,44 @@ export function FormalProgressView({
         {(progression?.reconciliations.length ?? 0) === 0 ? (
           <p className="muted">没有等待核对的判分结果。</p>
         ) : null}
-        <div className="progress-table" role="table">
+        <div className="progress-table" role="table" aria-label="判分与进展核对记录">
+          <div className="progress-row progress-head" role="row">
+            <span role="columnheader">学习单元</span>
+            <span role="columnheader">核对状态</span>
+            <span role="columnheader">说明</span>
+            <span role="columnheader">进展决定</span>
+            <span role="columnheader">操作</span>
+          </div>
           {(progression?.reconciliations ?? [])
             .slice(-25)
             .reverse()
             .map((item) => (
               <div className="progress-row" role="row" key={item.id}>
-                <span className="progress-unit-name">
+                <span className="progress-unit-name" role="cell">
                   <strong>{unitTitleById.get(item.curriculumLearningUnitId) ?? '学习单元'}</strong>
                   <span className="small muted">{item.curriculumLearningUnitId}</span>
                 </span>
-                <span className={`pill reconciliation ${item.status}`}>
-                  {reconciliationLabel(item.status)}
+                <span role="cell">
+                  <span className={`pill reconciliation ${item.status}`}>
+                    {reconciliationLabel(item.status)}
+                  </span>
                 </span>
-                <span>{item.reason ?? '等待本地核对'}</span>
-                <span>{item.decisionId ?? '尚无决定'}</span>
-                {item.status === 'reconciliation_pending' &&
-                overview?.acceptedStudyPlan?.id === item.studyPlanVersionId ? (
-                  <button
-                    type="button"
-                    disabled={action.loading}
-                    onClick={() => void retryReconciliation(item.gradingResultId)}
-                  >
-                    重新核对
-                  </button>
-                ) : null}
+                <span role="cell">{item.reason ?? '等待本地核对'}</span>
+                <span role="cell">{item.decisionId ?? '尚无决定'}</span>
+                <span role="cell">
+                  {item.status === 'reconciliation_pending' &&
+                  overview?.acceptedStudyPlan?.id === item.studyPlanVersionId ? (
+                    <button
+                      type="button"
+                      disabled={action.loading}
+                      onClick={() => void retryReconciliation(item.gradingResultId)}
+                    >
+                      重新核对
+                    </button>
+                  ) : (
+                    '—'
+                  )}
+                </span>
               </div>
             ))}
         </div>

@@ -25,6 +25,8 @@ const VIEW_DESCRIPTIONS: Record<AgentCourseView, string> = {
 
 const SIDEBAR_STORAGE_KEY = 'hy3-clinic:course-sidebar-collapsed';
 const NARROW_QUERY = '(max-width: 767px)';
+const DRAWER_FOCUSABLE =
+  'button:not(:disabled), select:not(:disabled), input:not(:disabled), [href], [tabindex]:not([tabindex="-1"])';
 
 export interface AgentCourseShellProps {
   activeView: AgentCourseView;
@@ -84,15 +86,48 @@ export function AgentCourseShell({
   }, [mobileOpen, narrow]);
 
   useEffect(() => {
+    const content = workspaceBodyRef.current;
+    if (!content) return;
+    if (narrow && mobileOpen) content.setAttribute('inert', '');
+    else content.removeAttribute('inert');
+    return () => content.removeAttribute('inert');
+  }, [mobileOpen, narrow]);
+
+  useEffect(() => {
     if (!mobileOpen) return;
     mobileCloseRef.current?.focus();
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      setMobileOpen(false);
-      mobileOpenerRef.current?.focus();
+    const handleDrawerKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setMobileOpen(false);
+        mobileOpenerRef.current?.focus();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusable = [
+        ...(sidebarRef.current?.querySelectorAll<HTMLElement>(DRAWER_FOCUSABLE) ?? []),
+      ].filter(
+        (element) =>
+          !element.hidden &&
+          !element.classList.contains('course-context-compact') &&
+          !element.classList.contains('course-sidebar-collapse'),
+      );
+      const first = focusable.at(0);
+      const last = focusable.at(-1);
+      if (!first || !last) return;
+      if (!sidebarRef.current?.contains(document.activeElement)) {
+        event.preventDefault();
+        first.focus();
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
-    window.addEventListener('keydown', closeOnEscape);
-    return () => window.removeEventListener('keydown', closeOnEscape);
+    window.addEventListener('keydown', handleDrawerKeyDown);
+    return () => window.removeEventListener('keydown', handleDrawerKeyDown);
   }, [mobileOpen]);
 
   useEffect(() => {
@@ -143,6 +178,9 @@ export function AgentCourseShell({
       className={`agent-course-shell view-${materialsActive ? 'materials' : activeView}`}
       aria-label="课程学习空间"
     >
+      <h1 className="sr-only">
+        Hy3 Study Clinic · {courseName ?? '选择课程'} · {destinationLabel}
+      </h1>
       <header className="course-mobile-bar">
         <button
           ref={mobileOpenerRef}

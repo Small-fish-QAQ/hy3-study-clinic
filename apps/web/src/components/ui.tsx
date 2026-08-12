@@ -18,13 +18,17 @@ export function Banner({
   kind: 'error' | 'info' | 'empty';
   children: ReactNode;
 }) {
-  return <div className={`banner ${kind}`}>{children}</div>;
+  return (
+    <div className={`banner ${kind}`} role={kind === 'error' ? 'alert' : undefined}>
+      {children}
+    </div>
+  );
 }
 
 export function Loading({ label }: { label: string }) {
   return (
-    <span className="muted">
-      <span className="spinner" /> {label}
+    <span className="muted" role="status" aria-live="polite">
+      <span className="spinner" aria-hidden="true" /> {label}
     </span>
   );
 }
@@ -44,7 +48,16 @@ export function MasteryMeter({ value }: { value: number }) {
   const pct = Math.round(value * 100);
   const level = value < 0.4 ? 'low' : value < 0.7 ? 'mid' : 'high';
   return (
-    <div className="meter-wrap" style={{ minWidth: 120 }}>
+    <div
+      className="meter-wrap"
+      style={{ minWidth: 120 }}
+      role="progressbar"
+      aria-label="掌握度"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={pct}
+      aria-valuetext={`掌握度 ${pct}%`}
+    >
       <div className={`meter ${level}`}>
         <span style={{ width: `${pct}%` }} />
       </div>

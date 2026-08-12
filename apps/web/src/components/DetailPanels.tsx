@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type KeyboardEvent } from 'react';
 import type {
   CanonicalConceptView,
   Concept,
@@ -131,16 +131,35 @@ function InspectorTabs({
     'evidence',
     ...(planAvailable ? (['plan'] as InspectorTab[]) : []),
   ];
+
+  function onTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, tab: InspectorTab): void {
+    const activeIndex = tabs.indexOf(tab);
+    let nextIndex: number | null = null;
+    if (event.key === 'ArrowRight') nextIndex = (activeIndex + 1) % tabs.length;
+    if (event.key === 'ArrowLeft') nextIndex = (activeIndex - 1 + tabs.length) % tabs.length;
+    if (event.key === 'Home') nextIndex = 0;
+    if (event.key === 'End') nextIndex = tabs.length - 1;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    const next = tabs[nextIndex]!;
+    onChange(next);
+    requestAnimationFrame(() => document.getElementById(`graph-detail-tab-${next}`)?.focus());
+  }
+
   return (
     <div className="inspector-tabs" role="tablist" aria-label="详情标签页">
       {tabs.map((tab) => (
         <button
           key={tab}
+          id={`graph-detail-tab-${tab}`}
           type="button"
           role="tab"
           aria-selected={active === tab}
+          aria-controls={`graph-detail-panel-${tab}`}
+          tabIndex={active === tab ? 0 : -1}
           className={active === tab ? 'active' : ''}
           onClick={() => onChange(tab)}
+          onKeyDown={(event) => onTabKeyDown(event, tab)}
         >
           {TAB_TEXT[tab]}
         </button>
@@ -241,7 +260,12 @@ export function ConceptDetailPanel({
       <InspectorTabs active={tab} onChange={setTab} planAvailable lessonAvailable />
 
       {tab === 'lesson' ? (
-        <div className="inspector-body">
+        <div
+          className="inspector-body"
+          id={`graph-detail-panel-${tab}`}
+          role="tabpanel"
+          aria-labelledby={`graph-detail-tab-${tab}`}
+        >
           <LessonCard
             workspaceId={workspaceId}
             conceptId={concept.id}
@@ -253,7 +277,12 @@ export function ConceptDetailPanel({
       ) : null}
 
       {tab === 'overview' ? (
-        <div className="inspector-body">
+        <div
+          className="inspector-body"
+          id={`graph-detail-panel-${tab}`}
+          role="tabpanel"
+          aria-labelledby={`graph-detail-tab-${tab}`}
+        >
           <p>
             <span className="pill model">模型提出</span> {concept.summary}
           </p>
@@ -334,7 +363,12 @@ export function ConceptDetailPanel({
       ) : null}
 
       {tab === 'evidence' ? (
-        <div className="inspector-body">
+        <div
+          className="inspector-body"
+          id={`graph-detail-panel-${tab}`}
+          role="tabpanel"
+          aria-labelledby={`graph-detail-tab-${tab}`}
+        >
           <section aria-label="原文依据">
             <h4>
               原文依据 <span className="pill deterministic">本地已验证</span>
@@ -346,7 +380,12 @@ export function ConceptDetailPanel({
       ) : null}
 
       {tab === 'plan' ? (
-        <div className="inspector-body">
+        <div
+          className="inspector-body"
+          id={`graph-detail-panel-${tab}`}
+          role="tabpanel"
+          aria-labelledby={`graph-detail-tab-${tab}`}
+        >
           <section aria-label="康复计划">
             <h4>康复计划</h4>
             {planError ? <Banner kind="error">{planError}</Banner> : null}
@@ -491,7 +530,12 @@ export function EdgeDetailPanel({
       <InspectorTabs active={tab} onChange={setTab} planAvailable={false} />
 
       {tab === 'overview' ? (
-        <div className="inspector-body">
+        <div
+          className="inspector-body"
+          id={`graph-detail-panel-${tab}`}
+          role="tabpanel"
+          aria-labelledby={`graph-detail-tab-${tab}`}
+        >
           <p>
             <span className="pill model">模型提出</span> {edge.explanation}
           </p>
@@ -504,7 +548,12 @@ export function EdgeDetailPanel({
       ) : null}
 
       {tab === 'evidence' ? (
-        <div className="inspector-body">
+        <div
+          className="inspector-body"
+          id={`graph-detail-panel-${tab}`}
+          role="tabpanel"
+          aria-labelledby={`graph-detail-tab-${tab}`}
+        >
           <section aria-label="关系依据">
             <h4>
               关系依据 <span className="pill deterministic">本地已验证</span>

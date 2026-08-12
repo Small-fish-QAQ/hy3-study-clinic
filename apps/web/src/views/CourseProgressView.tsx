@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type KeyboardEvent } from 'react';
 import type {
   CourseExecutionCommandEnvelope,
   CourseExecutionOverview,
@@ -21,6 +21,7 @@ const SECTION_LABELS: Record<ProgressSection, string> = {
   mastery: '掌握与复习',
   history: '历史与决定',
 };
+const PROGRESS_SECTIONS = Object.keys(SECTION_LABELS) as ProgressSection[];
 
 function CourseHistoryRecords({ overview }: { overview: CourseExecutionOverview | null }) {
   if (
@@ -152,6 +153,21 @@ export function CourseProgressView({
 
   const progress = overview?.formalProgress;
 
+  function onTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, current: ProgressSection): void {
+    const currentIndex = PROGRESS_SECTIONS.indexOf(current);
+    let nextIndex: number | null = null;
+    if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % PROGRESS_SECTIONS.length;
+    if (event.key === 'ArrowLeft')
+      nextIndex = (currentIndex - 1 + PROGRESS_SECTIONS.length) % PROGRESS_SECTIONS.length;
+    if (event.key === 'Home') nextIndex = 0;
+    if (event.key === 'End') nextIndex = PROGRESS_SECTIONS.length - 1;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    const next = PROGRESS_SECTIONS[nextIndex]!;
+    setSection(next);
+    requestAnimationFrame(() => document.getElementById(`progress-tab-${next}`)?.focus());
+  }
+
   return (
     <div className="course-progress stack" aria-label="课程进展">
       <header className="supporting-page-intro">
@@ -161,8 +177,8 @@ export function CourseProgressView({
         </p>
       </header>
 
-      <nav className="subview-tabs" aria-label="进展分类" role="tablist">
-        {(Object.keys(SECTION_LABELS) as ProgressSection[]).map((item) => (
+      <div className="subview-tabs" aria-label="进展分类" role="tablist">
+        {PROGRESS_SECTIONS.map((item) => (
           <button
             type="button"
             key={item}
@@ -173,11 +189,12 @@ export function CourseProgressView({
             tabIndex={section === item ? 0 : -1}
             className={section === item ? 'active' : ''}
             onClick={() => setSection(item)}
+            onKeyDown={(event) => onTabKeyDown(event, item)}
           >
             {SECTION_LABELS[item]}
           </button>
         ))}
-      </nav>
+      </div>
 
       {section === 'overview' ? (
         <div

@@ -634,6 +634,12 @@ describe('consolidated Course product shell', () => {
     ).toEqual(['主页', '学习', '课程结构', '进展', '探索']);
     expect(within(navigation).queryByText('Study Session')).not.toBeInTheDocument();
     expect(within(navigation).queryByText('课程执行')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', {
+        level: 1,
+        name: 'Hy3 Study Clinic · Probability · 主页',
+      }),
+    ).toBeInTheDocument();
     expect(within(navigation).getByRole('button', { name: '主页' })).toHaveAttribute(
       'aria-current',
       'page',
@@ -722,6 +728,7 @@ describe('consolidated Course product shell', () => {
         courses={[{ id: 'ws_1', name: 'Probability' }]}
         onCourseChange={vi.fn()}
         onViewChange={vi.fn()}
+        onOpenAdvancedTools={vi.fn()}
       >
         <p>Course content</p>
       </AgentCourseShell>,
@@ -734,10 +741,23 @@ describe('consolidated Course product shell', () => {
     expect(opener).toHaveAttribute('aria-expanded', 'true');
     expect(sidebar).not.toHaveAttribute('aria-hidden');
     expect(within(sidebar).getByRole('button', { name: '关闭课程导航' })).toHaveFocus();
+    expect(screen.getByText('Course content').closest('.agent-course-content')).toHaveAttribute(
+      'inert',
+    );
+
+    const lastDrawerControl = within(sidebar).getByRole('button', { name: '兼容与高级工具' });
+    lastDrawerControl.focus();
+    await user.tab();
+    expect(within(sidebar).getByRole('button', { name: '关闭课程导航' })).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(lastDrawerControl).toHaveFocus();
 
     await user.keyboard('{Escape}');
     expect(sidebar).toHaveAttribute('aria-hidden', 'true');
     expect(opener).toHaveFocus();
+    expect(screen.getByText('Course content').closest('.agent-course-content')).not.toHaveAttribute(
+      'inert',
+    );
   });
 
   it('keeps Course Materials actionable when the Course has no documents', () => {
@@ -863,11 +883,27 @@ describe('consolidated Course product shell', () => {
     expect(within(navigation).getByRole('tab', { name: '掌握与复习' })).toBeInTheDocument();
     expect(within(navigation).getByRole('tab', { name: '历史与决定' })).toBeInTheDocument();
     expect(screen.getByText(/Tutor 对话和一般活动不会自动成为正式进展/)).toBeInTheDocument();
-    await user.click(within(navigation).getByRole('tab', { name: '历史与决定' }));
+    within(navigation).getByRole('tab', { name: '概览' }).focus();
+    await user.keyboard('{End}');
+    await vi.waitFor(() =>
+      expect(within(navigation).getByRole('tab', { name: '历史与决定' })).toHaveFocus(),
+    );
+    expect(within(navigation).getByRole('tab', { name: '历史与决定' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
     expect(screen.getByText(/版本 1 · 通过期末考试/)).toBeInTheDocument();
     expect(screen.getByText(/版本 1 · 概率论/)).toBeInTheDocument();
     expect(screen.getByText(/4 项 · 预计 90 分钟 · 1 项延期/)).toBeInTheDocument();
     expect(await screen.findByText(/还没有已完成的测验/)).toBeInTheDocument();
+    await user.keyboard('{ArrowLeft}');
+    await vi.waitFor(() =>
+      expect(within(navigation).getByRole('tab', { name: '掌握与复习' })).toHaveFocus(),
+    );
+    await user.keyboard('{ArrowRight}');
+    await vi.waitFor(() =>
+      expect(within(navigation).getByRole('tab', { name: '历史与决定' })).toHaveFocus(),
+    );
     await user.click(within(navigation).getByRole('tab', { name: '修复' }));
     expect(
       screen.getByText(/课程还没有资料，因此暂时没有可汇总的错题或掌握记录/),

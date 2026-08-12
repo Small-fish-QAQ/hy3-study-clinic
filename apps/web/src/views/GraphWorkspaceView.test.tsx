@@ -438,7 +438,19 @@ describe('学习图谱工作台 — detail area and planner', () => {
     expect(within(panel).getByText(/未解决错题 1 道/)).toBeInTheDocument();
     expect(within(panel).getByText(/本概念 → 间隔重复/)).toBeInTheDocument();
     // Verified quotes live in the 原文证据 inspector tab.
-    await user.click(within(panel).getByRole('tab', { name: '原文证据' }));
+    within(panel).getByRole('tab', { name: '概览' }).focus();
+    await user.keyboard('{End}');
+    await vi.waitFor(() =>
+      expect(within(panel).getByRole('tab', { name: '学习计划' })).toHaveFocus(),
+    );
+    await user.keyboard('{ArrowLeft}');
+    await vi.waitFor(() =>
+      expect(within(panel).getByRole('tab', { name: '原文证据' })).toHaveFocus(),
+    );
+    expect(within(panel).getByRole('tab', { name: '原文证据' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
     expect(within(panel).getAllByText('本地已验证').length).toBeGreaterThanOrEqual(1);
     await user.click(within(panel).getAllByRole('button', { name: '查看原文依据' })[0]!);
     expect(within(panel).getByText('工作记忆的容量十分有限')).toBeInTheDocument();

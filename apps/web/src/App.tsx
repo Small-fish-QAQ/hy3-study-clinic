@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type {
   Answer,
   Concept,
@@ -25,6 +25,7 @@ import { AgentCourseWorkspace } from './views/AgentCourseWorkspace.js';
 import { Banner } from './components/ui.js';
 
 type Tab = 'import' | 'course' | 'graph' | 'quiz' | 'results' | 'history' | 'mistakes' | 'mastery';
+type PracticeTab = Extract<Tab, 'quiz' | 'results' | 'history'>;
 
 const LAST_MATERIAL_ID_STORAGE_KEY = 'hy3-clinic:last-material-id';
 
@@ -50,6 +51,8 @@ const MODULE_OF_TAB: Record<Tab, Module> = {
   mistakes: 'mistakes',
   mastery: 'mastery',
 };
+
+const PRACTICE_TABS: PracticeTab[] = ['quiz', 'results', 'history'];
 
 /** Evidence context of a workspace-scoped (adaptive) assessment. */
 interface AssessmentContext {
@@ -464,6 +467,25 @@ export function App() {
     setTab(nextTab);
   }
 
+  function handlePracticeTabKeyDown(
+    event: KeyboardEvent<HTMLButtonElement>,
+    current: PracticeTab,
+  ): void {
+    const enabledTabs = PRACTICE_TABS.filter((item) => item !== 'results' || result !== null);
+    const currentIndex = enabledTabs.indexOf(current);
+    let nextIndex: number | null = null;
+    if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % enabledTabs.length;
+    if (event.key === 'ArrowLeft')
+      nextIndex = (currentIndex - 1 + enabledTabs.length) % enabledTabs.length;
+    if (event.key === 'Home') nextIndex = 0;
+    if (event.key === 'End') nextIndex = enabledTabs.length - 1;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    const next = enabledTabs[nextIndex]!;
+    handleTabChange(next);
+    requestAnimationFrame(() => document.getElementById(`practice-tab-${next}`)?.focus());
+  }
+
   function handleModuleChange(module: Module) {
     handleTabChange(module === 'practice' ? 'quiz' : module);
   }
@@ -533,30 +555,42 @@ export function App() {
         {activeModule === 'practice' ? (
           <div className="practice-switch" role="tablist" aria-label="练习子页">
             <button
+              id="practice-tab-quiz"
               type="button"
               role="tab"
               aria-selected={tab === 'quiz'}
+              aria-controls="practice-panel-quiz"
+              tabIndex={tab === 'quiz' ? 0 : -1}
               className={tab === 'quiz' ? 'active' : ''}
               onClick={() => handleTabChange('quiz')}
+              onKeyDown={(event) => handlePracticeTabKeyDown(event, 'quiz')}
             >
               出题作答
             </button>
             <button
+              id="practice-tab-results"
               type="button"
               role="tab"
               aria-selected={tab === 'results'}
+              aria-controls="practice-panel-results"
+              tabIndex={tab === 'results' ? 0 : -1}
               className={tab === 'results' ? 'active' : ''}
               disabled={!result}
               onClick={() => handleTabChange('results')}
+              onKeyDown={(event) => handlePracticeTabKeyDown(event, 'results')}
             >
               判分结果
             </button>
             <button
+              id="practice-tab-history"
               type="button"
               role="tab"
               aria-selected={tab === 'history'}
+              aria-controls="practice-panel-history"
+              tabIndex={tab === 'history' ? 0 : -1}
               className={tab === 'history' ? 'active' : ''}
               onClick={() => handleTabChange('history')}
+              onKeyDown={(event) => handlePracticeTabKeyDown(event, 'history')}
             >
               测验历史
             </button>
@@ -606,38 +640,44 @@ export function App() {
         ) : null}
 
         {tab === 'quiz' && (material || assessmentActive) ? (
-          <QuizView
-            materialId={assessmentActive ? null : (material?.material.id ?? null)}
-            blocks={practiceBlocks}
-            hasConcepts={concepts.length > 0}
-            quiz={quiz}
-            documentTitles={assessmentActive ? assessment.documentTitles : undefined}
-            onQuizGenerated={(q) => {
-              if (q.materialId !== null && activeMaterialIdRef.current !== q.materialId) return;
-              setQuiz(q);
-              setResult(null);
-            }}
-            onGraded={handleGraded}
-          />
+          <div id="practice-panel-quiz" role="tabpanel" aria-labelledby="practice-tab-quiz">
+            <QuizView
+              materialId={assessmentActive ? null : (material?.material.id ?? null)}
+              blocks={practiceBlocks}
+              hasConcepts={concepts.length > 0}
+              quiz={quiz}
+              documentTitles={assessmentActive ? assessment.documentTitles : undefined}
+              onQuizGenerated={(q) => {
+                if (q.materialId !== null && activeMaterialIdRef.current !== q.materialId) return;
+                setQuiz(q);
+                setResult(null);
+              }}
+              onGraded={handleGraded}
+            />
+          </div>
         ) : null}
 
         {tab === 'results' && quiz && result && (material || assessmentActive) ? (
-          <ResultsView
-            quiz={quiz}
-            result={result}
-            answers={lastAnswers}
-            blocks={practiceBlocks}
-            onRemediate={() => void doRemediation()}
-            remediationLoading={remediationAction.loading}
-          />
+          <div id="practice-panel-results" role="tabpanel" aria-labelledby="practice-tab-results">
+            <ResultsView
+              quiz={quiz}
+              result={result}
+              answers={lastAnswers}
+              blocks={practiceBlocks}
+              onRemediate={() => void doRemediation()}
+              remediationLoading={remediationAction.loading}
+            />
+          </div>
         ) : null}
 
         {tab === 'history' && (material || assessmentActive) ? (
-          <QuizHistoryView
-            workspaceId={
-              assessmentActive ? assessment.workspaceId : (material?.material.workspaceId ?? null)
-            }
-          />
+          <div id="practice-panel-history" role="tabpanel" aria-labelledby="practice-tab-history">
+            <QuizHistoryView
+              workspaceId={
+                assessmentActive ? assessment.workspaceId : (material?.material.workspaceId ?? null)
+              }
+            />
+          </div>
         ) : null}
 
         {tab === 'mistakes' && material ? (

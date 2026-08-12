@@ -303,6 +303,19 @@ a {
   flex-wrap: wrap;
 }
 
+.subview-tabs {
+  max-width: 100%;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding: 2px 0;
+  scrollbar-width: thin;
+}
+
+.subview-tabs button {
+  flex: none;
+  white-space: nowrap;
+}
+
 .primary-nav button,
 .course-nav button,
 .legacy-nav button,
@@ -2708,6 +2721,7 @@ button.danger {
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-3);
+  flex-wrap: wrap;
 }
 
 .study-send-control {
@@ -2736,6 +2750,9 @@ button.danger {
 }
 
 .study-retry q {
+  display: block;
+  max-height: 4.8em;
+  overflow-y: auto;
   font-weight: 650;
 }
 
@@ -3188,6 +3205,7 @@ button.danger {
 
 .progress-table {
   display: grid;
+  min-width: 0;
   gap: 1px;
   border: 1px solid var(--border);
   background: var(--border);
@@ -3195,14 +3213,28 @@ button.danger {
 
 .progress-row {
   display: grid;
-  grid-template-columns:
+  grid-template-columns: var(
+    --progress-row-columns,
     minmax(120px, 1.2fr) minmax(120px, 1fr) minmax(90px, 0.8fr) minmax(180px, 2fr)
-    minmax(120px, 1fr);
+      minmax(120px, 1fr)
+  );
   gap: var(--space-2);
   align-items: center;
   padding: 0.55rem 0.65rem;
   background: var(--surface);
   overflow-wrap: anywhere;
+}
+
+.progress-row-four {
+  --progress-row-columns: minmax(120px, 1.2fr) minmax(120px, 1fr) minmax(120px, 1fr)
+    minmax(180px, 2fr);
+}
+
+.progress-head {
+  color: var(--text-muted);
+  background: var(--surface-weak);
+  font-size: 0.74rem;
+  font-weight: 700;
 }
 
 .progress-unit-name {
@@ -3345,7 +3377,7 @@ button.danger {
   }
 
   .progress-row {
-    grid-template-columns: 1fr;
+    --progress-row-columns: 1fr;
     gap: 0.25rem;
   }
 }
@@ -3719,6 +3751,7 @@ button.danger {
 
 .progress-summary-list strong {
   text-align: right;
+  overflow-wrap: anywhere;
 }
 
 .history-disclosure {
@@ -3915,6 +3948,29 @@ button.danger {
   background: var(--primary-weak);
 }
 
+@media (max-width: 1099px) and (min-width: 768px) {
+  .formal-progress-header {
+    flex-direction: column;
+  }
+
+  .progress-row {
+    --progress-row-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1023px) {
+  .course-state-grid,
+  .progress-summary,
+  .course-history-groups,
+  .material-import-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .material-import-grid .span-2 {
+    grid-column: auto;
+  }
+}
+
 .material-progress-scope {
   display: grid;
   gap: var(--space-3);
@@ -3977,7 +4033,10 @@ button.danger {
   }
 
   .next-action,
+  .course-home-title,
+  .supporting-page-intro.row,
   .material-row-main,
+  .today-work li,
   .review-row,
   .progress-summary-list button {
     align-items: flex-start;
@@ -3990,6 +4049,26 @@ button.danger {
 
   .course-primary-cta {
     width: 100%;
+  }
+
+  .curriculum-level .curriculum-level {
+    margin-left: var(--space-2);
+    padding-left: var(--space-2);
+  }
+
+  .curriculum-objectives li,
+  .curriculum-history-list button {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+
+  .curriculum-version-context span::before {
+    margin-right: var(--space-2);
+  }
+
+  .material-import-content {
+    padding-left: 0;
+    border-left: 0;
   }
 }
 
@@ -4005,7 +4084,8 @@ button.danger {
     flex: 0 0 54px;
     align-items: center;
     gap: var(--space-3);
-    padding: 0 var(--space-3);
+    padding-right: max(var(--space-3), env(safe-area-inset-right));
+    padding-left: max(var(--space-3), env(safe-area-inset-left));
     border-bottom: 1px solid var(--separator);
     background: var(--surface-raised);
   }
@@ -4051,6 +4131,9 @@ button.danger {
     z-index: 80;
     width: var(--sidebar-expanded);
     max-width: calc(100vw - 44px);
+    height: 100dvh;
+    max-height: 100dvh;
+    padding-bottom: env(safe-area-inset-bottom);
     transform: translateX(-105%);
     box-shadow: var(--shadow);
     visibility: hidden;
@@ -4093,7 +4176,7 @@ button.danger {
   }
 
   .agent-course-content {
-    padding: var(--space-4) var(--space-3) var(--space-5);
+    padding: var(--space-4) var(--space-3) max(var(--space-5), env(safe-area-inset-bottom));
     scrollbar-gutter: auto;
   }
 
@@ -4107,5 +4190,19 @@ button.danger {
 
   .app-utility-header .legacy-nav {
     flex-wrap: wrap;
+  }
+
+  .graph-workspace .detail-area {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .study-composer-dock {
+    padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
+  }
+
+  .study-composer textarea {
+    min-height: 44px;
+    max-height: min(140px, 25dvh);
   }
 }
