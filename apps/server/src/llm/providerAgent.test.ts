@@ -246,6 +246,71 @@ describe('FakeProvider Agent proposals', () => {
     expect(secondUnit?.prerequisiteUnitKeys).toHaveLength(1);
   });
 
+  it('forms one topic-level unit from consecutive anonymous blocks under the same heading', async () => {
+    const repeatedBlocks: SourceBlock[] = Array.from({ length: 3 }, (_, index) => ({
+      id: `blk_llm_${index + 1}`,
+      materialId: 'mat_1',
+      materialRevisionId: 'mrev_1',
+      index,
+      heading: '2. LLM',
+      headingPath: ['Foundations', '2. LLM'],
+      pageNumber: index + 1,
+      pageEnd: index + 1,
+      content: `LLM source passage ${index + 1} contains distinct grounded material.`,
+      startOffset: index * 80,
+      endOffset: index * 80 + 64,
+    }));
+    const repeatedInput: CurriculumProposalInput = {
+      ...curriculumInput,
+      executionSourceManifest: {
+        ...curriculumInput.executionSourceManifest,
+        revisions: [
+          {
+            ...curriculumInput.executionSourceManifest.revisions[0]!,
+            sourceBlockRevisionIds: repeatedBlocks.map((block) => block.id),
+          },
+        ],
+      },
+      outline: repeatedBlocks.map((block) => ({
+        structuralUnitId: null,
+        materialId: block.materialId,
+        materialRevisionId: block.materialRevisionId!,
+        parentStructuralUnitId: null,
+        kind: 'section' as const,
+        index: block.index,
+        title: block.heading,
+        sourceBlockIds: [block.id],
+      })),
+      concepts: [
+        concept('con_llm_1', 'Token prediction', repeatedBlocks[0]!),
+        concept('con_llm_2', 'Retrieval augmentation', repeatedBlocks[2]!),
+      ],
+      graphEdges: [],
+      blocks: repeatedBlocks,
+    };
+
+    const proposal = await new FakeProvider().proposeCurriculum(repeatedInput);
+    const units = proposal.nodes.filter((node) => node.kind === 'learning_unit');
+
+    expect(units).toHaveLength(1);
+    expect(units[0]!.title).toBe('2. LLM');
+    expect(units[0]!.sourceEvidence.map((item) => item.blockId)).toEqual(
+      repeatedBlocks.map((block) => block.id),
+    );
+    expect(units[0]!.conceptIds).toEqual(['con_llm_1', 'con_llm_2']);
+  });
+
+  it('does not merge explicitly identified units merely because their titles match', async () => {
+    const proposal = await new FakeProvider().proposeCurriculum({
+      ...curriculumInput,
+      outline: curriculumInput.outline.map((item) => ({ ...item, title: 'Repeated title' })),
+    });
+
+    expect(
+      proposal.nodes.filter((node) => node.kind === 'learning_unit').map((node) => node.title),
+    ).toEqual(['Repeated title', 'Repeated title']);
+  });
+
   it('orders prerequisites and only adds a formal check for locally eligible objectives', async () => {
     const proposal = await new FakeProvider().proposeStudyPlan(studyPlanInput);
     expect(StudyPlanProposalPayloadSchema.safeParse(proposal).success).toBe(true);

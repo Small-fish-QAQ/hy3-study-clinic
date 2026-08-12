@@ -35,6 +35,7 @@ import type {
   AssessmentProposalInput,
   ConceptAnalysisInput,
   ConceptLessonInput,
+  CurriculumOutlineItem,
   CurriculumProposalInput,
   GraphProposalInput,
   LlmProvider,
@@ -64,6 +65,31 @@ import type {
  */
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as const;
+
+/**
+ * Parser-derived outline rows have no structural identity and may split one
+ * headed topic into many paragraph/list/code SourceBlocks. Keep explicitly
+ * identified structural units separate, but coalesce consecutive anonymous
+ * rows that belong to the same heading before proposing LearningUnits.
+ */
+function groupCurriculumOutline(items: CurriculumOutlineItem[]): CurriculumOutlineItem[][] {
+  const groups: CurriculumOutlineItem[][] = [];
+  for (const item of items) {
+    const previous = groups.at(-1);
+    const previousItem = previous?.at(-1);
+    const sameAnonymousTopic =
+      previousItem !== undefined &&
+      previousItem.structuralUnitId === null &&
+      item.structuralUnitId === null &&
+      previousItem.parentStructuralUnitId === item.parentStructuralUnitId &&
+      previousItem.kind === item.kind &&
+      (previousItem.title ?? '').trim().replace(/\s+/g, ' ') ===
+        (item.title ?? '').trim().replace(/\s+/g, ' ');
+    if (sameAnonymousTopic) previous!.push(item);
+    else groups.push([item]);
+  }
+  return groups;
+}
 
 /** Split text into sentence-like spans on Chinese/ASCII terminators. */
 function sentences(text: string): string[] {
@@ -846,29 +872,42 @@ export class FakeProvider implements LlmProvider {
       const candidates = materialOutline.filter(
         (item) => item.kind !== 'document' && item.sourceBlockIds.length > 0,
       );
-      const selected = (candidates.length > 0 ? candidates : materialOutline.slice(0, 1)).slice(
-        0,
-        slotsForMaterial,
+      const groupedCandidates = groupCurriculumOutline(
+        candidates.length > 0 ? candidates : materialOutline.slice(0, 1),
       );
+      const selected = groupedCandidates.slice(0, slotsForMaterial);
       const seeds =
         selected.length > 0
           ? selected
           : [
-              {
-                structuralUnitId: null,
-                title: material.title,
-                sourceBlockIds: allowedBlocks
-                  .filter((block) => block.materialId === material.materialId)
-                  .map((block) => block.id),
-              },
+              [
+                {
+                  structuralUnitId: null,
+                  materialId: material.materialId,
+                  materialRevisionId:
+                    input.executionSourceManifest.revisions.find(
+                      (revision) => revision.materialId === material.materialId,
+                    )?.materialRevisionId ?? '',
+                  parentStructuralUnitId: null,
+                  kind: 'section' as const,
+                  index: 0,
+                  title: material.title,
+                  sourceBlockIds: allowedBlocks
+                    .filter((block) => block.materialId === material.materialId)
+                    .map((block) => block.id),
+                },
+              ],
             ];
 
-      for (const [unitIndex, seed] of seeds.entries()) {
+      for (const [unitIndex, seedItems] of seeds.entries()) {
         if (remainingUnitSlots <= 0) break;
-        const blockIds = new Set(seed.sourceBlockIds);
-        const sourceBlock =
-          allowedBlocks.find((block) => blockIds.has(block.id)) ??
-          allowedBlocks.find((block) => block.materialId === material.materialId);
+        const seed = seedItems[0]!;
+        const blockIds = new Set(seedItems.flatMap((item) => item.sourceBlockIds));
+        const sourceBlocks = allowedBlocks.filter((block) => blockIds.has(block.id)).slice(0, 20);
+        if (sourceBlocks.length === 0) {
+          const fallback = allowedBlocks.find((block) => block.materialId === material.materialId);
+          if (fallback) sourceBlocks.push(fallback);
+        }
         const concepts = input.concepts
           .filter(
             (concept) =>
@@ -879,24 +918,20 @@ export class FakeProvider implements LlmProvider {
         const unitNumber = learningUnits.length + 1;
         const unitKey = `unit-${unitNumber}`;
         const title = (seed.title || concepts[0]?.name || material.title).slice(0, 300);
-        const evidence = sourceBlock
-          ? [{ blockId: sourceBlock.id, quote: pickQuote(sourceBlock) }]
-          : [];
+        const evidence = sourceBlocks.map((block) => ({
+          blockId: block.id,
+          quote: pickQuote(block),
+        }));
         const unit: ProposedCurriculumNode = {
           key: unitKey,
           parentKey: sectionKey,
           kind: 'learning_unit',
           index: unitIndex,
           title,
-          structuralUnitIds: materialOutline
-            .filter(
-              (item) =>
-                seed.structuralUnitId !== null &&
-                (item.structuralUnitId === seed.structuralUnitId ||
-                  item.parentStructuralUnitId === seed.structuralUnitId),
-            )
-            .map((item) => item.structuralUnitId)
+          structuralUnitIds: seedItems
+            .flatMap((item) => [item.structuralUnitId, item.parentStructuralUnitId])
             .filter((id): id is string => id !== null)
+            .filter((id, index, values) => values.indexOf(id) === index)
             .slice(0, 500),
           sourceEvidence: evidence,
           conceptIds: concepts.map((concept) => concept.id),

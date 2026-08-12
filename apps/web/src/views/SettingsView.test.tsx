@@ -48,9 +48,9 @@ describe('SettingsView', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: '测试连接' }));
+    await user.click(screen.getByRole('button', { name: '检查本地服务状态' }));
 
-    expect(await screen.findByText('本地服务可访问')).toBeInTheDocument();
+    expect(await screen.findByRole('status')).toHaveTextContent('本地服务可访问');
     expect(screen.getByText('服务器运行方式：Hy3 在线模式')).toBeInTheDocument();
     expect(screen.getByText(/只确认本地服务响应，不验证 Hy3 凭据/)).toBeInTheDocument();
     expect(health).toHaveBeenCalledWith(expect.any(AbortSignal));
@@ -69,7 +69,7 @@ describe('SettingsView', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: '测试连接' }));
+    await user.click(screen.getByRole('button', { name: '检查本地服务状态' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       '无法连接本地服务。 本地服务没有响应。',
@@ -98,7 +98,7 @@ describe('SettingsView', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: '测试连接' }));
+    await user.click(screen.getByRole('button', { name: '检查本地服务状态' }));
     await user.click(await screen.findByRole('button', { name: '取消' }));
 
     await waitFor(() => expect(receivedSignal?.aborted).toBe(true));
@@ -120,5 +120,27 @@ describe('SettingsView', () => {
     await user.click(screen.getByRole('switch', { name: /默认展开课程侧边栏/ }));
 
     expect(onChange).toHaveBeenCalledWith(true);
+  });
+
+  it('shows the selected Course and the honest server-owned configuration boundary', async () => {
+    const user = userEvent.setup();
+    render(
+      <SettingsView
+        provider="fake"
+        currentCourseId="ws_probability"
+        currentCourseName="Probability"
+        sidebarDefaultCollapsed={false}
+        onSidebarDefaultCollapsedChange={() => {}}
+      />,
+    );
+
+    expect(screen.getByLabelText('运行与配置边界')).toHaveTextContent(
+      '配置来源服务器启动环境（浏览器只读）',
+    );
+    expect(screen.getByLabelText('课程连续性')).toHaveTextContent('已启用 · Probability');
+    await user.click(screen.getByText('诊断与关于'));
+    expect(screen.getByText('Probability')).toBeInTheDocument();
+    expect(screen.getByText('ws_probability')).toBeInTheDocument();
+    expect(screen.getByText(/提供程序与凭据由服务器启动配置管理/)).toBeInTheDocument();
   });
 });

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { DocumentSummary, MaterialRoleHistoryResponse } from '@hy3-clinic/shared';
 import { api } from '../api.js';
 import { Banner, Loading } from '../components/ui.js';
@@ -32,6 +32,7 @@ export interface CourseMaterialsViewProps {
   workspaceId: string;
   documents: DocumentSummary[];
   roleHistory: Record<string, MaterialRoleHistoryResponse>;
+  focusDocumentId?: string | null;
   onChanged: () => Promise<void> | void;
   onBack: () => void;
 }
@@ -41,6 +42,7 @@ export function CourseMaterialsView({
   workspaceId,
   documents,
   roleHistory,
+  focusDocumentId = null,
   onChanged,
   onBack,
 }: CourseMaterialsViewProps) {
@@ -49,6 +51,16 @@ export function CourseMaterialsView({
   const [importOpen, setImportOpen] = useState(documents.length === 0);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const action = useAsyncAction();
+  const idPrefix = useId().replace(/:/g, '');
+
+  useEffect(() => {
+    if (!focusDocumentId) return;
+    const element = window.document.getElementById(
+      `${idPrefix}-material-${encodeURIComponent(focusDocumentId)}`,
+    );
+    element?.scrollIntoView({ block: 'center' });
+    element?.focus({ preventScroll: true });
+  }, [focusDocumentId, idPrefix]);
 
   async function addText(): Promise<void> {
     const normalized = content.trim();
@@ -146,7 +158,12 @@ export function CourseMaterialsView({
             const role = roleHistory[document.id]?.current?.role ?? 'unknown';
             const sourceLabel = SOURCE_LABELS[document.sourceType] ?? document.sourceType;
             return (
-              <article className="material-row" key={document.id}>
+              <article
+                id={`${idPrefix}-material-${encodeURIComponent(document.id)}`}
+                className={`material-row${focusDocumentId === document.id ? ' is-source-target' : ''}`}
+                key={document.id}
+                tabIndex={focusDocumentId === document.id ? -1 : undefined}
+              >
                 <div className="material-row-layout">
                   <span className="material-source-mark" aria-hidden="true">
                     {sourceLabel.slice(0, 4)}

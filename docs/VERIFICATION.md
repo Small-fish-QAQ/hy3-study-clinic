@@ -55,9 +55,11 @@ Focused frontend checks for this presentation campaign can be run without callin
 
 ```bash
 npm run test -w @hy3-clinic/web -- src/views/SettingsView.test.tsx src/views/AgentCourseViews.test.tsx
+npm run test -w @hy3-clinic/web -- src/views/AgentCourseWorkspace.live01.test.tsx src/App.test.tsx
+npm run test -w @hy3-clinic/server -- src/llm/providerAgent.test.ts
 ```
 
-`SettingsView.test.tsx` covers fake/Hy3 wording, the deliberately local scope of Test Connection, failure, cancellation, and the sidebar-preference callback. The Curriculum cases in `AgentCourseViews.test.tsx` cover default-collapsed large structures, the first-12/show-rest behavior with 277 units, truth-authority labels, persisted current/route state, subordinate provenance, malformed-hierarchy recovery, loading, invalid-candidate acceptance, decisions, and version history. These are behavioral assertions rather than visual snapshots.
+`SettingsView.test.tsx` covers fake/Hy3 wording, the deliberately local scope of Check Local Service Status, failure, cancellation, configuration authority, current-Course diagnostics, and the sidebar-preference callback. The Curriculum cases in `AgentCourseViews.test.tsx` cover conservative source-fragment presentation, same-title non-merging when semantics differ, human-readable material/page/excerpt grounding, owning-Material navigation, source-only `0 / 0` omission, exact IDs behind technical detail, default-collapsed large structures, the first-12/show-rest behavior with 277 topics, truth-authority labels, persisted current/route state, malformed-hierarchy recovery, loading, decisions, and version history. `AgentCourseWorkspace.live01.test.tsx` covers Explore → Settings Course/layout ownership and navigation back out; `App.test.tsx` covers restored selection and deletion reconciliation. `providerAgent.test.ts` covers future fake proposals grouping anonymous same-heading source blocks while preserving explicit same-titled units. These are behavioral assertions rather than visual snapshots.
 
 Post-red-team correctness regressions exercise the production boundaries rather than only constructing repository state:
 
@@ -182,7 +184,7 @@ The README captions map the screenshots to PDF provenance, graph evidence, bound
 
 ## Honest scope
 
-- A successful Settings **Test Connection** proves only that local `/api/health` and `/api/config` responded. It is not real-provider evidence and does not validate Hy3 credentials, the configured model, or external endpoint availability.
+- A successful Settings **Check Local Service Status** proves only that local `/api/health` and `/api/config` responded. It is not real-provider evidence and does not validate Hy3 credentials, the configured model, or external endpoint availability.
 - Curriculum disclosure tests prove bounded initial rendering, accessibility state, and semantic labels. They do not benchmark scan time, teaching quality, or performance for every possible hierarchy shape.
 - The small hand-authored labels and fixtures make the online record an integration check, not a quality benchmark.
 - Exact quotation validation proves location, not complete semantic entailment.

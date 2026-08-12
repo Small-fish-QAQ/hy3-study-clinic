@@ -7,6 +7,8 @@ type Provider = 'fake' | 'hy3';
 
 export interface SettingsViewProps {
   provider?: Provider | null;
+  currentCourseId?: string | null;
+  currentCourseName?: string | null;
   sidebarDefaultCollapsed: boolean;
   onSidebarDefaultCollapsedChange: (collapsed: boolean) => void;
 }
@@ -24,13 +26,15 @@ const PROVIDER_LABELS: Record<Provider, string> = {
 /** System-level settings. Server-owned provider configuration is intentionally read-only here. */
 export function SettingsView({
   provider = null,
+  currentCourseId = null,
+  currentCourseName = null,
   sidebarDefaultCollapsed,
   onSidebarDefaultCollapsedChange,
 }: SettingsViewProps) {
   const connection = useAsyncAction();
   const [connectionResult, setConnectionResult] = useState<ConnectionResult | null>(null);
 
-  async function testConnection(): Promise<void> {
+  async function checkLocalService(): Promise<void> {
     setConnectionResult(null);
     const result = await connection.run(async (signal) => {
       const [health, config] = await Promise.all([api.health(signal), api.config(signal)]);
@@ -68,9 +72,9 @@ export function SettingsView({
               type="button"
               className="primary"
               disabled={connection.loading}
-              onClick={() => void testConnection()}
+              onClick={() => void checkLocalService()}
             >
-              {connection.loading ? '正在测试' : '测试连接'}
+              {connection.loading ? '正在检查' : '检查本地服务状态'}
             </button>
             {connection.loading ? (
               <button type="button" className="ghost" onClick={connection.cancel}>
@@ -80,7 +84,7 @@ export function SettingsView({
           </div>
         </div>
 
-        {connection.loading ? <Loading label="正在连接本地服务" /> : null}
+        {connection.loading ? <Loading label="正在检查本地服务" /> : null}
         {connection.error ? (
           <Banner kind="error">
             <strong>无法连接本地服务。</strong> {connection.error}
@@ -93,6 +97,25 @@ export function SettingsView({
             <small>这项检查只确认本地服务响应，不验证 Hy3 凭据或外部服务可用性。</small>
           </div>
         ) : null}
+
+        <dl className="settings-runtime-facts" aria-label="运行与配置边界">
+          <div>
+            <dt>Study Clinic API</dt>
+            <dd>{connectionResult ? '本地服务可访问' : '尚未检查'}</dd>
+          </div>
+          <div>
+            <dt>提供程序模式</dt>
+            <dd>{displayedProvider ? PROVIDER_LABELS[displayedProvider] : '尚未读取'}</dd>
+          </div>
+          <div>
+            <dt>配置来源</dt>
+            <dd>服务器启动环境（浏览器只读）</dd>
+          </div>
+          <div>
+            <dt>外部 Hy3 可用性</dt>
+            <dd>此页面不检查凭据或外部服务</dd>
+          </div>
+        </dl>
       </section>
 
       <section
@@ -118,6 +141,16 @@ export function SettingsView({
             onChange={(event) => onSidebarDefaultCollapsedChange(!event.target.checked)}
           />
         </label>
+
+        <div className="settings-preference-row" aria-label="课程连续性">
+          <span className="settings-preference-copy">
+            <strong>恢复最近选择的课程</strong>
+            <small>在这台设备上切换页面或重新打开应用时保留课程上下文。</small>
+          </span>
+          <span className="settings-readonly-value">
+            {currentCourseName ? `已启用 · ${currentCourseName}` : '已启用 · 尚未选择课程'}
+          </span>
+        </div>
       </section>
 
       <details className="settings-disclosure">
@@ -135,6 +168,20 @@ export function SettingsView({
             <div>
               <dt>服务器运行方式</dt>
               <dd>{displayedProvider ? PROVIDER_LABELS[displayedProvider] : '尚未读取'}</dd>
+            </div>
+            <div>
+              <dt>当前课程</dt>
+              <dd>{currentCourseName ?? '尚未选择'}</dd>
+            </div>
+            {currentCourseId ? (
+              <div>
+                <dt>课程 ID</dt>
+                <dd>{currentCourseId}</dd>
+              </div>
+            ) : null}
+            <div>
+              <dt>配置权限</dt>
+              <dd>提供程序与凭据由服务器启动配置管理</dd>
             </div>
             {connectionResult ? (
               <div>

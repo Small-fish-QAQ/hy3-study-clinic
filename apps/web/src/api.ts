@@ -334,7 +334,8 @@ export const api = {
 
   listMaterials: () => request<{ materials: MaterialSummary[] }>('GET', '/api/materials'),
 
-  getMaterial: (id: string) => request<MaterialWithBlocks>('GET', `/api/materials/${id}`),
+  getMaterial: (id: string, signal?: AbortSignal) =>
+    request<MaterialWithBlocks>('GET', `/api/materials/${id}`, undefined, signal),
 
   renameMaterial: (id: string, title: string, signal?: AbortSignal) =>
     request<{ material: Material }>('PATCH', `/api/materials/${id}`, { title }, signal),

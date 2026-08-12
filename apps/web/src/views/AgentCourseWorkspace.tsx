@@ -12,6 +12,7 @@ import type {
   MaterialRoleAssignment,
   MaterialRoleHistoryResponse,
   PublicQuiz,
+  SourceBlock,
   StudyPlanDraftEdit,
   WorkspaceSummary,
 } from '@hy3-clinic/shared';
@@ -150,6 +151,10 @@ export function AgentCourseWorkspace({
   const [overview, setOverview] = useState<CourseExecutionOverview | null>(null);
   const [hierarchy, setHierarchy] = useState<CurriculumHierarchyView | null>(null);
   const [roleHistory, setRoleHistory] = useState<Record<string, MaterialRoleHistoryResponse>>({});
+  const [curriculumSourceBlocks, setCurriculumSourceBlocks] = useState<SourceBlock[]>([]);
+  const [curriculumSourceLoading, setCurriculumSourceLoading] = useState(false);
+  const [curriculumSourceError, setCurriculumSourceError] = useState<string | null>(null);
+  const [focusedMaterialId, setFocusedMaterialId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [busyAction, setBusyAction] = useState<string | null>(null);
@@ -167,6 +172,34 @@ export function AgentCourseWorkspace({
   useEffect(() => {
     workspaceIdRef.current = workspaceId;
   }, [workspaceId]);
+
+  useEffect(() => {
+    if (view !== 'curriculum' || !workspaceId || documents.length === 0) {
+      setCurriculumSourceBlocks([]);
+      setCurriculumSourceError(null);
+      setCurriculumSourceLoading(false);
+      return;
+    }
+    const controller = new AbortController();
+    setCurriculumSourceLoading(true);
+    setCurriculumSourceError(null);
+    void Promise.all(documents.map((document) => api.getMaterial(document.id, controller.signal)))
+      .then((materials) => {
+        if (!controller.signal.aborted) {
+          setCurriculumSourceBlocks(materials.flatMap((material) => material.blocks));
+        }
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted) {
+          setCurriculumSourceError(error instanceof Error ? error.message : String(error));
+          setCurriculumSourceBlocks([]);
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setCurriculumSourceLoading(false);
+      });
+    return () => controller.abort();
+  }, [documents, view, workspaceId]);
 
   const selectedWorkspace = useMemo(
     () => workspaces.find((workspace) => workspace.id === workspaceId) ?? null,
@@ -761,6 +794,7 @@ export function AgentCourseWorkspace({
       onCourseChange={changeCourse}
       onViewChange={changeView}
       onOpenMaterials={() => {
+        setFocusedMaterialId(null);
         setSettingsOpen(false);
         setMaterialsOpen(true);
       }}
@@ -778,6 +812,8 @@ export function AgentCourseWorkspace({
       {settingsOpen ? (
         <SettingsView
           provider={provider}
+          currentCourseId={workspaceId}
+          currentCourseName={selectedWorkspace?.name ?? null}
           sidebarDefaultCollapsed={sidebarCollapsed}
           onSidebarDefaultCollapsedChange={setSidebarCollapsed}
         />
@@ -824,8 +860,12 @@ export function AgentCourseWorkspace({
           workspaceId={workspaceId}
           documents={documents}
           roleHistory={roleHistory}
+          focusDocumentId={focusedMaterialId}
           onChanged={refreshCourse}
-          onBack={() => setMaterialsOpen(false)}
+          onBack={() => {
+            setFocusedMaterialId(null);
+            setMaterialsOpen(false);
+          }}
         />
       ) : contractEditorOpen && overview ? (
         <ContractEditor
@@ -872,6 +912,14 @@ export function AgentCourseWorkspace({
           onAccept={() => void decideCurriculum('accept')}
           onReject={() => void decideCurriculum('reject')}
           onSelectHistory={(id) => void selectCurriculumHistory(id)}
+          documents={documents}
+          sourceBlocks={curriculumSourceBlocks}
+          sourceLoading={curriculumSourceLoading}
+          sourceError={curriculumSourceError}
+          onOpenSource={(materialId) => {
+            setFocusedMaterialId(materialId);
+            setMaterialsOpen(true);
+          }}
         />
       ) : view === 'session' ? (
         <StudySessionView

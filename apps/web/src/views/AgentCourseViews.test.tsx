@@ -6,6 +6,7 @@ import type {
   CurriculumHierarchyView,
   LearningContract,
   SessionAgenda,
+  SourceBlock,
   StudyPlan,
 } from '@hy3-clinic/shared';
 import { CourseHomeView, type CourseHomeViewProps } from './CourseHomeView.js';
@@ -407,6 +408,57 @@ function largeHierarchy(): CurriculumHierarchyView {
   return value;
 }
 
+function repeatedSourceFragmentHierarchy(): CurriculumHierarchyView {
+  const value = hierarchy();
+  const section = value.nodes.find((node) => node.id === 'section_1')!;
+  const template = value.nodes.find((node) => node.id === 'unit_2')!;
+  const units = Array.from({ length: 5 }, (_, index) => ({
+    ...template,
+    id: `unit_llm_${index + 1}`,
+    index,
+    title: '2. LLM',
+    breadcrumbTitles: ['Probability', 'Conditional probability', '2. LLM'],
+    learningUnit: {
+      ...template.learningUnit!,
+      conceptIds: [],
+      objectives: [
+        {
+          ...template.learningUnit!.objectives[0]!,
+          id: `objective_llm_${index + 1}`,
+          title: 'Understand 2. LLM',
+          description: 'Explain and apply the central ideas in 2. LLM.',
+        },
+      ],
+    },
+    sourceReferences: [
+      {
+        materialId: 'material_1',
+        materialRevisionId: 'revision_1',
+        structuralUnitId: null,
+        sourceBlockId: `source_llm_${index + 1}`,
+        sourceBlockRevisionFingerprint: `fingerprint_llm_${index + 1}`,
+      },
+    ],
+  }));
+  section.childIds = units.map((unit) => unit.id);
+  value.nodes = [value.nodes[0]!, section, ...units];
+  return value;
+}
+
+const repeatedSourceBlocks = Array.from({ length: 5 }, (_, index) => ({
+  id: `source_llm_${index + 1}`,
+  materialId: 'material_1',
+  materialRevisionId: 'revision_1',
+  index,
+  heading: '2. LLM',
+  headingPath: ['Probability', '2. LLM'],
+  pageNumber: index + 2,
+  pageEnd: index + 2,
+  content: `LLM 第 ${index + 1} 段真实课程资料，说明这一主题的不同侧面。`,
+  startOffset: index * 80,
+  endOffset: index * 80 + 35,
+})) satisfies SourceBlock[];
+
 describe('CourseHomeView action and authority rendering', () => {
   it('does not render a start command for a blocked next action', () => {
     render(<CourseHomeView {...homeProps(overview('blocked'))} />);
@@ -563,6 +615,142 @@ describe('StudyPlanPanel decisions', () => {
 });
 
 describe('CurriculumView truth and validation states', () => {
+  it('presents consecutive accepted source fragments as one auditable learner topic', async () => {
+    const user = userEvent.setup();
+    const onOpenSource = vi.fn();
+    render(
+      <CurriculumView
+        hierarchy={repeatedSourceFragmentHierarchy()}
+        history={[]}
+        loading={false}
+        error={null}
+        canPropose={false}
+        canAccept
+        busyAction={null}
+        onPropose={vi.fn()}
+        onAccept={vi.fn()}
+        onReject={vi.fn()}
+        onSelectHistory={vi.fn()}
+        documents={[
+          {
+            ...documentSummary,
+            id: 'material_1',
+            title: 'Weknora学习',
+            sourceType: 'pdf',
+            originalFilename: 'Weknora学习.pdf',
+            pageCount: 17,
+            blockCount: 5,
+          },
+        ]}
+        sourceBlocks={repeatedSourceBlocks}
+        onOpenSource={onOpenSource}
+      />,
+    );
+
+    expect(screen.getByText('1 个学习主题 · 5 条资料记录')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '查看内容（1 个学习主题）' }));
+    const topicHeading = screen.getByRole('heading', { name: '2. LLM' });
+    expect(screen.getAllByRole('heading', { name: '2. LLM' })).toHaveLength(1);
+    expect(screen.getAllByText('5 条资料记录')).toHaveLength(2);
+    expect(within(topicHeading.closest('article')!).getAllByText('Understand 2. LLM')).toHaveLength(
+      1,
+    );
+    expect(screen.queryByText(/引用概念 0|图关系 0/)).not.toBeInTheDocument();
+
+    const topicBasis = screen.getByText('课程依据（5 处）');
+    await user.click(topicBasis);
+    const topicBasisDetails = topicBasis.closest('details')!;
+    expect(within(topicBasisDetails).getByText('Weknora学习')).toBeInTheDocument();
+    expect(topicBasisDetails).toHaveTextContent('PDF · Weknora学习.pdf · 第 2、3、4、5、6 页');
+    expect(within(topicBasisDetails).getByText(/LLM 第 1 段真实课程资料/)).toBeInTheDocument();
+    expect(screen.getByText(/unit_llm_5/)).not.toBeVisible();
+    await user.click(within(topicBasisDetails).getByText('技术详情'));
+    expect(screen.getByText(/当前只有资料依据/)).toBeInTheDocument();
+    expect(screen.getByText(/LearningUnit ID unit_llm_5/)).toBeInTheDocument();
+    expect(screen.getByText(/Source Block source_llm_5/)).toBeInTheDocument();
+    await user.click(within(topicBasisDetails).getByRole('button', { name: '查看课程资料' }));
+    expect(onOpenSource).toHaveBeenCalledWith('material_1');
+  });
+
+  it('never groups same-titled units when their pedagogical mappings differ', async () => {
+    const value = repeatedSourceFragmentHierarchy();
+    const units = value.nodes.filter((node) => node.kind === 'learning_unit');
+    value.nodes = [
+      ...value.nodes.filter((node) => node.kind !== 'learning_unit'),
+      ...units.slice(0, 2),
+    ];
+    value.nodes.find((node) => node.id === 'section_1')!.childIds = ['unit_llm_1', 'unit_llm_2'];
+    value.nodes.find((node) => node.id === 'unit_llm_2')!.learningUnit!.conceptIds = ['concept_2'];
+    const user = userEvent.setup();
+    render(
+      <CurriculumView
+        hierarchy={value}
+        history={[]}
+        loading={false}
+        error={null}
+        canPropose={false}
+        canAccept
+        busyAction={null}
+        onPropose={vi.fn()}
+        onAccept={vi.fn()}
+        onReject={vi.fn()}
+        onSelectHistory={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('2 个学习主题 · 2 条资料记录')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '查看内容（2 个学习主题）' }));
+    expect(screen.getAllByRole('heading', { name: '2. LLM' })).toHaveLength(2);
+  });
+
+  it('collapses a redundant single section wrapper without removing its learning units', async () => {
+    const value = hierarchy();
+    const course = value.nodes.find((node) => node.id === 'course_1')!;
+    const section = value.nodes.find((node) => node.id === 'section_1')!;
+    course.childIds = ['chapter_1'];
+    section.parentId = 'chapter_1';
+    section.title = 'Verified source objective';
+    value.nodes.splice(1, 0, {
+      id: 'chapter_1',
+      parentId: 'course_1',
+      childIds: ['section_1'],
+      kind: 'chapter',
+      index: 0,
+      depth: 1,
+      title: 'Foundations',
+      breadcrumbTitles: ['Probability', 'Foundations'],
+      learningUnit: null,
+      sourceReferences: [],
+      mappedPlanItemIds: [],
+      progressState: null,
+    });
+    section.depth = 2;
+    for (const node of value.nodes.filter((node) => node.kind === 'learning_unit')) {
+      node.depth = 3;
+    }
+
+    const user = userEvent.setup();
+    render(
+      <CurriculumView
+        hierarchy={value}
+        history={[]}
+        loading={false}
+        error={null}
+        canPropose={false}
+        canAccept
+        busyAction={null}
+        onPropose={vi.fn()}
+        onAccept={vi.fn()}
+        onReject={vi.fn()}
+        onSelectHistory={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: '查看内容（2 个学习主题）' }));
+    expect(screen.getAllByRole('heading', { name: 'Verified source objective' })).toHaveLength(1);
+    expect(screen.getByRole('heading', { name: 'Supplement objective' })).toBeInTheDocument();
+  });
+
   it('keeps a large structure at major-part level until the learner expands it', async () => {
     const user = userEvent.setup();
     render(
@@ -581,11 +769,11 @@ describe('CurriculumView truth and validation states', () => {
       />,
     );
 
-    expect(screen.getByText('277 个学习单元 · 277 个学习目标')).toBeInTheDocument();
+    expect(screen.getByText('277 个学习主题 · 277 条资料记录')).toBeInTheDocument();
     expect(screen.queryByText('Large course unit 1')).not.toBeInTheDocument();
     expect(screen.queryByText('Large course unit 277')).not.toBeInTheDocument();
 
-    const expandSection = screen.getByRole('button', { name: '查看内容（277 个单元）' });
+    const expandSection = screen.getByRole('button', { name: '查看内容（277 个学习主题）' });
     expect(expandSection).toHaveAttribute('aria-expanded', 'false');
     expect(expandSection).toHaveAttribute('aria-controls');
     await user.click(expandSection);
@@ -596,7 +784,7 @@ describe('CurriculumView truth and validation states', () => {
     expect(screen.queryByText('Large course unit 13')).not.toBeInTheDocument();
     expect(screen.queryByText('Large course unit 277')).not.toBeInTheDocument();
 
-    const showRemaining = screen.getByRole('button', { name: '显示其余 265 个学习单元' });
+    const showRemaining = screen.getByRole('button', { name: '显示其余 265 个学习主题' });
     expect(showRemaining).toHaveAttribute('aria-expanded', 'false');
     await user.click(showRemaining);
     expect(showRemaining).toHaveAttribute('aria-expanded', 'true');
@@ -622,7 +810,7 @@ describe('CurriculumView truth and validation states', () => {
     );
 
     expect(screen.queryByText('事实依据已独立验证')).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: '查看内容（2 个单元）' }));
+    await user.click(screen.getByRole('button', { name: '查看内容（2 个学习主题）' }));
     expect(screen.getByText('事实依据已独立验证')).toBeInTheDocument();
     expect(screen.getByText('在学习范围内 · 事实依据未验证')).toBeInTheDocument();
   });
@@ -656,7 +844,9 @@ describe('CurriculumView truth and validation states', () => {
       'Verified source objective',
     );
     expect(screen.getByText('正在学习')).toBeInTheDocument();
-    await user.click(within(sectionNode!).getByRole('button', { name: '查看内容（2 个单元）' }));
+    await user.click(
+      within(sectionNode!).getByRole('button', { name: '查看内容（2 个学习主题）' }),
+    );
     expect(sectionNode).toContainElement(
       within(outline).getByRole('heading', { name: 'Verified source objective' }).closest('li'),
     );
@@ -697,16 +887,19 @@ describe('CurriculumView truth and validation states', () => {
     );
 
     expect(screen.getByText('manifest_1')).not.toBeVisible();
-    const courseBasis = screen.getByText('课程依据与精确版本');
+    const courseBasis = screen.getByText('课程依据（1 份资料）');
     await user.click(courseBasis);
+    await user.click(screen.getByText('技术详情与精确版本'));
     expect(screen.getByText('manifest_1')).toBeInTheDocument();
-    expect(screen.getByText('block_1')).toBeInTheDocument();
+    expect(screen.getByText(/Source Blocks block_1/)).toBeInTheDocument();
     expect(screen.getByText(/不单独证明完整语义蕴含/)).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: '查看内容（2 个单元）' }));
-    await user.click(screen.getByText('课程依据（1）'));
-    expect(screen.getByText(/来源块 source_block_1/)).toBeInTheDocument();
-    expect(screen.getByText(/来源块修订 source_block_fingerprint_1/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '查看内容（2 个学习主题）' }));
+    const unitBasis = screen.getByText('课程依据（1 处）');
+    await user.click(unitBasis);
+    await user.click(within(unitBasis.closest('details')!).getByText('技术详情'));
+    expect(screen.getByText(/Source Block source_block_1/)).toBeInTheDocument();
+    expect(screen.getByText(/Block Revision source_block_fingerprint_1/)).toBeInTheDocument();
   });
 
   it('reports malformed duplicate and cyclic links without mounting repeated branches', () => {
@@ -734,7 +927,7 @@ describe('CurriculumView truth and validation states', () => {
     expect(screen.getByText(/发现重复节点 ID：unit_1/)).toBeInTheDocument();
     expect(screen.getByText(/发现循环层级：course_1/)).toBeInTheDocument();
     expect(screen.getByText(/部分父节点不存在：missing_section/)).toBeInTheDocument();
-    expect(screen.getByText('学习单元').closest('div')).toHaveTextContent('学习单元2');
+    expect(screen.getByText('学习主题').closest('div')).toHaveTextContent('学习主题2');
   });
 
   it('keeps the Curriculum page context visible while the outline is loading', () => {
@@ -918,7 +1111,7 @@ describe('consolidated Course product shell', () => {
 
     rerender(
       <AgentCourseShell
-        activeView="home"
+        activeView="explore"
         courseId="ws_1"
         courseName="Probability"
         courses={[{ id: 'ws_1', name: 'Probability' }]}
@@ -932,7 +1125,9 @@ describe('consolidated Course product shell', () => {
     );
 
     expect(screen.getByRole('button', { name: '设置' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('button', { name: '主页' })).not.toHaveAttribute('aria-current');
+    expect(screen.getByRole('button', { name: '探索' })).not.toHaveAttribute('aria-current');
+    expect(screen.getByLabelText('课程学习空间')).toHaveClass('view-settings');
+    expect(screen.getByLabelText('课程学习空间')).not.toHaveClass('view-explore');
     expect(
       screen.getByRole('heading', {
         level: 1,

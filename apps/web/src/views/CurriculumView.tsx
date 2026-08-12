@@ -3,6 +3,8 @@ import type {
   CurriculumHierarchyNodeView,
   CurriculumHierarchyView,
   CurriculumHistoryItem,
+  DocumentSummary,
+  SourceBlock,
 } from '@hy3-clinic/shared';
 import { Banner, Loading } from '../components/ui.js';
 
@@ -36,6 +38,11 @@ export interface CurriculumViewProps {
   onAccept: () => void;
   onReject: () => void;
   onSelectHistory: (curriculumId: string) => void;
+  documents?: DocumentSummary[];
+  sourceBlocks?: SourceBlock[];
+  sourceLoading?: boolean;
+  sourceError?: string | null;
+  onOpenSource?: (materialId: string) => void;
 }
 
 interface CurriculumTreeNode {
@@ -53,12 +60,18 @@ interface BranchSummary {
   chapterCount: number;
   sectionCount: number;
   learningUnitCount: number;
+  topicCount: number;
   objectiveCount: number;
   prerequisiteUnitIds: string[];
   sourceReferenceCount: number;
   routeLinkedCount: number;
   currentUnits: CurriculumHierarchyNodeView[];
   objectiveTitles: string[];
+}
+
+interface CurriculumUnitTopic {
+  key: string;
+  members: CurriculumTreeNode[];
 }
 
 function buildCurriculumTree(hierarchy: CurriculumHierarchyView): CurriculumTreeResult {
@@ -168,6 +181,100 @@ function collectBranch(branch: CurriculumTreeNode): CurriculumTreeNode[] {
   return [branch, ...branch.children.flatMap(collectBranch)];
 }
 
+function normalizedTitle(value: string): string {
+  return value.trim().replace(/\s+/g, ' ');
+}
+
+function stableIds(values: string[]): string[] {
+  return [...values].sort((left, right) => left.localeCompare(right));
+}
+
+/**
+ * Presentation-only signature for parser fragments. IDs and evidence anchors
+ * intentionally stay out of this comparison; all pedagogical/state fields do
+ * participate, so equal titles alone can never collapse distinct units.
+ */
+function sourceFragmentSignature(node: CurriculumHierarchyNodeView): string | null {
+  const unit = node.learningUnit;
+  if (!unit || node.sourceReferences.length === 0) return null;
+  if (node.sourceReferences.some((reference) => !reference.sourceBlockId)) return null;
+  const sourceOwners = new Set(
+    node.sourceReferences.map(
+      (reference) => `${reference.materialId}:${reference.materialRevisionId}`,
+    ),
+  );
+  if (sourceOwners.size !== 1) return null;
+  return JSON.stringify({
+    parentId: node.parentId,
+    title: normalizedTitle(node.title),
+    objectives: unit.objectives.map((objective) => ({
+      title: normalizedTitle(objective.title),
+      description: normalizedTitle(objective.description),
+      truthPremiseStatus: objective.truthPremiseStatus,
+    })),
+    conceptIds: stableIds(unit.conceptIds),
+    canonicalConceptIds: stableIds(unit.canonicalConceptIds),
+    prerequisiteUnitIds: stableIds(unit.prerequisiteUnitIds),
+    graphRelationIds: stableIds(unit.graphRelationIds),
+    riskIds: stableIds(unit.riskIds),
+    mappedPlanItemIds: stableIds(node.mappedPlanItemIds),
+    progressState: node.progressState,
+    sourceOwner: [...sourceOwners][0],
+  });
+}
+
+function groupSourceFragmentUnits(children: CurriculumTreeNode[]): CurriculumUnitTopic[] {
+  const topics: CurriculumUnitTopic[] = [];
+  for (const child of children) {
+    const signature = sourceFragmentSignature(child.node);
+    const previous = topics.at(-1);
+    const previousSignature = previous ? sourceFragmentSignature(previous.members[0]!.node) : null;
+    if (signature && signature === previousSignature) previous!.members.push(child);
+    else topics.push({ key: child.node.id, members: [child] });
+  }
+  return topics;
+}
+
+function countPresentationTopics(branch: CurriculumTreeNode): number {
+  if (branch.node.kind === 'learning_unit') return 1;
+  if (
+    branch.children.length > 0 &&
+    branch.children.every((child) => child.node.kind === 'learning_unit')
+  ) {
+    return groupSourceFragmentUnits(branch.children).length;
+  }
+  return branch.children.reduce((count, child) => count + countPresentationTopics(child), 0);
+}
+
+function countPresentationObjectives(branch: CurriculumTreeNode): number {
+  if (branch.node.kind === 'learning_unit') {
+    return branch.node.learningUnit?.objectives.length ?? 0;
+  }
+  if (
+    branch.children.length > 0 &&
+    branch.children.every((child) => child.node.kind === 'learning_unit')
+  ) {
+    return groupSourceFragmentUnits(branch.children).reduce(
+      (count, topic) => count + (topic.members[0]?.node.learningUnit?.objectives.length ?? 0),
+      0,
+    );
+  }
+  return branch.children.reduce((count, child) => count + countPresentationObjectives(child), 0);
+}
+
+function presentationChildren(branch: CurriculumTreeNode): CurriculumTreeNode[] {
+  const wrapper = branch.children.length === 1 ? branch.children[0] : undefined;
+  if (
+    wrapper?.node.kind === 'section' &&
+    wrapper.children.length > 0 &&
+    wrapper.children.every((child) => child.node.kind === 'learning_unit') &&
+    normalizedTitle(wrapper.node.title) === normalizedTitle(wrapper.children[0]!.node.title)
+  ) {
+    return wrapper.children;
+  }
+  return branch.children;
+}
+
 function summarizeBranch(branch: CurriculumTreeNode): BranchSummary {
   const entries = collectBranch(branch);
   const prerequisiteUnitIds = new Set<string>();
@@ -192,7 +299,7 @@ function summarizeBranch(branch: CurriculumTreeNode): BranchSummary {
     }
     for (const objective of node.learningUnit?.objectives ?? []) {
       objectiveCount += 1;
-      objectiveTitles.push(objective.title);
+      if (!objectiveTitles.includes(objective.title)) objectiveTitles.push(objective.title);
     }
   }
 
@@ -200,6 +307,7 @@ function summarizeBranch(branch: CurriculumTreeNode): BranchSummary {
     chapterCount,
     sectionCount,
     learningUnitCount,
+    topicCount: countPresentationTopics(branch),
     objectiveCount,
     prerequisiteUnitIds: [...prerequisiteUnitIds],
     sourceReferenceCount,
@@ -222,22 +330,64 @@ function majorBranches(roots: CurriculumTreeNode[]): CurriculumTreeNode[] {
   });
 }
 
+const SOURCE_TYPE_LABELS: Record<string, string> = {
+  paste: '粘贴文本',
+  md: 'Markdown',
+  txt: 'TXT',
+  pdf: 'PDF',
+  docx: 'DOCX',
+};
+
+function sourceExcerpt(content: string): string {
+  const normalized = content.replace(/\s+/g, ' ').trim();
+  return normalized.length > 180 ? `${normalized.slice(0, 177)}…` : normalized;
+}
+
+function sourceLocation(blocks: SourceBlock[]): string | null {
+  const pages = [...new Set(blocks.flatMap((block) => [block.pageNumber, block.pageEnd]))]
+    .filter((page): page is number => page !== null)
+    .sort((left, right) => left - right);
+  if (pages.length > 0) return `第 ${pages.join('、')} 页`;
+  const headings = [...new Set(blocks.map((block) => block.heading).filter(Boolean))];
+  return headings.length > 0 ? headings.slice(0, 2).join(' / ') : null;
+}
+
 function CurriculumNodeDetail({
-  node,
+  members,
   nodeById,
+  documents,
+  sourceBlocks,
+  sourceLoading,
+  sourceError,
+  onOpenSource,
 }: {
-  node: CurriculumHierarchyNodeView;
+  members: CurriculumTreeNode[];
   nodeById: ReadonlyMap<string, CurriculumHierarchyNodeView>;
+  documents: DocumentSummary[];
+  sourceBlocks: SourceBlock[];
+  sourceLoading: boolean;
+  sourceError: string | null;
+  onOpenSource?: (materialId: string) => void;
 }) {
-  if (!node.learningUnit) return null;
+  const node = members[0]?.node;
+  if (!node?.learningUnit) return null;
   const prerequisiteNames = node.learningUnit.prerequisiteUnitIds.map(
     (unitId) => nodeById.get(unitId)?.title ?? unitId,
+  );
+  const references = members.flatMap((member) => member.node.sourceReferences);
+  const documentById = new Map(documents.map((document) => [document.id, document]));
+  const blockById = new Map(sourceBlocks.map((block) => [block.id, block]));
+  const materialIds = [...new Set(references.map((reference) => reference.materialId))];
+  const conceptIds = new Set(
+    members.flatMap((member) => member.node.learningUnit?.conceptIds ?? []),
+  );
+  const relationIds = new Set(
+    members.flatMap((member) => member.node.learningUnit?.graphRelationIds ?? []),
   );
 
   return (
     <div className="curriculum-unit-detail">
       <section className="curriculum-objective-section" aria-label={`${node.title}学习目标`}>
-        <h4>学习目标</h4>
         <ul className="curriculum-objectives">
           {node.learningUnit.objectives.map((objective) => (
             <li key={objective.id}>
@@ -252,8 +402,10 @@ function CurriculumNodeDetail({
                   ? '事实依据已独立验证'
                   : '在学习范围内 · 事实依据未验证'}
               </span>
-              <strong>{objective.title}</strong>
-              <span className="muted">{objective.description}</span>
+              <span className="curriculum-objective-copy">
+                <strong>{objective.title}</strong>
+                <span className="muted">{objective.description}</span>
+              </span>
             </li>
           ))}
         </ul>
@@ -261,48 +413,116 @@ function CurriculumNodeDetail({
 
       {prerequisiteNames.length > 0 ? (
         <section className="curriculum-prerequisites" aria-label={`${node.title}先修要求`}>
-          <h4>先修</h4>
-          <p>{prerequisiteNames.join('、')}</p>
+          <strong>先修</strong>
+          <span>{prerequisiteNames.join('、')}</span>
         </section>
       ) : null}
 
-      <details className="curriculum-evidence-disclosure small technical-details">
-        <summary>课程依据（{node.sourceReferences.length}）</summary>
-        <p className="muted">
-          来源锚点用于回到课程资料。引文逐字匹配只证明文本出现在标注位置，不单独证明完整语义蕴含。
-        </p>
-        <dl className="curriculum-evidence-meta">
-          <div>
-            <dt>引用概念</dt>
-            <dd>{node.learningUnit.conceptIds.length} 个</dd>
-          </div>
-          <div>
-            <dt>图关系</dt>
-            <dd>{node.learningUnit.graphRelationIds.length} 个</dd>
-          </div>
-        </dl>
-        {node.sourceReferences.length > 0 ? (
-          <ol className="curriculum-source-reference-list">
-            {node.sourceReferences.map((reference, index) => (
-              <li
-                key={`${reference.materialId}:${reference.materialRevisionId}:${reference.sourceBlockId ?? index}`}
-              >
-                <strong>来源锚点 {index + 1}</strong>
-                <span>资料 {reference.materialId}</span>
-                <span>处理版本 {reference.materialRevisionId}</span>
-                {reference.structuralUnitId ? (
-                  <span>结构位置 {reference.structuralUnitId}</span>
-                ) : null}
-                {reference.sourceBlockId ? <span>来源块 {reference.sourceBlockId}</span> : null}
-                {reference.sourceBlockRevisionFingerprint ? (
-                  <span>来源块修订 {reference.sourceBlockRevisionFingerprint}</span>
-                ) : null}
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <p className="muted">这个单元没有记录来源锚点。</p>
-        )}
+      <details className="curriculum-evidence-disclosure small">
+        <summary>课程依据（{references.length} 处）</summary>
+        <div className="curriculum-evidence-content">
+          <p className="muted curriculum-evidence-limit">
+            引文逐字匹配只证明文本出现在标注位置，不单独证明完整语义蕴含。
+          </p>
+          {materialIds.length > 0 ? (
+            <div className="curriculum-source-materials">
+              {materialIds.map((materialId) => {
+                const document = documentById.get(materialId);
+                const materialReferences = references.filter(
+                  (reference) => reference.materialId === materialId,
+                );
+                const blocks = materialReferences
+                  .map((reference) =>
+                    reference.sourceBlockId ? blockById.get(reference.sourceBlockId) : undefined,
+                  )
+                  .filter((block): block is SourceBlock => block !== undefined);
+                const excerpts = [...new Set(blocks.map((block) => sourceExcerpt(block.content)))];
+                return (
+                  <article className="curriculum-source-material" key={materialId}>
+                    <div className="curriculum-source-heading">
+                      <div>
+                        <strong>{document?.title ?? '课程资料'}</strong>
+                        <p className="muted">
+                          {document
+                            ? (SOURCE_TYPE_LABELS[document.sourceType] ?? document.sourceType)
+                            : '资料类型未读取'}
+                          {document?.originalFilename &&
+                          document.originalFilename !== document.title
+                            ? ` · ${document.originalFilename}`
+                            : ''}
+                          {sourceLocation(blocks) ? ` · ${sourceLocation(blocks)}` : ''}
+                        </p>
+                      </div>
+                      <span>{materialReferences.length} 处资料依据</span>
+                    </div>
+                    {excerpts.slice(0, 2).map((excerpt) => (
+                      <blockquote key={excerpt}>“{excerpt}”</blockquote>
+                    ))}
+                    {excerpts.length > 2 ? (
+                      <p className="muted">
+                        另有 {excerpts.length - 2} 处引用片段，可在技术详情中核对。
+                      </p>
+                    ) : null}
+                    {blocks.length === 0 && sourceLoading ? (
+                      <p className="muted">正在读取页码、章节与原文片段…</p>
+                    ) : null}
+                    {blocks.length === 0 && sourceError ? (
+                      <p className="muted">来源正文暂时无法读取；精确标识仍保留在技术详情中。</p>
+                    ) : null}
+                    {onOpenSource ? (
+                      <button
+                        type="button"
+                        className="ghost small"
+                        onClick={() => onOpenSource(materialId)}
+                      >
+                        查看课程资料
+                      </button>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="muted">这个学习主题没有记录资料依据。</p>
+          )}
+
+          <details className="technical-details curriculum-technical-details">
+            <summary>技术详情</summary>
+            {conceptIds.size === 0 && relationIds.size === 0 ? (
+              <p className="muted">当前只有资料依据，未记录概念或图关系映射。</p>
+            ) : (
+              <p className="muted">
+                已记录 {conceptIds.size} 个概念映射与 {relationIds.size} 条图关系。
+              </p>
+            )}
+            <ol className="curriculum-source-reference-list">
+              {members.map((member, memberIndex) => (
+                <li key={member.node.id}>
+                  <strong>学习单元记录 {memberIndex + 1}</strong>
+                  <span>LearningUnit ID {member.node.id}</span>
+                  {(member.node.learningUnit?.objectives ?? []).map((objective) => (
+                    <span key={objective.id}>Objective ID {objective.id}</span>
+                  ))}
+                  {member.node.sourceReferences.map((reference, referenceIndex) => (
+                    <span
+                      key={`${reference.materialId}:${reference.materialRevisionId}:${reference.sourceBlockId ?? referenceIndex}`}
+                    >
+                      Material ID {reference.materialId} · Revision ID{' '}
+                      {reference.materialRevisionId}
+                      {reference.sourceBlockId ? ` · Source Block ${reference.sourceBlockId}` : ''}
+                      {reference.structuralUnitId
+                        ? ` · Structural Unit ${reference.structuralUnitId}`
+                        : ''}
+                      {reference.sourceBlockRevisionFingerprint
+                        ? ` · Block Revision ${reference.sourceBlockRevisionFingerprint}`
+                        : ''}
+                    </span>
+                  ))}
+                </li>
+              ))}
+            </ol>
+          </details>
+        </div>
       </details>
     </div>
   );
@@ -310,7 +530,13 @@ function CurriculumNodeDetail({
 
 function CurriculumOutlineNode({
   branch,
+  topicMembers,
   nodeById,
+  documents,
+  sourceBlocks,
+  sourceLoading,
+  sourceError,
+  onOpenSource,
   expandedIds,
   onToggle,
   idPrefix,
@@ -318,14 +544,22 @@ function CurriculumOutlineNode({
   prominent = false,
 }: {
   branch: CurriculumTreeNode;
+  topicMembers?: CurriculumTreeNode[];
   nodeById: ReadonlyMap<string, CurriculumHierarchyNodeView>;
+  documents: DocumentSummary[];
+  sourceBlocks: SourceBlock[];
+  sourceLoading: boolean;
+  sourceError: string | null;
+  onOpenSource?: (materialId: string) => void;
   expandedIds: ReadonlySet<string>;
   onToggle: (nodeId: string) => void;
   idPrefix: string;
   level: number;
   prominent?: boolean;
 }) {
-  const { node, children } = branch;
+  const { node } = branch;
+  const displayedChildren = presentationChildren(branch);
+  const members = topicMembers ?? [branch];
   const summary = useMemo(() => summarizeBranch(branch), [branch]);
   const isExpanded = expandedIds.has(node.id);
   const isCurrent = node.progressState === 'started';
@@ -333,25 +567,34 @@ function CurriculumOutlineNode({
   const isRouteLinked = node.mappedPlanItemIds.length > 0;
   const contentId = `${idPrefix}-node-${encodeURIComponent(node.id)}`;
   const directUnitsOnly =
-    children.length > 0 && children.every(({ node: child }) => child.kind === 'learning_unit');
+    displayedChildren.length > 0 &&
+    displayedChildren.every(({ node: child }) => child.kind === 'learning_unit');
   const showAllDirectUnits = expandedIds.has(`${node.id}:all-units`);
-  const visibleChildren =
-    directUnitsOnly && children.length > DIRECT_UNIT_PREVIEW_LIMIT && !showAllDirectUnits
-      ? children.slice(0, DIRECT_UNIT_PREVIEW_LIMIT)
-      : children;
+  const childTopics = directUnitsOnly
+    ? groupSourceFragmentUnits(displayedChildren)
+    : displayedChildren.map((child) => ({ key: child.node.id, members: [child] }));
+  const visibleTopics =
+    directUnitsOnly && childTopics.length > DIRECT_UNIT_PREVIEW_LIMIT && !showAllDirectUnits
+      ? childTopics.slice(0, DIRECT_UNIT_PREVIEW_LIMIT)
+      : childTopics;
   const Heading = prominent ? 'h3' : level <= 2 ? 'h4' : 'h5';
 
   return (
     <li
       className={`curriculum-node kind-${node.kind}${prominent ? ' is-major' : ''}${
-        isCurrent || containsCurrent ? ' is-current' : ''
-      }`}
+        members.length > 1 ? ' is-source-topic' : ''
+      }${isCurrent || containsCurrent ? ' is-current' : ''}`}
       data-depth={node.depth}
+      data-source-record-count={members.length}
     >
       <article className="curriculum-node-content" aria-current={isCurrent ? 'step' : undefined}>
         <header className="curriculum-node-heading">
           <div className="curriculum-node-title">
-            <span className="curriculum-kind">{KIND_TEXT[node.kind]}</span>
+            <span className="curriculum-kind">
+              {node.kind === 'learning_unit' && members.length > 1
+                ? `${members.length} 条资料记录`
+                : KIND_TEXT[node.kind]}
+            </span>
             <Heading>{node.title}</Heading>
           </div>
           <div className="curriculum-node-state">
@@ -372,7 +615,7 @@ function CurriculumOutlineNode({
         {prominent ? (
           <div className="curriculum-major-summary">
             <p className="curriculum-major-counts">
-              {summary.learningUnitCount} 个学习单元 · {summary.objectiveCount} 个学习目标
+              {summary.topicCount} 个学习主题 · {summary.learningUnitCount} 条资料记录
               {summary.prerequisiteUnitIds.length > 0
                 ? ` · ${summary.prerequisiteUnitIds.length} 项先修关系`
                 : ''}
@@ -388,7 +631,7 @@ function CurriculumOutlineNode({
           </div>
         ) : null}
 
-        {children.length > 0 ? (
+        {displayedChildren.length > 0 ? (
           <button
             type="button"
             className="curriculum-expand-button ghost small"
@@ -396,22 +639,46 @@ function CurriculumOutlineNode({
             aria-controls={contentId}
             onClick={() => onToggle(node.id)}
           >
-            {isExpanded ? '收起内容' : `查看内容（${summary.learningUnitCount} 个单元）`}
+            {isExpanded ? '收起内容' : `查看内容（${summary.topicCount} 个学习主题）`}
           </button>
         ) : (
-          <CurriculumNodeDetail node={node} nodeById={nodeById} />
+          <CurriculumNodeDetail
+            members={members}
+            nodeById={nodeById}
+            documents={documents}
+            sourceBlocks={sourceBlocks}
+            sourceLoading={sourceLoading}
+            sourceError={sourceError}
+            onOpenSource={onOpenSource}
+          />
         )}
       </article>
 
-      {children.length > 0 && isExpanded ? (
+      {displayedChildren.length > 0 && isExpanded ? (
         <div className="curriculum-node-children" id={contentId}>
-          {node.learningUnit ? <CurriculumNodeDetail node={node} nodeById={nodeById} /> : null}
+          {node.learningUnit ? (
+            <CurriculumNodeDetail
+              members={members}
+              nodeById={nodeById}
+              documents={documents}
+              sourceBlocks={sourceBlocks}
+              sourceLoading={sourceLoading}
+              sourceError={sourceError}
+              onOpenSource={onOpenSource}
+            />
+          ) : null}
           <ol className="curriculum-level" id={`${contentId}-units`}>
-            {visibleChildren.map((child) => (
+            {visibleTopics.map((topic) => (
               <CurriculumOutlineNode
-                key={child.node.id}
-                branch={child}
+                key={topic.key}
+                branch={topic.members[0]!}
+                topicMembers={topic.members}
                 nodeById={nodeById}
+                documents={documents}
+                sourceBlocks={sourceBlocks}
+                sourceLoading={sourceLoading}
+                sourceError={sourceError}
+                onOpenSource={onOpenSource}
                 expandedIds={expandedIds}
                 onToggle={onToggle}
                 idPrefix={idPrefix}
@@ -419,7 +686,7 @@ function CurriculumOutlineNode({
               />
             ))}
           </ol>
-          {directUnitsOnly && children.length > DIRECT_UNIT_PREVIEW_LIMIT ? (
+          {directUnitsOnly && childTopics.length > DIRECT_UNIT_PREVIEW_LIMIT ? (
             <button
               type="button"
               className="curriculum-show-all-units ghost small"
@@ -428,8 +695,8 @@ function CurriculumOutlineNode({
               onClick={() => onToggle(`${node.id}:all-units`)}
             >
               {showAllDirectUnits
-                ? `只显示前 ${DIRECT_UNIT_PREVIEW_LIMIT} 个学习单元`
-                : `显示其余 ${children.length - visibleChildren.length} 个学习单元`}
+                ? `只显示前 ${DIRECT_UNIT_PREVIEW_LIMIT} 个学习主题`
+                : `显示其余 ${childTopics.length - visibleTopics.length} 个学习主题`}
             </button>
           ) : null}
         </div>
@@ -438,63 +705,113 @@ function CurriculumOutlineNode({
   );
 }
 
-function CurriculumManifest({ hierarchy }: { hierarchy: CurriculumHierarchyView }) {
+function CurriculumManifest({
+  hierarchy,
+  documents,
+  sourceBlocks,
+  sourceLoading,
+  sourceError,
+  onOpenSource,
+}: {
+  hierarchy: CurriculumHierarchyView;
+  documents: DocumentSummary[];
+  sourceBlocks: SourceBlock[];
+  sourceLoading: boolean;
+  sourceError: string | null;
+  onOpenSource?: (materialId: string) => void;
+}) {
   const sourceBlockRevisionCount = hierarchy.executionSourceManifest.revisions.reduce(
     (count, revision) => count + revision.sourceBlockRevisionIds.length,
     0,
   );
 
+  const documentById = new Map(documents.map((document) => [document.id, document]));
+  const sourceBlockById = new Map(sourceBlocks.map((block) => [block.id, block]));
+
   return (
-    <details className="curriculum-course-basis technical-details" aria-label="课程依据与精确版本">
-      <summary>课程依据与精确版本</summary>
+    <details className="curriculum-course-basis" aria-label="课程依据">
+      <summary>课程依据（{hierarchy.executionSourceManifest.revisions.length} 份资料）</summary>
       <div className="curriculum-course-basis-content">
         <p>
-          本结构记录了 {hierarchy.executionSourceManifest.revisions.length} 个资料处理版本和{' '}
-          {sourceBlockRevisionCount} 个来源块修订。
+          本课程结构依据 {hierarchy.executionSourceManifest.revisions.length} 份资料中的{' '}
+          {sourceBlockRevisionCount} 处引用片段生成。
         </p>
-        <p className="muted">
-          精确版本清单固定了生成时使用的资料。引文逐字匹配证明引文存在于标注位置，
-          不单独证明完整语义蕴含。
-        </p>
-        <dl className="curriculum-manifest-summary small">
-          <div>
-            <dt>清单指纹</dt>
-            <dd>{hierarchy.executionSourceManifest.fingerprint}</dd>
-          </div>
-        </dl>
-        <ol className="curriculum-manifest-list">
+        <p className="muted">引文逐字匹配证明引文存在于标注位置，不单独证明完整语义蕴含。</p>
+        <div className="curriculum-manifest-list">
           {hierarchy.executionSourceManifest.revisions.map((revision, index) => (
-            <li key={`${revision.materialId}:${revision.materialRevisionId}`}>
-              <h4>资料版本 {index + 1}</h4>
-              <dl>
-                <div>
-                  <dt>资料 ID</dt>
-                  <dd>{revision.materialId}</dd>
-                </div>
-                <div>
-                  <dt>处理版本 ID</dt>
-                  <dd>{revision.materialRevisionId}</dd>
-                </div>
-                <div>
-                  <dt>解析器</dt>
-                  <dd>{revision.parserVersion ?? '未记录'}</dd>
-                </div>
-                <div>
-                  <dt>解析指纹</dt>
-                  <dd>{revision.parserFingerprint ?? '未记录'}</dd>
-                </div>
-                <div>
-                  <dt>来源块修订 ID</dt>
-                  <dd>
-                    {revision.sourceBlockRevisionIds.length > 0
-                      ? revision.sourceBlockRevisionIds.join('、')
-                      : '无'}
-                  </dd>
-                </div>
-              </dl>
-            </li>
+            <article key={`${revision.materialId}:${revision.materialRevisionId}`}>
+              {(() => {
+                const document = documentById.get(revision.materialId);
+                const blocks = revision.sourceBlockRevisionIds
+                  .map((blockId) => sourceBlockById.get(blockId))
+                  .filter((block): block is SourceBlock => block !== undefined);
+                const excerpt = blocks[0] ? sourceExcerpt(blocks[0].content) : null;
+                return (
+                  <>
+                    <div className="curriculum-source-heading">
+                      <div>
+                        <h4>{document?.title ?? `课程资料 ${index + 1}`}</h4>
+                        <p className="muted">
+                          {document
+                            ? (SOURCE_TYPE_LABELS[document.sourceType] ?? document.sourceType)
+                            : '资料类型未读取'}
+                          {document?.originalFilename &&
+                          document.originalFilename !== document.title
+                            ? ` · ${document.originalFilename}`
+                            : ''}
+                          {sourceLocation(blocks) ? ` · ${sourceLocation(blocks)}` : ''}
+                        </p>
+                      </div>
+                      <span>{revision.sourceBlockRevisionIds.length} 处资料依据</span>
+                    </div>
+                    {excerpt ? <blockquote>“{excerpt}”</blockquote> : null}
+                    {!excerpt && sourceLoading ? (
+                      <p className="muted">正在读取页码、章节与原文片段…</p>
+                    ) : null}
+                    {!excerpt && sourceError ? (
+                      <p className="muted">来源正文暂时无法读取，精确版本标识仍然保留。</p>
+                    ) : null}
+                    {onOpenSource ? (
+                      <button
+                        type="button"
+                        className="ghost small"
+                        onClick={() => onOpenSource(revision.materialId)}
+                      >
+                        查看课程资料
+                      </button>
+                    ) : null}
+                  </>
+                );
+              })()}
+            </article>
           ))}
-        </ol>
+        </div>
+        <details className="technical-details curriculum-manifest-technical">
+          <summary>技术详情与精确版本</summary>
+          <dl className="curriculum-manifest-summary small">
+            <div>
+              <dt>清单指纹</dt>
+              <dd>{hierarchy.executionSourceManifest.fingerprint}</dd>
+            </div>
+          </dl>
+          <ol className="curriculum-source-reference-list">
+            {hierarchy.executionSourceManifest.revisions.map((revision, index) => (
+              <li key={`${revision.materialId}:${revision.materialRevisionId}`}>
+                <strong>资料版本 {index + 1}</strong>
+                <span>Material ID {revision.materialId}</span>
+                <span>Revision ID {revision.materialRevisionId}</span>
+                <span>解析器 {revision.parserVersion ?? '未记录'}</span>
+                <span>解析指纹 {revision.parserFingerprint ?? '未记录'}</span>
+                <span>
+                  Source Blocks{' '}
+                  {revision.sourceBlockRevisionIds.length > 0
+                    ? revision.sourceBlockRevisionIds.join('、')
+                    : '无'}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </details>
       </div>
     </details>
   );
@@ -513,6 +830,11 @@ export function CurriculumView({
   onAccept,
   onReject,
   onSelectHistory,
+  documents = [],
+  sourceBlocks = [],
+  sourceLoading = false,
+  sourceError = null,
+  onOpenSource,
 }: CurriculumViewProps) {
   const idPrefix = useId().replace(/:/g, '');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
@@ -520,10 +842,11 @@ export function CurriculumView({
   const majors = useMemo(() => majorBranches(tree?.roots ?? []), [tree]);
   const allNodes = tree ? [...tree.nodeById.values()] : [];
   const learningUnitCount = allNodes.filter((node) => node.kind === 'learning_unit').length;
+  const topicCount = majors.reduce((count, branch) => count + countPresentationTopics(branch), 0);
   const chapterCount = allNodes.filter((node) => node.kind === 'chapter').length;
   const sectionCount = allNodes.filter((node) => node.kind === 'section').length;
-  const objectiveCount = allNodes.reduce(
-    (count, node) => count + (node.learningUnit?.objectives.length ?? 0),
+  const objectiveCount = majors.reduce(
+    (count, branch) => count + countPresentationObjectives(branch),
     0,
   );
   const currentUnits = allNodes.filter((node) => node.progressState === 'started');
@@ -590,8 +913,13 @@ export function CurriculumView({
                 </dd>
               </div>
               <div>
-                <dt>学习单元</dt>
-                <dd>{learningUnitCount}</dd>
+                <dt>学习主题</dt>
+                <dd>
+                  {topicCount}
+                  {topicCount !== learningUnitCount ? (
+                    <small>{learningUnitCount} 条资料记录</small>
+                  ) : null}
+                </dd>
               </div>
               <div>
                 <dt>学习目标</dt>
@@ -662,6 +990,11 @@ export function CurriculumView({
                   key={branch.node.id}
                   branch={branch}
                   nodeById={tree?.nodeById ?? new Map()}
+                  documents={documents}
+                  sourceBlocks={sourceBlocks}
+                  sourceLoading={sourceLoading}
+                  sourceError={sourceError}
+                  onOpenSource={onOpenSource}
                   expandedIds={expandedIds}
                   onToggle={toggle}
                   idPrefix={idPrefix}
@@ -688,7 +1021,14 @@ export function CurriculumView({
             ) : null}
           </section>
 
-          <CurriculumManifest hierarchy={hierarchy} />
+          <CurriculumManifest
+            hierarchy={hierarchy}
+            documents={documents}
+            sourceBlocks={sourceBlocks}
+            sourceLoading={sourceLoading}
+            sourceError={sourceError}
+            onOpenSource={onOpenSource}
+          />
         </>
       )}
 

@@ -964,6 +964,35 @@ main.main-graph {
   grid-column: 1 / -1;
 }
 
+.settings-runtime-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  border-top: 1px solid var(--separator);
+}
+
+.settings-runtime-facts > div {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--separator);
+}
+
+.settings-runtime-facts > div:nth-child(odd) {
+  padding-right: var(--space-5);
+}
+
+.settings-runtime-facts dt {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-weight: 650;
+}
+
+.settings-runtime-facts dd {
+  margin: 0;
+  font-size: 0.86rem;
+}
+
 .settings-preference-row {
   min-height: 64px;
   justify-content: space-between;
@@ -979,6 +1008,12 @@ main.main-graph {
 
 .settings-preference-copy small {
   color: var(--text-muted);
+}
+
+.settings-readonly-value {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  text-align: right;
 }
 
 .settings-preference-row input[role='switch'] {
@@ -4996,6 +5031,19 @@ button.danger {
   border-top: 1px solid var(--border);
 }
 
+.curriculum-objective-copy {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.curriculum-prerequisites {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
 .curriculum-objectives li:first-child {
   border-top: 0;
 }
@@ -5024,6 +5072,74 @@ button.danger {
   color: var(--text-muted);
   font-size: 0.76rem;
   font-weight: 600;
+}
+
+.curriculum-evidence-content {
+  display: grid;
+  max-width: 54rem;
+  gap: var(--space-3);
+  padding: var(--space-3) 0 var(--space-2);
+}
+
+.curriculum-evidence-limit,
+.curriculum-source-heading p,
+.curriculum-source-material blockquote,
+.curriculum-manifest-list blockquote {
+  margin: 0;
+}
+
+.curriculum-source-materials,
+.curriculum-manifest-list {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+}
+
+.curriculum-source-material,
+.curriculum-manifest-list > article {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border);
+}
+
+.curriculum-source-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.curriculum-source-heading h4,
+.curriculum-source-heading strong {
+  margin: 0;
+}
+
+.curriculum-source-heading > span {
+  flex: none;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.curriculum-source-material blockquote,
+.curriculum-manifest-list blockquote {
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--border-strong);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.curriculum-source-material button,
+.curriculum-manifest-list button {
+  width: fit-content;
+}
+
+.curriculum-technical-details,
+.curriculum-manifest-technical {
+  margin-top: var(--space-2);
+  color: var(--text-muted);
 }
 
 .curriculum-evidence-meta {
@@ -5064,6 +5180,25 @@ button.danger {
 .curriculum-manifest-list,
 .curriculum-source-reference-list {
   margin: var(--space-3) 0 0;
+}
+
+.curriculum-source-reference-list li {
+  display: grid;
+  gap: 0.2rem;
+  overflow-wrap: anywhere;
+}
+
+.curriculum-counts dd small {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--text-muted);
+  font-size: 0.66rem;
+  font-weight: 500;
+}
+
+.material-row.is-source-target {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
 }
 
 .curriculum-manifest-list,
@@ -5353,6 +5488,18 @@ button.danger {
     width: 100%;
   }
 
+  .settings-runtime-facts {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-runtime-facts > div:nth-child(odd) {
+    padding-right: 0;
+  }
+
+  .settings-readonly-value {
+    text-align: left;
+  }
+
   .settings-diagnostics dl > div {
     grid-template-columns: 1fr;
     gap: 0.1rem;
@@ -5381,6 +5528,16 @@ button.danger {
 
   .curriculum-major-focus {
     white-space: normal;
+  }
+
+  .curriculum-objectives li {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+
+  .curriculum-source-heading {
+    flex-direction: column;
+    gap: var(--space-1);
   }
 
   .next-action,
