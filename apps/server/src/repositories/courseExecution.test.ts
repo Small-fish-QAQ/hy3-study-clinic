@@ -608,6 +608,23 @@ describe('accepted Course execution persistence', () => {
     const initialPredecessors = routePredecessors();
     const first = stageRoute('first', 1, initialPredecessors);
     const firstState = activate(first, initialPredecessors);
+    const predecessorSession = repos.studySessions.create({
+      id: 'rollback_predecessor_session',
+      workspaceId: 'ws_1',
+      contractVersionId: first.contract.id,
+      curriculumVersionId: first.curriculum.id,
+      studyPlanVersionId: first.plan.id,
+      sessionAgendaId: first.agenda.id,
+      executionSourceManifestFingerprint: first.plan.executionSourceManifestFingerprint,
+      version: 1,
+      status: 'paused',
+      routeState: 'execution_paused',
+      currentAgendaItemId: null,
+      routeStack: [],
+      transcriptWatermark: 0,
+      createdAt: T2,
+      updatedAt: T2,
+    });
     const successorPredecessors = routePredecessors();
     const second = stageRoute('second', 2, successorPredecessors);
 
@@ -622,6 +639,7 @@ describe('accepted Course execution persistence', () => {
     expect(repos.studyPlans.get(first.plan.id)?.status).toBe('accepted');
     expect(repos.learningContracts.get(second.contract.id)?.status).toBe('learner_confirmed');
     expect(repos.studyPlans.get(second.plan.id)?.status).toBe('proposed');
+    expect(repos.studySessions.get(predecessorSession.id)).toEqual(predecessorSession);
   });
 
   it('atomically swaps every pointer on a successful successor activation', () => {
@@ -644,6 +662,183 @@ describe('accepted Course execution persistence', () => {
     expect(repos.curricula.get(first.curriculum.id)?.status).toBe('superseded');
     expect(repos.studyPlans.get(first.plan.id)?.status).toBe('superseded');
     expect(repos.sessionAgendas.get(first.agenda.id)?.status).toBe('abandoned');
+  });
+
+  it('terminally closes and fences predecessor StudySession work during successor activation', () => {
+    const initialPredecessors = routePredecessors();
+    const first = stageRoute('session_old', 1, initialPredecessors);
+    activate(first, initialPredecessors);
+    const session = repos.studySessions.create({
+      id: 'predecessor_session',
+      workspaceId: 'ws_1',
+      contractVersionId: first.contract.id,
+      curriculumVersionId: first.curriculum.id,
+      studyPlanVersionId: first.plan.id,
+      sessionAgendaId: first.agenda.id,
+      executionSourceManifestFingerprint: first.plan.executionSourceManifestFingerprint,
+      version: 1,
+      status: 'active',
+      routeState: 'on_route',
+      currentAgendaItemId: null,
+      routeStack: [],
+      transcriptWatermark: 0,
+      createdAt: T2,
+      updatedAt: T2,
+    });
+    const operation = repos.operations.createOrGet({
+      id: 'predecessor_operation',
+      workspaceId: 'ws_1',
+      commandId: 'predecessor_turn_command',
+      idempotencyKey: 'predecessor_turn_command',
+      logicalOperationId: 'predecessor_turn_command',
+      operationType: 'study_session_turn',
+      expectedFingerprint: 'predecessor-turn-fingerprint',
+      createdAt: T2,
+      updatedAt: T2,
+    }).operation;
+    const claim = repos.operations.claim(operation.id, 'old-worker', T3, T2)!;
+    repos.telemetry.insertLogicalCall({
+      id: 'predecessor_logical_call',
+      operationId: operation.id,
+      workspaceId: 'ws_1',
+      studySessionId: session.id,
+      learningUnitId: null,
+      assessmentId: null,
+      operationType: 'study_session_tutor_turn',
+      cacheKey: null,
+      cacheStatus: 'not_checked',
+      promptFingerprint: null,
+      schemaFingerprint: 'tutor-turn-v1',
+      policyFingerprint: null,
+      sourceFingerprint: first.plan.executionSourceManifestFingerprint,
+      status: 'open',
+      createdAt: T2,
+      completedAt: null,
+    });
+    repos.telemetry.insertAttempt({
+      id: 'predecessor_attempt',
+      logicalCallId: 'predecessor_logical_call',
+      attemptNumber: 1,
+      attemptKind: 'original',
+      provider: 'fake',
+      model: null,
+      fencingToken: claim.fencingToken,
+      status: 'sent',
+      startedAt: T2,
+      sentAt: T2,
+      firstTokenAt: null,
+      completedAt: null,
+      latencyMs: null,
+      timeToFirstTokenMs: null,
+      errorCode: null,
+      errorMessage: null,
+    });
+    repos.studySessions.insertTurn({
+      id: 'predecessor_turn',
+      sessionId: session.id,
+      seq: 0,
+      commandId: 'predecessor_turn_command',
+      status: 'running',
+      contextManifest: {
+        fingerprint: 'predecessor-context',
+        contractScopeFingerprint: 'predecessor-scope',
+        contractVersionId: first.contract.id,
+        curriculumVersionId: first.curriculum.id,
+        studyPlanVersionId: first.plan.id,
+        sessionAgendaVersionId: `${first.agenda.id}:v${first.agenda.version}`,
+        studySessionVersion: session.version,
+        executionSourceManifestFingerprint: first.plan.executionSourceManifestFingerprint,
+        transcriptWatermark: 0,
+        sourceBlockRevisionIds: ['blk_1'],
+        formalEvidenceIds: [],
+        riskIds: [],
+      },
+      logicalCallId: 'predecessor_logical_call',
+      errorMessage: null,
+      createdAt: T2,
+      completedAt: null,
+    });
+    repos.studySessions.insertExchange({
+      id: 'predecessor_exchange',
+      sessionId: session.id,
+      turnId: 'predecessor_turn',
+      seq: 0,
+      role: 'learner',
+      content: 'Preserve this learner transcript.',
+      channel: 'conversation',
+      createdAt: T2,
+    });
+    repos.studySessions.update(
+      { ...session, version: 2, transcriptWatermark: 1, updatedAt: T2 },
+      session.version,
+    );
+
+    const successorPredecessors = routePredecessors();
+    const second = stageRoute('session_new', 2, successorPredecessors);
+    activate(second, successorPredecessors);
+
+    expect(repos.studySessions.get(session.id)).toMatchObject({
+      status: 'abandoned',
+      routeState: 'on_route',
+      currentAgendaItemId: null,
+      version: 3,
+      transcriptWatermark: 1,
+    });
+    expect(repos.studySessions.getTurn('predecessor_turn')).toMatchObject({
+      status: 'cancelled',
+      errorMessage: expect.stringContaining('route_superseded'),
+      completedAt: T3,
+    });
+    expect(repos.studySessions.listExchanges(session.id)).toMatchObject([
+      { id: 'predecessor_exchange', role: 'learner' },
+    ]);
+    expect(repos.studySessions.listTurnEvents('predecessor_turn')).toMatchObject([
+      { kind: 'cancelled', content: 'route_superseded' },
+    ]);
+    expect(repos.telemetry.getLogicalCall('predecessor_logical_call')).toMatchObject({
+      status: 'cancelled',
+      completedAt: T3,
+    });
+    expect(repos.telemetry.getAttempt('predecessor_attempt')).toMatchObject({
+      status: 'outcome_unknown',
+      errorCode: 'ROUTE_SUPERSEDED',
+    });
+    expect(repos.operations.get(operation.id)).toMatchObject({
+      status: 'cancelled',
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      fencingToken: claim.fencingToken,
+    });
+    expect(repos.operations.getResult(operation.id)).toMatchObject({
+      status: 'cancelled',
+      payload: { reason: 'route_superseded', successorPlanId: second.plan.id },
+    });
+    expect(repos.operations.listEvents(operation.id)).toMatchObject([
+      { kind: 'operation_interrupted', payload: { reason: 'route_superseded' } },
+    ]);
+    expect(
+      repos.operations.finalize(
+        {
+          operationId: operation.id,
+          status: 'completed',
+          payload: { stale: true },
+          createdAt: T3,
+        },
+        'old-worker',
+        claim.fencingToken,
+      ),
+    ).toBe(false);
+    const routeEvent = db
+      .prepare(
+        `SELECT payload FROM course_execution_events
+         WHERE workspace_id = 'ws_1' AND event_type = 'route_activated'
+         ORDER BY seq DESC LIMIT 1`,
+      )
+      .get() as { payload: string };
+    expect(JSON.parse(routeEvent.payload)).toMatchObject({
+      planId: second.plan.id,
+      supersededSessionIds: [session.id],
+    });
   });
 
   it('rejects a pending successor Curriculum without disturbing the active Curriculum', () => {

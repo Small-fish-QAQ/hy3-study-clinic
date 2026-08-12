@@ -52,6 +52,11 @@ export function StudySessionView({
   const [detourLearningUnitId, setDetourLearningUnitId] = useState('');
   const epoch = useRef(0);
   const action = useAsyncAction();
+  const routeContractVersionId = route?.contractVersionId;
+  const routeCurriculumVersionId = route?.curriculumVersionId;
+  const routeStudyPlanVersionId = route?.studyPlanVersionId;
+  const routeSessionAgendaId = route?.sessionAgendaId;
+  const routeExecutionVersion = route?.executionVersion;
 
   const loadSession = useCallback(
     async (targetWorkspaceId: string, sessionId: string, signal: AbortSignal) => {
@@ -88,9 +93,16 @@ export function StudySessionView({
       .listStudySessions(workspaceId, controller.signal)
       .then(async ({ sessions }) => {
         if (controller.signal.aborted || requestEpoch !== epoch.current) return;
-        const current = sessions.find(
-          (session) => session.status === 'active' || session.status === 'paused',
-        );
+        const current = routeContractVersionId
+          ? sessions.find(
+              (session) =>
+                (session.status === 'active' || session.status === 'paused') &&
+                session.contractVersionId === routeContractVersionId &&
+                session.curriculumVersionId === routeCurriculumVersionId &&
+                session.studyPlanVersionId === routeStudyPlanVersionId &&
+                session.sessionAgendaId === routeSessionAgendaId,
+            )
+          : undefined;
         if (!current) return;
         await loadSession(workspaceId, current.id, controller.signal);
       })
@@ -106,7 +118,15 @@ export function StudySessionView({
       controller.abort();
       epoch.current += 1;
     };
-  }, [loadSession, workspaceId]);
+  }, [
+    loadSession,
+    routeContractVersionId,
+    routeCurriculumVersionId,
+    routeExecutionVersion,
+    routeSessionAgendaId,
+    routeStudyPlanVersionId,
+    workspaceId,
+  ]);
 
   function replaceSession(session: StudySession, agenda = detail?.agenda): void {
     setDetail((current) => (current && agenda ? { ...current, session, agenda } : current));

@@ -358,7 +358,11 @@ export function createCourseExecutionRepo(db: SqliteDb) {
     return { contract, curriculum, plan, agenda };
   }
 
-  function addEvent(input: ActivateCourseRouteInput, resultingVersion: number): void {
+  function addEvent(
+    input: ActivateCourseRouteInput,
+    resultingVersion: number,
+    supersededSessionIds: string[],
+  ): void {
     const seq = (
       db
         .prepare(
@@ -384,6 +388,7 @@ export function createCourseExecutionRepo(db: SqliteDb) {
         curriculumId: input.curriculumId,
         planId: input.planId,
         agendaId: input.agendaId,
+        supersededSessionIds,
       }),
       input.acceptedAt,
     );
@@ -405,6 +410,7 @@ export function createCourseExecutionRepo(db: SqliteDb) {
         status: 'active',
         updatedAt: input.acceptedAt,
       });
+      const supersededSessionIds: string[] = [];
 
       if (current.activeContractId && current.activeContractId !== contract.id) {
         const oldContract = readContract(current.activeContractId);
@@ -471,6 +477,151 @@ export function createCourseExecutionRepo(db: SqliteDb) {
         );
       }
 
+      if (
+        current.activeContractId &&
+        current.activeCurriculumId &&
+        current.acceptedPlanId &&
+        current.activeAgendaId
+      ) {
+        const openSessions = db
+          .prepare(
+            `SELECT id, version FROM study_sessions
+             WHERE workspace_id = ? AND contract_id = ? AND curriculum_id = ?
+               AND plan_id = ? AND agenda_id = ?
+               AND status IN ('active', 'paused', 'interrupted')
+             ORDER BY created_at, id`,
+          )
+          .all(
+            input.workspaceId,
+            current.activeContractId,
+            current.activeCurriculumId,
+            current.acceptedPlanId,
+            current.activeAgendaId,
+          ) as Array<{ id: string; version: number }>;
+        for (const session of openSessions) {
+          supersededSessionIds.push(session.id);
+          const openTurns = db
+            .prepare(
+              `SELECT id FROM study_session_turns
+               WHERE session_id = ? AND status IN ('queued', 'running', 'interrupted') ORDER BY seq`,
+            )
+            .all(session.id) as Array<{ id: string }>;
+          for (const turn of openTurns) {
+            const nextTurnEventSeq = (
+              db
+                .prepare(
+                  `SELECT COALESCE(MAX(seq), -1) + 1 AS seq
+                   FROM study_turn_events WHERE turn_id = ?`,
+                )
+                .get(turn.id) as { seq: number }
+            ).seq;
+            db.prepare(
+              `UPDATE study_session_turns SET status = 'cancelled',
+                 error_message = 'route_superseded: learner accepted a successor StudyPlan.',
+                 completed_at = ?
+               WHERE id = ? AND status IN ('queued', 'running', 'interrupted')`,
+            ).run(input.acceptedAt, turn.id);
+            db.prepare(
+              `INSERT INTO study_turn_events
+                 (id, session_id, turn_id, seq, kind, provisional, content, created_at)
+               VALUES (?, ?, ?, ?, 'cancelled', 0, 'route_superseded', ?)`,
+            ).run(
+              `${turn.id}:${input.eventId}:route_superseded`,
+              session.id,
+              turn.id,
+              nextTurnEventSeq,
+              input.acceptedAt,
+            );
+          }
+
+          const runningOperations = db
+            .prepare(
+              `SELECT DISTINCT o.id, o.fencing_token, o.status
+               FROM agent_operations o
+               LEFT JOIN model_logical_calls lc ON lc.operation_id = o.id
+               WHERE o.status IN ('running', 'interrupted')
+                 AND (lc.study_session_id = ? OR
+                   (o.operation_type = 'study_session_turn' AND
+                    substr(o.command_id, 1, length(?)) = ?))
+               ORDER BY o.created_at, o.id`,
+            )
+            .all(session.id, `study-turn:${session.id}:`, `study-turn:${session.id}:`) as Array<{
+            id: string;
+            fencing_token: number;
+            status: 'running' | 'interrupted';
+          }>;
+          for (const operation of runningOperations) {
+            db.prepare(
+              `UPDATE model_call_attempts
+               SET status = CASE WHEN status = 'sent' THEN 'outcome_unknown' ELSE 'interrupted' END,
+                   completed_at = COALESCE(completed_at, ?),
+                   error_code = COALESCE(error_code, 'ROUTE_SUPERSEDED'),
+                   error_message = COALESCE(error_message, 'Successor route fenced this attempt.')
+               WHERE logical_call_id IN
+                 (SELECT id FROM model_logical_calls WHERE operation_id = ?)
+                 AND status IN ('queued', 'sent')`,
+            ).run(input.acceptedAt, operation.id);
+            db.prepare(
+              `UPDATE model_logical_calls SET status = 'cancelled', completed_at = ?
+               WHERE operation_id = ? AND status = 'open'`,
+            ).run(input.acceptedAt, operation.id);
+            const nextOperationEventSeq = (
+              db
+                .prepare(
+                  `SELECT COALESCE(MAX(seq), -1) + 1 AS seq
+                   FROM agent_operation_events WHERE operation_id = ?`,
+                )
+                .get(operation.id) as { seq: number }
+            ).seq;
+            db.prepare(
+              `INSERT INTO agent_operation_events
+                 (id, operation_id, seq, fencing_token, kind, payload, created_at)
+               VALUES (?, ?, ?, ?, 'operation_interrupted', ?, ?)`,
+            ).run(
+              `${operation.id}:${input.eventId}:route_superseded`,
+              operation.id,
+              nextOperationEventSeq,
+              operation.fencing_token,
+              JSON.stringify({ reason: 'route_superseded', successorPlanId: input.planId }),
+              input.acceptedAt,
+            );
+            db.prepare(
+              `INSERT INTO agent_operation_results
+                 (operation_id, fencing_token, status, payload, created_at)
+               VALUES (?, ?, 'cancelled', ?, ?)`,
+            ).run(
+              operation.id,
+              operation.fencing_token,
+              JSON.stringify({ reason: 'route_superseded', successorPlanId: input.planId }),
+              input.acceptedAt,
+            );
+            const fenced = db
+              .prepare(
+                `UPDATE agent_operations
+                 SET status = 'cancelled', lease_owner = NULL, lease_expires_at = NULL, updated_at = ?
+                 WHERE id = ? AND status = ? AND fencing_token = ?`,
+              )
+              .run(
+                input.acceptedAt,
+                operation.id,
+                operation.status,
+                operation.fencing_token,
+              ).changes;
+            if (fenced !== 1) throw new Error('Predecessor Tutor operation changed concurrently.');
+          }
+
+          const sessionClosed = db
+            .prepare(
+              `UPDATE study_sessions
+             SET status = 'abandoned', route_state = 'on_route', current_agenda_item_id = NULL,
+                 version = ?, updated_at = ? WHERE id = ? AND version = ?`,
+            )
+            .run(session.version + 1, input.acceptedAt, session.id, session.version).changes;
+          if (sessionClosed !== 1)
+            throw new Error('Predecessor StudySession changed concurrently.');
+        }
+      }
+
       db.prepare(
         `UPDATE learning_contract_versions SET status = 'active', payload = ? WHERE id = ?`,
       ).run(JSON.stringify(activeContract), activeContract.id);
@@ -520,7 +671,7 @@ export function createCourseExecutionRepo(db: SqliteDb) {
           ).changes;
         if (changed !== 1) throw new Error('Course execution state changed concurrently.');
       }
-      addEvent(input, resultingVersion);
+      addEvent(input, resultingVersion, supersededSessionIds);
       return get(input.workspaceId);
     },
   );

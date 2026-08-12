@@ -82,6 +82,14 @@ const detail: StudySessionDetailResponse = {
   latestSummary: null,
 };
 
+const currentRoute = {
+  contractVersionId: session.contractVersionId,
+  curriculumVersionId: session.curriculumVersionId,
+  studyPlanVersionId: session.studyPlanVersionId,
+  sessionAgendaId: session.sessionAgendaId,
+  executionVersion: 4,
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -137,6 +145,45 @@ describe('StudySessionView', () => {
     );
   });
 
+  it('selects only an open session on the current route and reloads after route changes', async () => {
+    const successorSession: StudySession = {
+      ...session,
+      id: 'session_2',
+      contractVersionId: 'contract_2',
+      curriculumVersionId: 'curriculum_2',
+      studyPlanVersionId: 'plan_2',
+      sessionAgendaId: 'agenda_2',
+    };
+    const successorRoute = {
+      contractVersionId: successorSession.contractVersionId,
+      curriculumVersionId: successorSession.curriculumVersionId,
+      studyPlanVersionId: successorSession.studyPlanVersionId,
+      sessionAgendaId: successorSession.sessionAgendaId,
+      executionVersion: 5,
+    };
+    vi.mocked(api.listStudySessions).mockResolvedValue({
+      sessions: [session, successorSession],
+    });
+    vi.mocked(api.getStudySession).mockImplementation(async (_workspaceId, sessionId) => ({
+      ...detail,
+      session: sessionId === successorSession.id ? successorSession : session,
+    }));
+
+    const { rerender } = render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    await waitFor(() =>
+      expect(api.getStudySession).toHaveBeenCalledWith('ws_1', session.id, expect.any(AbortSignal)),
+    );
+
+    rerender(<StudySessionView workspaceId="ws_1" route={successorRoute} />);
+    await waitFor(() =>
+      expect(api.getStudySession).toHaveBeenCalledWith(
+        'ws_1',
+        successorSession.id,
+        expect.any(AbortSignal),
+      ),
+    );
+  });
+
   it('launches a direct checkpoint through the normal agenda assessment callback', async () => {
     const user = userEvent.setup();
     const onLaunchQuiz = vi.fn();
@@ -178,7 +225,9 @@ describe('StudySessionView', () => {
     });
     vi.spyOn(window, 'prompt').mockReturnValue('Check my understanding');
 
-    render(<StudySessionView workspaceId="ws_1" route={null} onLaunchQuiz={onLaunchQuiz} />);
+    render(
+      <StudySessionView workspaceId="ws_1" route={currentRoute} onLaunchQuiz={onLaunchQuiz} />,
+    );
     await openStudyControls(user);
     await user.click(await screen.findByRole('button', { name: '发起正式评估' }));
 
@@ -237,7 +286,7 @@ describe('StudySessionView', () => {
     render(
       <StudySessionView
         workspaceId="ws_1"
-        route={null}
+        route={currentRoute}
         curriculumUnits={[
           { id: 'unit_1', title: 'Current unit' },
           { id: 'unit_2', title: 'Bayes review' },
@@ -290,7 +339,7 @@ describe('StudySessionView', () => {
       },
     });
 
-    render(<StudySessionView workspaceId="ws_1" route={null} />);
+    render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
     await openStudyControls(userEvent.setup());
 
     expect(await screen.findByRole('button', { name: '纳入长期路线' })).toBeEnabled();
@@ -300,7 +349,7 @@ describe('StudySessionView', () => {
     vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });
     vi.mocked(api.getStudySession).mockResolvedValue(detail);
 
-    const { unmount } = render(<StudySessionView workspaceId="ws_1" route={null} />);
+    const { unmount } = render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
     await openStudyControls(userEvent.setup());
     expect(await screen.findByRole('button', { name: '纳入长期路线' })).toBeDisabled();
     unmount();
@@ -316,7 +365,7 @@ describe('StudySessionView', () => {
       agenda: { ...detail.agenda, items: [detourWithoutUnit] },
     });
 
-    render(<StudySessionView workspaceId="ws_1" route={null} />);
+    render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
     await openStudyControls(userEvent.setup());
     expect(await screen.findByRole('button', { name: '纳入长期路线' })).toBeDisabled();
   });
@@ -400,7 +449,7 @@ describe('StudySessionView', () => {
       .mockReturnValueOnce(insertedItem.reason)
       .mockReturnValueOnce('Return after the inserted review.');
 
-    render(<StudySessionView workspaceId="ws_1" route={null} />);
+    render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
     await openStudyControls(user);
     await user.click(await screen.findByRole('button', { name: '插入短活动' }));
     await openAgenda(user);
@@ -512,7 +561,7 @@ describe('StudySessionView', () => {
       };
     });
 
-    render(<StudySessionView workspaceId="ws_1" route={null} />);
+    render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
     const composer = await screen.findByPlaceholderText('输入你的问题或想法…');
     await user.type(composer, 'Why?');
     await user.click(screen.getByRole('button', { name: '发送' }));
