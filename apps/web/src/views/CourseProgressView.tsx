@@ -12,15 +12,88 @@ import { QuizHistoryView } from './QuizHistoryView.js';
 import { MistakesView } from './MistakesView.js';
 import { MasteryView } from './MasteryView.js';
 
-type ProgressSection = 'summary' | 'formal' | 'assessments' | 'mistakes' | 'mastery';
+type ProgressSection = 'overview' | 'evidence' | 'repair' | 'mastery' | 'history';
 
 const SECTION_LABELS: Record<ProgressSection, string> = {
-  summary: '概览',
-  formal: '正式进展',
-  assessments: '测验记录',
-  mistakes: '错题与修复',
+  overview: '概览',
+  evidence: '正式证据',
+  repair: '修复',
   mastery: '掌握与复习',
+  history: '历史与决定',
 };
+
+function CourseHistoryRecords({ overview }: { overview: CourseExecutionOverview | null }) {
+  if (
+    !overview ||
+    (overview.contractHistory.length === 0 &&
+      overview.curriculumHistory.length === 0 &&
+      overview.studyPlanHistory.length === 0)
+  ) {
+    return (
+      <Banner kind="empty">
+        还没有目标、课程结构或路线版本。完成相应确认后，持久化决定会显示在这里。
+      </Banner>
+    );
+  }
+
+  return (
+    <div className="course-history-groups">
+      {overview.contractHistory.length > 0 ? (
+        <section>
+          <h3>学习目标决定</h3>
+          <ol className="course-history-list">
+            {[...overview.contractHistory].reverse().map((item) => (
+              <li key={item.id}>
+                <strong>
+                  版本 {item.version} · {item.targetDescription}
+                </strong>
+                <span className="small muted">
+                  {contractStatusLabel(item.status)} · {formatHistoryDate(item.createdAt)}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
+      {overview.curriculumHistory.length > 0 ? (
+        <section>
+          <h3>课程结构决定</h3>
+          <ol className="course-history-list">
+            {[...overview.curriculumHistory].reverse().map((item) => (
+              <li key={item.id}>
+                <strong>
+                  版本 {item.version} · {item.title}
+                </strong>
+                <span className="small muted">
+                  {curriculumStatusLabel(item.status)} · {item.learningUnitCount} 个学习单元 ·{' '}
+                  {formatHistoryDate(item.createdAt)}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
+      {overview.studyPlanHistory.length > 0 ? (
+        <section>
+          <h3>学习路线与调整</h3>
+          <ol className="course-history-list">
+            {[...overview.studyPlanHistory].reverse().map((item) => (
+              <li key={item.id}>
+                <strong>版本 {item.version}</strong>
+                <span className="small muted">
+                  {studyPlanStatusLabel(item.status)} · {item.itemCount} 项 · 预计{' '}
+                  {item.projectedMinutes} 分钟
+                  {item.deferredUnitCount > 0 ? ` · ${item.deferredUnitCount} 项延期` : ''} ·{' '}
+                  {formatHistoryDate(item.createdAt)}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
+    </div>
+  );
+}
 
 export interface CourseProgressViewProps {
   workspaceId: string;
@@ -50,7 +123,7 @@ export function CourseProgressView({
   remediationLoading,
   remediationError,
 }: CourseProgressViewProps) {
-  const [section, setSection] = useState<ProgressSection>('summary');
+  const [section, setSection] = useState<ProgressSection>('overview');
   const [materialId, setMaterialId] = useState(documents[0]?.id ?? '');
   const [reviews, setReviews] = useState<ReviewItem[] | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
@@ -81,18 +154,23 @@ export function CourseProgressView({
 
   return (
     <div className="course-progress stack" aria-label="课程进展">
-      <header className="section-heading">
-        <h2>进展</h2>
-        <p className="muted">查看正式学习结果、测验、错题修复和复习安排。</p>
+      <header className="supporting-page-intro">
+        <p className="eyebrow">持久学习状态</p>
+        <p className="muted">
+          查看正式证据、进展核对、修复与历史决定。Tutor 对话和一般活动不会自动成为正式进展。
+        </p>
       </header>
 
-      <nav className="subview-tabs" aria-label="进展分类">
+      <nav className="subview-tabs" aria-label="进展分类" role="tablist">
         {(Object.keys(SECTION_LABELS) as ProgressSection[]).map((item) => (
           <button
             type="button"
             key={item}
+            id={`progress-tab-${item}`}
             role="tab"
             aria-selected={section === item}
+            aria-controls={`progress-panel-${item}`}
+            tabIndex={section === item ? 0 : -1}
             className={section === item ? 'active' : ''}
             onClick={() => setSection(item)}
           >
@@ -101,8 +179,13 @@ export function CourseProgressView({
         ))}
       </nav>
 
-      {section === 'summary' ? (
-        <div className="progress-summary">
+      {section === 'overview' ? (
+        <div
+          className="progress-summary"
+          id="progress-panel-overview"
+          role="tabpanel"
+          aria-labelledby="progress-tab-overview"
+        >
           <section className="progress-summary-primary" aria-label="正式学习概览">
             <p className="eyebrow">当前正式进展</p>
             <strong className="progress-total">
@@ -111,116 +194,79 @@ export function CourseProgressView({
                 : '尚未开始'}
             </strong>
             <p className="muted">已完成的学习路线项目</p>
-            <button type="button" className="primary" onClick={() => setSection('formal')}>
-              查看正式进展
+            <button type="button" className="primary" onClick={() => setSection('evidence')}>
+              查看正式证据
             </button>
           </section>
-          <section className="progress-summary-list" aria-label="学习记录入口">
-            <button type="button" onClick={() => setSection('assessments')}>
-              <span>测验记录</span>
-              <strong>查看全部正式评估</strong>
+          <section className="progress-summary-list" aria-label="持久学习状态摘要">
+            <button type="button" onClick={() => setSection('evidence')}>
+              <span>可计入状态的证据</span>
+              <strong>{progress?.stateCreditingEvidenceCount ?? 0} 项</strong>
             </button>
-            <button type="button" onClick={() => setSection('mistakes')}>
-              <span>错题与修复</span>
+            <button type="button" onClick={() => setSection('repair')}>
+              <span>需要修复</span>
               <strong>{progress?.repairNeededPlanItemCount ?? 0} 项路线工作待修复</strong>
             </button>
             <button type="button" onClick={() => setSection('mastery')}>
               <span>掌握与复习</span>
               <strong>{reviews?.length ?? 0} 项复习记录</strong>
             </button>
+            <button type="button" onClick={() => setSection('history')}>
+              <span>历史与决定</span>
+              <strong>正式评估与版本记录</strong>
+            </button>
           </section>
-          <details className="history-disclosure">
-            <summary>学习目标与路线历史</summary>
-            {!overview ||
-            (overview.contractHistory.length === 0 &&
-              overview.curriculumHistory.length === 0 &&
-              overview.studyPlanHistory.length === 0) ? (
-              <Banner kind="empty">
-                还没有历史版本，这是尚未确认学习目标或路线时的正常状态。完成设置后，版本记录会显示在这里。
-              </Banner>
-            ) : (
-              <div className="course-history-groups">
-                {overview.contractHistory.length > 0 ? (
-                  <section>
-                    <h3>学习目标</h3>
-                    <ol className="course-history-list">
-                      {[...overview.contractHistory].reverse().map((item) => (
-                        <li key={item.id}>
-                          <strong>
-                            版本 {item.version} · {item.targetDescription}
-                          </strong>
-                          <span className="small muted">
-                            {contractStatusLabel(item.status)} · {formatHistoryDate(item.createdAt)}
-                          </span>
-                        </li>
-                      ))}
-                    </ol>
-                  </section>
-                ) : null}
-                {overview.curriculumHistory.length > 0 ? (
-                  <section>
-                    <h3>课程结构</h3>
-                    <ol className="course-history-list">
-                      {[...overview.curriculumHistory].reverse().map((item) => (
-                        <li key={item.id}>
-                          <strong>
-                            版本 {item.version} · {item.title}
-                          </strong>
-                          <span className="small muted">
-                            {curriculumStatusLabel(item.status)} · {item.learningUnitCount}{' '}
-                            个学习单元 · {formatHistoryDate(item.createdAt)}
-                          </span>
-                        </li>
-                      ))}
-                    </ol>
-                  </section>
-                ) : null}
-                {overview.studyPlanHistory.length > 0 ? (
-                  <section>
-                    <h3>学习路线与调整</h3>
-                    <ol className="course-history-list">
-                      {[...overview.studyPlanHistory].reverse().map((item) => (
-                        <li key={item.id}>
-                          <strong>版本 {item.version}</strong>
-                          <span className="small muted">
-                            {studyPlanStatusLabel(item.status)} · {item.itemCount} 项 · 预计{' '}
-                            {item.projectedMinutes} 分钟
-                            {item.deferredUnitCount > 0
-                              ? ` · ${item.deferredUnitCount} 项延期`
-                              : ''}{' '}
-                            · {formatHistoryDate(item.createdAt)}
-                          </span>
-                        </li>
-                      ))}
-                    </ol>
-                  </section>
-                ) : null}
-              </div>
-            )}
-          </details>
+          <p className="progress-advisory-note small muted">
+            另有 {progress?.advisoryEvidenceCount ?? 0} 项仅供参考证据；它们不会授予正式状态。
+          </p>
         </div>
       ) : null}
 
-      {section === 'formal' ? (
-        <FormalProgressView
-          workspaceId={workspaceId}
-          overview={overview}
-          command={command}
-          onAcceptProposedPlan={onAcceptProposedPlan}
-          onRejectProposedPlan={onRejectProposedPlan}
-          onCourseChanged={onCourseChanged}
-          onOpenProgress={(target) =>
-            setSection(
-              target === 'history' ? 'assessments' : target === 'mistakes' ? 'mistakes' : 'mastery',
-            )
-          }
-        />
+      {section === 'evidence' ? (
+        <div id="progress-panel-evidence" role="tabpanel" aria-labelledby="progress-tab-evidence">
+          <FormalProgressView
+            workspaceId={workspaceId}
+            overview={overview}
+            command={command}
+            onAcceptProposedPlan={onAcceptProposedPlan}
+            onRejectProposedPlan={onRejectProposedPlan}
+            onCourseChanged={onCourseChanged}
+            onOpenProgress={(target) =>
+              setSection(
+                target === 'history' ? 'history' : target === 'mistakes' ? 'repair' : 'mastery',
+              )
+            }
+          />
+        </div>
       ) : null}
 
-      {section === 'assessments' ? <QuizHistoryView workspaceId={workspaceId} /> : null}
+      {section === 'history' ? (
+        <div
+          className="progress-history stack"
+          id="progress-panel-history"
+          role="tabpanel"
+          aria-labelledby="progress-tab-history"
+        >
+          <section className="progress-history-versions" aria-label="学习目标与路线历史">
+            <div className="section-heading">
+              <h3>学习目标、课程结构与路线决定</h3>
+              <p className="small muted">已确认版本保留为历史记录，不会被后续版本改写。</p>
+            </div>
+            <CourseHistoryRecords overview={overview} />
+          </section>
+          <section className="progress-assessment-history" aria-label="正式评估历史">
+            <QuizHistoryView workspaceId={workspaceId} />
+          </section>
+        </div>
+      ) : null}
 
-      {section === 'mistakes' || section === 'mastery' ? (
-        <section className="material-progress-scope">
+      {section === 'repair' || section === 'mastery' ? (
+        <section
+          className="material-progress-scope"
+          id={`progress-panel-${section}`}
+          role="tabpanel"
+          aria-labelledby={`progress-tab-${section}`}
+        >
           {documents.length > 1 ? (
             <label>
               资料范围
@@ -237,7 +283,7 @@ export function CourseProgressView({
             <Banner kind="empty">
               课程还没有资料，因此暂时没有可汇总的错题或掌握记录。请先在课程主页添加资料。
             </Banner>
-          ) : section === 'mistakes' ? (
+          ) : section === 'repair' ? (
             <MistakesView
               materialId={materialId}
               refreshKey={refreshKey}

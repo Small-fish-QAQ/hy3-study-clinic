@@ -46,6 +46,7 @@ export function CourseMaterialsView({
 }: CourseMaterialsViewProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [importOpen, setImportOpen] = useState(documents.length === 0);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const action = useAsyncAction();
 
@@ -115,12 +116,14 @@ export function CourseMaterialsView({
 
   return (
     <div className="course-materials stack" aria-label="课程资料">
-      <header className="section-heading row between">
+      <header className="supporting-page-intro row between">
         <div>
-          <h2>课程资料</h2>
-          <p className="muted">这些资料共同构成当前课程的教材、参考资料和练习依据。</p>
+          <p className="eyebrow">课程来源</p>
+          <p className="muted">
+            管理教材、参考资料和练习依据。资料在课程中的用途不等于其事实依据已经独立验证。
+          </p>
         </div>
-        <button type="button" onClick={onBack}>
+        <button type="button" className="ghost" onClick={onBack}>
           返回主页
         </button>
       </header>
@@ -132,7 +135,7 @@ export function CourseMaterialsView({
           这门课程还没有资料，这是新课程的正常状态。添加教材或参考资料后即可建立学习目标与课程结构。
         </Banner>
       ) : (
-        <section className="material-list" aria-label="当前课程资料">
+        <section className="material-list" aria-label={`当前课程资料，共 ${documents.length} 份`}>
           {documents.map((document) => {
             const role = roleHistory[document.id]?.current?.role ?? 'unknown';
             return (
@@ -155,6 +158,9 @@ export function CourseMaterialsView({
                 {document.extractionWarnings.length > 0 ? (
                   <Banner kind="info">{document.extractionWarnings.join('；')}</Banner>
                 ) : null}
+                <p className="material-identity-note small muted">
+                  这是课程中的同一份逻辑资料；重新解析只更新其当前处理结果，不会创建另一份课程资料。
+                </p>
                 <div className="row material-actions">
                   {document.sourceType === 'pdf' || document.sourceType === 'docx' ? (
                     <button
@@ -167,7 +173,7 @@ export function CourseMaterialsView({
                   ) : null}
                   <button
                     type="button"
-                    className="danger"
+                    className="ghost danger"
                     disabled={action.loading}
                     onClick={() => void retire(document)}
                   >
@@ -175,10 +181,10 @@ export function CourseMaterialsView({
                   </button>
                 </div>
                 <details className="technical-details small">
-                  <summary>解析与来源详情</summary>
+                  <summary>当前处理版本与来源</summary>
                   <dl>
                     <div>
-                      <dt>解析器</dt>
+                      <dt>当前解析器</dt>
                       <dd>{document.parserVersion ?? '历史版本未记录'}</dd>
                     </div>
                     <div>
@@ -190,8 +196,16 @@ export function CourseMaterialsView({
                       <dd>{document.blockCount} 段</dd>
                     </div>
                     <div>
-                      <dt>资料记录</dt>
+                      <dt>逻辑资料 ID</dt>
                       <dd>{document.id}</dd>
+                    </div>
+                    <div>
+                      <dt>当前处理时间</dt>
+                      <dd>
+                        <time dateTime={document.updatedAt}>
+                          {new Date(document.updatedAt).toLocaleString('zh-CN')}
+                        </time>
+                      </dd>
                     </div>
                   </dl>
                 </details>
@@ -201,58 +215,64 @@ export function CourseMaterialsView({
         </section>
       )}
 
-      <section className="material-import" aria-label="添加课程资料">
-        <h3>添加课程资料</h3>
-        <div className="material-import-grid">
-          <label>
-            标题（可选）
-            <input value={title} onChange={(event) => setTitle(event.target.value)} />
-          </label>
-          <label className="span-2">
-            粘贴文本
-            <textarea
-              rows={5}
-              value={content}
-              onChange={(event) => setContent(event.target.value)}
-              placeholder="粘贴 Markdown 或纯文本"
-            />
-          </label>
+      <details
+        className="material-import"
+        open={importOpen}
+        onToggle={(event) => setImportOpen(event.currentTarget.open)}
+      >
+        <summary>添加课程资料</summary>
+        <div className="material-import-content" aria-label="添加课程资料">
+          <div className="material-import-grid">
+            <label>
+              标题（可选）
+              <input value={title} onChange={(event) => setTitle(event.target.value)} />
+            </label>
+            <label className="span-2">
+              粘贴文本
+              <textarea
+                rows={5}
+                value={content}
+                onChange={(event) => setContent(event.target.value)}
+                placeholder="粘贴 Markdown 或纯文本"
+              />
+            </label>
+          </div>
+          <div className="row material-import-actions">
+            <button
+              type="button"
+              className="primary"
+              disabled={action.loading || content.trim().length === 0}
+              onClick={() => void addText()}
+            >
+              添加文本资料
+            </button>
+            <label className="file-upload">
+              <input
+                ref={fileRef}
+                type="file"
+                accept={UPLOAD_ACCEPT}
+                disabled={action.loading}
+                aria-label="上传课程资料"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void addFile(file);
+                  if (fileRef.current) fileRef.current.value = '';
+                }}
+              />
+              上传文件
+            </label>
+            {action.loading ? (
+              <>
+                <Loading label="正在处理课程资料…" />
+                <button type="button" onClick={action.cancel}>
+                  取消
+                </button>
+              </>
+            ) : null}
+          </div>
+          <p className="small muted">支持 Markdown、TXT、PDF 和 DOCX。{UPLOAD_OCR_LIMIT_TEXT}</p>
         </div>
-        <div className="row material-import-actions">
-          <button
-            type="button"
-            className="primary"
-            disabled={action.loading || content.trim().length === 0}
-            onClick={() => void addText()}
-          >
-            添加文本资料
-          </button>
-          <label className="file-upload">
-            <input
-              ref={fileRef}
-              type="file"
-              accept={UPLOAD_ACCEPT}
-              disabled={action.loading}
-              aria-label="上传课程资料"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) void addFile(file);
-                if (fileRef.current) fileRef.current.value = '';
-              }}
-            />
-            上传文件
-          </label>
-          {action.loading ? (
-            <>
-              <Loading label="正在处理课程资料…" />
-              <button type="button" onClick={action.cancel}>
-                取消
-              </button>
-            </>
-          ) : null}
-        </div>
-        <p className="small muted">支持 Markdown、TXT、PDF 和 DOCX。{UPLOAD_OCR_LIMIT_TEXT}</p>
-      </section>
+      </details>
     </div>
   );
 }

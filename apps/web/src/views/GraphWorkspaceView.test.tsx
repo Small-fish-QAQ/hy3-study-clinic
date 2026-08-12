@@ -105,10 +105,12 @@ describe('学习图谱工作台 — workspace and document area', () => {
       />,
     );
 
-    expect(await screen.findByRole('heading', { name: '探索' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: '概念图谱' })).toBeInTheDocument();
     expect(screen.getAllByLabelText('个人学习图谱').length).toBeGreaterThan(0);
     expect(screen.queryByText('每日学习队列')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('新建课程')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('证据与辅导详情')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '展开详情面板' })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '展开资料面板' }));
     expect(await screen.findByText(documentSummary.title)).toBeInTheDocument();

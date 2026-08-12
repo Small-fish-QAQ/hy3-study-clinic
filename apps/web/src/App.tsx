@@ -503,6 +503,7 @@ export function App() {
                       key={module}
                       type="button"
                       className={activeModule === module ? 'active' : ''}
+                      aria-current={activeModule === module ? 'page' : undefined}
                       disabled={disabled}
                       onClick={() => handleModuleChange(module)}
                     >

@@ -149,13 +149,15 @@ export function CourseHomeView({
 
       <section className="course-home-hero" aria-label="课程概览">
         <div className="course-home-title row between">
-          <div>
-            <p className="eyebrow">当前课程</p>
-            <h2>{courseName}</h2>
-            <p className="muted">{SETUP_TEXT[overview.setupStage]}</p>
+          <div className="course-home-context">
+            <p className="eyebrow">课程主页</p>
+            <p>
+              <strong>{courseName}</strong>
+              <span className="muted">{SETUP_TEXT[overview.setupStage]}</span>
+            </p>
           </div>
-          <button type="button" onClick={onOpenMaterials}>
-            课程资料
+          <button type="button" className="ghost" onClick={onOpenMaterials}>
+            管理课程资料
           </button>
         </div>
 
@@ -214,7 +216,13 @@ export function CourseHomeView({
                 {busyAction === 'launch-next' ? '正在重新验证…' : '继续学习'}
               </button>
             ) : (
-              <Banner kind="info">{launchBlockReason(next.item.launch.reason)}</Banner>
+              <div className="course-continuation-blocked">
+                <p className="small muted">继续学习暂时受阻</p>
+                <Banner kind="info">{launchBlockReason(next.item.launch.reason)}</Banner>
+                <button type="button" className="ghost" onClick={onOpenMaterials}>
+                  检查课程资料
+                </button>
+              </div>
             )}
           </div>
         ) : setupAction ? (
@@ -234,9 +242,14 @@ export function CourseHomeView({
             </button>
           </div>
         ) : (
-          <Banner kind="info">
-            当前没有可启动的学习动作。请在进展中检查待修复内容，或重新打开课程资料验证来源。
-          </Banner>
+          <div className="course-continuation-blocked">
+            <Banner kind="info">
+              当前没有可启动的学习动作。请在进展中检查待修复内容，或重新打开课程资料验证来源。
+            </Banner>
+            <button type="button" className="ghost" onClick={onOpenMaterials}>
+              检查课程资料
+            </button>
+          </div>
         )}
       </section>
 

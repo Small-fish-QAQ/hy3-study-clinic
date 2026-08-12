@@ -303,7 +303,11 @@ describe('App shell', () => {
 
     await user.click(within(sidebar).getByRole('button', { name: '兼容与高级工具' }));
     expect(screen.getByRole('button', { name: '返回课程' })).toBeInTheDocument();
-    expect(screen.getByRole('navigation', { name: '兼容工具' })).toBeInTheDocument();
+    const compatibilityNavigation = screen.getByRole('navigation', { name: '兼容工具' });
+    expect(compatibilityNavigation).toBeInTheDocument();
+    expect(
+      within(compatibilityNavigation).getByRole('button', { name: '课程资料' }),
+    ).toHaveAttribute('aria-current', 'page');
     await user.click(screen.getByRole('button', { name: '返回课程' }));
     expect(screen.getByLabelText('课程侧边栏', { selector: 'aside' })).toBeInTheDocument();
   });

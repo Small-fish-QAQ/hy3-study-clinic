@@ -99,6 +99,14 @@ export function FormalProgressView({
     ],
     [latestDecisionByUnit, progression],
   );
+  const unitTitleById = useMemo(() => {
+    const hierarchy = overview?.activeCurriculumHierarchy ?? overview?.curriculumHierarchy;
+    return new Map(
+      (hierarchy?.nodes ?? [])
+        .filter((node) => node.kind === 'learning_unit')
+        .map((node) => [node.id, node.title]),
+    );
+  }, [overview]);
   const routeReady = Boolean(
     overview?.activeContract &&
     overview.acceptedCurriculum &&
@@ -283,7 +291,12 @@ export function FormalProgressView({
             .reverse()
             .map((evidence) => (
               <div className="progress-row" role="row" key={evidence.id}>
-                <span>{evidence.curriculumLearningUnitId}</span>
+                <span className="progress-unit-name">
+                  <strong>
+                    {unitTitleById.get(evidence.curriculumLearningUnitId) ?? '学习单元'}
+                  </strong>
+                  <span className="small muted">{evidence.curriculumLearningUnitId}</span>
+                </span>
                 <span>{tierLabel[evidence.admissibilityTier] ?? '证据级别已记录'}</span>
                 <span>{Math.round(evidence.normalizedScore * 100)}%</span>
                 <span>{evidence.stateCreditable ? '可计入正式进展' : '仅供参考'}</span>
@@ -305,7 +318,10 @@ export function FormalProgressView({
             const decision = latestDecisionByUnit.get(unitId);
             return (
               <div className="progress-row" role="row" key={unitId}>
-                <strong>{unitId}</strong>
+                <span className="progress-unit-name">
+                  <strong>{unitTitleById.get(unitId) ?? '学习单元'}</strong>
+                  <span className="small muted">{unitId}</span>
+                </span>
                 <span className={`pill progression-state ${decision?.nextState ?? 'not_started'}`}>
                   {decision?.nextState ? progressionStateLabel(decision.nextState) : '未开始'}
                 </span>
@@ -330,7 +346,10 @@ export function FormalProgressView({
             .reverse()
             .map((item) => (
               <div className="progress-row" role="row" key={item.id}>
-                <span>{item.curriculumLearningUnitId}</span>
+                <span className="progress-unit-name">
+                  <strong>{unitTitleById.get(item.curriculumLearningUnitId) ?? '学习单元'}</strong>
+                  <span className="small muted">{item.curriculumLearningUnitId}</span>
+                </span>
                 <span className={`pill reconciliation ${item.status}`}>
                   {reconciliationLabel(item.status)}
                 </span>

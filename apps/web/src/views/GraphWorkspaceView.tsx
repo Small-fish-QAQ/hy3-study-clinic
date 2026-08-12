@@ -131,7 +131,7 @@ export function GraphWorkspaceView({
   const [mappingLoading, setMappingLoading] = useState(false);
   const [deepeningSection, setDeepeningSection] = useState<string | null>(null);
   const [leftCollapsed, setLeftCollapsed] = useState(courseLocked);
-  const [rightCollapsed, setRightCollapsed] = useState(false);
+  const [rightCollapsed, setRightCollapsed] = useState(courseLocked);
 
   const epochRef = useRef(0);
   const mountedRef = useRef(true);
@@ -318,6 +318,7 @@ export function GraphWorkspaceView({
   const selectNode = useCallback(
     (conceptId: string | null) => {
       setSelectedNodeId(conceptId);
+      if (conceptId) setRightCollapsed(false);
       // Synchronous ref update: the staleness guard below must see the newest
       // selection even before React commits the state change.
       selectedNodeIdRef.current = conceptId;
@@ -353,6 +354,7 @@ export function GraphWorkspaceView({
 
   const selectEdge = useCallback((edgeId: string | null) => {
     setSelectedEdgeId(edgeId);
+    if (edgeId) setRightCollapsed(false);
     setSelectedNodeId(null);
     setPlan(null);
   }, []);
@@ -798,7 +800,7 @@ export function GraphWorkspaceView({
       ) : (
         <aside className="workspace-panel" aria-label="课程空间与文档">
           <div className="panel-head">
-            <h2>{courseLocked ? '探索工具' : '课程与资料'}</h2>
+            <h2>{courseLocked ? '图谱资料与版本' : '课程与资料'}</h2>
             <button
               type="button"
               className="rail-toggle"
@@ -1091,7 +1093,7 @@ export function GraphWorkspaceView({
       <div className="graph-area" aria-label="个人学习图谱">
         <div className="graph-area-head">
           <div>
-            <h2>{courseLocked ? '探索' : '个人学习图谱'}</h2>
+            {courseLocked ? <h3>概念图谱</h3> : <h2>个人学习图谱</h2>}
             {courseLocked ? (
               <p className="small muted">查看概念关系与课程依据，不会改变当前学习路线。</p>
             ) : null}

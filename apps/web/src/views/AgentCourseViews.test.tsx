@@ -15,6 +15,7 @@ import { AgentCourseShell } from './AgentCourseShell.js';
 import { CourseMaterialsView } from './CourseMaterialsView.js';
 import { CourseProgressView } from './CourseProgressView.js';
 import { api } from '../api.js';
+import { documentSummary } from '../test/fixtures.js';
 
 const AT = '2026-08-10T08:00:00.000Z';
 
@@ -557,6 +558,37 @@ describe('CurriculumView truth and validation states', () => {
     expect(screen.getByText('在学习范围内 · 事实依据未验证')).toBeInTheDocument();
   });
 
+  it('renders the persisted parent-child structure as a nested outline', () => {
+    const value = hierarchy();
+    value.nodes.find((node) => node.id === 'unit_1')!.mappedPlanItemIds = ['plan_item_1'];
+    render(
+      <CurriculumView
+        hierarchy={value}
+        history={[]}
+        loading={false}
+        error={null}
+        canPropose={false}
+        canAccept
+        busyAction={null}
+        onPropose={vi.fn()}
+        onAccept={vi.fn()}
+        onReject={vi.fn()}
+        onSelectHistory={vi.fn()}
+      />,
+    );
+
+    const outline = screen.getByRole('list', { name: '课程层级' });
+    const courseNode = within(outline).getByRole('heading', { name: 'Probability' }).closest('li');
+    const sectionNode = within(outline)
+      .getByRole('heading', { name: 'Conditional probability' })
+      .closest('li');
+    expect(courseNode).toContainElement(sectionNode);
+    expect(sectionNode).toContainElement(
+      within(outline).getByRole('heading', { name: 'Verified source objective' }).closest('li'),
+    );
+    expect(screen.getByText('已纳入当前学习路线')).toBeInTheDocument();
+  });
+
   it('keeps an invalid proposed Curriculum visibly non-acceptable', () => {
     render(
       <CurriculumView
@@ -724,6 +756,33 @@ describe('consolidated Course product shell', () => {
     expect(screen.getByLabelText('上传课程资料')).toBeInTheDocument();
   });
 
+  it('keeps logical Material identity distinct from its current processing result', () => {
+    render(
+      <CourseMaterialsView
+        workspaceId="ws_1"
+        documents={[
+          {
+            ...documentSummary,
+            id: 'material_1',
+            workspaceId: 'ws_1',
+            title: 'A very long but still readable course material filename.pdf',
+            sourceType: 'pdf',
+            parseStatus: 'parsed_with_warnings',
+            extractionWarnings: ['Some pages required fallback extraction.'],
+          },
+        ]}
+        roleHistory={{}}
+        onChanged={vi.fn()}
+        onBack={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/这是课程中的同一份逻辑资料/)).toBeInTheDocument();
+    expect(screen.getByText('逻辑资料 ID')).toBeInTheDocument();
+    expect(screen.getByText('material_1')).toBeInTheDocument();
+    expect(screen.getByText('已解析，有提示')).toBeInTheDocument();
+  });
+
   it('consolidates assessments, mistakes, reviews, and route history under Progress', async () => {
     const user = userEvent.setup();
     vi.spyOn(api, 'reviewItems').mockResolvedValue({ items: [] });
@@ -798,19 +857,18 @@ describe('consolidated Course product shell', () => {
       />,
     );
 
-    const navigation = screen.getByRole('navigation', { name: '进展分类' });
-    expect(within(navigation).getByRole('tab', { name: '测验记录' })).toBeInTheDocument();
-    expect(within(navigation).getByRole('tab', { name: '错题与修复' })).toBeInTheDocument();
+    const navigation = screen.getByRole('tablist', { name: '进展分类' });
+    expect(within(navigation).getByRole('tab', { name: '正式证据' })).toBeInTheDocument();
+    expect(within(navigation).getByRole('tab', { name: '修复' })).toBeInTheDocument();
     expect(within(navigation).getByRole('tab', { name: '掌握与复习' })).toBeInTheDocument();
-    expect(screen.getByText('学习目标与路线历史')).toBeInTheDocument();
-    await user.click(screen.getByText('学习目标与路线历史'));
+    expect(within(navigation).getByRole('tab', { name: '历史与决定' })).toBeInTheDocument();
+    expect(screen.getByText(/Tutor 对话和一般活动不会自动成为正式进展/)).toBeInTheDocument();
+    await user.click(within(navigation).getByRole('tab', { name: '历史与决定' }));
     expect(screen.getByText(/版本 1 · 通过期末考试/)).toBeInTheDocument();
     expect(screen.getByText(/版本 1 · 概率论/)).toBeInTheDocument();
     expect(screen.getByText(/4 项 · 预计 90 分钟 · 1 项延期/)).toBeInTheDocument();
-
-    await user.click(within(navigation).getByRole('tab', { name: '测验记录' }));
     expect(await screen.findByText(/还没有已完成的测验/)).toBeInTheDocument();
-    await user.click(within(navigation).getByRole('tab', { name: '错题与修复' }));
+    await user.click(within(navigation).getByRole('tab', { name: '修复' }));
     expect(
       screen.getByText(/课程还没有资料，因此暂时没有可汇总的错题或掌握记录/),
     ).toBeInTheDocument();
