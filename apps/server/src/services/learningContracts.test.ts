@@ -169,4 +169,94 @@ describe('learner scope and Learning Contracts', () => {
       }),
     ).toThrowError(expect.objectContaining<AppError>({ code: ApiErrorCode.VersionConflict }));
   });
+
+  it('LIVE01-A/C/E blocks stale scope, resumes after confirmation, and re-stales on a future role version', () => {
+    const commands = createCourseCommandService({ repos, clock });
+    const roles = createMaterialRoleService({ repos, clock, commands });
+    const contracts = createLearningContractService({ repos, clock, commands });
+    const initial = repos.materialRoles.getCurrent('mat_1')!;
+    const firstProposal = roles.propose({
+      command: command('live01-first-proposal'),
+      materialId: 'mat_1',
+      role: 'course_material',
+      expectedCurrentAssignmentId: initial.id,
+    });
+
+    expect(() =>
+      contracts.createDraft({
+        command: command('live01-stale-contract'),
+        fields: fields(firstProposal.id, firstProposal.version),
+        predecessorContractId: null,
+        expectedActiveContractId: null,
+      }),
+    ).toThrow('learner-confirmed Material role');
+
+    const firstConfirmation = roles.confirm({
+      command: command('live01-first-confirmation'),
+      assignmentId: firstProposal.id,
+      expectedVersion: firstProposal.version,
+    });
+    const firstDraft = contracts.createDraft({
+      command: command('live01-first-contract'),
+      fields: fields(firstConfirmation.id, firstConfirmation.version),
+      predecessorContractId: null,
+      expectedActiveContractId: null,
+    }).contract;
+    const firstProposedContract = contracts.transition({
+      command: command('live01-first-contract-propose'),
+      contractId: firstDraft.id,
+      expectedVersion: firstDraft.version,
+      transition: 'propose',
+    }).contract;
+    const firstConfirmedContract = contracts.transition({
+      command: command('live01-first-contract-confirm'),
+      contractId: firstProposedContract.id,
+      expectedVersion: firstProposedContract.version,
+      transition: 'confirm',
+    }).contract;
+    expect(firstConfirmedContract.status).toBe('learner_confirmed');
+
+    const futureProposal = roles.propose({
+      command: command('live01-future-proposal'),
+      materialId: 'mat_1',
+      role: 'course_material',
+      expectedCurrentAssignmentId: firstConfirmation.id,
+    });
+    expect(futureProposal).toMatchObject({
+      materialId: 'mat_1',
+      version: firstConfirmation.version + 1,
+      predecessorId: firstConfirmation.id,
+      status: 'proposed',
+    });
+    expect(() =>
+      contracts.createDraft({
+        command: command('live01-future-stale-contract'),
+        fields: fields(firstConfirmation.id, firstConfirmation.version),
+        predecessorContractId: firstConfirmedContract.id,
+        expectedActiveContractId: null,
+      }),
+    ).toThrow('learner-confirmed Material role');
+
+    const futureConfirmation = roles.confirm({
+      command: command('live01-future-confirmation'),
+      assignmentId: futureProposal.id,
+      expectedVersion: futureProposal.version,
+    });
+    const successor = contracts.createDraft({
+      command: command('live01-successor-contract'),
+      fields: fields(futureConfirmation.id, futureConfirmation.version),
+      predecessorContractId: firstConfirmedContract.id,
+      expectedActiveContractId: null,
+    }).contract;
+    expect(successor).toMatchObject({
+      workspaceId: 'ws_1',
+      predecessorId: firstConfirmedContract.id,
+      status: 'draft',
+    });
+    expect(successor.courseScope.materials[0]).toMatchObject({
+      materialId: 'mat_1',
+      materialRoleAssignmentId: futureConfirmation.id,
+      materialRoleAssignmentVersion: futureConfirmation.version,
+    });
+  });
 });

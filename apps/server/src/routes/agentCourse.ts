@@ -7,6 +7,7 @@ import {
   CreateLearningContractDraftRequestSchema,
   DecideStudyPlanRequestSchema,
   LaunchCourseActionRequestSchema,
+  MaterialRoleAssignmentResponseSchema,
   ProposeMaterialRoleRequestSchema,
   ProposeStudyPlanRequestSchema,
   RejectCurriculumRequestSchema,
@@ -63,7 +64,9 @@ export function registerAgentCourseRoutes(app: FastifyInstance, services: Servic
     assertWorkspace(body, id);
     if (body.materialId !== docId) throw new z.ZodError([]);
     reply.status(201);
-    return { assignment: services.materialRoles.propose(body) };
+    return MaterialRoleAssignmentResponseSchema.parse({
+      assignment: services.materialRoles.propose(body),
+    });
   });
 
   app.post('/api/workspaces/:id/documents/:docId/role/:assignmentId/confirm', async (request) => {
@@ -90,7 +93,7 @@ export function registerAgentCourseRoutes(app: FastifyInstance, services: Servic
       ]);
     }
     const assignment = services.materialRoles.confirm(body);
-    return { assignment };
+    return MaterialRoleAssignmentResponseSchema.parse({ assignment });
   });
 
   app.get('/api/workspaces/:id/contracts', async (request) => {

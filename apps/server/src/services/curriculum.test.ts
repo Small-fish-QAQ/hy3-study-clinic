@@ -100,6 +100,7 @@ let provider: ControlledCurriculumProvider;
 let curriculum: CurriculumService;
 let contract: LearningContract;
 let commands: ReturnType<typeof createCourseCommandService>;
+let roles: ReturnType<typeof createMaterialRoleService>;
 
 function command(id: string, actor: 'learner' | 'local' = 'local') {
   return { commandId: id, idempotencyKey: id, workspaceId: 'ws_1', actor } as const;
@@ -172,7 +173,7 @@ beforeEach(() => {
     ],
   );
   commands = createCourseCommandService({ repos, clock });
-  const roles = createMaterialRoleService({ repos, clock, commands });
+  roles = createMaterialRoleService({ repos, clock, commands });
   const roleProposal = roles.propose({
     command: command('role-propose'),
     materialId: 'mat_1',
@@ -217,6 +218,28 @@ beforeEach(() => {
 });
 
 describe('Curriculum proposal and authority boundaries', () => {
+  it('LIVE01-E blocks Curriculum when a future role version re-stales Contract scope', async () => {
+    const scoped = contract.courseScope.materials[0]!;
+    const future = roles.propose({
+      command: command('live01-future-role', 'learner'),
+      materialId: scoped.materialId,
+      role: scoped.role,
+      expectedCurrentAssignmentId: scoped.materialRoleAssignmentId,
+    });
+
+    await expect(curriculum.propose(proposalRequest('live01-stale-curriculum'))).rejects.toThrow(
+      'Material role assignment is stale or unconfirmed',
+    );
+    expect(provider.calls).toBe(0);
+    expect(future).toMatchObject({
+      materialId: scoped.materialId,
+      predecessorId: scoped.materialRoleAssignmentId,
+      version: scoped.materialRoleAssignmentVersion + 1,
+      status: 'proposed',
+    });
+    expect(repos.materials.get(scoped.materialId)?.id).toBe(scoped.materialId);
+  });
+
   it('resolves stable Contract Material scope to the exact active revision manifest', () => {
     const before = buildCurriculumExecutionContext(repos, contract).manifest;
     const sameContract = repos.learningContracts.get(contract.id)!;

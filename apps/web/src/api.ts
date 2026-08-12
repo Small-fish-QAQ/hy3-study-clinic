@@ -42,7 +42,7 @@ import {
   CurriculumProposalResponseSchema,
   LearningContractDetailResponseSchema,
   LearningContractHistoryResponseSchema,
-  MaterialRoleAssignmentSchema,
+  MaterialRoleAssignmentResponseSchema,
   MaterialRoleHistoryResponseSchema,
   StudyPlanDecisionResponseSchema,
   StudyPlanHistoryResponseSchema,
@@ -454,10 +454,10 @@ export const api = {
     requestParsed(
       'POST',
       `/api/workspaces/${workspaceId}/documents/${documentId}/role/proposals`,
-      MaterialRoleAssignmentSchema,
+      MaterialRoleAssignmentResponseSchema,
       input,
       signal,
-    ),
+    ).then((response) => response.assignment),
 
   confirmMaterialRole: (
     workspaceId: string,
@@ -469,10 +469,10 @@ export const api = {
     requestParsed(
       'POST',
       `/api/workspaces/${workspaceId}/documents/${documentId}/role/${assignmentId}/confirm`,
-      MaterialRoleAssignmentSchema,
+      MaterialRoleAssignmentResponseSchema,
       input,
       signal,
-    ),
+    ).then((response) => response.assignment),
 
   courseExecution: (
     workspaceId: string,

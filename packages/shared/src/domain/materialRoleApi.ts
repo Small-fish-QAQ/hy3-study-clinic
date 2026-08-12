@@ -30,6 +30,12 @@ export const ConfirmMaterialRoleRequestSchema = z
   });
 export type ConfirmMaterialRoleRequest = z.infer<typeof ConfirmMaterialRoleRequestSchema>;
 
+/** Runtime response shared by Material-role proposal and confirmation commands. */
+export const MaterialRoleAssignmentResponseSchema = z
+  .object({ assignment: MaterialRoleAssignmentSchema })
+  .strict();
+export type MaterialRoleAssignmentResponse = z.infer<typeof MaterialRoleAssignmentResponseSchema>;
+
 export const MaterialRoleHistoryResponseSchema = z
   .object({
     materialId: z.string().min(1),

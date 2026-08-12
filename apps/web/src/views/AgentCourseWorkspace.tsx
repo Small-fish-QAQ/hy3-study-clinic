@@ -15,7 +15,7 @@ import type {
   StudyPlanDraftEdit,
   WorkspaceSummary,
 } from '@hy3-clinic/shared';
-import { api } from '../api.js';
+import { api, ApiClientError } from '../api.js';
 import { Banner, Loading } from '../components/ui.js';
 import { useAsyncAction } from '../components/useAsyncAction.js';
 import { AgentCourseShell, type AgentCourseView } from './AgentCourseShell.js';
@@ -40,6 +40,9 @@ const DEPTH_LABELS: Record<DesiredDepth, string> = {
   high_performance: '高分表现',
   deep_transfer: '深入迁移',
 };
+
+const MATERIAL_ROLE_RECONFIRMATION_MESSAGE =
+  '课程资料已更新，需要重新确认资料用途。请检查资料角色与范围后再次保存学习约定。';
 
 interface ContractFormState {
   intent: string;
@@ -308,45 +311,82 @@ export function AgentCourseWorkspace({
     signal: AbortSignal,
   ): Promise<ContractCourseScope['materials']> {
     if (!workspaceId) throw new Error('请先选择课程空间。');
+
+    const acceptAuthoritativeHistory = (history: MaterialRoleHistoryResponse) => {
+      if (signal.aborted || workspaceId !== workspaceIdRef.current) {
+        throw new ApiClientError('ABORTED', '请求已取消。');
+      }
+      setRoleHistory((current) => ({ ...current, [history.materialId]: history }));
+      return history;
+    };
+
+    const reloadRole = async (materialId: string) =>
+      acceptAuthoritativeHistory(await api.materialRoleHistory(workspaceId, materialId, signal));
+
     const scopes: ContractCourseScope['materials'] = [];
     for (const document of documents) {
       const choice = materialChoices[document.id];
       if (!choice?.role) throw new Error(`请明确选择“${document.title}”的资料角色。`);
-      const current = roleHistory[document.id]?.current;
-      let confirmed: MaterialRoleAssignment;
-      if (current?.status === 'learner_confirmed' && current.role === choice.role) {
-        confirmed = current;
-      } else {
-        const proposed = await api.proposeMaterialRole(
-          workspaceId,
-          document.id,
-          {
-            command: command(workspaceId, 'propose_role'),
-            materialId: document.id,
-            role: choice.role,
-            expectedCurrentAssignmentId: current?.id ?? null,
-          },
-          signal,
-        );
-        confirmed = await api.confirmMaterialRole(
-          workspaceId,
-          document.id,
-          proposed.id,
-          {
-            command: command(workspaceId, 'confirm_role'),
-            assignmentId: proposed.id,
-            expectedVersion: proposed.version,
-          },
-          signal,
-        );
+      try {
+        const current = (await reloadRole(document.id)).current;
+        let confirmed: MaterialRoleAssignment;
+        if (current.status === 'learner_confirmed' && current.role === choice.role) {
+          confirmed = current;
+        } else {
+          const proposal =
+            current.status === 'proposed' && current.role === choice.role
+              ? current
+              : await api.proposeMaterialRole(
+                  workspaceId,
+                  document.id,
+                  {
+                    command: command(workspaceId, 'propose_role'),
+                    materialId: document.id,
+                    role: choice.role,
+                    expectedCurrentAssignmentId: current.id,
+                  },
+                  signal,
+                );
+          const confirmation = await api.confirmMaterialRole(
+            workspaceId,
+            document.id,
+            proposal.id,
+            {
+              command: command(workspaceId, 'confirm_role'),
+              assignmentId: proposal.id,
+              expectedVersion: proposal.version,
+            },
+            signal,
+          );
+          const refreshed = await reloadRole(document.id);
+          if (
+            refreshed.current.id !== confirmation.id ||
+            refreshed.current.version !== confirmation.version ||
+            refreshed.current.status !== 'learner_confirmed' ||
+            refreshed.current.role !== choice.role
+          ) {
+            throw new Error(MATERIAL_ROLE_RECONFIRMATION_MESSAGE);
+          }
+          confirmed = refreshed.current;
+        }
+        scopes.push({
+          materialId: document.id,
+          materialRoleAssignmentId: confirmed.id,
+          materialRoleAssignmentVersion: confirmed.version,
+          role: choice.role,
+          disposition: choice.disposition,
+        });
+      } catch (error) {
+        if (
+          error instanceof ApiClientError &&
+          error.code === 'VERSION_CONFLICT' &&
+          error.message.startsWith('Material role')
+        ) {
+          await reloadRole(document.id);
+          throw new Error(MATERIAL_ROLE_RECONFIRMATION_MESSAGE);
+        }
+        throw error;
       }
-      scopes.push({
-        materialId: document.id,
-        materialRoleAssignmentId: confirmed.id,
-        materialRoleAssignmentVersion: confirmed.version,
-        role: choice.role,
-        disposition: choice.disposition,
-      });
     }
     return scopes;
   }
@@ -766,6 +806,7 @@ export function AgentCourseWorkspace({
           documents={documents}
           form={contractForm}
           materialChoices={materialChoices}
+          roleHistory={roleHistory}
           busy={busyAction !== null}
           onFormChange={setContractForm}
           onMaterialChoicesChange={setMaterialChoices}
@@ -868,6 +909,7 @@ interface ContractEditorProps {
   documents: DocumentSummary[];
   form: ContractFormState;
   materialChoices: Record<string, MaterialScopeChoice>;
+  roleHistory: Record<string, MaterialRoleHistoryResponse>;
   busy: boolean;
   onFormChange: (value: ContractFormState) => void;
   onMaterialChoicesChange: (value: Record<string, MaterialScopeChoice>) => void;
@@ -879,6 +921,7 @@ function ContractEditor({
   documents,
   form,
   materialChoices,
+  roleHistory,
   busy,
   onFormChange,
   onMaterialChoicesChange,
@@ -887,6 +930,20 @@ function ContractEditor({
 }: ContractEditorProps) {
   const change = <K extends keyof ContractFormState>(key: K, value: ContractFormState[K]) =>
     onFormChange({ ...form, [key]: value });
+  const needsRoleConfirmation = documents.some((document) => {
+    const current = roleHistory[document.id]?.current;
+    const choice = materialChoices[document.id];
+    return !choice?.role || current?.status !== 'learner_confirmed' || current.role !== choice.role;
+  });
+  const hasChangedRoleAssignment = documents.some((document) => {
+    const history = roleHistory[document.id];
+    const choice = materialChoices[document.id];
+    return Boolean(
+      history &&
+      history.history.length > 1 &&
+      (history.current.status !== 'learner_confirmed' || history.current.role !== choice?.role),
+    );
+  });
   return (
     <form
       className="contract-editor stack"
@@ -1021,6 +1078,19 @@ function ContractEditor({
 
       <section aria-label="资料角色与范围">
         <h3>资料角色与范围</h3>
+        {hasChangedRoleAssignment ? (
+          <Banner kind="info">
+            <strong>课程资料已更新，需要重新确认资料用途</strong>
+            <br />
+            资料用途的当前版本发生了变化。请检查资料角色与范围，确认后再继续保存学习约定。
+          </Banner>
+        ) : needsRoleConfirmation && documents.length > 0 ? (
+          <Banner kind="info">
+            <strong>请确认课程资料用途</strong>
+            <br />
+            学习约定会记录你确认的资料角色与范围，确认前不会继续建立课程结构。
+          </Banner>
+        ) : null}
         {documents.length === 0 ? (
           <Banner kind="info">课程没有可纳入学习约定的资料。</Banner>
         ) : (
@@ -1089,7 +1159,7 @@ function ContractEditor({
         允许在路线中明确延期，并持续显示为学习缺口
       </label>
       <button type="submit" className="primary" disabled={busy || documents.length === 0}>
-        {busy ? '正在保存…' : '保存约定草稿'}
+        {busy ? '正在保存…' : needsRoleConfirmation ? '确认资料用途并保存约定草稿' : '保存约定草稿'}
       </button>
     </form>
   );
