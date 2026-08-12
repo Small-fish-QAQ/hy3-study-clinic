@@ -883,6 +883,8 @@ describe('consolidated Course product shell', () => {
     expect(within(navigation).getByRole('tab', { name: '掌握与复习' })).toBeInTheDocument();
     expect(within(navigation).getByRole('tab', { name: '历史与决定' })).toBeInTheDocument();
     expect(screen.getByText(/Tutor 对话和一般活动不会自动成为正式进展/)).toBeInTheDocument();
+    expect(screen.getByText('测验、评估与版本记录')).toBeInTheDocument();
+    expect(screen.queryByText('正式评估与版本记录')).not.toBeInTheDocument();
     within(navigation).getByRole('tab', { name: '概览' }).focus();
     await user.keyboard('{End}');
     await vi.waitFor(() =>
@@ -895,6 +897,7 @@ describe('consolidated Course product shell', () => {
     expect(screen.getByText(/版本 1 · 通过期末考试/)).toBeInTheDocument();
     expect(screen.getByText(/版本 1 · 概率论/)).toBeInTheDocument();
     expect(screen.getByText(/4 项 · 预计 90 分钟 · 1 项延期/)).toBeInTheDocument();
+    expect(screen.getByLabelText('测验与评估历史')).toBeInTheDocument();
     expect(await screen.findByText(/还没有已完成的测验/)).toBeInTheDocument();
     await user.keyboard('{ArrowLeft}');
     await vi.waitFor(() =>
@@ -908,5 +911,43 @@ describe('consolidated Course product shell', () => {
     expect(
       screen.getByText(/课程还没有资料，因此暂时没有可汇总的错题或掌握记录/),
     ).toBeInTheDocument();
+  });
+
+  it('reports review-count loading and failure without inventing a zero count', async () => {
+    let rejectReviews: ((error: Error) => void) | undefined;
+    vi.spyOn(api, 'reviewItems').mockImplementation(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectReviews = reject;
+        }),
+    );
+
+    render(
+      <CourseProgressView
+        workspaceId="ws_1"
+        documents={[]}
+        overview={overview('launchable')}
+        refreshKey={0}
+        command={(prefix) => ({
+          commandId: `${prefix}_1`,
+          idempotencyKey: `${prefix}_1`,
+          workspaceId: 'ws_1',
+          actor: 'learner',
+        })}
+        onAcceptProposedPlan={vi.fn()}
+        onRejectProposedPlan={vi.fn()}
+        onCourseChanged={vi.fn()}
+        onRemediate={vi.fn()}
+        remediationLoading={false}
+        remediationError={null}
+      />,
+    );
+
+    expect(screen.getByText('正在加载复习安排…')).toBeInTheDocument();
+    expect(screen.queryByText('0 项复习记录')).not.toBeInTheDocument();
+
+    rejectReviews?.(new Error('review service unavailable'));
+    expect(await screen.findByText('复习记录暂时无法读取')).toBeInTheDocument();
+    expect(screen.queryByText('0 项复习记录')).not.toBeInTheDocument();
   });
 });

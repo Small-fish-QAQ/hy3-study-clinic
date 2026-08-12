@@ -248,6 +248,52 @@ describe('StudySessionView', () => {
     );
   });
 
+  it('moves focus to the surviving Study target when a route change removes the inspector', async () => {
+    const user = userEvent.setup();
+    const successorSession: StudySession = {
+      ...session,
+      id: 'session_2',
+      contractVersionId: 'contract_2',
+      curriculumVersionId: 'curriculum_2',
+      studyPlanVersionId: 'plan_2',
+      sessionAgendaId: 'agenda_2',
+    };
+    const successorRoute = {
+      contractVersionId: successorSession.contractVersionId,
+      curriculumVersionId: successorSession.curriculumVersionId,
+      studyPlanVersionId: successorSession.studyPlanVersionId,
+      sessionAgendaId: successorSession.sessionAgendaId,
+      executionVersion: 5,
+    };
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session, successorSession] });
+    vi.mocked(api.getStudySession).mockImplementation(async (_workspaceId, sessionId) => ({
+      ...detail,
+      session: sessionId === successorSession.id ? successorSession : session,
+    }));
+
+    const { rerender } = render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    const trigger = await screen.findByRole('button', { name: /学习上下文/ });
+    await user.click(trigger);
+    expect(await screen.findByRole('button', { name: '关闭学习上下文' })).toHaveFocus();
+
+    const studyTarget = screen.getByLabelText('学习');
+    rerender(<StudySessionView workspaceId="ws_1" route={successorRoute} />);
+
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: '关闭学习上下文' })).not.toBeInTheDocument(),
+    );
+    await waitFor(() => expect(studyTarget).toHaveFocus());
+    expect(studyTarget).toBe(screen.getByLabelText('学习'));
+    await waitFor(() =>
+      expect(api.getStudySession).toHaveBeenCalledWith(
+        'ws_1',
+        successorSession.id,
+        expect.any(AbortSignal),
+      ),
+    );
+    expect(studyTarget).toHaveFocus();
+  });
+
   it('keeps dialogue in the transcript and separates the formal evidence boundary', async () => {
     const user = userEvent.setup();
     vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });

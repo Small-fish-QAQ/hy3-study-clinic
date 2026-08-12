@@ -152,6 +152,11 @@ export function CourseProgressView({
   }, [workspaceId, refreshKey]);
 
   const progress = overview?.formalProgress;
+  const reviewSummary = reviewError
+    ? '复习记录暂时无法读取'
+    : reviews === null
+      ? '正在加载复习安排…'
+      : `${reviews.length} 项复习记录`;
 
   function onTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, current: ProgressSection): void {
     const currentIndex = PROGRESS_SECTIONS.indexOf(current);
@@ -226,11 +231,11 @@ export function CourseProgressView({
             </button>
             <button type="button" onClick={() => setSection('mastery')}>
               <span>掌握与复习</span>
-              <strong>{reviews?.length ?? 0} 项复习记录</strong>
+              <strong>{reviewSummary}</strong>
             </button>
             <button type="button" onClick={() => setSection('history')}>
               <span>历史与决定</span>
-              <strong>正式评估与版本记录</strong>
+              <strong>测验、评估与版本记录</strong>
             </button>
           </section>
           <p className="progress-advisory-note small muted">
@@ -271,7 +276,7 @@ export function CourseProgressView({
             </div>
             <CourseHistoryRecords overview={overview} />
           </section>
-          <section className="progress-assessment-history" aria-label="正式评估历史">
+          <section className="progress-assessment-history" aria-label="测验与评估历史">
             <QuizHistoryView workspaceId={workspaceId} />
           </section>
         </div>

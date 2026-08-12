@@ -953,214 +953,296 @@ function ContractEditor({
         onSubmit();
       }}
     >
-      <div className="row between">
-        <div>
-          <h2>学习约定</h2>
-          <p className="small muted">学习范围由你确认；资料中的事实与评分依据另行验证。</p>
+      <header className="contract-header row between">
+        <div className="contract-heading">
+          <p className="eyebrow">学习约定</p>
+          <h2>定义你与 Hy3 的学习约定</h2>
+          <p className="muted">从目标开始。范围、时间与资料用途由你确认，Hy3 据此提出学习路线。</p>
         </div>
-        <button type="button" onClick={onCancel} disabled={busy}>
+        <button type="button" className="ghost" onClick={onCancel} disabled={busy}>
           返回
         </button>
-      </div>
+      </header>
 
-      <div className="contract-grid">
-        <label>
-          学习意图
-          <input
-            required
-            value={form.intent}
-            onChange={(event) => change('intent', event.target.value)}
-          />
-        </label>
-        <label>
-          目标结果
-          <input
-            required
-            value={form.targetDescription}
-            onChange={(event) => change('targetDescription', event.target.value)}
-          />
-        </label>
-        <label>
-          目标分数（可选）
-          <input
-            type="number"
-            min="0"
-            max="100"
-            value={form.targetScore}
-            onChange={(event) => change('targetScore', event.target.value)}
-          />
-        </label>
-        <label>
-          截止时间（可选）
-          <input
-            type="datetime-local"
-            value={form.deadlineLocal}
-            onChange={(event) => change('deadlineLocal', event.target.value)}
-          />
-        </label>
-        <label>
-          每天可用分钟
-          <input
-            type="number"
-            min="1"
-            value={form.minutesPerDay}
-            onChange={(event) => change('minutesPerDay', event.target.value)}
-          />
-        </label>
-        <label>
-          每周可用分钟
-          <input
-            type="number"
-            min="1"
-            value={form.minutesPerWeek}
-            onChange={(event) => change('minutesPerWeek', event.target.value)}
-          />
-        </label>
-        <label>
-          单次学习分钟（可选）
-          <input
-            type="number"
-            min="1"
-            value={form.preferredSessionMinutes}
-            onChange={(event) => change('preferredSessionMinutes', event.target.value)}
-          />
-        </label>
-        <label>
-          目标深度
-          <select
-            value={form.desiredDepth}
-            onChange={(event) => change('desiredDepth', event.target.value as DesiredDepth)}
-          >
-            {(Object.keys(DEPTH_LABELS) as DesiredDepth[]).map((depth) => (
-              <option key={depth} value={depth}>
-                {DEPTH_LABELS[depth]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="span-2">
-          课程主题范围（逗号或换行分隔）
-          <textarea
-            required
-            value={form.subjectBoundaries}
-            onChange={(event) => change('subjectBoundaries', event.target.value)}
-          />
-        </label>
-        <label>
-          明确包含的主题
-          <textarea
-            value={form.includedTopics}
-            onChange={(event) => change('includedTopics', event.target.value)}
-          />
-        </label>
-        <label>
-          明确排除的主题
-          <textarea
-            value={form.excludedTopics}
-            onChange={(event) => change('excludedTopics', event.target.value)}
-          />
-        </label>
-        <label>
-          既往学习情况（自述）
-          <textarea
-            value={form.priorStudy}
-            onChange={(event) => change('priorStudy', event.target.value)}
-          />
-        </label>
-        <label>
-          考试形式或情境（可选）
-          <textarea
-            value={form.examFormat}
-            onChange={(event) => change('examFormat', event.target.value)}
-          />
-        </label>
-      </div>
-
-      <section aria-label="资料角色与范围">
-        <h3>资料角色与范围</h3>
-        {hasChangedRoleAssignment ? (
-          <Banner kind="info">
-            <strong>课程资料已更新，需要重新确认资料用途</strong>
-            <br />
-            资料用途的当前版本发生了变化。请检查资料角色与范围，确认后再继续保存学习约定。
-          </Banner>
-        ) : needsRoleConfirmation && documents.length > 0 ? (
-          <Banner kind="info">
-            <strong>请确认课程资料用途</strong>
-            <br />
-            学习约定会记录你确认的资料角色与范围，确认前不会继续建立课程结构。
-          </Banner>
-        ) : null}
-        {documents.length === 0 ? (
-          <Banner kind="info">课程没有可纳入学习约定的资料。</Banner>
-        ) : (
-          <div className="material-scope-list">
-            {documents.map((document) => {
-              const choice = materialChoices[document.id] ?? {
-                role: '',
-                disposition: 'included' as const,
-              };
-              return (
-                <div key={document.id} className="material-scope-row">
-                  <strong>{document.title}</strong>
-                  <label>
-                    角色
-                    <select
-                      aria-label={`${document.title}资料角色`}
-                      required
-                      value={choice.role}
-                      onChange={(event) =>
-                        onMaterialChoicesChange({
-                          ...materialChoices,
-                          [document.id]: { ...choice, role: event.target.value as MaterialRole },
-                        })
-                      }
-                    >
-                      <option value="">请选择</option>
-                      {(Object.keys(ROLE_LABELS) as MaterialRole[]).map((role) => (
-                        <option key={role} value={role}>
-                          {ROLE_LABELS[role]}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    范围
-                    <select
-                      aria-label={`${document.title}范围`}
-                      value={choice.disposition}
-                      onChange={(event) =>
-                        onMaterialChoicesChange({
-                          ...materialChoices,
-                          [document.id]: {
-                            ...choice,
-                            disposition: event.target.value as 'included' | 'excluded',
-                          },
-                        })
-                      }
-                    >
-                      <option value="included">纳入本轮学习</option>
-                      <option value="excluded">明确排除</option>
-                    </select>
-                  </label>
-                </div>
-              );
-            })}
+      <div className="contract-flow">
+        <fieldset className="contract-question">
+          <legend>
+            <span>1</span>
+            你想达成什么？
+          </legend>
+          <p className="contract-question-hint">
+            说清学习动机与可验证的结果，Hy3 才能规划合适的路径。
+          </p>
+          <div className="contract-grid contract-grid-goal">
+            <label>
+              学习意图
+              <input
+                required
+                value={form.intent}
+                placeholder="例如：系统掌握课程核心内容并通过期末考试"
+                onChange={(event) => change('intent', event.target.value)}
+              />
+            </label>
+            <label>
+              目标结果
+              <input
+                required
+                value={form.targetDescription}
+                placeholder="例如：能独立完成综合题并解释关键推导"
+                onChange={(event) => change('targetDescription', event.target.value)}
+              />
+            </label>
           </div>
-        )}
-      </section>
+        </fieldset>
 
-      <label className="checkbox-row">
-        <input
-          type="checkbox"
-          checked={form.allowExplicitDeferral}
-          onChange={(event) => change('allowExplicitDeferral', event.target.checked)}
-        />
-        允许在路线中明确延期，并持续显示为学习缺口
-      </label>
-      <button type="submit" className="primary" disabled={busy || documents.length === 0}>
-        {busy ? '正在保存…' : needsRoleConfirmation ? '确认资料用途并保存约定草稿' : '保存约定草稿'}
-      </button>
+        <fieldset className="contract-question">
+          <legend>
+            <span>2</span>
+            希望何时完成？
+          </legend>
+          <p className="contract-question-hint">
+            没有固定日期也可以留空，路线会按当前投入持续调整。
+          </p>
+          <div className="contract-grid contract-grid-compact">
+            <label>
+              截止时间（可选）
+              <input
+                type="datetime-local"
+                value={form.deadlineLocal}
+                onChange={(event) => change('deadlineLocal', event.target.value)}
+              />
+            </label>
+            <label>
+              目标分数（可选）
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={form.targetScore}
+                placeholder="0-100"
+                onChange={(event) => change('targetScore', event.target.value)}
+              />
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset className="contract-question">
+          <legend>
+            <span>3</span>
+            你能投入多少时间？
+          </legend>
+          <p className="contract-question-hint">
+            每天或每周至少填写一项；单次时长帮助安排可完成的学习活动。
+          </p>
+          <div className="contract-grid contract-grid-budget">
+            <label>
+              每天可用分钟
+              <input
+                type="number"
+                min="1"
+                value={form.minutesPerDay}
+                placeholder="例如：45"
+                onChange={(event) => change('minutesPerDay', event.target.value)}
+              />
+            </label>
+            <label>
+              每周可用分钟
+              <input
+                type="number"
+                min="1"
+                value={form.minutesPerWeek}
+                placeholder="例如：300"
+                onChange={(event) => change('minutesPerWeek', event.target.value)}
+              />
+            </label>
+            <label>
+              单次学习分钟（可选）
+              <input
+                type="number"
+                min="1"
+                value={form.preferredSessionMinutes}
+                placeholder="例如：30"
+                onChange={(event) => change('preferredSessionMinutes', event.target.value)}
+              />
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset className="contract-question">
+          <legend>
+            <span>4</span>
+            你从哪里开始？
+          </legend>
+          <p className="contract-question-hint">
+            简要说明已有基础；这只是你的自述，不会替代正式证据。
+          </p>
+          <div className="contract-grid contract-grid-start">
+            <label>
+              既往学习情况（自述）
+              <textarea
+                value={form.priorStudy}
+                placeholder="学过哪些内容？哪些地方最不确定？"
+                onChange={(event) => change('priorStudy', event.target.value)}
+              />
+            </label>
+            <label>
+              目标深度
+              <select
+                value={form.desiredDepth}
+                onChange={(event) => change('desiredDepth', event.target.value as DesiredDepth)}
+              >
+                {(Object.keys(DEPTH_LABELS) as DesiredDepth[]).map((depth) => (
+                  <option key={depth} value={depth}>
+                    {DEPTH_LABELS[depth]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset className="contract-question contract-materials">
+          <legend>
+            <span>5</span>
+            哪些课程资料定义学习范围？
+          </legend>
+          <p className="contract-question-hint">
+            资料用途决定路线范围，不等于内容已经被验证为事实或评分依据。
+          </p>
+          <label className="contract-subject-boundaries">
+            课程主题范围（逗号或换行分隔）
+            <textarea
+              required
+              value={form.subjectBoundaries}
+              placeholder="例如：核心定义、主要定理、典型应用"
+              onChange={(event) => change('subjectBoundaries', event.target.value)}
+            />
+          </label>
+          {hasChangedRoleAssignment ? (
+            <Banner kind="info">
+              <strong>课程资料已更新，需要重新确认资料用途</strong>
+              <br />
+              资料用途的当前版本发生了变化。请检查资料角色与范围，确认后再继续保存学习约定。
+            </Banner>
+          ) : needsRoleConfirmation && documents.length > 0 ? (
+            <Banner kind="info">
+              <strong>请确认课程资料用途</strong>
+              <br />
+              学习约定会记录你确认的资料角色与范围，确认前不会继续建立课程结构。
+            </Banner>
+          ) : null}
+          {documents.length === 0 ? (
+            <Banner kind="info">课程没有可纳入学习约定的资料。</Banner>
+          ) : (
+            <div className="material-scope-list">
+              {documents.map((document) => {
+                const choice = materialChoices[document.id] ?? {
+                  role: '',
+                  disposition: 'included' as const,
+                };
+                return (
+                  <div key={document.id} className="material-scope-row">
+                    <strong>{document.title}</strong>
+                    <label>
+                      角色
+                      <select
+                        aria-label={`${document.title}资料角色`}
+                        required
+                        value={choice.role}
+                        onChange={(event) =>
+                          onMaterialChoicesChange({
+                            ...materialChoices,
+                            [document.id]: { ...choice, role: event.target.value as MaterialRole },
+                          })
+                        }
+                      >
+                        <option value="">请选择</option>
+                        {(Object.keys(ROLE_LABELS) as MaterialRole[]).map((role) => (
+                          <option key={role} value={role}>
+                            {ROLE_LABELS[role]}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      范围
+                      <select
+                        aria-label={`${document.title}范围`}
+                        value={choice.disposition}
+                        onChange={(event) =>
+                          onMaterialChoicesChange({
+                            ...materialChoices,
+                            [document.id]: {
+                              ...choice,
+                              disposition: event.target.value as 'included' | 'excluded',
+                            },
+                          })
+                        }
+                      >
+                        <option value="included">纳入本轮学习</option>
+                        <option value="excluded">明确排除</option>
+                      </select>
+                    </label>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </fieldset>
+
+        <fieldset className="contract-question">
+          <legend>
+            <span>6</span>
+            还有其他约束吗？
+          </legend>
+          <p className="contract-question-hint">可选设置不会阻挡你先建立基本约定。</p>
+          <details className="contract-advanced">
+            <summary>高级范围与考试设置</summary>
+            <div className="contract-grid contract-grid-advanced">
+              <label>
+                明确包含的主题
+                <textarea
+                  value={form.includedTopics}
+                  onChange={(event) => change('includedTopics', event.target.value)}
+                />
+              </label>
+              <label>
+                明确排除的主题
+                <textarea
+                  value={form.excludedTopics}
+                  onChange={(event) => change('excludedTopics', event.target.value)}
+                />
+              </label>
+              <label className="span-2">
+                考试形式或情境（可选）
+                <textarea
+                  value={form.examFormat}
+                  onChange={(event) => change('examFormat', event.target.value)}
+                />
+              </label>
+              <label className="checkbox-row span-2">
+                <input
+                  type="checkbox"
+                  checked={form.allowExplicitDeferral}
+                  onChange={(event) => change('allowExplicitDeferral', event.target.checked)}
+                />
+                允许在路线中明确延期，并持续显示为学习缺口
+              </label>
+            </div>
+          </details>
+        </fieldset>
+      </div>
+
+      <footer className="contract-actions">
+        <p className="small muted">保存后仍需由你确认，才会成为当前学习约定。</p>
+        <button type="submit" className="primary" disabled={busy || documents.length === 0}>
+          {busy
+            ? '正在保存…'
+            : needsRoleConfirmation
+              ? '确认资料用途并保存约定草稿'
+              : '保存约定草稿'}
+        </button>
+      </footer>
     </form>
   );
 }

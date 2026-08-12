@@ -298,16 +298,22 @@ export function FormalProgressView({
             .reverse()
             .map((evidence) => (
               <div className="progress-row" role="row" key={evidence.id}>
-                <span className="progress-unit-name" role="cell">
+                <span className="progress-unit-name" role="cell" data-label="学习单元">
                   <strong>
                     {unitTitleById.get(evidence.curriculumLearningUnitId) ?? '学习单元'}
                   </strong>
                   <span className="small muted">{evidence.curriculumLearningUnitId}</span>
                 </span>
-                <span role="cell">{tierLabel[evidence.admissibilityTier] ?? '证据级别已记录'}</span>
-                <span role="cell">{Math.round(evidence.normalizedScore * 100)}%</span>
-                <span role="cell">{evidence.stateCreditable ? '可计入正式进展' : '仅供参考'}</span>
-                <span role="cell">
+                <span role="cell" data-label="证据级别">
+                  {tierLabel[evidence.admissibilityTier] ?? '证据级别已记录'}
+                </span>
+                <span role="cell" data-label="结果">
+                  {Math.round(evidence.normalizedScore * 100)}%
+                </span>
+                <span role="cell" data-label="状态效力">
+                  {evidence.stateCreditable ? '可计入正式进展' : '仅供参考'}
+                </span>
+                <span role="cell" data-label="核对状态">
                   {evidence.needsReview ? '需要复核' : evidence.correct ? '通过' : '未通过'}
                 </span>
               </div>
@@ -331,21 +337,21 @@ export function FormalProgressView({
             const decision = latestDecisionByUnit.get(unitId);
             return (
               <div className="progress-row progress-row-four" role="row" key={unitId}>
-                <span className="progress-unit-name" role="cell">
+                <span className="progress-unit-name" role="cell" data-label="学习单元">
                   <strong>{unitTitleById.get(unitId) ?? '学习单元'}</strong>
                   <span className="small muted">{unitId}</span>
                 </span>
-                <span role="cell">
+                <span role="cell" data-label="当前状态">
                   <span
                     className={`pill progression-state ${decision?.nextState ?? 'not_started'}`}
                   >
                     {decision?.nextState ? progressionStateLabel(decision.nextState) : '未开始'}
                   </span>
                 </span>
-                <span role="cell">
+                <span role="cell" data-label="决定">
                   {decision?.kind ? progressionKindLabel(decision.kind) : '等待核对'}
                 </span>
-                <span role="cell">
+                <span role="cell" data-label="本地核对理由">
                   {decision?.reasonCodes.map(progressionReasonLabel).join('、') ?? '还没有正式决定'}
                 </span>
               </div>
@@ -372,18 +378,22 @@ export function FormalProgressView({
             .reverse()
             .map((item) => (
               <div className="progress-row" role="row" key={item.id}>
-                <span className="progress-unit-name" role="cell">
+                <span className="progress-unit-name" role="cell" data-label="学习单元">
                   <strong>{unitTitleById.get(item.curriculumLearningUnitId) ?? '学习单元'}</strong>
                   <span className="small muted">{item.curriculumLearningUnitId}</span>
                 </span>
-                <span role="cell">
+                <span role="cell" data-label="核对状态">
                   <span className={`pill reconciliation ${item.status}`}>
                     {reconciliationLabel(item.status)}
                   </span>
                 </span>
-                <span role="cell">{item.reason ?? '等待本地核对'}</span>
-                <span role="cell">{item.decisionId ?? '尚无决定'}</span>
-                <span role="cell">
+                <span role="cell" data-label="说明">
+                  {item.reason ?? '等待本地核对'}
+                </span>
+                <span role="cell" data-label="进展决定">
+                  {item.decisionId ?? '尚无决定'}
+                </span>
+                <span role="cell" data-label="操作">
                   {item.status === 'reconciliation_pending' &&
                   overview?.acceptedStudyPlan?.id === item.studyPlanVersionId ? (
                     <button

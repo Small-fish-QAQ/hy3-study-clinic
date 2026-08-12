@@ -95,9 +95,12 @@ export function StudySessionView({
   const epoch = useRef(0);
   const tutorEpoch = useRef(0);
   const tutorController = useRef<AbortController | null>(null);
+  const studyFocusTargetRef = useRef<HTMLDivElement>(null);
   const studyPrimaryRef = useRef<HTMLDivElement>(null);
   const inspectorTriggerRef = useRef<HTMLButtonElement>(null);
   const inspectorReturnFocusRef = useRef<HTMLButtonElement | null>(null);
+  const inspectorOpenRef = useRef(inspectorOpen);
+  inspectorOpenRef.current = inspectorOpen;
   const action = useAsyncAction();
   const routeContractVersionId = route?.contractVersionId;
   const routeCurriculumVersionId = route?.curriculumVersionId;
@@ -129,6 +132,7 @@ export function StudySessionView({
   useEffect(() => {
     const controller = new AbortController();
     const requestEpoch = ++epoch.current;
+    const inspectorWasOpen = inspectorOpenRef.current;
     tutorEpoch.current += 1;
     tutorController.current?.abort();
     tutorController.current = null;
@@ -141,6 +145,9 @@ export function StudySessionView({
     setInspectorOpen(false);
     setInspectorTab('agenda');
     setLoadError(null);
+    if (inspectorWasOpen) {
+      requestAnimationFrame(() => studyFocusTargetRef.current?.focus());
+    }
     if (!workspaceId) {
       setLoading(false);
       return () => controller.abort();
@@ -473,33 +480,50 @@ export function StudySessionView({
     if (response) replaceSession(response.session, response.agenda);
   }
 
-  if (!workspaceId) return <Banner kind="empty">请先选择课程，再进入学习。</Banner>;
-  if (loading && !detail) return <Loading label="加载学习记录…" />;
-  if (loadError && !detail) return <Banner kind="error">{loadError}</Banner>;
+  if (!workspaceId)
+    return (
+      <div ref={studyFocusTargetRef} className="study-session" aria-label="学习" tabIndex={-1}>
+        <Banner kind="empty">请先选择课程，再进入学习。</Banner>
+      </div>
+    );
+  if (loading && !detail)
+    return (
+      <div ref={studyFocusTargetRef} className="study-session" aria-label="学习" tabIndex={-1}>
+        <Loading label="加载学习记录…" />
+      </div>
+    );
+  if (loadError && !detail)
+    return (
+      <div ref={studyFocusTargetRef} className="study-session" aria-label="学习" tabIndex={-1}>
+        <Banner kind="error">{loadError}</Banner>
+      </div>
+    );
 
   if (!detail) {
     return (
-      <section className="study-session-empty" aria-label="学习">
-        <h3>学习</h3>
-        <p className="muted">
-          学习会从已接受的路线开始。Tutor 对话和非正式检查不会自动改变掌握状态或完成学习单元。
-        </p>
-        {!route ? (
-          <Banner kind="info">
-            还没有可执行的学习路线。请先回到主页设置目标，并查看、接受学习路线。
-          </Banner>
-        ) : (
-          <button
-            type="button"
-            className="primary"
-            disabled={action.loading}
-            onClick={() => void startSession()}
-          >
-            {action.loading ? '正在开始…' : '开始学习'}
-          </button>
-        )}
-        {action.error ? <Banner kind="error">{action.error}</Banner> : null}
-      </section>
+      <div ref={studyFocusTargetRef} className="study-session" aria-label="学习" tabIndex={-1}>
+        <section className="study-session-empty">
+          <h3>学习</h3>
+          <p className="muted">
+            学习会从已接受的路线开始。Tutor 对话和非正式检查不会自动改变掌握状态或完成学习单元。
+          </p>
+          {!route ? (
+            <Banner kind="info">
+              还没有可执行的学习路线。请先回到主页设置目标，并查看、接受学习路线。
+            </Banner>
+          ) : (
+            <button
+              type="button"
+              className="primary"
+              disabled={action.loading}
+              onClick={() => void startSession()}
+            >
+              {action.loading ? '正在开始…' : '开始学习'}
+            </button>
+          )}
+          {action.error ? <Banner kind="error">{action.error}</Banner> : null}
+        </section>
+      </div>
     );
   }
 
@@ -536,7 +560,12 @@ export function StudySessionView({
     (item) => item.state === 'completed' || item.state === 'deferred' || item.state === 'cancelled',
   ).length;
   return (
-    <div className={`study-session${inspectorOpen ? ' inspector-open' : ''}`} aria-label="学习">
+    <div
+      ref={studyFocusTargetRef}
+      className={`study-session${inspectorOpen ? ' inspector-open' : ''}`}
+      aria-label="学习"
+      tabIndex={-1}
+    >
       <div ref={studyPrimaryRef} className="study-session-primary">
         {loadError || action.error ? (
           <div className="study-session-alerts" aria-label="学习状态">

@@ -7,23 +7,23 @@
   color-scheme: light;
 
   /* Surfaces */
-  --bg: #f2f4f1;
-  --surface: #fbfcfb;
+  --bg: #f5f5f4;
+  --surface: #ffffff;
   --surface-raised: #ffffff;
-  --surface-2: #e9ede9;
-  --surface-3: #dce2dd;
+  --surface-2: #f4f4f3;
+  --surface-3: #e9e9e7;
   --surface-weak: var(--surface-2);
 
   /* Text */
-  --text: #19211d;
-  --text-muted: #59645e;
-  --text-faint: #7d8781;
+  --text: #171817;
+  --text-muted: #606460;
+  --text-faint: #858985;
   --muted: var(--text-muted);
 
   /* Borders */
-  --border: #d5dbd6;
-  --border-strong: #adb8b0;
-  --separator: #e2e6e2;
+  --border: #dedfdd;
+  --border-strong: #b8bbb8;
+  --separator: #ebebe9;
 
   /* Accent (product) */
   --primary: #285f53;
@@ -66,10 +66,10 @@
   --sidebar-collapsed: 60px;
   --content-width: 1120px;
   --content-wide: 1180px;
-  --shadow-sm: 0 1px 2px rgba(25, 33, 29, 0.06);
-  --shadow: 0 8px 24px rgba(25, 33, 29, 0.1);
+  --shadow-sm: 0 1px 2px rgba(23, 24, 23, 0.04);
+  --shadow: 0 10px 28px rgba(23, 24, 23, 0.1);
   --focus-ring: #397d6e;
-  --transition: 0.16s ease;
+  --transition: 0.2s ease-out;
 
   font-family:
     system-ui,
@@ -459,7 +459,7 @@ main.main-graph {
   overflow-x: hidden;
   overflow-y: auto;
   border-right: 1px solid var(--border);
-  background: #f7f8f6;
+  background: #f7f7f6;
   transition:
     width var(--transition),
     flex-basis var(--transition),
@@ -474,7 +474,7 @@ main.main-graph {
 .course-sidebar-brand-row {
   display: flex;
   align-items: center;
-  min-height: 64px;
+  min-height: 56px;
   padding: 0 var(--space-3);
   border-bottom: 1px solid var(--separator);
 }
@@ -488,9 +488,9 @@ main.main-graph {
 
 .course-brand-mark {
   display: inline-grid;
-  flex: 0 0 34px;
-  width: 34px;
-  height: 34px;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
   place-items: center;
   border: 1px solid #abc1ba;
   border-radius: var(--radius);
@@ -566,11 +566,11 @@ main.main-graph {
 .course-sidebar-collapse {
   display: flex;
   width: 100%;
-  min-height: 40px;
+  min-height: 38px;
   align-items: center;
   justify-content: flex-start;
-  gap: 0.7rem;
-  padding: 0.45rem 0.65rem;
+  gap: 0.65rem;
+  padding: 0.4rem 0.65rem;
   overflow: hidden;
   border-color: transparent;
   background: transparent;
@@ -589,8 +589,8 @@ main.main-graph {
 
 .course-sidebar-nav button.active,
 .course-sidebar-secondary button.active {
-  background: var(--primary-weak);
-  color: var(--primary-strong);
+  background: #e9ebe9;
+  color: var(--text);
   font-weight: 650;
 }
 
@@ -611,9 +611,9 @@ main.main-graph {
 }
 
 .course-shell-icon {
-  flex: 0 0 20px;
-  width: 20px;
-  height: 20px;
+  flex: 0 0 17px;
+  width: 17px;
+  height: 17px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.7;
@@ -731,11 +731,11 @@ main.main-graph {
 
 .course-workspace-header {
   display: flex;
-  flex: 0 0 64px;
+  flex: 0 0 56px;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  padding: 0 var(--space-5);
+  padding: 0 var(--space-4);
   border-bottom: 1px solid var(--separator);
   background: var(--surface-raised);
 }
@@ -752,7 +752,7 @@ main.main-graph {
 
 .course-workspace-header h2 {
   margin-top: 0.1rem;
-  font-size: 1.12rem;
+  font-size: 1rem;
   font-weight: 680;
 }
 
@@ -770,7 +770,7 @@ main.main-graph {
   overflow-x: hidden;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
-  padding: var(--space-5) var(--space-5) var(--space-6);
+  padding: var(--space-5) clamp(var(--space-4), 3vw, var(--space-6)) var(--space-6);
 }
 
 .agent-course-content > * {
@@ -3436,14 +3436,14 @@ button.danger {
 /* Post-Phase-4 learner surfaces inside the persistent Course workspace. */
 
 .no-course-state {
-  max-width: 40rem;
-  margin: 7vh auto 0;
+  max-width: 44rem;
+  margin: 9vh auto 0;
   padding: var(--space-5) 0;
 }
 
 .no-course-state h2 {
   margin: 0 0 var(--space-2);
-  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-size: 2rem;
 }
 
 .course-create-inline {
@@ -3456,7 +3456,7 @@ button.danger {
 }
 
 .course-home-hero {
-  padding: var(--space-2) 0 var(--space-4);
+  padding: 0 0 var(--space-4);
   border-bottom: 1px solid var(--border);
 }
 
@@ -3472,7 +3472,7 @@ button.danger {
 }
 
 .course-home-context strong {
-  font-size: 1.1rem;
+  font-size: 1.25rem;
 }
 
 .supporting-page-intro {
@@ -3491,8 +3491,7 @@ button.danger {
   color: var(--primary);
   font-size: 0.74rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0;
 }
 
 .course-state-grid {
@@ -3517,9 +3516,9 @@ button.danger {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  margin-top: var(--space-4);
-  padding: var(--space-4);
-  border: 1px solid var(--primary);
+  margin-top: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid color-mix(in srgb, var(--primary) 42%, var(--border));
   border-radius: var(--radius);
   background: var(--primary-weak);
 }
@@ -3536,7 +3535,185 @@ button.danger {
 .course-primary-cta {
   flex: none;
   min-width: 9rem;
+  font-size: 0.92rem;
+}
+
+/* Learning Contract: learner questions first, domain detail by disclosure. */
+.contract-editor {
+  max-width: 960px;
+  gap: 0;
+  padding-bottom: var(--space-5);
+}
+
+.contract-header {
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--separator);
+}
+
+.contract-heading {
+  max-width: 42rem;
+}
+
+.contract-heading h2,
+.contract-heading p {
+  margin-top: 0;
+}
+
+.contract-heading h2 {
+  margin-bottom: var(--space-2);
+  font-size: 1.65rem;
+}
+
+.contract-heading > p:last-child {
+  margin-bottom: 0;
+}
+
+.contract-flow {
+  display: grid;
+}
+
+.contract-question {
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-5) 0;
+  border: 0;
+  border-bottom: 1px solid var(--separator);
+}
+
+.contract-question legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0;
   font-size: 1rem;
+  font-weight: 700;
+}
+
+.contract-question legend > span {
+  display: inline-grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
+.contract-question-hint {
+  max-width: 44rem;
+  margin: var(--space-2) 0 var(--space-3) 32px;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
+.contract-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-left: 32px;
+}
+
+.contract-grid-goal,
+.contract-grid-budget {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.contract-grid-budget {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.contract-grid-start {
+  grid-template-columns: minmax(0, 2fr) minmax(12rem, 1fr);
+}
+
+.contract-grid label,
+.contract-subject-boundaries,
+.material-scope-row label {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.contract-grid textarea,
+.contract-subject-boundaries textarea {
+  min-height: 78px;
+  resize: vertical;
+}
+
+.contract-subject-boundaries,
+.contract-materials > .banner,
+.contract-materials > .material-scope-list {
+  margin-left: 32px;
+}
+
+.contract-subject-boundaries {
+  margin-bottom: var(--space-3);
+}
+
+.contract-materials > .banner {
+  margin-bottom: var(--space-3);
+}
+
+.contract-advanced {
+  margin-left: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+}
+
+.contract-advanced > summary {
+  padding: 0.7rem 0.8rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-weight: 650;
+}
+
+.contract-advanced[open] > summary {
+  border-bottom: 1px solid var(--separator);
+}
+
+.contract-grid-advanced {
+  margin: 0;
+  padding: var(--space-3);
+}
+
+.contract-grid .span-2 {
+  grid-column: 1 / -1;
+}
+
+.contract-grid .checkbox-row {
+  display: flex;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.contract-actions {
+  position: sticky;
+  bottom: calc(-1 * var(--space-6));
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding: var(--space-3) 0 max(var(--space-3), env(safe-area-inset-bottom));
+  border-top: 1px solid var(--separator);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.contract-actions p {
+  margin: 0;
+}
+
+.contract-actions button {
+  flex: none;
 }
 
 .course-continuation-blocked {
@@ -3958,6 +4135,43 @@ button.danger {
   }
 }
 
+@media (max-width: 1099px) {
+  .progress-head {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .progress-row > [role='cell'][data-label] {
+    display: grid;
+    grid-template-columns: minmax(7rem, 35%) minmax(0, 1fr);
+    gap: 0.2rem var(--space-2);
+    align-items: start;
+  }
+
+  .progress-row > [role='cell'][data-label]::before {
+    grid-column: 1;
+    color: var(--text-muted);
+    content: attr(data-label);
+    font-size: 0.74rem;
+    font-weight: 700;
+  }
+
+  .progress-row > .progress-unit-name[data-label]::before {
+    grid-row: 1 / span 2;
+  }
+
+  .progress-row > .progress-unit-name[data-label] > * {
+    grid-column: 2;
+  }
+}
+
 @media (max-width: 1023px) {
   .course-state-grid,
   .progress-summary,
@@ -4051,6 +4265,37 @@ button.danger {
     width: 100%;
   }
 
+  .contract-header,
+  .contract-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .contract-grid,
+  .contract-grid-goal,
+  .contract-grid-budget,
+  .contract-grid-start,
+  .contract-grid-compact {
+    grid-template-columns: 1fr;
+    margin-left: 0;
+  }
+
+  .contract-question-hint,
+  .contract-subject-boundaries,
+  .contract-materials > .banner,
+  .contract-materials > .material-scope-list,
+  .contract-advanced {
+    margin-left: 0;
+  }
+
+  .contract-question {
+    padding: var(--space-4) 0;
+  }
+
+  .contract-actions button {
+    width: 100%;
+  }
+
   .curriculum-level .curriculum-level {
     margin-left: var(--space-2);
     padding-left: var(--space-2);
@@ -4081,7 +4326,7 @@ button.danger {
     position: relative;
     z-index: 20;
     display: flex;
-    flex: 0 0 54px;
+    flex: 0 0 48px;
     align-items: center;
     gap: var(--space-3);
     padding-right: max(var(--space-3), env(safe-area-inset-right));

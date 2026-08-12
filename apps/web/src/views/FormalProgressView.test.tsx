@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
@@ -100,6 +100,25 @@ describe('FormalProgressView', () => {
     expect(screen.queryByText('sufficient_admissible_evidence')).not.toBeInTheDocument();
     expect(screen.getByText('已计入进展')).toBeInTheDocument();
     expect(screen.getByText(/Tutor 对话不是正式证据/)).toBeInTheDocument();
+
+    const expectedLabels = [
+      ['学习单元', '证据级别', '结果', '状态效力', '核对状态'],
+      ['学习单元', '当前状态', '决定', '本地核对理由'],
+      ['学习单元', '核对状态', '说明', '进展决定', '操作'],
+    ];
+    const tables = [
+      screen.getByRole('table', { name: '正式证据记录' }),
+      screen.getByRole('table', { name: '学习单元进展决定' }),
+      screen.getByRole('table', { name: '判分与进展核对记录' }),
+    ];
+    tables.forEach((table, index) => {
+      const recordRow = within(table).getAllByRole('row')[1]!;
+      expect(
+        within(recordRow)
+          .getAllByRole('cell')
+          .map((cell) => cell.getAttribute('data-label')),
+      ).toEqual(expectedLabels[index]);
+    });
   });
 
   it('requires an active route before exposing outcome controls', async () => {
