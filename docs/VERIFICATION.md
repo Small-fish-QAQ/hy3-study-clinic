@@ -23,6 +23,7 @@ npm run build
 npm run lint
 npm test
 npm run eval:fake
+git diff --check
 ```
 
 The root commands map to the existing monorepo workspaces:
@@ -31,6 +32,8 @@ The root commands map to the existing monorepo workspaces:
 - `npm run lint` runs ESLint and `prettier --check .`.
 - `npm test` first builds the shared package, then runs every workspace Vitest suite.
 - Migration and HTTP integration coverage live inside the server Vitest suite; there are no separate commands that must be run to obtain those results.
+- `npm run eval:fake` uses the deterministic fake provider and makes no real Hy3 request.
+- `git diff --check` checks the final patch for whitespace errors. `npm run lint` already includes the repository-wide `prettier --check .`; run `npx prettier --check README.md docs/ARCHITECTURE.md docs/VERIFICATION.md` for a documentation-only formatting check.
 
 CI executes `npm ci`, build, lint, and tests on:
 
@@ -46,7 +49,15 @@ The immutable final tag's historical results remain recorded in the release line
 
 `npm run eval:fake` covers provenance, alignment, cross-document blueprint scope, Tutor budgets, misconception transitions, review scheduling, retrieval isolation, prompt-injection defenses, mastery bounds, database foreign-key integrity, activity executability, grading state safety, course-understanding fixtures, and lesson provenance. It is deterministic and writes its reports under ignored `eval/reports/`.
 
-The server and shared suites also cover the implemented Phase 1-4 route: MaterialRevision lineage and source authority; Contract/Curriculum/StudyPlan/Agenda validation and atomic activation; durable StudySession lifecycle, idempotency, transcript recovery, and mixed-initiative controls; and formal-evidence progression, replan candidates, and goal outcomes. Web suites cover the Course selection shell, Course Home primary action, Course Materials, Curriculum, Chinese-named `学习` workspace, consolidated Progress destination, and embedded Explore graph. They also assert legacy-destination consolidation, useful empty states, formal/informal separation, prose-independent completion state, request cancellation, stale responses, and Course/document switching safety.
+The server and shared suites also cover the implemented Phase 1-4 route: MaterialRevision lineage and source authority; Contract/Curriculum/StudyPlan/Agenda validation and atomic activation; durable StudySession lifecycle, idempotency, transcript recovery, and mixed-initiative controls; and formal-evidence progression, replan candidates, and goal outcomes. Web suites cover the Course selection shell, Course Home primary action, Course Materials, Curriculum, Chinese-named `学习` workspace, consolidated Progress destination, embedded Explore graph, and the focused Settings surface. They also assert legacy-destination consolidation, useful empty states, formal/informal separation, prose-independent completion state, request cancellation, stale responses, and Course/document switching safety.
+
+Focused frontend checks for this presentation campaign can be run without calling a real provider:
+
+```bash
+npm run test -w @hy3-clinic/web -- src/views/SettingsView.test.tsx src/views/AgentCourseViews.test.tsx
+```
+
+`SettingsView.test.tsx` covers fake/Hy3 wording, the deliberately local scope of Test Connection, failure, cancellation, and the sidebar-preference callback. The Curriculum cases in `AgentCourseViews.test.tsx` cover default-collapsed large structures, the first-12/show-rest behavior with 277 units, truth-authority labels, persisted current/route state, subordinate provenance, malformed-hierarchy recovery, loading, invalid-candidate acceptance, decisions, and version history. These are behavioral assertions rather than visual snapshots.
 
 Post-red-team correctness regressions exercise the production boundaries rather than only constructing repository state:
 
@@ -171,6 +182,8 @@ The README captions map the screenshots to PDF provenance, graph evidence, bound
 
 ## Honest scope
 
+- A successful Settings **Test Connection** proves only that local `/api/health` and `/api/config` responded. It is not real-provider evidence and does not validate Hy3 credentials, the configured model, or external endpoint availability.
+- Curriculum disclosure tests prove bounded initial rendering, accessibility state, and semantic labels. They do not benchmark scan time, teaching quality, or performance for every possible hierarchy shape.
 - The small hand-authored labels and fixtures make the online record an integration check, not a quality benchmark.
 - Exact quotation validation proves location, not complete semantic entailment.
 - `eval:fake` checks deterministic boundaries and state invariants, not the pedagogical quality of generated content.

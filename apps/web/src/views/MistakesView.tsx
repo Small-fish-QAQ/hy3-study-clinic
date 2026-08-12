@@ -74,7 +74,10 @@ export function MistakesView({
         </div>
         {remediationError ? <Banner kind="error">{remediationError}</Banner> : null}
         {data && openCount === 0 && data.mistakes.length > 0 ? (
-          <Banner kind="empty">当前没有未解决的错题，无需生成康复练习。</Banner>
+          <section className="course-empty-state compact" role="status">
+            <strong>当前没有需要修复的错题</strong>
+            <p>所有错题都已解决，因此暂时不需要生成康复练习。</p>
+          </section>
         ) : null}
         {data && data.weakConcepts.length > 0 ? (
           <div className="row">
@@ -92,11 +95,14 @@ export function MistakesView({
       ) : error ? (
         <Banner kind="error">{error}</Banner>
       ) : !data || data.mistakes.length === 0 ? (
-        <Banner kind="empty">
-          {statusFilter === 'open'
-            ? '当前没有未解决的错题，无需生成康复练习。'
-            : '还没有错题记录，当前无需生成康复练习。先做一次测验吧。'}
-        </Banner>
+        <section className="course-empty-state compact" role="status">
+          <strong>{statusFilter === 'open' ? '当前没有需要修复的错题' : '还没有错题记录'}</strong>
+          <p>
+            {statusFilter === 'open'
+              ? '出现需要修复的错题后，可以从这里生成康复练习。'
+              : '完成一次测验后，错题和后续修复会保留在这里。'}
+          </p>
+        </section>
       ) : (
         data.mistakes.map((mistake) => <MistakeCard key={mistake.id} mistake={mistake} />)
       )}

@@ -483,7 +483,10 @@ export function StudySessionView({
   if (!workspaceId)
     return (
       <div ref={studyFocusTargetRef} className="study-session" aria-label="学习" tabIndex={-1}>
-        <Banner kind="empty">请先选择课程，再进入学习。</Banner>
+        <section className="course-empty-state study-session-empty compact">
+          <strong>请先选择课程，再进入学习。</strong>
+          <p>学习内容和记录都属于具体课程，请从课程侧边栏选择一门课程。</p>
+        </section>
       </div>
     );
   if (loading && !detail)
@@ -503,14 +506,13 @@ export function StudySessionView({
     return (
       <div ref={studyFocusTargetRef} className="study-session" aria-label="学习" tabIndex={-1}>
         <section className="study-session-empty">
-          <h3>学习</h3>
+          <p className="eyebrow">开始本次学习</p>
+          <strong>{route ? '已接受的学习路线已经就绪' : '还没有可执行的学习路线'}</strong>
           <p className="muted">
-            学习会从已接受的路线开始。Tutor 对话和非正式检查不会自动改变掌握状态或完成学习单元。
+            Tutor 对话和非正式检查可以帮助理解，但不会自动改变掌握状态或完成学习单元。
           </p>
           {!route ? (
-            <Banner kind="info">
-              还没有可执行的学习路线。请先回到主页设置目标，并查看、接受学习路线。
-            </Banner>
+            <p className="study-session-empty-next">请先回到主页设置目标，再查看并接受学习路线。</p>
           ) : (
             <button
               type="button"
@@ -676,8 +678,10 @@ export function StudySessionView({
               <div className="study-transcript-inner">
                 {detail.exchanges.length === 0 ? (
                   <div className="transcript-empty">
-                    <p>从当前目标开始提问。</p>
-                    <p className="small muted">可以要求换一种解释、举例，或说明哪里没有理解。</p>
+                    <p>有什么想先弄清楚的？</p>
+                    <p className="small muted">
+                      可以从当前目标提问，也可以请 Tutor 换一种解释或举个例子。
+                    </p>
                   </div>
                 ) : null}
                 {detail.exchanges.map((exchange) => (

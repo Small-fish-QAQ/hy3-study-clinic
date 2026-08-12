@@ -83,9 +83,10 @@ export function CourseHomeView({
   if (error && !overview) return <Banner kind="error">{error}</Banner>;
   if (!overview) {
     return (
-      <Banner kind="empty">
-        暂时无法读取课程状态。课程资料不会因此改变，请稍后重试或先检查课程资料。
-      </Banner>
+      <section className="course-empty-state compact" aria-label="课程状态暂不可用">
+        <strong>暂时无法读取课程状态</strong>
+        <p>课程资料不会因此改变。请稍后重试，也可以先检查课程资料。</p>
+      </section>
     );
   }
 
@@ -148,18 +149,15 @@ export function CourseHomeView({
       {error ? <Banner kind="error">{error}</Banner> : null}
 
       <section className="course-home-hero" aria-label="课程概览">
-        <div className="course-home-title row between">
+        <header className="course-page-intro course-home-title row between">
           <div className="course-home-context">
-            <p className="eyebrow">课程主页</p>
-            <p>
-              <strong>{courseName}</strong>
-              <span className="muted">{SETUP_TEXT[overview.setupStage]}</span>
-            </p>
+            <p className="eyebrow">学习概览</p>
+            <p className="course-page-summary">{SETUP_TEXT[overview.setupStage]}</p>
           </div>
           <button type="button" className="ghost" onClick={onOpenMaterials}>
             管理课程资料
           </button>
-        </div>
+        </header>
 
         {contract ? (
           <div className="course-state-grid" aria-label="目标与正式进度">
@@ -242,10 +240,9 @@ export function CourseHomeView({
             </button>
           </div>
         ) : (
-          <div className="course-continuation-blocked">
-            <Banner kind="info">
-              当前没有可启动的学习动作。请在进展中检查待修复内容，或重新打开课程资料验证来源。
-            </Banner>
+          <div className="course-continuation-blocked course-empty-state compact">
+            <strong>当前没有可继续的学习内容</strong>
+            <p>可以到“进展”查看待修复内容，或检查课程资料是否仍然适用。</p>
             <button type="button" className="ghost" onClick={onOpenMaterials}>
               检查课程资料
             </button>

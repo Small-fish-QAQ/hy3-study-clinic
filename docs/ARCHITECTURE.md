@@ -103,6 +103,12 @@ The real adapter calls an OpenAI-compatible `chat/completions` endpoint. Base UR
 
 Credentials remain server-side, authorization headers are redacted, and no configured endpoint/model/key is supplied by the repository.
 
+### Browser Settings boundary
+
+The system Settings surface does not introduce a second provider-configuration authority. `SettingsView` receives the current `fake | hy3` mode from the existing sanitized config response. Its **Test Connection** action concurrently requests `GET /api/health` and `GET /api/config` through one `AbortSignal`; cancellation and stale-result handling use the existing `useAsyncAction` contract. Success means only that the local Fastify server responded and disclosed its configured mode. It does not call `LlmProvider`, send an external request, validate credentials, or establish that the configured model is available.
+
+There are deliberately no browser fields for base URL, model, API key, or token, and no secret or provider configuration is written to local storage. Changing `LLM_PROVIDER` or any `HY3_*` value requires changing the server environment and restarting the server. The only editable Settings value is the Course-sidebar default, which is frontend-owned presentation state; diagnostic/about information is read-only and progressively disclosed.
+
 ## 5. Grading and mastery
 
 ### Objective grading
@@ -311,9 +317,19 @@ Course selection
     ├── 课程结构
     ├── 进展
     └── 探索
+system zone
+    ├── runtime mode
+    ├── 设置
+    └── advanced compatibility access
 ```
 
-`AgentCourseWorkspace` owns the Course selection and the single Course navigation model. Course Home composes the bounded overview into one next action, a short Agenda, learner-actionable exceptions, and secondary disclosures. Course Materials is a Home subview over the existing document APIs. `学习` renders the durable StudySession as a transcript-first interaction while retaining formal/informal evidence boundaries. `CourseProgressView` consolidates formal progression, assessment history, mistakes and remediation, mastery/reviews, and bounded Contract/Curriculum/StudyPlan history. Embedded `GraphWorkspaceView` keeps the selected Course fixed, collapses its management panel by default, and remains the advanced `探索` workspace.
+`AgentCourseWorkspace` owns the Course selection and the single Course navigation model. `AgentCourseShell` owns layout state only: an original vector product mark and wordmark, a 220 px expanded/60 px collapsed desktop sidebar, a below-768 px modal drawer with focus containment and Escape restoration, Course navigation, and the separate system zone. The brand asset is also used by the compatibility header and browser favicon. None of these surfaces owns Course domain state.
+
+Course Home composes the bounded overview into one next action, a short Agenda, learner-actionable exceptions, and secondary disclosures. Course Materials is a Home subview over the existing document APIs. `学习` renders the durable StudySession as a transcript-first interaction while retaining formal/informal evidence boundaries. `CourseProgressView` consolidates formal progression, assessment history, mistakes and remediation, mastery/reviews, and bounded Contract/Curriculum/StudyPlan history. Embedded `GraphWorkspaceView` keeps the selected Course fixed, collapses its management panel by default, and remains the advanced `探索` workspace.
+
+`CurriculumView` is a read-only projection over the accepted or selected Curriculum version. It first shows the actual version/status, the latest accepted version available in history, major/chapter/section/unit/objective counts, and only server-persisted `started` units as the current location. Major branches derive summaries from their real descendant objectives, prerequisites, source references, and route links. Non-leaf content mounts only after an `aria-expanded`/`aria-controls` disclosure is opened. When a section directly contains more than 12 learning units, the first 12 mount after expansion and a second accessible disclosure controls the remainder (covered with a 277-unit fixture). Expansion state resets when Curriculum identity/version changes and is never persisted as domain state.
+
+Learning objectives preserve their independently verified versus in-scope/unverified truth-authority labels. Unit source anchors, the exact execution-source manifest, and Curriculum history are subordinate disclosures. Their copy preserves the distinction between exact quotation/location and complete semantic entailment. Presentation recovery handles duplicate IDs, missing parents/children, repeated links, and cycles deterministically with visible notices; it neither loops indefinitely nor repairs the stored hierarchy. There is no invented Curriculum search/filter or inferred progress state.
 
 The Learning Contract editor treats Material-role confirmation as its existing separate authoritative command boundary, not as a client-only field change or an implicit side effect of Contract persistence. Before saving scope it refetches the current role assignment, confirms an already matching proposal (or proposes and confirms the reviewed choice), refetches the resulting history, and only then sends the exact confirmed assignment ID/version in Contract scope. A concurrent version conflict refreshes the visible role state and asks the learner to review again; it never bypasses the server freshness check. Reload follows the same history endpoint, so freshness is durable rather than component-local.
 
@@ -498,6 +514,8 @@ No vector database, graph database, orchestration framework, authentication laye
 
 ## 19. Known architectural limits
 
+- Settings can verify only the local health/config endpoints. It neither tests external Hy3 availability nor edits server-owned provider configuration.
+- Curriculum uses branch expansion and a 12-unit preview for large direct-unit sections, but it has no search/filter. Missing current/progress state remains visibly unavailable, and malformed-tree recovery changes presentation only.
 - PDF fidelity depends on the file's text layer. There is no OCR, and rotated/multi-column text, diagrams, complex tables, and text in images are not reconstructed.
 - Header/footer removal, visual-wrap repair, heading recognition, and table detection are conservative heuristics and can misclassify pathological documents.
 - DOCX does not provide stable page provenance; embedded image content is discarded.

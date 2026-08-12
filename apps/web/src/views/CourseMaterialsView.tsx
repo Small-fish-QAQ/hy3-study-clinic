@@ -116,12 +116,11 @@ export function CourseMaterialsView({
 
   return (
     <div className="course-materials stack" aria-label="课程资料">
-      <header className="supporting-page-intro material-page-intro row between">
+      <header className="supporting-page-intro course-page-intro material-page-intro row between">
         <div className="material-page-heading">
-          <p className="eyebrow">课程来源</p>
-          <h2>课程资料</h2>
+          <p className="eyebrow">学习所依据的内容</p>
           <p className="muted">
-            管理教材、参考资料和练习依据。资料在课程中的用途不等于其事实依据已经独立验证。
+            在这里管理教材、参考资料和练习内容。资料用途不等于其中的事实已经独立验证。
           </p>
         </div>
         <div className="material-page-actions">
@@ -137,9 +136,10 @@ export function CourseMaterialsView({
       {action.error ? <Banner kind="error">{action.error}</Banner> : null}
 
       {documents.length === 0 ? (
-        <Banner kind="empty">
-          这门课程还没有资料，这是新课程的正常状态。添加教材或参考资料后即可建立学习目标与课程结构。
-        </Banner>
+        <section className="course-empty-state material-empty-state" aria-label="还没有课程资料">
+          <strong>这门课程还没有资料，这是新课程的正常状态。</strong>
+          <p>从下方添加教材或参考资料后，就可以建立学习目标和课程结构。</p>
+        </section>
       ) : (
         <section className="material-list" aria-label={`当前课程资料，共 ${documents.length} 份`}>
           {documents.map((document) => {

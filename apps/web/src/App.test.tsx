@@ -293,7 +293,7 @@ describe('App shell', () => {
       },
     ]);
     render(<App />);
-    expect(await screen.findByText(/离线 · 模拟模式/)).toBeInTheDocument();
+    expect(await screen.findByText(/本地模拟模式/)).toBeInTheDocument();
     const sidebar = screen.getByLabelText('课程侧边栏', { selector: 'aside' });
     expect(within(sidebar).getByText('Hy3 Study Clinic')).toBeInTheDocument();
     expect(within(sidebar).getByRole('combobox', { name: '当前课程' })).toHaveValue('');
@@ -1568,7 +1568,8 @@ describe('Mistake notebook and mastery', () => {
 
     await user.click(screen.getByRole('button', { name: '错题与修复' }));
 
-    expect(await screen.findByText('当前没有未解决的错题，无需生成康复练习。')).toBeInTheDocument();
+    expect(await screen.findByText('当前没有需要修复的错题')).toBeInTheDocument();
+    expect(screen.getByText('出现需要修复的错题后，可以从这里生成康复练习。')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '生成康复练习' })).toBeDisabled();
   });
 

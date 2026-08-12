@@ -45,9 +45,10 @@ export function MasteryView({ materialId, refreshKey }: MasteryViewProps) {
   if (error) return <Banner kind="error">{error}</Banner>;
   if (!data || data.mastery.length === 0) {
     return (
-      <Banner kind="empty">
-        还没有综合掌握度数据。完成一次测验判分后,系统会按确定性公式更新每个概念的历史加权掌握度。
-      </Banner>
+      <section className="course-empty-state compact" role="status">
+        <strong>还没有掌握度记录</strong>
+        <p>完成一次正式测验并判分后，这里会按确定性规则显示每个概念的掌握变化。</p>
+      </section>
     );
   }
 

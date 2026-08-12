@@ -31,9 +31,10 @@ function CourseHistoryRecords({ overview }: { overview: CourseExecutionOverview 
       overview.studyPlanHistory.length === 0)
   ) {
     return (
-      <Banner kind="empty">
-        还没有目标、课程结构或路线版本。完成相应确认后，持久化决定会显示在这里。
-      </Banner>
+      <div className="course-empty-state compact" role="status">
+        <strong>还没有版本记录</strong>
+        <p>确认学习目标、课程结构或学习路线后，相应决定会保留在这里。</p>
+      </div>
     );
   }
 
@@ -175,10 +176,10 @@ export function CourseProgressView({
 
   return (
     <div className="course-progress stack" aria-label="课程进展">
-      <header className="supporting-page-intro">
-        <p className="eyebrow">持久学习状态</p>
+      <header className="supporting-page-intro course-page-intro">
+        <p className="eyebrow">有依据的学习进展</p>
         <p className="muted">
-          查看正式证据、进展核对、修复与历史决定。Tutor 对话和一般活动不会自动成为正式进展。
+          正式证据、待修复内容和历史决定都汇集在这里。Tutor 对话和一般活动不会自动成为正式进展。
         </p>
       </header>
 
@@ -302,9 +303,10 @@ export function CourseProgressView({
             </label>
           ) : null}
           {!materialId ? (
-            <Banner kind="empty">
-              课程还没有资料，因此暂时没有可汇总的错题或掌握记录。请先在课程主页添加资料。
-            </Banner>
+            <div className="course-empty-state compact" role="status">
+              <strong>还没有可以汇总的学习记录</strong>
+              <p>课程还没有资料，因此暂时没有可汇总的错题或掌握记录。请先添加课程资料。</p>
+            </div>
           ) : section === 'repair' ? (
             <MistakesView
               materialId={materialId}
@@ -321,9 +323,12 @@ export function CourseProgressView({
                 {reviewError ? <Banner kind="error">{reviewError}</Banner> : null}
                 {reviews === null && !reviewError ? <Loading label="加载复习安排…" /> : null}
                 {reviews?.length === 0 ? (
-                  <Banner kind="empty">
-                    还没有复习记录，这是尚未完成正式评估时的正常状态。完成测验后，复习安排会显示在这里。
-                  </Banner>
+                  <div className="course-empty-state compact" role="status">
+                    <strong>还没有复习安排</strong>
+                    <p>
+                      尚未完成正式评估时，这里为空是正常的。完成测验后，需要复习的内容会显示在这里。
+                    </p>
+                  </div>
                 ) : null}
                 {reviews?.map((review) => (
                   <article className="review-row" key={review.conceptId}>

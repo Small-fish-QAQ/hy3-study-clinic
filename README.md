@@ -15,10 +15,13 @@ Hy3 Study Clinic presents the implemented Phase 1-4 capabilities as one Course-c
 
 ### Learner-facing product shell
 
-- The global shell is primarily for selecting or switching the current Course. It does not expose the implementation's execution subsystems as peer applications.
+- The global shell is primarily for selecting or switching the current Course. An original progression-path mark, matching favicon, and `Hy3 Study Clinic` wordmark identify the product without borrowing DeepTutor branding. The sidebar expands for Course context, collapses to an icon rail on wide screens, and becomes an accessible modal drawer below 768 px.
+- The lower system zone keeps runtime status, Settings, advanced compatibility access, and sidebar collapse separate from the five Course destinations. Fake mode is presented as the normal deterministic offline runtime, not as a fault.
 - `主页` is the orientation surface and owns Course Materials. It shows the current goal, formal progress, relevant time information, a bounded agenda, actionable exceptions, and one dominant next action.
 - `学习` is the transcript-first daily workspace. Current unit and agenda context stay compact; detours and other mixed-initiative controls are progressively disclosed; formal checkpoints remain visually distinct from informal Tutor conversation.
-- `课程结构` presents the accepted hierarchy and current location. `进展` consolidates formal progression, assessments, mistakes and repair, mastery and reviews, plus Contract/Curriculum/Plan history. `探索` retains the full concept graph as an optional advanced workspace.
+- `课程结构` presents version/status and real hierarchy counts before the learner expands any branch. Major parts summarize actual learning goals and prerequisites; only persisted `started` units are labelled current. Expanding a leaf-heavy section mounts its first 12 units, with a separate control for the remainder, so a large Curriculum is not rendered as one default-expanded tree. Exact source revisions, unit evidence, and version history remain subordinate disclosures.
+- `进展` consolidates formal progression, assessments, mistakes and repair, mastery and reviews, plus Contract/Curriculum/Plan history. `探索` retains the full concept graph as an optional advanced workspace.
+- `设置` is a focused system surface. It reads the provider mode chosen by server startup configuration, can verify that the local Fastify health/config endpoints respond, and owns only a browser-side sidebar preference. It cannot edit or persist a provider URL, model, API key, or token.
 - Compatibility tools remain behind compact secondary access for existing workflows and bookmarks. Their learner destinations map as follows: materials to `主页 > 课程资料`, assessments to `学习` or `进展 > 测验记录`, mistakes to `进展 > 错题与修复`, legacy learning progress to `进展`, and the learning graph to `探索`.
 
 ### Agent architecture implementation status
@@ -196,6 +199,8 @@ HY3_MODEL=your-model-name
 
 `HY3_BASE_URL`, `HY3_API_KEY`, and `HY3_MODEL` are required in `hy3` mode. The repository provides no default endpoint, model, or credential. `HY3_TIMEOUT_MS` defaults to 30000 ms. See [`.env.example`](.env.example) for the complete contract, including server and database settings.
 
+Provider configuration is deliberately server-owned. The browser Settings page displays `fake` or `hy3` from `GET /api/config` but never receives the configured base URL, model, or key. Its **Test Connection** action calls only the local `GET /api/health` and `GET /api/config` endpoints with one cancellable request scope. A successful result proves that the local server responded and reports its configured mode; it does **not** validate Hy3 credentials, contact the external provider, or prove model availability. To change provider configuration, edit the server environment and restart the server.
+
 ### Main commands
 
 | Command | Purpose |
@@ -230,6 +235,8 @@ packages/shared -- Zod schemas, domain types, payloads, and deterministic utilit
 
 The browser never calls Hy3 directly. SQLite holds course workspaces, logical materials and immutable revisions, source blocks, source authority, Contracts, Curricula, StudyPlans, SessionAgendas, StudySessions, formal progression records, graph versions, assessments, completed attempts, mistakes, mastery, misconception hypotheses, review events, operations, and model-call telemetry. The browser retains only lightweight selection and graph-position preferences.
 
+The responsive Course shell and Settings route are presentation boundaries, not parallel configuration or persistence systems. The original SVG mark is reused by the sidebar, compatibility header, and favicon; server runtime configuration remains read-only in the browser. Curriculum expansion state is ephemeral presentation state: expanding branches, revealing the units after the first 12, or opening source/version details never modifies the accepted Curriculum.
+
 See [Architecture & Design Notes](docs/ARCHITECTURE.md) for request lifecycles, grounding rules, all 17 migrations, document deletion/reprocessing behavior, accepted-route lifecycle, formal progression, graph routing, provider contracts, learner-state machines, cancellation, and dependency rationale. It documents implemented current behavior; the authoritative design separately identifies the gated Phase 5 work that remains future scope.
 
 ## Verification summary
@@ -252,6 +259,8 @@ CodeBuddy confirmed, but did not author, the component's existing native button 
 
 ## Limitations
 
+- Settings tests local server reachability only. It does not make an authenticated Hy3 request, validate external provider availability, or support editing server-owned provider configuration in the browser.
+- Curriculum has progressive disclosure rather than search/filter. It never fabricates a current unit or progress state when the server did not persist one; malformed hierarchy recovery is display-only and does not repair stored Curriculum data.
 - PDF import requires an embedded text layer; there is no OCR. Complex multi-column layouts, rotated text, diagrams, and image text are not reconstructed. DOCX provenance has section headings but no page numbers.
 - Exact-quote verification establishes location, not semantic entailment. Strict grounding may reject otherwise schema-valid output.
 - 资料映射 reports structural mapping and anchor coverage, never semantic course coverage: a mapped section may still contain uncaptured ideas. Section budgets and the 40-concepts-per-document ceiling bound extraction depth.
