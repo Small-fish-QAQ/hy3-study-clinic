@@ -574,88 +574,92 @@ export function StudySessionView({
           </div>
         ) : null}
         <header className="study-session-header">
-          <div className="study-session-heading">
-            <p className="eyebrow">当前学习</p>
-            <h3>{currentLearningUnit?.title ?? currentAgendaItem?.reason ?? '学习'}</h3>
-            <div className="study-session-meta" aria-label="当前学习位置">
-              <span>{currentAgendaItem?.reason ?? '等待选择下一项学习内容'}</span>
-              {currentAgendaItem ? <span>约 {currentAgendaItem.estimatedMinutes} 分钟</span> : null}
-              {orderedAgenda.length > 0 ? (
-                <span>
-                  安排 {currentAgendaPosition || resolvedAgendaItems}/{orderedAgenda.length}
-                </span>
+          <div className="study-session-header-inner">
+            <div className="study-session-heading">
+              <p className="eyebrow">当前学习</p>
+              <h3>{currentLearningUnit?.title ?? currentAgendaItem?.reason ?? '学习'}</h3>
+              <div className="study-session-meta" aria-label="当前学习位置">
+                <span>{currentAgendaItem?.reason ?? '等待选择下一项学习内容'}</span>
+                {currentAgendaItem ? (
+                  <span>约 {currentAgendaItem.estimatedMinutes} 分钟</span>
+                ) : null}
+                {orderedAgenda.length > 0 ? (
+                  <span>
+                    安排 {currentAgendaPosition || resolvedAgendaItems}/{orderedAgenda.length}
+                  </span>
+                ) : null}
+              </div>
+              {session.routeStack.length > 0 ? (
+                <div className="route-return-cue compact" role="status">
+                  <span className="pill">临时探索</span>
+                  <span>{session.routeStack.at(-1)?.reason}</span>
+                  <button
+                    type="button"
+                    disabled={!active || busy}
+                    onClick={() => void mixedCommand('return')}
+                  >
+                    返回原学习路线
+                  </button>
+                </div>
               ) : null}
             </div>
-            {session.routeStack.length > 0 ? (
-              <div className="route-return-cue compact" role="status">
-                <span className="pill">临时探索</span>
-                <span>{session.routeStack.at(-1)?.reason}</span>
-                <button
-                  type="button"
-                  disabled={!active || busy}
-                  onClick={() => void mixedCommand('return')}
-                >
-                  返回原学习路线
-                </button>
-              </div>
-            ) : null}
-          </div>
-          <div className="study-session-header-actions">
-            <button
-              ref={inspectorTriggerRef}
-              type="button"
-              className="study-inspector-trigger"
-              aria-controls="study-inspector"
-              aria-expanded={inspectorOpen}
-              onClick={(event) =>
-                inspectorOpen
-                  ? setInspectorOpen(false)
-                  : openInspector('agenda', event.currentTarget)
-              }
-            >
-              <span>学习上下文</span>
-              <small>
-                安排 {currentAgendaPosition || resolvedAgendaItems}/{orderedAgenda.length}
-              </small>
-            </button>
-            {directCheckpointItem ? (
+            <div className="study-session-header-actions">
               <button
+                ref={inspectorTriggerRef}
                 type="button"
-                className="study-formal-trigger"
-                onClick={(event) => openInspector('evidence', event.currentTarget)}
+                className="study-inspector-trigger"
+                aria-controls="study-inspector"
+                aria-expanded={inspectorOpen}
+                onClick={(event) =>
+                  inspectorOpen
+                    ? setInspectorOpen(false)
+                    : openInspector('agenda', event.currentTarget)
+                }
               >
-                正式评估可用
+                <span>学习上下文</span>
+                <small>
+                  安排 {currentAgendaPosition || resolvedAgendaItems}/{orderedAgenda.length}
+                </small>
               </button>
-            ) : null}
-            <div className="study-session-lifecycle" aria-label="本次学习控制">
-              <span className={`session-status ${session.status}`}>
-                {sessionStatusLabel(session.status)}
-              </span>
-              {active ? (
-                <button type="button" disabled={busy} onClick={() => void lifecycle('pause')}>
-                  暂停
-                </button>
-              ) : null}
-              {session.status === 'paused' ? (
+              {directCheckpointItem ? (
                 <button
                   type="button"
-                  className="primary"
-                  disabled={busy}
-                  onClick={() => void lifecycle('resume')}
+                  className="study-formal-trigger"
+                  onClick={(event) => openInspector('evidence', event.currentTarget)}
                 >
-                  继续
+                  正式评估可用
                 </button>
               ) : null}
-              {active || session.status === 'paused' ? (
-                <button
-                  type="button"
-                  className="danger"
-                  disabled={busy}
-                  onClick={() => void lifecycle('stop')}
-                >
-                  结束本次学习
-                </button>
-              ) : null}
+              <div className="study-session-lifecycle" aria-label="本次学习控制">
+                <span className={`session-status ${session.status}`}>
+                  {sessionStatusLabel(session.status)}
+                </span>
+                {active ? (
+                  <button type="button" disabled={busy} onClick={() => void lifecycle('pause')}>
+                    暂停
+                  </button>
+                ) : null}
+                {session.status === 'paused' ? (
+                  <button
+                    type="button"
+                    className="primary"
+                    disabled={busy}
+                    onClick={() => void lifecycle('resume')}
+                  >
+                    继续
+                  </button>
+                ) : null}
+                {active || session.status === 'paused' ? (
+                  <button
+                    type="button"
+                    className="danger"
+                    disabled={busy}
+                    onClick={() => void lifecycle('stop')}
+                  >
+                    结束本次学习
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
         </header>
@@ -738,6 +742,7 @@ export function StudySessionView({
                     type="button"
                     className="primary study-send-control"
                     aria-label={tutorLoading ? '停止生成' : '发送'}
+                    title={tutorLoading ? '停止生成' : '发送'}
                     aria-busy={tutorLoading}
                     disabled={
                       tutorLoading
@@ -749,7 +754,7 @@ export function StudySessionView({
                     }
                     onClick={tutorLoading ? cancelTutorTurn : () => void submitTurn()}
                   >
-                    {tutorLoading ? '停止' : '发送'}
+                    <span aria-hidden="true">{tutorLoading ? '■' : '↑'}</span>
                   </button>
                 </div>
               </div>

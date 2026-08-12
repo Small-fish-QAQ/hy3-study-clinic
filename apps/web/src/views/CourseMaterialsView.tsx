@@ -116,16 +116,22 @@ export function CourseMaterialsView({
 
   return (
     <div className="course-materials stack" aria-label="课程资料">
-      <header className="supporting-page-intro row between">
-        <div>
+      <header className="supporting-page-intro material-page-intro row between">
+        <div className="material-page-heading">
           <p className="eyebrow">课程来源</p>
+          <h2>课程资料</h2>
           <p className="muted">
             管理教材、参考资料和练习依据。资料在课程中的用途不等于其事实依据已经独立验证。
           </p>
         </div>
-        <button type="button" className="ghost" onClick={onBack}>
-          返回主页
-        </button>
+        <div className="material-page-actions">
+          <span className="material-count" aria-label={`当前共有 ${documents.length} 份课程资料`}>
+            {documents.length} 份资料
+          </span>
+          <button type="button" className="ghost" onClick={onBack}>
+            返回主页
+          </button>
+        </div>
       </header>
 
       {action.error ? <Banner kind="error">{action.error}</Banner> : null}
@@ -138,77 +144,88 @@ export function CourseMaterialsView({
         <section className="material-list" aria-label={`当前课程资料，共 ${documents.length} 份`}>
           {documents.map((document) => {
             const role = roleHistory[document.id]?.current?.role ?? 'unknown';
+            const sourceLabel = SOURCE_LABELS[document.sourceType] ?? document.sourceType;
             return (
               <article className="material-row" key={document.id}>
-                <div className="material-row-main">
-                  <div>
-                    <h3>{document.title}</h3>
-                    <p className="small muted">
-                      {ROLE_LABELS[role] ?? role} ·{' '}
-                      {SOURCE_LABELS[document.sourceType] ?? document.sourceType}
-                      {document.pageCount ? ` · ${document.pageCount} 页` : ''}
-                    </p>
-                  </div>
-                  <span
-                    className={`pill ${document.parseStatus === 'parsed' ? 'deterministic' : ''}`}
-                  >
-                    {document.parseStatus === 'parsed' ? '可用于学习' : '已解析，有提示'}
+                <div className="material-row-layout">
+                  <span className="material-source-mark" aria-hidden="true">
+                    {sourceLabel.slice(0, 4)}
                   </span>
+                  <div className="material-row-content">
+                    <div className="material-row-main">
+                      <div className="material-row-title">
+                        <h3>{document.title}</h3>
+                        <p className="material-row-meta small muted">
+                          <span>{ROLE_LABELS[role] ?? role}</span>
+                          <span>{sourceLabel}</span>
+                          {document.pageCount ? <span>{document.pageCount} 页</span> : null}
+                          <span>{document.blockCount} 个引用片段</span>
+                        </p>
+                      </div>
+                      <span
+                        className={`pill material-status ${document.parseStatus === 'parsed' ? 'deterministic' : 'attention'}`}
+                      >
+                        {document.parseStatus === 'parsed' ? '可用于学习' : '已解析，有提示'}
+                      </span>
+                    </div>
+                    {document.extractionWarnings.length > 0 ? (
+                      <Banner kind="info">{document.extractionWarnings.join('；')}</Banner>
+                    ) : null}
+                    <div className="material-row-footer">
+                      <details className="technical-details material-provenance small">
+                        <summary>处理版本与来源</summary>
+                        <p className="material-identity-note muted">
+                          这是课程中的同一份逻辑资料；重新解析只更新其当前处理结果，不会创建另一份课程资料。
+                        </p>
+                        <dl>
+                          <div>
+                            <dt>当前解析器</dt>
+                            <dd>{document.parserVersion ?? '历史版本未记录'}</dd>
+                          </div>
+                          <div>
+                            <dt>内容规模</dt>
+                            <dd>{document.charCount.toLocaleString('zh-CN')} 字</dd>
+                          </div>
+                          <div>
+                            <dt>引用片段</dt>
+                            <dd>{document.blockCount} 段</dd>
+                          </div>
+                          <div>
+                            <dt>逻辑资料 ID</dt>
+                            <dd>{document.id}</dd>
+                          </div>
+                          <div>
+                            <dt>当前处理时间</dt>
+                            <dd>
+                              <time dateTime={document.updatedAt}>
+                                {new Date(document.updatedAt).toLocaleString('zh-CN')}
+                              </time>
+                            </dd>
+                          </div>
+                        </dl>
+                      </details>
+                      <div className="row material-actions">
+                        {document.sourceType === 'pdf' || document.sourceType === 'docx' ? (
+                          <button
+                            type="button"
+                            disabled={action.loading}
+                            onClick={() => void reprocess(document)}
+                          >
+                            重新解析
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="ghost danger"
+                          disabled={action.loading}
+                          onClick={() => void retire(document)}
+                        >
+                          从课程中移除
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                {document.extractionWarnings.length > 0 ? (
-                  <Banner kind="info">{document.extractionWarnings.join('；')}</Banner>
-                ) : null}
-                <p className="material-identity-note small muted">
-                  这是课程中的同一份逻辑资料；重新解析只更新其当前处理结果，不会创建另一份课程资料。
-                </p>
-                <div className="row material-actions">
-                  {document.sourceType === 'pdf' || document.sourceType === 'docx' ? (
-                    <button
-                      type="button"
-                      disabled={action.loading}
-                      onClick={() => void reprocess(document)}
-                    >
-                      重新解析
-                    </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="ghost danger"
-                    disabled={action.loading}
-                    onClick={() => void retire(document)}
-                  >
-                    从课程中移除
-                  </button>
-                </div>
-                <details className="technical-details small">
-                  <summary>当前处理版本与来源</summary>
-                  <dl>
-                    <div>
-                      <dt>当前解析器</dt>
-                      <dd>{document.parserVersion ?? '历史版本未记录'}</dd>
-                    </div>
-                    <div>
-                      <dt>内容规模</dt>
-                      <dd>{document.charCount.toLocaleString('zh-CN')} 字</dd>
-                    </div>
-                    <div>
-                      <dt>引用片段</dt>
-                      <dd>{document.blockCount} 段</dd>
-                    </div>
-                    <div>
-                      <dt>逻辑资料 ID</dt>
-                      <dd>{document.id}</dd>
-                    </div>
-                    <div>
-                      <dt>当前处理时间</dt>
-                      <dd>
-                        <time dateTime={document.updatedAt}>
-                          {new Date(document.updatedAt).toLocaleString('zh-CN')}
-                        </time>
-                      </dd>
-                    </div>
-                  </dl>
-                </details>
               </article>
             );
           })}
@@ -220,7 +237,10 @@ export function CourseMaterialsView({
         open={importOpen}
         onToggle={(event) => setImportOpen(event.currentTarget.open)}
       >
-        <summary>添加课程资料</summary>
+        <summary>
+          <span>添加课程资料</span>
+          <small>上传文件或粘贴文本</small>
+        </summary>
         <div className="material-import-content" aria-label="添加课程资料">
           <div className="material-import-grid">
             <label>

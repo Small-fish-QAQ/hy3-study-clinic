@@ -561,6 +561,7 @@ describe('CurriculumView truth and validation states', () => {
   it('renders the persisted parent-child structure as a nested outline', () => {
     const value = hierarchy();
     value.nodes.find((node) => node.id === 'unit_1')!.mappedPlanItemIds = ['plan_item_1'];
+    value.nodes.find((node) => node.id === 'unit_1')!.progressState = 'started';
     render(
       <CurriculumView
         hierarchy={value}
@@ -587,6 +588,34 @@ describe('CurriculumView truth and validation states', () => {
       within(outline).getByRole('heading', { name: 'Verified source objective' }).closest('li'),
     );
     expect(screen.getByText('已纳入当前学习路线')).toBeInTheDocument();
+    expect(
+      within(outline)
+        .getByRole('heading', { name: 'Verified source objective' })
+        .closest('article'),
+    ).toHaveAttribute('aria-current', 'step');
+  });
+
+  it('keeps the Curriculum page context visible while the outline is loading', () => {
+    render(
+      <CurriculumView
+        hierarchy={null}
+        history={[]}
+        loading
+        error={null}
+        canPropose
+        canAccept={false}
+        busyAction={null}
+        onPropose={vi.fn()}
+        onAccept={vi.fn()}
+        onReject={vi.fn()}
+        onSelectHistory={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText('课程结构')).toBeInTheDocument();
+    expect(screen.getByText('课程地图')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('加载课程结构…');
+    expect(screen.getByRole('button', { name: '生成结构' })).toBeDisabled();
   });
 
   it('keeps an invalid proposed Curriculum visibly non-acceptable', () => {

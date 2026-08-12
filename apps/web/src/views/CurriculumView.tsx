@@ -80,29 +80,40 @@ function CurriculumBranch({
     <ol className="curriculum-level" aria-label={level === 1 ? '课程层级' : undefined}>
       {branches.map(({ node, children }) => {
         const objectives = node.learningUnit?.objectives ?? [];
+        const isCurrent = node.progressState === 'started';
+        const isRouteLinked = node.mappedPlanItemIds.length > 0;
         const prerequisiteNames = (node.learningUnit?.prerequisiteUnitIds ?? []).map(
           (unitId) => nodeById.get(unitId)?.title ?? unitId,
         );
         return (
-          <li className={`curriculum-node kind-${node.kind}`} data-depth={node.depth} key={node.id}>
-            <article className="curriculum-node-content">
+          <li
+            className={`curriculum-node kind-${node.kind}${isCurrent ? ' is-current' : ''}`}
+            data-depth={node.depth}
+            key={node.id}
+          >
+            <article
+              className="curriculum-node-content"
+              aria-current={isCurrent ? 'step' : undefined}
+            >
               <header className="curriculum-node-heading">
-                <div>
+                <div className="curriculum-node-title">
                   <span className="curriculum-kind">{KIND_TEXT[node.kind]}</span>
                   <h3>{node.title}</h3>
                 </div>
-                {node.progressState ? (
-                  <span className={`curriculum-progress state-${node.progressState}`}>
-                    {progressLabel(node.progressState)}
-                  </span>
-                ) : null}
+                <div className="curriculum-node-state">
+                  {isRouteLinked ? (
+                    <span className="curriculum-route-note">已纳入当前学习路线</span>
+                  ) : null}
+                  {node.progressState ? (
+                    <span className={`curriculum-progress state-${node.progressState}`}>
+                      {progressLabel(node.progressState)}
+                    </span>
+                  ) : null}
+                </div>
               </header>
 
               {node.learningUnit ? (
                 <div className="curriculum-unit-detail">
-                  {node.mappedPlanItemIds.length > 0 ? (
-                    <p className="curriculum-route-note">已纳入当前学习路线</p>
-                  ) : null}
                   {objectives.length > 0 ? (
                     <ul className="curriculum-objectives" aria-label={`${node.title}学习目标`}>
                       {objectives.map((objective) => (
@@ -123,15 +134,24 @@ function CurriculumBranch({
                       ))}
                     </ul>
                   ) : null}
-                  <details className="small technical-details">
+                  <details className="curriculum-evidence-disclosure small technical-details">
                     <summary>课程依据</summary>
-                    <p className="muted">
-                      引用概念 {node.learningUnit.conceptIds.length} 个 · 来源锚点{' '}
-                      {node.sourceReferences.length} 个
-                    </p>
-                    {prerequisiteNames.length > 0 ? (
-                      <p className="muted">先修单元：{prerequisiteNames.join('、')}</p>
-                    ) : null}
+                    <dl className="curriculum-evidence-meta">
+                      <div>
+                        <dt>引用概念</dt>
+                        <dd>{node.learningUnit.conceptIds.length} 个</dd>
+                      </div>
+                      <div>
+                        <dt>来源锚点</dt>
+                        <dd>{node.sourceReferences.length} 个</dd>
+                      </div>
+                      {prerequisiteNames.length > 0 ? (
+                        <div className="curriculum-evidence-prerequisites">
+                          <dt>先修单元</dt>
+                          <dd>{prerequisiteNames.join('、')}</dd>
+                        </div>
+                      ) : null}
+                    </dl>
                   </details>
                 </div>
               ) : null}
@@ -160,8 +180,6 @@ export function CurriculumView({
   onReject,
   onSelectHistory,
 }: CurriculumViewProps) {
-  if (loading && !hierarchy) return <Loading label="加载课程结构…" />;
-
   const branches = hierarchy ? buildCurriculumTree(hierarchy) : [];
   const nodeById = new Map(hierarchy?.nodes.map((node) => [node.id, node]) ?? []);
   const learningUnitCount =
@@ -180,7 +198,7 @@ export function CurriculumView({
             </p>
           </div>
           {canPropose ? (
-            <button type="button" disabled={busyAction !== null} onClick={onPropose}>
+            <button type="button" disabled={loading || busyAction !== null} onClick={onPropose}>
               {busyAction === 'propose-curriculum'
                 ? '正在生成…'
                 : hierarchy
@@ -200,8 +218,22 @@ export function CurriculumView({
         ) : null}
       </header>
 
-      {!hierarchy ? (
-        <Banner kind="empty">确认学习约定后，可生成并审阅课程结构。</Banner>
+      {loading && !hierarchy ? (
+        <section
+          className="curriculum-state curriculum-loading-state"
+          aria-label="正在加载课程结构"
+        >
+          <Loading label="加载课程结构…" />
+        </section>
+      ) : !hierarchy ? (
+        <section
+          className="curriculum-state curriculum-empty-state"
+          aria-labelledby="curriculum-empty-title"
+        >
+          <p className="eyebrow">尚未生成</p>
+          <h2 id="curriculum-empty-title">暂无课程结构</h2>
+          <p className="muted">确认学习约定后，可生成并审阅课程结构。</p>
+        </section>
       ) : (
         <section className="curriculum-outline-section" aria-label="课程层级视图">
           {!hierarchy.validation.valid ? (

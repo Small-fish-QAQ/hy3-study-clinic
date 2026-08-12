@@ -499,47 +499,56 @@ export function App() {
     <div className={`app-shell module-${activeModule}`}>
       {tab !== 'course' ? (
         <header className="app-header app-utility-header">
-          <div className="app-branding">
-            <h1>Hy3 Study Clinic</h1>
-            <p className="app-subtitle">兼容与高级工具</p>
-          </div>
-          <nav className="primary-nav" aria-label="主导航">
-            <button type="button" onClick={() => handleModuleChange('course')}>
-              返回课程
-            </button>
-          </nav>
-          <details className="legacy-tools" open>
-            <summary>工具导航</summary>
-            <nav className="legacy-nav" aria-label="兼容工具">
-              {(Object.keys(MODULE_LABELS) as Module[])
-                .filter((module) => module !== 'course')
-                .map((module) => {
-                  const needsMaterial = module !== 'import' && module !== 'graph';
-                  const practiceViaAssessment = module === 'practice' && assessmentActive;
-                  const disabled =
-                    needsMaterial &&
-                    !practiceViaAssessment &&
-                    (!materialReady || openingMaterialId !== null);
-                  return (
-                    <button
-                      key={module}
-                      type="button"
-                      className={activeModule === module ? 'active' : ''}
-                      aria-current={activeModule === module ? 'page' : undefined}
-                      disabled={disabled}
-                      onClick={() => handleModuleChange(module)}
-                    >
-                      {MODULE_LABELS[module]}
-                    </button>
-                  );
-                })}
+          <div className="app-utility-heading">
+            <nav className="app-utility-return" aria-label="主导航">
+              <button
+                type="button"
+                className="app-utility-back"
+                onClick={() => handleModuleChange('course')}
+              >
+                <span aria-hidden="true">←</span>
+                返回课程
+              </button>
             </nav>
-          </details>
-          {provider ? (
-            <span className={`provider-badge ${provider}`}>
-              {provider === 'fake' ? '离线 · 模拟模式' : 'Hy3 在线'}
-            </span>
-          ) : null}
+            <div className="app-branding">
+              <p className="app-utility-kicker">Hy3 Study Clinic</p>
+              <h1>兼容与高级工具</h1>
+            </div>
+          </div>
+          <div className="app-utility-controls">
+            <details className="legacy-tools" open>
+              <summary>工具导航</summary>
+              <nav className="legacy-nav" aria-label="兼容工具">
+                {(Object.keys(MODULE_LABELS) as Module[])
+                  .filter((module) => module !== 'course')
+                  .map((module) => {
+                    const needsMaterial = module !== 'import' && module !== 'graph';
+                    const practiceViaAssessment = module === 'practice' && assessmentActive;
+                    const disabled =
+                      needsMaterial &&
+                      !practiceViaAssessment &&
+                      (!materialReady || openingMaterialId !== null);
+                    return (
+                      <button
+                        key={module}
+                        type="button"
+                        className={activeModule === module ? 'active' : ''}
+                        aria-current={activeModule === module ? 'page' : undefined}
+                        disabled={disabled}
+                        onClick={() => handleModuleChange(module)}
+                      >
+                        {MODULE_LABELS[module]}
+                      </button>
+                    );
+                  })}
+              </nav>
+            </details>
+            {provider ? (
+              <span className={`provider-badge ${provider}`}>
+                {provider === 'fake' ? '离线 · 模拟模式' : 'Hy3 在线'}
+              </span>
+            ) : null}
+          </div>
         </header>
       ) : null}
 
