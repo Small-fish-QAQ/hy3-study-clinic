@@ -435,6 +435,7 @@ function installSameUnitFormalActions() {
   const template = plan.items[0]!;
   const formalItems = [
     { id: 'plan_checkpoint', kind: 'formal_checkpoint' as const },
+    { id: 'plan_checkpoint_later', kind: 'formal_checkpoint' as const },
     { id: 'plan_synthesis', kind: 'synthesis' as const },
     { id: 'plan_repair', kind: 'targeted_repair' as const },
   ].map((item, offset) => ({
@@ -479,7 +480,12 @@ function installSameUnitFormalActions() {
 
   const agenda = repos.sessionAgendas.get('agenda_1')!;
   const agendaItems = formalItems.map((item, offset) => ({
-    id: `agenda_${item.kind}`,
+    id:
+      item.id === 'plan_checkpoint'
+        ? 'agenda_formal_checkpoint'
+        : item.id === 'plan_checkpoint_later'
+          ? 'agenda_formal_checkpoint_later'
+          : `agenda_${item.kind}`,
     index: agenda.items.length + offset,
     kind: item.kind,
     origin: 'accepted_plan' as const,
@@ -519,6 +525,7 @@ function installSameUnitFormalActions() {
   return {
     agenda: updatedAgenda,
     checkpointAgendaItemId: 'agenda_formal_checkpoint',
+    laterCheckpointAgendaItemId: 'agenda_formal_checkpoint_later',
     synthesisAgendaItemId: 'agenda_synthesis',
     repairAgendaItemId: 'agenda_targeted_repair',
   };
@@ -646,10 +653,10 @@ function installTwoUnitSynthesisRoute() {
   return { ...actions, secondBlock, secondObjectiveId };
 }
 
-function insertSynthesisQuiz(includeSecondUnit: boolean) {
+function insertSynthesisQuiz(includeSecondUnit: boolean, suffix = '') {
   const firstBlock = repos.materials.getBlock('blk_1')!;
   const secondBlock = repos.materials.getBlock('blk_2')!;
-  const quizId = includeSecondUnit ? 'quiz_synthesis_broad' : 'quiz_synthesis_narrow';
+  const quizId = `${includeSecondUnit ? 'quiz_synthesis_broad' : 'quiz_synthesis_narrow'}${suffix}`;
   const questionFor = (input: {
     id: string;
     conceptId: string;
@@ -709,8 +716,8 @@ function insertSynthesisQuiz(includeSecondUnit: boolean) {
   return quizId;
 }
 
-function insertSynthesisGrade(score: number) {
-  const quizId = insertSynthesisQuiz(true);
+function insertSynthesisGrade(score: number, suffix = '') {
+  const quizId = insertSynthesisQuiz(true, suffix);
   const quiz = repos.quizzes.get(quizId)!;
   const submissionId = `${quizId}_submission`;
   const gradingResultId = `${quizId}_grading`;
@@ -1117,6 +1124,83 @@ describe('formal progression service', () => {
     );
   });
 
+  it('makes a later ordinary failure actionable without erasing prior completion evidence', () => {
+    const actions = installSameUnitFormalActions();
+    const passed = insertGrade('ordinary_pass_before_failure', 1);
+    services.formalProgression.registerAssessmentContracts({
+      workspaceId: 'ws_1',
+      quizId: passed.quizId,
+      agendaId: actions.agenda.id,
+      agendaItemId: actions.checkpointAgendaItemId,
+      assessmentKind: 'formal_checkpoint',
+      contractVersionId: 'contract_1',
+      curriculumVersionId: 'curriculum_1',
+      studyPlanVersionId: 'plan_1',
+      executionSourceManifestFingerprint: 'manifest-fp',
+    });
+    const completed = services.formalProgression.reconcileAfterGrading(passed.gradingResultId)!;
+    expect(completed.decisions[0]?.kind).toBe('complete');
+
+    const failed = insertGrade('ordinary_failure_after_pass', 0);
+    services.formalProgression.registerAssessmentContracts({
+      workspaceId: 'ws_1',
+      quizId: failed.quizId,
+      agendaId: actions.agenda.id,
+      agendaItemId: actions.laterCheckpointAgendaItemId,
+      assessmentKind: 'formal_checkpoint',
+      contractVersionId: 'contract_1',
+      curriculumVersionId: 'curriculum_1',
+      studyPlanVersionId: 'plan_1',
+      executionSourceManifestFingerprint: 'manifest-fp',
+    });
+    const reconciled = services.formalProgression.reconcileAfterGrading(failed.gradingResultId)!;
+
+    expect(reconciled.decisions[0]).toMatchObject({
+      kind: 'targeted_repair',
+      priorState: 'complete',
+      nextState: 'complete',
+      reasonCodes: ['prior_completion_preserved'],
+    });
+    expect(reconciled.decisions[0]?.evidenceIds).toEqual(
+      expect.arrayContaining([completed.evidence[0]!.id, reconciled.evidence[0]!.id]),
+    );
+    expect(repos.formalProgression.listEvidenceForWorkspace('ws_1')).toHaveLength(2);
+    expect(repos.formalProgression.getUnitProgress('ws_1', 'curriculum_1', 'unit_1')).toMatchObject(
+      { state: 'complete', version: 2 },
+    );
+    expect(
+      repos.studyPlans
+        .listProgress('plan_1')
+        .find((item) => item.planItemId === 'plan_checkpoint_later'),
+    ).toMatchObject({ state: 'repair_needed' });
+    const agenda = repos.sessionAgendas.get(actions.agenda.id)!;
+    expect(
+      agenda.items.find((item) => item.id === actions.laterCheckpointAgendaItemId),
+    ).toMatchObject({ state: 'blocked' });
+    expect(agenda.currentItemId).toBe(actions.repairAgendaItemId);
+
+    const sideEffectsBeforeReplay = {
+      decisions: (
+        db.prepare('SELECT COUNT(*) AS n FROM progression_decisions').get() as { n: number }
+      ).n,
+      evidence: (
+        db.prepare('SELECT COUNT(*) AS n FROM formal_evidence_records').get() as { n: number }
+      ).n,
+      agendaItems: repos.sessionAgendas.get(actions.agenda.id)!.items.length,
+    };
+    const replay = services.formalProgression.reconcileAfterGrading(failed.gradingResultId)!;
+    expect(replay.decisions[0]?.id).toBe(reconciled.decisions[0]?.id);
+    expect({
+      decisions: (
+        db.prepare('SELECT COUNT(*) AS n FROM progression_decisions').get() as { n: number }
+      ).n,
+      evidence: (
+        db.prepare('SELECT COUNT(*) AS n FROM formal_evidence_records').get() as { n: number }
+      ).n,
+      agendaItems: repos.sessionAgendas.get(actions.agenda.id)!.items.length,
+    }).toEqual(sideEffectsBeforeReplay);
+  });
+
   it('keeps required repair queued and marks only failed synthesis work repair-needed', () => {
     const actions = installTwoUnitSynthesisRoute();
     const checkpoint = insertGrade('projection_checkpoint_pass', 1);
@@ -1180,7 +1264,7 @@ describe('formal progression service', () => {
 
     const agenda = repos.sessionAgendas.get(actions.agenda.id)!;
     expect(agenda.items.find((item) => item.id === actions.synthesisAgendaItemId)?.state).toBe(
-      'completed',
+      'blocked',
     );
     expect(agenda.items.find((item) => item.id === actions.repairAgendaItemId)?.state).toBe(
       'queued',
@@ -1626,6 +1710,120 @@ describe('formal progression service', () => {
       launch: { status: 'launchable', capability: 'assessment' },
     });
     expect(repairedAgenda.currentItemId).toBe(repair?.id);
+  });
+
+  it('resolves a historical synthesis gap after a later qualifying synthesis passes', () => {
+    const actions = installTwoUnitSynthesisRoute();
+    const checkpoint = insertGrade('checkpoint_before_synthesis_repair', 1);
+    services.formalProgression.registerAssessmentContracts({
+      workspaceId: 'ws_1',
+      quizId: checkpoint.quizId,
+      agendaId: actions.agenda.id,
+      agendaItemId: actions.checkpointAgendaItemId,
+      assessmentKind: 'formal_checkpoint',
+      contractVersionId: 'contract_1',
+      curriculumVersionId: 'curriculum_1',
+      studyPlanVersionId: 'plan_1',
+      executionSourceManifestFingerprint: 'manifest-fp',
+    });
+    services.formalProgression.reconcileAfterGrading(checkpoint.gradingResultId);
+
+    const failed = insertSynthesisGrade(0, '_failed');
+    services.formalProgression.registerAssessmentContracts({
+      workspaceId: 'ws_1',
+      quizId: failed.quizId,
+      agendaId: actions.agenda.id,
+      agendaItemId: actions.synthesisAgendaItemId,
+      assessmentKind: 'synthesis',
+      contractVersionId: 'contract_1',
+      curriculumVersionId: 'curriculum_1',
+      studyPlanVersionId: 'plan_1',
+      executionSourceManifestFingerprint: 'manifest-fp',
+    });
+    const failedReconciliation = services.formalProgression.reconcileAfterGrading(
+      failed.gradingResultId,
+    )!;
+    expect(failedReconciliation.decisions).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: 'targeted_repair' })]),
+    );
+    expect(
+      repos.coverageRisks
+        .list('ws_1', 'contract_1')
+        .filter((risk) => risk.facets.includes('transfer_integration_risk')),
+    ).toEqual(expect.arrayContaining([expect.objectContaining({ status: 'planned' })]));
+
+    const repaired = insertSynthesisGrade(1, '_repaired');
+    services.formalProgression.registerAssessmentContracts({
+      workspaceId: 'ws_1',
+      quizId: repaired.quizId,
+      agendaId: actions.agenda.id,
+      agendaItemId: actions.synthesisAgendaItemId,
+      assessmentKind: 'synthesis',
+      contractVersionId: 'contract_1',
+      curriculumVersionId: 'curriculum_1',
+      studyPlanVersionId: 'plan_1',
+      executionSourceManifestFingerprint: 'manifest-fp',
+    });
+    const reconciled = services.formalProgression.reconcileAfterGrading(repaired.gradingResultId)!;
+
+    expect(reconciled.decisions).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: 'complete' })]),
+    );
+    const historicalEvidence = repos.formalProgression.listEvidenceForWorkspace('ws_1');
+    expect(historicalEvidence.some((item) => item.gradingResultId === failed.gradingResultId)).toBe(
+      true,
+    );
+    expect(
+      historicalEvidence.some((item) => item.gradingResultId === repaired.gradingResultId),
+    ).toBe(true);
+    const synthesisRisks = repos.coverageRisks
+      .list('ws_1', 'contract_1')
+      .filter((risk) => risk.facets.includes('transfer_integration_risk'));
+    expect(synthesisRisks).not.toHaveLength(0);
+    expect(synthesisRisks.every((risk) => risk.status === 'resolved')).toBe(true);
+    expect(synthesisRisks.every((risk) => risk.resolutionEvidenceIds.length > 0)).toBe(true);
+    expect(
+      repos.formalProgression
+        .listReplanTriggers('ws_1')
+        .filter((trigger) => trigger.kind === 'synthesis_failure'),
+    ).toEqual(expect.arrayContaining([expect.objectContaining({ status: 'resolved' })]));
+    const agenda = repos.sessionAgendas.get(actions.agenda.id)!;
+    expect(agenda.items.find((item) => item.id === actions.synthesisAgendaItemId)?.state).toBe(
+      'completed',
+    );
+    expect(agenda.items.find((item) => item.id === actions.repairAgendaItemId)?.state).toBe(
+      'cancelled',
+    );
+    expect(agenda.currentItemId).not.toBe(actions.repairAgendaItemId);
+
+    const sideEffectsBeforeReplay = {
+      decisions: (
+        db.prepare('SELECT COUNT(*) AS n FROM progression_decisions').get() as { n: number }
+      ).n,
+      evidence: (
+        db.prepare('SELECT COUNT(*) AS n FROM formal_evidence_records').get() as { n: number }
+      ).n,
+      riskEvents: (
+        db.prepare('SELECT COUNT(*) AS n FROM coverage_risk_events').get() as { n: number }
+      ).n,
+      agendaItems: agenda.items.length,
+    };
+    const replay = services.formalProgression.reconcileAfterGrading(repaired.gradingResultId)!;
+    expect(replay.decisions.map((item) => item.id)).toEqual(
+      reconciled.decisions.map((item) => item.id),
+    );
+    expect({
+      decisions: (
+        db.prepare('SELECT COUNT(*) AS n FROM progression_decisions').get() as { n: number }
+      ).n,
+      evidence: (
+        db.prepare('SELECT COUNT(*) AS n FROM formal_evidence_records').get() as { n: number }
+      ).n,
+      riskEvents: (
+        db.prepare('SELECT COUNT(*) AS n FROM coverage_risk_events').get() as { n: number }
+      ).n,
+      agendaItems: repos.sessionAgendas.get(actions.agenda.id)!.items.length,
+    }).toEqual(sideEffectsBeforeReplay);
   });
 
   it('reconciles successor-Plan evidence without citing predecessor-Plan evidence', () => {

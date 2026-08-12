@@ -639,6 +639,7 @@ export function createFormalProgressionService({
     nextState: ProgressionDecision['nextState'],
     decisionId: string,
     at: string,
+    resolvesSynthesisGap: boolean,
   ): void {
     const route = repos.courseExecution.get(plan.workspaceId);
     if (route.acceptedPlanId !== plan.id || !route.activeAgendaId) return;
@@ -668,7 +669,11 @@ export function createFormalProgressionService({
       const current = repos.studyPlans
         .listProgress(plan.id)
         .find((item) => item.planItemId === executedPlanItem.id);
-      if (current && current.state !== planState && current.state !== 'completed') {
+      if (
+        current &&
+        current.state !== planState &&
+        (current.state !== 'completed' || planState === 'repair_needed')
+      ) {
         repos.studyPlans.updateProgress(
           plan.id,
           executedPlanItem.id,
@@ -685,9 +690,44 @@ export function createFormalProgressionService({
       if (item.id !== executedAgendaItem.id) return item;
       return {
         ...item,
-        state: nextState === 'deferred' ? ('deferred' as const) : ('completed' as const),
+        state:
+          nextState === 'deferred'
+            ? ('deferred' as const)
+            : decisionKind === 'targeted_repair'
+              ? ('blocked' as const)
+              : ('completed' as const),
       };
     });
+
+    if (resolvesSynthesisGap) {
+      for (const planItem of relevantPlanItems) {
+        if (planItem.id === executedPlanItem?.id || planItem.kind !== 'synthesis') continue;
+        const current = repos.studyPlans
+          .listProgress(plan.id)
+          .find((item) => item.planItemId === planItem.id);
+        if (current?.state === 'repair_needed') {
+          repos.studyPlans.updateProgress(
+            plan.id,
+            planItem.id,
+            current.version,
+            'obsolete',
+            newId('plan_progress_evt'),
+            `Synthesis gap resolved by formal decision ${decisionId}.`,
+            at,
+          );
+        }
+      }
+      items = items.map((item) =>
+        item.id !== executedAgendaItem.id &&
+        item.learningUnitId === unitId &&
+        (item.kind === 'targeted_repair' ||
+          (item.kind === 'synthesis' && item.state === 'blocked')) &&
+        item.state !== 'completed' &&
+        item.state !== 'cancelled'
+          ? { ...item, state: 'cancelled' as const }
+          : item,
+      );
+    }
 
     let preferredNextId: string | null = null;
     if (nextState === 'repair_needed' || decisionKind === 'targeted_repair') {
@@ -939,9 +979,15 @@ export function createFormalProgressionService({
         );
         continue;
       }
+      const currentEligible = eligible.filter((item) => item.gradingResultId === gradingResultId);
       const passed = eligible.filter((item) => item.normalizedScore >= policy.minimumScore);
-      const failed = eligible.some((item) => item.normalizedScore < policy.minimumScore);
+      const currentFailed = currentEligible.some(
+        (item) => item.normalizedScore < policy.minimumScore,
+      );
       const failedEvidence = eligible.filter((item) => item.normalizedScore < policy.minimumScore);
+      const currentFailedEvidence = currentEligible.filter(
+        (item) => item.normalizedScore < policy.minimumScore,
+      );
       const plan = repos.studyPlans.get(first.studyPlanVersionId);
       const routeCurriculum = repos.curricula.get(first.curriculumVersionId);
       if (!plan || !routeCurriculum) {
@@ -964,25 +1010,46 @@ export function createFormalProgressionService({
         passedObjectiveIds.has(objectiveId),
       );
       const synthesisRequired = policy.requireSynthesis;
-      const synthesisEvidence = eligible.filter((item) =>
-        unitContracts.some(
-          (candidate) =>
-            candidate.questionId === item.questionId && candidate.representation === 'synthesis',
-        ),
+      const evidenceContracts = new Map(
+        eligible.map((item) => [
+          item.id,
+          progression.getQuestionContract(item.formalQuestionContractId),
+        ]),
       );
-      const synthesisSatisfied = !synthesisRequired || synthesisEvidence.length > 0;
-      const failedSynthesis = synthesisEvidence.some(
+      const synthesisEvidence = eligible.filter(
+        (item) => evidenceContracts.get(item.id)?.representation === 'synthesis',
+      );
+      const passedSynthesisEvidence = synthesisEvidence.filter(
+        (item) => item.normalizedScore >= policy.minimumScore,
+      );
+      const synthesisSatisfied = !synthesisRequired || passedSynthesisEvidence.length > 0;
+      const currentFailedSynthesisEvidence = currentFailedEvidence.filter(
+        (item) => evidenceContracts.get(item.id)?.representation === 'synthesis',
+      );
+      const failedSynthesis = currentFailedSynthesisEvidence.some(
         (item) => item.normalizedScore < policy.minimumScore,
       );
-      const kind = failedSynthesis
+      const kind = currentFailed
         ? 'targeted_repair'
         : passed.length >= policy.minimumEligibleEvidenceCount &&
             synthesisSatisfied &&
             blockingObjectivesSatisfied
           ? 'complete'
-          : failed
-            ? 'targeted_repair'
-            : 'continue';
+          : 'continue';
+      const synthesisRiskId = `risk_synthesis_${commandFingerprint({
+        contractId: first.contractVersionId,
+        unitId,
+      })}`;
+      const currentAssessmentKinds = new Set(
+        unitContracts.map((candidate) => candidate.assessmentKind),
+      );
+      const resolvesSynthesisGap =
+        !currentFailed &&
+        currentEligible.length > 0 &&
+        (currentAssessmentKinds.has('synthesis') ||
+          currentAssessmentKinds.has('targeted_repair')) &&
+        repos.coverageRisks.get(synthesisRiskId)?.status !== undefined &&
+        repos.coverageRisks.get(synthesisRiskId)?.status !== 'resolved';
       const prior = progression.getUnitProgress(workspaceId, first.curriculumVersionId, unitId);
       const preserveCompleted = prior.state === 'complete' && kind !== 'complete';
       const nextState = preserveCompleted
@@ -998,7 +1065,7 @@ export function createFormalProgressionService({
           : ['prior_completion_preserved']
         : kind === 'complete'
           ? ['eligible_evidence_satisfied']
-          : failed
+          : currentFailed
             ? ['eligible_evidence_below_policy']
             : synthesisRequired && !synthesisSatisfied
               ? ['synthesis_required']
@@ -1016,13 +1083,10 @@ export function createFormalProgressionService({
         );
         if (synthesisContract && objective) {
           const firstProvenance = synthesisContract.provenance[0] ?? null;
-          const riskId = `risk_synthesis_${commandFingerprint({
-            contractId: first.contractVersionId,
-            unitId,
-          })}`;
-          if (!repos.coverageRisks.get(riskId)) {
+          const existingSynthesisRisk = repos.coverageRisks.get(synthesisRiskId);
+          if (!existingSynthesisRisk) {
             const risk: CoverageRiskEntry = {
-              id: riskId,
+              id: synthesisRiskId,
               workspaceId,
               contractVersionId: first.contractVersionId,
               stableScopeFingerprint: synthesisContract.stableScopeFingerprint,
@@ -1035,7 +1099,9 @@ export function createFormalProgressionService({
               truthAuthorityRecordIds: objective.truthAuthorityRecordIds,
               referencedCurriculumNodeIds: [unitId],
               referencedConceptIds: curriculumUnit?.learningUnit?.conceptIds ?? [],
-              referencedEvidenceIds: synthesisEvidence.slice(0, 50).map((item) => item.id),
+              referencedEvidenceIds: currentFailedSynthesisEvidence
+                .slice(0, 50)
+                .map((item) => item.id),
               origin: 'deterministic',
               status: 'planned',
               severity: 'high',
@@ -1079,15 +1145,31 @@ export function createFormalProgressionService({
               },
               createdAt: now,
             });
+          } else {
+            repos.coverageRisks.recordOutstanding(
+              synthesisRiskId,
+              currentFailedSynthesisEvidence.map((item) => item.id),
+              {
+                id: newId('risk_evt'),
+                eventType: 'formal_synthesis_gap_recorded',
+                actor: 'local',
+                payload: {
+                  gradingResultId,
+                  reconciliationId: reconciliation.id,
+                  targetedRepairRequired: true,
+                },
+                createdAt: now,
+              },
+            );
           }
         }
       }
       const automaticTriggerKind = failedSynthesis
         ? ('synthesis_failure' as const)
-        : failedEvidence.length >= 2
+        : currentFailed && failedEvidence.length >= 2
           ? ('repeated_formal_evidence' as const)
-          : unitContracts.some((candidate) => candidate.assessmentKind === 'targeted_repair') &&
-              failedEvidence.length > 0
+          : currentFailed &&
+              unitContracts.some((candidate) => candidate.assessmentKind === 'targeted_repair')
             ? ('strong_prerequisite_failure' as const)
             : null;
       if (automaticTriggerKind) {
@@ -1152,7 +1234,29 @@ export function createFormalProgressionService({
           result.decision.nextState,
           result.decision.id,
           now,
+          resolvesSynthesisGap,
         );
+        if (resolvesSynthesisGap) {
+          repos.coverageRisks.resolve(
+            synthesisRiskId,
+            currentEligible.map((item) => item.id),
+            {
+              id: newId('risk_evt'),
+              eventType: 'formal_synthesis_gap_resolved',
+              actor: 'local',
+              payload: { gradingResultId, reconciliationId: reconciliation.id },
+              createdAt: now,
+            },
+          );
+          const trigger = progression.findReplanTriggerByIdentity(
+            first.studyPlanVersionId,
+            'synthesis_failure',
+            `Formal synthesis failed for LearningUnit ${unitId}.`,
+          );
+          if (trigger && trigger.status !== 'resolved') {
+            progression.updateReplanTrigger({ ...trigger, status: 'resolved', updatedAt: now });
+          }
+        }
         return result;
       });
       reconciliations.push(applied.reconciliation);

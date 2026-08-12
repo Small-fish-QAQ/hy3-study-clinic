@@ -524,7 +524,9 @@ export function createFormalProgressionRepo(db: SqliteDb) {
         .all(trigger.acceptedStudyPlanId, trigger.kind) as PayloadRow[];
       const prior = existing
         .map((row) => ReplanTriggerSchema.parse(JSON.parse(row.payload)))
-        .find((candidate) => candidate.reason === trigger.reason);
+        .find(
+          (candidate) => candidate.reason === trigger.reason && candidate.status !== 'resolved',
+        );
       if (prior) return prior;
       db.prepare(
         `INSERT INTO replan_triggers

@@ -72,6 +72,31 @@ export function createCoverageRisksRepo(db: SqliteDb) {
     );
   }
 
+  function validateResolutionEvidence(
+    risk: CoverageRiskEntry,
+    resolutionEvidenceIds: string[],
+  ): string[] {
+    const evidenceIds = [...new Set(resolutionEvidenceIds)];
+    if (evidenceIds.length === 0) {
+      throw new Error('Updating a Coverage risk requires formal evidence.');
+    }
+    const placeholders = evidenceIds.map(() => '?').join(', ');
+    const evidenceCount = (
+      db
+        .prepare(
+          `SELECT COUNT(*) AS n FROM formal_evidence_records e
+           JOIN formal_question_contracts q ON q.id = e.formal_question_contract_id
+           WHERE e.id IN (${placeholders})
+             AND q.workspace_id = ? AND q.contract_id = ?`,
+        )
+        .get(...evidenceIds, risk.workspaceId, risk.contractVersionId) as { n: number }
+    ).n;
+    if (evidenceCount !== evidenceIds.length) {
+      throw new Error('Coverage risk update references out-of-scope formal evidence.');
+    }
+    return evidenceIds;
+  }
+
   const createTx = db.transaction((input: CoverageRiskEntry, event: CoverageRiskEventInput) => {
     const risk = CoverageRiskEntrySchema.parse(input);
     const contract = db
@@ -180,9 +205,70 @@ export function createCoverageRisksRepo(db: SqliteDb) {
     return get(risk.id)!;
   });
 
+  const resolveTx = db.transaction(
+    (id: string, resolutionEvidenceIds: string[], event: CoverageRiskEventInput) => {
+      const current = get(id);
+      if (!current) throw new Error('Coverage risk does not exist.');
+      if (current.status === 'resolved') return current;
+      const evidenceIds = validateResolutionEvidence(current, resolutionEvidenceIds);
+      const resolved = CoverageRiskEntrySchema.parse({
+        ...current,
+        status: 'resolved',
+        referencedEvidenceIds: [
+          ...new Set([...current.referencedEvidenceIds, ...evidenceIds]),
+        ].slice(-50),
+        resolutionEvidenceIds: [
+          ...new Set([...current.resolutionEvidenceIds, ...evidenceIds]),
+        ].slice(-100),
+        updatedAt: event.createdAt,
+      });
+      const changed = db
+        .prepare(
+          `UPDATE coverage_risk_entries
+           SET status = 'resolved', payload = ?, updated_at = ?
+           WHERE id = ? AND status <> 'resolved'`,
+        )
+        .run(JSON.stringify(resolved), resolved.updatedAt, id).changes;
+      if (changed !== 1) {
+        const replay = get(id);
+        if (replay?.status === 'resolved') return replay;
+        throw new Error('Coverage risk changed concurrently.');
+      }
+      appendEvent(id, event);
+      return get(id)!;
+    },
+  );
+
+  const recordOutstandingTx = db.transaction(
+    (id: string, evidenceIdsInput: string[], event: CoverageRiskEventInput) => {
+      const current = get(id);
+      if (!current) throw new Error('Coverage risk does not exist.');
+      const evidenceIds = validateResolutionEvidence(current, evidenceIdsInput);
+      const planned = CoverageRiskEntrySchema.parse({
+        ...current,
+        status: 'planned',
+        referencedEvidenceIds: [
+          ...new Set([...current.referencedEvidenceIds, ...evidenceIds]),
+        ].slice(-50),
+        updatedAt: event.createdAt,
+      });
+      const changed = db
+        .prepare(
+          `UPDATE coverage_risk_entries
+           SET status = 'planned', payload = ?, updated_at = ? WHERE id = ?`,
+        )
+        .run(JSON.stringify(planned), planned.updatedAt, id).changes;
+      if (changed !== 1) throw new Error('Coverage risk changed concurrently.');
+      appendEvent(id, event);
+      return get(id)!;
+    },
+  );
+
   return {
     get,
     create: createTx,
+    resolve: resolveTx,
+    recordOutstanding: recordOutstandingTx,
 
     list(workspaceId: string, contractId?: string): CoverageRiskEntry[] {
       const rows = contractId
