@@ -14,6 +14,7 @@ import {
   SessionAgendaStatusSchema,
   StudyExchangeSchema,
   StudyPlanItemKindSchema,
+  StudyPlanPreflightSchema,
   StudyPlanSchema,
   StudyPlanStatusSchema,
   SourceAuthorityBundleSchema,
@@ -283,6 +284,37 @@ describe('Plan, execution, and evidence boundaries', () => {
       'due_review',
       'adversarial_readiness',
     ]);
+  });
+
+  it('requires deterministic preflight counts and blockers to agree', () => {
+    const blocked = {
+      curriculumVersionId: 'curriculum_1',
+      totalLearningUnitCount: 277,
+      executableLearningUnitCount: 0,
+      nonExecutableLearningUnitCount: 277,
+      planningRepresentationCount: 277,
+      deferredOrUnplannableCount: 277,
+      allowedItemKindCounts: [{ kind: 'none', learningUnitCount: 277 }],
+      promptStrategy: 'blocked',
+      planningInputCharacters: 100_000,
+      providerPromptCharacters: null,
+      approximatePromptTokens: null,
+      canGenerate: false,
+      blockers: [
+        {
+          code: 'no_launchable_learning_unit',
+          message: 'No accepted LearningUnit is launchable.',
+          affectedLearningUnitCount: 277,
+        },
+      ],
+    };
+    expect(StudyPlanPreflightSchema.safeParse(blocked).success).toBe(true);
+    expect(
+      StudyPlanPreflightSchema.safeParse({ ...blocked, executableLearningUnitCount: 1 }).success,
+    ).toBe(false);
+    expect(StudyPlanPreflightSchema.safeParse({ ...blocked, canGenerate: true }).success).toBe(
+      false,
+    );
   });
 
   it('never permits tier-3 advisory evidence to block completion', () => {

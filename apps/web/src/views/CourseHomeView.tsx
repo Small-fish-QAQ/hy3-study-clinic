@@ -104,6 +104,12 @@ export function CourseHomeView({
   const feasibility = overview.contractFeasibility;
   const next = overview.nextAction;
   const progress = overview.formalProgress;
+  const planPreflight = overview.studyPlanPreflight ?? null;
+  const planReadinessBlocked =
+    overview.setupStage === 'plan_required' && planPreflight?.canGenerate === false;
+  const setupText = planReadinessBlocked
+    ? '课程结构已接受，但当前还不能生成可执行的学习路线'
+    : SETUP_TEXT[overview.setupStage];
   const agendaItems = overview.activeAgenda?.items
     .filter((item) => !['completed', 'cancelled', 'deferred'].includes(item.state))
     .sort((left, right) => left.index - right.index)
@@ -135,6 +141,13 @@ export function CourseHomeView({
       case 'curriculum_review':
         return { label: '查看并审阅课程结构', onClick: onOpenCurriculum, busy: false };
       case 'plan_required':
+        if (planReadinessBlocked) {
+          return {
+            label: '检查并更新课程结构',
+            onClick: onOpenCurriculum,
+            busy: false,
+          };
+        }
         return {
           label: '生成学习路线',
           onClick: onProposeStudyPlan,
@@ -161,7 +174,7 @@ export function CourseHomeView({
         <header className="course-page-intro course-home-title row between">
           <div className="course-home-context">
             <p className="eyebrow">学习概览</p>
-            <p className="course-page-summary">{SETUP_TEXT[overview.setupStage]}</p>
+            <p className="course-page-summary">{setupText}</p>
           </div>
           <button type="button" className="ghost" onClick={onOpenMaterials}>
             管理课程资料
@@ -276,8 +289,12 @@ export function CourseHomeView({
           <div className="next-action setup-action" aria-label="下一步">
             <div>
               <p className="eyebrow">下一步</p>
-              <h3>{SETUP_TEXT[overview.setupStage]}</h3>
-              <p className="muted">完成这一步后，系统才能给出可靠的后续学习动作。</p>
+              <h3>{setupText}</h3>
+              <p className="muted">
+                {planReadinessBlocked && planPreflight
+                  ? `${planPreflight.nonExecutableLearningUnitCount} / ${planPreflight.totalLearningUnitCount} 个学习单元缺少当前可执行能力，需要先审阅课程结构的新版本。`
+                  : '完成这一步后，系统才能给出可靠的后续学习动作。'}
+              </p>
             </div>
             <button
               type="button"

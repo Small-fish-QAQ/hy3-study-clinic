@@ -907,7 +907,7 @@ export class FakeProvider implements LlmProvider {
         if (remainingUnitSlots <= 0) break;
         const seed = seedItems[0]!;
         const blockIds = new Set(seedItems.flatMap((item) => item.sourceBlockIds));
-        const sourceBlocks = allowedBlocks.filter((block) => blockIds.has(block.id)).slice(0, 20);
+        const sourceBlocks = allowedBlocks.filter((block) => blockIds.has(block.id)).slice(0, 100);
         if (sourceBlocks.length === 0) {
           const fallback = allowedBlocks.find((block) => block.materialId === material.materialId);
           if (fallback) sourceBlocks.push(fallback);
@@ -945,7 +945,7 @@ export class FakeProvider implements LlmProvider {
               key: `objective-${unitNumber}`,
               title: `Understand ${title}`.slice(0, 300),
               description: `Explain and apply the central ideas in ${title}.`.slice(0, 1000),
-              evidence,
+              evidence: evidence.slice(0, 5),
             },
           ],
           prerequisiteUnitKeys: [],

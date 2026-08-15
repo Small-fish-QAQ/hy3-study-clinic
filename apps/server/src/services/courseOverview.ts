@@ -9,6 +9,7 @@ import { notFound } from '../errors.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { curriculumHierarchy } from './curriculum.js';
+import { preflightStudyPlan } from './studyPlansAgent.js';
 
 interface CourseOverviewDeps {
   repos: Repositories;
@@ -58,7 +59,8 @@ function summarizeRisks(risks: CoverageRiskEntry[], computedAt: string): Coverag
 
 export function createCourseOverviewService({ repos, clock }: CourseOverviewDeps) {
   function get(workspaceId: string): CourseExecutionOverview {
-    if (!repos.workspaces.get(workspaceId)) throw notFound('Course not found.');
+    const workspace = repos.workspaces.get(workspaceId);
+    if (!workspace) throw notFound('Course not found.');
     const generatedAt = clock.now().toISOString();
     const state = repos.courseExecution.get(workspaceId);
     const contracts = repos.learningContracts.list(workspaceId);
@@ -113,6 +115,10 @@ export function createCourseOverviewService({ repos, clock }: CourseOverviewDeps
         null)
       : null;
     const selectedCurriculum = proposedCurriculum ?? planningCurriculum;
+    const studyPlanPreflight =
+      selectedContract && planningCurriculum
+        ? preflightStudyPlan(repos, clock, selectedContract, planningCurriculum, workspace.name)
+        : null;
     const risks = selectedContract
       ? repos.coverageRisks.list(workspaceId, selectedContract.id)
       : repos.coverageRisks.list(workspaceId);
@@ -145,6 +151,7 @@ export function createCourseOverviewService({ repos, clock }: CourseOverviewDeps
         : null,
       acceptedStudyPlan,
       proposedStudyPlan,
+      studyPlanPreflight,
       activeAgenda,
       formalProgress: {
         planItemCount: acceptedStudyPlan?.items.length ?? 0,
@@ -175,6 +182,7 @@ export function createCourseOverviewService({ repos, clock }: CourseOverviewDeps
           proposedCurriculum?.validation.valid === true && proposedCurriculum.status === 'proposed',
         canProposeStudyPlan:
           planningCurriculum !== null &&
+          studyPlanPreflight?.canGenerate === true &&
           (selectedContract?.status === 'learner_confirmed' ||
             selectedContract?.status === 'active'),
         canEditStudyPlan: proposedStudyPlan?.status === 'proposed',

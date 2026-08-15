@@ -499,6 +499,51 @@ describe('CourseHomeView action and authority rendering', () => {
     expect(screen.queryByText('事实依据已独立验证')).not.toBeInTheDocument();
   });
 
+  it('does not claim route readiness when deterministic Plan preflight is blocked', async () => {
+    const value = overview('launchable');
+    value.activeContract = null;
+    value.acceptedStudyPlan = null;
+    value.activeAgenda = null;
+    value.nextAction = null;
+    value.pendingContract = contract('learner_confirmed');
+    value.setupStage = 'plan_required';
+    value.capabilities.canProposeStudyPlan = false;
+    value.studyPlanPreflight = {
+      curriculumVersionId: 'curriculum_source_only',
+      totalLearningUnitCount: 277,
+      executableLearningUnitCount: 0,
+      nonExecutableLearningUnitCount: 277,
+      planningRepresentationCount: 277,
+      deferredOrUnplannableCount: 277,
+      allowedItemKindCounts: [{ kind: 'none', learningUnitCount: 277 }],
+      promptStrategy: 'blocked',
+      planningInputCharacters: 100_000,
+      providerPromptCharacters: null,
+      approximatePromptTokens: null,
+      canGenerate: false,
+      blockers: [
+        {
+          code: 'no_launchable_learning_unit',
+          message: 'No accepted Curriculum LearningUnit has a currently launchable capability.',
+          affectedLearningUnitCount: 277,
+        },
+      ],
+    };
+    const props = homeProps(value);
+    const user = userEvent.setup();
+
+    render(<CourseHomeView {...props} />);
+
+    expect(
+      screen.getAllByText('课程结构已接受，但当前还不能生成可执行的学习路线').length,
+    ).toBeGreaterThan(0);
+    expect(screen.getByText(/277 \/ 277 个学习单元缺少当前可执行能力/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '生成学习路线' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '检查并更新课程结构' }));
+    expect(props.onOpenCurriculum).toHaveBeenCalledOnce();
+    expect(props.onProposeStudyPlan).not.toHaveBeenCalled();
+  });
+
   it('shows the Contract deadline and deterministic formal progress counts', () => {
     const value = overview('launchable');
     value.formalProgress = {

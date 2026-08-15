@@ -1,16 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import {
   ConceptAnalysisPayloadSchema,
+  CurriculumProposalPayloadSchema,
   QuizGenerationPayloadSchema,
   RubricGradeSchema,
   SAMPLE_MATERIAL_CONTENT,
   SAMPLE_MATERIAL_TITLE,
   type Concept,
+  type SourceBlock,
 } from '@hy3-clinic/shared';
 import { segmentMaterial } from '../ingestion/segment.js';
 import { verifyGrounding } from '../grounding/verify.js';
 import { FakeProvider } from './fakeProvider.js';
 import { ProviderError } from './errors.js';
+import type { CurriculumProposalInput } from './provider.js';
 
 const materialId = 'mat_fixture';
 const blocks = segmentMaterial(materialId, SAMPLE_MATERIAL_CONTENT.replace(/\r\n?/g, '\n'));
@@ -215,6 +218,117 @@ describe('FakeProvider.generateRemediation', () => {
       const verification = verifyGrounding(blocks, { blockId: q.blockId, quote: q.quote });
       expect(verification.ok).toBe(true);
     }
+  });
+});
+
+describe('FakeProvider.proposeCurriculum', () => {
+  it('turns a 277-block headed document into source-complete pedagogical units', async () => {
+    const topicSizes = [
+      1, 5, 5, 5, 8, 8, 14, 9, 1, 12, 11, 37, 25, 10, 8, 4, 16, 14, 24, 14, 21, 19, 6,
+    ];
+    const largeBlocks: SourceBlock[] = [];
+    const outline: CurriculumProposalInput['outline'] = [];
+    const concepts: Concept[] = [];
+    let offset = 0;
+    for (const [topicIndex, size] of topicSizes.entries()) {
+      const title = `Topic ${topicIndex + 1}`;
+      for (let localIndex = 0; localIndex < size; localIndex += 1) {
+        const index = largeBlocks.length;
+        const content = `${title} source fragment ${localIndex + 1}.`;
+        const block: SourceBlock = {
+          id: `block_${index + 1}`,
+          materialId: 'material_large',
+          materialRevisionId: 'revision_large',
+          index,
+          heading: title,
+          headingPath: [title],
+          pageNumber: null,
+          pageEnd: null,
+          content,
+          startOffset: offset,
+          endOffset: offset + content.length,
+        };
+        offset += content.length + 1;
+        largeBlocks.push(block);
+        outline.push({
+          structuralUnitId: null,
+          materialId: block.materialId,
+          materialRevisionId: 'revision_large',
+          parentStructuralUnitId: null,
+          kind: 'section',
+          index,
+          title,
+          sourceBlockIds: [block.id],
+        });
+      }
+      if (topicIndex === 1) continue;
+      const groundingBlock = largeBlocks.at(-size)!;
+      concepts.push({
+        id: `concept_${topicIndex + 1}`,
+        materialId: 'material_large',
+        materialRevisionId: 'revision_large',
+        name: title,
+        summary: `${title} summary`,
+        importance: 'medium',
+        grounding: {
+          blockId: groundingBlock.id,
+          quote: groundingBlock.content,
+          startOffset: 0,
+          endOffset: groundingBlock.content.length,
+          occurrenceCount: 1,
+          reanchored: false,
+        },
+        createdAt: '2026-01-01T00:00:00.000Z',
+      });
+    }
+    const input: CurriculumProposalInput = {
+      workspaceName: 'Large grounded course',
+      contract: {
+        contractVersionId: 'contract_large',
+        intent: 'Learn the complete course.',
+        targetOutcome: { description: 'Explain every topic.', targetScore: null },
+        desiredDepth: 'working_fluency',
+        subjectBoundaries: ['Course'],
+        materials: [
+          {
+            materialId: 'material_large',
+            title: 'Large material',
+            materialRoleAssignmentId: 'role_large',
+            materialRoleAssignmentVersion: 1,
+            role: 'course_material',
+            disposition: 'included',
+          },
+        ],
+        includedTopics: [],
+        excludedTopics: [],
+      },
+      executionSourceManifest: {
+        fingerprint: 'manifest_large',
+        revisions: [
+          {
+            materialId: 'material_large',
+            materialRevisionId: 'revision_large',
+            parserVersion: 'pdf-layout-v2',
+            parserFingerprint: 'parser_large',
+            sourceBlockRevisionIds: largeBlocks.map((block) => block.id),
+          },
+        ],
+      },
+      outline,
+      concepts,
+      graphEdges: [],
+      allowedCanonicalConceptIds: [],
+      blocks: largeBlocks,
+      limits: { maxNodes: 1999, maxObjectives: 30_000, maxSynthesisGroups: 200 },
+    };
+
+    const payload = await provider.proposeCurriculum(input);
+    expect(() => CurriculumProposalPayloadSchema.parse(payload)).not.toThrow();
+    const units = payload.nodes.filter((node) => node.kind === 'learning_unit');
+    expect(units).toHaveLength(topicSizes.length);
+    expect(units.filter((unit) => unit.conceptIds.length > 0)).toHaveLength(concepts.length);
+    expect(units.reduce((count, unit) => count + unit.sourceEvidence.length, 0)).toBe(277);
+    expect(units.every((unit) => unit.objectives[0]!.evidence.length <= 5)).toBe(true);
   });
 });
 

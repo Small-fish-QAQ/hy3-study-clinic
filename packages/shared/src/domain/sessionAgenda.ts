@@ -12,7 +12,11 @@ import {
   LearningContractSchema,
 } from './learningContract.js';
 import { PublicQuizSchema } from './quiz.js';
-import { StudyPlanHistoryItemSchema, StudyPlanSchema } from './studyPlan.js';
+import {
+  StudyPlanHistoryItemSchema,
+  StudyPlanPreflightSchema,
+  StudyPlanSchema,
+} from './studyPlan.js';
 
 export const CourseExecutionStatusSchema = z.enum(['active', 'paused', 'stopped']);
 export type CourseExecutionStatus = z.infer<typeof CourseExecutionStatusSchema>;
@@ -326,6 +330,8 @@ export const CourseExecutionOverviewSchema = z
     activeCurriculumHierarchy: CurriculumHierarchyViewSchema.nullable(),
     acceptedStudyPlan: StudyPlanSchema.nullable(),
     proposedStudyPlan: StudyPlanSchema.nullable(),
+    /** Deterministic readiness for the accepted Curriculum currently being planned. */
+    studyPlanPreflight: StudyPlanPreflightSchema.nullable().optional(),
     activeAgenda: SessionAgendaSchema.nullable(),
     formalProgress: CourseFormalProgressSummarySchema,
     nextAction: CourseNextActionSchema.nullable(),

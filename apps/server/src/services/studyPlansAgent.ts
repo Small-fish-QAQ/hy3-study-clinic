@@ -3,6 +3,7 @@ import {
   ApplyStudyPlanDraftEditRequestSchema,
   ProposeStudyPlanRequestSchema,
   StudyPlanHistoryResponseSchema,
+  StudyPlanPreflightSchema,
   StudyPlanProposalResponseSchema,
   type ApplyStudyPlanDraftEditRequest,
   type CoverageRiskEntry,
@@ -12,10 +13,13 @@ import {
   type StudyPlan,
   type StudyPlanHistoryResponse,
   type StudyPlanItem,
+  type StudyPlanItemKind,
+  type StudyPlanPreflight,
   type StudyPlanProposalResponse,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import type { LlmProvider, ProviderCallOptions, StudyPlanProposalInput } from '../llm/provider.js';
+import { groupedStudyPlanProposalMessages, studyPlanProposalMessages } from '../llm/prompts.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
@@ -203,22 +207,24 @@ function buildProviderInput(
   };
 }
 
-function assertExecutableProviderScope(
+const GROUPED_MODEL_ITEM_KINDS = [
+  'teach_unit',
+  'informal_check',
+  'formal_checkpoint',
+  'targeted_repair',
+  'due_review',
+] as const;
+
+const DETAILED_MODEL_ITEM_KINDS = [...GROUPED_MODEL_ITEM_KINDS, 'synthesis'] as const;
+
+function studyPlanPreflightFromContext(
   contract: LearningContract,
   input: StudyPlanProposalInput,
   profiles: ReturnType<typeof buildUnitLaunchProfiles>,
-): void {
-  const modelFacingKinds = new Set(
-    input.units.length >= 80
-      ? ['teach_unit', 'informal_check', 'formal_checkpoint', 'targeted_repair', 'due_review']
-      : [
-          'teach_unit',
-          'informal_check',
-          'formal_checkpoint',
-          'synthesis',
-          'targeted_repair',
-          'due_review',
-        ],
+): StudyPlanPreflight {
+  const grouped = input.units.length >= 80;
+  const modelFacingKinds = new Set<StudyPlanItemKind>(
+    grouped ? GROUPED_MODEL_ITEM_KINDS : DETAILED_MODEL_ITEM_KINDS,
   );
   const requiredIds = new Set(input.requiredLearningUnitIds);
   const requiredProfiles = profiles.filter((profile) =>
@@ -228,28 +234,91 @@ function assertExecutableProviderScope(
     (profile) => !profile.allowedItemKinds.some((kind) => modelFacingKinds.has(kind)),
   );
   const launchableCount = requiredProfiles.length - unavailable.length;
+  const blockers: StudyPlanPreflight['blockers'] = [];
   if (launchableCount === 0) {
+    blockers.push({
+      code: 'no_launchable_learning_unit',
+      message: 'No accepted Curriculum LearningUnit has a currently launchable capability.',
+      affectedLearningUnitCount: unavailable.length,
+    });
+  } else if (unavailable.length > 0 && !contract.riskTolerance?.allowExplicitDeferral) {
+    blockers.push({
+      code: 'unlaunchable_unit_deferral_forbidden',
+      message: 'The Contract forbids deferring LearningUnits without an executable capability.',
+      affectedLearningUnitCount: unavailable.length,
+    });
+  }
+  const canGenerate = blockers.length === 0;
+  const planningInputCharacters = JSON.stringify(input).length;
+  const messages = canGenerate
+    ? grouped
+      ? groupedStudyPlanProposalMessages(input)
+      : studyPlanProposalMessages(input)
+    : null;
+  const providerPromptCharacters = messages ? JSON.stringify({ messages }).length : null;
+  const allowedItemKindCounts: StudyPlanPreflight['allowedItemKindCounts'] = [
+    ...DETAILED_MODEL_ITEM_KINDS.map((kind) => ({
+      kind,
+      learningUnitCount: requiredProfiles.filter((profile) =>
+        profile.allowedItemKinds.includes(kind),
+      ).length,
+    })),
+    { kind: 'none' as const, learningUnitCount: unavailable.length },
+  ];
+  return StudyPlanPreflightSchema.parse({
+    curriculumVersionId: input.curriculumVersionId,
+    totalLearningUnitCount: requiredProfiles.length,
+    executableLearningUnitCount: launchableCount,
+    nonExecutableLearningUnitCount: unavailable.length,
+    planningRepresentationCount: input.units.length,
+    deferredOrUnplannableCount: unavailable.length,
+    allowedItemKindCounts,
+    promptStrategy: canGenerate ? (grouped ? 'grouped_units' : 'detailed_units') : 'blocked',
+    planningInputCharacters,
+    providerPromptCharacters,
+    approximatePromptTokens:
+      providerPromptCharacters === null ? null : Math.ceil(providerPromptCharacters / 4),
+    canGenerate,
+    blockers,
+  });
+}
+
+export function preflightStudyPlan(
+  repos: Repositories,
+  clock: Clock,
+  contract: LearningContract,
+  curriculum: Curriculum,
+  workspaceName: string,
+): StudyPlanPreflight {
+  const context = buildProviderInput(repos, clock, contract, curriculum, workspaceName);
+  return studyPlanPreflightFromContext(contract, context.input, context.profiles);
+}
+
+function assertExecutableProviderScope(preflight: StudyPlanPreflight): void {
+  const blocker = preflight.blockers[0];
+  if (!blocker) return;
+  if (blocker.code === 'no_launchable_learning_unit') {
     throw new AppError(
       ApiErrorCode.ValidationError,
       'StudyPlan generation requires at least one currently launchable LearningUnit.',
       {
-        reason: 'no_launchable_learning_unit',
-        requiredLearningUnitCount: requiredProfiles.length,
-        launchableLearningUnitCount: 0,
+        reason: blocker.code,
+        requiredLearningUnitCount: preflight.totalLearningUnitCount,
+        launchableLearningUnitCount: preflight.executableLearningUnitCount,
         guidance:
-          'Create validated Concept mappings or another supported launch capability before generating the route.',
+          'Create a successor Curriculum with validated Concept mappings or another supported launch capability before generating the route.',
       },
     );
   }
-  if (unavailable.length > 0 && !contract.riskTolerance?.allowExplicitDeferral) {
+  if (blocker.code === 'unlaunchable_unit_deferral_forbidden') {
     throw new AppError(
       ApiErrorCode.ValidationError,
       'StudyPlan generation cannot account for every required LearningUnit under the current no-deferral policy.',
       {
-        reason: 'unlaunchable_unit_deferral_forbidden',
-        requiredLearningUnitCount: requiredProfiles.length,
-        launchableLearningUnitCount: launchableCount,
-        unlaunchableLearningUnitCount: unavailable.length,
+        reason: blocker.code,
+        requiredLearningUnitCount: preflight.totalLearningUnitCount,
+        launchableLearningUnitCount: preflight.executableLearningUnitCount,
+        unlaunchableLearningUnitCount: preflight.nonExecutableLearningUnitCount,
       },
     );
   }
@@ -358,7 +427,12 @@ export function createStudyPlanAgentService({
         curriculum,
         workspace.name,
       );
-      assertExecutableProviderScope(contract, providerContext.input, providerContext.profiles);
+      const preflight = studyPlanPreflightFromContext(
+        contract,
+        providerContext.input,
+        providerContext.profiles,
+      );
+      assertExecutableProviderScope(preflight);
       const policyFingerprint = enforceAgentCostPolicies(repos, {
         workspaceId: parsed.command.workspaceId,
         operationType: 'propose_study_plan',

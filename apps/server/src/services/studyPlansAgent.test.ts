@@ -15,7 +15,7 @@ import { fixedClock } from '../util/ids.js';
 import { createCourseCommandService } from './courseCommands.js';
 import { createCourseExecutionService } from './courseExecution.js';
 import { createSessionAgendaAgentService } from './sessionAgendasAgent.js';
-import { createStudyPlanAgentService } from './studyPlansAgent.js';
+import { createStudyPlanAgentService, preflightStudyPlan } from './studyPlansAgent.js';
 
 const T1 = '2026-01-01T00:01:00.000Z';
 const T2 = '2026-01-01T00:02:00.000Z';
@@ -328,6 +328,40 @@ function services(provider: CapturingPlanProvider) {
 }
 
 describe('StudyPlan proposal and accepted Course route', () => {
+  it('reports source-only accepted Curriculum as blocked before provider work', () => {
+    const sourceOnly: Curriculum = {
+      ...curriculum,
+      nodes: curriculum.nodes.map((node) =>
+        node.learningUnit
+          ? {
+              ...node,
+              learningUnit: { ...node.learningUnit, conceptIds: [] },
+            }
+          : node,
+      ),
+    };
+
+    const preflight = preflightStudyPlan(repos, clock, contract, sourceOnly, 'Memory course');
+
+    expect(preflight).toMatchObject({
+      totalLearningUnitCount: 1,
+      executableLearningUnitCount: 0,
+      nonExecutableLearningUnitCount: 1,
+      planningRepresentationCount: 1,
+      deferredOrUnplannableCount: 1,
+      promptStrategy: 'blocked',
+      providerPromptCharacters: null,
+      approximatePromptTokens: null,
+      canGenerate: false,
+      blockers: [{ code: 'no_launchable_learning_unit', affectedLearningUnitCount: 1 }],
+    });
+    expect(preflight.planningInputCharacters).toBeGreaterThan(0);
+    expect(preflight.allowedItemKindCounts.find((entry) => entry.kind === 'none')).toEqual({
+      kind: 'none',
+      learningUnitCount: 1,
+    });
+  });
+
   it('fails locally without a provider call when no required unit is launchable', async () => {
     repos.materials.replaceConcepts('mat_1', []);
     const provider = new CapturingPlanProvider();
@@ -366,11 +400,23 @@ describe('StudyPlan proposal and accepted Course route', () => {
       deferrals: [],
     });
     const { plans } = services(provider);
+    const preflight = preflightStudyPlan(repos, clock, contract, curriculum, 'Memory course');
     const request = proposalRequest('plan-propose');
     const first = await plans.propose(request);
     const replay = await plans.propose(request);
 
     expect(provider.calls).toBe(1);
+    expect(preflight).toMatchObject({
+      totalLearningUnitCount: 1,
+      executableLearningUnitCount: 1,
+      nonExecutableLearningUnitCount: 0,
+      planningRepresentationCount: 1,
+      deferredOrUnplannableCount: 0,
+      promptStrategy: 'detailed_units',
+      canGenerate: true,
+      blockers: [],
+    });
+    expect(preflight.providerPromptCharacters).toBeGreaterThan(0);
     expect(provider.inTransaction).toBe(false);
     expect(provider.options?.timeoutMs).toBe(240_000);
     expect(replay.studyPlan.id).toBe(first.studyPlan.id);

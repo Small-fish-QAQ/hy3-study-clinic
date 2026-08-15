@@ -334,6 +334,63 @@ export const StudyPlanHistoryItemSchema = z
   .strict();
 export type StudyPlanHistoryItem = z.infer<typeof StudyPlanHistoryItemSchema>;
 
+export const StudyPlanPreflightSchema = z
+  .object({
+    curriculumVersionId: z.string().min(1),
+    totalLearningUnitCount: z.number().int().nonnegative(),
+    executableLearningUnitCount: z.number().int().nonnegative(),
+    nonExecutableLearningUnitCount: z.number().int().nonnegative(),
+    planningRepresentationCount: z.number().int().nonnegative(),
+    deferredOrUnplannableCount: z.number().int().nonnegative(),
+    allowedItemKindCounts: z
+      .array(
+        z
+          .object({
+            kind: z.union([StudyPlanItemKindSchema, z.literal('none')]),
+            learningUnitCount: z.number().int().nonnegative(),
+          })
+          .strict(),
+      )
+      .max(8),
+    promptStrategy: z.enum(['detailed_units', 'grouped_units', 'blocked']),
+    planningInputCharacters: z.number().int().nonnegative(),
+    providerPromptCharacters: z.number().int().nonnegative().nullable(),
+    approximatePromptTokens: z.number().int().nonnegative().nullable(),
+    canGenerate: z.boolean(),
+    blockers: z
+      .array(
+        z
+          .object({
+            code: z.enum(['no_launchable_learning_unit', 'unlaunchable_unit_deferral_forbidden']),
+            message: z.string().min(1).max(500),
+            affectedLearningUnitCount: z.number().int().nonnegative(),
+          })
+          .strict(),
+      )
+      .max(10),
+  })
+  .strict()
+  .superRefine((preflight, ctx) => {
+    if (
+      preflight.executableLearningUnitCount + preflight.nonExecutableLearningUnitCount !==
+      preflight.totalLearningUnitCount
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['executableLearningUnitCount'],
+        message: 'executable and non-executable counts must account for every LearningUnit',
+      });
+    }
+    if (preflight.canGenerate === preflight.blockers.length > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['canGenerate'],
+        message: 'canGenerate must be false exactly when a launchability blocker exists',
+      });
+    }
+  });
+export type StudyPlanPreflight = z.infer<typeof StudyPlanPreflightSchema>;
+
 export const StudyPlanHistoryResponseSchema = z
   .object({
     workspaceId: z.string().min(1),

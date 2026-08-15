@@ -279,7 +279,7 @@ export const ProposedCurriculumNodeSchema = z
     index: z.number().int().nonnegative(),
     title: z.string().min(1).max(300),
     structuralUnitIds: z.array(z.string().min(1)).max(500),
-    sourceEvidence: z.array(AgentProposalEvidenceSchema).max(20),
+    sourceEvidence: z.array(AgentProposalEvidenceSchema).max(100),
     conceptIds: z.array(z.string().min(1)).max(30),
     canonicalConceptIds: z.array(z.string().min(1)).max(20),
     objectives: z.array(ProposedCurriculumObjectiveSchema).max(30),
