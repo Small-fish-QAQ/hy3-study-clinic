@@ -159,6 +159,45 @@ export function createCourseExecutionRepo(db: SqliteDb) {
     });
   }
 
+  function planDescendsFrom(plan: StudyPlan, ancestorId: string): boolean {
+    const visited = new Set([plan.id]);
+    let predecessorId = plan.predecessorId;
+    while (predecessorId) {
+      if (predecessorId === ancestorId) return true;
+      if (visited.has(predecessorId)) {
+        throw new Error('StudyPlan predecessor history contains a cycle.');
+      }
+      visited.add(predecessorId);
+      const predecessor = readPlan(predecessorId);
+      if (predecessor.workspaceId !== plan.workspaceId || predecessor.version >= plan.version) {
+        throw new Error('StudyPlan predecessor history is incompatible.');
+      }
+      predecessorId = predecessor.predecessorId;
+    }
+    return false;
+  }
+
+  function curriculumDescendsFrom(curriculum: Curriculum, ancestorId: string): boolean {
+    const visited = new Set([curriculum.id]);
+    let predecessorId = curriculum.predecessorId;
+    while (predecessorId) {
+      if (predecessorId === ancestorId) return true;
+      if (visited.has(predecessorId)) {
+        throw new Error('Curriculum predecessor history contains a cycle.');
+      }
+      visited.add(predecessorId);
+      const predecessor = readCurriculum(predecessorId);
+      if (
+        predecessor.workspaceId !== curriculum.workspaceId ||
+        predecessor.version >= curriculum.version
+      ) {
+        throw new Error('Curriculum predecessor history is incompatible.');
+      }
+      predecessorId = predecessor.predecessorId;
+    }
+    return false;
+  }
+
   function verifyExpectedState(
     input: ActivateCourseRouteInput,
     current: CourseExecutionState,
@@ -233,10 +272,8 @@ export function createCourseExecutionRepo(db: SqliteDb) {
     ) {
       throw new Error('Route activation requires a compatible draft SessionAgenda.');
     }
-    if (current.acceptedPlanId && plan.predecessorId !== current.acceptedPlanId) {
-      throw new Error(
-        'Successor StudyPlan must identify the currently accepted Plan as predecessor.',
-      );
+    if (current.acceptedPlanId && !planDescendsFrom(plan, current.acceptedPlanId)) {
+      throw new Error('Successor StudyPlan must descend from the currently accepted Plan.');
     }
     if (
       current.activeContractId &&
@@ -248,9 +285,9 @@ export function createCourseExecutionRepo(db: SqliteDb) {
     if (
       current.activeCurriculumId &&
       !reusesActiveCurriculum &&
-      curriculum.predecessorId !== current.activeCurriculumId
+      !curriculumDescendsFrom(curriculum, current.activeCurriculumId)
     ) {
-      throw new Error('Successor Curriculum must identify the active Curriculum as predecessor.');
+      throw new Error('Successor Curriculum must descend from the active Curriculum.');
     }
 
     const currentManifest = db

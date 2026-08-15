@@ -641,9 +641,17 @@ describe('StudyPlan proposal and accepted Course route', () => {
   });
 
   it('rejects stale Plan acceptance after a newer accepted Curriculum and keeps history auditable', async () => {
-    acceptSuccessorCurriculum('curriculum_2');
     const { plans, execution } = services(new CapturingPlanProvider());
-    const staleProposal = await plans.propose(proposalRequest('plan-on-curriculum-2'));
+    const initialProposal = await plans.propose(proposalRequest('plan-on-curriculum-1'));
+    const initialRoute = execution.decideStudyPlan(
+      decisionRequest('accept-plan-on-curriculum-1', initialProposal.studyPlan.id, 'accept'),
+    );
+    expect(initialRoute.activeRoute?.curriculum.id).toBe('curriculum_1');
+
+    acceptSuccessorCurriculum('curriculum_2');
+    const staleProposal = await plans.propose(
+      proposalRequest('plan-on-curriculum-2', initialProposal.studyPlan.id),
+    );
     const staleDecision = decisionRequest(
       'accept-stale-plan',
       staleProposal.studyPlan.id,
@@ -654,14 +662,8 @@ describe('StudyPlan proposal and accepted Course route', () => {
 
     expect(() => execution.decideStudyPlan(staleDecision)).toThrow('stale or incompatible');
     expect(repos.studyPlans.get(staleProposal.studyPlan.id)?.status).toBe('proposed');
-    expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBeNull();
+    expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBe(initialProposal.studyPlan.id);
     expect(repos.curricula.get('curriculum_2')).toEqual(curriculum2Snapshot);
-    expect(repos.curricula.get('curriculum_3')).toEqual(curriculum3);
-
-    const rejected = execution.decideStudyPlan(
-      decisionRequest('reject-stale-plan', staleProposal.studyPlan.id, 'reject'),
-    );
-    expect(rejected.decidedPlan.status).toBe('rejected');
     expect(repos.curricula.get('curriculum_3')).toEqual(curriculum3);
 
     const currentProposal = await plans.propose(
@@ -675,7 +677,17 @@ describe('StudyPlan proposal and accepted Course route', () => {
     );
     expect(accepted.activeRoute?.curriculum.id).toBe('curriculum_3');
     expect(replay.activeRoute?.agenda.id).toBe(accepted.activeRoute?.agenda.id);
-    expect(repos.sessionAgendas.list('ws_1')).toHaveLength(1);
+    expect(repos.studyPlans.get(staleProposal.studyPlan.id)?.status).toBe('proposed');
+    expect(
+      repos.sessionAgendas.list('ws_1').filter((agenda) => agenda.status === 'active'),
+    ).toHaveLength(1);
+
+    const rejected = execution.decideStudyPlan(
+      decisionRequest('reject-stale-plan', staleProposal.studyPlan.id, 'reject'),
+    );
+    expect(rejected.decidedPlan.status).toBe('rejected');
+    expect(rejected.retainedRoute?.studyPlan.id).toBe(currentProposal.studyPlan.id);
+    expect(repos.curricula.get('curriculum_3')).toEqual(curriculum3);
   });
 
   it('rejects a successor proposal while retaining the accepted route', async () => {
