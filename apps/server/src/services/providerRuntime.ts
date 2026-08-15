@@ -95,6 +95,7 @@ export class ProviderRuntime {
   private connection: SafeProviderConfig['externalConnection'] = {
     status: 'untested',
     testedGeneration: null,
+    testedAt: null,
     message: null,
   };
   readonly store: ProviderConfigStore | null;
@@ -216,7 +217,7 @@ export class ProviderRuntime {
     });
     this.active = { ...next, generation: current.generation + 1, providerInstance };
     this.connectionTestId += 1;
-    this.connection = { status: 'untested', testedGeneration: null, message: null };
+    this.connection = { status: 'untested', testedGeneration: null, testedAt: null, message: null };
     return this.safeConfig();
   }
 
@@ -226,13 +227,19 @@ export class ProviderRuntime {
     if (!active.apiKey || !active.baseUrl || !active.model)
       throw new AppError('VALIDATION_ERROR', 'Hy3 配置尚未完整。');
     const testId = ++this.connectionTestId;
-    this.connection = { status: 'testing', testedGeneration: active.generation, message: null };
+    this.connection = {
+      status: 'testing',
+      testedGeneration: active.generation,
+      testedAt: null,
+      message: null,
+    };
     try {
       await active.providerInstance.testConnection({ signal });
       if (this.active.generation === active.generation && this.connectionTestId === testId)
         this.connection = {
           status: 'verified',
           testedGeneration: active.generation,
+          testedAt: new Date().toISOString(),
           message: '连接正常。',
         };
     } catch (error) {
@@ -245,10 +252,11 @@ export class ProviderRuntime {
       const cancelled = normalized.code === 'REQUEST_CANCELLED';
       if (this.active.generation === active.generation && this.connectionTestId === testId) {
         this.connection = cancelled
-          ? { status: 'untested', testedGeneration: null, message: null }
+          ? { status: 'untested', testedGeneration: null, testedAt: null, message: null }
           : {
               status: 'failed',
               testedGeneration: active.generation,
+              testedAt: new Date().toISOString(),
               message: normalized.message,
             };
       }

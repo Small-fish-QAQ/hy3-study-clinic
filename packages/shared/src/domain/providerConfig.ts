@@ -32,6 +32,7 @@ export const ProviderConnectionStateSchema = z.discriminatedUnion('status', [
     .object({
       status: z.literal('untested'),
       testedGeneration: z.null(),
+      testedAt: z.null(),
       message: z.null(),
     })
     .strict(),
@@ -39,6 +40,7 @@ export const ProviderConnectionStateSchema = z.discriminatedUnion('status', [
     .object({
       status: z.literal('testing'),
       testedGeneration: z.number().int().positive(),
+      testedAt: z.null(),
       message: z.null(),
     })
     .strict(),
@@ -46,6 +48,7 @@ export const ProviderConnectionStateSchema = z.discriminatedUnion('status', [
     .object({
       status: z.literal('verified'),
       testedGeneration: z.number().int().positive(),
+      testedAt: z.string().datetime(),
       message: z.string().trim().min(1).max(300),
     })
     .strict(),
@@ -53,6 +56,7 @@ export const ProviderConnectionStateSchema = z.discriminatedUnion('status', [
     .object({
       status: z.literal('failed'),
       testedGeneration: z.number().int().positive(),
+      testedAt: z.string().datetime(),
       message: z.string().trim().min(1).max(300),
     })
     .strict(),

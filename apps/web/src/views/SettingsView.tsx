@@ -15,6 +15,17 @@ export interface SettingsViewProps {
 
 const labels: Record<ProviderMode, string> = { fake: '模拟模式', hy3: 'Hy3 模式' };
 
+function formatConnectionTestTime(value: string): string {
+  return new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date(value));
+}
+
 export function SettingsView({
   provider = null,
   onProviderChange,
@@ -179,146 +190,182 @@ export function SettingsView({
         ) : null}
         {current ? (
           <>
-            <fieldset className="settings-mode-picker">
-              <legend>运行模式</legend>
+            <fieldset className="settings-mode-picker" aria-label="运行方式">
+              <legend>运行方式</legend>
               {(['hy3', 'fake'] as ProviderMode[]).map((mode) => (
-                <label key={mode} className="settings-mode-option">
+                <label
+                  key={mode}
+                  className={`settings-mode-option ${draft.provider === mode ? 'active' : ''}`}
+                >
                   <input
                     type="radio"
                     name="provider-mode"
+                    aria-label={labels[mode]}
                     checked={draft.provider === mode}
                     disabled={formLocked}
                     onChange={() => setDraft((v) => ({ ...v, provider: mode }))}
                   />
-                  <span>{labels[mode]}</span>
+                  <span>{mode === 'hy3' ? 'Hy3 在线' : '模拟模式'}</span>
                 </label>
               ))}
             </fieldset>
-            {draft.provider === 'hy3' ? (
-              <div className="settings-provider-form">
-                <label>
-                  <span>API 地址</span>
-                  <input
-                    value={draft.baseUrl}
-                    disabled={formLocked}
-                    onChange={(e) => setDraft((v) => ({ ...v, baseUrl: e.target.value }))}
-                    placeholder="https://…"
-                    inputMode="url"
-                  />
-                </label>
-                <label>
-                  <span>模型 / 服务</span>
-                  <input
-                    value={draft.model}
-                    disabled={formLocked}
-                    onChange={(e) => setDraft((v) => ({ ...v, model: e.target.value }))}
-                  />
-                </label>
-                <label>
-                  <span>API Key / Token</span>
-                  {current.apiKeyConfigured && !editingSecret && secretMode === 'unchanged' ? (
-                    <span className="settings-secret-configured">
-                      已配置{' '}
-                      <button
-                        type="button"
-                        className="ghost"
-                        disabled={formLocked}
-                        onClick={() => setEditingSecret(true)}
-                      >
-                        更改
-                      </button>
-                      <button
-                        type="button"
-                        className="ghost danger"
-                        disabled={formLocked}
-                        onClick={() => {
-                          if (window.confirm('移除已保存的 Hy3 凭据并切换到本地模拟模式？')) {
-                            setSecretMode('remove');
-                            setDraft((value) => ({ ...value, provider: 'fake' }));
-                          }
-                        }}
-                      >
-                        移除凭据
-                      </button>
-                    </span>
-                  ) : (
-                    <span className="settings-secret-editor">
-                      <input
-                        type="password"
-                        autoComplete="new-password"
-                        value={secret}
-                        disabled={formLocked}
-                        onChange={(e) => {
-                          setSecret(e.target.value);
-                          setSecretMode('replace');
-                        }}
-                        placeholder={current.apiKeyConfigured ? '输入新凭据' : '输入凭据'}
-                      />
-                      {editingSecret ? (
+            <div className="settings-config-group" aria-label="提供程序配置">
+              <div className="settings-config-heading">
+                <div>
+                  <h4>{draft.provider === 'hy3' ? 'Hy3 配置' : '模拟模式'}</h4>
+                  <p className="muted">
+                    {draft.provider === 'hy3'
+                      ? '这些设置只保存在本地服务器；浏览器不会读取已保存的凭据。'
+                      : '使用本地确定性模拟提供程序，不会调用外部服务。'}
+                  </p>
+                </div>
+                <span className={`settings-dirty-indicator ${dirty ? 'dirty' : ''}`}>
+                  {dirty ? '有未保存更改' : '已保存'}
+                </span>
+              </div>
+
+              {draft.provider === 'hy3' ? (
+                <div className="settings-provider-form">
+                  <label>
+                    <span>API 地址</span>
+                    <input
+                      className="settings-base-url-input"
+                      value={draft.baseUrl}
+                      disabled={formLocked}
+                      onChange={(e) => setDraft((v) => ({ ...v, baseUrl: e.target.value }))}
+                      placeholder="https://…"
+                      inputMode="url"
+                    />
+                  </label>
+                  <label>
+                    <span>模型 / 服务</span>
+                    <input
+                      className="settings-model-input"
+                      value={draft.model}
+                      disabled={formLocked}
+                      onChange={(e) => setDraft((v) => ({ ...v, model: e.target.value }))}
+                    />
+                  </label>
+                  <label>
+                    <span>API Key / Token</span>
+                    {current.apiKeyConfigured && !editingSecret && secretMode === 'unchanged' ? (
+                      <span className="settings-secret-configured">
+                        <span className="settings-configured-value">已配置</span>
                         <button
                           type="button"
                           className="ghost"
                           disabled={formLocked}
+                          onClick={() => setEditingSecret(true)}
+                        >
+                          更改
+                        </button>
+                        <button
+                          type="button"
+                          className="ghost danger"
+                          disabled={formLocked}
                           onClick={() => {
-                            setSecret('');
-                            setSecretMode('unchanged');
-                            setEditingSecret(false);
+                            if (window.confirm('移除已保存的 Hy3 凭据并切换到本地模拟模式？')) {
+                              setSecretMode('remove');
+                              setDraft((value) => ({ ...value, provider: 'fake' }));
+                            }
                           }}
                         >
-                          取消更改
+                          移除凭据
                         </button>
-                      ) : null}
-                    </span>
-                  )}
-                </label>
-              </div>
-            ) : (
-              <p className="muted settings-fake-note">
-                当前使用模拟模式。本地模拟模式不会调用外部服务，也不会删除已保存的 Hy3 凭据。
-              </p>
-            )}
+                      </span>
+                    ) : (
+                      <span className="settings-secret-editor">
+                        <input
+                          type="password"
+                          autoComplete="new-password"
+                          value={secret}
+                          disabled={formLocked}
+                          onChange={(e) => {
+                            setSecret(e.target.value);
+                            setSecretMode('replace');
+                          }}
+                          placeholder={current.apiKeyConfigured ? '输入新凭据' : '输入凭据'}
+                        />
+                        {editingSecret ? (
+                          <button
+                            type="button"
+                            className="ghost"
+                            disabled={formLocked}
+                            onClick={() => {
+                              setSecret('');
+                              setSecretMode('unchanged');
+                              setEditingSecret(false);
+                            }}
+                          >
+                            取消更改
+                          </button>
+                        ) : null}
+                      </span>
+                    )}
+                  </label>
+                </div>
+              ) : (
+                <details className="settings-saved-hy3">
+                  <summary>已保存的 Hy3 配置</summary>
+                  <dl>
+                    <div>
+                      <dt>API 地址</dt>
+                      <dd>{current.baseUrl ?? '未配置'}</dd>
+                    </div>
+                    <div>
+                      <dt>模型 / 服务</dt>
+                      <dd>{current.model ?? '未配置'}</dd>
+                    </div>
+                    <div>
+                      <dt>凭据</dt>
+                      <dd>{current.apiKeyConfigured ? '已配置并保留' : '未配置'}</dd>
+                    </div>
+                  </dl>
+                </details>
+              )}
 
-            <div className="settings-status-strip">
-              <div>
-                <strong>
-                  {dirty
-                    ? '更改尚未保存'
-                    : current.provider === 'fake'
-                      ? '当前使用模拟模式'
-                      : '服务器已配置为 Hy3 模式'}
-                </strong>
-                <p>
-                  {dirty
-                    ? `保存后将使用${draft.provider === 'fake' ? '模拟模式' : 'Hy3 模式'}；当前活动配置保持不变。`
-                    : current.provider === 'fake'
-                      ? '适合离线开发、测试与演示。'
-                      : `${current.complete ? '配置完整，可按需测试外部连接。' : '请补全 API 地址、凭据和模型。'} 这里显示的是配置状态，不代表凭据已经验证。`}
-                </p>
-              </div>
-              <div className="settings-action-row">
-                <button
-                  type="button"
-                  className="primary"
-                  disabled={
-                    !dirty ||
-                    formLocked ||
-                    secretInvalid ||
-                    (draft.provider === 'hy3' && !hy3DraftComplete)
-                  }
-                  onClick={() => void saveConfig()}
-                >
-                  {save.loading ? '正在保存' : '保存更改'}
-                </button>
-                {dirty ? (
+              <div className="settings-config-actions">
+                <div>
+                  <strong>
+                    {dirty
+                      ? '更改尚未保存'
+                      : current.provider === 'fake'
+                        ? '当前使用模拟模式'
+                        : '服务器已配置为 Hy3 模式'}
+                  </strong>
+                  <p className="muted">
+                    {dirty
+                      ? `保存后将使用${draft.provider === 'fake' ? '模拟模式' : 'Hy3 模式'}；当前活动配置保持不变。`
+                      : current.provider === 'fake'
+                        ? '适合离线开发、测试与演示。'
+                        : `${current.complete ? '配置完整，可按需测试外部连接。' : '请补全 API 地址、凭据和模型。'} 配置完整不代表凭据已经验证，也不保证后续大请求持续可用。`}
+                  </p>
+                </div>
+                <div className="settings-action-row">
+                  {dirty ? (
+                    <button
+                      type="button"
+                      className="ghost"
+                      disabled={formLocked}
+                      onClick={resetDraft}
+                    >
+                      重置
+                    </button>
+                  ) : null}
                   <button
                     type="button"
-                    className="ghost"
-                    disabled={formLocked}
-                    onClick={resetDraft}
+                    className="primary"
+                    disabled={
+                      !dirty ||
+                      formLocked ||
+                      secretInvalid ||
+                      (draft.provider === 'hy3' && !hy3DraftComplete)
+                    }
+                    onClick={() => void saveConfig()}
                   >
-                    重置
+                    {save.loading ? '正在保存' : '保存更改'}
                   </button>
-                ) : null}
+                </div>
               </div>
             </div>
             {save.error ? (
@@ -327,38 +374,61 @@ export function SettingsView({
               </Banner>
             ) : null}
 
+            <div className="settings-connection-heading">
+              <div>
+                <h4 id="settings-connection-status">连接状态</h4>
+                <p className="muted">服务、保存配置和最近一次 Hy3 测试是三项独立状态。</p>
+              </div>
+            </div>
             <dl className="settings-runtime-facts" aria-label="运行与配置边界">
               <div>
                 <dt>Study Clinic 服务</dt>
-                <dd>{localCheck.error ? '异常' : localStatus === 'ok' ? '正常' : '尚未检查'}</dd>
-              </div>
-              <div>
-                <dt>提供程序</dt>
                 <dd>
-                  {labels[current.provider]} · {current.complete ? '配置完整' : '配置不完整'}
+                  <span
+                    className={`settings-status-dot ${localCheck.error ? 'failed' : localStatus === 'ok' ? 'ok' : 'unknown'}`}
+                    aria-hidden="true"
+                  />
+                  {localCheck.error ? '无法访问' : localStatus === 'ok' ? '正常' : '尚未检查'}
                 </dd>
               </div>
               <div>
-                <dt>配置来源</dt>
-                <dd>{sourceLabel}</dd>
+                <dt>保存的提供程序配置</dt>
+                <dd>
+                  <span
+                    className={`settings-status-dot ${current.complete ? 'ok' : 'failed'}`}
+                    aria-hidden="true"
+                  />
+                  {labels[current.provider]} · {sourceLabel} ·{' '}
+                  {current.complete ? '配置完整' : '配置不完整'}
+                </dd>
               </div>
               <div>
-                <dt>外部 Hy3 连接</dt>
+                <dt>上次 Hy3 连接测试</dt>
                 <dd>
+                  <span
+                    className={`settings-status-dot ${connectionStatus === 'verified' ? 'ok' : connectionStatus === 'failed' ? 'failed' : 'unknown'}`}
+                    aria-hidden="true"
+                  />
                   {connectionStatus === 'verified'
-                    ? '已验证'
+                    ? current.externalConnection.testedAt
+                      ? `已通过 · ${formatConnectionTestTime(current.externalConnection.testedAt)}`
+                      : '已通过'
                     : connectionStatus === 'failed'
-                      ? '失败'
+                      ? current.externalConnection.testedAt
+                        ? `未通过 · ${formatConnectionTestTime(current.externalConnection.testedAt)}`
+                        : '未通过 · 本次测试'
                       : connectionStatus === 'testing'
-                        ? '测试中'
-                        : '未测试'}
+                        ? '正在测试'
+                        : dirty
+                          ? '配置已修改，保存后需重新测试'
+                          : '尚未测试'}
                 </dd>
               </div>
             </dl>
-            <div className="settings-action-row">
+            <div className="settings-connection-actions">
               <button
                 type="button"
-                className="primary"
+                className="ghost"
                 disabled={localCheck.loading || save.loading || externalTest.loading}
                 onClick={() => void checkLocalService()}
               >
@@ -366,7 +436,7 @@ export function SettingsView({
               </button>
               <button
                 type="button"
-                className="ghost"
+                className="primary"
                 disabled={
                   externalTest.loading ||
                   save.loading ||
@@ -407,6 +477,9 @@ export function SettingsView({
             {externalTest.error && !dirty ? (
               <Banner kind="error">
                 <strong>Hy3 连接失败。</strong> {externalTest.error}
+                <span className="settings-error-note">
+                  此结果只属于本次连接测试，不会把已保存凭据标记为无效。
+                </span>
               </Banner>
             ) : null}
           </>

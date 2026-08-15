@@ -82,6 +82,7 @@ describe('SafeProviderConfigSchema', () => {
     externalConnection: {
       status: 'verified' as const,
       testedGeneration: 2,
+      testedAt: '2026-08-15T08:00:00.000Z',
       message: 'connected',
     },
   };
@@ -106,13 +107,23 @@ describe('SafeProviderConfigSchema', () => {
     expect(
       SafeProviderConfigSchema.safeParse({
         ...safeConfig,
-        externalConnection: { status: 'verified', testedGeneration: null, message: 'connected' },
+        externalConnection: {
+          status: 'verified',
+          testedGeneration: null,
+          testedAt: '2026-08-15T08:00:00.000Z',
+          message: 'connected',
+        },
       }).success,
     ).toBe(false);
     expect(
       SafeProviderConfigSchema.safeParse({
         ...safeConfig,
-        externalConnection: { status: 'untested', testedGeneration: 2, message: null },
+        externalConnection: {
+          status: 'untested',
+          testedGeneration: 2,
+          testedAt: null,
+          message: null,
+        },
       }).success,
     ).toBe(false);
   });

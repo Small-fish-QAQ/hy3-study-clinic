@@ -340,7 +340,12 @@ describe('Course Settings navigation continuity', () => {
       source: 'default',
       complete: true,
       runtimeGeneration: 1,
-      externalConnection: { status: 'untested', testedGeneration: null, message: null },
+      externalConnection: {
+        status: 'untested',
+        testedGeneration: null,
+        testedAt: null,
+        message: null,
+      },
     });
     const user = userEvent.setup();
     renderWorkspace();
@@ -381,7 +386,12 @@ describe('Course Settings navigation continuity', () => {
       source: 'default',
       complete: true,
       runtimeGeneration: 1,
-      externalConnection: { status: 'untested', testedGeneration: null, message: null },
+      externalConnection: {
+        status: 'untested',
+        testedGeneration: null,
+        testedAt: null,
+        message: null,
+      },
     });
     const user = userEvent.setup();
     render(
@@ -415,7 +425,12 @@ describe('Home-owned learning-route failure', () => {
       source: 'default',
       complete: true,
       runtimeGeneration: 1,
-      externalConnection: { status: 'untested', testedGeneration: null, message: null },
+      externalConnection: {
+        status: 'untested',
+        testedGeneration: null,
+        testedAt: null,
+        message: null,
+      },
     });
   });
 

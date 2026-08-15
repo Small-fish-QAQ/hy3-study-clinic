@@ -14,7 +14,12 @@ function config(overrides: Partial<SafeProviderConfig> = {}): SafeProviderConfig
     source: 'saved',
     complete: true,
     runtimeGeneration: 1,
-    externalConnection: { status: 'untested', testedGeneration: null, message: null },
+    externalConnection: {
+      status: 'untested',
+      testedGeneration: null,
+      testedAt: null,
+      message: null,
+    },
     ...overrides,
   };
 }
@@ -176,7 +181,9 @@ describe('SettingsView', () => {
       />,
     );
 
-    expect(await screen.findByLabelText('运行与配置边界')).toHaveTextContent('配置来源默认值');
+    expect(await screen.findByLabelText('运行与配置边界')).toHaveTextContent(
+      '保存的提供程序配置模拟模式 · 默认值 · 配置完整',
+    );
     expect(screen.getByLabelText('课程连续性')).toHaveTextContent('已启用 · Probability');
     await user.click(screen.getByText('诊断与关于'));
     expect(screen.getByText('Probability')).toBeInTheDocument();
@@ -200,7 +207,7 @@ describe('SettingsView', () => {
       />,
     );
 
-    await screen.findByText('保存的设置');
+    await screen.findByText('已保存的 Hy3 配置');
     await user.click(screen.getByRole('radio', { name: 'Hy3 模式' }));
     expect(screen.getByText('已配置')).toBeInTheDocument();
     await user.click(screen.getByText('更改'));
@@ -228,7 +235,7 @@ describe('SettingsView', () => {
         onSidebarDefaultCollapsedChange={() => {}}
       />,
     );
-    await screen.findByText('保存的设置');
+    await screen.findByText('已保存的 Hy3 配置');
     await user.click(screen.getByRole('radio', { name: 'Hy3 模式' }));
     await user.clear(screen.getByDisplayValue('model-a'));
     await user.type(screen.getByDisplayValue(''), 'model-b');
@@ -310,7 +317,12 @@ describe('SettingsView', () => {
     const testConnection = vi.spyOn(api, 'testProviderConnection').mockResolvedValue(
       config({
         provider: 'hy3',
-        externalConnection: { status: 'verified', testedGeneration: 1, message: '连接正常。' },
+        externalConnection: {
+          status: 'verified',
+          testedGeneration: 1,
+          testedAt: '2026-08-15T08:00:00.000Z',
+          message: '连接正常。',
+        },
       }),
     );
     render(
@@ -324,7 +336,9 @@ describe('SettingsView', () => {
     expect(testConnection).not.toHaveBeenCalled();
     await user.click(button);
     await waitFor(() => expect(testConnection).toHaveBeenCalledWith(expect.any(AbortSignal)));
-    expect(screen.getByLabelText('运行与配置边界')).toHaveTextContent('外部 Hy3 连接已验证');
+    expect(screen.getByLabelText('运行与配置边界')).toHaveTextContent(
+      '上次 Hy3 连接测试已通过 · 2026/08/15',
+    );
   });
 
   it('invalidates a verified result when changed configuration is activated', async () => {
@@ -332,7 +346,12 @@ describe('SettingsView', () => {
     vi.spyOn(api, 'config').mockResolvedValue(
       config({
         provider: 'hy3',
-        externalConnection: { status: 'verified', testedGeneration: 1, message: '连接正常。' },
+        externalConnection: {
+          status: 'verified',
+          testedGeneration: 1,
+          testedAt: '2026-08-15T08:00:00.000Z',
+          message: '连接正常。',
+        },
       }),
     );
     vi.spyOn(api, 'updateConfig').mockResolvedValue(
@@ -340,7 +359,12 @@ describe('SettingsView', () => {
         provider: 'hy3',
         model: 'model-b',
         runtimeGeneration: 2,
-        externalConnection: { status: 'untested', testedGeneration: null, message: null },
+        externalConnection: {
+          status: 'untested',
+          testedGeneration: null,
+          testedAt: null,
+          message: null,
+        },
       }),
     );
     render(
@@ -351,14 +375,20 @@ describe('SettingsView', () => {
       />,
     );
 
-    expect(await screen.findByLabelText('运行与配置边界')).toHaveTextContent('外部 Hy3 连接已验证');
+    expect(await screen.findByLabelText('运行与配置边界')).toHaveTextContent(
+      '上次 Hy3 连接测试已通过 · 2026/08/15',
+    );
     await user.clear(screen.getByDisplayValue('model-a'));
     await user.type(screen.getByDisplayValue(''), 'model-b');
-    expect(screen.getByLabelText('运行与配置边界')).toHaveTextContent('外部 Hy3 连接未测试');
+    expect(screen.getByLabelText('运行与配置边界')).toHaveTextContent(
+      '上次 Hy3 连接测试配置已修改，保存后需重新测试',
+    );
     await user.click(screen.getByRole('button', { name: '保存更改' }));
 
     await waitFor(() =>
-      expect(screen.getByLabelText('运行与配置边界')).toHaveTextContent('外部 Hy3 连接未测试'),
+      expect(screen.getByLabelText('运行与配置边界')).toHaveTextContent(
+        '上次 Hy3 连接测试尚未测试',
+      ),
     );
   });
 
@@ -386,13 +416,18 @@ describe('SettingsView', () => {
       resolveTest(
         config({
           provider: 'hy3',
-          externalConnection: { status: 'verified', testedGeneration: 1, message: '连接正常。' },
+          externalConnection: {
+            status: 'verified',
+            testedGeneration: 1,
+            testedAt: '2026-08-15T08:00:00.000Z',
+            message: '连接正常。',
+          },
         }),
       ),
     );
 
     expect(testConnection).toHaveBeenCalledWith(expect.any(AbortSignal));
-    expect(screen.getByLabelText('运行与配置边界')).toHaveTextContent('外部 Hy3 连接未测试');
+    expect(screen.getByLabelText('运行与配置边界')).toHaveTextContent('上次 Hy3 连接测试尚未测试');
   });
 
   it('does not publish an initial config response after unmount cancellation', async () => {

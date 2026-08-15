@@ -388,7 +388,11 @@ describe('ProviderRuntime', () => {
 
     const first = runtime.testConnection();
     await expect(runtime.testConnection()).resolves.toMatchObject({
-      externalConnection: { status: 'verified', testedGeneration: 1 },
+      externalConnection: {
+        status: 'verified',
+        testedGeneration: 1,
+        testedAt: expect.any(String),
+      },
     });
     finishFirst();
     await first;

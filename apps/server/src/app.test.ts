@@ -112,7 +112,11 @@ describe('provider configuration routes', () => {
     expect(response.json()).toMatchObject({
       provider: 'hy3',
       apiKeyConfigured: true,
-      externalConnection: { status: 'verified', testedGeneration: 1 },
+      externalConnection: {
+        status: 'verified',
+        testedGeneration: 1,
+        testedAt: expect.any(String),
+      },
     });
     expect(response.body).not.toContain('sentinel-key');
     expect(calls).toBe(1);

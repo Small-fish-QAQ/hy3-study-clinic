@@ -35,7 +35,7 @@ const fakeProviderConfig: SafeProviderConfig = {
   source: 'default',
   complete: true,
   runtimeGeneration: 1,
-  externalConnection: { status: 'untested', testedGeneration: null, message: null },
+  externalConnection: { status: 'untested', testedGeneration: null, testedAt: null, message: null },
 };
 
 const baseRoutes: MockRoute[] = [
