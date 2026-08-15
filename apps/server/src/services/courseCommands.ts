@@ -16,7 +16,7 @@ export interface ClaimedCourseCommand {
   replayPayload?: unknown;
 }
 
-const LEASE_MS = 5 * 60 * 1000;
+const DEFAULT_LEASE_MS = 5 * 60 * 1000;
 
 export function commandFingerprint(value: unknown): string {
   return fnv1a32(JSON.stringify(value)).toString(16).padStart(8, '0');
@@ -28,6 +28,7 @@ export function createCourseCommandService({ repos, clock }: CourseCommandDeps) 
     command: CourseExecutionCommandEnvelope,
     operationType: string,
     expectedState: unknown,
+    options: { leaseMs?: number } = {},
   ): ClaimedCourseCommand {
     const now = clock.now();
     let created: ReturnType<Repositories['operations']['createOrGet']>;
@@ -77,7 +78,11 @@ export function createCourseCommandService({ repos, clock }: CourseCommandDeps) 
     }
 
     const owner = newId('worker');
-    const leaseExpiresAt = new Date(now.getTime() + LEASE_MS).toISOString();
+    const leaseMs = options.leaseMs ?? DEFAULT_LEASE_MS;
+    if (!Number.isFinite(leaseMs) || leaseMs <= 0) {
+      throw new Error('Course command lease must be finite and positive.');
+    }
+    const leaseExpiresAt = new Date(now.getTime() + leaseMs).toISOString();
     const claimed = repos.operations.claim(
       created.operation.id,
       owner,

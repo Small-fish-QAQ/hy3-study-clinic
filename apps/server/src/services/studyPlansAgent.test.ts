@@ -12,12 +12,16 @@ import { FakeProvider } from '../llm/fakeProvider.js';
 import type { ProviderCallOptions, StudyPlanProposalInput } from '../llm/provider.js';
 import { createRepositories, type Repositories } from '../repositories/index.js';
 import { makeBlock, makeConcept, makeMaterial, makeWorkspace, T0 } from '../testing/fixtures.js';
-import { fixedClock } from '../util/ids.js';
+import { fixedClock, type Clock } from '../util/ids.js';
 import { createCourseCommandService } from './courseCommands.js';
 import { createCourseExecutionService } from './courseExecution.js';
 import { buildCurriculumExecutionContext } from './curriculum.js';
 import { createSessionAgendaAgentService } from './sessionAgendasAgent.js';
-import { createStudyPlanAgentService, preflightStudyPlan } from './studyPlansAgent.js';
+import {
+  createStudyPlanAgentService,
+  preflightStudyPlan,
+  STUDY_PLAN_OPERATION_LEASE_MS,
+} from './studyPlansAgent.js';
 
 const T1 = '2026-01-01T00:01:00.000Z';
 const T2 = '2026-01-01T00:02:00.000Z';
@@ -334,12 +338,17 @@ beforeEach(() => {
   });
 });
 
-function services(provider: CapturingPlanProvider) {
-  const commands = createCourseCommandService({ repos, clock });
-  const agendas = createSessionAgendaAgentService({ repos, clock });
+function services(provider: CapturingPlanProvider, serviceClock: Clock = clock) {
+  const commands = createCourseCommandService({ repos, clock: serviceClock });
+  const agendas = createSessionAgendaAgentService({ repos, clock: serviceClock });
   return {
-    plans: createStudyPlanAgentService({ repos, provider, clock, commands }),
-    execution: createCourseExecutionService({ repos, clock, commands, agendas }),
+    plans: createStudyPlanAgentService({ repos, provider, clock: serviceClock, commands }),
+    execution: createCourseExecutionService({
+      repos,
+      clock: serviceClock,
+      commands,
+      agendas,
+    }),
     agendas,
     commands,
   };
@@ -504,6 +513,45 @@ describe('StudyPlan proposal and accepted Course route', () => {
       blocking: false,
       admissibilityTier: 'tier_3_advisory',
     });
+  });
+
+  it('keeps ownership through a bounded repair that crosses the former five-minute lease', async () => {
+    let nowMs = Date.parse(T2);
+    const timedClock: Clock = { now: () => new Date(nowMs) };
+    class TimedRepairProvider extends CapturingPlanProvider {
+      override async proposeStudyPlan(
+        input: StudyPlanProposalInput,
+        opts?: ProviderCallOptions,
+      ): Promise<StudyPlanProposalPayload> {
+        this.calls += 1;
+        this.input = input;
+        this.options = opts;
+        nowMs = Date.parse(T2) + 4 * 60 * 1000;
+        opts?.onRepairAttempt?.();
+        nowMs = Date.parse(T2) + 6 * 60 * 1000;
+        return FakeProvider.prototype.proposeStudyPlan.call(this, input, opts);
+      }
+    }
+    const provider = new TimedRepairProvider();
+    const { plans } = services(provider, timedClock);
+
+    const proposed = await plans.propose(proposalRequest('long-bounded-repair'));
+    const operation = db
+      .prepare(
+        `SELECT id, lease_expires_at AS leaseExpiresAt
+         FROM agent_operations WHERE operation_type = 'propose_study_plan'`,
+      )
+      .get() as { id: string; leaseExpiresAt: string | null };
+    const logical = db
+      .prepare('SELECT id FROM model_logical_calls WHERE operation_id = ?')
+      .get(operation.id) as { id: string };
+
+    expect(STUDY_PLAN_OPERATION_LEASE_MS).toBe(10 * 60 * 1000);
+    expect(proposed.studyPlan.status).toBe('proposed');
+    expect(repos.studyPlans.list('ws_1')).toHaveLength(1);
+    expect(repos.telemetry.listAttempts(logical.id)).toHaveLength(2);
+    expect(operation.leaseExpiresAt).toBeNull();
+    expect(repos.operations.getResult(operation.id)?.status).toBe('completed');
   });
 
   it('rejects omitted Curriculum work without replacing a prior valid proposal', async () => {

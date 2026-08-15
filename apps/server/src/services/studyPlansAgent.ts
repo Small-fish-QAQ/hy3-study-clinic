@@ -48,6 +48,9 @@ interface StudyPlanAgentDeps {
   providerModel?: string | null;
 }
 
+export const STUDY_PLAN_PROVIDER_TIMEOUT_MS = 240_000;
+export const STUDY_PLAN_OPERATION_LEASE_MS = STUDY_PLAN_PROVIDER_TIMEOUT_MS * 2 + 120_000;
+
 function requireContract(
   repos: Repositories,
   workspaceId: string,
@@ -390,17 +393,22 @@ export function createStudyPlanAgentService({
     const parsed = ProposeStudyPlanRequestSchema.parse(input);
     const workspace = repos.workspaces.get(parsed.command.workspaceId);
     if (!workspace) throw notFound('Course not found.');
-    const claim = commands.begin(parsed.command, 'propose_study_plan', {
-      contractId: parsed.contractId,
-      contractVersion: parsed.expectedContractVersion,
-      curriculumId: parsed.curriculumId,
-      curriculumVersion: parsed.expectedCurriculumVersion,
-      manifestFingerprint: parsed.expectedExecutionSourceManifestFingerprint,
-      predecessorStudyPlanId: parsed.predecessorStudyPlanId,
-      acceptedStudyPlanId: parsed.expectedAcceptedStudyPlanId,
-      proposalTrigger: parsed.proposalTrigger,
-      confirmedCostPolicyIds: parsed.confirmedCostPolicyIds ?? [],
-    });
+    const claim = commands.begin(
+      parsed.command,
+      'propose_study_plan',
+      {
+        contractId: parsed.contractId,
+        contractVersion: parsed.expectedContractVersion,
+        curriculumId: parsed.curriculumId,
+        curriculumVersion: parsed.expectedCurriculumVersion,
+        manifestFingerprint: parsed.expectedExecutionSourceManifestFingerprint,
+        predecessorStudyPlanId: parsed.predecessorStudyPlanId,
+        acceptedStudyPlanId: parsed.expectedAcceptedStudyPlanId,
+        proposalTrigger: parsed.proposalTrigger,
+        confirmedCostPolicyIds: parsed.confirmedCostPolicyIds ?? [],
+      },
+      { leaseMs: STUDY_PLAN_OPERATION_LEASE_MS },
+    );
     if (claim.replayPayload !== undefined) {
       return StudyPlanProposalResponseSchema.parse(claim.replayPayload);
     }
@@ -457,7 +465,7 @@ export function createStudyPlanAgentService({
         sourceFingerprint: curriculum.executionSourceManifest.fingerprint,
         providerOptions: {
           ...opts,
-          timeoutMs: opts?.timeoutMs ?? 240_000,
+          timeoutMs: opts?.timeoutMs ?? STUDY_PLAN_PROVIDER_TIMEOUT_MS,
         },
         invoke: (options) => provider.proposeStudyPlan(providerContext.input, options),
       });
