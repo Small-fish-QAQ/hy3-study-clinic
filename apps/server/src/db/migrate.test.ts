@@ -248,4 +248,53 @@ describe('migrations', () => {
     expect(db.pragma('foreign_key_check')).toEqual([]);
     db.close();
   });
+
+  it('upgrades v17 telemetry without fabricating historical provider generation', () => {
+    const db = openDatabase(':memory:');
+    migrate(db, { toVersion: 17 });
+    db.prepare(
+      `INSERT INTO workspaces (id, name, origin, created_at, updated_at)
+       VALUES ('ws_v17', 'Existing course', 'manual', ?, ?)`,
+    ).run('2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z');
+    db.prepare(
+      `INSERT INTO model_logical_calls
+         (id, operation_id, workspace_id, study_session_id, learning_unit_id, assessment_id,
+          operation_type, cache_key, cache_status, prompt_fingerprint, schema_fingerprint,
+          policy_fingerprint, source_fingerprint, status, created_at, completed_at)
+       VALUES ('call_v17', NULL, 'ws_v17', NULL, NULL, NULL, 'legacy_call', NULL,
+         'not_checked', NULL, NULL, NULL, NULL, 'completed', ?, ?)`,
+    ).run('2026-01-01T00:00:00.000Z', '2026-01-01T00:00:01.000Z');
+    db.prepare(
+      `INSERT INTO model_call_attempts
+         (id, logical_call_id, attempt_number, attempt_kind, fencing_token, provider, model,
+          status, started_at, sent_at, completed_at, latency_ms)
+       VALUES ('attempt_v17', 'call_v17', 1, 'original', 1, 'hy3', 'old-model',
+         'completed', ?, ?, ?, 1000)`,
+    ).run('2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:01.000Z');
+
+    migrate(db);
+
+    expect(
+      db
+        .prepare(
+          `SELECT provider_generation, fencing_token FROM model_call_attempts
+           WHERE id = 'attempt_v17'`,
+        )
+        .get(),
+    ).toEqual({ provider_generation: null, fencing_token: 1 });
+    expect(() =>
+      db
+        .prepare(
+          `INSERT INTO model_logical_calls
+             (id, operation_id, workspace_id, study_session_id, learning_unit_id, assessment_id,
+              operation_type, cache_key, cache_status, prompt_fingerprint, schema_fingerprint,
+              policy_fingerprint, source_fingerprint, status, created_at, completed_at)
+           VALUES ('call_global', NULL, NULL, NULL, NULL, NULL, 'provider_connection_test', NULL,
+             'not_checked', NULL, NULL, NULL, NULL, 'open', ?, NULL)`,
+        )
+        .run('2026-01-01T00:00:02.000Z'),
+    ).not.toThrow();
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+    db.close();
+  });
 });

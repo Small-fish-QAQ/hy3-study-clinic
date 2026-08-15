@@ -39,6 +39,7 @@ import {
   enforceAgentCostPolicies,
   runTrackedAgentProviderOperation,
 } from './agentProviderRuntime.js';
+import { createTelemetryProvider } from './providerTelemetry.js';
 
 interface StudyPlanAgentDeps {
   repos: Repositories;
@@ -386,6 +387,12 @@ export function createStudyPlanAgentService({
   commands,
   providerModel = null,
 }: StudyPlanAgentDeps) {
+  const inferenceProvider = createTelemetryProvider({
+    repos,
+    clock,
+    provider,
+    providerGeneration: () => 1,
+  });
   async function propose(
     input: ProposeStudyPlanRequest,
     opts?: ProviderCallOptions,
@@ -467,7 +474,7 @@ export function createStudyPlanAgentService({
           ...opts,
           timeoutMs: opts?.timeoutMs ?? STUDY_PLAN_PROVIDER_TIMEOUT_MS,
         },
-        invoke: (options) => provider.proposeStudyPlan(providerContext.input, options),
+        invoke: (options) => inferenceProvider.proposeStudyPlan(providerContext.input, options),
       });
       const now = clock.now().toISOString();
       const materialized = validateAndMaterializeStudyPlanProposal({

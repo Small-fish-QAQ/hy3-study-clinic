@@ -28,6 +28,7 @@ import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
 import type { MisconceptionsService } from './misconceptions.js';
+import { createTelemetryProvider } from './providerTelemetry.js';
 
 export interface AssessmentServiceDeps {
   repos: Repositories;
@@ -70,6 +71,12 @@ export function createAssessmentService({
   clock,
   misconceptions,
 }: AssessmentServiceDeps) {
+  const inferenceProvider = createTelemetryProvider({
+    repos,
+    clock,
+    provider,
+    providerGeneration: () => 1,
+  });
   function requireWorkspace(workspaceId: string) {
     const workspace = repos.workspaces.get(workspaceId);
     if (!workspace) throw notFound(`课程空间不存在:${workspaceId}`);
@@ -292,7 +299,14 @@ export function createAssessmentService({
       questionCount,
       misconception: misconceptionTarget ? misconceptions.get(misconceptionTarget) : null,
     };
-    const payload = await provider.proposeAssessment(providerInput, opts);
+    const payload = await inferenceProvider.proposeAssessment(providerInput, {
+      ...opts,
+      telemetry: {
+        ...opts?.telemetry,
+        workspaceId,
+        operationType: opts?.telemetry?.operationType ?? `propose_${request.mode}_assessment`,
+      },
+    });
 
     // ---- Local deterministic validation of every item ----
     const allowedConceptIds = new Set<string>();

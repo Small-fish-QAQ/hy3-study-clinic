@@ -1,11 +1,9 @@
 import { ApiErrorCode, fnv1a32 } from '@hy3-clinic/shared';
 import { AppError } from '../errors.js';
-import { ProviderError } from '../llm/errors.js';
 import type { LlmProvider, ProviderCallOptions } from '../llm/provider.js';
 import type { CostPolicy } from '../repositories/telemetry.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
-import { newId } from '../util/ids.js';
 
 interface CostPolicyContext {
   workspaceId: string;
@@ -122,8 +120,8 @@ interface TrackedProviderOperation<T> {
 export async function runTrackedAgentProviderOperation<T>({
   repos,
   clock,
-  provider,
-  providerModel,
+  provider: _provider,
+  providerModel: _providerModel,
   operationId,
   fencingToken,
   workspaceId,
@@ -137,67 +135,7 @@ export async function runTrackedAgentProviderOperation<T>({
   providerOptions,
   invoke,
 }: TrackedProviderOperation<T>): Promise<T> {
-  const logicalCallId = newId('llm_call');
-  let attemptId = newId('llm_attempt');
-  let attemptNumber = 1;
-  const startedAt = clock.now().toISOString();
-  let attemptStartedAt = startedAt;
-  repos.telemetry.insertLogicalCall({
-    id: logicalCallId,
-    operationId,
-    workspaceId,
-    studySessionId,
-    learningUnitId,
-    assessmentId,
-    operationType,
-    cacheKey: null,
-    cacheStatus: 'not_checked',
-    promptFingerprint: null,
-    schemaFingerprint,
-    policyFingerprint,
-    sourceFingerprint,
-    status: 'open',
-    createdAt: startedAt,
-    completedAt: null,
-  });
-  repos.telemetry.insertAttempt({
-    id: attemptId,
-    logicalCallId,
-    attemptNumber: 1,
-    attemptKind: 'original',
-    provider: provider.name,
-    model: provider.name === 'hy3' ? providerModel : null,
-    fencingToken,
-    status: 'queued',
-    startedAt,
-    sentAt: null,
-    firstTokenAt: null,
-    completedAt: null,
-    latencyMs: null,
-    timeToFirstTokenMs: null,
-    errorCode: null,
-    errorMessage: null,
-  });
-  repos.telemetry.markAttemptSent(attemptId, startedAt);
-
-  const recordUnknownUsage = (id: string, at: string): void => {
-    repos.telemetry.insertUsage({
-      id: newId('llm_usage'),
-      attemptId: id,
-      inputTokens: null,
-      outputTokens: null,
-      reasoningTokens: null,
-      cacheReadTokens: null,
-      cacheWriteTokens: null,
-      estimatedCostMicrounits: null,
-      currency: null,
-      pricingSource: null,
-      pricingVersion: null,
-      recordedAt: at,
-    });
-  };
-
-  const beginRepairAttempt = (): void => {
+  const assertCurrentLease = (): void => {
     const repairStartedAt = clock.now().toISOString();
     const operation = repos.operations.get(operationId);
     if (
@@ -212,111 +150,23 @@ export async function runTrackedAgentProviderOperation<T>({
         'Provider repair was fenced because its operation lease is stale.',
       );
     }
-    const nextAttemptNumber = attemptNumber + 1;
-    const nextAttemptId = newId('llm_attempt');
-    repos.transaction(() => {
-      if (
-        !repos.telemetry.finishAttempt(attemptId, {
-          status: 'completed',
-          completedAt: repairStartedAt,
-          latencyMs: Math.max(0, Date.parse(repairStartedAt) - Date.parse(attemptStartedAt)),
-          errorCode: 'STRUCTURED_OUTPUT_REPAIR_REQUIRED',
-          errorMessage: 'The first response required bounded structured-output repair.',
-        })
-      ) {
-        throw new Error('Original provider attempt was no longer open for repair.');
-      }
-      recordUnknownUsage(attemptId, repairStartedAt);
-      repos.telemetry.insertAttempt({
-        id: nextAttemptId,
-        logicalCallId,
-        attemptNumber: nextAttemptNumber,
-        attemptKind: 'repair',
-        provider: provider.name,
-        model: provider.name === 'hy3' ? providerModel : null,
-        fencingToken,
-        status: 'queued',
-        startedAt: repairStartedAt,
-        sentAt: null,
-        firstTokenAt: null,
-        completedAt: null,
-        latencyMs: null,
-        timeToFirstTokenMs: null,
-        errorCode: null,
-        errorMessage: null,
-      });
-      if (!repos.telemetry.markAttemptSent(nextAttemptId, repairStartedAt)) {
-        throw new Error('Repair provider attempt could not be marked sent.');
-      }
-    });
-    attemptNumber = nextAttemptNumber;
-    attemptId = nextAttemptId;
-    attemptStartedAt = repairStartedAt;
   };
-
-  try {
-    const result = await invoke({ ...providerOptions, onRepairAttempt: beginRepairAttempt });
-    const completedAt = clock.now().toISOString();
-    const operation = repos.operations.get(operationId);
-    const resultIsCurrent =
-      operation?.status === 'running' &&
-      operation.fencingToken === fencingToken &&
-      operation.leaseExpiresAt !== null &&
-      operation.leaseExpiresAt > completedAt;
-    if (!resultIsCurrent) {
-      repos.transaction(() => {
-        repos.telemetry.finishAttempt(attemptId, {
-          status: 'outcome_unknown',
-          completedAt,
-          latencyMs: Math.max(0, Date.parse(completedAt) - Date.parse(attemptStartedAt)),
-          errorCode: 'OPERATION_LEASE_LOST',
-          errorMessage: 'Provider result arrived after its operation lease became stale.',
-        });
-        recordUnknownUsage(attemptId, completedAt);
-        repos.telemetry.completeLogicalCall(logicalCallId, 'failed', completedAt);
-      });
-      throw new AppError(
-        ApiErrorCode.VersionConflict,
-        'Provider result was fenced because its operation lease is stale.',
-      );
-    }
-    repos.transaction(() => {
-      repos.telemetry.finishAttempt(attemptId, {
-        status: 'completed',
-        completedAt,
-        latencyMs: Math.max(0, Date.parse(completedAt) - Date.parse(attemptStartedAt)),
-      });
-      recordUnknownUsage(attemptId, completedAt);
-      repos.telemetry.completeLogicalCall(logicalCallId, 'completed', completedAt);
-    });
-    return result;
-  } catch (error) {
-    if (
-      error instanceof AppError &&
-      error.code === ApiErrorCode.VersionConflict &&
-      error.message === 'Provider result was fenced because its operation lease is stale.'
-    ) {
-      throw error;
-    }
-    const completedAt = clock.now().toISOString();
-    const cancelled =
-      error instanceof ProviderError && error.code === ApiErrorCode.RequestCancelled;
-    repos.transaction(() => {
-      repos.telemetry.finishAttempt(attemptId, {
-        status: cancelled ? 'cancelled' : 'failed',
-        completedAt,
-        latencyMs: Math.max(0, Date.parse(completedAt) - Date.parse(attemptStartedAt)),
-        errorCode: error instanceof ProviderError ? error.code : 'AGENT_PROVIDER_CALL_FAILED',
-        errorMessage:
-          error instanceof Error ? error.message.slice(0, 500) : 'Agent provider call failed.',
-      });
-      recordUnknownUsage(attemptId, completedAt);
-      repos.telemetry.completeLogicalCall(
-        logicalCallId,
-        cancelled ? 'cancelled' : 'failed',
-        completedAt,
-      );
-    });
-    throw error;
-  }
+  const result = await invoke({
+    ...providerOptions,
+    onRepairAttempt: assertCurrentLease,
+    beforeTelemetryComplete: assertCurrentLease,
+    telemetry: {
+      workspaceId,
+      operationId,
+      studySessionId,
+      learningUnitId,
+      assessmentId,
+      operationType,
+      schemaFingerprint,
+      policyFingerprint,
+      sourceFingerprint,
+      fencingToken,
+    },
+  });
+  return result;
 }

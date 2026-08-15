@@ -22,6 +22,7 @@ import {
   type ProviderConfigStore,
 } from './services/providerRuntime.js';
 import { requestSignal } from './util/requestSignal.js';
+import { createTelemetryProvider } from './services/providerTelemetry.js';
 
 export interface AppDeps {
   repos: Repositories;
@@ -76,9 +77,15 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   });
 
   const clock = deps.clock ?? systemClock;
+  const provider = createTelemetryProvider({
+    repos: deps.repos,
+    clock,
+    provider: createRuntimeProvider(runtime),
+    providerGeneration: () => runtime.generation,
+  });
   const services = createServices({
     repos: deps.repos,
-    provider: createRuntimeProvider(runtime),
+    provider,
     clock,
     providerModel: runtime.providerModel,
   });
@@ -179,7 +186,12 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   app.patch('/api/config', async (request) => runtime.update(request.body));
   app.post('/api/config/test', async (request, reply) => {
     ProviderConnectionTestRequestSchema.parse(request.body ?? {});
-    return runtime.testConnection(requestSignal(request, reply));
+    return runtime.testConnection(requestSignal(request, reply), (options) =>
+      provider.testConnection({
+        ...options,
+        telemetry: { workspaceId: null, operationType: 'provider_connection_test' },
+      }),
+    );
   });
 
   registerMaterialRoutes(app, services.materials);

@@ -80,6 +80,12 @@ export interface Hy3ProviderConfig {
 
 interface ChatCompletionResponse {
   choices?: Array<{ message?: { content?: string } }>;
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    prompt_tokens_details?: { cached_tokens?: number };
+    completion_tokens_details?: { reasoning_tokens?: number };
+  };
 }
 
 const GROUPED_STUDY_PLAN_KINDS = [
@@ -578,6 +584,7 @@ export class Hy3Provider implements LlmProvider {
     };
 
     try {
+      opts?.onRequestSent?.();
       const response = await this.fetchImpl(
         `${this.config.baseUrl.replace(/\/$/, '')}/chat/completions`,
         {
@@ -613,6 +620,22 @@ export class Hy3Provider implements LlmProvider {
       // The timeout/cancellation budget covers the complete body read, not
       // merely the arrival of response headers.
       if (controller.signal.aborted) throw abortError();
+
+      const nonnegativeInteger = (value: unknown): number | null =>
+        typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : null;
+      opts?.onUsage?.({
+        inputTokens: nonnegativeInteger(data.usage?.prompt_tokens),
+        outputTokens: nonnegativeInteger(data.usage?.completion_tokens),
+        reasoningTokens: nonnegativeInteger(
+          data.usage?.completion_tokens_details?.reasoning_tokens,
+        ),
+        cacheReadTokens: nonnegativeInteger(data.usage?.prompt_tokens_details?.cached_tokens),
+        cacheWriteTokens: null,
+        estimatedCostMicrounits: null,
+        currency: null,
+        pricingSource: null,
+        pricingVersion: null,
+      });
 
       const content = data.choices?.[0]?.message?.content;
       if (typeof content !== 'string' || content.trim().length === 0) {

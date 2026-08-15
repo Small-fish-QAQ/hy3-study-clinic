@@ -41,6 +41,7 @@ import {
   runTrackedAgentProviderOperation,
 } from './agentProviderRuntime.js';
 import type { SourceAuthorityService } from './sourceAuthority.js';
+import { createTelemetryProvider } from './providerTelemetry.js';
 
 /** HTTP/service request: the server, never the client, resolves exact revisions. */
 export const ProposeCurriculumCommandRequestSchema = ProposeCurriculumRequestSchema.omit({
@@ -298,6 +299,12 @@ export function createCurriculumService({
   providerModel,
   sourceAuthority,
 }: CurriculumServiceDeps) {
+  const inferenceProvider = createTelemetryProvider({
+    repos,
+    clock,
+    provider,
+    providerGeneration: () => 1,
+  });
   const coverageRisks = createCoverageRiskAgentService({ repos, clock });
   function requireCurriculum(workspaceId: string, id: string): Curriculum {
     const curriculum = repos.curricula.get(id);
@@ -437,7 +444,7 @@ export function createCurriculumService({
         policyFingerprint,
         sourceFingerprint: context.manifest.fingerprint,
         providerOptions: opts,
-        invoke: (options) => provider.proposeCurriculum(providerInput, options),
+        invoke: (options) => inferenceProvider.proposeCurriculum(providerInput, options),
       });
       const materialized = materializeCurriculumProposal(payload, {
         workspaceId: parsed.command.workspaceId,

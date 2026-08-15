@@ -1,6 +1,7 @@
 import type { Question, Quiz, QuizConfig } from '@hy3-clinic/shared';
 import { ApiErrorCode } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
+import { ProviderError } from '../llm/errors.js';
 import type { LlmProvider, ProviderCallOptions, RemediationTarget } from '../llm/provider.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
@@ -80,7 +81,13 @@ export function createRemediationService({ repos, provider, clock }: Remediation
           targets,
           questionsPerConcept: QUESTIONS_PER_CONCEPT,
         },
-        opts,
+        {
+          ...opts,
+          telemetry: {
+            workspaceId: material.workspaceId,
+            operationType: 'generate_remediation',
+          },
+        },
       );
 
       const quizId = newId('qz');
@@ -138,7 +145,13 @@ export function createRemediationService({ repos, provider, clock }: Remediation
               targets: retryTargets,
               questionsPerConcept: QUESTIONS_PER_CONCEPT,
             },
-            opts,
+            {
+              ...opts,
+              telemetry: {
+                workspaceId: material.workspaceId,
+                operationType: 'generate_remediation_repair',
+              },
+            },
           );
           const retryResult = assembleQuestions(retryPayload.questions, {
             quizId,
@@ -156,7 +169,13 @@ export function createRemediationService({ repos, provider, clock }: Remediation
             if (replacement) pool.push(replacement);
           }
           picked = pickQuestions(pool);
-        } catch {
+        } catch (error) {
+          if (
+            opts?.signal?.aborted ||
+            (error instanceof ProviderError && error.code === ApiErrorCode.RequestCancelled)
+          ) {
+            throw error;
+          }
           // The retry is best-effort repair; the original honest failure below
           // reports the still-missing pieces.
         }

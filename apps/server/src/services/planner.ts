@@ -143,7 +143,10 @@ export function createPlannerService({
           openMistakes,
           usedQuestionTypes,
         },
-        opts,
+        {
+          ...opts,
+          telemetry: { workspaceId, operationType: 'propose_remediation_plan' },
+        },
       );
 
       // ---- Local deterministic validation (fail closed, keep old plan) ----

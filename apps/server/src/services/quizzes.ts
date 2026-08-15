@@ -171,7 +171,10 @@ export function createQuizService({ repos, provider, clock, analysis }: QuizServ
 
       const payload = await provider.generateQuiz(
         { materialTitle: material.title, blocks, concepts: offeredConcepts, config },
-        opts,
+        {
+          ...opts,
+          telemetry: { workspaceId: material.workspaceId, operationType: 'generate_quiz' },
+        },
       );
 
       const quizId = newId('qz');

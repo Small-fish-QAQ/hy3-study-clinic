@@ -494,7 +494,7 @@ describe('StudyPlan proposal and accepted Course route', () => {
     expect(repos.telemetry.usageSummary('ws_1')).toMatchObject({
       logicalCalls: 1,
       physicalAttempts: 1,
-      attemptsWithKnownCost: 0,
+      attemptsWithKnownCost: 1,
     });
     expect(repos.studyPlans.list('ws_1')).toHaveLength(1);
     expect(provider.input?.launchCapabilities[0]?.allowedItemKinds).toContain('formal_checkpoint');

@@ -8,7 +8,7 @@ export type ModelAttemptStatus =
 export interface ModelLogicalCall {
   id: string;
   operationId: string | null;
-  workspaceId: string;
+  workspaceId: string | null;
   studySessionId: string | null;
   learningUnitId: string | null;
   assessmentId: string | null;
@@ -31,7 +31,8 @@ export interface ModelCallAttempt {
   attemptKind: 'original' | 'repair' | 'retry' | 'fallback';
   provider: string;
   model: string | null;
-  fencingToken: number;
+  providerGeneration: number | null;
+  fencingToken: number | null;
   status: ModelAttemptStatus;
   startedAt: string;
   sentAt: string | null;
@@ -122,7 +123,8 @@ interface AttemptRow {
   attempt_kind: ModelCallAttempt['attemptKind'];
   provider: string;
   model: string | null;
-  fencing_token: number;
+  provider_generation: number | null;
+  fencing_token: number | null;
   status: ModelAttemptStatus;
   started_at: string;
   sent_at: string | null;
@@ -211,6 +213,7 @@ function rowToAttempt(row: AttemptRow): ModelCallAttempt {
     attemptKind: row.attempt_kind,
     provider: row.provider,
     model: row.model,
+    providerGeneration: row.provider_generation,
     fencingToken: row.fencing_token,
     status: row.status,
     startedAt: row.started_at,
@@ -298,13 +301,13 @@ export function createTelemetryRepo(db: SqliteDb) {
       .prepare(
         `SELECT
            COUNT(DISTINCT lc.id) AS logicalCalls,
-           COUNT(DISTINCT a.id) AS physicalAttempts,
+           COUNT(DISTINCT CASE WHEN a.sent_at IS NOT NULL THEN a.id END) AS physicalAttempts,
            COUNT(DISTINCT CASE WHEN lc.cache_status = 'hit' THEN lc.id END) AS cacheHits,
            COALESCE(SUM(u.input_tokens), 0) AS inputTokens,
            COALESCE(SUM(u.output_tokens), 0) AS outputTokens,
            COALESCE(SUM(u.reasoning_tokens), 0) AS reasoningTokens,
            COALESCE(SUM(u.estimated_cost_microunits), 0) AS estimatedCostMicrounits,
-           COUNT(u.estimated_cost_microunits) AS attemptsWithKnownCost
+           COUNT(CASE WHEN a.sent_at IS NOT NULL THEN u.estimated_cost_microunits END) AS attemptsWithKnownCost
          FROM model_logical_calls lc
          LEFT JOIN model_call_attempts a ON a.logical_call_id = lc.id
          LEFT JOIN model_usage_records u ON u.attempt_id = a.id
@@ -419,14 +422,14 @@ export function createTelemetryRepo(db: SqliteDb) {
     insertAttempt(attempt: ModelCallAttempt): void {
       db.prepare(
         `INSERT INTO model_call_attempts
-           (id, logical_call_id, attempt_number, attempt_kind, provider, model, fencing_token, status,
+           (id, logical_call_id, attempt_number, attempt_kind, provider, model, provider_generation, fencing_token, status,
             started_at, sent_at, first_token_at, completed_at, latency_ms,
             time_to_first_token_ms, error_code, error_message)
          VALUES
-           (@id, @logicalCallId, @attemptNumber, @attemptKind, @provider, @model, @fencingToken, @status,
+           (@id, @logicalCallId, @attemptNumber, @attemptKind, @provider, @model, @providerGeneration, @fencingToken, @status,
             @startedAt, @sentAt, @firstTokenAt, @completedAt, @latencyMs,
             @timeToFirstTokenMs, @errorCode, @errorMessage)`,
-      ).run(attempt);
+      ).run({ ...attempt, providerGeneration: attempt.providerGeneration ?? null });
     },
 
     getAttempt(id: string): ModelCallAttempt | undefined {

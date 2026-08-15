@@ -45,6 +45,44 @@ export interface ProviderCallOptions {
   timeoutMs?: number | undefined;
   /** Internal telemetry hook: a schema repair is a new physical request. */
   onRepairAttempt?: (() => void) | undefined;
+  /** Internal telemetry hook fired immediately before a physical request is sent. */
+  onRequestSent?: (() => void) | undefined;
+  /** Internal telemetry hook for provider-reported usage of the current request. */
+  onUsage?: ((usage: ProviderUsage) => void) | undefined;
+  /** Final authority check immediately before successful ledger completion. */
+  beforeTelemetryComplete?: (() => void) | undefined;
+  /** Internal authoritative metadata for one logical provider inference. */
+  telemetry?: ProviderTelemetryContext | undefined;
+}
+
+/** Usage reported by the provider response. Missing values remain unknown. */
+export interface ProviderUsage {
+  inputTokens: number | null;
+  outputTokens: number | null;
+  reasoningTokens: number | null;
+  cacheReadTokens: number | null;
+  cacheWriteTokens: number | null;
+  estimatedCostMicrounits: number | null;
+  currency: string | null;
+  pricingSource: string | null;
+  pricingVersion: string | null;
+}
+
+/** Metadata only. Prompt/source content must never be placed in this context. */
+export interface ProviderTelemetryContext {
+  workspaceId: string | null;
+  operationType: string;
+  operationId?: string | null | undefined;
+  studySessionId?: string | null | undefined;
+  learningUnitId?: string | null | undefined;
+  assessmentId?: string | null | undefined;
+  schemaFingerprint?: string | null | undefined;
+  policyFingerprint?: string | null | undefined;
+  sourceFingerprint?: string | null | undefined;
+  fencingToken?: number | null | undefined;
+  logicalCallId?: string | undefined;
+  attemptKind?: 'original' | 'repair' | 'retry' | 'fallback' | undefined;
+  confirmedCostPolicyIds?: string[] | undefined;
 }
 
 export interface ConceptAnalysisInput {

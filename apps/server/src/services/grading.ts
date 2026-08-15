@@ -340,8 +340,19 @@ export function createGradingService({
 
       const createdAt = clock.now().toISOString();
       const grades: QuestionGrade[] = [];
+      const gradingOptions: ProviderCallOptions = {
+        ...opts,
+        telemetry: {
+          workspaceId:
+            quiz.workspaceId ??
+            (quiz.materialId ? repos.materials.get(quiz.materialId)?.workspaceId : null) ??
+            null,
+          operationType: 'grade_short_answer',
+          assessmentId: quiz.id,
+        },
+      };
       for (const question of quiz.questions) {
-        grades.push(await gradeQuestion(question, answersById.get(question.id)!, opts));
+        grades.push(await gradeQuestion(question, answersById.get(question.id)!, gradingOptions));
       }
 
       const totals = computeTotals(

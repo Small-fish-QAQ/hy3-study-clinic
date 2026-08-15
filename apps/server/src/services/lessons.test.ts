@@ -98,6 +98,17 @@ describe('lesson generation and provenance', () => {
       url: `/api/workspaces/${s.workspaceId}/concepts/${s.conceptId}/lesson`,
     });
     expect(read.json().lesson.id).toBe(lesson.id);
+    expect(
+      s.ctx.db
+        .prepare(
+          `SELECT COUNT(DISTINCT lc.id) AS logicalCalls,
+                  COUNT(DISTINCT CASE WHEN a.sent_at IS NOT NULL THEN a.id END) AS physicalAttempts
+           FROM model_logical_calls lc
+           LEFT JOIN model_call_attempts a ON a.logical_call_id = lc.id
+           WHERE lc.operation_type = 'generate_concept_lesson'`,
+        )
+        .get(),
+    ).toEqual({ logicalCalls: 1, physicalAttempts: 1 });
   });
 
   it('a fabricated anchor is dropped: the segment survives as labeled AI teaching', async () => {

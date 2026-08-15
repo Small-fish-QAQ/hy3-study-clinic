@@ -18,8 +18,8 @@ const blocks: SourceBlock[] = [
   },
 ];
 
-function jsonResponse(content: string): Response {
-  return new Response(JSON.stringify({ choices: [{ message: { content } }] }), {
+function jsonResponse(content: string, usage?: unknown): Response {
+  return new Response(JSON.stringify({ choices: [{ message: { content } }], usage }), {
     status: 200,
     headers: { 'content-type': 'application/json' },
   });
@@ -163,6 +163,33 @@ describe('Hy3Provider happy path', () => {
 
     const [, init] = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(init.headers.authorization).toBe('Bearer test-key-should-never-leak');
+  });
+
+  it('reports available standard usage without deriving unreported cost', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse(JSON.stringify({ concepts: [] }), {
+        prompt_tokens: 17,
+        completion_tokens: 5,
+        prompt_tokens_details: { cached_tokens: 3 },
+        completion_tokens_details: { reasoning_tokens: 2 },
+      }),
+    );
+    const onUsage = vi.fn();
+    await makeProvider(fetchMock).analyzeConcepts(
+      { materialTitle: SAMPLE_MATERIAL_TITLE, blocks },
+      { onUsage },
+    );
+    expect(onUsage).toHaveBeenCalledWith({
+      inputTokens: 17,
+      outputTokens: 5,
+      reasoningTokens: 2,
+      cacheReadTokens: 3,
+      cacheWriteTokens: null,
+      estimatedCostMicrounits: null,
+      currency: null,
+      pricingSource: null,
+      pricingVersion: null,
+    });
   });
 });
 

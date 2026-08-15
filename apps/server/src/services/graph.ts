@@ -119,7 +119,10 @@ export function createGraphService({ repos, provider, clock, providerModel }: Gr
             concepts,
             maxEdges: MAX_GRAPH_EDGES,
           },
-          opts,
+          {
+            ...opts,
+            telemetry: { workspaceId, operationType: 'propose_graph_edges' },
+          },
         );
       } catch (error) {
         repos.graph.markFailed(

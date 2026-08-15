@@ -1478,6 +1478,94 @@ const MIGRATIONS: Migration[] = [
         ON goal_outcomes(workspace_id, created_at DESC);
     `,
   },
+  {
+    version: 18,
+    name: 'complete_provider_inference_telemetry',
+    rebuildsTables: true,
+    up: `
+      CREATE TABLE model_logical_calls_v18 (
+        id TEXT PRIMARY KEY,
+        operation_id TEXT REFERENCES agent_operations(id) ON DELETE SET NULL,
+        workspace_id TEXT REFERENCES workspaces(id) ON DELETE CASCADE,
+        study_session_id TEXT,
+        learning_unit_id TEXT,
+        assessment_id TEXT,
+        operation_type TEXT NOT NULL,
+        cache_key TEXT,
+        cache_status TEXT NOT NULL CHECK (cache_status IN
+          ('not_checked', 'hit', 'miss', 'bypassed')),
+        prompt_fingerprint TEXT,
+        schema_fingerprint TEXT,
+        policy_fingerprint TEXT,
+        source_fingerprint TEXT,
+        status TEXT NOT NULL CHECK (status IN ('open', 'completed', 'failed', 'cancelled')),
+        created_at TEXT NOT NULL,
+        completed_at TEXT
+      );
+      INSERT INTO model_logical_calls_v18 SELECT * FROM model_logical_calls;
+
+      CREATE TABLE model_call_attempts_v18 (
+        id TEXT PRIMARY KEY,
+        logical_call_id TEXT NOT NULL REFERENCES model_logical_calls_v18(id) ON DELETE CASCADE,
+        attempt_number INTEGER NOT NULL CHECK (attempt_number >= 1),
+        attempt_kind TEXT NOT NULL CHECK (attempt_kind IN
+          ('original', 'repair', 'retry', 'fallback')),
+        fencing_token INTEGER CHECK (fencing_token IS NULL OR fencing_token >= 1),
+        provider TEXT NOT NULL,
+        model TEXT,
+        provider_generation INTEGER CHECK (provider_generation IS NULL OR provider_generation >= 1),
+        status TEXT NOT NULL CHECK (status IN
+          ('queued', 'sent', 'completed', 'failed', 'cancelled', 'interrupted', 'outcome_unknown')),
+        started_at TEXT NOT NULL,
+        sent_at TEXT,
+        first_token_at TEXT,
+        completed_at TEXT,
+        latency_ms INTEGER CHECK (latency_ms IS NULL OR latency_ms >= 0),
+        time_to_first_token_ms INTEGER CHECK (time_to_first_token_ms IS NULL OR time_to_first_token_ms >= 0),
+        error_code TEXT,
+        error_message TEXT,
+        UNIQUE (logical_call_id, attempt_number)
+      );
+      INSERT INTO model_call_attempts_v18
+        (id, logical_call_id, attempt_number, attempt_kind, fencing_token, provider, model,
+         provider_generation, status, started_at, sent_at, first_token_at, completed_at,
+         latency_ms, time_to_first_token_ms, error_code, error_message)
+      SELECT id, logical_call_id, attempt_number, attempt_kind, fencing_token, provider, model,
+             NULL, status, started_at, sent_at, first_token_at, completed_at,
+             latency_ms, time_to_first_token_ms, error_code, error_message
+      FROM model_call_attempts;
+
+      CREATE TABLE model_usage_records_v18 (
+        id TEXT PRIMARY KEY,
+        attempt_id TEXT NOT NULL UNIQUE REFERENCES model_call_attempts_v18(id) ON DELETE CASCADE,
+        input_tokens INTEGER CHECK (input_tokens IS NULL OR input_tokens >= 0),
+        output_tokens INTEGER CHECK (output_tokens IS NULL OR output_tokens >= 0),
+        reasoning_tokens INTEGER CHECK (reasoning_tokens IS NULL OR reasoning_tokens >= 0),
+        cache_read_tokens INTEGER CHECK (cache_read_tokens IS NULL OR cache_read_tokens >= 0),
+        cache_write_tokens INTEGER CHECK (cache_write_tokens IS NULL OR cache_write_tokens >= 0),
+        estimated_cost_microunits INTEGER CHECK
+          (estimated_cost_microunits IS NULL OR estimated_cost_microunits >= 0),
+        currency TEXT,
+        pricing_source TEXT,
+        pricing_version TEXT,
+        recorded_at TEXT NOT NULL
+      );
+      INSERT INTO model_usage_records_v18 SELECT * FROM model_usage_records;
+
+      DROP TABLE model_usage_records;
+      DROP TABLE model_call_attempts;
+      DROP TABLE model_logical_calls;
+      ALTER TABLE model_logical_calls_v18 RENAME TO model_logical_calls;
+      ALTER TABLE model_call_attempts_v18 RENAME TO model_call_attempts;
+      ALTER TABLE model_usage_records_v18 RENAME TO model_usage_records;
+      CREATE INDEX idx_model_logical_calls_workspace
+        ON model_logical_calls(workspace_id, created_at);
+      CREATE INDEX idx_model_logical_calls_operation
+        ON model_logical_calls(operation_id);
+      CREATE INDEX idx_model_call_attempts_logical
+        ON model_call_attempts(logical_call_id, attempt_number);
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

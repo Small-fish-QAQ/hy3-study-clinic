@@ -180,7 +180,13 @@ export function createLessonsService({
       const concept = requireWorkspaceConcept(workspaceId, conceptId);
       const { directive } = GenerateLessonRequestSchema.parse(request ?? {});
       const input = buildInput(workspaceId, concept, directive);
-      const payload = await provider.generateConceptLesson(input, opts);
+      const payload = await provider.generateConceptLesson(input, {
+        ...opts,
+        telemetry: {
+          workspaceId,
+          operationType: 'generate_concept_lesson',
+        },
+      });
       const { sections, conflicts } = validatePayload(payload, input.blocks);
 
       const now = clock.now().toISOString();

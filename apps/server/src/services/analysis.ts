@@ -69,7 +69,13 @@ export function createAnalysisService({ repos, provider, clock }: AnalysisServic
             }
           : {}),
       },
-      opts,
+      {
+        ...opts,
+        telemetry: {
+          workspaceId: repos.materials.get(materialId)?.workspaceId ?? null,
+          operationType: 'analyze_concepts',
+        },
+      },
     );
 
     const createdAt = clock.now().toISOString();

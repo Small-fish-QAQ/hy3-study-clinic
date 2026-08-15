@@ -24,6 +24,7 @@ import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
 import type { FormalProgressionService } from './formalProgression.js';
+import { createTelemetryProvider } from './providerTelemetry.js';
 import { enforceAgentCostPolicies } from './agentProviderRuntime.js';
 
 interface StudySessionServiceDeps {
@@ -101,10 +102,15 @@ function ownsOperation(
 export function createStudySessionService({
   repos,
   provider,
-  providerModel,
   clock,
   replanning,
 }: StudySessionServiceDeps) {
+  const inferenceProvider = createTelemetryProvider({
+    repos,
+    clock,
+    provider,
+    providerGeneration: () => 1,
+  });
   function enforceCostPolicies(
     workspaceId: string,
     sessionId: string,
@@ -506,70 +512,7 @@ export function createStudySessionService({
       throw error;
     }
 
-    // Telemetry is unconditional. Unknown provider usage/cost remains NULL;
-    // absence of a monetary policy never suppresses logical/physical counts.
     const logicalCallId = interruptedTurn?.logicalCallId ?? newId('llm_call');
-    let attemptId = newId('llm_attempt');
-    let attemptNumber = interruptedTurn
-      ? repos.telemetry.listAttempts(logicalCallId).length + 1
-      : 1;
-    const callStartedAt = clock.now().toISOString();
-    let attemptStartedAt = callStartedAt;
-    if (!interruptedTurn) {
-      repos.telemetry.insertLogicalCall({
-        id: logicalCallId,
-        operationId: claim.id,
-        workspaceId,
-        studySessionId: session.id,
-        learningUnitId: null,
-        assessmentId: null,
-        operationType: 'study_session_tutor_turn',
-        cacheKey: null,
-        cacheStatus: 'not_checked',
-        promptFingerprint: null,
-        schemaFingerprint: 'tutor-turn-v1',
-        policyFingerprint,
-        sourceFingerprint: session.executionSourceManifestFingerprint,
-        status: 'open',
-        createdAt: callStartedAt,
-        completedAt: null,
-      });
-    }
-    repos.telemetry.insertAttempt({
-      id: attemptId,
-      logicalCallId,
-      attemptNumber,
-      attemptKind: interruptedTurn ? 'retry' : 'original',
-      provider: provider.name,
-      model: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
-      fencingToken: claim.fencingToken,
-      status: 'queued',
-      startedAt: callStartedAt,
-      sentAt: null,
-      firstTokenAt: null,
-      completedAt: null,
-      latencyMs: null,
-      timeToFirstTokenMs: null,
-      errorCode: null,
-      errorMessage: null,
-    });
-
-    const recordUnknownUsage = (id: string, at: string): void => {
-      repos.telemetry.insertUsage({
-        id: newId('llm_usage'),
-        attemptId: id,
-        inputTokens: null,
-        outputTokens: null,
-        reasoningTokens: null,
-        cacheReadTokens: null,
-        cacheWriteTokens: null,
-        estimatedCostMicrounits: null,
-        currency: null,
-        pricingSource: null,
-        pricingVersion: null,
-        recordedAt: at,
-      });
-    };
     const onRepairAttempt = (): void => {
       const repairStartedAt = clock.now().toISOString();
       if (!ownsOperation(repos, claim.id, owner, claim.fencingToken, repairStartedAt)) {
@@ -578,46 +521,6 @@ export function createStudySessionService({
           'Tutor repair was fenced because its operation lease is stale.',
         );
       }
-      const nextAttemptNumber = attemptNumber + 1;
-      const nextAttemptId = newId('llm_attempt');
-      repos.transaction(() => {
-        if (
-          !repos.telemetry.finishAttempt(attemptId, {
-            status: 'completed',
-            completedAt: repairStartedAt,
-            latencyMs: Math.max(0, Date.parse(repairStartedAt) - Date.parse(attemptStartedAt)),
-            errorCode: 'STRUCTURED_OUTPUT_REPAIR_REQUIRED',
-            errorMessage: 'The first response required bounded structured-output repair.',
-          })
-        ) {
-          throw new Error('Original Tutor attempt was no longer open for repair.');
-        }
-        recordUnknownUsage(attemptId, repairStartedAt);
-        repos.telemetry.insertAttempt({
-          id: nextAttemptId,
-          logicalCallId,
-          attemptNumber: nextAttemptNumber,
-          attemptKind: 'repair',
-          provider: provider.name,
-          model: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
-          fencingToken: claim.fencingToken,
-          status: 'queued',
-          startedAt: repairStartedAt,
-          sentAt: null,
-          firstTokenAt: null,
-          completedAt: null,
-          latencyMs: null,
-          timeToFirstTokenMs: null,
-          errorCode: null,
-          errorMessage: null,
-        });
-        if (!repos.telemetry.markAttemptSent(nextAttemptId, repairStartedAt)) {
-          throw new Error('Tutor repair attempt could not be marked sent.');
-        }
-      });
-      attemptNumber = nextAttemptNumber;
-      attemptId = nextAttemptId;
-      attemptStartedAt = repairStartedAt;
     };
 
     const agenda = repos.sessionAgendas.get(session.sessionAgendaId)!;
@@ -719,29 +622,6 @@ export function createStudySessionService({
       });
       events.slice(0, 2).forEach((value) => onEvent?.(value));
     } catch (error) {
-      const failedAt = clock.now().toISOString();
-      repos.telemetry.finishAttempt(attemptId, {
-        status: 'failed',
-        completedAt: failedAt,
-        latencyMs: Math.max(0, Date.parse(failedAt) - Date.parse(callStartedAt)),
-        errorCode: 'TURN_NOT_STARTED',
-        errorMessage: error instanceof Error ? error.message.slice(0, 500) : 'Tutor turn failed.',
-      });
-      repos.telemetry.insertUsage({
-        id: newId('llm_usage'),
-        attemptId,
-        inputTokens: null,
-        outputTokens: null,
-        reasoningTokens: null,
-        cacheReadTokens: null,
-        cacheWriteTokens: null,
-        estimatedCostMicrounits: null,
-        currency: null,
-        pricingSource: null,
-        pricingVersion: null,
-        recordedAt: failedAt,
-      });
-      repos.telemetry.completeLogicalCall(logicalCallId, 'failed', failedAt);
       repos.operations.finalize(
         {
           operationId: claim.id,
@@ -758,10 +638,7 @@ export function createStudySessionService({
     }
 
     try {
-      if (!repos.telemetry.markAttemptSent(attemptId, clock.now().toISOString())) {
-        throw new Error('Tutor provider attempt could not be marked sent.');
-      }
-      const result = await provider.respondToTutorTurn(
+      const result = await inferenceProvider.respondToTutorTurn(
         {
           workspaceName: repos.workspaces.get(workspaceId)!.name,
           learnerMessage: parsed.content,
@@ -785,7 +662,32 @@ export function createStudySessionService({
             Math.max(-1, session.transcriptWatermark - 12),
           ),
         },
-        { ...providerOptions, onRepairAttempt },
+        {
+          ...providerOptions,
+          onRepairAttempt,
+          beforeTelemetryComplete: () => {
+            if (
+              !ownsOperation(repos, claim.id, owner, claim.fencingToken, clock.now().toISOString())
+            ) {
+              throw new AppError(
+                ApiErrorCode.VersionConflict,
+                'Tutor result was fenced because its operation lease is stale.',
+              );
+            }
+          },
+          telemetry: {
+            workspaceId,
+            operationId: claim.id,
+            studySessionId: session.id,
+            operationType: 'study_session_tutor_turn',
+            schemaFingerprint: 'tutor-turn-v1',
+            policyFingerprint,
+            sourceFingerprint: session.executionSourceManifestFingerprint,
+            fencingToken: claim.fencingToken,
+            logicalCallId,
+            attemptKind: interruptedTurn ? 'retry' : 'original',
+          },
+        },
       );
       const completedAt = clock.now().toISOString();
       const response = repos.transaction(() => {
@@ -833,13 +735,6 @@ export function createStudySessionService({
           exchanges: [learnerExchange, tutorExchange],
           events,
         });
-        repos.telemetry.finishAttempt(attemptId, {
-          status: 'completed',
-          completedAt,
-          latencyMs: Math.max(0, Date.parse(completedAt) - Date.parse(attemptStartedAt)),
-        });
-        recordUnknownUsage(attemptId, completedAt);
-        repos.telemetry.completeLogicalCall(logicalCallId, 'completed', completedAt);
         const finalized = repos.operations.finalize(
           { operationId: claim.id, status: 'completed', payload, createdAt: completedAt },
           owner,
@@ -869,20 +764,6 @@ export function createStudySessionService({
               event(cancelled ? 'cancelled' : 'failed', false, null),
             );
           }
-          repos.telemetry.finishAttempt(attemptId, {
-            status: cancelled ? 'cancelled' : 'failed',
-            completedAt,
-            latencyMs: Math.max(0, Date.parse(completedAt) - Date.parse(attemptStartedAt)),
-            errorCode: error instanceof ProviderError ? error.code : 'TUTOR_TURN_FAILED',
-            errorMessage:
-              error instanceof Error ? error.message.slice(0, 500) : 'Tutor turn failed.',
-          });
-          recordUnknownUsage(attemptId, completedAt);
-          repos.telemetry.completeLogicalCall(
-            logicalCallId,
-            cancelled ? 'cancelled' : 'failed',
-            completedAt,
-          );
           const finalized = repos.operations.finalize(
             {
               operationId: claim.id,

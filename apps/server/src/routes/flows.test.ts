@@ -150,6 +150,31 @@ describe('Flow A: material → analysis → grounded quiz', () => {
         expect((q.options ?? []).length).toBeGreaterThanOrEqual(2);
       }
     }
+
+    const inferenceRows = ctx.db
+      .prepare(
+        `SELECT lc.operation_type AS operationType,
+                COUNT(DISTINCT lc.id) AS logicalCalls,
+                COUNT(DISTINCT CASE WHEN a.sent_at IS NOT NULL THEN a.id END) AS physicalAttempts
+         FROM model_logical_calls lc
+         LEFT JOIN model_call_attempts a ON a.logical_call_id = lc.id
+         GROUP BY lc.operation_type
+         ORDER BY lc.operation_type`,
+      )
+      .all() as Array<{
+      operationType: string;
+      logicalCalls: number;
+      physicalAttempts: number;
+    }>;
+    expect(inferenceRows.map((row) => row.operationType)).toEqual([
+      'analyze_concepts',
+      'generate_quiz',
+    ]);
+    expect(inferenceRows.every((row) => row.logicalCalls === row.physicalAttempts)).toBe(true);
+    expect(inferenceRows.find((row) => row.operationType === 'generate_quiz')).toMatchObject({
+      logicalCalls: 1,
+      physicalAttempts: 1,
+    });
   });
 
   it('supports retrieving a generated quiz by id', async () => {
@@ -275,6 +300,70 @@ describe('Flow B: submission → grading → mistakes → remediation → master
       }),
     );
   }
+
+  it('accounts for nested grading and misconception inferences exactly once', async () => {
+    const state = await submitWithMistakes(6);
+    const sourceQuestion = state.questions.find(
+      (question) => question.type === 'single_choice' || question.type === 'multiple_choice',
+    );
+    if (!sourceQuestion) throw new Error('Expected an objective fixture question.');
+    const adaptiveQuestion: Question = {
+      ...sourceQuestion,
+      id: 'que_nested_misconception',
+      quizId: 'qz_nested_misconception',
+    };
+    ctx.repos.quizzes.insert({
+      id: 'qz_nested_misconception',
+      materialId: null,
+      workspaceId: 'ws_1',
+      kind: 'adaptive',
+      assessmentMode: 'diagnostic',
+      config: {
+        difficulty: 'medium',
+        types: [adaptiveQuestion.type],
+        countPerType: 1,
+      },
+      questions: [adaptiveQuestion],
+      targetConceptIds: [adaptiveQuestion.conceptId],
+      createdAt: T0,
+    });
+    const adaptiveSubmission = await ctx.app.inject({
+      method: 'POST',
+      url: '/api/quizzes/qz_nested_misconception/submissions',
+      payload: {
+        answers: [
+          {
+            questionId: adaptiveQuestion.id,
+            type: adaptiveQuestion.type,
+            selectedOptionIds: [],
+          },
+        ],
+      },
+    });
+    expect(adaptiveSubmission.statusCode).toBe(201);
+
+    const rows = ctx.db
+      .prepare(
+        `SELECT lc.operation_type AS operationType,
+                COUNT(DISTINCT lc.id) AS logicalCalls,
+                COUNT(DISTINCT CASE WHEN a.sent_at IS NOT NULL THEN a.id END) AS physicalAttempts
+         FROM model_logical_calls lc
+         LEFT JOIN model_call_attempts a ON a.logical_call_id = lc.id
+         WHERE lc.operation_type IN ('grade_short_answer', 'propose_misconception')
+         GROUP BY lc.operation_type
+         ORDER BY lc.operation_type`,
+      )
+      .all() as Array<{
+      operationType: string;
+      logicalCalls: number;
+      physicalAttempts: number;
+    }>;
+
+    expect(rows).toEqual([
+      { operationType: 'grade_short_answer', logicalCalls: 2, physicalAttempts: 2 },
+      { operationType: 'propose_misconception', logicalCalls: 1, physicalAttempts: 1 },
+    ]);
+  });
 
   it('keeps semantically equivalent rubric points covered despite extra intervals', async () => {
     const stem = '资料中列举的常见间隔重复安排是怎样的？请按顺序写出。';

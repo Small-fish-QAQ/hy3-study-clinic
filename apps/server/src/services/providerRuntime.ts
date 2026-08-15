@@ -11,7 +11,7 @@ import { z } from 'zod';
 import { AppError } from '../errors.js';
 import { ProviderError } from '../llm/errors.js';
 import { createProvider } from '../llm/factory.js';
-import type { LlmProvider } from '../llm/provider.js';
+import type { LlmProvider, ProviderCallOptions } from '../llm/provider.js';
 import type { AppConfig } from '../config.js';
 
 const StoredProviderConfigSchema = z
@@ -221,7 +221,10 @@ export class ProviderRuntime {
     return this.safeConfig();
   }
 
-  async testConnection(signal?: AbortSignal): Promise<SafeProviderConfig> {
+  async testConnection(
+    signal?: AbortSignal,
+    invoke?: (options: ProviderCallOptions) => Promise<void>,
+  ): Promise<SafeProviderConfig> {
     const active = this.active;
     if (active.provider !== 'hy3') return this.safeConfig();
     if (!active.apiKey || !active.baseUrl || !active.model)
@@ -234,7 +237,7 @@ export class ProviderRuntime {
       message: null,
     };
     try {
-      await active.providerInstance.testConnection({ signal });
+      await (invoke ? invoke({ signal }) : active.providerInstance.testConnection({ signal }));
       if (this.active.generation === active.generation && this.connectionTestId === testId)
         this.connection = {
           status: 'verified',

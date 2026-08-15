@@ -317,7 +317,7 @@ describe('StudySession service', () => {
     expect(repos.telemetry.usageSummary('ws_1')).toMatchObject({
       logicalCalls: 1,
       physicalAttempts: 1,
-      attemptsWithKnownCost: 0,
+      attemptsWithKnownCost: 1,
     });
   });
 
@@ -853,7 +853,7 @@ describe('StudySession service', () => {
     expect(repos.telemetry.usageSummary('ws_1')).toMatchObject({
       logicalCalls: 1,
       physicalAttempts: 1,
-      attemptsWithKnownCost: 0,
+      attemptsWithKnownCost: 1,
     });
   });
 });

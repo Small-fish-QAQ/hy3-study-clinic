@@ -205,7 +205,13 @@ export function createTutorService({
         while (run.iterations < TUTOR_LIMITS.maxIterations) {
           if (opts.signal?.aborted) throw ProviderError.cancelled();
 
-          const step = await provider.proposeTutorStep(buildStepInput(), { signal: opts.signal });
+          const step = await provider.proposeTutorStep(buildStepInput(), {
+            signal: opts.signal,
+            telemetry: {
+              workspaceId,
+              operationType: 'propose_tutor_step',
+            },
+          });
           save({ iterations: run.iterations + 1 });
 
           if (step.action === 'call_tool') {

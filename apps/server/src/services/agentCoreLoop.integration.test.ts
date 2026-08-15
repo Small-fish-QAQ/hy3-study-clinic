@@ -276,6 +276,17 @@ describe('ordinary Fake learning execution core loop', () => {
     });
     expect(launched.kind).toBe('assessment');
     if (launched.kind !== 'assessment') throw new Error('Expected a formal assessment.');
+    expect(
+      db
+        .prepare(
+          `SELECT COUNT(DISTINCT c.id) AS logicalCalls,
+                  COUNT(DISTINCT CASE WHEN a.sent_at IS NOT NULL THEN a.id END) AS physicalAttempts
+           FROM model_logical_calls c
+           LEFT JOIN model_call_attempts a ON a.logical_call_id = c.id
+           WHERE c.operation_type = 'propose_formal_assessment'`,
+        )
+        .get(),
+    ).toEqual({ logicalCalls: 2, physicalAttempts: 2 });
 
     const contracts = repos.formalProgression.listQuestionContractsForQuiz(launched.quiz.id);
     expect(contracts).toEqual([

@@ -136,6 +136,17 @@ describe('remediation targeted bounded repair', () => {
     // Exactly one bounded retry, restricted to the incomplete target only.
     expect(provider.calls).toHaveLength(2);
     expect(provider.calls[1]!.targets.map((t) => t.concept.id)).toEqual([provider.victimConceptId]);
+    expect(
+      setup.ctx.db
+        .prepare(
+          `SELECT COUNT(DISTINCT c.id) AS logicalCalls,
+                  COUNT(DISTINCT CASE WHEN a.sent_at IS NOT NULL THEN a.id END) AS physicalAttempts
+           FROM model_logical_calls c
+           LEFT JOIN model_call_attempts a ON a.logical_call_id = c.id
+           WHERE c.operation_type IN ('generate_remediation', 'generate_remediation_repair')`,
+        )
+        .get(),
+    ).toEqual({ logicalCalls: 2, physicalAttempts: 2 });
   });
 
   it('fails honestly with structured details when the retry is still incomplete', async () => {
@@ -160,5 +171,16 @@ describe('remediation targeted bounded repair', () => {
     ]);
     // Two provider calls total: the original round plus ONE bounded retry.
     expect(provider.calls).toHaveLength(2);
+    expect(
+      setup.ctx.db
+        .prepare(
+          `SELECT COUNT(DISTINCT c.id) AS logicalCalls,
+                  COUNT(DISTINCT CASE WHEN a.sent_at IS NOT NULL THEN a.id END) AS physicalAttempts
+           FROM model_logical_calls c
+           LEFT JOIN model_call_attempts a ON a.logical_call_id = c.id
+           WHERE c.operation_type IN ('generate_remediation', 'generate_remediation_repair')`,
+        )
+        .get(),
+    ).toEqual({ logicalCalls: 2, physicalAttempts: 2 });
   });
 });

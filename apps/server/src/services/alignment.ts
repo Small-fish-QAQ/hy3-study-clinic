@@ -227,7 +227,10 @@ export function createAlignmentService({ repos, provider, clock }: AlignmentServ
 
         const payload = await provider.proposeConceptAlignment(
           { workspaceName: repos.workspaces.get(workspaceId)!.name, candidates: offered, blocks },
-          opts,
+          {
+            ...opts,
+            telemetry: { workspaceId, operationType: 'propose_concept_alignment' },
+          },
         );
 
         const decidedAt = clock.now().toISOString();

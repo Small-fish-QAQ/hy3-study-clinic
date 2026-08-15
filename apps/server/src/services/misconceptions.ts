@@ -11,6 +11,7 @@ import {
 import { ApiErrorCode } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import { verifyGrounding } from '../grounding/verify.js';
+import { ProviderError } from '../llm/errors.js';
 import type { LlmProvider, ProviderCallOptions } from '../llm/provider.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
@@ -179,7 +180,14 @@ export function createMisconceptionsService({ repos, provider, clock }: Misconce
               sourceQuote: question.grounding.quote,
               blockId: question.grounding.blockId,
             },
-            opts,
+            {
+              ...opts,
+              telemetry: {
+                workspaceId,
+                operationType: 'propose_misconception',
+                assessmentId: quiz.id,
+              },
+            },
           );
           if (!payload.applicable) continue;
 
@@ -214,7 +222,13 @@ export function createMisconceptionsService({ repos, provider, clock }: Misconce
             createdAt: at,
             updatedAt: at,
           });
-        } catch {
+        } catch (error) {
+          if (
+            opts?.signal?.aborted ||
+            (error instanceof ProviderError && error.code === ApiErrorCode.RequestCancelled)
+          ) {
+            throw error;
+          }
           // Proposal is best-effort; grading already succeeded.
           continue;
         }

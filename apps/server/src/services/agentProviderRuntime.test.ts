@@ -10,6 +10,7 @@ import {
   enforceAgentCostPolicies,
   runTrackedAgentProviderOperation,
 } from './agentProviderRuntime.js';
+import { createTelemetryProvider } from './providerTelemetry.js';
 
 let db: SqliteDb;
 let repos: Repositories;
@@ -202,10 +203,21 @@ describe('Agent provider physical-attempt telemetry', () => {
     );
     expect(claim?.fencingToken).toBe(1);
 
+    const rawProvider = new FakeProvider();
+    rawProvider.analyzeConcepts = async (_input, options) => {
+      options?.onRepairAttempt?.();
+      return { concepts: [] };
+    };
+    const provider = createTelemetryProvider({
+      repos,
+      clock: fixedClock(T0),
+      provider: rawProvider,
+      providerGeneration: () => 3,
+    });
     const result = await runTrackedAgentProviderOperation({
       repos,
       clock: fixedClock(T0),
-      provider: new FakeProvider(),
+      provider,
       providerModel: null,
       operationId: operation.id,
       fencingToken: 1,
@@ -218,7 +230,7 @@ describe('Agent provider physical-attempt telemetry', () => {
       policyFingerprint: null,
       sourceFingerprint: 'manifest-v1',
       invoke: async (options) => {
-        options?.onRepairAttempt?.();
+        await provider.analyzeConcepts({ materialTitle: 'Course', blocks: [] }, options);
         return 'valid';
       },
     });
@@ -237,6 +249,7 @@ describe('Agent provider physical-attempt telemetry', () => {
       },
       { attemptNumber: 2, attemptKind: 'repair', status: 'completed', errorCode: null },
     ]);
+    expect(attempts.map((attempt) => attempt.providerGeneration)).toEqual([3, 3]);
     expect(repos.telemetry.getUsageByAttempt(attempts[0]!.id)).toBeDefined();
     expect(repos.telemetry.getUsageByAttempt(attempts[1]!.id)).toBeDefined();
     expect(repos.telemetry.getLogicalCall(row.id)?.status).toBe('completed');
