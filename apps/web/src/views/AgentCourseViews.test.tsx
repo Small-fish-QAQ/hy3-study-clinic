@@ -253,6 +253,7 @@ function homeProps(value: CourseExecutionOverview): CourseHomeViewProps {
     error: null,
     busyAction: null,
     routeGenerationFailure: null,
+    actionFailure: null,
     onCreateContract: vi.fn(),
     onEditContract: vi.fn(),
     onConfirmContract: vi.fn(),
@@ -464,6 +465,39 @@ const repeatedSourceBlocks = Array.from({ length: 5 }, (_, index) => ({
 })) satisfies SourceBlock[];
 
 describe('CourseHomeView action and authority rendering', () => {
+  it('places each learner operation failure beside its owning Home surface', () => {
+    const props = homeProps(overview('launchable'));
+    const rendered = render(
+      <CourseHomeView
+        {...props}
+        actionFailure={{ owner: 'continue', message: '继续操作失败。' }}
+      />,
+    );
+
+    expect(screen.getByRole('alert')).toHaveTextContent('暂时无法继续这项学习。继续操作失败。');
+
+    rendered.rerender(
+      <CourseHomeView
+        {...props}
+        actionFailure={{ owner: 'contract', message: '确认操作失败。' }}
+      />,
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent('学习目标暂未确认。确认操作失败。');
+
+    rendered.rerender(
+      <CourseHomeView
+        {...props}
+        actionFailure={{ owner: 'curriculum', message: '生成操作失败。' }}
+      />,
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent('课程结构暂未生成。生成操作失败。');
+
+    rendered.rerender(
+      <CourseHomeView {...props} actionFailure={{ owner: 'plan', message: '路线决定失败。' }} />,
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent('学习路线决定未完成。路线决定失败。');
+  });
+
   it('does not render a start command for a blocked next action', () => {
     render(<CourseHomeView {...homeProps(overview('blocked'))} />);
 
@@ -1425,6 +1459,7 @@ describe('consolidated Course product shell', () => {
         onRemediate={vi.fn()}
         remediationLoading={false}
         remediationError={null}
+        operationError={null}
       />,
     );
 
@@ -1491,6 +1526,7 @@ describe('consolidated Course product shell', () => {
         onRemediate={vi.fn()}
         remediationLoading={false}
         remediationError={null}
+        operationError={null}
       />,
     );
 
@@ -1500,5 +1536,35 @@ describe('consolidated Course product shell', () => {
     rejectReviews?.(new Error('review service unavailable'));
     expect(await screen.findByText('复习记录暂时无法读取')).toBeInTheDocument();
     expect(screen.queryByText('0 项复习记录')).not.toBeInTheDocument();
+  });
+
+  it('renders a Progress-owned operation failure inside Progress', () => {
+    vi.spyOn(api, 'reviewItems').mockImplementation(() => new Promise(() => {}));
+
+    render(
+      <CourseProgressView
+        workspaceId="ws_1"
+        documents={[]}
+        overview={overview('launchable')}
+        refreshKey={0}
+        command={(prefix) => ({
+          commandId: `${prefix}_1`,
+          idempotencyKey: `${prefix}_1`,
+          workspaceId: 'ws_1',
+          actor: 'learner',
+        })}
+        onAcceptProposedPlan={vi.fn()}
+        onRejectProposedPlan={vi.fn()}
+        onCourseChanged={vi.fn()}
+        onRemediate={vi.fn()}
+        remediationLoading={false}
+        remediationError={null}
+        operationError="路线调整暂时无法保存。"
+      />,
+    );
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      '这次进展操作未完成。路线调整暂时无法保存。',
+    );
   });
 });

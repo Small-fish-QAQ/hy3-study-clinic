@@ -46,6 +46,13 @@ interface PendingTutorTurn {
   readonly input: Readonly<SubmitTutorTurnRequest>;
 }
 
+interface TutorReconciliationTarget extends Pick<
+  PendingTutorTurn,
+  'workspaceId' | 'sessionId' | 'route'
+> {
+  readonly providerFailure: string;
+}
+
 function isIndeterminateTutorFailure(error: unknown): boolean {
   return (
     typeof error === 'object' && error !== null && 'code' in error && error.code === 'NETWORK_ERROR'
@@ -86,7 +93,10 @@ export function StudySessionView({
   const [detourLearningUnitId, setDetourLearningUnitId] = useState('');
   const [pendingTutorTurn, setPendingTutorTurn] = useState<PendingTutorTurn | null>(null);
   const [tutorLoading, setTutorLoading] = useState(false);
+  const [tutorReconciling, setTutorReconciling] = useState(false);
   const [tutorError, setTutorError] = useState<string | null>(null);
+  const [tutorReconciliationTarget, setTutorReconciliationTarget] =
+    useState<TutorReconciliationTarget | null>(null);
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [inspectorTab, setInspectorTab] = useState<StudyInspectorTab>('agenda');
   const [inspectorModal, setInspectorModal] = useState(
@@ -108,7 +118,7 @@ export function StudySessionView({
   const routeSessionAgendaId = route?.sessionAgendaId;
   const routeExecutionVersion = route?.executionVersion;
   const currentSessionId = detail?.session.id;
-  const busy = action.loading || tutorLoading || Boolean(pendingTutorTurn);
+  const busy = action.loading || tutorLoading || tutorReconciling || Boolean(pendingTutorTurn);
 
   const loadSession = useCallback(
     async (targetWorkspaceId: string, sessionId: string, signal: AbortSignal) => {
@@ -138,7 +148,9 @@ export function StudySessionView({
     tutorController.current = null;
     setPendingTutorTurn(null);
     setTutorLoading(false);
+    setTutorReconciling(false);
     setTutorError(null);
+    setTutorReconciliationTarget(null);
     setDetail(null);
     setComposer('');
     setDetourLearningUnitId('');
@@ -310,8 +322,50 @@ export function StudySessionView({
         : current,
     );
     setPendingTutorTurn(null);
+    setTutorReconciliationTarget(null);
     setTutorError(null);
     onSessionChanged?.();
+  }
+
+  async function reconcileTutorSession(
+    target: TutorReconciliationTarget,
+    requestEpoch: number,
+    controller: AbortController,
+  ): Promise<void> {
+    setTutorReconciliationTarget(target);
+    setTutorReconciling(true);
+    try {
+      const authoritative = await api.getStudySession(
+        target.workspaceId,
+        target.sessionId,
+        controller.signal,
+      );
+      if (requestEpoch !== tutorEpoch.current || controller.signal.aborted) return;
+      const authoritativeRoute = authoritative.session;
+      if (
+        authoritativeRoute.id !== target.sessionId ||
+        authoritativeRoute.workspaceId !== target.workspaceId ||
+        authoritativeRoute.contractVersionId !== target.route.contractVersionId ||
+        authoritativeRoute.curriculumVersionId !== target.route.curriculumVersionId ||
+        authoritativeRoute.studyPlanVersionId !== target.route.studyPlanVersionId ||
+        authoritativeRoute.sessionAgendaId !== target.route.sessionAgendaId
+      ) {
+        throw new Error('StudySession route changed while reconciling the failed Tutor turn.');
+      }
+      setDetail((current) => (current?.session.id === target.sessionId ? authoritative : current));
+      setTutorReconciliationTarget(null);
+      setTutorError(target.providerFailure);
+      onSessionChanged?.();
+    } catch {
+      if (requestEpoch !== tutorEpoch.current || controller.signal.aborted) return;
+      setTutorError(
+        `${target.providerFailure} 当前学习记录尚未同步，请重新同步后再发送下一条消息。`,
+      );
+    } finally {
+      if (requestEpoch === tutorEpoch.current && !controller.signal.aborted) {
+        setTutorReconciling(false);
+      }
+    }
   }
 
   async function sendTutorTurn(request: PendingTutorTurn): Promise<void> {
@@ -342,10 +396,14 @@ export function StudySessionView({
       if (requestEpoch !== tutorEpoch.current || controller.signal.aborted) return;
       if (isIndeterminateTutorFailure(error)) {
         setPendingTutorTurn(request);
+        setTutorError(errorMessage(error));
       } else {
         setPendingTutorTurn(null);
+        const providerFailure = errorMessage(error);
+        setTutorError(providerFailure);
+        setTutorLoading(false);
+        await reconcileTutorSession({ ...request, providerFailure }, requestEpoch, controller);
       }
-      setTutorError(errorMessage(error));
     } finally {
       if (tutorController.current === controller) {
         tutorController.current = null;
@@ -389,12 +447,24 @@ export function StudySessionView({
     await sendTutorTurn(request);
   }
 
+  async function retryTutorReconciliation(): Promise<void> {
+    const target = tutorReconciliationTarget;
+    if (!target || tutorController.current) return;
+    const requestEpoch = ++tutorEpoch.current;
+    const controller = new AbortController();
+    tutorController.current = controller;
+    await reconcileTutorSession(target, requestEpoch, controller);
+    if (tutorController.current === controller) tutorController.current = null;
+  }
+
   function abandonTutorRetry(): void {
     tutorEpoch.current += 1;
     tutorController.current?.abort();
     tutorController.current = null;
     setTutorLoading(false);
+    setTutorReconciling(false);
     setPendingTutorTurn(null);
+    setTutorReconciliationTarget(null);
     setTutorError(null);
   }
 
@@ -705,6 +775,16 @@ export function StudySessionView({
                 <div className="study-operation-notice error" role="alert">
                   <strong>这次 Tutor 请求未完成</strong>
                   <span>{tutorError}</span>
+                  {tutorReconciliationTarget ? (
+                    <button
+                      type="button"
+                      className="ghost"
+                      disabled={tutorReconciling}
+                      onClick={() => void retryTutorReconciliation()}
+                    >
+                      {tutorReconciling ? '正在同步…' : '重新同步学习记录'}
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
               {canRetryTutorTurn(pendingTutorTurn) ? (
@@ -735,7 +815,13 @@ export function StudySessionView({
                 <textarea
                   id="study-tutor-composer"
                   value={composer}
-                  disabled={!active || action.loading || tutorLoading}
+                  disabled={
+                    !active ||
+                    action.loading ||
+                    tutorLoading ||
+                    tutorReconciling ||
+                    Boolean(tutorReconciliationTarget)
+                  }
                   onChange={(event) => setComposer(event.target.value)}
                   placeholder={active ? '输入你的问题或想法…' : '继续本次学习后才能发送消息。'}
                   rows={3}
@@ -754,6 +840,7 @@ export function StudySessionView({
                         : !active ||
                           busy ||
                           Boolean(pendingTutorTurn) ||
+                          Boolean(tutorReconciliationTarget) ||
                           composer.trim().length === 0
                     }
                     onClick={tutorLoading ? cancelTutorTurn : () => void submitTurn()}

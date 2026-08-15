@@ -109,6 +109,7 @@ export interface CourseProgressViewProps {
   onRemediate: (materialId: string) => void;
   remediationLoading: boolean;
   remediationError: string | null;
+  operationError: string | null;
 }
 
 /** Consolidates formal progression and the legacy diagnostic views under one Course destination. */
@@ -124,6 +125,7 @@ export function CourseProgressView({
   onRemediate,
   remediationLoading,
   remediationError,
+  operationError,
 }: CourseProgressViewProps) {
   const [section, setSection] = useState<ProgressSection>('overview');
   const [materialId, setMaterialId] = useState(documents[0]?.id ?? '');
@@ -182,6 +184,8 @@ export function CourseProgressView({
           正式证据、待修复内容和历史决定都汇集在这里。Tutor 对话和一般活动不会自动成为正式进展。
         </p>
       </header>
+
+      {operationError ? <Banner kind="error">这次进展操作未完成。{operationError}</Banner> : null}
 
       <div className="subview-tabs" aria-label="进展分类" role="tablist">
         {PROGRESS_SECTIONS.map((item) => (

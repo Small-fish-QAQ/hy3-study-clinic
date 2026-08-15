@@ -57,6 +57,16 @@ interface RouteGenerationFailure {
   detail: string;
 }
 
+type ActionFailureOwner =
+  | 'course-create'
+  | 'contract-editor'
+  | 'home-contract'
+  | 'home-curriculum'
+  | 'home-plan'
+  | 'home-continue'
+  | 'curriculum'
+  | 'progress';
+
 function readRouteGenerationFailure(workspaceId: string | null): RouteGenerationFailure | null {
   if (!workspaceId) return null;
   try {
@@ -216,6 +226,7 @@ export function AgentCourseWorkspace({
   const [newCourseName, setNewCourseName] = useState('');
   const [routeGenerationFailure, setRouteGenerationFailure] =
     useState<RouteGenerationFailure | null>(() => readRouteGenerationFailure(workspaceId));
+  const [actionFailureOwner, setActionFailureOwner] = useState<ActionFailureOwner | null>(null);
   const loadEpoch = useRef(0);
   const workspaceIdRef = useRef(workspaceId);
   const action = useAsyncAction();
@@ -337,6 +348,7 @@ export function AgentCourseWorkspace({
     const name = newCourseName.trim();
     if (!name) return;
     setBusyAction('create-course');
+    setActionFailureOwner('course-create');
     const created = await action.run((signal) => api.createWorkspace({ name }, signal));
     setBusyAction(null);
     if (!created) return;
@@ -358,11 +370,13 @@ export function AgentCourseWorkspace({
 
   async function runAction<T>(
     name: string,
+    failureOwner: ActionFailureOwner,
     operation: (signal: AbortSignal) => Promise<T>,
     after?: (result: T, signal: AbortSignal) => Promise<void> | void,
   ): Promise<void> {
     const capturedWorkspaceId = workspaceId;
     setBusyAction(name);
+    setActionFailureOwner(failureOwner);
     setNotice(null);
     await action.run(async (signal) => {
       const result = await operation(signal);
@@ -555,6 +569,7 @@ export function AgentCourseWorkspace({
     if (!workspaceId || !overview) return;
     await runAction(
       'save-contract',
+      'contract-editor',
       async (signal) => {
         const scopes = await ensureConfirmedRoles(signal);
         const fields = contractFields(scopes);
@@ -599,6 +614,7 @@ export function AgentCourseWorkspace({
     const transition = current.status === 'draft' ? 'propose' : 'confirm';
     await runAction(
       'confirm-contract',
+      'home-contract',
       (signal) =>
         api.transitionLearningContract(
           workspaceId,
@@ -621,6 +637,7 @@ export function AgentCourseWorkspace({
     if (!contract) return;
     await runAction(
       'propose-curriculum',
+      view === 'home' ? 'home-curriculum' : 'curriculum',
       (signal) =>
         api.proposeCurriculum(
           workspaceId,
@@ -646,6 +663,7 @@ export function AgentCourseWorkspace({
     const curriculum = overview.proposedCurriculum;
     await runAction(
       `${decision}-curriculum`,
+      'curriculum',
       (signal) => {
         if (decision === 'accept') {
           return api.acceptCurriculum(
@@ -750,6 +768,7 @@ export function AgentCourseWorkspace({
     const current = overview.proposedStudyPlan;
     await runAction(
       'edit-plan',
+      view === 'progress' ? 'progress' : 'home-plan',
       (signal) =>
         api.editStudyPlan(
           workspaceId,
@@ -780,6 +799,7 @@ export function AgentCourseWorkspace({
     }
     await runAction(
       `${decision}-plan`,
+      view === 'progress' ? 'progress' : 'home-plan',
       (signal) =>
         api.decideStudyPlan(
           workspaceId,
@@ -811,6 +831,7 @@ export function AgentCourseWorkspace({
     const next = overview.nextAction;
     await runAction(
       'launch-next',
+      'home-continue',
       (signal) =>
         api.launchAgendaItem(
           workspaceId,
@@ -844,6 +865,7 @@ export function AgentCourseWorkspace({
     if (!workspaceId) return;
     await runAction(
       'load-curriculum-history',
+      'curriculum',
       (signal) => api.curriculum(workspaceId, curriculumId, signal),
       (result) => {
         setHierarchy(result.hierarchy);
@@ -852,7 +874,6 @@ export function AgentCourseWorkspace({
   }
 
   function changeView(next: AgentCourseView): void {
-    action.clearError();
     setNotice(null);
     setMaterialsOpen(false);
     setSettingsOpen(false);
@@ -863,6 +884,8 @@ export function AgentCourseWorkspace({
     action.cancel();
     planAction.cancel();
     progressRemediationAction.cancel();
+    action.clearError();
+    setActionFailureOwner(null);
     clearStoredRouteGenerationFailure(workspaceIdRef.current);
     clearStoredRouteGenerationFailure(nextWorkspaceId);
     setRouteGenerationFailure(null);
@@ -887,14 +910,12 @@ export function AgentCourseWorkspace({
       onCourseChange={changeCourse}
       onViewChange={changeView}
       onOpenMaterials={() => {
-        action.clearError();
         setNotice(null);
         setFocusedMaterialId(null);
         setSettingsOpen(false);
         setMaterialsOpen(true);
       }}
       onOpenSettings={() => {
-        action.clearError();
         setNotice(null);
         setMaterialsOpen(false);
         setSettingsOpen(true);
@@ -922,6 +943,9 @@ export function AgentCourseWorkspace({
             <p className="muted">
               课程会保存资料、学习目标、当前路线和正式进展。请从上方选择已有课程，或现在创建一门课程。
             </p>
+            {actionFailureOwner === 'course-create' && action.error ? (
+              <Banner kind="error">课程暂未创建。{action.error}</Banner>
+            ) : null}
             <form
               className="course-create-inline row"
               onSubmit={(event) => {
@@ -964,7 +988,9 @@ export function AgentCourseWorkspace({
         />
       ) : contractEditorOpen && overview ? (
         <div className="stack">
-          {action.error ? <Banner kind="error">{action.error}</Banner> : null}
+          {actionFailureOwner === 'contract-editor' && action.error ? (
+            <Banner kind="error">{action.error}</Banner>
+          ) : null}
           <ContractEditor
             documents={documents}
             form={contractForm}
@@ -985,6 +1011,15 @@ export function AgentCourseWorkspace({
           error={loadError}
           busyAction={busyAction}
           routeGenerationFailure={routeGenerationFailure}
+          actionFailure={
+            action.error && actionFailureOwner?.startsWith('home-')
+              ? {
+                  owner: actionFailureOwner.slice(5) as
+                    'contract' | 'curriculum' | 'plan' | 'continue',
+                  message: action.error,
+                }
+              : null
+          }
           onCreateContract={() => openContractEditor(overview?.activeContract ?? null)}
           onEditContract={() => openContractEditor(overview?.pendingContract ?? null)}
           onConfirmContract={() => void transitionContract()}
@@ -996,7 +1031,6 @@ export function AgentCourseWorkspace({
             setRouteGenerationFailure(null);
           }}
           onOpenSettings={() => {
-            action.clearError();
             setMaterialsOpen(false);
             setSettingsOpen(true);
           }}
@@ -1012,7 +1046,7 @@ export function AgentCourseWorkspace({
           hierarchy={hierarchy}
           history={overview?.curriculumHistory ?? []}
           loading={loading}
-          error={action.error ?? loadError}
+          error={actionFailureOwner === 'curriculum' ? (action.error ?? loadError) : loadError}
           canPropose={overview?.capabilities.canProposeCurriculum ?? false}
           canAccept={overview?.capabilities.canAcceptCurriculum ?? false}
           busyAction={busyAction}
@@ -1066,6 +1100,7 @@ export function AgentCourseWorkspace({
           onRemediate={(materialId) => void remediateMaterial(materialId)}
           remediationLoading={progressRemediationAction.loading}
           remediationError={progressRemediationAction.error}
+          operationError={actionFailureOwner === 'progress' ? action.error : null}
         />
       ) : (
         <GraphWorkspaceView

@@ -49,6 +49,10 @@ export interface CourseHomeViewProps {
     kind: 'timeout' | 'provider';
     detail: string;
   } | null;
+  actionFailure: {
+    owner: 'contract' | 'curriculum' | 'plan' | 'continue';
+    message: string;
+  } | null;
   onCreateContract: () => void;
   onEditContract: () => void;
   onConfirmContract: () => void;
@@ -73,6 +77,7 @@ export function CourseHomeView({
   error,
   busyAction,
   routeGenerationFailure,
+  actionFailure,
   onCreateContract,
   onEditContract,
   onConfirmContract,
@@ -258,6 +263,16 @@ export function CourseHomeView({
           </section>
         ) : null}
 
+        {actionFailure?.owner === 'contract' ? (
+          <Banner kind="error">学习目标暂未确认。{actionFailure.message}</Banner>
+        ) : null}
+        {actionFailure?.owner === 'curriculum' ? (
+          <Banner kind="error">课程结构暂未生成。{actionFailure.message}</Banner>
+        ) : null}
+        {actionFailure?.owner === 'continue' ? (
+          <Banner kind="error">暂时无法继续这项学习。{actionFailure.message}</Banner>
+        ) : null}
+
         {next ? (
           <div className="next-action" aria-label="下一步">
             <div>
@@ -400,6 +415,9 @@ export function CourseHomeView({
       {plan ? (
         <details className="course-detail-disclosure" open={plan.status === 'proposed'}>
           <summary>{plan.status === 'proposed' ? '待确认的学习路线' : '完整学习路线'}</summary>
+          {actionFailure?.owner === 'plan' ? (
+            <Banner kind="error">学习路线决定未完成。{actionFailure.message}</Banner>
+          ) : null}
           <StudyPlanPanel
             plan={plan}
             history={overview.studyPlanHistory}

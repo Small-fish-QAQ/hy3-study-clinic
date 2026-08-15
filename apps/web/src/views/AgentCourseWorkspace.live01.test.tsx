@@ -148,6 +148,29 @@ function planRequiredOverview(): CourseExecutionOverview {
   };
 }
 
+function contractReviewOverview(): CourseExecutionOverview {
+  const base = planRequiredOverview();
+  const pending = {
+    ...base.activeContract!,
+    status: 'proposed' as const,
+    learnerConfirmedAt: null,
+  };
+  return {
+    ...base,
+    setupStage: 'contract_review',
+    activeContract: null,
+    pendingContract: pending,
+    contractFeasibility: null,
+    acceptedCurriculum: null,
+    planningCurriculum: null,
+    capabilities: {
+      ...base.capabilities,
+      canConfirmContract: true,
+      canProposeStudyPlan: false,
+    },
+  };
+}
+
 function roleHistory(current: MaterialRoleAssignment): MaterialRoleHistoryResponse {
   return {
     materialId: documentSummary.id,
@@ -482,5 +505,39 @@ describe('Home-owned learning-route failure', () => {
 
     expect(screen.queryByRole('heading', { name: '学习路线暂未生成' })).not.toBeInTheDocument();
     expect(window.sessionStorage.length).toBe(0);
+  });
+});
+
+describe('F-6 operation-owned failures', () => {
+  it('keeps a Contract failure on Home, excludes it from Study and Explore, and clears it on retry success', async () => {
+    vi.mocked(api.courseExecution).mockResolvedValue({ overview: contractReviewOverview() });
+    vi.spyOn(api, 'materialRoleHistory').mockResolvedValue(roleHistory(strandedProposal));
+    vi.spyOn(api, 'listStudySessions').mockResolvedValue({ sessions: [] });
+    const transition = vi
+      .spyOn(api, 'transitionLearningContract')
+      .mockRejectedValueOnce(new Error('确认服务暂时不可用。'))
+      .mockResolvedValueOnce({} as Awaited<ReturnType<typeof api.transitionLearningContract>>);
+    const user = userEvent.setup();
+    renderWorkspace();
+
+    await user.click(await screen.findByRole('button', { name: '确认学习目标' }));
+    expect(await screen.findByText('学习目标暂未确认。确认服务暂时不可用。')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '学习' }));
+    expect(screen.getByLabelText('课程学习空间')).toHaveClass('view-session');
+    expect(screen.queryByText('确认服务暂时不可用。')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '探索' }));
+    expect(screen.getByLabelText('课程学习空间')).toHaveClass('view-explore');
+    expect(screen.queryByText('确认服务暂时不可用。')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '主页' }));
+    expect(screen.getByText('学习目标暂未确认。确认服务暂时不可用。')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '确认学习目标' }));
+
+    await waitFor(() =>
+      expect(screen.queryByText('学习目标暂未确认。确认服务暂时不可用。')).not.toBeInTheDocument(),
+    );
+    expect(transition).toHaveBeenCalledTimes(2);
   });
 });

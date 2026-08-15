@@ -978,12 +978,80 @@ describe('StudySessionView', () => {
     expect(calls[1]?.[2]).not.toEqual(calls[0]?.[2]);
   });
 
-  it('clears a definitive Tutor rejection instead of offering a blind replay', async () => {
+  it('reconciles a definitive Tutor failure before sending the next new turn without a remount', async () => {
     const user = userEvent.setup();
     vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });
-    vi.mocked(api.getStudySession).mockResolvedValue(detail);
-    vi.mocked(api.streamTutorTurn).mockRejectedValue(
-      Object.assign(new Error('StudySession version conflict.'), { code: 'VERSION_CONFLICT' }),
+    const failedTurn = {
+      ...completedTutorResponse.turn,
+      status: 'failed' as const,
+      errorMessage: 'Hy3 Tutor is temporarily unavailable.',
+      completedAt: session.updatedAt,
+    };
+    const reconciledDetail: StudySessionDetailResponse = {
+      ...detail,
+      session: { ...session, version: 2 },
+      turns: [failedTurn],
+    };
+    vi.mocked(api.getStudySession)
+      .mockResolvedValueOnce(detail)
+      .mockResolvedValueOnce(reconciledDetail);
+    const nextResponse = {
+      ...completedTutorResponse,
+      session: { ...session, version: 3, transcriptWatermark: 2 },
+      turn: { ...completedTutorResponse.turn, id: 'turn_2', commandId: 'tutor_turn_next' },
+      exchanges: completedTutorResponse.exchanges.map((exchange) => ({
+        ...exchange,
+        id: `${exchange.id}_next`,
+        turnId: 'turn_2',
+        content: exchange.role === 'learner' ? 'What should I try next?' : 'Try the next example.',
+      })),
+    };
+    vi.mocked(api.streamTutorTurn)
+      .mockRejectedValueOnce(
+        Object.assign(new Error('Hy3 Tutor is temporarily unavailable.'), {
+          code: 'PROVIDER_ERROR',
+        }),
+      )
+      .mockResolvedValueOnce(nextResponse);
+
+    render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    const composer = await screen.findByPlaceholderText('输入你的问题或想法…');
+    await user.type(composer, 'Why?');
+    await user.click(screen.getByRole('button', { name: '发送' }));
+
+    expect(await screen.findByText('Hy3 Tutor is temporarily unavailable.')).toBeInTheDocument();
+    await waitFor(() => expect(api.getStudySession).toHaveBeenCalledTimes(2));
+    expect(screen.queryByRole('button', { name: '重试此条提问' })).not.toBeInTheDocument();
+    expect(composer).toBeEnabled();
+
+    await user.type(composer, 'What should I try next?');
+    await user.click(screen.getByRole('button', { name: '发送' }));
+
+    await waitFor(() => expect(api.streamTutorTurn).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(api.streamTutorTurn).mock.calls[1]?.[2]).toEqual({
+      commandId: expect.stringMatching(/^tutor_turn_/),
+      expectedSessionVersion: 2,
+      content: 'What should I try next?',
+    });
+    expect(await screen.findByText('Try the next example.')).toBeInTheDocument();
+    expect(screen.queryByText('Hy3 Tutor is temporarily unavailable.')).not.toBeInTheDocument();
+    expect(screen.getAllByText('What should I try next?')).toHaveLength(1);
+  });
+
+  it('keeps the composer fenced when failure reconciliation fails and enables it after sync retry', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });
+    vi.mocked(api.getStudySession)
+      .mockResolvedValueOnce(detail)
+      .mockRejectedValueOnce(new Error('Session detail unavailable.'))
+      .mockResolvedValueOnce({
+        ...detail,
+        session: { ...session, version: 2 },
+      });
+    vi.mocked(api.streamTutorTurn).mockRejectedValueOnce(
+      Object.assign(new Error('Hy3 Tutor is temporarily unavailable.'), {
+        code: 'PROVIDER_ERROR',
+      }),
     );
 
     render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
@@ -991,10 +1059,17 @@ describe('StudySessionView', () => {
     await user.type(composer, 'Why?');
     await user.click(screen.getByRole('button', { name: '发送' }));
 
-    await waitFor(() =>
-      expect(screen.getByText('StudySession version conflict.')).toBeInTheDocument(),
-    );
-    expect(screen.queryByRole('button', { name: '重试此条提问' })).not.toBeInTheDocument();
+    const sync = await screen.findByRole('button', { name: '重新同步学习记录' });
+    expect(screen.getByText(/当前学习记录尚未同步/)).toBeInTheDocument();
+    expect(composer).toBeDisabled();
+
+    await user.click(sync);
+
+    await waitFor(() => expect(api.getStudySession).toHaveBeenCalledTimes(3));
+    expect(composer).toBeEnabled();
+    expect(screen.queryByRole('button', { name: '重新同步学习记录' })).not.toBeInTheDocument();
+    expect(screen.getByText('Hy3 Tutor is temporarily unavailable.')).toBeInTheDocument();
+    expect(api.streamTutorTurn).toHaveBeenCalledTimes(1);
   });
 
   it('drops an interrupted retry when the accepted route changes', async () => {
