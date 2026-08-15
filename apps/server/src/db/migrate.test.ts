@@ -2,6 +2,154 @@ import { describe, expect, it } from 'vitest';
 import { openDatabase } from './database.js';
 import { LATEST_MIGRATION_VERSION, migrate } from './migrate.js';
 
+function providerGenerationSchema(db: ReturnType<typeof openDatabase>) {
+  const column = (
+    db.pragma('table_info(model_call_attempts)') as Array<{
+      name: string;
+      notnull: number;
+      dflt_value: string | null;
+    }>
+  ).find((entry) => entry.name === 'provider_generation');
+  const table = db
+    .prepare(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'model_call_attempts'`)
+    .get() as { sql: string };
+  return { column, sql: table.sql };
+}
+
+function expectCanonicalProviderGenerationSchema(db: ReturnType<typeof openDatabase>): void {
+  const schema = providerGenerationSchema(db);
+  expect(schema.column).toMatchObject({
+    name: 'provider_generation',
+    notnull: 0,
+    dflt_value: null,
+  });
+  expect(schema.sql).toContain(
+    'provider_generation INTEGER CHECK (provider_generation IS NULL OR provider_generation >= 1)',
+  );
+}
+
+function telemetryRows(db: ReturnType<typeof openDatabase>) {
+  return {
+    calls: db.prepare('SELECT * FROM model_logical_calls ORDER BY id').all(),
+    attempts: db.prepare('SELECT * FROM model_call_attempts ORDER BY id').all(),
+    usage: db.prepare('SELECT * FROM model_usage_records ORDER BY id').all(),
+  };
+}
+
+function telemetryPhysicalSchema(db: ReturnType<typeof openDatabase>) {
+  return db
+    .prepare(
+      `SELECT type, name, tbl_name, sql
+       FROM sqlite_master
+       WHERE sql IS NOT NULL AND (
+         (type = 'table' AND name IN
+           ('model_logical_calls', 'model_call_attempts', 'model_usage_records'))
+         OR
+         (type = 'index' AND tbl_name IN
+           ('model_logical_calls', 'model_call_attempts', 'model_usage_records'))
+       )
+       ORDER BY type, name`,
+    )
+    .all();
+}
+
+function insertTelemetryFixture(
+  db: ReturnType<typeof openDatabase>,
+  id: string,
+  providerGeneration: number | null,
+  at = '2026-01-01T00:00:00.000Z',
+): void {
+  db.prepare(
+    `INSERT INTO model_logical_calls
+       (id, operation_id, workspace_id, study_session_id, learning_unit_id, assessment_id,
+        operation_type, cache_key, cache_status, prompt_fingerprint, schema_fingerprint,
+        policy_fingerprint, source_fingerprint, status, created_at, completed_at)
+     VALUES (?, NULL, NULL, NULL, NULL, NULL, 'migration_fixture', NULL, 'not_checked',
+       NULL, NULL, NULL, NULL, 'completed', ?, ?)`,
+  ).run(`call_${id}`, at, at);
+  db.prepare(
+    `INSERT INTO model_call_attempts
+       (id, logical_call_id, attempt_number, attempt_kind, fencing_token, provider, model,
+        provider_generation, status, started_at, sent_at, first_token_at, completed_at,
+        latency_ms, time_to_first_token_ms, error_code, error_message)
+     VALUES (?, ?, 1, 'original', NULL, 'fake', NULL, ?, 'completed', ?, ?, NULL, ?,
+       0, NULL, NULL, NULL)`,
+  ).run(`attempt_${id}`, `call_${id}`, providerGeneration, at, at, at);
+  db.prepare(
+    `INSERT INTO model_usage_records
+       (id, attempt_id, input_tokens, output_tokens, reasoning_tokens, cache_read_tokens,
+        cache_write_tokens, estimated_cost_microunits, currency, pricing_source,
+        pricing_version, recorded_at)
+     VALUES (?, ?, 0, 0, 0, 0, 0, 0, 'USD', 'migration-fixture', '1', ?)`,
+  ).run(`usage_${id}`, `attempt_${id}`, at);
+}
+
+function rewriteAsInterimMigration18(db: ReturnType<typeof openDatabase>): void {
+  db.pragma('foreign_keys = OFF');
+  try {
+    db.exec(`
+      CREATE TABLE model_call_attempts_interim_v18 (
+        id TEXT PRIMARY KEY,
+        logical_call_id TEXT NOT NULL REFERENCES model_logical_calls(id) ON DELETE CASCADE,
+        attempt_number INTEGER NOT NULL CHECK (attempt_number >= 1),
+        attempt_kind TEXT NOT NULL CHECK (attempt_kind IN
+          ('original', 'repair', 'retry', 'fallback')),
+        fencing_token INTEGER CHECK (fencing_token IS NULL OR fencing_token >= 1),
+        provider TEXT NOT NULL,
+        model TEXT,
+        provider_generation INTEGER NOT NULL DEFAULT 1 CHECK (provider_generation >= 1),
+        status TEXT NOT NULL CHECK (status IN
+          ('queued', 'sent', 'completed', 'failed', 'cancelled', 'interrupted', 'outcome_unknown')),
+        started_at TEXT NOT NULL,
+        sent_at TEXT,
+        first_token_at TEXT,
+        completed_at TEXT,
+        latency_ms INTEGER CHECK (latency_ms IS NULL OR latency_ms >= 0),
+        time_to_first_token_ms INTEGER CHECK (time_to_first_token_ms IS NULL OR time_to_first_token_ms >= 0),
+        error_code TEXT,
+        error_message TEXT,
+        UNIQUE (logical_call_id, attempt_number)
+      );
+      INSERT INTO model_call_attempts_interim_v18
+        (id, logical_call_id, attempt_number, attempt_kind, fencing_token, provider, model,
+         provider_generation, status, started_at, sent_at, first_token_at, completed_at,
+         latency_ms, time_to_first_token_ms, error_code, error_message)
+      SELECT id, logical_call_id, attempt_number, attempt_kind, fencing_token, provider, model,
+             COALESCE(provider_generation, 1), status, started_at, sent_at, first_token_at,
+             completed_at, latency_ms, time_to_first_token_ms, error_code, error_message
+      FROM model_call_attempts;
+
+      CREATE TABLE model_usage_records_interim_v18 (
+        id TEXT PRIMARY KEY,
+        attempt_id TEXT NOT NULL UNIQUE
+          REFERENCES model_call_attempts_interim_v18(id) ON DELETE CASCADE,
+        input_tokens INTEGER CHECK (input_tokens IS NULL OR input_tokens >= 0),
+        output_tokens INTEGER CHECK (output_tokens IS NULL OR output_tokens >= 0),
+        reasoning_tokens INTEGER CHECK (reasoning_tokens IS NULL OR reasoning_tokens >= 0),
+        cache_read_tokens INTEGER CHECK (cache_read_tokens IS NULL OR cache_read_tokens >= 0),
+        cache_write_tokens INTEGER CHECK (cache_write_tokens IS NULL OR cache_write_tokens >= 0),
+        estimated_cost_microunits INTEGER CHECK
+          (estimated_cost_microunits IS NULL OR estimated_cost_microunits >= 0),
+        currency TEXT,
+        pricing_source TEXT,
+        pricing_version TEXT,
+        recorded_at TEXT NOT NULL
+      );
+      INSERT INTO model_usage_records_interim_v18 SELECT * FROM model_usage_records;
+
+      DROP TABLE model_usage_records;
+      DROP TABLE model_call_attempts;
+      ALTER TABLE model_call_attempts_interim_v18 RENAME TO model_call_attempts;
+      ALTER TABLE model_usage_records_interim_v18 RENAME TO model_usage_records;
+      CREATE INDEX idx_model_call_attempts_logical
+        ON model_call_attempts(logical_call_id, attempt_number);
+    `);
+  } finally {
+    db.pragma('foreign_keys = ON');
+  }
+  expect(db.pragma('foreign_key_check')).toEqual([]);
+}
+
 describe('migrations', () => {
   it('applies all migrations to the latest version', () => {
     const db = openDatabase(':memory:');
@@ -10,6 +158,8 @@ describe('migrations', () => {
       .prepare('SELECT COALESCE(MAX(version), 0) AS v FROM schema_migrations')
       .get() as { v: number };
     expect(row.v).toBe(LATEST_MIGRATION_VERSION);
+    expect(row.v).toBe(19);
+    expectCanonicalProviderGenerationSchema(db);
     db.close();
   });
 
@@ -296,5 +446,87 @@ describe('migrations', () => {
     ).not.toThrow();
     expect(db.pragma('foreign_key_check')).toEqual([]);
     db.close();
+  });
+
+  it('upgrades canonical v18 telemetry to v19 without changing known or unknown generations', () => {
+    const db = openDatabase(':memory:');
+    migrate(db, { toVersion: 18 });
+    insertTelemetryFixture(db, 'canonical_unknown', null);
+    insertTelemetryFixture(db, 'canonical_generation_1', 1);
+    insertTelemetryFixture(db, 'canonical_generation_3', 3);
+    const before = telemetryRows(db);
+
+    migrate(db);
+
+    expect(telemetryRows(db)).toEqual(before);
+    expect(
+      db.prepare(`SELECT id, provider_generation FROM model_call_attempts ORDER BY id`).all(),
+    ).toEqual([
+      { id: 'attempt_canonical_generation_1', provider_generation: 1 },
+      { id: 'attempt_canonical_generation_3', provider_generation: 3 },
+      { id: 'attempt_canonical_unknown', provider_generation: null },
+    ]);
+    expect(db.prepare('SELECT COUNT(*) AS count FROM model_usage_records').get()).toEqual({
+      count: 3,
+    });
+    expectCanonicalProviderGenerationSchema(db);
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+    db.close();
+  });
+
+  it('upgrades interim incident v18 without guessing between indistinguishable generation-1 rows', () => {
+    const db = openDatabase(':memory:');
+    migrate(db, { toVersion: 18 });
+    insertTelemetryFixture(db, 'interim_backfill', null, '2026-01-01T00:00:00.000Z');
+    rewriteAsInterimMigration18(db);
+
+    // A fixed/custom application clock can make a genuinely observed post-migration
+    // row predate schema_migrations.applied_at, so timestamps cannot prove provenance.
+    insertTelemetryFixture(db, 'observed_generation_1', 1, '2026-01-01T00:00:00.000Z');
+    const interimSchema = providerGenerationSchema(db);
+    expect(interimSchema.column).toMatchObject({
+      name: 'provider_generation',
+      notnull: 1,
+      dflt_value: '1',
+    });
+    const before = telemetryRows(db);
+
+    migrate(db);
+
+    expect(telemetryRows(db)).toEqual(before);
+    expect(
+      db.prepare(`SELECT id, provider_generation FROM model_call_attempts ORDER BY id`).all(),
+    ).toEqual([
+      { id: 'attempt_interim_backfill', provider_generation: 1 },
+      { id: 'attempt_observed_generation_1', provider_generation: 1 },
+    ]);
+    expect(db.prepare('SELECT COUNT(*) AS count FROM model_usage_records').get()).toEqual({
+      count: 2,
+    });
+    expectCanonicalProviderGenerationSchema(db);
+    expect(() => insertTelemetryFixture(db, 'unknown_after_recovery', null)).not.toThrow();
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+    db.close();
+  });
+
+  it('converges fresh, canonical-v18, and interim-v18 databases on the v19 telemetry schema', () => {
+    const fresh = openDatabase(':memory:');
+    const canonical = openDatabase(':memory:');
+    const interim = openDatabase(':memory:');
+    migrate(fresh);
+    migrate(canonical, { toVersion: 18 });
+    migrate(interim, { toVersion: 18 });
+    rewriteAsInterimMigration18(interim);
+    migrate(canonical);
+    migrate(interim);
+
+    const expected = telemetryPhysicalSchema(fresh);
+    expect(telemetryPhysicalSchema(canonical)).toEqual(expected);
+    expect(telemetryPhysicalSchema(interim)).toEqual(expected);
+    for (const db of [fresh, canonical, interim]) {
+      expectCanonicalProviderGenerationSchema(db);
+      expect(db.pragma('foreign_key_check')).toEqual([]);
+      db.close();
+    }
   });
 });

@@ -1566,6 +1566,69 @@ const MIGRATIONS: Migration[] = [
         ON model_call_attempts(logical_call_id, attempt_number);
     `,
   },
+  {
+    version: 19,
+    name: 'canonicalize_provider_generation_nullability',
+    rebuildsTables: true,
+    up: `
+      CREATE TABLE model_call_attempts_v19 (
+        id TEXT PRIMARY KEY,
+        logical_call_id TEXT NOT NULL REFERENCES model_logical_calls(id) ON DELETE CASCADE,
+        attempt_number INTEGER NOT NULL CHECK (attempt_number >= 1),
+        attempt_kind TEXT NOT NULL CHECK (attempt_kind IN
+          ('original', 'repair', 'retry', 'fallback')),
+        fencing_token INTEGER CHECK (fencing_token IS NULL OR fencing_token >= 1),
+        provider TEXT NOT NULL,
+        model TEXT,
+        provider_generation INTEGER CHECK (provider_generation IS NULL OR provider_generation >= 1),
+        status TEXT NOT NULL CHECK (status IN
+          ('queued', 'sent', 'completed', 'failed', 'cancelled', 'interrupted', 'outcome_unknown')),
+        started_at TEXT NOT NULL,
+        sent_at TEXT,
+        first_token_at TEXT,
+        completed_at TEXT,
+        latency_ms INTEGER CHECK (latency_ms IS NULL OR latency_ms >= 0),
+        time_to_first_token_ms INTEGER CHECK (time_to_first_token_ms IS NULL OR time_to_first_token_ms >= 0),
+        error_code TEXT,
+        error_message TEXT,
+        UNIQUE (logical_call_id, attempt_number)
+      );
+      INSERT INTO model_call_attempts_v19
+        (id, logical_call_id, attempt_number, attempt_kind, fencing_token, provider, model,
+         provider_generation, status, started_at, sent_at, first_token_at, completed_at,
+         latency_ms, time_to_first_token_ms, error_code, error_message)
+      -- The interim backfill and genuinely observed generation 1 have no
+      -- persisted discriminator. Preserve both rather than guessing.
+      SELECT id, logical_call_id, attempt_number, attempt_kind, fencing_token, provider, model,
+             provider_generation, status, started_at, sent_at, first_token_at, completed_at,
+             latency_ms, time_to_first_token_ms, error_code, error_message
+      FROM model_call_attempts;
+
+      CREATE TABLE model_usage_records_v19 (
+        id TEXT PRIMARY KEY,
+        attempt_id TEXT NOT NULL UNIQUE REFERENCES model_call_attempts_v19(id) ON DELETE CASCADE,
+        input_tokens INTEGER CHECK (input_tokens IS NULL OR input_tokens >= 0),
+        output_tokens INTEGER CHECK (output_tokens IS NULL OR output_tokens >= 0),
+        reasoning_tokens INTEGER CHECK (reasoning_tokens IS NULL OR reasoning_tokens >= 0),
+        cache_read_tokens INTEGER CHECK (cache_read_tokens IS NULL OR cache_read_tokens >= 0),
+        cache_write_tokens INTEGER CHECK (cache_write_tokens IS NULL OR cache_write_tokens >= 0),
+        estimated_cost_microunits INTEGER CHECK
+          (estimated_cost_microunits IS NULL OR estimated_cost_microunits >= 0),
+        currency TEXT,
+        pricing_source TEXT,
+        pricing_version TEXT,
+        recorded_at TEXT NOT NULL
+      );
+      INSERT INTO model_usage_records_v19 SELECT * FROM model_usage_records;
+
+      DROP TABLE model_usage_records;
+      DROP TABLE model_call_attempts;
+      ALTER TABLE model_call_attempts_v19 RENAME TO model_call_attempts;
+      ALTER TABLE model_usage_records_v19 RENAME TO model_usage_records;
+      CREATE INDEX idx_model_call_attempts_logical
+        ON model_call_attempts(logical_call_id, attempt_number);
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

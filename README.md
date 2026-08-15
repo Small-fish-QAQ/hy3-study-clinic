@@ -243,7 +243,7 @@ The browser never calls Hy3 directly. SQLite holds course workspaces, logical ma
 
 The responsive Course shell and Settings route are presentation boundaries over server-owned runtime state, not parallel configuration or persistence systems. The original SVG mark is reused by the sidebar, compatibility header, and favicon; provider secrets never enter browser storage. Curriculum expansion state is ephemeral presentation state: expanding branches, revealing the units after the first 12, or opening source/version details never modifies the accepted Curriculum.
 
-See [Architecture & Design Notes](docs/ARCHITECTURE.md) for request lifecycles, grounding rules, all 18 migrations, document deletion/reprocessing behavior, accepted-route lifecycle, formal progression, graph routing, provider contracts, learner-state machines, cancellation, and dependency rationale. It documents implemented current behavior; the authoritative design separately identifies the gated Phase 5 work that remains future scope.
+See [Architecture & Design Notes](docs/ARCHITECTURE.md) for request lifecycles, grounding rules, all 19 migrations, document deletion/reprocessing behavior, accepted-route lifecycle, formal progression, graph routing, provider contracts, learner-state machines, cancellation, and dependency rationale. It documents implemented current behavior; the authoritative design separately identifies the gated Phase 5 work that remains future scope.
 
 ## Verification summary
 

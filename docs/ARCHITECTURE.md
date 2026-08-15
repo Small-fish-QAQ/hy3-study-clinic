@@ -279,7 +279,7 @@ Retiring one document clears the active graph pointer, marks dependent source-au
 
 `better-sqlite3` runs with foreign keys enabled. Repositories validate domain objects on writes and reads. Multi-row operations use explicit transactions, and migrations are recorded in `schema_migrations`.
 
-The 18 shipped migrations are:
+The 19 shipped migrations are:
 
 1. `initial_schema` - original materials, blocks, concepts, quizzes, grading, mistakes, and mastery.
 2. `course_workspaces_and_documents` - workspaces, document metadata/original bytes, and source-block page numbers; every legacy material receives a compatibility workspace without learning-data deletion.
@@ -299,6 +299,7 @@ The 18 shipped migrations are:
 16. `durable_study_sessions` - StudySessions, turns, exchanges, summaries, events, and route-stack persistence.
 17. `formal_evidence_progression_and_replans` - formal evidence links, objective/unit progression, replan triggers, and goal outcomes.
 18. `complete_provider_inference_telemetry` - permits workspace-less connection-probe calls and non-agent attempts, adds nullable provider generation, and preserves populated v17 telemetry without fabricating historical generation.
+19. `canonicalize_provider_generation_nullability` - repairs migration-18 schema drift by rebuilding the attempt/usage foreign-key chain with nullable, no-default provider generation while preserving every telemetry value. An interim migration-18 build backfilled existing rows with `1`; because those rows have no provenance marker and application timestamps may use an injected clock, migration 19 cannot reliably distinguish that backfill from a genuinely observed generation 1 and does not guess by rewriting either value.
 
 Table-rebuild migrations disable foreign keys only around the controlled rebuild, run `foreign_key_check` before commit, and restore enforcement even after failure. Tests cover idempotence, populated v1 and v3 upgrades, all-or-nothing rollback, and data preservation.
 
