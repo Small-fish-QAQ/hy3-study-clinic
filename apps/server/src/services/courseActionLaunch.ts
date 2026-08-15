@@ -188,7 +188,7 @@ export function createCourseActionLaunchService({
           repos,
           clock,
           provider,
-          providerModel: provider.name === 'hy3' ? providerModel : null,
+          providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
           operationId: claim.operationId,
           fencingToken: claim.fencingToken,
           workspaceId: parsed.command.workspaceId,

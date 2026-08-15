@@ -90,10 +90,25 @@ interface ChatCompletionResponse {
  */
 export class Hy3Provider implements LlmProvider {
   readonly name = 'hy3' as const;
+  get model(): string {
+    return this.config.model;
+  }
   private readonly fetchImpl: typeof fetch;
 
   constructor(private readonly config: Hy3ProviderConfig) {
     this.fetchImpl = config.fetchImpl ?? fetch;
+  }
+
+  /** Deliberate, minimal connectivity probe used only by Settings. */
+  async testConnection(opts?: ProviderCallOptions): Promise<void> {
+    await this.chat(
+      [
+        { role: 'system', content: '只回复 OK。不要调用工具,不要生成学习内容。' },
+        { role: 'user', content: 'OK' },
+      ],
+      opts,
+      { temperature: 0, maxTokens: 1 },
+    );
   }
 
   async analyzeConcepts(
@@ -294,7 +309,11 @@ export class Hy3Provider implements LlmProvider {
   }
 
   /** Single chat completion call with timeout + external cancellation. */
-  private async chat(messages: ChatMessage[], opts?: ProviderCallOptions): Promise<string> {
+  private async chat(
+    messages: ChatMessage[],
+    opts?: ProviderCallOptions,
+    requestOptions: { temperature?: number; maxTokens?: number } = {},
+  ): Promise<string> {
     if (opts?.signal?.aborted) throw ProviderError.cancelled();
 
     const controller = new AbortController();
@@ -324,7 +343,10 @@ export class Hy3Provider implements LlmProvider {
           body: JSON.stringify({
             model: this.config.model,
             messages,
-            temperature: 0.2,
+            temperature: requestOptions.temperature ?? 0.2,
+            ...(requestOptions.maxTokens !== undefined
+              ? { max_tokens: requestOptions.maxTokens }
+              : {}),
           }),
           signal: controller.signal,
         },

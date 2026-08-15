@@ -317,7 +317,7 @@ export function createStudyPlanAgentService({
         repos,
         clock,
         provider,
-        providerModel: provider.name === 'hy3' ? (providerModel ?? null) : null,
+        providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
         operationId: claim.operationId,
         fencingToken: claim.fencingToken,
         workspaceId: parsed.command.workspaceId,
@@ -384,7 +384,7 @@ export function createStudyPlanAgentService({
         paceBaseline: paceBaseline(contract, planId, projectedMinutes, feasibility.slackMinutes),
         diff: diffStudyPlans(predecessor, materialized.items),
         provider: provider.name,
-        providerModel,
+        providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
         learnerAcceptedAt: null,
         createdAt: now,
       };

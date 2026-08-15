@@ -424,7 +424,7 @@ export function createCurriculumService({
         repos,
         clock,
         provider,
-        providerModel: provider.name === 'hy3' ? (providerModel ?? null) : null,
+        providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
         operationId: claim.operationId,
         fencingToken: claim.fencingToken,
         workspaceId: parsed.command.workspaceId,
@@ -464,7 +464,7 @@ export function createCurriculumService({
         synthesisGroups: materialized.synthesisGroups,
         validation: materialized.validation,
         provider: provider.name,
-        providerModel: provider.name === 'hy3' ? (providerModel ?? null) : null,
+        providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
         createdAt: now,
         acceptedAt: null,
       };

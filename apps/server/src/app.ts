@@ -1,12 +1,13 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import { ZodError } from 'zod';
-import { ApiErrorCode } from '@hy3-clinic/shared';
+import { ApiErrorCode, ProviderConnectionTestRequestSchema } from '@hy3-clinic/shared';
 import { AppError, statusForErrorCode } from './errors.js';
 import { IngestionError } from './ingestion/ingest.js';
 import { ProviderError } from './llm/errors.js';
 import type { LlmProvider } from './llm/provider.js';
 import type { Repositories } from './repositories/index.js';
 import type { Clock } from './util/ids.js';
+import type { AppConfig } from './config.js';
 import { systemClock } from './util/ids.js';
 import { createServices } from './services/index.js';
 import { registerMaterialRoutes } from './routes/materials.js';
@@ -15,10 +16,19 @@ import { registerWorkspaceRoutes } from './routes/workspaces.js';
 import { registerAgentCourseRoutes } from './routes/agentCourse.js';
 import { registerStudySessionRoutes } from './routes/studySessions.js';
 import { registerFormalProgressionRoutes } from './routes/formalProgression.js';
+import {
+  ProviderRuntime,
+  createRuntimeProvider,
+  type ProviderConfigStore,
+} from './services/providerRuntime.js';
+import { requestSignal } from './util/requestSignal.js';
 
 export interface AppDeps {
   repos: Repositories;
   provider: LlmProvider;
+  providerRuntime?: ProviderRuntime;
+  providerConfigStore?: ProviderConfigStore | null;
+  startupConfig?: AppConfig;
   clock?: Clock;
   logger?: boolean;
   /** Model identifier recorded as graph provider metadata (hy3 only). */
@@ -26,6 +36,23 @@ export interface AppDeps {
 }
 
 export function buildApp(deps: AppDeps): FastifyInstance {
+  const runtime =
+    deps.providerRuntime ??
+    new ProviderRuntime({
+      startup: deps.startupConfig ?? {
+        port: 0,
+        host: '127.0.0.1',
+        databasePath: '',
+        provider: deps.provider.name,
+        hy3BaseUrl: undefined,
+        hy3ApiKey: undefined,
+        hy3Model: deps.providerModel,
+        hy3TimeoutMs: 30_000,
+        providerConfigPath: '',
+      },
+      store: deps.providerConfigStore,
+      initialProvider: deps.provider,
+    });
   const app = Fastify({
     // Generous enough for the 100k-char source limit encoded as JSON and for
     // base64-encoded PDF/DOCX uploads (10 MB decoded → ~13.7 MB encoded).
@@ -34,7 +61,14 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       ? {
           level: 'info',
           redact: {
-            paths: ['req.headers.authorization', 'req.headers.cookie', 'req.headers["x-api-key"]'],
+            paths: [
+              'req.headers.authorization',
+              'req.headers.cookie',
+              'req.headers["x-api-key"]',
+              'req.body.secret.value',
+              'req.body.apiKey',
+              'req.body.token',
+            ],
             censor: '[REDACTED]',
           },
         }
@@ -42,12 +76,37 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   });
 
   const clock = deps.clock ?? systemClock;
-  const providerName = deps.provider.name;
   const services = createServices({
     repos: deps.repos,
-    provider: deps.provider,
+    provider: createRuntimeProvider(runtime),
     clock,
-    providerModel: deps.providerModel,
+    providerModel: runtime.providerModel,
+  });
+
+  app.addHook('onRequest', async () => {
+    runtime.enterRequest();
+  });
+
+  app.addHook('preHandler', async (request) => {
+    const path = request.url.split('?', 1)[0];
+    if ((path === '/api/config' && request.method !== 'GET') || path === '/api/config/test') {
+      const remote = request.ip.replace(/^::ffff:/, '');
+      if (!['127.0.0.1', '::1', 'localhost'].includes(remote)) {
+        throw new AppError(ApiErrorCode.ValidationError, '提供程序设置仅允许本机访问。');
+      }
+      const origin = request.headers.origin;
+      if (origin) {
+        let originHost = '';
+        try {
+          originHost = new URL(origin).hostname.replace(/^\[(.*)\]$/, '$1');
+        } catch {
+          throw new AppError(ApiErrorCode.ValidationError, '提供程序设置请求来源无效。');
+        }
+        if (!['127.0.0.1', '::1', 'localhost'].includes(originHost)) {
+          throw new AppError(ApiErrorCode.ValidationError, '提供程序设置仅允许本机页面访问。');
+        }
+      }
+    }
   });
 
   // Restart policy: a Tutor run can only legitimately be `running` while its
@@ -115,8 +174,13 @@ export function buildApp(deps: AppDeps): FastifyInstance {
 
   app.get('/api/health', async () => ({ status: 'ok', service: 'hy3-study-clinic-server' }));
 
-  // Exposes only the provider NAME — never keys, URLs, or models.
-  app.get('/api/config', async () => ({ provider: providerName }));
+  // Safe runtime state includes non-secret URL/model fields but never the key.
+  app.get('/api/config', async () => runtime.safeConfig());
+  app.patch('/api/config', async (request) => runtime.update(request.body));
+  app.post('/api/config/test', async (request, reply) => {
+    ProviderConnectionTestRequestSchema.parse(request.body ?? {});
+    return runtime.testConnection(requestSignal(request, reply));
+  });
 
   registerMaterialRoutes(app, services.materials);
   registerStudyRoutes(app, services);

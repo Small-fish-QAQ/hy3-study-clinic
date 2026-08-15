@@ -428,6 +428,10 @@ export interface StudyPlanProposalInput {
  */
 export interface LlmProvider {
   readonly name: 'fake' | 'hy3';
+  /** Non-secret model identifier for auditable provider metadata. */
+  readonly model?: string | undefined;
+  /** Minimal, state-free connectivity check. Called only by the explicit Settings action. */
+  testConnection(opts?: ProviderCallOptions): Promise<void>;
   analyzeConcepts(
     input: ConceptAnalysisInput,
     opts?: ProviderCallOptions,

@@ -121,7 +121,7 @@ export function createTutorService({
         activity: null,
         errorMessage: null,
         provider: provider.name,
-        providerModel: provider.name === 'hy3' ? (providerModel ?? null) : null,
+        providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
         createdAt: startedAt,
         updatedAt: startedAt,
       };

@@ -192,7 +192,7 @@ export function createLessonsService({
         content: { sections },
         conflicts,
         provider: provider.name,
-        providerModel: provider.name === 'hy3' ? (providerModel ?? null) : null,
+        providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
         promptVersion: LESSON_PROMPT_VERSION,
         createdAt: previous?.createdAt ?? now,
         updatedAt: now,

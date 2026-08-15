@@ -4,10 +4,9 @@ import { Hy3Provider } from './hy3Provider.js';
 import type { LlmProvider } from './provider.js';
 
 /**
- * Build the configured provider. Defaults to the offline deterministic fake
- * provider; the Hy3 provider is only constructed when the server-side env
- * explicitly selects it (and config validation has already ensured the
- * required variables exist).
+ * Build one validated provider instance. Runtime Settings overrides are
+ * resolved by ProviderRuntime before this factory is called; incomplete Hy3
+ * startup configuration therefore remains on the Fake fallback path.
  */
 export function createProvider(config: AppConfig): LlmProvider {
   if (config.provider === 'hy3') {

@@ -6,7 +6,7 @@ import { migrate } from './db/migrate.js';
 import { createRepositories } from './repositories/index.js';
 import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
-import { createProvider } from './llm/factory.js';
+import { JsonProviderConfigStore, ProviderRuntime } from './services/providerRuntime.js';
 
 // Always load the repository-root .env file.
 // Existing process environment variables keep higher priority.
@@ -14,17 +14,22 @@ loadDotenv({
   path: fileURLToPath(new URL('../../../.env', import.meta.url)),
 });
 
-const config = loadConfig();
+const config = loadConfig(process.env, { allowIncompleteProvider: true });
 const db = openDatabase(config.databasePath);
 
 migrate(db);
 
 const repos = createRepositories(db);
-const provider = createProvider(config);
+const providerRuntime = new ProviderRuntime({
+  startup: config,
+  store: new JsonProviderConfigStore(config.providerConfigPath),
+});
 
 const app = buildApp({
   repos,
-  provider,
+  provider: providerRuntime.provider,
+  providerRuntime,
+  startupConfig: config,
   logger: true,
   providerModel: config.hy3Model,
 });
@@ -39,7 +44,9 @@ app
     host: config.host,
   })
   .then((address) => {
-    app.log.info(`Hy3 Study Clinic server listening at ${address} (provider=${config.provider})`);
+    app.log.info(
+      `Hy3 Study Clinic server listening at ${address} (provider=${providerRuntime.safeConfig().provider})`,
+    );
   })
   .catch((err) => {
     app.log.error(err);

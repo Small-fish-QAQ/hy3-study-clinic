@@ -33,6 +33,7 @@ export * from './domain/review.js';
 export * from './domain/lesson.js';
 export * from './domain/tutor.js';
 export * from './domain/errors.js';
+export * from './domain/providerConfig.js';
 export * from './provider/payloads.js';
 
 export { SAMPLE_MATERIAL_CONTENT, SAMPLE_MATERIAL_TITLE } from './sampleMaterial.js';

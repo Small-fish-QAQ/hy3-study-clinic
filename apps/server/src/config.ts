@@ -4,8 +4,8 @@ import { z } from 'zod';
  * Server configuration parsed from environment variables.
  *
  * SECURITY: `hy3ApiKey` is held server-side only. It is never logged, never
- * echoed in errors, and never sent to the web client (see /api/config which
- * exposes only the provider *name*).
+ * echoed in errors, and never sent to the web client. `/api/config` exposes
+ * only safe metadata and whether a credential is configured.
  */
 const EnvSchema = z.object({
   PORT: z.coerce.number().int().positive().default(8787),
@@ -16,6 +16,7 @@ const EnvSchema = z.object({
   HY3_API_KEY: z.string().min(1).optional(),
   HY3_MODEL: z.string().min(1).optional(),
   HY3_TIMEOUT_MS: z.coerce.number().int().min(1000).max(300_000).default(30_000),
+  PROVIDER_CONFIG_PATH: z.string().min(1).default('./data/provider-config.json'),
 });
 
 export interface AppConfig {
@@ -27,6 +28,7 @@ export interface AppConfig {
   hy3ApiKey: string | undefined;
   hy3Model: string | undefined;
   hy3TimeoutMs: number;
+  providerConfigPath: string;
 }
 
 export class ConfigError extends Error {
@@ -36,7 +38,10 @@ export class ConfigError extends Error {
   }
 }
 
-export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
+export function loadConfig(
+  env: NodeJS.ProcessEnv = process.env,
+  options: { allowIncompleteProvider?: boolean } = {},
+): AppConfig {
   const parsed = EnvSchema.safeParse(env);
   if (!parsed.success) {
     const summary = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
@@ -44,7 +49,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   }
   const e = parsed.data;
 
-  if (e.LLM_PROVIDER === 'hy3') {
+  if (e.LLM_PROVIDER === 'hy3' && !options.allowIncompleteProvider) {
     const missing = [
       e.HY3_BASE_URL ? null : 'HY3_BASE_URL',
       e.HY3_API_KEY ? null : 'HY3_API_KEY',
@@ -66,5 +71,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     hy3ApiKey: e.HY3_API_KEY,
     hy3Model: e.HY3_MODEL,
     hy3TimeoutMs: e.HY3_TIMEOUT_MS,
+    providerConfigPath: e.PROVIDER_CONFIG_PATH,
   };
 }

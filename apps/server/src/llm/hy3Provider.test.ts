@@ -53,6 +53,32 @@ describe('Hy3Provider happy path', () => {
   });
 });
 
+describe('Hy3Provider connection probe', () => {
+  it('sends one bounded minimal chat request without entering repair flow', async () => {
+    const fetchImpl = vi.fn(async (_url: string, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as {
+        model?: string;
+        messages?: Array<{ role: string; content: string }>;
+        temperature?: number;
+        max_tokens?: number;
+      };
+      expect(body).toMatchObject({
+        model: 'test-model',
+        temperature: 0,
+        max_tokens: 1,
+        messages: [
+          { role: 'system', content: expect.stringContaining('OK') },
+          { role: 'user', content: 'OK' },
+        ],
+      });
+      return jsonResponse('OK');
+    }) as unknown as typeof fetch;
+
+    await makeProvider(fetchImpl).testConnection();
+    expect((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(1);
+  });
+});
+
 describe('Hy3Provider bounded repair', () => {
   it('retries exactly once on invalid output, then succeeds', async () => {
     const onRepairAttempt = vi.fn();

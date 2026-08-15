@@ -102,7 +102,7 @@ export function createGraphService({ repos, provider, clock, providerModel }: Gr
         workspaceId,
         status: 'generating',
         provider: provider.name,
-        providerModel: provider.name === 'hy3' ? (providerModel ?? null) : null,
+        providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
         validationSummary: null,
         errorMessage: null,
         createdAt: now,

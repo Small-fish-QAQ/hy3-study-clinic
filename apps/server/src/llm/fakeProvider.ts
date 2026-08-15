@@ -140,6 +140,10 @@ export interface FakeProviderOptions {
 
 export class FakeProvider implements LlmProvider {
   readonly name = 'fake' as const;
+
+  async testConnection(opts?: ProviderCallOptions): Promise<void> {
+    if (opts?.signal?.aborted) throw ProviderError.cancelled();
+  }
   private readonly delayMs: number;
 
   constructor(options: FakeProviderOptions = {}) {

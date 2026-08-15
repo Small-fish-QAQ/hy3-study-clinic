@@ -7,6 +7,13 @@ describe('loadConfig', () => {
     expect(config.provider).toBe('fake');
     expect(config.port).toBe(8787);
     expect(config.hy3TimeoutMs).toBe(30_000);
+    expect(config.providerConfigPath).toBe('./data/provider-config.json');
+  });
+
+  it('accepts an explicit provider configuration path', () => {
+    expect(loadConfig({ PROVIDER_CONFIG_PATH: 'C:/clinic/runtime-provider.json' })).toMatchObject({
+      providerConfigPath: 'C:/clinic/runtime-provider.json',
+    });
   });
 
   it('requires hy3 credentials when provider is hy3', () => {
@@ -24,6 +31,19 @@ describe('loadConfig', () => {
     });
     expect(config.provider).toBe('hy3');
     expect(config.hy3TimeoutMs).toBe(5000);
+  });
+
+  it('allows incomplete startup Hy3 configuration only when runtime fallback is enabled', () => {
+    const config = loadConfig(
+      { LLM_PROVIDER: 'hy3', HY3_MODEL: 'environment-model' },
+      { allowIncompleteProvider: true },
+    );
+    expect(config).toMatchObject({
+      provider: 'hy3',
+      hy3BaseUrl: undefined,
+      hy3ApiKey: undefined,
+      hy3Model: 'environment-model',
+    });
   });
 
   it('rejects an invalid base url', () => {
