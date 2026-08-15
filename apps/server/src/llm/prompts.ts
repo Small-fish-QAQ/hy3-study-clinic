@@ -622,6 +622,9 @@ export function curriculumProposalMessages(input: CurriculumProposalInput): Chat
 /** StudyPlan route semantics only; deterministic code owns all consequential fields. */
 export function studyPlanProposalMessages(input: StudyPlanProposalInput): ChatMessage[] {
   const context = wrapUntrustedJson('STUDY_PLAN_CONTEXT', input);
+  const allowedKinds = studyPlanKinds(input, false);
+  const exampleKind = requireExampleStudyPlanKind(allowedKinds);
+  const exampleDepth = input.allowedDepths[0] ?? 'working_fluency';
   return [
     {
       role: 'system',
@@ -638,8 +641,10 @@ export function studyPlanProposalMessages(input: StudyPlanProposalInput): ChatMe
         context.guard,
         context.body,
         'Return exactly this shape:',
-        '{"rationale":"...","items":[{"key":"item-1","phase":"...","kind":"teach_unit|informal_check|formal_checkpoint|synthesis|targeted_repair|due_review","curriculumLearningUnitId":"unit-id-or-null","rationale":"...","estimatedMinutes":20,"targetDepth":"pass_oriented|working_fluency|high_performance|deep_transfer","objectiveIds":["objective-id"],"prerequisiteItemKeys":[]}],"deferrals":[{"curriculumLearningUnitId":"unit-id","objectiveIds":["objective-id"],"reason":"..."}]}',
-        'Use only offered Curriculum unit/objective ids, allowed item kinds, allowed depths, and launch capabilities.',
+        `{"rationale":"...","items":[{"key":"item-1","phase":"...","kind":"${exampleKind}","curriculumLearningUnitId":"unit-id","rationale":"...","estimatedMinutes":20,"targetDepth":"${exampleDepth}","objectiveIds":["objective-id"],"prerequisiteItemKeys":[]}],"deferrals":[{"curriculumLearningUnitId":"unit-id","objectiveIds":["objective-id"],"reason":"..."}]}`,
+        ...studyPlanKindGuidance(allowedKinds),
+        'For every item, kind MUST appear in that exact LearningUnit entry in launchCapabilities.allowedItemKinds. If the list is empty, do not create an item for that unit.',
+        'Use only offered Curriculum unit/objective ids, allowed depths, and launch capabilities.',
         'Order prerequisite work before dependent work and reference proposal-local item keys in prerequisiteItemKeys.',
         'Account for every requiredLearningUnitId with route items or, only when Contract policy allows, an explicit deferral.',
         'Use the supplied local feasibility result. Do not recalculate deadline, available time, slack, or feasibility.',
@@ -652,8 +657,49 @@ export function studyPlanProposalMessages(input: StudyPlanProposalInput): ChatMe
   ];
 }
 
+const STUDY_PLAN_KIND_DEFINITIONS = {
+  teach_unit: 'open a concept-backed lesson for one LearningUnit',
+  informal_check: 'run a non-formal conversational comprehension check',
+  formal_checkpoint: 'run a formal concept-practice checkpoint',
+  synthesis: 'integrate objectives from a validated multi-unit synthesis group',
+  targeted_repair: 'repair a validated prerequisite gap',
+  due_review: 'run an eligible due review',
+} as const;
+
+type ModelStudyPlanKind = keyof typeof STUDY_PLAN_KIND_DEFINITIONS;
+
+function studyPlanKinds(input: StudyPlanProposalInput, grouped: boolean): ModelStudyPlanKind[] {
+  return (Object.keys(STUDY_PLAN_KIND_DEFINITIONS) as ModelStudyPlanKind[]).filter(
+    (kind) => input.allowedItemKinds.includes(kind) && (!grouped || kind !== 'synthesis'),
+  );
+}
+
+function studyPlanKindGuidance(kinds: ModelStudyPlanKind[]): string[] {
+  return [
+    `kind MUST be exactly one of these offered literals: ${kinds.map((kind) => `\`${kind}\``).join(', ')}.`,
+    ...kinds.map((kind) => `- \`${kind}\`: ${STUDY_PLAN_KIND_DEFINITIONS[kind]}.`),
+    'No other kind value is permitted. Never invent, combine, translate, or paraphrase a kind literal.',
+  ];
+}
+
+function requireExampleStudyPlanKind(kinds: ModelStudyPlanKind[]): ModelStudyPlanKind {
+  const kind = kinds[0];
+  if (!kind) throw new Error('StudyPlan prompt requires at least one offered item kind.');
+  return kind;
+}
+
 /** Compact large-Curriculum route prompt; local code restores authoritative ids. */
 export function groupedStudyPlanProposalMessages(input: StudyPlanProposalInput): ChatMessage[] {
+  const requiredIds = new Set(input.requiredLearningUnitIds);
+  const capabilities = new Map(
+    input.launchCapabilities.map((capability) => [capability.curriculumLearningUnitId, capability]),
+  );
+  const learnerState = new Map(
+    input.learnerState.map((state) => [state.curriculumLearningUnitId, state]),
+  );
+  const allowedKinds = studyPlanKinds(input, true);
+  const exampleKind = requireExampleStudyPlanKind(allowedKinds);
+  const exampleDepth = input.allowedDepths[0] ?? 'working_fluency';
   const context = wrapUntrustedJson('STUDY_PLAN_CONTEXT', {
     workspaceName: input.workspaceName,
     contract: {
@@ -664,18 +710,22 @@ export function groupedStudyPlanProposalMessages(input: StudyPlanProposalInput):
       studyBudget: input.contract.studyBudget,
       allowExplicitDeferral: input.contract.allowExplicitDeferral,
     },
-    units: input.units.map((unit) => ({
-      id: unit.id,
-      title: unit.title,
-      prerequisiteUnitIds: unit.prerequisiteUnitIds,
-    })),
-    learnerState: input.learnerState,
-    requiredLearningUnitIds: input.requiredLearningUnitIds,
+    units: input.units
+      .filter((unit) => requiredIds.has(unit.id))
+      .map((unit) => {
+        const capability = capabilities.get(unit.id);
+        return {
+          id: unit.id,
+          title: unit.title,
+          prerequisiteUnitIds: unit.prerequisiteUnitIds,
+          learnerState: learnerState.get(unit.id)?.state ?? 'unassessed',
+          allowedItemKinds: (capability?.allowedItemKinds ?? []).filter(
+            (kind): kind is ModelStudyPlanKind =>
+              kind !== 'synthesis' && kind in STUDY_PLAN_KIND_DEFINITIONS,
+          ),
+        };
+      }),
     allowedDepths: input.allowedDepths,
-    launchCapabilities: input.launchCapabilities.map((capability) => ({
-      curriculumLearningUnitId: capability.curriculumLearningUnitId,
-      allowedItemKinds: capability.allowedItemKinds.filter((kind) => kind !== 'synthesis'),
-    })),
     feasibility: input.feasibility,
   });
   return [
@@ -694,11 +744,13 @@ export function groupedStudyPlanProposalMessages(input: StudyPlanProposalInput):
         context.guard,
         context.body,
         'Return exactly this shape:',
-        '{"format":"grouped_units","rationale":"...","groups":[{"key":"group-1","phase":"...","kind":"teach_unit|informal_check|formal_checkpoint|targeted_repair|due_review","curriculumLearningUnitIds":["unit-id"],"rationale":"...","estimatedMinutesPerUnit":20,"targetDepth":"pass_oriented|working_fluency|high_performance|deep_transfer"}],"deferrals":[{"curriculumLearningUnitIds":["unit-id"],"reason":"..."}]}',
-        'Place every requiredLearningUnitId exactly once in groups or, only when allowed, deferrals.',
+        `{"format":"grouped_units","rationale":"...","groups":[{"key":"group-1","phase":"...","kind":"${exampleKind}","curriculumLearningUnitIds":["unit-id"],"rationale":"...","estimatedMinutesPerUnit":20,"targetDepth":"${exampleDepth}"}],"deferrals":[{"curriculumLearningUnitIds":["unit-id"],"reason":"..."}]}`,
+        ...studyPlanKindGuidance(allowedKinds),
+        'Every unit shown in STUDY_PLAN_CONTEXT.units is required and MUST appear exactly once in groups or, only when Contract policy allows, deferrals.',
         'Keep prerequisite units before dependent units across the ordered groups and arrays.',
-        'A group may contain only units that support its kind in launchCapabilities.',
-        'Use only offered unit ids, allowed depths, and launch capabilities. Never invent ids.',
+        "A group may contain a unit only when that group kind appears in the unit's adjacent allowedItemKinds list. All units in one group must permit the same kind.",
+        'A unit with an empty allowedItemKinds list MUST go to deferrals when deferral is allowed; it can never appear in groups.',
+        'Use only offered unit ids, exact adjacent allowedItemKinds literals, and allowed depths. Never invent ids or kind values.',
         'Use the supplied local feasibility result. Do not recalculate deadline or available time.',
         'Do not output objective ids, prerequisite item ids, persisted ids, status, acceptance, completion rules, evidence tiers, truth authority, mastery, completion, or risk ids.',
         JSON_RULES,

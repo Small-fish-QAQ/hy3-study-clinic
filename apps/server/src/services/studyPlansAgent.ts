@@ -203,6 +203,58 @@ function buildProviderInput(
   };
 }
 
+function assertExecutableProviderScope(
+  contract: LearningContract,
+  input: StudyPlanProposalInput,
+  profiles: ReturnType<typeof buildUnitLaunchProfiles>,
+): void {
+  const modelFacingKinds = new Set(
+    input.units.length >= 80
+      ? ['teach_unit', 'informal_check', 'formal_checkpoint', 'targeted_repair', 'due_review']
+      : [
+          'teach_unit',
+          'informal_check',
+          'formal_checkpoint',
+          'synthesis',
+          'targeted_repair',
+          'due_review',
+        ],
+  );
+  const requiredIds = new Set(input.requiredLearningUnitIds);
+  const requiredProfiles = profiles.filter((profile) =>
+    requiredIds.has(profile.curriculumLearningUnitId),
+  );
+  const unavailable = requiredProfiles.filter(
+    (profile) => !profile.allowedItemKinds.some((kind) => modelFacingKinds.has(kind)),
+  );
+  const launchableCount = requiredProfiles.length - unavailable.length;
+  if (launchableCount === 0) {
+    throw new AppError(
+      ApiErrorCode.ValidationError,
+      'StudyPlan generation requires at least one currently launchable LearningUnit.',
+      {
+        reason: 'no_launchable_learning_unit',
+        requiredLearningUnitCount: requiredProfiles.length,
+        launchableLearningUnitCount: 0,
+        guidance:
+          'Create validated Concept mappings or another supported launch capability before generating the route.',
+      },
+    );
+  }
+  if (unavailable.length > 0 && !contract.riskTolerance?.allowExplicitDeferral) {
+    throw new AppError(
+      ApiErrorCode.ValidationError,
+      'StudyPlan generation cannot account for every required LearningUnit under the current no-deferral policy.',
+      {
+        reason: 'unlaunchable_unit_deferral_forbidden',
+        requiredLearningUnitCount: requiredProfiles.length,
+        launchableLearningUnitCount: launchableCount,
+        unlaunchableLearningUnitCount: unavailable.length,
+      },
+    );
+  }
+}
+
 function paceBaseline(
   contract: LearningContract,
   planId: string,
@@ -306,6 +358,7 @@ export function createStudyPlanAgentService({
         curriculum,
         workspace.name,
       );
+      assertExecutableProviderScope(contract, providerContext.input, providerContext.profiles);
       const policyFingerprint = enforceAgentCostPolicies(repos, {
         workspaceId: parsed.command.workspaceId,
         operationType: 'propose_study_plan',

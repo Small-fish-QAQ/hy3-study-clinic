@@ -28,7 +28,7 @@ import {
   type TutorStepPayload,
   type TutorTurnPayload,
 } from '@hy3-clinic/shared';
-import type { ZodType, ZodTypeDef } from 'zod';
+import { z, type ZodType, type ZodTypeDef } from 'zod';
 import { ProviderError } from './errors.js';
 import { extractJson, JsonExtractionError } from './json.js';
 import {
@@ -79,6 +79,127 @@ export interface Hy3ProviderConfig {
 
 interface ChatCompletionResponse {
   choices?: Array<{ message?: { content?: string } }>;
+}
+
+const GROUPED_STUDY_PLAN_KINDS = [
+  'teach_unit',
+  'informal_check',
+  'formal_checkpoint',
+  'targeted_repair',
+  'due_review',
+] as const;
+
+function groupedStudyPlanSchema(
+  input: StudyPlanProposalInput,
+): ZodType<GroupedStudyPlanProposalPayload, ZodTypeDef, unknown> {
+  const requiredIds = new Set(input.requiredLearningUnitIds);
+  const unitsById = new Map(input.units.map((unit) => [unit.id, unit]));
+  const capabilitiesById = new Map(
+    input.launchCapabilities.map((capability) => [capability.curriculumLearningUnitId, capability]),
+  );
+  return GroupedStudyPlanProposalPayloadSchema.superRefine((payload, ctx) => {
+    const accounted = new Set<string>();
+    const placed = new Set<string>();
+    for (const [groupIndex, group] of payload.groups.entries()) {
+      if (!input.allowedDepths.includes(group.targetDepth)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['groups', groupIndex, 'targetDepth'],
+          message: `unavailable depth; allowed values: ${input.allowedDepths.join(', ')}`,
+        });
+      }
+      for (const [unitIndex, unitId] of group.curriculumLearningUnitIds.entries()) {
+        const unit = unitsById.get(unitId);
+        const path = ['groups', groupIndex, 'curriculumLearningUnitIds', unitIndex];
+        if (!unit || !requiredIds.has(unitId)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path,
+            message: `unknown or non-required LearningUnit: ${unitId}`,
+          });
+          continue;
+        }
+        const allowedKinds = capabilitiesById
+          .get(unitId)
+          ?.allowedItemKinds.filter((kind) =>
+            GROUPED_STUDY_PLAN_KINDS.includes(kind as (typeof GROUPED_STUDY_PLAN_KINDS)[number]),
+          );
+        if (!allowedKinds?.includes(group.kind)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['groups', groupIndex, 'kind'],
+            message:
+              allowedKinds && allowedKinds.length > 0
+                ? `${group.kind} is unavailable for LearningUnit ${unitId}; allowed values: ${allowedKinds.join(', ')}`
+                : `${group.kind} is unavailable for LearningUnit ${unitId}; allowed values: none, defer this unit`,
+          });
+        }
+        const missingPrerequisite = unit.prerequisiteUnitIds.find(
+          (prerequisiteId) => requiredIds.has(prerequisiteId) && !placed.has(prerequisiteId),
+        );
+        if (missingPrerequisite) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path,
+            message: `prerequisite ${missingPrerequisite} must appear earlier`,
+          });
+        }
+        placed.add(unitId);
+        accounted.add(unitId);
+      }
+    }
+    for (const [deferralIndex, deferral] of payload.deferrals.entries()) {
+      if (!input.contract.allowExplicitDeferral) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['deferrals', deferralIndex],
+          message: 'deferrals are not allowed by the Contract',
+        });
+      }
+      for (const [unitIndex, unitId] of deferral.curriculumLearningUnitIds.entries()) {
+        if (!unitsById.has(unitId) || !requiredIds.has(unitId)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['deferrals', deferralIndex, 'curriculumLearningUnitIds', unitIndex],
+            message: `unknown or non-required LearningUnit: ${unitId}`,
+          });
+          continue;
+        }
+        accounted.add(unitId);
+      }
+    }
+    for (const unitId of input.requiredLearningUnitIds) {
+      if (!accounted.has(unitId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['groups'],
+          message: `required LearningUnit is omitted: ${unitId}`,
+        });
+      }
+    }
+  });
+}
+
+function studyPlanRepairGuidance(input: StudyPlanProposalInput, grouped: boolean): string {
+  const supported: ReadonlyArray<StudyPlanProposalInput['allowedItemKinds'][number]> = grouped
+    ? GROUPED_STUDY_PLAN_KINDS
+    : [
+        'teach_unit',
+        'informal_check',
+        'formal_checkpoint',
+        'synthesis',
+        'targeted_repair',
+        'due_review',
+      ];
+  const offered = supported.filter((kind) => input.allowedItemKinds.includes(kind));
+  return [
+    `Allowed kind literals for this request: ${offered.join(', ')}.`,
+    'A kind is valid for an item or group only when the exact literal appears in every referenced LearningUnit allowedItemKinds list.',
+    input.contract.allowExplicitDeferral
+      ? 'A LearningUnit with no allowed kind must be moved to deferrals.'
+      : 'Deferrals are forbidden; every LearningUnit must use an explicitly allowed kind.',
+    'Never invent, combine, translate, or paraphrase a kind literal. Preserve every otherwise-valid field and exact supplied ID.',
+  ].join('\n');
 }
 
 /**
@@ -254,12 +375,18 @@ export class Hy3Provider implements LlmProvider {
     if (input.units.length >= 80) {
       const grouped = await this.complete(
         groupedStudyPlanProposalMessages(input),
-        GroupedStudyPlanProposalPayloadSchema,
+        groupedStudyPlanSchema(input),
         opts,
+        studyPlanRepairGuidance(input, true),
       );
       return this.expandGroupedStudyPlan(input, grouped);
     }
-    return this.complete(studyPlanProposalMessages(input), StudyPlanProposalPayloadSchema, opts);
+    return this.complete(
+      studyPlanProposalMessages(input),
+      StudyPlanProposalPayloadSchema,
+      opts,
+      studyPlanRepairGuidance(input, false),
+    );
   }
 
   private expandGroupedStudyPlan(
@@ -376,6 +503,7 @@ export class Hy3Provider implements LlmProvider {
     messages: ChatMessage[],
     schema: ZodType<T, ZodTypeDef, unknown>,
     opts?: ProviderCallOptions,
+    repairGuidance?: string,
   ): Promise<T> {
     const raw = await this.chat(messages, opts);
     const first = this.tryParse(raw, schema);
@@ -390,6 +518,7 @@ export class Hy3Provider implements LlmProvider {
         content: [
           '你上一次的输出未通过校验,存在以下问题:',
           first.error,
+          ...(repairGuidance ? ['本次请求的精确修复约束:', repairGuidance] : []),
           '请仅修复这些问题,重新输出符合要求的 JSON。仍然只输出 JSON,不要解释。',
         ].join('\n'),
       },

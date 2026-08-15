@@ -13,6 +13,7 @@ import {
   PlanCompletionRequirementSchema,
   SessionAgendaStatusSchema,
   StudyExchangeSchema,
+  StudyPlanItemKindSchema,
   StudyPlanSchema,
   StudyPlanStatusSchema,
   SourceAuthorityBundleSchema,
@@ -270,6 +271,18 @@ describe('Plan, execution, and evidence boundaries', () => {
   it('has no paused StudyPlan status while Agenda supports execution pause', () => {
     expect(StudyPlanStatusSchema.safeParse('paused').success).toBe(false);
     expect(SessionAgendaStatusSchema.safeParse('paused').success).toBe(true);
+  });
+
+  it('keeps the authoritative StudyPlan item-kind vocabulary exact', () => {
+    expect(StudyPlanItemKindSchema.options).toEqual([
+      'teach_unit',
+      'informal_check',
+      'formal_checkpoint',
+      'synthesis',
+      'targeted_repair',
+      'due_review',
+      'adversarial_readiness',
+    ]);
   });
 
   it('never permits tier-3 advisory evidence to block completion', () => {

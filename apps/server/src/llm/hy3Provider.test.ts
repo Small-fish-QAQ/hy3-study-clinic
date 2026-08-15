@@ -3,6 +3,7 @@ import { SAMPLE_MATERIAL_TITLE, type SourceBlock } from '@hy3-clinic/shared';
 import { Hy3Provider } from './hy3Provider.js';
 import { ProviderError } from './errors.js';
 import type { StudyPlanProposalInput } from './provider.js';
+import { groupedStudyPlanProposalMessages } from './prompts.js';
 
 const blocks: SourceBlock[] = [
   {
@@ -158,6 +159,19 @@ describe('Hy3Provider connection probe', () => {
 });
 
 describe('Hy3Provider large StudyPlan output', () => {
+  it('places exact offered kinds beside units and does not advertise unavailable literals', () => {
+    const input = largeStudyPlanInput();
+    const content = groupedStudyPlanProposalMessages(input)[1]!.content;
+
+    expect(content).toContain('"allowedItemKinds":["teach_unit"]');
+    expect(content).toContain('kind MUST be exactly one of these offered literals: `teach_unit`');
+    expect(content).toContain('Never invent, combine, translate, or paraphrase a kind literal');
+    expect(content).not.toContain('teach_unit|');
+    expect(content).not.toContain('`formal_checkpoint`');
+    expect(content).not.toContain('`targeted_repair`');
+    expect(content).not.toContain('`due_review`');
+  });
+
   it('uses compact grouped output and derives objective and prerequisite ids locally', async () => {
     const input = largeStudyPlanInput();
     const unitIds = input.units.map((unit) => unit.id);
@@ -227,6 +241,101 @@ describe('Hy3Provider large StudyPlan output', () => {
     await expect(makeProvider(fetchImpl).proposeStudyPlan(input)).rejects.toMatchObject({
       code: 'PROVIDER_INVALID_OUTPUT',
     });
+  });
+
+  it('repairs a schema-valid teach_unit assignment that violates per-unit capabilities', async () => {
+    const input = largeStudyPlanInput();
+    input.contract.allowExplicitDeferral = true;
+    input.launchCapabilities[79] = {
+      curriculumLearningUnitId: 'unit_80',
+      allowedItemKinds: [],
+      launchableAssessmentModes: [],
+    };
+    const first = {
+      format: 'grouped_units',
+      rationale: 'Teach every required unit.',
+      groups: [
+        {
+          key: 'core',
+          phase: 'Core route',
+          kind: 'teach_unit',
+          curriculumLearningUnitIds: input.requiredLearningUnitIds,
+          rationale: 'Teach the route.',
+          estimatedMinutesPerUnit: 20,
+          targetDepth: 'working_fluency',
+        },
+      ],
+      deferrals: [],
+    };
+    const repaired = {
+      ...first,
+      groups: [
+        {
+          ...first.groups[0],
+          curriculumLearningUnitIds: input.requiredLearningUnitIds.slice(0, -1),
+        },
+      ],
+      deferrals: [
+        {
+          curriculumLearningUnitIds: ['unit_80'],
+          reason: 'No launch capability is currently available.',
+        },
+      ],
+    };
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(first)))
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(repaired))) as unknown as typeof fetch;
+
+    const proposal = await makeProvider(fetchImpl).proposeStudyPlan(input);
+
+    expect(proposal.items).toHaveLength(79);
+    expect(proposal.deferrals).toEqual([
+      {
+        curriculumLearningUnitId: 'unit_80',
+        objectiveIds: ['objective_80'],
+        reason: 'No launch capability is currently available.',
+      },
+    ]);
+    const repairBody = JSON.parse(
+      String((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[1]![1]!.body),
+    ) as { messages: Array<{ content: string }> };
+    const repairInstruction = repairBody.messages.at(-1)!.content;
+    expect(repairInstruction).toContain('teach_unit is unavailable for LearningUnit unit_80');
+    expect(repairInstruction).toContain('Allowed kind literals for this request: teach_unit');
+    expect(repairInstruction).toContain('must be moved to deferrals');
+    expect(repairInstruction).toContain(
+      'Preserve every otherwise-valid field and exact supplied ID',
+    );
+  });
+
+  it('still rejects arbitrary unknown kind aliases after exactly one repair', async () => {
+    const input = largeStudyPlanInput();
+    const invalid = {
+      format: 'grouped_units',
+      rationale: 'Use an invented action.',
+      groups: [
+        {
+          key: 'core',
+          phase: 'Core route',
+          kind: 'teach_course_unit',
+          curriculumLearningUnitIds: input.requiredLearningUnitIds,
+          rationale: 'Invented alias.',
+          estimatedMinutesPerUnit: 20,
+          targetDepth: 'working_fluency',
+        },
+      ],
+      deferrals: [],
+    };
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse(JSON.stringify(invalid)),
+    ) as unknown as typeof fetch;
+
+    await expect(makeProvider(fetchImpl).proposeStudyPlan(input)).rejects.toMatchObject({
+      code: 'PROVIDER_INVALID_OUTPUT',
+      details: { validation: expect.stringContaining('Invalid enum value') },
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 });
 

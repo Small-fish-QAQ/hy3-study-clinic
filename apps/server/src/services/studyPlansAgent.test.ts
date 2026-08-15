@@ -328,6 +328,25 @@ function services(provider: CapturingPlanProvider) {
 }
 
 describe('StudyPlan proposal and accepted Course route', () => {
+  it('fails locally without a provider call when no required unit is launchable', async () => {
+    repos.materials.replaceConcepts('mat_1', []);
+    const provider = new CapturingPlanProvider();
+    const { plans } = services(provider);
+
+    await expect(plans.propose(proposalRequest('no-launchable-unit'))).rejects.toMatchObject({
+      code: 'VALIDATION_ERROR',
+      message: 'StudyPlan generation requires at least one currently launchable LearningUnit.',
+      details: {
+        reason: 'no_launchable_learning_unit',
+        requiredLearningUnitCount: 1,
+        launchableLearningUnitCount: 0,
+      },
+    });
+    expect(provider.calls).toBe(0);
+    expect(repos.studyPlans.list('ws_1')).toHaveLength(0);
+    expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBeNull();
+  });
+
   it('keeps authority policy, identifiers, and feasibility local and replays exactly once', async () => {
     const provider = new CapturingPlanProvider({
       rationale: 'Check both objectives.',
