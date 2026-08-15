@@ -8,7 +8,7 @@ import type {
   MaterialRoleHistoryResponse,
 } from '@hy3-clinic/shared';
 import { api, ApiClientError } from '../api.js';
-import { documentSummary, workspace, workspaceSummary } from '../test/fixtures.js';
+import { documentSummary, material, workspace, workspaceSummary } from '../test/fixtures.js';
 import { AgentCourseWorkspace } from './AgentCourseWorkspace.js';
 
 const AT = '2026-08-12T11:54:07.530Z';
@@ -90,6 +90,64 @@ function contractRequiredOverview(): CourseExecutionOverview {
   };
 }
 
+function planRequiredOverview(): CourseExecutionOverview {
+  const base = contractRequiredOverview();
+  return {
+    ...base,
+    setupStage: 'plan_required',
+    activeContract: {
+      id: 'contract_1',
+      workspaceId: workspace.id,
+      version: 1,
+      predecessorId: null,
+      intent: '掌握课程内容',
+      targetOutcome: { description: '完成课程学习', targetScore: null, credential: null },
+      deadline: null,
+      studyBudget: {
+        minutesPerDay: 30,
+        minutesPerWeek: null,
+        preferredSessionMinutes: 30,
+        unavailablePeriods: [],
+      },
+      desiredDepth: 'working_fluency',
+      courseScope: {
+        subjectBoundaries: ['认知科学'],
+        materials: [],
+        includedTopics: [],
+        excludedTopics: [],
+      },
+      learnerSelfReport: null,
+      examContext: null,
+      riskTolerance: {
+        description: null,
+        allowExplicitDeferral: false,
+        maximumUnresolvedPriority: null,
+      },
+      status: 'active',
+      proposedBy: 'learner',
+      learnerConfirmedAt: AT,
+      createdAt: AT,
+    },
+    planningCurriculum: {
+      id: 'curriculum_1',
+      workspaceId: workspace.id,
+      contractVersionId: 'contract_1',
+      version: 1,
+      predecessorId: null,
+      status: 'accepted',
+      executionSourceManifest: { fingerprint: 'manifest_1', revisions: [] },
+      nodes: [],
+      synthesisGroups: [],
+      validation: { valid: true, errors: [], warnings: [], unmappedStructuralUnitIds: [] },
+      provider: 'fake',
+      providerModel: null,
+      createdAt: AT,
+      acceptedAt: AT,
+    },
+    capabilities: { ...base.capabilities, canProposeStudyPlan: true },
+  };
+}
+
 function roleHistory(current: MaterialRoleAssignment): MaterialRoleHistoryResponse {
   return {
     materialId: documentSummary.id,
@@ -116,6 +174,7 @@ async function openContractEditor(user: ReturnType<typeof userEvent.setup>) {
 
 beforeEach(() => {
   window.localStorage.clear();
+  window.sessionStorage.clear();
   vi.spyOn(api, 'listWorkspaces').mockResolvedValue({ workspaces: [workspaceSummary] });
   vi.spyOn(api, 'getWorkspace').mockResolvedValue({
     workspace,
@@ -341,5 +400,72 @@ describe('Course Settings navigation continuity', () => {
     expect(screen.getByLabelText('课程学习空间')).toHaveClass('view-settings');
     expect(screen.getByRole('button', { name: '设置' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByLabelText('课程连续性')).toHaveTextContent('已启用 · 尚未选择课程');
+  });
+});
+
+describe('Home-owned learning-route failure', () => {
+  beforeEach(() => {
+    vi.spyOn(api, 'materialRoleHistory').mockResolvedValue(roleHistory(strandedProposal));
+    vi.spyOn(api, 'getMaterial').mockResolvedValue(material);
+    vi.spyOn(api, 'config').mockResolvedValue({
+      provider: 'fake',
+      baseUrl: null,
+      model: null,
+      apiKeyConfigured: false,
+      source: 'default',
+      complete: true,
+      runtimeGeneration: 1,
+      externalConnection: { status: 'untested', testedGeneration: null, message: null },
+    });
+  });
+
+  it('stays on Home, cannot become a Study/Explore layout child, survives remount, and clears on success', async () => {
+    vi.mocked(api.courseExecution).mockResolvedValue({ overview: planRequiredOverview() });
+    const propose = vi
+      .spyOn(api, 'proposeStudyPlan')
+      .mockRejectedValueOnce(
+        new ApiClientError('PROVIDER_TIMEOUT', '模型服务响应超时(240000ms)', 504),
+      );
+    const user = userEvent.setup();
+    const rendered = renderWorkspace();
+
+    await user.click(await screen.findByRole('button', { name: '生成学习路线' }));
+    expect(await screen.findByRole('heading', { name: '学习路线暂未生成' })).toBeInTheDocument();
+    expect(screen.getByText('Hy3 响应时间过长，这次生成没有完成。')).toBeInTheDocument();
+
+    for (const destination of ['学习', '课程结构', '进展', '探索', '课程资料', '设置']) {
+      await user.click(screen.getByRole('button', { name: destination }));
+      expect(screen.queryByRole('heading', { name: '学习路线暂未生成' })).not.toBeInTheDocument();
+      expect(screen.queryByText('模型服务响应超时(240000ms)')).not.toBeInTheDocument();
+    }
+
+    await user.click(screen.getByRole('button', { name: '主页' }));
+    expect(screen.getByRole('heading', { name: '学习路线暂未生成' })).toBeInTheDocument();
+
+    rendered.unmount();
+    renderWorkspace();
+    expect(await screen.findByRole('heading', { name: '学习路线暂未生成' })).toBeInTheDocument();
+
+    propose.mockResolvedValueOnce({} as Awaited<ReturnType<typeof api.proposeStudyPlan>>);
+    await user.click(screen.getByRole('button', { name: '重试' }));
+    await waitFor(() =>
+      expect(screen.queryByRole('heading', { name: '学习路线暂未生成' })).not.toBeInTheDocument(),
+    );
+    expect(propose).toHaveBeenCalledTimes(2);
+  });
+
+  it('supports explicit dismissal without changing Course state', async () => {
+    vi.mocked(api.courseExecution).mockResolvedValue({ overview: planRequiredOverview() });
+    vi.spyOn(api, 'proposeStudyPlan').mockRejectedValue(
+      new ApiClientError('PROVIDER_TIMEOUT', '模型服务响应超时(240000ms)', 504),
+    );
+    const user = userEvent.setup();
+    renderWorkspace();
+
+    await user.click(await screen.findByRole('button', { name: '生成学习路线' }));
+    await user.click(await screen.findByRole('button', { name: '关闭学习路线错误' }));
+
+    expect(screen.queryByRole('heading', { name: '学习路线暂未生成' })).not.toBeInTheDocument();
+    expect(window.sessionStorage.length).toBe(0);
   });
 });

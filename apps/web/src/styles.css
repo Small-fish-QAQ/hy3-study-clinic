@@ -1180,12 +1180,28 @@ main.main-graph {
 }
 
 .course-workspace {
+  position: relative;
   display: flex;
   flex: 1;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
   background: var(--surface);
+}
+
+.course-shell-notifications {
+  position: absolute;
+  z-index: 30;
+  top: 68px;
+  right: var(--space-4);
+  width: min(28rem, calc(100% - 2 * var(--space-4)));
+  pointer-events: none;
+}
+
+.course-shell-notifications > * {
+  margin: 0;
+  box-shadow: var(--shadow);
+  pointer-events: auto;
 }
 
 .course-workspace-header {
@@ -4041,6 +4057,70 @@ button.danger {
   border-bottom: 1px solid var(--border);
 }
 
+.route-generation-failure {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3) var(--space-5);
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid #e7b9c2;
+  border-left: 4px solid var(--danger);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--danger-weak) 55%, var(--surface));
+}
+
+.route-generation-failure h3,
+.route-generation-failure p {
+  margin: 0;
+}
+
+.route-generation-failure h3 {
+  margin-top: 0.15rem;
+  font-size: 1rem;
+}
+
+.route-generation-failure h3 + p {
+  margin-top: var(--space-2);
+  color: var(--text-muted);
+}
+
+.route-generation-failure details {
+  margin-top: var(--space-2);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.route-generation-failure code {
+  display: block;
+  overflow-wrap: anywhere;
+  margin-top: var(--space-2);
+}
+
+.route-generation-failure-actions {
+  display: flex;
+  align-items: center;
+  align-self: center;
+  gap: var(--space-2);
+  padding-right: var(--space-4);
+}
+
+.route-generation-failure-dismiss {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  line-height: 1;
+  place-items: center;
+}
+
 .course-home-title {
   align-items: flex-start;
   gap: var(--space-3);
@@ -5762,6 +5842,27 @@ button.danger {
 @media (max-width: 767px) {
   .agent-course-shell {
     flex-direction: column;
+  }
+
+  .course-shell-notifications {
+    top: calc(56px + var(--space-2));
+    right: var(--space-3);
+    width: calc(100% - 2 * var(--space-3));
+  }
+
+  .route-generation-failure {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--space-3);
+  }
+
+  .route-generation-failure-actions {
+    align-items: stretch;
+    flex-direction: column;
+    padding-right: 0;
+  }
+
+  .route-generation-failure-actions button {
+    width: 100%;
   }
 
   .course-mobile-bar {

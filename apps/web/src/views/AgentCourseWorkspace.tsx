@@ -49,6 +49,54 @@ const DEPTH_LABELS: Record<DesiredDepth, string> = {
 
 const MATERIAL_ROLE_RECONFIRMATION_MESSAGE =
   '课程资料已更新，需要重新确认资料用途。请检查资料角色与范围后再次保存学习约定。';
+const ROUTE_FAILURE_STORAGE_PREFIX = 'hy3-clinic:route-generation-failure:';
+
+interface RouteGenerationFailure {
+  workspaceId: string;
+  kind: 'timeout' | 'provider';
+  detail: string;
+}
+
+function readRouteGenerationFailure(workspaceId: string | null): RouteGenerationFailure | null {
+  if (!workspaceId) return null;
+  try {
+    const value = window.sessionStorage.getItem(`${ROUTE_FAILURE_STORAGE_PREFIX}${workspaceId}`);
+    if (!value) return null;
+    const parsed = JSON.parse(value) as Partial<RouteGenerationFailure>;
+    if (
+      parsed.workspaceId !== workspaceId ||
+      (parsed.kind !== 'timeout' && parsed.kind !== 'provider') ||
+      typeof parsed.detail !== 'string'
+    ) {
+      return null;
+    }
+    return parsed as RouteGenerationFailure;
+  } catch {
+    return null;
+  }
+}
+
+function storeRouteGenerationFailure(failure: RouteGenerationFailure | null): void {
+  try {
+    if (failure) {
+      window.sessionStorage.setItem(
+        `${ROUTE_FAILURE_STORAGE_PREFIX}${failure.workspaceId}`,
+        JSON.stringify(failure),
+      );
+    }
+  } catch {
+    // Failure persistence across Compatibility navigation is optional when storage is unavailable.
+  }
+}
+
+function clearStoredRouteGenerationFailure(workspaceId: string | null): void {
+  if (!workspaceId) return;
+  try {
+    window.sessionStorage.removeItem(`${ROUTE_FAILURE_STORAGE_PREFIX}${workspaceId}`);
+  } catch {
+    // Session storage can be unavailable in privacy-restricted browser contexts.
+  }
+}
 
 interface ContractFormState {
   intent: string;
@@ -166,13 +214,17 @@ export function AgentCourseWorkspace({
   const [contractForm, setContractForm] = useState<ContractFormState>(() => initialForm(null));
   const [materialChoices, setMaterialChoices] = useState<Record<string, MaterialScopeChoice>>({});
   const [newCourseName, setNewCourseName] = useState('');
+  const [routeGenerationFailure, setRouteGenerationFailure] =
+    useState<RouteGenerationFailure | null>(() => readRouteGenerationFailure(workspaceId));
   const loadEpoch = useRef(0);
   const workspaceIdRef = useRef(workspaceId);
   const action = useAsyncAction();
+  const planAction = useAsyncAction();
   const progressRemediationAction = useAsyncAction();
 
   useEffect(() => {
     workspaceIdRef.current = workspaceId;
+    setRouteGenerationFailure(readRouteGenerationFailure(workspaceId));
   }, [workspaceId]);
 
   useEffect(() => {
@@ -637,10 +689,14 @@ export function AgentCourseWorkspace({
     const contract = overview.pendingContract ?? overview.activeContract;
     const curriculum = overview.planningCurriculum;
     if (!contract || !curriculum) return;
-    await runAction(
-      'propose-plan',
-      (signal) =>
-        api.proposeStudyPlan(
+    const capturedWorkspaceId = workspaceId;
+    clearStoredRouteGenerationFailure(capturedWorkspaceId);
+    setRouteGenerationFailure(null);
+    setBusyAction('propose-plan');
+    setNotice(null);
+    const result = await planAction.run(async (signal) => {
+      try {
+        const response = await api.proposeStudyPlan(
           workspaceId,
           {
             command: command(workspaceId, 'propose_plan'),
@@ -657,9 +713,36 @@ export function AgentCourseWorkspace({
               : 'Initial route',
           },
           signal,
-        ),
-      async (_result, signal) => refresh(signal),
-    );
+        );
+        if (capturedWorkspaceId === workspaceIdRef.current) await refresh(signal);
+        return response;
+      } catch (error) {
+        if (
+          !signal.aborted &&
+          capturedWorkspaceId === workspaceIdRef.current &&
+          !(error instanceof ApiClientError && error.code === 'ABORTED')
+        ) {
+          const failure: RouteGenerationFailure = {
+            workspaceId: capturedWorkspaceId,
+            kind:
+              error instanceof ApiClientError && error.code === 'PROVIDER_TIMEOUT'
+                ? 'timeout'
+                : 'provider',
+            detail: error instanceof Error ? error.message : String(error),
+          };
+          setRouteGenerationFailure(failure);
+          storeRouteGenerationFailure(failure);
+        }
+        throw error;
+      }
+    });
+    if (capturedWorkspaceId === workspaceIdRef.current) {
+      setBusyAction(null);
+      if (result) {
+        clearStoredRouteGenerationFailure(capturedWorkspaceId);
+        setRouteGenerationFailure(null);
+      }
+    }
   }
 
   async function editPlan(edit: StudyPlanDraftEdit): Promise<void> {
@@ -769,6 +852,8 @@ export function AgentCourseWorkspace({
   }
 
   function changeView(next: AgentCourseView): void {
+    action.clearError();
+    setNotice(null);
     setMaterialsOpen(false);
     setSettingsOpen(false);
     setView(next);
@@ -776,7 +861,13 @@ export function AgentCourseWorkspace({
 
   function changeCourse(nextWorkspaceId: string | null): void {
     action.cancel();
+    planAction.cancel();
     progressRemediationAction.cancel();
+    clearStoredRouteGenerationFailure(workspaceIdRef.current);
+    clearStoredRouteGenerationFailure(nextWorkspaceId);
+    setRouteGenerationFailure(null);
+    setBusyAction(null);
+    setNotice(null);
     setMaterialsOpen(false);
     setSettingsOpen(false);
     setView('home');
@@ -796,21 +887,22 @@ export function AgentCourseWorkspace({
       onCourseChange={changeCourse}
       onViewChange={changeView}
       onOpenMaterials={() => {
+        action.clearError();
+        setNotice(null);
         setFocusedMaterialId(null);
         setSettingsOpen(false);
         setMaterialsOpen(true);
       }}
       onOpenSettings={() => {
+        action.clearError();
+        setNotice(null);
         setMaterialsOpen(false);
         setSettingsOpen(true);
       }}
       onOpenAdvancedTools={onOpenAdvancedTools}
       onSidebarCollapsedChange={setSidebarCollapsed}
+      notifications={notice ? <Banner kind="info">{notice}</Banner> : null}
     >
-      {loadError ? <Banner kind="error">{loadError}</Banner> : null}
-      {action.error ? <Banner kind="error">{action.error}</Banner> : null}
-      {notice ? <Banner kind="info">{notice}</Banner> : null}
-
       {settingsOpen ? (
         <SettingsView
           provider={provider}
@@ -871,17 +963,20 @@ export function AgentCourseWorkspace({
           }}
         />
       ) : contractEditorOpen && overview ? (
-        <ContractEditor
-          documents={documents}
-          form={contractForm}
-          materialChoices={materialChoices}
-          roleHistory={roleHistory}
-          busy={busyAction !== null}
-          onFormChange={setContractForm}
-          onMaterialChoicesChange={setMaterialChoices}
-          onSubmit={() => void submitContract()}
-          onCancel={() => setContractEditorOpen(false)}
-        />
+        <div className="stack">
+          {action.error ? <Banner kind="error">{action.error}</Banner> : null}
+          <ContractEditor
+            documents={documents}
+            form={contractForm}
+            materialChoices={materialChoices}
+            roleHistory={roleHistory}
+            busy={busyAction !== null}
+            onFormChange={setContractForm}
+            onMaterialChoicesChange={setMaterialChoices}
+            onSubmit={() => void submitContract()}
+            onCancel={() => setContractEditorOpen(false)}
+          />
+        </div>
       ) : view === 'home' ? (
         <CourseHomeView
           courseName={selectedWorkspace?.name ?? '课程'}
@@ -889,12 +984,22 @@ export function AgentCourseWorkspace({
           loading={loading}
           error={loadError}
           busyAction={busyAction}
+          routeGenerationFailure={routeGenerationFailure}
           onCreateContract={() => openContractEditor(overview?.activeContract ?? null)}
           onEditContract={() => openContractEditor(overview?.pendingContract ?? null)}
           onConfirmContract={() => void transitionContract()}
           onProposeCurriculum={() => void proposeCurriculum()}
           onOpenCurriculum={() => setView('curriculum')}
           onProposeStudyPlan={() => void proposePlan()}
+          onDismissRouteGenerationFailure={() => {
+            clearStoredRouteGenerationFailure(workspaceId);
+            setRouteGenerationFailure(null);
+          }}
+          onOpenSettings={() => {
+            action.clearError();
+            setMaterialsOpen(false);
+            setSettingsOpen(true);
+          }}
           onEditStudyPlan={(edit) => void editPlan(edit)}
           onAcceptStudyPlan={() => void decidePlan('accept')}
           onRejectStudyPlan={() => void decidePlan('reject')}
@@ -907,7 +1012,7 @@ export function AgentCourseWorkspace({
           hierarchy={hierarchy}
           history={overview?.curriculumHistory ?? []}
           loading={loading}
-          error={loadError}
+          error={action.error ?? loadError}
           canPropose={overview?.capabilities.canProposeCurriculum ?? false}
           canAccept={overview?.capabilities.canAcceptCurriculum ?? false}
           busyAction={busyAction}
@@ -967,9 +1072,15 @@ export function AgentCourseWorkspace({
           refreshKey={refreshKey}
           selectedWorkspaceId={workspaceId}
           onWorkspaceSelected={(nextWorkspaceId) => {
-            if (nextWorkspaceId !== workspaceId) onWorkspaceChange(nextWorkspaceId);
+            if (nextWorkspaceId !== workspaceId) changeCourse(nextWorkspaceId);
           }}
-          onWorkspaceDeleted={onWorkspaceDeleted}
+          onWorkspaceDeleted={(deletedWorkspaceId) => {
+            clearStoredRouteGenerationFailure(deletedWorkspaceId);
+            if (routeGenerationFailure?.workspaceId === deletedWorkspaceId) {
+              setRouteGenerationFailure(null);
+            }
+            onWorkspaceDeleted?.(deletedWorkspaceId);
+          }}
           onLaunchQuiz={(quiz) => onLaunchQuiz(quiz)}
           onOpenMaterials={() => {
             setView('home');

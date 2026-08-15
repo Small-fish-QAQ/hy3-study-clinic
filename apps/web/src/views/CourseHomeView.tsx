@@ -45,12 +45,18 @@ export interface CourseHomeViewProps {
   loading: boolean;
   error: string | null;
   busyAction: string | null;
+  routeGenerationFailure: {
+    kind: 'timeout' | 'provider';
+    detail: string;
+  } | null;
   onCreateContract: () => void;
   onEditContract: () => void;
   onConfirmContract: () => void;
   onProposeCurriculum: () => void;
   onOpenCurriculum: () => void;
   onProposeStudyPlan: () => void;
+  onDismissRouteGenerationFailure: () => void;
+  onOpenSettings: () => void;
   onEditStudyPlan: (edit: StudyPlanDraftEdit) => void;
   onAcceptStudyPlan: () => void;
   onRejectStudyPlan: () => void;
@@ -66,12 +72,15 @@ export function CourseHomeView({
   loading,
   error,
   busyAction,
+  routeGenerationFailure,
   onCreateContract,
   onEditContract,
   onConfirmContract,
   onProposeCurriculum,
   onOpenCurriculum,
   onProposeStudyPlan,
+  onDismissRouteGenerationFailure,
+  onOpenSettings,
   onEditStudyPlan,
   onAcceptStudyPlan,
   onRejectStudyPlan,
@@ -194,6 +203,46 @@ export function CourseHomeView({
               </strong>
             </div>
           </div>
+        ) : null}
+
+        {routeGenerationFailure ? (
+          <section className="route-generation-failure" aria-label="学习路线生成失败">
+            <button
+              type="button"
+              className="route-generation-failure-dismiss"
+              aria-label="关闭学习路线错误"
+              title="关闭"
+              onClick={onDismissRouteGenerationFailure}
+            >
+              ×
+            </button>
+            <div>
+              <p className="eyebrow">学习路线暂未生成</p>
+              <h3>学习路线暂未生成</h3>
+              <p>
+                {routeGenerationFailure.kind === 'timeout'
+                  ? 'Hy3 响应时间过长，这次生成没有完成。'
+                  : 'Hy3 这次没有完成学习路线生成，课程状态与已有路线均未改变。'}
+              </p>
+              <details>
+                <summary>技术详情</summary>
+                <code>{routeGenerationFailure.detail}</code>
+              </details>
+            </div>
+            <div className="route-generation-failure-actions">
+              <button
+                type="button"
+                className="primary"
+                disabled={busyAction !== null}
+                onClick={onProposeStudyPlan}
+              >
+                {busyAction === 'propose-plan' ? '正在重试…' : '重试'}
+              </button>
+              <button type="button" className="ghost" onClick={onOpenSettings}>
+                检查 Hy3 设置
+              </button>
+            </div>
+          </section>
         ) : null}
 
         {next ? (

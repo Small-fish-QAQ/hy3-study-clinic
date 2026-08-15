@@ -43,6 +43,7 @@ export interface AgentCourseShellProps {
   onOpenSettings?: () => void;
   onOpenAdvancedTools?: () => void;
   onSidebarCollapsedChange?: (collapsed: boolean) => void;
+  notifications?: ReactNode;
   children: ReactNode;
 }
 
@@ -62,6 +63,7 @@ export function AgentCourseShell({
   onOpenSettings,
   onOpenAdvancedTools,
   onSidebarCollapsedChange,
+  notifications,
   children,
 }: AgentCourseShellProps) {
   const [localCollapsed, setLocalCollapsed] = useState(readSidebarCollapsedPreference);
@@ -411,6 +413,11 @@ export function AgentCourseShell({
             {settingsActive || courseId ? destinationDescription : '选择或创建课程后开始学习'}
           </span>
         </header>
+        {notifications ? (
+          <div className="course-shell-notifications" aria-live="polite">
+            {notifications}
+          </div>
+        ) : null}
         <div
           ref={workspaceBodyRef}
           className="agent-course-content"

@@ -22,6 +22,7 @@ const AT = '2026-08-10T08:00:00.000Z';
 
 beforeEach(() => {
   window.localStorage.clear();
+  window.sessionStorage.clear();
 });
 
 afterEach(() => {
@@ -251,12 +252,15 @@ function homeProps(value: CourseExecutionOverview): CourseHomeViewProps {
     loading: false,
     error: null,
     busyAction: null,
+    routeGenerationFailure: null,
     onCreateContract: vi.fn(),
     onEditContract: vi.fn(),
     onConfirmContract: vi.fn(),
     onProposeCurriculum: vi.fn(),
     onOpenCurriculum: vi.fn(),
     onProposeStudyPlan: vi.fn(),
+    onDismissRouteGenerationFailure: vi.fn(),
+    onOpenSettings: vi.fn(),
     onEditStudyPlan: vi.fn(),
     onAcceptStudyPlan: vi.fn(),
     onRejectStudyPlan: vi.fn(),
