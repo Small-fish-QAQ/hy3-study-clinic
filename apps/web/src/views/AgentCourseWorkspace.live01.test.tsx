@@ -271,28 +271,75 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
 });
 
 describe('Course Settings navigation continuity', () => {
-  it('keeps the same selected Course and system destination when opened from Explore', async () => {
+  it('keeps the same selected Course when opened from every Course destination', async () => {
     vi.spyOn(api, 'materialRoleHistory').mockResolvedValue(roleHistory(strandedProposal));
+    vi.spyOn(api, 'config').mockResolvedValue({
+      provider: 'fake',
+      baseUrl: null,
+      model: null,
+      apiKeyConfigured: false,
+      source: 'default',
+      complete: true,
+      runtimeGeneration: 1,
+      externalConnection: { status: 'untested', testedGeneration: null, message: null },
+    });
     const user = userEvent.setup();
     renderWorkspace();
 
     const courseSelector = await screen.findByRole('combobox', { name: '当前课程' });
     expect(courseSelector).toHaveValue(workspace.id);
-    await user.click(screen.getByRole('button', { name: '探索' }));
-    expect(screen.getByLabelText('课程学习空间')).toHaveClass('view-explore');
 
+    for (const destination of [
+      { label: '主页', className: 'view-home' },
+      { label: '探索', className: 'view-explore' },
+      { label: '课程结构', className: 'view-curriculum' },
+      { label: '进展', className: 'view-progress' },
+      { label: '课程资料', className: 'view-materials' },
+    ]) {
+      await user.click(screen.getByRole('button', { name: destination.label }));
+      expect(screen.getByLabelText('课程学习空间')).toHaveClass(destination.className);
+
+      await user.click(screen.getByRole('button', { name: '设置' }));
+      const shell = screen.getByLabelText('课程学习空间');
+      expect(courseSelector).toHaveValue(workspace.id);
+      expect(screen.getByRole('navigation', { name: '课程导航' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '设置' })).toHaveAttribute('aria-current', 'page');
+      expect(screen.getByRole('button', { name: destination.label })).not.toHaveAttribute(
+        'aria-current',
+      );
+      expect(shell).toHaveClass('view-settings');
+      expect(shell).not.toHaveClass(destination.className);
+      expect(screen.getByLabelText('课程连续性')).toHaveTextContent(workspace.name);
+    }
+  });
+
+  it('opens Settings from the no-Course state without inventing Course context', async () => {
+    vi.spyOn(api, 'config').mockResolvedValue({
+      provider: 'fake',
+      baseUrl: null,
+      model: null,
+      apiKeyConfigured: false,
+      source: 'default',
+      complete: true,
+      runtimeGeneration: 1,
+      externalConnection: { status: 'untested', testedGeneration: null, message: null },
+    });
+    const user = userEvent.setup();
+    render(
+      <AgentCourseWorkspace
+        workspaceId={null}
+        onWorkspaceChange={vi.fn()}
+        onLaunchQuiz={vi.fn()}
+        refreshKey={0}
+        provider="fake"
+      />,
+    );
+
+    expect(await screen.findByRole('heading', { name: '选择一门课程' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '设置' }));
-    const shell = screen.getByLabelText('课程学习空间');
-    expect(courseSelector).toHaveValue(workspace.id);
-    expect(screen.getByRole('navigation', { name: '课程导航' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '设置' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('button', { name: '探索' })).not.toHaveAttribute('aria-current');
-    expect(shell).toHaveClass('view-settings');
-    expect(shell).not.toHaveClass('view-explore');
-    expect(screen.getByLabelText('课程连续性')).toHaveTextContent(workspace.name);
 
-    await user.click(screen.getByRole('button', { name: '主页' }));
-    expect(screen.queryByRole('heading', { name: '设置' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '主页' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByLabelText('课程学习空间')).toHaveClass('view-settings');
+    expect(screen.getByRole('button', { name: '设置' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByLabelText('课程连续性')).toHaveTextContent('已启用 · 尚未选择课程');
   });
 });

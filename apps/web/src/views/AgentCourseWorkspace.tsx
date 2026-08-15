@@ -78,6 +78,7 @@ export interface AgentCourseWorkspaceProps {
   onLaunchQuiz: (quiz: PublicQuiz) => void;
   refreshKey: number;
   provider?: 'fake' | 'hy3' | null;
+  onProviderChange?: (provider: 'fake' | 'hy3') => void;
   onOpenAdvancedTools?: () => void;
   onWorkspaceDeleted?: (workspaceId: string) => void;
 }
@@ -139,6 +140,7 @@ export function AgentCourseWorkspace({
   onLaunchQuiz,
   refreshKey,
   provider = null,
+  onProviderChange,
   onOpenAdvancedTools,
   onWorkspaceDeleted,
 }: AgentCourseWorkspaceProps) {
@@ -812,6 +814,7 @@ export function AgentCourseWorkspace({
       {settingsOpen ? (
         <SettingsView
           provider={provider}
+          onProviderChange={onProviderChange}
           currentCourseId={workspaceId}
           currentCourseName={selectedWorkspace?.name ?? null}
           sidebarDefaultCollapsed={sidebarCollapsed}

@@ -1,9 +1,9 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { MAX_DOCUMENT_FILE_BYTES } from '@hy3-clinic/shared';
+import { MAX_DOCUMENT_FILE_BYTES, type SafeProviderConfig } from '@hy3-clinic/shared';
 import { App } from './App';
-import type { MaterialSummary } from './api';
+import { api, type MaterialSummary } from './api';
 import { installFetchMock, type MockRoute } from './test/mockFetch';
 import {
   blocks,
@@ -27,8 +27,19 @@ afterEach(() => {
 const LAST_MATERIAL_ID_KEY = 'hy3-clinic:last-material-id';
 const LAST_WORKSPACE_ID_KEY = 'hy3-clinic:last-workspace-id';
 
+const fakeProviderConfig: SafeProviderConfig = {
+  provider: 'fake',
+  baseUrl: null,
+  model: null,
+  apiKeyConfigured: false,
+  source: 'default',
+  complete: true,
+  runtimeGeneration: 1,
+  externalConnection: { status: 'untested', testedGeneration: null, message: null },
+};
+
 const baseRoutes: MockRoute[] = [
-  { method: 'GET', pattern: /\/api\/config$/, handler: () => ({ body: { provider: 'fake' } }) },
+  { method: 'GET', pattern: /\/api\/config$/, handler: () => ({ body: fakeProviderConfig }) },
   {
     method: 'GET',
     pattern: /\/api\/materials$/,
@@ -310,6 +321,40 @@ describe('App shell', () => {
     ).toHaveAttribute('aria-current', 'page');
     await user.click(screen.getByRole('button', { name: '返回课程' }));
     expect(screen.getByLabelText('课程侧边栏', { selector: 'aside' })).toBeInTheDocument();
+  });
+
+  it('does not let a stale bootstrap config overwrite a newer Settings config', async () => {
+    const stale = deferred<SafeProviderConfig>();
+    const hy3Config: SafeProviderConfig = {
+      ...fakeProviderConfig,
+      provider: 'hy3',
+      baseUrl: 'https://example.test/v1',
+      model: 'model-a',
+      apiKeyConfigured: true,
+      source: 'saved',
+      complete: true,
+      runtimeGeneration: 2,
+    };
+    vi.spyOn(api, 'config')
+      .mockImplementationOnce(() => stale.promise)
+      .mockResolvedValue(hy3Config);
+    installFetchMock([
+      ...baseRoutes,
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces$/,
+        handler: () => ({ body: { workspaces: [] } }),
+      },
+    ]);
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: '设置' }));
+    expect(await screen.findByText('服务器已配置为 Hy3 模式')).toBeInTheDocument();
+    await act(async () => stale.resolve(fakeProviderConfig));
+
+    expect(screen.getByText('服务器已配置为 Hy3 模式')).toBeInTheDocument();
+    expect(screen.queryByText('离线 · 模拟模式')).not.toBeInTheDocument();
   });
 });
 
@@ -1762,7 +1807,7 @@ describe('Course-space lifecycle across 资料库 and 学习图谱', () => {
       }));
 
     const routes: MockRoute[] = [
-      { method: 'GET', pattern: /\/api\/config$/, handler: () => ({ body: { provider: 'fake' } }) },
+      { method: 'GET', pattern: /\/api\/config$/, handler: () => ({ body: fakeProviderConfig }) },
       {
         method: 'GET',
         pattern: /\/api\/materials$/,

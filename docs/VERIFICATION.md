@@ -51,15 +51,16 @@ The immutable final tag's historical results remain recorded in the release line
 
 The server and shared suites also cover the implemented Phase 1-4 route: MaterialRevision lineage and source authority; Contract/Curriculum/StudyPlan/Agenda validation and atomic activation; durable StudySession lifecycle, idempotency, transcript recovery, and mixed-initiative controls; and formal-evidence progression, replan candidates, and goal outcomes. Web suites cover the Course selection shell, Course Home primary action, Course Materials, Curriculum, Chinese-named `学习` workspace, consolidated Progress destination, embedded Explore graph, and the focused Settings surface. They also assert legacy-destination consolidation, useful empty states, formal/informal separation, prose-independent completion state, request cancellation, stale responses, and Course/document switching safety.
 
-Focused frontend checks for this presentation campaign can be run without calling a real provider:
+Focused provider/settings checks can be run without calling a real provider:
 
 ```bash
-npm run test -w @hy3-clinic/web -- src/views/SettingsView.test.tsx src/views/AgentCourseViews.test.tsx
-npm run test -w @hy3-clinic/web -- src/views/AgentCourseWorkspace.live01.test.tsx src/App.test.tsx
-npm run test -w @hy3-clinic/server -- src/llm/providerAgent.test.ts
+npm run test -w @hy3-clinic/shared -- src/domain/providerConfig.test.ts
+npm run test -w @hy3-clinic/server -- src/services/providerRuntime.test.ts src/llm/hy3Provider.test.ts src/app.test.ts src/config.test.ts
+npm run test -w @hy3-clinic/web -- src/views/SettingsView.test.tsx src/views/AgentCourseWorkspace.live01.test.tsx
+npm run test -w @hy3-clinic/web -- src/views/AgentCourseViews.test.tsx src/App.test.tsx
 ```
 
-`SettingsView.test.tsx` covers fake/Hy3 wording, the deliberately local scope of Check Local Service Status, failure, cancellation, configuration authority, current-Course diagnostics, and the sidebar-preference callback. The Curriculum cases in `AgentCourseViews.test.tsx` cover conservative source-fragment presentation, same-title non-merging when semantics differ, human-readable material/page/excerpt grounding, owning-Material navigation, source-only `0 / 0` omission, exact IDs behind technical detail, default-collapsed large structures, the first-12/show-rest behavior with 277 topics, truth-authority labels, persisted current/route state, malformed-hierarchy recovery, loading, decisions, and version history. `AgentCourseWorkspace.live01.test.tsx` covers Explore → Settings Course/layout ownership and navigation back out; `App.test.tsx` covers restored selection and deletion reconciliation. `providerAgent.test.ts` covers future fake proposals grouping anonymous same-heading source blocks while preserving explicit same-titled units. These are behavioral assertions rather than visual snapshots.
+`providerConfig.test.ts`, `providerRuntime.test.ts`, `hy3Provider.test.ts`, and `app.test.ts` cover strict safe contracts, precedence and persistence, atomic activation/rollback, request snapshots, stale connection tests, loopback mutation guards, Fake no-call behavior, redaction, normalized provider failures, explicit secret actions, and provider switching without learning-state writes. `SettingsView.test.tsx` covers fake/Hy3 editing, safe secret replacement/removal/cancellation, unsaved drafts, save cancellation and stale responses, the deliberately local scope of Check Local Service Status, authoritative refresh, external-test cancellation, configuration authority, current-Course diagnostics, and the sidebar-preference callback. The remaining suites cover the existing course, curriculum, LIVE-01, and App continuity gates. These are behavioral assertions rather than visual snapshots.
 
 Post-red-team correctness regressions exercise the production boundaries rather than only constructing repository state:
 
@@ -184,7 +185,7 @@ The README captions map the screenshots to PDF provenance, graph evidence, bound
 
 ## Honest scope
 
-- A successful Settings **Check Local Service Status** proves only that local `/api/health` and `/api/config` responded. It is not real-provider evidence and does not validate Hy3 credentials, the configured model, or external endpoint availability.
+- A successful Settings **Check Local Service Status** proves only that local `/api/health` and `/api/config` responded. The separate external connection action is user-triggered; campaign verification uses Fake mode and never calls the real Hy3 API.
 - Curriculum disclosure tests prove bounded initial rendering, accessibility state, and semantic labels. They do not benchmark scan time, teaching quality, or performance for every possible hierarchy shape.
 - The small hand-authored labels and fixtures make the online record an integration check, not a quality benchmark.
 - Exact quotation validation proves location, not complete semantic entailment.

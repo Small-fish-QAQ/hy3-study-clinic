@@ -72,6 +72,7 @@ export function App() {
     readLastWorkspaceId,
   );
   const [provider, setProvider] = useState<'fake' | 'hy3' | null>(null);
+  const providerRevisionRef = useRef(0);
   const [material, setMaterial] = useState<MaterialWithBlocks | null>(null);
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [recentMaterials, setRecentMaterials] = useState<MaterialSummary[]>([]);
@@ -96,11 +97,25 @@ export function App() {
   const historyRefreshRef = useRef(0);
   const remediationAction = useAsyncAction();
 
+  const applyProvider = useCallback((next: 'fake' | 'hy3' | null) => {
+    providerRevisionRef.current += 1;
+    setProvider(next);
+  }, []);
+
   useEffect(() => {
+    const revision = providerRevisionRef.current;
+    const controller = new AbortController();
     api
-      .config()
-      .then((c) => setProvider(c.provider))
-      .catch(() => setProvider(null));
+      .config(controller.signal)
+      .then((c) => {
+        if (!controller.signal.aborted && providerRevisionRef.current === revision)
+          setProvider(c.provider);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted && providerRevisionRef.current === revision)
+          setProvider(null);
+      });
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
@@ -559,7 +574,7 @@ export function App() {
             </details>
             {provider ? (
               <span className={`provider-badge ${provider}`}>
-                {provider === 'fake' ? '离线 · 模拟模式' : 'Hy3 在线'}
+                {provider === 'fake' ? '离线 · 模拟模式' : 'Hy3 模式'}
               </span>
             ) : null}
           </div>
@@ -657,6 +672,7 @@ export function App() {
             onLaunchQuiz={(launchedQuiz) => void handleLaunchFromPlan(launchedQuiz)}
             refreshKey={refreshKey}
             provider={provider}
+            onProviderChange={applyProvider}
             onOpenAdvancedTools={() => handleModuleChange('import')}
             onWorkspaceDeleted={handleWorkspaceDeleted}
           />

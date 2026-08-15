@@ -73,19 +73,24 @@ Source blocks are wrapped with fresh request-specific delimiters and explicitly 
 
 ## 4. Provider contract
 
-`LlmProvider` is a narrow interface with eleven methods shared by `FakeProvider` and `Hy3Provider`:
+`LlmProvider` is a bounded interface shared by `FakeProvider` and `Hy3Provider`. It includes one
+deliberate connectivity probe and fourteen semantic operations:
 
-1. `analyzeConcepts`;
-2. `generateQuiz`;
-3. `gradeShortAnswer`;
-4. `generateRemediation`;
-5. `proposeGraphEdges`;
-6. `proposeRemediationPlan`;
-7. `proposeConceptAlignment`;
-8. `proposeAssessment`;
-9. `proposeMisconception`;
-10. `proposeTutorStep`; and
-11. `generateConceptLesson`.
+1. `testConnection`;
+2. `analyzeConcepts`;
+3. `generateQuiz`;
+4. `gradeShortAnswer`;
+5. `generateRemediation`;
+6. `proposeGraphEdges`;
+7. `proposeRemediationPlan`;
+8. `proposeConceptAlignment`;
+9. `proposeAssessment`;
+10. `proposeMisconception`;
+11. `generateConceptLesson`;
+12. `proposeTutorStep`;
+13. `respondToTutorTurn`;
+14. `proposeCurriculum`; and
+15. `proposeStudyPlan`.
 
 Every method receives an optional `AbortSignal` and returns a Zod-validated payload. Implementations expose normalized `ProviderError` failures rather than raw transport errors.
 
@@ -97,17 +102,17 @@ The complete workflow can be repeated offline, but this does not promise byte-id
 
 ### Hy3Provider
 
-The real adapter calls an OpenAI-compatible `chat/completions` endpoint. Base URL, model, key, and timeout come only from server environment configuration.
+The real adapter calls an OpenAI-compatible `chat/completions` endpoint. Base URL, model, key, and timeout are server-owned; Settings may save a validated local override in a versioned ignored JSON file outside Course SQLite. A usable saved configuration takes precedence over startup environment values; malformed or incomplete saved data falls back to a valid environment configuration or Fake mode.
 
 `Hy3Provider.complete` performs one initial request. If JSON extraction or Zod validation fails, it may make exactly one structured repair request containing the validation error. A second failure becomes `PROVIDER_INVALID_OUTPUT`. Transport errors, cancellation, timeout, and later evidence/domain rejection do not enter that repair loop.
 
-Credentials remain server-side, authorization headers are redacted, and no configured endpoint/model/key is supplied by the repository.
+Credentials remain server-side, authorization headers are redacted, and no configured endpoint/model/key is supplied by the repository. The explicit connection probe sends one `OK` chat request with `temperature=0` and `max_tokens=1`; providers that do not honor `max_tokens` may still charge their minimum request usage.
 
 ### Browser Settings boundary
 
-The system Settings surface does not introduce a second provider-configuration authority. `SettingsView` receives the current `fake | hy3` mode from the existing sanitized config response. Its **Check Local Service Status** action concurrently requests `GET /api/health` and `GET /api/config` through one `AbortSignal`; cancellation and stale-result handling use the existing `useAsyncAction` contract. Success means only that the local Fastify server responded and disclosed its configured mode. It does not call `LlmProvider`, send an external request, validate credentials, or establish that the configured model is available.
+The system Settings surface edits provider configuration through validated `GET/PATCH /api/config` and user-triggered `POST /api/config/test`. The safe response includes mode, non-secret URL/model, completeness, source, generation, and a boolean secret-configured flag. The secret is never returned. Runtime updates construct, persist, and activate atomically; in-flight requests retain their provider snapshot. Local health and external connectivity remain separate states.
 
-There are deliberately no browser fields for base URL, model, API key, or token, and no secret or provider configuration is written to local storage. Changing `LLM_PROVIDER` or any `HY3_*` value requires changing the server environment and restarting the server. The editable Settings value is the Course-sidebar default, which is frontend-owned presentation state. The selected Course is also remembered locally by App-level selection ownership; Settings reports that continuity and the current Course read-only. Diagnostic/about information remains progressively disclosed.
+The browser never stores provider secrets in local or session storage. The API-key field is password-type and is cleared after save/reset or explicit cancellation of credential editing. Reset discards unsaved provider and credential edits; confirmed removal persists an explicit credential removal while switching to Fake because Hy3 cannot be active without a key. Switching Fake/Hy3 otherwise does not delete credentials or mutate learning state. Diagnostic/about information remains progressively disclosed.
 
 ## 5. Grading and mastery
 
@@ -516,7 +521,7 @@ No vector database, graph database, orchestration framework, authentication laye
 
 ## 19. Known architectural limits
 
-- Settings can verify only the local health/config endpoints. It neither tests external Hy3 availability nor edits server-owned provider configuration.
+- Settings can verify local health/config endpoints and, only after an explicit user action, run the minimal external Hy3 connectivity probe. It also edits server-owned provider configuration through validated loopback APIs; campaign verification never calls the real provider.
 - Curriculum uses branch expansion and a 12-unit preview for large direct-unit sections, but it has no search/filter. Missing current/progress state remains visibly unavailable, and malformed-tree recovery changes presentation only.
 - PDF fidelity depends on the file's text layer. There is no OCR, and rotated/multi-column text, diagrams, complex tables, and text in images are not reconstructed.
 - Header/footer removal, visual-wrap repair, heading recognition, and table detection are conservative heuristics and can misclassify pathological documents.

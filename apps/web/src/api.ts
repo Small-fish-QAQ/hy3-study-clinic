@@ -34,6 +34,7 @@ import type {
   Workspace,
   WorkspaceOrigin,
   WorkspaceSummary,
+  SafeProviderConfig,
 } from '@hy3-clinic/shared';
 import {
   CourseActionLaunchResultSchema,
@@ -47,6 +48,7 @@ import {
   StudyPlanDecisionResponseSchema,
   StudyPlanHistoryResponseSchema,
   StudyPlanProposalResponseSchema,
+  SafeProviderConfigSchema,
   type AcceptCurriculumRequest,
   type ApplyStudyPlanDraftEditRequest,
   type ConfirmMaterialRoleRequest,
@@ -315,7 +317,29 @@ export const api = {
   health: (signal?: AbortSignal) =>
     request<{ status: string }>('GET', '/api/health', undefined, signal),
   config: (signal?: AbortSignal) =>
-    request<{ provider: 'fake' | 'hy3' }>('GET', '/api/config', undefined, signal),
+    requestParsed<SafeProviderConfig>(
+      'GET',
+      '/api/config',
+      SafeProviderConfigSchema,
+      undefined,
+      signal,
+    ),
+  updateConfig: (input: unknown, signal?: AbortSignal) =>
+    requestParsed<SafeProviderConfig>(
+      'PATCH',
+      '/api/config',
+      SafeProviderConfigSchema,
+      input,
+      signal,
+    ),
+  testProviderConnection: (signal?: AbortSignal) =>
+    requestParsed<SafeProviderConfig>(
+      'POST',
+      '/api/config/test',
+      SafeProviderConfigSchema,
+      {},
+      signal,
+    ),
 
   sampleMaterial: (signal?: AbortSignal) =>
     request<{ title: string; content: string; filename: string }>(

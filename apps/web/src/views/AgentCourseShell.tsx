@@ -355,14 +355,14 @@ export function AgentCourseShell({
               provider === 'fake'
                 ? '本地模拟模式'
                 : provider === 'hy3'
-                  ? 'Hy3 在线模式'
+                  ? 'Hy3 模式'
                   : '服务状态不可用'
             }
             title={
               provider === 'fake'
                 ? '本地模拟模式'
                 : provider === 'hy3'
-                  ? 'Hy3 在线模式'
+                  ? 'Hy3 模式'
                   : '服务状态不可用'
             }
           >
@@ -371,7 +371,7 @@ export function AgentCourseShell({
               {provider === 'fake'
                 ? '本地模拟模式'
                 : provider === 'hy3'
-                  ? 'Hy3 在线模式'
+                  ? 'Hy3 模式'
                   : '服务不可用'}
             </span>
           </div>
