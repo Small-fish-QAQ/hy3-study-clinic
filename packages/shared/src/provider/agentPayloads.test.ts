@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { CurriculumProposalPayloadSchema, StudyPlanProposalPayloadSchema } from './payloads.js';
+import {
+  CurriculumProposalPayloadSchema,
+  GroupedStudyPlanProposalPayloadSchema,
+  StudyPlanProposalPayloadSchema,
+} from './payloads.js';
 
 function curriculumPayload(): unknown {
   return {
@@ -172,5 +176,45 @@ describe('StudyPlanProposalPayloadSchema', () => {
     payload.items[1]!.key = 'item-1';
     payload.items[1]!.prerequisiteItemKeys = ['item-1'];
     expect(StudyPlanProposalPayloadSchema.safeParse(payload).success).toBe(false);
+  });
+});
+
+describe('GroupedStudyPlanProposalPayloadSchema', () => {
+  const groupedPayload = () => ({
+    format: 'grouped_units',
+    rationale: 'Move from foundations to application.',
+    groups: [
+      {
+        key: 'foundation',
+        phase: 'Foundation',
+        kind: 'teach_unit',
+        curriculumLearningUnitIds: ['unit_1', 'unit_2'],
+        rationale: 'Build the prerequisite chain.',
+        estimatedMinutesPerUnit: 20,
+        targetDepth: 'working_fluency',
+      },
+    ],
+    deferrals: [],
+  });
+
+  it('accepts compact unit groups without provider-assigned objective identity', () => {
+    expect(GroupedStudyPlanProposalPayloadSchema.safeParse(groupedPayload()).success).toBe(true);
+  });
+
+  it('rejects duplicate unit accounting across groups and deferrals', () => {
+    const payload = groupedPayload();
+    payload.deferrals = [
+      { curriculumLearningUnitIds: ['unit_2'], reason: 'Explicit learner deferral.' },
+    ];
+    expect(GroupedStudyPlanProposalPayloadSchema.safeParse(payload).success).toBe(false);
+  });
+
+  it('rejects consequential fields and unsupported synthesis grouping', () => {
+    const payload = groupedPayload() as ReturnType<typeof groupedPayload> & {
+      status?: string;
+    };
+    payload.status = 'accepted';
+    payload.groups[0]!.kind = 'synthesis';
+    expect(GroupedStudyPlanProposalPayloadSchema.safeParse(payload).success).toBe(false);
   });
 });

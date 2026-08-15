@@ -34,6 +34,7 @@ class CapturingPlanProvider extends FakeProvider {
   calls = 0;
   input: StudyPlanProposalInput | null = null;
   inTransaction = false;
+  options: ProviderCallOptions | undefined;
 
   constructor(private readonly output?: StudyPlanProposalPayload) {
     super();
@@ -46,6 +47,7 @@ class CapturingPlanProvider extends FakeProvider {
     this.calls += 1;
     this.input = input;
     this.inTransaction = db.inTransaction;
+    this.options = opts;
     return this.output ?? super.proposeStudyPlan(input, opts);
   }
 }
@@ -351,6 +353,7 @@ describe('StudyPlan proposal and accepted Course route', () => {
 
     expect(provider.calls).toBe(1);
     expect(provider.inTransaction).toBe(false);
+    expect(provider.options?.timeoutMs).toBe(240_000);
     expect(replay.studyPlan.id).toBe(first.studyPlan.id);
     expect(repos.telemetry.usageSummary('ws_1')).toMatchObject({
       logicalCalls: 1,

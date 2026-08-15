@@ -480,6 +480,87 @@ export const ProposedStudyPlanDeferralSchema = z
   .strict();
 export type ProposedStudyPlanDeferral = z.infer<typeof ProposedStudyPlanDeferralSchema>;
 
+/**
+ * Compact provider output for large Curricula. The server expands unit groups
+ * into ordinary StudyPlan items and derives objective/prerequisite identity
+ * from the accepted Curriculum before any proposal can be persisted.
+ */
+export const GroupedStudyPlanProposalPayloadSchema = z
+  .object({
+    format: z.literal('grouped_units'),
+    rationale: z.string().min(1).max(1000),
+    groups: z
+      .array(
+        z
+          .object({
+            key: z.string().min(1).max(100),
+            phase: z.string().min(1).max(200),
+            kind: z.enum([
+              'teach_unit',
+              'informal_check',
+              'formal_checkpoint',
+              'targeted_repair',
+              'due_review',
+            ]),
+            curriculumLearningUnitIds: z.array(z.string().min(1)).min(1).max(500),
+            rationale: z.string().min(1).max(1000),
+            estimatedMinutesPerUnit: z.number().int().positive().max(10_000),
+            targetDepth: DesiredDepthSchema,
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(100),
+    deferrals: z
+      .array(
+        z
+          .object({
+            curriculumLearningUnitIds: z.array(z.string().min(1)).min(1).max(500),
+            reason: z.string().min(1).max(500),
+          })
+          .strict(),
+      )
+      .max(100),
+  })
+  .strict()
+  .superRefine((payload, ctx) => {
+    const groupKeys = new Set<string>();
+    const unitIds = new Set<string>();
+    for (const [groupIndex, group] of payload.groups.entries()) {
+      if (groupKeys.has(group.key)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['groups', groupIndex, 'key'],
+          message: `duplicate grouped StudyPlan key: ${group.key}`,
+        });
+      }
+      groupKeys.add(group.key);
+      for (const [unitIndex, unitId] of group.curriculumLearningUnitIds.entries()) {
+        if (unitIds.has(unitId)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['groups', groupIndex, 'curriculumLearningUnitIds', unitIndex],
+            message: `duplicate grouped StudyPlan LearningUnit: ${unitId}`,
+          });
+        }
+        unitIds.add(unitId);
+      }
+    }
+    for (const [deferralIndex, deferral] of payload.deferrals.entries()) {
+      for (const [unitIndex, unitId] of deferral.curriculumLearningUnitIds.entries()) {
+        if (unitIds.has(unitId)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['deferrals', deferralIndex, 'curriculumLearningUnitIds', unitIndex],
+            message: `duplicate grouped StudyPlan LearningUnit: ${unitId}`,
+          });
+        }
+        unitIds.add(unitId);
+      }
+    }
+  });
+export type GroupedStudyPlanProposalPayload = z.infer<typeof GroupedStudyPlanProposalPayloadSchema>;
+
 /** Semantic StudyPlan proposal. Feasibility, diff, policy, and acceptance stay local. */
 export const StudyPlanProposalPayloadSchema = z
   .object({

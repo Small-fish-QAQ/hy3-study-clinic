@@ -41,6 +41,8 @@ import type {
 export interface ProviderCallOptions {
   /** Abort signal from the HTTP request (client cancellation). */
   signal?: AbortSignal | undefined;
+  /** Optional bounded timeout override for the owning operation. */
+  timeoutMs?: number | undefined;
   /** Internal telemetry hook: a schema repair is a new physical request. */
   onRepairAttempt?: (() => void) | undefined;
 }

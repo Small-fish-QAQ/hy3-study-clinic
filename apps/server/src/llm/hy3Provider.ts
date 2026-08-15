@@ -5,6 +5,7 @@ import {
   ConceptLessonPayloadSchema,
   CurriculumProposalPayloadSchema,
   GraphProposalPayloadSchema,
+  GroupedStudyPlanProposalPayloadSchema,
   MisconceptionProposalPayloadSchema,
   QuizGenerationPayloadSchema,
   RemediationPlanProposalPayloadSchema,
@@ -18,6 +19,7 @@ import {
   type ConceptLessonPayload,
   type CurriculumProposalPayload,
   type GraphProposalPayload,
+  type GroupedStudyPlanProposalPayload,
   type MisconceptionProposalPayload,
   type QuizGenerationPayload,
   type RemediationPlanProposalPayload,
@@ -36,6 +38,7 @@ import {
   conceptLessonMessages,
   curriculumProposalMessages,
   graphProposalMessages,
+  groupedStudyPlanProposalMessages,
   misconceptionProposalMessages,
   quizGenerationMessages,
   remediationMessages,
@@ -106,7 +109,7 @@ export class Hy3Provider implements LlmProvider {
         { role: 'system', content: '只回复 OK。不要调用工具,不要生成学习内容。' },
         { role: 'user', content: 'OK' },
       ],
-      opts,
+      { ...opts, timeoutMs: Math.min(opts?.timeoutMs ?? 15_000, 15_000) },
       { temperature: 0, maxTokens: 1 },
     );
   }
@@ -248,7 +251,119 @@ export class Hy3Provider implements LlmProvider {
     input: StudyPlanProposalInput,
     opts?: ProviderCallOptions,
   ): Promise<StudyPlanProposalPayload> {
+    if (input.units.length >= 80) {
+      const grouped = await this.complete(
+        groupedStudyPlanProposalMessages(input),
+        GroupedStudyPlanProposalPayloadSchema,
+        opts,
+      );
+      return this.expandGroupedStudyPlan(input, grouped);
+    }
     return this.complete(studyPlanProposalMessages(input), StudyPlanProposalPayloadSchema, opts);
+  }
+
+  private expandGroupedStudyPlan(
+    input: StudyPlanProposalInput,
+    grouped: GroupedStudyPlanProposalPayload,
+  ): StudyPlanProposalPayload {
+    const requiredIds = new Set(input.requiredLearningUnitIds);
+    const unitsById = new Map(input.units.map((unit) => [unit.id, unit]));
+    const capabilitiesById = new Map(
+      input.launchCapabilities.map((capability) => [
+        capability.curriculumLearningUnitId,
+        capability,
+      ]),
+    );
+    const itemKeyByUnitId = new Map<string, string>();
+    const accounted = new Set<string>();
+    const items: StudyPlanProposalPayload['items'] = [];
+    const deferrals: StudyPlanProposalPayload['deferrals'] = [];
+    const invalid = (message: string): never => {
+      throw ProviderError.invalidOutput(message);
+    };
+
+    for (const group of grouped.groups) {
+      if (!input.allowedDepths.includes(group.targetDepth)) {
+        invalid(`Grouped StudyPlan uses an unavailable depth: ${group.targetDepth}.`);
+      }
+      for (const unitId of group.curriculumLearningUnitIds) {
+        const unit = unitsById.get(unitId);
+        if (!unit) {
+          throw ProviderError.invalidOutput(
+            `Grouped StudyPlan references an unknown LearningUnit: ${unitId}.`,
+          );
+        }
+        if (!requiredIds.has(unitId)) {
+          invalid(`Grouped StudyPlan references a non-required LearningUnit: ${unitId}.`);
+        }
+        if (accounted.has(unitId)) {
+          invalid(`Grouped StudyPlan repeats LearningUnit: ${unitId}.`);
+        }
+        const capability = capabilitiesById.get(unitId);
+        if (!capability?.allowedItemKinds.includes(group.kind)) {
+          invalid(`Grouped StudyPlan kind ${group.kind} is unavailable for ${unitId}.`);
+        }
+        const missingPrerequisite = unit.prerequisiteUnitIds.find(
+          (prerequisiteId) =>
+            requiredIds.has(prerequisiteId) && !itemKeyByUnitId.has(prerequisiteId),
+        );
+        if (missingPrerequisite) {
+          invalid(
+            `Grouped StudyPlan must place prerequisite ${missingPrerequisite} before ${unitId}.`,
+          );
+        }
+        const key = `item-${items.length + 1}`;
+        items.push({
+          key,
+          phase: group.phase,
+          kind: group.kind,
+          curriculumLearningUnitId: unitId,
+          rationale: group.rationale,
+          estimatedMinutes: group.estimatedMinutesPerUnit,
+          targetDepth: group.targetDepth,
+          objectiveIds: unit.objectiveIds,
+          prerequisiteItemKeys: unit.prerequisiteUnitIds
+            .map((prerequisiteId) => itemKeyByUnitId.get(prerequisiteId))
+            .filter((itemKey): itemKey is string => Boolean(itemKey)),
+        });
+        itemKeyByUnitId.set(unitId, key);
+        accounted.add(unitId);
+      }
+    }
+
+    for (const deferral of grouped.deferrals) {
+      if (!input.contract.allowExplicitDeferral) {
+        invalid('Grouped StudyPlan deferrals are not allowed by the Contract.');
+      }
+      for (const unitId of deferral.curriculumLearningUnitIds) {
+        const unit = unitsById.get(unitId);
+        if (!unit) {
+          throw ProviderError.invalidOutput(
+            `Grouped StudyPlan defers an unknown LearningUnit: ${unitId}.`,
+          );
+        }
+        if (!requiredIds.has(unitId)) {
+          invalid(`Grouped StudyPlan defers a non-required LearningUnit: ${unitId}.`);
+        }
+        if (accounted.has(unitId)) {
+          invalid(`Grouped StudyPlan repeats LearningUnit: ${unitId}.`);
+        }
+        deferrals.push({
+          curriculumLearningUnitId: unitId,
+          objectiveIds: unit.objectiveIds,
+          reason: deferral.reason,
+        });
+        accounted.add(unitId);
+      }
+    }
+
+    const omitted = input.requiredLearningUnitIds.find((unitId) => !accounted.has(unitId));
+    if (omitted) invalid(`Grouped StudyPlan omits required LearningUnit: ${omitted}.`);
+    return StudyPlanProposalPayloadSchema.parse({
+      rationale: grouped.rationale,
+      items,
+      deferrals,
+    });
   }
 
   /**
@@ -316,18 +431,19 @@ export class Hy3Provider implements LlmProvider {
   ): Promise<string> {
     if (opts?.signal?.aborted) throw ProviderError.cancelled();
 
+    const timeoutMs = opts?.timeoutMs ?? this.config.timeoutMs;
     const controller = new AbortController();
     let timedOut = false;
     const onAbort = () => controller.abort();
     const timer = setTimeout(() => {
       timedOut = true;
       controller.abort();
-    }, this.config.timeoutMs);
+    }, timeoutMs);
     opts?.signal?.addEventListener('abort', onAbort, { once: true });
 
     const abortError = (): ProviderError => {
       if (opts?.signal?.aborted) return ProviderError.cancelled();
-      if (timedOut) return ProviderError.timeout(this.config.timeoutMs);
+      if (timedOut) return ProviderError.timeout(timeoutMs);
       return ProviderError.cancelled();
     };
 

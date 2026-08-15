@@ -328,7 +328,10 @@ export function createStudyPlanAgentService({
         schemaFingerprint: 'study-plan-proposal-v1',
         policyFingerprint,
         sourceFingerprint: curriculum.executionSourceManifest.fingerprint,
-        providerOptions: opts,
+        providerOptions: {
+          ...opts,
+          timeoutMs: opts?.timeoutMs ?? 240_000,
+        },
         invoke: (options) => provider.proposeStudyPlan(providerContext.input, options),
       });
       const now = clock.now().toISOString();

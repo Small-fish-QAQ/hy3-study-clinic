@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { SAMPLE_MATERIAL_TITLE, type SourceBlock } from '@hy3-clinic/shared';
 import { Hy3Provider } from './hy3Provider.js';
 import { ProviderError } from './errors.js';
+import type { StudyPlanProposalInput } from './provider.js';
 
 const blocks: SourceBlock[] = [
   {
@@ -31,6 +32,69 @@ function makeProvider(fetchImpl: typeof fetch, timeoutMs = 30_000): Hy3Provider 
     timeoutMs,
     fetchImpl,
   });
+}
+
+function largeStudyPlanInput(): StudyPlanProposalInput {
+  const units = Array.from({ length: 80 }, (_, index) => ({
+    id: `unit_${index + 1}`,
+    title: `Unit ${index + 1}`,
+    objectiveIds: [`objective_${index + 1}`],
+    objectiveSummaries: [
+      {
+        id: `objective_${index + 1}`,
+        title: `Objective ${index + 1}`,
+        description: `PRIVATE_VERBOSE_OBJECTIVE_${index + 1}`,
+      },
+    ],
+    prerequisiteUnitIds: index === 0 ? [] : [`unit_${index}`],
+    blockingEligibleObjectiveIds: [],
+    synthesisGroupIds: [],
+  }));
+  return {
+    workspaceName: 'Large course',
+    contract: {
+      contractVersionId: 'contract_1',
+      intent: 'Learn the course.',
+      targetOutcome: { description: 'Working fluency', targetScore: null },
+      deadline: null,
+      studyBudget: {
+        minutesPerDay: 60,
+        minutesPerWeek: null,
+        preferredSessionMinutes: 30,
+      },
+      desiredDepth: 'working_fluency',
+      subjectBoundaries: [],
+      materials: [],
+      includedTopics: [],
+      excludedTopics: [],
+      allowExplicitDeferral: false,
+    },
+    curriculumVersionId: 'curriculum_1',
+    executionSourceManifestFingerprint: 'manifest_1',
+    units,
+    synthesisGroups: [],
+    learnerState: units.map((unit) => ({
+      curriculumLearningUnitId: unit.id,
+      state: 'unassessed',
+      observedMinutes: null,
+      openMistakes: 0,
+    })),
+    requiredLearningUnitIds: units.map((unit) => unit.id),
+    allowedItemKinds: ['teach_unit'],
+    allowedDepths: ['working_fluency'],
+    launchCapabilities: units.map((unit) => ({
+      curriculumLearningUnitId: unit.id,
+      allowedItemKinds: ['teach_unit'],
+      launchableAssessmentModes: [],
+    })),
+    feasibility: {
+      projectedMinutes: 0,
+      availableMinutes: null,
+      slackMinutes: null,
+      state: 'unknown',
+      assumptions: [],
+    },
+  };
 }
 
 describe('Hy3Provider happy path', () => {
@@ -76,6 +140,93 @@ describe('Hy3Provider connection probe', () => {
 
     await makeProvider(fetchImpl).testConnection();
     expect((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(1);
+  });
+
+  it('uses a short timeout override without changing normal provider calls', async () => {
+    const fetchImpl = vi.fn((_url: string, init?: RequestInit) => {
+      return new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => {
+          reject(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+        });
+      });
+    }) as unknown as typeof fetch;
+
+    await expect(
+      makeProvider(fetchImpl, 30_000).testConnection({ timeoutMs: 20 }),
+    ).rejects.toMatchObject({ code: 'PROVIDER_TIMEOUT', message: expect.stringContaining('20ms') });
+  });
+});
+
+describe('Hy3Provider large StudyPlan output', () => {
+  it('uses compact grouped output and derives objective and prerequisite ids locally', async () => {
+    const input = largeStudyPlanInput();
+    const unitIds = input.units.map((unit) => unit.id);
+    const fetchImpl = vi.fn(async (_url: string, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as {
+        messages: Array<{ content: string }>;
+      };
+      expect(JSON.stringify(body.messages)).not.toContain('PRIVATE_VERBOSE_OBJECTIVE');
+      return jsonResponse(
+        JSON.stringify({
+          format: 'grouped_units',
+          rationale: 'Follow the accepted prerequisite order.',
+          groups: [
+            {
+              key: 'core',
+              phase: 'Core route',
+              kind: 'teach_unit',
+              curriculumLearningUnitIds: unitIds,
+              rationale: 'Advance each accepted LearningUnit.',
+              estimatedMinutesPerUnit: 20,
+              targetDepth: 'working_fluency',
+            },
+          ],
+          deferrals: [],
+        }),
+      );
+    }) as unknown as typeof fetch;
+
+    const proposal = await makeProvider(fetchImpl).proposeStudyPlan(input);
+
+    expect(proposal.items).toHaveLength(80);
+    expect(proposal.items[0]).toMatchObject({
+      curriculumLearningUnitId: 'unit_1',
+      objectiveIds: ['objective_1'],
+      prerequisiteItemKeys: [],
+    });
+    expect(proposal.items[79]).toMatchObject({
+      curriculumLearningUnitId: 'unit_80',
+      objectiveIds: ['objective_80'],
+      prerequisiteItemKeys: ['item-79'],
+    });
+  });
+
+  it('rejects unknown, omitted, and out-of-order unit accounting', async () => {
+    const input = largeStudyPlanInput();
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse(
+        JSON.stringify({
+          format: 'grouped_units',
+          rationale: 'Invalid route.',
+          groups: [
+            {
+              key: 'core',
+              phase: 'Core route',
+              kind: 'teach_unit',
+              curriculumLearningUnitIds: ['unit_2', 'unknown_unit'],
+              rationale: 'Invalid order and identity.',
+              estimatedMinutesPerUnit: 20,
+              targetDepth: 'working_fluency',
+            },
+          ],
+          deferrals: [],
+        }),
+      ),
+    ) as unknown as typeof fetch;
+
+    await expect(makeProvider(fetchImpl).proposeStudyPlan(input)).rejects.toMatchObject({
+      code: 'PROVIDER_INVALID_OUTPUT',
+    });
   });
 });
 
