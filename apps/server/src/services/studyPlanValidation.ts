@@ -18,6 +18,10 @@ import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
 import { checkActivityCapability } from './activityLaunch.js';
+import {
+  validateDetailedStudyPlanProposal,
+  type DetailedStudyPlanScope,
+} from '../llm/studyPlanContract.js';
 
 export const STUDY_PLAN_COMPLETION_POLICY_ID = 'learning-unit-completion';
 export const STUDY_PLAN_COMPLETION_POLICY_VERSION = 1;
@@ -65,6 +69,18 @@ function assessmentCapability(
   conceptIds: string[],
 ): AgendaLaunchCapability {
   const checked = checkActivityCapability(repos, clock, workspaceId, { mode, conceptIds });
+  if (
+    mode === 'review' &&
+    (conceptIds.length === 0 ||
+      (checked.ok && (checked.launch.mode !== 'review' || !checked.launch.conceptIds?.length)))
+  ) {
+    return {
+      status: 'blocked',
+      capability: 'assessment',
+      resourceId: null,
+      reason: 'This LearningUnit has no mapped Concept with a due review.',
+    };
+  }
   return checked.ok
     ? {
         status: 'launchable',
@@ -412,6 +428,25 @@ export function validateAndMaterializeStudyPlanProposal(input: {
   const profilesByUnit = new Map(
     profiles.map((profile) => [profile.curriculumLearningUnitId, profile]),
   );
+  const providerScope: DetailedStudyPlanScope = {
+    units: units.map((unit) => ({
+      id: unit.id,
+      objectiveIds: unit.learningUnit.objectives.map((objective) => objective.id),
+      prerequisiteUnitIds: unit.learningUnit.prerequisiteUnitIds,
+    })),
+    synthesisGroups: curriculum.synthesisGroups.map((group) => ({
+      learningUnitIds: group.learningUnitIds,
+      objectiveIds: group.objectiveIds,
+    })),
+    requiredLearningUnitIds: units.map((unit) => unit.id),
+    allowedDepths: ['pass_oriented', 'working_fluency', 'high_performance', 'deep_transfer'],
+    launchCapabilities: profiles.map((profile) => ({
+      curriculumLearningUnitId: profile.curriculumLearningUnitId,
+      allowedItemKinds: profile.allowedItemKinds,
+    })),
+    allowExplicitDeferral: contract.riskTolerance?.allowExplicitDeferral ?? false,
+  };
+  errors.push(...validateDetailedStudyPlanProposal(proposal, providerScope));
   const itemIdByKey = new Map(proposal.items.map((item) => [item.key, newId('plan_item')]));
   const planned = new Map<string, Set<string>>();
 

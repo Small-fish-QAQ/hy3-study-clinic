@@ -5,6 +5,10 @@ import {
   LaunchCourseActionRequestSchema,
   type CourseActionLaunchResult,
   type LaunchCourseActionRequest,
+  type SessionAgendaItem,
+  type StudyPlan,
+  type StudyPlanItem,
+  type StudyPlanItemKind,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import type { LlmProvider, ProviderCallOptions } from '../llm/provider.js';
@@ -28,6 +32,49 @@ interface CourseActionLaunchDeps {
   formalProgression: FormalProgressionService;
   provider: LlmProvider;
   providerModel?: string | null;
+}
+
+const AGENDA_KIND_BY_PLAN_KIND: Record<StudyPlanItemKind, SessionAgendaItem['kind']> = {
+  teach_unit: 'learning_unit_teaching',
+  informal_check: 'informal_check',
+  formal_checkpoint: 'formal_checkpoint',
+  synthesis: 'synthesis',
+  targeted_repair: 'targeted_repair',
+  due_review: 'due_review',
+  adversarial_readiness: 'adversarial_readiness',
+};
+
+function agendaBoundPlanItem(
+  repos: Repositories,
+  plan: StudyPlan,
+  item: SessionAgendaItem,
+): { ok: true; planItem: StudyPlanItem } | { ok: false; reason: string } {
+  if (item.state !== 'queued' && item.state !== 'active') {
+    return { ok: false, reason: `Agenda item state ${item.state} is not launchable.` };
+  }
+  if (!item.linkedPlanItemId) {
+    return { ok: false, reason: 'Agenda item is not linked to an accepted Plan item.' };
+  }
+  const planItem = plan.items.find((candidate) => candidate.id === item.linkedPlanItemId);
+  if (!planItem) return { ok: false, reason: 'The accepted Plan no longer contains this item.' };
+  if (item.learningUnitId !== planItem.curriculumLearningUnitId) {
+    return { ok: false, reason: 'Agenda and Plan LearningUnit identity do not match.' };
+  }
+
+  if (item.kind === 'targeted_repair' && planItem.kind !== 'targeted_repair') {
+    const progress = repos.studyPlans
+      .listProgress(plan.id)
+      .find((entry) => entry.planItemId === planItem.id);
+    if (progress?.state !== 'repair_needed') {
+      return { ok: false, reason: 'The linked Plan item no longer requires targeted repair.' };
+    }
+    return { ok: true, planItem: { ...planItem, kind: 'targeted_repair' } };
+  }
+
+  if (item.kind !== AGENDA_KIND_BY_PLAN_KIND[planItem.kind]) {
+    return { ok: false, reason: 'Agenda item kind is inconsistent with its accepted Plan item.' };
+  }
+  return { ok: true, planItem };
 }
 
 export function createCourseActionLaunchService({
@@ -101,7 +148,14 @@ export function createCourseActionLaunchService({
       const planItem = item.linkedPlanItemId
         ? plan?.items.find((candidate) => candidate.id === item.linkedPlanItemId)
         : undefined;
-      if (!plan || !curriculum || !planItem) {
+      if (
+        !plan ||
+        plan.status !== 'accepted' ||
+        !curriculum ||
+        curriculum.id !== plan.curriculumVersionId ||
+        agenda.curriculumVersionId !== curriculum.id ||
+        !planItem
+      ) {
         return commands.complete(claim, () =>
           CourseActionLaunchResultSchema.parse({
             kind: 'blocked',
@@ -112,12 +166,24 @@ export function createCourseActionLaunchService({
           }),
         );
       }
+      const bound = agendaBoundPlanItem(repos, plan, item);
+      if (!bound.ok) {
+        return commands.complete(claim, () =>
+          CourseActionLaunchResultSchema.parse({
+            kind: 'blocked',
+            agendaItemId: item.id,
+            reason: bound.reason,
+            stale: true,
+            recomposedAgenda: null,
+          }),
+        );
+      }
       const currentLaunch = resolveLaunchForPlanItem(
         repos,
         clock,
         parsed.command.workspaceId,
         curriculum,
-        planItem,
+        bound.planItem,
       );
       if (
         currentLaunch.status !== 'launchable' ||
@@ -166,11 +232,11 @@ export function createCourseActionLaunchService({
           JSON.parse(currentLaunch.resourceId ?? '{}') as unknown,
         );
         const assessmentKind =
-          item.kind === 'due_review'
+          bound.planItem.kind === 'due_review'
             ? 'due_review'
-            : item.kind === 'targeted_repair'
+            : bound.planItem.kind === 'targeted_repair'
               ? 'targeted_repair'
-              : item.kind === 'synthesis'
+              : bound.planItem.kind === 'synthesis'
                 ? 'synthesis'
                 : 'formal_checkpoint';
         const operationType =
@@ -232,7 +298,10 @@ export function createCourseActionLaunchService({
             currentAgenda.executionSourceManifestFingerprint !==
               parsed.expectedExecutionSourceManifestFingerprint ||
             !currentPlan ||
+            currentPlan.status !== 'accepted' ||
             !currentCurriculum ||
+            currentCurriculum.id !== currentPlan.curriculumVersionId ||
+            currentAgenda.curriculumVersionId !== currentCurriculum.id ||
             !currentItem ||
             !currentPlanItem
           ) {
@@ -241,12 +310,19 @@ export function createCourseActionLaunchService({
               'Course action context changed while the assessment was generated.',
             );
           }
+          const finalBound = agendaBoundPlanItem(repos, currentPlan, currentItem);
+          if (!finalBound.ok) {
+            throw new AppError(
+              ApiErrorCode.VersionConflict,
+              `Assessment action is no longer semantically launchable: ${finalBound.reason}`,
+            );
+          }
           const finalLaunch = resolveLaunchForPlanItem(
             repos,
             clock,
             parsed.command.workspaceId,
             currentCurriculum,
-            currentPlanItem,
+            finalBound.planItem,
           );
           if (
             finalLaunch.status !== 'launchable' ||

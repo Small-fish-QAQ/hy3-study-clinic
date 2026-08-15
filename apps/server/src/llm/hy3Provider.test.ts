@@ -98,6 +98,54 @@ function largeStudyPlanInput(): StudyPlanProposalInput {
   };
 }
 
+function detailedStudyPlanInput(): StudyPlanProposalInput {
+  const large = largeStudyPlanInput();
+  const units = large.units.slice(0, 2);
+  return {
+    ...large,
+    workspaceName: 'Detailed course',
+    units,
+    learnerState: large.learnerState.slice(0, 2),
+    requiredLearningUnitIds: units.map((unit) => unit.id),
+    launchCapabilities: units.map((unit) => ({
+      curriculumLearningUnitId: unit.id,
+      allowedItemKinds: ['teach_unit'],
+      launchableAssessmentModes: [],
+    })),
+  };
+}
+
+function validDetailedProposal() {
+  return {
+    rationale: 'Teach both required units in prerequisite order.',
+    items: [
+      {
+        key: 'item-1',
+        phase: 'Core route',
+        kind: 'teach_unit',
+        curriculumLearningUnitId: 'unit_1',
+        rationale: 'Teach the prerequisite.',
+        estimatedMinutes: 20,
+        targetDepth: 'working_fluency',
+        objectiveIds: ['objective_1'],
+        prerequisiteItemKeys: [],
+      },
+      {
+        key: 'item-2',
+        phase: 'Core route',
+        kind: 'teach_unit',
+        curriculumLearningUnitId: 'unit_2',
+        rationale: 'Teach the dependent unit.',
+        estimatedMinutes: 20,
+        targetDepth: 'working_fluency',
+        objectiveIds: ['objective_2'],
+        prerequisiteItemKeys: ['item-1'],
+      },
+    ],
+    deferrals: [],
+  } as const;
+}
+
 describe('Hy3Provider happy path', () => {
   it('sends a bearer token and parses a valid concept payload', async () => {
     const fetchImpl = vi.fn(async () =>
@@ -115,6 +163,85 @@ describe('Hy3Provider happy path', () => {
 
     const [, init] = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(init.headers.authorization).toBe('Bearer test-key-should-never-leak');
+  });
+});
+
+describe('Hy3Provider detailed StudyPlan input-aware repair', () => {
+  const invalidCases = [
+    {
+      name: 'unavailable capability',
+      mutate: () => {
+        const proposal = structuredClone(validDetailedProposal());
+        proposal.items[1]!.kind = 'formal_checkpoint';
+        return proposal;
+      },
+      expected: 'unavailable for LearningUnit unit_2',
+    },
+    {
+      name: 'unknown LearningUnit id',
+      mutate: () => {
+        const proposal = structuredClone(validDetailedProposal());
+        proposal.items[1]!.curriculumLearningUnitId = 'unit_unknown';
+        return proposal;
+      },
+      expected: 'unknown or non-required LearningUnit',
+    },
+    {
+      name: 'omitted required objective',
+      mutate: () => ({
+        ...structuredClone(validDetailedProposal()),
+        items: [validDetailedProposal().items[0]],
+      }),
+      expected: 'objective is omitted',
+    },
+    {
+      name: 'Contract-forbidden deferral',
+      mutate: () => ({
+        ...structuredClone(validDetailedProposal()),
+        items: [validDetailedProposal().items[0]],
+        deferrals: [
+          {
+            curriculumLearningUnitId: 'unit_2',
+            objectiveIds: ['objective_2'],
+            reason: 'Defer it.',
+          },
+        ],
+      }),
+      expected: 'Deferrals are not allowed',
+    },
+  ];
+
+  it.each(invalidCases)(
+    'repairs $name inside the one-repair contract',
+    async ({ mutate, expected }) => {
+      const fetchImpl = vi
+        .fn()
+        .mockResolvedValueOnce(jsonResponse(JSON.stringify(mutate())))
+        .mockResolvedValueOnce(
+          jsonResponse(JSON.stringify(validDetailedProposal())),
+        ) as unknown as typeof fetch;
+
+      const proposal = await makeProvider(fetchImpl).proposeStudyPlan(detailedStudyPlanInput());
+
+      expect(proposal).toEqual(validDetailedProposal());
+      expect(fetchImpl).toHaveBeenCalledTimes(2);
+      const repairBody = JSON.parse(
+        String((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[1]![1]!.body),
+      ) as { messages: Array<{ content: string }> };
+      expect(repairBody.messages.at(-1)!.content).toContain(expected);
+    },
+  );
+
+  it('fails closed after exactly one repair when the second detailed result is still invalid', async () => {
+    const invalid = invalidCases[1]!.mutate();
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse(JSON.stringify(invalid)),
+    ) as unknown as typeof fetch;
+
+    await expect(
+      makeProvider(fetchImpl).proposeStudyPlan(detailedStudyPlanInput()),
+    ).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 });
 

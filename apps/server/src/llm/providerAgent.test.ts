@@ -117,6 +117,7 @@ const curriculumInput: CurriculumProposalInput = {
       kind: 'section',
       index: 0,
       title: 'First idea',
+      headingPath: ['First idea'],
       sourceBlockIds: ['blk_1'],
     },
     {
@@ -127,6 +128,7 @@ const curriculumInput: CurriculumProposalInput = {
       kind: 'section',
       index: 1,
       title: 'Second idea',
+      headingPath: ['Second idea'],
       sourceBlockIds: ['blk_2'],
     },
   ],
@@ -279,6 +281,7 @@ describe('FakeProvider Agent proposals', () => {
         kind: 'section' as const,
         index: block.index,
         title: block.heading,
+        headingPath: block.headingPath,
         sourceBlockIds: [block.id],
       })),
       concepts: [

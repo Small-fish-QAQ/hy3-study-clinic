@@ -22,6 +22,7 @@ import {
   T0,
 } from '../testing/fixtures.js';
 import { fixedClock } from '../util/ids.js';
+import { buildCurriculumExecutionContext } from './curriculum.js';
 import { createServices, type Services } from './index.js';
 
 const T1 = '2026-01-01T00:01:00.000Z';
@@ -136,15 +137,7 @@ function stageAndActivateRoute() {
   );
   const manifest = {
     fingerprint: 'manifest-fp',
-    revisions: [
-      {
-        materialId: 'mat_1',
-        materialRevisionId: revisionId,
-        parserVersion: 'text-v1',
-        parserFingerprint: null,
-        sourceBlockRevisionIds: ['blk_1', 'blk_2'],
-      },
-    ],
+    revisions: buildCurriculumExecutionContext(repos, confirmedContract).manifest.revisions,
   };
   repos.curricula.createManifest('manifest_1', 'ws_1', manifest, T0);
   const curriculum: Curriculum = {
@@ -1631,6 +1624,150 @@ describe('formal progression service', () => {
         scopeKey: session.id,
       }),
     ).toMatchObject({ logicalCalls: 1, physicalAttempts: 1 });
+  });
+
+  it('launches repair-needed work only while its targeted-repair prerequisite remains valid', async () => {
+    const plan = repos.studyPlans.get('plan_1')!;
+    db.prepare('UPDATE study_plan_versions SET payload = ? WHERE id = ?').run(
+      JSON.stringify({
+        ...plan,
+        items: plan.items.map((item) =>
+          item.id === 'plan_item_1' ? { ...item, kind: 'formal_checkpoint' } : item,
+        ),
+      }),
+      plan.id,
+    );
+    db.prepare(
+      `UPDATE study_plan_progress
+       SET state = 'repair_needed', version = version + 1, updated_at = ?
+       WHERE plan_id = 'plan_1' AND plan_item_id = 'plan_item_1'`,
+    ).run(T3);
+
+    const existingConcepts = repos.materials.getConceptsByWorkspace('ws_1');
+    const prerequisiteConcept = makeConcept({
+      id: 'con_prerequisite',
+      name: 'Capacity prerequisite',
+      grounding: makeGrounding({
+        blockId: 'blk_2',
+        quote: repos.materials.getBlock('blk_2')!.content,
+      }),
+    });
+    repos.materials.replaceConcepts('mat_1', [...existingConcepts, prerequisiteConcept]);
+    repos.graph.insertVersion({
+      id: 'graph_repair_ready',
+      workspaceId: 'ws_1',
+      status: 'generating',
+      provider: 'fake',
+      providerModel: null,
+      validationSummary: null,
+      errorMessage: null,
+      createdAt: T3,
+      updatedAt: T3,
+    });
+    repos.graph.finalizeReady(
+      'graph_repair_ready',
+      'ws_1',
+      [
+        {
+          id: 'edge_repair_prerequisite',
+          graphVersionId: 'graph_repair_ready',
+          sourceConceptId: prerequisiteConcept.id,
+          targetConceptId: 'con_1',
+          relation: 'prerequisite',
+          explanation: 'The prerequisite supports repair of the target concept.',
+          evidence: [makeGrounding()],
+          createdAt: T3,
+        },
+      ],
+      {
+        candidateCount: 1,
+        acceptedCount: 1,
+        rejectedCount: 0,
+        duplicateCount: 0,
+        droppedEvidenceCount: 0,
+        rejected: [],
+      },
+      T3,
+    );
+    const agenda = repos.sessionAgendas.get('agenda_1')!;
+    const repairAgenda = repos.sessionAgendas.update(
+      {
+        ...agenda,
+        version: agenda.version + 1,
+        items: agenda.items.map((item) =>
+          item.id === 'agenda_item_1'
+            ? {
+                ...item,
+                kind: 'targeted_repair' as const,
+                state: 'queued' as const,
+                launch: {
+                  status: 'launchable' as const,
+                  capability: 'assessment',
+                  resourceId: null,
+                  reason: null,
+                },
+              }
+            : item,
+        ),
+        updatedAt: T3,
+      },
+      agenda.version,
+      {
+        id: 'agenda_repair_needed',
+        eventType: 'repair_needed',
+        actor: 'local',
+        payload: {},
+        createdAt: T3,
+      },
+    );
+    const request = {
+      agendaId: repairAgenda.id,
+      expectedAgendaVersion: repairAgenda.version,
+      agendaItemId: 'agenda_item_1',
+      expectedContractId: 'contract_1',
+      expectedStudyPlanId: 'plan_1',
+      expectedExecutionSourceManifestFingerprint: 'manifest-fp',
+    };
+
+    const launched = await services.courseActionLaunch.launch({
+      command: command('launch_valid_targeted_repair', 'learner'),
+      ...request,
+    });
+    expect(launched).toMatchObject({ kind: 'assessment', assessmentKind: 'targeted_repair' });
+
+    repos.graph.insertVersion({
+      id: 'graph_repair_invalid',
+      workspaceId: 'ws_1',
+      status: 'generating',
+      provider: 'fake',
+      providerModel: null,
+      validationSummary: null,
+      errorMessage: null,
+      createdAt: T3,
+      updatedAt: T3,
+    });
+    repos.graph.finalizeReady(
+      'graph_repair_invalid',
+      'ws_1',
+      [],
+      {
+        candidateCount: 0,
+        acceptedCount: 0,
+        rejectedCount: 0,
+        duplicateCount: 0,
+        droppedEvidenceCount: 0,
+        rejected: [],
+      },
+      T3,
+    );
+    const blocked = await services.courseActionLaunch.launch({
+      command: command('launch_invalid_targeted_repair', 'learner'),
+      ...request,
+    });
+    expect(blocked).toMatchObject({
+      kind: 'blocked',
+      reason: expect.stringContaining('前置概念'),
+    });
   });
 
   it('does not launder an unauthorized question through another authorized unit source', () => {

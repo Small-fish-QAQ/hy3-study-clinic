@@ -15,6 +15,7 @@ import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
 import type { CourseCommandService } from './courseCommands.js';
 import type { SessionAgendaAgentService } from './sessionAgendasAgent.js';
+import { buildCurriculumExecutionContext } from './curriculum.js';
 
 interface CourseExecutionServiceDeps {
   repos: Repositories;
@@ -66,6 +67,46 @@ function requireProposedPlan(repos: Repositories, request: DecideStudyPlanReques
     throw new AppError(ApiErrorCode.VersionConflict, 'StudyPlan decision is stale.');
   }
   return plan;
+}
+
+function requireCurrentPlanRouteAuthority(
+  repos: Repositories,
+  workspaceId: string,
+  planId: string,
+): {
+  plan: StudyPlan;
+  contract: NonNullable<ReturnType<Repositories['learningContracts']['get']>>;
+  curriculum: NonNullable<ReturnType<Repositories['curricula']['get']>>;
+} {
+  const plan = repos.studyPlans.get(planId);
+  if (!plan || plan.workspaceId !== workspaceId || plan.status !== 'proposed') {
+    throw new AppError(ApiErrorCode.VersionConflict, 'StudyPlan decision is stale.');
+  }
+  const contract = repos.learningContracts.get(plan.contractVersionId);
+  const curriculum = repos.curricula.get(plan.curriculumVersionId);
+  const currentAcceptedCurriculum = repos.curricula
+    .list(workspaceId)
+    .filter((candidate) => candidate.status === 'accepted')
+    .at(-1);
+  if (
+    !contract ||
+    !curriculum ||
+    currentAcceptedCurriculum?.id !== curriculum.id ||
+    (contract.status !== 'learner_confirmed' && contract.status !== 'active') ||
+    curriculum.status !== 'accepted' ||
+    curriculum.contractVersionId !== contract.id ||
+    curriculum.executionSourceManifest.fingerprint !== plan.executionSourceManifestFingerprint
+  ) {
+    throw new AppError(ApiErrorCode.VersionConflict, 'StudyPlan route is stale or incompatible.');
+  }
+  const currentExecutionContext = buildCurriculumExecutionContext(repos, contract);
+  if (
+    JSON.stringify(currentExecutionContext.manifest.revisions) !==
+    JSON.stringify(curriculum.executionSourceManifest.revisions)
+  ) {
+    throw new AppError(ApiErrorCode.VersionConflict, 'StudyPlan source manifest is stale.');
+  }
+  return { plan, contract, curriculum };
 }
 
 function compatiblePlanItem(
@@ -191,40 +232,34 @@ export function createCourseExecutionService({
         return StudyPlanDecisionResponseSchema.parse(response);
       }
 
-      const contract = repos.learningContracts.get(plan.contractVersionId);
-      const curriculum = repos.curricula.get(plan.curriculumVersionId);
-      if (!contract || !curriculum) {
-        throw new AppError(ApiErrorCode.VersionConflict, 'StudyPlan route is incomplete.');
-      }
-      if (
-        (contract.status !== 'learner_confirmed' && contract.status !== 'active') ||
-        curriculum.status !== 'accepted' ||
-        curriculum.contractVersionId !== contract.id ||
-        curriculum.executionSourceManifest.fingerprint !== plan.executionSourceManifestFingerprint
-      ) {
-        throw new AppError(
-          ApiErrorCode.VersionConflict,
-          'StudyPlan route is stale or incompatible.',
-        );
-      }
       const response = commands.complete(claim, () => {
+        const {
+          plan: authoritativePlan,
+          contract,
+          curriculum,
+        } = requireCurrentPlanRouteAuthority(repos, parsed.command.workspaceId, plan.id);
         const predecessor = before.acceptedPlanId
           ? (repos.studyPlans.get(before.acceptedPlanId) ?? null)
           : null;
-        carryCompatiblePlanProgress(repos, predecessor, plan, clock.now().toISOString());
-        const draftAgenda = agendas.composeDraft(contract, curriculum, plan);
+        carryCompatiblePlanProgress(
+          repos,
+          predecessor,
+          authoritativePlan,
+          clock.now().toISOString(),
+        );
+        const draftAgenda = agendas.composeDraft(contract, curriculum, authoritativePlan);
         const storedAgenda = repos.sessionAgendas.create(draftAgenda, {
           id: newId('agenda_evt'),
           eventType: 'composed_for_route_activation',
           actor: 'local',
-          payload: { studyPlanId: plan.id },
+          payload: { studyPlanId: authoritativePlan.id },
           createdAt: draftAgenda.createdAt,
         });
         repos.courseExecution.activateRoute({
           workspaceId: parsed.command.workspaceId,
           contractId: contract.id,
           curriculumId: curriculum.id,
-          planId: plan.id,
+          planId: authoritativePlan.id,
           agendaId: storedAgenda.id,
           expectedStateVersion: before.version,
           expectedActiveContractId: before.activeContractId,
@@ -235,7 +270,9 @@ export function createCourseExecutionService({
           actor: 'learner',
           acceptedAt: clock.now().toISOString(),
         });
-        const replanTrigger = repos.formalProgression.findReplanTriggerByProposedPlan(plan.id);
+        const replanTrigger = repos.formalProgression.findReplanTriggerByProposedPlan(
+          authoritativePlan.id,
+        );
         if (replanTrigger) {
           repos.formalProgression.updateReplanTrigger({
             ...replanTrigger,

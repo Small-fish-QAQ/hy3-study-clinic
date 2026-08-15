@@ -67,6 +67,7 @@ import type {
   TutorStepInput,
   TutorTurnInput,
 } from './provider.js';
+import { detailedStudyPlanSchema, detailedStudyPlanScopeFromInput } from './studyPlanContract.js';
 
 export interface Hy3ProviderConfig {
   baseUrl: string;
@@ -383,7 +384,7 @@ export class Hy3Provider implements LlmProvider {
     }
     return this.complete(
       studyPlanProposalMessages(input),
-      StudyPlanProposalPayloadSchema,
+      detailedStudyPlanSchema(detailedStudyPlanScopeFromInput(input)),
       opts,
       studyPlanRepairGuidance(input, false),
     );

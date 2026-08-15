@@ -222,6 +222,53 @@ describe('FakeProvider.generateRemediation', () => {
 });
 
 describe('FakeProvider.proposeCurriculum', () => {
+  function curriculumInputFor(
+    sourceBlocks: SourceBlock[],
+    outline: CurriculumProposalInput['outline'],
+  ): CurriculumProposalInput {
+    const revisionId = sourceBlocks[0]!.materialRevisionId!;
+    return {
+      workspaceName: 'Structural grouping course',
+      contract: {
+        contractVersionId: 'contract_grouping',
+        intent: 'Preserve parser-authoritative regions.',
+        targetOutcome: { description: 'Review every region.', targetScore: null },
+        desiredDepth: 'working_fluency',
+        subjectBoundaries: [],
+        materials: [
+          {
+            materialId: sourceBlocks[0]!.materialId,
+            title: 'Grouping fixture',
+            materialRoleAssignmentId: 'role_grouping',
+            materialRoleAssignmentVersion: 1,
+            role: 'course_material',
+            disposition: 'included',
+          },
+        ],
+        includedTopics: [],
+        excludedTopics: [],
+      },
+      executionSourceManifest: {
+        fingerprint: 'manifest_grouping',
+        revisions: [
+          {
+            materialId: sourceBlocks[0]!.materialId,
+            materialRevisionId: revisionId,
+            parserVersion: 'test-parser',
+            parserFingerprint: null,
+            sourceBlockRevisionIds: sourceBlocks.map((block) => block.id),
+          },
+        ],
+      },
+      outline,
+      concepts: [],
+      graphEdges: [],
+      allowedCanonicalConceptIds: [],
+      blocks: sourceBlocks,
+      limits: { maxNodes: 100, maxObjectives: 100, maxSynthesisGroups: 10 },
+    };
+  }
+
   it('turns a 277-block headed document into source-complete pedagogical units', async () => {
     const topicSizes = [
       1, 5, 5, 5, 8, 8, 14, 9, 1, 12, 11, 37, 25, 10, 8, 4, 16, 14, 24, 14, 21, 19, 6,
@@ -258,6 +305,7 @@ describe('FakeProvider.proposeCurriculum', () => {
           kind: 'section',
           index,
           title,
+          headingPath: [title],
           sourceBlockIds: [block.id],
         });
       }
@@ -329,6 +377,92 @@ describe('FakeProvider.proposeCurriculum', () => {
     expect(units.filter((unit) => unit.conceptIds.length > 0)).toHaveLength(concepts.length);
     expect(units.reduce((count, unit) => count + unit.sourceEvidence.length, 0)).toBe(277);
     expect(units.every((unit) => unit.objectives[0]!.evidence.length <= 5)).toBe(true);
+  });
+
+  it('keeps identical section names separate under different chapter paths', async () => {
+    const sourceBlocks: SourceBlock[] = [
+      {
+        id: 'block_chapter_a',
+        materialId: 'material_grouping',
+        materialRevisionId: 'revision_grouping',
+        index: 0,
+        heading: '小结',
+        headingPath: ['Chapter A', '小结'],
+        pageNumber: null,
+        pageEnd: null,
+        content: 'Chapter A summary evidence.',
+        startOffset: 0,
+        endOffset: 27,
+      },
+      {
+        id: 'block_chapter_b',
+        materialId: 'material_grouping',
+        materialRevisionId: 'revision_grouping',
+        index: 1,
+        heading: '小结',
+        headingPath: ['Chapter B', '小结'],
+        pageNumber: null,
+        pageEnd: null,
+        content: 'Chapter B summary evidence.',
+        startOffset: 28,
+        endOffset: 55,
+      },
+    ];
+    const outline = sourceBlocks.map((block) => ({
+      structuralUnitId: null,
+      materialId: block.materialId,
+      materialRevisionId: block.materialRevisionId!,
+      parentStructuralUnitId: null,
+      kind: 'section' as const,
+      index: block.index,
+      title: block.heading,
+      headingPath: block.headingPath,
+      sourceBlockIds: [block.id],
+    }));
+
+    const proposal = await provider.proposeCurriculum(curriculumInputFor(sourceBlocks, outline));
+    const units = proposal.nodes.filter((node) => node.kind === 'learning_unit');
+
+    expect(units).toHaveLength(2);
+    expect(units.map((unit) => unit.sourceEvidence.map((evidence) => evidence.blockId))).toEqual([
+      ['block_chapter_a'],
+      ['block_chapter_b'],
+    ]);
+  });
+
+  it('does not collapse consecutive headingless SourceBlock regions', async () => {
+    const sourceBlocks: SourceBlock[] = Array.from({ length: 4 }, (_, index) => ({
+      id: `block_headingless_${index + 1}`,
+      materialId: 'material_grouping',
+      materialRevisionId: 'revision_grouping',
+      index,
+      heading: null,
+      headingPath: [],
+      pageNumber: null,
+      pageEnd: null,
+      content: `Independent headingless region ${index + 1}.`,
+      startOffset: index * 40,
+      endOffset: index * 40 + 33,
+    }));
+    const outline = sourceBlocks.map((block) => ({
+      structuralUnitId: null,
+      materialId: block.materialId,
+      materialRevisionId: block.materialRevisionId!,
+      parentStructuralUnitId: null,
+      kind: 'paragraph' as const,
+      index: block.index,
+      title: null,
+      headingPath: [],
+      sourceBlockIds: [block.id],
+    }));
+
+    const proposal = await provider.proposeCurriculum(curriculumInputFor(sourceBlocks, outline));
+    const units = proposal.nodes.filter((node) => node.kind === 'learning_unit');
+
+    expect(units).toHaveLength(sourceBlocks.length);
+    expect(
+      units.flatMap((unit) => unit.sourceEvidence.map((evidence) => evidence.blockId)),
+    ).toEqual(sourceBlocks.map((block) => block.id));
   });
 });
 

@@ -67,22 +67,30 @@ import type {
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as const;
 
 /**
- * Parser-derived outline rows have no structural identity and may split one
- * headed topic into many paragraph/list/code SourceBlocks. Keep explicitly
- * identified structural units separate, but coalesce consecutive anonymous
- * rows that belong to the same heading before proposing LearningUnits.
+ * Parser-derived outline rows may split one headed topic into many
+ * SourceBlocks. Explicit structural identities stay separate. Anonymous rows
+ * coalesce only within the same revision and exact parser heading path;
+ * headingless rows remain independent because no authoritative shared region
+ * exists for them.
  */
 function groupCurriculumOutline(items: CurriculumOutlineItem[]): CurriculumOutlineItem[][] {
   const groups: CurriculumOutlineItem[][] = [];
   for (const item of items) {
     const previous = groups.at(-1);
     const previousItem = previous?.at(-1);
+    const sameHeadingPath =
+      previousItem !== undefined &&
+      previousItem.headingPath.length > 0 &&
+      previousItem.headingPath.length === item.headingPath.length &&
+      previousItem.headingPath.every((heading, index) => heading === item.headingPath[index]);
     const sameAnonymousTopic =
       previousItem !== undefined &&
       previousItem.structuralUnitId === null &&
       item.structuralUnitId === null &&
+      previousItem.materialRevisionId === item.materialRevisionId &&
       previousItem.parentStructuralUnitId === item.parentStructuralUnitId &&
       previousItem.kind === item.kind &&
+      sameHeadingPath &&
       (previousItem.title ?? '').trim().replace(/\s+/g, ' ') ===
         (item.title ?? '').trim().replace(/\s+/g, ' ');
     if (sameAnonymousTopic) previous!.push(item);

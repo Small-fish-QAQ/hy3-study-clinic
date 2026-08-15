@@ -169,6 +169,62 @@ describe('ordinary Fake learning execution core loop', () => {
       capability: 'assessment',
     });
 
+    let launchAgenda = route.agenda;
+    for (const invalidState of ['blocked', 'completed', 'cancelled'] as const) {
+      const prior = launchAgenda;
+      launchAgenda = repos.sessionAgendas.update(
+        {
+          ...prior,
+          version: prior.version + 1,
+          items: prior.items.map((item) =>
+            item.id === checkpoint!.id ? { ...item, state: invalidState } : item,
+          ),
+          updatedAt: NOW,
+        },
+        prior.version,
+        {
+          id: `agenda_state_${invalidState}`,
+          eventType: 'test_state_transition',
+          actor: 'local',
+          payload: { state: invalidState },
+          createdAt: NOW,
+        },
+      );
+      const blockedLaunch = await services.courseActionLaunch.launch({
+        command: command(workspace.id, `launch-${invalidState}-item`),
+        agendaId: launchAgenda.id,
+        expectedAgendaVersion: launchAgenda.version,
+        agendaItemId: checkpoint!.id,
+        expectedContractId: contract.id,
+        expectedStudyPlanId: route.studyPlan.id,
+        expectedExecutionSourceManifestFingerprint: curriculum.executionSourceManifest.fingerprint,
+      });
+      expect(blockedLaunch).toMatchObject({
+        kind: 'blocked',
+        agendaItemId: checkpoint!.id,
+        reason: expect.stringContaining(`state ${invalidState}`),
+      });
+    }
+    const invalid = launchAgenda;
+    launchAgenda = repos.sessionAgendas.update(
+      {
+        ...invalid,
+        version: invalid.version + 1,
+        items: invalid.items.map((item) =>
+          item.id === checkpoint!.id ? { ...item, state: 'queued' as const } : item,
+        ),
+        updatedAt: NOW,
+      },
+      invalid.version,
+      {
+        id: 'agenda_state_queued',
+        eventType: 'test_state_transition',
+        actor: 'local',
+        payload: { state: 'queued' },
+        createdAt: NOW,
+      },
+    );
+
     const quizCountBeforeFencedLaunch = (
       db.prepare('SELECT COUNT(*) AS n FROM quizzes').get() as { n: number }
     ).n;
@@ -182,8 +238,8 @@ describe('ordinary Fake learning execution core loop', () => {
     await expect(
       services.courseActionLaunch.launch({
         command: command(workspace.id, 'fenced-checkpoint-launch'),
-        agendaId: route.agenda.id,
-        expectedAgendaVersion: route.agenda.version,
+        agendaId: launchAgenda.id,
+        expectedAgendaVersion: launchAgenda.version,
         agendaItemId: checkpoint!.id,
         expectedContractId: contract.id,
         expectedStudyPlanId: route.studyPlan.id,
@@ -211,8 +267,8 @@ describe('ordinary Fake learning execution core loop', () => {
 
     const launched = await services.courseActionLaunch.launch({
       command: command(workspace.id, 'checkpoint-launch'),
-      agendaId: route.agenda.id,
-      expectedAgendaVersion: route.agenda.version,
+      agendaId: launchAgenda.id,
+      expectedAgendaVersion: launchAgenda.version,
       agendaItemId: checkpoint!.id,
       expectedContractId: contract.id,
       expectedStudyPlanId: route.studyPlan.id,

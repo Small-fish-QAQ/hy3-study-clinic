@@ -3,6 +3,7 @@ import {
   type Curriculum,
   type LearningContract,
   type LearningContractFeasibility,
+  type ReviewItem,
   type StudyPlanProposalPayload,
 } from '@hy3-clinic/shared';
 import { openDatabase, type SqliteDb } from '../db/database.js';
@@ -14,6 +15,7 @@ import { makeBlock, makeConcept, makeMaterial, makeWorkspace, T0 } from '../test
 import { fixedClock } from '../util/ids.js';
 import { createCourseCommandService } from './courseCommands.js';
 import { createCourseExecutionService } from './courseExecution.js';
+import { buildCurriculumExecutionContext } from './curriculum.js';
 import { createSessionAgendaAgentService } from './sessionAgendasAgent.js';
 import { createStudyPlanAgentService, preflightStudyPlan } from './studyPlansAgent.js';
 
@@ -78,6 +80,33 @@ function decisionRequest(id: string, planId: string, decision: 'accept' | 'rejec
     decision,
     reason: decision === 'reject' ? 'Learner wants a different route.' : null,
   };
+}
+
+function acceptSuccessorCurriculum(id: string): Curriculum {
+  const previous = curriculum;
+  const proposed: Curriculum = {
+    ...previous,
+    id,
+    version: previous.version + 1,
+    predecessorId: previous.id,
+    status: 'proposed',
+    acceptedAt: null,
+  };
+  repos.curricula.createVersion(proposed, {
+    id: `${id}_proposed`,
+    eventType: 'proposed',
+    actor: 'local',
+    payload: {},
+    createdAt: T2,
+  });
+  curriculum = repos.curricula.accept(id, T2, {
+    id: `${id}_accepted`,
+    eventType: 'accepted',
+    actor: 'learner',
+    payload: {},
+    createdAt: T2,
+  });
+  return curriculum;
 }
 
 beforeEach(() => {
@@ -222,18 +251,7 @@ beforeEach(() => {
     },
   );
 
-  const manifest = {
-    fingerprint: 'manifest-1',
-    revisions: [
-      {
-        materialId: 'mat_1',
-        materialRevisionId: revision.id,
-        parserVersion: 'text-v1',
-        parserFingerprint: null,
-        sourceBlockRevisionIds: ['blk_1'],
-      },
-    ],
-  };
+  const manifest = buildCurriculumExecutionContext(repos, contract).manifest;
   repos.curricula.createManifest('manifest_1', 'ws_1', manifest, T0);
   const proposedCurriculum: Curriculum = {
     id: 'curriculum_1',
@@ -358,6 +376,50 @@ describe('StudyPlan proposal and accepted Course route', () => {
     expect(preflight.planningInputCharacters).toBeGreaterThan(0);
     expect(preflight.allowedItemKindCounts.find((entry) => entry.kind === 'none')).toEqual({
       kind: 'none',
+      learningUnitCount: 1,
+    });
+  });
+
+  it('keeps due_review capability scoped to Concepts mapped to the LearningUnit', () => {
+    const dueReview: ReviewItem = {
+      workspaceId: 'ws_1',
+      conceptId: 'con_1',
+      conceptName: 'Working memory',
+      stability: 1,
+      difficulty: 5,
+      dueAt: T2,
+      lastReviewedAt: T1,
+      intervalDays: 1,
+      reviewCount: 1,
+      lapseCount: 0,
+      lastRating: 'good',
+      schedulerVersion: 'local-fsrs-v1',
+      createdAt: T1,
+      updatedAt: T2,
+    };
+    repos.review.upsert(dueReview);
+    const sourceOnly: Curriculum = {
+      ...curriculum,
+      nodes: curriculum.nodes.map((node) =>
+        node.learningUnit
+          ? { ...node, learningUnit: { ...node.learningUnit, conceptIds: [] } }
+          : node,
+      ),
+    };
+
+    const unrelated = preflightStudyPlan(repos, clock, contract, sourceOnly, 'Memory course');
+    const mapped = preflightStudyPlan(repos, clock, contract, curriculum, 'Memory course');
+
+    expect(unrelated.allowedItemKindCounts).toContainEqual({
+      kind: 'none',
+      learningUnitCount: 1,
+    });
+    expect(unrelated.allowedItemKindCounts).toContainEqual({
+      kind: 'due_review',
+      learningUnitCount: 0,
+    });
+    expect(mapped.allowedItemKindCounts).toContainEqual({
+      kind: 'due_review',
       learningUnitCount: 1,
     });
   });
@@ -528,6 +590,44 @@ describe('StudyPlan proposal and accepted Course route', () => {
     expect(replay.activeRoute?.agenda.id).toBe(accepted.activeRoute?.agenda.id);
     expect(repos.sessionAgendas.list('ws_1')).toHaveLength(1);
     expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBe(proposed.studyPlan.id);
+  });
+
+  it('rejects stale Plan acceptance after a newer accepted Curriculum and keeps history auditable', async () => {
+    acceptSuccessorCurriculum('curriculum_2');
+    const { plans, execution } = services(new CapturingPlanProvider());
+    const staleProposal = await plans.propose(proposalRequest('plan-on-curriculum-2'));
+    const staleDecision = decisionRequest(
+      'accept-stale-plan',
+      staleProposal.studyPlan.id,
+      'accept',
+    );
+    const curriculum2Snapshot = repos.curricula.get('curriculum_2');
+    const curriculum3 = acceptSuccessorCurriculum('curriculum_3');
+
+    expect(() => execution.decideStudyPlan(staleDecision)).toThrow('stale or incompatible');
+    expect(repos.studyPlans.get(staleProposal.studyPlan.id)?.status).toBe('proposed');
+    expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBeNull();
+    expect(repos.curricula.get('curriculum_2')).toEqual(curriculum2Snapshot);
+    expect(repos.curricula.get('curriculum_3')).toEqual(curriculum3);
+
+    const rejected = execution.decideStudyPlan(
+      decisionRequest('reject-stale-plan', staleProposal.studyPlan.id, 'reject'),
+    );
+    expect(rejected.decidedPlan.status).toBe('rejected');
+    expect(repos.curricula.get('curriculum_3')).toEqual(curriculum3);
+
+    const currentProposal = await plans.propose(
+      proposalRequest('plan-on-curriculum-3', staleProposal.studyPlan.id),
+    );
+    const accepted = execution.decideStudyPlan(
+      decisionRequest('accept-current-plan', currentProposal.studyPlan.id, 'accept'),
+    );
+    const replay = execution.decideStudyPlan(
+      decisionRequest('accept-current-plan', currentProposal.studyPlan.id, 'accept'),
+    );
+    expect(accepted.activeRoute?.curriculum.id).toBe('curriculum_3');
+    expect(replay.activeRoute?.agenda.id).toBe(accepted.activeRoute?.agenda.id);
+    expect(repos.sessionAgendas.list('ws_1')).toHaveLength(1);
   });
 
   it('rejects a successor proposal while retaining the accepted route', async () => {

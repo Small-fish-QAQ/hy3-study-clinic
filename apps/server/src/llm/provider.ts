@@ -342,6 +342,8 @@ export interface CurriculumOutlineItem {
   kind: StructuralUnitKind;
   index: number;
   title: string | null;
+  /** Parser-authoritative heading ancestry for anonymous SourceBlock rows. */
+  headingPath: string[];
   sourceBlockIds: string[];
 }
 

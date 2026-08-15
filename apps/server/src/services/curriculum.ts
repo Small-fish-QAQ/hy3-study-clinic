@@ -184,6 +184,7 @@ export function buildCurriculumExecutionContext(
         kind: block.heading ? 'section' : 'paragraph',
         index: block.index,
         title: block.heading,
+        headingPath: block.headingPath,
         sourceBlockIds: [block.id],
       });
       for (const bundle of repos.sourceAuthority.findEligibleByBlock(
