@@ -1,6 +1,7 @@
 import {
   ApiErrorCode,
   CurriculumProposalPayloadSchema,
+  CurriculumProposalFailureDetailsSchema,
   CurriculumValidationSchema,
   fnv1a32,
   type Curriculum,
@@ -125,11 +126,23 @@ function authorityStatus(
   };
 }
 
-function throwValidation(errors: string[], warnings: string[] = []): never {
+function throwValidation(
+  errors: string[],
+  warnings: string[] = [],
+  repairAttempted = false,
+): never {
+  const details = CurriculumProposalFailureDetailsSchema.parse({
+    kind: 'curriculum_candidate_validation',
+    repairAttempted,
+    errors: errors.slice(0, 20),
+    warnings: warnings.slice(0, 20),
+  });
   throw new AppError(
     ApiErrorCode.GroundingFailed,
-    'Curriculum proposal failed deterministic local validation; the prior valid Curriculum remains unchanged.',
-    { errors: errors.slice(0, 100), warnings: warnings.slice(0, 100) },
+    repairAttempted
+      ? '生成的新课程结构没有通过资料一致性检查，原版本未改变。系统已尝试一次修复。'
+      : '生成的新课程结构没有通过资料一致性检查，原版本未改变。',
+    details,
   );
 }
 
@@ -181,6 +194,27 @@ export function materializeCurriculumProposal(
       structuralUnitId: null,
       sourceBlockId: block.id,
       sourceBlockRevisionFingerprint: sourceBlockFingerprint(block, revision.materialRevisionId),
+    });
+    sourceRefsByNode.set(nodeId, refs.slice(0, 100));
+    sourceRefKeysByNode.set(nodeId, keys);
+  }
+
+  function addStructuralReference(
+    nodeId: string,
+    structuralUnitId: string,
+    owner: CurriculumStructuralUnitOwner,
+  ): void {
+    const refs = sourceRefsByNode.get(nodeId) ?? [];
+    const keys = sourceRefKeysByNode.get(nodeId) ?? new Set<string>();
+    const key = `${owner.materialRevisionId}\u0000structural:${structuralUnitId}`;
+    if (keys.has(key)) return;
+    keys.add(key);
+    refs.push({
+      materialId: owner.materialId,
+      materialRevisionId: owner.materialRevisionId,
+      structuralUnitId,
+      sourceBlockId: null,
+      sourceBlockRevisionFingerprint: null,
     });
     sourceRefsByNode.set(nodeId, refs.slice(0, 100));
     sourceRefKeysByNode.set(nodeId, keys);
@@ -249,6 +283,8 @@ export function materializeCurriculumProposal(
         errors.push(
           `Structural unit is outside the exact execution-source manifest: ${structuralUnitId}`,
         );
+      } else {
+        addStructuralReference(id, structuralUnitId, owner);
       }
     }
 
@@ -422,8 +458,8 @@ export function materializeCurriculumProposal(
 
   const validation = {
     valid: errors.length === 0,
-    errors: errors.slice(0, 100),
-    warnings: warnings.slice(0, 100),
+    errors: errors.slice(0, 100).map((error) => error.slice(0, 500)),
+    warnings: warnings.slice(0, 100).map((warning) => warning.slice(0, 500)),
     unmappedStructuralUnitIds: unmappedStructuralUnitIds.slice(0, 1000),
   };
   // Keep this helper useful to callers that want to inspect a failed candidate,
@@ -432,7 +468,10 @@ export function materializeCurriculumProposal(
   return { nodes, synthesisGroups, validation };
 }
 
-export function assertValidMaterializedCurriculum(result: MaterializedCurriculum): void {
+export function assertValidMaterializedCurriculum(
+  result: MaterializedCurriculum,
+  repairAttempted = false,
+): void {
   if (!result.validation.valid)
-    throwValidation(result.validation.errors, result.validation.warnings);
+    throwValidation(result.validation.errors, result.validation.warnings, repairAttempted);
 }

@@ -977,7 +977,7 @@ export class FakeProvider implements LlmProvider {
       if (!dependent.graphRelationIds.includes(edge.id)) dependent.graphRelationIds.push(edge.id);
     }
 
-    return {
+    const candidate: CurriculumProposalPayload = {
       nodes,
       synthesisGroups:
         learningUnits.length >= 2 && input.limits.maxSynthesisGroups > 0
@@ -994,6 +994,16 @@ export class FakeProvider implements LlmProvider {
             ]
           : [],
     };
+    const firstValidation = opts?.validateCandidate?.(candidate);
+    if (!firstValidation || firstValidation.valid) return candidate;
+
+    opts?.onRepairAttempt?.('candidate');
+    const repairedValidation = opts?.validateCandidate?.(candidate);
+    if (!repairedValidation || repairedValidation.valid) return candidate;
+    throw ProviderError.invalidOutput(
+      repairedValidation.diagnostics.join('; ').slice(0, 8_000),
+      'candidate',
+    );
   }
 
   async proposeStudyPlan(

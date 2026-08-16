@@ -30,11 +30,11 @@ export class ProviderError extends Error {
     return new ProviderError(ApiErrorCode.RequestCancelled, '请求已取消。');
   }
 
-  static invalidOutput(summary: string): ProviderError {
+  static invalidOutput(summary: string, validationKind?: 'schema' | 'candidate'): ProviderError {
     return new ProviderError(
       ApiErrorCode.ProviderInvalidOutput,
       '模型返回的数据不符合约定格式,已在一次修复尝试后放弃。',
-      { validation: summary },
+      { validation: summary, validationKind },
     );
   }
 

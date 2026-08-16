@@ -10,6 +10,7 @@ import {
   fnv1a32,
   type AcceptCurriculumRequest,
   type Curriculum,
+  type CurriculumProposalPayload,
   type CurriculumHierarchyView,
   type CurriculumHistoryResponse,
   type CurriculumProposalResponse,
@@ -19,6 +20,7 @@ import {
   type RejectCurriculumRequest,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
+import { ProviderError } from '../llm/errors.js';
 import type {
   CurriculumContractContext,
   CurriculumOutlineItem,
@@ -35,6 +37,8 @@ import { createCoverageRiskAgentService } from './coverageRisksAgent.js';
 import {
   assertValidMaterializedCurriculum,
   materializeCurriculumProposal,
+  type CurriculumValidationContext,
+  type MaterializedCurriculum,
 } from './curriculumValidation.js';
 import {
   enforceAgentCostPolicies,
@@ -57,6 +61,18 @@ const CURRICULUM_LIMITS = {
   maxObjectives: 30_000,
   maxSynthesisGroups: 200,
 } as const;
+
+export const CURRICULUM_PROVIDER_TIMEOUT_MS = 240_000;
+const PROVIDER_REPAIR_LEASE_MARGIN_MS = 120_000;
+export const CURRICULUM_OPERATION_LEASE_MS =
+  CURRICULUM_PROVIDER_TIMEOUT_MS * 2 + PROVIDER_REPAIR_LEASE_MARGIN_MS;
+
+export function curriculumOperationLeaseMs(timeoutMs: number): number {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    throw new AppError(ApiErrorCode.ValidationError, 'Curriculum provider timeout is invalid.');
+  }
+  return timeoutMs * 2 + PROVIDER_REPAIR_LEASE_MARGIN_MS;
+}
 
 interface CurriculumServiceDeps {
   repos: Repositories;
@@ -235,6 +251,90 @@ function manifestsEqual(left: ExecutionSourceManifest, right: ExecutionSourceMan
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
+function buildOfferedCurriculumKnowledge(
+  repos: Repositories,
+  workspaceId: string,
+  context: ReturnType<typeof buildCurriculumExecutionContext>,
+) {
+  const workspace = repos.workspaces.get(workspaceId);
+  if (!workspace) throw notFound('Course not found.');
+  const concepts = repos.materials
+    .getConceptsByWorkspace(workspaceId)
+    .filter((concept) => context.blocks.some((block) => block.id === concept.grounding.blockId));
+  const conceptIds = new Set(concepts.map((concept) => concept.id));
+  const graphEdges = workspace.activeGraphVersionId
+    ? repos.graph
+        .getEdges(workspace.activeGraphVersionId)
+        .filter(
+          (edge) => conceptIds.has(edge.sourceConceptId) && conceptIds.has(edge.targetConceptId),
+        )
+    : [];
+  const allowedCanonicalConceptIds = repos.alignment
+    .listCanonical(workspaceId)
+    .filter((canonical) =>
+      canonical.members.some((member) => conceptIds.has(member.sourceConceptId)),
+    )
+    .map((canonical) => canonical.id);
+  const fingerprint = `curriculum_context_${fnv1a32(
+    JSON.stringify({
+      workspaceName: workspace.name,
+      concepts,
+      graphEdges,
+      allowedCanonicalConceptIds,
+    }),
+  )
+    .toString(16)
+    .padStart(8, '0')}`;
+  return { workspace, concepts, graphEdges, allowedCanonicalConceptIds, fingerprint };
+}
+
+function assertProposalAuthorityCurrent(
+  repos: Repositories,
+  request: ProposeCurriculumCommandRequest,
+  contract: LearningContract,
+  manifest: ExecutionSourceManifest,
+  offeredKnowledgeFingerprint: string,
+): void {
+  const currentContract = repos.learningContracts.get(contract.id);
+  if (
+    !currentContract ||
+    currentContract.workspaceId !== request.command.workspaceId ||
+    currentContract.version !== request.expectedContractVersion ||
+    (currentContract.status !== 'learner_confirmed' && currentContract.status !== 'active')
+  ) {
+    throw new AppError(
+      ApiErrorCode.VersionConflict,
+      'Learning Contract changed while the Curriculum proposal was running.',
+    );
+  }
+  const currentContext = buildCurriculumExecutionContext(repos, currentContract);
+  if (!manifestsEqual(currentContext.manifest, manifest)) {
+    throw new AppError(
+      ApiErrorCode.VersionConflict,
+      'Course Material revisions changed while the Curriculum proposal was running.',
+    );
+  }
+  if (
+    buildOfferedCurriculumKnowledge(repos, request.command.workspaceId, currentContext)
+      .fingerprint !== offeredKnowledgeFingerprint
+  ) {
+    throw new AppError(
+      ApiErrorCode.VersionConflict,
+      'Course Concept or graph context changed while the Curriculum proposal was running.',
+    );
+  }
+  if (
+    repos.courseExecution.get(request.command.workspaceId).activeCurriculumId !==
+    request.expectedActiveCurriculumId
+  ) {
+    throw new AppError(ApiErrorCode.VersionConflict, 'Active Curriculum pointer is stale.');
+  }
+  const latest = repos.curricula.list(request.command.workspaceId).at(-1);
+  if ((latest?.id ?? null) !== request.predecessorCurriculumId) {
+    throw new AppError(ApiErrorCode.VersionConflict, 'Curriculum predecessor is stale.');
+  }
+}
+
 export function curriculumHierarchy(curriculum: Curriculum): CurriculumHierarchyView {
   const children = new Map<string | null, Curriculum['nodes']>();
   const byId = new Map(curriculum.nodes.map((node) => [node.id, node]));
@@ -375,14 +475,20 @@ export function createCurriculumService({
       );
     }
     const context = buildCurriculumExecutionContext(repos, contract);
-    const claim = commands.begin(parsed.command, 'propose_curriculum', {
-      contractId: contract.id,
-      contractVersion: contract.version,
-      predecessorCurriculumId: parsed.predecessorCurriculumId,
-      expectedActiveCurriculumId: parsed.expectedActiveCurriculumId,
-      manifestFingerprint: context.manifest.fingerprint,
-      confirmedCostPolicyIds: parsed.confirmedCostPolicyIds ?? [],
-    });
+    const providerTimeoutMs = opts?.timeoutMs ?? CURRICULUM_PROVIDER_TIMEOUT_MS;
+    const claim = commands.begin(
+      parsed.command,
+      'propose_curriculum',
+      {
+        contractId: contract.id,
+        contractVersion: contract.version,
+        predecessorCurriculumId: parsed.predecessorCurriculumId,
+        expectedActiveCurriculumId: parsed.expectedActiveCurriculumId,
+        manifestFingerprint: context.manifest.fingerprint,
+        confirmedCostPolicyIds: parsed.confirmedCostPolicyIds ?? [],
+      },
+      { leaseMs: curriculumOperationLeaseMs(providerTimeoutMs) },
+    );
     if (claim.replayPayload !== undefined) {
       return CurriculumProposalResponseSchema.parse(claim.replayPayload);
     }
@@ -397,18 +503,27 @@ export function createCurriculumService({
       commands.fail(claim, new Error('Curriculum predecessor is stale.'));
       throw new AppError(ApiErrorCode.VersionConflict, 'Curriculum predecessor is stale.');
     }
-    const concepts = repos.materials
-      .getConceptsByWorkspace(parsed.command.workspaceId)
-      .filter((concept) => context.blocks.some((block) => block.id === concept.grounding.blockId));
-    const graphEdges = workspace.activeGraphVersionId
-      ? repos.graph
-          .getEdges(workspace.activeGraphVersionId)
-          .filter(
-            (edge) =>
-              concepts.some((concept) => concept.id === edge.sourceConceptId) &&
-              concepts.some((concept) => concept.id === edge.targetConceptId),
-          )
-      : [];
+    const offeredKnowledge = buildOfferedCurriculumKnowledge(
+      repos,
+      parsed.command.workspaceId,
+      context,
+    );
+    const { concepts, graphEdges, allowedCanonicalConceptIds } = offeredKnowledge;
+    const structuralUnitOwners = new Map(
+      context.outline.flatMap((item) =>
+        item.structuralUnitId
+          ? [
+              [
+                item.structuralUnitId,
+                {
+                  materialId: item.materialId,
+                  materialRevisionId: item.materialRevisionId,
+                },
+              ] as const,
+            ]
+          : [],
+      ),
+    );
     const providerInput: CurriculumProposalInput = {
       workspaceName: workspace.name,
       contract: context.contractContext,
@@ -416,10 +531,24 @@ export function createCurriculumService({
       outline: context.outline,
       concepts,
       graphEdges,
-      allowedCanonicalConceptIds: [],
+      allowedCanonicalConceptIds,
       blocks: context.blocks,
       limits: CURRICULUM_LIMITS,
     };
+    const validationContext: CurriculumValidationContext = {
+      workspaceId: parsed.command.workspaceId,
+      courseTitle: workspace.name,
+      executionSourceManifest: context.manifest,
+      blocks: context.blocks,
+      concepts,
+      graphEdges,
+      structuralUnitOwners,
+      canonicalConceptIds: new Set(allowedCanonicalConceptIds),
+      authorityBundles: context.authorityBundles,
+      isAuthorityBlockingEligible: (id) => repos.sourceAuthority.isBlockingEligible(id),
+    };
+    let repairAttempted = false;
+    let lastCandidateValidation: MaterializedCurriculum | null = null;
     try {
       const policyFingerprint = enforceAgentCostPolicies(repos, {
         workspaceId: parsed.command.workspaceId,
@@ -444,21 +573,35 @@ export function createCurriculumService({
         policyFingerprint,
         sourceFingerprint: context.manifest.fingerprint,
         providerOptions: opts,
-        invoke: (options) => inferenceProvider.proposeCurriculum(providerInput, options),
+        invoke: (options) =>
+          inferenceProvider.proposeCurriculum(providerInput, {
+            ...options,
+            timeoutMs: providerTimeoutMs,
+            onRepairAttempt: (reason) => {
+              repairAttempted = true;
+              options?.onRepairAttempt?.(reason);
+            },
+            validateCandidate: (candidate) => {
+              assertProposalAuthorityCurrent(
+                repos,
+                parsed,
+                contract,
+                context.manifest,
+                offeredKnowledge.fingerprint,
+              );
+              lastCandidateValidation = materializeCurriculumProposal(
+                candidate as CurriculumProposalPayload,
+                validationContext,
+              );
+              return {
+                valid: lastCandidateValidation.validation.valid,
+                diagnostics: lastCandidateValidation.validation.errors,
+              };
+            },
+          }),
       });
-      const materialized = materializeCurriculumProposal(payload, {
-        workspaceId: parsed.command.workspaceId,
-        courseTitle: workspace.name,
-        executionSourceManifest: context.manifest,
-        blocks: context.blocks,
-        concepts,
-        graphEdges,
-        structuralUnitOwners: new Map(),
-        canonicalConceptIds: new Set(),
-        authorityBundles: context.authorityBundles,
-        isAuthorityBlockingEligible: (id) => repos.sourceAuthority.isBlockingEligible(id),
-      });
-      assertValidMaterializedCurriculum(materialized);
+      const materialized = materializeCurriculumProposal(payload, validationContext);
+      assertValidMaterializedCurriculum(materialized, repairAttempted);
       const now = clock.now().toISOString();
       const curriculum: Curriculum = {
         id: newId('curriculum'),
@@ -477,6 +620,13 @@ export function createCurriculumService({
         acceptedAt: null,
       };
       return commands.complete(claim, () => {
+        assertProposalAuthorityCurrent(
+          repos,
+          parsed,
+          contract,
+          context.manifest,
+          offeredKnowledge.fingerprint,
+        );
         repos.curricula.createManifest(
           newId('manifest'),
           curriculum.workspaceId,
@@ -498,8 +648,26 @@ export function createCurriculumService({
         });
       });
     } catch (error) {
-      commands.fail(claim, error);
-      throw error;
+      let failure: unknown = error;
+      const failedCandidate = lastCandidateValidation as MaterializedCurriculum | null;
+      if (
+        error instanceof ProviderError &&
+        error.code === ApiErrorCode.ProviderInvalidOutput &&
+        typeof error.details === 'object' &&
+        error.details !== null &&
+        'validationKind' in error.details &&
+        error.details.validationKind === 'candidate' &&
+        failedCandidate &&
+        !failedCandidate.validation.valid
+      ) {
+        try {
+          assertValidMaterializedCurriculum(failedCandidate, repairAttempted);
+        } catch (validationError) {
+          failure = validationError;
+        }
+      }
+      commands.fail(claim, failure);
+      throw failure;
     }
   }
 

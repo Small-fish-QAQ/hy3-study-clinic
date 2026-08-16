@@ -43,8 +43,14 @@ export interface ProviderCallOptions {
   signal?: AbortSignal | undefined;
   /** Optional bounded timeout override for the owning operation. */
   timeoutMs?: number | undefined;
-  /** Internal telemetry hook: a schema repair is a new physical request. */
-  onRepairAttempt?: (() => void) | undefined;
+  /** Internal telemetry hook: any bounded repair is a new physical request. */
+  onRepairAttempt?: ((reason?: ProviderRepairReason) => void) | undefined;
+  /**
+   * Local input-aware validation applied after schema parsing. Returning
+   * diagnostics consumes the provider's single repair allowance; throwing
+   * fails immediately for authoritative conflicts that a model cannot fix.
+   */
+  validateCandidate?: ((candidate: unknown) => ProviderCandidateValidation) | undefined;
   /** Internal telemetry hook fired immediately before a physical request is sent. */
   onRequestSent?: (() => void) | undefined;
   /** Internal telemetry hook for provider-reported usage of the current request. */
@@ -53,6 +59,14 @@ export interface ProviderCallOptions {
   beforeTelemetryComplete?: (() => void) | undefined;
   /** Internal authoritative metadata for one logical provider inference. */
   telemetry?: ProviderTelemetryContext | undefined;
+}
+
+export type ProviderRepairReason = 'schema' | 'candidate';
+
+export interface ProviderCandidateValidation {
+  valid: boolean;
+  /** Bounded, sanitized model-correctable reasons only. */
+  diagnostics: string[];
 }
 
 /** Usage reported by the provider response. Missing values remain unknown. */

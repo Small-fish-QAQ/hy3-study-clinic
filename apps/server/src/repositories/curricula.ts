@@ -247,10 +247,7 @@ export function createCurriculaRepo(db: SqliteDb) {
         }
       }
       if (!node.learningUnit) continue;
-      for (const conceptId of [
-        ...node.learningUnit.conceptIds,
-        ...node.learningUnit.canonicalConceptIds,
-      ]) {
+      for (const conceptId of node.learningUnit.conceptIds) {
         const concept = db
           .prepare(
             `SELECT 1 FROM concepts c JOIN execution_source_manifest_revisions r
@@ -259,6 +256,23 @@ export function createCurriculaRepo(db: SqliteDb) {
           )
           .get(manifestId, conceptId);
         if (!concept) throw new Error(`Unknown or out-of-manifest Concept: ${conceptId}`);
+      }
+      for (const canonicalConceptId of node.learningUnit.canonicalConceptIds) {
+        const canonical = db
+          .prepare(
+            `SELECT 1
+             FROM canonical_concepts cc
+             JOIN canonical_members cm ON cm.canonical_concept_id = cc.id
+             JOIN concepts c ON c.id = cm.source_concept_id
+             JOIN execution_source_manifest_revisions r
+               ON r.material_revision_id = c.material_revision_id
+             WHERE r.manifest_id = ? AND cc.workspace_id = ? AND cc.id = ?
+             LIMIT 1`,
+          )
+          .get(manifestId, curriculum.workspaceId, canonicalConceptId);
+        if (!canonical) {
+          throw new Error(`Unknown or out-of-manifest canonical Concept: ${canonicalConceptId}`);
+        }
       }
       for (const relationId of node.learningUnit.graphRelationIds) {
         if (!db.prepare('SELECT 1 FROM graph_edges WHERE id = ?').get(relationId)) {

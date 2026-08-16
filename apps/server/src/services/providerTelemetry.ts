@@ -176,14 +176,18 @@ export function createTelemetryProvider({
             usage = reported;
             supplied.onUsage?.(reported);
           },
-          onRepairAttempt: () => {
-            supplied.onRepairAttempt?.();
+          onRepairAttempt: (reason) => {
+            supplied.onRepairAttempt?.(reason);
             const repairStartedAt = clock.now().toISOString();
             finishAttempt(
               'completed',
               repairStartedAt,
-              'STRUCTURED_OUTPUT_REPAIR_REQUIRED',
-              'The first response required bounded structured-output repair.',
+              reason === 'candidate'
+                ? 'CANDIDATE_VALIDATION_REPAIR_REQUIRED'
+                : 'STRUCTURED_OUTPUT_REPAIR_REQUIRED',
+              reason === 'candidate'
+                ? 'The first response required bounded deterministic candidate repair.'
+                : 'The first response required bounded structured-output repair.',
             );
             attemptNumber += 1;
             attemptId = newId('llm_attempt');

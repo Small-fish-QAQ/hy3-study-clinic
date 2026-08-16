@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useState } from 'react';
+import { CurriculumProposalFailureDetailsSchema } from '@hy3-clinic/shared';
 import type {
   CurriculumHierarchyNodeView,
   CurriculumHierarchyView,
@@ -31,6 +32,7 @@ export interface CurriculumViewProps {
   history: CurriculumHistoryItem[];
   loading: boolean;
   error: string | null;
+  errorDetails?: unknown;
   canPropose: boolean;
   canAccept: boolean;
   busyAction: string | null;
@@ -43,6 +45,21 @@ export interface CurriculumViewProps {
   sourceLoading?: boolean;
   sourceError?: string | null;
   onOpenSource?: (materialId: string) => void;
+}
+
+export function CurriculumFailureDiagnostics({ details }: { details: unknown }) {
+  const parsed = CurriculumProposalFailureDetailsSchema.safeParse(details);
+  if (!parsed.success || parsed.data.errors.length === 0) return null;
+  return (
+    <details className="technical-details curriculum-failure-details">
+      <summary>查看资料一致性检查详情</summary>
+      <ul>
+        {parsed.data.errors.map((error, index) => (
+          <li key={`${index}:${error}`}>{error}</li>
+        ))}
+      </ul>
+    </details>
+  );
 }
 
 interface CurriculumTreeNode {
@@ -823,6 +840,7 @@ export function CurriculumView({
   history,
   loading,
   error,
+  errorDetails,
   canPropose,
   canAccept,
   busyAction,
@@ -872,7 +890,12 @@ export function CurriculumView({
 
   return (
     <div className="curriculum-workspace stack" aria-label="课程结构" aria-busy={loading}>
-      {error ? <Banner kind="error">{error}</Banner> : null}
+      {error ? (
+        <Banner kind="error">
+          <p>{error}</p>
+          <CurriculumFailureDiagnostics details={errorDetails} />
+        </Banner>
+      ) : null}
       <header className="supporting-page-intro curriculum-page-intro">
         <div className="row between">
           <div className="curriculum-page-heading">

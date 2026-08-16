@@ -513,7 +513,7 @@ export class Hy3Provider implements LlmProvider {
     repairGuidance?: string,
   ): Promise<T> {
     const raw = await this.chat(messages, opts);
-    const first = this.tryParse(raw, schema);
+    const first = this.tryParse(raw, schema, opts);
     if (first.ok) return first.value;
 
     // One bounded repair attempt.
@@ -531,32 +531,45 @@ export class Hy3Provider implements LlmProvider {
       },
     ];
     if (opts?.signal?.aborted) throw ProviderError.cancelled();
-    opts?.onRepairAttempt?.();
+    opts?.onRepairAttempt?.(first.reason);
     const repaired = await this.chat(repairMessages, opts);
-    const second = this.tryParse(repaired, schema);
+    const second = this.tryParse(repaired, schema, opts);
     if (second.ok) return second.value;
 
-    throw ProviderError.invalidOutput(second.error);
+    throw ProviderError.invalidOutput(second.error, second.reason);
   }
 
   private tryParse<T>(
     raw: string,
     schema: ZodType<T, ZodTypeDef, unknown>,
-  ): { ok: true; value: T } | { ok: false; error: string } {
+    opts?: ProviderCallOptions,
+  ): { ok: true; value: T } | { ok: false; error: string; reason: 'schema' | 'candidate' } {
     let json: unknown;
     try {
       json = extractJson(raw);
     } catch (err) {
-      if (err instanceof JsonExtractionError) return { ok: false, error: err.message };
+      if (err instanceof JsonExtractionError) {
+        return { ok: false, error: err.message, reason: 'schema' };
+      }
       throw err;
     }
     const parsed = schema.safeParse(json);
-    if (parsed.success) return { ok: true, value: parsed.data };
+    if (parsed.success) {
+      const candidate = opts?.validateCandidate?.(parsed.data);
+      if (candidate && !candidate.valid) {
+        return {
+          ok: false,
+          error: candidate.diagnostics.slice(0, 20).join('; ').slice(0, 8_000),
+          reason: 'candidate',
+        };
+      }
+      return { ok: true, value: parsed.data };
+    }
     const summary = parsed.error.issues
       .slice(0, 10)
       .map((i) => `${i.path.join('.')}: ${i.message}`)
       .join('; ');
-    return { ok: false, error: summary };
+    return { ok: false, error: summary, reason: 'schema' };
   }
 
   /** Single chat completion call with timeout + external cancellation. */

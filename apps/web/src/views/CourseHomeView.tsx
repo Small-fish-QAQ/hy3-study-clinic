@@ -5,6 +5,7 @@ import type {
 } from '@hy3-clinic/shared';
 import { Banner, Loading } from '../components/ui.js';
 import { StudyPlanPanel } from './StudyPlanPanel.js';
+import { CurriculumFailureDiagnostics } from './CurriculumView.js';
 
 const SETUP_TEXT: Record<CourseExecutionOverview['setupStage'], string> = {
   contract_required: '先明确这次学习要达到什么目标',
@@ -52,6 +53,7 @@ export interface CourseHomeViewProps {
   actionFailure: {
     owner: 'contract' | 'curriculum' | 'plan' | 'continue';
     message: string;
+    details?: unknown;
   } | null;
   onCreateContract: () => void;
   onEditContract: () => void;
@@ -267,7 +269,10 @@ export function CourseHomeView({
           <Banner kind="error">学习目标暂未确认。{actionFailure.message}</Banner>
         ) : null}
         {actionFailure?.owner === 'curriculum' ? (
-          <Banner kind="error">课程结构暂未生成。{actionFailure.message}</Banner>
+          <Banner kind="error">
+            <p>课程结构暂未生成。{actionFailure.message}</p>
+            <CurriculumFailureDiagnostics details={actionFailure.details} />
+          </Banner>
         ) : null}
         {actionFailure?.owner === 'continue' ? (
           <Banner kind="error">暂时无法继续这项学习。{actionFailure.message}</Banner>

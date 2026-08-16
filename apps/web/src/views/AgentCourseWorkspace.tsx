@@ -1017,6 +1017,7 @@ export function AgentCourseWorkspace({
                   owner: actionFailureOwner.slice(5) as
                     'contract' | 'curriculum' | 'plan' | 'continue',
                   message: action.error,
+                  details: action.errorDetails,
                 }
               : null
           }
@@ -1047,6 +1048,7 @@ export function AgentCourseWorkspace({
           history={overview?.curriculumHistory ?? []}
           loading={loading}
           error={actionFailureOwner === 'curriculum' ? (action.error ?? loadError) : loadError}
+          errorDetails={actionFailureOwner === 'curriculum' ? action.errorDetails : null}
           canPropose={overview?.capabilities.canProposeCurriculum ?? false}
           canAccept={overview?.capabilities.canAcceptCurriculum ?? false}
           busyAction={busyAction}

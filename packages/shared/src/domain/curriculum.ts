@@ -130,6 +130,19 @@ export const CurriculumValidationSchema = z
   })
   .strict();
 
+/** Safe, bounded details for a failed locally validated Curriculum candidate. */
+export const CurriculumProposalFailureDetailsSchema = z
+  .object({
+    kind: z.literal('curriculum_candidate_validation'),
+    repairAttempted: z.boolean(),
+    errors: z.array(z.string().min(1).max(500)).max(20),
+    warnings: z.array(z.string().min(1).max(500)).max(20),
+  })
+  .strict();
+export type CurriculumProposalFailureDetails = z.infer<
+  typeof CurriculumProposalFailureDetailsSchema
+>;
+
 export const CurriculumSchema = z
   .object({
     id: z.string().min(1),

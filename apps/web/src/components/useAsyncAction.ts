@@ -4,6 +4,7 @@ import { ApiClientError } from '../api.js';
 export interface AsyncActionState {
   loading: boolean;
   error: string | null;
+  errorDetails: unknown | null;
   cancel: () => void;
   clearError: () => void;
 }
@@ -18,6 +19,7 @@ export function useAsyncAction(): AsyncActionState & {
 } {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorDetails, setErrorDetails] = useState<unknown | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
 
@@ -36,6 +38,7 @@ export function useAsyncAction(): AsyncActionState & {
     controllerRef.current = controller;
     setLoading(true);
     setError(null);
+    setErrorDetails(null);
     try {
       const result = await fn(controller.signal);
       if (controller.signal.aborted || controllerRef.current !== controller) return null;
@@ -46,6 +49,7 @@ export function useAsyncAction(): AsyncActionState & {
       }
       if (mountedRef.current && controllerRef.current === controller) {
         setError(err instanceof Error ? err.message : String(err));
+        setErrorDetails(err instanceof ApiClientError ? (err.details ?? null) : null);
       }
       return null;
     } finally {
@@ -62,7 +66,10 @@ export function useAsyncAction(): AsyncActionState & {
     if (mountedRef.current) setLoading(false);
   }, []);
 
-  const clearError = useCallback(() => setError(null), []);
+  const clearError = useCallback(() => {
+    setError(null);
+    setErrorDetails(null);
+  }, []);
 
-  return { run, cancel, loading, error, clearError };
+  return { run, cancel, loading, error, errorDetails, clearError };
 }

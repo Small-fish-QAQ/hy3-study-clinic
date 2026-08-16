@@ -1057,6 +1057,39 @@ describe('CurriculumView truth and validation states', () => {
     expect(screen.getByRole('button', { name: '接受课程结构' })).toBeDisabled();
   });
 
+  it('shows a learner-readable proposal failure with optional validation detail', async () => {
+    const user = userEvent.setup();
+    render(
+      <CurriculumView
+        hierarchy={null}
+        history={[]}
+        loading={false}
+        error="生成的新课程结构没有通过资料一致性检查，原版本未改变。系统已尝试一次修复。"
+        errorDetails={{
+          kind: 'curriculum_candidate_validation',
+          repairAttempted: true,
+          errors: ['Curriculum evidence failed exact-quote validation.'],
+          warnings: [],
+        }}
+        canPropose
+        canAccept={false}
+        busyAction={null}
+        onPropose={vi.fn()}
+        onAccept={vi.fn()}
+        onReject={vi.fn()}
+        onSelectHistory={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('alert')).toHaveTextContent('原版本未改变。系统已尝试一次修复。');
+    const summary = screen.getByText('查看资料一致性检查详情');
+    expect(
+      screen.queryByText('Curriculum evidence failed exact-quote validation.'),
+    ).not.toBeVisible();
+    await user.click(summary);
+    expect(screen.getByText('Curriculum evidence failed exact-quote validation.')).toBeVisible();
+  });
+
   it('preserves proposal acceptance, rejection, and version-history selection', async () => {
     const onAccept = vi.fn();
     const onReject = vi.fn();

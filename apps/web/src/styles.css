@@ -5460,6 +5460,15 @@ button.danger {
   color: var(--text-muted);
 }
 
+.curriculum-failure-details {
+  margin-top: var(--space-2);
+}
+
+.curriculum-failure-details ul {
+  margin: var(--space-2) 0 0;
+  padding-left: 1.25rem;
+}
+
 .curriculum-evidence-meta {
   display: grid;
   grid-template-columns: repeat(2, max-content);

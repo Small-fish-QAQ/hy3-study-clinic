@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiErrorCode } from '@hy3-clinic/shared';
 import type {
   CurriculumProposalPayload,
   LearningContract,
@@ -7,14 +8,16 @@ import type {
 import { openDatabase, type SqliteDb } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
 import { FakeProvider } from '../llm/fakeProvider.js';
+import { Hy3Provider } from '../llm/hy3Provider.js';
 import type { CurriculumProposalInput, ProviderCallOptions } from '../llm/provider.js';
 import { createRepositories, type Repositories } from '../repositories/index.js';
 import { makeBlock, makeMaterial, makeWorkspace, T0 } from '../testing/fixtures.js';
-import { fixedClock } from '../util/ids.js';
+import { fixedClock, type Clock } from '../util/ids.js';
 import { createCourseCommandService } from './courseCommands.js';
 import {
   buildCurriculumExecutionContext,
   createCurriculumService,
+  CURRICULUM_OPERATION_LEASE_MS,
   type CurriculumService,
 } from './curriculum.js';
 import { createLearningContractService } from './learningContracts.js';
@@ -154,6 +157,79 @@ function proposalRequest(id: string, predecessorCurriculumId: string | null = nu
     predecessorCurriculumId,
     expectedActiveCurriculumId: null,
   };
+}
+
+function currentProposalRequest(id: string, predecessorCurriculumId: string | null = null) {
+  return {
+    ...proposalRequest(id, predecessorCurriculumId),
+    expectedActiveCurriculumId: repos.courseExecution.get('ws_1').activeCurriculumId,
+  };
+}
+
+function payloadForFetch(quote = QUOTE): CurriculumProposalPayload {
+  const input = { blocks: repos.materials.getBlocks('mat_1') } as CurriculumProposalInput;
+  const payload = new ControlledCurriculumProvider().makePayload(input);
+  payload.nodes[2]!.sourceEvidence = [{ blockId: 'blk_1', quote }];
+  payload.nodes[2]!.objectives[0]!.evidence = [{ blockId: 'blk_1', quote }];
+  return payload;
+}
+
+function useMockedHy3(contents: string[], beforeResponse?: (index: number) => void) {
+  let index = 0;
+  const fetchMock = vi.fn<typeof fetch>(async () => {
+    beforeResponse?.(index);
+    const content = contents[Math.min(index, contents.length - 1)]!;
+    index += 1;
+    return new Response(JSON.stringify({ choices: [{ message: { content } }] }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  });
+  const hy3 = new Hy3Provider({
+    baseUrl: 'https://example.test/v1',
+    apiKey: 'test-key-never-persist',
+    model: 'test-model',
+    timeoutMs: 30_000,
+    fetchImpl: fetchMock,
+  });
+  curriculum = createCurriculumService({
+    repos,
+    provider: hy3,
+    clock,
+    commands: createCourseCommandService({ repos, clock }),
+    sourceAuthority: createSourceAuthorityService({
+      sourceAuthority: repos.sourceAuthority,
+      clock,
+    }),
+  });
+  return fetchMock;
+}
+
+function attemptsForCommand(commandId: string) {
+  const row = db
+    .prepare(
+      `SELECT lc.id
+       FROM model_logical_calls lc
+       JOIN agent_operations op ON op.id = lc.operation_id
+       WHERE op.command_id = ?`,
+    )
+    .get(commandId) as { id: string } | undefined;
+  return row ? repos.telemetry.listAttempts(row.id) : [];
+}
+
+function usageRowsForCommand(commandId: string): number {
+  return (
+    db
+      .prepare(
+        `SELECT COUNT(*) AS count
+         FROM model_usage_records u
+         JOIN model_call_attempts a ON a.id = u.attempt_id
+         JOIN model_logical_calls lc ON lc.id = a.logical_call_id
+         JOIN agent_operations op ON op.id = lc.operation_id
+         WHERE op.command_id = ?`,
+      )
+      .get(commandId) as { count: number }
+  ).count;
 }
 
 beforeEach(() => {
@@ -339,6 +415,44 @@ describe('Curriculum proposal and authority boundaries', () => {
     );
   });
 
+  it('offers and validates canonical Concepts backed by scoped source Concepts', async () => {
+    const concept = {
+      id: 'concept_working_memory',
+      materialId: 'mat_1',
+      name: 'Working memory',
+      summary: QUOTE,
+      importance: 'high' as const,
+      grounding: {
+        blockId: 'blk_1',
+        quote: QUOTE,
+        startOffset: 0,
+        endOffset: QUOTE.length,
+        occurrenceCount: 1,
+        reanchored: false,
+      },
+      createdAt: T0,
+    };
+    repos.materials.addConcepts([concept]);
+    repos.alignment.ensureBaseline('ws_1', [concept], T0);
+    const canonicalId = repos.alignment.listCanonical('ws_1')[0]!.id;
+    provider.makePayload = (input) => {
+      const payload = new ControlledCurriculumProvider().makePayload(input);
+      payload.nodes[2]!.conceptIds = [concept.id];
+      payload.nodes[2]!.canonicalConceptIds = [canonicalId];
+      return payload;
+    };
+
+    const proposed = await curriculum.propose(proposalRequest('curriculum-canonical-context'));
+
+    expect(provider.lastInput?.allowedCanonicalConceptIds).toEqual([canonicalId]);
+    expect(
+      proposed.curriculum.nodes.find((node) => node.kind === 'learning_unit')?.learningUnit,
+    ).toMatchObject({
+      conceptIds: [concept.id],
+      canonicalConceptIds: [canonicalId],
+    });
+  });
+
   it('enforces an explicitly configured operation cap before a Curriculum provider call', async () => {
     repos.telemetry.upsertCostPolicy({
       id: 'curriculum_cost_policy',
@@ -374,6 +488,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       physicalAttempts: 1,
       attemptsWithKnownCost: 1,
     });
+    expect(usageRowsForCommand('curriculum-first')).toBe(1);
     const acceptance = {
       command: command('curriculum-accept', 'learner'),
       curriculumId: first.curriculum.id,
@@ -402,7 +517,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       return payload;
     };
     await expect(curriculum.propose(proposalRequest('curriculum-invalid'))).rejects.toThrow(
-      'deterministic local validation',
+      '资料一致性检查',
     );
     expect(repos.curricula.list('ws_1')).toEqual([]);
 
@@ -420,5 +535,167 @@ describe('Curriculum proposal and authority boundaries', () => {
       }),
     ).toThrow('acceptance identity is stale');
     expect(repos.curricula.get(proposed.curriculum.id)?.status).toBe('proposed');
+  });
+
+  it('repairs a schema-valid exact-quote violation once and persists only the repaired candidate', async () => {
+    const invalid = payloadForFetch('quote that is not in the offered SourceBlock');
+    const valid = payloadForFetch();
+    const fetchMock = useMockedHy3([JSON.stringify(invalid), JSON.stringify(valid)]);
+
+    const proposed = await curriculum.propose(proposalRequest('curriculum-semantic-repair'));
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(proposed.curriculum.validation.valid).toBe(true);
+    expect(repos.curricula.list('ws_1')).toHaveLength(1);
+    expect(attemptsForCommand('curriculum-semantic-repair')).toMatchObject([
+      {
+        attemptKind: 'original',
+        status: 'completed',
+        errorCode: 'CANDIDATE_VALIDATION_REPAIR_REQUIRED',
+      },
+      { attemptKind: 'repair', status: 'completed' },
+    ]);
+    expect(repos.telemetry.usageSummary('ws_1')).toMatchObject({
+      logicalCalls: 1,
+      physicalAttempts: 2,
+      attemptsWithKnownCost: 0,
+    });
+    expect(usageRowsForCommand('curriculum-semantic-repair')).toBe(2);
+  });
+
+  it('fails after one semantic repair, preserves the accepted Curriculum, and persists safe details', async () => {
+    const first = await curriculum.propose(proposalRequest('curriculum-prior-valid'));
+    const accepted = curriculum.accept({
+      command: command('curriculum-prior-accept', 'learner'),
+      curriculumId: first.curriculum.id,
+      expectedVersion: first.curriculum.version,
+      expectedContractId: contract.id,
+      expectedExecutionSourceManifestFingerprint:
+        first.curriculum.executionSourceManifest.fingerprint,
+      acceptanceBasis: 'learner_review',
+    }).curriculum;
+    const invalid = payloadForFetch('still not an exact source quote');
+    const fetchMock = useMockedHy3([JSON.stringify(invalid), JSON.stringify(invalid)]);
+
+    await expect(
+      curriculum.propose(currentProposalRequest('curriculum-semantic-repair-fails', accepted.id)),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.GroundingFailed,
+      message: expect.stringContaining('原版本未改变。系统已尝试一次修复。'),
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(attemptsForCommand('curriculum-semantic-repair-fails')).toHaveLength(2);
+    expect(usageRowsForCommand('curriculum-semantic-repair-fails')).toBe(2);
+    expect(repos.curricula.list('ws_1').map((item) => item.id)).toEqual([accepted.id]);
+    expect(repos.curricula.get(accepted.id)?.status).toBe('accepted');
+    const operation = db
+      .prepare(`SELECT id FROM agent_operations WHERE command_id = ?`)
+      .get('curriculum-semantic-repair-fails') as { id: string };
+    const result = repos.operations.getResult(operation.id);
+    expect(result).toMatchObject({
+      status: 'failed',
+      payload: {
+        code: ApiErrorCode.GroundingFailed,
+        details: {
+          kind: 'curriculum_candidate_validation',
+          repairAttempted: true,
+          errors: expect.arrayContaining([expect.stringContaining('exact-quote validation')]),
+        },
+      },
+    });
+    expect(JSON.stringify(result)).not.toContain('test-key-never-persist');
+  });
+
+  it('does not stack semantic repair after a schema-invalid original consumed the allowance', async () => {
+    const invalidSemantic = payloadForFetch('not present after schema repair');
+    const fetchMock = useMockedHy3(['{}', JSON.stringify(invalidSemantic)]);
+
+    await expect(
+      curriculum.propose(proposalRequest('curriculum-schema-then-semantic')),
+    ).rejects.toMatchObject({ code: ApiErrorCode.GroundingFailed });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(attemptsForCommand('curriculum-schema-then-semantic')).toMatchObject([
+      { attemptKind: 'original', errorCode: 'STRUCTURED_OUTPUT_REPAIR_REQUIRED' },
+      { attemptKind: 'repair', status: 'failed' },
+    ]);
+    expect(usageRowsForCommand('curriculum-schema-then-semantic')).toBe(2);
+    expect(repos.curricula.list('ws_1')).toEqual([]);
+  });
+
+  it('does not ask the model to repair an authoritative manifest change', async () => {
+    const invalid = payloadForFetch('not present');
+    const fetchMock = useMockedHy3([JSON.stringify(invalid)], (index) => {
+      if (index !== 0) return;
+      const content = `${QUOTE} Updated.`;
+      repos.materialRevisions.stage({
+        revisionId: 'revision-during-provider-call',
+        material: makeMaterial({ content, charCount: content.length, title: 'Memory notes' }),
+        blocks: [
+          makeBlock({
+            id: 'blk_during_provider_call',
+            content,
+            startOffset: 0,
+            endOffset: content.length,
+          }),
+        ],
+        originalData: null,
+        parserFingerprint: 'parser-during-provider-call',
+        contentFingerprint: 'content-during-provider-call',
+        parserAttemptId: 'attempt-during-provider-call',
+        createdAt: T0,
+      });
+      repos.materialRevisions.activate('mat_1', 'revision-during-provider-call', T0);
+    });
+
+    await expect(
+      curriculum.propose(proposalRequest('curriculum-authority-race')),
+    ).rejects.toMatchObject({ code: ApiErrorCode.VersionConflict });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(attemptsForCommand('curriculum-authority-race')).toHaveLength(1);
+    expect(repos.curricula.list('ws_1')).toEqual([]);
+  });
+
+  it('keeps ownership through a bounded Curriculum repair crossing five minutes', async () => {
+    let nowMs = Date.parse(T0);
+    const timedClock: Clock = { now: () => new Date(nowMs) };
+    class TimedRepairProvider extends ControlledCurriculumProvider {
+      override async proposeCurriculum(
+        input: CurriculumProposalInput,
+        opts?: ProviderCallOptions,
+      ): Promise<CurriculumProposalPayload> {
+        this.calls += 1;
+        this.lastInput = input;
+        nowMs = Date.parse(T0) + 4 * 60 * 1000;
+        opts?.onRepairAttempt?.('candidate');
+        nowMs = Date.parse(T0) + 6 * 60 * 1000;
+        return this.makePayload(input);
+      }
+    }
+    curriculum = createCurriculumService({
+      repos,
+      provider: new TimedRepairProvider(),
+      clock: timedClock,
+      commands: createCourseCommandService({ repos, clock: timedClock }),
+      sourceAuthority: createSourceAuthorityService({
+        sourceAuthority: repos.sourceAuthority,
+        clock: timedClock,
+      }),
+    });
+
+    const proposed = await curriculum.propose(proposalRequest('curriculum-long-repair'));
+    const operation = db
+      .prepare(
+        `SELECT id, lease_expires_at AS leaseExpiresAt FROM agent_operations WHERE command_id = ?`,
+      )
+      .get('curriculum-long-repair') as { id: string; leaseExpiresAt: string | null };
+
+    expect(CURRICULUM_OPERATION_LEASE_MS).toBe(10 * 60 * 1000);
+    expect(proposed.curriculum.status).toBe('proposed');
+    expect(attemptsForCommand('curriculum-long-repair')).toHaveLength(2);
+    expect(operation.leaseExpiresAt).toBeNull();
+    expect(repos.operations.getResult(operation.id)?.status).toBe('completed');
   });
 });

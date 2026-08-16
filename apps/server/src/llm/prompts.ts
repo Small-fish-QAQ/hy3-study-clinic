@@ -607,6 +607,7 @@ export function curriculumProposalMessages(input: CurriculumProposalInput): Chat
         '{"nodes":[{"key":"chapter-1","parentKey":null,"kind":"chapter|section|learning_unit","index":0,"title":"...","structuralUnitIds":[],"sourceEvidence":[{"blockId":"...","quote":"verbatim source text"}],"conceptIds":[],"canonicalConceptIds":[],"objectives":[{"key":"objective-1","title":"...","description":"...","evidence":[{"blockId":"...","quote":"verbatim source text"}]}],"prerequisiteUnitKeys":[],"graphRelationIds":[]}],"synthesisGroups":[{"key":"synthesis-1","title":"...","level":"section|chapter|course|transfer","learningUnitKeys":["unit-1","unit-2"],"objectiveKeys":["objective-1"]}]}',
         'Required hierarchy: chapter nodes have parentKey null; sections reference chapters; learning units reference sections.',
         'Use proposal-local keys. Reference only offered structural units, concepts, canonical concepts, graph relations, and source blocks.',
+        'When no non-null structuralUnitId is offered, every structuralUnitIds array must be empty.',
         'A learning unit needs at least one objective. Non-learning-unit nodes must keep all unit-only arrays empty.',
         'Evidence is optional for learner-scoped teaching objectives. Never invent a citation when the supplied sources do not support it.',
         'Do not output ids assigned by the server, status, acceptance, active pointers, MaterialRevision choices, parser fingerprints, truthPremiseStatus, truth-authority records, admissibility, completion, mastery, or risk decisions.',

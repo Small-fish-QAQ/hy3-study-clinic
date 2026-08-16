@@ -37,6 +37,7 @@ import type {
   SafeProviderConfig,
 } from '@hy3-clinic/shared';
 import {
+  ApiErrorSchema,
   CourseActionLaunchResultSchema,
   CourseExecutionOverviewResponseSchema,
   CurriculumHistoryResponseSchema,
@@ -110,6 +111,7 @@ export class ApiClientError extends Error {
     readonly code: ApiErrorCodeValue | 'NETWORK_ERROR' | 'ABORTED',
     message: string,
     readonly status?: number,
+    readonly details?: unknown,
   ) {
     super(message);
     this.name = 'ApiClientError';
@@ -274,14 +276,18 @@ async function request<T>(
   if (!response.ok) {
     let code: ApiErrorCodeValue = 'INTERNAL';
     let message = `请求失败(${response.status})。`;
+    let details: unknown;
     try {
-      const data = (await response.json()) as { error?: { code?: string; message?: string } };
-      if (data.error?.code) code = data.error.code as ApiErrorCodeValue;
-      if (data.error?.message) message = data.error.message;
+      const parsed = ApiErrorSchema.safeParse(await response.json());
+      if (parsed.success) {
+        code = parsed.data.error.code;
+        message = parsed.data.error.message;
+        details = parsed.data.error.details;
+      }
     } catch {
       // keep defaults
     }
-    throw new ApiClientError(code, message, response.status);
+    throw new ApiClientError(code, message, response.status, details);
   }
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
