@@ -388,6 +388,8 @@ export function AgentCourseWorkspace({
   }
 
   function openContractEditor(contract: LearningContract | null): void {
+    action.clearError();
+    setActionFailureOwner(null);
     setEditingContractId(contract?.status === 'draft' ? contract.id : null);
     setContractForm(initialForm(contract));
     const existingByMaterial = new Map(
@@ -397,17 +399,26 @@ export function AgentCourseWorkspace({
       Object.fromEntries(
         documents.map((document) => {
           const scoped = existingByMaterial.get(document.id);
-          const current = roleHistory[document.id]?.current;
+          const history = roleHistory[document.id];
+          const latestConfirmed = [...(history?.history ?? [])]
+            .reverse()
+            .find(
+              (assignment) =>
+                (assignment.status === 'learner_confirmed' || assignment.status === 'superseded') &&
+                assignment.learnerConfirmedAt !== null &&
+                assignment.role !== 'unknown' &&
+                assignment.role !== 'excluded',
+            );
           const persistedRole =
-            current?.status === 'learner_confirmed' &&
-            current.role !== 'unknown' &&
-            current.role !== 'excluded'
-              ? current.role
+            latestConfirmed &&
+            latestConfirmed.role !== 'unknown' &&
+            latestConfirmed.role !== 'excluded'
+              ? latestConfirmed.role
               : '';
           return [
             document.id,
             {
-              role: scoped?.role ?? persistedRole,
+              role: persistedRole || scoped?.role || '',
               disposition: scoped?.disposition ?? 'included',
             },
           ];
@@ -572,10 +583,24 @@ export function AgentCourseWorkspace({
       'save-contract',
       'contract-editor',
       async (signal) => {
+        const authoritative = (await api.courseExecution(workspaceId, signal)).overview;
+        if (signal.aborted || workspaceId !== workspaceIdRef.current) {
+          throw new ApiClientError('ABORTED', '请求已取消。');
+        }
+        setOverview(authoritative);
+        setHierarchy(authoritative.curriculumHierarchy);
+        const openedPredecessorId = overview.contractHistory.at(-1)?.id ?? null;
+        const currentPredecessorId = authoritative.contractHistory.at(-1)?.id ?? null;
+        if (!editingContractId && openedPredecessorId !== currentPredecessorId) {
+          if (authoritative.pendingContract?.status === 'draft') {
+            setEditingContractId(authoritative.pendingContract.id);
+          }
+          throw new Error('学习约定状态已更新，请检查当前约定后再保存。');
+        }
         const scopes = await ensureConfirmedRoles(signal);
         const fields = contractFields(scopes);
         if (editingContractId) {
-          const editing = overview.pendingContract;
+          const editing = authoritative.pendingContract;
           if (!editing || editing.id !== editingContractId) throw new Error('约定草稿已过期。');
           return api.updateLearningContract(
             workspaceId,
@@ -589,17 +614,24 @@ export function AgentCourseWorkspace({
             signal,
           );
         }
-        const latestContractId = overview.contractHistory.at(-1)?.id ?? null;
-        return api.createLearningContract(
-          workspaceId,
-          {
-            command: command(workspaceId, 'create_contract'),
-            fields,
-            predecessorContractId: latestContractId,
-            expectedActiveContractId: overview.activeContract?.id ?? null,
-          },
-          signal,
-        );
+        const latestContractId = authoritative.contractHistory.at(-1)?.id ?? null;
+        try {
+          return await api.createLearningContract(
+            workspaceId,
+            {
+              command: command(workspaceId, 'create_contract'),
+              fields,
+              predecessorContractId: latestContractId,
+              expectedActiveContractId: authoritative.activeContract?.id ?? null,
+            },
+            signal,
+          );
+        } catch (error) {
+          if (error instanceof ApiClientError && error.code === 'VERSION_CONFLICT') {
+            throw new Error('学习约定状态已更新，请检查当前约定后再保存。');
+          }
+          throw error;
+        }
       },
       async (_result, signal) => {
         setContractEditorOpen(false);
@@ -882,10 +914,21 @@ export function AgentCourseWorkspace({
   }
 
   function changeView(next: AgentCourseView): void {
+    if (actionFailureOwner === 'contract-editor') {
+      action.cancel();
+      action.clearError();
+      setActionFailureOwner(null);
+    }
     setNotice(null);
     setMaterialsOpen(false);
     setSettingsOpen(false);
+    setContractEditorOpen(false);
+    setEditingContractId(null);
     setView(next);
+  }
+
+  function openConceptGrounding(): void {
+    changeView('explore');
   }
 
   function changeCourse(nextWorkspaceId: string | null): void {
@@ -901,6 +944,8 @@ export function AgentCourseWorkspace({
     setNotice(null);
     setMaterialsOpen(false);
     setSettingsOpen(false);
+    setContractEditorOpen(false);
+    setEditingContractId(null);
     setView('home');
     onWorkspaceChange(nextWorkspaceId);
   }
@@ -1029,13 +1074,15 @@ export function AgentCourseWorkspace({
                 }
               : null
           }
-          onCreateContract={() => openContractEditor(overview?.activeContract ?? null)}
+          onCreateContract={() =>
+            openContractEditor(overview?.pendingContract ?? overview?.activeContract ?? null)
+          }
           onEditContract={() => openContractEditor(overview?.pendingContract ?? null)}
           onConfirmContract={() => void transitionContract()}
           onProposeCurriculum={() => void proposeCurriculum()}
           onCancelCurriculum={cancelCurriculum}
           onOpenCurriculum={() => setView('curriculum')}
-          onOpenConceptGrounding={() => setView('explore')}
+          onOpenConceptGrounding={openConceptGrounding}
           onProposeStudyPlan={() => void proposePlan()}
           onDismissRouteGenerationFailure={() => {
             clearStoredRouteGenerationFailure(workspaceId);
@@ -1064,7 +1111,7 @@ export function AgentCourseWorkspace({
           recovery={overview?.curriculumRecovery}
           busyAction={busyAction}
           onPropose={() => void proposeCurriculum()}
-          onOpenConceptGrounding={() => setView('explore')}
+          onOpenConceptGrounding={openConceptGrounding}
           onCancel={cancelCurriculum}
           onAccept={() => void decideCurriculum('accept')}
           onReject={() => void decideCurriculum('reject')}

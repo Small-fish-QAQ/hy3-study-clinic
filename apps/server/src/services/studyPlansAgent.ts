@@ -40,6 +40,7 @@ import {
   runTrackedAgentProviderOperation,
 } from './agentProviderRuntime.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
+import { assertLearningContractScopeCurrent } from './learningContractScope.js';
 
 interface StudyPlanAgentDeps {
   repos: Repositories;
@@ -426,6 +427,7 @@ export function createStudyPlanAgentService({
         parsed.contractId,
         parsed.expectedContractVersion,
       );
+      assertLearningContractScopeCurrent(repos, contract);
       const curriculum = requireCurriculum(
         repos,
         parsed.command.workspaceId,

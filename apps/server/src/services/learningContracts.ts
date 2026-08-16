@@ -108,8 +108,11 @@ export function createLearningContractService({
           ) {
             throw new AppError(
               ApiErrorCode.VersionConflict,
-              'Learning Contract pointers are stale.',
+              '学习约定状态已更新，请先查看当前约定后再继续。',
               {
+                kind: 'learning_contract_pointer_conflict',
+                requestedPredecessorContractId: parsed.predecessorContractId,
+                requestedActiveContractId: parsed.expectedActiveContractId,
                 latestContractId: latest?.id ?? null,
                 activeContractId: state.activeContractId,
               },

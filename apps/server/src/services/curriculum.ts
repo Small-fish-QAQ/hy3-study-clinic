@@ -54,6 +54,7 @@ import {
 } from './curriculumEvidence.js';
 import { preflightStudyPlan } from './studyPlansAgent.js';
 import { assessCurriculumRecovery } from './curriculumRecovery.js';
+import { assertLearningContractScopeCurrent } from './learningContractScope.js';
 
 /** HTTP/service request: the server, never the client, resolves exact revisions. */
 export const ProposeCurriculumCommandRequestSchema = ProposeCurriculumRequestSchema.omit({
@@ -145,6 +146,7 @@ export function buildCurriculumExecutionContext(
   blocks: ReturnType<Repositories['materials']['getBlocksByWorkspace']>;
   authorityBundles: SourceAuthorityBundle[];
 } {
+  assertLearningContractScopeCurrent(repos, contract);
   const materials = new Map(
     repos.materials
       .listByWorkspace(contract.workspaceId)
@@ -163,21 +165,6 @@ export function buildCurriculumExecutionContext(
       throw new AppError(
         ApiErrorCode.ValidationError,
         `Scoped Material not found: ${scoped.materialId}`,
-      );
-    }
-    const role = repos.materialRoles.get(scoped.materialRoleAssignmentId);
-    const currentRole = repos.materialRoles.getCurrent(scoped.materialId);
-    if (
-      !role ||
-      role.materialId !== scoped.materialId ||
-      role.version !== scoped.materialRoleAssignmentVersion ||
-      role.role !== scoped.role ||
-      role.status !== 'learner_confirmed' ||
-      currentRole?.id !== role.id
-    ) {
-      throw new AppError(
-        ApiErrorCode.VersionConflict,
-        `Material role assignment is stale or unconfirmed: ${scoped.materialId}`,
       );
     }
     contextMaterials.push({ ...scoped, title: material.title });

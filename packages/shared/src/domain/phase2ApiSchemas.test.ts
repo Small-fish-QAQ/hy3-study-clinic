@@ -6,6 +6,7 @@ import {
   CreateLearningContractDraftRequestSchema,
   CurriculumHierarchyViewSchema,
   LearningContractFeasibilitySchema,
+  LearningContractScopeReadinessSchema,
   StudyPlanDecisionResponseSchema,
   StudyPlanDraftEditSchema,
   TransitionLearningContractRequestSchema,
@@ -350,6 +351,31 @@ describe('Phase 2 command contracts', () => {
 });
 
 describe('Phase 2 read models and atomic route results', () => {
+  it('requires Contract scope readiness to match its concrete issue list', () => {
+    expect(
+      LearningContractScopeReadinessSchema.safeParse({ state: 'current', issues: [] }).success,
+    ).toBe(true);
+    expect(
+      LearningContractScopeReadinessSchema.safeParse({
+        state: 'current',
+        issues: [
+          {
+            kind: 'material_retired',
+            materialId: 'mat_1',
+            contractedRole: 'course_material',
+            currentConfirmedRole: null,
+          },
+        ],
+      }).success,
+    ).toBe(false);
+    expect(
+      LearningContractScopeReadinessSchema.safeParse({
+        state: 'reconfirmation_required',
+        issues: [],
+      }).success,
+    ).toBe(false);
+  });
+
   it('validates the hierarchy index and rejects dangling children', () => {
     expect(CurriculumHierarchyViewSchema.safeParse(hierarchy).success).toBe(true);
     expect(
@@ -397,6 +423,7 @@ describe('Phase 2 read models and atomic route results', () => {
         policyVersion: 'feasibility-v1',
         computedAt: T0,
       },
+      contractScopeReadiness: { state: 'current', issues: [] },
       acceptedCurriculum: curriculum,
       planningCurriculum: curriculum,
       proposedCurriculum: null,

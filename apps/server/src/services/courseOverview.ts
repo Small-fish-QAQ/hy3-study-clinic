@@ -11,6 +11,7 @@ import type { Clock } from '../util/ids.js';
 import { curriculumHierarchy, requiresStudyPlanExecutionRepair } from './curriculum.js';
 import { preflightStudyPlan } from './studyPlansAgent.js';
 import { assessCurriculumRecovery } from './curriculumRecovery.js';
+import { assessLearningContractScope } from './learningContractScope.js';
 
 interface CourseOverviewDeps {
   repos: Repositories;
@@ -116,12 +117,17 @@ export function createCourseOverviewService({ repos, clock }: CourseOverviewDeps
         null)
       : null;
     const selectedCurriculum = proposedCurriculum ?? planningCurriculum;
+    const contractScopeReadiness = selectedContract
+      ? assessLearningContractScope(repos, selectedContract)
+      : null;
+    const contractScopeCurrent = contractScopeReadiness?.state === 'current';
     const studyPlanPreflight =
-      selectedContract && planningCurriculum
+      selectedContract && planningCurriculum && contractScopeCurrent
         ? preflightStudyPlan(repos, clock, selectedContract, planningCurriculum, workspace.name)
         : null;
     const proposedCurriculumPreflight =
       selectedContract &&
+      contractScopeCurrent &&
       proposedCurriculum &&
       requiresStudyPlanExecutionRepair(
         repos,
@@ -134,13 +140,14 @@ export function createCourseOverviewService({ repos, clock }: CourseOverviewDeps
       )
         ? preflightStudyPlan(repos, clock, selectedContract, proposedCurriculum, workspace.name)
         : null;
-    const curriculumRecovery = selectedContract
-      ? assessCurriculumRecovery(repos, selectedContract, {
-          remediationRequired:
-            planningCurriculum !== null && studyPlanPreflight?.canGenerate === false,
-          candidateLaunchable: proposedCurriculumPreflight?.canGenerate === true,
-        })
-      : undefined;
+    const curriculumRecovery =
+      selectedContract && contractScopeCurrent
+        ? assessCurriculumRecovery(repos, selectedContract, {
+            remediationRequired:
+              planningCurriculum !== null && studyPlanPreflight?.canGenerate === false,
+            candidateLaunchable: proposedCurriculumPreflight?.canGenerate === true,
+          })
+        : undefined;
     const risks = selectedContract
       ? repos.coverageRisks.list(workspaceId, selectedContract.id)
       : repos.coverageRisks.list(workspaceId);
@@ -164,6 +171,7 @@ export function createCourseOverviewService({ repos, clock }: CourseOverviewDeps
       contractFeasibility: selectedContract
         ? (repos.learningContracts.getLatestFeasibility(selectedContract.id) ?? null)
         : null,
+      contractScopeReadiness,
       acceptedCurriculum,
       planningCurriculum,
       proposedCurriculum,
@@ -202,6 +210,7 @@ export function createCourseOverviewService({ repos, clock }: CourseOverviewDeps
         canProposeCurriculum:
           (selectedContract?.status === 'learner_confirmed' ||
             selectedContract?.status === 'active') &&
+          contractScopeCurrent &&
           ![
             'build_concept_grounding',
             'rebuild_concept_grounding',
@@ -214,6 +223,7 @@ export function createCourseOverviewService({ repos, clock }: CourseOverviewDeps
         canProposeStudyPlan:
           planningCurriculum !== null &&
           studyPlanPreflight?.canGenerate === true &&
+          contractScopeCurrent &&
           (selectedContract?.status === 'learner_confirmed' ||
             selectedContract?.status === 'active'),
         canEditStudyPlan: proposedStudyPlan?.status === 'proposed',

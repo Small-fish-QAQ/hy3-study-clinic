@@ -194,6 +194,7 @@ function overview(launchStatus: 'launchable' | 'blocked'): CourseExecutionOvervi
       policyVersion: 'contract-feasibility-v1',
       computedAt: AT,
     },
+    contractScopeReadiness: { state: 'current', issues: [] },
     acceptedCurriculum: null,
     planningCurriculum: null,
     proposedCurriculum: null,
@@ -704,6 +705,7 @@ describe('CourseHomeView action and authority rendering', () => {
     await user.click(screen.getByRole('button', { name: '提取概念依据' }));
     expect(props.onOpenConceptGrounding).toHaveBeenCalledOnce();
     expect(props.onProposeCurriculum).not.toHaveBeenCalled();
+    expect(props.onCreateContract).not.toHaveBeenCalled();
   });
 
   it('routes stale Concept grounding to rebuilding before Curriculum remediation', async () => {
@@ -716,6 +718,7 @@ describe('CourseHomeView action and authority rendering', () => {
     expect(props.onOpenConceptGrounding).toHaveBeenCalledOnce();
     expect(props.onOpenCurriculum).not.toHaveBeenCalled();
     expect(props.onProposeCurriculum).not.toHaveBeenCalled();
+    expect(props.onCreateContract).not.toHaveBeenCalled();
   });
 
   it('makes Curriculum remediation reachable once current Concept grounding is valid', async () => {
@@ -725,6 +728,36 @@ describe('CourseHomeView action and authority rendering', () => {
 
     await user.click(screen.getByRole('button', { name: '检查并更新课程结构' }));
     expect(props.onOpenCurriculum).toHaveBeenCalledOnce();
+    expect(props.onOpenConceptGrounding).not.toHaveBeenCalled();
+  });
+
+  it('routes a confirmed Material role change to Contract reconfirmation with Chinese detail', async () => {
+    const value = recoveryOverview('concept_grounding_missing');
+    value.contractScopeReadiness = {
+      state: 'reconfirmation_required',
+      issues: [
+        {
+          kind: 'material_role_changed',
+          materialId: 'material_1',
+          contractedRole: 'course_material',
+          currentConfirmedRole: 'supplementary_reference',
+        },
+      ],
+    };
+    value.curriculumRecovery = undefined;
+    value.studyPlanPreflight = null;
+    const props = homeProps(value);
+    const user = userEvent.setup();
+
+    render(<CourseHomeView {...props} />);
+
+    expect(screen.getAllByText('课程资料范围发生了变化').length).toBeGreaterThan(0);
+    expect(screen.getByText(/课程主资料.*补充参考/)).toBeInTheDocument();
+    expect(screen.getByText('学习范围待重新确认')).toBeInTheDocument();
+    expect(screen.queryByText('学习范围已确认')).not.toBeInTheDocument();
+    expect(screen.queryByText(/pointers are stale/i)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '重新确认学习约定' }));
+    expect(props.onCreateContract).toHaveBeenCalledOnce();
     expect(props.onOpenConceptGrounding).not.toHaveBeenCalled();
   });
 

@@ -142,6 +142,51 @@ describe('learner scope and Learning Contracts', () => {
     expect(repos.courseExecution.get('ws_1').activeContractId).toBeNull();
   });
 
+  it('reports a stale draft predecessor as a structured concurrency conflict', () => {
+    const commands = createCourseCommandService({ repos, clock });
+    const roles = createMaterialRoleService({ repos, clock, commands });
+    const contracts = createLearningContractService({ repos, clock, commands });
+    const proposal = roles.propose({
+      command: command('pointer-role-proposal'),
+      materialId: 'mat_1',
+      role: 'course_material',
+      expectedCurrentAssignmentId: repos.materialRoles.getCurrent('mat_1')!.id,
+    });
+    const role = roles.confirm({
+      command: command('pointer-role-confirmation'),
+      assignmentId: proposal.id,
+      expectedVersion: proposal.version,
+    });
+    const current = contracts.createDraft({
+      command: command('pointer-current-contract'),
+      fields: fields(role.id, role.version),
+      predecessorContractId: null,
+      expectedActiveContractId: null,
+    }).contract;
+
+    expect(() =>
+      contracts.createDraft({
+        command: command('pointer-stale-contract'),
+        fields: fields(role.id, role.version),
+        predecessorContractId: null,
+        expectedActiveContractId: null,
+      }),
+    ).toThrowError(
+      expect.objectContaining<AppError>({
+        code: ApiErrorCode.VersionConflict,
+        message: '学习约定状态已更新，请先查看当前约定后再继续。',
+        details: {
+          kind: 'learning_contract_pointer_conflict',
+          requestedPredecessorContractId: null,
+          requestedActiveContractId: null,
+          latestContractId: current.id,
+          activeContractId: null,
+        },
+      }),
+    );
+    expect(repos.learningContracts.list('ws_1').map((item) => item.id)).toEqual([current.id]);
+  });
+
   it('replays one idempotent command without creating another version', () => {
     const commands = createCourseCommandService({ repos, clock });
     const roles = createMaterialRoleService({ repos, clock, commands });

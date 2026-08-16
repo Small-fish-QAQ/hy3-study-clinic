@@ -22,6 +22,7 @@ import {
   type CurriculumService,
 } from './curriculum.js';
 import { createLearningContractService } from './learningContracts.js';
+import { assessLearningContractScope } from './learningContractScope.js';
 import { createMaterialRoleService } from './materialRoles.js';
 import { createSourceAuthorityService } from './sourceAuthority.js';
 import { preflightStudyPlan } from './studyPlansAgent.js';
@@ -367,24 +368,38 @@ beforeEach(() => {
 });
 
 describe('Curriculum proposal and authority boundaries', () => {
-  it('LIVE01-E blocks Curriculum when a future role version re-stales Contract scope', async () => {
+  it('keeps a pending role proposal below Contract authority, then blocks a confirmed role change', async () => {
     const scoped = contract.courseScope.materials[0]!;
     const future = roles.propose({
       command: command('live01-future-role', 'learner'),
       materialId: scoped.materialId,
-      role: scoped.role,
+      role: 'supplementary_reference',
       expectedCurrentAssignmentId: scoped.materialRoleAssignmentId,
     });
 
+    expect(assessLearningContractScope(repos, contract).state).toBe('current');
+    expect(() => buildCurriculumExecutionContext(repos, contract)).not.toThrow();
+    roles.confirm({
+      command: command('live01-future-role-confirm', 'learner'),
+      assignmentId: future.id,
+      expectedVersion: future.version,
+    });
     await expect(curriculum.propose(proposalRequest('live01-stale-curriculum'))).rejects.toThrow(
-      'Material role assignment is stale or unconfirmed',
+      '课程资料范围发生了变化',
     );
     expect(provider.calls).toBe(0);
     expect(future).toMatchObject({
       materialId: scoped.materialId,
       predecessorId: scoped.materialRoleAssignmentId,
       version: scoped.materialRoleAssignmentVersion + 1,
-      status: 'proposed',
+      role: 'supplementary_reference',
+    });
+    expect(createCourseOverviewService({ repos, clock }).get('ws_1')).toMatchObject({
+      contractScopeReadiness: {
+        state: 'reconfirmation_required',
+        issues: [{ kind: 'material_role_changed', materialId: scoped.materialId }],
+      },
+      capabilities: { canProposeCurriculum: false, canProposeStudyPlan: false },
     });
     expect(repos.materials.get(scoped.materialId)?.id).toBe(scoped.materialId);
   });
@@ -621,6 +636,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       canonicalConceptCount: 0,
       canonicalMembershipCount: 0,
     });
+    expect(overview.contractScopeReadiness).toEqual({ state: 'current', issues: [] });
     expect(overview.capabilities.canProposeCurriculum).toBe(false);
 
     for (const id of ['curriculum-missing-concepts-first', 'curriculum-missing-concepts-again']) {
@@ -710,6 +726,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       validGroundedConceptCount: 0,
       staleConceptCount: 1,
     });
+    expect(overview.contractScopeReadiness).toEqual({ state: 'current', issues: [] });
     expect(overview.capabilities.canProposeCurriculum).toBe(false);
   });
 
@@ -724,6 +741,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       validGroundedConceptCount: 1,
       canonicalMembershipCount: 0,
     });
+    expect(overview.contractScopeReadiness).toEqual({ state: 'current', issues: [] });
     expect(overview.capabilities.canProposeCurriculum).toBe(true);
 
     repos.alignment.ensureBaseline('ws_1', [concept], T0);

@@ -11,6 +11,7 @@ import {
   LearningContractFeasibilitySchema,
   LearningContractHistoryItemSchema,
   LearningContractSchema,
+  LearningContractScopeReadinessSchema,
 } from './learningContract.js';
 import { PublicQuizSchema } from './quiz.js';
 import {
@@ -320,6 +321,8 @@ export const CourseExecutionOverviewSchema = z
     activeContract: LearningContractSchema.nullable(),
     pendingContract: LearningContractSchema.nullable(),
     contractFeasibility: LearningContractFeasibilitySchema.nullable(),
+    /** Stable logical Material/role freshness; downstream revision state is excluded. */
+    contractScopeReadiness: LearningContractScopeReadinessSchema.nullable(),
     /** Curriculum owned by the currently executable accepted route. */
     acceptedCurriculum: CurriculumSchema.nullable(),
     /** Accepted Curriculum compatible with the Contract currently being planned. */

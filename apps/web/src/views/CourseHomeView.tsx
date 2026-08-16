@@ -1,6 +1,8 @@
 import type {
   CourseExecutionOverview,
   CourseNextAction,
+  LearningContractScopeReadiness,
+  MaterialRole,
   StudyPlanDraftEdit,
 } from '@hy3-clinic/shared';
 import { Banner, Loading } from '../components/ui.js';
@@ -27,6 +29,30 @@ const FEASIBILITY_TEXT: Record<
   infeasible: '按当前时间安排难以完成',
   unknown: '还没有足够信息估算时间',
 };
+
+const SCOPE_ROLE_TEXT: Record<MaterialRole, string> = {
+  course_material: '课程主资料',
+  supplementary_reference: '补充参考',
+  past_exam: '往年试题',
+  exercise_sheet: '练习资料',
+  question_set: '题目集合',
+};
+
+function contractScopeChangeText(readiness: LearningContractScopeReadiness): string {
+  const roleChange = readiness.issues.find(
+    (issue) => issue.kind === 'material_role_changed' && issue.currentConfirmedRole,
+  );
+  if (roleChange?.currentConfirmedRole) {
+    return `课程资料用途已从“${SCOPE_ROLE_TEXT[roleChange.contractedRole]}”改为“${SCOPE_ROLE_TEXT[roleChange.currentConfirmedRole]}”，需要你重新确认学习约定。`;
+  }
+  const unavailableCount = readiness.issues.filter((issue) =>
+    ['material_missing', 'material_retired', 'material_moved'].includes(issue.kind),
+  ).length;
+  if (unavailableCount > 0) {
+    return `学习约定中的 ${unavailableCount} 份课程资料已被移除或不再属于当前课程，需要你重新确认资料范围。`;
+  }
+  return '课程资料缺少仍然有效的用途确认，需要你检查资料范围并重新确认学习约定。';
+}
 
 function formatDeadline(at: string, timeZone: string): string {
   return new Intl.DateTimeFormat('zh-CN', {
@@ -110,17 +136,19 @@ export function CourseHomeView({
     );
   }
 
-  const contract = overview.activeContract ?? overview.pendingContract;
+  const contract = overview.pendingContract ?? overview.activeContract;
   const plan = overview.proposedStudyPlan ?? overview.acceptedStudyPlan;
   const feasibility = overview.contractFeasibility;
   const next = overview.nextAction;
   const progress = overview.formalProgress;
   const planPreflight = overview.studyPlanPreflight ?? null;
   const curriculumRecovery = overview.curriculumRecovery;
+  const contractScopeBlocked = overview.contractScopeReadiness?.state === 'reconfirmation_required';
   const planReadinessBlocked =
     overview.setupStage === 'plan_required' && planPreflight?.canGenerate === false;
-  const setupText =
-    planReadinessBlocked && curriculumRecovery?.state === 'concept_grounding_missing'
+  const setupText = contractScopeBlocked
+    ? '课程资料范围发生了变化'
+    : planReadinessBlocked && curriculumRecovery?.state === 'concept_grounding_missing'
       ? '先从课程资料提取有原文依据的概念'
       : planReadinessBlocked && curriculumRecovery?.state === 'concept_grounding_stale'
         ? '课程资料已变化，需要重新建立概念依据'
@@ -140,6 +168,9 @@ export function CourseHomeView({
   );
 
   const setupAction = (() => {
+    if (contractScopeBlocked) {
+      return { label: '重新确认学习约定', onClick: onCreateContract, busy: false };
+    }
     switch (overview.setupStage) {
       case 'contract_required':
         return { label: '设置学习目标', onClick: onCreateContract, busy: false };
@@ -334,13 +365,15 @@ export function CourseHomeView({
               <p className="eyebrow">下一步</p>
               <h3>{setupText}</h3>
               <p className="muted">
-                {planReadinessBlocked && planPreflight
-                  ? curriculumRecovery?.nextAction === 'build_concept_grounding'
-                    ? `当前 ${curriculumRecovery.includedMaterialCount} 份课程资料还没有可用的概念依据。完成提取后，系统会重新检查课程结构修复条件。`
-                    : curriculumRecovery?.nextAction === 'rebuild_concept_grounding'
-                      ? `已有 ${curriculumRecovery.staleConceptCount} 个概念依据不再对应当前资料版本。重新提取后，系统会重新检查课程结构修复条件。`
-                      : `${planPreflight.nonExecutableLearningUnitCount} / ${planPreflight.totalLearningUnitCount} 个学习单元缺少当前可执行能力，需要先审阅课程结构的新版本。`
-                  : '完成这一步后，系统才能给出可靠的后续学习动作。'}
+                {contractScopeBlocked && overview.contractScopeReadiness
+                  ? contractScopeChangeText(overview.contractScopeReadiness)
+                  : planReadinessBlocked && planPreflight
+                    ? curriculumRecovery?.nextAction === 'build_concept_grounding'
+                      ? `当前 ${curriculumRecovery.includedMaterialCount} 份课程资料还没有可用的概念依据。完成提取后，系统会重新检查课程结构修复条件。`
+                      : curriculumRecovery?.nextAction === 'rebuild_concept_grounding'
+                        ? `已有 ${curriculumRecovery.staleConceptCount} 个概念依据不再对应当前资料版本。重新提取后，系统会重新检查课程结构修复条件。`
+                        : `${planPreflight.nonExecutableLearningUnitCount} / ${planPreflight.totalLearningUnitCount} 个学习单元缺少当前可执行能力，需要先审阅课程结构的新版本。`
+                    : '完成这一步后，系统才能给出可靠的后续学习动作。'}
               </p>
             </div>
             {busyAction === 'propose-curriculum' ? (
@@ -418,7 +451,9 @@ export function CourseHomeView({
           <div className="detail-content">
             <p>{contract.intent}</p>
             <p className="small">
-              <span className="pill">学习范围已确认</span>{' '}
+              <span className="pill">
+                {contractScopeBlocked ? '学习范围待重新确认' : '学习范围已确认'}
+              </span>{' '}
               <span className="pill model">不等于事实或评分依据已验证</span>
             </p>
             {feasibility ? <p>{FEASIBILITY_TEXT[feasibility.state]}</p> : null}

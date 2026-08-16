@@ -452,6 +452,44 @@ describe('StudyPlan proposal and accepted Course route', () => {
     expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBeNull();
   });
 
+  it('blocks a direct StudyPlan command after a confirmed scope-role change without provider work', async () => {
+    const acceptedSnapshot = structuredClone(repos.learningContracts.get(contract.id));
+    const current = repos.materialRoles.getCurrent('mat_1')!;
+    const proposal = repos.materialRoles.createVersion({
+      id: 'role_scope_changed',
+      materialId: 'mat_1',
+      version: current.version + 1,
+      predecessorId: current.id,
+      role: 'supplementary_reference',
+      status: 'proposed',
+      proposedBy: 'learner',
+      learnerConfirmedAt: null,
+      createdAt: T2,
+    });
+    repos.materialRoles.confirm(proposal.id, T2);
+    const provider = new CapturingPlanProvider();
+    const { plans } = services(provider);
+
+    await expect(plans.propose(proposalRequest('scope-changed-plan'))).rejects.toMatchObject({
+      code: 'VERSION_CONFLICT',
+      details: {
+        kind: 'learning_contract_scope_changed',
+        state: 'reconfirmation_required',
+        issues: [
+          {
+            kind: 'material_role_changed',
+            materialId: 'mat_1',
+            contractedRole: 'course_material',
+            currentConfirmedRole: 'supplementary_reference',
+          },
+        ],
+      },
+    });
+    expect(provider.calls).toBe(0);
+    expect(repos.studyPlans.list('ws_1')).toEqual([]);
+    expect(repos.learningContracts.get(contract.id)).toEqual(acceptedSnapshot);
+  });
+
   it('keeps authority policy, identifiers, and feasibility local and replays exactly once', async () => {
     const provider = new CapturingPlanProvider({
       rationale: 'Check both objectives.',

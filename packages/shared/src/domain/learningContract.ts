@@ -147,6 +147,54 @@ export const LearningContractSchema = z
   });
 export type LearningContract = z.infer<typeof LearningContractSchema>;
 
+export const LearningContractScopeIssueKindSchema = z.enum([
+  'material_missing',
+  'material_retired',
+  'material_moved',
+  'role_confirmation_missing',
+  'material_role_changed',
+]);
+export type LearningContractScopeIssueKind = z.infer<typeof LearningContractScopeIssueKindSchema>;
+
+/**
+ * Learner-scope freshness is intentionally limited to stable Material identity
+ * and learner-confirmed role. Revision-bound execution state is owned downstream.
+ */
+export const LearningContractScopeReadinessSchema = z
+  .object({
+    state: z.enum(['current', 'reconfirmation_required']),
+    issues: z
+      .array(
+        z
+          .object({
+            kind: LearningContractScopeIssueKindSchema,
+            materialId: z.string().min(1),
+            contractedRole: MaterialRoleSchema,
+            currentConfirmedRole: MaterialRoleSchema.nullable(),
+          })
+          .strict(),
+      )
+      .max(100),
+  })
+  .strict()
+  .superRefine((readiness, ctx) => {
+    if (readiness.state === 'current' && readiness.issues.length > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['issues'],
+        message: 'current Contract scope cannot contain freshness issues',
+      });
+    }
+    if (readiness.state === 'reconfirmation_required' && readiness.issues.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['issues'],
+        message: 'Contract reconfirmation requires a concrete scope issue',
+      });
+    }
+  });
+export type LearningContractScopeReadiness = z.infer<typeof LearningContractScopeReadinessSchema>;
+
 /** Common identity for consequential Course-execution commands. */
 export const CourseExecutionCommandEnvelopeSchema = z
   .object({

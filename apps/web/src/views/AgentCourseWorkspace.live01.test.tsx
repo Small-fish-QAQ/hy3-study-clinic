@@ -44,6 +44,7 @@ function contractRequiredOverview(): CourseExecutionOverview {
     activeContract: null,
     pendingContract: null,
     contractFeasibility: null,
+    contractScopeReadiness: null,
     acceptedCurriculum: null,
     planningCurriculum: null,
     proposedCurriculum: null,
@@ -349,6 +350,111 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
     ).toBeInTheDocument();
     expect(screen.queryByText('Material role assignment is stale.')).not.toBeInTheDocument();
     expect(createContract).not.toHaveBeenCalled();
+  });
+
+  it('replaces a stale Contract predecessor diagnostic with learner-safe Chinese copy', async () => {
+    const confirmedRole: MaterialRoleAssignment = {
+      ...strandedProposal,
+      status: 'learner_confirmed',
+      learnerConfirmedAt: AT,
+    };
+    vi.spyOn(api, 'materialRoleHistory').mockResolvedValue(roleHistory(confirmedRole));
+    vi.spyOn(api, 'createLearningContract').mockRejectedValue(
+      new ApiClientError('VERSION_CONFLICT', 'Learning Contract pointers are stale.', 409, {
+        kind: 'learning_contract_pointer_conflict',
+      }),
+    );
+    const user = userEvent.setup();
+    renderWorkspace();
+
+    await openContractEditor(user);
+    await user.type(screen.getByLabelText('学习意图'), '掌握课程内容');
+    await user.type(screen.getByLabelText('目标结果'), '完成课程学习');
+    await user.type(screen.getByLabelText('每天可用分钟'), '30');
+    await user.type(screen.getByLabelText(/课程主题范围/), '认知科学');
+    await user.selectOptions(
+      screen.getByLabelText(`${documentSummary.title}资料角色`),
+      'course_material',
+    );
+    await user.click(screen.getByRole('button', { name: '保存约定草稿' }));
+
+    expect(
+      await screen.findByText('学习约定状态已更新，请检查当前约定后再保存。'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Learning Contract pointers are stale.')).not.toBeInTheDocument();
+  });
+
+  it('closes the Contract editor when navigating to Concept grounding', async () => {
+    vi.spyOn(api, 'materialRoleHistory').mockResolvedValue(roleHistory(strandedProposal));
+    const user = userEvent.setup();
+    renderWorkspace();
+
+    await openContractEditor(user);
+    expect(screen.getByLabelText('学习约定编辑器')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '探索' }));
+
+    expect(screen.queryByLabelText('学习约定编辑器')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('课程学习空间')).toHaveClass('view-explore');
+  });
+
+  it('defaults reconfirmation to the latest confirmed role beneath a pending proposal', async () => {
+    const contractedRole: MaterialRoleAssignment = {
+      ...strandedProposal,
+      status: 'superseded',
+      learnerConfirmedAt: AT,
+    };
+    const changedRole: MaterialRoleAssignment = {
+      ...contractedRole,
+      id: 'role_3',
+      version: 3,
+      predecessorId: contractedRole.id,
+      role: 'supplementary_reference',
+      status: 'superseded',
+    };
+    const pendingRole: MaterialRoleAssignment = {
+      ...changedRole,
+      id: 'role_4',
+      version: 4,
+      predecessorId: changedRole.id,
+      role: 'past_exam',
+      status: 'proposed',
+      learnerConfirmedAt: null,
+    };
+    const value = planRequiredOverview();
+    value.activeContract!.courseScope.materials = [
+      {
+        materialId: documentSummary.id,
+        materialRoleAssignmentId: contractedRole.id,
+        materialRoleAssignmentVersion: contractedRole.version,
+        role: 'course_material',
+        disposition: 'included',
+      },
+    ];
+    value.contractScopeReadiness = {
+      state: 'reconfirmation_required',
+      issues: [
+        {
+          kind: 'material_role_changed',
+          materialId: documentSummary.id,
+          contractedRole: 'course_material',
+          currentConfirmedRole: 'supplementary_reference',
+        },
+      ],
+    };
+    vi.mocked(api.courseExecution).mockResolvedValue({ overview: value });
+    vi.spyOn(api, 'materialRoleHistory').mockResolvedValue({
+      materialId: documentSummary.id,
+      current: pendingRole,
+      history: [legacyRole, contractedRole, changedRole, pendingRole],
+    });
+    const user = userEvent.setup();
+    renderWorkspace();
+
+    await user.click(await screen.findByRole('button', { name: '重新确认学习约定' }));
+
+    expect(screen.getByLabelText(`${documentSummary.title}资料角色`)).toHaveValue(
+      'supplementary_reference',
+    );
   });
 });
 
