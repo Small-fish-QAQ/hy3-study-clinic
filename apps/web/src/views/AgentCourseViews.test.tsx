@@ -260,6 +260,7 @@ function homeProps(value: CourseExecutionOverview): CourseHomeViewProps {
     onProposeCurriculum: vi.fn(),
     onCancelCurriculum: vi.fn(),
     onOpenCurriculum: vi.fn(),
+    onOpenConceptGrounding: vi.fn(),
     onProposeStudyPlan: vi.fn(),
     onDismissRouteGenerationFailure: vi.fn(),
     onOpenSettings: vi.fn(),
@@ -269,6 +270,60 @@ function homeProps(value: CourseExecutionOverview): CourseHomeViewProps {
     onLaunchNext: vi.fn(),
     onOpenMaterials: vi.fn(),
   };
+}
+
+function recoveryOverview(
+  state: 'concept_grounding_missing' | 'concept_grounding_stale' | 'curriculum_remediation_ready',
+): CourseExecutionOverview {
+  const value = overview('launchable');
+  value.activeContract = null;
+  value.acceptedStudyPlan = null;
+  value.activeAgenda = null;
+  value.nextAction = null;
+  value.pendingContract = contract('learner_confirmed');
+  value.setupStage = 'plan_required';
+  value.capabilities.canProposeStudyPlan = false;
+  value.capabilities.canProposeCurriculum = state === 'curriculum_remediation_ready';
+  value.studyPlanPreflight = {
+    curriculumVersionId: 'curriculum_source_only',
+    totalLearningUnitCount: 21,
+    executableLearningUnitCount: 0,
+    nonExecutableLearningUnitCount: 21,
+    planningRepresentationCount: 21,
+    deferredOrUnplannableCount: 21,
+    allowedItemKindCounts: [{ kind: 'none', learningUnitCount: 21 }],
+    promptStrategy: 'blocked',
+    planningInputCharacters: 12_000,
+    providerPromptCharacters: null,
+    approximatePromptTokens: null,
+    canGenerate: false,
+    blockers: [
+      {
+        code: 'no_launchable_learning_unit',
+        message: 'No accepted Curriculum LearningUnit has a currently launchable capability.',
+        affectedLearningUnitCount: 21,
+      },
+    ],
+  };
+  const nextAction =
+    state === 'concept_grounding_missing'
+      ? 'build_concept_grounding'
+      : state === 'concept_grounding_stale'
+        ? 'rebuild_concept_grounding'
+        : 'propose_curriculum_successor';
+  value.curriculumRecovery = {
+    state,
+    nextAction,
+    remediationRequired: true,
+    includedMaterialCount: 1,
+    currentConceptCount: state === 'curriculum_remediation_ready' ? 1 : 0,
+    validGroundedConceptCount: state === 'curriculum_remediation_ready' ? 1 : 0,
+    staleConceptCount: state === 'concept_grounding_stale' ? 4 : 0,
+    invalidGroundingCount: 0,
+    canonicalConceptCount: state === 'curriculum_remediation_ready' ? 1 : 0,
+    canonicalMembershipCount: state === 'curriculum_remediation_ready' ? 1 : 0,
+  };
+  return value;
 }
 
 function hierarchy(valid = true): CurriculumHierarchyView {
@@ -637,6 +692,42 @@ describe('CourseHomeView action and authority rendering', () => {
     expect(props.onProposeStudyPlan).not.toHaveBeenCalled();
   });
 
+  it('routes missing Concept grounding to extraction without offering a successor call', async () => {
+    const props = homeProps(recoveryOverview('concept_grounding_missing'));
+    const user = userEvent.setup();
+    render(<CourseHomeView {...props} />);
+
+    expect(
+      screen.queryByRole('button', { name: /更新课程结构|提出新版本/ }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(/还没有可用的概念依据/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '提取概念依据' }));
+    expect(props.onOpenConceptGrounding).toHaveBeenCalledOnce();
+    expect(props.onProposeCurriculum).not.toHaveBeenCalled();
+  });
+
+  it('routes stale Concept grounding to rebuilding before Curriculum remediation', async () => {
+    const props = homeProps(recoveryOverview('concept_grounding_stale'));
+    const user = userEvent.setup();
+    render(<CourseHomeView {...props} />);
+
+    expect(screen.getByText(/已有 4 个概念依据不再对应当前资料版本/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '重新提取概念依据' }));
+    expect(props.onOpenConceptGrounding).toHaveBeenCalledOnce();
+    expect(props.onOpenCurriculum).not.toHaveBeenCalled();
+    expect(props.onProposeCurriculum).not.toHaveBeenCalled();
+  });
+
+  it('makes Curriculum remediation reachable once current Concept grounding is valid', async () => {
+    const props = homeProps(recoveryOverview('curriculum_remediation_ready'));
+    const user = userEvent.setup();
+    render(<CourseHomeView {...props} />);
+
+    await user.click(screen.getByRole('button', { name: '检查并更新课程结构' }));
+    expect(props.onOpenCurriculum).toHaveBeenCalledOnce();
+    expect(props.onOpenConceptGrounding).not.toHaveBeenCalled();
+  });
+
   it('shows the Contract deadline and deterministic formal progress counts', () => {
     const value = overview('launchable');
     value.formalProgress = {
@@ -757,6 +848,36 @@ describe('StudyPlanPanel decisions', () => {
 });
 
 describe('CurriculumView truth and validation states', () => {
+  it('replaces the successor CTA with Concept recovery when grounding is missing', async () => {
+    const value = hierarchy();
+    value.status = 'accepted';
+    const onOpenConceptGrounding = vi.fn();
+    const onPropose = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <CurriculumView
+        hierarchy={value}
+        history={[]}
+        loading={false}
+        error={null}
+        canPropose={false}
+        canAccept={false}
+        recovery={recoveryOverview('concept_grounding_missing').curriculumRecovery}
+        busyAction={null}
+        onPropose={onPropose}
+        onOpenConceptGrounding={onOpenConceptGrounding}
+        onAccept={vi.fn()}
+        onReject={vi.fn()}
+        onSelectHistory={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: '提出新版本' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '提取概念依据' }));
+    expect(onOpenConceptGrounding).toHaveBeenCalledOnce();
+    expect(onPropose).not.toHaveBeenCalled();
+  });
+
   it('presents consecutive accepted source fragments as one auditable learner topic', async () => {
     const user = userEvent.setup();
     const onOpenSource = vi.fn();
@@ -1143,6 +1264,36 @@ describe('CurriculumView truth and validation states', () => {
       ),
     ).toBeVisible();
     expect(screen.queryByText(/Unmapped source blocks/iu)).not.toBeInTheDocument();
+  });
+
+  it('renders a persisted historical warning through structured learner-safe data', async () => {
+    const raw = 'Unmapped source blocks remain visible for risk reconciliation: 129.';
+    const value = hierarchy();
+    value.validation.warnings = [raw];
+    value.coverageWarnings = [{ code: 'unmapped_source_blocks', count: 129, technicalDetail: raw }];
+    const user = userEvent.setup();
+    render(
+      <CurriculumView
+        hierarchy={value}
+        history={[]}
+        loading={false}
+        error={null}
+        canPropose={false}
+        canAccept
+        busyAction={null}
+        onPropose={vi.fn()}
+        onAccept={vi.fn()}
+        onReject={vi.fn()}
+        onSelectHistory={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText('仍有 129 段课程资料尚未被当前课程结构引用。原始资料仍然保留，可查看详情。'),
+    ).toBeVisible();
+    expect(screen.getByText(raw)).not.toBeVisible();
+    await user.click(screen.getByText('技术详情'));
+    expect(screen.getByText(raw)).toBeVisible();
   });
 
   it('shows a learner-readable proposal failure with optional validation detail', async () => {

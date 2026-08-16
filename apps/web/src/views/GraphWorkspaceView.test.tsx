@@ -179,6 +179,123 @@ describe('学习图谱工作台 — workspace and document area', () => {
     expect(onOpenMaterials).toHaveBeenCalledOnce();
   });
 
+  it('does not make a hidden provider call when navigation opens Concept recovery', async () => {
+    const emptyWorkspace = { ...workspace, activeGraphVersionId: null };
+    const emptyDocument = { ...documentSummary, conceptCount: 0 };
+    const { calls } = installViewMock([
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces$/,
+        handler: () => ({ body: { workspaces: [{ ...workspaceSummary, conceptCount: 0 }] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1$/,
+        handler: () => ({ body: { workspace: emptyWorkspace, documents: [emptyDocument] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/graph$/,
+        handler: () => ({ body: { version: null, edges: [], concepts: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/graph\/versions$/,
+        handler: () => ({ body: { versions: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/overlay$/,
+        handler: () => ({ body: { states: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/materials\/mat_1$/,
+        handler: () => ({ body: material }),
+      },
+    ]);
+    render(
+      <GraphWorkspaceView
+        refreshKey={0}
+        selectedWorkspaceId="ws_1"
+        onLaunchQuiz={vi.fn()}
+        courseLocked
+      />,
+    );
+
+    expect(await screen.findByRole('button', { name: '提取核心概念' })).toBeInTheDocument();
+    expect(calls.length).toBeGreaterThan(0);
+    expect(calls.every((call) => call.method === 'GET')).toBe(true);
+  });
+
+  it('notifies Course readiness only after learner-triggered Concept extraction completes', async () => {
+    const emptyWorkspace = { ...workspace, activeGraphVersionId: null };
+    const emptyDocument = { ...documentSummary, conceptCount: 0 };
+    const onConceptGroundingChanged = vi.fn();
+    const { calls } = installViewMock([
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces$/,
+        handler: () => ({ body: { workspaces: [{ ...workspaceSummary, conceptCount: 0 }] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1$/,
+        handler: () => ({ body: { workspace: emptyWorkspace, documents: [emptyDocument] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/graph$/,
+        handler: () => ({ body: { version: null, edges: [], concepts: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/graph\/versions$/,
+        handler: () => ({ body: { versions: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/workspaces\/ws_1\/overlay$/,
+        handler: () => ({ body: { states: [] } }),
+      },
+      {
+        method: 'GET',
+        pattern: /\/api\/materials\/mat_1$/,
+        handler: () => ({ body: material }),
+      },
+      {
+        method: 'POST',
+        pattern: /\/api\/materials\/mat_1\/analyze$/,
+        handler: () => ({
+          body: {
+            concepts: [graphConcepts[0]],
+            extraction: {
+              sections: [],
+              conceptsAdded: 1,
+              conceptTotal: 1,
+              capReached: false,
+            },
+          },
+        }),
+      },
+    ]);
+    const user = userEvent.setup();
+    render(
+      <GraphWorkspaceView
+        refreshKey={0}
+        selectedWorkspaceId="ws_1"
+        onLaunchQuiz={vi.fn()}
+        onConceptGroundingChanged={onConceptGroundingChanged}
+        courseLocked
+      />,
+    );
+
+    expect(onConceptGroundingChanged).not.toHaveBeenCalled();
+    await user.click(await screen.findByRole('button', { name: '提取核心概念' }));
+    await waitFor(() => expect(onConceptGroundingChanged).toHaveBeenCalledWith('ws_1'));
+    expect(calls.filter((call) => call.method === 'POST')).toHaveLength(1);
+  });
+
   it('shows the empty state when no workspaces exist', async () => {
     installViewMock([
       {

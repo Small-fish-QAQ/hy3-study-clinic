@@ -3,6 +3,7 @@ import { CoverageRiskSummarySchema } from './coverageRisk.js';
 import {
   CurriculumHistoryItemSchema,
   CurriculumHierarchyViewSchema,
+  CurriculumRecoveryReadinessSchema,
   CurriculumSchema,
 } from './curriculum.js';
 import {
@@ -332,6 +333,8 @@ export const CourseExecutionOverviewSchema = z
     proposedStudyPlan: StudyPlanSchema.nullable(),
     /** Deterministic readiness for the accepted Curriculum currently being planned. */
     studyPlanPreflight: StudyPlanPreflightSchema.nullable().optional(),
+    /** Earliest authoritative prerequisite for repairing Curriculum execution. */
+    curriculumRecovery: CurriculumRecoveryReadinessSchema.optional(),
     activeAgenda: SessionAgendaSchema.nullable(),
     formalProgress: CourseFormalProgressSummarySchema,
     nextAction: CourseNextActionSchema.nullable(),

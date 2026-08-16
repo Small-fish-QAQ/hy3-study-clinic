@@ -61,6 +61,7 @@ export interface CourseHomeViewProps {
   onProposeCurriculum: () => void;
   onCancelCurriculum: () => void;
   onOpenCurriculum: () => void;
+  onOpenConceptGrounding: () => void;
   onProposeStudyPlan: () => void;
   onDismissRouteGenerationFailure: () => void;
   onOpenSettings: () => void;
@@ -87,6 +88,7 @@ export function CourseHomeView({
   onProposeCurriculum,
   onCancelCurriculum,
   onOpenCurriculum,
+  onOpenConceptGrounding,
   onProposeStudyPlan,
   onDismissRouteGenerationFailure,
   onOpenSettings,
@@ -114,11 +116,17 @@ export function CourseHomeView({
   const next = overview.nextAction;
   const progress = overview.formalProgress;
   const planPreflight = overview.studyPlanPreflight ?? null;
+  const curriculumRecovery = overview.curriculumRecovery;
   const planReadinessBlocked =
     overview.setupStage === 'plan_required' && planPreflight?.canGenerate === false;
-  const setupText = planReadinessBlocked
-    ? '课程结构已接受，但当前还不能生成可执行的学习路线'
-    : SETUP_TEXT[overview.setupStage];
+  const setupText =
+    planReadinessBlocked && curriculumRecovery?.state === 'concept_grounding_missing'
+      ? '先从课程资料提取有原文依据的概念'
+      : planReadinessBlocked && curriculumRecovery?.state === 'concept_grounding_stale'
+        ? '课程资料已变化，需要重新建立概念依据'
+        : planReadinessBlocked
+          ? '课程结构已接受，但当前还不能生成可执行的学习路线'
+          : SETUP_TEXT[overview.setupStage];
   const agendaItems = overview.activeAgenda?.items
     .filter((item) => !['completed', 'cancelled', 'deferred'].includes(item.state))
     .sort((left, right) => left.index - right.index)
@@ -151,6 +159,19 @@ export function CourseHomeView({
         return { label: '查看并审阅课程结构', onClick: onOpenCurriculum, busy: false };
       case 'plan_required':
         if (planReadinessBlocked) {
+          if (
+            curriculumRecovery?.nextAction === 'build_concept_grounding' ||
+            curriculumRecovery?.nextAction === 'rebuild_concept_grounding'
+          ) {
+            return {
+              label:
+                curriculumRecovery.nextAction === 'build_concept_grounding'
+                  ? '提取概念依据'
+                  : '重新提取概念依据',
+              onClick: onOpenConceptGrounding,
+              busy: false,
+            };
+          }
           return {
             label: '检查并更新课程结构',
             onClick: onOpenCurriculum,
@@ -314,7 +335,11 @@ export function CourseHomeView({
               <h3>{setupText}</h3>
               <p className="muted">
                 {planReadinessBlocked && planPreflight
-                  ? `${planPreflight.nonExecutableLearningUnitCount} / ${planPreflight.totalLearningUnitCount} 个学习单元缺少当前可执行能力，需要先审阅课程结构的新版本。`
+                  ? curriculumRecovery?.nextAction === 'build_concept_grounding'
+                    ? `当前 ${curriculumRecovery.includedMaterialCount} 份课程资料还没有可用的概念依据。完成提取后，系统会重新检查课程结构修复条件。`
+                    : curriculumRecovery?.nextAction === 'rebuild_concept_grounding'
+                      ? `已有 ${curriculumRecovery.staleConceptCount} 个概念依据不再对应当前资料版本。重新提取后，系统会重新检查课程结构修复条件。`
+                      : `${planPreflight.nonExecutableLearningUnitCount} / ${planPreflight.totalLearningUnitCount} 个学习单元缺少当前可执行能力，需要先审阅课程结构的新版本。`
                   : '完成这一步后，系统才能给出可靠的后续学习动作。'}
               </p>
             </div>

@@ -1,9 +1,11 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { CurriculumProposalFailureDetailsSchema } from '@hy3-clinic/shared';
 import type {
+  CurriculumCoverageWarning,
   CurriculumHierarchyNodeView,
   CurriculumHierarchyView,
   CurriculumHistoryItem,
+  CurriculumRecoveryReadiness,
   DocumentSummary,
   SourceBlock,
 } from '@hy3-clinic/shared';
@@ -41,6 +43,16 @@ export function learnerCurriculumWarning(warning: string): string {
   return '当前课程结构仍有一项资料覆盖提醒，可在详情中继续核对。';
 }
 
+export function learnerCoverageWarning(warning: CurriculumCoverageWarning): string {
+  if (warning.code === 'unmapped_source_blocks' && warning.count !== null) {
+    return `仍有 ${warning.count} 段课程资料尚未被当前课程结构引用。原始资料仍然保留，可查看详情。`;
+  }
+  if (warning.code === 'unmapped_structural_units' && warning.count !== null) {
+    return `仍有 ${warning.count} 个资料结构单元尚未被当前课程结构引用，可在详情中继续核对。`;
+  }
+  return '当前课程结构仍有一项资料覆盖提醒，可在详情中继续核对。';
+}
+
 export interface CurriculumViewProps {
   hierarchy: CurriculumHierarchyView | null;
   history: CurriculumHistoryItem[];
@@ -49,8 +61,10 @@ export interface CurriculumViewProps {
   errorDetails?: unknown;
   canPropose: boolean;
   canAccept: boolean;
+  recovery?: CurriculumRecoveryReadiness;
   busyAction: string | null;
   onPropose: () => void;
+  onOpenConceptGrounding?: () => void;
   onCancel?: () => void;
   onAccept: () => void;
   onReject: () => void;
@@ -897,8 +911,10 @@ export function CurriculumView({
   errorDetails,
   canPropose,
   canAccept,
+  recovery,
   busyAction,
   onPropose,
+  onOpenConceptGrounding,
   onCancel,
   onAccept,
   onReject,
@@ -929,6 +945,10 @@ export function CurriculumView({
       : history
           .filter((item) => item.status === 'accepted')
           .sort((left, right) => right.version - left.version)[0]?.version;
+  const conceptRecoveryRequired =
+    recovery?.nextAction === 'build_concept_grounding' ||
+    recovery?.nextAction === 'rebuild_concept_grounding';
+  const coverageWarnings = hierarchy?.coverageWarnings;
 
   useEffect(() => {
     setExpandedIds(new Set());
@@ -973,7 +993,18 @@ export function CurriculumView({
             <h2>课程结构</h2>
             <p className="muted">先看课程的主要部分，再按需展开学习目标、先修关系与课程依据。</p>
           </div>
-          {canPropose ? (
+          {conceptRecoveryRequired && onOpenConceptGrounding ? (
+            <button
+              type="button"
+              className="primary"
+              disabled={loading || busyAction !== null}
+              onClick={onOpenConceptGrounding}
+            >
+              {recovery.nextAction === 'build_concept_grounding'
+                ? '提取概念依据'
+                : '重新提取概念依据'}
+            </button>
+          ) : canPropose ? (
             <button type="button" disabled={loading || busyAction !== null} onClick={onPropose}>
               {busyAction === 'propose-curriculum'
                 ? '正在生成…'
@@ -983,6 +1014,14 @@ export function CurriculumView({
             </button>
           ) : null}
         </div>
+
+        {conceptRecoveryRequired ? (
+          <Banner kind="info">
+            {recovery.nextAction === 'build_concept_grounding'
+              ? '当前课程结构缺少可用于学习活动的概念依据。请先从课程资料提取并检查概念。'
+              : `已有 ${recovery.staleConceptCount} 个概念依据不再对应当前资料版本。请先重新提取并检查概念。`}
+          </Banner>
+        ) : null}
 
         {hierarchy ? (
           <div className="curriculum-version-overview" aria-label="课程结构版本概览">
@@ -1066,11 +1105,22 @@ export function CurriculumView({
             {!hierarchy.validation.valid ? (
               <Banner kind="error">该候选版本未通过本地结构校验，不能接受。</Banner>
             ) : null}
-            {hierarchy.validation.warnings.map((warning) => (
-              <Banner key={warning} kind="info">
-                {learnerCurriculumWarning(warning)}
-              </Banner>
-            ))}
+            {(coverageWarnings ?? hierarchy.validation.warnings).map((warning) => {
+              const key = typeof warning === 'string' ? warning : warning.technicalDetail;
+              return (
+                <Banner key={key} kind="info">
+                  {typeof warning === 'string'
+                    ? learnerCurriculumWarning(warning)
+                    : learnerCoverageWarning(warning)}
+                  {typeof warning === 'string' ? null : (
+                    <details className="small">
+                      <summary>技术详情</summary>
+                      <code>{warning.technicalDetail}</code>
+                    </details>
+                  )}
+                </Banner>
+              );
+            })}
             {tree?.issues.map((issue) => (
               <Banner key={issue} kind="info">
                 {issue}

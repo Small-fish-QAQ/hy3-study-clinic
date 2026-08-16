@@ -130,6 +130,58 @@ export const CurriculumValidationSchema = z
   })
   .strict();
 
+export const CurriculumCoverageWarningCodeSchema = z.enum([
+  'unmapped_source_blocks',
+  'unmapped_structural_units',
+  'other_coverage_warning',
+]);
+export type CurriculumCoverageWarningCode = z.infer<typeof CurriculumCoverageWarningCodeSchema>;
+
+/** Learner-safe warning identity projected from immutable validation diagnostics. */
+export const CurriculumCoverageWarningSchema = z
+  .object({
+    code: CurriculumCoverageWarningCodeSchema,
+    count: z.number().int().nonnegative().nullable(),
+    /** Bounded internal detail; clients must keep this behind technical disclosure. */
+    technicalDetail: z.string().min(1).max(500),
+  })
+  .strict();
+export type CurriculumCoverageWarning = z.infer<typeof CurriculumCoverageWarningSchema>;
+
+export const CurriculumRecoveryStateSchema = z.enum([
+  'not_required',
+  'concept_grounding_missing',
+  'concept_grounding_stale',
+  'curriculum_remediation_ready',
+  'curriculum_candidate_ready',
+]);
+export type CurriculumRecoveryState = z.infer<typeof CurriculumRecoveryStateSchema>;
+
+export const CurriculumRecoveryNextActionSchema = z.enum([
+  'none',
+  'build_concept_grounding',
+  'rebuild_concept_grounding',
+  'propose_curriculum_successor',
+  'review_curriculum_successor',
+]);
+
+/** Deterministic prerequisite state for repairing an unexecutable accepted Curriculum. */
+export const CurriculumRecoveryReadinessSchema = z
+  .object({
+    state: CurriculumRecoveryStateSchema,
+    nextAction: CurriculumRecoveryNextActionSchema,
+    remediationRequired: z.boolean(),
+    includedMaterialCount: z.number().int().nonnegative(),
+    currentConceptCount: z.number().int().nonnegative(),
+    validGroundedConceptCount: z.number().int().nonnegative(),
+    staleConceptCount: z.number().int().nonnegative(),
+    invalidGroundingCount: z.number().int().nonnegative(),
+    canonicalConceptCount: z.number().int().nonnegative(),
+    canonicalMembershipCount: z.number().int().nonnegative(),
+  })
+  .strict();
+export type CurriculumRecoveryReadiness = z.infer<typeof CurriculumRecoveryReadinessSchema>;
+
 /** Safe, bounded details for a failed locally validated Curriculum candidate. */
 export const CurriculumProposalFailureDetailsSchema = z
   .object({
@@ -248,6 +300,8 @@ export const CurriculumHierarchyViewSchema = z
     nodes: z.array(CurriculumHierarchyNodeViewSchema).min(1).max(2000),
     synthesisGroups: z.array(CurriculumSynthesisGroupSchema).max(200),
     validation: CurriculumValidationSchema,
+    /** Structured learner rendering; persisted validation diagnostics remain immutable. */
+    coverageWarnings: z.array(CurriculumCoverageWarningSchema).max(100).optional(),
     executionSourceManifest: ExecutionSourceManifestSchema,
   })
   .strict()

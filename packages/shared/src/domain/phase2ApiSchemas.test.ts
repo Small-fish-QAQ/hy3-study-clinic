@@ -254,6 +254,13 @@ const hierarchy = {
   ],
   synthesisGroups: [],
   validation: curriculum.validation,
+  coverageWarnings: [
+    {
+      code: 'unmapped_source_blocks' as const,
+      count: 3,
+      technicalDetail: 'Unmapped source blocks remain visible for risk reconciliation: 3.',
+    },
+  ],
   executionSourceManifest: manifest,
 };
 
@@ -397,6 +404,18 @@ describe('Phase 2 read models and atomic route results', () => {
       activeCurriculumHierarchy: hierarchy,
       acceptedStudyPlan: plan,
       proposedStudyPlan: null,
+      curriculumRecovery: {
+        state: 'not_required',
+        nextAction: 'none',
+        remediationRequired: false,
+        includedMaterialCount: 1,
+        currentConceptCount: 1,
+        validGroundedConceptCount: 1,
+        staleConceptCount: 0,
+        invalidGroundingCount: 0,
+        canonicalConceptCount: 1,
+        canonicalMembershipCount: 1,
+      },
       activeAgenda: agenda,
       formalProgress: {
         planItemCount: 1,

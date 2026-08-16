@@ -322,6 +322,18 @@ The service identifies an execution-remediation successor when the nearest accep
 
 This rule applies identically to Fake and Hy3 providers. Fake output may leave Concept arrays empty like real output; only the shared local materializer can derive bindings. The server does not repair a source-only Curriculum by inventing a Concept from a title or quoted passage. Concept extraction must first persist a current revision-grounded Concept, after which one learner-authorized successor can derive and validate the binding.
 
+Curriculum recovery is a read-only deterministic projection over the selected Contract, active MaterialRevisions, exact current Concept groundings, accepted canonical memberships, accepted Curriculum, and StudyPlan preflight. It never calls a provider or creates authority. The projection exposes the earliest next action through these states:
+
+- `not_required`: the accepted planning Curriculum does not require execution repair;
+- `concept_grounding_missing`: no included Material has a usable current Concept, so the learner must explicitly build Concept grounding;
+- `concept_grounding_stale`: only superseded-revision or invalid current groundings exist, so the learner must explicitly rebuild them;
+- `curriculum_remediation_ready`: at least one exact current grounding exists and the accepted Curriculum still lacks a launchable frontier, so a successor may be proposed; and
+- `curriculum_candidate_ready`: a proposed successor passes the unchanged current StudyPlan preflight and is ready for learner review.
+
+The Course capability and the Curriculum proposal service both consume this projection. Missing/stale states suppress the successor capability, and a direct execution-repair command fails durably before provider attempt creation with the Concept recovery action. The existing Explore surface performs only GET requests when opened; an explicit Concept extraction completion triggers a workspace-fenced Course reload. A failed or non-launchable successor never changes the accepted predecessor, and it cannot become acceptable until the same preflight succeeds against current authority.
+
+Persisted Curriculum validation warnings remain immutable audit data. The read model projects bounded diagnostics into structured coverage warning codes/counts. `CurriculumView` renders learner-safe copy from that structure and keeps the original technical string inside a closed disclosure, including for historical accepted Curricula; unknown warning shapes receive generic safe copy rather than being rendered directly.
+
 The route API is split by responsibility: `agentCourse.ts` owns Contract, Curriculum, StudyPlan, accepted-route, coverage-risk, and Agenda-action endpoints; `studySessions.ts` owns StudySession lifecycle and Tutor-turn endpoints; `formalProgression.ts` owns progression, replan, and goal-outcome endpoints. Route handlers parse requests and delegate to services; repositories preserve the durable invariants.
 
 ### Frontend product shell

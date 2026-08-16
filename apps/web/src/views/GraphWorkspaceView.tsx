@@ -68,6 +68,8 @@ export interface GraphWorkspaceViewProps {
   courseLocked?: boolean;
   /** Course-scoped path back to material management when Explore is empty. */
   onOpenMaterials?: () => void;
+  /** Explicit extraction completed; parent may refresh deterministic Course readiness. */
+  onConceptGroundingChanged?: (workspaceId: string) => void;
 }
 
 interface WorkspaceData {
@@ -109,6 +111,7 @@ export function GraphWorkspaceView({
   onWorkspaceSelected,
   courseLocked = false,
   onOpenMaterials,
+  onConceptGroundingChanged,
 }: GraphWorkspaceViewProps) {
   const [workspaces, setWorkspaces] = useState<WorkspaceSummary[]>([]);
   const [workspacesLoading, setWorkspacesLoading] = useState(true);
@@ -568,6 +571,7 @@ export function GraphWorkspaceView({
         // The sidebar summaries include a concept count — keep them in step.
         await loadWorkspaces();
         if (mappingDoc === documentId) await loadMapping(documentId);
+        onConceptGroundingChanged?.(workspaceId);
       }
     } finally {
       if (section) setDeepeningSection(null);

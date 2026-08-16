@@ -10,6 +10,7 @@ import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { curriculumHierarchy, requiresStudyPlanExecutionRepair } from './curriculum.js';
 import { preflightStudyPlan } from './studyPlansAgent.js';
+import { assessCurriculumRecovery } from './curriculumRecovery.js';
 
 interface CourseOverviewDeps {
   repos: Repositories;
@@ -133,6 +134,13 @@ export function createCourseOverviewService({ repos, clock }: CourseOverviewDeps
       )
         ? preflightStudyPlan(repos, clock, selectedContract, proposedCurriculum, workspace.name)
         : null;
+    const curriculumRecovery = selectedContract
+      ? assessCurriculumRecovery(repos, selectedContract, {
+          remediationRequired:
+            planningCurriculum !== null && studyPlanPreflight?.canGenerate === false,
+          candidateLaunchable: proposedCurriculumPreflight?.canGenerate === true,
+        })
+      : undefined;
     const risks = selectedContract
       ? repos.coverageRisks.list(workspaceId, selectedContract.id)
       : repos.coverageRisks.list(workspaceId);
@@ -166,6 +174,7 @@ export function createCourseOverviewService({ repos, clock }: CourseOverviewDeps
       acceptedStudyPlan,
       proposedStudyPlan,
       studyPlanPreflight,
+      curriculumRecovery,
       activeAgenda,
       formalProgress: {
         planItemCount: acceptedStudyPlan?.items.length ?? 0,
@@ -191,7 +200,13 @@ export function createCourseOverviewService({ repos, clock }: CourseOverviewDeps
         canEditContract: pendingContract?.status === 'draft',
         canConfirmContract: pendingContract?.status === 'proposed',
         canProposeCurriculum:
-          selectedContract?.status === 'learner_confirmed' || selectedContract?.status === 'active',
+          (selectedContract?.status === 'learner_confirmed' ||
+            selectedContract?.status === 'active') &&
+          ![
+            'build_concept_grounding',
+            'rebuild_concept_grounding',
+            'review_curriculum_successor',
+          ].includes(curriculumRecovery?.nextAction ?? 'none'),
         canAcceptCurriculum:
           proposedCurriculum?.validation.valid === true &&
           proposedCurriculum.status === 'proposed' &&

@@ -432,6 +432,19 @@ export function createMaterialsRepo(db: SqliteDb) {
       return rows.map(rowToConcept);
     },
 
+    /** Historical Concept rows for one active Material, including superseded revisions. */
+    getConceptHistory(materialId: string): Concept[] {
+      const rows = db
+        .prepare(
+          `SELECT c.* FROM concepts c
+           JOIN materials m ON m.id = c.material_id
+           WHERE m.id = ? AND m.availability = 'active'
+           ORDER BY c.created_at ASC, c.id ASC`,
+        )
+        .all(materialId) as ConceptRow[];
+      return rows.map(rowToConcept);
+    },
+
     /** All concepts of every document in a workspace (stable order). */
     getConceptsByWorkspace(workspaceId: string): Concept[] {
       const rows = db

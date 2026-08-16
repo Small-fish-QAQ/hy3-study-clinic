@@ -111,6 +111,24 @@ class ControlledCurriculumProvider extends FakeProvider {
   }
 }
 
+class SourceOnlyFakeProvider extends FakeProvider {
+  override proposeCurriculum(
+    input: CurriculumProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<CurriculumProposalPayload> {
+    return super.proposeCurriculum(
+      {
+        ...input,
+        concepts: [],
+        canonicalConcepts: [],
+        allowedCanonicalConceptIds: [],
+        evidenceCatalog: [],
+      },
+      opts,
+    );
+  }
+}
+
 let db: SqliteDb;
 let repos: Repositories;
 let provider: ControlledCurriculumProvider;
@@ -251,6 +269,40 @@ function usageRowsForCommand(commandId: string): number {
       )
       .get(commandId) as { count: number }
   ).count;
+}
+
+async function acceptSourceOnlyCurriculum(id: string) {
+  const first = await curriculum.propose(proposalRequest(`${id}-propose`));
+  return curriculum.accept({
+    command: command(`${id}-accept`, 'learner'),
+    curriculumId: first.curriculum.id,
+    expectedVersion: first.curriculum.version,
+    expectedContractId: contract.id,
+    expectedExecutionSourceManifestFingerprint:
+      first.curriculum.executionSourceManifest.fingerprint,
+    acceptanceBasis: 'learner_review',
+  }).curriculum;
+}
+
+function addGroundedConcept(id: string, blockId = 'blk_1', quote = QUOTE) {
+  const concept = {
+    id,
+    materialId: 'mat_1',
+    name: `Concept ${id}`,
+    summary: quote,
+    importance: 'high' as const,
+    grounding: {
+      blockId,
+      quote,
+      startOffset: 0,
+      endOffset: quote.length,
+      occurrenceCount: 1,
+      reanchored: false,
+    },
+    createdAt: T0,
+  };
+  repos.materials.addConcepts([concept]);
+  return concept;
 }
 
 beforeEach(() => {
@@ -556,24 +608,55 @@ describe('Curriculum proposal and authority boundaries', () => {
     expect(repos.curricula.list('ws_1')).toEqual([]);
   });
 
-  it('fails a source-only execution-remediation successor and preserves its accepted predecessor', async () => {
-    const first = await curriculum.propose(proposalRequest('curriculum-source-only-first'));
-    const accepted = curriculum.accept({
-      command: command('curriculum-source-only-accept', 'learner'),
-      curriculumId: first.curriculum.id,
-      expectedVersion: first.curriculum.version,
-      expectedContractId: contract.id,
-      expectedExecutionSourceManifestFingerprint:
-        first.curriculum.executionSourceManifest.fingerprint,
-      acceptanceBasis: 'learner_review',
-    }).curriculum;
+  it('stops impossible successor retries at the Concept prerequisite without provider calls or mutation', async () => {
+    const accepted = await acceptSourceOnlyCurriculum('curriculum-missing-concepts');
     const acceptedSnapshot = structuredClone(accepted);
-    expect(preflightStudyPlan(repos, clock, contract, accepted, 'Memory course').canGenerate).toBe(
-      false,
-    );
+    const overview = createCourseOverviewService({ repos, clock }).get('ws_1');
+
+    expect(overview.curriculumRecovery).toMatchObject({
+      state: 'concept_grounding_missing',
+      nextAction: 'build_concept_grounding',
+      currentConceptCount: 0,
+      validGroundedConceptCount: 0,
+      canonicalConceptCount: 0,
+      canonicalMembershipCount: 0,
+    });
+    expect(overview.capabilities.canProposeCurriculum).toBe(false);
+
+    for (const id of ['curriculum-missing-concepts-first', 'curriculum-missing-concepts-again']) {
+      await expect(curriculum.propose(proposalRequest(id, accepted.id))).rejects.toMatchObject({
+        code: ApiErrorCode.GroundingFailed,
+        message: expect.stringContaining('请先提取并检查概念'),
+        details: expect.objectContaining({
+          kind: 'curriculum_recovery_prerequisite',
+          state: 'concept_grounding_missing',
+          nextAction: 'build_concept_grounding',
+        }),
+      });
+      expect(attemptsForCommand(id)).toEqual([]);
+    }
+
+    expect(repos.curricula.list('ws_1').map((item) => item.id)).toEqual([accepted.id]);
+    expect(repos.curricula.get(accepted.id)).toEqual(acceptedSnapshot);
+    expect(provider.calls).toBe(1);
+  });
+
+  it('keeps B4 fail-closed validation when Concepts exist but selected evidence yields no frontier', async () => {
+    const otherQuote = 'Long-term memory stores durable knowledge.';
+    const revisionId = repos.materialRevisions.getActive('mat_1')!.id;
+    db.prepare(
+      `INSERT INTO source_blocks
+         (id, material_id, material_revision_id, idx, heading, heading_path,
+          page_number, page_end, content, start_offset, end_offset)
+       VALUES (?, 'mat_1', ?, 1, 'Long-term memory', '["Long-term memory"]',
+               NULL, NULL, ?, 0, ?)`,
+    ).run('blk_other', revisionId, otherQuote, otherQuote.length);
+    const accepted = await acceptSourceOnlyCurriculum('curriculum-empty-frontier');
+    const acceptedSnapshot = structuredClone(accepted);
+    addGroundedConcept('concept_other_evidence', 'blk_other', otherQuote);
 
     await expect(
-      curriculum.propose(proposalRequest('curriculum-source-only-successor', accepted.id)),
+      curriculum.propose(proposalRequest('curriculum-empty-frontier-successor', accepted.id)),
     ).rejects.toMatchObject({
       code: ApiErrorCode.GroundingFailed,
       message: expect.stringContaining('仍不能支持下一步学习'),
@@ -587,6 +670,102 @@ describe('Curriculum proposal and authority boundaries', () => {
     expect(repos.curricula.list('ws_1').map((item) => item.id)).toEqual([accepted.id]);
     expect(repos.curricula.get(accepted.id)).toEqual(acceptedSnapshot);
     expect(provider.calls).toBe(2);
+  });
+
+  it('reports stale Concept grounding and routes recovery to rebuilding', async () => {
+    const accepted = await acceptSourceOnlyCurriculum('curriculum-stale-concepts');
+    addGroundedConcept('concept_stale');
+    const material = repos.materials.get('mat_1')!;
+    const updatedQuote = 'Working memory has a deliberately revised source.';
+    repos.materialRevisions.stage({
+      revisionId: 'rev_2',
+      material: {
+        ...material,
+        content: updatedQuote,
+        charCount: updatedQuote.length,
+        updatedAt: T0,
+      },
+      blocks: [
+        makeBlock({
+          id: 'blk_rev_2',
+          content: updatedQuote,
+          startOffset: 0,
+          endOffset: updatedQuote.length,
+        }),
+      ],
+      originalData: null,
+      parserFingerprint: 'parser-rev-2',
+      contentFingerprint: 'content-rev-2',
+      parserAttemptId: 'parser_attempt_rev_2',
+      createdAt: T0,
+    });
+    repos.materialRevisions.activate('mat_1', 'rev_2', T0);
+
+    const overview = createCourseOverviewService({ repos, clock }).get('ws_1');
+    expect(overview.planningCurriculum?.id).toBe(accepted.id);
+    expect(overview.curriculumRecovery).toMatchObject({
+      state: 'concept_grounding_stale',
+      nextAction: 'rebuild_concept_grounding',
+      currentConceptCount: 0,
+      validGroundedConceptCount: 0,
+      staleConceptCount: 1,
+    });
+    expect(overview.capabilities.canProposeCurriculum).toBe(false);
+  });
+
+  it('enables Curriculum remediation only after exact current Concept grounding exists', async () => {
+    const accepted = await acceptSourceOnlyCurriculum('curriculum-grounding-ready');
+    const concept = addGroundedConcept('concept_recovery_ready');
+
+    let overview = createCourseOverviewService({ repos, clock }).get('ws_1');
+    expect(overview.curriculumRecovery).toMatchObject({
+      state: 'curriculum_remediation_ready',
+      nextAction: 'propose_curriculum_successor',
+      validGroundedConceptCount: 1,
+      canonicalMembershipCount: 0,
+    });
+    expect(overview.capabilities.canProposeCurriculum).toBe(true);
+
+    repos.alignment.ensureBaseline('ws_1', [concept], T0);
+    const successor = await curriculum.propose(
+      proposalRequest('curriculum-grounding-ready-successor', accepted.id),
+    );
+    overview = createCourseOverviewService({ repos, clock }).get('ws_1');
+    expect(overview.curriculumRecovery).toMatchObject({
+      state: 'curriculum_candidate_ready',
+      nextAction: 'review_curriculum_successor',
+      canonicalConceptCount: 1,
+      canonicalMembershipCount: 1,
+    });
+    expect(overview.capabilities.canProposeCurriculum).toBe(false);
+    expect(overview.capabilities.canAcceptCurriculum).toBe(true);
+    expect(
+      preflightStudyPlan(repos, clock, contract, successor.curriculum, 'Memory course').canGenerate,
+    ).toBe(true);
+  });
+
+  it('projects persisted raw coverage diagnostics without mutating accepted history', async () => {
+    const revisionId = repos.materialRevisions.getActive('mat_1')!.id;
+    const extra = 'Additional source context.';
+    db.prepare(
+      `INSERT INTO source_blocks
+         (id, material_id, material_revision_id, idx, heading, heading_path,
+          page_number, page_end, content, start_offset, end_offset)
+       VALUES ('blk_unmapped', 'mat_1', ?, 1, 'Extra', '["Extra"]',
+               NULL, NULL, ?, 0, ?)`,
+    ).run(revisionId, extra, extra.length);
+    const accepted = await acceptSourceOnlyCurriculum('curriculum-warning-projection');
+    const storedBefore = structuredClone(repos.curricula.get(accepted.id));
+    const raw = accepted.validation.warnings.find((warning) =>
+      warning.startsWith('Unmapped source blocks remain visible'),
+    );
+
+    expect(raw).toBe('Unmapped source blocks remain visible for risk reconciliation: 1.');
+    expect(curriculum.detail('ws_1', accepted.id).hierarchy.coverageWarnings).toEqual([
+      { code: 'unmapped_source_blocks', count: 1, technicalDetail: raw },
+    ]);
+    expect(repos.curricula.get(accepted.id)).toEqual(storedBefore);
+    expect(repos.curricula.get(accepted.id)?.validation.warnings).toEqual([raw]);
   });
 
   it('accepts an execution-remediation successor only after deterministic bindings create a frontier', async () => {
@@ -705,7 +884,7 @@ describe('Curriculum proposal and authority boundaries', () => {
   it('applies the same empty-frontier remediation contract to the Fake provider', async () => {
     const fakeCurriculum = createCurriculumService({
       repos,
-      provider: new FakeProvider(),
+      provider: new SourceOnlyFakeProvider(),
       clock,
       commands,
       sourceAuthority: createSourceAuthorityService({
@@ -723,6 +902,7 @@ describe('Curriculum proposal and authority boundaries', () => {
         first.curriculum.executionSourceManifest.fingerprint,
       acceptanceBasis: 'learner_review',
     }).curriculum;
+    addGroundedConcept('concept_fake_empty_frontier');
 
     await expect(
       fakeCurriculum.propose(proposalRequest('curriculum-fake-parity-successor', accepted.id)),
@@ -734,7 +914,7 @@ describe('Curriculum proposal and authority boundaries', () => {
     expect(attemptsForCommand('curriculum-fake-parity-successor')).toHaveLength(2);
   });
 
-  it('keeps the execution-remediation requirement through a rejected intermediate version', async () => {
+  it('keeps the earliest Concept prerequisite through a rejected intermediate version', async () => {
     const first = await curriculum.propose(proposalRequest('curriculum-lineage-first'));
     const accepted = curriculum.accept({
       command: command('curriculum-lineage-first-accept', 'learner'),
@@ -778,11 +958,12 @@ describe('Curriculum proposal and authority boundaries', () => {
     ).rejects.toMatchObject({
       code: ApiErrorCode.GroundingFailed,
       details: expect.objectContaining({
-        errors: expect.arrayContaining([
-          expect.stringContaining('StudyPlan execution repair: 0 of 1 LearningUnits'),
-        ]),
+        kind: 'curriculum_recovery_prerequisite',
+        state: 'concept_grounding_missing',
+        nextAction: 'build_concept_grounding',
       }),
     });
+    expect(attemptsForCommand('curriculum-lineage-source-only')).toEqual([]);
     expect(repos.curricula.list('ws_1').map((item) => item.id)).toEqual([accepted.id, rejected.id]);
     expect(repos.curricula.get(accepted.id)?.status).toBe('accepted');
     expect(repos.curricula.get(rejected.id)?.status).toBe('rejected');
@@ -836,6 +1017,7 @@ describe('Curriculum proposal and authority boundaries', () => {
     const acceptedResponse = curriculum.accept(acceptance);
     expect(curriculum.accept(acceptance)).toEqual(acceptedResponse);
     const accepted = acceptedResponse.curriculum;
+    addGroundedConcept('concept_provider_failure');
     provider.fail = true;
 
     await expect(
@@ -857,6 +1039,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       acceptanceBasis: 'learner_review',
     }).curriculum;
     const acceptedSnapshot = structuredClone(accepted);
+    addGroundedConcept('concept_timeout');
     const fetchMock = vi.fn(
       (_url: string, init?: RequestInit) =>
         new Promise<Response>((_resolve, reject) => {
@@ -977,6 +1160,7 @@ describe('Curriculum proposal and authority boundaries', () => {
     }).curriculum;
     const acceptedSnapshot = structuredClone(accepted);
     const executionSnapshot = structuredClone(repos.courseExecution.get('ws_1'));
+    addGroundedConcept('concept_semantic_repair_failure');
     const invalid = payloadForFetch('cev_still_not_offered');
     const fetchMock = useMockedHy3([JSON.stringify(invalid), JSON.stringify(invalid)]);
 

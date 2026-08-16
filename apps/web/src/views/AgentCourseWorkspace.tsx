@@ -330,9 +330,10 @@ export function AgentCourseWorkspace({
   }, [loadCourse, workspaceId]);
 
   async function refresh(signal?: AbortSignal): Promise<void> {
-    if (!workspaceId) return;
-    const execution = await api.courseExecution(workspaceId, signal);
-    if (signal?.aborted) return;
+    const targetWorkspaceId = workspaceIdRef.current;
+    if (!targetWorkspaceId) return;
+    const execution = await api.courseExecution(targetWorkspaceId, signal);
+    if (signal?.aborted || workspaceIdRef.current !== targetWorkspaceId) return;
     setOverview(execution.overview);
     setHierarchy(execution.overview.curriculumHierarchy);
   }
@@ -1034,6 +1035,7 @@ export function AgentCourseWorkspace({
           onProposeCurriculum={() => void proposeCurriculum()}
           onCancelCurriculum={cancelCurriculum}
           onOpenCurriculum={() => setView('curriculum')}
+          onOpenConceptGrounding={() => setView('explore')}
           onProposeStudyPlan={() => void proposePlan()}
           onDismissRouteGenerationFailure={() => {
             clearStoredRouteGenerationFailure(workspaceId);
@@ -1059,8 +1061,10 @@ export function AgentCourseWorkspace({
           errorDetails={actionFailureOwner === 'curriculum' ? action.errorDetails : null}
           canPropose={overview?.capabilities.canProposeCurriculum ?? false}
           canAccept={overview?.capabilities.canAcceptCurriculum ?? false}
+          recovery={overview?.curriculumRecovery}
           busyAction={busyAction}
           onPropose={() => void proposeCurriculum()}
+          onOpenConceptGrounding={() => setView('explore')}
           onCancel={cancelCurriculum}
           onAccept={() => void decideCurriculum('accept')}
           onReject={() => void decideCurriculum('reject')}
@@ -1131,6 +1135,9 @@ export function AgentCourseWorkspace({
           onOpenMaterials={() => {
             setView('home');
             setMaterialsOpen(true);
+          }}
+          onConceptGroundingChanged={(changedWorkspaceId) => {
+            if (changedWorkspaceId === workspaceIdRef.current) void refreshCourse();
           }}
           courseLocked
         />

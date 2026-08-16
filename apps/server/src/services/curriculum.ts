@@ -10,6 +10,7 @@ import {
   fnv1a32,
   type AcceptCurriculumRequest,
   type Curriculum,
+  type CurriculumCoverageWarning,
   type CurriculumProposalPayload,
   type CurriculumHierarchyView,
   type CurriculumHistoryResponse,
@@ -52,6 +53,7 @@ import {
   selectCurriculumEvidenceOffers,
 } from './curriculumEvidence.js';
 import { preflightStudyPlan } from './studyPlansAgent.js';
+import { assessCurriculumRecovery } from './curriculumRecovery.js';
 
 /** HTTP/service request: the server, never the client, resolves exact revisions. */
 export const ProposeCurriculumCommandRequestSchema = ProposeCurriculumRequestSchema.omit({
@@ -448,6 +450,36 @@ function assertProposalAuthorityCurrent(
   }
 }
 
+const UNMAPPED_BLOCK_WARNING_PREFIX =
+  'Unmapped source blocks remain visible for risk reconciliation:';
+const UNMAPPED_STRUCTURE_WARNING_PREFIX = 'Unmapped structural units remain visible:';
+
+function warningCount(warning: string, prefix: string): number | null {
+  if (!warning.startsWith(prefix) || !warning.endsWith('.')) return null;
+  const count = Number(warning.slice(prefix.length, -1).trim());
+  return Number.isSafeInteger(count) && count >= 0 ? count : null;
+}
+
+export function curriculumCoverageWarning(warning: string): CurriculumCoverageWarning {
+  const unmappedBlockCount = warningCount(warning, UNMAPPED_BLOCK_WARNING_PREFIX);
+  if (unmappedBlockCount !== null) {
+    return {
+      code: 'unmapped_source_blocks',
+      count: unmappedBlockCount,
+      technicalDetail: warning,
+    };
+  }
+  const unmappedStructuralUnitCount = warningCount(warning, UNMAPPED_STRUCTURE_WARNING_PREFIX);
+  if (unmappedStructuralUnitCount !== null) {
+    return {
+      code: 'unmapped_structural_units',
+      count: unmappedStructuralUnitCount,
+      technicalDetail: warning,
+    };
+  }
+  return { code: 'other_coverage_warning', count: null, technicalDetail: warning };
+}
+
 export function curriculumHierarchy(curriculum: Curriculum): CurriculumHierarchyView {
   const children = new Map<string | null, Curriculum['nodes']>();
   const byId = new Map(curriculum.nodes.map((node) => [node.id, node]));
@@ -500,6 +532,7 @@ export function curriculumHierarchy(curriculum: Curriculum): CurriculumHierarchy
     })),
     synthesisGroups: curriculum.synthesisGroups,
     validation: curriculum.validation,
+    coverageWarnings: curriculum.validation.warnings.map(curriculumCoverageWarning),
     executionSourceManifest: curriculum.executionSourceManifest,
   });
 }
@@ -665,6 +698,26 @@ export function createCurriculumService({
       predecessor,
       workspace.name,
     );
+    if (executionRepairRequired) {
+      const recovery = assessCurriculumRecovery(repos, contract, {
+        remediationRequired: true,
+        candidateLaunchable: false,
+      });
+      if (
+        recovery.state === 'concept_grounding_missing' ||
+        recovery.state === 'concept_grounding_stale'
+      ) {
+        const error = new AppError(
+          ApiErrorCode.GroundingFailed,
+          recovery.state === 'concept_grounding_stale'
+            ? '当前概念依据已过期。请先重新提取并检查概念，再更新课程结构。'
+            : '当前课程还没有可用的概念依据。请先提取并检查概念，再更新课程结构。',
+          { kind: 'curriculum_recovery_prerequisite', ...recovery },
+        );
+        commands.fail(claim, error);
+        throw error;
+      }
+    }
     const predecessorAuthorityIds = new Set(
       predecessor?.nodes.flatMap(
         (node) =>
