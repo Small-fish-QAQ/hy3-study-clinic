@@ -14,6 +14,7 @@ import { createRepositories, type Repositories } from '../repositories/index.js'
 import { makeBlock, makeMaterial, makeWorkspace, T0 } from '../testing/fixtures.js';
 import { fixedClock, type Clock } from '../util/ids.js';
 import { createCourseCommandService } from './courseCommands.js';
+import { createCourseOverviewService } from './courseOverview.js';
 import {
   buildCurriculumExecutionContext,
   createCurriculumService,
@@ -468,7 +469,6 @@ describe('Curriculum proposal and authority boundaries', () => {
     const canonicalId = repos.alignment.listCanonical('ws_1')[0]!.id;
     provider.makePayload = (input) => {
       const payload = new ControlledCurriculumProvider().makePayload(input);
-      payload.nodes[2]!.conceptIds = [concept.id];
       payload.nodes[2]!.canonicalConceptIds = [canonicalId];
       return payload;
     };
@@ -498,6 +498,294 @@ describe('Curriculum proposal and authority boundaries', () => {
     );
     expect(preflight.executableLearningUnitCount).toBe(1);
     expect(preflight.canGenerate).toBe(true);
+  });
+
+  it('derives exact source Concept and canonical bindings when real-shaped output leaves them empty', async () => {
+    const concept = {
+      id: 'concept_exact_evidence',
+      materialId: 'mat_1',
+      name: 'Working memory',
+      summary: QUOTE,
+      importance: 'high' as const,
+      grounding: {
+        blockId: 'blk_1',
+        quote: QUOTE,
+        startOffset: 0,
+        endOffset: QUOTE.length,
+        occurrenceCount: 1,
+        reanchored: false,
+      },
+      createdAt: T0,
+    };
+    repos.materials.addConcepts([concept]);
+    repos.alignment.ensureBaseline('ws_1', [concept], T0);
+    const canonicalId = repos.alignment.listCanonical('ws_1')[0]!.id;
+
+    const proposed = await curriculum.propose(proposalRequest('curriculum-derived-bindings'));
+    const unit = proposed.curriculum.nodes.find((node) => node.kind === 'learning_unit');
+
+    expect(unit?.learningUnit).toMatchObject({
+      conceptIds: [concept.id],
+      canonicalConceptIds: [canonicalId],
+    });
+    expect(
+      preflightStudyPlan(repos, clock, contract, proposed.curriculum, 'Memory course'),
+    ).toMatchObject({
+      executableLearningUnitCount: 1,
+      nonExecutableLearningUnitCount: 0,
+      canGenerate: true,
+    });
+  });
+
+  it('rejects an unknown provider-selected Concept even when its evidence selection is exact', async () => {
+    provider.makePayload = (input) => {
+      const payload = new ControlledCurriculumProvider().makePayload(input);
+      payload.nodes[2]!.conceptIds = ['concept_not_offered'];
+      return payload;
+    };
+
+    await expect(
+      curriculum.propose(proposalRequest('curriculum-unknown-concept')),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.GroundingFailed,
+      details: expect.objectContaining({
+        errors: expect.arrayContaining(['Unknown or out-of-scope Concept: concept_not_offered']),
+      }),
+    });
+    expect(provider.calls).toBe(1);
+    expect(repos.curricula.list('ws_1')).toEqual([]);
+  });
+
+  it('fails a source-only execution-remediation successor and preserves its accepted predecessor', async () => {
+    const first = await curriculum.propose(proposalRequest('curriculum-source-only-first'));
+    const accepted = curriculum.accept({
+      command: command('curriculum-source-only-accept', 'learner'),
+      curriculumId: first.curriculum.id,
+      expectedVersion: first.curriculum.version,
+      expectedContractId: contract.id,
+      expectedExecutionSourceManifestFingerprint:
+        first.curriculum.executionSourceManifest.fingerprint,
+      acceptanceBasis: 'learner_review',
+    }).curriculum;
+    const acceptedSnapshot = structuredClone(accepted);
+    expect(preflightStudyPlan(repos, clock, contract, accepted, 'Memory course').canGenerate).toBe(
+      false,
+    );
+
+    await expect(
+      curriculum.propose(proposalRequest('curriculum-source-only-successor', accepted.id)),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.GroundingFailed,
+      message: expect.stringContaining('仍不能支持下一步学习'),
+      details: expect.objectContaining({
+        errors: expect.arrayContaining([
+          expect.stringContaining('StudyPlan execution repair: 0 of 1 LearningUnits'),
+        ]),
+      }),
+    });
+
+    expect(repos.curricula.list('ws_1').map((item) => item.id)).toEqual([accepted.id]);
+    expect(repos.curricula.get(accepted.id)).toEqual(acceptedSnapshot);
+    expect(provider.calls).toBe(2);
+  });
+
+  it('accepts an execution-remediation successor only after deterministic bindings create a frontier', async () => {
+    const first = await curriculum.propose(proposalRequest('curriculum-remediation-first'));
+    const accepted = curriculum.accept({
+      command: command('curriculum-remediation-first-accept', 'learner'),
+      curriculumId: first.curriculum.id,
+      expectedVersion: first.curriculum.version,
+      expectedContractId: contract.id,
+      expectedExecutionSourceManifestFingerprint:
+        first.curriculum.executionSourceManifest.fingerprint,
+      acceptanceBasis: 'learner_review',
+    }).curriculum;
+    const concept = {
+      id: 'concept_remediation_frontier',
+      materialId: 'mat_1',
+      name: 'Working memory',
+      summary: QUOTE,
+      importance: 'high' as const,
+      grounding: {
+        blockId: 'blk_1',
+        quote: QUOTE,
+        startOffset: 0,
+        endOffset: QUOTE.length,
+        occurrenceCount: 1,
+        reanchored: false,
+      },
+      createdAt: T0,
+    };
+    repos.materials.addConcepts([concept]);
+    repos.alignment.ensureBaseline('ws_1', [concept], T0);
+
+    const successor = await curriculum.propose(
+      proposalRequest('curriculum-remediation-successor', accepted.id),
+    );
+    const preflight = preflightStudyPlan(
+      repos,
+      clock,
+      contract,
+      successor.curriculum,
+      'Memory course',
+    );
+    expect(
+      successor.curriculum.nodes.find((node) => node.learningUnit)?.learningUnit?.conceptIds,
+    ).toEqual([concept.id]);
+    expect(preflight).toMatchObject({
+      executableLearningUnitCount: 1,
+      nonExecutableLearningUnitCount: 0,
+      canGenerate: true,
+    });
+
+    const acceptedSuccessor = curriculum.accept({
+      command: command('curriculum-remediation-successor-accept', 'learner'),
+      curriculumId: successor.curriculum.id,
+      expectedVersion: successor.curriculum.version,
+      expectedContractId: contract.id,
+      expectedExecutionSourceManifestFingerprint:
+        successor.curriculum.executionSourceManifest.fingerprint,
+      acceptanceBasis: 'learner_review',
+    }).curriculum;
+    expect(acceptedSuccessor.status).toBe('accepted');
+    expect(repos.curricula.get(accepted.id)?.status).toBe('accepted');
+  });
+
+  it('revalidates remediation launchability at acceptance after a Concept disappears', async () => {
+    const first = await curriculum.propose(proposalRequest('curriculum-accept-gate-first'));
+    const accepted = curriculum.accept({
+      command: command('curriculum-accept-gate-first-accept', 'learner'),
+      curriculumId: first.curriculum.id,
+      expectedVersion: first.curriculum.version,
+      expectedContractId: contract.id,
+      expectedExecutionSourceManifestFingerprint:
+        first.curriculum.executionSourceManifest.fingerprint,
+      acceptanceBasis: 'learner_review',
+    }).curriculum;
+    const concept = {
+      id: 'concept_acceptance_gate',
+      materialId: 'mat_1',
+      name: 'Working memory',
+      summary: QUOTE,
+      importance: 'high' as const,
+      grounding: {
+        blockId: 'blk_1',
+        quote: QUOTE,
+        startOffset: 0,
+        endOffset: QUOTE.length,
+        occurrenceCount: 1,
+        reanchored: false,
+      },
+      createdAt: T0,
+    };
+    repos.materials.addConcepts([concept]);
+    const successor = await curriculum.propose(
+      proposalRequest('curriculum-accept-gate-successor', accepted.id),
+    );
+    const courseOverview = createCourseOverviewService({ repos, clock });
+    expect(courseOverview.get('ws_1').capabilities.canAcceptCurriculum).toBe(true);
+    db.prepare('DELETE FROM concepts WHERE id = ?').run(concept.id);
+    expect(courseOverview.get('ws_1').capabilities.canAcceptCurriculum).toBe(false);
+
+    expect(() =>
+      curriculum.accept({
+        command: command('curriculum-accept-gate-rejected', 'learner'),
+        curriculumId: successor.curriculum.id,
+        expectedVersion: successor.curriculum.version,
+        expectedContractId: contract.id,
+        expectedExecutionSourceManifestFingerprint:
+          successor.curriculum.executionSourceManifest.fingerprint,
+        acceptanceBasis: 'learner_review',
+      }),
+    ).toThrow('仍不能支持下一步学习');
+    expect(repos.curricula.get(successor.curriculum.id)?.status).toBe('proposed');
+    expect(repos.curricula.get(accepted.id)?.status).toBe('accepted');
+  });
+
+  it('applies the same empty-frontier remediation contract to the Fake provider', async () => {
+    const fakeCurriculum = createCurriculumService({
+      repos,
+      provider: new FakeProvider(),
+      clock,
+      commands,
+      sourceAuthority: createSourceAuthorityService({
+        sourceAuthority: repos.sourceAuthority,
+        clock,
+      }),
+    });
+    const first = await fakeCurriculum.propose(proposalRequest('curriculum-fake-parity-first'));
+    const accepted = fakeCurriculum.accept({
+      command: command('curriculum-fake-parity-first-accept', 'learner'),
+      curriculumId: first.curriculum.id,
+      expectedVersion: first.curriculum.version,
+      expectedContractId: contract.id,
+      expectedExecutionSourceManifestFingerprint:
+        first.curriculum.executionSourceManifest.fingerprint,
+      acceptanceBasis: 'learner_review',
+    }).curriculum;
+
+    await expect(
+      fakeCurriculum.propose(proposalRequest('curriculum-fake-parity-successor', accepted.id)),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.GroundingFailed,
+      details: expect.objectContaining({ repairAttempted: true }),
+    });
+    expect(repos.curricula.list('ws_1').map((item) => item.id)).toEqual([accepted.id]);
+    expect(attemptsForCommand('curriculum-fake-parity-successor')).toHaveLength(2);
+  });
+
+  it('keeps the execution-remediation requirement through a rejected intermediate version', async () => {
+    const first = await curriculum.propose(proposalRequest('curriculum-lineage-first'));
+    const accepted = curriculum.accept({
+      command: command('curriculum-lineage-first-accept', 'learner'),
+      curriculumId: first.curriculum.id,
+      expectedVersion: first.curriculum.version,
+      expectedContractId: contract.id,
+      expectedExecutionSourceManifestFingerprint:
+        first.curriculum.executionSourceManifest.fingerprint,
+      acceptanceBasis: 'learner_review',
+    }).curriculum;
+    const concept = {
+      id: 'concept_rejected_intermediate',
+      materialId: 'mat_1',
+      name: 'Working memory',
+      summary: QUOTE,
+      importance: 'high' as const,
+      grounding: {
+        blockId: 'blk_1',
+        quote: QUOTE,
+        startOffset: 0,
+        endOffset: QUOTE.length,
+        occurrenceCount: 1,
+        reanchored: false,
+      },
+      createdAt: T0,
+    };
+    repos.materials.addConcepts([concept]);
+    const executable = await curriculum.propose(
+      proposalRequest('curriculum-lineage-executable', accepted.id),
+    );
+    const rejected = curriculum.reject({
+      command: command('curriculum-lineage-reject', 'learner'),
+      curriculumId: executable.curriculum.id,
+      expectedVersion: executable.curriculum.version,
+      reason: 'Learner requested another proposal.',
+    }).curriculum;
+    db.prepare('DELETE FROM concepts WHERE id = ?').run(concept.id);
+
+    await expect(
+      curriculum.propose(proposalRequest('curriculum-lineage-source-only', rejected.id)),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.GroundingFailed,
+      details: expect.objectContaining({
+        errors: expect.arrayContaining([
+          expect.stringContaining('StudyPlan execution repair: 0 of 1 LearningUnits'),
+        ]),
+      }),
+    });
+    expect(repos.curricula.list('ws_1').map((item) => item.id)).toEqual([accepted.id, rejected.id]);
+    expect(repos.curricula.get(accepted.id)?.status).toBe('accepted');
+    expect(repos.curricula.get(rejected.id)?.status).toBe('rejected');
   });
 
   it('enforces an explicitly configured operation cap before a Curriculum provider call', async () => {

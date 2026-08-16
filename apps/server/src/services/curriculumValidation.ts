@@ -36,6 +36,9 @@ export interface CurriculumValidationContext {
   /** Empty until normalized structural-unit persistence is available. */
   structuralUnitOwners: Map<string, CurriculumStructuralUnitOwner>;
   canonicalConceptIds: Set<string>;
+  /** Authoritative alignment membership offered for this operation snapshot. */
+  canonicalConceptMembers: Map<string, string[]>;
+  canonicalConceptIdsBySourceConcept: Map<string, string[]>;
   /** Immutable exact excerpts offered for this operation snapshot. */
   evidenceCatalog: CurriculumEvidenceOffer[];
   limits: {
@@ -139,6 +142,9 @@ function throwValidation(
   warnings: string[] = [],
   repairAttempted = false,
 ): never {
+  const executionRepairFailed = errors.some((error) =>
+    error.startsWith('StudyPlan execution repair:'),
+  );
   const details = CurriculumProposalFailureDetailsSchema.parse({
     kind: 'curriculum_candidate_validation',
     repairAttempted,
@@ -147,9 +153,13 @@ function throwValidation(
   });
   throw new AppError(
     ApiErrorCode.GroundingFailed,
-    repairAttempted
-      ? '新课程结构没有通过资料一致性检查，原版本未改变。系统已尝试一次修复。'
-      : '新课程结构没有通过资料一致性检查，原版本未改变。',
+    executionRepairFailed
+      ? repairAttempted
+        ? '新课程结构仍不能支持下一步学习，因此没有生成新版本。当前已接受版本未改变，系统已尝试一次修复。'
+        : '新课程结构仍不能支持下一步学习，因此没有生成新版本。当前已接受版本未改变。'
+      : repairAttempted
+        ? '新课程结构没有通过资料一致性检查，原版本未改变。系统已尝试一次修复。'
+        : '新课程结构没有通过资料一致性检查，原版本未改变。',
     details,
   );
 }
@@ -304,17 +314,44 @@ export function materializeCurriculumProposal(
       continue;
     }
 
-    const sourceEvidence: VerifiedGrounding[] = [];
+    const selectedEvidence: VerifiedGrounding[] = [];
     for (const evidence of proposed.sourceEvidence) {
       const verified = verifyEvidence(id, evidence);
-      if (verified) sourceEvidence.push(verified);
+      if (verified) {
+        selectedEvidence.push(verified);
+      }
     }
 
     const sourceConceptIds: string[] = [];
     const canonicalConceptIds: string[] = [];
+    const requestedCanonicalConceptIds: string[] = [];
     const graphRelationIds: string[] = [];
     const prerequisiteUnitIds: string[] = [];
     const objectives: CurriculumObjective[] = [];
+
+    const addConcept = (conceptId: string): void => {
+      if (sourceConceptIds.includes(conceptId)) return;
+      const concept = conceptById.get(conceptId);
+      if (!concept) {
+        errors.push(`Unknown or out-of-scope Concept: ${conceptId}`);
+        return;
+      }
+      if (sourceConceptIds.length >= 30) {
+        if (
+          !warnings.includes('Additional exact Concept bindings were omitted at the local limit.')
+        ) {
+          warnings.push('Additional exact Concept bindings were omitted at the local limit.');
+        }
+        return;
+      }
+      const grounded = verifyGrounding(ctx.blocks, concept.grounding);
+      if (!grounded.ok) {
+        errors.push(`Existing Concept grounding is no longer valid: ${concept.id}`);
+        return;
+      }
+      sourceConceptIds.push(concept.id);
+      addSourceReference(id, grounded.grounding);
+    };
 
     for (const structuralUnitId of proposed.structuralUnitIds) {
       const owner = ctx.structuralUnitOwners.get(structuralUnitId);
@@ -338,26 +375,17 @@ export function materializeCurriculumProposal(
 
     if (proposed.kind === 'learning_unit') {
       for (const conceptId of proposed.conceptIds) {
-        const concept = conceptById.get(conceptId);
-        if (!concept) {
-          errors.push(`Unknown or out-of-scope Concept: ${conceptId}`);
-          continue;
-        }
-        sourceConceptIds.push(concept.id);
-        const grounded = verifyGrounding(ctx.blocks, concept.grounding);
-        if (grounded.ok) {
-          sourceEvidence.push(grounded.grounding);
-          addSourceReference(id, grounded.grounding);
-        } else {
-          errors.push(`Existing Concept grounding is no longer valid: ${concept.id}`);
-        }
+        addConcept(conceptId);
       }
       for (const canonicalId of proposed.canonicalConceptIds) {
         if (!ctx.canonicalConceptIds.has(canonicalId)) {
           errors.push(`Unknown canonical Concept: ${canonicalId}`);
           continue;
         }
-        canonicalConceptIds.push(canonicalId);
+        requestedCanonicalConceptIds.push(canonicalId);
+        for (const conceptId of ctx.canonicalConceptMembers.get(canonicalId) ?? []) {
+          addConcept(conceptId);
+        }
       }
       for (const relationId of proposed.graphRelationIds) {
         const edge = graphById.get(relationId);
@@ -378,7 +406,10 @@ export function materializeCurriculumProposal(
         const evidence: VerifiedGrounding[] = [];
         for (const proposedEvidence of objective.evidence) {
           const verified = verifyEvidence(id, proposedEvidence);
-          if (verified) evidence.push(verified);
+          if (verified) {
+            evidence.push(verified);
+            selectedEvidence.push(verified);
+          }
         }
         const authority = authorityStatus(objective, evidence, ctx);
         objectives.push({
@@ -388,6 +419,51 @@ export function materializeCurriculumProposal(
           truthPremiseStatus: authority.status,
           truthAuthorityRecordIds: authority.authorityIds,
         });
+      }
+
+      // Exact provider evidence and accepted alignment membership are enough
+      // to derive identity bindings locally. The model never grants Concept
+      // authority merely by emitting a persistent id.
+      const selectedEvidenceKeys = new Set(
+        selectedEvidence.map(
+          (evidence) =>
+            `${evidence.blockId}\u0000${evidence.quote}\u0000${evidence.startOffset}\u0000${evidence.endOffset}`,
+        ),
+      );
+      for (const concept of [...ctx.concepts].sort((left, right) =>
+        left.id.localeCompare(right.id),
+      )) {
+        const key = `${concept.grounding.blockId}\u0000${concept.grounding.quote}\u0000${concept.grounding.startOffset}\u0000${concept.grounding.endOffset}`;
+        if (selectedEvidenceKeys.has(key)) addConcept(concept.id);
+      }
+
+      const derivedCanonicalIds = sourceConceptIds
+        .flatMap((conceptId) => ctx.canonicalConceptIdsBySourceConcept.get(conceptId) ?? [])
+        .sort((left, right) => left.localeCompare(right));
+      for (const canonicalId of [...requestedCanonicalConceptIds, ...derivedCanonicalIds]) {
+        if (canonicalConceptIds.includes(canonicalId)) continue;
+        if (!ctx.canonicalConceptIds.has(canonicalId)) {
+          errors.push(`Unknown canonical Concept: ${canonicalId}`);
+          continue;
+        }
+        const members = ctx.canonicalConceptMembers.get(canonicalId) ?? [];
+        if (!members.some((conceptId) => sourceConceptIds.includes(conceptId))) {
+          errors.push(
+            `Canonical Concept has no authoritative member in this LearningUnit: ${canonicalId}`,
+          );
+          continue;
+        }
+        if (canonicalConceptIds.length >= 20) {
+          if (
+            !warnings.includes(
+              'Additional canonical Concept bindings were omitted at the local limit.',
+            )
+          ) {
+            warnings.push('Additional canonical Concept bindings were omitted at the local limit.');
+          }
+          break;
+        }
+        canonicalConceptIds.push(canonicalId);
       }
     } else if (
       proposed.conceptIds.length ||

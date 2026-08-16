@@ -18,6 +18,7 @@ import {
   type LearningContract,
   type ProposeCurriculumRequest,
   type RejectCurriculumRequest,
+  type StudyPlanPreflight,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import { ProviderError } from '../llm/errors.js';
@@ -50,6 +51,7 @@ import {
   buildCurriculumEvidenceCatalog,
   selectCurriculumEvidenceOffers,
 } from './curriculumEvidence.js';
+import { preflightStudyPlan } from './studyPlansAgent.js';
 
 /** HTTP/service request: the server, never the client, resolves exact revisions. */
 export const ProposeCurriculumCommandRequestSchema = ProposeCurriculumRequestSchema.omit({
@@ -266,6 +268,82 @@ export function buildCurriculumExecutionContext(
 
 function manifestsEqual(left: ExecutionSourceManifest, right: ExecutionSourceManifest): boolean {
   return JSON.stringify(left) === JSON.stringify(right);
+}
+
+export function requiresStudyPlanExecutionRepair(
+  repos: Repositories,
+  clock: Clock,
+  contract: LearningContract,
+  predecessor: Curriculum | null,
+  workspaceName: string,
+): boolean {
+  const visited = new Set<string>();
+  let ancestor = predecessor;
+  while (ancestor && !visited.has(ancestor.id)) {
+    if (ancestor.status === 'accepted') {
+      return !preflightStudyPlan(repos, clock, contract, ancestor, workspaceName).canGenerate;
+    }
+    visited.add(ancestor.id);
+    ancestor = ancestor.predecessorId
+      ? (repos.curricula.get(ancestor.predecessorId) ?? null)
+      : null;
+  }
+  return false;
+}
+
+function executionRepairErrors(preflight: StudyPlanPreflight): string[] {
+  if (preflight.canGenerate) return [];
+  const blockerCodes = preflight.blockers.map((blocker) => blocker.code).join(', ');
+  return [
+    `StudyPlan execution repair: ${preflight.executableLearningUnitCount} of ${preflight.totalLearningUnitCount} LearningUnits have a supported launch capability; blockers: ${blockerCodes}. Current launch implementations require an exact current source Concept binding or another supported capability.`,
+  ];
+}
+
+function validateExecutionRepairCandidate(input: {
+  repos: Repositories;
+  clock: Clock;
+  contract: LearningContract;
+  executionRepairRequired: boolean;
+  workspaceName: string;
+  manifest: ExecutionSourceManifest;
+  materialized: MaterializedCurriculum;
+}): MaterializedCurriculum {
+  if (!input.executionRepairRequired || !input.materialized.validation.valid) {
+    return input.materialized;
+  }
+  const candidate: Curriculum = {
+    id: 'curriculum_execution_repair_candidate',
+    workspaceId: input.contract.workspaceId,
+    contractVersionId: input.contract.id,
+    version: 1,
+    predecessorId: null,
+    status: 'proposed',
+    executionSourceManifest: input.manifest,
+    nodes: input.materialized.nodes,
+    synthesisGroups: input.materialized.synthesisGroups,
+    validation: input.materialized.validation,
+    provider: 'candidate',
+    providerModel: null,
+    createdAt: input.clock.now().toISOString(),
+    acceptedAt: null,
+  };
+  const preflight = preflightStudyPlan(
+    input.repos,
+    input.clock,
+    input.contract,
+    candidate,
+    input.workspaceName,
+  );
+  const errors = executionRepairErrors(preflight);
+  if (errors.length === 0) return input.materialized;
+  return {
+    ...input.materialized,
+    validation: {
+      ...input.materialized.validation,
+      valid: false,
+      errors: [...input.materialized.validation.errors, ...errors].slice(0, 100),
+    },
+  };
 }
 
 function buildOfferedCurriculumKnowledge(
@@ -580,6 +658,13 @@ export function createCurriculumService({
       preferredGroundings,
     });
     const predecessor = latest ?? null;
+    const executionRepairRequired = requiresStudyPlanExecutionRepair(
+      repos,
+      clock,
+      contract,
+      predecessor,
+      workspace.name,
+    );
     const predecessorAuthorityIds = new Set(
       predecessor?.nodes.flatMap(
         (node) =>
@@ -633,6 +718,20 @@ export function createCurriculumService({
       graphEdges,
       structuralUnitOwners,
       canonicalConceptIds: new Set(allowedCanonicalConceptIds),
+      canonicalConceptMembers: new Map(
+        canonicalConcepts.map((canonical) => [
+          canonical.id,
+          [...canonical.sourceConceptIds].sort((left, right) => left.localeCompare(right)),
+        ]),
+      ),
+      canonicalConceptIdsBySourceConcept: canonicalConcepts.reduce((memberships, canonical) => {
+        for (const conceptId of canonical.sourceConceptIds) {
+          const ids = memberships.get(conceptId) ?? [];
+          ids.push(canonical.id);
+          memberships.set(conceptId, ids);
+        }
+        return memberships;
+      }, new Map<string, string[]>()),
       evidenceCatalog: providerInput.evidenceCatalog.map((offer) => ({
         ...offer,
         headingPath: [...offer.headingPath],
@@ -683,10 +782,18 @@ export function createCurriculumService({
                 context.manifest,
                 offeredKnowledge.fingerprint,
               );
-              lastCandidateValidation = materializeCurriculumProposal(
-                candidate as CurriculumProposalPayload,
-                validationContext,
-              );
+              lastCandidateValidation = validateExecutionRepairCandidate({
+                repos,
+                clock,
+                contract,
+                executionRepairRequired,
+                workspaceName: workspace.name,
+                manifest: context.manifest,
+                materialized: materializeCurriculumProposal(
+                  candidate as CurriculumProposalPayload,
+                  validationContext,
+                ),
+              });
               return {
                 valid: lastCandidateValidation.validation.valid,
                 diagnostics: lastCandidateValidation.validation.errors,
@@ -694,7 +801,15 @@ export function createCurriculumService({
             },
           }),
       });
-      const materialized = materializeCurriculumProposal(payload, validationContext);
+      const materialized = validateExecutionRepairCandidate({
+        repos,
+        clock,
+        contract,
+        executionRepairRequired,
+        workspaceName: workspace.name,
+        manifest: context.manifest,
+        materialized: materializeCurriculumProposal(payload, validationContext),
+      });
       assertValidMaterializedCurriculum(materialized, repairAttempted);
       const now = clock.now().toISOString();
       const curriculum: Curriculum = {
@@ -813,6 +928,25 @@ export function createCurriculumService({
       const context = buildCurriculumExecutionContext(repos, contract);
       if (!manifestsEqual(context.manifest, current.executionSourceManifest)) {
         throw new AppError(ApiErrorCode.VersionConflict, 'Curriculum source manifest is stale.');
+      }
+      const predecessor = current.predecessorId
+        ? (repos.curricula.get(current.predecessorId) ?? null)
+        : null;
+      const workspaceName = repos.workspaces.get(current.workspaceId)?.name ?? 'Course';
+      if (requiresStudyPlanExecutionRepair(repos, clock, contract, predecessor, workspaceName)) {
+        const preflight = preflightStudyPlan(repos, clock, contract, current, workspaceName);
+        const errors = executionRepairErrors(preflight);
+        if (errors.length > 0) {
+          assertValidMaterializedCurriculum({
+            nodes: current.nodes,
+            synthesisGroups: current.synthesisGroups,
+            validation: {
+              ...current.validation,
+              valid: false,
+              errors: [...current.validation.errors, ...errors].slice(0, 100),
+            },
+          });
+        }
       }
       return commands.complete(claim, () => {
         const accepted = repos.curricula.accept(current.id, clock.now().toISOString(), {

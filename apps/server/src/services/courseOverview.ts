@@ -8,7 +8,7 @@ import {
 import { notFound } from '../errors.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
-import { curriculumHierarchy } from './curriculum.js';
+import { curriculumHierarchy, requiresStudyPlanExecutionRepair } from './curriculum.js';
 import { preflightStudyPlan } from './studyPlansAgent.js';
 
 interface CourseOverviewDeps {
@@ -119,6 +119,20 @@ export function createCourseOverviewService({ repos, clock }: CourseOverviewDeps
       selectedContract && planningCurriculum
         ? preflightStudyPlan(repos, clock, selectedContract, planningCurriculum, workspace.name)
         : null;
+    const proposedCurriculumPreflight =
+      selectedContract &&
+      proposedCurriculum &&
+      requiresStudyPlanExecutionRepair(
+        repos,
+        clock,
+        selectedContract,
+        proposedCurriculum.predecessorId
+          ? (repos.curricula.get(proposedCurriculum.predecessorId) ?? null)
+          : null,
+        workspace.name,
+      )
+        ? preflightStudyPlan(repos, clock, selectedContract, proposedCurriculum, workspace.name)
+        : null;
     const risks = selectedContract
       ? repos.coverageRisks.list(workspaceId, selectedContract.id)
       : repos.coverageRisks.list(workspaceId);
@@ -179,7 +193,9 @@ export function createCourseOverviewService({ repos, clock }: CourseOverviewDeps
         canProposeCurriculum:
           selectedContract?.status === 'learner_confirmed' || selectedContract?.status === 'active',
         canAcceptCurriculum:
-          proposedCurriculum?.validation.valid === true && proposedCurriculum.status === 'proposed',
+          proposedCurriculum?.validation.valid === true &&
+          proposedCurriculum.status === 'proposed' &&
+          proposedCurriculumPreflight?.canGenerate !== false,
         canProposeStudyPlan:
           planningCurriculum !== null &&
           studyPlanPreflight?.canGenerate === true &&
