@@ -27,6 +27,20 @@ const CURRICULUM_STATUS_TEXT: Record<string, string> = {
 
 const DIRECT_UNIT_PREVIEW_LIMIT = 12;
 
+export function learnerCurriculumWarning(warning: string): string {
+  const unmappedBlocks = warning.match(
+    /^Unmapped source blocks remain visible for risk reconciliation:\s*(\d+)\.$/u,
+  );
+  if (unmappedBlocks) {
+    return `仍有 ${unmappedBlocks[1]} 段课程资料尚未被当前课程结构引用。原始资料不会被删除，可在详情中查看。`;
+  }
+  const unmappedStructure = warning.match(/^Unmapped structural units remain visible:\s*(\d+)\.$/u);
+  if (unmappedStructure) {
+    return `仍有 ${unmappedStructure[1]} 个资料结构单元尚未被当前课程结构引用，可在详情中继续核对。`;
+  }
+  return '当前课程结构仍有一项资料覆盖提醒，可在详情中继续核对。';
+}
+
 export interface CurriculumViewProps {
   hierarchy: CurriculumHierarchyView | null;
   history: CurriculumHistoryItem[];
@@ -51,21 +65,30 @@ export interface CurriculumViewProps {
 export function CurriculumFailureDiagnostics({ details }: { details: unknown }) {
   const parsed = CurriculumProposalFailureDetailsSchema.safeParse(details);
   if (!parsed.success || parsed.data.errors.length === 0) return null;
-  const evidenceErrors = parsed.data.errors.filter((error) =>
-    /evidence|资料依据|引文|原文/iu.test(error),
+  const executionErrors = parsed.data.errors.filter((error) =>
+    /StudyPlan execution repair|launchable LearningUnit|launch capability/iu.test(error),
+  ).length;
+  const evidenceErrors = parsed.data.errors.filter(
+    (error) =>
+      !/StudyPlan execution repair|launchable LearningUnit|launch capability/iu.test(error) &&
+      /evidence|资料依据|引文|原文/iu.test(error),
   ).length;
   const manifestErrors = parsed.data.errors.filter(
     (error) =>
+      !/StudyPlan execution repair|launchable LearningUnit|launch capability/iu.test(error) &&
       !/evidence|资料依据|引文|原文/iu.test(error) &&
       /manifest|execution-source|范围|版本/iu.test(error),
   ).length;
-  const structuralErrors = parsed.data.errors.length - evidenceErrors - manifestErrors;
+  const structuralErrors =
+    parsed.data.errors.length - executionErrors - evidenceErrors - manifestErrors;
   const summary =
-    evidenceErrors > 0
-      ? `有 ${evidenceErrors} 条资料依据无法与本次课程资料的原文精确对应。`
-      : manifestErrors > 0
-        ? '有资料依据不属于本次课程使用的资料版本，已拒绝。'
-        : '新课程结构未通过本地一致性检查。';
+    executionErrors > 0
+      ? '新课程结构仍没有可启动的学习单元，因此未生成新版本。'
+      : evidenceErrors > 0
+        ? `有 ${evidenceErrors} 条资料依据无法与本次课程资料的原文精确对应。`
+        : manifestErrors > 0
+          ? '有资料依据不属于本次课程使用的资料版本，已拒绝。'
+          : '新课程结构未通过本地一致性检查。';
   return (
     <div className="curriculum-failure-diagnostics">
       <p className="curriculum-failure-summary">{summary}</p>
@@ -73,11 +96,14 @@ export function CurriculumFailureDiagnostics({ details }: { details: unknown }) 
         <p className="curriculum-failure-repair">系统已经尝试了一次自动修复。</p>
       ) : null}
       <p className="curriculum-failure-next-step">
-        请检查课程资料范围后重试；如果问题持续，可以检查 Hy3 设置。
+        {executionErrors > 0
+          ? '请先从当前课程资料生成有原文依据的概念，再提出新的课程结构。'
+          : '请检查课程资料范围后重试；如果问题持续，可以检查 Hy3 设置。'}
       </p>
       <details className="technical-details curriculum-failure-details">
         <summary>查看原因与技术详情</summary>
         <ul>
+          {executionErrors > 0 ? <li>学习单元的启动能力检查未通过。</li> : null}
           {evidenceErrors > 0 ? <li>资料依据精确对应检查未通过。</li> : null}
           {manifestErrors > 0 ? <li>资料版本或执行范围检查未通过。</li> : null}
           {structuralErrors > 0 ? <li>课程结构的本地规则检查未通过。</li> : null}
@@ -1042,7 +1068,7 @@ export function CurriculumView({
             ) : null}
             {hierarchy.validation.warnings.map((warning) => (
               <Banner key={warning} kind="info">
-                {warning}
+                {learnerCurriculumWarning(warning)}
               </Banner>
             ))}
             {tree?.issues.map((issue) => (

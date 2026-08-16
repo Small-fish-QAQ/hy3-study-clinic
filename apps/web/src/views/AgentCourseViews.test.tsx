@@ -1116,6 +1116,35 @@ describe('CurriculumView truth and validation states', () => {
     expect(screen.getByRole('button', { name: '接受课程结构' })).toBeDisabled();
   });
 
+  it('translates internal unmapped-block diagnostics before primary learner display', () => {
+    const value = hierarchy();
+    value.validation.warnings = [
+      'Unmapped source blocks remain visible for risk reconciliation: 129.',
+    ];
+    render(
+      <CurriculumView
+        hierarchy={value}
+        history={[]}
+        loading={false}
+        error={null}
+        canPropose={false}
+        canAccept
+        busyAction={null}
+        onPropose={vi.fn()}
+        onAccept={vi.fn()}
+        onReject={vi.fn()}
+        onSelectHistory={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        '仍有 129 段课程资料尚未被当前课程结构引用。原始资料不会被删除，可在详情中查看。',
+      ),
+    ).toBeVisible();
+    expect(screen.queryByText(/Unmapped source blocks/iu)).not.toBeInTheDocument();
+  });
+
   it('shows a learner-readable proposal failure with optional validation detail', async () => {
     const user = userEvent.setup();
     render(
@@ -1152,6 +1181,39 @@ describe('CurriculumView truth and validation states', () => {
     expect(
       screen.queryByText('Curriculum evidence failed exact-quote validation.'),
     ).not.toBeInTheDocument();
+  });
+
+  it('explains an empty execution-remediation frontier without exposing internal diagnostics', () => {
+    render(
+      <CurriculumView
+        hierarchy={hierarchy()}
+        history={[]}
+        loading={false}
+        error="新课程结构仍不能支持下一步学习，因此没有生成新版本。当前已接受版本未改变。"
+        errorDetails={{
+          kind: 'curriculum_candidate_validation',
+          repairAttempted: false,
+          errors: [
+            'StudyPlan execution repair: 0 of 21 LearningUnits have a supported launch capability.',
+          ],
+          warnings: [],
+        }}
+        canPropose
+        canAccept={false}
+        busyAction={null}
+        onPropose={vi.fn()}
+        onAccept={vi.fn()}
+        onReject={vi.fn()}
+        onSelectHistory={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('alert')).toHaveTextContent('当前已接受版本未改变');
+    expect(screen.getByText('新课程结构仍没有可启动的学习单元，因此未生成新版本。')).toBeVisible();
+    expect(
+      screen.getByText('请先从当前课程资料生成有原文依据的概念，再提出新的课程结构。'),
+    ).toBeVisible();
+    expect(screen.queryByText(/StudyPlan execution repair/iu)).not.toBeInTheDocument();
   });
 
   it('preserves proposal acceptance, rejection, and version-history selection', async () => {
