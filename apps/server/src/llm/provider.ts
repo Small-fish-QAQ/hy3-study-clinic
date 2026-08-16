@@ -6,6 +6,7 @@ import type {
   Concept,
   ConceptAnalysisPayload,
   ConceptLessonPayload,
+  Curriculum,
   CurriculumProposalPayload,
   DesiredDepth,
   ExecutionSourceManifest,
@@ -401,7 +402,10 @@ export interface CurriculumOutlineItem {
 
 /** Exact, revision-bound excerpt owned and offered by the local server. */
 export interface CurriculumEvidenceOffer {
+  /** Short operation-local identity exposed to the provider. */
   id: string;
+  /** Hash-bound workspace/revision/span identity retained only by local code. */
+  bindingId: string;
   materialId: string;
   materialRevisionId: string;
   blockId: string;
@@ -431,6 +435,8 @@ export interface CurriculumProposalInput {
   graphEdges: GraphEdge[];
   allowedCanonicalConceptIds: string[];
   canonicalConcepts: CurriculumCanonicalConceptOffer[];
+  /** Accepted predecessor used only as compact semantic/locality context. */
+  predecessor: Curriculum | null;
   /** Source blocks remain local provider input; output cannot quote them directly. */
   blocks: SourceBlock[];
   /** Exact evidence universe. Curriculum output may select only these identities. */

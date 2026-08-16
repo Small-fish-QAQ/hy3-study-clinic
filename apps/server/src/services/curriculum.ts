@@ -46,7 +46,10 @@ import {
 } from './agentProviderRuntime.js';
 import type { SourceAuthorityService } from './sourceAuthority.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
-import { buildCurriculumEvidenceCatalog } from './curriculumEvidence.js';
+import {
+  buildCurriculumEvidenceCatalog,
+  selectCurriculumEvidenceOffers,
+} from './curriculumEvidence.js';
 
 /** HTTP/service request: the server, never the client, resolves exact revisions. */
 export const ProposeCurriculumCommandRequestSchema = ProposeCurriculumRequestSchema.omit({
@@ -57,11 +60,24 @@ export type ProposeCurriculumCommandRequest = Omit<
   'executionSourceManifest'
 >;
 
-const CURRICULUM_LIMITS = {
-  maxNodes: 1999,
-  maxObjectives: 30_000,
-  maxSynthesisGroups: 200,
-} as const;
+function curriculumLimits(
+  outline: CurriculumOutlineItem[],
+  predecessor: Curriculum | null,
+): CurriculumProposalInput['limits'] {
+  const sourceSectionCount = new Set(
+    outline.map((item) => `${item.materialId}\u0000${item.headingPath.join('\u0001')}`),
+  ).size;
+  const semanticBaseline = Math.max(
+    predecessor?.nodes.filter((node) => node.kind !== 'course').length ?? 0,
+    sourceSectionCount * 2,
+  );
+  const maxNodes = Math.min(500, Math.max(64, semanticBaseline * 2));
+  return {
+    maxNodes,
+    maxObjectives: maxNodes * 8,
+    maxSynthesisGroups: Math.min(100, Math.max(16, sourceSectionCount * 2)),
+  };
+}
 
 export const CURRICULUM_PROVIDER_TIMEOUT_MS = 240_000;
 const PROVIDER_REPAIR_LEASE_MARGIN_MS = 120_000;
@@ -544,13 +560,38 @@ export function createCurriculumService({
           : [],
       ),
     );
-    const evidenceCatalog = buildCurriculumEvidenceCatalog({
+    const preferredGroundings = [
+      ...concepts.map((concept) => concept.grounding),
+      ...context.authorityBundles.flatMap((bundle) =>
+        bundle.claims.map((claim) => ({
+          blockId: claim.sourceBlockId,
+          quote: claim.quote,
+          startOffset: claim.startOffset,
+          endOffset: claim.endOffset,
+          occurrenceCount: claim.occurrenceCount,
+          reanchored: false,
+        })),
+      ),
+    ];
+    const fullEvidenceCatalog = buildCurriculumEvidenceCatalog({
       workspaceId: parsed.command.workspaceId,
       manifest: context.manifest,
       blocks: context.blocks,
-      preferredGroundings: [
-        ...concepts.map((concept) => concept.grounding),
-        ...context.authorityBundles.flatMap((bundle) =>
+      preferredGroundings,
+    });
+    const predecessor = latest ?? null;
+    const predecessorAuthorityIds = new Set(
+      predecessor?.nodes.flatMap(
+        (node) =>
+          node.learningUnit?.objectives.flatMap((objective) => objective.truthAuthorityRecordIds) ??
+          [],
+      ) ?? [],
+    );
+    const priorityGroundings = [
+      ...concepts.map((concept) => concept.grounding),
+      ...context.authorityBundles
+        .filter((bundle) => predecessorAuthorityIds.has(bundle.record.id))
+        .flatMap((bundle) =>
           bundle.claims.map((claim) => ({
             blockId: claim.sourceBlockId,
             quote: claim.quote,
@@ -560,7 +601,14 @@ export function createCurriculumService({
             reanchored: false,
           })),
         ),
-      ],
+    ];
+    const evidenceCatalog = selectCurriculumEvidenceOffers({
+      catalog: fullEvidenceCatalog,
+      blocks: context.blocks,
+      predecessor,
+      concepts,
+      contract,
+      priorityGroundings,
     });
     const providerInput: CurriculumProposalInput = {
       workspaceName: workspace.name,
@@ -571,9 +619,10 @@ export function createCurriculumService({
       graphEdges,
       allowedCanonicalConceptIds,
       canonicalConcepts,
+      predecessor,
       blocks: context.blocks,
       evidenceCatalog,
-      limits: CURRICULUM_LIMITS,
+      limits: curriculumLimits(context.outline, predecessor),
     };
     const validationContext: CurriculumValidationContext = {
       workspaceId: parsed.command.workspaceId,
@@ -588,6 +637,7 @@ export function createCurriculumService({
         ...offer,
         headingPath: [...offer.headingPath],
       })),
+      limits: providerInput.limits,
       authorityBundles: context.authorityBundles,
       isAuthorityBlockingEligible: (id) => repos.sourceAuthority.isBlockingEligible(id),
     };
@@ -693,8 +743,21 @@ export function createCurriculumService({
       });
     } catch (error) {
       let failure: unknown = error;
+      if (error instanceof ProviderError && error.code === ApiErrorCode.ProviderTimeout) {
+        failure = new AppError(
+          ApiErrorCode.ProviderTimeout,
+          '课程结构生成时间超过预期，本次没有修改现有课程结构。你可以稍后重试。',
+          {
+            kind: 'curriculum_timeout',
+            timeoutMs: providerTimeoutMs,
+            provider: provider.name,
+            operationId: claim.operationId,
+          },
+        );
+      }
       const failedCandidate = lastCandidateValidation as MaterializedCurriculum | null;
       if (
+        failure === error &&
         error instanceof ProviderError &&
         error.code === ApiErrorCode.ProviderInvalidOutput &&
         typeof error.details === 'object' &&

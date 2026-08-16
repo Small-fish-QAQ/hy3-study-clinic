@@ -78,6 +78,9 @@ export interface Hy3ProviderConfig {
   fetchImpl?: typeof fetch;
 }
 
+/** Observed Curriculum responses peaked at 10,962 tokens; retain bounded headroom. */
+export const CURRICULUM_MAX_OUTPUT_TOKENS = 16_000;
+
 interface ChatCompletionResponse {
   choices?: Array<{ message?: { content?: string } }>;
   usage?: {
@@ -372,7 +375,13 @@ export class Hy3Provider implements LlmProvider {
     input: CurriculumProposalInput,
     opts?: ProviderCallOptions,
   ): Promise<CurriculumProposalPayload> {
-    return this.complete(curriculumProposalMessages(input), CurriculumProposalPayloadSchema, opts);
+    return this.complete(
+      curriculumProposalMessages(input),
+      CurriculumProposalPayloadSchema,
+      opts,
+      undefined,
+      { maxTokens: CURRICULUM_MAX_OUTPUT_TOKENS },
+    );
   }
 
   async proposeStudyPlan(
@@ -511,8 +520,9 @@ export class Hy3Provider implements LlmProvider {
     schema: ZodType<T, ZodTypeDef, unknown>,
     opts?: ProviderCallOptions,
     repairGuidance?: string,
+    requestOptions: { maxTokens?: number } = {},
   ): Promise<T> {
-    const raw = await this.chat(messages, opts);
+    const raw = await this.chat(messages, opts, requestOptions);
     const first = this.tryParse(raw, schema, opts);
     if (first.ok) return first.value;
 
@@ -532,7 +542,7 @@ export class Hy3Provider implements LlmProvider {
     ];
     if (opts?.signal?.aborted) throw ProviderError.cancelled();
     opts?.onRepairAttempt?.(first.reason);
-    const repaired = await this.chat(repairMessages, opts);
+    const repaired = await this.chat(repairMessages, opts, requestOptions);
     const second = this.tryParse(repaired, schema, opts);
     if (second.ok) return second.value;
 

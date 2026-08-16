@@ -47,6 +47,7 @@ const blocks: SourceBlock[] = [
 function evidenceCatalog(sourceBlocks: SourceBlock[]): CurriculumEvidenceOffer[] {
   return sourceBlocks.map((block) => ({
     id: `evidence_${block.id}`,
+    bindingId: `binding_${block.id}`,
     materialId: block.materialId,
     materialRevisionId: block.materialRevisionId!,
     blockId: block.id,
@@ -154,6 +155,7 @@ const curriculumInput: CurriculumProposalInput = {
   graphEdges: [graphEdge],
   allowedCanonicalConceptIds: [],
   canonicalConcepts: [],
+  predecessor: null,
   blocks,
   evidenceCatalog: evidenceCatalog(blocks),
   limits: { maxNodes: 20, maxObjectives: 10, maxSynthesisGroups: 5 },
@@ -383,6 +385,10 @@ describe('Hy3Provider Agent proposals', () => {
     const provider = hy3(fetchImpl);
     await expect(provider.proposeCurriculum(curriculumInput)).resolves.toEqual(curriculum);
     await expect(provider.proposeStudyPlan(studyPlanInput)).resolves.toEqual(plan);
+    const curriculumBody = JSON.parse(
+      String((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[0]![1]!.body),
+    ) as { max_tokens?: number };
+    expect(curriculumBody.max_tokens).toBe(16_000);
   });
 
   it('repairs exactly once when a model tries to assign Curriculum authority', async () => {
@@ -418,8 +424,9 @@ describe('Agent proposal prompt boundaries', () => {
     expect(delimiters).toHaveLength(3);
     expect(content).toContain('truthPremiseStatus');
     expect(content).toContain('Learner-confirmed scope does not');
-    expect(content).toContain('executionSourceManifest');
-    expect(content).toContain('materialRoleAssignmentId');
+    expect(content).not.toContain('executionSourceManifest');
+    expect(content).not.toContain('materialRoleAssignmentId');
+    expect(content).not.toContain('binding_blk_1');
     expect(content).toContain('evidence_blk_1');
     expect(content).toContain('Select evidenceId only from evidenceCatalog');
     expect(content).toContain(

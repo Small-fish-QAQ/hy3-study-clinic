@@ -79,6 +79,8 @@ Deliberate behavior changes in the upgrade, each with updated tests: duplicate s
 
 Application and integration tests use the fake provider by default. Hy3 provider-contract tests inject a mocked `fetch`; ordinary automated tests and CI never require or contact the real Hy3 API.
 
+The B3 Curriculum latency regression suite also reconstructs provider requests without network access. It asserts deterministic section-size reporting, bounded candidate selection for large documents, predecessor/neighbor retention, lexical fallback widening, compact evidence-key resolution, full local binding preservation, omission of manifest/revision/hash internals from the prompt, the 16000-token output ceiling, one-attempt timeout telemetry with no synthetic usage row, accepted-Curriculum preservation, safe learner copy, cancellation, and the shared original-plus-one-repair ceiling. The affected 277-block Course measured 288059 characters / 345831 UTF-8 bytes and 551 visible offers before compaction, versus 41218 characters / 55681 bytes and 204 offers across 148 blocks afterward. Selection still starts from the complete 551-offer exact local catalog; validation accepts only the compact operation-local IDs actually offered to Hy3 and resolves each through its retained full binding. These are offline request-shape results; exactly one controlled human retry is required to observe real post-fix latency.
+
 ## End-to-end smoke workflows
 
 The in-process fake-provider smoke is self-contained:

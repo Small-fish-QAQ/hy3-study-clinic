@@ -658,6 +658,13 @@ export function AgentCourseWorkspace({
     );
   }
 
+  function cancelCurriculum(): void {
+    action.cancel();
+    setBusyAction(null);
+    setActionFailureOwner(null);
+    setNotice('已停止本次课程结构生成，当前已接受版本没有改变。');
+  }
+
   async function decideCurriculum(decision: 'accept' | 'reject'): Promise<void> {
     if (!workspaceId || !overview?.proposedCurriculum) return;
     const curriculum = overview.proposedCurriculum;
@@ -1025,6 +1032,7 @@ export function AgentCourseWorkspace({
           onEditContract={() => openContractEditor(overview?.pendingContract ?? null)}
           onConfirmContract={() => void transitionContract()}
           onProposeCurriculum={() => void proposeCurriculum()}
+          onCancelCurriculum={cancelCurriculum}
           onOpenCurriculum={() => setView('curriculum')}
           onProposeStudyPlan={() => void proposePlan()}
           onDismissRouteGenerationFailure={() => {
@@ -1053,6 +1061,7 @@ export function AgentCourseWorkspace({
           canAccept={overview?.capabilities.canAcceptCurriculum ?? false}
           busyAction={busyAction}
           onPropose={() => void proposeCurriculum()}
+          onCancel={cancelCurriculum}
           onAccept={() => void decideCurriculum('accept')}
           onReject={() => void decideCurriculum('reject')}
           onSelectHistory={(id) => void selectCurriculumHistory(id)}

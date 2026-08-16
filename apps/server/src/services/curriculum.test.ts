@@ -23,7 +23,6 @@ import {
 import { createLearningContractService } from './learningContracts.js';
 import { createMaterialRoleService } from './materialRoles.js';
 import { createSourceAuthorityService } from './sourceAuthority.js';
-import { buildCurriculumEvidenceCatalog } from './curriculumEvidence.js';
 import { preflightStudyPlan } from './studyPlansAgent.js';
 
 const QUOTE = 'Working memory is limited.';
@@ -181,13 +180,7 @@ function currentProposalRequest(id: string, predecessorCurriculumId: string | nu
 }
 
 function curriculumEvidenceId(): string {
-  const context = buildCurriculumExecutionContext(repos, contract);
-  return buildCurriculumEvidenceCatalog({
-    workspaceId: 'ws_1',
-    manifest: context.manifest,
-    blocks: context.blocks,
-    preferredGroundings: [],
-  }).find((offer) => offer.quote === QUOTE)!.id;
+  return 'E1';
 }
 
 function payloadForFetch(evidenceId = curriculumEvidenceId()): CurriculumProposalPayload {
@@ -562,6 +555,72 @@ describe('Curriculum proposal and authority boundaries', () => {
     ).rejects.toThrow('controlled provider failure');
     expect(repos.curricula.get(accepted.id)?.status).toBe('accepted');
     expect(repos.curricula.list('ws_1')).toHaveLength(1);
+  });
+
+  it('keeps an accepted Curriculum unchanged on one sent timeout and stores safe recovery copy', async () => {
+    const first = await curriculum.propose(proposalRequest('curriculum-timeout-prior'));
+    const accepted = curriculum.accept({
+      command: command('curriculum-timeout-accept', 'learner'),
+      curriculumId: first.curriculum.id,
+      expectedVersion: first.curriculum.version,
+      expectedContractId: contract.id,
+      expectedExecutionSourceManifestFingerprint:
+        first.curriculum.executionSourceManifest.fingerprint,
+      acceptanceBasis: 'learner_review',
+    }).curriculum;
+    const acceptedSnapshot = structuredClone(accepted);
+    const fetchMock = vi.fn(
+      (_url: string, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+        }),
+    ) as unknown as typeof fetch;
+    const hy3 = new Hy3Provider({
+      baseUrl: 'https://example.test/v1',
+      apiKey: 'test-key-never-persist',
+      model: 'test-model',
+      timeoutMs: 30_000,
+      fetchImpl: fetchMock,
+    });
+    curriculum = createCurriculumService({
+      repos,
+      provider: hy3,
+      clock,
+      commands: createCourseCommandService({ repos, clock }),
+      sourceAuthority: createSourceAuthorityService({
+        sourceAuthority: repos.sourceAuthority,
+        clock,
+      }),
+    });
+
+    await expect(
+      curriculum.propose(currentProposalRequest('curriculum-timeout-successor', accepted.id), {
+        timeoutMs: 20,
+      }),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.ProviderTimeout,
+      message: '课程结构生成时间超过预期，本次没有修改现有课程结构。你可以稍后重试。',
+      details: expect.objectContaining({ kind: 'curriculum_timeout', timeoutMs: 20 }),
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(attemptsForCommand('curriculum-timeout-successor')).toMatchObject([
+      { attemptNumber: 1, attemptKind: 'original', errorCode: ApiErrorCode.ProviderTimeout },
+    ]);
+    expect(usageRowsForCommand('curriculum-timeout-successor')).toBe(0);
+    expect(repos.curricula.list('ws_1')).toHaveLength(1);
+    expect(repos.curricula.get(accepted.id)).toEqual(acceptedSnapshot);
+    const operation = db
+      .prepare('SELECT id FROM agent_operations WHERE command_id = ?')
+      .get('curriculum-timeout-successor') as { id: string };
+    expect(repos.operations.getResult(operation.id)).toMatchObject({
+      status: 'failed',
+      payload: {
+        code: ApiErrorCode.ProviderTimeout,
+        message: '课程结构生成时间超过预期，本次没有修改现有课程结构。你可以稍后重试。',
+      },
+    });
+    expect(JSON.stringify(repos.operations.getResult(operation.id))).not.toContain('fake');
   });
 
   it('fails closed on invalid citations and keeps acceptance expected-version safe', async () => {

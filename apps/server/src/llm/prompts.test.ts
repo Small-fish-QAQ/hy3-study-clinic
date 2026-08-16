@@ -6,6 +6,7 @@ import {
   remediationMessages,
   shortAnswerGradingMessages,
   curriculumProposalMessages,
+  measureCurriculumRequest,
 } from './prompts.js';
 import type { CurriculumProposalInput } from './provider.js';
 
@@ -172,7 +173,15 @@ describe('prompt trust boundaries', () => {
   it('offers Curriculum evidence identities without asking the provider to author quotes', () => {
     const input = {
       workspaceName: '课程',
-      contract: {},
+      contract: {
+        intent: '学习课程',
+        targetOutcome: { description: '掌握课程', targetScore: null },
+        desiredDepth: 'working_fluency',
+        subjectBoundaries: [],
+        materials: [],
+        includedTopics: [],
+        excludedTopics: [],
+      },
       executionSourceManifest: { fingerprint: 'manifest', revisions: [] },
       outline: [],
       concepts: [],
@@ -183,6 +192,7 @@ describe('prompt trust boundaries', () => {
       evidenceCatalog: [
         {
           id: 'cev_exact_1',
+          bindingId: 'cev_exact_1',
           materialId: 'mat_1',
           materialRevisionId: 'rev_1',
           blockId: 'blk_1',
@@ -193,16 +203,25 @@ describe('prompt trust boundaries', () => {
           pageNumber: null,
         },
       ],
+      predecessor: null,
       limits: { maxNodes: 10, maxObjectives: 10, maxSynthesisGroups: 1 },
     } as unknown as CurriculumProposalInput;
     const content = curriculumProposalMessages(input)
       .map((message) => message.content)
       .join('\n');
     expect(content).toContain('cev_exact_1');
-    expect(content).toContain('exactText');
+    expect(content).toContain('"text"');
+    expect(content).not.toContain('materialRevisionId');
+    expect(content).not.toContain('blockId');
     expect(content).toContain(
       'never copy, rewrite, paraphrase, or invent authoritative quote text',
     );
     expect(content).toContain('evidenceId');
+    const report = measureCurriculumRequest(input);
+    expect(report).toEqual(measureCurriculumRequest(input));
+    expect(report.counts).toMatchObject({ sourceBlocks: 1, evidenceOffers: 1 });
+    expect(report.evidenceExcerpt.chars).toBe(blocks[0]!.content.length);
+    expect(report.sections).toHaveProperty('sourceSections');
+    expect(report.responseFormatSchema).toEqual({ chars: 0, bytes: 0 });
   });
 });

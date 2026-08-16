@@ -38,6 +38,11 @@ export interface CurriculumValidationContext {
   canonicalConceptIds: Set<string>;
   /** Immutable exact excerpts offered for this operation snapshot. */
   evidenceCatalog: CurriculumEvidenceOffer[];
+  limits: {
+    maxNodes: number;
+    maxObjectives: number;
+    maxSynthesisGroups: number;
+  };
   authorityBundles: SourceAuthorityBundle[];
   /** Source authority decisions are local, never provider output. */
   isAuthorityBlockingEligible: (authorityRecordId: string) => boolean;
@@ -169,6 +174,18 @@ export function materializeCurriculumProposal(
   const manifestBlockIds = new Set(
     ctx.executionSourceManifest.revisions.flatMap((revision) => revision.sourceBlockRevisionIds),
   );
+  const objectiveCount = parsed.nodes.reduce((sum, node) => sum + node.objectives.length, 0);
+  if (parsed.nodes.length > ctx.limits.maxNodes) {
+    errors.push(`Curriculum exceeds the offered node limit of ${ctx.limits.maxNodes}.`);
+  }
+  if (objectiveCount > ctx.limits.maxObjectives) {
+    errors.push(`Curriculum exceeds the offered objective limit of ${ctx.limits.maxObjectives}.`);
+  }
+  if (parsed.synthesisGroups.length > ctx.limits.maxSynthesisGroups) {
+    errors.push(
+      `Curriculum exceeds the offered synthesis-group limit of ${ctx.limits.maxSynthesisGroups}.`,
+    );
+  }
 
   for (const node of parsed.nodes) nodeIdByKey.set(node.key, newId('cun'));
   const rootId = newId('cun');

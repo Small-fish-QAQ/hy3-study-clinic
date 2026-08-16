@@ -59,6 +59,7 @@ export interface CourseHomeViewProps {
   onEditContract: () => void;
   onConfirmContract: () => void;
   onProposeCurriculum: () => void;
+  onCancelCurriculum: () => void;
   onOpenCurriculum: () => void;
   onProposeStudyPlan: () => void;
   onDismissRouteGenerationFailure: () => void;
@@ -84,6 +85,7 @@ export function CourseHomeView({
   onEditContract,
   onConfirmContract,
   onProposeCurriculum,
+  onCancelCurriculum,
   onOpenCurriculum,
   onProposeStudyPlan,
   onDismissRouteGenerationFailure,
@@ -316,14 +318,26 @@ export function CourseHomeView({
                   : '完成这一步后，系统才能给出可靠的后续学习动作。'}
               </p>
             </div>
-            <button
-              type="button"
-              className="primary course-primary-cta"
-              disabled={busyAction !== null}
-              onClick={setupAction.onClick}
-            >
-              {setupAction.busy ? '正在处理…' : setupAction.label}
-            </button>
+            {busyAction === 'propose-curriculum' ? (
+              <div className="stack curriculum-operation-status" role="status">
+                <strong>正在准备课程资料并生成课程结构</strong>
+                <span className="small muted">
+                  生成完成后会检查资料一致性；只有需要时才会尝试一次自动修复。
+                </span>
+                <button type="button" className="ghost" onClick={onCancelCurriculum}>
+                  停止
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="primary course-primary-cta"
+                disabled={busyAction !== null}
+                onClick={setupAction.onClick}
+              >
+                {setupAction.busy ? '正在处理…' : setupAction.label}
+              </button>
+            )}
           </div>
         ) : (
           <div className="course-continuation-blocked course-empty-state compact">

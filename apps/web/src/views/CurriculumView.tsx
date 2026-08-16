@@ -37,6 +37,7 @@ export interface CurriculumViewProps {
   canAccept: boolean;
   busyAction: string | null;
   onPropose: () => void;
+  onCancel?: () => void;
   onAccept: () => void;
   onReject: () => void;
   onSelectHistory: (curriculumId: string) => void;
@@ -872,6 +873,7 @@ export function CurriculumView({
   canAccept,
   busyAction,
   onPropose,
+  onCancel,
   onAccept,
   onReject,
   onSelectHistory,
@@ -922,6 +924,21 @@ export function CurriculumView({
           <p>{error}</p>
           <CurriculumFailureDiagnostics details={errorDetails} />
         </Banner>
+      ) : null}
+      {busyAction === 'propose-curriculum' ? (
+        <section className="curriculum-operation-status" role="status">
+          <div>
+            <strong>正在准备课程资料并生成课程结构</strong>
+            <p className="small muted">
+              生成完成后会检查资料一致性；只有需要时才会尝试一次自动修复。当前已接受版本不会在检查通过前改变。
+            </p>
+          </div>
+          {onCancel ? (
+            <button type="button" className="ghost" onClick={onCancel}>
+              停止
+            </button>
+          ) : null}
+        </section>
       ) : null}
       <header className="supporting-page-intro curriculum-page-intro">
         <div className="row between">

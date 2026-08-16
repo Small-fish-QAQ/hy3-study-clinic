@@ -258,6 +258,7 @@ function homeProps(value: CourseExecutionOverview): CourseHomeViewProps {
     onEditContract: vi.fn(),
     onConfirmContract: vi.fn(),
     onProposeCurriculum: vi.fn(),
+    onCancelCurriculum: vi.fn(),
     onOpenCurriculum: vi.fn(),
     onProposeStudyPlan: vi.fn(),
     onDismissRouteGenerationFailure: vi.fn(),
@@ -465,6 +466,39 @@ const repeatedSourceBlocks = Array.from({ length: 5 }, (_, index) => ({
 })) satisfies SourceBlock[];
 
 describe('CourseHomeView action and authority rendering', () => {
+  it('shows truthful cancellable Curriculum work without enabling duplicate submission', async () => {
+    const user = userEvent.setup();
+    const value = overview('launchable');
+    value.setupStage = 'curriculum_required';
+    value.nextAction = null;
+    const props = homeProps(value);
+    props.busyAction = 'propose-curriculum';
+    render(<CourseHomeView {...props} />);
+
+    expect(screen.getByRole('status')).toHaveTextContent('正在准备课程资料并生成课程结构');
+    expect(screen.getByRole('status')).toHaveTextContent('只有需要时才会尝试一次自动修复');
+    expect(screen.queryByRole('button', { name: '生成课程结构' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '停止' }));
+    expect(props.onCancelCurriculum).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses learner-safe Curriculum timeout recovery copy without mentioning fake mode', () => {
+    render(
+      <CourseHomeView
+        {...homeProps(overview('launchable'))}
+        actionFailure={{
+          owner: 'curriculum',
+          message: '课程结构生成时间超过预期，本次没有修改现有课程结构。你可以稍后重试。',
+          details: { kind: 'curriculum_timeout', timeoutMs: 240_000 },
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('alert')).toHaveTextContent('本次没有修改现有课程结构');
+    expect(screen.getByRole('alert')).toHaveTextContent('你可以稍后重试');
+    expect(screen.getByRole('alert')).not.toHaveTextContent(/fake/iu);
+  });
+
   it('places each learner operation failure beside its owning Home surface', () => {
     const props = homeProps(overview('launchable'));
     const rendered = render(

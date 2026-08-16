@@ -4958,6 +4958,29 @@ button.danger {
   min-width: 0;
 }
 
+.curriculum-operation-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-block: 1px solid var(--separator);
+  background: #f5f7f5;
+}
+
+.curriculum-operation-status > div,
+.curriculum-operation-status > span {
+  min-width: 0;
+}
+
+.curriculum-operation-status p {
+  margin: var(--space-1) 0 0;
+}
+
+.curriculum-operation-status button {
+  flex: none;
+}
+
 .curriculum-page-intro {
   display: grid;
   gap: var(--space-4);
@@ -5887,6 +5910,15 @@ button.danger {
 
   .curriculum-version-overview {
     padding: var(--space-3);
+  }
+
+  .curriculum-operation-status {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .curriculum-operation-status button {
+    width: 100%;
   }
 
   .curriculum-counts {

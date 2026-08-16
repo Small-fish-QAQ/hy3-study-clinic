@@ -561,19 +561,78 @@ export function conceptLessonMessages(input: ConceptLessonInput): ChatMessage[] 
 }
 
 /** Curriculum semantics only; activation, truth authority, and persisted ids stay local. */
-export function curriculumProposalMessages(input: CurriculumProposalInput): ChatMessage[] {
-  const context = wrapUntrustedJson('CURRICULUM_CONTEXT', {
+export function curriculumPromptContext(input: CurriculumProposalInput) {
+  const materialKeyById = new Map(
+    input.contract.materials.map((material, index) => [material.materialId, `M${index + 1}`]),
+  );
+  const sectionKey = (
+    materialId: string,
+    headingPath: string[],
+    structuralUnitId?: string | null,
+  ) =>
+    structuralUnitId
+      ? `${materialId}\u0000structural\u0000${structuralUnitId}`
+      : `${materialId}\u0000heading\u0000${headingPath.join('\u0001')}`;
+  const sectionIdByKey = new Map<string, string>();
+  const sourceSections: Array<{
+    sectionId: string;
+    materialKey: string;
+    title: string | null;
+    path: string[];
+    sourceItemCount: number;
+    structuralUnitIds: string[];
+  }> = [];
+  for (const item of input.outline) {
+    const key = sectionKey(item.materialId, item.headingPath, item.structuralUnitId);
+    const existingId = sectionIdByKey.get(key);
+    if (existingId) {
+      const existing = sourceSections.find((section) => section.sectionId === existingId)!;
+      existing.sourceItemCount += 1;
+      continue;
+    }
+    const sectionId = `S${sourceSections.length + 1}`;
+    sectionIdByKey.set(key, sectionId);
+    sourceSections.push({
+      sectionId,
+      materialKey: materialKeyById.get(item.materialId) ?? 'M?',
+      title: item.title ?? item.headingPath.at(-1) ?? null,
+      path: item.headingPath,
+      sourceItemCount: 1,
+      structuralUnitIds: item.structuralUnitId ? [item.structuralUnitId] : [],
+    });
+  }
+  const blockById = new Map(input.blocks.map((block) => [block.id, block]));
+  const evidenceIdByBlockId = new Map<string, string>();
+  for (const offer of input.evidenceCatalog) {
+    if (!evidenceIdByBlockId.has(offer.blockId)) evidenceIdByBlockId.set(offer.blockId, offer.id);
+  }
+  const predecessorNodes = input.predecessor?.nodes.filter((node) => node.kind !== 'course') ?? [];
+  const predecessorKeyById = new Map(
+    predecessorNodes.map((node, index) => [node.id, `P${index + 1}`]),
+  );
+
+  return {
     workspaceName: input.workspaceName,
-    contract: input.contract,
-    executionSourceManifest: input.executionSourceManifest,
-    outline: input.outline,
+    contract: {
+      intent: input.contract.intent,
+      targetOutcome: input.contract.targetOutcome,
+      desiredDepth: input.contract.desiredDepth,
+      subjectBoundaries: input.contract.subjectBoundaries,
+      materials: input.contract.materials.map((material) => ({
+        materialKey: materialKeyById.get(material.materialId),
+        title: material.title,
+        role: material.role,
+        disposition: material.disposition,
+      })),
+      includedTopics: input.contract.includedTopics,
+      excludedTopics: input.contract.excludedTopics,
+    },
+    sourceSections,
     concepts: input.concepts.map((concept) => ({
       id: concept.id,
-      materialId: concept.materialId,
       name: concept.name,
       summary: concept.summary,
       importance: concept.importance,
-      groundingBlockId: concept.grounding.blockId,
     })),
     graphEdges: input.graphEdges.map((edge) => ({
       id: edge.id,
@@ -582,16 +641,55 @@ export function curriculumProposalMessages(input: CurriculumProposalInput): Chat
       relation: edge.relation,
     })),
     canonicalConcepts: input.canonicalConcepts,
-    evidenceCatalog: input.evidenceCatalog.map((offer) => ({
-      evidenceId: offer.id,
-      blockId: offer.blockId,
-      materialRevisionId: offer.materialRevisionId,
-      headingPath: offer.headingPath,
-      pageNumber: offer.pageNumber,
-      exactText: offer.quote,
-    })),
+    predecessor: input.predecessor
+      ? {
+          version: input.predecessor.version,
+          nodes: predecessorNodes.map((node) => ({
+            previousKey: predecessorKeyById.get(node.id),
+            parentPreviousKey: node.parentId
+              ? (predecessorKeyById.get(node.parentId) ?? null)
+              : null,
+            kind: node.kind,
+            title: node.title,
+            conceptIds: node.learningUnit?.conceptIds ?? [],
+            canonicalConceptIds: node.learningUnit?.canonicalConceptIds ?? [],
+            objectives:
+              node.learningUnit?.objectives.map((objective) => ({
+                title: objective.title,
+                description: objective.description,
+              })) ?? [],
+            evidenceIds: [
+              ...new Set(
+                node.sourceReferences.flatMap((reference) => {
+                  if (!reference.sourceBlockId) return [];
+                  const evidenceId = evidenceIdByBlockId.get(reference.sourceBlockId);
+                  return evidenceId ? [evidenceId] : [];
+                }),
+              ),
+            ],
+          })),
+        }
+      : null,
+    evidenceCatalog: input.evidenceCatalog.map((offer) => {
+      const block = blockById.get(offer.blockId);
+      const key = sectionKey(
+        offer.materialId,
+        offer.headingPath,
+        input.outline.find((item) => item.sourceBlockIds.includes(offer.blockId))?.structuralUnitId,
+      );
+      return {
+        evidenceId: offer.id,
+        sectionId: sectionIdByKey.get(key) ?? null,
+        pageNumber: block?.pageNumber ?? offer.pageNumber,
+        text: offer.quote,
+      };
+    }),
     limits: input.limits,
-  });
+  };
+}
+
+export function curriculumProposalMessages(input: CurriculumProposalInput): ChatMessage[] {
+  const context = wrapUntrustedJson('CURRICULUM_CONTEXT', curriculumPromptContext(input));
 
   return [
     {
@@ -615,6 +713,8 @@ export function curriculumProposalMessages(input: CurriculumProposalInput): Chat
         'When no non-null structuralUnitId is offered, every structuralUnitIds array must be empty.',
         'A learning unit needs at least one objective. Non-learning-unit nodes must keep all unit-only arrays empty.',
         'Evidence is optional for learner-scoped teaching objectives. Select evidenceId only from evidenceCatalog; never copy, rewrite, paraphrase, or invent authoritative quote text.',
+        'The predecessor is compact advisory context. Improve it where useful; do not blindly copy its structure or evidence selections.',
+        'sourceSections and evidence candidates are deterministically narrowed navigation context, not local proof that a claim is true.',
         'Do not output ids assigned by the server, status, acceptance, active pointers, MaterialRevision choices, parser fingerprints, truthPremiseStatus, truth-authority records, admissibility, completion, mastery, or risk decisions.',
         'Learner-confirmed scope does not make a model-generated claim authoritative Course Truth.',
         'Respect every hard limit in CURRICULUM_CONTEXT.',
@@ -622,6 +722,37 @@ export function curriculumProposalMessages(input: CurriculumProposalInput): Chat
       ].join('\n'),
     },
   ];
+}
+
+function serializedSize(value: unknown): { chars: number; bytes: number } {
+  const serialized = typeof value === 'string' ? value : JSON.stringify(value);
+  return { chars: serialized.length, bytes: Buffer.byteLength(serialized, 'utf8') };
+}
+
+/** Deterministic offline observability for the exact provider-visible request shape. */
+export function measureCurriculumRequest(input: CurriculumProposalInput) {
+  const context = curriculumPromptContext(input);
+  const messages = curriculumProposalMessages(input);
+  const evidenceExcerpt = input.evidenceCatalog.map((offer) => offer.quote).join('');
+  return {
+    counts: {
+      sourceBlocks: input.blocks.length,
+      evidenceOffers: input.evidenceCatalog.length,
+      concepts: input.concepts.length,
+      canonicalConcepts: input.canonicalConcepts.length,
+      graphRelations: input.graphEdges.length,
+      predecessorNodes: input.predecessor?.nodes.length ?? 0,
+      predecessorLearningUnits:
+        input.predecessor?.nodes.filter((node) => node.kind === 'learning_unit').length ?? 0,
+    },
+    evidenceExcerpt: serializedSize(evidenceExcerpt),
+    sections: Object.fromEntries(
+      Object.entries(context).map(([name, value]) => [name, serializedSize(value)]),
+    ),
+    messageContent: serializedSize(messages.map((message) => message.content).join('')),
+    serializedMessages: serializedSize(messages),
+    responseFormatSchema: { chars: 0, bytes: 0 },
+  };
 }
 
 /** StudyPlan route semantics only; deterministic code owns all consequential fields. */

@@ -22,7 +22,8 @@ export class ProviderError extends Error {
   static timeout(ms: number): ProviderError {
     return new ProviderError(
       ApiErrorCode.ProviderTimeout,
-      `模型服务响应超时(${ms}ms),请稍后重试或改用离线 fake 模式。`,
+      '模型服务响应时间超过预期，请稍后重试。',
+      { timeoutMs: ms },
     );
   }
 

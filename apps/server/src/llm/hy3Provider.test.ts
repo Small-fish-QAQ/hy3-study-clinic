@@ -308,7 +308,7 @@ describe('Hy3Provider connection probe', () => {
 
     await expect(
       makeProvider(fetchImpl, 30_000).testConnection({ timeoutMs: 20 }),
-    ).rejects.toMatchObject({ code: 'PROVIDER_TIMEOUT', message: expect.stringContaining('20ms') });
+    ).rejects.toMatchObject({ code: 'PROVIDER_TIMEOUT', details: { timeoutMs: 20 } });
   });
 });
 

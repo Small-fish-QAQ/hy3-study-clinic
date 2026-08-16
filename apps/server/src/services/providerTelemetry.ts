@@ -114,6 +114,7 @@ export function createTelemetryProvider({
         let attemptId = newId('llm_attempt');
         let attemptStartedAt = startedAt;
         let usage: ProviderUsage = provider.name === 'fake' ? fakeUsage() : unknownUsage();
+        let usageReported = provider.name === 'fake';
         let sent = false;
         const insertAttempt = (kind: 'original' | 'repair' | 'retry' | 'fallback'): void => {
           repos.telemetry.insertAttempt({
@@ -146,6 +147,7 @@ export function createTelemetryProvider({
         if (provider.name === 'fake' && !supplied.signal?.aborted) markSent();
 
         const recordUsage = (at: string): void => {
+          if (!usageReported) return;
           repos.telemetry.insertUsage({
             id: newId('llm_usage'),
             attemptId,
@@ -174,6 +176,7 @@ export function createTelemetryProvider({
           onRequestSent: markSent,
           onUsage: (reported) => {
             usage = reported;
+            usageReported = true;
             supplied.onUsage?.(reported);
           },
           onRepairAttempt: (reason) => {
@@ -193,6 +196,7 @@ export function createTelemetryProvider({
             attemptId = newId('llm_attempt');
             attemptStartedAt = repairStartedAt;
             usage = provider.name === 'fake' ? fakeUsage() : unknownUsage();
+            usageReported = provider.name === 'fake';
             sent = false;
             insertAttempt('repair');
             if (provider.name === 'fake' && !supplied.signal?.aborted) markSent();

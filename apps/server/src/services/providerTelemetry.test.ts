@@ -293,6 +293,52 @@ describe('central provider inference telemetry', () => {
     expect(attempt.status).toBe(code === ApiErrorCode.RequestCancelled ? 'cancelled' : 'failed');
   });
 
+  it('records one sent real timeout attempt without inventing a usage row or retry', async () => {
+    class TimedOutHy3Provider extends FakeProvider {
+      override readonly name = 'hy3' as const;
+      override readonly model = 'hy3-test';
+
+      override async analyzeConcepts(
+        _input: Parameters<LlmProvider['analyzeConcepts']>[0],
+        options?: ProviderCallOptions,
+      ) {
+        options?.onRequestSent?.();
+        throw ProviderError.timeout(240_000);
+      }
+    }
+    const provider = createTelemetryProvider({
+      repos,
+      clock: fixedClock(T0),
+      provider: new TimedOutHy3Provider(),
+      providerGeneration: () => 4,
+    });
+
+    await expect(
+      provider.analyzeConcepts(
+        { materialTitle: 'Course', blocks: [] },
+        { telemetry: { workspaceId: 'ws_1', operationType: 'propose_curriculum' } },
+      ),
+    ).rejects.toMatchObject({ code: ApiErrorCode.ProviderTimeout });
+
+    const call = db.prepare('SELECT id, status FROM model_logical_calls').get() as {
+      id: string;
+      status: string;
+    };
+    expect(call.status).toBe('failed');
+    expect(repos.telemetry.listAttempts(call.id)).toMatchObject([
+      {
+        attemptNumber: 1,
+        attemptKind: 'original',
+        providerGeneration: 4,
+        status: 'failed',
+        errorCode: ApiErrorCode.ProviderTimeout,
+      },
+    ]);
+    expect(db.prepare('SELECT COUNT(*) count FROM model_usage_records').get()).toEqual({
+      count: 0,
+    });
+  });
+
   it('does not count a pre-aborted request as physically sent', async () => {
     const controller = new AbortController();
     controller.abort();
