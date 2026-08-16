@@ -14,8 +14,10 @@ import { DesiredDepthSchema } from '../domain/learningContract.js';
  *
  * These schemas are the ONLY accepted shapes for model output. Providers get
  * one bounded repair attempt on validation failure, then fail with a
- * structured error. Models cite sources as (blockId, exact quote) — never
- * offsets — and the server independently verifies every quote.
+ * structured error. Most model workflows cite sources as (blockId, exact
+ * quote) and the server independently verifies every quote. Curriculum is
+ * stricter: the model selects a server-offered evidence identity and the
+ * server resolves its exact revision-owned text locally.
  */
 
 export const ProposedConceptSchema = z.object({
@@ -252,7 +254,13 @@ export const ProposedEvidenceSchema = z.object({
 });
 export type ProposedEvidence = z.infer<typeof ProposedEvidenceSchema>;
 
-const AgentProposalEvidenceSchema = ProposedEvidenceSchema.strict();
+/** Server-offered exact evidence selected by identity in Curriculum output. */
+export const CurriculumEvidenceSelectionSchema = z
+  .object({
+    evidenceId: z.string().min(1).max(100),
+  })
+  .strict();
+export type CurriculumEvidenceSelection = z.infer<typeof CurriculumEvidenceSelectionSchema>;
 
 /** Learner-visible objective proposed for one Curriculum LearningUnit. */
 export const ProposedCurriculumObjectiveSchema = z
@@ -261,8 +269,8 @@ export const ProposedCurriculumObjectiveSchema = z
     key: z.string().min(1).max(100),
     title: z.string().min(1).max(300),
     description: z.string().min(1).max(1000),
-    /** Optional citations only. Local authority validation decides their meaning. */
-    evidence: z.array(AgentProposalEvidenceSchema).max(5),
+    /** Optional server-offered evidence selections; local authority decides their meaning. */
+    evidence: z.array(CurriculumEvidenceSelectionSchema).max(5),
   })
   .strict();
 export type ProposedCurriculumObjective = z.infer<typeof ProposedCurriculumObjectiveSchema>;
@@ -279,7 +287,7 @@ export const ProposedCurriculumNodeSchema = z
     index: z.number().int().nonnegative(),
     title: z.string().min(1).max(300),
     structuralUnitIds: z.array(z.string().min(1)).max(500),
-    sourceEvidence: z.array(AgentProposalEvidenceSchema).max(100),
+    sourceEvidence: z.array(CurriculumEvidenceSelectionSchema).max(100),
     conceptIds: z.array(z.string().min(1)).max(30),
     canonicalConceptIds: z.array(z.string().min(1)).max(20),
     objectives: z.array(ProposedCurriculumObjectiveSchema).max(30),

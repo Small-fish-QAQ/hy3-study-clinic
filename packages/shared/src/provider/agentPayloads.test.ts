@@ -43,7 +43,7 @@ function curriculumPayload(): unknown {
         index: 0,
         title: 'First idea',
         structuralUnitIds: ['su_unit_1'],
-        sourceEvidence: [{ blockId: 'blk_1', quote: 'First source statement.' }],
+        sourceEvidence: [{ evidenceId: 'evidence_1' }],
         conceptIds: ['con_1'],
         canonicalConceptIds: [],
         objectives: [
@@ -51,7 +51,7 @@ function curriculumPayload(): unknown {
             key: 'objective-1',
             title: 'Explain the first idea',
             description: 'Explain it from the accepted course material.',
-            evidence: [{ blockId: 'blk_1', quote: 'First source statement.' }],
+            evidence: [{ evidenceId: 'evidence_1' }],
           },
         ],
         prerequisiteUnitKeys: [],
@@ -149,6 +149,14 @@ describe('CurriculumProposalPayloadSchema', () => {
     };
     payload.nodes[3]!.key = 'unit-1';
     payload.nodes[3]!.prerequisiteUnitKeys = ['missing-unit'];
+    expect(CurriculumProposalPayloadSchema.safeParse(payload).success).toBe(false);
+  });
+
+  it('accepts only server-offered evidence identities, never model-authored quote text', () => {
+    const payload = curriculumPayload() as {
+      nodes: Array<{ sourceEvidence: Array<Record<string, unknown>> }>;
+    };
+    payload.nodes[2]!.sourceEvidence = [{ blockId: 'blk_1', quote: 'paraphrased' }];
     expect(CurriculumProposalPayloadSchema.safeParse(payload).success).toBe(false);
   });
 });

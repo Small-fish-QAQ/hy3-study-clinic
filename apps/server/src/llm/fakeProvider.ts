@@ -930,10 +930,22 @@ export class FakeProvider implements LlmProvider {
         const unitNumber = learningUnits.length + 1;
         const unitKey = `unit-${unitNumber}`;
         const title = (seed.title || concepts[0]?.name || material.title).slice(0, 300);
-        const evidence = sourceBlocks.map((block) => ({
-          blockId: block.id,
-          quote: pickQuote(block),
-        }));
+        const sourceBlockIds = new Set(sourceBlocks.map((block) => block.id));
+        const evidence = input.evidenceCatalog
+          .filter((offer) => sourceBlockIds.has(offer.blockId))
+          .filter(
+            (offer, index, offers) =>
+              offers.findIndex((candidate) => candidate.blockId === offer.blockId) === index,
+          )
+          .slice(0, 100)
+          .map((offer) => ({ evidenceId: offer.id }));
+        const conceptIdSet = new Set(concepts.map((concept) => concept.id));
+        const canonicalConceptIds = input.canonicalConcepts
+          .filter((canonical) =>
+            canonical.sourceConceptIds.some((conceptId) => conceptIdSet.has(conceptId)),
+          )
+          .map((canonical) => canonical.id)
+          .slice(0, 20);
         const unit: ProposedCurriculumNode = {
           key: unitKey,
           parentKey: sectionKey,
@@ -947,7 +959,7 @@ export class FakeProvider implements LlmProvider {
             .slice(0, 500),
           sourceEvidence: evidence,
           conceptIds: concepts.map((concept) => concept.id),
-          canonicalConceptIds: [],
+          canonicalConceptIds,
           objectives: [
             {
               key: `objective-${unitNumber}`,

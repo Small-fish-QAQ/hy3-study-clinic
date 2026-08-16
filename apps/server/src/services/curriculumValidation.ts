@@ -18,6 +18,7 @@ import {
 import { AppError } from '../errors.js';
 import { verifyGrounding } from '../grounding/verify.js';
 import type { SourceAuthorityBundle } from '../repositories/sourceAuthority.js';
+import type { CurriculumEvidenceOffer } from '../llm/provider.js';
 import { newId } from '../util/ids.js';
 
 export interface CurriculumStructuralUnitOwner {
@@ -35,6 +36,8 @@ export interface CurriculumValidationContext {
   /** Empty until normalized structural-unit persistence is available. */
   structuralUnitOwners: Map<string, CurriculumStructuralUnitOwner>;
   canonicalConceptIds: Set<string>;
+  /** Immutable exact excerpts offered for this operation snapshot. */
+  evidenceCatalog: CurriculumEvidenceOffer[];
   authorityBundles: SourceAuthorityBundle[];
   /** Source authority decisions are local, never provider output. */
   isAuthorityBlockingEligible: (authorityRecordId: string) => boolean;
@@ -140,8 +143,8 @@ function throwValidation(
   throw new AppError(
     ApiErrorCode.GroundingFailed,
     repairAttempted
-      ? '生成的新课程结构没有通过资料一致性检查，原版本未改变。系统已尝试一次修复。'
-      : '生成的新课程结构没有通过资料一致性检查，原版本未改变。',
+      ? '新课程结构没有通过资料一致性检查，原版本未改变。系统已尝试一次修复。'
+      : '新课程结构没有通过资料一致性检查，原版本未改变。',
     details,
   );
 }
@@ -220,17 +223,45 @@ export function materializeCurriculumProposal(
     sourceRefKeysByNode.set(nodeId, keys);
   }
 
+  const evidenceById = new Map(ctx.evidenceCatalog.map((offer) => [offer.id, offer]));
+
   function verifyEvidence(
     nodeId: string,
-    proposed: { blockId: string; quote: string },
+    proposed: { evidenceId: string },
   ): VerifiedGrounding | null {
-    if (!manifestBlockIds.has(proposed.blockId)) {
-      errors.push(`Provider cited a SourceBlock outside the exact manifest: ${proposed.blockId}`);
+    const offer = evidenceById.get(proposed.evidenceId);
+    if (!offer) {
+      errors.push(`Unknown or unavailable offered Curriculum evidence ID: ${proposed.evidenceId}`);
       return null;
     }
-    const result = verifyGrounding(ctx.blocks, proposed);
+    if (!manifestBlockIds.has(offer.blockId)) {
+      errors.push(`Offered Curriculum evidence is outside the exact execution-source manifest.`);
+      return null;
+    }
+    const offeredBlock = blockById.get(offer.blockId);
+    const offeredRevision = offeredBlock
+      ? revisionForBlock(offeredBlock, ctx.executionSourceManifest)
+      : undefined;
+    if (
+      !offeredBlock ||
+      !offeredRevision ||
+      offer.materialId !== offeredBlock.materialId ||
+      offer.materialRevisionId !== offeredRevision.materialRevisionId
+    ) {
+      errors.push(`Offered Curriculum evidence has inconsistent revision ownership.`);
+      return null;
+    }
+    const result = verifyGrounding(ctx.blocks, { blockId: offer.blockId, quote: offer.quote });
     if (!result.ok) {
-      errors.push(`Curriculum evidence failed exact-quote validation: ${result.message}`);
+      errors.push(`Offered Curriculum evidence no longer resolves to exact authoritative text.`);
+      return null;
+    }
+    if (
+      result.grounding.blockId !== offer.blockId ||
+      result.grounding.startOffset !== offer.startOffset ||
+      result.grounding.endOffset !== offer.endOffset
+    ) {
+      errors.push(`Offered Curriculum evidence span no longer matches its authoritative identity.`);
       return null;
     }
     addSourceReference(nodeId, result.grounding);

@@ -23,6 +23,8 @@ import {
 import { createLearningContractService } from './learningContracts.js';
 import { createMaterialRoleService } from './materialRoles.js';
 import { createSourceAuthorityService } from './sourceAuthority.js';
+import { buildCurriculumEvidenceCatalog } from './curriculumEvidence.js';
+import { preflightStudyPlan } from './studyPlansAgent.js';
 
 const QUOTE = 'Working memory is limited.';
 const clock = fixedClock(T0);
@@ -68,7 +70,13 @@ class ControlledCurriculumProvider extends FakeProvider {
         index: 0,
         title: 'Working memory capacity',
         structuralUnitIds: [],
-        sourceEvidence: [{ blockId: input.blocks[0]!.id, quote: QUOTE }],
+        sourceEvidence: [
+          {
+            evidenceId:
+              input.evidenceCatalog.find((offer) => offer.quote === QUOTE)?.id ??
+              input.evidenceCatalog[0]!.id,
+          },
+        ],
         conceptIds: [],
         canonicalConceptIds: [],
         objectives: [
@@ -76,7 +84,13 @@ class ControlledCurriculumProvider extends FakeProvider {
             key: 'objective-1',
             title: QUOTE,
             description: QUOTE,
-            evidence: [{ blockId: input.blocks[0]!.id, quote: QUOTE }],
+            evidence: [
+              {
+                evidenceId:
+                  input.evidenceCatalog.find((offer) => offer.quote === QUOTE)?.id ??
+                  input.evidenceCatalog[0]!.id,
+              },
+            ],
           },
         ],
         prerequisiteUnitKeys: [],
@@ -166,11 +180,24 @@ function currentProposalRequest(id: string, predecessorCurriculumId: string | nu
   };
 }
 
-function payloadForFetch(quote = QUOTE): CurriculumProposalPayload {
-  const input = { blocks: repos.materials.getBlocks('mat_1') } as CurriculumProposalInput;
+function curriculumEvidenceId(): string {
+  const context = buildCurriculumExecutionContext(repos, contract);
+  return buildCurriculumEvidenceCatalog({
+    workspaceId: 'ws_1',
+    manifest: context.manifest,
+    blocks: context.blocks,
+    preferredGroundings: [],
+  }).find((offer) => offer.quote === QUOTE)!.id;
+}
+
+function payloadForFetch(evidenceId = curriculumEvidenceId()): CurriculumProposalPayload {
+  const input = {
+    blocks: repos.materials.getBlocks('mat_1'),
+    evidenceCatalog: [{ id: evidenceId, quote: QUOTE }],
+  } as CurriculumProposalInput;
   const payload = new ControlledCurriculumProvider().makePayload(input);
-  payload.nodes[2]!.sourceEvidence = [{ blockId: 'blk_1', quote }];
-  payload.nodes[2]!.objectives[0]!.evidence = [{ blockId: 'blk_1', quote }];
+  payload.nodes[2]!.sourceEvidence = [{ evidenceId }];
+  payload.nodes[2]!.objectives[0]!.evidence = [{ evidenceId }];
   return payload;
 }
 
@@ -368,6 +395,17 @@ describe('Curriculum proposal and authority boundaries', () => {
     expect(
       admitted.flatMap((bundle) => bundle.claims).every((claim) => claim.claim === claim.quote),
     ).toBe(true);
+    expect(provider.lastInput?.evidenceCatalog.some((offer) => offer.quote === QUOTE)).toBe(true);
+    expect(
+      proposed.curriculum.nodes.find((node) => node.learningUnit)?.sourceReferences[0],
+    ).toMatchObject({
+      materialId: 'mat_1',
+      materialRevisionId: revision.id,
+      sourceBlockId: 'blk_1',
+      sourceBlockRevisionFingerprint: expect.stringMatching(/^block_/),
+    });
+    expect(attemptsForCommand('curriculum-verified')).toHaveLength(1);
+    expect(usageRowsForCommand('curriculum-verified')).toBe(1);
   });
 
   it('links ordinary Fake Curriculum premises to exact locally admitted source claims', async () => {
@@ -445,12 +483,28 @@ describe('Curriculum proposal and authority boundaries', () => {
     const proposed = await curriculum.propose(proposalRequest('curriculum-canonical-context'));
 
     expect(provider.lastInput?.allowedCanonicalConceptIds).toEqual([canonicalId]);
+    expect(provider.lastInput?.canonicalConcepts).toEqual([
+      {
+        id: canonicalId,
+        displayName: 'Working memory',
+        sourceConceptIds: [concept.id],
+      },
+    ]);
     expect(
       proposed.curriculum.nodes.find((node) => node.kind === 'learning_unit')?.learningUnit,
     ).toMatchObject({
       conceptIds: [concept.id],
       canonicalConceptIds: [canonicalId],
     });
+    const preflight = preflightStudyPlan(
+      repos,
+      clock,
+      contract,
+      proposed.curriculum,
+      'Memory course',
+    );
+    expect(preflight.executableLearningUnitCount).toBe(1);
+    expect(preflight.canGenerate).toBe(true);
   });
 
   it('enforces an explicitly configured operation cap before a Curriculum provider call', async () => {
@@ -513,7 +567,7 @@ describe('Curriculum proposal and authority boundaries', () => {
   it('fails closed on invalid citations and keeps acceptance expected-version safe', async () => {
     provider.makePayload = (input) => {
       const payload = new ControlledCurriculumProvider().makePayload(input);
-      payload.nodes[2]!.sourceEvidence = [{ blockId: input.blocks[0]!.id, quote: 'not present' }];
+      payload.nodes[2]!.sourceEvidence = [{ evidenceId: 'cev_outside_offered_manifest' }];
       return payload;
     };
     await expect(curriculum.propose(proposalRequest('curriculum-invalid'))).rejects.toThrow(
@@ -537,8 +591,8 @@ describe('Curriculum proposal and authority boundaries', () => {
     expect(repos.curricula.get(proposed.curriculum.id)?.status).toBe('proposed');
   });
 
-  it('repairs a schema-valid exact-quote violation once and persists only the repaired candidate', async () => {
-    const invalid = payloadForFetch('quote that is not in the offered SourceBlock');
+  it('repairs a schema-valid invalid evidence selection once and persists only the repaired candidate', async () => {
+    const invalid = payloadForFetch('cev_not_offered');
     const valid = payloadForFetch();
     const fetchMock = useMockedHy3([JSON.stringify(invalid), JSON.stringify(valid)]);
 
@@ -574,7 +628,9 @@ describe('Curriculum proposal and authority boundaries', () => {
         first.curriculum.executionSourceManifest.fingerprint,
       acceptanceBasis: 'learner_review',
     }).curriculum;
-    const invalid = payloadForFetch('still not an exact source quote');
+    const acceptedSnapshot = structuredClone(accepted);
+    const executionSnapshot = structuredClone(repos.courseExecution.get('ws_1'));
+    const invalid = payloadForFetch('cev_still_not_offered');
     const fetchMock = useMockedHy3([JSON.stringify(invalid), JSON.stringify(invalid)]);
 
     await expect(
@@ -588,7 +644,8 @@ describe('Curriculum proposal and authority boundaries', () => {
     expect(attemptsForCommand('curriculum-semantic-repair-fails')).toHaveLength(2);
     expect(usageRowsForCommand('curriculum-semantic-repair-fails')).toBe(2);
     expect(repos.curricula.list('ws_1').map((item) => item.id)).toEqual([accepted.id]);
-    expect(repos.curricula.get(accepted.id)?.status).toBe('accepted');
+    expect(repos.curricula.get(accepted.id)).toEqual(acceptedSnapshot);
+    expect(repos.courseExecution.get('ws_1')).toEqual(executionSnapshot);
     const operation = db
       .prepare(`SELECT id FROM agent_operations WHERE command_id = ?`)
       .get('curriculum-semantic-repair-fails') as { id: string };
@@ -600,7 +657,9 @@ describe('Curriculum proposal and authority boundaries', () => {
         details: {
           kind: 'curriculum_candidate_validation',
           repairAttempted: true,
-          errors: expect.arrayContaining([expect.stringContaining('exact-quote validation')]),
+          errors: expect.arrayContaining([
+            expect.stringContaining('offered Curriculum evidence ID'),
+          ]),
         },
       },
     });
@@ -608,7 +667,7 @@ describe('Curriculum proposal and authority boundaries', () => {
   });
 
   it('does not stack semantic repair after a schema-invalid original consumed the allowance', async () => {
-    const invalidSemantic = payloadForFetch('not present after schema repair');
+    const invalidSemantic = payloadForFetch('cev_not_offered_after_schema_repair');
     const fetchMock = useMockedHy3(['{}', JSON.stringify(invalidSemantic)]);
 
     await expect(
@@ -625,7 +684,7 @@ describe('Curriculum proposal and authority boundaries', () => {
   });
 
   it('does not ask the model to repair an authoritative manifest change', async () => {
-    const invalid = payloadForFetch('not present');
+    const invalid = payloadForFetch('cev_not_offered_during_authority_race');
     const fetchMock = useMockedHy3([JSON.stringify(invalid)], (index) => {
       if (index !== 0) return;
       const content = `${QUOTE} Updated.`;

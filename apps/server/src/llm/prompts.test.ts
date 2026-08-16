@@ -5,7 +5,9 @@ import {
   quizGenerationMessages,
   remediationMessages,
   shortAnswerGradingMessages,
+  curriculumProposalMessages,
 } from './prompts.js';
+import type { CurriculumProposalInput } from './provider.js';
 
 const blocks: SourceBlock[] = [
   {
@@ -165,5 +167,42 @@ describe('prompt trust boundaries', () => {
     expect(content).toContain(
       '必须且只能包含 matchedKeyPointIndexes、partialKeyPointIndexes、score、confidence、feedback',
     );
+  });
+
+  it('offers Curriculum evidence identities without asking the provider to author quotes', () => {
+    const input = {
+      workspaceName: '课程',
+      contract: {},
+      executionSourceManifest: { fingerprint: 'manifest', revisions: [] },
+      outline: [],
+      concepts: [],
+      graphEdges: [],
+      allowedCanonicalConceptIds: [],
+      canonicalConcepts: [],
+      blocks,
+      evidenceCatalog: [
+        {
+          id: 'cev_exact_1',
+          materialId: 'mat_1',
+          materialRevisionId: 'rev_1',
+          blockId: 'blk_1',
+          startOffset: 0,
+          endOffset: blocks[0]!.content.length,
+          quote: blocks[0]!.content,
+          headingPath: blocks[0]!.headingPath,
+          pageNumber: null,
+        },
+      ],
+      limits: { maxNodes: 10, maxObjectives: 10, maxSynthesisGroups: 1 },
+    } as unknown as CurriculumProposalInput;
+    const content = curriculumProposalMessages(input)
+      .map((message) => message.content)
+      .join('\n');
+    expect(content).toContain('cev_exact_1');
+    expect(content).toContain('exactText');
+    expect(content).toContain(
+      'never copy, rewrite, paraphrase, or invent authoritative quote text',
+    );
+    expect(content).toContain('evidenceId');
   });
 });

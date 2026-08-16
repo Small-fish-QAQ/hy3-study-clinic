@@ -562,7 +562,6 @@ export function conceptLessonMessages(input: ConceptLessonInput): ChatMessage[] 
 
 /** Curriculum semantics only; activation, truth authority, and persisted ids stay local. */
 export function curriculumProposalMessages(input: CurriculumProposalInput): ChatMessage[] {
-  const sources = wrapSourceBlocks(input.blocks);
   const context = wrapUntrustedJson('CURRICULUM_CONTEXT', {
     workspaceName: input.workspaceName,
     contract: input.contract,
@@ -582,7 +581,15 @@ export function curriculumProposalMessages(input: CurriculumProposalInput): Chat
       targetConceptId: edge.targetConceptId,
       relation: edge.relation,
     })),
-    allowedCanonicalConceptIds: input.allowedCanonicalConceptIds,
+    canonicalConcepts: input.canonicalConcepts,
+    evidenceCatalog: input.evidenceCatalog.map((offer) => ({
+      evidenceId: offer.id,
+      blockId: offer.blockId,
+      materialRevisionId: offer.materialRevisionId,
+      headingPath: offer.headingPath,
+      pageNumber: offer.pageNumber,
+      exactText: offer.quote,
+    })),
     limits: input.limits,
   });
 
@@ -601,19 +608,16 @@ export function curriculumProposalMessages(input: CurriculumProposalInput): Chat
       content: [
         context.guard,
         context.body,
-        sources.guard,
-        sources.body,
         'Return exactly this shape:',
-        '{"nodes":[{"key":"chapter-1","parentKey":null,"kind":"chapter|section|learning_unit","index":0,"title":"...","structuralUnitIds":[],"sourceEvidence":[{"blockId":"...","quote":"verbatim source text"}],"conceptIds":[],"canonicalConceptIds":[],"objectives":[{"key":"objective-1","title":"...","description":"...","evidence":[{"blockId":"...","quote":"verbatim source text"}]}],"prerequisiteUnitKeys":[],"graphRelationIds":[]}],"synthesisGroups":[{"key":"synthesis-1","title":"...","level":"section|chapter|course|transfer","learningUnitKeys":["unit-1","unit-2"],"objectiveKeys":["objective-1"]}]}',
+        '{"nodes":[{"key":"chapter-1","parentKey":null,"kind":"chapter|section|learning_unit","index":0,"title":"...","structuralUnitIds":[],"sourceEvidence":[{"evidenceId":"server-offered-id"}],"conceptIds":[],"canonicalConceptIds":[],"objectives":[{"key":"objective-1","title":"...","description":"...","evidence":[{"evidenceId":"server-offered-id"}]}],"prerequisiteUnitKeys":[],"graphRelationIds":[]}],"synthesisGroups":[{"key":"synthesis-1","title":"...","level":"section|chapter|course|transfer","learningUnitKeys":["unit-1","unit-2"],"objectiveKeys":["objective-1"]}]}',
         'Required hierarchy: chapter nodes have parentKey null; sections reference chapters; learning units reference sections.',
-        'Use proposal-local keys. Reference only offered structural units, concepts, canonical concepts, graph relations, and source blocks.',
+        'Use proposal-local keys. Reference only offered structural units, concepts, canonical concepts, graph relations, and evidence IDs.',
         'When no non-null structuralUnitId is offered, every structuralUnitIds array must be empty.',
         'A learning unit needs at least one objective. Non-learning-unit nodes must keep all unit-only arrays empty.',
-        'Evidence is optional for learner-scoped teaching objectives. Never invent a citation when the supplied sources do not support it.',
+        'Evidence is optional for learner-scoped teaching objectives. Select evidenceId only from evidenceCatalog; never copy, rewrite, paraphrase, or invent authoritative quote text.',
         'Do not output ids assigned by the server, status, acceptance, active pointers, MaterialRevision choices, parser fingerprints, truthPremiseStatus, truth-authority records, admissibility, completion, mastery, or risk decisions.',
         'Learner-confirmed scope does not make a model-generated claim authoritative Course Truth.',
         'Respect every hard limit in CURRICULUM_CONTEXT.',
-        CITATION_RULES,
         JSON_RULES,
       ].join('\n'),
     },

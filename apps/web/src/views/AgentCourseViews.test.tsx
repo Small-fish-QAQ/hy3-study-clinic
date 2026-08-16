@@ -498,6 +498,31 @@ describe('CourseHomeView action and authority rendering', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('学习路线决定未完成。路线决定失败。');
   });
 
+  it('shows safe Curriculum evidence diagnostics on Home without exposing raw identifiers', async () => {
+    const user = userEvent.setup();
+    render(
+      <CourseHomeView
+        {...homeProps(overview('launchable'))}
+        actionFailure={{
+          owner: 'curriculum',
+          message: '新课程结构没有通过资料一致性检查，原版本未改变。',
+          details: {
+            kind: 'curriculum_candidate_validation',
+            repairAttempted: true,
+            errors: ['Unknown or unavailable offered Curriculum evidence ID: cev_private_123'],
+            warnings: ['Unmapped source blocks remain visible for risk reconciliation: 204.'],
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByText('有 1 条资料依据无法与本次课程资料的原文精确对应。')).toBeVisible();
+    expect(screen.getByText('系统已经尝试了一次自动修复。')).toBeVisible();
+    await user.click(screen.getByText('查看原因与技术详情'));
+    expect(screen.getByText('仍有 1 项资料覆盖提醒。')).toBeVisible();
+    expect(screen.queryByText(/cev_private_123/)).not.toBeInTheDocument();
+  });
+
   it('does not render a start command for a blocked next action', () => {
     render(<CourseHomeView {...homeProps(overview('blocked'))} />);
 
@@ -1082,12 +1107,17 @@ describe('CurriculumView truth and validation states', () => {
     );
 
     expect(screen.getByRole('alert')).toHaveTextContent('原版本未改变。系统已尝试一次修复。');
-    const summary = screen.getByText('查看资料一致性检查详情');
+    expect(screen.getByText('有 1 条资料依据无法与本次课程资料的原文精确对应。')).toBeVisible();
+    expect(screen.getByText('系统已经尝试了一次自动修复。')).toBeVisible();
+    const summary = screen.getByText('查看原因与技术详情');
     expect(
       screen.queryByText('Curriculum evidence failed exact-quote validation.'),
-    ).not.toBeVisible();
+    ).not.toBeInTheDocument();
     await user.click(summary);
-    expect(screen.getByText('Curriculum evidence failed exact-quote validation.')).toBeVisible();
+    expect(screen.getByText('资料依据精确对应检查未通过。')).toBeVisible();
+    expect(
+      screen.queryByText('Curriculum evidence failed exact-quote validation.'),
+    ).not.toBeInTheDocument();
   });
 
   it('preserves proposal acceptance, rejection, and version-history selection', async () => {

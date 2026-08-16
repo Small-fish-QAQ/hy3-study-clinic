@@ -46,6 +46,7 @@ import {
 } from './agentProviderRuntime.js';
 import type { SourceAuthorityService } from './sourceAuthority.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
+import { buildCurriculumEvidenceCatalog } from './curriculumEvidence.js';
 
 /** HTTP/service request: the server, never the client, resolves exact revisions. */
 export const ProposeCurriculumCommandRequestSchema = ProposeCurriculumRequestSchema.omit({
@@ -269,23 +270,41 @@ function buildOfferedCurriculumKnowledge(
           (edge) => conceptIds.has(edge.sourceConceptId) && conceptIds.has(edge.targetConceptId),
         )
     : [];
-  const allowedCanonicalConceptIds = repos.alignment
+  const canonicalConcepts = repos.alignment
     .listCanonical(workspaceId)
     .filter((canonical) =>
       canonical.members.some((member) => conceptIds.has(member.sourceConceptId)),
     )
-    .map((canonical) => canonical.id);
+    .map((canonical) => ({
+      id: canonical.id,
+      displayName: canonical.displayName,
+      sourceConceptIds: canonical.members
+        .map((member) => member.sourceConceptId)
+        .filter((conceptId) => conceptIds.has(conceptId)),
+    }));
+  const allowedCanonicalConceptIds = canonicalConcepts.map((canonical) => canonical.id);
   const fingerprint = `curriculum_context_${fnv1a32(
     JSON.stringify({
       workspaceName: workspace.name,
       concepts,
       graphEdges,
-      allowedCanonicalConceptIds,
+      canonicalConcepts,
+      authorityBundles: context.authorityBundles.map((bundle) => ({
+        record: bundle.record,
+        claims: bundle.claims,
+      })),
     }),
   )
     .toString(16)
     .padStart(8, '0')}`;
-  return { workspace, concepts, graphEdges, allowedCanonicalConceptIds, fingerprint };
+  return {
+    workspace,
+    concepts,
+    graphEdges,
+    canonicalConcepts,
+    allowedCanonicalConceptIds,
+    fingerprint,
+  };
 }
 
 function assertProposalAuthorityCurrent(
@@ -508,7 +527,8 @@ export function createCurriculumService({
       parsed.command.workspaceId,
       context,
     );
-    const { concepts, graphEdges, allowedCanonicalConceptIds } = offeredKnowledge;
+    const { concepts, graphEdges, canonicalConcepts, allowedCanonicalConceptIds } =
+      offeredKnowledge;
     const structuralUnitOwners = new Map(
       context.outline.flatMap((item) =>
         item.structuralUnitId
@@ -524,6 +544,24 @@ export function createCurriculumService({
           : [],
       ),
     );
+    const evidenceCatalog = buildCurriculumEvidenceCatalog({
+      workspaceId: parsed.command.workspaceId,
+      manifest: context.manifest,
+      blocks: context.blocks,
+      preferredGroundings: [
+        ...concepts.map((concept) => concept.grounding),
+        ...context.authorityBundles.flatMap((bundle) =>
+          bundle.claims.map((claim) => ({
+            blockId: claim.sourceBlockId,
+            quote: claim.quote,
+            startOffset: claim.startOffset,
+            endOffset: claim.endOffset,
+            occurrenceCount: claim.occurrenceCount,
+            reanchored: false,
+          })),
+        ),
+      ],
+    });
     const providerInput: CurriculumProposalInput = {
       workspaceName: workspace.name,
       contract: context.contractContext,
@@ -532,7 +570,9 @@ export function createCurriculumService({
       concepts,
       graphEdges,
       allowedCanonicalConceptIds,
+      canonicalConcepts,
       blocks: context.blocks,
+      evidenceCatalog,
       limits: CURRICULUM_LIMITS,
     };
     const validationContext: CurriculumValidationContext = {
@@ -544,6 +584,10 @@ export function createCurriculumService({
       graphEdges,
       structuralUnitOwners,
       canonicalConceptIds: new Set(allowedCanonicalConceptIds),
+      evidenceCatalog: providerInput.evidenceCatalog.map((offer) => ({
+        ...offer,
+        headingPath: [...offer.headingPath],
+      })),
       authorityBundles: context.authorityBundles,
       isAuthorityBlockingEligible: (id) => repos.sourceAuthority.isBlockingEligible(id),
     };
@@ -569,7 +613,7 @@ export function createCurriculumService({
         learningUnitId: null,
         assessmentId: null,
         operationType: 'propose_curriculum',
-        schemaFingerprint: 'curriculum-proposal-v1',
+        schemaFingerprint: 'curriculum-proposal-v2-evidence-identity',
         policyFingerprint,
         sourceFingerprint: context.manifest.fingerprint,
         providerOptions: opts,

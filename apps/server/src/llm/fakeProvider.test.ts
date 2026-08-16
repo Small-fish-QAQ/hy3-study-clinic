@@ -264,7 +264,19 @@ describe('FakeProvider.proposeCurriculum', () => {
       concepts: [],
       graphEdges: [],
       allowedCanonicalConceptIds: [],
+      canonicalConcepts: [],
       blocks: sourceBlocks,
+      evidenceCatalog: sourceBlocks.map((block) => ({
+        id: block.id,
+        materialId: block.materialId,
+        materialRevisionId: revisionId,
+        blockId: block.id,
+        startOffset: 0,
+        endOffset: block.content.length,
+        quote: block.content,
+        headingPath: block.headingPath,
+        pageNumber: block.pageNumber,
+      })),
       limits: { maxNodes: 100, maxObjectives: 100, maxSynthesisGroups: 10 },
     };
   }
@@ -366,7 +378,19 @@ describe('FakeProvider.proposeCurriculum', () => {
       concepts,
       graphEdges: [],
       allowedCanonicalConceptIds: [],
+      canonicalConcepts: [],
       blocks: largeBlocks,
+      evidenceCatalog: largeBlocks.map((block) => ({
+        id: block.id,
+        materialId: block.materialId,
+        materialRevisionId: 'revision_large',
+        blockId: block.id,
+        startOffset: 0,
+        endOffset: block.content.length,
+        quote: block.content,
+        headingPath: block.headingPath,
+        pageNumber: block.pageNumber,
+      })),
       limits: { maxNodes: 1999, maxObjectives: 30_000, maxSynthesisGroups: 200 },
     };
 
@@ -424,10 +448,9 @@ describe('FakeProvider.proposeCurriculum', () => {
     const units = proposal.nodes.filter((node) => node.kind === 'learning_unit');
 
     expect(units).toHaveLength(2);
-    expect(units.map((unit) => unit.sourceEvidence.map((evidence) => evidence.blockId))).toEqual([
-      ['block_chapter_a'],
-      ['block_chapter_b'],
-    ]);
+    expect(units.map((unit) => unit.sourceEvidence.map((evidence) => evidence.evidenceId))).toEqual(
+      [['block_chapter_a'], ['block_chapter_b']],
+    );
   });
 
   it('does not collapse consecutive headingless SourceBlock regions', async () => {
@@ -461,7 +484,7 @@ describe('FakeProvider.proposeCurriculum', () => {
 
     expect(units).toHaveLength(sourceBlocks.length);
     expect(
-      units.flatMap((unit) => unit.sourceEvidence.map((evidence) => evidence.blockId)),
+      units.flatMap((unit) => unit.sourceEvidence.map((evidence) => evidence.evidenceId)),
     ).toEqual(sourceBlocks.map((block) => block.id));
   });
 });

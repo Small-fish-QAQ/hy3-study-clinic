@@ -9,7 +9,11 @@ import {
 import { FakeProvider } from './fakeProvider.js';
 import { Hy3Provider } from './hy3Provider.js';
 import { curriculumProposalMessages, studyPlanProposalMessages } from './prompts.js';
-import type { CurriculumProposalInput, StudyPlanProposalInput } from './provider.js';
+import type {
+  CurriculumEvidenceOffer,
+  CurriculumProposalInput,
+  StudyPlanProposalInput,
+} from './provider.js';
 
 const blocks: SourceBlock[] = [
   {
@@ -39,6 +43,20 @@ const blocks: SourceBlock[] = [
     endOffset: 106,
   },
 ];
+
+function evidenceCatalog(sourceBlocks: SourceBlock[]): CurriculumEvidenceOffer[] {
+  return sourceBlocks.map((block) => ({
+    id: `evidence_${block.id}`,
+    materialId: block.materialId,
+    materialRevisionId: block.materialRevisionId!,
+    blockId: block.id,
+    startOffset: 0,
+    endOffset: block.content.length,
+    quote: block.content,
+    headingPath: block.headingPath,
+    pageNumber: block.pageNumber,
+  }));
+}
 
 function concept(id: string, name: string, block: SourceBlock): Concept {
   return {
@@ -135,7 +153,9 @@ const curriculumInput: CurriculumProposalInput = {
   concepts,
   graphEdges: [graphEdge],
   allowedCanonicalConceptIds: [],
+  canonicalConcepts: [],
   blocks,
+  evidenceCatalog: evidenceCatalog(blocks),
   limits: { maxNodes: 20, maxObjectives: 10, maxSynthesisGroups: 5 },
 };
 
@@ -231,7 +251,7 @@ describe('FakeProvider Agent proposals', () => {
     expect(await provider.proposeCurriculum(curriculumInput)).toEqual(first);
     expect(CurriculumProposalPayloadSchema.safeParse(first).success).toBe(true);
 
-    const allowedBlockIds = new Set(blocks.map((block) => block.id));
+    const allowedEvidenceIds = new Set(curriculumInput.evidenceCatalog.map((offer) => offer.id));
     const allowedConceptIds = new Set(concepts.map((item) => item.id));
     for (const node of first.nodes) {
       for (const id of node.conceptIds) expect(allowedConceptIds.has(id)).toBe(true);
@@ -239,9 +259,7 @@ describe('FakeProvider Agent proposals', () => {
         ...node.sourceEvidence,
         ...node.objectives.flatMap((objective) => objective.evidence),
       ]) {
-        const block = blocks.find((candidate) => candidate.id === evidence.blockId);
-        expect(allowedBlockIds.has(evidence.blockId)).toBe(true);
-        expect(block!.content).toContain(evidence.quote);
+        expect(allowedEvidenceIds.has(evidence.evidenceId)).toBe(true);
       }
     }
     const secondUnit = first.nodes.find((node) => node.title === 'Second idea');
@@ -290,6 +308,7 @@ describe('FakeProvider Agent proposals', () => {
       ],
       graphEdges: [],
       blocks: repeatedBlocks,
+      evidenceCatalog: evidenceCatalog(repeatedBlocks),
     };
 
     const proposal = await new FakeProvider().proposeCurriculum(repeatedInput);
@@ -297,8 +316,8 @@ describe('FakeProvider Agent proposals', () => {
 
     expect(units).toHaveLength(1);
     expect(units[0]!.title).toBe('2. LLM');
-    expect(units[0]!.sourceEvidence.map((item) => item.blockId)).toEqual(
-      repeatedBlocks.map((block) => block.id),
+    expect(units[0]!.sourceEvidence.map((item) => item.evidenceId)).toEqual(
+      repeatedInput.evidenceCatalog.map((offer) => offer.id),
     );
     expect(units[0]!.conceptIds).toEqual(['con_llm_1', 'con_llm_2']);
   });
@@ -401,6 +420,11 @@ describe('Agent proposal prompt boundaries', () => {
     expect(content).toContain('Learner-confirmed scope does not');
     expect(content).toContain('executionSourceManifest');
     expect(content).toContain('materialRoleAssignmentId');
+    expect(content).toContain('evidence_blk_1');
+    expect(content).toContain('Select evidenceId only from evidenceCatalog');
+    expect(content).toContain(
+      'never copy, rewrite, paraphrase, or invent authoritative quote text',
+    );
   });
 
   it('fences feasibility and denies StudyPlan acceptance/completion authority', () => {

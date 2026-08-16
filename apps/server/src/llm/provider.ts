@@ -399,6 +399,26 @@ export interface CurriculumOutlineItem {
   sourceBlockIds: string[];
 }
 
+/** Exact, revision-bound excerpt owned and offered by the local server. */
+export interface CurriculumEvidenceOffer {
+  id: string;
+  materialId: string;
+  materialRevisionId: string;
+  blockId: string;
+  startOffset: number;
+  endOffset: number;
+  quote: string;
+  headingPath: string[];
+  pageNumber: number | null;
+}
+
+/** Scoped canonical identity with only authoritative in-manifest members. */
+export interface CurriculumCanonicalConceptOffer {
+  id: string;
+  displayName: string;
+  sourceConceptIds: string[];
+}
+
 export interface CurriculumProposalInput {
   workspaceName: string;
   contract: CurriculumContractContext;
@@ -410,8 +430,11 @@ export interface CurriculumProposalInput {
   /** Accepted active graph relations are optional supporting structure. */
   graphEdges: GraphEdge[];
   allowedCanonicalConceptIds: string[];
-  /** Bounded evidence space. Every proposed quote must come from these blocks. */
+  canonicalConcepts: CurriculumCanonicalConceptOffer[];
+  /** Source blocks remain local provider input; output cannot quote them directly. */
   blocks: SourceBlock[];
+  /** Exact evidence universe. Curriculum output may select only these identities. */
+  evidenceCatalog: CurriculumEvidenceOffer[];
   limits: {
     maxNodes: number;
     maxObjectives: number;
