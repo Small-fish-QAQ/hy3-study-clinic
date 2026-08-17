@@ -68,7 +68,7 @@ function revisionForBlock(
   );
 }
 
-function sourceBlockFingerprint(block: SourceBlock, revisionId: string): string {
+export function curriculumSourceBlockFingerprint(block: SourceBlock, revisionId: string): string {
   return `block_${fnv1a32(
     JSON.stringify({
       materialRevisionId: revisionId,
@@ -223,7 +223,10 @@ export function materializeCurriculumProposal(
       materialRevisionId: revision.materialRevisionId,
       structuralUnitId: null,
       sourceBlockId: block.id,
-      sourceBlockRevisionFingerprint: sourceBlockFingerprint(block, revision.materialRevisionId),
+      sourceBlockRevisionFingerprint: curriculumSourceBlockFingerprint(
+        block,
+        revision.materialRevisionId,
+      ),
     });
     sourceRefsByNode.set(nodeId, refs.slice(0, 100));
     sourceRefKeysByNode.set(nodeId, keys);

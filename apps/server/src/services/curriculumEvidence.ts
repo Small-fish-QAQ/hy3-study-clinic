@@ -157,6 +157,128 @@ export interface CurriculumEvidenceSelectionInput {
   priorityGroundings: VerifiedGrounding[];
 }
 
+export const CURRICULUM_EVIDENCE_SELECTION_SIGNALS = [
+  'predecessor_reference',
+  'concept_grounding',
+  'locality_neighbor',
+  'predecessor_lexical',
+  'contract_lexical',
+  'section_balance',
+  'fallback',
+] as const;
+export type CurriculumEvidenceSelectionSignal =
+  (typeof CURRICULUM_EVIDENCE_SELECTION_SIGNALS)[number];
+
+export interface CurriculumEvidenceBlockTrace {
+  blockId: string;
+  materialId: string;
+  sectionKey: string;
+  selectionIndex: number;
+  firstContributor: CurriculumEvidenceSelectionSignal;
+  signals: CurriculumEvidenceSelectionSignal[];
+}
+
+export interface CurriculumEvidenceSignalTrace {
+  signal: CurriculumEvidenceSelectionSignal;
+  attemptedBlockCount: number;
+  selectedBlockCount: number;
+  firstContributorBlockCount: number;
+  budgetRejectedBlockCount: number;
+}
+
+export interface CurriculumEvidenceSelectionTrace {
+  counts: {
+    corpusBlocks: number;
+    corpusMaterials: number;
+    corpusSections: number;
+    catalogBlocks: number;
+    catalogOffers: number;
+    candidateBlocks: number;
+    offeredBlocks: number;
+    offeredEvidence: number;
+    overlapBlocks: number;
+  };
+  diversity: {
+    candidateMaterials: number;
+    candidateSections: number;
+    materialCoverageRatio: number | null;
+    sectionCoverageRatio: number | null;
+  };
+  serialization: {
+    serializedInternalOfferBytes: number;
+    byteMethod: 'utf8_internal_offer_json_array';
+    estimatedTokens: number;
+    tokenEstimateMethod: 'ceil_utf8_bytes_div_4';
+  };
+  budgets: {
+    maxBlocks: number;
+    maxOffers: number;
+    maxOffersPerBlock: number;
+    minFallbackBlocks: number;
+    neighborRadius: number;
+    maxExcerptChars: number;
+  };
+  priorityOrdering: {
+    effect: 'offer_ordering_only';
+    requestedGroundingCount: number;
+    uniqueGroundingCount: number;
+    uniqueConceptGroundingCount: number;
+    /** Current callers use this lane for predecessor authority excerpts. */
+    uniqueNonConceptPriorityGroundingCount: number;
+    matchingCatalogOfferCount: number;
+    selectedPriorityOfferCount: number;
+    selectedConceptPriorityOfferCount: number;
+    selectedNonConceptPriorityOfferCount: number;
+    selectedBlocksWithPriorityOffer: number;
+    blocksWherePriorityChangedFirstOffer: number;
+  };
+  signals: CurriculumEvidenceSignalTrace[];
+  blocks: CurriculumEvidenceBlockTrace[];
+}
+
+export interface TracedCurriculumEvidenceSelection {
+  offers: CurriculumEvidenceOffer[];
+  trace: CurriculumEvidenceSelectionTrace;
+}
+
+interface InternalCurriculumEvidenceSelection {
+  offers: CurriculumEvidenceOffer[];
+  trace: CurriculumEvidenceSelectionTrace | null;
+}
+
+export interface CurriculumEvidenceRecallBudgetInput {
+  offers: CurriculumEvidenceOffer[];
+  requiredBlockIds: readonly string[];
+  blockBudget: number;
+  serializedByteBudget: number;
+  estimatedTokenBudget: number;
+}
+
+export interface CurriculumEvidenceRecallPoint {
+  recalledRequiredBlockIds: string[];
+  missingRequiredBlockIds: string[];
+  recall: number | null;
+  includedBlockCount: number;
+  includedOfferCount: number;
+  serializedInternalOfferBytes: number;
+  estimatedTokens: number;
+}
+
+export interface CurriculumEvidenceRecallAtBudgets {
+  requiredBlockIds: string[];
+  blockBudget: CurriculumEvidenceRecallPoint & { budget: number };
+  serializedByteBudget: CurriculumEvidenceRecallPoint & {
+    budgetBytes: number;
+    budgetSatisfied: boolean;
+    byteMethod: 'utf8_internal_offer_json_array';
+  };
+  estimatedTokenBudget: CurriculumEvidenceRecallPoint & {
+    budgetTokens: number;
+    budgetSatisfied: boolean;
+    tokenEstimateMethod: 'ceil_utf8_bytes_div_4';
+  };
+}
+
 function normalizedGroundingKey(grounding: Pick<VerifiedGrounding, 'blockId' | 'quote'>): string {
   return `${grounding.blockId}\u0000${grounding.quote}`;
 }
@@ -171,18 +293,131 @@ function predecessorSearchText(node: Curriculum['nodes'][number]): string {
   ].join(' ');
 }
 
+function sectionKey(block: Pick<SourceBlock, 'materialId' | 'headingPath'>): string {
+  return `${block.materialId}\u0000${block.headingPath.join('\u0001')}`;
+}
+
+function ratio(numerator: number, denominator: number): number | null {
+  return denominator === 0 ? null : numerator / denominator;
+}
+
+function serializedInternalOfferBytes(offers: readonly CurriculumEvidenceOffer[]): number {
+  return Buffer.byteLength(JSON.stringify(offers), 'utf8');
+}
+
+function estimatedTokensFromBytes(bytes: number): number {
+  return Math.ceil(bytes / 4);
+}
+
+function requireBudget(value: number, name: string): number {
+  if (!Number.isSafeInteger(value) || value < 0) {
+    throw new RangeError(`${name} must be a non-negative safe integer.`);
+  }
+  return value;
+}
+
+function uniqueInOrder(values: readonly string[]): string[] {
+  return [...new Set(values)];
+}
+
+function recallPoint(
+  offers: CurriculumEvidenceOffer[],
+  requiredBlockIds: string[],
+): CurriculumEvidenceRecallPoint {
+  const includedBlockIds = new Set(offers.map((offer) => offer.blockId));
+  const recalledRequiredBlockIds = requiredBlockIds.filter((id) => includedBlockIds.has(id));
+  const missingRequiredBlockIds = requiredBlockIds.filter((id) => !includedBlockIds.has(id));
+  const bytes = serializedInternalOfferBytes(offers);
+  return {
+    recalledRequiredBlockIds,
+    missingRequiredBlockIds,
+    recall:
+      requiredBlockIds.length === 0
+        ? null
+        : recalledRequiredBlockIds.length / requiredBlockIds.length,
+    includedBlockCount: includedBlockIds.size,
+    includedOfferCount: offers.length,
+    serializedInternalOfferBytes: bytes,
+    estimatedTokens: estimatedTokensFromBytes(bytes),
+  };
+}
+
+function largestSerializedPrefix(
+  offers: CurriculumEvidenceOffer[],
+  fits: (bytes: number) => boolean,
+): CurriculumEvidenceOffer[] {
+  let accepted: CurriculumEvidenceOffer[] = [];
+  for (let count = 0; count <= offers.length; count += 1) {
+    const candidate = offers.slice(0, count);
+    if (!fits(serializedInternalOfferBytes(candidate))) break;
+    accepted = candidate;
+  }
+  return accepted;
+}
+
+/**
+ * Exact block-ID recall over the already-ranked internal offers. Byte budgets
+ * use the internal offer JSON array exactly; token budgets are explicitly
+ * estimates (`ceil(bytes / 4)`), never provider request or usage telemetry.
+ */
+export function evaluateCurriculumEvidenceRecallAtBudgets({
+  offers,
+  requiredBlockIds,
+  blockBudget,
+  serializedByteBudget,
+  estimatedTokenBudget,
+}: CurriculumEvidenceRecallBudgetInput): CurriculumEvidenceRecallAtBudgets {
+  const checkedBlockBudget = requireBudget(blockBudget, 'blockBudget');
+  const checkedByteBudget = requireBudget(serializedByteBudget, 'serializedByteBudget');
+  const checkedTokenBudget = requireBudget(estimatedTokenBudget, 'estimatedTokenBudget');
+  const required = uniqueInOrder(requiredBlockIds);
+  const orderedBlocks = uniqueInOrder(offers.map((offer) => offer.blockId));
+  const blockIdsWithinBudget = new Set(orderedBlocks.slice(0, checkedBlockBudget));
+  const blockBudgetOffers = offers.filter((offer) => blockIdsWithinBudget.has(offer.blockId));
+  const byteBudgetOffers = largestSerializedPrefix(offers, (bytes) => bytes <= checkedByteBudget);
+  const tokenBudgetOffers = largestSerializedPrefix(
+    offers,
+    (bytes) => estimatedTokensFromBytes(bytes) <= checkedTokenBudget,
+  );
+
+  return {
+    requiredBlockIds: required,
+    blockBudget: {
+      budget: checkedBlockBudget,
+      ...recallPoint(blockBudgetOffers, required),
+    },
+    serializedByteBudget: {
+      budgetBytes: checkedByteBudget,
+      budgetSatisfied: serializedInternalOfferBytes(byteBudgetOffers) <= checkedByteBudget,
+      byteMethod: 'utf8_internal_offer_json_array',
+      ...recallPoint(byteBudgetOffers, required),
+    },
+    estimatedTokenBudget: {
+      budgetTokens: checkedTokenBudget,
+      budgetSatisfied:
+        estimatedTokensFromBytes(serializedInternalOfferBytes(tokenBudgetOffers)) <=
+        checkedTokenBudget,
+      tokenEstimateMethod: 'ceil_utf8_bytes_div_4',
+      ...recallPoint(tokenBudgetOffers, required),
+    },
+  };
+}
+
 /**
  * Select provider candidates without granting them authority. Exact bindings
  * remain in the full local catalog; this function only limits what Hy3 sees.
  */
-export function selectCurriculumEvidenceOffers({
-  catalog,
-  blocks,
-  predecessor,
-  concepts,
-  contract,
-  priorityGroundings,
-}: CurriculumEvidenceSelectionInput): CurriculumEvidenceOffer[] {
+function selectCurriculumEvidenceOffersInternal(
+  {
+    catalog,
+    blocks,
+    predecessor,
+    concepts,
+    contract,
+    priorityGroundings,
+  }: CurriculumEvidenceSelectionInput,
+  includeTrace: boolean,
+): InternalCurriculumEvidenceSelection {
   const blockById = new Map(blocks.map((block) => [block.id, block]));
   const orderedByMaterial = new Map<string, SourceBlock[]>();
   for (const block of blocks) {
@@ -197,22 +432,41 @@ export function selectCurriculumEvidenceOffers({
   );
 
   const selectedBlockIds = new Set<string>();
-  const addBlock = (blockId: string): void => {
-    if (
-      selectedBlockIds.size < CURRICULUM_PROVIDER_EVIDENCE_BLOCK_BUDGET &&
-      blockById.has(blockId)
-    ) {
-      selectedBlockIds.add(blockId);
+  const attemptedBySignal = includeTrace
+    ? new Map(CURRICULUM_EVIDENCE_SELECTION_SIGNALS.map((signal) => [signal, new Set<string>()]))
+    : null;
+  const rejectedBySignal = includeTrace
+    ? new Map(CURRICULUM_EVIDENCE_SELECTION_SIGNALS.map((signal) => [signal, new Set<string>()]))
+    : null;
+  const signalsByBlock = includeTrace
+    ? new Map<string, Set<CurriculumEvidenceSelectionSignal>>()
+    : null;
+  const firstContributorByBlock = includeTrace
+    ? new Map<string, CurriculumEvidenceSelectionSignal>()
+    : null;
+  const addBlock = (blockId: string, signal: CurriculumEvidenceSelectionSignal): void => {
+    if (!blockById.has(blockId)) return;
+    attemptedBySignal?.get(signal)!.add(blockId);
+    if (selectedBlockIds.has(blockId)) {
+      signalsByBlock?.get(blockId)!.add(signal);
+      return;
     }
+    if (selectedBlockIds.size >= CURRICULUM_PROVIDER_EVIDENCE_BLOCK_BUDGET) {
+      rejectedBySignal?.get(signal)!.add(blockId);
+      return;
+    }
+    selectedBlockIds.add(blockId);
+    signalsByBlock?.set(blockId, new Set([signal]));
+    firstContributorByBlock?.set(blockId, signal);
   };
 
   for (const node of predecessor?.nodes.filter((candidate) => candidate.kind === 'learning_unit') ??
     []) {
     for (const ref of node.sourceReferences.slice(0, CURRICULUM_PREDECESSOR_REFS_PER_UNIT)) {
-      if (ref.sourceBlockId) addBlock(ref.sourceBlockId);
+      if (ref.sourceBlockId) addBlock(ref.sourceBlockId, 'predecessor_reference');
     }
   }
-  for (const concept of concepts) addBlock(concept.grounding.blockId);
+  for (const concept of concepts) addBlock(concept.grounding.blockId, 'concept_grounding');
 
   for (const blockId of [...selectedBlockIds]) {
     const block = blockById.get(blockId);
@@ -225,14 +479,14 @@ export function selectCurriculumEvidenceOffers({
       offset += 1
     ) {
       const neighbor = siblings[position + offset];
-      if (neighbor) addBlock(neighbor.id);
+      if (neighbor) addBlock(neighbor.id, 'locality_neighbor');
     }
   }
 
   for (const node of predecessor?.nodes.filter((candidate) => candidate.kind === 'learning_unit') ??
     []) {
     for (const result of searchSourceBlocks(blocks, predecessorSearchText(node), { limit: 2 })) {
-      addBlock(result.blockId);
+      addBlock(result.blockId, 'predecessor_lexical');
     }
   }
   const contractQuery = [
@@ -240,7 +494,9 @@ export function selectCurriculumEvidenceOffers({
     contract.targetOutcome.description,
     ...contract.courseScope.includedTopics,
   ].join(' ');
-  for (const result of searchSourceBlocks(blocks, contractQuery)) addBlock(result.blockId);
+  for (const result of searchSourceBlocks(blocks, contractQuery)) {
+    addBlock(result.blockId, 'contract_lexical');
+  }
 
   const sectionGroups = new Map<string, SourceBlock[]>();
   for (const block of blocks) {
@@ -250,13 +506,13 @@ export function selectCurriculumEvidenceOffers({
     sectionGroups.set(key, group);
   }
   for (const group of sectionGroups.values()) {
-    addBlock(group[0]!.id);
-    addBlock(group[Math.floor(group.length / 2)]!.id);
+    addBlock(group[0]!.id, 'section_balance');
+    addBlock(group[Math.floor(group.length / 2)]!.id, 'section_balance');
   }
   if (selectedBlockIds.size < CURRICULUM_PROVIDER_MIN_FALLBACK_BLOCKS && blocks.length > 0) {
     const stride = blocks.length / CURRICULUM_PROVIDER_MIN_FALLBACK_BLOCKS;
     for (let index = 0; index < CURRICULUM_PROVIDER_MIN_FALLBACK_BLOCKS; index += 1) {
-      addBlock(blocks[Math.min(blocks.length - 1, Math.floor(index * stride))]!.id);
+      addBlock(blocks[Math.min(blocks.length - 1, Math.floor(index * stride))]!.id, 'fallback');
     }
   }
 
@@ -268,7 +524,16 @@ export function selectCurriculumEvidenceOffers({
     offers.push(offer);
     offersByBlock.set(offer.blockId, offers);
   }
-  offersByBlock.forEach((offers) =>
+  let blocksWherePriorityChangedFirstOffer = 0;
+  offersByBlock.forEach((offers) => {
+    const unprioritizedFirst = includeTrace
+      ? [...offers].sort(
+          (left, right) =>
+            left.startOffset - right.startOffset ||
+            right.quote.length - left.quote.length ||
+            left.bindingId.localeCompare(right.bindingId),
+        )[0]?.bindingId
+      : undefined;
     offers.sort((left, right) => {
       const leftPriority = priorityKeys.has(normalizedGroundingKey(left)) ? 0 : 1;
       const rightPriority = priorityKeys.has(normalizedGroundingKey(right)) ? 0 : 1;
@@ -278,17 +543,143 @@ export function selectCurriculumEvidenceOffers({
         right.quote.length - left.quote.length ||
         left.bindingId.localeCompare(right.bindingId)
       );
-    }),
-  );
+    });
+    if (includeTrace && offers[0]?.bindingId !== unprioritizedFirst) {
+      blocksWherePriorityChangedFirstOffer += 1;
+    }
+  });
 
   const selected: CurriculumEvidenceOffer[] = [];
+  let offerBudgetReached = false;
   for (let pass = 0; pass < CURRICULUM_PROVIDER_OFFERS_PER_BLOCK; pass += 1) {
     for (const blockId of selectedBlockIds) {
       const offer = offersByBlock.get(blockId)?.[pass];
       if (!offer) continue;
       selected.push({ ...offer, id: `E${selected.length + 1}` });
-      if (selected.length >= CURRICULUM_PROVIDER_EVIDENCE_OFFER_BUDGET) return selected;
+      if (selected.length >= CURRICULUM_PROVIDER_EVIDENCE_OFFER_BUDGET) {
+        offerBudgetReached = true;
+        break;
+      }
     }
+    if (offerBudgetReached) break;
   }
-  return selected;
+
+  if (!includeTrace) return { offers: selected, trace: null };
+
+  const corpusMaterialIds = new Set(blocks.map((block) => block.materialId));
+  const corpusSectionKeys = new Set(blocks.map(sectionKey));
+  const catalogBlockIds = new Set(catalog.map((offer) => offer.blockId));
+  const offeredBlockIds = new Set(selected.map((offer) => offer.blockId));
+  const candidateBlocks = [...selectedBlockIds].map((blockId, selectionIndex) => {
+    const block = blockById.get(blockId)!;
+    return {
+      blockId,
+      materialId: block.materialId,
+      sectionKey: sectionKey(block),
+      selectionIndex,
+      firstContributor: firstContributorByBlock!.get(blockId)!,
+      signals: CURRICULUM_EVIDENCE_SELECTION_SIGNALS.filter((signal) =>
+        signalsByBlock!.get(blockId)!.has(signal),
+      ),
+    } satisfies CurriculumEvidenceBlockTrace;
+  });
+  const candidateMaterialIds = new Set(candidateBlocks.map((block) => block.materialId));
+  const candidateSectionKeys = new Set(candidateBlocks.map((block) => block.sectionKey));
+  const conceptPriorityKeys = new Set(
+    concepts.map((concept) => normalizedGroundingKey(concept.grounding)),
+  );
+  const selectedPriorityOffers = selected.filter((offer) =>
+    priorityKeys.has(normalizedGroundingKey(offer)),
+  );
+  const selectedConceptPriorityOffers = selectedPriorityOffers.filter((offer) =>
+    conceptPriorityKeys.has(normalizedGroundingKey(offer)),
+  );
+  const matchingCatalogOfferCount = catalog.filter((offer) =>
+    priorityKeys.has(normalizedGroundingKey(offer)),
+  ).length;
+  const bytes = serializedInternalOfferBytes(selected);
+
+  return {
+    offers: selected,
+    trace: {
+      counts: {
+        corpusBlocks: blocks.length,
+        corpusMaterials: corpusMaterialIds.size,
+        corpusSections: corpusSectionKeys.size,
+        catalogBlocks: catalogBlockIds.size,
+        catalogOffers: catalog.length,
+        candidateBlocks: selectedBlockIds.size,
+        offeredBlocks: offeredBlockIds.size,
+        offeredEvidence: selected.length,
+        overlapBlocks: candidateBlocks.filter((block) => block.signals.length > 1).length,
+      },
+      diversity: {
+        candidateMaterials: candidateMaterialIds.size,
+        candidateSections: candidateSectionKeys.size,
+        materialCoverageRatio: ratio(candidateMaterialIds.size, corpusMaterialIds.size),
+        sectionCoverageRatio: ratio(candidateSectionKeys.size, corpusSectionKeys.size),
+      },
+      serialization: {
+        serializedInternalOfferBytes: bytes,
+        byteMethod: 'utf8_internal_offer_json_array',
+        estimatedTokens: estimatedTokensFromBytes(bytes),
+        tokenEstimateMethod: 'ceil_utf8_bytes_div_4',
+      },
+      budgets: {
+        maxBlocks: CURRICULUM_PROVIDER_EVIDENCE_BLOCK_BUDGET,
+        maxOffers: CURRICULUM_PROVIDER_EVIDENCE_OFFER_BUDGET,
+        maxOffersPerBlock: CURRICULUM_PROVIDER_OFFERS_PER_BLOCK,
+        minFallbackBlocks: CURRICULUM_PROVIDER_MIN_FALLBACK_BLOCKS,
+        neighborRadius: CURRICULUM_PROVIDER_NEIGHBOR_RADIUS,
+        maxExcerptChars: CURRICULUM_EVIDENCE_EXCERPT_MAX_CHARS,
+      },
+      priorityOrdering: {
+        effect: 'offer_ordering_only',
+        requestedGroundingCount: priorityGroundings.length,
+        uniqueGroundingCount: priorityKeys.size,
+        uniqueConceptGroundingCount: [...priorityKeys].filter((key) => conceptPriorityKeys.has(key))
+          .length,
+        uniqueNonConceptPriorityGroundingCount: [...priorityKeys].filter(
+          (key) => !conceptPriorityKeys.has(key),
+        ).length,
+        matchingCatalogOfferCount,
+        selectedPriorityOfferCount: selectedPriorityOffers.length,
+        selectedConceptPriorityOfferCount: selectedConceptPriorityOffers.length,
+        selectedNonConceptPriorityOfferCount:
+          selectedPriorityOffers.length - selectedConceptPriorityOffers.length,
+        selectedBlocksWithPriorityOffer: new Set(
+          selectedPriorityOffers.map((offer) => offer.blockId),
+        ).size,
+        blocksWherePriorityChangedFirstOffer,
+      },
+      signals: CURRICULUM_EVIDENCE_SELECTION_SIGNALS.map((signal) => ({
+        signal,
+        attemptedBlockCount: attemptedBySignal!.get(signal)!.size,
+        selectedBlockCount: [...attemptedBySignal!.get(signal)!].filter((id) =>
+          selectedBlockIds.has(id),
+        ).length,
+        firstContributorBlockCount: [...firstContributorByBlock!.values()].filter(
+          (candidate) => candidate === signal,
+        ).length,
+        budgetRejectedBlockCount: rejectedBySignal!.get(signal)!.size,
+      })),
+      blocks: candidateBlocks,
+    },
+  };
+}
+
+/** Evaluation selector with deterministic signal, diversity, and serialization telemetry. */
+export function selectCurriculumEvidenceOffersWithTrace(
+  input: CurriculumEvidenceSelectionInput,
+): TracedCurriculumEvidenceSelection {
+  const result = selectCurriculumEvidenceOffersInternal(input, true);
+  if (!result.trace) throw new Error('Curriculum evidence trace was not collected.');
+  return { offers: result.offers, trace: result.trace };
+}
+
+/** Production selector. Keep this output-only API stable; tracing is opt-in. */
+export function selectCurriculumEvidenceOffers(
+  input: CurriculumEvidenceSelectionInput,
+): CurriculumEvidenceOffer[] {
+  return selectCurriculumEvidenceOffersInternal(input, false).offers;
 }

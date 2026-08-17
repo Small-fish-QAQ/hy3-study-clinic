@@ -51,6 +51,14 @@ The immutable final tag's historical results remain recorded in the release line
 
 The server and shared suites also cover the implemented Phase 1-4 route: MaterialRevision lineage and source authority; Contract/Curriculum/StudyPlan/Agenda validation and atomic activation; deterministic Course Preparation with learner-governed stops, durable StudySession lifecycle, idempotency, transcript recovery, and mixed-initiative controls; and formal-evidence progression, replan candidates, and goal outcomes. Web suites cover the Course selection shell, Course Home primary action and preparation checkpoints, Course Materials, Curriculum, Chinese-named `学习` workspace, consolidated Progress destination, embedded Explore graph, and the focused Settings surface. They also assert legacy-destination consolidation, useful empty states, formal/informal separation, prose-independent completion state, request cancellation and post-cancel reconciliation, stale responses, and Course/document switching safety.
 
+The reusable Curriculum quality and retrieval evaluation checks are offline and make no provider call:
+
+```bash
+npm run test -w @hy3-clinic/server -- src/eval/curriculumQuality.test.ts src/services/curriculumEvidence.test.ts
+```
+
+The quality-profile suite verifies deterministic repeated output and capped comparisons, a root-only Curriculum, multi-module hierarchy and distribution metrics, source/material/section mapping and exact revision fingerprints, prerequisite cycles and invalid references, synthesis integrity, current Concept/canonical membership authority, explicitly supplied execution capability/frontier eligibility, cross-Course and stale-revision rejection, and the heuristic/nonclaim boundary. The evidence suite verifies the unchanged bounded offer list plus its opt-in selection trace, signal contributions, configured block/offer limits, fallback behavior, priority offer ordering, exact internal-offer UTF-8 JSON bytes, explicitly estimated token counts, and exact required-SourceBlock recall at block, internal-offer byte, and estimated-token budgets. These tests evaluate measurement logic and ranked selection diagnostics, not the provider DTO or full prompt shape; they do not call Hy3, score pedagogy, establish semantic entailment, or change production selection.
+
 Focused provider/settings checks can be run without calling a real provider:
 
 ```bash
