@@ -5,16 +5,21 @@ import type {
   ExecutionSourceManifest,
   LearningContract,
   SourceBlock,
+  VerifiedGrounding,
 } from '@hy3-clinic/shared';
 import { verifyGrounding } from '../grounding/verify.js';
+import type { CurriculumEvidenceOffer } from '../llm/provider.js';
+import { searchSourceBlocks } from '../retrieval/lexical.js';
 import {
   buildCurriculumEvidenceCatalog,
+  buildCurriculumEvidenceSignalRankings,
   CURRICULUM_EVIDENCE_EXCERPT_MAX_CHARS,
   CURRICULUM_PROVIDER_EVIDENCE_BLOCK_BUDGET,
   CURRICULUM_PROVIDER_EVIDENCE_OFFER_BUDGET,
   evaluateCurriculumEvidenceRecallAtBudgets,
   selectCurriculumEvidenceOffers,
   selectCurriculumEvidenceOffersWithTrace,
+  type CurriculumEvidenceSelectionInput,
 } from './curriculumEvidence.js';
 
 const block: SourceBlock = {
@@ -44,6 +49,192 @@ const manifest: ExecutionSourceManifest = {
     },
   ],
 };
+
+const REFERENCE_BLOCK_BUDGET = 160;
+const REFERENCE_OFFER_BUDGET = 240;
+const REFERENCE_OFFERS_PER_BLOCK = 2;
+const REFERENCE_PREDECESSOR_REFS_PER_UNIT = 6;
+const REFERENCE_MIN_FALLBACK_BLOCKS = 64;
+const REFERENCE_NEIGHBOR_RADIUS = 1;
+
+function referenceGroundingKey(grounding: Pick<VerifiedGrounding, 'blockId' | 'quote'>): string {
+  return `${grounding.blockId}\u0000${grounding.quote}`;
+}
+
+function referencePredecessorSearchText(node: Curriculum['nodes'][number]): string {
+  return [
+    node.title,
+    ...(node.learningUnit?.objectives.flatMap((objective) => [
+      objective.title,
+      objective.description,
+    ]) ?? []),
+  ].join(' ');
+}
+
+/** Frozen output-only copy of the production selector at 0836849. */
+function selectCurriculumEvidenceOffersAt0836849({
+  catalog,
+  blocks,
+  predecessor,
+  concepts,
+  contract,
+  priorityGroundings,
+}: CurriculumEvidenceSelectionInput): CurriculumEvidenceOffer[] {
+  const blockById = new Map(blocks.map((candidate) => [candidate.id, candidate]));
+  const orderedByMaterial = new Map<string, SourceBlock[]>();
+  for (const candidate of blocks) {
+    const materialBlocks = orderedByMaterial.get(candidate.materialId) ?? [];
+    materialBlocks.push(candidate);
+    orderedByMaterial.set(candidate.materialId, materialBlocks);
+  }
+  orderedByMaterial.forEach((materialBlocks) =>
+    materialBlocks.sort(
+      (left, right) => left.index - right.index || left.id.localeCompare(right.id),
+    ),
+  );
+
+  const selectedBlockIds = new Set<string>();
+  const addBlock = (blockId: string): void => {
+    if (!blockById.has(blockId) || selectedBlockIds.has(blockId)) return;
+    if (selectedBlockIds.size >= REFERENCE_BLOCK_BUDGET) return;
+    selectedBlockIds.add(blockId);
+  };
+
+  for (const node of predecessor?.nodes.filter((candidate) => candidate.kind === 'learning_unit') ??
+    []) {
+    for (const ref of node.sourceReferences.slice(0, REFERENCE_PREDECESSOR_REFS_PER_UNIT)) {
+      if (ref.sourceBlockId) addBlock(ref.sourceBlockId);
+    }
+  }
+  for (const concept of concepts) addBlock(concept.grounding.blockId);
+
+  for (const blockId of [...selectedBlockIds]) {
+    const candidate = blockById.get(blockId);
+    if (!candidate) continue;
+    const siblings = orderedByMaterial.get(candidate.materialId) ?? [];
+    const position = siblings.findIndex((sibling) => sibling.id === blockId);
+    for (
+      let offset = -REFERENCE_NEIGHBOR_RADIUS;
+      offset <= REFERENCE_NEIGHBOR_RADIUS;
+      offset += 1
+    ) {
+      const neighbor = siblings[position + offset];
+      if (neighbor) addBlock(neighbor.id);
+    }
+  }
+
+  for (const node of predecessor?.nodes.filter((candidate) => candidate.kind === 'learning_unit') ??
+    []) {
+    for (const result of searchSourceBlocks(blocks, referencePredecessorSearchText(node), {
+      limit: 2,
+    })) {
+      addBlock(result.blockId);
+    }
+  }
+  const contractQuery = [
+    contract.intent,
+    contract.targetOutcome.description,
+    ...contract.courseScope.includedTopics,
+  ].join(' ');
+  for (const result of searchSourceBlocks(blocks, contractQuery)) addBlock(result.blockId);
+
+  const sectionGroups = new Map<string, SourceBlock[]>();
+  for (const candidate of blocks) {
+    const key = `${candidate.materialId}\u0000${candidate.headingPath.join('\u0001')}`;
+    const group = sectionGroups.get(key) ?? [];
+    group.push(candidate);
+    sectionGroups.set(key, group);
+  }
+  for (const group of sectionGroups.values()) {
+    addBlock(group[0]!.id);
+    addBlock(group[Math.floor(group.length / 2)]!.id);
+  }
+  if (selectedBlockIds.size < REFERENCE_MIN_FALLBACK_BLOCKS && blocks.length > 0) {
+    const stride = blocks.length / REFERENCE_MIN_FALLBACK_BLOCKS;
+    for (let index = 0; index < REFERENCE_MIN_FALLBACK_BLOCKS; index += 1) {
+      addBlock(blocks[Math.min(blocks.length - 1, Math.floor(index * stride))]!.id);
+    }
+  }
+
+  const priorityKeys = new Set(priorityGroundings.map(referenceGroundingKey));
+  const offersByBlock = new Map<string, CurriculumEvidenceOffer[]>();
+  for (const offer of catalog) {
+    if (!selectedBlockIds.has(offer.blockId)) continue;
+    const offers = offersByBlock.get(offer.blockId) ?? [];
+    offers.push(offer);
+    offersByBlock.set(offer.blockId, offers);
+  }
+  offersByBlock.forEach((offers) => {
+    offers.sort((left, right) => {
+      const leftPriority = priorityKeys.has(referenceGroundingKey(left)) ? 0 : 1;
+      const rightPriority = priorityKeys.has(referenceGroundingKey(right)) ? 0 : 1;
+      return (
+        leftPriority - rightPriority ||
+        left.startOffset - right.startOffset ||
+        right.quote.length - left.quote.length ||
+        left.bindingId.localeCompare(right.bindingId)
+      );
+    });
+  });
+
+  const selected: CurriculumEvidenceOffer[] = [];
+  let offerBudgetReached = false;
+  for (let pass = 0; pass < REFERENCE_OFFERS_PER_BLOCK; pass += 1) {
+    for (const blockId of selectedBlockIds) {
+      const offer = offersByBlock.get(blockId)?.[pass];
+      if (!offer) continue;
+      selected.push({ ...offer, id: `E${selected.length + 1}` });
+      if (selected.length >= REFERENCE_OFFER_BUDGET) {
+        offerBudgetReached = true;
+        break;
+      }
+    }
+    if (offerBudgetReached) break;
+  }
+  return selected;
+}
+
+function makeSelectionOffers(blocks: readonly SourceBlock[]): CurriculumEvidenceOffer[] {
+  return blocks.flatMap((candidate) =>
+    ['Primary', 'Priority', 'Tertiary'].map((label) => {
+      const quote = `${label} evidence ${candidate.id}.`;
+      const startOffset = candidate.content.indexOf(quote);
+      return {
+        id: `catalog_${candidate.id}_${label.toLowerCase()}`,
+        bindingId: `binding_${candidate.id}_${label.toLowerCase()}`,
+        materialId: candidate.materialId,
+        materialRevisionId: candidate.materialRevisionId,
+        blockId: candidate.id,
+        startOffset,
+        endOffset: startOffset + quote.length,
+        quote,
+        headingPath: candidate.headingPath,
+        pageNumber: candidate.pageNumber,
+      };
+    }),
+  );
+}
+
+function conceptFor(candidate: SourceBlock): Concept {
+  const quote = `Primary evidence ${candidate.id}.`;
+  return {
+    id: `concept_${candidate.id}`,
+    materialId: candidate.materialId,
+    materialRevisionId: candidate.materialRevisionId,
+    name: candidate.id,
+    summary: quote,
+    importance: 'high',
+    grounding: {
+      blockId: candidate.id,
+      quote,
+      startOffset: 0,
+      endOffset: quote.length,
+      occurrenceCount: 1,
+      reanchored: false,
+    },
+    createdAt: '2026-01-01T00:00:00.000Z',
+  };
+}
 
 describe('Curriculum evidence catalog', () => {
   it('offers stable bounded exact excerpts and retains preferred authority text', () => {
@@ -256,6 +447,236 @@ describe('Curriculum evidence catalog', () => {
     expect(retained?.quote).toBe('Needle fallback evidence.');
     expect(catalog.some((offer) => offer.bindingId === retained?.bindingId)).toBe(true);
     expect(selected.every((offer) => blocks.some((item) => item.id === offer.blockId))).toBe(true);
+  });
+
+  it('preserves the 0836849 production output byte-for-byte across mixed signals and budgets', () => {
+    const blocks = Array.from({ length: 210 }, (_, index): SourceBlock => {
+      const id = `mixed_${index.toString().padStart(3, '0')}`;
+      const lexicalText =
+        index === 40 || index === 41
+          ? ' predecessoralpha'
+          : index === 42 || index === 43
+            ? ' predecessorbeta'
+            : index >= 80 && index < 88
+              ? ' contractomega'
+              : '';
+      const content =
+        `Primary evidence ${id}. Priority evidence ${id}. Tertiary evidence ${id}.` + lexicalText;
+      const materialSuffix = index < 105 ? 'a' : 'b';
+      return {
+        ...block,
+        id,
+        materialId: `mat_${materialSuffix}`,
+        materialRevisionId: `rev_${materialSuffix}`,
+        index: index % 105,
+        heading: `Section ${index}`,
+        headingPath: ['Section', index.toString()],
+        content,
+        endOffset: content.length,
+      };
+    });
+    const catalog = makeSelectionOffers(blocks);
+    const predecessor = {
+      nodes: [
+        {
+          id: 'unit_alpha',
+          kind: 'learning_unit',
+          title: 'predecessoralpha',
+          sourceReferences: [150, 151, 152, 153, 154, 155, 156].map((index) => ({
+            sourceBlockId: `mixed_${index.toString().padStart(3, '0')}`,
+          })),
+          learningUnit: { objectives: [] },
+        },
+        {
+          id: 'unit_beta',
+          kind: 'learning_unit',
+          title: 'predecessorbeta',
+          sourceReferences: [
+            { sourceBlockId: 'foreign_block' },
+            { sourceBlockId: 'mixed_010' },
+            { sourceBlockId: 'mixed_011' },
+          ],
+          learningUnit: { objectives: [] },
+        },
+      ],
+    } as unknown as Curriculum;
+    const priorityBlock = blocks[150]!;
+    const priorityQuote = `Priority evidence ${priorityBlock.id}.`;
+    const priorityStart = priorityBlock.content.indexOf(priorityQuote);
+    const input: CurriculumEvidenceSelectionInput = {
+      catalog,
+      blocks,
+      predecessor,
+      concepts: [conceptFor(blocks[60]!), conceptFor(blocks[100]!)],
+      contract: {
+        intent: 'contractomega',
+        targetOutcome: { description: 'contractomega' },
+        courseScope: { includedTopics: ['contractomega'] },
+      } as unknown as LearningContract,
+      priorityGroundings: [
+        {
+          blockId: priorityBlock.id,
+          quote: priorityQuote,
+          startOffset: priorityStart,
+          endOffset: priorityStart + priorityQuote.length,
+          occurrenceCount: 1,
+          reanchored: false,
+        },
+      ],
+    };
+
+    const reference = selectCurriculumEvidenceOffersAt0836849(input);
+    const current = selectCurriculumEvidenceOffers(input);
+    const traced = selectCurriculumEvidenceOffersWithTrace(input);
+
+    expect(
+      Buffer.from(JSON.stringify(current)).equals(Buffer.from(JSON.stringify(reference))),
+    ).toBe(true);
+    expect(new Set(current.map((offer) => offer.blockId)).size).toBe(REFERENCE_BLOCK_BUDGET);
+    expect(current).toHaveLength(REFERENCE_OFFER_BUDGET);
+    expect(current[0]?.quote).toBe(priorityQuote);
+    for (const signal of [
+      'predecessor_reference',
+      'concept_grounding',
+      'locality_neighbor',
+      'predecessor_lexical',
+      'contract_lexical',
+      'section_balance',
+    ] as const) {
+      expect(
+        traced.trace.signals.find((candidate) => candidate.signal === signal)
+          ?.firstContributorBlockCount,
+      ).toBeGreaterThan(0);
+    }
+  });
+
+  it('preserves the 0836849 fallback output byte-for-byte', () => {
+    const blocks = Array.from({ length: 100 }, (_, index): SourceBlock => {
+      const id = `fallback_parity_${index.toString().padStart(3, '0')}`;
+      const content = `Primary evidence ${id}. Priority evidence ${id}. Tertiary evidence ${id}.`;
+      return {
+        ...block,
+        id,
+        index,
+        heading: 'Shared section',
+        headingPath: ['Shared section'],
+        content,
+        endOffset: content.length,
+      };
+    });
+    const input: CurriculumEvidenceSelectionInput = {
+      catalog: makeSelectionOffers(blocks),
+      blocks,
+      predecessor: null,
+      concepts: [],
+      contract: {
+        intent: 'absentneedle',
+        targetOutcome: { description: 'absentneedle' },
+        courseScope: { includedTopics: [] },
+      } as unknown as LearningContract,
+      priorityGroundings: [],
+    };
+
+    const reference = selectCurriculumEvidenceOffersAt0836849(input);
+    const current = selectCurriculumEvidenceOffers(input);
+    const traced = selectCurriculumEvidenceOffersWithTrace(input);
+
+    expect(
+      Buffer.from(JSON.stringify(current)).equals(Buffer.from(JSON.stringify(reference))),
+    ).toBe(true);
+    expect(new Set(current.map((offer) => offer.blockId))).toHaveLength(
+      REFERENCE_MIN_FALLBACK_BLOCKS,
+    );
+    expect(
+      traced.trace.signals.find((candidate) => candidate.signal === 'fallback')
+        ?.firstContributorBlockCount,
+    ).toBeGreaterThan(0);
+  });
+
+  it('exposes exact deterministic production signal rankings for offline evaluation', () => {
+    const rankingBlock = (
+      id: string,
+      materialId: string,
+      index: number,
+      headingPath: string[],
+      content: string,
+    ): SourceBlock => ({
+      ...block,
+      id,
+      materialId,
+      materialRevisionId: `rev_${materialId}`,
+      index,
+      heading: headingPath.at(-1) ?? null,
+      headingPath,
+      content,
+      endOffset: content.length,
+    });
+    const blocks = [
+      rankingBlock('rank_z', 'mat_a', 0, ['A'], 'rankterm shared'),
+      rankingBlock('rank_a', 'mat_a', 0, ['A'], 'rankterm shared'),
+      rankingBlock('rank_m', 'mat_a', 2, ['A'], 'ordinary source'),
+      rankingBlock('rank_b', 'mat_b', 0, ['B'], 'contractterm shared'),
+      rankingBlock('rank_c', 'mat_b', 1, ['B'], 'contractterm shared'),
+      rankingBlock('rank_d', 'mat_b', 2, ['C'], 'ordinary source'),
+    ];
+    const foreign = rankingBlock('rank_foreign', 'mat_foreign', 0, ['Foreign'], 'rankterm');
+    const input = {
+      blocks,
+      predecessor: {
+        nodes: [
+          {
+            id: 'unit_rank',
+            kind: 'learning_unit',
+            title: 'rankterm',
+            sourceReferences: [
+              { sourceBlockId: foreign.id },
+              { sourceBlockId: 'rank_z' },
+              { sourceBlockId: 'rank_a' },
+              { sourceBlockId: 'rank_z' },
+              { sourceBlockId: 'rank_m' },
+              { sourceBlockId: 'rank_b' },
+              { sourceBlockId: 'rank_c' },
+            ],
+            learningUnit: { objectives: [] },
+          },
+          {
+            id: 'section_rank',
+            kind: 'section',
+            title: 'Ignored organization node',
+            sourceReferences: [{ sourceBlockId: 'rank_d' }],
+          },
+        ],
+      } as unknown as Curriculum,
+      concepts: [conceptFor(blocks[2]!), conceptFor(foreign), conceptFor(blocks[2]!)],
+      contract: {
+        intent: 'contractterm',
+        targetOutcome: { description: 'contractterm' },
+        courseScope: { includedTopics: ['contractterm'] },
+      } as unknown as LearningContract,
+    };
+
+    const rankings = buildCurriculumEvidenceSignalRankings(input);
+
+    expect(buildCurriculumEvidenceSignalRankings(input)).toEqual(rankings);
+    expect(rankings).toEqual([
+      {
+        signal: 'predecessor_reference',
+        blockIds: ['rank_z', 'rank_a', 'rank_m', 'rank_b'],
+      },
+      { signal: 'concept_grounding', blockIds: ['rank_m'] },
+      {
+        signal: 'locality_neighbor',
+        blockIds: ['rank_a', 'rank_z', 'rank_m', 'rank_b', 'rank_c'],
+      },
+      { signal: 'predecessor_lexical', blockIds: ['rank_a', 'rank_z'] },
+      { signal: 'contract_lexical', blockIds: ['rank_b', 'rank_c'] },
+      { signal: 'section_balance', blockIds: ['rank_z', 'rank_a', 'rank_b', 'rank_c', 'rank_d'] },
+      {
+        signal: 'fallback',
+        blockIds: ['rank_z', 'rank_a', 'rank_m', 'rank_b', 'rank_c', 'rank_d'],
+      },
+    ]);
+    expect(rankings.flatMap((ranking) => ranking.blockIds)).not.toContain(foreign.id);
   });
 
   it('traces deterministic overlapping signals without changing production selection', () => {

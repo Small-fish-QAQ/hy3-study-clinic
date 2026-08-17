@@ -169,6 +169,11 @@ export const CURRICULUM_EVIDENCE_SELECTION_SIGNALS = [
 export type CurriculumEvidenceSelectionSignal =
   (typeof CURRICULUM_EVIDENCE_SELECTION_SIGNALS)[number];
 
+export interface CurriculumEvidenceSignalRanking {
+  signal: CurriculumEvidenceSelectionSignal;
+  blockIds: string[];
+}
+
 export interface CurriculumEvidenceBlockTrace {
   blockId: string;
   materialId: string;
@@ -320,6 +325,136 @@ function uniqueInOrder(values: readonly string[]): string[] {
   return [...new Set(values)];
 }
 
+/**
+ * Expose the production selector's named rank channels for offline evaluation.
+ * The channels contain current-corpus identities only and do not grant source
+ * or semantic authority. Production still applies its existing global budget
+ * while consuming these channels in the established order below.
+ */
+export function buildCurriculumEvidenceSignalRankings({
+  blocks,
+  predecessor,
+  concepts,
+  contract,
+}: Pick<
+  CurriculumEvidenceSelectionInput,
+  'blocks' | 'predecessor' | 'concepts' | 'contract'
+>): CurriculumEvidenceSignalRanking[] {
+  const blockById = new Map(blocks.map((block) => [block.id, block]));
+  const orderedByMaterial = new Map<string, SourceBlock[]>();
+  for (const block of blocks) {
+    const materialBlocks = orderedByMaterial.get(block.materialId) ?? [];
+    materialBlocks.push(block);
+    orderedByMaterial.set(block.materialId, materialBlocks);
+  }
+  orderedByMaterial.forEach((materialBlocks) =>
+    materialBlocks.sort(
+      (left, right) => left.index - right.index || left.id.localeCompare(right.id),
+    ),
+  );
+
+  const selectedForProductionOrder = new Set<string>();
+  const rankings = new Map<CurriculumEvidenceSelectionSignal, string[]>(
+    CURRICULUM_EVIDENCE_SELECTION_SIGNALS.map((signal) => [signal, []]),
+  );
+  const addRanking = (
+    signal: CurriculumEvidenceSelectionSignal,
+    blockIds: readonly string[],
+  ): void => {
+    const currentIds = uniqueInOrder(blockIds.filter((blockId) => blockById.has(blockId)));
+    rankings.set(signal, currentIds);
+    for (const blockId of currentIds) {
+      if (selectedForProductionOrder.size >= CURRICULUM_PROVIDER_EVIDENCE_BLOCK_BUDGET) break;
+      selectedForProductionOrder.add(blockId);
+    }
+  };
+
+  addRanking(
+    'predecessor_reference',
+    predecessor?.nodes
+      .filter((candidate) => candidate.kind === 'learning_unit')
+      .flatMap((node) =>
+        node.sourceReferences
+          .slice(0, CURRICULUM_PREDECESSOR_REFS_PER_UNIT)
+          .flatMap((ref) => (ref.sourceBlockId ? [ref.sourceBlockId] : [])),
+      ) ?? [],
+  );
+  addRanking(
+    'concept_grounding',
+    concepts.map((concept) => concept.grounding.blockId),
+  );
+
+  const localityBlockIds: string[] = [];
+  for (const blockId of [...selectedForProductionOrder]) {
+    const block = blockById.get(blockId)!;
+    const siblings = orderedByMaterial.get(block.materialId) ?? [];
+    const position = siblings.findIndex((candidate) => candidate.id === blockId);
+    for (
+      let offset = -CURRICULUM_PROVIDER_NEIGHBOR_RADIUS;
+      offset <= CURRICULUM_PROVIDER_NEIGHBOR_RADIUS;
+      offset += 1
+    ) {
+      const neighbor = siblings[position + offset];
+      if (neighbor) localityBlockIds.push(neighbor.id);
+    }
+  }
+  addRanking('locality_neighbor', localityBlockIds);
+
+  addRanking(
+    'predecessor_lexical',
+    predecessor?.nodes
+      .filter((candidate) => candidate.kind === 'learning_unit')
+      .flatMap((node) =>
+        searchSourceBlocks(blocks, predecessorSearchText(node), { limit: 2 }).map(
+          (result) => result.blockId,
+        ),
+      ) ?? [],
+  );
+  const contractQuery = [
+    contract.intent,
+    contract.targetOutcome.description,
+    ...contract.courseScope.includedTopics,
+  ].join(' ');
+  addRanking(
+    'contract_lexical',
+    searchSourceBlocks(blocks, contractQuery).map((result) => result.blockId),
+  );
+
+  const sectionGroups = new Map<string, SourceBlock[]>();
+  for (const block of blocks) {
+    const key = sectionKey(block);
+    const group = sectionGroups.get(key) ?? [];
+    group.push(block);
+    sectionGroups.set(key, group);
+  }
+  addRanking(
+    'section_balance',
+    [...sectionGroups.values()].flatMap((group) => [
+      group[0]!.id,
+      group[Math.floor(group.length / 2)]!.id,
+    ]),
+  );
+
+  if (
+    selectedForProductionOrder.size < CURRICULUM_PROVIDER_MIN_FALLBACK_BLOCKS &&
+    blocks.length > 0
+  ) {
+    const stride = blocks.length / CURRICULUM_PROVIDER_MIN_FALLBACK_BLOCKS;
+    addRanking(
+      'fallback',
+      Array.from(
+        { length: CURRICULUM_PROVIDER_MIN_FALLBACK_BLOCKS },
+        (_unused, index) => blocks[Math.min(blocks.length - 1, Math.floor(index * stride))]!.id,
+      ),
+    );
+  }
+
+  return CURRICULUM_EVIDENCE_SELECTION_SIGNALS.map((signal) => ({
+    signal,
+    blockIds: rankings.get(signal)!,
+  }));
+}
+
 function recallPoint(
   offers: CurriculumEvidenceOffer[],
   requiredBlockIds: string[],
@@ -419,17 +554,6 @@ function selectCurriculumEvidenceOffersInternal(
   includeTrace: boolean,
 ): InternalCurriculumEvidenceSelection {
   const blockById = new Map(blocks.map((block) => [block.id, block]));
-  const orderedByMaterial = new Map<string, SourceBlock[]>();
-  for (const block of blocks) {
-    const materialBlocks = orderedByMaterial.get(block.materialId) ?? [];
-    materialBlocks.push(block);
-    orderedByMaterial.set(block.materialId, materialBlocks);
-  }
-  orderedByMaterial.forEach((materialBlocks) =>
-    materialBlocks.sort(
-      (left, right) => left.index - right.index || left.id.localeCompare(right.id),
-    ),
-  );
 
   const selectedBlockIds = new Set<string>();
   const attemptedBySignal = includeTrace
@@ -460,60 +584,13 @@ function selectCurriculumEvidenceOffersInternal(
     firstContributorByBlock?.set(blockId, signal);
   };
 
-  for (const node of predecessor?.nodes.filter((candidate) => candidate.kind === 'learning_unit') ??
-    []) {
-    for (const ref of node.sourceReferences.slice(0, CURRICULUM_PREDECESSOR_REFS_PER_UNIT)) {
-      if (ref.sourceBlockId) addBlock(ref.sourceBlockId, 'predecessor_reference');
-    }
-  }
-  for (const concept of concepts) addBlock(concept.grounding.blockId, 'concept_grounding');
-
-  for (const blockId of [...selectedBlockIds]) {
-    const block = blockById.get(blockId);
-    if (!block) continue;
-    const siblings = orderedByMaterial.get(block.materialId) ?? [];
-    const position = siblings.findIndex((candidate) => candidate.id === blockId);
-    for (
-      let offset = -CURRICULUM_PROVIDER_NEIGHBOR_RADIUS;
-      offset <= CURRICULUM_PROVIDER_NEIGHBOR_RADIUS;
-      offset += 1
-    ) {
-      const neighbor = siblings[position + offset];
-      if (neighbor) addBlock(neighbor.id, 'locality_neighbor');
-    }
-  }
-
-  for (const node of predecessor?.nodes.filter((candidate) => candidate.kind === 'learning_unit') ??
-    []) {
-    for (const result of searchSourceBlocks(blocks, predecessorSearchText(node), { limit: 2 })) {
-      addBlock(result.blockId, 'predecessor_lexical');
-    }
-  }
-  const contractQuery = [
-    contract.intent,
-    contract.targetOutcome.description,
-    ...contract.courseScope.includedTopics,
-  ].join(' ');
-  for (const result of searchSourceBlocks(blocks, contractQuery)) {
-    addBlock(result.blockId, 'contract_lexical');
-  }
-
-  const sectionGroups = new Map<string, SourceBlock[]>();
-  for (const block of blocks) {
-    const key = `${block.materialId}\u0000${block.headingPath.join('\u0001')}`;
-    const group = sectionGroups.get(key) ?? [];
-    group.push(block);
-    sectionGroups.set(key, group);
-  }
-  for (const group of sectionGroups.values()) {
-    addBlock(group[0]!.id, 'section_balance');
-    addBlock(group[Math.floor(group.length / 2)]!.id, 'section_balance');
-  }
-  if (selectedBlockIds.size < CURRICULUM_PROVIDER_MIN_FALLBACK_BLOCKS && blocks.length > 0) {
-    const stride = blocks.length / CURRICULUM_PROVIDER_MIN_FALLBACK_BLOCKS;
-    for (let index = 0; index < CURRICULUM_PROVIDER_MIN_FALLBACK_BLOCKS; index += 1) {
-      addBlock(blocks[Math.min(blocks.length - 1, Math.floor(index * stride))]!.id, 'fallback');
-    }
+  for (const ranking of buildCurriculumEvidenceSignalRankings({
+    blocks,
+    predecessor,
+    concepts,
+    contract,
+  })) {
+    for (const blockId of ranking.blockIds) addBlock(blockId, ranking.signal);
   }
 
   const priorityKeys = new Set(priorityGroundings.map(normalizedGroundingKey));
