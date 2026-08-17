@@ -3,6 +3,7 @@ import type {
   ContractCourseScope,
   CourseExecutionCommandEnvelope,
   CourseExecutionOverview,
+  CoursePreparation,
   CurriculumHierarchyView,
   DesiredDepth,
   DocumentSummary,
@@ -209,6 +210,7 @@ export function AgentCourseWorkspace({
   const [workspaces, setWorkspaces] = useState<WorkspaceSummary[]>([]);
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [overview, setOverview] = useState<CourseExecutionOverview | null>(null);
+  const [preparation, setPreparation] = useState<CoursePreparation | null>(null);
   const [hierarchy, setHierarchy] = useState<CurriculumHierarchyView | null>(null);
   const [roleHistory, setRoleHistory] = useState<Record<string, MaterialRoleHistoryResponse>>({});
   const [curriculumSourceBlocks, setCurriculumSourceBlocks] = useState<SourceBlock[]>([]);
@@ -230,6 +232,8 @@ export function AgentCourseWorkspace({
   const loadEpoch = useRef(0);
   const workspaceIdRef = useRef(workspaceId);
   const action = useAsyncAction();
+  const preparationAction = useAsyncAction();
+  const cancelPreparationAction = preparationAction.cancel;
   const planAction = useAsyncAction();
   const progressRemediationAction = useAsyncAction();
 
@@ -237,6 +241,11 @@ export function AgentCourseWorkspace({
     workspaceIdRef.current = workspaceId;
     setRouteGenerationFailure(readRouteGenerationFailure(workspaceId));
   }, [workspaceId]);
+
+  useEffect(() => {
+    cancelPreparationAction();
+    setBusyAction((current) => (current === 'prepare-course' ? null : current));
+  }, [cancelPreparationAction, workspaceId]);
 
   useEffect(() => {
     if (view !== 'curriculum' || !workspaceId || documents.length === 0) {
@@ -283,6 +292,7 @@ export function AgentCourseWorkspace({
         if (!targetWorkspaceId) {
           setDocuments([]);
           setOverview(null);
+          setPreparation(null);
           setHierarchy(null);
           setRoleHistory({});
           return;
@@ -291,13 +301,15 @@ export function AgentCourseWorkspace({
           onWorkspaceChange(null);
           setDocuments([]);
           setOverview(null);
+          setPreparation(null);
           setHierarchy(null);
           setRoleHistory({});
           return;
         }
-        const [detail, execution] = await Promise.all([
+        const [detail, execution, preparationResponse] = await Promise.all([
           api.getWorkspace(targetWorkspaceId, signal),
           api.courseExecution(targetWorkspaceId, signal),
+          api.coursePreparation(targetWorkspaceId, signal),
         ]);
         const roles = await Promise.all(
           detail.documents.map((document) =>
@@ -307,6 +319,7 @@ export function AgentCourseWorkspace({
         if (signal.aborted || epoch !== loadEpoch.current) return;
         setDocuments(detail.documents);
         setOverview(execution.overview);
+        setPreparation(preparationResponse.preparation);
         setHierarchy(execution.overview.curriculumHierarchy);
         setRoleHistory(Object.fromEntries(roles.map((role) => [role.materialId, role])));
       } catch (error) {
@@ -332,9 +345,13 @@ export function AgentCourseWorkspace({
   async function refresh(signal?: AbortSignal): Promise<void> {
     const targetWorkspaceId = workspaceIdRef.current;
     if (!targetWorkspaceId) return;
-    const execution = await api.courseExecution(targetWorkspaceId, signal);
+    const [execution, preparationResponse] = await Promise.all([
+      api.courseExecution(targetWorkspaceId, signal),
+      api.coursePreparation(targetWorkspaceId, signal),
+    ]);
     if (signal?.aborted || workspaceIdRef.current !== targetWorkspaceId) return;
     setOverview(execution.overview);
+    setPreparation(preparationResponse.preparation);
     setHierarchy(execution.overview.curriculumHierarchy);
   }
 
@@ -374,17 +391,85 @@ export function AgentCourseWorkspace({
     failureOwner: ActionFailureOwner,
     operation: (signal: AbortSignal) => Promise<T>,
     after?: (result: T, signal: AbortSignal) => Promise<void> | void,
-  ): Promise<void> {
+  ): Promise<T | null> {
     const capturedWorkspaceId = workspaceId;
     setBusyAction(name);
     setActionFailureOwner(failureOwner);
     setNotice(null);
-    await action.run(async (signal) => {
+    const result = await action.run(async (signal) => {
       const result = await operation(signal);
       if (capturedWorkspaceId === workspaceIdRef.current) await after?.(result, signal);
       return result;
     });
     if (capturedWorkspaceId === workspaceIdRef.current) setBusyAction(null);
+    return result;
+  }
+
+  async function runPreparation(starting?: CoursePreparation): Promise<void> {
+    const capturedWorkspaceId = workspaceIdRef.current;
+    if (!capturedWorkspaceId) return;
+    setBusyAction('prepare-course');
+    setNotice(null);
+    const response = await preparationAction.run(async (signal) => {
+      const snapshot =
+        starting ?? (await api.coursePreparation(capturedWorkspaceId, signal)).preparation;
+      if (signal.aborted || workspaceIdRef.current !== capturedWorkspaceId) {
+        return null;
+      }
+      setPreparation(snapshot);
+      if (
+        snapshot.workspaceId !== capturedWorkspaceId ||
+        !snapshot.canResume ||
+        !snapshot.operationKey
+      ) {
+        return { preparation: snapshot };
+      }
+      try {
+        return await api.runCoursePreparation(
+          capturedWorkspaceId,
+          {
+            command: {
+              commandId: snapshot.operationKey!,
+              idempotencyKey: snapshot.operationKey!,
+              workspaceId: capturedWorkspaceId,
+              actor: 'learner',
+            },
+            expectedRevision: snapshot.revision,
+          },
+          signal,
+        );
+      } catch (error) {
+        if (!signal.aborted && workspaceIdRef.current === capturedWorkspaceId) {
+          try {
+            const current = await api.coursePreparation(capturedWorkspaceId, signal);
+            if (!signal.aborted && workspaceIdRef.current === capturedWorkspaceId) {
+              setPreparation(current.preparation);
+            }
+          } catch {
+            // Keep the original preparation error; the next Course refresh will reconcile state.
+          }
+        }
+        throw error;
+      }
+    });
+    if (workspaceIdRef.current !== capturedWorkspaceId) return;
+    setBusyAction(null);
+    if (!response) {
+      try {
+        await refresh();
+      } catch {
+        // The next Course refresh will reconcile an unavailable cancellation status.
+      }
+      return;
+    }
+    setPreparation(response.preparation);
+    await refresh();
+  }
+
+  function cancelPreparation(): void {
+    preparationAction.cancel();
+    setBusyAction(null);
+    setNotice('已停止本次课程准备，已经验证并保存的内容会保留。');
   }
 
   function openContractEditor(contract: LearningContract | null): void {
@@ -579,7 +664,7 @@ export function AgentCourseWorkspace({
 
   async function submitContract(): Promise<void> {
     if (!workspaceId || !overview) return;
-    await runAction(
+    const result = await runAction(
       'save-contract',
       'contract-editor',
       async (signal) => {
@@ -599,10 +684,11 @@ export function AgentCourseWorkspace({
         }
         const scopes = await ensureConfirmedRoles(signal);
         const fields = contractFields(scopes);
+        let saved;
         if (editingContractId) {
           const editing = authoritative.pendingContract;
           if (!editing || editing.id !== editingContractId) throw new Error('约定草稿已过期。');
-          return api.updateLearningContract(
+          saved = await api.updateLearningContract(
             workspaceId,
             editing.id,
             {
@@ -613,55 +699,94 @@ export function AgentCourseWorkspace({
             },
             signal,
           );
-        }
-        const latestContractId = authoritative.contractHistory.at(-1)?.id ?? null;
-        try {
-          return await api.createLearningContract(
-            workspaceId,
-            {
-              command: command(workspaceId, 'create_contract'),
-              fields,
-              predecessorContractId: latestContractId,
-              expectedActiveContractId: authoritative.activeContract?.id ?? null,
-            },
-            signal,
-          );
-        } catch (error) {
-          if (error instanceof ApiClientError && error.code === 'VERSION_CONFLICT') {
-            throw new Error('学习约定状态已更新，请检查当前约定后再保存。');
+        } else {
+          const latestContractId = authoritative.contractHistory.at(-1)?.id ?? null;
+          try {
+            saved = await api.createLearningContract(
+              workspaceId,
+              {
+                command: command(workspaceId, 'create_contract'),
+                fields,
+                predecessorContractId: latestContractId,
+                expectedActiveContractId: authoritative.activeContract?.id ?? null,
+              },
+              signal,
+            );
+          } catch (error) {
+            if (error instanceof ApiClientError && error.code === 'VERSION_CONFLICT') {
+              throw new Error('学习约定状态已更新，请检查当前约定后再保存。');
+            }
+            throw error;
           }
-          throw error;
         }
+        const proposed = await api.transitionLearningContract(
+          workspaceId,
+          saved.contract.id,
+          {
+            command: command(workspaceId, 'propose_contract'),
+            contractId: saved.contract.id,
+            expectedVersion: saved.contract.version,
+            transition: 'propose',
+          },
+          signal,
+        );
+        return api.transitionLearningContract(
+          workspaceId,
+          proposed.contract.id,
+          {
+            command: command(workspaceId, 'confirm_contract'),
+            contractId: proposed.contract.id,
+            expectedVersion: proposed.contract.version,
+            transition: 'confirm',
+          },
+          signal,
+        );
       },
       async (_result, signal) => {
         setContractEditorOpen(false);
         await refresh(signal);
       },
     );
+    if (result?.contract.status === 'learner_confirmed') await runPreparation();
   }
 
   async function transitionContract(): Promise<void> {
     if (!workspaceId || !overview?.pendingContract) return;
     const current = overview.pendingContract;
     if (current.status !== 'draft' && current.status !== 'proposed') return;
-    const transition = current.status === 'draft' ? 'propose' : 'confirm';
-    await runAction(
+    const result = await runAction(
       'confirm-contract',
       'home-contract',
-      (signal) =>
-        api.transitionLearningContract(
+      async (signal) => {
+        const proposed =
+          current.status === 'draft'
+            ? await api.transitionLearningContract(
+                workspaceId,
+                current.id,
+                {
+                  command: command(workspaceId, 'propose_contract'),
+                  contractId: current.id,
+                  expectedVersion: current.version,
+                  transition: 'propose',
+                },
+                signal,
+              )
+            : { contract: current };
+        return api.transitionLearningContract(
           workspaceId,
-          current.id,
+          proposed.contract.id,
           {
-            command: command(workspaceId, `${transition}_contract`),
-            contractId: current.id,
-            expectedVersion: current.version,
-            transition,
+            command: command(workspaceId, 'confirm_contract'),
+            contractId: proposed.contract.id,
+            expectedVersion: proposed.contract.version,
+            transition: 'confirm',
           },
           signal,
-        ),
+        );
+      },
       async (_result, signal) => refresh(signal),
     );
+    if (result?.contract.status === 'learner_confirmed') await runPreparation();
   }
 
   async function proposeCurriculum(): Promise<void> {
@@ -933,13 +1058,16 @@ export function AgentCourseWorkspace({
 
   function changeCourse(nextWorkspaceId: string | null): void {
     action.cancel();
+    preparationAction.cancel();
     planAction.cancel();
     progressRemediationAction.cancel();
     action.clearError();
+    preparationAction.clearError();
     setActionFailureOwner(null);
     clearStoredRouteGenerationFailure(workspaceIdRef.current);
     clearStoredRouteGenerationFailure(nextWorkspaceId);
     setRouteGenerationFailure(null);
+    setPreparation(null);
     setBusyAction(null);
     setNotice(null);
     setMaterialsOpen(false);
@@ -1060,6 +1188,8 @@ export function AgentCourseWorkspace({
         <CourseHomeView
           courseName={selectedWorkspace?.name ?? '课程'}
           overview={overview}
+          preparation={preparation}
+          preparationError={preparationAction.error}
           loading={loading}
           error={loadError}
           busyAction={busyAction}
@@ -1079,6 +1209,8 @@ export function AgentCourseWorkspace({
           }
           onEditContract={() => openContractEditor(overview?.pendingContract ?? null)}
           onConfirmContract={() => void transitionContract()}
+          onRunPreparation={() => void runPreparation()}
+          onCancelPreparation={cancelPreparation}
           onProposeCurriculum={() => void proposeCurriculum()}
           onCancelCurriculum={cancelCurriculum}
           onOpenCurriculum={() => setView('curriculum')}
@@ -1245,7 +1377,7 @@ function ContractEditor({
         <div className="contract-heading">
           <p className="eyebrow">学习约定</p>
           <h2>定义你与 Hy3 的学习约定</h2>
-          <p className="muted">从目标开始。范围、时间与资料用途由你确认，Hy3 据此提出学习路线。</p>
+          <p className="muted">从目标开始。范围、时间与资料用途由你确认，Hy3 据此准备课程方案。</p>
         </div>
         <button type="button" className="ghost" onClick={onCancel} disabled={busy}>
           返回
@@ -1522,13 +1654,13 @@ function ContractEditor({
       </div>
 
       <footer className="contract-actions">
-        <p className="small muted">保存后仍需由你确认，才会成为当前学习约定。</p>
+        <p className="small muted">确认后将立即开始准备课程。</p>
         <button type="submit" className="primary" disabled={busy || documents.length === 0}>
           {busy
-            ? '正在保存…'
+            ? '正在确认…'
             : needsRoleConfirmation
-              ? '确认资料用途并保存约定草稿'
-              : '保存约定草稿'}
+              ? '确认资料用途并准备课程'
+              : '确认目标并准备课程'}
         </button>
       </footer>
     </form>

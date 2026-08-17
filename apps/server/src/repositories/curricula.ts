@@ -42,6 +42,20 @@ export interface CurriculumEventInput {
   createdAt: string;
 }
 
+export interface StoredCurriculumEvent extends CurriculumEventInput {
+  curriculumId: string;
+  seq: number;
+}
+
+interface CurriculumEventRow {
+  curriculum_id: string;
+  seq: number;
+  event_type: string;
+  actor: string;
+  payload: string;
+  created_at: string;
+}
+
 function hydrate(row: CurriculumRow): Curriculum {
   return CurriculumSchema.parse({
     ...(JSON.parse(row.payload) as object),
@@ -467,6 +481,24 @@ export function createCurriculaRepo(db: SqliteDb) {
     createVersion: createVersionTx,
     accept: acceptTx,
     reject: rejectTx,
+
+    listEvents(curriculumId: string): StoredCurriculumEvent[] {
+      const rows = db
+        .prepare(
+          `SELECT curriculum_id, seq, event_type, actor, payload, created_at
+           FROM curriculum_events WHERE curriculum_id = ? ORDER BY seq ASC`,
+        )
+        .all(curriculumId) as CurriculumEventRow[];
+      return rows.map((row) => ({
+        id: `${row.curriculum_id}:${row.seq}`,
+        curriculumId: row.curriculum_id,
+        seq: row.seq,
+        eventType: row.event_type,
+        actor: row.actor,
+        payload: JSON.parse(row.payload) as unknown,
+        createdAt: row.created_at,
+      }));
+    },
 
     list(workspaceId: string): Curriculum[] {
       return (

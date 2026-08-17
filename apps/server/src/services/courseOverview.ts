@@ -90,17 +90,17 @@ export function createCourseOverviewService({ repos, clock }: CourseOverviewDeps
             (item) => item.status === 'accepted' && item.contractVersionId === selectedContract.id,
           ) ?? null)
       : null;
+    const latestCurriculum = curricula.at(-1) ?? null;
     const proposedCurriculum =
-      [...curricula]
-        .reverse()
-        .find(
-          (item) => item.status === 'proposed' && item.contractVersionId === selectedContract?.id,
-        ) ?? null;
+      latestCurriculum?.status === 'proposed' &&
+      latestCurriculum.contractVersionId === selectedContract?.id
+        ? latestCurriculum
+        : null;
     const acceptedStudyPlan = state.acceptedPlanId
       ? (repos.studyPlans.get(state.acceptedPlanId) ?? null)
       : null;
-    const proposedStudyPlan =
-      [...plans].reverse().find((item) => item.status === 'proposed') ?? null;
+    const latestStudyPlan = plans.at(-1) ?? null;
+    const proposedStudyPlan = latestStudyPlan?.status === 'proposed' ? latestStudyPlan : null;
     const activeAgenda = state.activeAgendaId
       ? (repos.sessionAgendas.get(state.activeAgendaId) ?? null)
       : null;

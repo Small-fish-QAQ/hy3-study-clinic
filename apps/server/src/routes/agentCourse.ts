@@ -11,6 +11,7 @@ import {
   ProposeMaterialRoleRequestSchema,
   ProposeStudyPlanRequestSchema,
   RejectCurriculumRequestSchema,
+  RunCoursePreparationRequestSchema,
   TransitionLearningContractRequestSchema,
   UpdateLearningContractDraftRequestSchema,
 } from '@hy3-clinic/shared';
@@ -51,6 +52,18 @@ export function registerAgentCourseRoutes(app: FastifyInstance, services: Servic
   app.get('/api/workspaces/:id/execution', async (request) => {
     const { id } = WorkspaceParams.parse(request.params);
     return { overview: services.courseOverview.get(id) };
+  });
+
+  app.get('/api/workspaces/:id/preparation', async (request) => {
+    const { id } = WorkspaceParams.parse(request.params);
+    return { preparation: services.coursePreparation.get(id) };
+  });
+
+  app.post('/api/workspaces/:id/preparation/run', async (request, reply) => {
+    const { id } = WorkspaceParams.parse(request.params);
+    const body = RunCoursePreparationRequestSchema.parse(request.body);
+    assertWorkspace(body, id);
+    return services.coursePreparation.run(body, { signal: requestSignal(request, reply) });
   });
 
   app.get('/api/workspaces/:id/documents/:docId/role', async (request) => {
@@ -153,6 +166,15 @@ export function registerAgentCourseRoutes(app: FastifyInstance, services: Servic
     const body = AcceptCurriculumRequestSchema.parse(request.body);
     assertWorkspace(body, params.id);
     if (body.curriculumId !== params.curriculumId) throw new z.ZodError([]);
+    if (body.acceptanceBasis !== 'learner_review' || body.command.actor !== 'learner') {
+      throw new z.ZodError([
+        {
+          code: z.ZodIssueCode.custom,
+          path: ['acceptanceBasis'],
+          message: 'the public Curriculum route requires learner review',
+        },
+      ]);
+    }
     return services.curriculum.accept(body);
   });
 

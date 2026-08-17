@@ -88,6 +88,11 @@ export const CURRICULUM_PROVIDER_TIMEOUT_MS = 240_000;
 const PROVIDER_REPAIR_LEASE_MARGIN_MS = 120_000;
 export const CURRICULUM_OPERATION_LEASE_MS =
   CURRICULUM_PROVIDER_TIMEOUT_MS * 2 + PROVIDER_REPAIR_LEASE_MARGIN_MS;
+export const COURSE_PREPARATION_POLICY_ID = 'course_preparation_v1';
+
+export interface CurriculumProposalOptions extends ProviderCallOptions {
+  preparationPolicyId?: typeof COURSE_PREPARATION_POLICY_ID;
+}
 
 export function curriculumOperationLeaseMs(timeoutMs: number): number {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
@@ -562,8 +567,7 @@ export function createCurriculumService({
     return CurriculumHistoryResponseSchema.parse({
       workspaceId,
       acceptedCurriculumId: state.activeCurriculumId,
-      proposedCurriculumId:
-        [...items].reverse().find((item) => item.status === 'proposed')?.id ?? null,
+      proposedCurriculumId: items.at(-1)?.status === 'proposed' ? items.at(-1)!.id : null,
       items: items.map((item) => ({
         id: item.id,
         version: item.version,
@@ -583,7 +587,7 @@ export function createCurriculumService({
 
   async function propose(
     input: ProposeCurriculumCommandRequest,
-    opts?: ProviderCallOptions,
+    opts?: CurriculumProposalOptions,
   ): Promise<CurriculumProposalResponse> {
     const parsed = ProposeCurriculumCommandRequestSchema.parse(input);
     const workspace = repos.workspaces.get(parsed.command.workspaceId);
@@ -886,7 +890,11 @@ export function createCurriculumService({
           id: newId('curriculum_evt'),
           eventType: 'proposed',
           actor: parsed.command.actor,
-          payload: { contractId: contract.id, manifestFingerprint: context.manifest.fingerprint },
+          payload: {
+            contractId: contract.id,
+            manifestFingerprint: context.manifest.fingerprint,
+            ...(opts?.preparationPolicyId ? { preparationPolicyId: opts.preparationPolicyId } : {}),
+          },
           createdAt: now,
         });
         coverageRisks.seedCurriculum(contract, stored);
@@ -969,6 +977,41 @@ export function createCurriculumService({
       if (!manifestsEqual(context.manifest, current.executionSourceManifest)) {
         throw new AppError(ApiErrorCode.VersionConflict, 'Curriculum source manifest is stale.');
       }
+      if (parsed.acceptanceBasis === 'explicit_local_policy') {
+        const proposalEvent = repos.curricula
+          .listEvents(current.id)
+          .find((event) => event.eventType === 'proposed');
+        const preparationPolicyId =
+          typeof proposalEvent?.payload === 'object' &&
+          proposalEvent.payload !== null &&
+          'preparationPolicyId' in proposalEvent.payload
+            ? proposalEvent.payload.preparationPolicyId
+            : null;
+        if (
+          parsed.command.actor !== 'local' ||
+          proposalEvent?.actor !== 'local' ||
+          preparationPolicyId !== COURSE_PREPARATION_POLICY_ID
+        ) {
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            'Local Curriculum acceptance requires the Course Preparation policy.',
+          );
+        }
+        const preflight = preflightStudyPlan(
+          repos,
+          clock,
+          contract,
+          current,
+          repos.workspaces.get(current.workspaceId)?.name ?? 'Course',
+        );
+        if (!preflight.canGenerate) {
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            'Course Preparation cannot accept a non-executable Curriculum.',
+            { preflightReasonCodes: preflight.blockers.map((blocker) => blocker.code) },
+          );
+        }
+      }
       const predecessor = current.predecessorId
         ? (repos.curricula.get(current.predecessorId) ?? null)
         : null;
@@ -989,6 +1032,15 @@ export function createCurriculumService({
         }
       }
       return commands.complete(claim, () => {
+        if (
+          parsed.acceptanceBasis === 'explicit_local_policy' &&
+          repos.curricula.list(current.workspaceId).at(-1)?.id !== current.id
+        ) {
+          throw new AppError(
+            ApiErrorCode.VersionConflict,
+            'Prepared Curriculum candidate is no longer the latest version.',
+          );
+        }
         const accepted = repos.curricula.accept(current.id, clock.now().toISOString(), {
           id: newId('curriculum_evt'),
           eventType: 'accepted',

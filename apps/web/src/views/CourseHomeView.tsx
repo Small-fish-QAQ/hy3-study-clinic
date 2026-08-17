@@ -1,6 +1,7 @@
 import type {
   CourseExecutionOverview,
   CourseNextAction,
+  CoursePreparation,
   LearningContractScopeReadiness,
   MaterialRole,
   StudyPlanDraftEdit,
@@ -19,6 +20,29 @@ const SETUP_TEXT: Record<CourseExecutionOverview['setupStage'], string> = {
   route_active: '学习路线已启用',
   goal_closed: '本轮学习目标已结束',
 };
+
+const PREPARATION_TEXT: Record<CoursePreparation['state'], string> = {
+  not_started: '确认学习目标后开始准备课程',
+  preparing_materials: '正在整理课程资料',
+  preparing_concepts: '正在理解课程资料的核心内容',
+  preparing_course_structure: '正在设计课程结构',
+  validating_course_plan: '正在检查课程方案是否可以执行',
+  course_plan_ready: '课程方案等待你的确认',
+  awaiting_required_governance: '课程准备需要你的决定',
+  failed_recoverable: '课程准备暂时中断',
+  blocked: '课程准备需要检查',
+  complete: '课程已经准备好',
+};
+
+const CHECKPOINT_TEXT: Array<{
+  key: keyof CoursePreparation['checkpoints'];
+  label: string;
+}> = [
+  { key: 'materials', label: '资料已整理' },
+  { key: 'concepts', label: '核心内容已准备' },
+  { key: 'courseStructure', label: '课程结构已完成' },
+  { key: 'coursePlan', label: '课程方案已检查' },
+];
 
 const FEASIBILITY_TEXT: Record<
   NonNullable<CourseExecutionOverview['contractFeasibility']>['state'],
@@ -69,6 +93,8 @@ function formatDeadline(at: string, timeZone: string): string {
 export interface CourseHomeViewProps {
   courseName: string;
   overview: CourseExecutionOverview | null;
+  preparation: CoursePreparation | null;
+  preparationError: string | null;
   loading: boolean;
   error: string | null;
   busyAction: string | null;
@@ -84,6 +110,8 @@ export interface CourseHomeViewProps {
   onCreateContract: () => void;
   onEditContract: () => void;
   onConfirmContract: () => void;
+  onRunPreparation: () => void;
+  onCancelPreparation: () => void;
   onProposeCurriculum: () => void;
   onCancelCurriculum: () => void;
   onOpenCurriculum: () => void;
@@ -103,6 +131,8 @@ export interface CourseHomeViewProps {
 export function CourseHomeView({
   courseName,
   overview,
+  preparation,
+  preparationError,
   loading,
   error,
   busyAction,
@@ -111,6 +141,8 @@ export function CourseHomeView({
   onCreateContract,
   onEditContract,
   onConfirmContract,
+  onRunPreparation,
+  onCancelPreparation,
   onProposeCurriculum,
   onCancelCurriculum,
   onOpenCurriculum,
@@ -137,7 +169,18 @@ export function CourseHomeView({
   }
 
   const contract = overview.pendingContract ?? overview.activeContract;
-  const plan = overview.proposedStudyPlan ?? overview.acceptedStudyPlan;
+  const plan =
+    overview.proposedStudyPlan &&
+    (!overview.acceptedStudyPlan ||
+      overview.proposedStudyPlan.version > overview.acceptedStudyPlan.version)
+      ? overview.proposedStudyPlan
+      : overview.acceptedStudyPlan;
+  const curriculum =
+    overview.proposedCurriculum &&
+    (!overview.planningCurriculum ||
+      overview.proposedCurriculum.version > overview.planningCurriculum.version)
+      ? overview.proposedCurriculum
+      : overview.planningCurriculum;
   const feasibility = overview.contractFeasibility;
   const next = overview.nextAction;
   const progress = overview.formalProgress;
@@ -146,15 +189,19 @@ export function CourseHomeView({
   const contractScopeBlocked = overview.contractScopeReadiness?.state === 'reconfirmation_required';
   const planReadinessBlocked =
     overview.setupStage === 'plan_required' && planPreflight?.canGenerate === false;
-  const setupText = contractScopeBlocked
-    ? '课程资料范围发生了变化'
-    : planReadinessBlocked && curriculumRecovery?.state === 'concept_grounding_missing'
-      ? '先从课程资料提取有原文依据的概念'
-      : planReadinessBlocked && curriculumRecovery?.state === 'concept_grounding_stale'
-        ? '课程资料已变化，需要重新建立概念依据'
-        : planReadinessBlocked
-          ? '课程结构已接受，但当前还不能生成可执行的学习路线'
-          : SETUP_TEXT[overview.setupStage];
+  const preparationOwnsSetup =
+    preparation !== null && !['not_started', 'complete'].includes(preparation.state);
+  const setupText = preparationOwnsSetup
+    ? PREPARATION_TEXT[preparation.state]
+    : contractScopeBlocked
+      ? '课程资料范围发生了变化'
+      : planReadinessBlocked && curriculumRecovery?.state === 'concept_grounding_missing'
+        ? '先从课程资料提取有原文依据的概念'
+        : planReadinessBlocked && curriculumRecovery?.state === 'concept_grounding_stale'
+          ? '课程资料已变化，需要重新建立概念依据'
+          : planReadinessBlocked
+            ? '课程结构已接受，但当前还不能生成可执行的学习路线'
+            : SETUP_TEXT[overview.setupStage];
   const agendaItems = overview.activeAgenda?.items
     .filter((item) => !['completed', 'cancelled', 'deferred'].includes(item.state))
     .sort((left, right) => left.index - right.index)
@@ -168,6 +215,29 @@ export function CourseHomeView({
   );
 
   const setupAction = (() => {
+    if (preparationOwnsSetup && preparation) {
+      if (preparation.canResume) {
+        return {
+          label: preparation.state === 'failed_recoverable' ? '重试课程准备' : '继续准备课程',
+          onClick: onRunPreparation,
+          busy: busyAction === 'prepare-course',
+        };
+      }
+      switch (preparation.learnerAction) {
+        case 'reconfirm_learning_goal':
+          return { label: '重新确认学习目标', onClick: onCreateContract, busy: false };
+        case 'review_course_structure':
+          return { label: '检查课程结构', onClick: onOpenCurriculum, busy: false };
+        case 'review_course_plan':
+          return {
+            label: '确认课程方案',
+            onClick: onAcceptStudyPlan,
+            busy: busyAction === 'accept-plan',
+          };
+        default:
+          return null;
+      }
+    }
     if (contractScopeBlocked) {
       return { label: '重新确认学习约定', onClick: onCreateContract, busy: false };
     }
@@ -332,6 +402,40 @@ export function CourseHomeView({
           <Banner kind="error">暂时无法继续这项学习。{actionFailure.message}</Banner>
         ) : null}
 
+        {preparationOwnsSetup && preparation ? (
+          <section className="course-preparation-status" aria-label="课程准备状态">
+            <div className="section-heading">
+              <p className="eyebrow">课程准备</p>
+              <h3>{PREPARATION_TEXT[preparation.state]}</h3>
+            </div>
+            <ol>
+              {CHECKPOINT_TEXT.map(({ key, label }) => {
+                const state = preparation.checkpoints[key];
+                const mark =
+                  state === 'complete'
+                    ? '✓'
+                    : state === 'in_progress'
+                      ? '…'
+                      : state === 'blocked'
+                        ? '!'
+                        : '○';
+                return (
+                  <li key={key} data-state={state}>
+                    <span aria-hidden="true">{mark}</span>
+                    <span>{label}</span>
+                  </li>
+                );
+              })}
+            </ol>
+            {preparation.blocker ? (
+              <p className="small muted">{preparation.blocker.message}</p>
+            ) : null}
+            {preparationError && preparation.state === 'failed_recoverable' ? (
+              <Banner kind="error">课程准备暂未完成，已有有效内容保持不变。</Banner>
+            ) : null}
+          </section>
+        ) : null}
+
         {next ? (
           <div className="next-action" aria-label="下一步">
             <div>
@@ -365,18 +469,33 @@ export function CourseHomeView({
               <p className="eyebrow">下一步</p>
               <h3>{setupText}</h3>
               <p className="muted">
-                {contractScopeBlocked && overview.contractScopeReadiness
-                  ? contractScopeChangeText(overview.contractScopeReadiness)
-                  : planReadinessBlocked && planPreflight
-                    ? curriculumRecovery?.nextAction === 'build_concept_grounding'
-                      ? `当前 ${curriculumRecovery.includedMaterialCount} 份课程资料还没有可用的概念依据。完成提取后，系统会重新检查课程结构修复条件。`
-                      : curriculumRecovery?.nextAction === 'rebuild_concept_grounding'
-                        ? `已有 ${curriculumRecovery.staleConceptCount} 个概念依据不再对应当前资料版本。重新提取后，系统会重新检查课程结构修复条件。`
-                        : `${planPreflight.nonExecutableLearningUnitCount} / ${planPreflight.totalLearningUnitCount} 个学习单元缺少当前可执行能力，需要先审阅课程结构的新版本。`
-                    : '完成这一步后，系统才能给出可靠的后续学习动作。'}
+                {preparationOwnsSetup && preparation
+                  ? (preparation.blocker?.message ??
+                    (preparation.state === 'course_plan_ready'
+                      ? '课程结构和学习安排已经合并为一份课程方案。'
+                      : '系统正在继续完成课程准备。'))
+                  : contractScopeBlocked && overview.contractScopeReadiness
+                    ? contractScopeChangeText(overview.contractScopeReadiness)
+                    : planReadinessBlocked && planPreflight
+                      ? curriculumRecovery?.nextAction === 'build_concept_grounding'
+                        ? `当前 ${curriculumRecovery.includedMaterialCount} 份课程资料还没有可用的概念依据。完成提取后，系统会重新检查课程结构修复条件。`
+                        : curriculumRecovery?.nextAction === 'rebuild_concept_grounding'
+                          ? `已有 ${curriculumRecovery.staleConceptCount} 个概念依据不再对应当前资料版本。重新提取后，系统会重新检查课程结构修复条件。`
+                          : `${planPreflight.nonExecutableLearningUnitCount} / ${planPreflight.totalLearningUnitCount} 个学习单元缺少当前可执行能力，需要先审阅课程结构的新版本。`
+                      : '完成这一步后，系统才能给出可靠的后续学习动作。'}
               </p>
             </div>
-            {busyAction === 'propose-curriculum' ? (
+            {busyAction === 'prepare-course' ? (
+              <div className="stack curriculum-operation-status" role="status">
+                <strong>
+                  {preparation ? PREPARATION_TEXT[preparation.state] : '正在准备课程'}
+                </strong>
+                <span className="small muted">已完成的有效内容会立即保留。</span>
+                <button type="button" className="ghost" onClick={onCancelPreparation}>
+                  停止
+                </button>
+              </div>
+            ) : busyAction === 'propose-curriculum' ? (
               <div className="stack curriculum-operation-status" role="status">
                 <strong>正在准备课程资料并生成课程结构</strong>
                 <span className="small muted">
@@ -475,12 +594,9 @@ export function CourseHomeView({
       <details className="course-detail-disclosure">
         <summary>课程结构与版本</summary>
         <div className="detail-content">
-          {overview.planningCurriculum || overview.proposedCurriculum ? (
+          {curriculum ? (
             <>
-              <p>
-                当前课程结构版本{' '}
-                {(overview.proposedCurriculum ?? overview.planningCurriculum)!.version}
-              </p>
+              <p>当前课程结构版本 {curriculum.version}</p>
               <button type="button" onClick={onOpenCurriculum}>
                 查看完整课程结构
               </button>
@@ -493,7 +609,7 @@ export function CourseHomeView({
 
       {plan ? (
         <details className="course-detail-disclosure" open={plan.status === 'proposed'}>
-          <summary>{plan.status === 'proposed' ? '待确认的学习路线' : '完整学习路线'}</summary>
+          <summary>{plan.status === 'proposed' ? '待确认的课程方案' : '完整学习路线'}</summary>
           {actionFailure?.owner === 'plan' ? (
             <Banner kind="error">学习路线决定未完成。{actionFailure.message}</Banner>
           ) : null}
@@ -501,7 +617,10 @@ export function CourseHomeView({
             plan={plan}
             history={overview.studyPlanHistory}
             canEdit={overview.capabilities.canEditStudyPlan}
-            canAccept={overview.capabilities.canAcceptStudyPlan}
+            canAccept={
+              overview.capabilities.canAcceptStudyPlan && preparation?.state !== 'course_plan_ready'
+            }
+            showAcceptAction={preparation?.state !== 'course_plan_ready'}
             busyAction={busyAction}
             launchByPlanItemId={{}}
             onEdit={onEditStudyPlan}

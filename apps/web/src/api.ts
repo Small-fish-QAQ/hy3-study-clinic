@@ -40,6 +40,7 @@ import {
   ApiErrorSchema,
   CourseActionLaunchResultSchema,
   CourseExecutionOverviewResponseSchema,
+  CoursePreparationResponseSchema,
   CurriculumHistoryResponseSchema,
   CurriculumProposalResponseSchema,
   LearningContractDetailResponseSchema,
@@ -55,6 +56,7 @@ import {
   type ConfirmMaterialRoleRequest,
   type CourseActionLaunchResult,
   type CourseExecutionOverviewResponse,
+  type CoursePreparationResponse,
   type CreateLearningContractDraftRequest,
   type CurriculumHistoryResponse,
   type CurriculumProposalResponse,
@@ -72,6 +74,7 @@ import {
   type UpdateLearningContractDraftRequest,
   type ProposeCurriculumRequest,
   type LaunchCourseActionRequest,
+  type RunCoursePreparationRequest,
   StudySessionDetailResponseSchema,
   StudyTurnEventSchema,
   StartStudySessionResponseSchema,
@@ -516,6 +519,31 @@ export const api = {
       `/api/workspaces/${workspaceId}/execution`,
       CourseExecutionOverviewResponseSchema,
       undefined,
+      signal,
+    ),
+
+  coursePreparation: (
+    workspaceId: string,
+    signal?: AbortSignal,
+  ): Promise<CoursePreparationResponse> =>
+    requestParsed(
+      'GET',
+      `/api/workspaces/${workspaceId}/preparation`,
+      CoursePreparationResponseSchema,
+      undefined,
+      signal,
+    ),
+
+  runCoursePreparation: (
+    workspaceId: string,
+    input: RunCoursePreparationRequest,
+    signal?: AbortSignal,
+  ): Promise<CoursePreparationResponse> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/preparation/run`,
+      CoursePreparationResponseSchema,
+      input,
       signal,
     ),
 

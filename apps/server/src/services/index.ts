@@ -35,6 +35,10 @@ import {
 import { createCourseExecutionService, type CourseExecutionService } from './courseExecution.js';
 import { createCourseOverviewService, type CourseOverviewService } from './courseOverview.js';
 import {
+  createCoursePreparationService,
+  type CoursePreparationService,
+} from './coursePreparation.js';
+import {
   createCourseActionLaunchService,
   type CourseActionLaunchService,
 } from './courseActionLaunch.js';
@@ -72,6 +76,7 @@ export interface Services {
   sessionAgendasAgent: SessionAgendaAgentService;
   courseExecution: CourseExecutionService;
   courseOverview: CourseOverviewService;
+  coursePreparation: CoursePreparationService;
   courseActionLaunch: CourseActionLaunchService;
   formalProgression: FormalProgressionService;
   studySessions: StudySessionService;
@@ -138,6 +143,15 @@ export function createServices({ repos, provider, clock, providerModel }: Servic
     agendas: sessionAgendasAgent,
   });
   const courseOverview = createCourseOverviewService({ repos, clock });
+  const coursePreparation = createCoursePreparationService({
+    repos,
+    clock,
+    commands: courseCommands,
+    overview: courseOverview,
+    analysis,
+    curriculum,
+    studyPlans: studyPlansAgent,
+  });
   const formalProgression = createFormalProgressionService({
     repos,
     progression: repos.formalProgression,
@@ -188,6 +202,7 @@ export function createServices({ repos, provider, clock, providerModel }: Servic
     sessionAgendasAgent,
     courseExecution,
     courseOverview,
+    coursePreparation,
     courseActionLaunch,
     formalProgression,
     studySessions,

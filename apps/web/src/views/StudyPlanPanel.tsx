@@ -51,6 +51,7 @@ export interface StudyPlanPanelProps {
   history: StudyPlanHistoryItem[];
   canEdit: boolean;
   canAccept: boolean;
+  showAcceptAction?: boolean;
   busyAction: string | null;
   launchByPlanItemId: Record<string, AgendaLaunchCapability>;
   onEdit: (edit: StudyPlanDraftEdit) => void;
@@ -65,6 +66,7 @@ export function StudyPlanPanel({
   history,
   canEdit,
   canAccept,
+  showAcceptAction = true,
   busyAction,
   launchByPlanItemId,
   onEdit,
@@ -195,14 +197,16 @@ export function StudyPlanPanel({
 
       {plan.status === 'proposed' ? (
         <div className="row">
-          <button
-            type="button"
-            className="primary"
-            disabled={!canAccept || busyAction !== null}
-            onClick={onAccept}
-          >
-            {busyAction === 'accept-plan' ? '正在安装路线…' : '接受并启用路线'}
-          </button>
+          {showAcceptAction ? (
+            <button
+              type="button"
+              className="primary"
+              disabled={!canAccept || busyAction !== null}
+              onClick={onAccept}
+            >
+              {busyAction === 'accept-plan' ? '正在安装路线…' : '接受并启用路线'}
+            </button>
+          ) : null}
           <button type="button" disabled={busyAction !== null} onClick={onReject}>
             拒绝提案
           </button>

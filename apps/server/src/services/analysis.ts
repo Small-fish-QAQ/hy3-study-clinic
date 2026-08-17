@@ -39,6 +39,11 @@ export interface AnalyzeOutcome {
   extraction: ExtractionRunReport | null;
 }
 
+interface AnalyzeOptions {
+  section?: string;
+  beforePersist?: () => void;
+}
+
 export function createAnalysisService({ repos, provider, clock }: AnalysisServiceDeps) {
   /**
    * Run extraction over ONE section: bounded provider call, exact-quote
@@ -110,7 +115,9 @@ export function createAnalysisService({ repos, provider, clock }: AnalysisServic
     sections: DocumentSection[],
     sectioned: boolean,
     existing: Concept[],
+    expectedMaterialRevisionId: string,
     opts?: ProviderCallOptions,
+    options?: AnalyzeOptions,
   ): Promise<ExtractionRunReport> {
     const seenKeys = new Set(existing.map((c) => normalizeConceptKey(c.name)));
     let total = existing.length;
@@ -133,8 +140,9 @@ export function createAnalysisService({ repos, provider, clock }: AnalysisServic
         });
         continue;
       }
+      let accepted: Concept[];
       try {
-        const accepted = await extractSection(
+        accepted = await extractSection(
           materialId,
           materialTitle,
           section,
@@ -143,18 +151,6 @@ export function createAnalysisService({ repos, provider, clock }: AnalysisServic
           MAX_CONCEPTS_PER_DOCUMENT - total,
           opts,
         );
-        if (accepted.length > 0) {
-          repos.materials.addConcepts(accepted);
-          total += accepted.length;
-          added += accepted.length;
-        }
-        reports.push({
-          key: section.key,
-          title: section.title,
-          charCount: section.charCount,
-          status: accepted.length > 0 ? 'extracted' : 'empty',
-          conceptsAdded: accepted.length,
-        });
       } catch (error) {
         // Cancellation aborts the whole run (accepted sections stay
         // persisted); any other per-section failure is partial, retryable
@@ -167,7 +163,27 @@ export function createAnalysisService({ repos, provider, clock }: AnalysisServic
           status: 'failed',
           conceptsAdded: 0,
         });
+        continue;
       }
+      if (accepted.length > 0) {
+        options?.beforePersist?.();
+        if (repos.materialRevisions.getActive(materialId)?.id !== expectedMaterialRevisionId) {
+          throw new AppError(
+            ApiErrorCode.VersionConflict,
+            'Material changed while Concepts were being prepared.',
+          );
+        }
+        repos.materials.addConcepts(accepted);
+        total += accepted.length;
+        added += accepted.length;
+      }
+      reports.push({
+        key: section.key,
+        title: section.title,
+        charCount: section.charCount,
+        status: accepted.length > 0 ? 'extracted' : 'empty',
+        conceptsAdded: accepted.length,
+      });
     }
 
     return { sections: reports, conceptsAdded: added, conceptTotal: total, capReached };
@@ -191,10 +207,12 @@ export function createAnalysisService({ repos, provider, clock }: AnalysisServic
     async analyze(
       materialId: string,
       opts?: ProviderCallOptions,
-      options?: { section?: string },
+      options?: AnalyzeOptions,
     ): Promise<AnalyzeOutcome> {
       const material = repos.materials.get(materialId);
       if (!material) throw notFound(`学习资料不存在:${materialId}`);
+      const activeRevision = repos.materialRevisions.getActive(materialId);
+      if (!activeRevision) throw notFound(`学习资料没有可用版本:${materialId}`);
       const blocks = repos.materials.getBlocks(materialId);
       const existing = repos.materials.getConcepts(materialId);
 
@@ -213,7 +231,9 @@ export function createAnalysisService({ repos, provider, clock }: AnalysisServic
           [section],
           outline.length > 1,
           existing,
+          activeRevision.id,
           opts,
+          options,
         );
         return { concepts: repos.materials.getConcepts(materialId), extraction };
       }
@@ -227,7 +247,9 @@ export function createAnalysisService({ repos, provider, clock }: AnalysisServic
         sections,
         sections.length > 1,
         [],
+        activeRevision.id,
         opts,
+        options,
       );
       const concepts = repos.materials.getConcepts(materialId);
       if (concepts.length === 0) {

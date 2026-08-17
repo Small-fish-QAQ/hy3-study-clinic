@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   CourseExecutionOverview,
+  CoursePreparation,
   LearningContractDetailResponse,
   MaterialRoleAssignment,
   MaterialRoleHistoryResponse,
@@ -12,6 +13,33 @@ import { documentSummary, material, workspace, workspaceSummary } from '../test/
 import { AgentCourseWorkspace } from './AgentCourseWorkspace.js';
 
 const AT = '2026-08-12T11:54:07.530Z';
+
+function preparation(overrides: Partial<CoursePreparation> = {}): CoursePreparation {
+  return {
+    workspaceId: workspace.id,
+    revision: 'preparation-revision-1',
+    operationKey: null,
+    state: 'not_started',
+    machineAction: null,
+    learnerAction: 'confirm_learning_goal',
+    learnerDecisionRequired: false,
+    canResume: false,
+    canCancel: false,
+    checkpoints: {
+      materials: 'pending',
+      concepts: 'blocked',
+      courseStructure: 'pending',
+      coursePlan: 'pending',
+    },
+    blocker: {
+      code: 'learning_goal_required',
+      message: '请先确认学习目标和课程资料范围。',
+    },
+    failure: null,
+    generatedAt: AT,
+    ...overrides,
+  };
+}
 const legacyRole: MaterialRoleAssignment = {
   id: 'role_1',
   materialId: documentSummary.id,
@@ -205,6 +233,7 @@ beforeEach(() => {
     documents: [documentSummary],
   });
   vi.spyOn(api, 'courseExecution').mockResolvedValue({ overview: contractRequiredOverview() });
+  vi.spyOn(api, 'coursePreparation').mockResolvedValue({ preparation: preparation() });
 });
 
 afterEach(() => {
@@ -222,7 +251,7 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
 
     expect(screen.getByText('课程资料已更新，需要重新确认资料用途')).toBeInTheDocument();
     expect(screen.getByText(/请检查资料角色与范围，确认后再继续保存学习约定/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '确认资料用途并保存约定草稿' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '确认资料用途并准备课程' })).toBeInTheDocument();
     expect(createContract).not.toHaveBeenCalled();
   });
 
@@ -281,7 +310,7 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
       screen.getByLabelText(`${documentSummary.title}资料角色`),
       'course_material',
     );
-    await user.click(screen.getByRole('button', { name: '确认资料用途并保存约定草稿' }));
+    await user.click(screen.getByRole('button', { name: '确认资料用途并准备课程' }));
 
     await waitFor(() => expect(createContract).toHaveBeenCalledOnce());
     expect(confirm).toHaveBeenCalledWith(
@@ -307,7 +336,7 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
     renderWorkspace();
     await openContractEditor(user);
     expect(screen.queryByText('课程资料已更新，需要重新确认资料用途')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '保存约定草稿' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '确认目标并准备课程' })).toBeInTheDocument();
   });
 
   it('LIVE01-A refreshes a concurrent stale conflict and replaces raw server copy', async () => {
@@ -341,7 +370,7 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
       screen.getByLabelText(`${documentSummary.title}资料角色`),
       'supplementary_reference',
     );
-    await user.click(screen.getByRole('button', { name: '确认资料用途并保存约定草稿' }));
+    await user.click(screen.getByRole('button', { name: '确认资料用途并准备课程' }));
 
     expect(
       await screen.findByText(
@@ -376,7 +405,7 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
       screen.getByLabelText(`${documentSummary.title}资料角色`),
       'course_material',
     );
-    await user.click(screen.getByRole('button', { name: '保存约定草稿' }));
+    await user.click(screen.getByRole('button', { name: '确认目标并准备课程' }));
 
     expect(
       await screen.findByText('学习约定状态已更新，请检查当前约定后再保存。'),
@@ -458,6 +487,236 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
   });
 });
 
+describe('Course preparation orchestration', () => {
+  it('starts preparation automatically after the learner confirms the Contract', async () => {
+    const value = contractReviewOverview();
+    vi.mocked(api.courseExecution).mockResolvedValue({ overview: value });
+    vi.spyOn(api, 'materialRoleHistory').mockResolvedValue(roleHistory(strandedProposal));
+
+    const resumable = preparation({
+      revision: 'preparation-revision-2',
+      operationKey: 'prepare-course-ws-1',
+      state: 'preparing_concepts',
+      machineAction: 'prepare_concepts',
+      learnerAction: 'resume_preparation',
+      canResume: true,
+      canCancel: true,
+      checkpoints: {
+        materials: 'complete',
+        concepts: 'in_progress',
+        courseStructure: 'pending',
+        coursePlan: 'pending',
+      },
+      blocker: null,
+    });
+    const ready = preparation({
+      revision: 'preparation-revision-3',
+      state: 'course_plan_ready',
+      learnerAction: 'review_course_plan',
+      learnerDecisionRequired: true,
+      checkpoints: {
+        materials: 'complete',
+        concepts: 'complete',
+        courseStructure: 'complete',
+        coursePlan: 'complete',
+      },
+      blocker: null,
+    });
+    let currentPreparation = preparation();
+    vi.mocked(api.coursePreparation).mockImplementation(async () => ({
+      preparation: currentPreparation,
+    }));
+
+    const confirmedContract = {
+      ...value.pendingContract!,
+      status: 'learner_confirmed' as const,
+      learnerConfirmedAt: AT,
+    };
+    const transition = vi.spyOn(api, 'transitionLearningContract').mockImplementation(async () => {
+      currentPreparation = resumable;
+      return {
+        contract: confirmedContract,
+        feasibility: {
+          state: 'unknown',
+          deadlineAt: null,
+          availableMinutes: null,
+          projectedMinutes: null,
+          slackMinutes: null,
+          reasonCodes: ['deadline_absent', 'effort_unknown'],
+          assumptions: [],
+          policyVersion: 'contract-feasibility-v1',
+          computedAt: AT,
+        },
+      };
+    });
+    const run = vi.spyOn(api, 'runCoursePreparation').mockImplementation(async () => {
+      currentPreparation = ready;
+      return { preparation: ready };
+    });
+    const user = userEvent.setup();
+    renderWorkspace();
+
+    await user.click(await screen.findByRole('button', { name: '确认学习目标' }));
+
+    await waitFor(() => expect(run).toHaveBeenCalledOnce());
+    expect(transition).toHaveBeenCalledOnce();
+    expect(run).toHaveBeenCalledWith(
+      workspace.id,
+      expect.objectContaining({
+        command: expect.objectContaining({
+          commandId: resumable.operationKey,
+          idempotencyKey: resumable.operationKey,
+          workspaceId: workspace.id,
+          actor: 'learner',
+        }),
+        expectedRevision: resumable.revision,
+      }),
+      expect.any(AbortSignal),
+    );
+  });
+
+  it('aborts an in-flight preparation run when the learner switches Course', async () => {
+    const secondWorkspace = {
+      ...workspaceSummary,
+      id: 'ws_2',
+      name: 'Second Course',
+    };
+    vi.mocked(api.listWorkspaces).mockResolvedValue({
+      workspaces: [workspaceSummary, secondWorkspace],
+    });
+    vi.mocked(api.courseExecution).mockResolvedValue({ overview: planRequiredOverview() });
+    vi.spyOn(api, 'materialRoleHistory').mockResolvedValue(roleHistory(strandedProposal));
+    const running = preparation({
+      operationKey: 'prepare-course-ws-1',
+      state: 'preparing_concepts',
+      machineAction: 'prepare_concepts',
+      learnerAction: 'resume_preparation',
+      canResume: true,
+      canCancel: true,
+      checkpoints: {
+        materials: 'complete',
+        concepts: 'in_progress',
+        courseStructure: 'pending',
+        coursePlan: 'pending',
+      },
+      blocker: null,
+    });
+    vi.mocked(api.coursePreparation).mockResolvedValue({ preparation: running });
+    let runSignal: AbortSignal | undefined;
+    let finishRun: ((value: { preparation: CoursePreparation }) => void) | undefined;
+    vi.spyOn(api, 'runCoursePreparation').mockImplementation(
+      async (_workspaceId, _input, signal) =>
+        new Promise((resolve) => {
+          runSignal = signal;
+          finishRun = resolve;
+        }),
+    );
+    const onWorkspaceChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <AgentCourseWorkspace
+        workspaceId={workspace.id}
+        onWorkspaceChange={onWorkspaceChange}
+        onLaunchQuiz={vi.fn()}
+        refreshKey={0}
+        provider="fake"
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: '继续准备课程' }));
+    await waitFor(() => expect(runSignal).toBeDefined());
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: '当前课程' }),
+      secondWorkspace.id,
+    );
+
+    expect(onWorkspaceChange).toHaveBeenCalledWith(secondWorkspace.id);
+    expect(runSignal?.aborted).toBe(true);
+    finishRun?.({
+      preparation: preparation({
+        state: 'course_plan_ready',
+        learnerAction: 'review_course_plan',
+        learnerDecisionRequired: true,
+        checkpoints: {
+          materials: 'complete',
+          concepts: 'complete',
+          courseStructure: 'complete',
+          coursePlan: 'complete',
+        },
+        blocker: null,
+      }),
+    });
+    await waitFor(() => expect(screen.queryByLabelText('课程准备状态')).not.toBeInTheDocument());
+  });
+
+  it('refreshes authoritative preparation state after same-Course cancellation settles', async () => {
+    vi.mocked(api.courseExecution).mockResolvedValue({ overview: planRequiredOverview() });
+    vi.spyOn(api, 'materialRoleHistory').mockResolvedValue(roleHistory(strandedProposal));
+    const running = preparation({
+      operationKey: 'prepare-course-ws-1',
+      state: 'preparing_concepts',
+      machineAction: 'prepare_concepts',
+      learnerAction: 'resume_preparation',
+      canResume: true,
+      canCancel: true,
+      checkpoints: {
+        materials: 'complete',
+        concepts: 'in_progress',
+        courseStructure: 'pending',
+        coursePlan: 'pending',
+      },
+      blocker: null,
+    });
+    const cancelled = preparation({
+      revision: 'preparation-revision-2',
+      operationKey: 'prepare-course-ws-1-retry',
+      state: 'failed_recoverable',
+      machineAction: 'prepare_concepts',
+      learnerAction: 'resume_preparation',
+      canResume: true,
+      canCancel: false,
+      checkpoints: running.checkpoints,
+      blocker: {
+        code: 'preparation_interrupted',
+        message: '课程准备被中断，已完成的有效内容仍然保留，可以安全继续。',
+      },
+      failure: {
+        code: 'REQUEST_CANCELLED',
+        action: 'prepare_concepts',
+        occurredAt: AT,
+        retryable: true,
+      },
+    });
+    let current = running;
+    vi.mocked(api.coursePreparation).mockImplementation(async () => ({ preparation: current }));
+    let runSignal: AbortSignal | undefined;
+    vi.spyOn(api, 'runCoursePreparation').mockImplementation(
+      async (_workspaceId, _input, signal) =>
+        new Promise((_resolve, reject) => {
+          runSignal = signal;
+          signal?.addEventListener(
+            'abort',
+            () => {
+              current = cancelled;
+              reject(new ApiClientError('ABORTED', '请求已取消。'));
+            },
+            { once: true },
+          );
+        }),
+    );
+    const user = userEvent.setup();
+    renderWorkspace();
+
+    await user.click(await screen.findByRole('button', { name: '继续准备课程' }));
+    await waitFor(() => expect(runSignal).toBeDefined());
+    await user.click(screen.getByRole('button', { name: '停止' }));
+
+    expect(runSignal?.aborted).toBe(true);
+    expect(await screen.findByRole('button', { name: '重试课程准备' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '停止' })).not.toBeInTheDocument();
+  });
+});
+
 describe('Course Settings navigation continuity', () => {
   it('keeps the same selected Course when opened from every Course destination', async () => {
     vi.spyOn(api, 'materialRoleHistory').mockResolvedValue(roleHistory(strandedProposal));
@@ -476,6 +735,7 @@ describe('Course Settings navigation continuity', () => {
         message: null,
       },
     });
+    const runPreparation = vi.spyOn(api, 'runCoursePreparation');
     const user = userEvent.setup();
     renderWorkspace();
 
@@ -504,6 +764,7 @@ describe('Course Settings navigation continuity', () => {
       expect(shell).not.toHaveClass(destination.className);
       expect(screen.getByLabelText('课程连续性')).toHaveTextContent(workspace.name);
     }
+    expect(runPreparation).not.toHaveBeenCalled();
   });
 
   it('opens Settings from the no-Course state without inventing Course context', async () => {
@@ -622,7 +883,24 @@ describe('F-6 operation-owned failures', () => {
     const transition = vi
       .spyOn(api, 'transitionLearningContract')
       .mockRejectedValueOnce(new Error('确认服务暂时不可用。'))
-      .mockResolvedValueOnce({} as Awaited<ReturnType<typeof api.transitionLearningContract>>);
+      .mockResolvedValueOnce({
+        contract: {
+          ...contractReviewOverview().pendingContract!,
+          status: 'learner_confirmed',
+          learnerConfirmedAt: AT,
+        },
+        feasibility: {
+          state: 'unknown',
+          deadlineAt: null,
+          availableMinutes: null,
+          projectedMinutes: null,
+          slackMinutes: null,
+          reasonCodes: ['deadline_absent', 'effort_unknown'],
+          assumptions: [],
+          policyVersion: 'contract-feasibility-v1',
+          computedAt: AT,
+        },
+      });
     const user = userEvent.setup();
     renderWorkspace();
 

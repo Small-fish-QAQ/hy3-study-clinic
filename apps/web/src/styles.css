@@ -4333,6 +4333,55 @@ button.danger {
   overflow-wrap: anywhere;
 }
 
+.course-preparation-status {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+  border-block: 1px solid var(--separator);
+}
+
+.course-preparation-status ol {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.course-preparation-status li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.course-preparation-status li > span:first-child {
+  display: inline-grid;
+  flex: none;
+  width: 1.35rem;
+  height: 1.35rem;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  font-weight: 700;
+}
+
+.course-preparation-status li[data-state='complete'] {
+  color: #166534;
+}
+
+.course-preparation-status li[data-state='in_progress'] {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.course-preparation-status li[data-state='blocked'] {
+  color: #9f1239;
+}
+
 .next-action {
   display: flex;
   align-items: center;
@@ -5716,6 +5765,10 @@ button.danger {
   .course-history-groups,
   .material-import-grid {
     grid-template-columns: 1fr;
+  }
+
+  .course-preparation-status ol {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .curriculum-version-overview {

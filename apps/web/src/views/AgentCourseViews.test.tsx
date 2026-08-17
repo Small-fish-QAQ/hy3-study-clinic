@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   CourseExecutionOverview,
+  CoursePreparation,
   CurriculumHierarchyView,
   LearningContract,
   SessionAgenda,
@@ -250,6 +251,8 @@ function homeProps(value: CourseExecutionOverview): CourseHomeViewProps {
   return {
     courseName: 'Probability',
     overview: value,
+    preparation: null,
+    preparationError: null,
     loading: false,
     error: null,
     busyAction: null,
@@ -258,6 +261,8 @@ function homeProps(value: CourseExecutionOverview): CourseHomeViewProps {
     onCreateContract: vi.fn(),
     onEditContract: vi.fn(),
     onConfirmContract: vi.fn(),
+    onRunPreparation: vi.fn(),
+    onCancelPreparation: vi.fn(),
     onProposeCurriculum: vi.fn(),
     onCancelCurriculum: vi.fn(),
     onOpenCurriculum: vi.fn(),
@@ -270,6 +275,30 @@ function homeProps(value: CourseExecutionOverview): CourseHomeViewProps {
     onRejectStudyPlan: vi.fn(),
     onLaunchNext: vi.fn(),
     onOpenMaterials: vi.fn(),
+  };
+}
+
+function preparation(overrides: Partial<CoursePreparation> = {}): CoursePreparation {
+  return {
+    workspaceId: 'ws_1',
+    revision: 'preparation-revision-1',
+    operationKey: 'prepare-course-ws-1',
+    state: 'preparing_concepts',
+    machineAction: 'prepare_concepts',
+    learnerAction: 'resume_preparation',
+    learnerDecisionRequired: false,
+    canResume: true,
+    canCancel: true,
+    checkpoints: {
+      materials: 'complete',
+      concepts: 'in_progress',
+      courseStructure: 'pending',
+      coursePlan: 'pending',
+    },
+    blocker: null,
+    failure: null,
+    generatedAt: AT,
+    ...overrides,
   };
 }
 
@@ -522,6 +551,170 @@ const repeatedSourceBlocks = Array.from({ length: 5 }, (_, index) => ({
 })) satisfies SourceBlock[];
 
 describe('CourseHomeView action and authority rendering', () => {
+  it('renders compact learner-safe Course Preparation checkpoints', () => {
+    const props = homeProps(recoveryOverview('concept_grounding_missing'));
+    props.preparation = preparation({
+      state: 'preparing_course_structure',
+      machineAction: 'prepare_course_structure',
+      checkpoints: {
+        materials: 'complete',
+        concepts: 'complete',
+        courseStructure: 'in_progress',
+        coursePlan: 'pending',
+      },
+    });
+
+    render(<CourseHomeView {...props} />);
+
+    const status = screen.getByLabelText('课程准备状态');
+    expect(within(status).getByRole('heading', { name: '正在设计课程结构' })).toBeVisible();
+    expect(within(status).getByText('资料已整理').closest('li')).toHaveAttribute(
+      'data-state',
+      'complete',
+    );
+    expect(within(status).getByText('核心内容已准备').closest('li')).toHaveAttribute(
+      'data-state',
+      'complete',
+    );
+    expect(within(status).getByText('课程结构已完成').closest('li')).toHaveAttribute(
+      'data-state',
+      'in_progress',
+    );
+    expect(within(status).getByText('课程方案已检查').closest('li')).toHaveAttribute(
+      'data-state',
+      'pending',
+    );
+    expect(status).not.toHaveTextContent(/concept|graph|prepare-course-ws-1/iu);
+  });
+
+  it('offers a learner-safe retry after recoverable preparation failure', async () => {
+    const props = homeProps(recoveryOverview('concept_grounding_missing'));
+    props.preparation = preparation({
+      state: 'failed_recoverable',
+      canCancel: false,
+      blocker: {
+        code: 'preparation_failed',
+        message: '课程准备暂未完成，已有有效内容没有被覆盖，可以稍后重试。',
+      },
+      failure: {
+        code: 'PROVIDER_ERROR',
+        action: 'prepare_concepts',
+        occurredAt: AT,
+        retryable: true,
+      },
+    });
+    props.preparationError = 'raw provider operation op_private_123 failed';
+    const user = userEvent.setup();
+
+    render(<CourseHomeView {...props} />);
+
+    expect(screen.getByRole('alert')).toHaveTextContent('课程准备暂未完成，已有有效内容保持不变。');
+    expect(screen.queryByText(/op_private_123/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '重试课程准备' }));
+    expect(props.onRunPreparation).toHaveBeenCalledOnce();
+  });
+
+  it('shows one cancellable in-progress preparation operation', async () => {
+    const props = homeProps(recoveryOverview('concept_grounding_missing'));
+    props.preparation = preparation();
+    props.busyAction = 'prepare-course';
+    const user = userEvent.setup();
+
+    render(<CourseHomeView {...props} />);
+
+    const operation = screen.getByRole('status');
+    expect(operation).toHaveTextContent('正在理解课程资料的核心内容');
+    expect(screen.queryByRole('button', { name: '继续准备课程' })).not.toBeInTheDocument();
+    await user.click(within(operation).getByRole('button', { name: '停止' }));
+    expect(props.onCancelPreparation).toHaveBeenCalledOnce();
+  });
+
+  it('stops at a real learner-governed Course Structure decision', async () => {
+    const props = homeProps(recoveryOverview('curriculum_remediation_ready'));
+    props.preparation = preparation({
+      operationKey: null,
+      state: 'awaiting_required_governance',
+      machineAction: null,
+      learnerAction: 'review_course_structure',
+      learnerDecisionRequired: true,
+      canResume: false,
+      canCancel: false,
+      checkpoints: {
+        materials: 'complete',
+        concepts: 'complete',
+        courseStructure: 'in_progress',
+        coursePlan: 'pending',
+      },
+      blocker: {
+        code: 'course_structure_review_required',
+        message: '已有一份需要你决定的课程结构，系统不会替你接受它。',
+      },
+    });
+    const user = userEvent.setup();
+
+    render(<CourseHomeView {...props} />);
+
+    await user.click(screen.getByRole('button', { name: '检查课程结构' }));
+    expect(props.onOpenCurriculum).toHaveBeenCalledOnce();
+    expect(props.onRunPreparation).not.toHaveBeenCalled();
+    expect(props.onProposeCurriculum).not.toHaveBeenCalled();
+    expect(props.onAcceptStudyPlan).not.toHaveBeenCalled();
+  });
+
+  it('presents one actionable acceptance control for the ready Course Plan decision', async () => {
+    const value = recoveryOverview('curriculum_remediation_ready');
+    value.setupStage = 'plan_review';
+    value.proposedStudyPlan = plan('proposed');
+    const props = homeProps(value);
+    props.preparation = preparation({
+      operationKey: null,
+      state: 'course_plan_ready',
+      machineAction: null,
+      learnerAction: 'review_course_plan',
+      learnerDecisionRequired: true,
+      canResume: false,
+      canCancel: false,
+      checkpoints: {
+        materials: 'complete',
+        concepts: 'complete',
+        courseStructure: 'complete',
+        coursePlan: 'complete',
+      },
+    });
+    const user = userEvent.setup();
+
+    render(<CourseHomeView {...props} />);
+
+    const acceptanceControls = screen
+      .getAllByRole('button')
+      .filter(
+        (button) =>
+          !button.hasAttribute('disabled') &&
+          /^(?:确认课程方案|接受并启用路线)$/.test(button.textContent ?? ''),
+      );
+    expect(acceptanceControls).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: '接受并启用路线' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '确认课程方案' }));
+    expect(props.onAcceptStudyPlan).toHaveBeenCalledOnce();
+    expect(props.onRunPreparation).not.toHaveBeenCalled();
+    expect(props.onProposeStudyPlan).not.toHaveBeenCalled();
+  });
+
+  it('does not display a superseded older Curriculum proposal over its accepted successor', () => {
+    const value = overview('launchable');
+    value.planningCurriculum = {
+      version: 2,
+    } as NonNullable<CourseExecutionOverview['planningCurriculum']>;
+    value.proposedCurriculum = {
+      version: 1,
+    } as NonNullable<CourseExecutionOverview['proposedCurriculum']>;
+
+    render(<CourseHomeView {...homeProps(value)} />);
+
+    expect(screen.getByText('当前课程结构版本 2')).toBeInTheDocument();
+    expect(screen.queryByText('当前课程结构版本 1')).not.toBeInTheDocument();
+  });
+
   it('shows truthful cancellable Curriculum work without enabling duplicate submission', async () => {
     const user = userEvent.setup();
     const value = overview('launchable');

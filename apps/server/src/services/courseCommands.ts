@@ -195,7 +195,39 @@ export function createCourseCommandService({ repos, clock }: CourseCommandDeps) 
     );
   }
 
-  return { begin, complete, fail };
+  function appendEvent(claim: ClaimedCourseCommand, kind: string, payload: unknown): void {
+    if ('replayPayload' in claim) return;
+    const event = repos.operations.appendEvent(
+      {
+        id: newId('opevt'),
+        operationId: claim.operationId,
+        kind,
+        payload,
+        createdAt: clock.now().toISOString(),
+      },
+      claim.owner,
+      claim.fencingToken,
+    );
+    if (!event) throw new Error('Course command lost its operation lease.');
+  }
+
+  function renew(claim: ClaimedCourseCommand, leaseMs: number): void {
+    if ('replayPayload' in claim) return;
+    if (!Number.isFinite(leaseMs) || leaseMs <= 0) {
+      throw new Error('Course command lease must be finite and positive.');
+    }
+    const now = clock.now();
+    const renewed = repos.operations.renewLease(
+      claim.operationId,
+      claim.owner,
+      claim.fencingToken,
+      new Date(now.getTime() + leaseMs).toISOString(),
+      now.toISOString(),
+    );
+    if (!renewed) throw new Error('Course command lost its operation lease.');
+  }
+
+  return { begin, complete, fail, appendEvent, renew };
 }
 
 export type CourseCommandService = ReturnType<typeof createCourseCommandService>;

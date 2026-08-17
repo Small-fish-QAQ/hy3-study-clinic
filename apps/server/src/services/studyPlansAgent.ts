@@ -50,6 +50,10 @@ interface StudyPlanAgentDeps {
   providerModel?: string | null;
 }
 
+interface StudyPlanProposalPersistenceOptions {
+  beforePersist?: () => void;
+}
+
 export const STUDY_PLAN_PROVIDER_TIMEOUT_MS = 240_000;
 export const STUDY_PLAN_OPERATION_LEASE_MS = STUDY_PLAN_PROVIDER_TIMEOUT_MS * 2 + 120_000;
 
@@ -397,6 +401,7 @@ export function createStudyPlanAgentService({
   async function propose(
     input: ProposeStudyPlanRequest,
     opts?: ProviderCallOptions,
+    persistenceOptions?: StudyPlanProposalPersistenceOptions,
   ): Promise<StudyPlanProposalResponse> {
     const parsed = ProposeStudyPlanRequestSchema.parse(input);
     const workspace = repos.workspaces.get(parsed.command.workspaceId);
@@ -536,6 +541,8 @@ export function createStudyPlanAgentService({
         createdAt: now,
       };
       const response = commands.complete(claim, () => {
+        assertPlanRequestPointers(repos, parsed);
+        persistenceOptions?.beforePersist?.();
         for (const risk of materialized.risks) {
           if (repos.coverageRisks.get(risk.id)) continue;
           repos.coverageRisks.create(risk, {
@@ -573,7 +580,8 @@ export function createStudyPlanAgentService({
     if (!repos.workspaces.get(workspaceId)) throw notFound('Course not found.');
     const plans = repos.studyPlans.list(workspaceId);
     const state = repos.courseExecution.get(workspaceId);
-    const proposed = [...plans].reverse().find((plan) => plan.status === 'proposed');
+    const latest = plans.at(-1);
+    const proposed = latest?.status === 'proposed' ? latest : undefined;
     return StudyPlanHistoryResponseSchema.parse({
       workspaceId,
       acceptedStudyPlanId: state.acceptedPlanId,

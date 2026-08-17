@@ -392,6 +392,21 @@ export function createOperationsRepo(db: SqliteDb) {
     return expired.length;
   });
 
+  const recoverExpiredForWorkspaceTx = db.transaction(
+    (workspaceId: string, operationType: string, at: string): number => {
+      const expired = db
+        .prepare(
+          `SELECT * FROM agent_operations
+           WHERE workspace_id = ? AND operation_type = ? AND status = 'running'
+             AND lease_expires_at IS NOT NULL AND lease_expires_at <= ?
+           ORDER BY created_at ASC, id ASC`,
+        )
+        .all(workspaceId, operationType, at) as OperationRow[];
+      for (const operation of expired) recoverOperation(operation, at, 'lease_expired');
+      return expired.length;
+    },
+  );
+
   return {
     createOrGet(
       operation: Omit<AgentOperation, 'status' | 'leaseOwner' | 'leaseExpiresAt' | 'fencingToken'>,
@@ -408,6 +423,25 @@ export function createOperationsRepo(db: SqliteDb) {
     get(id: string): AgentOperation | undefined {
       const row = getRow(id);
       return row ? rowToOperation(row) : undefined;
+    },
+
+    getByIdempotencyKey(workspaceId: string, idempotencyKey: string): AgentOperation | undefined {
+      const row = db
+        .prepare('SELECT * FROM agent_operations WHERE workspace_id = ? AND idempotency_key = ?')
+        .get(workspaceId, idempotencyKey) as OperationRow | undefined;
+      return row ? rowToOperation(row) : undefined;
+    },
+
+    listForWorkspace(workspaceId: string, operationType: string, limit = 50): AgentOperation[] {
+      const boundedLimit = Math.max(1, Math.min(200, Math.trunc(limit)));
+      const rows = db
+        .prepare(
+          `SELECT * FROM agent_operations
+           WHERE workspace_id = ? AND operation_type = ?
+           ORDER BY created_at DESC, id DESC LIMIT ?`,
+        )
+        .all(workspaceId, operationType, boundedLimit) as OperationRow[];
+      return rows.map(rowToOperation);
     },
 
     claim(operationId: string, owner: string, leaseExpiresAt: string, at: string) {
@@ -465,6 +499,10 @@ export function createOperationsRepo(db: SqliteDb) {
 
     recoverExpired(at: string): number {
       return recoverOrphansTx(at, false);
+    },
+
+    recoverExpiredForWorkspace(workspaceId: string, operationType: string, at: string): number {
+      return recoverExpiredForWorkspaceTx(workspaceId, operationType, at);
     },
 
     /** Every running operation belongs to the previous process at startup. */
