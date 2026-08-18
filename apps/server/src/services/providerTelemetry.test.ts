@@ -172,8 +172,13 @@ describe('central provider inference telemetry', () => {
     const raw = new FakeProvider();
     override(raw, 'analyzeConcepts', async (...args) => {
       const options = args[1] as ProviderCallOptions;
-      options.onRepairAttempt?.();
-      throw ProviderError.invalidOutput('still invalid');
+      options.onRepairAttempt?.('schema', 'JSON_PARSE_FAILURE');
+      throw ProviderError.invalidOutput(
+        'still invalid',
+        'schema',
+        'SCHEMA_VALIDATION_FAILURE',
+        true,
+      );
     });
     const provider = createTelemetryProvider({
       repos,
@@ -192,8 +197,16 @@ describe('central provider inference telemetry', () => {
     };
     expect(call.status).toBe('failed');
     expect(repos.telemetry.listAttempts(call.id)).toMatchObject([
-      { attemptKind: 'original', status: 'completed' },
-      { attemptKind: 'repair', status: 'failed', errorCode: ApiErrorCode.ProviderInvalidOutput },
+      {
+        attemptKind: 'original',
+        status: 'completed',
+        errorCode: 'JSON_PARSE_FAILURE_REPAIR_REQUIRED',
+      },
+      {
+        attemptKind: 'repair',
+        status: 'failed',
+        errorCode: 'REPAIR_EXHAUSTED:SCHEMA_VALIDATION_FAILURE',
+      },
     ]);
   });
 

@@ -302,7 +302,10 @@ describe('Curriculum detail Hy3 provider contract', () => {
 
     expect(payload).toEqual(valid);
     expect(fetchImpl).toHaveBeenCalledTimes(2);
-    expect(onRepairAttempt).toHaveBeenCalledExactlyOnceWith('candidate');
+    expect(onRepairAttempt).toHaveBeenCalledExactlyOnceWith(
+      'candidate',
+      'SEMANTIC_VALIDATION_FAILURE',
+    );
     const firstRequest = JSON.parse(
       String((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[0]![1]!.body),
     ) as { max_tokens: number; messages: Array<{ content: string }> };
@@ -320,9 +323,13 @@ describe('Curriculum detail Hy3 provider contract', () => {
     ).rejects.toMatchObject({
       code: 'PROVIDER_INVALID_OUTPUT',
       details: { validationKind: 'schema' },
+      technicalFailureCode: 'REPAIR_EXHAUSTED:PROVIDER_FORMAT_INCOMPATIBILITY',
     });
     expect(fetchImpl).toHaveBeenCalledTimes(2);
-    expect(onRepairAttempt).toHaveBeenCalledExactlyOnceWith('schema');
+    expect(onRepairAttempt).toHaveBeenCalledExactlyOnceWith(
+      'schema',
+      'PROVIDER_FORMAT_INCOMPATIBILITY',
+    );
   });
 
   it('does not retry a timed-out detail request and supports cancellation', async () => {

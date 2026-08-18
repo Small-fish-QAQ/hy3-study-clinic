@@ -47,7 +47,9 @@ export interface ProviderCallOptions {
   /** Optional bounded timeout override for the owning operation. */
   timeoutMs?: number | undefined;
   /** Internal telemetry hook: any bounded repair is a new physical request. */
-  onRepairAttempt?: ((reason?: ProviderRepairReason) => void) | undefined;
+  onRepairAttempt?:
+    | ((reason?: ProviderRepairReason, category?: StructuredOutputFailureCategory) => void)
+    | undefined;
   /**
    * Local input-aware validation applied after schema parsing. Returning
    * diagnostics consumes the provider's single repair allowance; throwing
@@ -58,6 +60,11 @@ export interface ProviderCallOptions {
   onRequestSent?: (() => void) | undefined;
   /** Internal telemetry hook for provider-reported usage of the current request. */
   onUsage?: ((usage: ProviderUsage) => void) | undefined;
+  /**
+   * Evaluation/debug observer for scalar-redacted structured-output metadata.
+   * Production callers must not expose this envelope to learners.
+   */
+  onStructuredOutputDiagnostic?: ((diagnostic: StructuredOutputDiagnostic) => void) | undefined;
   /** Final authority check immediately before successful ledger completion. */
   beforeTelemetryComplete?: (() => void) | undefined;
   /** Internal authoritative metadata for one logical provider inference. */
@@ -66,10 +73,58 @@ export interface ProviderCallOptions {
 
 export type ProviderRepairReason = 'schema' | 'candidate';
 
+export type StructuredOutputFailureCategory =
+  | 'TRANSPORT_FAILURE'
+  | 'EMPTY_RESPONSE'
+  | 'JSON_PARSE_FAILURE'
+  | 'SCHEMA_VALIDATION_FAILURE'
+  | 'SEMANTIC_VALIDATION_FAILURE'
+  | 'TRUNCATED_OUTPUT'
+  | 'REPAIR_EXHAUSTED'
+  | 'PROVIDER_FORMAT_INCOMPATIBILITY';
+
+export interface StructuredOutputDiagnostic {
+  schemaName: string;
+  operationType: string | null;
+  attemptNumber: 1 | 2;
+  attemptKind: 'original' | 'repair';
+  provider: 'hy3';
+  model: string;
+  transportSuccess: boolean;
+  httpStatus: number | null;
+  responseBodyBytes: number | null;
+  contentType: 'string' | 'array' | 'object' | 'null' | 'missing' | 'other';
+  contentBytes: number | null;
+  contentFingerprint: string | null;
+  finishReason:
+    | 'stop'
+    | 'length'
+    | 'sensitive'
+    | 'content_filter'
+    | 'tool_calls'
+    | 'function_call'
+    | 'unknown'
+    | null;
+  truncated: boolean;
+  possiblyIncomplete: boolean;
+  jsonParseSuccess: boolean;
+  jsonFormat: 'direct' | 'markdown_json_fence' | null;
+  topLevelType: 'object' | 'array' | 'string' | 'number' | 'boolean' | 'null' | null;
+  topLevelKeys: string[];
+  schemaIssueCount: number;
+  schemaIssues: Array<{ path: string; code: string }>;
+  semanticIssueCodes: string[];
+  failureCategory: StructuredOutputFailureCategory | null;
+  repairAction: 'none' | 'requested' | 'exhausted';
+  structuralPreview: unknown;
+}
+
 export interface ProviderCandidateValidation {
   valid: boolean;
   /** Bounded, sanitized model-correctable reasons only. */
   diagnostics: string[];
+  /** Stable codes for private structural diagnostics; never raw model content. */
+  diagnosticCodes?: string[] | undefined;
 }
 
 /** Usage reported by the provider response. Missing values remain unknown. */

@@ -927,10 +927,11 @@ export function createCurriculumService({
             inferenceProvider.proposeCurriculum(providerInput, {
               ...options,
               timeoutMs: providerTimeoutMs,
-              onRepairAttempt: (reason) => {
+              onRepairAttempt: (reason, category) => {
                 repairAttempted = true;
                 assertGenerationSnapshotCurrent();
-                options?.onRepairAttempt?.(reason);
+                if (category) options?.onRepairAttempt?.(reason, category);
+                else options?.onRepairAttempt?.(reason);
               },
               validateCandidate: (candidate) => {
                 assertGenerationSnapshotCurrent();
@@ -949,6 +950,9 @@ export function createCurriculumService({
                 return {
                   valid: lastCandidateValidation.validation.valid,
                   diagnostics: lastCandidateValidation.validation.errors,
+                  diagnosticCodes: lastCandidateValidation.validation.valid
+                    ? []
+                    : ['curriculum_candidate_invalid'],
                 };
               },
             }),
@@ -1038,10 +1042,11 @@ export function createCurriculumService({
               {
                 ...options,
                 timeoutMs: providerTimeoutMs,
-                onRepairAttempt: (reason) => {
+                onRepairAttempt: (reason, category) => {
                   repairAttempted = true;
                   assertGenerationSnapshotCurrent();
-                  options?.onRepairAttempt?.(reason);
+                  if (category) options?.onRepairAttempt?.(reason, category);
+                  else options?.onRepairAttempt?.(reason);
                 },
               },
             ),
@@ -1084,10 +1089,11 @@ export function createCurriculumService({
               inferenceProvider.proposeCurriculumDetails(batch.input, {
                 ...options,
                 timeoutMs: providerTimeoutMs,
-                onRepairAttempt: (reason) => {
+                onRepairAttempt: (reason, category) => {
                   repairAttempted = true;
                   assertGenerationSnapshotCurrent();
-                  options?.onRepairAttempt?.(reason);
+                  if (category) options?.onRepairAttempt?.(reason, category);
+                  else options?.onRepairAttempt?.(reason);
                 },
                 validateCandidate: (candidate) => {
                   assertGenerationSnapshotCurrent();

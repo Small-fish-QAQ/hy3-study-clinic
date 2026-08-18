@@ -1263,7 +1263,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       {
         attemptKind: 'original',
         status: 'completed',
-        errorCode: 'CANDIDATE_VALIDATION_REPAIR_REQUIRED',
+        errorCode: 'SEMANTIC_VALIDATION_FAILURE_REPAIR_REQUIRED',
       },
       { attemptKind: 'repair', status: 'completed' },
     ]);
@@ -1335,7 +1335,7 @@ describe('Curriculum proposal and authority boundaries', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(attemptsForCommand('curriculum-schema-then-semantic')).toMatchObject([
-      { attemptKind: 'original', errorCode: 'STRUCTURED_OUTPUT_REPAIR_REQUIRED' },
+      { attemptKind: 'original', errorCode: 'SCHEMA_VALIDATION_FAILURE_REPAIR_REQUIRED' },
       { attemptKind: 'repair', status: 'failed' },
     ]);
     expect(usageRowsForCommand('curriculum-schema-then-semantic')).toBe(2);

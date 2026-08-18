@@ -179,15 +179,17 @@ export function createTelemetryProvider({
             usageReported = true;
             supplied.onUsage?.(reported);
           },
-          onRepairAttempt: (reason) => {
-            supplied.onRepairAttempt?.(reason);
+          onRepairAttempt: (reason, category) => {
+            supplied.onRepairAttempt?.(reason, category);
             const repairStartedAt = clock.now().toISOString();
             finishAttempt(
               'completed',
               repairStartedAt,
-              reason === 'candidate'
-                ? 'CANDIDATE_VALIDATION_REPAIR_REQUIRED'
-                : 'STRUCTURED_OUTPUT_REPAIR_REQUIRED',
+              category
+                ? `${category}_REPAIR_REQUIRED`
+                : reason === 'candidate'
+                  ? 'CANDIDATE_VALIDATION_REPAIR_REQUIRED'
+                  : 'STRUCTURED_OUTPUT_REPAIR_REQUIRED',
               reason === 'candidate'
                 ? 'The first response required bounded deterministic candidate repair.'
                 : 'The first response required bounded structured-output repair.',
@@ -226,7 +228,7 @@ export function createTelemetryProvider({
             supplied.signal?.aborted === true;
           const errorCode =
             error instanceof ProviderError
-              ? error.code
+              ? (error.technicalFailureCode ?? error.code)
               : cancelled
                 ? ApiErrorCode.RequestCancelled
                 : 'PROVIDER_CALL_FAILED';

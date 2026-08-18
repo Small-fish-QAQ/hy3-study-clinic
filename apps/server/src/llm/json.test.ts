@@ -6,15 +6,17 @@ describe('extractJson', () => {
     expect(extractJson('{"a":1}')).toEqual({ a: 1 });
   });
 
-  it('parses JSON inside a markdown fence', () => {
-    expect(extractJson('说明如下\n```json\n{"a": [1,2]}\n```\n完毕')).toEqual({ a: [1, 2] });
+  it('parses JSON when one markdown fence is the complete response', () => {
+    expect(extractJson('```json\n{"a": [1,2]}\n```')).toEqual({ a: [1, 2] });
   });
 
-  it('parses the first balanced object embedded in prose', () => {
-    expect(extractJson('好的,这是结果:{"name":"工作记忆","n":4},请查收。')).toEqual({
-      name: '工作记忆',
-      n: 4,
-    });
+  it('rejects prose around JSON instead of fishing for a balanced fragment', () => {
+    expect(() => extractJson('好的,这是结果:{"name":"工作记忆","n":4},请查收。')).toThrowError(
+      JsonExtractionError,
+    );
+    expect(() => extractJson('说明如下\n```json\n{"a": [1,2]}\n```\n完毕')).toThrowError(
+      JsonExtractionError,
+    );
   });
 
   it('handles braces inside JSON strings', () => {
@@ -33,6 +35,10 @@ describe('extractJson', () => {
 
   it('throws on unbalanced JSON', () => {
     expect(() => extractJson('{"a": [1, 2')).toThrowError(JsonExtractionError);
+  });
+
+  it('leaves a wrong top-level wrapper intact for schema rejection', () => {
+    expect(extractJson('{"data":{"a":1}}')).toEqual({ data: { a: 1 } });
   });
 
   it('rejects absurdly long input', () => {

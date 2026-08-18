@@ -34,7 +34,7 @@ import {
 } from '@hy3-clinic/shared';
 import { z, type ZodType, type ZodTypeDef } from 'zod';
 import { ProviderError } from './errors.js';
-import { extractJson, JsonExtractionError } from './json.js';
+import { extractJsonWithFormat, JsonExtractionError } from './json.js';
 import {
   alignmentProposalMessages,
   assessmentProposalMessages,
@@ -72,9 +72,18 @@ import type {
   RemediationPlanInput,
   ShortAnswerGradingInput,
   StudyPlanProposalInput,
+  StructuredOutputDiagnostic,
+  StructuredOutputFailureCategory,
   TutorStepInput,
   TutorTurnInput,
 } from './provider.js';
+import {
+  buildStructuredOutputDiagnostic,
+  contentShape,
+  safeFinishReason,
+  type StructuredParseMetadata,
+  type StructuredResponseMetadata,
+} from './structuredOutputDiagnostics.js';
 import { detailedStudyPlanSchema, detailedStudyPlanScopeFromInput } from './studyPlanContract.js';
 
 export interface Hy3ProviderConfig {
@@ -91,13 +100,24 @@ export const CURRICULUM_MAX_OUTPUT_TOKENS = 16_000;
 export const COURSE_MAP_MAX_OUTPUT_TOKENS = 8_000;
 
 interface ChatCompletionResponse {
-  choices?: Array<{ message?: { content?: string } }>;
+  choices?: Array<{ message?: { content?: unknown }; finish_reason?: unknown }>;
   usage?: {
     prompt_tokens?: number;
     completion_tokens?: number;
     prompt_tokens_details?: { cached_tokens?: number };
     completion_tokens_details?: { reasoning_tokens?: number };
   };
+}
+
+interface ChatCompletionResult {
+  content: string;
+  response: StructuredResponseMetadata;
+  envelopeFailure?:
+    | {
+        category: 'PROVIDER_FORMAT_INCOMPATIBILITY';
+        summary: string;
+      }
+    | undefined;
 }
 
 const GROUPED_STUDY_PLAN_KINDS = [
@@ -244,7 +264,7 @@ export class Hy3Provider implements LlmProvider {
 
   /** Deliberate, minimal connectivity probe used only by Settings. */
   async testConnection(opts?: ProviderCallOptions): Promise<void> {
-    await this.chat(
+    const result = await this.chat(
       [
         { role: 'system', content: '只回复 OK。不要调用工具,不要生成学习内容。' },
         { role: 'user', content: 'OK' },
@@ -252,6 +272,16 @@ export class Hy3Provider implements LlmProvider {
       { ...opts, timeoutMs: Math.min(opts?.timeoutMs ?? 15_000, 15_000) },
       { temperature: 0, maxTokens: 1 },
     );
+    if (result.envelopeFailure) {
+      throw ProviderError.invalidOutput(
+        result.envelopeFailure.summary,
+        undefined,
+        result.envelopeFailure.category,
+      );
+    }
+    if (result.content.trim().length === 0) {
+      throw ProviderError.invalidOutput('响应缺少 message.content。', undefined, 'EMPTY_RESPONSE');
+    }
   }
 
   async analyzeConcepts(
@@ -389,7 +419,10 @@ export class Hy3Provider implements LlmProvider {
       CurriculumProposalPayloadSchema,
       opts,
       undefined,
-      { maxTokens: CURRICULUM_MAX_OUTPUT_TOKENS },
+      {
+        maxTokens: CURRICULUM_MAX_OUTPUT_TOKENS,
+        schemaName: 'curriculum-proposal-v2-evidence-identity',
+      },
     );
   }
 
@@ -402,7 +435,7 @@ export class Hy3Provider implements LlmProvider {
       CourseMapProposalPayloadSchema,
       opts,
       undefined,
-      { maxTokens: COURSE_MAP_MAX_OUTPUT_TOKENS },
+      { maxTokens: COURSE_MAP_MAX_OUTPUT_TOKENS, schemaName: 'course-map-proposal-v1' },
     );
   }
 
@@ -415,7 +448,10 @@ export class Hy3Provider implements LlmProvider {
       CurriculumDetailProposalPayloadSchema,
       opts,
       undefined,
-      { maxTokens: CURRICULUM_MAX_OUTPUT_TOKENS },
+      {
+        maxTokens: CURRICULUM_MAX_OUTPUT_TOKENS,
+        schemaName: 'curriculum-detail-proposal-v1',
+      },
     );
   }
 
@@ -555,16 +591,44 @@ export class Hy3Provider implements LlmProvider {
     schema: ZodType<T, ZodTypeDef, unknown>,
     opts?: ProviderCallOptions,
     repairGuidance?: string,
-    requestOptions: { maxTokens?: number } = {},
+    requestOptions: { maxTokens?: number; schemaName?: string } = {},
   ): Promise<T> {
-    const raw = await this.chat(messages, opts, requestOptions);
-    const first = this.tryParse(raw, schema, opts);
+    const schemaName =
+      requestOptions.schemaName ??
+      opts?.telemetry?.schemaFingerprint ??
+      opts?.telemetry?.operationType ??
+      'provider-structured-output';
+    const original = await this.chatWithDiagnostic(
+      messages,
+      opts,
+      requestOptions,
+      schemaName,
+      1,
+      'original',
+    );
+    const first = this.tryParse(original, schema, opts);
+    this.emitDiagnostic(
+      opts,
+      buildStructuredOutputDiagnostic({
+        schemaName,
+        operationType: opts?.telemetry?.operationType ?? null,
+        attemptNumber: 1,
+        attemptKind: 'original',
+        model: this.config.model,
+        response: original.response,
+        parse: first.parse,
+        repairAction: first.ok ? 'none' : first.repairable ? 'requested' : 'none',
+      }),
+    );
     if (first.ok) return first.value;
+    if (!first.repairable) {
+      throw ProviderError.invalidOutput(first.error, first.reason, first.category);
+    }
 
     // One bounded repair attempt.
     const repairMessages: ChatMessage[] = [
       ...messages,
-      { role: 'assistant', content: raw },
+      { role: 'assistant', content: original.content },
       {
         role: 'user',
         content: [
@@ -576,29 +640,134 @@ export class Hy3Provider implements LlmProvider {
       },
     ];
     if (opts?.signal?.aborted) throw ProviderError.cancelled();
-    opts?.onRepairAttempt?.(first.reason);
-    const repaired = await this.chat(repairMessages, opts, requestOptions);
+    opts?.onRepairAttempt?.(first.reason, first.category);
+    const repaired = await this.chatWithDiagnostic(
+      repairMessages,
+      opts,
+      requestOptions,
+      schemaName,
+      2,
+      'repair',
+    );
     const second = this.tryParse(repaired, schema, opts);
+    this.emitDiagnostic(
+      opts,
+      buildStructuredOutputDiagnostic({
+        schemaName,
+        operationType: opts?.telemetry?.operationType ?? null,
+        attemptNumber: 2,
+        attemptKind: 'repair',
+        model: this.config.model,
+        response: repaired.response,
+        parse: second.parse,
+        repairAction: second.ok ? 'none' : 'exhausted',
+      }),
+    );
     if (second.ok) return second.value;
 
-    throw ProviderError.invalidOutput(second.error, second.reason);
+    throw ProviderError.invalidOutput(second.error, second.reason, second.category, true);
   }
 
   private tryParse<T>(
-    raw: string,
+    result: ChatCompletionResult,
     schema: ZodType<T, ZodTypeDef, unknown>,
     opts?: ProviderCallOptions,
-  ): { ok: true; value: T } | { ok: false; error: string; reason: 'schema' | 'candidate' } {
-    let json: unknown;
+  ):
+    | { ok: true; value: T; parse: StructuredParseMetadata }
+    | {
+        ok: false;
+        error: string;
+        reason: 'schema' | 'candidate';
+        category: StructuredOutputFailureCategory;
+        repairable: boolean;
+        parse: StructuredParseMetadata;
+      } {
+    const abnormalFinishReason =
+      result.response.finishReason === 'sensitive' ||
+      result.response.finishReason === 'content_filter' ||
+      result.response.finishReason === 'tool_calls' ||
+      result.response.finishReason === 'function_call';
+    if (result.envelopeFailure) {
+      return {
+        ok: false,
+        error: result.envelopeFailure.summary,
+        reason: 'schema',
+        category: result.envelopeFailure.category,
+        repairable: false,
+        parse: {
+          jsonParseSuccess: false,
+          jsonFormat: null,
+          parsed: undefined,
+          failureCategory: result.envelopeFailure.category,
+        },
+      };
+    }
+
+    let extracted: ReturnType<typeof extractJsonWithFormat>;
     try {
-      json = extractJson(raw);
+      extracted = extractJsonWithFormat(result.content);
     } catch (err) {
       if (err instanceof JsonExtractionError) {
-        return { ok: false, error: err.message, reason: 'schema' };
+        result.response.possiblyIncomplete = err.kind === 'incomplete_json';
+        const category: StructuredOutputFailureCategory = abnormalFinishReason
+          ? 'PROVIDER_FORMAT_INCOMPATIBILITY'
+          : result.response.truncated
+            ? 'TRUNCATED_OUTPUT'
+            : err.kind === 'empty'
+              ? 'EMPTY_RESPONSE'
+              : err.kind === 'format_incompatible'
+                ? 'PROVIDER_FORMAT_INCOMPATIBILITY'
+                : 'JSON_PARSE_FAILURE';
+        return {
+          ok: false,
+          error: err.message,
+          reason: 'schema',
+          category,
+          repairable: !abnormalFinishReason,
+          parse: {
+            jsonParseSuccess: false,
+            jsonFormat: null,
+            parsed: undefined,
+            failureCategory: category,
+          },
+        };
       }
       throw err;
     }
-    const parsed = schema.safeParse(json);
+
+    const parsed = schema.safeParse(extracted.value);
+    if (abnormalFinishReason) {
+      return {
+        ok: false,
+        error: `模型服务以异常原因结束结构化输出: ${result.response.finishReason}。`,
+        reason: 'schema',
+        category: 'PROVIDER_FORMAT_INCOMPATIBILITY',
+        repairable: false,
+        parse: {
+          jsonParseSuccess: true,
+          jsonFormat: extracted.format,
+          parsed: extracted.value,
+          ...(!parsed.success ? { schemaIssues: parsed.error.issues } : {}),
+          failureCategory: 'PROVIDER_FORMAT_INCOMPATIBILITY',
+        },
+      };
+    }
+    if (result.response.truncated) {
+      return {
+        ok: false,
+        error: '模型输出因长度限制而截断。',
+        reason: 'schema',
+        category: 'TRUNCATED_OUTPUT',
+        repairable: true,
+        parse: {
+          jsonParseSuccess: true,
+          jsonFormat: extracted.format,
+          parsed: extracted.value,
+          ...(!parsed.success ? { schemaIssues: parsed.error.issues } : {}),
+          failureCategory: 'TRUNCATED_OUTPUT',
+        },
+      };
+    }
     if (parsed.success) {
       const candidate = opts?.validateCandidate?.(parsed.data);
       if (candidate && !candidate.valid) {
@@ -606,23 +775,111 @@ export class Hy3Provider implements LlmProvider {
           ok: false,
           error: candidate.diagnostics.slice(0, 20).join('; ').slice(0, 8_000),
           reason: 'candidate',
+          category: 'SEMANTIC_VALIDATION_FAILURE',
+          repairable: true,
+          parse: {
+            jsonParseSuccess: true,
+            jsonFormat: extracted.format,
+            parsed: extracted.value,
+            semanticIssueCodes: candidate.diagnosticCodes ?? ['candidate_validation_failed'],
+            failureCategory: 'SEMANTIC_VALIDATION_FAILURE',
+          },
         };
       }
-      return { ok: true, value: parsed.data };
+      return {
+        ok: true,
+        value: parsed.data,
+        parse: {
+          jsonParseSuccess: true,
+          jsonFormat: extracted.format,
+          parsed: extracted.value,
+          failureCategory: null,
+        },
+      };
     }
     const summary = parsed.error.issues
       .slice(0, 10)
       .map((i) => `${i.path.join('.')}: ${i.message}`)
       .join('; ');
-    return { ok: false, error: summary, reason: 'schema' };
+    return {
+      ok: false,
+      error: summary,
+      reason: 'schema',
+      category: 'SCHEMA_VALIDATION_FAILURE',
+      repairable: true,
+      parse: {
+        jsonParseSuccess: true,
+        jsonFormat: extracted.format,
+        parsed: extracted.value,
+        schemaIssues: parsed.error.issues,
+        failureCategory: 'SCHEMA_VALIDATION_FAILURE',
+      },
+    };
+  }
+
+  private emitDiagnostic(
+    opts: ProviderCallOptions | undefined,
+    diagnostic: StructuredOutputDiagnostic,
+  ): void {
+    try {
+      opts?.onStructuredOutputDiagnostic?.(diagnostic);
+    } catch {
+      // Diagnostics are observational and must never change provider behavior.
+    }
+  }
+
+  private async chatWithDiagnostic(
+    messages: ChatMessage[],
+    opts: ProviderCallOptions | undefined,
+    requestOptions: { maxTokens?: number },
+    schemaName: string,
+    attemptNumber: 1 | 2,
+    attemptKind: 'original' | 'repair',
+  ): Promise<ChatCompletionResult> {
+    try {
+      return await this.chat(messages, opts, requestOptions);
+    } catch (error) {
+      this.emitDiagnostic(
+        opts,
+        buildStructuredOutputDiagnostic({
+          schemaName,
+          operationType: opts?.telemetry?.operationType ?? null,
+          attemptNumber,
+          attemptKind,
+          model: this.config.model,
+          response: {
+            transportSuccess: false,
+            httpStatus: error instanceof ProviderError ? (error.technicalHttpStatus ?? null) : null,
+            responseBodyBytes: null,
+            contentType: 'missing',
+            contentBytes: null,
+            contentFingerprint: null,
+            finishReason: null,
+            truncated: false,
+            possiblyIncomplete: false,
+          },
+          parse: {
+            jsonParseSuccess: false,
+            jsonFormat: null,
+            parsed: undefined,
+            failureCategory: 'TRANSPORT_FAILURE',
+          },
+          repairAction: attemptKind === 'repair' ? 'exhausted' : 'none',
+        }),
+      );
+      throw error;
+    }
   }
 
   /** Single chat completion call with timeout + external cancellation. */
   private async chat(
     messages: ChatMessage[],
     opts?: ProviderCallOptions,
-    requestOptions: { temperature?: number; maxTokens?: number } = {},
-  ): Promise<string> {
+    requestOptions: {
+      temperature?: number;
+      maxTokens?: number;
+    } = {},
+  ): Promise<ChatCompletionResult> {
     if (opts?.signal?.aborted) throw ProviderError.cancelled();
 
     const timeoutMs = opts?.timeoutMs ?? this.config.timeoutMs;
@@ -667,17 +924,44 @@ export class Hy3Provider implements LlmProvider {
         throw ProviderError.http(response.status);
       }
 
-      let data: ChatCompletionResponse;
+      let body: string;
       try {
-        data = (await response.json()) as ChatCompletionResponse;
+        body = await response.text();
       } catch {
         if (controller.signal.aborted) throw abortError();
-        throw ProviderError.invalidOutput('响应不是合法 JSON。');
+        throw ProviderError.network();
       }
 
       // The timeout/cancellation budget covers the complete body read, not
       // merely the arrival of response headers.
       if (controller.signal.aborted) throw abortError();
+
+      const responseBodyBytes = Buffer.byteLength(body, 'utf8');
+      let data: ChatCompletionResponse;
+      try {
+        const parsed = JSON.parse(body) as unknown;
+        data =
+          parsed !== null && typeof parsed === 'object' ? (parsed as ChatCompletionResponse) : {};
+      } catch {
+        return {
+          content: '',
+          response: {
+            transportSuccess: true,
+            httpStatus: response.status,
+            responseBodyBytes,
+            contentType: 'missing',
+            contentBytes: null,
+            contentFingerprint: null,
+            finishReason: null,
+            truncated: false,
+            possiblyIncomplete: false,
+          },
+          envelopeFailure: {
+            category: 'PROVIDER_FORMAT_INCOMPATIBILITY',
+            summary: '模型服务响应不是合法 JSON。',
+          },
+        };
+      }
 
       const nonnegativeInteger = (value: unknown): number | null =>
         typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : null;
@@ -695,11 +979,31 @@ export class Hy3Provider implements LlmProvider {
         pricingVersion: null,
       });
 
-      const content = data.choices?.[0]?.message?.content;
-      if (typeof content !== 'string' || content.trim().length === 0) {
-        throw ProviderError.invalidOutput('响应缺少 message.content。');
+      const choice = data.choices?.[0];
+      const content = choice?.message?.content;
+      const finishReason = safeFinishReason(choice?.finish_reason);
+      const baseResponse = {
+        transportSuccess: true,
+        httpStatus: response.status,
+        responseBodyBytes,
+        contentType: contentShape(content),
+        contentBytes: typeof content === 'string' ? Buffer.byteLength(content, 'utf8') : null,
+        contentFingerprint: null,
+        finishReason,
+        truncated: finishReason === 'length',
+        possiblyIncomplete: false,
+      } satisfies StructuredResponseMetadata;
+      if (typeof content !== 'string') {
+        return {
+          content: '',
+          response: baseResponse,
+          envelopeFailure: {
+            category: 'PROVIDER_FORMAT_INCOMPATIBILITY',
+            summary: '模型服务响应缺少字符串 message.content。',
+          },
+        };
       }
-      return content;
+      return { content, response: baseResponse };
     } catch (err) {
       if (err instanceof ProviderError) throw err;
       if (controller.signal.aborted) throw abortError();

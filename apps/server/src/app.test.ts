@@ -126,6 +126,17 @@ describe('provider configuration routes', () => {
   it.each([
     ['authentication failure', ProviderError.http(401), 502, 'PROVIDER_ERROR'],
     ['unreachable provider', ProviderError.network(), 502, 'PROVIDER_ERROR'],
+    [
+      'invalid structured output',
+      ProviderError.invalidOutput(
+        'sentinel-private-provider-output',
+        'schema',
+        'SCHEMA_VALIDATION_FAILURE',
+        true,
+      ),
+      502,
+      'PROVIDER_INVALID_OUTPUT',
+    ],
     ['request cancellation', ProviderError.cancelled(), 499, 'REQUEST_CANCELLED'],
   ])('maps mocked %s without making a real request', async (_name, error, status, code) => {
     const runtime = runtimeWithConnectionTest(async (opts) => {
@@ -139,6 +150,7 @@ describe('provider configuration routes', () => {
     expect(response.statusCode).toBe(status);
     expect(response.json()).toMatchObject({ error: { code } });
     expect(response.body).not.toContain('sentinel-key');
+    expect(response.body).not.toContain('sentinel-private-provider-output');
     const config = await app.inject({ method: 'GET', url: '/api/config' });
     expect(config.json()).toMatchObject({
       externalConnection:

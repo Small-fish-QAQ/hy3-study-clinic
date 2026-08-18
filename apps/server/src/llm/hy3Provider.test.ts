@@ -487,7 +487,8 @@ describe('Hy3Provider large StudyPlan output', () => {
 
     await expect(makeProvider(fetchImpl).proposeStudyPlan(input)).rejects.toMatchObject({
       code: 'PROVIDER_INVALID_OUTPUT',
-      details: { validation: expect.stringContaining('Invalid enum value') },
+      details: { validationKind: 'schema' },
+      technicalFailureCode: 'REPAIR_EXHAUSTED:SCHEMA_VALIDATION_FAILURE',
     });
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
@@ -631,7 +632,7 @@ describe('Hy3Provider response-body cancellation', () => {
     return {
       ok: true,
       status: 200,
-      json: () =>
+      text: () =>
         new Promise<never>((_resolve, reject) => {
           const rejectAbort = () =>
             reject(Object.assign(new Error('aborted while reading body'), { name: 'AbortError' }));

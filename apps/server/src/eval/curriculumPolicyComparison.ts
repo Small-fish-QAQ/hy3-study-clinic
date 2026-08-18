@@ -659,6 +659,9 @@ export async function evaluateCurriculumPolicy(
               return {
                 valid: lastCandidate.validation.valid,
                 diagnostics: lastCandidate.validation.errors,
+                diagnosticCodes: lastCandidate.validation.valid
+                  ? []
+                  : ['curriculum_candidate_invalid'],
               };
             },
           }),

@@ -1,4 +1,5 @@
 import { ApiErrorCode, type ApiErrorCodeValue } from '@hy3-clinic/shared';
+import type { StructuredOutputFailureCategory } from './provider.js';
 
 export type ProviderErrorCode = Extract<
   ApiErrorCodeValue,
@@ -14,6 +15,8 @@ export class ProviderError extends Error {
     readonly code: ProviderErrorCode,
     message: string,
     readonly details?: unknown,
+    readonly technicalFailureCode?: string,
+    readonly technicalHttpStatus?: number,
   ) {
     super(message);
     this.name = 'ProviderError';
@@ -31,11 +34,23 @@ export class ProviderError extends Error {
     return new ProviderError(ApiErrorCode.RequestCancelled, '请求已取消。');
   }
 
-  static invalidOutput(summary: string, validationKind?: 'schema' | 'candidate'): ProviderError {
+  static invalidOutput(
+    _summary: string,
+    validationKind?: 'schema' | 'candidate',
+    failureCategory?: StructuredOutputFailureCategory,
+    repairExhausted = false,
+  ): ProviderError {
     return new ProviderError(
       ApiErrorCode.ProviderInvalidOutput,
-      '模型返回的数据不符合约定格式,已在一次修复尝试后放弃。',
-      { validation: summary, validationKind },
+      repairExhausted
+        ? '模型返回的数据不符合约定格式,已在一次修复尝试后放弃。'
+        : '模型返回的数据不符合约定格式。',
+      validationKind ? { validationKind } : undefined,
+      failureCategory
+        ? repairExhausted
+          ? `REPAIR_EXHAUSTED:${failureCategory}`
+          : failureCategory
+        : undefined,
     );
   }
 
@@ -43,6 +58,9 @@ export class ProviderError extends Error {
     return new ProviderError(
       ApiErrorCode.ProviderError,
       `模型服务返回错误状态 ${status},请检查服务配置或稍后重试。`,
+      undefined,
+      undefined,
+      status,
     );
   }
 

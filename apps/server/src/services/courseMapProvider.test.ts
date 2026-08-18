@@ -203,7 +203,7 @@ describe('Course Map Hy3 provider contract', () => {
       details: { validationKind: 'schema' },
     });
     expect(fetchImpl).toHaveBeenCalledTimes(2);
-    expect(onRepairAttempt).toHaveBeenCalledExactlyOnceWith('schema');
+    expect(onRepairAttempt).toHaveBeenCalledExactlyOnceWith('schema', 'SCHEMA_VALIDATION_FAILURE');
   });
 
   it('repairs one schema-valid semantic failure using local diagnostics', async () => {
@@ -226,7 +226,10 @@ describe('Course Map Hy3 provider contract', () => {
     expect(result.repairAttempted).toBe(true);
     expect(result.analysis.validation.valid).toBe(true);
     expect(fetchImpl).toHaveBeenCalledTimes(2);
-    expect(onRepairAttempt).toHaveBeenCalledExactlyOnceWith('candidate');
+    expect(onRepairAttempt).toHaveBeenCalledExactlyOnceWith(
+      'candidate',
+      'SEMANTIC_VALIDATION_FAILURE',
+    );
     const repairBody = JSON.parse(
       String((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[1]![1]!.body),
     ) as { messages: Array<{ content: string }> };
@@ -248,9 +251,9 @@ describe('Course Map Hy3 provider contract', () => {
     ).rejects.toMatchObject({
       code: 'PROVIDER_INVALID_OUTPUT',
       details: {
-        validation: expect.stringContaining('prerequisite_cycle'),
         validationKind: 'candidate',
       },
+      technicalFailureCode: 'REPAIR_EXHAUSTED:SEMANTIC_VALIDATION_FAILURE',
     });
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });

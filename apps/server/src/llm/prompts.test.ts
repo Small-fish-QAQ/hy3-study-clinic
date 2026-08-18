@@ -2,13 +2,14 @@ import { describe, expect, it } from 'vitest';
 import type { Concept, SourceBlock } from '@hy3-clinic/shared';
 import {
   conceptAnalysisMessages,
+  courseMapProposalMessages,
   quizGenerationMessages,
   remediationMessages,
   shortAnswerGradingMessages,
   curriculumProposalMessages,
   measureCurriculumRequest,
 } from './prompts.js';
-import type { CurriculumProposalInput } from './provider.js';
+import type { CourseMapProposalInput, CurriculumProposalInput } from './provider.js';
 
 const blocks: SourceBlock[] = [
   {
@@ -223,5 +224,39 @@ describe('prompt trust boundaries', () => {
     expect(report.evidenceExcerpt.chars).toBe(blocks[0]!.content.length);
     expect(report.sections).toHaveProperty('sourceSections');
     expect(report.responseFormatSchema).toEqual({ chars: 0, bytes: 0 });
+  });
+
+  it('states that Course Map region indexes restart inside every module', () => {
+    const content = courseMapProposalMessages({
+      workspaceName: 'Course',
+      contract: {
+        intent: 'Learn',
+        targetOutcome: { description: 'Understand', targetScore: null },
+        desiredDepth: 'working_fluency',
+        subjectBoundaries: [],
+        materials: [],
+        includedTopics: [],
+        excludedTopics: [],
+      },
+      courseSourceMapFingerprint: 'course_source_map_fixture',
+      sourceAllocationFingerprint:
+        'course_map_source_allocation_0000000000000000000000000000000000000000',
+      sourceRegions: [],
+      concepts: [],
+      canonicalConcepts: [],
+      limits: {
+        maxModules: 3,
+        maxRegions: 7,
+        maxPrerequisiteEdges: 12,
+        maxPrerequisiteDegree: 4,
+        maxSynthesisGroups: 3,
+        maxSourceRegionsPerRegion: 2,
+      },
+    } as CourseMapProposalInput)
+      .map((message) => message.content)
+      .join('\n');
+
+    expect(content).toContain('Inside EACH module, region indexes restart at 0');
+    expect(content).toContain('never use one course-global region index');
   });
 });

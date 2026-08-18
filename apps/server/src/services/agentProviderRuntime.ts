@@ -154,9 +154,10 @@ export async function runTrackedAgentProviderOperation<T>({
   assertCurrentLease();
   const result = await invoke({
     ...providerOptions,
-    onRepairAttempt: (reason) => {
+    onRepairAttempt: (reason, category) => {
       assertCurrentLease();
-      providerOptions?.onRepairAttempt?.(reason);
+      if (category) providerOptions?.onRepairAttempt?.(reason, category);
+      else providerOptions?.onRepairAttempt?.(reason);
     },
     beforeTelemetryComplete: assertCurrentLease,
     telemetry: {

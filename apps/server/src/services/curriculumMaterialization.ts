@@ -307,15 +307,19 @@ export function validateCurriculumDetailCandidate(
       diagnostics: parsed.error.issues.map(
         (issue) => `${issue.path.join('.') || 'payload'}: ${issue.message}`,
       ),
+      diagnosticCodes: parsed.error.issues.map((issue) => `schema_${issue.code}`),
     };
   }
   const diagnostics: string[] = [];
+  const diagnosticCodes: string[] = [];
   const payload = parsed.data;
   if (payload.courseMapId !== input.courseMapId) {
     diagnostics.push('Curriculum detail response references a foreign Course Map.');
+    diagnosticCodes.push('foreign_course_map');
   }
   if (payload.sourceAllocationFingerprint !== input.sourceAllocationFingerprint) {
     diagnostics.push('Curriculum detail response has a stale source-allocation fingerprint.');
+    diagnosticCodes.push('source_allocation_fingerprint_mismatch');
   }
   const expectedRegionIds = input.regions.map((region) => region.regionId);
   const actualRegionIds = payload.units.map((unit) => unit.regionId);
@@ -326,12 +330,14 @@ export function validateCurriculumDetailCandidate(
     diagnostics.push(
       'Curriculum detail response must represent every offered region exactly once in order.',
     );
+    diagnosticCodes.push('region_set_or_order_mismatch');
   }
   const regionById = new Map(input.regions.map((region) => [region.regionId, region] as const));
   for (const unit of payload.units) {
     const region = regionById.get(unit.regionId);
     if (!region) {
       diagnostics.push(`Curriculum detail response contains an unknown region: ${unit.regionId}.`);
+      diagnosticCodes.push('unknown_region');
       continue;
     }
     const evidenceById = new Map(
@@ -346,6 +352,7 @@ export function validateCurriculumDetailCandidate(
         diagnostics.push(
           `Curriculum detail region ${unit.regionId} selected unknown or foreign evidence: ${evidenceId}.`,
         );
+        diagnosticCodes.push('unknown_evidence');
       }
     }
     const selectedSourceRegionIds = new Set(
@@ -359,6 +366,7 @@ export function validateCurriculumDetailCandidate(
         diagnostics.push(
           `Curriculum detail region ${unit.regionId} does not represent source allocation ${sourceRegionId}.`,
         );
+        diagnosticCodes.push('source_allocation_omitted');
       }
     }
     const allowedConceptIds = new Set(region.concepts.map((concept) => concept.id));
@@ -367,6 +375,7 @@ export function validateCurriculumDetailCandidate(
         diagnostics.push(
           `Curriculum detail region ${unit.regionId} selected an unknown Concept: ${conceptId}.`,
         );
+        diagnosticCodes.push('unknown_concept');
       }
     }
     const allowedCanonicalIds = new Set(region.canonicalConcepts.map((canonical) => canonical.id));
@@ -375,10 +384,15 @@ export function validateCurriculumDetailCandidate(
         diagnostics.push(
           `Curriculum detail region ${unit.regionId} selected an unknown canonical Concept: ${canonicalId}.`,
         );
+        diagnosticCodes.push('unknown_canonical_concept');
       }
     }
   }
-  return { valid: diagnostics.length === 0, diagnostics: diagnostics.slice(0, 100) };
+  return {
+    valid: diagnostics.length === 0,
+    diagnostics: diagnostics.slice(0, 100),
+    diagnosticCodes: diagnosticCodes.slice(0, 100),
+  };
 }
 
 export interface CurriculumDetailAssembly {

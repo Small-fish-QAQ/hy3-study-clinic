@@ -732,7 +732,7 @@ export function analyzeCourseMapProposal(
         add(
           'error',
           'invalid_region_order',
-          'Course Map region indexes must be contiguous and match array order.',
+          'Inside each module, Course Map region indexes must restart at 0, be contiguous, and match that module regions array order; never use a course-global region index.',
           [proposedRegion.key],
         );
       }
@@ -1232,9 +1232,10 @@ export async function generateCourseMapPrototype(
   let repairAttempted = false;
   const payload = await provider.proposeCourseMap(providerInput, {
     ...opts,
-    onRepairAttempt: (reason) => {
+    onRepairAttempt: (reason, category) => {
       repairAttempted = true;
-      opts?.onRepairAttempt?.(reason);
+      if (category) opts?.onRepairAttempt?.(reason, category);
+      else opts?.onRepairAttempt?.(reason);
     },
     validateCandidate: (candidate) => {
       const parsed = CourseMapProposalPayloadSchema.safeParse(candidate);
@@ -1244,6 +1245,7 @@ export async function generateCourseMapPrototype(
           diagnostics: parsed.error.issues
             .slice(0, 20)
             .map((issue) => `${issue.path.join('.')}: ${issue.message}`),
+          diagnosticCodes: parsed.error.issues.slice(0, 20).map((issue) => `schema_${issue.code}`),
         };
       }
       const analysis = analyzeCourseMapProposal(parsed.data, {
@@ -1255,12 +1257,19 @@ export async function generateCourseMapPrototype(
         diagnostics: analysis.validation.diagnostics
           .filter((diagnostic) => diagnostic.severity === 'error')
           .map((diagnostic) => `${diagnostic.code}: ${diagnostic.message}`),
+        diagnosticCodes: analysis.validation.diagnostics
+          .filter((diagnostic) => diagnostic.severity === 'error')
+          .map((diagnostic) => diagnostic.code),
       };
       const external = opts?.validateCandidate?.(candidate);
       return external && !external.valid
         ? {
             valid: false,
             diagnostics: [...local.diagnostics, ...external.diagnostics].slice(0, 20),
+            diagnosticCodes: [
+              ...local.diagnosticCodes,
+              ...(external.diagnosticCodes ?? ['external_candidate_validation_failed']),
+            ].slice(0, 20),
           }
         : local;
     },
