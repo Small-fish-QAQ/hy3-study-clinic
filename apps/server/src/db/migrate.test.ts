@@ -158,7 +158,7 @@ describe('migrations', () => {
       .prepare('SELECT COALESCE(MAX(version), 0) AS v FROM schema_migrations')
       .get() as { v: number };
     expect(row.v).toBe(LATEST_MIGRATION_VERSION);
-    expect(row.v).toBe(20);
+    expect(row.v).toBe(21);
     expectCanonicalProviderGenerationSchema(db);
     db.close();
   });
@@ -191,6 +191,16 @@ describe('migrations', () => {
     expect(
       db.prepare('SELECT version, name FROM schema_migrations WHERE version = 20').get(),
     ).toEqual({ version: 20, name: 'immutable_learning_unit_teaching_briefs' });
+    expect(
+      db.prepare('SELECT version, name FROM schema_migrations WHERE version = 21').get(),
+    ).toEqual({ version: 21, name: 'session_owned_lesson_execution' });
+    expect(
+      db
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'lesson_execution_states'",
+        )
+        .get(),
+    ).toEqual({ name: 'lesson_execution_states' });
     expect(db.pragma('foreign_key_check')).toEqual([]);
     db.close();
   });
@@ -236,6 +246,8 @@ describe('migrations', () => {
       'study_turn_events',
       'study_session_summaries',
       'teaching_briefs',
+      'lesson_execution_states',
+      'lesson_execution_events',
     ]) {
       expect(tables).toContain(expected);
     }

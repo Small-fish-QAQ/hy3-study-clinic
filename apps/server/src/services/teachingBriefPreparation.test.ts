@@ -216,4 +216,44 @@ describe('Teaching Brief preparation', () => {
     ).rejects.toMatchObject({ code: 'VERSION_CONFLICT' });
     expect(harness.provider.teachingBriefCalls).toBe(0);
   });
+
+  it('prepares and presents a lesson inside a StudySession without formal credit', async () => {
+    const harness = await createHarness();
+    const agenda = harness.repos.sessionAgendas.list('ws_1').at(-1)!;
+    const execution = harness.repos.courseExecution.get('ws_1');
+    const started = harness.services.studySessions.start('ws_1', {
+      contractVersionId: agenda.contractVersionId,
+      curriculumVersionId: agenda.curriculumVersionId,
+      studyPlanVersionId: agenda.studyPlanVersionId,
+      sessionAgendaId: agenda.id,
+      expectedCourseExecutionVersion: execution.version,
+    });
+    const session = started.session;
+    const initial = harness.services.lessonExecution.get('ws_1', session.id);
+    expect(initial.status).toBe('preparation_needed');
+    expect(initial.allowedActions).toContain('prepare_lesson');
+    const prepared = await harness.services.lessonExecution.ensure('ws_1', session.id, {
+      command: command('lesson-prepare'),
+      expectedSessionVersion: session.version,
+      expectedAgendaVersion: agenda.version,
+      expectedAgendaItemId: session.currentAgendaItemId,
+    });
+    expect(prepared.status).toBe('ready');
+    expect(prepared.lesson).not.toBeNull();
+    expect(prepared.allowedActions).toContain('start_lesson');
+    const readyVersion = prepared.progress!.stateVersion;
+    const startedLesson = await harness.services.lessonExecution.command('ws_1', session.id, {
+      command: command('lesson-start'),
+      expectedSessionVersion: prepared.session.version,
+      expectedAgendaVersion: prepared.agenda!.version,
+      expectedAgendaItemId: session.currentAgendaItemId!,
+      expectedLessonStateVersion: readyVersion,
+      action: { kind: 'start_lesson' },
+    });
+    expect(startedLesson.progress?.presentedSegmentIndexes).toContain(0);
+    expect(harness.services.lessonExecution.tutorContext('ws_1', session.id)).not.toBeNull();
+    expect(harness.repos.formalProgression.listEvidenceForWorkspace('ws_1')).toHaveLength(0);
+    expect(harness.repos.mistakes.listOpenByWorkspace('ws_1')).toHaveLength(0);
+    expect(harness.provider.teachingBriefCalls).toBe(1);
+  });
 });

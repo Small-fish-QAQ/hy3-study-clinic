@@ -24,6 +24,32 @@ export function registerStudySessionRoutes(app: FastifyInstance, services: Servi
     return services.studySessions.detail(params.workspaceId, params.sessionId);
   });
 
+  app.get(
+    '/api/workspaces/:workspaceId/study-sessions/:sessionId/lesson-execution',
+    async (request) => {
+      const params = SessionParams.parse(request.params);
+      return services.lessonExecution.get(params.workspaceId, params.sessionId);
+    },
+  );
+
+  app.post(
+    '/api/workspaces/:workspaceId/study-sessions/:sessionId/lesson-execution/prepare',
+    async (request, reply) => {
+      const params = SessionParams.parse(request.params);
+      return services.lessonExecution.ensure(params.workspaceId, params.sessionId, request.body, {
+        signal: requestSignal(request, reply),
+      });
+    },
+  );
+
+  app.post(
+    '/api/workspaces/:workspaceId/study-sessions/:sessionId/lesson-execution/commands',
+    async (request) => {
+      const params = SessionParams.parse(request.params);
+      return services.lessonExecution.command(params.workspaceId, params.sessionId, request.body);
+    },
+  );
+
   app.post(
     '/api/workspaces/:workspaceId/study-sessions/:sessionId/turns',
     async (request, reply) => {

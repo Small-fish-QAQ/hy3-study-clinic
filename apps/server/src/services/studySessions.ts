@@ -24,6 +24,7 @@ import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
 import type { FormalProgressionService } from './formalProgression.js';
+import type { LessonExecutionService } from './lessonExecution.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
 import { enforceAgentCostPolicies } from './agentProviderRuntime.js';
 
@@ -33,6 +34,7 @@ interface StudySessionServiceDeps {
   providerModel?: string | null;
   clock: Clock;
   replanning: Pick<FormalProgressionService, 'qualifyReplanTrigger' | 'proposeQualifiedReplan'>;
+  lessonExecution?: Pick<LessonExecutionService, 'tutorContext'>;
 }
 
 interface StudyTurnOptions extends ProviderCallOptions {
@@ -104,6 +106,7 @@ export function createStudySessionService({
   provider,
   clock,
   replanning,
+  lessonExecution,
 }: StudySessionServiceDeps) {
   const inferenceProvider = createTelemetryProvider({
     repos,
@@ -489,6 +492,7 @@ export function createStudySessionService({
     }
 
     let policyFingerprint: string | null = null;
+    const lessonContext = lessonExecution?.tutorContext(workspaceId, sessionId) ?? null;
     try {
       policyFingerprint = enforceCostPolicies(
         workspaceId,
@@ -655,7 +659,8 @@ export function createStudySessionService({
               : null,
           },
           summary: repos.studySessions.latestSummary(session.id) ?? null,
-          currentUnit: currentUnitContext(session, currentAgendaItem),
+          lessonContext,
+          currentUnit: lessonContext ? null : currentUnitContext(session, currentAgendaItem),
           learnerState: learnerStateContext(session, currentAgendaItem),
           recentExchanges: repos.studySessions.listExchanges(
             session.id,

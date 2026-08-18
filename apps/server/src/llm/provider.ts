@@ -37,6 +37,7 @@ import type {
   TutorStepPayload,
   TutorTurnPayload,
   StudyExchange,
+  LessonTutorContext,
   StudySessionSummary,
   TutorToolName,
 } from '@hy3-clinic/shared';
@@ -419,6 +420,8 @@ export interface TutorTurnInput {
     | 'openActions'
     | 'safetyFlags'
   > | null;
+  /** Bounded Teaching Brief slice for the current lesson execution. */
+  lessonContext: LessonTutorContext | null;
   /** Bounded, revision-pinned teaching context for the current LearningUnit. */
   currentUnit: {
     id: string;

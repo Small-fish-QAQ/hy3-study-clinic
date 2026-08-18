@@ -1111,6 +1111,7 @@ export function tutorStepMessages(input: TutorStepInput): ChatMessage[] {
 export function tutorTurnMessages(input: TutorTurnInput): ChatMessage[] {
   const context = wrapUntrustedJson('STUDY_SESSION_CONTEXT', {
     session: input.session,
+    lessonContext: input.lessonContext,
     currentUnit: input.currentUnit,
     learnerState: input.learnerState,
     summary: input.summary,

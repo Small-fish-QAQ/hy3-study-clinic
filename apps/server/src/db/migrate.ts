@@ -1661,6 +1661,58 @@ const MIGRATIONS: Migration[] = [
         ON teaching_briefs(workspace_id, learning_unit_id, created_at DESC);
     `,
   },
+  {
+    version: 21,
+    name: 'session_owned_lesson_execution',
+    // Presentation progress is a weak child of a StudySession. It is never
+    // learner evidence and therefore cannot mutate plan, mastery, mistakes,
+    // or formal assessment state.
+    up: `
+      CREATE TABLE lesson_execution_states (
+        id TEXT PRIMARY KEY,
+        session_id TEXT NOT NULL REFERENCES study_sessions(id) ON DELETE CASCADE,
+        agenda_item_id TEXT NOT NULL,
+        curriculum_id TEXT NOT NULL REFERENCES curriculum_versions(id),
+        study_plan_id TEXT NOT NULL REFERENCES study_plan_versions(id),
+        learning_unit_id TEXT NOT NULL,
+        teaching_brief_id TEXT REFERENCES teaching_briefs(id),
+        manifest_fingerprint TEXT NOT NULL,
+        source_context_fingerprint TEXT,
+        preparation_status TEXT NOT NULL CHECK (
+          preparation_status IN ('preparing', 'ready', 'retryable_failure')
+        ),
+        preparation_operation_id TEXT,
+        version INTEGER NOT NULL CHECK (version > 0),
+        current_segment_index INTEGER NOT NULL CHECK (current_segment_index >= 0),
+        presented_segment_indexes TEXT NOT NULL DEFAULT '[]',
+        informal_interactions TEXT NOT NULL DEFAULT '[]',
+        presentation_completed_at TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE (session_id, agenda_item_id)
+      );
+      CREATE INDEX idx_lesson_execution_session
+        ON lesson_execution_states(session_id, updated_at DESC);
+
+      CREATE TABLE lesson_execution_events (
+        id TEXT PRIMARY KEY,
+        lesson_execution_state_id TEXT NOT NULL
+          REFERENCES lesson_execution_states(id) ON DELETE CASCADE,
+        seq INTEGER NOT NULL CHECK (seq > 0),
+        command_id TEXT NOT NULL,
+        kind TEXT NOT NULL CHECK (kind IN (
+          'preparation_started', 'preparation_ready', 'preparation_failed',
+          'segment_presented', 'segment_revisited',
+          'informal_response_recorded', 'presentation_completed'
+        )),
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE (lesson_execution_state_id, seq)
+      );
+      CREATE INDEX idx_lesson_execution_events_state
+        ON lesson_execution_events(lesson_execution_state_id, seq);
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

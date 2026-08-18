@@ -51,6 +51,7 @@ import {
   createTeachingBriefPreparationService,
   type TeachingBriefPreparationService,
 } from './teachingBriefPreparation.js';
+import { createLessonExecutionService, type LessonExecutionService } from './lessonExecution.js';
 
 export interface Services {
   materials: MaterialService;
@@ -85,6 +86,7 @@ export interface Services {
   formalProgression: FormalProgressionService;
   studySessions: StudySessionService;
   teachingBriefPreparation: TeachingBriefPreparationService;
+  lessonExecution: LessonExecutionService;
 }
 
 export interface ServiceDeps {
@@ -172,18 +174,25 @@ export function createServices({ repos, provider, clock, providerModel }: Servic
     provider,
     providerModel,
   });
+  const teachingBriefPreparation = createTeachingBriefPreparationService({
+    repos,
+    provider,
+    clock,
+    providerModel,
+  });
+  const lessonExecution = createLessonExecutionService({
+    repos,
+    clock,
+    commands: courseCommands,
+    teachingBriefPreparation,
+  });
   const studySessions = createStudySessionService({
     repos,
     provider,
     providerModel,
     clock,
     replanning: formalProgression,
-  });
-  const teachingBriefPreparation = createTeachingBriefPreparationService({
-    repos,
-    provider,
-    clock,
-    providerModel,
+    lessonExecution,
   });
   return {
     materials,
@@ -218,5 +227,6 @@ export function createServices({ repos, provider, clock, providerModel }: Servic
     formalProgression,
     studySessions,
     teachingBriefPreparation,
+    lessonExecution,
   };
 }
