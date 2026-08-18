@@ -247,4 +247,4 @@ npm run eval:fake
 git diff --check
 ```
 
-The current full run on this revision passes 1,434 tests: 149 shared, 887 server, and 398 web. The build and focused migration/provider suites also pass. `npm run eval:fake` remains the deterministic campaign check; no real Hy3 call is required or made. Structural quality dimensions are diagnostics, not a teaching-effectiveness score. Teaching Briefs do not create Formal Evidence, mastery, progression, or durable mistakes, and no claim is made that the unshipped learner-facing lesson execution is complete.
+The current full run on this revision passes 1,437 tests: 149 shared, 890 server, and 398 web. The build and focused migration/provider/preparation suites also pass. `npm run eval:fake` remains the deterministic campaign check; no real Hy3 call is required or made. Structural quality dimensions are diagnostics, not a teaching-effectiveness score. Teaching Briefs do not create Formal Evidence, mastery, progression, or durable mistakes, and no claim is made that the unshipped learner-facing lesson execution is complete.
