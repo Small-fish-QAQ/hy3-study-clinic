@@ -313,6 +313,11 @@ describe('StudySession service', () => {
 
     expect(replayed).toEqual(completed);
     expect(completed.exchanges.map((exchange) => exchange.role)).toEqual(['learner', 'tutor']);
+    expect(completed.turn.tutorMetadata).toMatchObject({
+      move: 'EXPLAIN_DEEPER',
+      routeSignal: 'stay_on_route',
+      policyVersion: 'lesson-aware-v1',
+    });
     expect(repos.studySessions.listTurns(started.session.id)).toHaveLength(1);
     expect(repos.telemetry.usageSummary('ws_1')).toMatchObject({
       logicalCalls: 1,

@@ -31,6 +31,7 @@ import {
   type TeachingBriefProposalPayload,
   type TutorStepPayload,
   type TutorTurnPayload,
+  type TutorPedagogicalMove,
 } from '@hy3-clinic/shared';
 import { ProviderError } from './errors.js';
 import { alignPointToStem, charCoverageRatio } from '../grading/rubricAlignment.js';
@@ -151,7 +152,17 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
 export interface FakeProviderOptions {
   /** Simulated latency per call, for observable loading/cancel states. */
   delayMs?: number;
+  /** Optional Tutor-only fault fixture used by offline contract tests. */
+  tutorTurnFixture?: FakeTutorTurnFixture;
 }
+
+export type FakeTutorTurnFixture =
+  | 'invalid_source_ref'
+  | 'unsupported_move'
+  | 'malformed_json'
+  | 'semantic_invalid'
+  | 'repair_once'
+  | 'repair_exhausted';
 
 export class FakeProvider implements LlmProvider {
   readonly name = 'fake' as const;
@@ -160,9 +171,12 @@ export class FakeProvider implements LlmProvider {
     if (opts?.signal?.aborted) throw ProviderError.cancelled();
   }
   private readonly delayMs: number;
+  private readonly tutorTurnFixture: FakeTutorTurnFixture | null;
+  private tutorTurnFixtureCalls = 0;
 
   constructor(options: FakeProviderOptions = {}) {
     this.delayMs = options.delayMs ?? 0;
+    this.tutorTurnFixture = options.tutorTurnFixture ?? null;
   }
 
   private async gate(opts?: ProviderCallOptions): Promise<void> {
@@ -1517,8 +1531,63 @@ export class FakeProvider implements LlmProvider {
     await this.gate(opts);
     const focus = input.session.currentAgendaItem?.reason ?? 'the current study goal';
     const question = input.learnerMessage.trim();
-    return {
-      text: `Let us work from ${focus}. You asked: ${question}. State the part that feels least clear, then we can test that understanding with one concrete example.`,
+    const lower = question.toLocaleLowerCase();
+    const requested: TutorPedagogicalMove = /正式检验|正式检查|formal checkpoint/u.test(lower)
+      ? 'FORMAL_CHECK_READY'
+      : /举个例子|给个例子|例子|example|for example/u.test(lower)
+        ? 'GIVE_EXAMPLE'
+        : /区别|不同|对比|差异|versus/u.test(lower)
+          ? 'CONTRAST'
+          : /总结|概括|小结|summary|summarize/u.test(lower)
+            ? 'SUMMARIZE'
+            : /换个说法|换一种说法|通俗|简单点|没懂|不懂|不明白|看不懂|^\s*[?？]\s*$/u.test(lower)
+              ? 'SIMPLIFY'
+              : /^(?:继续|接着讲|下一段|继续学习|continue|next)\s*[.!。！!]*$/u.test(lower)
+                ? 'RETURN_TO_ROUTE'
+                : /顺便|另外|题外|side question/u.test(lower)
+                  ? 'DETOUR'
+                  : /直接告诉我答案|告诉我答案|just tell me the answer|为什么|为何|如何|怎么|why|how|什么是|what/u.test(
+                        lower,
+                      ) || /[?？]/u.test(question)
+                    ? 'ANSWER_QUESTION'
+                    : 'EXPLAIN_DEEPER';
+    const move = input.allowedMoves.includes(requested)
+      ? requested
+      : requested === 'FORMAL_CHECK_READY' && input.allowedMoves.includes('ANSWER_QUESTION')
+        ? 'ANSWER_QUESTION'
+        : input.recentMoves.at(-1)?.move === requested
+          ? requested === 'SIMPLIFY'
+            ? 'GIVE_EXAMPLE'
+            : 'EXPLAIN_DEEPER'
+          : (input.allowedMoves[0] ?? 'ANSWER_QUESTION');
+    const sourceRefs =
+      input.offeredSourceRefs.length > 0 && move !== 'GIVE_ANALOGY'
+        ? [input.offeredSourceRefs[0]!.referenceKey]
+        : [];
+    const teachingLead =
+      move === 'GIVE_EXAMPLE'
+        ? '先看一个具体例子'
+        : move === 'CONTRAST'
+          ? '把两个容易混淆的点并排比较'
+          : move === 'SUMMARIZE'
+            ? '先把这一段压缩成几个要点'
+            : move === 'SIMPLIFY'
+              ? '换一种更简单的说法'
+              : move === 'RETURN_TO_ROUTE'
+                ? '我们回到当前课程路线'
+                : move === 'DETOUR'
+                  ? '这个旁支问题和当前目标有关,我们先短暂展开'
+                  : '直接回答你的问题';
+    const validCandidate: TutorTurnPayload = {
+      move,
+      text: `${teachingLead}: ${focus}。你问的是“${question}”。${move === 'RETURN_TO_ROUTE' ? '接下来继续当前段落,不会改变学习路线。' : '我会把关键点讲清楚,再用一句话连接回当前目标。'}`,
+      sourceRefs,
+      routeSignal:
+        move === 'DETOUR'
+          ? 'detour_started'
+          : move === 'RETURN_TO_ROUTE'
+            ? 'return_to_route'
+            : 'stay_on_route',
       summaryDelta: {
         learnerQuestions: [question.slice(0, 500)],
         unresolvedConfusion: [],
@@ -1529,6 +1598,36 @@ export class FakeProvider implements LlmProvider {
       },
       suggestedActions: [],
     };
+    const fixture = this.tutorTurnFixture;
+    if (!fixture) return validCandidate;
+    const firstCall = this.tutorTurnFixtureCalls++ === 0;
+    const invalidCandidate: unknown =
+      fixture === 'invalid_source_ref'
+        ? { ...validCandidate, sourceRefs: ['FOREIGN_REF'] }
+        : fixture === 'unsupported_move'
+          ? { ...validCandidate, move: 'UNSUPPORTED_MOVE' }
+          : fixture === 'semantic_invalid'
+            ? { ...validCandidate, move: 'SELF_EXPLANATION' }
+            : fixture === 'malformed_json'
+              ? '{"move":"ANSWER_QUESTION"'
+              : fixture === 'repair_once' && firstCall
+                ? { ...validCandidate, sourceRefs: ['FOREIGN_REF'] }
+                : fixture === 'repair_exhausted'
+                  ? { ...validCandidate, sourceRefs: ['FOREIGN_REF'] }
+                  : validCandidate;
+    const firstValidation = opts?.validateCandidate?.(invalidCandidate);
+    if (!firstValidation || firstValidation.valid) return invalidCandidate as TutorTurnPayload;
+    opts?.onRepairAttempt?.('candidate');
+    await this.gate(opts);
+    const repairedCandidate = fixture === 'repair_exhausted' ? invalidCandidate : validCandidate;
+    const repairedValidation = opts?.validateCandidate?.(repairedCandidate);
+    if (!repairedValidation || repairedValidation.valid) {
+      return repairedCandidate as TutorTurnPayload;
+    }
+    throw ProviderError.invalidOutput(
+      repairedValidation.diagnostics.join('; ').slice(0, 8_000),
+      'candidate',
+    );
   }
 }
 

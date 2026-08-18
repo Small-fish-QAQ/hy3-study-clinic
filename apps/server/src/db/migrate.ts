@@ -1713,6 +1713,15 @@ const MIGRATIONS: Migration[] = [
         ON lesson_execution_events(lesson_execution_state_id, seq);
     `,
   },
+  {
+    version: 22,
+    name: 'tutor_pedagogy_turn_metadata',
+    // The move decision is audit metadata for conversational turns only. It
+    // has no foreign-key path to Evidence, Mastery, Mistakes, or progression.
+    up: `
+      ALTER TABLE study_session_turns ADD COLUMN pedagogy_metadata TEXT;
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

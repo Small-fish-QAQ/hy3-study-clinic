@@ -9,6 +9,7 @@ import {
   type StudySessionSummary,
   type StudyTurn,
   type StudyTurnEvent,
+  type TutorTurnMetadata,
 } from '@hy3-clinic/shared';
 import type { SqliteDb } from '../db/database.js';
 
@@ -37,6 +38,7 @@ interface TurnRow {
   command_id: string;
   status: StudyTurn['status'];
   context_manifest: string;
+  pedagogy_metadata: string | null;
   logical_call_id: string | null;
   error_message: string | null;
   created_at: string;
@@ -103,6 +105,9 @@ function hydrateTurn(row: TurnRow): StudyTurn {
     commandId: row.command_id,
     status: row.status,
     contextManifest: JSON.parse(row.context_manifest),
+    ...(row.pedagogy_metadata
+      ? { tutorMetadata: JSON.parse(row.pedagogy_metadata) as TutorTurnMetadata }
+      : {}),
     logicalCallId: row.logical_call_id,
     errorMessage: row.error_message,
     createdAt: row.created_at,
@@ -257,10 +262,14 @@ export function createStudySessionsRepo(db: SqliteDb) {
       db.prepare(
         `INSERT INTO study_session_turns
            (id, session_id, seq, command_id, status, context_manifest, logical_call_id,
-            error_message, created_at, completed_at)
+            pedagogy_metadata, error_message, created_at, completed_at)
          VALUES (@id, @sessionId, @seq, @commandId, @status, @contextManifest, @logicalCallId,
-            @errorMessage, @createdAt, @completedAt)`,
-      ).run({ ...turn, contextManifest: JSON.stringify(turn.contextManifest) });
+            @pedagogyMetadata, @errorMessage, @createdAt, @completedAt)`,
+      ).run({
+        ...turn,
+        contextManifest: JSON.stringify(turn.contextManifest),
+        pedagogyMetadata: turn.tutorMetadata ? JSON.stringify(turn.tutorMetadata) : null,
+      });
       return getTurn(turn.id)!;
     },
 
@@ -277,11 +286,16 @@ export function createStudySessionsRepo(db: SqliteDb) {
       const result = db
         .prepare(
           `UPDATE study_session_turns SET status = @status, context_manifest = @contextManifest,
-             logical_call_id = @logicalCallId, error_message = @errorMessage,
+             logical_call_id = @logicalCallId, pedagogy_metadata = @pedagogyMetadata,
+             error_message = @errorMessage,
              completed_at = @completedAt
            WHERE id = @id AND session_id = @sessionId`,
         )
-        .run({ ...turn, contextManifest: JSON.stringify(turn.contextManifest) });
+        .run({
+          ...turn,
+          contextManifest: JSON.stringify(turn.contextManifest),
+          pedagogyMetadata: turn.tutorMetadata ? JSON.stringify(turn.tutorMetadata) : null,
+        });
       if (result.changes !== 1) throw new Error('StudySession turn does not exist.');
       return getTurn(turn.id)!;
     },

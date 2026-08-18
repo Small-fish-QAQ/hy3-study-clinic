@@ -6,7 +6,11 @@ import { AlignmentLanguageSchema, AlignmentRelationSchema } from '../domain/alig
 import { AssessmentModeSchema } from '../domain/blueprint.js';
 import { LessonSectionKindSchema } from '../domain/lesson.js';
 import { MisconceptionCategorySchema } from '../domain/misconception.js';
-import { TutorToolNameSchema } from '../domain/tutor.js';
+import {
+  TutorPedagogicalMoveSchema,
+  TutorRouteSignalSchema,
+  TutorToolNameSchema,
+} from '../domain/tutor.js';
 import { DesiredDepthSchema } from '../domain/learningContract.js';
 import {
   InformalCheckKindSchema,
@@ -1056,7 +1060,12 @@ export type TutorTurnSummaryDelta = z.infer<typeof TutorTurnSummaryDeltaSchema>;
  */
 export const TutorTurnPayloadSchema = z
   .object({
+    /** One selected pedagogical move, validated again by local policy. */
+    move: TutorPedagogicalMoveSchema,
     text: z.string().min(1).max(8000),
+    /** Keys must come from the operation-local offers in TutorTurnInput. */
+    sourceRefs: z.array(z.string().min(1).max(40)).max(6),
+    routeSignal: TutorRouteSignalSchema,
     summaryDelta: TutorTurnSummaryDeltaSchema,
     suggestedActions: z.array(TutorTurnSuggestedActionSchema).max(6),
   })

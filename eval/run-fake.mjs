@@ -26,6 +26,7 @@ import { buildApp } from '../apps/server/dist/app.js';
 import { wrapSourceBlocks } from '../apps/server/dist/grounding/wrapSource.js';
 import { searchSourceBlocks } from '../apps/server/dist/retrieval/lexical.js';
 import { scheduleFirst, scheduleNext } from '../apps/server/dist/review/scheduler.js';
+import { evaluateTutorPedagogyProfile } from '../apps/server/dist/eval/tutorPedagogy.js';
 
 const evalDir = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => readFileSync(join(evalDir, 'fixtures', name), 'utf8');
@@ -667,6 +668,22 @@ section('13. 讲解卡片与来源标注(lesson provenance)');
     .join(',');
   check('生成/阅读讲解(含注入文本资料)零学习状态变化', stateBefore === stateAfter);
   await ctx.app.close();
+}
+
+// ---------------------------------------------------------------------------
+section('14. Tutor 教学策略离线画像(lesson-aware pedagogy profile)');
+{
+  const profile = evaluateTutorPedagogyProfile();
+  check(
+    '23 个 Tutor 教学场景通过确定性策略校验',
+    profile.deterministicPass && profile.scenarios.length === 23,
+    profile.profile.name,
+  );
+  check(
+    '教学对话保持非正式、非权威边界',
+    profile.nonAuthorityMutation === true &&
+      profile.profile.deterministic.includes('authority_safe'),
+  );
 }
 
 // ---------------------------------------------------------------------------

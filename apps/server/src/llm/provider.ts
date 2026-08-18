@@ -36,6 +36,9 @@ import type {
   TeachingBriefProposalPayload,
   TutorStepPayload,
   TutorTurnPayload,
+  TutorPedagogicalMove,
+  TutorRecentMove,
+  TutorSourceRef,
   StudyExchange,
   LessonTutorContext,
   StudySessionSummary,
@@ -443,6 +446,11 @@ export interface TutorTurnInput {
       contentExcerpt: string;
     }>;
   } | null;
+  /** Deterministic local policy inputs; the provider may only choose among them. */
+  allowedMoves: TutorPedagogicalMove[];
+  recentMoves: TutorRecentMove[];
+  formalCheckpointAvailable: boolean;
+  offeredSourceRefs: TutorSourceRef[];
   learnerState: {
     formalEvidence: Array<{
       id: string;

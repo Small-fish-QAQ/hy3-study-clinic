@@ -3,6 +3,67 @@ import { VerifiedGroundingSchema } from './material.js';
 import { AssessmentModeSchema } from './blueprint.js';
 
 /**
+ * Small, learner-facing-independent vocabulary for the Tutor's pedagogical
+ * policy.  These names are an internal contract: the UI should render the
+ * response, not expose enum literals as labels.
+ */
+export const TutorPedagogicalMoveSchema = z.enum([
+  'TEACH_NEW',
+  'EXPLAIN_DEEPER',
+  'SIMPLIFY',
+  'GIVE_EXAMPLE',
+  'GIVE_ANALOGY',
+  'CONTRAST',
+  'ANSWER_QUESTION',
+  'REPAIR_MISCONCEPTION',
+  'ASK_INFORMAL_CHECK',
+  'GUIDED_PRACTICE',
+  'SELF_EXPLANATION',
+  'SUMMARIZE',
+  'DETOUR',
+  'RETURN_TO_ROUTE',
+  'FORMAL_CHECK_READY',
+]);
+export type TutorPedagogicalMove = z.infer<typeof TutorPedagogicalMoveSchema>;
+
+export const TutorRouteSignalSchema = z.enum([
+  'stay_on_route',
+  'detour_started',
+  'return_to_route',
+]);
+export type TutorRouteSignal = z.infer<typeof TutorRouteSignalSchema>;
+
+/** A compact, operation-local source reference offered to one Tutor turn. */
+export const TutorSourceRefSchema = z
+  .object({
+    referenceKey: z.string().min(1).max(40),
+    excerpt: z.string().min(1).max(900),
+    origin: z.enum(['lesson', 'course_truth']),
+  })
+  .strict();
+export type TutorSourceRef = z.infer<typeof TutorSourceRefSchema>;
+
+export const TutorRecentMoveSchema = z
+  .object({
+    move: TutorPedagogicalMoveSchema,
+    segmentIndex: z.number().int().nonnegative().nullable(),
+  })
+  .strict();
+export type TutorRecentMove = z.infer<typeof TutorRecentMoveSchema>;
+
+/** Metadata persisted with a completed StudySession Tutor turn only. */
+export const TutorTurnMetadataSchema = z
+  .object({
+    move: TutorPedagogicalMoveSchema,
+    sourceRefs: z.array(z.string().min(1).max(40)).max(6),
+    routeSignal: TutorRouteSignalSchema,
+    lessonSegmentIndex: z.number().int().nonnegative().nullable(),
+    policyVersion: z.string().min(1).max(40),
+  })
+  .strict();
+export type TutorTurnMetadata = z.infer<typeof TutorTurnMetadataSchema>;
+
+/**
  * Bounded Hy3 Tutor: shared contracts for tool whitelisting, run persistence,
  * and the safe timeline shown to the learner.
  *

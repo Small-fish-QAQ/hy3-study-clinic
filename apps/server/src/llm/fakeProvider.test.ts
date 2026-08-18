@@ -6,18 +6,53 @@ import {
   RubricGradeSchema,
   SAMPLE_MATERIAL_CONTENT,
   SAMPLE_MATERIAL_TITLE,
+  TutorTurnPayloadSchema,
   type Concept,
   type SourceBlock,
 } from '@hy3-clinic/shared';
 import { segmentMaterial } from '../ingestion/segment.js';
 import { verifyGrounding } from '../grounding/verify.js';
-import { FakeProvider } from './fakeProvider.js';
+import { FakeProvider, type FakeTutorTurnFixture } from './fakeProvider.js';
 import { ProviderError } from './errors.js';
-import type { CurriculumProposalInput } from './provider.js';
+import type { CurriculumProposalInput, TutorTurnInput } from './provider.js';
+import { validateTutorTurnCandidate } from '../tutor/pedagogy.js';
 
 const materialId = 'mat_fixture';
 const blocks = segmentMaterial(materialId, SAMPLE_MATERIAL_CONTENT.replace(/\r\n?/g, '\n'));
 const provider = new FakeProvider();
+
+const tutorInput: TutorTurnInput = {
+  workspaceName: 'Fixture course',
+  learnerMessage: '举个例子',
+  session: {
+    id: 'session_fixture',
+    routeState: 'on_route',
+    currentAgendaItemId: 'agenda_fixture',
+    currentAgendaItem: {
+      kind: 'teach_unit',
+      reason: 'Explain the segment',
+      learningUnitId: 'unit_fixture',
+    },
+  },
+  summary: null,
+  lessonContext: null,
+  currentUnit: null,
+  allowedMoves: ['GIVE_EXAMPLE', 'ANSWER_QUESTION', 'SELF_EXPLANATION'],
+  recentMoves: [],
+  formalCheckpointAvailable: false,
+  offeredSourceRefs: [
+    { referenceKey: 'S1', excerpt: 'A bounded source excerpt.', origin: 'lesson' },
+  ],
+  learnerState: {
+    formalEvidence: [],
+    openMistakes: [],
+    misconceptions: [],
+    reviews: [],
+    mastery: [],
+    riskIds: [],
+  },
+  recentExchanges: [],
+};
 
 async function fixtureConcepts(): Promise<Concept[]> {
   const analysis = await provider.analyzeConcepts({
@@ -510,5 +545,44 @@ describe('FakeProvider cancellation', () => {
     );
     setTimeout(() => controller.abort(), 20);
     await expect(pending).rejects.toBeInstanceOf(ProviderError);
+  });
+});
+
+describe('FakeProvider Tutor contract fixtures', () => {
+  it.each([
+    'invalid_source_ref',
+    'unsupported_move',
+    'malformed_json',
+    'semantic_invalid',
+    'repair_once',
+  ] as FakeTutorTurnFixture[])('exercises one bounded repair for %s', async (fixture) => {
+    let repairs = 0;
+    const payload = await new FakeProvider({ tutorTurnFixture: fixture }).respondToTutorTurn(
+      tutorInput,
+      {
+        validateCandidate: (candidate) => {
+          const parsed = TutorTurnPayloadSchema.safeParse(candidate);
+          if (!parsed.success) return { valid: false, diagnostics: ['schema'] };
+          return validateTutorTurnCandidate(parsed.data, tutorInput);
+        },
+        onRepairAttempt: () => {
+          repairs += 1;
+        },
+      },
+    );
+    expect(TutorTurnPayloadSchema.parse(payload).move).toBe('GIVE_EXAMPLE');
+    expect(repairs).toBe(1);
+  });
+
+  it('fails closed when a Tutor repair remains invalid', async () => {
+    await expect(
+      new FakeProvider({ tutorTurnFixture: 'repair_exhausted' }).respondToTutorTurn(tutorInput, {
+        validateCandidate: (candidate) => {
+          const parsed = TutorTurnPayloadSchema.safeParse(candidate);
+          if (!parsed.success) return { valid: false, diagnostics: ['schema'] };
+          return validateTutorTurnCandidate(parsed.data, tutorInput);
+        },
+      }),
+    ).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
   });
 });

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { SessionAgendaSchema } from './sessionAgenda.js';
+import { TutorTurnMetadataSchema } from './tutor.js';
 
 export const StudySessionStatusSchema = z.enum([
   'active',
@@ -70,6 +71,8 @@ export const StudyTurnSchema = z
     commandId: z.string().min(1),
     status: StudyTurnStatusSchema,
     contextManifest: TutorContextManifestSchema,
+    /** Persisted pedagogical decision; absent on interrupted/legacy turns. */
+    tutorMetadata: TutorTurnMetadataSchema.nullable().optional(),
     logicalCallId: z.string().min(1).nullable(),
     errorMessage: z.string().min(1).max(1000).nullable(),
     createdAt: z.string().datetime(),

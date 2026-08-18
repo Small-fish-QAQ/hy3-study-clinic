@@ -9,6 +9,7 @@ import {
   StartStudySessionResponseSchema,
   SubmitTutorTurnRequestSchema,
   SubmitTutorTurnResponseSchema,
+  TutorTurnPayloadSchema,
   type StudyExchange,
   type StudySession,
   type StudySessionSummary,
@@ -16,6 +17,7 @@ import {
   type StudyTurnEvent,
   type SessionAgendaItem,
   type TutorContextManifest,
+  type TutorTurnPayload,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import { ProviderError } from '../llm/errors.js';
@@ -27,6 +29,16 @@ import type { FormalProgressionService } from './formalProgression.js';
 import type { LessonExecutionService } from './lessonExecution.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
 import { enforceAgentCostPolicies } from './agentProviderRuntime.js';
+import {
+  TUTOR_CONTEXT_LIMITS,
+  TUTOR_PEDAGOGY_POLICY_VERSION,
+  allowedTutorMoves,
+  boundTutorTurnInput,
+  constrainTutorTurn,
+  tutorRecentMoves,
+  tutorSourceOffers,
+  validateTutorTurnCandidate,
+} from '../tutor/pedagogy.js';
 
 interface StudySessionServiceDeps {
   repos: Repositories;
@@ -51,6 +63,16 @@ function boundedUnique(existing: string[], additions: string[], max = 100): stri
   return [...new Set([...existing, ...additions].map((item) => item.trim()).filter(Boolean))].slice(
     -max,
   );
+}
+
+function boundedTutorExchanges(
+  exchanges: Array<Pick<StudyExchange, 'role' | 'content' | 'channel'>>,
+): Array<Pick<StudyExchange, 'role' | 'content' | 'channel'>> {
+  return exchanges.slice(-TUTOR_CONTEXT_LIMITS.maxRecentExchanges).map((exchange) => ({
+    role: exchange.role,
+    channel: exchange.channel,
+    content: exchange.content.slice(-TUTOR_CONTEXT_LIMITS.maxExchangeChars),
+  }));
 }
 
 function requireSession(repos: Repositories, workspaceId: string, sessionId: string): StudySession {
@@ -236,7 +258,7 @@ export function createStudySessionService({
     const curriculum = repos.curricula.get(session.curriculumVersionId);
     const node = curriculum?.nodes.find((candidate) => candidate.id === agendaItem.learningUnitId);
     if (!node?.learningUnit) return null;
-    const refs = node.sourceReferences.filter((ref) => ref.sourceBlockId).slice(0, 8);
+    const refs = node.sourceReferences.filter((ref) => ref.sourceBlockId).slice(0, 4);
     const sourceTruth = refs.flatMap((ref) => {
       const block = ref.sourceBlockId ? repos.materials.getBlock(ref.sourceBlockId) : undefined;
       if (!block) return [];
@@ -246,7 +268,7 @@ export function createStudySessionService({
           materialId: ref.materialId,
           materialRevisionId: ref.materialRevisionId,
           heading: block.heading,
-          contentExcerpt: block.content.slice(0, 3500),
+          contentExcerpt: block.content.slice(0, TUTOR_CONTEXT_LIMITS.maxSourceExcerptChars),
         },
       ];
     });
@@ -531,6 +553,58 @@ export function createStudySessionService({
     const currentAgendaItem = session.currentAgendaItemId
       ? (agenda.items.find((item) => item.id === session.currentAgendaItemId) ?? null)
       : null;
+    const currentUnit = lessonContext ? null : currentUnitContext(session, currentAgendaItem);
+    const formalCheckpointAvailable = agenda.items.some(
+      (item) => item.kind === 'formal_checkpoint' && item.launch.status === 'launchable',
+    );
+    const recentMoves = tutorRecentMoves(repos.studySessions.listTurns(session.id));
+    const tutorInput = {
+      workspaceName: repos.workspaces.get(workspaceId)!.name,
+      learnerMessage: parsed.content,
+      session: {
+        id: session.id,
+        routeState: session.routeState,
+        currentAgendaItemId: session.currentAgendaItemId,
+        currentAgendaItem: currentAgendaItem
+          ? {
+              kind: currentAgendaItem.kind,
+              reason: currentAgendaItem.reason,
+              learningUnitId: currentAgendaItem.learningUnitId,
+            }
+          : null,
+      },
+      summary: repos.studySessions.latestSummary(session.id) ?? null,
+      lessonContext,
+      currentUnit,
+      allowedMoves: allowedTutorMoves({
+        session: {
+          id: session.id,
+          routeState: session.routeState,
+          currentAgendaItemId: session.currentAgendaItemId,
+          currentAgendaItem: currentAgendaItem
+            ? {
+                kind: currentAgendaItem.kind,
+                reason: currentAgendaItem.reason,
+                learningUnitId: currentAgendaItem.learningUnitId,
+              }
+            : null,
+        },
+        lessonContext,
+        currentUnit,
+        formalCheckpointAvailable,
+      }),
+      recentMoves,
+      formalCheckpointAvailable,
+      offeredSourceRefs: tutorSourceOffers(lessonContext, currentUnit),
+      learnerState: learnerStateContext(session, currentAgendaItem),
+      recentExchanges: boundedTutorExchanges(
+        repos.studySessions.listExchanges(
+          session.id,
+          Math.max(-1, session.transcriptWatermark - TUTOR_CONTEXT_LIMITS.maxRecentExchanges * 2),
+        ),
+      ),
+    };
+    const boundedTutorInput = boundTutorTurnInput(tutorInput);
     const turnCreatedAt = clock.now().toISOString();
     const turn: StudyTurn = interruptedTurn
       ? {
@@ -642,58 +716,75 @@ export function createStudySessionService({
     }
 
     try {
-      const result = await inferenceProvider.respondToTutorTurn(
-        {
-          workspaceName: repos.workspaces.get(workspaceId)!.name,
-          learnerMessage: parsed.content,
-          session: {
-            id: session.id,
-            routeState: session.routeState,
-            currentAgendaItemId: session.currentAgendaItemId,
-            currentAgendaItem: currentAgendaItem
-              ? {
-                  kind: currentAgendaItem.kind,
-                  reason: currentAgendaItem.reason,
-                  learningUnitId: currentAgendaItem.learningUnitId,
-                }
-              : null,
-          },
-          summary: repos.studySessions.latestSummary(session.id) ?? null,
-          lessonContext,
-          currentUnit: lessonContext ? null : currentUnitContext(session, currentAgendaItem),
-          learnerState: learnerStateContext(session, currentAgendaItem),
-          recentExchanges: repos.studySessions.listExchanges(
-            session.id,
-            Math.max(-1, session.transcriptWatermark - 12),
-          ),
+      const result = await inferenceProvider.respondToTutorTurn(boundedTutorInput, {
+        ...providerOptions,
+        onRepairAttempt,
+        validateCandidate: (candidate) => {
+          const policy = validateTutorTurnCandidate(candidate, boundedTutorInput);
+          const external = providerOptions.validateCandidate?.(candidate);
+          if (external && !external.valid) {
+            return {
+              valid: false,
+              diagnostics: [...policy.diagnostics, ...external.diagnostics].slice(0, 20),
+              diagnosticCodes: [
+                ...(policy.diagnosticCodes ?? []),
+                ...(external.diagnosticCodes ?? []),
+              ],
+            };
+          }
+          return policy;
         },
-        {
-          ...providerOptions,
-          onRepairAttempt,
-          beforeTelemetryComplete: () => {
-            if (
-              !ownsOperation(repos, claim.id, owner, claim.fencingToken, clock.now().toISOString())
-            ) {
-              throw new AppError(
-                ApiErrorCode.VersionConflict,
-                'Tutor result was fenced because its operation lease is stale.',
-              );
-            }
-          },
-          telemetry: {
-            workspaceId,
-            operationId: claim.id,
-            studySessionId: session.id,
-            operationType: 'study_session_tutor_turn',
-            schemaFingerprint: 'tutor-turn-v1',
-            policyFingerprint,
-            sourceFingerprint: session.executionSourceManifestFingerprint,
-            fencingToken: claim.fencingToken,
-            logicalCallId,
-            attemptKind: interruptedTurn ? 'retry' : 'original',
-          },
+        beforeTelemetryComplete: () => {
+          if (
+            !ownsOperation(repos, claim.id, owner, claim.fencingToken, clock.now().toISOString())
+          ) {
+            throw new AppError(
+              ApiErrorCode.VersionConflict,
+              'Tutor result was fenced because its operation lease is stale.',
+            );
+          }
         },
-      );
+        telemetry: {
+          workspaceId,
+          operationId: claim.id,
+          studySessionId: session.id,
+          operationType: 'study_session_tutor_turn',
+          schemaFingerprint: 'tutor-turn-v1',
+          policyFingerprint,
+          sourceFingerprint: session.executionSourceManifestFingerprint,
+          fencingToken: claim.fencingToken,
+          logicalCallId,
+          attemptKind: interruptedTurn ? 'retry' : 'original',
+        },
+      });
+      let safeResult: TutorTurnPayload;
+      try {
+        const parsedResult = TutorTurnPayloadSchema.parse(result);
+        const validation = validateTutorTurnCandidate(parsedResult, boundedTutorInput);
+        const fatal = new Set([
+          'TUTOR_SCHEMA_INVALID',
+          'TUTOR_SOURCE_REF_UNKNOWN',
+          'TUTOR_FORMAL_CHECK_UNAVAILABLE',
+        ]);
+        if (
+          !validation.valid &&
+          (validation.diagnosticCodes ?? []).some((code) => fatal.has(code))
+        ) {
+          throw ProviderError.invalidOutput(
+            'Tutor policy validation failed.',
+            'candidate',
+            'SEMANTIC_VALIDATION_FAILURE',
+          );
+        }
+        safeResult = constrainTutorTurn(parsedResult, boundedTutorInput);
+      } catch (error) {
+        if (error instanceof ProviderError) throw error;
+        throw ProviderError.invalidOutput(
+          'Tutor policy validation failed.',
+          'candidate',
+          'SEMANTIC_VALIDATION_FAILURE',
+        );
+      }
       const completedAt = clock.now().toISOString();
       const response = repos.transaction(() => {
         const current = requireSession(repos, workspaceId, sessionId);
@@ -713,14 +804,25 @@ export function createStudySessionService({
           turnId: turn.id,
           seq: learnerExchange.seq + 1,
           role: 'tutor',
-          content: result.text,
+          content: safeResult.text,
           channel: 'conversation',
           createdAt: completedAt,
         };
-        const completedTurn = updateTurn({ ...turn, status: 'completed', completedAt });
+        const completedTurn = updateTurn({
+          ...turn,
+          status: 'completed',
+          completedAt,
+          tutorMetadata: {
+            move: safeResult.move,
+            sourceRefs: safeResult.sourceRefs,
+            routeSignal: safeResult.routeSignal,
+            lessonSegmentIndex: lessonContext?.currentSegment.index ?? null,
+            policyVersion: TUTOR_PEDAGOGY_POLICY_VERSION,
+          },
+        });
         repos.studySessions.insertExchange(tutorExchange);
-        repos.studySessions.insertTurnEvent(event('content_delta', false, result.text));
-        for (const suggestedAction of result.suggestedActions) {
+        repos.studySessions.insertTurnEvent(event('content_delta', false, safeResult.text));
+        for (const suggestedAction of safeResult.suggestedActions) {
           repos.studySessions.insertTurnEvent(event('action_proposed', false, suggestedAction));
         }
         repos.studySessions.insertTurnEvent(event('completed', false, null));
@@ -733,7 +835,7 @@ export function createStudySessionService({
           },
           current.version,
         );
-        createSummary(updatedSession, tutorExchange.seq, result.summaryDelta);
+        createSummary(updatedSession, tutorExchange.seq, safeResult.summaryDelta);
         const payload = SubmitTutorTurnResponseSchema.parse({
           session: updatedSession,
           turn: completedTurn,

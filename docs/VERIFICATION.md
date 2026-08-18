@@ -49,6 +49,14 @@ The immutable final tag's historical results remain recorded in the release line
 
 `npm run eval:fake` covers provenance, alignment, cross-document blueprint scope, Tutor budgets, misconception transitions, review scheduling, retrieval isolation, prompt-injection defenses, mastery bounds, database foreign-key integrity, activity executability, grading state safety, course-understanding fixtures, and lesson provenance. It is deterministic and writes its reports under ignored `eval/reports/`.
 
+Phase 5A's named offline Tutor profile is `lesson-aware-tutor-v1`. Its focused checks are:
+
+```bash
+npm run test -w @hy3-clinic/server -- src/tutor/pedagogy.test.ts src/eval/tutorPedagogy.test.ts src/services/studySessions.test.ts src/repositories/studySessions.test.ts
+```
+
+The profile evaluates 23 deterministic scenarios (direct questions, confusion, examples, contrasts, detours, return-to-route, formal-check readiness, source identity, repetition, and non-credit authority). Helpfulness, clarity, naturalness, and misconception-repair quality remain human/model-judged dimensions; the profile is not an educational-effectiveness score. `npm run eval:fake` also records the profile result as its final section.
+
 The server and shared suites also cover the implemented Phase 1-4 route: MaterialRevision lineage and source authority; Contract/Curriculum/StudyPlan/Agenda validation and atomic activation; production Course Map planning and bounded LearningUnit materialization; deterministic Course Preparation with learner-governed stops, durable StudySession lifecycle, idempotency, transcript recovery, and mixed-initiative controls; and formal-evidence progression, replan candidates, and goal outcomes. Web suites cover the Course selection shell, Course Home primary action and preparation checkpoints, Course Materials, Curriculum, Chinese-named `学习` workspace, consolidated Progress destination, embedded Explore graph, and the focused Settings surface. They also assert legacy-destination consolidation, useful empty states, formal/informal separation, prose-independent completion state, request cancellation and post-cancel reconciliation, stale responses, and Course/document switching safety.
 
 The reusable Curriculum quality, Course Source Map, and retrieval-policy evaluation checks are offline and make no provider call:
