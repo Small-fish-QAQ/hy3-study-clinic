@@ -52,7 +52,7 @@ The immutable final tag's historical results remain recorded in the release line
 Phase 5A's named offline Tutor profile is `lesson-aware-tutor-v1`. Its focused checks are:
 
 ```bash
-npm run test -w @hy3-clinic/server -- src/tutor/pedagogy.test.ts src/eval/tutorPedagogy.test.ts src/services/studySessions.test.ts src/repositories/studySessions.test.ts
+npm run test -w @hy3-clinic/server -- src/llm/fakeProvider.test.ts src/tutor/pedagogy.test.ts src/eval/tutorPedagogy.test.ts src/services/studySessions.test.ts src/repositories/studySessions.test.ts
 ```
 
 The profile evaluates 23 deterministic scenarios (direct questions, confusion, examples, contrasts, detours, return-to-route, formal-check readiness, source identity, repetition, and non-credit authority). Helpfulness, clarity, naturalness, and misconception-repair quality remain human/model-judged dimensions; the profile is not an educational-effectiveness score. `npm run eval:fake` also records the profile result as its final section.
