@@ -3,7 +3,6 @@ import {
   CurriculumProposalPayloadSchema,
   CurriculumProposalFailureDetailsSchema,
   CurriculumValidationSchema,
-  fnv1a32,
   type Curriculum,
   type CurriculumObjective,
   type CurriculumProposalPayload,
@@ -17,6 +16,8 @@ import {
 } from '@hy3-clinic/shared';
 import { AppError } from '../errors.js';
 import { verifyGrounding } from '../grounding/verify.js';
+import { curriculumSourceBlockFingerprint } from '../grounding/sourceFingerprint.js';
+export { curriculumSourceBlockFingerprint } from '../grounding/sourceFingerprint.js';
 import type { SourceAuthorityBundle } from '../repositories/sourceAuthority.js';
 import type { CurriculumEvidenceOffer } from '../llm/provider.js';
 import { newId } from '../util/ids.js';
@@ -66,21 +67,6 @@ function revisionForBlock(
       revision.materialId === block.materialId &&
       revision.sourceBlockRevisionIds.includes(block.id),
   );
-}
-
-export function curriculumSourceBlockFingerprint(block: SourceBlock, revisionId: string): string {
-  return `block_${fnv1a32(
-    JSON.stringify({
-      materialRevisionId: revisionId,
-      blockId: block.id,
-      index: block.index,
-      content: block.content,
-      startOffset: block.startOffset,
-      endOffset: block.endOffset,
-    }),
-  )
-    .toString(16)
-    .padStart(8, '0')}`;
 }
 
 function normalize(value: string): string {

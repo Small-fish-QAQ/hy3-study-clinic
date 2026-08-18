@@ -158,7 +158,7 @@ describe('migrations', () => {
       .prepare('SELECT COALESCE(MAX(version), 0) AS v FROM schema_migrations')
       .get() as { v: number };
     expect(row.v).toBe(LATEST_MIGRATION_VERSION);
-    expect(row.v).toBe(19);
+    expect(row.v).toBe(20);
     expectCanonicalProviderGenerationSchema(db);
     db.close();
   });
@@ -170,6 +170,28 @@ describe('migrations', () => {
     migrate(db);
     const second = db.prepare('SELECT COUNT(*) AS c FROM schema_migrations').get() as { c: number };
     expect(second.c).toBe(first.c);
+    db.close();
+  });
+
+  it('adds the append-only Teaching Brief store when upgrading v19 data', () => {
+    const db = openDatabase(':memory:');
+    migrate(db, { toVersion: 19 });
+    db.prepare(
+      `INSERT INTO workspaces (id, name, origin, created_at, updated_at)
+       VALUES ('ws_v20', 'Teaching Brief course', 'manual', ?, ?)`,
+    ).run('2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z');
+
+    migrate(db);
+
+    expect(
+      db
+        .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'teaching_briefs'")
+        .get(),
+    ).toEqual({ name: 'teaching_briefs' });
+    expect(
+      db.prepare('SELECT version, name FROM schema_migrations WHERE version = 20').get(),
+    ).toEqual({ version: 20, name: 'immutable_learning_unit_teaching_briefs' });
+    expect(db.pragma('foreign_key_check')).toEqual([]);
     db.close();
   });
 
@@ -213,6 +235,7 @@ describe('migrations', () => {
       'study_session_exchanges',
       'study_turn_events',
       'study_session_summaries',
+      'teaching_briefs',
     ]) {
       expect(tables).toContain(expected);
     }

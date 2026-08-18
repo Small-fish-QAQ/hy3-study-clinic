@@ -33,6 +33,7 @@ import type {
   StudyPlanFeasibility,
   StudyPlanItemKind,
   StudyPlanProposalPayload,
+  TeachingBriefProposalPayload,
   TutorStepPayload,
   TutorTurnPayload,
   StudyExchange,
@@ -320,6 +321,42 @@ export interface ConceptLessonInput {
   neighbors: LessonNeighbor[];
   /** Optional single-turn regeneration directive. */
   directive?: LessonDirective;
+}
+
+/** Compact provider view for one route-owned LearningUnit lesson. */
+export interface TeachingBriefGenerationInput {
+  workspaceName: string;
+  learningUnit: {
+    title: string;
+    objectives: Array<{ objectiveRef: string; title: string; description: string }>;
+    concepts: Array<{ name: string; summary: string }>;
+    canonicalConcepts: Array<{ name: string }>;
+  };
+  prerequisites: Array<{
+    prerequisiteRef: string;
+    title: string;
+    objectiveSummaries: string[];
+  }>;
+  nextConnection: { title: string } | null;
+  sourceContext: {
+    blockCount: number;
+    offerCount: number;
+    serializedBytes: number;
+    materialCount: number;
+    sectionCount: number;
+    offers: Array<{
+      sourceRef: string;
+      materialTitle: string;
+      headingPath: string[];
+      pageNumber: number | null;
+      text: string;
+    }>;
+  };
+  limits: {
+    maxSegments: number;
+    maxSourceRefsPerSegment: number;
+    maxFormalOpportunities: number;
+  };
 }
 
 /** One prior validated observation shown back to the Tutor model. */
@@ -709,6 +746,11 @@ export interface LlmProvider {
     input: ConceptLessonInput,
     opts?: ProviderCallOptions,
   ): Promise<ConceptLessonPayload>;
+  /** Generate semantic teaching content while selecting only offered local refs. */
+  generateTeachingBrief(
+    input: TeachingBriefGenerationInput,
+    opts?: ProviderCallOptions,
+  ): Promise<TeachingBriefProposalPayload>;
   /** One bounded Tutor iteration: call a whitelisted tool or finalize. */
   proposeTutorStep(input: TutorStepInput, opts?: ProviderCallOptions): Promise<TutorStepPayload>;
   /** Generate non-authoritative conversational guidance for a StudySession turn. */

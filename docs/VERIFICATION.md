@@ -234,3 +234,17 @@ The README captions map the screenshots to PDF provenance, graph evidence, bound
 - `eval:fake` checks deterministic boundaries and state invariants, not the pedagogical quality of generated content.
 - Real-provider latency and output depend on the configured endpoint and model.
 - The current automated suite is broad but is not a formal proof of security, psychometric validity, or perfect PDF reconstruction.
+
+## Phase 4A Teaching Brief coverage
+
+The Phase 4A focused suites cover the runtime Teaching Brief domain, compact source-context prioritization and byte budgets, unknown/duplicate provider refs, objective coverage, source-authority labels, structural quality profiles, strict Hy3 parsing, one bounded repair, timeout/cancellation without retry, and migration 20 creation/upgrades. The preparation service is internal and does not add a new learner route or alter Study/Tutor rendering. Full verification remains offline and uses Fake or mocked providers only:
+
+```bash
+npm run build
+npm run lint
+npm test
+npm run eval:fake
+git diff --check
+```
+
+The current full run on this revision passes 1,434 tests: 149 shared, 887 server, and 398 web. The build and focused migration/provider suites also pass. `npm run eval:fake` remains the deterministic campaign check; no real Hy3 call is required or made. Structural quality dimensions are diagnostics, not a teaching-effectiveness score. Teaching Briefs do not create Formal Evidence, mastery, progression, or durable mistakes, and no claim is made that the unshipped learner-facing lesson execution is complete.

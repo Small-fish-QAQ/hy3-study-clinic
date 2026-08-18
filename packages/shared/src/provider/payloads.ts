@@ -8,6 +8,10 @@ import { LessonSectionKindSchema } from '../domain/lesson.js';
 import { MisconceptionCategorySchema } from '../domain/misconception.js';
 import { TutorToolNameSchema } from '../domain/tutor.js';
 import { DesiredDepthSchema } from '../domain/learningContract.js';
+import {
+  InformalCheckKindSchema,
+  TeachingBriefSegmentPurposeSchema,
+} from '../domain/teachingBrief.js';
 
 /**
  * Structured payloads that LLM providers must return.
@@ -918,6 +922,71 @@ export const ConceptLessonPayloadSchema = z.object({
     .default([]),
 });
 export type ConceptLessonPayload = z.infer<typeof ConceptLessonPayloadSchema>;
+
+// ---------------------------------------------------------------------------
+// LearningUnit Teaching Brief
+// ---------------------------------------------------------------------------
+
+const ProposedTeachingIllustrationSchema = z
+  .object({
+    text: z.string().min(1).max(1800),
+    authority: z.enum(['source_backed_teaching', 'ai_teaching_synthesis']),
+    sourceRefs: z.array(z.string().min(1).max(40)).max(8),
+  })
+  .strict();
+
+const ProposedTeachingMisconceptionSchema = z
+  .object({
+    hypothesis: z.string().min(1).max(600),
+    correction: z.string().min(1).max(1000),
+    sourceRefs: z.array(z.string().min(1).max(40)).max(8),
+  })
+  .strict();
+
+const ProposedTeachingInformalCheckSchema = z
+  .object({
+    kind: InformalCheckKindSchema,
+    prompt: z.string().min(1).max(700),
+    expectedSignal: z.string().max(500).nullable(),
+  })
+  .strict();
+
+export const ProposedTeachingSegmentSchema = z
+  .object({
+    purpose: TeachingBriefSegmentPurposeSchema,
+    objectiveRefs: z.array(z.string().min(1).max(40)).max(30),
+    explanation: z.string().min(1).max(2400),
+    explanationAuthority: z.enum(['source_backed_teaching', 'ai_teaching_synthesis']),
+    sourceRefs: z.array(z.string().min(1).max(40)).max(8),
+    example: ProposedTeachingIllustrationSchema.optional(),
+    contrast: ProposedTeachingIllustrationSchema.optional(),
+    misconception: ProposedTeachingMisconceptionSchema.optional(),
+    informalCheck: ProposedTeachingInformalCheckSchema.optional(),
+  })
+  .strict();
+export type ProposedTeachingSegment = z.infer<typeof ProposedTeachingSegmentSchema>;
+
+export const TeachingBriefProposalPayloadSchema = z
+  .object({
+    whyNow: z.string().min(1).max(1000),
+    prerequisites: z
+      .array(
+        z
+          .object({
+            prerequisiteRef: z.string().min(1).max(40),
+            reason: z.string().min(1).max(700),
+            readinessHint: z.string().max(500).nullable(),
+          })
+          .strict(),
+      )
+      .max(30),
+    segments: z.array(ProposedTeachingSegmentSchema).min(1).max(12),
+    formalOpportunities: z.array(z.string().min(1).max(500)).max(8),
+    summary: z.string().min(1).max(1200),
+    nextConnection: z.string().max(800).nullable(),
+  })
+  .strict();
+export type TeachingBriefProposalPayload = z.infer<typeof TeachingBriefProposalPayloadSchema>;
 
 // ---------------------------------------------------------------------------
 // Tutor step

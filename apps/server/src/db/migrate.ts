@@ -1629,6 +1629,38 @@ const MIGRATIONS: Migration[] = [
         ON model_call_attempts(logical_call_id, attempt_number);
     `,
   },
+  {
+    version: 20,
+    name: 'immutable_learning_unit_teaching_briefs',
+    // Route- and source-pinned teaching artifacts. Rows are append-only:
+    // source or route changes produce a successor while historical Briefs
+    // remain auditable and are never treated as learner-state evidence.
+    up: `
+      CREATE TABLE teaching_briefs (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        curriculum_id TEXT NOT NULL REFERENCES curriculum_versions(id),
+        study_plan_id TEXT NOT NULL REFERENCES study_plan_versions(id),
+        learning_unit_id TEXT NOT NULL,
+        manifest_fingerprint TEXT NOT NULL,
+        source_context_fingerprint TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        provider TEXT NOT NULL,
+        provider_model TEXT,
+        prompt_version TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE (
+          curriculum_id,
+          study_plan_id,
+          learning_unit_id,
+          manifest_fingerprint,
+          source_context_fingerprint
+        )
+      );
+      CREATE INDEX idx_teaching_briefs_workspace_unit
+        ON teaching_briefs(workspace_id, learning_unit_id, created_at DESC);
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

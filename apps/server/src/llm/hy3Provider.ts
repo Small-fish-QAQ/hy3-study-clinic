@@ -12,6 +12,7 @@ import {
   QuizGenerationPayloadSchema,
   RemediationPlanProposalPayloadSchema,
   StudyPlanProposalPayloadSchema,
+  TeachingBriefProposalPayloadSchema,
   RubricGradeSchema,
   TutorStepPayloadSchema,
   TutorTurnPayloadSchema,
@@ -28,6 +29,7 @@ import {
   type QuizGenerationPayload,
   type RemediationPlanProposalPayload,
   type StudyPlanProposalPayload,
+  type TeachingBriefProposalPayload,
   type RubricGrade,
   type TutorStepPayload,
   type TutorTurnPayload,
@@ -53,6 +55,7 @@ import {
   studyPlanProposalMessages,
   tutorStepMessages,
   tutorTurnMessages,
+  teachingBriefMessages,
   type ChatMessage,
 } from './prompts.js';
 import type {
@@ -72,6 +75,7 @@ import type {
   RemediationPlanInput,
   ShortAnswerGradingInput,
   StudyPlanProposalInput,
+  TeachingBriefGenerationInput,
   StructuredOutputDiagnostic,
   StructuredOutputFailureCategory,
   TutorStepInput,
@@ -394,6 +398,19 @@ export class Hy3Provider implements LlmProvider {
     opts?: ProviderCallOptions,
   ): Promise<ConceptLessonPayload> {
     return this.complete(conceptLessonMessages(input), ConceptLessonPayloadSchema, opts);
+  }
+
+  async generateTeachingBrief(
+    input: TeachingBriefGenerationInput,
+    opts?: ProviderCallOptions,
+  ): Promise<TeachingBriefProposalPayload> {
+    return this.complete(
+      teachingBriefMessages(input),
+      TeachingBriefProposalPayloadSchema,
+      opts,
+      'Use only offered O*, P*, and S* references; remove duplicates and cover every objective.',
+      { maxTokens: 8_000, schemaName: 'teaching-brief-proposal-v1-local-refs' },
+    );
   }
 
   async proposeTutorStep(

@@ -27,6 +27,8 @@ import {
   type RubricGrade,
   type SourceBlock,
   type StudyPlanProposalPayload,
+  TeachingBriefProposalPayloadSchema,
+  type TeachingBriefProposalPayload,
   type TutorStepPayload,
   type TutorTurnPayload,
 } from '@hy3-clinic/shared';
@@ -50,6 +52,7 @@ import type {
   RemediationPlanInput,
   ShortAnswerGradingInput,
   StudyPlanProposalInput,
+  TeachingBriefGenerationInput,
   TutorStepInput,
   TutorTurnInput,
 } from './provider.js';
@@ -757,6 +760,76 @@ export class FakeProvider implements LlmProvider {
       ],
       conflicts: [],
     };
+  }
+
+  async generateTeachingBrief(
+    input: TeachingBriefGenerationInput,
+    opts?: ProviderCallOptions,
+  ): Promise<TeachingBriefProposalPayload> {
+    await this.gate(opts);
+    const firstSource = input.sourceContext.offers[0];
+    const firstObjective = input.learningUnit.objectives[0];
+    if (!firstSource || !firstObjective) {
+      throw ProviderError.invalidOutput(
+        'Teaching Brief input requires source and objective offers.',
+      );
+    }
+    const payload = TeachingBriefProposalPayloadSchema.parse({
+      whyNow: `This lesson establishes ${input.learningUnit.title} before the next route step.`,
+      prerequisites: input.prerequisites.map((prerequisite) => ({
+        prerequisiteRef: prerequisite.prerequisiteRef,
+        reason: `${prerequisite.title} supplies required context for this lesson.`,
+        readinessHint: `Recall the main idea of ${prerequisite.title}.`,
+      })),
+      segments: [
+        {
+          purpose: 'explanation',
+          objectiveRefs: input.learningUnit.objectives.map((objective) => objective.objectiveRef),
+          explanation: `Start from the course excerpt for ${input.learningUnit.title}: ${firstSource.text}`,
+          explanationAuthority: 'source_backed_teaching',
+          sourceRefs: [firstSource.sourceRef],
+          example: {
+            text: `Teaching illustration: apply ${input.learningUnit.title} to a small concrete case and inspect each step.`,
+            authority: 'ai_teaching_synthesis',
+            sourceRefs: [],
+          },
+          informalCheck: {
+            kind: 'own_words',
+            prompt: `Explain the central idea of ${input.learningUnit.title} in your own words.`,
+            expectedSignal: firstObjective.title,
+          },
+        },
+        {
+          purpose: 'contrast',
+          objectiveRefs: [firstObjective.objectiveRef],
+          explanation: `Separate the defining mechanism of ${input.learningUnit.title} from a merely similar surface description.`,
+          explanationAuthority: 'ai_teaching_synthesis',
+          sourceRefs: [firstSource.sourceRef],
+          contrast: {
+            text: 'Teaching illustration: compare the mechanism with a near-neighbor that shares vocabulary but not the same conditions.',
+            authority: 'ai_teaching_synthesis',
+            sourceRefs: [],
+          },
+          misconception: {
+            hypothesis:
+              'A learner may memorize the label while missing the conditions that make the mechanism apply.',
+            correction:
+              'Return to the sourced definition, identify its conditions, and test them in the worked case.',
+            sourceRefs: [firstSource.sourceRef],
+          },
+        },
+      ],
+      formalOpportunities: [`A later formal assessment may align with ${firstObjective.title}.`],
+      summary: `The lesson links the sourced definition of ${input.learningUnit.title} to a worked application and an informal understanding check.`,
+      nextConnection: input.nextConnection
+        ? `Next, connect this lesson to ${input.nextConnection.title}.`
+        : null,
+    });
+    const validation = opts?.validateCandidate?.(payload);
+    if (validation && !validation.valid) {
+      throw ProviderError.invalidOutput(validation.diagnostics.join('; '), 'candidate');
+    }
+    return payload;
   }
 
   /**

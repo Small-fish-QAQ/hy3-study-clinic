@@ -47,6 +47,10 @@ import {
   type FormalProgressionService,
 } from './formalProgression.js';
 import { createStudySessionService, type StudySessionService } from './studySessions.js';
+import {
+  createTeachingBriefPreparationService,
+  type TeachingBriefPreparationService,
+} from './teachingBriefPreparation.js';
 
 export interface Services {
   materials: MaterialService;
@@ -80,6 +84,7 @@ export interface Services {
   courseActionLaunch: CourseActionLaunchService;
   formalProgression: FormalProgressionService;
   studySessions: StudySessionService;
+  teachingBriefPreparation: TeachingBriefPreparationService;
 }
 
 export interface ServiceDeps {
@@ -174,6 +179,12 @@ export function createServices({ repos, provider, clock, providerModel }: Servic
     clock,
     replanning: formalProgression,
   });
+  const teachingBriefPreparation = createTeachingBriefPreparationService({
+    repos,
+    provider,
+    clock,
+    providerModel,
+  });
   return {
     materials,
     workspaces,
@@ -206,5 +217,6 @@ export function createServices({ repos, provider, clock, providerModel }: Servic
     courseActionLaunch,
     formalProgression,
     studySessions,
+    teachingBriefPreparation,
   };
 }
