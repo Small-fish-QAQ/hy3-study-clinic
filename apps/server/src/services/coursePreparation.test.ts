@@ -24,7 +24,11 @@ import { createRepositories, type Repositories } from '../repositories/index.js'
 import { makeBlock, makeConcept, makeMaterial, makeWorkspace, T0 } from '../testing/fixtures.js';
 import { buildTestApp } from '../testing/testApp.js';
 import { fixedClock } from '../util/ids.js';
-import { COURSE_PREPARATION_POLICY_ID, LEGACY_CURRICULUM_GENERATION_POLICY } from './curriculum.js';
+import {
+  COURSE_MAP_CURRICULUM_GENERATION_POLICY,
+  COURSE_PREPARATION_POLICY_ID,
+  LEGACY_CURRICULUM_GENERATION_POLICY,
+} from './curriculum.js';
 import { createServices, type Services } from './index.js';
 
 const QUOTE = 'Working memory is limited.';
@@ -67,6 +71,14 @@ class TrackingProvider extends FakeProvider {
     input: CurriculumProposalInput,
     opts?: ProviderCallOptions,
   ): Promise<CurriculumProposalPayload> {
+    this.curriculumCalls += 1;
+    const gate = this.curriculumGate;
+    this.curriculumGate = null;
+    const started = this.onCurriculumStarted;
+    this.onCurriculumStarted = null;
+    started?.();
+    if (gate) await gate;
+    if (this.failCurriculum) throw new Error('controlled Curriculum failure');
     return super.proposeCurriculum(
       this.sourceOnlyCurriculum
         ? {
@@ -400,7 +412,7 @@ describe('Course Preparation coordinator', () => {
     });
     expect(provider.analyzeCalls).toBe(1);
     expect(provider.curriculumCalls).toBe(1);
-    expect(provider.detailCalls).toBe(1);
+    expect(provider.detailCalls).toBe(0);
     expect(provider.studyPlanCalls).toBe(1);
     expect(repos.curricula.list('ws_1').map((item) => item.status)).toEqual(['accepted']);
     expect(repos.studyPlans.list('ws_1').map((item) => item.status)).toEqual(['proposed']);
@@ -410,13 +422,16 @@ describe('Course Preparation coordinator', () => {
     const harness = createHarness({ withConcept: true, sectionCount: 120 });
 
     await expect(
-      harness.services.curriculum.propose({
-        command: command('detail-batch-overflow'),
-        contractId: harness.contract.id,
-        expectedContractVersion: harness.contract.version,
-        predecessorCurriculumId: null,
-        expectedActiveCurriculumId: null,
-      }),
+      harness.services.curriculum.propose(
+        {
+          command: command('detail-batch-overflow'),
+          contractId: harness.contract.id,
+          expectedContractVersion: harness.contract.version,
+          predecessorCurriculumId: null,
+          expectedActiveCurriculumId: null,
+        },
+        { generationPolicy: COURSE_MAP_CURRICULUM_GENERATION_POLICY },
+      ),
     ).rejects.toMatchObject({
       code: ApiErrorCode.ValidationError,
       details: { kind: 'curriculum_detail_batch_bound_exceeded', maxDetailBatches: 2 },
@@ -439,13 +454,16 @@ describe('Course Preparation coordinator', () => {
       if (call === 2) signalSecondDetail();
     };
     const harness = createHarness({ provider, withConcept: true, sectionCount: 51 });
-    const pending = harness.services.curriculum.propose({
-      command: command('stale-second-detail'),
-      contractId: harness.contract.id,
-      expectedContractVersion: harness.contract.version,
-      predecessorCurriculumId: null,
-      expectedActiveCurriculumId: null,
-    });
+    const pending = harness.services.curriculum.propose(
+      {
+        command: command('stale-second-detail'),
+        contractId: harness.contract.id,
+        expectedContractVersion: harness.contract.version,
+        predecessorCurriculumId: null,
+        expectedActiveCurriculumId: null,
+      },
+      { generationPolicy: COURSE_MAP_CURRICULUM_GENERATION_POLICY },
+    );
 
     await secondDetailStarted;
     activateReplacementRevision(harness.repos);
@@ -473,7 +491,10 @@ describe('Course Preparation coordinator', () => {
           predecessorCurriculumId: null,
           expectedActiveCurriculumId: null,
         },
-        { signal: abort.signal },
+        {
+          generationPolicy: COURSE_MAP_CURRICULUM_GENERATION_POLICY,
+          signal: abort.signal,
+        },
       ),
     ).rejects.toMatchObject({ code: ApiErrorCode.RequestCancelled });
     expect(provider.detailCalls).toBe(2);
@@ -488,13 +509,16 @@ describe('Course Preparation coordinator', () => {
     harness.provider.failDetailAtCall = 2;
 
     await expect(
-      harness.services.curriculum.propose({
-        command: command('failed-second-detail'),
-        contractId: harness.contract.id,
-        expectedContractVersion: harness.contract.version,
-        predecessorCurriculumId: predecessorId,
-        expectedActiveCurriculumId: harness.repos.courseExecution.get('ws_1').activeCurriculumId,
-      }),
+      harness.services.curriculum.propose(
+        {
+          command: command('failed-second-detail'),
+          contractId: harness.contract.id,
+          expectedContractVersion: harness.contract.version,
+          predecessorCurriculumId: predecessorId,
+          expectedActiveCurriculumId: harness.repos.courseExecution.get('ws_1').activeCurriculumId,
+        },
+        { generationPolicy: COURSE_MAP_CURRICULUM_GENERATION_POLICY },
+      ),
     ).rejects.toThrow('controlled Curriculum detail failure');
     expect(harness.provider.detailCalls).toBe(2);
     expect(harness.repos.curricula.get(predecessorId)).toEqual(predecessor);

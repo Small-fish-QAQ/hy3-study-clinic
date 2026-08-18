@@ -19,6 +19,7 @@ import {
   buildCurriculumCourseSourceMap,
   buildCurriculumExecutionContext,
   createCurriculumService,
+  CURRICULUM_GENERATION_POLICY,
   curriculumOperationLeaseMs,
   LEGACY_CURRICULUM_GENERATION_POLICY,
   type CurriculumService,
@@ -372,6 +373,11 @@ beforeEach(() => {
 });
 
 describe('Curriculum proposal and authority boundaries', () => {
+  it('defaults production generation to the legacy direct policy', () => {
+    expect(CURRICULUM_GENERATION_POLICY).toBe(LEGACY_CURRICULUM_GENERATION_POLICY);
+    expect(curriculumOperationLeaseMs(240_000)).toBe(10 * 60 * 1000);
+  });
+
   it('keeps a pending role proposal below Contract authority, then blocks a confirmed role change', async () => {
     const scoped = contract.courseScope.materials[0]!;
     const future = roles.propose({
