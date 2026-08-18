@@ -149,6 +149,7 @@ export function createLessonExecutionService({
   function executable(context: RouteContext): boolean {
     return (
       context.item.kind === 'learning_unit_teaching' &&
+      (context.item.state === 'queued' || context.item.state === 'active') &&
       context.item.launch.status === 'launchable' &&
       context.item.launch.capability === 'lesson' &&
       context.item.learningUnitId !== null &&
