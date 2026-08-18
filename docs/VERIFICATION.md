@@ -61,6 +61,15 @@ The quality-profile suite verifies deterministic repeated output and capped comp
 
 The Course Source Map suite covers deterministic multi-Material construction, exact manifest/source order, parser hierarchy boundaries, derived budgeting sections, current Concept and predecessor intersections, revision fingerprints, and rejection of stale revisions, foreign Courses, duplicates, incomplete corpora, and reordered blocks. Curriculum service coverage proves that the real request path projects current persisted multi-Material facts before selection. The policy-benchmark suite covers caller-supplied baseline parity, deterministic repeated runs, whole-offer byte truncation, fixed global and per-block budgets, section reserve/cap redistribution, weighted-RRF ties and named contributions, hierarchy child provenance, exact-ID recall, balance/overlap/diagnostic profiles, and rejection of unknown, foreign, stale, duplicate, or catalog-mismatched identities. The representative synthetic multi-Material gate saturates the production block budget, compares both named policies, preserves fixed labeled predecessor/Concept/priority evidence and material coverage, protects baseline priority evidence when sections exceed capacity, checks exact internal-offer bytes and whole-object truncation, and demonstrates recovery of otherwise starved derived sections. These tests evaluate local organization and comparison logic, not teaching quality or semantic entailment, and make no Hy3 call.
 
+The internal Course Map prototype has focused offline checks:
+
+```bash
+npm run test -w @hy3-clinic/shared -- src/domain/courseMap.test.ts
+npm run test -w @hy3-clinic/server -- src/services/courseMap.test.ts src/services/courseMapProvider.test.ts
+```
+
+These suites cover strict runtime schemas; deterministic multi-module and multi-Material allocation; complete section/SourceBlock representation under fixed prompt caps; stale/foreign and duplicate identity rejection; hierarchy, allocation, synthesis, Concept/canonical, and duplicate-intent diagnostics; prerequisite cycles, self-edges, unknown IDs, duplicates, order, degree, and edge bounds; deterministic Fake output; Hy3-shaped valid, malformed, and semantically invalid mocked responses; one shared schema/candidate repair; repair failure; timeout without blind retry; cancellation during generation and repair; and physical-attempt callback compatibility. They make no real Hy3 call and do not exercise production Curriculum routing because Phase 3C1 intentionally leaves that path unchanged.
+
 Focused provider/settings checks can be run without calling a real provider:
 
 ```bash

@@ -1,5 +1,9 @@
 import type { SourceBlock } from '@hy3-clinic/shared';
-import { CourseSourceMapSchema, type CourseSourceMap } from './courseSourceMap.js';
+import {
+  assertCourseSourceMapIntegrity,
+  CourseSourceMapSchema,
+  type CourseSourceMap,
+} from './courseSourceMap.js';
 import { curriculumSourceBlockFingerprint } from './curriculumValidation.js';
 
 export const CURRICULUM_EVIDENCE_SELECTOR_POLICIES = [
@@ -110,6 +114,7 @@ export function validateCourseSourceMapSelectionCorpus(input: {
       throw new Error('Curriculum evidence Course Source Map derived-section identity is stale.');
     }
   }
+  assertCourseSourceMapIntegrity(sourceMap);
   return sourceMap;
 }
 

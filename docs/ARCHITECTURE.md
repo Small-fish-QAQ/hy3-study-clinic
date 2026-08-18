@@ -91,10 +91,20 @@ Each profile reports exact-ID recall at candidate, offered, block, and byte boun
 
 Source blocks are wrapped with fresh request-specific delimiters and explicitly labelled untrusted data. Student answers are fenced for grading in the same way. This reduces injection risk but is not presented as a proof of prompt-injection immunity.
 
+### Internal Course Map prototype boundary
+
+`apps/server/src/services/courseMap.ts` implements a Phase 3C1 shadow/prototype step between the deterministic Course Source Map and later detailed Curriculum materialization. It is deliberately isolated from production Course Preparation. Nothing invokes it from a route or persistence service, and its result cannot become an accepted Curriculum, Course Truth, Evidence, Mastery, or learner-state transition.
+
+The local source-allocation builder validates one exact current Course Source Map and evidence catalog, preserves Material boundaries, and partitions every derived section and SourceBlock exactly once into at most 120 contiguous planning regions. Provider visibility is smaller: region summaries, current Concept/canonical IDs that are valid for the allocation, and at most 160 exact excerpts with a two-per-region ceiling. Allocation proves visibility and planning coverage only; exact SourceBlocks remain the authoritative evidence leaves.
+
+Hy3 or Fake proposes concise modules, ordered instructional regions, approximate scope, source-region references, pedagogical prerequisite edges, and synthesis boundaries. Local code assigns deterministic operation-local IDs and validates exact allocation fingerprint, known IDs, hierarchy/index order, module/region limits, one-time allocation, anchor ownership, prerequisite self/duplicate/degree/edge/order rules, complete DAG acyclicity, and synthesis identities/boundaries. It also returns named quality dimensions for allocation distribution, unsupported or isolated regions, duplicate/near-duplicate intents, and anchor validity. There is intentionally no universal quality score, no locally invented semantic prerequisite edge, and no persistence.
+
+`generateCourseMapPrototype` supplies this semantic validator through the normal provider candidate-validation hook. A valid result uses one physical request. JSON/schema failure or model-correctable semantic failure may use the one shared bounded repair; a second invalid response fails closed. Timeout, transport failure, and cancellation do not cause a blind retry. The prototype therefore exercises the contract needed for later production integration without changing the current Curriculum selector, detailed LearningUnit generation, StudyPlan preflight, learner confirmation count, or accepted-predecessor safety.
+
 ## 4. Provider contract
 
 `LlmProvider` is a bounded interface shared by `FakeProvider` and `Hy3Provider`. It includes one
-deliberate connectivity probe and fourteen semantic operations:
+deliberate connectivity probe and fifteen semantic operations:
 
 1. `testConnection`;
 2. `analyzeConcepts`;
@@ -109,8 +119,9 @@ deliberate connectivity probe and fourteen semantic operations:
 11. `generateConceptLesson`;
 12. `proposeTutorStep`;
 13. `respondToTutorTurn`;
-14. `proposeCurriculum`; and
-15. `proposeStudyPlan`.
+14. `proposeCourseMap`;
+15. `proposeCurriculum`; and
+16. `proposeStudyPlan`.
 
 Every method receives optional provider-call options containing an `AbortSignal` and, when its owning operation needs one, a bounded timeout override. Every method returns a Zod-validated payload. Implementations expose normalized `ProviderError` failures rather than raw transport errors.
 
@@ -596,5 +607,6 @@ No vector database, graph database, orchestration framework, authentication laye
 - Deterministic bounded graph routing can retain crossings in dense arrangements.
 - Material/document retirement is non-destructive to immutable revisions and longitudinal history, although the current API has no automatic unretire operation. Reprocessing retains immutable prior revisions and history, but activating a new revision changes which source artifacts ordinary current-state workflows use. Explicit workspace deletion is irreversible and cascades its course data.
 - Course Preparation treats a Material as grounded after at least one exact current-revision Concept survives local validation. Section extraction can retain valid partial progress after another section fails, so this state is operational readiness rather than proof of semantic completeness or entailment. Curriculum quality, retrieval ranking, and LearningUnit granularity are unchanged.
+- The internal Course Map remains a non-persisted shadow/prototype. Its deterministic profiles prove structural capability and failure handling, not pedagogical superiority; production Curriculum generation still performs its existing one-step detailed proposal until a later integration phase.
 
 Verification commands, test counts, migration coverage, public evidence, and reviewer mappings are maintained separately in [Verification and Reviewer Evidence](VERIFICATION.md).

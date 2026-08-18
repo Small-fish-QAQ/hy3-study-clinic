@@ -6,6 +6,7 @@ import type {
   Concept,
   ConceptAnalysisPayload,
   ConceptLessonPayload,
+  CourseMapProposalPayload,
   Curriculum,
   CurriculumProposalPayload,
   DesiredDepth,
@@ -448,6 +449,44 @@ export interface CurriculumProposalInput {
   };
 }
 
+/** Compact, bounded visibility for one exact local source-allocation region. */
+export interface CourseMapSourceRegionOffer {
+  id: string;
+  index: number;
+  materialId: string;
+  materialTitle: string;
+  title: string;
+  sectionCount: number;
+  blockCount: number;
+  charCount: number;
+  conceptIds: string[];
+  evidence: Array<{ evidenceId: string; text: string }>;
+}
+
+/** Internal skeleton-generation input. Full SourceBlocks never cross this boundary. */
+export interface CourseMapProposalInput {
+  workspaceName: string;
+  contract: CurriculumContractContext;
+  courseSourceMapFingerprint: string;
+  sourceAllocationFingerprint: string;
+  sourceRegions: CourseMapSourceRegionOffer[];
+  concepts: Array<{
+    id: string;
+    name: string;
+    summary: string;
+    importance: Concept['importance'];
+  }>;
+  canonicalConcepts: CurriculumCanonicalConceptOffer[];
+  limits: {
+    maxModules: number;
+    maxRegions: number;
+    maxPrerequisiteEdges: number;
+    maxPrerequisiteDegree: number;
+    maxSynthesisGroups: number;
+    maxSourceRegionsPerRegion: number;
+  };
+}
+
 export interface StudyPlanContractContext extends CurriculumContractContext {
   deadline: { at: string; timeZone: string } | null;
   studyBudget: {
@@ -567,6 +606,11 @@ export interface LlmProvider {
   proposeTutorStep(input: TutorStepInput, opts?: ProviderCallOptions): Promise<TutorStepPayload>;
   /** Generate non-authoritative conversational guidance for a StudySession turn. */
   respondToTutorTurn(input: TutorTurnInput, opts?: ProviderCallOptions): Promise<TutorTurnPayload>;
+  /** Propose a planning-only Curriculum skeleton; local code validates every identity and edge. */
+  proposeCourseMap(
+    input: CourseMapProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<CourseMapProposalPayload>;
   /** Propose learner-visible Curriculum semantics; local code validates and versions it. */
   proposeCurriculum(
     input: CurriculumProposalInput,

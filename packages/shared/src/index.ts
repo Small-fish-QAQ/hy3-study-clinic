@@ -13,6 +13,7 @@ export * from './domain/materialRoleApi.js';
 export * from './domain/learningContract.js';
 export * from './domain/sourceAuthority.js';
 export * from './domain/curriculum.js';
+export * from './domain/courseMap.js';
 export * from './domain/studyPlan.js';
 export * from './domain/sessionAgenda.js';
 export * from './domain/coursePreparation.js';

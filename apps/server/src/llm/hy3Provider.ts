@@ -3,6 +3,7 @@ import {
   AssessmentProposalPayloadSchema,
   ConceptAnalysisPayloadSchema,
   ConceptLessonPayloadSchema,
+  CourseMapProposalPayloadSchema,
   CurriculumProposalPayloadSchema,
   GraphProposalPayloadSchema,
   GroupedStudyPlanProposalPayloadSchema,
@@ -17,6 +18,7 @@ import {
   type AssessmentProposalPayload,
   type ConceptAnalysisPayload,
   type ConceptLessonPayload,
+  type CourseMapProposalPayload,
   type CurriculumProposalPayload,
   type GraphProposalPayload,
   type GroupedStudyPlanProposalPayload,
@@ -36,6 +38,7 @@ import {
   assessmentProposalMessages,
   conceptAnalysisMessages,
   conceptLessonMessages,
+  courseMapProposalMessages,
   curriculumProposalMessages,
   graphProposalMessages,
   groupedStudyPlanProposalMessages,
@@ -54,6 +57,7 @@ import type {
   AssessmentProposalInput,
   ConceptAnalysisInput,
   ConceptLessonInput,
+  CourseMapProposalInput,
   CurriculumProposalInput,
   GraphProposalInput,
   LlmProvider,
@@ -80,6 +84,7 @@ export interface Hy3ProviderConfig {
 
 /** Observed Curriculum responses peaked at 10,962 tokens; retain bounded headroom. */
 export const CURRICULUM_MAX_OUTPUT_TOKENS = 16_000;
+export const COURSE_MAP_MAX_OUTPUT_TOKENS = 8_000;
 
 interface ChatCompletionResponse {
   choices?: Array<{ message?: { content?: string } }>;
@@ -381,6 +386,19 @@ export class Hy3Provider implements LlmProvider {
       opts,
       undefined,
       { maxTokens: CURRICULUM_MAX_OUTPUT_TOKENS },
+    );
+  }
+
+  async proposeCourseMap(
+    input: CourseMapProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<CourseMapProposalPayload> {
+    return this.complete(
+      courseMapProposalMessages(input),
+      CourseMapProposalPayloadSchema,
+      opts,
+      undefined,
+      { maxTokens: COURSE_MAP_MAX_OUTPUT_TOKENS },
     );
   }
 

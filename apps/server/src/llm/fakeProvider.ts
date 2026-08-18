@@ -8,6 +8,7 @@ import {
   type Concept,
   type ConceptAnalysisPayload,
   type ConceptLessonPayload,
+  type CourseMapProposalPayload,
   type CurriculumProposalPayload,
   type GraphProposalPayload,
   type MisconceptionProposalPayload,
@@ -35,6 +36,7 @@ import type {
   AssessmentProposalInput,
   ConceptAnalysisInput,
   ConceptLessonInput,
+  CourseMapProposalInput,
   CurriculumOutlineItem,
   CurriculumProposalInput,
   GraphProposalInput,
@@ -790,6 +792,114 @@ export class FakeProvider implements LlmProvider {
           : `学习者对「${input.conceptName}」的表述遗漏了原文的关键限定,可能只掌握了部分含义,需判别确认。`,
       evidence: [{ blockId: input.blockId, quote: input.sourceQuote }],
     };
+  }
+
+  async proposeCourseMap(
+    input: CourseMapProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<CourseMapProposalPayload> {
+    await this.gate(opts);
+    if (input.sourceRegions.length === 0 || input.limits.maxModules < 1) {
+      throw ProviderError.invalidOutput('Course Map requires bounded source regions');
+    }
+    const moduleCount = Math.min(
+      input.limits.maxModules,
+      Math.max(1, Math.ceil(input.sourceRegions.length / 4)),
+    );
+    const modules: CourseMapProposalPayload['modules'] = [];
+    const orderedRegionKeys: string[] = [];
+    for (let moduleIndex = 0; moduleIndex < moduleCount; moduleIndex += 1) {
+      const start = Math.floor((moduleIndex * input.sourceRegions.length) / moduleCount);
+      const end = Math.floor(((moduleIndex + 1) * input.sourceRegions.length) / moduleCount);
+      const sourceRegions = input.sourceRegions.slice(start, end);
+      const moduleKey = `module-${moduleIndex + 1}`;
+      const title =
+        sourceRegions.length === 1
+          ? sourceRegions[0]!.title
+          : `${sourceRegions[0]!.title} - ${sourceRegions.at(-1)!.title}`;
+      const regions = sourceRegions.map((sourceRegion, regionIndex) => {
+        const key = `region-${sourceRegion.index + 1}`;
+        orderedRegionKeys.push(key);
+        const conceptIds = sourceRegion.conceptIds.slice(0, 1);
+        const canonicalConceptIds = input.canonicalConcepts
+          .filter((canonical) =>
+            canonical.sourceConceptIds.some((conceptId) => conceptIds.includes(conceptId)),
+          )
+          .map((canonical) => canonical.id)
+          .slice(0, 1);
+        return {
+          key,
+          index: regionIndex,
+          title: sourceRegion.title,
+          learningIntent: `Build working understanding of ${sourceRegion.title}.`,
+          approximateScope:
+            sourceRegion.blockCount <= 2
+              ? ('focused' as const)
+              : sourceRegion.blockCount >= 12
+                ? ('extended' as const)
+                : ('standard' as const),
+          sourceRegionIds: [sourceRegion.id],
+          conceptIds,
+          canonicalConceptIds,
+        };
+      });
+      modules.push({
+        key: moduleKey,
+        index: moduleIndex,
+        title: title.slice(0, 300),
+        learningIntent: `Connect the source regions from ${title}.`.slice(0, 700),
+        regions,
+      });
+    }
+    const prerequisites: CourseMapProposalPayload['prerequisites'] = [];
+    for (
+      let index = 1;
+      index < orderedRegionKeys.length &&
+      input.limits.maxPrerequisiteDegree > 0 &&
+      prerequisites.length < input.limits.maxPrerequisiteEdges;
+      index += 1
+    ) {
+      prerequisites.push({
+        prerequisiteRegionKey: orderedRegionKeys[index - 1]!,
+        dependentRegionKey: orderedRegionKeys[index]!,
+      });
+    }
+    const synthesisGroups: CourseMapProposalPayload['synthesisGroups'] = [];
+    for (const module of modules) {
+      if (module.regions.length < 2 || synthesisGroups.length >= input.limits.maxSynthesisGroups) {
+        continue;
+      }
+      synthesisGroups.push({
+        key: `synthesis-${module.key}`,
+        title: `Synthesize ${module.title}`.slice(0, 300),
+        level: 'module',
+        regionKeys: module.regions.map((region) => region.key),
+      });
+    }
+    if (modules.length >= 2 && synthesisGroups.length < input.limits.maxSynthesisGroups) {
+      synthesisGroups.push({
+        key: 'synthesis-course',
+        title: 'Connect the complete course structure',
+        level: 'course',
+        regionKeys: modules.map((module) => module.regions.at(-1)!.key),
+      });
+    }
+    const candidate: CourseMapProposalPayload = {
+      sourceAllocationFingerprint: input.sourceAllocationFingerprint,
+      modules,
+      prerequisites,
+      synthesisGroups,
+    };
+    const firstValidation = opts?.validateCandidate?.(candidate);
+    if (!firstValidation || firstValidation.valid) return candidate;
+    opts?.onRepairAttempt?.('candidate');
+    await this.gate(opts);
+    const repairedValidation = opts?.validateCandidate?.(candidate);
+    if (!repairedValidation || repairedValidation.valid) return candidate;
+    throw ProviderError.invalidOutput(
+      repairedValidation.diagnostics.join('; ').slice(0, 8_000),
+      'candidate',
+    );
   }
 
   async proposeCurriculum(

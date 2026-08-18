@@ -162,6 +162,95 @@ function sourceMapFingerprint(value: unknown): string {
     .slice(0, 40)}`;
 }
 
+function canonicalSourceMapFingerprintInput(
+  sourceMap: Omit<CourseSourceMap, 'fingerprint'>,
+): Omit<CourseSourceMap, 'fingerprint'> {
+  return {
+    schemaVersion: sourceMap.schemaVersion,
+    workspaceId: sourceMap.workspaceId,
+    manifestFingerprint: sourceMap.manifestFingerprint,
+    authority: sourceMap.authority,
+    materialCount: sourceMap.materialCount,
+    blockCount: sourceMap.blockCount,
+    sectionCount: sourceMap.sectionCount,
+    conceptAssociationCount: sourceMap.conceptAssociationCount,
+    predecessorUsedBlockCount: sourceMap.predecessorUsedBlockCount,
+    materials: sourceMap.materials.map((material) => ({
+      materialId: material.materialId,
+      title: material.title,
+      sourceIndex: material.sourceIndex,
+      activeMaterialRevisionId: material.activeMaterialRevisionId,
+      parserVersion: material.parserVersion,
+      parserFingerprint: material.parserFingerprint,
+      blockCount: material.blockCount,
+      sectionCount: material.sectionCount,
+      parserPathNodes: material.parserPathNodes.map((node) => ({
+        id: node.id,
+        parentId: node.parentId,
+        materialId: node.materialId,
+        materialRevisionId: node.materialRevisionId,
+        depth: node.depth,
+        title: node.title,
+        headingPath: node.headingPath,
+        provenance: node.provenance,
+        authority: node.authority,
+        sourceBlockIds: node.sourceBlockIds,
+        firstSourceIndex: node.firstSourceIndex,
+        lastSourceIndex: node.lastSourceIndex,
+        blockCount: node.blockCount,
+      })),
+      sections: material.sections.map((section) => ({
+        id: section.id,
+        sectionKey: section.sectionKey,
+        materialId: section.materialId,
+        materialRevisionId: section.materialRevisionId,
+        sectionIndex: section.sectionIndex,
+        title: section.title,
+        boundaryProvenance: section.boundaryProvenance,
+        titleProvenance: section.titleProvenance,
+        authority: section.authority,
+        headingPaths: section.headingPaths,
+        sourceBlockIds: section.sourceBlockIds,
+        blockCount: section.blockCount,
+        charCount: section.charCount,
+        firstSourceIndex: section.firstSourceIndex,
+        lastSourceIndex: section.lastSourceIndex,
+      })),
+      blocks: material.blocks.map((block) => ({
+        sourceBlockId: block.sourceBlockId,
+        materialId: block.materialId,
+        materialRevisionId: block.materialRevisionId,
+        structuralUnitId: block.structuralUnitId,
+        sourceIndex: block.sourceIndex,
+        courseSourceIndex: block.courseSourceIndex,
+        blockIndex: block.blockIndex,
+        sourceBlockRevisionFingerprint: block.sourceBlockRevisionFingerprint,
+        heading: block.heading,
+        headingPath: block.headingPath,
+        pageNumber: block.pageNumber,
+        pageEnd: block.pageEnd,
+        startOffset: block.startOffset,
+        endOffset: block.endOffset,
+        parserPathNodeIds: block.parserPathNodeIds,
+        derivedSectionId: block.derivedSectionId,
+        conceptIds: block.conceptIds,
+        predecessorUsage: block.predecessorUsage,
+      })),
+    })),
+  };
+}
+
+/** Verify that persisted navigation metadata has not been changed after construction. */
+export function assertCourseSourceMapIntegrity(sourceMap: CourseSourceMap): void {
+  const { fingerprint: claimedFingerprint, ...withoutFingerprint } = sourceMap;
+  const expectedFingerprint = sourceMapFingerprint(
+    canonicalSourceMapFingerprintInput(withoutFingerprint),
+  );
+  if (claimedFingerprint !== expectedFingerprint) {
+    throw new Error('Course Source Map fingerprint is stale or mismatched.');
+  }
+}
+
 function executionSourceManifestFingerprint(
   revisions: z.infer<typeof ExecutionSourceManifestSchema>['revisions'],
 ): string {
@@ -534,6 +623,6 @@ export function buildCourseSourceMap(raw: CourseSourceMapInput): CourseSourceMap
   };
   return CourseSourceMapSchema.parse({
     ...mapWithoutFingerprint,
-    fingerprint: sourceMapFingerprint(mapWithoutFingerprint),
+    fingerprint: sourceMapFingerprint(canonicalSourceMapFingerprintInput(mapWithoutFingerprint)),
   });
 }
