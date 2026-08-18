@@ -331,25 +331,43 @@ export type ProposedCurriculumSynthesisGroup = z.infer<
   typeof ProposedCurriculumSynthesisGroupSchema
 >;
 
+/** Compact operation-local reference to one server-offered source region. */
+export const CourseMapSourceRegionRefSchema = z
+  .string()
+  .max(100)
+  .regex(/^R[1-9][0-9]*$/u);
+export type CourseMapSourceRegionRef = z.infer<typeof CourseMapSourceRegionRefSchema>;
+
+/** Region-scoped selection of one server-offered Concept/canonical anchor binding. */
+export const CourseMapAnchorOptionRefSchema = z
+  .string()
+  .max(100)
+  .regex(/^R[1-9][0-9]*:A[1-9][0-9]*$/u);
+export type CourseMapAnchorOptionRef = z.infer<typeof CourseMapAnchorOptionRefSchema>;
+
 /** One ordered instructional region in the internal Course Map proposal. */
 export const ProposedCourseMapRegionSchema = z
   .object({
-    key: z.string().min(1).max(100),
-    index: z.number().int().nonnegative(),
+    sourceRegionRef: CourseMapSourceRegionRefSchema,
     title: z.string().min(1).max(300),
     learningIntent: z.string().min(1).max(700),
     approximateScope: z.enum(['focused', 'standard', 'extended']),
-    sourceRegionIds: z.array(z.string().min(1).max(100)).min(1).max(16),
-    conceptIds: z.array(z.string().min(1)).max(20),
-    canonicalConceptIds: z.array(z.string().min(1)).max(10),
+    anchorOptionRefs: z.array(CourseMapAnchorOptionRefSchema).max(30),
   })
-  .strict();
+  .strict()
+  .superRefine((region, ctx) => {
+    if (new Set(region.anchorOptionRefs).size !== region.anchorOptionRefs.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['anchorOptionRefs'],
+        message: 'Course Map region anchor-option references must be unique.',
+      });
+    }
+  });
 export type ProposedCourseMapRegion = z.infer<typeof ProposedCourseMapRegionSchema>;
 
 export const ProposedCourseMapModuleSchema = z
   .object({
-    key: z.string().min(1).max(100),
-    index: z.number().int().nonnegative(),
     title: z.string().min(1).max(300),
     learningIntent: z.string().min(1).max(700),
     regions: z.array(ProposedCourseMapRegionSchema).min(1).max(120),
@@ -359,18 +377,17 @@ export type ProposedCourseMapModule = z.infer<typeof ProposedCourseMapModuleSche
 
 export const ProposedCourseMapPrerequisiteSchema = z
   .object({
-    prerequisiteRegionKey: z.string().min(1).max(100),
-    dependentRegionKey: z.string().min(1).max(100),
+    prerequisiteRegionRef: CourseMapSourceRegionRefSchema,
+    dependentRegionRef: CourseMapSourceRegionRefSchema,
   })
   .strict();
 export type ProposedCourseMapPrerequisite = z.infer<typeof ProposedCourseMapPrerequisiteSchema>;
 
 export const ProposedCourseMapSynthesisGroupSchema = z
   .object({
-    key: z.string().min(1).max(100),
     title: z.string().min(1).max(300),
     level: z.enum(['module', 'course', 'transfer']),
-    regionKeys: z.array(z.string().min(1).max(100)).min(2).max(50),
+    regionRefs: z.array(CourseMapSourceRegionRefSchema).min(2).max(50),
   })
   .strict();
 export type ProposedCourseMapSynthesisGroup = z.infer<typeof ProposedCourseMapSynthesisGroupSchema>;
@@ -382,61 +399,11 @@ export type ProposedCourseMapSynthesisGroup = z.infer<typeof ProposedCourseMapSy
  */
 export const CourseMapProposalPayloadSchema = z
   .object({
-    sourceAllocationFingerprint: z.string().regex(/^course_map_source_allocation_[0-9a-f]{40}$/u),
     modules: z.array(ProposedCourseMapModuleSchema).min(1).max(24),
     prerequisites: z.array(ProposedCourseMapPrerequisiteSchema).max(384),
     synthesisGroups: z.array(ProposedCourseMapSynthesisGroupSchema).max(100),
   })
-  .strict()
-  .superRefine((payload, ctx) => {
-    const moduleKeys = new Set<string>();
-    const regionKeys = new Set<string>();
-    for (const [moduleIndex, module] of payload.modules.entries()) {
-      if (moduleKeys.has(module.key)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['modules', moduleIndex, 'key'],
-          message: `duplicate Course Map module key: ${module.key}`,
-        });
-      }
-      moduleKeys.add(module.key);
-      for (const [regionIndex, region] of module.regions.entries()) {
-        if (regionKeys.has(region.key)) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['modules', moduleIndex, 'regions', regionIndex, 'key'],
-            message: `duplicate Course Map region key: ${region.key}`,
-          });
-        }
-        regionKeys.add(region.key);
-        if (new Set(region.conceptIds).size !== region.conceptIds.length) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['modules', moduleIndex, 'regions', regionIndex, 'conceptIds'],
-            message: 'Course Map region Concept anchors must be unique.',
-          });
-        }
-        if (new Set(region.canonicalConceptIds).size !== region.canonicalConceptIds.length) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['modules', moduleIndex, 'regions', regionIndex, 'canonicalConceptIds'],
-            message: 'Course Map region canonical Concept anchors must be unique.',
-          });
-        }
-      }
-    }
-    const synthesisKeys = new Set<string>();
-    for (const [index, group] of payload.synthesisGroups.entries()) {
-      if (synthesisKeys.has(group.key)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['synthesisGroups', index, 'key'],
-          message: `duplicate Course Map synthesis key: ${group.key}`,
-        });
-      }
-      synthesisKeys.add(group.key);
-    }
-  });
+  .strict();
 export type CourseMapProposalPayload = z.infer<typeof CourseMapProposalPayloadSchema>;
 
 /** One bounded LearningUnit detail proposal for a server-owned Course Map region. */

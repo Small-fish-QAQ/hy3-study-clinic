@@ -3,6 +3,7 @@ import { CurriculumDetailProposalPayloadSchema, type CourseMap } from '@hy3-clin
 import { FakeProvider } from '../llm/fakeProvider.js';
 import { Hy3Provider } from '../llm/hy3Provider.js';
 import { createCourseMapFixture } from '../testing/courseMapFixtures.js';
+import { analyzeCourseMapProposal } from './courseMap.js';
 import {
   CurriculumDetailBatchPlanningError,
   assembleCurriculumDetailBatches,
@@ -12,55 +13,7 @@ import {
 
 function planningInput() {
   const fixture = createCourseMapFixture();
-  const analysis = fixture.good;
-  const courseMap = {
-    schemaVersion: 1 as const,
-    id: 'course_map_0123456789abcdef01234567',
-    workspaceId: fixture.workspaceId,
-    courseSourceMapFingerprint: fixture.sourceAllocation.courseSourceMapFingerprint,
-    sourceAllocationFingerprint: fixture.sourceAllocation.fingerprint,
-    authority: 'planning_proposal_only' as const,
-    modules: analysis.modules.map((module, moduleIndex) => ({
-      id: `course_map_module_${(moduleIndex + 1).toString(16).padStart(24, '0')}`,
-      proposalKey: module.key,
-      index: module.index,
-      title: module.title,
-      learningIntent: module.learningIntent,
-      regions: module.regions.map((region, regionIndex) => ({
-        id: `course_map_region_${(regionIndex + moduleIndex * 3 + 1).toString(16).padStart(24, '0')}`,
-        proposalKey: region.key,
-        moduleId: `course_map_module_${(moduleIndex + 1).toString(16).padStart(24, '0')}`,
-        index: region.index,
-        title: region.title,
-        learningIntent: region.learningIntent,
-        approximateScope: region.approximateScope,
-        sourceAllocationRegionIds: region.sourceRegionIds,
-        materialIds: [fixture.sourceAllocation.regions[regionIndex + moduleIndex * 3]!.materialId],
-        conceptIds: region.conceptIds,
-        canonicalConceptIds: region.canonicalConceptIds,
-      })),
-    })),
-    prerequisites: analysis.prerequisites.map((edge) => {
-      const regionId = (key: string) => {
-        const index = Number(key.replace('region-', '')) - 1;
-        return `course_map_region_${(index + 1).toString(16).padStart(24, '0')}`;
-      };
-      return {
-        prerequisiteRegionId: regionId(edge.prerequisiteRegionKey),
-        dependentRegionId: regionId(edge.dependentRegionKey),
-      };
-    }),
-    synthesisGroups: analysis.synthesisGroups.map((group, index) => ({
-      id: `course_map_synthesis_${(index + 1).toString(16).padStart(24, '0')}`,
-      proposalKey: group.key,
-      title: group.title,
-      level: group.level,
-      regionIds: group.regionKeys.map((key) => {
-        const regionIndex = Number(key.replace('region-', '')) - 1;
-        return `course_map_region_${(regionIndex + 1).toString(16).padStart(24, '0')}`;
-      }),
-    })),
-  } satisfies CourseMap;
+  const courseMap = analyzeCourseMapProposal(fixture.good, fixture).courseMap satisfies CourseMap;
   return {
     workspaceName: 'Course Map fixture',
     contract: {
@@ -70,7 +23,7 @@ function planningInput() {
     sourceAllocation: fixture.sourceAllocation,
     evidenceCatalog: fixture.evidenceCatalog,
     concepts: fixture.concepts,
-    canonicalConcepts: fixture.providerInput.canonicalConcepts,
+    canonicalConcepts: fixture.canonicalConcepts,
   };
 }
 

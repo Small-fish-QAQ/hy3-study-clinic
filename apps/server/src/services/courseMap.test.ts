@@ -135,8 +135,8 @@ describe('Course Map bounded source allocation', () => {
     expect(measured.counts).toEqual({
       sourceRegions: 6,
       evidenceOffers: 6,
-      concepts: 2,
-      canonicalConcepts: 1,
+      anchorOptions: 2,
+      canonicalAnchorOptions: 1,
     });
     expect('blocks' in fixture.providerInput).toBe(false);
     expect(JSON.stringify(fixture.providerInput)).not.toContain('block_1_1');
@@ -266,6 +266,13 @@ describe('Course Map bounded source allocation', () => {
     expect(() => analyzeCourseMapProposal(fixture.good, incompleteContext)).toThrow(
       /must expose every source-allocation region/u,
     );
+
+    const staleAnchorContext = structuredClone(fixture);
+    staleAnchorContext.providerInput.sourceRegions[0]!.anchorOptions[0]!.binding.conceptId =
+      'unknown_concept';
+    expect(() => analyzeCourseMapProposal(fixture.good, staleAnchorContext)).toThrow(
+      /anchor-option Concept binding is stale or outside/u,
+    );
   });
 });
 
@@ -302,16 +309,21 @@ describe('Course Map hierarchy and quality profile', () => {
     expect(changedAnalysis.courseMap.modules[0]!.id).not.toBe(first.courseMap.modules[0]!.id);
   });
 
-  it('reports invalid hierarchy order and a flat hierarchy as named dimensions', () => {
+  it('derives hierarchy order locally and reports a flat hierarchy as a named dimension', () => {
     const fixture = createCourseMapFixture();
-    const unordered = structuredClone(fixture.good);
-    unordered.modules[0]!.index = 1;
-    unordered.modules[0]!.regions[0]!.index = 2;
-    const analysis = analyzeCourseMapProposal(unordered, fixture);
-    expect(analysis.validation.valid).toBe(false);
-    expect(analysis.validation.diagnostics.map((item) => item.code)).toEqual(
-      expect.arrayContaining(['invalid_module_order', 'invalid_region_order']),
-    );
+    const analysis = analyzeCourseMapProposal(fixture.good, fixture);
+    expect(analysis.courseMap.modules.map((module) => module.index)).toEqual([0, 1]);
+    expect(analysis.courseMap.modules[0]!.regions.map((region) => region.index)).toEqual([0, 1, 2]);
+    expect(analysis.courseMap.modules[1]!.regions.map((region) => region.index)).toEqual([0, 1, 2]);
+    expect(analysis.courseMap.modules.map((module) => module.proposalKey)).toEqual([
+      'module-1',
+      'module-2',
+    ]);
+    expect(
+      analysis.courseMap.modules.flatMap((module) =>
+        module.regions.map((region) => region.proposalKey),
+      ),
+    ).toEqual(['region-1', 'region-2', 'region-3', 'region-4', 'region-5', 'region-6']);
 
     const flat = analyzeCourseMapProposal(fixture.flat, fixture);
     expect(flat.qualityProfile.hierarchy.flat).toBe(true);
@@ -338,9 +350,9 @@ describe('Course Map hierarchy and quality profile', () => {
     );
 
     const duplicate = structuredClone(fixture.good);
-    duplicate.modules[0]!.regions[1]!.sourceRegionIds = [
-      duplicate.modules[0]!.regions[0]!.sourceRegionIds[0]!,
-    ];
+    duplicate.modules[0]!.regions[1]!.sourceRegionRef =
+      duplicate.modules[0]!.regions[0]!.sourceRegionRef;
+    duplicate.modules[0]!.regions[1]!.anchorOptionRefs = [];
     const duplicateAnalysis = analyzeCourseMapProposal(duplicate, fixture);
     expect(duplicateAnalysis.validation.valid).toBe(false);
     expect(duplicateAnalysis.qualityProfile.sourceAllocation.duplicateAllocationCount).toBe(1);
@@ -363,75 +375,41 @@ describe('Course Map hierarchy and quality profile', () => {
     );
   });
 
-  it('reports concentrated source allocation as a named distribution dimension', () => {
+  it('resolves exact Concept/canonical bindings and rejects invalid local anchor options', () => {
     const fixture = createCourseMapFixture();
-    const concentrated = structuredClone(fixture.good);
-    const sourceRegionIds = fixture.sourceAllocation.regions.map((region) => region.id);
-    concentrated.modules = [
-      {
-        key: 'module-concentrated',
-        index: 0,
-        title: 'Concentrated module',
-        learningIntent: 'Teach every source region through two broad instructional regions.',
-        regions: [
-          {
-            ...concentrated.modules[0]!.regions[0]!,
-            index: 0,
-            conceptIds: ['concept_1', 'concept_2'],
-            sourceRegionIds: sourceRegionIds.slice(0, 4),
-          },
-          {
-            ...concentrated.modules[1]!.regions[1]!,
-            index: 1,
-            conceptIds: [],
-            canonicalConceptIds: [],
-            sourceRegionIds: sourceRegionIds.slice(4),
-          },
-        ],
-      },
-    ];
-    concentrated.prerequisites = [
-      { prerequisiteRegionKey: 'region-1', dependentRegionKey: 'region-5' },
-    ];
-    concentrated.synthesisGroups = [
-      {
-        key: 'synthesis-concentrated',
-        title: 'Synthesize broad regions',
-        level: 'module',
-        regionKeys: ['region-1', 'region-5'],
-      },
-    ];
+    const valid = analyzeCourseMapProposal(fixture.good, fixture);
+    expect(valid.courseMap.modules[0]!.regions[0]).toMatchObject({
+      conceptIds: ['concept_1'],
+      canonicalConceptIds: ['canonical_alpha'],
+    });
+    expect(valid.courseMap.modules[1]!.regions[0]).toMatchObject({
+      conceptIds: ['concept_2'],
+      canonicalConceptIds: [],
+    });
 
-    const analysis = analyzeCourseMapProposal(concentrated, fixture);
-    expect(analysis.validation.valid).toBe(true);
-    expect(analysis.qualityProfile.sourceAllocation.maxRegionShare).toBeCloseTo(2 / 3);
-    expect(analysis.validation.diagnostics.map((item) => item.code)).toContain(
-      'source_allocation_concentration',
-    );
-  });
-
-  it('validates exact Concept and canonical anchors against each region allocation', () => {
-    const fixture = createCourseMapFixture();
     const invalid = structuredClone(fixture.good);
-    invalid.modules[0]!.regions[1]!.conceptIds = ['concept_1'];
-    invalid.modules[1]!.regions[0]!.canonicalConceptIds = ['canonical_alpha'];
-    invalid.modules[1]!.regions[1]!.conceptIds = ['unknown_concept'];
+    invalid.modules[0]!.regions[0]!.anchorOptionRefs = ['R1:A999'];
     const analysis = analyzeCourseMapProposal(invalid, fixture);
     expect(analysis.validation.valid).toBe(false);
-    expect(analysis.qualityProfile.anchors.invalidAnchorCount).toBe(3);
-    expect(analysis.validation.diagnostics.map((item) => item.code)).toEqual(
-      expect.arrayContaining([
-        'concept_anchor_outside_allocation',
-        'canonical_anchor_outside_allocation',
-        'unknown_concept_anchor',
-      ]),
+    expect(analysis.qualityProfile.anchors.invalidAnchorCount).toBe(1);
+    expect(analysis.validation.diagnostics.map((item) => item.code)).toContain(
+      'unknown_anchor_option',
+    );
+
+    const crossRegion = structuredClone(fixture.good);
+    crossRegion.modules[1]!.regions[0]!.anchorOptionRefs = ['R1:A1'];
+    const crossRegionAnalysis = analyzeCourseMapProposal(crossRegion, fixture);
+    expect(crossRegionAnalysis.validation.valid).toBe(false);
+    expect(crossRegionAnalysis.qualityProfile.anchors.invalidAnchorCount).toBe(1);
+    expect(crossRegionAnalysis.validation.diagnostics.map((item) => item.code)).toContain(
+      'anchor_option_outside_region',
     );
   });
 
   it('validates synthesis identities and module boundaries', () => {
     const fixture = createCourseMapFixture();
     const invalid = structuredClone(fixture.good);
-    invalid.synthesisGroups[0]!.regionKeys = ['region-1', 'region-4'];
+    invalid.synthesisGroups[0]!.regionRefs = ['R1', 'R4'];
     invalid.synthesisGroups[0]!.level = 'module';
     const analysis = analyzeCourseMapProposal(invalid, fixture);
     expect(analysis.validation.valid).toBe(false);
@@ -459,7 +437,7 @@ describe('Course Map prerequisite validation', () => {
       'self edge',
       (fixture: ReturnType<typeof createCourseMapFixture>) => ({
         ...fixture.good,
-        prerequisites: [{ prerequisiteRegionKey: 'region-1', dependentRegionKey: 'region-1' }],
+        prerequisites: [{ prerequisiteRegionRef: 'R1', dependentRegionRef: 'R1' }],
       }),
       'self_prerequisite',
     ],
@@ -467,7 +445,7 @@ describe('Course Map prerequisite validation', () => {
       'unknown id',
       (fixture: ReturnType<typeof createCourseMapFixture>) => ({
         ...fixture.good,
-        prerequisites: [{ prerequisiteRegionKey: 'unknown', dependentRegionKey: 'region-1' }],
+        prerequisites: [{ prerequisiteRegionRef: 'R999', dependentRegionRef: 'R1' }],
       }),
       'unknown_prerequisite_region',
     ],
@@ -483,7 +461,7 @@ describe('Course Map prerequisite validation', () => {
       'wrong ordering',
       (fixture: ReturnType<typeof createCourseMapFixture>) => ({
         ...fixture.good,
-        prerequisites: [{ prerequisiteRegionKey: 'region-2', dependentRegionKey: 'region-1' }],
+        prerequisites: [{ prerequisiteRegionRef: 'R2', dependentRegionRef: 'R1' }],
       }),
       'prerequisite_wrong_order',
     ],

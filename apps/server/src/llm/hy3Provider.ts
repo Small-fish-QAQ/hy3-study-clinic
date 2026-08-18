@@ -435,7 +435,10 @@ export class Hy3Provider implements LlmProvider {
       CourseMapProposalPayloadSchema,
       opts,
       undefined,
-      { maxTokens: COURSE_MAP_MAX_OUTPUT_TOKENS, schemaName: 'course-map-proposal-v1' },
+      {
+        maxTokens: COURSE_MAP_MAX_OUTPUT_TOKENS,
+        schemaName: 'course-map-proposal-v2-local-refs',
+      },
     );
   }
 

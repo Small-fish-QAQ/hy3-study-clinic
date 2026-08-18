@@ -84,7 +84,7 @@ async function run(
       telemetry: {
         workspaceId: 'ws_1',
         operationType: 'curriculum_course_map',
-        schemaFingerprint: 'course-map-proposal-v1',
+        schemaFingerprint: 'course-map-proposal-v2-local-refs',
       },
     },
   );
@@ -105,7 +105,7 @@ describe('Hy3 structured-output compatibility diagnostics', () => {
     expect(execution.fetchImpl).toHaveBeenCalledTimes(1);
     expect(execution.diagnostics).toMatchObject([
       {
-        schemaName: 'course-map-proposal-v1',
+        schemaName: 'course-map-proposal-v2-local-refs',
         attemptNumber: 1,
         jsonParseSuccess: true,
         jsonFormat: format,
@@ -221,6 +221,54 @@ describe('Hy3 structured-output compatibility diagnostics', () => {
         concepts: { $type: 'array', $length: 1 },
       },
     });
+  });
+
+  it('allowlists compact Course Map refs and anchor-option semantic codes', () => {
+    const diagnostic = buildStructuredOutputDiagnostic({
+      schemaName: 'course-map-proposal-v2-local-refs',
+      operationType: 'curriculum_course_map',
+      attemptNumber: 1,
+      attemptKind: 'original',
+      model: 'hy3-test',
+      response: {
+        transportSuccess: true,
+        httpStatus: 200,
+        responseBodyBytes: 1,
+        contentType: 'string',
+        contentBytes: 1,
+        contentFingerprint: null,
+        finishReason: 'stop',
+        truncated: false,
+        possiblyIncomplete: false,
+      },
+      parse: {
+        jsonParseSuccess: true,
+        jsonFormat: 'direct',
+        parsed: {
+          sourceRegionRef: 'R1',
+          anchorOptionRefs: ['R1:A1'],
+          prerequisiteRegionRef: 'R1',
+          dependentRegionRef: 'R2',
+          regionRefs: ['R1', 'R2'],
+        },
+        semanticIssueCodes: ['unknown_anchor_option', 'anchor_option_outside_region'],
+        failureCategory: 'SEMANTIC_VALIDATION_FAILURE',
+      },
+      repairAction: 'requested',
+    });
+
+    expect(diagnostic.topLevelKeys).toEqual([
+      'sourceRegionRef',
+      'anchorOptionRefs',
+      'prerequisiteRegionRef',
+      'dependentRegionRef',
+      'regionRefs',
+    ]);
+    expect(diagnostic.semanticIssueCodes).toEqual([
+      'unknown_anchor_option',
+      'anchor_option_outside_region',
+    ]);
+    expect(JSON.stringify(diagnostic.structuralPreview)).not.toContain('<key:sha256:');
   });
 
   it('hashes unknown object keys, schema paths, and semantic codes', async () => {

@@ -701,7 +701,7 @@ export async function evaluateCurriculumPolicy(
       });
       const courseMapResult = await runStage({
         stage: 'course_map',
-        schemaFingerprint: 'course-map-proposal-v1',
+        schemaFingerprint: 'course-map-proposal-v2-local-refs',
         sourceFingerprint: sourceAllocation.fingerprint,
         request: measureCourseMapRequest(courseMapProviderInput),
         invoke: (options) =>

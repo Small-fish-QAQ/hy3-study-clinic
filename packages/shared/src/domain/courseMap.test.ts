@@ -1,26 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import { CourseMapSourceAllocationSchema } from './courseMap.js';
-import { CourseMapProposalPayloadSchema } from '../provider/payloads.js';
+import {
+  CourseMapAnchorOptionRefSchema,
+  CourseMapProposalPayloadSchema,
+  CourseMapSourceRegionRefSchema,
+} from '../provider/payloads.js';
 
 function proposal() {
   return {
-    sourceAllocationFingerprint: `course_map_source_allocation_${'a'.repeat(40)}`,
     modules: [
       {
-        key: 'module-1',
-        index: 0,
         title: 'Module',
         learningIntent: 'Build a coherent foundation.',
         regions: [
           {
-            key: 'region-1',
-            index: 0,
+            sourceRegionRef: 'R1',
             title: 'Region',
             learningIntent: 'Understand the first source region.',
             approximateScope: 'standard',
-            sourceRegionIds: ['source-region-1'],
-            conceptIds: [],
-            canonicalConceptIds: [],
+            anchorOptionRefs: ['R1:A1'],
           },
         ],
       },
@@ -80,40 +78,80 @@ describe('CourseMapProposalPayloadSchema', () => {
     ).toThrow();
   });
 
-  it('rejects duplicate module and region proposal identities', () => {
-    const duplicateModule = proposal();
-    duplicateModule.modules.push(structuredClone(duplicateModule.modules[0]!));
-    expect(() => CourseMapProposalPayloadSchema.parse(duplicateModule)).toThrow(
-      /duplicate Course Map module key/u,
-    );
-
-    const duplicateRegion = proposal();
-    duplicateRegion.modules[0]!.regions.push(
-      structuredClone(duplicateRegion.modules[0]!.regions[0]!),
-    );
-    expect(() => CourseMapProposalPayloadSchema.parse(duplicateRegion)).toThrow(
-      /duplicate Course Map region key/u,
-    );
+  it('accepts only compact operation-local region and anchor-option references', () => {
+    expect(CourseMapSourceRegionRefSchema.safeParse('R1').success).toBe(true);
+    expect(CourseMapSourceRegionRefSchema.safeParse('R0').success).toBe(false);
+    expect(CourseMapSourceRegionRefSchema.safeParse('region-1').success).toBe(false);
+    expect(CourseMapAnchorOptionRefSchema.safeParse('R12:A3').success).toBe(true);
+    expect(CourseMapAnchorOptionRefSchema.safeParse('R12:concept-3').success).toBe(false);
   });
 
-  it('requires every instructional region to name bounded source allocation', () => {
-    const missing = proposal();
-    missing.modules[0]!.regions[0]!.sourceRegionIds = [];
-    expect(() => CourseMapProposalPayloadSchema.parse(missing)).toThrow();
+  it('rejects old model-owned identity, ordering, and authority fields', () => {
+    const legacyTopLevel = {
+      ...proposal(),
+      sourceAllocationFingerprint: `course_map_source_allocation_${'a'.repeat(40)}`,
+    };
+    expect(() => CourseMapProposalPayloadSchema.parse(legacyTopLevel)).toThrow();
+
+    for (const fields of [{ key: 'module-1' }, { index: 0 }]) {
+      const legacyModule = proposal();
+      Object.assign(legacyModule.modules[0]!, fields);
+      expect(() => CourseMapProposalPayloadSchema.parse(legacyModule)).toThrow();
+    }
+
+    for (const fields of [
+      { key: 'region-1' },
+      { index: 0 },
+      { sourceRegionIds: ['source-region-1'] },
+      { conceptIds: ['concept-1'] },
+      { canonicalConceptIds: ['canonical-1'] },
+    ]) {
+      const legacyRegion = proposal();
+      Object.assign(legacyRegion.modules[0]!.regions[0]!, fields);
+      expect(() => CourseMapProposalPayloadSchema.parse(legacyRegion)).toThrow();
+    }
+
+    const legacySynthesis = proposal();
+    legacySynthesis.synthesisGroups.push({
+      title: 'Synthesis',
+      level: 'module',
+      regionRefs: ['R1', 'R2'],
+    });
+    for (const fields of [
+      { key: 'synthesis-1' },
+      { regionKeys: ['region-1', 'region-2'] },
+    ]) {
+      const candidate = structuredClone(legacySynthesis);
+      Object.assign(candidate.synthesisGroups[0]!, fields);
+      expect(() => CourseMapProposalPayloadSchema.parse(candidate)).toThrow();
+    }
   });
 
-  it('rejects duplicate Concept and canonical Concept anchors', () => {
-    const duplicateConcept = proposal();
-    duplicateConcept.modules[0]!.regions[0]!.conceptIds = ['concept-1', 'concept-1'];
-    expect(() => CourseMapProposalPayloadSchema.parse(duplicateConcept)).toThrow(
-      /Concept anchors must be unique/u,
+  it('rejects duplicate anchor-option references and leaves ownership to local validation', () => {
+    const duplicate = proposal();
+    duplicate.modules[0]!.regions[0]!.anchorOptionRefs = ['R1:A1', 'R1:A1'];
+    expect(() => CourseMapProposalPayloadSchema.parse(duplicate)).toThrow(
+      /anchor-option references must be unique/u,
     );
 
-    const duplicateCanonical = proposal();
-    duplicateCanonical.modules[0]!.regions[0]!.canonicalConceptIds = ['canonical-1', 'canonical-1'];
-    expect(() => CourseMapProposalPayloadSchema.parse(duplicateCanonical)).toThrow(
-      /canonical Concept anchors must be unique/u,
-    );
+    const crossRegion = proposal();
+    crossRegion.modules[0]!.regions[0]!.anchorOptionRefs = ['R2:A1'];
+    expect(CourseMapProposalPayloadSchema.parse(crossRegion)).toEqual(crossRegion);
+  });
+
+  it('rejects extra prerequisite keys and old prerequisite field names', () => {
+    const extraKey = proposal();
+    extraKey.prerequisites.push({ prerequisiteRegionRef: 'R1', dependentRegionRef: 'R2' });
+    Object.assign(extraKey.prerequisites[0]!, { reason: 'Invented provider explanation' });
+    expect(() => CourseMapProposalPayloadSchema.parse(extraKey)).toThrow();
+
+    const legacyFields = proposal();
+    legacyFields.prerequisites.push({ prerequisiteRegionRef: 'R1', dependentRegionRef: 'R2' });
+    Object.assign(legacyFields.prerequisites[0]!, {
+      prerequisiteRegionKey: 'region-1',
+      dependentRegionKey: 'region-2',
+    });
+    expect(() => CourseMapProposalPayloadSchema.parse(legacyFields)).toThrow();
   });
 });
 

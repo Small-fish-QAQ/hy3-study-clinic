@@ -1028,7 +1028,7 @@ export function createCurriculumService({
           learningUnitId: null,
           assessmentId: null,
           operationType: 'propose_curriculum',
-          schemaFingerprint: 'course-map-proposal-v1',
+          schemaFingerprint: 'course-map-proposal-v2-local-refs',
           policyFingerprint: courseMapPolicyFingerprint,
           sourceFingerprint: sourceAllocation.fingerprint,
           providerOptions: opts,

@@ -506,40 +506,47 @@ export interface CurriculumProposalInput {
 }
 
 /** Compact, bounded visibility for one exact local source-allocation region. */
+export interface CourseMapAnchorOptionOffer {
+  anchorOptionId: string;
+  conceptName: string;
+  conceptSummary: string;
+  importance: Concept['importance'];
+  canonicalConceptName: string | null;
+  /** Local authority binding. Prompt construction must not expose these ids. */
+  binding: {
+    conceptId: string;
+    canonicalConceptId: string | null;
+  };
+}
+
 export interface CourseMapSourceRegionOffer {
-  id: string;
-  index: number;
+  sourceRegionRef: string;
+  /** Local authority binding. Prompt construction must not expose this id. */
+  sourceAllocationRegionId: string;
   materialId: string;
   materialTitle: string;
   title: string;
   sectionCount: number;
   blockCount: number;
   charCount: number;
-  conceptIds: string[];
+  anchorOptions: CourseMapAnchorOptionOffer[];
   evidence: Array<{ evidenceId: string; text: string }>;
 }
 
 /** Internal skeleton-generation input. Full SourceBlocks never cross this boundary. */
 export interface CourseMapProposalInput {
+  contractVersion: 'course_map_proposal_v2';
   workspaceName: string;
   contract: CurriculumContractContext;
   courseSourceMapFingerprint: string;
   sourceAllocationFingerprint: string;
   sourceRegions: CourseMapSourceRegionOffer[];
-  concepts: Array<{
-    id: string;
-    name: string;
-    summary: string;
-    importance: Concept['importance'];
-  }>;
-  canonicalConcepts: CurriculumCanonicalConceptOffer[];
   limits: {
     maxModules: number;
     maxRegions: number;
     maxPrerequisiteEdges: number;
     maxPrerequisiteDegree: number;
     maxSynthesisGroups: number;
-    maxSourceRegionsPerRegion: number;
   };
 }
 

@@ -297,6 +297,8 @@ export const CourseMapDiagnosticCodeSchema = z.enum([
   'concept_anchor_outside_allocation',
   'unknown_canonical_anchor',
   'canonical_anchor_outside_allocation',
+  'unknown_anchor_option',
+  'anchor_option_outside_region',
   'unknown_prerequisite_region',
   'self_prerequisite',
   'duplicate_prerequisite',

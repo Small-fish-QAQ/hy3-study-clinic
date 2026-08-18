@@ -206,6 +206,29 @@ describe('Course Map Hy3 provider contract', () => {
     expect(onRepairAttempt).toHaveBeenCalledExactlyOnceWith('schema', 'SCHEMA_VALIDATION_FAILURE');
   });
 
+  it('repairs one malformed original into a valid compact Course Map', async () => {
+    const fixture = createCourseMapFixture();
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse('{"modules":[],"prerequisites":[],"synthesisGroups":[]}'))
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(fixture.good))) as unknown as typeof fetch;
+    const onRepairAttempt = vi.fn();
+
+    const result = await generateCourseMapPrototype(
+      {
+        provider: makeHy3Provider(fetchImpl),
+        providerInput: fixture.providerInput,
+        sourceAllocation: fixture.sourceAllocation,
+      },
+      { onRepairAttempt },
+    );
+
+    expect(result.repairAttempted).toBe(true);
+    expect(result.analysis.validation.valid).toBe(true);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(onRepairAttempt).toHaveBeenCalledExactlyOnceWith('schema', 'SCHEMA_VALIDATION_FAILURE');
+  });
+
   it('repairs one schema-valid semantic failure using local diagnostics', async () => {
     const fixture = createCourseMapFixture();
     const fetchImpl = vi

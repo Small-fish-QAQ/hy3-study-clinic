@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { Concept, SourceBlock } from '@hy3-clinic/shared';
 import {
   conceptAnalysisMessages,
+  courseMapPromptContext,
   courseMapProposalMessages,
+  measureCourseMapRequest,
   quizGenerationMessages,
   remediationMessages,
   shortAnswerGradingMessages,
@@ -226,37 +228,114 @@ describe('prompt trust boundaries', () => {
     expect(report.responseFormatSchema).toEqual({ chars: 0, bytes: 0 });
   });
 
-  it('states that Course Map region indexes restart inside every module', () => {
-    const content = courseMapProposalMessages({
+  it('exposes only compact Course Map refs and adjacent anchor options', () => {
+    const input: CourseMapProposalInput = {
+      contractVersion: 'course_map_proposal_v2',
       workspaceName: 'Course',
       contract: {
         intent: 'Learn',
         targetOutcome: { description: 'Understand', targetScore: null },
         desiredDepth: 'working_fluency',
         subjectBoundaries: [],
-        materials: [],
+        materials: [
+          {
+            materialId: 'PRIVATE_MATERIAL_ID',
+            title: 'Course material',
+            materialRoleAssignmentId: 'PRIVATE_ROLE_ID',
+            materialRoleAssignmentVersion: 1,
+            role: 'course_material',
+            disposition: 'included',
+          },
+        ],
         includedTopics: [],
         excludedTopics: [],
       },
       courseSourceMapFingerprint: 'course_source_map_fixture',
       sourceAllocationFingerprint:
         'course_map_source_allocation_0000000000000000000000000000000000000000',
-      sourceRegions: [],
-      concepts: [],
-      canonicalConcepts: [],
+      sourceRegions: [
+        {
+          sourceRegionRef: 'R1',
+          sourceAllocationRegionId: 'PRIVATE_ALLOCATION_ID',
+          materialId: 'PRIVATE_SOURCE_MATERIAL_ID',
+          materialTitle: 'Course material',
+          title: 'Foundations',
+          sectionCount: 1,
+          blockCount: 2,
+          charCount: 300,
+          anchorOptions: [
+            {
+              anchorOptionId: 'R1:A1',
+              conceptName: 'Working memory',
+              conceptSummary: 'A bounded system for active information.',
+              importance: 'high',
+              canonicalConceptName: 'Memory systems',
+              binding: {
+                conceptId: 'PRIVATE_CONCEPT_ID',
+                canonicalConceptId: 'PRIVATE_CANONICAL_ID',
+              },
+            },
+          ],
+          evidence: [{ evidenceId: 'PRIVATE_EVIDENCE_ID', text: 'Bounded source excerpt.' }],
+        },
+      ],
       limits: {
         maxModules: 3,
         maxRegions: 7,
         maxPrerequisiteEdges: 12,
         maxPrerequisiteDegree: 4,
         maxSynthesisGroups: 3,
-        maxSourceRegionsPerRegion: 2,
       },
-    } as CourseMapProposalInput)
+    };
+    const context = courseMapPromptContext(input);
+    const content = courseMapProposalMessages(input)
       .map((message) => message.content)
       .join('\n');
 
-    expect(content).toContain('Inside EACH module, region indexes restart at 0');
-    expect(content).toContain('never use one course-global region index');
+    expect(context.sourceRegions[0]).toEqual({
+      sourceRegionRef: 'R1',
+      materialTitle: 'Course material',
+      title: 'Foundations',
+      sectionCount: 1,
+      blockCount: 2,
+      charCount: 300,
+      anchorOptions: [
+        {
+          anchorOptionId: 'R1:A1',
+          conceptName: 'Working memory',
+          conceptSummary: 'A bounded system for active information.',
+          importance: 'high',
+          canonicalConceptName: 'Memory systems',
+        },
+      ],
+      evidence: [{ text: 'Bounded source excerpt.' }],
+    });
+    const serializedContext = JSON.stringify(context);
+    for (const privateId of [
+      'PRIVATE_MATERIAL_ID',
+      'PRIVATE_ROLE_ID',
+      'PRIVATE_ALLOCATION_ID',
+      'PRIVATE_SOURCE_MATERIAL_ID',
+      'PRIVATE_CONCEPT_ID',
+      'PRIVATE_CANONICAL_ID',
+      'PRIVATE_EVIDENCE_ID',
+    ]) {
+      expect(serializedContext).not.toContain(privateId);
+    }
+    expect(content).toContain('"sourceRegionRef":"R1"');
+    expect(content).toContain('"anchorOptionRefs":["R1:A1"]');
+    expect(content).toContain('"prerequisiteRegionRef":"R1"');
+    expect(content).toContain('"regionRefs":["R1","R2"]');
+    expect(content).toContain('Use every offered sourceRegionRef exactly once');
+    expect(content).toContain('Do not output keys, numeric indexes, fingerprints');
+    expect(content).not.toContain('sourceAllocationFingerprint":"course_map_source_allocation_');
+    expect(content).not.toContain('"index":0');
+    expect(content).not.toContain('"key":"module-1"');
+    expect(measureCourseMapRequest(input).counts).toEqual({
+      sourceRegions: 1,
+      evidenceOffers: 1,
+      anchorOptions: 1,
+      canonicalAnchorOptions: 1,
+    });
   });
 });

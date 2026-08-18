@@ -21,6 +21,7 @@ export interface CourseMapFixture {
   workspaceId: string;
   blocks: SourceBlock[];
   concepts: Concept[];
+  canonicalConcepts: CurriculumCanonicalConceptOffer[];
   sourceMap: CourseSourceMap;
   evidenceCatalog: CurriculumEvidenceOffer[];
   sourceAllocation: ReturnType<typeof buildCourseMapSourceAllocation>;
@@ -169,93 +170,81 @@ export function createCourseMapFixture(): CourseMapFixture {
     includedTopics: [],
     excludedTopics: [],
   };
+  const canonicalConcepts: CurriculumCanonicalConceptOffer[] = [
+    {
+      id: 'canonical_alpha',
+      displayName: 'Canonical alpha',
+      sourceConceptIds: ['concept_1'],
+    },
+  ];
   const providerInput = buildCourseMapProposalInput({
     workspaceName: 'Course Map fixture',
     contract,
     sourceAllocation,
     concepts,
-    canonicalConcepts: [
-      {
-        id: 'canonical_alpha',
-        displayName: 'Canonical alpha',
-        sourceConceptIds: ['concept_1'],
-      },
-    ],
+    canonicalConcepts,
   });
-  const sourceRegions = sourceAllocation.regions;
-  const region = (index: number, localIndex: number) => ({
-    key: `region-${index + 1}`,
-    index: localIndex,
+  const region = (index: number) => ({
+    sourceRegionRef: `R${index + 1}`,
     title: `Instructional region ${index + 1}`,
     learningIntent: `Understand and apply the distinct ideas in source region ${index + 1}.`,
     approximateScope: 'standard' as const,
-    sourceRegionIds: [sourceRegions[index]!.id],
-    conceptIds: index === 0 ? ['concept_1'] : index === 3 ? ['concept_2'] : [],
-    canonicalConceptIds: index === 0 ? ['canonical_alpha'] : [],
+    anchorOptionRefs: providerInput.sourceRegions[index]!.anchorOptions.map(
+      (option) => option.anchorOptionId,
+    ),
   });
   const good: CourseMapProposalPayload = {
-    sourceAllocationFingerprint: sourceAllocation.fingerprint,
     modules: [
       {
-        key: 'module-1',
-        index: 0,
         title: 'Foundations',
         learningIntent: 'Build the first material into a connected foundation.',
-        regions: [region(0, 0), region(1, 1), region(2, 2)],
+        regions: [region(0), region(1), region(2)],
       },
       {
-        key: 'module-2',
-        index: 1,
         title: 'Applications',
         learningIntent: 'Use the second material to extend and apply the foundation.',
-        regions: [region(3, 0), region(4, 1), region(5, 2)],
+        regions: [region(3), region(4), region(5)],
       },
     ],
     prerequisites: Array.from({ length: 5 }, (_, index) => ({
-      prerequisiteRegionKey: `region-${index + 1}`,
-      dependentRegionKey: `region-${index + 2}`,
+      prerequisiteRegionRef: `R${index + 1}`,
+      dependentRegionRef: `R${index + 2}`,
     })),
     synthesisGroups: [
       {
-        key: 'synthesis-1',
         title: 'Synthesize foundations',
         level: 'module',
-        regionKeys: ['region-1', 'region-2', 'region-3'],
+        regionRefs: ['R1', 'R2', 'R3'],
       },
       {
-        key: 'synthesis-2',
         title: 'Synthesize applications',
         level: 'module',
-        regionKeys: ['region-4', 'region-5', 'region-6'],
+        regionRefs: ['R4', 'R5', 'R6'],
       },
       {
-        key: 'synthesis-course',
         title: 'Connect both modules',
         level: 'course',
-        regionKeys: ['region-3', 'region-6'],
+        regionRefs: ['R3', 'R6'],
       },
     ],
   };
   const flat = clone(good);
   flat.modules = [
     {
-      key: 'module-flat',
-      index: 0,
       title: 'Flat outline',
       learningIntent: 'Keep every topic at one undifferentiated hierarchy level.',
-      regions: Array.from({ length: 6 }, (_, index) => region(index, index)),
+      regions: Array.from({ length: 6 }, (_, index) => region(index)),
     },
   ];
   flat.synthesisGroups = [];
   const cycle = clone(good);
   cycle.prerequisites.push({
-    prerequisiteRegionKey: 'region-6',
-    dependentRegionKey: 'region-1',
+    prerequisiteRegionRef: 'R6',
+    dependentRegionRef: 'R1',
   });
   const unknownSource = clone(good);
-  unknownSource.modules[0]!.regions[0]!.sourceRegionIds = [
-    'course_map_source_region_deadbeefdeadbeefdeadbeef',
-  ];
+  unknownSource.modules[0]!.regions[0]!.sourceRegionRef = 'R999';
+  unknownSource.modules[0]!.regions[0]!.anchorOptionRefs = [];
   const duplicateIntent = clone(good);
   duplicateIntent.modules[0]!.regions[1]!.learningIntent =
     duplicateIntent.modules[0]!.regions[0]!.learningIntent;
@@ -270,6 +259,7 @@ export function createCourseMapFixture(): CourseMapFixture {
     workspaceId,
     blocks,
     concepts,
+    canonicalConcepts,
     sourceMap,
     evidenceCatalog,
     sourceAllocation,

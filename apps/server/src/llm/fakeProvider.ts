@@ -809,29 +809,19 @@ export class FakeProvider implements LlmProvider {
       Math.max(1, Math.ceil(input.sourceRegions.length / 4)),
     );
     const modules: CourseMapProposalPayload['modules'] = [];
-    const orderedRegionKeys: string[] = [];
+    const orderedRegionRefs: string[] = [];
     for (let moduleIndex = 0; moduleIndex < moduleCount; moduleIndex += 1) {
       const start = Math.floor((moduleIndex * input.sourceRegions.length) / moduleCount);
       const end = Math.floor(((moduleIndex + 1) * input.sourceRegions.length) / moduleCount);
       const sourceRegions = input.sourceRegions.slice(start, end);
-      const moduleKey = `module-${moduleIndex + 1}`;
       const title =
         sourceRegions.length === 1
           ? sourceRegions[0]!.title
           : `${sourceRegions[0]!.title} - ${sourceRegions.at(-1)!.title}`;
-      const regions = sourceRegions.map((sourceRegion, regionIndex) => {
-        const key = `region-${sourceRegion.index + 1}`;
-        orderedRegionKeys.push(key);
-        const conceptIds = sourceRegion.conceptIds.slice(0, 1);
-        const canonicalConceptIds = input.canonicalConcepts
-          .filter((canonical) =>
-            canonical.sourceConceptIds.some((conceptId) => conceptIds.includes(conceptId)),
-          )
-          .map((canonical) => canonical.id)
-          .slice(0, 1);
+      const regions = sourceRegions.map((sourceRegion) => {
+        orderedRegionRefs.push(sourceRegion.sourceRegionRef);
         return {
-          key,
-          index: regionIndex,
+          sourceRegionRef: sourceRegion.sourceRegionRef,
           title: sourceRegion.title,
           learningIntent: `Build working understanding of ${sourceRegion.title}.`,
           approximateScope:
@@ -840,14 +830,12 @@ export class FakeProvider implements LlmProvider {
               : sourceRegion.blockCount >= 12
                 ? ('extended' as const)
                 : ('standard' as const),
-          sourceRegionIds: [sourceRegion.id],
-          conceptIds,
-          canonicalConceptIds,
+          anchorOptionRefs: sourceRegion.anchorOptions
+            .slice(0, 1)
+            .map((option) => option.anchorOptionId),
         };
       });
       modules.push({
-        key: moduleKey,
-        index: moduleIndex,
         title: title.slice(0, 300),
         learningIntent: `Connect the source regions from ${title}.`.slice(0, 700),
         regions,
@@ -856,14 +844,14 @@ export class FakeProvider implements LlmProvider {
     const prerequisites: CourseMapProposalPayload['prerequisites'] = [];
     for (
       let index = 1;
-      index < orderedRegionKeys.length &&
+      index < orderedRegionRefs.length &&
       input.limits.maxPrerequisiteDegree > 0 &&
       prerequisites.length < input.limits.maxPrerequisiteEdges;
       index += 1
     ) {
       prerequisites.push({
-        prerequisiteRegionKey: orderedRegionKeys[index - 1]!,
-        dependentRegionKey: orderedRegionKeys[index]!,
+        prerequisiteRegionRef: orderedRegionRefs[index - 1]!,
+        dependentRegionRef: orderedRegionRefs[index]!,
       });
     }
     const synthesisGroups: CourseMapProposalPayload['synthesisGroups'] = [];
@@ -872,22 +860,19 @@ export class FakeProvider implements LlmProvider {
         continue;
       }
       synthesisGroups.push({
-        key: `synthesis-${module.key}`,
         title: `Synthesize ${module.title}`.slice(0, 300),
         level: 'module',
-        regionKeys: module.regions.map((region) => region.key),
+        regionRefs: module.regions.map((region) => region.sourceRegionRef),
       });
     }
     if (modules.length >= 2 && synthesisGroups.length < input.limits.maxSynthesisGroups) {
       synthesisGroups.push({
-        key: 'synthesis-course',
         title: 'Connect the complete course structure',
         level: 'course',
-        regionKeys: modules.map((module) => module.regions.at(-1)!.key),
+        regionRefs: modules.map((module) => module.regions.at(-1)!.sourceRegionRef),
       });
     }
     const candidate: CourseMapProposalPayload = {
-      sourceAllocationFingerprint: input.sourceAllocationFingerprint,
       modules,
       prerequisites,
       synthesisGroups,

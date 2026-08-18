@@ -38,7 +38,6 @@ export const COURSE_MAP_DEFAULT_LIMITS: CourseMapProposalInput['limits'] = {
   maxPrerequisiteEdges: 240,
   maxPrerequisiteDegree: 8,
   maxSynthesisGroups: 60,
-  maxSourceRegionsPerRegion: 16,
 };
 
 function stableId(prefix: string, value: unknown): string {
@@ -109,6 +108,7 @@ function assertCourseMapProviderInputIntegrity(
   assertCourseMapSourceAllocationIntegrity(allocation);
   assertCourseMapContractAllocationIntegrity(providerInput.contract, allocation);
   if (
+    providerInput.contractVersion !== 'course_map_proposal_v2' ||
     providerInput.sourceAllocationFingerprint !== allocation.fingerprint ||
     providerInput.courseSourceMapFingerprint !== allocation.courseSourceMapFingerprint
   ) {
@@ -116,50 +116,13 @@ function assertCourseMapProviderInputIntegrity(
   }
 
   assertUnique(
-    providerInput.sourceRegions.map((region) => region.id),
-    'Course Map provider source-region identities',
+    providerInput.sourceRegions.map((region) => region.sourceRegionRef),
+    'Course Map provider source-region references',
   );
   assertUnique(
-    providerInput.concepts.map((concept) => concept.id),
-    'Course Map provider Concept identities',
+    providerInput.sourceRegions.map((region) => region.sourceAllocationRegionId),
+    'Course Map provider source-allocation bindings',
   );
-  assertUnique(
-    providerInput.canonicalConcepts.map((canonical) => canonical.id),
-    'Course Map provider canonical Concept identities',
-  );
-  if (providerInput.concepts.length > COURSE_MAP_CONCEPT_OFFER_LIMIT) {
-    throw new Error('Course Map provider Concept visibility exceeds its hard limit.');
-  }
-  if (providerInput.canonicalConcepts.length > COURSE_MAP_CANONICAL_OFFER_LIMIT) {
-    throw new Error('Course Map provider canonical Concept visibility exceeds its hard limit.');
-  }
-
-  const allocationConceptIds = new Set(allocation.regions.flatMap((region) => region.conceptIds));
-  const offeredConceptIds = new Set(providerInput.concepts.map((concept) => concept.id));
-  for (const conceptId of offeredConceptIds) {
-    if (!allocationConceptIds.has(conceptId)) {
-      throw new Error(
-        'Course Map provider context contains a Concept outside the source allocation.',
-      );
-    }
-  }
-  const canonicalOwnerByConceptId = new Map<string, string>();
-  for (const canonical of providerInput.canonicalConcepts) {
-    assertUnique(
-      canonical.sourceConceptIds,
-      `Course Map provider canonical Concept ${canonical.id} member identities`,
-    );
-    for (const conceptId of canonical.sourceConceptIds) {
-      if (!offeredConceptIds.has(conceptId)) {
-        throw new Error('Course Map provider canonical Concept contains an unoffered Concept.');
-      }
-      const owner = canonicalOwnerByConceptId.get(conceptId);
-      if (owner && owner !== canonical.id) {
-        throw new Error('Course Map provider Concept belongs to multiple canonical Concepts.');
-      }
-      canonicalOwnerByConceptId.set(conceptId, canonical.id);
-    }
-  }
 
   if (providerInput.sourceRegions.length !== allocation.regions.length) {
     throw new Error('Course Map provider context must expose every source-allocation region.');
@@ -168,34 +131,73 @@ function assertCourseMapProviderInputIntegrity(
     providerInput.contract.materials.map((material) => [material.materialId, material.title]),
   );
   let evidenceOfferCount = 0;
+  let anchorOptionCount = 0;
+  const anchorOptionIds = new Set<string>();
+  const offeredConceptIds = new Set<string>();
+  const canonicalOwnerByConceptId = new Map<string, string>();
   for (const [index, allocationRegion] of allocation.regions.entries()) {
     const offeredRegion = providerInput.sourceRegions[index];
-    const expectedConceptIds = allocationRegion.conceptIds.filter((id) =>
-      offeredConceptIds.has(id),
-    );
     const expectedEvidence = allocationRegion.evidence.map((evidence) => ({
       evidenceId: evidence.evidenceId,
       text: evidence.quote,
     }));
     if (
       !offeredRegion ||
-      offeredRegion.id !== allocationRegion.id ||
-      offeredRegion.index !== allocationRegion.index ||
+      offeredRegion.sourceRegionRef !== `R${index + 1}` ||
+      offeredRegion.sourceAllocationRegionId !== allocationRegion.id ||
       offeredRegion.materialId !== allocationRegion.materialId ||
       offeredRegion.materialTitle !== materialTitleById.get(allocationRegion.materialId) ||
       offeredRegion.title !== allocationRegion.title ||
       offeredRegion.sectionCount !== allocationRegion.sourceSectionIds.length ||
       offeredRegion.blockCount !== allocationRegion.sourceBlockIds.length ||
       offeredRegion.charCount !== allocationRegion.charCount ||
-      JSON.stringify(offeredRegion.conceptIds) !== JSON.stringify(expectedConceptIds) ||
       JSON.stringify(offeredRegion.evidence) !== JSON.stringify(expectedEvidence)
     ) {
       throw new Error('Course Map provider source-region view is stale, incomplete, or reordered.');
+    }
+    let localOptionIndex = 0;
+    for (const option of offeredRegion.anchorOptions) {
+      localOptionIndex += 1;
+      anchorOptionCount += 1;
+      if (option.anchorOptionId !== `${offeredRegion.sourceRegionRef}:A${localOptionIndex}`) {
+        throw new Error(
+          'Course Map anchor-option references must be contiguous and deterministic.',
+        );
+      }
+      if (anchorOptionIds.has(option.anchorOptionId)) {
+        throw new Error('Course Map anchor-option references must be globally unique.');
+      }
+      anchorOptionIds.add(option.anchorOptionId);
+      if (
+        offeredConceptIds.has(option.binding.conceptId) ||
+        !allocationRegion.conceptIds.includes(option.binding.conceptId)
+      ) {
+        throw new Error('Course Map anchor-option Concept binding is stale or outside its region.');
+      }
+      offeredConceptIds.add(option.binding.conceptId);
+      if (
+        option.conceptName.length === 0 ||
+        option.conceptSummary.length === 0 ||
+        (option.binding.canonicalConceptId === null) !== (option.canonicalConceptName === null)
+      ) {
+        throw new Error('Course Map anchor-option semantic metadata is incomplete.');
+      }
+      const canonicalId = option.binding.canonicalConceptId;
+      if (canonicalId) {
+        const owner = canonicalOwnerByConceptId.get(option.binding.conceptId);
+        if (owner && owner !== canonicalId) {
+          throw new Error('Course Map Concept belongs to multiple canonical Concept bindings.');
+        }
+        canonicalOwnerByConceptId.set(option.binding.conceptId, canonicalId);
+      }
     }
     if (offeredRegion.evidence.length > COURSE_MAP_SOURCE_EVIDENCE_PER_REGION_LIMIT) {
       throw new Error('Course Map provider evidence visibility exceeds its per-region hard limit.');
     }
     evidenceOfferCount += offeredRegion.evidence.length;
+  }
+  if (anchorOptionCount > COURSE_MAP_CONCEPT_OFFER_LIMIT) {
+    throw new Error('Course Map anchor-option visibility exceeds its hard limit.');
   }
   if (evidenceOfferCount > COURSE_MAP_SOURCE_EVIDENCE_LIMIT) {
     throw new Error('Course Map provider evidence visibility exceeds its global hard limit.');
@@ -225,12 +227,6 @@ function assertCourseMapProviderInputIntegrity(
     0,
     100,
     'Course Map provider synthesis-group limit',
-  );
-  boundedInteger(
-    providerInput.limits.maxSourceRegionsPerRegion,
-    1,
-    16,
-    'Course Map provider source-regions-per-region limit',
   );
 }
 
@@ -576,43 +572,53 @@ export function buildCourseMapProposalInput({
       100,
       'Course Map synthesis-group limit',
     ),
-    maxSourceRegionsPerRegion: boundedInteger(
-      overrides.maxSourceRegionsPerRegion ?? COURSE_MAP_DEFAULT_LIMITS.maxSourceRegionsPerRegion,
-      1,
-      16,
-      'Course Map source-regions-per-region limit',
-    ),
   };
+  const canonicalBySourceConceptId = new Map<string, (typeof offeredCanonicalConcepts)[number]>();
+  for (const canonical of offeredCanonicalConcepts) {
+    for (const conceptId of canonical.sourceConceptIds) {
+      canonicalBySourceConceptId.set(conceptId, canonical);
+    }
+  }
   const providerInput: CourseMapProposalInput = {
+    contractVersion: 'course_map_proposal_v2',
     workspaceName,
     contract,
     courseSourceMapFingerprint: sourceAllocation.courseSourceMapFingerprint,
     sourceAllocationFingerprint: sourceAllocation.fingerprint,
-    sourceRegions: sourceAllocation.regions.map((region) => ({
-      id: region.id,
-      index: region.index,
-      materialId: region.materialId,
-      materialTitle: materialTitleById.get(region.materialId)!,
-      title: region.title,
-      sectionCount: region.sourceSectionIds.length,
-      blockCount: region.sourceBlockIds.length,
-      charCount: region.charCount,
-      conceptIds: region.conceptIds.filter((conceptId) => offeredConceptIdSet.has(conceptId)),
-      evidence: region.evidence.map((evidence) => ({
-        evidenceId: evidence.evidenceId,
-        text: evidence.quote,
-      })),
-    })),
-    concepts: offeredConceptIds.map((id) => {
-      const concept = conceptById.get(id)!;
+    sourceRegions: sourceAllocation.regions.map((region, regionIndex) => {
+      const sourceRegionRef = `R${regionIndex + 1}`;
       return {
-        id: concept.id,
-        name: concept.name,
-        summary: concept.summary,
-        importance: concept.importance,
+        sourceRegionRef,
+        sourceAllocationRegionId: region.id,
+        materialId: region.materialId,
+        materialTitle: materialTitleById.get(region.materialId)!,
+        title: region.title,
+        sectionCount: region.sourceSectionIds.length,
+        blockCount: region.sourceBlockIds.length,
+        charCount: region.charCount,
+        anchorOptions: region.conceptIds
+          .filter((conceptId) => offeredConceptIdSet.has(conceptId))
+          .map((conceptId, optionIndex) => {
+            const concept = conceptById.get(conceptId)!;
+            const canonical = canonicalBySourceConceptId.get(conceptId) ?? null;
+            return {
+              anchorOptionId: `${sourceRegionRef}:A${optionIndex + 1}`,
+              conceptName: concept.name,
+              conceptSummary: concept.summary,
+              importance: concept.importance,
+              canonicalConceptName: canonical?.displayName ?? null,
+              binding: {
+                conceptId,
+                canonicalConceptId: canonical?.id ?? null,
+              },
+            };
+          }),
+        evidence: region.evidence.map((evidence) => ({
+          evidenceId: evidence.evidenceId,
+          text: evidence.quote,
+        })),
       };
     }),
-    canonicalConcepts: offeredCanonicalConcepts,
     limits,
   };
   assertCourseMapProviderInputIntegrity(sourceAllocation, providerInput);
@@ -671,7 +677,6 @@ export function analyzeCourseMapProposal(
     diagnostics.push({ severity, code, message: message.slice(0, 500), entityKeys });
   };
   if (
-    parsed.sourceAllocationFingerprint !== sourceAllocation.fingerprint ||
     context.providerInput.sourceAllocationFingerprint !== sourceAllocation.fingerprint ||
     context.providerInput.courseSourceMapFingerprint !== sourceAllocation.courseSourceMapFingerprint
   ) {
@@ -693,16 +698,17 @@ export function analyzeCourseMapProposal(
   }
 
   const allocationById = new Map(sourceAllocation.regions.map((region) => [region.id, region]));
-  const conceptById = new Map(
-    context.providerInput.concepts.map((concept) => [concept.id, concept]),
+  const sourceOfferByRef = new Map(
+    context.providerInput.sourceRegions.map((region) => [region.sourceRegionRef, region]),
   );
-  const canonicalById = new Map(
-    context.providerInput.canonicalConcepts.map((canonical) => [canonical.id, canonical]),
+  const anchorOptionById = new Map(
+    context.providerInput.sourceRegions.flatMap((region) =>
+      region.anchorOptions.map((option) => [option.anchorOptionId, { region, option }] as const),
+    ),
   );
-  const moduleIdByKey = new Map<string, string>();
-  const regionIdByKey = new Map<string, string>();
-  const regionOrderByKey = new Map<string, number>();
-  const regionModuleKeyByKey = new Map<string, string>();
+  const regionIdByRef = new Map<string, string>();
+  const regionOrderByRef = new Map<string, number>();
+  const regionModuleKeyByRef = new Map<string, string>();
   const materializedModules: CourseMap['modules'] = [];
   const allocationUseCount = new Map<string, number>();
   const sourceBlockIdsByProposedRegion = new Map<string, Set<string>>();
@@ -711,150 +717,110 @@ export function analyzeCourseMapProposal(
   let globalRegionOrder = 0;
 
   for (const [modulePosition, proposedModule] of parsed.modules.entries()) {
-    if (proposedModule.index !== modulePosition) {
-      add(
-        'error',
-        'invalid_module_order',
-        'Course Map module indexes must be contiguous and match array order.',
-        [proposedModule.key],
-      );
-    }
+    const moduleKey = `module-${modulePosition + 1}`;
     const moduleId = stableId('course_map_module', {
       allocation: sourceAllocation.fingerprint,
       proposal: proposalFingerprint,
-      key: proposedModule.key,
-      index: proposedModule.index,
+      key: moduleKey,
+      index: modulePosition,
     });
-    moduleIdByKey.set(proposedModule.key, moduleId);
     const regions: CourseMap['modules'][number]['regions'] = [];
     for (const [regionPosition, proposedRegion] of proposedModule.regions.entries()) {
-      if (proposedRegion.index !== regionPosition) {
+      const regionKey = `region-${globalRegionOrder + 1}`;
+      const sourceOffer = sourceOfferByRef.get(proposedRegion.sourceRegionRef);
+      const allocation = sourceOffer
+        ? allocationById.get(sourceOffer.sourceAllocationRegionId)
+        : undefined;
+      if (!sourceOffer || !allocation) {
         add(
           'error',
-          'invalid_region_order',
-          'Inside each module, Course Map region indexes must restart at 0, be contiguous, and match that module regions array order; never use a course-global region index.',
-          [proposedRegion.key],
+          'unknown_source_region',
+          'Course Map region references an unknown offered source-region ref.',
+          [regionKey, proposedRegion.sourceRegionRef],
         );
       }
-      if (
-        proposedRegion.sourceRegionIds.length >
-        context.providerInput.limits.maxSourceRegionsPerRegion
-      ) {
-        add(
-          'error',
-          'region_limit_exceeded',
-          'Course Map region exceeds the offered source-allocation reference limit.',
-          [proposedRegion.key],
-        );
-      }
-      const localSourceRegionIds = new Set<string>();
-      const knownAllocations: CourseMapSourceAllocation['regions'] = [];
-      for (const sourceRegionId of proposedRegion.sourceRegionIds) {
-        const allocation = allocationById.get(sourceRegionId);
-        if (!allocation) {
-          add(
-            'error',
-            'unknown_source_region',
-            'Course Map region references an unknown source-allocation region.',
-            [proposedRegion.key, sourceRegionId],
-          );
-          continue;
-        }
-        if (localSourceRegionIds.has(sourceRegionId)) {
-          add(
-            'error',
-            'duplicate_source_allocation',
-            'Course Map region repeats a source-allocation region.',
-            [proposedRegion.key, sourceRegionId],
-          );
-          allocationUseCount.set(sourceRegionId, (allocationUseCount.get(sourceRegionId) ?? 0) + 1);
-          continue;
-        }
-        localSourceRegionIds.add(sourceRegionId);
-        allocationUseCount.set(sourceRegionId, (allocationUseCount.get(sourceRegionId) ?? 0) + 1);
-        knownAllocations.push(allocation);
-      }
-      if (knownAllocations.length === 0) {
+      if (!allocation) {
         unsupportedRegionCount += 1;
         add('error', 'unsupported_region', 'Course Map region has no valid source allocation.', [
-          proposedRegion.key,
+          regionKey,
         ]);
+      } else {
+        allocationUseCount.set(allocation.id, (allocationUseCount.get(allocation.id) ?? 0) + 1);
       }
-      const allocatedConceptIds = new Set(
-        knownAllocations.flatMap((allocation) => allocation.conceptIds),
-      );
-      for (const conceptId of proposedRegion.conceptIds) {
-        if (!conceptById.has(conceptId)) {
+      const conceptIds: string[] = [];
+      const canonicalConceptIds: string[] = [];
+      const selectedConceptIds = new Set<string>();
+      const selectedCanonicalIds = new Set<string>();
+      for (const anchorOptionId of proposedRegion.anchorOptionRefs) {
+        const resolved = anchorOptionById.get(anchorOptionId);
+        if (!resolved) {
           invalidAnchorCount += 1;
           add(
             'error',
-            'unknown_concept_anchor',
-            'Course Map region references an unknown offered Concept.',
-            [proposedRegion.key, conceptId],
+            'unknown_anchor_option',
+            'Course Map region references an unknown offered anchor option.',
+            [regionKey, anchorOptionId],
           );
-        } else if (!allocatedConceptIds.has(conceptId)) {
+          continue;
+        }
+        if (resolved.region.sourceRegionRef !== proposedRegion.sourceRegionRef) {
           invalidAnchorCount += 1;
           add(
             'error',
-            'concept_anchor_outside_allocation',
-            'Course Map Concept anchor is outside the region source allocation.',
-            [proposedRegion.key, conceptId],
+            'anchor_option_outside_region',
+            'Course Map anchor option is outside the selected source region.',
+            [regionKey, anchorOptionId],
           );
+          continue;
+        }
+        const { conceptId, canonicalConceptId } = resolved.option.binding;
+        if (!selectedConceptIds.has(conceptId)) {
+          selectedConceptIds.add(conceptId);
+          conceptIds.push(conceptId);
+        }
+        if (canonicalConceptId && !selectedCanonicalIds.has(canonicalConceptId)) {
+          selectedCanonicalIds.add(canonicalConceptId);
+          canonicalConceptIds.push(canonicalConceptId);
         }
       }
-      for (const canonicalId of proposedRegion.canonicalConceptIds) {
-        const canonical = canonicalById.get(canonicalId);
-        if (!canonical) {
-          invalidAnchorCount += 1;
-          add(
-            'error',
-            'unknown_canonical_anchor',
-            'Course Map region references an unknown canonical Concept.',
-            [proposedRegion.key, canonicalId],
-          );
-        } else if (!canonical.sourceConceptIds.some((id) => allocatedConceptIds.has(id))) {
-          invalidAnchorCount += 1;
-          add(
-            'error',
-            'canonical_anchor_outside_allocation',
-            'Course Map canonical Concept has no offered member in the region allocation.',
-            [proposedRegion.key, canonicalId],
-          );
-        }
+      if (conceptIds.length > 20 || canonicalConceptIds.length > 10) {
+        add('error', 'region_limit_exceeded', 'Course Map region exceeds its anchor limit.', [
+          regionKey,
+        ]);
       }
       const regionId = stableId('course_map_region', {
         allocation: sourceAllocation.fingerprint,
         proposal: proposalFingerprint,
-        moduleKey: proposedModule.key,
-        key: proposedRegion.key,
-        index: proposedRegion.index,
+        moduleKey,
+        key: regionKey,
+        index: regionPosition,
       });
-      regionIdByKey.set(proposedRegion.key, regionId);
-      regionOrderByKey.set(proposedRegion.key, globalRegionOrder);
-      regionModuleKeyByKey.set(proposedRegion.key, proposedModule.key);
+      if (!regionIdByRef.has(proposedRegion.sourceRegionRef)) {
+        regionIdByRef.set(proposedRegion.sourceRegionRef, regionId);
+        regionOrderByRef.set(proposedRegion.sourceRegionRef, globalRegionOrder);
+        regionModuleKeyByRef.set(proposedRegion.sourceRegionRef, moduleKey);
+      }
       globalRegionOrder += 1;
-      const sourceBlockIds = new Set(
-        knownAllocations.flatMap((allocation) => allocation.sourceBlockIds),
-      );
-      sourceBlockIdsByProposedRegion.set(proposedRegion.key, sourceBlockIds);
+      const sourceBlockIds = new Set(allocation?.sourceBlockIds ?? []);
+      sourceBlockIdsByProposedRegion.set(regionKey, sourceBlockIds);
       regions.push({
         id: regionId,
-        proposalKey: proposedRegion.key,
+        proposalKey: regionKey,
         moduleId,
-        index: proposedRegion.index,
+        index: regionPosition,
         title: proposedRegion.title,
         learningIntent: proposedRegion.learningIntent,
         approximateScope: proposedRegion.approximateScope,
-        sourceAllocationRegionIds: proposedRegion.sourceRegionIds,
-        materialIds: [...new Set(knownAllocations.map((allocation) => allocation.materialId))],
-        conceptIds: proposedRegion.conceptIds,
-        canonicalConceptIds: proposedRegion.canonicalConceptIds,
+        sourceAllocationRegionIds: allocation ? [allocation.id] : [proposedRegion.sourceRegionRef],
+        materialIds: allocation ? [allocation.materialId] : [],
+        conceptIds,
+        canonicalConceptIds,
       });
     }
     materializedModules.push({
       id: moduleId,
-      proposalKey: proposedModule.key,
-      index: proposedModule.index,
+      proposalKey: moduleKey,
+      index: modulePosition,
       title: proposedModule.title,
       learningIntent: proposedModule.learningIntent,
       regions,
@@ -899,22 +865,22 @@ export function analyzeCourseMapProposal(
     );
   }
   for (const edge of parsed.prerequisites) {
-    const prerequisiteId = regionIdByKey.get(edge.prerequisiteRegionKey);
-    const dependentId = regionIdByKey.get(edge.dependentRegionKey);
+    const prerequisiteId = regionIdByRef.get(edge.prerequisiteRegionRef);
+    const dependentId = regionIdByRef.get(edge.dependentRegionRef);
     if (!prerequisiteId || !dependentId) {
       prerequisiteTopologyValid = false;
       add(
         'error',
         'unknown_prerequisite_region',
-        'Course Map prerequisite references an unknown region.',
-        [edge.prerequisiteRegionKey, edge.dependentRegionKey],
+        'Course Map prerequisite references an unknown offered source-region ref.',
+        [edge.prerequisiteRegionRef, edge.dependentRegionRef],
       );
       continue;
     }
     if (prerequisiteId === dependentId) {
       prerequisiteTopologyValid = false;
       add('error', 'self_prerequisite', 'Course Map region cannot be its own prerequisite.', [
-        edge.prerequisiteRegionKey,
+        edge.prerequisiteRegionRef,
       ]);
       continue;
     }
@@ -922,22 +888,22 @@ export function analyzeCourseMapProposal(
     if (prerequisiteKeys.has(key)) {
       prerequisiteTopologyValid = false;
       add('error', 'duplicate_prerequisite', 'Course Map prerequisite edge is duplicated.', [
-        edge.prerequisiteRegionKey,
-        edge.dependentRegionKey,
+        edge.prerequisiteRegionRef,
+        edge.dependentRegionRef,
       ]);
       continue;
     }
     prerequisiteKeys.add(key);
     if (
-      regionOrderByKey.get(edge.prerequisiteRegionKey)! >=
-      regionOrderByKey.get(edge.dependentRegionKey)!
+      regionOrderByRef.get(edge.prerequisiteRegionRef)! >=
+      regionOrderByRef.get(edge.dependentRegionRef)!
     ) {
       prerequisiteTopologyValid = false;
       add(
         'error',
         'prerequisite_wrong_order',
         'Prerequisite region must occur before its dependent region.',
-        [edge.prerequisiteRegionKey, edge.dependentRegionKey],
+        [edge.prerequisiteRegionRef, edge.dependentRegionRef],
       );
     }
     const dependents = adjacency.get(prerequisiteId) ?? [];
@@ -950,7 +916,7 @@ export function analyzeCourseMapProposal(
       dependentRegionId: dependentId,
     });
   }
-  const allRegionIds = [...regionIdByKey.values()];
+  const allRegionIds = [...regionIdByRef.values()];
   const visiting = new Set<string>();
   const visited = new Set<string>();
   let hasCycle = false;
@@ -995,7 +961,6 @@ export function analyzeCourseMapProposal(
   }
 
   const materializedSynthesis: CourseMap['synthesisGroups'] = [];
-  const synthesisKeys = new Set<string>();
   const synthesisRegionIds = new Set<string>();
   if (parsed.synthesisGroups.length > context.providerInput.limits.maxSynthesisGroups) {
     add(
@@ -1004,48 +969,39 @@ export function analyzeCourseMapProposal(
       'Course Map exceeds the offered synthesis-group limit.',
     );
   }
-  for (const group of parsed.synthesisGroups) {
-    if (synthesisKeys.has(group.key)) {
-      add(
-        'error',
-        'duplicate_synthesis_group',
-        'Course Map synthesis-group identity is duplicated.',
-        [group.key],
-      );
-      continue;
-    }
-    synthesisKeys.add(group.key);
+  for (const [groupIndex, group] of parsed.synthesisGroups.entries()) {
+    const groupKey = `synthesis-${groupIndex + 1}`;
     const localRegionKeys = new Set<string>();
     const regionIds: string[] = [];
-    for (const regionKey of group.regionKeys) {
-      const id = regionIdByKey.get(regionKey);
+    for (const regionRef of group.regionRefs) {
+      const id = regionIdByRef.get(regionRef);
       if (!id) {
         add(
           'error',
           'unknown_synthesis_region',
-          'Course Map synthesis group references an unknown region.',
-          [group.key, regionKey],
+          'Course Map synthesis group references an unknown offered source-region ref.',
+          [groupKey, regionRef],
         );
-      } else if (localRegionKeys.has(regionKey)) {
+      } else if (localRegionKeys.has(regionRef)) {
         add('error', 'duplicate_synthesis_region', 'Course Map synthesis group repeats a region.', [
-          group.key,
-          regionKey,
+          groupKey,
+          regionRef,
         ]);
       } else {
-        localRegionKeys.add(regionKey);
+        localRegionKeys.add(regionRef);
         regionIds.push(id);
         synthesisRegionIds.add(id);
       }
     }
     if (
       group.level === 'module' &&
-      new Set(group.regionKeys.map((key) => regionModuleKeyByKey.get(key))).size !== 1
+      new Set(group.regionRefs.map((ref) => regionModuleKeyByRef.get(ref))).size !== 1
     ) {
       add(
         'error',
         'invalid_synthesis_boundary',
         'Module-level synthesis must stay within one Course Map module.',
-        [group.key],
+        [groupKey],
       );
     }
     if (regionIds.length >= 2) {
@@ -1053,9 +1009,9 @@ export function analyzeCourseMapProposal(
         id: stableId('course_map_synthesis', {
           allocation: sourceAllocation.fingerprint,
           proposal: proposalFingerprint,
-          key: group.key,
+          key: groupKey,
         }),
-        proposalKey: group.key,
+        proposalKey: groupKey,
         title: group.title,
         level: group.level,
         regionIds,
@@ -1086,7 +1042,7 @@ export function analyzeCourseMapProposal(
             'warning',
             'duplicate_region_intent',
             'Course Map regions have duplicate normalized learning intents.',
-            [left.key, right.key],
+            [left.sourceRegionRef, right.sourceRegionRef],
           );
         }
       } else if (nearDuplicate(left.learningIntent, right.learningIntent)) {
@@ -1096,7 +1052,7 @@ export function analyzeCourseMapProposal(
             'warning',
             'near_duplicate_region_intent',
             'Course Map regions have near-duplicate learning intents.',
-            [left.key, right.key],
+            [left.sourceRegionRef, right.sourceRegionRef],
           );
         }
       }
@@ -1105,7 +1061,7 @@ export function analyzeCourseMapProposal(
   const flat = parsed.modules.length === 1 && proposedRegionCount >= 4;
   if (flat) {
     add('warning', 'flat_hierarchy', 'Course Map keeps a multi-region course in one module.', [
-      parsed.modules[0]!.key,
+      'module-1',
     ]);
   }
 
@@ -1191,14 +1147,12 @@ export function analyzeCourseMapProposal(
     },
     duplication: { duplicateIntentPairCount, nearDuplicateIntentPairCount },
     anchors: {
-      conceptAnchorCount: proposedRegions.reduce(
-        (count, region) => count + region.conceptIds.length,
-        0,
-      ),
-      canonicalConceptAnchorCount: proposedRegions.reduce(
-        (count, region) => count + region.canonicalConceptIds.length,
-        0,
-      ),
+      conceptAnchorCount: materializedModules
+        .flatMap((module) => module.regions)
+        .reduce((count, region) => count + region.conceptIds.length, 0),
+      canonicalConceptAnchorCount: materializedModules
+        .flatMap((module) => module.regions)
+        .reduce((count, region) => count + region.canonicalConceptIds.length, 0),
       invalidAnchorCount,
     },
   };
