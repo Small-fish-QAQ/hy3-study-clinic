@@ -1,7 +1,12 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { PublicQuiz, StudySession, StudySessionDetailResponse } from '@hy3-clinic/shared';
+import type {
+  LessonExecutionProjection,
+  PublicQuiz,
+  StudySession,
+  StudySessionDetailResponse,
+} from '@hy3-clinic/shared';
 import { StudySessionView } from './StudySessionView.js';
 import { api } from '../api.js';
 
@@ -17,6 +22,9 @@ vi.mock('../api.js', () => ({
     resumeStudySession: vi.fn(),
     stopStudySession: vi.fn(),
     launchAgendaItem: vi.fn(),
+    getLessonExecution: vi.fn(),
+    prepareLessonExecution: vi.fn(),
+    lessonExecutionCommand: vi.fn(),
   },
 }));
 
@@ -82,6 +90,18 @@ const detail: StudySessionDetailResponse = {
   latestSummary: null,
 };
 
+const lessonUnavailable: LessonExecutionProjection = {
+  status: 'lesson_unavailable',
+  message: '当前安排暂时没有可展示的讲解。',
+  course: { title: 'Probability' },
+  session: { status: session.status, version: session.version },
+  agenda: { version: detail.agenda.version, itemState: detail.agenda.items[0]!.state },
+  lesson: null,
+  progress: null,
+  currentInformalCheck: null,
+  allowedActions: [],
+};
+
 const currentRoute = {
   contractVersionId: session.contractVersionId,
   curriculumVersionId: session.curriculumVersionId,
@@ -144,6 +164,9 @@ const completedTutorResponse = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(api.getLessonExecution).mockResolvedValue(lessonUnavailable);
+  vi.mocked(api.prepareLessonExecution).mockResolvedValue(lessonUnavailable);
+  vi.mocked(api.lessonExecutionCommand).mockResolvedValue(lessonUnavailable);
 });
 
 async function openStudyControls(user: ReturnType<typeof userEvent.setup>): Promise<void> {

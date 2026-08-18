@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   MixedInitiativeCommandRequest,
+  LessonExecutionProjection,
   PublicQuiz,
   SubmitTutorTurnRequest,
   SubmitTutorTurnResponse,
@@ -11,6 +12,7 @@ import type {
 import { api } from '../api.js';
 import { Banner, Loading } from '../components/ui.js';
 import { useAsyncAction } from '../components/useAsyncAction.js';
+import { LessonExecutionPanel } from '../components/LessonExecutionPanel.js';
 import { StudyInspector, type StudyInspectorTab } from './StudyInspector.js';
 
 const INSPECTOR_MODAL_QUERY = '(max-width: 1279px)';
@@ -265,6 +267,28 @@ export function StudySessionView({
     setDetail((current) => (current && agenda ? { ...current, session, agenda } : current));
     onSessionChanged?.();
   }
+
+  const refreshCurrentSession = useCallback(() => {
+    if (!workspaceId || !currentSessionId) return;
+    void loadSession(workspaceId, currentSessionId, new AbortController().signal);
+  }, [currentSessionId, loadSession, workspaceId]);
+
+  const updateLessonProjection = useCallback((projection: LessonExecutionProjection) => {
+    setDetail((current) =>
+      current && projection.session.version >= current.session.version
+        ? {
+            ...current,
+            session: { ...current.session, version: projection.session.version },
+            agenda: projection.agenda
+              ? {
+                  ...current.agenda,
+                  version: Math.max(current.agenda.version, projection.agenda.version),
+                }
+              : current.agenda,
+          }
+        : current,
+    );
+  }, []);
 
   async function startSession(): Promise<void> {
     if (!workspaceId || !route) return;
@@ -737,120 +761,146 @@ export function StudySessionView({
         </header>
 
         <div className="study-session-layout">
-          <section className="study-transcript" aria-label="Tutor 对话">
-            <div
-              className="study-transcript-list"
-              role="log"
-              aria-label="学习对话记录"
-              aria-live="polite"
-              aria-relevant="additions text"
-            >
-              <div className="study-transcript-inner">
-                {detail.exchanges.length === 0 ? (
-                  <div className="transcript-empty">
-                    <p>有什么想先弄清楚的？</p>
-                    <p className="small muted">
-                      可以从当前目标提问，也可以请 Tutor 换一种解释或举个例子。
-                    </p>
+          <div className="study-session-learning-stack">
+            <LessonExecutionPanel
+              workspaceId={workspaceId}
+              sessionId={session.id}
+              agendaItemId={currentAgendaItem?.id ?? session.currentAgendaItemId ?? ''}
+              active={active}
+              busy={busy}
+              directCheckpointItemId={directCheckpointItem?.id ?? null}
+              onResumeStudySession={() => void lifecycle('resume')}
+              onStartFormalAssessment={() =>
+                void mixedCommand('direct_checkpoint', directCheckpointItem?.id ?? null)
+              }
+              onSessionVersionChange={updateLessonProjection}
+              onRefreshSession={refreshCurrentSession}
+            />
+            <section className="study-tutor-secondary" aria-label="Tutor 辅助">
+              <header className="study-tutor-secondary-header">
+                <div>
+                  <p className="eyebrow">需要时再问</p>
+                  <h3>Hy3 Tutor</h3>
+                </div>
+                <p>讲解是主线；Tutor 可以针对当前讲解补充说明、举例或换一种说法。</p>
+              </header>
+              <section className="study-transcript" aria-label="Tutor 对话">
+                <div
+                  className="study-transcript-list"
+                  role="log"
+                  aria-label="学习对话记录"
+                  aria-live="polite"
+                  aria-relevant="additions text"
+                >
+                  <div className="study-transcript-inner">
+                    {detail.exchanges.length === 0 ? (
+                      <div className="transcript-empty">
+                        <p>讲解过程中有疑问，再把它交给 Tutor。</p>
+                        <p className="small muted">
+                          你可以请 Tutor 换一种解释、举个例子，或针对当前部分展开说明。
+                        </p>
+                      </div>
+                    ) : null}
+                    {detail.exchanges.map((exchange) => (
+                      <Exchange key={exchange.id} exchange={exchange} />
+                    ))}
+                    {tutorLoading ? (
+                      <div className="study-tutor-stream" role="status" aria-live="polite">
+                        <span className="study-tutor-avatar" aria-hidden="true">
+                          H3
+                        </span>
+                        <div>
+                          <strong>Hy3 Tutor</strong>
+                          <p>Tutor 正在组织这次回应…</p>
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
-                {detail.exchanges.map((exchange) => (
-                  <Exchange key={exchange.id} exchange={exchange} />
-                ))}
-                {tutorLoading ? (
-                  <div className="study-tutor-stream" role="status" aria-live="polite">
-                    <span className="study-tutor-avatar" aria-hidden="true">
-                      H3
-                    </span>
-                    <div>
-                      <strong>Hy3 Tutor</strong>
-                      <p>Tutor 正在组织这次回应…</p>
+                </div>
+                <div className="study-composer-dock">
+                  {tutorError ? (
+                    <div className="study-operation-notice error" role="alert">
+                      <strong>这次 Tutor 请求未完成</strong>
+                      <span>{tutorError}</span>
+                      {tutorReconciliationTarget ? (
+                        <button
+                          type="button"
+                          className="ghost"
+                          disabled={tutorReconciling}
+                          onClick={() => void retryTutorReconciliation()}
+                        >
+                          {tutorReconciling ? '正在同步…' : '重新同步学习记录'}
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  {canRetryTutorTurn(pendingTutorTurn) ? (
+                    <div className="study-retry" role="alert">
+                      <p>
+                        Tutor 请求尚未确认完成，原提问已保留：
+                        <q>{pendingTutorTurn.input.content}</q>
+                      </p>
+                      <div className="row">
+                        <button
+                          type="button"
+                          className="primary"
+                          disabled={tutorLoading}
+                          aria-busy={tutorLoading}
+                          onClick={() => void retryTutorTurn()}
+                        >
+                          重试此条提问
+                        </button>
+                        <button type="button" onClick={abandonTutorRetry}>
+                          放弃重试
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                  <div className="study-composer">
+                    <label htmlFor="study-tutor-composer" className="sr-only">
+                      向 Tutor 提问
+                    </label>
+                    <textarea
+                      id="study-tutor-composer"
+                      value={composer}
+                      disabled={
+                        !active ||
+                        action.loading ||
+                        tutorLoading ||
+                        tutorReconciling ||
+                        Boolean(tutorReconciliationTarget)
+                      }
+                      onChange={(event) => setComposer(event.target.value)}
+                      placeholder={active ? '输入你的问题或想法…' : '继续本次学习后才能发送消息。'}
+                      rows={3}
+                    />
+                    <div className="study-composer-actions">
+                      <span className="small muted">Enter 换行</span>
+                      <button
+                        type="button"
+                        className="primary study-send-control"
+                        aria-label={tutorLoading ? '停止生成' : '发送'}
+                        title={tutorLoading ? '停止生成' : '发送'}
+                        aria-busy={tutorLoading}
+                        disabled={
+                          tutorLoading
+                            ? false
+                            : !active ||
+                              busy ||
+                              Boolean(pendingTutorTurn) ||
+                              Boolean(tutorReconciliationTarget) ||
+                              composer.trim().length === 0
+                        }
+                        onClick={tutorLoading ? cancelTutorTurn : () => void submitTurn()}
+                      >
+                        <span aria-hidden="true">{tutorLoading ? '■' : '↑'}</span>
+                      </button>
                     </div>
                   </div>
-                ) : null}
-              </div>
-            </div>
-            <div className="study-composer-dock">
-              {tutorError ? (
-                <div className="study-operation-notice error" role="alert">
-                  <strong>这次 Tutor 请求未完成</strong>
-                  <span>{tutorError}</span>
-                  {tutorReconciliationTarget ? (
-                    <button
-                      type="button"
-                      className="ghost"
-                      disabled={tutorReconciling}
-                      onClick={() => void retryTutorReconciliation()}
-                    >
-                      {tutorReconciling ? '正在同步…' : '重新同步学习记录'}
-                    </button>
-                  ) : null}
                 </div>
-              ) : null}
-              {canRetryTutorTurn(pendingTutorTurn) ? (
-                <div className="study-retry" role="alert">
-                  <p>
-                    Tutor 请求尚未确认完成，原提问已保留：<q>{pendingTutorTurn.input.content}</q>
-                  </p>
-                  <div className="row">
-                    <button
-                      type="button"
-                      className="primary"
-                      disabled={tutorLoading}
-                      aria-busy={tutorLoading}
-                      onClick={() => void retryTutorTurn()}
-                    >
-                      重试此条提问
-                    </button>
-                    <button type="button" onClick={abandonTutorRetry}>
-                      放弃重试
-                    </button>
-                  </div>
-                </div>
-              ) : null}
-              <div className="study-composer">
-                <label htmlFor="study-tutor-composer" className="sr-only">
-                  向 Tutor 提问
-                </label>
-                <textarea
-                  id="study-tutor-composer"
-                  value={composer}
-                  disabled={
-                    !active ||
-                    action.loading ||
-                    tutorLoading ||
-                    tutorReconciling ||
-                    Boolean(tutorReconciliationTarget)
-                  }
-                  onChange={(event) => setComposer(event.target.value)}
-                  placeholder={active ? '输入你的问题或想法…' : '继续本次学习后才能发送消息。'}
-                  rows={3}
-                />
-                <div className="study-composer-actions">
-                  <span className="small muted">Enter 换行</span>
-                  <button
-                    type="button"
-                    className="primary study-send-control"
-                    aria-label={tutorLoading ? '停止生成' : '发送'}
-                    title={tutorLoading ? '停止生成' : '发送'}
-                    aria-busy={tutorLoading}
-                    disabled={
-                      tutorLoading
-                        ? false
-                        : !active ||
-                          busy ||
-                          Boolean(pendingTutorTurn) ||
-                          Boolean(tutorReconciliationTarget) ||
-                          composer.trim().length === 0
-                    }
-                    onClick={tutorLoading ? cancelTutorTurn : () => void submitTurn()}
-                  >
-                    <span aria-hidden="true">{tutorLoading ? '■' : '↑'}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </section>
+              </section>
+            </section>
+          </div>
         </div>
       </div>
       <StudyInspector

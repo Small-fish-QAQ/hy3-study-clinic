@@ -82,6 +82,10 @@ import {
   MixedInitiativeCommandResponseSchema,
   SessionExecutionCommandResponseSchema,
   StudySessionSchema,
+  LessonExecutionProjectionSchema,
+  type EnsureLessonExecutionRequest,
+  type LessonExecutionCommandRequest,
+  type LessonExecutionProjection,
   type StartStudySessionRequest,
   type StartStudySessionResponse,
   type StudySessionDetailResponse,
@@ -942,6 +946,49 @@ export const api = {
       'POST',
       `/api/workspaces/${workspaceId}/study-sessions/${sessionId}/stop`,
       SessionExecutionCommandResponseSchema,
+      input,
+      signal,
+    ),
+
+  // --- Lesson-first Study presentation (weak, session-owned state) ---
+
+  getLessonExecution: (
+    workspaceId: string,
+    sessionId: string,
+    signal?: AbortSignal,
+  ): Promise<LessonExecutionProjection> =>
+    requestParsed(
+      'GET',
+      `/api/workspaces/${workspaceId}/study-sessions/${sessionId}/lesson-execution`,
+      LessonExecutionProjectionSchema,
+      undefined,
+      signal,
+    ),
+
+  prepareLessonExecution: (
+    workspaceId: string,
+    sessionId: string,
+    input: EnsureLessonExecutionRequest,
+    signal?: AbortSignal,
+  ): Promise<LessonExecutionProjection> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/study-sessions/${sessionId}/lesson-execution/prepare`,
+      LessonExecutionProjectionSchema,
+      input,
+      signal,
+    ),
+
+  lessonExecutionCommand: (
+    workspaceId: string,
+    sessionId: string,
+    input: LessonExecutionCommandRequest,
+    signal?: AbortSignal,
+  ): Promise<LessonExecutionProjection> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/study-sessions/${sessionId}/lesson-execution/commands`,
+      LessonExecutionProjectionSchema,
       input,
       signal,
     ),
