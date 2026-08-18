@@ -3749,12 +3749,27 @@ button.danger {
   text-align: right;
 }
 
+.study-tutor-context {
+  margin-top: 0.35rem !important;
+  color: var(--primary-strong) !important;
+  font-size: 0.78rem !important;
+  text-align: left !important;
+}
+
 .study-tutor-secondary .study-transcript {
-  min-height: 360px;
+  min-height: 300px;
 }
 
 .study-tutor-secondary .study-transcript-list {
-  max-height: 520px;
+  max-height: 380px;
+}
+
+.study-tutor-secondary .study-transcript-inner {
+  padding: 1.15rem 1.25rem 2rem;
+}
+
+.study-tutor-secondary .study-exchange {
+  margin-bottom: 1.5rem;
 }
 
 .study-transcript {
@@ -3823,6 +3838,87 @@ button.danger {
   line-height: 1.75;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+}
+
+.tutor-content-blocks > :first-child {
+  margin-top: 0;
+}
+
+.tutor-content-blocks > :last-child {
+  margin-bottom: 0;
+}
+
+.tutor-content-blocks p {
+  margin: 0 0 0.9rem;
+}
+
+.tutor-content-blocks ul {
+  margin: 0 0 0.9rem;
+  padding-left: 1.25rem;
+}
+
+.study-tutor-response-details {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.45rem 0.6rem;
+  margin-top: 0.7rem;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
+.study-tutor-move-cue,
+.study-tutor-synthesis-label {
+  padding: 0.16rem 0.48rem;
+  border-radius: 999px;
+  background: var(--primary-weak);
+  color: var(--primary-strong);
+  font-weight: 650;
+}
+
+.study-tutor-synthesis-label {
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+
+.study-tutor-sources summary {
+  cursor: pointer;
+  color: var(--primary-strong);
+  font-weight: 650;
+}
+
+.study-tutor-sources {
+  max-width: 100%;
+}
+
+.study-tutor-sources ul {
+  display: grid;
+  gap: 0.55rem;
+  width: min(100%, 38rem);
+  margin: 0.55rem 0 0;
+  padding: 0.7rem 0.85rem 0.7rem 1.6rem;
+  border-left: 2px solid var(--primary-weak);
+  background: color-mix(in srgb, var(--primary-weak) 38%, transparent);
+}
+
+.study-tutor-sources li {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.study-tutor-sources li span {
+  color: var(--text-muted);
+}
+
+.study-tutor-sources q {
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.study-tutor-route-cue {
+  flex-basis: 100%;
+  margin: 0.05rem 0 0;
+  color: var(--text-muted);
 }
 
 .study-exchange.learner {
@@ -3896,6 +3992,42 @@ button.danger {
 
 .study-tutor-stream .study-tutor-avatar {
   animation: study-pulse 1.5s ease-in-out infinite;
+}
+
+.study-quick-help {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0 0.2rem 0.15rem;
+}
+
+.study-quick-help button {
+  min-height: 30px;
+  padding: 0.25rem 0.6rem;
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
+  color: var(--primary-strong);
+}
+
+.study-formal-ready {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-2);
+  padding: 0.7rem 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--border));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--primary-weak) 45%, var(--surface-raised));
+}
+
+.study-formal-ready > div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.study-formal-ready span {
+  color: var(--text-muted);
+  font-size: 0.78rem;
 }
 
 @keyframes study-pulse {
@@ -4585,6 +4717,15 @@ button.danger {
   .study-tutor-secondary-header > p {
     max-width: none;
     text-align: left;
+  }
+
+  .study-formal-ready {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .study-formal-ready button {
+    align-self: flex-start;
   }
 
   .study-transcript {

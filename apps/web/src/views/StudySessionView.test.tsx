@@ -102,6 +102,62 @@ const lessonUnavailable: LessonExecutionProjection = {
   allowedActions: [],
 };
 
+const lessonReady: LessonExecutionProjection = {
+  status: 'ready',
+  message: 'Lesson is ready.',
+  course: { title: 'Probability' },
+  session: { status: session.status, version: session.version },
+  agenda: { version: detail.agenda.version, itemState: detail.agenda.items[0]!.state },
+  lesson: {
+    objective: {
+      title: '理解条件概率',
+      whyNow: '它是后续推理的基础。',
+      outcomes: [{ title: '解释定义', description: '能用自己的话解释。' }],
+    },
+    prerequisites: [],
+    segments: [
+      {
+        index: 0,
+        purpose: 'explanation',
+        explanation: '条件概率会把观察范围收窄到已知条件。',
+        explanationOrigin: 'source_grounded',
+        sources: [
+          {
+            referenceKey: 'S1',
+            materialTitle: '概率论讲义',
+            headingPath: ['第二章', '条件概率'],
+            pageNumber: 12,
+            locationLabel: '第 12 页 · 条件概率',
+            exactExcerpt: '在已知事件 B 发生时，事件 A 的条件概率记作 P(A|B)。',
+            classification: 'exact_source_excerpt',
+          },
+        ],
+        example: null,
+        contrast: null,
+        possibleMisconception: null,
+        informalCheck: null,
+      },
+    ],
+    sourceReferencesAvailable: true,
+    summary: {
+      available: true,
+      text: '条件概率聚焦已知条件下的可能性。',
+      nextConnection: null,
+      formalOpportunities: [],
+    },
+  },
+  progress: {
+    stateVersion: 1,
+    currentSegmentIndex: 0,
+    segmentCount: 1,
+    presentedSegmentIndexes: [0],
+    presentationStatus: 'in_progress',
+    presentationCompletedAt: null,
+  },
+  currentInformalCheck: null,
+  allowedActions: ['move_to_next_segment'],
+};
+
 const currentRoute = {
   contractVersionId: session.contractVersionId,
   curriculumVersionId: session.curriculumVersionId,
@@ -336,6 +392,95 @@ describe('StudySessionView', () => {
     );
   });
 
+  it('sends contextual quick help as ordinary learner text without selecting a move', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });
+    vi.mocked(api.getStudySession).mockResolvedValue(detail);
+    vi.mocked(api.streamTutorTurn).mockResolvedValue(completedTutorResponse);
+
+    render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+
+    await user.click(await screen.findByRole('button', { name: '举个例子' }));
+    await waitFor(() => expect(api.streamTutorTurn).toHaveBeenCalledTimes(1));
+    const input = vi.mocked(api.streamTutorTurn).mock.calls[0]?.[2];
+    expect(input).toEqual({
+      commandId: expect.stringMatching(/^tutor_turn_/),
+      expectedSessionVersion: 1,
+      content: '举个例子说明一下。',
+    });
+    expect(input).not.toHaveProperty('move');
+  });
+
+  it('renders accepted Tutor metadata in learner language with keyboard-reachable sources', async () => {
+    const user = userEvent.setup();
+    const sourceTurn = {
+      ...completedTutorResponse.turn,
+      tutorMetadata: {
+        move: 'GIVE_EXAMPLE' as const,
+        sourceRefs: ['S1'],
+        routeSignal: 'detour_started' as const,
+        lessonSegmentIndex: 0,
+        policyVersion: 'lesson-aware-tutor-v1',
+      },
+    };
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });
+    vi.mocked(api.getStudySession).mockResolvedValue({
+      ...detail,
+      turns: [sourceTurn],
+      exchanges: completedTutorResponse.exchanges,
+    });
+    vi.mocked(api.getLessonExecution).mockResolvedValue(lessonReady);
+
+    render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+
+    expect(await screen.findByText('正在围绕：理解条件概率 · 核心解释')).toBeInTheDocument();
+    expect(screen.getAllByText('举个例子')).toHaveLength(2);
+    expect(screen.getByText(/这是一个补充问题，回答完可以回到：理解条件概率/)).toBeInTheDocument();
+    expect(screen.queryByText('GIVE_EXAMPLE')).not.toBeInTheDocument();
+    expect(screen.queryByText('S1')).not.toBeInTheDocument();
+
+    const disclosure = screen.getByText('查看来源（1）');
+    disclosure.focus();
+    await user.keyboard('{Enter}');
+    expect(screen.getAllByText('概率论讲义').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('第 12 页 · 条件概率').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/在已知事件 B 发生时/).length).toBeGreaterThan(0);
+  });
+
+  it('labels synthesis without fabricating a citation and sends Enter while preserving Shift+Enter', async () => {
+    const user = userEvent.setup();
+    const synthesisTurn = {
+      ...completedTutorResponse.turn,
+      tutorMetadata: {
+        move: 'GIVE_ANALOGY' as const,
+        sourceRefs: [],
+        routeSignal: 'stay_on_route' as const,
+        lessonSegmentIndex: 0,
+        policyVersion: 'lesson-aware-tutor-v1',
+      },
+    };
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });
+    vi.mocked(api.getStudySession).mockResolvedValue({
+      ...detail,
+      turns: [synthesisTurn],
+      exchanges: completedTutorResponse.exchanges,
+    });
+    vi.mocked(api.streamTutorTurn).mockResolvedValue(completedTutorResponse);
+
+    render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+
+    expect(await screen.findByText('Hy3 补充解释')).toBeInTheDocument();
+    expect(screen.queryByText(/查看来源/)).not.toBeInTheDocument();
+    const composer = screen.getByLabelText('向 Tutor 提问');
+    await user.type(composer, '第一行{Shift>}{Enter}{/Shift}第二行');
+    expect(composer).toHaveValue('第一行\n第二行');
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(api.streamTutorTurn).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(api.streamTutorTurn).mock.calls[0]?.[2]).toMatchObject({
+      content: '第一行\n第二行',
+    });
+  });
+
   it('uses one Send or Stop locus and aborts the active Tutor stream', async () => {
     const user = userEvent.setup();
     let streamSignal: AbortSignal | undefined;
@@ -530,6 +675,96 @@ describe('StudySessionView', () => {
 
     await waitFor(() => expect(api.launchAgendaItem).toHaveBeenCalled());
     expect(onLaunchQuiz).toHaveBeenCalledWith(expect.objectContaining({ id: 'quiz_1' }));
+  });
+
+  it('offers the formal-ready Tutor CTA only when an accepted turn and launchable checkpoint agree', async () => {
+    const user = userEvent.setup();
+    const onLaunchQuiz = vi.fn();
+    const formalReadyTurn = {
+      ...completedTutorResponse.turn,
+      tutorMetadata: {
+        move: 'FORMAL_CHECK_READY' as const,
+        sourceRefs: [],
+        routeSignal: 'stay_on_route' as const,
+        lessonSegmentIndex: 0,
+        policyVersion: 'lesson-aware-tutor-v1',
+      },
+    };
+    const checkpointAgenda = {
+      ...detail.agenda,
+      items: [
+        ...detail.agenda.items,
+        {
+          ...detail.agenda.items[0]!,
+          id: 'agenda_item_checkpoint',
+          kind: 'formal_checkpoint' as const,
+          reason: 'Check current unit formally.',
+          state: 'queued' as const,
+          launch: {
+            status: 'launchable' as const,
+            capability: 'assessment',
+            resourceId: 'quiz_seed_1',
+            reason: null,
+          },
+        },
+      ],
+    };
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });
+    vi.mocked(api.getStudySession).mockResolvedValue({
+      ...detail,
+      agenda: checkpointAgenda,
+      turns: [formalReadyTurn],
+      exchanges: completedTutorResponse.exchanges,
+    });
+    vi.mocked(api.studySessionCommand).mockResolvedValue({
+      session: { ...session, version: 2 },
+      agenda: checkpointAgenda,
+      effect: {
+        kind: 'direct_checkpoint',
+        affectedAgendaItemId: 'agenda_item_checkpoint',
+        planChangeRequest: null,
+      },
+    });
+    vi.mocked(api.launchAgendaItem).mockResolvedValue({
+      kind: 'assessment',
+      agendaItemId: 'agenda_item_checkpoint',
+      assessmentKind: 'formal_checkpoint',
+      quiz: { id: 'quiz_1' } as PublicQuiz,
+    });
+    vi.spyOn(window, 'prompt').mockReturnValue('Tutor says ready');
+
+    const { rerender } = render(
+      <StudySessionView workspaceId="ws_1" route={currentRoute} onLaunchQuiz={onLaunchQuiz} />,
+    );
+
+    expect(await screen.findByText('这部分已经讲到可以检验的程度')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '开始正式检验' })).toBeInTheDocument();
+    expect(screen.queryByText('FORMAL_CHECK_READY')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '开始正式检验' }));
+    await waitFor(() => expect(api.launchAgendaItem).toHaveBeenCalled());
+    expect(api.studySessionCommand).toHaveBeenCalledWith(
+      'ws_1',
+      'session_1',
+      expect.objectContaining({
+        kind: 'direct_checkpoint',
+        targetAgendaItemId: 'agenda_item_checkpoint',
+        reason: 'Tutor says ready',
+      }),
+      expect.any(AbortSignal),
+    );
+    expect(onLaunchQuiz).toHaveBeenCalledWith(expect.objectContaining({ id: 'quiz_1' }));
+
+    vi.mocked(api.getStudySession).mockResolvedValue({
+      ...detail,
+      turns: [formalReadyTurn],
+      exchanges: completedTutorResponse.exchanges,
+    });
+    rerender(
+      <StudySessionView workspaceId="ws_1" route={{ ...currentRoute, executionVersion: 5 }} />,
+    );
+    await waitFor(() =>
+      expect(screen.queryByText('这部分已经讲到可以检验的程度')).not.toBeInTheDocument(),
+    );
   });
 
   it('sends a learner-selected Curriculum unit as a detour target', async () => {

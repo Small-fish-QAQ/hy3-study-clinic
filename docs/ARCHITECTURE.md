@@ -647,4 +647,14 @@ Start, next, revisit, and complete controls call the existing version-fenced com
 
 This Phase 4B2 description supersedes the pre-4B2 transcript-first wording in the shell overview above; the transcript remains available, but it is no longer the primary empty Study surface.
 
+## 23. Lesson-aware Tutor learner UX (Phase 5B)
+
+The Study view renders the accepted Phase 5A Tutor metadata without recomputing pedagogy policy in the browser. Quick-help controls submit ordinary learner text through the existing `SubmitTutorTurnRequest`; they do not select or transmit provider move enums. The existing StudySession turn remains the audit source for move, route signal, lesson-segment index, and operation-local source refs. Streaming, stop, exact-request retry, reconciliation, request epochs, and workspace/route switching retain the existing cancellation and stale-response protections.
+
+The lesson remains the primary Study surface and Tutor is a secondary support panel below it. Tutor identifies the current objective and segment purpose, renders prose and bullet responses for scanning, maps a small accepted-move subset to learner language, and shows accepted detour/return signals as conversational route cues. Provider enum names, source keys, database IDs, offsets, fingerprints, and policy versions are not learner-facing.
+
+Source disclosure is deliberately narrower than accepted metadata alone. Operation-local source keys are resolved only when the turn's accepted `lessonSegmentIndex` equals the current lesson projection's segment index; matching learner-safe source projections provide material title, location, and exact excerpt in a native keyboard-accessible disclosure. A response with an empty accepted source-ref list is labeled `Hy3 补充解释`, preserving the distinction between grounded quotations and teaching synthesis. A historical or stale key that cannot be safely resolved is not displayed or rebound to another segment. Exact quotation still establishes occurrence at the claimed location, not complete semantic entailment.
+
+`FORMAL_CHECK_READY` remains advisory metadata. The UI offers `开始正式检验` only when the latest accepted conversational Tutor turn carries that move and the existing current Agenda item is independently launchable with kind `formal_checkpoint`. The action calls the existing version-fenced `direct_checkpoint` command and formal assessment path; Tutor text, quick questions, move labels, and route cues never create Evidence, grade an answer, update Mastery, change Mistakes or Reviews, complete an Agenda item, or advance Plan progress. Phase 5B adds no migration or production dependency and does not include Assessment/Repair redesign, FSRS, multimodal Materials, or real-Hy3 evaluation.
+
 Verification commands, test counts, migration coverage, public evidence, and reviewer mappings are maintained separately in [Verification and Reviewer Evidence](VERIFICATION.md).
