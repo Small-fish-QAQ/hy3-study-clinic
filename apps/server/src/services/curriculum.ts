@@ -86,7 +86,7 @@ export type ProposeCurriculumCommandRequest = Omit<
   'executionSourceManifest'
 >;
 
-function curriculumLimits(
+export function curriculumLimits(
   outline: CurriculumOutlineItem[],
   predecessor: Curriculum | null,
 ): CurriculumProposalInput['limits'] {
@@ -371,7 +371,7 @@ function executionRepairErrors(preflight: StudyPlanPreflight): string[] {
   ];
 }
 
-function validateExecutionRepairCandidate(input: {
+export function validateExecutionRepairCandidate(input: {
   repos: Repositories;
   clock: Clock;
   contract: LearningContract;
@@ -418,7 +418,7 @@ function validateExecutionRepairCandidate(input: {
   };
 }
 
-function buildOfferedCurriculumKnowledge(
+export function buildOfferedCurriculumKnowledge(
   repos: Repositories,
   workspaceId: string,
   context: ReturnType<typeof buildCurriculumExecutionContext>,
