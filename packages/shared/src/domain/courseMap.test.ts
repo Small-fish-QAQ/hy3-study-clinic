@@ -117,10 +117,7 @@ describe('CourseMapProposalPayloadSchema', () => {
       level: 'module',
       regionRefs: ['R1', 'R2'],
     });
-    for (const fields of [
-      { key: 'synthesis-1' },
-      { regionKeys: ['region-1', 'region-2'] },
-    ]) {
+    for (const fields of [{ key: 'synthesis-1' }, { regionKeys: ['region-1', 'region-2'] }]) {
       const candidate = structuredClone(legacySynthesis);
       Object.assign(candidate.synthesisGroups[0]!, fields);
       expect(() => CourseMapProposalPayloadSchema.parse(candidate)).toThrow();
