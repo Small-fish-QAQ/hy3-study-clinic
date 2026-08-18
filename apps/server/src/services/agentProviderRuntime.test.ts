@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { openDatabase, type SqliteDb } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
 import { createRepositories, type Repositories } from '../repositories/index.js';
@@ -183,6 +183,49 @@ describe('Agent cost policy enforcement', () => {
 });
 
 describe('Agent provider physical-attempt telemetry', () => {
+  it('fences an original request before invoking a provider with an expired lease', async () => {
+    const operation = repos.operations.createOrGet({
+      id: 'op_expired',
+      workspaceId: 'ws_1',
+      commandId: 'expired-command',
+      idempotencyKey: 'expired-key',
+      logicalOperationId: 'expired-logical-operation',
+      operationType: 'propose_curriculum',
+      expectedFingerprint: 'expected-v1',
+      createdAt: T0,
+      updatedAt: T0,
+    }).operation;
+    const claim = repos.operations.claim(
+      operation.id,
+      'test-worker',
+      '2026-01-01T00:01:00.000Z',
+      T0,
+    );
+    expect(claim?.fencingToken).toBe(1);
+    const invoke = vi.fn(async () => 'must-not-run');
+
+    await expect(
+      runTrackedAgentProviderOperation({
+        repos,
+        clock: fixedClock('2026-01-01T00:02:00.000Z'),
+        provider: new FakeProvider(),
+        providerModel: null,
+        operationId: operation.id,
+        fencingToken: 1,
+        workspaceId: 'ws_1',
+        studySessionId: null,
+        learningUnitId: null,
+        assessmentId: null,
+        operationType: 'propose_curriculum',
+        schemaFingerprint: 'curriculum-v1',
+        policyFingerprint: null,
+        sourceFingerprint: 'manifest-v1',
+        invoke,
+      }),
+    ).rejects.toMatchObject({ code: 'VERSION_CONFLICT' });
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
   it('records bounded structured repair as a second attempt in one logical call', async () => {
     const operation = repos.operations.createOrGet({
       id: 'op_repair',

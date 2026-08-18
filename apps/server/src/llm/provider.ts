@@ -8,6 +8,7 @@ import type {
   ConceptLessonPayload,
   CourseMapProposalPayload,
   Curriculum,
+  CurriculumDetailProposalPayload,
   CurriculumProposalPayload,
   DesiredDepth,
   ExecutionSourceManifest,
@@ -487,6 +488,50 @@ export interface CourseMapProposalInput {
   };
 }
 
+export interface CurriculumDetailRegionInput {
+  regionId: string;
+  moduleId: string;
+  moduleIndex: number;
+  moduleTitle: string;
+  regionIndex: number;
+  title: string;
+  learningIntent: string;
+  approximateScope: 'focused' | 'standard' | 'extended';
+  sourceAllocationRegionIds: string[];
+  prerequisiteRegionIds: string[];
+  synthesisGroups: Array<{
+    id: string;
+    title: string;
+    level: 'module' | 'course' | 'transfer';
+  }>;
+  concepts: Array<{ id: string; name: string; summary: string }>;
+  canonicalConcepts: CurriculumCanonicalConceptOffer[];
+  evidence: Array<{ evidenceId: string; sourceAllocationRegionId: string; text: string }>;
+}
+
+/** One fixed-batch, operation-local detail request over server-owned Course Map regions. */
+export interface CurriculumDetailProposalInput {
+  workspaceName: string;
+  contract: Pick<
+    CurriculumContractContext,
+    | 'intent'
+    | 'targetOutcome'
+    | 'desiredDepth'
+    | 'subjectBoundaries'
+    | 'includedTopics'
+    | 'excludedTopics'
+  >;
+  courseMapId: string;
+  sourceAllocationFingerprint: string;
+  batchKey: string;
+  regions: CurriculumDetailRegionInput[];
+  limits: {
+    maxUnits: number;
+    maxObjectivesPerUnit: number;
+    maxEvidenceSelectionsPerUnit: number;
+  };
+}
+
 export interface StudyPlanContractContext extends CurriculumContractContext {
   deadline: { at: string; timeZone: string } | null;
   studyBudget: {
@@ -611,6 +656,11 @@ export interface LlmProvider {
     input: CourseMapProposalInput,
     opts?: ProviderCallOptions,
   ): Promise<CourseMapProposalPayload>;
+  /** Materialize semantic LearningUnit details for one fixed Course Map partition. */
+  proposeCurriculumDetails(
+    input: CurriculumDetailProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<CurriculumDetailProposalPayload>;
   /** Propose learner-visible Curriculum semantics; local code validates and versions it. */
   proposeCurriculum(
     input: CurriculumProposalInput,

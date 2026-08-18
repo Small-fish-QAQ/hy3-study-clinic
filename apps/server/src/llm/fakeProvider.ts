@@ -9,6 +9,7 @@ import {
   type ConceptAnalysisPayload,
   type ConceptLessonPayload,
   type CourseMapProposalPayload,
+  type CurriculumDetailProposalPayload,
   type CurriculumProposalPayload,
   type GraphProposalPayload,
   type MisconceptionProposalPayload,
@@ -37,6 +38,7 @@ import type {
   ConceptAnalysisInput,
   ConceptLessonInput,
   CourseMapProposalInput,
+  CurriculumDetailProposalInput,
   CurriculumOutlineItem,
   CurriculumProposalInput,
   GraphProposalInput,
@@ -889,6 +891,51 @@ export class FakeProvider implements LlmProvider {
       modules,
       prerequisites,
       synthesisGroups,
+    };
+    const firstValidation = opts?.validateCandidate?.(candidate);
+    if (!firstValidation || firstValidation.valid) return candidate;
+    opts?.onRepairAttempt?.('candidate');
+    await this.gate(opts);
+    const repairedValidation = opts?.validateCandidate?.(candidate);
+    if (!repairedValidation || repairedValidation.valid) return candidate;
+    throw ProviderError.invalidOutput(
+      repairedValidation.diagnostics.join('; ').slice(0, 8_000),
+      'candidate',
+    );
+  }
+
+  async proposeCurriculumDetails(
+    input: CurriculumDetailProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<CurriculumDetailProposalPayload> {
+    await this.gate(opts);
+    const units = input.regions.map((region, index) => {
+      const selectedEvidence = region.sourceAllocationRegionIds.flatMap((sourceRegionId) => {
+        const offer = region.evidence.find(
+          (candidate) => candidate.sourceAllocationRegionId === sourceRegionId,
+        );
+        return offer ? [{ evidenceId: offer.evidenceId }] : [];
+      });
+      return {
+        regionId: region.regionId,
+        title: region.title,
+        sourceEvidence: selectedEvidence,
+        conceptIds: region.concepts.slice(0, 3).map((concept) => concept.id),
+        canonicalConceptIds: region.canonicalConcepts.slice(0, 2).map((concept) => concept.id),
+        objectives: [
+          {
+            key: `detail-objective-${index + 1}`,
+            title: `Understand ${region.title}`.slice(0, 300),
+            description: region.learningIntent.slice(0, 1_000),
+            evidence: selectedEvidence.slice(0, 3),
+          },
+        ],
+      };
+    });
+    const candidate: CurriculumDetailProposalPayload = {
+      courseMapId: input.courseMapId,
+      sourceAllocationFingerprint: input.sourceAllocationFingerprint,
+      units,
     };
     const firstValidation = opts?.validateCandidate?.(candidate);
     if (!firstValidation || firstValidation.valid) return candidate;

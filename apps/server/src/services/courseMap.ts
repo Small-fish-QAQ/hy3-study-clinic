@@ -1223,10 +1223,7 @@ export interface CourseMapPrototypeResult {
   repairAttempted: boolean;
 }
 
-/**
- * Isolated generation path for Phase 3C1. It performs no persistence and is
- * intentionally not called by production Curriculum preparation yet.
- */
+/** Operation-local Course Map generation. It performs no persistence or learner governance. */
 export async function generateCourseMapPrototype(
   { provider, providerInput, sourceAllocation }: GenerateCourseMapPrototypeInput,
   opts?: ProviderCallOptions,

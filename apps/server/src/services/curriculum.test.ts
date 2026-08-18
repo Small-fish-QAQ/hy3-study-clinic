@@ -19,7 +19,8 @@ import {
   buildCurriculumCourseSourceMap,
   buildCurriculumExecutionContext,
   createCurriculumService,
-  CURRICULUM_OPERATION_LEASE_MS,
+  curriculumOperationLeaseMs,
+  LEGACY_CURRICULUM_GENERATION_POLICY,
   type CurriculumService,
 } from './curriculum.js';
 import { createLearningContractService } from './learningContracts.js';
@@ -242,6 +243,7 @@ function useMockedHy3(contents: string[], beforeResponse?: (index: number) => vo
       sourceAuthority: repos.sourceAuthority,
       clock,
     }),
+    generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
   });
   return fetchMock;
 }
@@ -365,6 +367,7 @@ beforeEach(() => {
       sourceAuthority: repos.sourceAuthority,
       clock,
     }),
+    generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
   });
 });
 
@@ -583,6 +586,7 @@ describe('Curriculum proposal and authority boundaries', () => {
         sourceAuthority: repos.sourceAuthority,
         clock,
       }),
+      generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
     });
 
     const proposed = await fake.propose(proposalRequest('curriculum-fake-authority'));
@@ -1013,6 +1017,7 @@ describe('Curriculum proposal and authority boundaries', () => {
         sourceAuthority: repos.sourceAuthority,
         clock,
       }),
+      generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
     });
     const first = await fakeCurriculum.propose(proposalRequest('curriculum-fake-parity-first'));
     const accepted = fakeCurriculum.accept({
@@ -1184,6 +1189,7 @@ describe('Curriculum proposal and authority boundaries', () => {
         sourceAuthority: repos.sourceAuthority,
         clock,
       }),
+      generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
     });
 
     await expect(
@@ -1395,6 +1401,7 @@ describe('Curriculum proposal and authority boundaries', () => {
         sourceAuthority: repos.sourceAuthority,
         clock: timedClock,
       }),
+      generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
     });
 
     const proposed = await curriculum.propose(proposalRequest('curriculum-long-repair'));
@@ -1404,7 +1411,9 @@ describe('Curriculum proposal and authority boundaries', () => {
       )
       .get('curriculum-long-repair') as { id: string; leaseExpiresAt: string | null };
 
-    expect(CURRICULUM_OPERATION_LEASE_MS).toBe(10 * 60 * 1000);
+    expect(curriculumOperationLeaseMs(240_000, LEGACY_CURRICULUM_GENERATION_POLICY)).toBe(
+      10 * 60 * 1000,
+    );
     expect(proposed.curriculum.status).toBe('proposed');
     expect(attemptsForCommand('curriculum-long-repair')).toHaveLength(2);
     expect(operation.leaseExpiresAt).toBeNull();

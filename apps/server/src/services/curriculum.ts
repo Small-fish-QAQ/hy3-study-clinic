@@ -12,6 +12,7 @@ import {
   type Curriculum,
   type CurriculumCoverageWarning,
   type CurriculumProposalPayload,
+  type CurriculumDetailProposalPayload,
   type CurriculumHierarchyView,
   type CurriculumHistoryResponse,
   type CurriculumProposalResponse,
@@ -62,6 +63,19 @@ import {
 import { preflightStudyPlan } from './studyPlansAgent.js';
 import { assessCurriculumRecovery } from './curriculumRecovery.js';
 import { assertLearningContractScopeCurrent } from './learningContractScope.js';
+import {
+  assertCourseMapSourceAllocationIntegrity,
+  buildCourseMapProposalInput,
+  buildCourseMapSourceAllocation,
+  generateCourseMapPrototype,
+} from './courseMap.js';
+import {
+  CurriculumDetailBatchPlanningError,
+  MAX_DETAIL_BATCHES,
+  assembleCurriculumDetailBatches,
+  planCurriculumDetailBatches,
+  validateCurriculumDetailCandidate,
+} from './curriculumMaterialization.js';
 
 /** HTTP/service request: the server, never the client, resolves exact revisions. */
 export const ProposeCurriculumCommandRequestSchema = ProposeCurriculumRequestSchema.omit({
@@ -93,19 +107,35 @@ function curriculumLimits(
 
 export const CURRICULUM_PROVIDER_TIMEOUT_MS = 240_000;
 const PROVIDER_REPAIR_LEASE_MARGIN_MS = 120_000;
+export const LEGACY_CURRICULUM_GENERATION_POLICY = 'legacy_direct_v1' as const;
+export const COURSE_MAP_CURRICULUM_GENERATION_POLICY = 'course_map_materialization_v1' as const;
+export const CURRICULUM_GENERATION_POLICY = COURSE_MAP_CURRICULUM_GENERATION_POLICY;
+export type CurriculumGenerationPolicy =
+  typeof LEGACY_CURRICULUM_GENERATION_POLICY | typeof COURSE_MAP_CURRICULUM_GENERATION_POLICY;
+export const CURRICULUM_MAX_LOGICAL_PROVIDER_CALLS = 1 + MAX_DETAIL_BATCHES;
+export const CURRICULUM_MAX_PHYSICAL_PROVIDER_CALLS = CURRICULUM_MAX_LOGICAL_PROVIDER_CALLS * 2;
 export const CURRICULUM_OPERATION_LEASE_MS =
-  CURRICULUM_PROVIDER_TIMEOUT_MS * 2 + PROVIDER_REPAIR_LEASE_MARGIN_MS;
+  CURRICULUM_PROVIDER_TIMEOUT_MS * CURRICULUM_MAX_PHYSICAL_PROVIDER_CALLS +
+  PROVIDER_REPAIR_LEASE_MARGIN_MS;
 export const COURSE_PREPARATION_POLICY_ID = 'course_preparation_v1';
 
 export interface CurriculumProposalOptions extends ProviderCallOptions {
   preparationPolicyId?: typeof COURSE_PREPARATION_POLICY_ID;
+  generationPolicy?: CurriculumGenerationPolicy;
 }
 
-export function curriculumOperationLeaseMs(timeoutMs: number): number {
+export function curriculumOperationLeaseMs(
+  timeoutMs: number,
+  generationPolicy: CurriculumGenerationPolicy = CURRICULUM_GENERATION_POLICY,
+): number {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
     throw new AppError(ApiErrorCode.ValidationError, 'Curriculum provider timeout is invalid.');
   }
-  return timeoutMs * 2 + PROVIDER_REPAIR_LEASE_MARGIN_MS;
+  const physicalCalls =
+    generationPolicy === LEGACY_CURRICULUM_GENERATION_POLICY
+      ? 2
+      : CURRICULUM_MAX_PHYSICAL_PROVIDER_CALLS;
+  return timeoutMs * physicalCalls + PROVIDER_REPAIR_LEASE_MARGIN_MS;
 }
 
 interface CurriculumServiceDeps {
@@ -115,6 +145,7 @@ interface CurriculumServiceDeps {
   commands: CourseCommandService;
   providerModel?: string | null;
   sourceAuthority: Pick<SourceAuthorityService, 'ensureVerbatimAssessmentAuthority'>;
+  generationPolicy?: CurriculumGenerationPolicy;
 }
 
 function manifestFingerprint(revisions: ExecutionSourceManifest['revisions']): string {
@@ -583,6 +614,7 @@ export function createCurriculumService({
   commands,
   providerModel,
   sourceAuthority,
+  generationPolicy: defaultGenerationPolicy = CURRICULUM_GENERATION_POLICY,
 }: CurriculumServiceDeps) {
   const inferenceProvider = createTelemetryProvider({
     repos,
@@ -660,6 +692,7 @@ export function createCurriculumService({
     }
     const context = buildCurriculumExecutionContext(repos, contract);
     const providerTimeoutMs = opts?.timeoutMs ?? CURRICULUM_PROVIDER_TIMEOUT_MS;
+    const generationPolicy = opts?.generationPolicy ?? defaultGenerationPolicy;
     const claim = commands.begin(
       parsed.command,
       'propose_curriculum',
@@ -669,9 +702,10 @@ export function createCurriculumService({
         predecessorCurriculumId: parsed.predecessorCurriculumId,
         expectedActiveCurriculumId: parsed.expectedActiveCurriculumId,
         manifestFingerprint: context.manifest.fingerprint,
+        generationPolicy,
         confirmedCostPolicyIds: parsed.confirmedCostPolicyIds ?? [],
       },
-      { leaseMs: curriculumOperationLeaseMs(providerTimeoutMs) },
+      { leaseMs: curriculumOperationLeaseMs(providerTimeoutMs, generationPolicy) },
     );
     if (claim.replayPayload !== undefined) {
       return CurriculumProposalResponseSchema.parse(claim.replayPayload);
@@ -848,74 +882,264 @@ export function createCurriculumService({
     };
     let repairAttempted = false;
     let lastCandidateValidation: MaterializedCurriculum | null = null;
-    try {
-      const policyFingerprint = enforceAgentCostPolicies(repos, {
-        workspaceId: parsed.command.workspaceId,
-        operationType: 'propose_curriculum',
-        studySessionId: null,
-        at: clock.now().toISOString(),
-        confirmedPolicyIds: parsed.confirmedCostPolicyIds ?? [],
-      });
-      const payload = await runTrackedAgentProviderOperation({
+    let assertGenerationSnapshotCurrent = (): void => {
+      if (opts?.signal?.aborted) throw ProviderError.cancelled();
+      assertProposalAuthorityCurrent(
         repos,
-        clock,
-        provider,
-        providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
-        operationId: claim.operationId,
-        fencingToken: claim.fencingToken,
-        workspaceId: parsed.command.workspaceId,
-        studySessionId: null,
-        learningUnitId: null,
-        assessmentId: null,
-        operationType: 'propose_curriculum',
-        schemaFingerprint: 'curriculum-proposal-v2-evidence-identity',
-        policyFingerprint,
-        sourceFingerprint: context.manifest.fingerprint,
-        providerOptions: opts,
-        invoke: (options) =>
-          inferenceProvider.proposeCurriculum(providerInput, {
-            ...options,
-            timeoutMs: providerTimeoutMs,
-            onRepairAttempt: (reason) => {
-              repairAttempted = true;
-              options?.onRepairAttempt?.(reason);
-            },
-            validateCandidate: (candidate) => {
-              assertProposalAuthorityCurrent(
-                repos,
-                parsed,
-                contract,
-                context.manifest,
-                offeredKnowledge.fingerprint,
-              );
-              lastCandidateValidation = validateExecutionRepairCandidate({
-                repos,
-                clock,
-                contract,
-                executionRepairRequired,
-                workspaceName: workspace.name,
-                manifest: context.manifest,
-                materialized: materializeCurriculumProposal(
-                  candidate as CurriculumProposalPayload,
-                  validationContext,
-                ),
-              });
-              return {
-                valid: lastCandidateValidation.validation.valid,
-                diagnostics: lastCandidateValidation.validation.errors,
-              };
-            },
-          }),
-      });
+        parsed,
+        contract,
+        context.manifest,
+        offeredKnowledge.fingerprint,
+      );
+    };
+    try {
+      const enforceCurrentCostPolicy = (): string | null =>
+        enforceAgentCostPolicies(repos, {
+          workspaceId: parsed.command.workspaceId,
+          operationType: 'propose_curriculum',
+          studySessionId: null,
+          at: clock.now().toISOString(),
+          confirmedPolicyIds: parsed.confirmedCostPolicyIds ?? [],
+        });
+      let payload: CurriculumProposalPayload;
+      let requiredExecutionPreflight = executionRepairRequired;
+      let expectedRegionCount: number | null = null;
+      let expectedPrerequisiteCount: number | null = null;
+      if (generationPolicy === LEGACY_CURRICULUM_GENERATION_POLICY) {
+        const policyFingerprint = enforceCurrentCostPolicy();
+        payload = await runTrackedAgentProviderOperation({
+          repos,
+          clock,
+          provider,
+          providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
+          operationId: claim.operationId,
+          fencingToken: claim.fencingToken,
+          workspaceId: parsed.command.workspaceId,
+          studySessionId: null,
+          learningUnitId: null,
+          assessmentId: null,
+          operationType: 'propose_curriculum',
+          schemaFingerprint: 'curriculum-proposal-v2-evidence-identity',
+          policyFingerprint,
+          sourceFingerprint: context.manifest.fingerprint,
+          providerOptions: opts,
+          invoke: (options) =>
+            inferenceProvider.proposeCurriculum(providerInput, {
+              ...options,
+              timeoutMs: providerTimeoutMs,
+              onRepairAttempt: (reason) => {
+                repairAttempted = true;
+                assertGenerationSnapshotCurrent();
+                options?.onRepairAttempt?.(reason);
+              },
+              validateCandidate: (candidate) => {
+                assertGenerationSnapshotCurrent();
+                lastCandidateValidation = validateExecutionRepairCandidate({
+                  repos,
+                  clock,
+                  contract,
+                  executionRepairRequired,
+                  workspaceName: workspace.name,
+                  manifest: context.manifest,
+                  materialized: materializeCurriculumProposal(
+                    candidate as CurriculumProposalPayload,
+                    validationContext,
+                  ),
+                });
+                return {
+                  valid: lastCandidateValidation.validation.valid,
+                  diagnostics: lastCandidateValidation.validation.errors,
+                };
+              },
+            }),
+        });
+      } else {
+        const sourceAllocation = buildCourseMapSourceAllocation({
+          workspaceId: parsed.command.workspaceId,
+          sourceMap,
+          blocks: context.blocks,
+          evidenceCatalog,
+        });
+        const courseMapProviderInput = buildCourseMapProposalInput({
+          workspaceName: workspace.name,
+          contract: context.contractContext,
+          sourceAllocation,
+          concepts,
+          canonicalConcepts,
+        });
+        assertGenerationSnapshotCurrent = (): void => {
+          if (opts?.signal?.aborted) throw ProviderError.cancelled();
+          assertProposalAuthorityCurrent(
+            repos,
+            parsed,
+            contract,
+            context.manifest,
+            offeredKnowledge.fingerprint,
+          );
+          assertCourseMapSourceAllocationIntegrity(sourceAllocation);
+          const currentContract = repos.learningContracts.get(contract.id)!;
+          const currentContext = buildCurriculumExecutionContext(repos, currentContract);
+          const currentKnowledge = buildOfferedCurriculumKnowledge(
+            repos,
+            parsed.command.workspaceId,
+            currentContext,
+          );
+          const currentPredecessor =
+            repos.curricula.list(parsed.command.workspaceId).at(-1) ?? null;
+          const currentSourceMap = buildCurriculumCourseSourceMap(
+            currentContext,
+            currentKnowledge.concepts,
+            currentPredecessor,
+          );
+          if (currentSourceMap.fingerprint !== sourceMap.fingerprint) {
+            throw new AppError(
+              ApiErrorCode.VersionConflict,
+              'Course Source Map changed while the Curriculum proposal was running.',
+            );
+          }
+          const currentAllocation = buildCourseMapSourceAllocation({
+            workspaceId: parsed.command.workspaceId,
+            sourceMap: currentSourceMap,
+            blocks: currentContext.blocks,
+            evidenceCatalog,
+          });
+          if (currentAllocation.fingerprint !== sourceAllocation.fingerprint) {
+            throw new AppError(
+              ApiErrorCode.VersionConflict,
+              'Course Map source allocation changed while the Curriculum proposal was running.',
+            );
+          }
+        };
+        assertGenerationSnapshotCurrent();
+        const courseMapPolicyFingerprint = enforceCurrentCostPolicy();
+        const courseMapResult = await runTrackedAgentProviderOperation({
+          repos,
+          clock,
+          provider,
+          providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
+          operationId: claim.operationId,
+          fencingToken: claim.fencingToken,
+          workspaceId: parsed.command.workspaceId,
+          studySessionId: null,
+          learningUnitId: null,
+          assessmentId: null,
+          operationType: 'propose_curriculum',
+          schemaFingerprint: 'course-map-proposal-v1',
+          policyFingerprint: courseMapPolicyFingerprint,
+          sourceFingerprint: sourceAllocation.fingerprint,
+          providerOptions: opts,
+          invoke: (options) =>
+            generateCourseMapPrototype(
+              {
+                provider: inferenceProvider,
+                providerInput: courseMapProviderInput,
+                sourceAllocation,
+              },
+              {
+                ...options,
+                timeoutMs: providerTimeoutMs,
+                onRepairAttempt: (reason) => {
+                  repairAttempted = true;
+                  assertGenerationSnapshotCurrent();
+                  options?.onRepairAttempt?.(reason);
+                },
+              },
+            ),
+        });
+        assertGenerationSnapshotCurrent();
+        const detailBatches = planCurriculumDetailBatches({
+          workspaceName: workspace.name,
+          contract: context.contractContext,
+          courseMap: courseMapResult.analysis.courseMap,
+          sourceAllocation,
+          evidenceCatalog,
+          concepts,
+          canonicalConcepts,
+        });
+        const completedBatches: Array<{
+          input: (typeof detailBatches)[number]['input'];
+          payload: CurriculumDetailProposalPayload;
+        }> = [];
+        for (const batch of detailBatches) {
+          assertGenerationSnapshotCurrent();
+          const detailPolicyFingerprint = enforceCurrentCostPolicy();
+          const detailPayload = await runTrackedAgentProviderOperation({
+            repos,
+            clock,
+            provider,
+            providerModel:
+              provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
+            operationId: claim.operationId,
+            fencingToken: claim.fencingToken,
+            workspaceId: parsed.command.workspaceId,
+            studySessionId: null,
+            learningUnitId: null,
+            assessmentId: null,
+            operationType: 'propose_curriculum',
+            schemaFingerprint: 'curriculum-detail-proposal-v1',
+            policyFingerprint: detailPolicyFingerprint,
+            sourceFingerprint: `${sourceAllocation.fingerprint}:${batch.input.batchKey}`,
+            providerOptions: opts,
+            invoke: (options) =>
+              inferenceProvider.proposeCurriculumDetails(batch.input, {
+                ...options,
+                timeoutMs: providerTimeoutMs,
+                onRepairAttempt: (reason) => {
+                  repairAttempted = true;
+                  assertGenerationSnapshotCurrent();
+                  options?.onRepairAttempt?.(reason);
+                },
+                validateCandidate: (candidate) => {
+                  assertGenerationSnapshotCurrent();
+                  return validateCurriculumDetailCandidate(candidate, batch.input);
+                },
+              }),
+          });
+          completedBatches.push({ input: batch.input, payload: detailPayload });
+        }
+        const assembly = assembleCurriculumDetailBatches(
+          courseMapResult.analysis.courseMap,
+          completedBatches,
+        );
+        payload = assembly.payload;
+        expectedRegionCount = assembly.regionCount;
+        expectedPrerequisiteCount = assembly.prerequisiteCount;
+        requiredExecutionPreflight = true;
+      }
       const materialized = validateExecutionRepairCandidate({
         repos,
         clock,
         contract,
-        executionRepairRequired,
+        executionRepairRequired: requiredExecutionPreflight,
         workspaceName: workspace.name,
         manifest: context.manifest,
         materialized: materializeCurriculumProposal(payload, validationContext),
       });
+      if (expectedRegionCount !== null) {
+        const learningUnits = materialized.nodes.filter((node) => node.kind === 'learning_unit');
+        const prerequisiteCount = learningUnits.reduce(
+          (count, node) => count + (node.learningUnit?.prerequisiteUnitIds.length ?? 0),
+          0,
+        );
+        const preservationErrors = [
+          ...(learningUnits.length === expectedRegionCount
+            ? []
+            : ['Course Map region coverage was lost during final Curriculum materialization.']),
+          ...(prerequisiteCount === expectedPrerequisiteCount
+            ? []
+            : [
+                'Course Map prerequisite structure was lost during final Curriculum materialization.',
+              ]),
+        ];
+        if (preservationErrors.length > 0) {
+          materialized.validation = {
+            ...materialized.validation,
+            valid: false,
+            errors: [...materialized.validation.errors, ...preservationErrors].slice(0, 100),
+          };
+        }
+      }
+      lastCandidateValidation = materialized;
       assertValidMaterializedCurriculum(materialized, repairAttempted);
       const now = clock.now().toISOString();
       const curriculum: Curriculum = {
@@ -935,13 +1159,7 @@ export function createCurriculumService({
         acceptedAt: null,
       };
       return commands.complete(claim, () => {
-        assertProposalAuthorityCurrent(
-          repos,
-          parsed,
-          contract,
-          context.manifest,
-          offeredKnowledge.fingerprint,
-        );
+        assertGenerationSnapshotCurrent();
         repos.curricula.createManifest(
           newId('manifest'),
           curriculum.workspaceId,
@@ -977,6 +1195,17 @@ export function createCurriculumService({
             timeoutMs: providerTimeoutMs,
             provider: provider.name,
             operationId: claim.operationId,
+          },
+        );
+      }
+      if (error instanceof CurriculumDetailBatchPlanningError) {
+        failure = new AppError(
+          ApiErrorCode.ValidationError,
+          '当前课程结构无法在固定的详细规划预算内完成，本次没有修改现有课程结构。',
+          {
+            kind: 'curriculum_detail_batch_bound_exceeded',
+            maxDetailBatches: MAX_DETAIL_BATCHES,
+            diagnostics: error.diagnostics.slice(0, 20),
           },
         );
       }

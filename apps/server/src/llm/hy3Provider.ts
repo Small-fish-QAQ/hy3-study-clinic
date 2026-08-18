@@ -4,6 +4,7 @@ import {
   ConceptAnalysisPayloadSchema,
   ConceptLessonPayloadSchema,
   CourseMapProposalPayloadSchema,
+  CurriculumDetailProposalPayloadSchema,
   CurriculumProposalPayloadSchema,
   GraphProposalPayloadSchema,
   GroupedStudyPlanProposalPayloadSchema,
@@ -19,6 +20,7 @@ import {
   type ConceptAnalysisPayload,
   type ConceptLessonPayload,
   type CourseMapProposalPayload,
+  type CurriculumDetailProposalPayload,
   type CurriculumProposalPayload,
   type GraphProposalPayload,
   type GroupedStudyPlanProposalPayload,
@@ -39,6 +41,7 @@ import {
   conceptAnalysisMessages,
   conceptLessonMessages,
   courseMapProposalMessages,
+  curriculumDetailProposalMessages,
   curriculumProposalMessages,
   graphProposalMessages,
   groupedStudyPlanProposalMessages,
@@ -58,6 +61,7 @@ import type {
   ConceptAnalysisInput,
   ConceptLessonInput,
   CourseMapProposalInput,
+  CurriculumDetailProposalInput,
   CurriculumProposalInput,
   GraphProposalInput,
   LlmProvider,
@@ -399,6 +403,19 @@ export class Hy3Provider implements LlmProvider {
       opts,
       undefined,
       { maxTokens: COURSE_MAP_MAX_OUTPUT_TOKENS },
+    );
+  }
+
+  async proposeCurriculumDetails(
+    input: CurriculumDetailProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<CurriculumDetailProposalPayload> {
+    return this.complete(
+      curriculumDetailProposalMessages(input),
+      CurriculumDetailProposalPayloadSchema,
+      opts,
+      undefined,
+      { maxTokens: CURRICULUM_MAX_OUTPUT_TOKENS },
     );
   }
 

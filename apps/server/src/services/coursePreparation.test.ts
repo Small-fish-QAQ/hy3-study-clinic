@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   ApiErrorCode,
   type ConceptAnalysisPayload,
+  type CourseMapProposalPayload,
+  type CurriculumDetailProposalPayload,
   type CurriculumProposalPayload,
   type LearningContract,
   type LearningContractDraftFields,
@@ -12,6 +14,8 @@ import { migrate } from '../db/migrate.js';
 import { FakeProvider, type FakeProviderOptions } from '../llm/fakeProvider.js';
 import type {
   ConceptAnalysisInput,
+  CourseMapProposalInput,
+  CurriculumDetailProposalInput,
   CurriculumProposalInput,
   ProviderCallOptions,
   StudyPlanProposalInput,
@@ -20,7 +24,7 @@ import { createRepositories, type Repositories } from '../repositories/index.js'
 import { makeBlock, makeConcept, makeMaterial, makeWorkspace, T0 } from '../testing/fixtures.js';
 import { buildTestApp } from '../testing/testApp.js';
 import { fixedClock } from '../util/ids.js';
-import { COURSE_PREPARATION_POLICY_ID } from './curriculum.js';
+import { COURSE_PREPARATION_POLICY_ID, LEGACY_CURRICULUM_GENERATION_POLICY } from './curriculum.js';
 import { createServices, type Services } from './index.js';
 
 const QUOTE = 'Working memory is limited.';
@@ -30,6 +34,7 @@ const databases: SqliteDb[] = [];
 class TrackingProvider extends FakeProvider {
   analyzeCalls = 0;
   curriculumCalls = 0;
+  detailCalls = 0;
   studyPlanCalls = 0;
   failCurriculum = false;
   sourceOnlyCurriculum = false;
@@ -39,6 +44,10 @@ class TrackingProvider extends FakeProvider {
   curriculumGate: Promise<void> | null = null;
   onStudyPlanStarted: (() => void) | null = null;
   studyPlanGate: Promise<void> | null = null;
+  onDetailStarted: ((call: number) => void) | null = null;
+  detailGateAtCall: number | null = null;
+  detailGate: Promise<void> | null = null;
+  failDetailAtCall: number | null = null;
 
   constructor(options: FakeProviderOptions = {}) {
     super(options);
@@ -58,14 +67,6 @@ class TrackingProvider extends FakeProvider {
     input: CurriculumProposalInput,
     opts?: ProviderCallOptions,
   ): Promise<CurriculumProposalPayload> {
-    this.curriculumCalls += 1;
-    const gate = this.curriculumGate;
-    this.curriculumGate = null;
-    const started = this.onCurriculumStarted;
-    this.onCurriculumStarted = null;
-    started?.();
-    if (gate) await gate;
-    if (this.failCurriculum) throw new Error('controlled Curriculum failure');
     return super.proposeCurriculum(
       this.sourceOnlyCurriculum
         ? {
@@ -78,6 +79,33 @@ class TrackingProvider extends FakeProvider {
         : input,
       opts,
     );
+  }
+
+  override async proposeCourseMap(
+    input: CourseMapProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<CourseMapProposalPayload> {
+    this.curriculumCalls += 1;
+    const gate = this.curriculumGate;
+    this.curriculumGate = null;
+    const started = this.onCurriculumStarted;
+    this.onCurriculumStarted = null;
+    started?.();
+    if (gate) await gate;
+    if (this.failCurriculum) throw new Error('controlled Curriculum failure');
+    return super.proposeCourseMap(input, opts);
+  }
+
+  override async proposeCurriculumDetails(
+    input: CurriculumDetailProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<CurriculumDetailProposalPayload> {
+    this.detailCalls += 1;
+    const call = this.detailCalls;
+    this.onDetailStarted?.(call);
+    if (this.detailGateAtCall === call && this.detailGate) await this.detailGate;
+    if (this.failDetailAtCall === call) throw new Error('controlled Curriculum detail failure');
+    return super.proposeCurriculumDetails(input, opts);
   }
 
   override async proposeStudyPlan(
@@ -148,7 +176,7 @@ function contractFields(roleId: string, roleVersion: number): LearningContractDr
 }
 
 function createHarness(
-  options: { provider?: TrackingProvider; withConcept?: boolean } = {},
+  options: { provider?: TrackingProvider; withConcept?: boolean; sectionCount?: number } = {},
 ): Harness {
   const db = openDatabase(':memory:');
   databases.push(db);
@@ -156,16 +184,36 @@ function createHarness(
   const repos = createRepositories(db);
   const provider = options.provider ?? new TrackingProvider();
   repos.workspaces.insert(makeWorkspace({ name: 'Memory course' }));
+  const sections = Array.from({ length: options.sectionCount ?? 1 }, (_, index) => {
+    const base =
+      index === 0
+        ? `${QUOTE} Working memory section ${index + 1} has a bounded claim.`
+        : `Working memory section ${index + 1} has a bounded claim.`;
+    return base.padEnd(520, 'x');
+  });
+  const materialContent = sections.join('\n');
+  let sourceOffset = 0;
+  const blocks = sections.map((content, index) => {
+    const startOffset = sourceOffset;
+    sourceOffset += content.length + 1;
+    const heading = `Working memory ${index + 1}`;
+    return makeBlock({
+      id: `blk_${index + 1}`,
+      index,
+      content,
+      startOffset,
+      endOffset: startOffset + content.length,
+      heading,
+      headingPath: [heading],
+    });
+  });
   repos.materials.insertWithBlocks(
-    makeMaterial({ content: QUOTE, charCount: QUOTE.length, title: 'Memory notes' }),
-    [
-      makeBlock({
-        content: QUOTE,
-        startOffset: 0,
-        endOffset: QUOTE.length,
-        heading: 'Working memory',
-      }),
-    ],
+    makeMaterial({
+      content: materialContent,
+      charCount: materialContent.length,
+      title: 'Memory notes',
+    }),
+    blocks,
   );
   if (options.withConcept) addCurrentConcept(repos, 'con_seed');
 
@@ -232,13 +280,16 @@ function runRequest(preparation: ReturnType<Services['coursePreparation']['get']
 async function acceptSourceOnlyCurriculum(harness: Harness): Promise<string> {
   const { repos, provider, services, contract } = harness;
   provider.sourceOnlyCurriculum = true;
-  const proposed = await services.curriculum.propose({
-    command: command('source-only-propose'),
-    contractId: contract.id,
-    expectedContractVersion: contract.version,
-    predecessorCurriculumId: null,
-    expectedActiveCurriculumId: null,
-  });
+  const proposed = await services.curriculum.propose(
+    {
+      command: command('source-only-propose'),
+      contractId: contract.id,
+      expectedContractVersion: contract.version,
+      predecessorCurriculumId: null,
+      expectedActiveCurriculumId: null,
+    },
+    { generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY },
+  );
   const accepted = services.curriculum.accept({
     command: command('source-only-accept'),
     curriculumId: proposed.curriculum.id,
@@ -349,9 +400,105 @@ describe('Course Preparation coordinator', () => {
     });
     expect(provider.analyzeCalls).toBe(1);
     expect(provider.curriculumCalls).toBe(1);
+    expect(provider.detailCalls).toBe(1);
     expect(provider.studyPlanCalls).toBe(1);
     expect(repos.curricula.list('ws_1').map((item) => item.status)).toEqual(['accepted']);
     expect(repos.studyPlans.list('ws_1').map((item) => item.status)).toEqual(['proposed']);
+  });
+
+  it('returns a bounded diagnostic when detail materialization would exceed two batches', async () => {
+    const harness = createHarness({ withConcept: true, sectionCount: 120 });
+
+    await expect(
+      harness.services.curriculum.propose({
+        command: command('detail-batch-overflow'),
+        contractId: harness.contract.id,
+        expectedContractVersion: harness.contract.version,
+        predecessorCurriculumId: null,
+        expectedActiveCurriculumId: null,
+      }),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.ValidationError,
+      details: { kind: 'curriculum_detail_batch_bound_exceeded', maxDetailBatches: 2 },
+    });
+    expect(harness.repos.curricula.list('ws_1')).toEqual([]);
+  });
+
+  it('fences a stale MaterialRevision during the second fixed detail batch', async () => {
+    const provider = new TrackingProvider();
+    let releaseDetail = () => undefined;
+    provider.detailGateAtCall = 2;
+    provider.detailGate = new Promise<void>((resolve) => {
+      releaseDetail = resolve;
+    });
+    let signalSecondDetail = () => undefined;
+    const secondDetailStarted = new Promise<void>((resolve) => {
+      signalSecondDetail = resolve;
+    });
+    provider.onDetailStarted = (call) => {
+      if (call === 2) signalSecondDetail();
+    };
+    const harness = createHarness({ provider, withConcept: true, sectionCount: 51 });
+    const pending = harness.services.curriculum.propose({
+      command: command('stale-second-detail'),
+      contractId: harness.contract.id,
+      expectedContractVersion: harness.contract.version,
+      predecessorCurriculumId: null,
+      expectedActiveCurriculumId: null,
+    });
+
+    await secondDetailStarted;
+    activateReplacementRevision(harness.repos);
+    releaseDetail();
+
+    await expect(pending).rejects.toMatchObject({ code: ApiErrorCode.VersionConflict });
+    expect(provider.detailCalls).toBe(2);
+    expect(harness.repos.curricula.list('ws_1')).toEqual([]);
+  });
+
+  it('cancels between fixed detail batches without persisting a partial Curriculum', async () => {
+    const provider = new TrackingProvider();
+    const abort = new AbortController();
+    provider.onDetailStarted = (call) => {
+      if (call === 2) abort.abort();
+    };
+    const harness = createHarness({ provider, withConcept: true, sectionCount: 51 });
+
+    await expect(
+      harness.services.curriculum.propose(
+        {
+          command: command('cancel-second-detail'),
+          contractId: harness.contract.id,
+          expectedContractVersion: harness.contract.version,
+          predecessorCurriculumId: null,
+          expectedActiveCurriculumId: null,
+        },
+        { signal: abort.signal },
+      ),
+    ).rejects.toMatchObject({ code: ApiErrorCode.RequestCancelled });
+    expect(provider.detailCalls).toBe(2);
+    expect(harness.repos.curricula.list('ws_1')).toEqual([]);
+  });
+
+  it('preserves an accepted predecessor when the second detail batch fails', async () => {
+    const harness = createHarness({ withConcept: true, sectionCount: 51 });
+    const predecessorId = await acceptSourceOnlyCurriculum(harness);
+    const predecessor = structuredClone(harness.repos.curricula.get(predecessorId));
+    harness.provider.detailCalls = 0;
+    harness.provider.failDetailAtCall = 2;
+
+    await expect(
+      harness.services.curriculum.propose({
+        command: command('failed-second-detail'),
+        contractId: harness.contract.id,
+        expectedContractVersion: harness.contract.version,
+        predecessorCurriculumId: predecessorId,
+        expectedActiveCurriculumId: harness.repos.courseExecution.get('ws_1').activeCurriculumId,
+      }),
+    ).rejects.toThrow('controlled Curriculum detail failure');
+    expect(harness.provider.detailCalls).toBe(2);
+    expect(harness.repos.curricula.get(predecessorId)).toEqual(predecessor);
+    expect(harness.repos.curricula.list('ws_1')).toHaveLength(1);
   });
 
   it('rebuilds Concepts for a replacement revision while rejecting the stale request', async () => {

@@ -147,10 +147,11 @@ export async function runTrackedAgentProviderOperation<T>({
     ) {
       throw new AppError(
         ApiErrorCode.VersionConflict,
-        'Provider repair was fenced because its operation lease is stale.',
+        'Provider request was fenced because its operation lease is stale.',
       );
     }
   };
+  assertCurrentLease();
   const result = await invoke({
     ...providerOptions,
     onRepairAttempt: (reason) => {

@@ -439,6 +439,79 @@ export const CourseMapProposalPayloadSchema = z
   });
 export type CourseMapProposalPayload = z.infer<typeof CourseMapProposalPayloadSchema>;
 
+/** One bounded LearningUnit detail proposal for a server-owned Course Map region. */
+export const ProposedCurriculumDetailUnitSchema = z
+  .object({
+    regionId: z.string().regex(/^course_map_region_[0-9a-f]{24}$/u),
+    title: z.string().min(1).max(300),
+    sourceEvidence: z.array(CurriculumEvidenceSelectionSchema).min(1).max(32),
+    conceptIds: z.array(z.string().min(1)).max(20),
+    canonicalConceptIds: z.array(z.string().min(1)).max(10),
+    objectives: z.array(ProposedCurriculumObjectiveSchema).min(1).max(4),
+  })
+  .strict()
+  .superRefine((unit, ctx) => {
+    if (
+      new Set(unit.sourceEvidence.map((item) => item.evidenceId)).size !==
+      unit.sourceEvidence.length
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['sourceEvidence'],
+        message: 'Curriculum detail evidence selections must be unique.',
+      });
+    }
+    if (new Set(unit.conceptIds).size !== unit.conceptIds.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['conceptIds'],
+        message: 'Curriculum detail Concept selections must be unique.',
+      });
+    }
+    if (new Set(unit.canonicalConceptIds).size !== unit.canonicalConceptIds.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['canonicalConceptIds'],
+        message: 'Curriculum detail canonical Concept selections must be unique.',
+      });
+    }
+  });
+export type ProposedCurriculumDetailUnit = z.infer<typeof ProposedCurriculumDetailUnitSchema>;
+
+/** Fixed-batch semantic detail output. It has no persistence or partial-Curriculum authority. */
+export const CurriculumDetailProposalPayloadSchema = z
+  .object({
+    courseMapId: z.string().regex(/^course_map_[0-9a-f]{24}$/u),
+    sourceAllocationFingerprint: z.string().regex(/^course_map_source_allocation_[0-9a-f]{40}$/u),
+    units: z.array(ProposedCurriculumDetailUnitSchema).min(1).max(60),
+  })
+  .strict()
+  .superRefine((payload, ctx) => {
+    const regionIds = new Set<string>();
+    const objectiveKeys = new Set<string>();
+    for (const [unitIndex, unit] of payload.units.entries()) {
+      if (regionIds.has(unit.regionId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['units', unitIndex, 'regionId'],
+          message: `duplicate Curriculum detail region id: ${unit.regionId}`,
+        });
+      }
+      regionIds.add(unit.regionId);
+      for (const [objectiveIndex, objective] of unit.objectives.entries()) {
+        if (objectiveKeys.has(objective.key)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['units', unitIndex, 'objectives', objectiveIndex, 'key'],
+            message: `duplicate Curriculum detail objective key: ${objective.key}`,
+          });
+        }
+        objectiveKeys.add(objective.key);
+      }
+    }
+  });
+export type CurriculumDetailProposalPayload = z.infer<typeof CurriculumDetailProposalPayloadSchema>;
+
 /** Semantic Curriculum proposal. All consequential fields are assigned locally. */
 export const CurriculumProposalPayloadSchema = z
   .object({
