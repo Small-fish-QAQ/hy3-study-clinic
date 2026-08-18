@@ -16,6 +16,7 @@ import { fixedClock, type Clock } from '../util/ids.js';
 import { createCourseCommandService } from './courseCommands.js';
 import { createCourseOverviewService } from './courseOverview.js';
 import {
+  buildCurriculumCourseSourceMap,
   buildCurriculumExecutionContext,
   createCurriculumService,
   CURRICULUM_OPERATION_LEASE_MS,
@@ -438,6 +439,109 @@ describe('Curriculum proposal and authority boundaries', () => {
     );
     expect(after.fingerprint).not.toBe(before.fingerprint);
     expect(JSON.stringify(contract.courseScope)).not.toContain('materialRevisionId');
+  });
+
+  it('builds the production Course Source Map from current persisted multi-Material facts', async () => {
+    addGroundedConcept('concept_source_map');
+    const predecessor = await curriculum.propose(proposalRequest('curriculum-source-map-prior'));
+    const companionText = 'Companion transfer evidence remains exact.';
+    repos.materials.insertWithBlocks(
+      makeMaterial({
+        id: 'mat_2',
+        workspaceId: 'ws_1',
+        title: 'Companion cases',
+        content: companionText,
+        charCount: companionText.length,
+      }),
+      [
+        makeBlock({
+          id: 'blk_2',
+          materialId: 'mat_2',
+          content: companionText,
+          startOffset: 0,
+          endOffset: companionText.length,
+          heading: 'Transfer',
+          headingPath: ['Transfer'],
+        }),
+      ],
+    );
+    const companionProposal = roles.propose({
+      command: command('source-map-companion-role-propose'),
+      materialId: 'mat_2',
+      role: 'supplementary_reference',
+      expectedCurrentAssignmentId: repos.materialRoles.getCurrent('mat_2')!.id,
+    });
+    const companionRole = roles.confirm({
+      command: command('source-map-companion-role-confirm', 'learner'),
+      assignmentId: companionProposal.id,
+      expectedVersion: companionProposal.version,
+    });
+    const multiMaterialContract: LearningContract = {
+      ...contract,
+      courseScope: {
+        ...contract.courseScope,
+        materials: [
+          ...contract.courseScope.materials,
+          {
+            materialId: 'mat_2',
+            materialRoleAssignmentId: companionRole.id,
+            materialRoleAssignmentVersion: companionRole.version,
+            role: companionRole.role,
+            disposition: 'included',
+          },
+        ],
+      },
+    };
+    const context = buildCurriculumExecutionContext(repos, multiMaterialContract);
+    const concepts = repos.materials.getConceptsByWorkspace('ws_1');
+    const sourceMap = buildCurriculumCourseSourceMap(context, concepts, predecessor.curriculum);
+    const repeated = buildCurriculumCourseSourceMap(
+      structuredClone(context),
+      structuredClone(concepts),
+      structuredClone(predecessor.curriculum),
+    );
+
+    expect(repeated).toEqual(sourceMap);
+    expect(sourceMap).toMatchObject({
+      workspaceId: 'ws_1',
+      manifestFingerprint: context.manifest.fingerprint,
+      authority: 'organization_only',
+      materialCount: 2,
+      blockCount: 2,
+      conceptAssociationCount: 1,
+      predecessorUsedBlockCount: 1,
+    });
+    expect(sourceMap.materials.map((material) => material.materialId)).toEqual(['mat_1', 'mat_2']);
+    expect(sourceMap.materials.flatMap((material) => material.blocks)).toMatchObject([
+      {
+        sourceBlockId: 'blk_1',
+        courseSourceIndex: 0,
+        conceptIds: ['concept_source_map'],
+        predecessorUsage: { curriculumId: predecessor.curriculum.id },
+      },
+      {
+        sourceBlockId: 'blk_2',
+        courseSourceIndex: 1,
+        conceptIds: [],
+        predecessorUsage: null,
+      },
+    ]);
+
+    const stale = structuredClone(context);
+    stale.manifest.fingerprint = 'manifest_stale';
+    expect(() => buildCurriculumCourseSourceMap(stale, concepts, predecessor.curriculum)).toThrow(
+      /manifest fingerprint is stale/u,
+    );
+    const foreign = structuredClone(context);
+    foreign.sourceMapMaterials[1]!.workspaceId = 'course_foreign';
+    expect(() => buildCurriculumCourseSourceMap(foreign, concepts, predecessor.curriculum)).toThrow(
+      /foreign Course/u,
+    );
+    const duplicate = structuredClone(context);
+    duplicate.sourceMapMaterials[1]!.blocks[0]!.id = duplicate.sourceMapMaterials[0]!.blocks[0]!.id;
+    expect(() =>
+      buildCurriculumCourseSourceMap(duplicate, concepts, predecessor.curriculum),
+    ).toThrow(/SourceBlock identities must be unique/u);
   });
 
   it('keeps learner scope separate while a local validator admits exact source statements', async () => {

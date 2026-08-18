@@ -6,6 +6,7 @@ import {
   type CurriculumEvidenceSignalRanking,
 } from '../services/curriculumEvidence.js';
 import { CourseSourceMapSchema, type CourseSourceMap } from '../services/courseSourceMap.js';
+import { selectDerivedSectionReserveCandidates } from '../services/curriculumEvidencePolicy.js';
 
 const EvidenceOfferSchema = z
   .object({
@@ -78,6 +79,7 @@ export const CurriculumRetrievalBenchmarkInputSchema = z
           .object({
             reservePerSection: z.number().int().nonnegative(),
             maxBlocksPerSection: z.number().int().positive().nullable(),
+            protectBaselinePriority: z.boolean().optional().default(false),
           })
           .strict(),
         weightedRrf: z
@@ -133,6 +135,7 @@ export interface RetrievalSignalContribution {
 export type RetrievalSelectionReason =
   | 'baseline'
   | 'byte_budget'
+  | 'protected_baseline'
   | 'section_reserve'
   | 'ranked_redistribution'
   | 'source_order_redistribution'
@@ -679,67 +682,28 @@ function rrfCandidateOrder(
 
 function sectionQuotaCandidateOrder(
   input: ParsedBenchmarkInput,
-  index: SourceMapIndex,
+  _index: SourceMapIndex,
 ): { blockIds: string[]; reasonByBlock: Map<string, RetrievalSelectionReason> } {
-  const rankedWithoutFallback = uniqueInOrder([
-    ...input.baseline.candidateBlockIds,
-    ...orderedRankings(input).flatMap((ranking) => ranking.blockIds),
+  const protectedSignals = new Set<CurriculumEvidenceSelectionSignal>([
+    'predecessor_reference',
+    'concept_grounding',
   ]);
-  const globalOrder = uniqueInOrder([
-    ...rankedWithoutFallback,
-    ...index.blocks.map((block) => block.sourceBlockId),
-  ]);
-  const orderIndex = new Map(globalOrder.map((blockId, position) => [blockId, position]));
-  const rankedSet = new Set(rankedWithoutFallback);
-  const selected: string[] = [];
-  const selectedSet = new Set<string>();
-  const selectedCountBySection = new Map<string, number>();
-  const reasonByBlock = new Map<string, RetrievalSelectionReason>();
-  const cap = input.policies.sectionQuota.maxBlocksPerSection ?? Number.POSITIVE_INFINITY;
-  const candidatesBySection = new Map(
-    index.sections.map((section) => [
-      section.id,
-      [...section.sourceBlockIds].sort(
-        (left, right) =>
-          orderIndex.get(left)! - orderIndex.get(right)! ||
-          index.blockById.get(left)!.courseSourceIndex -
-            index.blockById.get(right)!.courseSourceIndex ||
-          left.localeCompare(right),
-      ),
-    ]),
-  );
-  const add = (blockId: string, reason: RetrievalSelectionReason): boolean => {
-    if (selected.length >= input.budgets.maxBlocks || selectedSet.has(blockId)) return false;
-    const section = index.sectionByBlockId.get(blockId)!;
-    const sectionCount = selectedCountBySection.get(section.id) ?? 0;
-    if (sectionCount >= cap) return false;
-    selected.push(blockId);
-    selectedSet.add(blockId);
-    selectedCountBySection.set(section.id, sectionCount + 1);
-    reasonByBlock.set(blockId, reason);
-    return true;
-  };
-
-  for (
-    let round = 0;
-    round < input.policies.sectionQuota.reservePerSection &&
-    selected.length < input.budgets.maxBlocks;
-    round += 1
-  ) {
-    for (const section of index.sections) {
-      const next = candidatesBySection
-        .get(section.id)!
-        .find((blockId) => !selectedSet.has(blockId));
-      if (next) add(next, 'section_reserve');
-      if (selected.length >= input.budgets.maxBlocks) break;
-    }
-  }
-
-  for (const blockId of globalOrder) {
-    if (selected.length >= input.budgets.maxBlocks) break;
-    add(blockId, rankedSet.has(blockId) ? 'ranked_redistribution' : 'source_order_redistribution');
-  }
-  return { blockIds: selected, reasonByBlock };
+  const selected = selectDerivedSectionReserveCandidates({
+    sourceMap: input.sourceMap,
+    baselineCandidateBlockIds: input.baseline.candidateBlockIds,
+    rankedBlockIds: orderedRankings(input).flatMap((ranking) => ranking.blockIds),
+    protectedBaselineBlockIds: input.policies.sectionQuota.protectBaselinePriority
+      ? input.baseline.candidateBlockIds.filter((blockId) =>
+          input.signalRankings.some(
+            (ranking) => protectedSignals.has(ranking.signal) && ranking.blockIds.includes(blockId),
+          ),
+        )
+      : [],
+    maxBlocks: input.budgets.maxBlocks,
+    reservePerSection: input.policies.sectionQuota.reservePerSection,
+    maxBlocksPerSection: input.policies.sectionQuota.maxBlocksPerSection,
+  });
+  return { blockIds: selected.blockIds, reasonByBlock: selected.reasonByBlockId };
 }
 
 function orderedCatalogByBlock(

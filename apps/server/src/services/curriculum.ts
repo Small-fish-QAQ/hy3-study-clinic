@@ -38,6 +38,7 @@ import type { CourseCommandService } from './courseCommands.js';
 import { createCoverageRiskAgentService } from './coverageRisksAgent.js';
 import {
   assertValidMaterializedCurriculum,
+  curriculumSourceBlockFingerprint,
   materializeCurriculumProposal,
   type CurriculumValidationContext,
   type MaterializedCurriculum,
@@ -52,6 +53,12 @@ import {
   buildCurriculumEvidenceCatalog,
   selectCurriculumEvidenceOffers,
 } from './curriculumEvidence.js';
+import { CURRICULUM_EVIDENCE_PRODUCTION_POLICY } from './curriculumEvidencePolicy.js';
+import {
+  buildCourseSourceMap,
+  type CourseSourceMap,
+  type CourseSourceMapInput,
+} from './courseSourceMap.js';
 import { preflightStudyPlan } from './studyPlansAgent.js';
 import { assessCurriculumRecovery } from './curriculumRecovery.js';
 import { assertLearningContractScopeCurrent } from './learningContractScope.js';
@@ -145,11 +152,13 @@ export function buildCurriculumExecutionContext(
   repos: Repositories,
   contract: LearningContract,
 ): {
+  workspaceId: string;
   manifest: ExecutionSourceManifest;
   contractContext: CurriculumContractContext;
   outline: CurriculumOutlineItem[];
   blocks: ReturnType<Repositories['materials']['getBlocksByWorkspace']>;
   authorityBundles: SourceAuthorityBundle[];
+  sourceMapMaterials: CourseSourceMapInput['materials'];
 } {
   assertLearningContractScopeCurrent(repos, contract);
   const materials = new Map(
@@ -161,6 +170,7 @@ export function buildCurriculumExecutionContext(
   const outline: CurriculumOutlineItem[] = [];
   const blocks = [] as ReturnType<Repositories['materials']['getBlocksByWorkspace']>;
   const authorityBundles: SourceAuthorityBundle[] = [];
+  const sourceMapMaterials: CourseSourceMapInput['materials'] = [];
   const authorityIds = new Set<string>();
   const contextMaterials: CurriculumContractContext['materials'] = [];
 
@@ -204,6 +214,26 @@ export function buildCurriculumExecutionContext(
       parserFingerprint: revision.parserFingerprint,
       sourceBlockRevisionIds: materialBlocks.map((block) => block.id),
     });
+    sourceMapMaterials.push({
+      materialId: material.id,
+      workspaceId: material.workspaceId,
+      title: material.title,
+      availability: 'active',
+      activeRevisionId: revision.id,
+      revision: {
+        id: revision.id,
+        materialId: revision.materialId,
+        status: 'active',
+        parserVersion: revision.parserVersion,
+        parserFingerprint: revision.parserFingerprint,
+      },
+      blocks: materialBlocks.map((block) => ({
+        ...block,
+        materialRevisionId: revision.id,
+        structuralUnitId: null,
+        revisionFingerprint: curriculumSourceBlockFingerprint(block, revision.id),
+      })),
+    });
     for (const block of materialBlocks) {
       blocks.push(block);
       outline.push({
@@ -240,10 +270,12 @@ export function buildCurriculumExecutionContext(
     revisions,
   });
   return {
+    workspaceId: contract.workspaceId,
     manifest,
     outline,
     blocks,
     authorityBundles,
+    sourceMapMaterials,
     contractContext: {
       contractVersionId: contract.id,
       intent: contract.intent,
@@ -258,6 +290,21 @@ export function buildCurriculumExecutionContext(
       excludedTopics: contract.courseScope.excludedTopics,
     },
   };
+}
+
+/** Build the production navigation projection from the already-validated request facts. */
+export function buildCurriculumCourseSourceMap(
+  context: ReturnType<typeof buildCurriculumExecutionContext>,
+  concepts: CourseSourceMapInput['concepts'],
+  predecessor: CourseSourceMapInput['predecessor'],
+): CourseSourceMap {
+  return buildCourseSourceMap({
+    workspaceId: context.workspaceId,
+    manifest: context.manifest,
+    materials: context.sourceMapMaterials,
+    concepts,
+    predecessor,
+  });
 }
 
 function manifestsEqual(left: ExecutionSourceManifest, right: ExecutionSourceManifest): boolean {
@@ -682,6 +729,13 @@ export function createCurriculumService({
       preferredGroundings,
     });
     const predecessor = latest ?? null;
+    let sourceMap: CourseSourceMap;
+    try {
+      sourceMap = buildCurriculumCourseSourceMap(context, concepts, predecessor);
+    } catch (error) {
+      commands.fail(claim, error);
+      throw error;
+    }
     const executionRepairRequired = requiresStudyPlanExecutionRepair(
       repos,
       clock,
@@ -731,14 +785,22 @@ export function createCurriculumService({
           })),
         ),
     ];
-    const evidenceCatalog = selectCurriculumEvidenceOffers({
-      catalog: fullEvidenceCatalog,
-      blocks: context.blocks,
-      predecessor,
-      concepts,
-      contract,
-      priorityGroundings,
-    });
+    let evidenceCatalog: ReturnType<typeof selectCurriculumEvidenceOffers>;
+    try {
+      evidenceCatalog = selectCurriculumEvidenceOffers({
+        catalog: fullEvidenceCatalog,
+        blocks: context.blocks,
+        predecessor,
+        concepts,
+        contract,
+        priorityGroundings,
+        sourceMap,
+        policy: CURRICULUM_EVIDENCE_PRODUCTION_POLICY,
+      });
+    } catch (error) {
+      commands.fail(claim, error);
+      throw error;
+    }
     const providerInput: CurriculumProposalInput = {
       workspaceName: workspace.name,
       contract: context.contractContext,

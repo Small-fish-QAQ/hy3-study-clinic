@@ -10,6 +10,14 @@ import type {
 import type { CurriculumEvidenceOffer } from '../llm/provider.js';
 import { verifyGrounding } from '../grounding/verify.js';
 import { searchSourceBlocks } from '../retrieval/lexical.js';
+import type { CourseSourceMap } from './courseSourceMap.js';
+import {
+  CURRICULUM_EVIDENCE_BASELINE_POLICY,
+  selectDerivedSectionReserveCandidates,
+  validateCourseSourceMapSelectionCorpus,
+  type CurriculumEvidencePolicySelectionReason,
+  type CurriculumEvidenceSelectorPolicy,
+} from './curriculumEvidencePolicy.js';
 
 export const CURRICULUM_EVIDENCE_EXCERPT_MAX_CHARS = 320;
 export const CURRICULUM_PROVIDER_EVIDENCE_BLOCK_BUDGET = 160;
@@ -155,6 +163,8 @@ export interface CurriculumEvidenceSelectionInput {
   concepts: Concept[];
   contract: LearningContract;
   priorityGroundings: VerifiedGrounding[];
+  sourceMap?: CourseSourceMap;
+  policy?: CurriculumEvidenceSelectorPolicy;
 }
 
 export const CURRICULUM_EVIDENCE_SELECTION_SIGNALS = [
@@ -179,8 +189,9 @@ export interface CurriculumEvidenceBlockTrace {
   materialId: string;
   sectionKey: string;
   selectionIndex: number;
-  firstContributor: CurriculumEvidenceSelectionSignal;
+  firstContributor: CurriculumEvidenceSelectionSignal | null;
   signals: CurriculumEvidenceSelectionSignal[];
+  policySelectionReason: 'baseline_signal_order' | CurriculumEvidencePolicySelectionReason;
 }
 
 export interface CurriculumEvidenceSignalTrace {
@@ -192,6 +203,7 @@ export interface CurriculumEvidenceSignalTrace {
 }
 
 export interface CurriculumEvidenceSelectionTrace {
+  policy: CurriculumEvidenceSelectorPolicy;
   counts: {
     corpusBlocks: number;
     corpusMaterials: number;
@@ -550,12 +562,62 @@ function selectCurriculumEvidenceOffersInternal(
     concepts,
     contract,
     priorityGroundings,
+    sourceMap,
+    policy = CURRICULUM_EVIDENCE_BASELINE_POLICY,
   }: CurriculumEvidenceSelectionInput,
   includeTrace: boolean,
 ): InternalCurriculumEvidenceSelection {
   const blockById = new Map(blocks.map((block) => [block.id, block]));
-
-  const selectedBlockIds = new Set<string>();
+  if (sourceMap) {
+    validateCourseSourceMapSelectionCorpus({
+      workspaceId: contract.workspaceId,
+      sourceMap,
+      blocks,
+    });
+  }
+  const rankings = buildCurriculumEvidenceSignalRankings({
+    blocks,
+    predecessor,
+    concepts,
+    contract,
+  });
+  const rankedBlockIds = uniqueInOrder(rankings.flatMap((ranking) => ranking.blockIds));
+  const baselineCandidateBlockIds = rankedBlockIds.slice(
+    0,
+    CURRICULUM_PROVIDER_EVIDENCE_BLOCK_BUDGET,
+  );
+  let selectedCandidateBlockIds = baselineCandidateBlockIds;
+  let policyReasonByBlockId = new Map<
+    string,
+    'baseline_signal_order' | CurriculumEvidencePolicySelectionReason
+  >(baselineCandidateBlockIds.map((blockId) => [blockId, 'baseline_signal_order']));
+  if (policy !== CURRICULUM_EVIDENCE_BASELINE_POLICY) {
+    if (!sourceMap) {
+      throw new Error('The derived-section reserve policy requires a validated Course Source Map.');
+    }
+    const protectedBaselineBlockIds = new Set([
+      ...rankings
+        .filter(
+          (ranking) =>
+            ranking.signal === 'predecessor_reference' || ranking.signal === 'concept_grounding',
+        )
+        .flatMap((ranking) => ranking.blockIds),
+      ...priorityGroundings.map((grounding) => grounding.blockId),
+    ]);
+    const reserved = selectDerivedSectionReserveCandidates({
+      sourceMap,
+      baselineCandidateBlockIds,
+      rankedBlockIds,
+      protectedBaselineBlockIds: baselineCandidateBlockIds.filter((blockId) =>
+        protectedBaselineBlockIds.has(blockId),
+      ),
+      maxBlocks: CURRICULUM_PROVIDER_EVIDENCE_BLOCK_BUDGET,
+      reservePerSection: 1,
+    });
+    selectedCandidateBlockIds = reserved.blockIds;
+    policyReasonByBlockId = reserved.reasonByBlockId;
+  }
+  const selectedBlockIds = new Set(selectedCandidateBlockIds);
   const attemptedBySignal = includeTrace
     ? new Map(CURRICULUM_EVIDENCE_SELECTION_SIGNALS.map((signal) => [signal, new Set<string>()]))
     : null;
@@ -568,35 +630,32 @@ function selectCurriculumEvidenceOffersInternal(
   const firstContributorByBlock = includeTrace
     ? new Map<string, CurriculumEvidenceSelectionSignal>()
     : null;
-  const addBlock = (blockId: string, signal: CurriculumEvidenceSelectionSignal): void => {
-    if (!blockById.has(blockId)) return;
-    attemptedBySignal?.get(signal)!.add(blockId);
-    if (selectedBlockIds.has(blockId)) {
-      signalsByBlock?.get(blockId)!.add(signal);
-      return;
+  if (includeTrace) {
+    for (const blockId of selectedBlockIds) signalsByBlock!.set(blockId, new Set());
+  }
+  for (const ranking of rankings) {
+    for (const blockId of ranking.blockIds) {
+      if (!blockById.has(blockId)) continue;
+      attemptedBySignal?.get(ranking.signal)!.add(blockId);
+      if (!selectedBlockIds.has(blockId)) {
+        rejectedBySignal?.get(ranking.signal)!.add(blockId);
+        continue;
+      }
+      signalsByBlock?.get(blockId)!.add(ranking.signal);
+      if (!firstContributorByBlock?.has(blockId)) {
+        firstContributorByBlock?.set(blockId, ranking.signal);
+      }
     }
-    if (selectedBlockIds.size >= CURRICULUM_PROVIDER_EVIDENCE_BLOCK_BUDGET) {
-      rejectedBySignal?.get(signal)!.add(blockId);
-      return;
-    }
-    selectedBlockIds.add(blockId);
-    signalsByBlock?.set(blockId, new Set([signal]));
-    firstContributorByBlock?.set(blockId, signal);
-  };
-
-  for (const ranking of buildCurriculumEvidenceSignalRankings({
-    blocks,
-    predecessor,
-    concepts,
-    contract,
-  })) {
-    for (const blockId of ranking.blockIds) addBlock(blockId, ranking.signal);
   }
 
   const priorityKeys = new Set(priorityGroundings.map(normalizedGroundingKey));
+  const relevantOfferBlockIds = new Set([
+    ...baselineCandidateBlockIds,
+    ...selectedCandidateBlockIds,
+  ]);
   const offersByBlock = new Map<string, CurriculumEvidenceOffer[]>();
   for (const offer of catalog) {
-    if (!selectedBlockIds.has(offer.blockId)) continue;
+    if (!relevantOfferBlockIds.has(offer.blockId)) continue;
     const offers = offersByBlock.get(offer.blockId) ?? [];
     offers.push(offer);
     offersByBlock.set(offer.blockId, offers);
@@ -621,25 +680,44 @@ function selectCurriculumEvidenceOffersInternal(
         left.bindingId.localeCompare(right.bindingId)
       );
     });
-    if (includeTrace && offers[0]?.bindingId !== unprioritizedFirst) {
+    if (
+      includeTrace &&
+      selectedBlockIds.has(offers[0]!.blockId) &&
+      offers[0]?.bindingId !== unprioritizedFirst
+    ) {
       blocksWherePriorityChangedFirstOffer += 1;
     }
   });
 
-  const selected: CurriculumEvidenceOffer[] = [];
-  let offerBudgetReached = false;
-  for (let pass = 0; pass < CURRICULUM_PROVIDER_OFFERS_PER_BLOCK; pass += 1) {
-    for (const blockId of selectedBlockIds) {
-      const offer = offersByBlock.get(blockId)?.[pass];
-      if (!offer) continue;
-      selected.push({ ...offer, id: `E${selected.length + 1}` });
-      if (selected.length >= CURRICULUM_PROVIDER_EVIDENCE_OFFER_BUDGET) {
-        offerBudgetReached = true;
-        break;
+  const selectOffers = (candidateBlockIds: readonly string[]): CurriculumEvidenceOffer[] => {
+    const offers: CurriculumEvidenceOffer[] = [];
+    let offerBudgetReached = false;
+    for (let pass = 0; pass < CURRICULUM_PROVIDER_OFFERS_PER_BLOCK; pass += 1) {
+      for (const blockId of candidateBlockIds) {
+        const offer = offersByBlock.get(blockId)?.[pass];
+        if (!offer) continue;
+        offers.push({ ...offer, id: `E${offers.length + 1}` });
+        if (offers.length >= CURRICULUM_PROVIDER_EVIDENCE_OFFER_BUDGET) {
+          offerBudgetReached = true;
+          break;
+        }
       }
+      if (offerBudgetReached) break;
     }
-    if (offerBudgetReached) break;
-  }
+    return offers;
+  };
+  const baselineOffers = selectOffers(baselineCandidateBlockIds);
+  const policyOffers =
+    policy === CURRICULUM_EVIDENCE_BASELINE_POLICY
+      ? baselineOffers
+      : selectOffers(selectedCandidateBlockIds);
+  const selected =
+    policy === CURRICULUM_EVIDENCE_BASELINE_POLICY
+      ? policyOffers
+      : largestSerializedPrefix(
+          policyOffers,
+          (bytes) => bytes <= serializedInternalOfferBytes(baselineOffers),
+        );
 
   if (!includeTrace) return { offers: selected, trace: null };
 
@@ -647,17 +725,18 @@ function selectCurriculumEvidenceOffersInternal(
   const corpusSectionKeys = new Set(blocks.map(sectionKey));
   const catalogBlockIds = new Set(catalog.map((offer) => offer.blockId));
   const offeredBlockIds = new Set(selected.map((offer) => offer.blockId));
-  const candidateBlocks = [...selectedBlockIds].map((blockId, selectionIndex) => {
+  const candidateBlocks = selectedCandidateBlockIds.map((blockId, selectionIndex) => {
     const block = blockById.get(blockId)!;
     return {
       blockId,
       materialId: block.materialId,
       sectionKey: sectionKey(block),
       selectionIndex,
-      firstContributor: firstContributorByBlock!.get(blockId)!,
+      firstContributor: firstContributorByBlock!.get(blockId) ?? null,
       signals: CURRICULUM_EVIDENCE_SELECTION_SIGNALS.filter((signal) =>
         signalsByBlock!.get(blockId)!.has(signal),
       ),
+      policySelectionReason: policyReasonByBlockId.get(blockId)!,
     } satisfies CurriculumEvidenceBlockTrace;
   });
   const candidateMaterialIds = new Set(candidateBlocks.map((block) => block.materialId));
@@ -679,6 +758,7 @@ function selectCurriculumEvidenceOffersInternal(
   return {
     offers: selected,
     trace: {
+      policy,
       counts: {
         corpusBlocks: blocks.length,
         corpusMaterials: corpusMaterialIds.size,
@@ -754,7 +834,7 @@ export function selectCurriculumEvidenceOffersWithTrace(
   return { offers: result.offers, trace: result.trace };
 }
 
-/** Production selector. Keep this output-only API stable; tracing is opt-in. */
+/** Output-only selector; an omitted policy intentionally reproduces the frozen baseline. */
 export function selectCurriculumEvidenceOffers(
   input: CurriculumEvidenceSelectionInput,
 ): CurriculumEvidenceOffer[] {

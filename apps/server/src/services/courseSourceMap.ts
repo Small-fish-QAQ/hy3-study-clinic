@@ -420,10 +420,11 @@ export function buildCourseSourceMap(raw: CourseSourceMapInput): CourseSourceMap
         parserPathNodeIdsByBlock.set(block.id, ids);
       }
 
+      const sourceIndexByBlockId = new Map(
+        orderedBlocks.map((block, sourceIndex) => [block.id, sourceIndex] as const),
+      );
       const sections = computeSections(orderedBlocks).map((section, sectionIndex) => {
-        const sourceIndexes = section.blocks.map((block) =>
-          orderedBlocks.findIndex((candidate) => candidate.id === block.id),
-        );
+        const sourceIndexes = section.blocks.map((block) => sourceIndexByBlockId.get(block.id)!);
         const headingPaths = [
           ...new Map(
             section.blocks.map((block) => [pathKey(block.headingPath), block.headingPath]),
