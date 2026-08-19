@@ -11,6 +11,7 @@ import {
   type SourceType,
 } from '@hy3-clinic/shared';
 import { IngestionError, normalizeText } from './ingest.js';
+import { HTML_PARSER_VERSION, parseHtml } from './html.js';
 
 export const STRUCTURE_AWARE_CHUNKER_VERSION = 'structure-aware-v1';
 export const STRUCTURE_AWARE_CHUNKER_FINGERPRINT = `chunk_${fnv1a32(
@@ -712,6 +713,7 @@ export function parserForSourceType(sourceType: SourceType): ParserAdapter {
   if (sourceType === 'pdf') return PDF_ADAPTER;
   if (sourceType === 'docx') return DOCX_ADAPTER;
   if (sourceType === 'pptx') return PPTX_ADAPTER;
+  if (sourceType === 'html') return HTML_ADAPTER;
   // Existing PDF/DOCX extraction already supplies normalized text and page
   // spans. The Markdown structural pass preserves its headings/lists without
   // claiming to be a richer PDF/DOCX parser.
@@ -789,6 +791,30 @@ export const PPTX_ADAPTER: ParserAdapter = {
     }),
 };
 
+export const HTML_ADAPTER: ParserAdapter = {
+  id: 'html-readability-jsdom',
+  version: HTML_PARSER_VERSION,
+  sourceTypes: ['html'],
+  extensions: ['html', 'htm'],
+  mediaTypes: ['text/html'],
+  capabilities: [
+    'text_extraction',
+    'structural_hierarchy',
+    'table_structure',
+    'deterministic_text',
+    'source_location_precision',
+  ],
+  limits: NORMALIZED_DOCUMENT_LIMITS,
+  parse: (input) =>
+    parseHtml(input.content, {
+      revisionId: input.revisionId,
+      materialId: input.materialId,
+      sourceType: 'html',
+      baseUrl: input.filename?.match(/^https?:\/\//iu) ? input.filename : undefined,
+      warnings: input.warnings,
+    }).normalizedDocument,
+};
+
 export const PARSER_REGISTRY: readonly ParserAdapter[] = [
   MARKDOWN_ADAPTER,
   TXT_ADAPTER,
@@ -796,6 +822,7 @@ export const PARSER_REGISTRY: readonly ParserAdapter[] = [
   PDF_ADAPTER,
   DOCX_ADAPTER,
   PPTX_ADAPTER,
+  HTML_ADAPTER,
 ];
 
 export function chunkNormalizedDocument(document: NormalizedDocument): ChunkProjection[] {

@@ -49,6 +49,8 @@ const SUPPORTED_EXTENSIONS: Record<string, SourceType> = {
   json: 'source_code',
   yaml: 'source_code',
   yml: 'source_code',
+  html: 'html',
+  htm: 'html',
 };
 
 /**

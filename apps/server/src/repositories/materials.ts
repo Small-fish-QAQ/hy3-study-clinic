@@ -214,6 +214,9 @@ export function createMaterialsRepo(db: SqliteDb) {
     `INSERT INTO source_blocks (id, material_id, material_revision_id, idx, heading, heading_path, page_number, page_end, slide_number, content, start_offset, end_offset, structural_unit_id, chunker_version, content_origin)
       VALUES (@id, @materialId, @materialRevisionId, @index, @heading, @headingPath, @pageNumber, @pageEnd, @slideNumber, @content, @startOffset, @endOffset, @structuralUnitId, @chunkerVersion, @contentOrigin)`,
   );
+  const hasWebSnapshot = (
+    db.pragma('table_info(material_revisions)') as Array<{ name: string }>
+  ).some((column) => column.name === 'web_snapshot');
   const insertMaterialRevisionStmt = db.prepare(
     `INSERT INTO material_revisions (
        id, material_id, revision_number, predecessor_revision_id, status,
@@ -221,13 +224,13 @@ export function createMaterialsRepo(db: SqliteDb) {
        parse_status, page_count, extraction_warnings, parser_version,
        parser_fingerprint, content_fingerprint, chunker_version, chunker_fingerprint,
        source_fingerprint, original_data, failure_code,
-       failure_message, created_at, activated_at
+       failure_message, created_at, activated_at${hasWebSnapshot ? ', web_snapshot' : ''}
      ) VALUES (
        @id, @materialId, 1, NULL, 'active', @sourceType, @mediaType,
        @originalFilename, @content, @charCount, @parseStatus, @pageCount,
        @extractionWarnings, @parserVersion, @parserFingerprint,
        @contentFingerprint, @chunkerVersion, @chunkerFingerprint,
-       @sourceFingerprint, @originalData, NULL, NULL, @createdAt, @activatedAt
+       @sourceFingerprint, @originalData, NULL, NULL, @createdAt, @activatedAt${hasWebSnapshot ? ', @webSnapshot' : ''}
      )`,
   );
   const insertConceptStmt = db.prepare(
@@ -293,6 +296,7 @@ export function createMaterialsRepo(db: SqliteDb) {
         chunkerVersion?: string | null;
         chunkerFingerprint?: string | null;
         sourceFingerprint?: string | null;
+        webSnapshot?: unknown | null;
       } = {},
       embeddedAssets: EmbeddedAssetInput[] = [],
     ) => {
@@ -332,6 +336,9 @@ export function createMaterialsRepo(db: SqliteDb) {
         originalData,
         createdAt: material.createdAt,
         activatedAt: material.updatedAt,
+        ...(hasWebSnapshot
+          ? { webSnapshot: derivation.webSnapshot ? JSON.stringify(derivation.webSnapshot) : null }
+          : {}),
       });
       db.prepare('UPDATE materials SET active_revision_id = ? WHERE id = ?').run(
         revisionId,
@@ -519,6 +526,7 @@ export function createMaterialsRepo(db: SqliteDb) {
         chunkerVersion?: string | null;
         chunkerFingerprint?: string | null;
         sourceFingerprint?: string | null;
+        webSnapshot?: unknown | null;
       } = {},
       embeddedAssets: EmbeddedAssetInput[] = [],
     ): void {

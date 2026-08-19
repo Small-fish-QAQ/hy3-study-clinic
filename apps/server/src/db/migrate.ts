@@ -2135,6 +2135,13 @@ const MIGRATIONS: Migration[] = [
       END;
     `,
   },
+  {
+    version: 27,
+    name: 'html_web_snapshot_metadata',
+    up: `
+      ALTER TABLE material_revisions ADD COLUMN web_snapshot TEXT;
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

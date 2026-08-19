@@ -10,6 +10,7 @@ import {
   type SourceBlock,
   type SourceType,
   type Workspace,
+  type WebSnapshotMetadata,
 } from '@hy3-clinic/shared';
 import type { Repositories } from '../repositories/index.js';
 import { AppError, notFound } from '../errors.js';
@@ -30,6 +31,7 @@ import {
   STRUCTURE_AWARE_CHUNKER_VERSION,
 } from '../ingestion/normalized.js';
 import type { SourceAuthorityService } from './sourceAuthority.js';
+import { fetchWebSnapshot } from '../ingestion/webSnapshot.js';
 
 export interface CreateMaterialInput {
   content: string;
@@ -113,7 +115,9 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
         sourceType === 'paste' ||
         sourceType === 'source_code'
           ? MEDIA_TYPE_FOR_TEXT[sourceType]
-          : 'text/plain',
+          : sourceType === 'html'
+            ? 'text/html'
+            : 'text/plain',
       content: normalized.content,
       filename: input.filename ?? null,
     });
@@ -134,7 +138,9 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
         sourceType === 'pptx' ||
         sourceType === 'image'
           ? null
-          : MEDIA_TYPE_FOR_TEXT[sourceType],
+          : sourceType === 'html'
+            ? 'text/html'
+            : MEDIA_TYPE_FOR_TEXT[sourceType],
       originalFilename: input.filename?.trim() || null,
       content: normalized.content,
       charCount: normalized.charCount,
@@ -177,7 +183,7 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
   async function createFromUpload(
     input: DocumentFilePayload,
     workspaceId?: string,
-    options: { signal?: AbortSignal } = {},
+    options: { signal?: AbortSignal; webSnapshot?: WebSnapshotMetadata } = {},
   ): Promise<MaterialWithBlocks> {
     if (options.signal?.aborted) {
       throw new AppError(ApiErrorCode.RequestCancelled, '文档导入已取消。');
@@ -190,7 +196,8 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
       kind.sourceType !== 'pdf' &&
       kind.sourceType !== 'docx' &&
       kind.sourceType !== 'pptx' &&
-      kind.sourceType !== 'image'
+      kind.sourceType !== 'image' &&
+      kind.sourceType !== 'html'
     ) {
       // Text file uploaded as base64: decode and reuse the text path.
       return create(
@@ -213,6 +220,7 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
       candidateRevisionId,
       options.signal,
       kind.mediaType,
+      options.webSnapshot?.finalUrl,
     );
     if (options.signal?.aborted) {
       throw new AppError(ApiErrorCode.RequestCancelled, '文档导入已取消。');
@@ -276,6 +284,7 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
         chunkerVersion: STRUCTURE_AWARE_CHUNKER_VERSION,
         chunkerFingerprint: STRUCTURE_AWARE_CHUNKER_FINGERPRINT,
         sourceFingerprint: `sha256:${createHash('sha256').update(buffer).digest('hex')}`,
+        webSnapshot: options.webSnapshot ?? null,
       },
       parsed.embeddedAssets ?? [],
     );
@@ -293,9 +302,28 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
     };
   }
 
+  async function createFromWebSnapshot(
+    input: { url: string; title?: string },
+    workspaceId?: string,
+    options: { signal?: AbortSignal } = {},
+  ): Promise<MaterialWithBlocks> {
+    const snapshot = await fetchWebSnapshot(input.url, options);
+    return createFromUpload(
+      {
+        filename: 'snapshot.html',
+        dataBase64: snapshot.bytes.toString('base64'),
+        title: input.title ?? undefined,
+        mediaType: 'text/html',
+      },
+      workspaceId,
+      { ...options, webSnapshot: snapshot.metadata },
+    );
+  }
+
   return {
     create,
     createFromUpload,
+    createFromWebSnapshot,
 
     get(id: string): MaterialWithBlocks | undefined {
       const material = repos.materials.get(id);

@@ -7,6 +7,8 @@ import {
   type NormalizedDocumentUnit,
   type NormalizedStructuralUnit,
   type SourceBlock,
+  WebSnapshotMetadataSchema,
+  type WebSnapshotMetadata,
 } from '@hy3-clinic/shared';
 import type { SqliteDb } from '../db/database.js';
 import { assertEmbeddedAssetBytes } from './embeddedAssets.js';
@@ -38,6 +40,7 @@ export interface MaterialRevisionRecord {
   failureMessage: string | null;
   createdAt: string;
   activatedAt: string | null;
+  webSnapshot: WebSnapshotMetadata | null;
 }
 
 export interface EmbeddedAssetInput extends EmbeddedAsset {
@@ -68,6 +71,7 @@ interface RevisionRow {
   failure_message: string | null;
   created_at: string;
   activated_at: string | null;
+  web_snapshot: string | null;
 }
 
 interface StructuralUnitRow {
@@ -176,6 +180,9 @@ function hydrate(row: RevisionRow): MaterialRevisionRecord {
     failureMessage: row.failure_message,
     createdAt: row.created_at,
     activatedAt: row.activated_at,
+    webSnapshot: row.web_snapshot
+      ? WebSnapshotMetadataSchema.parse(JSON.parse(row.web_snapshot))
+      : null,
   };
 }
 
@@ -194,9 +201,13 @@ export interface StageMaterialRevisionInput {
   parserAttemptId: string;
   createdAt: string;
   expectedActiveRevisionId?: string | null;
+  webSnapshot?: WebSnapshotMetadata | null;
 }
 
 export function createMaterialRevisionsRepo(db: SqliteDb) {
+  const hasWebSnapshot = (
+    db.pragma('table_info(material_revisions)') as Array<{ name: string }>
+  ).some((column) => column.name === 'web_snapshot');
   const stage = db.transaction((input: StageMaterialRevisionInput): MaterialRevisionRecord => {
     const active = db
       .prepare('SELECT active_revision_id FROM materials WHERE id = ?')
@@ -223,15 +234,15 @@ export function createMaterialRevisionsRepo(db: SqliteDb) {
          source_type, media_type, original_filename, content, char_count,
          parse_status, page_count, extraction_warnings, parser_version,
           parser_fingerprint, content_fingerprint, chunker_version, chunker_fingerprint,
-          source_fingerprint, original_data, failure_code,
-         failure_message, created_at, activated_at
+         source_fingerprint, original_data, failure_code,
+         failure_message, created_at, activated_at${hasWebSnapshot ? ', web_snapshot' : ''}
        ) VALUES (
          @id, @materialId, @revisionNumber, @predecessorRevisionId, 'candidate',
          @sourceType, @mediaType, @originalFilename, @content, @charCount,
          @parseStatus, @pageCount, @extractionWarnings, @parserVersion,
           @parserFingerprint, @contentFingerprint, @chunkerVersion, @chunkerFingerprint,
-          @sourceFingerprint, @originalData, NULL, NULL,
-         @createdAt, NULL
+         @sourceFingerprint, @originalData, NULL, NULL,
+         @createdAt, NULL${hasWebSnapshot ? ', @webSnapshot' : ''}
        )`,
     ).run({
       id: input.revisionId,
@@ -254,6 +265,9 @@ export function createMaterialRevisionsRepo(db: SqliteDb) {
       sourceFingerprint: input.sourceFingerprint ?? null,
       originalData: input.originalData,
       createdAt: input.createdAt,
+      ...(hasWebSnapshot
+        ? { webSnapshot: input.webSnapshot ? JSON.stringify(input.webSnapshot) : null }
+        : {}),
     });
 
     const insertUnit = db.prepare(

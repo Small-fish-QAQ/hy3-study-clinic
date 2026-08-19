@@ -10,6 +10,7 @@ import { analyzePdfLayout, type PdfPageInput, type PageSpan } from './pdfLayout.
 import { parseRichOoxml, type ExtractedEmbeddedAsset } from './richDocuments.js';
 import type { NormalizedDocument } from '@hy3-clinic/shared';
 import { parseStandaloneImage } from './images.js';
+import { HTML_PARSER_VERSION, parseHtmlBytes } from './html.js';
 
 export type { PageSpan } from './pdfLayout.js';
 
@@ -78,6 +79,8 @@ const UPLOAD_EXTENSIONS: Record<string, UploadKind> = {
   jpg: { sourceType: 'image', mediaType: 'image/jpeg' },
   jpeg: { sourceType: 'image', mediaType: 'image/jpeg' },
   webp: { sourceType: 'image', mediaType: 'image/webp' },
+  html: { sourceType: 'html', mediaType: 'text/html' },
+  htm: { sourceType: 'html', mediaType: 'text/html' },
 };
 
 for (const extension of [
@@ -346,7 +349,32 @@ export async function parseBinaryUpload(
   revisionId?: string,
   signal?: AbortSignal,
   expectedMediaType?: MediaType | null,
+  baseUrl?: string,
 ): Promise<ParsedBinaryDocument> {
+  if (sourceType === 'html') {
+    const preview = buffer.subarray(0, 8192).toString('latin1');
+    if (
+      !/<(?:!doctype\s+html|html\b|head\b|body\b|article\b|main\b|p\b|h[1-6]\b)/iu.test(preview)
+    ) {
+      throw new IngestionError(ApiErrorCode.TypeMismatch, 'HTML 文件内容不像 HTML 文档。');
+    }
+    if (looksBinary(buffer.toString('latin1'))) {
+      throw new IngestionError(ApiErrorCode.BinaryInput, '检测到二进制或非 HTML 内容,已拒绝导入。');
+    }
+    const parsed = parseHtmlBytes(buffer, {
+      revisionId: revisionId ?? 'html:parse',
+      materialId,
+      baseUrl,
+    });
+    return {
+      content: parsed.content,
+      pageCount: null,
+      pageSpans: null,
+      warnings: parsed.warnings,
+      parserVersion: HTML_PARSER_VERSION,
+      normalizedDocument: parsed.normalizedDocument,
+    };
+  }
   if (sourceType === 'pdf') {
     if (hasDocxPackageStructure(buffer) || hasPptxPackageStructure(buffer)) {
       throw new IngestionError(

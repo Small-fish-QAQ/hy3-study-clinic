@@ -254,7 +254,7 @@ The material library and workspace document endpoint share `createFromUpload`, s
 ### Inputs and limits
 
 - Pasted text uses the text ingestion path.
-- `.md`, `.txt`, `.pdf`, `.pptx`, `.docx`, `.png`, `.jpg`, `.jpeg`, and `.webp` file uploads use base64 JSON and are limited to 10 MB after decoding. Common standalone source-code extensions use the same bounded text path.
+- `.md`, `.txt`, `.html`, `.htm`, `.pdf`, `.pptx`, `.docx`, `.png`, `.jpg`, `.jpeg`, and `.webp` file uploads use base64 JSON and are limited to 10 MB after decoding. Common standalone source-code extensions use the same bounded text path. Public Web Snapshots use `POST /api/materials/web-snapshot` and the same HTML parser after a captured response.
 - Every file is checked against its extension and optional declared MIME type. PDF requires a `%PDF-` header; PPTX and DOCX require ZIP/OOXML signatures and their expected package parts. Standalone images require matching PNG, JPEG, or WebP bytes and bounded sharp validation. Markdown/TXT/source-code bytes pass a binary-content check instead.
 - Invalid, oversized, or malformed inputs fail before the first database write. Text-oriented inputs must retain extractable text unless a supported original asset makes the rich document valid; a standalone Image Material and an asset-only PPTX/DOCX revision may legitimately have no textual SourceBlocks.
 
@@ -294,6 +294,14 @@ Charts and SmartArt are recorded only as unsupported/partial warnings; their lab
 Revision-aware production ingestion uses `docx-ooxml-rich-v1` over the bounded OOXML reader. It walks body children in package order and preserves Heading 1-6 hierarchy, paragraphs, contiguous lists/list items, reversibly escaped TSV tables, embedded media relationships, and headers/footers as structurally distinct source units. It never executes macros or document code and never fetches an external relationship. An asset-only DOCX remains valid original source material but produces no textual SourceBlocks.
 
 `mammoth` remains as the compatibility conversion path for callers without revision identity and for historical behavior tests; accepted revision-aware production imports and reprocessing use the direct OOXML path so structural and embedded-asset provenance share one parser boundary. DOCX has heading/document-structure provenance but no reliable page numbers, so none are invented. Footnotes/endnotes, equations, drawings, and other unsupported objects are not claimed as complete.
+
+### HTML files and public Web Snapshots
+
+HTML uses `html-readability-jsdom-v1`: Mozilla Readability is the primary bounded main-content extraction strategy and jsdom parses static DOM with `runScripts: outside-only`; scripts, styles, frames, embeds, and templates are removed. If Readability returns no meaningful article, the parser uses a structured body fallback and persists a warning. Headings, paragraphs, lists, blockquotes, `pre/code`, tables, captions, safe absolute links, and image alt/reference markers are projected into the existing normalized units and `structure-aware-v1` chunks. Remote images are never fetched; only a safe reference and alt text can remain. DOM paths are honest structural locations, not pixel or raw-byte offsets.
+
+Web Snapshots accept one explicit public HTTP(S) URL. DNS results are checked for loopback, localhost, private, link-local, multicast, documentation, carrier-grade, and reserved addresses before every request and redirect. Fetches send only an HTML `Accept` header, never learner cookies or authorization, follow at most four validated redirects, enforce a 15-second timeout and 10 MiB decompressed response ceiling, and require both an HTML MIME type and plausible HTML bytes. The captured bytes and SHA-256 are immutable revision data, alongside requested/normalized/final URL, fetch timestamp, policy version, and extraction strategy. Refreshing a URL creates a new revision; URL equality never implies byte equality. No JavaScript, browser automation, authentication, crawling, or linked-page scope expansion is performed.
+
+Dynamic SPA shells may produce partial extraction or a fail-closed empty-source error. Exact evidence offsets refer to normalized extracted content; HTML parser output does not claim browser-rendered coordinates or raw HTML byte spans.
 
 ### Embedded ORIGINAL assets
 
@@ -337,7 +345,7 @@ Retiring one document clears the active graph pointer, marks dependent source-au
 
 `better-sqlite3` runs with foreign keys enabled. Repositories validate domain objects on writes and reads. Multi-row operations use explicit transactions, and migrations are recorded in `schema_migrations`.
 
-The 24 shipped migrations are:
+The 27 shipped migrations are:
 
 1. `initial_schema` - original materials, blocks, concepts, quizzes, grading, mistakes, and mastery.
 2. `course_workspaces_and_documents` - workspaces, document metadata/original bytes, and source-block page numbers; every legacy material receives a compatibility workspace without learning-data deletion.
@@ -363,6 +371,9 @@ The 24 shipped migrations are:
 22. `tutor_pedagogy_turn_metadata` - nullable audit metadata for the selected pedagogical move and offered source references on conversational StudySession turns.
 23. `structure_aware_material_derivation_metadata` - parser/chunker/source fingerprints, revision-owned normalized structural kinds and locations, SourceBlock structural-unit ownership, `structure-aware-v1` identity, and honest nullable legacy metadata.
 24. `rich_document_assets_and_slide_provenance` - PPTX slide locations on normalized units and SourceBlocks plus hash-addressed original asset blobs and immutable MaterialRevision-owned asset provenance.
+25. `immutable_visual_derivations` - advisory, occurrence-bound visual descriptions over original image assets.
+26. `visual_provider_runtime_identity` - provider endpoint/runtime identity for immutable visual derivations.
+27. `html_web_snapshot_metadata` - immutable requested/final URL, response hash, fetch policy and extraction strategy metadata for HTML Web Snapshots.
 
 Table-rebuild migrations disable foreign keys only around the controlled rebuild, run `foreign_key_check` before commit, and restore enforcement even after failure. Tests cover idempotence, populated v1 and v3 upgrades, all-or-nothing rollback, and data preservation.
 
@@ -622,6 +633,8 @@ At process startup, unfinished StudySession turns and running operations are mar
 | [`yauzl@3.4.0`](https://github.com/thejoshwolfe/yauzl) | server | Small, maintained lazy-entry ZIP reader used only for bounded PPTX/DOCX package access. It supports central-directory validation and streamed member reads without extracting attacker-controlled paths to disk; local code adds member, byte, compression-ratio, duplicate-path, encryption, and relationship gates. |
 | [`@xmldom/xmldom@0.8.13`](https://github.com/xmldom/xmldom) | server | Maintained namespace-aware XML DOM parser used for the limited OOXML parts needed by PPTX/DOCX structure and relationships. Local code rejects entity/doctype declarations, malformed XML, and oversized/deep trees before consuming nodes. |
 | [`sharp@0.35.3`](https://github.com/lovell/sharp) | server | Maintained Node/libvips image pipeline used for actual-byte PNG/JPEG/WebP inspection, strict bounded decode, EXIF orientation, and deterministic provider transport resizing/transcoding. Exact original bytes remain immutable source authority. |
+| [`@mozilla/readability@0.6.0`](https://github.com/mozilla/readability) | server | Apache-2.0 mature main-content scoring and boilerplate reduction for static HTML. Adapted locally so accepted output still passes structural-unit, warning, provenance, and chunk limits. |
+| [`jsdom@26.1.0`](https://github.com/jsdom/jsdom) | server | MIT WHATWG DOM/parser used for malformed HTML recovery and deterministic structure projection. Configured without resource loading or page-script execution; browser fidelity is intentionally out of scope. |
 | [`@xyflow/react`](https://github.com/xyflow/xyflow) | web | Maintained React 18 graph renderer with accessible pan/zoom, selection, and controlled dragging. |
 | [`d3-force`](https://github.com/d3/d3-force) | web | Small standard force-layout library used for bounded, hash-seeded synchronous network layout. |
 

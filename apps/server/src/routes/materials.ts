@@ -5,6 +5,7 @@ import {
   SAMPLE_MATERIAL_CONTENT,
   SAMPLE_MATERIAL_TITLE,
   UpdateMaterialTitleRequestSchema,
+  WebSnapshotRequestSchema,
 } from '@hy3-clinic/shared';
 import { notFound } from '../errors.js';
 import type { MaterialService } from '../services/materials.js';
@@ -33,6 +34,14 @@ export function registerMaterialRoutes(app: FastifyInstance, materials: Material
     }
     const body = CreateMaterialBodySchema.parse(raw);
     const created = materials.create(body);
+    reply.status(201).send(created);
+  });
+
+  app.post('/api/materials/web-snapshot', async (request, reply) => {
+    const body = WebSnapshotRequestSchema.parse(request.body);
+    const created = await materials.createFromWebSnapshot(body, undefined, {
+      signal: requestSignal(request, reply),
+    });
     reply.status(201).send(created);
   });
 

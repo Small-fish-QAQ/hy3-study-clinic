@@ -135,6 +135,14 @@ export const DocumentFilePayloadSchema = z
   .strict();
 export type DocumentFilePayload = z.infer<typeof DocumentFilePayloadSchema>;
 
+export const WebSnapshotRequestSchema = z
+  .object({
+    url: z.string().url().max(2048),
+    title: z.string().max(200).optional(),
+  })
+  .strict();
+export type WebSnapshotRequest = z.infer<typeof WebSnapshotRequestSchema>;
+
 /**
  * Runtime contract for POST /api/workspaces/:id/documents.
  *

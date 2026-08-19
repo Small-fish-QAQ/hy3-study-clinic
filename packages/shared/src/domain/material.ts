@@ -34,6 +34,7 @@ export const SourceTypeSchema = z.enum([
   'docx',
   'pptx',
   'image',
+  'html',
   'source_code',
 ]);
 export type SourceType = z.infer<typeof SourceTypeSchema>;
@@ -48,6 +49,7 @@ export const MediaTypeSchema = z.enum([
   'image/png',
   'image/jpeg',
   'image/webp',
+  'text/html',
   'text/x-source-code',
 ]);
 export type MediaType = z.infer<typeof MediaTypeSchema>;
@@ -254,6 +256,21 @@ export const MaterialRevisionStatusSchema = z.enum([
 ]);
 export type MaterialRevisionStatus = z.infer<typeof MaterialRevisionStatusSchema>;
 
+/** Immutable identity recorded for a public HTTP HTML snapshot. */
+export const WebSnapshotMetadataSchema = z
+  .object({
+    requestedUrl: z.string().url(),
+    normalizedUrl: z.string().url(),
+    finalUrl: z.string().url(),
+    fetchedAt: z.string().datetime(),
+    responseContentType: z.string().min(1).max(200),
+    responseByteHash: z.string().regex(/^sha256:[0-9a-f]{64}$/),
+    fetchPolicyVersion: z.string().min(1).max(80),
+    extractionStrategyVersion: z.string().min(1).max(80),
+  })
+  .strict();
+export type WebSnapshotMetadata = z.infer<typeof WebSnapshotMetadataSchema>;
+
 export const MaterialRevisionSchema = z
   .object({
     id: z.string().min(1),
@@ -279,6 +296,7 @@ export const MaterialRevisionSchema = z
     chunkerFingerprint: z.string().min(1).max(200).nullable().optional(),
     sourceFingerprint: z.string().min(1).max(200).nullable(),
     originalAssetFingerprint: z.string().min(1).max(200).nullable(),
+    webSnapshot: WebSnapshotMetadataSchema.nullable().optional(),
     createdAt: z.string().datetime(),
     activatedAt: z.string().datetime().nullable(),
     retiredAt: z.string().datetime().nullable(),
