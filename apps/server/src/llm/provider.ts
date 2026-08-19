@@ -45,6 +45,8 @@ import type {
   TutorToolName,
   VisualAdvisoryContext,
   VisualDescriptionPayload,
+  RepairDiagnosticCategory,
+  RepairGenerationPayload,
 } from '@hy3-clinic/shared';
 
 /** Options threaded through every provider call. */
@@ -245,6 +247,15 @@ export interface RemediationInput {
   targets: RemediationTarget[];
   /** Number of questions to generate per weak concept (1-3). */
   questionsPerConcept: number;
+}
+
+export interface RepairGenerationInput {
+  targetLearningUnitId: string;
+  diagnosticCategory: RepairDiagnosticCategory;
+  gapSummary: string;
+  affectedCriteria: string[];
+  sourceContext: Array<{ blockId: string; quote: string }>;
+  failedPrompt: string;
 }
 
 export interface GraphProposalInput {
@@ -789,6 +800,10 @@ export interface LlmProvider extends VisualDescriptionProvider {
     input: RemediationInput,
     opts?: ProviderCallOptions,
   ): Promise<QuizGenerationPayload>;
+  generateRepair(
+    input: RepairGenerationInput,
+    opts?: ProviderCallOptions,
+  ): Promise<RepairGenerationPayload>;
   /** Propose typed, evidence-cited relationships between EXISTING concepts. */
   proposeGraphEdges(
     input: GraphProposalInput,

@@ -34,6 +34,7 @@ import {
   type TutorStepPayload,
   type TutorTurnPayload,
   type VisualDescriptionPayload,
+  type RepairGenerationPayload,
 } from '@hy3-clinic/shared';
 import { z, type ZodType, type ZodTypeDef } from 'zod';
 import { ProviderError } from './errors.js';
@@ -73,6 +74,7 @@ import type {
   ProviderCallOptions,
   QuizGenerationInput,
   RemediationInput,
+  RepairGenerationInput,
   RemediationPlanInput,
   ShortAnswerGradingInput,
   StudyPlanProposalInput,
@@ -359,6 +361,15 @@ export class Hy3Provider implements LlmProvider {
       ),
       QuizGenerationPayloadSchema,
       opts,
+    );
+  }
+
+  async generateRepair(
+    _input: RepairGenerationInput,
+    _opts?: ProviderCallOptions,
+  ): Promise<RepairGenerationPayload> {
+    throw ProviderError.invalidOutput(
+      'Repair generation is not enabled for the real provider in Phase 7B1.',
     );
   }
 

@@ -69,6 +69,12 @@ The same workflows run offline with the fake provider through `npm run demo:grap
 
 Practice and formal assessment are separate paths. Formal assessments use immutable accepted versions with explicit learning-unit/objective targets, exact MaterialRevision/SourceBlock bindings, and an authoritative rubric. Short-answer items are the supported formal path; choice items remain practice/advisory unless complete option-premise authority is available. Attempts are durable and immutable after submission, and grades are append-only records that support regrading without erasing history. A grade is not Formal Evidence: local gating derives evidence only from an eligible item, current grade, submitted attempt, and valid source/rubric authority. Evidence is then handed to a separate idempotent progression-reconciliation boundary. Tutor conversation, lesson completion, exact quote occurrence alone, and derived visual descriptions never grant formal credit.
 
+### Diagnostic Repair orchestration
+
+A failed or partial formal grade can open a durable Repair episode. Repair interprets the response, not the learner: wrong does not automatically mean the underlying knowledge is absent. The bounded taxonomy distinguishes a surface slip, incomplete expression, local misconception, reversed relation, procedural gap, prerequisite gap, irrelevant/guessing response, and uncertainty. A semantically correct response with a harmless spelling slip does not open Repair merely because of that slip.
+
+Local code derives the episode from the persisted grade and criterion judgments, selects the minimum sufficient intervention policy, validates source and target identity, and owns every status transition. Fake mode can generate an immutable, source-linked Repair packet for deterministic offline development. Repair practice is non-credit and creates no Evidence, mastery, mistake closure, or progression mutation. Reading an explanation, clicking continue, or saying "I understand" cannot resolve Repair. Resolution requires supported Evidence from a linked, fresh formal assessment version for the same target; the evidence and progression reconciliation boundaries remain separate. Learner-facing Repair UX is intentionally not complete yet.
+
 ## Product workflow
 
 ### Course materials to a verifiable learning graph
@@ -341,7 +347,7 @@ The browser never calls Hy3 directly. SQLite holds course workspaces, logical ma
 
 The responsive Course shell and Settings route are presentation boundaries over server-owned runtime state, not parallel configuration or persistence systems. The original SVG mark is reused by the sidebar, compatibility header, and favicon; provider secrets never enter browser storage. Curriculum expansion state is ephemeral presentation state: expanding branches, revealing the units after the first 12, or opening source/version details never modifies the accepted Curriculum.
 
-See [Architecture & Design Notes](docs/ARCHITECTURE.md) for request lifecycles, grounding rules, all 26 migrations, document deletion/reprocessing behavior, rich-document archive safety, original-asset provenance, accepted-route lifecycle, formal progression, graph routing, provider contracts, learner-state machines, cancellation, and dependency rationale. It documents implemented current behavior; the authoritative design separately identifies later gated work.
+See [Architecture & Design Notes](docs/ARCHITECTURE.md) for request lifecycles, grounding rules, all 29 migrations, document deletion/reprocessing behavior, rich-document archive safety, original-asset provenance, accepted-route lifecycle, formal progression, graph routing, provider contracts, learner-state machines, cancellation, and dependency rationale. It documents implemented current behavior; the authoritative design separately identifies later gated work.
 
 ## Verification summary
 

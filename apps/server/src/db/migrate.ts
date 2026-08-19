@@ -2224,6 +2224,75 @@ const MIGRATIONS: Migration[] = [
       BEGIN SELECT RAISE(ABORT, 'assessment items are immutable after acceptance'); END;
     `,
   },
+  {
+    version: 29,
+    name: 'diagnostic_repair_orchestration',
+    up: `
+      CREATE TABLE repair_episodes (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        trigger_grade_record_id TEXT NOT NULL UNIQUE REFERENCES assessment_grade_records(id) ON DELETE CASCADE,
+        trigger_attempt_id TEXT NOT NULL REFERENCES assessment_attempts(id) ON DELETE CASCADE,
+        assessment_version_id TEXT NOT NULL REFERENCES assessment_versions(id) ON DELETE CASCADE,
+        item_id TEXT NOT NULL,
+        target_learning_unit_id TEXT NOT NULL,
+        diagnostic_category TEXT NOT NULL CHECK (diagnostic_category IN
+          ('SURFACE_SLIP', 'INCOMPLETE_EXPRESSION', 'LOCAL_MISCONCEPTION',
+           'RELATION_REVERSAL', 'PROCEDURAL_GAP', 'PREREQUISITE_GAP',
+           'IRRELEVANT_OR_GUESSING', 'UNCERTAIN')),
+        affected_criterion_ids TEXT NOT NULL,
+        gap_summary TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN
+          ('OPEN', 'ACTIVE', 'AWAITING_VERIFICATION', 'RESOLVED', 'DEFERRED', 'CANCELLED')),
+        attempt_count INTEGER NOT NULL DEFAULT 0 CHECK (attempt_count BETWEEN 0 AND 3),
+        verification_attempt_id TEXT REFERENCES assessment_attempts(id) ON DELETE CASCADE,
+        resolved_evidence_id TEXT REFERENCES assessment_evidence_records(id) ON DELETE CASCADE,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_repair_episodes_workspace ON repair_episodes(workspace_id, created_at DESC);
+      CREATE INDEX idx_repair_episodes_target ON repair_episodes(target_learning_unit_id, status);
+
+      CREATE TABLE repair_packets (
+        id TEXT PRIMARY KEY,
+        episode_id TEXT NOT NULL REFERENCES repair_episodes(id) ON DELETE CASCADE,
+        generation_key TEXT NOT NULL UNIQUE,
+        provider TEXT NOT NULL CHECK (provider IN ('fake', 'hy3')),
+        provider_model TEXT,
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_repair_packets_episode ON repair_packets(episode_id, created_at);
+
+      CREATE TABLE repair_practice_events (
+        id TEXT PRIMARY KEY,
+        episode_id TEXT NOT NULL REFERENCES repair_episodes(id) ON DELETE CASCADE,
+        ordinal INTEGER NOT NULL CHECK (ordinal > 0),
+        response_summary TEXT NOT NULL,
+        outcome TEXT NOT NULL CHECK (outcome IN
+          ('CONTINUE', 'READY_FOR_VERIFICATION', 'NEEDS_MORE_SUPPORT')),
+        created_at TEXT NOT NULL,
+        UNIQUE (episode_id, ordinal)
+      );
+
+      CREATE TABLE repair_status_events (
+        id TEXT PRIMARY KEY,
+        episode_id TEXT NOT NULL REFERENCES repair_episodes(id) ON DELETE CASCADE,
+        from_status TEXT,
+        to_status TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_repair_status_events_episode ON repair_status_events(episode_id, created_at);
+
+      CREATE TRIGGER prevent_repair_packet_update
+        BEFORE UPDATE ON repair_packets
+        BEGIN SELECT RAISE(ABORT, 'repair packets are immutable'); END;
+      CREATE TRIGGER prevent_repair_status_event_update
+        BEFORE UPDATE ON repair_status_events
+        BEGIN SELECT RAISE(ABORT, 'repair status history is append-only'); END;
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

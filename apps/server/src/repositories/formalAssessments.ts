@@ -59,12 +59,24 @@ export function createFormalAssessmentsRepo(db: SqliteDb) {
         PayloadRow | undefined,
       GradeRecordSchema,
     );
-  const evidence = (id: string) =>
-    parse(
-      db.prepare('SELECT payload FROM assessment_evidence_records WHERE id = ?').get(id) as
-        PayloadRow | undefined,
-      EvidenceRecordSchema,
-    );
+  const evidence = (id: string) => {
+    const row = db.prepare('SELECT * FROM assessment_evidence_records WHERE id = ?').get(id) as
+      Record<string, unknown> | undefined;
+    return row
+      ? EvidenceRecordSchema.parse({
+          id: row.id,
+          attemptId: row.attempt_id,
+          gradeRecordId: row.grade_record_id,
+          assessmentVersionId: row.assessment_version_id,
+          itemId: row.item_id,
+          targetLearningUnitId: row.target_learning_unit_id,
+          conclusion: row.conclusion,
+          policyVersion: row.policy_version,
+          sourceBindingIds: JSON.parse(String(row.source_binding_ids)),
+          createdAt: row.created_at,
+        })
+      : undefined;
+  };
   const reconciliation = (id: string) =>
     parse(
       db

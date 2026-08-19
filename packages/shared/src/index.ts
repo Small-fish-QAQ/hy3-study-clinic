@@ -30,6 +30,7 @@ export * from './domain/quiz.js';
 export * from './domain/grading.js';
 export * from './domain/attempt.js';
 export * from './domain/formalAssessment.js';
+export * from './domain/repair.js';
 export * from './domain/mistake.js';
 export * from './domain/alignment.js';
 export * from './domain/blueprint.js';

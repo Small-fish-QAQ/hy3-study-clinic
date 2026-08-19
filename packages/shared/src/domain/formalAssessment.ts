@@ -113,6 +113,23 @@ export const GradeRecordSchema = z.object({
       z.object({ criterionId: z.string().min(1), result: z.enum(['met', 'partial', 'not_met']) }),
     ),
     feedback: z.string().max(1000),
+    diagnostic: z
+      .object({
+        category: z.enum([
+          'SURFACE_SLIP',
+          'INCOMPLETE_EXPRESSION',
+          'LOCAL_MISCONCEPTION',
+          'RELATION_REVERSAL',
+          'PROCEDURAL_GAP',
+          'PREREQUISITE_GAP',
+          'IRRELEVANT_OR_GUESSING',
+          'UNCERTAIN',
+        ]),
+        affectedCriterionIds: z.array(z.string().min(1)).max(8),
+        summary: z.string().min(1).max(500),
+        uncertainty: z.number().min(0).max(1),
+      })
+      .optional(),
   }),
   supersedesId: z.string().min(1).nullable(),
   createdAt: z.string().datetime(),

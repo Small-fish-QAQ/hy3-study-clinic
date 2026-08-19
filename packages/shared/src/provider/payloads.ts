@@ -12,6 +12,7 @@ import {
   TutorToolNameSchema,
 } from '../domain/tutor.js';
 import { DesiredDepthSchema } from '../domain/learningContract.js';
+import { RepairDiagnosticCategorySchema, RepairInterventionModeSchema } from '../domain/repair.js';
 import {
   InformalCheckKindSchema,
   TeachingBriefSegmentPurposeSchema,
@@ -869,6 +870,15 @@ export const AssessmentProposalPayloadSchema = z.object({
   items: z.array(ProposedAssessmentItemSchema).min(1).max(8),
 });
 export type AssessmentProposalPayload = z.infer<typeof AssessmentProposalPayloadSchema>;
+
+export const RepairGenerationPayloadSchema = z.object({
+  interventionMode: RepairInterventionModeSchema,
+  explanation: z.string().min(1).max(1500),
+  practicePrompt: z.string().min(1).max(1000),
+  hints: z.array(z.string().min(1).max(500)).max(4),
+  diagnosticCategory: RepairDiagnosticCategorySchema,
+});
+export type RepairGenerationPayload = z.infer<typeof RepairGenerationPayloadSchema>;
 
 // ---------------------------------------------------------------------------
 // Misconception hypothesis
