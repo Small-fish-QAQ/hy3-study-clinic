@@ -279,6 +279,7 @@ export function createLearnerAssessmentsService({
       const grade = await gradeAttempt(submitted, opts);
       formalAssessments.recordGrade(grade);
       const evidence = formalAssessments.deriveEvidence(grade.id);
+      if (grade.judgment.score < 0.6) repair.createForGrade(grade.id);
       const linkedEpisode = repos.repair
         .listByWorkspace(submitted.workspaceId)
         .find((candidate) => candidate.verificationAttemptId === submitted.id);
