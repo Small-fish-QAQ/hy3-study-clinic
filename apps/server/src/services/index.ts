@@ -183,12 +183,16 @@ export function createServices({
     curriculum,
     studyPlans: studyPlansAgent,
   });
-  const formalAssessments = createFormalAssessmentsService({ repos, clock });
   const formalProgression = createFormalProgressionService({
     repos,
     progression: repos.formalProgression,
     commands: courseCommands,
     clock,
+  });
+  const formalAssessments = createFormalAssessmentsService({
+    repos,
+    clock,
+    progression: formalProgression,
   });
   const courseActionLaunch = createCourseActionLaunchService({
     repos,

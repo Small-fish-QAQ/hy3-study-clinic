@@ -291,6 +291,12 @@ export function createLearnerAssessmentsService({
       const grade = await gradeAttempt(submitted, opts);
       formalAssessments.recordGrade(grade);
       const evidence = formalAssessments.deriveEvidence(grade.id);
+      // Formal Evidence is durable before this explicit, separately retryable
+      // projection step. A projection failure must not discard the grade or
+      // make the learner repeat the provider-backed assessment.
+      for (const record of evidence.filter((candidate) => candidate.conclusion === 'supported')) {
+        formalAssessments.reconcileEvidence(record.id);
+      }
       if (grade.judgment.score < 0.6) repair.createForGrade(grade.id);
       const linkedEpisode = repos.repair
         .listByWorkspace(submitted.workspaceId)
@@ -396,6 +402,7 @@ export function createLearnerAssessmentsService({
         sourceRevisionIds: successorItem.sourceBindings.map(
           (binding) => binding.materialRevisionId,
         ),
+        progressionContext: sourceVersion.progressionContext,
       });
       const accepted = repos.formalAssessments.acceptVersion(
         successor.id,

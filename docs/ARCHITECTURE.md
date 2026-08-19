@@ -91,7 +91,7 @@ Each profile reports exact-ID recall at candidate, offered, block, and byte boun
 
 ### Formal assessment evidence backbone
 
-The additive formal-assessment aggregate is persisted by migration 28. An `AssessmentDefinition` is the logical identity; each accepted `AssessmentVersion` is immutable and contains target-bound items, exact source-revision bindings, rubric authority, and a local `FORMAL_ELIGIBLE` or `PRACTICE_ONLY` reason. `AssessmentAttempt` stores one durable execution and its submitted responses. `GradeRecord` is append-only and identifies the grader/rubric version; regrading supersedes a record without rewriting it. Evidence is derived only by the local gate from a submitted attempt, current grade, immutable formal item, authoritative non-derived source and rubric bindings, and the approved short-answer policy. `AssessmentEvidenceRecord` and `AssessmentProgressionReconciliation` are separate durable records, so a reconciliation failure is retryable and cannot silently turn a grade into mastery. Existing Tutor, lesson, and legacy quiz paths remain non-formal unless they enter this explicit contract.
+The additive formal-assessment aggregate is persisted by migration 28. An `AssessmentDefinition` is the logical identity; each accepted `AssessmentVersion` is immutable and contains target-bound items, exact source-revision bindings, rubric authority, and a local `FORMAL_ELIGIBLE` or `PRACTICE_ONLY` reason. `AssessmentAttempt` stores one durable execution and its submitted responses. `GradeRecord` is append-only and identifies the grader/rubric version; regrading supersedes a record without rewriting it. Evidence is derived only by the local gate from a submitted attempt, current grade, immutable formal item, authoritative non-derived source and rubric bindings, and the approved short-answer policy. `AssessmentEvidenceRecord` and `AssessmentProgressionReconciliation` are separate durable records. Migration 30 adds immutable launch context and retry identity to that reconciliation boundary: supported Evidence is translated into one local grading projection and passed to the existing `formalProgression` service, which retains the versioned completion policy, route projection, duplicate fencing, and historical-current semantics. A failed projection leaves Grade and Evidence durable and retryable; it never invokes a provider. Existing Tutor, lesson, and legacy quiz paths remain non-formal unless they enter this explicit contract.
 
 ### Diagnostic Repair orchestration
 
@@ -357,7 +357,7 @@ Retiring one document clears the active graph pointer, marks dependent source-au
 
 `better-sqlite3` runs with foreign keys enabled. Repositories validate domain objects on writes and reads. Multi-row operations use explicit transactions, and migrations are recorded in `schema_migrations`.
 
-The 27 shipped migrations are:
+The 30 shipped migrations are:
 
 1. `initial_schema` - original materials, blocks, concepts, quizzes, grading, mistakes, and mastery.
 2. `course_workspaces_and_documents` - workspaces, document metadata/original bytes, and source-block page numbers; every legacy material receives a compatibility workspace without learning-data deletion.
@@ -386,6 +386,9 @@ The 27 shipped migrations are:
 25. `immutable_visual_derivations` - advisory, occurrence-bound visual descriptions over original image assets.
 26. `visual_provider_runtime_identity` - provider endpoint/runtime identity for immutable visual derivations.
 27. `html_web_snapshot_metadata` - immutable requested/final URL, response hash, fetch policy and extraction strategy metadata for HTML Web Snapshots.
+28. `formal_assessment_evidence_backbone` - immutable formal assessment versions, attempts, grades, criterion-gated evidence, and the separate assessment reconciliation record.
+29. `diagnostic_repair_orchestration` - immutable Repair packets, non-credit practice events, and append-only Repair status history.
+30. `formal_assessment_progression_bridge` - immutable assessment launch context plus retryable linkage to the existing deterministic progression reconciliation.
 
 Table-rebuild migrations disable foreign keys only around the controlled rebuild, run `foreign_key_check` before commit, and restore enforcement even after failure. Tests cover idempotence, populated v1 and v3 upgrades, all-or-nothing rollback, and data preservation.
 

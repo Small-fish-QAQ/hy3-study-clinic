@@ -81,7 +81,7 @@ export function createFormalAssessmentsRepo(db: SqliteDb) {
     parse(
       db
         .prepare(
-          "SELECT json_object('id', id, 'evidenceRecordId', evidence_record_id, 'status', status, 'appliedAt', applied_at, 'createdAt', created_at) AS payload FROM assessment_progression_reconciliations WHERE id = ?",
+          "SELECT json_object('id', id, 'evidenceRecordId', evidence_record_id, 'status', status, 'appliedAt', applied_at, 'createdAt', created_at, 'gradingResultId', grading_result_id, 'failureReason', failure_reason) AS payload FROM assessment_progression_reconciliations WHERE id = ?",
         )
         .get(id) as PayloadRow | undefined,
       ProgressionReconciliationRecordSchema,
@@ -107,7 +107,7 @@ export function createFormalAssessmentsRepo(db: SqliteDb) {
     insertVersion(input: AssessmentVersion) {
       const item = AssessmentVersionSchema.parse(input);
       db.prepare(
-        'INSERT INTO assessment_versions (id, definition_id, version, predecessor_id, status, payload, source_revision_ids, created_at, accepted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO assessment_versions (id, definition_id, version, predecessor_id, status, payload, source_revision_ids, progression_context, created_at, accepted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       ).run(
         item.id,
         item.definitionId,
@@ -116,6 +116,7 @@ export function createFormalAssessmentsRepo(db: SqliteDb) {
         item.status,
         JSON.stringify(item),
         JSON.stringify(item.sourceRevisionIds),
+        item.progressionContext ? JSON.stringify(item.progressionContext) : null,
         item.createdAt,
         item.acceptedAt,
       );
@@ -292,15 +293,50 @@ export function createFormalAssessmentsRepo(db: SqliteDb) {
         .get(item.evidenceRecordId) as { id: string } | undefined;
       if (existing) return reconciliation(existing.id)!;
       db.prepare(
-        'INSERT INTO assessment_progression_reconciliations (id, evidence_record_id, status, applied_at, created_at) VALUES (?, ?, ?, ?, ?)',
-      ).run(item.id, item.evidenceRecordId, item.status, item.appliedAt, item.createdAt);
+        'INSERT INTO assessment_progression_reconciliations (id, evidence_record_id, status, applied_at, created_at, grading_result_id, failure_reason) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      ).run(
+        item.id,
+        item.evidenceRecordId,
+        item.status,
+        item.appliedAt,
+        item.createdAt,
+        item.gradingResultId,
+        item.failureReason,
+      );
       return item;
     },
     getReconciliation: reconciliation,
+    getReconciliationForGrade(gradeRecordId: string) {
+      const row = db
+        .prepare(
+          `SELECT apr.id FROM assessment_progression_reconciliations apr
+           JOIN assessment_evidence_records aer ON aer.id = apr.evidence_record_id
+           WHERE aer.grade_record_id = ? ORDER BY apr.created_at, apr.id LIMIT 1`,
+        )
+        .get(gradeRecordId) as { id: string } | undefined;
+      return row ? reconciliation(row.id) : undefined;
+    },
+    linkReconciliation(id: string, gradingResultId: string) {
+      const current = reconciliation(id);
+      if (!current) throw new Error('Assessment reconciliation does not exist.');
+      if (current.gradingResultId && current.gradingResultId !== gradingResultId) {
+        throw new Error('Assessment reconciliation is linked to a different grading result.');
+      }
+      db.prepare(
+        'UPDATE assessment_progression_reconciliations SET grading_result_id = ? WHERE id = ? AND (grading_result_id IS NULL OR grading_result_id = ?)',
+      ).run(gradingResultId, id, gradingResultId);
+      return reconciliation(id)!;
+    },
     markReconciled(id: string, appliedAt: string) {
       db.prepare(
-        "UPDATE assessment_progression_reconciliations SET status = 'applied', applied_at = ? WHERE id = ? AND status = 'pending'",
+        "UPDATE assessment_progression_reconciliations SET status = 'applied', applied_at = ?, failure_reason = NULL WHERE id = ? AND status IN ('pending', 'failed')",
       ).run(appliedAt, id);
+      return reconciliation(id)!;
+    },
+    markFailed(id: string, reason: string) {
+      db.prepare(
+        "UPDATE assessment_progression_reconciliations SET status = 'failed', failure_reason = ? WHERE id = ? AND status IN ('pending', 'failed')",
+      ).run(reason.slice(0, 500), id);
       return reconciliation(id)!;
     },
   };

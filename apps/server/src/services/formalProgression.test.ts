@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  GradeRecordSchema,
   FormalQuestionContractSchema,
   type Curriculum,
   type LearningContract,
@@ -849,6 +850,94 @@ beforeEach(() => {
 });
 
 describe('formal progression service', () => {
+  it('bridges supported Assessment Evidence through the existing progression projection exactly once', () => {
+    const source = insertGrade('assessment_bridge', 1);
+    services.formalProgression.registerAssessmentContracts({
+      workspaceId: 'ws_1',
+      quizId: source.quizId,
+      agendaId: 'agenda_1',
+      agendaItemId: 'agenda_item_1',
+      assessmentKind: 'formal_checkpoint',
+      contractVersionId: 'contract_1',
+      curriculumVersionId: 'curriculum_1',
+      studyPlanVersionId: 'plan_1',
+      executionSourceManifestFingerprint: 'manifest-fp',
+    });
+    const version = services.formalAssessments.createAcceptedFromQuiz({
+      workspaceId: 'ws_1',
+      quiz: repos.quizzes.get(source.quizId)!,
+      logicalKey: 'bridge-assessment',
+      title: 'Bridge assessment',
+      targetLearningUnitId: 'unit_1',
+      targetObjectiveId: 'objective_1',
+      progressionContext: {
+        quizId: source.quizId,
+        contractVersionId: 'contract_1',
+        curriculumVersionId: 'curriculum_1',
+        studyPlanVersionId: 'plan_1',
+        agendaId: 'agenda_1',
+        agendaItemId: 'agenda_item_1',
+        assessmentKind: 'formal_checkpoint',
+        executionSourceManifestFingerprint: 'manifest-fp',
+      },
+    });
+    const attempt = services.formalAssessments.startAttempt(version.id, 'ws_1');
+    services.formalAssessments.submitAttempt(attempt.id, {
+      [version.items[0]!.id]: repos.materials.getBlock('blk_1')!.content,
+    });
+    const criterionId = version.items[0]!.rubric![0]!.id;
+    const grade = services.formalAssessments.recordGrade(
+      GradeRecordSchema.parse({
+        id: 'assessment_bridge_grade',
+        attemptId: attempt.id,
+        assessmentVersionId: version.id,
+        grader: 'fake',
+        rubricVersion: 'formal-short-answer-v1',
+        status: 'current',
+        judgment: {
+          score: 1,
+          criterionResults: [{ criterionId, result: 'met' }],
+          feedback: 'supported',
+        },
+        supersedesId: null,
+        createdAt: T3,
+      }),
+    );
+    const evidence = services.formalAssessments.deriveEvidence(grade.id);
+    expect(evidence).toHaveLength(1);
+    const originalReconcile = services.formalProgression.reconcileAfterGrading;
+    services.formalProgression.reconcileAfterGrading = (() => {
+      throw new Error('injected projection failure');
+    }) as typeof originalReconcile;
+    const failed = services.formalAssessments.reconcileEvidence(evidence[0]!.id);
+    expect(failed.status).toBe('failed');
+    expect(failed.failureReason).toContain('injected projection failure');
+    const bridgeResultsAfterFailure = db
+      .prepare("SELECT COUNT(*) AS n FROM grading_results WHERE id LIKE 'bridge_grade_%'")
+      .get() as { n: number };
+    expect(bridgeResultsAfterFailure.n).toBe(1);
+
+    services.formalProgression.reconcileAfterGrading = originalReconcile;
+    const first = services.formalAssessments.reconcileEvidence(evidence[0]!.id);
+    const replay = services.formalAssessments.reconcileEvidence(evidence[0]!.id);
+    expect(first.status).toBe('applied');
+    expect(replay).toEqual(first);
+    expect(
+      (
+        db
+          .prepare("SELECT COUNT(*) AS n FROM grading_results WHERE id LIKE 'bridge_grade_%'")
+          .get() as { n: number }
+      ).n,
+    ).toBe(1);
+    expect(repos.formalProgression.listEvidenceForWorkspace('ws_1')).toHaveLength(1);
+    expect(repos.formalProgression.getUnitProgress('ws_1', 'curriculum_1', 'unit_1')).toMatchObject(
+      {
+        state: 'complete',
+        version: 1,
+      },
+    );
+  });
+
   it('keeps tier-3 grading advisory and idempotently rejects progression', () => {
     const grade = insertGrade('advisory', 1);
     repos.formalProgression.insertQuestionContracts([

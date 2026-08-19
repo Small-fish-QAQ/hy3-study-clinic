@@ -362,6 +362,17 @@ export function createCourseActionLaunchService({
                 title: currentPlanItem.rationale || '理解检查',
                 targetLearningUnitId,
                 targetObjectiveId,
+                progressionContext: {
+                  quizId: creation.quiz.id,
+                  contractVersionId: currentPlan.contractVersionId,
+                  curriculumVersionId: currentPlan.curriculumVersionId,
+                  studyPlanVersionId: currentPlan.id,
+                  agendaId: currentAgenda.id,
+                  agendaItemId: currentItem.id,
+                  assessmentKind,
+                  executionSourceManifestFingerprint:
+                    currentPlan.executionSourceManifestFingerprint,
+                },
               });
               formalAssessmentVersionId = formalVersion.id;
             }

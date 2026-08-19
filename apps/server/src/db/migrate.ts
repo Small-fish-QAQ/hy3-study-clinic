@@ -2293,6 +2293,21 @@ const MIGRATIONS: Migration[] = [
         BEGIN SELECT RAISE(ABORT, 'repair status history is append-only'); END;
     `,
   },
+  {
+    version: 30,
+    name: 'formal_assessment_progression_bridge',
+    up: `
+      ALTER TABLE assessment_versions ADD COLUMN progression_context TEXT;
+      ALTER TABLE assessment_progression_reconciliations ADD COLUMN grading_result_id TEXT;
+      ALTER TABLE assessment_progression_reconciliations ADD COLUMN failure_reason TEXT;
+      CREATE INDEX idx_assessment_progression_reconciliation_grade
+        ON assessment_progression_reconciliations(grading_result_id);
+      CREATE TRIGGER prevent_assessment_progression_context_mutation
+        BEFORE UPDATE OF progression_context ON assessment_versions
+      WHEN OLD.status IN ('accepted', 'superseded') AND NEW.progression_context IS NOT OLD.progression_context
+      BEGIN SELECT RAISE(ABORT, 'accepted assessment progression context is immutable'); END;
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

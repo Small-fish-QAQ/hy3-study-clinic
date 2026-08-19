@@ -1292,7 +1292,10 @@ export function createFormalProgressionService({
     }
   }
 
-  function reconcileAfterGrading(gradingResultId: string) {
+  function reconcileAfterGrading(
+    gradingResultId: string,
+    expected?: { studyPlanId: string; manifestFingerprint: string },
+  ) {
     const result = repos.submissions.getGradingResult(gradingResultId);
     if (!result) throw notFound('Grading result not found.');
     const quiz = repos.quizzes.get(result.quizId);
@@ -1305,8 +1308,9 @@ export function createFormalProgressionService({
     const questionContract = progression.listQuestionContractsForQuiz(quiz.id)[0]!;
     return repos.transaction(() =>
       reconcile(workspaceId, gradingResultId, {
-        studyPlanId: questionContract.studyPlanVersionId,
-        manifestFingerprint: questionContract.executionSourceManifestFingerprint,
+        studyPlanId: expected?.studyPlanId ?? questionContract.studyPlanVersionId,
+        manifestFingerprint:
+          expected?.manifestFingerprint ?? questionContract.executionSourceManifestFingerprint,
       }),
     );
   }

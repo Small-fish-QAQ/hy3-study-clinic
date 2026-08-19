@@ -5,6 +5,7 @@ import {
   ApiErrorCode,
   EvidenceRecordSchema,
   FORMAL_EVIDENCE_POLICY_VERSION,
+  GradingResultSchema,
   GradeRecordSchema,
   ProgressionReconciliationRecordSchema,
   classifyFormalAssessmentItem,
@@ -23,15 +24,18 @@ import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
 import { verifyGrounding } from '../grounding/verify.js';
+import type { FormalProgressionService } from './formalProgression.js';
 
 const POLICY_VERSION = FORMAL_EVIDENCE_POLICY_VERSION;
 
 export function createFormalAssessmentsService({
   repos,
   clock,
+  progression,
 }: {
   repos: Repositories;
   clock: Clock;
+  progression: FormalProgressionService;
 }) {
   function getVersion(id: string) {
     const version = repos.formalAssessments.getVersion(id);
@@ -68,6 +72,25 @@ export function createFormalAssessmentsService({
     return { ...item, formalEligible: policy.formalEligible, policyReason: policy.policyReason };
   }
 
+  function hasCurrentFormalSource(item: FormalAssessmentItem): boolean {
+    return item.sourceBindings.every((binding) => {
+      const block = repos.materials.getBlock(binding.sourceBlockId);
+      const active = repos.materialRevisions.getActive(binding.materialId);
+      return Boolean(
+        block &&
+        block.materialId === binding.materialId &&
+        block.materialRevisionId === binding.materialRevisionId &&
+        active?.id === binding.materialRevisionId &&
+        binding.contentOrigin === 'extracted_original' &&
+        binding.authoritative &&
+        verifyGrounding([block], {
+          blockId: binding.sourceBlockId,
+          quote: binding.quote,
+        }).ok,
+      );
+    });
+  }
+
   function createDefinition(
     input: Omit<AssessmentDefinition, 'id' | 'createdAt' | 'updatedAt'>,
   ): AssessmentDefinition {
@@ -89,6 +112,7 @@ export function createFormalAssessmentsService({
     items: FormalAssessmentItem[];
     sourceRevisionIds: string[];
     predecessorId?: string | null;
+    progressionContext?: AssessmentVersion['progressionContext'];
   }): AssessmentVersion {
     const definition = repos.formalAssessments.getDefinition(input.definitionId);
     if (!definition) throw notFound(`正式评估定义不存在:${input.definitionId}`);
@@ -119,6 +143,7 @@ export function createFormalAssessmentsService({
         sourceRevisionIds: [...new Set(input.sourceRevisionIds)],
         createdAt: now,
         acceptedAt: null,
+        progressionContext: input.progressionContext ?? null,
       }),
     );
   }
@@ -149,6 +174,7 @@ export function createFormalAssessmentsService({
       title: string;
       targetLearningUnitId: string;
       targetObjectiveId: string;
+      progressionContext?: NonNullable<AssessmentVersion['progressionContext']>;
     }): AssessmentVersion {
       const questions = input.quiz.questions.filter(
         (question) => question.type === 'short_answer' && question.rubric,
@@ -184,6 +210,7 @@ export function createFormalAssessmentsService({
         const sourceBindingIds = sourceBindings.map((binding) => binding.sourceBlockId);
         return {
           id: newId('assessment_item'),
+          sourceQuestionId: question.id,
           index,
           targetLearningUnitId: input.targetLearningUnitId,
           targetObjectiveId: input.targetObjectiveId,
@@ -210,6 +237,7 @@ export function createFormalAssessmentsService({
             ),
           ),
         ],
+        progressionContext: input.progressionContext,
       });
       if (!version.items.every((item) => item.formalEligible)) {
         throw new AppError(
@@ -294,7 +322,7 @@ export function createFormalAssessmentsService({
         });
         const anyCoverage = result.some((criterion) => criterion.result !== 'not_met');
         const conclusion =
-          !item.formalEligible || result.length === 0
+          !item.formalEligible || !hasCurrentFormalSource(item) || result.length === 0
             ? 'unsupported'
             : credit.formallyDemonstrated
               ? 'supported'
@@ -332,9 +360,149 @@ export function createFormalAssessmentsService({
           createdAt: clock.now().toISOString(),
         }),
       );
-      return current.status === 'pending'
-        ? repos.formalAssessments.markReconciled(current.id, clock.now().toISOString())
-        : current;
+      if (evidence.conclusion !== 'supported') {
+        return current.status === 'pending'
+          ? repos.formalAssessments.markFailed(
+              current.id,
+              'Only supported Formal Evidence may enter progression.',
+            )
+          : current;
+      }
+      if (current.status === 'applied') return current;
+
+      const grade = repos.formalAssessments.getGrade(evidence.gradeRecordId);
+      const attempt = repos.formalAssessments.getAttempt(evidence.attemptId);
+      const version = getVersion(evidence.assessmentVersionId);
+      const context = version.progressionContext;
+      if (
+        !grade ||
+        grade.status !== 'current' ||
+        !attempt ||
+        attempt.status !== 'submitted' ||
+        !context
+      ) {
+        return repos.formalAssessments.markFailed(
+          current.id,
+          'Assessment Evidence has no current, route-bound formal assessment context.',
+        );
+      }
+
+      let gradingResultId = current.gradingResultId;
+      const priorForGrade = repos.formalAssessments.getReconciliationForGrade(grade.id);
+      if (!gradingResultId && priorForGrade?.gradingResultId)
+        gradingResultId = priorForGrade.gradingResultId;
+      if (!gradingResultId) {
+        const quiz = repos.quizzes.get(context.quizId);
+        const supported = repos.formalAssessments
+          .listEvidenceForGrade(grade.id)
+          .filter((record) => record.conclusion === 'supported');
+        const grades = supported.flatMap((record) => {
+          const item = version.items.find((candidate) => candidate.id === record.itemId);
+          const question = item?.sourceQuestionId
+            ? quiz?.questions.find((candidate) => candidate.id === item.sourceQuestionId)
+            : undefined;
+          if (!item || !question) return [];
+          const rubric = item.rubric ?? [];
+          const criterionIds = new Set(rubric.map((criterion) => criterion.id));
+          const criteria = grade.judgment.criterionResults.filter((result) =>
+            criterionIds.has(result.criterionId),
+          );
+          const required = rubric.filter((criterion) => criterion.required);
+          const score =
+            required.length > 0 &&
+            required.every(
+              (criterion) =>
+                criteria.find((result) => result.criterionId === criterion.id)?.result === 'met',
+            )
+              ? 1
+              : 0;
+          return [
+            {
+              questionId: question.id,
+              type: question.type,
+              gradedBy: 'deterministic' as const,
+              correct: score === 1,
+              awardedPoints: score * question.points,
+              maxPoints: question.points,
+              normalizedScore: score,
+              matchedKeyPoints: rubric
+                .filter(
+                  (criterion) =>
+                    criteria.find((result) => result.criterionId === criterion.id)?.result ===
+                    'met',
+                )
+                .map((criterion) => criterion.text),
+              missedKeyPoints: rubric
+                .filter(
+                  (criterion) =>
+                    criterion.required &&
+                    criteria.find((result) => result.criterionId === criterion.id)?.result !==
+                      'met',
+                )
+                .map((criterion) => criterion.text),
+              needsReview: false,
+            },
+          ];
+        });
+        if (!quiz || grades.length === 0) {
+          return repos.formalAssessments.markFailed(
+            current.id,
+            'Supported Evidence cannot be mapped to the accepted formal route.',
+          );
+        }
+        const now = clock.now().toISOString();
+        const submissionId = newId('bridge_submission');
+        repos.submissions.insertSubmission({
+          id: submissionId,
+          quizId: quiz.id,
+          answers: grades.map((item) => ({
+            questionId: item.questionId,
+            type: item.type,
+            text:
+              attempt.responses[
+                version.items.find((candidate) => candidate.sourceQuestionId === item.questionId)
+                  ?.id ?? ''
+              ] ?? '',
+          })),
+          createdAt: now,
+        });
+        const bridgeResult = GradingResultSchema.parse({
+          id: newId('bridge_grade'),
+          submissionId,
+          quizId: quiz.id,
+          grades,
+          totalAwarded: grades.reduce((sum, item) => sum + item.awardedPoints, 0),
+          totalPossible: grades.reduce((sum, item) => sum + item.maxPoints, 0),
+          overallScore: grades.reduce((sum, item) => sum + item.normalizedScore, 0) / grades.length,
+          createdAt: now,
+        });
+        repos.submissions.insertGradingResult(bridgeResult);
+        gradingResultId = bridgeResult.id;
+        repos.formalAssessments.linkReconciliation(current.id, gradingResultId);
+      } else {
+        repos.formalAssessments.linkReconciliation(current.id, gradingResultId);
+      }
+
+      try {
+        const projection = progression.reconcileAfterGrading(gradingResultId, {
+          studyPlanId: context.studyPlanVersionId,
+          manifestFingerprint: context.executionSourceManifestFingerprint,
+        });
+        if (!projection || projection.reconciliations.some((item) => item.status !== 'applied')) {
+          return repos.formalAssessments.markFailed(
+            current.id,
+            'Deterministic progression rejected or fenced this Evidence.',
+          );
+        }
+        return repos.formalAssessments.markReconciled(current.id, clock.now().toISOString());
+      } catch (error) {
+        return repos.formalAssessments.markFailed(
+          current.id,
+          error instanceof Error
+            ? error.message
+            : 'Deterministic progression projection failed; retryable.',
+        );
+      }
     },
   };
 }

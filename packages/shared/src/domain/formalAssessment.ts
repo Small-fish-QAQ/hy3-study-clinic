@@ -45,6 +45,8 @@ export type FormalRubricCriterion = z.infer<typeof FormalRubricCriterionSchema>;
 
 export const FormalAssessmentItemSchema = z.object({
   id: z.string().min(1),
+  /** Original quiz question identity used only by the local progression bridge. */
+  sourceQuestionId: z.string().min(1).nullable().optional(),
   index: z.number().int().nonnegative(),
   targetLearningUnitId: z.string().min(1),
   targetObjectiveId: z.string().min(1),
@@ -82,6 +84,26 @@ export const AssessmentVersionSchema = z.object({
   sourceRevisionIds: z.array(z.string().min(1)).min(1),
   createdAt: z.string().datetime(),
   acceptedAt: z.string().datetime().nullable(),
+  /** Immutable launch context for the separate deterministic progression bridge. */
+  progressionContext: z
+    .object({
+      quizId: z.string().min(1),
+      contractVersionId: z.string().min(1),
+      curriculumVersionId: z.string().min(1),
+      studyPlanVersionId: z.string().min(1),
+      agendaId: z.string().min(1),
+      agendaItemId: z.string().min(1),
+      assessmentKind: z.enum([
+        'formal_checkpoint',
+        'targeted_repair',
+        'synthesis',
+        'direct_checkpoint',
+        'due_review',
+      ]),
+      executionSourceManifestFingerprint: z.string().min(1),
+    })
+    .nullable()
+    .default(null),
 });
 export type AssessmentVersion = z.infer<typeof AssessmentVersionSchema>;
 
@@ -202,6 +224,9 @@ export const ProgressionReconciliationRecordSchema = z.object({
   status: z.enum(['pending', 'applied', 'failed']),
   appliedAt: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),
+  /** Existing formalProgression reconciliation identity, when projection began. */
+  gradingResultId: z.string().min(1).nullable().default(null),
+  failureReason: z.string().min(1).max(500).nullable().default(null),
 });
 export type ProgressionReconciliationRecord = z.infer<typeof ProgressionReconciliationRecordSchema>;
 
