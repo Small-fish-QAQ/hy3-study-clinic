@@ -44,6 +44,9 @@ export function FormalAssessmentPanel({
     }
   }
 
+  // `load` intentionally captures the current panel identity; the effect is
+  // fenced by workspace/version and aborts the previous request on change.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     controller.current?.abort();
     const next = new AbortController();
