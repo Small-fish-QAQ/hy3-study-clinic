@@ -129,6 +129,8 @@ export const DocumentFilePayloadSchema = z
     filename: z.string().min(1).max(255),
     dataBase64: z.string().min(1).max(MAX_DOCUMENT_FILE_BASE64_CHARS),
     title: z.string().max(200).optional(),
+    /** Optional client-declared MIME, cross-checked against extension/signature. */
+    mediaType: MediaTypeSchema.optional(),
   })
   .strict();
 export type DocumentFilePayload = z.infer<typeof DocumentFilePayloadSchema>;

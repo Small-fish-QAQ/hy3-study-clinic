@@ -158,7 +158,7 @@ describe('migrations', () => {
       .prepare('SELECT COALESCE(MAX(version), 0) AS v FROM schema_migrations')
       .get() as { v: number };
     expect(row.v).toBe(LATEST_MIGRATION_VERSION);
-    expect(row.v).toBe(22);
+    expect(row.v).toBe(LATEST_MIGRATION_VERSION);
     expectCanonicalProviderGenerationSchema(db);
     db.close();
   });

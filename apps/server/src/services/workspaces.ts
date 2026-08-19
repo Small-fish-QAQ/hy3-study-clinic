@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import {
   CreateWorkspaceRequestSchema,
   fnv1a32,
@@ -16,7 +17,12 @@ import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
 import { ingestSource } from '../ingestion/ingest.js';
 import { parseBinaryUpload } from '../ingestion/documents.js';
-import { segmentMaterial } from '../ingestion/segment.js';
+import {
+  normalizedDocumentToSourceBlocks,
+  parserForSourceType,
+  STRUCTURE_AWARE_CHUNKER_FINGERPRINT,
+  STRUCTURE_AWARE_CHUNKER_VERSION,
+} from '../ingestion/normalized.js';
 import type { MaterialService, MaterialWithBlocks } from './materials.js';
 import type { SourceAuthorityService } from './sourceAuthority.js';
 
@@ -136,8 +142,9 @@ export function createWorkspaceService({
       let originalData: Buffer | null = null;
 
       try {
+        const storedOriginal = repos.materials.getOriginalData(documentId);
         if (existing.sourceType === 'pdf' || existing.sourceType === 'docx') {
-          const original = repos.materials.getOriginalData(documentId);
+          const original = storedOriginal;
           if (!original) {
             throw new AppError(
               ApiErrorCode.ValidationError,
@@ -152,7 +159,8 @@ export function createWorkspaceService({
           warnings = parsed.warnings;
           parserVersion = parsed.parserVersion;
         } else {
-          content = existing.content;
+          originalData = storedOriginal;
+          content = storedOriginal ? storedOriginal.toString('utf8') : existing.content;
           parserVersion = existing.parserVersion ?? 'text-v1';
         }
 
@@ -167,16 +175,21 @@ export function createWorkspaceService({
           parserVersion,
           updatedAt: now,
         };
-        const blocks = segmentMaterial(documentId, normalized.content, {
+        const document = parserForSourceType(existing.sourceType).parse({
+          revisionId,
+          materialId: documentId,
+          sourceType: existing.sourceType,
+          mediaType: existing.mediaType,
+          content: normalized.content,
+          filename: existing.originalFilename,
           ...(pageSpans ? { pageSpans } : {}),
+        });
+        const blocks = normalizedDocumentToSourceBlocks(documentId, document, {
           idSeed: revisionId,
+          materialRevisionId: revisionId,
         });
         const contentFingerprint = fnv1a32(normalized.content).toString(16).padStart(8, '0');
-        const parserFingerprint = fnv1a32(
-          JSON.stringify({ parserVersion, sourceType: existing.sourceType }),
-        )
-          .toString(16)
-          .padStart(8, '0');
+        const parserFingerprint = document.parserFingerprint;
 
         repos.materialRevisions.stage({
           revisionId,
@@ -185,6 +198,12 @@ export function createWorkspaceService({
           originalData,
           parserFingerprint,
           contentFingerprint,
+          chunkerVersion: STRUCTURE_AWARE_CHUNKER_VERSION,
+          chunkerFingerprint: STRUCTURE_AWARE_CHUNKER_FINGERPRINT,
+          sourceFingerprint: `sha256:${createHash('sha256')
+            .update(originalData ?? Buffer.from(normalized.content, 'utf8'))
+            .digest('hex')}`,
+          normalizedUnits: document.units,
           parserAttemptId,
           createdAt: now,
         });
@@ -201,6 +220,8 @@ export function createWorkspaceService({
             materialId: documentId,
             parserVersion: existing.parserVersion,
             parserFingerprint: null,
+            chunkerVersion: STRUCTURE_AWARE_CHUNKER_VERSION,
+            chunkerFingerprint: STRUCTURE_AWARE_CHUNKER_FINGERPRINT,
             errorCode: error instanceof AppError ? error.code : null,
             errorMessage: error instanceof Error ? error.message : String(error),
             startedAt: now,

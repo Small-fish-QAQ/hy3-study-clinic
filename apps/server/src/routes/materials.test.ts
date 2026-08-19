@@ -443,8 +443,8 @@ describe('POST /api/materials (file imports)', () => {
       url: '/api/materials',
       payload: { filename: 'fake.pdf', dataBase64: fixtureB64('sample.docx') },
     });
-    expect(res.statusCode).toBe(422);
-    expect(res.json().error.code).toBe('PARSE_FAILED');
+    expect(res.statusCode).toBe(415);
+    expect(res.json().error.code).toBe('TYPE_MISMATCH');
     expect(ctx.repos.materials.list()).toEqual([]);
   });
 

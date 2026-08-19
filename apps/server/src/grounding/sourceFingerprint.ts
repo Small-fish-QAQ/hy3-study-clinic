@@ -10,6 +10,7 @@ export function curriculumSourceBlockFingerprint(block: SourceBlock, revisionId:
       content: block.content,
       startOffset: block.startOffset,
       endOffset: block.endOffset,
+      chunkerVersion: block.chunkerVersion ?? null,
     }),
   )
     .toString(16)

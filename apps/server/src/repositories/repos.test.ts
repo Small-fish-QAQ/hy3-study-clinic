@@ -247,6 +247,15 @@ describe('materials repository', () => {
     expect(() => repos.materials.insertWithBlocks(bad, [])).toThrow();
   });
 
+  it('rejects a SourceBlock owned by a different material without persisting either row', () => {
+    const material = makeMaterial();
+    const foreignBlock = makeBlock({ materialId: 'mat_foreign' });
+    expect(() => repos.materials.insertWithBlocks(material, [foreignBlock])).toThrow(
+      /foreign material/u,
+    );
+    expect(repos.materials.get(material.id)).toBeUndefined();
+  });
+
   it('renames only the material title and allows duplicate titles', () => {
     const first = populateMaterialGraph('rename');
     repos.materials.insertWithBlocks(makeMaterial({ id: 'mat_duplicate', title: '目标标题' }), [
@@ -312,6 +321,7 @@ describe('materials repository', () => {
     expect(references('source_blocks')).toEqual([
       'material_id->materials.id:CASCADE',
       'material_revision_id->material_revisions.id:NO ACTION',
+      'structural_unit_id->normalized_structural_units.id:SET NULL',
     ]);
     expect(references('concepts')).toEqual([
       'material_id->materials.id:CASCADE',

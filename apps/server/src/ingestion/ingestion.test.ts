@@ -106,10 +106,11 @@ describe('sanitizeParsedText', () => {
 });
 
 describe('sourceTypeForFilename', () => {
-  it('accepts .md and .txt (case-insensitive)', () => {
+  it('accepts text and common source-code extensions (case-insensitive)', () => {
     expect(sourceTypeForFilename('notes.md')).toBe('md');
     expect(sourceTypeForFilename('NOTES.TXT')).toBe('txt');
     expect(sourceTypeForFilename('a.markdown')).toBe('md');
+    expect(sourceTypeForFilename('example.TS')).toBe('source_code');
   });
 
   it('rejects unsupported extensions', () => {

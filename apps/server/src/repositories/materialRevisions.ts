@@ -1,6 +1,8 @@
 import {
+  fnv1a32,
   NormalizedStructuralUnitSchema,
   type Material,
+  type NormalizedDocumentUnit,
   type NormalizedStructuralUnit,
   type SourceBlock,
 } from '@hy3-clinic/shared';
@@ -26,6 +28,9 @@ export interface MaterialRevisionRecord {
   parserVersion: string | null;
   parserFingerprint: string | null;
   contentFingerprint: string | null;
+  chunkerVersion: string | null;
+  chunkerFingerprint: string | null;
+  sourceFingerprint: string | null;
   failureCode: string | null;
   failureMessage: string | null;
   createdAt: string;
@@ -49,6 +54,9 @@ interface RevisionRow {
   parser_version: string | null;
   parser_fingerprint: string | null;
   content_fingerprint: string | null;
+  chunker_version: string | null;
+  chunker_fingerprint: string | null;
+  source_fingerprint: string | null;
   failure_code: string | null;
   failure_message: string | null;
   created_at: string;
@@ -67,6 +75,34 @@ interface StructuralUnitRow {
   page_number: number | null;
   metadata: string;
   revision_content: string;
+  line_start: number | null;
+  line_end: number | null;
+  page_end: number | null;
+  heading_path: string | null;
+  content_origin: string | null;
+  chunker_version: string | null;
+}
+
+function orderNormalizedUnits(units: NormalizedDocumentUnit[]): NormalizedDocumentUnit[] {
+  const byId = new Map(units.map((unit) => [unit.id, unit]));
+  if (byId.size !== units.length) throw new Error('Duplicate normalized unit id');
+  const depthMemo = new Map<string, number>();
+  const visiting = new Set<string>();
+  const depthOf = (id: string): number => {
+    const cached = depthMemo.get(id);
+    if (cached !== undefined) return cached;
+    const unit = byId.get(id);
+    if (!unit) throw new Error(`Normalized unit parent is unknown: ${id}`);
+    if (visiting.has(id)) throw new Error(`Normalized unit parent cycle: ${id}`);
+    visiting.add(id);
+    const depth = unit.parentUnitId ? depthOf(unit.parentUnitId) + 1 : 0;
+    visiting.delete(id);
+    depthMemo.set(id, depth);
+    return depth;
+  };
+  return [...units].sort(
+    (a, b) => depthOf(a.id) - depthOf(b.id) || a.index - b.index || a.id.localeCompare(b.id),
+  );
 }
 
 function hydrate(row: RevisionRow): MaterialRevisionRecord {
@@ -87,6 +123,9 @@ function hydrate(row: RevisionRow): MaterialRevisionRecord {
     parserVersion: row.parser_version,
     parserFingerprint: row.parser_fingerprint,
     contentFingerprint: row.content_fingerprint,
+    chunkerVersion: row.chunker_version,
+    chunkerFingerprint: row.chunker_fingerprint,
+    sourceFingerprint: row.source_fingerprint,
     failureCode: row.failure_code,
     failureMessage: row.failure_message,
     createdAt: row.created_at,
@@ -101,6 +140,10 @@ export interface StageMaterialRevisionInput {
   originalData: Buffer | null;
   parserFingerprint: string | null;
   contentFingerprint: string | null;
+  chunkerVersion?: string | null;
+  chunkerFingerprint?: string | null;
+  sourceFingerprint?: string | null;
+  normalizedUnits?: NormalizedDocumentUnit[];
   parserAttemptId: string;
   createdAt: string;
 }
@@ -125,13 +168,15 @@ export function createMaterialRevisionsRepo(db: SqliteDb) {
          id, material_id, revision_number, predecessor_revision_id, status,
          source_type, media_type, original_filename, content, char_count,
          parse_status, page_count, extraction_warnings, parser_version,
-         parser_fingerprint, content_fingerprint, original_data, failure_code,
+          parser_fingerprint, content_fingerprint, chunker_version, chunker_fingerprint,
+          source_fingerprint, original_data, failure_code,
          failure_message, created_at, activated_at
        ) VALUES (
          @id, @materialId, @revisionNumber, @predecessorRevisionId, 'candidate',
          @sourceType, @mediaType, @originalFilename, @content, @charCount,
          @parseStatus, @pageCount, @extractionWarnings, @parserVersion,
-         @parserFingerprint, @contentFingerprint, @originalData, NULL, NULL,
+          @parserFingerprint, @contentFingerprint, @chunkerVersion, @chunkerFingerprint,
+          @sourceFingerprint, @originalData, NULL, NULL,
          @createdAt, NULL
        )`,
     ).run({
@@ -150,20 +195,85 @@ export function createMaterialRevisionsRepo(db: SqliteDb) {
       parserVersion: input.material.parserVersion,
       parserFingerprint: input.parserFingerprint,
       contentFingerprint: input.contentFingerprint,
+      chunkerVersion: input.chunkerVersion ?? null,
+      chunkerFingerprint: input.chunkerFingerprint ?? null,
+      sourceFingerprint: input.sourceFingerprint ?? null,
       originalData: input.originalData,
       createdAt: input.createdAt,
     });
 
+    const insertUnit = db.prepare(
+      `INSERT INTO normalized_structural_units (
+         id, material_revision_id, parent_id, unit_type, idx, title,
+         start_offset, end_offset, page_number, metadata, line_start, line_end,
+         page_end, heading_path, content_origin, chunker_version
+       ) VALUES (
+         @id, @materialRevisionId, @parentId, @kind, @index, @title,
+         @startOffset, @endOffset, @pageNumber, @metadata, @lineStart, @lineEnd,
+         @pageEnd, @headingPath, @contentOrigin, @chunkerVersion
+       )`,
+    );
     const insertBlock = db.prepare(
       `INSERT INTO source_blocks (
          id, material_id, material_revision_id, idx, heading, heading_path,
-         page_number, page_end, content, start_offset, end_offset
+         page_number, page_end, content, start_offset, end_offset,
+         structural_unit_id, chunker_version, content_origin
        ) VALUES (
          @id, @materialId, @materialRevisionId, @index, @heading, @headingPath,
-         @pageNumber, @pageEnd, @content, @startOffset, @endOffset
+         @pageNumber, @pageEnd, @content, @startOffset, @endOffset,
+         @structuralUnitId, @chunkerVersion, @contentOrigin
        )`,
     );
+    const unitIdMap = new Map<string, string>();
+    for (const unit of input.normalizedUnits ?? []) {
+      if (
+        unit.materialRevisionId !== input.revisionId &&
+        !unit.materialRevisionId.endsWith(':candidate')
+      ) {
+        throw new Error(`Normalized unit belongs to a foreign revision: ${unit.id}`);
+      }
+      if (unitIdMap.has(unit.id)) throw new Error(`Duplicate normalized unit: ${unit.id}`);
+      const persistedId = `unit_${fnv1a32(`${input.revisionId}:${unit.id}`).toString(16).padStart(8, '0')}`;
+      unitIdMap.set(unit.id, persistedId);
+    }
+    for (const unit of orderNormalizedUnits(input.normalizedUnits ?? [])) {
+      const persistedId = unitIdMap.get(unit.id)!;
+      const metadata = {
+        content: unit.content,
+        sourceLocator: unit.location.domPath ?? null,
+        derivation: unit.derivation,
+        confidence: null,
+        headingPath: unit.headingPath,
+      };
+      insertUnit.run({
+        id: persistedId,
+        materialRevisionId: input.revisionId,
+        parentId: unit.parentUnitId ? (unitIdMap.get(unit.parentUnitId) ?? null) : null,
+        kind: unit.kind,
+        index: unit.index,
+        title: unit.title,
+        startOffset: unit.startOffset,
+        endOffset: unit.endOffset,
+        pageNumber: unit.location.pageNumber ?? null,
+        metadata: JSON.stringify(metadata),
+        lineStart: unit.location.lineStart ?? null,
+        lineEnd: unit.location.lineEnd ?? null,
+        pageEnd: unit.location.pageEnd ?? null,
+        headingPath: JSON.stringify(unit.headingPath),
+        contentOrigin: unit.contentOrigin,
+        chunkerVersion: input.chunkerVersion ?? null,
+      });
+    }
     for (const block of input.blocks) {
+      if (block.materialId !== input.material.id)
+        throw new Error(`SourceBlock belongs to a foreign material: ${block.id}`);
+      if (
+        (input.normalizedUnits?.length ?? 0) > 0 &&
+        block.structuralUnitId &&
+        !unitIdMap.has(block.structuralUnitId)
+      ) {
+        throw new Error(`SourceBlock structural unit is unknown: ${block.structuralUnitId}`);
+      }
       insertBlock.run({
         id: block.id,
         materialId: block.materialId,
@@ -176,20 +286,27 @@ export function createMaterialRevisionsRepo(db: SqliteDb) {
         content: block.content,
         startOffset: block.startOffset,
         endOffset: block.endOffset,
+        structuralUnitId: block.structuralUnitId
+          ? (unitIdMap.get(block.structuralUnitId) ?? null)
+          : null,
+        chunkerVersion: block.chunkerVersion ?? input.chunkerVersion ?? null,
+        contentOrigin: block.contentOrigin ?? 'extracted_original',
       });
     }
 
     db.prepare(
       `INSERT INTO material_parser_attempts (
          id, material_id, revision_id, status, parser_version,
-         parser_fingerprint, started_at, finished_at
-       ) VALUES (?, ?, ?, 'succeeded', ?, ?, ?, ?)`,
+         parser_fingerprint, chunker_version, chunker_fingerprint, started_at, finished_at
+       ) VALUES (?, ?, ?, 'succeeded', ?, ?, ?, ?, ?, ?)`,
     ).run(
       input.parserAttemptId,
       input.material.id,
       input.revisionId,
       input.material.parserVersion,
       input.parserFingerprint,
+      input.chunkerVersion ?? null,
+      input.chunkerFingerprint ?? null,
       input.createdAt,
       input.createdAt,
     );
@@ -406,10 +523,18 @@ export function createMaterialRevisionsRepo(db: SqliteDb) {
               : hasOffsets
                 ? `offsets:${row.start_offset}-${row.end_offset}`
                 : null;
+        const derivationValues = new Set([
+          'source_text',
+          'parser_derived',
+          'ocr_derived',
+          'extracted_original',
+          'derived_ocr',
+          'derived_visual_description',
+          'derived_layout_label',
+          'derived_summary',
+        ]);
         const derivation =
-          metadata.derivation === 'source_text' ||
-          metadata.derivation === 'parser_derived' ||
-          metadata.derivation === 'ocr_derived'
+          typeof metadata.derivation === 'string' && derivationValues.has(metadata.derivation)
             ? metadata.derivation
             : 'parser_derived';
         const confidence =
@@ -418,7 +543,7 @@ export function createMaterialRevisionsRepo(db: SqliteDb) {
           metadata.confidence <= 1
             ? metadata.confidence
             : null;
-        return NormalizedStructuralUnitSchema.parse({
+        const parsed = {
           id: row.id,
           materialRevisionId: row.material_revision_id,
           parentUnitId: row.parent_id,
@@ -431,7 +556,15 @@ export function createMaterialRevisionsRepo(db: SqliteDb) {
           sourceLocator,
           derivation,
           confidence,
-        });
+          ...(row.line_start !== null ? { lineStart: row.line_start } : {}),
+          ...(row.line_end !== null ? { lineEnd: row.line_end } : {}),
+          ...(row.page_end !== null ? { pageEnd: row.page_end } : {}),
+          ...(row.heading_path && JSON.parse(row.heading_path).length > 0
+            ? { headingPath: JSON.parse(row.heading_path) as string[] }
+            : {}),
+          ...(row.content_origin ? { contentOrigin: row.content_origin } : {}),
+        };
+        return NormalizedStructuralUnitSchema.parse(parsed);
       });
     },
 
@@ -448,6 +581,8 @@ export function createMaterialRevisionsRepo(db: SqliteDb) {
       materialId: string;
       parserVersion: string | null;
       parserFingerprint: string | null;
+      chunkerVersion?: string | null;
+      chunkerFingerprint?: string | null;
       errorCode: string | null;
       errorMessage: string;
       startedAt: string;
@@ -456,12 +591,18 @@ export function createMaterialRevisionsRepo(db: SqliteDb) {
       db.prepare(
         `INSERT INTO material_parser_attempts (
            id, material_id, revision_id, status, parser_version,
-           parser_fingerprint, error_code, error_message, started_at, finished_at
+           parser_fingerprint, chunker_version, chunker_fingerprint,
+           error_code, error_message, started_at, finished_at
          ) VALUES (
            @id, @materialId, NULL, 'failed', @parserVersion,
-           @parserFingerprint, @errorCode, @errorMessage, @startedAt, @finishedAt
+           @parserFingerprint, @chunkerVersion, @chunkerFingerprint,
+           @errorCode, @errorMessage, @startedAt, @finishedAt
          )`,
-      ).run(input);
+      ).run({
+        ...input,
+        chunkerVersion: input.chunkerVersion ?? null,
+        chunkerFingerprint: input.chunkerFingerprint ?? null,
+      });
     },
 
     retire(materialId: string, at: string): boolean {

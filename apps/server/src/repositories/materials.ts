@@ -5,6 +5,7 @@ import {
   SourceBlockSchema,
   type Concept,
   type Material,
+  type NormalizedDocumentUnit,
   type SourceBlock,
 } from '@hy3-clinic/shared';
 import type { SqliteDb } from '../db/database.js';
@@ -56,6 +57,9 @@ interface BlockRow {
   start_offset: number;
   end_offset: number;
   material_revision_id: string | null;
+  structural_unit_id: string | null;
+  chunker_version: string | null;
+  content_origin: string | null;
 }
 
 interface ConceptRow {
@@ -67,6 +71,28 @@ interface ConceptRow {
   grounding: string;
   created_at: string;
   material_revision_id: string | null;
+}
+
+function orderNormalizedUnits(units: NormalizedDocumentUnit[]): NormalizedDocumentUnit[] {
+  const byId = new Map(units.map((unit) => [unit.id, unit]));
+  if (byId.size !== units.length) throw new Error('Duplicate normalized unit id');
+  const depthMemo = new Map<string, number>();
+  const visiting = new Set<string>();
+  const depthOf = (id: string): number => {
+    const cached = depthMemo.get(id);
+    if (cached !== undefined) return cached;
+    const unit = byId.get(id);
+    if (!unit) throw new Error(`Normalized unit parent is unknown: ${id}`);
+    if (visiting.has(id)) throw new Error(`Normalized unit parent cycle: ${id}`);
+    visiting.add(id);
+    const depth = unit.parentUnitId ? depthOf(unit.parentUnitId) + 1 : 0;
+    visiting.delete(id);
+    depthMemo.set(id, depth);
+    return depth;
+  };
+  return [...units].sort(
+    (a, b) => depthOf(a.id) - depthOf(b.id) || a.index - b.index || a.id.localeCompare(b.id),
+  );
 }
 
 const MATERIAL_COLUMNS = `id, workspace_id, active_revision_id, availability, retired_at,
@@ -97,7 +123,7 @@ function rowToMaterial(row: MaterialRow): Material {
 }
 
 function rowToBlock(row: BlockRow): SourceBlock {
-  return SourceBlockSchema.parse({
+  const parsed = {
     id: row.id,
     materialId: row.material_id,
     materialRevisionId: row.material_revision_id,
@@ -109,7 +135,11 @@ function rowToBlock(row: BlockRow): SourceBlock {
     content: row.content,
     startOffset: row.start_offset,
     endOffset: row.end_offset,
-  });
+    ...(row.structural_unit_id ? { structuralUnitId: row.structural_unit_id } : {}),
+    ...(row.chunker_version ? { chunkerVersion: row.chunker_version } : {}),
+    ...(row.content_origin ? { contentOrigin: row.content_origin } : {}),
+  };
+  return SourceBlockSchema.parse(parsed);
 }
 
 function rowToConcept(row: ConceptRow): Concept {
@@ -134,21 +164,23 @@ export function createMaterialsRepo(db: SqliteDb) {
              @parserVersion, @createdAt, @updatedAt, @originalData)`,
   );
   const insertBlockStmt = db.prepare(
-    `INSERT INTO source_blocks (id, material_id, material_revision_id, idx, heading, heading_path, page_number, page_end, content, start_offset, end_offset)
-     VALUES (@id, @materialId, @materialRevisionId, @index, @heading, @headingPath, @pageNumber, @pageEnd, @content, @startOffset, @endOffset)`,
+    `INSERT INTO source_blocks (id, material_id, material_revision_id, idx, heading, heading_path, page_number, page_end, content, start_offset, end_offset, structural_unit_id, chunker_version, content_origin)
+      VALUES (@id, @materialId, @materialRevisionId, @index, @heading, @headingPath, @pageNumber, @pageEnd, @content, @startOffset, @endOffset, @structuralUnitId, @chunkerVersion, @contentOrigin)`,
   );
   const insertMaterialRevisionStmt = db.prepare(
     `INSERT INTO material_revisions (
        id, material_id, revision_number, predecessor_revision_id, status,
        source_type, media_type, original_filename, content, char_count,
        parse_status, page_count, extraction_warnings, parser_version,
-       parser_fingerprint, content_fingerprint, original_data, failure_code,
+       parser_fingerprint, content_fingerprint, chunker_version, chunker_fingerprint,
+       source_fingerprint, original_data, failure_code,
        failure_message, created_at, activated_at
      ) VALUES (
        @id, @materialId, 1, NULL, 'active', @sourceType, @mediaType,
        @originalFilename, @content, @charCount, @parseStatus, @pageCount,
        @extractionWarnings, @parserVersion, @parserFingerprint,
-       @contentFingerprint, @originalData, NULL, NULL, @createdAt, @activatedAt
+       @contentFingerprint, @chunkerVersion, @chunkerFingerprint,
+       @sourceFingerprint, @originalData, NULL, NULL, @createdAt, @activatedAt
      )`,
   );
   const insertConceptStmt = db.prepare(
@@ -196,25 +228,41 @@ export function createMaterialsRepo(db: SqliteDb) {
       startOffset: block.startOffset,
       endOffset: block.endOffset,
       materialRevisionId,
+      structuralUnitId: block.structuralUnitId ?? null,
+      chunkerVersion: block.chunkerVersion ?? null,
+      contentOrigin: block.contentOrigin ?? null,
     };
   }
 
   const insertWithBlocks = db.transaction(
-    (material: Material, blocks: SourceBlock[], originalData: Buffer | null) => {
+    (
+      material: Material,
+      blocks: SourceBlock[],
+      originalData: Buffer | null,
+      normalizedUnits: NormalizedDocumentUnit[] = [],
+      derivation: {
+        parserFingerprint?: string | null;
+        chunkerVersion?: string | null;
+        chunkerFingerprint?: string | null;
+        sourceFingerprint?: string | null;
+      } = {},
+    ) => {
       insertMaterialStmt.run(materialParams(material, originalData));
       const revisionId = newId('rev');
       const contentFingerprint = fnv1a32(material.content).toString(16).padStart(8, '0');
-      const parserFingerprint = material.parserVersion
-        ? fnv1a32(
-            JSON.stringify({
-              parserVersion: material.parserVersion,
-              sourceType: material.sourceType,
-              mediaType: material.mediaType,
-            }),
-          )
-            .toString(16)
-            .padStart(8, '0')
-        : null;
+      const parserFingerprint =
+        derivation.parserFingerprint ??
+        (material.parserVersion
+          ? fnv1a32(
+              JSON.stringify({
+                parserVersion: material.parserVersion,
+                sourceType: material.sourceType,
+                mediaType: material.mediaType,
+              }),
+            )
+              .toString(16)
+              .padStart(8, '0')
+          : null);
       insertMaterialRevisionStmt.run({
         id: revisionId,
         materialId: material.id,
@@ -229,6 +277,9 @@ export function createMaterialsRepo(db: SqliteDb) {
         parserVersion: material.parserVersion,
         parserFingerprint,
         contentFingerprint,
+        chunkerVersion: derivation.chunkerVersion ?? null,
+        chunkerFingerprint: derivation.chunkerFingerprint ?? null,
+        sourceFingerprint: derivation.sourceFingerprint ?? null,
         originalData,
         createdAt: material.createdAt,
         activatedAt: material.updatedAt,
@@ -244,8 +295,68 @@ export function createMaterialsRepo(db: SqliteDb) {
          ) VALUES (?, ?, 1, NULL, 'unknown', 0, 0, 'system',
            'Role awaits learner confirmation.', ?)`,
       ).run(newId('role'), material.id, material.createdAt);
+      const orderedUnits = orderNormalizedUnits(normalizedUnits);
+      const unitIdMap = new Map<string, string>();
+      for (const unit of orderedUnits) {
+        if (unit.materialRevisionId !== `${material.id}:candidate`) {
+          throw new Error(`Normalized unit belongs to a foreign revision: ${unit.id}`);
+        }
+        unitIdMap.set(
+          unit.id,
+          `unit_${fnv1a32(`${revisionId}:${unit.id}`).toString(16).padStart(8, '0')}`,
+        );
+      }
+      const insertUnitStmt = db.prepare(
+        `INSERT INTO normalized_structural_units (
+           id, material_revision_id, parent_id, unit_type, idx, title,
+           start_offset, end_offset, page_number, metadata, line_start, line_end,
+           page_end, heading_path, content_origin, chunker_version
+         ) VALUES (@id, @materialRevisionId, @parentId, @kind, @index, @title,
+           @startOffset, @endOffset, @pageNumber, @metadata, @lineStart, @lineEnd,
+           @pageEnd, @headingPath, @contentOrigin, @chunkerVersion)`,
+      );
+      for (const unit of orderedUnits) {
+        insertUnitStmt.run({
+          id: unitIdMap.get(unit.id),
+          materialRevisionId: revisionId,
+          parentId: unit.parentUnitId ? (unitIdMap.get(unit.parentUnitId) ?? null) : null,
+          kind: unit.kind,
+          index: unit.index,
+          title: unit.title,
+          startOffset: unit.startOffset,
+          endOffset: unit.endOffset,
+          pageNumber: unit.location.pageNumber ?? null,
+          metadata: JSON.stringify({
+            content: unit.content,
+            sourceLocator: null,
+            derivation: unit.derivation,
+            confidence: null,
+          }),
+          lineStart: unit.location.lineStart ?? null,
+          lineEnd: unit.location.lineEnd ?? null,
+          pageEnd: unit.location.pageEnd ?? null,
+          headingPath: JSON.stringify(unit.headingPath),
+          contentOrigin: unit.contentOrigin,
+          chunkerVersion: derivation.chunkerVersion ?? null,
+        });
+      }
       for (const block of blocks) {
-        insertBlockStmt.run(blockParams(block, revisionId));
+        if (block.materialId !== material.id) {
+          throw new Error(`SourceBlock belongs to a foreign material: ${block.id}`);
+        }
+        if (
+          normalizedUnits.length > 0 &&
+          block.structuralUnitId &&
+          !unitIdMap.has(block.structuralUnitId)
+        ) {
+          throw new Error(`SourceBlock structural unit is unknown: ${block.structuralUnitId}`);
+        }
+        insertBlockStmt.run({
+          ...blockParams(block, revisionId),
+          structuralUnitId: block.structuralUnitId
+            ? (unitIdMap.get(block.structuralUnitId) ?? null)
+            : null,
+        });
       }
     },
   );
@@ -293,10 +404,17 @@ export function createMaterialsRepo(db: SqliteDb) {
       material: Material,
       blocks: SourceBlock[],
       originalData: Buffer | null = null,
+      normalizedUnits: NormalizedDocumentUnit[] = [],
+      derivation: {
+        parserFingerprint?: string | null;
+        chunkerVersion?: string | null;
+        chunkerFingerprint?: string | null;
+        sourceFingerprint?: string | null;
+      } = {},
     ): void {
       MaterialSchema.parse(material);
       blocks.forEach((b) => SourceBlockSchema.parse(b));
-      insertWithBlocks(material, blocks, originalData);
+      insertWithBlocks(material, blocks, originalData, normalizedUnits, derivation);
     },
 
     get(id: string): Material | undefined {

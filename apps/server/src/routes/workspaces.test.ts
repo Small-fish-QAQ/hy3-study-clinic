@@ -215,7 +215,7 @@ describe('document ingestion routes', () => {
       url: `/api/workspaces/${workspaceId}/documents`,
       payload: { kind: 'file', filename: 'fake.pdf', dataBase64: sampleDocxB64() },
     });
-    expect(response.statusCode).toBe(422);
+    expect(response.statusCode).toBe(415);
   });
 
   it('activates a successor PDF revision without deleting prior extraction history', async () => {

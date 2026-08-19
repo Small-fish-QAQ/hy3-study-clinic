@@ -54,6 +54,46 @@ describe('material service history management', () => {
     ).toBe(true);
   });
 
+  it('persists normalized units and structure-aware chunk identity', () => {
+    const created = materials.create({
+      filename: 'lesson.md',
+      content: '# Retrieval\n\nA paragraph with grounded context.\n\n```ts\n# stays code\n```',
+    });
+    const revision = repos.materialRevisions.getActive(created.material.id)!;
+    const units = repos.materialRevisions.getStructuralUnits(revision.id);
+    expect(units.some((unit) => unit.kind === 'heading')).toBe(true);
+    expect(units.some((unit) => unit.kind === 'code_block')).toBe(true);
+    expect(created.blocks.every((block) => block.chunkerVersion === 'structure-aware-v1')).toBe(
+      true,
+    );
+    expect(revision.parserFingerprint).toMatch(/^parser_[0-9a-f]{8}$/u);
+    expect(revision.sourceFingerprint).toMatch(/^sha256:[0-9a-f]{64}$/u);
+    expect(
+      created.blocks.every(
+        (block) =>
+          block.content === created.material.content.slice(block.startOffset, block.endOffset),
+      ),
+    ).toBe(true);
+  });
+
+  it('imports source code as exact text with line-aware structural units', () => {
+    const created = materials.create({
+      filename: 'example.ts',
+      content: '// comment\nfunction run() {\n  return 1;\n}',
+    });
+    expect(created.material.sourceType).toBe('source_code');
+    expect(created.material.parserVersion).toBe('source-code-structure-v1');
+    expect(created.blocks[0]!.content).toContain('function run');
+    const units = repos.materialRevisions.getStructuralUnits(created.material.activeRevisionId!);
+    expect(units.some((unit) => unit.kind === 'function')).toBe(true);
+    expect(units.find((unit) => unit.kind === 'function')?.content).toBe(
+      created.material.content.slice(
+        units.find((unit) => unit.kind === 'function')!.startOffset,
+        units.find((unit) => unit.kind === 'function')!.endOffset,
+      ),
+    );
+  });
+
   it('normalizes and persists a title update without changing other material fields', () => {
     const created = materials.create({ title: '原标题', content: '一段学习资料。' });
 

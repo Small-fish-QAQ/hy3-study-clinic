@@ -1,13 +1,14 @@
 import { fnv1a32, type SourceBlock } from '@hy3-clinic/shared';
 import { ApiErrorCode } from '@hy3-clinic/shared';
 import { IngestionError } from './ingest.js';
+import { normalizeMarkdown } from './normalized.js';
 
 /**
  * Deterministic Markdown/plain-text segmentation.
  *
- * The source is split into paragraph blocks along ATX headings (`#`..`######`)
- * and blank-line boundaries. Headings are NOT standalone blocks — they become
- * `heading` / `headingPath` metadata on the paragraph blocks that follow them.
+ * The source is split into normalized structural blocks. ATX headings become
+ * context metadata, while lists, quotes, tables, and fenced code remain intact
+ * units instead of being flattened by blank-line paragraph splitting.
  *
  * Invariants (verified by tests):
  * - `material.content.slice(block.startOffset, block.endOffset) === block.content`
@@ -27,8 +28,6 @@ interface RawSegment {
   endOffset: number;
 }
 
-const HEADING_RE = /^(#{1,6})\s+(.+?)\s*#*\s*$/;
-
 /** Compute a stable, content-addressed block id. */
 export function blockId(materialId: string, index: number, content: string): string {
   const hash = fnv1a32(`${materialId}:${index}:${content}`).toString(16).padStart(8, '0');
@@ -37,60 +36,22 @@ export function blockId(materialId: string, index: number, content: string): str
 
 /** Split normalized content into raw segments with exact offsets. */
 export function segmentContent(content: string): RawSegment[] {
-  const segments: RawSegment[] = [];
-  const headingStack: { level: number; text: string }[] = [];
-
-  let paragraphStart = -1;
-  let cursor = 0;
-  const lines = content.split('\n');
-
-  const flushParagraph = (endOffset: number) => {
-    if (paragraphStart < 0) return;
-    const text = content.slice(paragraphStart, endOffset);
-    const trimmed = text.trim();
-    if (trimmed.length > 0) {
-      const leading = text.length - text.trimStart().length;
-      const start = paragraphStart + leading;
-      segments.push({
-        heading: headingStack.length > 0 ? headingStack[headingStack.length - 1]!.text : null,
-        headingPath: headingStack.map((h) => h.text),
-        content: trimmed,
-        startOffset: start,
-        endOffset: start + trimmed.length,
-      });
-    }
-    paragraphStart = -1;
-  };
-
-  for (const line of lines) {
-    const lineStart = cursor;
-    const lineEnd = cursor + line.length;
-    cursor = lineEnd + 1; // account for the '\n' removed by split
-
-    const headingMatch = HEADING_RE.exec(line.trim());
-    if (headingMatch) {
-      flushParagraph(lineStart);
-      const level = headingMatch[1]!.length;
-      const text = headingMatch[2]!.trim();
-      while (headingStack.length > 0 && headingStack[headingStack.length - 1]!.level >= level) {
-        headingStack.pop();
-      }
-      headingStack.push({ level, text });
-      continue;
-    }
-
-    if (line.trim() === '') {
-      flushParagraph(lineStart);
-      continue;
-    }
-
-    if (paragraphStart < 0) {
-      paragraphStart = lineStart;
-    }
-  }
-  flushParagraph(content.length);
-
-  return segments;
+  const normalized = normalizeMarkdown({
+    revisionId: 'segment-preview',
+    sourceType: 'md',
+    mediaType: 'text/markdown',
+    content,
+  });
+  return normalized.units
+    .filter((unit) => !['heading', 'list_item'].includes(unit.kind))
+    .map((unit) => ({
+      heading: unit.headingPath.length ? unit.headingPath[unit.headingPath.length - 1]! : null,
+      headingPath: unit.headingPath,
+      content: unit.content.trim(),
+      startOffset: unit.startOffset + (unit.content.length - unit.content.trimStart().length),
+      endOffset: unit.endOffset - (unit.content.length - unit.content.trimEnd().length),
+    }))
+    .filter((segment) => segment.content.length > 0);
 }
 
 /** Segment a material's content into persisted SourceBlocks. */

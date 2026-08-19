@@ -20,6 +20,35 @@ const SUPPORTED_EXTENSIONS: Record<string, SourceType> = {
   markdown: 'md',
   txt: 'txt',
   text: 'txt',
+  js: 'source_code',
+  jsx: 'source_code',
+  ts: 'source_code',
+  tsx: 'source_code',
+  mjs: 'source_code',
+  cjs: 'source_code',
+  py: 'source_code',
+  java: 'source_code',
+  c: 'source_code',
+  h: 'source_code',
+  cc: 'source_code',
+  cpp: 'source_code',
+  hpp: 'source_code',
+  cs: 'source_code',
+  go: 'source_code',
+  rs: 'source_code',
+  rb: 'source_code',
+  php: 'source_code',
+  swift: 'source_code',
+  kt: 'source_code',
+  kts: 'source_code',
+  scala: 'source_code',
+  sh: 'source_code',
+  bash: 'source_code',
+  zsh: 'source_code',
+  sql: 'source_code',
+  json: 'source_code',
+  yaml: 'source_code',
+  yml: 'source_code',
 };
 
 /**
@@ -117,7 +146,7 @@ export function sourceTypeForFilename(filename: string): SourceType {
   if (!ext || !(ext in SUPPORTED_EXTENSIONS)) {
     throw new IngestionError(
       ApiErrorCode.UnsupportedFile,
-      '不支持的文件类型:文本内容仅接受 .md 与 .txt 文件;PDF 与 DOCX 请以文件形式上传。',
+      '不支持的文件类型:仅接受核心学习资料格式与常见源代码文件。',
     );
   }
   return SUPPORTED_EXTENSIONS[ext]!;
@@ -136,7 +165,12 @@ export interface IngestOptions {
 }
 
 /** Source types whose content reaches ingestion as raw user-supplied text bytes. */
-const RAW_TEXT_SOURCE_TYPES: ReadonlySet<SourceType> = new Set<SourceType>(['paste', 'md', 'txt']);
+const RAW_TEXT_SOURCE_TYPES: ReadonlySet<SourceType> = new Set<SourceType>([
+  'paste',
+  'md',
+  'txt',
+  'source_code',
+]);
 
 /**
  * Validate and normalize an incoming source document.

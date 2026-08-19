@@ -23,6 +23,7 @@ export function statusForErrorCode(code: ApiErrorCodeValue): number {
     case ApiErrorCode.SourceTooLarge:
       return 413;
     case ApiErrorCode.UnsupportedFile:
+    case ApiErrorCode.TypeMismatch:
     case ApiErrorCode.BinaryInput:
       return 415;
     case ApiErrorCode.ParseFailed:

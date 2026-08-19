@@ -11,6 +11,7 @@ import {
   parseDocx,
   parsePdf,
   uploadKindForFilename,
+  validateUploadDeclaration,
 } from './documents.js';
 import { segmentMaterial } from './segment.js';
 
@@ -29,6 +30,10 @@ describe('uploadKindForFilename', () => {
     expect(uploadKindForFilename('b.DOCX').sourceType).toBe('docx');
     expect(uploadKindForFilename('c.md').sourceType).toBe('md');
     expect(uploadKindForFilename('d.txt').sourceType).toBe('txt');
+    expect(uploadKindForFilename('e.ts')).toEqual({
+      sourceType: 'source_code',
+      mediaType: 'text/x-source-code',
+    });
   });
 
   it('rejects unsupported extensions with a 415 error code', () => {
@@ -58,6 +63,18 @@ describe('decodeUpload', () => {
     } catch (error) {
       expect((error as IngestionError).code).toBe(ApiErrorCode.SourceTooLarge);
     }
+  });
+
+  it('rejects malformed base64 instead of silently discarding bytes', () => {
+    for (const value of ['not base64!', 'ab=c', 'abcde', 'abcd===', 'abcd$']) {
+      expect(() => decodeUpload(value)).toThrowError(IngestionError);
+    }
+  });
+
+  it('rejects a declared MIME that disagrees with the filename', () => {
+    expect(() =>
+      validateUploadDeclaration(uploadKindForFilename('notes.md'), 'text/plain'),
+    ).toThrow(/MIME/);
   });
 });
 
@@ -211,6 +228,12 @@ describe('parseBinaryUpload (text branch)', () => {
         code: ApiErrorCode.BinaryInput,
       });
     }
+  });
+
+  it('rejects a rich-document signature under a source-code extension', async () => {
+    await expect(parseBinaryUpload('source_code', Buffer.from('%PDF-1.7'))).rejects.toMatchObject({
+      code: ApiErrorCode.TypeMismatch,
+    });
   });
 });
 

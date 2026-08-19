@@ -243,6 +243,8 @@ export function buildCurriculumExecutionContext(
       materialRevisionId: revision.id,
       parserVersion: revision.parserVersion,
       parserFingerprint: revision.parserFingerprint,
+      chunkerVersion: revision.chunkerVersion,
+      chunkerFingerprint: revision.chunkerFingerprint,
       sourceBlockRevisionIds: materialBlocks.map((block) => block.id),
     });
     sourceMapMaterials.push({
@@ -257,18 +259,20 @@ export function buildCurriculumExecutionContext(
         status: 'active',
         parserVersion: revision.parserVersion,
         parserFingerprint: revision.parserFingerprint,
+        chunkerVersion: revision.chunkerVersion,
+        chunkerFingerprint: revision.chunkerFingerprint,
       },
       blocks: materialBlocks.map((block) => ({
         ...block,
         materialRevisionId: revision.id,
-        structuralUnitId: null,
+        structuralUnitId: block.structuralUnitId ?? null,
         revisionFingerprint: curriculumSourceBlockFingerprint(block, revision.id),
       })),
     });
     for (const block of materialBlocks) {
       blocks.push(block);
       outline.push({
-        structuralUnitId: null,
+        structuralUnitId: block.structuralUnitId ?? null,
         materialId: material.id,
         materialRevisionId: revision.id,
         parentStructuralUnitId: null,

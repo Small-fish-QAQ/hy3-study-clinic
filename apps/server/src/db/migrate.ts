@@ -1722,6 +1722,90 @@ const MIGRATIONS: Migration[] = [
       ALTER TABLE study_session_turns ADD COLUMN pedagogy_metadata TEXT;
     `,
   },
+  {
+    version: 23,
+    name: 'structure_aware_material_derivation_metadata',
+    // Phase 6A makes parser/chunker identity explicit. Legacy rows remain
+    // nullable: historical SourceBlocks are never relabeled as structure-aware.
+    // The structural-unit table is rebuilt only to widen its controlled kind
+    // enum; all existing rows are copied byte-for-byte.
+    rebuildsTables: true,
+    up: `
+      ALTER TABLE material_revisions ADD COLUMN chunker_version TEXT;
+      ALTER TABLE material_revisions ADD COLUMN chunker_fingerprint TEXT;
+      ALTER TABLE material_revisions ADD COLUMN source_fingerprint TEXT;
+
+      DROP INDEX idx_material_parser_attempts_material;
+      ALTER TABLE material_parser_attempts RENAME TO material_parser_attempts_legacy;
+      CREATE TABLE material_parser_attempts_rebuilt (
+        id TEXT PRIMARY KEY,
+        material_id TEXT NOT NULL REFERENCES materials(id) ON DELETE CASCADE,
+        revision_id TEXT REFERENCES material_revisions(id) ON DELETE SET NULL,
+        status TEXT NOT NULL CHECK (status IN
+          ('queued', 'running', 'succeeded', 'failed', 'interrupted', 'cancelled', 'outcome_unknown')),
+        parser_version TEXT,
+        parser_fingerprint TEXT,
+        chunker_version TEXT,
+        chunker_fingerprint TEXT,
+        error_code TEXT,
+        error_message TEXT,
+        started_at TEXT NOT NULL,
+        finished_at TEXT
+      );
+      INSERT INTO material_parser_attempts_rebuilt (
+        id, material_id, revision_id, status, parser_version,
+        parser_fingerprint, error_code, error_message, started_at, finished_at
+      )
+      SELECT id, material_id, revision_id, status, parser_version,
+        parser_fingerprint, error_code, error_message, started_at, finished_at
+      FROM material_parser_attempts_legacy;
+      DROP TABLE material_parser_attempts_legacy;
+      ALTER TABLE material_parser_attempts_rebuilt RENAME TO material_parser_attempts;
+      CREATE INDEX idx_material_parser_attempts_material
+        ON material_parser_attempts(material_id, started_at DESC);
+
+      CREATE TABLE normalized_structural_units_rebuilt (
+        id TEXT PRIMARY KEY,
+        material_revision_id TEXT NOT NULL REFERENCES material_revisions(id) ON DELETE CASCADE,
+        parent_id TEXT REFERENCES normalized_structural_units_rebuilt(id) ON DELETE CASCADE,
+        unit_type TEXT NOT NULL CHECK (unit_type IN (
+          'document', 'chapter', 'section', 'heading', 'paragraph', 'list', 'list_item',
+          'quote', 'code_block', 'page', 'slide', 'text_box', 'speaker_notes', 'table',
+          'image', 'formula', 'figure', 'caption', 'html_block', 'source_file',
+          'source_code_block', 'function', 'class', 'method', 'other'
+        )),
+        idx INTEGER NOT NULL CHECK (idx >= 0),
+        title TEXT,
+        start_offset INTEGER,
+        end_offset INTEGER,
+        page_number INTEGER,
+        metadata TEXT NOT NULL DEFAULT '{}',
+        line_start INTEGER,
+        line_end INTEGER,
+        page_end INTEGER,
+        heading_path TEXT NOT NULL DEFAULT '[]',
+        content_origin TEXT,
+        chunker_version TEXT,
+        UNIQUE (material_revision_id, idx, unit_type)
+      );
+      INSERT INTO normalized_structural_units_rebuilt (
+        id, material_revision_id, parent_id, unit_type, idx, title,
+        start_offset, end_offset, page_number, metadata
+      )
+      SELECT id, material_revision_id, parent_id, unit_type, idx, title,
+        start_offset, end_offset, page_number, metadata
+      FROM normalized_structural_units;
+      DROP TABLE normalized_structural_units;
+      ALTER TABLE normalized_structural_units_rebuilt RENAME TO normalized_structural_units;
+      CREATE INDEX idx_structural_units_revision
+        ON normalized_structural_units(material_revision_id, idx);
+
+      ALTER TABLE source_blocks ADD COLUMN structural_unit_id TEXT REFERENCES normalized_structural_units(id) ON DELETE SET NULL;
+      ALTER TABLE source_blocks ADD COLUMN chunker_version TEXT;
+      ALTER TABLE source_blocks ADD COLUMN content_origin TEXT;
+      CREATE INDEX idx_source_blocks_structural_unit ON source_blocks(structural_unit_id);
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

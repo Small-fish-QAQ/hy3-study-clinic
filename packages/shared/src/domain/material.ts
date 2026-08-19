@@ -26,7 +26,7 @@ export const DifficultySchema = z.enum(['easy', 'medium', 'hard']);
 export type Difficulty = z.infer<typeof DifficultySchema>;
 
 /** How a document was imported. */
-export const SourceTypeSchema = z.enum(['paste', 'md', 'txt', 'pdf', 'docx']);
+export const SourceTypeSchema = z.enum(['paste', 'md', 'txt', 'pdf', 'docx', 'source_code']);
 export type SourceType = z.infer<typeof SourceTypeSchema>;
 
 /** Media types accepted for document ingestion. */
@@ -35,6 +35,7 @@ export const MediaTypeSchema = z.enum([
   'text/markdown',
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/x-source-code',
 ]);
 export type MediaType = z.infer<typeof MediaTypeSchema>;
 
@@ -111,6 +112,20 @@ export const SourceBlockSchema = z.object({
   /** Offsets into the normalized material content (UTF-16 code units). */
   startOffset: z.number().int().nonnegative(),
   endOffset: z.number().int().positive(),
+  /** Normalized structural unit that produced this block, when available. */
+  structuralUnitId: z.string().min(1).nullable().optional(),
+  /** Parser/chunker derivation identity. Null is honest for legacy rows. */
+  chunkerVersion: z.string().max(80).nullable().optional(),
+  contentOrigin: z
+    .enum([
+      'extracted_original',
+      'derived_ocr',
+      'derived_visual_description',
+      'derived_layout_label',
+      'derived_summary',
+    ])
+    .nullable()
+    .optional(),
 });
 export type SourceBlock = z.infer<typeof SourceBlockSchema>;
 
@@ -243,6 +258,9 @@ export const MaterialRevisionSchema = z
     parserVersion: z.string().max(80).nullable(),
     /** Null for honest legacy revisions whose parser/extraction identity is unknown. */
     parserFingerprint: z.string().min(1).max(200).nullable(),
+    /** Chunking strategy identity; null is honest for legacy revisions. */
+    chunkerVersion: z.string().max(80).nullable().optional(),
+    chunkerFingerprint: z.string().min(1).max(200).nullable().optional(),
     sourceFingerprint: z.string().min(1).max(200).nullable(),
     originalAssetFingerprint: z.string().min(1).max(200).nullable(),
     createdAt: z.string().datetime(),
@@ -288,6 +306,8 @@ export const MaterialParserAttemptSchema = z
     status: ParserAttemptStatusSchema,
     parserVersion: z.string().max(80).nullable(),
     parserFingerprint: z.string().min(1).max(200).nullable(),
+    chunkerVersion: z.string().max(80).nullable().optional(),
+    chunkerFingerprint: z.string().min(1).max(200).nullable().optional(),
     startedAt: z.string().datetime().nullable(),
     completedAt: z.string().datetime().nullable(),
     errorMessage: z.string().min(1).max(1000).nullable(),
@@ -300,11 +320,27 @@ export const StructuralUnitKindSchema = z.enum([
   'document',
   'chapter',
   'section',
+  'heading',
   'paragraph',
+  'list',
+  'list_item',
+  'quote',
+  'code_block',
   'page',
+  'slide',
+  'text_box',
+  'speaker_notes',
   'table',
+  'image',
   'formula',
   'figure',
+  'caption',
+  'html_block',
+  'source_file',
+  'source_code_block',
+  'function',
+  'class',
+  'method',
   'other',
 ]);
 export type StructuralUnitKind = z.infer<typeof StructuralUnitKindSchema>;
@@ -319,8 +355,32 @@ export const NormalizedStructuralUnitSchema = z
     title: z.string().min(1).max(300).nullable(),
     content: z.string(),
     sourceLocator: z.string().min(1).max(500).nullable(),
-    derivation: z.enum(['source_text', 'parser_derived', 'ocr_derived']),
+    derivation: z.enum([
+      'source_text',
+      'parser_derived',
+      'ocr_derived',
+      'extracted_original',
+      'derived_ocr',
+      'derived_visual_description',
+      'derived_layout_label',
+      'derived_summary',
+    ]),
     confidence: z.number().min(0).max(1).nullable(),
+    startOffset: z.number().int().nonnegative().nullable().optional(),
+    endOffset: z.number().int().nonnegative().nullable().optional(),
+    lineStart: z.number().int().positive().nullable().optional(),
+    lineEnd: z.number().int().positive().nullable().optional(),
+    pageEnd: z.number().int().positive().nullable().optional(),
+    headingPath: z.array(z.string()).optional(),
+    contentOrigin: z
+      .enum([
+        'extracted_original',
+        'derived_ocr',
+        'derived_visual_description',
+        'derived_layout_label',
+        'derived_summary',
+      ])
+      .optional(),
   })
   .strict();
 export type NormalizedStructuralUnit = z.infer<typeof NormalizedStructuralUnitSchema>;

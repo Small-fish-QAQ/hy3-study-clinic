@@ -5,6 +5,8 @@
 
 Hy3 Study Clinic turns a learner's course documents into a **verifiable personal learning graph** and closes the loop from **diagnostic weakness to grounded remediation and persistent learning progress**. It supports pasted text, Markdown, TXT, PDF, and DOCX inside multi-document course workspaces.
 
+The material pipeline also accepts common source-code files as learning material. Markdown, TXT, PDF/DOCX text-layer output, and source code pass through a parser registry into revision-owned normalized structural units and deterministic structure-aware SourceBlocks. Blocks retain exact offsets, heading paths, page or line locations where available, and parser/chunker identity. The registry rejects extension/MIME/signature mismatches and applies bounded input, unit, and chunk limits.
+
 Hy3 performs the semantic work: concept extraction, grounded question generation, semantic rubric grading, relationship and alignment proposals, misconception hypotheses, and bounded tutoring decisions. Deterministic local code validates citations and IDs, computes scores, controls every learning-state transition, and persists the accepted result in SQLite. The model never directly changes mastery, closes mistakes, accepts alignments, sets review dates, or deletes history.
 
 ## Product status

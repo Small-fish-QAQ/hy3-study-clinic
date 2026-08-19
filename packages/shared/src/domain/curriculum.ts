@@ -8,6 +8,8 @@ export const ExecutionSourceRevisionSchema = z
     materialRevisionId: z.string().min(1),
     parserVersion: z.string().max(80).nullable(),
     parserFingerprint: z.string().min(1).max(200).nullable(),
+    chunkerVersion: z.string().max(80).nullable().optional(),
+    chunkerFingerprint: z.string().min(1).max(200).nullable().optional(),
     sourceBlockRevisionIds: z.array(z.string().min(1)).max(10000),
   })
   .strict();

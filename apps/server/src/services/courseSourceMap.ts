@@ -28,6 +28,8 @@ const CourseSourceMapMaterialInputSchema = z
         status: z.literal('active'),
         parserVersion: z.string().max(80).nullable(),
         parserFingerprint: z.string().min(1).max(200).nullable(),
+        chunkerVersion: z.string().max(80).nullable().optional(),
+        chunkerFingerprint: z.string().min(1).max(200).nullable().optional(),
       })
       .strict(),
     blocks: z.array(SourceBlockRevisionSchema).min(1).max(10_000),
@@ -122,6 +124,8 @@ const CourseSourceMapMaterialSchema = z
     activeMaterialRevisionId: z.string().min(1),
     parserVersion: z.string().max(80).nullable(),
     parserFingerprint: z.string().min(1).max(200).nullable(),
+    chunkerVersion: z.string().max(80).nullable().optional(),
+    chunkerFingerprint: z.string().min(1).max(200).nullable().optional(),
     blockCount: z.number().int().positive(),
     sectionCount: z.number().int().positive(),
     parserPathNodes: z.array(CourseSourceMapParserPathSchema),
@@ -182,6 +186,8 @@ function canonicalSourceMapFingerprintInput(
       activeMaterialRevisionId: material.activeMaterialRevisionId,
       parserVersion: material.parserVersion,
       parserFingerprint: material.parserFingerprint,
+      chunkerVersion: material.chunkerVersion,
+      chunkerFingerprint: material.chunkerFingerprint,
       blockCount: material.blockCount,
       sectionCount: material.sectionCount,
       parserPathNodes: material.parserPathNodes.map((node) => ({
@@ -387,7 +393,10 @@ export function buildCourseSourceMap(raw: CourseSourceMapInput): CourseSourceMap
     }
     if (
       manifestRevision.parserVersion !== material.revision.parserVersion ||
-      manifestRevision.parserFingerprint !== material.revision.parserFingerprint
+      manifestRevision.parserFingerprint !== material.revision.parserFingerprint ||
+      (manifestRevision.chunkerVersion ?? null) !== (material.revision.chunkerVersion ?? null) ||
+      (manifestRevision.chunkerFingerprint ?? null) !==
+        (material.revision.chunkerFingerprint ?? null)
     ) {
       throw new Error('Course Source Map parser identity does not match the manifest.');
     }
@@ -594,6 +603,8 @@ export function buildCourseSourceMap(raw: CourseSourceMapInput): CourseSourceMap
         activeMaterialRevisionId: material.revision.id,
         parserVersion: material.revision.parserVersion,
         parserFingerprint: material.revision.parserFingerprint,
+        chunkerVersion: material.revision.chunkerVersion,
+        chunkerFingerprint: material.revision.chunkerFingerprint,
         blockCount: blocks.length,
         sectionCount: sections.length,
         parserPathNodes: [...pathNodes.values()].map((node) => ({

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import {
   ApiErrorCode,
   UpdateMaterialTitleRequestSchema,
@@ -18,15 +19,22 @@ import {
   decodeUpload,
   parseBinaryUpload,
   uploadKindForFilename,
+  validateUploadDeclaration,
   TEXT_PARSER_VERSION,
 } from '../ingestion/documents.js';
-import { segmentMaterial } from '../ingestion/segment.js';
+import {
+  normalizedDocumentToSourceBlocks,
+  parserForSourceType,
+  STRUCTURE_AWARE_CHUNKER_FINGERPRINT,
+  STRUCTURE_AWARE_CHUNKER_VERSION,
+} from '../ingestion/normalized.js';
 import type { SourceAuthorityService } from './sourceAuthority.js';
 
 export interface CreateMaterialInput {
   content: string;
   title?: string | undefined;
   filename?: string | undefined;
+  originalData?: Buffer | null | undefined;
 }
 
 export interface MaterialWithBlocks {
@@ -40,10 +48,11 @@ export interface MaterialServiceDeps {
   sourceAuthority: Pick<SourceAuthorityService, 'ensureVerbatimAssessmentAuthority'>;
 }
 
-const MEDIA_TYPE_FOR_TEXT: Record<'paste' | 'md' | 'txt', MediaType> = {
+const MEDIA_TYPE_FOR_TEXT: Record<'paste' | 'md' | 'txt' | 'source_code', MediaType> = {
   paste: 'text/plain',
   md: 'text/markdown',
   txt: 'text/plain',
+  source_code: 'text/x-source-code',
 };
 
 export function createMaterialService({ repos, clock, sourceAuthority }: MaterialServiceDeps) {
@@ -92,7 +101,24 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
         ? input.title.trim().slice(0, 100)
         : deriveTitle(normalized.content);
 
-    const blocks = segmentMaterial(id, normalized.content);
+    const document = parserForSourceType(sourceType).parse({
+      revisionId: `${id}:candidate`,
+      materialId: id,
+      sourceType,
+      mediaType:
+        sourceType === 'md' ||
+        sourceType === 'txt' ||
+        sourceType === 'paste' ||
+        sourceType === 'source_code'
+          ? MEDIA_TYPE_FOR_TEXT[sourceType]
+          : 'text/plain',
+      content: normalized.content,
+      filename: input.filename ?? null,
+    });
+    const blocks = normalizedDocumentToSourceBlocks(id, document, {
+      idSeed: id,
+      materialRevisionId: `${id}:candidate`,
+    });
     const targetWorkspaceId = resolveTargetWorkspace(title, now, workspaceId);
 
     const material: Material = {
@@ -108,12 +134,18 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
       parseStatus: 'parsed',
       pageCount: null,
       extractionWarnings: [],
-      parserVersion: TEXT_PARSER_VERSION,
+      parserVersion: sourceType === 'source_code' ? document.parserVersion : TEXT_PARSER_VERSION,
       createdAt: now,
       updatedAt: now,
     };
 
-    repos.materials.insertWithBlocks(material, blocks);
+    const originalData = input.originalData ?? Buffer.from(input.content, 'utf8');
+    repos.materials.insertWithBlocks(material, blocks, originalData, document.units, {
+      parserFingerprint: document.parserFingerprint,
+      chunkerVersion: STRUCTURE_AWARE_CHUNKER_VERSION,
+      chunkerFingerprint: STRUCTURE_AWARE_CHUNKER_FINGERPRINT,
+      sourceFingerprint: `sha256:${createHash('sha256').update(originalData).digest('hex')}`,
+    });
     const stored = repos.materials.get(id)!;
     sourceAuthority.ensureVerbatimAssessmentAuthority(
       targetWorkspaceId,
@@ -140,12 +172,18 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
     workspaceId?: string,
   ): Promise<MaterialWithBlocks> {
     const kind = uploadKindForFilename(input.filename);
+    validateUploadDeclaration(kind, input.mediaType);
     const buffer = decodeUpload(input.dataBase64);
 
     if (kind.sourceType !== 'pdf' && kind.sourceType !== 'docx') {
       // Text file uploaded as base64: decode and reuse the text path.
       return create(
-        { content: buffer.toString('utf8'), title: input.title, filename: input.filename },
+        {
+          content: buffer.toString('utf8'),
+          title: input.title,
+          filename: input.filename,
+          originalData: buffer,
+        },
         workspaceId,
       );
     }
@@ -161,8 +199,18 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
         ? input.title.trim().slice(0, 100)
         : deriveTitle(normalized.content) || input.filename.slice(0, 80);
 
-    const blocks = segmentMaterial(id, normalized.content, {
+    const document = parserForSourceType(kind.sourceType).parse({
+      revisionId: `${id}:candidate`,
+      materialId: id,
+      sourceType: kind.sourceType,
+      mediaType: kind.mediaType,
+      content: normalized.content,
+      filename: input.filename,
       ...(parsed.pageSpans ? { pageSpans: parsed.pageSpans } : {}),
+    });
+    const blocks = normalizedDocumentToSourceBlocks(id, document, {
+      idSeed: id,
+      materialRevisionId: `${id}:candidate`,
     });
     const targetWorkspaceId = resolveTargetWorkspace(title, now, workspaceId);
 
@@ -183,7 +231,12 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
       updatedAt: now,
     };
 
-    repos.materials.insertWithBlocks(material, blocks, buffer);
+    repos.materials.insertWithBlocks(material, blocks, buffer, document.units, {
+      parserFingerprint: document.parserFingerprint,
+      chunkerVersion: STRUCTURE_AWARE_CHUNKER_VERSION,
+      chunkerFingerprint: STRUCTURE_AWARE_CHUNKER_FINGERPRINT,
+      sourceFingerprint: `sha256:${createHash('sha256').update(buffer).digest('hex')}`,
+    });
     const stored = repos.materials.get(id)!;
     sourceAuthority.ensureVerbatimAssessmentAuthority(
       targetWorkspaceId,

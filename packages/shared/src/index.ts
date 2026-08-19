@@ -9,6 +9,7 @@ export {
 } from './mastery.js';
 
 export * from './domain/material.js';
+export * from './domain/normalizedDocument.js';
 export * from './domain/materialRoleApi.js';
 export * from './domain/learningContract.js';
 export * from './domain/sourceAuthority.js';

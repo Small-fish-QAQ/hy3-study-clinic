@@ -67,6 +67,40 @@ const UPLOAD_EXTENSIONS: Record<string, UploadKind> = {
   },
 };
 
+for (const extension of [
+  'js',
+  'jsx',
+  'ts',
+  'tsx',
+  'mjs',
+  'cjs',
+  'py',
+  'java',
+  'c',
+  'h',
+  'cc',
+  'cpp',
+  'hpp',
+  'cs',
+  'go',
+  'rs',
+  'rb',
+  'php',
+  'swift',
+  'kt',
+  'kts',
+  'scala',
+  'sh',
+  'bash',
+  'zsh',
+  'sql',
+  'json',
+  'yaml',
+  'yml',
+]) {
+  UPLOAD_EXTENSIONS[extension] = { sourceType: 'source_code', mediaType: 'text/x-source-code' };
+}
+
 /** Resolve an uploaded filename to its source/media type, or throw 415. */
 export function uploadKindForFilename(filename: string): UploadKind {
   const match = /\.([a-z0-9]+)$/i.exec(filename.trim());
@@ -75,18 +109,58 @@ export function uploadKindForFilename(filename: string): UploadKind {
   if (!kind) {
     throw new IngestionError(
       ApiErrorCode.UnsupportedFile,
-      '不支持的文件类型:仅接受 .md、.txt、.pdf 与 .docx 文件。',
+      '不支持的文件类型:仅接受 .md、.txt、.pdf、.docx 与常见源代码文件。',
     );
   }
   return kind;
 }
 
+/** Validate an optional declared MIME against the filename-resolved contract. */
+export function validateUploadDeclaration(kind: UploadKind, declaredMediaType?: MediaType): void {
+  if (declaredMediaType && declaredMediaType !== kind.mediaType) {
+    throw new IngestionError(
+      ApiErrorCode.TypeMismatch,
+      `文件扩展名与声明的 MIME 类型不匹配:${kind.mediaType} != ${declaredMediaType}。`,
+    );
+  }
+}
+
 /** Decode + bound a base64 upload. Throws 413 when the decoded size exceeds the limit. */
 export function decodeUpload(dataBase64: string): Buffer {
+  const compact = dataBase64.trim();
+  const firstPadding = compact.indexOf('=');
+  const paddingLength = firstPadding < 0 ? 0 : compact.length - firstPadding;
+  let alphabetValid = compact.length > 0 && compact.length % 4 !== 1;
+  for (let index = 0; index < compact.length && alphabetValid; index += 1) {
+    const code = compact.charCodeAt(index);
+    const isAlphabet =
+      (code >= 0x41 && code <= 0x5a) ||
+      (code >= 0x61 && code <= 0x7a) ||
+      (code >= 0x30 && code <= 0x39) ||
+      code === 0x2b ||
+      code === 0x2f;
+    if (index < (firstPadding < 0 ? compact.length : firstPadding)) {
+      if (!isAlphabet) alphabetValid = false;
+    } else if (code !== 0x3d) {
+      alphabetValid = false;
+    }
+  }
+  if (
+    firstPadding >= 0 &&
+    (paddingLength < 1 || paddingLength > 2 || firstPadding < compact.length - 2)
+  ) {
+    alphabetValid = false;
+  }
+  if (!alphabetValid) {
+    throw new IngestionError(ApiErrorCode.UnsupportedFile, '文件内容不是合法的 base64 编码。');
+  }
   let buffer: Buffer;
   try {
-    buffer = Buffer.from(dataBase64, 'base64');
+    buffer = Buffer.from(compact, 'base64');
   } catch {
+    throw new IngestionError(ApiErrorCode.UnsupportedFile, '文件内容不是合法的 base64 编码。');
+  }
+  if (buffer.toString('base64').replace(/=+$/u, '') !== compact.replace(/=+$/u, '')) {
     throw new IngestionError(ApiErrorCode.UnsupportedFile, '文件内容不是合法的 base64 编码。');
   }
   if (buffer.length === 0) {
@@ -108,6 +182,17 @@ function hasPdfMagic(buffer: Buffer): boolean {
 
 function hasZipMagic(buffer: Buffer): boolean {
   return buffer.length >= 4 && buffer[0] === 0x50 && buffer[1] === 0x4b;
+}
+
+function hasDocxPackageStructure(buffer: Buffer): boolean {
+  if (!hasZipMagic(buffer)) return false;
+  const ascii = buffer.toString('latin1');
+  return (
+    ascii.includes('[Content_Types].xml') &&
+    ascii.includes('word/document.xml') &&
+    !ascii.includes('../') &&
+    !ascii.includes('..\\')
+  );
 }
 
 /** Parse a PDF into layout-reconstructed text with per-page spans. */
@@ -177,7 +262,7 @@ export async function parsePdf(buffer: Buffer): Promise<ParsedBinaryDocument> {
 
 /** Parse a DOCX into normalized Markdown-style text (headings preserved). */
 export async function parseDocx(buffer: Buffer): Promise<ParsedBinaryDocument> {
-  if (!hasZipMagic(buffer)) {
+  if (!hasDocxPackageStructure(buffer)) {
     throw new IngestionError(ApiErrorCode.ParseFailed, '文件不是有效的 DOCX(缺少 ZIP 文件头)。');
   }
 
@@ -216,9 +301,25 @@ export async function parseBinaryUpload(
   sourceType: SourceType,
   buffer: Buffer,
 ): Promise<ParsedBinaryDocument> {
-  if (sourceType === 'pdf') return parsePdf(buffer);
-  if (sourceType === 'docx') return parseDocx(buffer);
-  // md / txt uploads arrive as decoded text files.
+  if (sourceType === 'pdf') {
+    if (hasDocxPackageStructure(buffer)) {
+      throw new IngestionError(
+        ApiErrorCode.TypeMismatch,
+        'PDF 扩展名对应的内容是 ZIP/OOXML 文件。',
+      );
+    }
+    return parsePdf(buffer);
+  }
+  if (sourceType === 'docx') {
+    if (hasPdfMagic(buffer)) {
+      throw new IngestionError(ApiErrorCode.TypeMismatch, 'DOCX 扩展名对应的内容是 PDF 文件。');
+    }
+    return parseDocx(buffer);
+  }
+  if (hasPdfMagic(buffer) || hasDocxPackageStructure(buffer)) {
+    throw new IngestionError(ApiErrorCode.TypeMismatch, '文件签名与文本/源代码扩展名不匹配。');
+  }
+  // md / txt / source-code uploads arrive as decoded text files.
   const text = buffer.toString('utf8');
   if (looksBinary(text)) {
     throw new IngestionError(ApiErrorCode.BinaryInput, '检测到二进制或非文本内容,已拒绝导入。');
@@ -228,7 +329,7 @@ export async function parseBinaryUpload(
     pageCount: null,
     pageSpans: null,
     warnings: [],
-    parserVersion: TEXT_PARSER_VERSION,
+    parserVersion: sourceType === 'source_code' ? 'source-code-structure-v1' : TEXT_PARSER_VERSION,
   };
 }
 
