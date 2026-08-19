@@ -56,7 +56,7 @@ describe('uploadValidationError', () => {
 
   it('rejects unsupported types, empty files, and oversized files', () => {
     expect(uploadValidationError(new File(['x'], 'a.xlsx'))).toBe(
-      '不支持的文件类型:仅接受 .md、.txt、.pdf、.pptx 与 .docx 文件。',
+      '不支持的文件类型:仅接受 .md、.txt、.pdf、.pptx、.docx、.png、.jpg、.jpeg 与 .webp 文件。',
     );
     expect(uploadValidationError(new File([], 'a.pdf'))).toBe('上传的文件为空。');
     expect(

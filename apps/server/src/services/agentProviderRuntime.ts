@@ -159,7 +159,10 @@ export async function runTrackedAgentProviderOperation<T>({
       if (category) providerOptions?.onRepairAttempt?.(reason, category);
       else providerOptions?.onRepairAttempt?.(reason);
     },
-    beforeTelemetryComplete: assertCurrentLease,
+    beforeTelemetryComplete: () => {
+      assertCurrentLease();
+      providerOptions?.beforeTelemetryComplete?.();
+    },
     telemetry: {
       workspaceId,
       operationId,

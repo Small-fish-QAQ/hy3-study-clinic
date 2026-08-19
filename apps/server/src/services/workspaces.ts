@@ -15,7 +15,7 @@ import type { Repositories } from '../repositories/index.js';
 import { AppError, notFound } from '../errors.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
-import { ingestSource } from '../ingestion/ingest.js';
+import { ingestSource, IngestionError } from '../ingestion/ingest.js';
 import { parseBinaryUpload, type ParsedBinaryDocument } from '../ingestion/documents.js';
 import {
   normalizedDocumentToSourceBlocks,
@@ -160,7 +160,8 @@ export function createWorkspaceService({
         if (
           existing.sourceType === 'pdf' ||
           existing.sourceType === 'docx' ||
-          existing.sourceType === 'pptx'
+          existing.sourceType === 'pptx' ||
+          existing.sourceType === 'image'
         ) {
           const original = storedOriginal;
           if (!original) {
@@ -176,6 +177,7 @@ export function createWorkspaceService({
             documentId,
             revisionId,
             options.signal,
+            existing.mediaType,
           );
           content = parsedDocument.content;
           pageCount = parsedDocument.pageCount;
@@ -264,7 +266,8 @@ export function createWorkspaceService({
             parserFingerprint: null,
             chunkerVersion: STRUCTURE_AWARE_CHUNKER_VERSION,
             chunkerFingerprint: STRUCTURE_AWARE_CHUNKER_FINGERPRINT,
-            errorCode: error instanceof AppError ? error.code : null,
+            errorCode:
+              error instanceof AppError || error instanceof IngestionError ? error.code : null,
             errorMessage: error instanceof Error ? error.message : String(error),
             startedAt: now,
             finishedAt: clock.now().toISOString(),

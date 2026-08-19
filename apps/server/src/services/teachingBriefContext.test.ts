@@ -1,12 +1,83 @@
 import { describe, expect, it } from 'vitest';
-import type { Concept, Curriculum, Material, SourceBlockRevision } from '@hy3-clinic/shared';
+import type {
+  Concept,
+  Curriculum,
+  EmbeddedAsset,
+  Material,
+  SourceBlockRevision,
+  VisualDerivation,
+} from '@hy3-clinic/shared';
 import { makeMaterial, T0 } from '../testing/fixtures.js';
 import { curriculumSourceBlockFingerprint } from '../grounding/sourceFingerprint.js';
 import {
   buildTeachingBriefSourceContext,
   TEACHING_BRIEF_MAX_BLOCKS,
   TEACHING_BRIEF_MAX_SERIALIZED_OFFER_BYTES,
+  TEACHING_BRIEF_MAX_SERIALIZED_VISUAL_BYTES,
+  TEACHING_BRIEF_MAX_VISUAL_OFFERS,
+  type TeachingBriefVisualCandidate,
 } from './teachingBriefContext.js';
+
+function visualCandidate(index = 0): TeachingBriefVisualCandidate {
+  const asset: EmbeddedAsset = {
+    id: `asset_${index}`,
+    materialId: 'material_a',
+    materialRevisionId: 'revision_a',
+    index,
+    parentStructuralUnitId: null,
+    sourcePath: `ppt/media/image${index + 1}.png`,
+    mediaType: 'image/png',
+    byteHash: `sha256:${index.toString(16).padStart(64, '0')}`,
+    byteLength: 128,
+    width: 320,
+    height: 200,
+    location: { slideNumber: index + 1 },
+    relationshipKind: 'image',
+    contentOrigin: 'extracted_original',
+    parserVersion: 'pptx-ooxml-v1',
+  };
+  const derivation: VisualDerivation = {
+    id: `visual_derivation_${index}`,
+    materialId: asset.materialId,
+    materialRevisionId: asset.materialRevisionId,
+    assetId: asset.id,
+    assetByteHash: asset.byteHash,
+    identityFingerprint: `visual_derivation_${index.toString(16).padStart(64, '0')}`,
+    semanticIdentityFingerprint: `visual_semantic_${index.toString(16).padStart(64, '0')}`,
+    derivationKind: 'visual_description',
+    contentOrigin: 'derived_visual_description',
+    authority: 'derived',
+    evidenceAdmissibility: 'advisory_nonblocking',
+    validationStatus: 'accepted',
+    generatorIdentity: 'provider_visual_description',
+    generatorVersion: 'provider-visual-description-v1',
+    provider: 'fake',
+    providerModel: null,
+    configurationFingerprint: `configuration_${index}`,
+    contextMode: 'image_only',
+    contextFingerprint: null,
+    transport: {
+      mediaType: 'image/png',
+      width: 320,
+      height: 200,
+      byteLength: 128,
+      transformation: 'validated_original',
+      preparationVersion: 'sharp-visual-transport-v1',
+      fingerprint: `sha256:${index.toString(16).padStart(64, '0')}`,
+    },
+    payload: {
+      description: `Diagram ${index} links the visible concepts.`,
+      visualType: 'diagram',
+      visibleText: null,
+      importantConcepts: [`concept ${index}`],
+      pedagogicalNotes: ['Use as advisory teaching context.'],
+      uncertainty: [],
+    },
+    reusedFromDerivationId: null,
+    createdAt: T0,
+  };
+  return { asset, derivation };
+}
 
 function block(input: {
   id: string;
@@ -237,5 +308,62 @@ describe('Teaching Brief source context', () => {
     const foreign = fixture();
     foreign.materials[1] = { ...foreign.materials[1]!, workspaceId: 'ws_other' };
     expect(() => buildTeachingBriefSourceContext(foreign)).toThrow(/outside this Course/);
+  });
+
+  it('keeps bounded original visuals separate from advisory explanations and fingerprints exact derivations', () => {
+    const input = {
+      ...fixture(),
+      visuals: Array.from({ length: 12 }, (_, index) => visualCandidate(index)),
+    };
+    const context = buildTeachingBriefSourceContext(input);
+
+    expect(context.visualOfferCount).toBe(TEACHING_BRIEF_MAX_VISUAL_OFFERS);
+    expect(context.visualSerializedBytes).toBeLessThanOrEqual(
+      TEACHING_BRIEF_MAX_SERIALIZED_VISUAL_BYTES,
+    );
+    expect(context.visualOffers[0]).toMatchObject({
+      referenceKey: 'V1',
+      source: { authority: 'original_visual', sourceKind: 'embedded' },
+      explanation: {
+        contentOrigin: 'derived_visual_description',
+        authority: 'advisory',
+        evidenceAdmissibility: 'advisory_nonblocking',
+        formalEvidenceEligible: false,
+      },
+    });
+    expect(context.visualOffers[0]).not.toHaveProperty('assetId');
+    expect(context.visualOffers[0]).not.toHaveProperty('assetByteHash');
+    expect(context.visualReferences[0]).toMatchObject({
+      assetId: 'asset_0',
+      assetByteHash: `sha256:${'0'.repeat(64)}`,
+      context: context.visualOffers[0],
+    });
+
+    const changed = fixture();
+    const changedVisual = visualCandidate(0);
+    changedVisual.derivation = {
+      ...changedVisual.derivation,
+      id: 'visual_derivation_changed',
+      identityFingerprint: `visual_derivation_${'f'.repeat(64)}`,
+    };
+    const changedContext = buildTeachingBriefSourceContext({
+      ...changed,
+      visuals: [changedVisual],
+    });
+    expect(changedContext.fingerprint).not.toBe(
+      buildTeachingBriefSourceContext({ ...fixture(), visuals: [visualCandidate(0)] }).fingerprint,
+    );
+
+    expect(() =>
+      buildTeachingBriefSourceContext({
+        ...fixture(),
+        visuals: [visualCandidate(0), visualCandidate(0)],
+      }),
+    ).toThrow(/occurrence-unique/);
+    const stale = visualCandidate(0);
+    stale.asset = { ...stale.asset, materialRevisionId: 'revision_old' };
+    expect(() => buildTeachingBriefSourceContext({ ...fixture(), visuals: [stale] })).toThrow(
+      /stale, foreign, or not advisory/,
+    );
   });
 });

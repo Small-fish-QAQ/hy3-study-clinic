@@ -127,6 +127,42 @@ describe('lesson-aware Tutor pedagogy policy', () => {
     );
     expect(unknown.valid).toBe(false);
     expect(unknown.diagnosticCodes).toContain('TUTOR_SOURCE_REF_UNKNOWN');
+    const advisoryVisual = input('为什么？');
+    advisoryVisual.lessonContext!.visuals = [
+      {
+        referenceKey: 'V1',
+        materialTitle: 'Diagram',
+        source: {
+          sourceKind: 'embedded',
+          mediaType: 'image/png',
+          width: 320,
+          height: 200,
+          location: { pageNumber: 1, slideNumber: null, contextLabel: 'Page 1' },
+          authority: 'original_visual',
+        },
+        explanation: {
+          text: 'Hy3 describes a capacity diagram.',
+          visualType: 'diagram',
+          importantConcepts: ['capacity'],
+          pedagogicalNotes: [],
+          uncertainty: [],
+          contentOrigin: 'derived_visual_description',
+          provenanceCategory: 'generated_visual_explanation',
+          authority: 'advisory',
+          evidenceAdmissibility: 'advisory_nonblocking',
+          formalEvidenceEligible: false,
+        },
+      },
+    ];
+    const visualCitation = validateTutorTurnCandidate(
+      payload('ANSWER_QUESTION', ['V1']),
+      advisoryVisual,
+    );
+    expect(visualCitation.valid).toBe(false);
+    expect(visualCitation.diagnosticCodes).toContain('TUTOR_SOURCE_REF_UNKNOWN');
+    expect(tutorSourceOffers(advisoryVisual.lessonContext, null)).toEqual([
+      { referenceKey: 'S1', excerpt: 'Exact source excerpt.', origin: 'lesson' },
+    ]);
     const unavailable = validateTutorTurnCandidate(
       payload('FORMAL_CHECK_READY'),
       input('继续', [], false),

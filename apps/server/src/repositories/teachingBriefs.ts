@@ -144,6 +144,111 @@ export function createTeachingBriefsRepo(db: SqliteDb) {
         throw new Error('Teaching Brief source provenance is stale, foreign, or inexact.');
       }
     }
+    for (const reference of brief.visualReferences) {
+      const manifestRevision = brief.sourceManifest.revisions.find(
+        (revision) => revision.materialId === reference.materialId,
+      );
+      if (manifestRevision?.materialRevisionId !== reference.materialRevisionId) {
+        throw new Error('Teaching Brief visual provenance is outside its source manifest.');
+      }
+      const binding = db
+        .prepare(
+          `SELECT vd.material_id, vd.material_revision_id, vd.asset_id,
+                  vd.asset_byte_hash, vd.identity_fingerprint, vd.content_origin,
+                  vd.authority, vd.evidence_admissibility, vd.validation_status,
+                  vd.description, vd.visual_type, vd.important_concepts,
+                  vd.pedagogical_notes, vd.uncertainty,
+                  a.media_type, a.width, a.height, a.location, a.relationship_kind,
+                  a.content_origin AS asset_content_origin,
+                  m.workspace_id, m.title, m.source_type, m.active_revision_id, m.availability
+           FROM visual_derivations vd
+           JOIN material_revision_assets a ON a.id = vd.asset_id
+           JOIN materials m ON m.id = vd.material_id
+           WHERE vd.id = ? AND a.id = ?`,
+        )
+        .get(reference.derivationId, reference.assetId) as
+        | {
+            material_id: string;
+            material_revision_id: string;
+            asset_id: string;
+            asset_byte_hash: string;
+            identity_fingerprint: string;
+            content_origin: string;
+            authority: string;
+            evidence_admissibility: string;
+            validation_status: string;
+            description: string;
+            visual_type: string;
+            important_concepts: string;
+            pedagogical_notes: string;
+            uncertainty: string;
+            media_type: string;
+            width: number | null;
+            height: number | null;
+            location: string;
+            relationship_kind: string;
+            asset_content_origin: string;
+            workspace_id: string;
+            title: string;
+            source_type: string;
+            active_revision_id: string | null;
+            availability: string;
+          }
+        | undefined;
+      const location = binding ? (JSON.parse(binding.location) as Record<string, unknown>) : null;
+      const context = reference.context;
+      const expectedLocationLabel = binding
+        ? location?.slideNumber
+          ? `Slide ${location.slideNumber}`
+          : location?.pageNumber
+            ? `Page ${location.pageNumber}`
+            : binding.source_type === 'image'
+              ? 'Standalone image'
+              : `Embedded visual ${
+                  (
+                    db
+                      .prepare('SELECT idx FROM material_revision_assets WHERE id = ?')
+                      .get(reference.assetId) as { idx: number }
+                  ).idx + 1
+                }`
+        : null;
+      if (
+        !binding ||
+        binding.workspace_id !== brief.workspaceId ||
+        binding.material_id !== reference.materialId ||
+        binding.material_revision_id !== reference.materialRevisionId ||
+        binding.asset_id !== reference.assetId ||
+        binding.asset_byte_hash !== reference.assetByteHash ||
+        binding.identity_fingerprint !== reference.derivationIdentityFingerprint ||
+        binding.content_origin !== 'derived_visual_description' ||
+        binding.authority !== 'derived' ||
+        binding.evidence_admissibility !== 'advisory_nonblocking' ||
+        binding.validation_status !== 'accepted' ||
+        binding.relationship_kind !== 'image' ||
+        binding.asset_content_origin !== 'extracted_original' ||
+        binding.active_revision_id !== reference.materialRevisionId ||
+        binding.availability !== 'active' ||
+        binding.title !== context.materialTitle ||
+        (binding.source_type === 'image' ? 'standalone' : 'embedded') !==
+          context.source.sourceKind ||
+        binding.media_type !== context.source.mediaType ||
+        binding.width !== context.source.width ||
+        binding.height !== context.source.height ||
+        (location?.pageNumber ?? null) !== context.source.location.pageNumber ||
+        (location?.slideNumber ?? null) !== context.source.location.slideNumber ||
+        expectedLocationLabel !== context.source.location.contextLabel ||
+        binding.description !== context.explanation.text ||
+        binding.visual_type !== context.explanation.visualType ||
+        JSON.stringify(JSON.parse(binding.important_concepts)) !==
+          JSON.stringify(context.explanation.importantConcepts) ||
+        JSON.stringify(JSON.parse(binding.pedagogical_notes)) !==
+          JSON.stringify(context.explanation.pedagogicalNotes) ||
+        JSON.stringify(JSON.parse(binding.uncertainty)) !==
+          JSON.stringify(context.explanation.uncertainty)
+      ) {
+        throw new Error('Teaching Brief visual provenance is stale, foreign, or non-advisory.');
+      }
+    }
     db.prepare(
       `INSERT INTO teaching_briefs
          (id, workspace_id, curriculum_id, study_plan_id, learning_unit_id,

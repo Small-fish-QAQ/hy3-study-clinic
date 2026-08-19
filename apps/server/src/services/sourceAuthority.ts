@@ -268,6 +268,9 @@ export function createSourceAuthorityService({
 
       const admitted: SourceAuthorityBundle[] = [];
       for (const block of revision.blocks) {
+        // Null is retained for legacy rows; explicit derived origins are never
+        // admitted until the material is reprocessed with modern lineage.
+        if (block.contentOrigin && block.contentOrigin !== 'extracted_original') continue;
         for (const premiseKind of ['expected_answer', 'rubric_point'] as const) {
           const logicalSourceId = `local-verbatim:${materialRevisionId}:${block.id}:${premiseKind}`;
           const existing = sourceAuthority.listHistory(logicalSourceId).at(-1);
@@ -376,11 +379,19 @@ export function createSourceAuthorityService({
           'The MaterialRevision has no revision-owned SourceBlocks.',
         );
       }
-
       const now = clock.now().toISOString();
       const claims: Array<Omit<SourceAuthorityClaim, 'authorityRecordId'>> = [];
       const dedupe = new Set<string>();
       for (const proposed of parsed.claims) {
+        const proposedBlock = revision.blocks.find(
+          (block) => block.id === proposed.grounding.blockId,
+        );
+        if (proposedBlock?.contentOrigin && proposedBlock.contentOrigin !== 'extracted_original') {
+          throw new AppError(
+            ApiErrorCode.GroundingFailed,
+            'Derived SourceBlocks are not admissible as blocking source authority.',
+          );
+        }
         const verification = verifyGrounding(revision.blocks, proposed.grounding);
         if (!verification.ok) {
           throw new AppError(ApiErrorCode.GroundingFailed, verification.message, {

@@ -180,7 +180,7 @@ export const CourseActionLaunchResultSchema = z.discriminatedUnion('kind', [
       kind: z.literal('lesson'),
       agendaItemId: z.string().min(1),
       learningUnitId: z.string().min(1),
-      conceptId: z.string().min(1),
+      conceptId: z.string().min(1).nullable(),
       lessonId: z.string().min(1).nullable(),
     })
     .strict(),

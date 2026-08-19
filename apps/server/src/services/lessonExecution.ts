@@ -356,6 +356,7 @@ export function createLessonExecutionService({
       })),
       segments,
       sourceReferencesAvailable: sources.length > 0,
+      visuals: brief.visualReferences.map((reference) => reference.context),
       summary: {
         available: true,
         text: brief.summary,
@@ -822,6 +823,7 @@ export function createLessonExecutionService({
       },
       nearbySegments,
       sources: current.sources.slice(0, 4),
+      visuals: lesson.visuals.slice(0, 4),
       summary: lesson.summary.text,
       nextConnection: lesson.summary.nextConnection,
     });
@@ -836,6 +838,16 @@ export function createLessonExecutionService({
           possibleMisconception: result.currentSegment.possibleMisconception?.slice(0, 250) ?? null,
         },
         sources: result.sources.slice(0, 2),
+        visuals: (result.visuals ?? []).slice(0, 2).map((visual) => ({
+          ...visual,
+          explanation: {
+            ...visual.explanation,
+            text: visual.explanation.text.slice(0, 600),
+            importantConcepts: visual.explanation.importantConcepts.slice(0, 4),
+            pedagogicalNotes: visual.explanation.pedagogicalNotes.slice(0, 2),
+            uncertainty: visual.explanation.uncertainty.slice(0, 2),
+          },
+        })),
         summary: result.summary?.slice(0, 300) ?? null,
       });
     }

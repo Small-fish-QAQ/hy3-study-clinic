@@ -140,6 +140,7 @@ const lessonReady: LessonExecutionProjection = {
       },
     ],
     sourceReferencesAvailable: true,
+    visuals: [],
     summary: {
       available: true,
       text: '条件概率聚焦已知条件下的可能性。',

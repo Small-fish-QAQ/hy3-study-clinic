@@ -1,6 +1,7 @@
 import type { SqliteDb } from '../db/database.js';
 import { createMaterialsRepo, type MaterialsRepo } from './materials.js';
 import { createMaterialRevisionsRepo, type MaterialRevisionsRepo } from './materialRevisions.js';
+import { createVisualDerivationsRepo, type VisualDerivationsRepo } from './visualDerivations.js';
 import { createSourceAuthorityRepo, type SourceAuthorityRepo } from './sourceAuthority.js';
 import { createWorkspacesRepo, type WorkspacesRepo } from './workspaces.js';
 import { createGraphRepo, type GraphRepo } from './graph.js';
@@ -40,6 +41,7 @@ export interface Repositories {
   workspaces: WorkspacesRepo;
   materials: MaterialsRepo;
   materialRevisions: MaterialRevisionsRepo;
+  visualDerivations: VisualDerivationsRepo;
   sourceAuthority: SourceAuthorityRepo;
   graph: GraphRepo;
   alignment: AlignmentRepo;
@@ -80,6 +82,7 @@ export function createRepositories(db: SqliteDb): Repositories {
     workspaces: createWorkspacesRepo(db),
     materials: createMaterialsRepo(db),
     materialRevisions: createMaterialRevisionsRepo(db),
+    visualDerivations: createVisualDerivationsRepo(db),
     sourceAuthority: createSourceAuthorityRepo(db),
     graph: createGraphRepo(db),
     alignment: createAlignmentRepo(db),

@@ -43,6 +43,8 @@ import type {
   LessonTutorContext,
   StudySessionSummary,
   TutorToolName,
+  VisualAdvisoryContext,
+  VisualDescriptionPayload,
 } from '@hy3-clinic/shared';
 
 /** Options threaded through every provider call. */
@@ -160,6 +162,24 @@ export interface ProviderTelemetryContext {
   logicalCallId?: string | undefined;
   attemptKind?: 'original' | 'repair' | 'retry' | 'fallback' | undefined;
   confirmedCostPolicyIds?: string[] | undefined;
+}
+
+/** One context-free visual unit. Local source identity never crosses this boundary. */
+export interface VisualDescriptionInput {
+  image: {
+    dataBase64: string;
+    mediaType: 'image/png' | 'image/jpeg' | 'image/webp';
+    width: number;
+    height: number;
+    byteLength: number;
+  };
+  limits: {
+    maxDescriptionChars: number;
+    maxVisibleTextChars: number;
+    maxConcepts: number;
+    maxPedagogicalNotes: number;
+    maxUncertaintyItems: number;
+  };
 }
 
 export interface ConceptAnalysisInput {
@@ -357,6 +377,12 @@ export interface TeachingBriefGenerationInput {
       text: string;
     }>;
   };
+  /** Visual source and Hy3 explanation stay explicitly separate and advisory. */
+  visualContext: {
+    offerCount: number;
+    serializedBytes: number;
+    offers: VisualAdvisoryContext[];
+  };
   limits: {
     maxSegments: number;
     maxSourceRefsPerSegment: number;
@@ -547,6 +573,16 @@ export interface CurriculumProposalInput {
   blocks: SourceBlock[];
   /** Exact evidence universe. Curriculum output may select only these identities. */
   evidenceCatalog: CurriculumEvidenceOffer[];
+  /**
+   * Bounded, learner-safe visual explanations. These may shape advisory
+   * teaching structure, but they are not source evidence and expose no local
+   * asset, revision, derivation, or hash identity to the provider.
+   */
+  visualContext?: {
+    offerCount: number;
+    serializedBytes: number;
+    offers: VisualAdvisoryContext[];
+  };
   limits: {
     maxNodes: number;
     maxObjectives: number;
@@ -712,6 +748,11 @@ export interface LlmProvider {
   readonly model?: string | undefined;
   /** Minimal, state-free connectivity check. Called only by the explicit Settings action. */
   testConnection(opts?: ProviderCallOptions): Promise<void>;
+  /** Describe one bounded image-only visual unit; local code attaches all identity. */
+  describeVisual(
+    input: VisualDescriptionInput,
+    opts?: ProviderCallOptions,
+  ): Promise<VisualDescriptionPayload>;
   analyzeConcepts(
     input: ConceptAnalysisInput,
     opts?: ProviderCallOptions,

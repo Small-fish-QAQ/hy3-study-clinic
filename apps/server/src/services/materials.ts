@@ -129,7 +129,10 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
       title,
       sourceType,
       mediaType:
-        sourceType === 'pdf' || sourceType === 'docx' || sourceType === 'pptx'
+        sourceType === 'pdf' ||
+        sourceType === 'docx' ||
+        sourceType === 'pptx' ||
+        sourceType === 'image'
           ? null
           : MEDIA_TYPE_FOR_TEXT[sourceType],
       originalFilename: input.filename?.trim() || null,
@@ -183,7 +186,12 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
     validateUploadDeclaration(kind, input.mediaType);
     const buffer = decodeUpload(input.dataBase64);
 
-    if (kind.sourceType !== 'pdf' && kind.sourceType !== 'docx' && kind.sourceType !== 'pptx') {
+    if (
+      kind.sourceType !== 'pdf' &&
+      kind.sourceType !== 'docx' &&
+      kind.sourceType !== 'pptx' &&
+      kind.sourceType !== 'image'
+    ) {
       // Text file uploaded as base64: decode and reuse the text path.
       return create(
         {
@@ -204,6 +212,7 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
       id,
       candidateRevisionId,
       options.signal,
+      kind.mediaType,
     );
     if (options.signal?.aborted) {
       throw new AppError(ApiErrorCode.RequestCancelled, '文档导入已取消。');

@@ -9,6 +9,7 @@ import { IngestionError, looksBinary, normalizeText, sanitizeParsedText } from '
 import { analyzePdfLayout, type PdfPageInput, type PageSpan } from './pdfLayout.js';
 import { parseRichOoxml, type ExtractedEmbeddedAsset } from './richDocuments.js';
 import type { NormalizedDocument } from '@hy3-clinic/shared';
+import { parseStandaloneImage } from './images.js';
 
 export type { PageSpan } from './pdfLayout.js';
 
@@ -73,6 +74,10 @@ const UPLOAD_EXTENSIONS: Record<string, UploadKind> = {
     sourceType: 'pptx',
     mediaType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   },
+  png: { sourceType: 'image', mediaType: 'image/png' },
+  jpg: { sourceType: 'image', mediaType: 'image/jpeg' },
+  jpeg: { sourceType: 'image', mediaType: 'image/jpeg' },
+  webp: { sourceType: 'image', mediaType: 'image/webp' },
 };
 
 for (const extension of [
@@ -340,6 +345,7 @@ export async function parseBinaryUpload(
   materialId?: string,
   revisionId?: string,
   signal?: AbortSignal,
+  expectedMediaType?: MediaType | null,
 ): Promise<ParsedBinaryDocument> {
   if (sourceType === 'pdf') {
     if (hasDocxPackageStructure(buffer) || hasPptxPackageStructure(buffer)) {
@@ -366,6 +372,27 @@ export async function parseBinaryUpload(
       throw new IngestionError(ApiErrorCode.ParseFailed, 'PPTX 解析缺少修订身份。');
     }
     return parseRichOffice('pptx', buffer, materialId, revisionId, signal);
+  }
+  if (sourceType === 'image') {
+    if (!materialId || !revisionId || !expectedMediaType) {
+      throw new IngestionError(ApiErrorCode.ParseFailed, '图像解析缺少修订或媒体身份。');
+    }
+    const parsed = await parseStandaloneImage(
+      buffer,
+      materialId,
+      revisionId,
+      expectedMediaType,
+      signal,
+    );
+    return {
+      content: '',
+      pageCount: null,
+      pageSpans: null,
+      warnings: [],
+      parserVersion: parsed.document.parserVersion,
+      normalizedDocument: parsed.document,
+      embeddedAssets: parsed.assets,
+    };
   }
   if (hasPdfMagic(buffer) || hasDocxPackageStructure(buffer) || hasPptxPackageStructure(buffer)) {
     throw new IngestionError(ApiErrorCode.TypeMismatch, '文件签名与文本/源代码扩展名不匹配。');

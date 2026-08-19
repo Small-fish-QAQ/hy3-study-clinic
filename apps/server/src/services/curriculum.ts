@@ -5,6 +5,8 @@ import {
   CurriculumHistoryResponseSchema,
   CurriculumProposalResponseSchema,
   ExecutionSourceManifestSchema,
+  VisualAdvisoryContextSchema,
+  VisualMediaTypeSchema,
   ProposeCurriculumRequestSchema,
   RejectCurriculumRequestSchema,
   fnv1a32,
@@ -21,6 +23,8 @@ import {
   type ProposeCurriculumRequest,
   type RejectCurriculumRequest,
   type StudyPlanPreflight,
+  type VisualAdvisoryContext,
+  type VisualDerivation,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import { ProviderError } from '../llm/errors.js';
@@ -76,6 +80,7 @@ import {
   planCurriculumDetailBatches,
   validateCurriculumDetailCandidate,
 } from './curriculumMaterialization.js';
+import { visualAwareManifestFingerprint } from './advisoryVisuals.js';
 
 /** HTTP/service request: the server, never the client, resolves exact revisions. */
 export const ProposeCurriculumCommandRequestSchema = ProposeCurriculumRequestSchema.omit({
@@ -118,6 +123,67 @@ export const CURRICULUM_OPERATION_LEASE_MS =
   CURRICULUM_PROVIDER_TIMEOUT_MS * CURRICULUM_MAX_PHYSICAL_PROVIDER_CALLS +
   PROVIDER_REPAIR_LEASE_MARGIN_MS;
 export const COURSE_PREPARATION_POLICY_ID = 'course_preparation_v1';
+export const CURRICULUM_MAX_VISUAL_OFFERS = 24;
+export const CURRICULUM_MAX_SERIALIZED_VISUAL_BYTES = 32_768;
+
+interface CurriculumVisualCandidate {
+  materialTitle: string;
+  sourceKind: 'standalone' | 'embedded';
+  mediaType: 'image/png' | 'image/jpeg' | 'image/webp';
+  width: number;
+  height: number;
+  pageNumber: number | null;
+  slideNumber: number | null;
+  contextLabel: string;
+  derivation: VisualDerivation;
+}
+
+function buildCurriculumVisualContext(
+  candidates: CurriculumVisualCandidate[],
+): NonNullable<CurriculumProposalInput['visualContext']> {
+  const offers: VisualAdvisoryContext[] = [];
+  for (const candidate of candidates) {
+    if (offers.length >= CURRICULUM_MAX_VISUAL_OFFERS) break;
+    const offer = VisualAdvisoryContextSchema.parse({
+      referenceKey: `V${offers.length + 1}`,
+      materialTitle: candidate.materialTitle,
+      source: {
+        sourceKind: candidate.sourceKind,
+        mediaType: candidate.mediaType,
+        width: candidate.width,
+        height: candidate.height,
+        location: {
+          pageNumber: candidate.pageNumber,
+          slideNumber: candidate.slideNumber,
+          contextLabel: candidate.contextLabel,
+        },
+        authority: 'original_visual',
+      },
+      explanation: {
+        text: candidate.derivation.payload.description,
+        visualType: candidate.derivation.payload.visualType,
+        importantConcepts: candidate.derivation.payload.importantConcepts,
+        pedagogicalNotes: candidate.derivation.payload.pedagogicalNotes,
+        uncertainty: candidate.derivation.payload.uncertainty,
+        contentOrigin: 'derived_visual_description',
+        provenanceCategory: 'generated_visual_explanation',
+        authority: 'advisory',
+        evidenceAdmissibility: 'advisory_nonblocking',
+        formalEvidenceEligible: false,
+      },
+    });
+    const next = [...offers, offer];
+    if (Buffer.byteLength(JSON.stringify(next), 'utf8') > CURRICULUM_MAX_SERIALIZED_VISUAL_BYTES) {
+      continue;
+    }
+    offers.push(offer);
+  }
+  return {
+    offerCount: offers.length,
+    serializedBytes: Buffer.byteLength(JSON.stringify(offers), 'utf8'),
+    offers,
+  };
+}
 
 export interface CurriculumProposalOptions extends ProviderCallOptions {
   preparationPolicyId?: typeof COURSE_PREPARATION_POLICY_ID;
@@ -146,10 +212,6 @@ interface CurriculumServiceDeps {
   providerModel?: string | null;
   sourceAuthority: Pick<SourceAuthorityService, 'ensureVerbatimAssessmentAuthority'>;
   generationPolicy?: CurriculumGenerationPolicy;
-}
-
-function manifestFingerprint(revisions: ExecutionSourceManifest['revisions']): string {
-  return `manifest_${fnv1a32(JSON.stringify(revisions)).toString(16).padStart(8, '0')}`;
 }
 
 function requireContract(
@@ -190,6 +252,7 @@ export function buildCurriculumExecutionContext(
   blocks: ReturnType<Repositories['materials']['getBlocksByWorkspace']>;
   authorityBundles: SourceAuthorityBundle[];
   sourceMapMaterials: CourseSourceMapInput['materials'];
+  visualCandidates: CurriculumVisualCandidate[];
 } {
   assertLearningContractScopeCurrent(repos, contract);
   const materials = new Map(
@@ -202,6 +265,7 @@ export function buildCurriculumExecutionContext(
   const blocks = [] as ReturnType<Repositories['materials']['getBlocksByWorkspace']>;
   const authorityBundles: SourceAuthorityBundle[] = [];
   const sourceMapMaterials: CourseSourceMapInput['materials'] = [];
+  const visualCandidates: CurriculumVisualCandidate[] = [];
   const authorityIds = new Set<string>();
   const contextMaterials: CurriculumContractContext['materials'] = [];
 
@@ -229,9 +293,25 @@ export function buildCurriculumExecutionContext(
       );
     }
     const materialBlocks = repos.materials.getBlocks(material.id);
+    const originalVisuals = repos.materialRevisions
+      .getAssets(revision.id)
+      .filter(
+        (asset) =>
+          asset.relationshipKind === 'image' &&
+          asset.contentOrigin === 'extracted_original' &&
+          asset.width !== null &&
+          asset.height !== null &&
+          VisualMediaTypeSchema.safeParse(asset.mediaType).success,
+      );
     if (
-      materialBlocks.length === 0 ||
-      materialBlocks.some((block) => block.materialRevisionId !== revision.id)
+      materialBlocks.some(
+        (block) =>
+          block.materialRevisionId !== revision.id ||
+          (block.contentOrigin !== undefined &&
+            block.contentOrigin !== null &&
+            block.contentOrigin !== 'extracted_original'),
+      ) ||
+      (materialBlocks.length === 0 && originalVisuals.length === 0)
     ) {
       throw new AppError(
         ApiErrorCode.VersionConflict,
@@ -262,6 +342,63 @@ export function buildCurriculumExecutionContext(
         chunkerVersion: revision.chunkerVersion,
         chunkerFingerprint: revision.chunkerFingerprint,
       },
+      visuals: originalVisuals.map((asset) => {
+        const derivation = repos.visualDerivations
+          .listForAsset(asset.id)
+          .filter(
+            (candidate) =>
+              candidate.materialRevisionId === revision.id &&
+              candidate.assetByteHash === asset.byteHash &&
+              candidate.validationStatus === 'accepted' &&
+              candidate.authority === 'derived' &&
+              candidate.evidenceAdmissibility === 'advisory_nonblocking',
+          )
+          .at(-1);
+        const pageNumber = asset.location.pageNumber ?? null;
+        const slideNumber = asset.location.slideNumber ?? null;
+        const contextLabel =
+          slideNumber !== null
+            ? `Slide ${slideNumber}`
+            : pageNumber !== null
+              ? `Page ${pageNumber}`
+              : material.sourceType === 'image'
+                ? 'Standalone image'
+                : `Embedded visual ${asset.index + 1}`;
+        if (derivation) {
+          visualCandidates.push({
+            materialTitle: material.title,
+            sourceKind: material.sourceType === 'image' ? 'standalone' : 'embedded',
+            mediaType: VisualMediaTypeSchema.parse(asset.mediaType),
+            width: asset.width!,
+            height: asset.height!,
+            pageNumber,
+            slideNumber,
+            contextLabel,
+            derivation,
+          });
+        }
+        return {
+          assetOccurrenceId: asset.id,
+          assetByteHash: asset.byteHash,
+          mediaType: VisualMediaTypeSchema.parse(asset.mediaType),
+          width: asset.width!,
+          height: asset.height!,
+          location: {
+            pageNumber,
+            slideNumber,
+            contextLabel,
+          },
+          contentOrigin: 'extracted_original' as const,
+          advisoryDescription: derivation
+            ? {
+                text: derivation.payload.description,
+                derivationId: derivation.id,
+                identityFingerprint: derivation.identityFingerprint,
+                authority: 'advisory_nonblocking' as const,
+              }
+            : null,
+        };
+      }),
       blocks: materialBlocks.map((block) => ({
         ...block,
         materialRevisionId: revision.id,
@@ -301,7 +438,7 @@ export function buildCurriculumExecutionContext(
     );
   }
   const manifest = ExecutionSourceManifestSchema.parse({
-    fingerprint: manifestFingerprint(revisions),
+    fingerprint: visualAwareManifestFingerprint(repos, revisions),
     revisions,
   });
   return {
@@ -311,6 +448,7 @@ export function buildCurriculumExecutionContext(
     blocks,
     authorityBundles,
     sourceMapMaterials,
+    visualCandidates,
     contractContext: {
       contractVersionId: contract.id,
       intent: contract.intent,
@@ -459,6 +597,18 @@ export function buildOfferedCurriculumKnowledge(
       concepts,
       graphEdges,
       canonicalConcepts,
+      visualCandidates: context.visualCandidates.map((candidate) => ({
+        materialTitle: candidate.materialTitle,
+        sourceKind: candidate.sourceKind,
+        mediaType: candidate.mediaType,
+        width: candidate.width,
+        height: candidate.height,
+        pageNumber: candidate.pageNumber,
+        slideNumber: candidate.slideNumber,
+        contextLabel: candidate.contextLabel,
+        derivationId: candidate.derivation.id,
+        derivationIdentityFingerprint: candidate.derivation.identityFingerprint,
+      })),
       authorityBundles: context.authorityBundles.map((bundle) => ({
         record: bundle.record,
         claims: bundle.claims,
@@ -851,6 +1001,7 @@ export function createCurriculumService({
       predecessor,
       blocks: context.blocks,
       evidenceCatalog,
+      visualContext: buildCurriculumVisualContext(context.visualCandidates),
       limits: curriculumLimits(context.outline, predecessor),
     };
     const validationContext: CurriculumValidationContext = {

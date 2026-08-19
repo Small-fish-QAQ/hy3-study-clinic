@@ -1916,6 +1916,98 @@ const MIGRATIONS: Migration[] = [
       END;
     `,
   },
+  {
+    version: 25,
+    name: 'immutable_visual_derivations',
+    up: `
+      CREATE TABLE visual_derivations (
+        id TEXT PRIMARY KEY,
+        material_id TEXT NOT NULL REFERENCES materials(id) ON DELETE CASCADE,
+        material_revision_id TEXT NOT NULL REFERENCES material_revisions(id) ON DELETE CASCADE,
+        asset_id TEXT NOT NULL REFERENCES material_revision_assets(id) ON DELETE CASCADE,
+        asset_byte_hash TEXT NOT NULL REFERENCES source_asset_blobs(byte_hash),
+        identity_fingerprint TEXT NOT NULL UNIQUE,
+        semantic_identity_fingerprint TEXT NOT NULL,
+        derivation_kind TEXT NOT NULL CHECK (derivation_kind = 'visual_description'),
+        content_origin TEXT NOT NULL CHECK (content_origin = 'derived_visual_description'),
+        authority TEXT NOT NULL CHECK (authority = 'derived'),
+        evidence_admissibility TEXT NOT NULL CHECK (evidence_admissibility = 'advisory_nonblocking'),
+        validation_status TEXT NOT NULL CHECK (validation_status = 'accepted'),
+        generator_identity TEXT NOT NULL CHECK (generator_identity = 'provider_visual_description'),
+        generator_version TEXT NOT NULL,
+        provider TEXT NOT NULL CHECK (provider IN ('fake', 'hy3')),
+        provider_model TEXT,
+        configuration_fingerprint TEXT NOT NULL,
+        context_mode TEXT NOT NULL CHECK (context_mode = 'image_only'),
+        context_fingerprint TEXT CHECK (context_fingerprint IS NULL),
+        transport_media_type TEXT NOT NULL CHECK (
+          transport_media_type IN ('image/png', 'image/jpeg', 'image/webp')
+        ),
+        transport_width INTEGER NOT NULL CHECK (transport_width BETWEEN 1 AND 4096),
+        transport_height INTEGER NOT NULL CHECK (transport_height BETWEEN 1 AND 4096),
+        transport_byte_length INTEGER NOT NULL CHECK (
+          transport_byte_length BETWEEN 1 AND ${4 * 1024 * 1024}
+        ),
+        transport_transformation TEXT NOT NULL CHECK (
+          transport_transformation IN ('validated_original', 'auto_orient_resize_transcode')
+        ),
+        transport_preparation_version TEXT NOT NULL,
+        transport_fingerprint TEXT NOT NULL,
+        description TEXT NOT NULL CHECK (length(description) BETWEEN 1 AND 1200),
+        visual_type TEXT NOT NULL CHECK (
+          visual_type IN ('photo', 'diagram', 'chart', 'screenshot', 'text_heavy', 'illustration', 'other')
+        ),
+        visible_text TEXT CHECK (visible_text IS NULL OR length(visible_text) BETWEEN 1 AND 2000),
+        important_concepts TEXT NOT NULL,
+        pedagogical_notes TEXT NOT NULL,
+        uncertainty TEXT NOT NULL,
+        reused_from_derivation_id TEXT REFERENCES visual_derivations(id),
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_visual_derivations_asset
+        ON visual_derivations(asset_id, created_at DESC, id DESC);
+      CREATE INDEX idx_visual_derivations_revision
+        ON visual_derivations(material_revision_id, created_at DESC, id DESC);
+      CREATE INDEX idx_visual_derivations_semantic_identity
+        ON visual_derivations(semantic_identity_fingerprint, created_at ASC, id ASC);
+      CREATE TRIGGER guard_visual_derivation_source_binding
+        BEFORE INSERT ON visual_derivations
+        WHEN NOT EXISTS (
+          SELECT 1
+          FROM material_revision_assets a
+          JOIN material_revisions mr ON mr.id = a.material_revision_id
+          WHERE a.id = NEW.asset_id
+            AND a.material_id = NEW.material_id
+            AND a.material_revision_id = NEW.material_revision_id
+            AND a.byte_hash = NEW.asset_byte_hash
+            AND a.relationship_kind = 'image'
+            AND a.content_origin = 'extracted_original'
+            AND mr.material_id = NEW.material_id
+        )
+      BEGIN
+        SELECT RAISE(ABORT, 'visual derivation source binding mismatch');
+      END;
+      CREATE TRIGGER prevent_visual_derivation_update
+        BEFORE UPDATE ON visual_derivations
+      BEGIN
+        SELECT RAISE(ABORT, 'visual derivations are immutable');
+      END;
+      CREATE TRIGGER prevent_direct_visual_derivation_delete
+        BEFORE DELETE ON visual_derivations
+        WHEN EXISTS (SELECT 1 FROM materials WHERE id = OLD.material_id)
+          AND EXISTS (
+            SELECT 1 FROM material_revisions WHERE id = OLD.material_revision_id
+          )
+          AND EXISTS (SELECT 1 FROM material_revision_assets WHERE id = OLD.asset_id)
+      BEGIN
+        SELECT RAISE(ABORT, 'visual derivations are immutable');
+      END;
+      CREATE UNIQUE INDEX idx_active_visual_preparation_identity
+        ON agent_operations(workspace_id, operation_type, expected_fingerprint)
+        WHERE operation_type = 'prepare_visual_description'
+          AND status IN ('queued', 'running');
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

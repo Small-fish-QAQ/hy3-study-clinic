@@ -279,4 +279,22 @@ describe('source truth/premise authority', () => {
       }
     }
   });
+
+  it('never admits explicitly derived text as blocking source authority', () => {
+    const active = db
+      .prepare('SELECT active_revision_id FROM materials WHERE id = ?')
+      .get(MATERIAL_ID) as { active_revision_id: string };
+
+    for (const origin of ['derived_ocr', 'derived_visual_description'] as const) {
+      db.prepare('UPDATE source_blocks SET content_origin = ? WHERE id = ?').run(origin, BLOCK_ID);
+
+      expect(
+        service.ensureVerbatimAssessmentAuthority('ws_1', MATERIAL_ID, active.active_revision_id),
+      ).toEqual([]);
+      expect(() => service.createCandidate(candidateInput())).toThrow(
+        'Derived SourceBlocks are not admissible as blocking source authority.',
+      );
+    }
+    expect(repo.listHistory(LOGICAL_SOURCE_ID)).toEqual([]);
+  });
 });

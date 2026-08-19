@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ExecutionSourceManifestSchema } from './curriculum.js';
+import { VisualAdvisoryContextSchema } from './visual.js';
 
 /** A Teaching Brief teaches from a route snapshot; it is never Course Truth. */
 export const TeachingBriefAuthoritySchema = z.enum([
@@ -54,6 +55,30 @@ export const TeachingBriefSourceReferenceSchema = z
     }
   });
 export type TeachingBriefSourceReference = z.infer<typeof TeachingBriefSourceReferenceSchema>;
+
+/** Private immutable binding for one learner-safe advisory visual projection. */
+export const TeachingBriefVisualReferenceSchema = z
+  .object({
+    refId: z.string().regex(/^V[1-9][0-9]*$/u),
+    materialId: z.string().min(1),
+    materialRevisionId: z.string().min(1),
+    assetId: z.string().min(1),
+    assetByteHash: z.string().regex(/^sha256:[0-9a-f]{64}$/u),
+    derivationId: z.string().min(1),
+    derivationIdentityFingerprint: z.string().regex(/^visual_derivation_[0-9a-f]{64}$/u),
+    context: VisualAdvisoryContextSchema,
+  })
+  .strict()
+  .superRefine((reference, ctx) => {
+    if (reference.refId !== reference.context.referenceKey) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['context', 'referenceKey'],
+        message: 'Teaching Brief visual reference key must match its private binding',
+      });
+    }
+  });
+export type TeachingBriefVisualReference = z.infer<typeof TeachingBriefVisualReferenceSchema>;
 
 export const TeachingBriefIllustrationSchema = z
   .object({
@@ -206,7 +231,8 @@ export const TeachingBriefSchema = z
     formalOpportunities: z.array(z.string().min(1).max(500)).max(8),
     summary: z.string().min(1).max(1200),
     nextConnection: z.string().max(800).nullable(),
-    sourceReferences: z.array(TeachingBriefSourceReferenceSchema).min(1).max(160),
+    sourceReferences: z.array(TeachingBriefSourceReferenceSchema).max(160),
+    visualReferences: z.array(TeachingBriefVisualReferenceSchema).max(8).default([]),
     qualityProfile: TeachingBriefQualityProfileSchema,
     provider: z.string().min(1).max(40),
     providerModel: z.string().max(120).nullable(),
@@ -215,6 +241,13 @@ export const TeachingBriefSchema = z
   })
   .strict()
   .superRefine((brief, ctx) => {
+    if (brief.sourceReferences.length === 0 && brief.visualReferences.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['sourceReferences'],
+        message: 'Teaching Brief requires exact text or advisory visual context',
+      });
+    }
     if (brief.sourceManifest.fingerprint !== brief.executionSourceManifestFingerprint) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -236,6 +269,14 @@ export const TeachingBriefSchema = z
         code: z.ZodIssueCode.custom,
         path: ['sourceReferences'],
         message: 'Teaching Brief source reference identities must be unique',
+      });
+    }
+    const visualIds = new Set(brief.visualReferences.map((reference) => reference.refId));
+    if (visualIds.size !== brief.visualReferences.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['visualReferences'],
+        message: 'Teaching Brief visual reference identities must be unique',
       });
     }
     const objectiveIds = new Set(brief.objective.objectives.map((objective) => objective.id));

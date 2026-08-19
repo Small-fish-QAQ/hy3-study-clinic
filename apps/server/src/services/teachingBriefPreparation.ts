@@ -17,6 +17,7 @@ import type {
   TeachingBriefGenerationInput,
 } from '../llm/provider.js';
 import type { Repositories } from '../repositories/index.js';
+import { searchRetrievalUnits, visualDerivationToRetrievalUnit } from '../retrieval/lexical.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
 import {
@@ -26,6 +27,7 @@ import {
 import { validateTeachingBriefCandidate } from './teachingBriefContract.js';
 import { buildTeachingBriefSourceContext } from './teachingBriefContext.js';
 import { profileTeachingBrief } from './teachingBriefQuality.js';
+import { visualManifestMatchesCurrentDerivations } from './advisoryVisuals.js';
 
 export const TEACHING_BRIEF_PROMPT_VERSION = 'teaching-brief-v1';
 const PREPARATION_LEASE_MS = 10 * 60 * 1000;
@@ -83,6 +85,12 @@ export function createTeachingBriefPreparationService({
     ) {
       throw new AppError(ApiErrorCode.VersionConflict, 'Teaching Brief source route is stale.');
     }
+    if (!visualManifestMatchesCurrentDerivations(repos, curriculum.executionSourceManifest)) {
+      throw new AppError(
+        ApiErrorCode.VersionConflict,
+        'Teaching Brief visual source route is stale.',
+      );
+    }
     const node = curriculum.nodes.find((candidate) => candidate.id === input.learningUnitId);
     const planItem = plan.items.find(
       (item) =>
@@ -115,6 +123,71 @@ export function createTeachingBriefPreparationService({
           revisionFingerprint: curriculumSourceBlockFingerprint(block, block.materialRevisionId),
         };
       });
+    const relevantMaterialIds = new Set([
+      ...input.node.sourceReferences.map((reference) => reference.materialId),
+      ...input.node.learningUnit!.conceptIds.flatMap((conceptId) => {
+        const concept = repos.materials.getConcept(conceptId);
+        return concept ? [concept.materialId] : [];
+      }),
+    ]);
+    const manifestRevisionByMaterial = new Map(
+      input.curriculum.executionSourceManifest.revisions.map((revision) => [
+        revision.materialId,
+        revision.materialRevisionId,
+      ]),
+    );
+    const visualCandidates = materials.flatMap((material) => {
+      const revisionId = manifestRevisionByMaterial.get(material.id);
+      if (!revisionId) return [];
+      return repos.materialRevisions.getAssets(revisionId).flatMap((asset) => {
+        const derivation = repos.visualDerivations
+          .listForAsset(asset.id)
+          .filter(
+            (candidate) =>
+              candidate.materialRevisionId === revisionId &&
+              candidate.assetByteHash === asset.byteHash &&
+              candidate.validationStatus === 'accepted' &&
+              candidate.authority === 'derived' &&
+              candidate.evidenceAdmissibility === 'advisory_nonblocking',
+          )
+          .at(-1);
+        return derivation ? [{ asset, derivation }] : [];
+      });
+    });
+    const scopedVisuals =
+      relevantMaterialIds.size === 0
+        ? visualCandidates
+        : visualCandidates.filter(({ asset }) => relevantMaterialIds.has(asset.materialId));
+    const visualQuery = [
+      input.node.title,
+      ...input.node.learningUnit!.objectives.flatMap((objective) => [
+        objective.title,
+        objective.description,
+      ]),
+      ...input.node.learningUnit!.conceptIds.flatMap((conceptId) => {
+        const concept = repos.materials.getConcept(conceptId);
+        return concept ? [concept.name, concept.summary] : [];
+      }),
+    ].join(' ');
+    const visualByRetrievalId = new Map(
+      scopedVisuals.map((candidate) => [
+        `${candidate.derivation.id}\u0000${candidate.asset.id}`,
+        candidate,
+      ]),
+    );
+    const rankedVisuals = searchRetrievalUnits(
+      [],
+      scopedVisuals.map(({ derivation }) => visualDerivationToRetrievalUnit(derivation)),
+      visualQuery,
+      { limit: 8 },
+    ).flatMap((result) => {
+      if (result.kind !== 'visual_derivation') return [];
+      const candidate = visualByRetrievalId.get(
+        `${result.derivationId}\u0000${result.assetOccurrenceId}`,
+      );
+      return candidate ? [candidate] : [];
+    });
+    const visuals = rankedVisuals.length > 0 ? rankedVisuals : scopedVisuals.slice(0, 8);
     return buildTeachingBriefSourceContext({
       workspaceId: input.workspace.id,
       curriculum: input.curriculum,
@@ -122,6 +195,7 @@ export function createTeachingBriefPreparationService({
       materials,
       blocks,
       concepts: repos.materials.getConceptsByWorkspace(input.workspace.id),
+      visuals,
     });
   }
 
@@ -186,6 +260,11 @@ export function createTeachingBriefPreparationService({
         materialCount: context.materialCount,
         sectionCount: context.sectionCount,
         offers: context.offers,
+      },
+      visualContext: {
+        offerCount: context.visualOfferCount,
+        serializedBytes: context.visualSerializedBytes,
+        offers: context.visualOffers,
       },
       limits: {
         maxSegments: 12,
@@ -297,6 +376,7 @@ export function createTeachingBriefPreparationService({
       summary: payload.summary,
       nextConnection: payload.nextConnection,
       sourceReferences: context.references,
+      visualReferences: context.visualReferences,
       qualityProfile,
       provider: provider.name,
       providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,

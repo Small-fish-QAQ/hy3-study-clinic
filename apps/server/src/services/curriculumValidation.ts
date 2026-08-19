@@ -255,6 +255,10 @@ export function materializeCurriculumProposal(
       return null;
     }
     const offeredBlock = blockById.get(offer.blockId);
+    if (offeredBlock?.contentOrigin && offeredBlock.contentOrigin !== 'extracted_original') {
+      errors.push(`Derived text is advisory and cannot satisfy Curriculum evidence.`);
+      return null;
+    }
     const offeredRevision = offeredBlock
       ? revisionForBlock(offeredBlock, ctx.executionSourceManifest)
       : undefined;
@@ -334,6 +338,14 @@ export function materializeCurriculumProposal(
         return;
       }
       const grounded = verifyGrounding(ctx.blocks, concept.grounding);
+      if (
+        concept.grounding &&
+        blockById.get(concept.grounding.blockId)?.contentOrigin &&
+        blockById.get(concept.grounding.blockId)?.contentOrigin !== 'extracted_original'
+      ) {
+        errors.push(`Derived text cannot ground a formal Curriculum Concept: ${concept.id}`);
+        return;
+      }
       if (!grounded.ok) {
         errors.push(`Existing Concept grounding is no longer valid: ${concept.id}`);
         return;

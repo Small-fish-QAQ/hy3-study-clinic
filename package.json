@@ -6,7 +6,7 @@
   "description": "Evidence-grounded adaptive-learning app with course workspaces, a personal concept graph, deterministic learner state, and a bounded Hy3 tutor.",
   "type": "module",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=20.9.0"
   },
   "workspaces": [
     "packages/*",

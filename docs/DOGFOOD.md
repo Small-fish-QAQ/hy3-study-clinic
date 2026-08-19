@@ -6,7 +6,7 @@ This gate evaluates whether the Learning Execution Agent's core scaffold is usab
 
 ## Safe local setup
 
-Use Node.js 20 or newer. Routine dogfood can use the deterministic Fake provider and consumes no Hy3 quota:
+Use Node.js 20.9 or newer. Routine dogfood can use the deterministic Fake provider and consumes no Hy3 quota:
 
 ```bash
 npm ci

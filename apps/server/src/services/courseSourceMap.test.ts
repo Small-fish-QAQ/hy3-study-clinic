@@ -10,8 +10,15 @@ import { buildCourseSourceMap, type CourseSourceMapInput } from './courseSourceM
 
 const NOW = '2026-08-17T00:00:00.000Z';
 
-function manifestFingerprint(revisions: CourseSourceMapInput['manifest']['revisions']): string {
-  return `manifest_${fnv1a32(JSON.stringify(revisions)).toString(16).padStart(8, '0')}`;
+function manifestFingerprint(
+  revisions: CourseSourceMapInput['manifest']['revisions'],
+  visualDerivationIdentityFingerprints: string[] = [],
+): string {
+  const identity =
+    visualDerivationIdentityFingerprints.length === 0
+      ? revisions
+      : { revisions, visualDerivationIdentityFingerprints };
+  return `manifest_${fnv1a32(JSON.stringify(identity)).toString(16).padStart(8, '0')}`;
 }
 
 function block(input: {
@@ -232,6 +239,100 @@ function predecessor(
 }
 
 describe('buildCourseSourceMap', () => {
+  it('accepts an asset-only material while keeping original visual and advisory description separate', () => {
+    const revisions = [
+      {
+        materialId: 'material_visual',
+        materialRevisionId: 'revision_visual',
+        parserVersion: 'parser-1',
+        parserFingerprint: 'parser-material_visual',
+        sourceBlockRevisionIds: [],
+      },
+    ];
+    const sourceMap = buildCourseSourceMap({
+      workspaceId: 'ws_course',
+      manifest: {
+        fingerprint: manifestFingerprint(revisions, [`visual_derivation_${'b'.repeat(64)}`]),
+        revisions,
+      },
+      materials: [
+        {
+          ...material({
+            materialId: 'material_visual',
+            revisionId: 'revision_visual',
+            title: 'Capacity diagram',
+            blocks: [],
+          }),
+          visuals: [
+            {
+              assetOccurrenceId: 'asset_visual_1',
+              assetByteHash: `sha256:${'a'.repeat(64)}`,
+              mediaType: 'image/png',
+              width: 640,
+              height: 480,
+              location: {
+                pageNumber: null,
+                slideNumber: null,
+                contextLabel: 'Standalone image',
+              },
+              contentOrigin: 'extracted_original',
+              advisoryDescription: {
+                text: 'Hy3 describes a diagram with two connected regions.',
+                derivationId: 'derivation_visual_1',
+                identityFingerprint: `visual_derivation_${'b'.repeat(64)}`,
+                authority: 'advisory_nonblocking',
+              },
+            },
+          ],
+        },
+      ],
+      concepts: [],
+      predecessor: null,
+    });
+
+    expect(sourceMap).toMatchObject({
+      authority: 'organization_only',
+      blockCount: 0,
+      sectionCount: 0,
+      conceptAssociationCount: 0,
+      materials: [
+        {
+          blockCount: 0,
+          sectionCount: 0,
+          blocks: [],
+          sections: [],
+          visuals: [
+            {
+              contentOrigin: 'extracted_original',
+              advisoryDescription: { authority: 'advisory_nonblocking' },
+            },
+          ],
+        },
+      ],
+    });
+    expect(sourceMap.materials[0]!.visuals[0]!.assetByteHash).toMatch(/^sha256:/u);
+    expect(sourceMap.materials[0]!.visuals[0]!.advisoryDescription?.text).not.toBe(
+      sourceMap.materials[0]!.visuals[0]!.assetByteHash,
+    );
+
+    expect(() =>
+      buildCourseSourceMap({
+        workspaceId: 'ws_course',
+        manifest: { fingerprint: manifestFingerprint(revisions), revisions },
+        materials: [
+          material({
+            materialId: 'material_visual',
+            revisionId: 'revision_visual',
+            title: 'Missing visual',
+            blocks: [],
+          }),
+        ],
+        concepts: [],
+        predecessor: null,
+      }),
+    ).toThrow(/require original visual occurrences/);
+  });
+
   it('builds deterministic exact leaves, parser hierarchy, and contiguous derived sections', () => {
     const input = baseInput();
     const first = buildCourseSourceMap(input);

@@ -487,7 +487,7 @@ export function ImportView({
               disabled={materialOpening || materialManagementActive || importAction.loading}
               style={{ display: 'none' }}
               onChange={(e) => void onFileChange(e.target.files)}
-              aria-label="选择 .md、.txt、.pdf、.pptx 或 .docx 文件"
+              aria-label="选择 .md、.txt、.pdf、.pptx、.docx、.png、.jpg 或 .webp 文件"
             />
             <button
               type="button"

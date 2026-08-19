@@ -28,10 +28,12 @@ import {
   type SourceBlock,
   type StudyPlanProposalPayload,
   TeachingBriefProposalPayloadSchema,
+  VisualDescriptionPayloadSchema,
   type TeachingBriefProposalPayload,
   type TutorStepPayload,
   type TutorTurnPayload,
   type TutorPedagogicalMove,
+  type VisualDescriptionPayload,
 } from '@hy3-clinic/shared';
 import { ProviderError } from './errors.js';
 import { alignPointToStem, charCoverageRatio } from '../grading/rubricAlignment.js';
@@ -56,6 +58,7 @@ import type {
   TeachingBriefGenerationInput,
   TutorStepInput,
   TutorTurnInput,
+  VisualDescriptionInput,
 } from './provider.js';
 
 /**
@@ -154,7 +157,24 @@ export interface FakeProviderOptions {
   delayMs?: number;
   /** Optional Tutor-only fault fixture used by offline contract tests. */
   tutorTurnFixture?: FakeTutorTurnFixture;
+  /** Visual-only deterministic output/fault fixture. */
+  visualDescriptionFixture?: FakeVisualDescriptionFixture;
 }
+
+export type FakeVisualDescriptionFixture =
+  | 'photo'
+  | 'diagram'
+  | 'text_heavy'
+  | 'chart'
+  | 'embedded'
+  | 'no_text'
+  | 'uncertainty'
+  | 'malformed_json'
+  | 'invalid_schema'
+  | 'too_long'
+  | 'semantic_invalid'
+  | 'repair_once'
+  | 'repair_exhausted';
 
 export type FakeTutorTurnFixture =
   | 'invalid_source_ref'
@@ -172,11 +192,118 @@ export class FakeProvider implements LlmProvider {
   }
   private readonly delayMs: number;
   private readonly tutorTurnFixture: FakeTutorTurnFixture | null;
+  private readonly visualDescriptionFixture: FakeVisualDescriptionFixture | null;
   private tutorTurnFixtureCalls = 0;
 
   constructor(options: FakeProviderOptions = {}) {
     this.delayMs = options.delayMs ?? 0;
     this.tutorTurnFixture = options.tutorTurnFixture ?? null;
+    this.visualDescriptionFixture = options.visualDescriptionFixture ?? null;
+  }
+
+  async describeVisual(
+    input: VisualDescriptionInput,
+    opts?: ProviderCallOptions,
+  ): Promise<VisualDescriptionPayload> {
+    if (opts?.signal?.aborted) throw ProviderError.cancelled();
+    if (this.delayMs > 0) {
+      await new Promise<void>((resolve, reject) => {
+        let settled = false;
+        const cleanup = () => {
+          if (timeout) clearTimeout(timeout);
+          opts?.signal?.removeEventListener('abort', onAbort);
+        };
+        const finish = (outcome: 'delay' | 'timeout' | 'cancelled') => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(delay);
+          cleanup();
+          if (outcome === 'delay') resolve();
+          else if (outcome === 'timeout') reject(ProviderError.timeout(opts!.timeoutMs!));
+          else reject(ProviderError.cancelled());
+        };
+        const delay = setTimeout(() => finish('delay'), this.delayMs);
+        const timeout =
+          opts?.timeoutMs !== undefined
+            ? setTimeout(() => finish('timeout'), opts.timeoutMs)
+            : null;
+        const onAbort = () => finish('cancelled');
+        opts?.signal?.addEventListener('abort', onAbort, { once: true });
+      });
+    }
+    const fixture = this.visualDescriptionFixture;
+    const visualType =
+      fixture === 'photo'
+        ? 'photo'
+        : fixture === 'diagram' || fixture === 'embedded'
+          ? 'diagram'
+          : fixture === 'chart'
+            ? 'chart'
+            : fixture === 'text_heavy'
+              ? 'text_heavy'
+              : 'other';
+    const valid: VisualDescriptionPayload = {
+      description:
+        fixture === 'chart'
+          ? 'A chart-like visual with labeled values and a visible comparison pattern.'
+          : fixture === 'diagram' || fixture === 'embedded'
+            ? 'A structured diagram connecting several visible learning concepts.'
+            : fixture === 'photo'
+              ? 'A photo-like visual showing one main subject and its surrounding context.'
+              : fixture === 'text_heavy'
+                ? 'A text-heavy visual containing a heading and several short content lines.'
+                : 'A visual learning source with bounded descriptive context.',
+      visualType,
+      visibleText: fixture === 'no_text' || fixture === 'photo' ? null : 'Visible fixture text',
+      importantConcepts: fixture === 'chart' ? ['comparison', 'trend'] : ['visual concept'],
+      pedagogicalNotes: ['Use this visual as advisory teaching context.'],
+      uncertainty:
+        fixture === 'uncertainty' ? ['Some small labels may be difficult to distinguish.'] : [],
+    };
+    if (fixture === 'malformed_json') {
+      opts?.onRepairAttempt?.('schema', 'JSON_PARSE_FAILURE');
+      throw ProviderError.invalidOutput(
+        'visual JSON remained malformed',
+        'schema',
+        'JSON_PARSE_FAILURE',
+        true,
+      );
+    }
+    const invalid: unknown =
+      fixture === 'invalid_schema'
+        ? { description: 'missing fields' }
+        : fixture === 'too_long'
+          ? { ...valid, description: 'x'.repeat(input.limits.maxDescriptionChars + 1) }
+          : fixture === 'repair_once' || fixture === 'repair_exhausted'
+            ? { ...valid, importantConcepts: ['Duplicate', ' duplicate '] }
+            : valid;
+    const first = VisualDescriptionPayloadSchema.safeParse(invalid);
+    if (!first.success) {
+      opts?.onRepairAttempt?.('schema', 'SCHEMA_VALIDATION_FAILURE');
+      if (fixture === 'repair_once') return VisualDescriptionPayloadSchema.parse(valid);
+      throw ProviderError.invalidOutput(
+        first.error.message,
+        'schema',
+        'SCHEMA_VALIDATION_FAILURE',
+        true,
+      );
+    }
+    const candidate =
+      fixture === 'semantic_invalid'
+        ? { ...first.data, description: 'This image definitively grants mastery.' }
+        : first.data;
+    const validation = opts?.validateCandidate?.(candidate);
+    if (validation && !validation.valid) {
+      opts?.onRepairAttempt?.('candidate', 'SEMANTIC_VALIDATION_FAILURE');
+      if (fixture === 'repair_once') return valid;
+      throw ProviderError.invalidOutput(
+        validation.diagnostics.join('; '),
+        'candidate',
+        'SEMANTIC_VALIDATION_FAILURE',
+        true,
+      );
+    }
+    return candidate;
   }
 
   private async gate(opts?: ProviderCallOptions): Promise<void> {
@@ -782,12 +909,20 @@ export class FakeProvider implements LlmProvider {
   ): Promise<TeachingBriefProposalPayload> {
     await this.gate(opts);
     const firstSource = input.sourceContext.offers[0];
+    const firstVisual = input.visualContext.offers[0];
     const firstObjective = input.learningUnit.objectives[0];
-    if (!firstSource || !firstObjective) {
+    if ((!firstSource && !firstVisual) || !firstObjective) {
       throw ProviderError.invalidOutput(
-        'Teaching Brief input requires source and objective offers.',
+        'Teaching Brief input requires source or visual context plus an objective offer.',
       );
     }
+    const explanation = firstSource
+      ? `Start from the course excerpt for ${input.learningUnit.title}: ${firstSource.text}`
+      : `Use the advisory visual explanation for ${input.learningUnit.title}: ${firstVisual!.explanation.text}`;
+    const explanationAuthority = firstSource
+      ? ('source_backed_teaching' as const)
+      : ('ai_teaching_synthesis' as const);
+    const sourceRefs = firstSource ? [firstSource.sourceRef] : [];
     const payload = TeachingBriefProposalPayloadSchema.parse({
       whyNow: `This lesson establishes ${input.learningUnit.title} before the next route step.`,
       prerequisites: input.prerequisites.map((prerequisite) => ({
@@ -799,9 +934,9 @@ export class FakeProvider implements LlmProvider {
         {
           purpose: 'explanation',
           objectiveRefs: input.learningUnit.objectives.map((objective) => objective.objectiveRef),
-          explanation: `Start from the course excerpt for ${input.learningUnit.title}: ${firstSource.text}`,
-          explanationAuthority: 'source_backed_teaching',
-          sourceRefs: [firstSource.sourceRef],
+          explanation,
+          explanationAuthority,
+          sourceRefs,
           example: {
             text: `Teaching illustration: apply ${input.learningUnit.title} to a small concrete case and inspect each step.`,
             authority: 'ai_teaching_synthesis',
@@ -818,7 +953,7 @@ export class FakeProvider implements LlmProvider {
           objectiveRefs: [firstObjective.objectiveRef],
           explanation: `Separate the defining mechanism of ${input.learningUnit.title} from a merely similar surface description.`,
           explanationAuthority: 'ai_teaching_synthesis',
-          sourceRefs: [firstSource.sourceRef],
+          sourceRefs,
           contrast: {
             text: 'Teaching illustration: compare the mechanism with a near-neighbor that shares vocabulary but not the same conditions.',
             authority: 'ai_teaching_synthesis',
@@ -829,12 +964,16 @@ export class FakeProvider implements LlmProvider {
               'A learner may memorize the label while missing the conditions that make the mechanism apply.',
             correction:
               'Return to the sourced definition, identify its conditions, and test them in the worked case.',
-            sourceRefs: [firstSource.sourceRef],
+            sourceRefs,
           },
         },
       ],
-      formalOpportunities: [`A later formal assessment may align with ${firstObjective.title}.`],
-      summary: `The lesson links the sourced definition of ${input.learningUnit.title} to a worked application and an informal understanding check.`,
+      formalOpportunities: firstSource
+        ? [`A later formal assessment may align with ${firstObjective.title}.`]
+        : [],
+      summary: firstSource
+        ? `The lesson links the sourced definition of ${input.learningUnit.title} to a worked application and an informal understanding check.`
+        : `The lesson uses an advisory generated visual explanation for ${input.learningUnit.title} and keeps it separate from Formal Evidence.`,
       nextConnection: input.nextConnection
         ? `Next, connect this lesson to ${input.nextConnection.title}.`
         : null,
@@ -1081,6 +1220,9 @@ export class FakeProvider implements LlmProvider {
 
     for (const [materialIndex, material] of materials.entries()) {
       const sectionKey = `section-${materialIndex + 1}`;
+      const materialVisuals =
+        input.visualContext?.offers.filter((offer) => offer.materialTitle === material.title) ?? [];
+      const primaryVisual = materialVisuals[0];
       const materialOutline = input.outline
         .filter((item) => item.materialId === material.materialId)
         .sort(
@@ -1132,7 +1274,10 @@ export class FakeProvider implements LlmProvider {
                   parentStructuralUnitId: null,
                   kind: 'section' as const,
                   index: 0,
-                  title: material.title,
+                  title:
+                    primaryVisual?.explanation.importantConcepts[0] ??
+                    primaryVisual?.explanation.visualType ??
+                    material.title,
                   sourceBlockIds: allowedBlocks
                     .filter((block) => block.materialId === material.materialId)
                     .map((block) => block.id),
@@ -1158,7 +1303,22 @@ export class FakeProvider implements LlmProvider {
           .slice(0, 30);
         const unitNumber = learningUnits.length + 1;
         const unitKey = `unit-${unitNumber}`;
-        const title = (seed.title || concepts[0]?.name || material.title).slice(0, 300);
+        const visual =
+          materialVisuals.find(
+            (offer) =>
+              seed.title !== null &&
+              [offer.explanation.text, ...offer.explanation.importantConcepts]
+                .join(' ')
+                .toLocaleLowerCase()
+                .includes(seed.title.toLocaleLowerCase()),
+          ) ?? primaryVisual;
+        const title = (
+          seed.title ||
+          concepts[0]?.name ||
+          visual?.explanation.importantConcepts[0] ||
+          visual?.explanation.visualType ||
+          material.title
+        ).slice(0, 300);
         const sourceBlockIds = new Set(sourceBlocks.map((block) => block.id));
         const evidence = input.evidenceCatalog
           .filter((offer) => sourceBlockIds.has(offer.blockId))
@@ -1193,7 +1353,10 @@ export class FakeProvider implements LlmProvider {
             {
               key: `objective-${unitNumber}`,
               title: `Understand ${title}`.slice(0, 300),
-              description: `Explain and apply the central ideas in ${title}.`.slice(0, 1000),
+              description: (visual
+                ? `Use the advisory visual explanation to explore ${title}: ${visual.explanation.text}`
+                : `Explain and apply the central ideas in ${title}.`
+              ).slice(0, 1000),
               evidence: evidence.slice(0, 5),
             },
           ],

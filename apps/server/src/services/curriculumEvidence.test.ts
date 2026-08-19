@@ -297,6 +297,28 @@ describe('Curriculum evidence catalog', () => {
     ).toBe(true);
   });
 
+  it('does not promote explicitly derived OCR or visual descriptions into evidence offers', () => {
+    for (const contentOrigin of ['derived_ocr', 'derived_visual_description'] as const) {
+      expect(
+        buildCurriculumEvidenceCatalog({
+          workspaceId: 'ws_a',
+          manifest,
+          blocks: [{ ...block, contentOrigin }],
+          preferredGroundings: [
+            {
+              blockId: block.id,
+              quote: preferredQuote,
+              startOffset: 0,
+              endOffset: preferredQuote.length,
+              occurrenceCount: 1,
+              reanchored: false,
+            },
+          ],
+        }),
+      ).toEqual([]);
+    }
+  });
+
   it('binds identities to the exact workspace and revision snapshot', () => {
     const original = buildCurriculumEvidenceCatalog({
       workspaceId: 'ws_a',

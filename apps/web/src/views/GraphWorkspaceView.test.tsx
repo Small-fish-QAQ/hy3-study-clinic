@@ -426,8 +426,13 @@ describe('学习图谱工作台 — workspace and document area', () => {
     await screen.findByText('个人学习图谱');
 
     expect(screen.getByText(/暂不支持纯扫描图片型 PDF/)).toBeInTheDocument();
-    const input = screen.getByLabelText('上传文档文件(.md / .txt / .pdf / .pptx / .docx)');
-    expect(input).toHaveAttribute('accept', '.md,.markdown,.txt,.pdf,.pptx,.docx');
+    const input = screen.getByLabelText(
+      '上传文档文件(.md / .txt / .pdf / .pptx / .docx / .png / .jpg / .webp)',
+    );
+    expect(input).toHaveAttribute(
+      'accept',
+      '.md,.markdown,.txt,.pdf,.pptx,.docx,.png,.jpg,.jpeg,.webp',
+    );
     fireEvent.change(input, {
       target: { files: [new File([pdfBody], '讲义.pdf', { type: 'application/pdf' })] },
     });
@@ -455,15 +460,20 @@ describe('学习图谱工作台 — workspace and document area', () => {
     renderView();
     await screen.findByText('个人学习图谱');
 
-    fireEvent.change(screen.getByLabelText('上传文档文件(.md / .txt / .pdf / .pptx / .docx)'), {
-      target: {
-        files: [
-          new File([pptxBody], '讲义.pptx', {
-            type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-          }),
-        ],
+    fireEvent.change(
+      screen.getByLabelText(
+        '上传文档文件(.md / .txt / .pdf / .pptx / .docx / .png / .jpg / .webp)',
+      ),
+      {
+        target: {
+          files: [
+            new File([pptxBody], '讲义.pptx', {
+              type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            }),
+          ],
+        },
       },
-    });
+    );
 
     await waitFor(() => expect(received).toBeDefined());
     expect(received).toMatchObject({ kind: 'file', filename: '讲义.pptx' });
@@ -480,12 +490,19 @@ describe('学习图谱工作台 — workspace and document area', () => {
     renderView();
     await screen.findByText('个人学习图谱');
 
-    fireEvent.change(screen.getByLabelText('上传文档文件(.md / .txt / .pdf / .pptx / .docx)'), {
-      target: { files: [new File(['nope'], 'workbook.xlsx')] },
-    });
+    fireEvent.change(
+      screen.getByLabelText(
+        '上传文档文件(.md / .txt / .pdf / .pptx / .docx / .png / .jpg / .webp)',
+      ),
+      {
+        target: { files: [new File(['nope'], 'workbook.xlsx')] },
+      },
+    );
 
     expect(
-      await screen.findByText('不支持的文件类型:仅接受 .md、.txt、.pdf、.pptx 与 .docx 文件。'),
+      await screen.findByText(
+        '不支持的文件类型:仅接受 .md、.txt、.pdf、.pptx、.docx、.png、.jpg、.jpeg 与 .webp 文件。',
+      ),
     ).toBeInTheDocument();
     expect(addDocument).not.toHaveBeenCalled();
   });

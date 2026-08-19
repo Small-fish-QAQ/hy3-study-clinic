@@ -1642,7 +1642,7 @@ function AddDocumentForm({
             ref={fileInputRef}
             type="file"
             accept={UPLOAD_ACCEPT}
-            aria-label="上传文档文件(.md / .txt / .pdf / .pptx / .docx)"
+            aria-label="上传文档文件(.md / .txt / .pdf / .pptx / .docx / .png / .jpg / .webp)"
             disabled={loading}
             onChange={(e) => {
               const file = e.target.files?.[0];
@@ -1650,7 +1650,7 @@ function AddDocumentForm({
               if (fileInputRef.current) fileInputRef.current.value = '';
             }}
           />
-          上传文件(.md / .txt / .pdf / .pptx / .docx,≤10MB)
+          上传文件(.md / .txt / .pdf / .pptx / .docx / .png / .jpg / .webp,≤10MB)
         </label>
         <p className="muted small">{UPLOAD_OCR_LIMIT_TEXT}</p>
         {loading ? (

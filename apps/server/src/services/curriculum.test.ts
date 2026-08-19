@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiErrorCode } from '@hy3-clinic/shared';
 import type {
@@ -29,6 +30,7 @@ import { assessLearningContractScope } from './learningContractScope.js';
 import { createMaterialRoleService } from './materialRoles.js';
 import { createSourceAuthorityService } from './sourceAuthority.js';
 import { preflightStudyPlan } from './studyPlansAgent.js';
+import { buildCurriculumEvidenceCatalog } from './curriculumEvidence.js';
 
 const QUOTE = 'Working memory is limited.';
 const clock = fixedClock(T0);
@@ -376,6 +378,161 @@ describe('Curriculum proposal and authority boundaries', () => {
   it('defaults production generation to the legacy direct policy', () => {
     expect(CURRICULUM_GENERATION_POLICY).toBe(LEGACY_CURRICULUM_GENERATION_POLICY);
     expect(curriculumOperationLeaseMs(240_000)).toBe(10 * 60 * 1000);
+  });
+
+  it('admits an asset-only scoped revision without promoting its advisory description to evidence or authority', () => {
+    const bytes = Buffer.from('exact standalone image bytes');
+    const byteHash = `sha256:${createHash('sha256').update(bytes).digest('hex')}` as const;
+    repos.materials.insertWithBlocks(
+      makeMaterial({
+        id: 'mat_visual',
+        title: 'Capacity diagram',
+        sourceType: 'image',
+        mediaType: 'image/png',
+        originalFilename: 'capacity.png',
+        content: '',
+        charCount: 0,
+        parserVersion: 'standalone-image-sharp-v1',
+      }),
+      [],
+      bytes,
+      [],
+      { sourceFingerprint: byteHash },
+      [
+        {
+          id: 'candidate_visual',
+          materialId: 'mat_visual',
+          materialRevisionId: 'mat_visual:candidate',
+          index: 0,
+          parentStructuralUnitId: null,
+          sourcePath: 'original-image',
+          mediaType: 'image/png',
+          byteHash,
+          byteLength: bytes.length,
+          width: 640,
+          height: 480,
+          location: { domPath: 'standalone:image' },
+          relationshipKind: 'image',
+          contentOrigin: 'extracted_original',
+          parserVersion: 'standalone-image-sharp-v1',
+          bytes,
+        },
+      ],
+    );
+    const roleProposal = roles.propose({
+      command: command('visual-role-propose'),
+      materialId: 'mat_visual',
+      role: 'course_material',
+      expectedCurrentAssignmentId: repos.materialRoles.getCurrent('mat_visual')!.id,
+    });
+    const visualRole = roles.confirm({
+      command: command('visual-role-confirm', 'learner'),
+      assignmentId: roleProposal.id,
+      expectedVersion: roleProposal.version,
+    });
+    const asset = repos.materials.getAssets('mat_visual')[0]!;
+    repos.visualDerivations.create({
+      id: 'visual_derivation_asset_only',
+      materialId: asset.materialId,
+      materialRevisionId: asset.materialRevisionId,
+      assetId: asset.id,
+      assetByteHash: asset.byteHash,
+      identityFingerprint: `visual_derivation_${'d'.repeat(64)}`,
+      semanticIdentityFingerprint: `visual_semantic_${'e'.repeat(64)}`,
+      derivationKind: 'visual_description',
+      contentOrigin: 'derived_visual_description',
+      authority: 'derived',
+      evidenceAdmissibility: 'advisory_nonblocking',
+      validationStatus: 'accepted',
+      generatorIdentity: 'provider_visual_description',
+      generatorVersion: 'provider-visual-description-v1',
+      provider: 'fake',
+      providerModel: null,
+      configurationFingerprint: `sha256:${'f'.repeat(64)}`,
+      contextMode: 'image_only',
+      contextFingerprint: null,
+      transport: {
+        mediaType: 'image/png',
+        width: 640,
+        height: 480,
+        byteLength: bytes.length,
+        transformation: 'validated_original',
+        preparationVersion: 'sharp-visual-transport-v1',
+        fingerprint: byteHash,
+      },
+      payload: {
+        description: 'Hy3 describes a capacity diagram with two linked regions.',
+        visualType: 'diagram',
+        visibleText: null,
+        importantConcepts: ['capacity'],
+        pedagogicalNotes: ['Use only as advisory teaching context.'],
+        uncertainty: ['The image alone does not establish a formal premise.'],
+      },
+      reusedFromDerivationId: null,
+      createdAt: T0,
+    });
+    const visualContract: LearningContract = {
+      ...contract,
+      id: 'contract_visual',
+      courseScope: {
+        ...contract.courseScope,
+        materials: [
+          {
+            materialId: 'mat_visual',
+            materialRoleAssignmentId: visualRole.id,
+            materialRoleAssignmentVersion: visualRole.version,
+            role: 'course_material',
+            disposition: 'included',
+          },
+        ],
+      },
+    };
+
+    const context = buildCurriculumExecutionContext(repos, visualContract);
+    const sourceMap = buildCurriculumCourseSourceMap(context, [], null);
+    const evidenceCatalog = buildCurriculumEvidenceCatalog({
+      workspaceId: 'ws_1',
+      manifest: context.manifest,
+      blocks: context.blocks,
+      preferredGroundings: [],
+    });
+
+    expect(context.manifest.revisions[0]).toMatchObject({
+      materialId: 'mat_visual',
+      materialRevisionId: asset.materialRevisionId,
+      sourceBlockRevisionIds: [],
+    });
+    expect(context.blocks).toEqual([]);
+    expect(context.outline).toEqual([]);
+    expect(context.authorityBundles).toEqual([]);
+    expect(evidenceCatalog).toEqual([]);
+    expect(sourceMap).toMatchObject({
+      blockCount: 0,
+      sectionCount: 0,
+      materials: [
+        {
+          visuals: [
+            {
+              assetOccurrenceId: asset.id,
+              assetByteHash: byteHash,
+              contentOrigin: 'extracted_original',
+              advisoryDescription: {
+                text: 'Hy3 describes a capacity diagram with two linked regions.',
+                authority: 'advisory_nonblocking',
+              },
+            },
+          ],
+        },
+      ],
+    });
+    expect(
+      (
+        db
+          .prepare('SELECT COUNT(*) AS count FROM truth_authority_records WHERE material_id = ?')
+          .get('mat_visual') as { count: number }
+      ).count,
+    ).toBe(0);
+    expect(CURRICULUM_GENERATION_POLICY).toBe('legacy_direct_v1');
   });
 
   it('keeps a pending role proposal below Contract authority, then blocks a confirmed role change', async () => {

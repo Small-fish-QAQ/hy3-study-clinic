@@ -33,6 +33,7 @@ import {
   type RubricGrade,
   type TutorStepPayload,
   type TutorTurnPayload,
+  type VisualDescriptionPayload,
 } from '@hy3-clinic/shared';
 import { z, type ZodType, type ZodTypeDef } from 'zod';
 import { ProviderError } from './errors.js';
@@ -76,6 +77,7 @@ import type {
   ShortAnswerGradingInput,
   StudyPlanProposalInput,
   TeachingBriefGenerationInput,
+  VisualDescriptionInput,
   StructuredOutputDiagnostic,
   StructuredOutputFailureCategory,
   TutorStepInput,
@@ -286,6 +288,20 @@ export class Hy3Provider implements LlmProvider {
     if (result.content.trim().length === 0) {
       throw ProviderError.invalidOutput('响应缺少 message.content。', undefined, 'EMPTY_RESPONSE');
     }
+  }
+
+  async describeVisual(
+    _input: VisualDescriptionInput,
+    opts?: ProviderCallOptions,
+  ): Promise<VisualDescriptionPayload> {
+    if (opts?.signal?.aborted) throw ProviderError.cancelled();
+    // The configured transport currently documents only string chat content.
+    // Phase 6B2B must freeze and evaluate a real image-part contract first.
+    throw ProviderError.invalidOutput(
+      'Hy3 visual input transport is not configured.',
+      undefined,
+      'PROVIDER_FORMAT_INCOMPATIBILITY',
+    );
   }
 
   async analyzeConcepts(

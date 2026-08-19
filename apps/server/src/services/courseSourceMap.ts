@@ -32,7 +32,38 @@ const CourseSourceMapMaterialInputSchema = z
         chunkerFingerprint: z.string().min(1).max(200).nullable().optional(),
       })
       .strict(),
-    blocks: z.array(SourceBlockRevisionSchema).min(1).max(10_000),
+    visuals: z
+      .array(
+        z
+          .object({
+            assetOccurrenceId: z.string().min(1),
+            assetByteHash: z.string().regex(/^sha256:[0-9a-f]{64}$/u),
+            mediaType: z.enum(['image/png', 'image/jpeg', 'image/webp']),
+            width: z.number().int().positive(),
+            height: z.number().int().positive(),
+            location: z
+              .object({
+                pageNumber: z.number().int().positive().nullable(),
+                slideNumber: z.number().int().positive().nullable(),
+                contextLabel: z.string().min(1).max(300),
+              })
+              .strict(),
+            contentOrigin: z.literal('extracted_original'),
+            advisoryDescription: z
+              .object({
+                text: z.string().min(1).max(1200),
+                derivationId: z.string().min(1),
+                identityFingerprint: z.string().min(1),
+                authority: z.literal('advisory_nonblocking'),
+              })
+              .strict()
+              .nullable(),
+          })
+          .strict(),
+      )
+      .max(10_000)
+      .default([]),
+    blocks: z.array(SourceBlockRevisionSchema).max(10_000),
   })
   .strict();
 
@@ -127,11 +158,12 @@ const CourseSourceMapMaterialSchema = z
     parserFingerprint: z.string().min(1).max(200).nullable(),
     chunkerVersion: z.string().max(80).nullable().optional(),
     chunkerFingerprint: z.string().min(1).max(200).nullable().optional(),
-    blockCount: z.number().int().positive(),
-    sectionCount: z.number().int().positive(),
+    blockCount: z.number().int().nonnegative(),
+    sectionCount: z.number().int().nonnegative(),
     parserPathNodes: z.array(CourseSourceMapParserPathSchema),
-    sections: z.array(CourseSourceMapSectionSchema).min(1),
-    blocks: z.array(CourseSourceMapBlockSchema).min(1),
+    sections: z.array(CourseSourceMapSectionSchema),
+    blocks: z.array(CourseSourceMapBlockSchema),
+    visuals: CourseSourceMapMaterialInputSchema.shape.visuals,
   })
   .strict();
 
@@ -143,8 +175,8 @@ export const CourseSourceMapSchema = z
     fingerprint: z.string().regex(/^course_source_map_[0-9a-f]{40}$/u),
     authority: z.literal('organization_only'),
     materialCount: z.number().int().positive(),
-    blockCount: z.number().int().positive(),
-    sectionCount: z.number().int().positive(),
+    blockCount: z.number().int().nonnegative(),
+    sectionCount: z.number().int().nonnegative(),
     conceptAssociationCount: z.number().int().nonnegative(),
     predecessorUsedBlockCount: z.number().int().nonnegative(),
     materials: z.array(CourseSourceMapMaterialSchema).min(1),
@@ -244,6 +276,16 @@ function canonicalSourceMapFingerprintInput(
         conceptIds: block.conceptIds,
         predecessorUsage: block.predecessorUsage,
       })),
+      visuals: material.visuals.map((visual) => ({
+        assetOccurrenceId: visual.assetOccurrenceId,
+        assetByteHash: visual.assetByteHash,
+        mediaType: visual.mediaType,
+        width: visual.width,
+        height: visual.height,
+        location: visual.location,
+        contentOrigin: visual.contentOrigin,
+        advisoryDescription: visual.advisoryDescription,
+      })),
     })),
   };
 }
@@ -261,8 +303,20 @@ export function assertCourseSourceMapIntegrity(sourceMap: CourseSourceMap): void
 
 function executionSourceManifestFingerprint(
   revisions: z.infer<typeof ExecutionSourceManifestSchema>['revisions'],
+  materials: z.infer<typeof CourseSourceMapInputSchema>['materials'],
 ): string {
-  return `manifest_${fnv1a32(JSON.stringify(revisions)).toString(16).padStart(8, '0')}`;
+  const visualDerivationIdentityFingerprints = materials
+    .flatMap((material) =>
+      material.visuals.flatMap((visual) =>
+        visual.advisoryDescription ? [visual.advisoryDescription.identityFingerprint] : [],
+      ),
+    )
+    .sort();
+  const identity =
+    visualDerivationIdentityFingerprints.length === 0
+      ? revisions
+      : { revisions, visualDerivationIdentityFingerprints };
+  return `manifest_${fnv1a32(JSON.stringify(identity)).toString(16).padStart(8, '0')}`;
 }
 
 function pathKey(path: readonly string[]): string {
@@ -430,6 +484,11 @@ export function buildCourseSourceMap(raw: CourseSourceMapInput): CourseSourceMap
       blocksById.set(block.id, block);
       return block;
     });
+    if (orderedBlocks.length === 0 && material.visuals.length === 0) {
+      throw new Error(
+        'Asset-only Course Source Map materials require original visual occurrences.',
+      );
+    }
     const expectedOrder = [...orderedBlocks].sort(
       (left, right) => left.index - right.index || left.id.localeCompare(right.id),
     );
@@ -442,7 +501,9 @@ export function buildCourseSourceMap(raw: CourseSourceMapInput): CourseSourceMap
   if (blocksById.size !== allInputBlocks.length) {
     throw new Error('Course Source Map contains a SourceBlock outside the manifest.');
   }
-  if (manifest.fingerprint !== executionSourceManifestFingerprint(manifest.revisions)) {
+  if (
+    manifest.fingerprint !== executionSourceManifestFingerprint(manifest.revisions, input.materials)
+  ) {
     throw new Error('Course Source Map execution-source manifest fingerprint is stale.');
   }
   assertUnique(
@@ -616,6 +677,7 @@ export function buildCourseSourceMap(raw: CourseSourceMapInput): CourseSourceMap
         })),
         sections,
         blocks,
+        visuals: material.visuals,
       };
     },
   );

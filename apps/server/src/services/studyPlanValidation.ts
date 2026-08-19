@@ -15,6 +15,7 @@ import {
   type StudyPlanProposalPayload,
 } from '@hy3-clinic/shared';
 import type { Repositories } from '../repositories/index.js';
+import { searchRetrievalUnits, visualDerivationToRetrievalUnit } from '../retrieval/lexical.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
 import { checkActivityCapability } from './activityLaunch.js';
@@ -22,6 +23,10 @@ import {
   validateDetailedStudyPlanProposal,
   type DetailedStudyPlanScope,
 } from '../llm/studyPlanContract.js';
+import {
+  listAcceptedAdvisoryVisuals,
+  visualManifestMatchesCurrentDerivations,
+} from './advisoryVisuals.js';
 
 export const STUDY_PLAN_COMPLETION_POLICY_ID = 'learning-unit-completion';
 export const STUDY_PLAN_COMPLETION_POLICY_VERSION = 1;
@@ -110,18 +115,58 @@ export function resolveLaunchForPlanItem(
   switch (item.kind) {
     case 'teach_unit': {
       const conceptId = conceptIds.find((id) => repos.materials.getConcept(id));
-      return conceptId
+      const currentVisuals = unit
+        ? curriculum.executionSourceManifest.revisions.flatMap((revision) => {
+            const material = repos.materials.get(revision.materialId);
+            if (
+              material?.workspaceId !== workspaceId ||
+              material.availability !== 'active' ||
+              material.activeRevisionId !== revision.materialRevisionId
+            ) {
+              return [];
+            }
+            return listAcceptedAdvisoryVisuals(
+              repos,
+              revision.materialId,
+              revision.materialRevisionId,
+            );
+          })
+        : [];
+      const visualManifestCurrent = visualManifestMatchesCurrentDerivations(
+        repos,
+        curriculum.executionSourceManifest,
+      );
+      const visualQuery = unit
+        ? [
+            unit.title,
+            ...unit.learningUnit.objectives.flatMap((objective) => [
+              objective.title,
+              objective.description,
+            ]),
+          ].join(' ')
+        : '';
+      const hasCurrentVisual =
+        visualManifestCurrent &&
+        searchRetrievalUnits(
+          [],
+          currentVisuals.map(({ derivation }) => visualDerivationToRetrievalUnit(derivation)),
+          visualQuery,
+          { limit: 1 },
+        ).some((result) => result.kind === 'visual_derivation');
+      return conceptId || hasCurrentVisual
         ? {
             status: 'launchable',
             capability: 'lesson',
-            resourceId: JSON.stringify({ conceptId }),
+            resourceId: JSON.stringify({ learningUnitId: unit!.id, conceptId: conceptId ?? null }),
             reason: null,
           }
         : {
             status: 'blocked',
             capability: 'lesson',
             resourceId: null,
-            reason: 'This LearningUnit has no current source Concept for lesson launch.',
+            reason: visualManifestCurrent
+              ? 'This LearningUnit has no current source Concept or accepted advisory visual for lesson launch.'
+              : 'The accepted Course visual source manifest is stale; prepare a new Course route before lesson launch.',
           };
     }
     case 'formal_checkpoint':

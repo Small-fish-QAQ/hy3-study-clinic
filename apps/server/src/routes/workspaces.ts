@@ -7,6 +7,11 @@ import { requestSignal } from '../util/requestSignal.js';
 
 const WorkspaceIdParams = z.object({ id: z.string().min(1) });
 const DocumentParams = z.object({ id: z.string().min(1), docId: z.string().min(1) });
+const VisualParams = z.object({
+  id: z.string().min(1),
+  docId: z.string().min(1),
+  visualRef: z.string().regex(/^visual_[0-9a-f]{24}$/u),
+});
 const VersionParams = z.object({ id: z.string().min(1), versionId: z.string().min(1) });
 const ConceptParams = z.object({ id: z.string().min(1), conceptId: z.string().min(1) });
 const PlanParams = z.object({ id: z.string().min(1), planId: z.string().min(1) });
@@ -68,6 +73,21 @@ export function registerWorkspaceRoutes(app: FastifyInstance, services: Services
     const { id } = WorkspaceIdParams.parse(request.params);
     return { documents: services.workspaces.listDocuments(id) };
   });
+
+  app.get('/api/workspaces/:id/documents/:docId/visuals', async (request) => {
+    const { id, docId } = DocumentParams.parse(request.params);
+    return { visuals: services.visualPreparation.list(id, docId) };
+  });
+
+  app.post(
+    '/api/workspaces/:id/documents/:docId/visuals/:visualRef/prepare',
+    async (request, reply) => {
+      const { id, docId, visualRef } = VisualParams.parse(request.params);
+      return services.visualPreparation.prepare(id, docId, visualRef, request.body, {
+        signal: requestSignal(request, reply),
+      });
+    },
+  );
 
   app.post('/api/workspaces/:id/documents/:docId/reprocess', async (request, reply) => {
     const { id, docId } = DocumentParams.parse(request.params);

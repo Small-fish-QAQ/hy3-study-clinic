@@ -85,6 +85,13 @@ interface BlockRow {
   content: string;
   start_offset: number;
   end_offset: number;
+  content_origin:
+    | 'extracted_original'
+    | 'derived_ocr'
+    | 'derived_visual_description'
+    | 'derived_layout_label'
+    | 'derived_summary'
+    | null;
 }
 
 export interface CreateAuthorityVersionInput {
@@ -163,6 +170,7 @@ function toBlock(row: BlockRow): SourceBlock {
     content: row.content,
     startOffset: row.start_offset,
     endOffset: row.end_offset,
+    ...(row.content_origin ? { contentOrigin: row.content_origin } : {}),
   });
 }
 
@@ -336,7 +344,7 @@ export function createSourceAuthorityRepo(db: SqliteDb) {
         db
           .prepare(
             `SELECT id, material_id, idx, heading, heading_path, page_number,
-                    page_end, content, start_offset, end_offset
+                    page_end, content, start_offset, end_offset, content_origin
              FROM source_blocks
              WHERE material_id = ? AND material_revision_id = ?
              ORDER BY idx`,
@@ -367,7 +375,11 @@ export function createSourceAuthorityRepo(db: SqliteDb) {
                AND m.availability = 'active'
                AND m.active_revision_id = mr.id
                AND EXISTS(
-                 SELECT 1 FROM truth_authority_claims c WHERE c.authority_record_id = r.id
+                 SELECT 1
+                 FROM truth_authority_claims c
+                 JOIN source_blocks b ON b.id = c.source_block_id
+                 WHERE c.authority_record_id = r.id
+                   AND (b.content_origin IS NULL OR b.content_origin = 'extracted_original')
                )
            ) AS eligible`,
         )
@@ -392,6 +404,7 @@ export function createSourceAuthorityRepo(db: SqliteDb) {
              AND r.material_revision_id = ?
              AND c.source_block_id = ?
              AND b.material_revision_id = r.material_revision_id
+             AND (b.content_origin IS NULL OR b.content_origin = 'extracted_original')
              AND r.validation_state = 'validated'
              AND r.conflict_state IN ('none', 'resolved')
              AND mr.status = 'active'

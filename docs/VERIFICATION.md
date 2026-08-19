@@ -15,7 +15,7 @@ This post-tag audit improves documentation and reviewer-facing metadata. It does
 
 ## Standard verification
 
-Use Node.js 20 or newer from the repository root:
+Use Node.js 20.9 or newer from the repository root:
 
 ```bash
 npm ci
@@ -161,7 +161,7 @@ The restart checks verify persisted documents, active graph data, learner state,
 
 ## Migration verification
 
-The server suite covers all 24 migrations directly: applying them from scratch and re-running them safely;
+The server suite covers all 25 migrations directly: applying them from scratch and re-running them safely;
 - populated v1 -> current migration without deleting source, quiz, grading, mistake, mastery, or history rows;
 - honest `unknown` origin for workspaces whose historical creation path cannot be reconstructed;
 - populated v3 -> current migration, including the SQLite quiz-table rebuild;
@@ -185,6 +185,64 @@ npm run test -w @hy3-clinic/web -- src/upload.test.ts src/views/GraphWorkspaceVi
 ```
 
 The OOXML tests cover traversal, duplicate paths, member/expanded-byte/compression-ratio limits, encryption, malformed packages, invalid relationships, and no-network/no-filesystem extraction. Rich parser tests cover deterministic slide order, visible text, lists, tables, notes, grouped/hidden shapes, DOCX headings/lists/tables/headers, embedded-image hashes and dimensions, honest DOCX no-page locations, PDF page parents/warnings, partial extraction, and cross-format rejection. Repository and route tests cover immutable revision ownership, blob deduplication, historical asset retention, purge cleanup, legacy nullable slide hydration, and downstream retrieval/Teaching Brief/source display provenance.
+
+## Phase 6B2A visual verification
+
+Phase 6B2A adds bounded standalone Image ingestion and explicit visual semantic
+preparation on top of the Phase 6B1 original-asset authority. It does not call
+Hy3. The real provider adapter intentionally rejects visual calls until Phase
+6B2B freezes a documented image transport and model configuration.
+
+Run the focused offline suites:
+
+```bash
+npm run test -w @hy3-clinic/server -- src/ingestion/images.test.ts src/ingestion/documents.test.ts src/services/visualPreparation.test.ts src/services/visualLearningFlow.test.ts src/retrieval/lexical.test.ts src/llm/fakeProvider.test.ts src/llm/hy3Provider.test.ts src/db/migrate.test.ts src/db/richAssetsMigration.test.ts src/db/visualDerivationsMigration.test.ts src/routes/workspaces.test.ts src/services/courseSourceMap.test.ts src/services/curriculum.test.ts src/services/teachingBriefContext.test.ts src/services/teachingBriefPreparation.test.ts src/tutor/pedagogy.test.ts
+npm run test -w @hy3-clinic/shared -- src/domain/schemas.test.ts src/domain/richDocumentSchemas.test.ts
+```
+
+The focused visual tests cover valid PNG/JPEG/WebP signatures and exact bytes,
+MIME mismatch, malformed/truncated input, dimensions and transport limits,
+animation policy, image-only revisions, immutable original authority,
+embedded occurrence provenance, duplicate-byte semantic reuse without
+occurrence collapse, derivation identity and versioning, advisory/nonblocking
+authority, retrieval origin metadata, Teaching Brief/Tutor visual projections,
+stale revision fencing, idempotent replay, failure preservation, one bounded
+schema/semantic repair, repair exhaustion, timeout, cancellation, and the
+unsupported real-Hy3 visual transport boundary. Migration tests cover clean
+creation and upgrade of `visual_derivations` without mutating original asset
+blobs or historical revisions.
+
+Run the private machine-property benchmark from the private workspace (the
+benchmark is not distributed in this repository):
+
+```powershell
+node research/benchmarks/phase6b2a/run.mjs
+```
+
+The benchmark writes `result.json` beside the script and measures properties
+separately: actual-byte format detection, exact source hashes and dimensions,
+bounded normalized transport, duplicate-byte occurrence provenance, malformed
+input rejection, and oversized-dimension rejection. Focused tests separately
+verify persistence, retrieval, downstream projections, and the original-versus-
+derived authority boundary. The benchmark uses deterministic synthetic/legal
+fixtures and does not claim OCR accuracy, visual semantic quality, semantic
+entailment, latency, token usage, or cost. FakeProvider output is a contract
+fixture, not a visual quality score.
+
+The complete offline verification remains:
+
+```bash
+npm run build
+npm run lint
+npm test
+npm run eval:fake
+git diff --check
+```
+
+Do not run `eval:hy3` for Phase 6B2A. Phase 6B2B must first select the frozen
+provider/model, document the image payload contract, compare provider visible-
+text behavior with text-heavy fixtures, and enforce source/authority gates and
+request/latency/token/cost ceilings.
 
 ## Real Hy3 evaluation
 

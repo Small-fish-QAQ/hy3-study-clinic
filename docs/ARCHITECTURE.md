@@ -254,9 +254,9 @@ The material library and workspace document endpoint share `createFromUpload`, s
 ### Inputs and limits
 
 - Pasted text uses the text ingestion path.
-- `.md`, `.txt`, `.pdf`, `.pptx`, and `.docx` file uploads use base64 JSON and are limited to 10 MB after decoding. Common standalone source-code extensions use the same bounded text path.
-- Every file is checked against its extension and optional declared MIME type. PDF requires a `%PDF-` header; PPTX and DOCX require ZIP/OOXML signatures and their expected package parts. Markdown/TXT/source-code bytes pass a binary-content check instead.
-- Invalid, oversized, malformed, and text-free inputs fail before the first database write.
+- `.md`, `.txt`, `.pdf`, `.pptx`, `.docx`, `.png`, `.jpg`, `.jpeg`, and `.webp` file uploads use base64 JSON and are limited to 10 MB after decoding. Common standalone source-code extensions use the same bounded text path.
+- Every file is checked against its extension and optional declared MIME type. PDF requires a `%PDF-` header; PPTX and DOCX require ZIP/OOXML signatures and their expected package parts. Standalone images require matching PNG, JPEG, or WebP bytes and bounded sharp validation. Markdown/TXT/source-code bytes pass a binary-content check instead.
+- Invalid, oversized, or malformed inputs fail before the first database write. Text-oriented inputs must retain extractable text unless a supported original asset makes the rich document valid; a standalone Image Material and an asset-only PPTX/DOCX revision may legitimately have no textual SourceBlocks.
 
 Binary sniffing applies only to raw text-like bytes. Parsed PDF/PPTX/DOCX text is sanitized instead, preventing valid documents with extractor artifacts from being misclassified as binary.
 
@@ -301,7 +301,7 @@ Supported PPTX/DOCX media relationships produce immutable revision-local asset r
 
 The exact uploaded member bytes are `extracted_original` source material. `source_asset_blobs` stores them once by hash, while `material_revision_assets` preserves immutable revision ownership and provenance. Repository writes validate owner IDs, parent unit IDs, byte length, and hash collisions transactionally. These child assets are not independent logical Materials, and activating a later revision does not rewrite older asset records.
 
-OCR, generated descriptions, and AI interpretation are intentionally absent. A future OCR result or visual description would be DERIVED content and would not replace or become identical to the ORIGINAL asset.
+Local OCR remains intentionally absent. Phase 6B2A can prepare a generated visual description for an eligible original image occurrence, but that description is DERIVED advisory content and never replaces or becomes identical to the ORIGINAL asset.
 
 ### Parsed-text sanitation
 
@@ -621,6 +621,7 @@ At process startup, unfinished StudySession turns and running operations are mar
 | [`mammoth`](https://github.com/mwilliamson/mammoth.js) | server | Retained compatibility DOCX-to-HTML path for historical/non-revision-aware callers; revision-aware production DOCX ingestion now uses the bounded direct OOXML adapter. |
 | [`yauzl@3.4.0`](https://github.com/thejoshwolfe/yauzl) | server | Small, maintained lazy-entry ZIP reader used only for bounded PPTX/DOCX package access. It supports central-directory validation and streamed member reads without extracting attacker-controlled paths to disk; local code adds member, byte, compression-ratio, duplicate-path, encryption, and relationship gates. |
 | [`@xmldom/xmldom@0.8.13`](https://github.com/xmldom/xmldom) | server | Maintained namespace-aware XML DOM parser used for the limited OOXML parts needed by PPTX/DOCX structure and relationships. Local code rejects entity/doctype declarations, malformed XML, and oversized/deep trees before consuming nodes. |
+| [`sharp@0.35.3`](https://github.com/lovell/sharp) | server | Maintained Node/libvips image pipeline used for actual-byte PNG/JPEG/WebP inspection, strict bounded decode, EXIF orientation, and deterministic provider transport resizing/transcoding. Exact original bytes remain immutable source authority. |
 | [`@xyflow/react`](https://github.com/xyflow/xyflow) | web | Maintained React 18 graph renderer with accessible pan/zoom, selection, and controlled dragging. |
 | [`d3-force`](https://github.com/d3/d3-force) | web | Small standard force-layout library used for bounded, hash-seeded synchronous network layout. |
 
@@ -634,7 +635,7 @@ No vector database, graph database, orchestration framework, authentication laye
 - Header/footer removal, visual-wrap repair, heading recognition, and table detection are conservative heuristics and can misclassify pathological documents.
 - PPTX drawing-layer order is deterministic but is not guaranteed spatial/semantic reading order. Charts, SmartArt, equations, unknown shapes, and unsupported embedded objects are not semantically interpreted.
 - DOCX does not provide stable page provenance. Footnotes/endnotes, equations, drawings, and other unsupported document objects may be absent or produce partial warnings.
-- Embedded PPTX/DOCX images retain exact ORIGINAL bytes and provenance, but no OCR, visual description, visual understanding, or image semantic search is implemented. HTML/Web Snapshot ingestion is also not implemented.
+- Embedded PPTX/DOCX images retain exact ORIGINAL bytes and provenance. Phase 6B2A can explicitly prepare derived descriptions for retained PNG/JPEG/WebP image occurrences with known dimensions; other retained media remain provenance-only. Derived descriptions and advisory lexical retrieval are not visual source truth. HTML/Web Snapshot ingestion is not implemented.
 - Grounding can reject semantically reasonable output when an exact quote is unavailable or ambiguous.
 - Structural document mapping reports which sections have grounded concepts and which blocks are cited by verified anchors; it never measures semantic coverage, and a "mapped" section may still contain uncaptured ideas. Semantic recall lives in the evaluation suite against hand-authored labels.
 - Lesson cards may contain model teaching that goes beyond the uploaded text; it is labeled AI 辅助讲解(非资料原文) and is never grading evidence, but its factual quality depends on the configured model and should be read critically. Section-aware extraction and lesson quality are bounded by the size-aware budgets and the 40-concepts-per-document ceiling.
@@ -695,7 +696,7 @@ Adapters produce a normalized ordered document structure before chunking. Produc
 
 Each accepted SourceBlock retains exact offsets into the normalized revision text, heading path, page/slide/document or line location where available, normalized-unit identity, content-origin class, and chunker version. Parser and chunker identities are persisted with the immutable MaterialRevision derivation metadata. Legacy rows remain nullable/unknown and are never relabeled retroactively. `extracted_original` is distinct from derived OCR, visual descriptions, layout labels, or summaries; derived text may aid navigation and teaching but is not automatically Course Truth. Exact quote validation proves occurrence at the recorded span, not complete semantic entailment.
 
-PPTX and richer DOCX structure now retain supported embedded ORIGINAL assets with immutable revision provenance. Standalone-image semantic preparation, OCR, visual descriptions, image semantic search, HTML/Web Snapshot ingestion, semantic chart/SmartArt/equation interpretation, repository ingestion, AST/call-graph analysis, and spreadsheet support are not implemented.
+PPTX and richer DOCX structure now retain supported embedded ORIGINAL assets with immutable revision provenance. Standalone-image semantic preparation and visual descriptions are implemented in Phase 6B2A, while OCR, vector image search, HTML/Web Snapshot ingestion, semantic chart/SmartArt/equation interpretation, repository ingestion, AST/call-graph analysis, and spreadsheet support are not implemented.
 
 The parser and persistence path is identical in Fake and real-Hy3 modes and makes no provider call. `LLM_PROVIDER`, Hy3 endpoint/model/credential configuration, provider budgets, and external connectivity checks are unchanged by rich-document ingestion.
 
@@ -712,3 +713,92 @@ npm run eval:fake
 npx prettier --check README.md docs/ARCHITECTURE.md
 git diff --check
 ```
+
+## 25. Visual source preparation and derived semantics (Phase 6B2A)
+
+Phase 6B2A extends the normalized-material foundation with a bounded visual
+path. It reuses Phase 6B1 `material_revision_assets`, `source_asset_blobs`, and
+revision-local occurrences; it does not create a second Material or asset
+identity model.
+
+### Original visual authority
+
+The accepted source is the exact original image byte sequence. Standalone
+`PNG`, `JPEG`, and `WebP` uploads become Image Materials with an image-only
+normalized revision and no invented authoritative text. PPTX/DOCX embedded
+images remain occurrence-bound original assets; visual preparation enumerates
+only retained PNG/JPEG/WebP image occurrences with known dimensions. Other
+retained media remain provenance-only. Hash-addressed blobs may be deduplicated,
+but occurrence IDs and parent slide/document locations are never collapsed.
+The original SHA-256, media type, dimensions, and source location remain local
+authority.
+
+### Bounded image preparation
+
+`apps/server/src/ingestion/images.ts` opens the exact `Buffer` with `sharp`
+0.35.3 and validates actual format, declared media type, positive dimensions,
+channels, 25-million-pixel and 16,384-pixel dimension limits, and single-frame
+policy. Animation and multipage inputs fail closed. Metadata checks are
+followed by a strict bounded decode with warning failure, pixel/channel limits,
+EXIF auto-orientation, and a ten-second libvips timeout. Provider transport is
+an immutable-source-preserving derivative capped at 2,048 pixels per dimension
+and 4 MiB, with a recorded transformation and preparation/version fingerprint.
+The original bytes are never replaced. sharp has no active-work AbortSignal;
+request cancellation is checked around the decode and provider boundary, while
+the timeout and operation fence contain in-flight work.
+
+### Derivation contract and persistence
+
+`packages/shared/src/domain/visual.ts` defines strict schemas for the semantic
+payload, transport metadata, immutable `VisualDerivation`, preparation state,
+learner-safe source projection, and bounded advisory teaching context. The
+provider sees only one image-only visual unit and local limits. It cannot emit
+Material IDs, revision IDs, asset IDs, hashes, authority, Evidence IDs, mastery,
+or persistent state. Local code attaches those facts after schema and semantic
+validation.
+
+`visual_derivations` is migration 25. Each accepted row binds Material,
+MaterialRevision, exact asset occurrence, original byte hash, generator/schema
+version, provider/model/configuration identity, context mode, transport
+fingerprint, bounded payload, and immutable creation time. Reprocessing creates
+another versioned record when the derivation identity changes. Identical bytes
+may reuse semantic content, but the new occurrence receives its own derivation
+identity and provenance link.
+
+Preparation is explicit and operation-fenced. It does not spend provider calls
+on a read. A command is idempotent, duplicate in-flight work is rejected, and
+an old revision/asset/hash cannot finalize onto a newer source. Failed or
+cancelled preparation leaves the original asset and any prior accepted
+derivation intact. FakeProvider is deterministic and offline. Its visual
+fixtures exercise photo, diagram, chart, text-heavy, embedded, no-text,
+uncertainty, malformed, schema-invalid, semantic-invalid, one-repair,
+repair-exhausted, timeout, and cancellation paths.
+
+### Downstream authority boundary
+
+`apps/server/src/retrieval/lexical.ts` projects a visual derivation as a
+retrieval unit with explicit `derived_visual_description` origin,
+`advisory_nonblocking` authority, derivation identity, original asset
+occurrence, and original byte hash. It is searchable for discovery and teaching
+context but is not merged into an authoritative SourceBlock. Teaching Brief
+and Tutor projections use operation-local `V*` references and retain separate
+`original_visual` source facts beside `generated_visual_explanation` advisory
+facts. Learner projections omit database IDs, hashes, provider payloads, and
+diagnostics. Derived visual text is never admissible as Formal Evidence and
+cannot grant mastery, close mistakes, complete an Agenda item, or advance a
+Plan.
+
+### Provider and OCR scope
+
+The shared `LlmProvider` contract and FakeProvider include one strict
+`describeVisual` operation with the existing whole-response JSON boundary and
+at most one bounded repair. `Hy3Provider` deliberately rejects this operation
+until Phase 6B2B confirms documented image transport; no undocumented image
+payload is sent. Local OCR is rejected for this phase after source-level review
+of Tesseract.js, native Tesseract, PaddleOCR, Surya, and OCRmyPDF. The selected
+production image dependency is sharp only; no Python runtime, native OCR
+binary, model-download manager, GPU runtime, or vector database is added.
+
+HTML/Web Snapshot, full local OCR, OCR confidence projections, vector visual
+search, chart/equation entailment, and visual-grounded formal evidence remain
+outside this phase.

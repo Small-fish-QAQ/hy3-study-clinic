@@ -12,6 +12,7 @@ import { fixedClock } from '../util/ids.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
 
 const methods = [
+  'describeVisual',
   'analyzeConcepts',
   'generateQuiz',
   'gradeShortAnswer',

@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it } from 'vitest';
+import sharp from 'sharp';
 import { openDatabase } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
 import { createRepositories } from '../repositories/index.js';
@@ -340,6 +341,45 @@ describe('document ingestion routes', () => {
         .prepare('SELECT status, revision_id FROM material_parser_attempts WHERE material_id = ?')
         .get(docId),
     ).toEqual({ status: 'failed', revision_id: null });
+  });
+
+  it('records the structured ingestion code when image reprocessing fails', async () => {
+    const image = await sharp({
+      create: { width: 2, height: 2, channels: 3, background: '#ffffff' },
+    })
+      .png()
+      .toBuffer();
+    const imported = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/workspaces/${workspaceId}/documents`,
+      payload: {
+        kind: 'file',
+        filename: 'source.png',
+        mediaType: 'image/png',
+        dataBase64: image.toString('base64'),
+      },
+    });
+    expect(imported.statusCode, imported.body).toBe(201);
+    const documentId = imported.json().material.id as string;
+    const activeRevisionId = imported.json().material.activeRevisionId as string;
+    ctx.db
+      .prepare('UPDATE material_revisions SET original_data = ? WHERE id = ?')
+      .run(Buffer.from('not-an-image'), activeRevisionId);
+
+    const response = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/workspaces/${workspaceId}/documents/${documentId}/reprocess`,
+    });
+
+    expect(response.statusCode).toBe(422);
+    expect(ctx.repos.materialRevisions.getActive(documentId)!.id).toBe(activeRevisionId);
+    expect(
+      ctx.db
+        .prepare(
+          'SELECT status, revision_id, error_code FROM material_parser_attempts WHERE material_id = ? ORDER BY started_at DESC LIMIT 1',
+        )
+        .get(documentId),
+    ).toEqual({ status: 'failed', revision_id: null, error_code: 'PARSE_FAILED' });
   });
 
   it('deleting a document prunes graph edges that referenced its concepts', async () => {

@@ -122,6 +122,18 @@ function sameIdentity(existing: AgentOperation, requested: AgentOperation): bool
   );
 }
 
+function exclusivePrefixUpperBound(prefix: string): string {
+  const codePoints = Array.from(prefix);
+  for (let index = codePoints.length - 1; index >= 0; index -= 1) {
+    const codePoint = codePoints[index]!.codePointAt(0)!;
+    if (codePoint < 0x10ffff) {
+      codePoints[index] = String.fromCodePoint(codePoint + 1);
+      return codePoints.slice(0, index + 1).join('');
+    }
+  }
+  throw new Error('Idempotency-key prefix must have an exclusive upper bound.');
+}
+
 /**
  * Durable command execution primitives. Provider work never runs inside
  * these transactions; workers claim a lease, work outside SQLite, then
@@ -429,6 +441,32 @@ export function createOperationsRepo(db: SqliteDb) {
       const row = db
         .prepare('SELECT * FROM agent_operations WHERE workspace_id = ? AND idempotency_key = ?')
         .get(workspaceId, idempotencyKey) as OperationRow | undefined;
+      return row ? rowToOperation(row) : undefined;
+    },
+
+    findLatestByIdempotencyPrefix(
+      workspaceId: string,
+      operationType: string,
+      prefix: string,
+      statuses?: readonly AgentOperationStatus[],
+    ): AgentOperation | undefined {
+      if (prefix.length === 0) throw new Error('Idempotency-key prefix must not be empty.');
+      if (statuses?.length === 0) return undefined;
+      const statusClause = statuses ? ` AND status IN (${statuses.map(() => '?').join(', ')})` : '';
+      const row = db
+        .prepare(
+          `SELECT * FROM agent_operations
+           WHERE workspace_id = ? AND operation_type = ?
+             AND idempotency_key >= ? AND idempotency_key < ?${statusClause}
+           ORDER BY created_at DESC, id DESC LIMIT 1`,
+        )
+        .get(
+          workspaceId,
+          operationType,
+          prefix,
+          exclusivePrefixUpperBound(prefix),
+          ...(statuses ?? []),
+        ) as OperationRow | undefined;
       return row ? rowToOperation(row) : undefined;
     },
 

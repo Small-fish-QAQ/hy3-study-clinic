@@ -101,6 +101,7 @@ export function buildCurriculumEvidenceCatalog({
 
   const add = (block: SourceBlock, grounding: VerifiedGrounding): void => {
     if (!revisionByBlockId.has(block.id)) return;
+    if (block.contentOrigin && block.contentOrigin !== 'extracted_original') return;
     if (grounding.quote.length > CURRICULUM_EVIDENCE_EXCERPT_MAX_CHARS) return;
     const verified = verifyGrounding(blocks, { blockId: block.id, quote: grounding.quote });
     if (!verified.ok || verified.grounding.blockId !== block.id) return;

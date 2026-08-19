@@ -201,12 +201,17 @@ export function createCourseActionLaunchService({
       }
 
       if (currentLaunch.capability === 'lesson') {
-        const resource = JSON.parse(currentLaunch.resourceId ?? '{}') as { conceptId?: unknown };
-        if (typeof resource.conceptId !== 'string') {
+        const resource = JSON.parse(currentLaunch.resourceId ?? '{}') as {
+          learningUnitId?: unknown;
+          conceptId?: unknown;
+        };
+        if (
+          typeof resource.learningUnitId !== 'string' ||
+          (resource.conceptId !== null && typeof resource.conceptId !== 'string')
+        ) {
           throw new AppError(ApiErrorCode.ValidationError, 'Lesson launch resource is invalid.');
         }
-        const lesson = repos.lessons.getByConcept(resource.conceptId);
-        if (!item.learningUnitId) {
+        if (!item.learningUnitId || resource.learningUnitId !== item.learningUnitId) {
           return commands.complete(claim, () =>
             CourseActionLaunchResultSchema.parse({
               kind: 'blocked',
@@ -217,11 +222,13 @@ export function createCourseActionLaunchService({
             }),
           );
         }
+        const conceptId = typeof resource.conceptId === 'string' ? resource.conceptId : null;
+        const lesson = conceptId ? repos.lessons.getByConcept(conceptId) : null;
         const response = CourseActionLaunchResultSchema.parse({
           kind: 'lesson',
           agendaItemId: item.id,
           learningUnitId: item.learningUnitId,
-          conceptId: resource.conceptId,
+          conceptId,
           lessonId: lesson?.id ?? null,
         });
         return commands.complete(claim, () => response);

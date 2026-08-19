@@ -801,7 +801,9 @@ export const PARSER_REGISTRY: readonly ParserAdapter[] = [
 export function chunkNormalizedDocument(document: NormalizedDocument): ChunkProjection[] {
   const candidates = document.units.filter(
     (unit) =>
-      !['document', 'source_file', 'page', 'slide', 'text_box', 'list_item'].includes(unit.kind),
+      !['document', 'source_file', 'page', 'slide', 'text_box', 'list_item'].includes(unit.kind) &&
+      unit.endOffset > unit.startOffset &&
+      unit.content.length > 0,
   );
   const chunks: ChunkProjection[] = [];
   const emit = (

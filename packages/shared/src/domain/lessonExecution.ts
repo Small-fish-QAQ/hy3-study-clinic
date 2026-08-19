@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { VisualAdvisoryContextSchema } from './visual.js';
 import { CourseExecutionCommandEnvelopeSchema } from './learningContract.js';
 import { StudySessionStatusSchema } from './studySession.js';
 
@@ -122,6 +123,9 @@ export const LessonSourceProjectionSchema = z
   .strict();
 export type LessonSourceProjection = z.infer<typeof LessonSourceProjectionSchema>;
 
+export const LessonVisualProjectionSchema = VisualAdvisoryContextSchema;
+export type LessonVisualProjection = z.infer<typeof LessonVisualProjectionSchema>;
+
 export const LessonTeachingOriginSchema = z.enum(['source_grounded', 'hy3_synthesis']);
 export type LessonTeachingOrigin = z.infer<typeof LessonTeachingOriginSchema>;
 
@@ -230,6 +234,7 @@ export const LearnerLessonProjectionSchema = z
       .max(30),
     segments: z.array(LessonSegmentProjectionSchema).min(1).max(12),
     sourceReferencesAvailable: z.boolean(),
+    visuals: z.array(LessonVisualProjectionSchema).max(8).default([]),
     summary: z
       .object({
         available: z.boolean(),
@@ -364,6 +369,7 @@ export const LessonTutorContextSchema = z
       )
       .max(2),
     sources: z.array(LessonSourceProjectionSchema).max(4),
+    visuals: z.array(LessonVisualProjectionSchema).max(4).optional(),
     summary: z.string().max(700).nullable(),
     nextConnection: z.string().max(500).nullable(),
   })

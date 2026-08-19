@@ -33,6 +33,7 @@ export const SourceTypeSchema = z.enum([
   'pdf',
   'docx',
   'pptx',
+  'image',
   'source_code',
 ]);
 export type SourceType = z.infer<typeof SourceTypeSchema>;
@@ -44,6 +45,9 @@ export const MediaTypeSchema = z.enum([
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'image/png',
+  'image/jpeg',
+  'image/webp',
   'text/x-source-code',
 ]);
 export type MediaType = z.infer<typeof MediaTypeSchema>;

@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import type { SourceBlock } from '@hy3-clinic/shared';
-import { MAX_EXCERPT_CHARS, MAX_RESULTS, searchSourceBlocks, tokenize } from './lexical.js';
+import type { SourceBlock, VisualDerivation } from '@hy3-clinic/shared';
+import {
+  MAX_EXCERPT_CHARS,
+  MAX_RESULTS,
+  searchRetrievalUnits,
+  searchSourceBlocks,
+  tokenize,
+  visualDerivationToRetrievalUnit,
+} from './lexical.js';
 
 function block(id: string, materialId: string, content: string, index = 0): SourceBlock {
   return {
@@ -92,5 +99,111 @@ describe('searchSourceBlocks', () => {
 
   it('returns empty for empty queries', () => {
     expect(searchSourceBlocks(corpus, '   ')).toEqual([]);
+  });
+});
+
+function visualDerivation(
+  overrides: Partial<VisualDerivation> & Pick<VisualDerivation, 'id' | 'assetId'>,
+): VisualDerivation {
+  return {
+    id: overrides.id,
+    materialId: 'material_visual',
+    materialRevisionId: 'revision_visual',
+    assetId: overrides.assetId,
+    assetByteHash: `sha256:${'a'.repeat(64)}`,
+    identityFingerprint: `visual_derivation_${'b'.repeat(64)}`,
+    semanticIdentityFingerprint: `visual_semantic_${'c'.repeat(64)}`,
+    derivationKind: 'visual_description',
+    contentOrigin: 'derived_visual_description',
+    authority: 'derived',
+    evidenceAdmissibility: 'advisory_nonblocking',
+    validationStatus: 'accepted',
+    generatorIdentity: 'provider_visual_description',
+    generatorVersion: 'provider-visual-description-v1',
+    provider: 'fake',
+    providerModel: null,
+    configurationFingerprint: `sha256:${'d'.repeat(64)}`,
+    contextMode: 'image_only',
+    contextFingerprint: null,
+    transport: {
+      mediaType: 'image/png',
+      width: 640,
+      height: 480,
+      byteLength: 1024,
+      transformation: 'validated_original',
+      preparationVersion: 'sharp-visual-transport-v1',
+      fingerprint: `sha256:${'e'.repeat(64)}`,
+    },
+    payload: {
+      description: 'A phase portrait compares stable and unstable equilibrium regions.',
+      visualType: 'diagram',
+      visibleText: 'stable equilibrium',
+      importantConcepts: ['phase portrait', 'equilibrium'],
+      pedagogicalNotes: ['Use the arrows to discuss local stability.'],
+      uncertainty: [],
+    },
+    reusedFromDerivationId: null,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+describe('visual-derived lexical retrieval', () => {
+  it('keeps advisory origin and exact occurrence identity for duplicate image bytes', () => {
+    const first = visualDerivation({ id: 'derivation_first', assetId: 'asset_slide_2' });
+    const second = visualDerivation({
+      id: 'derivation_second',
+      materialId: 'material_second',
+      materialRevisionId: 'revision_second',
+      assetId: 'asset_slide_9',
+      identityFingerprint: `visual_derivation_${'f'.repeat(64)}`,
+      reusedFromDerivationId: first.id,
+    });
+    const units = [first, second].map(visualDerivationToRetrievalUnit);
+
+    expect(units).toMatchObject([
+      {
+        derivationId: first.id,
+        assetOccurrenceId: first.assetId,
+        assetByteHash: first.assetByteHash,
+        identityFingerprint: first.identityFingerprint,
+        semanticIdentityFingerprint: first.semanticIdentityFingerprint,
+        contentOrigin: 'derived_visual_description',
+        authority: 'advisory_nonblocking',
+      },
+      {
+        derivationId: second.id,
+        assetOccurrenceId: second.assetId,
+        assetByteHash: second.assetByteHash,
+        identityFingerprint: second.identityFingerprint,
+        semanticIdentityFingerprint: second.semanticIdentityFingerprint,
+        contentOrigin: 'derived_visual_description',
+        authority: 'advisory_nonblocking',
+      },
+    ]);
+    expect(first.assetByteHash).toBe(second.assetByteHash);
+    expect(first.semanticIdentityFingerprint).toBe(second.semanticIdentityFingerprint);
+    expect(first.assetId).not.toBe(second.assetId);
+    expect(first.identityFingerprint).not.toBe(second.identityFingerprint);
+
+    const results = searchRetrievalUnits([], units, 'phase portrait equilibrium');
+    expect(results).toHaveLength(2);
+    for (const derivation of [first, second]) {
+      expect(results).toContainEqual(
+        expect.objectContaining({
+          kind: 'visual_derivation',
+          derivationId: derivation.id,
+          materialId: derivation.materialId,
+          materialRevisionId: derivation.materialRevisionId,
+          assetOccurrenceId: derivation.assetId,
+          assetByteHash: derivation.assetByteHash,
+          identityFingerprint: derivation.identityFingerprint,
+          semanticIdentityFingerprint: derivation.semanticIdentityFingerprint,
+          contentOrigin: 'derived_visual_description',
+          authority: 'advisory_nonblocking',
+          source: 'lexical',
+        }),
+      );
+    }
   });
 });

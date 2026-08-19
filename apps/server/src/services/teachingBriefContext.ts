@@ -2,15 +2,22 @@ import { createHash } from 'node:crypto';
 import type {
   Concept,
   Curriculum,
+  EmbeddedAsset,
   Material,
   SourceBlockRevision,
   TeachingBriefSourceReference,
+  TeachingBriefVisualReference,
+  VisualAdvisoryContext,
+  VisualDerivation,
 } from '@hy3-clinic/shared';
+import { VisualAdvisoryContextSchema, VisualMediaTypeSchema } from '@hy3-clinic/shared';
 
 export const TEACHING_BRIEF_MAX_BLOCKS = 24;
 export const TEACHING_BRIEF_MAX_OFFERS = 24;
 export const TEACHING_BRIEF_MAX_EXCERPT_CHARS = 1200;
 export const TEACHING_BRIEF_MAX_SERIALIZED_OFFER_BYTES = 32_768;
+export const TEACHING_BRIEF_MAX_VISUAL_OFFERS = 8;
+export const TEACHING_BRIEF_MAX_SERIALIZED_VISUAL_BYTES = 16_384;
 
 export interface TeachingBriefSourceOffer {
   sourceRef: string;
@@ -30,6 +37,15 @@ export interface TeachingBriefSourceContext {
   sectionCount: number;
   offers: TeachingBriefSourceOffer[];
   references: TeachingBriefSourceReference[];
+  visualOfferCount: number;
+  visualSerializedBytes: number;
+  visualOffers: VisualAdvisoryContext[];
+  visualReferences: TeachingBriefVisualReference[];
+}
+
+export interface TeachingBriefVisualCandidate {
+  asset: EmbeddedAsset;
+  derivation: VisualDerivation;
 }
 
 interface BuildTeachingBriefSourceContextInput {
@@ -39,6 +55,7 @@ interface BuildTeachingBriefSourceContextInput {
   materials: Material[];
   blocks: SourceBlockRevision[];
   concepts: Concept[];
+  visuals?: TeachingBriefVisualCandidate[];
 }
 
 interface Candidate {
@@ -64,6 +81,7 @@ export function buildTeachingBriefSourceContext({
   materials,
   blocks,
   concepts,
+  visuals = [],
 }: BuildTeachingBriefSourceContextInput): TeachingBriefSourceContext {
   if (curriculum.workspaceId !== workspaceId || curriculum.status !== 'accepted') {
     throw new Error('Teaching Brief requires an accepted Curriculum owned by this Course.');
@@ -224,7 +242,110 @@ export function buildTeachingBriefSourceContext({
       slideNumber: candidate.block.slideNumber ?? null,
     });
   }
-  if (offers.length === 0) throw new Error('Teaching Brief has no eligible exact source context.');
+  const revisionOrder = new Map(
+    curriculum.executionSourceManifest.revisions.map((revision, index) => [
+      revision.materialRevisionId,
+      index,
+    ]),
+  );
+  const seenVisualAssets = new Set<string>();
+  const orderedVisuals = [...visuals].sort(
+    (left, right) =>
+      (revisionOrder.get(left.asset.materialRevisionId) ?? Number.MAX_SAFE_INTEGER) -
+        (revisionOrder.get(right.asset.materialRevisionId) ?? Number.MAX_SAFE_INTEGER) ||
+      left.asset.index - right.asset.index ||
+      left.asset.id.localeCompare(right.asset.id),
+  );
+  const visualOffers: VisualAdvisoryContext[] = [];
+  const visualReferences: TeachingBriefVisualReference[] = [];
+  for (const candidate of orderedVisuals) {
+    if (seenVisualAssets.has(candidate.asset.id)) {
+      throw new Error('Teaching Brief visual candidates must be occurrence-unique.');
+    }
+    seenVisualAssets.add(candidate.asset.id);
+    const material = materialById.get(candidate.asset.materialId);
+    const manifestRevision = manifestRevisionByMaterialId.get(candidate.asset.materialId);
+    const { asset, derivation } = candidate;
+    if (
+      !material ||
+      !manifestRevision ||
+      material.activeRevisionId !== asset.materialRevisionId ||
+      manifestRevision.materialRevisionId !== asset.materialRevisionId ||
+      asset.relationshipKind !== 'image' ||
+      asset.contentOrigin !== 'extracted_original' ||
+      asset.width === null ||
+      asset.height === null ||
+      !VisualMediaTypeSchema.safeParse(asset.mediaType).success ||
+      derivation.assetId !== asset.id ||
+      derivation.materialId !== asset.materialId ||
+      derivation.materialRevisionId !== asset.materialRevisionId ||
+      derivation.assetByteHash !== asset.byteHash ||
+      derivation.contentOrigin !== 'derived_visual_description' ||
+      derivation.authority !== 'derived' ||
+      derivation.evidenceAdmissibility !== 'advisory_nonblocking' ||
+      derivation.validationStatus !== 'accepted'
+    ) {
+      throw new Error('Teaching Brief visual derivation is stale, foreign, or not advisory.');
+    }
+    if (visualOffers.length >= TEACHING_BRIEF_MAX_VISUAL_OFFERS) break;
+    const refId = `V${visualOffers.length + 1}`;
+    const context = VisualAdvisoryContextSchema.parse({
+      referenceKey: refId,
+      materialTitle: material.title,
+      source: {
+        sourceKind: material.sourceType === 'image' ? 'standalone' : 'embedded',
+        mediaType: asset.mediaType,
+        width: asset.width,
+        height: asset.height,
+        location: {
+          pageNumber: asset.location.pageNumber ?? null,
+          slideNumber: asset.location.slideNumber ?? null,
+          contextLabel: asset.location.slideNumber
+            ? `Slide ${asset.location.slideNumber}`
+            : asset.location.pageNumber
+              ? `Page ${asset.location.pageNumber}`
+              : material.sourceType === 'image'
+                ? 'Standalone image'
+                : `Embedded visual ${asset.index + 1}`,
+        },
+        authority: 'original_visual',
+      },
+      explanation: {
+        text: derivation.payload.description,
+        visualType: derivation.payload.visualType,
+        importantConcepts: derivation.payload.importantConcepts,
+        pedagogicalNotes: derivation.payload.pedagogicalNotes,
+        uncertainty: derivation.payload.uncertainty,
+        contentOrigin: 'derived_visual_description',
+        provenanceCategory: 'generated_visual_explanation',
+        authority: 'advisory',
+        evidenceAdmissibility: 'advisory_nonblocking',
+        formalEvidenceEligible: false,
+      },
+    });
+    const nextOffers = [...visualOffers, context];
+    if (
+      Buffer.byteLength(JSON.stringify(nextOffers), 'utf8') >
+      TEACHING_BRIEF_MAX_SERIALIZED_VISUAL_BYTES
+    ) {
+      continue;
+    }
+    visualOffers.push(context);
+    visualReferences.push({
+      refId,
+      materialId: asset.materialId,
+      materialRevisionId: asset.materialRevisionId,
+      assetId: asset.id,
+      assetByteHash: asset.byteHash,
+      derivationId: derivation.id,
+      derivationIdentityFingerprint: derivation.identityFingerprint,
+      context,
+    });
+  }
+
+  if (offers.length === 0 && visualOffers.length === 0) {
+    throw new Error('Teaching Brief has no eligible source or advisory visual context.');
+  }
 
   const serializedBytes = Buffer.byteLength(JSON.stringify(offers), 'utf8');
   const identity = {
@@ -233,6 +354,7 @@ export function buildTeachingBriefSourceContext({
     learningUnitId,
     executionSourceManifestFingerprint: curriculum.executionSourceManifest.fingerprint,
     references,
+    visualReferences,
   };
   return {
     fingerprint: fingerprint(identity),
@@ -244,5 +366,9 @@ export function buildTeachingBriefSourceContext({
       .size,
     offers,
     references,
+    visualOfferCount: visualOffers.length,
+    visualSerializedBytes: Buffer.byteLength(JSON.stringify(visualOffers), 'utf8'),
+    visualOffers,
+    visualReferences,
   };
 }

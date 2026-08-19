@@ -288,6 +288,16 @@ export function boundTutorTurnInput(input: TutorTurnInput): TutorTurnInput {
           sources: bounded.lessonContext.sources
             .slice(0, 2)
             .map((source) => ({ ...source, exactExcerpt: source.exactExcerpt.slice(0, 500) })),
+          visuals: (bounded.lessonContext.visuals ?? []).slice(0, 2).map((visual) => ({
+            ...visual,
+            explanation: {
+              ...visual.explanation,
+              text: visual.explanation.text.slice(0, 500),
+              importantConcepts: visual.explanation.importantConcepts.slice(0, 3),
+              pedagogicalNotes: visual.explanation.pedagogicalNotes.slice(0, 2),
+              uncertainty: visual.explanation.uncertainty.slice(0, 2),
+            },
+          })),
           summary: bounded.lessonContext.summary?.slice(0, 300) ?? null,
           nextConnection: bounded.lessonContext.nextConnection?.slice(0, 200) ?? null,
         }
@@ -306,5 +316,6 @@ export function boundTutorTurnInput(input: TutorTurnInput): TutorTurnInput {
     ...bounded,
     recentExchanges: bounded.recentExchanges.slice(-2),
     offeredSourceRefs: bounded.offeredSourceRefs.slice(0, 3),
+    lessonContext: bounded.lessonContext ? { ...bounded.lessonContext, visuals: [] } : null,
   };
 }

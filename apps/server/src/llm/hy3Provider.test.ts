@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { SAMPLE_MATERIAL_TITLE, type SourceBlock } from '@hy3-clinic/shared';
 import { Hy3Provider } from './hy3Provider.js';
 import { ProviderError } from './errors.js';
-import type { StudyPlanProposalInput } from './provider.js';
+import type { StudyPlanProposalInput, VisualDescriptionInput } from './provider.js';
 import { groupedStudyPlanProposalMessages } from './prompts.js';
 
 const blocks: SourceBlock[] = [
@@ -34,6 +34,46 @@ function makeProvider(fetchImpl: typeof fetch, timeoutMs = 30_000): Hy3Provider 
     fetchImpl,
   });
 }
+
+const visualInput: VisualDescriptionInput = {
+  image: {
+    dataBase64: 'iVBORw0KGgo=',
+    mediaType: 'image/png',
+    width: 1,
+    height: 1,
+    byteLength: 8,
+  },
+  limits: {
+    maxDescriptionChars: 1200,
+    maxVisibleTextChars: 2000,
+    maxConcepts: 12,
+    maxPedagogicalNotes: 6,
+    maxUncertaintyItems: 6,
+  },
+};
+
+describe('Hy3Provider visual transport boundary', () => {
+  it('fails closed without fetching when image transport is not configured', async () => {
+    const fetchImpl = vi.fn() as unknown as typeof fetch;
+
+    await expect(makeProvider(fetchImpl).describeVisual(visualInput)).rejects.toMatchObject({
+      code: 'PROVIDER_INVALID_OUTPUT',
+      technicalFailureCode: 'PROVIDER_FORMAT_INCOMPATIBILITY',
+    });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it('prioritizes an already-aborted visual request without fetching', async () => {
+    const fetchImpl = vi.fn() as unknown as typeof fetch;
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      makeProvider(fetchImpl).describeVisual(visualInput, { signal: controller.signal }),
+    ).rejects.toMatchObject({ code: 'REQUEST_CANCELLED' });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+});
 
 function largeStudyPlanInput(): StudyPlanProposalInput {
   const units = Array.from({ length: 80 }, (_, index) => ({

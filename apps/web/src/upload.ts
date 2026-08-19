@@ -8,16 +8,17 @@ import { MAX_DOCUMENT_FILE_BYTES } from '@hy3-clinic/shared';
  */
 
 /** File extensions accepted by every import surface (must match the server). */
-export const UPLOAD_ACCEPT = '.md,.markdown,.txt,.pdf,.pptx,.docx';
+export const UPLOAD_ACCEPT = '.md,.markdown,.txt,.pdf,.pptx,.docx,.png,.jpg,.jpeg,.webp';
 
 /** Consistent supported-format wording shown next to upload controls. */
-export const UPLOAD_FORMATS_TEXT = '支持粘贴文本及 Markdown、TXT、PDF、PPTX、DOCX 文件。';
+export const UPLOAD_FORMATS_TEXT =
+  '支持粘贴文本及 Markdown、TXT、PDF、PPTX、DOCX、PNG、JPEG、WebP 文件。';
 
 /** Consistent OCR-limitation wording shown next to upload controls. */
 export const UPLOAD_OCR_LIMIT_TEXT = '暂不支持纯扫描图片型 PDF;PDF 中需要包含可提取文本。';
 
-export type UploadKind = 'md' | 'txt' | 'pdf' | 'pptx' | 'docx';
-export type BinaryUploadKind = 'pdf' | 'pptx' | 'docx';
+export type UploadKind = 'md' | 'txt' | 'pdf' | 'pptx' | 'docx' | 'image';
+export type BinaryUploadKind = 'pdf' | 'pptx' | 'docx' | 'image';
 
 const EXTENSION_KINDS: Record<string, UploadKind> = {
   md: 'md',
@@ -27,6 +28,10 @@ const EXTENSION_KINDS: Record<string, UploadKind> = {
   pdf: 'pdf',
   pptx: 'pptx',
   docx: 'docx',
+  png: 'image',
+  jpg: 'image',
+  jpeg: 'image',
+  webp: 'image',
 };
 
 /** Human-readable type label shown next to a selected filename. */
@@ -36,6 +41,7 @@ export const UPLOAD_KIND_LABELS: Record<UploadKind, string> = {
   pdf: 'PDF',
   pptx: 'PowerPoint 演示文稿',
   docx: 'Word 文档',
+  image: '图像',
 };
 
 /** Resolve a filename to its upload kind, or null when unsupported. */
@@ -46,7 +52,7 @@ export function uploadKindOf(filename: string): UploadKind | null {
 
 /** True when the file must be sent base64-encoded instead of as text. */
 export function isBinaryUploadKind(kind: UploadKind): kind is BinaryUploadKind {
-  return kind === 'pdf' || kind === 'pptx' || kind === 'docx';
+  return kind === 'pdf' || kind === 'pptx' || kind === 'docx' || kind === 'image';
 }
 
 /**
@@ -55,7 +61,7 @@ export function isBinaryUploadKind(kind: UploadKind): kind is BinaryUploadKind {
  */
 export function uploadValidationError(file: File): string | null {
   if (uploadKindOf(file.name) === null) {
-    return '不支持的文件类型:仅接受 .md、.txt、.pdf、.pptx 与 .docx 文件。';
+    return '不支持的文件类型:仅接受 .md、.txt、.pdf、.pptx、.docx、.png、.jpg、.jpeg 与 .webp 文件。';
   }
   if (file.size === 0) {
     return '上传的文件为空。';

@@ -1078,7 +1078,7 @@ describe('Import flow', () => {
 });
 
 describe('File import (PDF/PPTX/DOCX)', () => {
-  const FILE_INPUT_LABEL = '选择 .md、.txt、.pdf、.pptx 或 .docx 文件';
+  const FILE_INPUT_LABEL = '选择 .md、.txt、.pdf、.pptx、.docx、.png、.jpg 或 .webp 文件';
   const PDF_BYTES = '%PDF-1.4 fake fixture body';
   const PPTX_BYTES = 'PK\u0003\u0004 fake presentation fixture body';
 
@@ -1114,14 +1114,16 @@ describe('File import (PDF/PPTX/DOCX)', () => {
     await renderAppAtMaterials();
 
     expect(
-      await screen.findByText(/支持粘贴文本及 Markdown、TXT、PDF、PPTX、DOCX 文件。/),
+      await screen.findByText(
+        /支持粘贴文本及 Markdown、TXT、PDF、PPTX、DOCX、PNG、JPEG、WebP 文件。/,
+      ),
     ).toBeInTheDocument();
     expect(
       screen.getByText(/暂不支持纯扫描图片型 PDF;PDF 中需要包含可提取文本。/),
     ).toBeInTheDocument();
     expect(screen.getByLabelText(FILE_INPUT_LABEL)).toHaveAttribute(
       'accept',
-      '.md,.markdown,.txt,.pdf,.pptx,.docx',
+      '.md,.markdown,.txt,.pdf,.pptx,.docx,.png,.jpg,.jpeg,.webp',
     );
   });
 
@@ -1250,7 +1252,9 @@ describe('File import (PDF/PPTX/DOCX)', () => {
     await screen.findByRole('button', { name: '选择文件' });
     pickFile(new File(['workbook'], 'workbook.xlsx'));
     expect(
-      await screen.findByText('不支持的文件类型:仅接受 .md、.txt、.pdf、.pptx 与 .docx 文件。'),
+      await screen.findByText(
+        '不支持的文件类型:仅接受 .md、.txt、.pdf、.pptx、.docx、.png、.jpg、.jpeg 与 .webp 文件。',
+      ),
     ).toBeInTheDocument();
 
     pickFile(new File([new ArrayBuffer(MAX_DOCUMENT_FILE_BYTES + 1)], 'big.pdf'));

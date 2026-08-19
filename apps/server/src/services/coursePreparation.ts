@@ -29,6 +29,7 @@ import {
   type CurriculumService,
 } from './curriculum.js';
 import { preflightStudyPlan, type StudyPlanAgentService } from './studyPlansAgent.js';
+import { listAcceptedAdvisoryVisuals } from './advisoryVisuals.js';
 
 interface CoursePreparationDeps {
   repos: Repositories;
@@ -148,6 +149,14 @@ export function createCoursePreparationService({
       materials: includedMaterialIds.map((materialId) => ({
         materialId,
         revisionId: repos.materialRevisions.getActive(materialId)?.id ?? null,
+        visualDerivationIdentityFingerprints: (() => {
+          const revision = repos.materialRevisions.getActive(materialId);
+          return revision
+            ? listAcceptedAdvisoryVisuals(repos, materialId, revision.id)
+                .map(({ derivation }) => derivation.identityFingerprint)
+                .sort()
+            : [];
+        })(),
       })),
     });
   }
@@ -181,6 +190,23 @@ export function createCoursePreparationService({
       const revision = repos.materialRevisions.getActive(materialId);
       const blocks = repos.materials.getBlocks(materialId);
       const concepts = repos.materials.getConcepts(materialId);
+      const acceptedVisuals = revision
+        ? listAcceptedAdvisoryVisuals(repos, materialId, revision.id)
+        : [];
+      const authoritativeBlocksReady = Boolean(
+        revision &&
+        blocks.length > 0 &&
+        blocks.every(
+          (block) =>
+            block.materialRevisionId === revision.id &&
+            (block.contentOrigin === undefined ||
+              block.contentOrigin === null ||
+              block.contentOrigin === 'extracted_original'),
+        ),
+      );
+      const visualOnlyReady = Boolean(
+        material && blocks.length === 0 && acceptedVisuals.length > 0,
+      );
       const validConceptIds = concepts
         .filter((concept) => verifyGrounding(blocks, concept.grounding).ok)
         .map((concept) => concept.id)
@@ -188,16 +214,23 @@ export function createCoursePreparationService({
       return {
         materialId,
         materialCurrent: Boolean(
-          material && material.workspaceId === workspaceId && revision && blocks.length > 0,
+          material &&
+          material.workspaceId === workspaceId &&
+          revision &&
+          (authoritativeBlocksReady || visualOnlyReady),
         ),
         revisionId: revision?.id ?? null,
         blockIds: blocks.map((block) => block.id),
         validConceptIds,
+        visualOnlyReady,
+        visualDerivationIdentityFingerprints: acceptedVisuals
+          .map(({ derivation }) => derivation.identityFingerprint)
+          .sort(),
       };
     });
     const materialsCurrent = materialFacts.every((material) => material.materialCurrent);
     const missingConceptMaterialIds = materialFacts
-      .filter((material) => material.validConceptIds.length === 0)
+      .filter((material) => material.validConceptIds.length === 0 && !material.visualOnlyReady)
       .map((material) => material.materialId);
     const conceptsCurrent = materialsCurrent && missingConceptMaterialIds.length === 0;
     const latestCurriculumId = overview.curriculumHistory.at(-1)?.id ?? null;
@@ -217,15 +250,15 @@ export function createCoursePreparationService({
     const planningCurriculum =
       planningCurriculumCandidate &&
       currentExecutionManifest &&
-      JSON.stringify(planningCurriculumCandidate.executionSourceManifest.revisions) ===
-        JSON.stringify(currentExecutionManifest.revisions)
+      JSON.stringify(planningCurriculumCandidate.executionSourceManifest) ===
+        JSON.stringify(currentExecutionManifest)
         ? planningCurriculumCandidate
         : null;
     const proposedCurriculumSourceCurrent = Boolean(
       proposedCurriculum &&
       currentExecutionManifest &&
-      JSON.stringify(proposedCurriculum.executionSourceManifest.revisions) ===
-        JSON.stringify(currentExecutionManifest.revisions),
+      JSON.stringify(proposedCurriculum.executionSourceManifest) ===
+        JSON.stringify(currentExecutionManifest),
     );
     const proposedPlan =
       overview.proposedStudyPlan &&

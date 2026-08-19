@@ -84,7 +84,10 @@ export function validateTeachingBriefCandidate(
       codes.push('objective_not_covered');
     }
   }
-  if (!payload.segments.some((segment) => segment.sourceRefs.length > 0)) {
+  if (
+    (input.visualContext?.offers.length ?? 0) === 0 &&
+    !payload.segments.some((segment) => segment.sourceRefs.length > 0)
+  ) {
     diagnostics.push('Teaching sequence must contain at least one source-referenced segment.');
     codes.push('no_source_backed_segment');
   }

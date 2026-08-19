@@ -72,6 +72,7 @@ function readyLesson(
         },
       ],
       sourceReferencesAvailable: true,
+      visuals: [],
       summary: {
         available: true,
         text: '条件概率把观察范围收窄到已知条件。',
