@@ -16,7 +16,7 @@ import { AppError, notFound } from '../errors.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
 import { ingestSource } from '../ingestion/ingest.js';
-import { parseBinaryUpload } from '../ingestion/documents.js';
+import { parseBinaryUpload, type ParsedBinaryDocument } from '../ingestion/documents.js';
 import {
   normalizedDocumentToSourceBlocks,
   parserForSourceType,
@@ -44,6 +44,12 @@ export function createWorkspaceService({
   materials,
   sourceAuthority,
 }: WorkspaceServiceDeps) {
+  function throwIfCancelled(signal?: AbortSignal): void {
+    if (signal?.aborted) {
+      throw new AppError(ApiErrorCode.RequestCancelled, '文档重新解析已取消。');
+    }
+  }
+
   function requireWorkspace(id: string): Workspace {
     const workspace = repos.workspaces.get(id);
     if (!workspace) throw notFound(`课程空间不存在:${id}`);
@@ -109,6 +115,7 @@ export function createWorkspaceService({
     async addDocument(
       workspaceId: string,
       request: AddDocumentRequest,
+      options: { signal?: AbortSignal } = {},
     ): Promise<MaterialWithBlocks> {
       requireWorkspace(workspaceId);
 
@@ -119,7 +126,7 @@ export function createWorkspaceService({
         );
       }
 
-      return materials.createFromUpload(request, workspaceId);
+      return materials.createFromUpload(request, workspaceId, options);
     },
 
     /**
@@ -127,8 +134,13 @@ export function createWorkspaceService({
      * work happens before the transaction. Failure records an attempt and
      * leaves the previous active revision and longitudinal history intact.
      */
-    async reprocessDocument(workspaceId: string, documentId: string): Promise<MaterialWithBlocks> {
+    async reprocessDocument(
+      workspaceId: string,
+      documentId: string,
+      options: { signal?: AbortSignal } = {},
+    ): Promise<MaterialWithBlocks> {
       const existing = requireDocument(workspaceId, documentId);
+      const expectedActiveRevisionId = existing.activeRevisionId ?? null;
       const now = clock.now().toISOString();
       const parserAttemptId = newId('parse');
       const revisionId = newId('rev');
@@ -140,10 +152,16 @@ export function createWorkspaceService({
       let warnings: string[] = [];
       let parserVersion: string;
       let originalData: Buffer | null = null;
+      let parsedDocument: ParsedBinaryDocument | undefined;
 
       try {
+        throwIfCancelled(options.signal);
         const storedOriginal = repos.materials.getOriginalData(documentId);
-        if (existing.sourceType === 'pdf' || existing.sourceType === 'docx') {
+        if (
+          existing.sourceType === 'pdf' ||
+          existing.sourceType === 'docx' ||
+          existing.sourceType === 'pptx'
+        ) {
           const original = storedOriginal;
           if (!original) {
             throw new AppError(
@@ -152,19 +170,29 @@ export function createWorkspaceService({
             );
           }
           originalData = original;
-          const parsed = await parseBinaryUpload(existing.sourceType, original);
-          content = parsed.content;
-          pageCount = parsed.pageCount;
-          pageSpans = parsed.pageSpans;
-          warnings = parsed.warnings;
-          parserVersion = parsed.parserVersion;
+          parsedDocument = await parseBinaryUpload(
+            existing.sourceType,
+            original,
+            documentId,
+            revisionId,
+            options.signal,
+          );
+          content = parsedDocument.content;
+          pageCount = parsedDocument.pageCount;
+          pageSpans = parsedDocument.pageSpans;
+          warnings = parsedDocument.warnings;
+          parserVersion = parsedDocument.parserVersion;
         } else {
           originalData = storedOriginal;
           content = storedOriginal ? storedOriginal.toString('utf8') : existing.content;
           parserVersion = existing.parserVersion ?? 'text-v1';
         }
 
-        const normalized = ingestSource(content, { sourceType: existing.sourceType });
+        throwIfCancelled(options.signal);
+        const normalized =
+          content.length === 0 && (parsedDocument?.embeddedAssets?.length ?? 0) > 0
+            ? { content: '', charCount: 0, sourceType: existing.sourceType }
+            : ingestSource(content, { sourceType: existing.sourceType });
         const updated: Material = {
           ...existing,
           content: normalized.content,
@@ -175,15 +203,18 @@ export function createWorkspaceService({
           parserVersion,
           updatedAt: now,
         };
-        const document = parserForSourceType(existing.sourceType).parse({
-          revisionId,
-          materialId: documentId,
-          sourceType: existing.sourceType,
-          mediaType: existing.mediaType,
-          content: normalized.content,
-          filename: existing.originalFilename,
-          ...(pageSpans ? { pageSpans } : {}),
-        });
+        const document =
+          parsedDocument?.normalizedDocument ??
+          parserForSourceType(existing.sourceType).parse({
+            revisionId,
+            materialId: documentId,
+            sourceType: existing.sourceType,
+            mediaType: existing.mediaType,
+            content: normalized.content,
+            filename: existing.originalFilename,
+            warnings,
+            ...(pageSpans ? { pageSpans } : {}),
+          });
         const blocks = normalizedDocumentToSourceBlocks(documentId, document, {
           idSeed: revisionId,
           materialRevisionId: revisionId,
@@ -191,6 +222,7 @@ export function createWorkspaceService({
         const contentFingerprint = fnv1a32(normalized.content).toString(16).padStart(8, '0');
         const parserFingerprint = document.parserFingerprint;
 
+        throwIfCancelled(options.signal);
         repos.materialRevisions.stage({
           revisionId,
           material: updated,
@@ -204,16 +236,26 @@ export function createWorkspaceService({
             .update(originalData ?? Buffer.from(normalized.content, 'utf8'))
             .digest('hex')}`,
           normalizedUnits: document.units,
+          embeddedAssets: parsedDocument?.embeddedAssets,
           parserAttemptId,
           createdAt: now,
+          expectedActiveRevisionId,
         });
-        repos.materialRevisions.activate(documentId, revisionId, now);
+        throwIfCancelled(options.signal);
+        repos.materialRevisions.activate(documentId, revisionId, now, expectedActiveRevisionId);
         sourceAuthority.ensureVerbatimAssessmentAuthority(workspaceId, documentId, revisionId);
         return {
           material: repos.materials.get(documentId)!,
           blocks: repos.materials.getBlocks(documentId),
+          assets: repos.materials.getAssets(documentId),
         };
       } catch (error) {
+        if (error instanceof Error && error.message === 'STALE_REPROCESS_ACTIVATION') {
+          throw new AppError(
+            ApiErrorCode.VersionConflict,
+            '文档在重新解析期间已被其他操作更新,当前结果未激活。',
+          );
+        }
         if (!repos.materialRevisions.get(revisionId)) {
           repos.materialRevisions.recordFailedAttempt({
             id: parserAttemptId,

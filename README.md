@@ -3,9 +3,9 @@
 [![CI](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml/badge.svg)](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-Hy3 Study Clinic turns a learner's course documents into a **verifiable personal learning graph** and closes the loop from **diagnostic weakness to grounded remediation and persistent learning progress**. It supports pasted text, Markdown, TXT, PDF, and DOCX inside multi-document course workspaces.
+Hy3 Study Clinic turns a learner's course documents into a **verifiable personal learning graph** and closes the loop from **diagnostic weakness to grounded remediation and persistent learning progress**. It supports pasted text, Markdown, TXT, PDF, PPTX, and DOCX inside multi-document course workspaces.
 
-The material pipeline also accepts common source-code files as learning material. Markdown, TXT, PDF/DOCX text-layer output, and source code pass through a parser registry into revision-owned normalized structural units and deterministic structure-aware SourceBlocks. Blocks retain exact offsets, heading paths, page or line locations where available, and parser/chunker identity. The registry rejects extension/MIME/signature mismatches and applies bounded input, unit, and chunk limits.
+The material pipeline also accepts common source-code files as learning material. Markdown, TXT, PDF, PPTX, DOCX, and source code pass through a parser registry into revision-owned normalized structural units and deterministic `structure-aware-v1` SourceBlocks. Blocks retain exact offsets, heading paths, page, slide, document-structure, or line locations where available, plus parser/chunker identity. The registry rejects extension/MIME/signature mismatches and applies bounded input, archive, XML, unit, and chunk limits.
 
 Hy3 performs the semantic work: concept extraction, grounded question generation, semantic rubric grading, relationship and alignment proposals, misconception hypotheses, and bounded tutoring decisions. Deterministic local code validates citations and IDs, computes scores, controls every learning-state transition, and persists the accepted result in SQLite. The model never directly changes mastery, closes mistakes, accepts alignments, sets review dates, or deletes history.
 
@@ -13,7 +13,7 @@ Hy3 performs the semantic work: concept extraction, grounded question generation
 
 ### Implemented current product
 
-Hy3 Study Clinic presents the implemented Phase 1-5B capabilities as one Course-centered learning journey. After selecting a Course, the learner moves through `主页 / 学习 / 课程结构 / 进展 / 探索`; Course Home explains the current goal and one next action, while technical evidence and version history remain available through intentional disclosures. Implemented behavior includes document workspaces, immutable material revisions, SourceBlocks, concepts, graph exploration, grounded lessons and assessments, mistakes, mastery, misconceptions, review scheduling, learner-confirmed Contracts, deterministic Course Preparation, Curricula, accepted StudyPlans, SessionAgendas, StudySessions, formal progression, bounded replanning, and lesson-aware Tutor support.
+Hy3 Study Clinic presents the implemented learning workflows as one Course-centered journey. After selecting a Course, the learner moves through `主页 / 学习 / 课程结构 / 进展 / 探索`; Course Home explains the current goal and one next action, while technical evidence and version history remain available through intentional disclosures. Implemented behavior includes rich document workspaces, immutable material revisions, SourceBlocks, concepts, graph exploration, grounded lessons and assessments, mistakes, mastery, misconceptions, review scheduling, learner-confirmed Contracts, deterministic Course Preparation, Curricula, accepted StudyPlans, SessionAgendas, StudySessions, formal progression, bounded replanning, and lesson-aware Tutor support.
 
 ### Learner-facing product shell
 
@@ -67,7 +67,7 @@ The same workflows run offline with the fake provider through `npm run demo:grap
 
 ### Course materials to a verifiable learning graph
 
-1. Create a course workspace and add one or more documents. PDF/DOCX parsing preserves stable source blocks, character offsets, heading paths, and PDF page ranges.
+1. Create a course workspace and add one or more documents. PDF parsing preserves page identity, positioned-text reconstruction, headings, lists, conservative tables, and page ranges. PPTX preserves presentation relationship order, stable drawing-layer order, paragraphs/lists, tables, speaker notes, and slide ownership. DOCX preserves body order, heading hierarchy, paragraphs, lists, tables, and honest document-structural locations without invented page numbers.
 2. Hy3 extracts concepts section by section along a deterministic document outline (with a synthetic-window fallback for weak headings), under size-aware budgets — a thin section may honestly yield nothing, and long documents are no longer compressed into one 3-8-concept pass. Every concept carries `(blockId, exact quote)` evidence, and 资料映射 shows which sections are mapped, with per-section additive deepening that never regenerates existing concept ids.
 3. Deterministic candidate generation and bounded Hy3 proposals align equivalent concepts across documents. Only exact normalized aliases are auto-accepted; semantic merges require learner review.
 4. Hy3 proposes typed graph relations from a controlled vocabulary: `prerequisite`, `part_of`, `contrasts_with`, `causes`, `applies_to`, and `example_of`.
@@ -76,6 +76,16 @@ The same workflows run offline with the fake provider through `npm run demo:grap
 7. Each concept can open a 讲解 lesson card: typed teaching sections (explanation, intuition, worked example, misconception warnings, contrasts, applications) whose provenance is decided per segment by the server — verified course quotes are labeled 课程资料/本地已验证, everything else is honestly labeled AI 辅助讲解(非资料原文) and never becomes grading evidence. Where the course text differs from the common presentation, the conflict is shown with a verified quote and the source wins.
 
 Failed graph, plan, or lesson generation never overwrites the last valid version.
+
+### Rich document extraction and original assets
+
+- PDF remains a deterministic text-layer parser. It reconstructs visual lines from positioned text, filters conservative repeated headers/footers, keeps page spans, and emits explicit warnings for pages without extractable text. It does not enumerate PDF figures or interpret diagrams.
+- PPTX slide order comes from `ppt/presentation.xml` relationships. Within a slide, text uses stable OOXML drawing-layer order; this is deterministic but is not claimed to be perfect spatial or semantic reading order. Speaker notes stay distinct from visible slide content, and tables retain row and column order in normalized table units.
+- Revision-aware DOCX ingestion reads bounded OOXML directly to preserve headings, paragraphs, contiguous lists, tables, headers/footers, and embedded media relationships. DOCX pagination depends on rendering software, so no page number is fabricated.
+- Embedded PPTX/DOCX media is persisted as immutable `extracted_original` source material with revision ownership, a stable revision-local identity, SHA-256 byte identity, media type, byte length, dimensions when deterministically available, and parent slide/document structure where known. Hash-addressed blob storage avoids duplicating identical original bytes. Embedded assets do not become independent logical Materials.
+- Unsupported or incomplete structures produce visible partial-extraction warnings. Missing relationships, unsupported objects, image-only slides/pages, and PPTX charts or SmartArt are not silently treated as complete semantic text.
+
+This phase does not perform OCR, visual understanding, generated image descriptions, or image semantic search. HTML/Web Snapshot ingestion is not implemented. Original images remain source assets; any future OCR or visual description would be derived content rather than Course Truth.
 
 ### Diagnostic weakness to verified remediation
 
@@ -230,6 +240,8 @@ Open <http://localhost:5173>. Vite proxies `/api` to Fastify at `http://127.0.0.
 
 `LLM_PROVIDER=fake` is the default. It is offline and shares the real provider's validated contracts. The complete workflow can be repeated offline, but regenerated IDs and state mean generated content and order may vary between runs; byte-identical output is not promised.
 
+Rich-document extraction is local and deterministic in both provider modes. It does not call Hy3, so Fake and real-Hy3 setup is unchanged.
+
 For the real API, set the server-side variables in `.env`:
 
 ```dotenv
@@ -283,11 +295,11 @@ apps/server (Fastify)
 packages/shared -- Zod schemas, domain types, payloads, and deterministic utilities
 ```
 
-The browser never calls Hy3 directly. SQLite holds course workspaces, logical materials and immutable revisions, source blocks, source authority, Contracts, Curricula, StudyPlans, SessionAgendas, StudySessions, formal progression records, graph versions, assessments, completed attempts, mistakes, mastery, misconception hypotheses, review events, operations, and model-call telemetry. The browser retains only lightweight selection and graph-position preferences.
+The browser never calls Hy3 directly. SQLite holds course workspaces, logical materials and immutable revisions, normalized structural units, hash-addressed original asset blobs and revision-local asset provenance, source blocks, source authority, Contracts, Curricula, StudyPlans, SessionAgendas, StudySessions, formal progression records, graph versions, assessments, completed attempts, mistakes, mastery, misconception hypotheses, review events, operations, and model-call telemetry. The browser retains only lightweight selection and graph-position preferences.
 
 The responsive Course shell and Settings route are presentation boundaries over server-owned runtime state, not parallel configuration or persistence systems. The original SVG mark is reused by the sidebar, compatibility header, and favicon; provider secrets never enter browser storage. Curriculum expansion state is ephemeral presentation state: expanding branches, revealing the units after the first 12, or opening source/version details never modifies the accepted Curriculum.
 
-See [Architecture & Design Notes](docs/ARCHITECTURE.md) for request lifecycles, grounding rules, all 22 migrations, document deletion/reprocessing behavior, accepted-route lifecycle, formal progression, graph routing, provider contracts, learner-state machines, cancellation, and dependency rationale. It documents implemented current behavior; the authoritative design separately identifies the gated Phase 5 work that remains future scope.
+See [Architecture & Design Notes](docs/ARCHITECTURE.md) for request lifecycles, grounding rules, all 24 migrations, document deletion/reprocessing behavior, rich-document archive safety, original-asset provenance, accepted-route lifecycle, formal progression, graph routing, provider contracts, learner-state machines, cancellation, and dependency rationale. It documents implemented current behavior; the authoritative design separately identifies later gated work.
 
 ## Verification summary
 
@@ -296,6 +308,20 @@ The immutable `issue-4-final` tag has a historical verification record. Current 
 CI runs build, lint, and tests on Ubuntu Node 20, Ubuntu Node 24, and Windows Node 24. `eval:fake` exercises deterministic structural boundaries, including activity executability, grading state safety, semantic-recall fixtures, and lesson provenance. See [Verification](docs/VERIFICATION.md) for exact commands, migration/integration coverage, the evidence-to-requirement matrix, and the limits of each smoke script. The human product/dogfood protocol is maintained separately in [docs/DOGFOOD.md](docs/DOGFOOD.md).
 
 Tests never call the real Hy3 API.
+
+Phase 6B1 and full-repository verification commands are:
+
+```bash
+npm run test -w @hy3-clinic/shared -- src/domain/richDocumentSchemas.test.ts
+npm run test -w @hy3-clinic/server -- src/ingestion/ooxmlPackage.test.ts src/ingestion/richDocuments.test.ts src/ingestion/pdfLayout.test.ts src/ingestion/normalized.test.ts src/ingestion/documents.test.ts src/ingestion/ingestion.test.ts src/services/materials.test.ts src/routes/materials.test.ts src/db/migrate.test.ts src/db/migrateCompat.test.ts
+npm run test -w @hy3-clinic/web -- src/upload.test.ts src/views/GraphWorkspaceView.test.tsx src/App.test.tsx
+npm run build
+npm run lint
+npm test
+npm run eval:fake
+npx prettier --check README.md docs/ARCHITECTURE.md
+git diff --check
+```
 
 ## CodeBuddy collaboration
 
@@ -312,7 +338,9 @@ CodeBuddy confirmed, but did not author, the component's existing native button 
 - Settings local-service tests cover only local reachability. The separate external Hy3 test is explicit, minimal, timestamped, and may consume provider usage; a passing probe is not a guarantee for later large requests. Campaign verification mocks it and makes no real call. Provider configuration edits are validated and activated by the server, while the browser receives only safe non-secret state.
 - Curriculum has progressive disclosure rather than search/filter. Its conservative topic presentation retains every accepted LearningUnit identity and never fabricates mappings, a current unit, or progress state; malformed hierarchy recovery is display-only and does not repair stored Curriculum data.
 - Historical Curricula created before parser-fragment grouping may contain many source-only LearningUnits and remain accepted history. Their smaller learner-facing topic presentation has no planning authority. When those units lack a launchable capability, the supported repair is a separately proposed and learner-accepted successor Curriculum, not a capability backfill or Plan-only display projection. If no current Concept has the exact selected evidence identity, the server will not synthesize one from a LearningUnit title or citation; the learner must first generate revision-grounded Concepts from the Course material, then request the successor.
-- PDF import requires an embedded text layer; there is no OCR. Complex multi-column layouts, rotated text, diagrams, and image text are not reconstructed. DOCX provenance has section headings but no page numbers.
+- PDF import requires an embedded text layer; there is no OCR. Complex multi-column layouts, rotated text, diagrams, PDF figures, and image text are not reconstructed. DOCX provenance has structural order and headings but no page numbers.
+- PPTX text follows stable OOXML drawing-layer order, not a guaranteed semantic reading order. Charts, SmartArt, equations, unknown shapes, and unsupported embedded objects are not semantically interpreted; supported original media can be retained with an explicit partial-extraction warning.
+- Embedded original images are persisted for provenance, not converted into text. There is no visual understanding, generated image description, image semantic search, or HTML/Web Snapshot ingestion.
 - Exact-quote verification establishes location, not semantic entailment. Strict grounding may reject otherwise schema-valid output.
 - 资料映射 reports structural mapping and anchor coverage, never semantic course coverage: a mapped section may still contain uncaptured ideas. Section budgets and the 40-concepts-per-document ceiling bound extraction depth.
 - Lesson cards may teach beyond the uploaded text; such segments are explicitly labeled AI 辅助讲解(非资料原文), are never grading evidence, and their factual quality depends on the configured model.

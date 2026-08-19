@@ -12,6 +12,7 @@ import type {
   DailyQueueItem,
   DocumentDeletionResult,
   DocumentSummary,
+  EmbeddedAsset,
   GradingResult,
   GraphEdge,
   GraphVersion,
@@ -142,6 +143,7 @@ export interface MaterialSummary {
 export interface MaterialWithBlocks {
   material: Material;
   blocks: SourceBlock[];
+  assets?: EmbeddedAsset[];
 }
 
 export interface MistakesResponse {

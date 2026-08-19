@@ -13,7 +13,7 @@ import type {
 } from '@hy3-clinic/shared';
 import { SourceEvidencePanel } from './SourceEvidencePanel.js';
 import { LessonCard } from './LessonCard.js';
-import { Banner, formatPageRange, Loading, MasteryMeter } from './ui.js';
+import { Banner, formatPageRange, formatSlideNumber, Loading, MasteryMeter } from './ui.js';
 import { RELATION_LABELS } from './ConceptGraph.js';
 
 /**
@@ -99,6 +99,7 @@ function EvidenceList({
         const location = [
           doc ? `文档《${doc.title}》` : null,
           block ? formatPageRange(block.pageNumber, block.pageEnd) : null,
+          block ? formatSlideNumber(block.slideNumber) : null,
           block && block.headingPath.length > 0 ? block.headingPath.join(' / ') : null,
         ]
           .filter(Boolean)

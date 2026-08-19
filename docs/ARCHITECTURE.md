@@ -254,11 +254,11 @@ The material library and workspace document endpoint share `createFromUpload`, s
 ### Inputs and limits
 
 - Pasted text uses the text ingestion path.
-- `.md`, `.txt`, `.pdf`, and `.docx` file uploads use base64 JSON and are limited to 10 MB after decoding.
-- Every file is checked against its extension. PDF and DOCX also require matching magic bytes (`%PDF-` or ZIP `PK`); Markdown/TXT bytes pass a binary-content check instead.
+- `.md`, `.txt`, `.pdf`, `.pptx`, and `.docx` file uploads use base64 JSON and are limited to 10 MB after decoding. Common standalone source-code extensions use the same bounded text path.
+- Every file is checked against its extension and optional declared MIME type. PDF requires a `%PDF-` header; PPTX and DOCX require ZIP/OOXML signatures and their expected package parts. Markdown/TXT/source-code bytes pass a binary-content check instead.
 - Invalid, oversized, malformed, and text-free inputs fail before the first database write.
 
-Binary sniffing applies only to raw text-like bytes. Parsed PDF/DOCX text is sanitized instead, preventing valid documents with extractor artifacts from being misclassified as binary.
+Binary sniffing applies only to raw text-like bytes. Parsed PDF/PPTX/DOCX text is sanitized instead, preventing valid documents with extractor artifacts from being misclassified as binary.
 
 ### PDF layout reconstruction
 
@@ -273,13 +273,35 @@ Binary sniffing applies only to raw text-like bytes. Parsed PDF/DOCX text is san
 7. insert ` | ` separators only for conservatively detected aligned table rows; and
 8. return normalized text plus exact per-page character spans.
 
-Paragraphs can cross a repaired page boundary, so blocks store `pageNumber` through nullable `pageEnd`. Image-only pages produce warnings; a document with no extractable text returns `PARSE_FAILED`. There is no OCR.
+Paragraphs can cross a repaired page boundary, so normalized units and SourceBlocks store `pageNumber` through nullable `pageEnd`. Image-only pages produce warnings; a document with no extractable text returns `PARSE_FAILED`. The adapter does not enumerate PDF figures. There is no OCR or visual interpretation.
+
+### Bounded OOXML package reader
+
+PPTX and revision-aware production DOCX ingestion share a purpose-built bounded package reader over `yauzl@3.4.0`. It keeps members in bounded memory and never extracts an uploaded package to the filesystem. The hard limits are 1,000 members, 20 MiB per expanded member, 100 MiB total expanded bytes, and a 1,000:1 maximum declared compression ratio; streamed byte counts are checked again rather than trusting the central directory.
+
+The reader rejects absolute/traversing or duplicate normalized paths, encrypted members, unsupported compression methods, impossible sizes, malformed central directories, and declared/actual size disagreement. Relationship resolution cannot escape the package. External URI, fragment, and query targets resolve to no local member and are never fetched. XML parsing rejects `DOCTYPE`/entity declarations and bounds each parse to 40 MiB of XML, 200,000 element nodes in aggregate, and depth 100. Learner-visible warnings do not expose internal OOXML relationship IDs.
+
+### PPTX extraction
+
+`pptx-ooxml-rich-v1` follows the relationship order declared by `ppt/presentation.xml`; it does not infer order from slide filenames. Each accepted SourceBlock carries its 1-based `slideNumber`. Inside a slide, grouped shapes are traversed in stable OOXML drawing-layer order. This policy is deterministic and auditable, but every PPTX receives an explicit warning that drawing-layer order may not equal spatial or semantic reading order.
+
+The adapter preserves visible shape paragraphs, contiguous list items, reversibly escaped TSV tables with row/column/cell-paragraph order, speaker notes as separate `speaker_notes` units owned by their slide, and supported embedded media relationships. Notes are source content from the package and are never silently merged into visible slide text. Missing or malformed relationships, unsupported object kinds, and text-free slides produce partial-extraction warnings. A presentation with neither extractable text nor a supported original asset fails; an asset-only presentation remains valid original source material but produces no textual SourceBlocks.
+
+Charts and SmartArt are recorded only as unsupported/partial warnings; their labels are not flattened into fabricated semantic claims. Equations, unknown shapes, and unsupported embedded objects are likewise not interpreted. No external relationship is fetched.
 
 ### DOCX conversion
 
-`mammoth` converts DOCX XML into constrained HTML, and the local `docxHtmlToText` converter preserves heading/list/table text as Markdown-style input for the existing segmenter. Macros and scripts are not executed. Mammoth's default image conversion can read and encode embedded image data, but the local converter discards the resulting `<img>` output.
+Revision-aware production ingestion uses `docx-ooxml-rich-v1` over the bounded OOXML reader. It walks body children in package order and preserves Heading 1-6 hierarchy, paragraphs, contiguous lists/list items, reversibly escaped TSV tables, embedded media relationships, and headers/footers as structurally distinct source units. It never executes macros or document code and never fetches an external relationship. An asset-only DOCX remains valid original source material but produces no textual SourceBlocks.
 
-DOCX has heading-path provenance but no reliable page numbers.
+`mammoth` remains as the compatibility conversion path for callers without revision identity and for historical behavior tests; accepted revision-aware production imports and reprocessing use the direct OOXML path so structural and embedded-asset provenance share one parser boundary. DOCX has heading/document-structure provenance but no reliable page numbers, so none are invented. Footnotes/endnotes, equations, drawings, and other unsupported objects are not claimed as complete.
+
+### Embedded ORIGINAL assets
+
+Supported PPTX/DOCX media relationships produce immutable revision-local asset records. Each record binds the logical Material, exact MaterialRevision, stable revision-local index/ID, parent structural unit when known, package source path, signature-validated media type, SHA-256 byte hash, byte length, deterministic dimensions when available, slide/document location, relationship kind, and parser version. PNG, JPEG, GIF, BMP, TIFF, WMF, EMF, WAV, MP3, and MP4 signatures are recognized locally; PNG, JPEG, and GIF dimensions are retained when their headers are valid. Unknown or conflicting types receive warnings and unknown dimensions remain `null`.
+
+The exact uploaded member bytes are `extracted_original` source material. `source_asset_blobs` stores them once by hash, while `material_revision_assets` preserves immutable revision ownership and provenance. Repository writes validate owner IDs, parent unit IDs, byte length, and hash collisions transactionally. These child assets are not independent logical Materials, and activating a later revision does not rewrite older asset records.
+
+OCR, generated descriptions, and AI interpretation are intentionally absent. A future OCR result or visual description would be DERIVED content and would not replace or become identical to the ORIGINAL asset.
 
 ### Parsed-text sanitation
 
@@ -291,7 +313,7 @@ Every stored source block maintains:
 document.content.slice(block.startOffset, block.endOffset) === block.content
 ```
 
-Blocks also carry stable content-derived IDs, heading paths, and optional PDF page ranges. Parser warnings/version, media type, filename, and page count are stored on the document. PDF/DOCX documents also retain their original upload bytes; text documents retain normalized content instead.
+Blocks also carry stable content-derived IDs, heading paths, optional PDF page ranges or PPTX slide numbers, normalized structural-unit identity, `structure-aware-v1` chunker identity, and `extracted_original` content origin. Small tables and other ordinary structural units remain intact; oversized units split deterministically at bounded line/hard boundaries without generic overlap becoming independent evidence. Parser warnings/version, media type, filename, and page count are stored on the document. PDF/PPTX/DOCX documents retain their original upload bytes; text documents retain normalized content instead.
 
 ## 9. Workspace and document lifecycle
 
@@ -307,7 +329,7 @@ Both document-removal endpoints retire the stable Material, preserve its revisio
 
 Explicit workspace deletion is available for every origin. After confirmation, `DELETE /api/workspaces/:id` cascades documents, blocks, concepts, graph data, quizzes/history, mistakes, mastery, alignments, misconceptions, review data, Tutor data, and blueprints in one transaction. A missing workspace is treated as already deleted by the UI.
 
-Reprocessing reruns the current parser from stored original bytes for PDF/DOCX, or reruns text ingestion and segmentation from stored normalized content for pasted text, Markdown, and TXT. `materials.id` remains the stable logical identity. The service stages a new immutable `MaterialRevision` and revision-owned SourceBlocks, then activates it transactionally only after parsing and structural validation succeed. Earlier revisions, concepts, quizzes, attempts, mistakes, mastery, and other longitudinal history remain stored; ordinary current-state reads select artifacts owned by the active revision. Exact truth-authority records tied to the replaced revision become stale rather than being rewritten, and an accepted route is marked `revalidation_required` before another Tutor turn or action may launch. The stable Learning Contract is not versioned merely because extraction changed. A parser failure is recorded and leaves the prior active revision and route unchanged. Legacy binary documents imported before original-byte storage cannot be reprocessed and must be re-imported.
+Reprocessing reruns the current parser from stored original bytes for PDF/PPTX/DOCX, or reruns text ingestion and segmentation from stored normalized content for pasted text, Markdown, and TXT. `materials.id` remains the stable logical identity. The service stages a new immutable `MaterialRevision`, revision-owned structural units, SourceBlocks, and embedded assets, then activates it transactionally only after parsing and structural validation succeed. Earlier revisions, assets, concepts, quizzes, attempts, mistakes, mastery, and other longitudinal history remain stored; ordinary current-state reads select artifacts owned by the active revision. Exact truth-authority records tied to the replaced revision become stale rather than being rewritten, and an accepted route is marked `revalidation_required` before another Tutor turn or action may launch. The stable Learning Contract is not versioned merely because extraction changed. A parser failure is recorded and leaves the prior active revision and route unchanged. Legacy binary documents imported before original-byte storage cannot be reprocessed and must be re-imported.
 
 Retiring one document clears the active graph pointer, marks dependent source-authority records stale, and requires accepted-route revalidation. Immutable revisions, concepts, graph history, assessments, and learner state remain inspectable; current active-material reads exclude the retired source. Canonical groups remain backed by their surviving source concepts where available.
 
@@ -315,7 +337,7 @@ Retiring one document clears the active graph pointer, marks dependent source-au
 
 `better-sqlite3` runs with foreign keys enabled. Repositories validate domain objects on writes and reads. Multi-row operations use explicit transactions, and migrations are recorded in `schema_migrations`.
 
-The 19 shipped migrations are:
+The 24 shipped migrations are:
 
 1. `initial_schema` - original materials, blocks, concepts, quizzes, grading, mistakes, and mastery.
 2. `course_workspaces_and_documents` - workspaces, document metadata/original bytes, and source-block page numbers; every legacy material receives a compatibility workspace without learning-data deletion.
@@ -339,6 +361,8 @@ The 19 shipped migrations are:
 20. `immutable_learning_unit_teaching_briefs` - append-only, route- and source-pinned Teaching Brief artifacts.
 21. `session_owned_lesson_execution` - weak StudySession-owned lesson presentation state and append-only presentation events.
 22. `tutor_pedagogy_turn_metadata` - nullable audit metadata for the selected pedagogical move and offered source references on conversational StudySession turns.
+23. `structure_aware_material_derivation_metadata` - parser/chunker/source fingerprints, revision-owned normalized structural kinds and locations, SourceBlock structural-unit ownership, `structure-aware-v1` identity, and honest nullable legacy metadata.
+24. `rich_document_assets_and_slide_provenance` - PPTX slide locations on normalized units and SourceBlocks plus hash-addressed original asset blobs and immutable MaterialRevision-owned asset provenance.
 
 Table-rebuild migrations disable foreign keys only around the controlled rebuild, run `foreign_key_check` before commit, and restore enforcement even after failure. Tests cover idempotence, populated v1 and v3 upgrades, all-or-nothing rollback, and data preservation.
 
@@ -594,7 +618,9 @@ At process startup, unfinished StudySession turns and running operations are mar
 | Dependency | Scope | Rationale |
 | --- | --- | --- |
 | [`unpdf`](https://github.com/unjs/unpdf) | server | Maintained serverless PDF.js distribution exposing positioned text items needed for deterministic layout reconstruction and page provenance, without native binaries or OCR. |
-| [`mammoth`](https://github.com/mwilliamson/mammoth.js) | server | Maintained DOCX-to-HTML converter whose structural output can be reduced locally to text/headings/lists/tables; image output is discarded and no document code is executed. |
+| [`mammoth`](https://github.com/mwilliamson/mammoth.js) | server | Retained compatibility DOCX-to-HTML path for historical/non-revision-aware callers; revision-aware production DOCX ingestion now uses the bounded direct OOXML adapter. |
+| [`yauzl@3.4.0`](https://github.com/thejoshwolfe/yauzl) | server | Small, maintained lazy-entry ZIP reader used only for bounded PPTX/DOCX package access. It supports central-directory validation and streamed member reads without extracting attacker-controlled paths to disk; local code adds member, byte, compression-ratio, duplicate-path, encryption, and relationship gates. |
+| [`@xmldom/xmldom@0.8.13`](https://github.com/xmldom/xmldom) | server | Maintained namespace-aware XML DOM parser used for the limited OOXML parts needed by PPTX/DOCX structure and relationships. Local code rejects entity/doctype declarations, malformed XML, and oversized/deep trees before consuming nodes. |
 | [`@xyflow/react`](https://github.com/xyflow/xyflow) | web | Maintained React 18 graph renderer with accessible pan/zoom, selection, and controlled dragging. |
 | [`d3-force`](https://github.com/d3/d3-force) | web | Small standard force-layout library used for bounded, hash-seeded synchronous network layout. |
 
@@ -604,9 +630,11 @@ No vector database, graph database, orchestration framework, authentication laye
 
 - Settings can verify local health/config endpoints and, only after an explicit user action, run the minimal external Hy3 connectivity probe. It also edits server-owned provider configuration through validated loopback APIs; campaign verification never calls the real provider.
 - Curriculum uses branch expansion and a 12-unit preview for large direct-unit sections, but it has no search/filter. Missing current/progress state remains visibly unavailable, and malformed-tree recovery changes presentation only.
-- PDF fidelity depends on the file's text layer. There is no OCR, and rotated/multi-column text, diagrams, complex tables, and text in images are not reconstructed.
+- PDF fidelity depends on the file's text layer. There is no OCR, and rotated/multi-column text, diagrams, PDF figures, complex tables, and text in images are not reconstructed.
 - Header/footer removal, visual-wrap repair, heading recognition, and table detection are conservative heuristics and can misclassify pathological documents.
-- DOCX does not provide stable page provenance; embedded image content is discarded.
+- PPTX drawing-layer order is deterministic but is not guaranteed spatial/semantic reading order. Charts, SmartArt, equations, unknown shapes, and unsupported embedded objects are not semantically interpreted.
+- DOCX does not provide stable page provenance. Footnotes/endnotes, equations, drawings, and other unsupported document objects may be absent or produce partial warnings.
+- Embedded PPTX/DOCX images retain exact ORIGINAL bytes and provenance, but no OCR, visual description, visual understanding, or image semantic search is implemented. HTML/Web Snapshot ingestion is also not implemented.
 - Grounding can reject semantically reasonable output when an exact quote is unavailable or ambiguous.
 - Structural document mapping reports which sections have grounded concepts and which blocks are cited by verified anchors; it never measures semantic coverage, and a "mapped" section may still contain uncaptured ideas. Semantic recall lives in the evaluation suite against hand-authored labels.
 - Lesson cards may contain model teaching that goes beyond the uploaded text; it is labeled AI 辅助讲解(非资料原文) and is never grading evidence, but its factual quality depends on the configured model and should be read critically. Section-aware extraction and lesson quality are bounded by the size-aware budgets and the 40-concepts-per-document ceiling.
@@ -659,12 +687,28 @@ Source disclosure is deliberately narrower than accepted metadata alone. Operati
 
 Verification commands, test counts, migration coverage, public evidence, and reviewer mappings are maintained separately in [Verification and Reviewer Evidence](VERIFICATION.md).
 
-## 17. Material extraction foundation
+## 24. Normalized material extraction foundation
 
-The supported learning-material core is pasted text, Markdown, TXT, text-layer PDF, DOCX text extraction, and standalone source-code files. Uploads are resolved through the parser registry using filename, optional declared MIME, and parser-level signature checks. Unknown or mismatched inputs fail closed; bounded input, unit, and chunk limits prevent an archive or parser from becoming an unbounded resource consumer.
+The supported learning-material core is pasted text, Markdown, TXT, text-layer PDF, PPTX, rich DOCX, and standalone source-code files. Uploads are resolved through the parser registry using filename, optional declared MIME, and parser-level signature checks. Unknown or mismatched inputs fail closed; bounded input, OOXML archive/XML, unit, and chunk limits prevent a parser from becoming an unbounded resource consumer.
 
-Adapters produce a normalized ordered document structure before chunking. The structure can represent headings, sections, paragraphs, lists/list items, quotes, fenced code, tables, pages, slides, figures, HTML blocks, and source-code constructs, while Phase 6A production adapters are limited to Markdown/TXT/source code and the existing PDF/DOCX paths. Structure-aware chunking attaches heading spans and paths to the content they govern, keeps normalized structural units separate for primary provenance, keeps fenced code and small tables intact, and falls back to line or hard-boundary splitting only for oversized units. It does not use generic overlap as independent evidence.
+Adapters produce a normalized ordered document structure before chunking. Production units include headings, sections, paragraphs, lists/list items, quotes, fenced code, conservative tables, PDF page locations, PPTX slides/text boxes/speaker notes, DOCX document structure, and source-code constructs. `structure-aware-v1` attaches heading spans and paths to the content they govern, keeps normalized structural units separate for primary provenance, keeps fenced code and small tables intact, and falls back to line or hard-boundary splitting only for oversized units. It does not use generic overlap as independent evidence or merge unrelated slides merely to reach a target size.
 
-Each accepted SourceBlock retains exact offsets into the normalized revision text, heading path, page or line location where available, normalized-unit identity, content-origin class, and chunker version. Parser and chunker identities are persisted with the immutable MaterialRevision derivation metadata. Legacy rows remain nullable/unknown and are never relabeled retroactively. `extracted_original` is distinct from derived OCR, visual descriptions, layout labels, or summaries; derived text may aid navigation and teaching but is not automatically Course Truth. Exact quote validation proves occurrence at the recorded span, not complete semantic entailment.
+Each accepted SourceBlock retains exact offsets into the normalized revision text, heading path, page/slide/document or line location where available, normalized-unit identity, content-origin class, and chunker version. Parser and chunker identities are persisted with the immutable MaterialRevision derivation metadata. Legacy rows remain nullable/unknown and are never relabeled retroactively. `extracted_original` is distinct from derived OCR, visual descriptions, layout labels, or summaries; derived text may aid navigation and teaching but is not automatically Course Truth. Exact quote validation proves occurrence at the recorded span, not complete semantic entailment.
 
-PPTX, richer DOCX structure, standalone-image interpretation, embedded visual assets, and HTML snapshots remain later adapter work. This phase does not claim OCR, multimodal understanding, repository ingestion, AST/call-graph analysis, or spreadsheet support.
+PPTX and richer DOCX structure now retain supported embedded ORIGINAL assets with immutable revision provenance. Standalone-image semantic preparation, OCR, visual descriptions, image semantic search, HTML/Web Snapshot ingestion, semantic chart/SmartArt/equation interpretation, repository ingestion, AST/call-graph analysis, and spreadsheet support are not implemented.
+
+The parser and persistence path is identical in Fake and real-Hy3 modes and makes no provider call. `LLM_PROVIDER`, Hy3 endpoint/model/credential configuration, provider budgets, and external connectivity checks are unchanged by rich-document ingestion.
+
+Exact focused and full verification commands are:
+
+```bash
+npm run test -w @hy3-clinic/shared -- src/domain/richDocumentSchemas.test.ts
+npm run test -w @hy3-clinic/server -- src/ingestion/ooxmlPackage.test.ts src/ingestion/richDocuments.test.ts src/ingestion/pdfLayout.test.ts src/ingestion/normalized.test.ts src/ingestion/documents.test.ts src/ingestion/ingestion.test.ts src/services/materials.test.ts src/routes/materials.test.ts src/db/migrate.test.ts src/db/migrateCompat.test.ts
+npm run test -w @hy3-clinic/web -- src/upload.test.ts src/views/GraphWorkspaceView.test.tsx src/App.test.tsx
+npm run build
+npm run lint
+npm test
+npm run eval:fake
+npx prettier --check README.md docs/ARCHITECTURE.md
+git diff --check
+```

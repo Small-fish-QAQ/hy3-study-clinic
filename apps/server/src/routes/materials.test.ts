@@ -419,7 +419,7 @@ describe('POST /api/materials (file imports)', () => {
     const res = await ctx.app.inject({
       method: 'POST',
       url: '/api/materials',
-      payload: { filename: 'slides.pptx', dataBase64: fixtureB64('sample.pdf') },
+      payload: { filename: 'slides.ppt', dataBase64: fixtureB64('sample.pdf') },
     });
     expect(res.statusCode).toBe(415);
     expect(res.json().error.code).toBe('UNSUPPORTED_FILE');

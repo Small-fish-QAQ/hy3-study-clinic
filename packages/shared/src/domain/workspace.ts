@@ -68,7 +68,7 @@ export const DocumentSummarySchema = z.object({
   sourceType: SourceTypeSchema,
   mediaType: MediaTypeSchema.nullable(),
   originalFilename: z.string().max(255).nullable(),
-  charCount: z.number().int().positive(),
+  charCount: z.number().int().nonnegative(),
   blockCount: z.number().int().nonnegative(),
   conceptCount: z.number().int().nonnegative(),
   parseStatus: ParseStatusSchema,

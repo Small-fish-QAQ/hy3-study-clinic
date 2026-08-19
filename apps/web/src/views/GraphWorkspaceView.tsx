@@ -37,6 +37,8 @@ import {
   UPLOAD_ACCEPT,
   UPLOAD_OCR_LIMIT_TEXT,
   fileToBase64,
+  isBinaryUploadKind,
+  uploadKindOf,
   uploadValidationError,
 } from '../upload.js';
 
@@ -47,6 +49,7 @@ const SOURCE_TYPE_TEXT: Record<string, string> = {
   md: 'Markdown',
   txt: 'TXT',
   pdf: 'PDF',
+  pptx: 'PPTX',
   docx: 'DOCX',
 };
 
@@ -529,13 +532,14 @@ export function GraphWorkspaceView({
   async function handleAddFile(file: File) {
     if (!activeWorkspaceId) return;
     const workspaceId = activeWorkspaceId;
-    const lower = file.name.toLowerCase();
-    const isBinary = lower.endsWith('.pdf') || lower.endsWith('.docx');
+    const kind = uploadKindOf(file.name);
     const result = await addDocAction.run(async (signal) => {
       // Same pre-flight rules as the material library; the server re-checks.
       const validationError = uploadValidationError(file);
-      if (validationError) throw new Error(validationError);
-      if (isBinary) {
+      if (validationError || kind === null) {
+        throw new Error(validationError ?? '不支持的文件类型。');
+      }
+      if (isBinaryUploadKind(kind)) {
         const dataBase64 = await fileToBase64(file);
         return api.addDocument(
           workspaceId,
@@ -1091,7 +1095,9 @@ export function GraphWorkspaceView({
                             提取概念
                           </button>
                         ) : null}
-                        {doc.sourceType === 'pdf' || doc.sourceType === 'docx' ? (
+                        {doc.sourceType === 'pdf' ||
+                        doc.sourceType === 'pptx' ||
+                        doc.sourceType === 'docx' ? (
                           <button
                             type="button"
                             className="ghost small"
@@ -1545,7 +1551,7 @@ function GraphOnboarding({
           <span>
             {courseLocked
               ? '请先从主页添加课程资料，之后即可在这里提取概念并生成学习图谱。'
-              : '先在左侧「课程资料」添加课程文档(支持粘贴文本、Markdown、TXT、PDF、DOCX)。'}
+              : '先在左侧「课程资料」添加课程文档(支持粘贴文本、Markdown、TXT、PDF、PPTX、DOCX)。'}
           </span>
           {courseLocked && onOpenMaterials ? (
             <button type="button" className="primary" onClick={onOpenMaterials}>
@@ -1636,7 +1642,7 @@ function AddDocumentForm({
             ref={fileInputRef}
             type="file"
             accept={UPLOAD_ACCEPT}
-            aria-label="上传文档文件(.md / .txt / .pdf / .docx)"
+            aria-label="上传文档文件(.md / .txt / .pdf / .pptx / .docx)"
             disabled={loading}
             onChange={(e) => {
               const file = e.target.files?.[0];
@@ -1644,7 +1650,7 @@ function AddDocumentForm({
               if (fileInputRef.current) fileInputRef.current.value = '';
             }}
           />
-          上传文件(.md / .txt / .pdf / .docx,≤10MB)
+          上传文件(.md / .txt / .pdf / .pptx / .docx,≤10MB)
         </label>
         <p className="muted small">{UPLOAD_OCR_LIMIT_TEXT}</p>
         {loading ? (

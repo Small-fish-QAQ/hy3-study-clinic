@@ -8,15 +8,16 @@ import { MAX_DOCUMENT_FILE_BYTES } from '@hy3-clinic/shared';
  */
 
 /** File extensions accepted by every import surface (must match the server). */
-export const UPLOAD_ACCEPT = '.md,.markdown,.txt,.pdf,.docx';
+export const UPLOAD_ACCEPT = '.md,.markdown,.txt,.pdf,.pptx,.docx';
 
 /** Consistent supported-format wording shown next to upload controls. */
-export const UPLOAD_FORMATS_TEXT = '支持粘贴文本及 Markdown、TXT、PDF、DOCX 文件。';
+export const UPLOAD_FORMATS_TEXT = '支持粘贴文本及 Markdown、TXT、PDF、PPTX、DOCX 文件。';
 
 /** Consistent OCR-limitation wording shown next to upload controls. */
 export const UPLOAD_OCR_LIMIT_TEXT = '暂不支持纯扫描图片型 PDF;PDF 中需要包含可提取文本。';
 
-export type UploadKind = 'md' | 'txt' | 'pdf' | 'docx';
+export type UploadKind = 'md' | 'txt' | 'pdf' | 'pptx' | 'docx';
+export type BinaryUploadKind = 'pdf' | 'pptx' | 'docx';
 
 const EXTENSION_KINDS: Record<string, UploadKind> = {
   md: 'md',
@@ -24,6 +25,7 @@ const EXTENSION_KINDS: Record<string, UploadKind> = {
   txt: 'txt',
   text: 'txt',
   pdf: 'pdf',
+  pptx: 'pptx',
   docx: 'docx',
 };
 
@@ -32,6 +34,7 @@ export const UPLOAD_KIND_LABELS: Record<UploadKind, string> = {
   md: 'Markdown',
   txt: '文本',
   pdf: 'PDF',
+  pptx: 'PowerPoint 演示文稿',
   docx: 'Word 文档',
 };
 
@@ -42,8 +45,8 @@ export function uploadKindOf(filename: string): UploadKind | null {
 }
 
 /** True when the file must be sent base64-encoded instead of as text. */
-export function isBinaryUploadKind(kind: UploadKind): kind is 'pdf' | 'docx' {
-  return kind === 'pdf' || kind === 'docx';
+export function isBinaryUploadKind(kind: UploadKind): kind is BinaryUploadKind {
+  return kind === 'pdf' || kind === 'pptx' || kind === 'docx';
 }
 
 /**
@@ -52,7 +55,7 @@ export function isBinaryUploadKind(kind: UploadKind): kind is 'pdf' | 'docx' {
  */
 export function uploadValidationError(file: File): string | null {
   if (uploadKindOf(file.name) === null) {
-    return '不支持的文件类型:仅接受 .md、.txt、.pdf 与 .docx 文件。';
+    return '不支持的文件类型:仅接受 .md、.txt、.pdf、.pptx 与 .docx 文件。';
   }
   if (file.size === 0) {
     return '上传的文件为空。';

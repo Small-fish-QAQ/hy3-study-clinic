@@ -57,7 +57,9 @@ export function registerWorkspaceRoutes(app: FastifyInstance, services: Services
   app.post('/api/workspaces/:id/documents', async (request, reply) => {
     const { id } = WorkspaceIdParams.parse(request.params);
     const body = AddDocumentRequestSchema.parse(request.body);
-    const created = await services.workspaces.addDocument(id, body);
+    const created = await services.workspaces.addDocument(id, body, {
+      signal: requestSignal(request, reply),
+    });
     reply.status(201);
     return created;
   });
@@ -67,9 +69,11 @@ export function registerWorkspaceRoutes(app: FastifyInstance, services: Services
     return { documents: services.workspaces.listDocuments(id) };
   });
 
-  app.post('/api/workspaces/:id/documents/:docId/reprocess', async (request) => {
+  app.post('/api/workspaces/:id/documents/:docId/reprocess', async (request, reply) => {
     const { id, docId } = DocumentParams.parse(request.params);
-    return services.workspaces.reprocessDocument(id, docId);
+    return services.workspaces.reprocessDocument(id, docId, {
+      signal: requestSignal(request, reply),
+    });
   });
 
   // Returns the structured deletion result (200) instead of a bare 204 —

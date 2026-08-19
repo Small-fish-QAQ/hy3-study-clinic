@@ -5,8 +5,11 @@ import { Banner, Loading } from '../components/ui.js';
 import { useAsyncAction } from '../components/useAsyncAction.js';
 import {
   UPLOAD_ACCEPT,
+  UPLOAD_FORMATS_TEXT,
   UPLOAD_OCR_LIMIT_TEXT,
   fileToBase64,
+  isBinaryUploadKind,
+  uploadKindOf,
   uploadValidationError,
 } from '../upload.js';
 
@@ -25,6 +28,7 @@ const SOURCE_LABELS: Record<string, string> = {
   md: 'Markdown',
   txt: 'TXT',
   pdf: 'PDF',
+  pptx: 'PPTX',
   docx: 'DOCX',
 };
 
@@ -79,17 +83,16 @@ export function CourseMaterialsView({
   }
 
   async function addFile(file: File): Promise<void> {
+    const kind = uploadKindOf(file.name);
     const validationError = uploadValidationError(file);
-    if (validationError) {
+    if (validationError || kind === null) {
       await action.run(async () => {
-        throw new Error(validationError);
+        throw new Error(validationError ?? '不支持的文件类型。');
       });
       return;
     }
-    const lower = file.name.toLowerCase();
-    const binary = lower.endsWith('.pdf') || lower.endsWith('.docx');
     const result = await action.run(async (signal) => {
-      if (binary) {
+      if (isBinaryUploadKind(kind)) {
         const dataBase64 = await fileToBase64(file);
         return api.addDocument(
           workspaceId,
@@ -222,7 +225,9 @@ export function CourseMaterialsView({
                         </dl>
                       </details>
                       <div className="row material-actions">
-                        {document.sourceType === 'pdf' || document.sourceType === 'docx' ? (
+                        {document.sourceType === 'pdf' ||
+                        document.sourceType === 'pptx' ||
+                        document.sourceType === 'docx' ? (
                           <button
                             type="button"
                             disabled={action.loading}
@@ -307,7 +312,10 @@ export function CourseMaterialsView({
               </>
             ) : null}
           </div>
-          <p className="small muted">支持 Markdown、TXT、PDF 和 DOCX。{UPLOAD_OCR_LIMIT_TEXT}</p>
+          <p className="small muted">
+            {UPLOAD_FORMATS_TEXT}
+            {UPLOAD_OCR_LIMIT_TEXT}
+          </p>
         </div>
       </details>
     </div>

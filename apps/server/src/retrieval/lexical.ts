@@ -29,6 +29,7 @@ export interface RetrievalResult {
   blockId: string;
   materialId: string;
   pageNumber: number | null;
+  slideNumber: number | null;
   headingPath: string[];
   /** BM25-style relevance score (rounded, deterministic). */
   matchScore: number;
@@ -151,6 +152,7 @@ export function searchSourceBlocks(
       blockId: block.id,
       materialId: block.materialId,
       pageNumber: block.pageNumber,
+      slideNumber: block.slideNumber ?? null,
       headingPath: block.headingPath,
       matchScore: roundTo(score, 4),
       excerpt: excerpt.text,
@@ -170,6 +172,7 @@ export function searchSourceBlocks(
         blockId: block.id,
         materialId: block.materialId,
         pageNumber: block.pageNumber,
+        slideNumber: block.slideNumber ?? null,
         headingPath: block.headingPath,
         matchScore: 0,
         excerpt: excerpt.text,

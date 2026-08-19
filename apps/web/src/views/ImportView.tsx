@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import type { Concept } from '@hy3-clinic/shared';
 import { api, type MaterialSummary, type MaterialWithBlocks } from '../api.js';
-import { Banner, formatPageRange, Loading } from '../components/ui.js';
+import { Banner, formatPageRange, formatSlideNumber, Loading } from '../components/ui.js';
 import { SourceEvidencePanel } from '../components/SourceEvidencePanel.js';
 import { useAsyncAction } from '../components/useAsyncAction.js';
 import {
@@ -13,6 +13,7 @@ import {
   isBinaryUploadKind,
   uploadKindOf,
   uploadValidationError,
+  type BinaryUploadKind,
 } from '../upload.js';
 
 export interface ImportViewProps {
@@ -74,9 +75,10 @@ export function ImportView({
 }: ImportViewProps) {
   const [content, setContent] = useState('');
   const [filename, setFilename] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<{ file: File; kind: 'pdf' | 'docx' } | null>(
-    null,
-  );
+  const [selectedFile, setSelectedFile] = useState<{
+    file: File;
+    kind: BinaryUploadKind;
+  } | null>(null);
   const [title, setTitle] = useState('');
   const [fileError, setFileError] = useState<string | null>(null);
   const [historyQuery, setHistoryQuery] = useState('');
@@ -137,7 +139,7 @@ export function ImportView({
     }
     setFileError(null);
     if (isBinaryUploadKind(kind)) {
-      // PDF/DOCX are parsed server-side: stage the file for import.
+      // Rich binary documents are parsed server-side: stage the file for import.
       setSelectedFile({ file, kind });
       setContent('');
       setFilename(file.name);
@@ -485,7 +487,7 @@ export function ImportView({
               disabled={materialOpening || materialManagementActive || importAction.loading}
               style={{ display: 'none' }}
               onChange={(e) => void onFileChange(e.target.files)}
-              aria-label="选择 .md、.txt、.pdf 或 .docx 文件"
+              aria-label="选择 .md、.txt、.pdf、.pptx 或 .docx 文件"
             />
             <button
               type="button"
@@ -598,7 +600,7 @@ export function ImportView({
                 #{block.index}
                 {block.headingPath.length > 0
                   ? ` · ${block.headingPath.join(' / ')}`
-                  : ` · ${formatPageRange(block.pageNumber, block.pageEnd) ?? '(无标题)'}`}
+                  : ` · ${formatPageRange(block.pageNumber, block.pageEnd) ?? formatSlideNumber(block.slideNumber) ?? '(无标题)'}`}
               </div>
               <div style={{ whiteSpace: 'pre-wrap' }}>{block.content}</div>
             </div>

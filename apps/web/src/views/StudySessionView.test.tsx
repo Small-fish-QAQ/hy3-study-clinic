@@ -127,6 +127,7 @@ const lessonReady: LessonExecutionProjection = {
             materialTitle: '概率论讲义',
             headingPath: ['第二章', '条件概率'],
             pageNumber: 12,
+            slideNumber: null,
             locationLabel: '第 12 页 · 条件概率',
             exactExcerpt: '在已知事件 B 发生时，事件 A 的条件概率记作 P(A|B)。',
             classification: 'exact_source_excerpt',

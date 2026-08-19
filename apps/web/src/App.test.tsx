@@ -1077,9 +1077,10 @@ describe('Import flow', () => {
   });
 });
 
-describe('File import (PDF/DOCX)', () => {
-  const FILE_INPUT_LABEL = '选择 .md、.txt、.pdf 或 .docx 文件';
+describe('File import (PDF/PPTX/DOCX)', () => {
+  const FILE_INPUT_LABEL = '选择 .md、.txt、.pdf、.pptx 或 .docx 文件';
   const PDF_BYTES = '%PDF-1.4 fake fixture body';
+  const PPTX_BYTES = 'PK\u0003\u0004 fake presentation fixture body';
 
   const pdfMaterial = {
     material: {
@@ -1113,14 +1114,14 @@ describe('File import (PDF/DOCX)', () => {
     await renderAppAtMaterials();
 
     expect(
-      await screen.findByText(/支持粘贴文本及 Markdown、TXT、PDF、DOCX 文件。/),
+      await screen.findByText(/支持粘贴文本及 Markdown、TXT、PDF、PPTX、DOCX 文件。/),
     ).toBeInTheDocument();
     expect(
       screen.getByText(/暂不支持纯扫描图片型 PDF;PDF 中需要包含可提取文本。/),
     ).toBeInTheDocument();
     expect(screen.getByLabelText(FILE_INPUT_LABEL)).toHaveAttribute(
       'accept',
-      '.md,.markdown,.txt,.pdf,.docx',
+      '.md,.markdown,.txt,.pdf,.pptx,.docx',
     );
   });
 
@@ -1157,6 +1158,23 @@ describe('File import (PDF/DOCX)', () => {
     expect(window.localStorage.getItem(LAST_MATERIAL_ID_KEY)).toBe(material.material.id);
     // Staging is cleared after a successful import.
     expect(screen.queryByRole('button', { name: '移除文件' })).not.toBeInTheDocument();
+  });
+
+  it('stages a PPTX as a server-parsed presentation', async () => {
+    installFetchMock(baseRoutes);
+    await renderAppAtMaterials();
+
+    await screen.findByRole('button', { name: '选择文件' });
+    pickFile(
+      new File([PPTX_BYTES], 'lecture.pptx', {
+        type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      }),
+    );
+
+    expect(await screen.findByText('lecture.pptx(PowerPoint 演示文稿,待导入)')).toBeInTheDocument();
+    expect(screen.getByText('导入后在服务器解析并切分')).toBeInTheDocument();
+    expect(screen.getByLabelText('资料内容')).toHaveValue('');
+    expect(screen.getByRole('button', { name: '导入并切分' })).toBeEnabled();
   });
 
   it('shows an importing state, blocks duplicate submissions, and supports cancel', async () => {
@@ -1230,9 +1248,9 @@ describe('File import (PDF/DOCX)', () => {
     await renderAppAtMaterials();
 
     await screen.findByRole('button', { name: '选择文件' });
-    pickFile(new File(['slides'], 'slides.pptx'));
+    pickFile(new File(['workbook'], 'workbook.xlsx'));
     expect(
-      await screen.findByText('不支持的文件类型:仅接受 .md、.txt、.pdf 与 .docx 文件。'),
+      await screen.findByText('不支持的文件类型:仅接受 .md、.txt、.pdf、.pptx 与 .docx 文件。'),
     ).toBeInTheDocument();
 
     pickFile(new File([new ArrayBuffer(MAX_DOCUMENT_FILE_BYTES + 1)], 'big.pdf'));

@@ -46,9 +46,12 @@ function sourceProjection(brief: TeachingBrief, repos: Repositories): LessonSour
       materialTitle: material?.title ?? 'Course source',
       headingPath: reference.headingPath,
       pageNumber: reference.pageNumber,
+      slideNumber: reference.slideNumber,
       locationLabel: reference.pageNumber
         ? `Page ${reference.pageNumber}`
-        : reference.headingPath.join(' › ') || 'Source excerpt',
+        : reference.slideNumber
+          ? `Slide ${reference.slideNumber}`
+          : reference.headingPath.join(' › ') || 'Source excerpt',
       exactExcerpt: reference.quote,
       classification: 'exact_source_excerpt' as const,
     };

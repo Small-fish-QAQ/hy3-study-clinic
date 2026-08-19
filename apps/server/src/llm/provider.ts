@@ -353,6 +353,7 @@ export interface TeachingBriefGenerationInput {
       materialTitle: string;
       headingPath: string[];
       pageNumber: number | null;
+      slideNumber: number | null;
       text: string;
     }>;
   };

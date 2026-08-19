@@ -81,6 +81,7 @@ interface BlockRow {
   heading_path: string;
   page_number: number | null;
   page_end: number | null;
+  slide_number: number | null;
   content: string;
   start_offset: number;
   end_offset: number;
@@ -158,6 +159,7 @@ function toBlock(row: BlockRow): SourceBlock {
     headingPath: JSON.parse(row.heading_path) as string[],
     pageNumber: row.page_number,
     pageEnd: row.page_end,
+    slideNumber: row.slide_number,
     content: row.content,
     startOffset: row.start_offset,
     endOffset: row.end_offset,

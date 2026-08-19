@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { MAX_DOCUMENT_FILE_BYTES } from '@hy3-clinic/shared';
 import {
   UPLOAD_ACCEPT,
+  UPLOAD_FORMATS_TEXT,
+  UPLOAD_KIND_LABELS,
   arrayBufferToBase64,
   fileToBase64,
   isBinaryUploadKind,
@@ -15,11 +17,12 @@ describe('uploadKindOf', () => {
     expect(uploadKindOf('notes.MARKDOWN')).toBe('md');
     expect(uploadKindOf('notes.txt')).toBe('txt');
     expect(uploadKindOf('讲义.PDF')).toBe('pdf');
+    expect(uploadKindOf('课件.PPTX')).toBe('pptx');
     expect(uploadKindOf('讲义.docx')).toBe('docx');
   });
 
   it('returns null for unsupported or missing extensions', () => {
-    expect(uploadKindOf('slides.pptx')).toBeNull();
+    expect(uploadKindOf('workbook.xlsx')).toBeNull();
     expect(uploadKindOf('archive.docx.zip')).toBeNull();
     expect(uploadKindOf('no-extension')).toBeNull();
   });
@@ -30,11 +33,17 @@ describe('uploadKindOf', () => {
     }
   });
 
-  it('classifies pdf/docx as binary and md/txt as text', () => {
+  it('classifies pdf/pptx/docx as binary and md/txt as text', () => {
     expect(isBinaryUploadKind('pdf')).toBe(true);
+    expect(isBinaryUploadKind('pptx')).toBe(true);
     expect(isBinaryUploadKind('docx')).toBe(true);
     expect(isBinaryUploadKind('md')).toBe(false);
     expect(isBinaryUploadKind('txt')).toBe(false);
+  });
+
+  it('advertises PPTX with a learner-facing presentation label', () => {
+    expect(UPLOAD_FORMATS_TEXT).toContain('PPTX');
+    expect(UPLOAD_KIND_LABELS.pptx).toBe('PowerPoint 演示文稿');
   });
 });
 
@@ -42,11 +51,12 @@ describe('uploadValidationError', () => {
   it('accepts a normal supported file', () => {
     expect(uploadValidationError(new File(['内容'], 'a.md'))).toBeNull();
     expect(uploadValidationError(new File(['%PDF-'], 'a.pdf'))).toBeNull();
+    expect(uploadValidationError(new File(['PK'], 'a.pptx'))).toBeNull();
   });
 
   it('rejects unsupported types, empty files, and oversized files', () => {
-    expect(uploadValidationError(new File(['x'], 'a.pptx'))).toBe(
-      '不支持的文件类型:仅接受 .md、.txt、.pdf 与 .docx 文件。',
+    expect(uploadValidationError(new File(['x'], 'a.xlsx'))).toBe(
+      '不支持的文件类型:仅接受 .md、.txt、.pdf、.pptx 与 .docx 文件。',
     );
     expect(uploadValidationError(new File([], 'a.pdf'))).toBe('上传的文件为空。');
     expect(

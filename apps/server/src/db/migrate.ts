@@ -1806,6 +1806,116 @@ const MIGRATIONS: Migration[] = [
       CREATE INDEX idx_source_blocks_structural_unit ON source_blocks(structural_unit_id);
     `,
   },
+  {
+    version: 24,
+    name: 'rich_document_assets_and_slide_provenance',
+    // Original package bytes are hash-addressed once, while immutable
+    // revision-local records retain structural ownership and provenance.
+    // Asset-only rich documents have zero extracted characters without being
+    // empty sources, so the revision constraint is widened losslessly.
+    rebuildsTables: true,
+    up: `
+      CREATE TABLE material_revisions_rebuilt (
+        id TEXT PRIMARY KEY,
+        material_id TEXT NOT NULL REFERENCES materials(id) ON DELETE CASCADE,
+        revision_number INTEGER NOT NULL CHECK (revision_number > 0),
+        predecessor_revision_id TEXT REFERENCES material_revisions_rebuilt(id),
+        status TEXT NOT NULL CHECK (status IN ('candidate', 'ready', 'active', 'failed', 'retired')),
+        source_type TEXT NOT NULL,
+        media_type TEXT,
+        original_filename TEXT,
+        content TEXT NOT NULL,
+        char_count INTEGER NOT NULL CHECK (char_count >= 0),
+        parse_status TEXT CHECK (parse_status IS NULL OR parse_status IN ('parsed', 'parsed_with_warnings')),
+        page_count INTEGER,
+        extraction_warnings TEXT NOT NULL DEFAULT '[]',
+        parser_version TEXT,
+        parser_fingerprint TEXT,
+        content_fingerprint TEXT,
+        chunker_version TEXT,
+        chunker_fingerprint TEXT,
+        source_fingerprint TEXT,
+        original_data BLOB,
+        failure_code TEXT,
+        failure_message TEXT,
+        created_at TEXT NOT NULL,
+        activated_at TEXT,
+        UNIQUE (material_id, revision_number)
+      );
+      INSERT INTO material_revisions_rebuilt (
+        id, material_id, revision_number, predecessor_revision_id, status,
+        source_type, media_type, original_filename, content, char_count,
+        parse_status, page_count, extraction_warnings, parser_version,
+        parser_fingerprint, content_fingerprint, chunker_version, chunker_fingerprint,
+        source_fingerprint, original_data, failure_code, failure_message,
+        created_at, activated_at
+      )
+      SELECT
+        id, material_id, revision_number, predecessor_revision_id, status,
+        source_type, media_type, original_filename, content, char_count,
+        parse_status, page_count, extraction_warnings, parser_version,
+        parser_fingerprint, content_fingerprint, chunker_version, chunker_fingerprint,
+        source_fingerprint, original_data, failure_code, failure_message,
+        created_at, activated_at
+      FROM material_revisions;
+      DROP INDEX idx_material_revisions_material;
+      DROP INDEX idx_material_revisions_status;
+      DROP TABLE material_revisions;
+      ALTER TABLE material_revisions_rebuilt RENAME TO material_revisions;
+      CREATE INDEX idx_material_revisions_material
+        ON material_revisions(material_id, revision_number DESC);
+      CREATE INDEX idx_material_revisions_status
+        ON material_revisions(material_id, status);
+
+      ALTER TABLE normalized_structural_units ADD COLUMN slide_number INTEGER
+        CHECK (slide_number IS NULL OR slide_number >= 1);
+      ALTER TABLE source_blocks ADD COLUMN slide_number INTEGER
+        CHECK (slide_number IS NULL OR slide_number >= 1);
+
+      CREATE TABLE source_asset_blobs (
+        byte_hash TEXT PRIMARY KEY,
+        media_type TEXT NOT NULL,
+        byte_length INTEGER NOT NULL CHECK (byte_length >= 0),
+        original_data BLOB NOT NULL,
+        CHECK (length(original_data) = byte_length)
+      );
+
+      CREATE TABLE material_revision_assets (
+        id TEXT PRIMARY KEY,
+        material_id TEXT NOT NULL REFERENCES materials(id) ON DELETE CASCADE,
+        material_revision_id TEXT NOT NULL REFERENCES material_revisions(id) ON DELETE CASCADE,
+        idx INTEGER NOT NULL CHECK (idx >= 0),
+        parent_structural_unit_id TEXT REFERENCES normalized_structural_units(id) ON DELETE SET NULL,
+        source_path TEXT NOT NULL,
+        media_type TEXT NOT NULL,
+        byte_hash TEXT NOT NULL REFERENCES source_asset_blobs(byte_hash),
+        byte_length INTEGER NOT NULL CHECK (byte_length >= 0),
+        width INTEGER CHECK (width IS NULL OR width >= 1),
+        height INTEGER CHECK (height IS NULL OR height >= 1),
+        location TEXT NOT NULL,
+        relationship_kind TEXT NOT NULL CHECK (
+          relationship_kind IN ('image', 'media', 'ole_object', 'unknown')
+        ),
+        content_origin TEXT NOT NULL CHECK (content_origin = 'extracted_original'),
+        parser_version TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE (material_revision_id, idx)
+      );
+      CREATE INDEX idx_material_revision_assets_revision
+        ON material_revision_assets(material_revision_id, idx);
+      CREATE INDEX idx_material_revision_assets_parent
+        ON material_revision_assets(parent_structural_unit_id);
+
+      CREATE TRIGGER cleanup_source_asset_blob_after_occurrence_delete
+      AFTER DELETE ON material_revision_assets
+      WHEN NOT EXISTS (
+        SELECT 1 FROM material_revision_assets WHERE byte_hash = OLD.byte_hash
+      )
+      BEGIN
+        DELETE FROM source_asset_blobs WHERE byte_hash = OLD.byte_hash;
+      END;
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

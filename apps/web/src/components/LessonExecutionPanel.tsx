@@ -78,6 +78,7 @@ function originLabel(origin: LessonSegmentProjection['explanationOrigin']): stri
 
 function formatSourceLocation(source: LessonSourceProjection): string {
   if (source.pageNumber !== null) return `第 ${source.pageNumber} 页`;
+  if (source.slideNumber !== null) return `第 ${source.slideNumber} 张幻灯片`;
   if (source.headingPath.length > 0) return source.headingPath.join(' › ');
   return source.locationLabel;
 }

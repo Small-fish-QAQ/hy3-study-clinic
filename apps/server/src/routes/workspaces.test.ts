@@ -11,6 +11,7 @@ import { FakeProvider } from '../llm/fakeProvider.js';
 import { fixedClock } from '../util/ids.js';
 import { buildTestApp, type TestApp } from '../testing/testApp.js';
 import { makeMistake, makeQuestion, makeWorkspace, T0 } from '../testing/fixtures.js';
+import { imageOnlyPptxFixture } from '../testing/richOoxmlFixtures.js';
 
 const filesDir = join(dirname(fileURLToPath(import.meta.url)), '../testing/files');
 const samplePdfB64 = () => readFileSync(join(filesDir, 'sample.pdf')).toString('base64');
@@ -166,11 +167,51 @@ describe('document ingestion routes', () => {
     expect(headings).toContain('间隔重复');
   });
 
+  it('imports and reprocesses an asset-only PPTX without fabricated text blocks', async () => {
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAHnOcQAAAAABJRU5ErkJggg==',
+      'base64',
+    );
+    const deck = imageOnlyPptxFixture(png).toString('base64');
+    const imported = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/workspaces/${workspaceId}/documents`,
+      payload: { kind: 'file', filename: 'diagram.pptx', dataBase64: deck },
+    });
+    expect(imported.statusCode).toBe(201);
+    expect(imported.json()).toMatchObject({
+      material: {
+        title: 'diagram.pptx',
+        sourceType: 'pptx',
+        content: '',
+        charCount: 0,
+        parseStatus: 'parsed_with_warnings',
+      },
+      blocks: [],
+      assets: [{ mediaType: 'image/png', location: { slideNumber: 1 } }],
+    });
+
+    const documentId = imported.json().material.id as string;
+    const firstRevisionId = imported.json().material.activeRevisionId as string;
+    const reprocessed = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/workspaces/${workspaceId}/documents/${documentId}/reprocess`,
+    });
+    expect(reprocessed.statusCode).toBe(200);
+    expect(reprocessed.json()).toMatchObject({
+      material: { content: '', charCount: 0 },
+      blocks: [],
+    });
+    expect(reprocessed.json().assets).toHaveLength(1);
+    expect(reprocessed.json().material.activeRevisionId).not.toBe(firstRevisionId);
+    expect(ctx.repos.materialRevisions.getAssets(firstRevisionId)).toHaveLength(1);
+  });
+
   it('rejects unsupported extensions with 415', async () => {
     const response = await ctx.app.inject({
       method: 'POST',
       url: `/api/workspaces/${workspaceId}/documents`,
-      payload: { kind: 'file', filename: 'slides.pptx', dataBase64: samplePdfB64() },
+      payload: { kind: 'file', filename: 'slides.ppt', dataBase64: samplePdfB64() },
     });
     expect(response.statusCode).toBe(415);
     expect(response.json().error.code).toBe('UNSUPPORTED_FILE');

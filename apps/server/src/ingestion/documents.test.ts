@@ -28,6 +28,10 @@ describe('uploadKindForFilename', () => {
       mediaType: 'application/pdf',
     });
     expect(uploadKindForFilename('b.DOCX').sourceType).toBe('docx');
+    expect(uploadKindForFilename('slides.PPTX')).toEqual({
+      sourceType: 'pptx',
+      mediaType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    });
     expect(uploadKindForFilename('c.md').sourceType).toBe('md');
     expect(uploadKindForFilename('d.txt').sourceType).toBe('txt');
     expect(uploadKindForFilename('e.ts')).toEqual({
@@ -37,7 +41,7 @@ describe('uploadKindForFilename', () => {
   });
 
   it('rejects unsupported extensions with a 415 error code', () => {
-    for (const name of ['e.doc', 'f.exe', 'g', 'h.pptx']) {
+    for (const name of ['e.doc', 'f.exe', 'g', 'h.ppt']) {
       try {
         uploadKindForFilename(name);
         expect.unreachable(`${name} should have been rejected`);

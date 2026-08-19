@@ -26,7 +26,15 @@ export const DifficultySchema = z.enum(['easy', 'medium', 'hard']);
 export type Difficulty = z.infer<typeof DifficultySchema>;
 
 /** How a document was imported. */
-export const SourceTypeSchema = z.enum(['paste', 'md', 'txt', 'pdf', 'docx', 'source_code']);
+export const SourceTypeSchema = z.enum([
+  'paste',
+  'md',
+  'txt',
+  'pdf',
+  'docx',
+  'pptx',
+  'source_code',
+]);
 export type SourceType = z.infer<typeof SourceTypeSchema>;
 
 /** Media types accepted for document ingestion. */
@@ -35,6 +43,7 @@ export const MediaTypeSchema = z.enum([
   'text/markdown',
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   'text/x-source-code',
 ]);
 export type MediaType = z.infer<typeof MediaTypeSchema>;
@@ -108,6 +117,8 @@ export const SourceBlockSchema = z.object({
    * (legacy PDF blocks were page-bounded, so null never hides a real span).
    */
   pageEnd: z.number().int().positive().nullable().default(null),
+  /** 1-based slide the block belongs to, for slide decks. */
+  slideNumber: z.number().int().positive().nullable().optional(),
   content: z.string().min(1),
   /** Offsets into the normalized material content (UTF-16 code units). */
   startOffset: z.number().int().nonnegative(),
@@ -149,8 +160,8 @@ export const MaterialSchema = z.object({
   /** Original uploaded filename, when the document came from a file. */
   originalFilename: z.string().max(255).nullable(),
   /** Normalized content (LF line endings). */
-  content: z.string().min(1),
-  charCount: z.number().int().positive(),
+  content: z.string(),
+  charCount: z.number().int().nonnegative(),
   parseStatus: ParseStatusSchema,
   /** Total pages for paginated sources (PDF); null otherwise. */
   pageCount: z.number().int().positive().nullable(),
@@ -250,7 +261,8 @@ export const MaterialRevisionSchema = z
     sourceType: SourceTypeSchema,
     mediaType: MediaTypeSchema.nullable(),
     originalFilename: z.string().max(255).nullable(),
-    normalizedContent: z.string().min(1).nullable(),
+    /** Empty only for an asset-only rich document validated by ingestion. */
+    normalizedContent: z.string().nullable(),
     charCount: z.number().int().nonnegative().nullable(),
     parseStatus: ParseStatusSchema.nullable(),
     pageCount: z.number().int().positive().nullable(),
@@ -271,7 +283,10 @@ export const MaterialRevisionSchema = z
   })
   .strict()
   .superRefine((revision, ctx) => {
-    if (revision.status === 'active' && (!revision.normalizedContent || !revision.parseStatus)) {
+    if (
+      revision.status === 'active' &&
+      (revision.normalizedContent === null || !revision.parseStatus)
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'an active material revision requires validated normalized content',
@@ -345,6 +360,34 @@ export const StructuralUnitKindSchema = z.enum([
 ]);
 export type StructuralUnitKind = z.infer<typeof StructuralUnitKindSchema>;
 
+/** Immutable original bytes extracted from a document package. */
+export const EmbeddedAssetSchema = z
+  .object({
+    id: z.string().min(1),
+    materialId: z.string().min(1),
+    materialRevisionId: z.string().min(1),
+    index: z.number().int().nonnegative(),
+    parentStructuralUnitId: z.string().min(1).nullable(),
+    sourcePath: z.string().min(1).max(500),
+    mediaType: z.string().min(1).max(200),
+    byteHash: z.string().regex(/^sha256:[0-9a-f]{64}$/),
+    byteLength: z.number().int().nonnegative(),
+    width: z.number().int().positive().nullable(),
+    height: z.number().int().positive().nullable(),
+    location: z
+      .object({
+        pageNumber: z.number().int().positive().nullable().optional(),
+        slideNumber: z.number().int().positive().nullable().optional(),
+        domPath: z.string().max(500).nullable().optional(),
+      })
+      .strict(),
+    relationshipKind: z.enum(['image', 'media', 'ole_object', 'unknown']),
+    contentOrigin: z.literal('extracted_original'),
+    parserVersion: z.string().max(80),
+  })
+  .strict();
+export type EmbeddedAsset = z.infer<typeof EmbeddedAssetSchema>;
+
 export const NormalizedStructuralUnitSchema = z
   .object({
     id: z.string().min(1),
@@ -371,6 +414,7 @@ export const NormalizedStructuralUnitSchema = z
     lineStart: z.number().int().positive().nullable().optional(),
     lineEnd: z.number().int().positive().nullable().optional(),
     pageEnd: z.number().int().positive().nullable().optional(),
+    slideNumber: z.number().int().positive().nullable().optional(),
     headingPath: z.array(z.string()).optional(),
     contentOrigin: z
       .enum([

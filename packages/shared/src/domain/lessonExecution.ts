@@ -114,6 +114,7 @@ export const LessonSourceProjectionSchema = z
     materialTitle: z.string().min(1).max(500),
     headingPath: z.array(z.string().min(1).max(300)).max(10),
     pageNumber: z.number().int().positive().nullable(),
+    slideNumber: z.number().int().positive().nullable().default(null),
     locationLabel: z.string().min(1).max(1000),
     exactExcerpt: z.string().min(1).max(2000),
     classification: z.literal('exact_source_excerpt'),

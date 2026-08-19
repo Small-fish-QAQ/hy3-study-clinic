@@ -17,6 +17,7 @@ export interface TeachingBriefSourceOffer {
   materialTitle: string;
   headingPath: string[];
   pageNumber: number | null;
+  slideNumber: number | null;
   text: string;
 }
 
@@ -198,6 +199,7 @@ export function buildTeachingBriefSourceContext({
       materialTitle: material.title,
       headingPath: candidate.block.headingPath,
       pageNumber: candidate.block.pageNumber,
+      slideNumber: candidate.block.slideNumber ?? null,
       text: candidate.quote,
     };
     const nextOffers = [...offers, offer];
@@ -219,6 +221,7 @@ export function buildTeachingBriefSourceContext({
       quote: candidate.quote,
       headingPath: candidate.block.headingPath,
       pageNumber: candidate.block.pageNumber,
+      slideNumber: candidate.block.slideNumber ?? null,
     });
   }
   if (offers.length === 0) throw new Error('Teaching Brief has no eligible exact source context.');

@@ -41,6 +41,7 @@ export const TeachingBriefSourceReferenceSchema = z
     quote: z.string().min(1).max(2000),
     headingPath: z.array(z.string().max(300)).max(10),
     pageNumber: z.number().int().positive().nullable(),
+    slideNumber: z.number().int().positive().nullable().default(null),
   })
   .strict()
   .superRefine((reference, ctx) => {

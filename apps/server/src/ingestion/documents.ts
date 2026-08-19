@@ -7,6 +7,8 @@ import {
 } from '@hy3-clinic/shared';
 import { IngestionError, looksBinary, normalizeText, sanitizeParsedText } from './ingest.js';
 import { analyzePdfLayout, type PdfPageInput, type PageSpan } from './pdfLayout.js';
+import { parseRichOoxml, type ExtractedEmbeddedAsset } from './richDocuments.js';
+import type { NormalizedDocument } from '@hy3-clinic/shared';
 
 export type { PageSpan } from './pdfLayout.js';
 
@@ -48,6 +50,8 @@ export interface ParsedBinaryDocument {
   pageSpans: PageSpan[] | null;
   warnings: string[];
   parserVersion: string;
+  normalizedDocument?: NormalizedDocument;
+  embeddedAssets?: ExtractedEmbeddedAsset[];
 }
 
 interface UploadKind {
@@ -64,6 +68,10 @@ const UPLOAD_EXTENSIONS: Record<string, UploadKind> = {
   docx: {
     sourceType: 'docx',
     mediaType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  },
+  pptx: {
+    sourceType: 'pptx',
+    mediaType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   },
 };
 
@@ -109,7 +117,7 @@ export function uploadKindForFilename(filename: string): UploadKind {
   if (!kind) {
     throw new IngestionError(
       ApiErrorCode.UnsupportedFile,
-      '不支持的文件类型:仅接受 .md、.txt、.pdf、.docx 与常见源代码文件。',
+      '不支持的文件类型:仅接受 .md、.txt、.pdf、.docx、.pptx 与常见源代码文件。',
     );
   }
   return kind;
@@ -195,6 +203,12 @@ function hasDocxPackageStructure(buffer: Buffer): boolean {
   );
 }
 
+function hasPptxPackageStructure(buffer: Buffer): boolean {
+  if (!hasZipMagic(buffer)) return false;
+  const ascii = buffer.toString('latin1');
+  return ascii.includes('[Content_Types].xml') && ascii.includes('ppt/presentation.xml');
+}
+
 /** Parse a PDF into layout-reconstructed text with per-page spans. */
 export async function parsePdf(buffer: Buffer): Promise<ParsedBinaryDocument> {
   if (!hasPdfMagic(buffer)) {
@@ -216,7 +230,9 @@ export async function parsePdf(buffer: Buffer): Promise<ParsedBinaryDocument> {
         if (!('str' in item) || typeof item.str !== 'string') continue;
         // transform = [a, b, c, d, e, f]; (e, f) is the baseline origin and
         // hypot(c, d) the effective font size in device space.
-        const [, , c, d, e, f] = item.transform as number[];
+        const [a, b, c, d, e, f] = item.transform as number[];
+        const axisScale = Math.max(Math.abs(a ?? 0), Math.abs(d ?? 0), 1);
+        const crossAxisScale = Math.max(Math.abs(b ?? 0), Math.abs(c ?? 0));
         items.push({
           str: item.str,
           x: e ?? 0,
@@ -224,6 +240,7 @@ export async function parsePdf(buffer: Buffer): Promise<ParsedBinaryDocument> {
           width: item.width,
           height: item.height,
           fontSize: Math.hypot(c ?? 0, d ?? 0),
+          rotated: crossAxisScale > axisScale * 0.1,
         });
       }
       pages.push({
@@ -296,13 +313,36 @@ export async function parseDocx(buffer: Buffer): Promise<ParsedBinaryDocument> {
   };
 }
 
+/** Parse a PPTX or rich DOCX through the bounded OOXML adapter. */
+export async function parseRichOffice(
+  sourceType: 'docx' | 'pptx',
+  buffer: Buffer,
+  materialId: string,
+  revisionId: string,
+  signal?: AbortSignal,
+): Promise<ParsedBinaryDocument> {
+  const result = await parseRichOoxml(sourceType, buffer, materialId, revisionId, signal);
+  return {
+    content: result.document.content,
+    pageCount: result.pageCount,
+    pageSpans: null,
+    warnings: result.warnings,
+    parserVersion: result.parserVersion,
+    normalizedDocument: result.document,
+    embeddedAssets: result.assets,
+  };
+}
+
 /** Parse an uploaded binary file according to its resolved kind. */
 export async function parseBinaryUpload(
   sourceType: SourceType,
   buffer: Buffer,
+  materialId?: string,
+  revisionId?: string,
+  signal?: AbortSignal,
 ): Promise<ParsedBinaryDocument> {
   if (sourceType === 'pdf') {
-    if (hasDocxPackageStructure(buffer)) {
+    if (hasDocxPackageStructure(buffer) || hasPptxPackageStructure(buffer)) {
       throw new IngestionError(
         ApiErrorCode.TypeMismatch,
         'PDF 扩展名对应的内容是 ZIP/OOXML 文件。',
@@ -314,9 +354,20 @@ export async function parseBinaryUpload(
     if (hasPdfMagic(buffer)) {
       throw new IngestionError(ApiErrorCode.TypeMismatch, 'DOCX 扩展名对应的内容是 PDF 文件。');
     }
-    return parseDocx(buffer);
+    return materialId && revisionId
+      ? parseRichOffice('docx', buffer, materialId, revisionId, signal)
+      : parseDocx(buffer);
   }
-  if (hasPdfMagic(buffer) || hasDocxPackageStructure(buffer)) {
+  if (sourceType === 'pptx') {
+    if (hasPdfMagic(buffer)) {
+      throw new IngestionError(ApiErrorCode.TypeMismatch, 'PPTX 扩展名与文件内容不匹配。');
+    }
+    if (!materialId || !revisionId) {
+      throw new IngestionError(ApiErrorCode.ParseFailed, 'PPTX 解析缺少修订身份。');
+    }
+    return parseRichOffice('pptx', buffer, materialId, revisionId, signal);
+  }
+  if (hasPdfMagic(buffer) || hasDocxPackageStructure(buffer) || hasPptxPackageStructure(buffer)) {
     throw new IngestionError(ApiErrorCode.TypeMismatch, '文件签名与文本/源代码扩展名不匹配。');
   }
   // md / txt / source-code uploads arrive as decoded text files.

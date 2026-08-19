@@ -11,6 +11,11 @@ export function formatPageRange(pageNumber: number | null, pageEnd: number | nul
   return `第 ${pageNumber} 页`;
 }
 
+/** Human label for a block's 1-based presentation slide provenance. */
+export function formatSlideNumber(slideNumber: number | null | undefined): string | null {
+  return slideNumber == null ? null : `第 ${slideNumber} 张幻灯片`;
+}
+
 export function Banner({
   kind,
   children,

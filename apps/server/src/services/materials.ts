@@ -4,6 +4,7 @@ import {
   UpdateMaterialTitleRequestSchema,
   type DocumentDeletionResult,
   type DocumentFilePayload,
+  type EmbeddedAsset,
   type Material,
   type MediaType,
   type SourceBlock,
@@ -40,6 +41,7 @@ export interface CreateMaterialInput {
 export interface MaterialWithBlocks {
   material: Material;
   blocks: SourceBlock[];
+  assets: EmbeddedAsset[];
 }
 
 export interface MaterialServiceDeps {
@@ -127,7 +129,9 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
       title,
       sourceType,
       mediaType:
-        sourceType === 'pdf' || sourceType === 'docx' ? null : MEDIA_TYPE_FOR_TEXT[sourceType],
+        sourceType === 'pdf' || sourceType === 'docx' || sourceType === 'pptx'
+          ? null
+          : MEDIA_TYPE_FOR_TEXT[sourceType],
       originalFilename: input.filename?.trim() || null,
       content: normalized.content,
       charCount: normalized.charCount,
@@ -153,7 +157,7 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
       stored.activeRevisionId!,
     );
     repos.workspaces.touch(targetWorkspaceId, now);
-    return { material: stored, blocks: repos.materials.getBlocks(id) };
+    return { material: stored, blocks: repos.materials.getBlocks(id), assets: [] };
   }
 
   /**
@@ -170,12 +174,16 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
   async function createFromUpload(
     input: DocumentFilePayload,
     workspaceId?: string,
+    options: { signal?: AbortSignal } = {},
   ): Promise<MaterialWithBlocks> {
+    if (options.signal?.aborted) {
+      throw new AppError(ApiErrorCode.RequestCancelled, '文档导入已取消。');
+    }
     const kind = uploadKindForFilename(input.filename);
     validateUploadDeclaration(kind, input.mediaType);
     const buffer = decodeUpload(input.dataBase64);
 
-    if (kind.sourceType !== 'pdf' && kind.sourceType !== 'docx') {
+    if (kind.sourceType !== 'pdf' && kind.sourceType !== 'docx' && kind.sourceType !== 'pptx') {
       // Text file uploaded as base64: decode and reuse the text path.
       return create(
         {
@@ -188,29 +196,47 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
       );
     }
 
-    const parsed = await parseBinaryUpload(kind.sourceType, buffer);
-    // Reuse the shared size/emptiness limits on the EXTRACTED text.
-    const normalized = ingestSource(parsed.content, { sourceType: kind.sourceType });
-
     const id = newId('mat');
+    const candidateRevisionId = `${id}:candidate`;
+    const parsed = await parseBinaryUpload(
+      kind.sourceType,
+      buffer,
+      id,
+      candidateRevisionId,
+      options.signal,
+    );
+    if (options.signal?.aborted) {
+      throw new AppError(ApiErrorCode.RequestCancelled, '文档导入已取消。');
+    }
+    // Asset-only rich documents are original source material even before OCR.
+    const normalized =
+      parsed.content.length === 0 && (parsed.embeddedAssets?.length ?? 0) > 0
+        ? { content: '', charCount: 0, sourceType: kind.sourceType }
+        : ingestSource(parsed.content, { sourceType: kind.sourceType });
+
     const now = clock.now().toISOString();
     const title =
       input.title && input.title.trim().length > 0
         ? input.title.trim().slice(0, 100)
-        : deriveTitle(normalized.content) || input.filename.slice(0, 80);
+        : normalized.content.length > 0
+          ? deriveTitle(normalized.content)
+          : input.filename.slice(0, 80);
 
-    const document = parserForSourceType(kind.sourceType).parse({
-      revisionId: `${id}:candidate`,
-      materialId: id,
-      sourceType: kind.sourceType,
-      mediaType: kind.mediaType,
-      content: normalized.content,
-      filename: input.filename,
-      ...(parsed.pageSpans ? { pageSpans: parsed.pageSpans } : {}),
-    });
+    const document =
+      parsed.normalizedDocument ??
+      parserForSourceType(kind.sourceType).parse({
+        revisionId: candidateRevisionId,
+        materialId: id,
+        sourceType: kind.sourceType,
+        mediaType: kind.mediaType,
+        content: normalized.content,
+        filename: input.filename,
+        warnings: parsed.warnings,
+        ...(parsed.pageSpans ? { pageSpans: parsed.pageSpans } : {}),
+      });
     const blocks = normalizedDocumentToSourceBlocks(id, document, {
       idSeed: id,
-      materialRevisionId: `${id}:candidate`,
+      materialRevisionId: candidateRevisionId,
     });
     const targetWorkspaceId = resolveTargetWorkspace(title, now, workspaceId);
 
@@ -231,12 +257,19 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
       updatedAt: now,
     };
 
-    repos.materials.insertWithBlocks(material, blocks, buffer, document.units, {
-      parserFingerprint: document.parserFingerprint,
-      chunkerVersion: STRUCTURE_AWARE_CHUNKER_VERSION,
-      chunkerFingerprint: STRUCTURE_AWARE_CHUNKER_FINGERPRINT,
-      sourceFingerprint: `sha256:${createHash('sha256').update(buffer).digest('hex')}`,
-    });
+    repos.materials.insertWithBlocks(
+      material,
+      blocks,
+      buffer,
+      document.units,
+      {
+        parserFingerprint: document.parserFingerprint,
+        chunkerVersion: STRUCTURE_AWARE_CHUNKER_VERSION,
+        chunkerFingerprint: STRUCTURE_AWARE_CHUNKER_FINGERPRINT,
+        sourceFingerprint: `sha256:${createHash('sha256').update(buffer).digest('hex')}`,
+      },
+      parsed.embeddedAssets ?? [],
+    );
     const stored = repos.materials.get(id)!;
     sourceAuthority.ensureVerbatimAssessmentAuthority(
       targetWorkspaceId,
@@ -244,7 +277,11 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
       stored.activeRevisionId!,
     );
     repos.workspaces.touch(targetWorkspaceId, now);
-    return { material: stored, blocks: repos.materials.getBlocks(id) };
+    return {
+      material: stored,
+      blocks: repos.materials.getBlocks(id),
+      assets: repos.materials.getAssets(id),
+    };
   }
 
   return {
@@ -254,7 +291,11 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
     get(id: string): MaterialWithBlocks | undefined {
       const material = repos.materials.get(id);
       if (!material) return undefined;
-      return { material, blocks: repos.materials.getBlocks(id) };
+      return {
+        material,
+        blocks: repos.materials.getBlocks(id),
+        assets: repos.materials.getAssets(id),
+      };
     },
 
     updateTitle(id: string, title: string): Material {

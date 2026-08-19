@@ -1,6 +1,7 @@
 import {
   fnv1a32,
   NormalizedDocumentSchema,
+  type EmbeddedAsset,
   type MediaType,
   type NormalizedDocument,
   type NormalizedDocumentUnit,
@@ -36,6 +37,8 @@ export interface NormalizeInput {
   pageSpans?: Array<{ pageNumber: number; startOffset: number; endOffset: number }>;
   parserId?: string;
   parserVersion?: string;
+  warnings?: string[];
+  assets?: EmbeddedAsset[];
 }
 
 export interface ChunkProjection {
@@ -48,6 +51,7 @@ export interface ChunkProjection {
   pageEnd: number | null;
   lineStart: number | null;
   lineEnd: number | null;
+  slideNumber: number | null;
 }
 
 export interface ParserAdapter {
@@ -186,6 +190,7 @@ function finishDocument(
     complete: warnings.length === 0,
     parserVersion: version,
     parserFingerprint: parserFingerprint(adapterId, version),
+    assets: input.assets ?? [],
   });
 }
 
@@ -384,6 +389,7 @@ export function normalizeMarkdown(input: NormalizeInput): NormalizedDocument {
     input.parserVersion ?? 'markdown-structure-v1',
     units,
     CAP_TEXT,
+    input.warnings,
   );
 }
 
@@ -421,7 +427,80 @@ export function normalizeTxt(input: NormalizeInput): NormalizedDocument {
     input.parserVersion ?? 'text-structure-v1',
     units,
     ['text_extraction', 'deterministic_text', 'source_location_precision'],
+    input.warnings,
   );
+}
+
+/** Preserve PDF page ownership without replacing the existing structural pass. */
+export function normalizePdf(input: NormalizeInput): NormalizedDocument {
+  const document = normalizeMarkdown({
+    ...input,
+    parserId: input.parserId ?? 'pdf-layout',
+    parserVersion: input.parserVersion ?? 'pdf-layout-v2',
+  });
+  const spans = [...(input.pageSpans ?? [])]
+    .filter(
+      (span) =>
+        span.pageNumber > 0 &&
+        span.startOffset >= 0 &&
+        span.endOffset >= span.startOffset &&
+        span.endOffset <= document.content.length,
+    )
+    .sort(
+      (left, right) => left.startOffset - right.startOffset || left.pageNumber - right.pageNumber,
+    );
+  if (spans.length === 0) {
+    return NormalizedDocumentSchema.parse({
+      ...document,
+      capabilities: [...CAP_TEXT, 'page_awareness', 'table_structure'],
+    });
+  }
+
+  const pageUnits = spans.map((span, pageIndex): NormalizedDocumentUnit => ({
+    id: unitId(input.revisionId, document.units.length + pageIndex, 'page', span.startOffset),
+    materialRevisionId: input.revisionId,
+    parentUnitId: null,
+    kind: 'page',
+    index: 0,
+    title: `Page ${span.pageNumber}`,
+    content: document.content.slice(span.startOffset, span.endOffset),
+    startOffset: span.startOffset,
+    endOffset: span.endOffset,
+    headingPath: [],
+    location: { pageNumber: span.pageNumber, pageEnd: span.pageNumber },
+    contentOrigin: 'extracted_original',
+    derivation: 'parser_derived',
+  }));
+  const units = document.units.map((unit) => {
+    if (unit.parentUnitId) return unit;
+    const pageIndex = spans.findIndex(
+      (span) => unit.startOffset >= span.startOffset && unit.endOffset <= span.endOffset,
+    );
+    return pageIndex < 0 ? unit : { ...unit, parentUnitId: pageUnits[pageIndex]!.id };
+  });
+  const ordered = [...pageUnits, ...units]
+    .sort((left, right) => {
+      const offsetOrder = left.startOffset - right.startOffset;
+      if (offsetOrder !== 0) return offsetOrder;
+      if (left.kind === 'page' && right.kind === 'page') {
+        return (left.location.pageNumber ?? 0) - (right.location.pageNumber ?? 0);
+      }
+      if (left.kind === 'page') return -1;
+      if (right.kind === 'page') return 1;
+      return left.index - right.index;
+    })
+    .map((unit, index) => ({ ...unit, index }));
+  if (ordered.length > NORMALIZED_DOCUMENT_LIMITS.maxUnits) {
+    throw new IngestionError(
+      'SOURCE_TOO_LARGE',
+      `源材料结构单元超过 ${NORMALIZED_DOCUMENT_LIMITS.maxUnits} 个。`,
+    );
+  }
+  return NormalizedDocumentSchema.parse({
+    ...document,
+    units: ordered,
+    capabilities: [...CAP_TEXT, 'page_awareness', 'table_structure'],
+  });
 }
 
 function codeLineKind(line: string): 'class' | 'function' | null {
@@ -621,6 +700,7 @@ export function normalizeSourceCode(input: NormalizeInput): NormalizedDocument {
     input.parserVersion ?? 'source-code-structure-v1',
     units,
     [...CAP_TEXT, 'exact_line_ranges'],
+    input.warnings,
   );
 }
 
@@ -631,6 +711,7 @@ export function parserForSourceType(sourceType: SourceType): ParserAdapter {
   if (sourceType === 'paste') return MARKDOWN_ADAPTER;
   if (sourceType === 'pdf') return PDF_ADAPTER;
   if (sourceType === 'docx') return DOCX_ADAPTER;
+  if (sourceType === 'pptx') return PPTX_ADAPTER;
   // Existing PDF/DOCX extraction already supplies normalized text and page
   // spans. The Markdown structural pass preserves its headings/lists without
   // claiming to be a richer PDF/DOCX parser.
@@ -675,10 +756,9 @@ export const PDF_ADAPTER: ParserAdapter = {
   extensions: ['pdf'],
   mediaTypes: ['application/pdf'],
   signatures: ['%PDF-'],
-  capabilities: [...CAP_TEXT, 'page_awareness'],
+  capabilities: [...CAP_TEXT, 'page_awareness', 'table_structure'],
   limits: NORMALIZED_DOCUMENT_LIMITS,
-  parse: (input) =>
-    normalizeMarkdown({ ...input, parserId: 'pdf-layout', parserVersion: 'pdf-layout-v2' }),
+  parse: normalizePdf,
 };
 export const DOCX_ADAPTER: ParserAdapter = {
   id: 'docx-mammoth',
@@ -692,6 +772,22 @@ export const DOCX_ADAPTER: ParserAdapter = {
   parse: (input) =>
     normalizeMarkdown({ ...input, parserId: 'docx-mammoth', parserVersion: 'docx-mammoth-v1' }),
 };
+export const PPTX_ADAPTER: ParserAdapter = {
+  id: 'pptx-ooxml-rich',
+  version: 'pptx-ooxml-rich-v1',
+  sourceTypes: ['pptx'],
+  extensions: ['pptx'],
+  mediaTypes: ['application/vnd.openxmlformats-officedocument.presentationml.presentation'],
+  signatures: ['PK'],
+  capabilities: [...CAP_TEXT, 'slide_awareness', 'embedded_assets', 'table_structure'],
+  limits: NORMALIZED_DOCUMENT_LIMITS,
+  parse: (input) =>
+    normalizeMarkdown({
+      ...input,
+      parserId: 'pptx-ooxml-rich',
+      parserVersion: 'pptx-ooxml-rich-v1',
+    }),
+};
 
 export const PARSER_REGISTRY: readonly ParserAdapter[] = [
   MARKDOWN_ADAPTER,
@@ -699,11 +795,13 @@ export const PARSER_REGISTRY: readonly ParserAdapter[] = [
   SOURCE_CODE_ADAPTER,
   PDF_ADAPTER,
   DOCX_ADAPTER,
+  PPTX_ADAPTER,
 ];
 
 export function chunkNormalizedDocument(document: NormalizedDocument): ChunkProjection[] {
   const candidates = document.units.filter(
-    (unit) => !['document', 'source_file', 'page', 'list_item'].includes(unit.kind),
+    (unit) =>
+      !['document', 'source_file', 'page', 'slide', 'text_box', 'list_item'].includes(unit.kind),
   );
   const chunks: ChunkProjection[] = [];
   const emit = (
@@ -722,13 +820,30 @@ export function chunkNormalizedDocument(document: NormalizedDocument): ChunkProj
       pageEnd: unit.location.pageEnd ?? unit.location.pageNumber ?? null,
       lineStart: unit.location.lineStart ?? null,
       lineEnd: unit.location.lineEnd ?? null,
+      slideNumber: unit.location.slideNumber ?? null,
     });
+  };
+  const sharesPageOrSlide = (
+    heading: NormalizedDocumentUnit,
+    unit: NormalizedDocumentUnit,
+  ): boolean => {
+    for (const field of ['pageNumber', 'slideNumber'] as const) {
+      const headingValue = heading.location[field] ?? null;
+      const unitValue = unit.location[field] ?? null;
+      if ((headingValue !== null || unitValue !== null) && headingValue !== unitValue) return false;
+    }
+    return true;
   };
   let pendingHeading: NormalizedDocumentUnit | null = null;
   for (const unit of candidates) {
     if (unit.kind === 'heading') {
+      if (pendingHeading) emit(pendingHeading);
       pendingHeading = unit;
       continue;
+    }
+    if (pendingHeading && !sharesPageOrSlide(pendingHeading, unit)) {
+      emit(pendingHeading);
+      pendingHeading = null;
     }
     const startWithHeading = pendingHeading?.startOffset ?? unit.startOffset;
     const unitIds = pendingHeading ? [pendingHeading.id, unit.id] : [unit.id];
@@ -769,7 +884,11 @@ export function chunkNormalizedDocument(document: NormalizedDocument): ChunkProj
     // stable while still allowing oversized units to use the hard-limit path.
     emit(effectiveUnit, effectiveUnit.startOffset, effectiveUnit.endOffset, unitIds);
   }
-  if (!chunks.length) throw new IngestionError('EMPTY_SOURCE', '未生成可用的源代码或正文块。');
+  if (pendingHeading) emit(pendingHeading);
+  if (!chunks.length) {
+    if (document.content.length === 0 && document.assets.length > 0) return [];
+    throw new IngestionError('EMPTY_SOURCE', '未生成可用的源代码或正文块。');
+  }
   if (chunks.length > NORMALIZED_DOCUMENT_LIMITS.maxChunks)
     throw new IngestionError(
       'SOURCE_TOO_LARGE',
@@ -798,6 +917,7 @@ export function normalizedDocumentToSourceBlocks(
       headingPath: chunk.headingPath,
       pageNumber: chunk.pageNumber,
       pageEnd: chunk.pageEnd,
+      slideNumber: chunk.slideNumber,
       content: chunk.content,
       startOffset: chunk.startOffset,
       endOffset: chunk.endOffset,

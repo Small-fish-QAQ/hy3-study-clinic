@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { SourceBlock, VerifiedGrounding } from '@hy3-clinic/shared';
-import { formatPageRange } from './ui.js';
+import { formatPageRange, formatSlideNumber } from './ui.js';
 
 export interface SourceEvidencePanelProps {
   grounding: VerifiedGrounding;
@@ -70,6 +70,7 @@ export function SourceEvidencePanel({
   const location = [
     block.headingPath.join(' / '),
     formatPageRange(block.pageNumber, block.pageEnd) ?? '',
+    formatSlideNumber(block.slideNumber) ?? '',
   ]
     .filter(Boolean)
     .join(' · ');

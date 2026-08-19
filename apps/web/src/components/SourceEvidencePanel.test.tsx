@@ -68,6 +68,16 @@ describe('SourceEvidencePanel', () => {
     expect(screen.getByText(/原文依据 · 第 2–3 页/)).toBeInTheDocument();
   });
 
+  it('cites the slide when a presentation block carries slide provenance', () => {
+    const slideBlocks = [
+      { ...blocks[0]!, heading: null, headingPath: [], pageNumber: null, slideNumber: 6 },
+    ];
+    render(
+      <SourceEvidencePanel grounding={concepts[0]!.grounding} blocks={slideBlocks} defaultOpen />,
+    );
+    expect(screen.getByText(/原文依据 · 第 6 张幻灯片/u)).toBeInTheDocument();
+  });
+
   it('shows heading path and page number together when both exist', () => {
     const paginatedBlocks = [{ ...blocks[0]!, pageNumber: 2 }];
     render(

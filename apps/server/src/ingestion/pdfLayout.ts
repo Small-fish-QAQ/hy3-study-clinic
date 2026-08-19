@@ -39,6 +39,8 @@ export interface PdfTextItem {
   width: number;
   height: number;
   fontSize: number;
+  /** True when the PDF text matrix is materially rotated or skewed. */
+  rotated?: boolean;
 }
 
 export interface PdfPageInput {
@@ -732,6 +734,28 @@ export function analyzePdfLayout(pages: PdfPageInput[]): PdfLayoutResult {
   const pageLines = pages.map((page) => reconstructLines(page));
   const stats = computeDocStats(pageLines);
   removeMarginLines(pageLines, stats);
+  for (const [pageIndex, page] of pages.entries()) {
+    if (page.items.some((item) => item.rotated)) {
+      warnings.push(`第 ${page.pageNumber} 页包含旋转或倾斜文本;阅读顺序可能不完整。`);
+    }
+    const separatedLines = pageLines[pageIndex]!.filter(
+      (line) =>
+        !line.removed &&
+        line.cells.length === 2 &&
+        line.cells.every((cell) => cell.text.length >= 12),
+    );
+    if (separatedLines.length >= 3) {
+      const secondColumnStarts = separatedLines.map((line) => line.cells[1]!.x0);
+      if (
+        Math.max(...secondColumnStarts) - Math.min(...secondColumnStarts) <=
+        Math.max(stats.bodySize * 2, 20)
+      ) {
+        warnings.push(
+          `第 ${page.pageNumber} 页可能包含多栏文本或复杂表格;结构按保守几何顺序提取。`,
+        );
+      }
+    }
+  }
   const headingLevels = computeHeadingLevels(pageLines, stats);
 
   const units: Unit[] = [];
@@ -902,7 +926,13 @@ export function analyzePdfLayout(pages: PdfPageInput[]): PdfLayoutResult {
   const pageSpans: PageSpan[] = [];
   for (const page of pages) {
     const pageRuns = runs.filter((r) => r.pageNumber === page.pageNumber);
-    if (pageRuns.length === 0) continue;
+    if (pageRuns.length === 0) {
+      const next = runs.find((run) => run.pageNumber > page.pageNumber);
+      const previous = [...runs].reverse().find((run) => run.pageNumber < page.pageNumber);
+      const anchor = next?.start ?? previous?.end ?? text.length;
+      pageSpans.push({ pageNumber: page.pageNumber, startOffset: anchor, endOffset: anchor });
+      continue;
+    }
     pageSpans.push({
       pageNumber: page.pageNumber,
       startOffset: pageRuns[0]!.start,

@@ -420,6 +420,7 @@ const SOURCE_TYPE_LABELS: Record<string, string> = {
   md: 'Markdown',
   txt: 'TXT',
   pdf: 'PDF',
+  pptx: 'PPTX',
   docx: 'DOCX',
 };
 
@@ -433,6 +434,10 @@ function sourceLocation(blocks: SourceBlock[]): string | null {
     .filter((page): page is number => page !== null)
     .sort((left, right) => left - right);
   if (pages.length > 0) return `第 ${pages.join('、')} 页`;
+  const slides = [...new Set(blocks.map((block) => block.slideNumber))]
+    .filter((slide): slide is number => slide != null)
+    .sort((left, right) => left - right);
+  if (slides.length > 0) return `第 ${slides.join('、')} 张幻灯片`;
   const headings = [...new Set(blocks.map((block) => block.heading).filter(Boolean))];
   return headings.length > 0 ? headings.slice(0, 2).join(' / ') : null;
 }

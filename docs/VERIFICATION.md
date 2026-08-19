@@ -161,7 +161,7 @@ The restart checks verify persisted documents, active graph data, learner state,
 
 ## Migration verification
 
-The server suite covers all 19 migrations directly: applying them from scratch and re-running them safely;
+The server suite covers all 24 migrations directly: applying them from scratch and re-running them safely;
 - populated v1 -> current migration without deleting source, quiz, grading, mistake, mastery, or history rows;
 - honest `unknown` origin for workspaces whose historical creation path cannot be reconstructed;
 - populated v3 -> current migration, including the SQLite quiz-table rebuild;
@@ -171,6 +171,20 @@ The server suite covers all 19 migrations directly: applying them from scratch a
 - conservative legacy migration behavior plus current material/document retirement and explicit workspace-deletion behavior.
 
 Route and repository tests add transaction, cascade, cross-workspace isolation, legacy request compatibility, and historical-result degradation coverage. Migration 12 (`concept_lessons`) is additive; a direct populated-v11 regression verifies that migration 12 creates the lesson table without changing an existing concept row. Migrations 13-14 verify honest revision-1 adoption without invented fingerprints, preservation of existing learning history, active-revision foreign keys, source-authority separation, operation idempotency/fencing/orphan recovery, and optional cost-policy persistence. Migration 15 verifies the accepted Course route and revalidation after source revision. Migration 16 verifies durable StudySession persistence and Agenda mutation invariants. Migration 17 verifies formal evidence, progression, replan, and goal-outcome persistence. Migration 18 rebuilds the telemetry call/attempt/usage foreign-key chain, permits workspace-less probes and nullable non-agent fencing, preserves populated v17 rows, and backfills historical provider generation as unknown (`NULL`) rather than inventing a value. Migration 19 forward-repairs databases that may already report v18 with either the canonical nullable column or an interim `NOT NULL DEFAULT 1` column. Both paths converge on the nullable, no-default schema without losing calls, attempts, or usage. The interim backfill and a genuine observed generation 1 have no reliable row-level discriminator: telemetry timestamps use an injectable application clock, while migration time uses the wall clock. Compatibility tests therefore prove that v19 preserves ambiguous values instead of guessing, while canonical-v18 `NULL` remains unknown and future unknown values can again be stored as `NULL`. A real pre-upgrade database copy was also migrated v11 -> v12 during upgrade verification with clean foreign keys, intact history, and an honest deterministic adjustment when launching a pre-upgrade Tutor recommendation.
+
+## Phase 6B1 rich-document verification
+
+Phase 6B1 is deterministic local extraction only. It adds bounded PDF structural warnings, PPTX and rich DOCX parsing, exact slide/page/document provenance, immutable revision-local original assets, and OOXML archive/XML safety. It does not call Hy3 and does not implement OCR, visual descriptions, semantic image search, or HTML/Web Snapshot ingestion.
+
+Run the focused suites:
+
+```bash
+npm run test -w @hy3-clinic/shared -- src/domain/richDocumentSchemas.test.ts
+npm run test -w @hy3-clinic/server -- src/ingestion/ooxmlPackage.test.ts src/ingestion/richDocuments.test.ts src/ingestion/pdfLayout.test.ts src/ingestion/normalized.test.ts src/ingestion/documents.test.ts src/repositories/richAssets.test.ts src/db/richAssetsMigration.test.ts src/services/slideProvenance.test.ts
+npm run test -w @hy3-clinic/web -- src/upload.test.ts src/views/GraphWorkspaceView.test.tsx src/App.test.tsx src/components/SourceEvidencePanel.test.tsx src/components/LessonExecutionPanel.test.tsx
+```
+
+The OOXML tests cover traversal, duplicate paths, member/expanded-byte/compression-ratio limits, encryption, malformed packages, invalid relationships, and no-network/no-filesystem extraction. Rich parser tests cover deterministic slide order, visible text, lists, tables, notes, grouped/hidden shapes, DOCX headings/lists/tables/headers, embedded-image hashes and dimensions, honest DOCX no-page locations, PDF page parents/warnings, partial extraction, and cross-format rejection. Repository and route tests cover immutable revision ownership, blob deduplication, historical asset retention, purge cleanup, legacy nullable slide hydration, and downstream retrieval/Teaching Brief/source display provenance.
 
 ## Real Hy3 evaluation
 
@@ -255,4 +269,4 @@ npm run eval:fake
 git diff --check
 ```
 
-The current full run on this revision passes 1,437 tests: 149 shared, 890 server, and 398 web. The build and focused migration/provider/preparation suites also pass. `npm run eval:fake` remains the deterministic campaign check; no real Hy3 call is required or made. Structural quality dimensions are diagnostics, not a teaching-effectiveness score. Teaching Briefs do not create Formal Evidence, mastery, progression, or durable mistakes, and no claim is made that the unshipped learner-facing lesson execution is complete.
+The historical Phase 4A run recorded 1,437 tests (149 shared, 890 server, and 398 web). That snapshot predates Phase 6B1; use the standard commands and the focused Phase 6B1 section above for current totals. `npm run eval:fake` remains the deterministic campaign check; no real Hy3 call is required or made. Structural quality dimensions are diagnostics, not a teaching-effectiveness score. Teaching Briefs do not create Formal Evidence, mastery, progression, or durable mistakes, and no claim is made that the unshipped learner-facing lesson execution is complete.

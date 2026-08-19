@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   chunkNormalizedDocument,
   normalizeMarkdown,
+  normalizePdf,
   normalizeSourceCode,
   normalizeTxt,
   normalizedDocumentToSourceBlocks,
@@ -48,6 +49,90 @@ describe('normalized structure and chunking', () => {
     expect(document.units.filter((unit) => unit.kind === 'table')).toHaveLength(1);
     expect(document.units.filter((unit) => unit.kind === 'other')).toHaveLength(1);
     expect(chunkNormalizedDocument(document)).toHaveLength(4);
+  });
+
+  it('adds PDF page parents while chunking only page-owned structural content', () => {
+    const firstPage = '# Topic\n\nFirst paragraph.\n\nA | B\n1 | 2';
+    const secondPage = 'Second paragraph.';
+    const content = `${firstPage}\n\n${secondPage}`;
+    const document = normalizePdf({
+      revisionId: 'rev_pdf',
+      sourceType: 'pdf',
+      mediaType: 'application/pdf',
+      content,
+      pageSpans: [
+        { pageNumber: 1, startOffset: 0, endOffset: firstPage.length },
+        {
+          pageNumber: 2,
+          startOffset: content.indexOf(secondPage),
+          endOffset: content.length,
+        },
+      ],
+    });
+
+    const pages = document.units.filter((unit) => unit.kind === 'page');
+    expect(pages).toHaveLength(2);
+    expect(pages.map((unit) => unit.location.pageNumber)).toEqual([1, 2]);
+    expect(document.units.find((unit) => unit.kind === 'table')?.parentUnitId).toBe(pages[0]!.id);
+    expect(
+      document.units.find((unit) => unit.kind === 'paragraph' && unit.content === secondPage)
+        ?.parentUnitId,
+    ).toBe(pages[1]!.id);
+
+    const chunks = chunkNormalizedDocument(document);
+    expect(chunks).toHaveLength(3);
+    expect(chunks.map((chunk) => chunk.pageNumber)).toEqual([1, 1, 2]);
+    expect(chunks.map((chunk) => chunk.content)).not.toContain(firstPage);
+    expect(document.capabilities).toEqual(
+      expect.arrayContaining(['page_awareness', 'table_structure']),
+    );
+  });
+
+  it('keeps an empty PDF page as an honest zero-width structural location', () => {
+    const content = 'Only page one has text.';
+    const document = normalizePdf({
+      revisionId: 'rev_pdf_empty_page',
+      sourceType: 'pdf',
+      mediaType: 'application/pdf',
+      content,
+      pageSpans: [
+        { pageNumber: 1, startOffset: 0, endOffset: content.length },
+        { pageNumber: 2, startOffset: content.length, endOffset: content.length },
+      ],
+      warnings: ['Page 2 has no extractable text.'],
+    });
+    expect(document.units.find((unit) => unit.location.pageNumber === 2)).toMatchObject({
+      kind: 'page',
+      content: '',
+      startOffset: content.length,
+      endOffset: content.length,
+    });
+    expect(normalizedDocumentToSourceBlocks('mat_pdf_empty_page', document)).toHaveLength(1);
+  });
+
+  it('never carries a trailing PDF heading into the next page', () => {
+    const firstPage = '# Page one heading';
+    const secondPage = 'Page two paragraph.';
+    const content = `${firstPage}\n\n${secondPage}`;
+    const document = normalizePdf({
+      revisionId: 'rev_pdf_page_boundary',
+      sourceType: 'pdf',
+      mediaType: 'application/pdf',
+      content,
+      pageSpans: [
+        { pageNumber: 1, startOffset: 0, endOffset: firstPage.length },
+        {
+          pageNumber: 2,
+          startOffset: content.indexOf(secondPage),
+          endOffset: content.length,
+        },
+      ],
+    });
+
+    expect(chunkNormalizedDocument(document)).toMatchObject([
+      { content: firstPage, pageNumber: 1, pageEnd: 1 },
+      { content: secondPage, pageNumber: 2, pageEnd: 2 },
+    ]);
   });
 
   it('splits oversized paragraphs only at hard boundaries and stays deterministic', () => {

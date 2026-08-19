@@ -210,11 +210,12 @@ describe('materials repository', () => {
     expect(stored.availability).toBe('active');
     expect(stored.retiredAt).toBeNull();
     expect(repos.materials.getBlocks(material.id)).toEqual([
-      { ...block, materialRevisionId: stored.activeRevisionId },
+      { ...block, materialRevisionId: stored.activeRevisionId, slideNumber: null },
     ]);
     expect(repos.materials.getBlock(block.id)).toEqual({
       ...block,
       materialRevisionId: stored.activeRevisionId,
+      slideNumber: null,
     });
 
     const summaries = repos.materials.list();

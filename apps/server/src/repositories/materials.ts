@@ -1,15 +1,18 @@
 import {
   ConceptSchema,
+  EmbeddedAssetSchema,
   fnv1a32,
   MaterialSchema,
   SourceBlockSchema,
   type Concept,
+  type EmbeddedAsset,
   type Material,
   type NormalizedDocumentUnit,
   type SourceBlock,
 } from '@hy3-clinic/shared';
 import type { SqliteDb } from '../db/database.js';
 import { newId } from '../util/ids.js';
+import { assertEmbeddedAssetBytes } from './embeddedAssets.js';
 
 export interface MaterialSummary {
   id: string;
@@ -53,6 +56,7 @@ interface BlockRow {
   heading_path: string;
   page_number: number | null;
   page_end: number | null;
+  slide_number: number | null;
   content: string;
   start_offset: number;
   end_offset: number;
@@ -60,6 +64,28 @@ interface BlockRow {
   structural_unit_id: string | null;
   chunker_version: string | null;
   content_origin: string | null;
+}
+
+interface AssetRow {
+  id: string;
+  material_id: string;
+  material_revision_id: string;
+  idx: number;
+  parent_structural_unit_id: string | null;
+  source_path: string;
+  media_type: string;
+  byte_hash: string;
+  byte_length: number;
+  width: number | null;
+  height: number | null;
+  location: string;
+  relationship_kind: EmbeddedAsset['relationshipKind'];
+  content_origin: 'extracted_original';
+  parser_version: string;
+}
+
+export interface EmbeddedAssetInput extends EmbeddedAsset {
+  bytes: Buffer;
 }
 
 interface ConceptRow {
@@ -132,6 +158,7 @@ function rowToBlock(row: BlockRow): SourceBlock {
     headingPath: JSON.parse(row.heading_path) as string[],
     pageNumber: row.page_number,
     pageEnd: row.page_end,
+    slideNumber: row.slide_number,
     content: row.content,
     startOffset: row.start_offset,
     endOffset: row.end_offset,
@@ -140,6 +167,26 @@ function rowToBlock(row: BlockRow): SourceBlock {
     ...(row.content_origin ? { contentOrigin: row.content_origin } : {}),
   };
   return SourceBlockSchema.parse(parsed);
+}
+
+function rowToAsset(row: AssetRow): EmbeddedAsset {
+  return EmbeddedAssetSchema.parse({
+    id: row.id,
+    materialId: row.material_id,
+    materialRevisionId: row.material_revision_id,
+    index: row.idx,
+    parentStructuralUnitId: row.parent_structural_unit_id,
+    sourcePath: row.source_path,
+    mediaType: row.media_type,
+    byteHash: row.byte_hash,
+    byteLength: row.byte_length,
+    width: row.width,
+    height: row.height,
+    location: JSON.parse(row.location),
+    relationshipKind: row.relationship_kind,
+    contentOrigin: row.content_origin,
+    parserVersion: row.parser_version,
+  });
 }
 
 function rowToConcept(row: ConceptRow): Concept {
@@ -164,8 +211,8 @@ export function createMaterialsRepo(db: SqliteDb) {
              @parserVersion, @createdAt, @updatedAt, @originalData)`,
   );
   const insertBlockStmt = db.prepare(
-    `INSERT INTO source_blocks (id, material_id, material_revision_id, idx, heading, heading_path, page_number, page_end, content, start_offset, end_offset, structural_unit_id, chunker_version, content_origin)
-      VALUES (@id, @materialId, @materialRevisionId, @index, @heading, @headingPath, @pageNumber, @pageEnd, @content, @startOffset, @endOffset, @structuralUnitId, @chunkerVersion, @contentOrigin)`,
+    `INSERT INTO source_blocks (id, material_id, material_revision_id, idx, heading, heading_path, page_number, page_end, slide_number, content, start_offset, end_offset, structural_unit_id, chunker_version, content_origin)
+      VALUES (@id, @materialId, @materialRevisionId, @index, @heading, @headingPath, @pageNumber, @pageEnd, @slideNumber, @content, @startOffset, @endOffset, @structuralUnitId, @chunkerVersion, @contentOrigin)`,
   );
   const insertMaterialRevisionStmt = db.prepare(
     `INSERT INTO material_revisions (
@@ -224,6 +271,7 @@ export function createMaterialsRepo(db: SqliteDb) {
       headingPath: JSON.stringify(block.headingPath),
       pageNumber: block.pageNumber,
       pageEnd: block.pageEnd,
+      slideNumber: block.slideNumber ?? null,
       content: block.content,
       startOffset: block.startOffset,
       endOffset: block.endOffset,
@@ -246,6 +294,7 @@ export function createMaterialsRepo(db: SqliteDb) {
         chunkerFingerprint?: string | null;
         sourceFingerprint?: string | null;
       } = {},
+      embeddedAssets: EmbeddedAssetInput[] = [],
     ) => {
       insertMaterialStmt.run(materialParams(material, originalData));
       const revisionId = newId('rev');
@@ -310,10 +359,10 @@ export function createMaterialsRepo(db: SqliteDb) {
         `INSERT INTO normalized_structural_units (
            id, material_revision_id, parent_id, unit_type, idx, title,
            start_offset, end_offset, page_number, metadata, line_start, line_end,
-           page_end, heading_path, content_origin, chunker_version
+           page_end, slide_number, heading_path, content_origin, chunker_version
          ) VALUES (@id, @materialRevisionId, @parentId, @kind, @index, @title,
            @startOffset, @endOffset, @pageNumber, @metadata, @lineStart, @lineEnd,
-           @pageEnd, @headingPath, @contentOrigin, @chunkerVersion)`,
+           @pageEnd, @slideNumber, @headingPath, @contentOrigin, @chunkerVersion)`,
       );
       for (const unit of orderedUnits) {
         insertUnitStmt.run({
@@ -328,13 +377,14 @@ export function createMaterialsRepo(db: SqliteDb) {
           pageNumber: unit.location.pageNumber ?? null,
           metadata: JSON.stringify({
             content: unit.content,
-            sourceLocator: null,
+            sourceLocator: unit.location.domPath ?? null,
             derivation: unit.derivation,
             confidence: null,
           }),
           lineStart: unit.location.lineStart ?? null,
           lineEnd: unit.location.lineEnd ?? null,
           pageEnd: unit.location.pageEnd ?? null,
+          slideNumber: unit.location.slideNumber ?? null,
           headingPath: JSON.stringify(unit.headingPath),
           contentOrigin: unit.contentOrigin,
           chunkerVersion: derivation.chunkerVersion ?? null,
@@ -356,6 +406,65 @@ export function createMaterialsRepo(db: SqliteDb) {
           structuralUnitId: block.structuralUnitId
             ? (unitIdMap.get(block.structuralUnitId) ?? null)
             : null,
+        });
+      }
+      const insertBlob = db.prepare(
+        `INSERT OR IGNORE INTO source_asset_blobs
+           (byte_hash, media_type, byte_length, original_data)
+         VALUES (@byteHash, @mediaType, @byteLength, @bytes)`,
+      );
+      const insertAsset = db.prepare(
+        `INSERT INTO material_revision_assets (
+           id, material_id, material_revision_id, idx, parent_structural_unit_id,
+           source_path, media_type, byte_hash, byte_length, width, height,
+           location, relationship_kind, content_origin, parser_version, created_at
+         ) VALUES (
+           @id, @materialId, @materialRevisionId, @index, @parentStructuralUnitId,
+           @sourcePath, @mediaType, @byteHash, @byteLength, @width, @height,
+           @location, @relationshipKind, 'extracted_original', @parserVersion, @createdAt
+         )`,
+      );
+      for (const asset of embeddedAssets) {
+        if (asset.materialId !== material.id) {
+          throw new Error(`Embedded asset belongs to a foreign material: ${asset.id}`);
+        }
+        if (asset.materialRevisionId !== `${material.id}:candidate`) {
+          throw new Error(`Embedded asset belongs to a foreign revision: ${asset.id}`);
+        }
+        if (asset.parentStructuralUnitId && !unitIdMap.has(asset.parentStructuralUnitId)) {
+          throw new Error(`Embedded asset structural unit is unknown: ${asset.id}`);
+        }
+        assertEmbeddedAssetBytes(asset);
+        insertBlob.run({
+          byteHash: asset.byteHash,
+          mediaType: asset.mediaType,
+          byteLength: asset.byteLength,
+          bytes: asset.bytes,
+        });
+        const existing = db
+          .prepare('SELECT original_data FROM source_asset_blobs WHERE byte_hash = ?')
+          .get(asset.byteHash) as { original_data: Buffer } | undefined;
+        if (!existing || !existing.original_data.equals(asset.bytes)) {
+          throw new Error(`Embedded asset hash collision: ${asset.id}`);
+        }
+        insertAsset.run({
+          id: `asset_${fnv1a32(`${revisionId}:${asset.id}`).toString(16).padStart(8, '0')}`,
+          materialId: material.id,
+          materialRevisionId: revisionId,
+          index: asset.index,
+          parentStructuralUnitId: asset.parentStructuralUnitId
+            ? (unitIdMap.get(asset.parentStructuralUnitId) ?? null)
+            : null,
+          sourcePath: asset.sourcePath,
+          mediaType: asset.mediaType,
+          byteHash: asset.byteHash,
+          byteLength: asset.byteLength,
+          width: asset.width,
+          height: asset.height,
+          location: JSON.stringify(asset.location),
+          relationshipKind: asset.relationshipKind,
+          parserVersion: asset.parserVersion,
+          createdAt: material.createdAt,
         });
       }
     },
@@ -411,10 +520,12 @@ export function createMaterialsRepo(db: SqliteDb) {
         chunkerFingerprint?: string | null;
         sourceFingerprint?: string | null;
       } = {},
+      embeddedAssets: EmbeddedAssetInput[] = [],
     ): void {
       MaterialSchema.parse(material);
       blocks.forEach((b) => SourceBlockSchema.parse(b));
-      insertWithBlocks(material, blocks, originalData, normalizedUnits, derivation);
+      embeddedAssets.forEach(({ bytes: _bytes, ...asset }) => EmbeddedAssetSchema.parse(asset));
+      insertWithBlocks(material, blocks, originalData, normalizedUnits, derivation, embeddedAssets);
     },
 
     get(id: string): Material | undefined {
@@ -503,6 +614,28 @@ export function createMaterialsRepo(db: SqliteDb) {
         )
         .all(materialId) as BlockRow[];
       return rows.map(rowToBlock);
+    },
+
+    getAssets(materialId: string): EmbeddedAsset[] {
+      const rows = db
+        .prepare(
+          `SELECT a.* FROM material_revision_assets a
+           JOIN materials m ON m.active_revision_id = a.material_revision_id
+           WHERE m.id = ? ORDER BY a.idx ASC`,
+        )
+        .all(materialId) as AssetRow[];
+      return rows.map(rowToAsset);
+    },
+
+    getAssetBytes(assetId: string): Buffer | undefined {
+      const row = db
+        .prepare(
+          `SELECT b.original_data FROM source_asset_blobs b
+           JOIN material_revision_assets a ON a.byte_hash = b.byte_hash
+           WHERE a.id = ?`,
+        )
+        .get(assetId) as { original_data: Buffer } | undefined;
+      return row?.original_data;
     },
 
     /** All blocks of every document in a workspace (document order, then block order). */

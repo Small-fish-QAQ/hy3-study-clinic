@@ -3,13 +3,14 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { LessonExecutionProjection } from '@hy3-clinic/shared';
 import { api } from '../api.js';
-import { LessonExecutionPanel } from './LessonExecutionPanel.js';
+import { LessonExecutionPanel, LessonSourceReference } from './LessonExecutionPanel.js';
 
 const source = {
   referenceKey: 'S1',
   materialTitle: '概率论讲义',
   headingPath: ['第二章', '条件概率'],
   pageNumber: 12,
+  slideNumber: null,
   locationLabel: '第 12 页',
   exactExcerpt: '条件概率描述了在已知另一个事件发生时，某事件发生的可能性。',
   classification: 'exact_source_excerpt' as const,
@@ -109,6 +110,15 @@ const prepared = readyLesson({
 afterEach(() => vi.restoreAllMocks());
 
 describe('LessonExecutionPanel', () => {
+  it('shows slide provenance ahead of a fallback heading path', () => {
+    render(
+      <LessonSourceReference
+        source={{ ...source, pageNumber: null, slideNumber: 4, locationLabel: 'Slide 4' }}
+      />,
+    );
+    expect(screen.getByText('第 4 张幻灯片')).toBeInTheDocument();
+  });
+
   it('prepares a missing lesson once and renders the ready lesson hierarchy', async () => {
     const user = userEvent.setup();
     const get = vi.spyOn(api, 'getLessonExecution').mockResolvedValue(needed);

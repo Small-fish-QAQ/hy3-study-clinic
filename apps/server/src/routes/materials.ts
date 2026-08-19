@@ -8,6 +8,7 @@ import {
 } from '@hy3-clinic/shared';
 import { notFound } from '../errors.js';
 import type { MaterialService } from '../services/materials.js';
+import { requestSignal } from '../util/requestSignal.js';
 
 const CreateMaterialBodySchema = z.object({
   content: z.string(),
@@ -24,7 +25,9 @@ export function registerMaterialRoutes(app: FastifyInstance, materials: Material
     // stay schema-validated and share the workspace document ingestion path.
     if (typeof raw === 'object' && raw !== null && 'dataBase64' in raw) {
       const body = DocumentFilePayloadSchema.parse(raw);
-      const created = await materials.createFromUpload(body);
+      const created = await materials.createFromUpload(body, undefined, {
+        signal: requestSignal(request, reply),
+      });
       reply.status(201).send(created);
       return;
     }

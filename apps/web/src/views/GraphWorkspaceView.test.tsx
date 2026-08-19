@@ -426,8 +426,8 @@ describe('学习图谱工作台 — workspace and document area', () => {
     await screen.findByText('个人学习图谱');
 
     expect(screen.getByText(/暂不支持纯扫描图片型 PDF/)).toBeInTheDocument();
-    const input = screen.getByLabelText('上传文档文件(.md / .txt / .pdf / .docx)');
-    expect(input).toHaveAttribute('accept', '.md,.markdown,.txt,.pdf,.docx');
+    const input = screen.getByLabelText('上传文档文件(.md / .txt / .pdf / .pptx / .docx)');
+    expect(input).toHaveAttribute('accept', '.md,.markdown,.txt,.pdf,.pptx,.docx');
     fireEvent.change(input, {
       target: { files: [new File([pdfBody], '讲义.pdf', { type: 'application/pdf' })] },
     });
@@ -435,6 +435,39 @@ describe('学习图谱工作台 — workspace and document area', () => {
     await waitFor(() => expect(received).toBeDefined());
     expect(received).toMatchObject({ kind: 'file', filename: '讲义.pdf' });
     expect(atob((received as { dataBase64: string }).dataBase64)).toBe(pdfBody);
+  });
+
+  it('uploads a PPTX file as a base64 file document', async () => {
+    openSavedWorkspace();
+    const pptxBody = 'PK\u0003\u0004 workspace presentation upload';
+    let received: unknown;
+    installViewMock([
+      ...baseRoutes(),
+      {
+        method: 'POST',
+        pattern: /\/api\/workspaces\/ws_1\/documents$/,
+        handler: (body) => {
+          received = body;
+          return { status: 201, body: material };
+        },
+      },
+    ]);
+    renderView();
+    await screen.findByText('个人学习图谱');
+
+    fireEvent.change(screen.getByLabelText('上传文档文件(.md / .txt / .pdf / .pptx / .docx)'), {
+      target: {
+        files: [
+          new File([pptxBody], '讲义.pptx', {
+            type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          }),
+        ],
+      },
+    });
+
+    await waitFor(() => expect(received).toBeDefined());
+    expect(received).toMatchObject({ kind: 'file', filename: '讲义.pptx' });
+    expect(atob((received as { dataBase64: string }).dataBase64)).toBe(pptxBody);
   });
 
   it('rejects an unsupported upload locally with the shared message and no request', async () => {
@@ -447,12 +480,12 @@ describe('学习图谱工作台 — workspace and document area', () => {
     renderView();
     await screen.findByText('个人学习图谱');
 
-    fireEvent.change(screen.getByLabelText('上传文档文件(.md / .txt / .pdf / .docx)'), {
-      target: { files: [new File(['nope'], 'slides.pptx')] },
+    fireEvent.change(screen.getByLabelText('上传文档文件(.md / .txt / .pdf / .pptx / .docx)'), {
+      target: { files: [new File(['nope'], 'workbook.xlsx')] },
     });
 
     expect(
-      await screen.findByText('不支持的文件类型:仅接受 .md、.txt、.pdf 与 .docx 文件。'),
+      await screen.findByText('不支持的文件类型:仅接受 .md、.txt、.pdf、.pptx 与 .docx 文件。'),
     ).toBeInTheDocument();
     expect(addDocument).not.toHaveBeenCalled();
   });

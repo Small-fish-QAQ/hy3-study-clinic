@@ -316,6 +316,24 @@ describe('analyzePdfLayout: conservatism', () => {
     const result = analyzePdfLayout([page(1, [line('唯一有内容的页面。', 400)]), page(2, [])]);
     expect(result.warnings).toHaveLength(1);
     expect(result.warnings[0]).toContain('第 2 页');
-    expect(result.pageSpans.map((s) => s.pageNumber)).toEqual([1]);
+    expect(result.pageSpans.map((s) => s.pageNumber)).toEqual([1, 2]);
+    expect(result.pageSpans[1]!.startOffset).toBe(result.pageSpans[1]!.endOffset);
+  });
+
+  it('warns without inventing order for rotated and likely multi-column text', () => {
+    const result = analyzePdfLayout([
+      page(1, [
+        { ...item('Rotated note', 40, 760), rotated: true },
+        item('A long sentence in the left column', 40, 700),
+        item('A long sentence in the right column', 330, 700),
+        item('Another substantial left-column line', 40, 670),
+        item('Another substantial right-column line', 330, 670),
+        item('A third substantial left-column line', 40, 640),
+        item('A third substantial right-column line', 330, 640),
+      ]),
+    ]);
+
+    expect(result.warnings.some((warning) => warning.includes('旋转'))).toBe(true);
+    expect(result.warnings.some((warning) => warning.includes('多栏'))).toBe(true);
   });
 });
