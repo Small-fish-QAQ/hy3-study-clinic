@@ -296,8 +296,9 @@ export function createLearnerAssessmentsService({
         .listByWorkspace(submitted.workspaceId)
         .find((candidate) => candidate.verificationAttemptId === submitted.id);
       if (linkedEpisode) {
-        if (evidence.some((record) => record.conclusion === 'supported')) {
-          repair.resolveFromEvidence(linkedEpisode.id, evidence[0]!.id);
+        const supportedEvidence = evidence.find((record) => record.conclusion === 'supported');
+        if (supportedEvidence) {
+          repair.resolveFromEvidence(linkedEpisode.id, supportedEvidence.id);
         } else {
           repair.recordVerificationFailure(linkedEpisode.id);
         }
