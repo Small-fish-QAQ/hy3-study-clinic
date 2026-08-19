@@ -16,6 +16,7 @@ import { registerWorkspaceRoutes } from './routes/workspaces.js';
 import { registerAgentCourseRoutes } from './routes/agentCourse.js';
 import { registerStudySessionRoutes } from './routes/studySessions.js';
 import { registerFormalProgressionRoutes } from './routes/formalProgression.js';
+import { registerFormalAssessmentRoutes } from './routes/formalAssessments.js';
 import {
   ProviderRuntime,
   createRuntimeProvider,
@@ -214,6 +215,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   registerAgentCourseRoutes(app, services);
   registerStudySessionRoutes(app, services);
   registerFormalProgressionRoutes(app, services);
+  registerFormalAssessmentRoutes(app, services);
 
   return app;
 }

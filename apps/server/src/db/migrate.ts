@@ -2142,6 +2142,88 @@ const MIGRATIONS: Migration[] = [
       ALTER TABLE material_revisions ADD COLUMN web_snapshot TEXT;
     `,
   },
+  {
+    version: 28,
+    name: 'formal_assessment_evidence_backbone',
+    up: `
+      CREATE TABLE assessment_definitions (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        logical_key TEXT NOT NULL,
+        title TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE (workspace_id, logical_key)
+      );
+      CREATE TABLE assessment_versions (
+        id TEXT PRIMARY KEY,
+        definition_id TEXT NOT NULL REFERENCES assessment_definitions(id) ON DELETE CASCADE,
+        version INTEGER NOT NULL CHECK (version > 0),
+        predecessor_id TEXT REFERENCES assessment_versions(id),
+        status TEXT NOT NULL CHECK (status IN ('draft', 'accepted', 'superseded')),
+        payload TEXT NOT NULL,
+        source_revision_ids TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        accepted_at TEXT,
+        UNIQUE (definition_id, version)
+      );
+      CREATE INDEX idx_assessment_versions_definition ON assessment_versions(definition_id, version DESC);
+      CREATE TABLE assessment_attempts (
+        id TEXT PRIMARY KEY,
+        assessment_version_id TEXT NOT NULL REFERENCES assessment_versions(id),
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        ordinal INTEGER NOT NULL CHECK (ordinal > 0),
+        status TEXT NOT NULL CHECK (status IN ('started', 'submitted', 'cancelled')),
+        responses TEXT NOT NULL,
+        started_at TEXT NOT NULL,
+        submitted_at TEXT,
+        cancelled_at TEXT,
+        UNIQUE (assessment_version_id, ordinal)
+      );
+      CREATE INDEX idx_assessment_attempts_workspace ON assessment_attempts(workspace_id, started_at DESC);
+      CREATE TABLE assessment_grade_records (
+        id TEXT PRIMARY KEY,
+        attempt_id TEXT NOT NULL REFERENCES assessment_attempts(id),
+        assessment_version_id TEXT NOT NULL REFERENCES assessment_versions(id),
+        grader TEXT NOT NULL CHECK (grader IN ('deterministic', 'fake', 'hy3')),
+        rubric_version TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN ('current', 'superseded')),
+        payload TEXT NOT NULL,
+        supersedes_id TEXT REFERENCES assessment_grade_records(id),
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_assessment_grades_attempt ON assessment_grade_records(attempt_id, created_at DESC);
+      CREATE TABLE assessment_evidence_records (
+        id TEXT PRIMARY KEY,
+        attempt_id TEXT NOT NULL REFERENCES assessment_attempts(id),
+        grade_record_id TEXT NOT NULL REFERENCES assessment_grade_records(id),
+        assessment_version_id TEXT NOT NULL REFERENCES assessment_versions(id),
+        item_id TEXT NOT NULL,
+        target_learning_unit_id TEXT NOT NULL,
+        conclusion TEXT NOT NULL CHECK (conclusion IN ('supported', 'partial', 'unsupported')),
+        policy_version TEXT NOT NULL,
+        source_binding_ids TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE (grade_record_id, item_id)
+      );
+      CREATE INDEX idx_assessment_evidence_attempt ON assessment_evidence_records(attempt_id, created_at);
+      CREATE TABLE assessment_progression_reconciliations (
+        id TEXT PRIMARY KEY,
+        evidence_record_id TEXT NOT NULL UNIQUE REFERENCES assessment_evidence_records(id),
+        status TEXT NOT NULL CHECK (status IN ('pending', 'applied', 'failed')),
+        applied_at TEXT,
+        created_at TEXT NOT NULL
+      );
+      CREATE TRIGGER prevent_assessment_version_mutation
+        BEFORE UPDATE OF payload, source_revision_ids, predecessor_id, version ON assessment_versions
+      WHEN OLD.status IN ('accepted', 'superseded')
+      BEGIN SELECT RAISE(ABORT, 'accepted assessment versions are immutable'); END;
+      CREATE TRIGGER prevent_assessment_item_mutation
+        BEFORE UPDATE ON assessment_versions
+      WHEN OLD.status IN ('accepted', 'superseded') AND NEW.payload != OLD.payload
+      BEGIN SELECT RAISE(ABORT, 'assessment items are immutable after acceptance'); END;
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

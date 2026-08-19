@@ -65,6 +65,10 @@ course material -> document import with provenance -> Hy3 concept extraction -> 
 
 The same workflows run offline with the fake provider through `npm run demo:graph` and `npm run demo:adaptive`.
 
+### Formal assessment and evidence boundary
+
+Practice and formal assessment are separate paths. Formal assessments use immutable accepted versions with explicit learning-unit/objective targets, exact MaterialRevision/SourceBlock bindings, and an authoritative rubric. Short-answer items are the supported formal path; choice items remain practice/advisory unless complete option-premise authority is available. Attempts are durable and immutable after submission, and grades are append-only records that support regrading without erasing history. A grade is not Formal Evidence: local gating derives evidence only from an eligible item, current grade, submitted attempt, and valid source/rubric authority. Evidence is then handed to a separate idempotent progression-reconciliation boundary. Tutor conversation, lesson completion, exact quote occurrence alone, and derived visual descriptions never grant formal credit.
+
 ## Product workflow
 
 ### Course materials to a verifiable learning graph

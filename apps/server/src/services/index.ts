@@ -56,6 +56,10 @@ import {
   createVisualPreparationService,
   type VisualPreparationService,
 } from './visualPreparation.js';
+import {
+  createFormalAssessmentsService,
+  type FormalAssessmentsService,
+} from './formalAssessments.js';
 
 export interface Services {
   materials: MaterialService;
@@ -92,6 +96,7 @@ export interface Services {
   teachingBriefPreparation: TeachingBriefPreparationService;
   lessonExecution: LessonExecutionService;
   visualPreparation: VisualPreparationService;
+  formalAssessments: FormalAssessmentsService;
 }
 
 export interface ServiceDeps {
@@ -203,6 +208,7 @@ export function createServices({
     provider: visualProvider,
     clock,
   });
+  const formalAssessments = createFormalAssessmentsService({ repos, clock });
   const studySessions = createStudySessionService({
     repos,
     provider,
@@ -246,5 +252,6 @@ export function createServices({
     teachingBriefPreparation,
     lessonExecution,
     visualPreparation,
+    formalAssessments,
   };
 }
