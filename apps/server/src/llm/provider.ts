@@ -182,6 +182,26 @@ export interface VisualDescriptionInput {
   };
 }
 
+export type VisualProviderName = 'disabled' | 'fake' | 'hy3' | 'tokenhub';
+
+/** Visual-only provider surface. Language and pedagogy operations stay on LlmProvider. */
+export interface VisualDescriptionProvider {
+  readonly name: VisualProviderName;
+  readonly model?: string | undefined;
+  /** Non-secret normalized endpoint identity used to fence semantic reuse. */
+  readonly endpointIdentity?: string | undefined;
+  /** Adapter/documented transport generation used to fence semantic reuse. */
+  readonly runtimeIdentity?: string | undefined;
+  /** Prompt/configuration generation used to fence semantic reuse. */
+  readonly promptIdentity?: string | undefined;
+  /** Maximum duration of one physical visual request. */
+  readonly timeoutMs?: number | undefined;
+  describeVisual(
+    input: VisualDescriptionInput,
+    opts?: ProviderCallOptions,
+  ): Promise<VisualDescriptionPayload>;
+}
+
 export interface ConceptAnalysisInput {
   materialTitle: string;
   blocks: SourceBlock[];
@@ -742,7 +762,7 @@ export interface StudyPlanProposalInput {
  * Zod-validated payloads; implementations must never throw raw HTTP errors —
  * only ProviderError (see errors.ts).
  */
-export interface LlmProvider {
+export interface LlmProvider extends VisualDescriptionProvider {
   readonly name: 'fake' | 'hy3';
   /** Non-secret model identifier for auditable provider metadata. */
   readonly model?: string | undefined;

@@ -4,7 +4,7 @@ import { ApiErrorCode, ProviderConnectionTestRequestSchema } from '@hy3-clinic/s
 import { AppError, statusForErrorCode } from './errors.js';
 import { IngestionError } from './ingestion/ingest.js';
 import { ProviderError } from './llm/errors.js';
-import type { LlmProvider } from './llm/provider.js';
+import type { LlmProvider, VisualDescriptionProvider } from './llm/provider.js';
 import type { Repositories } from './repositories/index.js';
 import type { Clock } from './util/ids.js';
 import type { AppConfig } from './config.js';
@@ -27,6 +27,7 @@ import { createTelemetryProvider } from './services/providerTelemetry.js';
 export interface AppDeps {
   repos: Repositories;
   provider: LlmProvider;
+  visualProvider?: VisualDescriptionProvider;
   providerRuntime?: ProviderRuntime;
   providerConfigStore?: ProviderConfigStore | null;
   startupConfig?: AppConfig;
@@ -49,6 +50,11 @@ export function buildApp(deps: AppDeps): FastifyInstance {
         hy3ApiKey: undefined,
         hy3Model: deps.providerModel,
         hy3TimeoutMs: 30_000,
+        visualProvider: 'disabled',
+        tokenHubVisualBaseUrl: undefined,
+        tokenHubVisualApiKey: undefined,
+        tokenHubVisualModel: 'hy-vision-2.0-instruct',
+        tokenHubVisualTimeoutMs: 120_000,
         providerConfigPath: '',
       },
       store: deps.providerConfigStore,
@@ -77,15 +83,23 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   });
 
   const clock = deps.clock ?? systemClock;
+  const runtimeProvider = createRuntimeProvider(runtime);
   const provider = createTelemetryProvider({
     repos: deps.repos,
     clock,
-    provider: createRuntimeProvider(runtime),
+    provider: runtimeProvider,
     providerGeneration: () => runtime.generation,
+  });
+  const visualProvider = createTelemetryProvider({
+    repos: deps.repos,
+    clock,
+    provider: deps.visualProvider ?? runtimeProvider,
+    providerGeneration: () => (deps.visualProvider ? 1 : runtime.generation),
   });
   const services = createServices({
     repos: deps.repos,
     provider,
+    visualProvider,
     clock,
     providerModel: runtime.providerModel,
   });

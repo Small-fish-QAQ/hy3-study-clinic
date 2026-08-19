@@ -313,6 +313,11 @@ export class ProviderRuntime {
         hy3ApiKey: undefined,
         hy3Model: undefined,
         hy3TimeoutMs: timeoutMs,
+        visualProvider: 'disabled',
+        tokenHubVisualBaseUrl: undefined,
+        tokenHubVisualApiKey: undefined,
+        tokenHubVisualModel: 'hy-vision-2.0-instruct',
+        tokenHubVisualTimeoutMs: 120_000,
         providerConfigPath: '',
       });
     return createProvider({
@@ -324,6 +329,11 @@ export class ProviderRuntime {
       hy3ApiKey: config.apiKey,
       hy3Model: config.model,
       hy3TimeoutMs: timeoutMs,
+      visualProvider: 'disabled',
+      tokenHubVisualBaseUrl: undefined,
+      tokenHubVisualApiKey: undefined,
+      tokenHubVisualModel: 'hy-vision-2.0-instruct',
+      tokenHubVisualTimeoutMs: 120_000,
       providerConfigPath: '',
     });
   }

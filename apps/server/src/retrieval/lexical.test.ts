@@ -122,6 +122,8 @@ function visualDerivation(
     generatorVersion: 'provider-visual-description-v1',
     provider: 'fake',
     providerModel: null,
+    providerEndpointIdentity: 'local:fake',
+    providerRuntimeIdentity: 'fake-provider-v1',
     configurationFingerprint: `sha256:${'d'.repeat(64)}`,
     contextMode: 'image_only',
     contextFingerprint: null,

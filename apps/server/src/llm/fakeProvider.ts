@@ -186,6 +186,9 @@ export type FakeTutorTurnFixture =
 
 export class FakeProvider implements LlmProvider {
   readonly name = 'fake' as const;
+  readonly endpointIdentity: string = 'local:fake';
+  readonly runtimeIdentity: string = 'fake-provider-v1';
+  readonly promptIdentity: string = 'fake-visual-description-v1';
 
   async testConnection(opts?: ProviderCallOptions): Promise<void> {
     if (opts?.signal?.aborted) throw ProviderError.cancelled();

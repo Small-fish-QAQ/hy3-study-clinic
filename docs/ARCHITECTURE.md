@@ -790,11 +790,12 @@ Plan.
 
 ### Provider and OCR scope
 
-The shared `LlmProvider` contract and FakeProvider include one strict
+The shared visual-provider contract and FakeProvider include one strict
 `describeVisual` operation with the existing whole-response JSON boundary and
-at most one bounded repair. `Hy3Provider` deliberately rejects this operation
-until Phase 6B2B confirms documented image transport; no undocumented image
-payload is sent. Local OCR is rejected for this phase after source-level review
+at most one bounded repair. `Hy3Provider` remains text-only and never receives
+an undocumented image payload; the dedicated `TokenHubVisionProvider` is the
+documented Phase 6B2C image path. Local OCR is rejected for this phase after
+source-level review
 of Tesseract.js, native Tesseract, PaddleOCR, Surya, and OCRmyPDF. The selected
 production image dependency is sharp only; no Python runtime, native OCR
 binary, model-download manager, GPU runtime, or vector database is added.
@@ -802,3 +803,45 @@ binary, model-download manager, GPU runtime, or vector database is added.
 HTML/Web Snapshot, full local OCR, OCR confidence projections, vector visual
 search, chart/equation entailment, and visual-grounded formal evidence remain
 outside this phase.
+
+## 26. Dedicated TokenHub visual provider (Phase 6B2C)
+
+Hy3 remains the text-only language and pedagogy provider. Visual description has
+its own startup-only configuration: `disabled`, deterministic `fake`, or the
+single documented TokenHub target `hy-vision-2.0-instruct`. The TokenHub adapter
+implements only `describeVisual`; it is not a Course, Curriculum, StudyPlan,
+assessment, grading, mastery, or evidence provider.
+
+The documented transport is `POST /v1/chat/completions` with one `user` message
+whose content array contains one `image_url` Data URL followed by one bounded
+text instruction. Local preparation restricts input to one PNG, JPEG, or WebP
+image. The adapter does not use a system message, `response_format`, automatic
+model routing, multiple images, video, or an OCR cascade. The response must be
+one complete JSON value that passes the shared Zod payload and local semantic
+validation. Only a schema or semantic failure may trigger one repair; HTTP,
+network, envelope, timeout, and cancellation failures are not retried.
+
+Migration 26 rebuilds `visual_derivations` to add immutable, non-secret
+`provider_endpoint_identity` and `provider_runtime_identity` fields and permit
+the controlled `tokenhub` provider value. Historical rows receive the explicit
+`historical:unrecorded` sentinel rather than a fabricated target. New semantic
+reuse binds provider, model, hashed normalized endpoint, adapter/transport
+generation, prompt generation, generator/schema version, image-preparation
+version, context mode, limits, and the prepared transport fingerprint. API keys
+and Authorization headers never enter this identity.
+
+Visual preparation derives its ownership lease from the real request envelope:
+two possible physical requests plus a 30-second local finalization margin. With
+the 120-second default per-request timeout, the lease is 270 seconds. Existing
+cancellation, active-revision/asset/hash checks, operation fencing, immutable
+accepted-history behavior, provider-attempt telemetry, and failed-generation
+preservation remain authoritative.
+
+Regardless of provider, accepted output remains
+`derived_visual_description`, `authority: derived`, and
+`advisory_nonblocking`. It can support lexical discovery, Teaching Briefs,
+Lessons, and Tutor context, but it cannot become a SourceBlock, Formal Evidence,
+grading input, mastery update, mistake closure, review decision, Agenda
+completion, or Plan progression. Exact quotation validation still proves only
+that quoted text occurs at a claimed source position; it does not prove full
+semantic entailment.

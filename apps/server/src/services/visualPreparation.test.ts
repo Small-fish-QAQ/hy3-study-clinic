@@ -284,6 +284,55 @@ describe('visual source preparation', () => {
     );
   });
 
+  it('does not reuse a derivation after the visual endpoint or runtime identity changes', async () => {
+    class VisualTargetProvider extends FakeProvider {
+      override readonly endpointIdentity: string;
+      override readonly runtimeIdentity: string;
+
+      constructor(endpoint: string, runtime: string) {
+        super();
+        this.endpointIdentity = endpoint;
+        this.runtimeIdentity = runtime;
+      }
+    }
+
+    const firstProvider = new VisualTargetProvider('endpoint:a', 'runtime:a');
+    const {
+      ctx,
+      materialId,
+      service: firstService,
+      visualRef,
+    } = await directPreparationFixture(firstProvider);
+    await firstService.prepare('ws_1', materialId, visualRef, { commandId: 'target-a' });
+
+    const secondProvider = createTelemetryProvider({
+      repos: ctx.repos,
+      clock: fixedClock(T0),
+      provider: new VisualTargetProvider('endpoint:b', 'runtime:b'),
+      providerGeneration: () => 1,
+    });
+    const secondService = createVisualPreparationService({
+      repos: ctx.repos,
+      clock: fixedClock(T0),
+      provider: secondProvider,
+    });
+    expect(secondService.list('ws_1', materialId)[0]!.preparation.state).toBe('stale');
+
+    const result = await secondService.prepare('ws_1', materialId, visualRef, {
+      commandId: 'target-b',
+    });
+    expect(result.status).toBe('prepared');
+    const history = ctx.repos.visualDerivations.listForAsset(
+      ctx.repos.materials.getAssets(materialId)[0]!.id,
+    );
+    expect(history).toHaveLength(2);
+    const first = history.find((row) => row.providerEndpointIdentity === 'endpoint:a')!;
+    const second = history.find((row) => row.providerEndpointIdentity === 'endpoint:b')!;
+    expect(first.semanticIdentityFingerprint).not.toBe(second.semanticIdentityFingerprint);
+    expect(second.reusedFromDerivationId).toBeNull();
+    expect(visualAttempts(ctx)).toHaveLength(2);
+  });
+
   it('coordinates concurrent SHA-identical occurrences by semantic identity', async () => {
     let enteredProvider!: () => void;
     let releaseProvider!: () => void;

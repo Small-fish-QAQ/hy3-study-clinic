@@ -84,6 +84,8 @@ function derivation(asset: EmbeddedAsset, hex: string): VisualDerivation {
     generatorVersion: 'provider-visual-description-v1',
     provider: 'fake',
     providerModel: null,
+    providerEndpointIdentity: 'local:fake',
+    providerRuntimeIdentity: 'fake-provider-v1',
     configurationFingerprint: `sha256:${hex.repeat(64)}`,
     contextMode: 'image_only',
     contextFingerprint: null,
@@ -134,7 +136,7 @@ function insertCopiedRow(
     .run(values);
 }
 
-describe('migration 25 visual derivation invariants', () => {
+describe('visual derivation invariants across migration 26', () => {
   it('enforces exact original occurrence binding and immutable accepted rows on a fresh install', () => {
     db = openDatabase(':memory:');
     migrate(db);
@@ -208,6 +210,50 @@ describe('migration 25 visual derivation invariants', () => {
     ).toBeUndefined();
     expect(legacyRepos.visualDerivations.listForAsset(legacyAsset.id)).toEqual([]);
 
+    migrate(db, { toVersion: 25 });
+    const historical = derivation(legacyAsset, 'f');
+    db.prepare(
+      `INSERT INTO visual_derivations (
+         id, material_id, material_revision_id, asset_id, asset_byte_hash,
+         identity_fingerprint, semantic_identity_fingerprint, derivation_kind,
+         content_origin, authority, evidence_admissibility, validation_status,
+         generator_identity, generator_version, provider, provider_model,
+         configuration_fingerprint, context_mode, context_fingerprint,
+         transport_media_type, transport_width, transport_height, transport_byte_length,
+         transport_transformation, transport_preparation_version, transport_fingerprint,
+         description, visual_type, visible_text, important_concepts, pedagogical_notes,
+         uncertainty, reused_from_derivation_id, created_at
+       ) VALUES (
+         @id, @materialId, @materialRevisionId, @assetId, @assetByteHash,
+         @identityFingerprint, @semanticIdentityFingerprint, @derivationKind,
+         @contentOrigin, @authority, @evidenceAdmissibility, @validationStatus,
+         @generatorIdentity, @generatorVersion, @provider, @providerModel,
+         @configurationFingerprint, @contextMode, @contextFingerprint,
+         @transportMediaType, @transportWidth, @transportHeight, @transportByteLength,
+         @transportTransformation, @transportPreparationVersion, @transportFingerprint,
+         @description, @visualType, @visibleText, @importantConcepts, @pedagogicalNotes,
+         @uncertainty, @reusedFromDerivationId, @createdAt
+       )`,
+    ).run({
+      ...historical,
+      transportMediaType: historical.transport.mediaType,
+      transportWidth: historical.transport.width,
+      transportHeight: historical.transport.height,
+      transportByteLength: historical.transport.byteLength,
+      transportTransformation: historical.transport.transformation,
+      transportPreparationVersion: historical.transport.preparationVersion,
+      transportFingerprint: historical.transport.fingerprint,
+      description: historical.payload.description,
+      visualType: historical.payload.visualType,
+      visibleText: historical.payload.visibleText,
+      importantConcepts: JSON.stringify(historical.payload.importantConcepts),
+      pedagogicalNotes: JSON.stringify(historical.payload.pedagogicalNotes),
+      uncertainty: JSON.stringify(historical.payload.uncertainty),
+    });
+    insertCopiedRow(historical.id, 'g', {
+      reused_from_derivation_id: historical.id,
+      identity_fingerprint: `visual_derivation_${'e'.repeat(64)}`,
+    });
     migrate(db);
     const repos = createRepositories(db);
     expect(repos.materialRevisions.getAssets(legacyAsset.materialRevisionId)).toEqual([
@@ -222,11 +268,50 @@ describe('migration 25 visual derivation invariants', () => {
       original_data: originalBytes,
     });
 
-    const accepted = repos.visualDerivations.create(derivation(legacyAsset, 'f'));
-    expect(repos.visualDerivations.listForAsset(legacyAsset.id)).toEqual([accepted]);
+    const accepted = repos.visualDerivations.get(historical.id)!;
+    const reused = repos.visualDerivations.get('visual_derivation_raw_g')!;
+    expect(repos.visualDerivations.listForAsset(legacyAsset.id)).toHaveLength(2);
+    expect(accepted).toMatchObject({
+      ...historical,
+      providerEndpointIdentity: 'historical:unrecorded',
+      providerRuntimeIdentity: 'historical:unrecorded',
+    });
+    expect(reused).toMatchObject({
+      ...historical,
+      id: 'visual_derivation_raw_g',
+      identityFingerprint: `visual_derivation_${'e'.repeat(64)}`,
+      providerEndpointIdentity: 'historical:unrecorded',
+      providerRuntimeIdentity: 'historical:unrecorded',
+      reusedFromDerivationId: historical.id,
+    });
     expect(
-      db.prepare('SELECT version, name FROM schema_migrations WHERE version = 25').get(),
-    ).toEqual({ version: 25, name: 'immutable_visual_derivations' });
+      db.prepare('SELECT version, name FROM schema_migrations WHERE version = 26').get(),
+    ).toEqual({ version: 26, name: 'visual_provider_runtime_identity' });
+    expect(
+      db
+        .prepare(
+          'SELECT provider_endpoint_identity, provider_runtime_identity FROM visual_derivations WHERE id = ?',
+        )
+        .get(accepted.id),
+    ).toEqual({
+      provider_endpoint_identity: 'historical:unrecorded',
+      provider_runtime_identity: 'historical:unrecorded',
+    });
+    expect(accepted).toMatchObject({
+      assetId: legacyAsset.id,
+      assetByteHash: legacyAsset.byteHash,
+      providerEndpointIdentity: 'historical:unrecorded',
+      providerRuntimeIdentity: 'historical:unrecorded',
+    });
+    expect(reused.reusedFromDerivationId).toBe(historical.id);
+    expect(() =>
+      db!
+        .prepare('UPDATE visual_derivations SET description = ? WHERE id = ?')
+        .run('mutated historical row', accepted.id),
+    ).toThrow(/visual derivations are immutable/u);
+    expect(() =>
+      db!.prepare('DELETE FROM visual_derivations WHERE id = ?').run(accepted.id),
+    ).toThrow(/visual derivations are immutable/u);
     expect(db.pragma('foreign_key_check')).toEqual([]);
   });
 });

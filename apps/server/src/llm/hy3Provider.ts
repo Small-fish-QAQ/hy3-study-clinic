@@ -295,8 +295,8 @@ export class Hy3Provider implements LlmProvider {
     opts?: ProviderCallOptions,
   ): Promise<VisualDescriptionPayload> {
     if (opts?.signal?.aborted) throw ProviderError.cancelled();
-    // The configured transport currently documents only string chat content.
-    // Phase 6B2B must freeze and evaluate a real image-part contract first.
+    // Hy3 is the text-only language/pedagogy provider. Visual requests use the
+    // separately configured documented TokenHub vision adapter.
     throw ProviderError.invalidOutput(
       'Hy3 visual input transport is not configured.',
       undefined,

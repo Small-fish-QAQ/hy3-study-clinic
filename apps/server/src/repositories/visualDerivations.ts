@@ -20,8 +20,10 @@ interface VisualDerivationRow {
   validation_status: 'accepted';
   generator_identity: 'provider_visual_description';
   generator_version: string;
-  provider: 'fake' | 'hy3';
+  provider: 'fake' | 'hy3' | 'tokenhub';
   provider_model: string | null;
+  provider_endpoint_identity: string;
+  provider_runtime_identity: string;
   configuration_fingerprint: string;
   context_mode: 'image_only';
   context_fingerprint: null;
@@ -60,6 +62,8 @@ function hydrate(row: VisualDerivationRow): VisualDerivation {
     generatorVersion: row.generator_version,
     provider: row.provider,
     providerModel: row.provider_model,
+    providerEndpointIdentity: row.provider_endpoint_identity,
+    providerRuntimeIdentity: row.provider_runtime_identity,
     configurationFingerprint: row.configuration_fingerprint,
     contextMode: row.context_mode,
     contextFingerprint: row.context_fingerprint,
@@ -101,7 +105,8 @@ export function createVisualDerivationsRepo(db: SqliteDb) {
        id, material_id, material_revision_id, asset_id, asset_byte_hash,
        identity_fingerprint, semantic_identity_fingerprint, derivation_kind,
        content_origin, authority, evidence_admissibility, validation_status,
-       generator_identity, generator_version, provider, provider_model,
+        generator_identity, generator_version, provider, provider_model,
+        provider_endpoint_identity, provider_runtime_identity,
        configuration_fingerprint, context_mode, context_fingerprint,
        transport_media_type, transport_width, transport_height, transport_byte_length,
        transport_transformation, transport_preparation_version, transport_fingerprint,
@@ -111,7 +116,8 @@ export function createVisualDerivationsRepo(db: SqliteDb) {
        @id, @materialId, @materialRevisionId, @assetId, @assetByteHash,
        @identityFingerprint, @semanticIdentityFingerprint, @derivationKind,
        @contentOrigin, @authority, @evidenceAdmissibility, @validationStatus,
-       @generatorIdentity, @generatorVersion, @provider, @providerModel,
+        @generatorIdentity, @generatorVersion, @provider, @providerModel,
+        @providerEndpointIdentity, @providerRuntimeIdentity,
        @configurationFingerprint, @contextMode, @contextFingerprint,
        @transportMediaType, @transportWidth, @transportHeight, @transportByteLength,
        @transportTransformation, @transportPreparationVersion, @transportFingerprint,

@@ -1,6 +1,10 @@
 import { ApiErrorCode, fnv1a32 } from '@hy3-clinic/shared';
 import { AppError } from '../errors.js';
-import type { LlmProvider, ProviderCallOptions } from '../llm/provider.js';
+import type {
+  LlmProvider,
+  ProviderCallOptions,
+  VisualDescriptionProvider,
+} from '../llm/provider.js';
 import type { CostPolicy } from '../repositories/telemetry.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
@@ -100,7 +104,7 @@ export function enforceAgentCostPolicies(
 interface TrackedProviderOperation<T> {
   repos: Repositories;
   clock: Clock;
-  provider: LlmProvider;
+  provider: LlmProvider | VisualDescriptionProvider;
   providerModel: string | null;
   operationId: string;
   fencingToken: number;

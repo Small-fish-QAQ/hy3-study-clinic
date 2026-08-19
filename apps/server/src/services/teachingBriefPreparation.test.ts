@@ -146,6 +146,8 @@ async function createHarness(): Promise<Harness> {
     generatorVersion: 'provider-visual-description-v1',
     provider: 'fake',
     providerModel: null,
+    providerEndpointIdentity: 'local:fake',
+    providerRuntimeIdentity: 'fake-provider-v1',
     configurationFingerprint: `sha256:${'c'.repeat(64)}`,
     contextMode: 'image_only',
     contextFingerprint: null,

@@ -53,6 +53,8 @@ function visualCandidate(index = 0): TeachingBriefVisualCandidate {
     generatorVersion: 'provider-visual-description-v1',
     provider: 'fake',
     providerModel: null,
+    providerEndpointIdentity: 'local:fake',
+    providerRuntimeIdentity: 'fake-provider-v1',
     configurationFingerprint: `configuration_${index}`,
     contextMode: 'image_only',
     contextFingerprint: null,

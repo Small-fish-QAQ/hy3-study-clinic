@@ -1,4 +1,4 @@
-import type { LlmProvider } from '../llm/provider.js';
+import type { LlmProvider, VisualDescriptionProvider } from '../llm/provider.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { createMaterialService, type MaterialService } from './materials.js';
@@ -97,12 +97,19 @@ export interface Services {
 export interface ServiceDeps {
   repos: Repositories;
   provider: LlmProvider;
+  visualProvider?: VisualDescriptionProvider;
   clock: Clock;
   /** Model identifier recorded as graph provider metadata (hy3 only). */
   providerModel?: string | undefined;
 }
 
-export function createServices({ repos, provider, clock, providerModel }: ServiceDeps): Services {
+export function createServices({
+  repos,
+  provider,
+  visualProvider = provider,
+  clock,
+  providerModel,
+}: ServiceDeps): Services {
   const sourceAuthority = createSourceAuthorityService({
     sourceAuthority: repos.sourceAuthority,
     clock,
@@ -193,9 +200,8 @@ export function createServices({ repos, provider, clock, providerModel }: Servic
   });
   const visualPreparation = createVisualPreparationService({
     repos,
-    provider,
+    provider: visualProvider,
     clock,
-    providerModel,
   });
   const studySessions = createStudySessionService({
     repos,

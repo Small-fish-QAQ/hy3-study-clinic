@@ -19,7 +19,7 @@ import {
   VISUAL_TRANSPORT_PREPARATION_VERSION,
 } from '../ingestion/images.js';
 import { ProviderError } from '../llm/errors.js';
-import type { LlmProvider, ProviderCallOptions } from '../llm/provider.js';
+import type { ProviderCallOptions, VisualDescriptionProvider } from '../llm/provider.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
@@ -30,7 +30,8 @@ import {
 
 export const VISUAL_DESCRIPTION_GENERATOR_VERSION = 'provider-visual-description-v1';
 export const VISUAL_DESCRIPTION_SCHEMA_FINGERPRINT = 'visual-description-payload-v1';
-const PREPARATION_LEASE_MS = 10 * 60 * 1000;
+export const VISUAL_PREPARATION_FINALIZATION_MARGIN_MS = 30_000;
+const DEFAULT_VISUAL_REQUEST_TIMEOUT_MS = 30_000;
 const SUPPORTED_MEDIA_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
 const LIMITS = {
   maxDescriptionChars: 1200,
@@ -42,9 +43,8 @@ const LIMITS = {
 
 interface VisualPreparationDeps {
   repos: Repositories;
-  provider: LlmProvider;
+  provider: VisualDescriptionProvider;
   clock: Clock;
-  providerModel?: string | null;
 }
 
 interface ResolvedVisual {
@@ -59,6 +59,8 @@ interface DerivationIdentity {
   semanticIdentityFingerprint: `visual_semantic_${string}`;
   identityFingerprint: `visual_derivation_${string}`;
   providerModel: string | null;
+  providerEndpointIdentity: string;
+  providerRuntimeIdentity: string;
 }
 
 function sha256(value: string | Buffer): string {
@@ -69,20 +71,20 @@ function visualRefForAsset(assetId: string): string {
   return `visual_${sha256(assetId).slice(0, 24)}`;
 }
 
-function providerModel(provider: LlmProvider, configured: string | null): string | null {
-  return provider.name === 'hy3' ? (provider.model ?? configured) : null;
+function providerModel(provider: VisualDescriptionProvider): string | null {
+  return provider.name === 'fake' ? null : (provider.model ?? null);
 }
 
-function configurationFingerprint(
-  provider: LlmProvider,
-  configuredProviderModel: string | null,
-): string {
+export function visualConfigurationFingerprint(provider: VisualDescriptionProvider): string {
   return `sha256:${sha256(
     JSON.stringify({
       generatorVersion: VISUAL_DESCRIPTION_GENERATOR_VERSION,
       schemaFingerprint: VISUAL_DESCRIPTION_SCHEMA_FINGERPRINT,
       provider: provider.name,
-      providerModel: providerModel(provider, configuredProviderModel),
+      providerModel: providerModel(provider),
+      providerEndpointIdentity: provider.endpointIdentity ?? `unbound:${provider.name}`,
+      providerRuntimeIdentity: provider.runtimeIdentity ?? `unbound:${provider.name}`,
+      visualPromptVersion: provider.promptIdentity ?? `unbound:${provider.name}`,
       contextMode: 'image_only',
       transportPreparationVersion: VISUAL_TRANSPORT_PREPARATION_VERSION,
       limits: LIMITS,
@@ -92,12 +94,11 @@ function configurationFingerprint(
 
 function derivationIdentity(
   resolved: ResolvedVisual,
-  provider: LlmProvider,
-  configuredProviderModel: string | null,
+  provider: VisualDescriptionProvider,
   transportFingerprint: string,
 ): DerivationIdentity {
-  const model = providerModel(provider, configuredProviderModel);
-  const configuration = configurationFingerprint(provider, configuredProviderModel);
+  const model = providerModel(provider);
+  const configuration = visualConfigurationFingerprint(provider);
   const semanticIdentityFingerprint = `visual_semantic_${sha256(
     JSON.stringify({
       assetByteHash: resolved.asset.byteHash,
@@ -119,7 +120,18 @@ function derivationIdentity(
     semanticIdentityFingerprint,
     identityFingerprint,
     providerModel: model,
+    providerEndpointIdentity: provider.endpointIdentity ?? `unbound:${provider.name}`,
+    providerRuntimeIdentity: provider.runtimeIdentity ?? `unbound:${provider.name}`,
   };
+}
+
+export function visualPreparationLeaseMs(
+  provider: VisualDescriptionProvider,
+  timeoutOverrideMs?: number,
+): number {
+  const requestTimeoutMs =
+    timeoutOverrideMs ?? provider.timeoutMs ?? DEFAULT_VISUAL_REQUEST_TIMEOUT_MS;
+  return requestTimeoutMs * 2 + VISUAL_PREPARATION_FINALIZATION_MARGIN_MS;
 }
 
 function semanticCandidateValidation(candidate: unknown) {
@@ -180,12 +192,7 @@ function throwIfCancelled(signal?: AbortSignal): void {
   if (signal?.aborted) throw ProviderError.cancelled();
 }
 
-export function createVisualPreparationService({
-  repos,
-  provider,
-  clock,
-  providerModel: configuredProviderModel = null,
-}: VisualPreparationDeps) {
+export function createVisualPreparationService({ repos, provider, clock }: VisualPreparationDeps) {
   function materialInWorkspace(workspaceId: string, materialId: string): Material {
     if (!repos.workspaces.get(workspaceId)) throw notFound('Course workspace not found.');
     const material = repos.materials.get(materialId);
@@ -243,8 +250,8 @@ export function createVisualPreparationService({
 
   function project(resolved: ResolvedVisual): VisualSourceProjection {
     const history = repos.visualDerivations.listForAsset(resolved.asset.id);
-    const currentModel = providerModel(provider, configuredProviderModel);
-    const currentConfiguration = configurationFingerprint(provider, configuredProviderModel);
+    const currentModel = providerModel(provider);
+    const currentConfiguration = visualConfigurationFingerprint(provider);
     const exact = history.findLast(
       (derivation) =>
         derivation.assetByteHash === resolved.asset.byteHash &&
@@ -310,6 +317,13 @@ export function createVisualPreparationService({
     payload: VisualDescriptionPayload,
     reusedFromDerivationId: string | null,
   ): VisualDerivation {
+    if (provider.name === 'disabled') {
+      throw ProviderError.invalidOutput(
+        'Disabled visual providers cannot materialize accepted derivations.',
+        undefined,
+        'PROVIDER_FORMAT_INCOMPATIBILITY',
+      );
+    }
     return {
       id: newId('visual_derivation'),
       materialId: resolved.material.id,
@@ -327,6 +341,8 @@ export function createVisualPreparationService({
       generatorVersion: VISUAL_DESCRIPTION_GENERATOR_VERSION,
       provider: provider.name,
       providerModel: identity.providerModel,
+      providerEndpointIdentity: identity.providerEndpointIdentity,
+      providerRuntimeIdentity: identity.providerRuntimeIdentity,
       configurationFingerprint: identity.configurationFingerprint,
       contextMode: 'image_only',
       contextFingerprint: null,
@@ -356,12 +372,7 @@ export function createVisualPreparationService({
       options?.signal,
     );
     throwIfCancelled(options?.signal);
-    const identity = derivationIdentity(
-      resolved,
-      provider,
-      configuredProviderModel,
-      prepared.transport.fingerprint,
-    );
+    const identity = derivationIdentity(resolved, provider, prepared.transport.fingerprint);
     const operationKey = `visual-description:${visualRef}:${input.commandId}`;
     const startedAt = clock.now();
     repos.operations.recoverExpiredForWorkspace(
@@ -410,7 +421,9 @@ export function createVisualPreparationService({
     const claim = repos.operations.claim(
       created.operation.id,
       owner,
-      new Date(startedAt.getTime() + PREPARATION_LEASE_MS).toISOString(),
+      new Date(
+        startedAt.getTime() + visualPreparationLeaseMs(provider, options?.timeoutMs),
+      ).toISOString(),
       startedAt.toISOString(),
     );
     if (!claim) {

@@ -7,6 +7,7 @@ import { createRepositories } from './repositories/index.js';
 import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
 import { JsonProviderConfigStore, ProviderRuntime } from './services/providerRuntime.js';
+import { createVisualProvider } from './llm/factory.js';
 
 // Always load the repository-root .env file.
 // Existing process environment variables keep higher priority.
@@ -24,11 +25,13 @@ const providerRuntime = new ProviderRuntime({
   startup: config,
   store: new JsonProviderConfigStore(config.providerConfigPath),
 });
+const visualProvider = createVisualProvider(config);
 
 const app = buildApp({
   repos,
   provider: providerRuntime.provider,
   providerRuntime,
+  visualProvider,
   startupConfig: config,
   logger: true,
   providerModel: config.hy3Model,

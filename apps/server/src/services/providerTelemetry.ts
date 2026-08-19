@@ -2,7 +2,6 @@ import { ApiErrorCode } from '@hy3-clinic/shared';
 import { AppError } from '../errors.js';
 import { ProviderError } from '../llm/errors.js';
 import type {
-  LlmProvider,
   ProviderCallOptions,
   ProviderTelemetryContext,
   ProviderUsage,
@@ -38,10 +37,15 @@ const fakeUsage = (): ProviderUsage => ({
   pricingVersion: '1',
 });
 
-interface TelemetryProviderOptions {
+interface TelemetryProviderSurface {
+  readonly name: string;
+  readonly model?: string | undefined;
+}
+
+interface TelemetryProviderOptions<TProvider extends TelemetryProviderSurface> {
   repos: Repositories;
   clock: Clock;
-  provider: LlmProvider;
+  provider: TProvider;
   providerGeneration: () => number;
 }
 
@@ -50,13 +54,13 @@ interface TelemetryProviderOptions {
  * bypass physical-attempt telemetry. Callers supply metadata only; this
  * boundary owns every ledger write and never receives prompt content.
  */
-export function createTelemetryProvider({
+export function createTelemetryProvider<TProvider extends TelemetryProviderSurface>({
   repos,
   clock,
   provider,
   providerGeneration,
-}: TelemetryProviderOptions): LlmProvider {
-  if ((provider as LlmProvider & { [TELEMETRY_PROVIDER]?: boolean })[TELEMETRY_PROVIDER]) {
+}: TelemetryProviderOptions<TProvider>): TProvider {
+  if ((provider as TProvider & { [TELEMETRY_PROVIDER]?: boolean })[TELEMETRY_PROVIDER]) {
     return provider;
   }
   return new Proxy(provider, {
@@ -123,7 +127,7 @@ export function createTelemetryProvider({
             attemptNumber,
             attemptKind: kind,
             provider: provider.name,
-            model: provider.name === 'hy3' ? (provider.model ?? null) : null,
+            model: provider.name === 'fake' ? null : (provider.model ?? null),
             providerGeneration: providerGeneration(),
             fencingToken: context.fencingToken ?? null,
             status: 'queued',
@@ -261,5 +265,5 @@ export function createTelemetryProvider({
         }
       };
     },
-  }) as LlmProvider;
+  }) as TProvider;
 }

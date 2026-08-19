@@ -4,7 +4,7 @@ import { migrate } from '../db/migrate.js';
 import { createRepositories, type Repositories } from '../repositories/index.js';
 import { buildApp } from '../app.js';
 import { FakeProvider } from '../llm/fakeProvider.js';
-import type { LlmProvider } from '../llm/provider.js';
+import type { LlmProvider, VisualDescriptionProvider } from '../llm/provider.js';
 import { fixedClock, type Clock } from '../util/ids.js';
 import { makeWorkspace, T0 } from './fixtures.js';
 import type { ProviderConfigStore, ProviderRuntime } from '../services/providerRuntime.js';
@@ -20,6 +20,7 @@ export interface TestApp {
 export function buildTestApp(
   options: {
     provider?: LlmProvider;
+    visualProvider?: VisualDescriptionProvider;
     clock?: Clock;
     providerConfigStore?: ProviderConfigStore | null;
     providerRuntime?: ProviderRuntime;
@@ -35,6 +36,7 @@ export function buildTestApp(
   const app = buildApp({
     repos,
     provider,
+    visualProvider: options.visualProvider,
     providerRuntime: options.providerRuntime,
     providerConfigStore: options.providerConfigStore,
     clock: options.clock ?? fixedClock(T0),

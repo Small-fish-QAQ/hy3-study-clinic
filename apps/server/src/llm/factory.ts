@@ -2,6 +2,23 @@ import type { AppConfig } from '../config.js';
 import { FakeProvider } from './fakeProvider.js';
 import { Hy3Provider } from './hy3Provider.js';
 import type { LlmProvider } from './provider.js';
+import type { VisualDescriptionProvider } from './provider.js';
+import { TokenHubVisionProvider } from './tokenHubVisionProvider.js';
+import { ProviderError } from './errors.js';
+
+class DisabledVisualProvider implements VisualDescriptionProvider {
+  readonly name = 'disabled' as const;
+  readonly endpointIdentity = 'local:disabled';
+  readonly runtimeIdentity = 'visual-provider-disabled-v1';
+  readonly promptIdentity = 'visual-provider-disabled-v1';
+  async describeVisual(): Promise<never> {
+    throw ProviderError.invalidOutput(
+      'Visual description provider is not configured.',
+      undefined,
+      'PROVIDER_FORMAT_INCOMPATIBILITY',
+    );
+  }
+}
 
 /**
  * Build one validated provider instance. Runtime Settings overrides are
@@ -19,4 +36,17 @@ export function createProvider(config: AppConfig): LlmProvider {
   }
   // Small simulated latency so loading/cancel states are observable in the UI.
   return new FakeProvider({ delayMs: 500 });
+}
+
+export function createVisualProvider(config: AppConfig): VisualDescriptionProvider {
+  if (config.visualProvider === 'tokenhub') {
+    return new TokenHubVisionProvider({
+      baseUrl: config.tokenHubVisualBaseUrl!,
+      apiKey: config.tokenHubVisualApiKey!,
+      model: config.tokenHubVisualModel,
+      timeoutMs: config.tokenHubVisualTimeoutMs,
+    });
+  }
+  if (config.visualProvider === 'fake') return new FakeProvider({ delayMs: 500 });
+  return new DisabledVisualProvider();
 }
