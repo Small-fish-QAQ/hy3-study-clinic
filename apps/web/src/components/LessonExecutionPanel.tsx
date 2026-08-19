@@ -8,6 +8,7 @@ import type {
 } from '@hy3-clinic/shared';
 import { api, ApiClientError } from '../api.js';
 import { Loading } from './ui.js';
+import { FormalAssessmentPanel } from './FormalAssessmentPanel.js';
 
 let lessonCommandSequence = 0;
 
@@ -23,6 +24,7 @@ export interface LessonExecutionPanelProps {
   active: boolean;
   busy?: boolean;
   directCheckpointItemId?: string | null;
+  formalAssessmentVersionId?: string | null;
   onResumeStudySession?: () => void;
   onStartFormalAssessment?: () => void;
   onSessionVersionChange?: (projection: LessonExecutionProjection) => void;
@@ -435,6 +437,7 @@ export function LessonExecutionPanel({
   active,
   busy = false,
   directCheckpointItemId = null,
+  formalAssessmentVersionId = null,
   onResumeStudySession,
   onStartFormalAssessment,
   onSessionVersionChange,
@@ -706,6 +709,13 @@ export function LessonExecutionPanel({
         onAction={(action) => void command(action)}
         onResponseChange={setResponseDraft}
       />
+      {formalAssessmentVersionId ? (
+        <FormalAssessmentPanel
+          workspaceId={workspaceId}
+          versionId={formalAssessmentVersionId}
+          onChanged={onRefreshSession}
+        />
+      ) : null}
       {projection.session.status === 'paused' ? (
         <div className="lesson-paused-state" role="status">
           <strong>本次学习已暂停</strong>

@@ -21,6 +21,7 @@ import {
 } from './agentProviderRuntime.js';
 import type { CourseCommandService } from './courseCommands.js';
 import type { FormalProgressionService } from './formalProgression.js';
+import type { FormalAssessmentsService } from './formalAssessments.js';
 import { toPublicQuiz } from './quizzes.js';
 import { resolveLaunchForPlanItem } from './studyPlanValidation.js';
 
@@ -32,6 +33,7 @@ interface CourseActionLaunchDeps {
   formalProgression: FormalProgressionService;
   provider: LlmProvider;
   providerModel?: string | null;
+  formalAssessments: FormalAssessmentsService;
 }
 
 const AGENDA_KIND_BY_PLAN_KIND: Record<StudyPlanItemKind, SessionAgendaItem['kind']> = {
@@ -85,6 +87,7 @@ export function createCourseActionLaunchService({
   formalProgression,
   provider,
   providerModel = null,
+  formalAssessments,
 }: CourseActionLaunchDeps) {
   async function launch(
     input: LaunchCourseActionRequest,
@@ -246,6 +249,9 @@ export function createCourseActionLaunchService({
               : bound.planItem.kind === 'synthesis'
                 ? 'synthesis'
                 : 'formal_checkpoint';
+        const formalOnly =
+          assessmentKind === 'formal_checkpoint' || assessmentKind === 'targeted_repair';
+        const assessmentRequest = { ...request, ...(formalOnly ? { formalOnly: true } : {}) };
         const operationType =
           assessmentKind === 'synthesis'
             ? 'propose_synthesis_assessment'
@@ -273,13 +279,15 @@ export function createCourseActionLaunchService({
           policyFingerprint,
           sourceFingerprint: parsed.expectedExecutionSourceManifestFingerprint,
           providerOptions: opts,
-          invoke: (options) => assessment.prepare(parsed.command.workspaceId, request, options),
+          invoke: (options) =>
+            assessment.prepare(parsed.command.workspaceId, assessmentRequest, options),
         });
         const response = CourseActionLaunchResultSchema.parse({
           kind: 'assessment',
           agendaItemId: item.id,
           quiz: toPublicQuiz(creation.quiz),
           assessmentKind,
+          formalAssessmentVersionId: null,
         });
         return commands.complete(claim, () => {
           const currentState = repos.courseExecution.get(parsed.command.workspaceId);
@@ -342,6 +350,22 @@ export function createCourseActionLaunchService({
             );
           }
           assessment.persist(creation);
+          let formalAssessmentVersionId: string | null = null;
+          if (assessmentKind === 'formal_checkpoint' || assessmentKind === 'targeted_repair') {
+            const targetLearningUnitId = item.learningUnitId;
+            const targetObjectiveId = currentPlanItem.objectiveIds[0];
+            if (targetLearningUnitId && targetObjectiveId) {
+              const formalVersion = formalAssessments.createAcceptedFromQuiz({
+                workspaceId: parsed.command.workspaceId,
+                quiz: creation.quiz,
+                logicalKey: `agenda:${currentAgenda.id}:${currentItem.id}`,
+                title: currentPlanItem.rationale || '理解检查',
+                targetLearningUnitId,
+                targetObjectiveId,
+              });
+              formalAssessmentVersionId = formalVersion.id;
+            }
+          }
           formalProgression.registerAssessmentContracts({
             workspaceId: parsed.command.workspaceId,
             quizId: creation.quiz.id,
@@ -354,7 +378,7 @@ export function createCourseActionLaunchService({
             studyPlanVersionId: currentPlan.id,
             executionSourceManifestFingerprint: currentPlan.executionSourceManifestFingerprint,
           });
-          return response;
+          return { ...response, formalAssessmentVersionId };
         });
       }
 

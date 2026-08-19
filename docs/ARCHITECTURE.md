@@ -870,3 +870,6 @@ grading input, mastery update, mistake closure, review decision, Agenda
 completion, or Plan progression. Exact quotation validation still proves only
 that quoted text occurs at a claimed source position; it does not prove full
 semantic entailment.
+# Learner Assessment / Repair Execution
+
+The Study route launches accepted formal short-answer versions from the existing SessionAgenda. `AssessmentAttempt` and `GradeRecord` remain immutable/append-only; learner projections hide internal IDs and expose criterion feedback plus honest source locations. Failed or partial formal grades may create one durable `RepairEpisode` and immutable `RepairPacket`. Repair practice is recorded as non-credit events. A fresh successor AssessmentVersion with changed wording is required before supported Evidence can resolve the episode. Tutor and lesson completion cannot grant credit. The Phase 7B2 UI recovers the current attempt and agenda-scoped version after reload; progression reconciliation remains separate from Evidence persistence.

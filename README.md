@@ -331,6 +331,14 @@ The full command matrix, restart checks, evidence-publication rules, and test in
 
 ## Architecture
 
+### Lesson checks and targeted Repair
+
+The learner-facing Study loop keeps formal assessment inside lesson execution:
+
+`Lesson -> 正式检查 -> learner-safe criterion feedback -> targeted Repair practice -> fresh changed-context verification`.
+
+Lesson checks, Tutor conversation, and Repair practice are non-credit. A formal short-answer attempt is immutable after submission. Local code validates the accepted AssessmentVersion, source bindings, IDs, grading shape, Evidence gate, and Repair transitions; Hy3 proposes semantic grading or Repair content through the existing bounded structured provider contract. A successful Repair verification resolves only that Repair episode after supported Evidence is linked. It does not claim global Course Mastery. The current three-failure verification bound defers to deeper support, and Repair can be deferred, cancelled, resumed, and recovered after reload. Progression reconciliation remains a separate explicit operation.
+
 ```text
 apps/web (React + Vite)
         | /api JSON and NDJSON Tutor events

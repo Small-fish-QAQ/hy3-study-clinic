@@ -96,6 +96,14 @@ export function createFormalAssessmentsRepo(db: SqliteDb) {
       return item;
     },
     getDefinition: definition,
+    findDefinitionByLogicalKey(workspaceId: string, logicalKey: string) {
+      const row = db
+        .prepare(
+          'SELECT id FROM assessment_definitions WHERE workspace_id = ? AND logical_key = ? ORDER BY created_at DESC LIMIT 1',
+        )
+        .get(workspaceId, logicalKey) as { id: string } | undefined;
+      return row ? definition(row.id) : undefined;
+    },
     insertVersion(input: AssessmentVersion) {
       const item = AssessmentVersionSchema.parse(input);
       db.prepare(
@@ -151,6 +159,21 @@ export function createFormalAssessmentsRepo(db: SqliteDb) {
       return item;
     },
     getAttempt: attempt,
+    listAttemptsForWorkspace(workspaceId: string) {
+      return (
+        db
+          .prepare(
+            "SELECT json_object('id', id, 'assessmentVersionId', assessment_version_id, 'workspaceId', workspace_id, 'ordinal', ordinal, 'status', status, 'responses', responses, 'startedAt', started_at, 'submittedAt', submitted_at, 'cancelledAt', cancelled_at) AS payload FROM assessment_attempts WHERE workspace_id = ? ORDER BY started_at DESC, id DESC",
+          )
+          .all(workspaceId) as PayloadRow[]
+      ).map((row) => {
+        const value = JSON.parse(row.payload) as Record<string, unknown>;
+        return AssessmentAttemptSchema.parse({
+          ...value,
+          responses: JSON.parse(String(value.responses)),
+        });
+      });
+    },
     nextAttemptOrdinal(assessmentVersionId: string) {
       return (
         ((

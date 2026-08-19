@@ -14,6 +14,7 @@ import {
   type FormalAssessmentItem,
   type GradeRecord,
   type ProgressionReconciliationRecord,
+  type Quiz,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import type { Repositories } from '../repositories/index.js';
@@ -65,64 +66,157 @@ export function createFormalAssessmentsService({
     return { ...item, formalEligible: policy.formalEligible, policyReason: policy.policyReason };
   }
 
+  function createDefinition(
+    input: Omit<AssessmentDefinition, 'id' | 'createdAt' | 'updatedAt'>,
+  ): AssessmentDefinition {
+    if (!repos.workspaces.get(input.workspaceId))
+      throw notFound(`课程空间不存在:${input.workspaceId}`);
+    const now = clock.now().toISOString();
+    return repos.formalAssessments.insertDefinition(
+      AssessmentDefinitionSchema.parse({
+        ...input,
+        id: newId('assessment'),
+        createdAt: now,
+        updatedAt: now,
+      }),
+    );
+  }
+
+  function createVersion(input: {
+    definitionId: string;
+    items: FormalAssessmentItem[];
+    sourceRevisionIds: string[];
+    predecessorId?: string | null;
+  }): AssessmentVersion {
+    const definition = repos.formalAssessments.getDefinition(input.definitionId);
+    if (!definition) throw notFound(`正式评估定义不存在:${input.definitionId}`);
+    const items = input.items.map((item) => validateItem(definition.workspaceId, item));
+    const boundRevisionIds = new Set(
+      items.flatMap((item) => item.sourceBindings.map((binding) => binding.materialRevisionId)),
+    );
+    const declaredRevisionIds = new Set(input.sourceRevisionIds);
+    if (
+      declaredRevisionIds.size !== boundRevisionIds.size ||
+      [...declaredRevisionIds].some((revisionId) => !boundRevisionIds.has(revisionId))
+    ) {
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        '正式评估版本声明了未被题目绑定的来源修订。',
+      );
+    }
+    const previous = repos.formalAssessments.listVersions(input.definitionId).at(-1);
+    const now = clock.now().toISOString();
+    return repos.formalAssessments.insertVersion(
+      AssessmentVersionSchema.parse({
+        id: newId('assessment_version'),
+        definitionId: input.definitionId,
+        version: (previous?.version ?? 0) + 1,
+        predecessorId: input.predecessorId ?? previous?.id ?? null,
+        status: 'draft',
+        items,
+        sourceRevisionIds: [...new Set(input.sourceRevisionIds)],
+        createdAt: now,
+        acceptedAt: null,
+      }),
+    );
+  }
+
   return {
-    createDefinition(
-      input: Omit<AssessmentDefinition, 'id' | 'createdAt' | 'updatedAt'>,
-    ): AssessmentDefinition {
-      if (!repos.workspaces.get(input.workspaceId))
-        throw notFound(`课程空间不存在:${input.workspaceId}`);
-      const now = clock.now().toISOString();
-      return repos.formalAssessments.insertDefinition(
-        AssessmentDefinitionSchema.parse({
-          ...input,
-          id: newId('assessment'),
-          createdAt: now,
-          updatedAt: now,
-        }),
-      );
-    },
-    createVersion(input: {
-      definitionId: string;
-      items: FormalAssessmentItem[];
-      sourceRevisionIds: string[];
-      predecessorId?: string | null;
-    }): AssessmentVersion {
-      const definition = repos.formalAssessments.getDefinition(input.definitionId);
-      if (!definition) throw notFound(`正式评估定义不存在:${input.definitionId}`);
-      const items = input.items.map((item) => validateItem(definition.workspaceId, item));
-      const boundRevisionIds = new Set(
-        items.flatMap((item) => item.sourceBindings.map((binding) => binding.materialRevisionId)),
-      );
-      const declaredRevisionIds = new Set(input.sourceRevisionIds);
-      if (
-        declaredRevisionIds.size !== boundRevisionIds.size ||
-        [...declaredRevisionIds].some((revisionId) => !boundRevisionIds.has(revisionId))
-      ) {
-        throw new AppError(
-          ApiErrorCode.ValidationError,
-          '正式评估版本声明了未被题目绑定的来源修订。',
-        );
-      }
-      const previous = repos.formalAssessments.listVersions(input.definitionId).at(-1);
-      const now = clock.now().toISOString();
-      return repos.formalAssessments.insertVersion(
-        AssessmentVersionSchema.parse({
-          id: newId('assessment_version'),
-          definitionId: input.definitionId,
-          version: (previous?.version ?? 0) + 1,
-          predecessorId: input.predecessorId ?? previous?.id ?? null,
-          status: 'draft',
-          items,
-          sourceRevisionIds: [...new Set(input.sourceRevisionIds)],
-          createdAt: now,
-          acceptedAt: null,
-        }),
-      );
-    },
+    createDefinition,
+    createVersion,
     acceptVersion(id: string) {
       return repos.formalAssessments.acceptVersion(id, clock.now().toISOString());
     },
     getVersion,
+    getAcceptedForAgenda(workspaceId: string, agendaId: string, agendaItemId: string) {
+      const definition = repos.formalAssessments.findDefinitionByLogicalKey(
+        workspaceId,
+        `agenda:${agendaId}:${agendaItemId}`,
+      );
+      if (!definition) return null;
+      return (
+        repos.formalAssessments
+          .listVersions(definition.id)
+          .find((candidate) => candidate.status === 'accepted') ?? null
+      );
+    },
+    createAcceptedFromQuiz(input: {
+      workspaceId: string;
+      quiz: Quiz;
+      logicalKey: string;
+      title: string;
+      targetLearningUnitId: string;
+      targetObjectiveId: string;
+    }): AssessmentVersion {
+      const questions = input.quiz.questions.filter(
+        (question) => question.type === 'short_answer' && question.rubric,
+      );
+      if (questions.length === 0) {
+        throw new AppError(
+          ApiErrorCode.ValidationError,
+          '本次检查没有可接受的正式简答题，未创建正式评估。',
+        );
+      }
+      const definition = createDefinition({
+        workspaceId: input.workspaceId,
+        logicalKey: input.logicalKey,
+        title: input.title,
+      });
+      const items = questions.map((question, index): FormalAssessmentItem => {
+        const grounding = [question.grounding, ...(question.supplementaryEvidence ?? [])];
+        const sourceBindings = grounding.map((reference) => {
+          const block = repos.materials.getBlock(reference.blockId);
+          const revisionId = block?.materialRevisionId;
+          if (!block || !revisionId) {
+            throw new AppError(ApiErrorCode.ValidationError, '正式评估题目缺少当前来源修订绑定。');
+          }
+          return {
+            materialId: block.materialId,
+            materialRevisionId: revisionId,
+            sourceBlockId: block.id,
+            quote: reference.quote,
+            contentOrigin: block.contentOrigin ?? ('extracted_original' as const),
+            authoritative: (block.contentOrigin ?? 'extracted_original') === 'extracted_original',
+          };
+        });
+        const sourceBindingIds = sourceBindings.map((binding) => binding.sourceBlockId);
+        return {
+          id: newId('assessment_item'),
+          index,
+          targetLearningUnitId: input.targetLearningUnitId,
+          targetObjectiveId: input.targetObjectiveId,
+          questionType: 'short_answer',
+          prompt: question.stem,
+          rubric: question.rubric!.keyPoints.map((criterion) => ({
+            id: newId('criterion'),
+            text: criterion.text,
+            required: criterion.required,
+            sourceBindingIds,
+          })),
+          sourceBindings,
+          formalEligible: false,
+          policyReason: 'MISSING_AUTHORITATIVE_SOURCE',
+        };
+      });
+      const version = createVersion({
+        definitionId: definition.id,
+        items,
+        sourceRevisionIds: [
+          ...new Set(
+            items.flatMap((item) =>
+              item.sourceBindings.map((binding) => binding.materialRevisionId),
+            ),
+          ),
+        ],
+      });
+      if (!version.items.every((item) => item.formalEligible)) {
+        throw new AppError(
+          ApiErrorCode.ValidationError,
+          '题目未满足正式证据来源要求，未开放正式检查。',
+        );
+      }
+      return repos.formalAssessments.acceptVersion(version.id, clock.now().toISOString());
+    },
     startAttempt(assessmentVersionId: string, workspaceId: string): AssessmentAttempt {
       const version = getVersion(assessmentVersionId);
       const definition = repos.formalAssessments.getDefinition(version.definitionId);

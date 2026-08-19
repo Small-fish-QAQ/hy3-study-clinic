@@ -89,6 +89,42 @@ export const RepairStatusTransitionSchema = z.object({
 });
 export type RepairStatusTransition = z.infer<typeof RepairStatusTransitionSchema>;
 
+export const LearnerRepairProjectionSchema = z.object({
+  episodeId: z.string().min(1),
+  status: RepairStatusSchema,
+  diagnosis: z.string().min(1).max(500),
+  target: z.string().min(1).max(500),
+  attemptCount: z.number().int().nonnegative().max(3),
+  packet: z
+    .object({
+      interventionLabel: z.string().min(1).max(100),
+      explanation: z.string().min(1).max(1500),
+      practicePrompt: z.string().min(1).max(1000),
+      hints: z.array(z.string().min(1).max(500)).max(4),
+    })
+    .nullable(),
+  practice: z.array(
+    z.object({
+      ordinal: z.number().int().positive(),
+      response: z.string().max(500),
+      outcome: z.enum(['CONTINUE', 'READY_FOR_VERIFICATION', 'NEEDS_MORE_SUPPORT']),
+      createdAt: z.string().datetime(),
+    }),
+  ),
+  sourceReferences: z.array(
+    z.object({
+      materialTitle: z.string().min(1),
+      locationLabel: z.string().min(1),
+      excerpt: z.string().min(1).max(2000),
+      advisory: z.boolean(),
+    }),
+  ),
+  verificationAssessmentVersionId: z.string().min(1).nullable(),
+  resolved: z.boolean(),
+  deeperSupportRecommended: z.boolean(),
+});
+export type LearnerRepairProjection = z.infer<typeof LearnerRepairProjectionSchema>;
+
 const transitionMap: Record<RepairStatus, readonly RepairStatus[]> = {
   OPEN: ['ACTIVE', 'DEFERRED', 'CANCELLED'],
   ACTIVE: ['AWAITING_VERIFICATION', 'DEFERRED', 'CANCELLED'],

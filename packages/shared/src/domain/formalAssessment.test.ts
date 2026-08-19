@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   classifyFormalAssessmentItem,
   FormalAssessmentSourceBindingSchema,
+  LearnerAssessmentExecutionSchema,
 } from './formalAssessment.js';
 
 const binding = (overrides: Record<string, unknown> = {}) =>
@@ -62,4 +63,28 @@ describe('formal assessment policy', () => {
       }).policyReason,
     ).toBe('INVALID_RUBRIC_AUTHORITY');
   });
+});
+
+it('keeps learner execution projections free of internal rubric payloads', () => {
+  const parsed = LearnerAssessmentExecutionSchema.parse({
+    assessmentVersionId: 'version_1',
+    title: '理解检查',
+    attempt: {
+      id: 'attempt_1',
+      assessmentVersionId: 'version_1',
+      workspaceId: 'workspace_1',
+      ordinal: 1,
+      status: 'started',
+      responses: {},
+      startedAt: '2026-01-01T00:00:00.000Z',
+      submittedAt: null,
+      cancelledAt: null,
+    },
+    items: [
+      { itemId: 'item_1', prompt: '说明关键能力。', purpose: '检验理解', sourceReferences: [] },
+    ],
+    result: null,
+  });
+  expect(parsed.items[0]?.prompt).toBe('说明关键能力。');
+  expect(parsed.result).toBeNull();
 });

@@ -44,6 +44,17 @@ export function createRepairRepo(db: SqliteDb) {
         .get(gradeId) as { id: string } | undefined;
       return row ? getEpisode(row.id) : undefined;
     },
+    listByWorkspace(workspaceId: string): RepairEpisode[] {
+      return (
+        db
+          .prepare(
+            'SELECT id FROM repair_episodes WHERE workspace_id = ? ORDER BY updated_at DESC, id DESC',
+          )
+          .all(workspaceId) as Array<{ id: string }>
+      )
+        .map((row) => getEpisode(row.id)!)
+        .filter(Boolean);
+    },
     insertEpisode(input: RepairEpisode): RepairEpisode {
       const item = RepairEpisodeSchema.parse(input);
       db.prepare(

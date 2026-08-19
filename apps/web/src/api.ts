@@ -36,6 +36,8 @@ import type {
   WorkspaceOrigin,
   WorkspaceSummary,
   SafeProviderConfig,
+  LearnerAssessmentExecution,
+  LearnerRepairProjection,
 } from '@hy3-clinic/shared';
 import {
   ApiErrorSchema,
@@ -102,6 +104,8 @@ import {
   ProgressionReconciliationResponseSchema,
   ReplanTriggerSchema,
   GoalOutcomeSchema,
+  LearnerAssessmentExecutionSchema,
+  LearnerRepairProjectionSchema,
   type FormalProgressionOverview,
   type ProgressionReconciliationResponse,
   type QualifyReplanTriggerRequest,
@@ -752,6 +756,116 @@ export const api = {
       input,
       signal,
     ),
+
+  getFormalExecution: (
+    workspaceId: string,
+    versionId: string,
+    signal?: AbortSignal,
+  ): Promise<LearnerAssessmentExecution | null> =>
+    requestParsed(
+      'GET',
+      `/api/workspaces/${workspaceId}/formal-assessment-versions/${versionId}/execution`,
+      z.object({ execution: LearnerAssessmentExecutionSchema.nullable() }),
+      undefined,
+      signal,
+    ).then((value) => value.execution),
+
+  startFormalExecution: (
+    workspaceId: string,
+    versionId: string,
+    signal?: AbortSignal,
+  ): Promise<LearnerAssessmentExecution> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/formal-assessment-versions/${versionId}/execution`,
+      z.object({ execution: LearnerAssessmentExecutionSchema }),
+      {},
+      signal,
+    ).then((value) => value.execution),
+
+  submitFormalExecution: (
+    attemptId: string,
+    responses: Record<string, string>,
+    signal?: AbortSignal,
+  ): Promise<LearnerAssessmentExecution> =>
+    requestParsed(
+      'POST',
+      `/api/formal-assessment-attempts/${attemptId}/learner-submit`,
+      z.object({ execution: LearnerAssessmentExecutionSchema }),
+      { responses },
+      signal,
+    ).then((value) => value.execution),
+
+  getLearnerRepair: (episodeId: string, signal?: AbortSignal): Promise<LearnerRepairProjection> =>
+    requestParsed(
+      'GET',
+      `/api/repair-episodes/${episodeId}/learner`,
+      z.object({ repair: LearnerRepairProjectionSchema }),
+      undefined,
+      signal,
+    ).then((value) => value.repair),
+
+  startLearnerRepair: (episodeId: string, signal?: AbortSignal): Promise<LearnerRepairProjection> =>
+    requestParsed(
+      'POST',
+      `/api/repair-episodes/${episodeId}/learner-start`,
+      z.object({ repair: LearnerRepairProjectionSchema }),
+      {},
+      signal,
+    ).then((value) => value.repair),
+
+  learnerRepairPractice: (
+    episodeId: string,
+    response: string,
+    outcome: 'CONTINUE' | 'READY_FOR_VERIFICATION' | 'NEEDS_MORE_SUPPORT',
+    signal?: AbortSignal,
+  ): Promise<LearnerRepairProjection> =>
+    requestParsed(
+      'POST',
+      `/api/repair-episodes/${episodeId}/learner-practice`,
+      z.object({ repair: LearnerRepairProjectionSchema }),
+      { response, outcome },
+      signal,
+    ).then((value) => value.repair),
+
+  createRepairVerification: (
+    episodeId: string,
+    signal?: AbortSignal,
+  ): Promise<LearnerAssessmentExecution> =>
+    requestParsed(
+      'POST',
+      `/api/repair-episodes/${episodeId}/learner-verification`,
+      z.object({ execution: LearnerAssessmentExecutionSchema }),
+      {},
+      signal,
+    ).then((value) => value.execution),
+
+  getAgendaFormalAssessment: (
+    workspaceId: string,
+    agendaId: string,
+    itemId: string,
+    signal?: AbortSignal,
+  ) =>
+    requestParsed(
+      'GET',
+      `/api/workspaces/${workspaceId}/agendas/${agendaId}/items/${itemId}/formal-assessment`,
+      z.object({ version: z.object({ id: z.string() }).passthrough().nullable() }),
+      undefined,
+      signal,
+    ).then((value) => value.version),
+
+  learnerRepairAction: (
+    episodeId: string,
+    action: 'defer' | 'cancel' | 'resume',
+    signal?: AbortSignal,
+  ): Promise<LearnerRepairProjection> =>
+    requestParsed(
+      'POST',
+      `/api/repair-episodes/${episodeId}/learner-${action}`,
+      z.object({ repair: LearnerRepairProjectionSchema }),
+      {},
+      signal,
+    ).then((value) => value.repair),
 
   // --- Persistent conversational Study Sessions ---
 

@@ -14,10 +14,51 @@ export function registerRepairRoutes(app: FastifyInstance, services: Services): 
   app.get('/api/repair-episodes/:id', async (request) =>
     services.repair.inspect(idParams.parse(request.params).id),
   );
+  app.get('/api/repair-episodes/:id/learner', async (request) => ({
+    repair: services.learnerAssessments.getRepair(idParams.parse(request.params).id),
+  }));
   app.post('/api/repair-episodes/:id/generate', async (request, reply) => ({
     packet: await services.repair.generatePacket(idParams.parse(request.params).id, {
       signal: requestSignal(request, reply),
     }),
+  }));
+  app.post('/api/repair-episodes/:id/learner-start', async (request, reply) => {
+    reply.status(201);
+    return {
+      repair: await services.learnerAssessments.startRepair(idParams.parse(request.params).id, {
+        signal: requestSignal(request, reply),
+      }),
+    };
+  });
+  app.post('/api/repair-episodes/:id/learner-practice', async (request) => {
+    const body = z
+      .object({
+        response: z.string().max(500),
+        outcome: z.enum(['CONTINUE', 'READY_FOR_VERIFICATION', 'NEEDS_MORE_SUPPORT']),
+      })
+      .parse(request.body);
+    return {
+      repair: services.learnerAssessments.practice(
+        idParams.parse(request.params).id,
+        body.response,
+        body.outcome,
+      ),
+    };
+  });
+  app.post('/api/repair-episodes/:id/learner-verification', async (request, reply) => {
+    reply.status(201);
+    return {
+      execution: services.learnerAssessments.createVerification(idParams.parse(request.params).id),
+    };
+  });
+  app.post('/api/repair-episodes/:id/learner-defer', async (request) => ({
+    repair: services.learnerAssessments.defer(idParams.parse(request.params).id),
+  }));
+  app.post('/api/repair-episodes/:id/learner-cancel', async (request) => ({
+    repair: services.learnerAssessments.cancelRepair(idParams.parse(request.params).id),
+  }));
+  app.post('/api/repair-episodes/:id/learner-resume', async (request) => ({
+    repair: services.learnerAssessments.resumeRepair(idParams.parse(request.params).id),
   }));
   app.post('/api/repair-episodes/:id/practice', async (request) => {
     const body = z

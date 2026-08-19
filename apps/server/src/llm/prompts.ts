@@ -198,6 +198,35 @@ export function shortAnswerGradingMessages(
   ];
 }
 
+export function repairGenerationMessages(input: {
+  targetLearningUnitId: string;
+  diagnosticCategory: string;
+  gapSummary: string;
+  affectedCriteria: string[];
+  sourceContext: Array<{ blockId: string; quote: string }>;
+  failedPrompt: string;
+}): ChatMessage[] {
+  const wrapped = wrapUntrustedJson('REPAIR_DATA', input);
+  return [
+    {
+      role: 'system',
+      content:
+        '你为 Hy3 Study Clinic 生成最小充分的学习修复材料。只解释答案中的学习缺口，不评价学习者本人；Repair 练习不产生正式证据。',
+    },
+    {
+      role: 'user',
+      content: [
+        wrapped.guard,
+        wrapped.body,
+        'diagnosticCategory 和 interventionMode 必须保持本地提供的诊断与对应模式。',
+        '只输出 JSON：{"interventionMode":"TARGETED_PROMPT","diagnosticCategory":"INCOMPLETE_EXPRESSION","explanation":"...","practicePrompt":"...","hints":[]}',
+        '引用只能使用给出的原文上下文，不要输出数据库 ID、哈希、内部评分或思维链。',
+        JSON_RULES,
+      ].join('\n'),
+    },
+  ];
+}
+
 export function remediationMessages(
   _materialTitle: string,
   blocks: SourceBlock[],

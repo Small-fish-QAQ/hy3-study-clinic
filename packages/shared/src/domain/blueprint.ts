@@ -90,6 +90,8 @@ export const CreateAssessmentRequestSchema = z
     conceptIds: z.array(z.string().min(1)).max(3).optional(),
     /** Misconception to discriminate (misconception_check mode). */
     misconceptionId: z.string().min(1).optional(),
+    /** Formal Study checks request short-answer-only generation. */
+    formalOnly: z.boolean().optional(),
   })
   .strict();
 export type CreateAssessmentRequest = z.infer<typeof CreateAssessmentRequestSchema>;

@@ -10,6 +10,7 @@ import {
   GroupedStudyPlanProposalPayloadSchema,
   MisconceptionProposalPayloadSchema,
   QuizGenerationPayloadSchema,
+  RepairGenerationPayloadSchema,
   RemediationPlanProposalPayloadSchema,
   StudyPlanProposalPayloadSchema,
   TeachingBriefProposalPayloadSchema,
@@ -54,6 +55,7 @@ import {
   remediationMessages,
   remediationPlanMessages,
   shortAnswerGradingMessages,
+  repairGenerationMessages,
   studyPlanProposalMessages,
   tutorStepMessages,
   tutorTurnMessages,
@@ -365,11 +367,14 @@ export class Hy3Provider implements LlmProvider {
   }
 
   async generateRepair(
-    _input: RepairGenerationInput,
-    _opts?: ProviderCallOptions,
+    input: RepairGenerationInput,
+    opts?: ProviderCallOptions,
   ): Promise<RepairGenerationPayload> {
-    throw ProviderError.invalidOutput(
-      'Repair generation is not enabled for the real provider in Phase 7B1.',
+    return this.complete(
+      repairGenerationMessages(input),
+      RepairGenerationPayloadSchema,
+      opts,
+      `interventionMode 必须与诊断 ${input.diagnosticCategory} 对应；只提供一个小而可执行的修复步骤。`,
     );
   }
 

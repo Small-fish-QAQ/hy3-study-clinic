@@ -284,7 +284,9 @@ export function createAssessmentService({
       }
     }
     const blocks = [...involvedMaterialIds].flatMap((id) => repos.materials.getBlocks(id));
-    const allowedTypes = TYPES_BY_MODE[request.mode];
+    const allowedTypes = request.formalOnly
+      ? (['short_answer'] as QuestionType[])
+      : TYPES_BY_MODE[request.mode];
     const questionCount =
       request.mode === 'misconception_check'
         ? 1

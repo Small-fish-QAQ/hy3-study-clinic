@@ -61,6 +61,10 @@ import {
   type FormalAssessmentsService,
 } from './formalAssessments.js';
 import { createRepairService, type RepairService } from './repair.js';
+import {
+  createLearnerAssessmentsService,
+  type LearnerAssessmentsService,
+} from './learnerAssessments.js';
 
 export interface Services {
   materials: MaterialService;
@@ -99,6 +103,7 @@ export interface Services {
   visualPreparation: VisualPreparationService;
   formalAssessments: FormalAssessmentsService;
   repair: RepairService;
+  learnerAssessments: LearnerAssessmentsService;
 }
 
 export interface ServiceDeps {
@@ -178,6 +183,7 @@ export function createServices({
     curriculum,
     studyPlans: studyPlansAgent,
   });
+  const formalAssessments = createFormalAssessmentsService({ repos, clock });
   const formalProgression = createFormalProgressionService({
     repos,
     progression: repos.formalProgression,
@@ -192,6 +198,7 @@ export function createServices({
     formalProgression,
     provider,
     providerModel,
+    formalAssessments,
   });
   const teachingBriefPreparation = createTeachingBriefPreparationService({
     repos,
@@ -210,8 +217,14 @@ export function createServices({
     provider: visualProvider,
     clock,
   });
-  const formalAssessments = createFormalAssessmentsService({ repos, clock });
   const repair = createRepairService({ repos, provider, clock });
+  const learnerAssessments = createLearnerAssessmentsService({
+    repos,
+    provider,
+    clock,
+    formalAssessments,
+    repair,
+  });
   const studySessions = createStudySessionService({
     repos,
     provider,
@@ -257,5 +270,6 @@ export function createServices({
     visualPreparation,
     formalAssessments,
     repair,
+    learnerAssessments,
   };
 }

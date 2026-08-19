@@ -173,6 +173,7 @@ export const CourseActionLaunchResultSchema = z.discriminatedUnion('kind', [
       agendaItemId: z.string().min(1),
       quiz: PublicQuizSchema,
       assessmentKind: z.enum(['formal_checkpoint', 'due_review', 'targeted_repair', 'synthesis']),
+      formalAssessmentVersionId: z.string().min(1).nullable().optional(),
     })
     .strict(),
   z

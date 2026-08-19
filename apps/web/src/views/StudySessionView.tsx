@@ -121,6 +121,7 @@ export function StudySessionView({
 }: StudySessionViewProps) {
   const [detail, setDetail] = useState<StudySessionDetailResponse | null>(null);
   const [lessonProjection, setLessonProjection] = useState<LessonExecutionProjection | null>(null);
+  const [formalAssessmentVersionId, setFormalAssessmentVersionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [composer, setComposer] = useState('');
@@ -162,7 +163,25 @@ export function StudySessionView({
       setLoadError(null);
       try {
         const next = await api.getStudySession(targetWorkspaceId, sessionId, signal);
-        if (!signal.aborted && requestEpoch === epoch.current) setDetail(next);
+        if (!signal.aborted && requestEpoch === epoch.current) {
+          setDetail(next);
+          const currentItem = next.agenda.items.find(
+            (item) => item.id === next.session.currentAgendaItemId,
+          );
+          if (
+            currentItem &&
+            (currentItem.kind === 'formal_checkpoint' || currentItem.kind === 'targeted_repair')
+          ) {
+            const version = await api.getAgendaFormalAssessment(
+              targetWorkspaceId,
+              next.agenda.id,
+              currentItem.id,
+              signal,
+            );
+            if (!signal.aborted && requestEpoch === epoch.current)
+              setFormalAssessmentVersionId(version?.id ?? null);
+          }
+        }
       } catch (error) {
         if (!signal.aborted && requestEpoch === epoch.current) {
           setLoadError(error instanceof Error ? error.message : String(error));
@@ -178,6 +197,7 @@ export function StudySessionView({
     const controller = new AbortController();
     const requestEpoch = ++epoch.current;
     const inspectorWasOpen = inspectorOpenRef.current;
+    setFormalAssessmentVersionId(null);
     tutorEpoch.current += 1;
     tutorController.current?.abort();
     tutorController.current = null;
@@ -599,7 +619,11 @@ export function StudySessionView({
         signal,
       ),
     );
-    if (launched?.kind === 'assessment') onLaunchQuiz?.(launched.quiz);
+    if (launched?.kind === 'assessment') {
+      if (launched.formalAssessmentVersionId)
+        setFormalAssessmentVersionId(launched.formalAssessmentVersionId);
+      else onLaunchQuiz?.(launched.quiz);
+    }
   }
 
   async function lifecycle(actionKind: 'pause' | 'resume' | 'stop'): Promise<void> {
@@ -836,6 +860,7 @@ export function StudySessionView({
               active={active}
               busy={busy}
               directCheckpointItemId={directCheckpointItem?.id ?? null}
+              formalAssessmentVersionId={formalAssessmentVersionId}
               onResumeStudySession={() => void lifecycle('resume')}
               onStartFormalAssessment={() =>
                 void mixedCommand('direct_checkpoint', directCheckpointItem?.id ?? null)

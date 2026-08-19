@@ -159,6 +159,50 @@ export const ProgressionReconciliationRecordSchema = z.object({
 });
 export type ProgressionReconciliationRecord = z.infer<typeof ProgressionReconciliationRecordSchema>;
 
+export const LearnerSourceReferenceSchema = z.object({
+  materialTitle: z.string().min(1),
+  locationLabel: z.string().min(1),
+  excerpt: z.string().min(1).max(2000),
+  advisory: z.boolean(),
+});
+export type LearnerSourceReference = z.infer<typeof LearnerSourceReferenceSchema>;
+
+export const LearnerAssessmentItemSchema = z.object({
+  itemId: z.string().min(1),
+  prompt: z.string().min(1).max(2000),
+  purpose: z.string().min(1).max(500),
+  sourceReferences: z.array(LearnerSourceReferenceSchema).max(10),
+});
+export type LearnerAssessmentItem = z.infer<typeof LearnerAssessmentItemSchema>;
+
+export const LearnerCriterionFeedbackSchema = z.object({
+  criterionId: z.string().min(1),
+  label: z.string().min(1).max(500),
+  result: z.enum(['met', 'partial', 'not_met']),
+  message: z.string().min(1).max(500),
+});
+export type LearnerCriterionFeedback = z.infer<typeof LearnerCriterionFeedbackSchema>;
+
+export const LearnerAssessmentExecutionSchema = z.object({
+  assessmentVersionId: z.string().min(1),
+  title: z.string().min(1).max(300),
+  attempt: AssessmentAttemptSchema,
+  items: z.array(LearnerAssessmentItemSchema).min(1),
+  result: z
+    .object({
+      gradeRecordId: z.string().min(1),
+      demonstrated: z.boolean(),
+      summary: z.string().min(1).max(1000),
+      minorNotice: z.string().max(500).nullable(),
+      criteria: z.array(LearnerCriterionFeedbackSchema).max(8),
+      sourceReferences: z.array(LearnerSourceReferenceSchema).max(10),
+      evidenceStatus: z.enum(['supported', 'partial', 'unavailable']),
+      repairEpisodeId: z.string().min(1).nullable(),
+    })
+    .nullable(),
+});
+export type LearnerAssessmentExecution = z.infer<typeof LearnerAssessmentExecutionSchema>;
+
 export function classifyFormalAssessmentItem(input: {
   targetLearningUnitId?: string;
   questionType: FormalAssessmentQuestionType | string;
