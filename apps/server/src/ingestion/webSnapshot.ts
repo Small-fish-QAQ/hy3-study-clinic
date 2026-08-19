@@ -105,6 +105,8 @@ export async function fetchWebSnapshot(
         headers: { accept: 'text/html,application/xhtml+xml;q=0.9' },
       });
     } catch (error) {
+      clearTimeout(timer);
+      options.signal?.removeEventListener('abort', onAbort);
       if (options.signal?.aborted)
         throw new IngestionError(ApiErrorCode.RequestCancelled, 'Web Snapshot 获取已取消。');
       throw new IngestionError(
@@ -113,31 +115,77 @@ export async function fetchWebSnapshot(
           ? 'Web Snapshot 获取超时。'
           : 'Web Snapshot 网络获取失败。',
       );
-    } finally {
-      clearTimeout(timer);
-      options.signal?.removeEventListener('abort', onAbort);
     }
     if (response.status >= 300 && response.status < 400) {
-      if (redirect === maxRedirects)
+      if (redirect === maxRedirects) {
+        clearTimeout(timer);
+        options.signal?.removeEventListener('abort', onAbort);
         throw new IngestionError(ApiErrorCode.ParseFailed, 'Web Snapshot 重定向次数超过上限。');
+      }
       const location = response.headers.get('location');
-      if (!location)
+      if (!location) {
+        clearTimeout(timer);
+        options.signal?.removeEventListener('abort', onAbort);
         throw new IngestionError(ApiErrorCode.ParseFailed, 'Web Snapshot 重定向缺少目标。');
+      }
+      clearTimeout(timer);
+      options.signal?.removeEventListener('abort', onAbort);
       current = await validatePublicUrl(new URL(location, current).href);
       continue;
     }
-    if (!response.ok)
+    if (!response.ok) {
+      clearTimeout(timer);
+      options.signal?.removeEventListener('abort', onAbort);
       throw new IngestionError(
         ApiErrorCode.ParseFailed,
         `Web Snapshot 返回 HTTP ${response.status}。`,
       );
+    }
     const contentType =
       response.headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase() ?? '';
-    if (!['text/html', 'application/xhtml+xml'].includes(contentType))
+    if (!['text/html', 'application/xhtml+xml'].includes(contentType)) {
+      clearTimeout(timer);
+      options.signal?.removeEventListener('abort', onAbort);
       throw new IngestionError(ApiErrorCode.TypeMismatch, 'Web Snapshot 响应不是 HTML。');
-    const bytes = Buffer.from(await response.arrayBuffer());
-    if (bytes.length > HTML_MAX_BYTES)
-      throw new IngestionError(ApiErrorCode.SourceTooLarge, 'Web Snapshot 响应超过字节上限。');
+    }
+    let bytes: Buffer;
+    try {
+      if (!response.body) {
+        bytes = Buffer.from(await response.arrayBuffer());
+      } else {
+        const reader = response.body.getReader();
+        const chunks: Buffer[] = [];
+        let total = 0;
+        while (true) {
+          const part = await reader.read();
+          if (part.done) break;
+          const chunk = Buffer.from(part.value);
+          total += chunk.length;
+          if (total > HTML_MAX_BYTES) {
+            await reader.cancel();
+            throw new IngestionError(
+              ApiErrorCode.SourceTooLarge,
+              'Web Snapshot 响应超过字节上限。',
+            );
+          }
+          chunks.push(chunk);
+        }
+        bytes = Buffer.concat(chunks, total);
+      }
+    } catch (error) {
+      if (options.signal?.aborted)
+        throw new IngestionError(ApiErrorCode.RequestCancelled, 'Web Snapshot 获取已取消。');
+      if (error instanceof IngestionError) throw error;
+      throw new IngestionError(
+        ApiErrorCode.ParseFailed,
+        error instanceof Error && error.name === 'AbortError'
+          ? 'Web Snapshot 获取超时。'
+          : 'Web Snapshot 响应读取失败。',
+      );
+    } finally {
+      clearTimeout(timer);
+      options.signal?.removeEventListener('abort', onAbort);
+    }
     if (
       !/<(?:!doctype\s+html|html\b|body\b|main\b|article\b)/iu.test(
         bytes.subarray(0, 8192).toString('latin1'),
