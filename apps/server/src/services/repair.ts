@@ -20,7 +20,7 @@ import { newId } from '../util/ids.js';
 
 export const MAX_REPAIR_VERIFICATION_FAILURES = 3;
 const GENERATOR_VERSION = 'diagnostic-repair-v1';
-const PROMPT_VERSION = 'repair-prompt-v1';
+const PROMPT_VERSION = 'repair-prompt-v2';
 const POLICY_VERSION = 'minimum-sufficient-intervention-v1';
 
 function fallbackDiagnosis(grade: GradeRecord): {
@@ -224,10 +224,12 @@ export function createRepairService({
       const criterionById = new Map(
         item.rubric?.map((criterion) => [criterion.id, criterion.text]) ?? [],
       );
+      const expectedMode = repairInterventionFor(episode.diagnosticCategory);
       const payload = await provider.generateRepair(
         {
           targetLearningUnitId: episode.targetLearningUnitId,
           diagnosticCategory: episode.diagnosticCategory,
+          requiredInterventionMode: expectedMode,
           gapSummary: episode.gapSummary,
           affectedCriteria: episode.affectedCriterionIds.map(
             (criterionId) => criterionById.get(criterionId) ?? 'the required idea',
@@ -252,15 +254,24 @@ export function createRepairService({
           },
           validateCandidate: (candidate) => {
             const value = candidate as { diagnosticCategory?: unknown; interventionMode?: unknown };
-            const expectedMode = repairInterventionFor(episode.diagnosticCategory);
-            const valid =
-              value.diagnosticCategory === episode.diagnosticCategory &&
-              value.interventionMode === expectedMode;
+            const diagnostics: string[] = [];
+            const diagnosticCodes: string[] = [];
+            if (value.diagnosticCategory !== episode.diagnosticCategory) {
+              diagnostics.push(
+                `diagnosticCategory mismatch: returned ${String(value.diagnosticCategory)}, required ${episode.diagnosticCategory}.`,
+              );
+              diagnosticCodes.push('repair_diagnostic_category_mismatch');
+            }
+            if (value.interventionMode !== expectedMode) {
+              diagnostics.push(
+                `interventionMode mismatch: returned ${String(value.interventionMode)}, required ${expectedMode} for ${episode.diagnosticCategory}.`,
+              );
+              diagnosticCodes.push('repair_intervention_mode_mismatch');
+            }
             return {
-              valid,
-              diagnostics: valid
-                ? []
-                : ['Use the supplied diagnosis and required intervention mode.'],
+              valid: diagnostics.length === 0,
+              diagnostics,
+              diagnosticCodes,
             };
           },
         },

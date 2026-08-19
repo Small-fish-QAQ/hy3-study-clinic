@@ -162,7 +162,7 @@ export interface FakeProviderOptions {
   /** Visual-only deterministic output/fault fixture. */
   visualDescriptionFixture?: FakeVisualDescriptionFixture;
   /** Repair-only semantic fault fixture for bounded-provider tests. */
-  repairFixture?: 'repair_once' | 'repair_exhausted';
+  repairFixture?: 'repair_once' | 'repair_exhausted' | 'wrong_mode_once' | 'wrong_mode_exhausted';
 }
 
 export type FakeVisualDescriptionFixture =
@@ -200,7 +200,8 @@ export class FakeProvider implements LlmProvider {
   private readonly delayMs: number;
   private readonly tutorTurnFixture: FakeTutorTurnFixture | null;
   private readonly visualDescriptionFixture: FakeVisualDescriptionFixture | null;
-  private readonly repairFixture: 'repair_once' | 'repair_exhausted' | null;
+  private readonly repairFixture:
+    'repair_once' | 'repair_exhausted' | 'wrong_mode_once' | 'wrong_mode_exhausted' | null;
   private tutorTurnFixtureCalls = 0;
 
   constructor(options: FakeProviderOptions = {}) {
@@ -461,21 +462,7 @@ export class FakeProvider implements LlmProvider {
     opts?: ProviderCallOptions,
   ): Promise<RepairGenerationPayload> {
     await this.gate(opts);
-    const mode =
-      input.diagnosticCategory === 'INCOMPLETE_EXPRESSION'
-        ? 'TARGETED_PROMPT'
-        : input.diagnosticCategory === 'LOCAL_MISCONCEPTION' ||
-            input.diagnosticCategory === 'RELATION_REVERSAL'
-          ? 'CONTRAST'
-          : input.diagnosticCategory === 'PROCEDURAL_GAP'
-            ? 'SCAFFOLD'
-            : input.diagnosticCategory === 'PREREQUISITE_GAP'
-              ? 'PREREQUISITE_REVIEW'
-              : input.diagnosticCategory === 'IRRELEVANT_OR_GUESSING'
-                ? 'RETEACH_RETRIEVAL'
-                : input.diagnosticCategory === 'SURFACE_SLIP'
-                  ? 'NOTICE'
-                  : 'CLARIFY';
+    const mode = input.requiredInterventionMode;
     const valid: RepairGenerationPayload = {
       interventionMode: mode,
       diagnosticCategory: input.diagnosticCategory,
@@ -483,13 +470,20 @@ export class FakeProvider implements LlmProvider {
       practicePrompt: `请用不同表述回答：${input.failedPrompt}`.slice(0, 1000),
       hints: input.affectedCriteria.slice(0, 2).map((criterion) => `检查是否说明了：${criterion}`),
     };
-    const invalid: RepairGenerationPayload = { ...valid, interventionMode: 'CLARIFY' };
+    const invalid: RepairGenerationPayload = {
+      ...valid,
+      interventionMode:
+        input.requiredInterventionMode === 'TARGETED_PROMPT' ? 'CONTRAST' : 'TARGETED_PROMPT',
+    };
     const first = this.repairFixture ? invalid : valid;
     const firstValidation = opts?.validateCandidate?.(first);
     if (!firstValidation || firstValidation.valid) return first;
     opts?.onRepairAttempt?.('candidate');
     await this.gate(opts);
-    const repaired = this.repairFixture === 'repair_exhausted' ? invalid : valid;
+    const repaired =
+      this.repairFixture === 'repair_exhausted' || this.repairFixture === 'wrong_mode_exhausted'
+        ? invalid
+        : valid;
     const repairedValidation = opts?.validateCandidate?.(repaired);
     if (!repairedValidation || repairedValidation.valid) return repaired;
     throw ProviderError.invalidOutput(repairedValidation.diagnostics.join('; '), 'candidate');

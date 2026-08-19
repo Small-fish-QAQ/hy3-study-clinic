@@ -46,6 +46,7 @@ import type {
   VisualAdvisoryContext,
   VisualDescriptionPayload,
   RepairDiagnosticCategory,
+  RepairInterventionMode,
   RepairGenerationPayload,
 } from '@hy3-clinic/shared';
 
@@ -252,6 +253,8 @@ export interface RemediationInput {
 export interface RepairGenerationInput {
   targetLearningUnitId: string;
   diagnosticCategory: RepairDiagnosticCategory;
+  /** Locally authoritative intervention mode; the provider must preserve it. */
+  requiredInterventionMode: RepairInterventionMode;
   gapSummary: string;
   affectedCriteria: string[];
   sourceContext: Array<{ blockId: string; quote: string }>;

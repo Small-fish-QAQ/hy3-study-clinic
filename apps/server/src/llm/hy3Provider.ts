@@ -374,7 +374,11 @@ export class Hy3Provider implements LlmProvider {
       repairGenerationMessages(input),
       RepairGenerationPayloadSchema,
       opts,
-      `interventionMode 必须与诊断 ${input.diagnosticCategory} 对应；只提供一个小而可执行的修复步骤。`,
+      [
+        `本地契约要求 diagnosticCategory=${input.diagnosticCategory} 且 interventionMode=${input.requiredInterventionMode}；这两个值不可更改。`,
+        `请保持 interventionMode=${input.requiredInterventionMode}，不要将其替换为 TARGETED_PROMPT 或任何其他模式；只修复校验报告中的字段。`,
+        '保留已经有效的源约束和教学内容，仅提供一个最小充分、不可授予正式学分的修复步骤。',
+      ].join('\n'),
     );
   }
 

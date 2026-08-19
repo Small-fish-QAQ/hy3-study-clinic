@@ -7,6 +7,7 @@ import {
   measureCourseMapRequest,
   quizGenerationMessages,
   remediationMessages,
+  repairGenerationMessages,
   shortAnswerGradingMessages,
   curriculumProposalMessages,
   measureCurriculumRequest,
@@ -25,6 +26,33 @@ const blocks: SourceBlock[] = [
     endOffset: 9,
   },
 ];
+
+describe('Repair semantic contract prompt', () => {
+  const cases = [
+    ['INCOMPLETE_EXPRESSION', 'TARGETED_PROMPT'],
+    ['RELATION_REVERSAL', 'CONTRAST'],
+    ['LOCAL_MISCONCEPTION', 'CONTRAST'],
+    ['PROCEDURAL_GAP', 'SCAFFOLD'],
+    ['IRRELEVANT_OR_GUESSING', 'RETEACH_RETRIEVAL'],
+  ] as const;
+
+  it.each(cases)('carries the local %s -> %s contract as authority', (category, mode) => {
+    const content = repairGenerationMessages({
+      targetLearningUnitId: 'unit_1',
+      diagnosticCategory: category,
+      requiredInterventionMode: mode,
+      gapSummary: 'A bounded learning gap.',
+      affectedCriteria: ['criterion'],
+      sourceContext: [{ blockId: 'block_1', quote: 'Source text.' }],
+      failedPrompt: 'Answer the question.',
+    })
+      .map((message) => message.content)
+      .join('\n');
+    expect(content).toContain(`interventionMode=${mode}`);
+    expect(content).toContain(`diagnosticCategory 必须原样保持为 ${category}`);
+    expect(content).toContain(`不要把 ${mode} 改成其他模式`);
+  });
+});
 
 const concept: Concept = {
   id: 'con_1',

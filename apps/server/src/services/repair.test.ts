@@ -254,6 +254,7 @@ describe('Fake Repair provider contract', () => {
   const input = {
     targetLearningUnitId: 'unit_1',
     diagnosticCategory: 'INCOMPLETE_EXPRESSION' as const,
+    requiredInterventionMode: 'TARGETED_PROMPT' as const,
     gapSummary: 'The response omitted one required idea.',
     affectedCriteria: ['States the capacity limit'],
     sourceContext: [{ blockId: 'block_1', quote: 'Working memory is limited.' }],
@@ -291,5 +292,62 @@ describe('Fake Repair provider contract', () => {
       }),
     ).rejects.toMatchObject({ code: 'REQUEST_CANCELLED' });
     expect(repairs).toBe(0);
+  });
+
+  it('repairs an exact wrong intervention mode and preserves the local mapping', async () => {
+    let repairs = 0;
+    const payload = await new FakeProvider({ repairFixture: 'wrong_mode_once' }).generateRepair(
+      {
+        ...input,
+        diagnosticCategory: 'RELATION_REVERSAL',
+        requiredInterventionMode: 'CONTRAST',
+      },
+      {
+        validateCandidate: (candidate) => {
+          const value = candidate as { diagnosticCategory?: unknown; interventionMode?: unknown };
+          const diagnostics: string[] = [];
+          if (value.diagnosticCategory !== 'RELATION_REVERSAL') {
+            diagnostics.push(
+              'diagnosticCategory mismatch: returned value, required RELATION_REVERSAL.',
+            );
+          }
+          if (value.interventionMode !== 'CONTRAST') {
+            diagnostics.push(
+              'interventionMode mismatch: returned value, required CONTRAST for RELATION_REVERSAL.',
+            );
+          }
+          return { valid: diagnostics.length === 0, diagnostics };
+        },
+        onRepairAttempt: () => repairs++,
+      },
+    );
+    expect(payload).toMatchObject({
+      diagnosticCategory: 'RELATION_REVERSAL',
+      interventionMode: 'CONTRAST',
+    });
+    expect(repairs).toBe(1);
+  });
+
+  it('fails closed when the wrong intervention mode remains after one repair', async () => {
+    await expect(
+      new FakeProvider({ repairFixture: 'wrong_mode_exhausted' }).generateRepair(
+        {
+          ...input,
+          diagnosticCategory: 'RELATION_REVERSAL',
+          requiredInterventionMode: 'CONTRAST',
+        },
+        {
+          validateCandidate: (candidate) => ({
+            valid:
+              (candidate as { diagnosticCategory?: unknown }).diagnosticCategory ===
+                'RELATION_REVERSAL' &&
+              (candidate as { interventionMode?: unknown }).interventionMode === 'CONTRAST',
+            diagnostics: [
+              'interventionMode mismatch: returned TARGETED_PROMPT, required CONTRAST for RELATION_REVERSAL.',
+            ],
+          }),
+        },
+      ),
+    ).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
   });
 });

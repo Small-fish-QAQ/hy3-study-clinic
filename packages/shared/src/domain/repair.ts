@@ -1,15 +1,19 @@
 import { z } from 'zod';
 
-export const RepairDiagnosticCategorySchema = z.enum([
-  'SURFACE_SLIP',
-  'INCOMPLETE_EXPRESSION',
-  'LOCAL_MISCONCEPTION',
-  'RELATION_REVERSAL',
-  'PROCEDURAL_GAP',
-  'PREREQUISITE_GAP',
-  'IRRELEVANT_OR_GUESSING',
-  'UNCERTAIN',
-]);
+export const RepairDiagnosticCategorySchema = z
+  .enum([
+    'SURFACE_SLIP',
+    'INCOMPLETE_EXPRESSION',
+    'LOCAL_MISCONCEPTION',
+    'RELATION_REVERSAL',
+    'PROCEDURAL_GAP',
+    'PREREQUISITE_GAP',
+    'IRRELEVANT_OR_GUESSING',
+    'UNCERTAIN',
+  ])
+  .describe(
+    'Local diagnostic category selected by deterministic grading policy; provider output cannot change it.',
+  );
 export type RepairDiagnosticCategory = z.infer<typeof RepairDiagnosticCategorySchema>;
 
 export const RepairStatusSchema = z.enum([
@@ -22,15 +26,19 @@ export const RepairStatusSchema = z.enum([
 ]);
 export type RepairStatus = z.infer<typeof RepairStatusSchema>;
 
-export const RepairInterventionModeSchema = z.enum([
-  'NOTICE',
-  'TARGETED_PROMPT',
-  'CONTRAST',
-  'SCAFFOLD',
-  'PREREQUISITE_REVIEW',
-  'RETEACH_RETRIEVAL',
-  'CLARIFY',
-]);
+export const RepairInterventionModeSchema = z
+  .enum([
+    'NOTICE',
+    'TARGETED_PROMPT',
+    'CONTRAST',
+    'SCAFFOLD',
+    'PREREQUISITE_REVIEW',
+    'RETEACH_RETRIEVAL',
+    'CLARIFY',
+  ])
+  .describe(
+    'Locally selected pedagogical contract: TARGETED_PROMPT elicits a missing part; CONTRAST compares an error with the grounded relation; SCAFFOLD decomposes a procedure; RETEACH_RETRIEVAL reteaches then checks retrieval. Provider output must preserve the supplied mode.',
+  );
 export type RepairInterventionMode = z.infer<typeof RepairInterventionModeSchema>;
 
 export const RepairEpisodeSchema = z.object({

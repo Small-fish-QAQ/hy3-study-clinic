@@ -2,7 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { SAMPLE_MATERIAL_TITLE, type SourceBlock } from '@hy3-clinic/shared';
 import { Hy3Provider } from './hy3Provider.js';
 import { ProviderError } from './errors.js';
-import type { StudyPlanProposalInput, VisualDescriptionInput } from './provider.js';
+import type {
+  RepairGenerationInput,
+  StudyPlanProposalInput,
+  VisualDescriptionInput,
+} from './provider.js';
 import { groupedStudyPlanProposalMessages } from './prompts.js';
 
 const blocks: SourceBlock[] = [
@@ -535,6 +539,54 @@ describe('Hy3Provider large StudyPlan output', () => {
 });
 
 describe('Hy3Provider bounded repair', () => {
+  it('carries the locally required Repair mode into the first request and exact mismatch into the one repair', async () => {
+    const input: RepairGenerationInput = {
+      targetLearningUnitId: 'unit_1',
+      diagnosticCategory: 'RELATION_REVERSAL',
+      requiredInterventionMode: 'CONTRAST',
+      gapSummary: 'The relation was reversed.',
+      affectedCriteria: ['States the correct relation.'],
+      sourceContext: [{ blockId: 'block_1', quote: 'A precedes B.' }],
+      failedPrompt: 'Explain the relation.',
+    };
+    const wrong = {
+      interventionMode: 'TARGETED_PROMPT',
+      diagnosticCategory: 'RELATION_REVERSAL',
+      explanation: 'Ask the learner to reconsider.',
+      practicePrompt: 'Try again.',
+      hints: [],
+    };
+    const corrected = { ...wrong, interventionMode: 'CONTRAST' };
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(wrong)))
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(corrected))) as unknown as typeof fetch;
+    const provider = makeProvider(fetchImpl);
+    const payload = await provider.generateRepair(input, {
+      validateCandidate: (candidate) => ({
+        valid: (candidate as { interventionMode?: string }).interventionMode === 'CONTRAST',
+        diagnostics: [
+          'interventionMode mismatch: returned TARGETED_PROMPT, required CONTRAST for RELATION_REVERSAL.',
+        ],
+        diagnosticCodes: ['repair_intervention_mode_mismatch'],
+      }),
+    });
+    expect(payload.interventionMode).toBe('CONTRAST');
+    const calls = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls;
+    const firstBody = JSON.parse(String(calls[0]![1]!.body)) as {
+      messages: Array<{ content: string }>;
+    };
+    const repairBody = JSON.parse(String(calls[1]![1]!.body)) as {
+      messages: Array<{ content: string }>;
+    };
+    expect(JSON.stringify(firstBody.messages)).toContain('requiredInterventionMode');
+    expect(JSON.stringify(firstBody.messages)).toContain('CONTRAST');
+    expect(repairBody.messages.at(-1)!.content).toContain(
+      'returned TARGETED_PROMPT, required CONTRAST for RELATION_REVERSAL',
+    );
+    expect(repairBody.messages.at(-1)!.content).toContain('这两个值不可更改');
+  });
+
   it('retries exactly once on invalid output, then succeeds', async () => {
     const onRepairAttempt = vi.fn();
     const fetchImpl = vi

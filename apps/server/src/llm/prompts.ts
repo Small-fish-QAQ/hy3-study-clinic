@@ -201,6 +201,7 @@ export function shortAnswerGradingMessages(
 export function repairGenerationMessages(input: {
   targetLearningUnitId: string;
   diagnosticCategory: string;
+  requiredInterventionMode: string;
   gapSummary: string;
   affectedCriteria: string[];
   sourceContext: Array<{ blockId: string; quote: string }>;
@@ -218,9 +219,10 @@ export function repairGenerationMessages(input: {
       content: [
         wrapped.guard,
         wrapped.body,
-        'diagnosticCategory 和 interventionMode 必须保持本地提供的诊断与对应模式。',
-        '只输出 JSON：{"interventionMode":"TARGETED_PROMPT","diagnosticCategory":"INCOMPLETE_EXPRESSION","explanation":"...","practicePrompt":"...","hints":[]}',
-        '引用只能使用给出的原文上下文，不要输出数据库 ID、哈希、内部评分或思维链。',
+        `本地修复契约已经决定 interventionMode=${input.requiredInterventionMode}。这是确定性的本地权威，不是供你重新选择的建议。diagnosticCategory 必须原样保持为 ${input.diagnosticCategory}。`,
+        '模式的教学职责：TARGETED_PROMPT=只引出缺失部分；CONTRAST=明确比较错误关系与资料中的正确关系；SCAFFOLD=拆成可执行步骤；RETEACH_RETRIEVAL=短讲解后检索练习；PREREQUISITE_REVIEW=先复习前置概念；NOTICE=只指出表面问题；CLARIFY=澄清不确定回答。',
+        `不要把 ${input.requiredInterventionMode} 改成其他模式，尤其不要把 CONTRAST、SCAFFOLD 或 RETEACH_RETRIEVAL 改写成 TARGETED_PROMPT。只输出 JSON：{"interventionMode":"${input.requiredInterventionMode}","diagnosticCategory":"${input.diagnosticCategory}","explanation":"...","practicePrompt":"...","hints":[]}`,
+        '内容必须保持最小充分、源材料有据、非正式学习练习且不泄露完整答案；不要输出数据库 ID、哈希、内部评分或思维链。',
         JSON_RULES,
       ].join('\n'),
     },

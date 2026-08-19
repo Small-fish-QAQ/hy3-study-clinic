@@ -872,11 +872,15 @@ export const AssessmentProposalPayloadSchema = z.object({
 export type AssessmentProposalPayload = z.infer<typeof AssessmentProposalPayloadSchema>;
 
 export const RepairGenerationPayloadSchema = z.object({
-  interventionMode: RepairInterventionModeSchema,
+  interventionMode: RepairInterventionModeSchema.describe(
+    'Must exactly equal the locally supplied required intervention mode; this field is not provider-selected.',
+  ),
   explanation: z.string().min(1).max(1500),
   practicePrompt: z.string().min(1).max(1000),
   hints: z.array(z.string().min(1).max(500)).max(4),
-  diagnosticCategory: RepairDiagnosticCategorySchema,
+  diagnosticCategory: RepairDiagnosticCategorySchema.describe(
+    'Must exactly equal the locally supplied diagnostic category; preserve local authority.',
+  ),
 });
 export type RepairGenerationPayload = z.infer<typeof RepairGenerationPayloadSchema>;
 
