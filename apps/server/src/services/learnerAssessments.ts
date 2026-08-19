@@ -9,6 +9,7 @@ import {
   type LearnerRepairProjection,
   type FormalAssessmentItem,
   type RubricGrade,
+  decideFormalCredit,
 } from '@hy3-clinic/shared';
 import { notFound } from '../errors.js';
 import type { LlmProvider, ProviderCallOptions } from '../llm/provider.js';
@@ -126,7 +127,18 @@ export function createLearnerAssessmentsService({
     const item = version.items[0]!;
     const evidence = repos.formalAssessments.listEvidenceForGrade(grade.id);
     const diagnostic = grade.judgment.diagnostic;
-    const demonstrated = grade.judgment.score >= 0.6;
+    const demonstrated = version.items
+      .filter((candidate) => candidate.formalEligible)
+      .every((candidate) => {
+        const rubric = candidate.rubric ?? [];
+        const criterionIds = new Set(rubric.map((criterion) => criterion.id));
+        return decideFormalCredit({
+          rubric,
+          criterionResults: grade.judgment.criterionResults.filter((result) =>
+            criterionIds.has(result.criterionId),
+          ),
+        }).formallyDemonstrated;
+      });
     return {
       gradeRecordId: grade.id,
       demonstrated,
@@ -284,7 +296,7 @@ export function createLearnerAssessmentsService({
         .listByWorkspace(submitted.workspaceId)
         .find((candidate) => candidate.verificationAttemptId === submitted.id);
       if (linkedEpisode) {
-        if (grade.judgment.score >= 0.6 && evidence.length > 0) {
+        if (evidence.some((record) => record.conclusion === 'supported')) {
           repair.resolveFromEvidence(linkedEpisode.id, evidence[0]!.id);
         } else {
           repair.recordVerificationFailure(linkedEpisode.id);

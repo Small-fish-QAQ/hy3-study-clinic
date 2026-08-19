@@ -4,6 +4,7 @@ import {
   AssessmentVersionSchema,
   ApiErrorCode,
   EvidenceRecordSchema,
+  FORMAL_EVIDENCE_POLICY_VERSION,
   GradeRecordSchema,
   ProgressionReconciliationRecordSchema,
   classifyFormalAssessmentItem,
@@ -15,6 +16,7 @@ import {
   type GradeRecord,
   type ProgressionReconciliationRecord,
   type Quiz,
+  decideFormalCredit,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import type { Repositories } from '../repositories/index.js';
@@ -22,7 +24,7 @@ import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
 import { verifyGrounding } from '../grounding/verify.js';
 
-const POLICY_VERSION = 'formal-assessment-evidence-v1';
+const POLICY_VERSION = FORMAL_EVIDENCE_POLICY_VERSION;
 
 export function createFormalAssessmentsService({
   repos,
@@ -286,12 +288,17 @@ export function createFormalAssessmentsService({
         const result = grade.judgment.criterionResults.filter((r) =>
           item.rubric?.some((c) => c.id === r.criterionId),
         );
+        const credit = decideFormalCredit({
+          rubric: item.rubric ?? [],
+          criterionResults: result,
+        });
+        const anyCoverage = result.some((criterion) => criterion.result !== 'not_met');
         const conclusion =
           !item.formalEligible || result.length === 0
             ? 'unsupported'
-            : grade.judgment.score >= 0.6
+            : credit.formallyDemonstrated
               ? 'supported'
-              : grade.judgment.score > 0
+              : anyCoverage
                 ? 'partial'
                 : 'unsupported';
         if (conclusion === 'unsupported') return [];

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   classifyFormalAssessmentItem,
+  decideFormalCredit,
+  FORMAL_EVIDENCE_POLICY_VERSION,
   FormalAssessmentSourceBindingSchema,
   LearnerAssessmentExecutionSchema,
 } from './formalAssessment.js';
@@ -17,6 +19,71 @@ const binding = (overrides: Record<string, unknown> = {}) =>
   });
 
 describe('formal assessment policy', () => {
+  const rubric = [
+    { id: 'required_a', required: true },
+    { id: 'required_b', required: true },
+    { id: 'optional_c', required: false },
+  ];
+
+  it('requires every required criterion even when the durable score is above the old threshold', () => {
+    expect(
+      decideFormalCredit({
+        rubric,
+        criterionResults: [
+          { criterionId: 'required_a', result: 'met' },
+          { criterionId: 'required_b', result: 'not_met' },
+          { criterionId: 'optional_c', result: 'met' },
+        ],
+      }).formallyDemonstrated,
+    ).toBe(false);
+  });
+
+  it('fails closed for missing and partial required criteria', () => {
+    expect(
+      decideFormalCredit({
+        rubric,
+        criterionResults: [{ criterionId: 'required_a', result: 'met' }],
+      }).formallyDemonstrated,
+    ).toBe(false);
+    expect(
+      decideFormalCredit({
+        rubric,
+        criterionResults: [
+          { criterionId: 'required_a', result: 'met' },
+          { criterionId: 'required_b', result: 'partial' },
+        ],
+      }).formallyDemonstrated,
+    ).toBe(false);
+  });
+
+  it('credits exact/paraphrase/harmless-slip judgments when all required criteria are met', () => {
+    for (const result of ['met', 'met', 'met'] as const) {
+      expect(
+        decideFormalCredit({
+          rubric,
+          criterionResults: [
+            { criterionId: 'required_a', result },
+            { criterionId: 'required_b', result },
+          ],
+        }).formallyDemonstrated,
+      ).toBe(true);
+    }
+  });
+
+  it('keeps optional criteria non-blocking and exposes a policy identity', () => {
+    expect(
+      decideFormalCredit({
+        rubric,
+        criterionResults: [
+          { criterionId: 'required_a', result: 'met' },
+          { criterionId: 'required_b', result: 'met' },
+          { criterionId: 'optional_c', result: 'not_met' },
+        ],
+      }).formallyDemonstrated,
+    ).toBe(true);
+    expect(FORMAL_EVIDENCE_POLICY_VERSION).toBe('formal-assessment-evidence-v2-criterion-gate');
+  });
+
   it('allows only authoritative short-answer items with a target and sourced rubric', () => {
     expect(
       classifyFormalAssessmentItem({

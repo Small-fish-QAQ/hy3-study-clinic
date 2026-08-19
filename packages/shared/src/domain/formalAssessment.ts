@@ -150,6 +150,52 @@ export const EvidenceRecordSchema = z.object({
 });
 export type EvidenceRecord = z.infer<typeof EvidenceRecordSchema>;
 
+/**
+ * Versioned local policy for converting an immutable rubric judgment into
+ * formal evidence. The aggregate model/local score remains durable feedback,
+ * but it is never sufficient to grant formal credit by itself.
+ */
+export const FORMAL_EVIDENCE_POLICY_VERSION = 'formal-assessment-evidence-v2-criterion-gate';
+
+export type FormalCriterionResult = 'met' | 'partial' | 'not_met';
+
+export interface FormalCreditDecision {
+  formallyDemonstrated: boolean;
+  requiredCriterionIds: string[];
+  failedRequiredCriterionIds: string[];
+}
+
+/**
+ * Deterministically evaluate formal credit from the immutable rubric and its
+ * persisted criterion results. Required criteria are the authority boundary;
+ * optional criteria never veto credit, and missing/duplicate/unknown results
+ * fail closed rather than being inferred from the aggregate score.
+ */
+export function decideFormalCredit(input: {
+  rubric: readonly Pick<FormalRubricCriterion, 'id' | 'required'>[];
+  criterionResults: readonly { criterionId: string; result: FormalCriterionResult }[];
+}): FormalCreditDecision {
+  const requiredCriterionIds = input.rubric
+    .filter((criterion) => criterion.required)
+    .map((c) => c.id);
+  const rubricIds = new Set(input.rubric.map((criterion) => criterion.id));
+  const resultById = new Map<string, FormalCriterionResult>();
+  let malformed = false;
+  for (const result of input.criterionResults) {
+    if (!rubricIds.has(result.criterionId) || resultById.has(result.criterionId)) malformed = true;
+    resultById.set(result.criterionId, result.result);
+  }
+  const failedRequiredCriterionIds = requiredCriterionIds.filter(
+    (criterionId) => resultById.get(criterionId) !== 'met',
+  );
+  return {
+    formallyDemonstrated:
+      !malformed && requiredCriterionIds.length > 0 && failedRequiredCriterionIds.length === 0,
+    requiredCriterionIds,
+    failedRequiredCriterionIds,
+  };
+}
+
 export const ProgressionReconciliationRecordSchema = z.object({
   id: z.string().min(1),
   evidenceRecordId: z.string().min(1),
