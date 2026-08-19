@@ -269,7 +269,11 @@ export function parseHtml(html: string, options: HtmlParseOptions): ParsedHtmlDo
       content: line,
       startOffset,
       endOffset,
-      headingPath: [...headingStack.slice(0, kind === 'heading' ? -1 : undefined)],
+      // HTML permits skipped heading levels; never persist sparse arrays with
+      // fabricated/undefined ancestors in the shared normalized contract.
+      headingPath: headingStack
+        .slice(0, kind === 'heading' ? -1 : undefined)
+        .filter((heading): heading is string => Boolean(heading)),
       location,
       contentOrigin: 'extracted_original',
       derivation: 'parser_derived',

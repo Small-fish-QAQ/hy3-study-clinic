@@ -45,6 +45,15 @@ export function registerMaterialRoutes(app: FastifyInstance, materials: Material
     reply.status(201).send(created);
   });
 
+  app.post('/api/materials/:id/web-snapshot', async (request, reply) => {
+    const { id } = MaterialIdParamsSchema.parse(request.params);
+    const body = WebSnapshotRequestSchema.parse(request.body);
+    const refreshed = await materials.refreshWebSnapshot(id, body, {
+      signal: requestSignal(request, reply),
+    });
+    reply.status(200).send(refreshed);
+  });
+
   app.get('/api/materials', async () => {
     return { materials: materials.list() };
   });

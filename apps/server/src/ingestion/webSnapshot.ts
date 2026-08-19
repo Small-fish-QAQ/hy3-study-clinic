@@ -1,6 +1,8 @@
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
 import { createHash } from 'node:crypto';
+import { request as httpRequest } from 'node:http';
+import { request as httpsRequest } from 'node:https';
 import { ApiErrorCode, type WebSnapshotMetadata } from '@hy3-clinic/shared';
 import { IngestionError } from './ingest.js';
 import { HTML_MAX_BYTES, HTML_EXTRACTION_STRATEGY_VERSION } from './html.js';
@@ -18,6 +20,13 @@ export interface WebSnapshotFetchOptions {
 export interface WebSnapshotFetchResult {
   bytes: Buffer;
   metadata: WebSnapshotMetadata;
+}
+
+interface PinnedResponse {
+  status: number;
+  ok: boolean;
+  headers: Headers;
+  body: AsyncIterable<Uint8Array>;
 }
 
 function forbiddenIp(address: string): boolean {
@@ -84,6 +93,56 @@ export async function validatePublicUrl(raw: string): Promise<URL> {
   return url;
 }
 
+/**
+ * Connect to the address already validated for this request. Passing the
+ * numeric address to Node's core client avoids a second hostname resolution;
+ * the original hostname remains the HTTP Host header and TLS SNI for virtual
+ * hosting and certificate validation.
+ */
+function requestPinned(
+  url: URL,
+  address: string,
+  signal: AbortSignal | undefined,
+  timeoutMs: number,
+): Promise<PinnedResponse> {
+  return new Promise((resolve, reject) => {
+    const request = (url.protocol === 'https:' ? httpsRequest : httpRequest)(
+      {
+        host: address,
+        port: url.port ? Number(url.port) : url.protocol === 'https:' ? 443 : 80,
+        path: `${url.pathname}${url.search}`,
+        method: 'GET',
+        headers: {
+          host: url.host,
+          accept: 'text/html,application/xhtml+xml;q=0.9',
+        },
+        ...(url.protocol === 'https:' ? { servername: url.hostname } : {}),
+      },
+      (response) => {
+        const headers = new Headers();
+        for (const [name, value] of Object.entries(response.headers)) {
+          if (typeof value === 'string') headers.set(name, value);
+          else if (Array.isArray(value)) headers.set(name, value.join(', '));
+        }
+        resolve({
+          status: response.statusCode ?? 0,
+          ok: (response.statusCode ?? 0) >= 200 && (response.statusCode ?? 0) < 300,
+          headers,
+          body: response,
+        });
+      },
+    );
+    const onAbort = () => request.destroy(new Error('Web Snapshot request aborted.'));
+    signal?.addEventListener('abort', onAbort, { once: true });
+    request.setTimeout(timeoutMs, () =>
+      request.destroy(new Error('Web Snapshot request timed out.')),
+    );
+    request.once('error', reject);
+    request.once('close', () => signal?.removeEventListener('abort', onAbort));
+    request.end();
+  });
+}
+
 export async function fetchWebSnapshot(
   rawUrl: string,
   options: WebSnapshotFetchOptions = {},
@@ -97,13 +156,26 @@ export async function fetchWebSnapshot(
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     const onAbort = () => controller.abort();
     options.signal?.addEventListener('abort', onAbort, { once: true });
-    let response: Response;
+    let response: Response | PinnedResponse;
     try {
-      response = await fetch(current, {
-        redirect: 'manual',
-        signal: controller.signal,
-        headers: { accept: 'text/html,application/xhtml+xml;q=0.9' },
-      });
+      if (isIP(current.hostname)) {
+        response = await fetch(current, {
+          redirect: 'manual',
+          signal: controller.signal,
+          headers: { accept: 'text/html,application/xhtml+xml;q=0.9' },
+        });
+      } else {
+        const addresses = await lookup(current.hostname, { all: true, verbatim: true })
+          .then((rows) => rows.map((row) => row.address))
+          .catch(() => []);
+        if (!addresses.length || addresses.some(forbiddenIp)) {
+          throw new IngestionError(
+            ApiErrorCode.ValidationError,
+            'Web Snapshot URL 解析到受限或不可验证的网络地址。',
+          );
+        }
+        response = await requestPinned(current, addresses[0]!, options.signal, timeoutMs);
+      }
     } catch (error) {
       clearTimeout(timer);
       options.signal?.removeEventListener('abort', onAbort);
@@ -150,10 +222,11 @@ export async function fetchWebSnapshot(
     }
     let bytes: Buffer;
     try {
-      if (!response.body) {
+      const body = response.body;
+      if (!body && 'arrayBuffer' in response) {
         bytes = Buffer.from(await response.arrayBuffer());
-      } else {
-        const reader = response.body.getReader();
+      } else if (body && 'getReader' in body) {
+        const reader = body.getReader();
         const chunks: Buffer[] = [];
         let total = 0;
         while (true) {
@@ -163,6 +236,21 @@ export async function fetchWebSnapshot(
           total += chunk.length;
           if (total > HTML_MAX_BYTES) {
             await reader.cancel();
+            throw new IngestionError(
+              ApiErrorCode.SourceTooLarge,
+              'Web Snapshot 响应超过字节上限。',
+            );
+          }
+          chunks.push(chunk);
+        }
+        bytes = Buffer.concat(chunks, total);
+      } else {
+        const chunks: Buffer[] = [];
+        let total = 0;
+        for await (const part of body ?? []) {
+          const chunk = Buffer.from(part);
+          total += chunk.length;
+          if (total > HTML_MAX_BYTES) {
             throw new IngestionError(
               ApiErrorCode.SourceTooLarge,
               'Web Snapshot 响应超过字节上限。',

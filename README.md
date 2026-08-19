@@ -96,6 +96,23 @@ Failed graph, plan, or lesson generation never overwrites the last valid version
 - FakeProvider implements deterministic visual-description fixtures with a strict schema for description, visual type, visible text, important concepts, pedagogical notes, and uncertainty. The derived result is labelled advisory and nonblocking. It can support retrieval discovery, Teaching Brief context, and Tutor context without becoming quoted course text, Course Truth, Formal Evidence, mastery, mistake closure, or progression.
 - Local OCR is intentionally not shipped in this phase. Hy3 remains the text-only language/pedagogy provider; the dedicated `TokenHubVisionProvider` targets only the officially documented `hy-vision-2.0-instruct` one-image transport. Its bounded descriptions remain advisory and provider-variable. Advisory lexical retrieval of accepted visual descriptions is implemented; vector visual search, semantic entailment, and formal visual evidence are not implemented.
 
+### Final Materials capability boundary
+
+The Materials Core has eight format families, all converging on `Material` -> immutable `MaterialRevision` -> parser adapter -> normalized structural units -> `structure-aware-v1` SourceBlocks and revision-local original assets. The labels below describe shipped behavior, not a promise of perfect extraction.
+
+| Family | Shipped capability | Formal evidence boundary | Important limitation |
+| --- | --- | --- | --- |
+| PDF | `BOUNDED`: text-layer extraction, page spans, headings/lists/conservative tables, original bytes | Exact authoritative text only; no OCR or visual-derived evidence | Multi-column/rotated/figure/image-only pages can be partial |
+| PPTX | `BOUNDED`: slide ownership, text/list/table/notes structure, embedded original images | Exact extracted text only | OOXML drawing order is not guaranteed semantic reading order; charts/SmartArt/equations are warned partial |
+| DOCX | `BOUNDED`: heading hierarchy, paragraphs/lists/tables, headers/footers where related, embedded original images | Exact authoritative text only | No fabricated pages; advanced drawings/equations/footnotes may be incomplete |
+| Markdown | `FULL` within the supported syntax: headings, lists, quotes, fenced code, tables, exact offsets | Exact text | Unsupported extensions remain ordinary text |
+| TXT | `TEXT_LAYER_ONLY`: deterministic paragraph blocks and line offsets | Exact text | Intentionally low structure |
+| Standalone Image | `BOUNDED`: actual-byte validation, immutable original asset and dimensions, bounded visual preparation | `NOT_AVAILABLE` for image descriptions | Provider descriptions are advisory and nonblocking; local OCR is not shipped |
+| HTML / Web Snapshot | `BOUNDED`: static Readability/jsdom extraction, DOM/heading paths, tables/code/links and snapshot bytes/hash | Captured extracted text only | No JavaScript, browser rendering, authentication, crawl, or remote-subresource archive |
+| Source Code | `BOUNDED`: exact source text, imports/comments/functions/classes and line provenance | Exact source text only | Not repository intelligence: no execution, call graph, LSP, or dependency authority |
+
+Original extracted text and original visual bytes are distinct from `DERIVED_OCR`, `DERIVED_VISUAL_DESCRIPTION`, `DERIVED_LAYOUT_LABEL`, and `DERIVED_SUMMARY`. TokenHub visual output can help retrieval, Teaching Briefs, Lessons, and Tutor context only as `ADVISORY_DERIVED`; it cannot become Course Truth or formal Evidence by selection alone. Exact quote occurrence proves location, not semantic entailment.
+
 ### Diagnostic weakness to verified remediation
 
 1. A workspace diagnostic assessment uses validated question blueprints. A question marked cross-document must have verified evidence from at least two documents.
@@ -361,7 +378,7 @@ CodeBuddy confirmed, but did not author, the component's existing native button 
 - Historical Curricula created before parser-fragment grouping may contain many source-only LearningUnits and remain accepted history. Their smaller learner-facing topic presentation has no planning authority. When those units lack a launchable capability, the supported repair is a separately proposed and learner-accepted successor Curriculum, not a capability backfill or Plan-only display projection. If no current Concept has the exact selected evidence identity, the server will not synthesize one from a LearningUnit title or citation; the learner must first generate revision-grounded Concepts from the Course material, then request the successor.
 - PDF import requires an embedded text layer; there is no OCR. Complex multi-column layouts, rotated text, diagrams, PDF figures, and image text are not reconstructed. DOCX provenance has structural order and headings but no page numbers.
 - PPTX text follows stable OOXML drawing-layer order, not a guaranteed semantic reading order. Charts, SmartArt, equations, unknown shapes, and unsupported embedded objects are not semantically interpreted; supported original media can be retained with an explicit partial-extraction warning.
-- Embedded original images remain immutable source assets. Accepted provider-derived descriptions are available only through explicit advisory projections; they are not visual source truth. HTML/Web Snapshot ingestion is not implemented.
+- Embedded original images remain immutable source assets. Accepted provider-derived descriptions are available only through explicit advisory projections; they are not visual source truth. HTML/Web Snapshot ingestion is a static, no-JavaScript snapshot path: it captures one public HTTP(S) response, retains exact response bytes and URL/hash provenance, and keeps remote images as reference/alt/caption metadata rather than pretending they were archived.
 - The dedicated TokenHub visual path is bounded advisory generation, not perfect OCR, exact chart extraction, formal visual Evidence, multimodal mastery, or proof of pedagogical effectiveness. Provider-visible text and structural interpretation can vary by fixture; unknown image-token accounting and monetary cost are never inferred.
 - Exact-quote verification establishes location, not semantic entailment. Strict grounding may reject otherwise schema-valid output.
 - 资料映射 reports structural mapping and anchor coverage, never semantic course coverage: a mapped section may still contain uncaptured ideas. Section budgets and the 40-concepts-per-document ceiling bound extraction depth.

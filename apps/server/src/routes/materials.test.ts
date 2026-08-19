@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SAMPLE_MATERIAL_TITLE } from '@hy3-clinic/shared';
 import { buildTestApp, type TestApp } from '../testing/testApp.js';
 import {
@@ -21,6 +21,7 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
+  vi.unstubAllGlobals();
   await ctx.app.close();
 });
 
@@ -227,6 +228,70 @@ describe('POST /api/materials', () => {
 });
 
 describe('POST /api/materials (file imports)', () => {
+  it('refreshes a Web Snapshot under the same logical Material identity', async () => {
+    const first = new Response(
+      '<!doctype html><html><body><main><h1>第一版</h1><p>初始内容。</p></main></body></html>',
+      { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } },
+    );
+    const second = new Response(
+      '<!doctype html><html><body><main><h1>第二版</h1><p>刷新后的内容。</p></main></body></html>',
+      { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } },
+    );
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(first).mockResolvedValueOnce(second));
+
+    const created = await ctx.app.inject({
+      method: 'POST',
+      url: '/api/materials/web-snapshot',
+      payload: { url: 'https://1.1.1.1/course', title: '稳定课程资料' },
+    });
+    expect(created.statusCode).toBe(201);
+    const initial = created.json();
+    const initialRevisionId = initial.material.activeRevisionId;
+
+    const refreshed = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/materials/${initial.material.id}/web-snapshot`,
+      payload: { url: 'https://1.1.1.1/course' },
+    });
+    expect(refreshed.statusCode).toBe(200);
+    const next = refreshed.json();
+    expect(next.material.id).toBe(initial.material.id);
+    expect(next.material.title).toBe('稳定课程资料');
+    expect(next.material.activeRevisionId).not.toBe(initialRevisionId);
+    expect(next.material.content).toContain('刷新后的内容');
+    expect(ctx.repos.materials.list()).toHaveLength(1);
+    expect(ctx.repos.materialRevisions.list(initial.material.id)).toHaveLength(2);
+  });
+
+  it('keeps the active Web Snapshot revision when refresh parsing fails', async () => {
+    const valid = new Response(
+      '<!doctype html><html><body><main><h1>稳定版</h1><p>保留内容。</p></main></body></html>',
+      { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } },
+    );
+    const invalid = new Response('not html', {
+      status: 200,
+      headers: { 'content-type': 'text/html; charset=utf-8' },
+    });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(valid).mockResolvedValueOnce(invalid));
+
+    const created = await ctx.app.inject({
+      method: 'POST',
+      url: '/api/materials/web-snapshot',
+      payload: { url: 'https://1.1.1.1/course' },
+    });
+    const initial = created.json();
+    const refreshed = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/materials/${initial.material.id}/web-snapshot`,
+      payload: { url: 'https://1.1.1.1/course' },
+    });
+    expect(refreshed.statusCode).toBe(415);
+    const current = ctx.repos.materials.get(initial.material.id)!;
+    expect(current.activeRevisionId).toBe(initial.material.activeRevisionId);
+    expect(current.content).toContain('保留内容');
+    expect(ctx.repos.materialRevisions.list(initial.material.id)).toHaveLength(1);
+  });
+
   it('imports a text PDF with page provenance, a compat workspace, and stored original bytes', async () => {
     const res = await ctx.app.inject({
       method: 'POST',

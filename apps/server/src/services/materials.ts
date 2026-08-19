@@ -320,10 +320,98 @@ export function createMaterialService({ repos, clock, sourceAuthority }: Materia
     );
   }
 
+  /** Refresh an existing Web Snapshot without changing its logical Material. */
+  async function refreshWebSnapshot(
+    materialId: string,
+    input: { url: string; title?: string },
+    options: { signal?: AbortSignal } = {},
+  ): Promise<MaterialWithBlocks> {
+    const existing = repos.materials.get(materialId);
+    if (!existing) throw notFound(`学习资料不存在:${materialId}`);
+    if (existing.sourceType !== 'html') {
+      throw new AppError(ApiErrorCode.ValidationError, '只有 HTML / Web Snapshot 资料可以刷新。');
+    }
+    const snapshot = await fetchWebSnapshot(input.url, options);
+    const buffer = snapshot.bytes;
+    const revisionId = newId('rev');
+    const parsed = await parseBinaryUpload(
+      'html',
+      buffer,
+      materialId,
+      revisionId,
+      options.signal,
+      'text/html',
+      snapshot.metadata.finalUrl,
+    );
+    if (options.signal?.aborted) {
+      throw new AppError(ApiErrorCode.RequestCancelled, 'Web Snapshot 刷新已取消。');
+    }
+    const normalized = ingestSource(parsed.content, { sourceType: 'html' });
+    const document =
+      parsed.normalizedDocument ??
+      parserForSourceType('html').parse({
+        revisionId,
+        materialId,
+        sourceType: 'html',
+        mediaType: 'text/html',
+        content: normalized.content,
+        filename: 'snapshot.html',
+        warnings: parsed.warnings,
+      });
+    const blocks = normalizedDocumentToSourceBlocks(materialId, document, {
+      idSeed: revisionId,
+      materialRevisionId: revisionId,
+    });
+    const now = clock.now().toISOString();
+    const material: Material = {
+      ...existing,
+      mediaType: 'text/html',
+      originalFilename: 'snapshot.html',
+      content: normalized.content,
+      charCount: normalized.charCount,
+      parseStatus: parsed.warnings.length > 0 ? 'parsed_with_warnings' : 'parsed',
+      pageCount: null,
+      extractionWarnings: parsed.warnings.slice(0, 50),
+      parserVersion: parsed.parserVersion,
+      updatedAt: now,
+    };
+    repos.materialRevisions.stage({
+      revisionId,
+      material,
+      blocks,
+      originalData: buffer,
+      parserFingerprint: document.parserFingerprint,
+      contentFingerprint: `sha256:${createHash('sha256').update(normalized.content).digest('hex')}`,
+      chunkerVersion: STRUCTURE_AWARE_CHUNKER_VERSION,
+      chunkerFingerprint: STRUCTURE_AWARE_CHUNKER_FINGERPRINT,
+      sourceFingerprint: `sha256:${createHash('sha256').update(buffer).digest('hex')}`,
+      normalizedUnits: document.units,
+      embeddedAssets: parsed.embeddedAssets ?? [],
+      parserAttemptId: newId('attempt'),
+      createdAt: now,
+      expectedActiveRevisionId: existing.activeRevisionId,
+      webSnapshot: snapshot.metadata,
+    });
+    repos.materialRevisions.activate(materialId, revisionId, now, existing.activeRevisionId);
+    const active = repos.materials.get(materialId)!;
+    sourceAuthority.ensureVerbatimAssessmentAuthority(
+      active.workspaceId,
+      materialId,
+      active.activeRevisionId!,
+    );
+    repos.workspaces.touch(active.workspaceId, now);
+    return {
+      material: active,
+      blocks: repos.materials.getBlocks(materialId),
+      assets: repos.materials.getAssets(materialId),
+    };
+  }
+
   return {
     create,
     createFromUpload,
     createFromWebSnapshot,
+    refreshWebSnapshot,
 
     get(id: string): MaterialWithBlocks | undefined {
       const material = repos.materials.get(id);
