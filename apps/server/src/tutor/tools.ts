@@ -9,6 +9,7 @@ import { searchSourceBlocks } from '../retrieval/lexical.js';
 import { overdueDays } from '../review/scheduler.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
+import { resolveReviewTargetContext } from '../services/reviewSuccessor.js';
 
 /**
  * The Tutor tool whitelist: small, typed, runtime-validated, READ-ONLY.
@@ -97,7 +98,12 @@ const TOOLS: Record<TutorToolName, ToolDefinition> = {
       const misconceptions = ctx.repos.misconceptions
         .countsByConceptForWorkspace(ctx.workspaceId)
         .get(concept.id) ?? { conceptId: concept.id, proposed: 0, confirmed: 0 };
-      const review = ctx.repos.review.get(ctx.workspaceId, concept.id);
+      const review = ctx.repos.reviewSuccessor
+        .listCurrent(ctx.workspaceId)
+        .flatMap(({ target }) => {
+          const context = resolveReviewTargetContext(ctx.repos, target.id);
+          return context && context.conceptIds.includes(concept.id) ? [context] : [];
+        })[0];
       return {
         summary: `已检查「${displayName}」的学习状态:掌握度 ${
           mastery ? Math.round(mastery.mastery * 100) + '%' : '未评估'
@@ -112,8 +118,8 @@ const TOOLS: Record<TutorToolName, ToolDefinition> = {
           resolvedMistakes: mistakes.resolved,
           proposedMisconceptions: misconceptions.proposed,
           confirmedMisconceptions: misconceptions.confirmed,
-          reviewDueAt: review?.dueAt ?? null,
-          reviewOverdueDays: review ? overdueDays(review.dueAt, ctx.clock.now()) : null,
+          reviewDueAt: review?.state.dueAt ?? null,
+          reviewOverdueDays: review ? overdueDays(review.state.dueAt, ctx.clock.now()) : null,
         },
       };
     },
@@ -426,20 +432,27 @@ const TOOLS: Record<TutorToolName, ToolDefinition> = {
     argsSchema: z.object({}).strict(),
     execute(ctx) {
       const now = ctx.clock.now();
-      const items = ctx.repos.review.listByWorkspace(ctx.workspaceId).slice(0, 8);
-      const due = items.filter((i) => new Date(i.dueAt).getTime() <= now.getTime());
+      const items = ctx.repos.reviewSuccessor
+        .listCurrent(ctx.workspaceId)
+        .flatMap(({ target }) => {
+          const context = resolveReviewTargetContext(ctx.repos, target.id);
+          return context ? [context] : [];
+        })
+        .slice(0, 8);
+      const due = items.filter((item) => new Date(item.state.dueAt).getTime() <= now.getTime());
       return {
         summary: `查看复习队列:${due.length} 个概念已到期复习。`,
         resultCount: items.length,
         data: {
-          items: items.map((i) => ({
-            conceptId: i.conceptId,
-            conceptName: i.conceptName,
-            dueAt: i.dueAt,
-            overdueDays: overdueDays(i.dueAt, now),
-            lastRating: i.lastRating,
-            reviewCount: i.reviewCount,
-            lapseCount: i.lapseCount,
+          items: items.map((item) => ({
+            reviewTargetId: item.target.id,
+            conceptIds: item.conceptIds,
+            objectiveTitle: item.objective.title,
+            dueAt: item.state.dueAt,
+            overdueDays: overdueDays(item.state.dueAt, now),
+            lifecycleState: item.state.lifecycleState,
+            repetitions: item.state.repetitions,
+            lapses: item.state.lapses,
           })),
         },
       };

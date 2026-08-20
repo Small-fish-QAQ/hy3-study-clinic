@@ -18,7 +18,7 @@ import type {
   MisconceptionRecord,
   PublicQuiz,
   RemediationPlan,
-  ReviewItem,
+  CurrentReviewItem,
   SourceBlock,
   TutorRun,
   Workspace,
@@ -87,7 +87,7 @@ interface WorkspaceData {
   canonical: CanonicalConceptView[];
   pendingAlignmentCount: number;
   misconceptions: MisconceptionRecord[];
-  reviewItems: ReviewItem[];
+  reviewItems: CurrentReviewItem[];
   queue: DailyQueueItem[];
 }
 
@@ -855,10 +855,12 @@ export function GraphWorkspaceView({
     return map;
   }, [data, displayGraph]);
   const reviewByConcept = useMemo(() => {
-    const map = new Map<string, ReviewItem>();
+    const map = new Map<string, CurrentReviewItem>();
     for (const item of data?.reviewItems ?? []) {
-      const representative = displayGraph.representativeByConcept.get(item.conceptId);
-      if (representative && !map.has(representative)) map.set(representative, item);
+      for (const conceptId of item.conceptIds) {
+        const representative = displayGraph.representativeByConcept.get(conceptId);
+        if (representative && !map.has(representative)) map.set(representative, item);
+      }
     }
     return map;
   }, [data, displayGraph]);

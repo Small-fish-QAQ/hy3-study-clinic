@@ -24,6 +24,7 @@ import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
 import { verifyGrounding } from '../grounding/verify.js';
+import { DEFAULT_CONFIGURATION } from '../review/fsrsAdapter.js';
 import type { FormalProgressionService } from './formalProgression.js';
 import type { ReviewSuccessorService } from './reviewSuccessor.js';
 
@@ -371,8 +372,6 @@ export function createFormalAssessmentsService({
             )
           : current;
       }
-      if (current.status === 'applied') return current;
-
       const grade = repos.formalAssessments.getGrade(evidence.gradeRecordId);
       const attempt = repos.formalAssessments.getAttempt(evidence.attemptId);
       const version = getVersion(evidence.assessmentVersionId);
@@ -390,134 +389,164 @@ export function createFormalAssessmentsService({
         );
       }
 
-      let gradingResultId = current.gradingResultId;
-      const priorForGrade = repos.formalAssessments.getReconciliationForGrade(grade.id);
-      if (!gradingResultId && priorForGrade?.gradingResultId)
-        gradingResultId = priorForGrade.gradingResultId;
-      if (!gradingResultId) {
-        const quiz = repos.quizzes.get(context.quizId);
-        const supported = repos.formalAssessments
-          .listEvidenceForGrade(grade.id)
-          .filter((record) => record.conclusion === 'supported');
-        const grades = supported.flatMap((record) => {
-          const item = version.items.find((candidate) => candidate.id === record.itemId);
-          const question = item?.sourceQuestionId
-            ? quiz?.questions.find((candidate) => candidate.id === item.sourceQuestionId)
-            : undefined;
-          if (!item || !question) return [];
-          const rubric = item.rubric ?? [];
-          const criterionIds = new Set(rubric.map((criterion) => criterion.id));
-          const criteria = grade.judgment.criterionResults.filter((result) =>
-            criterionIds.has(result.criterionId),
-          );
-          const required = rubric.filter((criterion) => criterion.required);
-          const score =
-            required.length > 0 &&
-            required.every(
-              (criterion) =>
-                criteria.find((result) => result.criterionId === criterion.id)?.result === 'met',
-            )
-              ? 1
-              : 0;
-          return [
-            {
-              questionId: question.id,
-              type: question.type,
-              gradedBy: 'deterministic' as const,
-              correct: score === 1,
-              awardedPoints: score * question.points,
-              maxPoints: question.points,
-              normalizedScore: score,
-              matchedKeyPoints: rubric
-                .filter(
+      let reconciled = current;
+      if (current.status !== 'applied') {
+        try {
+          let gradingResultId = current.gradingResultId;
+          const priorForGrade = repos.formalAssessments.getReconciliationForGrade(grade.id);
+          if (!gradingResultId && priorForGrade?.gradingResultId) {
+            gradingResultId = priorForGrade.gradingResultId;
+          }
+          if (!gradingResultId) {
+            const quiz = repos.quizzes.get(context.quizId);
+            const supported = repos.formalAssessments
+              .listEvidenceForGrade(grade.id)
+              .filter((record) => record.conclusion === 'supported');
+            const grades = supported.flatMap((record) => {
+              const item = version.items.find((candidate) => candidate.id === record.itemId);
+              const question = item?.sourceQuestionId
+                ? quiz?.questions.find((candidate) => candidate.id === item.sourceQuestionId)
+                : undefined;
+              if (!item || !question) return [];
+              const rubric = item.rubric ?? [];
+              const criterionIds = new Set(rubric.map((criterion) => criterion.id));
+              const criteria = grade.judgment.criterionResults.filter((result) =>
+                criterionIds.has(result.criterionId),
+              );
+              const required = rubric.filter((criterion) => criterion.required);
+              const score =
+                required.length > 0 &&
+                required.every(
                   (criterion) =>
                     criteria.find((result) => result.criterionId === criterion.id)?.result ===
                     'met',
                 )
-                .map((criterion) => criterion.text),
-              missedKeyPoints: rubric
-                .filter(
-                  (criterion) =>
-                    criterion.required &&
-                    criteria.find((result) => result.criterionId === criterion.id)?.result !==
-                      'met',
-                )
-                .map((criterion) => criterion.text),
-              needsReview: false,
-            },
-          ];
-        });
-        if (!quiz || grades.length === 0) {
+                  ? 1
+                  : 0;
+              return [
+                {
+                  questionId: question.id,
+                  type: question.type,
+                  gradedBy: 'deterministic' as const,
+                  correct: score === 1,
+                  awardedPoints: score * question.points,
+                  maxPoints: question.points,
+                  normalizedScore: score,
+                  matchedKeyPoints: rubric
+                    .filter(
+                      (criterion) =>
+                        criteria.find((result) => result.criterionId === criterion.id)?.result ===
+                        'met',
+                    )
+                    .map((criterion) => criterion.text),
+                  missedKeyPoints: rubric
+                    .filter(
+                      (criterion) =>
+                        criterion.required &&
+                        criteria.find((result) => result.criterionId === criterion.id)?.result !==
+                          'met',
+                    )
+                    .map((criterion) => criterion.text),
+                  needsReview: false,
+                },
+              ];
+            });
+            if (!quiz || grades.length === 0) {
+              return repos.formalAssessments.markFailed(
+                current.id,
+                'Supported Evidence cannot be mapped to the accepted formal route.',
+              );
+            }
+            const now = clock.now().toISOString();
+            const submissionId = newId('bridge_submission');
+            repos.submissions.insertSubmission({
+              id: submissionId,
+              quizId: quiz.id,
+              answers: grades.map((item) => ({
+                questionId: item.questionId,
+                type: item.type,
+                text:
+                  attempt.responses[
+                    version.items.find(
+                      (candidate) => candidate.sourceQuestionId === item.questionId,
+                    )?.id ?? ''
+                  ] ?? '',
+              })),
+              createdAt: now,
+            });
+            const bridgeResult = GradingResultSchema.parse({
+              id: newId('bridge_grade'),
+              submissionId,
+              quizId: quiz.id,
+              grades,
+              totalAwarded: grades.reduce((sum, item) => sum + item.awardedPoints, 0),
+              totalPossible: grades.reduce((sum, item) => sum + item.maxPoints, 0),
+              overallScore:
+                grades.reduce((sum, item) => sum + item.normalizedScore, 0) / grades.length,
+              createdAt: now,
+            });
+            repos.submissions.insertGradingResult(bridgeResult);
+            gradingResultId = bridgeResult.id;
+          }
+          repos.formalAssessments.linkReconciliation(current.id, gradingResultId);
+          const projection = progression.reconcileAfterGrading(gradingResultId, {
+            studyPlanId: context.studyPlanVersionId,
+            manifestFingerprint: context.executionSourceManifestFingerprint,
+          });
+          if (!projection || projection.reconciliations.some((item) => item.status !== 'applied')) {
+            return repos.formalAssessments.markFailed(
+              current.id,
+              'Deterministic progression rejected or fenced this Evidence.',
+            );
+          }
+          reconciled = repos.formalAssessments.markReconciled(
+            current.id,
+            clock.now().toISOString(),
+          );
+        } catch (error) {
           return repos.formalAssessments.markFailed(
             current.id,
-            'Supported Evidence cannot be mapped to the accepted formal route.',
+            error instanceof Error
+              ? error.message
+              : 'Deterministic progression projection failed; retryable.',
           );
         }
-        const now = clock.now().toISOString();
-        const submissionId = newId('bridge_submission');
-        repos.submissions.insertSubmission({
-          id: submissionId,
-          quizId: quiz.id,
-          answers: grades.map((item) => ({
-            questionId: item.questionId,
-            type: item.type,
-            text:
-              attempt.responses[
-                version.items.find((candidate) => candidate.sourceQuestionId === item.questionId)
-                  ?.id ?? ''
-              ] ?? '',
-          })),
-          createdAt: now,
-        });
-        const bridgeResult = GradingResultSchema.parse({
-          id: newId('bridge_grade'),
-          submissionId,
-          quizId: quiz.id,
-          grades,
-          totalAwarded: grades.reduce((sum, item) => sum + item.awardedPoints, 0),
-          totalPossible: grades.reduce((sum, item) => sum + item.maxPoints, 0),
-          overallScore: grades.reduce((sum, item) => sum + item.normalizedScore, 0) / grades.length,
-          createdAt: now,
-        });
-        repos.submissions.insertGradingResult(bridgeResult);
-        gradingResultId = bridgeResult.id;
-        repos.formalAssessments.linkReconciliation(current.id, gradingResultId);
-      } else {
-        repos.formalAssessments.linkReconciliation(current.id, gradingResultId);
       }
 
-      try {
-        const projection = progression.reconcileAfterGrading(gradingResultId, {
-          studyPlanId: context.studyPlanVersionId,
-          manifestFingerprint: context.executionSourceManifestFingerprint,
-        });
-        if (!projection || projection.reconciliations.some((item) => item.status !== 'applied')) {
-          return repos.formalAssessments.markFailed(
-            current.id,
-            'Deterministic progression rejected or fenced this Evidence.',
-          );
+      // Formal progression is already durable. Review scheduling is a separate,
+      // idempotent projection and its failure must remain visible and retryable.
+      if (reviewSuccessor && evidence.createdAt >= DEFAULT_CONFIGURATION.effectiveAt) {
+        const item = version.items.find((candidate) => candidate.id === evidence.itemId);
+        if (item && context.assessmentKind === 'due_review') {
+          const targetId = `review-target:${attempt.workspaceId}:${item.targetObjectiveId}`;
+          const execution = reviewSuccessor.beginExecution({
+            targetId,
+            workspaceId: attempt.workspaceId,
+            courseId: attempt.workspaceId,
+            agendaId: context.agendaId,
+          });
+          reviewSuccessor.recordFreshSuccess({
+            targetId,
+            sourceOutcomeId: evidence.id,
+            executionId: execution.id,
+          });
+        } else if (item) {
+          reviewSuccessor.activate({
+            workspaceId: attempt.workspaceId,
+            courseId: attempt.workspaceId,
+            learningUnitId: item.targetLearningUnitId,
+            objectiveId: item.targetObjectiveId,
+            contractVersionId: context.contractVersionId,
+            curriculumVersionId: context.curriculumVersionId,
+            manifestFingerprint: context.executionSourceManifestFingerprint,
+            evidenceId: evidence.id,
+            sourceOutcomeId: evidence.id,
+            eligible: true,
+            at: evidence.createdAt,
+          });
         }
-        const reconciled = repos.formalAssessments.markReconciled(current.id, clock.now().toISOString());
-        if (reviewSuccessor && context.assessmentKind === 'due_review') {
-          const item = version.items.find(candidate => candidate.id === evidence.itemId);
-          if (item) {
-            const targetId = `review-target:${attempt.workspaceId}:${item.targetObjectiveId}`;
-            const execution = reviewSuccessor.beginExecution({ targetId, workspaceId: attempt.workspaceId, courseId: attempt.workspaceId, agendaId: context.agendaId });
-            reviewSuccessor.recordFreshSuccess({ targetId, sourceOutcomeId: evidence.id, executionId: execution.id });
-          }
-        } else if (reviewSuccessor && context.assessmentKind === 'formal_checkpoint') {
-          const item = version.items.find(candidate => candidate.id === evidence.itemId);
-          if (item) reviewSuccessor.activate({ workspaceId: attempt.workspaceId, courseId: attempt.workspaceId, learningUnitId: item.targetLearningUnitId, objectiveId: item.targetObjectiveId, contractVersionId: context.contractVersionId, curriculumVersionId: context.curriculumVersionId, manifestFingerprint: context.executionSourceManifestFingerprint, evidenceId: evidence.id, sourceOutcomeId: evidence.id, eligible: true });
-        }
-        return reconciled;
-      } catch (error) {
-        return repos.formalAssessments.markFailed(
-          current.id,
-          error instanceof Error
-            ? error.message
-            : 'Deterministic progression projection failed; retryable.',
-        );
       }
+      return reconciled;
     },
   };
 }

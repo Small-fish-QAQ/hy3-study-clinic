@@ -29,6 +29,7 @@ import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
 import type { MisconceptionsService } from './misconceptions.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
+import { resolveReviewTargetContext } from './reviewSuccessor.js';
 
 export interface AssessmentServiceDeps {
   repos: Repositories;
@@ -151,40 +152,41 @@ export function createAssessmentService({
 
     if (mode === 'review') {
       const now = clock.now().getTime();
-      if (conceptIds && conceptIds.length > 0) {
+      const current = repos.reviewSuccessor.listCurrent(workspaceId);
+      const candidateTargetIds =
+        conceptIds && conceptIds.length > 0
+          ? conceptIds
+          : current
+              .filter(({ state }) => new Date(state.dueAt).getTime() <= now)
+              .map(({ target }) => target.id);
+      const dueLimit =
+        conceptIds && conceptIds.length > 0 ? endOfToday(clock.now()).getTime() : now;
+      const targets: Concept[] = [];
+      const seenConceptIds = new Set<string>();
+      for (const targetId of candidateTargetIds) {
+        if (targets.length >= 4) break;
+        const context = resolveReviewTargetContext(repos, targetId);
+        if (
+          !context ||
+          context.target.workspaceId !== workspaceId ||
+          new Date(context.state.dueAt).getTime() > dueLimit
+        ) {
+          continue;
+        }
+        for (const conceptId of context.conceptIds) {
+          if (targets.length >= 4 || seenConceptIds.has(conceptId)) continue;
+          targets.push(requireWorkspaceConcept(workspaceId, conceptId));
+          seenConceptIds.add(conceptId);
+        }
+      }
+      if (targets.length === 0) {
         // Named review targets (queue items / Tutor recommendations) follow
         // the queue's advertised semantics: anything due by the END of today
         // may be reviewed slightly early. Unnamed review keeps strict due-now.
-        const endOfDay = endOfToday(clock.now()).getTime();
-        const targets: Concept[] = [];
-        for (const conceptId of conceptIds) {
-          const item = repos.review.get(workspaceId, conceptId);
-          if (!item || new Date(item.dueAt).getTime() > endOfDay) continue;
-          const concept = repos.materials.getConcept(conceptId);
-          const material = concept ? repos.materials.get(concept.materialId) : undefined;
-          if (concept && material && material.workspaceId === workspaceId) {
-            targets.push(concept);
-          }
-        }
-        if (targets.length === 0) {
+        if (conceptIds && conceptIds.length > 0) {
           throw new AppError(ApiErrorCode.ValidationError, '目标概念今天没有到期的复习安排。');
         }
-        return { targets: targets.slice(0, 4), misconceptionTarget: null };
-      }
-      const due = repos.review
-        .listByWorkspace(workspaceId)
-        .filter((item) => new Date(item.dueAt).getTime() <= now);
-      if (due.length === 0) {
         throw new AppError(ApiErrorCode.ValidationError, '当前没有到期的复习概念。');
-      }
-      const targets: Concept[] = [];
-      for (const item of due) {
-        if (targets.length >= 4) break;
-        const concept = repos.materials.getConcept(item.conceptId);
-        if (concept) targets.push(concept);
-      }
-      if (targets.length === 0) {
-        throw new AppError(ApiErrorCode.ValidationError, '到期复习项对应的概念已不存在。');
       }
       return { targets, misconceptionTarget: null };
     }

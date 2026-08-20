@@ -13,6 +13,7 @@ import { fixedClock } from '../util/ids.js';
 import { buildTestApp, type TestApp } from '../testing/testApp.js';
 import { makeMistake, makeQuestion, makeWorkspace, T0 } from '../testing/fixtures.js';
 import { imageOnlyPptxFixture } from '../testing/richOoxmlFixtures.js';
+import { createReviewSuccessorService } from '../services/reviewSuccessor.js';
 
 const filesDir = join(dirname(fileURLToPath(import.meta.url)), '../testing/files');
 const samplePdfB64 = () => readFileSync(join(filesDir, 'sample.pdf')).toString('base64');
@@ -575,6 +576,48 @@ describe('course-space lifecycle after document deletion', () => {
       },
     });
     expect(submitted.statusCode).toBe(201);
+    expect(
+      (
+        ctx.db
+          .prepare('SELECT COUNT(*) AS n FROM review_events WHERE workspace_id = ?')
+          .get(material.workspaceId) as { n: number }
+      ).n,
+    ).toBe(0);
+    expect(
+      (
+        ctx.db
+          .prepare('SELECT COUNT(*) AS n FROM review_targets WHERE workspace_id = ?')
+          .get(material.workspaceId) as { n: number }
+      ).n,
+    ).toBe(0);
+    const historicalConcept = ctx.repos.materials.getConcepts(material.id)[0]!;
+    ctx.repos.review.upsert({
+      workspaceId: material.workspaceId,
+      conceptId: historicalConcept.id,
+      conceptName: historicalConcept.name,
+      stability: 1,
+      difficulty: 5,
+      dueAt: T0,
+      lastReviewedAt: T0,
+      intervalDays: 1,
+      reviewCount: 1,
+      lapseCount: 0,
+      lastRating: 'good',
+      schedulerVersion: 'local-fsrs-v1',
+      createdAt: T0,
+      updatedAt: T0,
+    });
+    ctx.repos.review.insertEvent({
+      id: 'legacy_review_event_retirement',
+      workspaceId: material.workspaceId,
+      conceptId: historicalConcept.id,
+      quizId: wsQuiz.id,
+      rating: 'good',
+      score: 1,
+      intervalDays: 1,
+      dueAt: T0,
+      createdAt: T0,
+    });
 
     // An unrelated workspace that must survive untouched.
     const other = await importLegacyMaterial(TEXT_B, '课程B');
@@ -822,6 +865,45 @@ describe('course-space lifecycle after document deletion', () => {
       T0,
       T0,
     );
+    expect(
+      (
+        ctx.db
+          .prepare('SELECT COUNT(*) AS n FROM review_events WHERE workspace_id = ?')
+          .get(wsA) as {
+          n: number;
+        }
+      ).n,
+    ).toBe(0);
+    ctx.repos.review.insertEvent({
+      id: 'legacy_review_event_castest',
+      workspaceId: wsA,
+      conceptId: conceptA.id,
+      quizId: wsQuiz.id,
+      rating: 'good',
+      score: 1,
+      intervalDays: 1,
+      dueAt: T0,
+      createdAt: T0,
+    });
+    const successor = createReviewSuccessorService({ repos: ctx.repos, clock: fixedClock(T0) });
+    successor.activate({
+      workspaceId: wsA,
+      courseId: wsA,
+      learningUnitId: 'unit_castest',
+      objectiveId: 'objective_castest',
+      contractVersionId: 'contract_castest',
+      curriculumVersionId: 'curriculum_castest',
+      manifestFingerprint: 'manifest_castest',
+      evidenceId: 'evidence_castest',
+      sourceOutcomeId: 'evidence_castest',
+      eligible: true,
+      at: T0,
+    });
+    successor.beginExecution({
+      targetId: `review-target:${wsA}:objective_castest`,
+      workspaceId: wsA,
+      courseId: wsA,
+    });
     seed(
       `INSERT INTO tutor_runs (id, workspace_id, concept_id, concept_name, status, provider, created_at, updated_at)
        VALUES ('run_castest', ?, ?, ?, 'completed', 'fake', ?, ?)`,
@@ -911,6 +993,21 @@ describe('course-space lifecycle after document deletion', () => {
           `SELECT workspace_id || '/' || concept_id AS id FROM review_items WHERE workspace_id = ?`,
         ),
         review_events: all(`SELECT id FROM review_events WHERE workspace_id = ?`),
+        review_targets: all(`SELECT id FROM review_targets WHERE workspace_id = ?`),
+        review_target_bindings: all(
+          `SELECT b.review_target_id || '/' || b.binding_version AS id
+           FROM review_target_bindings b JOIN review_targets t ON t.id = b.review_target_id
+           WHERE t.workspace_id = ?`,
+        ),
+        memory_schedule_states: all(
+          `SELECT s.review_target_id AS id FROM memory_schedule_states s
+           JOIN review_targets t ON t.id = s.review_target_id WHERE t.workspace_id = ?`,
+        ),
+        successor_review_events: all(
+          `SELECT e.id FROM successor_review_events e
+           JOIN review_targets t ON t.id = e.review_target_id WHERE t.workspace_id = ?`,
+        ),
+        review_executions: all(`SELECT id FROM review_executions WHERE workspace_id = ?`),
         tutor_runs: all(`SELECT id FROM tutor_runs WHERE workspace_id = ?`),
         tutor_events: all(
           `SELECT e.id FROM tutor_events e JOIN tutor_runs r ON r.id = e.run_id WHERE r.workspace_id = ?`,
@@ -1140,8 +1237,8 @@ describe('queue launch sweep and named-review semantics (Phase 0)', () => {
     });
   }
 
-  it('unnamed review launch keeps strict due-now semantics', async () => {
-    // Only a later-today review exists: generic review must still refuse…
+  it('current Review launch never resurrects a legacy-only schedule', async () => {
+    // A legacy row remains historical and cannot become current authority.
     seedReview(conceptIds[3]!, new Date(Date.parse(T0) + 6 * 3600 * 1000).toISOString());
     const generic = await ctx.app.inject({
       method: 'POST',
@@ -1151,13 +1248,14 @@ describe('queue launch sweep and named-review semantics (Phase 0)', () => {
     expect(generic.statusCode).toBe(400);
     expect(generic.json().error.message).toContain('当前没有到期的复习概念');
 
-    // …while naming the concept follows the queue's advertised semantics.
+    // Naming the legacy Concept does not make that historical row current.
     const named = await ctx.app.inject({
       method: 'POST',
       url: `/api/workspaces/${workspaceId}/assessments`,
       payload: { mode: 'review', conceptIds: [conceptIds[3]!] },
     });
-    expect(named.statusCode).toBe(201);
+    expect(named.statusCode).toBe(400);
+    expect(named.json().error.message).toContain('今天没有到期的复习安排');
 
     // Naming a concept with no eligible schedule fails with the honest reason.
     const wrong = await ctx.app.inject({
@@ -1204,7 +1302,7 @@ describe('queue launch sweep and named-review semantics (Phase 0)', () => {
       createdAt: T0,
       updatedAt: T0,
     });
-    // Tier 1: overdue review on c2; tier 5: due later today on c3.
+    // Historical legacy rows for the former Review tiers must be ignored.
     seedReview(c2, new Date(Date.parse(T0) - 24 * 3600 * 1000).toISOString());
     seedReview(c3, new Date(Date.parse(T0) + 6 * 3600 * 1000).toISOString());
     // Tier 4: c5 weak (low mastery) → its prerequisite c4 needs work.
@@ -1228,13 +1326,14 @@ describe('queue launch sweep and named-review semantics (Phase 0)', () => {
       conceptId: string;
       launch: { mode: string; conceptIds?: string[]; misconceptionId?: string };
     }>;
-    // All five tiers are present…
+    // No current Review tier is resurrected from legacy history. The remaining
+    // deterministic queue entries retain their original launchability contract.
     expect(items.map((i) => i.kind)).toEqual([
-      'overdue_review',
       'misconception_repair',
       'open_mistakes',
       'weak_prerequisite',
-      'due_review',
+      'unassessed_next',
+      'unassessed_next',
     ]);
     // …and EVERY item's server-resolved launch request succeeds right now.
     for (const item of items) {

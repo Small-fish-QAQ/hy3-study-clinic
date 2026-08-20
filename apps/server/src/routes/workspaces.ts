@@ -264,22 +264,7 @@ export function registerWorkspaceRoutes(app: FastifyInstance, services: Services
 
   app.get('/api/workspaces/:id/review', async (request) => {
     const { id } = WorkspaceIdParams.parse(request.params);
-    return { items: services.reviewSuccessor.listCurrent(id).map(({ target, state }) => ({
-      workspaceId: target.workspaceId,
-      conceptId: target.id,
-      conceptName: target.id,
-      stability: state!.stability,
-      difficulty: state!.difficulty,
-      dueAt: state!.dueAt,
-      lastReviewedAt: state!.lastReviewedAt ?? state!.createdAt,
-      intervalDays: state!.scheduledDays,
-      reviewCount: state!.repetitions,
-      lapseCount: state!.lapses,
-      lastRating: state!.lapses > 0 ? 'again' : 'good',
-      schedulerVersion: state!.policyVersion,
-      createdAt: state!.createdAt,
-      updatedAt: state!.updatedAt,
-    })) };
+    return { items: services.reviewSuccessor.listCurrentProjection(id) };
   });
 
   app.get('/api/workspaces/:id/queue', async (request) => {

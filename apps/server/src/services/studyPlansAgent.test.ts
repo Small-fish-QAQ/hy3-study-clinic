@@ -3,7 +3,6 @@ import {
   type Curriculum,
   type LearningContract,
   type LearningContractFeasibility,
-  type ReviewItem,
   type StudyPlanProposalPayload,
 } from '@hy3-clinic/shared';
 import { openDatabase, type SqliteDb } from '../db/database.js';
@@ -22,6 +21,7 @@ import {
   preflightStudyPlan,
   STUDY_PLAN_OPERATION_LEASE_MS,
 } from './studyPlansAgent.js';
+import { createReviewSuccessorService } from './reviewSuccessor.js';
 
 const T1 = '2026-01-01T00:01:00.000Z';
 const T2 = '2026-01-01T00:02:00.000Z';
@@ -390,23 +390,24 @@ describe('StudyPlan proposal and accepted Course route', () => {
   });
 
   it('keeps due_review capability scoped to Concepts mapped to the LearningUnit', () => {
-    const dueReview: ReviewItem = {
+    const review = createReviewSuccessorService({ repos, clock });
+    review.activate({
       workspaceId: 'ws_1',
-      conceptId: 'con_1',
-      conceptName: 'Working memory',
-      stability: 1,
-      difficulty: 5,
-      dueAt: T2,
-      lastReviewedAt: T1,
-      intervalDays: 1,
-      reviewCount: 1,
-      lapseCount: 0,
-      lastRating: 'good',
-      schedulerVersion: 'local-fsrs-v1',
-      createdAt: T1,
-      updatedAt: T2,
-    };
-    repos.review.upsert(dueReview);
+      courseId: 'ws_1',
+      learningUnitId: 'unit_1',
+      objectiveId: 'objective_verified',
+      contractVersionId: contract.id,
+      curriculumVersionId: curriculum.id,
+      manifestFingerprint: curriculum.executionSourceManifest.fingerprint,
+      evidenceId: 'evidence_due_review',
+      sourceOutcomeId: 'evidence_due_review',
+      at: T0,
+      eligible: true,
+    });
+    db.prepare('UPDATE memory_schedule_states SET due_at = ? WHERE review_target_id = ?').run(
+      T2,
+      'review-target:ws_1:objective_verified',
+    );
     const sourceOnly: Curriculum = {
       ...curriculum,
       nodes: curriculum.nodes.map((node) =>

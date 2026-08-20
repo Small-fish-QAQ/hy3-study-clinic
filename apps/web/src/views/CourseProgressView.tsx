@@ -3,7 +3,7 @@ import type {
   CourseExecutionCommandEnvelope,
   CourseExecutionOverview,
   DocumentSummary,
-  ReviewItem,
+  CurrentReviewItem,
 } from '@hy3-clinic/shared';
 import { api } from '../api.js';
 import { Banner, Loading } from '../components/ui.js';
@@ -129,7 +129,7 @@ export function CourseProgressView({
 }: CourseProgressViewProps) {
   const [section, setSection] = useState<ProgressSection>('overview');
   const [materialId, setMaterialId] = useState(documents[0]?.id ?? '');
-  const [reviews, setReviews] = useState<ReviewItem[] | null>(null);
+  const [reviews, setReviews] = useState<CurrentReviewItem[] | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -335,11 +335,13 @@ export function CourseProgressView({
                   </div>
                 ) : null}
                 {reviews?.map((review) => (
-                  <article className="review-row" key={review.conceptId}>
-                    <strong>{review.conceptName}</strong>
+                  <article className="review-row" key={review.reviewTargetId}>
+                    <strong>{review.objectiveTitle}</strong>
                     <span className="small muted">
-                      下次复习 {new Date(review.dueAt).toLocaleString('zh-CN')} · 已复习{' '}
-                      {review.reviewCount} 次
+                      下次复习 {new Date(review.dueAt).toLocaleString('zh-CN')}
+                      {review.lifecycleState === 'pending_initial_review'
+                        ? ' · 等待首次复习'
+                        : ` · 已复习 ${review.repetitions ?? 0} 次`}
                     </span>
                   </article>
                 ))}

@@ -33,6 +33,7 @@ import {
   resolveActivityLaunch,
 } from './activityLaunch.js';
 import type { AssessmentCreation, AssessmentService } from './assessment.js';
+import { resolveReviewTargetContext } from './reviewSuccessor.js';
 import { validatePlanProposal } from './planValidation.js';
 
 export interface TutorServiceDeps {
@@ -170,7 +171,11 @@ export function createTutorService({
         const misconceptions = repos.misconceptions
           .countsByConceptForWorkspace(workspaceId)
           .get(selected.id) ?? { conceptId: selected.id, proposed: 0, confirmed: 0 };
-        const review = repos.review.get(workspaceId, selected.id);
+        const reviews = repos.reviewSuccessor.listCurrent(workspaceId).flatMap(({ target }) => {
+          const context = resolveReviewTargetContext(repos, target.id);
+          return context ? [context] : [];
+        });
+        const review = reviews.find((item) => item.conceptIds.includes(selected.id));
         const actionable = findActionableMisconception(repos, workspaceId, [selected.id]);
         return {
           workspaceName: workspace.name,
@@ -181,17 +186,21 @@ export function createTutorService({
             openMistakes: mistakes.open,
             proposedMisconceptions: misconceptions.proposed,
             confirmedMisconceptions: misconceptions.confirmed,
-            reviewDue: review ? new Date(review.dueAt).getTime() <= clock.now().getTime() : false,
+            reviewDue: review
+              ? new Date(review.state.dueAt).getTime() <= clock.now().getTime()
+              : false,
           },
           tools: toolCatalog(),
           observations,
           remainingIterations: TUTOR_LIMITS.maxIterations - run.iterations,
           remainingToolCalls: TUTOR_LIMITS.maxToolCalls - run.toolCallCount,
           allowedConceptIds,
-          reviewItems: repos.review
-            .listByWorkspace(workspaceId)
-            .slice(0, 10)
-            .map((i) => ({ conceptId: i.conceptId, dueAt: i.dueAt, lastRating: i.lastRating })),
+          reviewItems: reviews.slice(0, 10).map((item) => ({
+            reviewTargetId: item.target.id,
+            conceptIds: item.conceptIds,
+            dueAt: item.state.dueAt,
+            lifecycleState: item.state.lifecycleState,
+          })),
           // Executability contract: only these modes may be recommended, so a
           // completed run can never surface a predictably dead activity.
           launchableModes: launchableTutorModes(repos, clock, workspaceId, selected.id),

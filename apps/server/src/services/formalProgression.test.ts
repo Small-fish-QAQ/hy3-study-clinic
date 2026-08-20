@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   GradeRecordSchema,
   FormalQuestionContractSchema,
@@ -25,6 +25,7 @@ import {
 import { fixedClock } from '../util/ids.js';
 import { buildCurriculumExecutionContext } from './curriculum.js';
 import { createServices, type Services } from './index.js';
+import { createReviewBackfillService } from './reviewBackfill.js';
 
 const T1 = '2026-01-01T00:01:00.000Z';
 const T2 = '2026-01-01T00:02:00.000Z';
@@ -33,6 +34,7 @@ const T3 = '2026-01-01T00:03:00.000Z';
 let db: SqliteDb;
 let repos: Repositories;
 let services: Services;
+let provider: FakeProvider;
 let revisionId: string;
 let authorityId: string;
 let rubricAuthorityId: string;
@@ -422,6 +424,74 @@ function insertGrade(suffix: string, score: number, blockId = 'blk_1') {
     createdAt: T3,
   });
   return { quizId, questionId, gradingResultId: `grading_${suffix}` };
+}
+
+function createAssessmentEvidence(suffix: string, createdAt = T3) {
+  const source = insertGrade(`assessment_${suffix}`, 1);
+  services.formalProgression.registerAssessmentContracts({
+    workspaceId: 'ws_1',
+    quizId: source.quizId,
+    agendaId: 'agenda_1',
+    agendaItemId: 'agenda_item_1',
+    assessmentKind: 'formal_checkpoint',
+    contractVersionId: 'contract_1',
+    curriculumVersionId: 'curriculum_1',
+    studyPlanVersionId: 'plan_1',
+    executionSourceManifestFingerprint: 'manifest-fp',
+  });
+  const version = services.formalAssessments.createAcceptedFromQuiz({
+    workspaceId: 'ws_1',
+    quiz: repos.quizzes.get(source.quizId)!,
+    logicalKey: `bridge-${suffix}`,
+    title: `Bridge ${suffix}`,
+    targetLearningUnitId: 'unit_1',
+    targetObjectiveId: 'objective_1',
+    progressionContext: {
+      quizId: source.quizId,
+      contractVersionId: 'contract_1',
+      curriculumVersionId: 'curriculum_1',
+      studyPlanVersionId: 'plan_1',
+      agendaId: 'agenda_1',
+      agendaItemId: 'agenda_item_1',
+      assessmentKind: 'formal_checkpoint',
+      executionSourceManifestFingerprint: 'manifest-fp',
+    },
+  });
+  const attempt = services.formalAssessments.startAttempt(version.id, 'ws_1');
+  const responses = { [version.items[0]!.id]: repos.materials.getBlock('blk_1')!.content };
+  services.formalAssessments.submitAttempt(attempt.id, responses);
+  const grade = services.formalAssessments.recordGrade(
+    GradeRecordSchema.parse({
+      id: `assessment_grade_${suffix}`,
+      attemptId: attempt.id,
+      assessmentVersionId: version.id,
+      grader: 'fake',
+      rubricVersion: 'formal-short-answer-v1',
+      status: 'current',
+      judgment: {
+        score: 1,
+        criterionResults: [{ criterionId: version.items[0]!.rubric![0]!.id, result: 'met' }],
+        feedback: 'supported',
+      },
+      supersedesId: null,
+      createdAt,
+    }),
+  );
+  const evidence = services.formalAssessments.deriveEvidence(grade.id)[0]!;
+  if (evidence.createdAt !== createdAt) {
+    db.prepare('UPDATE assessment_evidence_records SET created_at = ? WHERE id = ?').run(
+      createdAt,
+      evidence.id,
+    );
+  }
+  return {
+    source,
+    version,
+    attempt,
+    responses,
+    grade,
+    evidence: repos.formalAssessments.getEvidence(evidence.id)!,
+  };
 }
 
 function installSameUnitFormalActions() {
@@ -846,7 +916,8 @@ beforeEach(() => {
     },
   });
   stageAndActivateRoute();
-  services = createServices({ repos, provider: new FakeProvider(), clock: fixedClock(T3) });
+  provider = new FakeProvider();
+  services = createServices({ repos, provider, clock: fixedClock(T3) });
 });
 
 describe('formal progression service', () => {
@@ -935,6 +1006,182 @@ describe('formal progression service', () => {
         state: 'complete',
         version: 1,
       },
+    );
+    const targetId = 'review-target:ws_1:objective_1';
+    expect(repos.reviewSuccessor.listEvents(targetId)).toHaveLength(1);
+    expect(repos.reviewSuccessor.listEvents(targetId)[0]).toMatchObject({
+      kind: 'activation',
+      rating: 'Good',
+    });
+  });
+
+  it('keeps applied Formal state durable when scheduling fails and retries without regrading', async () => {
+    const input = createAssessmentEvidence('scheduler_retry');
+    const gradeCall = vi.spyOn(provider, 'gradeShortAnswer');
+    db.exec(`
+      CREATE TRIGGER inject_activation_failure
+      BEFORE INSERT ON successor_review_events
+      WHEN NEW.kind = 'activation'
+      BEGIN SELECT RAISE(ABORT, 'injected activation failure'); END;
+    `);
+
+    expect(() => services.formalAssessments.reconcileEvidence(input.evidence.id)).toThrow(
+      /injected activation failure/,
+    );
+    expect(repos.formalAssessments.getReconciliationForGrade(input.grade.id)).toMatchObject({
+      status: 'applied',
+    });
+    expect(repos.formalProgression.listEvidenceForWorkspace('ws_1')).toHaveLength(1);
+    expect(repos.reviewSuccessor.listEvents('review-target:ws_1:objective_1')).toHaveLength(0);
+    expect(repos.reviewSuccessor.getState('review-target:ws_1:objective_1')).toMatchObject({
+      lifecycleState: 'pending_initial_review',
+      lastReviewEventId: null,
+    });
+
+    db.exec('DROP TRIGGER inject_activation_failure');
+    await services.learnerAssessments.submit(input.attempt.id, input.responses);
+    expect(gradeCall).not.toHaveBeenCalled();
+    expect(repos.formalAssessments.listGrades(input.attempt.id)).toHaveLength(1);
+    expect(repos.reviewSuccessor.listEvents('review-target:ws_1:objective_1')).toHaveLength(1);
+    expect(
+      repos.reviewSuccessor
+        .listBackfillAudits()
+        .some((audit) => audit.evidenceId === input.evidence.id),
+    ).toBe(false);
+  });
+
+  it('backfills eligible pre-cutover Evidence to null-memory pending state idempotently', () => {
+    const beforeCutover = '2025-12-31T23:59:59.000Z';
+    const input = createAssessmentEvidence('pre_cutover', beforeCutover);
+    repos.review.upsert({
+      workspaceId: 'ws_1',
+      conceptId: 'con_1',
+      conceptName: 'Legacy Review history',
+      stability: 9,
+      difficulty: 4,
+      dueAt: T3,
+      lastReviewedAt: T2,
+      intervalDays: 9,
+      reviewCount: 2,
+      lapseCount: 1,
+      lastRating: 'again',
+      schedulerVersion: 'local-fsrs-v1',
+      createdAt: T1,
+      updatedAt: T2,
+    });
+    repos.review.insertEvent({
+      id: 'legacy_review_event_pre_cutover',
+      workspaceId: 'ws_1',
+      conceptId: 'con_1',
+      quizId: input.source.quizId,
+      rating: 'easy',
+      score: 1,
+      intervalDays: 9,
+      dueAt: T3,
+      createdAt: T2,
+    });
+    const legacyBefore = {
+      item: repos.review.get('ws_1', 'con_1'),
+      events: repos.review.listEvents('ws_1', 'con_1'),
+      mastery: repos.mastery.listByWorkspace('ws_1'),
+    };
+
+    expect(services.formalAssessments.reconcileEvidence(input.evidence.id).status).toBe('applied');
+    expect(repos.reviewSuccessor.listTargets('ws_1')).toHaveLength(0);
+    const first = services.reviewBackfill.run();
+    const targetId = 'review-target:ws_1:objective_1';
+    const firstState = repos.reviewSuccessor.getState(targetId);
+    expect(first).toContainEqual(
+      expect.objectContaining({
+        evidenceId: input.evidence.id,
+        outcome: 'created',
+        reason: 'eligible_pending_created',
+        reviewTargetId: targetId,
+      }),
+    );
+    expect(firstState).toEqual(
+      expect.objectContaining({
+        lifecycleState: 'pending_initial_review',
+        dueAt: '2026-01-01T00:00:00.000Z',
+        lastReviewedAt: null,
+        stability: null,
+        difficulty: null,
+        scheduledDays: null,
+        repetitions: null,
+        lapses: null,
+        lastReviewEventId: null,
+      }),
+    );
+    expect(repos.reviewSuccessor.listEvents(targetId)).toHaveLength(0);
+    expect(services.reviewSuccessor.listCurrentProjection('ws_1')).toContainEqual(
+      expect.objectContaining({
+        reviewTargetId: targetId,
+        objectiveId: 'objective_1',
+        objectiveTitle: 'Explain capacity',
+        conceptIds: ['con_1'],
+        lifecycleState: 'pending_initial_review',
+      }),
+    );
+
+    const restarted = createReviewBackfillService({
+      repos,
+      reviewSuccessor: services.reviewSuccessor,
+    });
+    const second = restarted.run();
+    expect(second).toEqual(first);
+    expect(repos.reviewSuccessor.listTargets('ws_1')).toHaveLength(1);
+    expect(repos.reviewSuccessor.getState(targetId)).toEqual(firstState);
+    expect(repos.reviewSuccessor.listEvents(targetId)).toHaveLength(0);
+    expect(repos.review.get('ws_1', 'con_1')).toEqual(legacyBefore.item);
+    expect(repos.review.listEvents('ws_1', 'con_1')).toEqual(legacyBefore.events);
+    expect(repos.mastery.listByWorkspace('ws_1')).toEqual(legacyBefore.mastery);
+  });
+
+  it('audits ambiguous, unsupported, and unreconciled pre-cutover candidates without guessing', () => {
+    const beforeCutover = '2025-12-31T23:59:59.000Z';
+    const ambiguous = createAssessmentEvidence('ambiguous', beforeCutover);
+    expect(services.formalAssessments.reconcileEvidence(ambiguous.evidence.id).status).toBe(
+      'applied',
+    );
+    services.reviewSuccessor.ensureTarget({
+      workspaceId: 'ws_1',
+      courseId: 'ws_1',
+      learningUnitId: 'unit_1',
+      objectiveId: 'objective_1',
+      contractVersionId: 'different-contract',
+      curriculumVersionId: 'curriculum_1',
+      manifestFingerprint: 'manifest-fp',
+      at: '2026-01-01T00:00:00.000Z',
+      pendingDueAt: '2026-01-01T00:00:00.000Z',
+    });
+    expect(services.reviewBackfill.run()).toContainEqual(
+      expect.objectContaining({
+        evidenceId: ambiguous.evidence.id,
+        outcome: 'skipped',
+        reason: 'ambiguous_existing_target',
+        reviewTargetId: null,
+      }),
+    );
+
+    const unsupported = createAssessmentEvidence('unsupported', beforeCutover);
+    db.prepare("UPDATE assessment_evidence_records SET conclusion = 'partial' WHERE id = ?").run(
+      unsupported.evidence.id,
+    );
+    const unreconciled = createAssessmentEvidence('unreconciled', beforeCutover);
+    const audits = services.reviewBackfill.run();
+    expect(audits).toContainEqual(
+      expect.objectContaining({
+        evidenceId: unsupported.evidence.id,
+        outcome: 'skipped',
+        reason: 'not_supported',
+      }),
+    );
+    expect(audits).toContainEqual(
+      expect.objectContaining({
+        evidenceId: unreconciled.evidence.id,
+        outcome: 'skipped',
+        reason: 'reconciliation_not_applied',
+      }),
     );
   });
 

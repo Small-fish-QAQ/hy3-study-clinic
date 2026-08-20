@@ -287,7 +287,13 @@ export function createLearnerAssessmentsService({
       const current = repos.formalAssessments
         .listGrades(submitted.id)
         .find((grade) => grade.status === 'current');
-      if (current) return projection(version(submitted.assessmentVersionId), submitted);
+      if (current) {
+        const evidence = formalAssessments.deriveEvidence(current.id);
+        for (const record of evidence.filter((candidate) => candidate.conclusion === 'supported')) {
+          formalAssessments.reconcileEvidence(record.id);
+        }
+        return projection(version(submitted.assessmentVersionId), submitted);
+      }
       const grade = await gradeAttempt(submitted, opts);
       formalAssessments.recordGrade(grade);
       const evidence = formalAssessments.deriveEvidence(grade.id);

@@ -27,7 +27,7 @@ import type {
   Question,
   QuizConfig,
   RemediationPlan,
-  ReviewItem,
+  CurrentReviewItem,
   SourceBlock,
   SubmissionStateChanges,
   TutorEvent,
@@ -1349,7 +1349,7 @@ export const api = {
     ),
 
   reviewItems: (workspaceId: string, signal?: AbortSignal) =>
-    request<{ items: ReviewItem[] }>(
+    request<{ items: CurrentReviewItem[] }>(
       'GET',
       `/api/workspaces/${workspaceId}/review`,
       undefined,

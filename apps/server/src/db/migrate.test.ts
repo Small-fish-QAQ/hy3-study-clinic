@@ -564,4 +564,84 @@ describe('migrations', () => {
       db.close();
     }
   });
+
+  it('upgrades migration-31 pending Review rows without fabricating FSRS memory', () => {
+    const db = openDatabase(':memory:');
+    migrate(db, { toVersion: 31 });
+    const cutoverAt = '2026-01-01T00:00:00.000Z';
+    db.prepare(
+      `INSERT INTO workspaces (id, name, origin, created_at, updated_at)
+       VALUES ('ws_review_v31', 'Review migration', 'manual', ?, ?)`,
+    ).run(cutoverAt, cutoverAt);
+    db.prepare(
+      `INSERT INTO review_scheduler_configurations
+         (version, algorithm_generation, package_name, package_version, local_adapter_version,
+          rating_policy_version, requested_retention, config_hash, fuzz, short_term,
+          maximum_due_horizon_days, effective_at, retired_at)
+       VALUES ('review-policy-fsrs6-v1', 'FSRS-6', 'ts-fsrs', '5.4.1',
+         'study-clinic-fsrs6-v1', 'formal-review-outcome-binary-v1', 0.9,
+         'migration-fixture', 0, 0, 365, ?, NULL)`,
+    ).run(cutoverAt);
+    db.prepare(
+      `INSERT INTO review_targets
+         (id, workspace_id, course_id, target_kind, origin_evidence_id, status,
+          current_binding_version, created_at, updated_at)
+       VALUES ('target_v31', 'ws_review_v31', 'ws_review_v31', 'curriculum_objective',
+         NULL, 'pending_initial_review', 1, ?, ?)`,
+    ).run(cutoverAt, cutoverAt);
+    db.prepare(
+      `INSERT INTO memory_schedule_states
+         (review_target_id, policy_version, lifecycle_state, due_at, last_reviewed_at,
+          stability, difficulty, scheduled_days, repetitions, lapses, last_review_event_id,
+          row_version, created_at, updated_at)
+       VALUES ('target_v31', 'review-policy-fsrs6-v1', 'new', ?, NULL,
+         0, 1, 0, 0, 0, NULL, 1, ?, ?)`,
+    ).run(cutoverAt, cutoverAt, cutoverAt);
+
+    migrate(db);
+
+    expect(
+      db
+        .prepare(
+          `SELECT lifecycle_state, due_at, last_reviewed_at, stability, difficulty,
+                  scheduled_days, repetitions, lapses, last_review_event_id
+           FROM memory_schedule_states WHERE review_target_id = 'target_v31'`,
+        )
+        .get(),
+    ).toEqual({
+      lifecycle_state: 'pending_initial_review',
+      due_at: cutoverAt,
+      last_reviewed_at: null,
+      stability: null,
+      difficulty: null,
+      scheduled_days: null,
+      repetitions: null,
+      lapses: null,
+      last_review_event_id: null,
+    });
+    expect(
+      db
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'review_backfill_audits'",
+        )
+        .get(),
+    ).toEqual({ name: 'review_backfill_audits' });
+    db.prepare(
+      `INSERT INTO successor_review_events
+         (id, review_target_id, binding_version, policy_version, kind, sequence,
+          source_outcome_id, review_execution_id, rating, occurred_at, recorded_at,
+          pre_state, post_state, exact_input_time, due_at, idempotency_key)
+       VALUES ('event_v32', 'target_v31', NULL, 'review-policy-fsrs6-v1', 'activation', 1,
+         'source_v32', NULL, 'Good', ?, ?, '{}', '{}', ?, ?, 'event_v32')`,
+    ).run(cutoverAt, cutoverAt, cutoverAt, cutoverAt);
+    expect(() =>
+      db.prepare("DELETE FROM successor_review_events WHERE id = 'event_v32'").run(),
+    ).toThrow(/append-only/);
+    db.prepare("DELETE FROM workspaces WHERE id = 'ws_review_v31'").run();
+    expect(
+      db.prepare("SELECT COUNT(*) AS n FROM successor_review_events WHERE id = 'event_v32'").get(),
+    ).toEqual({ n: 0 });
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+    db.close();
+  });
 });

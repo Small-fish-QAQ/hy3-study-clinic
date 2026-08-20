@@ -250,7 +250,34 @@ describe('cross-document assessment generation', () => {
     );
   });
 
-  it('schedules review items only after graded completion', async () => {
+  it('ordinary diagnostic grading does not create legacy or successor Review scheduling', async () => {
+    const reviewCounts = () => ({
+      legacyItems: (
+        setup.ctx.db.prepare('SELECT COUNT(*) AS n FROM review_items').get() as { n: number }
+      ).n,
+      legacyEvents: (
+        setup.ctx.db.prepare('SELECT COUNT(*) AS n FROM review_events').get() as { n: number }
+      ).n,
+      targets: (
+        setup.ctx.db.prepare('SELECT COUNT(*) AS n FROM review_targets').get() as { n: number }
+      ).n,
+      bindings: (
+        setup.ctx.db.prepare('SELECT COUNT(*) AS n FROM review_target_bindings').get() as {
+          n: number;
+        }
+      ).n,
+      states: (
+        setup.ctx.db.prepare('SELECT COUNT(*) AS n FROM memory_schedule_states').get() as {
+          n: number;
+        }
+      ).n,
+      events: (
+        setup.ctx.db.prepare('SELECT COUNT(*) AS n FROM successor_review_events').get() as {
+          n: number;
+        }
+      ).n,
+    });
+    const persistedBefore = reviewCounts();
     const before = await setup.ctx.app.inject({
       method: 'GET',
       url: `/api/workspaces/${setup.workspaceId}/review`,
@@ -288,8 +315,8 @@ describe('cross-document assessment generation', () => {
       method: 'GET',
       url: `/api/workspaces/${setup.workspaceId}/review`,
     });
-    expect(after.json().items.length).toBeGreaterThan(0);
-    expect(after.json().items[0]!.lastRating).toBe('again');
+    expect(after.json().items).toHaveLength(0);
+    expect(reviewCounts()).toEqual(persistedBefore);
   });
 });
 

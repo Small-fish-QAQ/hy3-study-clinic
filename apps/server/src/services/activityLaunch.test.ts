@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { MisconceptionRecord, ReviewItem } from '@hy3-clinic/shared';
+import type { MisconceptionRecord } from '@hy3-clinic/shared';
 import { buildTestApp, type TestApp } from '../testing/testApp.js';
 import { makeBlock, makeConcept, makeGrounding, makeMaterial, T0 } from '../testing/fixtures.js';
 import { fixedClock } from '../util/ids.js';
@@ -16,26 +16,6 @@ import {
  */
 
 const clock = fixedClock(T0);
-
-function reviewItem(overrides: Partial<ReviewItem>): ReviewItem {
-  return {
-    workspaceId: 'ws_1',
-    conceptId: 'con_1',
-    conceptName: '工作记忆',
-    stability: 1,
-    difficulty: 5,
-    dueAt: T0,
-    lastReviewedAt: T0,
-    intervalDays: 1,
-    reviewCount: 1,
-    lapseCount: 0,
-    lastRating: 'good',
-    schedulerVersion: 'local-fsrs-v1',
-    createdAt: T0,
-    updatedAt: T0,
-    ...overrides,
-  };
-}
 
 function misconception(overrides: Partial<MisconceptionRecord>): MisconceptionRecord {
   return {
@@ -130,27 +110,66 @@ describe('checkActivityCapability', () => {
     });
   });
 
-  it('review with named concepts accepts due-by-end-of-today, rejects later dues', () => {
+  it('review ignores legacy rows and fails closed for an unresolved successor binding', () => {
     const now = clock.now().getTime();
-    ctx.repos.review.upsert(
-      reviewItem({ conceptId: 'con_1', dueAt: new Date(now + 6 * 3600 * 1000).toISOString() }),
-    );
-    // Due six hours from now — later today, launchable when named.
-    expect(check({ mode: 'review', conceptIds: ['con_1'] })).toEqual({
-      ok: true,
-      launch: { mode: 'review', conceptIds: ['con_1'] },
+    ctx.repos.review.upsert({
+      workspaceId: 'ws_1',
+      conceptId: 'con_1',
+      conceptName: 'legacy-only',
+      stability: 1,
+      difficulty: 5,
+      dueAt: T0,
+      lastReviewedAt: T0,
+      intervalDays: 1,
+      reviewCount: 1,
+      lapseCount: 0,
+      lastRating: 'good',
+      schedulerVersion: 'local-fsrs-v1',
+      createdAt: T0,
+      updatedAt: T0,
     });
-    // Unnamed review keeps strict due-now semantics.
+    expect(check({ mode: 'review', conceptIds: ['con_1'] }).ok).toBe(false);
+
+    const targetId = 'review-target:ws_1:objective_1';
+    ctx.repos.reviewSuccessor.insertTarget({
+      id: targetId,
+      workspaceId: 'ws_1',
+      courseId: 'ws_1',
+      targetKind: 'curriculum_objective',
+      originEvidenceId: null,
+      status: 'pending_initial_review',
+      currentBindingVersion: 1,
+      createdAt: T0,
+      updatedAt: T0,
+    });
+    ctx.repos.reviewSuccessor.insertBinding({
+      reviewTargetId: targetId,
+      bindingVersion: 1,
+      contractVersionId: 'contract_1',
+      curriculumVersionId: 'curriculum_1',
+      learningUnitId: 'unit_1',
+      objectiveId: 'objective_1',
+      executionSourceManifestFingerprint: 'manifest_1',
+      validFrom: T0,
+      validTo: null,
+      createdAt: T0,
+    });
+    ctx.repos.reviewSuccessor.insertPendingState(
+      targetId,
+      'review-policy-fsrs6-v1',
+      new Date(now + 6 * 3600 * 1000).toISOString(),
+      T0,
+    );
+    // A successor row alone is insufficient: launch requires its exact
+    // Curriculum/LearningUnit/objective binding to remain resolvable.
+    expect(check({ mode: 'review', conceptIds: [targetId] }).ok).toBe(false);
     expect(check({ mode: 'review', conceptIds: [] }).ok).toBe(false);
 
     // Due in three days: not launchable even when named.
-    ctx.repos.review.upsert(
-      reviewItem({
-        conceptId: 'con_1',
-        dueAt: new Date(now + 3 * 24 * 3600 * 1000).toISOString(),
-      }),
-    );
-    const later = check({ mode: 'review', conceptIds: ['con_1'] });
+    ctx.db
+      .prepare('UPDATE memory_schedule_states SET due_at = ? WHERE review_target_id = ?')
+      .run(new Date(now + 3 * 24 * 3600 * 1000).toISOString(), targetId);
+    const later = check({ mode: 'review', conceptIds: [targetId] });
     expect(later.ok).toBe(false);
     if (!later.ok) expect(later.reason).toContain('复习安排');
   });

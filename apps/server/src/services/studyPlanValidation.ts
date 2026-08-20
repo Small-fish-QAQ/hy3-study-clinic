@@ -27,6 +27,7 @@ import {
   listAcceptedAdvisoryVisuals,
   visualManifestMatchesCurrentDerivations,
 } from './advisoryVisuals.js';
+import { resolveReviewTargetContext } from './reviewSuccessor.js';
 
 export const STUDY_PLAN_COMPLETION_POLICY_ID = 'learning-unit-completion';
 export const STUDY_PLAN_COMPLETION_POLICY_VERSION = 1;
@@ -173,8 +174,29 @@ export function resolveLaunchForPlanItem(
       return assessmentCapability(repos, clock, workspaceId, 'concept_practice', conceptIds);
     case 'targeted_repair':
       return assessmentCapability(repos, clock, workspaceId, 'prerequisite_repair', conceptIds);
-    case 'due_review':
-      return assessmentCapability(repos, clock, workspaceId, 'review', conceptIds);
+    case 'due_review': {
+      if (!unit) {
+        return {
+          status: 'blocked',
+          capability: 'assessment',
+          resourceId: null,
+          reason: 'This Review item has no exact Curriculum LearningUnit binding.',
+        };
+      }
+      const objectiveIds = new Set(item.objectiveIds);
+      const reviewTargetIds = repos.reviewSuccessor
+        .listCurrent(workspaceId)
+        .flatMap(({ target }) => {
+          const context = resolveReviewTargetContext(repos, target.id);
+          return context &&
+            context.binding.learningUnitId === unit.id &&
+            objectiveIds.has(context.binding.objectiveId) &&
+            context.conceptIds.some((conceptId) => conceptIds.includes(conceptId))
+            ? [target.id]
+            : [];
+        });
+      return assessmentCapability(repos, clock, workspaceId, 'review', reviewTargetIds);
+    }
     case 'synthesis': {
       const group = curriculum.synthesisGroups.find(
         (candidate) =>

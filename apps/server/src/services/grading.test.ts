@@ -167,11 +167,12 @@ describe('atomic grading persistence', () => {
     const setup = await setupQuiz(ctx);
     const before = stateRowCounts(ctx);
 
-    // Fault injection: the review scheduler write is late in the write set;
-    // making it throw must erase the submission/result/mistake/mastery rows
-    // written earlier inside the same transaction.
-    const originalUpsert = ctx.repos.review.upsert.bind(ctx.repos.review);
-    ctx.repos.review.upsert = () => {
+    // Fault injection at a still-owned late grading write: the completed-attempt
+    // snapshot follows submission/result/mistake/mastery writes in the same transaction.
+    const originalRecordStateChanges = ctx.repos.submissions.recordStateChanges.bind(
+      ctx.repos.submissions,
+    );
+    ctx.repos.submissions.recordStateChanges = () => {
       throw new Error('模拟写入故障');
     };
     const res = await ctx.app.inject({
@@ -183,7 +184,7 @@ describe('atomic grading persistence', () => {
     expect(stateRowCounts(ctx)).toEqual(before);
 
     // The quiz remains submittable after the fault clears (no half-state).
-    ctx.repos.review.upsert = originalUpsert;
+    ctx.repos.submissions.recordStateChanges = originalRecordStateChanges;
     const retry = await ctx.app.inject({
       method: 'POST',
       url: `/api/quizzes/${setup.quizId}/submissions`,

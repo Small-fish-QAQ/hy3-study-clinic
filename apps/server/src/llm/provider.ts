@@ -7,6 +7,7 @@ import type {
   ConceptAnalysisPayload,
   ConceptLessonPayload,
   CourseMapProposalPayload,
+  CurrentReviewItem,
   Curriculum,
   CurriculumDetailProposalPayload,
   CurriculumProposalPayload,
@@ -25,7 +26,6 @@ import type {
   QuizConfig,
   QuizGenerationPayload,
   RemediationPlanProposalPayload,
-  ReviewItem,
   RubricGrade,
   RubricPoint,
   SourceBlock,
@@ -454,7 +454,10 @@ export interface TutorStepInput {
   /** Concept ids the final plan/activity may reference. */
   allowedConceptIds: string[];
   /** Review items of the workspace concepts (bounded, read-only). */
-  reviewItems: Pick<ReviewItem, 'conceptId' | 'dueAt' | 'lastRating'>[];
+  reviewItems: Pick<
+    CurrentReviewItem,
+    'reviewTargetId' | 'conceptIds' | 'dueAt' | 'lifecycleState'
+  >[];
   /**
    * Activity modes that are executable RIGHT NOW for the selected concept
    * (computed by the deterministic launch resolver). The final activity.mode

@@ -7,7 +7,7 @@ import type {
   GraphEdge,
   MisconceptionRecord,
   RemediationPlan,
-  ReviewItem,
+  CurrentReviewItem,
   SourceBlock,
   VerifiedGrounding,
 } from '@hy3-clinic/shared';
@@ -183,7 +183,7 @@ export interface ConceptDetailPanelProps {
   /** Misconception hypotheses of this concept (all statuses, bounded). */
   misconceptions?: MisconceptionRecord[];
   /** Long-term review state (undefined before the first graded activity). */
-  reviewItem?: ReviewItem | undefined;
+  reviewItem?: CurrentReviewItem | undefined;
   plan: RemediationPlan | null;
   planLoading: boolean;
   planError: string | null;
@@ -334,8 +334,11 @@ export function ConceptDetailPanel({
             {reviewItem ? (
               <p className="small">
                 <span className="pill deterministic">本地调度</span> 下次复习:
-                {formatDue(reviewItem.dueAt)} · 已复习 {reviewItem.reviewCount} 次
-                {reviewItem.lapseCount > 0 ? ` · 遗忘 ${reviewItem.lapseCount} 次` : ''}
+                {formatDue(reviewItem.dueAt)}
+                {reviewItem.lifecycleState === 'pending_initial_review'
+                  ? ' · 等待首次复习'
+                  : ` · 已复习 ${reviewItem.repetitions ?? 0} 次`}
+                {(reviewItem.lapses ?? 0) > 0 ? ` · 遗忘 ${reviewItem.lapses} 次` : ''}
                 {reviewDue ? ' · 已到期' : ''}
               </p>
             ) : (

@@ -33,6 +33,8 @@ The root commands map to the existing monorepo workspaces:
 - `npm test` first builds the shared package, then runs every workspace Vitest suite.
 - Migration and HTTP integration coverage live inside the server Vitest suite; there are no separate commands that must be run to obtain those results.
 - `npm run eval:fake` uses the deterministic fake provider and makes no real Hy3 request.
+
+Phase 8B-R coverage includes migration-31 upgrade repair, null-memory pending state, exact-binding pre-cutover backfill, durable audit/idempotency and pre/post-cutover separation; successor-only queue, assessment, Tutor, and API reads; event/state/execution atomicity; retry after a durable Formal reconciliation; and exact Again-before-Good ordering. Legacy Review rows are seeded only to prove historical preservation and the absence of current fallback authority.
 - `git diff --check` checks the final patch for whitespace errors. `npm run lint` already includes the repository-wide `prettier --check .`; run `npx prettier --check README.md docs/ARCHITECTURE.md docs/VERIFICATION.md` for a documentation-only formatting check.
 
 CI executes `npm ci`, build, lint, and tests on:

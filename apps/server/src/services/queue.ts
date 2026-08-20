@@ -63,32 +63,20 @@ export function createQueueService({ repos, clock, reviewSuccessor }: QueueServi
           conceptIds: [item.conceptId],
           ...(item.misconceptionId ? { misconceptionId: item.misconceptionId } : {}),
         });
-        if (!resolved) return;
+        if (!resolved || (intendedMode === 'review' && resolved.adjusted)) return;
         usedConcepts.add(item.conceptId);
         items.push({ ...item, launch: resolved.launch });
       };
 
       // 1. Overdue reviews, most overdue first.
-      const successorItems = reviewSuccessor?.listCurrent(workspaceId) ?? [];
-      const successorReviewItems = successorItems.map(({ target, state }) => ({
-        workspaceId: target.workspaceId,
-        conceptId: target.id,
-        conceptName: target.id,
-        stability: state.stability,
-        difficulty: state.difficulty,
-        dueAt: state.dueAt,
-        lastReviewedAt: state.lastReviewedAt ?? state.createdAt,
-        intervalDays: state.scheduledDays,
-        reviewCount: state.repetitions,
-        lapseCount: state.lapses,
-        lastRating: state.lapses > 0 ? 'again' as const : 'good' as const,
-        schedulerVersion: state.policyVersion,
-        createdAt: state.createdAt,
-        updatedAt: state.updatedAt,
-      }));
-      const reviewItems = successorReviewItems.length > 0
-        ? successorReviewItems
-        : repos.review.listByWorkspace(workspaceId);
+      const reviewItems = (reviewSuccessor?.listCurrentProjection(workspaceId) ?? []).map(
+        (item) => ({
+          conceptId: item.reviewTargetId,
+          conceptName: item.objectiveTitle,
+          dueAt: item.dueAt,
+          lifecycleState: item.lifecycleState,
+        }),
+      );
       const overdue = reviewItems
         .map((item) => ({ item, days: overdueDays(item.dueAt, now) }))
         .filter(({ item, days }) => days > 0 || new Date(item.dueAt).getTime() <= now.getTime())
@@ -101,8 +89,10 @@ export function createQueueService({ repos, clock, reviewSuccessor }: QueueServi
           misconceptionId: null,
           reason:
             days >= 1
-              ? `复习已过期 ${Math.floor(days)} 天(上次评级:${item.lastRating})。`
-              : '复习已到期,建议今天完成一次检索练习。',
+              ? `复习已过期 ${Math.floor(days)} 天。`
+              : item.lifecycleState === 'pending_initial_review'
+                ? '初始复习已到期,建议今天完成一次检索练习。'
+                : '复习已到期,建议今天完成一次检索练习。',
           overdueDays: days,
         });
       }

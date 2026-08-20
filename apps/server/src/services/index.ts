@@ -16,6 +16,7 @@ import { createAttemptsService, type AttemptsService } from './attempts.js';
 import { createMisconceptionsService, type MisconceptionsService } from './misconceptions.js';
 import { createReviewService, type ReviewService } from './review.js';
 import { createReviewSuccessorService, type ReviewSuccessorService } from './reviewSuccessor.js';
+import { createReviewBackfillService, type ReviewBackfillService } from './reviewBackfill.js';
 import { createQueueService, type QueueService } from './queue.js';
 import { createMappingService, type MappingService } from './mapping.js';
 import { createLessonsService, type LessonsService } from './lessons.js';
@@ -83,6 +84,7 @@ export interface Services {
   misconceptions: MisconceptionsService;
   review: ReviewService;
   reviewSuccessor: ReviewSuccessorService;
+  reviewBackfill: ReviewBackfillService;
   queue: QueueService;
   mapping: MappingService;
   lessons: LessonsService;
@@ -135,6 +137,8 @@ export function createServices({
   const misconceptions = createMisconceptionsService({ repos, provider, clock });
   const review = createReviewService({ repos, clock });
   const reviewSuccessor = createReviewSuccessorService({ repos, clock });
+  const reviewBackfill = createReviewBackfillService({ repos, reviewSuccessor });
+  reviewBackfill.run();
   const grading = createGradingService({ repos, provider, clock, misconceptions });
   const remediation = createRemediationService({ repos, provider, clock });
   const mistakes = createMistakesService({ repos });
@@ -257,6 +261,7 @@ export function createServices({
     misconceptions,
     review,
     reviewSuccessor,
+    reviewBackfill,
     queue,
     mapping,
     lessons,

@@ -2360,6 +2360,142 @@ const MIGRATIONS: Migration[] = [
       CREATE TRIGGER prevent_successor_review_event_delete BEFORE DELETE ON successor_review_events BEGIN SELECT RAISE(ABORT, 'successor review events are append-only'); END;
     `,
   },
+  {
+    version: 32,
+    name: 'review_cutover_backfill_support',
+    rebuildsTables: true,
+    up: `
+      CREATE TABLE memory_schedule_states_rebuilt (
+        review_target_id TEXT NOT NULL REFERENCES review_targets(id) ON DELETE CASCADE,
+        policy_version TEXT NOT NULL REFERENCES review_scheduler_configurations(version),
+        lifecycle_state TEXT NOT NULL CHECK (
+          lifecycle_state IN ('pending_initial_review', 'new', 'review')
+        ),
+        due_at TEXT NOT NULL,
+        last_reviewed_at TEXT,
+        stability REAL,
+        difficulty REAL,
+        scheduled_days REAL,
+        repetitions INTEGER,
+        lapses INTEGER,
+        last_review_event_id TEXT,
+        row_version INTEGER NOT NULL CHECK (row_version > 0),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY (review_target_id, policy_version),
+        UNIQUE (review_target_id),
+        CHECK (
+          (lifecycle_state = 'pending_initial_review'
+            AND last_reviewed_at IS NULL
+            AND stability IS NULL
+            AND difficulty IS NULL
+            AND scheduled_days IS NULL
+            AND repetitions IS NULL
+            AND lapses IS NULL
+            AND last_review_event_id IS NULL)
+          OR
+          (lifecycle_state IN ('new', 'review')
+            AND stability IS NOT NULL AND stability >= 0
+            AND difficulty IS NOT NULL AND difficulty BETWEEN 1 AND 10
+            AND scheduled_days IS NOT NULL AND scheduled_days >= 0
+            AND repetitions IS NOT NULL AND repetitions >= 0
+            AND lapses IS NOT NULL AND lapses >= 0)
+        )
+      );
+      INSERT INTO memory_schedule_states_rebuilt (
+        review_target_id, policy_version, lifecycle_state, due_at, last_reviewed_at,
+        stability, difficulty, scheduled_days, repetitions, lapses,
+        last_review_event_id, row_version, created_at, updated_at
+      )
+      SELECT
+        s.review_target_id,
+        s.policy_version,
+        CASE
+          WHEN t.status = 'pending_initial_review'
+            AND s.last_review_event_id IS NULL
+            AND NOT EXISTS (
+              SELECT 1 FROM successor_review_events e
+              WHERE e.review_target_id = s.review_target_id
+            )
+          THEN 'pending_initial_review'
+          ELSE s.lifecycle_state
+        END,
+        s.due_at,
+        CASE WHEN t.status = 'pending_initial_review' AND s.last_review_event_id IS NULL
+          AND NOT EXISTS (SELECT 1 FROM successor_review_events e WHERE e.review_target_id = s.review_target_id)
+          THEN NULL ELSE s.last_reviewed_at END,
+        CASE WHEN t.status = 'pending_initial_review' AND s.last_review_event_id IS NULL
+          AND NOT EXISTS (SELECT 1 FROM successor_review_events e WHERE e.review_target_id = s.review_target_id)
+          THEN NULL ELSE s.stability END,
+        CASE WHEN t.status = 'pending_initial_review' AND s.last_review_event_id IS NULL
+          AND NOT EXISTS (SELECT 1 FROM successor_review_events e WHERE e.review_target_id = s.review_target_id)
+          THEN NULL ELSE s.difficulty END,
+        CASE WHEN t.status = 'pending_initial_review' AND s.last_review_event_id IS NULL
+          AND NOT EXISTS (SELECT 1 FROM successor_review_events e WHERE e.review_target_id = s.review_target_id)
+          THEN NULL ELSE s.scheduled_days END,
+        CASE WHEN t.status = 'pending_initial_review' AND s.last_review_event_id IS NULL
+          AND NOT EXISTS (SELECT 1 FROM successor_review_events e WHERE e.review_target_id = s.review_target_id)
+          THEN NULL ELSE s.repetitions END,
+        CASE WHEN t.status = 'pending_initial_review' AND s.last_review_event_id IS NULL
+          AND NOT EXISTS (SELECT 1 FROM successor_review_events e WHERE e.review_target_id = s.review_target_id)
+          THEN NULL ELSE s.lapses END,
+        CASE WHEN t.status = 'pending_initial_review' AND s.last_review_event_id IS NULL
+          AND NOT EXISTS (SELECT 1 FROM successor_review_events e WHERE e.review_target_id = s.review_target_id)
+          THEN NULL ELSE s.last_review_event_id END,
+        s.row_version, s.created_at, s.updated_at
+      FROM memory_schedule_states s
+      JOIN review_targets t ON t.id = s.review_target_id;
+      DROP TABLE memory_schedule_states;
+      ALTER TABLE memory_schedule_states_rebuilt RENAME TO memory_schedule_states;
+      CREATE INDEX idx_memory_schedule_due ON memory_schedule_states(policy_version, due_at);
+
+      ALTER TABLE successor_review_events ADD COLUMN sequence INTEGER;
+      UPDATE successor_review_events AS event
+      SET sequence = (
+        SELECT COUNT(*)
+        FROM successor_review_events AS prior
+        WHERE prior.review_target_id = event.review_target_id
+          AND (
+            prior.occurred_at < event.occurred_at
+            OR (prior.occurred_at = event.occurred_at AND prior.id <= event.id)
+          )
+      );
+      CREATE UNIQUE INDEX idx_successor_review_events_sequence
+        ON successor_review_events(review_target_id, sequence);
+      CREATE TRIGGER require_successor_review_event_sequence
+        BEFORE INSERT ON successor_review_events
+        WHEN NEW.sequence IS NULL OR NEW.sequence <= 0
+      BEGIN
+        SELECT RAISE(ABORT, 'successor review event sequence is required');
+      END;
+
+      DROP TRIGGER prevent_successor_review_event_delete;
+      CREATE TRIGGER prevent_successor_review_event_delete
+        BEFORE DELETE ON successor_review_events
+        WHEN EXISTS (
+          SELECT 1 FROM review_targets WHERE id = OLD.review_target_id
+        )
+      BEGIN
+        SELECT RAISE(ABORT, 'successor review events are append-only');
+      END;
+
+      CREATE TABLE review_backfill_audits (
+        evidence_id TEXT PRIMARY KEY REFERENCES assessment_evidence_records(id) ON DELETE CASCADE,
+        cutover_at TEXT NOT NULL,
+        outcome TEXT NOT NULL CHECK (outcome IN ('created', 'already_present', 'skipped')),
+        reason TEXT NOT NULL CHECK (reason IN (
+          'eligible_pending_created', 'eligible_pending_present', 'not_supported',
+          'unsupported_policy', 'reconciliation_not_applied', 'invalid_formal_context',
+          'ineligible_assessment_kind', 'due_review_not_backfillable',
+          'missing_exact_binding', 'ambiguous_existing_target', 'invalid_source_binding'
+        )),
+        review_target_id TEXT REFERENCES review_targets(id) ON DELETE SET NULL,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_review_backfill_outcome
+        ON review_backfill_audits(outcome, reason, evidence_id);
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {
