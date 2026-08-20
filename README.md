@@ -434,6 +434,26 @@ Course Progress labels the learner-safe phase (`正式回忆进行中`, `需要�
 
 Hy3 still performs semantic assessment grading and Repair proposal work through the existing structured provider boundary. Deterministic local code validates all IDs, citations, evidence conclusions, route versions, scheduler events, and persistence. FakeProvider is the only provider used by automated tests; real-Hy3 setup is unchanged and remains an explicit, credentialed option.
 
+## Mastery Red Team shadow architecture
+
+Mastery Red Team is a developer/audit-only shadow workflow for searching for a fair, source-grounded counterexample to apparent mastery. It is not a learner-facing assessment route and it is not another mastery authority. A target is eligible only when its objective has current supported Formal Evidence, applied progression reconciliation, a completed LearningUnit, a current accepted Course route, a future non-initial Review state, and no open mistake, confirmed misconception, active Repair, or due Review already owning the gap.
+
+Each run freezes an immutable `MasterySnapshot`: accepted Contract/Curriculum/StudyPlan/Agenda identities, route and source-manifest versions, objective and LearningUnit context, supported Evidence/Grade/Attempt/criterion records, legacy mastery observations, mistake/misconception/Repair summaries, Review state, prior questions, and exact active original-source excerpts. Route, Review binding, source revision, or exact-quote drift makes the snapshot stale and fails closed.
+
+Local policy derives named fragility hypotheses such as transfer, boundary conditions, near-neighbor confusion, changed premises, counterexamples, error diagnosis, alternative refutation, cross-LearningUnit synthesis, historical misconceptions, adversarial distractors, representation shift, and one explicit discriminative follow-up. It selects the least-used locally supported family with deterministic tie-breaking. This is not IRT, BKT, a calibrated mastery probability, or a semantic-similarity model.
+
+Hy3 receives bounded aliases, verified excerpts, the selected family, concise historical summaries, and fixed candidate limits. It proposes exactly three structured short-answer candidates. Local code rejects unknown IDs/sources, hidden or external premises, unresolved ambiguity, unbound rubric/answer claims, stale or non-authoritative sources, triviality, answer leakage, duplicates, and excessive lexical overlap before selecting one candidate. Exact quotation proves source occurrence, not complete semantic entailment or universal fairness.
+
+The selected candidate reuses the existing Formal Assessment, Attempt, semantic Grade, and criterion machinery under the explicit `mastery_red_team_shadow` authority mode. Ordinary learner Formal APIs cannot execute that version, and its Grade cannot create Evidence, progression reconciliation, mastery changes, Review events, Repair episodes, mistake changes, or Course Truth changes. Outcomes are append-only advisory records: `robust_signal`, `possible_gap`, or `inconclusive`. A possible gap may only propose a fresh inspection through the ordinary Formal Evidence path; historical valid Evidence remains intact.
+
+Developer/audit endpoints are:
+
+- `POST /api/workspaces/:workspaceId/mastery-red-team/runs`;
+- `GET /api/workspaces/:workspaceId/mastery-red-team/runs/:runId`;
+- `POST /api/workspaces/:workspaceId/mastery-red-team/runs/:runId/submit`.
+
+FakeProvider is deterministic and covers valid candidates, duplicates, unsupported sources, unfair/unanswerable prompts, trivial prompts, schema failure, one bounded candidate repair, and repair exhaustion. Real-Hy3 configuration uses the existing `LLM_PROVIDER=hy3` setup; no live Red Team call or learner-facing workflow is required or claimed by this shadow gate. No production dependency was added.
+
 ## License
 
 [Apache-2.0](LICENSE). The built-in Chinese sample course and evaluation fixtures are original repository content released under the same license.

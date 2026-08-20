@@ -9,6 +9,7 @@ import {
   GraphProposalPayloadSchema,
   GroupedStudyPlanProposalPayloadSchema,
   MisconceptionProposalPayloadSchema,
+  MasteryChallengeProposalPayloadSchema,
   QuizGenerationPayloadSchema,
   RepairGenerationPayloadSchema,
   RemediationPlanProposalPayloadSchema,
@@ -27,6 +28,7 @@ import {
   type GraphProposalPayload,
   type GroupedStudyPlanProposalPayload,
   type MisconceptionProposalPayload,
+  type MasteryChallengeProposalPayload,
   type QuizGenerationPayload,
   type RemediationPlanProposalPayload,
   type StudyPlanProposalPayload,
@@ -51,6 +53,7 @@ import {
   graphProposalMessages,
   groupedStudyPlanProposalMessages,
   misconceptionProposalMessages,
+  masteryChallengeProposalMessages,
   quizGenerationMessages,
   remediationMessages,
   remediationPlanMessages,
@@ -73,6 +76,7 @@ import type {
   GraphProposalInput,
   LlmProvider,
   MisconceptionProposalInput,
+  MasteryChallengeProposalInput,
   ProviderCallOptions,
   QuizGenerationInput,
   RemediationInput,
@@ -416,6 +420,22 @@ export class Hy3Provider implements LlmProvider {
     opts?: ProviderCallOptions,
   ): Promise<AssessmentProposalPayload> {
     return this.complete(assessmentProposalMessages(input), AssessmentProposalPayloadSchema, opts);
+  }
+
+  async proposeMasteryChallenges(
+    input: MasteryChallengeProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<MasteryChallengeProposalPayload> {
+    return this.complete(
+      masteryChallengeProposalMessages(input),
+      MasteryChallengeProposalPayloadSchema,
+      opts,
+      [
+        `Keep exactly three distinct candidates and preserve selectedFamily=${input.selectedFamily}.`,
+        'Use only the offered O* and S* aliases. Bind every required claim and learner-visible premise to offered sources.',
+        'Remove external knowledge, hidden premises, ambiguity, undefined terms, answer leakage, and overlap with prior prompts.',
+      ].join('\n'),
+    );
   }
 
   async proposeMisconception(

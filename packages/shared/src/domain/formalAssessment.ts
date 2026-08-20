@@ -74,6 +74,9 @@ export const AssessmentDefinitionSchema = z.object({
 });
 export type AssessmentDefinition = z.infer<typeof AssessmentDefinitionSchema>;
 
+export const AssessmentAuthorityModeSchema = z.enum(['formal', 'mastery_red_team_shadow']);
+export type AssessmentAuthorityMode = z.infer<typeof AssessmentAuthorityModeSchema>;
+
 export const AssessmentVersionSchema = z.object({
   id: z.string().min(1),
   definitionId: z.string().min(1),
@@ -84,6 +87,7 @@ export const AssessmentVersionSchema = z.object({
   sourceRevisionIds: z.array(z.string().min(1)).min(1),
   createdAt: z.string().datetime(),
   acceptedAt: z.string().datetime().nullable(),
+  authorityMode: AssessmentAuthorityModeSchema.default('formal'),
   /** Immutable launch context for the separate deterministic progression bridge. */
   progressionContext: z
     .object({

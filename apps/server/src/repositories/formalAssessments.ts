@@ -107,7 +107,7 @@ export function createFormalAssessmentsRepo(db: SqliteDb) {
     insertVersion(input: AssessmentVersion) {
       const item = AssessmentVersionSchema.parse(input);
       db.prepare(
-        'INSERT INTO assessment_versions (id, definition_id, version, predecessor_id, status, payload, source_revision_ids, progression_context, created_at, accepted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO assessment_versions (id, definition_id, version, predecessor_id, status, payload, source_revision_ids, progression_context, authority_mode, created_at, accepted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       ).run(
         item.id,
         item.definitionId,
@@ -117,6 +117,7 @@ export function createFormalAssessmentsRepo(db: SqliteDb) {
         JSON.stringify(item),
         JSON.stringify(item.sourceRevisionIds),
         item.progressionContext ? JSON.stringify(item.progressionContext) : null,
+        item.authorityMode,
         item.createdAt,
         item.acceptedAt,
       );
@@ -329,6 +330,14 @@ export function createFormalAssessmentsRepo(db: SqliteDb) {
       return item;
     },
     getReconciliation: reconciliation,
+    getReconciliationForEvidence(evidenceRecordId: string) {
+      const row = db
+        .prepare(
+          'SELECT id FROM assessment_progression_reconciliations WHERE evidence_record_id = ?',
+        )
+        .get(evidenceRecordId) as { id: string } | undefined;
+      return row ? reconciliation(row.id) : undefined;
+    },
     getReconciliationForGrade(gradeRecordId: string) {
       const row = db
         .prepare(

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ConceptAnalysisPayloadSchema,
   CurriculumProposalPayloadSchema,
+  MasteryChallengeProposalPayloadSchema,
   QuizGenerationPayloadSchema,
   RubricGradeSchema,
   SAMPLE_MATERIAL_CONTENT,
@@ -12,9 +13,17 @@ import {
 } from '@hy3-clinic/shared';
 import { segmentMaterial } from '../ingestion/segment.js';
 import { verifyGrounding } from '../grounding/verify.js';
-import { FakeProvider, type FakeTutorTurnFixture } from './fakeProvider.js';
+import {
+  FakeProvider,
+  type FakeMasteryRedTeamFixture,
+  type FakeTutorTurnFixture,
+} from './fakeProvider.js';
 import { ProviderError } from './errors.js';
-import type { CurriculumProposalInput, TutorTurnInput } from './provider.js';
+import type {
+  CurriculumProposalInput,
+  MasteryChallengeProposalInput,
+  TutorTurnInput,
+} from './provider.js';
 import { validateTutorTurnCandidate } from '../tutor/pedagogy.js';
 
 const materialId = 'mat_fixture';
@@ -52,6 +61,29 @@ const tutorInput: TutorTurnInput = {
     riskIds: [],
   },
   recentExchanges: [],
+};
+
+const masteryRedTeamInput: MasteryChallengeProposalInput = {
+  contractVersion: 'mastery-red-team-challenge-v1',
+  selectedFamily: 'transfer',
+  hypothesisBasis: ['direct_recall_only'],
+  objectives: [
+    {
+      objectiveRef: 'O1',
+      title: 'Explain the bounded claim',
+      description: 'Explain and apply the claim from the supplied source.',
+      primary: true,
+    },
+  ],
+  sources: [{ sourceRef: 'S1', text: 'The claim holds only under the supplied condition.' }],
+  priorPrompts: [{ promptRef: 'P1', prompt: 'State the source claim directly.' }],
+  historicalSummaries: [],
+  limits: {
+    candidateCount: 3,
+    maxPromptChars: 2_000,
+    maxAnswerChars: 1_500,
+    maxRubricCriteria: 8,
+  },
 };
 
 async function fixtureConcepts(): Promise<Concept[]> {
@@ -585,4 +617,97 @@ describe('FakeProvider Tutor contract fixtures', () => {
       }),
     ).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
   });
+});
+
+describe('FakeProvider Mastery Red Team contract fixtures', () => {
+  it('returns a schema-valid bounded candidate pool by default', async () => {
+    const payload = await provider.proposeMasteryChallenges(masteryRedTeamInput);
+
+    expect(MasteryChallengeProposalPayloadSchema.parse(payload).candidates).toHaveLength(3);
+    expect(payload.candidates.every((candidate) => candidate.family === 'transfer')).toBe(true);
+    expect(payload.candidates.every((candidate) => candidate.sourceRefs.includes('S1'))).toBe(true);
+  });
+
+  it.each([
+    [
+      'duplicate_candidates',
+      (payload) => new Set(payload.candidates.map((item) => item.prompt)).size === 1,
+    ],
+    [
+      'unsupported_source',
+      (payload) => payload.candidates.every((item) => item.sourceRefs.includes('S99')),
+    ],
+    [
+      'unfair_unanswerable',
+      (payload) => payload.candidates.every((item) => item.requiresExternalKnowledge),
+    ],
+    [
+      'trivial_candidate',
+      (payload) => payload.candidates.every((item) => item.prompt === 'What is it?'),
+    ],
+  ] as Array<
+    [
+      FakeMasteryRedTeamFixture,
+      (payload: ReturnType<typeof MasteryChallengeProposalPayloadSchema.parse>) => boolean,
+    ]
+  >)('emits the deterministic %s fault', async (fixture, assertion) => {
+    const payload = await new FakeProvider({
+      masteryRedTeamFixture: fixture,
+    }).proposeMasteryChallenges(masteryRedTeamInput);
+
+    expect(() => MasteryChallengeProposalPayloadSchema.parse(payload)).not.toThrow();
+    expect(assertion(payload)).toBe(true);
+  });
+
+  it('performs one bounded semantic repair and returns the repaired pool', async () => {
+    let repairs = 0;
+    const payload = await new FakeProvider({
+      masteryRedTeamFixture: 'candidate_repair_once',
+    }).proposeMasteryChallenges(masteryRedTeamInput, {
+      validateCandidate: (candidate) => {
+        const parsed = MasteryChallengeProposalPayloadSchema.safeParse(candidate);
+        return {
+          valid:
+            parsed.success &&
+            parsed.data.candidates.every((item) => !item.requiresExternalKnowledge),
+          diagnostics: parsed.success ? ['external knowledge'] : ['schema'],
+        };
+      },
+      onRepairAttempt: () => {
+        repairs += 1;
+      },
+    });
+
+    expect(repairs).toBe(1);
+    expect(payload.candidates.every((candidate) => !candidate.requiresExternalKnowledge)).toBe(
+      true,
+    );
+  });
+
+  it.each(['schema_failure', 'candidate_repair_failure'] as const)(
+    'fails closed after the bounded %s path',
+    async (fixture) => {
+      let repairs = 0;
+      await expect(
+        new FakeProvider({ masteryRedTeamFixture: fixture }).proposeMasteryChallenges(
+          masteryRedTeamInput,
+          {
+            validateCandidate: (candidate) => {
+              const parsed = MasteryChallengeProposalPayloadSchema.safeParse(candidate);
+              return {
+                valid:
+                  parsed.success &&
+                  parsed.data.candidates.every((item) => !item.requiresExternalKnowledge),
+                diagnostics: parsed.success ? ['external knowledge'] : ['schema'],
+              };
+            },
+            onRepairAttempt: () => {
+              repairs += 1;
+            },
+          },
+        ),
+      ).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
+      expect(repairs).toBe(1);
+    },
+  );
 });

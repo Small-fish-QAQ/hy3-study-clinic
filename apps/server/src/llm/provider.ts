@@ -48,6 +48,9 @@ import type {
   RepairDiagnosticCategory,
   RepairInterventionMode,
   RepairGenerationPayload,
+  MasteryChallengeProposalPayload,
+  MasteryChallengeFamily,
+  MasteryFragilityBasis,
 } from '@hy3-clinic/shared';
 
 /** Options threaded through every provider call. */
@@ -343,6 +346,28 @@ export interface AssessmentProposalInput {
   questionCount: number;
   /** Misconception to discriminate (misconception_check mode only). */
   misconception: MisconceptionRecord | null;
+}
+
+/** Bounded alias-only context for one non-authoritative Mastery Red Team proposal. */
+export interface MasteryChallengeProposalInput {
+  contractVersion: 'mastery-red-team-challenge-v1';
+  selectedFamily: MasteryChallengeFamily;
+  hypothesisBasis: MasteryFragilityBasis[];
+  objectives: Array<{
+    objectiveRef: string;
+    title: string;
+    description: string;
+    primary: boolean;
+  }>;
+  sources: Array<{ sourceRef: string; text: string }>;
+  priorPrompts: Array<{ promptRef: string; prompt: string }>;
+  historicalSummaries: Array<{ summaryRef: string; summary: string }>;
+  limits: {
+    candidateCount: 3;
+    maxPromptChars: number;
+    maxAnswerChars: number;
+    maxRubricCriteria: number;
+  };
 }
 
 export interface MisconceptionProposalInput {
@@ -830,6 +855,11 @@ export interface LlmProvider extends VisualDescriptionProvider {
     input: AssessmentProposalInput,
     opts?: ProviderCallOptions,
   ): Promise<AssessmentProposalPayload>;
+  /** Propose three source-grounded shadow challenges; local code selects or rejects them. */
+  proposeMasteryChallenges(
+    input: MasteryChallengeProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<MasteryChallengeProposalPayload>;
   /** Propose (or decline) a misconception hypothesis for one wrong answer. */
   proposeMisconception(
     input: MisconceptionProposalInput,

@@ -245,15 +245,17 @@ export function createLearnerAssessmentsService({
 
   function version(id: string): AssessmentVersion {
     const found = repos.formalAssessments.getVersion(id);
-    if (!found || found.status !== 'accepted') throw notFound('正式检查不存在或已失效。');
+    if (!found || found.status !== 'accepted' || found.authorityMode !== 'formal') {
+      throw notFound('正式检查不存在或已失效。');
+    }
     return found;
   }
 
   async function gradeAttempt(
     attempt: AssessmentAttempt,
+    assessmentVersion: AssessmentVersion,
     opts?: ProviderCallOptions,
   ): Promise<GradeRecord> {
-    const assessmentVersion = version(attempt.assessmentVersionId);
     const criterionResults: GradeRecord['judgment']['criterionResults'] = [];
     let totalScore = 0;
     for (const item of assessmentVersion.items.filter((candidate) => candidate.formalEligible)) {
@@ -417,13 +419,34 @@ export function createLearnerAssessmentsService({
         finalizeGrade(version(submitted.assessmentVersionId), submitted, current);
         return projection(version(submitted.assessmentVersionId), submitted);
       }
-      const grade = await gradeAttempt(submitted, opts);
+      const grade = await gradeAttempt(submitted, version(submitted.assessmentVersionId), opts);
       formalAssessments.recordGrade(grade);
       // Formal Evidence is durable before this explicit, separately retryable
       // projection step. A projection failure must not discard the grade or
       // make the learner repeat the provider-backed assessment.
       finalizeGrade(version(submitted.assessmentVersionId), submitted, grade);
       return projection(version(submitted.assessmentVersionId), submitted);
+    },
+    async gradeShadowAttempt(attemptId: string, opts?: ProviderCallOptions) {
+      const attempt = repos.formalAssessments.getAttempt(attemptId);
+      const assessmentVersion = attempt
+        ? repos.formalAssessments.getVersion(attempt.assessmentVersionId)
+        : undefined;
+      if (
+        !attempt ||
+        attempt.status !== 'submitted' ||
+        !assessmentVersion ||
+        assessmentVersion.status !== 'accepted' ||
+        assessmentVersion.authorityMode !== 'mastery_red_team_shadow'
+      ) {
+        throw notFound('影子 Mastery Red Team 尝试不存在或不可判分。');
+      }
+      const current = repos.formalAssessments
+        .listGrades(attempt.id)
+        .find((grade) => grade.status === 'current');
+      if (current) return current;
+      const grade = await gradeAttempt(attempt, assessmentVersion, opts);
+      return formalAssessments.recordShadowGrade(grade);
     },
     cancel(attemptId: string) {
       const attempt = formalAssessments.cancelAttempt(attemptId);

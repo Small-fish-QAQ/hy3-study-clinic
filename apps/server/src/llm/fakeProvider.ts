@@ -12,6 +12,7 @@ import {
   type CurriculumDetailProposalPayload,
   type CurriculumProposalPayload,
   type GraphProposalPayload,
+  type MasteryChallengeProposalPayload,
   type MisconceptionProposalPayload,
   type ProposedAlignment,
   type ProposedAssessmentItem,
@@ -48,6 +49,7 @@ import type {
   CurriculumOutlineItem,
   CurriculumProposalInput,
   GraphProposalInput,
+  MasteryChallengeProposalInput,
   LlmProvider,
   MisconceptionProposalInput,
   ProviderCallOptions,
@@ -163,6 +165,8 @@ export interface FakeProviderOptions {
   visualDescriptionFixture?: FakeVisualDescriptionFixture;
   /** Repair-only semantic fault fixture for bounded-provider tests. */
   repairFixture?: 'repair_once' | 'repair_exhausted' | 'wrong_mode_once' | 'wrong_mode_exhausted';
+  /** Mastery Red Team semantic/schema fault fixture. */
+  masteryRedTeamFixture?: FakeMasteryRedTeamFixture;
 }
 
 export type FakeVisualDescriptionFixture =
@@ -188,6 +192,15 @@ export type FakeTutorTurnFixture =
   | 'repair_once'
   | 'repair_exhausted';
 
+export type FakeMasteryRedTeamFixture =
+  | 'schema_failure'
+  | 'candidate_repair_once'
+  | 'candidate_repair_failure'
+  | 'duplicate_candidates'
+  | 'unsupported_source'
+  | 'unfair_unanswerable'
+  | 'trivial_candidate';
+
 export class FakeProvider implements LlmProvider {
   readonly name = 'fake' as const;
   readonly endpointIdentity: string = 'local:fake';
@@ -203,12 +216,15 @@ export class FakeProvider implements LlmProvider {
   private readonly repairFixture:
     'repair_once' | 'repair_exhausted' | 'wrong_mode_once' | 'wrong_mode_exhausted' | null;
   private tutorTurnFixtureCalls = 0;
+  private readonly masteryRedTeamFixture: FakeMasteryRedTeamFixture | null;
+  private masteryRedTeamCalls = 0;
 
   constructor(options: FakeProviderOptions = {}) {
     this.delayMs = options.delayMs ?? 0;
     this.tutorTurnFixture = options.tutorTurnFixture ?? null;
     this.visualDescriptionFixture = options.visualDescriptionFixture ?? null;
     this.repairFixture = options.repairFixture ?? null;
+    this.masteryRedTeamFixture = options.masteryRedTeamFixture ?? null;
   }
 
   async describeVisual(
@@ -881,6 +897,96 @@ export class FakeProvider implements LlmProvider {
       });
     }
     return { items };
+  }
+
+  async proposeMasteryChallenges(
+    input: MasteryChallengeProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<MasteryChallengeProposalPayload> {
+    await this.gate(opts);
+    const fixture = this.masteryRedTeamFixture;
+    if (fixture === 'schema_failure') {
+      opts?.onRepairAttempt?.('schema', 'SCHEMA_VALIDATION_FAILURE');
+      throw ProviderError.invalidOutput(
+        'mastery red team fixture schema failure',
+        'schema',
+        'SCHEMA_VALIDATION_FAILURE',
+        true,
+      );
+    }
+    const source = input.sources[0] ?? { sourceRef: 'S1', text: 'The offered source claim.' };
+    const base = (ordinal: number): MasteryChallengeProposalPayload['candidates'][number] => ({
+      candidateKey: `fake-${ordinal}`,
+      family: input.selectedFamily,
+      prompt:
+        input.selectedFamily === 'discriminative_follow_up'
+          ? `Contrast the unresolved prior reasoning with source-grounded condition ${ordinal}, then diagnose exactly which claim remains justified.`
+          : `Using the source-grounded ${input.selectedFamily} case ${ordinal}, explain the answer and the condition that makes it hold.`,
+      expectedAnswer: source.text,
+      targetObjectiveRefs: ['O1'],
+      sourceRefs: [source.sourceRef],
+      expectedAnswerSourceRefs: [source.sourceRef],
+      premises: [
+        {
+          text: 'Use only the supplied source claim.',
+          sourceRefs: [source.sourceRef],
+          learnerVisible: true,
+        },
+      ],
+      rubric: [
+        {
+          key: `criterion-${ordinal}`,
+          text: source.text.slice(0, 300),
+          required: true,
+          sourceRefs: [source.sourceRef],
+        },
+      ],
+      requiresExternalKnowledge: false,
+      ambiguity: 'none',
+      undefinedTerms: [],
+      rationale: `A bounded ${input.selectedFamily} challenge grounded in ${source.sourceRef}.`,
+    });
+    const valid = { candidates: [base(1), base(2), base(3)] };
+    if (!fixture) return valid;
+    const first = this.masteryRedTeamCalls++ === 0;
+    const invalidCandidate = (ordinal: number) => {
+      const candidate = base(ordinal);
+      if (fixture === 'duplicate_candidates') {
+        return {
+          ...candidate,
+          candidateKey: 'duplicate',
+          prompt:
+            'Use this identical source-grounded challenge to explain the claim and its condition.',
+        };
+      }
+      if (fixture === 'unsupported_source') {
+        return { ...candidate, sourceRefs: ['S99'], expectedAnswerSourceRefs: ['S99'] };
+      }
+      if (fixture === 'unfair_unanswerable')
+        return { ...candidate, requiresExternalKnowledge: true };
+      if (fixture === 'trivial_candidate') return { ...candidate, prompt: 'What is it?' };
+      if (fixture === 'candidate_repair_once' || fixture === 'candidate_repair_failure') {
+        return { ...candidate, requiresExternalKnowledge: true };
+      }
+      return candidate;
+    };
+    const invalid: MasteryChallengeProposalPayload = {
+      candidates: [invalidCandidate(1), invalidCandidate(2), invalidCandidate(3)],
+    };
+    if (fixture === 'candidate_repair_once' && !first) return valid;
+    const firstValidation = opts?.validateCandidate?.(invalid);
+    if (!firstValidation || firstValidation.valid) return invalid;
+    opts?.onRepairAttempt?.('candidate', 'SEMANTIC_VALIDATION_FAILURE');
+    await this.gate(opts);
+    const repaired = fixture === 'candidate_repair_once' ? valid : invalid;
+    const repairedValidation = opts?.validateCandidate?.(repaired);
+    if (!repairedValidation || repairedValidation.valid) return repaired;
+    throw ProviderError.invalidOutput(
+      repairedValidation.diagnostics.join('; ').slice(0, 8_000),
+      'candidate',
+      'SEMANTIC_VALIDATION_FAILURE',
+      true,
+    );
   }
 
   /**

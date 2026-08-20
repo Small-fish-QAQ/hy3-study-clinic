@@ -67,6 +67,7 @@ import {
   createLearnerAssessmentsService,
   type LearnerAssessmentsService,
 } from './learnerAssessments.js';
+import { createMasteryRedTeamService, type MasteryRedTeamService } from './masteryRedTeam.js';
 
 export interface Services {
   materials: MaterialService;
@@ -108,6 +109,7 @@ export interface Services {
   formalAssessments: FormalAssessmentsService;
   repair: RepairService;
   learnerAssessments: LearnerAssessmentsService;
+  masteryRedTeam: MasteryRedTeamService;
 }
 
 export interface ServiceDeps {
@@ -239,6 +241,14 @@ export function createServices({
     repair,
     reviewSuccessor,
   });
+  const masteryRedTeam = createMasteryRedTeamService({
+    repos,
+    provider,
+    clock,
+    providerModel,
+    formalAssessments,
+    learnerAssessments,
+  });
   const studySessions = createStudySessionService({
     repos,
     provider,
@@ -287,5 +297,6 @@ export function createServices({
     formalAssessments,
     repair,
     learnerAssessments,
+    masteryRedTeam,
   };
 }

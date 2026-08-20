@@ -2496,6 +2496,112 @@ const MIGRATIONS: Migration[] = [
         ON review_backfill_audits(outcome, reason, evidence_id);
     `,
   },
+  {
+    version: 33,
+    name: 'mastery_red_team_shadow',
+    up: `
+      ALTER TABLE assessment_versions ADD COLUMN authority_mode TEXT NOT NULL DEFAULT 'formal'
+        CHECK (authority_mode IN ('formal', 'mastery_red_team_shadow'));
+      CREATE INDEX idx_assessment_versions_authority
+        ON assessment_versions(authority_mode, definition_id, version DESC);
+      CREATE TRIGGER prevent_assessment_authority_mode_mutation
+        BEFORE UPDATE OF authority_mode ON assessment_versions
+      WHEN OLD.status IN ('accepted', 'superseded') AND NEW.authority_mode IS NOT OLD.authority_mode
+      BEGIN SELECT RAISE(ABORT, 'accepted assessment authority mode is immutable'); END;
+
+      CREATE TABLE mastery_red_team_snapshots (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        course_id TEXT NOT NULL,
+        review_target_id TEXT NOT NULL REFERENCES review_targets(id) ON DELETE CASCADE,
+        parent_run_id TEXT,
+        follow_up_depth INTEGER NOT NULL CHECK (follow_up_depth BETWEEN 0 AND 1),
+        snapshot_hash TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_mastery_red_team_snapshots_target
+        ON mastery_red_team_snapshots(review_target_id, created_at DESC, id DESC);
+
+      CREATE TABLE mastery_red_team_runs (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        snapshot_id TEXT NOT NULL UNIQUE REFERENCES mastery_red_team_snapshots(id) ON DELETE CASCADE,
+        idempotency_key TEXT NOT NULL,
+        parent_run_id TEXT REFERENCES mastery_red_team_runs(id) ON DELETE SET NULL,
+        follow_up_depth INTEGER NOT NULL CHECK (follow_up_depth BETWEEN 0 AND 1),
+        selected_family TEXT NOT NULL CHECK (selected_family IN (
+          'transfer', 'boundary_conditions', 'near_neighbor_confusion',
+          'hidden_premise_change', 'counterexample', 'error_diagnosis',
+          'plausible_alternative_refutation', 'cross_learning_unit_synthesis',
+          'historical_misconception', 'adversarial_distractor',
+          'discriminative_follow_up', 'representation_shift'
+        )),
+        status TEXT NOT NULL CHECK (status IN (
+          'generating', 'selected', 'evaluating', 'evaluated',
+          'generation_failed', 'evaluation_failed'
+        )),
+        selected_candidate_id TEXT,
+        assessment_version_id TEXT REFERENCES assessment_versions(id),
+        submission_key TEXT,
+        submission_answer_hash TEXT,
+        failure_code TEXT,
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE (workspace_id, idempotency_key)
+      );
+      CREATE INDEX idx_mastery_red_team_runs_snapshot ON mastery_red_team_runs(snapshot_id);
+      CREATE INDEX idx_mastery_red_team_runs_target
+        ON mastery_red_team_runs(workspace_id, selected_family, created_at DESC);
+
+      CREATE TABLE mastery_red_team_candidates (
+        id TEXT PRIMARY KEY,
+        run_id TEXT NOT NULL REFERENCES mastery_red_team_runs(id) ON DELETE CASCADE,
+        ordinal INTEGER NOT NULL CHECK (ordinal BETWEEN 0 AND 2),
+        provider_candidate_key TEXT NOT NULL,
+        selected INTEGER NOT NULL CHECK (selected IN (0, 1)),
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE (run_id, ordinal),
+        UNIQUE (run_id, provider_candidate_key)
+      );
+      CREATE UNIQUE INDEX idx_mastery_red_team_selected_candidate
+        ON mastery_red_team_candidates(run_id) WHERE selected = 1;
+
+      CREATE TABLE mastery_red_team_evaluations (
+        id TEXT PRIMARY KEY,
+        run_id TEXT NOT NULL UNIQUE REFERENCES mastery_red_team_runs(id) ON DELETE CASCADE,
+        attempt_id TEXT NOT NULL UNIQUE REFERENCES assessment_attempts(id),
+        grade_record_id TEXT NOT NULL UNIQUE REFERENCES assessment_grade_records(id),
+        outcome TEXT NOT NULL CHECK (outcome IN ('robust_signal', 'possible_gap', 'inconclusive')),
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+
+      CREATE TRIGGER prevent_mastery_red_team_snapshot_update
+        BEFORE UPDATE ON mastery_red_team_snapshots
+        BEGIN SELECT RAISE(ABORT, 'MasterySnapshot is immutable'); END;
+      CREATE TRIGGER prevent_mastery_red_team_snapshot_delete
+        BEFORE DELETE ON mastery_red_team_snapshots
+        WHEN EXISTS (SELECT 1 FROM workspaces WHERE id = OLD.workspace_id)
+        BEGIN SELECT RAISE(ABORT, 'MasterySnapshot is immutable'); END;
+      CREATE TRIGGER prevent_mastery_red_team_candidate_update
+        BEFORE UPDATE ON mastery_red_team_candidates
+        BEGIN SELECT RAISE(ABORT, 'Mastery Red Team candidates are immutable'); END;
+      CREATE TRIGGER prevent_mastery_red_team_candidate_delete
+        BEFORE DELETE ON mastery_red_team_candidates
+        WHEN EXISTS (SELECT 1 FROM mastery_red_team_runs WHERE id = OLD.run_id)
+        BEGIN SELECT RAISE(ABORT, 'Mastery Red Team candidates are immutable'); END;
+      CREATE TRIGGER prevent_mastery_red_team_evaluation_update
+        BEFORE UPDATE ON mastery_red_team_evaluations
+        BEGIN SELECT RAISE(ABORT, 'Mastery Red Team evaluations are append-only'); END;
+      CREATE TRIGGER prevent_mastery_red_team_evaluation_delete
+        BEFORE DELETE ON mastery_red_team_evaluations
+        WHEN EXISTS (SELECT 1 FROM mastery_red_team_runs WHERE id = OLD.run_id)
+        BEGIN SELECT RAISE(ABORT, 'Mastery Red Team evaluations are append-only'); END;
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

@@ -307,6 +307,24 @@ git diff --check
 
 Do not rerun `eval:hy3` during ordinary tests or documentation maintenance. Do not rerun `eval:evidence` merely as a read-only check: it is a publication command and intentionally writes tracked artifacts with a new generation timestamp.
 
+## Phase 09A Mastery Red Team shadow verification
+
+Phase 09A is offline and uses FakeProvider/deterministic fixtures only. Focused verification exercises the strict shared contracts, hypothesis/family policy, candidate novelty and authority validation, provider schema/semantic repair fixtures, immutable migration ledgers, current route/source/Review fences, shadow Grade reuse, retry/idempotency, and exact preservation of Evidence, mastery, progression, Review, Repair, mistakes, and Course Truth.
+
+```bash
+npm run build -w @hy3-clinic/shared
+npm run test -w @hy3-clinic/shared -- src/domain/masteryRedTeam.test.ts src/domain/formalAssessment.test.ts
+npm run test -w @hy3-clinic/server -- src/services/masteryRedTeamPolicy.test.ts src/services/formalProgression.test.ts src/llm/fakeProvider.test.ts src/llm/hy3Provider.test.ts src/db/masteryRedTeamMigration.test.ts src/db/migrate.test.ts src/db/migrateCompat.test.ts
+npm run build
+npm run lint
+npm test
+npm run eval:fake
+npx prettier --check .
+git diff --check
+```
+
+No real Hy3 call is part of this gate. Exact quote validation proves that a quote occurs in the frozen current SourceBlock; it does not prove complete semantic entailment, universal fairness, or calibrated mastery. The developer/audit API is not a learner workflow and shadow results cannot mutate authoritative learning state.
+
 ## Media verification
 
 The reviewer assets are:

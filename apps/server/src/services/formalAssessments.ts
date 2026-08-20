@@ -10,6 +10,7 @@ import {
   ProgressionReconciliationRecordSchema,
   classifyFormalAssessmentItem,
   type AssessmentAttempt,
+  type AssessmentAuthorityMode,
   type AssessmentDefinition,
   type AssessmentVersion,
   type EvidenceRecord,
@@ -117,6 +118,7 @@ export function createFormalAssessmentsService({
     sourceRevisionIds: string[];
     predecessorId?: string | null;
     progressionContext?: AssessmentVersion['progressionContext'];
+    authorityMode?: AssessmentAuthorityMode;
   }): AssessmentVersion {
     const definition = repos.formalAssessments.getDefinition(input.definitionId);
     if (!definition) throw notFound(`正式评估定义不存在:${input.definitionId}`);
@@ -135,6 +137,13 @@ export function createFormalAssessmentsService({
       );
     }
     const previous = repos.formalAssessments.listVersions(input.definitionId).at(-1);
+    const authorityMode = input.authorityMode ?? 'formal';
+    if (authorityMode === 'mastery_red_team_shadow' && input.progressionContext) {
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        '影子 Mastery Red Team 评估不能携带进度上下文。',
+      );
+    }
     const now = clock.now().toISOString();
     return repos.formalAssessments.insertVersion(
       AssessmentVersionSchema.parse({
@@ -147,9 +156,78 @@ export function createFormalAssessmentsService({
         sourceRevisionIds: [...new Set(input.sourceRevisionIds)],
         createdAt: now,
         acceptedAt: null,
+        authorityMode,
         progressionContext: input.progressionContext ?? null,
       }),
     );
+  }
+
+  function startAttemptForMode(
+    assessmentVersionId: string,
+    workspaceId: string,
+    authorityMode: AssessmentAuthorityMode,
+  ): AssessmentAttempt {
+    const version = getVersion(assessmentVersionId);
+    const definition = repos.formalAssessments.getDefinition(version.definitionId);
+    if (
+      version.status !== 'accepted' ||
+      version.authorityMode !== authorityMode ||
+      !definition ||
+      definition.workspaceId !== workspaceId
+    ) {
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        authorityMode === 'formal'
+          ? '只能执行当前课程空间已接受的正式评估版本。'
+          : '只能执行当前课程空间已接受的影子 Mastery Red Team 版本。',
+      );
+    }
+    const now = clock.now().toISOString();
+    return repos.formalAssessments.insertAttempt(
+      AssessmentAttemptSchema.parse({
+        id: newId('assessment_attempt'),
+        assessmentVersionId,
+        workspaceId,
+        ordinal: repos.formalAssessments.nextAttemptOrdinal(assessmentVersionId),
+        status: 'started',
+        responses: {},
+        startedAt: now,
+        submittedAt: null,
+        cancelledAt: null,
+      }),
+    );
+  }
+
+  function recordGradeForMode(input: GradeRecord, authorityMode: AssessmentAuthorityMode) {
+    const attempt = repos.formalAssessments.getAttempt(input.attemptId);
+    const version = repos.formalAssessments.getVersion(input.assessmentVersionId);
+    if (
+      !attempt ||
+      attempt.status !== 'submitted' ||
+      attempt.assessmentVersionId !== input.assessmentVersionId ||
+      !version ||
+      version.authorityMode !== authorityMode
+    ) {
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        '只能为已提交、版本一致且权威模式匹配的评估尝试判分。',
+      );
+    }
+    if (input.supersedesId) {
+      const prior = repos.formalAssessments.getGrade(input.supersedesId);
+      if (
+        !prior ||
+        prior.attemptId !== input.attemptId ||
+        prior.assessmentVersionId !== input.assessmentVersionId ||
+        prior.status !== 'current'
+      ) {
+        throw new AppError(
+          ApiErrorCode.ValidationError,
+          '重判只能替换同一评估尝试的当前判分记录。',
+        );
+      }
+    }
+    return repos.formalAssessments.insertGrade(GradeRecordSchema.parse(input));
   }
 
   return {
@@ -252,28 +330,10 @@ export function createFormalAssessmentsService({
       return repos.formalAssessments.acceptVersion(version.id, clock.now().toISOString());
     },
     startAttempt(assessmentVersionId: string, workspaceId: string): AssessmentAttempt {
-      const version = getVersion(assessmentVersionId);
-      const definition = repos.formalAssessments.getDefinition(version.definitionId);
-      if (version.status !== 'accepted' || !definition || definition.workspaceId !== workspaceId)
-        throw new AppError(
-          ApiErrorCode.ValidationError,
-          '只能执行当前课程空间已接受的正式评估版本。',
-        );
-      const now = clock.now().toISOString();
-      const row = repos.formalAssessments.insertAttempt(
-        AssessmentAttemptSchema.parse({
-          id: newId('assessment_attempt'),
-          assessmentVersionId,
-          workspaceId,
-          ordinal: repos.formalAssessments.nextAttemptOrdinal(assessmentVersionId),
-          status: 'started',
-          responses: {},
-          startedAt: now,
-          submittedAt: null,
-          cancelledAt: null,
-        }),
-      );
-      return row;
+      return startAttemptForMode(assessmentVersionId, workspaceId, 'formal');
+    },
+    startShadowAttempt(assessmentVersionId: string, workspaceId: string): AssessmentAttempt {
+      return startAttemptForMode(assessmentVersionId, workspaceId, 'mastery_red_team_shadow');
     },
     submitAttempt(id: string, responses: Record<string, string>) {
       return repos.formalAssessments.submitAttempt(id, responses, clock.now().toISOString());
@@ -282,37 +342,17 @@ export function createFormalAssessmentsService({
       return repos.formalAssessments.cancelAttempt(id, clock.now().toISOString());
     },
     recordGrade(input: GradeRecord) {
-      const attempt = repos.formalAssessments.getAttempt(input.attemptId);
-      if (
-        !attempt ||
-        attempt.status !== 'submitted' ||
-        attempt.assessmentVersionId !== input.assessmentVersionId
-      )
-        throw new AppError(
-          ApiErrorCode.ValidationError,
-          '只能为已提交且版本一致的正式评估尝试判分。',
-        );
-      if (input.supersedesId) {
-        const prior = repos.formalAssessments.getGrade(input.supersedesId);
-        if (
-          !prior ||
-          prior.attemptId !== input.attemptId ||
-          prior.assessmentVersionId !== input.assessmentVersionId ||
-          prior.status !== 'current'
-        ) {
-          throw new AppError(
-            ApiErrorCode.ValidationError,
-            '重判只能替换同一正式尝试的当前判分记录。',
-          );
-        }
-      }
-      return repos.formalAssessments.insertGrade(GradeRecordSchema.parse(input));
+      return recordGradeForMode(input, 'formal');
+    },
+    recordShadowGrade(input: GradeRecord) {
+      return recordGradeForMode(input, 'mastery_red_team_shadow');
     },
     deriveEvidence(gradeRecordId: string): EvidenceRecord[] {
       const grade = repos.formalAssessments.getGrade(gradeRecordId);
       if (!grade || grade.status !== 'current') return [];
       const attempt = repos.formalAssessments.getAttempt(grade.attemptId);
       const version = getVersion(grade.assessmentVersionId);
+      if (version.authorityMode !== 'formal') return [];
       if (!attempt || attempt.status !== 'submitted') return [];
       const existing = repos.formalAssessments.listEvidenceForGrade(gradeRecordId);
       if (existing.length > 0) return existing;

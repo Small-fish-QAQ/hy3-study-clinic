@@ -11,7 +11,9 @@ import {
 import { openDatabase, type SqliteDb } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
 import { FakeProvider } from '../llm/fakeProvider.js';
+import { ProviderError } from '../llm/errors.js';
 import { createRepositories, type Repositories } from '../repositories/index.js';
+import { curriculumSourceBlockFingerprint } from '../grounding/sourceFingerprint.js';
 import {
   makeBlock,
   makeConcept,
@@ -958,6 +960,64 @@ async function launchDueReview(suffix: string) {
     throw new Error('Expected a formal due Review assessment.');
   }
   return { agenda, item, request, launched };
+}
+
+function correctCurriculumSourceFingerprints() {
+  const curriculum = repos.curricula.get('curriculum_1')!;
+  const nodes = curriculum.nodes.map((node) => ({
+    ...node,
+    sourceReferences: node.sourceReferences.map((reference) => {
+      if (!reference.sourceBlockId) return reference;
+      const block = repos.materials.getBlock(reference.sourceBlockId)!;
+      return {
+        ...reference,
+        sourceBlockRevisionFingerprint: curriculumSourceBlockFingerprint(block, revisionId),
+      };
+    }),
+  }));
+  db.prepare('UPDATE curriculum_versions SET payload = ? WHERE id = ?').run(
+    JSON.stringify({ ...curriculum, nodes }),
+    curriculum.id,
+  );
+}
+
+async function seedEligibleMasteryRedTeamState(suffix: string) {
+  const { historical, targetId } = makeDueReview(suffix);
+  const { launched } = await launchDueReview(suffix);
+  const execution = services.learnerAssessments.start(launched.formalAssessmentVersionId!, 'ws_1');
+  const version = repos.formalAssessments.getVersion(launched.formalAssessmentVersionId!)!;
+  const answer = version.items[0]!.rubric!.map((criterion) => criterion.text).join(' ');
+  await services.learnerAssessments.submit(execution.attempt.id, {
+    [version.items[0]!.id]: answer,
+  });
+  correctCurriculumSourceFingerprints();
+  return { historical, targetId };
+}
+
+function authoritativeState(targetId: string) {
+  return {
+    evidenceCount: (
+      db.prepare('SELECT COUNT(*) AS count FROM assessment_evidence_records').get() as {
+        count: number;
+      }
+    ).count,
+    reconciliationCount: (
+      db.prepare('SELECT COUNT(*) AS count FROM assessment_progression_reconciliations').get() as {
+        count: number;
+      }
+    ).count,
+    mastery: repos.mastery.listByWorkspace('ws_1'),
+    mistakes: repos.mistakes.listByMaterial('mat_1'),
+    repairs: repos.repair.listByWorkspace('ws_1'),
+    reviewState: repos.reviewSuccessor.getState(targetId),
+    reviewEvents: repos.reviewSuccessor.listEvents(targetId),
+    progression: repos.formalProgression.getUnitProgress('ws_1', 'curriculum_1', 'unit_1'),
+    truthAuthorityCount: (
+      db.prepare('SELECT COUNT(*) AS count FROM truth_authority_records').get() as {
+        count: number;
+      }
+    ).count,
+  };
 }
 
 describe('formal progression service', () => {
@@ -3246,5 +3306,441 @@ describe('formal progression service', () => {
     ).toThrow('became stale');
     expect(repos.studyPlans.list('ws_1')).toHaveLength(2);
     expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBe('plan_1');
+  });
+});
+
+describe('Mastery Red Team shadow service', () => {
+  it('starts one grounded shadow challenge and deduplicates the run identity', async () => {
+    const { targetId } = await seedEligibleMasteryRedTeamState('red_team_start');
+
+    const first = await services.masteryRedTeam.start({
+      workspaceId: 'ws_1',
+      reviewTargetId: targetId,
+      idempotencyKey: 'red-team-start-1',
+    });
+    const replay = await services.masteryRedTeam.start({
+      workspaceId: 'ws_1',
+      reviewTargetId: targetId,
+      idempotencyKey: 'red-team-start-1',
+    });
+
+    expect(replay.run.id).toBe(first.run.id);
+    expect(first.run).toMatchObject({
+      status: 'selected',
+      selectedFamily: 'near_neighbor_confusion',
+    });
+    expect(first.snapshot.evidence.length).toBeGreaterThan(0);
+    expect(first.snapshot.hypotheses.map((item) => item.family)).toEqual(
+      expect.arrayContaining(['transfer', 'boundary_conditions']),
+    );
+    expect(first.candidates).toHaveLength(3);
+    expect(first.candidates.filter((candidate) => candidate.selected)).toHaveLength(1);
+    const version = repos.formalAssessments.getVersion(first.run.assessmentVersionId!)!;
+    expect(version).toMatchObject({
+      status: 'accepted',
+      authorityMode: 'mastery_red_team_shadow',
+      progressionContext: null,
+    });
+    expect(() => services.learnerAssessments.start(version.id, 'ws_1')).toThrow(/不存在|失效/);
+    expect(() => services.formalAssessments.startAttempt(version.id, 'ws_1')).toThrow(
+      /接受的正式评估版本/,
+    );
+    expect(repos.masteryRedTeam.listRunsForTarget(targetId)).toHaveLength(1);
+    await expect(
+      services.masteryRedTeam.start({
+        workspaceId: 'ws_1',
+        reviewTargetId: targetId,
+        idempotencyKey: 'red-team-start-1',
+        parentRunId: 'different-parent-run',
+      }),
+    ).rejects.toThrow(/不同的目标或父运行/);
+  });
+
+  it('excludes incomplete synthesis units from the frozen challenge scope', async () => {
+    const { targetId } = await seedEligibleMasteryRedTeamState('red_team_synthesis_scope');
+    installTwoUnitSynthesisRoute();
+    correctCurriculumSourceFingerprints();
+
+    const detail = await services.masteryRedTeam.start({
+      workspaceId: 'ws_1',
+      reviewTargetId: targetId,
+      idempotencyKey: 'red-team-synthesis-scope',
+    });
+
+    expect(detail.snapshot.target.synthesisGroupIds).toEqual([]);
+    expect(
+      detail.snapshot.target.relatedObjectives.some(
+        (objective) => objective.learningUnitId === 'unit_2',
+      ),
+    ).toBe(false);
+    expect(
+      detail.snapshot.sources.every((source) => !source.learningUnitIds.includes('unit_2')),
+    ).toBe(true);
+  });
+
+  it('projects only operation-local aliases and bounded semantic context to Hy3', async () => {
+    const { targetId } = await seedEligibleMasteryRedTeamState('red_team_provider_aliases');
+    repos.misconceptions.insert({
+      id: 'internal_misconception_do_not_expose',
+      workspaceId: 'ws_1',
+      conceptId: 'con_1',
+      conceptName: 'Working memory',
+      originBlueprintId: null,
+      originQuestionId: 'question_historical',
+      originQuizId: 'quiz_historical',
+      learnerAnswer: {
+        questionId: 'question_historical',
+        type: 'single_choice',
+        selectedOptionIds: ['B'],
+      },
+      evidence: [makeGrounding()],
+      category: 'definition_confusion',
+      hypothesis: 'The learner may confuse capacity with duration.',
+      provider: 'fake',
+      status: 'resolved',
+      decidedByQuizId: 'quiz_resolution',
+      createdAt: T0,
+      updatedAt: T3,
+    });
+    const proposal = vi.spyOn(provider, 'proposeMasteryChallenges');
+
+    await services.masteryRedTeam.start({
+      workspaceId: 'ws_1',
+      reviewTargetId: targetId,
+      idempotencyKey: 'red-team-provider-aliases',
+    });
+
+    const providerInput = proposal.mock.calls[0]![0];
+    expect(providerInput.historicalSummaries).toEqual([
+      {
+        summaryRef: 'H1',
+        summary: 'The learner may confuse capacity with duration.',
+      },
+    ]);
+    expect(JSON.stringify(providerInput)).not.toContain('internal_misconception_do_not_expose');
+    expect(providerInput.objectives[1]).toMatchObject({
+      objectiveRef: 'O2',
+      title: 'Apply capacity',
+      description: 'Apply the capacity limit.',
+      primary: false,
+    });
+    expect(providerInput.sources.every((source) => /^S[1-9][0-9]*$/.test(source.sourceRef))).toBe(
+      true,
+    );
+  });
+
+  it('bounds mature historical observations instead of rejecting an otherwise eligible snapshot', async () => {
+    const { targetId } = await seedEligibleMasteryRedTeamState('red_team_bounded_history');
+    for (let index = 0; index < 65; index += 1) {
+      repos.misconceptions.insert({
+        id: `bounded_history_misconception_${index}`,
+        workspaceId: 'ws_1',
+        conceptId: 'con_1',
+        conceptName: 'Working memory',
+        originBlueprintId: null,
+        originQuestionId: `bounded_history_question_${index}`,
+        originQuizId: `bounded_history_quiz_${index}`,
+        learnerAnswer: {
+          questionId: `bounded_history_question_${index}`,
+          type: 'single_choice',
+          selectedOptionIds: ['B'],
+        },
+        evidence: [makeGrounding()],
+        category: 'definition_confusion',
+        hypothesis: `Historical bounded misconception ${index}.`,
+        provider: 'fake',
+        status: 'resolved',
+        decidedByQuizId: `bounded_history_resolution_${index}`,
+        createdAt: T0,
+        updatedAt: T3,
+      });
+    }
+    const proposal = vi.spyOn(provider, 'proposeMasteryChallenges');
+
+    const detail = await services.masteryRedTeam.start({
+      workspaceId: 'ws_1',
+      reviewTargetId: targetId,
+      idempotencyKey: 'red-team-bounded-history',
+    });
+
+    expect(detail.snapshot.misconceptionObservations).toHaveLength(60);
+    expect(proposal.mock.calls[0]![0].historicalSummaries).toHaveLength(4);
+  });
+
+  it('records a reusable shadow GradeRecord without mutating any authoritative learner state', async () => {
+    const { historical, targetId } = await seedEligibleMasteryRedTeamState('red_team_grade');
+    const started = await services.masteryRedTeam.start({
+      workspaceId: 'ws_1',
+      reviewTargetId: targetId,
+      idempotencyKey: 'red-team-grade-1',
+    });
+    const before = authoritativeState(targetId);
+    const selected = started.candidates.find((candidate) => candidate.selected)!;
+
+    const evaluated = await services.masteryRedTeam.submit('ws_1', started.run.id, {
+      answer: selected.candidate.expectedAnswer,
+      submissionKey: 'shadow-submit-1',
+    });
+    const replay = await services.masteryRedTeam.submit('ws_1', started.run.id, {
+      answer: selected.candidate.expectedAnswer,
+      submissionKey: 'shadow-submit-1',
+    });
+
+    expect(evaluated.evaluation).toMatchObject({
+      outcome: 'robust_signal',
+      evidenceCreated: false,
+      masteryMutated: false,
+      progressionMutated: false,
+      reviewMutated: false,
+      repairMutated: false,
+    });
+    expect(replay.evaluation?.id).toBe(evaluated.evaluation?.id);
+    expect(repos.formalAssessments.getEvidence(historical.evidence.id)).toEqual(
+      historical.evidence,
+    );
+    expect(authoritativeState(targetId)).toEqual(before);
+    expect(
+      repos.formalAssessments.listEvidenceForGrade(evaluated.evaluation!.gradeRecordId),
+    ).toEqual([]);
+    expect(repos.formalAssessments.listGrades(evaluated.evaluation!.attemptId)).toHaveLength(1);
+    await expect(
+      services.masteryRedTeam.submit('ws_1', started.run.id, {
+        answer: 'A different answer under the same submission identity.',
+        submissionKey: 'shadow-submit-1',
+      }),
+    ).rejects.toThrow(/不同的答案/);
+    await expect(
+      services.masteryRedTeam.submit('ws_1', started.run.id, {
+        answer: selected.candidate.expectedAnswer,
+        submissionKey: 'different-submit-key',
+      }),
+    ).rejects.toThrow(/另一个提交键/);
+  });
+
+  it('keeps a failed adversarial signal advisory and preserves lower-level Evidence', async () => {
+    const { historical, targetId } = await seedEligibleMasteryRedTeamState('red_team_gap');
+    const started = await services.masteryRedTeam.start({
+      workspaceId: 'ws_1',
+      reviewTargetId: targetId,
+      idempotencyKey: 'red-team-gap-1',
+    });
+    const before = authoritativeState(targetId);
+
+    const evaluated = await services.masteryRedTeam.submit('ws_1', started.run.id, {
+      answer: 'I cannot justify the claim from the offered source.',
+      submissionKey: 'shadow-gap-submit-1',
+    });
+
+    expect(evaluated.evaluation).toMatchObject({
+      outcome: 'possible_gap',
+      advisoryRisk: 'possible_hidden_gap',
+      proposedNextAction: 'propose_fresh_formal_inspection',
+      evidenceCreated: false,
+    });
+    expect(repos.formalAssessments.getEvidence(historical.evidence.id)).toEqual(
+      historical.evidence,
+    );
+    expect(authoritativeState(targetId)).toEqual(before);
+  });
+
+  it('allows one explicit discriminative follow-up and rejects a second successor', async () => {
+    const { targetId } = await seedEligibleMasteryRedTeamState('red_team_follow_up');
+    const parent = await services.masteryRedTeam.start({
+      workspaceId: 'ws_1',
+      reviewTargetId: targetId,
+      idempotencyKey: 'red-team-follow-up-parent',
+    });
+    const parentResult = await services.masteryRedTeam.submit('ws_1', parent.run.id, {
+      answer: 'The prior response does not establish the supplied condition.',
+      submissionKey: 'red-team-follow-up-parent-submit',
+    });
+    expect(parentResult.evaluation?.outcome).toBe('possible_gap');
+
+    const followUp = await services.masteryRedTeam.start({
+      workspaceId: 'ws_1',
+      reviewTargetId: targetId,
+      idempotencyKey: 'red-team-follow-up-child',
+      parentRunId: parent.run.id,
+    });
+    expect(followUp.run).toMatchObject({
+      parentRunId: parent.run.id,
+      followUpDepth: 1,
+      selectedFamily: 'discriminative_follow_up',
+      status: 'selected',
+    });
+    const followUpResult = await services.masteryRedTeam.submit('ws_1', followUp.run.id, {
+      answer: 'The remaining claim is still not justified.',
+      submissionKey: 'red-team-follow-up-child-submit',
+    });
+    expect(followUpResult.evaluation?.outcome).toBe('possible_gap');
+
+    await expect(
+      services.masteryRedTeam.start({
+        workspaceId: 'ws_1',
+        reviewTargetId: targetId,
+        idempotencyKey: 'red-team-follow-up-grandchild',
+        parentRunId: followUp.run.id,
+      }),
+    ).rejects.toThrow(/只能进行一次/);
+  });
+
+  it('retries a failed shadow grade exactly once under the same submission identity', async () => {
+    const { targetId } = await seedEligibleMasteryRedTeamState('red_team_retry');
+    const started = await services.masteryRedTeam.start({
+      workspaceId: 'ws_1',
+      reviewTargetId: targetId,
+      idempotencyKey: 'red-team-retry-1',
+    });
+    const selected = started.candidates.find((candidate) => candidate.selected)!;
+    vi.spyOn(provider, 'gradeShortAnswer').mockRejectedValueOnce(ProviderError.network());
+
+    await expect(
+      services.masteryRedTeam.submit('ws_1', started.run.id, {
+        answer: selected.candidate.expectedAnswer,
+        submissionKey: 'shadow-retry-submit-1',
+      }),
+    ).rejects.toMatchObject({ code: 'PROVIDER_ERROR' });
+    expect(repos.masteryRedTeam.getRun(started.run.id)).toMatchObject({
+      status: 'evaluation_failed',
+      submissionKey: 'shadow-retry-submit-1',
+      failureCode: 'PROVIDER_ERROR',
+    });
+
+    const evaluated = await services.masteryRedTeam.submit('ws_1', started.run.id, {
+      answer: selected.candidate.expectedAnswer,
+      submissionKey: 'shadow-retry-submit-1',
+    });
+    expect(evaluated.run.status).toBe('evaluated');
+    expect(evaluated.evaluation?.outcome).toBe('robust_signal');
+    expect(repos.formalAssessments.listGrades(evaluated.evaluation!.attemptId)).toHaveLength(1);
+  });
+
+  it('atomically retries evaluation finalization without duplicating the durable shadow grade', async () => {
+    const { targetId } = await seedEligibleMasteryRedTeamState('red_team_finalize_retry');
+    const started = await services.masteryRedTeam.start({
+      workspaceId: 'ws_1',
+      reviewTargetId: targetId,
+      idempotencyKey: 'red-team-finalize-retry',
+    });
+    const selected = started.candidates.find((candidate) => candidate.selected)!;
+    db.exec(`
+      CREATE TRIGGER fail_red_team_evaluation_completion
+      BEFORE UPDATE OF status ON mastery_red_team_runs
+      WHEN NEW.status = 'evaluated'
+      BEGIN SELECT RAISE(ABORT, 'injected evaluation completion failure'); END;
+    `);
+
+    await expect(
+      services.masteryRedTeam.submit('ws_1', started.run.id, {
+        answer: selected.candidate.expectedAnswer,
+        submissionKey: 'red-team-finalize-submit',
+      }),
+    ).rejects.toThrow(/injected evaluation completion failure/);
+    expect(repos.masteryRedTeam.getEvaluationForRun(started.run.id)).toBeUndefined();
+    expect(repos.masteryRedTeam.getRun(started.run.id)?.status).toBe('evaluation_failed');
+    const attempt = repos.formalAssessments
+      .listAttemptsForWorkspace('ws_1')
+      .find((candidate) => candidate.assessmentVersionId === started.run.assessmentVersionId)!;
+    expect(repos.formalAssessments.listGrades(attempt.id)).toHaveLength(1);
+
+    db.exec('DROP TRIGGER fail_red_team_evaluation_completion');
+    const evaluated = await services.masteryRedTeam.submit('ws_1', started.run.id, {
+      answer: selected.candidate.expectedAnswer,
+      submissionKey: 'red-team-finalize-submit',
+    });
+    expect(evaluated.run.status).toBe('evaluated');
+    expect(evaluated.evaluation?.outcome).toBe('robust_signal');
+    expect(repos.formalAssessments.listGrades(attempt.id)).toHaveLength(1);
+  });
+
+  it.each(['review_binding', 'source_revision'] as const)(
+    'fails closed when the frozen %s becomes stale',
+    async (kind) => {
+      const { targetId } = await seedEligibleMasteryRedTeamState(`red_team_stale_${kind}`);
+      const started = await services.masteryRedTeam.start({
+        workspaceId: 'ws_1',
+        reviewTargetId: targetId,
+        idempotencyKey: `red-team-stale-${kind}`,
+      });
+      if (kind === 'review_binding') {
+        db.prepare(
+          'UPDATE memory_schedule_states SET row_version = row_version + 1 WHERE review_target_id = ?',
+        ).run(targetId);
+      } else {
+        const nextMaterial = makeMaterial({
+          content: '# Revised memory notes\n\nWorking-memory capacity is context dependent.',
+          charCount: 63,
+          updatedAt: T3,
+        });
+        repos.materialRevisions.stage({
+          revisionId: 'revision_stale_red_team',
+          material: nextMaterial,
+          blocks: [
+            makeBlock({
+              id: 'blk_stale_red_team',
+              content: 'Working-memory capacity is context dependent.',
+              startOffset: 24,
+              endOffset: 68,
+            }),
+          ],
+          originalData: null,
+          parserFingerprint: 'parser-stale-red-team',
+          contentFingerprint: 'content-stale-red-team',
+          parserAttemptId: 'parser_attempt_stale_red_team',
+          createdAt: T3,
+          expectedActiveRevisionId: revisionId,
+        });
+        repos.materialRevisions.activate('mat_1', 'revision_stale_red_team', T3, revisionId);
+      }
+
+      await expect(
+        services.masteryRedTeam.submit('ws_1', started.run.id, {
+          answer: started.candidates.find((candidate) => candidate.selected)!.candidate
+            .expectedAnswer,
+          submissionKey: `shadow-stale-${kind}`,
+        }),
+      ).rejects.toMatchObject({ code: 'VERSION_CONFLICT' });
+      expect(repos.masteryRedTeam.getEvaluationForRun(started.run.id)).toBeUndefined();
+    },
+  );
+
+  it.each(['schema_failure', 'candidate_repair_failure'] as const)(
+    'persists an auditable fail-closed run for %s',
+    async (fixture) => {
+      const { targetId } = await seedEligibleMasteryRedTeamState(`red_team_${fixture}`);
+      provider = new FakeProvider({ masteryRedTeamFixture: fixture });
+      services = createServices({ repos, provider, clock: fixedClock(T3) });
+
+      await expect(
+        services.masteryRedTeam.start({
+          workspaceId: 'ws_1',
+          reviewTargetId: targetId,
+          idempotencyKey: `red-team-${fixture}`,
+        }),
+      ).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
+      expect(
+        repos.masteryRedTeam.findRunByIdempotencyKey('ws_1', `red-team-${fixture}`),
+      ).toMatchObject({
+        status: 'generation_failed',
+        repairAttempted: true,
+        failureCode: expect.stringMatching(/^REPAIR_EXHAUSTED:/),
+      });
+    },
+  );
+
+  it('records one bounded candidate repair before selecting the repaired payload', async () => {
+    const { targetId } = await seedEligibleMasteryRedTeamState('red_team_repaired');
+    provider = new FakeProvider({ masteryRedTeamFixture: 'candidate_repair_once' });
+    services = createServices({ repos, provider, clock: fixedClock(T3) });
+
+    const detail = await services.masteryRedTeam.start({
+      workspaceId: 'ws_1',
+      reviewTargetId: targetId,
+      idempotencyKey: 'red-team-repaired',
+    });
+
+    expect(detail.run).toMatchObject({ status: 'selected', repairAttempted: true });
+    expect(detail.candidates.find((candidate) => candidate.selected)?.validation.valid).toBe(true);
+    expect(detail.candidates.some((candidate) => !candidate.validation.valid)).toBe(true);
   });
 });

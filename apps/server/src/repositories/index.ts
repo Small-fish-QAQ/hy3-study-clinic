@@ -26,6 +26,7 @@ import { createCourseExecutionRepo, type CourseExecutionRepo } from './courseExe
 import { createFormalProgressionRepo, type FormalProgressionRepo } from './formalProgression.js';
 import { createFormalAssessmentsRepo, type FormalAssessmentsRepo } from './formalAssessments.js';
 import { createRepairRepo, type RepairRepo } from './repair.js';
+import { createMasteryRedTeamRepo, type MasteryRedTeamRepo } from './masteryRedTeam.js';
 import { createStudySessionsRepo, type StudySessionsRepo } from './studySessions.js';
 import {
   createQuizzesRepo,
@@ -65,6 +66,7 @@ export interface Repositories {
   formalProgression: FormalProgressionRepo;
   formalAssessments: FormalAssessmentsRepo;
   repair: RepairRepo;
+  masteryRedTeam: MasteryRedTeamRepo;
   studySessions: StudySessionsRepo;
   quizzes: QuizzesRepo;
   submissions: SubmissionsRepo;
@@ -109,6 +111,7 @@ export function createRepositories(db: SqliteDb): Repositories {
     formalProgression: createFormalProgressionRepo(db),
     formalAssessments: createFormalAssessmentsRepo(db),
     repair: createRepairRepo(db),
+    masteryRedTeam: createMasteryRedTeamRepo(db),
     studySessions: createStudySessionsRepo(db),
     quizzes: createQuizzesRepo(db),
     submissions: createSubmissionsRepo(db),

@@ -36,6 +36,7 @@ export * from './domain/alignment.js';
 export * from './domain/blueprint.js';
 export * from './domain/misconception.js';
 export * from './domain/review.js';
+export * from './domain/masteryRedTeam.js';
 export * from './domain/lesson.js';
 export * from './domain/teachingBrief.js';
 export * from './domain/lessonExecution.js';
