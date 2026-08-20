@@ -18,6 +18,62 @@ import { CreateAssessmentRequestSchema } from './blueprint.js';
 /** Version tag persisted with every item so future models can migrate. */
 export const REVIEW_SCHEDULER_VERSION = 'local-fsrs-v1';
 
+/** Successor objective-level Review scheduling contract (Phase 8B). */
+export const REVIEW_ALGORITHM_GENERATION = 'FSRS-6' as const;
+export const REVIEW_PACKAGE_NAME = 'ts-fsrs' as const;
+export const REVIEW_PACKAGE_VERSION = '5.4.1' as const;
+export const REVIEW_ADAPTER_VERSION = 'study-clinic-fsrs6-v1' as const;
+export const REVIEW_RATING_POLICY_VERSION = 'formal-review-outcome-binary-v1' as const;
+export const REVIEW_POLICY_VERSION = 'review-policy-fsrs6-v1' as const;
+export const REVIEW_MAX_DUE_HORIZON_DAYS = 365 as const;
+
+export const ReviewTargetStatusSchema = z.enum([
+  'pending_initial_review',
+  'active',
+  'suspended',
+  'retired',
+]);
+export type ReviewTargetStatus = z.infer<typeof ReviewTargetStatusSchema>;
+export const ReviewTargetSchema = z.object({
+  id: z.string().min(1), workspaceId: z.string().min(1), courseId: z.string().min(1),
+  targetKind: z.literal('curriculum_objective'), originEvidenceId: z.string().min(1).nullable(),
+  status: ReviewTargetStatusSchema, currentBindingVersion: z.number().int().positive().nullable(),
+  createdAt: z.string().datetime(), updatedAt: z.string().datetime(),
+});
+export type ReviewTarget = z.infer<typeof ReviewTargetSchema>;
+export const ReviewTargetBindingSchema = z.object({
+  reviewTargetId: z.string().min(1), bindingVersion: z.number().int().positive(),
+  contractVersionId: z.string().min(1), curriculumVersionId: z.string().min(1),
+  learningUnitId: z.string().min(1), objectiveId: z.string().min(1),
+  executionSourceManifestFingerprint: z.string().min(1), validFrom: z.string().datetime(), validTo: z.string().datetime().nullable(),
+  createdAt: z.string().datetime(),
+});
+export type ReviewTargetBinding = z.infer<typeof ReviewTargetBindingSchema>;
+export const SchedulerConfigurationSchema = z.object({
+  version: z.string().min(1), algorithmGeneration: z.literal(REVIEW_ALGORITHM_GENERATION), packageName: z.literal(REVIEW_PACKAGE_NAME),
+  packageVersion: z.literal(REVIEW_PACKAGE_VERSION), localAdapterVersion: z.literal(REVIEW_ADAPTER_VERSION),
+  ratingPolicyVersion: z.literal(REVIEW_RATING_POLICY_VERSION), requestedRetention: z.literal(0.9),
+  configHash: z.string().min(1), fuzz: z.literal(false), shortTerm: z.literal(false), maximumDueHorizonDays: z.literal(REVIEW_MAX_DUE_HORIZON_DAYS),
+  effectiveAt: z.string().datetime(), retiredAt: z.string().datetime().nullable(),
+});
+export type SchedulerConfiguration = z.infer<typeof SchedulerConfigurationSchema>;
+export const MemoryScheduleStateSchema = z.object({
+  reviewTargetId: z.string().min(1), policyVersion: z.string().min(1), lifecycleState: z.enum(['new','review']), dueAt: z.string().datetime(), lastReviewedAt: z.string().datetime().nullable(),
+  stability: z.number().finite().nonnegative(), difficulty: z.number().finite().min(1).max(10), scheduledDays: z.number().finite().nonnegative(), repetitions: z.number().int().nonnegative(), lapses: z.number().int().nonnegative(), lastReviewEventId: z.string().min(1).nullable(), rowVersion: z.number().int().positive(), createdAt: z.string().datetime(), updatedAt: z.string().datetime(),
+});
+export type MemoryScheduleState = z.infer<typeof MemoryScheduleStateSchema>;
+export const ReviewEventKindSchema = z.enum(['activation','retrieval_failure','fresh_verification_success','migration']);
+export const SuccessorReviewRatingSchema = z.enum(['Again','Good']);
+export const ReviewEventSchemaV2 = z.object({
+  id: z.string().min(1), reviewTargetId: z.string().min(1), bindingVersion: z.number().int().positive().nullable(), policyVersion: z.string().min(1), kind: ReviewEventKindSchema,
+  sourceOutcomeId: z.string().min(1), reviewExecutionId: z.string().min(1).nullable(), rating: SuccessorReviewRatingSchema.nullable(), occurredAt: z.string().datetime(), recordedAt: z.string().datetime(), preState: z.record(z.unknown()), postState: z.record(z.unknown()), exactInputTime: z.string().datetime().nullable(), dueAt: z.string().datetime().nullable(), idempotencyKey: z.string().min(1),
+});
+export type SuccessorReviewEvent = z.infer<typeof ReviewEventSchemaV2>;
+export const ReviewExecutionSchema = z.object({
+  id: z.string().min(1), reviewTargetId: z.string().min(1), bindingVersion: z.number().int().positive(), consumedRowVersion: z.number().int().positive(), workspaceId: z.string().min(1), courseId: z.string().min(1), agendaId: z.string().min(1).nullable(), assessmentVersionId: z.string().min(1).nullable(), attemptId: z.string().min(1).nullable(), status: z.enum(['active','completed','failed','cancelled']), failureReason: z.string().max(500).nullable(), createdAt: z.string().datetime(), updatedAt: z.string().datetime(),
+});
+export type ReviewExecution = z.infer<typeof ReviewExecutionSchema>;
+
 /** Discrete review ratings derived deterministically from graded scores. */
 export const ReviewRatingSchema = z.enum(['again', 'hard', 'good', 'easy']);
 export type ReviewRating = z.infer<typeof ReviewRatingSchema>;

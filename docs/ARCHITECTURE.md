@@ -876,3 +876,11 @@ semantic entailment.
 # Learner Assessment / Repair Execution
 
 The Study route launches accepted formal short-answer versions from the existing SessionAgenda. `AssessmentAttempt` and `GradeRecord` remain immutable/append-only; learner projections hide internal IDs and expose criterion feedback plus honest source locations. Failed or partial formal grades may create one durable `RepairEpisode` and immutable `RepairPacket`. Repair practice is recorded as non-credit events. A fresh successor AssessmentVersion with changed wording is required before supported Evidence can resolve the episode. Tutor and lesson completion cannot grant credit. The Phase 7B2 UI recovers the current attempt and agenda-scoped version after reload; progression reconciliation remains separate from Evidence persistence.
+
+## 27. Production Review scheduler (Phase 8B)
+
+Review scheduling is an objective-level successor domain. `ReviewTarget` identity is bound to the accepted Contract, Curriculum, LearningUnit/objective, and execution source-manifest fingerprint. `MemoryScheduleState` is a rebuildable CAS projection; immutable successor events retain exact pre/post state, policy epoch, source outcome, and ReviewExecution identity. The local adapter owns all `ts-fsrs` types and validates FSRS-6 output before persistence: binary Again/Good, no fuzz, no short-term mode, and a 365-day ceiling.
+
+The authority chain remains Attempt -> Grade -> criterion-gated Evidence -> deterministic formal progression reconciliation -> Review activation/execution. Review cannot grant mastery or bypass Evidence. An active due execution records one Again for retrieval failure; a later supported fresh verification for that same execution records one Good. Event append and schedule-state update are atomic and row-version fenced; duplicate outcomes and launches are idempotent.
+
+Migration 31 preserves legacy `review_items`/`review_events` as audit history and disables their grading writer. Current queue, activity capability, and review API projections read successor state only. Legacy rows are never converted into fabricated FSRS history. FSRS-7, optimization, Hard/Easy automation, broad Review UX, and real-provider scheduling calls remain deferred.

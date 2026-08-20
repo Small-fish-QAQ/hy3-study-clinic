@@ -26,7 +26,6 @@ import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
 import type { MisconceptionsService } from './misconceptions.js';
-import type { ReviewService } from './review.js';
 
 export interface GradingServiceDeps {
   repos: Repositories;
@@ -34,8 +33,6 @@ export interface GradingServiceDeps {
   clock: Clock;
   /** Deterministic misconception lifecycle (transitions + proposals). */
   misconceptions: MisconceptionsService;
-  /** Deterministic review scheduler (long-term memory state). */
-  review: ReviewService;
 }
 
 /** A mistake is recorded when the normalized score is below this threshold. */
@@ -56,7 +53,6 @@ export function createGradingService({
   provider,
   clock,
   misconceptions,
-  review,
 }: GradingServiceDeps) {
   /** Grade one question, choosing deterministic vs. model path by type. */
   async function gradeQuestion(
@@ -428,12 +424,9 @@ export function createGradingService({
           repos.misconceptions.insert(record);
         }
 
-        // Review scheduling: only completed graded events reach the scheduler.
-        const reviewScheduled = review.recordGradedOutcomes(
-          quiz,
-          outcomes.conceptScores,
-          createdAt,
-        );
+        // Legacy Review scheduling is disabled after the Phase 8B cutover.
+        // Current scheduling is downstream of reconciled Formal Evidence.
+        const reviewScheduled: [] = [];
 
         const documentIds = [
           ...new Set([...outcomes.conceptScores.values()].map((c) => c.materialId)),

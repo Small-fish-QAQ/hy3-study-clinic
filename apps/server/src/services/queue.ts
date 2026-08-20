@@ -5,10 +5,12 @@ import { overdueDays } from '../review/scheduler.js';
 import { resolveActivityLaunch } from './activityLaunch.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
+import type { ReviewSuccessorService } from './reviewSuccessor.js';
 
 export interface QueueServiceDeps {
   repos: Repositories;
   clock: Clock;
+  reviewSuccessor?: ReviewSuccessorService;
 }
 
 /** Maximum entries in the daily learning queue. */
@@ -29,7 +31,7 @@ export const MAX_QUEUE_ITEMS = 8;
  * One concept appears at most once (highest tier wins). No time estimates
  * are invented — the queue reports facts (counts, overdue days) only.
  */
-export function createQueueService({ repos, clock }: QueueServiceDeps) {
+export function createQueueService({ repos, clock, reviewSuccessor }: QueueServiceDeps) {
   return {
     dailyQueue(workspaceId: string): DailyQueueItem[] {
       if (!repos.workspaces.get(workspaceId)) throw notFound(`课程空间不存在:${workspaceId}`);
@@ -67,7 +69,26 @@ export function createQueueService({ repos, clock }: QueueServiceDeps) {
       };
 
       // 1. Overdue reviews, most overdue first.
-      const reviewItems = repos.review.listByWorkspace(workspaceId);
+      const successorItems = reviewSuccessor?.listCurrent(workspaceId) ?? [];
+      const successorReviewItems = successorItems.map(({ target, state }) => ({
+        workspaceId: target.workspaceId,
+        conceptId: target.id,
+        conceptName: target.id,
+        stability: state.stability,
+        difficulty: state.difficulty,
+        dueAt: state.dueAt,
+        lastReviewedAt: state.lastReviewedAt ?? state.createdAt,
+        intervalDays: state.scheduledDays,
+        reviewCount: state.repetitions,
+        lapseCount: state.lapses,
+        lastRating: state.lapses > 0 ? 'again' as const : 'good' as const,
+        schedulerVersion: state.policyVersion,
+        createdAt: state.createdAt,
+        updatedAt: state.updatedAt,
+      }));
+      const reviewItems = successorReviewItems.length > 0
+        ? successorReviewItems
+        : repos.review.listByWorkspace(workspaceId);
       const overdue = reviewItems
         .map((item) => ({ item, days: overdueDays(item.dueAt, now) }))
         .filter(({ item, days }) => days > 0 || new Date(item.dueAt).getTime() <= now.getTime())

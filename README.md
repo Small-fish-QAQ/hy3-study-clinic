@@ -414,6 +414,14 @@ CodeBuddy confirmed, but did not author, the component's existing native button 
 
 Detailed format, graph, history, scheduling, and parser limitations are documented beside their implementation in [Architecture & Design Notes](docs/ARCHITECTURE.md).
 
+## Phase 8B review scheduling
+
+Current objective-level review scheduling uses a local deterministic FSRS-6 adapter backed by the exact `ts-fsrs@5.4.1` dependency. It accepts only `Again` and `Good`, disables fuzz and short-term learning, and enforces a 365-day local due-date ceiling. Scheduler state is separate from mastery, Evidence, and Course Truth.
+
+Formal Assessment remains authoritative: Attempt -> Grade -> criterion-gated Evidence -> successful progression reconciliation -> Review activation or execution outcome. Review failure records `Again`; only a supported fresh verification belonging to the same ReviewExecution can record `Good`. Migration 31 adds versioned targets/bindings, immutable successor events, CAS schedule state, scheduler configuration metadata, and one-active-execution fencing.
+
+The old `review_items` and `review_events` tables remain audit history only. Their grading writer is disabled, current queue/API projections read successor state, and pre-cutover legacy rows are not replayed into fabricated FSRS history. FSRS-7, optimization, Hard/Easy automation, broad Review UX, and learner self-rating are outside this phase.
+
 ## License
 
 [Apache-2.0](LICENSE). The built-in Chinese sample course and evaluation fixtures are original repository content released under the same license.

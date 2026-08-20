@@ -12,6 +12,7 @@ import { createAlignmentRepo, type AlignmentRepo } from './alignment.js';
 import { createBlueprintsRepo, type BlueprintsRepo } from './blueprints.js';
 import { createMisconceptionsRepo, type MisconceptionsRepo } from './misconceptions.js';
 import { createReviewRepo, type ReviewRepo } from './review.js';
+import { createReviewSuccessorRepo, type ReviewSuccessorRepo } from './reviewSuccessor.js';
 import { createTutorRepo, type TutorRepo } from './tutor.js';
 import { createOperationsRepo, type OperationsRepo } from './operations.js';
 import { createTelemetryRepo, type TelemetryRepo } from './telemetry.js';
@@ -50,6 +51,7 @@ export interface Repositories {
   blueprints: BlueprintsRepo;
   misconceptions: MisconceptionsRepo;
   review: ReviewRepo;
+  reviewSuccessor: ReviewSuccessorRepo;
   tutor: TutorRepo;
   operations: OperationsRepo;
   telemetry: TelemetryRepo;
@@ -93,6 +95,7 @@ export function createRepositories(db: SqliteDb): Repositories {
     blueprints: createBlueprintsRepo(db),
     misconceptions: createMisconceptionsRepo(db),
     review: createReviewRepo(db),
+    reviewSuccessor: createReviewSuccessorRepo(db),
     tutor: createTutorRepo(db),
     operations: createOperationsRepo(db),
     telemetry: createTelemetryRepo(db),

@@ -167,22 +167,27 @@ export function checkActivityCapability(
 
     case 'review': {
       const now = clock.now();
+      const successor = repos.reviewSuccessor.listCurrent(workspaceId);
+      // Compatibility projection for pre-migration workspaces with no
+      // successor targets; once successor state exists it is authoritative.
+      const legacyFallback = successor.length === 0 ? repos.review.listByWorkspace(workspaceId) : [];
       if (conceptIds.length > 0) {
         // Named targets follow the queue's advertised semantics: anything due
         // by the end of today may be reviewed (slightly early is fine).
         const endOfDay = endOfToday(now).getTime();
         const eligible = conceptIds.filter((conceptId) => {
-          const item = repos.review.get(workspaceId, conceptId);
-          return item !== undefined && new Date(item.dueAt).getTime() <= endOfDay;
+          const item = successor.find(({ target }) => target.id === conceptId);
+          const legacy = legacyFallback.find((candidate) => candidate.conceptId === conceptId);
+          return (item !== undefined && new Date(item.state.dueAt).getTime() <= endOfDay) ||
+            (legacy !== undefined && new Date(legacy.dueAt).getTime() <= endOfDay);
         });
         if (eligible.length === 0) {
           return { ok: false, reason: '目标概念今天没有到期的复习安排。' };
         }
         return { ok: true, launch: { mode: 'review', conceptIds: eligible } };
       }
-      const dueNow = repos.review
-        .listByWorkspace(workspaceId)
-        .some((item) => new Date(item.dueAt).getTime() <= now.getTime());
+      const dueNow = successor.some(({ state }) => new Date(state.dueAt).getTime() <= now.getTime()) ||
+        legacyFallback.some((item) => new Date(item.dueAt).getTime() <= now.getTime());
       if (!dueNow) {
         return { ok: false, reason: '当前没有到期的复习概念。' };
       }

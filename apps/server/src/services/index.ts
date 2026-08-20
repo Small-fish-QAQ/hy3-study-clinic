@@ -15,6 +15,7 @@ import { createAssessmentService, type AssessmentService } from './assessment.js
 import { createAttemptsService, type AttemptsService } from './attempts.js';
 import { createMisconceptionsService, type MisconceptionsService } from './misconceptions.js';
 import { createReviewService, type ReviewService } from './review.js';
+import { createReviewSuccessorService, type ReviewSuccessorService } from './reviewSuccessor.js';
 import { createQueueService, type QueueService } from './queue.js';
 import { createMappingService, type MappingService } from './mapping.js';
 import { createLessonsService, type LessonsService } from './lessons.js';
@@ -81,6 +82,7 @@ export interface Services {
   attempts: AttemptsService;
   misconceptions: MisconceptionsService;
   review: ReviewService;
+  reviewSuccessor: ReviewSuccessorService;
   queue: QueueService;
   mapping: MappingService;
   lessons: LessonsService;
@@ -132,7 +134,8 @@ export function createServices({
   const quizzes = createQuizService({ repos, provider, clock, analysis });
   const misconceptions = createMisconceptionsService({ repos, provider, clock });
   const review = createReviewService({ repos, clock });
-  const grading = createGradingService({ repos, provider, clock, misconceptions, review });
+  const reviewSuccessor = createReviewSuccessorService({ repos, clock });
+  const grading = createGradingService({ repos, provider, clock, misconceptions });
   const remediation = createRemediationService({ repos, provider, clock });
   const mistakes = createMistakesService({ repos });
   const graph = createGraphService({ repos, provider, clock, providerModel });
@@ -140,7 +143,7 @@ export function createServices({
   const alignment = createAlignmentService({ repos, provider, clock });
   const assessment = createAssessmentService({ repos, provider, clock, misconceptions });
   const attempts = createAttemptsService({ repos });
-  const queue = createQueueService({ repos, clock });
+  const queue = createQueueService({ repos, clock, reviewSuccessor });
   const mapping = createMappingService({ repos });
   const lessons = createLessonsService({ repos, provider, clock, providerModel });
   const tutor = createTutorService({ repos, provider, clock, assessment, providerModel });
@@ -193,6 +196,7 @@ export function createServices({
     repos,
     clock,
     progression: formalProgression,
+    reviewSuccessor,
   });
   const courseActionLaunch = createCourseActionLaunchService({
     repos,
@@ -252,6 +256,7 @@ export function createServices({
     attempts,
     misconceptions,
     review,
+    reviewSuccessor,
     queue,
     mapping,
     lessons,

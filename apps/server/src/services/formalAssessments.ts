@@ -25,6 +25,7 @@ import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
 import { verifyGrounding } from '../grounding/verify.js';
 import type { FormalProgressionService } from './formalProgression.js';
+import type { ReviewSuccessorService } from './reviewSuccessor.js';
 
 const POLICY_VERSION = FORMAL_EVIDENCE_POLICY_VERSION;
 
@@ -32,10 +33,12 @@ export function createFormalAssessmentsService({
   repos,
   clock,
   progression,
+  reviewSuccessor,
 }: {
   repos: Repositories;
   clock: Clock;
   progression: FormalProgressionService;
+  reviewSuccessor?: ReviewSuccessorService;
 }) {
   function getVersion(id: string) {
     const version = repos.formalAssessments.getVersion(id);
@@ -494,7 +497,19 @@ export function createFormalAssessmentsService({
             'Deterministic progression rejected or fenced this Evidence.',
           );
         }
-        return repos.formalAssessments.markReconciled(current.id, clock.now().toISOString());
+        const reconciled = repos.formalAssessments.markReconciled(current.id, clock.now().toISOString());
+        if (reviewSuccessor && context.assessmentKind === 'due_review') {
+          const item = version.items.find(candidate => candidate.id === evidence.itemId);
+          if (item) {
+            const targetId = `review-target:${attempt.workspaceId}:${item.targetObjectiveId}`;
+            const execution = reviewSuccessor.beginExecution({ targetId, workspaceId: attempt.workspaceId, courseId: attempt.workspaceId, agendaId: context.agendaId });
+            reviewSuccessor.recordFreshSuccess({ targetId, sourceOutcomeId: evidence.id, executionId: execution.id });
+          }
+        } else if (reviewSuccessor && context.assessmentKind === 'formal_checkpoint') {
+          const item = version.items.find(candidate => candidate.id === evidence.itemId);
+          if (item) reviewSuccessor.activate({ workspaceId: attempt.workspaceId, courseId: attempt.workspaceId, learningUnitId: item.targetLearningUnitId, objectiveId: item.targetObjectiveId, contractVersionId: context.contractVersionId, curriculumVersionId: context.curriculumVersionId, manifestFingerprint: context.executionSourceManifestFingerprint, evidenceId: evidence.id, sourceOutcomeId: evidence.id, eligible: true });
+        }
+        return reconciled;
       } catch (error) {
         return repos.formalAssessments.markFailed(
           current.id,

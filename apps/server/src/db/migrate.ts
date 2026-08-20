@@ -2308,6 +2308,58 @@ const MIGRATIONS: Migration[] = [
       BEGIN SELECT RAISE(ABORT, 'accepted assessment progression context is immutable'); END;
     `,
   },
+  {
+    version: 31,
+    name: 'objective_review_scheduler_successor',
+    up: `
+      CREATE TABLE review_scheduler_configurations (
+        version TEXT PRIMARY KEY, algorithm_generation TEXT NOT NULL CHECK (algorithm_generation = 'FSRS-6'),
+        package_name TEXT NOT NULL CHECK (package_name = 'ts-fsrs'), package_version TEXT NOT NULL CHECK (package_version = '5.4.1'),
+        local_adapter_version TEXT NOT NULL, rating_policy_version TEXT NOT NULL, requested_retention REAL NOT NULL CHECK (requested_retention = 0.9),
+        config_hash TEXT NOT NULL, fuzz INTEGER NOT NULL CHECK (fuzz = 0), short_term INTEGER NOT NULL CHECK (short_term = 0), maximum_due_horizon_days INTEGER NOT NULL CHECK (maximum_due_horizon_days = 365),
+        effective_at TEXT NOT NULL, retired_at TEXT
+      );
+      CREATE TABLE review_targets (
+        id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE, course_id TEXT NOT NULL,
+        target_kind TEXT NOT NULL CHECK (target_kind = 'curriculum_objective'), origin_evidence_id TEXT,
+        status TEXT NOT NULL CHECK (status IN ('pending_initial_review','active','suspended','retired')),
+        current_binding_version INTEGER, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_review_targets_workspace_status ON review_targets(workspace_id, status);
+      CREATE TABLE review_target_bindings (
+        review_target_id TEXT NOT NULL REFERENCES review_targets(id) ON DELETE CASCADE, binding_version INTEGER NOT NULL,
+        contract_version_id TEXT NOT NULL, curriculum_version_id TEXT NOT NULL, learning_unit_id TEXT NOT NULL, objective_id TEXT NOT NULL,
+        execution_source_manifest_fingerprint TEXT NOT NULL, valid_from TEXT NOT NULL, valid_to TEXT, created_at TEXT NOT NULL,
+        PRIMARY KEY (review_target_id, binding_version)
+      );
+      CREATE INDEX idx_review_target_bindings_current ON review_target_bindings(review_target_id, binding_version DESC);
+      CREATE TABLE memory_schedule_states (
+        review_target_id TEXT NOT NULL REFERENCES review_targets(id) ON DELETE CASCADE, policy_version TEXT NOT NULL REFERENCES review_scheduler_configurations(version), lifecycle_state TEXT NOT NULL CHECK (lifecycle_state IN ('new','review')),
+        due_at TEXT NOT NULL, last_reviewed_at TEXT, stability REAL NOT NULL, difficulty REAL NOT NULL, scheduled_days REAL NOT NULL, repetitions INTEGER NOT NULL, lapses INTEGER NOT NULL,
+        last_review_event_id TEXT, row_version INTEGER NOT NULL CHECK (row_version > 0), created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+        PRIMARY KEY (review_target_id, policy_version), UNIQUE (review_target_id)
+      );
+      CREATE INDEX idx_memory_schedule_due ON memory_schedule_states(policy_version, due_at);
+      CREATE TABLE successor_review_events (
+        id TEXT PRIMARY KEY, review_target_id TEXT NOT NULL REFERENCES review_targets(id) ON DELETE CASCADE, binding_version INTEGER,
+        policy_version TEXT NOT NULL REFERENCES review_scheduler_configurations(version), kind TEXT NOT NULL CHECK (kind IN ('activation','retrieval_failure','fresh_verification_success','migration')),
+        source_outcome_id TEXT NOT NULL, review_execution_id TEXT, rating TEXT CHECK (rating IN ('Again','Good')), occurred_at TEXT NOT NULL, recorded_at TEXT NOT NULL,
+        pre_state TEXT NOT NULL, post_state TEXT NOT NULL, exact_input_time TEXT, due_at TEXT, idempotency_key TEXT NOT NULL UNIQUE,
+        UNIQUE (review_target_id, source_outcome_id, policy_version)
+      );
+      CREATE INDEX idx_successor_review_events_target ON successor_review_events(review_target_id, occurred_at, id);
+      CREATE TABLE review_executions (
+        id TEXT PRIMARY KEY, review_target_id TEXT NOT NULL REFERENCES review_targets(id) ON DELETE CASCADE, binding_version INTEGER NOT NULL,
+        consumed_row_version INTEGER NOT NULL, workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE, course_id TEXT NOT NULL, agenda_id TEXT,
+        assessment_version_id TEXT, attempt_id TEXT, status TEXT NOT NULL CHECK (status IN ('active','completed','failed','cancelled')), failure_reason TEXT,
+        created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+      );
+      CREATE UNIQUE INDEX idx_review_executions_active ON review_executions(review_target_id) WHERE status = 'active';
+      CREATE INDEX idx_review_executions_workspace ON review_executions(workspace_id, status);
+      CREATE TRIGGER prevent_successor_review_event_update BEFORE UPDATE ON successor_review_events BEGIN SELECT RAISE(ABORT, 'successor review events are immutable'); END;
+      CREATE TRIGGER prevent_successor_review_event_delete BEFORE DELETE ON successor_review_events BEGIN SELECT RAISE(ABORT, 'successor review events are append-only'); END;
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

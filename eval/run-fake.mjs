@@ -349,7 +349,9 @@ section('6. 复习调度(review transitions, fixed clock)');
   });
   const review = (await ctx.call('GET', `/api/workspaces/${workspace.id}/review`)).body.items;
   const mastery = (await ctx.call('GET', `/api/workspaces/${workspace.id}/overlay`)).body.states;
-  check('只有判分完成的学习事件推进复习状态', review.length > 0);
+  // Phase 8B cutover: ordinary legacy quiz grading no longer writes current
+  // Review state; Review advances only after reconciled Formal Evidence.
+  check('普通判分不会绕过Formal Evidence推进当前复习状态', review.length === 0);
   check(
     '复习状态与掌握度相互独立存在(两套并行数据)',
     review.every((item) => item.dueAt && item.stability > 0) &&
