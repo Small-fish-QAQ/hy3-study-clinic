@@ -111,6 +111,36 @@ const prepared = readyLesson({
 afterEach(() => vi.restoreAllMocks());
 
 describe('LessonExecutionPanel', () => {
+  it('renders a due Review entry instead of the generic unavailable lesson state', async () => {
+    const user = userEvent.setup();
+    const startReview = vi.fn();
+    vi.spyOn(api, 'getLessonExecution').mockResolvedValue({
+      ...needed,
+      status: 'lesson_unavailable',
+      message: 'No lesson is required for this Review.',
+      allowedActions: [],
+    });
+
+    render(
+      <LessonExecutionPanel
+        workspaceId="ws_1"
+        sessionId="session_1"
+        agendaItemId="due_review_1"
+        active
+        reviewMode
+        directCheckpointItemId="due_review_1"
+        onStartFormalAssessment={startReview}
+      />,
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: '先用一次独立回忆确认这项目标' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('当前安排暂时没有可展示的讲解。')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '开始到期复习' }));
+    expect(startReview).toHaveBeenCalledOnce();
+  });
+
   it('shows slide provenance ahead of a fallback heading path', () => {
     render(
       <LessonSourceReference

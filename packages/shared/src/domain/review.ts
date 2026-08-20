@@ -158,6 +158,18 @@ export const CurrentReviewItemSchema = z.object({
   repetitions: z.number().int().nonnegative().nullable(),
   lapses: z.number().int().nonnegative().nullable(),
   policyVersion: z.string().min(1),
+  workflowPhase: z
+    .enum([
+      'scheduled',
+      'due',
+      'retrieval',
+      'repair',
+      'practice',
+      'fresh_verification',
+      'scheduling_retry',
+    ])
+    .default('scheduled'),
+  schedulingRetryRequired: z.boolean().default(false),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });

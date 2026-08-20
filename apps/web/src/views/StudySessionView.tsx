@@ -165,12 +165,15 @@ export function StudySessionView({
         const next = await api.getStudySession(targetWorkspaceId, sessionId, signal);
         if (!signal.aborted && requestEpoch === epoch.current) {
           setDetail(next);
+          setFormalAssessmentVersionId(null);
           const currentItem = next.agenda.items.find(
             (item) => item.id === next.session.currentAgendaItemId,
           );
           if (
             currentItem &&
-            (currentItem.kind === 'formal_checkpoint' || currentItem.kind === 'targeted_repair')
+            (currentItem.kind === 'formal_checkpoint' ||
+              currentItem.kind === 'targeted_repair' ||
+              currentItem.kind === 'due_review')
           ) {
             const version = await api.getAgendaFormalAssessment(
               targetWorkspaceId,
@@ -699,7 +702,10 @@ export function StudySessionView({
   const currentLearningUnit = curriculumUnits.find(
     (unit) => unit.id === currentAgendaItem?.learningUnitId,
   );
-  const directCheckpointItem = detail.agenda.items.find(
+  const directCheckpointItem = [
+    ...(currentAgendaItem ? [currentAgendaItem] : []),
+    ...detail.agenda.items.filter((item) => item.id !== currentAgendaItem?.id),
+  ].find(
     (item) =>
       (item.kind === 'formal_checkpoint' ||
         item.kind === 'synthesis' ||
@@ -861,6 +867,7 @@ export function StudySessionView({
               busy={busy}
               directCheckpointItemId={directCheckpointItem?.id ?? null}
               formalAssessmentVersionId={formalAssessmentVersionId}
+              reviewMode={currentAgendaItem?.kind === 'due_review'}
               onResumeStudySession={() => void lifecycle('resume')}
               onStartFormalAssessment={() =>
                 void mixedCommand('direct_checkpoint', directCheckpointItem?.id ?? null)

@@ -729,6 +729,22 @@ export function createFormalProgressionService({
       );
     }
 
+    if (
+      formalContract.assessmentKind === 'due_review' &&
+      decisionKind === 'complete' &&
+      nextState === 'complete'
+    ) {
+      items = items.map((item) =>
+        item.id !== executedAgendaItem.id &&
+        item.kind === 'targeted_repair' &&
+        item.learningUnitId === unitId &&
+        item.state !== 'completed' &&
+        item.state !== 'cancelled'
+          ? { ...item, state: 'cancelled' as const }
+          : item,
+      );
+    }
+
     let preferredNextId: string | null = null;
     if (nextState === 'repair_needed' || decisionKind === 'targeted_repair') {
       const existingRepair = items.find(

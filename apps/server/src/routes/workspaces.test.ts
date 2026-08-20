@@ -899,10 +899,22 @@ describe('course-space lifecycle after document deletion', () => {
       eligible: true,
       at: T0,
     });
-    successor.beginExecution({
-      targetId: `review-target:${wsA}:objective_castest`,
+    const cascadeTargetId = `review-target:${wsA}:objective_castest`;
+    const cascadeState = ctx.repos.reviewSuccessor.getState(cascadeTargetId)!;
+    ctx.repos.reviewSuccessor.insertExecution({
+      id: 'review_execution_castest',
+      reviewTargetId: cascadeTargetId,
+      bindingVersion: 1,
+      consumedRowVersion: cascadeState.rowVersion,
       workspaceId: wsA,
       courseId: wsA,
+      agendaId: null,
+      assessmentVersionId: null,
+      attemptId: null,
+      status: 'active',
+      failureReason: null,
+      createdAt: T0,
+      updatedAt: T0,
     });
     seed(
       `INSERT INTO tutor_runs (id, workspace_id, concept_id, concept_name, status, provider, created_at, updated_at)

@@ -22,6 +22,15 @@ vi.mock('../api.js', () => ({
     resumeStudySession: vi.fn(),
     stopStudySession: vi.fn(),
     launchAgendaItem: vi.fn(),
+    getAgendaFormalAssessment: vi.fn(),
+    getFormalExecution: vi.fn(),
+    startFormalExecution: vi.fn(),
+    submitFormalExecution: vi.fn(),
+    getLearnerRepair: vi.fn(),
+    startLearnerRepair: vi.fn(),
+    learnerRepairPractice: vi.fn(),
+    createRepairVerification: vi.fn(),
+    learnerRepairAction: vi.fn(),
     getLessonExecution: vi.fn(),
     prepareLessonExecution: vi.fn(),
     lessonExecutionCommand: vi.fn(),
@@ -222,6 +231,8 @@ const completedTutorResponse = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(api.getAgendaFormalAssessment).mockResolvedValue(null);
+  vi.mocked(api.getFormalExecution).mockResolvedValue(null);
   vi.mocked(api.getLessonExecution).mockResolvedValue(lessonUnavailable);
   vi.mocked(api.prepareLessonExecution).mockResolvedValue(lessonUnavailable);
   vi.mocked(api.lessonExecutionCommand).mockResolvedValue(lessonUnavailable);
@@ -677,6 +688,95 @@ describe('StudySessionView', () => {
 
     await waitFor(() => expect(api.launchAgendaItem).toHaveBeenCalled());
     expect(onLaunchQuiz).toHaveBeenCalledWith(expect.objectContaining({ id: 'quiz_1' }));
+  });
+
+  it('launches the current due Review and clears its formal version when Agenda changes', async () => {
+    const user = userEvent.setup();
+    const dueItem = {
+      ...detail.agenda.items[0]!,
+      id: 'agenda_due_review',
+      index: 1,
+      kind: 'due_review' as const,
+      origin: 'due_review' as const,
+      reason: 'This objective is due for an independent recall.',
+      state: 'queued' as const,
+      launch: {
+        status: 'launchable' as const,
+        capability: 'assessment' as const,
+        resourceId: JSON.stringify({
+          mode: 'review',
+          conceptIds: ['review-target:ws_1:objective_1'],
+        }),
+        reason: null,
+      },
+    };
+    const unrelatedCheckpoint = {
+      ...dueItem,
+      id: 'agenda_unrelated_checkpoint',
+      index: 0,
+      kind: 'formal_checkpoint' as const,
+      origin: 'accepted_plan' as const,
+      reason: 'An unrelated earlier checkpoint.',
+    };
+    const dueSession = { ...session, currentAgendaItemId: dueItem.id };
+    const dueAgenda = {
+      ...detail.agenda,
+      items: [unrelatedCheckpoint, dueItem],
+      currentItemId: dueItem.id,
+    };
+    const dueDetail = { ...detail, session: dueSession, agenda: dueAgenda };
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [dueSession] });
+    vi.mocked(api.getStudySession).mockResolvedValueOnce(dueDetail).mockResolvedValue(detail);
+    vi.mocked(api.studySessionCommand).mockResolvedValue({
+      session: { ...dueSession, version: 2 },
+      agenda: dueAgenda,
+      effect: {
+        kind: 'direct_checkpoint',
+        affectedAgendaItemId: dueItem.id,
+        planChangeRequest: null,
+      },
+    });
+    vi.mocked(api.launchAgendaItem).mockResolvedValue({
+      kind: 'assessment',
+      agendaItemId: dueItem.id,
+      assessmentKind: 'due_review',
+      quiz: { id: 'quiz_due_review' } as PublicQuiz,
+      formalAssessmentVersionId: 'formal_due_review_1',
+    });
+    vi.spyOn(window, 'prompt').mockReturnValue('Begin the due Review.');
+
+    const { rerender } = render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+
+    await user.click(await screen.findByRole('button', { name: '开始到期复习' }));
+    await waitFor(() =>
+      expect(api.studySessionCommand).toHaveBeenCalledWith(
+        'ws_1',
+        'session_1',
+        expect.objectContaining({
+          kind: 'direct_checkpoint',
+          targetAgendaItemId: dueItem.id,
+        }),
+        expect.any(AbortSignal),
+      ),
+    );
+    expect(api.launchAgendaItem).toHaveBeenCalledWith(
+      'ws_1',
+      'agenda_1',
+      dueItem.id,
+      expect.anything(),
+      expect.any(AbortSignal),
+    );
+    expect(await screen.findByRole('heading', { name: '先独立回忆这项目标' })).toBeInTheDocument();
+
+    rerender(
+      <StudySessionView
+        workspaceId="ws_1"
+        route={{ ...currentRoute, executionVersion: currentRoute.executionVersion + 1 }}
+      />,
+    );
+    await waitFor(() =>
+      expect(screen.queryByRole('heading', { name: '先独立回忆这项目标' })).not.toBeInTheDocument(),
+    );
   });
 
   it('offers the formal-ready Tutor CTA only when an accepted turn and launchable checkpoint agree', async () => {

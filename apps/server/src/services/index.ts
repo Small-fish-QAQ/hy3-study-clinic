@@ -180,7 +180,7 @@ export function createServices({
     commands: courseCommands,
     agendas: sessionAgendasAgent,
   });
-  const courseOverview = createCourseOverviewService({ repos, clock });
+  const courseOverview = createCourseOverviewService({ repos, clock, reviewSuccessor });
   const coursePreparation = createCoursePreparationService({
     repos,
     clock,
@@ -211,6 +211,7 @@ export function createServices({
     provider,
     providerModel,
     formalAssessments,
+    reviewSuccessor,
   });
   const teachingBriefPreparation = createTeachingBriefPreparationService({
     repos,
@@ -236,6 +237,7 @@ export function createServices({
     clock,
     formalAssessments,
     repair,
+    reviewSuccessor,
   });
   const studySessions = createStudySessionService({
     repos,

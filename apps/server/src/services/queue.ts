@@ -35,6 +35,7 @@ export function createQueueService({ repos, clock, reviewSuccessor }: QueueServi
   return {
     dailyQueue(workspaceId: string): DailyQueueItem[] {
       if (!repos.workspaces.get(workspaceId)) throw notFound(`课程空间不存在:${workspaceId}`);
+      reviewSuccessor?.reconcileDueAgenda(workspaceId);
       const now = clock.now();
       const endOfDay = new Date(now);
       endOfDay.setHours(23, 59, 59, 999);

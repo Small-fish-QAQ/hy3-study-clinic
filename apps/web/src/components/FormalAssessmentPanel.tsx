@@ -11,10 +11,12 @@ function errorText(error: unknown): string {
 export function FormalAssessmentPanel({
   workspaceId,
   versionId,
+  reviewMode = false,
   onChanged,
 }: {
   workspaceId: string;
   versionId: string;
+  reviewMode?: boolean;
   onChanged?: () => void;
 }) {
   const [execution, setExecution] = useState<LearnerAssessmentExecution | null>(null);
@@ -80,7 +82,6 @@ export function FormalAssessmentPanel({
       if (next.result?.repairEpisodeId) {
         setRepair(await api.startLearnerRepair(next.result.repairEpisodeId));
       }
-      onChanged?.();
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -121,6 +122,7 @@ export function FormalAssessmentPanel({
     try {
       setExecution(await api.createRepairVerification(repair.episodeId));
       setRepair(await api.getLearnerRepair(repair.episodeId));
+      setDrafts({});
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -132,25 +134,41 @@ export function FormalAssessmentPanel({
   if (!execution) {
     return (
       <section className="formal-assessment-panel" aria-label="理解检查">
-        <p className="eyebrow">正式检查</p>
-        <h3>检查你是否能说明这个关键能力</h3>
-        <p>这是一次正式的简答检查；Tutor 对话和练习回应不会代替它。</p>
+        <p className="eyebrow">{reviewMode ? '到期复习' : '正式检查'}</p>
+        <h3>{reviewMode ? '先独立回忆这项目标' : '检查你是否能说明这个关键能力'}</h3>
+        <p>
+          {reviewMode
+            ? '这次到期复习使用正式简答检查；练习和 Tutor 对话不会代替本次回忆结果。'
+            : '这是一次正式的简答检查；Tutor 对话和练习回应不会代替它。'}
+        </p>
         {error ? <Banner kind="error">{error}</Banner> : null}
         <button type="button" className="primary" disabled={busy} onClick={() => void start()}>
-          {busy ? '正在准备…' : '开始检查'}
+          {busy ? '正在准备…' : reviewMode ? '开始复习' : '开始检查'}
         </button>
       </section>
     );
   }
 
   const submitted = execution.attempt.status === 'submitted';
+  const review = execution.review;
   return (
     <section className="formal-assessment-panel" aria-label="正式理解检查">
       <header>
-        <p className="eyebrow">正式检查</p>
+        <p className="eyebrow">{review ? '到期复习 · 正式回忆' : '正式检查'}</p>
         <h3>{execution.title}</h3>
-        <p>用自己的话回答。提交后，这次回答会作为不可改写的学习记录保存。</p>
+        <p>
+          {review?.dueReason ?? '用自己的话回答。提交后，这次回答会作为不可改写的学习记录保存。'}
+        </p>
       </header>
+      {review ? (
+        <div className={`review-workflow-state ${review.phase}`} role="status">
+          <strong>{reviewPhaseLabel(review.phase)}</strong>
+          <span>{review.objectiveTitle}</span>
+          {review.nextDueAt ? (
+            <span>下次复习：{new Date(review.nextDueAt).toLocaleString('zh-CN')}</span>
+          ) : null}
+        </div>
+      ) : null}
       {error ? <Banner kind="error">{error}</Banner> : null}
       {!submitted ? (
         <>
@@ -237,10 +255,38 @@ export function FormalAssessmentPanel({
               onVerify={verify}
             />
           ) : null}
+          {review?.schedulingRetryRequired ? (
+            <div className="formal-scheduling-retry" role="alert">
+              <strong>正式结果已保存，复习时间还需要重新同步。</strong>
+              <p>重试只会补写复习安排，不会重新评分或覆盖已有证据。</p>
+              <button type="button" disabled={busy} onClick={() => void submit()}>
+                {busy ? '正在同步…' : '重试复习安排'}
+              </button>
+            </div>
+          ) : null}
+          {(review?.resolved || repair?.resolved) && !review?.schedulingRetryRequired ? (
+            <button type="button" className="primary" disabled={busy} onClick={onChanged}>
+              继续下一项学习
+            </button>
+          ) : null}
         </>
       ) : null}
     </section>
   );
+}
+
+function reviewPhaseLabel(
+  phase: NonNullable<LearnerAssessmentExecution['review']>['phase'],
+): string {
+  const labels: Record<typeof phase, string> = {
+    retrieval: '正在进行正式回忆',
+    repair: '本次回忆需要针对性修复',
+    practice: '正在进行不计分练习',
+    fresh_verification: '等待换情境的正式确认',
+    resolved: '本次复习已完成',
+    scheduling_retry: '正式结果已保存，复习安排待同步',
+  };
+  return labels[phase];
 }
 
 function RepairPanel({

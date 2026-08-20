@@ -424,7 +424,6 @@ export function createRepairService({
       const updated = repos.repair.updateEpisode({
         ...episode,
         attemptCount: count,
-        verificationAttemptId: null,
         updatedAt: clock.now().toISOString(),
       });
       return transition(

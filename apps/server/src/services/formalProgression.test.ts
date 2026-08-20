@@ -920,7 +920,400 @@ beforeEach(() => {
   services = createServices({ repos, provider, clock: fixedClock(T3) });
 });
 
+function makeDueReview(suffix: string) {
+  const historical = createAssessmentEvidence(`review_seed_${suffix}`);
+  const reconciliation = services.formalAssessments.reconcileEvidence(historical.evidence.id);
+  if (reconciliation.status !== 'applied') throw new Error('Review seed did not reconcile.');
+  const targetId = 'review-target:ws_1:objective_1';
+  db.prepare('UPDATE memory_schedule_states SET due_at = ? WHERE review_target_id = ?').run(
+    T3,
+    targetId,
+  );
+  return { historical, targetId };
+}
+
+function dueAgendaItem() {
+  services.courseOverview.get('ws_1');
+  const agenda = repos.sessionAgendas.get('agenda_1')!;
+  const item = agenda.items.find((candidate) => candidate.kind === 'due_review');
+  if (!item) throw new Error('Due Review Agenda item was not reconciled.');
+  return { agenda, item };
+}
+
+async function launchDueReview(suffix: string) {
+  const { agenda, item } = dueAgendaItem();
+  const request = {
+    agendaId: agenda.id,
+    expectedAgendaVersion: agenda.version,
+    agendaItemId: item.id,
+    expectedContractId: 'contract_1',
+    expectedStudyPlanId: 'plan_1',
+    expectedExecutionSourceManifestFingerprint: 'manifest-fp',
+  };
+  const launched = await services.courseActionLaunch.launch({
+    command: command(`launch_due_review_${suffix}`, 'learner'),
+    ...request,
+  });
+  if (launched.kind !== 'assessment' || !launched.formalAssessmentVersionId) {
+    throw new Error('Expected a formal due Review assessment.');
+  }
+  return { agenda, item, request, launched };
+}
+
 describe('formal progression service', () => {
+  it('reconciles one exact due Review into Agenda and resumes one durable launch', async () => {
+    const { targetId } = makeDueReview('launch');
+    let agenda = repos.sessionAgendas.get('agenda_1')!;
+    if (!agenda.currentItemId) {
+      agenda = repos.sessionAgendas.update(
+        { ...agenda, version: agenda.version + 1, currentItemId: 'agenda_item_2', updatedAt: T3 },
+        agenda.version,
+        {
+          id: 'agenda_positioned_before_due_review',
+          eventType: 'positioned_for_session',
+          actor: 'local',
+          payload: {},
+          createdAt: T3,
+        },
+      );
+    }
+    const route = repos.courseExecution.get('ws_1');
+    const session = services.studySessions.start('ws_1', {
+      contractVersionId: 'contract_1',
+      curriculumVersionId: 'curriculum_1',
+      studyPlanVersionId: 'plan_1',
+      sessionAgendaId: agenda.id,
+      expectedCourseExecutionVersion: route.version,
+    }).session;
+    const priorSessionItemId = session.currentAgendaItemId;
+    const beforeVersion = agenda.version;
+
+    const firstOverview = services.courseOverview.get('ws_1');
+    const reconciled = repos.sessionAgendas.get('agenda_1')!;
+    const dueItems = reconciled.items.filter((item) => item.kind === 'due_review');
+    expect(firstOverview.nextAction?.item.kind).not.toBe('due_review');
+    expect(services.reviewSuccessor.listCurrentProjection('ws_1')).toContainEqual(
+      expect.objectContaining({
+        reviewTargetId: targetId,
+        objectiveTitle: 'Explain capacity',
+        workflowPhase: 'due',
+      }),
+    );
+    expect(dueItems).toHaveLength(1);
+    expect(dueItems[0]).toMatchObject({ priority: 'high', state: 'queued' });
+    expect(reconciled.version).toBe(beforeVersion + 1);
+    expect(repos.studySessions.get(session.id)?.currentAgendaItemId).toBe(priorSessionItemId);
+
+    services.courseOverview.get('ws_1');
+    expect(repos.sessionAgendas.get('agenda_1')?.version).toBe(reconciled.version);
+    expect(
+      repos.sessionAgendas.get('agenda_1')?.items.filter((item) => item.kind === 'due_review'),
+    ).toHaveLength(1);
+
+    const proposalCall = vi.spyOn(provider, 'proposeAssessment');
+    const launch = await launchDueReview('launch');
+    expect(launch.launched).toMatchObject({ assessmentKind: 'due_review' });
+    const execution = repos.reviewSuccessor.activeExecution(targetId)!;
+    expect(execution).toMatchObject({
+      agendaId: 'agenda_1',
+      assessmentVersionId: launch.launched.formalAssessmentVersionId,
+      attemptId: null,
+      status: 'active',
+    });
+
+    const replay = await services.courseActionLaunch.launch({
+      command: command('launch_due_review_launch_replay', 'learner'),
+      ...launch.request,
+    });
+    expect(replay).toEqual(launch.launched);
+    expect(proposalCall).toHaveBeenCalledTimes(1);
+    expect(
+      (db.prepare('SELECT COUNT(*) AS n FROM review_executions').get() as { n: number }).n,
+    ).toBe(1);
+
+    await expect(
+      services.courseActionLaunch.launch({
+        command: command('launch_due_review_stale', 'learner'),
+        ...launch.request,
+        expectedExecutionSourceManifestFingerprint: 'stale-manifest',
+      }),
+    ).rejects.toThrow(/stale/i);
+    expect(repos.reviewSuccessor.activeExecution(targetId)?.id).toBe(execution.id);
+  });
+
+  it('resolves direct supported recall with one Good and no mastery mutation', async () => {
+    const { historical, targetId } = makeDueReview('direct');
+    const masteryBefore = repos.mastery.listByWorkspace('ws_1');
+    const { launched } = await launchDueReview('direct');
+    const first = services.learnerAssessments.start(launched.formalAssessmentVersionId!, 'ws_1');
+    const resumed = services.learnerAssessments.start(launched.formalAssessmentVersionId!, 'ws_1');
+    expect(resumed.attempt.id).toBe(first.attempt.id);
+    expect(first.review).toMatchObject({ phase: 'retrieval', resolved: false });
+    const version = repos.formalAssessments.getVersion(launched.formalAssessmentVersionId!)!;
+    const answer = version.items[0]!.rubric!.map((criterion) => criterion.text).join(' ');
+
+    const result = await services.learnerAssessments.submit(first.attempt.id, {
+      [version.items[0]!.id]: answer,
+    });
+    const execution = repos.reviewSuccessor.findExecutionByAttempt(first.attempt.id)!;
+    const executionEvents = repos.reviewSuccessor
+      .listEvents(targetId)
+      .filter((event) => event.reviewExecutionId === execution.id);
+    expect(result.result).toMatchObject({ demonstrated: true, evidenceStatus: 'supported' });
+    expect(result.review).toMatchObject({
+      phase: 'resolved',
+      resolved: true,
+      schedulingRetryRequired: false,
+      nextDueAt: expect.any(String),
+    });
+    expect(executionEvents.map((event) => event.rating)).toEqual(['Good']);
+    expect(executionEvents.some((event) => event.rating === 'Again')).toBe(false);
+    expect(repos.reviewSuccessor.getExecution(execution.id)?.status).toBe('completed');
+    expect(repos.formalAssessments.getEvidence(historical.evidence.id)).toEqual(
+      historical.evidence,
+    );
+    expect(repos.mastery.listByWorkspace('ws_1')).toEqual(masteryBefore);
+  });
+
+  it('runs failure through Repair and changed-context verification as Again then Good', async () => {
+    const { historical, targetId } = makeDueReview('repair');
+    installSameUnitFormalActions();
+    const { launched } = await launchDueReview('repair');
+    const retrieval = services.learnerAssessments.start(
+      launched.formalAssessmentVersionId!,
+      'ws_1',
+    );
+    const retrievalVersion = repos.formalAssessments.getVersion(
+      launched.formalAssessmentVersionId!,
+    )!;
+    const failed = await services.learnerAssessments.submit(retrieval.attempt.id, {
+      [retrievalVersion.items[0]!.id]: 'unrelated answer',
+    });
+    const repairId = failed.result?.repairEpisodeId;
+    if (!repairId) throw new Error('Expected targeted Repair after failed retrieval.');
+    const execution = repos.reviewSuccessor.findExecutionByAttempt(retrieval.attempt.id)!;
+    expect(failed.review).toMatchObject({ phase: 'repair', resolved: false });
+    expect(
+      repos.reviewSuccessor
+        .listEvents(targetId)
+        .filter((event) => event.reviewExecutionId === execution.id)
+        .map((event) => event.rating),
+    ).toEqual(['Again']);
+
+    await services.learnerAssessments.startRepair(repairId);
+    services.learnerAssessments.practice(
+      repairId,
+      'The capacity limit constrains active processing.',
+      'READY_FOR_VERIFICATION',
+    );
+    expect(
+      repos.reviewSuccessor
+        .listEvents(targetId)
+        .filter((event) => event.reviewExecutionId === execution.id),
+    ).toHaveLength(1);
+
+    const firstVerification = services.learnerAssessments.createVerification(repairId);
+    expect(firstVerification.review?.phase).toBe('fresh_verification');
+    const firstVerificationVersion = repos.formalAssessments.getVersion(
+      firstVerification.assessmentVersionId,
+    )!;
+    await services.learnerAssessments.submit(firstVerification.attempt.id, {
+      [firstVerificationVersion.items[0]!.id]: 'still unrelated',
+    });
+    expect(
+      repos.reviewSuccessor
+        .listEvents(targetId)
+        .filter((event) => event.reviewExecutionId === execution.id),
+    ).toHaveLength(1);
+    expect(repos.repair.listByWorkspace('ws_1')).toHaveLength(1);
+
+    services.learnerAssessments.practice(
+      repairId,
+      'Reworked the explanation with the source premise.',
+      'READY_FOR_VERIFICATION',
+    );
+    const secondVerification = services.learnerAssessments.createVerification(repairId);
+    await services.learnerAssessments.submit(firstVerification.attempt.id, {
+      [firstVerificationVersion.items[0]!.id]: 'still unrelated',
+    });
+    expect(repos.repair.listByWorkspace('ws_1')).toHaveLength(1);
+    expect(repos.repair.getEpisode(repairId)).toMatchObject({
+      status: 'AWAITING_VERIFICATION',
+      verificationAttemptId: secondVerification.attempt.id,
+    });
+    const secondVerificationVersion = repos.formalAssessments.getVersion(
+      secondVerification.assessmentVersionId,
+    )!;
+    const supportedAnswer = secondVerificationVersion.items[0]!.rubric!.map(
+      (criterion) => criterion.text,
+    ).join(' ');
+    const resolved = await services.learnerAssessments.submit(secondVerification.attempt.id, {
+      [secondVerificationVersion.items[0]!.id]: supportedAnswer,
+    });
+    expect(resolved.review).toMatchObject({ phase: 'resolved', resolved: true });
+    expect(repos.repair.getEpisode(repairId)).toMatchObject({
+      status: 'RESOLVED',
+      verificationAttemptId: secondVerification.attempt.id,
+    });
+    expect(
+      repos.reviewSuccessor
+        .listEvents(targetId)
+        .filter((event) => event.reviewExecutionId === execution.id)
+        .map((event) => event.rating),
+    ).toEqual(['Again', 'Good']);
+    expect(repos.formalAssessments.getEvidence(historical.evidence.id)).toEqual(
+      historical.evidence,
+    );
+    const finalAgenda = repos.sessionAgendas.get('agenda_1')!;
+    expect(finalAgenda.items.find((item) => item.kind === 'due_review')?.state).toBe('completed');
+    expect(
+      finalAgenda.items
+        .filter((item) => item.kind === 'targeted_repair')
+        .every((item) => item.state === 'cancelled'),
+    ).toBe(true);
+    expect(finalAgenda.currentItemId).not.toBe(
+      finalAgenda.items.find((item) => item.kind === 'due_review')?.id,
+    );
+  });
+
+  it('preserves Formal state across scheduler failure and retries without regrading', async () => {
+    const { targetId } = makeDueReview('scheduler_failure');
+    const { launched } = await launchDueReview('scheduler_failure');
+    const learner = services.learnerAssessments.start(launched.formalAssessmentVersionId!, 'ws_1');
+    const version = repos.formalAssessments.getVersion(launched.formalAssessmentVersionId!)!;
+    const answer = version.items[0]!.rubric!.map((criterion) => criterion.text).join(' ');
+    const gradeCall = vi.spyOn(provider, 'gradeShortAnswer');
+    db.exec(`
+      CREATE TRIGGER inject_due_review_scheduler_failure
+      BEFORE INSERT ON successor_review_events
+      WHEN NEW.kind = 'fresh_verification_success' AND NEW.review_execution_id IS NOT NULL
+      BEGIN SELECT RAISE(ABORT, 'injected due Review scheduler failure'); END;
+    `);
+
+    const saved = await services.learnerAssessments.submit(learner.attempt.id, {
+      [version.items[0]!.id]: answer,
+    });
+    const execution = repos.reviewSuccessor.findExecutionByAttempt(learner.attempt.id)!;
+    expect(saved.result).toMatchObject({ demonstrated: true, evidenceStatus: 'supported' });
+    expect(saved.review).toMatchObject({
+      phase: 'scheduling_retry',
+      resolved: false,
+      schedulingRetryRequired: true,
+    });
+    expect(repos.formalAssessments.listGrades(learner.attempt.id)).toHaveLength(1);
+    expect(
+      repos.formalAssessments.getReconciliationForGrade(saved.result!.gradeRecordId),
+    ).toMatchObject({
+      status: 'applied',
+    });
+    expect(repos.reviewSuccessor.getExecution(execution.id)).toMatchObject({
+      status: 'active',
+      failureReason: expect.stringContaining('injected due Review scheduler failure'),
+    });
+    expect(
+      repos.reviewSuccessor
+        .listEvents(targetId)
+        .filter((event) => event.reviewExecutionId === execution.id),
+    ).toHaveLength(0);
+
+    db.exec('DROP TRIGGER inject_due_review_scheduler_failure');
+    const retried = await services.learnerAssessments.submit(learner.attempt.id, {
+      [version.items[0]!.id]: answer,
+    });
+    expect(retried.review).toMatchObject({
+      phase: 'resolved',
+      resolved: true,
+      schedulingRetryRequired: false,
+    });
+    expect(gradeCall).toHaveBeenCalledTimes(1);
+    expect(repos.formalAssessments.listGrades(learner.attempt.id)).toHaveLength(1);
+    expect(
+      repos.reviewSuccessor
+        .listEvents(targetId)
+        .filter((event) => event.reviewExecutionId === execution.id)
+        .map((event) => event.rating),
+    ).toEqual(['Good']);
+  });
+
+  it('rejects due Review Evidence without a learner-launched execution', () => {
+    services.reviewSuccessor.activate({
+      workspaceId: 'ws_1',
+      courseId: 'ws_1',
+      learningUnitId: 'unit_1',
+      objectiveId: 'objective_1',
+      contractVersionId: 'contract_1',
+      curriculumVersionId: 'curriculum_1',
+      manifestFingerprint: 'manifest-fp',
+      sourceOutcomeId: 'unlaunched_seed_evidence',
+      eligible: true,
+      at: T3,
+    });
+    const source = insertGrade('unlaunched_due_review', 1);
+    services.formalProgression.registerAssessmentContracts({
+      workspaceId: 'ws_1',
+      quizId: source.quizId,
+      agendaId: 'agenda_1',
+      agendaItemId: 'agenda_item_1',
+      assessmentKind: 'due_review',
+      contractVersionId: 'contract_1',
+      curriculumVersionId: 'curriculum_1',
+      studyPlanVersionId: 'plan_1',
+      executionSourceManifestFingerprint: 'manifest-fp',
+    });
+    const version = services.formalAssessments.createAcceptedFromQuiz({
+      workspaceId: 'ws_1',
+      quiz: repos.quizzes.get(source.quizId)!,
+      logicalKey: 'unlaunched-due-review',
+      title: 'Unlaunched due Review',
+      targetLearningUnitId: 'unit_1',
+      targetObjectiveId: 'objective_1',
+      progressionContext: {
+        quizId: source.quizId,
+        contractVersionId: 'contract_1',
+        curriculumVersionId: 'curriculum_1',
+        studyPlanVersionId: 'plan_1',
+        agendaId: 'agenda_1',
+        agendaItemId: 'agenda_item_1',
+        assessmentKind: 'due_review',
+        executionSourceManifestFingerprint: 'manifest-fp',
+      },
+    });
+    const attempt = services.formalAssessments.startAttempt(version.id, 'ws_1');
+    services.formalAssessments.submitAttempt(attempt.id, {
+      [version.items[0]!.id]: version.items[0]!.rubric![0]!.text,
+    });
+    const grade = services.formalAssessments.recordGrade(
+      GradeRecordSchema.parse({
+        id: 'unlaunched_due_review_grade',
+        attemptId: attempt.id,
+        assessmentVersionId: version.id,
+        grader: 'fake',
+        rubricVersion: 'formal-short-answer-v1',
+        status: 'current',
+        judgment: {
+          score: 1,
+          criterionResults: [{ criterionId: version.items[0]!.rubric![0]!.id, result: 'met' }],
+          feedback: 'supported',
+        },
+        supersedesId: null,
+        createdAt: T3,
+      }),
+    );
+    const evidence = services.formalAssessments.deriveEvidence(grade.id)[0]!;
+
+    expect(() => services.formalAssessments.reconcileEvidence(evidence.id)).toThrow(
+      'Due Review Evidence has no learner-launched ReviewExecution.',
+    );
+    expect(
+      (db.prepare('SELECT COUNT(*) AS n FROM review_executions').get() as { n: number }).n,
+    ).toBe(0);
+    expect(
+      repos.reviewSuccessor
+        .listEvents('review-target:ws_1:objective_1')
+        .filter((event) => event.reviewExecutionId !== null),
+    ).toHaveLength(0);
+  });
+
   it('bridges supported Assessment Evidence through the existing progression projection exactly once', () => {
     const source = insertGrade('assessment_bridge', 1);
     services.formalProgression.registerAssessmentContracts({

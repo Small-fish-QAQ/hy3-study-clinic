@@ -4430,6 +4430,42 @@ button.danger {
   font-weight: 800;
 }
 
+.review-workflow-state,
+.formal-scheduling-retry {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-3) 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--primary-weak);
+}
+
+.review-workflow-state span,
+.formal-scheduling-retry p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.review-workflow-state.repair,
+.review-workflow-state.practice,
+.review-workflow-state.fresh_verification {
+  background: var(--warning-weak);
+}
+
+.review-workflow-state.resolved {
+  background: var(--success-weak);
+}
+
+.review-workflow-state.scheduling_retry,
+.formal-scheduling-retry {
+  background: var(--danger-weak);
+}
+
+.formal-scheduling-retry button {
+  width: fit-content;
+}
+
 .inspector-evidence-list,
 .inspector-activity-list {
   margin: 0;

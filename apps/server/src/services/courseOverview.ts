@@ -12,10 +12,12 @@ import { curriculumHierarchy, requiresStudyPlanExecutionRepair } from './curricu
 import { preflightStudyPlan } from './studyPlansAgent.js';
 import { assessCurriculumRecovery } from './curriculumRecovery.js';
 import { assessLearningContractScope } from './learningContractScope.js';
+import type { ReviewSuccessorService } from './reviewSuccessor.js';
 
 interface CourseOverviewDeps {
   repos: Repositories;
   clock: Clock;
+  reviewSuccessor?: ReviewSuccessorService;
 }
 
 const SEVERITY = ['low', 'medium', 'high', 'critical'] as const;
@@ -59,10 +61,11 @@ function summarizeRisks(risks: CoverageRiskEntry[], computedAt: string): Coverag
   });
 }
 
-export function createCourseOverviewService({ repos, clock }: CourseOverviewDeps) {
+export function createCourseOverviewService({ repos, clock, reviewSuccessor }: CourseOverviewDeps) {
   function get(workspaceId: string): CourseExecutionOverview {
     const workspace = repos.workspaces.get(workspaceId);
     if (!workspace) throw notFound('Course not found.');
+    reviewSuccessor?.reconcileDueAgenda(workspaceId);
     const generatedAt = clock.now().toISOString();
     const state = repos.courseExecution.get(workspaceId);
     const contracts = repos.learningContracts.list(workspaceId);

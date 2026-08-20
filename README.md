@@ -424,6 +424,16 @@ The explicit startup backfill considers only supported pre-cutover Formal Eviden
 
 The old `review_items` and `review_events` tables remain audit history only. Their grading writer is disabled, and current queue, assessment, Tutor, and API projections read successor state without a legacy fallback. Pre-cutover legacy rows and score buckets are never replayed into fabricated FSRS history. FSRS-7, optimization, Hard/Easy automation, broad Review UX, and learner self-rating are outside this phase.
 
+## Phase 8C due Review workflow
+
+Due Reviews now run through the existing Course, SessionAgenda, StudySession, Formal Assessment, Evidence, Repair, and Progress surfaces. A deterministic agenda reconciliation projects each due objective into one exact `due_review` action without displacing an active StudySession. Launch validates the accepted Contract/Curriculum/StudyPlan route, current objective binding, source-manifest fingerprint, and agenda version before creating or resuming one durable `ReviewExecution`.
+
+The learner receives a fresh current-source formal short-answer AssessmentVersion. Local code owns the target/source fence, attempt lifecycle, criterion-gated Grade and Evidence, progression reconciliation, and the binary successor scheduler outcome. A supported direct retrieval records one `Good`; a failed retrieval records one `Again`, opens the existing targeted Repair episode, keeps Repair practice non-credit, and requires changed-context fresh verification before one `Good`. Historical Evidence and events remain visible after a later failure. Duplicate launch, submission, retry, stale route, and stale source operations fail closed or replay idempotently.
+
+Course Progress labels the learner-safe phase (`正式回忆进行中`, `需要针对性修复`, `修复练习中`, `等待换情境确认`, or `正式结果已保存，安排待同步`) and shows the next due time only from the local projection. Stability, difficulty, retrievability, policy versions, and other FSRS internals are not presented as mastery. A scheduling write failure leaves the valid Formal Grade/Evidence/progression state intact and exposes a retryable scheduling state.
+
+Hy3 still performs semantic assessment grading and Repair proposal work through the existing structured provider boundary. Deterministic local code validates all IDs, citations, evidence conclusions, route versions, scheduler events, and persistence. FakeProvider is the only provider used by automated tests; real-Hy3 setup is unchanged and remains an explicit, credentialed option.
+
 ## License
 
 [Apache-2.0](LICENSE). The built-in Chinese sample course and evaluation fixtures are original repository content released under the same license.

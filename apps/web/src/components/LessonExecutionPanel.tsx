@@ -25,6 +25,7 @@ export interface LessonExecutionPanelProps {
   busy?: boolean;
   directCheckpointItemId?: string | null;
   formalAssessmentVersionId?: string | null;
+  reviewMode?: boolean;
   onResumeStudySession?: () => void;
   onStartFormalAssessment?: () => void;
   onSessionVersionChange?: (projection: LessonExecutionProjection) => void;
@@ -438,6 +439,7 @@ export function LessonExecutionPanel({
   busy = false,
   directCheckpointItemId = null,
   formalAssessmentVersionId = null,
+  reviewMode = false,
   onResumeStudySession,
   onStartFormalAssessment,
   onSessionVersionChange,
@@ -638,6 +640,37 @@ export function LessonExecutionPanel({
   if (!projection) return null;
 
   if (projection.status === 'lesson_unavailable') {
+    if (formalAssessmentVersionId) {
+      return (
+        <section className="lesson-execution-panel formal-only" aria-label="正式学习活动">
+          <FormalAssessmentPanel
+            workspaceId={workspaceId}
+            versionId={formalAssessmentVersionId}
+            reviewMode={reviewMode}
+            onChanged={onRefreshSession}
+          />
+        </section>
+      );
+    }
+    if (reviewMode && directCheckpointItemId && onStartFormalAssessment) {
+      return (
+        <section className="lesson-execution-panel formal-only" aria-label="到期复习">
+          <div className="lesson-empty-state">
+            <p className="eyebrow">到期复习</p>
+            <h3>先用一次独立回忆确认这项目标</h3>
+            <p>系统会准备一题有当前课程来源依据的正式简答题。</p>
+            <button
+              type="button"
+              className="primary"
+              disabled={!active || busy}
+              onClick={onStartFormalAssessment}
+            >
+              开始到期复习
+            </button>
+          </div>
+        </section>
+      );
+    }
     return (
       <section className="lesson-execution-panel" aria-label="本节讲解">
         <div className="lesson-empty-state">
@@ -713,6 +746,7 @@ export function LessonExecutionPanel({
         <FormalAssessmentPanel
           workspaceId={workspaceId}
           versionId={formalAssessmentVersionId}
+          reviewMode={reviewMode}
           onChanged={onRefreshSession}
         />
       ) : null}

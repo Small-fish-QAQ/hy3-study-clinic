@@ -361,6 +361,36 @@ export function createReviewSuccessorRepo(db: SqliteDb) {
       ).map((row) => event(row.id)!);
     },
     getExecution: execution,
+    findExecutionByAssessmentVersion(assessmentVersionId: string) {
+      const row = db
+        .prepare(
+          `SELECT id FROM review_executions
+           WHERE assessment_version_id = ?
+           ORDER BY created_at DESC, id DESC LIMIT 1`,
+        )
+        .get(assessmentVersionId) as { id: string } | undefined;
+      return row ? execution(row.id) : undefined;
+    },
+    findExecutionByAttempt(attemptId: string) {
+      const row = db
+        .prepare(
+          `SELECT id FROM review_executions
+           WHERE attempt_id = ?
+           ORDER BY created_at DESC, id DESC LIMIT 1`,
+        )
+        .get(attemptId) as { id: string } | undefined;
+      return row ? execution(row.id) : undefined;
+    },
+    latestExecution(targetId: string) {
+      const row = db
+        .prepare(
+          `SELECT id FROM review_executions
+           WHERE review_target_id = ?
+           ORDER BY created_at DESC, id DESC LIMIT 1`,
+        )
+        .get(targetId) as { id: string } | undefined;
+      return row ? execution(row.id) : undefined;
+    },
     activeExecution(targetId: string) {
       const row = db
         .prepare(
@@ -411,6 +441,58 @@ export function createReviewSuccessorRepo(db: SqliteDb) {
         item.id,
       );
       return execution(item.id)!;
+    },
+    bindExecutionAssessment(id: string, assessmentVersionId: string, updatedAt: string) {
+      const current = execution(id);
+      if (!current || current.status !== 'active') {
+        throw new Error('Review execution is not active.');
+      }
+      if (
+        current.assessmentVersionId !== null &&
+        current.assessmentVersionId !== assessmentVersionId
+      ) {
+        throw new Error('Review execution is already bound to another AssessmentVersion.');
+      }
+      if (current.assessmentVersionId === assessmentVersionId) return current;
+      const changed = db
+        .prepare(
+          `UPDATE review_executions
+           SET assessment_version_id = ?, failure_reason = NULL, updated_at = ?
+           WHERE id = ? AND status = 'active' AND assessment_version_id IS NULL`,
+        )
+        .run(assessmentVersionId, updatedAt, id).changes;
+      if (changed !== 1)
+        throw new Error('Review execution assessment binding changed concurrently.');
+      return execution(id)!;
+    },
+    bindExecutionAttempt(id: string, attemptId: string, updatedAt: string) {
+      const current = execution(id);
+      if (!current || current.status !== 'active' || !current.assessmentVersionId) {
+        throw new Error('Review execution has no active AssessmentVersion binding.');
+      }
+      if (current.attemptId !== null && current.attemptId !== attemptId) {
+        throw new Error('Review execution is already bound to another Attempt.');
+      }
+      if (current.attemptId === attemptId) return current;
+      const changed = db
+        .prepare(
+          `UPDATE review_executions
+           SET attempt_id = ?, failure_reason = NULL, updated_at = ?
+           WHERE id = ? AND status = 'active' AND attempt_id IS NULL`,
+        )
+        .run(attemptId, updatedAt, id).changes;
+      if (changed !== 1) throw new Error('Review execution Attempt binding changed concurrently.');
+      return execution(id)!;
+    },
+    setExecutionFailure(id: string, failureReason: string | null, updatedAt: string) {
+      const current = execution(id);
+      if (!current) throw new Error('Review execution does not exist.');
+      if (current.status !== 'active') return current;
+      db.prepare(
+        `UPDATE review_executions SET failure_reason = ?, updated_at = ?
+         WHERE id = ? AND status = 'active'`,
+      ).run(failureReason, updatedAt, id);
+      return execution(id)!;
     },
     commitEventAndState(
       inputEvent: SuccessorReviewEvent,
@@ -467,7 +549,7 @@ export function createReviewSuccessorRepo(db: SqliteDb) {
           const executionChange = db
             .prepare(
               `UPDATE review_executions
-               SET consumed_row_version = ?, status = ?, updated_at = ?
+               SET consumed_row_version = ?, status = ?, failure_reason = NULL, updated_at = ?
                WHERE id = ? AND status = 'active' AND consumed_row_version = ?`,
             )
             .run(

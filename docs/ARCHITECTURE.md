@@ -886,3 +886,26 @@ The authority chain remains Attempt -> Grade -> criterion-gated Evidence -> dete
 Migration 31 preserves legacy `review_items`/`review_events` as audit history and disables their grading writer. Migration 32 makes `pending_initial_review` an explicit null-memory state, adds deterministic per-target event sequence numbers, and records a durable per-Evidence backfill decision. At service startup, the idempotent backfill uses the persisted FSRS-6 policy epoch as its cutover and considers only pre-cutover supported Formal Evidence with an applied Evidence reconciliation, applied formal-progression reconciliation, and an exact locally revalidated Contract/Curriculum/LearningUnit/objective/source binding. Eligible rows become due pending targets without a synthetic event, rating, stability, difficulty, repetitions, or lapses; ambiguous or invalid bindings are audited and skipped.
 
 Current queue, assessment, Tutor, and review API projections resolve successor targets through their exact versioned Curriculum binding and never fall back to legacy scheduling rows. Legacy rows and score buckets are not inputs to successor state. Successor events remain immutable under direct operations while legitimate parent-scope deletion cascades are allowed. FSRS-7, optimization, Hard/Easy automation, broad Review UX, and real-provider scheduling calls remain deferred.
+
+## 28. Due Review execution and learner workflow (Phase 8C)
+
+Due work is composed into the existing accepted Course route as a `due_review` SessionAgenda item. `reviewSuccessor.reconcileDueAgenda()` is deterministic and idempotent: it checks the current accepted Contract, Curriculum, StudyPlan, exact objective binding, source-manifest fingerprint, and agenda version. An active or paused StudySession is never displaced; a queued due item becomes the next meaningful Course action only when the existing continuation rules allow it. The Course overview performs the same reconciliation before projecting Agenda state, so navigation cannot expose a stale due queue.
+
+`courseActionLaunch` is the only learner launch boundary. It rechecks workspace, route, agenda, plan, source-manifest, LearningUnit, objective, and current successor binding fences. A due launch creates or resumes one `ReviewExecution` before any provider request. The execution records the consumed binding and state row version; the accepted Formal AssessmentVersion and Attempt are then bound to that execution. A stale binding, stale agenda, mismatched source, unknown objective, or unlaunched due Evidence fails closed. Replayed launch commands return their durable result and never create another execution.
+
+The formal loop remains the Phase 7 authority chain:
+
+```text
+current-source AssessmentVersion
+ -> submitted Attempt
+ -> semantic Grade
+ -> criterion-gated Evidence
+ -> deterministic progression reconciliation
+ -> locally derived Review event and next schedule
+```
+
+For direct supported retrieval, the successor records one `Good`. For a failed retrieval, the successor records one `Again` only after the current Grade/Attempt/Version prove the active due execution failed; the existing targeted Repair service then owns its OPEN/ACTIVE/DEFERRED/AWAITING_VERIFICATION lifecycle. Repair practice is non-credit and cannot create a Review event. A fresh verification must use a changed-context accepted AssessmentVersion and linked Repair episode. Supported fresh Evidence records the one later `Good`; failed verification does not add another `Again` and cannot open nested Repair. Event/state/execution writes are atomic and idempotent, and a scheduler persistence failure is stored on the active execution for retry without deleting valid Formal state or regrading.
+
+The learner projection is intentionally smaller than the audit projection. Progress and Study name the objective, due reason, current phase, formal result, Repair requirement, resolution, and next due time. They do not expose FSRS stability, difficulty, retrievability, policy hashes, private provider output, or internal identifiers. Historical Evidence and Review events remain append-only and visible in audit/history surfaces after current forgetting. Exact quotation validation still establishes source occurrence, not complete semantic entailment.
+
+Hy3 remains responsible for semantic grading, misconception hypotheses, and bounded Repair proposals. Local TypeScript/Fastify/Zod/SQLite code validates structured output, source IDs and quotes, route versions, objective identity, Evidence eligibility, score/state transitions, scheduler outcomes, persistence, budgets, permissions, cancellation, and stale-response fences. FakeProvider supplies deterministic offline fixtures; no new production dependency or competing scheduler was introduced.

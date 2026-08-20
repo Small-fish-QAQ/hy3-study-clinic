@@ -338,7 +338,9 @@ export function CourseProgressView({
                   <article className="review-row" key={review.reviewTargetId}>
                     <strong>{review.objectiveTitle}</strong>
                     <span className="small muted">
-                      下次复习 {new Date(review.dueAt).toLocaleString('zh-CN')}
+                      {reviewWorkflowLabel(review.workflowPhase)} ·{' '}
+                      {review.workflowPhase === 'due' ? '到期时间' : '下次复习'}{' '}
+                      {new Date(review.dueAt).toLocaleString('zh-CN')}
                       {review.lifecycleState === 'pending_initial_review'
                         ? ' · 等待首次复习'
                         : ` · 已复习 ${review.repetitions ?? 0} 次`}
@@ -352,6 +354,19 @@ export function CourseProgressView({
       ) : null}
     </div>
   );
+}
+
+function reviewWorkflowLabel(phase: CurrentReviewItem['workflowPhase']): string {
+  const labels: Record<CurrentReviewItem['workflowPhase'], string> = {
+    scheduled: '已安排',
+    due: '现在到期',
+    retrieval: '正式回忆进行中',
+    repair: '需要针对性修复',
+    practice: '修复练习中',
+    fresh_verification: '等待换情境确认',
+    scheduling_retry: '正式结果已保存，安排待同步',
+  };
+  return labels[phase];
 }
 
 function contractStatusLabel(value: string): string {

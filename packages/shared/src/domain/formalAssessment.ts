@@ -271,6 +271,26 @@ export const LearnerAssessmentExecutionSchema = z.object({
       repairEpisodeId: z.string().min(1).nullable(),
     })
     .nullable(),
+  review: z
+    .object({
+      reviewTargetId: z.string().min(1),
+      objectiveTitle: z.string().min(1).max(300),
+      dueReason: z.string().min(1).max(500),
+      phase: z.enum([
+        'retrieval',
+        'repair',
+        'practice',
+        'fresh_verification',
+        'resolved',
+        'scheduling_retry',
+      ]),
+      dueAt: z.string().datetime(),
+      nextDueAt: z.string().datetime().nullable(),
+      schedulingRetryRequired: z.boolean(),
+      resolved: z.boolean(),
+    })
+    .nullable()
+    .default(null),
 });
 export type LearnerAssessmentExecution = z.infer<typeof LearnerAssessmentExecutionSchema>;
 

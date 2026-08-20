@@ -23,6 +23,7 @@ import type { CourseCommandService } from './courseCommands.js';
 import type { FormalProgressionService } from './formalProgression.js';
 import type { FormalAssessmentsService } from './formalAssessments.js';
 import { toPublicQuiz } from './quizzes.js';
+import type { ReviewSuccessorService } from './reviewSuccessor.js';
 import { resolveLaunchForPlanItem } from './studyPlanValidation.js';
 
 interface CourseActionLaunchDeps {
@@ -34,6 +35,7 @@ interface CourseActionLaunchDeps {
   provider: LlmProvider;
   providerModel?: string | null;
   formalAssessments: FormalAssessmentsService;
+  reviewSuccessor: ReviewSuccessorService;
 }
 
 const AGENDA_KIND_BY_PLAN_KIND: Record<StudyPlanItemKind, SessionAgendaItem['kind']> = {
@@ -63,6 +65,34 @@ function agendaBoundPlanItem(
     return { ok: false, reason: 'Agenda and Plan LearningUnit identity do not match.' };
   }
 
+  if (item.kind === 'due_review') {
+    try {
+      const request = CreateAssessmentRequestSchema.parse(JSON.parse(item.launch.resourceId ?? ''));
+      const targetId = request.mode === 'review' ? request.conceptIds?.[0] : undefined;
+      const target = targetId ? repos.reviewSuccessor.getTarget(targetId) : undefined;
+      const binding =
+        target?.currentBindingVersion !== null && target?.currentBindingVersion !== undefined
+          ? repos.reviewSuccessor.getBinding(target.id, target.currentBindingVersion)
+          : undefined;
+      if (
+        request.conceptIds?.length !== 1 ||
+        !target ||
+        target.status !== 'active' ||
+        !binding ||
+        binding.learningUnitId !== planItem.curriculumLearningUnitId ||
+        !planItem.objectiveIds.includes(binding.objectiveId)
+      ) {
+        return { ok: false, reason: 'The due Review target no longer matches this Plan item.' };
+      }
+      return {
+        ok: true,
+        planItem: { ...planItem, kind: 'due_review', objectiveIds: [binding.objectiveId] },
+      };
+    } catch {
+      return { ok: false, reason: 'The due Review launch binding is invalid.' };
+    }
+  }
+
   if (item.kind === 'targeted_repair' && planItem.kind !== 'targeted_repair') {
     const progress = repos.studyPlans
       .listProgress(plan.id)
@@ -88,11 +118,13 @@ export function createCourseActionLaunchService({
   provider,
   providerModel = null,
   formalAssessments,
+  reviewSuccessor,
 }: CourseActionLaunchDeps) {
   async function launch(
     input: LaunchCourseActionRequest,
     opts?: ProviderCallOptions,
   ): Promise<CourseActionLaunchResult> {
+    let reviewExecutionId: string | null = null;
     const parsed = LaunchCourseActionRequestSchema.parse(input);
     const claim = commands.begin(parsed.command, 'launch_course_action', {
       agendaId: parsed.agendaId,
@@ -250,8 +282,51 @@ export function createCourseActionLaunchService({
                 ? 'synthesis'
                 : 'formal_checkpoint';
         const formalOnly =
-          assessmentKind === 'formal_checkpoint' || assessmentKind === 'targeted_repair';
+          assessmentKind === 'formal_checkpoint' ||
+          assessmentKind === 'targeted_repair' ||
+          assessmentKind === 'due_review';
         const assessmentRequest = { ...request, ...(formalOnly ? { formalOnly: true } : {}) };
+        if (assessmentKind === 'due_review') {
+          const targetId = request.mode === 'review' ? request.conceptIds?.[0] : undefined;
+          if (!targetId || request.conceptIds?.length !== 1) {
+            throw new AppError(
+              ApiErrorCode.ValidationError,
+              'Due Review launch requires one exact objective target.',
+            );
+          }
+          const execution = reviewSuccessor.beginExecution({
+            targetId,
+            workspaceId: parsed.command.workspaceId,
+            courseId: parsed.command.workspaceId,
+            agendaId: agenda.id,
+            agendaItemId: item.id,
+            contractVersionId: plan.contractVersionId,
+            curriculumVersionId: plan.curriculumVersionId,
+            studyPlanVersionId: plan.id,
+            manifestFingerprint: plan.executionSourceManifestFingerprint,
+          });
+          reviewExecutionId = execution.id;
+          if (execution.assessmentVersionId) {
+            const formalVersion = formalAssessments.getVersion(execution.assessmentVersionId);
+            const quizId = formalVersion.progressionContext?.quizId;
+            const quiz = quizId ? repos.quizzes.get(quizId) : undefined;
+            if (!quiz) {
+              throw new AppError(
+                ApiErrorCode.VersionConflict,
+                'The active Review assessment binding is incomplete.',
+              );
+            }
+            return commands.complete(claim, () =>
+              CourseActionLaunchResultSchema.parse({
+                kind: 'assessment',
+                agendaItemId: item.id,
+                quiz: toPublicQuiz(quiz),
+                assessmentKind,
+                formalAssessmentVersionId: formalVersion.id,
+              }),
+            );
+          }
+        }
         const operationType =
           assessmentKind === 'synthesis'
             ? 'propose_synthesis_assessment'
@@ -281,13 +356,6 @@ export function createCourseActionLaunchService({
           providerOptions: opts,
           invoke: (options) =>
             assessment.prepare(parsed.command.workspaceId, assessmentRequest, options),
-        });
-        const response = CourseActionLaunchResultSchema.parse({
-          kind: 'assessment',
-          agendaItemId: item.id,
-          quiz: toPublicQuiz(creation.quiz),
-          assessmentKind,
-          formalAssessmentVersionId: null,
         });
         return commands.complete(claim, () => {
           const currentState = repos.courseExecution.get(parsed.command.workspaceId);
@@ -349,17 +417,50 @@ export function createCourseActionLaunchService({
               'Assessment action is no longer launchable.',
             );
           }
+          if (assessmentKind === 'due_review' && reviewExecutionId) {
+            const execution = repos.reviewSuccessor.getExecution(reviewExecutionId);
+            if (execution?.assessmentVersionId) {
+              const formalVersion = formalAssessments.getVersion(execution.assessmentVersionId);
+              const quizId = formalVersion.progressionContext?.quizId;
+              const quiz = quizId ? repos.quizzes.get(quizId) : undefined;
+              if (!quiz) {
+                throw new AppError(
+                  ApiErrorCode.VersionConflict,
+                  'The active Review assessment binding is incomplete.',
+                );
+              }
+              return CourseActionLaunchResultSchema.parse({
+                kind: 'assessment',
+                agendaItemId: currentItem.id,
+                quiz: toPublicQuiz(quiz),
+                assessmentKind,
+                formalAssessmentVersionId: formalVersion.id,
+              });
+            }
+          }
           assessment.persist(creation);
           let formalAssessmentVersionId: string | null = null;
-          if (assessmentKind === 'formal_checkpoint' || assessmentKind === 'targeted_repair') {
+          if (
+            assessmentKind === 'formal_checkpoint' ||
+            assessmentKind === 'targeted_repair' ||
+            assessmentKind === 'due_review'
+          ) {
             const targetLearningUnitId = item.learningUnitId;
-            const targetObjectiveId = currentPlanItem.objectiveIds[0];
+            const targetObjectiveId = finalBound.planItem.objectiveIds[0];
             if (targetLearningUnitId && targetObjectiveId) {
+              const objectiveTitle = currentCurriculum.nodes
+                .find((node) => node.id === targetLearningUnitId && node.learningUnit !== null)
+                ?.learningUnit?.objectives.find(
+                  (objective) => objective.id === targetObjectiveId,
+                )?.title;
               const formalVersion = formalAssessments.createAcceptedFromQuiz({
                 workspaceId: parsed.command.workspaceId,
                 quiz: creation.quiz,
                 logicalKey: `agenda:${currentAgenda.id}:${currentItem.id}`,
-                title: currentPlanItem.rationale || '理解检查',
+                title:
+                  assessmentKind === 'due_review' && objectiveTitle
+                    ? `到期复习：${objectiveTitle}`
+                    : currentPlanItem.rationale || '理解检查',
                 targetLearningUnitId,
                 targetObjectiveId,
                 progressionContext: {
@@ -375,6 +476,9 @@ export function createCourseActionLaunchService({
                 },
               });
               formalAssessmentVersionId = formalVersion.id;
+              if (assessmentKind === 'due_review' && reviewExecutionId) {
+                reviewSuccessor.bindAssessment(reviewExecutionId, formalVersion);
+              }
             }
           }
           formalProgression.registerAssessmentContracts({
@@ -389,7 +493,13 @@ export function createCourseActionLaunchService({
             studyPlanVersionId: currentPlan.id,
             executionSourceManifestFingerprint: currentPlan.executionSourceManifestFingerprint,
           });
-          return { ...response, formalAssessmentVersionId };
+          return CourseActionLaunchResultSchema.parse({
+            kind: 'assessment',
+            agendaItemId: currentItem.id,
+            quiz: toPublicQuiz(creation.quiz),
+            assessmentKind,
+            formalAssessmentVersionId,
+          });
         });
       }
 
@@ -403,6 +513,7 @@ export function createCourseActionLaunchService({
         }),
       );
     } catch (error) {
+      if (reviewExecutionId) reviewSuccessor.markExecutionFailure(reviewExecutionId, error);
       commands.fail(claim, error);
       throw error;
     }

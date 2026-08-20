@@ -280,6 +280,31 @@ Publication is fail-closed. `npm run eval:evidence` rejects:
 
 The exporter keeps only whitelisted aggregate fields. Per-sample details, prompts, raw model output, credentials, endpoint paths/query strings, and local paths never enter the public record. `publishedEvidence.test.ts` verifies that the Markdown is rendered from the same JSON object and that the committed pair remains provenance-complete and secret-free.
 
+## Phase 8C due Review verification
+
+Phase 8C verification is offline and uses FakeProvider/deterministic fixtures only. The focused workflow suites are:
+
+```bash
+npx vitest run apps/server/src/services/formalProgression.test.ts apps/server/src/services/reviewSuccessor.test.ts apps/server/src/routes/workspaces.test.ts
+npx vitest run apps/web/src/components/FormalAssessmentPanel.test.tsx apps/web/src/components/LessonExecutionPanel.test.tsx apps/web/src/views/StudySessionView.test.tsx apps/web/src/views/AgentCourseViews.test.tsx
+npx vitest run packages/shared/src/domain/formalAssessment.test.ts packages/shared/src/domain/review.test.ts
+```
+
+They cover due Agenda reconciliation and idempotency, active StudySession preservation, exact and stale launch fences, one ReviewExecution and exact current-source AssessmentVersion binding, direct supported retrieval to one `Good`, failed retrieval to one `Again` plus targeted Repair, non-credit Repair practice, changed-context fresh verification, historical Evidence retention, duplicate/retry idempotency, scheduler-failure retry without regrading, no legacy Review fallback, no FSRS-to-mastery mutation, and learner-safe Study/Progress states. The UI assertions explicitly reject scheduler internals from the default learner projection.
+
+The complete Phase 8C gate remains:
+
+```bash
+npm test
+npm run eval:fake
+npm run build
+npm run lint
+npx prettier --check .
+git diff --check
+```
+
+`npm run lint` includes the repository-wide Prettier check. Real Hy3 calls are not part of this phase; `eval:hy3` remains an explicit credentialed evaluation and must not be used to make the deterministic suite pass. The private closure record is `reports/08c-due-review-execution-workflow.md`, with deterministic benchmark outputs under `research/benchmarks/phase8c/`.
+
 Do not rerun `eval:hy3` during ordinary tests or documentation maintenance. Do not rerun `eval:evidence` merely as a read-only check: it is a publication command and intentionally writes tracked artifacts with a new generation timestamp.
 
 ## Media verification

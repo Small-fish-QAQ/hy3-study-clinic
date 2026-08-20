@@ -2047,7 +2047,7 @@ describe('consolidated Course product shell', () => {
     render(
       <CourseProgressView
         workspaceId="ws_1"
-        documents={[]}
+        documents={[documentSummary]}
         overview={overview('launchable')}
         refreshKey={0}
         command={(prefix) => ({
@@ -2072,6 +2072,83 @@ describe('consolidated Course product shell', () => {
     rejectReviews?.(new Error('review service unavailable'));
     expect(await screen.findByText('复习记录暂时无法读取')).toBeInTheDocument();
     expect(screen.queryByText('0 项复习记录')).not.toBeInTheDocument();
+  });
+
+  it('shows learner Review workflow states without scheduler internals in Progress', async () => {
+    const user = userEvent.setup();
+    const review = {
+      reviewTargetId: 'review-target:ws_1:objective_1',
+      workspaceId: 'ws_1',
+      courseId: 'ws_1',
+      learningUnitId: 'unit_1',
+      objectiveId: 'objective_1',
+      objectiveTitle: '解释工作记忆容量',
+      conceptIds: ['concept_1'],
+      targetStatus: 'active' as const,
+      lifecycleState: 'review' as const,
+      dueAt: '2026-08-21T08:00:00.000Z',
+      lastReviewedAt: '2026-08-20T08:00:00.000Z',
+      stability: 9.876,
+      difficulty: 4.321,
+      scheduledDays: 3,
+      repetitions: 2,
+      lapses: 1,
+      policyVersion: 'fsrs-policy-hidden-from-learner',
+      workflowPhase: 'due' as const,
+      schedulingRetryRequired: false,
+      createdAt: AT,
+      updatedAt: AT,
+    };
+    vi.spyOn(api, 'reviewItems').mockResolvedValue({
+      items: [
+        review,
+        {
+          ...review,
+          reviewTargetId: 'review-target:ws_1:objective_2',
+          objectiveId: 'objective_2',
+          objectiveTitle: '应用容量限制',
+          workflowPhase: 'retrieval',
+        },
+        {
+          ...review,
+          reviewTargetId: 'review-target:ws_1:objective_3',
+          objectiveId: 'objective_3',
+          objectiveTitle: '比较容量模型',
+          workflowPhase: 'scheduling_retry',
+          schedulingRetryRequired: true,
+        },
+      ],
+    });
+    vi.spyOn(api, 'listAttempts').mockResolvedValue({ attempts: [] });
+
+    render(
+      <CourseProgressView
+        workspaceId="ws_1"
+        documents={[documentSummary]}
+        overview={overview('launchable')}
+        refreshKey={0}
+        command={(prefix) => ({
+          commandId: `${prefix}_1`,
+          idempotencyKey: `${prefix}_1`,
+          workspaceId: 'ws_1',
+          actor: 'learner',
+        })}
+        onAcceptProposedPlan={vi.fn()}
+        onRejectProposedPlan={vi.fn()}
+        onCourseChanged={vi.fn()}
+        onRemediate={vi.fn()}
+        remediationLoading={false}
+        remediationError={null}
+        operationError={null}
+      />,
+    );
+
+    await user.click(screen.getByRole('tab', { name: '掌握与复习' }));
+    expect(await screen.findByText('解释工作记忆容量')).toBeInTheDocument();
+    expect(screen.getByText(/现在到期/)).toBeInTheDocument();
+    expect(screen.getByText(/正式回忆进行中/)).toBeInTheDocument();
+    expect(screen.getByText(/正式结果已保存，安排待同步/)).toBeInTheDocument();
+    expect(screen.queryByText(/9\.876|4\.321|fsrs-policy-hidden/i)).not.toBeInTheDocument();
   });
 
   it('renders a Progress-owned operation failure inside Progress', () => {

@@ -154,4 +154,43 @@ it('keeps learner execution projections free of internal rubric payloads', () =>
   });
   expect(parsed.items[0]?.prompt).toBe('说明关键能力。');
   expect(parsed.result).toBeNull();
+  expect(parsed.review).toBeNull();
+});
+
+it('validates the learner due-Review workflow projection', () => {
+  const parsed = LearnerAssessmentExecutionSchema.parse({
+    assessmentVersionId: 'version_review_1',
+    title: '到期复习',
+    attempt: {
+      id: 'attempt_review_1',
+      assessmentVersionId: 'version_review_1',
+      workspaceId: 'workspace_1',
+      ordinal: 1,
+      status: 'submitted',
+      responses: { item_1: '容量有限。' },
+      startedAt: '2026-08-21T08:00:00.000Z',
+      submittedAt: '2026-08-21T08:01:00.000Z',
+      cancelledAt: null,
+    },
+    items: [
+      { itemId: 'item_1', prompt: '说明关键能力。', purpose: '检验回忆', sourceReferences: [] },
+    ],
+    result: null,
+    review: {
+      reviewTargetId: 'review_target_1',
+      objectiveTitle: '解释工作记忆容量',
+      dueReason: '这项目标现在需要复习。',
+      phase: 'fresh_verification',
+      dueAt: '2026-08-21T08:00:00.000Z',
+      nextDueAt: null,
+      schedulingRetryRequired: false,
+      resolved: false,
+    },
+  });
+
+  expect(parsed.review).toMatchObject({
+    reviewTargetId: 'review_target_1',
+    phase: 'fresh_verification',
+    resolved: false,
+  });
 });

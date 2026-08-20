@@ -519,17 +519,28 @@ export function createFormalAssessmentsService({
         const item = version.items.find((candidate) => candidate.id === evidence.itemId);
         if (item && context.assessmentKind === 'due_review') {
           const targetId = `review-target:${attempt.workspaceId}:${item.targetObjectiveId}`;
-          const execution = reviewSuccessor.beginExecution({
-            targetId,
-            workspaceId: attempt.workspaceId,
-            courseId: attempt.workspaceId,
-            agendaId: context.agendaId,
-          });
-          reviewSuccessor.recordFreshSuccess({
-            targetId,
-            sourceOutcomeId: evidence.id,
-            executionId: execution.id,
-          });
+          const linkedRepair = repos.repair
+            .listByWorkspace(attempt.workspaceId)
+            .find((episode) => episode.verificationAttemptId === attempt.id);
+          const execution =
+            repos.reviewSuccessor.findExecutionByAssessmentVersion(version.id) ??
+            repos.reviewSuccessor.findExecutionByAttempt(attempt.id) ??
+            (linkedRepair
+              ? repos.reviewSuccessor.findExecutionByAttempt(linkedRepair.triggerAttemptId)
+              : undefined);
+          if (!execution || execution.reviewTargetId !== targetId) {
+            throw new Error('Due Review Evidence has no learner-launched ReviewExecution.');
+          }
+          try {
+            reviewSuccessor.recordSupportedEvidence({
+              targetId,
+              evidenceId: evidence.id,
+              executionId: execution.id,
+            });
+            reviewSuccessor.clearExecutionFailure(execution.id);
+          } catch (error) {
+            reviewSuccessor.markExecutionFailure(execution.id, error);
+          }
         } else if (item) {
           reviewSuccessor.activate({
             workspaceId: attempt.workspaceId,
