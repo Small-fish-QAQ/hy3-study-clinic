@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -639,6 +641,16 @@ describe('SettingsView', () => {
     await waitFor(() => expect(opener).toHaveFocus());
     expect(container.querySelector('.settings-page-intro')).not.toHaveAttribute('inert');
     expect(onDeleteCourse).not.toHaveBeenCalled();
+  });
+
+  it('keeps the Danger Zone opener legible while reserving the filled style for confirmation', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
+    expect(css).toMatch(
+      /button\.settings-delete-course\s*\{[^}]*background:\s*var\(--surface-raised\);[^}]*color:\s*var\(--danger\);/su,
+    );
+    expect(css).toMatch(
+      /\.settings-delete-dialog button\.settings-delete-confirm\s*\{[^}]*background:\s*var\(--danger\);[^}]*color:\s*#fff;/su,
+    );
   });
 
   it('keeps the dialog open on deletion failure and locks every control while busy', async () => {

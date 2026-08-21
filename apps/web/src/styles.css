@@ -1320,10 +1320,17 @@ main.main-graph {
   font-size: 0.8rem;
 }
 
-.settings-delete-course {
+button.settings-delete-course {
   flex: none;
   border-color: color-mix(in srgb, var(--danger) 55%, var(--separator));
   background: var(--surface-raised);
+  color: var(--danger);
+}
+
+button.settings-delete-course:hover:not(:disabled) {
+  border-color: var(--danger);
+  background: var(--danger-weak);
+  color: var(--danger);
 }
 
 .settings-no-current-course {

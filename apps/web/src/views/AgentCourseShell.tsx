@@ -108,7 +108,6 @@ export function AgentCourseShell({
 
   useEffect(() => {
     if (!mobileOpen) return;
-    mobileCloseRef.current?.focus();
     const handleDrawerKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
@@ -158,6 +157,19 @@ export function AgentCourseShell({
         ? '课程来源、角色与处理状态'
         : VIEW_DESCRIPTIONS[activeView]);
   const visuallyCollapsed = collapsed && !narrow;
+
+  function openMobile(): void {
+    if (sidebarRef.current) sidebarRef.current.inert = false;
+    setMobileOpen(true);
+    window.setTimeout(() => {
+      if (
+        sidebarRef.current?.classList.contains('is-mobile-open') &&
+        mobileCloseRef.current?.isConnected
+      ) {
+        mobileCloseRef.current.focus();
+      }
+    }, 100);
+  }
 
   function closeMobile(returnFocus = true): void {
     setMobileOpen(false);
@@ -223,7 +235,7 @@ export function AgentCourseShell({
           aria-label="打开课程导航"
           aria-controls="course-sidebar"
           aria-expanded={mobileOpen}
-          onClick={() => setMobileOpen(true)}
+          onClick={openMobile}
         >
           <ShellIcon name="menu" />
         </button>
@@ -261,15 +273,17 @@ export function AgentCourseShell({
               <small>Guided learning workspace</small>
             </span>
           </div>
-          <button
-            ref={mobileCloseRef}
-            type="button"
-            className="course-sidebar-mobile-close"
-            aria-label="关闭课程导航"
-            onClick={() => closeMobile()}
-          >
-            <ShellIcon name="close" />
-          </button>
+          {narrow && mobileOpen ? (
+            <button
+              ref={mobileCloseRef}
+              type="button"
+              className="course-sidebar-mobile-close"
+              aria-label="关闭课程导航"
+              onClick={() => closeMobile()}
+            >
+              <ShellIcon name="close" />
+            </button>
+          ) : null}
         </div>
 
         <div className="course-context">

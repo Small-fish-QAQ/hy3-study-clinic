@@ -1875,7 +1875,9 @@ describe('consolidated Course product shell', () => {
     await user.click(opener);
     expect(opener).toHaveAttribute('aria-expanded', 'true');
     expect(sidebar).not.toHaveAttribute('aria-hidden');
-    expect(within(sidebar).getByRole('button', { name: '关闭课程导航' })).toHaveFocus();
+    await waitFor(() =>
+      expect(within(sidebar).getByRole('button', { name: '关闭课程导航' })).toHaveFocus(),
+    );
     expect(screen.getByText('Course content').closest('.agent-course-content')).toHaveAttribute(
       'inert',
     );
