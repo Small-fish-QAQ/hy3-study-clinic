@@ -925,3 +925,39 @@ The selected challenge creates an accepted `AssessmentVersion` with `authorityMo
 Migration 33 adds the authority mode plus immutable snapshot/candidate and append-only evaluation ledgers. Runs may transition through generating, selected, evaluating, evaluated, or explicit failure states. Start and submission keys provide deterministic replay; a failed provider grade may resume the already submitted Attempt under the same key without duplicate grading. Each evaluation explicitly records `evidenceCreated`, `masteryMutated`, `progressionMutated`, `reviewMutated`, and `repairMutated` as false, plus `robust_signal`, `possible_gap`, or `inconclusive`, bounded advisory confidence/risk, validation limits, and a proposed inspection action.
 
 Only developer/audit routes expose this phase. A `possible_gap` cannot erase lower-level Evidence or open Repair. It may recommend that a later, separately authorized workflow create a fresh current-source ordinary Formal Assessment; only that ordinary Attempt -> Grade -> criterion-gated Evidence -> deterministic reconciliation path may affect authoritative learning state. Human dogfood, live-Hy3 quality claims, calibrated fairness, mastery influence, automatic follow-up, and learner-facing Red Team UI remain outside Phase 09A. No production dependency was added.
+
+## Knowledge Map learner-state projection (Phase 10A)
+
+`apps/server/src/services/knowledgeMap.ts` builds the read-only
+`knowledge-map-projection-v1` contract consumed by
+`GET /api/workspaces/:workspaceId/knowledge-map`. The contract is a projection
+and navigation substrate, not a second mastery/progress authority or a model
+truth store. It supplies four modes over one graph: structural knowledge,
+learner progress, the accepted route, and defensible weakness signals.
+
+Nodes are heterogeneous: active source concepts retain their canonical/source
+metadata, accepted Curriculum LearningUnits carry objective and route context,
+and accepted synthesis groups carry only legitimate membership. Structural edges
+come from the locally validated concept graph or accepted Curriculum
+prerequisite/association/synthesis records. Layout never creates a relation.
+Every accepted edge has exact source-block provenance; the projection records
+that exact quotation validation does not prove complete semantic entailment.
+
+Learner state is resolved by the fixed precedence policy
+`knowledge-map-precedence-v1`: active Repair overrides the primary display
+state; current formal failure and progression repair precede supported evidence;
+progression completion and supported Formal Evidence yield `evidence_backed`;
+lesson presentation yields `taught` or `awaiting_formal_validation`; accepted
+Plan membership and active lesson execution yield `planned` and
+`currently_learning`; legacy mastery alone may yield `mastered`, `developing`,
+or concept `weak`. Review due and retrievability concern are separate signals,
+not mastery failure. Mastery Red Team `possible_gap` is advisory only. History
+is retained in bounded references and is excluded from current state.
+
+Route projection checks the active Contract, accepted Curriculum and StudyPlan,
+Agenda identity, route validation, source-manifest fingerprints, active
+MaterialRevision/SourceBlock membership, and current formal bindings. It does
+not call `reconcileDueAgenda()` or any provider and performs no writes. A stale
+or incomplete route/source binding fails closed with explicit unknown reasons.
+The projection is bounded at 2,000 nodes and 4,000 edges and uses fixed-query
+repository reads rather than a graph database or whole-corpus provider prompt.

@@ -25,6 +25,7 @@ export * from './domain/coverageRisk.js';
 export * from './domain/telemetry.js';
 export * from './domain/workspace.js';
 export * from './domain/graph.js';
+export * from './domain/knowledgeMap.js';
 export * from './domain/plan.js';
 export * from './domain/quiz.js';
 export * from './domain/grading.js';

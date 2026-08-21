@@ -65,6 +65,14 @@ course material -> document import with provenance -> Hy3 concept extraction -> 
 
 The same workflows run offline with the fake provider through `npm run demo:graph` and `npm run demo:adaptive`.
 
+### Knowledge Map projection contract (Phase 10A)
+
+The course-scoped `GET /api/workspaces/:workspaceId/knowledge-map` endpoint exposes one versioned, read-only projection for the later Knowledge Map UI. Its four modes (`knowledge_structure`, `learning_progress`, `learning_route`, and `weakness_map`) are views over the same heterogeneous concept, LearningUnit, and synthesis nodes; they do not create a graph-owned progress or mastery store.
+
+The projection keeps authority explicit. Validated source graph relations and accepted Curriculum prerequisite, concept-association, and synthesis-membership edges are structural only. Legacy mastery is the only source for a `mastered` concept state. Formal Evidence and deterministic progression provide `evidence_backed`; lesson presentation can only produce `taught` or `awaiting_formal_validation`. Active Repair takes display precedence while preserving formal facts, and Review due/retrievability concerns remain scheduling signals rather than mastery failure. Mastery Red Team `possible_gap` is advisory and cannot change any formal state.
+
+Every accepted graph edge and current Curriculum association retains exact source-block provenance. Exact quotation validation proves source occurrence, not complete semantic entailment. Accepted Contract/Curriculum/StudyPlan/Agenda identity, source-manifest fingerprints, active MaterialRevisions, and current Evidence bindings are checked on read; stale or incomplete route/source state fails closed as `unknown`/`partial`. The GET is deterministic, provider-free, and mutation-free. Historical Curriculum, Plan, Formal Evidence, and assessment records remain addressable in the projection history without being treated as current truth.
+
 ### Formal assessment and evidence boundary
 
 Practice and formal assessment are separate paths. Formal assessments use immutable accepted versions with explicit learning-unit/objective targets, exact MaterialRevision/SourceBlock bindings, and an authoritative rubric. Short-answer items are the supported formal path; choice items remain practice/advisory unless complete option-premise authority is available. Attempts are durable and immutable after submission, and grades are append-only records that support regrading without erasing history. A grade is not Formal Evidence: local gating derives evidence only from an eligible item, current grade, submitted attempt, and valid source/rubric authority. Evidence is then handed to a separate idempotent progression-reconciliation boundary. Tutor conversation, lesson completion, exact quote occurrence alone, and derived visual descriptions never grant formal credit.

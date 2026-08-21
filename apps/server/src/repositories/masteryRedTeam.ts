@@ -252,6 +252,27 @@ export function createMasteryRedTeamRepo(db: SqliteDb) {
         .get(runId) as { id: string } | undefined;
       return row ? evaluation(row.id) : undefined;
     },
+    listProjectionRecords(workspaceId: string) {
+      const rows = db
+        .prepare(
+          `SELECT e.payload AS evaluation_payload, r.payload AS run_payload,
+                  s.payload AS snapshot_payload
+           FROM mastery_red_team_evaluations e
+           JOIN mastery_red_team_runs r ON r.id = e.run_id
+           JOIN mastery_red_team_snapshots s ON s.id = r.snapshot_id
+           WHERE r.workspace_id = ? ORDER BY e.created_at, e.id`,
+        )
+        .all(workspaceId) as Array<{
+        evaluation_payload: string;
+        run_payload: string;
+        snapshot_payload: string;
+      }>;
+      return rows.map((row) => ({
+        evaluation: MasteryRedTeamEvaluationSchema.parse(JSON.parse(row.evaluation_payload)),
+        run: MasteryRedTeamRunSchema.parse(JSON.parse(row.run_payload)),
+        snapshot: MasterySnapshotSchema.parse(JSON.parse(row.snapshot_payload)),
+      }));
+    },
   };
 }
 

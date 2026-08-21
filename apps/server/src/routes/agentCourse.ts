@@ -49,6 +49,11 @@ function assertWorkspace(body: { command: { workspaceId: string } }, workspaceId
 
 /** Focused Phase-2 Course execution routes; legacy routes remain in workspaces.ts. */
 export function registerAgentCourseRoutes(app: FastifyInstance, services: Services): void {
+  app.get('/api/workspaces/:id/knowledge-map', async (request) => {
+    const { id } = WorkspaceParams.parse(request.params);
+    return { projection: services.knowledgeMap.get(id) };
+  });
+
   app.get('/api/workspaces/:id/execution', async (request) => {
     const { id } = WorkspaceParams.parse(request.params);
     return { overview: services.courseOverview.get(id) };

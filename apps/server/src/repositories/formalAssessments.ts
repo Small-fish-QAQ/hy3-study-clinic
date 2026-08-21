@@ -21,6 +21,22 @@ const parse = <T>(row: PayloadRow | undefined, schema: { parse: (v: unknown) => 
   row ? schema.parse(JSON.parse(row.payload)) : undefined;
 
 export function createFormalAssessmentsRepo(db: SqliteDb) {
+  function listAttemptsForWorkspace(workspaceId: string) {
+    return (
+      db
+        .prepare(
+          "SELECT json_object('id', id, 'assessmentVersionId', assessment_version_id, 'workspaceId', workspace_id, 'ordinal', ordinal, 'status', status, 'responses', responses, 'startedAt', started_at, 'submittedAt', submitted_at, 'cancelledAt', cancelled_at) AS payload FROM assessment_attempts WHERE workspace_id = ? ORDER BY started_at DESC, id DESC",
+        )
+        .all(workspaceId) as PayloadRow[]
+    ).map((row) => {
+      const value = JSON.parse(row.payload) as Record<string, unknown>;
+      return AssessmentAttemptSchema.parse({
+        ...value,
+        responses: JSON.parse(String(value.responses)),
+      });
+    });
+  }
+
   const definition = (id: string) =>
     parse(
       db
@@ -161,21 +177,7 @@ export function createFormalAssessmentsRepo(db: SqliteDb) {
       return item;
     },
     getAttempt: attempt,
-    listAttemptsForWorkspace(workspaceId: string) {
-      return (
-        db
-          .prepare(
-            "SELECT json_object('id', id, 'assessmentVersionId', assessment_version_id, 'workspaceId', workspace_id, 'ordinal', ordinal, 'status', status, 'responses', responses, 'startedAt', started_at, 'submittedAt', submitted_at, 'cancelledAt', cancelled_at) AS payload FROM assessment_attempts WHERE workspace_id = ? ORDER BY started_at DESC, id DESC",
-          )
-          .all(workspaceId) as PayloadRow[]
-      ).map((row) => {
-        const value = JSON.parse(row.payload) as Record<string, unknown>;
-        return AssessmentAttemptSchema.parse({
-          ...value,
-          responses: JSON.parse(String(value.responses)),
-        });
-      });
-    },
+    listAttemptsForWorkspace,
     nextAttemptOrdinal(assessmentVersionId: string) {
       return (
         ((
@@ -307,6 +309,60 @@ export function createFormalAssessmentsRepo(db: SqliteDb) {
           createdAt: row.created_at,
         }),
       );
+    },
+    listProjectionRecords(workspaceId: string) {
+      const versions = (
+        db
+          .prepare(
+            `SELECT v.payload FROM assessment_versions v
+             JOIN assessment_definitions d ON d.id = v.definition_id
+             WHERE d.workspace_id = ? ORDER BY v.created_at, v.id`,
+          )
+          .all(workspaceId) as PayloadRow[]
+      ).map((row) => AssessmentVersionSchema.parse(JSON.parse(row.payload)));
+      const attempts = listAttemptsForWorkspace(workspaceId);
+      const grades = (
+        db
+          .prepare(
+            `SELECT g.payload FROM assessment_grade_records g
+             JOIN assessment_attempts a ON a.id = g.attempt_id
+             WHERE a.workspace_id = ? ORDER BY g.created_at, g.id`,
+          )
+          .all(workspaceId) as PayloadRow[]
+      ).map((row) => GradeRecordSchema.parse(JSON.parse(row.payload)));
+      const evidenceRecords = (
+        db
+          .prepare(
+            `SELECT e.* FROM assessment_evidence_records e
+             JOIN assessment_attempts a ON a.id = e.attempt_id
+             WHERE a.workspace_id = ? ORDER BY e.created_at, e.id`,
+          )
+          .all(workspaceId) as Array<Record<string, unknown>>
+      ).map((row) =>
+        EvidenceRecordSchema.parse({
+          id: row.id,
+          attemptId: row.attempt_id,
+          gradeRecordId: row.grade_record_id,
+          assessmentVersionId: row.assessment_version_id,
+          itemId: row.item_id,
+          targetLearningUnitId: row.target_learning_unit_id,
+          conclusion: row.conclusion,
+          policyVersion: row.policy_version,
+          sourceBindingIds: JSON.parse(String(row.source_binding_ids)),
+          createdAt: row.created_at,
+        }),
+      );
+      const reconciliations = (
+        db
+          .prepare(
+            `SELECT r.id FROM assessment_progression_reconciliations r
+             JOIN assessment_evidence_records e ON e.id = r.evidence_record_id
+             JOIN assessment_attempts a ON a.id = e.attempt_id
+             WHERE a.workspace_id = ? ORDER BY r.created_at, r.id`,
+          )
+          .all(workspaceId) as Array<{ id: string }>
+      ).map((row) => reconciliation(row.id)!);
+      return { versions, attempts, grades, evidence: evidenceRecords, reconciliations };
     },
     insertReconciliation(input: ProgressionReconciliationRecord) {
       const item = ProgressionReconciliationRecordSchema.parse(input);

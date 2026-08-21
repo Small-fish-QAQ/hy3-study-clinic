@@ -106,6 +106,8 @@ import {
   GoalOutcomeSchema,
   LearnerAssessmentExecutionSchema,
   LearnerRepairProjectionSchema,
+  KnowledgeMapProjectionResponseSchema,
+  type KnowledgeMapProjectionResponse,
   type FormalProgressionOverview,
   type ProgressionReconciliationResponse,
   type QualifyReplanTriggerRequest,
@@ -1180,6 +1182,18 @@ export const api = {
     request<WorkspaceGraphResponse>(
       'GET',
       `/api/workspaces/${workspaceId}/graph`,
+      undefined,
+      signal,
+    ),
+
+  getKnowledgeMap: (
+    workspaceId: string,
+    signal?: AbortSignal,
+  ): Promise<KnowledgeMapProjectionResponse> =>
+    requestParsed(
+      'GET',
+      `/api/workspaces/${workspaceId}/knowledge-map`,
+      KnowledgeMapProjectionResponseSchema,
       undefined,
       signal,
     ),

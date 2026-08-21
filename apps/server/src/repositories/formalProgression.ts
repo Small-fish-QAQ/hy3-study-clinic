@@ -220,16 +220,22 @@ export function createFormalProgressionRepo(db: SqliteDb) {
       ).map((row) => FormalEvidenceRecordSchema.parse(JSON.parse(row.payload)));
     },
 
-    listEvidenceForRoute(contractId: string, planId: string): FormalEvidenceRecord[] {
+    listEvidenceForRoute(
+      contractId: string,
+      planId: string,
+      curriculumId?: string,
+    ): FormalEvidenceRecord[] {
+      const curriculumClause = curriculumId ? ' AND q.curriculum_id = ?' : '';
+      const params = curriculumId ? [contractId, planId, curriculumId] : [contractId, planId];
       return (
         db
           .prepare(
             `SELECT e.payload FROM formal_evidence_records e
              JOIN formal_question_contracts q ON q.id = e.formal_question_contract_id
-             WHERE q.contract_id = ? AND q.plan_id = ?
+             WHERE q.contract_id = ? AND q.plan_id = ?${curriculumClause}
              ORDER BY e.created_at, e.id`,
           )
-          .all(contractId, planId) as PayloadRow[]
+          .all(...params) as PayloadRow[]
       ).map((row) => FormalEvidenceRecordSchema.parse(JSON.parse(row.payload)));
     },
 
@@ -511,6 +517,36 @@ export function createFormalProgressionRepo(db: SqliteDb) {
             lastDecisionId: null,
             updatedAt: new Date(0).toISOString(),
           };
+    },
+
+    listUnitProgress(workspaceId: string, curriculumId: string): LearningUnitProgress[] {
+      return (
+        db
+          .prepare(
+            `SELECT workspace_id, curriculum_id, learning_unit_id, state, version,
+                    last_decision_id, updated_at
+             FROM learning_unit_progress
+             WHERE workspace_id = ? AND curriculum_id = ?
+             ORDER BY learning_unit_id`,
+          )
+          .all(workspaceId, curriculumId) as Array<{
+          workspace_id: string;
+          curriculum_id: string;
+          learning_unit_id: string;
+          state: LearningUnitProgressState;
+          version: number;
+          last_decision_id: string | null;
+          updated_at: string;
+        }>
+      ).map((row) => ({
+        workspaceId: row.workspace_id,
+        curriculumId: row.curriculum_id,
+        learningUnitId: row.learning_unit_id,
+        state: row.state,
+        version: row.version,
+        lastDecisionId: row.last_decision_id,
+        updatedAt: row.updated_at,
+      }));
     },
 
     insertReplanTrigger(input: ReplanTrigger): ReplanTrigger {

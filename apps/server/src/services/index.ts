@@ -68,6 +68,7 @@ import {
   type LearnerAssessmentsService,
 } from './learnerAssessments.js';
 import { createMasteryRedTeamService, type MasteryRedTeamService } from './masteryRedTeam.js';
+import { createKnowledgeMapService, type KnowledgeMapService } from './knowledgeMap.js';
 
 export interface Services {
   materials: MaterialService;
@@ -110,6 +111,7 @@ export interface Services {
   repair: RepairService;
   learnerAssessments: LearnerAssessmentsService;
   masteryRedTeam: MasteryRedTeamService;
+  knowledgeMap: KnowledgeMapService;
 }
 
 export interface ServiceDeps {
@@ -249,6 +251,7 @@ export function createServices({
     formalAssessments,
     learnerAssessments,
   });
+  const knowledgeMap = createKnowledgeMapService({ repos, graph, clock });
   const studySessions = createStudySessionService({
     repos,
     provider,
@@ -298,5 +301,6 @@ export function createServices({
     repair,
     learnerAssessments,
     masteryRedTeam,
+    knowledgeMap,
   };
 }

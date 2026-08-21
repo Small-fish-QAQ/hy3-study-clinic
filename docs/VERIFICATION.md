@@ -373,3 +373,38 @@ git diff --check
 ```
 
 The historical Phase 4A run recorded 1,437 tests (149 shared, 890 server, and 398 web). That snapshot predates Phase 6B1; use the standard commands and the focused Phase 6B1 section above for current totals. `npm run eval:fake` remains the deterministic campaign check; no real Hy3 call is required or made. Structural quality dimensions are diagnostics, not a teaching-effectiveness score. Teaching Briefs do not create Formal Evidence, mastery, progression, or durable mistakes, and no claim is made that the unshipped learner-facing lesson execution is complete.
+
+## Phase 10A Knowledge Map projection verification
+
+The Knowledge Map projection is deterministic and local. Its GET path does not
+call Hy3, reconcile due Agenda work, or mutate learner state. The focused
+contract/service checks are:
+
+```bash
+npm run test -w @hy3-clinic/shared -- src/domain/knowledgeMap.test.ts
+npm run test -w @hy3-clinic/server -- src/services/knowledgeMap.test.ts
+```
+
+The shared contract pins `knowledge-map-projection-v1` and
+`knowledge-map-precedence-v1`, all four modes, provenance and edge endpoint
+validation, node/edge limits, route unknown reasons, and the distinction between
+formal failure, Repair, Review due/retrievability, legacy weak mastery, and
+Mastery Red Team advisory `possible_gap`. The server service verifies a fresh
+workspace, active source grounding, course-scoped GET, foreign-workspace 404,
+idempotent repeated reads, and no writes from projection reads. The complete
+repository gate remains:
+
+```bash
+npm test
+npm run eval:fake
+npm run build
+npm run lint
+npx prettier --check .
+git diff --check
+```
+
+No real-provider call is required for this phase. Exact quote validation proves
+source occurrence at the claimed location; it does not prove complete semantic
+entailment. Phase 10B may add learner-facing map modes and interaction polish
+only after consuming this single contract without re-deriving authority in the
+frontend.

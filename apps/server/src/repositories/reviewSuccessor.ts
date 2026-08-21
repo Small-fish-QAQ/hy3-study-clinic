@@ -210,6 +210,126 @@ export function createReviewSuccessorRepo(db: SqliteDb) {
           .all(workspaceId) as Array<{ id: string }>
       ).map((row) => ({ target: target(row.id)!, state: state(row.id)! }));
     },
+    listProjectionRecords(workspaceId: string) {
+      const targets = (
+        db
+          .prepare('SELECT * FROM review_targets WHERE workspace_id = ? ORDER BY id')
+          .all(workspaceId) as Array<Record<string, unknown>>
+      ).map((row) =>
+        ReviewTargetSchema.parse({
+          id: row.id,
+          workspaceId: row.workspace_id,
+          courseId: row.course_id,
+          targetKind: row.target_kind,
+          originEvidenceId: row.origin_evidence_id,
+          currentBindingVersion: row.current_binding_version,
+          status: row.status,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        }),
+      );
+      const bindings = (
+        db
+          .prepare(
+            `SELECT b.* FROM review_target_bindings b
+             JOIN review_targets t ON t.id = b.review_target_id
+             WHERE t.workspace_id = ? ORDER BY b.review_target_id, b.binding_version`,
+          )
+          .all(workspaceId) as Array<Record<string, unknown>>
+      ).map((row) =>
+        ReviewTargetBindingSchema.parse({
+          reviewTargetId: row.review_target_id,
+          bindingVersion: row.binding_version,
+          contractVersionId: row.contract_version_id,
+          curriculumVersionId: row.curriculum_version_id,
+          learningUnitId: row.learning_unit_id,
+          objectiveId: row.objective_id,
+          executionSourceManifestFingerprint: row.execution_source_manifest_fingerprint,
+          validFrom: row.valid_from,
+          validTo: row.valid_to,
+          createdAt: row.created_at,
+        }),
+      );
+      const states = (
+        db
+          .prepare(
+            `SELECT s.* FROM memory_schedule_states s
+             JOIN review_targets t ON t.id = s.review_target_id
+             WHERE t.workspace_id = ? ORDER BY s.review_target_id`,
+          )
+          .all(workspaceId) as Array<Record<string, unknown>>
+      ).map((row) =>
+        MemoryScheduleStateSchema.parse({
+          reviewTargetId: row.review_target_id,
+          policyVersion: row.policy_version,
+          lifecycleState: row.lifecycle_state,
+          dueAt: row.due_at,
+          lastReviewedAt: row.last_reviewed_at,
+          stability: row.stability,
+          difficulty: row.difficulty,
+          scheduledDays: row.scheduled_days,
+          repetitions: row.repetitions,
+          lapses: row.lapses,
+          lastReviewEventId: row.last_review_event_id,
+          rowVersion: row.row_version,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        }),
+      );
+      const executions = (
+        db
+          .prepare(
+            `SELECT * FROM review_executions
+             WHERE workspace_id = ? ORDER BY created_at, id`,
+          )
+          .all(workspaceId) as Array<Record<string, unknown>>
+      ).map((row) =>
+        ReviewExecutionSchema.parse({
+          id: row.id,
+          reviewTargetId: row.review_target_id,
+          bindingVersion: row.binding_version,
+          consumedRowVersion: row.consumed_row_version,
+          workspaceId: row.workspace_id,
+          courseId: row.course_id,
+          agendaId: row.agenda_id,
+          assessmentVersionId: row.assessment_version_id,
+          attemptId: row.attempt_id,
+          status: row.status,
+          failureReason: row.failure_reason,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        }),
+      );
+      const events = (
+        db
+          .prepare(
+            `SELECT e.* FROM successor_review_events e
+             JOIN review_targets t ON t.id = e.review_target_id
+             WHERE t.workspace_id = ? ORDER BY e.review_target_id, e.sequence`,
+          )
+          .all(workspaceId) as Array<Record<string, unknown>>
+      ).map((row) =>
+        ReviewEventSchemaV2.parse({
+          id: row.id,
+          reviewTargetId: row.review_target_id,
+          bindingVersion: row.binding_version,
+          policyVersion: row.policy_version,
+          kind: row.kind,
+          sequence: row.sequence,
+          sourceOutcomeId: row.source_outcome_id,
+          reviewExecutionId: row.review_execution_id,
+          rating: row.rating,
+          occurredAt: row.occurred_at,
+          recordedAt: row.recorded_at,
+          preState: parseJson(String(row.pre_state)),
+          postState: parseJson(String(row.post_state)),
+          exactInputTime: row.exact_input_time,
+          dueAt: row.due_at,
+          idempotencyKey: row.idempotency_key,
+        }),
+      );
+      return { targets, bindings, states, executions, events };
+    },
     insertTarget(input: ReviewTarget) {
       const item = ReviewTargetSchema.parse(input);
       db.prepare(
