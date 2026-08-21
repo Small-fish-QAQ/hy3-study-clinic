@@ -265,6 +265,31 @@ describe('StudySessionView', () => {
     expect(screen.getByText('请先选择课程，再进入学习。')).toBeInTheDocument();
   });
 
+  it('opens the current LearningUnit in the Knowledge Map', async () => {
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });
+    vi.mocked(api.getStudySession).mockResolvedValue(detail);
+    const onOpenKnowledgeMap = vi.fn();
+    const user = userEvent.setup();
+
+    render(
+      <StudySessionView
+        workspaceId="ws_1"
+        route={{
+          contractVersionId: 'contract_1',
+          curriculumVersionId: 'curriculum_1',
+          studyPlanVersionId: 'plan_1',
+          sessionAgendaId: 'agenda_1',
+          executionVersion: 1,
+        }}
+        curriculumUnits={[{ id: 'unit_1', title: 'Bayes foundations' }]}
+        onOpenKnowledgeMap={onOpenKnowledgeMap}
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: '在知识地图中定位' }));
+    expect(onOpenKnowledgeMap).toHaveBeenCalledWith('unit_1');
+  });
+
   it('starts only against the accepted route and persisted execution version', async () => {
     const user = userEvent.setup();
     vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [] });

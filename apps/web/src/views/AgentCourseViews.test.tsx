@@ -551,6 +551,22 @@ const repeatedSourceBlocks = Array.from({ length: 5 }, (_, index) => ({
 })) satisfies SourceBlock[];
 
 describe('CourseHomeView action and authority rendering', () => {
+  it('opens the learner Knowledge Map from the Course Home shortcut', async () => {
+    const value = overview('launchable');
+    value.planningCurriculum = {
+      version: 1,
+    } as NonNullable<CourseExecutionOverview['planningCurriculum']>;
+    const props = homeProps(value);
+    props.onOpenKnowledgeMap = vi.fn();
+    const user = userEvent.setup();
+
+    render(<CourseHomeView {...props} />);
+
+    await user.click(screen.getByText('课程结构与版本'));
+    await user.click(screen.getByRole('button', { name: '在知识地图中查看' }));
+    expect(props.onOpenKnowledgeMap).toHaveBeenCalledOnce();
+  });
+
   it('renders compact learner-safe Course Preparation checkpoints', () => {
     const props = homeProps(recoveryOverview('concept_grounding_missing'));
     props.preparation = preparation({
@@ -1641,6 +1657,38 @@ describe('CurriculumView truth and validation states', () => {
 });
 
 describe('consolidated Course product shell', () => {
+  it('opens the Weakness Map from Progress without inventing a learner-state conclusion', async () => {
+    vi.spyOn(api, 'reviewItems').mockResolvedValue({ items: [] });
+    const onOpenKnowledgeMap = vi.fn();
+    const user = userEvent.setup();
+
+    render(
+      <CourseProgressView
+        workspaceId="ws_1"
+        documents={[]}
+        overview={overview('launchable')}
+        refreshKey={0}
+        command={(prefix) => ({
+          commandId: `${prefix}_1`,
+          idempotencyKey: `${prefix}_1`,
+          workspaceId: 'ws_1',
+          actor: 'learner',
+        })}
+        onAcceptProposedPlan={vi.fn()}
+        onRejectProposedPlan={vi.fn()}
+        onCourseChanged={vi.fn()}
+        onRemediate={vi.fn()}
+        remediationLoading={false}
+        remediationError={null}
+        operationError={null}
+        onOpenKnowledgeMap={onOpenKnowledgeMap}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: '在知识地图中解释' }));
+    expect(onOpenKnowledgeMap).toHaveBeenCalledOnce();
+  });
+
   it('offers one learner-facing Course navigation model with Chinese Study naming', () => {
     render(
       <AgentCourseShell
@@ -1660,7 +1708,7 @@ describe('consolidated Course product shell', () => {
       within(navigation)
         .getAllByRole('button')
         .map((button) => button.textContent),
-    ).toEqual(['主页', '学习', '课程结构', '进展', '探索']);
+    ).toEqual(['主页', '学习', '课程结构', '进展', '知识地图']);
     expect(within(navigation).queryByText('Study Session')).not.toBeInTheDocument();
     expect(within(navigation).queryByText('课程执行')).not.toBeInTheDocument();
     expect(
@@ -1744,7 +1792,7 @@ describe('consolidated Course product shell', () => {
     );
 
     expect(screen.getByRole('button', { name: '设置' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('button', { name: '探索' })).not.toHaveAttribute('aria-current');
+    expect(screen.getByRole('button', { name: '知识地图' })).not.toHaveAttribute('aria-current');
     expect(screen.getByLabelText('课程学习空间')).toHaveClass('view-settings');
     expect(screen.getByLabelText('课程学习空间')).not.toHaveClass('view-explore');
     expect(

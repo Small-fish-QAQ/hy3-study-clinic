@@ -17,6 +17,7 @@ export interface FormalProgressViewProps {
   onRejectProposedPlan: () => void;
   onCourseChanged: () => void;
   onOpenProgress: (view: 'history' | 'mistakes' | 'mastery') => void;
+  focusObjectiveId?: string | null;
 }
 
 const tierLabel: Record<string, string> = {
@@ -41,6 +42,7 @@ export function FormalProgressView({
   onRejectProposedPlan,
   onCourseChanged,
   onOpenProgress,
+  focusObjectiveId = null,
 }: FormalProgressViewProps) {
   const [progression, setProgression] = useState<FormalProgressionOverview | null>(null);
   const [loading, setLoading] = useState(false);
@@ -83,6 +85,15 @@ export function FormalProgressView({
       epoch.current += 1;
     };
   }, [refresh]);
+
+  useEffect(() => {
+    if (!focusObjectiveId || !progression) return;
+    requestAnimationFrame(() =>
+      document.querySelector<HTMLElement>('[data-focused-evidence="true"]')?.scrollIntoView({
+        block: 'center',
+      }),
+    );
+  }, [focusObjectiveId, progression]);
 
   const latestDecisionByUnit = useMemo(() => {
     const map = new Map<string, FormalProgressionOverview['decisions'][number]>();
@@ -297,7 +308,16 @@ export function FormalProgressView({
             .slice(-25)
             .reverse()
             .map((evidence) => (
-              <div className="progress-row" role="row" key={evidence.id}>
+              <div
+                className={`progress-row${
+                  focusObjectiveId === evidence.primaryObjectiveId ? ' is-focused' : ''
+                }`}
+                role="row"
+                key={evidence.id}
+                data-focused-evidence={
+                  focusObjectiveId === evidence.primaryObjectiveId ? 'true' : undefined
+                }
+              >
                 <span className="progress-unit-name" role="cell" data-label="学习单元">
                   <strong>
                     {unitTitleById.get(evidence.curriculumLearningUnitId) ?? '学习单元'}

@@ -1228,6 +1228,59 @@ export function createKnowledgeMapService({
           reasonCodes: [reason],
           authorityRefs: refs,
         });
+        const projectedRoute = routeOverlay(
+          node.id,
+          unit.objectives.map((objective) => objective.id),
+          routeUsable() ? route.plan : null,
+          routeUsable() ? planProgress : [],
+          routeUsable() ? route.agenda : null,
+          unitById,
+          nodeIdByUnitId,
+          routeUsable() ? (nextPlanItem?.id ?? null) : null,
+          routeUsable() ? progressByUnitId : new Map(),
+        );
+        const defaultObjectiveId = unit.objectives[0]?.id ?? null;
+        const activeRepairs = repairsForNode.filter((repair) =>
+          ACTIVE_REPAIR_STATUSES.has(repair.status),
+        );
+        const currentReviews = unique(
+          [...facts.reviewDue, ...facts.reviewConcern],
+          (review) => review.target.id,
+        );
+        const unitAgendaItem = route.agenda?.items.find((item) => item.learningUnitId === node.id);
+        const navigation = [
+          ...(!projectedRoute.prerequisiteLocked &&
+          routeUsable() &&
+          unitAgendaItem !== undefined &&
+          unitAgendaItem.id === route.agenda?.currentItemId &&
+          unitAgendaItem.launch.status === 'launchable'
+            ? baseNavigation('study', {
+                learningUnitId: node.id,
+                objectiveId: defaultObjectiveId,
+                agendaItemId: unitAgendaItem.id,
+              })
+            : []),
+          ...(formal.records.length > 0
+            ? baseNavigation('progress', {
+                learningUnitId: node.id,
+                objectiveId: formal.records.at(-1)?.primaryObjectiveId ?? defaultObjectiveId,
+              })
+            : []),
+          ...activeRepairs.flatMap((repair) =>
+            baseNavigation('progress', {
+              learningUnitId: node.id,
+              objectiveId: defaultObjectiveId,
+              repairEpisodeId: repair.id,
+            }),
+          ),
+          ...currentReviews.flatMap((review) =>
+            baseNavigation('progress', {
+              learningUnitId: node.id,
+              objectiveId: review.binding.objectiveId ?? defaultObjectiveId,
+              reviewTargetId: review.target.id,
+            }),
+          ),
+        ].slice(0, 20);
         return {
           id: `learning-unit:${node.id}`,
           kind: 'learning_unit',
@@ -1236,24 +1289,9 @@ export function createKnowledgeMapService({
           current: routeUsable(),
           provenance: unitProvenance,
           learner: overlay,
-          route: routeOverlay(
-            node.id,
-            unit.objectives.map((objective) => objective.id),
-            routeUsable() ? route.plan : null,
-            routeUsable() ? planProgress : [],
-            routeUsable() ? route.agenda : null,
-            unitById,
-            nodeIdByUnitId,
-            routeUsable() ? (nextPlanItem?.id ?? null) : null,
-            routeUsable() ? progressByUnitId : new Map(),
-          ),
+          route: projectedRoute,
           weaknesses,
-          navigation: baseNavigation('study', {
-            learningUnitId: node.id,
-            objectiveId: unit.objectives[0]?.id ?? null,
-            agendaItemId:
-              route.agenda?.items.find((item) => item.learningUnitId === node.id)?.id ?? null,
-          }),
+          navigation,
           curriculumVersionId: route.curriculum?.id ?? 'unknown-curriculum',
           objectiveIds: unit.objectives.map((objective) => objective.id),
           conceptNodeIds: unit.conceptIds

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
@@ -10,6 +10,7 @@ import type {
 } from '@hy3-clinic/shared';
 import { api, ApiClientError } from '../api.js';
 import { documentSummary, material, workspace, workspaceSummary } from '../test/fixtures.js';
+import { knowledgeMapProjection } from '../test/knowledgeMapFixture.js';
 import { AgentCourseWorkspace } from './AgentCourseWorkspace.js';
 
 const AT = '2026-08-12T11:54:07.530Z';
@@ -234,6 +235,7 @@ beforeEach(() => {
   });
   vi.spyOn(api, 'courseExecution').mockResolvedValue({ overview: contractRequiredOverview() });
   vi.spyOn(api, 'coursePreparation').mockResolvedValue({ preparation: preparation() });
+  vi.spyOn(api, 'getKnowledgeMap').mockResolvedValue({ projection: knowledgeMapProjection() });
 });
 
 afterEach(() => {
@@ -413,17 +415,36 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
     expect(screen.queryByText('Learning Contract pointers are stale.')).not.toBeInTheDocument();
   });
 
-  it('closes the Contract editor when navigating to Concept grounding', async () => {
+  it('closes the Contract editor when navigating to the Knowledge Map', async () => {
     vi.spyOn(api, 'materialRoleHistory').mockResolvedValue(roleHistory(strandedProposal));
     const user = userEvent.setup();
     renderWorkspace();
 
     await openContractEditor(user);
     expect(screen.getByLabelText('学习约定编辑器')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: '探索' }));
+    await user.click(screen.getByRole('button', { name: '知识地图' }));
 
     expect(screen.queryByLabelText('学习约定编辑器')).not.toBeInTheDocument();
     expect(screen.getByLabelText('课程学习空间')).toHaveClass('view-explore');
+  });
+
+  it('clears a Knowledge Map Progress focus after leaving Progress', async () => {
+    vi.spyOn(api, 'reviewItems').mockResolvedValue({ items: [] });
+    vi.spyOn(api, 'mistakes').mockResolvedValue({ mistakes: [], weakConcepts: [] });
+    vi.spyOn(api, 'getLearnerRepair').mockImplementation(() => new Promise(() => {}));
+    const user = userEvent.setup();
+    renderWorkspace();
+
+    await user.click(await screen.findByRole('button', { name: '知识地图' }));
+    fireEvent.click((await screen.findByText('认知负荷应用')).closest('.react-flow__node')!);
+    await user.click(screen.getByRole('button', { name: '查看修复' }));
+    expect(await screen.findByLabelText('知识地图定位结果')).toHaveTextContent('查看当前修复');
+
+    await user.click(screen.getByRole('button', { name: '主页' }));
+    await user.click(screen.getByRole('button', { name: '进展' }));
+
+    expect(screen.queryByLabelText('知识地图定位结果')).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '概览' })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('defaults reconfirmation to the latest confirmed role beneath a pending proposal', async () => {
@@ -744,7 +765,7 @@ describe('Course Settings navigation continuity', () => {
 
     for (const destination of [
       { label: '主页', className: 'view-home' },
-      { label: '探索', className: 'view-explore' },
+      { label: '知识地图', className: 'view-explore' },
       { label: '课程结构', className: 'view-curriculum' },
       { label: '进展', className: 'view-progress' },
       { label: '课程资料', className: 'view-materials' },
@@ -838,7 +859,7 @@ describe('Home-owned learning-route failure', () => {
     expect(await screen.findByRole('heading', { name: '学习路线暂未生成' })).toBeInTheDocument();
     expect(screen.getByText('Hy3 响应时间过长，这次生成没有完成。')).toBeInTheDocument();
 
-    for (const destination of ['学习', '课程结构', '进展', '探索', '课程资料', '设置']) {
+    for (const destination of ['学习', '课程结构', '进展', '知识地图', '课程资料', '设置']) {
       await user.click(screen.getByRole('button', { name: destination }));
       expect(screen.queryByRole('heading', { name: '学习路线暂未生成' })).not.toBeInTheDocument();
       expect(screen.queryByText('模型服务响应超时(240000ms)')).not.toBeInTheDocument();
@@ -911,7 +932,7 @@ describe('F-6 operation-owned failures', () => {
     expect(screen.getByLabelText('课程学习空间')).toHaveClass('view-session');
     expect(screen.queryByText('确认服务暂时不可用。')).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: '探索' }));
+    await user.click(screen.getByRole('button', { name: '知识地图' }));
     expect(screen.getByLabelText('课程学习空间')).toHaveClass('view-explore');
     expect(screen.queryByText('确认服务暂时不可用。')).not.toBeInTheDocument();
 

@@ -116,6 +116,7 @@ export interface CourseHomeViewProps {
   onCancelCurriculum: () => void;
   onOpenCurriculum: () => void;
   onOpenConceptGrounding: () => void;
+  onOpenKnowledgeMap?: () => void;
   onProposeStudyPlan: () => void;
   onDismissRouteGenerationFailure: () => void;
   onOpenSettings: () => void;
@@ -147,6 +148,7 @@ export function CourseHomeView({
   onCancelCurriculum,
   onOpenCurriculum,
   onOpenConceptGrounding,
+  onOpenKnowledgeMap,
   onProposeStudyPlan,
   onDismissRouteGenerationFailure,
   onOpenSettings,
@@ -600,6 +602,11 @@ export function CourseHomeView({
               <button type="button" onClick={onOpenCurriculum}>
                 查看完整课程结构
               </button>
+              {onOpenKnowledgeMap ? (
+                <button type="button" onClick={onOpenKnowledgeMap}>
+                  在知识地图中查看
+                </button>
+              ) : null}
             </>
           ) : (
             <p className="muted">确认学习目标后即可生成课程结构。</p>

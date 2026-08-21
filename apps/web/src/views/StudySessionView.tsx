@@ -63,6 +63,7 @@ export interface StudySessionViewProps {
   curriculumUnits?: Array<{ id: string; title: string }>;
   onSessionChanged?: () => void;
   onLaunchQuiz?: (quiz: PublicQuiz) => void;
+  onOpenKnowledgeMap?: (learningUnitId: string) => void;
 }
 
 let commandSequence = 0;
@@ -118,6 +119,7 @@ export function StudySessionView({
   curriculumUnits = [],
   onSessionChanged,
   onLaunchQuiz,
+  onOpenKnowledgeMap,
 }: StudySessionViewProps) {
   const [detail, setDetail] = useState<StudySessionDetailResponse | null>(null);
   const [lessonProjection, setLessonProjection] = useState<LessonExecutionProjection | null>(null);
@@ -797,6 +799,15 @@ export function StudySessionView({
               ) : null}
             </div>
             <div className="study-session-header-actions">
+              {currentAgendaItem?.learningUnitId && onOpenKnowledgeMap ? (
+                <button
+                  type="button"
+                  className="study-map-trigger"
+                  onClick={() => onOpenKnowledgeMap(currentAgendaItem.learningUnitId!)}
+                >
+                  在知识地图中定位
+                </button>
+              ) : null}
               <button
                 ref={inspectorTriggerRef}
                 type="button"

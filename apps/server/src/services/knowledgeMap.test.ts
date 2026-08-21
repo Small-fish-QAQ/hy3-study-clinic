@@ -16,6 +16,7 @@ function installCurrentRoute(
     review?: unknown;
     redTeam?: unknown[];
     lesson?: unknown[];
+    agendaLaunchStatus?: 'launchable' | 'blocked';
   } = {},
 ) {
   if (!context) throw new Error('test context is not initialized');
@@ -127,6 +128,13 @@ function installCurrentRoute(
         state: 'active',
         linkedPlanItemId: 'plan_item_1',
         learningUnitId: 'unit_1',
+        launch: {
+          status: overrides.agendaLaunchStatus ?? 'launchable',
+          capability: 'teach_unit',
+          resourceId: overrides.agendaLaunchStatus === 'blocked' ? null : 'con_1',
+          reason:
+            overrides.agendaLaunchStatus === 'blocked' ? 'Current source is unavailable.' : null,
+        },
       },
     ],
   };
@@ -357,6 +365,24 @@ describe('Knowledge Map projection service', () => {
       unit?.weaknesses.find((item) => item.kind === 'mastery_red_team_possible_gap'),
     ).toMatchObject({ advisory: true, actionable: false });
     expect(unit?.learner.formalValidation).toBe('current_failure');
+    expect(unit?.navigation).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ destination: 'study', learningUnitId: 'unit_1' }),
+        expect.objectContaining({
+          destination: 'progress',
+          learningUnitId: 'unit_1',
+          objectiveId: 'objective_1',
+        }),
+        expect.objectContaining({
+          destination: 'progress',
+          repairEpisodeId: 'repair_1',
+        }),
+        expect.objectContaining({
+          destination: 'progress',
+          reviewTargetId: 'review_target_1',
+        }),
+      ]),
+    );
   });
 
   it('does not turn a due Review into weak mastery and clears the concern after recovery', () => {
@@ -403,6 +429,30 @@ describe('Knowledge Map projection service', () => {
     expect(unit?.weaknesses).not.toContainEqual(
       expect.objectContaining({ kind: 'retrievability_concern' }),
     );
+    expect(unit?.navigation).toContainEqual(
+      expect.objectContaining({
+        destination: 'progress',
+        reviewTargetId: 'review_target_1',
+      }),
+    );
+  });
+
+  it('does not project a Study action for a blocked current agenda item', () => {
+    context = buildTestApp();
+    const { repos } = context;
+    repos.materials.insertWithBlocks(makeMaterial(), [makeBlock()]);
+    repos.materials.addConcepts([makeConcept()]);
+    installCurrentRoute({ agendaLaunchStatus: 'blocked' });
+
+    const projection = createServices({
+      repos,
+      provider: context.provider,
+      clock: fixedClock(T0),
+    }).knowledgeMap.get('ws_1');
+
+    expect(
+      projection.nodes.find((node) => node.kind === 'learning_unit')?.navigation,
+    ).not.toContainEqual(expect.objectContaining({ destination: 'study' }));
   });
 
   it('fails closed when the accepted route source manifest is stale', () => {
@@ -424,6 +474,9 @@ describe('Knowledge Map projection service', () => {
     expect(
       projection.nodes.find((node) => node.kind === 'learning_unit')?.learner.primaryState,
     ).toBe('unknown');
+    expect(
+      projection.nodes.find((node) => node.kind === 'learning_unit')?.navigation,
+    ).not.toContainEqual(expect.objectContaining({ destination: 'study' }));
   });
 
   it('returns 404 for a foreign workspace without touching state', async () => {

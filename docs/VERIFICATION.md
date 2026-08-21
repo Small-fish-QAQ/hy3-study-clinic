@@ -405,6 +405,34 @@ git diff --check
 
 No real-provider call is required for this phase. Exact quote validation proves
 source occurrence at the claimed location; it does not prove complete semantic
-entailment. Phase 10B may add learner-facing map modes and interaction polish
-only after consuming this single contract without re-deriving authority in the
-frontend.
+entailment. Phase 10B consumes this single contract without re-deriving
+authority in the frontend.
+
+## Phase 10B learner-facing Knowledge Map verification
+
+Phase 10B remains offline and adds no production dependency or migration. The
+focused suites are:
+
+```bash
+npm run test -w @hy3-clinic/server -- src/services/knowledgeMap.test.ts
+npm run test -w @hy3-clinic/web -- src/views/KnowledgeMapView.test.tsx src/knowledgeMapPresentation.test.ts src/knowledgeMapLayout.test.ts
+npm run test -w @hy3-clinic/web -- src/views/AgentCourseViews.test.tsx src/views/StudySessionView.test.tsx src/views/AgentCourseWorkspace.live01.test.tsx
+```
+
+They verify all four projection-driven modes; direct enum-to-wording mapping;
+formal failure, Repair, due Review, retrievability, and advisory distinctions;
+current/completed/next/locked routes; selected-node retention and inspector
+actions; Home/Study/Progress cross-navigation; no Study action for a stale,
+locked, non-current, or blocked Agenda item; search, camera controls, deterministic
+layout and local presentation preferences; unconfigured/failure/retry states;
+120-node rendering; keyboard tabs; narrow dialog focus/Escape restoration; and
+AbortController plus request-sequence fencing against a late previous-Course
+response. Existing Phase 10A authority tests remain unchanged.
+
+Browser-level review uses a disposable SQLite database, Fake provider, and an
+isolated deterministic projection fixture. Desktop, 1024 px, and 390 px
+viewports cover Structure, Progress, Route, Weakness, selected inspector,
+formal/Review/advisory distinctions, a 120-node map, and unconfigured/error
+states. The full gate remains the repository commands above. It makes no real
+Hy3 request; opening the Knowledge Map is a local GET and no persistent learner
+state is written.

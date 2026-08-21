@@ -12,6 +12,7 @@ import type {
   MaterialRole,
   MaterialRoleAssignment,
   MaterialRoleHistoryResponse,
+  KnowledgeMapMode,
   PublicQuiz,
   SourceBlock,
   StudyPlanDraftEdit,
@@ -29,9 +30,14 @@ import { CourseHomeView } from './CourseHomeView.js';
 import { CurriculumView } from './CurriculumView.js';
 import { StudySessionView } from './StudySessionView.js';
 import { CourseMaterialsView } from './CourseMaterialsView.js';
-import { CourseProgressView } from './CourseProgressView.js';
+import { CourseProgressView, type CourseProgressIntent } from './CourseProgressView.js';
 import { GraphWorkspaceView } from './GraphWorkspaceView.js';
 import { SettingsView } from './SettingsView.js';
+import {
+  KnowledgeMapView,
+  type KnowledgeMapIntent,
+  type KnowledgeMapNavigationTarget,
+} from './KnowledgeMapView.js';
 
 const ROLE_LABELS: Record<MaterialRole, string> = {
   course_material: '课程主资料',
@@ -204,6 +210,14 @@ export function AgentCourseWorkspace({
   onWorkspaceDeleted,
 }: AgentCourseWorkspaceProps) {
   const [view, setView] = useState<AgentCourseView>('home');
+  const [exploreSurface, setExploreSurface] = useState<'map' | 'concept-grounding'>('map');
+  const mapIntentSequence = useRef(0);
+  const progressIntentSequence = useRef(0);
+  const [knowledgeMapIntent, setKnowledgeMapIntent] = useState<KnowledgeMapIntent>({
+    requestId: 0,
+    mode: 'knowledge_structure',
+  });
+  const [progressIntent, setProgressIntent] = useState<CourseProgressIntent | null>(null);
   const [materialsOpen, setMaterialsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarCollapsedPreference);
@@ -1049,11 +1063,50 @@ export function AgentCourseWorkspace({
     setSettingsOpen(false);
     setContractEditorOpen(false);
     setEditingContractId(null);
+    if (next === 'explore') setExploreSurface('map');
+    if (next !== 'progress') setProgressIntent(null);
     setView(next);
   }
 
   function openConceptGrounding(): void {
     changeView('explore');
+    setExploreSurface('concept-grounding');
+  }
+
+  function openKnowledgeMap(
+    mode: KnowledgeMapMode,
+    focus: Pick<KnowledgeMapIntent, 'nodeId' | 'learningUnitId' | 'objectiveId'> = {},
+  ): void {
+    mapIntentSequence.current += 1;
+    setKnowledgeMapIntent({ requestId: mapIntentSequence.current, mode, ...focus });
+    changeView('explore');
+  }
+
+  function navigateFromKnowledgeMap(target: KnowledgeMapNavigationTarget): void {
+    if (target.destination === 'materials') {
+      setFocusedMaterialId(target.materialId);
+      setSettingsOpen(false);
+      setMaterialsOpen(true);
+      return;
+    }
+    if (target.destination === 'curriculum') {
+      changeView('curriculum');
+      return;
+    }
+    if (target.destination === 'study') {
+      changeView('session');
+      return;
+    }
+    progressIntentSequence.current += 1;
+    setProgressIntent({
+      requestId: progressIntentSequence.current,
+      section: target.repairEpisodeId ? 'repair' : target.reviewTargetId ? 'mastery' : 'evidence',
+      learningUnitId: target.learningUnitId,
+      objectiveId: target.objectiveId,
+      repairEpisodeId: target.repairEpisodeId,
+      reviewTargetId: target.reviewTargetId,
+    });
+    changeView('progress');
   }
 
   function changeCourse(nextWorkspaceId: string | null): void {
@@ -1074,6 +1127,12 @@ export function AgentCourseWorkspace({
     setSettingsOpen(false);
     setContractEditorOpen(false);
     setEditingContractId(null);
+    setExploreSurface('map');
+    setKnowledgeMapIntent({
+      requestId: ++mapIntentSequence.current,
+      mode: 'knowledge_structure',
+    });
+    setProgressIntent(null);
     setView('home');
     onWorkspaceChange(nextWorkspaceId);
   }
@@ -1215,6 +1274,7 @@ export function AgentCourseWorkspace({
           onCancelCurriculum={cancelCurriculum}
           onOpenCurriculum={() => setView('curriculum')}
           onOpenConceptGrounding={openConceptGrounding}
+          onOpenKnowledgeMap={() => openKnowledgeMap('knowledge_structure')}
           onProposeStudyPlan={() => void proposePlan()}
           onDismissRouteGenerationFailure={() => {
             clearStoredRouteGenerationFailure(workspaceId);
@@ -1280,6 +1340,9 @@ export function AgentCourseWorkspace({
           }
           onSessionChanged={() => void refresh()}
           onLaunchQuiz={onLaunchQuiz}
+          onOpenKnowledgeMap={(learningUnitId) =>
+            openKnowledgeMap('learning_route', { learningUnitId })
+          }
         />
       ) : view === 'progress' ? (
         <CourseProgressView
@@ -1295,30 +1358,50 @@ export function AgentCourseWorkspace({
           remediationLoading={progressRemediationAction.loading}
           remediationError={progressRemediationAction.error}
           operationError={actionFailureOwner === 'progress' ? action.error : null}
+          intent={progressIntent}
+          onOpenKnowledgeMap={() => openKnowledgeMap('weakness_map')}
         />
+      ) : exploreSurface === 'concept-grounding' ? (
+        <div className="legacy-grounding-bridge">
+          <div className="legacy-grounding-bridge-head">
+            <div>
+              <p className="eyebrow">课程准备工具</p>
+              <strong>补充课程概念依据</strong>
+            </div>
+            <button type="button" onClick={() => openKnowledgeMap('knowledge_structure')}>
+              返回知识地图
+            </button>
+          </div>
+          <GraphWorkspaceView
+            refreshKey={refreshKey}
+            selectedWorkspaceId={workspaceId}
+            onWorkspaceSelected={(nextWorkspaceId) => {
+              if (nextWorkspaceId !== workspaceId) changeCourse(nextWorkspaceId);
+            }}
+            onWorkspaceDeleted={(deletedWorkspaceId) => {
+              clearStoredRouteGenerationFailure(deletedWorkspaceId);
+              if (routeGenerationFailure?.workspaceId === deletedWorkspaceId) {
+                setRouteGenerationFailure(null);
+              }
+              onWorkspaceDeleted?.(deletedWorkspaceId);
+            }}
+            onLaunchQuiz={(quiz) => onLaunchQuiz(quiz)}
+            onOpenMaterials={() => {
+              setView('home');
+              setMaterialsOpen(true);
+            }}
+            onConceptGroundingChanged={(changedWorkspaceId) => {
+              if (changedWorkspaceId === workspaceIdRef.current) void refreshCourse();
+            }}
+            courseLocked
+          />
+        </div>
       ) : (
-        <GraphWorkspaceView
+        <KnowledgeMapView
+          workspaceId={workspaceId}
           refreshKey={refreshKey}
-          selectedWorkspaceId={workspaceId}
-          onWorkspaceSelected={(nextWorkspaceId) => {
-            if (nextWorkspaceId !== workspaceId) changeCourse(nextWorkspaceId);
-          }}
-          onWorkspaceDeleted={(deletedWorkspaceId) => {
-            clearStoredRouteGenerationFailure(deletedWorkspaceId);
-            if (routeGenerationFailure?.workspaceId === deletedWorkspaceId) {
-              setRouteGenerationFailure(null);
-            }
-            onWorkspaceDeleted?.(deletedWorkspaceId);
-          }}
-          onLaunchQuiz={(quiz) => onLaunchQuiz(quiz)}
-          onOpenMaterials={() => {
-            setView('home');
-            setMaterialsOpen(true);
-          }}
-          onConceptGroundingChanged={(changedWorkspaceId) => {
-            if (changedWorkspaceId === workspaceIdRef.current) void refreshCourse();
-          }}
-          courseLocked
+          intent={knowledgeMapIntent}
+          onNavigate={navigateFromKnowledgeMap}
         />
       )}
     </AgentCourseShell>

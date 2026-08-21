@@ -4,6 +4,7 @@ import type {
   CourseExecutionOverview,
   DocumentSummary,
   CurrentReviewItem,
+  LearnerRepairProjection,
 } from '@hy3-clinic/shared';
 import { api } from '../api.js';
 import { Banner, Loading } from '../components/ui.js';
@@ -12,7 +13,16 @@ import { QuizHistoryView } from './QuizHistoryView.js';
 import { MistakesView } from './MistakesView.js';
 import { MasteryView } from './MasteryView.js';
 
-type ProgressSection = 'overview' | 'evidence' | 'repair' | 'mastery' | 'history';
+export type ProgressSection = 'overview' | 'evidence' | 'repair' | 'mastery' | 'history';
+
+export interface CourseProgressIntent {
+  requestId: number;
+  section: ProgressSection;
+  learningUnitId?: string | null;
+  objectiveId?: string | null;
+  repairEpisodeId?: string | null;
+  reviewTargetId?: string | null;
+}
 
 const SECTION_LABELS: Record<ProgressSection, string> = {
   overview: '概览',
@@ -110,6 +120,8 @@ export interface CourseProgressViewProps {
   remediationLoading: boolean;
   remediationError: string | null;
   operationError: string | null;
+  intent?: CourseProgressIntent | null;
+  onOpenKnowledgeMap?: () => void;
 }
 
 /** Consolidates formal progression and the legacy diagnostic views under one Course destination. */
@@ -126,11 +138,47 @@ export function CourseProgressView({
   remediationLoading,
   remediationError,
   operationError,
+  intent = null,
+  onOpenKnowledgeMap,
 }: CourseProgressViewProps) {
   const [section, setSection] = useState<ProgressSection>('overview');
   const [materialId, setMaterialId] = useState(documents[0]?.id ?? '');
   const [reviews, setReviews] = useState<CurrentReviewItem[] | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
+  const [focusedRepair, setFocusedRepair] = useState<LearnerRepairProjection | null>(null);
+  const [focusedRepairError, setFocusedRepairError] = useState<string | null>(null);
+  const [focusedRepairLoading, setFocusedRepairLoading] = useState(false);
+
+  useEffect(() => {
+    if (intent) setSection(intent.section);
+  }, [intent]);
+
+  useEffect(() => {
+    if (!intent?.repairEpisodeId) {
+      setFocusedRepair(null);
+      setFocusedRepairError(null);
+      setFocusedRepairLoading(false);
+      return;
+    }
+    const controller = new AbortController();
+    setFocusedRepair(null);
+    setFocusedRepairError(null);
+    setFocusedRepairLoading(true);
+    void api
+      .getLearnerRepair(intent.repairEpisodeId, controller.signal)
+      .then((repair) => {
+        if (!controller.signal.aborted) setFocusedRepair(repair);
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted) {
+          setFocusedRepairError(error instanceof Error ? error.message : String(error));
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setFocusedRepairLoading(false);
+      });
+    return () => controller.abort();
+  }, [intent?.repairEpisodeId, intent?.requestId]);
 
   useEffect(() => {
     if (!documents.some((document) => document.id === materialId)) {
@@ -179,13 +227,68 @@ export function CourseProgressView({
   return (
     <div className="course-progress stack" aria-label="课程进展">
       <header className="supporting-page-intro course-page-intro">
-        <p className="eyebrow">有依据的学习进展</p>
-        <p className="muted">
-          正式证据、待修复内容和历史决定都汇集在这里。Tutor 对话和一般活动不会自动成为正式进展。
-        </p>
+        <div>
+          <p className="eyebrow">有依据的学习进展</p>
+          <p className="muted">
+            正式证据、待修复内容和历史决定都汇集在这里。Tutor 对话和一般活动不会自动成为正式进展。
+          </p>
+        </div>
+        {onOpenKnowledgeMap ? (
+          <button type="button" onClick={onOpenKnowledgeMap}>
+            在知识地图中解释
+          </button>
+        ) : null}
       </header>
 
       {operationError ? <Banner kind="error">这次进展操作未完成。{operationError}</Banner> : null}
+
+      {intent ? (
+        <section className="progress-map-focus" aria-label="知识地图定位结果" role="status">
+          <div>
+            <span className="eyebrow">来自知识地图</span>
+            <strong>
+              {intent.repairEpisodeId
+                ? '查看当前修复'
+                : intent.reviewTargetId
+                  ? '查看复习安排'
+                  : '查看正式证据'}
+            </strong>
+          </div>
+          {focusedRepairLoading ? <Loading label="读取修复内容…" /> : null}
+          {focusedRepairError ? (
+            <Banner kind="error">修复内容暂时无法读取。{focusedRepairError}</Banner>
+          ) : null}
+          {focusedRepair ? (
+            <div className="progress-map-repair-detail">
+              <p>
+                <b>需要修复</b>
+                {focusedRepair.diagnosis}
+              </p>
+              <p>
+                <b>修复目标</b>
+                {focusedRepair.target}
+              </p>
+              {focusedRepair.packet ? (
+                <p>
+                  <b>{focusedRepair.packet.interventionLabel}</b>
+                  {focusedRepair.packet.explanation}
+                </p>
+              ) : null}
+              <span className="small muted">
+                已练习 {focusedRepair.attemptCount} 次 ·{' '}
+                {focusedRepair.resolved ? '已解决' : '仍在进行'}
+              </span>
+            </div>
+          ) : null}
+          {intent.reviewTargetId && reviews ? (
+            reviews.some((review) => review.reviewTargetId === intent.reviewTargetId) ? (
+              <p>已在“掌握与复习”中定位当前复习项目。</p>
+            ) : (
+              <p className="muted">该复习项目已不在当前安排中，下面显示最新复习状态。</p>
+            )
+          ) : null}
+        </section>
+      ) : null}
 
       <div className="subview-tabs" aria-label="进展分类" role="tablist">
         {PROGRESS_SECTIONS.map((item) => (
@@ -263,6 +366,7 @@ export function CourseProgressView({
                 target === 'history' ? 'history' : target === 'mistakes' ? 'repair' : 'mastery',
               )
             }
+            focusObjectiveId={intent?.section === 'evidence' ? intent.objectiveId : null}
           />
         </div>
       ) : null}
@@ -335,7 +439,15 @@ export function CourseProgressView({
                   </div>
                 ) : null}
                 {reviews?.map((review) => (
-                  <article className="review-row" key={review.reviewTargetId}>
+                  <article
+                    className={`review-row${
+                      intent?.reviewTargetId === review.reviewTargetId ? ' is-focused' : ''
+                    }`}
+                    key={review.reviewTargetId}
+                    aria-current={
+                      intent?.reviewTargetId === review.reviewTargetId ? 'true' : undefined
+                    }
+                  >
                     <strong>{review.objectiveTitle}</strong>
                     <span className="small muted">
                       {reviewWorkflowLabel(review.workflowPhase)} ·{' '}

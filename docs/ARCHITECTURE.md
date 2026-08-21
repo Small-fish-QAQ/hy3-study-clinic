@@ -961,3 +961,50 @@ not call `reconcileDueAgenda()` or any provider and performs no writes. A stale
 or incomplete route/source binding fails closed with explicit unknown reasons.
 The projection is bounded at 2,000 nodes and 4,000 edges and uses fixed-query
 repository reads rather than a graph database or whole-corpus provider prompt.
+
+## Learner-facing Knowledge Map and navigation (Phase 10B)
+
+`KnowledgeMapView` is a read-only Course surface over the frozen
+`knowledge-map-projection-v1` and `knowledge-map-precedence-v1` contracts. React
+maps projection enums to learner wording, icons/badges, shape, border, opacity,
+and emphasis; it does not inspect Evidence, Repair, Review, mastery, mistakes,
+or Red Team records to reach a new state conclusion. Repair remains the primary
+display override, formal failure remains authoritative weakness, Review due is
+scheduling, and `possible_gap` remains an advisory that cannot trigger an
+action or mutate formal state.
+
+The server owns executable navigation. A LearningUnit receives `study` only
+when it is the current Agenda item, its route is current, prerequisites are
+unlocked, and its launch status is `launchable`. Current formal records, active
+Repair episodes, and current due/concern Review targets project focused
+`progress` actions. The client dispatches those validated targets to existing
+Study, Progress, Curriculum, and Material surfaces; arbitrary visible nodes do
+not receive synthetic actions. The GET path remains provider-free and
+mutation-free.
+
+The canvas uses the existing React Flow and d3-force stack. One deterministic
+topology layout is independent of learner mode and state, so mode switches keep
+selection, node positions, and camera context. Dragged positions and viewport
+are optional local presentation preferences keyed by workspace and accepted
+Curriculum identity. Small maps retain the existing obstacle-aware edge router;
+above 48 edges the view uses straight, low-emphasis edges and visible-element
+culling. Search, fit, reset, zoom, and selected one-hop focus provide bounded
+navigation without introducing a graph-query language. React Flow selection,
+drag, and pan ownership prevents node dragging from becoming canvas panning.
+
+Course-level request ownership uses an AbortController plus a monotonically
+increasing request sequence. The projection is cleared on Course identity
+change; a late response from a previous Course cannot render into the new one,
+and a failed refresh can retain only a valid projection already owned by the
+same Course. Unconfigured, partial/unknown, loading, and failed/retry states are
+learner-visible. On narrow screens the inspector is a modal bottom sheet with
+focus containment, Escape/backdrop close, and focus restoration; desktop uses
+an adjacent inspector and medium widths use an overlay drawer.
+
+The legacy `GraphWorkspaceView` is not retired in this phase. It remains behind
+the Course preparation bridge for concept extraction, grounding, graph
+generation, alignment, and other existing advanced workflows. Phase 10C must
+decide those capability destinations and history requirements before removing
+any route. The existing concept mastery repository is historical in naming but
+still the current authority for concept `mastered`, `developing`, and `weak`;
+Phase 10B neither replaces nor reinterprets it.

@@ -12,7 +12,7 @@ const VIEW_LABELS: Record<AgentCourseView, string> = {
   session: '学习',
   curriculum: '课程结构',
   progress: '进展',
-  explore: '探索',
+  explore: '知识地图',
 };
 
 const VIEW_DESCRIPTIONS: Record<AgentCourseView, string> = {
@@ -20,7 +20,7 @@ const VIEW_DESCRIPTIONS: Record<AgentCourseView, string> = {
   session: 'Tutor 对话与当前学习安排',
   curriculum: '已验证的课程层级与版本',
   progress: '正式证据、修复与学习记录',
-  explore: '概念、关系与来源依据',
+  explore: '课程结构、学习路线与当前关注',
 };
 
 const SIDEBAR_STORAGE_KEY = 'hy3-clinic:course-sidebar-collapsed';
