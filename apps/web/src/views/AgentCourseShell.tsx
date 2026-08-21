@@ -22,6 +22,7 @@ const VIEW_DESCRIPTIONS: Record<AgentCourseView, string> = {
   progress: '正式证据、修复与学习记录',
   explore: '课程结构、学习路线与当前关注',
 };
+const PRIMARY_VIEWS: AgentCourseView[] = ['home', 'session', 'curriculum', 'explore', 'progress'];
 
 const SIDEBAR_STORAGE_KEY = 'hy3-clinic:course-sidebar-collapsed';
 const NARROW_QUERY = '(max-width: 767px)';
@@ -37,11 +38,12 @@ export interface AgentCourseShellProps {
   settingsActive?: boolean;
   provider?: 'fake' | 'hy3' | null;
   sidebarCollapsed?: boolean;
+  destinationLabel?: string;
+  destinationDescription?: string;
   onCourseChange: (courseId: string | null) => void;
   onViewChange: (view: AgentCourseView) => void;
   onOpenMaterials?: () => void;
   onOpenSettings?: () => void;
-  onOpenAdvancedTools?: () => void;
   onSidebarCollapsedChange?: (collapsed: boolean) => void;
   notifications?: ReactNode;
   children: ReactNode;
@@ -57,11 +59,12 @@ export function AgentCourseShell({
   settingsActive = false,
   provider = null,
   sidebarCollapsed,
+  destinationLabel: destinationLabelOverride,
+  destinationDescription: destinationDescriptionOverride,
   onCourseChange,
   onViewChange,
   onOpenMaterials,
   onOpenSettings,
-  onOpenAdvancedTools,
   onSidebarCollapsedChange,
   notifications,
   children,
@@ -144,16 +147,16 @@ export function AgentCourseShell({
     setMobileOpen(false);
   }, [activeView, courseId, materialsActive, settingsActive]);
 
-  const destinationLabel = settingsActive
-    ? '设置'
-    : materialsActive
-      ? '课程资料'
-      : VIEW_LABELS[activeView];
-  const destinationDescription = settingsActive
-    ? '连接、工作区偏好与应用信息'
-    : materialsActive
-      ? '课程来源、角色与处理状态'
-      : VIEW_DESCRIPTIONS[activeView];
+  const destinationLabel =
+    destinationLabelOverride ??
+    (settingsActive ? '设置' : materialsActive ? '课程资料' : VIEW_LABELS[activeView]);
+  const destinationDescription =
+    destinationDescriptionOverride ??
+    (settingsActive
+      ? '连接、工作区偏好与应用信息'
+      : materialsActive
+        ? '课程来源、角色与处理状态'
+        : VIEW_DESCRIPTIONS[activeView]);
   const visuallyCollapsed = collapsed && !narrow;
 
   function closeMobile(returnFocus = true): void {
@@ -300,7 +303,7 @@ export function AgentCourseShell({
         {courseName ? (
           <nav className="course-sidebar-nav" aria-label="课程导航">
             <span className="course-sidebar-section-label">学习空间</span>
-            {(Object.keys(VIEW_LABELS) as AgentCourseView[]).map((view) => {
+            {PRIMARY_VIEWS.map((view) => {
               const selected = !materialsActive && !settingsActive && activeView === view;
               return (
                 <button
@@ -333,17 +336,6 @@ export function AgentCourseShell({
             >
               <ShellIcon name="materials" />
               <span className="course-nav-label">课程资料</span>
-            </button>
-          ) : null}
-          {onOpenAdvancedTools ? (
-            <button
-              type="button"
-              aria-label={visuallyCollapsed ? '兼容与高级工具' : undefined}
-              title={visuallyCollapsed ? '兼容与高级工具' : undefined}
-              onClick={onOpenAdvancedTools}
-            >
-              <ShellIcon name="advanced" />
-              <span className="course-nav-label">兼容与高级工具</span>
             </button>
           ) : null}
         </div>
@@ -432,14 +424,7 @@ export function AgentCourseShell({
 }
 
 type ShellIconName =
-  | AgentCourseView
-  | 'course'
-  | 'materials'
-  | 'settings'
-  | 'advanced'
-  | 'menu'
-  | 'close'
-  | 'collapse';
+  AgentCourseView | 'course' | 'materials' | 'settings' | 'menu' | 'close' | 'collapse';
 
 const ICON_PATHS: Record<ShellIconName, string> = {
   home: 'M3 10.5 12 3l9 7.5v9a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H4.5A1.5 1.5 0 0 1 3 19.5z',
@@ -452,7 +437,6 @@ const ICON_PATHS: Record<ShellIconName, string> = {
   materials: 'M6 3h8l4 4v14H6zm8 0v5h4M9 12h6m-6 4h6',
   settings:
     'M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm7.4 3.5a7.8 7.8 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a8.8 8.8 0 0 0-1.8-1l-.4-2.6h-4L10.3 6a8.8 8.8 0 0 0-1.8 1L6.1 6l-2 3.4 2 1.6a7.8 7.8 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a8.8 8.8 0 0 0 1.8 1l.4 2.6h4l.4-2.6a8.8 8.8 0 0 0 1.8-1l2.4 1 2-3.4-2-1.6a7.8 7.8 0 0 0 .1-1Z',
-  advanced: 'M5 12a1.5 1.5 0 1 0 0 .01M12 12a1.5 1.5 0 1 0 0 .01M19 12a1.5 1.5 0 1 0 0 .01',
   menu: 'M4 7h16M4 12h16M4 17h16',
   close: 'm6 6 12 12M18 6 6 18',
   collapse: 'm14 6-6 6 6 6M20 4v16',

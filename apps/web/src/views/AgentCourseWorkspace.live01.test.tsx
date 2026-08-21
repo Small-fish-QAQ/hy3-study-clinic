@@ -9,7 +9,13 @@ import type {
   MaterialRoleHistoryResponse,
 } from '@hy3-clinic/shared';
 import { api, ApiClientError } from '../api.js';
-import { documentSummary, material, workspace, workspaceSummary } from '../test/fixtures.js';
+import {
+  concepts,
+  documentSummary,
+  material,
+  workspace,
+  workspaceSummary,
+} from '../test/fixtures.js';
 import { knowledgeMapProjection } from '../test/knowledgeMapFixture.js';
 import { AgentCourseWorkspace } from './AgentCourseWorkspace.js';
 
@@ -214,7 +220,6 @@ function renderWorkspace() {
     <AgentCourseWorkspace
       workspaceId={workspace.id}
       onWorkspaceChange={vi.fn()}
-      onLaunchQuiz={vi.fn()}
       refreshKey={0}
       provider="fake"
     />,
@@ -638,7 +643,6 @@ describe('Course preparation orchestration', () => {
       <AgentCourseWorkspace
         workspaceId={workspace.id}
         onWorkspaceChange={onWorkspaceChange}
-        onLaunchQuiz={vi.fn()}
         refreshKey={0}
         provider="fake"
       />,
@@ -739,6 +743,113 @@ describe('Course preparation orchestration', () => {
 });
 
 describe('Course Settings navigation continuity', () => {
+  it('applies an external advanced-assessment route inside the selected Course shell', async () => {
+    vi.spyOn(api, 'materialRoleHistory').mockResolvedValue(roleHistory(strandedProposal));
+    vi.spyOn(api, 'getMaterial').mockResolvedValue(material);
+    vi.spyOn(api, 'getConcepts').mockResolvedValue({ concepts });
+    const onDestinationChange = vi.fn();
+    render(
+      <AgentCourseWorkspace
+        workspaceId={workspace.id}
+        onWorkspaceChange={vi.fn()}
+        refreshKey={0}
+        provider="fake"
+        navigationIntent={{ requestId: 1, destination: 'assessment' }}
+        onDestinationChange={onDestinationChange}
+      />,
+    );
+
+    expect(await screen.findByLabelText('课程高级评估')).toBeInTheDocument();
+    expect(screen.getByLabelText('课程学习空间')).toHaveClass('view-progress');
+    expect(screen.queryByText('兼容与高级工具')).not.toBeInTheDocument();
+    expect(onDestinationChange).not.toHaveBeenCalled();
+  });
+
+  it('applies browser history changes without echoing the previous Progress subsection', async () => {
+    vi.spyOn(api, 'materialRoleHistory').mockResolvedValue(roleHistory(strandedProposal));
+    vi.spyOn(api, 'reviewItems').mockResolvedValue({ items: [] });
+    vi.spyOn(api, 'mastery').mockResolvedValue({ mastery: [], weakConcepts: [] });
+    vi.spyOn(api, 'mistakes').mockResolvedValue({ mistakes: [], weakConcepts: [] });
+    const onDestinationChange = vi.fn();
+    const user = userEvent.setup();
+    const rendered = render(
+      <AgentCourseWorkspace
+        workspaceId={workspace.id}
+        onWorkspaceChange={vi.fn()}
+        refreshKey={0}
+        provider="fake"
+        navigationIntent={{ requestId: 1, destination: 'progress-overview' }}
+        onDestinationChange={onDestinationChange}
+      />,
+    );
+
+    expect(await screen.findByRole('tab', { name: '概览' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    onDestinationChange.mockClear();
+
+    rendered.rerender(
+      <AgentCourseWorkspace
+        workspaceId={workspace.id}
+        onWorkspaceChange={vi.fn()}
+        refreshKey={0}
+        provider="fake"
+        navigationIntent={{ requestId: 2, destination: 'progress-mastery' }}
+        onDestinationChange={onDestinationChange}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole('tab', { name: '掌握与复习' })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      ),
+    );
+    expect(onDestinationChange).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('tab', { name: '修复' }));
+    expect(onDestinationChange).toHaveBeenLastCalledWith('progress-repair');
+  });
+
+  it('does not suppress user navigation after an identical controlled destination', async () => {
+    vi.spyOn(api, 'materialRoleHistory').mockResolvedValue(roleHistory(strandedProposal));
+    vi.spyOn(api, 'reviewItems').mockResolvedValue({ items: [] });
+    vi.spyOn(api, 'mastery').mockResolvedValue({ mastery: [], weakConcepts: [] });
+    vi.spyOn(api, 'mistakes').mockResolvedValue({ mistakes: [], weakConcepts: [] });
+    const onDestinationChange = vi.fn();
+    const user = userEvent.setup();
+    const rendered = render(
+      <AgentCourseWorkspace
+        workspaceId={workspace.id}
+        onWorkspaceChange={vi.fn()}
+        refreshKey={0}
+        provider="fake"
+        navigationIntent={{ requestId: 1, destination: 'progress-overview' }}
+        onDestinationChange={onDestinationChange}
+      />,
+    );
+
+    expect(await screen.findByRole('tab', { name: '概览' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    onDestinationChange.mockClear();
+    rendered.rerender(
+      <AgentCourseWorkspace
+        workspaceId={workspace.id}
+        onWorkspaceChange={vi.fn()}
+        refreshKey={0}
+        provider="fake"
+        navigationIntent={{ requestId: 2, destination: 'progress-overview' }}
+        onDestinationChange={onDestinationChange}
+      />,
+    );
+
+    await user.click(screen.getByRole('tab', { name: '修复' }));
+    expect(onDestinationChange).toHaveBeenLastCalledWith('progress-repair');
+  });
+
   it('keeps the same selected Course when opened from every Course destination', async () => {
     vi.spyOn(api, 'materialRoleHistory').mockResolvedValue(roleHistory(strandedProposal));
     vi.spyOn(api, 'config').mockResolvedValue({
@@ -809,7 +920,6 @@ describe('Course Settings navigation continuity', () => {
       <AgentCourseWorkspace
         workspaceId={null}
         onWorkspaceChange={vi.fn()}
-        onLaunchQuiz={vi.fn()}
         refreshKey={0}
         provider="fake"
       />,

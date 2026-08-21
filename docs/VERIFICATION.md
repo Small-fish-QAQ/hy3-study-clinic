@@ -4,12 +4,12 @@ This document is the reproducibility and reviewer-evidence companion to the [Hy3
 
 ## Release lineage
 
-| Purpose | Commit or ref | Meaning |
-| --- | --- | --- |
-| Real Hy3 evaluation source | `46d34f288d6c619d396ee5f39e12cb33249161da` | The six-operation `eval:hy3` suite ran from this clean worktree. |
-| Final submitted release | `c67ac6d5a42295a21197794e5055ef7785df3b0b` | Direct child of the evaluated commit; adds the sanitized evidence, its regression guard, and documentation. |
-| Immutable final tag | `issue-4-final` | Annotated tag pointing to `c67ac6d`; it is intentionally not moved by later documentation maintenance. |
-| Upstream submission | [Tencent-Hunyuan/Hy3#77](https://github.com/Tencent-Hunyuan/Hy3/pull/77) | Wrapper PR targeting upstream branch `rhinobird2026` and linking the independent repository. |
+| Purpose                    | Commit or ref                                                            | Meaning                                                                                                     |
+| -------------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Real Hy3 evaluation source | `46d34f288d6c619d396ee5f39e12cb33249161da`                               | The six-operation `eval:hy3` suite ran from this clean worktree.                                            |
+| Final submitted release    | `c67ac6d5a42295a21197794e5055ef7785df3b0b`                               | Direct child of the evaluated commit; adds the sanitized evidence, its regression guard, and documentation. |
+| Immutable final tag        | `issue-4-final`                                                          | Annotated tag pointing to `c67ac6d`; it is intentionally not moved by later documentation maintenance.      |
+| Upstream submission        | [Tencent-Hunyuan/Hy3#77](https://github.com/Tencent-Hunyuan/Hy3/pull/77) | Wrapper PR targeting upstream branch `rhinobird2026` and linking the independent repository.                |
 
 This post-tag audit improves documentation and reviewer-facing metadata. It does not rewrite the historical evaluation or move the release tag.
 
@@ -35,6 +35,7 @@ The root commands map to the existing monorepo workspaces:
 - `npm run eval:fake` uses the deterministic fake provider and makes no real Hy3 request.
 
 Phase 8B-R coverage includes migration-31 upgrade repair, null-memory pending state, exact-binding pre-cutover backfill, durable audit/idempotency and pre/post-cutover separation; successor-only queue, assessment, Tutor, and API reads; event/state/execution atomicity; retry after a durable Formal reconciliation; and exact Again-before-Good ordering. Legacy Review rows are seeded only to prove historical preservation and the absence of current fallback authority.
+
 - `git diff --check` checks the final patch for whitespace errors. `npm run lint` already includes the repository-wide `prettier --check .`; run `npx prettier --check README.md docs/ARCHITECTURE.md docs/VERIFICATION.md` for a documentation-only formatting check.
 
 CI executes `npm ci`, build, lint, and tests on:
@@ -164,6 +165,7 @@ The restart checks verify persisted documents, active graph data, learner state,
 ## Migration verification
 
 The server suite covers all 25 migrations directly: applying them from scratch and re-running them safely;
+
 - populated v1 -> current migration without deleting source, quiz, grading, mistake, mastery, or history rows;
 - honest `unknown` origin for workspaces whose historical creation path cannot be reconstructed;
 - populated v3 -> current migration, including the SQLite quiz-table rebuild;
@@ -338,17 +340,17 @@ The README captions map the screenshots to PDF provenance, graph evidence, bound
 
 ## Evidence-to-requirement matrix
 
-| Issue #4 claim | Implementation | Reviewer evidence | Automated evidence |
-| --- | --- | --- | --- |
-| Hy3 powers production semantic workflows | [`hy3Provider.ts`](../apps/server/src/llm/hy3Provider.ts), [`provider.ts`](../apps/server/src/llm/provider.ts) | [Online verification](evidence/hy3-online-verification.md), [demo](assets/hy3-study-clinic-demo.mp4) | [`hy3Provider.test.ts`](../apps/server/src/llm/hy3Provider.test.ts), [`flows.test.ts`](../apps/server/src/routes/flows.test.ts) |
-| Interactive web frontend | [`App.tsx`](../apps/web/src/App.tsx), [`views/`](../apps/web/src/views) | Seven screenshots and the final demo | [`App.test.tsx`](../apps/web/src/App.test.tsx) and focused view/component suites |
-| Page/section source provenance | [`documents.ts`](../apps/server/src/ingestion/documents.ts), [`verify.ts`](../apps/server/src/grounding/verify.ts) | [Screenshot 01](assets/01-pdf-page-evidence.png) | [`documents.test.ts`](../apps/server/src/ingestion/documents.test.ts), [`verify.test.ts`](../apps/server/src/grounding/verify.test.ts) |
-| Locally validated concept graph | [`graph.ts`](../apps/server/src/services/graph.ts), [`validate.ts`](../apps/server/src/graph/validate.ts) | [Screenshot 02](assets/02-learning-graph-evidence.png) | Graph validator, service, route, and frontend graph suites |
-| Bounded graph-grounded Tutor | [`tutor.ts`](../apps/server/src/services/tutor.ts), [`tools.ts`](../apps/server/src/tutor/tools.ts) | [Screenshot 03](assets/03-hy3-graph-tutoring.png) | [`tutor.test.ts`](../apps/server/src/services/tutor.test.ts), [`tools.test.ts`](../apps/server/src/tutor/tools.test.ts) |
-| Hybrid deterministic/semantic grading | [`grading.ts`](../apps/server/src/services/grading.ts), [`score.ts`](../apps/server/src/grading/score.ts) | [Screenshots 04](assets/04-assessment-result-overview.png) and [05](assets/05-hy3-rubric-grading.png) | Score, rubric-alignment, flow, and results-view suites |
-| Mistake-remediation loop | [`remediation.ts`](../apps/server/src/services/remediation.ts), [`grading.ts`](../apps/server/src/services/grading.ts) | [Screenshot 06](assets/06-remediation-resolved.png) | Flow, remediation, service, and repository tests |
-| Persistent learner state | [`database.ts`](../apps/server/src/db/database.ts), [`study.ts`](../apps/server/src/routes/study.ts) | [Screenshot 07](assets/07-learning-progress.png) | Repository, migration, flow, history, misconception, and review tests |
-| Reproducible open-source delivery | [`package.json`](../package.json), [`.env.example`](../.env.example), [`ci.yml`](../.github/workflows/ci.yml) | Final Release, tag, PR, and this document | Full offline suite and three-platform CI matrix |
+| Issue #4 claim                           | Implementation                                                                                                         | Reviewer evidence                                                                                     | Automated evidence                                                                                                                     |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Hy3 powers production semantic workflows | [`hy3Provider.ts`](../apps/server/src/llm/hy3Provider.ts), [`provider.ts`](../apps/server/src/llm/provider.ts)         | [Online verification](evidence/hy3-online-verification.md), [demo](assets/hy3-study-clinic-demo.mp4)  | [`hy3Provider.test.ts`](../apps/server/src/llm/hy3Provider.test.ts), [`flows.test.ts`](../apps/server/src/routes/flows.test.ts)        |
+| Interactive web frontend                 | [`App.tsx`](../apps/web/src/App.tsx), [`views/`](../apps/web/src/views)                                                | Seven screenshots and the final demo                                                                  | [`App.test.tsx`](../apps/web/src/App.test.tsx) and focused view/component suites                                                       |
+| Page/section source provenance           | [`documents.ts`](../apps/server/src/ingestion/documents.ts), [`verify.ts`](../apps/server/src/grounding/verify.ts)     | [Screenshot 01](assets/01-pdf-page-evidence.png)                                                      | [`documents.test.ts`](../apps/server/src/ingestion/documents.test.ts), [`verify.test.ts`](../apps/server/src/grounding/verify.test.ts) |
+| Locally validated concept graph          | [`graph.ts`](../apps/server/src/services/graph.ts), [`validate.ts`](../apps/server/src/graph/validate.ts)              | [Screenshot 02](assets/02-learning-graph-evidence.png)                                                | Graph validator, service, route, and frontend graph suites                                                                             |
+| Bounded graph-grounded Tutor             | [`tutor.ts`](../apps/server/src/services/tutor.ts), [`tools.ts`](../apps/server/src/tutor/tools.ts)                    | [Screenshot 03](assets/03-hy3-graph-tutoring.png)                                                     | [`tutor.test.ts`](../apps/server/src/services/tutor.test.ts), [`tools.test.ts`](../apps/server/src/tutor/tools.test.ts)                |
+| Hybrid deterministic/semantic grading    | [`grading.ts`](../apps/server/src/services/grading.ts), [`score.ts`](../apps/server/src/grading/score.ts)              | [Screenshots 04](assets/04-assessment-result-overview.png) and [05](assets/05-hy3-rubric-grading.png) | Score, rubric-alignment, flow, and results-view suites                                                                                 |
+| Mistake-remediation loop                 | [`remediation.ts`](../apps/server/src/services/remediation.ts), [`grading.ts`](../apps/server/src/services/grading.ts) | [Screenshot 06](assets/06-remediation-resolved.png)                                                   | Flow, remediation, service, and repository tests                                                                                       |
+| Persistent learner state                 | [`database.ts`](../apps/server/src/db/database.ts), [`study.ts`](../apps/server/src/routes/study.ts)                   | [Screenshot 07](assets/07-learning-progress.png)                                                      | Repository, migration, flow, history, misconception, and review tests                                                                  |
+| Reproducible open-source delivery        | [`package.json`](../package.json), [`.env.example`](../.env.example), [`ci.yml`](../.github/workflows/ci.yml)          | Final Release, tag, PR, and this document                                                             | Full offline suite and three-platform CI matrix                                                                                        |
 
 ## Honest scope
 
@@ -436,3 +438,47 @@ formal/Review/advisory distinctions, a 120-node map, and unconfigured/error
 states. The full gate remains the repository commands above. It makes no real
 Hy3 request; opening the Knowledge Map is a local GET and no persistent learner
 state is written.
+
+## Phase 10C legacy surface consolidation verification
+
+Phase 10C is a frontend route and information-architecture change. It adds no
+migration, backend authority, production dependency, or real Hy3 call. Run the
+focused web gate through the web workspace so Vitest uses its jsdom setup:
+
+```bash
+npm run test -w @hy3-clinic/web -- src/appRoutes.test.ts src/App.test.tsx src/views/CourseAssessmentView.test.tsx src/views/AgentCourseViews.test.tsx src/views/AgentCourseWorkspace.live01.test.tsx src/views/GraphWorkspaceView.test.tsx
+```
+
+These suites cover the canonical top-level shell, absence of peer legacy
+products, every alias class, unknown-path fallback, no redirect loop, direct
+advanced bookmarks, browser history between Progress subsections, Course-switch
+reset, provider-bootstrap fencing, manual generation/grading, immutable history
+refresh, Formal Evidence and read-only result history, Mistake/Repair launch and
+history, mastery/Review visibility, grounding extraction/alignment/version
+governance, learner-overlay isolation, request cancellation, and stale Course
+responses.
+
+Browser review must use a disposable SQLite file, `LLM_PROVIDER=fake`, and an
+isolated `PROVIDER_CONFIG_PATH` that cannot inherit a saved Hy3 selection. Before
+seeding or opening the UI, require `GET /api/config` to report `provider: fake`;
+the saved provider configuration takes precedence over the environment default.
+Check desktop and narrow navigation; Home, Study, Curriculum, Knowledge Map,
+Progress, Materials, and Settings; representative legacy bookmarks; Formal
+history; Repair; mastery/Review; advanced grounding; manual assessment;
+back/forward; and Course switching. Confirm that no retired shell appears in
+history and no learner overlay/plan request is made by Course grounding.
+
+The complete gate is:
+
+```bash
+npm test
+npm run eval:fake
+npm run build
+npm run lint
+npx prettier --check .
+git diff --check
+```
+
+Also inspect the changed-file diff for credentials, private workspace or
+attachment paths, obsolete peer-navigation labels, and noncanonical internal
+links. Do not run `eval:hy3` or edit a live SQLite database.

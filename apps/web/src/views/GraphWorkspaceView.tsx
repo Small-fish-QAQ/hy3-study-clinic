@@ -27,7 +27,11 @@ import type {
 import { api, ApiClientError, type DocumentMapping } from '../api.js';
 import { Banner, Loading } from '../components/ui.js';
 import { ConceptGraph, RELATION_LABELS as RELATION_TEXT } from '../components/ConceptGraph.js';
-import { ConceptDetailPanel, EdgeDetailPanel } from '../components/DetailPanels.js';
+import {
+  ConceptDetailPanel,
+  ConceptGroundingDetailPanel,
+  EdgeDetailPanel,
+} from '../components/DetailPanels.js';
 import { AlignmentPanel } from '../components/AlignmentPanel.js';
 import { DailyQueue } from '../components/DailyQueue.js';
 import { ACTIVITY_TEXT, TutorPanel } from '../components/TutorPanel.js';
@@ -277,7 +281,7 @@ export function GraphWorkspaceView({
     }
   }, []);
 
-  /** Load everything the three areas need for one workspace. */
+  /** Load learner state for the standalone workspace, or grounding-only data in Course. */
   const loadWorkspaceData = useCallback(
     async (workspaceId: string) => {
       const epoch = epochRef.current;
@@ -288,12 +292,20 @@ export function GraphWorkspaceView({
           await Promise.all([
             api.getWorkspace(workspaceId),
             api.getWorkspaceGraph(workspaceId),
-            api.learnerOverlay(workspaceId),
+            courseLocked
+              ? Promise.resolve({ states: [] as ConceptLearnerState[] })
+              : api.learnerOverlay(workspaceId),
             api.listGraphVersions(workspaceId),
             api.alignmentOverview(workspaceId),
-            api.misconceptions(workspaceId),
-            api.reviewItems(workspaceId),
-            api.dailyQueue(workspaceId),
+            courseLocked
+              ? Promise.resolve({ misconceptions: [] as MisconceptionRecord[] })
+              : api.misconceptions(workspaceId),
+            courseLocked
+              ? Promise.resolve({ items: [] as CurrentReviewItem[] })
+              : api.reviewItems(workspaceId),
+            courseLocked
+              ? Promise.resolve({ items: [] as DailyQueueItem[] })
+              : api.dailyQueue(workspaceId),
           ]);
         const blockLists = await Promise.all(
           detail.documents.map((doc) => api.getMaterial(doc.id).then((m) => m.blocks)),
@@ -319,7 +331,7 @@ export function GraphWorkspaceView({
         if (error instanceof ApiClientError && error.status === 404) {
           setActiveWorkspaceId(null);
           setData(null);
-          void loadWorkspaces();
+          if (!courseLocked) void loadWorkspaces();
         } else {
           setDataError(errorMessage(error));
         }
@@ -327,7 +339,7 @@ export function GraphWorkspaceView({
         if (mountedRef.current && epochRef.current === epoch) setDataLoading(false);
       }
     },
-    [loadWorkspaces],
+    [courseLocked, loadWorkspaces],
   );
 
   const switchWorkspace = useCallback(
@@ -379,6 +391,11 @@ export function GraphWorkspaceView({
 
   /** Initial load + restore last opened workspace. */
   useEffect(() => {
+    if (courseLocked) {
+      setWorkspacesLoading(false);
+      setActiveWorkspaceId(selectedWorkspaceId ?? null);
+      return;
+    }
     void (async () => {
       const list = await loadWorkspaces();
       if (!list) return;
@@ -388,7 +405,7 @@ export function GraphWorkspaceView({
         setActiveWorkspaceId(target);
       }
     })();
-  }, [loadWorkspaces, selectedWorkspaceId]);
+  }, [courseLocked, loadWorkspaces, selectedWorkspaceId]);
 
   useEffect(() => {
     if (selectedWorkspaceId === undefined || selectedWorkspaceId === activeWorkspaceId) return;
@@ -425,7 +442,7 @@ export function GraphWorkspaceView({
       if (pendingLaunchRef.current?.surface === 'tutor') {
         assessmentAction.cancel();
       }
-      if (!conceptId || !activeWorkspaceId) return;
+      if (!conceptId || !activeWorkspaceId || courseLocked) return;
       const epoch = epochRef.current;
       void api
         .getPlan(activeWorkspaceId, conceptId)
@@ -1054,25 +1071,18 @@ export function GraphWorkspaceView({
                                     {section.mapped ? null : (
                                       <>
                                         {' '}
-                                        <span className="pill">未映射</span>
-                                        {!courseLocked ? (
-                                          <>
-                                            {' '}
-                                            <button
-                                              type="button"
-                                              className="ghost small"
-                                              disabled={analyzeAction.loading}
-                                              aria-busy={deepeningSection === section.key}
-                                              onClick={() =>
-                                                void handleAnalyze(doc.id, section.key)
-                                              }
-                                            >
-                                              {deepeningSection === section.key
-                                                ? '正在提取…'
-                                                : '继续提取'}
-                                            </button>
-                                          </>
-                                        ) : null}
+                                        <span className="pill">未映射</span>{' '}
+                                        <button
+                                          type="button"
+                                          className="ghost small"
+                                          disabled={analyzeAction.loading}
+                                          aria-busy={deepeningSection === section.key}
+                                          onClick={() => void handleAnalyze(doc.id, section.key)}
+                                        >
+                                          {deepeningSection === section.key
+                                            ? '正在提取…'
+                                            : '继续提取'}
+                                        </button>
                                       </>
                                     )}
                                   </li>
@@ -1085,7 +1095,18 @@ export function GraphWorkspaceView({
                         </details>
                       ) : null}
                     </div>
-                    {!courseLocked ? (
+                    {courseLocked && doc.conceptCount === 0 ? (
+                      <div className="document-actions">
+                        <button
+                          type="button"
+                          className="small"
+                          disabled={analyzeAction.loading}
+                          onClick={() => void handleAnalyze(doc.id)}
+                        >
+                          提取概念
+                        </button>
+                      </div>
+                    ) : !courseLocked ? (
                       <div className="document-actions">
                         {doc.conceptCount === 0 ? (
                           <button
@@ -1231,10 +1252,10 @@ export function GraphWorkspaceView({
             ) : null}
           </div>
           <div className="graph-area-actions">
-            {data && weakCount > 0 ? (
+            {!courseLocked && data && weakCount > 0 ? (
               <span className="pill weak">薄弱概念 {weakCount} 个</span>
             ) : null}
-            {data && dueReviewCount > 0 ? (
+            {!courseLocked && data && dueReviewCount > 0 ? (
               <span className="pill review-due">待复习 {dueReviewCount} 个</span>
             ) : null}
             {data && data.documents.length > 1 ? (
@@ -1353,20 +1374,21 @@ export function GraphWorkspaceView({
             <ConceptGraph
               concepts={displayGraph.concepts}
               edges={displayGraph.edges}
-              overlay={displayOverlay}
+              overlay={courseLocked ? new Map() : displayOverlay}
               selectedNodeId={selectedNodeId}
               selectedEdgeId={selectedEdgeId}
               onSelectNode={selectNode}
               onSelectEdge={selectEdge}
               versionId={data.version?.id ?? null}
-              planTargetIds={highlightIds}
+              planTargetIds={courseLocked ? new Set() : highlightIds}
               refitKey={`${leftCollapsed ? 'L' : 'l'}${rightCollapsed ? 'R' : 'r'}`}
               summary={{
                 documentCount: data.documents.length,
-                weakCount,
+                weakCount: courseLocked ? 0 : weakCount,
                 acceptedCount: summary?.acceptedCount ?? null,
                 rejectedCount: summary?.rejectedCount ?? null,
               }}
+              learnerStateVisible={!courseLocked}
             />
             {data.version?.status === 'failed' ? (
               <Banner kind="error">
@@ -1401,7 +1423,7 @@ export function GraphWorkspaceView({
         <aside
           id="explore-detail-panel"
           className="detail-area"
-          aria-label="证据与辅导详情"
+          aria-label={courseLocked ? '概念与关系依据' : '证据与辅导详情'}
           role={courseLocked ? 'dialog' : undefined}
           aria-modal={courseLocked || undefined}
           onKeyDown={courseLocked ? containPanelFocus : undefined}
@@ -1420,38 +1442,49 @@ export function GraphWorkspaceView({
             </button>
           </div>
           {selectedConcept && data ? (
-            <>
-              <ConceptDetailPanel
-                workspaceId={activeWorkspaceId ?? ''}
+            courseLocked ? (
+              <ConceptGroundingDetailPanel
                 concept={selectedConcept}
                 blocks={data.blocks}
                 documents={data.documents}
-                state={displayOverlay.get(selectedConcept.id)}
                 edges={displayGraph.edges}
                 conceptNameById={conceptNameById}
                 canonical={displayGraph.canonicalByRepresentative.get(selectedConcept.id)}
-                misconceptions={misconceptionsByConcept.get(selectedConcept.id) ?? []}
-                reviewItem={reviewByConcept.get(selectedConcept.id)}
-                plan={plan}
-                planLoading={planAction.loading}
-                planError={planAction.error}
-                launchLoading={launchAction.loading}
-                onGeneratePlan={() => void handleGeneratePlan()}
-                onCancelPlan={planAction.cancel}
-                onLaunchPlan={(p) => void handleLaunchPlan(p)}
               />
-              {activeWorkspaceId ? (
-                <TutorPanel
-                  workspaceId={activeWorkspaceId}
-                  conceptId={selectedConcept.id}
-                  conceptName={selectedConcept.name}
-                  activityLaunching={pendingLaunch?.surface === 'tutor'}
-                  onPathChange={setTutorPathIds}
-                  onStartActivity={handleStartTutorActivity}
-                  onPlanAccepted={refreshPlanForSelection}
+            ) : (
+              <>
+                <ConceptDetailPanel
+                  workspaceId={activeWorkspaceId ?? ''}
+                  concept={selectedConcept}
+                  blocks={data.blocks}
+                  documents={data.documents}
+                  state={displayOverlay.get(selectedConcept.id)}
+                  edges={displayGraph.edges}
+                  conceptNameById={conceptNameById}
+                  canonical={displayGraph.canonicalByRepresentative.get(selectedConcept.id)}
+                  misconceptions={misconceptionsByConcept.get(selectedConcept.id) ?? []}
+                  reviewItem={reviewByConcept.get(selectedConcept.id)}
+                  plan={plan}
+                  planLoading={planAction.loading}
+                  planError={planAction.error}
+                  launchLoading={launchAction.loading}
+                  onGeneratePlan={() => void handleGeneratePlan()}
+                  onCancelPlan={planAction.cancel}
+                  onLaunchPlan={(p) => void handleLaunchPlan(p)}
                 />
-              ) : null}
-            </>
+                {activeWorkspaceId ? (
+                  <TutorPanel
+                    workspaceId={activeWorkspaceId}
+                    conceptId={selectedConcept.id}
+                    conceptName={selectedConcept.name}
+                    activityLaunching={pendingLaunch?.surface === 'tutor'}
+                    onPathChange={setTutorPathIds}
+                    onStartActivity={handleStartTutorActivity}
+                    onPlanAccepted={refreshPlanForSelection}
+                  />
+                ) : null}
+              </>
+            )
           ) : selectedEdge && data ? (
             <EdgeDetailPanel
               edge={selectedEdge}
@@ -1464,12 +1497,16 @@ export function GraphWorkspaceView({
             />
           ) : (
             <Banner kind="empty">
-              在图谱中选择一个概念或一条关系,这里会显示它的原文依据、学习状态与康复计划。
+              {courseLocked
+                ? '在图谱中选择一个概念或一条关系，这里会显示当前版本的原文依据。'
+                : '在图谱中选择一个概念或一条关系,这里会显示它的原文依据、学习状态与康复计划。'}
             </Banner>
           )}
-          {launchAction.error ? <Banner kind="error">{launchAction.error}</Banner> : null}
-          {activityNotice ? <Banner kind="info">{activityNotice}</Banner> : null}
-          {assessmentAction.error && selectedConcept ? (
+          {!courseLocked && launchAction.error ? (
+            <Banner kind="error">{launchAction.error}</Banner>
+          ) : null}
+          {!courseLocked && activityNotice ? <Banner kind="info">{activityNotice}</Banner> : null}
+          {!courseLocked && assessmentAction.error && selectedConcept ? (
             <Banner kind="error">{assessmentAction.error}</Banner>
           ) : null}
           {hasGraph && data && displayGraph.edges.length > 0 ? (
@@ -1530,8 +1567,12 @@ function GraphOnboarding({
     { label: '添加课程资料', done: hasDocuments },
     { label: '提取核心概念', done: hasConcepts },
     { label: '生成个人学习图谱', done: hasGraph },
-    { label: '完成诊断练习', done: anyAttempts },
-    { label: '查看薄弱路径并开始补救', done: hasGraph && anyAttempts && weakCount === 0 },
+    ...(!courseLocked
+      ? [
+          { label: '完成诊断练习', done: anyAttempts },
+          { label: '查看薄弱路径并开始补救', done: hasGraph && anyAttempts && weakCount === 0 },
+        ]
+      : []),
   ];
 
   return (

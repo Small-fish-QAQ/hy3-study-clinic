@@ -94,7 +94,7 @@ function openSavedWorkspace() {
 describe('学习图谱工作台 — workspace and document area', () => {
   it('keeps the graph primary in embedded Explore and removes Course management controls', async () => {
     const user = userEvent.setup();
-    installViewMock(baseRoutes());
+    const { calls } = installViewMock(baseRoutes());
     render(
       <GraphWorkspaceView
         refreshKey={0}
@@ -125,11 +125,25 @@ describe('学习图谱工作台 — workspace and document area', () => {
     expect(materialsTrigger).toHaveFocus();
 
     const graph = screen.getByTestId('concept-graph');
+    expect(within(graph).queryByText('未评估')).not.toBeInTheDocument();
+    expect(within(graph).queryByLabelText('布局模式')).not.toBeInTheDocument();
+    expect(within(graph).queryByRole('button', { name: '隐藏未评估' })).not.toBeInTheDocument();
+    expect(within(graph).getByLabelText('概念 工作记忆')).toBeInTheDocument();
+    expect(within(graph).getByLabelText('图谱概要')).not.toHaveTextContent('薄弱');
     fireEvent.click(within(graph).getByText('工作记忆'));
-    expect(await screen.findByRole('dialog', { name: '证据与辅导详情' })).toBeInTheDocument();
+    const groundingDetail = await screen.findByRole('dialog', { name: '概念与关系依据' });
+    expect(within(groundingDetail).getByLabelText('概念依据:工作记忆')).toBeInTheDocument();
+    expect(within(groundingDetail).queryByText('学习状态')).not.toBeInTheDocument();
+    expect(within(groundingDetail).queryByText('学习计划')).not.toBeInTheDocument();
+    expect(within(groundingDetail).queryByText('Tutor')).not.toBeInTheDocument();
+    expect(
+      calls.some((call) =>
+        /\/overlay$|\/misconceptions$|\/review$|\/queue$|\/plan$/.test(call.url),
+      ),
+    ).toBe(false);
     expect(screen.getByTestId('concept-graph')).toBeInTheDocument();
     await user.keyboard('{Escape}');
-    expect(screen.queryByRole('dialog', { name: '证据与辅导详情' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: '概念与关系依据' })).not.toBeInTheDocument();
   });
 
   it('routes an empty embedded Explore back to Course Materials', async () => {

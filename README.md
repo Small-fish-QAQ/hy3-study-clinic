@@ -15,18 +15,19 @@ Hy3 performs the semantic work: concept extraction, grounded question generation
 
 ### Implemented current product
 
-Hy3 Study Clinic presents the implemented learning workflows as one Course-centered journey. After selecting a Course, the learner moves through `主页 / 学习 / 课程结构 / 进展 / 探索`; Course Home explains the current goal and one next action, while technical evidence and version history remain available through intentional disclosures. Implemented behavior includes rich document workspaces, immutable material revisions, SourceBlocks, concepts, graph exploration, grounded lessons and assessments, mistakes, mastery, misconceptions, review scheduling, learner-confirmed Contracts, deterministic Course Preparation, Curricula, accepted StudyPlans, SessionAgendas, StudySessions, formal progression, bounded replanning, and lesson-aware Tutor support.
+Hy3 Study Clinic presents the implemented learning workflows as one Course-centered journey. After selecting a Course, the learner moves through `主页 / 学习 / 课程结构 / 知识地图 / 进展 / 课程资料`; Settings remains secondary. Course Home explains the current goal and one next action, while technical evidence and version history remain available through intentional disclosures. Implemented behavior includes rich document workspaces, immutable material revisions, SourceBlocks, concepts, graph exploration, grounded lessons and assessments, mistakes, mastery, misconceptions, review scheduling, learner-confirmed Contracts, deterministic Course Preparation, Curricula, accepted StudyPlans, SessionAgendas, StudySessions, formal progression, bounded replanning, and lesson-aware Tutor support.
 
 ### Learner-facing product shell
 
 - The global shell is primarily for selecting or switching the current Course. An original progression-path mark, matching favicon, and `Hy3 Study Clinic` wordmark identify the product without borrowing DeepTutor branding. The sidebar expands for Course context, collapses to an icon rail on wide screens, and becomes an accessible modal drawer below 768 px.
-- The lower system zone keeps runtime status, Settings, advanced compatibility access, and sidebar collapse separate from the five Course destinations. Fake mode is presented as the normal deterministic offline runtime, not as a fault.
-- `主页` is the orientation surface and owns Course Materials. It shows the current goal, formal progress, relevant time information, a bounded agenda, actionable exceptions, and one dominant next action.
+- The lower system zone keeps runtime status, Settings, and sidebar collapse separate from Course destinations. Fake mode is presented as the normal deterministic offline runtime, not as a fault.
+- `主页` is the orientation surface. It shows the current goal, formal progress, relevant time information, a bounded agenda, actionable exceptions, and one dominant next action. `课程资料` is the dedicated source-management destination.
 - `学习` is the lesson-first daily workspace. The current Teaching Brief is the primary reading order: objective, why-now context, ordered sections, examples, misconception cautions, and source references are visible before the optional Tutor panel. The learner can resume or revisit presentation sections, record a non-credit informal check, and see a truthful boundary between presentation completion and formal progression. The secondary Tutor stays visibly tied to the current lesson, supports natural-language quick questions, formats accepted responses for reading, and exposes verified source excerpts only when the accepted response metadata matches the current lesson segment.
 - `课程结构` presents version/status and a learner-facing topic count before the learner expands any branch. Consecutive accepted records are shown as one topic only when all pedagogical mappings, state, source ownership, and normalized titles match; every LearningUnit/objective/source identity remains available under technical detail. Expanding a leaf-heavy section mounts its first 12 topics, with a separate control for the remainder. Grounding leads with the real material name, type, page/section, excerpts, and a safe owning-Material action; exact revision/block IDs remain subordinate.
-- `进展` consolidates formal progression, assessments, mistakes and repair, mastery and reviews, plus Contract/Curriculum/Plan history. `知识地图` is the optional explanatory and navigation surface: four projection-driven modes separate course structure, learning progress, the accepted route, and current concerns. The older concept-grounding graph remains available only as a Course preparation bridge.
+- `进展` consolidates formal Evidence, assessment results/history, mistakes and Repair, concept mastery and Review state, plus Contract/Curriculum/Plan history. Formal checkpoints still launch contextually from Study or Agenda. A manual assessment tool remains available under an advanced Progress disclosure rather than as a peer product.
+- `知识地图` is the learner-facing explanatory and navigation surface: four projection-driven modes separate course structure, learning progress, the accepted route, and current concerns. Concept extraction/deepening, graph generation, alignment review, version activation/history, and detailed provenance remain reachable through the advanced `课程结构 > 课程概念依据` disclosure. That grounding surface is Course-locked and does not fetch or display Tutor, remediation, mastery, Review, queue, or other learner overlays.
 - `设置` is a focused system surface. A compact mode selector and configuration-first layout edit the server-owned provider mode, URL, model, and credential intent through validated APIs; saved Hy3 values remain available behind disclosure in Fake mode. Local Fastify health, saved provider configuration, and the timestamped result of the last deliberate external Hy3 probe are presented as separate facts. The surface also explains the server/browser authority boundary, reports locally restored Course continuity, and exposes the mutable browser-side sidebar preference.
-- Compatibility tools remain behind compact secondary access for existing workflows and bookmarks. Their learner destinations map as follows: materials to `主页 > 课程资料`, assessments to `学习` or `进展 > 测验记录`, mistakes to `进展 > 错题与修复`, legacy learning progress to `进展`, and the learning graph to `探索`.
+- The parallel compatibility shell and peer Quiz, Mistakes, Repair, Mastery, Review, History, and Hy3-mode pages are retired. Meaningful old hash/query bookmarks are normalized into canonical Course destinations: Graph/Explore to Knowledge Map; Quiz/Assessment to advanced manual assessment; Results/History to Progress history; Mistakes/Repair/Remediation to Progress Repair; Mastery/Review to Progress mastery; Import/Materials to Course Materials; provider/Hy3 to Settings; and compatibility/advanced to Course grounding. Unknown Course paths fail safely to Course Home. Browser back/forward, Course switching, cancellation, and stale-response fencing continue through the single Course workspace.
 
 ### Agent architecture implementation status
 
@@ -81,6 +82,12 @@ Selecting a node opens a learner-facing inspector with current projected state, 
 
 The deterministic topology layout is stable across modes. Learner-dragged positions and the camera are stored locally by Course/Curriculum identity; search, zoom, fit, reset, and one-hop focus support larger maps. Maps above 48 edges use restrained straight-edge rendering to keep interaction bounded. At narrow widths the inspector becomes a focus-trapped bottom sheet with Escape/close focus restoration. Loading, unconfigured, partial/unknown, failure/retry, cancellation, Course switching, and late-response fencing are explicit. Opening or navigating the map performs no background Hy3 operation and does not mutate persistent learning state.
 
+### Legacy surface consolidation (Phase 10C)
+
+The application has one canonical hash route model under `#/course/:workspaceId/...`. The ordinary destinations are Home, Study, Curriculum, Knowledge Map, Progress, Materials, and secondary Settings. Progress owns separate canonical subsections for Evidence, Repair, mastery/Review, and history, so old bookmarks retain the actual user job instead of landing on a generic page. Direct bookmarks to advanced grounding and manual assessment remain supported. Alias normalization uses `replaceState`; learner navigation uses `pushState`; browser history creates a fresh controlled navigation intent without an echo or redirect loop.
+
+Only redundant product shells were retired. Assessment generation/grading, immutable attempts, Formal Evidence, mistake and Repair lifecycle, concept mastery, successor Review/FSRS records, misconception history, graph validation/versioning/alignment, source provenance, workspace/material administration, provider configuration, and audit data keep their existing APIs, services, repositories, and migrations. No database or backend authority changed. In particular, deterministic legacy quiz grading remains the sole writer of historical concept mastery; Evidence, Review/FSRS, Repair, Tutor, and Mastery Red Team output do not become mastery writers.
+
 ### Formal assessment and evidence boundary
 
 Practice and formal assessment are separate paths. Formal assessments use immutable accepted versions with explicit learning-unit/objective targets, exact MaterialRevision/SourceBlock bindings, and an authoritative rubric. Short-answer items are the supported formal path; choice items remain practice/advisory unless complete option-premise authority is available. Attempts are durable and immutable after submission, and grades are append-only records that support regrading without erasing history. A grade is not Formal Evidence: local gating derives evidence only from an eligible item, current grade, submitted attempt, and valid source/rubric authority. Evidence is then handed to a separate idempotent progression-reconciliation boundary. Tutor conversation, lesson completion, exact quote occurrence alone, and derived visual descriptions never grant formal credit.
@@ -126,16 +133,16 @@ Failed graph, plan, or lesson generation never overwrites the last valid version
 
 The Materials Core has eight format families, all converging on `Material` -> immutable `MaterialRevision` -> parser adapter -> normalized structural units -> `structure-aware-v1` SourceBlocks and revision-local original assets. The labels below describe shipped behavior, not a promise of perfect extraction.
 
-| Family | Shipped capability | Formal evidence boundary | Important limitation |
-| --- | --- | --- | --- |
-| PDF | `BOUNDED`: text-layer extraction, page spans, headings/lists/conservative tables, original bytes | Exact authoritative text only; no OCR or visual-derived evidence | Multi-column/rotated/figure/image-only pages can be partial |
-| PPTX | `BOUNDED`: slide ownership, text/list/table/notes structure, embedded original images | Exact extracted text only | OOXML drawing order is not guaranteed semantic reading order; charts/SmartArt/equations are warned partial |
-| DOCX | `BOUNDED`: heading hierarchy, paragraphs/lists/tables, headers/footers where related, embedded original images | Exact authoritative text only | No fabricated pages; advanced drawings/equations/footnotes may be incomplete |
-| Markdown | `FULL` within the supported syntax: headings, lists, quotes, fenced code, tables, exact offsets | Exact text | Unsupported extensions remain ordinary text |
-| TXT | `TEXT_LAYER_ONLY`: deterministic paragraph blocks and line offsets | Exact text | Intentionally low structure |
-| Standalone Image | `BOUNDED`: actual-byte validation, immutable original asset and dimensions, bounded visual preparation | `NOT_AVAILABLE` for image descriptions | Provider descriptions are advisory and nonblocking; local OCR is not shipped |
-| HTML / Web Snapshot | `BOUNDED`: static Readability/jsdom extraction, DOM/heading paths, tables/code/links and snapshot bytes/hash | Captured extracted text only | No JavaScript, browser rendering, authentication, crawl, or remote-subresource archive |
-| Source Code | `BOUNDED`: exact source text, imports/comments/functions/classes and line provenance | Exact source text only | Not repository intelligence: no execution, call graph, LSP, or dependency authority |
+| Family              | Shipped capability                                                                                             | Formal evidence boundary                                         | Important limitation                                                                                       |
+| ------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| PDF                 | `BOUNDED`: text-layer extraction, page spans, headings/lists/conservative tables, original bytes               | Exact authoritative text only; no OCR or visual-derived evidence | Multi-column/rotated/figure/image-only pages can be partial                                                |
+| PPTX                | `BOUNDED`: slide ownership, text/list/table/notes structure, embedded original images                          | Exact extracted text only                                        | OOXML drawing order is not guaranteed semantic reading order; charts/SmartArt/equations are warned partial |
+| DOCX                | `BOUNDED`: heading hierarchy, paragraphs/lists/tables, headers/footers where related, embedded original images | Exact authoritative text only                                    | No fabricated pages; advanced drawings/equations/footnotes may be incomplete                               |
+| Markdown            | `FULL` within the supported syntax: headings, lists, quotes, fenced code, tables, exact offsets                | Exact text                                                       | Unsupported extensions remain ordinary text                                                                |
+| TXT                 | `TEXT_LAYER_ONLY`: deterministic paragraph blocks and line offsets                                             | Exact text                                                       | Intentionally low structure                                                                                |
+| Standalone Image    | `BOUNDED`: actual-byte validation, immutable original asset and dimensions, bounded visual preparation         | `NOT_AVAILABLE` for image descriptions                           | Provider descriptions are advisory and nonblocking; local OCR is not shipped                               |
+| HTML / Web Snapshot | `BOUNDED`: static Readability/jsdom extraction, DOM/heading paths, tables/code/links and snapshot bytes/hash   | Captured extracted text only                                     | No JavaScript, browser rendering, authentication, crawl, or remote-subresource archive                     |
+| Source Code         | `BOUNDED`: exact source text, imports/comments/functions/classes and line provenance                           | Exact source text only                                           | Not repository intelligence: no execution, call graph, LSP, or dependency authority                        |
 
 Original extracted text and original visual bytes are distinct from `DERIVED_OCR`, `DERIVED_VISUAL_DESCRIPTION`, `DERIVED_LAYOUT_LABEL`, and `DERIVED_SUMMARY`. TokenHub visual output can help retrieval, Teaching Briefs, Lessons, and Tutor context only as `ADVISORY_DERIVED`; it cannot become Course Truth or formal Evidence by selection alone. Exact quote occurrence proves location, not semantic entailment.
 
@@ -245,20 +252,20 @@ This is integration evidence, not a benchmark. Exact quotation validation proves
 
 ## Responsibility boundary
 
-| Hy3 proposes | Deterministic local code owns |
-| --- | --- |
-| Grounded concepts | Ingestion, source blocks, offsets, page/section provenance |
-| Standard and remediation questions | Request/domain schemas and answer stripping |
-| Short-answer rubric coverage and feedback | Objective answers, required-point score arithmetic, totals |
-| Typed graph relations | Known IDs, relation vocabulary, evidence, cycles, version acceptance |
-| Cross-document alignments | Candidate bounds, exact-alias rule, review decisions, canonical persistence |
-| Assessment blueprints and misconception hypotheses | Evidence-derived scope, lifecycle transitions, persistence |
-| Lesson-card teaching content and conflict claims | Segment-level provenance (verified anchors vs labeled AI teaching), conflict-quote verification, assessment isolation |
-| Remediation and Tutor plans | Tool execution, budgets, plan validation, activity launchability + launch |
-| Semantic rationales | Mistakes, mastery, review scheduling, permissions, all final mutations |
-| Curriculum and StudyPlan proposals | Contract scope, source-manifest freshness, hierarchy, coverage, feasibility, launchability, route activation |
-| Tutor turns and StudySession summaries | Persistent transcript/event lifecycle, route version checks, pause/resume/stop, formal-evidence separation |
-| Replan suggestions | Trigger qualification, successor lineage, learner decision, atomic route replacement |
+| Hy3 proposes                                       | Deterministic local code owns                                                                                         |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Grounded concepts                                  | Ingestion, source blocks, offsets, page/section provenance                                                            |
+| Standard and remediation questions                 | Request/domain schemas and answer stripping                                                                           |
+| Short-answer rubric coverage and feedback          | Objective answers, required-point score arithmetic, totals                                                            |
+| Typed graph relations                              | Known IDs, relation vocabulary, evidence, cycles, version acceptance                                                  |
+| Cross-document alignments                          | Candidate bounds, exact-alias rule, review decisions, canonical persistence                                           |
+| Assessment blueprints and misconception hypotheses | Evidence-derived scope, lifecycle transitions, persistence                                                            |
+| Lesson-card teaching content and conflict claims   | Segment-level provenance (verified anchors vs labeled AI teaching), conflict-quote verification, assessment isolation |
+| Remediation and Tutor plans                        | Tool execution, budgets, plan validation, activity launchability + launch                                             |
+| Semantic rationales                                | Mistakes, mastery, review scheduling, permissions, all final mutations                                                |
+| Curriculum and StudyPlan proposals                 | Contract scope, source-manifest freshness, hierarchy, coverage, feasibility, launchability, route activation          |
+| Tutor turns and StudySession summaries             | Persistent transcript/event lifecycle, route version checks, pause/resume/stop, formal-evidence separation            |
+| Replan suggestions                                 | Trigger qualification, successor lineage, learner decision, atomic route replacement                                  |
 
 All important real-provider output uses runtime-validated structured contracts. Important output is never extracted with ad hoc regular expressions. A schema/JSON failure or model-correctable Curriculum candidate failure may receive the same single bounded repair request; a second failure and every authoritative state conflict fail closed.
 
@@ -329,19 +336,19 @@ The saved Base URL is trusted local-user configuration. Private and loopback HTT
 
 ### Main commands
 
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Build shared code and run the API and web development servers. |
-| `npm run build` | Type-check and build every workspace. |
-| `npm run lint` | Run ESLint and the Prettier check. |
-| `npm test` | Build shared code and run all workspace tests. |
-| `npm run demo:offline` | Run the original flows in process with the fake provider. |
-| `npm run demo:http` | Exercise the original HTTP flows against a running server. |
-| `npm run demo:graph` | Exercise the document -> graph -> overlay -> plan -> remediation workflow. |
+| Command                 | Purpose                                                                             |
+| ----------------------- | ----------------------------------------------------------------------------------- |
+| `npm run dev`           | Build shared code and run the API and web development servers.                      |
+| `npm run build`         | Type-check and build every workspace.                                               |
+| `npm run lint`          | Run ESLint and the Prettier check.                                                  |
+| `npm test`              | Build shared code and run all workspace tests.                                      |
+| `npm run demo:offline`  | Run the original flows in process with the fake provider.                           |
+| `npm run demo:http`     | Exercise the original HTTP flows against a running server.                          |
+| `npm run demo:graph`    | Exercise the document -> graph -> overlay -> plan -> remediation workflow.          |
 | `npm run demo:adaptive` | Exercise alignment -> assessment -> Tutor -> learner-state -> daily-queue workflow. |
-| `npm run eval:fake` | Run the deterministic offline structural evaluation and write ignored reports. |
-| `npm run eval:hy3` | Run the optional real-provider evaluation; explicit credentials are mandatory. |
-| `npm run eval:evidence` | Publish sanitized evidence from a successful real-provider report. |
+| `npm run eval:fake`     | Run the deterministic offline structural evaluation and write ignored reports.      |
+| `npm run eval:hy3`      | Run the optional real-provider evaluation; explicit credentials are mandatory.      |
+| `npm run eval:evidence` | Publish sanitized evidence from a successful real-provider report.                  |
 
 The full command matrix, restart checks, evidence-publication rules, and test inventory are in [Verification](docs/VERIFICATION.md). Real-provider evaluation details are in [eval/README.md](eval/README.md).
 
@@ -371,7 +378,7 @@ The browser never calls Hy3 directly. SQLite holds course workspaces, logical ma
 
 Formal progression is deliberately layered: an immutable Attempt produces an append-only GradeRecord; the criterion-gated local policy derives supported Formal Evidence; and a separate reconciliation adapter projects that Evidence through the existing completion policy and Course route. Duplicate reconciliation is idempotent, stale accepted routes are fenced, and a projection failure leaves the Grade/Evidence durable for retry.
 
-The responsive Course shell and Settings route are presentation boundaries over server-owned runtime state, not parallel configuration or persistence systems. The original SVG mark is reused by the sidebar, compatibility header, and favicon; provider secrets never enter browser storage. Curriculum expansion state is ephemeral presentation state: expanding branches, revealing the units after the first 12, or opening source/version details never modifies the accepted Curriculum.
+The responsive Course shell and Settings route are presentation boundaries over server-owned runtime state, not parallel configuration or persistence systems. The original SVG mark is reused by the sidebar and favicon; provider secrets never enter browser storage. Curriculum expansion state is ephemeral presentation state: expanding branches, revealing the units after the first 12, or opening source/version details never modifies the accepted Curriculum.
 
 See [Architecture & Design Notes](docs/ARCHITECTURE.md) for request lifecycles, grounding rules, all 30 migrations, document deletion/reprocessing behavior, rich-document archive safety, original-asset provenance, accepted-route lifecycle, formal progression, graph routing, provider contracts, learner-state machines, cancellation, and dependency rationale. It documents implemented current behavior; the authoritative design separately identifies later gated work.
 

@@ -193,6 +193,74 @@ export interface ConceptDetailPanelProps {
   onLaunchPlan: (plan: RemediationPlan) => void;
 }
 
+export interface ConceptGroundingDetailPanelProps {
+  concept: Concept;
+  blocks: SourceBlock[];
+  documents: DocumentSummary[];
+  edges: GraphEdge[];
+  conceptNameById: Map<string, string>;
+  canonical?: CanonicalConceptView | undefined;
+}
+
+/** Read-only inspector for Curriculum grounding and graph-version audit. */
+export function ConceptGroundingDetailPanel({
+  concept,
+  blocks,
+  documents,
+  edges,
+  conceptNameById,
+  canonical,
+}: ConceptGroundingDetailPanelProps) {
+  const incoming = edges.filter((edge) => edge.targetConceptId === concept.id);
+  const outgoing = edges.filter((edge) => edge.sourceConceptId === concept.id);
+  const memberDocuments = canonical
+    ? canonical.materialIds.map(
+        (id) => documents.find((document) => document.id === id)?.title ?? id,
+      )
+    : [];
+
+  return (
+    <div className="detail-panel" aria-label={`概念依据:${concept.name}`}>
+      <div className="inspector-head">
+        <h3>{canonical?.displayName ?? concept.name}</h3>
+        <span className="pill deterministic">本地已验证引用</span>
+      </div>
+      {canonical && (canonical.aliases.length > 0 || canonical.materialIds.length > 1) ? (
+        <p className="small muted canonical-meta">
+          {canonical.aliases.length > 0 ? <>别名:{canonical.aliases.join('、')} · </> : null}
+          来自 {canonical.materialIds.length} 份文档
+          {memberDocuments.length > 0 ? `(${memberDocuments.join('、')})` : ''}
+        </p>
+      ) : null}
+      <div className="inspector-body">
+        <p>
+          <span className="pill model">模型提出</span> {concept.summary}
+        </p>
+        <section aria-label="原文依据">
+          <h4>原文依据</h4>
+          <EvidenceList evidence={[concept.grounding]} blocks={blocks} documents={documents} />
+          <EvidenceDisclaimer />
+        </section>
+        <section aria-label="概念关系">
+          <h4>当前版本中的关系</h4>
+          {incoming.length === 0 && outgoing.length === 0 ? (
+            <p className="small muted">当前图谱版本中没有涉及该概念的关系。</p>
+          ) : (
+            <>
+              {incoming.map((edge) => (
+                <RelationRow key={edge.id} edge={edge} direction="in" names={conceptNameById} />
+              ))}
+              {outgoing.map((edge) => (
+                <RelationRow key={edge.id} edge={edge} direction="out" names={conceptNameById} />
+              ))}
+            </>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+
 export function ConceptDetailPanel({
   workspaceId,
   concept,

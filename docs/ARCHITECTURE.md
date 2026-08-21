@@ -282,7 +282,7 @@ Binary sniffing applies only to raw text-like bytes. Parsed PDF/PPTX/DOCX text i
 4. infer heading tiers from font-size differences and emit Markdown headings;
 5. repair evidence-supported visual wraps for CJK and Latin text, including hyphenation and line-fit constraints;
 6. recover line-leading list bullets that some ToUnicode maps expose as U+0000;
-7. insert ` | ` separators only for conservatively detected aligned table rows; and
+7. insert `|` separators only for conservatively detected aligned table rows; and
 8. return normalized text plus exact per-page character spans.
 
 Paragraphs can cross a repaired page boundary, so normalized units and SourceBlocks store `pageNumber` through nullable `pageEnd`. Image-only pages produce warnings; a document with no extractable text returns `PARSE_FAILED`. The adapter does not enumerate PDF figures. There is no OCR or visual interpretation.
@@ -447,17 +447,19 @@ Course selection
     ├── 主页
     ├── 学习
     ├── 课程结构
+    ├── 知识地图
     ├── 进展
-    └── 探索
+    └── 课程资料
 system zone
     ├── runtime mode
-    ├── 设置
-    └── advanced compatibility access
+    └── 设置
 ```
 
-`App` owns and restores the selected Course for both Course and compatibility/Explore entry paths; `AgentCourseWorkspace` projects that controlled selection through the single Course navigation model. `AgentCourseShell` owns layout state only: an original vector product mark and wordmark, a 220 px expanded/60 px collapsed desktop sidebar, a below-768 px modal drawer with focus containment and Escape restoration, Course navigation, and the separate system zone. Settings receives its own layout mode, so it cannot inherit Explore's graph overflow/padding rules. The brand asset is also used by the compatibility header and browser favicon. None of these surfaces owns Course domain state.
+`App` owns selected-Course continuity, provider bootstrap fencing, canonical hash parsing, legacy alias normalization, and browser history. `AgentCourseWorkspace` projects each controlled destination through the single Course navigation model and reports only learner-initiated destination changes. Applying a back/forward intent is suppressed from the outbound route effect until the requested state is active, so an old Progress subsection cannot overwrite the browser destination. Switching Course cancels owned operations and always opens the new Course Home. `AgentCourseShell` owns layout state only: an original vector product mark and wordmark, a 220 px expanded/60 px collapsed desktop sidebar, a below-768 px modal drawer with focus containment and Escape restoration, Course navigation, and the separate system zone. Settings receives its own layout mode. The brand asset is also used by the browser favicon. None of these surfaces owns Course domain state.
 
-Course Home composes the bounded overview into one next action, a short Agenda, learner-actionable exceptions, and secondary disclosures. Confirming the Contract starts one cancellable preparation request. Home shows four compact learner-safe checkpoints, recoverable retry copy, and exactly one course-plan acceptance control; internal Concept/graph/operation identifiers remain absent. The preparation action owns its loading, error, cancellation, and Course identity. Switching Courses aborts it and ignores late results, while same-Course cancellation refreshes authority only after the request unwinds. Each learner-triggered asynchronous command is owned by its initiating surface: Contract confirmation and Curriculum proposal failures stay beside their Home actions, Plan accept/reject stays in its decision surface, Continue/start stays beside the next action, Progress commands stay in Progress, and Tutor failures stay in Study. A failed Curriculum proposal says that the new structure did not pass source-consistency checks, the prior version remains unchanged, and whether one repair was attempted; bounded deterministic reasons are available under an optional technical disclosure. The API client runtime-validates this known detail shape. Durable command failures store bounded known AppError/provider code, message, and sanitized details, while unexpected failures store only a generic message and never raw error text. Retry/replacement or success clears the corresponding local failure. Learning-route generation retains its longer-lived Home-owned recovery state. None of these errors is inserted into unrelated Study, Curriculum, Progress, Explore, Materials, or Settings layout containers, and the removed global action banner is not recreated. Transient shell notices render in a shell-owned notification region outside route-specific grids. Course Materials is a Home subview over the existing document APIs. `学习` renders the durable StudySession as a transcript-first interaction while retaining formal/informal evidence boundaries. `CourseProgressView` consolidates formal progression, assessment history, mistakes and remediation, mastery/reviews, and bounded Contract/Curriculum/StudyPlan history. Embedded `GraphWorkspaceView` keeps the selected Course fixed, collapses its management panel by default, and remains the advanced `探索` workspace.
+Course Home composes the bounded overview into one next action, a short Agenda, learner-actionable exceptions, and secondary disclosures. Confirming the Contract starts one cancellable preparation request. Home shows four compact learner-safe checkpoints, recoverable retry copy, and exactly one course-plan acceptance control; internal Concept/graph/operation identifiers remain absent. The preparation action owns its loading, error, cancellation, and Course identity. Switching Courses aborts it and ignores late results, while same-Course cancellation refreshes authority only after the request unwinds. Each learner-triggered asynchronous command is owned by its initiating surface: Contract confirmation and Curriculum proposal failures stay beside their Home actions, Plan accept/reject stays in its decision surface, Continue/start stays beside the next action, Progress commands stay in Progress, and Tutor failures stay in Study. A failed Curriculum proposal says that the new structure did not pass source-consistency checks, the prior version remains unchanged, and whether one repair was attempted; bounded deterministic reasons are available under an optional technical disclosure. The API client runtime-validates this known detail shape. Durable command failures store bounded known AppError/provider code, message, and sanitized details, while unexpected failures store only a generic message and never raw error text. Retry/replacement or success clears the corresponding local failure. Learning-route generation retains its longer-lived Home-owned recovery state. None of these errors is inserted into unrelated Study, Curriculum, Progress, Knowledge Map, Materials, or Settings layout containers, and the removed global action banner is not recreated. Transient shell notices render in a shell-owned notification region outside route-specific grids. Course Materials is a dedicated destination over the existing document APIs. `学习` renders the durable StudySession while retaining formal/informal evidence boundaries. `CourseProgressView` consolidates formal progression/Evidence, assessment history, mistakes/Repair, concept mastery/Review, and bounded Contract/Curriculum/StudyPlan history. The optional manual-assessment surface reuses the existing quiz generation, grading, result, and history contracts inside the Course shell.
+
+The learner-facing `KnowledgeMapView` is the only ordinary graph destination. `GraphWorkspaceView` remains Course-locked behind `课程结构 > 课程概念依据` for concept extraction/deepening, graph generation, alignment review, graph version activation/history, and provenance audit. In that mode it does not list/switch/delete workspaces or add/delete Materials, and it does not request learner overlay, misconceptions, Review, daily queue, or remediation plans. Tutor, quiz launch, learner-state badges, weak/Review counts, remediation, and learner onboarding stages are absent. Concept and edge details use read-only grounding projections. A failed preparation action retains the previous valid graph/version.
 
 `CurriculumView` is a read-only projection over the accepted or selected Curriculum version. It first shows the actual version/status, the latest accepted version available in history, major/chapter/section/topic/objective counts, and only server-persisted `started` units as the current location. A presentation topic may combine consecutive source-fragment siblings only when they share parent, normalized title, objective content/authority, concept/canonical/prerequisite/graph/risk mappings, plan mappings, progress state, and source material/revision. This is not title deduplication: different pedagogical or state fields preserve separate rows, and every LearningUnit, objective, and exact source reference remains in technical detail. Major branches derive summaries from their real descendant objectives, prerequisites, source references, and route links. Non-leaf content mounts only after an `aria-expanded`/`aria-controls` disclosure is opened. When a section directly contains more than 12 presentation topics, the first 12 mount after expansion and a second accessible disclosure controls the remainder (covered with a 277-unit fixture). Expansion state resets when Curriculum identity/version changes and is never persisted as domain state.
 
@@ -469,7 +471,7 @@ StudyPlan does not introduce a `PlanningUnit` or reuse presentation topics. Its 
 
 The Learning Contract editor treats Material-role confirmation as its existing separate authoritative command boundary, not as a client-only field change or an implicit side effect of Contract persistence. It initializes role choices from the latest learner-confirmed history entry even when a newer proposal is pending. Before saving scope it refetches the current role assignment, confirms an already matching proposal (or proposes and confirms the reviewed choice), refetches the resulting history, and only then sends the exact confirmed assignment ID/version in Contract scope. It also refetches Course overview and uses the authoritative latest/active Contract pointers for the create command. A concurrent role or Contract-pointer conflict refreshes visible state and asks the learner to review again in Chinese; it never bypasses the server freshness check or exposes the old raw English diagnostic. Navigating to Concept recovery closes the editor and its operation-owned error without clearing unrelated Home failures. Reload follows the same history and overview endpoints, so freshness is durable rather than component-local.
 
-The prior Library, Practice, Mistakes, progress, and graph views are reused rather than cloned. Compatibility access remains secondary in `App`; the selected Course is the primary product context. This shell is presentation-only: it does not infer completion from prose, change source authority, rewrite Plan/Agenda ownership, or modify persistence and provider contracts.
+The prior Library, Practice, Mistakes, mastery, Review, history, provider, and graph capabilities are reused rather than cloned. Their parallel peer shells are retired; canonical Course destinations and deterministic legacy aliases preserve their jobs and bookmarks. This shell is presentation-only: it does not infer completion from prose, change source authority, rewrite Plan/Agenda ownership, or modify persistence and provider contracts.
 
 ## 11. Concept graph and plans
 
@@ -641,17 +643,17 @@ At process startup, unfinished StudySession turns and running operations are mar
 
 ## 18. Production dependencies added for the upgrade
 
-| Dependency | Scope | Rationale |
-| --- | --- | --- |
-| [`unpdf`](https://github.com/unjs/unpdf) | server | Maintained serverless PDF.js distribution exposing positioned text items needed for deterministic layout reconstruction and page provenance, without native binaries or OCR. |
-| [`mammoth`](https://github.com/mwilliamson/mammoth.js) | server | Retained compatibility DOCX-to-HTML path for historical/non-revision-aware callers; revision-aware production DOCX ingestion now uses the bounded direct OOXML adapter. |
-| [`yauzl@3.4.0`](https://github.com/thejoshwolfe/yauzl) | server | Small, maintained lazy-entry ZIP reader used only for bounded PPTX/DOCX package access. It supports central-directory validation and streamed member reads without extracting attacker-controlled paths to disk; local code adds member, byte, compression-ratio, duplicate-path, encryption, and relationship gates. |
-| [`@xmldom/xmldom@0.8.13`](https://github.com/xmldom/xmldom) | server | Maintained namespace-aware XML DOM parser used for the limited OOXML parts needed by PPTX/DOCX structure and relationships. Local code rejects entity/doctype declarations, malformed XML, and oversized/deep trees before consuming nodes. |
-| [`sharp@0.35.3`](https://github.com/lovell/sharp) | server | Maintained Node/libvips image pipeline used for actual-byte PNG/JPEG/WebP inspection, strict bounded decode, EXIF orientation, and deterministic provider transport resizing/transcoding. Exact original bytes remain immutable source authority. |
-| [`@mozilla/readability@0.6.0`](https://github.com/mozilla/readability) | server | Apache-2.0 mature main-content scoring and boilerplate reduction for static HTML. Adapted locally so accepted output still passes structural-unit, warning, provenance, and chunk limits. |
-| [`jsdom@26.1.0`](https://github.com/jsdom/jsdom) | server | MIT WHATWG DOM/parser used for malformed HTML recovery and deterministic structure projection. Configured without resource loading or page-script execution; browser fidelity is intentionally out of scope. |
-| [`@xyflow/react`](https://github.com/xyflow/xyflow) | web | Maintained React 18 graph renderer with accessible pan/zoom, selection, and controlled dragging. |
-| [`d3-force`](https://github.com/d3/d3-force) | web | Small standard force-layout library used for bounded, hash-seeded synchronous network layout. |
+| Dependency                                                             | Scope  | Rationale                                                                                                                                                                                                                                                                                                             |
+| ---------------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`unpdf`](https://github.com/unjs/unpdf)                               | server | Maintained serverless PDF.js distribution exposing positioned text items needed for deterministic layout reconstruction and page provenance, without native binaries or OCR.                                                                                                                                          |
+| [`mammoth`](https://github.com/mwilliamson/mammoth.js)                 | server | Retained compatibility DOCX-to-HTML path for historical/non-revision-aware callers; revision-aware production DOCX ingestion now uses the bounded direct OOXML adapter.                                                                                                                                               |
+| [`yauzl@3.4.0`](https://github.com/thejoshwolfe/yauzl)                 | server | Small, maintained lazy-entry ZIP reader used only for bounded PPTX/DOCX package access. It supports central-directory validation and streamed member reads without extracting attacker-controlled paths to disk; local code adds member, byte, compression-ratio, duplicate-path, encryption, and relationship gates. |
+| [`@xmldom/xmldom@0.8.13`](https://github.com/xmldom/xmldom)            | server | Maintained namespace-aware XML DOM parser used for the limited OOXML parts needed by PPTX/DOCX structure and relationships. Local code rejects entity/doctype declarations, malformed XML, and oversized/deep trees before consuming nodes.                                                                           |
+| [`sharp@0.35.3`](https://github.com/lovell/sharp)                      | server | Maintained Node/libvips image pipeline used for actual-byte PNG/JPEG/WebP inspection, strict bounded decode, EXIF orientation, and deterministic provider transport resizing/transcoding. Exact original bytes remain immutable source authority.                                                                     |
+| [`@mozilla/readability@0.6.0`](https://github.com/mozilla/readability) | server | Apache-2.0 mature main-content scoring and boilerplate reduction for static HTML. Adapted locally so accepted output still passes structural-unit, warning, provenance, and chunk limits.                                                                                                                             |
+| [`jsdom@26.1.0`](https://github.com/jsdom/jsdom)                       | server | MIT WHATWG DOM/parser used for malformed HTML recovery and deterministic structure projection. Configured without resource loading or page-script execution; browser fidelity is intentionally out of scope.                                                                                                          |
+| [`@xyflow/react`](https://github.com/xyflow/xyflow)                    | web    | Maintained React 18 graph renderer with accessible pan/zoom, selection, and controlled dragging.                                                                                                                                                                                                                      |
+| [`d3-force`](https://github.com/d3/d3-force)                           | web    | Small standard force-layout library used for bounded, hash-seeded synchronous network layout.                                                                                                                                                                                                                         |
 
 No vector database, graph database, orchestration framework, authentication layer, microservice, or new backend language was introduced.
 
@@ -873,6 +875,7 @@ grading input, mastery update, mistake closure, review decision, Agenda
 completion, or Plan progression. Exact quotation validation still proves only
 that quoted text occurs at a claimed source position; it does not prove full
 semantic entailment.
+
 # Learner Assessment / Repair Execution
 
 The Study route launches accepted formal short-answer versions from the existing SessionAgenda. `AssessmentAttempt` and `GradeRecord` remain immutable/append-only; learner projections hide internal IDs and expose criterion feedback plus honest source locations. Failed or partial formal grades may create one durable `RepairEpisode` and immutable `RepairPacket`. Repair practice is recorded as non-credit events. A fresh successor AssessmentVersion with changed wording is required before supported Evidence can resolve the episode. Tutor and lesson completion cannot grant credit. The Phase 7B2 UI recovers the current attempt and agenda-scoped version after reload; progression reconciliation remains separate from Evidence persistence.
@@ -1008,3 +1011,40 @@ decide those capability destinations and history requirements before removing
 any route. The existing concept mastery repository is historical in naming but
 still the current authority for concept `mastered`, `developing`, and `weak`;
 Phase 10B neither replaces nor reinterprets it.
+
+## Legacy surface retirement and capability consolidation (Phase 10C)
+
+`appRoutes.ts` defines the canonical Course route model. Course paths cover
+Home, Study, Curriculum, Knowledge Map, Progress and its Evidence/Repair/
+mastery/history subsections, Materials, Settings, advanced grounding, and
+advanced manual assessment. `#/courses` is the no-Course state and `#/settings`
+keeps Settings available without inventing Course context. Meaningful legacy
+hashes and `view`/`tab`/`module` query values normalize with `replaceState`:
+Graph/Explore -> Knowledge Map; Quiz/Assessment -> manual assessment;
+Results/History -> Progress history; Mistakes/Repair/Remediation -> Progress
+Repair; Mastery/Review -> Progress mastery; Import/Materials -> Materials;
+Hy3/provider -> Settings; compatibility/advanced -> grounding. Unknown Course
+paths fail to its Home. Canonical learner navigation uses `pushState` and never
+creates a compatibility-shell history entry or redirect loop.
+
+Retirement is a frontend information-architecture change, not a persistence or
+authority migration. No server route, service, repository, database table, or
+migration was removed. Formal Assessment still uses immutable versions,
+attempts, append-only grades, criterion-gated Evidence, and explicit
+progression reconciliation. Durable legacy mistakes and newer Repair episodes
+remain inspectable and actionable in Progress. Successor Review targets,
+executions, append-only events, and FSRS state remain separate from mastery and
+appear through Home, Study, and Progress without default scheduler internals.
+Provider configuration and deliberate connectivity diagnostics remain in
+Settings; server telemetry and developer/audit APIs remain retained without
+becoming ordinary learner navigation.
+
+Concept mastery authority is unchanged. Migration 1's `mastery_states` table
+and the existing mistakes/mastery repository remain the store. The deterministic
+legacy grading service computes a concept question average and calls the shared
+`updateMastery` rule before the repository upsert. `GET /api/materials/:id/mastery`
+feeds Progress; the Knowledge Map service reads the same workspace states and is
+the only projection source for concept `mastered`, `developing`, or `weak`.
+Formal Evidence/progression, Repair, successor Review/FSRS, Tutor, and Mastery
+Red Team paths do not write `mastery_states`. Surface consolidation therefore
+does not reinterpret objective Evidence or scheduling as concept mastery.

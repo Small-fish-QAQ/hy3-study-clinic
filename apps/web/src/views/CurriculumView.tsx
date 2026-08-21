@@ -1077,6 +1077,20 @@ export function CurriculumView({
         ) : null}
       </header>
 
+      {onOpenConceptGrounding ? (
+        <details className="technical-details curriculum-grounding-tools">
+          <summary>高级课程准备</summary>
+          <button
+            type="button"
+            className="ghost small"
+            disabled={loading || busyAction !== null}
+            onClick={onOpenConceptGrounding}
+          >
+            打开概念依据与图谱版本
+          </button>
+        </details>
+      ) : null}
+
       {loading && !hierarchy ? (
         <section
           className="curriculum-state curriculum-loading-state"

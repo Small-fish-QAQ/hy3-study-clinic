@@ -100,6 +100,8 @@ export interface ConceptGraphProps {
   refitKey?: string | number;
   /** Compact 图谱概要 numbers rendered inside the canvas. */
   summary?: GraphSummaryInfo | null;
+  /** Hide personal-learning semantics when the graph is used for Course grounding. */
+  learnerStateVisible?: boolean;
 }
 
 interface ConceptNodeData extends Record<string, unknown> {
@@ -111,6 +113,7 @@ interface ConceptNodeData extends Record<string, unknown> {
   insufficientEvidence: boolean;
   planTarget: boolean;
   flash: boolean;
+  learnerStateVisible: boolean;
 }
 
 function motionDuration(base: number): number {
@@ -129,36 +132,42 @@ function ConceptNode({ data, selected }: NodeProps<FlowNode<ConceptNodeData>>) {
     <div
       className={[
         'concept-node',
-        stateClass,
+        data.learnerStateVisible ? stateClass : '',
         selected ? 'selected' : '',
-        data.state === 'weak' ? 'weak-emphasis' : '',
-        data.planTarget ? 'plan-target' : '',
+        data.learnerStateVisible && data.state === 'weak' ? 'weak-emphasis' : '',
+        data.learnerStateVisible && data.planTarget ? 'plan-target' : '',
         data.flash ? 'search-flash' : '',
       ]
         .filter(Boolean)
         .join(' ')}
       style={{ '--node-scale': scale } as CSSProperties}
-      aria-label={`概念 ${data.name}(${
-        data.state === 'unknown' ? '学习状态未加载' : STATE_LABELS[data.state]
-      }${data.openMistakes > 0 ? `,${data.openMistakes} 道未解决错题` : ''})`}
+      aria-label={
+        data.learnerStateVisible
+          ? `概念 ${data.name}(${
+              data.state === 'unknown' ? '学习状态未加载' : STATE_LABELS[data.state]
+            }${data.openMistakes > 0 ? `,${data.openMistakes} 道未解决错题` : ''})`
+          : `概念 ${data.name}`
+      }
     >
       <Handle type="target" position={Position.Top} isConnectable={false} />
       <span className="concept-node-name">{data.name}</span>
-      <span className="concept-node-meta">
-        <span className={`state-dot ${stateClass}`} aria-hidden="true" />
-        {data.state === 'unknown' ? '未评估' : STATE_LABELS[data.state]}
-        {data.masteryPct !== null ? ` · ${data.masteryPct}%` : ''}
-        {data.insufficientEvidence ? (
-          <span className="evidence-hint" title="作答次数还不足以稳定评估">
-            证据不足
-          </span>
-        ) : null}
-        {data.openMistakes > 0 ? (
-          <span className="mistake-badge" title={`${data.openMistakes} 道未解决错题`}>
-            {data.openMistakes}
-          </span>
-        ) : null}
-      </span>
+      {data.learnerStateVisible ? (
+        <span className="concept-node-meta">
+          <span className={`state-dot ${stateClass}`} aria-hidden="true" />
+          {data.state === 'unknown' ? '未评估' : STATE_LABELS[data.state]}
+          {data.masteryPct !== null ? ` · ${data.masteryPct}%` : ''}
+          {data.insufficientEvidence ? (
+            <span className="evidence-hint" title="作答次数还不足以稳定评估">
+              证据不足
+            </span>
+          ) : null}
+          {data.openMistakes > 0 ? (
+            <span className="mistake-badge" title={`${data.openMistakes} 道未解决错题`}>
+              {data.openMistakes}
+            </span>
+          ) : null}
+        </span>
+      ) : null}
       <Handle type="source" position={Position.Bottom} isConnectable={false} />
     </div>
   );
@@ -181,7 +190,7 @@ export function ConceptGraph(props: ConceptGraphProps) {
   );
 }
 
-const FIT_VIEW_OPTIONS = { padding: 0.18, maxZoom: 1.35 };
+const FIT_VIEW_OPTIONS = { maxZoom: 1.35 };
 const FIT_MAX_ATTEMPTS = 5;
 
 /**
@@ -194,7 +203,7 @@ const FIT_MAX_ATTEMPTS = 5;
  * trigger takes over. Hover, selection, and dragging never change `trigger`,
  * so they can never cause a fit.
  */
-function AutoFit({ trigger }: { trigger: string }) {
+function AutoFit({ trigger, padding }: { trigger: string; padding: number }) {
   const nodesInitialized = useNodesInitialized();
   const canvasReady = useStore((state) => state.width > 0 && state.height > 0);
   const { fitView } = useReactFlow();
@@ -210,14 +219,16 @@ function AutoFit({ trigger }: { trigger: string }) {
     const attempt = () => {
       if (epochRef.current !== epoch) return;
       attempts += 1;
-      void fitView({ ...FIT_VIEW_OPTIONS, duration: motionDuration(220) }).then((applied) => {
-        if (epochRef.current !== epoch) return;
-        if (applied || attempts >= FIT_MAX_ATTEMPTS) {
-          doneRef.current = trigger;
-        } else {
-          frames.push(requestAnimationFrame(attempt));
-        }
-      });
+      void fitView({ ...FIT_VIEW_OPTIONS, padding, duration: motionDuration(220) }).then(
+        (applied) => {
+          if (epochRef.current !== epoch) return;
+          if (applied || attempts >= FIT_MAX_ATTEMPTS) {
+            doneRef.current = trigger;
+          } else {
+            frames.push(requestAnimationFrame(attempt));
+          }
+        },
+      );
     };
     frames.push(
       requestAnimationFrame(() => {
@@ -227,7 +238,7 @@ function AutoFit({ trigger }: { trigger: string }) {
     return () => {
       for (const frame of frames) cancelAnimationFrame(frame);
     };
-  }, [nodesInitialized, canvasReady, trigger, fitView]);
+  }, [nodesInitialized, canvasReady, trigger, padding, fitView]);
 
   // Window resizes re-fit; panel collapse/expand arrives via `trigger`.
   useEffect(() => {
@@ -235,7 +246,7 @@ function AutoFit({ trigger }: { trigger: string }) {
     const onResize = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
-        void fitView({ ...FIT_VIEW_OPTIONS, duration: motionDuration(120) });
+        void fitView({ ...FIT_VIEW_OPTIONS, padding, duration: motionDuration(120) });
       });
     };
     window.addEventListener('resize', onResize);
@@ -243,7 +254,7 @@ function AutoFit({ trigger }: { trigger: string }) {
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', onResize);
     };
-  }, [fitView]);
+  }, [fitView, padding]);
 
   return null;
 }
@@ -260,11 +271,14 @@ function ConceptGraphInner({
   planTargetIds,
   refitKey,
   summary,
+  learnerStateVisible = true,
 }: ConceptGraphProps) {
   const { setCenter, getZoom } = useReactFlow();
   const canvasRef = useRef<HTMLDivElement | null>(null);
 
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('network');
+  const effectiveLayoutMode = learnerStateVisible ? layoutMode : 'network';
+  const fitPadding = learnerStateVisible ? 0.18 : 0.3;
   const [showEdgeLabels, setShowEdgeLabels] = useState(false);
   const [showUnassessed, setShowUnassessed] = useState(true);
   const [focus, setFocus] = useState<{ rootId: string; hops: 1 | 2 } | null>(null);
@@ -415,7 +429,7 @@ function ConceptGraphInner({
     let ids: Set<string>;
     if (focus) {
       ids = neighborhoodConceptIds(focus.rootId, validEdges, focus.hops);
-    } else if (layoutMode === 'weak-path') {
+    } else if (effectiveLayoutMode === 'weak-path') {
       ids =
         weakSubgraph.conceptIds.size > 0
           ? new Set(weakSubgraph.conceptIds)
@@ -423,7 +437,7 @@ function ConceptGraphInner({
     } else {
       ids = new Set(concepts.map((c) => c.id));
     }
-    if (!showUnassessed) {
+    if (learnerStateVisible && !showUnassessed) {
       for (const concept of concepts) {
         const state = overlay.get(concept.id)?.state ?? 'unassessed';
         if (state === 'unassessed' && concept.id !== focus?.rootId) {
@@ -432,7 +446,16 @@ function ConceptGraphInner({
       }
     }
     return ids;
-  }, [concepts, validEdges, overlay, layoutMode, focus, showUnassessed, weakSubgraph]);
+  }, [
+    concepts,
+    validEdges,
+    overlay,
+    effectiveLayoutMode,
+    focus,
+    learnerStateVisible,
+    showUnassessed,
+    weakSubgraph,
+  ]);
 
   /** Never hide the selected concept out from under the user. */
   const visibleIds = useMemo(() => {
@@ -454,11 +477,11 @@ function ConceptGraphInner({
     );
     // 薄弱路径 additionally drops relations that are not part of the
     // remediation path (contrast/example/application/causal edges).
-    if (layoutMode === 'weak-path' && !focus && weakSubgraph.conceptIds.size > 0) {
+    if (effectiveLayoutMode === 'weak-path' && !focus && weakSubgraph.conceptIds.size > 0) {
       return base.filter((e) => weakSubgraph.edgeIds.has(e.id));
     }
     return base;
-  }, [validEdges, visibleIds, layoutMode, focus, weakSubgraph]);
+  }, [validEdges, visibleIds, effectiveLayoutMode, focus, weakSubgraph]);
 
   /** Estimated node sizes: layout collision + pre-measurement edge fallback. */
   const estimatedSizes = useMemo(
@@ -469,13 +492,13 @@ function ConceptGraphInner({
 
   /** Deterministic base layout for the visible subgraph. */
   const basePositions = useMemo(() => {
-    if (layoutMode === 'dependency' && !focus) {
+    if (effectiveLayoutMode === 'dependency' && !focus) {
       return computeDependencyLayout(visibleConcepts, visibleEdges);
     }
     return computeForceLayout(visibleConcepts, visibleEdges, estimatedSizes);
     // relayoutNonce forces a fresh simulation on 重新布局.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleConcepts, visibleEdges, layoutMode, focus, estimatedSizes, relayoutNonce]);
+  }, [visibleConcepts, visibleEdges, effectiveLayoutMode, focus, estimatedSizes, relayoutNonce]);
 
   /** Neighborhood emphasis: hovered node wins, then selected node/edge. */
   const emphasis = useMemo(() => {
@@ -528,6 +551,7 @@ function ConceptGraphInner({
             insufficientEvidence: state ? !state.hasEnoughActivity && state.attempts > 0 : false,
             planTarget: planTargetIds?.has(concept.id) ?? false,
             flash: flashNodeId === concept.id,
+            learnerStateVisible,
           },
         };
       }),
@@ -543,6 +567,7 @@ function ConceptGraphInner({
       degree,
       planTargetIds,
       flashNodeId,
+      learnerStateVisible,
     ],
   );
 
@@ -655,7 +680,7 @@ function ConceptGraphInner({
   const lanePlans = useMemo(() => planEdgeLanes(visibleEdges), [visibleEdges]);
   const incidentByNode = useMemo(() => planNodeEdgeOrder(visibleEdges), [visibleEdges]);
   const routeMode =
-    layoutMode === 'dependency' && !focus ? ('dependency' as const) : ('network' as const);
+    effectiveLayoutMode === 'dependency' && !focus ? ('dependency' as const) : ('network' as const);
 
   /** Node rects the route planner sees — same resolution as flowNodes. */
   const routingRects = useMemo(() => {
@@ -823,8 +848,8 @@ function ConceptGraphInner({
 
   const { fitView } = useReactFlow();
   const handleFit = useCallback(() => {
-    void fitView({ ...FIT_VIEW_OPTIONS, duration: motionDuration(220) });
-  }, [fitView]);
+    void fitView({ ...FIT_VIEW_OPTIONS, padding: fitPadding, duration: motionDuration(220) });
+  }, [fitPadding, fitView]);
 
   /**
    * One automatic fit per meaningful graph state. Built from the CORE
@@ -837,7 +862,8 @@ function ConceptGraphInner({
   }, [coreVisibleIds]);
   const fitTrigger = [
     versionId ?? 'none',
-    layoutMode,
+    effectiveLayoutMode,
+    learnerStateVisible ? 'learner' : 'grounding',
     focus ? `${focus.rootId}:${focus.hops}` : 'all',
     showUnassessed ? 'u1' : 'u0',
     relayoutNonce,
@@ -853,7 +879,7 @@ function ConceptGraphInner({
 
   /** 薄弱路径 caption info (and the "identical to full graph" explanation). */
   const weakPathInfo =
-    layoutMode === 'weak-path' && !focus && weakSubgraph.conceptIds.size > 0
+    effectiveLayoutMode === 'weak-path' && !focus && weakSubgraph.conceptIds.size > 0
       ? {
           nodeCount: visibleConcepts.length,
           totalCount: concepts.length,
@@ -917,7 +943,7 @@ function ConceptGraphInner({
           onSelectEdge(null);
         }}
       >
-        <AutoFit trigger={fitTrigger} />
+        <AutoFit trigger={fitTrigger} padding={fitPadding} />
         <EdgeMarkerDefs />
         <Background gap={26} size={1.4} />
         <Controls showInteractive={false} position="bottom-right" />
@@ -943,10 +969,12 @@ function ConceptGraphInner({
                 <li key={concept.id}>
                   <button type="button" onClick={() => handleSearchPick(concept.id)}>
                     {concept.name}
-                    <span className="small muted">
-                      {' '}
-                      {STATE_LABELS[overlay.get(concept.id)?.state ?? 'unassessed']}
-                    </span>
+                    {learnerStateVisible ? (
+                      <span className="small muted">
+                        {' '}
+                        {STATE_LABELS[overlay.get(concept.id)?.state ?? 'unassessed']}
+                      </span>
+                    ) : null}
                   </button>
                 </li>
               ))}
@@ -958,24 +986,26 @@ function ConceptGraphInner({
         </Panel>
 
         <Panel position="top-right" className="graph-overlay graph-toolbar">
-          <label className="graph-toolbar-field">
-            <span className="visually-hidden">布局模式</span>
-            <select
-              aria-label="布局模式"
-              value={layoutMode}
-              onChange={(e) => {
-                setLayoutMode(e.target.value as LayoutMode);
-                setFocus(null);
-              }}
-            >
-              {(Object.keys(LAYOUT_MODE_LABELS) as LayoutMode[]).map((mode) => (
-                <option key={mode} value={mode} disabled={mode === 'weak-path' && !weakAvailable}>
-                  {LAYOUT_MODE_LABELS[mode]}
-                  {mode === 'weak-path' && !weakAvailable ? '(暂无薄弱概念)' : ''}
-                </option>
-              ))}
-            </select>
-          </label>
+          {learnerStateVisible ? (
+            <label className="graph-toolbar-field">
+              <span className="visually-hidden">布局模式</span>
+              <select
+                aria-label="布局模式"
+                value={layoutMode}
+                onChange={(e) => {
+                  setLayoutMode(e.target.value as LayoutMode);
+                  setFocus(null);
+                }}
+              >
+                {(Object.keys(LAYOUT_MODE_LABELS) as LayoutMode[]).map((mode) => (
+                  <option key={mode} value={mode} disabled={mode === 'weak-path' && !weakAvailable}>
+                    {LAYOUT_MODE_LABELS[mode]}
+                    {mode === 'weak-path' && !weakAvailable ? '(暂无薄弱概念)' : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <button type="button" className="ghost small" onClick={handleFit}>
             适配视图
           </button>
@@ -995,14 +1025,16 @@ function ConceptGraphInner({
           >
             {showEdgeLabels ? '隐藏关系标签' : '显示关系标签'}
           </button>
-          <button
-            type="button"
-            className="ghost small"
-            aria-pressed={!showUnassessed}
-            onClick={() => setShowUnassessed((v) => !v)}
-          >
-            {showUnassessed ? '隐藏未评估' : '显示未评估'}
-          </button>
+          {learnerStateVisible ? (
+            <button
+              type="button"
+              className="ghost small"
+              aria-pressed={!showUnassessed}
+              onClick={() => setShowUnassessed((v) => !v)}
+            >
+              {showUnassessed ? '隐藏未评估' : '显示未评估'}
+            </button>
+          ) : null}
         </Panel>
 
         {focus ? (
@@ -1047,7 +1079,7 @@ function ConceptGraphInner({
         ) : null}
 
         <Panel position="bottom-left" className="graph-overlay graph-legend-panel">
-          <GraphLegend />
+          <GraphLegend learnerStateVisible={learnerStateVisible} />
         </Panel>
 
         {summary ? (
@@ -1056,8 +1088,8 @@ function ConceptGraphInner({
             className="graph-overlay graph-summary"
             aria-label="图谱概要"
           >
-            文档 {summary.documentCount} · 概念 {concepts.length} · 关系 {validEdges.length} · 薄弱{' '}
-            {summary.weakCount}
+            文档 {summary.documentCount} · 概念 {concepts.length} · 关系 {validEdges.length}
+            {learnerStateVisible ? ` · 薄弱 ${summary.weakCount}` : ''}
             {summary.acceptedCount !== null ? ` · 采纳 ${summary.acceptedCount}` : ''}
             {summary.rejectedCount !== null && summary.rejectedCount > 0
               ? ` · 拒绝 ${summary.rejectedCount}`
@@ -1067,7 +1099,13 @@ function ConceptGraphInner({
       </ReactFlow>
 
       {tooltip ? (
-        <GraphTooltip tooltip={tooltip} concepts={concepts} overlay={overlay} degree={degree} />
+        <GraphTooltip
+          tooltip={tooltip}
+          concepts={concepts}
+          overlay={overlay}
+          degree={degree}
+          learnerStateVisible={learnerStateVisible}
+        />
       ) : null}
     </div>
   );
@@ -1078,11 +1116,13 @@ function GraphTooltip({
   concepts,
   overlay,
   degree,
+  learnerStateVisible,
 }: {
   tooltip: TooltipState;
   concepts: Concept[];
   overlay: Map<string, ConceptLearnerState>;
   degree: Map<string, number>;
+  learnerStateVisible: boolean;
 }) {
   const concept = concepts.find((c) => c.id === tooltip.conceptId);
   if (!concept) return null;
@@ -1097,29 +1137,37 @@ function GraphTooltip({
       style={{ left: tooltip.x, top: tooltip.y, pointerEvents: 'none' }}
     >
       <strong>{concept.name}</strong>
-      <span>
-        {STATE_LABELS[state?.state ?? 'unassessed']}
-        {state?.mastery != null ? ` · 掌握 ${Math.round(state.mastery * 100)}%` : ''}
-      </span>
-      <span>
-        关系 {degree.get(concept.id) ?? 0} 条 · 未解决错题 {state?.openMistakes ?? 0} 道
-      </span>
+      {learnerStateVisible ? (
+        <>
+          <span>
+            {STATE_LABELS[state?.state ?? 'unassessed']}
+            {state?.mastery != null ? ` · 掌握 ${Math.round(state.mastery * 100)}%` : ''}
+          </span>
+          <span>
+            关系 {degree.get(concept.id) ?? 0} 条 · 未解决错题 {state?.openMistakes ?? 0} 道
+          </span>
+        </>
+      ) : (
+        <span>关系 {degree.get(concept.id) ?? 0} 条</span>
+      )}
     </div>
   );
 }
 
 /** Compact in-canvas legend for node states and relation styles. */
-export function GraphLegend() {
+export function GraphLegend({ learnerStateVisible = true }: { learnerStateVisible?: boolean }) {
   return (
     <details className="graph-legend" aria-label="图例">
       <summary>图例</summary>
       <div className="legend-body">
-        <span className="legend-group">
-          <span className="legend-chip unassessed">未评估</span>
-          <span className="legend-chip weak">薄弱</span>
-          <span className="legend-chip developing">进步中</span>
-          <span className="legend-chip stable">稳固</span>
-        </span>
+        {learnerStateVisible ? (
+          <span className="legend-group">
+            <span className="legend-chip unassessed">未评估</span>
+            <span className="legend-chip weak">薄弱</span>
+            <span className="legend-chip developing">进步中</span>
+            <span className="legend-chip stable">稳固</span>
+          </span>
+        ) : null}
         <span className="legend-group">
           {(Object.keys(RELATION_LABELS) as GraphRelation[]).map((relation) => (
             <span key={relation} className="legend-relation">

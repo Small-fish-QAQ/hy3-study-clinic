@@ -19,6 +19,7 @@ import type {
   WorkspaceSummary,
 } from '@hy3-clinic/shared';
 import { api, ApiClientError } from '../api.js';
+import type { CourseDestination } from '../appRoutes.js';
 import { Banner, Loading } from '../components/ui.js';
 import { useAsyncAction } from '../components/useAsyncAction.js';
 import {
@@ -30,7 +31,12 @@ import { CourseHomeView } from './CourseHomeView.js';
 import { CurriculumView } from './CurriculumView.js';
 import { StudySessionView } from './StudySessionView.js';
 import { CourseMaterialsView } from './CourseMaterialsView.js';
-import { CourseProgressView, type CourseProgressIntent } from './CourseProgressView.js';
+import {
+  CourseProgressView,
+  type CourseProgressIntent,
+  type ProgressSection,
+} from './CourseProgressView.js';
+import { CourseAssessmentView } from './CourseAssessmentView.js';
 import { GraphWorkspaceView } from './GraphWorkspaceView.js';
 import { SettingsView } from './SettingsView.js';
 import {
@@ -140,12 +146,39 @@ interface MaterialScopeChoice {
 export interface AgentCourseWorkspaceProps {
   workspaceId: string | null;
   onWorkspaceChange: (workspaceId: string | null) => void;
-  onLaunchQuiz: (quiz: PublicQuiz) => void;
   refreshKey: number;
   provider?: 'fake' | 'hy3' | null;
   onProviderChange?: (provider: 'fake' | 'hy3') => void;
-  onOpenAdvancedTools?: () => void;
+  navigationIntent?: { requestId: number; destination: CourseDestination };
+  onDestinationChange?: (destination: CourseDestination) => void;
   onWorkspaceDeleted?: (workspaceId: string) => void;
+}
+
+function viewForDestination(destination: CourseDestination): AgentCourseView {
+  if (destination === 'study') return 'session';
+  if (destination === 'curriculum') return 'curriculum';
+  if (destination === 'knowledge-map' || destination === 'grounding') return 'explore';
+  if (destination.startsWith('progress-') || destination === 'assessment') return 'progress';
+  return 'home';
+}
+
+function progressSectionForDestination(destination: CourseDestination): ProgressSection {
+  if (destination === 'progress-evidence') return 'evidence';
+  if (destination === 'progress-repair') return 'repair';
+  if (destination === 'progress-mastery') return 'mastery';
+  if (destination === 'progress-history') return 'history';
+  return 'overview';
+}
+
+function destinationForProgressSection(section: ProgressSection): CourseDestination {
+  const destinations: Record<ProgressSection, CourseDestination> = {
+    overview: 'progress-overview',
+    evidence: 'progress-evidence',
+    repair: 'progress-repair',
+    mastery: 'progress-mastery',
+    history: 'progress-history',
+  };
+  return destinations[section];
 }
 
 let fallbackCommandSequence = 0;
@@ -202,24 +235,40 @@ function initialForm(contract: LearningContract | null): ContractFormState {
 export function AgentCourseWorkspace({
   workspaceId,
   onWorkspaceChange,
-  onLaunchQuiz,
   refreshKey,
   provider = null,
   onProviderChange,
-  onOpenAdvancedTools,
+  navigationIntent,
+  onDestinationChange,
   onWorkspaceDeleted,
 }: AgentCourseWorkspaceProps) {
-  const [view, setView] = useState<AgentCourseView>('home');
-  const [exploreSurface, setExploreSurface] = useState<'map' | 'concept-grounding'>('map');
+  const initialDestination = navigationIntent?.destination ?? 'home';
+  const [view, setView] = useState<AgentCourseView>(() => viewForDestination(initialDestination));
+  const [exploreSurface, setExploreSurface] = useState<'map' | 'concept-grounding'>(() =>
+    initialDestination === 'grounding' ? 'concept-grounding' : 'map',
+  );
   const mapIntentSequence = useRef(0);
   const progressIntentSequence = useRef(0);
   const [knowledgeMapIntent, setKnowledgeMapIntent] = useState<KnowledgeMapIntent>({
     requestId: 0,
     mode: 'knowledge_structure',
   });
-  const [progressIntent, setProgressIntent] = useState<CourseProgressIntent | null>(null);
-  const [materialsOpen, setMaterialsOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [progressIntent, setProgressIntent] = useState<CourseProgressIntent | null>(() =>
+    initialDestination.startsWith('progress-')
+      ? {
+          requestId: navigationIntent?.requestId ?? 0,
+          section: progressSectionForDestination(initialDestination),
+        }
+      : null,
+  );
+  const [progressSection, setProgressSection] = useState<ProgressSection>(() =>
+    progressSectionForDestination(initialDestination),
+  );
+  const [materialsOpen, setMaterialsOpen] = useState(initialDestination === 'materials');
+  const [settingsOpen, setSettingsOpen] = useState(initialDestination === 'settings');
+  const [assessmentOpen, setAssessmentOpen] = useState(initialDestination === 'assessment');
+  const [launchedQuiz, setLaunchedQuiz] = useState<PublicQuiz | null>(null);
+  const [assessmentRevision, setAssessmentRevision] = useState(0);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarCollapsedPreference);
   const [workspaces, setWorkspaces] = useState<WorkspaceSummary[]>([]);
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
@@ -245,11 +294,69 @@ export function AgentCourseWorkspace({
   const [actionFailureOwner, setActionFailureOwner] = useState<ActionFailureOwner | null>(null);
   const loadEpoch = useRef(0);
   const workspaceIdRef = useRef(workspaceId);
+  const applyingNavigationIntentRef = useRef<number | null>(null);
   const action = useAsyncAction();
   const preparationAction = useAsyncAction();
   const cancelPreparationAction = preparationAction.cancel;
   const planAction = useAsyncAction();
   const progressRemediationAction = useAsyncAction();
+
+  useEffect(() => {
+    if (!navigationIntent) return;
+    const requestId = navigationIntent.requestId;
+    applyingNavigationIntentRef.current = requestId;
+    queueMicrotask(() => {
+      if (applyingNavigationIntentRef.current === requestId) {
+        applyingNavigationIntentRef.current = null;
+      }
+    });
+    const destination = navigationIntent.destination;
+    setNotice(null);
+    setMaterialsOpen(destination === 'materials');
+    setSettingsOpen(destination === 'settings');
+    setAssessmentOpen(destination === 'assessment');
+    setContractEditorOpen(false);
+    setEditingContractId(null);
+    setView(viewForDestination(destination));
+    setExploreSurface(destination === 'grounding' ? 'concept-grounding' : 'map');
+    const section = progressSectionForDestination(destination);
+    setProgressSection(section);
+    setProgressIntent(
+      destination.startsWith('progress-')
+        ? { requestId: navigationIntent.requestId, section }
+        : null,
+    );
+    if (destination === 'knowledge-map') {
+      setKnowledgeMapIntent({
+        requestId: ++mapIntentSequence.current,
+        mode: 'knowledge_structure',
+      });
+    }
+  }, [navigationIntent]);
+
+  useEffect(() => {
+    if (applyingNavigationIntentRef.current !== null) return;
+    let destination: CourseDestination;
+    if (settingsOpen) destination = 'settings';
+    else if (materialsOpen) destination = 'materials';
+    else if (assessmentOpen) destination = 'assessment';
+    else if (view === 'explore' && exploreSurface === 'concept-grounding')
+      destination = 'grounding';
+    else if (view === 'session') destination = 'study';
+    else if (view === 'curriculum') destination = 'curriculum';
+    else if (view === 'explore') destination = 'knowledge-map';
+    else if (view === 'progress') destination = destinationForProgressSection(progressSection);
+    else destination = 'home';
+    onDestinationChange?.(destination);
+  }, [
+    assessmentOpen,
+    exploreSurface,
+    materialsOpen,
+    onDestinationChange,
+    progressSection,
+    settingsOpen,
+    view,
+  ]);
 
   useEffect(() => {
     workspaceIdRef.current = workspaceId;
@@ -397,7 +504,7 @@ export function AgentCourseWorkspace({
       api.remediation(materialId, signal),
     );
     if (!response || capturedWorkspaceId !== workspaceIdRef.current) return;
-    onLaunchQuiz(response.quiz);
+    openAssessment(response.quiz);
   }
 
   async function runAction<T>(
@@ -1029,7 +1136,7 @@ export function AgentCourseWorkspace({
           signal,
         ),
       async (result, signal) => {
-        if (result.kind === 'assessment') onLaunchQuiz(result.quiz);
+        if (result.kind === 'assessment') openAssessment(result.quiz);
         if (result.kind === 'lesson') {
           setNotice('当前学习内容已重新验证，可以在学习页继续。');
           setView('session');
@@ -1061,11 +1168,23 @@ export function AgentCourseWorkspace({
     setNotice(null);
     setMaterialsOpen(false);
     setSettingsOpen(false);
+    setAssessmentOpen(false);
     setContractEditorOpen(false);
     setEditingContractId(null);
     if (next === 'explore') setExploreSurface('map');
     if (next !== 'progress') setProgressIntent(null);
     setView(next);
+  }
+
+  function openAssessment(quiz: PublicQuiz | null = null): void {
+    setNotice(null);
+    setMaterialsOpen(false);
+    setSettingsOpen(false);
+    setContractEditorOpen(false);
+    setEditingContractId(null);
+    setLaunchedQuiz(quiz);
+    setAssessmentOpen(true);
+    setView('progress');
   }
 
   function openConceptGrounding(): void {
@@ -1125,6 +1244,8 @@ export function AgentCourseWorkspace({
     setNotice(null);
     setMaterialsOpen(false);
     setSettingsOpen(false);
+    setAssessmentOpen(false);
+    setLaunchedQuiz(null);
     setContractEditorOpen(false);
     setEditingContractId(null);
     setExploreSurface('map');
@@ -1145,6 +1266,20 @@ export function AgentCourseWorkspace({
       courses={workspaces.map((workspace) => ({ id: workspace.id, name: workspace.name }))}
       materialsActive={materialsOpen}
       settingsActive={settingsOpen}
+      destinationLabel={
+        assessmentOpen
+          ? '手动评估'
+          : view === 'explore' && exploreSurface === 'concept-grounding'
+            ? '课程概念依据'
+            : undefined
+      }
+      destinationDescription={
+        assessmentOpen
+          ? '高级出题、当前评估与旧活动兼容'
+          : view === 'explore' && exploreSurface === 'concept-grounding'
+            ? '概念提取、关系验证、对齐与版本审计'
+            : undefined
+      }
       provider={provider}
       sidebarCollapsed={sidebarCollapsed}
       onCourseChange={changeCourse}
@@ -1153,14 +1288,15 @@ export function AgentCourseWorkspace({
         setNotice(null);
         setFocusedMaterialId(null);
         setSettingsOpen(false);
+        setAssessmentOpen(false);
         setMaterialsOpen(true);
       }}
       onOpenSettings={() => {
         setNotice(null);
         setMaterialsOpen(false);
+        setAssessmentOpen(false);
         setSettingsOpen(true);
       }}
-      onOpenAdvancedTools={onOpenAdvancedTools}
       onSidebarCollapsedChange={setSidebarCollapsed}
       notifications={notice ? <Banner kind="info">{notice}</Banner> : null}
     >
@@ -1224,6 +1360,23 @@ export function AgentCourseWorkspace({
           onBack={() => {
             setFocusedMaterialId(null);
             setMaterialsOpen(false);
+          }}
+        />
+      ) : assessmentOpen ? (
+        <CourseAssessmentView
+          workspaceId={workspaceId}
+          documents={documents}
+          launchedQuiz={launchedQuiz}
+          onChanged={() => {
+            setAssessmentRevision((revision) => revision + 1);
+            void refresh();
+          }}
+          onBack={() => {
+            setLaunchedQuiz(null);
+            setAssessmentOpen(false);
+            setProgressSection('overview');
+            setProgressIntent(null);
+            setView('progress');
           }}
         />
       ) : contractEditorOpen && overview ? (
@@ -1339,7 +1492,7 @@ export function AgentCourseWorkspace({
               : null
           }
           onSessionChanged={() => void refresh()}
-          onLaunchQuiz={onLaunchQuiz}
+          onLaunchQuiz={(quiz) => openAssessment(quiz)}
           onOpenKnowledgeMap={(learningUnitId) =>
             openKnowledgeMap('learning_route', { learningUnitId })
           }
@@ -1349,7 +1502,7 @@ export function AgentCourseWorkspace({
           workspaceId={workspaceId}
           documents={documents}
           overview={overview}
-          refreshKey={refreshKey}
+          refreshKey={refreshKey + assessmentRevision}
           command={(prefix) => command(workspaceId, prefix)}
           onAcceptProposedPlan={() => void decidePlan('accept')}
           onRejectProposedPlan={() => void decidePlan('reject')}
@@ -1359,6 +1512,8 @@ export function AgentCourseWorkspace({
           remediationError={progressRemediationAction.error}
           operationError={actionFailureOwner === 'progress' ? action.error : null}
           intent={progressIntent}
+          onSectionChange={setProgressSection}
+          onOpenAssessment={() => openAssessment()}
           onOpenKnowledgeMap={() => openKnowledgeMap('weakness_map')}
         />
       ) : exploreSurface === 'concept-grounding' ? (
@@ -1385,7 +1540,7 @@ export function AgentCourseWorkspace({
               }
               onWorkspaceDeleted?.(deletedWorkspaceId);
             }}
-            onLaunchQuiz={(quiz) => onLaunchQuiz(quiz)}
+            onLaunchQuiz={(quiz) => openAssessment(quiz)}
             onOpenMaterials={() => {
               setView('home');
               setMaterialsOpen(true);

@@ -93,11 +93,11 @@ export function ResultsView({
             >
               {remediationLoading ? '正在生成康复练习…' : '针对错题生成康复练习'}
             </button>
-            <span className="muted small">错题已记入错题本,可稍后在「错题本」页处理。</span>
+            <span className="muted small">错题已保留，可稍后在「进展」的修复记录中处理。</span>
           </div>
         ) : null}
         {wrongCount === 0 && !stateChanges ? (
-          <Banner kind="info">全部答对!可以到「掌握度」页查看进展。</Banner>
+          <Banner kind="info">全部答对!可以到「进展」查看掌握与复习记录。</Banner>
         ) : null}
       </section>
 

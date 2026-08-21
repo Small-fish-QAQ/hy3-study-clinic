@@ -400,8 +400,13 @@ export const api = {
   documentMapping: (materialId: string, signal?: AbortSignal) =>
     request<DocumentMapping>('GET', `/api/materials/${materialId}/mapping`, undefined, signal),
 
-  getConcepts: (materialId: string) =>
-    request<{ concepts: Concept[] }>('GET', `/api/materials/${materialId}/concepts`),
+  getConcepts: (materialId: string, signal?: AbortSignal) =>
+    request<{ concepts: Concept[] }>(
+      'GET',
+      `/api/materials/${materialId}/concepts`,
+      undefined,
+      signal,
+    ),
 
   generateQuiz: (materialId: string, config: QuizConfig, signal?: AbortSignal) =>
     request<{ quiz: PublicQuiz }>('POST', '/api/quizzes', { materialId, config }, signal),

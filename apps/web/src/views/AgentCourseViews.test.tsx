@@ -1613,6 +1613,7 @@ describe('CurriculumView truth and validation states', () => {
     const onAccept = vi.fn();
     const onReject = vi.fn();
     const onSelectHistory = vi.fn();
+    const onOpenConceptGrounding = vi.fn();
     const user = userEvent.setup();
     render(
       <CurriculumView
@@ -1639,6 +1640,7 @@ describe('CurriculumView truth and validation states', () => {
         canAccept
         busyAction={null}
         onPropose={vi.fn()}
+        onOpenConceptGrounding={onOpenConceptGrounding}
         onAccept={onAccept}
         onReject={onReject}
         onSelectHistory={onSelectHistory}
@@ -1650,9 +1652,12 @@ describe('CurriculumView truth and validation states', () => {
     await user.click(screen.getByRole('button', { name: '拒绝候选版本' }));
     await user.click(screen.getByText('版本历史（1）'));
     await user.click(screen.getByRole('button', { name: /版本 1/ }));
+    await user.click(screen.getByText('高级课程准备'));
+    await user.click(screen.getByRole('button', { name: '打开概念依据与图谱版本' }));
     expect(onAccept).toHaveBeenCalledOnce();
     expect(onReject).toHaveBeenCalledOnce();
     expect(onSelectHistory).toHaveBeenCalledWith('curriculum_history_1');
+    expect(onOpenConceptGrounding).toHaveBeenCalledOnce();
   });
 });
 
@@ -1660,6 +1665,8 @@ describe('consolidated Course product shell', () => {
   it('opens the Weakness Map from Progress without inventing a learner-state conclusion', async () => {
     vi.spyOn(api, 'reviewItems').mockResolvedValue({ items: [] });
     const onOpenKnowledgeMap = vi.fn();
+    const onOpenAssessment = vi.fn();
+    const onSectionChange = vi.fn();
     const user = userEvent.setup();
 
     render(
@@ -1682,11 +1689,18 @@ describe('consolidated Course product shell', () => {
         remediationError={null}
         operationError={null}
         onOpenKnowledgeMap={onOpenKnowledgeMap}
+        onOpenAssessment={onOpenAssessment}
+        onSectionChange={onSectionChange}
       />,
     );
 
     await user.click(screen.getByRole('button', { name: '在知识地图中解释' }));
     expect(onOpenKnowledgeMap).toHaveBeenCalledOnce();
+    await user.click(screen.getByText('高级评估'));
+    await user.click(screen.getByRole('button', { name: '打开手动评估' }));
+    expect(onOpenAssessment).toHaveBeenCalledOnce();
+    await user.click(screen.getByRole('tab', { name: '修复' }));
+    expect(onSectionChange).toHaveBeenCalledWith('repair');
   });
 
   it('offers one learner-facing Course navigation model with Chinese Study naming', () => {
@@ -1708,7 +1722,7 @@ describe('consolidated Course product shell', () => {
       within(navigation)
         .getAllByRole('button')
         .map((button) => button.textContent),
-    ).toEqual(['主页', '学习', '课程结构', '进展', '知识地图']);
+    ).toEqual(['主页', '学习', '课程结构', '知识地图', '进展']);
     expect(within(navigation).queryByText('Study Session')).not.toBeInTheDocument();
     expect(within(navigation).queryByText('课程执行')).not.toBeInTheDocument();
     expect(
@@ -1723,11 +1737,10 @@ describe('consolidated Course product shell', () => {
     );
   });
 
-  it('keeps Course switching and Materials secondary to the five primary destinations', async () => {
+  it('keeps Course switching and Materials secondary while retiring compatibility navigation', async () => {
     const user = userEvent.setup();
     const onCourseChange = vi.fn();
     const onOpenMaterials = vi.fn();
-    const onOpenAdvancedTools = vi.fn();
     render(
       <AgentCourseShell
         activeView="home"
@@ -1740,7 +1753,6 @@ describe('consolidated Course product shell', () => {
         onCourseChange={onCourseChange}
         onViewChange={vi.fn()}
         onOpenMaterials={onOpenMaterials}
-        onOpenAdvancedTools={onOpenAdvancedTools}
       >
         <p>Course content</p>
       </AgentCourseShell>,
@@ -1752,8 +1764,7 @@ describe('consolidated Course product shell', () => {
     const secondary = screen.getByLabelText('课程辅助入口');
     await user.click(within(secondary).getByRole('button', { name: '课程资料' }));
     expect(onOpenMaterials).toHaveBeenCalledTimes(1);
-    await user.click(within(secondary).getByRole('button', { name: '兼容与高级工具' }));
-    expect(onOpenAdvancedTools).toHaveBeenCalledTimes(1);
+    expect(within(secondary).queryByText('兼容与高级工具')).not.toBeInTheDocument();
   });
 
   it('presents Settings as the active system destination without selecting a Course view', async () => {
@@ -1853,7 +1864,6 @@ describe('consolidated Course product shell', () => {
         courses={[{ id: 'ws_1', name: 'Probability' }]}
         onCourseChange={vi.fn()}
         onViewChange={vi.fn()}
-        onOpenAdvancedTools={vi.fn()}
       >
         <p>Course content</p>
       </AgentCourseShell>,
@@ -1870,7 +1880,7 @@ describe('consolidated Course product shell', () => {
       'inert',
     );
 
-    const lastDrawerControl = within(sidebar).getByRole('button', { name: '兼容与高级工具' });
+    const lastDrawerControl = within(sidebar).getByRole('button', { name: '进展' });
     lastDrawerControl.focus();
     await user.tab();
     expect(within(sidebar).getByRole('button', { name: '关闭课程导航' })).toHaveFocus();

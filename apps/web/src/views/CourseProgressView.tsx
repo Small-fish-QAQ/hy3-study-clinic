@@ -122,6 +122,8 @@ export interface CourseProgressViewProps {
   operationError: string | null;
   intent?: CourseProgressIntent | null;
   onOpenKnowledgeMap?: () => void;
+  onSectionChange?: (section: ProgressSection) => void;
+  onOpenAssessment?: () => void;
 }
 
 /** Consolidates formal progression and the legacy diagnostic views under one Course destination. */
@@ -140,6 +142,8 @@ export function CourseProgressView({
   operationError,
   intent = null,
   onOpenKnowledgeMap,
+  onSectionChange,
+  onOpenAssessment,
 }: CourseProgressViewProps) {
   const [section, setSection] = useState<ProgressSection>('overview');
   const [materialId, setMaterialId] = useState(documents[0]?.id ?? '');
@@ -209,6 +213,11 @@ export function CourseProgressView({
       ? '正在加载复习安排…'
       : `${reviews.length} 项复习记录`;
 
+  function changeSection(next: ProgressSection): void {
+    setSection(next);
+    onSectionChange?.(next);
+  }
+
   function onTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, current: ProgressSection): void {
     const currentIndex = PROGRESS_SECTIONS.indexOf(current);
     let nextIndex: number | null = null;
@@ -220,7 +229,7 @@ export function CourseProgressView({
     if (nextIndex === null) return;
     event.preventDefault();
     const next = PROGRESS_SECTIONS[nextIndex]!;
-    setSection(next);
+    changeSection(next);
     requestAnimationFrame(() => document.getElementById(`progress-tab-${next}`)?.focus());
   }
 
@@ -239,6 +248,15 @@ export function CourseProgressView({
           </button>
         ) : null}
       </header>
+
+      {onOpenAssessment ? (
+        <details className="technical-details progress-assessment-tools">
+          <summary>高级评估</summary>
+          <button type="button" className="ghost small" onClick={onOpenAssessment}>
+            打开手动评估
+          </button>
+        </details>
+      ) : null}
 
       {operationError ? <Banner kind="error">这次进展操作未完成。{operationError}</Banner> : null}
 
@@ -301,7 +319,7 @@ export function CourseProgressView({
             aria-controls={`progress-panel-${item}`}
             tabIndex={section === item ? 0 : -1}
             className={section === item ? 'active' : ''}
-            onClick={() => setSection(item)}
+            onClick={() => changeSection(item)}
             onKeyDown={(event) => onTabKeyDown(event, item)}
           >
             {SECTION_LABELS[item]}
@@ -324,24 +342,24 @@ export function CourseProgressView({
                 : '尚未开始'}
             </strong>
             <p className="muted">已完成的学习路线项目</p>
-            <button type="button" className="primary" onClick={() => setSection('evidence')}>
+            <button type="button" className="primary" onClick={() => changeSection('evidence')}>
               查看正式证据
             </button>
           </section>
           <section className="progress-summary-list" aria-label="持久学习状态摘要">
-            <button type="button" onClick={() => setSection('evidence')}>
+            <button type="button" onClick={() => changeSection('evidence')}>
               <span>可计入状态的证据</span>
               <strong>{progress?.stateCreditingEvidenceCount ?? 0} 项</strong>
             </button>
-            <button type="button" onClick={() => setSection('repair')}>
+            <button type="button" onClick={() => changeSection('repair')}>
               <span>需要修复</span>
               <strong>{progress?.repairNeededPlanItemCount ?? 0} 项路线工作待修复</strong>
             </button>
-            <button type="button" onClick={() => setSection('mastery')}>
+            <button type="button" onClick={() => changeSection('mastery')}>
               <span>掌握与复习</span>
               <strong>{reviewSummary}</strong>
             </button>
-            <button type="button" onClick={() => setSection('history')}>
+            <button type="button" onClick={() => changeSection('history')}>
               <span>历史与决定</span>
               <strong>测验、评估与版本记录</strong>
             </button>
@@ -362,7 +380,7 @@ export function CourseProgressView({
             onRejectProposedPlan={onRejectProposedPlan}
             onCourseChanged={onCourseChanged}
             onOpenProgress={(target) =>
-              setSection(
+              changeSection(
                 target === 'history' ? 'history' : target === 'mistakes' ? 'repair' : 'mastery',
               )
             }
