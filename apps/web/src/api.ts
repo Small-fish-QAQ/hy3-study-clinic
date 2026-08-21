@@ -455,6 +455,9 @@ export const api = {
       signal,
     ),
 
+  renameWorkspace: (id: string, name: string, signal?: AbortSignal) =>
+    request<{ workspace: Workspace }>('PATCH', `/api/workspaces/${id}`, { name }, signal),
+
   deleteWorkspace: (id: string, signal?: AbortSignal) =>
     request<void>('DELETE', `/api/workspaces/${id}`, undefined, signal),
 

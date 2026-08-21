@@ -55,7 +55,14 @@ export function CourseMaterialsView({
   const [importOpen, setImportOpen] = useState(documents.length === 0);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const action = useAsyncAction();
+  const cancelAction = action.cancel;
+  const clearActionError = action.clearError;
   const idPrefix = useId().replace(/:/g, '');
+
+  useEffect(() => {
+    cancelAction();
+    clearActionError();
+  }, [cancelAction, clearActionError, workspaceId]);
 
   useEffect(() => {
     if (!focusDocumentId) return;

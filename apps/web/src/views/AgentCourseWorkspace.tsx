@@ -289,6 +289,9 @@ export function AgentCourseWorkspace({
   const [contractForm, setContractForm] = useState<ContractFormState>(() => initialForm(null));
   const [materialChoices, setMaterialChoices] = useState<Record<string, MaterialScopeChoice>>({});
   const [newCourseName, setNewCourseName] = useState('');
+  const [courseLifecycleOperation, setCourseLifecycleOperation] = useState<
+    'create' | 'rename' | 'delete' | null
+  >(null);
   const [routeGenerationFailure, setRouteGenerationFailure] =
     useState<RouteGenerationFailure | null>(() => readRouteGenerationFailure(workspaceId));
   const [actionFailureOwner, setActionFailureOwner] = useState<ActionFailureOwner | null>(null);
@@ -296,10 +299,20 @@ export function AgentCourseWorkspace({
   const workspaceIdRef = useRef(workspaceId);
   const applyingNavigationIntentRef = useRef<number | null>(null);
   const action = useAsyncAction();
+  const cancelAction = action.cancel;
+  const clearActionError = action.clearError;
   const preparationAction = useAsyncAction();
   const cancelPreparationAction = preparationAction.cancel;
+  const clearPreparationError = preparationAction.clearError;
   const planAction = useAsyncAction();
+  const cancelPlanAction = planAction.cancel;
+  const clearPlanError = planAction.clearError;
   const progressRemediationAction = useAsyncAction();
+  const cancelProgressRemediationAction = progressRemediationAction.cancel;
+  const clearProgressRemediationError = progressRemediationAction.clearError;
+  const courseLifecycleAction = useAsyncAction();
+  const cancelCourseLifecycleAction = courseLifecycleAction.cancel;
+  const clearCourseLifecycleError = courseLifecycleAction.clearError;
 
   useEffect(() => {
     if (!navigationIntent) return;
@@ -364,9 +377,32 @@ export function AgentCourseWorkspace({
   }, [workspaceId]);
 
   useEffect(() => {
+    cancelAction();
     cancelPreparationAction();
-    setBusyAction((current) => (current === 'prepare-course' ? null : current));
-  }, [cancelPreparationAction, workspaceId]);
+    cancelPlanAction();
+    cancelProgressRemediationAction();
+    cancelCourseLifecycleAction();
+    clearActionError();
+    clearPreparationError();
+    clearPlanError();
+    clearProgressRemediationError();
+    clearCourseLifecycleError();
+    setActionFailureOwner(null);
+    setCourseLifecycleOperation(null);
+    setBusyAction(null);
+  }, [
+    cancelAction,
+    cancelCourseLifecycleAction,
+    cancelPlanAction,
+    cancelPreparationAction,
+    cancelProgressRemediationAction,
+    clearActionError,
+    clearCourseLifecycleError,
+    clearPlanError,
+    clearPreparationError,
+    clearProgressRemediationError,
+    workspaceId,
+  ]);
 
   useEffect(() => {
     if (view !== 'curriculum' || !workspaceId || documents.length === 0) {
@@ -496,6 +532,80 @@ export function AgentCourseWorkspace({
     setSettingsOpen(false);
     setView('home');
     onWorkspaceChange(created.workspace.id);
+  }
+
+  async function createCourseFromSettings(name: string): Promise<boolean> {
+    setCourseLifecycleOperation('create');
+    const created = await courseLifecycleAction.run((signal) =>
+      api.createWorkspace({ name }, signal),
+    );
+    if (!created) return false;
+    setWorkspaces((current) => [
+      {
+        ...created.workspace,
+        documentCount: 0,
+        conceptCount: 0,
+      },
+      ...current.filter((course) => course.id !== created.workspace.id),
+    ]);
+    onWorkspaceChange(created.workspace.id);
+    return true;
+  }
+
+  async function renameCourseFromSettings(courseId: string, name: string): Promise<boolean> {
+    setCourseLifecycleOperation('rename');
+    const renamed = await courseLifecycleAction.run((signal) =>
+      api.renameWorkspace(courseId, name, signal),
+    );
+    if (!renamed || workspaceIdRef.current !== courseId) return false;
+    setWorkspaces((current) =>
+      current.map((course) =>
+        course.id === courseId ? { ...course, ...renamed.workspace } : course,
+      ),
+    );
+    return true;
+  }
+
+  async function deleteCourseFromSettings(courseId: string): Promise<boolean> {
+    if (courseLifecycleAction.loading) return false;
+    action.cancel();
+    preparationAction.cancel();
+    planAction.cancel();
+    progressRemediationAction.cancel();
+    action.clearError();
+    preparationAction.clearError();
+    planAction.clearError();
+    progressRemediationAction.clearError();
+    setActionFailureOwner(null);
+    setBusyAction(null);
+    setCourseLifecycleOperation('delete');
+
+    const deleted = await courseLifecycleAction.run(async (signal) => {
+      try {
+        await api.deleteWorkspace(courseId, signal);
+      } catch (error) {
+        if (error instanceof ApiClientError && error.status === 404) return true;
+        throw error;
+      }
+      return true;
+    });
+    if (!deleted || workspaceIdRef.current !== courseId) return false;
+
+    loadEpoch.current += 1;
+    workspaceIdRef.current = null;
+    clearStoredRouteGenerationFailure(courseId);
+    setWorkspaces((current) => current.filter((course) => course.id !== courseId));
+    setDocuments([]);
+    setOverview(null);
+    setPreparation(null);
+    setHierarchy(null);
+    setRoleHistory({});
+    setCurriculumSourceBlocks([]);
+    setRouteGenerationFailure(null);
+    setNotice(null);
+    setLaunchedQuiz(null);
+    onWorkspaceDeleted?.(courseId);
+    return true;
   }
 
   async function remediateMaterial(materialId: string): Promise<void> {
@@ -1233,9 +1343,12 @@ export function AgentCourseWorkspace({
     preparationAction.cancel();
     planAction.cancel();
     progressRemediationAction.cancel();
+    courseLifecycleAction.cancel();
     action.clearError();
     preparationAction.clearError();
+    courseLifecycleAction.clearError();
     setActionFailureOwner(null);
+    setCourseLifecycleOperation(null);
     clearStoredRouteGenerationFailure(workspaceIdRef.current);
     clearStoredRouteGenerationFailure(nextWorkspaceId);
     setRouteGenerationFailure(null);
@@ -1306,6 +1419,14 @@ export function AgentCourseWorkspace({
           onProviderChange={onProviderChange}
           currentCourseId={workspaceId}
           currentCourseName={selectedWorkspace?.name ?? null}
+          courses={workspaces}
+          courseLifecycleLoading={courseLifecycleAction.loading}
+          courseLifecycleError={courseLifecycleAction.error}
+          courseLifecycleOperation={courseLifecycleOperation}
+          onCreateCourse={createCourseFromSettings}
+          onRenameCourse={renameCourseFromSettings}
+          onDeleteCourse={deleteCourseFromSettings}
+          onClearCourseLifecycleError={courseLifecycleAction.clearError}
           sidebarDefaultCollapsed={sidebarCollapsed}
           onSidebarDefaultCollapsedChange={setSidebarCollapsed}
         />

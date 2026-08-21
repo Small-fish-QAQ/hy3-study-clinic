@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ProviderMode, SafeProviderConfig } from '@hy3-clinic/shared';
+import {
+  WORKSPACE_NAME_MAX_LENGTH,
+  type ProviderMode,
+  type SafeProviderConfig,
+  type WorkspaceSummary,
+} from '@hy3-clinic/shared';
 import { api } from '../api.js';
 import { Banner, Loading } from '../components/ui.js';
 import { useAsyncAction } from '../components/useAsyncAction.js';
@@ -9,11 +14,21 @@ export interface SettingsViewProps {
   onProviderChange?: (provider: ProviderMode) => void;
   currentCourseId?: string | null;
   currentCourseName?: string | null;
+  courses?: WorkspaceSummary[];
+  courseLifecycleLoading?: boolean;
+  courseLifecycleError?: string | null;
+  courseLifecycleOperation?: 'create' | 'rename' | 'delete' | null;
+  onCreateCourse?: (name: string) => Promise<boolean>;
+  onRenameCourse?: (courseId: string, name: string) => Promise<boolean>;
+  onDeleteCourse?: (courseId: string) => Promise<boolean>;
+  onClearCourseLifecycleError?: () => void;
   sidebarDefaultCollapsed: boolean;
   onSidebarDefaultCollapsedChange: (collapsed: boolean) => void;
 }
 
 const labels: Record<ProviderMode, string> = { fake: '模拟模式', hy3: 'Hy3 模式' };
+const DIALOG_FOCUSABLE =
+  'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [href], [tabindex]:not([tabindex="-1"])';
 
 function formatConnectionTestTime(value: string): string {
   return new Intl.DateTimeFormat('zh-CN', {
@@ -31,6 +46,14 @@ export function SettingsView({
   onProviderChange,
   currentCourseId = null,
   currentCourseName = null,
+  courses = [],
+  courseLifecycleLoading = false,
+  courseLifecycleError = null,
+  courseLifecycleOperation = null,
+  onCreateCourse,
+  onRenameCourse,
+  onDeleteCourse,
+  onClearCourseLifecycleError,
   sidebarDefaultCollapsed,
   onSidebarDefaultCollapsedChange,
 }: SettingsViewProps) {
@@ -48,12 +71,87 @@ export function SettingsView({
   const [secretMode, setSecretMode] = useState<'unchanged' | 'replace' | 'remove'>('unchanged');
   const [editingSecret, setEditingSecret] = useState(false);
   const [localStatus, setLocalStatus] = useState<'unknown' | 'ok'>('unknown');
+  const [newCourseName, setNewCourseName] = useState('');
+  const [renameCourseName, setRenameCourseName] = useState(currentCourseName ?? '');
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const runLoad = load.run;
   const onProviderChangeRef = useRef(onProviderChange);
+  const deleteDialogRef = useRef<HTMLDivElement | null>(null);
+  const deleteConfirmInputRef = useRef<HTMLInputElement | null>(null);
+  const deleteOpenerRef = useRef<HTMLElement | null>(null);
+  const lifecycleLoadingRef = useRef(courseLifecycleLoading);
 
   useEffect(() => {
     onProviderChangeRef.current = onProviderChange;
   }, [onProviderChange]);
+
+  useEffect(() => {
+    lifecycleLoadingRef.current = courseLifecycleLoading;
+  }, [courseLifecycleLoading]);
+
+  useEffect(() => {
+    setRenameCourseName(currentCourseName ?? '');
+    setDeleteConfirmation('');
+    setDeleteDialogOpen(false);
+  }, [currentCourseId, currentCourseName]);
+
+  useEffect(() => {
+    if (!deleteDialogOpen) return;
+    const dialog = deleteDialogRef.current;
+    if (!dialog) return;
+
+    const inerted: Array<{ element: HTMLElement; wasInert: boolean }> = [];
+    let branch: HTMLElement | null = dialog;
+    while (branch.parentElement) {
+      const parent: HTMLElement = branch.parentElement;
+      for (const sibling of parent.children) {
+        if (sibling === branch || !(sibling instanceof HTMLElement)) continue;
+        inerted.push({ element: sibling, wasInert: sibling.hasAttribute('inert') });
+        sibling.setAttribute('inert', '');
+      }
+      branch = parent;
+      if (branch.classList.contains('agent-course-shell')) break;
+    }
+
+    const focusFrame = window.requestAnimationFrame(() => deleteConfirmInputRef.current?.focus());
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !lifecycleLoadingRef.current) {
+        event.preventDefault();
+        setDeleteDialogOpen(false);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusable = [...dialog.querySelectorAll<HTMLElement>(DIALOG_FOCUSABLE)].filter(
+        (element) => !element.hidden,
+      );
+      const first = focusable.at(0);
+      const last = focusable.at(-1);
+      if (!first || !last) return;
+      if (!dialog.contains(document.activeElement)) {
+        event.preventDefault();
+        first.focus();
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.removeEventListener('keydown', onKeyDown);
+      for (const { element, wasInert } of inerted) {
+        if (!wasInert) element.removeAttribute('inert');
+      }
+      const opener = deleteOpenerRef.current;
+      window.requestAnimationFrame(() => {
+        if (opener?.isConnected) opener.focus();
+      });
+    };
+  }, [deleteDialogOpen]);
 
   const applyActiveConfig = useCallback((result: SafeProviderConfig, syncDraft = true) => {
     setActive(result);
@@ -151,6 +249,29 @@ export function SettingsView({
     if (result) applyActiveConfig(result);
   }
 
+  async function createCourse(): Promise<void> {
+    const name = newCourseName.trim();
+    if (!name || !onCreateCourse) return;
+    if (await onCreateCourse(name)) setNewCourseName('');
+  }
+
+  async function renameCourse(): Promise<void> {
+    const name = renameCourseName.trim();
+    if (!currentCourseId || !name || !onRenameCourse || name === currentCourseName) return;
+    if (await onRenameCourse(currentCourseId, name)) setRenameCourseName(name);
+  }
+
+  async function deleteCourse(): Promise<void> {
+    if (!currentCourseId || !onDeleteCourse) return;
+    if (await onDeleteCourse(currentCourseId)) setDeleteDialogOpen(false);
+  }
+
+  function closeDeleteDialog(): void {
+    if (courseLifecycleLoading) return;
+    setDeleteDialogOpen(false);
+    setDeleteConfirmation('');
+  }
+
   const connectionStatus = dirty
     ? 'untested'
     : externalTest.loading
@@ -164,6 +285,9 @@ export function SettingsView({
       : current?.source === 'environment'
         ? '服务器环境变量'
         : '默认值';
+  const currentCourse = courses.find((course) => course.id === currentCourseId) ?? null;
+  const deleteConfirmationMatches =
+    currentCourseName !== null && deleteConfirmation === currentCourseName;
 
   return (
     <div className="settings-view" aria-labelledby="settings-title">
@@ -486,6 +610,138 @@ export function SettingsView({
         ) : null}
       </section>
 
+      {onCreateCourse ? (
+        <section
+          className="settings-section settings-course-lifecycle"
+          aria-labelledby="course-lifecycle-title"
+        >
+          <div className="settings-section-heading">
+            <div>
+              <h3 id="course-lifecycle-title">课程管理</h3>
+              <p className="muted">创建和命名课程，或明确永久删除当前课程。</p>
+            </div>
+            <span className="settings-course-count">共 {courses.length} 门课程</span>
+          </div>
+
+          {courseLifecycleError ? (
+            <Banner kind="error">
+              <strong>
+                {courseLifecycleOperation === 'delete'
+                  ? '删除失败，课程及其学习历史没有被删除。'
+                  : courseLifecycleOperation === 'rename'
+                    ? '重命名失败，当前课程名称没有改变。'
+                    : '创建失败，没有新增课程。'}
+              </strong>{' '}
+              {courseLifecycleError}
+            </Banner>
+          ) : null}
+
+          <form
+            className="settings-course-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void createCourse();
+            }}
+          >
+            <label htmlFor="settings-create-course">创建另一门课程</label>
+            <div className="settings-course-control">
+              <input
+                id="settings-create-course"
+                value={newCourseName}
+                maxLength={WORKSPACE_NAME_MAX_LENGTH}
+                disabled={courseLifecycleLoading}
+                placeholder="课程名称"
+                onChange={(event) => setNewCourseName(event.target.value)}
+              />
+              <button
+                type="submit"
+                className="primary"
+                disabled={courseLifecycleLoading || newCourseName.trim().length === 0}
+              >
+                {courseLifecycleLoading && courseLifecycleOperation === 'create'
+                  ? '正在创建'
+                  : '创建课程'}
+              </button>
+            </div>
+          </form>
+
+          {currentCourseId && currentCourseName ? (
+            <>
+              <form
+                className="settings-course-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void renameCourse();
+                }}
+              >
+                <label htmlFor="settings-rename-course">当前课程名称</label>
+                <div className="settings-course-control">
+                  <input
+                    id="settings-rename-course"
+                    value={renameCourseName}
+                    maxLength={WORKSPACE_NAME_MAX_LENGTH}
+                    disabled={courseLifecycleLoading}
+                    onChange={(event) => setRenameCourseName(event.target.value)}
+                  />
+                  <button
+                    type="submit"
+                    className="primary"
+                    disabled={
+                      courseLifecycleLoading ||
+                      renameCourseName.trim().length === 0 ||
+                      renameCourseName.trim() === currentCourseName
+                    }
+                  >
+                    {courseLifecycleLoading && courseLifecycleOperation === 'rename'
+                      ? '正在保存'
+                      : '保存名称'}
+                  </button>
+                </div>
+              </form>
+
+              {currentCourse ? (
+                <dl className="settings-course-facts" aria-label="当前课程内容数量">
+                  <div>
+                    <dt>课程资料</dt>
+                    <dd>{currentCourse.documentCount} 份</dd>
+                  </div>
+                  <div>
+                    <dt>图谱概念</dt>
+                    <dd>{currentCourse.conceptCount} 个</dd>
+                  </div>
+                </dl>
+              ) : null}
+
+              <div className="settings-danger-zone">
+                <div>
+                  <strong>永久删除当前课程</strong>
+                  <p>
+                    删除会一并移除资料、已接受学习路线、Evidence、Repair、Review、掌握度和全部学习历史，且无法恢复。
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="danger settings-delete-course"
+                  disabled={courseLifecycleLoading}
+                  onClick={(event) => {
+                    deleteOpenerRef.current = event.currentTarget;
+                    setDeleteConfirmation('');
+                    onClearCourseLifecycleError?.();
+                    setDeleteDialogOpen(true);
+                  }}
+                >
+                  删除当前课程
+                </button>
+              </div>
+            </>
+          ) : (
+            <p className="muted settings-no-current-course">
+              尚未选择课程。创建课程后可在这里重命名或永久删除。
+            </p>
+          )}
+        </section>
+      ) : null}
+
       <section
         className="settings-section settings-preferences"
         aria-labelledby="preferences-title"
@@ -555,6 +811,66 @@ export function SettingsView({
           </p>
         </div>
       </details>
+
+      {deleteDialogOpen && currentCourseId && currentCourseName ? (
+        <div className="settings-dialog-backdrop">
+          <div
+            ref={deleteDialogRef}
+            className="settings-delete-dialog"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="settings-delete-title"
+            aria-describedby="settings-delete-description"
+            aria-busy={courseLifecycleLoading || undefined}
+          >
+            <header>
+              <p className="eyebrow">危险操作</p>
+              <h3 id="settings-delete-title">永久删除「{currentCourseName}」？</h3>
+            </header>
+            <p id="settings-delete-description">
+              这会永久删除当前课程、{currentCourse?.documentCount ?? 0} 份资料、
+              {currentCourse?.conceptCount ?? 0}{' '}
+              个图谱概念、已接受学习路线、Evidence、Repair、Review、掌握度与全部学习历史。此操作无法撤销。
+            </p>
+            <label htmlFor="settings-delete-confirmation">
+              输入课程名称 <strong>{currentCourseName}</strong> 以确认
+            </label>
+            <input
+              ref={deleteConfirmInputRef}
+              id="settings-delete-confirmation"
+              value={deleteConfirmation}
+              disabled={courseLifecycleLoading}
+              autoComplete="off"
+              onChange={(event) => setDeleteConfirmation(event.target.value)}
+            />
+            {courseLifecycleError && courseLifecycleOperation === 'delete' ? (
+              <Banner kind="error">
+                <strong>删除失败，课程及其学习历史没有被删除。</strong> {courseLifecycleError}
+              </Banner>
+            ) : null}
+            <div className="settings-dialog-actions">
+              <button
+                type="button"
+                className="ghost"
+                disabled={courseLifecycleLoading}
+                onClick={closeDeleteDialog}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                className="danger settings-delete-confirm"
+                disabled={courseLifecycleLoading || !deleteConfirmationMatches}
+                onClick={() => void deleteCourse()}
+              >
+                {courseLifecycleLoading && courseLifecycleOperation === 'delete'
+                  ? '正在永久删除'
+                  : '永久删除课程'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

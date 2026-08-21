@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
@@ -17,7 +17,7 @@ import { AgentCourseShell } from './AgentCourseShell.js';
 import { CourseMaterialsView } from './CourseMaterialsView.js';
 import { CourseProgressView } from './CourseProgressView.js';
 import { api } from '../api.js';
-import { documentSummary } from '../test/fixtures.js';
+import { documentSummary, material } from '../test/fixtures.js';
 
 const AT = '2026-08-10T08:00:00.000Z';
 
@@ -1953,6 +1953,47 @@ describe('consolidated Course product shell', () => {
     expect(screen.getByText(/这门课程还没有资料，这是新课程的正常状态/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '添加文本资料' })).toBeDisabled();
     expect(screen.getByLabelText('上传课程资料')).toBeInTheDocument();
+  });
+
+  it('cancels a pending Material operation when the Course changes', async () => {
+    const user = userEvent.setup();
+    const onChanged = vi.fn();
+    let operationSignal: AbortSignal | undefined;
+    let resolveAdd!: (value: typeof material) => void;
+    vi.spyOn(api, 'addDocument').mockImplementation(
+      (_workspaceId, _input, signal) =>
+        new Promise((resolve) => {
+          operationSignal = signal;
+          resolveAdd = resolve;
+        }),
+    );
+    const rendered = render(
+      <CourseMaterialsView
+        workspaceId="ws_1"
+        documents={[]}
+        roleHistory={{}}
+        onChanged={onChanged}
+        onBack={vi.fn()}
+      />,
+    );
+
+    await user.type(screen.getByLabelText('粘贴文本'), 'Course A material');
+    await user.click(screen.getByRole('button', { name: '添加文本资料' }));
+    await waitFor(() => expect(operationSignal).toBeDefined());
+    rendered.rerender(
+      <CourseMaterialsView
+        workspaceId="ws_2"
+        documents={[]}
+        roleHistory={{}}
+        onChanged={onChanged}
+        onBack={vi.fn()}
+      />,
+    );
+
+    expect(operationSignal?.aborted).toBe(true);
+    resolveAdd(material);
+    await waitFor(() => expect(screen.queryByText('正在处理课程资料…')).not.toBeInTheDocument());
+    expect(onChanged).not.toHaveBeenCalled();
   });
 
   it('keeps logical Material identity distinct from its current processing result', () => {

@@ -21,6 +21,24 @@ import { AgentCourseWorkspace } from './AgentCourseWorkspace.js';
 
 const AT = '2026-08-12T11:54:07.530Z';
 
+function mockSettingsConfig(): void {
+  vi.spyOn(api, 'config').mockResolvedValue({
+    provider: 'fake',
+    baseUrl: null,
+    model: null,
+    apiKeyConfigured: false,
+    source: 'default',
+    complete: true,
+    runtimeGeneration: 1,
+    externalConnection: {
+      status: 'untested',
+      testedGeneration: null,
+      testedAt: null,
+      message: null,
+    },
+  });
+}
+
 function preparation(overrides: Partial<CoursePreparation> = {}): CoursePreparation {
   return {
     workspaceId: workspace.id,
@@ -931,6 +949,184 @@ describe('Course Settings navigation continuity', () => {
     expect(screen.getByLabelText('课程学习空间')).toHaveClass('view-settings');
     expect(screen.getByRole('button', { name: '设置' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByLabelText('课程连续性')).toHaveTextContent('已启用 · 尚未选择课程');
+  });
+});
+
+describe('canonical Course lifecycle in Settings', () => {
+  function renderSettings(overrides: { onWorkspaceChange?: ReturnType<typeof vi.fn> } = {}) {
+    const onWorkspaceChange = overrides.onWorkspaceChange ?? vi.fn();
+    const onWorkspaceDeleted = vi.fn();
+    const rendered = render(
+      <AgentCourseWorkspace
+        workspaceId={workspace.id}
+        onWorkspaceChange={onWorkspaceChange}
+        refreshKey={0}
+        provider="fake"
+        navigationIntent={{ requestId: 1, destination: 'settings' }}
+        onWorkspaceDeleted={onWorkspaceDeleted}
+      />,
+    );
+    return { ...rendered, onWorkspaceChange, onWorkspaceDeleted };
+  }
+
+  it('creates another Course and renames the current Course through existing API contracts', async () => {
+    const user = userEvent.setup();
+    mockSettingsConfig();
+    const createdWorkspace = {
+      ...workspace,
+      id: 'ws_2',
+      name: '概率论',
+      activeGraphVersionId: null,
+    };
+    const create = vi
+      .spyOn(api, 'createWorkspace')
+      .mockResolvedValue({ workspace: createdWorkspace });
+    const rename = vi.spyOn(api, 'renameWorkspace').mockResolvedValue({
+      workspace: { ...workspace, name: '认知科学进阶' },
+    });
+    const { onWorkspaceChange } = renderSettings();
+
+    await user.type(await screen.findByLabelText('创建另一门课程'), createdWorkspace.name);
+    await user.click(screen.getByRole('button', { name: '创建课程' }));
+    expect(create).toHaveBeenCalledWith({ name: createdWorkspace.name }, expect.any(AbortSignal));
+    expect(onWorkspaceChange).toHaveBeenCalledWith(createdWorkspace.id);
+
+    const renameInput = screen.getByLabelText('当前课程名称');
+    await user.clear(renameInput);
+    await user.type(renameInput, '认知科学进阶');
+    await user.click(screen.getByRole('button', { name: '保存名称' }));
+    expect(rename).toHaveBeenCalledWith(workspace.id, '认知科学进阶', expect.any(AbortSignal));
+    expect(screen.getByLabelText('当前课程名称')).toHaveValue('认知科学进阶');
+  });
+
+  it('deletes only after server confirmation and reports the canonical deletion callback', async () => {
+    const user = userEvent.setup();
+    mockSettingsConfig();
+    const remove = vi.spyOn(api, 'deleteWorkspace').mockResolvedValue(undefined);
+    const { onWorkspaceDeleted } = renderSettings();
+
+    await user.click(await screen.findByRole('button', { name: '删除当前课程' }));
+    await user.type(screen.getByLabelText(`输入课程名称 ${workspace.name} 以确认`), workspace.name);
+    await user.click(screen.getByRole('button', { name: '永久删除课程' }));
+
+    expect(remove).toHaveBeenCalledWith(workspace.id, expect.any(AbortSignal));
+    expect(onWorkspaceDeleted).toHaveBeenCalledWith(workspace.id);
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: workspace.name })).not.toBeInTheDocument();
+  });
+
+  it('treats a deletion 404 as the already-reached goal state', async () => {
+    const user = userEvent.setup();
+    mockSettingsConfig();
+    vi.spyOn(api, 'deleteWorkspace').mockRejectedValue(
+      new ApiClientError('NETWORK_ERROR', '课程已不存在。', 404),
+    );
+    const { onWorkspaceDeleted } = renderSettings();
+
+    await user.click(await screen.findByRole('button', { name: '删除当前课程' }));
+    await user.type(screen.getByLabelText(`输入课程名称 ${workspace.name} 以确认`), workspace.name);
+    await user.click(screen.getByRole('button', { name: '永久删除课程' }));
+
+    expect(onWorkspaceDeleted).toHaveBeenCalledWith(workspace.id);
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+  });
+
+  it('keeps the current Course available when deletion fails', async () => {
+    const user = userEvent.setup();
+    mockSettingsConfig();
+    vi.spyOn(api, 'deleteWorkspace').mockRejectedValue(
+      new ApiClientError('NETWORK_ERROR', '删除服务暂时不可用。', 503),
+    );
+    const { onWorkspaceDeleted } = renderSettings();
+
+    await user.click(await screen.findByRole('button', { name: '删除当前课程' }));
+    await user.type(screen.getByLabelText(`输入课程名称 ${workspace.name} 以确认`), workspace.name);
+    await user.click(screen.getByRole('button', { name: '永久删除课程' }));
+
+    expect(await screen.findByRole('alertdialog')).toHaveTextContent(
+      '删除失败，课程及其学习历史没有被删除。 删除服务暂时不可用。',
+    );
+    expect(onWorkspaceDeleted).not.toHaveBeenCalled();
+    expect(screen.getByRole('option', { name: workspace.name })).toBeInTheDocument();
+  });
+
+  it('aborts pending Course preparation before deleting the current Course', async () => {
+    const user = userEvent.setup();
+    mockSettingsConfig();
+    vi.mocked(api.courseExecution).mockResolvedValue({ overview: planRequiredOverview() });
+    vi.spyOn(api, 'materialRoleHistory').mockResolvedValue(roleHistory(strandedProposal));
+    vi.mocked(api.coursePreparation).mockResolvedValue({
+      preparation: preparation({
+        operationKey: 'prepare-course-ws-1',
+        state: 'preparing_concepts',
+        machineAction: 'prepare_concepts',
+        learnerAction: 'resume_preparation',
+        canResume: true,
+        canCancel: true,
+        checkpoints: {
+          materials: 'complete',
+          concepts: 'in_progress',
+          courseStructure: 'pending',
+          coursePlan: 'pending',
+        },
+        blocker: null,
+      }),
+    });
+    let preparationSignal: AbortSignal | undefined;
+    vi.spyOn(api, 'runCoursePreparation').mockImplementation(
+      (_workspaceId, _input, signal) =>
+        new Promise<never>(() => {
+          preparationSignal = signal;
+        }),
+    );
+    vi.spyOn(api, 'deleteWorkspace').mockResolvedValue(undefined);
+    const onWorkspaceDeleted = vi.fn();
+    render(
+      <AgentCourseWorkspace
+        workspaceId={workspace.id}
+        onWorkspaceChange={vi.fn()}
+        refreshKey={0}
+        provider="fake"
+        onWorkspaceDeleted={onWorkspaceDeleted}
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: '继续准备课程' }));
+    await waitFor(() => expect(preparationSignal).toBeDefined());
+    await user.click(screen.getByRole('button', { name: '设置' }));
+    await user.click(await screen.findByRole('button', { name: '删除当前课程' }));
+    await user.type(screen.getByLabelText(`输入课程名称 ${workspace.name} 以确认`), workspace.name);
+    await user.click(screen.getByRole('button', { name: '永久删除课程' }));
+
+    expect(preparationSignal?.aborted).toBe(true);
+    expect(onWorkspaceDeleted).toHaveBeenCalledWith(workspace.id);
+  });
+
+  it('does not let a late Course detail response resurrect a deleted Course', async () => {
+    const user = userEvent.setup();
+    mockSettingsConfig();
+    let resolveDetail!: (value: {
+      workspace: typeof workspace;
+      documents: (typeof documentSummary)[];
+    }) => void;
+    vi.mocked(api.getWorkspace).mockReturnValue(
+      new Promise((resolve) => {
+        resolveDetail = resolve;
+      }),
+    );
+    vi.spyOn(api, 'deleteWorkspace').mockResolvedValue(undefined);
+    const { onWorkspaceDeleted } = renderSettings();
+
+    await user.click(await screen.findByRole('button', { name: '删除当前课程' }));
+    await user.type(screen.getByLabelText(`输入课程名称 ${workspace.name} 以确认`), workspace.name);
+    await user.click(screen.getByRole('button', { name: '永久删除课程' }));
+    expect(onWorkspaceDeleted).toHaveBeenCalledWith(workspace.id);
+
+    resolveDetail({ workspace, documents: [documentSummary] });
+    await waitFor(() =>
+      expect(screen.queryByRole('option', { name: workspace.name })).not.toBeInTheDocument(),
+    );
+    expect(screen.queryByText(documentSummary.title)).not.toBeInTheDocument();
   });
 });
 

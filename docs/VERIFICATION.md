@@ -492,3 +492,21 @@ git diff --check
 Also inspect the changed-file diff for credentials, private workspace or
 attachment paths, obsolete peer-navigation labels, and noncanonical internal
 links. Do not run `eval:hy3` or edit a live SQLite database.
+
+## Phase 11 product integration and lifecycle verification
+
+Phase 11 adds no migration, backend authority, production dependency, archive
+state, or real Hy3 call. It exposes the existing Course create/rename/delete
+contracts in canonical Settings and extends frontend cancellation/fencing. Run:
+
+```bash
+npm run test -w @hy3-clinic/web -- src/views/SettingsView.test.tsx src/views/AgentCourseWorkspace.live01.test.tsx src/views/AgentCourseViews.test.tsx
+```
+
+These suites cover create/rename delegation, exact-name destructive
+confirmation, consequence disclosure, initial focus, Tab containment, Escape,
+focus restoration, inert outside content, busy/failure preservation, delete
+404 idempotence, deletion during pending Course preparation, stale detail
+rejection, and Materials cancellation when the Course identity changes. The
+complete gate and isolated Fake browser requirements remain the commands and
+environment policy above.

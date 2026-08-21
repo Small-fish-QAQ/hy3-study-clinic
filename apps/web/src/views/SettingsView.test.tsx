@@ -2,6 +2,7 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { api } from '../api.js';
+import { workspaceSummary } from '../test/fixtures.js';
 import { SettingsView } from './SettingsView.js';
 import type { SafeProviderConfig } from '@hy3-clinic/shared';
 
@@ -554,5 +555,128 @@ describe('SettingsView', () => {
 
     expect(await screen.findByText('服务器运行方式：Hy3 模式')).toBeInTheDocument();
     expect(onProviderChange).toHaveBeenLastCalledWith('hy3');
+  });
+
+  it('delegates Course creation and renaming with bounded learner input', async () => {
+    const user = userEvent.setup();
+    const onCreateCourse = vi.fn().mockResolvedValue(true);
+    const onRenameCourse = vi.fn().mockResolvedValue(true);
+    vi.spyOn(api, 'config').mockResolvedValue(config());
+    render(
+      <SettingsView
+        currentCourseId={workspaceSummary.id}
+        currentCourseName={workspaceSummary.name}
+        courses={[workspaceSummary]}
+        onCreateCourse={onCreateCourse}
+        onRenameCourse={onRenameCourse}
+        onDeleteCourse={vi.fn().mockResolvedValue(true)}
+        sidebarDefaultCollapsed={false}
+        onSidebarDefaultCollapsedChange={() => {}}
+      />,
+    );
+
+    const createInput = await screen.findByLabelText('创建另一门课程');
+    expect(createInput).toHaveAttribute('maxlength', '120');
+    await user.type(createInput, '  概率论  ');
+    await user.click(screen.getByRole('button', { name: '创建课程' }));
+    expect(onCreateCourse).toHaveBeenCalledWith('概率论');
+
+    const renameInput = screen.getByLabelText('当前课程名称');
+    await user.clear(renameInput);
+    await user.type(renameInput, '认知科学进阶');
+    await user.click(screen.getByRole('button', { name: '保存名称' }));
+    expect(onRenameCourse).toHaveBeenCalledWith(workspaceSummary.id, '认知科学进阶');
+    expect(screen.getByLabelText('当前课程内容数量')).toHaveTextContent('课程资料1 份');
+    expect(screen.getByLabelText('当前课程内容数量')).toHaveTextContent('图谱概念2 个');
+  });
+
+  it('requires the exact Course name and manages destructive-dialog focus', async () => {
+    const user = userEvent.setup();
+    const onDeleteCourse = vi.fn().mockResolvedValue(false);
+    vi.spyOn(api, 'config').mockResolvedValue(config());
+    const { container } = render(
+      <SettingsView
+        currentCourseId={workspaceSummary.id}
+        currentCourseName={workspaceSummary.name}
+        courses={[workspaceSummary]}
+        onCreateCourse={vi.fn().mockResolvedValue(true)}
+        onRenameCourse={vi.fn().mockResolvedValue(true)}
+        onDeleteCourse={onDeleteCourse}
+        sidebarDefaultCollapsed={false}
+        onSidebarDefaultCollapsedChange={() => {}}
+      />,
+    );
+
+    const opener = await screen.findByRole('button', { name: '删除当前课程' });
+    await user.click(opener);
+    const dialog = screen.getByRole('alertdialog', {
+      name: `永久删除「${workspaceSummary.name}」？`,
+    });
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+    expect(dialog).toHaveTextContent(
+      '已接受学习路线、Evidence、Repair、Review、掌握度与全部学习历史',
+    );
+    expect(container.querySelector('.settings-page-intro')).toHaveAttribute('inert');
+
+    const confirmation = screen.getByLabelText(`输入课程名称 ${workspaceSummary.name} 以确认`);
+    await waitFor(() => expect(confirmation).toHaveFocus());
+    const confirmDelete = screen.getByRole('button', { name: '永久删除课程' });
+    expect(confirmDelete).toBeDisabled();
+    await user.type(confirmation, `${workspaceSummary.name} `);
+    expect(confirmDelete).toBeDisabled();
+    await user.clear(confirmation);
+    await user.type(confirmation, workspaceSummary.name);
+    expect(confirmDelete).toBeEnabled();
+
+    confirmDelete.focus();
+    await user.tab();
+    expect(confirmation).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(confirmDelete).toHaveFocus();
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    await waitFor(() => expect(opener).toHaveFocus());
+    expect(container.querySelector('.settings-page-intro')).not.toHaveAttribute('inert');
+    expect(onDeleteCourse).not.toHaveBeenCalled();
+  });
+
+  it('keeps the dialog open on deletion failure and locks every control while busy', async () => {
+    const user = userEvent.setup();
+    const onDeleteCourse = vi.fn().mockResolvedValue(false);
+    const baseProps = {
+      currentCourseId: workspaceSummary.id,
+      currentCourseName: workspaceSummary.name,
+      courses: [workspaceSummary],
+      onCreateCourse: vi.fn().mockResolvedValue(true),
+      onRenameCourse: vi.fn().mockResolvedValue(true),
+      onDeleteCourse,
+      sidebarDefaultCollapsed: false,
+      onSidebarDefaultCollapsedChange: () => {},
+    };
+    vi.spyOn(api, 'config').mockResolvedValue(config());
+    const { rerender } = render(<SettingsView {...baseProps} />);
+
+    await user.click(await screen.findByRole('button', { name: '删除当前课程' }));
+    const confirmation = screen.getByLabelText(`输入课程名称 ${workspaceSummary.name} 以确认`);
+    await user.type(confirmation, workspaceSummary.name);
+    await user.click(screen.getByRole('button', { name: '永久删除课程' }));
+    expect(onDeleteCourse).toHaveBeenCalledWith(workspaceSummary.id);
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+
+    rerender(
+      <SettingsView
+        {...baseProps}
+        courseLifecycleLoading
+        courseLifecycleOperation="delete"
+        courseLifecycleError="服务器拒绝删除。"
+      />,
+    );
+    const busyDialog = screen.getByRole('alertdialog');
+    expect(busyDialog).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByLabelText(`输入课程名称 ${workspaceSummary.name} 以确认`)).toBeDisabled();
+    expect(screen.getByRole('button', { name: '取消' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '正在永久删除' })).toBeDisabled();
+    expect(busyDialog).toHaveTextContent('删除失败，课程及其学习历史没有被删除。');
   });
 });

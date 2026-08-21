@@ -851,6 +851,7 @@ main.main-graph {
 /* --- Settings ----------------------------------------------------------- */
 
 .settings-view {
+  position: relative;
   display: grid;
   width: 100%;
   max-width: 1024px !important;
@@ -1229,6 +1230,161 @@ main.main-graph {
   margin-top: 0.25rem;
   font-size: 0.8rem;
   font-weight: 400;
+}
+
+.settings-course-count {
+  flex: none;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.settings-course-form {
+  display: grid;
+  grid-template-columns: minmax(10rem, 0.34fr) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-4);
+  max-width: 48rem;
+}
+
+.settings-course-form > label {
+  font-size: 0.84rem;
+  font-weight: 650;
+}
+
+.settings-course-control {
+  display: flex;
+  min-width: 0;
+  gap: var(--space-2);
+}
+
+.settings-course-control input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.settings-course-control button {
+  flex: none;
+}
+
+.settings-course-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+  margin: 0;
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--separator);
+}
+
+.settings-course-facts > div {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.settings-course-facts dt,
+.settings-course-facts dd {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.settings-course-facts dt {
+  color: var(--text-muted);
+}
+
+.settings-danger-zone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--separator));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--danger) 4%, var(--surface));
+}
+
+.settings-danger-zone > div {
+  min-width: 0;
+}
+
+.settings-danger-zone strong,
+.settings-danger-zone p,
+.settings-delete-dialog h3,
+.settings-delete-dialog p {
+  overflow-wrap: anywhere;
+}
+
+.settings-danger-zone p {
+  max-width: 44rem;
+  margin: 0.25rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.settings-delete-course {
+  flex: none;
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--separator));
+  background: var(--surface-raised);
+}
+
+.settings-no-current-course {
+  margin: 0;
+}
+
+.settings-dialog-backdrop {
+  position: fixed;
+  z-index: 120;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: rgb(17 24 20 / 52%);
+}
+
+.settings-delete-dialog {
+  display: grid;
+  width: min(100%, 35rem);
+  max-height: calc(100dvh - 2 * var(--space-4));
+  gap: var(--space-4);
+  padding: clamp(var(--space-4), 4vw, var(--space-6));
+  overflow-y: auto;
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--separator));
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow);
+}
+
+.settings-delete-dialog header,
+.settings-delete-dialog header > *,
+.settings-delete-dialog > p {
+  margin: 0;
+}
+
+.settings-delete-dialog h3 {
+  margin-top: var(--space-1);
+  font-size: 1.15rem;
+}
+
+.settings-delete-dialog > p,
+.settings-delete-dialog > label {
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+.settings-delete-dialog > label {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.settings-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.settings-delete-dialog button.settings-delete-confirm {
+  border-color: var(--danger);
+  background: var(--danger);
+  color: #fff;
 }
 
 .settings-preference-row {
@@ -7312,6 +7468,34 @@ button.danger {
   .settings-diagnostics dl > div {
     grid-template-columns: 1fr;
     gap: 0.1rem;
+  }
+
+  .settings-course-form {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+
+  .settings-course-control,
+  .settings-danger-zone,
+  .settings-dialog-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .settings-course-control button,
+  .settings-danger-zone button,
+  .settings-dialog-actions button {
+    width: 100%;
+  }
+
+  .settings-dialog-backdrop {
+    align-items: end;
+    padding: var(--space-2);
+  }
+
+  .settings-delete-dialog {
+    width: 100%;
+    max-height: calc(100dvh - 2 * var(--space-2));
   }
 
   .curriculum-version-overview {
