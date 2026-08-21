@@ -156,6 +156,7 @@ export function AgentCourseShell({
       : materialsActive
         ? '课程来源、角色与处理状态'
         : VIEW_DESCRIPTIONS[activeView]);
+  const shellDestination = settingsActive ? 'settings' : materialsActive ? 'materials' : activeView;
   const visuallyCollapsed = collapsed && !narrow;
 
   function openMobile(): void {
@@ -219,9 +220,9 @@ export function AgentCourseShell({
 
   return (
     <section
-      className={`agent-course-shell view-${
-        settingsActive ? 'settings' : materialsActive ? 'materials' : activeView
-      }`}
+      className={`agent-course-shell view-${shellDestination}`}
+      data-course-shell=""
+      data-course-destination={shellDestination}
       aria-label="课程学习空间"
     >
       <h1 className="sr-only">
@@ -258,6 +259,7 @@ export function AgentCourseShell({
         ref={sidebarRef}
         id="course-sidebar"
         className={`course-sidebar ${visuallyCollapsed ? 'is-collapsed' : ''} ${mobileOpen ? 'is-mobile-open' : ''}`}
+        data-course-sidebar=""
         aria-label="课程侧边栏"
         aria-hidden={narrow && !mobileOpen ? true : undefined}
         role={narrow ? 'dialog' : undefined}
@@ -409,7 +411,7 @@ export function AgentCourseShell({
         </div>
       </aside>
 
-      <div className="course-workspace">
+      <div className="course-workspace" data-course-workspace="">
         <header className="course-workspace-header">
           <div>
             <p>{settingsActive ? 'Hy3 Study Clinic' : (courseName ?? 'Hy3 Study Clinic')}</p>

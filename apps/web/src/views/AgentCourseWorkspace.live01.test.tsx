@@ -894,6 +894,7 @@ describe('Course Settings navigation continuity', () => {
 
     for (const destination of [
       { label: '主页', className: 'view-home' },
+      { label: '学习', className: 'view-session' },
       { label: '知识地图', className: 'view-explore' },
       { label: '课程结构', className: 'view-curriculum' },
       { label: '进展', className: 'view-progress' },

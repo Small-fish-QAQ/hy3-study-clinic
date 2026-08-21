@@ -1770,6 +1770,7 @@ describe('consolidated Course product shell', () => {
   it('presents Settings as the active system destination without selecting a Course view', async () => {
     const user = userEvent.setup();
     const onOpenSettings = vi.fn();
+    const onOpenMaterials = vi.fn();
     const { rerender } = render(
       <AgentCourseShell
         activeView="home"
@@ -1778,10 +1779,17 @@ describe('consolidated Course product shell', () => {
         courses={[{ id: 'ws_1', name: 'Probability' }]}
         onCourseChange={vi.fn()}
         onViewChange={vi.fn()}
+        onOpenMaterials={onOpenMaterials}
         onOpenSettings={onOpenSettings}
+        provider="fake"
       >
         <p>Course content</p>
       </AgentCourseShell>,
+    );
+    const canonicalSidebar = screen.getByLabelText('课程侧边栏');
+    expect(screen.getByLabelText('课程学习空间')).toHaveAttribute(
+      'data-course-destination',
+      'home',
     );
 
     await user.click(screen.getByRole('button', { name: '设置' }));
@@ -1796,7 +1804,9 @@ describe('consolidated Course product shell', () => {
         settingsActive
         onCourseChange={vi.fn()}
         onViewChange={vi.fn()}
+        onOpenMaterials={onOpenMaterials}
         onOpenSettings={onOpenSettings}
+        provider="fake"
       >
         <p>Settings content</p>
       </AgentCourseShell>,
@@ -1806,6 +1816,32 @@ describe('consolidated Course product shell', () => {
     expect(screen.getByRole('button', { name: '知识地图' })).not.toHaveAttribute('aria-current');
     expect(screen.getByLabelText('课程学习空间')).toHaveClass('view-settings');
     expect(screen.getByLabelText('课程学习空间')).not.toHaveClass('view-explore');
+    expect(screen.getByLabelText('课程学习空间')).toHaveAttribute(
+      'data-course-destination',
+      'settings',
+    );
+    expect(screen.getByLabelText('课程侧边栏')).toBe(canonicalSidebar);
+    expect(screen.getByLabelText('课程侧边栏')).toHaveAttribute('data-course-sidebar');
+    expect(screen.getByLabelText('设置').closest('.course-workspace')).toHaveAttribute(
+      'data-course-workspace',
+    );
+
+    const primaryNavigation = screen.getByRole('navigation', { name: '课程导航' });
+    expect(within(primaryNavigation).getAllByRole('button')).toHaveLength(5);
+    for (const label of ['主页', '学习', '课程结构', '知识地图', '进展']) {
+      expect(within(primaryNavigation).getByRole('button', { name: label })).toBeInTheDocument();
+    }
+    const resourceNavigation = screen.getByLabelText('课程辅助入口');
+    expect(
+      within(resourceNavigation).getByRole('button', { name: '课程资料' }),
+    ).toBeInTheDocument();
+    const footer = screen.getByLabelText('系统');
+    expect(within(footer).getByLabelText('本地模拟模式')).toBeInTheDocument();
+    expect(within(footer).getByRole('button', { name: '设置' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(within(footer).getByRole('button', { name: '折叠课程侧边栏' })).toBeInTheDocument();
     expect(
       screen.getByRole('heading', {
         level: 1,
