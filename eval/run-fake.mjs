@@ -27,6 +27,7 @@ import { wrapSourceBlocks } from '../apps/server/dist/grounding/wrapSource.js';
 import { searchSourceBlocks } from '../apps/server/dist/retrieval/lexical.js';
 import { scheduleFirst, scheduleNext } from '../apps/server/dist/review/scheduler.js';
 import { evaluateTutorPedagogyProfile } from '../apps/server/dist/eval/tutorPedagogy.js';
+import { assertResolvedFakeProvider } from '../scripts/assert-fake-provider.mjs';
 
 const evalDir = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => readFileSync(join(evalDir, 'fixtures', name), 'utf8');
@@ -47,10 +48,20 @@ function buildEvalApp(provider = new FakeProvider()) {
   migrate(db);
   const repos = createRepositories(db);
   const app = buildApp({ repos, provider });
-  const call = async (method, url, payload) => {
+  let providerVerified = false;
+  const rawCall = async (method, url, payload) => {
     const res = await app.inject({ method, url, ...(payload ? { payload } : {}) });
     const body = res.statusCode === 204 ? undefined : res.json();
     return { status: res.statusCode, body };
+  };
+  const call = async (method, url, payload) => {
+    if (!providerVerified) {
+      const resolved = await rawCall('GET', '/api/config');
+      if (resolved.status !== 200) throw new Error('Fake evaluation could not verify provider.');
+      assertResolvedFakeProvider(resolved.body, 'Fake evaluation');
+      providerVerified = true;
+    }
+    return rawCall(method, url, payload);
   };
   return { db, repos, app, call, provider };
 }

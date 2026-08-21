@@ -11,12 +11,20 @@ describe('loadConfig', () => {
     expect(config.port).toBe(8787);
     expect(config.hy3TimeoutMs).toBe(30_000);
     expect(config.providerConfigPath).toBe('./data/provider-config.json');
+    expect(config.automationExpectedProvider).toBeUndefined();
   });
 
   it('accepts an explicit provider configuration path', () => {
     expect(loadConfig({ PROVIDER_CONFIG_PATH: 'C:/clinic/runtime-provider.json' })).toMatchObject({
       providerConfigPath: 'C:/clinic/runtime-provider.json',
     });
+  });
+
+  it('parses only the explicit Fake automation expectation', () => {
+    expect(loadConfig({ AUTOMATION_EXPECT_PROVIDER: 'fake' })).toMatchObject({
+      automationExpectedProvider: 'fake',
+    });
+    expect(() => loadConfig({ AUTOMATION_EXPECT_PROVIDER: 'hy3' })).toThrowError(ConfigError);
   });
 
   it('requires hy3 credentials when provider is hy3', () => {

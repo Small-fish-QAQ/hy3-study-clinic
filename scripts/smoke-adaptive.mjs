@@ -14,6 +14,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { assertFakeHttpProvider } from './assert-fake-provider.mjs';
 
 const base = process.env.SMOKE_BASE ?? 'http://127.0.0.1:8787';
 const filesDir = join(dirname(fileURLToPath(import.meta.url)), '../apps/server/src/testing/files');
@@ -33,6 +34,8 @@ const send = (method, path, body) =>
   }).then(j);
 
 const [, , mode, verifyWorkspaceId, verifyConceptId, verifyRunId] = process.argv;
+
+await assertFakeHttpProvider(base, 'Adaptive smoke workflow');
 
 if (mode === 'verify') {
   // ---- 22-23. Post-restart persistence verification ----

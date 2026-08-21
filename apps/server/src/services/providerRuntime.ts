@@ -90,6 +90,8 @@ export interface ProviderRuntimeOptions {
 export class ProviderRuntime {
   private readonly requestSnapshots = new AsyncLocalStorage<ActiveSnapshot>();
   private readonly timeoutMs: number;
+  private readonly automationExpectedProvider: 'fake' | undefined;
+  private readonly externalVisualProviderEnabled: boolean;
   private connectionTestId = 0;
   private active: ActiveSnapshot;
   private connection: SafeProviderConfig['externalConnection'] = {
@@ -102,6 +104,8 @@ export class ProviderRuntime {
 
   constructor(options: ProviderRuntimeOptions) {
     this.timeoutMs = options.startup.hy3TimeoutMs;
+    this.automationExpectedProvider = options.startup.automationExpectedProvider;
+    this.externalVisualProviderEnabled = options.startup.visualProvider === 'tokenhub';
     this.store = options.store ?? null;
     const saved = this.store?.read() ?? null;
     const savedConfig: ProviderRuntimeConfig | null = saved
@@ -145,6 +149,7 @@ export class ProviderRuntime {
             ...(options.startup.hy3Model ? { model: options.startup.hy3Model } : {}),
             source,
           };
+    this.assertAutomationIsolation(config);
     this.validate(config);
     const providerInstance =
       options.initialProvider && !savedIsUsable && options.initialProvider.name === config.provider
@@ -200,6 +205,7 @@ export class ProviderRuntime {
     };
     if (parsed.secret?.action === 'replace') next.apiKey = parsed.secret.value;
     if (parsed.secret?.action === 'remove') next.apiKey = undefined;
+    this.assertAutomationIsolation(next);
     this.validate(next);
     const providerInstance =
       next.provider === current.provider &&
@@ -286,6 +292,17 @@ export class ProviderRuntime {
       url.hash
     )
       throw new AppError('VALIDATION_ERROR', 'API 地址必须使用不含凭据的 HTTP(S) URL。');
+  }
+
+  private assertAutomationIsolation(config: ProviderRuntimeConfig): void {
+    if (!this.automationExpectedProvider) return;
+    if (config.provider !== this.automationExpectedProvider || this.externalVisualProviderEnabled) {
+      throw new AppError(
+        'VALIDATION_ERROR',
+        `自动化环境要求最终提供程序为 ${this.automationExpectedProvider} 且禁用外部视觉提供程序；` +
+          `当前解析结果为 ${config.provider}（来源：${config.source}）。已在首次提供程序请求前停止。`,
+      );
+    }
   }
 
   private isValid(config: ProviderRuntimeConfig): boolean {

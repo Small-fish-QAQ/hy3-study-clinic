@@ -33,6 +33,7 @@ The root commands map to the existing monorepo workspaces:
 - `npm test` first builds the shared package, then runs every workspace Vitest suite.
 - Migration and HTTP integration coverage live inside the server Vitest suite; there are no separate commands that must be run to obtain those results.
 - `npm run eval:fake` uses the deterministic fake provider and makes no real Hy3 request.
+- Fake/offline automation verifies the final resolved provider before its first provider-capable operation. For a launched server fixture, set `AUTOMATION_EXPECT_PROVIDER=fake`, use an isolated `PROVIDER_CONFIG_PATH`, disable external visual transport, and require `GET /api/config` to report `provider: fake`.
 
 Phase 8B-R coverage includes migration-31 upgrade repair, null-memory pending state, exact-binding pre-cutover backfill, durable audit/idempotency and pre/post-cutover separation; successor-only queue, assessment, Tutor, and API reads; event/state/execution atomicity; retry after a durable Formal reconciliation; and exact Again-before-Good ordering. Legacy Review rows are seeded only to prove historical preservation and the absence of current fallback authority.
 
@@ -120,6 +121,12 @@ Deliberate behavior changes in the upgrade, each with updated tests: duplicate s
 
 Application and integration tests use the fake provider by default. Hy3 provider-contract tests inject a mocked `fetch`; ordinary automated tests and CI never require or contact the real Hy3 API.
 
+Provider-isolation regressions prove that `AUTOMATION_EXPECT_PROVIDER=fake`
+plus a complete saved Hy3 configuration refuses startup before provider use,
+that guarded runtime updates cannot activate Hy3, and that guarded automation
+cannot retain external TokenHub visual transport. Normal saved-over-environment
+precedence remains covered separately.
+
 The B3 Curriculum latency regression suite also reconstructs provider requests without network access. It asserts deterministic section-size reporting, bounded candidate selection for large documents, predecessor/neighbor retention, lexical fallback widening, compact evidence-key resolution, full local binding preservation, omission of manifest/revision/hash internals from the prompt, the 16000-token output ceiling, one-attempt timeout telemetry with no synthetic usage row, accepted-Curriculum preservation, safe learner copy, cancellation, and the shared original-plus-one-repair ceiling. The affected 277-block Course measured 288059 characters / 345831 UTF-8 bytes and 551 visible offers before compaction, versus 41218 characters / 55681 bytes and 204 offers across 148 blocks afterward. Selection still starts from the complete 551-offer exact local catalog; validation accepts only the compact operation-local IDs actually offered to Hy3 and resolves each through its retained full binding. These are offline request-shape results; exactly one controlled human retry is required to observe real post-fix latency.
 
 The Curriculum execution-contract regressions use real-provider-shaped payloads whose Concept and canonical arrays are empty. They prove exact deterministic Concept/canonical derivation, rejection of unknown provider-selected Concepts, an executable remediation frontier, fail-closed empty-frontier successors, accepted-predecessor preservation across rejected intermediate versions, acceptance-time Concept disappearance, dynamic `canAcceptCurriculum`, and Fake/real semantic parity. The same focused run includes the B2 exact evidence-identity and B3 bounded-context cases plus the unchanged StudyPlan preflight suite. The web run proves learner-safe Chinese coverage warnings and execution-remediation diagnostics without exposing raw `Unmapped source blocks...` or `StudyPlan execution repair...` text. All are offline and must not contact Hy3.
@@ -137,10 +144,11 @@ npm run build
 npm run demo:offline
 ```
 
-The HTTP scripts require a running fake-provider server in another terminal:
+The HTTP scripts require a running Fake server in another terminal. Use an
+isolated provider file and the final-resolution guard:
 
 ```bash
-npm run dev:server
+AUTOMATION_EXPECT_PROVIDER=fake PROVIDER_CONFIG_PATH=./data/smoke-provider-config.json LLM_PROVIDER=fake VISUAL_PROVIDER=disabled npm run dev:server
 ```
 
 Then run:
@@ -458,10 +466,12 @@ history, mastery/Review visibility, grounding extraction/alignment/version
 governance, learner-overlay isolation, request cancellation, and stale Course
 responses.
 
-Browser review must use a disposable SQLite file, `LLM_PROVIDER=fake`, and an
-isolated `PROVIDER_CONFIG_PATH` that cannot inherit a saved Hy3 selection. Before
-seeding or opening the UI, require `GET /api/config` to report `provider: fake`;
-the saved provider configuration takes precedence over the environment default.
+Browser review must use a disposable SQLite file, `LLM_PROVIDER=fake`,
+`AUTOMATION_EXPECT_PROVIDER=fake`, `VISUAL_PROVIDER=disabled`, and an isolated
+`PROVIDER_CONFIG_PATH`. The server must refuse startup if the final resolved
+provider is not Fake. Before seeding or opening the UI, also require
+`GET /api/config` to report `provider: fake`; the saved provider configuration
+takes precedence over the environment default.
 Check desktop and narrow navigation; Home, Study, Curriculum, Knowledge Map,
 Progress, Materials, and Settings; representative legacy bookmarks; Formal
 history; Repair; mastery/Review; advanced grounding; manual assessment;

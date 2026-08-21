@@ -299,6 +299,8 @@ Open <http://localhost:5173>. Vite proxies `/api` to Fastify at `http://127.0.0.
 
 `LLM_PROVIDER=fake` is the default. It is offline and shares the real provider's validated contracts. The complete workflow can be repeated offline, but regenerated IDs and state mean generated content and order may vary between runs; byte-identical output is not promised.
 
+Saved Settings intentionally take precedence over `LLM_PROVIDER`. Automated browser or offline processes that must never reach an external provider set `AUTOMATION_EXPECT_PROVIDER=fake` in addition to an isolated `PROVIDER_CONFIG_PATH` and a non-external visual mode. The server checks the final resolved runtime after precedence is applied and refuses startup before provider construction when it is not Fake; guarded processes also reject a later switch to Hy3. The shipped fake evaluation and smoke scripts independently verify `/api/config` before their first provider-capable operation.
+
 Rich-document extraction is local and deterministic in both provider modes. It does not call Hy3, so Fake and real-Hy3 setup is unchanged.
 
 For the real API, set the server-side variables in `.env`:

@@ -15,6 +15,7 @@ import { migrate } from '../apps/server/dist/db/migrate.js';
 import { createRepositories } from '../apps/server/dist/repositories/index.js';
 import { FakeProvider } from '../apps/server/dist/llm/fakeProvider.js';
 import { buildApp } from '../apps/server/dist/app.js';
+import { assertResolvedFakeProvider } from './assert-fake-provider.mjs';
 
 const db = openDatabase(':memory:');
 migrate(db);
@@ -29,6 +30,8 @@ const call = async (method, url, payload) => {
   }
   return body;
 };
+
+assertResolvedFakeProvider(await call('GET', '/api/config'), 'Offline demo');
 
 console.log('==== Flow A: 导入 → 切分 → 概念分析 → 溯源出题 ====');
 

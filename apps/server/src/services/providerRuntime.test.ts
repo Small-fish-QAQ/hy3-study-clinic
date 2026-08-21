@@ -132,6 +132,62 @@ describe('ProviderRuntime', () => {
     expect(runtime.safeConfig()).toMatchObject({ provider: 'fake', source: 'saved' });
   });
 
+  it('fails closed before provider use when Fake automation resolves saved Hy3', () => {
+    const store = new MemoryStore();
+    store.value = {
+      version: 1,
+      provider: 'hy3',
+      baseUrl: 'https://saved.test/v1',
+      apiKey: 'saved-secret',
+      model: 'saved-model',
+    };
+    let providerCalls = 0;
+    const injected = mockedHy3Provider(async () => {
+      providerCalls += 1;
+    });
+
+    expect(
+      () =>
+        new ProviderRuntime({
+          startup: { ...startup, automationExpectedProvider: 'fake' },
+          store,
+          initialProvider: injected,
+        }),
+    ).toThrow(/首次提供程序请求前停止/);
+    expect(providerCalls).toBe(0);
+  });
+
+  it('prevents guarded Fake automation from activating Hy3 at runtime', () => {
+    const runtime = new ProviderRuntime({
+      startup: { ...startup, automationExpectedProvider: 'fake' },
+      initialProvider: new FakeProvider(),
+    });
+
+    expect(() =>
+      runtime.update({
+        provider: 'hy3',
+        baseUrl: 'https://example.test/v1',
+        model: 'model',
+        secret: { action: 'replace', value: 'secret' },
+      }),
+    ).toThrow(/最终提供程序为 fake/);
+    expect(runtime.safeConfig()).toMatchObject({ provider: 'fake', runtimeGeneration: 1 });
+  });
+
+  it('rejects external visual transport in guarded offline automation', () => {
+    expect(
+      () =>
+        new ProviderRuntime({
+          startup: {
+            ...startup,
+            automationExpectedProvider: 'fake',
+            visualProvider: 'tokenhub',
+          },
+          initialProvider: new FakeProvider(),
+        }),
+    ).toThrow(/禁用外部视觉提供程序/);
+  });
+
   it('ignores a saved Hy3 configuration with a missing secret in favor of complete environment', () => {
     const store = new MemoryStore();
     store.value = {

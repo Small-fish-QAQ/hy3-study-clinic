@@ -48,6 +48,7 @@ const EnvSchema = z.object({
   ),
   TOKENHUB_VISUAL_TIMEOUT_MS: z.coerce.number().int().min(1000).max(300_000).default(120_000),
   PROVIDER_CONFIG_PATH: z.string().min(1).default('./data/provider-config.json'),
+  AUTOMATION_EXPECT_PROVIDER: z.literal('fake').optional(),
 });
 
 export interface AppConfig {
@@ -65,6 +66,8 @@ export interface AppConfig {
   tokenHubVisualModel: typeof TOKENHUB_VISUAL_MODEL;
   tokenHubVisualTimeoutMs: number;
   providerConfigPath: string;
+  /** Fail-closed provider expectation for automated/offline processes. */
+  automationExpectedProvider?: 'fake';
 }
 
 export class ConfigError extends Error {
@@ -123,5 +126,6 @@ export function loadConfig(
     tokenHubVisualModel: e.TOKENHUB_VISUAL_MODEL,
     tokenHubVisualTimeoutMs: e.TOKENHUB_VISUAL_TIMEOUT_MS,
     providerConfigPath: e.PROVIDER_CONFIG_PATH,
+    automationExpectedProvider: e.AUTOMATION_EXPECT_PROVIDER,
   };
 }

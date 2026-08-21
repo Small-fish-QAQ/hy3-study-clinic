@@ -1,10 +1,14 @@
 /** End-to-end smoke test of both flows against a running dev server. */
+import { assertFakeHttpProvider } from './assert-fake-provider.mjs';
+
 const base = process.env.SMOKE_BASE ?? 'http://127.0.0.1:8787';
 const j = async (r) => {
   const b = await r.json();
   if (!r.ok) throw new Error(r.status + ' ' + JSON.stringify(b));
   return b;
 };
+
+await assertFakeHttpProvider(base, 'HTTP smoke workflow');
 
 const sample = await j(await fetch(base + '/api/sample-material'));
 const imported = await j(
