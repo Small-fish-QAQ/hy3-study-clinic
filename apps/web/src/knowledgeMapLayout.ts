@@ -35,11 +35,13 @@ function hashId(id: string): number {
 
 export function estimateKnowledgeMapNodeSize(node: KnowledgeMapNode): KnowledgeMapNodeSize {
   const base =
-    node.kind === 'learning_unit'
-      ? { min: 176, max: 224, height: 78 }
-      : node.kind === 'synthesis'
-        ? { min: 168, max: 214, height: 72 }
-        : { min: 144, max: 194, height: 66 };
+    node.kind === 'curriculum_region'
+      ? { min: 194, max: 250, height: 86 }
+      : node.kind === 'learning_unit'
+        ? { min: 176, max: 224, height: 78 }
+        : node.kind === 'synthesis'
+          ? { min: 168, max: 214, height: 72 }
+          : { min: 144, max: 194, height: 66 };
   return {
     width: Math.min(base.max, Math.max(base.min, 52 + node.label.length * 13)),
     height: base.height,

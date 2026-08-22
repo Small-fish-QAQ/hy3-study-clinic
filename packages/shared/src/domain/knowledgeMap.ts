@@ -6,6 +6,7 @@ import { StudyPlanItemKindSchema, StudyPlanProgressStateSchema } from './studyPl
 
 export const KNOWLEDGE_MAP_PROJECTION_VERSION = 'knowledge-map-projection-v1' as const;
 export const KNOWLEDGE_MAP_PRECEDENCE_POLICY = 'knowledge-map-precedence-v1' as const;
+export const KNOWLEDGE_MAP_ABSTRACTION_VERSION = 'knowledge-map-learner-abstraction-v1' as const;
 export const MAX_KNOWLEDGE_MAP_NODES = 2000;
 export const MAX_KNOWLEDGE_MAP_EDGES = 4000;
 export const MAX_KNOWLEDGE_MAP_HISTORY_REFS = 500;
@@ -17,6 +18,12 @@ export const KnowledgeMapModeSchema = z.enum([
   'weakness_map',
 ]);
 export type KnowledgeMapMode = z.infer<typeof KnowledgeMapModeSchema>;
+
+export const KnowledgeMapAbstractionLevelSchema = z.enum(['overview', 'topic', 'inspectable']);
+export type KnowledgeMapAbstractionLevel = z.infer<typeof KnowledgeMapAbstractionLevelSchema>;
+
+export const KnowledgeMapCurriculumKindSchema = z.enum(['course', 'chapter', 'section']);
+export type KnowledgeMapCurriculumKind = z.infer<typeof KnowledgeMapCurriculumKindSchema>;
 
 export const KnowledgeMapProjectionStatusSchema = z.enum([
   'unconfigured',
@@ -274,7 +281,21 @@ const KnowledgeMapNodeBaseSchema = z.object({
   route: KnowledgeMapRouteOverlaySchema,
   weaknesses: z.array(KnowledgeMapWeaknessSignalSchema).max(100),
   navigation: z.array(KnowledgeMapNavigationSchema).max(20),
+  /** Learner abstraction metadata. Omitted by legacy clients/fixtures and defaults to visible topic. */
+  abstractionLevel: KnowledgeMapAbstractionLevelSchema.optional(),
+  learnerVisible: z.boolean().optional(),
+  parentNodeId: z.string().min(1).nullable().optional(),
 });
+
+export const KnowledgeMapCurriculumRegionNodeSchema = KnowledgeMapNodeBaseSchema.extend({
+  kind: z.literal('curriculum_region'),
+  curriculumVersionId: z.string().min(1),
+  curriculumKind: KnowledgeMapCurriculumKindSchema,
+  childNodeIds: z.array(z.string().min(1)).max(200),
+  learningUnitNodeIds: z.array(z.string().min(1)).max(200),
+  conceptNodeIds: z.array(z.string().min(1)).max(200),
+  objectiveIds: z.array(z.string().min(1)).max(500),
+}).strict();
 
 export const KnowledgeMapConceptNodeSchema = KnowledgeMapNodeBaseSchema.extend({
   kind: z.literal('concept'),
@@ -314,6 +335,7 @@ export const KnowledgeMapSynthesisNodeSchema = KnowledgeMapNodeBaseSchema.extend
 }).strict();
 
 export const KnowledgeMapNodeSchema = z.discriminatedUnion('kind', [
+  KnowledgeMapCurriculumRegionNodeSchema,
   KnowledgeMapConceptNodeSchema,
   KnowledgeMapLearningUnitNodeSchema,
   KnowledgeMapSynthesisNodeSchema,
@@ -325,6 +347,7 @@ export const KnowledgeMapEdgeKindSchema = z.enum([
   'curriculum_prerequisite',
   'unit_contains_concept',
   'synthesis_includes_unit',
+  'curriculum_contains',
 ]);
 export type KnowledgeMapEdgeKind = z.infer<typeof KnowledgeMapEdgeKindSchema>;
 
@@ -367,6 +390,19 @@ export const KnowledgeMapProjectionSchema = z
       })
       .strict(),
     modes: z.array(KnowledgeMapModeSchema).length(4),
+    abstraction: z
+      .object({
+        version: z.literal(KNOWLEDGE_MAP_ABSTRACTION_VERSION),
+        defaultLevel: z.literal('overview'),
+        rawNodeCount: z.number().int().nonnegative(),
+        rawEdgeCount: z.number().int().nonnegative(),
+        defaultNodeCount: z.number().int().nonnegative(),
+        defaultEdgeCount: z.number().int().nonnegative(),
+        hiddenInternalNodeCount: z.number().int().nonnegative(),
+        hiddenInternalEdgeCount: z.number().int().nonnegative(),
+        duplicateIdentityGroups: z.array(z.array(z.string().min(1)).min(2)).max(200),
+      })
+      .optional(),
     nodes: z.array(KnowledgeMapNodeSchema).max(MAX_KNOWLEDGE_MAP_NODES),
     edges: z.array(KnowledgeMapEdgeSchema).max(MAX_KNOWLEDGE_MAP_EDGES),
     history: z
@@ -425,6 +461,29 @@ export const KnowledgeMapProjectionSchema = z
     }
   });
 export type KnowledgeMapProjection = z.infer<typeof KnowledgeMapProjectionSchema>;
+
+/** Conservative, projection-only state aggregation for curriculum regions. */
+export function aggregateKnowledgeMapPrimaryState(
+  states: readonly KnowledgeMapPrimaryState[],
+): KnowledgeMapPrimaryState {
+  if (states.length === 0) return 'not_started';
+  const precedence: KnowledgeMapPrimaryState[] = [
+    'unknown',
+    'repair',
+    'weak',
+    'currently_learning',
+    'awaiting_formal_validation',
+    'taught',
+    'developing',
+    'planned',
+    'not_started',
+    'evidence_backed',
+    'mastered',
+  ];
+  return states
+    .slice()
+    .sort((left, right) => precedence.indexOf(left) - precedence.indexOf(right))[0]!;
+}
 
 export const KnowledgeMapProjectionResponseSchema = z
   .object({ projection: KnowledgeMapProjectionSchema })

@@ -151,6 +151,7 @@ function InitialFit({ enabled }: { enabled: boolean }) {
 function routingRelation(kind: KnowledgeMapEdge['kind']): GraphRelation {
   if (kind === 'curriculum_prerequisite') return 'prerequisite';
   if (kind === 'unit_contains_concept' || kind === 'synthesis_includes_unit') return 'part_of';
+  if (kind === 'curriculum_contains') return 'part_of';
   return kind;
 }
 
@@ -184,6 +185,7 @@ interface KnowledgeMapCanvasProps {
   projection: KnowledgeMapProjection;
   mode: KnowledgeMapMode;
   selectedNodeId: string | null;
+  expandedNodeIds: ReadonlySet<string>;
   focusRequestId: number | null;
   onSelectNode: (nodeId: string | null, returnTarget?: HTMLElement | null) => void;
 }
@@ -192,6 +194,7 @@ function KnowledgeMapCanvas({
   projection,
   mode,
   selectedNodeId,
+  expandedNodeIds,
   focusRequestId,
   onSelectNode,
 }: KnowledgeMapCanvasProps) {
@@ -214,8 +217,8 @@ function KnowledgeMapCanvas({
     [projection.nodes],
   );
   const modeNodeIds = useMemo(
-    () => visibleKnowledgeMapNodeIds(projection, mode, selectedNodeId),
-    [mode, projection, selectedNodeId],
+    () => visibleKnowledgeMapNodeIds(projection, mode, selectedNodeId, expandedNodeIds),
+    [expandedNodeIds, mode, projection, selectedNodeId],
   );
   const modeEdges = useMemo(
     () => visibleKnowledgeMapEdges(projection, mode, modeNodeIds),
@@ -635,6 +638,8 @@ interface KnowledgeMapInspectorProps {
   closeRef: RefObject<HTMLButtonElement>;
   onClose: () => void;
   onNavigate: (target: KnowledgeMapNavigationTarget) => void;
+  expanded: boolean;
+  onExpand: () => void;
 }
 
 function KnowledgeMapInspector({
@@ -644,6 +649,8 @@ function KnowledgeMapInspector({
   closeRef,
   onClose,
   onNavigate,
+  expanded,
+  onExpand,
 }: KnowledgeMapInspectorProps) {
   const relationships = projection.edges
     .filter((edge) => edge.sourceNodeId === node.id || edge.targetNodeId === node.id)
@@ -775,6 +782,25 @@ function KnowledgeMapInspector({
           </ul>
         </section>
       ) : null}
+      {(() => {
+        const detailCount =
+          node.kind === 'curriculum_region'
+            ? node.childNodeIds.length
+            : node.kind === 'learning_unit'
+              ? node.conceptNodeIds.length
+              : node.kind === 'synthesis'
+                ? node.learningUnitNodeIds.length
+                : 0;
+        return detailCount > 0 ? (
+          <section aria-labelledby="map-inspector-detail">
+            <h4 id="map-inspector-detail">主题细节</h4>
+            <p className="small muted">可查看 {detailCount} 个底层课程对象及其来源依据。</p>
+            <button type="button" onClick={onExpand} disabled={expanded}>
+              {expanded ? '已展开底层对象' : '展开底层对象'}
+            </button>
+          </section>
+        ) : null;
+      })()}
       {provenance.length > 0 ? (
         <section aria-labelledby="map-inspector-source">
           <h4 id="map-inspector-source">来源依据</h4>
@@ -823,6 +849,7 @@ export function KnowledgeMapView({
   const [projection, setProjection] = useState<KnowledgeMapProjection | null>(null);
   const [mode, setMode] = useState<KnowledgeMapMode>(intent?.mode ?? 'knowledge_structure');
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(() => new Set());
   const [error, setError] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
   const [narrow, setNarrow] = useState(
@@ -833,6 +860,10 @@ export function KnowledgeMapView({
   const rootRef = useRef<HTMLDivElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    setExpandedNodeIds(new Set());
+  }, [workspaceId]);
 
   useEffect(() => {
     const query = window.matchMedia?.('(max-width: 767px)');
@@ -999,6 +1030,7 @@ export function KnowledgeMapView({
             projection={currentProjection}
             mode={mode}
             selectedNodeId={selectedNodeId}
+            expandedNodeIds={expandedNodeIds}
             focusRequestId={intent?.requestId ?? null}
             onSelectNode={selectNode}
           />
@@ -1020,6 +1052,10 @@ export function KnowledgeMapView({
               closeRef={closeRef}
               onClose={closeInspector}
               onNavigate={onNavigate}
+              expanded={expandedNodeIds.has(selectedNode.id)}
+              onExpand={() =>
+                setExpandedNodeIds((current) => new Set(current).add(selectedNode.id))
+              }
             />
           </>
         ) : null}

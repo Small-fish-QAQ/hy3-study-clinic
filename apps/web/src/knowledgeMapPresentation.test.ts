@@ -49,4 +49,37 @@ describe('Knowledge Map projection presentation', () => {
     const routeEdges = visibleKnowledgeMapEdges(projection, 'learning_route', routeIds);
     expect(routeEdges).toHaveLength(3);
   });
+
+  it('keeps inspectable substrate hidden until a deterministic parent expansion', () => {
+    const projection = knowledgeMapProjection();
+    const parent = projection.nodes.find((node) => node.label === '认知负荷应用')!;
+    const child = {
+      ...projection.nodes.find((node) => node.label === '间隔效应')!,
+      learnerVisible: false,
+    };
+    projection.nodes = [
+      ...projection.nodes.filter((node) => node.id !== child.id),
+      child,
+      {
+        ...parent,
+        id: 'curriculum:test-region',
+        label: '测试课程区域',
+        kind: 'curriculum_region',
+        childNodeIds: [child.id],
+        learningUnitNodeIds: [child.id],
+        conceptNodeIds: [],
+        objectiveIds: parent.objectiveIds,
+        curriculumKind: 'section',
+      } as typeof parent,
+    ];
+    const defaultIds = visibleKnowledgeMapNodeIds(projection, 'knowledge_structure', null);
+    expect(defaultIds.has(child.id)).toBe(false);
+    const expandedIds = visibleKnowledgeMapNodeIds(
+      projection,
+      'knowledge_structure',
+      null,
+      new Set(['curriculum:test-region']),
+    );
+    expect(expandedIds.has(child.id)).toBe(true);
+  });
 });

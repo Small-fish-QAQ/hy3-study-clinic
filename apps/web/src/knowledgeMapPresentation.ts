@@ -19,7 +19,7 @@ export const KNOWLEDGE_MAP_MODES: KnowledgeMapModePresentation[] = [
     mode: 'knowledge_structure',
     label: '知识结构',
     question: '这门课程包含什么，彼此如何连接？',
-    summary: '查看概念、学习单元、先修关系与综合结构。',
+    summary: '查看课程区域、主题、先修关系与有意义的综合任务。',
   },
   {
     mode: 'learning_progress',
@@ -144,9 +144,11 @@ export const EDGE_KIND_LABELS: Record<KnowledgeMapEdge['kind'], string> = {
   curriculum_prerequisite: '课程先修',
   unit_contains_concept: '包含概念',
   synthesis_includes_unit: '综合学习单元',
+  curriculum_contains: '课程包含',
 };
 
 export const NODE_KIND_LABELS: Record<KnowledgeMapNode['kind'], string> = {
+  curriculum_region: '课程区域',
   concept: '概念',
   learning_unit: '学习单元',
   synthesis: '综合结构',
@@ -202,9 +204,11 @@ export function visibleKnowledgeMapNodeIds(
   projection: KnowledgeMapProjection,
   mode: KnowledgeMapMode,
   selectedNodeId: string | null,
+  expandedNodeIds: ReadonlySet<string> = new Set(),
 ): Set<string> {
   const ids = new Set<string>();
   for (const node of projection.nodes) {
+    if (node.learnerVisible === false) continue;
     if (!node.modes.includes(mode)) continue;
     if (mode === 'learning_route' && node.route.position === 'outside_route') continue;
     if (
@@ -216,6 +220,22 @@ export function visibleKnowledgeMapNodeIds(
       continue;
     }
     ids.add(node.id);
+  }
+  for (const expandedId of expandedNodeIds) {
+    const node = projection.nodes.find((candidate) => candidate.id === expandedId);
+    if (!node) continue;
+    const childIds =
+      node.kind === 'curriculum_region'
+        ? node.childNodeIds
+        : node.kind === 'learning_unit'
+          ? node.conceptNodeIds
+          : node.kind === 'synthesis'
+            ? node.learningUnitNodeIds
+            : [];
+    for (const childId of childIds) {
+      const child = projection.nodes.find((candidate) => candidate.id === childId);
+      if (child?.modes.includes(mode)) ids.add(childId);
+    }
   }
   if (selectedNodeId && projection.nodes.some((node) => node.id === selectedNodeId)) {
     ids.add(selectedNodeId);

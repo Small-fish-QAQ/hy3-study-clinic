@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  aggregateKnowledgeMapPrimaryState,
   KnowledgeMapProjectionSchema,
   KnowledgeMapProjectionResponseSchema,
   KNOWLEDGE_MAP_PRECEDENCE_POLICY,
@@ -9,6 +10,13 @@ import {
 const T = '2026-01-01T00:00:00.000Z';
 
 describe('Knowledge Map projection contract', () => {
+  it('aggregates grouped state conservatively without creating authority', () => {
+    expect(aggregateKnowledgeMapPrimaryState(['evidence_backed', 'repair'])).toBe('repair');
+    expect(aggregateKnowledgeMapPrimaryState(['mastered', 'evidence_backed'])).toBe(
+      'evidence_backed',
+    );
+    expect(aggregateKnowledgeMapPrimaryState([])).toBe('not_started');
+  });
   it('requires the versioned contract and all four modes', () => {
     const parsed = KnowledgeMapProjectionSchema.safeParse({
       schemaVersion: 1,

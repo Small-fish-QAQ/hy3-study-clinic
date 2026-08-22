@@ -543,4 +543,29 @@ describe('Knowledge Map projection service', () => {
     });
     expect(response.statusCode).toBe(404);
   });
+
+  it('projects curriculum regions as the default and keeps overlapping concepts inspectable', () => {
+    context = buildTestApp();
+    const { repos } = context;
+    repos.materials.insertWithBlocks(makeMaterial(), [makeBlock()]);
+    repos.materials.addConcepts([makeConcept()]);
+    installCurrentRoute();
+    const projection = createServices({
+      repos,
+      provider: context.provider,
+      clock: fixedClock(T0),
+    }).knowledgeMap.get('ws_1');
+    const region = projection.nodes.find((node) => node.kind === 'curriculum_region');
+    const unit = projection.nodes.find((node) => node.kind === 'learning_unit');
+    const concept = projection.nodes.find((node) => node.kind === 'concept');
+    expect(region).toMatchObject({ learnerVisible: true, abstractionLevel: 'overview' });
+    expect(unit).toMatchObject({ learnerVisible: false, abstractionLevel: 'topic' });
+    expect(concept).toMatchObject({ learnerVisible: false, abstractionLevel: 'inspectable' });
+    expect(projection.abstraction).toMatchObject({
+      defaultLevel: 'overview',
+      defaultNodeCount: 1,
+      hiddenInternalNodeCount: 2,
+    });
+    expect(repos.mastery.listByWorkspace('ws_1')).toEqual([]);
+  });
 });

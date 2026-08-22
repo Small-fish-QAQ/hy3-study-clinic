@@ -1,6 +1,8 @@
 import {
   KnowledgeMapProjectionResponseSchema,
   KnowledgeMapProjectionSchema,
+  KNOWLEDGE_MAP_ABSTRACTION_VERSION,
+  aggregateKnowledgeMapPrimaryState,
   type Concept,
   type Curriculum,
   type FormalEvidenceRecord,
@@ -47,6 +49,17 @@ const ROUTE_BLOCKING_REASONS = new Set([
   'source_manifest_mismatch',
   'invalid_current_provenance',
 ]);
+
+function meaningfulSynthesisTitle(title: string): boolean {
+  const normalized = title.trim().toLocaleLowerCase();
+  // Generic computational hubs are audit substrate; concrete comparison,
+  // workflow, design, and transfer tasks carry learner meaning.
+  return (
+    /(比较|对比|串联|流程|设计|综合设计|应用|迁移|compare|contrast|workflow|design|transfer)/u.test(
+      normalized,
+    ) && !/(connect|synthesize|foundation|hub|连接课程|综合基础)/u.test(normalized)
+  );
+}
 
 type RouteArtifacts = {
   state: ReturnType<Repositories['courseExecution']['get']>;
@@ -1366,6 +1379,212 @@ export function createKnowledgeMapService({
       for (const node of allUnitNodes) {
         nodes.push(buildUnitNode(node));
       }
+
+      const conceptUnitMembership = new Map<string, string[]>();
+      for (const unit of allUnitNodes) {
+        for (const conceptId of unit.learningUnit!.conceptIds) {
+          const members = conceptUnitMembership.get(conceptId) ?? [];
+          members.push(unit.id);
+          conceptUnitMembership.set(conceptId, members);
+        }
+      }
+      for (const conceptNode of nodes.filter(
+        (node): node is Extract<KnowledgeMapNode, { kind: 'concept' }> => node.kind === 'concept',
+      )) {
+        const memberships =
+          conceptUnitMembership.get(conceptNode.sourceConcepts[0]?.id ?? '') ?? [];
+        conceptNode.learnerVisible = memberships.length === 0 && !route.curriculum;
+        conceptNode.abstractionLevel = conceptNode.learnerVisible ? 'topic' : 'inspectable';
+        conceptNode.parentNodeId = memberships[0] ? `learning-unit:${memberships[0]}` : null;
+        conceptNode.learningUnitIds = memberships;
+      }
+
+      // The learner-facing default is organized by the authoritative Curriculum
+      // hierarchy. Units and concepts remain in the substrate for drill-down,
+      // but region nodes carry the overview state and relationships.
+      const nodeById = new Map(nodes.map((node) => [node.id, node]));
+      const curriculumNodeById = new Map(
+        (route.curriculum?.nodes ?? []).map((node) => [node.id, node]),
+      );
+      const unitIdsUnder = (curriculumNodeId: string): string[] =>
+        allUnitNodes
+          .filter((unit) => {
+            let parent = unit.parentId;
+            while (parent) {
+              if (parent === curriculumNodeId) return true;
+              parent = curriculumNodeById.get(parent)?.parentId ?? null;
+            }
+            return false;
+          })
+          .map((unit) => unit.id);
+      for (const curriculumNode of route.curriculum?.nodes ?? []) {
+        if (curriculumNode.kind === 'learning_unit') continue;
+        const childCurriculumNodes = (route.curriculum?.nodes ?? [])
+          .filter((candidate) => candidate.parentId === curriculumNode.id)
+          .sort((left, right) => left.index - right.index || left.id.localeCompare(right.id));
+        const unitIds = unitIdsUnder(curriculumNode.id);
+        if (unitIds.length === 0) continue;
+        const childNodeIds = childCurriculumNodes
+          .map((child) =>
+            child.kind === 'learning_unit' ? `learning-unit:${child.id}` : `curriculum:${child.id}`,
+          )
+          .filter(
+            (id) => nodeById.has(id) || curriculumNodeById.has(id.replace('curriculum:', '')),
+          );
+        const childUnits = unitIds
+          .map((id) => nodeById.get(`learning-unit:${id}`))
+          .filter((node): node is KnowledgeMapNode => !!node);
+        const objectiveIds = [
+          ...new Set(
+            childUnits.flatMap((node) =>
+              node.kind === 'learning_unit' || node.kind === 'curriculum_region'
+                ? node.objectiveIds
+                : [],
+            ),
+          ),
+        ].sort();
+        const regionProvenance = childUnits.flatMap((node) => node.provenance).slice(0, 100);
+        const regionStates = childUnits.map((node) => node.learner.primaryState);
+        const regionState = aggregateKnowledgeMapPrimaryState(regionStates);
+        const regionWeaknesses = childUnits
+          .flatMap((node) => node.weaknesses)
+          .filter(
+            (item, index, list) =>
+              list.findIndex(
+                (candidate) =>
+                  `${candidate.kind}:${candidate.recordIds.join(',')}` ===
+                  `${item.kind}:${item.recordIds.join(',')}`,
+              ) === index,
+          )
+          .slice(0, 100);
+        const regionRefs = childUnits
+          .flatMap((node) => node.learner.authorityRefs)
+          .filter(
+            (item, index, list) =>
+              list.findIndex(
+                (candidate) =>
+                  `${candidate.authority}:${candidate.recordId}` ===
+                  `${item.authority}:${item.recordId}`,
+              ) === index,
+          )
+          .slice(0, 200);
+        const regionId = `curriculum:${curriculumNode.id}`;
+        const regionNode: KnowledgeMapNode = {
+          id: regionId,
+          kind: 'curriculum_region',
+          label: curriculumNode.title,
+          modes: [...MODES],
+          current: routeUsable(),
+          provenance: regionProvenance,
+          learner: buildOverlay({
+            primaryState: regionState,
+            milestones: regionState === 'not_started' ? [] : ['planned'],
+            formalValidation: childUnits.some(
+              (node) => node.learner.formalValidation === 'current_failure',
+            )
+              ? 'current_failure'
+              : childUnits.every((node) => node.learner.formalValidation === 'supported')
+                ? 'supported'
+                : 'unknown',
+            progression: childUnits.flatMap((node) => node.learner.progression),
+            reasonCodes:
+              regionState === 'repair' ? ['active_repair'] : ['accepted_plan_membership'],
+            authorityRefs: regionRefs,
+          }),
+          route: routeOverlay(
+            null,
+            objectiveIds,
+            routeUsable() ? route.plan : null,
+            routeUsable() ? planProgress : [],
+            routeUsable() ? route.agenda : null,
+            unitById,
+            nodeIdByUnitId,
+            routeUsable() ? (nextPlanItem?.id ?? null) : null,
+            routeUsable() ? progressByUnitId : new Map(),
+          ),
+          weaknesses: regionWeaknesses,
+          navigation: baseNavigation('curriculum', { objectiveId: objectiveIds[0] ?? null }),
+          abstractionLevel: 'overview',
+          learnerVisible: true,
+          parentNodeId: curriculumNode.parentId ? `curriculum:${curriculumNode.parentId}` : null,
+          curriculumVersionId: route.curriculum?.id ?? 'unknown-curriculum',
+          curriculumKind: curriculumNode.kind,
+          childNodeIds,
+          learningUnitNodeIds: unitIds.map((id) => `learning-unit:${id}`),
+          conceptNodeIds: childUnits.flatMap((node) =>
+            node.kind === 'learning_unit' ? node.conceptNodeIds : [],
+          ),
+          objectiveIds,
+        };
+        nodes.push(regionNode);
+        nodeById.set(regionId, regionNode);
+        if (curriculumNode.parentId) {
+          const child = nodeById.get(`learning-unit:${curriculumNode.id}`);
+          if (child) child.parentNodeId = regionId;
+        }
+      }
+      for (const node of allUnitNodes) {
+        const projected = nodeById.get(`learning-unit:${node.id}`);
+        if (projected && node.parentId) {
+          projected.parentNodeId = `curriculum:${node.parentId}`;
+          projected.learnerVisible = false;
+          projected.abstractionLevel = 'topic';
+        }
+      }
+      for (const region of nodes.filter(
+        (node): node is Extract<KnowledgeMapNode, { kind: 'curriculum_region' }> =>
+          node.kind === 'curriculum_region',
+      )) {
+        region.childNodeIds = (route.curriculum?.nodes ?? [])
+          .filter((candidate) => candidate.parentId === region.id.replace('curriculum:', ''))
+          .map((candidate) =>
+            candidate.kind === 'learning_unit'
+              ? `learning-unit:${candidate.id}`
+              : `curriculum:${candidate.id}`,
+          )
+          .filter((id) => nodeById.has(id));
+        for (const childId of region.childNodeIds) {
+          const child = nodeById.get(childId);
+          if (!child || region.provenance.length === 0) continue;
+          edges.push({
+            id: `curriculum-contains:${region.id}:${child.id}`,
+            sourceNodeId: region.id,
+            targetNodeId: child.id,
+            kind: 'curriculum_contains',
+            modes: ['knowledge_structure', 'learning_progress', 'learning_route'],
+            current: routeUsable(),
+            authority: 'accepted_curriculum',
+            sourceRecordIds: [route.curriculum?.id ?? region.id],
+            explanation: 'Accepted Curriculum contains this learner-facing region or topic.',
+            provenance: region.provenance.length > 0 ? region.provenance.slice(0, 20) : [],
+          });
+        }
+      }
+      const regionsByIdentity = new Map<
+        string,
+        Extract<KnowledgeMapNode, { kind: 'curriculum_region' }>[]
+      >();
+      for (const region of nodes.filter(
+        (node): node is Extract<KnowledgeMapNode, { kind: 'curriculum_region' }> =>
+          node.kind === 'curriculum_region',
+      )) {
+        const identity = [...region.learningUnitNodeIds].sort().join(',');
+        const group = regionsByIdentity.get(identity) ?? [];
+        group.push(region);
+        regionsByIdentity.set(identity, group);
+      }
+      for (const group of regionsByIdentity.values()) {
+        if (group.length < 2) continue;
+        for (const sameKind of ['course', 'chapter', 'section'] as const) {
+          const sameKindRegions = group
+            .filter((region) => region.curriculumKind === sameKind)
+            .sort((left, right) => left.id.localeCompare(right.id));
+          for (const duplicate of sameKindRegions.slice(1)) {
+            duplicate.learnerVisible = false;
+            duplicate.abstractionLevel = 'inspectable';
+          }
+        }
+      }
       for (const group of route.curriculum?.synthesisGroups ?? []) {
         const groupObjectives = new Set(group.objectiveIds);
         const groupPlanItems = route.plan
@@ -1376,13 +1595,20 @@ export function createKnowledgeMapService({
           groupPlanItems.every((item) =>
             ['completed', 'obsolete'].includes(planProgressState(planProgress, item.id)),
           );
+        const groupChildren = group.learningUnitIds
+          .map((id) => nodeById.get(`learning-unit:${id}`))
+          .filter((node): node is KnowledgeMapNode => !!node);
         const primaryState: KnowledgeMapPrimaryState = !routeUsable()
           ? 'unknown'
-          : groupCompleted
-            ? 'evidence_backed'
-            : groupPlanItems.length
-              ? 'planned'
-              : 'not_started';
+          : groupChildren.length > 0
+            ? aggregateKnowledgeMapPrimaryState(
+                groupChildren.map((node) => node.learner.primaryState),
+              )
+            : groupCompleted
+              ? 'evidence_backed'
+              : groupPlanItems.length
+                ? 'planned'
+                : 'not_started';
         const refs: KnowledgeMapAuthorityRef[] = [];
         if (route.curriculum)
           refs.push(
@@ -1410,16 +1636,18 @@ export function createKnowledgeMapService({
           label: group.title,
           modes: [...MODES],
           current: routeUsable(),
-          provenance: [],
+          provenance: groupChildren.flatMap((node) => node.provenance).slice(0, 100),
           learner: buildOverlay({
             primaryState,
             milestones: groupPlanItems.length ? ['planned'] : [],
             reasonCodes: [
-              groupCompleted
-                ? 'current_progression_complete'
-                : groupPlanItems.length
-                  ? 'accepted_plan_membership'
-                  : 'route_unavailable',
+              primaryState === 'repair'
+                ? 'active_repair'
+                : groupCompleted
+                  ? 'current_progression_complete'
+                  : groupPlanItems.length
+                    ? 'accepted_plan_membership'
+                    : 'route_unavailable',
             ],
             authorityRefs: refs,
           }),
@@ -1443,6 +1671,9 @@ export function createKnowledgeMapService({
           level: group.level,
           learningUnitNodeIds: group.learningUnitIds.map((id) => `learning-unit:${id}`),
           objectiveIds: group.objectiveIds,
+          abstractionLevel: 'inspectable',
+          learnerVisible: meaningfulSynthesisTitle(group.title),
+          parentNodeId: null,
         });
       }
       for (const edge of graphData.edges) {
@@ -1596,6 +1827,35 @@ export function createKnowledgeMapService({
             projectedNodeIds.has(edge.sourceNodeId) && projectedNodeIds.has(edge.targetNodeId),
         )
         .slice(0, 4000);
+      const defaultNodeIds = new Set(
+        projectedNodes.filter((node) => node.learnerVisible !== false).map((node) => node.id),
+      );
+      const defaultEdges = projectedEdges.filter(
+        (edge) => defaultNodeIds.has(edge.sourceNodeId) && defaultNodeIds.has(edge.targetNodeId),
+      );
+      const duplicateIdentityGroups = [
+        ...new Map(
+          projectedNodes
+            .filter((node) => node.kind === 'curriculum_region')
+            .map(
+              (node) =>
+                [
+                  `${node.kind}|${node.kind === 'curriculum_region' ? [...node.learningUnitNodeIds].sort().join(',') : node.id}`,
+                  node.id,
+                ] as const,
+            )
+            .reduce((groups, [key, id]) => {
+              const list = groups.get(key) ?? [];
+              list.push(id);
+              groups.set(key, list);
+              return groups;
+            }, new Map<string, string[]>())
+            .entries(),
+        ),
+      ]
+        .map(([, ids]) => ids)
+        .filter((ids) => ids.length > 1)
+        .slice(0, 200);
       const blockingRouteUnknown = route.reasons.some((reason) =>
         ROUTE_BLOCKING_REASONS.has(reason),
       );
@@ -1629,6 +1889,17 @@ export function createKnowledgeMapService({
           unknownReasons: [...new Set(route.reasons)],
         },
         modes: [...MODES],
+        abstraction: {
+          version: KNOWLEDGE_MAP_ABSTRACTION_VERSION,
+          defaultLevel: 'overview',
+          rawNodeCount: nodeCandidates,
+          rawEdgeCount: edgeCandidates,
+          defaultNodeCount: defaultNodeIds.size,
+          defaultEdgeCount: defaultEdges.length,
+          hiddenInternalNodeCount: projectedNodes.length - defaultNodeIds.size,
+          hiddenInternalEdgeCount: projectedEdges.length - defaultEdges.length,
+          duplicateIdentityGroups,
+        },
         nodes: projectedNodes,
         edges: projectedEdges,
         history: {
