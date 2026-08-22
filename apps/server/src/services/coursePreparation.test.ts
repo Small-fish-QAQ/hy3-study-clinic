@@ -147,7 +147,12 @@ function command(id: string, actor: 'learner' | 'local' = 'learner', workspaceId
   return { commandId: id, idempotencyKey: id, workspaceId, actor } as const;
 }
 
-function contractFields(roleId: string, roleVersion: number): LearningContractDraftFields {
+function contractFields(
+  roleId: string,
+  roleVersion: number,
+  minutesPerDay = 30,
+  preferredSessionMinutes = 30,
+): LearningContractDraftFields {
   return {
     intent: 'Learn working-memory capacity.',
     targetOutcome: {
@@ -157,9 +162,9 @@ function contractFields(roleId: string, roleVersion: number): LearningContractDr
     },
     deadline: null,
     studyBudget: {
-      minutesPerDay: 30,
+      minutesPerDay,
       minutesPerWeek: null,
-      preferredSessionMinutes: 30,
+      preferredSessionMinutes,
       unavailablePeriods: [],
     },
     desiredDepth: 'working_fluency',
@@ -188,7 +193,14 @@ function contractFields(roleId: string, roleVersion: number): LearningContractDr
 }
 
 function createHarness(
-  options: { provider?: TrackingProvider; withConcept?: boolean; sectionCount?: number } = {},
+  options: {
+    provider?: TrackingProvider;
+    withConcept?: boolean;
+    sectionCount?: number;
+    compactMaterial?: boolean;
+    minutesPerDay?: number;
+    preferredSessionMinutes?: number;
+  } = {},
 ): Harness {
   const db = openDatabase(':memory:');
   databases.push(db);
@@ -201,7 +213,7 @@ function createHarness(
       index === 0
         ? `${QUOTE} Working memory section ${index + 1} has a bounded claim.`
         : `Working memory section ${index + 1} has a bounded claim.`;
-    return base.padEnd(520, 'x');
+    return options.compactMaterial ? base : base.padEnd(520, 'x');
   });
   const materialContent = sections.join('\n');
   let sourceOffset = 0;
@@ -243,7 +255,12 @@ function createHarness(
   });
   const draft = services.learningContracts.createDraft({
     command: command('contract-create'),
-    fields: contractFields(role.id, role.version),
+    fields: contractFields(
+      role.id,
+      role.version,
+      options.minutesPerDay,
+      options.preferredSessionMinutes,
+    ),
     predecessorContractId: null,
     expectedActiveContractId: null,
   }).contract;
@@ -938,7 +955,9 @@ describe('Course Preparation coordinator', () => {
       decision: 'accept',
       reason: null,
     });
-    expect(harness.services.coursePreparation.get('ws_1').state).toBe('complete');
+    expect(harness.services.coursePreparation.get('ws_1').state).toBe(
+      'preparing_assessment_readiness',
+    );
 
     activateReplacementRevision(harness.repos);
 
@@ -947,6 +966,129 @@ describe('Course Preparation coordinator', () => {
       machineAction: 'prepare_concepts',
       learnerAction: 'resume_preparation',
     });
+  });
+
+  it('does not declare complete when the accepted route lacks a formal checkpoint path', async () => {
+    const harness = createHarness({ withConcept: true });
+    const first = await harness.services.coursePreparation.run(
+      runRequest(harness.services.coursePreparation.get('ws_1')),
+    );
+    expect(first.preparation.state).toBe('course_plan_ready');
+    const plan = harness.repos.studyPlans.list('ws_1').at(-1)!;
+    const curriculum = harness.repos.curricula.get(plan.curriculumVersionId)!;
+    harness.services.courseExecution.decideStudyPlan({
+      command: command('accept-readiness-route'),
+      studyPlanId: plan.id,
+      expectedVersion: plan.version,
+      expectedContractId: harness.contract.id,
+      expectedCurriculumId: curriculum.id,
+      expectedExecutionSourceManifestFingerprint: curriculum.executionSourceManifest.fingerprint,
+      decision: 'accept',
+      reason: null,
+    });
+    const pending = harness.services.coursePreparation.get('ws_1');
+    expect(pending).toMatchObject({
+      state: 'preparing_assessment_readiness',
+      formalReadiness: { status: 'blocked' },
+      learnerDecisionRequired: false,
+      learnerAction: 'resume_preparation',
+    });
+    const blocked = await harness.services.coursePreparation.run(runRequest(pending));
+    expect(blocked.preparation).toMatchObject({
+      state: 'blocked',
+      blocker: { code: 'formal_assessment_readiness_unavailable' },
+    });
+  });
+
+  it('completes readiness when current premises and a formal checkpoint are valid', async () => {
+    const harness = createHarness({
+      compactMaterial: true,
+      minutesPerDay: 60,
+      preferredSessionMinutes: 60,
+    });
+    const first = await harness.services.coursePreparation.run(
+      runRequest(harness.services.coursePreparation.get('ws_1')),
+    );
+    expect(first.preparation.state).toBe('course_plan_ready');
+    const plan = harness.repos.studyPlans.list('ws_1').at(-1)!;
+    const curriculum = harness.repos.curricula.get(plan.curriculumVersionId)!;
+    harness.services.courseExecution.decideStudyPlan({
+      command: command('accept-valid-readiness-route'),
+      studyPlanId: plan.id,
+      expectedVersion: plan.version,
+      expectedContractId: harness.contract.id,
+      expectedCurriculumId: curriculum.id,
+      expectedExecutionSourceManifestFingerprint: curriculum.executionSourceManifest.fingerprint,
+      decision: 'accept',
+      reason: null,
+    });
+
+    const completed = harness.services.coursePreparation.get('ws_1');
+    expect(completed).toMatchObject({
+      state: 'complete',
+      learnerAction: 'continue_study',
+      learnerDecisionRequired: false,
+      formalReadiness: {
+        status: 'ready',
+        requiredObjectiveCount: 1,
+        readyObjectiveCount: 1,
+        unresolvedObjectiveIds: [],
+        teachingOnlyObjectiveIds: [],
+      },
+      checkpoints: { assessmentReadiness: 'complete' },
+    });
+  });
+
+  it('fails closed when a teaching-ready objective has no current authorized premise', async () => {
+    const harness = createHarness({ withConcept: true });
+    const first = await harness.services.coursePreparation.run(
+      runRequest(harness.services.coursePreparation.get('ws_1')),
+    );
+    const plan = harness.repos.studyPlans.list('ws_1').at(-1)!;
+    const curriculum = harness.repos.curricula.get(plan.curriculumVersionId)!;
+    harness.services.courseExecution.decideStudyPlan({
+      command: command('accept-fabricated-authority-route'),
+      studyPlanId: plan.id,
+      expectedVersion: plan.version,
+      expectedContractId: harness.contract.id,
+      expectedCurriculumId: curriculum.id,
+      expectedExecutionSourceManifestFingerprint: curriculum.executionSourceManifest.fingerprint,
+      decision: 'accept',
+      reason: null,
+    });
+    const row = harness.db
+      .prepare('SELECT payload FROM curriculum_versions WHERE id = ?')
+      .get(curriculum.id) as { payload: string };
+    const payload = JSON.parse(row.payload) as typeof curriculum;
+    const objective = payload.nodes.find((node) => node.learningUnit)?.learningUnit?.objectives[0];
+    expect(objective).toBeDefined();
+    objective!.truthPremiseStatus = 'independently_verified';
+    objective!.truthAuthorityRecordIds = ['ta_fabricated_not_current'];
+    harness.db
+      .prepare('UPDATE curriculum_versions SET payload = ? WHERE id = ?')
+      .run(JSON.stringify(payload), curriculum.id);
+
+    const blocked = harness.services.coursePreparation.get('ws_1');
+    expect(blocked).toMatchObject({
+      state: 'preparing_assessment_readiness',
+      formalReadiness: {
+        status: 'blocked',
+        unresolvedObjectiveIds: [objective!.id],
+        teachingOnlyObjectiveIds: [objective!.id],
+      },
+      learnerDecisionRequired: false,
+      learnerAction: 'resume_preparation',
+    });
+    const after = await harness.services.coursePreparation.run(runRequest(blocked));
+    expect(after.preparation).toMatchObject({
+      state: 'blocked',
+      canResume: false,
+      learnerDecisionRequired: false,
+      blocker: { code: 'formal_assessment_readiness_unavailable' },
+      formalReadiness: { status: 'blocked', unresolvedObjectiveIds: [objective!.id] },
+    });
+    expect(after.preparation.blocker?.message).not.toContain('请你');
+    expect(first.preparation.state).toBe('course_plan_ready');
   });
 
   it('projects an expired preparation lease as retryable and fences it before resuming', async () => {

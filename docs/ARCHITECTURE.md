@@ -744,6 +744,14 @@ Source disclosure is deliberately narrower than accepted metadata alone. Operati
 
 Verification commands, test counts, migration coverage, public evidence, and reviewer mappings are maintained separately in [Verification and Reviewer Evidence](VERIFICATION.md).
 
+## 23b. Course readiness and Formal Assessment handoff (Phase 12B7A)
+
+Course Preparation exposes a deterministic readiness projection over the current Contract, active MaterialRevisions/SourceBlocks, accepted Curriculum, accepted StudyPlan, and current SessionAgenda. A systematic-mastery Course may enter `complete` only when every required objective has independently validated source authority whose claims are tied to the objective's current Curriculum source references, plus an accepted launchable `formal_checkpoint` item for that objective. Optional objectives may remain teaching-only; required unsupported or stale objectives remain unresolved and block readiness with `formal_assessment_readiness_unavailable`.
+
+The readiness check is local and provider-independent. `sourceAuthority` validates exact current claims and eligibility; Curriculum or Teaching Brief prose, Tutor output, and lesson completion cannot authorize a formal premise. The bounded coordinator preserves accepted predecessors and durable intermediate work. The web client automatically resumes ordinary successful checkpoints up to its bounded transition limit, while cancellation, recoverable failure, stale authority, and learner decisions remain genuine stop points. Home renders semantic preparation stages and keeps system-owned readiness gaps out of learner-actionable attention items.
+
+Formal entry is a deterministic Lesson next-state: a launchable matching checkpoint is offered; otherwise the learner sees whether formal preparation is pending or the objective is currently unverifiable. Presentation completion records no Evidence, mastery, Review, or progression mutation. Formal Assessment versions still use the existing launch-time schema, provenance, attempt, grading, Evidence, and deterministic progression authorities.
+
 ## 24. Normalized material extraction foundation
 
 The supported learning-material core is pasted text, Markdown, TXT, text-layer PDF, PPTX, rich DOCX, standalone PNG/JPEG/WebP images, static HTML/Web Snapshots, and source-code files. Uploads are resolved through the parser registry using filename, optional declared MIME, and parser-level signature checks. Unknown or mismatched inputs fail closed; bounded input, OOXML archive/XML, unit, image, HTML, and chunk limits prevent a parser from becoming an unbounded resource consumer.

@@ -7,11 +7,14 @@ import {
   RunCoursePreparationRequestSchema,
   fnv1a32,
   type CourseExecutionOverview,
+  type CourseFormalReadiness,
   type CoursePreparation,
   type CoursePreparationMachineAction,
   type Curriculum,
   type LearningContract,
   type RunCoursePreparationRequest,
+  type SessionAgenda,
+  type StudyPlan,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import { verifyGrounding } from '../grounding/verify.js';
@@ -39,6 +42,13 @@ interface CoursePreparationDeps {
   analysis: AnalysisService;
   curriculum: CurriculumService;
   studyPlans: StudyPlanAgentService;
+  sourceAuthority: {
+    ensureVerbatimAssessmentAuthority: (
+      workspaceId: string,
+      materialId: string,
+      materialRevisionId: string,
+    ) => unknown;
+  };
 }
 
 interface PreparationFacts {
@@ -47,6 +57,7 @@ interface PreparationFacts {
   missingConceptMaterialIds: string[];
   proposedCurriculum: Curriculum | null;
   planningCurriculum: Curriculum | null;
+  formalReadiness?: CourseFormalReadiness;
   projection: Omit<CoursePreparation, 'operationKey' | 'canCancel' | 'failure'>;
 }
 
@@ -65,6 +76,8 @@ function preparationStateForAction(
     case 'accept_prepared_course_structure':
     case 'prepare_course_plan':
       return 'validating_course_plan';
+    case 'prepare_assessment_readiness':
+      return 'preparing_assessment_readiness';
   }
 }
 
@@ -107,6 +120,13 @@ function projectionForAction(
   generatedAt: string,
   action: CoursePreparationMachineAction,
   checkpoints: CoursePreparation['checkpoints'],
+  formalReadiness: CourseFormalReadiness = {
+    status: 'pending',
+    requiredObjectiveCount: 0,
+    readyObjectiveCount: 0,
+    unresolvedObjectiveIds: [],
+    teachingOnlyObjectiveIds: [],
+  },
 ): PreparationFacts['projection'] {
   return {
     workspaceId,
@@ -117,8 +137,88 @@ function projectionForAction(
     learnerDecisionRequired: false,
     canResume: true,
     checkpoints,
+    formalReadiness,
     blocker: null,
     generatedAt,
+  };
+}
+
+/**
+ * Formal readiness is deliberately narrower than teaching readiness. It only
+ * accepts objectives whose exact current SourceBlock claims are independently
+ * validated and still eligible for blocking use. Curriculum prose or Lesson
+ * output never participates in this decision.
+ */
+function assessFormalReadiness(
+  repos: Repositories,
+  curriculum: Curriculum | null,
+  route?: { studyPlan: StudyPlan | null; agenda: SessionAgenda | null },
+): CourseFormalReadiness {
+  if (!curriculum) {
+    return {
+      status: 'pending',
+      requiredObjectiveCount: 0,
+      readyObjectiveCount: 0,
+      unresolvedObjectiveIds: [],
+      teachingOnlyObjectiveIds: [],
+    };
+  }
+  const objectives = curriculum.nodes.flatMap(
+    (node) => node.learningUnit?.objectives.map((objective) => ({ node, objective })) ?? [],
+  );
+  const required = objectives.filter(({ objective }) => objective.priority !== 'optional');
+  const unresolved = required.filter(({ node, objective }) => {
+    if (objective.truthPremiseStatus !== 'independently_verified') return true;
+    const sourceBlockIds = new Set(
+      node.sourceReferences
+        .map((reference) => reference.sourceBlockId)
+        .filter((id): id is string => id !== null),
+    );
+    const authorityReady = objective.truthAuthorityRecordIds.some((authorityId) => {
+      if (!repos.sourceAuthority.isBlockingEligible(authorityId)) return false;
+      const bundle = repos.sourceAuthority.getBundle(authorityId);
+      return Boolean(
+        bundle?.claims.some(
+          (claim) =>
+            sourceBlockIds.has(claim.sourceBlockId) &&
+            repos.materials.getBlock(claim.sourceBlockId)?.materialRevisionId ===
+              bundle.record.materialRevisionId,
+        ),
+      );
+    });
+    if (!authorityReady) return true;
+
+    // Once an accepted route exists, authority alone is insufficient: the
+    // objective must have an accepted formal-checkpoint route item and that
+    // item must remain launchable on the current Agenda. Question generation
+    // itself remains launch-time work, but the path cannot be absent.
+    if (!route?.studyPlan || !route.agenda) return false;
+    const planItem = route.studyPlan.items.find(
+      (item) => item.kind === 'formal_checkpoint' && item.objectiveIds.includes(objective.id),
+    );
+    if (!planItem) return true;
+    const planLaunch = repos.studyPlans
+      .listLaunchValidations(route.studyPlan.id)
+      .find((entry) => entry.planItemId === planItem.id);
+    if (
+      !planLaunch ||
+      planLaunch.launch.status !== 'launchable' ||
+      planLaunch.launch.capability !== 'assessment'
+    ) {
+      return true;
+    }
+    const agendaItem = route.agenda.items.find(
+      (item) => item.linkedPlanItemId === planItem.id && item.kind === 'formal_checkpoint',
+    );
+    return !agendaItem || agendaItem.launch.status !== 'launchable';
+  });
+  const unresolvedIds = unresolved.map(({ objective }) => objective.id).sort();
+  return {
+    status: unresolvedIds.length === 0 ? 'ready' : 'blocked',
+    requiredObjectiveCount: required.length,
+    readyObjectiveCount: required.length - unresolvedIds.length,
+    unresolvedObjectiveIds: unresolvedIds,
+    teachingOnlyObjectiveIds: unresolvedIds,
   };
 }
 
@@ -130,6 +230,7 @@ export function createCoursePreparationService({
   analysis,
   curriculum,
   studyPlans,
+  sourceAuthority,
 }: CoursePreparationDeps) {
   function authorityFingerprint(facts: PreparationFacts): string {
     const includedMaterialIds =
@@ -280,6 +381,10 @@ export function createCoursePreparationService({
         planningCurriculum.executionSourceManifest.fingerprint &&
       overview.activeAgenda,
     );
+    const formalReadiness = assessFormalReadiness(repos, planningCurriculum, {
+      studyPlan: overview.acceptedStudyPlan,
+      agenda: overview.activeAgenda,
+    });
     const revision = safeRevision(workspaceId, {
       contract: contract
         ? { id: contract.id, version: contract.version, status: contract.status }
@@ -300,15 +405,34 @@ export function createCoursePreparationService({
         fingerprint: item.executionSourceManifestFingerprint,
       })),
       executionVersion: overview.courseExecutionVersion,
+      formalReadiness,
     });
+    const readinessAttempted = repos.operations
+      .listForWorkspace(workspaceId, OPERATION_TYPE, 200)
+      .some((operation) =>
+        repos.operations.listEvents(operation.id).some((event) => {
+          if (event.kind !== 'preparation_step_completed') return false;
+          if (typeof event.payload !== 'object' || event.payload === null) return false;
+          const payload = event.payload as { action?: unknown; revision?: unknown };
+          return payload.action === 'prepare_assessment_readiness' && payload.revision === revision;
+        }),
+      );
 
     const checkpoints: CoursePreparation['checkpoints'] = {
       materials: materialsCurrent ? 'complete' : 'pending',
       concepts: conceptsCurrent ? 'complete' : materialsCurrent ? 'pending' : 'blocked',
       courseStructure: planningCurriculum ? 'complete' : 'pending',
       coursePlan: proposedPlan || activeRouteCurrent ? 'complete' : 'pending',
+      assessmentReadiness:
+        formalReadiness.status === 'ready'
+          ? 'complete'
+          : activeRouteCurrent && readinessAttempted
+            ? 'blocked'
+            : activeRouteCurrent
+              ? 'pending'
+              : 'in_progress',
     };
-    const common = { workspaceId, revision, generatedAt, checkpoints };
+    const common = { workspaceId, revision, generatedAt, checkpoints, formalReadiness };
 
     if (!contract || contract.status === 'draft' || contract.status === 'proposed') {
       return {
@@ -378,6 +502,48 @@ export function createCoursePreparationService({
     }
 
     if (activeRouteCurrent && !overview.pendingContract) {
+      if (formalReadiness.status !== 'ready') {
+        if (readinessAttempted) {
+          return {
+            overview,
+            contract,
+            missingConceptMaterialIds,
+            proposedCurriculum,
+            planningCurriculum,
+            formalReadiness,
+            projection: {
+              ...common,
+              state: 'blocked',
+              machineAction: null,
+              learnerAction: 'none',
+              learnerDecisionRequired: false,
+              canResume: false,
+              checkpoints: { ...checkpoints, assessmentReadiness: 'blocked' },
+              blocker: {
+                code: 'formal_assessment_readiness_unavailable',
+                message:
+                  '部分必修目标目前没有可独立验证的正式评估依据；课程仍可教学，但不能宣称已具备完整掌握验证路径。',
+              },
+            },
+          };
+        }
+        return {
+          overview,
+          contract,
+          missingConceptMaterialIds,
+          proposedCurriculum,
+          planningCurriculum,
+          formalReadiness,
+          projection: projectionForAction(
+            workspaceId,
+            revision,
+            generatedAt,
+            'prepare_assessment_readiness',
+            { ...checkpoints, assessmentReadiness: 'in_progress' },
+            formalReadiness,
+          ),
+        };
+      }
       return {
         overview,
         contract,
@@ -780,6 +946,21 @@ export function createCoursePreparationService({
             },
           },
         );
+        return;
+      }
+      case 'prepare_assessment_readiness': {
+        for (const scope of contract.courseScope.materials) {
+          if (scope.disposition !== 'included') continue;
+          const revision = repos.materialRevisions.getActive(scope.materialId);
+          if (revision) {
+            sourceAuthority.ensureVerbatimAssessmentAuthority(
+              contract.workspaceId,
+              scope.materialId,
+              revision.id,
+            );
+          }
+        }
+        return;
       }
     }
   }
@@ -885,7 +1066,10 @@ export function createCoursePreparationService({
         commands.renew(claim, OPERATION_LEASE_MS);
         const after = projectFacts(parsed.command.workspaceId);
         assertAuthorityCurrent(parsed.command.workspaceId, expectedAuthorityFingerprint);
-        if (after.projection.revision === previousRevision) {
+        if (
+          after.projection.revision === previousRevision &&
+          action !== 'prepare_assessment_readiness'
+        ) {
           throw new AppError(
             ApiErrorCode.Internal,
             'Course Preparation made no durable progress and stopped safely.',

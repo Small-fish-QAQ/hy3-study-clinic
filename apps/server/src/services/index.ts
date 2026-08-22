@@ -195,6 +195,7 @@ export function createServices({
     analysis,
     curriculum,
     studyPlans: studyPlansAgent,
+    sourceAuthority,
   });
   const formalProgression = createFormalProgressionService({
     repos,

@@ -704,20 +704,36 @@ export function StudySessionView({
   const currentLearningUnit = curriculumUnits.find(
     (unit) => unit.id === currentAgendaItem?.learningUnitId,
   );
-  const directCheckpointItem = [
-    ...(currentAgendaItem ? [currentAgendaItem] : []),
-    ...detail.agenda.items.filter((item) => item.id !== currentAgendaItem?.id),
-  ].find(
-    (item) =>
-      (item.kind === 'formal_checkpoint' ||
-        item.kind === 'synthesis' ||
-        item.kind === 'due_review' ||
-        item.kind === 'targeted_repair') &&
-      item.state !== 'completed' &&
-      item.state !== 'deferred' &&
-      item.state !== 'cancelled' &&
-      item.launch.status === 'launchable',
-  );
+  const formalKinds = new Set(['formal_checkpoint', 'synthesis', 'due_review', 'targeted_repair']);
+  const availableFormalItems = detail.agenda.items
+    .filter(
+      (item) =>
+        formalKinds.has(item.kind) &&
+        item.state !== 'completed' &&
+        item.state !== 'deferred' &&
+        item.state !== 'cancelled' &&
+        item.launch.status === 'launchable',
+    )
+    .sort((left, right) => left.index - right.index);
+  // A completed Lesson hands off to the formal checkpoint for the same
+  // LearningUnit when one exists. Falling back to the next route checkpoint
+  // keeps the route usable for legacy agendas without inventing mastery credit.
+  const directCheckpointItem =
+    (currentAgendaItem &&
+    formalKinds.has(currentAgendaItem.kind) &&
+    currentAgendaItem.state !== 'completed' &&
+    currentAgendaItem.state !== 'deferred' &&
+    currentAgendaItem.state !== 'cancelled' &&
+    currentAgendaItem.launch.status === 'launchable'
+      ? currentAgendaItem
+      : undefined) ??
+    availableFormalItems.find(
+      (item) =>
+        currentAgendaItem?.learningUnitId !== null &&
+        currentAgendaItem?.learningUnitId !== undefined &&
+        item.learningUnitId === currentAgendaItem.learningUnitId,
+    ) ??
+    availableFormalItems[0];
   const active = session.status === 'active';
   const canPromoteCurrentDetour = Boolean(
     active &&

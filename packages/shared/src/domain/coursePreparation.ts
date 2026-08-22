@@ -8,6 +8,7 @@ export const CoursePreparationStateSchema = z.enum([
   'preparing_concepts',
   'preparing_course_structure',
   'validating_course_plan',
+  'preparing_assessment_readiness',
   'course_plan_ready',
   'awaiting_required_governance',
   'failed_recoverable',
@@ -21,6 +22,7 @@ export const CoursePreparationMachineActionSchema = z.enum([
   'prepare_course_structure',
   'accept_prepared_course_structure',
   'prepare_course_plan',
+  'prepare_assessment_readiness',
 ]);
 export type CoursePreparationMachineAction = z.infer<typeof CoursePreparationMachineActionSchema>;
 
@@ -51,6 +53,7 @@ export const CoursePreparationCheckpointsSchema = z
     concepts: CoursePreparationCheckpointStateSchema,
     courseStructure: CoursePreparationCheckpointStateSchema,
     coursePlan: CoursePreparationCheckpointStateSchema,
+    assessmentReadiness: CoursePreparationCheckpointStateSchema.optional(),
   })
   .strict();
 export type CoursePreparationCheckpoints = z.infer<typeof CoursePreparationCheckpointsSchema>;
@@ -61,6 +64,7 @@ export const CoursePreparationBlockerCodeSchema = z.enum([
   'material_not_ready',
   'course_structure_review_required',
   'course_structure_not_executable',
+  'formal_assessment_readiness_unavailable',
   'preparation_failed',
   'preparation_interrupted',
 ]);
@@ -83,6 +87,50 @@ export const CoursePreparationFailureSchema = z
   .strict();
 export type CoursePreparationFailure = z.infer<typeof CoursePreparationFailureSchema>;
 
+export const CourseFormalReadinessSchema = z
+  .object({
+    status: z.enum(['pending', 'ready', 'blocked']),
+    requiredObjectiveCount: z.number().int().nonnegative(),
+    readyObjectiveCount: z.number().int().nonnegative(),
+    unresolvedObjectiveIds: z.array(z.string().min(1)).max(200),
+    teachingOnlyObjectiveIds: z.array(z.string().min(1)).max(200),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.readyObjectiveCount > value.requiredObjectiveCount) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['readyObjectiveCount'],
+        message: 'ready objectives cannot exceed required objectives',
+      });
+    }
+    if (value.status === 'ready' && value.unresolvedObjectiveIds.length > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['unresolvedObjectiveIds'],
+        message: 'ready courses cannot retain unresolved objectives',
+      });
+    }
+    if (value.status === 'ready' && value.readyObjectiveCount !== value.requiredObjectiveCount) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['readyObjectiveCount'],
+        message: 'ready courses require every required objective to be ready',
+      });
+    }
+    if (
+      value.readyObjectiveCount + value.unresolvedObjectiveIds.length !==
+      value.requiredObjectiveCount
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['requiredObjectiveCount'],
+        message: 'readiness counts must partition required objectives',
+      });
+    }
+  });
+export type CourseFormalReadiness = z.infer<typeof CourseFormalReadinessSchema>;
+
 /** Learner-safe, read-only projection over current Course authority and durable operations. */
 export const CoursePreparationSchema = z
   .object({
@@ -96,6 +144,7 @@ export const CoursePreparationSchema = z
     canResume: z.boolean(),
     canCancel: z.boolean(),
     checkpoints: CoursePreparationCheckpointsSchema,
+    formalReadiness: CourseFormalReadinessSchema.optional(),
     blocker: CoursePreparationBlockerSchema.nullable(),
     failure: CoursePreparationFailureSchema.nullable(),
     generatedAt: z.string().datetime(),
@@ -136,6 +185,7 @@ export const CoursePreparationSchema = z
           'preparing_concepts',
           'preparing_course_structure',
           'validating_course_plan',
+          'preparing_assessment_readiness',
         ].includes(preparation.state))
     ) {
       ctx.addIssue({

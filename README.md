@@ -171,6 +171,12 @@ Removing a material from the active course normally retires its stable logical i
 
 For one accepted, executable `teach_unit` item, the internal preparation service checks route ownership and source-manifest freshness, selects bounded mapped evidence plus Concept grounding and local neighbors, and either reuses an identical immutable Brief or performs one provider generation. A normal structured generation is one physical request; schema or semantic repair is limited to one additional request. Timeout, transport failure, and cancellation are not retried. Source references remain learner-visible-ready provenance records, while AI synthesis, examples, contrasts, and misconception candidates retain advisory labels. Informal checks and formal opportunity markers do not create Evidence or learner-state writes. A route or source change leaves the old Brief in history and prevents it from being reused as current.
 
+### Course readiness and formal-assessment handoff (Phase 12B7A)
+
+For a systematic-mastery goal, `Course Preparation` is complete only when the current accepted source state, coherent Curriculum, runnable StudyPlan/Agenda, and every required objective's formal path are current. Formal readiness requires independently validated, version-bound source authority tied to the objective's current Curriculum references and an accepted, launchable `formal_checkpoint` route item. Teaching Briefs and Tutor output remain instructional and cannot self-authorize a premise. Unsupported or stale objectives remain unresolved and fail closed with a system-recovery state rather than being presented as a learner task.
+
+Preparation advances ordinary bounded server checkpoints automatically in the web client and stops only for cancellation, provider/recoverable failure, stale authority, or learner governance. Home exposes semantic stages such as source reading, concept/structure work, formal-readiness checks, and plan validation; it does not expose internal readiness diagnostics as learner attention items while the system is still working. After a Lesson, Study deterministically selects the current matching formal checkpoint when launchable, explains a pending or unverifiable limitation otherwise, and never creates Formal Evidence or mastery from presentation completion.
+
 ### Adaptive pace and learner-governed feasibility
 
 The accepted Curriculum remains complete when a target date is tight. New

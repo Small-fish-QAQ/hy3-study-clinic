@@ -783,7 +783,9 @@ export function LessonExecutionPanel({
               开始正式检验
             </button>
           ) : (
-            <p className="small muted">当前安排还没有可直接进入的正式检验入口。</p>
+            <p className="small muted">
+              当前目标还没有可用的正式检验入口。讲解完成不会自动生成正式证据；课程会保留这一限制，直到有可验证的来源依据和正式路线。
+            </p>
           )}
         </section>
       ) : null}

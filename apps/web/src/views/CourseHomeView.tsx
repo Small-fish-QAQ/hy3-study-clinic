@@ -28,6 +28,7 @@ const PREPARATION_TEXT: Record<CoursePreparation['state'], string> = {
   preparing_concepts: '正在理解课程资料的核心内容',
   preparing_course_structure: '正在设计课程结构',
   validating_course_plan: '正在检查课程方案是否可以执行',
+  preparing_assessment_readiness: '正在检查正式检验依据',
   course_plan_ready: '课程方案等待你的确认',
   awaiting_required_governance: '课程准备需要你的决定',
   failed_recoverable: '课程准备暂时中断',
@@ -43,6 +44,7 @@ const CHECKPOINT_TEXT: Array<{
   { key: 'concepts', label: '核心内容已准备' },
   { key: 'courseStructure', label: '课程结构已完成' },
   { key: 'coursePlan', label: '课程方案已检查' },
+  { key: 'assessmentReadiness', label: '正式检验依据已检查' },
 ];
 
 const FEASIBILITY_TEXT: Record<
@@ -216,7 +218,8 @@ export function CourseHomeView({
       risk.status !== 'rejected' &&
       (risk.category === 'intentional_deferral' ||
         risk.category === 'execution_blocker' ||
-        risk.category === 'readiness_gap' ||
+        (risk.category === 'readiness_gap' &&
+          (preparation === null || preparation.state === 'complete')) ||
         risk.severity === 'critical' ||
         risk.severity === 'high'),
   );
@@ -421,7 +424,7 @@ export function CourseHomeView({
             </div>
             <ol>
               {CHECKPOINT_TEXT.map(({ key, label }) => {
-                const state = preparation.checkpoints[key];
+                const state = preparation.checkpoints[key] ?? 'pending';
                 const mark =
                   state === 'complete'
                     ? '✓'
