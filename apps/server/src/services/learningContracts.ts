@@ -7,6 +7,7 @@ import {
   UpdateLearningContractDraftRequestSchema,
   type CreateLearningContractDraftRequest,
   type LearningContract,
+  type LearningContractDraftFields,
   type LearningContractDetailResponse,
   type LearningContractHistoryResponse,
   type TransitionLearningContractRequest,
@@ -33,6 +34,18 @@ function ensureDistinctScope(contract: LearningContract): void {
       'A Material may appear only once in Contract scope.',
     );
   }
+}
+
+/** New learner input defaults to advisory planning semantics. */
+function normalizePlanningFields(fields: LearningContractDraftFields): LearningContractDraftFields {
+  return {
+    ...fields,
+    deadline: fields.deadline ? { ...fields.deadline, hard: fields.deadline.hard ?? false } : null,
+    studyBudget: {
+      ...fields.studyBudget,
+      availabilityPolicy: fields.studyBudget.availabilityPolicy ?? 'estimate',
+    },
+  };
 }
 
 export function createLearningContractService({
@@ -124,7 +137,7 @@ export function createLearningContractService({
             workspaceId: parsed.command.workspaceId,
             version: (latest?.version ?? 0) + 1,
             predecessorId: parsed.predecessorContractId,
-            ...parsed.fields,
+            ...normalizePlanningFields(parsed.fields),
             status: 'draft',
             proposedBy: parsed.command.actor,
             learnerConfirmedAt: null,
@@ -174,7 +187,7 @@ export function createLearningContractService({
             id: newId('contract'),
             version: current.version + 1,
             predecessorId: current.id,
-            ...parsed.fields,
+            ...normalizePlanningFields(parsed.fields),
             proposedBy: parsed.command.actor,
             createdAt: now,
           };

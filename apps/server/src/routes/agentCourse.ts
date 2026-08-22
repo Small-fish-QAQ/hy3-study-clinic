@@ -10,6 +10,8 @@ import {
   MaterialRoleAssignmentResponseSchema,
   ProposeMaterialRoleRequestSchema,
   ProposeStudyPlanRequestSchema,
+  PaceEstimateResponseSchema,
+  RecordPaceObservationRequestSchema,
   RejectCurriculumRequestSchema,
   RunCoursePreparationRequestSchema,
   TransitionLearningContractRequestSchema,
@@ -23,6 +25,9 @@ const WorkspaceParams = z.object({ id: z.string().min(1) });
 const ContractParams = z.object({ id: z.string().min(1), contractId: z.string().min(1) });
 const CurriculumParams = z.object({ id: z.string().min(1), curriculumId: z.string().min(1) });
 const PlanParams = z.object({ id: z.string().min(1), planId: z.string().min(1) });
+const PaceQuery = z.object({
+  remainingEstimatedMinutes: z.coerce.number().int().nonnegative().nullable().optional(),
+});
 const RoleParams = z.object({ id: z.string().min(1), docId: z.string().min(1) });
 const RoleConfirmParams = z.object({
   id: z.string().min(1),
@@ -199,6 +204,26 @@ export function registerAgentCourseRoutes(app: FastifyInstance, services: Servic
   app.get('/api/workspaces/:id/study-plans/:planId', async (request) => {
     const params = PlanParams.parse(request.params);
     return { studyPlan: services.studyPlansAgent.get(params.id, params.planId) };
+  });
+
+  app.get('/api/workspaces/:id/study-plans/:planId/pace', async (request) => {
+    const params = PlanParams.parse(request.params);
+    const query = PaceQuery.parse(request.query);
+    return PaceEstimateResponseSchema.parse(
+      services.adaptivePace.response(
+        params.id,
+        params.planId,
+        query.remainingEstimatedMinutes ?? null,
+      ),
+    );
+  });
+
+  app.post('/api/workspaces/:id/study-plans/:planId/pace-observations', async (request) => {
+    const params = PlanParams.parse(request.params);
+    const body = RecordPaceObservationRequestSchema.parse(request.body);
+    assertWorkspace(body, params.id);
+    if (body.studyPlanId !== params.planId) throw new z.ZodError([]);
+    return { observation: services.adaptivePace.recordRequest(body) };
   });
 
   app.post('/api/workspaces/:id/study-plans/proposals', async (request, reply) => {

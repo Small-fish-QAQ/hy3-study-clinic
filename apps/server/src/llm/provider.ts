@@ -742,11 +742,12 @@ export interface CurriculumDetailProposalInput {
 }
 
 export interface StudyPlanContractContext extends CurriculumContractContext {
-  deadline: { at: string; timeZone: string } | null;
+  deadline: { at: string; timeZone: string; hard?: boolean } | null;
   studyBudget: {
     minutesPerDay: number | null;
     minutesPerWeek: number | null;
     preferredSessionMinutes: number | null;
+    availabilityPolicy?: 'estimate' | 'hard_cap';
   };
   allowExplicitDeferral: boolean;
 }
@@ -756,7 +757,13 @@ export interface StudyPlanCurriculumUnit {
   id: string;
   title: string;
   objectiveIds: string[];
-  objectiveSummaries: Array<{ id: string; title: string; description: string }>;
+  objectiveSummaries: Array<{
+    id: string;
+    title: string;
+    description: string;
+    priority?: 'required' | 'high' | 'normal' | 'optional';
+    priorityRationale?: string;
+  }>;
   prerequisiteUnitIds: string[];
   /** Only these objectives may be offered blocking formal requirements locally. */
   blockingEligibleObjectiveIds: string[];

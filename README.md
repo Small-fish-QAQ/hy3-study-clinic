@@ -171,6 +171,26 @@ Removing a material from the active course normally retires its stable logical i
 
 For one accepted, executable `teach_unit` item, the internal preparation service checks route ownership and source-manifest freshness, selects bounded mapped evidence plus Concept grounding and local neighbors, and either reuses an identical immutable Brief or performs one provider generation. A normal structured generation is one physical request; schema or semantic repair is limited to one additional request. Timeout, transport failure, and cancellation are not retried. Source references remain learner-visible-ready provenance records, while AI synthesis, examples, contrasts, and misconception candidates retain advisory labels. Informal checks and formal opportunity markers do not create Evidence or learner-state writes. A route or source change leaves the old Brief in history and prevents it from being reused as current.
 
+### Adaptive pace and learner-governed feasibility
+
+The accepted Curriculum remains complete when a target date is tight. New
+Contracts treat daily/weekly minutes as an `estimate` by default and preferred
+session length as a shaping preference. A learner can explicitly set
+`availabilityPolicy: hard_cap` and/or mark a deadline hard; only those choices
+can block acceptance of an over-cap route. Soft deficits persist as an
+`at_risk` warning with deterministic projected effort, capacity, slack,
+confidence, assumptions, and bounded recommendations. Recommendations remain
+proposals until the learner accepts, rejects, keeps the current route, or asks
+for another strategy.
+
+PaceBaseline starts with unknown confidence. Append-only observations use
+explicit active StudySession, formal-attempt, Repair, or Review time and never
+browser idle time. A bounded effort multiplier updates remaining-work estimates
+only after enough evidence; ordinary Agenda adaptation does not create a
+StudyPlan version. Historical Contracts without the policy field retain their
+legacy hard-cap interpretation, while newly saved Contracts are explicit soft
+estimates.
+
 ### Curriculum-to-StudyPlan execution contract
 
 Hy3 may select exact evidence and existing semantic relationships for a LearningUnit, but it does not create persistent Concept authority by returning an ID. During Curriculum materialization, the server can attach a current source Concept only when the LearningUnit selected the exact offered `(MaterialRevision, SourceBlock, quote span)` identity already used by that Concept, or when Hy3 selected an offered canonical Concept whose accepted membership contains that current source Concept. Canonical bindings are then derived from accepted memberships of the materialized source Concepts. Unknown IDs, stale groundings, memberships outside the operation snapshot, and merely similar titles or quotations fail closed; exact quotation validation proves location, not semantic entailment.

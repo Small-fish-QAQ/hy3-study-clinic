@@ -3,6 +3,15 @@ import type { LearningContract, LearningContractFeasibility } from '@hy3-clinic/
 const DAY_MS = 24 * 60 * 60 * 1000;
 const POLICY_VERSION = 'contract-feasibility-v1';
 
+/** Missing policy is the compatibility interpretation for historical records. */
+export function isHardAvailability(contract: LearningContract): boolean {
+  return contract.studyBudget.availabilityPolicy !== 'estimate';
+}
+
+export function isHardDeadline(contract: LearningContract): boolean {
+  return contract.deadline?.hard === true;
+}
+
 function availableMinutesPerDay(contract: LearningContract): number | null {
   const daily = contract.studyBudget.minutesPerDay;
   const weekly = contract.studyBudget.minutesPerWeek;
@@ -51,8 +60,9 @@ export function computeContractFeasibility(
   const deadlineMs = Date.parse(deadlineAt);
   const nowMs = now.getTime();
   if (deadlineMs <= nowMs) {
+    const elapsedIsHard = isHardAvailability(contract) || isHardDeadline(contract);
     return {
-      state: projectedMinutes === 0 ? 'at_risk' : 'infeasible',
+      state: projectedMinutes === 0 ? 'at_risk' : elapsedIsHard ? 'infeasible' : 'at_risk',
       deadlineAt,
       availableMinutes: 0,
       projectedMinutes,
@@ -90,7 +100,10 @@ export function computeContractFeasibility(
   const availableMinutes = Math.max(0, Math.floor((horizonDays - unavailableDays) * perDay));
   const assumptions = [
     'Capacity is prorated uniformly across the time remaining before the deadline.',
-    'When daily and weekly limits are both present, the stricter average limit applies.',
+    'When daily and weekly values are both present, the stricter average is shown for planning.',
+    isHardAvailability(contract)
+      ? 'The learner marked availability as a hard cap.'
+      : 'Daily and weekly values are estimates/preferences, not an automatic scope cap.',
   ];
   const reasonCodes: LearningContractFeasibility['reasonCodes'] = [];
   if (unavailableDays > 0) {
@@ -119,10 +132,21 @@ export function computeContractFeasibility(
   if (slackMinutes < 0) reasonCodes.push('insufficient_time');
   else if (slackMinutes < lowSlackThreshold) reasonCodes.push('low_slack');
   else reasonCodes.push('sufficient_slack');
+  reasonCodes.push(
+    isHardAvailability(contract) ? 'hard_availability_cap' : 'soft_availability_estimate',
+  );
+
+  const deficitIsHard = isHardAvailability(contract) || isHardDeadline(contract);
 
   return {
     state:
-      slackMinutes < 0 ? 'infeasible' : slackMinutes < lowSlackThreshold ? 'at_risk' : 'feasible',
+      slackMinutes < 0
+        ? deficitIsHard
+          ? 'infeasible'
+          : 'at_risk'
+        : slackMinutes < lowSlackThreshold
+          ? 'at_risk'
+          : 'feasible',
     deadlineAt,
     availableMinutes,
     projectedMinutes,

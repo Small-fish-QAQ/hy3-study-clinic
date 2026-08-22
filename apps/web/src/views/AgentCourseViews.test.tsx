@@ -1016,6 +1016,54 @@ describe('CourseHomeView action and authority rendering', () => {
 });
 
 describe('StudyPlanPanel decisions', () => {
+  it('shows feasibility recommendations as learner choices without changing the route', () => {
+    const proposed = plan('proposed');
+    proposed.feasibility = {
+      projectedMinutes: 300,
+      availableMinutes: 120,
+      slackMinutes: -180,
+      state: 'at_risk',
+      assumptions: ['Daily time is an estimate.'],
+    };
+    proposed.recommendations = [
+      {
+        kind: 'keep_full_scope',
+        rationale: 'Keep all accepted topics.',
+        affectedCurriculumLearningUnitIds: [],
+        projectedMinutes: 300,
+        learnerDecision: 'pending',
+      },
+      {
+        kind: 'defer_optional_content',
+        rationale: 'Only optional content is eligible.',
+        affectedCurriculumLearningUnitIds: ['unit_2'],
+        projectedMinutes: 120,
+        learnerDecision: 'pending',
+      },
+    ];
+    render(
+      <StudyPlanPanel
+        plan={proposed}
+        history={[]}
+        canEdit={false}
+        canAccept
+        busyAction={null}
+        launchByPlanItemId={{}}
+        onEdit={vi.fn()}
+        onAccept={vi.fn()}
+        onReject={vi.fn()}
+        onLaunchItem={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('region', { name: '可选策略' })).toHaveTextContent(
+      '保留完整范围，接受日期风险',
+    );
+    expect(screen.getByRole('region', { name: '可选策略' })).toHaveTextContent(
+      '仅延期可选/补充内容',
+    );
+    expect(screen.getByText('当前路线不会因时间估算自动删减内容。')).toBeInTheDocument();
+  });
+
   it('exposes learner acceptance and rejection callbacks for a proposed Plan', async () => {
     const onAccept = vi.fn();
     const onReject = vi.fn();

@@ -55,6 +55,9 @@ export const CurriculumObjectiveSchema = z
     description: z.string().min(1).max(1000),
     truthPremiseStatus: TruthPremiseStatusSchema,
     truthAuthorityRecordIds: z.array(z.string().min(1)).max(20),
+    /** Goal-specific emphasis; Curriculum truth remains unchanged. */
+    priority: z.enum(['required', 'high', 'normal', 'optional']).optional(),
+    priorityRationale: z.string().min(1).max(500).optional(),
   })
   .strict()
   .superRefine((objective, ctx) => {

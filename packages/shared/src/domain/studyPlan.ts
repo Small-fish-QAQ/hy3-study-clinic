@@ -65,6 +65,8 @@ export const StudyPlanItemSchema = z
     prerequisitePlanItemIds: z.array(z.string().min(1)).max(30),
     completionPolicy: CompletionPolicyReferenceSchema.nullable(),
     completionRequirements: z.array(PlanCompletionRequirementSchema).max(30),
+    priority: z.enum(['required', 'high', 'normal', 'optional']).optional(),
+    priorityRationale: z.string().min(1).max(500).optional(),
   })
   .strict();
 export type StudyPlanItem = z.infer<typeof StudyPlanItemSchema>;
@@ -90,6 +92,25 @@ export const StudyPlanFeasibilitySchema = z
   .strict();
 export type StudyPlanFeasibility = z.infer<typeof StudyPlanFeasibilitySchema>;
 
+/** A bounded, learner-governed alternative. Recommendations never mutate the route. */
+export const StudyPlanRecommendationSchema = z
+  .object({
+    kind: z.enum([
+      'keep_full_scope',
+      'increase_study_effort',
+      'reduce_teaching_depth',
+      'defer_optional_content',
+      'narrow_learner_scope',
+      'change_deadline',
+    ]),
+    rationale: z.string().min(1).max(1000),
+    affectedCurriculumLearningUnitIds: z.array(z.string().min(1)).max(500),
+    projectedMinutes: z.number().int().nonnegative().nullable(),
+    learnerDecision: z.enum(['pending', 'accepted', 'rejected', 'keep_current']).default('pending'),
+  })
+  .strict();
+export type StudyPlanRecommendation = z.infer<typeof StudyPlanRecommendationSchema>;
+
 export const PaceBaselineSchema = z
   .object({
     id: z.string().min(1),
@@ -101,6 +122,13 @@ export const PaceBaselineSchema = z
     explicitSlackMinutes: z.number().int().nonnegative(),
     estimateConfidence: z.enum(['low', 'medium', 'high']),
     estimateSource: z.enum(['local', 'learner', 'model_assisted']),
+    /** Bounded comparison of measured active study time to the original estimate. */
+    paceAdjustment: z.number().min(0.5).max(2).optional(),
+    paceConfidence: z.enum(['unknown', 'low', 'medium', 'high']).optional(),
+    measuredObservationCount: z.number().int().nonnegative().optional(),
+    measuredActualMinutes: z.number().int().nonnegative().optional(),
+    measuredPlannedMinutes: z.number().int().nonnegative().optional(),
+    remainingProjectedMinutes: z.number().int().nonnegative().nullable().optional(),
     milestones: z
       .array(
         z
@@ -156,6 +184,7 @@ export const StudyPlanSchema = z
     items: z.array(StudyPlanItemSchema).min(1).max(1000),
     deferrals: z.array(StudyPlanDeferralSchema).max(500),
     feasibility: StudyPlanFeasibilitySchema,
+    recommendations: z.array(StudyPlanRecommendationSchema).max(20).optional(),
     paceBaseline: PaceBaselineSchema.nullable(),
     diff: z.array(StudyPlanDiffOperationSchema).max(2000),
     provider: z.string().min(1).max(40),

@@ -126,9 +126,11 @@ interface ContractFormState {
   targetDescription: string;
   targetScore: string;
   deadlineLocal: string;
+  deadlineHard: boolean;
   minutesPerDay: string;
   minutesPerWeek: string;
   preferredSessionMinutes: string;
+  availabilityPolicy: 'estimate' | 'hard_cap';
   desiredDepth: DesiredDepth;
   subjectBoundaries: string;
   includedTopics: string;
@@ -218,9 +220,13 @@ function initialForm(contract: LearningContract | null): ContractFormState {
     targetDescription: contract?.targetOutcome.description ?? '',
     targetScore: contract?.targetOutcome.targetScore?.toString() ?? '',
     deadlineLocal: contract?.deadline?.at ? contract.deadline.at.slice(0, 16) : '',
+    // Historical Contracts had hard-cap arithmetic; show that meaning until
+    // the learner explicitly saves a new soft-estimate Contract.
+    deadlineHard: contract?.deadline ? (contract.deadline.hard ?? true) : false,
     minutesPerDay: contract?.studyBudget.minutesPerDay?.toString() ?? '',
     minutesPerWeek: contract?.studyBudget.minutesPerWeek?.toString() ?? '',
     preferredSessionMinutes: contract?.studyBudget.preferredSessionMinutes?.toString() ?? '',
+    availabilityPolicy: contract?.studyBudget.availabilityPolicy ?? 'hard_cap',
     desiredDepth: contract?.desiredDepth ?? 'working_fluency',
     subjectBoundaries: contract?.courseScope.subjectBoundaries.join(', ') ?? '',
     includedTopics: contract?.courseScope.includedTopics.join(', ') ?? '',
@@ -831,9 +837,6 @@ export function AgentCourseWorkspace({
   function contractFields(scopes: ContractCourseScope['materials']): LearningContractDraftFields {
     const minutesPerDay = optionalPositiveInt(contractForm.minutesPerDay);
     const minutesPerWeek = optionalPositiveInt(contractForm.minutesPerWeek);
-    if (minutesPerDay === null && minutesPerWeek === null) {
-      throw new Error('请填写每天或每周至少一项可用学习时间。');
-    }
     const subjectBoundaries = list(contractForm.subjectBoundaries);
     if (subjectBoundaries.length === 0) throw new Error('请填写课程主题范围。');
     const deadlineAt = contractForm.deadlineLocal
@@ -851,6 +854,7 @@ export function AgentCourseWorkspace({
         ? {
             at: deadlineAt,
             timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+            hard: contractForm.deadlineHard,
           }
         : null,
       studyBudget: {
@@ -858,6 +862,7 @@ export function AgentCourseWorkspace({
         minutesPerWeek,
         preferredSessionMinutes: optionalPositiveInt(contractForm.preferredSessionMinutes),
         unavailablePeriods: [],
+        availabilityPolicy: contractForm.availabilityPolicy,
       },
       desiredDepth: contractForm.desiredDepth,
       courseScope: {
@@ -1802,6 +1807,14 @@ function ContractEditor({
                 onChange={(event) => change('targetScore', event.target.value)}
               />
             </label>
+            <label className="checkbox-row span-2">
+              <input
+                type="checkbox"
+                checked={form.deadlineHard}
+                onChange={(event) => change('deadlineHard', event.target.checked)}
+              />
+              必须在此日期前完成（否则只是目标日期）
+            </label>
           </div>
         </fieldset>
 
@@ -1811,7 +1824,7 @@ function ContractEditor({
             你能投入多少时间？
           </legend>
           <p className="contract-question-hint">
-            每天或每周至少填写一项；单次时长帮助安排可完成的学习活动。
+            可填写大致投入时间，也可以暂时留空；单次时长帮助安排可完成的学习活动。
           </p>
           <div className="contract-grid contract-grid-budget">
             <label>
@@ -1843,6 +1856,18 @@ function ContractEditor({
                 placeholder="例如：30"
                 onChange={(event) => change('preferredSessionMinutes', event.target.value)}
               />
+            </label>
+            <label>
+              时间含义
+              <select
+                value={form.availabilityPolicy}
+                onChange={(event) =>
+                  change('availabilityPolicy', event.target.value as 'estimate' | 'hard_cap')
+                }
+              >
+                <option value="estimate">大致可投入时间（建议）</option>
+                <option value="hard_cap">明确上限，不能超过</option>
+              </select>
             </label>
           </div>
         </fieldset>

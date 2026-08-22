@@ -2602,6 +2602,32 @@ const MIGRATIONS: Migration[] = [
         BEGIN SELECT RAISE(ABORT, 'Mastery Red Team evaluations are append-only'); END;
     `,
   },
+  {
+    version: 34,
+    name: 'adaptive_pace_observations',
+    // Active-time observations are append-only planning evidence. They are
+    // deliberately separate from mastery and formal progression authority.
+    up: `
+      CREATE TABLE pace_observations (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        study_plan_id TEXT NOT NULL REFERENCES study_plan_versions(id) ON DELETE CASCADE,
+        plan_item_id TEXT NOT NULL,
+        planned_minutes REAL NOT NULL CHECK (planned_minutes > 0),
+        actual_minutes REAL NOT NULL CHECK (actual_minutes > 0),
+        source TEXT NOT NULL CHECK (source IN ('study_session', 'formal_attempt', 'repair', 'review')),
+        measured_at TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        UNIQUE (study_plan_id, plan_item_id, source, measured_at),
+        FOREIGN KEY (study_plan_id, plan_item_id)
+          REFERENCES study_plan_items(plan_id, plan_item_id) ON DELETE CASCADE
+      );
+      CREATE INDEX idx_pace_observations_plan ON pace_observations(study_plan_id, measured_at);
+      CREATE TRIGGER prevent_pace_observation_update
+        BEFORE UPDATE ON pace_observations
+        BEGIN SELECT RAISE(ABORT, 'Pace observations are append-only'); END;
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

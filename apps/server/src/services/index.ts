@@ -69,6 +69,7 @@ import {
 } from './learnerAssessments.js';
 import { createMasteryRedTeamService, type MasteryRedTeamService } from './masteryRedTeam.js';
 import { createKnowledgeMapService, type KnowledgeMapService } from './knowledgeMap.js';
+import { createAdaptivePaceService, type AdaptivePaceService } from './adaptivePace.js';
 
 export interface Services {
   materials: MaterialService;
@@ -112,6 +113,7 @@ export interface Services {
   learnerAssessments: LearnerAssessmentsService;
   masteryRedTeam: MasteryRedTeamService;
   knowledgeMap: KnowledgeMapService;
+  adaptivePace: AdaptivePaceService;
 }
 
 export interface ServiceDeps {
@@ -252,6 +254,7 @@ export function createServices({
     learnerAssessments,
   });
   const knowledgeMap = createKnowledgeMapService({ repos, graph, clock });
+  const adaptivePace = createAdaptivePaceService({ repos, clock });
   const studySessions = createStudySessionService({
     repos,
     provider,
@@ -302,5 +305,6 @@ export function createServices({
     learnerAssessments,
     masteryRedTeam,
     knowledgeMap,
+    adaptivePace,
   };
 }

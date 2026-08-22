@@ -83,6 +83,25 @@ describe('computeContractFeasibility', () => {
     expect(result.reasonCodes).toEqual(['deadline_absent']);
   });
 
+  it('allows an intentionally unspecified time estimate without fake precision', () => {
+    const result = computeContractFeasibility(
+      contract({
+        deadline: { at: '2026-08-17T00:00:00.000Z', timeZone: 'Asia/Shanghai', hard: false },
+        studyBudget: {
+          minutesPerDay: null,
+          minutesPerWeek: null,
+          preferredSessionMinutes: null,
+          unavailablePeriods: [],
+          availabilityPolicy: 'estimate',
+        },
+      }),
+      300,
+      NOW,
+    );
+    expect(result.state).toBe('unknown');
+    expect(result.reasonCodes).toEqual(['budget_unknown']);
+  });
+
   it('marks an elapsed deadline without pretending time remains', () => {
     const result = computeContractFeasibility(
       contract({ deadline: { at: '2026-08-09T00:00:00.000Z', timeZone: 'Asia/Shanghai' } }),
@@ -93,5 +112,60 @@ describe('computeContractFeasibility', () => {
     expect(result.availableMinutes).toBe(0);
     expect(result.slackMinutes).toBe(-120);
     expect(result.reasonCodes).toEqual(['deadline_elapsed']);
+  });
+
+  it('treats fresh daily availability as a soft estimate and warns without shrinking scope', () => {
+    const result = computeContractFeasibility(
+      contract({
+        studyBudget: {
+          minutesPerDay: 30,
+          minutesPerWeek: null,
+          preferredSessionMinutes: 30,
+          unavailablePeriods: [],
+          availabilityPolicy: 'estimate',
+        },
+      }),
+      900,
+      NOW,
+    );
+    expect(result.state).toBe('at_risk');
+    expect(result.reasonCodes).toContain('soft_availability_estimate');
+    expect(result.slackMinutes).toBeLessThan(0);
+  });
+
+  it('keeps an explicitly hard availability cap infeasible', () => {
+    const result = computeContractFeasibility(
+      contract({
+        studyBudget: {
+          minutesPerDay: 30,
+          minutesPerWeek: null,
+          preferredSessionMinutes: 30,
+          unavailablePeriods: [],
+          availabilityPolicy: 'hard_cap',
+        },
+      }),
+      900,
+      NOW,
+    );
+    expect(result.state).toBe('infeasible');
+    expect(result.reasonCodes).toContain('hard_availability_cap');
+  });
+
+  it('keeps an elapsed soft target advisory rather than treating it as a hard stop', () => {
+    const result = computeContractFeasibility(
+      contract({
+        deadline: { at: '2026-08-09T00:00:00.000Z', timeZone: 'Asia/Shanghai', hard: false },
+        studyBudget: {
+          minutesPerDay: 30,
+          minutesPerWeek: null,
+          preferredSessionMinutes: 30,
+          unavailablePeriods: [],
+          availabilityPolicy: 'estimate',
+        },
+      }),
+      120,
+      NOW,
+    );
+    expect(result.state).toBe('at_risk');
   });
 });

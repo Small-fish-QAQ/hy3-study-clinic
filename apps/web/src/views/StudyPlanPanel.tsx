@@ -33,6 +33,15 @@ const FEASIBILITY_TEXT: Record<string, string> = {
   unknown: '等待估算',
 };
 
+const RECOMMENDATION_TEXT: Record<string, string> = {
+  keep_full_scope: '保留完整范围，接受日期风险',
+  increase_study_effort: '增加预计投入或学习频率',
+  reduce_teaching_depth: '减少讲解与练习深度，但保留核心范围',
+  defer_optional_content: '仅延期可选/补充内容',
+  narrow_learner_scope: '由你明确缩小学习范围',
+  change_deadline: '调整目标日期',
+};
+
 const DEPTH_TEXT: Record<string, string> = {
   pass_oriented: '通过评估',
   working_fluency: '熟练运用',
@@ -99,6 +108,21 @@ export function StudyPlanPanel({
             ))}
           </ul>
         </details>
+      ) : null}
+
+      {plan.recommendations && plan.recommendations.length > 0 ? (
+        <div role="region" aria-label="可选策略">
+          <h4>可选策略（需要你的决定）</h4>
+          {plan.recommendations.map((recommendation) => (
+            <p key={recommendation.kind} className="small">
+              <span className="pill">
+                {RECOMMENDATION_TEXT[recommendation.kind] ?? recommendation.kind}
+              </span>{' '}
+              {recommendation.rationale}
+            </p>
+          ))}
+          <p className="small muted">当前路线不会因时间估算自动删减内容。</p>
+        </div>
       ) : null}
 
       <ol className="plan-steps">

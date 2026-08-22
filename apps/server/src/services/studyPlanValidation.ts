@@ -33,6 +33,16 @@ export const STUDY_PLAN_COMPLETION_POLICY_ID = 'learning-unit-completion';
 export const STUDY_PLAN_COMPLETION_POLICY_VERSION = 1;
 export const PACE_BASELINE_POLICY_VERSION = 'pace-baseline-v1';
 
+function contractAllowsDeferral(contract: LearningContract): boolean {
+  // Soft availability is advisory: a provider must not turn an estimate into
+  // an autonomous scope reduction. Historical records without the field keep
+  // their legacy hard-cap interpretation.
+  return (
+    (contract.riskTolerance?.allowExplicitDeferral ?? false) &&
+    contract.studyBudget.availabilityPolicy !== 'estimate'
+  );
+}
+
 export interface UnitLaunchProfile {
   curriculumLearningUnitId: string;
   conceptIds: string[];
@@ -475,6 +485,26 @@ function completionRequirements(
   });
 }
 
+function objectivePriority(
+  curriculum: Curriculum,
+  objectiveIds: string[],
+): { priority?: StudyPlanItem['priority']; rationale?: string } {
+  const priorities = new Map(
+    ['optional', 'normal', 'high', 'required'].map((value, index) => [value, index]),
+  );
+  const objectives = objectiveMap(curriculum);
+  const selected = objectiveIds
+    .map((id) => objectives.get(id)?.objective)
+    .filter((objective): objective is NonNullable<typeof objective> => Boolean(objective));
+  const best = selected
+    .map((objective) => objective.priority)
+    .filter((priority): priority is NonNullable<typeof priority> => Boolean(priority))
+    .sort((left, right) => priorities.get(right)! - priorities.get(left)!)[0];
+  if (!best) return {};
+  const rationale = selected.find((objective) => objective.priority === best)?.priorityRationale;
+  return { priority: best, ...(rationale ? { rationale } : {}) };
+}
+
 export function validateAndMaterializeStudyPlanProposal(input: {
   repos: Repositories;
   clock: Clock;
@@ -511,7 +541,7 @@ export function validateAndMaterializeStudyPlanProposal(input: {
       curriculumLearningUnitId: profile.curriculumLearningUnitId,
       allowedItemKinds: profile.allowedItemKinds,
     })),
-    allowExplicitDeferral: contract.riskTolerance?.allowExplicitDeferral ?? false,
+    allowExplicitDeferral: contractAllowsDeferral(contract),
   };
   errors.push(...validateDetailedStudyPlanProposal(proposal, providerScope));
   const itemIdByKey = new Map(proposal.items.map((item) => [item.key, newId('plan_item')]));
@@ -551,6 +581,7 @@ export function validateAndMaterializeStudyPlanProposal(input: {
         planned.set(unit.id, set);
       }
     }
+    const emphasis = objectivePriority(curriculum, item.objectiveIds);
     return {
       id: itemIdByKey.get(item.key)!,
       index,
@@ -567,6 +598,8 @@ export function validateAndMaterializeStudyPlanProposal(input: {
           ? { id: STUDY_PLAN_COMPLETION_POLICY_ID, version: STUDY_PLAN_COMPLETION_POLICY_VERSION }
           : null,
       completionRequirements: completionRequirements(curriculum, item),
+      ...(emphasis.priority ? { priority: emphasis.priority } : {}),
+      ...(emphasis.rationale ? { priorityRationale: emphasis.rationale } : {}),
     };
   });
 
@@ -579,7 +612,7 @@ export function validateAndMaterializeStudyPlanProposal(input: {
       errors.push(`Deferral references unknown LearningUnit: ${deferral.curriculumLearningUnitId}`);
       continue;
     }
-    if (!contract.riskTolerance?.allowExplicitDeferral) {
+    if (!contractAllowsDeferral(contract)) {
       errors.push(`Contract policy does not allow deferring ${unit.title}.`);
       continue;
     }

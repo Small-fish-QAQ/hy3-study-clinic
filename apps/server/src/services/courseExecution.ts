@@ -16,6 +16,7 @@ import { newId } from '../util/ids.js';
 import type { CourseCommandService } from './courseCommands.js';
 import type { SessionAgendaAgentService } from './sessionAgendasAgent.js';
 import { buildCurriculumExecutionContext } from './curriculum.js';
+import { isHardAvailability, isHardDeadline } from './feasibility.js';
 
 interface CourseExecutionServiceDeps {
   repos: Repositories;
@@ -230,6 +231,19 @@ export function createCourseExecutionService({
           });
         });
         return StudyPlanDecisionResponseSchema.parse(response);
+      }
+
+      const plannedContract = repos.learningContracts.get(plan.contractVersionId);
+      if (
+        plannedContract &&
+        (isHardAvailability(plannedContract) || isHardDeadline(plannedContract)) &&
+        plan.feasibility.state === 'infeasible'
+      ) {
+        throw new AppError(
+          ApiErrorCode.ValidationError,
+          'This StudyPlan exceeds an explicit hard Contract constraint. Accept a compressed proposal or change the Contract first.',
+          { reason: 'hard_availability_cap_exceeded', recommendationRequired: true },
+        );
       }
 
       const response = commands.complete(claim, () => {

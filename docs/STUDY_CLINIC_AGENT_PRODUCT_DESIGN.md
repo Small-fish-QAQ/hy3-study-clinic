@@ -482,6 +482,9 @@ A plan version contains:
 - completion-policy reference;
 - checkpoint, synthesis, and adversarial expectations;
 - intentional deferrals and their risk;
+- bounded learner-governed recommendations (keep scope, increase effort,
+  reduce depth, optional deferral, explicit scope narrowing, or deadline
+  change);
 - total time, slack, and feasibility assumptions;
 - proposal trigger, predecessor, machine-readable diff, status, and acceptance record.
 
@@ -500,9 +503,14 @@ Plan acceptance persists a versioned PaceBaseline:
 - estimate confidence and source;
 - the accepted Plan/Contract versions.
 
-Actual study time comes from persisted StudySession activity intervals and formal activity durations, with learner correction controls. Wall-clock time while a tab is idle is not silently counted as study.
+Daily/weekly Contract time is an estimate unless the learner explicitly marks
+`availabilityPolicy` as `hard_cap`; a deadline is a target unless its `hard`
+flag is set. Soft deficits warn and preserve the complete Curriculum. Actual
+study time comes from append-only, explicitly measured StudySession activity,
+formal activity, Repair, or Review durations. Wall-clock time while a tab is
+idle is never counted as study.
 
-Deterministic policy reports pace as unknown, on_track, or at_risk with reason codes. Unknown applies when there is too little reliable elapsed-time evidence. At-risk requires a documented threshold for persistent cumulative slippage, missed milestone, remaining-effort/deadline infeasibility, or sustained budget change; one long conversation does not trigger it. Thresholds and policy versions are visible and testable.
+Deterministic policy reports pace as unknown, on_track, or at_risk with reason codes. Unknown applies when there is too little reliable elapsed-time evidence. At-risk requires a documented threshold for persistent cumulative slippage, missed milestone, remaining-effort/deadline infeasibility, or sustained budget change; one long conversation does not trigger it. A bounded pace multiplier can trigger structural replanning only after enough measured evidence; routine Agenda changes never create Plan versions. Thresholds and policy versions are visible and testable.
 
 ### State and authority
 

@@ -248,6 +248,7 @@ describe('migrations', () => {
       'teaching_briefs',
       'lesson_execution_states',
       'lesson_execution_events',
+      'pace_observations',
     ]) {
       expect(tables).toContain(expected);
     }

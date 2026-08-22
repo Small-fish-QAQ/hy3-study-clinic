@@ -41,6 +41,7 @@ import {
 } from './agentProviderRuntime.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
 import { assertLearningContractScopeCurrent } from './learningContractScope.js';
+import { buildPlanningRecommendations } from './planningRecommendations.js';
 
 interface StudyPlanAgentDeps {
   repos: Repositories;
@@ -129,6 +130,8 @@ function buildProviderInput(
         id: objective.id,
         title: objective.title,
         description: objective.description,
+        ...(objective.priority ? { priority: objective.priority } : {}),
+        ...(objective.priorityRationale ? { priorityRationale: objective.priorityRationale } : {}),
       })),
       prerequisiteUnitIds: node.learningUnit!.prerequisiteUnitIds,
       blockingEligibleObjectiveIds: node
@@ -183,6 +186,7 @@ function buildProviderInput(
           minutesPerDay: contract.studyBudget.minutesPerDay,
           minutesPerWeek: contract.studyBudget.minutesPerWeek,
           preferredSessionMinutes: contract.studyBudget.preferredSessionMinutes,
+          availabilityPolicy: contract.studyBudget.availabilityPolicy,
         },
         desiredDepth: contract.desiredDepth,
         subjectBoundaries: contract.courseScope.subjectBoundaries,
@@ -196,7 +200,10 @@ function buildProviderInput(
         })),
         includedTopics: contract.courseScope.includedTopics,
         excludedTopics: contract.courseScope.excludedTopics,
-        allowExplicitDeferral: contract.riskTolerance?.allowExplicitDeferral ?? false,
+        // Soft time estimates never authorize autonomous scope reduction.
+        allowExplicitDeferral:
+          (contract.riskTolerance?.allowExplicitDeferral ?? false) &&
+          contract.studyBudget.availabilityPolicy !== 'estimate',
       },
       curriculumVersionId: curriculum.id,
       executionSourceManifestFingerprint: curriculum.executionSourceManifest.fingerprint,
@@ -354,6 +361,12 @@ function paceBaseline(
     explicitSlackMinutes: Math.max(0, slackMinutes ?? 0),
     estimateConfidence: 'medium' as const,
     estimateSource: 'local' as const,
+    paceAdjustment: 1,
+    paceConfidence: 'unknown' as const,
+    measuredObservationCount: 0,
+    measuredActualMinutes: 0,
+    measuredPlannedMinutes: 0,
+    remainingProjectedMinutes: projectedMinutes,
     milestones: contract.deadline
       ? [
           {
@@ -533,6 +546,7 @@ export function createStudyPlanAgentService({
         items: materialized.items,
         deferrals: materialized.deferrals,
         feasibility,
+        recommendations: buildPlanningRecommendations(contract, curriculum, feasibility),
         paceBaseline: paceBaseline(contract, planId, projectedMinutes, feasibility.slackMinutes),
         diff: diffStudyPlans(predecessor, materialized.items),
         provider: provider.name,

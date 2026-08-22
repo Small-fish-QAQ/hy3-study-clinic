@@ -38,6 +38,9 @@ import type {
   SafeProviderConfig,
   LearnerAssessmentExecution,
   LearnerRepairProjection,
+  PaceEstimateResponse,
+  PaceObservationResponse,
+  RecordPaceObservationRequest,
 } from '@hy3-clinic/shared';
 import {
   ApiErrorSchema,
@@ -53,6 +56,8 @@ import {
   StudyPlanDecisionResponseSchema,
   StudyPlanHistoryResponseSchema,
   StudyPlanProposalResponseSchema,
+  PaceEstimateResponseSchema,
+  PaceObservationResponseSchema,
   SafeProviderConfigSchema,
   type AcceptCurriculumRequest,
   type ApplyStudyPlanDraftEditRequest,
@@ -748,6 +753,38 @@ export const api = {
       'POST',
       `/api/workspaces/${workspaceId}/study-plans/${planId}/decision`,
       StudyPlanDecisionResponseSchema,
+      input,
+      signal,
+    ),
+
+  studyPlanPace: (
+    workspaceId: string,
+    planId: string,
+    remainingEstimatedMinutes: number | null = null,
+    signal?: AbortSignal,
+  ): Promise<PaceEstimateResponse> =>
+    requestParsed(
+      'GET',
+      `/api/workspaces/${workspaceId}/study-plans/${planId}/pace${
+        remainingEstimatedMinutes === null
+          ? ''
+          : `?remainingEstimatedMinutes=${encodeURIComponent(remainingEstimatedMinutes)}`
+      }`,
+      PaceEstimateResponseSchema,
+      undefined,
+      signal,
+    ),
+
+  recordPaceObservation: (
+    workspaceId: string,
+    planId: string,
+    input: RecordPaceObservationRequest,
+    signal?: AbortSignal,
+  ): Promise<PaceObservationResponse> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/study-plans/${planId}/pace-observations`,
+      PaceObservationResponseSchema,
       input,
       signal,
     ),

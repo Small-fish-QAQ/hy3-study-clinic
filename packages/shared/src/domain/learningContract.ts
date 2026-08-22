@@ -33,6 +33,8 @@ export const ContractDeadlineSchema = z
   .object({
     at: z.string().datetime(),
     timeZone: z.string().min(1).max(100),
+    /** New Contracts treat a deadline as a target unless explicitly hard. */
+    hard: z.boolean().optional(),
   })
   .strict();
 export type ContractDeadline = z.infer<typeof ContractDeadlineSchema>;
@@ -55,11 +57,10 @@ export const ContractStudyBudgetSchema = z
     minutesPerWeek: z.number().int().positive().nullable(),
     preferredSessionMinutes: z.number().int().positive().nullable(),
     unavailablePeriods: z.array(ContractUnavailablePeriodSchema).max(100),
+    /** `estimate` is a planning preference; `hard_cap` is learner-enforced. */
+    availabilityPolicy: z.enum(['estimate', 'hard_cap']).optional(),
   })
-  .strict()
-  .refine((budget) => budget.minutesPerDay !== null || budget.minutesPerWeek !== null, {
-    message: 'study budget requires daily or weekly available minutes',
-  });
+  .strict();
 export type ContractStudyBudget = z.infer<typeof ContractStudyBudgetSchema>;
 
 /** Stable learner-level scope. Revision IDs are intentionally rejected. */
@@ -231,6 +232,8 @@ export const ContractFeasibilityReasonCodeSchema = z.enum([
   'insufficient_time',
   'deadline_elapsed',
   'unavailable_periods_reduce_capacity',
+  'soft_availability_estimate',
+  'hard_availability_cap',
 ]);
 export type ContractFeasibilityReasonCode = z.infer<typeof ContractFeasibilityReasonCodeSchema>;
 

@@ -28,6 +28,7 @@ import { createFormalAssessmentsRepo, type FormalAssessmentsRepo } from './forma
 import { createRepairRepo, type RepairRepo } from './repair.js';
 import { createMasteryRedTeamRepo, type MasteryRedTeamRepo } from './masteryRedTeam.js';
 import { createStudySessionsRepo, type StudySessionsRepo } from './studySessions.js';
+import { createPaceObservationsRepo, type PaceObservationsRepo } from './paceObservations.js';
 import {
   createQuizzesRepo,
   createSubmissionsRepo,
@@ -68,6 +69,7 @@ export interface Repositories {
   repair: RepairRepo;
   masteryRedTeam: MasteryRedTeamRepo;
   studySessions: StudySessionsRepo;
+  paceObservations: PaceObservationsRepo;
   quizzes: QuizzesRepo;
   submissions: SubmissionsRepo;
   mistakes: MistakesRepo;
@@ -113,6 +115,7 @@ export function createRepositories(db: SqliteDb): Repositories {
     repair: createRepairRepo(db),
     masteryRedTeam: createMasteryRedTeamRepo(db),
     studySessions: createStudySessionsRepo(db),
+    paceObservations: createPaceObservationsRepo(db),
     quizzes: createQuizzesRepo(db),
     submissions: createSubmissionsRepo(db),
     mistakes: createMistakesRepo(db),
