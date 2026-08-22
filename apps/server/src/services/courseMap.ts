@@ -697,6 +697,43 @@ export function analyzeCourseMapProposal(
     add('error', 'region_limit_exceeded', 'Course Map exceeds the offered region limit.');
   }
 
+  const proposedSourceRefs = new Set(
+    parsed.modules.flatMap((module) => module.regions.map((region) => region.sourceRegionRef)),
+  );
+  for (const disposition of parsed.sourceDispositions ?? []) {
+    const sourceIndex = Number(disposition.sourceRegionRef.slice(1)) - 1;
+    if (!sourceAllocation.regions[sourceIndex]) {
+      add(
+        'error',
+        'unknown_source_disposition_region',
+        'Course Map source disposition references an unknown offered source region.',
+        [disposition.sourceRegionRef],
+      );
+      continue;
+    }
+    for (const representedRef of disposition.representedRegionRefs) {
+      if (!proposedSourceRefs.has(representedRef)) {
+        add(
+          'error',
+          'source_disposition_inconsistent',
+          'A source disposition claims representation by a region that is not in the skeleton.',
+          [disposition.sourceRegionRef, representedRef],
+        );
+      }
+    }
+    if (
+      disposition.disposition === 'represented_directly' &&
+      !proposedSourceRefs.has(disposition.sourceRegionRef)
+    ) {
+      add(
+        'error',
+        'source_disposition_inconsistent',
+        'A directly represented source disposition has no corresponding skeleton region.',
+        [disposition.sourceRegionRef],
+      );
+    }
+  }
+
   const allocationById = new Map(sourceAllocation.regions.map((region) => [region.id, region]));
   const sourceOfferByRef = new Map(
     context.providerInput.sourceRegions.map((region) => [region.sourceRegionRef, region]),
@@ -815,6 +852,7 @@ export function analyzeCourseMapProposal(
         materialIds: allocation ? [allocation.materialId] : [],
         conceptIds,
         canonicalConceptIds,
+        expectedOutcome: proposedRegion.learningIntent.slice(0, 500),
       });
     }
     materializedModules.push({
@@ -823,6 +861,7 @@ export function analyzeCourseMapProposal(
       index: modulePosition,
       title: proposedModule.title,
       learningIntent: proposedModule.learningIntent,
+      sequenceRationale: `按“${proposedModule.learningIntent}”建立从基础到应用的连续学习顺序。`,
       regions,
     });
   }
@@ -842,12 +881,37 @@ export function analyzeCourseMapProposal(
     (region) => !allocationUseCount.has(region.id),
   );
   if (unallocatedSourceRegions.length > 0) {
-    add(
-      'error',
-      'unallocated_source_region',
-      `${unallocatedSourceRegions.length} source-allocation regions are not represented.`,
-      unallocatedSourceRegions.slice(0, 20).map((region) => region.id),
+    const dispositionsByRef = new Map(
+      (parsed.sourceDispositions ?? []).map((disposition) => [
+        disposition.sourceRegionRef,
+        disposition,
+      ]),
     );
+    const unresolved = unallocatedSourceRegions.filter((region) => {
+      const ref = `R${sourceAllocation.regions.indexOf(region) + 1}`;
+      const disposition = dispositionsByRef.get(ref);
+      return !disposition || disposition.disposition === 'unresolved_candidate_gap';
+    });
+    const explained = unallocatedSourceRegions.length - unresolved.length;
+    if (explained > 0) {
+      add(
+        'warning',
+        'unallocated_source_region',
+        `${explained} source-allocation regions are intentionally classified rather than directly represented.`,
+        unallocatedSourceRegions
+          .filter((region) => !unresolved.includes(region))
+          .slice(0, 20)
+          .map((region) => region.id),
+      );
+    }
+    if (unresolved.length > 0) {
+      add(
+        'error',
+        'unallocated_source_region',
+        `${unresolved.length} meaningful source-allocation regions have no explicit coverage disposition.`,
+        unresolved.slice(0, 20).map((region) => region.id),
+      );
+    }
   }
 
   const materializedPrerequisites: CourseMap['prerequisites'] = [];
@@ -914,6 +978,7 @@ export function analyzeCourseMapProposal(
     materializedPrerequisites.push({
       prerequisiteRegionId: prerequisiteId,
       dependentRegionId: dependentId,
+      rationale: '先完成前置区域的核心概念，再进入依赖该基础的区域。',
     });
   }
   const allRegionIds = [...regionIdByRef.values()];
@@ -1112,6 +1177,29 @@ export function analyzeCourseMapProposal(
     modules: materializedModules,
     prerequisites: materializedPrerequisites,
     synthesisGroups: materializedSynthesis,
+    sourceDispositions: sourceAllocation.regions.map((region, regionIndex) => {
+      const sourceRef = `R${regionIndex + 1}`;
+      const explicit = (parsed.sourceDispositions ?? []).find(
+        (candidate) => candidate.sourceRegionRef === sourceRef,
+      );
+      const directlyRepresented = parsed.modules
+        .flatMap((module) => module.regions)
+        .some((candidate) => candidate.sourceRegionRef === sourceRef);
+      const disposition =
+        explicit?.disposition ??
+        (directlyRepresented ? 'represented_directly' : 'unresolved_candidate_gap');
+      return {
+        sourceAllocationRegionId: region.id,
+        disposition,
+        rationale:
+          explicit?.rationale ??
+          (directlyRepresented
+            ? '该精确来源区域被纳入课程骨架并进入详细生成。'
+            : '该来源区域尚未在课程骨架中找到可解释的覆盖归属。'),
+        representedRegionRefs:
+          explicit?.representedRegionRefs ?? (directlyRepresented ? [sourceRef] : []),
+      };
+    }),
   };
   const qualityProfile: CourseMapQualityProfile = {
     hierarchy: {

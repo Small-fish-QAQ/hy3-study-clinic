@@ -58,6 +58,9 @@ export const CurriculumObjectiveSchema = z
     /** Goal-specific emphasis; Curriculum truth remains unchanged. */
     priority: z.enum(['required', 'high', 'normal', 'optional']).optional(),
     priorityRationale: z.string().min(1).max(500).optional(),
+    /** Explicit compatibility result for the Formal Assessment handoff. */
+    formalAssessmentReady: z.boolean().optional(),
+    formalAssessmentReadinessRationale: z.string().min(1).max(500).optional(),
   })
   .strict()
   .superRefine((objective, ctx) => {
@@ -73,6 +76,139 @@ export const CurriculumObjectiveSchema = z
     }
   });
 export type CurriculumObjective = z.infer<typeof CurriculumObjectiveSchema>;
+
+/** Why one exact source region is or is not represented in a Curriculum. */
+export const CurriculumCoverageDispositionKindSchema = z.enum([
+  'represented_directly',
+  'represented_by_parent_or_synthesis',
+  'duplicate/redundant',
+  'boilerplate/navigation/non-learning-content',
+  'explicitly_out_of_scope',
+  'unresolved_candidate_gap',
+]);
+export type CurriculumCoverageDispositionKind = z.infer<
+  typeof CurriculumCoverageDispositionKindSchema
+>;
+
+export const CurriculumCoverageDispositionSchema = z
+  .object({
+    sourceRegionId: z.string().min(1).max(200),
+    materialId: z.string().min(1),
+    materialRevisionId: z.string().min(1),
+    sourceSectionIds: z.array(z.string().min(1)).min(1).max(10_000),
+    sourceBlockIds: z.array(z.string().min(1)).min(1).max(10_000),
+    meaningful: z.boolean(),
+    disposition: CurriculumCoverageDispositionKindSchema,
+    rationale: z.string().min(1).max(500),
+    curriculumNodeIds: z.array(z.string().min(1)).max(100),
+    objectiveIds: z.array(z.string().min(1)).max(100),
+  })
+  .strict()
+  .superRefine((row, ctx) => {
+    if (
+      (row.disposition === 'represented_directly' ||
+        row.disposition === 'represented_by_parent_or_synthesis') &&
+      row.curriculumNodeIds.length === 0
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['curriculumNodeIds'],
+        message: 'represented source regions require Curriculum node identities',
+      });
+    }
+    if (row.disposition === 'unresolved_candidate_gap' && !row.meaningful) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['meaningful'],
+        message: 'unresolved candidate gaps must remain meaningful source regions',
+      });
+    }
+  });
+export type CurriculumCoverageDisposition = z.infer<typeof CurriculumCoverageDispositionSchema>;
+
+export const CurriculumCoverageAccountabilitySchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    sourceMapFingerprint: z.string().min(1).max(200),
+    scope: z.enum(['systematic_mastery', 'intentional_scope']),
+    regions: z.array(CurriculumCoverageDispositionSchema).max(10_000),
+    meaningfulRegionCount: z.number().int().nonnegative(),
+    dispositionCounts: z.record(z.string(), z.number().int().nonnegative()),
+    unresolvedMeaningfulRegionIds: z.array(z.string().min(1)).max(10_000),
+  })
+  .strict()
+  .superRefine((coverage, ctx) => {
+    const ids = coverage.regions.map((row) => row.sourceRegionId);
+    if (new Set(ids).size !== ids.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['regions'],
+        message: 'source coverage dispositions must identify each region exactly once',
+      });
+    }
+    const meaningfulCount = coverage.regions.filter((row) => row.meaningful).length;
+    if (meaningfulCount !== coverage.meaningfulRegionCount) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['meaningfulRegionCount'],
+        message: 'meaningfulRegionCount does not match source disposition rows',
+      });
+    }
+    const unresolved = coverage.regions
+      .filter((row) => row.meaningful && row.disposition === 'unresolved_candidate_gap')
+      .map((row) => row.sourceRegionId);
+    if (
+      unresolved.length !== coverage.unresolvedMeaningfulRegionIds.length ||
+      unresolved.some((id, index) => id !== coverage.unresolvedMeaningfulRegionIds[index])
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['unresolvedMeaningfulRegionIds'],
+        message: 'unresolved meaningful source regions are inconsistent with dispositions',
+      });
+    }
+  });
+export type CurriculumCoverageAccountability = z.infer<
+  typeof CurriculumCoverageAccountabilitySchema
+>;
+
+export const CurriculumQualityCriterionSchema = z.enum([
+  'coverage_accountability',
+  'hierarchy_coherence',
+  'sequencing',
+  'conceptual_cohesion',
+  'granularity',
+  'objective_alignment',
+  'assessment_readiness_compatibility',
+]);
+export type CurriculumQualityCriterion = z.infer<typeof CurriculumQualityCriterionSchema>;
+
+export const CurriculumQualityFindingSchema = z
+  .object({
+    criterion: CurriculumQualityCriterionSchema,
+    severity: z.enum(['info', 'warning', 'error']),
+    code: z.string().min(1).max(120),
+    affectedCurriculumNodeIds: z.array(z.string().min(1)).max(100),
+    affectedSourceRegionIds: z.array(z.string().min(1)).max(100),
+    rationale: z.string().min(1).max(800),
+    repairDisposition: z.enum(['none', 'repaired', 'rejected']),
+  })
+  .strict();
+export type CurriculumQualityFinding = z.infer<typeof CurriculumQualityFindingSchema>;
+
+export const CurriculumSemanticEvaluationSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    policyVersion: z.string().min(1).max(80),
+    evaluator: z.string().min(1).max(120),
+    independent: z.literal(true),
+    status: z.enum(['pass', 'fail']),
+    boundedRepairAttempted: z.boolean(),
+    findings: z.array(CurriculumQualityFindingSchema).max(200),
+    evaluatedAt: z.string().datetime(),
+  })
+  .strict();
+export type CurriculumSemanticEvaluation = z.infer<typeof CurriculumSemanticEvaluationSchema>;
 
 export const CurriculumLearningUnitSchema = z
   .object({
@@ -216,6 +352,8 @@ export const CurriculumSchema = z
     providerModel: z.string().max(120).nullable(),
     createdAt: z.string().datetime(),
     acceptedAt: z.string().datetime().nullable(),
+    coverageAccountability: CurriculumCoverageAccountabilitySchema.optional(),
+    qualityEvaluation: CurriculumSemanticEvaluationSchema.optional(),
   })
   .strict()
   .superRefine((curriculum, ctx) => {
@@ -307,6 +445,8 @@ export const CurriculumHierarchyViewSchema = z
     validation: CurriculumValidationSchema,
     /** Structured learner rendering; persisted validation diagnostics remain immutable. */
     coverageWarnings: z.array(CurriculumCoverageWarningSchema).max(100).optional(),
+    coverageAccountability: CurriculumCoverageAccountabilitySchema.optional(),
+    qualityEvaluation: CurriculumSemanticEvaluationSchema.optional(),
     executionSourceManifest: ExecutionSourceManifestSchema,
   })
   .strict()

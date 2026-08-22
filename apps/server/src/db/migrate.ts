@@ -2628,6 +2628,26 @@ const MIGRATIONS: Migration[] = [
         BEGIN SELECT RAISE(ABORT, 'Pace observations are append-only'); END;
     `,
   },
+  {
+    version: 35,
+    name: 'curriculum_quality_evaluations',
+    // Structured evaluator metadata is immutable evidence about a Curriculum
+    // candidate; it is never learner-state authority.
+    up: `
+      CREATE TABLE curriculum_quality_evaluations (
+        curriculum_id TEXT PRIMARY KEY REFERENCES curriculum_versions(id) ON DELETE CASCADE,
+        policy_version TEXT NOT NULL,
+        evaluator TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN ('pass', 'fail')),
+        bounded_repair_attempted INTEGER NOT NULL CHECK (bounded_repair_attempted IN (0, 1)),
+        payload TEXT NOT NULL,
+        evaluated_at TEXT NOT NULL
+      );
+      CREATE TRIGGER prevent_curriculum_quality_evaluation_update
+        BEFORE UPDATE ON curriculum_quality_evaluations
+        BEGIN SELECT RAISE(ABORT, 'Curriculum quality evaluations are append-only'); END;
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

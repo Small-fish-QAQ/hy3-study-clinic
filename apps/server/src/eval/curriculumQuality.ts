@@ -13,6 +13,21 @@ import { verifyGrounding } from '../grounding/verify.js';
 import { computeSections } from '../ingestion/sections.js';
 import { curriculumSourceBlockFingerprint } from '../services/curriculumValidation.js';
 
+// The profile below remains a descriptive diagnostic. The acceptance decision
+// lives in the independent bounded semantic evaluator and is re-exported here
+// so evaluation tooling has one stable import boundary.
+export {
+  CURRICULUM_SEMANTIC_EVALUATOR_POLICY_VERSION,
+  buildCurriculumCoverageAccountability,
+  evaluateCurriculumSemantics,
+  evaluateCurriculumWithBoundedRepair,
+} from '../services/curriculumSemanticEvaluator.js';
+export type {
+  CurriculumSemanticEvaluationInput,
+  CurriculumSemanticEvaluationResult,
+  CurriculumSemanticSourceRegion,
+} from '../services/curriculumSemanticEvaluator.js';
+
 const EvaluationSourceMaterialSchema = z
   .object({
     materialId: z.string().min(1),

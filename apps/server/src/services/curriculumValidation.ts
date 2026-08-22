@@ -530,6 +530,21 @@ export function materializeCurriculumProposal(
           description: objective.description,
           truthPremiseStatus: authority.status,
           truthAuthorityRecordIds: authority.authorityIds,
+          ...(objective.priority ? { priority: objective.priority } : {}),
+          ...(objective.priorityRationale
+            ? { priorityRationale: objective.priorityRationale }
+            : {}),
+          ...(objective.priority === 'required'
+            ? {
+                formalAssessmentReady:
+                  authority.status === 'independently_verified' &&
+                  authority.authorityIds.length > 0,
+                formalAssessmentReadinessRationale:
+                  authority.status === 'independently_verified'
+                    ? '当前版本存在已验证且无冲突的精确来源权威。'
+                    : '当前来源只能支持教学解释，尚不足以授予正式评估权威。',
+              }
+            : {}),
         });
       }
 

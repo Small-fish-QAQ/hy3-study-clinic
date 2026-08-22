@@ -66,6 +66,10 @@ import {
 } from './courseSourceMap.js';
 import { preflightStudyPlan } from './studyPlansAgent.js';
 import { assessCurriculumRecovery } from './curriculumRecovery.js';
+import {
+  evaluateCurriculumSemantics,
+  type CurriculumSemanticSourceRegion,
+} from './curriculumSemanticEvaluator.js';
 import { assertLearningContractScopeCurrent } from './learningContractScope.js';
 import {
   assertCourseMapSourceAllocationIntegrity,
@@ -774,6 +778,10 @@ export function curriculumHierarchy(curriculum: Curriculum): CurriculumHierarchy
     synthesisGroups: curriculum.synthesisGroups,
     validation: curriculum.validation,
     coverageWarnings: curriculum.validation.warnings.map(curriculumCoverageWarning),
+    ...(curriculum.coverageAccountability
+      ? { coverageAccountability: curriculum.coverageAccountability }
+      : {}),
+    ...(curriculum.qualityEvaluation ? { qualityEvaluation: curriculum.qualityEvaluation } : {}),
     executionSourceManifest: curriculum.executionSourceManifest,
   });
 }
@@ -1059,6 +1067,18 @@ export function createCurriculumService({
     };
     let repairAttempted = false;
     let lastCandidateValidation: MaterializedCurriculum | null = null;
+    let semanticSourceRegions: CurriculumSemanticSourceRegion[] = sourceMap.materials.flatMap(
+      (material) =>
+        material.sections.map((section) => ({
+          id: section.id,
+          materialId: section.materialId,
+          materialRevisionId: section.materialRevisionId,
+          title: section.title,
+          sourceSectionIds: [section.id],
+          sourceBlockIds: [...section.sourceBlockIds],
+          charCount: section.charCount,
+        })),
+    );
     let assertGenerationSnapshotCurrent = (): void => {
       if (opts?.signal?.aborted) throw ProviderError.cancelled();
       assertProposalAuthorityCurrent(
@@ -1285,6 +1305,20 @@ export function createCurriculumService({
           completedBatches,
         );
         payload = assembly.payload;
+        semanticSourceRegions = sourceAllocation.regions.map((region, index) => {
+          const disposition = courseMapResult.analysis.courseMap.sourceDispositions?.[index];
+          return {
+            id: region.id,
+            materialId: region.materialId,
+            materialRevisionId: region.materialRevisionId,
+            title: region.title,
+            sourceSectionIds: [...region.sourceSectionIds],
+            sourceBlockIds: [...region.sourceBlockIds],
+            charCount: region.charCount,
+            defaultDisposition: disposition?.disposition,
+            defaultRationale: disposition?.rationale,
+          };
+        });
         expectedRegionCount = assembly.regionCount;
         expectedPrerequisiteCount = assembly.prerequisiteCount;
         requiredExecutionPreflight = true;
@@ -1325,7 +1359,7 @@ export function createCurriculumService({
       lastCandidateValidation = materialized;
       assertValidMaterializedCurriculum(materialized, repairAttempted);
       const now = clock.now().toISOString();
-      const curriculum: Curriculum = {
+      let curriculum: Curriculum = {
         id: newId('curriculum'),
         workspaceId: parsed.command.workspaceId,
         contractVersionId: contract.id,
@@ -1340,6 +1374,34 @@ export function createCurriculumService({
         providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
         createdAt: now,
         acceptedAt: null,
+      };
+      const semantic = evaluateCurriculumSemantics({
+        curriculum,
+        sourceMapFingerprint: sourceMap.fingerprint,
+        sourceRegions: semanticSourceRegions,
+        scope:
+          contract.desiredDepth === 'high_performance' || contract.desiredDepth === 'deep_transfer'
+            ? 'systematic_mastery'
+            : 'intentional_scope',
+        evaluatedAt: now,
+      });
+      if (semantic.evaluation.status === 'fail') {
+        const semanticErrors = semantic.evaluation.findings
+          .filter((finding) => finding.severity === 'error')
+          .map(
+            (finding) => `Pedagogical Curriculum quality: ${finding.code} - ${finding.rationale}`,
+          );
+        materialized.validation = {
+          ...materialized.validation,
+          valid: false,
+          errors: [...materialized.validation.errors, ...semanticErrors].slice(0, 100),
+        };
+        assertValidMaterializedCurriculum(materialized, repairAttempted);
+      }
+      curriculum = {
+        ...curriculum,
+        coverageAccountability: semantic.coverage,
+        qualityEvaluation: semantic.evaluation,
       };
       return commands.complete(claim, () => {
         assertGenerationSnapshotCurrent();

@@ -280,6 +280,8 @@ export const ProposedCurriculumObjectiveSchema = z
     description: z.string().min(1).max(1000),
     /** Optional server-offered evidence selections; local authority decides their meaning. */
     evidence: z.array(CurriculumEvidenceSelectionSchema).max(5),
+    priority: z.enum(['required', 'high', 'normal', 'optional']).optional(),
+    priorityRationale: z.string().min(1).max(500).optional(),
   })
   .strict();
 export type ProposedCurriculumObjective = z.infer<typeof ProposedCurriculumObjectiveSchema>;
@@ -375,6 +377,26 @@ export const ProposedCourseMapRegionSchema = z
   });
 export type ProposedCourseMapRegion = z.infer<typeof ProposedCourseMapRegionSchema>;
 
+/** Explicit accountability for source regions not represented as a direct unit. */
+export const ProposedCourseMapSourceDispositionSchema = z
+  .object({
+    sourceRegionRef: CourseMapSourceRegionRefSchema,
+    disposition: z.enum([
+      'represented_directly',
+      'represented_by_parent_or_synthesis',
+      'duplicate/redundant',
+      'boilerplate/navigation/non-learning-content',
+      'explicitly_out_of_scope',
+      'unresolved_candidate_gap',
+    ]),
+    rationale: z.string().min(1).max(500),
+    representedRegionRefs: z.array(CourseMapSourceRegionRefSchema).max(20),
+  })
+  .strict();
+export type ProposedCourseMapSourceDisposition = z.infer<
+  typeof ProposedCourseMapSourceDispositionSchema
+>;
+
 export const ProposedCourseMapModuleSchema = z
   .object({
     title: z.string().min(1).max(300),
@@ -411,6 +433,7 @@ export const CourseMapProposalPayloadSchema = z
     modules: z.array(ProposedCourseMapModuleSchema).min(1).max(24),
     prerequisites: z.array(ProposedCourseMapPrerequisiteSchema).max(384),
     synthesisGroups: z.array(ProposedCourseMapSynthesisGroupSchema).max(100),
+    sourceDispositions: z.array(ProposedCourseMapSourceDispositionSchema).max(120).optional(),
   })
   .strict();
 export type CourseMapProposalPayload = z.infer<typeof CourseMapProposalPayloadSchema>;

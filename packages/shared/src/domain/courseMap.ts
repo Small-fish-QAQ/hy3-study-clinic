@@ -32,6 +32,26 @@ export const CourseMapSourceAllocationRegionSchema = z
   .strict();
 export type CourseMapSourceAllocationRegion = z.infer<typeof CourseMapSourceAllocationRegionSchema>;
 
+export const CourseMapSourceDispositionKindSchema = z.enum([
+  'represented_directly',
+  'represented_by_parent_or_synthesis',
+  'duplicate/redundant',
+  'boilerplate/navigation/non-learning-content',
+  'explicitly_out_of_scope',
+  'unresolved_candidate_gap',
+]);
+export type CourseMapSourceDispositionKind = z.infer<typeof CourseMapSourceDispositionKindSchema>;
+
+export const CourseMapSourceDispositionSchema = z
+  .object({
+    sourceAllocationRegionId: z.string().min(1),
+    disposition: CourseMapSourceDispositionKindSchema,
+    rationale: z.string().min(1).max(500),
+    representedRegionRefs: z.array(z.string().regex(/^R[1-9][0-9]*$/u)).max(20),
+  })
+  .strict();
+export type CourseMapSourceDisposition = z.infer<typeof CourseMapSourceDispositionSchema>;
+
 /** Bounded visibility over a complete Course Source Map; never source truth. */
 export const CourseMapSourceAllocationSchema = z
   .object({
@@ -227,6 +247,7 @@ export const CourseMapRegionSchema = z
     materialIds: z.array(z.string().min(1)).max(100),
     conceptIds: z.array(z.string().min(1)).max(20),
     canonicalConceptIds: z.array(z.string().min(1)).max(10),
+    expectedOutcome: z.string().min(1).max(500).optional(),
   })
   .strict();
 export type CourseMapRegion = z.infer<typeof CourseMapRegionSchema>;
@@ -238,6 +259,7 @@ export const CourseMapModuleSchema = z
     index: z.number().int().nonnegative(),
     title: z.string().min(1).max(300),
     learningIntent: z.string().min(1).max(700),
+    sequenceRationale: z.string().min(1).max(500).optional(),
     regions: z.array(CourseMapRegionSchema).min(1).max(120),
   })
   .strict();
@@ -247,6 +269,7 @@ export const CourseMapPrerequisiteSchema = z
   .object({
     prerequisiteRegionId: z.string().regex(/^course_map_region_[0-9a-f]{24}$/u),
     dependentRegionId: z.string().regex(/^course_map_region_[0-9a-f]{24}$/u),
+    rationale: z.string().min(1).max(500).optional(),
   })
   .strict();
 export type CourseMapPrerequisite = z.infer<typeof CourseMapPrerequisiteSchema>;
@@ -277,6 +300,7 @@ export const CourseMapSchema = z
     modules: z.array(CourseMapModuleSchema).min(1).max(24),
     prerequisites: z.array(CourseMapPrerequisiteSchema).max(384),
     synthesisGroups: z.array(CourseMapSynthesisGroupSchema).max(100),
+    sourceDispositions: z.array(CourseMapSourceDispositionSchema).max(120).optional(),
   })
   .strict();
 export type CourseMap = z.infer<typeof CourseMapSchema>;
@@ -315,6 +339,8 @@ export const CourseMapDiagnosticCodeSchema = z.enum([
   'duplicate_region_intent',
   'near_duplicate_region_intent',
   'flat_hierarchy',
+  'unknown_source_disposition_region',
+  'source_disposition_inconsistent',
 ]);
 export type CourseMapDiagnosticCode = z.infer<typeof CourseMapDiagnosticCodeSchema>;
 

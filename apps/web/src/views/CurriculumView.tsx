@@ -1073,6 +1073,28 @@ export function CurriculumView({
                 还没有可显示的当前学习位置。
               </p>
             )}
+            {hierarchy.qualityEvaluation?.status === 'fail' ? (
+              <Banner kind="error">
+                课程结构需要修复：语义评估发现{' '}
+                {
+                  hierarchy.qualityEvaluation.findings.filter(
+                    (finding) => finding.severity === 'error',
+                  ).length
+                }{' '}
+                项结构或依据问题。
+              </Banner>
+            ) : null}
+            {hierarchy.coverageAccountability ? (
+              <details className="curriculum-coverage-summary small">
+                <summary>
+                  资料覆盖：{hierarchy.coverageAccountability.meaningfulRegionCount} 个有意义区域，
+                  {hierarchy.coverageAccountability.unresolvedMeaningfulRegionIds.length} 个待解释
+                </summary>
+                <p className="muted">
+                  每个资料区域都保留了明确的覆盖、综合、重复、非学习内容、范围或候选缺口说明。
+                </p>
+              </details>
+            ) : null}
           </div>
         ) : null}
       </header>

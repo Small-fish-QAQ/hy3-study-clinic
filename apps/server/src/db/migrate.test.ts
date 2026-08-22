@@ -249,6 +249,7 @@ describe('migrations', () => {
       'lesson_execution_states',
       'lesson_execution_events',
       'pace_observations',
+      'curriculum_quality_evaluations',
     ]) {
       expect(tables).toContain(expected);
     }
@@ -271,6 +272,19 @@ describe('migrations', () => {
         )
         .run(),
     ).toThrow();
+    db.close();
+  });
+
+  it('creates the append-only Curriculum quality evaluation store', () => {
+    const db = openDatabase(':memory:');
+    migrate(db);
+    expect(
+      db
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'curriculum_quality_evaluations'",
+        )
+        .get(),
+    ).toEqual({ name: 'curriculum_quality_evaluations' });
     db.close();
   });
 

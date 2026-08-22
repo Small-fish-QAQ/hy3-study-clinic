@@ -1250,6 +1250,7 @@ export class FakeProvider implements LlmProvider {
       modules,
       prerequisites,
       synthesisGroups,
+      sourceDispositions: [],
     };
     const firstValidation = opts?.validateCandidate?.(candidate);
     if (!firstValidation || firstValidation.valid) return candidate;

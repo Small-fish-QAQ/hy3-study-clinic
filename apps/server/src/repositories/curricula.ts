@@ -1,5 +1,6 @@
 import {
   CurriculumSchema,
+  CurriculumSemanticEvaluationSchema,
   ExecutionSourceManifestSchema,
   type Curriculum,
   type ExecutionSourceManifest,
@@ -79,6 +80,11 @@ function hydrateManifest(row: ManifestRow): StoredExecutionSourceManifest {
   };
 }
 
+interface CurriculumQualityEvaluationRow {
+  curriculum_id: string;
+  payload: string;
+}
+
 export function createCurriculaRepo(db: SqliteDb) {
   function get(id: string): Curriculum | undefined {
     const row = db.prepare('SELECT * FROM curriculum_versions WHERE id = ?').get(id) as
@@ -94,6 +100,17 @@ export function createCurriculaRepo(db: SqliteDb) {
       )
       .get(workspaceId, fingerprint) as ManifestRow | undefined;
     return row ? hydrateManifest(row) : undefined;
+  }
+
+  function getQualityEvaluation(curriculumId: string) {
+    const row = db
+      .prepare(
+        'SELECT curriculum_id, payload FROM curriculum_quality_evaluations WHERE curriculum_id = ?',
+      )
+      .get(curriculumId) as CurriculumQualityEvaluationRow | undefined;
+    return row
+      ? CurriculumSemanticEvaluationSchema.parse(JSON.parse(row.payload) as unknown)
+      : undefined;
   }
 
   function appendEvent(curriculumId: string, event: CurriculumEventInput): void {
@@ -379,6 +396,22 @@ export function createCurriculaRepo(db: SqliteDb) {
         curriculum.createdAt,
         curriculum.acceptedAt,
       );
+      if (curriculum.qualityEvaluation) {
+        db.prepare(
+          `INSERT INTO curriculum_quality_evaluations
+             (curriculum_id, policy_version, evaluator, status,
+              bounded_repair_attempted, payload, evaluated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        ).run(
+          curriculum.id,
+          curriculum.qualityEvaluation.policyVersion,
+          curriculum.qualityEvaluation.evaluator,
+          curriculum.qualityEvaluation.status,
+          curriculum.qualityEvaluation.boundedRepairAttempted ? 1 : 0,
+          JSON.stringify(curriculum.qualityEvaluation),
+          curriculum.qualityEvaluation.evaluatedAt,
+        );
+      }
 
       const insertNode = db.prepare(
         `INSERT INTO curriculum_node_index
@@ -477,6 +510,7 @@ export function createCurriculaRepo(db: SqliteDb) {
   return {
     get,
     getManifest,
+    getQualityEvaluation,
     createManifest: createManifestTx,
     createVersion: createVersionTx,
     accept: acceptTx,
