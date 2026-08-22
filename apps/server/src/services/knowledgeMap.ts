@@ -190,6 +190,46 @@ function curriculumProvenance(
   });
 }
 
+/**
+ * Older accepted Curricula recorded the revision-owned structural unit but
+ * predated the required SourceBlock identity/fingerprint fields. A legacy
+ * reference is compatible only when that structural unit resolves to exactly
+ * one SourceBlock in the same MaterialRevision. Ambiguous or unbound records
+ * remain unverifiable and therefore fail closed below.
+ */
+function resolveCurriculumReference(
+  ref: Curriculum['nodes'][number]['sourceReferences'][number],
+  blocksByStructuralUnit: Map<string, SourceBlock[]>,
+  blockById: Map<string, SourceBlock>,
+): Curriculum['nodes'][number]['sourceReferences'][number] {
+  const existingBlock = ref.sourceBlockId ? blockById.get(ref.sourceBlockId) : undefined;
+  if (ref.sourceBlockRevisionFingerprint) return ref;
+  if (
+    existingBlock &&
+    existingBlock.materialId === ref.materialId &&
+    existingBlock.materialRevisionId === ref.materialRevisionId
+  ) {
+    return {
+      ...ref,
+      sourceBlockRevisionFingerprint: curriculumSourceBlockFingerprint(
+        existingBlock,
+        ref.materialRevisionId,
+      ),
+    };
+  }
+  if (!ref.structuralUnitId) return ref;
+  const candidates = blocksByStructuralUnit.get(
+    `${ref.materialId}:${ref.materialRevisionId}:${ref.structuralUnitId}`,
+  );
+  if (candidates?.length !== 1) return ref;
+  const block = candidates[0]!;
+  return {
+    ...ref,
+    sourceBlockId: block.id,
+    sourceBlockRevisionFingerprint: curriculumSourceBlockFingerprint(block, ref.materialRevisionId),
+  };
+}
+
 function curriculumEdgeProvenance(
   refs: Curriculum['nodes'][number]['sourceReferences'],
   fallbackRefs: Curriculum['nodes'][number]['sourceReferences'],
@@ -573,6 +613,14 @@ export function createKnowledgeMapService({
         ids.add(block.id);
         activeBlockIdsByMaterial.set(block.materialId, ids);
       }
+      const blocksByStructuralUnit = new Map<string, SourceBlock[]>();
+      for (const block of blocks) {
+        if (!block.structuralUnitId || !block.materialRevisionId) continue;
+        const key = `${block.materialId}:${block.materialRevisionId}:${block.structuralUnitId}`;
+        const candidates = blocksByStructuralUnit.get(key) ?? [];
+        candidates.push(block);
+        blocksByStructuralUnit.set(key, candidates);
+      }
       const allConcepts = repos.materials.getConceptsByWorkspace(workspaceId);
       const concepts = allConcepts.filter(
         (concept) =>
@@ -585,6 +633,17 @@ export function createKnowledgeMapService({
         activeRevisionByMaterial,
         activeBlockIdsByMaterial,
       );
+      if (route.curriculum) {
+        route.curriculum = {
+          ...route.curriculum,
+          nodes: route.curriculum.nodes.map((node) => ({
+            ...node,
+            sourceReferences: node.sourceReferences.map((ref) =>
+              resolveCurriculumReference(ref, blocksByStructuralUnit, blockById),
+            ),
+          })),
+        };
+      }
       if (
         allConcepts.some(
           (concept) =>

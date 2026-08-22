@@ -17,6 +17,7 @@ function installCurrentRoute(
     redTeam?: unknown[];
     lesson?: unknown[];
     agendaLaunchStatus?: 'launchable' | 'blocked';
+    legacySourceReference?: boolean;
   } = {},
 ) {
   if (!context) throw new Error('test context is not initialized');
@@ -36,9 +37,13 @@ function installCurrentRoute(
   const sourceReference = {
     materialId: 'mat_1',
     materialRevisionId: activeRevisionId,
-    structuralUnitId: null,
-    sourceBlockId: block.id,
-    sourceBlockRevisionFingerprint: curriculumSourceBlockFingerprint(block, activeRevisionId),
+    structuralUnitId: overrides.legacySourceReference
+      ? (block.structuralUnitId ?? 'legacy-structural-unit')
+      : null,
+    sourceBlockId: overrides.legacySourceReference ? null : block.id,
+    sourceBlockRevisionFingerprint: overrides.legacySourceReference
+      ? null
+      : curriculumSourceBlockFingerprint(block, activeRevisionId),
   };
   const curriculum = {
     id: 'curriculum_1',
@@ -477,6 +482,57 @@ describe('Knowledge Map projection service', () => {
     expect(
       projection.nodes.find((node) => node.kind === 'learning_unit')?.navigation,
     ).not.toContainEqual(expect.objectContaining({ destination: 'study' }));
+  });
+
+  it('resolves a uniquely bound legacy structural reference without inventing identity', () => {
+    context = buildTestApp();
+    const { repos } = context;
+    repos.materials.insertWithBlocks(makeMaterial(), [makeBlock()]);
+    repos.materials.addConcepts([makeConcept()]);
+    vi.spyOn(repos.materials, 'getBlocksByWorkspace').mockReturnValue([
+      { ...repos.materials.getBlock('blk_1')!, structuralUnitId: 'legacy-structural-unit' },
+    ] as never);
+    installCurrentRoute({ legacySourceReference: true });
+
+    const projection = createServices({
+      repos,
+      provider: context.provider,
+      clock: fixedClock(T0),
+    }).knowledgeMap.get('ws_1');
+    const unit = projection.nodes.find((node) => node.kind === 'learning_unit');
+    expect(projection.status).toBe('current');
+    expect(projection.route.current).toBe(true);
+    expect(unit?.learner.primaryState).toBe('planned');
+    expect(unit?.provenance).toContainEqual(
+      expect.objectContaining({ sourceBlockId: 'blk_1', exactQuoteValidated: true, current: true }),
+    );
+  });
+
+  it('keeps an ambiguous legacy structural reference fail closed', () => {
+    context = buildTestApp();
+    const { repos } = context;
+    repos.materials.insertWithBlocks(makeMaterial(), [
+      makeBlock(),
+      makeBlock({ id: 'blk_2', index: 1 }),
+    ]);
+    repos.materials.addConcepts([makeConcept()]);
+    vi.spyOn(repos.materials, 'getBlocksByWorkspace').mockReturnValue([
+      { ...repos.materials.getBlock('blk_1')!, structuralUnitId: 'legacy-structural-unit' },
+      { ...repos.materials.getBlock('blk_2')!, structuralUnitId: 'legacy-structural-unit' },
+    ] as never);
+    installCurrentRoute({ legacySourceReference: true });
+
+    const projection = createServices({
+      repos,
+      provider: context.provider,
+      clock: fixedClock(T0),
+    }).knowledgeMap.get('ws_1');
+    const unit = projection.nodes.find((node) => node.kind === 'learning_unit');
+
+    expect(projection.status).toBe('unknown');
+    expect(projection.route.current).toBe(false);
+    expect(projection.route.unknownReasons).toContain('invalid_current_provenance');
+    expect(unit?.learner.primaryState).toBe('unknown');
   });
 
   it('returns 404 for a foreign workspace without touching state', async () => {
