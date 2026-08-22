@@ -115,8 +115,25 @@ const PROVIDER_REPAIR_LEASE_MARGIN_MS = 120_000;
 export const LEGACY_CURRICULUM_GENERATION_POLICY = 'legacy_direct_v1' as const;
 export const COURSE_MAP_CURRICULUM_GENERATION_POLICY = 'course_map_materialization_v1' as const;
 export const CURRICULUM_GENERATION_POLICY = LEGACY_CURRICULUM_GENERATION_POLICY;
+/** Long source outlines use the hierarchy-first path even for legacy callers. */
+export const LARGE_CURRICULUM_OUTLINE_THRESHOLD = 80;
 export type CurriculumGenerationPolicy =
   typeof LEGACY_CURRICULUM_GENERATION_POLICY | typeof COURSE_MAP_CURRICULUM_GENERATION_POLICY;
+
+export function curriculumGenerationPolicyForOutline(
+  outlineLength: number,
+  requested: CurriculumGenerationPolicy,
+  explicitlyConfigured = false,
+): CurriculumGenerationPolicy {
+  if (
+    !explicitlyConfigured &&
+    requested === LEGACY_CURRICULUM_GENERATION_POLICY &&
+    outlineLength >= LARGE_CURRICULUM_OUTLINE_THRESHOLD
+  ) {
+    return COURSE_MAP_CURRICULUM_GENERATION_POLICY;
+  }
+  return requested;
+}
 export const CURRICULUM_MAX_LOGICAL_PROVIDER_CALLS = 1 + MAX_DETAIL_BATCHES;
 export const CURRICULUM_MAX_PHYSICAL_PROVIDER_CALLS = CURRICULUM_MAX_LOGICAL_PROVIDER_CALLS * 2;
 export const CURRICULUM_OPERATION_LEASE_MS =
@@ -846,7 +863,12 @@ export function createCurriculumService({
     }
     const context = buildCurriculumExecutionContext(repos, contract);
     const providerTimeoutMs = opts?.timeoutMs ?? CURRICULUM_PROVIDER_TIMEOUT_MS;
-    const generationPolicy = opts?.generationPolicy ?? defaultGenerationPolicy;
+    const requestedGenerationPolicy = opts?.generationPolicy ?? defaultGenerationPolicy;
+    const generationPolicy = curriculumGenerationPolicyForOutline(
+      context.outline.length,
+      requestedGenerationPolicy,
+      opts?.generationPolicy !== undefined,
+    );
     const claim = commands.begin(
       parsed.command,
       'propose_curriculum',

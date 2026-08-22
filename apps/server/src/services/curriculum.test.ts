@@ -21,6 +21,7 @@ import {
   buildCurriculumExecutionContext,
   createCurriculumService,
   CURRICULUM_GENERATION_POLICY,
+  curriculumGenerationPolicyForOutline,
   curriculumOperationLeaseMs,
   LEGACY_CURRICULUM_GENERATION_POLICY,
   type CurriculumService,
@@ -375,6 +376,18 @@ beforeEach(() => {
 });
 
 describe('Curriculum proposal and authority boundaries', () => {
+  it('selects the hierarchy-first generation path at the large-outline threshold', () => {
+    expect(curriculumGenerationPolicyForOutline(79, LEGACY_CURRICULUM_GENERATION_POLICY)).toBe(
+      LEGACY_CURRICULUM_GENERATION_POLICY,
+    );
+    expect(curriculumGenerationPolicyForOutline(80, LEGACY_CURRICULUM_GENERATION_POLICY)).toBe(
+      'course_map_materialization_v1',
+    );
+    expect(
+      curriculumGenerationPolicyForOutline(200, LEGACY_CURRICULUM_GENERATION_POLICY, true),
+    ).toBe(LEGACY_CURRICULUM_GENERATION_POLICY);
+  });
+
   it('defaults production generation to the legacy direct policy', () => {
     expect(CURRICULUM_GENERATION_POLICY).toBe(LEGACY_CURRICULUM_GENERATION_POLICY);
     expect(curriculumOperationLeaseMs(240_000)).toBe(10 * 60 * 1000);

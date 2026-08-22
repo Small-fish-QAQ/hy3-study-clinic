@@ -73,6 +73,117 @@ function normalize(value: string): string {
   return value.trim().replace(/\s+/gu, ' ').toLocaleLowerCase();
 }
 
+function normalizeLearnerTitle(value: string): string {
+  return normalize(value).replace(/[\p{P}\p{S}]/gu, '');
+}
+
+/**
+ * Duplicate headings are common in extracted long documents. They are not a
+ * reason to expose several indistinguishable learner units. When the units
+ * carry different concept/objective meaning, retain both and make that
+ * meaning visible; when their source/objective meaning is identical, reject
+ * the candidate so the previous accepted version remains authoritative.
+ */
+export function normalizeDuplicateLearningUnitTitles(
+  nodes: Curriculum['nodes'],
+  concepts: Concept[],
+  blocks: SourceBlock[],
+  errors: string[],
+): void {
+  const conceptById = new Map(concepts.map((concept) => [concept.id, concept]));
+  const blockById = new Map(blocks.map((block) => [block.id, block]));
+  const siblings = new Map<string, Curriculum['nodes']>();
+  const reportedTitleKeys = new Set<string>();
+  for (const node of nodes) {
+    if (node.kind !== 'learning_unit') continue;
+    // A repeated section wrapper can hide duplicate units from a parent-only
+    // check, so compare learner-visible LearningUnits across the whole course.
+    const key = normalizeLearnerTitle(node.title);
+    const group = siblings.get(key) ?? [];
+    group.push(node);
+    siblings.set(key, group);
+  }
+  for (const [key, group] of siblings) {
+    if (group.length < 2) continue;
+    const labels = group.map((node) => {
+      const conceptsForUnit = (node.learningUnit?.conceptIds ?? [])
+        .map((id) => conceptById.get(id)?.name)
+        .filter((name): name is string => Boolean(name))
+        .map((name) => name.trim())
+        .filter(Boolean);
+      const objective = node.learningUnit?.objectives[0]?.title
+        ?.replace(/^understand\s+/iu, '')
+        .trim();
+      const sourceHint = (node.sourceReferences ?? [])
+        .map((ref) => (ref.sourceBlockId ? blockById.get(ref.sourceBlockId)?.content : null))
+        .find((content): content is string => Boolean(content))
+        ?.split(/(?<=[.!?。！？；;])\s*/u)[0]
+        ?.trim()
+        .replace(/\s+/gu, ' ')
+        .slice(0, 80);
+      const semanticParts = [
+        ...conceptsForUnit,
+        objective && normalizeLearnerTitle(objective) !== normalizeLearnerTitle(node.title)
+          ? objective
+          : '',
+      ];
+      if (semanticParts.filter(Boolean).length === 0) semanticParts.push(sourceHint ?? '');
+      return [...new Set(semanticParts)].filter(Boolean).join(' / ');
+    });
+    const normalizedLabels = labels.map(normalizeLearnerTitle);
+    const canDisambiguate =
+      labels.every(Boolean) && new Set(normalizedLabels).size === normalizedLabels.length;
+    if (canDisambiguate) {
+      group.forEach((node, index) => {
+        const label = labels[index]!;
+        const suffix = ` - ${label}`;
+        node.title = `${node.title.trim().slice(0, Math.max(1, 300 - suffix.length))}${suffix}`;
+      });
+      continue;
+    }
+    const semanticKeys = group.map((node) => {
+      const source = (node.sourceReferences ?? [])
+        .map(
+          (ref) =>
+            `${ref.materialRevisionId}\u0000${ref.structuralUnitId ?? ''}\u0000${ref.sourceBlockId ?? ''}`,
+        )
+        .sort()
+        .join('\u0001');
+      const objectives = (node.learningUnit?.objectives ?? [])
+        .map(
+          (objective) => `${normalize(objective.title)}\u0000${normalize(objective.description)}`,
+        )
+        .sort()
+        .join('\u0001');
+      return `${source}\u0002${objectives}`;
+    });
+    if (
+      new Set(semanticKeys).size !== semanticKeys.length ||
+      new Set(normalizedLabels).size === 1
+    ) {
+      reportedTitleKeys.add(key);
+      errors.push(
+        `Duplicate learner-visible LearningUnit title has no distinct source/objective meaning: ${key.split('\u0000')[1] ?? key}.`,
+      );
+    } else {
+      reportedTitleKeys.add(key);
+      errors.push(
+        `Duplicate learner-visible LearningUnit title could not be deterministically disambiguated: ${key.split('\u0000')[1] ?? key}.`,
+      );
+    }
+  }
+  const finalTitles = new Map<string, string>();
+  for (const node of nodes) {
+    if (node.kind !== 'learning_unit') continue;
+    const titleKey = normalizeLearnerTitle(node.title);
+    const previous = finalTitles.get(titleKey);
+    if (previous && previous !== node.id && !reportedTitleKeys.has(titleKey)) {
+      errors.push(`LearningUnit title normalization still collides for ${node.title}.`);
+    }
+    finalTitles.set(titleKey, node.id);
+  }
+}
+
 function authorityStatus(
   _objective: { title: string; description: string },
   evidence: VerifiedGrounding[],
@@ -567,6 +678,8 @@ export function materializeCurriculumProposal(
       objectiveIds,
     });
   }
+
+  normalizeDuplicateLearningUnitTitles(nodes, ctx.concepts, ctx.blocks, errors);
 
   const unmappedStructuralUnitIds = [...ctx.structuralUnitOwners.keys()].filter(
     (id) => !nodes.some((node) => node.sourceReferences.some((ref) => ref.structuralUnitId === id)),

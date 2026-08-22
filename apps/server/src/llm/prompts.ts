@@ -882,6 +882,7 @@ export function curriculumDetailProposalMessages(
         'Use only evidence, Concept, and canonical Concept identities offered inside that same region. Select at least one exact evidence offer from every listed sourceAllocationRegionId.',
         'Prerequisite and synthesis context is informational: the server maps the validated Course Map structure into the final Curriculum. Do not output prerequisite or synthesis identities.',
         'Each unit needs one to four concrete instructional objectives. Evidence selection identifies exact server-owned excerpts; never reconstruct, paraphrase, or invent source authority.',
+        'Titles are learner-visible teachable-unit identities, not copied parser headings. Derive concise distinctions from the offered Concept names, objective meaning, and exact source excerpts. If adjacent regions share a generic heading, do not repeat that heading as the sole title.',
         'Do not output persisted ids, module or region keys, status, acceptance, truth authority, mastery, completion, risk, or learner-state decisions.',
         'Echo the exact courseMapId and sourceAllocationFingerprint and respect every hard limit.',
         JSON_RULES,

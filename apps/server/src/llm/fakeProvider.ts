@@ -1275,9 +1275,19 @@ export class FakeProvider implements LlmProvider {
         );
         return offer ? [{ evidenceId: offer.evidenceId }] : [];
       });
+      const sourceHint = region.evidence[0]?.text
+        ?.split(/(?<=[.!?。！？；;])\s*/u)[0]
+        ?.trim()
+        .slice(0, 80);
+      const title = (
+        region.concepts[0]?.name ??
+        region.canonicalConcepts[0]?.displayName ??
+        sourceHint ??
+        region.title
+      ).slice(0, 300);
       return {
         regionId: region.regionId,
-        title: region.title,
+        title,
         sourceEvidence: selectedEvidence,
         conceptIds: region.concepts.slice(0, 3).map((concept) => concept.id),
         canonicalConceptIds: region.canonicalConcepts.slice(0, 2).map((concept) => concept.id),

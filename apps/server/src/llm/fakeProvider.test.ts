@@ -465,6 +465,7 @@ describe('FakeProvider.proposeCurriculum', () => {
     expect(() => CurriculumProposalPayloadSchema.parse(payload)).not.toThrow();
     const units = payload.nodes.filter((node) => node.kind === 'learning_unit');
     expect(units).toHaveLength(topicSizes.length);
+    expect(new Set(units.map((unit) => unit.title))).toHaveLength(units.length);
     expect(units.filter((unit) => unit.conceptIds.length > 0)).toHaveLength(concepts.length);
     expect(units.reduce((count, unit) => count + unit.sourceEvidence.length, 0)).toBe(277);
     expect(units.every((unit) => unit.objectives[0]!.evidence.length <= 5)).toBe(true);
