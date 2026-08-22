@@ -18,6 +18,7 @@ function installCurrentRoute(
     lesson?: unknown[];
     agendaLaunchStatus?: 'launchable' | 'blocked';
     legacySourceReference?: boolean;
+    withoutPlan?: boolean;
   } = {},
 ) {
   if (!context) throw new Error('test context is not initialized');
@@ -148,10 +149,10 @@ function installCurrentRoute(
     version: 1,
     activeContractId: 'contract_1',
     activeCurriculumId: 'curriculum_1',
-    acceptedPlanId: 'plan_1',
-    activeAgendaId: 'agenda_1',
-    routeValidationStatus: 'valid',
-    executionStatus: 'active',
+    acceptedPlanId: overrides.withoutPlan ? null : 'plan_1',
+    activeAgendaId: overrides.withoutPlan ? null : 'agenda_1',
+    routeValidationStatus: overrides.withoutPlan ? 'revalidation_required' : 'valid',
+    executionStatus: overrides.withoutPlan ? 'stopped' : 'active',
     updatedAt: T0,
   } as never);
   vi.spyOn(repos.learningContracts, 'get').mockReturnValue({
@@ -246,7 +247,7 @@ describe('Knowledge Map projection service', () => {
     });
   });
 
-  it('projects active source concepts without creating a second mastery authority', () => {
+  it('keeps source concepts internally without publishing a pre-Curriculum map', () => {
     context = buildTestApp();
     const { repos } = context;
     repos.materials.insertWithBlocks(makeMaterial(), [makeBlock()]);
@@ -254,18 +255,31 @@ describe('Knowledge Map projection service', () => {
     const services = createServices({ repos, provider: context.provider, clock: fixedClock(T0) });
 
     const projection = services.knowledgeMap.get('ws_1');
-    expect(projection.nodes).toHaveLength(1);
-    expect(projection.nodes[0]).toMatchObject({
-      kind: 'concept',
-      id: 'concept:con_1',
-      learner: { primaryState: 'not_started', legacyMastery: null },
-      weaknesses: [],
+    expect(projection.status).toBe('unconfigured');
+    expect(projection.nodes).toEqual([]);
+    expect(context.db.prepare('SELECT COUNT(*) AS count FROM concepts').get()).toEqual({
+      count: 1,
     });
-    expect(projection.nodes[0]?.provenance[0]).toMatchObject({
-      kind: 'source_concept_grounding',
-      exactQuoteValidated: true,
-      semanticEntailmentClaimed: false,
-    });
+  });
+
+  it('publishes Structure without making Route available before a StudyPlan exists', () => {
+    context = buildTestApp();
+    const { repos } = context;
+    repos.materials.insertWithBlocks(makeMaterial(), [makeBlock()]);
+    repos.materials.addConcepts([makeConcept()]);
+    installCurrentRoute({ withoutPlan: true });
+
+    const projection = createServices({
+      repos,
+      provider: context.provider,
+      clock: fixedClock(T0),
+    }).knowledgeMap.get('ws_1');
+
+    expect(projection.nodes.some((node) => node.kind === 'learning_unit')).toBe(true);
+    expect(projection.route.curriculumVersionId).toBe('curriculum_1');
+    expect(projection.route.studyPlanVersionId).toBeNull();
+    expect(projection.route.current).toBe(false);
+    expect(projection.route.unknownReasons).toContain('incomplete_route_pointers');
   });
 
   it('keeps Repair, Review, formal failure, and Red Team advisory signals distinct', () => {
@@ -476,12 +490,7 @@ describe('Knowledge Map projection service', () => {
     expect(projection.status).toBe('unknown');
     expect(projection.route.current).toBe(false);
     expect(projection.route.unknownReasons).toContain('source_manifest_mismatch');
-    expect(
-      projection.nodes.find((node) => node.kind === 'learning_unit')?.learner.primaryState,
-    ).toBe('unknown');
-    expect(
-      projection.nodes.find((node) => node.kind === 'learning_unit')?.navigation,
-    ).not.toContainEqual(expect.objectContaining({ destination: 'study' }));
+    expect(projection.nodes).toEqual([]);
   });
 
   it('resolves a uniquely bound legacy structural reference without inventing identity', () => {
@@ -527,12 +536,10 @@ describe('Knowledge Map projection service', () => {
       provider: context.provider,
       clock: fixedClock(T0),
     }).knowledgeMap.get('ws_1');
-    const unit = projection.nodes.find((node) => node.kind === 'learning_unit');
-
     expect(projection.status).toBe('unknown');
     expect(projection.route.current).toBe(false);
     expect(projection.route.unknownReasons).toContain('invalid_current_provenance');
-    expect(unit?.learner.primaryState).toBe('unknown');
+    expect(projection.nodes).toEqual([]);
   });
 
   it('returns 404 for a foreign workspace without touching state', async () => {

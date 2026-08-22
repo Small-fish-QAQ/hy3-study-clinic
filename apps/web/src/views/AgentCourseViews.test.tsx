@@ -593,11 +593,11 @@ describe('CourseHomeView action and authority rendering', () => {
       'data-state',
       'complete',
     );
-    expect(within(status).getByText('课程结构已完成').closest('li')).toHaveAttribute(
+    expect(within(status).getByText('正在准备课程结构').closest('li')).toHaveAttribute(
       'data-state',
       'in_progress',
     );
-    expect(within(status).getByText('课程方案已检查').closest('li')).toHaveAttribute(
+    expect(within(status).getByText('课程方案待准备').closest('li')).toHaveAttribute(
       'data-state',
       'pending',
     );

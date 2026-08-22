@@ -681,6 +681,53 @@ describe('Course Preparation coordinator', () => {
     });
   });
 
+  it('retains a structural Curriculum failure after an earlier concept step and does not retry it', async () => {
+    const harness = createHarness({ provider: new TrackingProvider() });
+    harness.provider.failCurriculum = true;
+    const preparation = harness.services.coursePreparation.get('ws_1');
+
+    await expect(harness.services.coursePreparation.run(runRequest(preparation))).rejects.toThrow(
+      'controlled Curriculum failure',
+    );
+    const operation = harness.repos.operations.listForWorkspace('ws_1', 'course_preparation')[0]!;
+    harness.db.prepare('UPDATE agent_operation_results SET payload = ? WHERE operation_id = ?').run(
+      JSON.stringify({
+        code: ApiErrorCode.GroundingFailed,
+        message: 'Curriculum candidate failed deterministic quality validation.',
+        details: {
+          kind: 'curriculum_candidate_validation',
+          repairAttempted: true,
+          errors: ['Pedagogical Curriculum quality: over_compressed_systematic_route'],
+          warnings: [],
+        },
+      }),
+      operation.id,
+    );
+
+    const blocked = harness.services.coursePreparation.get('ws_1');
+    expect(blocked).toMatchObject({
+      state: 'blocked',
+      machineAction: null,
+      learnerAction: 'review_course_structure',
+      learnerDecisionRequired: true,
+      canResume: false,
+      operationKey: null,
+      blocker: {
+        code: 'course_structure_review_required',
+        message: '课程结构需要重新组织。',
+      },
+      failure: { action: 'prepare_course_structure', retryable: false },
+    });
+
+    const curriculumCalls = harness.provider.curriculumCalls;
+    const result = await harness.services.coursePreparation.run({
+      command: command('structural-no-retry'),
+      expectedRevision: blocked.revision,
+    });
+    expect(result.preparation).toEqual(blocked);
+    expect(harness.provider.curriculumCalls).toBe(curriculumCalls);
+  });
+
   it('cancels in-flight preparation without persisting a Curriculum or StudyPlan', async () => {
     const provider = new TrackingProvider({ delayMs: 50 });
     const harness = createHarness({ provider });

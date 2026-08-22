@@ -227,7 +227,7 @@ describe('Course Preparation nested contracts', () => {
     ).toBe(false);
   });
 
-  it('accepts only retryable, structured failures with controlled actions', () => {
+  it('accepts retryable and review-required structured failures with controlled actions', () => {
     const failure = {
       code: 'PROVIDER_TIMEOUT' as const,
       action: 'prepare_course_plan' as const,
@@ -237,7 +237,7 @@ describe('Course Preparation nested contracts', () => {
 
     expect(CoursePreparationFailureSchema.safeParse(failure).success).toBe(true);
     expect(CoursePreparationFailureSchema.safeParse({ ...failure, retryable: false }).success).toBe(
-      false,
+      true,
     );
     expect(
       CoursePreparationFailureSchema.safeParse({ ...failure, action: 'accept_course_plan' })

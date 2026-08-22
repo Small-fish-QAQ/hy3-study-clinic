@@ -67,6 +67,8 @@ type RouteArtifacts = {
   curriculum: NonNullable<ReturnType<Repositories['curricula']['get']>> | null;
   plan: NonNullable<ReturnType<Repositories['studyPlans']['get']>> | null;
   agenda: NonNullable<ReturnType<Repositories['sessionAgendas']['get']>> | null;
+  /** Accepted Curriculum/source identity is a separate maturity boundary from a full route. */
+  curriculumCurrent: boolean;
   current: boolean;
   reasons: KnowledgeMapProjection['route']['unknownReasons'];
 };
@@ -305,6 +307,24 @@ function addReason(
   if (!reasons.includes(reason)) reasons.push(reason);
 }
 
+function checkCurriculumManifest(
+  curriculum: Curriculum,
+  activeRevisionByMaterial: Map<string, string>,
+  activeBlockIdsByMaterial: Map<string, Set<string>>,
+  reasons: KnowledgeMapProjection['route']['unknownReasons'],
+): void {
+  for (const revision of curriculum.executionSourceManifest.revisions) {
+    if (activeRevisionByMaterial.get(revision.materialId) !== revision.materialRevisionId) {
+      addReason(reasons, 'stale_source_revision');
+      continue;
+    }
+    const activeBlocks = activeBlockIdsByMaterial.get(revision.materialId) ?? new Set<string>();
+    if (revision.sourceBlockRevisionIds.some((id) => !activeBlocks.has(id))) {
+      addReason(reasons, 'stale_source_revision');
+    }
+  }
+}
+
 function checkCurrentManifest(
   curriculum: Curriculum,
   plan: StudyPlan,
@@ -352,72 +372,97 @@ function readRoute(
       curriculum: null,
       plan: null,
       agenda: null,
+      curriculumCurrent: false,
       current: false,
       reasons,
     };
   }
-  if (pointers.some((pointer) => pointer === null) || state.updatedAt === null) {
-    addReason(reasons, 'incomplete_route_pointers');
-    return {
-      state,
-      contract: null,
-      curriculum: null,
-      plan: null,
-      agenda: null,
-      current: false,
-      reasons,
-    };
-  }
-  const contract = repos.learningContracts.get(state.activeContractId!);
-  const curriculum = repos.curricula.get(state.activeCurriculumId!);
-  const plan = repos.studyPlans.get(state.acceptedPlanId!);
-  const agenda = repos.sessionAgendas.get(state.activeAgendaId!);
-  if (!contract || !curriculum || !plan || !agenda) {
+  if (state.updatedAt === null) addReason(reasons, 'incomplete_route_pointers');
+  if (pointers.some((pointer) => pointer === null)) addReason(reasons, 'incomplete_route_pointers');
+
+  // Read every independently persisted pointer. A missing Plan or Agenda must
+  // make Route unavailable without hiding an otherwise accepted Curriculum
+  // Structure from the learner.
+  const contract = state.activeContractId
+    ? (repos.learningContracts.get(state.activeContractId) ?? null)
+    : null;
+  const curriculum = state.activeCurriculumId
+    ? (repos.curricula.get(state.activeCurriculumId) ?? null)
+    : null;
+  const plan = state.acceptedPlanId ? (repos.studyPlans.get(state.acceptedPlanId) ?? null) : null;
+  const agenda = state.activeAgendaId
+    ? (repos.sessionAgendas.get(state.activeAgendaId) ?? null)
+    : null;
+  if ((state.activeContractId && !contract) || (state.activeCurriculumId && !curriculum)) {
     addReason(reasons, 'missing_route_artifact');
-    return {
-      state,
-      contract: contract ?? null,
-      curriculum: curriculum ?? null,
-      plan: plan ?? null,
-      agenda: agenda ?? null,
-      current: false,
-      reasons,
-    };
   }
-  if (state.routeValidationStatus !== 'valid') addReason(reasons, 'route_not_valid');
-  if (
-    contract.workspaceId !== workspaceId ||
-    contract.status !== 'active' ||
-    curriculum.workspaceId !== workspaceId ||
-    curriculum.status !== 'accepted' ||
-    !curriculum.validation.valid ||
-    plan.workspaceId !== workspaceId ||
-    plan.status !== 'accepted' ||
-    agenda.workspaceId !== workspaceId ||
-    agenda.status === 'abandoned' ||
-    curriculum.contractVersionId !== contract.id ||
-    plan.contractVersionId !== contract.id ||
-    plan.curriculumVersionId !== curriculum.id ||
-    agenda.contractVersionId !== contract.id ||
-    agenda.curriculumVersionId !== curriculum.id ||
-    agenda.studyPlanVersionId !== plan.id ||
-    agenda.executionSourceManifestFingerprint !== plan.executionSourceManifestFingerprint
-  )
-    addReason(reasons, 'route_identity_mismatch');
-  checkCurrentManifest(
-    curriculum,
-    plan,
-    agenda,
-    activeRevisionByMaterial,
-    activeBlockIdsByMaterial,
-    reasons,
+  if ((state.acceptedPlanId && !plan) || (state.activeAgendaId && !agenda)) {
+    addReason(reasons, 'missing_route_artifact');
+  }
+
+  let curriculumCurrent = Boolean(
+    contract &&
+    curriculum &&
+    contract.workspaceId === workspaceId &&
+    (contract.status === 'active' || contract.status === 'learner_confirmed') &&
+    curriculum.workspaceId === workspaceId &&
+    curriculum.status === 'accepted' &&
+    curriculum.validation.valid &&
+    curriculum.contractVersionId === contract.id,
   );
+  if (curriculumCurrent && curriculum) {
+    checkCurriculumManifest(
+      curriculum,
+      activeRevisionByMaterial,
+      activeBlockIdsByMaterial,
+      reasons,
+    );
+    curriculumCurrent = !reasons.some((reason) =>
+      ['stale_source_revision', 'source_manifest_mismatch', 'invalid_current_provenance'].includes(
+        reason,
+      ),
+    );
+  } else if (curriculum && contract) {
+    addReason(reasons, 'route_identity_mismatch');
+  }
+
+  if (state.routeValidationStatus !== 'valid') addReason(reasons, 'route_not_valid');
+  if (curriculum && contract && plan && agenda) {
+    if (
+      contract.workspaceId !== workspaceId ||
+      contract.status !== 'active' ||
+      curriculum.workspaceId !== workspaceId ||
+      curriculum.status !== 'accepted' ||
+      !curriculum.validation.valid ||
+      plan.workspaceId !== workspaceId ||
+      plan.status !== 'accepted' ||
+      agenda.workspaceId !== workspaceId ||
+      agenda.status === 'abandoned' ||
+      curriculum.contractVersionId !== contract.id ||
+      plan.contractVersionId !== contract.id ||
+      plan.curriculumVersionId !== curriculum.id ||
+      agenda.contractVersionId !== contract.id ||
+      agenda.curriculumVersionId !== curriculum.id ||
+      agenda.studyPlanVersionId !== plan.id ||
+      agenda.executionSourceManifestFingerprint !== plan.executionSourceManifestFingerprint
+    )
+      addReason(reasons, 'route_identity_mismatch');
+    checkCurrentManifest(
+      curriculum,
+      plan,
+      agenda,
+      activeRevisionByMaterial,
+      activeBlockIdsByMaterial,
+      reasons,
+    );
+  }
   return {
     state,
     contract,
     curriculum,
     plan,
     agenda,
+    curriculumCurrent,
     current: reasons.every((reason) => !ROUTE_BLOCKING_REASONS.has(reason)),
     reasons,
   };
@@ -665,7 +710,7 @@ export function createKnowledgeMapService({
       ) {
         addReason(route.reasons, 'invalid_current_provenance');
       }
-      if (route.current && route.curriculum) {
+      if (route.curriculumCurrent && route.curriculum) {
         for (const curriculumNode of route.curriculum.nodes) {
           for (const ref of curriculumNode.sourceReferences) {
             const currentRef = curriculumProvenance(
@@ -680,6 +725,15 @@ export function createKnowledgeMapService({
       }
       const routeUsable = () =>
         route.current && !route.reasons.some((reason) => ROUTE_BLOCKING_REASONS.has(reason));
+      const structureUsable = () =>
+        route.curriculumCurrent &&
+        !route.reasons.some((reason) =>
+          [
+            'stale_source_revision',
+            'source_manifest_mismatch',
+            'invalid_current_provenance',
+          ].includes(reason),
+        );
       const graphData = graph.getActive(workspaceId);
       const graphConceptIds = new Set(concepts.map((concept) => concept.id));
       const mastery = new Map(
@@ -706,11 +760,12 @@ export function createKnowledgeMapService({
       const nodeIdByUnitId = new Map<string, string>();
       const nodes: KnowledgeMapNode[] = [];
       const edges: KnowledgeMapEdge[] = [];
-      const allUnitNodes = route.curriculum
-        ? route.curriculum.nodes.filter((node) => node.kind === 'learning_unit')
-        : [];
+      const allUnitNodes =
+        structureUsable() && route.curriculum
+          ? route.curriculum.nodes.filter((node) => node.kind === 'learning_unit')
+          : [];
       const unitById = new Map(allUnitNodes.map((node) => [node.id, node]));
-      if (route.current && route.curriculum) {
+      if (structureUsable() && route.curriculum) {
         for (const node of allUnitNodes) {
           const unit = node.learningUnit!;
           for (const prerequisite of unit.prerequisiteUnitIds) {
@@ -1055,7 +1110,11 @@ export function createKnowledgeMapService({
           objectiveIds: [],
         };
       };
-      for (const concept of concepts) nodes.push(sourceNodeForConcept(concept));
+      // Concepts remain durable internal substrate, but are never published as
+      // a normal learner Knowledge Map before an accepted current Curriculum.
+      if (structureUsable()) {
+        for (const concept of concepts) nodes.push(sourceNodeForConcept(concept));
+      }
       const buildUnitNode = (node: Curriculum['nodes'][number]): KnowledgeMapNode => {
         const unit = node.learningUnit!;
         const refs: KnowledgeMapAuthorityRef[] = [];
@@ -1585,7 +1644,7 @@ export function createKnowledgeMapService({
           }
         }
       }
-      for (const group of route.curriculum?.synthesisGroups ?? []) {
+      for (const group of structureUsable() ? (route.curriculum?.synthesisGroups ?? []) : []) {
         const groupObjectives = new Set(group.objectiveIds);
         const groupPlanItems = route.plan
           ? currentPlanItems(route.plan, groupObjectives, null)
@@ -1676,7 +1735,7 @@ export function createKnowledgeMapService({
           parentNodeId: null,
         });
       }
-      for (const edge of graphData.edges) {
+      for (const edge of structureUsable() ? graphData.edges : []) {
         if (
           !graphConceptIds.has(edge.sourceConceptId) ||
           !graphConceptIds.has(edge.targetConceptId)
@@ -1859,15 +1918,16 @@ export function createKnowledgeMapService({
       const blockingRouteUnknown = route.reasons.some((reason) =>
         ROUTE_BLOCKING_REASONS.has(reason),
       );
-      const status: KnowledgeMapProjection['status'] = blockingRouteUnknown
-        ? route.contract || route.curriculum
+      const structureReady = structureUsable();
+      const status: KnowledgeMapProjection['status'] = !structureReady
+        ? route.curriculum
           ? 'unknown'
           : 'unconfigured'
-        : route.reasons.length
-          ? 'partial'
-          : route.current
-            ? 'current'
-            : 'unconfigured';
+        : route.current && !blockingRouteUnknown
+          ? route.reasons.length
+            ? 'partial'
+            : 'current'
+          : 'partial';
       return KnowledgeMapProjectionSchema.parse({
         schemaVersion: 1,
         projectionVersion: 'knowledge-map-projection-v1',

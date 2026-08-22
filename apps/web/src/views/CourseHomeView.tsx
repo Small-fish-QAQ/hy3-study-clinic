@@ -36,16 +36,38 @@ const PREPARATION_TEXT: Record<CoursePreparation['state'], string> = {
   complete: '课程已经准备好',
 };
 
-const CHECKPOINT_TEXT: Array<{
-  key: keyof CoursePreparation['checkpoints'];
-  label: string;
-}> = [
-  { key: 'materials', label: '资料已整理' },
-  { key: 'concepts', label: '核心内容已准备' },
-  { key: 'courseStructure', label: '课程结构已完成' },
-  { key: 'coursePlan', label: '课程方案已检查' },
-  { key: 'assessmentReadiness', label: '正式检验依据已检查' },
-];
+const CHECKPOINT_TEXT: Record<keyof CoursePreparation['checkpoints'], string> = {
+  materials: '资料',
+  concepts: '核心内容',
+  courseStructure: '课程结构',
+  coursePlan: '课程方案',
+  assessmentReadiness: '正式检验依据',
+};
+const CHECKPOINT_COMPLETE_TEXT: Record<keyof CoursePreparation['checkpoints'], string> = {
+  materials: '资料已整理',
+  concepts: '核心内容已准备',
+  courseStructure: '课程结构已完成',
+  coursePlan: '课程方案已检查',
+  assessmentReadiness: '正式检验依据已检查',
+};
+
+function checkpointLabel(
+  key: keyof CoursePreparation['checkpoints'],
+  state: CoursePreparation['checkpoints'][typeof key] | undefined,
+): string {
+  const subject = CHECKPOINT_TEXT[key];
+  switch (state ?? 'pending') {
+    case 'complete':
+      return CHECKPOINT_COMPLETE_TEXT[key];
+    case 'in_progress':
+      return `正在准备${subject}`;
+    case 'blocked':
+      return `${subject}需要检查`;
+    case 'pending':
+    default:
+      return `${subject}待准备`;
+  }
+}
 
 const FEASIBILITY_TEXT: Record<
   NonNullable<CourseExecutionOverview['contractFeasibility']>['state'],
@@ -423,23 +445,25 @@ export function CourseHomeView({
               <h3>{PREPARATION_TEXT[preparation.state]}</h3>
             </div>
             <ol>
-              {CHECKPOINT_TEXT.map(({ key, label }) => {
-                const state = preparation.checkpoints[key] ?? 'pending';
-                const mark =
-                  state === 'complete'
-                    ? '✓'
-                    : state === 'in_progress'
-                      ? '…'
-                      : state === 'blocked'
-                        ? '!'
-                        : '○';
-                return (
-                  <li key={key} data-state={state}>
-                    <span aria-hidden="true">{mark}</span>
-                    <span>{label}</span>
-                  </li>
-                );
-              })}
+              {(Object.keys(CHECKPOINT_TEXT) as Array<keyof CoursePreparation['checkpoints']>).map(
+                (key) => {
+                  const state = preparation.checkpoints[key] ?? 'pending';
+                  const mark =
+                    state === 'complete'
+                      ? '✓'
+                      : state === 'in_progress'
+                        ? '…'
+                        : state === 'blocked'
+                          ? '!'
+                          : '○';
+                  return (
+                    <li key={key} data-state={state}>
+                      <span aria-hidden="true">{mark}</span>
+                      <span>{checkpointLabel(key, state)}</span>
+                    </li>
+                  );
+                },
+              )}
             </ol>
             {preparation.blocker ? (
               <p className="small muted">{preparation.blocker.message}</p>

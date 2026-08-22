@@ -81,6 +81,30 @@ describe('learner-facing Knowledge Map', () => {
     expect(get).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps learner-state modes unavailable when the projection has no learner authority', async () => {
+    const projection = knowledgeMapProjection();
+    projection.nodes = projection.nodes.map((node) => ({
+      ...node,
+      learner: {
+        ...node.learner,
+        primaryState: 'not_started',
+        milestones: [],
+        progression: [],
+        legacyMastery: null,
+        reasonCodes: ['no_current_learning_activity'],
+        authorityRefs: [],
+      },
+      weaknesses: [],
+    }));
+    vi.spyOn(api, 'getKnowledgeMap').mockResolvedValue({ projection });
+    renderMap();
+
+    await screen.findByRole('tab', { name: '知识结构' });
+    expect(screen.getAllByRole('tab')).toHaveLength(2);
+    expect(screen.queryByRole('tab', { name: '学习进展' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: '关注地图' })).not.toBeInTheDocument();
+  });
+
   it('keeps Formal failure, Repair, due Review, retrievability, and advisory explanations distinct', async () => {
     const user = userEvent.setup();
     mockProjection();
@@ -176,7 +200,7 @@ describe('learner-facing Knowledge Map', () => {
     empty.edges = [];
     vi.spyOn(api, 'getKnowledgeMap').mockResolvedValueOnce({ projection: empty });
     const first = renderMap();
-    expect(await screen.findByText('课程结构准备好后，这里会出现知识地图')).toBeInTheDocument();
+    expect(await screen.findByText('课程结构还没有准备完成')).toBeInTheDocument();
     first.unmount();
 
     const get = vi

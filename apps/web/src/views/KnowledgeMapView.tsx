@@ -618,8 +618,38 @@ function KnowledgeMapCanvas({
 function projectionStatusMessage(projection: KnowledgeMapProjection): string | null {
   if (projection.status === 'unknown')
     return '当前课程路线或资料版本暂时无法对应，因此暂不显示学习状态。';
+  if (projection.route.curriculumVersionId && !projection.route.studyPlanVersionId)
+    return '课程结构已经准备好，学习路线将在学习安排生成后可用。';
   if (projection.status === 'partial') return '地图可用，但部分图关系或规模信息不完整。';
   return null;
+}
+
+function hasCompatibleLearnerState(projection: KnowledgeMapProjection): boolean {
+  const learnerAuthorities = new Set([
+    'formal_assessment',
+    'formal_progression',
+    'repair',
+    'review',
+    'mistake',
+    'legacy_mastery',
+  ]);
+  return projection.nodes.some(
+    (node) =>
+      node.learner.progression.length > 0 ||
+      node.learner.legacyMastery !== null ||
+      node.weaknesses.some((signal) => !signal.advisory) ||
+      node.learner.authorityRefs.some((ref) => learnerAuthorities.has(ref.authority)),
+  );
+}
+
+function modeAvailable(projection: KnowledgeMapProjection, mode: KnowledgeMapMode): boolean {
+  const hasPublishedStructure = projection.nodes.some(
+    (node) => node.kind === 'curriculum_region' || node.kind === 'learning_unit',
+  );
+  if (!hasPublishedStructure) return false;
+  if (mode === 'knowledge_structure') return true;
+  if (mode === 'learning_route') return projection.route.current;
+  return projection.route.current && hasCompatibleLearnerState(projection);
 }
 
 function navigationLabel(target: KnowledgeMapNavigationTarget): string {
@@ -962,15 +992,25 @@ export function KnowledgeMapView({
     );
   }
   if (!currentProjection) return null;
-  if (currentProjection.status === 'unconfigured' && currentProjection.nodes.length === 0) {
+  if (
+    !currentProjection.nodes.some(
+      (node) => node.kind === 'curriculum_region' || node.kind === 'learning_unit',
+    )
+  ) {
     return (
       <section className="knowledge-map-load-state" role="status">
-        <strong>课程结构准备好后，这里会出现知识地图</strong>
-        <p>先确认学习目标并接受课程结构；地图不会在缺少可靠路线时猜测学习状态。</p>
+        <strong>课程结构还没有准备完成</strong>
+        <p>知识地图将在课程结构确认后生成。概念分析等内部准备结果会继续保留。</p>
       </section>
     );
   }
-  const presentation = modePresentation(mode);
+  const availableModes = KNOWLEDGE_MAP_MODES.filter((item) =>
+    modeAvailable(currentProjection, item.mode),
+  );
+  const visibleMode = availableModes.some((item) => item.mode === mode)
+    ? mode
+    : 'knowledge_structure';
+  const presentation = modePresentation(visibleMode);
   const statusMessage = projectionStatusMessage(currentProjection);
   return (
     <div
@@ -985,7 +1025,7 @@ export function KnowledgeMapView({
           <p className="muted">{presentation.summary}</p>
         </div>
         <div className="knowledge-map-mode-tabs" role="tablist" aria-label="知识地图模式">
-          {KNOWLEDGE_MAP_MODES.map((item) => (
+          {availableModes.map((item) => (
             <button
               key={item.mode}
               type="button"
@@ -996,15 +1036,15 @@ export function KnowledgeMapView({
               className={mode === item.mode ? 'active' : ''}
               onClick={() => setMode(item.mode)}
               onKeyDown={(event) => {
-                const current = KNOWLEDGE_MAP_MODES.findIndex(
-                  (candidate) => candidate.mode === mode,
+                const current = availableModes.findIndex(
+                  (candidate) => candidate.mode === visibleMode,
                 );
                 const offset = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
                 if (!offset) return;
                 event.preventDefault();
                 const next =
-                  KNOWLEDGE_MAP_MODES[
-                    (current + offset + KNOWLEDGE_MAP_MODES.length) % KNOWLEDGE_MAP_MODES.length
+                  availableModes[
+                    (current + offset + availableModes.length) % availableModes.length
                   ]!;
                 setMode(next.mode);
                 requestAnimationFrame(() =>
@@ -1028,7 +1068,7 @@ export function KnowledgeMapView({
           <KnowledgeMapCanvas
             key={knowledgeMapIdentity(currentProjection)}
             projection={currentProjection}
-            mode={mode}
+            mode={visibleMode}
             selectedNodeId={selectedNodeId}
             expandedNodeIds={expandedNodeIds}
             focusRequestId={intent?.requestId ?? null}

@@ -82,7 +82,8 @@ export const CoursePreparationFailureSchema = z
     code: ApiErrorCodeSchema.nullable(),
     action: CoursePreparationMachineActionSchema,
     occurredAt: z.string().datetime(),
-    retryable: z.literal(true),
+    /** False means the failed artifact needs review/reorganization, not another identical run. */
+    retryable: z.boolean(),
   })
   .strict();
 export type CoursePreparationFailure = z.infer<typeof CoursePreparationFailureSchema>;
@@ -194,11 +195,14 @@ export const CoursePreparationSchema = z
         message: 'only active machine-owned preparation can be cancelled',
       });
     }
-    if ((preparation.failure !== null) !== (preparation.state === 'failed_recoverable')) {
+    if (
+      (preparation.failure !== null) !==
+      ['failed_recoverable', 'blocked'].includes(preparation.state)
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['failure'],
-        message: 'recoverable failure state and failure details disagree',
+        message: 'failure state and failure details disagree',
       });
     }
   });

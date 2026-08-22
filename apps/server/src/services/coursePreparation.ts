@@ -102,6 +102,63 @@ function operationKey(workspaceId: string, revision: string, attempt: number): s
   return `course-preparation:${fnv1a32(workspaceId).toString(16)}:${revision}:${attempt}`;
 }
 
+function failurePayloadDetails(payload: unknown): { code: string | null; details: unknown } {
+  if (typeof payload !== 'object' || payload === null) return { code: null, details: null };
+  const code =
+    'code' in payload && ApiErrorCodeSchema.safeParse(payload.code).success
+      ? (payload.code as string)
+      : null;
+  return { code, details: 'details' in payload ? payload.details : null };
+}
+
+function isStructuralCurriculumFailure(
+  action: CoursePreparationMachineAction,
+  payload: unknown,
+): boolean {
+  if (action !== 'prepare_course_structure') return false;
+  const { code, details } = failurePayloadDetails(payload);
+  if (code !== ApiErrorCode.GroundingFailed && code !== ApiErrorCode.ValidationError) return false;
+  if (typeof details !== 'object' || details === null || !('kind' in details)) return false;
+  return details.kind === 'curriculum_candidate_validation';
+}
+
+function structuralCurriculumFailureMessage(payload: unknown): string {
+  const details = failurePayloadDetails(payload).details;
+  const errors =
+    typeof details === 'object' &&
+    details !== null &&
+    'errors' in details &&
+    Array.isArray(details.errors)
+      ? details.errors.filter((error): error is string => typeof error === 'string')
+      : [];
+  const joined = errors.join(' ');
+  if (/unresolved_meaningful_source_gap|unmapped source|coverage/iu.test(joined)) {
+    return '部分学习内容还没有可靠纳入课程结构。';
+  }
+  if (
+    /over_compressed|semantic_topic_scattering|numbering|prerequisite|objective_alignment|Pedagogical Curriculum quality/iu.test(
+      joined,
+    )
+  ) {
+    return '课程结构需要重新组织。';
+  }
+  return '课程结构没有通过完整性检查。';
+}
+
+function operationReachedPreparationAction(
+  repos: Repositories,
+  operationId: string,
+  action: CoursePreparationMachineAction,
+  revision: string,
+): boolean {
+  return repos.operations.listEvents(operationId).some((event) => {
+    if (event.kind !== 'preparation_step_started') return false;
+    if (typeof event.payload !== 'object' || event.payload === null) return false;
+    const payload = event.payload as { action?: unknown; revision?: unknown };
+    return payload.action === action && payload.revision === revision;
+  });
+}
+
 function machineCommand(
   workspaceId: string,
   parentOperationKey: string,
@@ -764,7 +821,15 @@ export function createCoursePreparationService({
         ...base,
         operationKey: null,
         canCancel: false,
-        failure: null,
+        failure:
+          base.state === 'blocked'
+            ? {
+                code: null,
+                action: 'prepare_course_plan',
+                occurredAt: base.generatedAt,
+                retryable: false,
+              }
+            : null,
       });
     }
 
@@ -791,7 +856,9 @@ export function createCoursePreparationService({
       });
     }
     const matching = operations.filter(
-      (operation) => operation.expectedFingerprint === expectedFingerprint,
+      (operation) =>
+        operation.expectedFingerprint === expectedFingerprint ||
+        operationReachedPreparationAction(repos, operation.id, base.machineAction!, base.revision),
     );
     const latest = matching[0];
     const nextOperationKey = operationKey(workspaceId, base.revision, matching.length + 1);
@@ -822,6 +889,30 @@ export function createCoursePreparationService({
         typeof result?.payload === 'object' && result.payload !== null ? result.payload : null;
       const code = payload && 'code' in payload ? ApiErrorCodeSchema.safeParse(payload.code) : null;
       const interrupted = latest.status === 'interrupted';
+      const structuralFailure =
+        !interrupted && isStructuralCurriculumFailure(base.machineAction, payload);
+      if (structuralFailure) {
+        return CoursePreparationSchema.parse({
+          ...base,
+          state: 'blocked',
+          machineAction: null,
+          learnerAction: 'review_course_structure',
+          learnerDecisionRequired: true,
+          canResume: false,
+          operationKey: null,
+          canCancel: false,
+          blocker: {
+            code: 'course_structure_review_required',
+            message: structuralCurriculumFailureMessage(payload),
+          },
+          failure: {
+            code: code?.success ? code.data : null,
+            action: base.machineAction,
+            occurredAt: latest.updatedAt,
+            retryable: false,
+          },
+        });
+      }
       return CoursePreparationSchema.parse({
         ...base,
         operationKey: nextOperationKey,
