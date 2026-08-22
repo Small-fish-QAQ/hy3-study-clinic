@@ -604,6 +604,43 @@ describe('CourseHomeView action and authority rendering', () => {
     expect(status).not.toHaveTextContent(/concept|graph|prepare-course-ws-1/iu);
   });
 
+  it('labels a blocked checkpoint as needing review instead of completed', () => {
+    const props = homeProps(recoveryOverview('concept_grounding_missing'));
+    props.preparation = preparation({
+      operationKey: null,
+      state: 'blocked',
+      machineAction: null,
+      learnerAction: 'none',
+      canResume: false,
+      canCancel: false,
+      checkpoints: {
+        materials: 'complete',
+        concepts: 'complete',
+        courseStructure: 'blocked',
+        coursePlan: 'pending',
+      },
+      blocker: {
+        code: 'course_structure_review_required',
+        message: '课程结构需要重新组织。',
+      },
+      failure: {
+        code: 'GROUNDING_FAILED',
+        action: 'prepare_course_structure',
+        occurredAt: AT,
+        retryable: false,
+      },
+    });
+
+    render(<CourseHomeView {...props} />);
+
+    const status = screen.getByLabelText('课程准备状态');
+    expect(within(status).getByText('课程结构需要检查').closest('li')).toHaveAttribute(
+      'data-state',
+      'blocked',
+    );
+    expect(within(status).queryByText('课程结构已完成')).not.toBeInTheDocument();
+  });
+
   it('offers a learner-safe retry after recoverable preparation failure', async () => {
     const props = homeProps(recoveryOverview('concept_grounding_missing'));
     props.preparation = preparation({

@@ -282,6 +282,27 @@ describe('Knowledge Map projection service', () => {
     expect(projection.route.unknownReasons).toContain('incomplete_route_pointers');
   });
 
+  it('does not mutate accepted Course authority while applying the publication gate', () => {
+    context = buildTestApp();
+    const { repos } = context;
+    repos.materials.insertWithBlocks(makeMaterial(), [makeBlock()]);
+    repos.materials.addConcepts([makeConcept()]);
+    installCurrentRoute();
+    const beforeExecution = repos.courseExecution.get('ws_1');
+    const beforeCurriculum = repos.curricula.get('curriculum_1');
+    const beforePlan = repos.studyPlans.get('plan_1');
+    const beforeAgenda = repos.sessionAgendas.get('agenda_1');
+
+    createServices({ repos, provider: context.provider, clock: fixedClock(T0) }).knowledgeMap.get(
+      'ws_1',
+    );
+
+    expect(repos.courseExecution.get('ws_1')).toEqual(beforeExecution);
+    expect(repos.curricula.get('curriculum_1')).toEqual(beforeCurriculum);
+    expect(repos.studyPlans.get('plan_1')).toEqual(beforePlan);
+    expect(repos.sessionAgendas.get('agenda_1')).toEqual(beforeAgenda);
+  });
+
   it('keeps Repair, Review, formal failure, and Red Team advisory signals distinct', () => {
     context = buildTestApp();
     const { repos } = context;

@@ -105,6 +105,36 @@ describe('learner-facing Knowledge Map', () => {
     expect(screen.queryByRole('tab', { name: '关注地图' })).not.toBeInTheDocument();
   });
 
+  it('drops a stale projection when the learner switches Course', async () => {
+    let resolveFirst!: (value: KnowledgeMapProjectionResponse) => void;
+    let resolveSecond!: (value: KnowledgeMapProjectionResponse) => void;
+    const first = new Promise<KnowledgeMapProjectionResponse>((resolve) => {
+      resolveFirst = resolve;
+    });
+    const second = new Promise<KnowledgeMapProjectionResponse>((resolve) => {
+      resolveSecond = resolve;
+    });
+    const get = vi
+      .spyOn(api, 'getKnowledgeMap')
+      .mockImplementation((workspaceId) => (workspaceId === 'ws_1' ? first : second));
+    const view = renderMap({ workspaceId: 'ws_1' });
+
+    await waitFor(() => expect(get).toHaveBeenCalledWith('ws_1', expect.any(AbortSignal)));
+    view.rerender(<KnowledgeMapView workspaceId="ws_2" refreshKey={0} onNavigate={vi.fn()} />);
+    await waitFor(() => expect(get).toHaveBeenCalledWith('ws_2', expect.any(AbortSignal)));
+
+    resolveFirst({ projection: knowledgeMapProjection('ws_1') });
+    const secondProjection = knowledgeMapProjection('ws_2');
+    secondProjection.nodes = [];
+    secondProjection.status = 'unconfigured';
+    resolveSecond({ projection: secondProjection });
+
+    expect(await screen.findByText('课程结构还没有准备完成')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: '这门课程包含什么，彼此如何连接？' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('keeps Formal failure, Repair, due Review, retrievability, and advisory explanations distinct', async () => {
     const user = userEvent.setup();
     mockProjection();
