@@ -236,6 +236,25 @@ A mid-write failure rolls the whole set back; the quiz remains submittable after
 
 `GET /api/materials/:id/mapping` reports structural mapping only: per-section block/char counts, grounded-concept counts, and which blocks are cited by at least one verified anchor (concept groundings, active-graph edge evidence, lesson anchors). Mapping means "this section has at least one grounded concept" — it is NOT a claim of semantic course coverage, and the UI says so. Semantic recall is measured separately in the evaluation suite against hand-authored must-find labels.
 
+### Coverage/Risk current projection
+
+Coverage/Risk entries are append-only audit records. Deterministic seeding may
+record one observation per unmapped SourceBlock and one readiness observation per
+unverified Curriculum objective; those rows preserve exact revision and source
+provenance but are not independent learner blockers. Course Home computes a
+current projection fenced to the active Contract and source manifest, groups
+rows by stable material/Curriculum/objective identity, and keeps supporting raw
+record ids inspectable. Structural source observations, meaningful Curriculum
+gaps, planning warnings, recommendations, intentional deferrals, execution
+blockers, readiness gaps, and historical observations remain distinct.
+
+Phase 12B3 soft feasibility deficits produce advisory planning warnings. A
+provider-generated recommendation is persisted as a pending planning record;
+only a learner-accepted consequential route decision becomes an intentional
+deferral. Rejected recommendations remain immutable history and do not inflate
+the current Course summary. Mapping arithmetic never proves semantic
+completeness or entailment.
+
 ## 6. Completed-attempt snapshots
 
 A successful submission is an immutable snapshot across `quizzes/questions`, `submissions`, and `grading_results`: revealed questions/rubrics, learner answers, per-question grades, totals, provider, and deterministic `stateChanges`.

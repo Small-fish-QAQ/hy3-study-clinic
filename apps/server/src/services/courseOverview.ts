@@ -4,6 +4,8 @@ import {
   type CourseExecutionOverview,
   type CoverageRiskEntry,
   type CoverageRiskSummary,
+  type CoverageRiskCategory,
+  type StudyPlan,
 } from '@hy3-clinic/shared';
 import { notFound } from '../errors.js';
 import type { Repositories } from '../repositories/index.js';
@@ -22,12 +24,85 @@ interface CourseOverviewDeps {
 
 const SEVERITY = ['low', 'medium', 'high', 'critical'] as const;
 
-function summarizeRisks(risks: CoverageRiskEntry[], computedAt: string): CoverageRiskSummary {
-  const open = risks.filter((risk) =>
+function riskCategory(risk: CoverageRiskEntry): CoverageRiskCategory {
+  if (risk.facets.includes('intentionally_deferred') || risk.status === 'deferred')
+    return 'intentional_deferral';
+  if (risk.facets.includes('planning_recommendation')) return 'recommendation';
+  if (
+    risk.facets.includes('present_in_course_material') &&
+    risk.referencedCurriculumNodeIds.length === 0
+  )
+    return 'source_coverage_observation';
+  if (risk.facets.includes('structurally_mapped') && risk.referencedCurriculumNodeIds.length === 0)
+    return 'source_coverage_observation';
+  if (
+    risk.facets.includes('included_in_curriculum') &&
+    risk.truthPremiseStatus !== 'independently_verified'
+  )
+    return 'readiness_gap';
+  if (
+    risk.facets.includes('prerequisite_risk') ||
+    risk.facets.includes('unresolved_unverified_risk')
+  )
+    return 'curriculum_coverage_gap';
+  return risk.status === 'stale' ? 'historical_observation' : 'readiness_gap';
+}
+
+export function summarizeRisks(
+  risks: CoverageRiskEntry[],
+  computedAt: string,
+  currentContractId?: string | null,
+  currentManifestFingerprint?: string | null,
+  currentPlan?: StudyPlan | null,
+): CoverageRiskSummary {
+  const current = risks.filter((risk) => {
+    if (risk.status === 'resolved' || risk.status === 'rejected') return false;
+    if (currentContractId && risk.contractVersionId !== currentContractId) return false;
+    if (!currentManifestFingerprint) return risk.status !== 'stale';
+    return (
+      risk.status !== 'stale' &&
+      (risk.observations.length === 0 ||
+        risk.observations.some(
+          (observation) =>
+            observation.executionSourceManifestFingerprint === currentManifestFingerprint,
+        ))
+    );
+  });
+  const historicalOnlyCount = risks.filter((risk) => !current.includes(risk)).length;
+  const grouped = new Map<string, { risk: CoverageRiskEntry; records: string[] }>();
+  for (const risk of current) {
+    const category = riskCategory(risk);
+    const key = [
+      category,
+      risk.contractVersionId,
+      risk.stableScopeFingerprint,
+      risk.materialId ?? '',
+      risk.referencedCurriculumNodeIds.join(','),
+      risk.objectiveId ?? '',
+    ].join('|');
+    const existing = grouped.get(key);
+    if (existing) {
+      existing.records.push(risk.id);
+      if (
+        risk.priority > existing.risk.priority ||
+        (risk.priority === existing.risk.priority && risk.id.localeCompare(existing.risk.id) < 0)
+      ) {
+        existing.risk = risk;
+      }
+    } else grouped.set(key, { risk, records: [risk.id] });
+  }
+  const issues = [...grouped.values()].sort(
+    (a, b) => b.risk.priority - a.risk.priority || a.risk.id.localeCompare(b.risk.id),
+  );
+  const planningRiskCount =
+    currentPlan && ['at_risk', 'infeasible'].includes(currentPlan.feasibility.state) ? 1 : 0;
+  const planRecommendations =
+    currentPlan?.recommendations?.filter((item) => item.learnerDecision === 'pending') ?? [];
+  const open = issues.filter(({ risk }) =>
     ['open', 'acknowledged', 'planned', 'checking'].includes(risk.status),
   );
   const highestOpenSeverity = open.reduce<CoverageRiskSummary['highestOpenSeverity']>(
-    (highest, risk) =>
+    (highest, { risk }) =>
       highest === null || SEVERITY.indexOf(risk.severity) > SEVERITY.indexOf(highest)
         ? risk.severity
         : highest,
@@ -35,29 +110,112 @@ function summarizeRisks(risks: CoverageRiskEntry[], computedAt: string): Coverag
   );
   return CoverageRiskSummarySchema.parse({
     openCount: open.length,
-    deferredCount: risks.filter((risk) => risk.status === 'deferred').length,
-    staleCount: risks.filter((risk) => risk.status === 'stale').length,
+    deferredCount: issues.filter(({ risk }) => risk.status === 'deferred').length,
+    staleCount: risks.filter((risk) => risk.status === 'stale' || !current.includes(risk)).length,
     highestOpenSeverity,
-    deterministicMappingGapCount: risks.filter(
-      (risk) => risk.origin === 'deterministic' && risk.facets.includes('structurally_mapped'),
+    deterministicMappingGapCount: issues.filter(
+      ({ risk }) => riskCategory(risk) === 'curriculum_coverage_gap',
     ).length,
-    explicitDeferralCount: risks.filter((risk) => risk.facets.includes('intentionally_deferred'))
-      .length,
-    highlights: risks.slice(0, 20).map((risk) => ({
-      id: risk.id,
-      claim: risk.claim,
-      uncertainty: risk.uncertainty,
-      severity: risk.severity,
-      status: risk.status,
-      facets: risk.facets,
-      scopeAuthorityStatus: risk.scopeAuthorityStatus,
-      truthPremiseStatus: risk.truthPremiseStatus,
-      materialId: risk.materialId,
-      curriculumNodeId: risk.referencedCurriculumNodeIds[0] ?? null,
-      isCurrent: risk.status !== 'stale',
-    })),
+    explicitDeferralCount: issues.filter(
+      ({ risk }) => riskCategory(risk) === 'intentional_deferral',
+    ).length,
+    highlights: [
+      ...issues.map(({ risk, records }) => ({
+        id: risk.id,
+        claim: risk.claim,
+        uncertainty: risk.uncertainty,
+        severity: risk.severity,
+        status: risk.status,
+        facets: risk.facets,
+        scopeAuthorityStatus: risk.scopeAuthorityStatus,
+        truthPremiseStatus: risk.truthPremiseStatus,
+        materialId: risk.materialId,
+        curriculumNodeId: risk.referencedCurriculumNodeIds[0] ?? null,
+        isCurrent: true,
+        category: riskCategory(risk),
+        whyItMatters: risk.uncertainty,
+        affectedArea: risk.referencedCurriculumNodeIds[0]
+          ? '课程结构与学习路线'
+          : risk.materialId
+            ? '课程资料'
+            : '课程',
+        learnerActionRequired: [
+          'intentional_deferral',
+          'planning_risk',
+          'execution_blocker',
+        ].includes(riskCategory(risk)),
+        supportingRecordIds: [...records].sort().slice(0, 200),
+        observationCount: records.length,
+      })),
+      ...(planningRiskCount > 0 && currentPlan
+        ? [
+            {
+              id: `planning-risk:${currentPlan.id}`,
+              claim:
+                'The current StudyPlan may not fit the learner target under the present estimates.',
+              uncertainty: currentPlan.feasibility.assumptions.join(' '),
+              severity:
+                currentPlan.feasibility.state === 'infeasible'
+                  ? ('high' as const)
+                  : ('medium' as const),
+              status: 'open' as const,
+              facets: ['unresolved_unverified_risk' as const],
+              scopeAuthorityStatus: 'in_scope' as const,
+              truthPremiseStatus: 'not_applicable' as const,
+              materialId: null,
+              curriculumNodeId: null,
+              isCurrent: true,
+              category: 'planning_risk' as const,
+              whyItMatters:
+                'The target date or expected effort may need learner review; no content is automatically removed.',
+              affectedArea: '学习路线与目标时间',
+              learnerActionRequired: currentPlan.feasibility.state === 'infeasible',
+              supportingRecordIds: [currentPlan.id],
+              observationCount: 1,
+            },
+          ]
+        : []),
+      ...planRecommendations.map((recommendation, index) => ({
+        id: `recommendation:${currentPlan!.id}:${recommendation.kind}`,
+        claim: recommendation.rationale,
+        uncertainty:
+          'This is a planning option, not an accepted route or learner-approved omission.',
+        severity: 'low' as const,
+        status: 'planned' as const,
+        facets: ['planning_recommendation' as const],
+        scopeAuthorityStatus: 'in_scope' as const,
+        truthPremiseStatus: 'not_applicable' as const,
+        materialId: null,
+        curriculumNodeId: recommendation.affectedCurriculumLearningUnitIds[0] ?? null,
+        isCurrent: true,
+        category: 'recommendation' as const,
+        whyItMatters:
+          'The learner may keep the full scope, change effort, or choose another explicit route decision.',
+        affectedArea: '学习路线',
+        learnerActionRequired: false,
+        supportingRecordIds: [currentPlan!.id, `recommendation-${index}`],
+        observationCount: 1,
+      })),
+    ].slice(0, 20),
     analysisState: 'available',
     computedAt,
+    currentIssueCount: issues.length + planningRiskCount + planRecommendations.length,
+    historicalOnlyCount,
+    sourceCoverageObservationCount: issues.filter(
+      ({ risk }) => riskCategory(risk) === 'source_coverage_observation',
+    ).length,
+    meaningfulCurriculumGapCount: issues.filter(
+      ({ risk }) => riskCategory(risk) === 'curriculum_coverage_gap',
+    ).length,
+    planningWarningCount: planningRiskCount,
+    recommendationCount:
+      issues.filter(({ risk }) => riskCategory(risk) === 'recommendation').length +
+      planRecommendations.length,
+    intentionalDeferralCount: issues.filter(
+      ({ risk }) => riskCategory(risk) === 'intentional_deferral',
+    ).length,
+    blockerCount: issues.filter(({ risk }) => riskCategory(risk) === 'execution_blocker').length,
+    readinessGapCount: issues.filter(({ risk }) => riskCategory(risk) === 'readiness_gap').length,
   });
 }
 
@@ -206,7 +364,15 @@ export function createCourseOverviewService({ repos, clock, reviewSuccessor }: C
               whyNext: currentAgendaItem.reason,
             }
           : null,
-      riskSummary: summarizeRisks(risks, generatedAt),
+      riskSummary: summarizeRisks(
+        risks,
+        generatedAt,
+        activeContract?.id ?? selectedContract?.id ?? null,
+        acceptedCurriculum?.executionSourceManifest.fingerprint ??
+          planningCurriculum?.executionSourceManifest.fingerprint ??
+          null,
+        acceptedStudyPlan ?? proposedStudyPlan,
+      ),
       capabilities: {
         canEditContract: pendingContract?.status === 'draft',
         canConfirmContract: pendingContract?.status === 'proposed',

@@ -208,6 +208,20 @@ export function createCourseExecutionService({
       const before = repos.courseExecution.get(parsed.command.workspaceId);
       if (parsed.decision === 'reject') {
         const response = commands.complete(claim, () => {
+          for (const deferral of plan.deferrals) {
+            for (const riskId of deferral.riskIds) {
+              const risk = repos.coverageRisks.get(riskId);
+              if (risk?.facets.includes('planning_recommendation')) {
+                repos.coverageRisks.rejectRecommendation(riskId, clock.now().toISOString(), {
+                  id: newId('risk_evt'),
+                  eventType: 'learner_rejected_recommendation',
+                  actor: 'learner',
+                  payload: { studyPlanId: plan.id, reason: parsed.reason },
+                  createdAt: clock.now().toISOString(),
+                });
+              }
+            }
+          }
           const rejected = repos.studyPlans.reject(plan.id, {
             id: newId('plan_evt'),
             eventType: 'learner_rejected',
@@ -261,6 +275,25 @@ export function createCourseExecutionService({
           authoritativePlan,
           clock.now().toISOString(),
         );
+        for (const deferral of authoritativePlan.deferrals) {
+          for (const riskId of deferral.riskIds) {
+            const risk = repos.coverageRisks.get(riskId);
+            if (risk?.facets.includes('planning_recommendation')) {
+              repos.coverageRisks.acceptDeferral(
+                riskId,
+                parsed.command.commandId,
+                clock.now().toISOString(),
+                {
+                  id: newId('risk_evt'),
+                  eventType: 'learner_accepted_deferral',
+                  actor: 'learner',
+                  payload: { studyPlanId: authoritativePlan.id },
+                  createdAt: clock.now().toISOString(),
+                },
+              );
+            }
+          }
+        }
         const draftAgenda = agendas.composeDraft(contract, curriculum, authoritativePlan);
         const storedAgenda = repos.sessionAgendas.create(draftAgenda, {
           id: newId('agenda_evt'),

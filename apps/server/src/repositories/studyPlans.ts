@@ -195,10 +195,15 @@ export function createStudyPlansRepo(db: SqliteDb) {
               referencedCurriculumNodeIds?: string[];
             })
           : undefined;
+        const acceptedDeferral =
+          riskPayload?.facets?.includes('intentionally_deferred') &&
+          riskPayload.status === 'deferred';
+        const pendingRecommendation =
+          riskPayload?.facets?.includes('planning_recommendation') &&
+          riskPayload.status === 'planned';
         if (
-          !riskPayload?.facets?.includes('intentionally_deferred') ||
-          riskPayload.origin !== 'deterministic' ||
-          riskPayload.status !== 'deferred' ||
+          (!acceptedDeferral && !pendingRecommendation) ||
+          riskPayload?.origin !== 'deterministic' ||
           !riskPayload.referencedCurriculumNodeIds?.includes(deferral.curriculumLearningUnitId)
         ) {
           throw new Error('A Plan deferral requires a visible deterministic deferral risk.');

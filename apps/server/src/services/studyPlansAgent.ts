@@ -695,7 +695,7 @@ export function createStudyPlanAgentService({
           curriculum,
           { curriculumLearningUnitId: unitId, objectiveIds, reason },
           now,
-          { id: riskIds[0], learnerDecisionId: parsed.command.commandId },
+          { id: riskIds[0], learnerDecisionId: parsed.command.commandId, learnerAccepted: true },
         );
         const existing = repos.coverageRisks.get(risk.id);
         if (

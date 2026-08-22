@@ -213,7 +213,11 @@ export function CourseHomeView({
       risk.isCurrent &&
       risk.status !== 'resolved' &&
       risk.status !== 'rejected' &&
-      (risk.severity === 'critical' || risk.severity === 'high' || risk.status === 'stale'),
+      (risk.category === 'intentional_deferral' ||
+        risk.category === 'execution_blocker' ||
+        risk.category === 'readiness_gap' ||
+        risk.severity === 'critical' ||
+        risk.severity === 'high'),
   );
 
   const setupAction = (() => {
@@ -558,7 +562,11 @@ export function CourseHomeView({
           {actionableRisks.map((risk) => (
             <p key={risk.id}>
               <span className={`pill ${risk.severity === 'critical' ? 'wrong' : ''}`}>
-                {risk.status === 'stale' ? '需要重新验证' : '优先处理'}
+                {risk.category === 'intentional_deferral'
+                  ? '已接受延期'
+                  : risk.category === 'readiness_gap'
+                    ? '待补充依据'
+                    : '优先处理'}
               </span>{' '}
               {risk.claim}
             </p>
@@ -638,14 +646,20 @@ export function CourseHomeView({
         </details>
       ) : null}
 
-      {overview.riskSummary.openCount > 0 || overview.riskSummary.explicitDeferralCount > 0 ? (
+      {(overview.riskSummary.currentIssueCount ?? overview.riskSummary.openCount) > 0 ||
+      overview.riskSummary.explicitDeferralCount > 0 ? (
         <details className="course-detail-disclosure">
-          <summary>全部延期与风险记录</summary>
+          <summary>当前覆盖与路线提醒</summary>
           <div className="detail-content">
             <p>
-              未解决 {overview.riskSummary.openCount} · 明确延期{' '}
-              {overview.riskSummary.explicitDeferralCount} · 待重新核对{' '}
-              {overview.riskSummary.staleCount}
+              当前问题 {overview.riskSummary.currentIssueCount ?? overview.riskSummary.openCount} ·
+              资料覆盖观察 {overview.riskSummary.sourceCoverageObservationCount ?? 0} ·
+              有意义的课程覆盖缺口 {overview.riskSummary.meaningfulCurriculumGapCount ?? 0} ·
+              计划建议 {overview.riskSummary.recommendationCount ?? 0} · 已接受延期{' '}
+              {overview.riskSummary.intentionalDeferralCount ??
+                overview.riskSummary.explicitDeferralCount}{' '}
+              · 历史记录{' '}
+              {overview.riskSummary.historicalOnlyCount ?? overview.riskSummary.staleCount}
             </p>
             {overview.riskSummary.highlights.map((risk) => (
               <p key={risk.id} className="small">

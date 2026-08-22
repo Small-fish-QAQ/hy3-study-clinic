@@ -264,11 +264,65 @@ export function createCoverageRisksRepo(db: SqliteDb) {
     },
   );
 
+  const acceptDeferralTx = db.transaction(
+    (id: string, learnerDecisionId: string, at: string, event: CoverageRiskEventInput) => {
+      const current = get(id);
+      if (!current) throw new Error('Coverage risk does not exist.');
+      if (current.status === 'deferred' && current.facets.includes('intentionally_deferred'))
+        return current;
+      if (!current.facets.includes('planning_recommendation')) {
+        throw new Error('Only a planning recommendation can become an accepted deferral.');
+      }
+      const accepted = CoverageRiskEntrySchema.parse({
+        ...current,
+        facets: [
+          ...current.facets.filter((facet) => facet !== 'planning_recommendation'),
+          'intentionally_deferred',
+        ],
+        status: 'deferred',
+        learnerDecisionId,
+        claim: current.claim
+          .replace('The route recommends postponing', 'The learner accepted leaving')
+          .replace('; this is not learner acceptance.', ' unfinished in this route.'),
+        uncertainty: 'The accepted route retains an unresolved visible coverage gap.',
+        updatedAt: at,
+      });
+      db.prepare(
+        'UPDATE coverage_risk_entries SET status = ?, payload = ?, updated_at = ? WHERE id = ?',
+      ).run(accepted.status, JSON.stringify(accepted), at, id);
+      appendEvent(id, event);
+      return get(id)!;
+    },
+  );
+
+  const rejectRecommendationTx = db.transaction(
+    (id: string, at: string, event: CoverageRiskEventInput) => {
+      const current = get(id);
+      if (!current) throw new Error('Coverage risk does not exist.');
+      if (current.status === 'rejected') return current;
+      if (!current.facets.includes('planning_recommendation')) {
+        throw new Error('Only a planning recommendation can be rejected.');
+      }
+      const rejected = CoverageRiskEntrySchema.parse({
+        ...current,
+        status: 'rejected',
+        updatedAt: at,
+      });
+      db.prepare(
+        'UPDATE coverage_risk_entries SET status = ?, payload = ?, updated_at = ? WHERE id = ?',
+      ).run(rejected.status, JSON.stringify(rejected), at, id);
+      appendEvent(id, event);
+      return get(id)!;
+    },
+  );
+
   return {
     get,
     create: createTx,
     resolve: resolveTx,
     recordOutstanding: recordOutstandingTx,
+    acceptDeferral: acceptDeferralTx,
+    rejectRecommendation: rejectRecommendationTx,
 
     list(workspaceId: string, contractId?: string): CoverageRiskEntry[] {
       const rows = contractId

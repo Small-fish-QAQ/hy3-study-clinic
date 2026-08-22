@@ -406,6 +406,20 @@ See [Architecture & Design Notes](docs/ARCHITECTURE.md) for request lifecycles, 
 
 ## Verification summary
 
+### Coverage and risk semantics
+
+Course Home presents a deterministic current-risk projection over the active
+Contract, Curriculum, source manifest, and accepted/proposed StudyPlan. It
+groups low-level source observations by stable revision/material identity and
+keeps structural unmapped counts separate from meaningful Curriculum gaps.
+Soft feasibility deficits are planning warnings, and Plan recommendations are
+learner choices rather than accepted omissions. An intentional deferral is
+recorded only after the learner accepts a consequential route decision.
+Historical and superseded records remain available in the raw coverage-risk
+audit view with exact source provenance, but do not inflate current Course
+counts. Exact source mapping still proves occurrence and location, not
+semantic completeness or entailment.
+
 The immutable `issue-4-final` tag has a historical verification record. Current test files and test totals are intentionally not duplicated here because they change as the implementation evolves. Run the commands in [Verification](docs/VERIFICATION.md) against the checked-out revision for current results.
 
 CI runs build, lint, and tests on Ubuntu Node 20, Ubuntu Node 24, and Windows Node 24. `eval:fake` exercises deterministic structural boundaries, including activity executability, grading state safety, semantic-recall fixtures, and lesson provenance. See [Verification](docs/VERIFICATION.md) for exact commands, migration/integration coverage, the evidence-to-requirement matrix, and the limits of each smoke script. The human product/dogfood protocol is maintained separately in [docs/DOGFOOD.md](docs/DOGFOOD.md).

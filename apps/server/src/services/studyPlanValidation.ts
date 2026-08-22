@@ -312,7 +312,7 @@ export function materializeDeferralRisk(
   curriculum: Curriculum,
   deferral: ProposedStudyPlanDeferral,
   at: string,
-  options: { id?: string; learnerDecisionId?: string | null } = {},
+  options: { id?: string; learnerDecisionId?: string | null; learnerAccepted?: boolean } = {},
 ): CoverageRiskEntry {
   const unit = learningUnits(curriculum).find(
     (candidate) => candidate.id === deferral.curriculumLearningUnitId,
@@ -332,6 +332,7 @@ export function materializeDeferralRisk(
   const sourceReferences = unit.sourceReferences.filter((reference) => reference.sourceBlockId);
   const materialIds = [...new Set(sourceReferences.map((reference) => reference.materialId))];
   const fingerprint = stableRiskFingerprint(contract.id, deferral);
+  const learnerAccepted = options.learnerAccepted === true;
   return {
     id: options.id ?? `risk_deferral_${fingerprint}`,
     workspaceId: contract.workspaceId,
@@ -340,7 +341,7 @@ export function materializeDeferralRisk(
     materialId: materialIds.length === 1 ? materialIds[0]! : null,
     topicId: null,
     objectiveId: deferral.objectiveIds.length === 1 ? deferral.objectiveIds[0]! : null,
-    facets: ['intentionally_deferred'],
+    facets: [learnerAccepted ? 'intentionally_deferred' : 'planning_recommendation'],
     scopeAuthorityStatus: 'in_scope',
     truthPremiseStatus,
     truthAuthorityRecordIds,
@@ -348,12 +349,16 @@ export function materializeDeferralRisk(
     referencedConceptIds: unit.learningUnit.conceptIds,
     referencedEvidenceIds: [],
     origin: 'deterministic',
-    status: 'deferred',
+    status: learnerAccepted ? 'deferred' : 'planned',
     severity: 'medium',
     priority: 50,
     contractSensitive: true,
-    claim: `The proposed route explicitly defers ${unit.title}.`,
-    uncertainty: 'The deferred objectives remain an unresolved visible coverage gap.',
+    claim: learnerAccepted
+      ? `The learner accepted leaving ${unit.title} unfinished in this route.`
+      : `The route recommends postponing ${unit.title}; this is not learner acceptance.`,
+    uncertainty: learnerAccepted
+      ? 'The accepted route retains an unresolved visible coverage gap.'
+      : 'This planning recommendation may be rejected or changed before acceptance.',
     observations: sourceReferences.slice(0, 20).map((reference, index) => ({
       id: `risk_observation_${fingerprint}_${index + 1}`,
       materialRevisionId: reference.materialRevisionId,
@@ -365,7 +370,7 @@ export function materializeDeferralRisk(
       lastVerifiedAt: at,
     })),
     resolutionEvidenceIds: [],
-    learnerDecisionId: options.learnerDecisionId ?? null,
+    learnerDecisionId: learnerAccepted ? (options.learnerDecisionId ?? null) : null,
     provider: null,
     providerModel: null,
     promptVersion: null,

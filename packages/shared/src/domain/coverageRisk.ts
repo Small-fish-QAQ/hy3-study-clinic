@@ -15,6 +15,7 @@ export const CoverageRiskFacetSchema = z.enum([
   'adversarial_blind_spot_candidate',
   'unresolved_unverified_risk',
   'intentionally_deferred',
+  'planning_recommendation',
 ]);
 export type CoverageRiskFacet = z.infer<typeof CoverageRiskFacetSchema>;
 
@@ -38,6 +39,18 @@ export const CoverageRiskOriginSchema = z.enum([
   'model_candidate',
 ]);
 export type CoverageRiskOrigin = z.infer<typeof CoverageRiskOriginSchema>;
+
+export const CoverageRiskCategorySchema = z.enum([
+  'source_coverage_observation',
+  'curriculum_coverage_gap',
+  'planning_risk',
+  'recommendation',
+  'intentional_deferral',
+  'execution_blocker',
+  'readiness_gap',
+  'historical_observation',
+]);
+export type CoverageRiskCategory = z.infer<typeof CoverageRiskCategorySchema>;
 
 export const CoverageRiskObservationSchema = z
   .object({
@@ -115,6 +128,12 @@ export const CoverageRiskHighlightSchema = z
     materialId: z.string().min(1).nullable(),
     curriculumNodeId: z.string().min(1).nullable(),
     isCurrent: z.boolean(),
+    category: CoverageRiskCategorySchema.optional(),
+    whyItMatters: z.string().min(1).max(1000).optional(),
+    affectedArea: z.string().min(1).max(300).optional(),
+    learnerActionRequired: z.boolean().optional(),
+    supportingRecordIds: z.array(z.string().min(1)).max(200).optional(),
+    observationCount: z.number().int().nonnegative().optional(),
   })
   .strict();
 export type CoverageRiskHighlight = z.infer<typeof CoverageRiskHighlightSchema>;
@@ -130,6 +149,15 @@ export const CoverageRiskSummarySchema = z
     highlights: z.array(CoverageRiskHighlightSchema).max(20),
     analysisState: z.enum(['available', 'stale', 'unavailable']),
     computedAt: z.string().datetime(),
+    currentIssueCount: z.number().int().nonnegative().optional(),
+    historicalOnlyCount: z.number().int().nonnegative().optional(),
+    sourceCoverageObservationCount: z.number().int().nonnegative().optional(),
+    meaningfulCurriculumGapCount: z.number().int().nonnegative().optional(),
+    planningWarningCount: z.number().int().nonnegative().optional(),
+    recommendationCount: z.number().int().nonnegative().optional(),
+    intentionalDeferralCount: z.number().int().nonnegative().optional(),
+    blockerCount: z.number().int().nonnegative().optional(),
+    readinessGapCount: z.number().int().nonnegative().optional(),
   })
   .strict();
 export type CoverageRiskSummary = z.infer<typeof CoverageRiskSummarySchema>;
