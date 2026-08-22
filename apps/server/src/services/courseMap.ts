@@ -4,6 +4,7 @@ import {
   CourseMapProposalPayloadSchema,
   CourseMapSourceAllocationSchema,
   type Concept,
+  type CurriculumAuthorityEnvelope,
   type CourseMap,
   type CourseMapAnalysis,
   type CourseMapDiagnostic,
@@ -459,6 +460,7 @@ export interface BuildCourseMapProposalInput {
   concepts: Concept[];
   canonicalConcepts: CurriculumCanonicalConceptOffer[];
   limits?: Partial<CourseMapProposalInput['limits']>;
+  authorityEnvelopesByRegionId?: Map<string, CurriculumAuthorityEnvelope>;
 }
 
 /** Build the only provider-visible Course Map context; it contains no full SourceBlocks. */
@@ -469,6 +471,7 @@ export function buildCourseMapProposalInput({
   concepts,
   canonicalConcepts,
   limits: overrides = {},
+  authorityEnvelopesByRegionId,
 }: BuildCourseMapProposalInput): CourseMapProposalInput {
   const sourceAllocation = CourseMapSourceAllocationSchema.parse(rawAllocation);
   assertCourseMapSourceAllocationIntegrity(sourceAllocation);
@@ -617,6 +620,9 @@ export function buildCourseMapProposalInput({
           evidenceId: evidence.evidenceId,
           text: evidence.quote,
         })),
+        ...(authorityEnvelopesByRegionId?.has(region.id)
+          ? { authorityEnvelope: authorityEnvelopesByRegionId.get(region.id) }
+          : {}),
       };
     }),
     limits,

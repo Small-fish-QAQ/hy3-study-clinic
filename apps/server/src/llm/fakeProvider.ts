@@ -1479,6 +1479,13 @@ export class FakeProvider implements LlmProvider {
           material.title
         ).slice(0, 300);
         const sourceBlockIds = new Set(sourceBlocks.map((block) => block.id));
+        const authorityEnvelope = input.authorityEnvelopes?.find((envelope) =>
+          envelope.sourceBlockIds.some((blockId) => sourceBlockIds.has(blockId)),
+        );
+        const supportsExplain = authorityEnvelope?.supportedConstructs.includes('explain') ?? false;
+        const objectiveDescription = supportsExplain
+          ? `Explain the source-supported ideas in ${title}.`
+          : `Identify the source-supported statements in ${title}.`;
         const evidence = input.evidenceCatalog
           .filter((offer) => sourceBlockIds.has(offer.blockId))
           .filter(
@@ -1512,10 +1519,7 @@ export class FakeProvider implements LlmProvider {
             {
               key: `objective-${unitNumber}`,
               title: `Understand ${title}`.slice(0, 300),
-              description: (visual
-                ? `Use the advisory visual explanation to explore ${title}: ${visual.explanation.text}`
-                : `Explain and apply the central ideas in ${title}.`
-              ).slice(0, 1000),
+              description: objectiveDescription.slice(0, 1000),
               evidence: evidence.slice(0, 5),
             },
           ],

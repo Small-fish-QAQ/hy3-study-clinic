@@ -5,6 +5,8 @@ import {
   type Concept,
   type CourseMap,
   type CourseMapSourceAllocation,
+  type CurriculumAuthorityEnvelope,
+  type FormalAssessmentConstruct,
   type CurriculumDetailProposalPayload,
   type CurriculumProposalPayload,
 } from '@hy3-clinic/shared';
@@ -18,6 +20,7 @@ import type {
 } from '../llm/provider.js';
 import { measureCurriculumDetailRequest } from '../llm/prompts.js';
 import { assertCourseMapSourceAllocationIntegrity } from './courseMap.js';
+import { detectFormalConstruct, isConstructSupported } from './curriculumAuthority.js';
 
 export const MAX_DETAIL_BATCHES = 2;
 export const MAX_DETAIL_REGIONS_PER_BATCH = 50;
@@ -35,6 +38,7 @@ export interface CurriculumDetailPlanningInput {
   evidenceCatalog: CurriculumEvidenceOffer[];
   concepts: Concept[];
   canonicalConcepts: CurriculumCanonicalConceptOffer[];
+  authorityEnvelopesByRegionId?: Map<string, CurriculumAuthorityEnvelope>;
 }
 
 export interface CurriculumDetailBatch {
@@ -176,6 +180,9 @@ function buildDetailRegions(input: CurriculumDetailPlanningInput): CurriculumDet
           sourceConceptIds: [...canonical!.sourceConceptIds],
         })),
         evidence,
+        ...(input.authorityEnvelopesByRegionId?.has(region.id)
+          ? { authorityEnvelope: input.authorityEnvelopesByRegionId.get(region.id) }
+          : {}),
       };
     }),
   );
@@ -340,6 +347,17 @@ export function validateCurriculumDetailCandidate(
       diagnosticCodes.push('unknown_region');
       continue;
     }
+    if (region.authorityEnvelope) {
+      for (const objective of unit.objectives) {
+        if (objective.priority !== 'required') continue;
+        const construct = detectFormalConstruct(`${objective.title} ${objective.description}`);
+        if (isConstructSupported(construct, region.authorityEnvelope)) continue;
+        diagnostics.push(
+          `required_objective_formal_authority_missing: objective ${objective.key} claims ${construct}, but source region ${region.regionId} supports ${region.authorityEnvelope.supportedConstructs.join(', ') || 'no formal construct'}; narrowerClaim=${region.authorityEnvelope.narrowerClaim ?? 'none'}; protectedPriority=required.`,
+        );
+        diagnosticCodes.push('required_objective_formal_authority_missing');
+      }
+    }
     const evidenceById = new Map(
       region.evidence.map((offer) => [offer.evidenceId, offer] as const),
     );
@@ -393,6 +411,44 @@ export function validateCurriculumDetailCandidate(
     diagnostics: diagnostics.slice(0, 100),
     diagnosticCodes: diagnosticCodes.slice(0, 100),
   };
+}
+
+/** Narrow one over-broad required detail objective using its local envelope. */
+export function repairCurriculumDetailAuthorityCandidate(
+  candidate: CurriculumDetailProposalPayload,
+  input: CurriculumDetailProposalInput,
+): { candidate: CurriculumDetailProposalPayload; repaired: boolean } {
+  const parsed = CurriculumDetailProposalPayloadSchema.parse(candidate);
+  let repaired = false;
+  for (const unit of parsed.units) {
+    const envelope = input.regions.find(
+      (region) => region.regionId === unit.regionId,
+    )?.authorityEnvelope;
+    if (!envelope) continue;
+    for (const objective of unit.objectives) {
+      if (objective.priority !== 'required') continue;
+      const construct = detectFormalConstruct(`${objective.title} ${objective.description}`);
+      if (
+        isConstructSupported(construct, envelope) ||
+        !envelope.narrowerClaim ||
+        (envelope.tier !== 'formal_sufficient' && envelope.tier !== 'narrower_formal') ||
+        envelope.supportedConstructs.length === 0
+      )
+        continue;
+      const narrowerConstruct: FormalAssessmentConstruct = envelope.supportedConstructs.includes(
+        'explain',
+      )
+        ? 'explain'
+        : 'identify';
+      const verb = narrowerConstruct === 'explain' ? 'Explain' : 'Identify';
+      const claim = envelope.narrowerClaim.slice(0, 500);
+      objective.title = `${verb} the source-supported claim: ${claim}`.slice(0, 300);
+      objective.description =
+        `${verb} only what the current source explicitly states: ${claim}`.slice(0, 1_000);
+      repaired = true;
+    }
+  }
+  return { candidate: parsed, repaired };
 }
 
 export interface CurriculumDetailAssembly {

@@ -491,7 +491,7 @@ export class Hy3Provider implements LlmProvider {
       curriculumProposalMessages(input),
       CurriculumProposalPayloadSchema,
       opts,
-      undefined,
+      'For required_objective_formal_authority_missing, narrow or split the objective to the supplied authority envelope and preserve required priority. Never mark it optional, invent evidence, or repeat the unchanged claim.',
       {
         maxTokens: CURRICULUM_MAX_OUTPUT_TOKENS,
         schemaName: 'curriculum-proposal-v2-evidence-identity',

@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { CourseExecutionCommandEnvelopeSchema } from './learningContract.js';
-import { TruthPremiseStatusSchema } from './sourceAuthority.js';
+import {
+  CurriculumAuthorityCritiqueSchema,
+  CurriculumAuthorityEnvelopeTierSchema,
+  FormalAssessmentConstructSchema,
+  TruthPremiseStatusSchema,
+} from './sourceAuthority.js';
 
 export const ExecutionSourceRevisionSchema = z
   .object({
@@ -61,6 +66,9 @@ export const CurriculumObjectiveSchema = z
     /** Explicit compatibility result for the Formal Assessment handoff. */
     formalAssessmentReady: z.boolean().optional(),
     formalAssessmentReadinessRationale: z.string().min(1).max(500).optional(),
+    formalAssessmentConstruct: FormalAssessmentConstructSchema.optional(),
+    authorityEnvelopeTier: CurriculumAuthorityEnvelopeTierSchema.optional(),
+    formalEvidenceSourceBlockIds: z.array(z.string().min(1)).max(100).optional(),
   })
   .strict()
   .superRefine((objective, ctx) => {
@@ -192,6 +200,7 @@ export const CurriculumQualityFindingSchema = z
     affectedSourceRegionIds: z.array(z.string().min(1)).max(100),
     rationale: z.string().min(1).max(800),
     repairDisposition: z.enum(['none', 'repaired', 'rejected']),
+    authorityCritique: CurriculumAuthorityCritiqueSchema.optional(),
   })
   .strict();
 export type CurriculumQualityFinding = z.infer<typeof CurriculumQualityFindingSchema>;
@@ -330,6 +339,7 @@ export const CurriculumProposalFailureDetailsSchema = z
     repairAttempted: z.boolean(),
     errors: z.array(z.string().min(1).max(500)).max(20),
     warnings: z.array(z.string().min(1).max(500)).max(20),
+    authorityCritiques: z.array(CurriculumAuthorityCritiqueSchema).max(20).optional(),
   })
   .strict();
 export type CurriculumProposalFailureDetails = z.infer<

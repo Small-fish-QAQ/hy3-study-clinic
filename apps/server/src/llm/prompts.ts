@@ -1,4 +1,10 @@
-import type { Concept, QuizConfig, RubricPoint, SourceBlock } from '@hy3-clinic/shared';
+import type {
+  Concept,
+  CurriculumAuthorityEnvelope,
+  QuizConfig,
+  RubricPoint,
+  SourceBlock,
+} from '@hy3-clinic/shared';
 import { GRAPH_RELATIONS } from '@hy3-clinic/shared';
 import { randomUUID } from 'node:crypto';
 import { wrapSourceBlocks } from '../grounding/wrapSource.js';
@@ -75,6 +81,22 @@ const CITATION_RULES = [
 ].join('\n');
 
 const JSON_RULES = '仅输出一个 JSON 对象,不要输出任何解释性文字或 Markdown 代码块。';
+
+/**
+ * Providers need the qualitative authority boundary, not the server's source
+ * bindings. Evidence offers already carry the selectable ids used by the
+ * provider contract, so the envelope only exposes the bounded semantic facts.
+ */
+function authorityEnvelopePromptContext(envelope: CurriculumAuthorityEnvelope) {
+  return {
+    formalEvidenceCount: envelope.formalEvidenceIds.length,
+    supportedConstructs: envelope.supportedConstructs,
+    strongestSupportedConstruct: envelope.strongestSupportedConstruct,
+    narrowerClaim: envelope.narrowerClaim,
+    tier: envelope.tier,
+    rationale: envelope.rationale,
+  };
+}
 
 const RUBRIC_RULES = [
   '简答题评分要点(rubricKeyPoints)规则:',
@@ -757,6 +779,7 @@ export function curriculumPromptContext(input: CurriculumProposalInput) {
       serializedBytes: input.visualContext?.serializedBytes ?? 0,
       offers: input.visualContext?.offers ?? [],
     },
+    authorityEnvelopes: (input.authorityEnvelopes ?? []).map(authorityEnvelopePromptContext),
     limits: input.limits,
   };
 }
@@ -792,6 +815,9 @@ export function courseMapPromptContext(input: CourseMapProposalInput) {
         canonicalConceptName: option.canonicalConceptName,
       })),
       evidence: region.evidence.map((offer) => ({ text: offer.text })),
+      ...(region.authorityEnvelope
+        ? { authorityEnvelope: authorityEnvelopePromptContext(region.authorityEnvelope) }
+        : {}),
     })),
     limits: input.limits,
   };
@@ -861,7 +887,16 @@ export function measureCourseMapRequest(input: CourseMapProposalInput) {
 export function curriculumDetailProposalMessages(
   input: CurriculumDetailProposalInput,
 ): ChatMessage[] {
-  const context = wrapUntrustedJson('CURRICULUM_DETAIL_CONTEXT', input);
+  const contextInput = {
+    ...input,
+    regions: input.regions.map((region) => ({
+      ...region,
+      ...(region.authorityEnvelope
+        ? { authorityEnvelope: authorityEnvelopePromptContext(region.authorityEnvelope) }
+        : {}),
+    })),
+  };
+  const context = wrapUntrustedJson('CURRICULUM_DETAIL_CONTEXT', contextInput);
   return [
     {
       role: 'system',
@@ -883,6 +918,7 @@ export function curriculumDetailProposalMessages(
         'Use only evidence, Concept, and canonical Concept identities offered inside that same region. Select at least one exact evidence offer from every listed sourceAllocationRegionId.',
         'Prerequisite and synthesis context is informational: the server maps the validated Course Map structure into the final Curriculum. Do not output prerequisite or synthesis identities.',
         'Each unit needs one to four concrete instructional objectives. Use priority required only when the exact evidence can support an independently authorized Formal Assessment path; narrow a broader teaching intention when its source authority is narrower.',
+        'Treat authorityEnvelope as a local boundary: formalEvidenceCount and supportedConstructs describe the strongest permitted Formal construct. A teaching_only or unavailable envelope may still guide explanation, but cannot justify a required formal claim. Preserve required priority while narrowing or splitting the claim; never invent authority or silently make it optional.',
         'Titles are learner-visible teachable-unit identities, not copied parser headings. Derive concise distinctions from the offered Concept names, objective meaning, and exact source excerpts. If adjacent regions share a generic heading, do not repeat that heading as the sole title.',
         'Do not output persisted ids, module or region keys, status, acceptance, truth authority, mastery, completion, risk, or learner-state decisions.',
         'Echo the exact courseMapId and sourceAllocationFingerprint and respect every hard limit.',
@@ -934,6 +970,7 @@ export function curriculumProposalMessages(input: CurriculumProposalInput): Chat
         'When no non-null structuralUnitId is offered, every structuralUnitIds array must be empty.',
         'A learning unit needs at least one objective. Non-learning-unit nodes must keep all unit-only arrays empty.',
         'Evidence is optional for learner-scoped teaching objectives. Select evidenceId only from evidenceCatalog; never copy, rewrite, paraphrase, or invent authoritative quote text.',
+        'Use the supplied authorityEnvelopes to design objectives backward from the strongest supported Formal construct. A required objective must stay within that envelope; if the requested goal exceeds every envelope, leave the mismatch visible for local fail-closed handling.',
         'Visual V* context may shape learner-visible organization and unverified teaching objectives. It is a generated advisory explanation of an original visual, not quoted course text or evidence. Never copy V* into evidence IDs, structural-unit IDs, Concept IDs, graph IDs, or any formal authority field.',
         'The predecessor is compact advisory context. Improve it where useful; do not blindly copy its structure or evidence selections.',
         'sourceSections and evidence candidates are deterministically narrowed navigation context, not local proof that a claim is true.',

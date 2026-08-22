@@ -780,6 +780,17 @@ describe('Curriculum proposal and authority boundaries', () => {
       true,
     );
     expect(objectives.some((objective) => objective.title.startsWith('Understand '))).toBe(true);
+    const proposalEvent = repos.curricula
+      .listEvents(proposed.curriculum.id)
+      .find((event) => event.eventType === 'proposed');
+    expect(proposalEvent?.payload).toMatchObject({
+      generationOperationId: expect.any(String),
+    });
+    expect(
+      db
+        .prepare('SELECT COUNT(*) AS count FROM model_logical_calls WHERE operation_id = ?')
+        .get((proposalEvent?.payload as { generationOperationId: string }).generationOperationId),
+    ).toMatchObject({ count: 1 });
   });
 
   it('rejects a client-fabricated manifest and resolves provider context locally', async () => {

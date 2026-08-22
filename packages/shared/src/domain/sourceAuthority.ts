@@ -13,6 +13,56 @@ export const TruthPremiseStatusSchema = z.enum([
 ]);
 export type TruthPremiseStatus = z.infer<typeof TruthPremiseStatusSchema>;
 
+/** Controlled assessment constructs exposed to Curriculum objective design. */
+export const FormalAssessmentConstructSchema = z.enum([
+  'identify',
+  'explain',
+  'apply',
+  'design',
+  'evaluate',
+]);
+export type FormalAssessmentConstruct = z.infer<typeof FormalAssessmentConstructSchema>;
+
+/** Bounded description of what the current source can support formally. */
+export const CurriculumAuthorityEnvelopeTierSchema = z.enum([
+  'formal_sufficient',
+  'narrower_formal',
+  'teaching_only',
+  'unavailable',
+]);
+export type CurriculumAuthorityEnvelopeTier = z.infer<typeof CurriculumAuthorityEnvelopeTierSchema>;
+
+export const CurriculumAuthorityEnvelopeSchema = z
+  .object({
+    sourceRegionId: z.string().min(1).max(200),
+    sourceBlockIds: z.array(z.string().min(1)).max(10_000),
+    formalEvidenceIds: z.array(z.string().min(1)).max(100),
+    supportedConstructs: z.array(FormalAssessmentConstructSchema).max(5),
+    strongestSupportedConstruct: FormalAssessmentConstructSchema.nullable(),
+    narrowerClaim: z.string().min(1).max(500).nullable(),
+    tier: CurriculumAuthorityEnvelopeTierSchema,
+    rationale: z.string().min(1).max(500),
+  })
+  .strict();
+export type CurriculumAuthorityEnvelope = z.infer<typeof CurriculumAuthorityEnvelopeSchema>;
+
+/** Actionable critique used by the one bounded Curriculum authority repair. */
+export const CurriculumAuthorityCritiqueSchema = z
+  .object({
+    objectiveId: z.string().min(1).max(200).nullable(),
+    objectiveKey: z.string().min(1).max(100).nullable(),
+    currentClaim: z.string().min(1).max(1000),
+    affectedSourceRegionIds: z.array(z.string().min(1).max(200)).max(100),
+    affectedSourceBlockIds: z.array(z.string().min(1)).max(100),
+    authorityTier: CurriculumAuthorityEnvelopeTierSchema,
+    supportedConstructs: z.array(FormalAssessmentConstructSchema).max(5),
+    narrowerClaim: z.string().min(1).max(500).nullable(),
+    reason: z.string().min(1).max(800),
+    protectedPriority: z.enum(['required', 'high', 'normal', 'optional']),
+  })
+  .strict();
+export type CurriculumAuthorityCritique = z.infer<typeof CurriculumAuthorityCritiqueSchema>;
+
 export const EvidenceAdmissibilityTierSchema = z.enum([
   'tier_1_authorized_truth',
   'tier_2_validated_representation',

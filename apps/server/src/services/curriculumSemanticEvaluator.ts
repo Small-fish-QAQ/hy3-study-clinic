@@ -2,6 +2,7 @@ import {
   CurriculumCoverageAccountabilitySchema,
   CurriculumSemanticEvaluationSchema,
   type Curriculum,
+  type CurriculumAuthorityCritique,
   type CurriculumCoverageAccountability,
   type CurriculumCoverageDisposition,
   type CurriculumQualityFinding,
@@ -422,15 +423,36 @@ function objectiveFindings(
         objective.priority === 'required' &&
         (!objective.formalAssessmentReady || objective.truthAuthorityRecordIds.length === 0)
       ) {
-        findings.push(
-          finding(
+        const affectedSourceBlockIds = unit.sourceReferences
+          .map((reference) => reference.sourceBlockId)
+          .filter((id): id is string => id !== null)
+          .slice(0, 100);
+        const authorityCritique: CurriculumAuthorityCritique = {
+          objectiveId: objective.id,
+          objectiveKey: null,
+          currentClaim: `${objective.title}: ${objective.description}`,
+          affectedSourceRegionIds: [],
+          affectedSourceBlockIds,
+          authorityTier: objective.authorityEnvelopeTier ?? 'unavailable',
+          supportedConstructs: objective.formalAssessmentConstruct
+            ? [objective.formalAssessmentConstruct]
+            : [],
+          narrowerClaim: null,
+          reason:
+            objective.formalAssessmentReadinessRationale ??
+            'Required objective has no independently authorized Formal Assessment path.',
+          protectedPriority: 'required',
+        };
+        findings.push({
+          ...finding(
             'assessment_readiness_compatibility',
             'error',
             'required_objective_formal_authority_missing',
             `Required objective “${objective.title}” is broader than the exact independently authorized source premises available for Formal Assessment.`,
             [unit.id],
           ),
-        );
+          authorityCritique,
+        });
       }
     }
   }

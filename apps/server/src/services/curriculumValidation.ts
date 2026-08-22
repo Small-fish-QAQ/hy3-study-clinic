@@ -3,6 +3,7 @@ import {
   CurriculumProposalPayloadSchema,
   CurriculumProposalFailureDetailsSchema,
   CurriculumValidationSchema,
+  type CurriculumAuthorityCritique,
   type Curriculum,
   type CurriculumObjective,
   type CurriculumProposalPayload,
@@ -13,6 +14,8 @@ import {
   type TruthPremiseStatus,
   type VerifiedGrounding,
   type Concept,
+  type CurriculumAuthorityEnvelopeTier,
+  type FormalAssessmentConstruct,
 } from '@hy3-clinic/shared';
 import { AppError } from '../errors.js';
 import { verifyGrounding } from '../grounding/verify.js';
@@ -21,6 +24,11 @@ export { curriculumSourceBlockFingerprint } from '../grounding/sourceFingerprint
 import type { SourceAuthorityBundle } from '../repositories/sourceAuthority.js';
 import type { CurriculumEvidenceOffer } from '../llm/provider.js';
 import { newId } from '../util/ids.js';
+import {
+  buildCurriculumAuthorityEnvelope,
+  detectFormalConstruct,
+  isConstructSupported,
+} from './curriculumAuthority.js';
 
 export interface CurriculumStructuralUnitOwner {
   materialId: string;
@@ -56,6 +64,7 @@ export interface MaterializedCurriculum {
   nodes: Curriculum['nodes'];
   synthesisGroups: Curriculum['synthesisGroups'];
   validation: Curriculum['validation'];
+  authorityCritiques: CurriculumAuthorityCritique[];
 }
 
 function revisionForBlock(
@@ -184,11 +193,27 @@ export function normalizeDuplicateLearningUnitTitles(
   }
 }
 
+interface AuthorityAssessment {
+  status: TruthPremiseStatus;
+  authorityIds: string[];
+  construct: FormalAssessmentConstruct;
+  envelopeTier: CurriculumAuthorityEnvelopeTier;
+  formalEvidenceSourceBlockIds: string[];
+  readinessRationale: string;
+  critique: CurriculumAuthorityCritique | undefined;
+}
+
 function authorityStatus(
-  _objective: { title: string; description: string },
+  objective: {
+    key: string;
+    title: string;
+    description: string;
+    priority?: 'required' | 'high' | 'normal' | 'optional';
+  },
   evidence: VerifiedGrounding[],
   ctx: CurriculumValidationContext,
-): { status: TruthPremiseStatus; authorityIds: string[] } {
+  nodeId: string,
+): AuthorityAssessment {
   const evidenceKeys = new Set(evidence.map((item) => `${item.blockId}\u0000${item.quote}`));
   const matched = ctx.authorityBundles.filter((bundle) => {
     const record = bundle.record;
@@ -210,27 +235,89 @@ function authorityStatus(
         normalize(claim.claim) === normalize(claim.quote),
     );
   });
+  const evidenceOffers = ctx.evidenceCatalog.filter((offer) =>
+    evidenceKeys.has(`${offer.blockId}\u0000${offer.quote}`),
+  );
+  const envelope = buildCurriculumAuthorityEnvelope({
+    sourceRegionId: nodeId,
+    sourceBlockIds: evidence.map((item) => item.blockId),
+    evidence: evidenceOffers,
+    authorityBundles: matched,
+    isBlockingEligible: ctx.isAuthorityBlockingEligible,
+  });
+  const construct = detectFormalConstruct(`${objective.title} ${objective.description}`);
   const conflicted = matched.filter((bundle) => bundle.record.conflictState === 'unresolved');
   if (conflicted.length > 0) {
     return {
       status: 'conflicted',
       authorityIds: conflicted.map((bundle) => bundle.record.id).slice(0, 20),
+      construct,
+      envelopeTier: envelope.tier,
+      formalEvidenceSourceBlockIds: [],
+      readinessRationale: '当前来源存在未解决的权威冲突，不能用于正式评估。',
+      critique:
+        objective.priority === 'required'
+          ? {
+              objectiveId: null,
+              objectiveKey: objective.key,
+              currentClaim: `${objective.title}: ${objective.description}`,
+              affectedSourceRegionIds: [nodeId],
+              affectedSourceBlockIds: evidence.map((item) => item.blockId).slice(0, 100),
+              authorityTier: envelope.tier,
+              supportedConstructs: envelope.supportedConstructs,
+              narrowerClaim: envelope.narrowerClaim,
+              reason: '当前来源权威存在未解决冲突，不能授予正式评估权威。',
+              protectedPriority: 'required',
+            }
+          : undefined,
     };
   }
-  const eligible = matched.filter(
-    (bundle) =>
-      bundle.record.validationState === 'validated' &&
-      ctx.isAuthorityBlockingEligible(bundle.record.id),
-  );
-  if (eligible.length > 0) {
-    return {
-      status: 'independently_verified',
-      authorityIds: eligible.map((bundle) => bundle.record.id).slice(0, 20),
-    };
-  }
+  const eligible = envelope.formalEvidenceIds.length > 0;
+  const supported = isConstructSupported(construct, envelope);
+  const ready = eligible && supported;
+  const authorityIds = matched
+    .filter(
+      (bundle) =>
+        bundle.record.validationState === 'validated' &&
+        ctx.isAuthorityBlockingEligible(bundle.record.id),
+    )
+    .map((bundle) => bundle.record.id)
+    .slice(0, 20);
+  const reason = !eligible
+    ? envelope.tier === 'teaching_only'
+      ? '当前来源可用于教学解释，但没有独立验证的正式证据。'
+      : '当前来源没有足以支持正式评估的精确权威。'
+    : !supported
+      ? `当前来源的正式权威仅支持 ${envelope.supportedConstructs.join('、') || '更窄'} 构念，不能支持 ${construct}。`
+      : '当前版本存在已验证且无冲突的精确来源权威。';
   return {
-    status: 'unverified',
-    authorityIds: matched.map((bundle) => bundle.record.id).slice(0, 20),
+    status: ready ? 'independently_verified' : 'unverified',
+    authorityIds:
+      authorityIds.length > 0
+        ? authorityIds
+        : matched.map((bundle) => bundle.record.id).slice(0, 20),
+    construct,
+    envelopeTier: envelope.tier,
+    formalEvidenceSourceBlockIds: evidenceOffers
+      .filter((offer) => envelope.formalEvidenceIds.includes(offer.id))
+      .map((offer) => offer.blockId)
+      .slice(0, 100),
+    readinessRationale: reason,
+    critique:
+      objective.priority === 'required' && !ready
+        ? {
+            objectiveId: null,
+            objectiveKey: objective.key,
+            currentClaim: `${objective.title}: ${objective.description}`,
+            affectedSourceRegionIds: [nodeId],
+            affectedSourceBlockIds: evidence.map((item) => item.blockId).slice(0, 100),
+            authorityTier: envelope.tier,
+            supportedConstructs: envelope.supportedConstructs,
+            narrowerClaim: envelope.narrowerClaim,
+            reason,
+            protectedPriority: 'required',
+          }
+        : undefined,
   };
 }
 
@@ -238,6 +325,7 @@ function throwValidation(
   errors: string[],
   warnings: string[] = [],
   repairAttempted = false,
+  authorityCritiques: CurriculumAuthorityCritique[] = [],
 ): never {
   const executionRepairFailed = errors.some((error) =>
     error.startsWith('StudyPlan execution repair:'),
@@ -247,6 +335,9 @@ function throwValidation(
     repairAttempted,
     errors: errors.slice(0, 20),
     warnings: warnings.slice(0, 20),
+    ...(authorityCritiques.length > 0
+      ? { authorityCritiques: authorityCritiques.slice(0, 20) }
+      : {}),
   });
   throw new AppError(
     ApiErrorCode.GroundingFailed,
@@ -273,6 +364,7 @@ export function materializeCurriculumProposal(
   const parsed = CurriculumProposalPayloadSchema.parse(payload);
   const errors: string[] = [];
   const warnings: string[] = [];
+  const authorityCritiques: CurriculumAuthorityCritique[] = [];
   const nodeIdByKey = new Map<string, string>();
   const objectiveIdByKey = new Map<string, string>();
   const conceptById = new Map(ctx.concepts.map((concept) => [concept.id, concept]));
@@ -523,7 +615,11 @@ export function materializeCurriculumProposal(
             selectedEvidence.push(verified);
           }
         }
-        const authority = authorityStatus(objective, evidence, ctx);
+        const authority = authorityStatus(objective, evidence, ctx, id);
+        if (authority.critique) {
+          authority.critique.objectiveId = objectiveId;
+          authorityCritiques.push(authority.critique);
+        }
         objectives.push({
           id: objectiveId,
           title: objective.title,
@@ -539,12 +635,12 @@ export function materializeCurriculumProposal(
                 formalAssessmentReady:
                   authority.status === 'independently_verified' &&
                   authority.authorityIds.length > 0,
-                formalAssessmentReadinessRationale:
-                  authority.status === 'independently_verified'
-                    ? '当前版本存在已验证且无冲突的精确来源权威。'
-                    : '当前来源只能支持教学解释，尚不足以授予正式评估权威。',
+                formalAssessmentReadinessRationale: authority.readinessRationale,
               }
             : {}),
+          formalAssessmentConstruct: authority.construct,
+          authorityEnvelopeTier: authority.envelopeTier,
+          formalEvidenceSourceBlockIds: authority.formalEvidenceSourceBlockIds,
         });
       }
 
@@ -718,13 +814,69 @@ export function materializeCurriculumProposal(
   // Keep this helper useful to callers that want to inspect a failed candidate,
   // while the service fails closed before persisting invalid active state.
   CurriculumValidationSchema.parse(validation);
-  return { nodes, synthesisGroups, validation };
+  return { nodes, synthesisGroups, validation, authorityCritiques };
+}
+
+/**
+ * Apply one deterministic authority repair to a provider candidate. The repair
+ * only narrows wording to an exact local claim and never changes protected
+ * priority, source selections, ids, or learner scope.
+ */
+export function repairCurriculumAuthorityCandidate(
+  payload: CurriculumProposalPayload,
+  ctx: CurriculumValidationContext,
+): { payload: CurriculumProposalPayload; repaired: boolean } {
+  const candidate = CurriculumProposalPayloadSchema.parse(payload);
+  const materialized = materializeCurriculumProposal(candidate, ctx);
+  if (materialized.authorityCritiques.length === 0) return { payload: candidate, repaired: false };
+  const critiqueByKey = new Map(
+    materialized.authorityCritiques
+      .filter((critique) => critique.objectiveKey)
+      .map((critique) => [critique.objectiveKey!, critique]),
+  );
+  let repaired = false;
+  for (const node of candidate.nodes) {
+    if (node.kind !== 'learning_unit') continue;
+    for (const objective of node.objectives) {
+      const critique = critiqueByKey.get(objective.key);
+      if (
+        !critique?.narrowerClaim ||
+        (critique.authorityTier !== 'formal_sufficient' &&
+          critique.authorityTier !== 'narrower_formal') ||
+        critique.supportedConstructs.length === 0
+      )
+        continue;
+      const construct = critique.supportedConstructs.includes('explain') ? 'Explain' : 'Identify';
+      const claim = critique.narrowerClaim.slice(0, 500);
+      objective.title = `${construct} the source-supported claim: ${claim}`.slice(0, 300);
+      objective.description =
+        `${construct} only what the current source explicitly states: ${claim}`.slice(0, 1_000);
+      // Required priority is intentionally preserved. The provider cannot
+      // satisfy an authority critique by downgrading learner scope.
+      repaired = true;
+    }
+  }
+  return { payload: candidate, repaired };
 }
 
 export function assertValidMaterializedCurriculum(
   result: MaterializedCurriculum,
   repairAttempted = false,
+  rejectAuthorityCritiques = false,
 ): void {
-  if (!result.validation.valid)
-    throwValidation(result.validation.errors, result.validation.warnings, repairAttempted);
+  if (
+    !result.validation.valid ||
+    (rejectAuthorityCritiques && result.authorityCritiques.length > 0)
+  )
+    throwValidation(
+      [
+        ...result.validation.errors,
+        ...(result.authorityCritiques.length > 0
+          ? ['required_objective_formal_authority_missing']
+          : []),
+      ],
+      result.validation.warnings,
+      repairAttempted,
+      result.authorityCritiques,
+    );
 }

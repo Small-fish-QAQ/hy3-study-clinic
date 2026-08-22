@@ -11,6 +11,7 @@ import type {
   Curriculum,
   CurriculumDetailProposalPayload,
   CurriculumProposalPayload,
+  CurriculumAuthorityEnvelope,
   DesiredDepth,
   ExecutionSourceManifest,
   GraphEdge,
@@ -635,6 +636,8 @@ export interface CurriculumProposalInput {
   blocks: SourceBlock[];
   /** Exact evidence universe. Curriculum output may select only these identities. */
   evidenceCatalog: CurriculumEvidenceOffer[];
+  /** Local source-authority envelope; the provider may narrow claims but cannot grant authority. */
+  authorityEnvelopes?: CurriculumAuthorityEnvelope[];
   /**
    * Bounded, learner-safe visual explanations. These may shape advisory
    * teaching structure, but they are not source evidence and expose no local
@@ -678,6 +681,8 @@ export interface CourseMapSourceRegionOffer {
   charCount: number;
   anchorOptions: CourseMapAnchorOptionOffer[];
   evidence: Array<{ evidenceId: string; text: string }>;
+  /** Bounded authority description for objective design; source bindings remain local-only. */
+  authorityEnvelope?: CurriculumAuthorityEnvelope;
 }
 
 /** Internal skeleton-generation input. Full SourceBlocks never cross this boundary. */
@@ -716,6 +721,7 @@ export interface CurriculumDetailRegionInput {
   concepts: Array<{ id: string; name: string; summary: string }>;
   canonicalConcepts: CurriculumCanonicalConceptOffer[];
   evidence: Array<{ evidenceId: string; sourceAllocationRegionId: string; text: string }>;
+  authorityEnvelope?: CurriculumAuthorityEnvelope;
 }
 
 /** One fixed-batch, operation-local detail request over server-owned Course Map regions. */

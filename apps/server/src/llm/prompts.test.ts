@@ -4,6 +4,7 @@ import {
   conceptAnalysisMessages,
   courseMapPromptContext,
   courseMapProposalMessages,
+  curriculumDetailProposalMessages,
   measureCourseMapRequest,
   quizGenerationMessages,
   remediationMessages,
@@ -12,7 +13,11 @@ import {
   curriculumProposalMessages,
   measureCurriculumRequest,
 } from './prompts.js';
-import type { CourseMapProposalInput, CurriculumProposalInput } from './provider.js';
+import type {
+  CourseMapProposalInput,
+  CurriculumDetailProposalInput,
+  CurriculumProposalInput,
+} from './provider.js';
 
 const blocks: SourceBlock[] = [
   {
@@ -235,6 +240,18 @@ describe('prompt trust boundaries', () => {
         },
       ],
       predecessor: null,
+      authorityEnvelopes: [
+        {
+          sourceRegionId: 'PRIVATE_AUTHORITY_REGION_ID',
+          sourceBlockIds: ['PRIVATE_AUTHORITY_BLOCK_ID'],
+          formalEvidenceIds: ['PRIVATE_FORMAL_EVIDENCE_ID'],
+          supportedConstructs: ['identify', 'explain'],
+          strongestSupportedConstruct: 'explain',
+          narrowerClaim: '工作记忆容量有限。',
+          tier: 'formal_sufficient',
+          rationale: 'Exact local authority.',
+        },
+      ],
       limits: { maxNodes: 10, maxObjectives: 10, maxSynthesisGroups: 1 },
     } as unknown as CurriculumProposalInput;
     const content = curriculumProposalMessages(input)
@@ -248,6 +265,10 @@ describe('prompt trust boundaries', () => {
       'never copy, rewrite, paraphrase, or invent authoritative quote text',
     );
     expect(content).toContain('evidenceId');
+    expect(content).toContain('"formalEvidenceCount":1');
+    expect(content).not.toContain('PRIVATE_AUTHORITY_REGION_ID');
+    expect(content).not.toContain('PRIVATE_AUTHORITY_BLOCK_ID');
+    expect(content).not.toContain('PRIVATE_FORMAL_EVIDENCE_ID');
     const report = measureCurriculumRequest(input);
     expect(report).toEqual(measureCurriculumRequest(input));
     expect(report.counts).toMatchObject({ sourceBlocks: 1, evidenceOffers: 1 });
@@ -365,5 +386,64 @@ describe('prompt trust boundaries', () => {
       anchorOptions: 1,
       canonicalAnchorOptions: 1,
     });
+  });
+
+  it('keeps detail authority bindings local while exposing bounded semantics', () => {
+    const input = {
+      workspaceName: 'Course',
+      contract: {
+        intent: 'Learn',
+        targetOutcome: 'Explain',
+        desiredDepth: 'working_fluency',
+        subjectBoundaries: [],
+        includedTopics: [],
+        excludedTopics: [],
+      },
+      courseMapId: 'PRIVATE_COURSE_MAP_ID',
+      sourceAllocationFingerprint: 'PRIVATE_ALLOCATION_FINGERPRINT',
+      batchKey: 'batch-1',
+      regions: [
+        {
+          regionId: 'PRIVATE_REGION_ID',
+          moduleId: 'PRIVATE_MODULE_ID',
+          moduleIndex: 0,
+          moduleTitle: 'Foundations',
+          regionIndex: 0,
+          title: 'Memory',
+          learningIntent: 'Explain memory',
+          approximateScope: 'focused',
+          sourceAllocationRegionIds: ['PRIVATE_SOURCE_REGION_ID'],
+          prerequisiteRegionIds: [],
+          synthesisGroups: [],
+          concepts: [],
+          canonicalConcepts: [],
+          evidence: [
+            {
+              evidenceId: 'PRIVATE_EVIDENCE_ID',
+              sourceAllocationRegionId: 'PRIVATE_SOURCE_REGION_ID',
+              text: 'Working memory is limited.',
+            },
+          ],
+          authorityEnvelope: {
+            sourceRegionId: 'PRIVATE_AUTHORITY_REGION_ID',
+            sourceBlockIds: ['PRIVATE_AUTHORITY_BLOCK_ID'],
+            formalEvidenceIds: ['PRIVATE_FORMAL_EVIDENCE_ID'],
+            supportedConstructs: ['identify'],
+            strongestSupportedConstruct: 'identify',
+            narrowerClaim: 'Working memory is limited.',
+            tier: 'narrower_formal',
+            rationale: 'Exact local authority.',
+          },
+        },
+      ],
+      limits: { maxUnits: 1, maxObjectivesPerUnit: 1, maxEvidenceSelectionsPerUnit: 1 },
+    } as unknown as CurriculumDetailProposalInput;
+    const content = curriculumDetailProposalMessages(input)
+      .map((message) => message.content)
+      .join('\n');
+    expect(content).toContain('"formalEvidenceCount":1');
+    expect(content).not.toContain('PRIVATE_AUTHORITY_REGION_ID');
+    expect(content).not.toContain('PRIVATE_AUTHORITY_BLOCK_ID');
+    expect(content).not.toContain('PRIVATE_FORMAL_EVIDENCE_ID');
   });
 });

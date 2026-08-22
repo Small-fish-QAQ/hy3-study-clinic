@@ -15,6 +15,7 @@ import {
   type CurriculumCoverageWarning,
   type CurriculumProposalPayload,
   type CurriculumDetailProposalPayload,
+  type CurriculumAuthorityEnvelope,
   type CurriculumHierarchyView,
   type CurriculumHistoryResponse,
   type CurriculumProposalResponse,
@@ -45,6 +46,7 @@ import {
   assertValidMaterializedCurriculum,
   curriculumSourceBlockFingerprint,
   materializeCurriculumProposal,
+  repairCurriculumAuthorityCandidate,
   type CurriculumValidationContext,
   type MaterializedCurriculum,
 } from './curriculumValidation.js';
@@ -82,9 +84,11 @@ import {
   MAX_DETAIL_BATCHES,
   assembleCurriculumDetailBatches,
   planCurriculumDetailBatches,
+  repairCurriculumDetailAuthorityCandidate,
   validateCurriculumDetailCandidate,
 } from './curriculumMaterialization.js';
 import { visualAwareManifestFingerprint } from './advisoryVisuals.js';
+import { buildCurriculumAuthorityEnvelope } from './curriculumAuthority.js';
 
 /** HTTP/service request: the server, never the client, resolves exact revisions. */
 export const ProposeCurriculumCommandRequestSchema = ProposeCurriculumRequestSchema.omit({
@@ -503,6 +507,27 @@ export function buildCurriculumCourseSourceMap(
 
 function manifestsEqual(left: ExecutionSourceManifest, right: ExecutionSourceManifest): boolean {
   return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function buildAuthorityEnvelopeMap(
+  regions: Array<{ id: string; sourceBlockIds: string[] }>,
+  evidenceCatalog: ReturnType<typeof selectCurriculumEvidenceOffers>,
+  context: ReturnType<typeof buildCurriculumExecutionContext>,
+  repos: Repositories,
+): Map<string, CurriculumAuthorityEnvelope> {
+  return new Map(
+    regions.map((region) => [
+      region.id,
+      buildCurriculumAuthorityEnvelope({
+        sourceRegionId: region.id,
+        sourceBlockIds: region.sourceBlockIds,
+        evidence: evidenceCatalog.filter((offer) => region.sourceBlockIds.includes(offer.blockId)),
+        authorityBundles: context.authorityBundles,
+        isBlockingEligible: (authorityRecordId) =>
+          repos.sourceAuthority.isBlockingEligible(authorityRecordId),
+      }),
+    ]),
+  );
 }
 
 export function requiresStudyPlanExecutionRepair(
@@ -1019,6 +1044,17 @@ export function createCurriculumService({
       commands.fail(claim, error);
       throw error;
     }
+    const legacyAuthorityEnvelopes = [
+      ...buildAuthorityEnvelopeMap(
+        context.outline.map((item, index) => ({
+          id: `outline_region_${index + 1}`,
+          sourceBlockIds: [...item.sourceBlockIds],
+        })),
+        evidenceCatalog,
+        context,
+        repos,
+      ).values(),
+    ];
     const providerInput: CurriculumProposalInput = {
       workspaceName: workspace.name,
       contract: context.contractContext,
@@ -1031,6 +1067,7 @@ export function createCurriculumService({
       predecessor,
       blocks: context.blocks,
       evidenceCatalog,
+      authorityEnvelopes: legacyAuthorityEnvelopes,
       visualContext: buildCurriculumVisualContext(context.visualCandidates),
       limits: curriculumLimits(context.outline, predecessor),
     };
@@ -1066,6 +1103,7 @@ export function createCurriculumService({
       isAuthorityBlockingEligible: (id) => repos.sourceAuthority.isBlockingEligible(id),
     };
     let repairAttempted = false;
+    let authorityRepairAttempted = false;
     let lastCandidateValidation: MaterializedCurriculum | null = null;
     let semanticSourceRegions: CurriculumSemanticSourceRegion[] = sourceMap.materials.flatMap(
       (material) =>
@@ -1132,6 +1170,7 @@ export function createCurriculumService({
               },
               validateCandidate: (candidate) => {
                 assertGenerationSnapshotCurrent();
+                let candidateValue = candidate as CurriculumProposalPayload;
                 lastCandidateValidation = validateExecutionRepairCandidate({
                   repos,
                   clock,
@@ -1139,17 +1178,57 @@ export function createCurriculumService({
                   executionRepairRequired,
                   workspaceName: workspace.name,
                   manifest: context.manifest,
-                  materialized: materializeCurriculumProposal(
-                    candidate as CurriculumProposalPayload,
-                    validationContext,
-                  ),
+                  materialized: materializeCurriculumProposal(candidateValue, validationContext),
                 });
+                if (
+                  lastCandidateValidation.authorityCritiques.length > 0 &&
+                  !authorityRepairAttempted
+                ) {
+                  const repaired = repairCurriculumAuthorityCandidate(
+                    candidateValue,
+                    validationContext,
+                  );
+                  if (repaired.repaired) {
+                    authorityRepairAttempted = true;
+                    repairAttempted = true;
+                    Object.assign(candidate as object, repaired.payload);
+                    candidateValue = repaired.payload;
+                    lastCandidateValidation = validateExecutionRepairCandidate({
+                      repos,
+                      clock,
+                      contract,
+                      executionRepairRequired,
+                      workspaceName: workspace.name,
+                      manifest: context.manifest,
+                      materialized: materializeCurriculumProposal(
+                        candidateValue,
+                        validationContext,
+                      ),
+                    });
+                  }
+                }
+                const authorityDiagnostics = lastCandidateValidation.authorityCritiques.map(
+                  (critique) =>
+                    `Curriculum authority critique: objective=${critique.objectiveKey ?? critique.objectiveId ?? 'unknown'}; sourceRegions=${critique.affectedSourceRegionIds.join(',') || 'none'}; sourceBlocks=${critique.affectedSourceBlockIds.join(',') || 'none'}; tier=${critique.authorityTier}; supportedConstructs=${critique.supportedConstructs.join(',') || 'none'}; narrowerClaim=${critique.narrowerClaim ?? 'none'}; protectedPriority=${critique.protectedPriority}; reason=${critique.reason}`,
+                );
                 return {
-                  valid: lastCandidateValidation.validation.valid,
-                  diagnostics: lastCandidateValidation.validation.errors,
-                  diagnosticCodes: lastCandidateValidation.validation.valid
-                    ? []
-                    : ['curriculum_candidate_invalid'],
+                  valid:
+                    lastCandidateValidation.validation.valid &&
+                    lastCandidateValidation.authorityCritiques.length === 0,
+                  diagnostics: [
+                    ...lastCandidateValidation.validation.errors,
+                    ...authorityDiagnostics,
+                  ].slice(0, 100),
+                  diagnosticCodes:
+                    lastCandidateValidation.validation.valid &&
+                    lastCandidateValidation.authorityCritiques.length === 0
+                      ? []
+                      : [
+                          'curriculum_candidate_invalid',
+                          ...(lastCandidateValidation.authorityCritiques.length > 0
+                            ? ['required_objective_formal_authority_missing']
+                            : []),
+                        ],
                 };
               },
             }),
@@ -1161,12 +1240,19 @@ export function createCurriculumService({
           blocks: context.blocks,
           evidenceCatalog,
         });
+        const authorityEnvelopesByRegionId = buildAuthorityEnvelopeMap(
+          sourceAllocation.regions,
+          evidenceCatalog,
+          context,
+          repos,
+        );
         const courseMapProviderInput = buildCourseMapProposalInput({
           workspaceName: workspace.name,
           contract: context.contractContext,
           sourceAllocation,
           concepts,
           canonicalConcepts,
+          authorityEnvelopesByRegionId,
         });
         assertGenerationSnapshotCurrent = (): void => {
           if (opts?.signal?.aborted) throw ProviderError.cancelled();
@@ -1257,6 +1343,7 @@ export function createCurriculumService({
           evidenceCatalog,
           concepts,
           canonicalConcepts,
+          authorityEnvelopesByRegionId,
         });
         const completedBatches: Array<{
           input: (typeof detailBatches)[number]['input'];
@@ -1294,7 +1381,20 @@ export function createCurriculumService({
                 },
                 validateCandidate: (candidate) => {
                   assertGenerationSnapshotCurrent();
-                  return validateCurriculumDetailCandidate(candidate, batch.input);
+                  const validation = validateCurriculumDetailCandidate(candidate, batch.input);
+                  if (!validation.valid && !authorityRepairAttempted) {
+                    const repaired = repairCurriculumDetailAuthorityCandidate(
+                      candidate as CurriculumDetailProposalPayload,
+                      batch.input,
+                    );
+                    if (repaired.repaired) {
+                      authorityRepairAttempted = true;
+                      repairAttempted = true;
+                      Object.assign(candidate as object, repaired.candidate);
+                      return validateCurriculumDetailCandidate(candidate, batch.input);
+                    }
+                  }
+                  return validation;
                 },
               }),
           });
@@ -1418,6 +1518,7 @@ export function createCurriculumService({
           payload: {
             contractId: contract.id,
             manifestFingerprint: context.manifest.fingerprint,
+            generationOperationId: claim.operationId,
             ...(opts?.preparationPolicyId ? { preparationPolicyId: opts.preparationPolicyId } : {}),
           },
           createdAt: now,
@@ -1464,10 +1565,10 @@ export function createCurriculumService({
         'validationKind' in error.details &&
         error.details.validationKind === 'candidate' &&
         failedCandidate &&
-        !failedCandidate.validation.valid
+        (!failedCandidate.validation.valid || failedCandidate.authorityCritiques.length > 0)
       ) {
         try {
-          assertValidMaterializedCurriculum(failedCandidate, repairAttempted);
+          assertValidMaterializedCurriculum(failedCandidate, repairAttempted, true);
         } catch (validationError) {
           failure = validationError;
         }
@@ -1559,6 +1660,7 @@ export function createCurriculumService({
           assertValidMaterializedCurriculum({
             nodes: current.nodes,
             synthesisGroups: current.synthesisGroups,
+            authorityCritiques: [],
             validation: {
               ...current.validation,
               valid: false,
