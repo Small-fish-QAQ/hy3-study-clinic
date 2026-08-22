@@ -1056,7 +1056,7 @@ export function AgentCourseWorkspace({
     action.cancel();
     setBusyAction(null);
     setActionFailureOwner(null);
-    setNotice('已停止本次课程结构生成，当前已接受版本没有改变。');
+    setNotice('已停止本次课程结构生成，当前课程结构没有改变。');
   }
 
   async function decideCurriculum(decision: 'accept' | 'reject'): Promise<void> {

@@ -116,7 +116,7 @@ export const STATE_REASON_LABELS: Record<
   KnowledgeMapNode['learner']['reasonCodes'][number],
   string
 > = {
-  route_unavailable: '当前路线不可用，因此不推断学习状态。',
+  route_unavailable: '当前课程路线暂时无法对应，因此暂不显示学习状态。',
   accepted_plan_membership: '已包含在当前接受的学习路线中。',
   current_agenda_item: '是本次学习安排的当前项目。',
   active_study_session: '当前学习会话正在处理此内容。',
@@ -143,7 +143,7 @@ export const EDGE_KIND_LABELS: Record<KnowledgeMapEdge['kind'], string> = {
   causes: '导致',
   curriculum_prerequisite: '课程先修',
   unit_contains_concept: '包含概念',
-  synthesis_includes_unit: '综合学习单元',
+  synthesis_includes_unit: '综合任务包含',
   curriculum_contains: '课程包含',
 };
 

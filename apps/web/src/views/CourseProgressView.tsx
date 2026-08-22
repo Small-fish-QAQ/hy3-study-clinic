@@ -514,11 +514,11 @@ function contractStatusLabel(value: string): string {
 
 function curriculumStatusLabel(value: string): string {
   const labels: Record<string, string> = {
-    candidate: '候选版本',
-    proposed: '待确认',
-    accepted: '已接受',
+    candidate: '待审核结构',
+    proposed: '等待你确认',
+    accepted: '当前结构',
     rejected: '已拒绝',
-    failed: '生成失败',
+    failed: '生成未完成',
     superseded: '历史版本',
   };
   return labels[value] ?? '已记录';
@@ -526,9 +526,9 @@ function curriculumStatusLabel(value: string): string {
 
 function studyPlanStatusLabel(value: string): string {
   const labels: Record<string, string> = {
-    candidate: '候选路线',
-    proposed: '待确认',
-    accepted: '已接受',
+    candidate: '待审核路线',
+    proposed: '等待你确认',
+    accepted: '当前路线',
     rejected: '已拒绝',
     superseded: '历史路线',
     closed: '已结束',

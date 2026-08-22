@@ -9,6 +9,7 @@ import type {
 import { Banner, Loading } from '../components/ui.js';
 import { StudyPlanPanel } from './StudyPlanPanel.js';
 import { CurriculumFailureDiagnostics } from './CurriculumView.js';
+import { learnerPlanText } from './learnerLanguage.js';
 
 const SETUP_TEXT: Record<CourseExecutionOverview['setupStage'], string> = {
   contract_required: '先明确这次学习要达到什么目标',
@@ -409,7 +410,11 @@ export function CourseHomeView({
         ) : null}
 
         {preparationOwnsSetup && preparation ? (
-          <section className="course-preparation-status" aria-label="课程准备状态">
+          <section
+            className="course-preparation-status"
+            aria-label="课程准备状态"
+            role={busyAction === 'prepare-course' ? 'status' : undefined}
+          >
             <div className="section-heading">
               <p className="eyebrow">课程准备</p>
               <h3>{PREPARATION_TEXT[preparation.state]}</h3>
@@ -446,8 +451,8 @@ export function CourseHomeView({
           <div className="next-action" aria-label="下一步">
             <div>
               <p className="eyebrow">下一步</p>
-              <h3>{next.item.reason}</h3>
-              <p>{next.whyNext}</p>
+              <h3>{learnerPlanText(next.item.reason)}</h3>
+              <p>{learnerPlanText(next.whyNext)}</p>
               <p className="small muted">预计 {next.item.estimatedMinutes} 分钟</p>
             </div>
             {next.item.launch.status === 'launchable' ? (
@@ -473,7 +478,7 @@ export function CourseHomeView({
           <div className="next-action setup-action" aria-label="下一步">
             <div>
               <p className="eyebrow">下一步</p>
-              <h3>{setupText}</h3>
+              <h3>{preparationOwnsSetup && setupAction ? setupAction.label : setupText}</h3>
               <p className="muted">
                 {preparationOwnsSetup && preparation
                   ? (preparation.blocker?.message ??
@@ -492,10 +497,7 @@ export function CourseHomeView({
               </p>
             </div>
             {busyAction === 'prepare-course' ? (
-              <div className="stack curriculum-operation-status" role="status">
-                <strong>
-                  {preparation ? PREPARATION_TEXT[preparation.state] : '正在准备课程'}
-                </strong>
+              <div className="stack curriculum-operation-status">
                 <span className="small muted">已完成的有效内容会立即保留。</span>
                 <button type="button" className="ghost" onClick={onCancelPreparation}>
                   停止
@@ -545,7 +547,7 @@ export function CourseHomeView({
                 key={item.id}
                 aria-current={item.id === overview.activeAgenda?.currentItemId ? 'step' : undefined}
               >
-                <span>{item.reason}</span>
+                <span>{learnerPlanText(item.reason)}</span>
                 <span className="small muted">约 {item.estimatedMinutes} 分钟</span>
               </li>
             ))}
@@ -568,7 +570,7 @@ export function CourseHomeView({
                     ? '待补充依据'
                     : '优先处理'}
               </span>{' '}
-              {risk.claim}
+              {learnerPlanText(risk.claim)}
             </p>
           ))}
         </section>
@@ -663,7 +665,8 @@ export function CourseHomeView({
             </p>
             {overview.riskSummary.highlights.map((risk) => (
               <p key={risk.id} className="small">
-                {risk.claim} · <span className="muted">{risk.uncertainty}</span>
+                {learnerPlanText(risk.claim)} ·{' '}
+                <span className="muted">{learnerPlanText(risk.uncertainty)}</span>
               </p>
             ))}
           </div>

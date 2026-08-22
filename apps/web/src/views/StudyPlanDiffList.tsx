@@ -1,4 +1,5 @@
 import type { StudyPlanDiffOperation } from '@hy3-clinic/shared';
+import { learnerPlanText } from './learnerLanguage.js';
 
 export interface StudyPlanDiffListProps {
   changes: StudyPlanDiffOperation[];
@@ -35,7 +36,8 @@ export function StudyPlanDiffList({ changes }: StudyPlanDiffListProps) {
             key={`${change.kind}:${change.planItemId ?? change.curriculumLearningUnitId ?? index}`}
           >
             <strong>{diffKindLabel(change.kind)}</strong>
-            {details.length > 0 ? ` | ${details.join(' | ')}` : ''}: {change.reason}
+            {details.length > 0 ? ` | ${details.join(' | ')}` : ''}:{' '}
+            {learnerPlanText(change.reason)}
           </li>
         );
       })}

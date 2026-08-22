@@ -6,6 +6,7 @@ import type {
 } from '@hy3-clinic/shared';
 import { Banner } from '../components/ui.js';
 import { StudyPlanDiffList } from './StudyPlanDiffList.js';
+import { learnerPlanText } from './learnerLanguage.js';
 
 const KIND_TEXT: Record<StudyPlan['items'][number]['kind'], string> = {
   teach_unit: '学习单元',
@@ -18,11 +19,11 @@ const KIND_TEXT: Record<StudyPlan['items'][number]['kind'], string> = {
 };
 
 const PLAN_STATUS_TEXT: Record<string, string> = {
-  candidate: '候选路线',
-  proposed: '待确认',
-  accepted: '已接受',
+  candidate: '待审核路线',
+  proposed: '等待你确认',
+  accepted: '当前路线',
   rejected: '已拒绝',
-  superseded: '已由新路线替代',
+  superseded: '已被新路线替代',
   closed: '已结束',
 };
 
@@ -98,13 +99,13 @@ export function StudyPlanPanel({
         </span>
       </div>
 
-      <p>{plan.rationale}</p>
+      <p>{learnerPlanText(plan.rationale)}</p>
       {plan.feasibility.assumptions.length > 0 ? (
         <details className="small">
           <summary>时间估算依据</summary>
           <ul>
             {plan.feasibility.assumptions.map((assumption) => (
-              <li key={assumption}>{assumption}</li>
+              <li key={assumption}>{learnerPlanText(assumption)}</li>
             ))}
           </ul>
         </details>
@@ -118,7 +119,7 @@ export function StudyPlanPanel({
               <span className="pill">
                 {RECOMMENDATION_TEXT[recommendation.kind] ?? recommendation.kind}
               </span>{' '}
-              {recommendation.rationale}
+              {learnerPlanText(recommendation.rationale)}
             </p>
           ))}
           <p className="small muted">当前路线不会因时间估算自动删减内容。</p>
@@ -132,11 +133,11 @@ export function StudyPlanPanel({
             <li key={item.id} className="block-preview">
               <div className="row between">
                 <strong>
-                  {item.phase} · {KIND_TEXT[item.kind]}
+                  {learnerPlanText(item.phase)} · {KIND_TEXT[item.kind]}
                 </strong>
                 <span className="small muted">{item.estimatedMinutes} 分钟</span>
               </div>
-              <p className="small">{item.rationale}</p>
+              <p className="small">{learnerPlanText(item.rationale)}</p>
               <p className="small muted">
                 深度 {DEPTH_TEXT[item.targetDepth] ?? '已设置'} · 目标 {item.objectiveIds.length} 项
               </p>
@@ -201,12 +202,12 @@ export function StudyPlanPanel({
       </ol>
 
       {plan.deferrals.length > 0 ? (
-        <div aria-label="明确延期">
-          <h4>明确延期</h4>
+        <div aria-label="已接受的延期">
+          <h4>已接受的延期</h4>
           {plan.deferrals.map((deferral) => (
             <p key={deferral.curriculumLearningUnitId} className="small">
-              <span className="pill wrong">仍是学习缺口</span> {deferral.reason} · 风险{' '}
-              {deferral.riskIds.join('、')}
+              <span className="pill wrong">仍是学习缺口</span> {learnerPlanText(deferral.reason)} ·
+              风险 {deferral.riskIds.join('、')}
             </p>
           ))}
         </div>
@@ -244,7 +245,7 @@ export function StudyPlanPanel({
             {history.map((item) => (
               <li key={item.id}>
                 版本 {item.version} · {PLAN_STATUS_TEXT[item.status] ?? '已记录'} ·{' '}
-                {item.projectedMinutes} 分钟 · {item.proposalTrigger}
+                {item.projectedMinutes} 分钟 · {learnerPlanText(item.proposalTrigger)}
               </li>
             ))}
           </ol>

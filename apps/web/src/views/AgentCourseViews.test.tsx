@@ -584,6 +584,7 @@ describe('CourseHomeView action and authority rendering', () => {
 
     const status = screen.getByLabelText('课程准备状态');
     expect(within(status).getByRole('heading', { name: '正在设计课程结构' })).toBeVisible();
+    expect(screen.getAllByRole('heading', { name: '正在设计课程结构' })).toHaveLength(1);
     expect(within(status).getByText('资料已整理').closest('li')).toHaveAttribute(
       'data-state',
       'complete',
@@ -638,10 +639,10 @@ describe('CourseHomeView action and authority rendering', () => {
 
     render(<CourseHomeView {...props} />);
 
-    const operation = screen.getByRole('status');
+    const operation = screen.getByLabelText('课程准备状态');
     expect(operation).toHaveTextContent('正在理解课程资料的核心内容');
     expect(screen.queryByRole('button', { name: '继续准备课程' })).not.toBeInTheDocument();
-    await user.click(within(operation).getByRole('button', { name: '停止' }));
+    await user.click(screen.getByRole('button', { name: '停止' }));
     expect(props.onCancelPreparation).toHaveBeenCalledOnce();
   });
 
@@ -1061,6 +1062,10 @@ describe('StudyPlanPanel decisions', () => {
     expect(screen.getByRole('region', { name: '可选策略' })).toHaveTextContent(
       '仅延期可选/补充内容',
     );
+    expect(screen.getByRole('region', { name: '可选策略' })).toHaveTextContent(
+      '这项建议只涉及可选或补充内容。',
+    );
+    expect(screen.queryByText('Only optional content is eligible.')).not.toBeInTheDocument();
     expect(screen.getByText('当前路线不会因时间估算自动删减内容。')).toBeInTheDocument();
   });
 
@@ -1133,7 +1138,7 @@ describe('StudyPlanPanel decisions', () => {
 
     expect(screen.getByText(/顺序 2 → 1/)).toHaveTextContent('时长 25 → 35 分钟');
     expect(screen.getByText(/顺序 2 → 1/)).toHaveTextContent('深度 高水平表现 → 深入迁移');
-    expect(screen.getByText(/Preserve the accepted deadline/)).toHaveTextContent('学习单元 unit_3');
+    expect(screen.getByText(/保留当前目标日期/)).toHaveTextContent('学习单元 unit_3');
   });
 });
 
@@ -1523,7 +1528,7 @@ describe('CurriculumView truth and validation states', () => {
       />,
     );
 
-    expect(screen.getByText('该候选版本未通过本地结构校验，不能接受。')).toBeInTheDocument();
+    expect(screen.getByText('这份课程结构未通过本地检查，暂时不能接受。')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '接受课程结构' })).toBeDisabled();
   });
 
@@ -1630,7 +1635,7 @@ describe('CurriculumView truth and validation states', () => {
         hierarchy={hierarchy()}
         history={[]}
         loading={false}
-        error="新课程结构仍不能支持下一步学习，因此没有生成新版本。当前已接受版本未改变。"
+        error="新课程结构仍不能支持下一步学习，因此没有生成新版本。当前课程结构没有改变。"
         errorDetails={{
           kind: 'curriculum_candidate_validation',
           repairAttempted: false,
@@ -1649,7 +1654,7 @@ describe('CurriculumView truth and validation states', () => {
       />,
     );
 
-    expect(screen.getByRole('alert')).toHaveTextContent('当前已接受版本未改变');
+    expect(screen.getByRole('alert')).toHaveTextContent('当前课程结构没有改变');
     expect(screen.getByText('新课程结构仍没有可启动的学习单元，因此未生成新版本。')).toBeVisible();
     expect(
       screen.getByText('请先从当前课程资料生成有原文依据的概念，再提出新的课程结构。'),
@@ -1695,9 +1700,9 @@ describe('CurriculumView truth and validation states', () => {
       />,
     );
 
-    expect(screen.getByText('当前已接受版本 1')).toBeInTheDocument();
+    expect(screen.getByText('当前课程结构版本 1')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '接受课程结构' }));
-    await user.click(screen.getByRole('button', { name: '拒绝候选版本' }));
+    await user.click(screen.getByRole('button', { name: '拒绝这份结构' }));
     await user.click(screen.getByText('版本历史（1）'));
     await user.click(screen.getByRole('button', { name: /版本 1/ }));
     await user.click(screen.getByText('高级课程准备'));

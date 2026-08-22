@@ -617,7 +617,7 @@ function KnowledgeMapCanvas({
 
 function projectionStatusMessage(projection: KnowledgeMapProjection): string | null {
   if (projection.status === 'unknown')
-    return '当前课程路线或资料版本无法可靠对应，地图不会推断学习状态。';
+    return '当前课程路线或资料版本暂时无法对应，因此暂不显示学习状态。';
   if (projection.status === 'partial') return '地图可用，但部分图关系或规模信息不完整。';
   return null;
 }

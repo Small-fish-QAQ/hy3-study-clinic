@@ -19,12 +19,12 @@ const KIND_TEXT: Record<CurriculumHierarchyNodeView['kind'], string> = {
 };
 
 const CURRICULUM_STATUS_TEXT: Record<string, string> = {
-  candidate: '候选版本',
-  proposed: '待确认',
-  accepted: '已接受',
+  candidate: '待审核结构',
+  proposed: '等待你确认',
+  accepted: '当前结构',
   rejected: '已拒绝',
-  failed: '生成失败',
-  superseded: '已由新版本替代',
+  failed: '生成未完成',
+  superseded: '已被新结构替代',
 };
 
 const DIRECT_UNIT_PREVIEW_LIMIT = 12;
@@ -981,7 +981,7 @@ export function CurriculumView({
           <div>
             <strong>正在准备课程资料并生成课程结构</strong>
             <p className="small muted">
-              生成完成后会检查资料一致性；只有需要时才会尝试一次自动修复。当前已接受版本不会在检查通过前改变。
+              生成完成后会检查资料一致性；只有需要时才会尝试一次自动修复。当前课程结构不会在检查通过前改变。
             </p>
           </div>
           {onCancel ? (
@@ -1035,7 +1035,7 @@ export function CurriculumView({
               <strong>版本 {hierarchy.curriculumVersion}</strong>
               <span>{CURRICULUM_STATUS_TEXT[hierarchy.status] ?? '已记录'}</span>
               <span>
-                {acceptedVersion ? `当前已接受版本 ${acceptedVersion}` : '未提供已接受版本记录'}
+                {acceptedVersion ? `当前课程结构版本 ${acceptedVersion}` : '还没有当前课程结构记录'}
               </span>
             </div>
             <dl className="curriculum-counts">
@@ -1122,7 +1122,7 @@ export function CurriculumView({
             </header>
 
             {!hierarchy.validation.valid ? (
-              <Banner kind="error">该候选版本未通过本地结构校验，不能接受。</Banner>
+              <Banner kind="error">这份课程结构未通过本地检查，暂时不能接受。</Banner>
             ) : null}
             {(coverageWarnings ?? hierarchy.validation.warnings).map((warning) => {
               const key = typeof warning === 'string' ? warning : warning.technicalDetail;
@@ -1177,7 +1177,7 @@ export function CurriculumView({
                   {busyAction === 'accept-curriculum' ? '正在接受…' : '接受课程结构'}
                 </button>
                 <button type="button" disabled={busyAction !== null} onClick={onReject}>
-                  拒绝候选版本
+                  拒绝这份结构
                 </button>
               </div>
             ) : null}
