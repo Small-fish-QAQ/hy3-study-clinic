@@ -47,10 +47,11 @@ function normalized(value: string): string {
 function features(value: string): Set<string> {
   const normalizedValue = normalized(value);
   const result = new Set<string>(normalizedValue.match(/[a-z0-9]{3,}/g) ?? []);
-  const han = [...normalizedValue.matchAll(/\p{Script=Han}+/gu)].flatMap((match) => [...match[0]]);
-  for (const character of han) result.add(character);
-  for (let index = 0; index + 1 < han.length; index += 1) {
-    result.add(`${han[index]}${han[index + 1]}`);
+  for (const match of normalizedValue.matchAll(/\p{Script=Han}+/gu)) {
+    const han = [...match[0]];
+    for (let index = 0; index + 1 < han.length; index += 1) {
+      result.add(`${han[index]}${han[index + 1]}`);
+    }
   }
   return result;
 }

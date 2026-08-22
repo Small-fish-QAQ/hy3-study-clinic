@@ -185,6 +185,36 @@ describe('independent Curriculum semantic evaluator', () => {
     expect(result.evaluation.status).toBe('fail');
   });
 
+  it('does not treat a shared single Han character as a semantic anchor', () => {
+    const candidate = curriculum(['权限', '限额']);
+    candidate.nodes[1]!.id = 'chapter-foundations';
+    candidate.nodes[1]!.title = '甲类';
+    candidate.nodes[2]!.parentId = 'chapter-foundations';
+    candidate.nodes.push({
+      id: 'chapter-operations',
+      parentId: 'course',
+      kind: 'chapter',
+      index: 1,
+      title: '乙类',
+      sourceReferences: [],
+      learningUnit: null,
+    });
+    candidate.nodes[3]!.parentId = 'chapter-operations';
+    const source = regions(2);
+    source[0]!.title = '权限';
+    source[1]!.title = '限额';
+    const result = evaluateCurriculumSemantics({
+      curriculum: candidate,
+      sourceMapFingerprint: 'source-map',
+      sourceRegions: source,
+      scope: 'intentional_scope',
+      evaluatedAt,
+    });
+    expect(result.evaluation.findings.map((finding) => finding.code)).not.toContain(
+      'semantic_topic_scattering',
+    );
+  });
+
   it('does not reject a concise coherent course solely for being small', () => {
     const result = evaluateCurriculumSemantics({
       curriculum: curriculum(['Foundations', 'Application']),
