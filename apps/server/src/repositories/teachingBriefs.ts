@@ -1,6 +1,7 @@
-import { TeachingBriefSchema, type TeachingBrief } from '@hy3-clinic/shared';
+import { ApiErrorCode, TeachingBriefSchema, type TeachingBrief } from '@hy3-clinic/shared';
 import type { SqliteDb } from '../db/database.js';
 import { curriculumSourceBlockFingerprint } from '../grounding/sourceFingerprint.js';
+import { AppError } from '../errors.js';
 
 interface TeachingBriefRow {
   id: string;
@@ -96,13 +97,16 @@ export function createTeachingBriefsRepo(db: SqliteDb) {
       route.node_kind !== 'learning_unit' ||
       route.plan_manifest_fingerprint !== brief.executionSourceManifestFingerprint
     ) {
-      throw new Error('Teaching Brief persistence requires its exact accepted Course route.');
+      throw new AppError(
+        ApiErrorCode.VersionConflict,
+        'Teaching Brief persistence requires its exact accepted Course route.',
+      );
     }
     for (const reference of brief.sourceReferences) {
       const block = db
         .prepare(
           `SELECT b.id, b.idx, b.content, b.start_offset, b.end_offset,
-                  b.material_id, b.material_revision_id, m.workspace_id
+                  b.chunker_version, b.material_id, b.material_revision_id, m.workspace_id
            FROM source_blocks b JOIN materials m ON m.id = b.material_id
            WHERE b.id = ?`,
         )
@@ -113,6 +117,7 @@ export function createTeachingBriefsRepo(db: SqliteDb) {
             idx: number;
             start_offset: number;
             end_offset: number;
+            chunker_version: string | null;
             material_id: string;
             material_revision_id: string;
             workspace_id: string;
@@ -136,12 +141,16 @@ export function createTeachingBriefsRepo(db: SqliteDb) {
             content: block.content,
             startOffset: block.start_offset,
             endOffset: block.end_offset,
+            chunkerVersion: block.chunker_version,
           },
           block.material_revision_id,
         ) !== reference.sourceBlockRevisionFingerprint ||
         block.content.slice(reference.startOffset, reference.endOffset) !== reference.quote
       ) {
-        throw new Error('Teaching Brief source provenance is stale, foreign, or inexact.');
+        throw new AppError(
+          ApiErrorCode.VersionConflict,
+          'Teaching Brief source provenance is stale, foreign, or inexact.',
+        );
       }
     }
     for (const reference of brief.visualReferences) {
@@ -149,7 +158,10 @@ export function createTeachingBriefsRepo(db: SqliteDb) {
         (revision) => revision.materialId === reference.materialId,
       );
       if (manifestRevision?.materialRevisionId !== reference.materialRevisionId) {
-        throw new Error('Teaching Brief visual provenance is outside its source manifest.');
+        throw new AppError(
+          ApiErrorCode.VersionConflict,
+          'Teaching Brief visual provenance is outside its source manifest.',
+        );
       }
       const binding = db
         .prepare(
@@ -246,7 +258,10 @@ export function createTeachingBriefsRepo(db: SqliteDb) {
         JSON.stringify(JSON.parse(binding.uncertainty)) !==
           JSON.stringify(context.explanation.uncertainty)
       ) {
-        throw new Error('Teaching Brief visual provenance is stale, foreign, or non-advisory.');
+        throw new AppError(
+          ApiErrorCode.VersionConflict,
+          'Teaching Brief visual provenance is stale, foreign, or non-advisory.',
+        );
       }
     }
     db.prepare(

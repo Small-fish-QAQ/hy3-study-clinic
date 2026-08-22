@@ -4,6 +4,7 @@ import type { LearningContractDraftFields } from '@hy3-clinic/shared';
 import { openDatabase, type SqliteDb } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
 import { FakeProvider } from '../llm/fakeProvider.js';
+import { ProviderError } from '../llm/errors.js';
 import type {
   ProviderCallOptions,
   TeachingBriefGenerationInput,
@@ -19,6 +20,7 @@ const databases: SqliteDb[] = [];
 
 class CountingProvider extends FakeProvider {
   teachingBriefCalls = 0;
+  failTeachingBrief = false;
   lastTeachingBriefInput: TeachingBriefGenerationInput | null = null;
   lastTutorInput: TutorTurnInput | null = null;
 
@@ -28,6 +30,7 @@ class CountingProvider extends FakeProvider {
   ) {
     this.teachingBriefCalls += 1;
     this.lastTeachingBriefInput = input;
+    if (this.failTeachingBrief) throw ProviderError.network();
     return super.generateTeachingBrief(input, opts);
   }
 
@@ -82,6 +85,7 @@ function contractFields(roleId: string, roleVersion: number): LearningContractDr
 }
 
 interface Harness {
+  db: SqliteDb;
   repos: Repositories;
   provider: CountingProvider;
   services: Services;
@@ -103,7 +107,15 @@ async function createHarness(): Promise<Harness> {
   const visualHash = `sha256:${createHash('sha256').update(visualBytes).digest('hex')}` as const;
   repos.materials.insertWithBlocks(
     makeMaterial({ content, charCount: content.length }),
-    [makeBlock({ content, startOffset: 0, endOffset: content.length, heading: 'Memory' })],
+    [
+      makeBlock({
+        content,
+        startOffset: 0,
+        endOffset: content.length,
+        heading: 'Memory',
+        chunkerVersion: 'structure-aware-v1',
+      }),
+    ],
     null,
     [],
     {},
@@ -235,6 +247,7 @@ async function createHarness(): Promise<Harness> {
     (candidate) => candidate.kind === 'teach_unit' && candidate.curriculumLearningUnitId,
   )!;
   return {
+    db,
     repos,
     provider,
     services,
@@ -344,6 +357,91 @@ describe('Teaching Brief preparation', () => {
       }),
     ).rejects.toMatchObject({ code: 'VERSION_CONFLICT' });
     expect(harness.provider.teachingBriefCalls).toBe(0);
+  });
+
+  it('preserves the current source fingerprint when persisting a modern chunked block', async () => {
+    const harness = await createHarness();
+    const input = {
+      workspaceId: 'ws_1',
+      curriculumVersionId: harness.curriculumId,
+      studyPlanVersionId: harness.planId,
+      learningUnitId: harness.learningUnitId,
+      commandId: 'brief-modern-chunked-source',
+      expectedExecutionSourceManifestFingerprint: harness.manifestFingerprint,
+    };
+
+    const prepared = await harness.services.teachingBriefPreparation.prepare(input);
+
+    expect(prepared.status).toBe('prepared');
+    expect(prepared.brief.sourceReferences[0]?.sourceBlockRevisionFingerprint).toBe(
+      harness.repos.curricula
+        .get(harness.curriculumId)!
+        .nodes.find((node) => node.id === harness.learningUnitId)!.sourceReferences[0]!
+        .sourceBlockRevisionFingerprint,
+    );
+    expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toHaveLength(
+      1,
+    );
+  });
+
+  it('fails closed on changed source bindings without offering a preparation retry', async () => {
+    const harness = await createHarness();
+    const agenda = harness.repos.sessionAgendas.list('ws_1').at(-1)!;
+    const execution = harness.repos.courseExecution.get('ws_1');
+    const started = harness.services.studySessions.start('ws_1', {
+      contractVersionId: agenda.contractVersionId,
+      curriculumVersionId: agenda.curriculumVersionId,
+      studyPlanVersionId: agenda.studyPlanVersionId,
+      sessionAgendaId: agenda.id,
+      expectedCourseExecutionVersion: execution.version,
+    });
+    const block = harness.repos.materials.getBlock('blk_1')!;
+    harness.db
+      .prepare('UPDATE source_blocks SET content = ? WHERE id = ?')
+      .run(`${block.content} changed after acceptance`, block.id);
+
+    await expect(
+      harness.services.lessonExecution.ensure('ws_1', started.session.id, {
+        command: command('lesson-invalid-source'),
+        expectedSessionVersion: started.session.version,
+        expectedAgendaVersion: agenda.version,
+        expectedAgendaItemId: started.session.currentAgendaItemId,
+      }),
+    ).rejects.toMatchObject({ code: 'VERSION_CONFLICT' });
+
+    const unavailable = harness.services.lessonExecution.get('ws_1', started.session.id);
+    expect(unavailable.status).toBe('lesson_unavailable');
+    expect(unavailable.allowedActions).toEqual([]);
+    expect(unavailable.message).toContain('来源绑定');
+    expect(harness.provider.teachingBriefCalls).toBe(0);
+    expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toHaveLength(
+      0,
+    );
+  });
+
+  it('keeps transient provider failures retryable', async () => {
+    const harness = await createHarness();
+    const agenda = harness.repos.sessionAgendas.list('ws_1').at(-1)!;
+    const execution = harness.repos.courseExecution.get('ws_1');
+    const started = harness.services.studySessions.start('ws_1', {
+      contractVersionId: agenda.contractVersionId,
+      curriculumVersionId: agenda.curriculumVersionId,
+      studyPlanVersionId: agenda.studyPlanVersionId,
+      sessionAgendaId: agenda.id,
+      expectedCourseExecutionVersion: execution.version,
+    });
+    harness.provider.failTeachingBrief = true;
+
+    const retryable = await harness.services.lessonExecution.ensure('ws_1', started.session.id, {
+      command: command('lesson-provider-failure'),
+      expectedSessionVersion: started.session.version,
+      expectedAgendaVersion: agenda.version,
+      expectedAgendaItemId: started.session.currentAgendaItemId,
+    });
+
+    expect(retryable.status).toBe('retry_available');
+    expect(retryable.allowedActions).toEqual(['retry_preparation']);
+    expect(harness.provider.teachingBriefCalls).toBe(1);
   });
 
   it('prepares and presents a lesson inside a StudySession without formal credit', async () => {

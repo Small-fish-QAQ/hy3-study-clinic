@@ -141,6 +141,36 @@ describe('LessonExecutionPanel', () => {
     expect(startReview).toHaveBeenCalledOnce();
   });
 
+  it('shows source-binding recovery guidance without offering a repeated retry', async () => {
+    const get = vi.spyOn(api, 'getLessonExecution').mockResolvedValue({
+      ...needed,
+      status: 'lesson_unavailable',
+      message:
+        '当前课程路线的来源绑定无法安全准备本节讲解。已有学习记录保持不变，请回到课程主页重新准备当前课程路线。',
+      allowedActions: [],
+    });
+    const prepare = vi.spyOn(api, 'prepareLessonExecution');
+
+    render(
+      <LessonExecutionPanel
+        workspaceId="ws_1"
+        sessionId="session_1"
+        agendaItemId="item_1"
+        active
+      />,
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: '当前讲解无法安全准备' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/已有学习记录保持不变/)).toBeInTheDocument();
+    expect(screen.getByText(/回到课程主页重新准备当前课程路线/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '重新准备本节讲解' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '重新读取安排' })).not.toBeInTheDocument();
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(prepare).not.toHaveBeenCalled();
+  });
+
   it('shows slide provenance ahead of a fallback heading path', () => {
     render(
       <LessonSourceReference

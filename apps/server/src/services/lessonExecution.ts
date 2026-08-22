@@ -179,6 +179,12 @@ export function createLessonExecutionService({
     });
   }
 
+  function preparationOperationFailed(state: LessonExecutionState | undefined): boolean {
+    if (state?.preparationStatus !== 'preparing' || !state.preparationOperationId) return false;
+    const status = repos.operations.get(state.preparationOperationId)?.status;
+    return status === 'failed' || status === 'interrupted' || status === 'cancelled';
+  }
+
   function projection(
     context: RouteContext,
     state: LessonExecutionState | undefined,
@@ -188,6 +194,20 @@ export function createLessonExecutionService({
       return LessonExecutionProjectionSchema.parse({
         status: 'lesson_unavailable',
         message: 'The current Agenda item is not executable teaching work.',
+        course: { title: context.courseTitle },
+        session: { status: context.session.status, version: context.session.version },
+        agenda: { version: context.agenda.version, itemState: context.item.state },
+        lesson: null,
+        progress: null,
+        currentInformalCheck: null,
+        allowedActions: [],
+      });
+    }
+    if (state?.preparationStatus === 'preparing' && preparationOperationFailed(state)) {
+      return LessonExecutionProjectionSchema.parse({
+        status: 'lesson_unavailable',
+        message:
+          '当前课程路线的来源绑定无法安全准备本节讲解。已有学习记录保持不变，请回到课程主页重新准备当前课程路线。',
         course: { title: context.courseTitle },
         session: { status: context.session.status, version: context.session.version },
         agenda: { version: context.agenda.version, itemState: context.item.state },
@@ -372,7 +392,12 @@ export function createLessonExecutionService({
 
   function get(workspaceId: string, sessionId: string): LessonExecutionProjection {
     const context = route(workspaceId, sessionId);
-    return projection(context, stateFor(context), currentBrief(context));
+    const state = stateFor(context);
+    return projection(
+      context,
+      state,
+      state?.preparationStatus === 'ready' ? currentBrief(context) : null,
+    );
   }
 
   function assertExpected(

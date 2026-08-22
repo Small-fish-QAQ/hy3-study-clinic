@@ -451,7 +451,18 @@ export function createTeachingBriefPreparationService({
 
     try {
       const route = routeContext(input);
-      const context = sourceContext(route);
+      let context: ReturnType<typeof sourceContext>;
+      try {
+        context = sourceContext(route);
+      } catch (error) {
+        if (error instanceof AppError) throw error;
+        throw new AppError(
+          ApiErrorCode.VersionConflict,
+          error instanceof Error
+            ? error.message
+            : 'Teaching Brief source context is stale or unavailable.',
+        );
+      }
       const history = repos.teachingBriefs.listForUnit(input.workspaceId, input.learningUnitId);
       const reuse = repos.teachingBriefs.findReusable({
         workspaceId: input.workspaceId,

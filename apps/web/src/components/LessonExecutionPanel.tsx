@@ -671,15 +671,20 @@ export function LessonExecutionPanel({
         </section>
       );
     }
+    const preparationBlocked = projection.message.includes('来源绑定');
     return (
       <section className="lesson-execution-panel" aria-label="本节讲解">
         <div className="lesson-empty-state">
           <p className="eyebrow">当前安排</p>
-          <h3>这项内容暂时没有可展示的讲解</h3>
-          <p>请从学习安排选择一个可教的学习单元，或稍后重新读取当前课程。</p>
-          <button type="button" onClick={() => void refresh()}>
-            重新读取安排
-          </button>
+          <h3>{preparationBlocked ? '当前讲解无法安全准备' : '这项内容暂时没有可展示的讲解'}</h3>
+          <p>{projection.message}</p>
+          {preparationBlocked ? (
+            <p className="small muted">请使用课程导航回到课程主页，重新准备当前课程路线。</p>
+          ) : (
+            <button type="button" onClick={() => void refresh()}>
+              重新读取安排
+            </button>
+          )}
         </div>
       </section>
     );
