@@ -619,6 +619,39 @@ describe('Course preparation orchestration', () => {
     );
   });
 
+  it('keeps Curriculum as an observation surface while preparation owns structure', async () => {
+    const value = planRequiredOverview();
+    value.capabilities = { ...value.capabilities, canProposeCurriculum: true };
+    vi.mocked(api.courseExecution).mockResolvedValue({ overview: value });
+    vi.spyOn(api, 'materialRoleHistory').mockResolvedValue(roleHistory(strandedProposal));
+    vi.mocked(api.coursePreparation).mockResolvedValue({
+      preparation: preparation({
+        operationKey: 'prepare-course-ws-structure',
+        state: 'preparing_course_structure',
+        machineAction: 'prepare_course_structure',
+        learnerAction: 'resume_preparation',
+        canResume: true,
+        canCancel: true,
+        checkpoints: {
+          materials: 'complete',
+          concepts: 'complete',
+          courseStructure: 'in_progress',
+          coursePlan: 'pending',
+        },
+        blocker: null,
+      }),
+    });
+
+    const user = userEvent.setup();
+    renderWorkspace();
+    await user.click(await screen.findByRole('button', { name: /^课程结构$/u }));
+
+    await waitFor(() =>
+      expect(document.querySelector('[data-course-destination="curriculum"]')).toBeTruthy(),
+    );
+    expect(screen.queryByRole('button', { name: '生成结构' })).not.toBeInTheDocument();
+  });
+
   it('aborts an in-flight preparation run when the learner switches Course', async () => {
     const secondWorkspace = {
       ...workspaceSummary,

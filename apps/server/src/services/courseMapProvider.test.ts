@@ -3,7 +3,7 @@ import { FakeProvider } from '../llm/fakeProvider.js';
 import { Hy3Provider } from '../llm/hy3Provider.js';
 import type { ProviderUsage } from '../llm/provider.js';
 import { createCourseMapFixture } from '../testing/courseMapFixtures.js';
-import { generateCourseMapPrototype } from './courseMap.js';
+import { generateCourseMapPrototype, repairOmittedCourseMapCoverage } from './courseMap.js';
 
 function jsonResponse(content: string, usage?: unknown): Response {
   return new Response(JSON.stringify({ choices: [{ message: { content } }], usage }), {
@@ -135,6 +135,97 @@ describe('Course Map Fake provider prototype', () => {
       }),
     ).rejects.toThrow(/fingerprint is stale or mismatched/u);
     expect(proposeCourseMap).not.toHaveBeenCalled();
+  });
+
+  it('recovers omitted unclassified regions during the one bounded repair', async () => {
+    const fixture = createCourseMapFixture();
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(fixture.sparse)))
+      .mockResolvedValueOnce(
+        jsonResponse(JSON.stringify(fixture.sparse)),
+      ) as unknown as typeof fetch;
+
+    const result = await generateCourseMapPrototype({
+      provider: makeHy3Provider(fetchImpl),
+      providerInput: fixture.providerInput,
+      sourceAllocation: fixture.sourceAllocation,
+    });
+
+    expect(result.repairAttempted).toBe(true);
+    expect(result.analysis.validation.valid).toBe(true);
+    expect(result.analysis.courseMap.modules.flatMap((module) => module.regions)).toHaveLength(6);
+    expect(result.analysis.courseMap.sourceDispositions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          sourceAllocationRegionId: fixture.sourceAllocation.regions[1]!.id,
+          disposition: 'represented_directly',
+        }),
+      ]),
+    );
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    const repairBody = JSON.parse(
+      String((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[1]![1]!.body),
+    ) as { messages: Array<{ content: string }> };
+    expect(repairBody.messages.at(-1)!.content).toContain('R2');
+    expect(repairBody.messages.at(-1)!.content).toContain(fixture.sourceAllocation.regions[1]!.id);
+  });
+
+  it('preserves explicit dispositions while repairing other omitted regions', () => {
+    const fixture = createCourseMapFixture();
+    const candidate = structuredClone(fixture.sparse);
+    candidate.sourceDispositions = [
+      {
+        sourceRegionRef: 'R2',
+        disposition: 'duplicate/redundant',
+        rationale: 'Duplicate coverage is already present in the adjacent region.',
+        representedRegionRefs: ['R1'],
+      },
+    ];
+
+    expect(
+      repairOmittedCourseMapCoverage(candidate, fixture.providerInput, fixture.sourceAllocation),
+    ).toBe(true);
+    expect(candidate.sourceDispositions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          sourceRegionRef: 'R2',
+          disposition: 'duplicate/redundant',
+        }),
+      ]),
+    );
+    expect(
+      candidate.modules.flatMap((module) => module.regions).map((region) => region.sourceRegionRef),
+    ).toEqual(expect.arrayContaining(['R1', 'R3', 'R4', 'R5', 'R6']));
+    expect(
+      candidate.modules.flatMap((module) => module.regions).map((region) => region.sourceRegionRef),
+    ).not.toContain('R2');
+  });
+
+  it('fails closed when every omitted region is an unresolved candidate gap', async () => {
+    const fixture = createCourseMapFixture();
+    const candidate = structuredClone(fixture.sparse);
+    candidate.sourceDispositions = ['R2', 'R3', 'R5', 'R6'].map((sourceRegionRef) => ({
+      sourceRegionRef,
+      disposition: 'unresolved_candidate_gap' as const,
+      rationale: 'The candidate could not safely represent this meaningful region.',
+      representedRegionRefs: [],
+    }));
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse(JSON.stringify(candidate)),
+    ) as unknown as typeof fetch;
+
+    await expect(
+      generateCourseMapPrototype({
+        provider: makeHy3Provider(fetchImpl),
+        providerInput: fixture.providerInput,
+        sourceAllocation: fixture.sourceAllocation,
+      }),
+    ).rejects.toMatchObject({
+      code: 'PROVIDER_INVALID_OUTPUT',
+      details: { validationKind: 'candidate' },
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 });
 

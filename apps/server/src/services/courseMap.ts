@@ -907,7 +907,10 @@ export function analyzeCourseMapProposal(
         unallocatedSourceRegions
           .filter((region) => !unresolved.includes(region))
           .slice(0, 20)
-          .map((region) => region.id),
+          .map((region) => {
+            const sourceRef = `R${sourceAllocation.regions.indexOf(region) + 1}`;
+            return `${sourceRef}:${region.id}`;
+          }),
       );
     }
     if (unresolved.length > 0) {
@@ -915,7 +918,10 @@ export function analyzeCourseMapProposal(
         'error',
         'unallocated_source_region',
         `${unresolved.length} meaningful source-allocation regions have no explicit coverage disposition.`,
-        unresolved.slice(0, 20).map((region) => region.id),
+        unresolved.slice(0, 20).map((region) => {
+          const sourceRef = `R${sourceAllocation.regions.indexOf(region) + 1}`;
+          return `${sourceRef}:${region.id}`;
+        }),
       );
     }
   }
@@ -1271,6 +1277,63 @@ export interface CourseMapPrototypeResult {
   repairAttempted: boolean;
 }
 
+/**
+ * Recover only omitted, unclassified source regions during the single bounded
+ * candidate repair. Explicit dispositions are authoritative and remain intact.
+ */
+export function repairOmittedCourseMapCoverage(
+  candidate: CourseMapProposalPayload,
+  providerInput: CourseMapProposalInput,
+  sourceAllocation: CourseMapSourceAllocation,
+): boolean {
+  const proposedRefs = new Set(
+    candidate.modules.flatMap((module) => module.regions.map((region) => region.sourceRegionRef)),
+  );
+  const explicitRefs = new Set(
+    (candidate.sourceDispositions ?? []).map((disposition) => disposition.sourceRegionRef),
+  );
+  const omitted = providerInput.sourceRegions.filter(
+    (region) =>
+      !proposedRefs.has(region.sourceRegionRef) && !explicitRefs.has(region.sourceRegionRef),
+  );
+  if (omitted.length === 0) return false;
+
+  const proposedRegionCount = candidate.modules.reduce(
+    (count, module) => count + module.regions.length,
+    0,
+  );
+  if (proposedRegionCount + omitted.length > providerInput.limits.maxRegions) return false;
+  const lastModule = candidate.modules.at(-1);
+  if (!lastModule) return false;
+
+  for (const sourceRegion of omitted) {
+    const allocation = sourceAllocation.regions.find(
+      (region) => region.id === sourceRegion.sourceAllocationRegionId,
+    );
+    if (!allocation) return false;
+    lastModule.regions.push({
+      sourceRegionRef: sourceRegion.sourceRegionRef,
+      title: sourceRegion.title,
+      learningIntent: `直接覆盖资料区域“${sourceRegion.title}”中的核心学习内容。`,
+      approximateScope:
+        sourceRegion.blockCount <= 2
+          ? 'focused'
+          : sourceRegion.blockCount >= 12
+            ? 'extended'
+            : 'standard',
+      anchorOptionRefs: sourceRegion.anchorOptions.map((option) => option.anchorOptionId),
+    });
+    candidate.sourceDispositions ??= [];
+    candidate.sourceDispositions.push({
+      sourceRegionRef: sourceRegion.sourceRegionRef,
+      disposition: 'represented_directly',
+      rationale: `直接纳入资料区域“${sourceRegion.title}”，并保留服务器提供的精确锚点。`,
+      representedRegionRefs: [sourceRegion.sourceRegionRef],
+    });
+  }
+  return true;
+}
+
 /** Operation-local Course Map generation. It performs no persistence or learner governance. */
 export async function generateCourseMapPrototype(
   { provider, providerInput, sourceAllocation }: GenerateCourseMapPrototypeInput,
@@ -1278,10 +1341,12 @@ export async function generateCourseMapPrototype(
 ): Promise<CourseMapPrototypeResult> {
   assertCourseMapProviderInputIntegrity(sourceAllocation, providerInput);
   let repairAttempted = false;
+  let repairArmed = false;
   const payload = await provider.proposeCourseMap(providerInput, {
     ...opts,
     onRepairAttempt: (reason, category) => {
       repairAttempted = true;
+      repairArmed = true;
       if (category) opts?.onRepairAttempt?.(reason, category);
       else opts?.onRepairAttempt?.(reason);
     },
@@ -1296,7 +1361,15 @@ export async function generateCourseMapPrototype(
           diagnosticCodes: parsed.error.issues.slice(0, 20).map((issue) => `schema_${issue.code}`),
         };
       }
-      const analysis = analyzeCourseMapProposal(parsed.data, {
+      if (repairArmed) {
+        repairOmittedCourseMapCoverage(
+          candidate as CourseMapProposalPayload,
+          providerInput,
+          sourceAllocation,
+        );
+      }
+      const repairedCandidate = CourseMapProposalPayloadSchema.parse(candidate);
+      const analysis = analyzeCourseMapProposal(repairedCandidate, {
         providerInput,
         sourceAllocation,
       });
@@ -1304,7 +1377,10 @@ export async function generateCourseMapPrototype(
         valid: analysis.validation.valid,
         diagnostics: analysis.validation.diagnostics
           .filter((diagnostic) => diagnostic.severity === 'error')
-          .map((diagnostic) => `${diagnostic.code}: ${diagnostic.message}`),
+          .map(
+            (diagnostic) =>
+              `${diagnostic.code}${diagnostic.entityKeys.length > 0 ? ` [${diagnostic.entityKeys.join(', ')}]` : ''}: ${diagnostic.message}`,
+          ),
         diagnosticCodes: analysis.validation.diagnostics
           .filter((diagnostic) => diagnostic.severity === 'error')
           .map((diagnostic) => diagnostic.code),

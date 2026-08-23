@@ -507,7 +507,12 @@ export class Hy3Provider implements LlmProvider {
       courseMapProposalMessages(input),
       CourseMapProposalPayloadSchema,
       opts,
-      undefined,
+      [
+        'Course Map coverage repair is bounded to this one retry. Consume the exact source-region references (R1, R2, ...) and source-allocation identities named in the validation diagnostics.',
+        'For every omitted meaningful region, add a direct region using that exact offered R# title and anchor-option references, or provide a valid explicit source disposition with a truthful rationale and representedRegionRefs.',
+        'Preserve existing represented_by_parent_or_synthesis, duplicate/redundant, boilerplate/navigation/non-learning-content, explicitly_out_of_scope, and unresolved_candidate_gap dispositions; do not drop source identities or return the unchanged candidate.',
+        'A meaningful unresolved_candidate_gap remains a deterministic failure for systematic or deep goals.',
+      ].join('\n'),
       {
         maxTokens: COURSE_MAP_MAX_OUTPUT_TOKENS,
         schemaName: 'course-map-proposal-v2-local-refs',

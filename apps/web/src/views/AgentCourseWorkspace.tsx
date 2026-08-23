@@ -662,7 +662,7 @@ export function AgentCourseWorkspace({
         return { preparation: snapshot };
       }
       try {
-        let current = await api.runCoursePreparation(
+        const current = await api.runCoursePreparation(
           capturedWorkspaceId,
           {
             command: {
@@ -675,35 +675,6 @@ export function AgentCourseWorkspace({
           },
           signal,
         );
-        // A successful bounded checkpoint is an implementation detail. Keep
-        // advancing while the server reports ordinary resumable work; only a
-        // failure, pause, or learner decision returns control to the learner.
-        for (let attempt = 0; attempt < 24; attempt += 1) {
-          const next = current.preparation;
-          if (
-            signal.aborted ||
-            !next.canResume ||
-            !next.operationKey ||
-            next.state === 'failed_recoverable' ||
-            next.learnerDecisionRequired
-          ) {
-            break;
-          }
-          setPreparation(next);
-          current = await api.runCoursePreparation(
-            capturedWorkspaceId,
-            {
-              command: {
-                commandId: next.operationKey,
-                idempotencyKey: next.operationKey,
-                workspaceId: capturedWorkspaceId,
-                actor: 'learner',
-              },
-              expectedRevision: next.revision,
-            },
-            signal,
-          );
-        }
         return current;
       } catch (error) {
         if (!signal.aborted && workspaceIdRef.current === capturedWorkspaceId) {
@@ -1607,7 +1578,10 @@ export function AgentCourseWorkspace({
           loading={loading}
           error={actionFailureOwner === 'curriculum' ? (action.error ?? loadError) : loadError}
           errorDetails={actionFailureOwner === 'curriculum' ? action.errorDetails : null}
-          canPropose={overview?.capabilities.canProposeCurriculum ?? false}
+          canPropose={
+            (overview?.capabilities.canProposeCurriculum ?? false) &&
+            !(preparation?.canResume || preparation?.state === 'preparing_course_structure')
+          }
           canAccept={overview?.capabilities.canAcceptCurriculum ?? false}
           recovery={overview?.curriculumRecovery}
           busyAction={busyAction}
