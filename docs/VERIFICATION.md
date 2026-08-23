@@ -510,3 +510,46 @@ focus restoration, inert outside content, busy/failure preservation, delete
 rejection, and Materials cancellation when the Course identity changes. The
 complete gate and isolated Fake browser requirements remain the commands and
 environment policy above.
+
+## Phase 12B7B4 real-Hy3 Curriculum closure verification
+
+The offline regression gate covers the learner-owned preparation state,
+Course Map membership, exact source accountability, evidence-level objective
+authority, independent semantic evaluation, bounded schema/candidate repair,
+provider telemetry, lease ceilings, and accepted-predecessor preservation:
+
+```bash
+npm run test -w @hy3-clinic/server -- src/services/coursePreparation.test.ts src/services/courseMap.test.ts src/services/courseMapProvider.test.ts src/services/curriculumMaterialization.test.ts src/services/curriculumAuthority.test.ts src/services/curriculumEvidence.test.ts src/services/curriculumSemanticEvaluator.test.ts src/services/curriculum.test.ts src/services/courseCommands.test.ts src/services/studyPlansAgent.test.ts src/eval/curriculumPolicyComparison.test.ts
+npm run test -w @hy3-clinic/shared -- src/domain/schemas.test.ts
+npm run test -w @hy3-clinic/web -- src/views/AgentCourseViews.test.tsx src/views/AgentCourseWorkspace.live01.test.tsx
+```
+
+The complete repository gate remains:
+
+```bash
+npm test
+npm run eval:fake
+npm run build
+npm run lint
+npx prettier --check .
+git diff --check
+```
+
+The live acceptance gate is intentionally separate because Fake tests cannot
+prove real structured-output behavior or actual-browser ownership. With the
+already configured local provider, use a fresh Course and one rendered Prepare
+action. While the backend owns Curriculum preparation, Home may expose progress
+and Stop, and Curriculum is observation-only: no `检查课程结构`, `生成结构`,
+duplicate continuation, or manual Curriculum acceptance action is valid. PASS
+requires persisted REAL_HY3 provider/model telemetry, an accepted current
+source-bound Curriculum, automatic StudyPlan continuation, and reconstructible
+`generationOperationId` joins.
+
+The Phase 12B7B4 acceptance artifact contained 295/295 mapped SourceBlocks and
+295/295 mapped structural units, seven directly represented meaningful regions,
+zero unresolved regions, and zero deterministic validation errors or warnings.
+Every required objective was Formal-ready. The independent semantic evaluator
+passed with one non-blocking optional, explicitly non-assessed MCP title note.
+This live check does not weaken the offline requirement, guarantee future
+provider conformance, or prove complete semantic entailment or learning
+effectiveness.
