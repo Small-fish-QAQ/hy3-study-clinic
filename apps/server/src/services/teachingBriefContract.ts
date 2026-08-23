@@ -115,15 +115,99 @@ export function validateTeachingBriefCandidate(
     }
   }
 
+  let lessonEvaluation: ReturnType<typeof evaluateLessonPedagogy> | undefined;
+  let practiceEvaluation: ReturnType<typeof evaluatePracticeQuality> | undefined;
   if (diagnostics.length === 0) {
     const evaluatedAt = '1970-01-01T00:00:00.000Z';
-    const lessonEvaluation = evaluateLessonPedagogy(payload, input, { evaluatedAt });
-    const practiceEvaluation = evaluatePracticeQuality(payload, input, { evaluatedAt });
+    lessonEvaluation = evaluateLessonPedagogy(payload, input, { evaluatedAt });
+    practiceEvaluation = evaluatePracticeQuality(payload, input, { evaluatedAt });
     for (const finding of [...lessonEvaluation.findings, ...practiceEvaluation.findings]) {
       if (finding.severity !== 'error') continue;
       diagnostics.push(finding.message);
       codes.push(finding.code);
     }
+  }
+
+  const safeSourceAliases = (objectiveRef: string) =>
+    input.sourceContext.offers
+      .filter((offer) => offer.authorizedObjectiveRefs.includes(objectiveRef))
+      .slice(0, 8)
+      .map((offer) => ({ sourceRef: offer.sourceRef, text: offer.text.slice(0, 600) }));
+  const semanticFindings = [
+    ...(lessonEvaluation?.findings ?? []),
+    ...(practiceEvaluation?.findings ?? []),
+  ].filter((finding) => finding.severity === 'error');
+  const structuredDiagnostics = semanticFindings.map((finding) => {
+    const segmentIndexes = 'segmentIndexes' in finding ? finding.segmentIndexes : [];
+    const itemIndexes = 'itemIndexes' in finding ? finding.itemIndexes : [];
+    const objectiveRefs = finding.objectiveRefs;
+    const facts: Record<string, string | number | boolean | null | string[] | object> = {
+      objectiveRefs,
+    };
+    if (segmentIndexes.length > 0) {
+      facts.segmentIndexes = segmentIndexes;
+      facts.currentExplanation = segmentIndexes
+        .map((index) => payload.segments[index]?.explanation.slice(0, 700))
+        .filter(Boolean)
+        .join(' | ');
+      facts.missingRelationship =
+        'Make one source-supported relation observable: cause/consequence, mechanism/effect, condition/decision, step/why, misconception/correction, comparison, or evidence/conclusion.';
+      facts.safeSourceContext = objectiveRefs.flatMap(safeSourceAliases).slice(0, 8);
+    }
+    if (finding.code === 'agenda_duration_not_supported_by_learning_actions') {
+      facts.targetMinutes = input.durationBudget?.targetMinutes ?? input.plannedMinutes;
+      facts.derivedRange = lessonEvaluation?.estimatedActiveMinutes ?? null;
+      facts.direction = lessonEvaluation
+        ? lessonEvaluation.estimatedActiveMinutes.min > input.plannedMinutes
+          ? 'over_budget'
+          : 'under_budget'
+        : null;
+      facts.protectedRoles = input.durationBudget?.protectedRoles ?? [
+        'objective_orientation',
+        'explanation',
+        'worked_example',
+        'guided_practice',
+      ];
+      facts.protectedObjectiveRefs = input.durationBudget?.protectedObjectiveRefs ?? [];
+      facts.reductionOrder = input.durationBudget?.reductionOrder ?? [];
+    }
+    if (itemIndexes.length > 0) {
+      facts.itemIndexes = itemIndexes;
+      facts.currentPrompts = itemIndexes
+        .map((index) => payload.practice.items[index]?.initial.prompt.slice(0, 700))
+        .filter(Boolean);
+      facts.targetConstructs = objectiveRefs.map(
+        (objectiveRef) =>
+          input.learningUnit.objectives.find((objective) => objective.objectiveRef === objectiveRef)
+            ?.construct ?? null,
+      );
+      facts.allowedEvidenceAliases = objectiveRefs.flatMap(safeSourceAliases).slice(0, 8);
+      facts.allowedApplyForms = [
+        'choose the correct next step under an exact source-stated state',
+        'order source-stated procedural steps',
+        'detect a missing or wrong procedural step',
+        'complete a source-stated sequence',
+        'apply a stated condition to determine an action',
+        'diagnose why a bounded source-stated procedure fails',
+      ];
+      facts.prohibitedForApply = [
+        'recall a procedure name',
+        'recognize a definition',
+        'locate a paragraph or page',
+        'repeat a sequence without an action or decision',
+        'unsupported transfer or design',
+      ];
+      if (finding.code === 'practice_source_outside_objective_authority') {
+        facts.selectedSourceRefs = itemIndexes.flatMap(
+          (index) => payload.practice.items[index]?.sourceRefs ?? [],
+        );
+      }
+    }
+    return { code: finding.code, message: finding.message, facts };
+  });
+  if (semanticFindings.length > 0) {
+    diagnostics.push(...structuredDiagnostics.map((finding) => finding.message));
+    codes.push(...structuredDiagnostics.map((finding) => finding.code));
   }
 
   return {
@@ -140,10 +224,13 @@ export function validateTeachingBriefCandidate(
               segmentCount: payload.segments.length,
               practiceItemCount: payload.practice.items.length,
             },
-            diagnostics: [...new Set(diagnostics)].slice(0, 20).map((message, index) => ({
-              code: [...new Set(codes)][index] ?? 'lesson_practice_quality_rejection',
-              message,
-            })),
+            diagnostics:
+              structuredDiagnostics.length > 0
+                ? structuredDiagnostics.slice(0, 20)
+                : [...new Set(diagnostics)].slice(0, 20).map((message, index) => ({
+                    code: [...new Set(codes)][index] ?? 'lesson_practice_quality_rejection',
+                    message,
+                  })),
           },
         }
       : {}),

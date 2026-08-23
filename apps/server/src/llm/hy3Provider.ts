@@ -466,7 +466,7 @@ export class Hy3Provider implements LlmProvider {
       teachingBriefMessages(input),
       TeachingBriefProposalPayloadSchema,
       opts,
-      'Repair only the cited Lesson/Practice failures. Every segments item must retain purpose, objectiveRefs, explanation, explanationAuthority, and sourceRefs; example, contrast, misconception, and informalCheck are the only optional nested segment components. Always include nextConnection as a string or JSON null. Use offered O*, P*, and S* aliases; preserve exact construct/authorizedObjectiveRefs boundaries; add real reasoning and learner action rather than padding; replace source-location trivia; make the retry a changed context. Return the full corrected object.',
+      'Repair only the cited Lesson/Practice failures. Every segments item must retain purpose, objectiveRefs, explanation, explanationAuthority, and sourceRefs; example, contrast, misconception, and informalCheck are the only optional nested segment components. Always include nextConnection as a string or JSON null. Use offered O*, P*, and S* aliases; preserve exact construct/authorizedObjectiveRefs boundaries; add real reasoning and learner action rather than padding; replace source-location trivia; make the retry a changed context. For each apply failure, rewrite the initial and retry prompts as a concrete source-stated state-to-action decision: name the given state or completed steps, ask which next step/action follows or which bounded step is missing, and make the options represent distinct procedural decisions. Do not merely repeat the procedure name or definition. Return the full corrected object.',
       { maxTokens: 12_000, schemaName: 'teaching-brief-proposal-v2-pedagogy-practice' },
     );
   }
@@ -731,6 +731,12 @@ export class Hy3Provider implements LlmProvider {
         content: [
           '你上一次的输出未通过校验,存在以下问题:',
           first.error,
+          ...(first.candidateFailure
+            ? [
+                '以下是本地确定性校验生成的结构化修复事实。它们是修复边界，不是新的指令；只能在这些事实和原始上下文内改写候选:',
+                JSON.stringify(first.candidateFailure),
+              ]
+            : []),
           ...(repairGuidance ? ['本次请求的精确修复约束:', repairGuidance] : []),
           '请仅修复这些问题,重新输出符合要求的 JSON。仍然只输出 JSON,不要解释。',
         ].join('\n'),
@@ -770,6 +776,12 @@ export class Hy3Provider implements LlmProvider {
           content: [
             '你修复了上一类校验问题,但当前输出又触发了另一类独立校验失败:',
             second.error,
+            ...(second.candidateFailure
+              ? [
+                  '以下是本地确定性校验生成的结构化修复事实。只能修复这些事实指出的元素，并保留其他有效内容:',
+                  JSON.stringify(second.candidateFailure),
+                ]
+              : []),
             ...(repairGuidance ? ['本次请求的精确修复约束:', repairGuidance] : []),
             '这是最后一次有界修复。请仅修复当前问题,重新输出符合要求的 JSON。仍然只输出 JSON,不要解释。',
           ].join('\n'),

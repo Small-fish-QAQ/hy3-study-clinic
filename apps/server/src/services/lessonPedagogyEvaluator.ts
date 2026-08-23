@@ -44,9 +44,17 @@ const SOURCE_LOCATION_TRIVIA =
   /(?:\b(?:page|slide|section|chapter|paragraph|line|block|document)\b.{0,35}\b(?:where|which|number|located|mention(?:ed)?)\b|\bsource\b.{0,35}\b(?:where|located|mention(?:ed)?|page|slide|section|chapter|paragraph|line|block)\b|\b(?:where|which)\b.{0,35}\b(?:document|source|page|slide|section|chapter|paragraph|line|block)\b|第.{0,8}(?:页|幻灯片|章节|段|行)|(?:哪一|哪个|何处|哪里).{0,12}(?:页|幻灯片|章节|段落|位置)|(?:原文|资料|文档|来源).{0,12}(?:哪里|何处|哪一页|第几页|哪个章节))/iu;
 
 const EXPLANATION_REASONING =
-  /(?:\b(?:because|therefore|so that|depends on|causes?|means that|works by|mechanism|why|how)\b|因为|所以|因此|从而|取决于|意味着|机制|原理|如何|为什么|通过)/iu;
+  /(?:\b(?:because|therefore|so that|depends on|causes?|means that|works by|mechanism|why|how)\b|因为|因|所以|故|因此|从而|导致|前提|必要|取决于|意味着|机制|原理|如何|为什么|通过)/iu;
 const WORKED_REASONING =
   /(?:\b(?:first|next|then|finally|step|given|result|because|therefore|if|when)\b|首先|先|接着|然后|最后|步骤|已知|结果|因为|因此|如果|当)/iu;
+const WORKED_START =
+  /(?:\b(?:given|input|case|starting|initial|known|state)\b|已知|给定|输入|起始|状态|案例)/iu;
+const WORKED_PROCEDURE =
+  /(?:\b(?:first|next|then|finally|step|apply|inspect|compare|trace|calculate)\b|首先|先|接着|然后|最后|步骤|下一步|应用|检查|比较|追踪|计算)/iu;
+const WORKED_DECISION =
+  /(?:\b(?:choose|select|decide|reject|infer|determine|if|when|condition|transition)\b|选择|选取|判断|决策|决定|拒绝|推断|确定|如果|当|条件|转变)/iu;
+const WORKED_RESULT =
+  /(?:\b(?:result|therefore|consequence|follows|outcome|because)\b|结果|因此|后果|结论|所以|从而)/iu;
 const ACTION_LANGUAGE =
   /(?:\b(?:choose|select|decide|predict|explain|explanation|apply|diagnose|compare|order|identify|evaluate|design|classify|which|best)\b|选择|判断|预测|解释|应用|诊断|比较|排序|识别|评估|设计|归类|哪一|最)/iu;
 const CONSTRUCT_LANGUAGE = {
@@ -59,6 +67,8 @@ const CONSTRUCT_LANGUAGE = {
   evaluate:
     /(?:\b(?:evaluate|judge|critique|best|trade-?off|justify)\b|评估|评价|判断|权衡|论证|最合适)/iu,
 } as const;
+const APPLY_OBSERVABLE =
+  /(?:\b(?:next step|order|sequence|missing step|wrong step|complete|diagnose|condition.{0,50}(?:choose|select|action|step|result)|choose.{0,50}(?:step|action|result))\b|下一步|排序|顺序|缺少.{0,12}步骤|错误.{0,12}步骤|完成.{0,12}(?:流程|序列)|诊断.{0,30}(?:失败|原因)|条件.{0,30}(?:选择|行动|步骤|结果)|选择.{0,30}(?:步骤|行动|结果))/iu;
 
 function lessonFinding(
   criterion: LessonPedagogyFinding['criterion'],
@@ -168,7 +178,14 @@ export function evaluateLessonPedagogy(
   } else {
     for (const segment of worked) {
       const combined = `${segment.explanation} ${segment.example?.text ?? ''}`;
-      if (!segment.example || !WORKED_REASONING.test(combined)) {
+      if (
+        !segment.example ||
+        !WORKED_REASONING.test(combined) ||
+        !WORKED_START.test(combined) ||
+        !WORKED_PROCEDURE.test(combined) ||
+        !WORKED_DECISION.test(combined) ||
+        !WORKED_RESULT.test(combined)
+      ) {
         findings.push(
           lessonFinding(
             'worked_example',
@@ -273,15 +290,17 @@ export function evaluateLessonPedagogy(
   }
 
   const minutes = lessonMinutes(payload);
-  if (
-    input.plannedMinutes > minutes.max + 3 ||
-    input.plannedMinutes < Math.max(1, minutes.min - 8)
-  ) {
+  const durationTarget = input.durationBudget?.targetMinutes ?? input.plannedMinutes;
+  const acceptableActiveMinutes = input.durationBudget?.acceptableActiveMinutes ?? {
+    min: Math.max(1, durationTarget - 8),
+    max: durationTarget + 3,
+  };
+  if (minutes.min > acceptableActiveMinutes.max || minutes.max < acceptableActiveMinutes.min) {
     findings.push(
       lessonFinding(
         'duration_plausibility',
         'agenda_duration_not_supported_by_learning_actions',
-        `The ${input.plannedMinutes}-minute Agenda claim is not supported by the locally derived ${minutes.min}–${minutes.max}-minute activity range.`,
+        `The ${durationTarget}-minute Agenda claim is not supported by the locally derived ${minutes.min}–${minutes.max}-minute activity range (target window ${acceptableActiveMinutes.min}–${acceptableActiveMinutes.max}).`,
       ),
     );
   }
@@ -330,6 +349,43 @@ export function evaluatePracticeQuality(
       continue;
     }
     seenObjectives.add(item.objectiveRef);
+    const practiceEnvelope = objective.practiceEnvelope;
+    if (practiceEnvelope) {
+      if (
+        practiceEnvelope.targetConstruct !== item.construct ||
+        practiceEnvelope.authorityMode === 'unavailable' ||
+        (practiceEnvelope.authorityMode === 'exact_source' && item.authority !== 'exact_source') ||
+        (practiceEnvelope.authorityMode === 'advisory_visual' &&
+          item.authority !== 'advisory_visual')
+      ) {
+        findings.push(
+          practiceFinding(
+            'objective_construct_alignment',
+            'practice_construct_exceeds_objective_authority',
+            `Practice item ${itemIndex} must preserve the exact provider-visible construct and authority envelope for ${item.objectiveRef}.`,
+            [itemIndex],
+            [item.objectiveRef],
+          ),
+        );
+      }
+      const offeredEvidence = new Set(
+        practiceEnvelope.evidenceAliases.map((alias) => alias.sourceRef),
+      );
+      if (
+        practiceEnvelope.authorityMode === 'exact_source' &&
+        item.sourceRefs.some((sourceRef) => !offeredEvidence.has(sourceRef))
+      ) {
+        findings.push(
+          practiceFinding(
+            'authority_alignment',
+            'practice_source_outside_objective_authority',
+            `Practice item ${itemIndex} selects an evidence alias outside the objective-scoped Practice envelope.`,
+            [itemIndex],
+            [item.objectiveRef],
+          ),
+        );
+      }
+    }
     if (
       !objective.construct ||
       objective.construct !== item.construct ||
@@ -397,7 +453,8 @@ export function evaluatePracticeQuality(
     if (
       overlapRatio(semanticTarget, semanticItem) === 0 ||
       !ACTION_LANGUAGE.test(item.initial.prompt) ||
-      !CONSTRUCT_LANGUAGE[item.construct].test(item.initial.prompt)
+      !CONSTRUCT_LANGUAGE[item.construct].test(item.initial.prompt) ||
+      (item.construct === 'apply' && !APPLY_OBSERVABLE.test(item.initial.prompt))
     ) {
       findings.push(
         practiceFinding(

@@ -451,6 +451,14 @@ export interface TeachingBriefGenerationInput {
       construct: FormalAssessmentConstruct | null;
       authorityEnvelopeTier: CurriculumAuthorityEnvelopeTier;
       practiceAuthority: 'exact_formal' | 'exact_teaching' | 'advisory_visual' | 'unavailable';
+      /** Provider-visible, objective-scoped Practice contract. Local code remains authoritative. */
+      practiceEnvelope?: {
+        targetConstruct: FormalAssessmentConstruct | null;
+        authorityMode: 'exact_source' | 'advisory_visual' | 'unavailable';
+        evidenceAliases: Array<{ sourceRef: string; text: string }>;
+        allowedCapability: string;
+        prohibitedStrongerConstructs: FormalAssessmentConstruct[];
+      };
     }>;
     concepts: Array<{ name: string; summary: string }>;
     canonicalConcepts: Array<{ name: string }>;
@@ -491,6 +499,22 @@ export interface TeachingBriefGenerationInput {
   };
   /** Accepted Agenda estimate; independent evaluation must justify it from learning actions. */
   plannedMinutes: number;
+  /** Upstream action-design budget derived from the accepted Agenda item. */
+  durationBudget?: {
+    targetMinutes: number;
+    acceptableActiveMinutes: { min: number; max: number };
+    protectedRoles: Array<
+      | 'objective_orientation'
+      | 'explanation'
+      | 'mechanism'
+      | 'worked_example'
+      | 'contrast'
+      | 'misconception'
+      | 'guided_practice'
+    >;
+    protectedObjectiveRefs: string[];
+    reductionOrder: string[];
+  };
 }
 
 /** One prior validated observation shown back to the Tutor model. */

@@ -257,6 +257,37 @@ export function createTeachingBriefPreparationService({
           (candidate) => candidate.id === nextPlanItem.curriculumLearningUnitId,
         )
       : undefined;
+    const strongerConstructs: Record<
+      NonNullable<CurriculumObjective['formalAssessmentConstruct']>,
+      NonNullable<CurriculumObjective['formalAssessmentConstruct']>[]
+    > = {
+      identify: ['explain', 'apply', 'design', 'evaluate'],
+      explain: ['apply', 'design', 'evaluate'],
+      apply: ['design', 'evaluate'],
+      design: ['evaluate'],
+      evaluate: [],
+    };
+    const objectiveRefs = route.node.learningUnit!.objectives.map(
+      (_objective, index) => `O${index + 1}`,
+    );
+    const durationTarget = route.planItem.estimatedMinutes;
+    const isSourceAuthorizedForObjective = (
+      offer: (typeof context.offers)[number],
+      objective: CurriculumObjective,
+    ) => {
+      const reference = context.references.find((candidate) => candidate.refId === offer.sourceRef);
+      if (!reference) return false;
+      const formallyAuthorized = objective.formalEvidenceSourceBlockIds?.includes(
+        reference.sourceBlockId,
+      );
+      const teachingAuthorized = route.node.sourceReferences.some(
+        (candidate) => candidate.sourceBlockId === reference.sourceBlockId,
+      );
+      const hasExactFormalAuthority =
+        Boolean(objective.formalAssessmentConstruct) &&
+        (objective.formalEvidenceSourceBlockIds?.length ?? 0) > 0;
+      return hasExactFormalAuthority ? formallyAuthorized : teachingAuthorized;
+    };
     return {
       workspaceName: route.workspace.name,
       learningUnit: {
@@ -277,6 +308,41 @@ export function createTeachingBriefPreparationService({
                 : context.visualOffers.length > 0
                   ? 'advisory_visual'
                   : 'unavailable',
+          practiceEnvelope: (() => {
+            const exactEvidence = context.offers
+              .filter((offer) =>
+                isSourceAuthorizedForObjective(offer, route.node.learningUnit!.objectives[index]!),
+              )
+              .map((offer) => ({ sourceRef: offer.sourceRef, text: offer.text.slice(0, 600) }));
+            const requiresFormalAuthority =
+              Boolean(objective.formalAssessmentConstruct) &&
+              (objective.formalEvidenceSourceBlockIds?.length ?? 0) > 0;
+            const authorityMode =
+              exactEvidence.length > 0
+                ? ('exact_source' as const)
+                : requiresFormalAuthority
+                  ? ('unavailable' as const)
+                  : context.visualOffers.length > 0
+                    ? ('advisory_visual' as const)
+                    : ('unavailable' as const);
+            const targetConstruct = teachingConstruct(objective);
+            return {
+              targetConstruct,
+              authorityMode,
+              evidenceAliases: exactEvidence,
+              allowedCapability:
+                targetConstruct === 'apply'
+                  ? 'Use a source-stated rule or procedure in its supported context to choose a next step, order a step, detect a missing step, or diagnose a bounded procedure failure.'
+                  : targetConstruct === 'explain'
+                    ? 'Express a mechanism, relation, reason, consequence, or conceptual connection.'
+                    : targetConstruct === 'identify'
+                      ? 'Select, name, distinguish, or classify the correct entity or component.'
+                      : `Demonstrate the locally authorized ${targetConstruct} capability without promoting it to a stronger construct.`,
+              prohibitedStrongerConstructs: targetConstruct
+                ? strongerConstructs[targetConstruct]
+                : [],
+            };
+          })(),
         })),
         concepts,
         canonicalConcepts,
@@ -325,7 +391,30 @@ export function createTeachingBriefPreparationService({
         maxSourceRefsPerSegment: 8,
         maxFormalOpportunities: 8,
       },
-      plannedMinutes: route.planItem.estimatedMinutes,
+      plannedMinutes: durationTarget,
+      durationBudget: {
+        targetMinutes: durationTarget,
+        acceptableActiveMinutes: {
+          min: Math.max(1, durationTarget - 8),
+          max: durationTarget + 3,
+        },
+        protectedRoles: [
+          'objective_orientation',
+          'explanation',
+          'worked_example',
+          'guided_practice',
+        ],
+        protectedObjectiveRefs: objectiveRefs,
+        reductionOrder: [
+          'remove redundant explanation',
+          'collapse duplicated examples',
+          'reduce unnecessary learner interruptions',
+          'prioritize required objective teaching',
+          'preserve one strong worked reasoning path',
+          'preserve meaningful learner cognition',
+          'preserve required Practice coverage',
+        ],
+      },
     };
   }
 
