@@ -233,7 +233,7 @@ function ReadyLesson({
   const progress = projection.progress!;
   const currentIndex = progress.currentSegmentIndex;
   const presented = new Set(progress.presentedSegmentIndexes);
-  const completed = progress.presentationStatus === 'presentation_completed';
+  const presentationCompleted = progress.presentationStatus === 'presentation_completed';
   const canStart = projection.allowedActions.includes('start_lesson');
   const canNext = projection.allowedActions.includes('move_to_next_segment');
   const canRevisit = projection.allowedActions.includes('revisit_segment');
@@ -249,6 +249,13 @@ function ReadyLesson({
             {presentationStateLabel(projection.progress)} · 已呈现 {presented.size}/
             {lesson.segments.length} 个部分
           </p>
+          {lesson.plannedTime ? (
+            <p className="small muted">
+              安排约 {lesson.plannedTime.agendaMinutes}{' '}
+              分钟；按讲解、推理示例与主动练习，本地评估为约 {lesson.plannedTime.activeMinutesMin}–
+              {lesson.plannedTime.activeMinutesMax} 分钟。
+            </p>
+          ) : null}
         </div>
         <div className="lesson-segment-progress" aria-label="讲解进度">
           {lesson.segments.map((segment) => (
@@ -372,7 +379,7 @@ function ReadyLesson({
                   }
                 />
               ) : null}
-              {isCurrent && !completed ? (
+              {isCurrent && !presentationCompleted ? (
                 <div className="lesson-segment-actions">
                   {canRevisit && currentIndex > 0 ? (
                     <button
@@ -415,7 +422,7 @@ function ReadyLesson({
       </ol>
 
       {lesson.summary.available &&
-      (completed || progress.presentationStatus === 'summary_ready') ? (
+      (presentationCompleted || progress.presentationStatus === 'summary_ready') ? (
         <section className="lesson-summary" aria-label="本节总结">
           <p className="eyebrow">本节总结</p>
           {lesson.summary.text ? <p>{lesson.summary.text}</p> : null}
@@ -423,6 +430,61 @@ function ReadyLesson({
             <div className="lesson-next-connection">
               <strong>接下来</strong>
               <p>{lesson.summary.nextConnection}</p>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {projection.practice && projection.practice.status !== 'locked' ? (
+        <section className="lesson-practice" aria-label="本节练习">
+          <p className="eyebrow">Practice · 非正式练习</p>
+          <h3>
+            {projection.practice.status === 'completed'
+              ? '练习完成'
+              : `第 ${projection.practice.currentItemIndex + 1}/${projection.practice.itemCount} 题`}
+          </h3>
+          <p className="small muted">
+            这里的回应只用于即时反馈，不创建正式证据，也不改变掌握度或课程进度。
+          </p>
+          {projection.practice.attempts.length > 0 ? (
+            <div className="lesson-practice-feedback" aria-live="polite">
+              {projection.practice.attempts.map((attempt) => (
+                <article key={`${attempt.itemIndex}-${attempt.attemptNumber}`}>
+                  <strong>{attempt.correct ? '回答正确' : '再想一步'}</strong>
+                  <p>{attempt.feedback}</p>
+                  {attempt.hint ? (
+                    <p className="lesson-practice-hint">提示：{attempt.hint}</p>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          ) : null}
+          {projection.practice.item ? (
+            <div className="lesson-practice-item">
+              <div className="lesson-practice-purpose">
+                <strong>{projection.practice.item.objectiveTitle}</strong>
+                <span>检验能力：{projection.practice.item.capabilityTested}</span>
+                <small>为什么练：{projection.practice.item.pedagogicalReason}</small>
+              </div>
+              <p className="lesson-practice-prompt">{projection.practice.item.prompt}</p>
+              <div className="lesson-practice-options">
+                {projection.practice.item.options.map((option) => (
+                  <button
+                    type="button"
+                    key={option.id}
+                    disabled={!active || busy || commandLoading}
+                    onClick={() =>
+                      onAction({
+                        kind: 'submit_practice_response',
+                        itemIndex: projection.practice!.item!.index,
+                        optionId: option.id,
+                      })
+                    }
+                  >
+                    {option.text}
+                  </button>
+                ))}
+              </div>
             </div>
           ) : null}
         </section>
@@ -727,7 +789,7 @@ export function LessonExecutionPanel({
     );
   }
 
-  const completed = projection.progress?.presentationStatus === 'presentation_completed';
+  const completed = projection.practice?.status === 'completed';
   return (
     <section
       className={`lesson-execution-panel ${completed ? 'is-complete' : ''}`}
@@ -747,7 +809,7 @@ export function LessonExecutionPanel({
         onAction={(action) => void command(action)}
         onResponseChange={setResponseDraft}
       />
-      {formalAssessmentVersionId ? (
+      {formalAssessmentVersionId && completed ? (
         <FormalAssessmentPanel
           workspaceId={workspaceId}
           versionId={formalAssessmentVersionId}
@@ -769,9 +831,11 @@ export function LessonExecutionPanel({
       {completed ? (
         <section className="lesson-handoff" aria-label="正式学习入口">
           <div>
-            <p className="eyebrow">讲解完成</p>
+            <p className="eyebrow">Lesson 与 Practice 完成</p>
             <h3>接下来可以进行正式检验</h3>
-            <p>完成讲解只表示你走完了本节教学顺序，不代表已经掌握，也不会自动推进学习安排。</p>
+            <p>
+              完成讲解与非正式练习不代表已经掌握，也不会自动推进学习安排；正式检验仍是一个明确、独立的动作。
+            </p>
           </div>
           {directCheckpointItemId && onStartFormalAssessment ? (
             <button

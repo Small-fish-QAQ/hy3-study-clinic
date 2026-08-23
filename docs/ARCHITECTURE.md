@@ -395,7 +395,7 @@ Retiring one document clears the active graph pointer, marks dependent source-au
 
 `better-sqlite3` runs with foreign keys enabled. Repositories validate domain objects on writes and reads. Multi-row operations use explicit transactions, and migrations are recorded in `schema_migrations`.
 
-The 30 shipped migrations are:
+The 36 shipped migrations are:
 
 1. `initial_schema` - original materials, blocks, concepts, quizzes, grading, mistakes, and mastery.
 2. `course_workspaces_and_documents` - workspaces, document metadata/original bytes, and source-block page numbers; every legacy material receives a compatibility workspace without learning-data deletion.
@@ -427,6 +427,12 @@ The 30 shipped migrations are:
 28. `formal_assessment_evidence_backbone` - immutable formal assessment versions, attempts, grades, criterion-gated evidence, and the separate assessment reconciliation record.
 29. `diagnostic_repair_orchestration` - immutable Repair packets, non-credit practice events, and append-only Repair status history.
 30. `formal_assessment_progression_bridge` - immutable assessment launch context plus retryable linkage to the existing deterministic progression reconciliation.
+31. `objective_review_scheduler_successor` - objective-bound successor Review targets, executions, immutable events, and locally fenced scheduler state.
+32. `review_cutover_backfill_support` - explicit null-memory Review state, deterministic event sequence numbers, and audited one-time eligibility decisions for supported historical Evidence.
+33. `mastery_red_team_shadow` - immutable shadow snapshots, candidates, evaluations, and explicit no-mutation audit fields.
+34. `adaptive_pace_observations` - append-only active-time observations and versioned pace projections without making pace a mastery authority.
+35. `curriculum_quality_evaluations` - immutable independent Curriculum quality evaluations and bounded repair audit metadata.
+36. `informal_lesson_practice_execution` - session-owned non-credit Practice state and events, including bounded retries, without any Formal Evidence, mastery, mistake, Review, Agenda, or Plan authority.
 
 Table-rebuild migrations disable foreign keys only around the controlled rebuild, run `foreign_key_check` before commit, and restore enforcement even after failure. Tests cover idempotence, populated v1 and v3 upgrades, all-or-nothing rollback, and data preservation.
 
@@ -763,6 +769,18 @@ Course Preparation exposes a deterministic readiness projection over the current
 The readiness check is local and provider-independent. `sourceAuthority` validates exact current claims and eligibility; Curriculum or Teaching Brief prose, Tutor output, and lesson completion cannot authorize a formal premise. The bounded coordinator preserves accepted predecessors and durable intermediate work. One learner start command claims the durable preparation operation, whose server-side transition loop continues ordinary successful checkpoints; the web client observes progress and does not simulate continuation clicks. Cancellation, recoverable failure, stale authority, and learner decisions remain genuine stop points. Curriculum navigation is observation-only while preparation owns the structure stage. Home renders semantic preparation stages and keeps system-owned readiness gaps out of learner-actionable attention items.
 
 Formal entry is a deterministic Lesson next-state: a launchable matching checkpoint is offered; otherwise the learner sees whether formal preparation is pending or the objective is currently unverifiable. Presentation completion records no Evidence, mastery, Review, or progression mutation. Formal Assessment versions still use the existing launch-time schema, provenance, attempt, grading, Evidence, and deterministic progression authorities.
+
+## 23c. Lesson and informal Practice pedagogy closure (Phase 12B7C)
+
+A Teaching Brief candidate must first satisfy the existing runtime schema and authority materialization, then pass independent deterministic lesson and Practice evaluators. Provider code does not own either evaluator. The lesson gate requires purposeful instructional roles, explanation with observable reasoning moves, a complete worked example, learner action, contrast or misconception handling, objective-semantic alignment, bounded redundancy, and locally computed active-time support for the Agenda duration. It deliberately does not use word count as a proxy for teaching quality. A declarative paraphrase, padded repetition, missing reasoning, or implausible duration fails closed.
+
+Each informal Practice item binds one existing objective, one controlled construct, and an authority mode. `exact_source` items must cite only exact source blocks independently authorized for that objective; visual-derived context may be used only as `advisory_visual` and cannot authorize an expected answer. The Practice evaluator rejects source-location trivia, unsupported authority, answer leakage, non-observable constructs, invalid options, duplicate items, and retries that do not meaningfully change the elicitation. An item carries one initial prompt and at most one changed retry. Feedback and a hint are hidden until the learner commits a response.
+
+The shared provider ceiling remains one original structured request plus one repair. Schema failure and semantic candidate failure are distinguished, and the final materialized candidate is evaluated afresh before persistence. A route, source, or request-ownership change fences the result. Cancellation, a stale response, exhausted repair, or either independent evaluator's rejection preserves any previously valid immutable Brief. Persisted diagnostics retain only bounded categories, issue paths/codes, completion facts, and repair actions; raw provider output, summaries, prompt previews, model fingerprints, and expected answers are excluded.
+
+Migration 36 extends the weak `lesson_execution_states` child and its append-only event trail with Practice position, attempt, learner response, feedback visibility, and completion facts. Service commands remain StudySession, Agenda, route, and row-version fenced. Practice events are permanently marked `credit: none`; the repository and service have no path from these events to Formal Evidence, grading, mastery, mistakes, Review, Agenda completion, or StudyPlan progress. The React surface consumes only the learner-safe projection and preserves abort/stale-response behavior during Course or document switches.
+
+FakeProvider and Hy3 implement the same contract, but deterministic Fake coverage is not evidence that a real provider candidate is pedagogically acceptable. Real candidates are intentionally allowed to fail the independent gates; successful persistence, actual-browser interaction, and human review remain separate release evidence. Exact quotation validation continues to prove source occurrence, not complete semantic entailment or instructional effectiveness.
 
 ## 24. Normalized material extraction foundation
 

@@ -4415,6 +4415,7 @@ button.danger {
 .lesson-misconception,
 .lesson-informal-check,
 .lesson-summary,
+.lesson-practice,
 .lesson-handoff {
   padding: var(--space-4);
   border-radius: var(--radius-md);
@@ -4512,6 +4513,57 @@ button.danger {
 
 .lesson-next-connection p {
   margin-bottom: 0;
+}
+
+.lesson-practice {
+  display: grid;
+  gap: var(--space-4);
+  border: 1px solid #9cb7d8;
+  background: #f5f8ff;
+}
+
+.lesson-practice h3,
+.lesson-practice p {
+  margin-bottom: 0;
+}
+
+.lesson-practice-purpose,
+.lesson-practice-item,
+.lesson-practice-feedback {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.lesson-practice-purpose span,
+.lesson-practice-purpose small {
+  color: var(--text-muted);
+}
+
+.lesson-practice-prompt {
+  font-weight: 650;
+  line-height: 1.65;
+}
+
+.lesson-practice-options {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.lesson-practice-options button {
+  justify-content: flex-start;
+  min-height: 44px;
+  text-align: left;
+  white-space: normal;
+}
+
+.lesson-practice-feedback article {
+  padding: var(--space-3);
+  border-left: 3px solid var(--primary);
+  background: var(--surface-raised);
+}
+
+.lesson-practice-hint {
+  color: var(--primary-strong);
 }
 
 .lesson-handoff {

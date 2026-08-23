@@ -300,7 +300,117 @@ describe('LessonExecutionPanel', () => {
     expect(screen.getByText(/不计入正式进展/)).toBeInTheDocument();
   });
 
-  it('keeps presentation completion separate and offers the existing formal handoff only after completion', async () => {
+  it('shows contingent wrong-answer feedback and a changed retry before Practice completion', async () => {
+    const user = userEvent.setup();
+    const initial = readyLesson({
+      stateVersion: 6,
+      currentSegmentIndex: 1,
+      segmentCount: 2,
+      presentedSegmentIndexes: [0, 1],
+      presentationStatus: 'presentation_completed',
+      presentationCompletedAt: '2026-08-19T01:00:00.000Z',
+    });
+    initial.allowedActions = ['submit_practice_response'];
+    initial.practice = {
+      status: 'available',
+      currentItemIndex: 0,
+      itemCount: 1,
+      item: {
+        index: 0,
+        objectiveTitle: '解释条件概率',
+        construct: 'explain',
+        capabilityTested: '解释条件如何改变结果',
+        pedagogicalReason: '区分因果理解和表面复述',
+        surface: 'initial',
+        prompt: '哪种解释说明了条件如何改变结果？',
+        options: [
+          { id: 'initial_A', text: '条件改变了候选范围' },
+          { id: 'initial_B', text: '只重复标题中的词' },
+          { id: 'initial_C', text: '忽略已知条件' },
+        ],
+      },
+      attempts: [],
+      completedAt: null,
+      credit: 'none',
+    };
+    const retry = structuredClone(initial);
+    retry.session.version = 3;
+    retry.progress!.stateVersion = 7;
+    retry.practice = {
+      ...initial.practice,
+      status: 'in_progress',
+      item: {
+        ...initial.practice.item!,
+        surface: 'retry',
+        prompt: '换一个候选集合后，哪种解释仍然成立？',
+        options: [
+          { id: 'retry_A', text: '标题位置变了' },
+          { id: 'retry_B', text: '满足条件的候选变了' },
+          { id: 'retry_C', text: '所有候选都保留' },
+        ],
+      },
+      attempts: [
+        {
+          itemIndex: 0,
+          attemptNumber: 1,
+          surface: 'initial',
+          selectedOptionId: 'initial_B',
+          correct: false,
+          feedback: '这只是表面复述，没有让条件参与推理。',
+          hint: '找出条件如何改变候选范围。',
+          respondedAt: '2026-08-19T01:01:00.000Z',
+          credit: 'none',
+        },
+      ],
+    };
+    const completed = structuredClone(retry);
+    completed.session.version = 4;
+    completed.progress!.stateVersion = 8;
+    completed.allowedActions = ['review_lesson'];
+    completed.practice = {
+      ...retry.practice,
+      status: 'completed',
+      item: null,
+      attempts: [
+        ...retry.practice.attempts,
+        {
+          itemIndex: 0,
+          attemptNumber: 2,
+          surface: 'retry',
+          selectedOptionId: 'retry_B',
+          correct: true,
+          feedback: '正确：候选资格改变，所以结果改变。',
+          hint: null,
+          respondedAt: '2026-08-19T01:02:00.000Z',
+          credit: 'none',
+        },
+      ],
+      completedAt: '2026-08-19T01:02:00.000Z',
+    };
+    vi.spyOn(api, 'getLessonExecution').mockResolvedValue(initial);
+    const command = vi
+      .spyOn(api, 'lessonExecutionCommand')
+      .mockResolvedValueOnce(retry)
+      .mockResolvedValueOnce(completed);
+
+    render(
+      <LessonExecutionPanel
+        workspaceId="ws_1"
+        sessionId="session_1"
+        agendaItemId="item_1"
+        active
+      />,
+    );
+    await user.click(await screen.findByRole('button', { name: '只重复标题中的词' }));
+    expect(await screen.findByText('这只是表面复述，没有让条件参与推理。')).toBeInTheDocument();
+    expect(screen.getByText(/找出条件如何改变候选范围/)).toBeInTheDocument();
+    expect(screen.getByText('换一个候选集合后，哪种解释仍然成立？')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '满足条件的候选变了' }));
+    expect(await screen.findByRole('heading', { name: '练习完成' })).toBeInTheDocument();
+    expect(command).toHaveBeenCalledTimes(2);
+  });
+
+  it('offers the existing formal handoff only after Lesson and informal Practice completion', async () => {
     const user = userEvent.setup();
     const completed = readyLesson({
       stateVersion: 5,
@@ -310,6 +420,27 @@ describe('LessonExecutionPanel', () => {
       presentationStatus: 'presentation_completed',
       presentationCompletedAt: '2026-08-19T01:00:00.000Z',
     });
+    completed.practice = {
+      status: 'completed',
+      currentItemIndex: 0,
+      itemCount: 1,
+      item: null,
+      attempts: [
+        {
+          itemIndex: 0,
+          attemptNumber: 1,
+          surface: 'initial',
+          selectedOptionId: 'practice_A',
+          correct: true,
+          feedback: '你根据条件解释了结果。',
+          hint: null,
+          respondedAt: '2026-08-19T01:02:00.000Z',
+          credit: 'none',
+        },
+      ],
+      completedAt: '2026-08-19T01:02:00.000Z',
+      credit: 'none',
+    };
     completed.allowedActions = ['review_lesson'];
     vi.spyOn(api, 'getLessonExecution').mockResolvedValue(completed);
     const handoff = vi.fn();

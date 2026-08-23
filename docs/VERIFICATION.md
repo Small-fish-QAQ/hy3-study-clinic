@@ -553,3 +553,40 @@ passed with one non-blocking optional, explicitly non-assessed MCP title note.
 This live check does not weaken the offline requirement, guarantee future
 provider conformance, or prove complete semantic entailment or learning
 effectiveness.
+
+## Phase 12B7C Lesson and informal Practice verification
+
+The focused gate exercises schema evolution, lesson-role and reasoning quality,
+active-time feasibility, objective/construct alignment, exact-source authority,
+visual-advisory restrictions, source-location trivia, answer leakage, changed
+retry behavior, final materialization reevaluation, sanitized provider failure
+diagnostics, cancellation/stale-result fencing, migration compatibility, and the
+learner-safe non-credit UI:
+
+```bash
+npm run test -w @hy3-clinic/shared -- src/domain/teachingBrief.test.ts src/domain/lessonExecution.test.ts
+npm run test -w @hy3-clinic/server -- src/services/lessonPedagogyEvaluator.test.ts src/services/teachingBriefContract.test.ts src/llm/teachingBriefProvider.test.ts src/llm/hy3Provider.test.ts src/services/teachingBriefPreparation.test.ts src/db/migrate.test.ts
+npm run test -w @hy3-clinic/web -- src/components/LessonExecutionPanel.test.tsx
+```
+
+The complete repository gate remains:
+
+```bash
+npm test
+npm run eval:fake
+npm run build
+npm run lint
+npx prettier --check .
+git diff --check
+```
+
+Automated tests never call the real Hy3 API. A credentialed real-provider gate
+is separate and must use the actual browser plus persisted sanitized telemetry.
+PASS requires an accepted current-source Brief, a human-audited instructional
+Lesson and construct-valid Practice, commit-before-guidance behavior, a visibly
+changed bounded retry, and proof that Practice changed no Formal Evidence,
+mastery, mistakes, Review, Agenda, or Plan progress. A schema-valid candidate
+that fails the independent semantic evaluator is an honest blocked result, not
+a reason to relax the gate or substitute FakeProvider output. Exact quotation
+checks establish source occurrence only; they do not establish complete
+semantic entailment or educational effectiveness.
