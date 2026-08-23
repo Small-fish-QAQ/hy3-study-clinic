@@ -231,6 +231,10 @@ describe('Hy3 Teaching Brief provider contract', () => {
     }
     expect(originalPrompt).toContain('Every object in segments MUST contain all five base fields');
     expect(originalPrompt).toContain('nextConnection is required');
+    expect(originalPrompt).toContain('cause -> consequence');
+    expect(originalPrompt).toContain('durationBudget');
+    expect(originalPrompt).toContain('practiceEnvelope');
+    expect(originalPrompt).toContain('source-stated rule/procedure');
     expect(repairPrompt).toContain('Always include nextConnection as a string or JSON null');
     expect(originalPrompt).not.toContain('Optional segment fields may be omitted');
     expect(fetchImpl).toHaveBeenCalledTimes(2);
@@ -274,6 +278,42 @@ describe('Hy3 Teaching Brief provider contract', () => {
     expect(result.segments.some((segment) => segment.sourceRefs.includes('S1'))).toBe(true);
     expect(result.practice.items[0]?.sourceRefs).toEqual(['S1']);
     expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it('passes exact semantic authority facts into bounded candidate repair', async () => {
+    const context = input();
+    context.sourceContext.offers.push({
+      sourceRef: 'S2',
+      materialTitle: 'Material',
+      headingPath: ['Memory'],
+      pageNumber: 1,
+      slideNumber: null,
+      text: 'A second authorized explanation of the capacity condition.',
+      authorizedObjectiveRefs: ['O1'],
+    });
+    context.sourceContext.offers[0]!.authorizedObjectiveRefs = [];
+    const invalid = validPayload('S1');
+    const repaired = validPayload('S2');
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(response(JSON.stringify(invalid)))
+      .mockResolvedValueOnce(response(JSON.stringify(repaired))) as unknown as typeof fetch;
+
+    await provider(fetchImpl).generateTeachingBrief(context, {
+      validateCandidate: (candidate) => validateTeachingBriefCandidate(candidate, context),
+    });
+
+    const calls = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls;
+    const repairBody = JSON.parse(String(calls[1]![1]!.body)) as {
+      messages: Array<{ content: string }>;
+    };
+    const repairPrompt = repairBody.messages.at(-1)!.content;
+    expect(repairPrompt).toContain('practice_source_outside_objective_authority');
+    expect(repairPrompt).toContain('allowedEvidenceAliases');
+    expect(repairPrompt).toContain('S2');
+    expect(repairPrompt).toContain('targetConstruct');
+    expect(repairPrompt).toContain('allowedApplyForms');
+    expect(repairPrompt).toContain('source-stated state-to-action decision');
   });
 
   it('fails closed after an invalid repair', async () => {

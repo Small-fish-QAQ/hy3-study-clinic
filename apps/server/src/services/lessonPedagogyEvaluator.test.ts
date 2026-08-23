@@ -373,9 +373,97 @@ describe('independent Lesson and Practice semantic evaluators', () => {
     payload.practice.items[0]!.capabilityTested =
       'Apply bounded retrieval to a scenario using the stated condition.';
     payload.practice.items[0]!.initial.prompt =
-      'Apply bounded retrieval in this scenario while preserving the source-stated condition. Which result should the learner use?';
+      'Apply bounded retrieval in this scenario while preserving the source-stated condition. Which next step should the learner choose?';
     payload.practice.items[0]!.retry.prompt =
       'In a second case with a different candidate set, apply the retrieval condition to choose the next result.';
     expect(evaluatePracticeQuality(payload, context, { evaluatedAt }).status).toBe('pass');
+  });
+
+  it('rejects apply that only recognizes a procedure or definition', () => {
+    const payload = candidate();
+    const context = input();
+    context.learningUnit.objectives[0]!.construct = 'apply';
+    payload.practice.items[0]!.construct = 'apply';
+    payload.practice.items[0]!.capabilityTested = 'Apply the bounded retrieval procedure.';
+    payload.practice.items[0]!.initial.prompt =
+      'Which definition names the bounded retrieval procedure?';
+    expect(
+      evaluatePracticeQuality(payload, context, { evaluatedAt }).findings.map(
+        (finding) => finding.code,
+      ),
+    ).toContain('practice_does_not_elicit_authorized_capability');
+  });
+
+  it('accepts a source-bounded apply decision about the next procedural step', () => {
+    const payload = candidate();
+    const context = input();
+    context.learningUnit.objectives[0]!.construct = 'apply';
+    payload.practice.items[0]!.construct = 'apply';
+    payload.practice.items[0]!.capabilityTested =
+      'Apply the source-stated retrieval condition to choose the next step.';
+    payload.practice.items[0]!.initial.prompt =
+      'Given the source-stated condition, which next step should you choose before returning a retrieval result?';
+    payload.practice.items[0]!.retry.prompt =
+      'In a changed candidate set, which next step applies the retrieval condition before selecting the result?';
+    expect(evaluatePracticeQuality(payload, context, { evaluatedAt }).status).toBe('pass');
+  });
+
+  it('does not accept duration by changing only the displayed target', () => {
+    const payload = candidate();
+    const context = input();
+    context.plannedMinutes = 30;
+    context.durationBudget = {
+      targetMinutes: 30,
+      acceptableActiveMinutes: { min: 22, max: 33 },
+      protectedRoles: ['objective_orientation', 'explanation', 'worked_example', 'guided_practice'],
+      protectedObjectiveRefs: ['O1'],
+      reductionOrder: ['remove redundant explanation'],
+    };
+    payload.segments.push(
+      {
+        purpose: 'mechanism',
+        objectiveRefs: ['O1'],
+        explanation: 'A distinct second mechanism traces a different condition to its consequence.',
+        explanationAuthority: 'source_backed_teaching',
+        sourceRefs: ['S1'],
+      },
+      {
+        purpose: 'contrast',
+        objectiveRefs: ['O1'],
+        explanation:
+          'A second boundary comparison distinguishes the condition from a surface label.',
+        explanationAuthority: 'source_backed_teaching',
+        sourceRefs: ['S2'],
+        contrast: {
+          text: 'The second case changes the condition and therefore changes the decision.',
+          authority: 'ai_teaching_synthesis',
+          sourceRefs: [],
+        },
+      },
+      {
+        purpose: 'guided_practice',
+        objectiveRefs: ['O1'],
+        explanation: 'A second learner action applies the condition and commits a decision.',
+        explanationAuthority: 'ai_teaching_synthesis',
+        sourceRefs: ['S2'],
+        informalCheck: {
+          kind: 'apply_simple_example',
+          prompt: 'Choose the next step under the changed condition.',
+          expectedSignal: 'Connect condition and decision.',
+        },
+      },
+      {
+        purpose: 'explanation',
+        objectiveRefs: ['O1'],
+        explanation:
+          'A final explanation makes a distinct causal relation explicit because the condition changes the result.',
+        explanationAuthority: 'source_backed_teaching',
+        sourceRefs: ['S2'],
+      },
+    );
+    const evaluation = evaluateLessonPedagogy(payload, context, { evaluatedAt });
+    expect(evaluation.findings.map((finding) => finding.code)).toContain(
+      'agenda_duration_not_supported_by_learning_actions',
+    );
   });
 });
