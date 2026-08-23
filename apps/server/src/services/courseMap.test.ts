@@ -5,11 +5,65 @@ import {
   assertCourseMapSourceAllocationIntegrity,
   buildCourseMapProposalInput,
   buildCourseMapSourceAllocation,
+  repairOmittedCourseMapCoverage,
 } from './courseMap.js';
 import { measureCourseMapRequest } from '../llm/prompts.js';
 import { createCourseMapFixture } from '../testing/courseMapFixtures.js';
+import { validateCourseMapSemanticCoherence } from './curriculumSemanticEvaluator.js';
 
 describe('Course Map bounded source allocation', () => {
+  it('does not scatter a system overview from a RAG workflow on the domain label alone', () => {
+    const fixture = createCourseMapFixture();
+    const candidate = structuredClone(fixture.good);
+    candidate.modules = [
+      {
+        title: '系统定位与语义表示基础',
+        learningIntent: 'Establish the system position and semantic representation foundation.',
+        regions: [candidate.modules[0]!.regions[0]!],
+      },
+      {
+        title: 'RAG 流程与权限工程体系',
+        learningIntent: 'Develop the RAG workflow, hallucination controls, and permissions.',
+        regions: [...candidate.modules[0]!.regions.slice(1), ...candidate.modules[1]!.regions],
+      },
+    ];
+    candidate.modules[0]!.regions[0]!.title = '系统定位与 RAG 全景';
+    candidate.modules[1]!.regions[0]!.title = 'RAG 流程与幻觉';
+    candidate.synthesisGroups = [];
+    const courseMap = analyzeCourseMapProposal(candidate, fixture).courseMap;
+    const sourceAllocation = structuredClone(fixture.sourceAllocation);
+    sourceAllocation.regions[0]!.title = '系统定位与 RAG 全景';
+    sourceAllocation.regions[1]!.title = 'RAG 流程与幻觉';
+
+    const validation = validateCourseMapSemanticCoherence(courseMap, sourceAllocation);
+
+    expect(validation.diagnosticCodes).not.toContain('semantic_topic_scattering');
+    expect(validation.valid).toBe(true);
+  });
+
+  it('recovers omitted coverage as a real region, never disposition-only bookkeeping', () => {
+    const fixture = createCourseMapFixture();
+    const candidate = structuredClone(fixture.good);
+    candidate.modules[1]!.regions.pop();
+    expect(candidate.sourceDispositions).toBeUndefined();
+    expect(
+      repairOmittedCourseMapCoverage(candidate, fixture.providerInput, fixture.sourceAllocation),
+    ).toBe(true);
+    expect(
+      candidate.modules.flatMap((module) => module.regions).map((region) => region.sourceRegionRef),
+    ).toContain('R6');
+    expect(candidate.sourceDispositions).toBeUndefined();
+    const repaired = analyzeCourseMapProposal(candidate, {
+      providerInput: fixture.providerInput,
+      sourceAllocation: fixture.sourceAllocation,
+    });
+    expect(
+      repaired.validation.diagnostics.some(
+        (diagnostic) => diagnostic.code === 'unallocated_source_region',
+      ),
+    ).toBe(false);
+  });
+
   it('is deterministic, complete, multi-Material, and bounded', () => {
     const fixture = createCourseMapFixture();
     const again = buildCourseMapSourceAllocation({

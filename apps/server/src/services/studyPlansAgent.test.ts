@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   type Curriculum,
   type LearningContract,
+  type StudyPlanItem,
   type LearningContractFeasibility,
   type StudyPlanProposalPayload,
 } from '@hy3-clinic/shared';
@@ -21,6 +22,7 @@ import {
   preflightStudyPlan,
   STUDY_PLAN_OPERATION_LEASE_MS,
 } from './studyPlansAgent.js';
+import { validateStudyPlanScopeAccounting } from './studyPlanValidation.js';
 import { createReviewSuccessorService } from './reviewSuccessor.js';
 
 const T1 = '2026-01-01T00:01:00.000Z';
@@ -355,6 +357,55 @@ function services(provider: CapturingPlanProvider, serviceClock: Clock = clock) 
 }
 
 describe('StudyPlan proposal and accepted Course route', () => {
+  it('allows synthesis items to account for objectives from every declared synthesis unit', () => {
+    const secondUnit = {
+      ...curriculum.nodes.find((node) => node.id === 'unit_1')!,
+      id: 'unit_2',
+      title: 'Working-memory transfer',
+      learningUnit: {
+        ...curriculum.nodes.find((node) => node.id === 'unit_1')!.learningUnit!,
+        objectives: [
+          {
+            id: 'objective_transfer',
+            title: 'Apply transfer',
+            description: 'Apply the source claim in a new situation.',
+            truthPremiseStatus: 'unverified' as const,
+            truthAuthorityRecordIds: [],
+          },
+        ],
+      },
+    };
+    const synthesisCurriculum: Curriculum = {
+      ...curriculum,
+      nodes: [...curriculum.nodes, secondUnit],
+      synthesisGroups: [
+        {
+          id: 'synthesis_1',
+          title: 'Cross-unit transfer',
+          level: 'course',
+          learningUnitIds: ['unit_1', 'unit_2'],
+          objectiveIds: ['objective_verified', 'objective_unverified', 'objective_transfer'],
+        },
+      ],
+    };
+    const item: StudyPlanItem = {
+      id: 'plan_synthesis',
+      index: 0,
+      phase: 'Core route',
+      kind: 'synthesis',
+      curriculumLearningUnitId: 'unit_1',
+      rationale: 'Connect both units.',
+      estimatedMinutes: 20,
+      targetDepth: 'working_fluency',
+      objectiveIds: ['objective_verified', 'objective_unverified', 'objective_transfer'],
+      prerequisitePlanItemIds: [],
+      completionPolicy: null,
+      completionRequirements: [],
+    };
+
+    expect(validateStudyPlanScopeAccounting(synthesisCurriculum, [item], [])).toEqual([]);
+  });
+
   it('reports source-only accepted Curriculum as blocked before provider work', () => {
     const sourceOnly: Curriculum = {
       ...curriculum,

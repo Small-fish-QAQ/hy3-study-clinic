@@ -1,10 +1,73 @@
 import { ApiErrorCode, type ApiErrorCodeValue } from '@hy3-clinic/shared';
-import type { StructuredOutputFailureCategory } from './provider.js';
+import type {
+  ProviderCandidateFailureArtifact,
+  ProviderCandidateFailureValue,
+  StructuredOutputFailureCategory,
+} from './provider.js';
 
 export type ProviderErrorCode = Extract<
   ApiErrorCodeValue,
   'PROVIDER_ERROR' | 'PROVIDER_TIMEOUT' | 'PROVIDER_INVALID_OUTPUT' | 'REQUEST_CANCELLED'
 >;
+
+const CANDIDATE_FAILURE_STRING_LIMIT = 500;
+const CANDIDATE_FAILURE_ARRAY_LIMIT = 20;
+const CANDIDATE_FAILURE_OBJECT_KEY_LIMIT = 30;
+const CANDIDATE_FAILURE_DEPTH_LIMIT = 4;
+const BLOCKED_CANDIDATE_FAILURE_KEY =
+  /authorization|api.?key|secret|token|prompt|raw|payload|body|stack/iu;
+
+function sanitizeCandidateFailureValue(
+  value: unknown,
+  depth = 0,
+): ProviderCandidateFailureValue | undefined {
+  if (depth > CANDIDATE_FAILURE_DEPTH_LIMIT) return undefined;
+  if (typeof value === 'string') return value.slice(0, CANDIDATE_FAILURE_STRING_LIMIT);
+  if (typeof value === 'number' || typeof value === 'boolean' || value === null) return value;
+  if (Array.isArray(value)) {
+    return value
+      .slice(0, CANDIDATE_FAILURE_ARRAY_LIMIT)
+      .map((item) => sanitizeCandidateFailureValue(item, depth + 1))
+      .filter((item): item is ProviderCandidateFailureValue => item !== undefined);
+  }
+  if (typeof value !== 'object') return undefined;
+  const safe: Record<string, ProviderCandidateFailureValue> = {};
+  for (const [key, item] of Object.entries(value).slice(0, CANDIDATE_FAILURE_OBJECT_KEY_LIMIT)) {
+    if (BLOCKED_CANDIDATE_FAILURE_KEY.test(key)) continue;
+    const sanitized = sanitizeCandidateFailureValue(item, depth + 1);
+    if (sanitized !== undefined) safe[key.slice(0, 100)] = sanitized;
+  }
+  return safe;
+}
+
+export function sanitizeProviderCandidateFailureArtifact(
+  artifact: unknown,
+): ProviderCandidateFailureArtifact | undefined {
+  if (!artifact || typeof artifact !== 'object' || Array.isArray(artifact)) return undefined;
+  const record = artifact as Record<string, unknown>;
+  if (typeof record.kind !== 'string' || !Array.isArray(record.diagnostics)) return undefined;
+  const context = record.context ? sanitizeCandidateFailureValue(record.context) : undefined;
+  const diagnostics = record.diagnostics
+    .slice(0, CANDIDATE_FAILURE_ARRAY_LIMIT)
+    .flatMap((value) => {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
+      const diagnostic = value as Record<string, unknown>;
+      if (typeof diagnostic.code !== 'string' || typeof diagnostic.message !== 'string') return [];
+      const facts = diagnostic.facts ? sanitizeCandidateFailureValue(diagnostic.facts) : undefined;
+      return [
+        {
+          code: diagnostic.code.slice(0, 100),
+          message: diagnostic.message.slice(0, CANDIDATE_FAILURE_STRING_LIMIT),
+          ...(facts && !Array.isArray(facts) && typeof facts === 'object' ? { facts } : {}),
+        },
+      ];
+    });
+  return {
+    kind: record.kind.slice(0, 100),
+    ...(context && !Array.isArray(context) && typeof context === 'object' ? { context } : {}),
+    diagnostics,
+  };
+}
 
 /**
  * Structured provider failure. Messages are user-facing and MUST NOT contain
@@ -39,13 +102,20 @@ export class ProviderError extends Error {
     validationKind?: 'schema' | 'candidate',
     failureCategory?: StructuredOutputFailureCategory,
     repairExhausted = false,
+    candidateFailure?: ProviderCandidateFailureArtifact,
   ): ProviderError {
+    const safeCandidateFailure = sanitizeProviderCandidateFailureArtifact(candidateFailure);
     return new ProviderError(
       ApiErrorCode.ProviderInvalidOutput,
       repairExhausted
         ? '模型返回的数据不符合约定格式,已在一次修复尝试后放弃。'
         : '模型返回的数据不符合约定格式。',
-      validationKind ? { validationKind } : undefined,
+      validationKind
+        ? {
+            validationKind,
+            ...(safeCandidateFailure ? { candidateFailure: safeCandidateFailure } : {}),
+          }
+        : undefined,
       failureCategory
         ? repairExhausted
           ? `REPAIR_EXHAUSTED:${failureCategory}`

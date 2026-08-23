@@ -6,7 +6,7 @@ import {
   type CourseExecutionCommandEnvelope,
 } from '@hy3-clinic/shared';
 import { AppError } from '../errors.js';
-import { ProviderError } from '../llm/errors.js';
+import { ProviderError, sanitizeProviderCandidateFailureArtifact } from '../llm/errors.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
@@ -60,7 +60,21 @@ function safeCommandFailure(error: unknown): SafeCommandFailure {
       code: error.code,
       message: error.message.slice(0, FAILURE_MESSAGE_LIMIT),
     };
-    const details = sanitizeFailureDetails(error.details);
+    let details = sanitizeFailureDetails(error.details);
+    if (
+      error instanceof ProviderError &&
+      error.details &&
+      typeof error.details === 'object' &&
+      !Array.isArray(error.details) &&
+      details &&
+      typeof details === 'object' &&
+      !Array.isArray(details)
+    ) {
+      const candidateFailure = sanitizeProviderCandidateFailureArtifact(
+        (error.details as Record<string, unknown>).candidateFailure,
+      );
+      if (candidateFailure) details = { ...details, candidateFailure };
+    }
     if (details !== undefined && JSON.stringify(details).length <= FAILURE_DETAILS_JSON_LIMIT) {
       failure.details = details;
     }

@@ -14,6 +14,7 @@ import {
   buildCurriculumEvidenceCatalog,
   buildCurriculumEvidenceSignalRankings,
   CURRICULUM_EVIDENCE_EXCERPT_MAX_CHARS,
+  CURRICULUM_PROVIDER_APPLY_PROCEDURE_BLOCK_RESERVE,
   CURRICULUM_PROVIDER_EVIDENCE_BLOCK_BUDGET,
   CURRICULUM_PROVIDER_EVIDENCE_OFFER_BUDGET,
   evaluateCurriculumEvidenceRecallAtBudgets,
@@ -848,6 +849,92 @@ describe('Curriculum evidence catalog', () => {
     );
     expect(traced.offers.every((offer, index) => offer.id === `E${index + 1}`)).toBe(true);
     expect(selectCurriculumEvidenceOffers(input)).toEqual(traced.offers);
+  });
+
+  it('reserves an exact apply-procedure offer beyond the ordinary block budget', () => {
+    const procedure = '必须：先检索 → 按权限过滤 → 再给模型。';
+    const blocks = Array.from({ length: 170 }, (_, index): SourceBlock => {
+      const content =
+        index === 169
+          ? `边界资料。${procedure}仅限这个来源语境。`
+          : `Ordinary evidence ${index}. ${'bounded detail '.repeat(30)}`;
+      return {
+        ...block,
+        id: `procedure_budget_block_${index}`,
+        index,
+        heading: `Section ${index}`,
+        headingPath: [`Section ${index}`],
+        content,
+        endOffset: content.length,
+      };
+    });
+    const procedureBlock = blocks.at(-1)!;
+    const procedureStart = procedureBlock.content.indexOf(procedure);
+    const procedureGrounding: VerifiedGrounding = {
+      blockId: procedureBlock.id,
+      quote: procedure,
+      startOffset: procedureStart,
+      endOffset: procedureStart + procedure.length,
+      occurrenceCount: 1,
+      reanchored: false,
+    };
+    const budgetManifest: ExecutionSourceManifest = {
+      ...manifest,
+      revisions: [
+        { ...manifest.revisions[0]!, sourceBlockRevisionIds: blocks.map((item) => item.id) },
+      ],
+    };
+    const catalog = buildCurriculumEvidenceCatalog({
+      workspaceId: 'ws_a',
+      manifest: budgetManifest,
+      blocks,
+      preferredGroundings: [procedureGrounding],
+    });
+    const input: CurriculumEvidenceSelectionInput = {
+      catalog,
+      blocks,
+      predecessor: null,
+      concepts: [],
+      contract: {
+        intent: 'Master the bounded source',
+        targetOutcome: { description: 'Explain and apply the core procedures' },
+        courseScope: { includedTopics: [] },
+      } as unknown as LearningContract,
+      priorityGroundings: [],
+    };
+
+    expect(
+      selectCurriculumEvidenceOffers(input).some(
+        (offer) => offer.blockId === procedureBlock.id && offer.quote === procedure,
+      ),
+    ).toBe(false);
+
+    const traced = selectCurriculumEvidenceOffersWithTrace({
+      ...input,
+      applyProcedureGroundings: [procedureGrounding],
+    });
+
+    expect(CURRICULUM_PROVIDER_APPLY_PROCEDURE_BLOCK_RESERVE).toBeGreaterThan(0);
+    expect(traced.offers[0]).toMatchObject({
+      id: 'E1',
+      blockId: procedureBlock.id,
+      quote: procedure,
+    });
+    expect(traced.trace.counts.candidateBlocks).toBe(CURRICULUM_PROVIDER_EVIDENCE_BLOCK_BUDGET);
+    expect(traced.trace.counts.offeredEvidence).toBeLessThanOrEqual(
+      CURRICULUM_PROVIDER_EVIDENCE_OFFER_BUDGET,
+    );
+    expect(traced.trace.priorityOrdering).toMatchObject({
+      effect: 'offer_ordering_and_apply_procedure_block_reserve',
+      requestedApplyProcedureGroundingCount: 1,
+      matchingApplyProcedureOfferCount: 1,
+      reservedApplyProcedureBlockCount: 1,
+      selectedApplyProcedureOfferCount: 1,
+    });
+    expect(traced.trace.blocks[0]).toMatchObject({
+      blockId: procedureBlock.id,
+      policySelectionReason: 'apply_procedure_reserve',
+    });
   });
 
   it('attributes deterministic fallback widening without treating it as authority', () => {

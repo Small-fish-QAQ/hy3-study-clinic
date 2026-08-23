@@ -4,6 +4,7 @@ import {
   CURRICULUM_SEMANTIC_EVALUATOR_POLICY_VERSION,
   evaluateCurriculumSemantics,
   evaluateCurriculumWithBoundedRepair,
+  hasCurriculumSemanticAnchor,
   type CurriculumSemanticSourceRegion,
 } from './curriculumSemanticEvaluator.js';
 import {
@@ -122,6 +123,14 @@ function regions(count: number): CurriculumSemanticSourceRegion[] {
 }
 
 describe('independent Curriculum semantic evaluator', () => {
+  it('uses controlled domain aliases without equating retrieval with permissions', () => {
+    expect(hasCurriculumSemanticAnchor('递归分隔符按优先级执行', ['文档切片原理'])).toBe(true);
+    expect(hasCurriculumSemanticAnchor('解释忠实性与正确性区别', ['RAG 幻觉控制'])).toBe(true);
+    expect(
+      hasCurriculumSemanticAnchor('IVF query 搜索 centroid 与 nprobe', ['权限模型与后端安全']),
+    ).toBe(false);
+  });
+
   it('rejects unexplained discontinuous numbering such as 1 -> 3 -> 5 -> 7', () => {
     const result = evaluateCurriculumSemantics({
       curriculum: curriculum([
@@ -138,6 +147,19 @@ describe('independent Curriculum semantic evaluator', () => {
     expect(result.evaluation.policyVersion).toBe(CURRICULUM_SEMANTIC_EVALUATOR_POLICY_VERSION);
     expect(result.evaluation.status).toBe('fail');
     expect(result.evaluation.findings.map((finding) => finding.code)).toContain(
+      'structural_numbering_discontinuity',
+    );
+  });
+
+  it('does not collapse decimal sibling numbering such as 7.1 -> 7.2 -> 7.3 into repeated 7s', () => {
+    const result = evaluateCurriculumSemantics({
+      curriculum: curriculum(['7.1 Retrieval permissions', '7.2 Tool permissions', '7.3 Audit']),
+      sourceMapFingerprint: 'source-map',
+      sourceRegions: regions(3),
+      scope: 'intentional_scope',
+      evaluatedAt,
+    });
+    expect(result.evaluation.findings.map((finding) => finding.code)).not.toContain(
       'structural_numbering_discontinuity',
     );
   });
@@ -213,6 +235,85 @@ describe('independent Curriculum semantic evaluator', () => {
     expect(result.evaluation.findings.map((finding) => finding.code)).not.toContain(
       'semantic_topic_scattering',
     );
+  });
+
+  it('does not treat a corpus-wide domain label as focused topic scattering', () => {
+    const candidate = curriculum(['RAG foundations', 'RAG retrieval', 'RAG evaluation']);
+    candidate.nodes[1]!.id = 'chapter-foundations';
+    candidate.nodes[1]!.title = 'RAG foundations';
+    candidate.nodes[2]!.parentId = 'chapter-foundations';
+    candidate.nodes.push(
+      {
+        id: 'chapter-retrieval',
+        parentId: 'course',
+        kind: 'chapter',
+        index: 1,
+        title: 'RAG retrieval',
+        sourceReferences: [],
+        learningUnit: null,
+      },
+      {
+        id: 'chapter-evaluation',
+        parentId: 'course',
+        kind: 'chapter',
+        index: 2,
+        title: 'RAG evaluation',
+        sourceReferences: [],
+        learningUnit: null,
+      },
+    );
+    candidate.nodes[3]!.parentId = 'chapter-retrieval';
+    candidate.nodes[4]!.parentId = 'chapter-evaluation';
+    const source = regions(3);
+    source[0]!.title = 'RAG foundations';
+    source[1]!.title = 'RAG retrieval';
+    source[2]!.title = 'RAG evaluation';
+
+    const result = evaluateCurriculumSemantics({
+      curriculum: candidate,
+      sourceMapFingerprint: 'source-map',
+      sourceRegions: source,
+      scope: 'systematic_mastery',
+      evaluatedAt,
+    });
+
+    expect(result.evaluation.findings.map((finding) => finding.code)).not.toContain(
+      'semantic_topic_scattering',
+    );
+    expect(result.evaluation.status).toBe('pass');
+  });
+
+  it('does not use the RAG domain label alone to merge two coherent source regions', () => {
+    const candidate = curriculum(['系统定位与语义表示基础', 'RAG 流程与权限工程体系']);
+    candidate.nodes[1]!.id = 'chapter-system';
+    candidate.nodes[1]!.title = '系统定位与语义表示基础';
+    candidate.nodes[2]!.parentId = 'chapter-system';
+    candidate.nodes.push({
+      id: 'chapter-rag-workflow',
+      parentId: 'course',
+      kind: 'chapter',
+      index: 1,
+      title: 'RAG 流程与权限工程体系',
+      sourceReferences: [],
+      learningUnit: null,
+    });
+    candidate.nodes[3]!.parentId = 'chapter-rag-workflow';
+    const source = regions(2);
+    source[0]!.title = '系统定位与 RAG 全景';
+    source[1]!.title = 'RAG 流程与幻觉';
+
+    const result = evaluateCurriculumSemantics({
+      curriculum: candidate,
+      sourceMapFingerprint: 'source-map',
+      sourceRegions: source,
+      scope: 'systematic_mastery',
+      evaluatedAt,
+    });
+
+    expect(result.evaluation.findings.map((finding) => finding.code)).not.toContain(
+      'semantic_topic_scattering',
+    );
+    expect(result.evaluation.status).toBe('pass');
   });
 
   it('does not reject a concise coherent course solely for being small', () => {

@@ -6,9 +6,9 @@ import {
   type CourseMap,
   type CourseMapSourceAllocation,
   type CurriculumAuthorityEnvelope,
-  type FormalAssessmentConstruct,
   type CurriculumDetailProposalPayload,
   type CurriculumProposalPayload,
+  type SourceBlock,
 } from '@hy3-clinic/shared';
 import type {
   CurriculumCanonicalConceptOffer,
@@ -16,11 +16,19 @@ import type {
   CurriculumDetailProposalInput,
   CurriculumDetailRegionInput,
   CurriculumEvidenceOffer,
+  ProviderCandidateFailureArtifact,
   ProviderCandidateValidation,
 } from '../llm/provider.js';
 import { measureCurriculumDetailRequest } from '../llm/prompts.js';
 import { assertCourseMapSourceAllocationIntegrity } from './courseMap.js';
-import { detectFormalConstruct, isConstructSupported } from './curriculumAuthority.js';
+import { hasCurriculumSemanticAnchor } from './curriculumSemanticEvaluator.js';
+import {
+  curriculumTargetRequestsApplication,
+  detectFormalConstruct,
+  formatNarrowedFormalObjective,
+  isFormalObjectiveSupported,
+  strongestNarrowableConstruct,
+} from './curriculumAuthority.js';
 
 export const MAX_DETAIL_BATCHES = 2;
 export const MAX_DETAIL_REGIONS_PER_BATCH = 50;
@@ -39,6 +47,7 @@ export interface CurriculumDetailPlanningInput {
   concepts: Concept[];
   canonicalConcepts: CurriculumCanonicalConceptOffer[];
   authorityEnvelopesByRegionId?: Map<string, CurriculumAuthorityEnvelope>;
+  authorityEnvelopesByEvidenceId?: Map<string, CurriculumAuthorityEnvelope>;
 }
 
 export interface CurriculumDetailBatch {
@@ -46,6 +55,44 @@ export interface CurriculumDetailBatch {
   input: CurriculumDetailProposalInput;
   requestBytes: number;
   outputEstimateBytes: number;
+}
+
+/**
+ * Preserve the server-owned Course Map allocation as exact final-node
+ * membership. This is navigation/provenance identity only; it does not prove
+ * that every block semantically entails every generated objective.
+ */
+export function buildCourseMapDeterministicCoverage(
+  courseMap: CourseMap,
+  sourceAllocation: CourseMapSourceAllocation,
+  blocks: readonly SourceBlock[],
+): Map<string, { structuralUnitIds: string[]; sourceBlockIds: string[] }> {
+  assertCourseMapSourceAllocationIntegrity(sourceAllocation);
+  const allocationById = new Map(sourceAllocation.regions.map((region) => [region.id, region]));
+  const blockById = new Map(blocks.map((block) => [block.id, block]));
+  const result = new Map<string, { structuralUnitIds: string[]; sourceBlockIds: string[] }>();
+  let regionIndex = 0;
+  for (const module of courseMap.modules) {
+    for (const region of module.regions) {
+      const sourceBlockIds = [
+        ...new Set(
+          region.sourceAllocationRegionIds.flatMap(
+            (allocationId) => allocationById.get(allocationId)?.sourceBlockIds ?? [],
+          ),
+        ),
+      ];
+      const structuralUnitIds = [
+        ...new Set(
+          sourceBlockIds
+            .map((blockId) => blockById.get(blockId)?.structuralUnitId ?? null)
+            .filter((id): id is string => id !== null),
+        ),
+      ];
+      result.set(`course-map-unit-${regionIndex + 1}`, { structuralUnitIds, sourceBlockIds });
+      regionIndex += 1;
+    }
+  }
+  return result;
 }
 
 export class CurriculumDetailBatchPlanningError extends Error {
@@ -124,6 +171,9 @@ function buildDetailRegions(input: CurriculumDetailPlanningInput): CurriculumDet
             evidenceId: offer.id,
             sourceAllocationRegionId: allocation!.id,
             text: offer.quote,
+            ...(input.authorityEnvelopesByEvidenceId?.has(offer.id)
+              ? { authorityEnvelope: input.authorityEnvelopesByEvidenceId.get(offer.id) }
+              : {}),
           };
         }),
       );
@@ -309,24 +359,61 @@ export function validateCurriculumDetailCandidate(
 ): ProviderCandidateValidation {
   const parsed = CurriculumDetailProposalPayloadSchema.safeParse(candidate);
   if (!parsed.success) {
+    const issues = parsed.error.issues.slice(0, 100);
     return {
       valid: false,
-      diagnostics: parsed.error.issues.map(
-        (issue) => `${issue.path.join('.') || 'payload'}: ${issue.message}`,
-      ),
-      diagnosticCodes: parsed.error.issues.map((issue) => `schema_${issue.code}`),
+      diagnostics: issues.map((issue) => `${issue.path.join('.') || 'payload'}: ${issue.message}`),
+      diagnosticCodes: issues.map((issue) => `schema_${issue.code}`),
+      failureArtifact: {
+        kind: 'curriculum_detail_candidate_validation_failed',
+        context: {
+          courseMapId: input.courseMapId,
+          batchKey: input.batchKey,
+        },
+        diagnostics: issues.slice(0, 20).map((issue) => ({
+          code: `schema_${issue.code}`,
+          message: `${issue.path.join('.') || 'payload'}: ${issue.message}`,
+          facts: {
+            path: issue.path.map(String),
+          },
+        })),
+      },
     };
   }
   const diagnostics: string[] = [];
   const diagnosticCodes: string[] = [];
+  const failureDiagnostics: ProviderCandidateFailureArtifact['diagnostics'] = [];
+  const addDiagnostic = (
+    code: string,
+    message: string,
+    facts?: ProviderCandidateFailureArtifact['diagnostics'][number]['facts'],
+  ) => {
+    diagnostics.push(message);
+    diagnosticCodes.push(code);
+    if (failureDiagnostics.length < 20) {
+      failureDiagnostics.push({ code, message, ...(facts ? { facts } : {}) });
+    }
+  };
   const payload = parsed.data;
   if (payload.courseMapId !== input.courseMapId) {
-    diagnostics.push('Curriculum detail response references a foreign Course Map.');
-    diagnosticCodes.push('foreign_course_map');
+    addDiagnostic(
+      'foreign_course_map',
+      'Curriculum detail response references a foreign Course Map.',
+      {
+        expectedCourseMapId: input.courseMapId,
+        actualCourseMapId: payload.courseMapId,
+      },
+    );
   }
   if (payload.sourceAllocationFingerprint !== input.sourceAllocationFingerprint) {
-    diagnostics.push('Curriculum detail response has a stale source-allocation fingerprint.');
-    diagnosticCodes.push('source_allocation_fingerprint_mismatch');
+    addDiagnostic(
+      'source_allocation_fingerprint_mismatch',
+      'Curriculum detail response has a stale source-allocation fingerprint.',
+      {
+        expectedSourceAllocationFingerprint: input.sourceAllocationFingerprint,
+        actualSourceAllocationFingerprint: payload.sourceAllocationFingerprint,
+      },
+    );
   }
   const expectedRegionIds = input.regions.map((region) => region.regionId);
   const actualRegionIds = payload.units.map((unit) => unit.regionId);
@@ -334,43 +421,122 @@ export function validateCurriculumDetailCandidate(
     actualRegionIds.length !== expectedRegionIds.length ||
     actualRegionIds.some((id, index) => id !== expectedRegionIds[index])
   ) {
-    diagnostics.push(
+    addDiagnostic(
+      'region_set_or_order_mismatch',
       'Curriculum detail response must represent every offered region exactly once in order.',
+      {
+        expectedRegionIds,
+        actualRegionIds,
+      },
     );
-    diagnosticCodes.push('region_set_or_order_mismatch');
   }
   const regionById = new Map(input.regions.map((region) => [region.regionId, region] as const));
   for (const unit of payload.units) {
     const region = regionById.get(unit.regionId);
     if (!region) {
-      diagnostics.push(`Curriculum detail response contains an unknown region: ${unit.regionId}.`);
-      diagnosticCodes.push('unknown_region');
+      addDiagnostic(
+        'unknown_region',
+        `Curriculum detail response contains an unknown region: ${unit.regionId}.`,
+        { regionId: unit.regionId },
+      );
       continue;
-    }
-    if (region.authorityEnvelope) {
-      for (const objective of unit.objectives) {
-        if (objective.priority !== 'required') continue;
-        const construct = detectFormalConstruct(`${objective.title} ${objective.description}`);
-        if (isConstructSupported(construct, region.authorityEnvelope)) continue;
-        diagnostics.push(
-          `required_objective_formal_authority_missing: objective ${objective.key} claims ${construct}, but source region ${region.regionId} supports ${region.authorityEnvelope.supportedConstructs.join(', ') || 'no formal construct'}; narrowerClaim=${region.authorityEnvelope.narrowerClaim ?? 'none'}; protectedPriority=required.`,
-        );
-        diagnosticCodes.push('required_objective_formal_authority_missing');
-      }
     }
     const evidenceById = new Map(
       region.evidence.map((offer) => [offer.evidenceId, offer] as const),
     );
+    const selectedAuthorityEnvelopes = (objective: (typeof unit.objectives)[number]) => {
+      const exact = objective.evidence.flatMap((selection) => {
+        const envelope = evidenceById.get(selection.evidenceId)?.authorityEnvelope;
+        return envelope ? [envelope] : [];
+      });
+      return exact.length > 0 ? exact : region.authorityEnvelope ? [region.authorityEnvelope] : [];
+    };
+    const siblingUnitTitles = payload.units
+      .filter((candidate) => candidate.regionId !== unit.regionId)
+      .map((candidate) => candidate.title);
+    const requiredObjectives = unit.objectives.filter(
+      (objective) => objective.priority === 'required',
+    );
+    const ownAnchoredRequiredObjectiveCount = requiredObjectives.filter((objective) =>
+      hasCurriculumSemanticAnchor(`${objective.title} ${objective.description}`, [unit.title]),
+    ).length;
+    for (const objective of unit.objectives) {
+      if (objective.priority !== 'required') continue;
+      const objectiveClaim = `${objective.title} ${objective.description}`;
+      const matchingSiblingUnitTitles = siblingUnitTitles.filter((title) =>
+        hasCurriculumSemanticAnchor(objectiveClaim, [title]),
+      );
+      if (!hasCurriculumSemanticAnchor(objectiveClaim, [unit.title])) {
+        addDiagnostic(
+          'required_objective_parent_topic_mismatch',
+          `Required objective ${objective.key} has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.`,
+          {
+            courseMapRegionId: region.regionId,
+            learningUnitTitle: unit.title,
+            objectiveKey: objective.key,
+            objectiveTitle: objective.title,
+            ownAnchoredRequiredObjectiveCount,
+            matchingSiblingUnitTitles: matchingSiblingUnitTitles.slice(0, 20),
+          },
+        );
+      }
+    }
+    if (region.authorityEnvelope || region.evidence.some((offer) => offer.authorityEnvelope)) {
+      for (const objective of unit.objectives) {
+        if (objective.priority !== 'required') continue;
+        const construct = detectFormalConstruct(`${objective.title} ${objective.description}`);
+        const envelopes = selectedAuthorityEnvelopes(objective);
+        const objectiveClaim = `${objective.title} ${objective.description}`;
+        if (envelopes.some((envelope) => isFormalObjectiveSupported(objectiveClaim, envelope))) {
+          continue;
+        }
+        const repairEnvelope =
+          envelopes.find((envelope) => envelope.supportedConstructs.includes('apply')) ??
+          envelopes.find((envelope) => envelope.supportedConstructs.includes('explain')) ??
+          envelopes.find((envelope) => envelope.supportedConstructs.includes('identify')) ??
+          envelopes[0];
+        const message = `required_objective_formal_authority_missing: objective ${objective.key} claims ${construct}, but its exact selected evidence in source region ${region.regionId} supports ${repairEnvelope?.supportedConstructs.join(', ') || 'no formal construct'}; narrowerClaim=${repairEnvelope?.narrowerClaim ?? 'none'}; protectedPriority=required.`;
+        addDiagnostic('required_objective_formal_authority_missing', message, {
+          courseMapRegionId: region.regionId,
+          objectiveKey: objective.key,
+          claimedConstruct: construct,
+          protectedPriority: objective.priority,
+          selectedEvidenceIds: objective.evidence.map((selection) => selection.evidenceId),
+          selectedEvidenceAuthority: objective.evidence.map((selection) => {
+            const offer = evidenceById.get(selection.evidenceId);
+            const envelope = offer?.authorityEnvelope;
+            return {
+              evidenceId: selection.evidenceId,
+              sourceAllocationRegionId: offer?.sourceAllocationRegionId ?? null,
+              available: Boolean(offer),
+              authorityTier: envelope?.tier ?? null,
+              supportedConstructs: envelope?.supportedConstructs ?? [],
+              strongestSupportedConstruct: envelope?.strongestSupportedConstruct ?? null,
+              formalEvidenceCount: envelope?.formalEvidenceIds.length ?? 0,
+              narrowerClaim: envelope?.narrowerClaim ?? null,
+            };
+          }),
+          repairAuthorityTier: repairEnvelope?.tier ?? null,
+          repairSupportedConstructs: repairEnvelope?.supportedConstructs ?? [],
+          repairNarrowerClaim: repairEnvelope?.narrowerClaim ?? null,
+        });
+      }
+    }
     const selectedEvidenceIds = [
       ...unit.sourceEvidence.map((item) => item.evidenceId),
       ...unit.objectives.flatMap((objective) => objective.evidence.map((item) => item.evidenceId)),
     ];
     for (const evidenceId of selectedEvidenceIds) {
       if (!evidenceById.has(evidenceId)) {
-        diagnostics.push(
+        addDiagnostic(
+          'unknown_evidence',
           `Curriculum detail region ${unit.regionId} selected unknown or foreign evidence: ${evidenceId}.`,
+          {
+            courseMapRegionId: unit.regionId,
+            evidenceId,
+            selectedEvidenceIds,
+          },
         );
-        diagnosticCodes.push('unknown_evidence');
       }
     }
     const selectedSourceRegionIds = new Set(
@@ -381,35 +547,111 @@ export function validateCurriculumDetailCandidate(
     );
     for (const sourceRegionId of region.sourceAllocationRegionIds) {
       if (!selectedSourceRegionIds.has(sourceRegionId)) {
-        diagnostics.push(
+        addDiagnostic(
+          'source_allocation_omitted',
           `Curriculum detail region ${unit.regionId} does not represent source allocation ${sourceRegionId}.`,
+          {
+            courseMapRegionId: unit.regionId,
+            omittedSourceAllocationRegionId: sourceRegionId,
+            requiredSourceAllocationRegionIds: region.sourceAllocationRegionIds,
+            selectedUnitEvidenceIds: unit.sourceEvidence.map((item) => item.evidenceId),
+            representedSourceAllocationRegionIds: [...selectedSourceRegionIds],
+          },
         );
-        diagnosticCodes.push('source_allocation_omitted');
       }
     }
     const allowedConceptIds = new Set(region.concepts.map((concept) => concept.id));
     for (const conceptId of unit.conceptIds) {
       if (!allowedConceptIds.has(conceptId)) {
-        diagnostics.push(
+        addDiagnostic(
+          'unknown_concept',
           `Curriculum detail region ${unit.regionId} selected an unknown Concept: ${conceptId}.`,
+          {
+            courseMapRegionId: unit.regionId,
+            conceptId,
+          },
         );
-        diagnosticCodes.push('unknown_concept');
       }
     }
     const allowedCanonicalIds = new Set(region.canonicalConcepts.map((canonical) => canonical.id));
     for (const canonicalId of unit.canonicalConceptIds) {
       if (!allowedCanonicalIds.has(canonicalId)) {
-        diagnostics.push(
+        addDiagnostic(
+          'unknown_canonical_concept',
           `Curriculum detail region ${unit.regionId} selected an unknown canonical Concept: ${canonicalId}.`,
+          {
+            courseMapRegionId: unit.regionId,
+            canonicalConceptId: canonicalId,
+          },
         );
-        diagnosticCodes.push('unknown_canonical_concept');
       }
+    }
+  }
+  const applyEvidenceOffers = input.regions.flatMap((region) =>
+    region.evidence
+      .filter((offer) => offer.authorityEnvelope?.supportedConstructs.includes('apply'))
+      .map((offer) => ({ regionId: region.regionId, offer })),
+  );
+  if (
+    curriculumTargetRequestsApplication(input.contract.targetOutcome.description) &&
+    applyEvidenceOffers.length > 0
+  ) {
+    const regionByIdForApply = new Map(
+      input.regions.map((region) => [region.regionId, region] as const),
+    );
+    const hasBoundedRequiredApply = payload.units.some((unit) => {
+      const region = regionByIdForApply.get(unit.regionId);
+      if (!region) return false;
+      const evidenceById = new Map(
+        region.evidence.map((offer) => [offer.evidenceId, offer] as const),
+      );
+      return unit.objectives.some((objective) => {
+        const claim = `${objective.title} ${objective.description}`;
+        if (objective.priority !== 'required' || detectFormalConstruct(claim) !== 'apply') {
+          return false;
+        }
+        return objective.evidence.some((selection) => {
+          const envelope = evidenceById.get(selection.evidenceId)?.authorityEnvelope;
+          return envelope ? isFormalObjectiveSupported(claim, envelope) : false;
+        });
+      });
+    });
+    if (!hasBoundedRequiredApply) {
+      addDiagnostic(
+        'required_target_apply_missing',
+        'The learner target explicitly requires application, exact source-stated procedure authority is available, but the detail candidate contains no required apply objective bounded to that procedure.',
+        {
+          targetOutcome: input.contract.targetOutcome.description,
+          availableProcedureEvidence: applyEvidenceOffers
+            .slice(0, 20)
+            .map(({ regionId, offer }) => ({
+              courseMapRegionId: regionId,
+              evidenceId: offer.evidenceId,
+              sourceAllocationRegionId: offer.sourceAllocationRegionId,
+              supportedConstructs: offer.authorityEnvelope?.supportedConstructs ?? [],
+              narrowerClaim: offer.authorityEnvelope?.narrowerClaim ?? null,
+            })),
+        },
+      );
     }
   }
   return {
     valid: diagnostics.length === 0,
     diagnostics: diagnostics.slice(0, 100),
     diagnosticCodes: diagnosticCodes.slice(0, 100),
+    ...(failureDiagnostics.length > 0
+      ? {
+          failureArtifact: {
+            kind: 'curriculum_detail_candidate_validation_failed',
+            context: {
+              courseMapId: input.courseMapId,
+              batchKey: input.batchKey,
+              sourceAllocationFingerprint: input.sourceAllocationFingerprint,
+            },
+            diagnostics: failureDiagnostics,
+          },
+        }
+      : {}),
   };
 }
 
@@ -421,30 +663,42 @@ export function repairCurriculumDetailAuthorityCandidate(
   const parsed = CurriculumDetailProposalPayloadSchema.parse(candidate);
   let repaired = false;
   for (const unit of parsed.units) {
-    const envelope = input.regions.find(
-      (region) => region.regionId === unit.regionId,
-    )?.authorityEnvelope;
-    if (!envelope) continue;
+    const region = input.regions.find((candidate) => candidate.regionId === unit.regionId);
+    if (!region) continue;
+    const evidenceById = new Map(
+      region.evidence.map((offer) => [offer.evidenceId, offer] as const),
+    );
     for (const objective of unit.objectives) {
       if (objective.priority !== 'required') continue;
-      const construct = detectFormalConstruct(`${objective.title} ${objective.description}`);
+      const exactEnvelopes = objective.evidence.flatMap((selection) => {
+        const envelope = evidenceById.get(selection.evidenceId)?.authorityEnvelope;
+        return envelope ? [envelope] : [];
+      });
+      const envelopes =
+        exactEnvelopes.length > 0
+          ? exactEnvelopes
+          : region.authorityEnvelope
+            ? [region.authorityEnvelope]
+            : [];
+      const envelope =
+        envelopes.find((candidate) => candidate.supportedConstructs.includes('apply')) ??
+        envelopes.find((candidate) => candidate.supportedConstructs.includes('explain')) ??
+        envelopes.find((candidate) => candidate.supportedConstructs.includes('identify'));
       if (
-        isConstructSupported(construct, envelope) ||
+        envelopes.some((candidate) =>
+          isFormalObjectiveSupported(`${objective.title} ${objective.description}`, candidate),
+        ) ||
+        !envelope ||
         !envelope.narrowerClaim ||
         (envelope.tier !== 'formal_sufficient' && envelope.tier !== 'narrower_formal') ||
         envelope.supportedConstructs.length === 0
       )
         continue;
-      const narrowerConstruct: FormalAssessmentConstruct = envelope.supportedConstructs.includes(
-        'explain',
-      )
-        ? 'explain'
-        : 'identify';
-      const verb = narrowerConstruct === 'explain' ? 'Explain' : 'Identify';
-      const claim = envelope.narrowerClaim.slice(0, 500);
-      objective.title = `${verb} the source-supported claim: ${claim}`.slice(0, 300);
-      objective.description =
-        `${verb} only what the current source explicitly states: ${claim}`.slice(0, 1_000);
+      const narrowerConstruct = strongestNarrowableConstruct(envelope);
+      if (!narrowerConstruct) continue;
+      const wording = formatNarrowedFormalObjective(narrowerConstruct, envelope.narrowerClaim);
+      objective.title = wording.title;
+      objective.description = wording.description;
       repaired = true;
     }
   }

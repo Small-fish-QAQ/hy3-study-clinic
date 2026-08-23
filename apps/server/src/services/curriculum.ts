@@ -15,6 +15,7 @@ import {
   type CurriculumCoverageWarning,
   type CurriculumProposalPayload,
   type CurriculumDetailProposalPayload,
+  type CourseMap,
   type CurriculumAuthorityEnvelope,
   type CurriculumHierarchyView,
   type CurriculumHistoryResponse,
@@ -29,6 +30,7 @@ import {
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import { ProviderError } from '../llm/errors.js';
+import { MAX_STRUCTURED_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL } from '../llm/provider.js';
 import type {
   CurriculumContractContext,
   CurriculumOutlineItem,
@@ -48,6 +50,7 @@ import {
   materializeCurriculumProposal,
   repairCurriculumAuthorityCandidate,
   type CurriculumValidationContext,
+  type CurriculumDeterministicCoverageMembership,
   type MaterializedCurriculum,
 } from './curriculumValidation.js';
 import {
@@ -83,12 +86,17 @@ import {
   CurriculumDetailBatchPlanningError,
   MAX_DETAIL_BATCHES,
   assembleCurriculumDetailBatches,
+  buildCourseMapDeterministicCoverage,
   planCurriculumDetailBatches,
   repairCurriculumDetailAuthorityCandidate,
   validateCurriculumDetailCandidate,
 } from './curriculumMaterialization.js';
 import { visualAwareManifestFingerprint } from './advisoryVisuals.js';
-import { buildCurriculumAuthorityEnvelope } from './curriculumAuthority.js';
+import {
+  buildCurriculumAuthorityEnvelope,
+  curriculumTargetRequestsApplication,
+  selectApplyCapableProcedureGroundings,
+} from './curriculumAuthority.js';
 
 /** HTTP/service request: the server, never the client, resolves exact revisions. */
 export const ProposeCurriculumCommandRequestSchema = ProposeCurriculumRequestSchema.omit({
@@ -143,7 +151,8 @@ export function curriculumGenerationPolicyForOutline(
   return requested;
 }
 export const CURRICULUM_MAX_LOGICAL_PROVIDER_CALLS = 1 + MAX_DETAIL_BATCHES;
-export const CURRICULUM_MAX_PHYSICAL_PROVIDER_CALLS = CURRICULUM_MAX_LOGICAL_PROVIDER_CALLS * 2;
+export const CURRICULUM_MAX_PHYSICAL_PROVIDER_CALLS =
+  CURRICULUM_MAX_LOGICAL_PROVIDER_CALLS * MAX_STRUCTURED_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL;
 export const CURRICULUM_OPERATION_LEASE_MS =
   CURRICULUM_PROVIDER_TIMEOUT_MS * CURRICULUM_MAX_PHYSICAL_PROVIDER_CALLS +
   PROVIDER_REPAIR_LEASE_MARGIN_MS;
@@ -224,7 +233,7 @@ export function curriculumOperationLeaseMs(
   }
   const physicalCalls =
     generationPolicy === LEGACY_CURRICULUM_GENERATION_POLICY
-      ? 2
+      ? MAX_STRUCTURED_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL
       : CURRICULUM_MAX_PHYSICAL_PROVIDER_CALLS;
   return timeoutMs * physicalCalls + PROVIDER_REPAIR_LEASE_MARGIN_MS;
 }
@@ -522,6 +531,67 @@ function buildAuthorityEnvelopeMap(
         sourceRegionId: region.id,
         sourceBlockIds: region.sourceBlockIds,
         evidence: evidenceCatalog.filter((offer) => region.sourceBlockIds.includes(offer.blockId)),
+        authorityBundles: context.authorityBundles,
+        isBlockingEligible: (authorityRecordId) =>
+          repos.sourceAuthority.isBlockingEligible(authorityRecordId),
+      }),
+    ]),
+  );
+}
+
+/**
+ * Detail requests are keyed by server-owned Course Map region ids, while the
+ * initial Course Map request is keyed by source-allocation region ids. Keep
+ * that identity boundary explicit and derive one envelope over every
+ * allocation represented by each final Course Map region.
+ */
+export function buildCourseMapRegionAuthorityEnvelopeMap(
+  courseMap: CourseMap,
+  sourceAllocation: { regions: Array<{ id: string; sourceBlockIds: string[] }> },
+  evidenceCatalog: ReturnType<typeof selectCurriculumEvidenceOffers>,
+  context: ReturnType<typeof buildCurriculumExecutionContext>,
+  repos: Repositories,
+): Map<string, CurriculumAuthorityEnvelope> {
+  const allocationById = new Map(sourceAllocation.regions.map((region) => [region.id, region]));
+  return new Map(
+    courseMap.modules.flatMap((module) =>
+      module.regions.map((region) => {
+        const sourceBlockIds = [
+          ...new Set(
+            region.sourceAllocationRegionIds.flatMap(
+              (allocationId) => allocationById.get(allocationId)?.sourceBlockIds ?? [],
+            ),
+          ),
+        ];
+        return [
+          region.id,
+          buildCurriculumAuthorityEnvelope({
+            sourceRegionId: region.id,
+            sourceBlockIds,
+            evidence: evidenceCatalog.filter((offer) => sourceBlockIds.includes(offer.blockId)),
+            authorityBundles: context.authorityBundles,
+            isBlockingEligible: (authorityRecordId) =>
+              repos.sourceAuthority.isBlockingEligible(authorityRecordId),
+          }),
+        ] as const;
+      }),
+    ),
+  );
+}
+
+/** Exact provider evidence offers carry the same authority boundary enforced after materialization. */
+export function buildEvidenceAuthorityEnvelopeMap(
+  evidenceCatalog: ReturnType<typeof selectCurriculumEvidenceOffers>,
+  context: ReturnType<typeof buildCurriculumExecutionContext>,
+  repos: Repositories,
+): Map<string, CurriculumAuthorityEnvelope> {
+  return new Map(
+    evidenceCatalog.map((offer) => [
+      offer.id,
+      buildCurriculumAuthorityEnvelope({
+        sourceRegionId: offer.id,
+        sourceBlockIds: [offer.blockId],
+        evidence: [offer],
         authorityBundles: context.authorityBundles,
         isBlockingEligible: (authorityRecordId) =>
           repos.sourceAuthority.isBlockingEligible(authorityRecordId),
@@ -952,7 +1022,17 @@ export function createCurriculumService({
           : [],
       ),
     );
+    const applyProcedureGroundings = curriculumTargetRequestsApplication(
+      context.contractContext.targetOutcome.description,
+    )
+      ? selectApplyCapableProcedureGroundings({
+          authorityBundles: context.authorityBundles,
+          isBlockingEligible: (authorityRecordId) =>
+            repos.sourceAuthority.isBlockingEligible(authorityRecordId),
+        })
+      : [];
     const preferredGroundings = [
+      ...applyProcedureGroundings,
       ...concepts.map((concept) => concept.grounding),
       ...context.authorityBundles.flatMap((bundle) =>
         bundle.claims.map((claim) => ({
@@ -1037,6 +1117,7 @@ export function createCurriculumService({
         concepts,
         contract,
         priorityGroundings,
+        applyProcedureGroundings,
         sourceMap,
         policy: CURRICULUM_EVIDENCE_PRODUCTION_POLICY,
       });
@@ -1071,6 +1152,10 @@ export function createCurriculumService({
       visualContext: buildCurriculumVisualContext(context.visualCandidates),
       limits: curriculumLimits(context.outline, predecessor),
     };
+    const deterministicCoverageByNodeKey = new Map<
+      string,
+      CurriculumDeterministicCoverageMembership
+    >();
     const validationContext: CurriculumValidationContext = {
       workspaceId: parsed.command.workspaceId,
       courseTitle: workspace.name,
@@ -1079,6 +1164,7 @@ export function createCurriculumService({
       concepts,
       graphEdges,
       structuralUnitOwners,
+      deterministicCoverageByNodeKey,
       canonicalConceptIds: new Set(allowedCanonicalConceptIds),
       canonicalConceptMembers: new Map(
         canonicalConcepts.map((canonical) => [
@@ -1343,7 +1429,18 @@ export function createCurriculumService({
           evidenceCatalog,
           concepts,
           canonicalConcepts,
-          authorityEnvelopesByRegionId,
+          authorityEnvelopesByRegionId: buildCourseMapRegionAuthorityEnvelopeMap(
+            courseMapResult.analysis.courseMap,
+            sourceAllocation,
+            evidenceCatalog,
+            context,
+            repos,
+          ),
+          authorityEnvelopesByEvidenceId: buildEvidenceAuthorityEnvelopeMap(
+            evidenceCatalog,
+            context,
+            repos,
+          ),
         });
         const completedBatches: Array<{
           input: (typeof detailBatches)[number]['input'];
@@ -1381,8 +1478,13 @@ export function createCurriculumService({
                 },
                 validateCandidate: (candidate) => {
                   assertGenerationSnapshotCurrent();
-                  const validation = validateCurriculumDetailCandidate(candidate, batch.input);
-                  if (!validation.valid && !authorityRepairAttempted) {
+                  let validation = validateCurriculumDetailCandidate(candidate, batch.input);
+                  // A schema repair can replace the locally narrowed first
+                  // candidate with a fresh provider response. Reapply the
+                  // same deterministic authority narrowing to that response;
+                  // the bounded repair remains local and cannot change scope
+                  // or priority.
+                  if (!validation.valid) {
                     const repaired = repairCurriculumDetailAuthorityCandidate(
                       candidate as CurriculumDetailProposalPayload,
                       batch.input,
@@ -1391,7 +1493,7 @@ export function createCurriculumService({
                       authorityRepairAttempted = true;
                       repairAttempted = true;
                       Object.assign(candidate as object, repaired.candidate);
-                      return validateCurriculumDetailCandidate(candidate, batch.input);
+                      validation = validateCurriculumDetailCandidate(candidate, batch.input);
                     }
                   }
                   return validation;
@@ -1405,8 +1507,17 @@ export function createCurriculumService({
           completedBatches,
         );
         payload = assembly.payload;
-        semanticSourceRegions = sourceAllocation.regions.map((region, index) => {
-          const disposition = courseMapResult.analysis.courseMap.sourceDispositions?.[index];
+        for (const [nodeKey, membership] of buildCourseMapDeterministicCoverage(
+          courseMapResult.analysis.courseMap,
+          sourceAllocation,
+          context.blocks,
+        )) {
+          deterministicCoverageByNodeKey.set(nodeKey, membership);
+        }
+        semanticSourceRegions = sourceAllocation.regions.map((region) => {
+          const disposition = courseMapResult.analysis.courseMap.sourceDispositions?.find(
+            (candidate) => candidate.sourceAllocationRegionId === region.id,
+          );
           return {
             id: region.id,
             materialId: region.materialId,

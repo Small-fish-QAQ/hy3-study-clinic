@@ -64,6 +64,7 @@ export const CoursePreparationBlockerCodeSchema = z.enum([
   'material_not_ready',
   'course_structure_review_required',
   'course_structure_not_executable',
+  'course_structure_generation_failed',
   'formal_assessment_readiness_unavailable',
   'preparation_failed',
   'preparation_interrupted',

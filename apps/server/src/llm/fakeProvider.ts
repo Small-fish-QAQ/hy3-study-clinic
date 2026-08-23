@@ -1270,10 +1270,17 @@ export class FakeProvider implements LlmProvider {
   ): Promise<CurriculumDetailProposalPayload> {
     await this.gate(opts);
     const units = input.regions.map((region, index) => {
+      const applyOffer = /(?:\bapply\b|应用)/iu.test(input.contract.targetOutcome.description)
+        ? region.evidence.find((offer) =>
+            offer.authorityEnvelope?.supportedConstructs.includes('apply'),
+          )
+        : undefined;
       const selectedEvidence = region.sourceAllocationRegionIds.flatMap((sourceRegionId) => {
-        const offer = region.evidence.find(
-          (candidate) => candidate.sourceAllocationRegionId === sourceRegionId,
-        );
+        const offer =
+          (applyOffer?.sourceAllocationRegionId === sourceRegionId ? applyOffer : undefined) ??
+          region.evidence.find(
+            (candidate) => candidate.sourceAllocationRegionId === sourceRegionId,
+          );
         return offer ? [{ evidenceId: offer.evidenceId }] : [];
       });
       const sourceHint = region.evidence[0]?.text
@@ -1295,9 +1302,22 @@ export class FakeProvider implements LlmProvider {
         objectives: [
           {
             key: `detail-objective-${index + 1}`,
-            title: `Understand ${region.title}`.slice(0, 300),
-            description: region.learningIntent.slice(0, 1_000),
+            title: (applyOffer
+              ? 'Apply the source-stated procedure'
+              : `Understand ${region.title}`
+            ).slice(0, 300),
+            description: (applyOffer
+              ? 'Apply the exact ordered procedure within its source-stated context.'
+              : region.learningIntent
+            ).slice(0, 1_000),
             evidence: selectedEvidence.slice(0, 3),
+            ...(applyOffer
+              ? {
+                  priority: 'required' as const,
+                  priorityRationale:
+                    'The exact selected evidence exposes a locally bounded apply construct.',
+                }
+              : {}),
           },
         ],
       };

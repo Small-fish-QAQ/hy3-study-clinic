@@ -708,16 +708,19 @@ describe('Course Preparation coordinator', () => {
     expect(blocked).toMatchObject({
       state: 'blocked',
       machineAction: null,
-      learnerAction: 'review_course_structure',
-      learnerDecisionRequired: true,
+      learnerAction: 'none',
+      learnerDecisionRequired: false,
       canResume: false,
       operationKey: null,
       blocker: {
-        code: 'course_structure_review_required',
-        message: '课程结构需要重新组织。',
+        code: 'course_structure_generation_failed',
+        message: '课程结构准备未完成。课程结构需要重新组织。 当前有效课程结构没有改变。',
       },
       failure: { action: 'prepare_course_structure', retryable: false },
     });
+    expect(harness.services.courseOverview.get('ws_1').capabilities.canProposeCurriculum).toBe(
+      false,
+    );
 
     const curriculumCalls = harness.provider.curriculumCalls;
     const result = await harness.services.coursePreparation.run({

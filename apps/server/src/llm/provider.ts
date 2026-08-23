@@ -54,6 +54,9 @@ import type {
   MasteryFragilityBasis,
 } from '@hy3-clinic/shared';
 
+/** One original plus independently bounded schema and candidate repairs. */
+export const MAX_STRUCTURED_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL = 3;
+
 /** Options threaded through every provider call. */
 export interface ProviderCallOptions {
   /** Abort signal from the HTTP request (client cancellation). */
@@ -66,8 +69,9 @@ export interface ProviderCallOptions {
     | undefined;
   /**
    * Local input-aware validation applied after schema parsing. Returning
-   * diagnostics consumes the provider's single repair allowance; throwing
-   * fails immediately for authoritative conflicts that a model cannot fix.
+   * diagnostics may consume the independently bounded candidate-repair
+   * allowance; throwing fails immediately for authoritative conflicts that a
+   * model cannot fix.
    */
   validateCandidate?: ((candidate: unknown) => ProviderCandidateValidation) | undefined;
   /** Internal telemetry hook fired immediately before a physical request is sent. */
@@ -100,7 +104,7 @@ export type StructuredOutputFailureCategory =
 export interface StructuredOutputDiagnostic {
   schemaName: string;
   operationType: string | null;
-  attemptNumber: 1 | 2;
+  attemptNumber: 1 | 2 | 3;
   attemptKind: 'original' | 'repair';
   provider: 'hy3';
   model: string;
@@ -139,6 +143,31 @@ export interface ProviderCandidateValidation {
   diagnostics: string[];
   /** Stable codes for private structural diagnostics; never raw model content. */
   diagnosticCodes?: string[] | undefined;
+  /**
+   * Optional bounded failure artifact assembled by deterministic local code.
+   * It may contain exact local identities and validation facts, but must never
+   * contain credentials, prompts, raw provider responses, or unbounded source
+   * content. The provider preserves this only when candidate repair exhausts.
+   */
+  failureArtifact?: ProviderCandidateFailureArtifact | undefined;
+}
+
+export type ProviderCandidateFailureValue =
+  | string
+  | number
+  | boolean
+  | null
+  | ProviderCandidateFailureValue[]
+  | { [key: string]: ProviderCandidateFailureValue };
+
+export interface ProviderCandidateFailureArtifact {
+  kind: string;
+  context?: Record<string, ProviderCandidateFailureValue> | undefined;
+  diagnostics: Array<{
+    code: string;
+    message: string;
+    facts?: Record<string, ProviderCandidateFailureValue> | undefined;
+  }>;
 }
 
 /** Usage reported by the provider response. Missing values remain unknown. */
@@ -720,7 +749,13 @@ export interface CurriculumDetailRegionInput {
   }>;
   concepts: Array<{ id: string; name: string; summary: string }>;
   canonicalConcepts: CurriculumCanonicalConceptOffer[];
-  evidence: Array<{ evidenceId: string; sourceAllocationRegionId: string; text: string }>;
+  evidence: Array<{
+    evidenceId: string;
+    sourceAllocationRegionId: string;
+    text: string;
+    /** Exact-offer boundary; required objectives are validated against their selected offers. */
+    authorityEnvelope?: CurriculumAuthorityEnvelope;
+  }>;
   authorityEnvelope?: CurriculumAuthorityEnvelope;
 }
 

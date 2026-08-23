@@ -93,6 +93,9 @@ const SAFE_SEMANTIC_CODES = new Set([
   'prerequisite_wrong_order',
   'region_limit_exceeded',
   'region_set_or_order_mismatch',
+  'required_objective_formal_authority_missing',
+  'required_objective_parent_topic_mismatch',
+  'required_target_apply_missing',
   'source_allocation_concentration',
   'source_allocation_fingerprint_mismatch',
   'source_allocation_omitted',
@@ -209,7 +212,7 @@ export function safeFinishReason(value: unknown): StructuredOutputDiagnostic['fi
 export function buildStructuredOutputDiagnostic(input: {
   schemaName: string;
   operationType: string | null;
-  attemptNumber: 1 | 2;
+  attemptNumber: 1 | 2 | 3;
   attemptKind: 'original' | 'repair';
   model: string;
   response: StructuredResponseMetadata;

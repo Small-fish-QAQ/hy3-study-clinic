@@ -19,6 +19,7 @@ import { createCourseOverviewService } from './courseOverview.js';
 import {
   buildCurriculumCourseSourceMap,
   buildCurriculumExecutionContext,
+  COURSE_MAP_CURRICULUM_GENERATION_POLICY,
   createCurriculumService,
   CURRICULUM_GENERATION_POLICY,
   curriculumGenerationPolicyForOutline,
@@ -390,7 +391,10 @@ describe('Curriculum proposal and authority boundaries', () => {
 
   it('defaults production generation to the legacy direct policy', () => {
     expect(CURRICULUM_GENERATION_POLICY).toBe(LEGACY_CURRICULUM_GENERATION_POLICY);
-    expect(curriculumOperationLeaseMs(240_000)).toBe(10 * 60 * 1000);
+    expect(curriculumOperationLeaseMs(240_000)).toBe(14 * 60 * 1000);
+    expect(curriculumOperationLeaseMs(240_000, COURSE_MAP_CURRICULUM_GENERATION_POLICY)).toBe(
+      38 * 60 * 1000,
+    );
   });
 
   it('admits an asset-only scoped revision without promoting its advisory description to evidence or authority', () => {
@@ -1514,21 +1518,25 @@ describe('Curriculum proposal and authority boundaries', () => {
     expect(JSON.stringify(result)).not.toContain('test-key-never-persist');
   });
 
-  it('does not stack semantic repair after a schema-invalid original consumed the allowance', async () => {
+  it('uses independent schema and candidate repairs in one bounded Curriculum call', async () => {
     const invalidSemantic = payloadForFetch('cev_not_offered_after_schema_repair');
-    const fetchMock = useMockedHy3(['{}', JSON.stringify(invalidSemantic)]);
+    const fetchMock = useMockedHy3([
+      '{}',
+      JSON.stringify(invalidSemantic),
+      JSON.stringify(payloadForFetch()),
+    ]);
 
-    await expect(
-      curriculum.propose(proposalRequest('curriculum-schema-then-semantic')),
-    ).rejects.toMatchObject({ code: ApiErrorCode.GroundingFailed });
+    const proposed = await curriculum.propose(proposalRequest('curriculum-schema-then-semantic'));
 
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(proposed.curriculum.validation.valid).toBe(true);
     expect(attemptsForCommand('curriculum-schema-then-semantic')).toMatchObject([
       { attemptKind: 'original', errorCode: 'SCHEMA_VALIDATION_FAILURE_REPAIR_REQUIRED' },
-      { attemptKind: 'repair', status: 'failed' },
+      { attemptKind: 'repair', errorCode: 'SEMANTIC_VALIDATION_FAILURE_REPAIR_REQUIRED' },
+      { attemptKind: 'repair', status: 'completed' },
     ]);
-    expect(usageRowsForCommand('curriculum-schema-then-semantic')).toBe(2);
-    expect(repos.curricula.list('ws_1')).toEqual([]);
+    expect(usageRowsForCommand('curriculum-schema-then-semantic')).toBe(3);
+    expect(repos.curricula.list('ws_1')).toHaveLength(1);
   });
 
   it('does not ask the model to repair an authoritative manifest change', async () => {
@@ -1601,7 +1609,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       .get('curriculum-long-repair') as { id: string; leaseExpiresAt: string | null };
 
     expect(curriculumOperationLeaseMs(240_000, LEGACY_CURRICULUM_GENERATION_POLICY)).toBe(
-      10 * 60 * 1000,
+      14 * 60 * 1000,
     );
     expect(proposed.curriculum.status).toBe('proposed');
     expect(attemptsForCommand('curriculum-long-repair')).toHaveLength(2);

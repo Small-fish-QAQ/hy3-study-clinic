@@ -896,14 +896,14 @@ export function createCoursePreparationService({
           ...base,
           state: 'blocked',
           machineAction: null,
-          learnerAction: 'review_course_structure',
-          learnerDecisionRequired: true,
+          learnerAction: 'none',
+          learnerDecisionRequired: false,
           canResume: false,
           operationKey: null,
           canCancel: false,
           blocker: {
-            code: 'course_structure_review_required',
-            message: structuralCurriculumFailureMessage(payload),
+            code: 'course_structure_generation_failed',
+            message: `课程结构准备未完成。${structuralCurriculumFailureMessage(payload)} 当前有效课程结构没有改变。`,
           },
           failure: {
             code: code?.success ? code.data : null,

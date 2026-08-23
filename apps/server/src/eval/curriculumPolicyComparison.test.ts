@@ -232,7 +232,7 @@ describe('Curriculum policy comparison coordinator', () => {
     expect(result.policy).toBe(COURSE_MAP_CURRICULUM_GENERATION_POLICY);
     expect(result.totals.logicalCalls).toBeGreaterThanOrEqual(2);
     expect(result.totals.logicalCalls).toBeLessThanOrEqual(3);
-    expect(result.totals.physicalCalls).toBeLessThanOrEqual(6);
+    expect(result.totals.physicalCalls).toBeLessThanOrEqual(9);
     expect(result.stages[0]!.stage).toBe('course_map');
     expect(result.stages.slice(1).every((stage) => stage.stage === 'curriculum_detail')).toBe(true);
     expect(result.courseMap).toMatchObject({

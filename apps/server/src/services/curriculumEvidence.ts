@@ -18,11 +18,13 @@ import {
   type CurriculumEvidencePolicySelectionReason,
   type CurriculumEvidenceSelectorPolicy,
 } from './curriculumEvidencePolicy.js';
+import { curriculumTargetRequestsApplication } from './curriculumAuthority.js';
 
 export const CURRICULUM_EVIDENCE_EXCERPT_MAX_CHARS = 320;
 export const CURRICULUM_PROVIDER_EVIDENCE_BLOCK_BUDGET = 160;
 export const CURRICULUM_PROVIDER_EVIDENCE_OFFER_BUDGET = 240;
 export const CURRICULUM_PROVIDER_OFFERS_PER_BLOCK = 2;
+export const CURRICULUM_PROVIDER_APPLY_PROCEDURE_BLOCK_RESERVE = 8;
 export const CURRICULUM_PREDECESSOR_REFS_PER_UNIT = 6;
 const CURRICULUM_PROVIDER_MIN_FALLBACK_BLOCKS = 64;
 const CURRICULUM_PROVIDER_NEIGHBOR_RADIUS = 1;
@@ -164,6 +166,7 @@ export interface CurriculumEvidenceSelectionInput {
   concepts: Concept[];
   contract: LearningContract;
   priorityGroundings: VerifiedGrounding[];
+  applyProcedureGroundings?: VerifiedGrounding[];
   sourceMap?: CourseSourceMap;
   policy?: CurriculumEvidenceSelectorPolicy;
 }
@@ -192,7 +195,8 @@ export interface CurriculumEvidenceBlockTrace {
   selectionIndex: number;
   firstContributor: CurriculumEvidenceSelectionSignal | null;
   signals: CurriculumEvidenceSelectionSignal[];
-  policySelectionReason: 'baseline_signal_order' | CurriculumEvidencePolicySelectionReason;
+  policySelectionReason:
+    'baseline_signal_order' | 'apply_procedure_reserve' | CurriculumEvidencePolicySelectionReason;
 }
 
 export interface CurriculumEvidenceSignalTrace {
@@ -237,7 +241,7 @@ export interface CurriculumEvidenceSelectionTrace {
     maxExcerptChars: number;
   };
   priorityOrdering: {
-    effect: 'offer_ordering_only';
+    effect: 'offer_ordering_only' | 'offer_ordering_and_apply_procedure_block_reserve';
     requestedGroundingCount: number;
     uniqueGroundingCount: number;
     uniqueConceptGroundingCount: number;
@@ -249,6 +253,10 @@ export interface CurriculumEvidenceSelectionTrace {
     selectedNonConceptPriorityOfferCount: number;
     selectedBlocksWithPriorityOffer: number;
     blocksWherePriorityChangedFirstOffer: number;
+    requestedApplyProcedureGroundingCount: number;
+    matchingApplyProcedureOfferCount: number;
+    reservedApplyProcedureBlockCount: number;
+    selectedApplyProcedureOfferCount: number;
   };
   signals: CurriculumEvidenceSignalTrace[];
   blocks: CurriculumEvidenceBlockTrace[];
@@ -563,6 +571,7 @@ function selectCurriculumEvidenceOffersInternal(
     concepts,
     contract,
     priorityGroundings,
+    applyProcedureGroundings = [],
     sourceMap,
     policy = CURRICULUM_EVIDENCE_BASELINE_POLICY,
   }: CurriculumEvidenceSelectionInput,
@@ -590,7 +599,7 @@ function selectCurriculumEvidenceOffersInternal(
   let selectedCandidateBlockIds = baselineCandidateBlockIds;
   let policyReasonByBlockId = new Map<
     string,
-    'baseline_signal_order' | CurriculumEvidencePolicySelectionReason
+    'baseline_signal_order' | 'apply_procedure_reserve' | CurriculumEvidencePolicySelectionReason
   >(baselineCandidateBlockIds.map((blockId) => [blockId, 'baseline_signal_order']));
   if (policy !== CURRICULUM_EVIDENCE_BASELINE_POLICY) {
     if (!sourceMap) {
@@ -617,6 +626,29 @@ function selectCurriculumEvidenceOffersInternal(
     });
     selectedCandidateBlockIds = reserved.blockIds;
     policyReasonByBlockId = reserved.reasonByBlockId;
+  }
+  const catalogKeys = new Set(catalog.map(normalizedGroundingKey));
+  const matchingApplyProcedureGroundings = curriculumTargetRequestsApplication(
+    contract.targetOutcome.description,
+  )
+    ? applyProcedureGroundings.filter(
+        (grounding) =>
+          blockById.has(grounding.blockId) && catalogKeys.has(normalizedGroundingKey(grounding)),
+      )
+    : [];
+  const applyProcedureBlockIds = uniqueInOrder(
+    matchingApplyProcedureGroundings.map((grounding) => grounding.blockId),
+  ).slice(0, CURRICULUM_PROVIDER_APPLY_PROCEDURE_BLOCK_RESERVE);
+  if (applyProcedureBlockIds.length > 0) {
+    selectedCandidateBlockIds = uniqueInOrder([
+      ...applyProcedureBlockIds,
+      ...selectedCandidateBlockIds,
+    ]).slice(0, CURRICULUM_PROVIDER_EVIDENCE_BLOCK_BUDGET);
+    for (const blockId of applyProcedureBlockIds) {
+      if (selectedCandidateBlockIds.includes(blockId)) {
+        policyReasonByBlockId.set(blockId, 'apply_procedure_reserve');
+      }
+    }
   }
   const selectedBlockIds = new Set(selectedCandidateBlockIds);
   const attemptedBySignal = includeTrace
@@ -649,7 +681,9 @@ function selectCurriculumEvidenceOffersInternal(
     }
   }
 
-  const priorityKeys = new Set(priorityGroundings.map(normalizedGroundingKey));
+  const effectivePriorityGroundings = [...priorityGroundings, ...matchingApplyProcedureGroundings];
+  const priorityKeys = new Set(effectivePriorityGroundings.map(normalizedGroundingKey));
+  const applyProcedureKeys = new Set(matchingApplyProcedureGroundings.map(normalizedGroundingKey));
   const relevantOfferBlockIds = new Set([
     ...baselineCandidateBlockIds,
     ...selectedCandidateBlockIds,
@@ -708,10 +742,7 @@ function selectCurriculumEvidenceOffersInternal(
     return offers;
   };
   const baselineOffers = selectOffers(baselineCandidateBlockIds);
-  const policyOffers =
-    policy === CURRICULUM_EVIDENCE_BASELINE_POLICY
-      ? baselineOffers
-      : selectOffers(selectedCandidateBlockIds);
+  const policyOffers = selectOffers(selectedCandidateBlockIds);
   const selected =
     policy === CURRICULUM_EVIDENCE_BASELINE_POLICY
       ? policyOffers
@@ -751,8 +782,14 @@ function selectCurriculumEvidenceOffersInternal(
   const selectedConceptPriorityOffers = selectedPriorityOffers.filter((offer) =>
     conceptPriorityKeys.has(normalizedGroundingKey(offer)),
   );
+  const selectedApplyProcedureOffers = selected.filter((offer) =>
+    applyProcedureKeys.has(normalizedGroundingKey(offer)),
+  );
   const matchingCatalogOfferCount = catalog.filter((offer) =>
     priorityKeys.has(normalizedGroundingKey(offer)),
+  ).length;
+  const matchingApplyProcedureOfferCount = catalog.filter((offer) =>
+    applyProcedureKeys.has(normalizedGroundingKey(offer)),
   ).length;
   const bytes = serializedInternalOfferBytes(selected);
 
@@ -792,8 +829,11 @@ function selectCurriculumEvidenceOffersInternal(
         maxExcerptChars: CURRICULUM_EVIDENCE_EXCERPT_MAX_CHARS,
       },
       priorityOrdering: {
-        effect: 'offer_ordering_only',
-        requestedGroundingCount: priorityGroundings.length,
+        effect:
+          applyProcedureBlockIds.length > 0
+            ? 'offer_ordering_and_apply_procedure_block_reserve'
+            : 'offer_ordering_only',
+        requestedGroundingCount: effectivePriorityGroundings.length,
         uniqueGroundingCount: priorityKeys.size,
         uniqueConceptGroundingCount: [...priorityKeys].filter((key) => conceptPriorityKeys.has(key))
           .length,
@@ -809,6 +849,12 @@ function selectCurriculumEvidenceOffersInternal(
           selectedPriorityOffers.map((offer) => offer.blockId),
         ).size,
         blocksWherePriorityChangedFirstOffer,
+        requestedApplyProcedureGroundingCount: applyProcedureGroundings.length,
+        matchingApplyProcedureOfferCount,
+        reservedApplyProcedureBlockCount: applyProcedureBlockIds.filter((blockId) =>
+          selectedBlockIds.has(blockId),
+        ).length,
+        selectedApplyProcedureOfferCount: selectedApplyProcedureOffers.length,
       },
       signals: CURRICULUM_EVIDENCE_SELECTION_SIGNALS.map((signal) => ({
         signal,

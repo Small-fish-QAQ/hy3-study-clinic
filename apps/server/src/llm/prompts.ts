@@ -844,6 +844,7 @@ export function courseMapProposalMessages(input: CourseMapProposalInput): ChatMe
         'Return exactly this shape:',
         '{"modules":[{"title":"...","learningIntent":"...","regions":[{"sourceRegionRef":"R1","title":"...","learningIntent":"...","approximateScope":"focused|standard|extended","anchorOptionRefs":["R1:A1"]}]}],"prerequisites":[{"prerequisiteRegionRef":"R1","dependentRegionRef":"R2"}],"synthesisGroups":[{"title":"...","level":"module|course|transfer","regionRefs":["R1","R2"]}],"sourceDispositions":[{"sourceRegionRef":"R3","disposition":"represented_by_parent_or_synthesis|duplicate/redundant|boilerplate/navigation/non-learning-content|explicitly_out_of_scope|unresolved_candidate_gap","rationale":"...","representedRegionRefs":["R1"]}]}',
         'Create a coherent ordered hierarchy before any detailed objectives or LearningUnits.',
+        'Module and region titles are learner-visible pedagogical identities, not parser headings. Remove source-order numbering, do not copy numbered source headings, and do not distinguish repeated headings by merely appending counters such as (1)/(2). Name the semantic learning boundary represented by each exact sourceRegionRef.',
         'Module array order and region array order are the pedagogical order. Do not output keys, numeric indexes, fingerprints, counts, allocation ids, Concept ids, canonical Concept ids, evidence ids, or any other identity not present in the requested shape.',
         'Use every offered sourceRegionRef exactly once: create exactly one instructional region for every meaningful offered sourceRegionRef. If a region is not a direct unit, include exactly one sourceDispositions row with a concrete rationale. Never classify meaningful learning content as boilerplate merely to improve coverage.',
         'For systematic or deep goals, unresolved_candidate_gap is a failing disposition and must be avoided or made explicit for local rejection. Duplicate, boilerplate, and out-of-scope dispositions require a bounded rationale and never silently disappear.',
@@ -891,6 +892,12 @@ export function curriculumDetailProposalMessages(
     ...input,
     regions: input.regions.map((region) => ({
       ...region,
+      evidence: region.evidence.map((offer) => ({
+        ...offer,
+        ...(offer.authorityEnvelope
+          ? { authorityEnvelope: authorityEnvelopePromptContext(offer.authorityEnvelope) }
+          : {}),
+      })),
       ...(region.authorityEnvelope
         ? { authorityEnvelope: authorityEnvelopePromptContext(region.authorityEnvelope) }
         : {}),
@@ -918,7 +925,10 @@ export function curriculumDetailProposalMessages(
         'Use only evidence, Concept, and canonical Concept identities offered inside that same region. Select at least one exact evidence offer from every listed sourceAllocationRegionId.',
         'Prerequisite and synthesis context is informational: the server maps the validated Course Map structure into the final Curriculum. Do not output prerequisite or synthesis identities.',
         'Each unit needs one to four concrete instructional objectives. Use priority required only when the exact evidence can support an independently authorized Formal Assessment path; narrow a broader teaching intention when its source authority is narrower.',
-        'Treat authorityEnvelope as a local boundary: formalEvidenceCount and supportedConstructs describe the strongest permitted Formal construct. A teaching_only or unavailable envelope may still guide explanation, but cannot justify a required formal claim. Preserve required priority while narrowing or splitting the claim; never invent authority or silently make it optional.',
+        'Each exact evidence offer has its own authorityEnvelope. That evidence-level envelope is decisive for an objective that selects the offer; the broader region envelope is planning context only and cannot lend authority across evidence offers. formalEvidenceCount and supportedConstructs describe the strongest permitted Formal construct.',
+        'A teaching_only or unavailable evidence envelope may still guide non-required explanation, but cannot justify a required formal claim. For every required objective, select exact evidence whose own envelope supports the objective construct. Preserve required priority while narrowing or splitting the claim; never invent authority or silently make it optional.',
+        'When the learner target explicitly asks to apply and an exact evidence offer supports apply, include a required apply objective. Apply means following only that source-stated ordered procedure in its stated context; it does not authorize transfer, design, deployment, or a broader scenario.',
+        'The LearningUnit title must semantically cover all of its required objectives. Do not place a narrow security, implementation, or diagnostic objective under a title that names only a different sibling topic.',
         'Titles are learner-visible teachable-unit identities, not copied parser headings. Derive concise distinctions from the offered Concept names, objective meaning, and exact source excerpts. If adjacent regions share a generic heading, do not repeat that heading as the sole title.',
         'Do not output persisted ids, module or region keys, status, acceptance, truth authority, mastery, completion, risk, or learner-state decisions.',
         'Echo the exact courseMapId and sourceAllocationFingerprint and respect every hard limit.',

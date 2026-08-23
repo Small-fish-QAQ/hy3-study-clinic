@@ -24,6 +24,28 @@ interface CourseOverviewDeps {
 
 const SEVERITY = ['low', 'medium', 'high', 'critical'] as const;
 
+function preparationOwnsStructuralCurriculumFailure(
+  repos: Repositories,
+  workspaceId: string,
+): boolean {
+  const latest = repos.operations.listForWorkspace(workspaceId, 'course_preparation', 1)[0];
+  if (!latest || !['failed', 'interrupted'].includes(latest.status)) return false;
+  const started = repos.operations.listEvents(latest.id).some((event) => {
+    if (event.kind !== 'preparation_step_started') return false;
+    if (typeof event.payload !== 'object' || event.payload === null) return false;
+    return (event.payload as { action?: unknown }).action === 'prepare_course_structure';
+  });
+  if (!started || latest.status === 'interrupted') return false;
+  const result = repos.operations.getResult(latest.id);
+  if (typeof result?.payload !== 'object' || result.payload === null) return false;
+  const payload = result.payload as { details?: unknown };
+  return (
+    typeof payload.details === 'object' &&
+    payload.details !== null &&
+    (payload.details as { kind?: unknown }).kind === 'curriculum_candidate_validation'
+  );
+}
+
 function riskCategory(risk: CoverageRiskEntry): CoverageRiskCategory {
   if (risk.facets.includes('intentionally_deferred') || risk.status === 'deferred')
     return 'intentional_deferral';
@@ -380,6 +402,7 @@ export function createCourseOverviewService({ repos, clock, reviewSuccessor }: C
           (selectedContract?.status === 'learner_confirmed' ||
             selectedContract?.status === 'active') &&
           contractScopeCurrent &&
+          !preparationOwnsStructuralCurriculumFailure(repos, workspaceId) &&
           ![
             'build_concept_grounding',
             'rebuild_concept_grounding',

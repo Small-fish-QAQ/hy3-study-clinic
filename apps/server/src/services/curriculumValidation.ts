@@ -1,5 +1,6 @@
 import {
   ApiErrorCode,
+  CURRICULUM_SOURCE_REFERENCE_LIMIT,
   CurriculumProposalPayloadSchema,
   CurriculumProposalFailureDetailsSchema,
   CurriculumValidationSchema,
@@ -27,12 +28,20 @@ import { newId } from '../util/ids.js';
 import {
   buildCurriculumAuthorityEnvelope,
   detectFormalConstruct,
-  isConstructSupported,
+  formatNarrowedFormalObjective,
+  isFormalObjectiveSupported,
+  strongestNarrowableConstruct,
 } from './curriculumAuthority.js';
 
 export interface CurriculumStructuralUnitOwner {
   materialId: string;
   materialRevisionId: string;
+}
+
+/** Deterministic membership derived from the server-owned Course Map region. */
+export interface CurriculumDeterministicCoverageMembership {
+  structuralUnitIds: string[];
+  sourceBlockIds: string[];
 }
 
 export interface CurriculumValidationContext {
@@ -44,6 +53,8 @@ export interface CurriculumValidationContext {
   graphEdges: GraphEdge[];
   /** Empty until normalized structural-unit persistence is available. */
   structuralUnitOwners: Map<string, CurriculumStructuralUnitOwner>;
+  /** Optional Course Map region membership keyed by the materialized node key. */
+  deterministicCoverageByNodeKey?: Map<string, CurriculumDeterministicCoverageMembership>;
   canonicalConceptIds: Set<string>;
   /** Authoritative alignment membership offered for this operation snapshot. */
   canonicalConceptMembers: Map<string, string[]>;
@@ -273,7 +284,10 @@ function authorityStatus(
     };
   }
   const eligible = envelope.formalEvidenceIds.length > 0;
-  const supported = isConstructSupported(construct, envelope);
+  const supported = isFormalObjectiveSupported(
+    `${objective.title} ${objective.description}`,
+    envelope,
+  );
   const ready = eligible && supported;
   const authorityIds = matched
     .filter(
@@ -326,6 +340,7 @@ function throwValidation(
   warnings: string[] = [],
   repairAttempted = false,
   authorityCritiques: CurriculumAuthorityCritique[] = [],
+  coverage?: Pick<Curriculum['validation'], 'unmappedStructuralUnitIds' | 'unmappedSourceBlockIds'>,
 ): never {
   const executionRepairFailed = errors.some((error) =>
     error.startsWith('StudyPlan execution repair:'),
@@ -335,6 +350,12 @@ function throwValidation(
     repairAttempted,
     errors: errors.slice(0, 20),
     warnings: warnings.slice(0, 20),
+    ...(coverage?.unmappedStructuralUnitIds
+      ? { unmappedStructuralUnitIds: coverage.unmappedStructuralUnitIds.slice(0, 1000) }
+      : {}),
+    ...(coverage?.unmappedSourceBlockIds
+      ? { unmappedSourceBlockIds: coverage.unmappedSourceBlockIds.slice(0, 10_000) }
+      : {}),
     ...(authorityCritiques.length > 0
       ? { authorityCritiques: authorityCritiques.slice(0, 20) }
       : {}),
@@ -417,7 +438,7 @@ export function materializeCurriculumProposal(
         revision.materialRevisionId,
       ),
     });
-    sourceRefsByNode.set(nodeId, refs.slice(0, 100));
+    sourceRefsByNode.set(nodeId, refs.slice(0, CURRICULUM_SOURCE_REFERENCE_LIMIT));
     sourceRefKeysByNode.set(nodeId, keys);
   }
 
@@ -438,7 +459,45 @@ export function materializeCurriculumProposal(
       sourceBlockId: null,
       sourceBlockRevisionFingerprint: null,
     });
-    sourceRefsByNode.set(nodeId, refs.slice(0, 100));
+    sourceRefsByNode.set(nodeId, refs.slice(0, CURRICULUM_SOURCE_REFERENCE_LIMIT));
+    sourceRefKeysByNode.set(nodeId, keys);
+  }
+
+  function addDeterministicBlockReference(nodeId: string, sourceBlockId: string): void {
+    const block = blockById.get(sourceBlockId);
+    const revision = block ? revisionForBlock(block, ctx.executionSourceManifest) : undefined;
+    if (!block || !revision) {
+      errors.push(
+        `Deterministic Course Map coverage is outside the exact execution-source manifest: ${sourceBlockId}`,
+      );
+      return;
+    }
+    const refs = sourceRefsByNode.get(nodeId) ?? [];
+    const keys = sourceRefKeysByNode.get(nodeId) ?? new Set<string>();
+    const key = `${revision.materialRevisionId}\u0000${sourceBlockId}`;
+    if (keys.has(key)) {
+      mappedBlockIds.add(sourceBlockId);
+      return;
+    }
+    if (refs.length >= CURRICULUM_SOURCE_REFERENCE_LIMIT) {
+      errors.push(
+        `LearningUnit exceeds the exact source-reference limit while preserving Course Map coverage: ${sourceBlockId}`,
+      );
+      return;
+    }
+    keys.add(key);
+    refs.push({
+      materialId: block.materialId,
+      materialRevisionId: revision.materialRevisionId,
+      structuralUnitId: null,
+      sourceBlockId: block.id,
+      sourceBlockRevisionFingerprint: curriculumSourceBlockFingerprint(
+        block,
+        revision.materialRevisionId,
+      ),
+    });
+    mappedBlockIds.add(sourceBlockId);
+    sourceRefsByNode.set(nodeId, refs);
     sourceRefKeysByNode.set(nodeId, keys);
   }
 
@@ -577,6 +636,39 @@ export function materializeCurriculumProposal(
       }
     }
 
+    // Course Map region membership is deterministic provenance, not a model
+    // claim of semantic entailment. It makes the real LearningUnit placement
+    // inspectable even when provider evidence offers are bounded.
+    if (proposed.kind === 'learning_unit') {
+      const membership = ctx.deterministicCoverageByNodeKey?.get(proposed.key);
+      if (membership) {
+        for (const structuralUnitId of membership.structuralUnitIds) {
+          const owner = ctx.structuralUnitOwners.get(structuralUnitId);
+          if (!owner) {
+            errors.push(
+              `Deterministic Course Map coverage references an unknown structural unit: ${structuralUnitId}`,
+            );
+            continue;
+          }
+          const revision = ctx.executionSourceManifest.revisions.find(
+            (candidate) =>
+              candidate.materialId === owner.materialId &&
+              candidate.materialRevisionId === owner.materialRevisionId,
+          );
+          if (!revision) {
+            errors.push(
+              `Deterministic Course Map structural-unit coverage is stale: ${structuralUnitId}`,
+            );
+            continue;
+          }
+          addStructuralReference(id, structuralUnitId, owner);
+        }
+        for (const sourceBlockId of membership.sourceBlockIds) {
+          addDeterministicBlockReference(id, sourceBlockId);
+        }
+      }
+    }
+
     if (proposed.kind === 'learning_unit') {
       for (const conceptId of proposed.conceptIds) {
         addConcept(conceptId);
@@ -704,7 +796,10 @@ export function materializeCurriculumProposal(
       kind: proposed.kind,
       index: proposed.index,
       title: proposed.title,
-      sourceReferences: (sourceRefsByNode.get(id) ?? []).slice(0, 100),
+      sourceReferences: (sourceRefsByNode.get(id) ?? []).slice(
+        0,
+        CURRICULUM_SOURCE_REFERENCE_LIMIT,
+      ),
       learningUnit:
         proposed.kind === 'learning_unit'
           ? {
@@ -810,6 +905,7 @@ export function materializeCurriculumProposal(
     errors: errors.slice(0, 100).map((error) => error.slice(0, 500)),
     warnings: warnings.slice(0, 100).map((warning) => warning.slice(0, 500)),
     unmappedStructuralUnitIds: unmappedStructuralUnitIds.slice(0, 1000),
+    unmappedSourceBlockIds: unmappedBlocks.slice(0, 10_000),
   };
   // Keep this helper useful to callers that want to inspect a failed candidate,
   // while the service fails closed before persisting invalid active state.
@@ -846,11 +942,11 @@ export function repairCurriculumAuthorityCandidate(
         critique.supportedConstructs.length === 0
       )
         continue;
-      const construct = critique.supportedConstructs.includes('explain') ? 'Explain' : 'Identify';
-      const claim = critique.narrowerClaim.slice(0, 500);
-      objective.title = `${construct} the source-supported claim: ${claim}`.slice(0, 300);
-      objective.description =
-        `${construct} only what the current source explicitly states: ${claim}`.slice(0, 1_000);
+      const construct = strongestNarrowableConstruct(critique);
+      if (!construct) continue;
+      const wording = formatNarrowedFormalObjective(construct, critique.narrowerClaim);
+      objective.title = wording.title;
+      objective.description = wording.description;
       // Required priority is intentionally preserved. The provider cannot
       // satisfy an authority critique by downgrading learner scope.
       repaired = true;
@@ -878,5 +974,6 @@ export function assertValidMaterializedCurriculum(
       result.validation.warnings,
       repairAttempted,
       result.authorityCritiques,
+      result.validation,
     );
 }

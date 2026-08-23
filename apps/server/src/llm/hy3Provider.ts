@@ -77,6 +77,7 @@ import type {
   LlmProvider,
   MisconceptionProposalInput,
   MasteryChallengeProposalInput,
+  ProviderCandidateFailureArtifact,
   ProviderCallOptions,
   QuizGenerationInput,
   RemediationInput,
@@ -261,7 +262,8 @@ function studyPlanRepairGuidance(input: StudyPlanProposalInput, grouped: boolean
  * Not tied to any specific commercial endpoint — baseUrl/model/key all come
  * from server-side env config. Enforces per-call timeout + external
  * cancellation, extracts JSON safely, validates with Zod, and grants exactly
- * ONE bounded repair attempt before failing with a structured ProviderError.
+ * fixed, independent schema/candidate repair budgets before failing with a
+ * structured ProviderError.
  * The API key is only ever sent in the Authorization header; it is never
  * logged or included in any thrown message.
  */
@@ -511,6 +513,8 @@ export class Hy3Provider implements LlmProvider {
         'Course Map coverage repair is bounded to this one retry. Consume the exact source-region references (R1, R2, ...) and source-allocation identities named in the validation diagnostics.',
         'For every omitted meaningful region, add a direct region using that exact offered R# title and anchor-option references, or provide a valid explicit source disposition with a truthful rationale and representedRegionRefs.',
         'Preserve existing represented_by_parent_or_synthesis, duplicate/redundant, boilerplate/navigation/non-learning-content, explicitly_out_of_scope, and unresolved_candidate_gap dispositions; do not drop source identities or return the unchanged candidate.',
+        'For semantic_topic_scattering, use the exact modules and R# source regions in the diagnostic. Regroup the affected regions under one coherent module, or add a narrowly named synthesis group across them only when there is a real cross-module teaching integration. Never add a broad bookkeeping-only synthesis group merely to silence validation.',
+        'For source_heading_title_dump, rename each exact affected R# region into a concise learner-visible semantic identity. Remove parser/source numbering and repeated-heading counters while preserving the exact source-region membership and pedagogical order.',
         'A meaningful unresolved_candidate_gap remains a deterministic failure for systematic or deep goals.',
       ].join('\n'),
       {
@@ -528,7 +532,13 @@ export class Hy3Provider implements LlmProvider {
       curriculumDetailProposalMessages(input),
       CurriculumDetailProposalPayloadSchema,
       opts,
-      undefined,
+      [
+        'Curriculum detail repair is bounded to this one retry. Preserve every offered region exactly once and keep identities within that region.',
+        "For every required objective, the authorityEnvelope attached to each selected evidence offer is decisive. Select evidence with formalEvidenceCount > 0 and keep the objective construct within that evidence offer's supportedConstructs.",
+        "A broader region authorityEnvelope cannot lend authority to a different evidence offer. Never make required scope optional and never invent authority; narrow the wording to the selected evidence's narrowerClaim when necessary.",
+        "For required_target_apply_missing, add a required apply objective using one exact evidence offer whose supportedConstructs contains apply. Keep it within that offer's source-stated ordered procedure and stated context; do not claim transfer, design, or broader deployment authority.",
+        'For required_objective_parent_topic_mismatch, rename or regroup the LearningUnit so its learner-visible title semantically covers every required objective. Do not drop the required objective, change its priority, or move it outside the offered Course Map region.',
+      ].join('\n'),
       {
         maxTokens: CURRICULUM_MAX_OUTPUT_TOKENS,
         schemaName: 'curriculum-detail-proposal-v1',
@@ -662,10 +672,11 @@ export class Hy3Provider implements LlmProvider {
   }
 
   /**
-   * Core request/validate loop with a single bounded repair attempt.
-   * Attempt 1: original messages. Attempt 2 (only on validation failure):
-   * original messages + the assistant's bad reply + a repair instruction
-   * quoting the Zod errors. After that, fail with a structured error.
+   * Core request/validate loop with independent fixed repair budgets.
+   * At most one schema repair and one deterministic-candidate repair are
+   * allowed. A third physical attempt exists only when attempt 2 crosses from
+   * one failure kind to the other; equivalent repeated failures remain
+   * exhausted after attempt 2.
    */
   private async complete<T>(
     messages: ChatMessage[],
@@ -703,10 +714,16 @@ export class Hy3Provider implements LlmProvider {
     );
     if (first.ok) return first.value;
     if (!first.repairable) {
-      throw ProviderError.invalidOutput(first.error, first.reason, first.category);
+      throw ProviderError.invalidOutput(
+        first.error,
+        first.reason,
+        first.category,
+        false,
+        first.candidateFailure,
+      );
     }
 
-    // One bounded repair attempt.
+    // First bounded repair dimension.
     const repairMessages: ChatMessage[] = [
       ...messages,
       { role: 'assistant', content: original.content },
@@ -731,6 +748,8 @@ export class Hy3Provider implements LlmProvider {
       'repair',
     );
     const second = this.tryParse(repaired, schema, opts);
+    const independentRepairAllowed =
+      !second.ok && second.repairable && second.reason !== first.reason;
     this.emitDiagnostic(
       opts,
       buildStructuredOutputDiagnostic({
@@ -741,12 +760,65 @@ export class Hy3Provider implements LlmProvider {
         model: this.config.model,
         response: repaired.response,
         parse: second.parse,
-        repairAction: second.ok ? 'none' : 'exhausted',
+        repairAction: second.ok ? 'none' : independentRepairAllowed ? 'requested' : 'exhausted',
       }),
     );
     if (second.ok) return second.value;
+    if (independentRepairAllowed) {
+      const independentRepairMessages: ChatMessage[] = [
+        ...messages,
+        { role: 'assistant', content: repaired.content },
+        {
+          role: 'user',
+          content: [
+            '你修复了上一类校验问题,但当前输出又触发了另一类独立校验失败:',
+            second.error,
+            ...(repairGuidance ? ['本次请求的精确修复约束:', repairGuidance] : []),
+            '这是最后一次有界修复。请仅修复当前问题,重新输出符合要求的 JSON。仍然只输出 JSON,不要解释。',
+          ].join('\n'),
+        },
+      ];
+      if (opts?.signal?.aborted) throw ProviderError.cancelled();
+      opts?.onRepairAttempt?.(second.reason, second.category);
+      const independentlyRepaired = await this.chatWithDiagnostic(
+        independentRepairMessages,
+        opts,
+        requestOptions,
+        schemaName,
+        3,
+        'repair',
+      );
+      const third = this.tryParse(independentlyRepaired, schema, opts);
+      this.emitDiagnostic(
+        opts,
+        buildStructuredOutputDiagnostic({
+          schemaName,
+          operationType: opts?.telemetry?.operationType ?? null,
+          attemptNumber: 3,
+          attemptKind: 'repair',
+          model: this.config.model,
+          response: independentlyRepaired.response,
+          parse: third.parse,
+          repairAction: third.ok ? 'none' : 'exhausted',
+        }),
+      );
+      if (third.ok) return third.value;
+      throw ProviderError.invalidOutput(
+        third.error,
+        third.reason,
+        third.category,
+        true,
+        third.candidateFailure,
+      );
+    }
 
-    throw ProviderError.invalidOutput(second.error, second.reason, second.category, true);
+    throw ProviderError.invalidOutput(
+      second.error,
+      second.reason,
+      second.category,
+      true,
+      second.candidateFailure,
+    );
   }
 
   private tryParse<T>(
@@ -761,6 +833,7 @@ export class Hy3Provider implements LlmProvider {
         reason: 'schema' | 'candidate';
         category: StructuredOutputFailureCategory;
         repairable: boolean;
+        candidateFailure?: ProviderCandidateFailureArtifact | undefined;
         parse: StructuredParseMetadata;
       } {
     const abnormalFinishReason =
@@ -858,6 +931,7 @@ export class Hy3Provider implements LlmProvider {
           reason: 'candidate',
           category: 'SEMANTIC_VALIDATION_FAILURE',
           repairable: true,
+          ...(candidate.failureArtifact ? { candidateFailure: candidate.failureArtifact } : {}),
           parse: {
             jsonParseSuccess: true,
             jsonFormat: extracted.format,
@@ -914,7 +988,7 @@ export class Hy3Provider implements LlmProvider {
     opts: ProviderCallOptions | undefined,
     requestOptions: { maxTokens?: number },
     schemaName: string,
-    attemptNumber: 1 | 2,
+    attemptNumber: 1 | 2 | 3,
     attemptKind: 'original' | 'repair',
   ): Promise<ChatCompletionResult> {
     try {

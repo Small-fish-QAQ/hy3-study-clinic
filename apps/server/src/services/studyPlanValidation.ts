@@ -295,6 +295,16 @@ function objectiveMap(curriculum: Curriculum) {
   );
 }
 
+function synthesisGroupForItem(curriculum: Curriculum, item: StudyPlanItem) {
+  if (item.kind !== 'synthesis' || !item.curriculumLearningUnitId) return undefined;
+  return curriculum.synthesisGroups.find(
+    (group) =>
+      group.learningUnitIds.length >= 2 &&
+      group.learningUnitIds.includes(item.curriculumLearningUnitId!) &&
+      item.objectiveIds.every((objectiveId) => group.objectiveIds.includes(objectiveId)),
+  );
+}
+
 function stableRiskFingerprint(contractId: string, deferral: ProposedStudyPlanDeferral): string {
   return fnv1a32(
     JSON.stringify({
@@ -392,6 +402,7 @@ export function validateStudyPlanScopeAccounting(
   const deferred = new Set<string>();
 
   for (const item of items) {
+    const synthesisGroup = synthesisGroupForItem(curriculum, item);
     for (const prerequisiteId of item.prerequisitePlanItemIds) {
       const prerequisiteIndex = itemIndex.get(prerequisiteId);
       if (prerequisiteIndex === undefined) {
@@ -406,7 +417,11 @@ export function validateStudyPlanScopeAccounting(
         errors.push(`Unknown Curriculum objective: ${objectiveId}.`);
         continue;
       }
-      if (item.curriculumLearningUnitId && owner.unit.id !== item.curriculumLearningUnitId) {
+      if (
+        item.curriculumLearningUnitId &&
+        owner.unit.id !== item.curriculumLearningUnitId &&
+        !synthesisGroup?.learningUnitIds.includes(owner.unit.id)
+      ) {
         errors.push(
           `Objective ${objectiveId} does not belong to LearningUnit ${item.curriculumLearningUnitId}.`,
         );
@@ -564,14 +579,20 @@ export function validateAndMaterializeStudyPlanProposal(input: {
     for (const objectiveId of item.objectiveIds) {
       const owner = objectives.get(objectiveId);
       if (!owner) errors.push(`Unknown Curriculum objective: ${objectiveId}`);
-      const synthesisGroup =
-        item.kind === 'synthesis' && unit
-          ? curriculum.synthesisGroups.find(
-              (group) =>
-                group.learningUnitIds.includes(unit.id) &&
-                item.objectiveIds.every((id) => group.objectiveIds.includes(id)),
-            )
-          : undefined;
+      const synthesisGroup = synthesisGroupForItem(curriculum, {
+        id: item.key,
+        index,
+        phase: item.phase,
+        kind: item.kind,
+        curriculumLearningUnitId: item.curriculumLearningUnitId,
+        rationale: item.rationale,
+        estimatedMinutes: item.estimatedMinutes,
+        targetDepth: item.targetDepth,
+        objectiveIds: item.objectiveIds,
+        prerequisitePlanItemIds: [],
+        completionPolicy: null,
+        completionRequirements: [],
+      });
       if (
         unit &&
         owner &&
@@ -584,6 +605,11 @@ export function validateAndMaterializeStudyPlanProposal(input: {
         const set = planned.get(unit.id) ?? new Set<string>();
         set.add(objectiveId);
         planned.set(unit.id, set);
+        if (synthesisGroup && owner && owner.unit.id !== unit.id) {
+          const ownerSet = planned.get(owner.unit.id) ?? new Set<string>();
+          ownerSet.add(objectiveId);
+          planned.set(owner.unit.id, ownerSet);
+        }
       }
     }
     const emphasis = objectivePriority(curriculum, item.objectiveIds);

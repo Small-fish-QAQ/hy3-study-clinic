@@ -53,6 +53,9 @@ export const CurriculumSourceReferenceSchema = z
   .strict();
 export type CurriculumSourceReference = z.infer<typeof CurriculumSourceReferenceSchema>;
 
+/** Exact provenance capacity per Curriculum node; aligned with source manifests/accountability. */
+export const CURRICULUM_SOURCE_REFERENCE_LIMIT = 10_000;
+
 export const CurriculumObjectiveSchema = z
   .object({
     id: z.string().min(1),
@@ -238,7 +241,9 @@ export const CurriculumNodeSchema = z
     kind: CurriculumNodeKindSchema,
     index: z.number().int().nonnegative(),
     title: z.string().min(1).max(300),
-    sourceReferences: z.array(CurriculumSourceReferenceSchema).max(100),
+    sourceReferences: z
+      .array(CurriculumSourceReferenceSchema)
+      .max(CURRICULUM_SOURCE_REFERENCE_LIMIT),
     learningUnit: CurriculumLearningUnitSchema.nullable(),
   })
   .strict()
@@ -277,6 +282,8 @@ export const CurriculumValidationSchema = z
     errors: z.array(z.string().min(1).max(500)).max(100),
     warnings: z.array(z.string().min(1).max(500)).max(100),
     unmappedStructuralUnitIds: z.array(z.string().min(1)).max(1000),
+    /** Exact current source-block identities omitted from this candidate. */
+    unmappedSourceBlockIds: z.array(z.string().min(1)).max(10_000).optional(),
   })
   .strict();
 
@@ -339,6 +346,8 @@ export const CurriculumProposalFailureDetailsSchema = z
     repairAttempted: z.boolean(),
     errors: z.array(z.string().min(1).max(500)).max(20),
     warnings: z.array(z.string().min(1).max(500)).max(20),
+    unmappedStructuralUnitIds: z.array(z.string().min(1)).max(1000).optional(),
+    unmappedSourceBlockIds: z.array(z.string().min(1)).max(10_000).optional(),
     authorityCritiques: z.array(CurriculumAuthorityCritiqueSchema).max(20).optional(),
   })
   .strict();
@@ -435,7 +444,9 @@ export const CurriculumHierarchyNodeViewSchema = z
     title: z.string().min(1).max(300),
     breadcrumbTitles: z.array(z.string().min(1).max(300)).max(10),
     learningUnit: CurriculumLearningUnitSchema.nullable(),
-    sourceReferences: z.array(CurriculumSourceReferenceSchema).max(100),
+    sourceReferences: z
+      .array(CurriculumSourceReferenceSchema)
+      .max(CURRICULUM_SOURCE_REFERENCE_LIMIT),
     mappedPlanItemIds: z.array(z.string().min(1)).max(100),
     progressState: z
       .enum(['not_started', 'started', 'completed', 'repair_needed', 'deferred', 'obsolete'])

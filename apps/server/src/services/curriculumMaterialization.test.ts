@@ -7,7 +7,9 @@ import { analyzeCourseMapProposal } from './courseMap.js';
 import {
   CurriculumDetailBatchPlanningError,
   assembleCurriculumDetailBatches,
+  buildCourseMapDeterministicCoverage,
   planCurriculumDetailBatches,
+  repairCurriculumDetailAuthorityCandidate,
   validateCurriculumDetailCandidate,
 } from './curriculumMaterialization.js';
 
@@ -81,6 +83,32 @@ function hangingFetch(): typeof fetch {
 }
 
 describe('bounded Curriculum detail materialization', () => {
+  it('preserves exact Course Map region membership for every real LearningUnit', () => {
+    const input = planningInput();
+    const coverage = buildCourseMapDeterministicCoverage(
+      input.courseMap,
+      input.sourceAllocation,
+      input.sourceAllocation.regions.flatMap((region) =>
+        region.sourceBlockIds.map((id, index) => ({
+          id,
+          materialId: region.materialId,
+          materialRevisionId: region.materialRevisionId,
+          structuralUnitId: index === 0 ? `structural-${region.index}` : null,
+        })),
+      ) as never,
+    );
+    const firstRegion = input.courseMap.modules[0]!.regions[0]!;
+    const firstMembership = coverage.get('course-map-unit-1')!;
+    expect(firstMembership.sourceBlockIds).toEqual(
+      firstRegion.sourceAllocationRegionIds.flatMap(
+        (allocationId) =>
+          input.sourceAllocation.regions.find((region) => region.id === allocationId)!
+            .sourceBlockIds,
+      ),
+    );
+    expect(firstMembership.structuralUnitIds).toEqual(['structural-0']);
+  });
+
   it('plans deterministic one-batch detail materialization with exact request accounting', () => {
     const input = planningInput();
     const first = planCurriculumDetailBatches(input);
@@ -266,6 +294,33 @@ describe('Curriculum detail Hy3 provider contract', () => {
     expect(JSON.stringify(firstRequest.messages)).toContain(batch.input.regions[0]!.regionId);
   });
 
+  it('keeps one independent candidate repair after a schema repair', async () => {
+    const batch = planCurriculumDetailBatches(planningInput())[0]!;
+    const valid = await new FakeProvider().proposeCurriculumDetails(batch.input);
+    const foreign = {
+      ...valid,
+      courseMapId: 'course_map_ffffffffffffffffffffffff',
+    };
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse('not json'))
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(foreign)))
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(valid))) as unknown as typeof fetch;
+    const onRepairAttempt = vi.fn();
+
+    const payload = await makeHy3Provider(fetchImpl).proposeCurriculumDetails(batch.input, {
+      validateCandidate: (candidate) => validateCurriculumDetailCandidate(candidate, batch.input),
+      onRepairAttempt,
+    });
+
+    expect(payload).toEqual(valid);
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(onRepairAttempt.mock.calls).toEqual([
+      ['schema', 'PROVIDER_FORMAT_INCOMPATIBILITY'],
+      ['candidate', 'SEMANTIC_VALIDATION_FAILURE'],
+    ]);
+  });
+
   it('fails after one malformed-output repair', async () => {
     const batch = planCurriculumDetailBatches(planningInput())[0]!;
     const fetchImpl = vi.fn(async () => jsonResponse('not json')) as unknown as typeof fetch;
@@ -283,6 +338,157 @@ describe('Curriculum detail Hy3 provider contract', () => {
       'schema',
       'PROVIDER_FORMAT_INCOMPATIBILITY',
     );
+  });
+
+  it('reapplies deterministic evidence authority repair after a schema repair', async () => {
+    const batch = planCurriculumDetailBatches(planningInput())[0]!;
+    const candidate = await new FakeProvider().proposeCurriculumDetails(batch.input);
+    candidate.units[0]!.title = 'Alpha material source boundary';
+    const objective = candidate.units[0]!.objectives[0]!;
+    objective.priority = 'required';
+    objective.title = 'Apply the source in production';
+    objective.description = 'Apply a broader procedure than the evidence supports.';
+    const selectedEvidenceId = objective.evidence[0]!.evidenceId;
+    const selectedOffer = batch.input.regions[0]!.evidence.find(
+      (offer) => offer.evidenceId === selectedEvidenceId,
+    )!;
+    selectedOffer.authorityEnvelope = {
+      sourceRegionId: selectedEvidenceId,
+      sourceBlockIds: ['block-1'],
+      formalEvidenceIds: [selectedEvidenceId],
+      supportedConstructs: ['identify'],
+      strongestSupportedConstruct: 'identify',
+      narrowerClaim: selectedOffer.text,
+      tier: 'narrower_formal',
+      rationale: 'The exact selected evidence supports identification only.',
+    };
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse('not json'))
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(candidate))) as unknown as typeof fetch;
+
+    const payload = await makeHy3Provider(fetchImpl).proposeCurriculumDetails(batch.input, {
+      validateCandidate: (value) => {
+        let validation = validateCurriculumDetailCandidate(value, batch.input);
+        if (!validation.valid) {
+          const repaired = repairCurriculumDetailAuthorityCandidate(
+            value as typeof candidate,
+            batch.input,
+          );
+          if (repaired.repaired) {
+            Object.assign(value as object, repaired.candidate);
+            validation = validateCurriculumDetailCandidate(value, batch.input);
+          }
+        }
+        return validation;
+      },
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(payload.units[0]!.objectives[0]).toMatchObject({
+      priority: 'required',
+      evidence: [{ evidenceId: selectedEvidenceId }],
+    });
+    expect(payload.units[0]!.objectives[0]!.title).toMatch(/^Identify:/u);
+    expect(validateCurriculumDetailCandidate(payload, batch.input).valid).toBe(true);
+  });
+
+  it('preserves exact repaired candidate diagnostics in a bounded safe failure artifact', async () => {
+    const batch = planCurriculumDetailBatches(planningInput())[0]!;
+    const candidate = await new FakeProvider().proposeCurriculumDetails(batch.input);
+    candidate.units[0]!.title = 'Unsupported provider claim boundary';
+    const objective = candidate.units[0]!.objectives[0]!;
+    const selectedEvidenceId = objective.evidence[0]!.evidenceId;
+    const selectedOffer = batch.input.regions[0]!.evidence.find(
+      (offer) => offer.evidenceId === selectedEvidenceId,
+    )!;
+    const boundedNarrowerClaim = 'Only identify the exact source-supported boundary.';
+    objective.priority = 'required';
+    objective.title = 'Apply an unsupported private provider claim';
+    objective.description = 'PRIVATE_REPAIRED_PROVIDER_RESPONSE_TEXT';
+    selectedOffer.authorityEnvelope = {
+      sourceRegionId: selectedEvidenceId,
+      sourceBlockIds: ['block-1'],
+      formalEvidenceIds: [],
+      supportedConstructs: [],
+      strongestSupportedConstruct: null,
+      narrowerClaim: boundedNarrowerClaim,
+      tier: 'unavailable',
+      rationale: 'The selected offer cannot support a formal objective.',
+    };
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse(JSON.stringify(candidate)),
+    ) as unknown as typeof fetch;
+
+    let thrown: unknown;
+    try {
+      await makeHy3Provider(fetchImpl).proposeCurriculumDetails(batch.input, {
+        validateCandidate: (value) => {
+          let validation = validateCurriculumDetailCandidate(value, batch.input);
+          if (!validation.valid) {
+            const repaired = repairCurriculumDetailAuthorityCandidate(
+              value as typeof candidate,
+              batch.input,
+            );
+            if (repaired.repaired) {
+              Object.assign(value as object, repaired.candidate);
+              validation = validateCurriculumDetailCandidate(value, batch.input);
+            }
+          }
+          return validation;
+        },
+      });
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(thrown).toMatchObject({
+      code: 'PROVIDER_INVALID_OUTPUT',
+      technicalFailureCode: 'REPAIR_EXHAUSTED:SEMANTIC_VALIDATION_FAILURE',
+      details: {
+        validationKind: 'candidate',
+        candidateFailure: {
+          kind: 'curriculum_detail_candidate_validation_failed',
+          context: {
+            courseMapId: batch.input.courseMapId,
+            batchKey: batch.input.batchKey,
+          },
+          diagnostics: [
+            {
+              code: 'required_objective_formal_authority_missing',
+              facts: {
+                courseMapRegionId: batch.input.regions[0]!.regionId,
+                objectiveKey: objective.key,
+                claimedConstruct: 'apply',
+                protectedPriority: 'required',
+                selectedEvidenceIds: [selectedEvidenceId],
+                selectedEvidenceAuthority: [
+                  {
+                    evidenceId: selectedEvidenceId,
+                    sourceAllocationRegionId: selectedOffer.sourceAllocationRegionId,
+                    available: true,
+                    authorityTier: 'unavailable',
+                    supportedConstructs: [],
+                    strongestSupportedConstruct: null,
+                    formalEvidenceCount: 0,
+                    narrowerClaim: boundedNarrowerClaim,
+                  },
+                ],
+                repairAuthorityTier: 'unavailable',
+                repairSupportedConstructs: [],
+                repairNarrowerClaim: boundedNarrowerClaim,
+              },
+            },
+          ],
+        },
+      },
+    });
+    const serialized = JSON.stringify(thrown);
+    expect(serialized).toContain(boundedNarrowerClaim);
+    expect(serialized).not.toContain('PRIVATE_REPAIRED_PROVIDER_RESPONSE_TEXT');
+    expect(serialized).not.toContain('curriculum-detail-test-key');
+    expect(serialized.length).toBeLessThan(16_000);
   });
 
   it('does not retry a timed-out detail request and supports cancellation', async () => {

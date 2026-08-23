@@ -5,6 +5,7 @@ import { AnswerSchema, classifyGradeStatus, RubricGradeSchema } from './grading.
 import { MasteryStateSchema } from './mistake.js';
 import { ApiErrorSchema } from './errors.js';
 import { MATERIAL_TITLE_MAX_LENGTH, UpdateMaterialTitleRequestSchema } from './material.js';
+import { CURRICULUM_SOURCE_REFERENCE_LIMIT, CurriculumNodeSchema } from './curriculum.js';
 
 const baseGrounding = {
   blockId: 'b1',
@@ -14,6 +15,44 @@ const baseGrounding = {
   occurrenceCount: 1,
   reanchored: false,
 };
+
+describe('Curriculum provenance capacity', () => {
+  it('accepts every exact source reference needed by a high-cardinality source region', () => {
+    const sourceReferences = Array.from({ length: 295 }, (_, index) => ({
+      materialId: 'material_1',
+      materialRevisionId: 'revision_1',
+      structuralUnitId: null,
+      sourceBlockId: `block_${index + 1}`,
+      sourceBlockRevisionFingerprint: `fingerprint_${index + 1}`,
+    }));
+    const result = CurriculumNodeSchema.safeParse({
+      id: 'unit_1',
+      parentId: 'section_1',
+      kind: 'learning_unit',
+      index: 0,
+      title: 'High-cardinality source region',
+      sourceReferences,
+      learningUnit: {
+        conceptIds: [],
+        canonicalConceptIds: [],
+        objectives: [
+          {
+            id: 'objective_1',
+            title: 'Explain the source',
+            description: 'Explain the exact source region.',
+            truthPremiseStatus: 'unverified',
+            truthAuthorityRecordIds: [],
+          },
+        ],
+        prerequisiteUnitIds: [],
+        graphRelationIds: [],
+        riskIds: [],
+      },
+    });
+    expect(CURRICULUM_SOURCE_REFERENCE_LIMIT).toBeGreaterThanOrEqual(295);
+    expect(result.success).toBe(true);
+  });
+});
 
 const validSingleChoice = {
   id: 'q1',

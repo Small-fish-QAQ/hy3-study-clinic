@@ -23,9 +23,12 @@ import type {
   CurriculumEvidenceOffer,
   LlmProvider,
   ProviderCallOptions,
+  ProviderCandidateValidation,
+  ProviderCandidateFailureArtifact,
 } from '../llm/provider.js';
 import { CourseSourceMapSchema, type CourseSourceMap } from './courseSourceMap.js';
 import { validateCourseSourceMapSelectionCorpus } from './curriculumEvidencePolicy.js';
+import { validateCourseMapSemanticCoherence } from './curriculumSemanticEvaluator.js';
 
 export const COURSE_MAP_SOURCE_REGION_LIMIT = 120;
 export const COURSE_MAP_SOURCE_EVIDENCE_LIMIT = 160;
@@ -1279,7 +1282,9 @@ export interface CourseMapPrototypeResult {
 
 /**
  * Recover only omitted, unclassified source regions during the single bounded
- * candidate repair. Explicit dispositions are authoritative and remain intact.
+ * candidate repair. Every recovered region becomes a real Course Map region;
+ * disposition arithmetic is derived later from that region and is never used
+ * as a substitute for final Curriculum membership.
  */
 export function repairOmittedCourseMapCoverage(
   candidate: CourseMapProposalPayload,
@@ -1322,13 +1327,6 @@ export function repairOmittedCourseMapCoverage(
             ? 'extended'
             : 'standard',
       anchorOptionRefs: sourceRegion.anchorOptions.map((option) => option.anchorOptionId),
-    });
-    candidate.sourceDispositions ??= [];
-    candidate.sourceDispositions.push({
-      sourceRegionRef: sourceRegion.sourceRegionRef,
-      disposition: 'represented_directly',
-      rationale: `直接纳入资料区域“${sourceRegion.title}”，并保留服务器提供的精确锚点。`,
-      representedRegionRefs: [sourceRegion.sourceRegionRef],
     });
   }
   return true;
@@ -1373,29 +1371,69 @@ export async function generateCourseMapPrototype(
         providerInput,
         sourceAllocation,
       });
-      const local = {
+      const localDiagnostics = analysis.validation.diagnostics.filter(
+        (diagnostic) => diagnostic.severity === 'error',
+      );
+      const local: ProviderCandidateValidation = {
         valid: analysis.validation.valid,
-        diagnostics: analysis.validation.diagnostics
-          .filter((diagnostic) => diagnostic.severity === 'error')
-          .map(
-            (diagnostic) =>
-              `${diagnostic.code}${diagnostic.entityKeys.length > 0 ? ` [${diagnostic.entityKeys.join(', ')}]` : ''}: ${diagnostic.message}`,
-          ),
-        diagnosticCodes: analysis.validation.diagnostics
-          .filter((diagnostic) => diagnostic.severity === 'error')
-          .map((diagnostic) => diagnostic.code),
+        diagnostics: localDiagnostics.map(
+          (diagnostic) =>
+            `${diagnostic.code}${diagnostic.entityKeys.length > 0 ? ` [${diagnostic.entityKeys.join(', ')}]` : ''}: ${diagnostic.message}`,
+        ),
+        diagnosticCodes: localDiagnostics.map((diagnostic) => diagnostic.code),
+        ...(localDiagnostics.length > 0
+          ? {
+              failureArtifact: {
+                kind: 'course_map_local_validation_failed',
+                context: {
+                  courseMapId: analysis.courseMap.id,
+                  sourceAllocationFingerprint: sourceAllocation.fingerprint,
+                },
+                diagnostics: localDiagnostics.slice(0, 20).map((diagnostic) => ({
+                  code: diagnostic.code,
+                  message: diagnostic.message,
+                  facts: { entityKeys: diagnostic.entityKeys },
+                })),
+              },
+            }
+          : {}),
       };
+      const semantic = validateCourseMapSemanticCoherence(
+        analysis.courseMap,
+        analysis.sourceAllocation,
+      );
       const external = opts?.validateCandidate?.(candidate);
-      return external && !external.valid
-        ? {
-            valid: false,
-            diagnostics: [...local.diagnostics, ...external.diagnostics].slice(0, 20),
-            diagnosticCodes: [
-              ...local.diagnosticCodes,
-              ...(external.diagnosticCodes ?? ['external_candidate_validation_failed']),
-            ].slice(0, 20),
-          }
-        : local;
+      const validations = [local, semantic, ...(external ? [external] : [])];
+      const failedValidations = validations.filter((validation) => !validation.valid);
+      const failureDiagnostics: ProviderCandidateFailureArtifact['diagnostics'] = failedValidations
+        .flatMap(
+          (validation) =>
+            validation.failureArtifact?.diagnostics ??
+            validation.diagnostics.map((message, index) => ({
+              code: validation.diagnosticCodes?.[index] ?? 'candidate_validation_failed',
+              message,
+            })),
+        )
+        .slice(0, 20);
+      return {
+        valid: failedValidations.length === 0,
+        diagnostics: validations.flatMap((validation) => validation.diagnostics).slice(0, 20),
+        diagnosticCodes: validations
+          .flatMap((validation) => validation.diagnosticCodes ?? [])
+          .slice(0, 20),
+        ...(failureDiagnostics.length > 0
+          ? {
+              failureArtifact: {
+                kind: 'course_map_candidate_validation_failed',
+                context: {
+                  courseMapId: analysis.courseMap.id,
+                  sourceAllocationFingerprint: sourceAllocation.fingerprint,
+                },
+                diagnostics: failureDiagnostics,
+              },
+            }
+          : {}),
+      };
     },
   });
   const analysis = analyzeCourseMapProposal(payload, { providerInput, sourceAllocation });
@@ -1408,6 +1446,13 @@ export async function generateCourseMapPrototype(
         .join('; '),
       'candidate',
     );
+  }
+  const semantic = validateCourseMapSemanticCoherence(
+    analysis.courseMap,
+    analysis.sourceAllocation,
+  );
+  if (!semantic.valid) {
+    throw ProviderError.invalidOutput(semantic.diagnostics.slice(0, 20).join('; '), 'candidate');
   }
   return { analysis, repairAttempted };
 }

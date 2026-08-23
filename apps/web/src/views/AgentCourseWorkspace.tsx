@@ -1580,7 +1580,11 @@ export function AgentCourseWorkspace({
           errorDetails={actionFailureOwner === 'curriculum' ? action.errorDetails : null}
           canPropose={
             (overview?.capabilities.canProposeCurriculum ?? false) &&
-            !(preparation?.canResume || preparation?.state === 'preparing_course_structure')
+            !(
+              preparation?.canResume ||
+              preparation?.state === 'preparing_course_structure' ||
+              preparation?.blocker?.code === 'course_structure_generation_failed'
+            )
           }
           canAccept={overview?.capabilities.canAcceptCurriculum ?? false}
           recovery={overview?.curriculumRecovery}

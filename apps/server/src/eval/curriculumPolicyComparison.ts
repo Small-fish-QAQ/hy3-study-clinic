@@ -12,6 +12,7 @@ import {
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import { computeSections } from '../ingestion/sections.js';
+import { MAX_STRUCTURED_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL } from '../llm/provider.js';
 import type {
   CurriculumProposalInput,
   LlmProvider,
@@ -853,7 +854,8 @@ export async function evaluateCurriculumPolicy(
     const allUsage = stages.flatMap((stage) => stage.usage);
     const currencies = [...new Set(allUsage.map((usage) => usage.currency).filter(Boolean))];
     const maximumPhysicalCalls =
-      policy === LEGACY_CURRICULUM_GENERATION_POLICY ? 2 : 2 * (1 + MAX_DETAIL_BATCHES);
+      (policy === LEGACY_CURRICULUM_GENERATION_POLICY ? 1 : 1 + MAX_DETAIL_BATCHES) *
+      MAX_STRUCTURED_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL;
     const logicalCalls = stages.length;
     const physicalCalls = stages.reduce((sum, stage) => sum + stage.physicalCalls, 0);
     const repairs = stages.reduce((sum, stage) => sum + stage.repairReasons.length, 0);
@@ -861,7 +863,11 @@ export async function evaluateCurriculumPolicy(
       logicalCalls >
         (policy === LEGACY_CURRICULUM_GENERATION_POLICY ? 1 : 1 + MAX_DETAIL_BATCHES) ||
       physicalCalls > maximumPhysicalCalls ||
-      stages.some((stage) => stage.physicalCalls > 2 || stage.repairReasons.length > 1)
+      stages.some(
+        (stage) =>
+          stage.physicalCalls > MAX_STRUCTURED_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL ||
+          stage.repairReasons.length > MAX_STRUCTURED_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL - 1,
+      )
     ) {
       throw new Error('Curriculum evaluation exceeded the production provider-call ceiling.');
     }

@@ -1,4 +1,6 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
+import type { CourseMapSourceAllocation } from '@hy3-clinic/shared';
 import { FakeProvider } from '../llm/fakeProvider.js';
 import { Hy3Provider } from '../llm/hy3Provider.js';
 import type { ProviderUsage } from '../llm/provider.js';
@@ -33,6 +35,42 @@ function hangingFetch(): typeof fetch {
         );
       }),
   ) as unknown as typeof fetch;
+}
+
+function semanticScatteringFixture() {
+  const fixture = createCourseMapFixture();
+  const sourceAllocation = structuredClone(fixture.sourceAllocation);
+  sourceAllocation.regions[0]!.title = 'Permissions model';
+  sourceAllocation.regions[1]!.title = 'Permissions boundaries';
+  const { fingerprint: _oldFingerprint, ...withoutFingerprint } = sourceAllocation;
+  sourceAllocation.fingerprint = `course_map_source_allocation_${createHash('sha256')
+    .update(JSON.stringify(withoutFingerprint))
+    .digest('hex')
+    .slice(0, 40)}` as CourseMapSourceAllocation['fingerprint'];
+  const providerInput = structuredClone(fixture.providerInput);
+  providerInput.sourceAllocationFingerprint = sourceAllocation.fingerprint;
+  providerInput.sourceRegions[0]!.title = sourceAllocation.regions[0]!.title;
+  providerInput.sourceRegions[1]!.title = sourceAllocation.regions[1]!.title;
+  const scattered = structuredClone(fixture.good);
+  scattered.modules = [
+    {
+      title: 'Permissions foundations',
+      learningIntent: 'Establish the permissions model.',
+      regions: [scattered.modules[0]!.regions[0]!],
+    },
+    {
+      title: 'Permissions operations',
+      learningIntent: 'Apply permission boundaries in later operations.',
+      regions: [...scattered.modules[0]!.regions.slice(1), ...scattered.modules[1]!.regions],
+    },
+  ];
+  scattered.modules[0]!.regions[0]!.title = 'Permissions model';
+  scattered.modules[1]!.regions[0]!.title = 'Permissions boundaries';
+  scattered.synthesisGroups = [];
+  const repaired = structuredClone(fixture.good);
+  repaired.modules[0]!.regions[0]!.title = 'Permissions model';
+  repaired.modules[0]!.regions[1]!.title = 'Permissions boundaries';
+  return { fixture, sourceAllocation, providerInput, scattered, repaired };
 }
 
 describe('Course Map Fake provider prototype', () => {
@@ -348,6 +386,126 @@ describe('Course Map Hy3 provider contract', () => {
       String((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[1]![1]!.body),
     ) as { messages: Array<{ content: string }> };
     expect(repairBody.messages.at(-1)!.content).toContain('prerequisite_cycle');
+  });
+
+  it('repairs exact cross-module semantic scattering once using module and source identities', async () => {
+    const { fixture, sourceAllocation, providerInput, scattered, repaired } =
+      semanticScatteringFixture();
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(scattered)))
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(repaired))) as unknown as typeof fetch;
+
+    const result = await generateCourseMapPrototype({
+      provider: makeHy3Provider(fetchImpl),
+      providerInput,
+      sourceAllocation,
+    });
+
+    expect(result.repairAttempted).toBe(true);
+    expect(result.analysis.validation.valid).toBe(true);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    const repairBody = JSON.parse(
+      String((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[1]![1]!.body),
+    ) as { messages: Array<{ content: string }> };
+    const repairPrompt = repairBody.messages.at(-1)!.content;
+    expect(repairPrompt).toContain('semantic_topic_scattering');
+    expect(repairPrompt).toContain('module-1 (Permissions foundations)');
+    expect(repairPrompt).toContain('module-2 (Permissions operations)');
+    expect(repairPrompt).toContain(`R1:${sourceAllocation.regions[0]!.id}`);
+    expect(repairPrompt).toContain(`R2:${sourceAllocation.regions[1]!.id}`);
+    expect(result.analysis.courseMap.modules[0]!.regions.map((region) => region.title)).toEqual(
+      expect.arrayContaining(['Permissions model', 'Permissions boundaries']),
+    );
+    expect(result.analysis.sourceAllocation.workspaceId).toBe(fixture.workspaceId);
+  });
+
+  it('repairs copied numbered source headings into learner-visible region identities', async () => {
+    const fixture = createCourseMapFixture();
+    const sourceAllocation = structuredClone(fixture.sourceAllocation);
+    sourceAllocation.regions[0]!.title = '1. Parser source heading';
+    const { fingerprint: _oldFingerprint, ...withoutFingerprint } = sourceAllocation;
+    sourceAllocation.fingerprint = `course_map_source_allocation_${createHash('sha256')
+      .update(JSON.stringify(withoutFingerprint))
+      .digest('hex')
+      .slice(0, 40)}` as CourseMapSourceAllocation['fingerprint'];
+    const providerInput = structuredClone(fixture.providerInput);
+    providerInput.sourceAllocationFingerprint = sourceAllocation.fingerprint;
+    providerInput.sourceRegions[0]!.title = sourceAllocation.regions[0]!.title;
+    const copied = structuredClone(fixture.good);
+    copied.modules[0]!.regions[0]!.title = '1. Parser source heading';
+    const repaired = structuredClone(copied);
+    repaired.modules[0]!.regions[0]!.title = 'Semantic foundations';
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(copied)))
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(repaired))) as unknown as typeof fetch;
+
+    const result = await generateCourseMapPrototype({
+      provider: makeHy3Provider(fetchImpl),
+      providerInput,
+      sourceAllocation,
+    });
+
+    expect(result.repairAttempted).toBe(true);
+    expect(result.analysis.courseMap.modules[0]!.regions[0]!.title).toBe('Semantic foundations');
+    const repairBody = JSON.parse(
+      String((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[1]![1]!.body),
+    ) as { messages: Array<{ content: string }> };
+    const repairPrompt = repairBody.messages.at(-1)!.content;
+    expect(repairPrompt).toContain('source_heading_title_dump');
+    expect(repairPrompt).toContain('R1');
+    expect(repairPrompt).toContain('1. Parser source heading');
+  });
+
+  it('fails closed when bounded semantic-scattering repair returns an equivalent map', async () => {
+    const { sourceAllocation, providerInput, scattered } = semanticScatteringFixture();
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse(JSON.stringify(scattered)),
+    ) as unknown as typeof fetch;
+
+    await expect(
+      generateCourseMapPrototype({
+        provider: makeHy3Provider(fetchImpl),
+        providerInput,
+        sourceAllocation,
+      }),
+    ).rejects.toMatchObject({
+      code: 'PROVIDER_INVALID_OUTPUT',
+      details: {
+        validationKind: 'candidate',
+        candidateFailure: {
+          kind: 'course_map_candidate_validation_failed',
+          diagnostics: [
+            {
+              code: 'semantic_topic_scattering',
+              facts: {
+                modules: [
+                  {
+                    moduleTitle: 'Permissions foundations',
+                  },
+                  {
+                    moduleTitle: 'Permissions operations',
+                  },
+                ],
+                sourceRegions: expect.arrayContaining([
+                  expect.objectContaining({
+                    sourceRegionRef: 'R1',
+                    sourceAllocationRegionId: sourceAllocation.regions[0]!.id,
+                  }),
+                  expect.objectContaining({
+                    sourceRegionRef: 'R2',
+                    sourceAllocationRegionId: sourceAllocation.regions[1]!.id,
+                  }),
+                ]),
+              },
+            },
+          ],
+        },
+      },
+      technicalFailureCode: 'REPAIR_EXHAUSTED:SEMANTIC_VALIDATION_FAILURE',
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
   it('fails closed when the semantic repair remains invalid', async () => {

@@ -7,7 +7,10 @@ import {
   type CurriculumCoverageDisposition,
   type CurriculumQualityFinding,
   type CurriculumSemanticEvaluation,
+  type CourseMap,
+  type CourseMapSourceAllocation,
 } from '@hy3-clinic/shared';
+import type { ProviderCandidateValidation } from '../llm/provider.js';
 
 export const CURRICULUM_SEMANTIC_EVALUATOR_POLICY_VERSION = 'curriculum-semantic-v1';
 
@@ -45,6 +48,22 @@ function normalized(value: string): string {
     .trim();
 }
 
+const SEMANTIC_ALIAS_PATTERNS: Array<{ token: string; pattern: RegExp }> = [
+  {
+    token: 'semantic_document_chunking',
+    pattern: /(?:(?:文档)?(?:切片|切块)|分隔符|\bchunks?\b|\bchunking\b)/iu,
+  },
+  {
+    token: 'semantic_grounded_answer_quality',
+    pattern: /(?:忠实性|幻觉|faithful(?:ness)?|hallucinat(?:ion|e|ed|ing)?)/iu,
+  },
+  {
+    token: 'semantic_retrieval',
+    pattern:
+      /(?:\bivf(?:pq)?\b|\bnprobe\b|\bcentroids?\b|检索|召回|\bretriev(?:al|e|ed|ing)?\b|\bsearch\b)/iu,
+  },
+];
+
 function features(value: string): Set<string> {
   const normalizedValue = normalized(value);
   const result = new Set<string>(normalizedValue.match(/[a-z0-9]{3,}/g) ?? []);
@@ -54,12 +73,26 @@ function features(value: string): Set<string> {
       result.add(`${han[index]}${han[index + 1]}`);
     }
   }
+  for (const alias of SEMANTIC_ALIAS_PATTERNS) {
+    if (alias.pattern.test(normalizedValue)) result.add(alias.token);
+  }
   return result;
 }
 
 function overlaps(left: Set<string>, right: Set<string>): boolean {
   for (const value of left) if (right.has(value)) return true;
   return false;
+}
+
+/** Shared title/objective anchor test used before and after materialization. */
+export function hasCurriculumSemanticAnchor(subject: string, anchors: string[]): boolean {
+  const subjectFeatures = features(subject);
+  if (subjectFeatures.size === 0) return true;
+  const anchorFeatures = new Set<string>();
+  for (const anchor of anchors) {
+    for (const token of features(anchor)) anchorFeatures.add(token);
+  }
+  return overlaps(subjectFeatures, anchorFeatures);
 }
 
 const SEMANTIC_STOPWORDS = new Set([
@@ -78,7 +111,39 @@ const SEMANTIC_STOPWORDS = new Set([
   'foundations',
   'system',
   'systems',
+  'rag',
+  'topic',
+  '课程',
+  '章节',
+  '模块',
+  '学习',
+  '内容',
+  '概念',
+  '基础',
+  '工程',
+  '要点',
 ]);
+
+const HAN_JOINERS = new Set([
+  '与',
+  '和',
+  '及',
+  '的',
+  '在',
+  '为',
+  '从',
+  '到',
+  '对',
+  '中',
+  '上',
+  '下',
+]);
+
+function isSpecificSemanticToken(token: string): boolean {
+  if (SEMANTIC_STOPWORDS.has(token)) return false;
+  const characters = [...token];
+  return !(characters.length === 2 && characters.some((character) => HAN_JOINERS.has(character)));
+}
 
 function isMeaningful(region: CurriculumSemanticSourceRegion): boolean {
   if (region.meaningful !== undefined) return region.meaningful;
@@ -193,8 +258,26 @@ function finding(
 }
 
 function leadingNumber(title: string): number | null {
-  const match = title.trim().match(/^(\d{1,4})(?:[.)、:]|\s)/u);
+  // A decimal subsection such as 7.1 is not three repeated top-level "7"
+  // siblings. Only parse a complete integer prefix followed by a delimiter.
+  const match = title.trim().match(/^(\d{1,4})(?:[.)、:](?!\d)|\s)/u);
   return match ? Number(match[1]) : null;
+}
+
+function sourceOrdinalPrefix(title: string): string | null {
+  const match = title
+    .trimStart()
+    .match(
+      /^(?:\d{1,4}(?:\.\d+)+(?:[.)、:：])?|\d{1,4}[.)、:：]|\d{1,4}(?=\s)|[一二三四五六七八九十百]+[、.)）:]|第[一二三四五六七八九十百\d]+[章节部分])/u,
+    );
+  return match?.[0].normalize('NFKC').replace(/[.)、:：）]+$/gu, '') ?? null;
+}
+
+function repeatedHeadingBase(title: string): string | null {
+  if (!/[（(]\s*\d+\s*[)）]\s*$/u.test(title)) return null;
+  const withoutCounter = title.replace(/[（(]\s*\d+\s*[)）]\s*$/u, '');
+  const ordinal = sourceOrdinalPrefix(withoutCounter);
+  return normalized(ordinal ? withoutCounter.slice(ordinal.length) : withoutCounter) || null;
 }
 
 function siblingNumberingFindings(curriculum: Curriculum): CurriculumQualityFinding[] {
@@ -296,17 +379,32 @@ function cohesionFindings(
       [chapter.title, ...descendants.map((node) => node.title), ...sourceTitles].join(' '),
     );
   });
+  const chapterIndexesByToken = new Map<string, Set<number>>();
+  for (const [chapterIndex, tokens] of tokensByChapter.entries()) {
+    for (const token of tokens) {
+      const indexes = chapterIndexesByToken.get(token) ?? new Set<number>();
+      indexes.add(chapterIndex);
+      chapterIndexesByToken.set(token, indexes);
+    }
+  }
+  const sourceRegionCountByToken = new Map<string, number>();
+  for (const region of sourceRegions) {
+    for (const token of features(region.title)) {
+      sourceRegionCountByToken.set(token, (sourceRegionCountByToken.get(token) ?? 0) + 1);
+    }
+  }
+  const broadSourceTokenThreshold = Math.max(4, Math.ceil(sourceRegions.length * 0.1));
   const findings: CurriculumQualityFinding[] = [];
   for (let left = 0; left < chapters.length; left += 1) {
     for (let right = left + 1; right < chapters.length; right += 1) {
       const shared = [...tokensByChapter[left]!].filter((token) =>
         tokensByChapter[right]!.has(token),
       );
-      const meaningfulShared = shared.filter(
-        (token) =>
-          !SEMANTIC_STOPWORDS.has(token) &&
-          !/^(?:course|chapter|module|part|section|课程|章节|模块|内容)$/iu.test(token),
-      );
+      const meaningfulShared = shared.filter((token) => {
+        if (!isSpecificSemanticToken(token)) return false;
+        if ((chapterIndexesByToken.get(token)?.size ?? 0) > 2) return false;
+        return (sourceRegionCountByToken.get(token) ?? 0) <= broadSourceTokenThreshold;
+      });
       if (meaningfulShared.length === 0) continue;
       const leftIds = new Set(descendantsByChapter[left]!.map((node) => node.id));
       const rightIds = new Set(descendantsByChapter[right]!.map((node) => node.id));
@@ -316,17 +414,21 @@ function cohesionFindings(
           group.learningUnitIds.some((id) => rightIds.has(id)),
       );
       if (explainedBySynthesis) continue;
-      const sourceRegionIds = sourceRegions
-        .filter((region) => {
-          const sourceFeatures = features(region.title);
-          const mappedIds = nodeIdsByRegion.get(region.id) ?? [];
-          return (
-            mappedIds.some((id) => leftIds.has(id) || rightIds.has(id)) &&
-            meaningfulShared.some((token) => sourceFeatures.has(token))
-          );
-        })
-        .map((region) => region.id);
-      if (sourceRegionIds.length === 0) continue;
+      const matchingSourceRegionIds = (chapterIds: Set<string>) =>
+        sourceRegions
+          .filter((region) => {
+            const sourceFeatures = features(region.title);
+            const mappedIds = nodeIdsByRegion.get(region.id) ?? [];
+            return (
+              mappedIds.some((id) => chapterIds.has(id)) &&
+              meaningfulShared.some((token) => sourceFeatures.has(token))
+            );
+          })
+          .map((region) => region.id);
+      const leftSourceRegionIds = matchingSourceRegionIds(leftIds);
+      const rightSourceRegionIds = matchingSourceRegionIds(rightIds);
+      if (leftSourceRegionIds.length === 0 || rightSourceRegionIds.length === 0) continue;
+      const sourceRegionIds = [...new Set([...leftSourceRegionIds, ...rightSourceRegionIds])];
       findings.push(
         finding(
           'conceptual_cohesion',
@@ -340,6 +442,238 @@ function cohesionFindings(
     }
   }
   return findings;
+}
+
+function courseMapTitleFindings(
+  courseMap: CourseMap,
+  sourceAllocation: CourseMapSourceAllocation,
+): CurriculumQualityFinding[] {
+  const allocationById = new Map(sourceAllocation.regions.map((region) => [region.id, region]));
+  const regions = courseMap.modules.flatMap((module) => module.regions);
+  const findings: CurriculumQualityFinding[] = [];
+  for (const region of regions) {
+    const generatedOrdinal = sourceOrdinalPrefix(region.title);
+    const copiedNumbering = generatedOrdinal
+      ? region.sourceAllocationRegionIds
+          .map((id) => allocationById.get(id))
+          .filter((item): item is CourseMapSourceAllocation['regions'][number] => Boolean(item))
+          .some((source) => sourceOrdinalPrefix(source.title) === generatedOrdinal)
+      : false;
+    if (!copiedNumbering) continue;
+    findings.push(
+      finding(
+        'sequencing',
+        'error',
+        'source_heading_title_dump',
+        `Course Map region “${region.title}” preserves source/parser numbering instead of naming a learner-visible semantic boundary.`,
+        [region.id],
+        [...region.sourceAllocationRegionIds],
+      ),
+    );
+  }
+  const repeatedByBase = new Map<string, CourseMap['modules'][number]['regions']>();
+  for (const region of regions) {
+    const base = repeatedHeadingBase(region.title);
+    if (!base) continue;
+    const matches = repeatedByBase.get(base) ?? [];
+    matches.push(region);
+    repeatedByBase.set(base, matches);
+  }
+  for (const [base, matches] of repeatedByBase) {
+    if (matches.length < 2) continue;
+    findings.push(
+      finding(
+        'sequencing',
+        'error',
+        'source_heading_title_dump',
+        `Course Map regions repeat the same source-heading identity “${base}” and differ only by appended counters.`,
+        matches.map((region) => region.id),
+        [...new Set(matches.flatMap((region) => region.sourceAllocationRegionIds))],
+      ),
+    );
+  }
+  return findings;
+}
+
+/**
+ * Apply the independent cohesion rule to a Course Map before detailed
+ * generation. This keeps model-correctable grouping defects inside the
+ * provider's fixed bounded repair contract; the final Curriculum evaluator
+ * still runs independently after materialization.
+ */
+export function validateCourseMapSemanticCoherence(
+  courseMap: CourseMap,
+  sourceAllocation: CourseMapSourceAllocation,
+): ProviderCandidateValidation {
+  const courseId = 'course-map-semantic-probe';
+  const nodes: Curriculum['nodes'] = [
+    {
+      id: courseId,
+      parentId: null,
+      kind: 'course',
+      index: 0,
+      title: 'Course Map semantic probe',
+      sourceReferences: [],
+      learningUnit: null,
+    },
+  ];
+  const allocationById = new Map(sourceAllocation.regions.map((region) => [region.id, region]));
+  for (const module of courseMap.modules) {
+    nodes.push({
+      id: module.id,
+      parentId: courseId,
+      kind: 'chapter',
+      index: module.index,
+      title: module.title,
+      sourceReferences: [],
+      learningUnit: null,
+    });
+    for (const region of module.regions) {
+      const allocations = region.sourceAllocationRegionIds
+        .map((id) => allocationById.get(id))
+        .filter((item): item is CourseMapSourceAllocation['regions'][number] => Boolean(item));
+      nodes.push({
+        id: region.id,
+        parentId: module.id,
+        kind: 'learning_unit',
+        index: region.index,
+        title: region.title,
+        sourceReferences: allocations.flatMap((allocation) =>
+          allocation.sourceBlockIds.map((sourceBlockId) => ({
+            materialId: allocation.materialId,
+            materialRevisionId: allocation.materialRevisionId,
+            structuralUnitId: null,
+            sourceBlockId,
+            sourceBlockRevisionFingerprint: 'course-map-semantic-probe',
+          })),
+        ),
+        learningUnit: {
+          conceptIds: [],
+          canonicalConceptIds: [],
+          objectives: [],
+          prerequisiteUnitIds: [],
+          graphRelationIds: [],
+          riskIds: [],
+        },
+      });
+    }
+  }
+  const probe: Curriculum = {
+    id: courseId,
+    workspaceId: courseMap.workspaceId,
+    contractVersionId: courseId,
+    version: 1,
+    predecessorId: null,
+    status: 'proposed',
+    executionSourceManifest: { fingerprint: courseMap.courseSourceMapFingerprint, revisions: [] },
+    nodes,
+    synthesisGroups: courseMap.synthesisGroups.map((group) => ({
+      id: group.id,
+      title: group.title,
+      level: group.level === 'module' ? 'chapter' : group.level,
+      learningUnitIds: [...group.regionIds],
+      objectiveIds: [],
+    })),
+    validation: { valid: true, errors: [], warnings: [], unmappedStructuralUnitIds: [] },
+    provider: 'fake',
+    providerModel: null,
+    createdAt: '1970-01-01T00:00:00.000Z',
+    acceptedAt: null,
+  };
+  const sourceRegions: CurriculumSemanticSourceRegion[] = sourceAllocation.regions.map(
+    (region) => ({
+      id: region.id,
+      materialId: region.materialId,
+      materialRevisionId: region.materialRevisionId,
+      title: region.title,
+      sourceSectionIds: [...region.sourceSectionIds],
+      sourceBlockIds: [...region.sourceBlockIds],
+      charCount: region.charCount,
+    }),
+  );
+  const findings = [
+    ...cohesionFindings(probe, sourceRegions),
+    ...courseMapTitleFindings(courseMap, sourceAllocation),
+  ];
+  const sourceRefById = new Map(
+    sourceAllocation.regions.map((region, index) => [region.id, `R${index + 1}`] as const),
+  );
+  const moduleById = new Map(
+    courseMap.modules.map(
+      (module, index) => [module.id, `module-${index + 1} (${module.title})`] as const,
+    ),
+  );
+  const moduleFactsById = new Map(
+    courseMap.modules.map((module, index) => [
+      module.id,
+      { moduleId: module.id, moduleIndex: index, moduleTitle: module.title },
+    ]),
+  );
+  const regionFactsById = new Map(
+    courseMap.modules.flatMap((module) =>
+      module.regions.map(
+        (region) =>
+          [
+            region.id,
+            {
+              courseMapRegionId: region.id,
+              regionIndex: region.index,
+              regionTitle: region.title,
+              moduleId: module.id,
+              moduleTitle: module.title,
+            },
+          ] as const,
+      ),
+    ),
+  );
+  return {
+    valid: findings.length === 0,
+    diagnostics: findings.map((item) => {
+      const modules = item.affectedCurriculumNodeIds
+        .map((id) => moduleById.get(id))
+        .filter((value): value is NonNullable<typeof value> => Boolean(value));
+      const courseMapRegions = item.affectedCurriculumNodeIds
+        .map((id) => regionFactsById.get(id))
+        .filter((value): value is NonNullable<typeof value> => Boolean(value));
+      const regions = item.affectedSourceRegionIds
+        .map((id) => `${sourceRefById.get(id) ?? 'unknown'}:${id}`)
+        .slice(0, 20);
+      return `${item.code} [modules=${modules.join(' | ') || 'unknown'}; courseMapRegions=${courseMapRegions.map((region) => `${region.moduleTitle} / ${region.regionTitle}`).join(' | ') || 'unknown'}; sourceRegions=${regions.join(',') || 'unknown'}]: ${item.rationale}`;
+    }),
+    diagnosticCodes: findings.map((item) => item.code),
+    ...(findings.length > 0
+      ? {
+          failureArtifact: {
+            kind: 'course_map_semantic_validation_failed',
+            context: {
+              courseMapId: courseMap.id,
+              sourceAllocationFingerprint: sourceAllocation.fingerprint,
+            },
+            diagnostics: findings.slice(0, 20).map((item) => ({
+              code: item.code,
+              message: item.rationale,
+              facts: {
+                modules: item.affectedCurriculumNodeIds
+                  .map((id) => moduleFactsById.get(id))
+                  .filter((value): value is NonNullable<typeof value> => Boolean(value)),
+                courseMapRegions: item.affectedCurriculumNodeIds
+                  .map((id) => regionFactsById.get(id))
+                  .filter((value): value is NonNullable<typeof value> => Boolean(value)),
+                sourceRegions: item.affectedSourceRegionIds.map((id) => {
+                  const index = sourceAllocation.regions.findIndex((region) => region.id === id);
+                  const region = index >= 0 ? sourceAllocation.regions[index] : undefined;
+                  return {
+                    sourceRegionRef: index >= 0 ? `R${index + 1}` : 'unknown',
+                    sourceAllocationRegionId: id,
+                    sourceRegionTitle: region?.title ?? null,
+                  };
+                }),
+              },
+            })),
+          },
+        }
+      : {}),
+  };
 }
 
 function granularityFindings(
@@ -384,30 +718,24 @@ function objectiveFindings(
   curriculum: Curriculum,
   sourceRegions: CurriculumSemanticSourceRegion[],
 ): CurriculumQualityFinding[] {
-  const regionFeatures = new Map(
-    sourceRegions.map((region) => [region.id, features(region.title)]),
-  );
   const findings: CurriculumQualityFinding[] = [];
   for (const unit of curriculum.nodes.filter(
     (node) => node.kind === 'learning_unit' && node.learningUnit,
   )) {
-    const titleFeatures = features(unit.title);
-    const sourceFeatures = new Set<string>();
-    for (const region of sourceRegions) {
-      if (
+    const sourceRegionTitles = sourceRegions
+      .filter((region) =>
         unit.sourceReferences.some(
           (reference) =>
             reference.sourceBlockId && region.sourceBlockIds.includes(reference.sourceBlockId),
-        )
-      ) {
-        for (const token of regionFeatures.get(region.id) ?? []) sourceFeatures.add(token);
-      }
-    }
+        ),
+      )
+      .map((region) => region.title);
     for (const objective of unit.learningUnit!.objectives) {
-      const objectiveFeatures = features(`${objective.title} ${objective.description}`);
       if (
-        objectiveFeatures.size > 0 &&
-        !overlaps(objectiveFeatures, new Set([...titleFeatures, ...sourceFeatures]))
+        !hasCurriculumSemanticAnchor(`${objective.title} ${objective.description}`, [
+          unit.title,
+          ...sourceRegionTitles,
+        ])
       ) {
         findings.push(
           finding(
