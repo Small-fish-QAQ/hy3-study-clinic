@@ -17,6 +17,10 @@ import {
   InformalCheckKindSchema,
   TeachingBriefSegmentPurposeSchema,
 } from '../domain/teachingBrief.js';
+import {
+  TeachingLessonSlotContentsSchema,
+  TeachingPracticeApplicationContentSchema,
+} from '../domain/teachingSkeleton.js';
 import { FormalAssessmentConstructSchema } from '../domain/sourceAuthority.js';
 
 /**
@@ -1068,6 +1072,72 @@ export const TeachingBriefProposalPayloadSchema = z
   })
   .strict();
 export type TeachingBriefProposalPayload = z.infer<typeof TeachingBriefProposalPayloadSchema>;
+
+// ---------------------------------------------------------------------------
+// Compositional LearningUnit Lesson / Practice content
+// ---------------------------------------------------------------------------
+
+/**
+ * One logical Lesson-content response. The immutable local skeleton owns
+ * objective membership, construct, role, duration, protection, and authority;
+ * the provider can fill only the stable slot content contract.
+ */
+export const LessonSlotContentProposalPayloadSchema = z
+  .object({ slots: TeachingLessonSlotContentsSchema })
+  .strict();
+export type LessonSlotContentProposalPayload = z.infer<
+  typeof LessonSlotContentProposalPayloadSchema
+>;
+
+/**
+ * Provider-fillable content for one locally planned informal Practice slot.
+ * Objective, construct, authority, duration, and retry eligibility are
+ * intentionally absent; local assembly restores them from the Practice plan.
+ */
+export const ProposedPracticeSlotContentSchema = z
+  .object({
+    practiceSlotId: z.string().regex(/^PR[1-9][0-9]*$/u),
+    capabilityTested: z.string().min(1).max(700),
+    pedagogicalReason: z.string().min(1).max(700),
+    sourceRefs: z.array(z.string().regex(/^S[1-9][0-9]*$/u)).max(8),
+    visualRefs: z.array(z.string().regex(/^V[1-9][0-9]*$/u)).max(8),
+    application: TeachingPracticeApplicationContentSchema.nullable(),
+    initial: ProposedLessonPracticeSurfaceSchema,
+    retry: ProposedLessonPracticeSurfaceSchema,
+  })
+  .strict()
+  .superRefine((item, ctx) => {
+    if (new Set(item.sourceRefs).size !== item.sourceRefs.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['sourceRefs'],
+        message: 'Practice content source aliases must be unique',
+      });
+    }
+    if (new Set(item.visualRefs).size !== item.visualRefs.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['visualRefs'],
+        message: 'Practice content visual aliases must be unique',
+      });
+    }
+  });
+export type ProposedPracticeSlotContent = z.infer<typeof ProposedPracticeSlotContentSchema>;
+
+export const PracticeContentProposalPayloadSchema = z
+  .object({ items: z.array(ProposedPracticeSlotContentSchema).min(1).max(8) })
+  .strict()
+  .superRefine((payload, ctx) => {
+    const ids = payload.items.map((item) => item.practiceSlotId);
+    if (new Set(ids).size !== ids.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['items'],
+        message: 'Practice content slot identities must be unique',
+      });
+    }
+  });
+export type PracticeContentProposalPayload = z.infer<typeof PracticeContentProposalPayloadSchema>;
 
 // ---------------------------------------------------------------------------
 // Tutor step

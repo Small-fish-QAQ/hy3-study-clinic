@@ -41,6 +41,7 @@ export * from './domain/review.js';
 export * from './domain/masteryRedTeam.js';
 export * from './domain/lesson.js';
 export * from './domain/teachingBrief.js';
+export * from './domain/teachingSkeleton.js';
 export * from './domain/lessonExecution.js';
 export * from './domain/lessonPractice.js';
 export * from './domain/tutor.js';

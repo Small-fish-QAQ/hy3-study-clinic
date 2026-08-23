@@ -172,7 +172,7 @@ The restart checks verify persisted documents, active graph data, learner state,
 
 ## Migration verification
 
-The server suite covers all 25 migrations directly: applying them from scratch and re-running them safely;
+The server suite covers every current numbered migration directly: applying them from scratch and re-running them safely;
 
 - populated v1 -> current migration without deleting source, quiz, grading, mistake, mastery, or history rows;
 - honest `unknown` origin for workspaces whose historical creation path cannot be reconstructed;
@@ -590,3 +590,44 @@ that fails the independent semantic evaluator is an honest blocked result, not
 a reason to relax the gate or substitute FakeProvider output. Exact quotation
 checks establish source occurrence only; they do not establish complete
 semantic entailment or educational effectiveness.
+
+## Phase 12B7C2 compositional Teaching generation verification
+
+The current focused gate verifies the spine-first path without a real provider. Run it from the repository root with Node.js 20.9 or newer:
+
+```bash
+npm run build -w @hy3-clinic/shared
+npm run test -w @hy3-clinic/shared -- src/domain/teachingSkeleton.test.ts src/provider/compositionalTeachingPayloads.test.ts src/domain/teachingBrief.test.ts src/domain/lessonExecution.test.ts
+npm run test -w @hy3-clinic/server -- src/services/teachingSkeletonPlanner.test.ts src/services/lessonPedagogyEvaluator.test.ts src/services/teachingBriefContract.test.ts src/llm/compositionalTeachingProvider.test.ts src/llm/hy3Provider.test.ts src/services/teachingBriefPreparation.test.ts src/repositories/acceptedLessonCheckpoints.test.ts src/db/migrate.test.ts
+npm run test -w @hy3-clinic/web -- src/components/LessonExecutionPanel.test.tsx
+```
+
+These suites cover the critical composition boundaries:
+
+- the linked accepted Plan item's nonempty, unique, ordered objective subset; rejection of foreign objective IDs; and consistent use of that subset for planning, provider projection, evaluation, and final Brief metadata;
+- exact local construct, source/visual authority, stable `L*`/`PR*` identity, and schema ownership;
+- construct-aware deterministic planning, including no automatic worked procedure for `identify`, semantic-relation and learner-action slots for `explain`, exact-authority worked application for `apply`, and rejection rather than construct promotion when authority is insufficient;
+- pre-provider Agenda-duration feasibility, protected-work incompatibility, slot ceilings, and rejection of a changed minute label when the learning actions still do not fit;
+- Lesson-only and Practice-after-acceptance provider projections, complete runtime schemas, one targeted repair per logical phase, restoration of frozen valid peers, unknown/missing/duplicate slot rejection, and Fake/Hy3 contract parity;
+- distinct Lesson/Practice logical IDs and schema fingerprints under the canonical Teaching Brief operation type, per-phase cost-policy enforcement, and checkpoint preservation when Practice is refused or fails;
+- reasoning without required keywords, rejection of lexical marker stuffing, real structured worked-process requirements, source-location-trivia rejection, observable apply decisions, exact per-slot evidence envelopes, and independent fresh Lesson/Practice evaluation;
+- no Practice call or checkpoint after Lesson failure; immutable accepted-Lesson checkpoint creation only after a passing Lesson and completed Lesson logical call; byte-identical Lesson reuse after Practice failure; and Practice retry without a second Lesson call;
+- migration 37 checkpoint creation and runtime immutability, migration 38 logical-call provenance/backfill compatibility, migration 39 workspace-cascade compatibility, exact active Session/Agenda/Plan persistence fences, and validated hydration; and
+- learner-safe read-only accepted-Lesson recovery, `practice_retry_available`, contingent feedback/hint, one changed retry, `credit: none`, and browser request abort/stale-response behavior during Agenda switches.
+
+The complete repository gate remains:
+
+```bash
+npm test
+npm run eval:fake
+npm run build
+npm run lint
+npx prettier --check .
+git diff --check
+```
+
+`npm run lint` already includes the same repository-wide Prettier check; the explicit `npx prettier --check .` line is retained as an independently visible release gate. TypeScript checks run through the workspace builds. Migration and integration coverage are part of `npm test`; no hidden real-provider step is needed to make the automated gate pass.
+
+All commands above are offline/Fake or mocked-provider checks and must never contact the real Hy3 API. For isolated Fake server or browser work, set `AUTOMATION_EXPECT_PROVIDER=fake`, use a disposable `PROVIDER_CONFIG_PATH`, keep external visual transport disabled, and verify `GET /api/config` reports `provider: fake` before a provider-capable action. Fake acceptance establishes deterministic wiring and authority invariants only; it is not evidence of real structured-output conformance, teaching quality, or educational effectiveness.
+
+Real-provider acceptance is a separate, explicit product check with a complete server-owned Hy3 configuration, a disposable SQLite-safe database copy, a fresh StudySession created through supported APIs, and the actual browser. It must reconstruct separate Lesson and Practice logical calls and physical attempts, show that Lesson acceptance precedes Practice, preserve the accepted checkpoint across a Practice failure/retry, and audit before/after SQLite state for unchanged Formal/assessment Evidence, mastery, mistakes, Review, accepted StudyPlan progress, and Agenda item state; every informal interaction must remain `credit: none`. A human must read the accepted Lesson and Practice for reasoning, worked-process quality, duration plausibility, construct validity, contingent feedback, changed retry, and genuine source-bounded application. `npm run eval:hy3` remains an optional credentialed adapter evaluation; it is not a substitute for that StudySession/browser gate. No Fake, real-Hy3, Chrome, human-audit, SQL-audit, or current test-count result is asserted by this section.

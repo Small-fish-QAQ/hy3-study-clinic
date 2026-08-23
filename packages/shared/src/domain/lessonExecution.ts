@@ -36,6 +36,7 @@ export const LessonExecutionStateSchema = z
     studyPlanVersionId: z.string().min(1),
     learningUnitId: z.string().min(1),
     teachingBriefId: z.string().min(1).nullable(),
+    acceptedLessonCheckpointId: z.string().min(1).nullable(),
     executionSourceManifestFingerprint: z.string().min(1).max(200),
     sourceContextFingerprint: z.string().min(1).max(200).nullable(),
     preparationStatus: LessonExecutionPreparationStatusSchema,
@@ -182,6 +183,51 @@ export const LessonSegmentProjectionSchema = z
     explanation: z.string().min(1).max(2400),
     explanationOrigin: LessonTeachingOriginSchema,
     sources: z.array(LessonSourceProjectionSchema).max(8),
+    semanticRelations: z
+      .array(
+        z
+          .object({
+            kind: z.enum([
+              'cause_consequence',
+              'mechanism_effect',
+              'step_purpose',
+              'omission_failure',
+              'condition_action',
+              'misconception_correction',
+              'difference_discrimination',
+              'evidence_conclusion',
+            ]),
+            fromProposition: z.string().min(1).max(700),
+            toProposition: z.string().min(1).max(700),
+            relevanceToObjective: z.string().min(1).max(700),
+          })
+          .strict(),
+      )
+      .max(4)
+      .optional(),
+    workedProcess: z
+      .object({
+        startingState: z.string().min(1).max(900),
+        ruleOrProcedure: z.string().min(1).max(1200),
+        steps: z
+          .array(
+            z
+              .object({
+                action: z.string().min(1).max(700),
+                reason: z.string().min(1).max(700),
+                resultingState: z.string().min(1).max(700),
+              })
+              .strict(),
+          )
+          .min(1)
+          .max(8),
+        learnerDecision: z.string().min(1).max(700).nullable(),
+        result: z.string().min(1).max(900),
+        whyResultFollows: z.string().min(1).max(900),
+      })
+      .strict()
+      .nullable()
+      .optional(),
     example: LessonIllustrationProjectionSchema.nullable(),
     contrast: LessonIllustrationProjectionSchema.nullable(),
     possibleMisconception: z
@@ -283,6 +329,7 @@ export const LessonExecutionProjectionSchema = z
       'ready',
       'lesson_unavailable',
       'retry_available',
+      'practice_retry_available',
     ]),
     message: z.string().min(1).max(500),
     course: z.object({ title: z.string().min(1).max(500) }).strict(),
@@ -315,7 +362,41 @@ export const LessonExecutionProjectionSchema = z
     practice: LearnerPracticeProjectionSchema.nullable().optional(),
     allowedActions: z.array(LessonExecutionAllowedActionSchema).max(10),
   })
-  .strict();
+  .strict()
+  .superRefine((projection, ctx) => {
+    if (projection.status !== 'practice_retry_available') return;
+    if (!projection.lesson) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['lesson'],
+        message: 'Practice retry recovery requires the accepted Lesson projection',
+      });
+    }
+    if (!projection.progress) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['progress'],
+        message: 'Practice retry recovery requires read-only Lesson progress',
+      });
+    }
+    if (projection.practice != null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['practice'],
+        message: 'Rejected Practice content must not enter the learner projection',
+      });
+    }
+    if (
+      projection.allowedActions.length !== 1 ||
+      projection.allowedActions[0] !== 'retry_preparation'
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['allowedActions'],
+        message: 'Practice retry recovery may only retry preparation',
+      });
+    }
+  });
 export type LessonExecutionProjection = z.infer<typeof LessonExecutionProjectionSchema>;
 
 export const EnsureLessonExecutionRequestSchema = z

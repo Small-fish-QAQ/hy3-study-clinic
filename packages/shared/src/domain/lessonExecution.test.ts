@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   LessonExecutionCommandRequestSchema,
+  LessonExecutionProjectionSchema,
   LessonExecutionStateSchema,
   LessonTutorContextSchema,
 } from './lessonExecution.js';
@@ -15,6 +16,7 @@ describe('lesson execution contracts', () => {
       studyPlanVersionId: 'plan_1',
       learningUnitId: 'unit_1',
       teachingBriefId: 'brief_1',
+      acceptedLessonCheckpointId: null,
       executionSourceManifestFingerprint: 'manifest',
       sourceContextFingerprint: 'source',
       preparationStatus: 'ready',
@@ -92,5 +94,68 @@ describe('lesson execution contracts', () => {
     });
     expect(context.currentSegment.informalCheck?.credit).toBe('none');
     expect(JSON.stringify(context).length).toBeLessThan(12000);
+  });
+
+  it('keeps an accepted Lesson available while only Practice preparation is retryable', () => {
+    const recovery = {
+      status: 'practice_retry_available',
+      message: 'The accepted Lesson is preserved; retry Practice preparation.',
+      course: { title: 'Course' },
+      session: { status: 'active', version: 3 },
+      agenda: { version: 2, itemState: 'active' },
+      lesson: {
+        objective: {
+          title: 'Explain retrieval',
+          whyNow: 'It supports the next application.',
+          outcomes: [{ title: 'Explain', description: 'Explain the mechanism.' }],
+        },
+        prerequisites: [],
+        segments: [
+          {
+            index: 0,
+            purpose: 'mechanism',
+            explanation: 'The query is embedded before similar chunks are retrieved.',
+            explanationOrigin: 'source_grounded',
+            sources: [],
+            example: null,
+            contrast: null,
+            possibleMisconception: null,
+            informalCheck: null,
+          },
+        ],
+        sourceReferencesAvailable: true,
+        visuals: [],
+        summary: {
+          available: true,
+          text: 'Retrieval uses the embedded query.',
+          nextConnection: null,
+          formalOpportunities: [],
+        },
+      },
+      progress: {
+        stateVersion: 2,
+        currentSegmentIndex: 0,
+        segmentCount: 1,
+        presentedSegmentIndexes: [],
+        presentationStatus: 'not_started',
+        presentationCompletedAt: null,
+      },
+      currentInformalCheck: null,
+      practice: null,
+      allowedActions: ['retry_preparation'],
+    } as const;
+
+    expect(LessonExecutionProjectionSchema.parse(recovery).lesson?.objective.title).toBe(
+      'Explain retrieval',
+    );
+    expect(() => LessonExecutionProjectionSchema.parse({ ...recovery, lesson: null })).toThrow(
+      /accepted Lesson projection/,
+    );
+    expect(() =>
+      LessonExecutionProjectionSchema.parse({
+        ...recovery,
+        allowedActions: ['retry_preparation', 'start_lesson'],
+      }),
+    ).toThrow(/may only retry preparation/);
   });
 });

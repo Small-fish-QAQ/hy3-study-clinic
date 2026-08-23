@@ -35,6 +35,10 @@ import type {
   StudyPlanItemKind,
   StudyPlanProposalPayload,
   TeachingBriefProposalPayload,
+  LessonSlotContentProposalPayload,
+  PracticeContentProposalPayload,
+  TeachingLessonSlotContent,
+  TeachingSkeleton,
   TutorStepPayload,
   TutorTurnPayload,
   TutorPedagogicalMove,
@@ -58,6 +62,8 @@ import type {
 
 /** One original plus independently bounded schema and candidate repairs. */
 export const MAX_STRUCTURED_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL = 3;
+/** Original plus one bounded targeted repair for each compositional phase. */
+export const MAX_COMPOSITIONAL_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL = 2;
 
 /** Options threaded through every provider call. */
 export interface ProviderCallOptions {
@@ -152,6 +158,17 @@ export interface ProviderCandidateValidation {
    * content. The provider preserves this only when candidate repair exhausts.
    */
   failureArtifact?: ProviderCandidateFailureArtifact | undefined;
+  /**
+   * Optional item identities that deterministic validation found invalid.
+   * Compositional provider methods use this local-only scope to freeze every
+   * other first-pass item during their one bounded candidate repair. The
+   * scope is never provider-authored and carries no content or authority.
+   */
+  targetedRepair?: ProviderTargetedRepairScope | undefined;
+}
+
+export interface ProviderTargetedRepairScope {
+  invalidItemIds: string[];
 }
 
 export type ProviderCandidateFailureValue =
@@ -515,6 +532,55 @@ export interface TeachingBriefGenerationInput {
     protectedObjectiveRefs: string[];
     reductionOrder: string[];
   };
+}
+
+/**
+ * Provider-visible Lesson phase of one immutable local Teaching Skeleton.
+ * Practice planning is absent from the provider contract, rather than merely
+ * being filtered later while a provider implementation can still observe it.
+ */
+export interface LessonTeachingSkeleton {
+  id: TeachingSkeleton['id'];
+  schemaVersion: TeachingSkeleton['schemaVersion'];
+  plannerVersion: TeachingSkeleton['plannerVersion'];
+  fingerprint: TeachingSkeleton['fingerprint'];
+  learningUnitTitle: TeachingSkeleton['learningUnitTitle'];
+  objectives: TeachingSkeleton['objectives'];
+  targetMinutes: TeachingSkeleton['targetMinutes'];
+  acceptableActiveMinutes: TeachingSkeleton['acceptableActiveMinutes'];
+  lessonSlots: TeachingSkeleton['lessonSlots'];
+  synthesisActivityBudget: TeachingSkeleton['synthesisActivityBudget'];
+  protectedActivityBudget: TeachingSkeleton['protectedActivityBudget'];
+  plannedActivityBudget: TeachingSkeleton['plannedActivityBudget'];
+}
+
+export interface LessonSlotContentGenerationInput {
+  workspaceName: string;
+  skeleton: LessonTeachingSkeleton;
+  sourceContext: TeachingBriefGenerationInput['sourceContext'];
+  visualContext: TeachingBriefGenerationInput['visualContext'];
+  learningContext: {
+    concepts: Array<{ name: string; summary: string }>;
+    canonicalConcepts: Array<{ name: string }>;
+    prerequisites: Array<{
+      prerequisiteRef: string;
+      title: string;
+      objectiveSummaries: string[];
+    }>;
+    nextConnection: { title: string } | null;
+  };
+}
+
+/**
+ * Provider-visible Practice phase. It can observe the already accepted
+ * Lesson content, but can fill only locally planned Practice slot identities.
+ */
+export interface PracticeContentGenerationInput {
+  workspaceName: string;
+  skeleton: TeachingSkeleton;
+  acceptedLesson: TeachingLessonSlotContent[];
+  sourceContext: TeachingBriefGenerationInput['sourceContext'];
+  visualContext: TeachingBriefGenerationInput['visualContext'];
 }
 
 /** One prior validated observation shown back to the Tutor model. */
@@ -961,6 +1027,16 @@ export interface LlmProvider extends VisualDescriptionProvider {
     input: TeachingBriefGenerationInput,
     opts?: ProviderCallOptions,
   ): Promise<TeachingBriefProposalPayload>;
+  /** Fill immutable local Lesson slots without generating Practice. */
+  generateLessonSlotContent(
+    input: LessonSlotContentGenerationInput,
+    opts?: ProviderCallOptions,
+  ): Promise<LessonSlotContentProposalPayload>;
+  /** Fill immutable local Practice slots after Lesson acceptance. */
+  generatePracticeContent(
+    input: PracticeContentGenerationInput,
+    opts?: ProviderCallOptions,
+  ): Promise<PracticeContentProposalPayload>;
   /** One bounded Tutor iteration: call a whitelisted tool or finalize. */
   proposeTutorStep(input: TutorStepInput, opts?: ProviderCallOptions): Promise<TutorStepPayload>;
   /** Generate non-authoritative conversational guidance for a StudySession turn. */

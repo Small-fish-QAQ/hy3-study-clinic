@@ -2685,6 +2685,154 @@ const MIGRATIONS: Migration[] = [
         ON lesson_execution_events(lesson_execution_state_id, seq);
     `,
   },
+  {
+    version: 37,
+    name: 'immutable_accepted_lesson_checkpoints',
+    // A Practice failure must not destroy or regenerate an independently
+    // accepted Lesson. This narrow, session-owned artifact records only the
+    // immutable instructional predecessor and its exact route/source fences;
+    // it has no authority path to Evidence, mastery, mistakes, or progression.
+    up: `
+      CREATE TABLE accepted_lesson_checkpoints (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        study_session_id TEXT NOT NULL REFERENCES study_sessions(id) ON DELETE CASCADE,
+        session_agenda_id TEXT NOT NULL REFERENCES session_agendas(id) ON DELETE CASCADE,
+        agenda_item_id TEXT NOT NULL,
+        expected_session_version INTEGER NOT NULL CHECK (expected_session_version > 0),
+        expected_agenda_version INTEGER NOT NULL CHECK (expected_agenda_version > 0),
+        curriculum_id TEXT NOT NULL REFERENCES curriculum_versions(id),
+        study_plan_id TEXT NOT NULL REFERENCES study_plan_versions(id),
+        study_plan_item_id TEXT NOT NULL,
+        learning_unit_id TEXT NOT NULL,
+        manifest_fingerprint TEXT NOT NULL,
+        source_context_fingerprint TEXT NOT NULL,
+        skeleton_version INTEGER NOT NULL CHECK (skeleton_version > 0),
+        skeleton_fingerprint TEXT NOT NULL,
+        skeleton_payload TEXT NOT NULL,
+        lesson_payload TEXT NOT NULL,
+        lesson_evaluation_payload TEXT NOT NULL,
+        operation_id TEXT NOT NULL,
+        provider TEXT NOT NULL,
+        provider_model TEXT,
+        prompt_version TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE (
+          study_session_id,
+          agenda_item_id,
+          expected_session_version,
+          expected_agenda_version,
+          curriculum_id,
+          study_plan_id,
+          manifest_fingerprint,
+          source_context_fingerprint,
+          skeleton_fingerprint
+        )
+      );
+      CREATE INDEX idx_accepted_lesson_checkpoint_session
+        ON accepted_lesson_checkpoints(study_session_id, agenda_item_id, created_at DESC);
+      CREATE TRIGGER prevent_accepted_lesson_checkpoint_update
+        BEFORE UPDATE ON accepted_lesson_checkpoints
+        BEGIN SELECT RAISE(ABORT, 'Accepted Lesson checkpoints are immutable'); END;
+      CREATE TRIGGER prevent_accepted_lesson_checkpoint_delete
+        BEFORE DELETE ON accepted_lesson_checkpoints
+        WHEN EXISTS (SELECT 1 FROM study_sessions WHERE id = OLD.study_session_id)
+         AND EXISTS (SELECT 1 FROM workspaces WHERE id = OLD.workspace_id)
+        BEGIN SELECT RAISE(ABORT, 'Accepted Lesson checkpoints are immutable'); END;
+
+      ALTER TABLE lesson_execution_states
+        ADD COLUMN accepted_lesson_checkpoint_id TEXT
+          REFERENCES accepted_lesson_checkpoints(id) ON DELETE SET NULL;
+    `,
+  },
+  {
+    version: 38,
+    name: 'accepted_lesson_logical_call_provenance',
+    // Migration-37 checkpoints remain readable. When their completed Lesson
+    // telemetry still exists, backfill it while preserving the table's
+    // immutable runtime contract; newly created checkpoints require this FK.
+    up: `
+      DROP TRIGGER prevent_accepted_lesson_checkpoint_update;
+      ALTER TABLE accepted_lesson_checkpoints
+        ADD COLUMN lesson_logical_call_id TEXT REFERENCES model_logical_calls(id);
+      UPDATE accepted_lesson_checkpoints
+         SET lesson_logical_call_id = (
+           SELECT lc.id
+            FROM model_logical_calls lc
+           WHERE lc.operation_id = accepted_lesson_checkpoints.operation_id
+              AND lc.operation_type IN (
+                'prepare_teaching_brief', 'prepare_teaching_lesson_content'
+              )
+              AND lc.schema_fingerprint = 'lesson-slot-content-proposal-v1'
+              AND lc.status = 'completed'
+              AND lc.source_fingerprint = accepted_lesson_checkpoints.source_context_fingerprint
+            ORDER BY lc.created_at ASC, lc.id ASC
+            LIMIT 1
+         );
+      CREATE INDEX idx_accepted_lesson_checkpoint_logical_call
+        ON accepted_lesson_checkpoints(lesson_logical_call_id);
+      CREATE TRIGGER prevent_accepted_lesson_checkpoint_update
+        BEFORE UPDATE ON accepted_lesson_checkpoints
+        BEGIN SELECT RAISE(ABORT, 'Accepted Lesson checkpoints are immutable'); END;
+    `,
+  },
+  {
+    version: 39,
+    name: 'allow_accepted_lesson_workspace_cascade',
+    // Direct deletion remains forbidden while the owning route exists. During
+    // a workspace cascade SQLite has already removed the owning workspace from
+    // visibility, so the immutable child can follow that authorized lifecycle.
+    up: `
+      DROP TRIGGER prevent_accepted_lesson_checkpoint_delete;
+      CREATE TRIGGER prevent_accepted_lesson_checkpoint_delete
+        BEFORE DELETE ON accepted_lesson_checkpoints
+        WHEN EXISTS (SELECT 1 FROM study_sessions WHERE id = OLD.study_session_id)
+         AND EXISTS (SELECT 1 FROM workspaces WHERE id = OLD.workspace_id)
+        BEGIN SELECT RAISE(ABORT, 'Accepted Lesson checkpoints are immutable'); END;
+    `,
+  },
+  {
+    version: 40,
+    name: 'session_bound_compositional_teaching_briefs',
+    // Multiple StudySessions can independently accept a Lesson predecessor
+    // for the same Course route and source context. Preserve every immutable
+    // final rather than forcing one session to reuse another session's Lesson.
+    rebuildsTables: true,
+    up: `
+      CREATE TABLE teaching_briefs_v40 (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        curriculum_id TEXT NOT NULL REFERENCES curriculum_versions(id),
+        study_plan_id TEXT NOT NULL REFERENCES study_plan_versions(id),
+        learning_unit_id TEXT NOT NULL,
+        manifest_fingerprint TEXT NOT NULL,
+        source_context_fingerprint TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        provider TEXT NOT NULL,
+        provider_model TEXT,
+        prompt_version TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+      INSERT INTO teaching_briefs_v40
+        (id, workspace_id, curriculum_id, study_plan_id, learning_unit_id,
+         manifest_fingerprint, source_context_fingerprint, payload, provider,
+         provider_model, prompt_version, created_at)
+      SELECT id, workspace_id, curriculum_id, study_plan_id, learning_unit_id,
+             manifest_fingerprint, source_context_fingerprint, payload, provider,
+             provider_model, prompt_version, created_at
+      FROM teaching_briefs;
+      DROP INDEX idx_teaching_briefs_workspace_unit;
+      DROP TABLE teaching_briefs;
+      ALTER TABLE teaching_briefs_v40 RENAME TO teaching_briefs;
+      CREATE INDEX idx_teaching_briefs_workspace_unit
+        ON teaching_briefs(workspace_id, learning_unit_id, created_at DESC);
+      CREATE INDEX idx_teaching_briefs_reusable
+        ON teaching_briefs(
+          curriculum_id, study_plan_id, learning_unit_id,
+          manifest_fingerprint, source_context_fingerprint, created_at DESC
+        );
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

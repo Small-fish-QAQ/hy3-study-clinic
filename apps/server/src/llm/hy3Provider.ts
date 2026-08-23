@@ -15,7 +15,11 @@ import {
   RemediationPlanProposalPayloadSchema,
   StudyPlanProposalPayloadSchema,
   TeachingBriefProposalPayloadSchema,
+  LessonSlotContentProposalPayloadSchema,
+  PracticeContentProposalPayloadSchema,
+  ProposedPracticeSlotContentSchema,
   RubricGradeSchema,
+  TeachingLessonSlotContentSchema,
   TutorStepPayloadSchema,
   TutorTurnPayloadSchema,
   type AlignmentProposalPayload,
@@ -33,6 +37,8 @@ import {
   type RemediationPlanProposalPayload,
   type StudyPlanProposalPayload,
   type TeachingBriefProposalPayload,
+  type LessonSlotContentProposalPayload,
+  type PracticeContentProposalPayload,
   type RubricGrade,
   type TutorStepPayload,
   type TutorTurnPayload,
@@ -63,6 +69,8 @@ import {
   tutorStepMessages,
   tutorTurnMessages,
   teachingBriefMessages,
+  lessonSlotContentMessages,
+  practiceContentMessages,
   type ChatMessage,
 } from './prompts.js';
 import type {
@@ -79,6 +87,7 @@ import type {
   MasteryChallengeProposalInput,
   ProviderCandidateFailureArtifact,
   ProviderCallOptions,
+  ProviderTargetedRepairScope,
   QuizGenerationInput,
   RemediationInput,
   RepairGenerationInput,
@@ -86,6 +95,8 @@ import type {
   ShortAnswerGradingInput,
   StudyPlanProposalInput,
   TeachingBriefGenerationInput,
+  LessonSlotContentGenerationInput,
+  PracticeContentGenerationInput,
   VisualDescriptionInput,
   StructuredOutputDiagnostic,
   StructuredOutputFailureCategory,
@@ -133,6 +144,101 @@ interface ChatCompletionResult {
         summary: string;
       }
     | undefined;
+}
+
+interface TargetedRepairCollection {
+  collectionKey: 'slots' | 'items';
+  identityKey: 'slotId' | 'practiceSlotId';
+  itemSchema: ZodType<unknown, ZodTypeDef, unknown>;
+}
+
+function normalizeTargetedRepairScope(
+  scope: ProviderTargetedRepairScope,
+  collection: TargetedRepairCollection,
+): ProviderTargetedRepairScope | null {
+  const pattern = collection.identityKey === 'slotId' ? /^L[1-9][0-9]*$/u : /^PR[1-9][0-9]*$/u;
+  const limit = collection.collectionKey === 'slots' ? 24 : 16;
+  const invalidItemIds = [...new Set(scope.invalidItemIds)]
+    .filter((id) => pattern.test(id))
+    .slice(0, limit);
+  return invalidItemIds.length > 0 ? { invalidItemIds } : null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Recover stable, individually valid peers from a schema-invalid collection.
+ * This is intentionally narrower than permissive root parsing: every item
+ * must still expose one unique well-formed local identity, and at least one
+ * peer must already pass its complete item schema. Otherwise repair falls
+ * back to the ordinary full-response boundary.
+ */
+function schemaTargetedRepairBase(
+  parsed: unknown,
+  collection: TargetedRepairCollection,
+): { candidate: unknown; scope: ProviderTargetedRepairScope } | null {
+  if (!isRecord(parsed)) return null;
+  const items = parsed[collection.collectionKey];
+  if (!Array.isArray(items) || items.length < 2) return null;
+  const pattern = collection.identityKey === 'slotId' ? /^L[1-9][0-9]*$/u : /^PR[1-9][0-9]*$/u;
+  const seen = new Set<string>();
+  const invalidItemIds: string[] = [];
+  let validItemCount = 0;
+  for (const item of items) {
+    if (!isRecord(item)) return null;
+    const identity = item[collection.identityKey];
+    if (typeof identity !== 'string' || !pattern.test(identity) || seen.has(identity)) return null;
+    seen.add(identity);
+    if (collection.itemSchema.safeParse(item).success) validItemCount += 1;
+    else invalidItemIds.push(identity);
+  }
+  if (validItemCount === 0 || invalidItemIds.length === 0) return null;
+  return { candidate: parsed, scope: { invalidItemIds } };
+}
+
+/**
+ * Keep every valid first-pass compositional item byte-for-byte stable while
+ * accepting replacements only for locally identified failures. Unknown
+ * repaired identities are retained so the candidate validator can reject
+ * them instead of silently dropping a provider authority escape.
+ */
+function mergeTargetedRepairCandidate(
+  previous: unknown,
+  repaired: unknown,
+  collection: TargetedRepairCollection,
+  scope: ProviderTargetedRepairScope,
+): unknown {
+  if (!isRecord(previous) || !isRecord(repaired)) return repaired;
+  const previousItems = previous[collection.collectionKey];
+  const repairedItems = repaired[collection.collectionKey];
+  if (!Array.isArray(previousItems) || !Array.isArray(repairedItems)) return repaired;
+  const invalidIds = new Set(scope.invalidItemIds);
+  const repairedById = new Map<string, unknown>();
+  for (const item of repairedItems) {
+    if (!isRecord(item)) continue;
+    const itemId = item[collection.identityKey];
+    if (typeof itemId !== 'string') continue;
+    repairedById.set(itemId, item);
+  }
+  const previousIds = new Set<string>();
+  const merged = previousItems.flatMap((item) => {
+    if (!isRecord(item)) return [item];
+    const id = item[collection.identityKey];
+    if (typeof id !== 'string') return [item];
+    previousIds.add(id);
+    if (!invalidIds.has(id)) return [item];
+    const replacement = repairedById.get(id);
+    return replacement === undefined ? [] : [replacement];
+  });
+  for (const item of repairedItems) {
+    const itemId = isRecord(item) ? item[collection.identityKey] : undefined;
+    if (typeof itemId !== 'string' || !previousIds.has(itemId)) {
+      merged.push(item);
+    }
+  }
+  return { ...repaired, [collection.collectionKey]: merged };
 }
 
 const GROUPED_STUDY_PLAN_KINDS = [
@@ -471,6 +577,62 @@ export class Hy3Provider implements LlmProvider {
     );
   }
 
+  async generateLessonSlotContent(
+    input: LessonSlotContentGenerationInput,
+    opts?: ProviderCallOptions,
+  ): Promise<LessonSlotContentProposalPayload> {
+    return this.complete(
+      lessonSlotContentMessages(input),
+      LessonSlotContentProposalPayloadSchema,
+      opts,
+      [
+        'Repair only locally identified L* slots. Every other first-pass slot is frozen and cannot be changed, deleted, or reordered.',
+        'Return only slotId plus bounded content fields. Never output objective refs, construct, role, duration, protection, authority mode, Practice, Formal Evidence, mastery, or progression.',
+        'Use only the slot-specific offered S*/V* aliases. A semantic relation needs two distinct propositions and objective relevance; keywords alone never prove reasoning.',
+        'For a worked-process failure, provide the source-stated starting state/rule, transitions with reasons, result, and why it follows. Do not substitute a label or generic checklist.',
+        'Return a slots object containing only replacements for the named invalid L* identities. Local code will reassemble it with every frozen valid slot exactly.',
+      ].join('\n'),
+      {
+        maxTokens: 10_000,
+        schemaName: 'lesson-slot-content-v1-compositional',
+        targetedRepairCollection: {
+          collectionKey: 'slots',
+          identityKey: 'slotId',
+          itemSchema: TeachingLessonSlotContentSchema,
+        },
+        allowIndependentRepair: false,
+      },
+    );
+  }
+
+  async generatePracticeContent(
+    input: PracticeContentGenerationInput,
+    opts?: ProviderCallOptions,
+  ): Promise<PracticeContentProposalPayload> {
+    return this.complete(
+      practiceContentMessages(input),
+      PracticeContentProposalPayloadSchema,
+      opts,
+      [
+        'Repair only locally identified PR* items. The accepted Lesson and every other first-pass Practice item are frozen.',
+        'Return only practiceSlotId plus bounded item/surface content. Never output objective refs, construct, authority mode, duration, credit, Formal Evidence, mastery, or progression.',
+        'Use only slot-specific offered S*/V* aliases and stay inside the locally stated capability and prohibited-construct boundary.',
+        'For an apply failure, application must expose a source-stated starting state/rule, real decision, and expected action reflected by both prompt and action options. Lexical apply/next-step markers alone are invalid.',
+        'Return an items object containing only replacements for the named invalid PR* identities. Local code will reassemble it with every frozen valid item exactly.',
+      ].join('\n'),
+      {
+        maxTokens: 8_000,
+        schemaName: 'practice-content-v1-compositional',
+        targetedRepairCollection: {
+          collectionKey: 'items',
+          identityKey: 'practiceSlotId',
+          itemSchema: ProposedPracticeSlotContentSchema,
+        },
+        allowIndependentRepair: false,
+      },
+    );
+  }
+
   async proposeTutorStep(
     input: TutorStepInput,
     opts?: ProviderCallOptions,
@@ -683,7 +845,13 @@ export class Hy3Provider implements LlmProvider {
     schema: ZodType<T, ZodTypeDef, unknown>,
     opts?: ProviderCallOptions,
     repairGuidance?: string,
-    requestOptions: { maxTokens?: number; schemaName?: string } = {},
+    requestOptions: {
+      maxTokens?: number;
+      schemaName?: string;
+      targetedRepairCollection?: TargetedRepairCollection;
+      /** Legacy calls may spend independent schema/candidate repairs; compositional calls do not. */
+      allowIndependentRepair?: boolean;
+    } = {},
   ): Promise<T> {
     const schemaName =
       requestOptions.schemaName ??
@@ -699,6 +867,26 @@ export class Hy3Provider implements LlmProvider {
       'original',
     );
     const first = this.tryParse(original, schema, opts);
+    const firstCandidateTargetedRepair =
+      requestOptions.targetedRepairCollection &&
+      !first.ok &&
+      first.reason === 'candidate' &&
+      first.candidate !== undefined &&
+      first.targetedRepair !== undefined
+        ? normalizeTargetedRepairScope(
+            first.targetedRepair,
+            requestOptions.targetedRepairCollection,
+          )
+        : null;
+    let targetedRepairBase: {
+      candidate: unknown;
+      scope: ProviderTargetedRepairScope;
+    } | null =
+      firstCandidateTargetedRepair && !first.ok && first.candidate !== undefined
+        ? { candidate: first.candidate, scope: firstCandidateTargetedRepair }
+        : requestOptions.targetedRepairCollection && !first.ok && first.reason === 'schema'
+          ? schemaTargetedRepairBase(first.parse.parsed, requestOptions.targetedRepairCollection)
+          : null;
     const firstDiagnostic = buildStructuredOutputDiagnostic({
       schemaName,
       operationType: opts?.telemetry?.operationType ?? null,
@@ -737,6 +925,11 @@ export class Hy3Provider implements LlmProvider {
                 JSON.stringify(first.candidateFailure),
               ]
             : []),
+          ...(targetedRepairBase
+            ? [
+                `Only these stable item identities may change: ${targetedRepairBase.scope.invalidItemIds.join(', ')}. Every other first-pass item is frozen and will be restored locally if rewritten or omitted.`,
+              ]
+            : []),
           ...(repairGuidance ? ['本次请求的精确修复约束:', repairGuidance] : []),
           '请仅修复这些问题,重新输出符合要求的 JSON。仍然只输出 JSON,不要解释。',
         ].join('\n'),
@@ -752,9 +945,38 @@ export class Hy3Provider implements LlmProvider {
       2,
       'repair',
     );
-    const second = this.tryParse(repaired, schema, opts);
+    const second = this.tryParse(
+      repaired,
+      schema,
+      opts,
+      targetedRepairBase && requestOptions.targetedRepairCollection
+        ? (candidate) =>
+            mergeTargetedRepairCandidate(
+              targetedRepairBase!.candidate,
+              candidate,
+              requestOptions.targetedRepairCollection!,
+              targetedRepairBase!.scope,
+            )
+        : undefined,
+    );
+    if (
+      requestOptions.targetedRepairCollection &&
+      !second.ok &&
+      second.reason === 'candidate' &&
+      second.candidate !== undefined &&
+      second.targetedRepair !== undefined
+    ) {
+      const scope = normalizeTargetedRepairScope(
+        second.targetedRepair,
+        requestOptions.targetedRepairCollection,
+      );
+      if (scope) targetedRepairBase = { candidate: second.candidate, scope };
+    }
     const independentRepairAllowed =
-      !second.ok && second.repairable && second.reason !== first.reason;
+      requestOptions.allowIndependentRepair !== false &&
+      !second.ok &&
+      second.repairable &&
+      second.reason !== first.reason;
     const secondDiagnostic = buildStructuredOutputDiagnostic({
       schemaName,
       operationType: opts?.telemetry?.operationType ?? null,
@@ -782,6 +1004,11 @@ export class Hy3Provider implements LlmProvider {
                   JSON.stringify(second.candidateFailure),
                 ]
               : []),
+            ...(targetedRepairBase
+              ? [
+                  `Only these stable item identities may change: ${targetedRepairBase.scope.invalidItemIds.join(', ')}. Every other validated item is frozen and cannot be rewritten or omitted.`,
+                ]
+              : []),
             ...(repairGuidance ? ['本次请求的精确修复约束:', repairGuidance] : []),
             '这是最后一次有界修复。请仅修复当前问题,重新输出符合要求的 JSON。仍然只输出 JSON,不要解释。',
           ].join('\n'),
@@ -797,7 +1024,20 @@ export class Hy3Provider implements LlmProvider {
         3,
         'repair',
       );
-      const third = this.tryParse(independentlyRepaired, schema, opts);
+      const third = this.tryParse(
+        independentlyRepaired,
+        schema,
+        opts,
+        targetedRepairBase && requestOptions.targetedRepairCollection
+          ? (candidate) =>
+              mergeTargetedRepairCandidate(
+                targetedRepairBase!.candidate,
+                candidate,
+                requestOptions.targetedRepairCollection!,
+                targetedRepairBase!.scope,
+              )
+          : undefined,
+      );
       const thirdDiagnostic = buildStructuredOutputDiagnostic({
         schemaName,
         operationType: opts?.telemetry?.operationType ?? null,
@@ -834,6 +1074,7 @@ export class Hy3Provider implements LlmProvider {
     result: ChatCompletionResult,
     schema: ZodType<T, ZodTypeDef, unknown>,
     opts?: ProviderCallOptions,
+    candidateTransform?: ((candidate: T) => unknown) | undefined,
   ):
     | { ok: true; value: T; parse: StructuredParseMetadata }
     | {
@@ -843,6 +1084,8 @@ export class Hy3Provider implements LlmProvider {
         category: StructuredOutputFailureCategory;
         repairable: boolean;
         candidateFailure?: ProviderCandidateFailureArtifact | undefined;
+        candidate?: T | undefined;
+        targetedRepair?: ProviderTargetedRepairScope | undefined;
         parse: StructuredParseMetadata;
       } {
     const abnormalFinishReason =
@@ -898,7 +1141,10 @@ export class Hy3Provider implements LlmProvider {
       throw err;
     }
 
-    const parsed = schema.safeParse(extracted.value);
+    let parsed = schema.safeParse(extracted.value);
+    if (parsed.success && candidateTransform) {
+      parsed = schema.safeParse(candidateTransform(parsed.data));
+    }
     if (abnormalFinishReason) {
       return {
         ok: false,
@@ -941,6 +1187,8 @@ export class Hy3Provider implements LlmProvider {
           category: 'SEMANTIC_VALIDATION_FAILURE',
           repairable: true,
           ...(candidate.failureArtifact ? { candidateFailure: candidate.failureArtifact } : {}),
+          candidate: parsed.data,
+          ...(candidate.targetedRepair ? { targetedRepair: candidate.targetedRepair } : {}),
           parse: {
             jsonParseSuccess: true,
             jsonFormat: extracted.format,

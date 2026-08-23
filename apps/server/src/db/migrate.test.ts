@@ -53,6 +53,76 @@ function telemetryPhysicalSchema(db: ReturnType<typeof openDatabase>) {
     .all();
 }
 
+function insertAcceptedLessonCascadeFixture(db: ReturnType<typeof openDatabase>): void {
+  const at = '2026-01-01T00:00:00.000Z';
+  db.prepare(
+    `INSERT INTO workspaces (id, name, origin, created_at, updated_at)
+     VALUES ('ws_checkpoint_cascade', 'Checkpoint cascade', 'manual', ?, ?)`,
+  ).run(at, at);
+  db.prepare(
+    `INSERT INTO learning_contract_versions
+       (id, workspace_id, version, status, payload, created_at)
+     VALUES ('contract_checkpoint_cascade', 'ws_checkpoint_cascade', 1, 'active', '{}', ?)`,
+  ).run(at);
+  db.prepare(
+    `INSERT INTO execution_source_manifests
+       (id, workspace_id, fingerprint, payload, created_at)
+     VALUES ('manifest_checkpoint_cascade', 'ws_checkpoint_cascade',
+       'manifest-checkpoint-cascade', '{}', ?)`,
+  ).run(at);
+  db.prepare(
+    `INSERT INTO curriculum_versions
+       (id, workspace_id, contract_id, manifest_id, manifest_fingerprint, version,
+        status, validation_valid, payload, created_at)
+     VALUES ('curriculum_checkpoint_cascade', 'ws_checkpoint_cascade',
+       'contract_checkpoint_cascade', 'manifest_checkpoint_cascade',
+       'manifest-checkpoint-cascade', 1, 'accepted', 1, '{}', ?)`,
+  ).run(at);
+  db.prepare(
+    `INSERT INTO study_plan_versions
+       (id, workspace_id, contract_id, curriculum_id, manifest_fingerprint, version,
+        status, payload, created_at)
+     VALUES ('plan_checkpoint_cascade', 'ws_checkpoint_cascade',
+       'contract_checkpoint_cascade', 'curriculum_checkpoint_cascade',
+       'manifest-checkpoint-cascade', 1, 'accepted', '{}', ?)`,
+  ).run(at);
+  db.prepare(
+    `INSERT INTO session_agendas
+       (id, workspace_id, contract_id, curriculum_id, plan_id, manifest_fingerprint,
+        version, status, payload, created_at, updated_at)
+     VALUES ('agenda_checkpoint_cascade', 'ws_checkpoint_cascade',
+       'contract_checkpoint_cascade', 'curriculum_checkpoint_cascade',
+       'plan_checkpoint_cascade', 'manifest-checkpoint-cascade', 1, 'active', '{}', ?, ?)`,
+  ).run(at, at);
+  db.prepare(
+    `INSERT INTO study_sessions
+       (id, workspace_id, contract_id, curriculum_id, plan_id, agenda_id,
+        manifest_fingerprint, version, status, route_state, current_agenda_item_id,
+        route_stack, transcript_watermark, created_at, updated_at)
+     VALUES ('session_checkpoint_cascade', 'ws_checkpoint_cascade',
+       'contract_checkpoint_cascade', 'curriculum_checkpoint_cascade',
+       'plan_checkpoint_cascade', 'agenda_checkpoint_cascade',
+       'manifest-checkpoint-cascade', 1, 'active', 'on_route', 'agenda_item_checkpoint_cascade',
+       '[]', 0, ?, ?)`,
+  ).run(at, at);
+  db.prepare(
+    `INSERT INTO accepted_lesson_checkpoints
+       (id, workspace_id, study_session_id, session_agenda_id, agenda_item_id,
+        expected_session_version, expected_agenda_version, curriculum_id, study_plan_id,
+        study_plan_item_id, learning_unit_id, manifest_fingerprint,
+        source_context_fingerprint, skeleton_version, skeleton_fingerprint,
+        skeleton_payload, lesson_payload, lesson_evaluation_payload, operation_id,
+        provider, provider_model, prompt_version, created_at)
+     VALUES ('checkpoint_cascade', 'ws_checkpoint_cascade', 'session_checkpoint_cascade',
+       'agenda_checkpoint_cascade', 'agenda_item_checkpoint_cascade', 1, 1,
+       'curriculum_checkpoint_cascade', 'plan_checkpoint_cascade',
+       'plan_item_checkpoint_cascade', 'unit_checkpoint_cascade',
+       'manifest-checkpoint-cascade', 'source-checkpoint-cascade', 1,
+       'skeleton-checkpoint-cascade', '{}', '[]', '{}', 'operation_checkpoint_cascade',
+       'fake', 'fake-deterministic', 'lesson-content-v1-compositional', ?)`,
+  ).run(at);
+}
+
 function insertTelemetryFixture(
   db: ReturnType<typeof openDatabase>,
   id: string,
@@ -246,6 +316,7 @@ describe('migrations', () => {
       'study_turn_events',
       'study_session_summaries',
       'teaching_briefs',
+      'accepted_lesson_checkpoints',
       'lesson_execution_states',
       'lesson_execution_events',
       'pace_observations',
@@ -311,6 +382,284 @@ describe('migrations', () => {
     expect(eventSql.sql).toContain("'practice_response_recorded'");
     expect(eventSql.sql).toContain("'practice_completed'");
     expect(eventSql.sql).not.toMatch(/mastery|formal_evidence|progression_decision/iu);
+    db.close();
+  });
+
+  it('adds immutable accepted-Lesson checkpoints without learner-state authority paths', () => {
+    const db = openDatabase(':memory:');
+    migrate(db, { toVersion: 36 });
+    migrate(db, { toVersion: 37 });
+
+    expect(
+      db
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'accepted_lesson_checkpoints'",
+        )
+        .get(),
+    ).toEqual({ name: 'accepted_lesson_checkpoints' });
+    expect(
+      db.prepare('SELECT version, name FROM schema_migrations WHERE version = 37').get(),
+    ).toEqual({ version: 37, name: 'immutable_accepted_lesson_checkpoints' });
+    expect(
+      (db.pragma('table_info(accepted_lesson_checkpoints)') as Array<{ name: string }>).some(
+        (column) => column.name === 'lesson_logical_call_id',
+      ),
+    ).toBe(false);
+    const freshDeleteTriggerSql = (
+      db
+        .prepare(
+          "SELECT sql FROM sqlite_master WHERE type = 'trigger' AND name = 'prevent_accepted_lesson_checkpoint_delete'",
+        )
+        .get() as { sql: string }
+    ).sql;
+    expect(freshDeleteTriggerSql).toContain('FROM study_sessions');
+    expect(freshDeleteTriggerSql).toContain('FROM workspaces');
+
+    migrate(db);
+    expect(
+      db.prepare('SELECT version, name FROM schema_migrations WHERE version = 38').get(),
+    ).toEqual({ version: 38, name: 'accepted_lesson_logical_call_provenance' });
+    expect(
+      (
+        db.pragma('table_info(accepted_lesson_checkpoints)') as Array<{
+          name: string;
+          notnull: number;
+        }>
+      ).find((column) => column.name === 'lesson_logical_call_id'),
+    ).toMatchObject({ notnull: 0 });
+
+    const tableSql = (
+      db
+        .prepare(
+          "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'accepted_lesson_checkpoints'",
+        )
+        .get() as { sql: string }
+    ).sql;
+    expect(tableSql).toContain('expected_session_version');
+    expect(tableSql).toContain('expected_agenda_version');
+    expect(tableSql).toContain('skeleton_fingerprint');
+    expect(tableSql).not.toMatch(/formal_evidence|mastery|mistake|progression/iu);
+
+    const triggerSql = (
+      db
+        .prepare(
+          "SELECT sql FROM sqlite_master WHERE type = 'trigger' AND name = 'prevent_accepted_lesson_checkpoint_update'",
+        )
+        .get() as { sql: string }
+    ).sql;
+    expect(triggerSql).toContain('Accepted Lesson checkpoints are immutable');
+    expect(
+      db
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE type = 'trigger' AND name = 'prevent_accepted_lesson_checkpoint_delete'",
+        )
+        .get(),
+    ).toEqual({ name: 'prevent_accepted_lesson_checkpoint_delete' });
+    const lessonStateColumns = db.pragma('table_info(lesson_execution_states)') as Array<{
+      name: string;
+      notnull: number;
+    }>;
+    expect(
+      lessonStateColumns.find((column) => column.name === 'accepted_lesson_checkpoint_id'),
+    ).toMatchObject({ notnull: 0 });
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+    db.close();
+  });
+
+  it.each([
+    ['exact', 'source-checkpoint-cascade', 'lesson-slot-content-proposal-v1', 'lesson_call_exact'],
+    ['mismatched', 'source-checkpoint-other', 'lesson-slot-content-proposal-v1', null],
+    ['missing', null, 'lesson-slot-content-proposal-v1', null],
+    ['wrong-schema', 'source-checkpoint-cascade', 'practice-content-proposal-v1', null],
+  ] as const)(
+    'backfills only %s Lesson logical-call source provenance',
+    (_label, sourceFingerprint, schemaFingerprint, expectedLogicalCallId) => {
+      const db = openDatabase(':memory:');
+      const at = '2026-01-01T00:00:00.000Z';
+      migrate(db, { toVersion: 37 });
+      insertAcceptedLessonCascadeFixture(db);
+      db.prepare(
+        `INSERT INTO agent_operations
+           (id, workspace_id, command_id, idempotency_key, logical_operation_id,
+            operation_type, expected_fingerprint, status, lease_owner, lease_expires_at,
+            fencing_token, created_at, updated_at)
+         VALUES ('operation_checkpoint_cascade', 'ws_checkpoint_cascade',
+           'command_checkpoint_cascade', 'idempotency_checkpoint_cascade',
+           'logical_operation_checkpoint_cascade', 'prepare_teaching_brief',
+           'route-fingerprint', 'completed', NULL, NULL, 1, ?, ?)`,
+      ).run(at, at);
+      db.prepare(
+        `INSERT INTO model_logical_calls
+           (id, operation_id, workspace_id, study_session_id, learning_unit_id,
+            assessment_id, operation_type, cache_key, cache_status, prompt_fingerprint,
+            schema_fingerprint, policy_fingerprint, source_fingerprint, status,
+            created_at, completed_at)
+         VALUES ('lesson_call_exact', 'operation_checkpoint_cascade',
+           'ws_checkpoint_cascade', 'session_checkpoint_cascade', 'unit_checkpoint_cascade',
+           NULL, 'prepare_teaching_brief', NULL, 'not_checked', NULL,
+           ?, NULL, ?, 'completed', ?, ?)`,
+      ).run(schemaFingerprint, sourceFingerprint, at, at);
+
+      migrate(db, { toVersion: 38 });
+
+      expect(
+        db
+          .prepare(
+            "SELECT lesson_logical_call_id FROM accepted_lesson_checkpoints WHERE id = 'checkpoint_cascade'",
+          )
+          .get(),
+      ).toEqual({ lesson_logical_call_id: expectedLogicalCallId });
+      expect(db.pragma('foreign_key_check')).toEqual([]);
+      db.close();
+    },
+  );
+
+  it('keeps accepted Lessons immutable while allowing an owning workspace cascade', () => {
+    const db = openDatabase(':memory:');
+    migrate(db, { toVersion: 38 });
+    insertAcceptedLessonCascadeFixture(db);
+
+    migrate(db);
+    expect(
+      db.prepare('SELECT version, name FROM schema_migrations WHERE version = 39').get(),
+    ).toEqual({ version: 39, name: 'allow_accepted_lesson_workspace_cascade' });
+    expect(() =>
+      db.prepare("DELETE FROM accepted_lesson_checkpoints WHERE id = 'checkpoint_cascade'").run(),
+    ).toThrow('Accepted Lesson checkpoints are immutable');
+    expect(db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get()).toEqual({
+      count: 1,
+    });
+
+    db.prepare("DELETE FROM workspaces WHERE id = 'ws_checkpoint_cascade'").run();
+    expect(db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get()).toEqual({
+      count: 0,
+    });
+    expect(
+      db
+        .prepare(
+          "SELECT COUNT(*) AS count FROM study_sessions WHERE id = 'session_checkpoint_cascade'",
+        )
+        .get(),
+    ).toEqual({ count: 0 });
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+    db.close();
+  });
+
+  it('allows an accepted Lesson checkpoint to cascade with its owning StudySession', () => {
+    const db = openDatabase(':memory:');
+    migrate(db, { toVersion: 38 });
+    insertAcceptedLessonCascadeFixture(db);
+    migrate(db);
+
+    db.prepare("DELETE FROM study_sessions WHERE id = 'session_checkpoint_cascade'").run();
+
+    expect(db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get()).toEqual({
+      count: 0,
+    });
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+    db.close();
+  });
+
+  it('preserves Brief data and child foreign keys while allowing session-bound finals', () => {
+    const db = openDatabase(':memory:');
+    const at = '2026-01-01T00:00:00.000Z';
+    migrate(db, { toVersion: 39 });
+    db.prepare(
+      `INSERT INTO workspaces (id, name, origin, created_at, updated_at)
+       VALUES ('ws_brief_v40', 'Brief migration', 'manual', ?, ?)`,
+    ).run(at, at);
+    db.prepare(
+      `INSERT INTO learning_contract_versions
+         (id, workspace_id, version, status, payload, created_at)
+       VALUES ('contract_brief_v40', 'ws_brief_v40', 1, 'active', '{}', ?)`,
+    ).run(at);
+    db.prepare(
+      `INSERT INTO execution_source_manifests
+         (id, workspace_id, fingerprint, payload, created_at)
+       VALUES ('manifest_brief_v40', 'ws_brief_v40', 'manifest-v40', '{}', ?)`,
+    ).run(at);
+    db.prepare(
+      `INSERT INTO curriculum_versions
+         (id, workspace_id, contract_id, manifest_id, manifest_fingerprint, version,
+          status, validation_valid, payload, created_at)
+       VALUES ('curriculum_brief_v40', 'ws_brief_v40', 'contract_brief_v40',
+         'manifest_brief_v40', 'manifest-v40', 1, 'accepted', 1, '{}', ?)`,
+    ).run(at);
+    db.prepare(
+      `INSERT INTO study_plan_versions
+         (id, workspace_id, contract_id, curriculum_id, manifest_fingerprint, version,
+          status, payload, created_at)
+       VALUES ('plan_brief_v40', 'ws_brief_v40', 'contract_brief_v40',
+         'curriculum_brief_v40', 'manifest-v40', 1, 'accepted', '{}', ?)`,
+    ).run(at);
+    db.prepare(
+      `INSERT INTO session_agendas
+         (id, workspace_id, contract_id, curriculum_id, plan_id, manifest_fingerprint,
+          version, status, payload, created_at, updated_at)
+       VALUES ('agenda_brief_v40', 'ws_brief_v40', 'contract_brief_v40',
+         'curriculum_brief_v40', 'plan_brief_v40', 'manifest-v40', 1, 'active', '{}', ?, ?)`,
+    ).run(at, at);
+    db.prepare(
+      `INSERT INTO study_sessions
+         (id, workspace_id, contract_id, curriculum_id, plan_id, agenda_id,
+          manifest_fingerprint, version, status, route_state, current_agenda_item_id,
+          route_stack, transcript_watermark, created_at, updated_at)
+       VALUES ('session_brief_v40', 'ws_brief_v40', 'contract_brief_v40',
+         'curriculum_brief_v40', 'plan_brief_v40', 'agenda_brief_v40', 'manifest-v40',
+         1, 'active', 'on_route', NULL, '[]', 0, ?, ?)`,
+    ).run(at, at);
+    const insertBrief = db.prepare(
+      `INSERT INTO teaching_briefs
+         (id, workspace_id, curriculum_id, study_plan_id, learning_unit_id,
+          manifest_fingerprint, source_context_fingerprint, payload, provider,
+          provider_model, prompt_version, created_at)
+       VALUES (?, 'ws_brief_v40', 'curriculum_brief_v40', 'plan_brief_v40', 'unit_v40',
+         'manifest-v40', 'context-v40', ?, 'fake', NULL, 'legacy-prompt', ?)`,
+    );
+    insertBrief.run('brief_v40_a', '{"session":"a"}', at);
+    db.prepare(
+      `INSERT INTO lesson_execution_states
+         (id, session_id, agenda_item_id, curriculum_id, study_plan_id, learning_unit_id,
+          teaching_brief_id, manifest_fingerprint, source_context_fingerprint,
+          preparation_status, preparation_operation_id, version, current_segment_index,
+          presented_segment_indexes, informal_interactions, presentation_completed_at,
+          created_at, updated_at, practice_interactions, practice_completed_at,
+          accepted_lesson_checkpoint_id)
+       VALUES ('lesson_state_v40', 'session_brief_v40', 'agenda_item_v40',
+         'curriculum_brief_v40', 'plan_brief_v40', 'unit_v40', 'brief_v40_a',
+         'manifest-v40', 'context-v40', 'ready', NULL, 1, 0, '[]', '[]', NULL,
+         ?, ?, '[]', NULL, NULL)`,
+    ).run(at, at);
+
+    expect(() => insertBrief.run('brief_v40_pre_conflict', '{"session":"pre"}', at)).toThrow();
+    migrate(db);
+
+    expect(
+      db.prepare('SELECT version, name FROM schema_migrations WHERE version = 40').get(),
+    ).toEqual({ version: 40, name: 'session_bound_compositional_teaching_briefs' });
+    expect(
+      db.prepare("SELECT payload FROM teaching_briefs WHERE id = 'brief_v40_a'").get(),
+    ).toEqual({ payload: '{"session":"a"}' });
+    expect(
+      db
+        .prepare(
+          "SELECT teaching_brief_id FROM lesson_execution_states WHERE id = 'lesson_state_v40'",
+        )
+        .get(),
+    ).toEqual({ teaching_brief_id: 'brief_v40_a' });
+    expect(() =>
+      insertBrief.run('brief_v40_b', '{"session":"b"}', '2026-01-01T00:01:00.000Z'),
+    ).not.toThrow();
+    const tableSql = (
+      db
+        .prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'teaching_briefs'")
+        .get() as { sql: string }
+    ).sql;
+    expect(tableSql).not.toContain(
+      'UNIQUE (curriculum_id, study_plan_id, learning_unit_id, manifest_fingerprint, source_context_fingerprint)',
+    );
+    expect(db.prepare('SELECT COUNT(*) AS count FROM teaching_briefs').get()).toEqual({ count: 2 });
+    expect(db.pragma('foreign_key_check')).toEqual([]);
     db.close();
   });
 

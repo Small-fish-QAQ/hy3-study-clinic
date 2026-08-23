@@ -7,6 +7,10 @@ import { createWorkspacesRepo, type WorkspacesRepo } from './workspaces.js';
 import { createGraphRepo, type GraphRepo } from './graph.js';
 import { createLessonsRepo, type LessonsRepo } from './lessons.js';
 import { createTeachingBriefsRepo, type TeachingBriefsRepo } from './teachingBriefs.js';
+import {
+  createAcceptedLessonCheckpointsRepo,
+  type AcceptedLessonCheckpointsRepo,
+} from './acceptedLessonCheckpoints.js';
 import { createLessonExecutionRepo, type LessonExecutionRepo } from './lessonExecution.js';
 import { createAlignmentRepo, type AlignmentRepo } from './alignment.js';
 import { createBlueprintsRepo, type BlueprintsRepo } from './blueprints.js';
@@ -76,6 +80,7 @@ export interface Repositories {
   mastery: MasteryRepo;
   lessons: LessonsRepo;
   teachingBriefs: TeachingBriefsRepo;
+  acceptedLessonCheckpoints: AcceptedLessonCheckpointsRepo;
   lessonExecution: LessonExecutionRepo;
   /**
    * Run `fn` inside ONE database transaction spanning any repository writes
@@ -122,6 +127,7 @@ export function createRepositories(db: SqliteDb): Repositories {
     mastery: createMasteryRepo(db),
     lessons: createLessonsRepo(db),
     teachingBriefs: createTeachingBriefsRepo(db),
+    acceptedLessonCheckpoints: createAcceptedLessonCheckpointsRepo(db),
     lessonExecution: createLessonExecutionRepo(db),
     transaction<T>(fn: () => T): T {
       return db.transaction(fn)();

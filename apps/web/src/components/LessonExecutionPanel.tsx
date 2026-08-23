@@ -75,6 +75,20 @@ const PURPOSE_LABELS: Record<LessonSegmentProjection['purpose'], string> = {
   guided_practice: '练习',
 };
 
+const RELATION_LABELS: Record<
+  NonNullable<LessonSegmentProjection['semanticRelations']>[number]['kind'],
+  string
+> = {
+  cause_consequence: '原因 → 结果',
+  mechanism_effect: '机制 → 作用',
+  step_purpose: '步骤 → 目的',
+  omission_failure: '遗漏 → 失败',
+  condition_action: '条件 → 行动',
+  misconception_correction: '误解 → 纠正',
+  difference_discrimination: '差异 → 区分',
+  evidence_conclusion: '证据 → 结论',
+};
+
 function originLabel(origin: LessonSegmentProjection['explanationOrigin']): string {
   return origin === 'source_grounded' ? '来源原文' : 'Hy3 讲解补充';
 }
@@ -216,6 +230,7 @@ function ReadyLesson({
   projection,
   active,
   busy,
+  readOnly = false,
   responseDraft,
   commandLoading,
   onAction,
@@ -224,6 +239,7 @@ function ReadyLesson({
   projection: LessonExecutionProjection;
   active: boolean;
   busy: boolean;
+  readOnly?: boolean;
   responseDraft: string;
   commandLoading: boolean;
   onAction: (action: LessonExecutionCommandRequest['action']) => void;
@@ -234,10 +250,10 @@ function ReadyLesson({
   const currentIndex = progress.currentSegmentIndex;
   const presented = new Set(progress.presentedSegmentIndexes);
   const presentationCompleted = progress.presentationStatus === 'presentation_completed';
-  const canStart = projection.allowedActions.includes('start_lesson');
-  const canNext = projection.allowedActions.includes('move_to_next_segment');
-  const canRevisit = projection.allowedActions.includes('revisit_segment');
-  const canComplete = projection.allowedActions.includes('complete_presentation');
+  const canStart = !readOnly && projection.allowedActions.includes('start_lesson');
+  const canNext = !readOnly && projection.allowedActions.includes('move_to_next_segment');
+  const canRevisit = !readOnly && projection.allowedActions.includes('revisit_segment');
+  const canComplete = !readOnly && projection.allowedActions.includes('complete_presentation');
 
   return (
     <>
@@ -246,8 +262,14 @@ function ReadyLesson({
           <p className="eyebrow">本节讲解</p>
           <h3>{lesson.objective.title}</h3>
           <p className="lesson-player-status" role="status">
-            {presentationStateLabel(projection.progress)} · 已呈现 {presented.size}/
-            {lesson.segments.length} 个部分
+            {readOnly ? (
+              '讲解内容已接受 · 等待非正式练习'
+            ) : (
+              <>
+                {presentationStateLabel(projection.progress)} · 已呈现 {presented.size}/
+                {lesson.segments.length} 个部分
+              </>
+            )}
           </p>
           {lesson.plannedTime ? (
             <p className="small muted">
@@ -257,29 +279,33 @@ function ReadyLesson({
             </p>
           ) : null}
         </div>
-        <div className="lesson-segment-progress" aria-label="讲解进度">
-          {lesson.segments.map((segment) => (
-            <button
-              type="button"
-              key={segment.index}
-              className={
-                segment.index === currentIndex
-                  ? 'current'
-                  : presented.has(segment.index)
-                    ? 'presented'
-                    : ''
-              }
-              aria-label={`第 ${segment.index + 1} 部分${segment.index === currentIndex ? '，当前' : ''}`}
-              aria-current={segment.index === currentIndex ? 'step' : undefined}
-              disabled={
-                busy || !active || (!presented.has(segment.index) && segment.index !== currentIndex)
-              }
-              onClick={() => onAction({ kind: 'move_to_segment', segmentIndex: segment.index })}
-            >
-              {segment.index + 1}
-            </button>
-          ))}
-        </div>
+        {!readOnly ? (
+          <div className="lesson-segment-progress" aria-label="讲解进度">
+            {lesson.segments.map((segment) => (
+              <button
+                type="button"
+                key={segment.index}
+                className={
+                  segment.index === currentIndex
+                    ? 'current'
+                    : presented.has(segment.index)
+                      ? 'presented'
+                      : ''
+                }
+                aria-label={`第 ${segment.index + 1} 部分${segment.index === currentIndex ? '，当前' : ''}`}
+                aria-current={segment.index === currentIndex ? 'step' : undefined}
+                disabled={
+                  busy ||
+                  !active ||
+                  (!presented.has(segment.index) && segment.index !== currentIndex)
+                }
+                onClick={() => onAction({ kind: 'move_to_segment', segmentIndex: segment.index })}
+              >
+                {segment.index + 1}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </header>
 
       <section className="lesson-objective" aria-label="本节目标">
@@ -331,8 +357,8 @@ function ReadyLesson({
 
       <ol className="lesson-segment-list" aria-label="有序讲解内容">
         {lesson.segments.map((segment) => {
-          const isCurrent = segment.index === currentIndex;
-          const isPresented = presented.has(segment.index);
+          const isCurrent = !readOnly && segment.index === currentIndex;
+          const isPresented = !readOnly && presented.has(segment.index);
           return (
             <li
               key={segment.index}
@@ -349,6 +375,59 @@ function ReadyLesson({
               </div>
               <p className="lesson-segment-explanation">{segment.explanation}</p>
               <SourceReferences sources={segment.sources} origin={segment.explanationOrigin} />
+              {segment.semanticRelations && segment.semanticRelations.length > 0 ? (
+                <section className="lesson-semantic-relations" aria-label="推理关系">
+                  <strong>推理关系</strong>
+                  <ul>
+                    {segment.semanticRelations.map((relation, relationIndex) => (
+                      <li key={`${relation.kind}-${relationIndex}`}>
+                        <span>{RELATION_LABELS[relation.kind]}</span>
+                        <p>
+                          {relation.fromProposition} → {relation.toProposition}
+                        </p>
+                        <small>{relation.relevanceToObjective}</small>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+              {segment.workedProcess ? (
+                <section className="lesson-worked-process" aria-label="完整推演过程">
+                  <strong>完整推演过程</strong>
+                  <p>
+                    <b>起始状态：</b>
+                    {segment.workedProcess.startingState}
+                  </p>
+                  <p>
+                    <b>依据的规则或流程：</b>
+                    {segment.workedProcess.ruleOrProcedure}
+                  </p>
+                  <ol>
+                    {segment.workedProcess.steps.map((step, stepIndex) => (
+                      <li key={stepIndex}>
+                        <p>{step.action}</p>
+                        <small>
+                          {step.reason} → {step.resultingState}
+                        </small>
+                      </li>
+                    ))}
+                  </ol>
+                  {segment.workedProcess.learnerDecision ? (
+                    <p>
+                      <b>需要作出的判断：</b>
+                      {segment.workedProcess.learnerDecision}
+                    </p>
+                  ) : null}
+                  <p>
+                    <b>结果：</b>
+                    {segment.workedProcess.result}
+                  </p>
+                  <p>
+                    <b>为什么得到这个结果：</b>
+                    {segment.workedProcess.whyResultFollows}
+                  </p>
+                </section>
+              ) : null}
               {segment.example ? <Illustration label="教学示例" value={segment.example} /> : null}
               {segment.contrast ? <Illustration label="对比一下" value={segment.contrast} /> : null}
               {segment.possibleMisconception ? (
@@ -363,7 +442,13 @@ function ReadyLesson({
                   <small>这是提醒，不是对你的判断。</small>
                 </aside>
               ) : null}
-              {isCurrent ? (
+              {readOnly && segment.informalCheck ? (
+                <section className="lesson-informal-check" aria-label="讲解中的思考点">
+                  <p className="eyebrow">讲解中的思考点</p>
+                  <h5>{segment.informalCheck.prompt}</h5>
+                  <p className="small muted">非正式练习准备完成后即可开始并记录回应。</p>
+                </section>
+              ) : isCurrent ? (
                 <InformalCheck
                   segment={segment}
                   response={responseDraft}
@@ -379,7 +464,7 @@ function ReadyLesson({
                   }
                 />
               ) : null}
-              {isCurrent && !presentationCompleted ? (
+              {!readOnly && isCurrent && !presentationCompleted ? (
                 <div className="lesson-segment-actions">
                   {canRevisit && currentIndex > 0 ? (
                     <button
@@ -422,7 +507,7 @@ function ReadyLesson({
       </ol>
 
       {lesson.summary.available &&
-      (presentationCompleted || progress.presentationStatus === 'summary_ready') ? (
+      (readOnly || presentationCompleted || progress.presentationStatus === 'summary_ready') ? (
         <section className="lesson-summary" aria-label="本节总结">
           <p className="eyebrow">本节总结</p>
           {lesson.summary.text ? <p>{lesson.summary.text}</p> : null}
@@ -435,7 +520,7 @@ function ReadyLesson({
         </section>
       ) : null}
 
-      {projection.practice && projection.practice.status !== 'locked' ? (
+      {!readOnly && projection.practice && projection.practice.status !== 'locked' ? (
         <section className="lesson-practice" aria-label="本节练习">
           <p className="eyebrow">Practice · 非正式练习</p>
           <h3>
@@ -507,12 +592,21 @@ export function LessonExecutionPanel({
   onSessionVersionChange,
   onRefreshSession,
 }: LessonExecutionPanelProps) {
-  const [projection, setProjection] = useState<LessonExecutionProjection | null>(null);
+  const routeIdentity = JSON.stringify([workspaceId, sessionId, agendaItemId]);
+  const [projectionState, setProjectionState] = useState<{
+    routeIdentity: string;
+    value: LessonExecutionProjection;
+  } | null>(null);
+  const projection =
+    projectionState?.routeIdentity === routeIdentity ? projectionState.value : null;
+  const routeTransitioning =
+    projectionState !== null && projectionState.routeIdentity !== routeIdentity;
   const [loading, setLoading] = useState(true);
   const [preparing, setPreparing] = useState(false);
   const [commandLoading, setCommandLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [responseDraft, setResponseDraft] = useState('');
+  const routeEpoch = useRef(0);
   const requestEpoch = useRef(0);
   const refreshController = useRef<AbortController | null>(null);
   const prepareKey = useRef<string | null>(null);
@@ -521,25 +615,36 @@ export function LessonExecutionPanel({
 
   const applyProjection = useCallback(
     (next: LessonExecutionProjection) => {
-      setProjection(next);
+      setProjectionState({ routeIdentity, value: next });
       setError(null);
       onSessionVersionChange?.(next);
     },
-    [onSessionVersionChange],
+    [onSessionVersionChange, routeIdentity],
   );
 
   const refresh = useCallback(async () => {
     refreshController.current?.abort();
     const controller = new AbortController();
     refreshController.current = controller;
-    const epoch = ++requestEpoch.current;
+    const epoch = routeEpoch.current;
+    const refreshEpoch = ++requestEpoch.current;
     setLoading(true);
     setError(null);
     try {
       const next = await api.getLessonExecution(workspaceId, sessionId, controller.signal);
-      if (!controller.signal.aborted && epoch === requestEpoch.current) applyProjection(next);
+      if (
+        !controller.signal.aborted &&
+        epoch === routeEpoch.current &&
+        refreshEpoch === requestEpoch.current
+      ) {
+        applyProjection(next);
+      }
     } catch (cause) {
-      if (!controller.signal.aborted && epoch === requestEpoch.current) {
+      if (
+        !controller.signal.aborted &&
+        epoch === routeEpoch.current &&
+        refreshEpoch === requestEpoch.current
+      ) {
         const message = learnerMessage(cause);
         if (message) setError(message);
         if (cause instanceof ApiClientError && cause.code === 'VERSION_CONFLICT') {
@@ -548,19 +653,42 @@ export function LessonExecutionPanel({
       }
     } finally {
       if (refreshController.current === controller) refreshController.current = null;
-      if (!controller.signal.aborted && epoch === requestEpoch.current) setLoading(false);
+      if (epoch === routeEpoch.current && refreshEpoch === requestEpoch.current) setLoading(false);
     }
   }, [applyProjection, onRefreshSession, sessionId, workspaceId]);
 
   useEffect(() => {
-    void refresh();
+    routeEpoch.current += 1;
+    requestEpoch.current += 1;
+    refreshController.current?.abort();
+    prepareController.current?.abort();
+    commandController.current?.abort();
+    refreshController.current = null;
+    prepareController.current = null;
+    commandController.current = null;
+    prepareKey.current = null;
+    setProjectionState(null);
+    setLoading(true);
+    setPreparing(false);
+    setCommandLoading(false);
+    setError(null);
+    setResponseDraft('');
+
     return () => {
+      routeEpoch.current += 1;
       requestEpoch.current += 1;
       refreshController.current?.abort();
       prepareController.current?.abort();
       commandController.current?.abort();
+      refreshController.current = null;
+      prepareController.current = null;
+      commandController.current = null;
     };
-  }, [refresh, agendaItemId]);
+  }, [routeIdentity]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh, routeIdentity]);
 
   useEffect(() => {
     if (projection?.status !== 'preparing') return;
@@ -583,6 +711,7 @@ export function LessonExecutionPanel({
       };
       const controller = new AbortController();
       prepareController.current = controller;
+      const epoch = routeEpoch.current;
       setPreparing(true);
       setError(null);
       try {
@@ -592,9 +721,9 @@ export function LessonExecutionPanel({
           input,
           controller.signal,
         );
-        if (!controller.signal.aborted) applyProjection(next);
+        if (!controller.signal.aborted && epoch === routeEpoch.current) applyProjection(next);
       } catch (cause) {
-        if (!controller.signal.aborted) {
+        if (!controller.signal.aborted && epoch === routeEpoch.current) {
           const message = learnerMessage(cause);
           if (message) setError(message);
           if (cause instanceof ApiClientError && cause.code === 'VERSION_CONFLICT') {
@@ -604,7 +733,7 @@ export function LessonExecutionPanel({
         }
       } finally {
         if (prepareController.current === controller) prepareController.current = null;
-        if (!controller.signal.aborted) setPreparing(false);
+        if (epoch === routeEpoch.current) setPreparing(false);
       }
     },
     [
@@ -638,6 +767,7 @@ export function LessonExecutionPanel({
       };
       const controller = new AbortController();
       commandController.current = controller;
+      const epoch = routeEpoch.current;
       setCommandLoading(true);
       setError(null);
       try {
@@ -647,12 +777,12 @@ export function LessonExecutionPanel({
           input,
           controller.signal,
         );
-        if (!controller.signal.aborted) {
+        if (!controller.signal.aborted && epoch === routeEpoch.current) {
           setResponseDraft('');
           applyProjection(next);
         }
       } catch (cause) {
-        if (!controller.signal.aborted) {
+        if (!controller.signal.aborted && epoch === routeEpoch.current) {
           const message = learnerMessage(cause);
           if (message) setError(message);
           if (cause instanceof ApiClientError && cause.code === 'VERSION_CONFLICT') {
@@ -662,7 +792,7 @@ export function LessonExecutionPanel({
         }
       } finally {
         if (commandController.current === controller) commandController.current = null;
-        if (!controller.signal.aborted) setCommandLoading(false);
+        if (epoch === routeEpoch.current) setCommandLoading(false);
       }
     },
     [
@@ -678,7 +808,7 @@ export function LessonExecutionPanel({
     ],
   );
 
-  if (loading && !projection) {
+  if ((loading || routeTransitioning) && !projection) {
     return (
       <section className="lesson-execution-panel" aria-label="本节讲解">
         <Loading label="正在读取本节讲解…" />
@@ -748,6 +878,47 @@ export function LessonExecutionPanel({
             </button>
           )}
         </div>
+      </section>
+    );
+  }
+
+  if (projection.status === 'practice_retry_available') {
+    return (
+      <section className="lesson-execution-panel" aria-label="本节讲解">
+        <div className={preparing ? 'lesson-preparing-state' : 'lesson-error-state'} role="status">
+          <p className="eyebrow">Practice · 非正式练习</p>
+          <h3>{preparing ? '正在重新准备非正式练习' : '讲解已安全保存，练习还需要重试'}</h3>
+          {preparing ? (
+            <>
+              <Loading label="正在根据已接受的讲解准备非正式练习…" />
+              <p className="small muted">只会重新准备练习；下方已接受的讲解保持不变。</p>
+            </>
+          ) : (
+            <>
+              <p>{error ?? projection.message}</p>
+              <button
+                type="button"
+                className="primary"
+                disabled={!active || busy}
+                onClick={() => void prepare(true)}
+              >
+                重新准备非正式练习
+              </button>
+            </>
+          )}
+        </div>
+        {projection.lesson && projection.progress ? (
+          <ReadyLesson
+            projection={projection}
+            active={false}
+            busy={busy}
+            readOnly
+            responseDraft=""
+            commandLoading={false}
+            onAction={(action) => void command(action)}
+            onResponseChange={() => undefined}
+          />
+        ) : null}
       </section>
     );
   }

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { LessonExecutionProjection } from '@hy3-clinic/shared';
@@ -85,6 +85,38 @@ function readyLesson(
     allowedActions:
       progress.presentationStatus === 'not_started' ? ['start_lesson'] : ['move_to_next_segment'],
   };
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, reject, resolve };
+}
+
+function practiceRetryLesson(): LessonExecutionProjection {
+  const recovery = readyLesson({
+    stateVersion: 2,
+    currentSegmentIndex: 0,
+    segmentCount: 2,
+    presentedSegmentIndexes: [],
+    presentationStatus: 'not_started',
+    presentationCompletedAt: null,
+  });
+  recovery.status = 'practice_retry_available';
+  recovery.message = '讲解内容已经安全保存；这次非正式练习准备没有完成。';
+  recovery.practice = null;
+  recovery.allowedActions = ['retry_preparation'];
+  return recovery;
+}
+
+function lessonTitled(title: string): LessonExecutionProjection {
+  const lesson = structuredClone(prepared);
+  lesson.lesson!.objective.title = title;
+  return lesson;
 }
 
 const needed: LessonExecutionProjection = {
@@ -408,6 +440,186 @@ describe('LessonExecutionPanel', () => {
     await user.click(screen.getByRole('button', { name: '满足条件的候选变了' }));
     expect(await screen.findByRole('heading', { name: '练习完成' })).toBeInTheDocument();
     expect(command).toHaveBeenCalledTimes(2);
+  });
+
+  it('preserves an accepted Lesson as a read-only preview while retrying only Practice', async () => {
+    const user = userEvent.setup();
+    const recovery = practiceRetryLesson();
+    const retry = deferred<LessonExecutionProjection>();
+    vi.spyOn(api, 'getLessonExecution').mockResolvedValue(recovery);
+    const prepare = vi.spyOn(api, 'prepareLessonExecution').mockReturnValue(retry.promise);
+    const command = vi.spyOn(api, 'lessonExecutionCommand');
+
+    render(
+      <LessonExecutionPanel
+        workspaceId="ws_1"
+        sessionId="session_1"
+        agendaItemId="item_1"
+        active
+      />,
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: '讲解已安全保存，练习还需要重试' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '理解条件概率' })).toBeInTheDocument();
+    expect(screen.getByText('条件概率把观察范围收窄到已知条件。')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: '请用自己的话说说它描述了什么。' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '开始本节讲解' })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('练习回应')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '重新准备非正式练习' }));
+    expect(await screen.findByText('正在根据已接受的讲解准备非正式练习…')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '理解条件概率' })).toBeInTheDocument();
+    expect(prepare).toHaveBeenCalledWith(
+      'ws_1',
+      'session_1',
+      expect.objectContaining({
+        expectedSessionVersion: 2,
+        expectedAgendaVersion: 3,
+        expectedAgendaItemId: 'item_1',
+      }),
+      expect.any(AbortSignal),
+    );
+    expect(command).not.toHaveBeenCalled();
+
+    await act(async () => retry.resolve(prepared));
+    expect(await screen.findByRole('button', { name: '开始本节讲解' })).toBeInTheDocument();
+  });
+
+  it('drops a stale Lesson refresh after the Agenda item identity changes', async () => {
+    const firstRefresh = deferred<LessonExecutionProjection>();
+    let firstSignal: AbortSignal | undefined;
+    const successor = lessonTitled('后继讲解');
+    vi.spyOn(api, 'getLessonExecution')
+      .mockImplementationOnce((_workspaceId, _sessionId, signal) => {
+        firstSignal = signal;
+        return firstRefresh.promise;
+      })
+      .mockResolvedValueOnce(successor);
+
+    const rendered = render(
+      <LessonExecutionPanel
+        workspaceId="ws_1"
+        sessionId="session_1"
+        agendaItemId="item_1"
+        active
+      />,
+    );
+    await waitFor(() => expect(firstSignal).toBeDefined());
+
+    rendered.rerender(
+      <LessonExecutionPanel
+        workspaceId="ws_1"
+        sessionId="session_1"
+        agendaItemId="item_2"
+        active
+      />,
+    );
+    expect(await screen.findByRole('heading', { name: '后继讲解' })).toBeInTheDocument();
+    expect(firstSignal?.aborted).toBe(true);
+
+    await act(async () => firstRefresh.resolve(lessonTitled('过期讲解')));
+    expect(screen.getByRole('heading', { name: '后继讲解' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '过期讲解' })).not.toBeInTheDocument();
+  });
+
+  it('aborts a pending Practice retry and ignores its late response after an Agenda switch', async () => {
+    const user = userEvent.setup();
+    const retry = deferred<LessonExecutionProjection>();
+    let retrySignal: AbortSignal | undefined;
+    const successor = lessonTitled('新的安排');
+    vi.spyOn(api, 'getLessonExecution')
+      .mockResolvedValueOnce(practiceRetryLesson())
+      .mockResolvedValueOnce(successor);
+    vi.spyOn(api, 'prepareLessonExecution').mockImplementation(
+      (_workspaceId, _sessionId, _input, signal) => {
+        retrySignal = signal;
+        return retry.promise;
+      },
+    );
+
+    const rendered = render(
+      <LessonExecutionPanel
+        workspaceId="ws_1"
+        sessionId="session_1"
+        agendaItemId="item_1"
+        active
+      />,
+    );
+    await user.click(await screen.findByRole('button', { name: '重新准备非正式练习' }));
+    await waitFor(() => expect(retrySignal).toBeDefined());
+
+    rendered.rerender(
+      <LessonExecutionPanel
+        workspaceId="ws_1"
+        sessionId="session_1"
+        agendaItemId="item_2"
+        active
+      />,
+    );
+    expect(await screen.findByRole('heading', { name: '新的安排' })).toBeInTheDocument();
+    expect(retrySignal?.aborted).toBe(true);
+
+    await act(async () => retry.resolve(lessonTitled('过期的练习结果')));
+    expect(screen.getByRole('heading', { name: '新的安排' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '过期的练习结果' })).not.toBeInTheDocument();
+    expect(screen.queryByText('正在重新准备非正式练习')).not.toBeInTheDocument();
+  });
+
+  it('aborts a learner command and clears command loading after an Agenda switch', async () => {
+    const user = userEvent.setup();
+    const commandResult = deferred<LessonExecutionProjection>();
+    let commandSignal: AbortSignal | undefined;
+    const inProgress = readyLesson({
+      stateVersion: 4,
+      currentSegmentIndex: 0,
+      segmentCount: 2,
+      presentedSegmentIndexes: [0],
+      presentationStatus: 'in_progress',
+      presentationCompletedAt: null,
+    });
+    inProgress.lesson!.segments[0]!.informalCheck = null;
+    inProgress.allowedActions = ['move_to_next_segment'];
+    const successor = lessonTitled('命令后的新安排');
+    vi.spyOn(api, 'getLessonExecution')
+      .mockResolvedValueOnce(inProgress)
+      .mockResolvedValueOnce(successor);
+    vi.spyOn(api, 'lessonExecutionCommand').mockImplementation(
+      (_workspaceId, _sessionId, _input, signal) => {
+        commandSignal = signal;
+        return commandResult.promise;
+      },
+    );
+
+    const rendered = render(
+      <LessonExecutionPanel
+        workspaceId="ws_1"
+        sessionId="session_1"
+        agendaItemId="item_1"
+        active
+      />,
+    );
+    await user.click(await screen.findByRole('button', { name: '继续到下一部分' }));
+    await waitFor(() => expect(commandSignal).toBeDefined());
+
+    rendered.rerender(
+      <LessonExecutionPanel
+        workspaceId="ws_1"
+        sessionId="session_1"
+        agendaItemId="item_2"
+        active
+      />,
+    );
+    expect(await screen.findByRole('heading', { name: '命令后的新安排' })).toBeInTheDocument();
+    expect(commandSignal?.aborted).toBe(true);
+    expect(screen.getByRole('button', { name: '开始本节讲解' })).toBeEnabled();
+
+    await act(async () => commandResult.resolve(lessonTitled('过期命令结果')));
+    expect(screen.getByRole('heading', { name: '命令后的新安排' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '过期命令结果' })).not.toBeInTheDocument();
   });
 
   it('offers the existing formal handoff only after Lesson and informal Practice completion', async () => {

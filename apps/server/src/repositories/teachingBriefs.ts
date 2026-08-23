@@ -1,4 +1,13 @@
-import { ApiErrorCode, TeachingBriefSchema, type TeachingBrief } from '@hy3-clinic/shared';
+import {
+  ApiErrorCode,
+  LessonPedagogyEvaluationSchema,
+  StudyPlanItemSchema,
+  TeachingBriefSchema,
+  TeachingLessonSlotContentsSchema,
+  TeachingSkeletonSchema,
+  teachingBriefMatchesAcceptedLessonProjection,
+  type TeachingBrief,
+} from '@hy3-clinic/shared';
 import type { SqliteDb } from '../db/database.js';
 import { curriculumSourceBlockFingerprint } from '../grounding/sourceFingerprint.js';
 import { AppError } from '../errors.js';
@@ -16,6 +25,15 @@ interface TeachingBriefRow {
   provider_model: string | null;
   prompt_version: string;
   created_at: string;
+}
+
+function parseObjectiveIds(payload: string): string[] | undefined {
+  try {
+    const parsed = StudyPlanItemSchema.shape.objectiveIds.safeParse(JSON.parse(payload));
+    return parsed.success && parsed.data.length > 0 ? parsed.data : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function hydrate(row: TeachingBriefRow): TeachingBrief {
@@ -49,8 +67,9 @@ export function createTeachingBriefsRepo(db: SqliteDb) {
     learningUnitId: string;
     manifestFingerprint: string;
     sourceContextFingerprint: string;
+    acceptedLessonCheckpointId: string;
   }): TeachingBrief | undefined {
-    const row = db
+    const rows = db
       .prepare(
         `SELECT * FROM teaching_briefs
          WHERE workspace_id = @workspaceId
@@ -59,10 +78,16 @@ export function createTeachingBriefsRepo(db: SqliteDb) {
            AND learning_unit_id = @learningUnitId
            AND manifest_fingerprint = @manifestFingerprint
            AND source_context_fingerprint = @sourceContextFingerprint
-         ORDER BY created_at DESC LIMIT 1`,
+         ORDER BY created_at DESC, id DESC`,
       )
-      .get(input) as TeachingBriefRow | undefined;
-    return row ? hydrate(row) : undefined;
+      .all(input) as TeachingBriefRow[];
+    for (const row of rows) {
+      const brief = hydrate(row);
+      if (brief.composition?.acceptedLessonCheckpointId === input.acceptedLessonCheckpointId) {
+        return brief;
+      }
+    }
+    return undefined;
   }
 
   const createTx = db.transaction((input: TeachingBrief): TeachingBrief => {
@@ -101,6 +126,135 @@ export function createTeachingBriefsRepo(db: SqliteDb) {
         ApiErrorCode.VersionConflict,
         'Teaching Brief persistence requires its exact accepted Course route.',
       );
+    }
+    if (brief.composition) {
+      const predecessor = db
+        .prepare(
+          `SELECT workspace_id, curriculum_id, study_plan_id, learning_unit_id,
+                  study_session_id,
+                  study_plan_item_id,
+                  manifest_fingerprint, source_context_fingerprint,
+                  skeleton_version, skeleton_fingerprint, operation_id,
+                  lesson_logical_call_id, skeleton_payload, lesson_payload,
+                  lesson_evaluation_payload, prompt_version
+           FROM accepted_lesson_checkpoints WHERE id = ?`,
+        )
+        .get(brief.composition.acceptedLessonCheckpointId) as
+        | {
+            workspace_id: string;
+            curriculum_id: string;
+            study_plan_id: string;
+            learning_unit_id: string;
+            study_session_id: string;
+            study_plan_item_id: string;
+            manifest_fingerprint: string;
+            source_context_fingerprint: string;
+            skeleton_version: number;
+            skeleton_fingerprint: string;
+            operation_id: string;
+            lesson_logical_call_id: string | null;
+            skeleton_payload: string;
+            lesson_payload: string;
+            lesson_evaluation_payload: string;
+            prompt_version: string;
+          }
+        | undefined;
+      const practiceOperation = db
+        .prepare(`SELECT workspace_id, status, operation_type FROM agent_operations WHERE id = ?`)
+        .get(brief.composition.practiceOperationId) as
+        { workspace_id: string; status: string; operation_type: string } | undefined;
+      const practiceLogicalCall = brief.composition.practiceLogicalCallId
+        ? (db
+            .prepare(
+              `SELECT operation_id, workspace_id, study_session_id, learning_unit_id,
+                      operation_type, schema_fingerprint, source_fingerprint, status
+                 FROM model_logical_calls WHERE id = ?`,
+            )
+            .get(brief.composition.practiceLogicalCallId) as
+            | {
+                operation_id: string | null;
+                workspace_id: string | null;
+                study_session_id: string | null;
+                learning_unit_id: string | null;
+                operation_type: string;
+                schema_fingerprint: string | null;
+                source_fingerprint: string | null;
+                status: string;
+              }
+            | undefined)
+        : undefined;
+      const planItem = predecessor
+        ? (db
+            .prepare(
+              `SELECT objective_ids FROM study_plan_items
+               WHERE plan_id = ? AND plan_item_id = ?
+                 AND curriculum_learning_unit_id = ?`,
+            )
+            .get(
+              predecessor.study_plan_id,
+              predecessor.study_plan_item_id,
+              predecessor.learning_unit_id,
+            ) as { objective_ids: string } | undefined)
+        : undefined;
+      const objectiveIds = planItem ? parseObjectiveIds(planItem.objective_ids) : undefined;
+      const hasLogicalCallProvenance =
+        brief.composition.lessonLogicalCallId !== undefined &&
+        brief.composition.practiceLogicalCallId !== undefined;
+      const requiresLogicalCallProvenance = brief.promptVersion.startsWith(
+        'teaching-brief-v3-compositional',
+      );
+      const matchesAcceptedLessonProjection =
+        predecessor && objectiveIds
+          ? teachingBriefMatchesAcceptedLessonProjection(
+              brief,
+              {
+                id: brief.composition.acceptedLessonCheckpointId,
+                skeleton: TeachingSkeletonSchema.parse(JSON.parse(predecessor.skeleton_payload)),
+                lessonContent: TeachingLessonSlotContentsSchema.parse(
+                  JSON.parse(predecessor.lesson_payload),
+                ),
+                lessonEvaluation: LessonPedagogyEvaluationSchema.parse(
+                  JSON.parse(predecessor.lesson_evaluation_payload),
+                ),
+                promptVersion: predecessor.prompt_version,
+              },
+              objectiveIds,
+            )
+          : false;
+      if (
+        !predecessor ||
+        predecessor.workspace_id !== brief.workspaceId ||
+        predecessor.curriculum_id !== brief.curriculumVersionId ||
+        predecessor.study_plan_id !== brief.studyPlanVersionId ||
+        predecessor.learning_unit_id !== brief.learningUnitId ||
+        predecessor.manifest_fingerprint !== brief.executionSourceManifestFingerprint ||
+        predecessor.source_context_fingerprint !== brief.sourceContextFingerprint ||
+        predecessor.skeleton_version !== brief.composition.skeletonSchemaVersion ||
+        predecessor.skeleton_fingerprint !== brief.composition.skeletonFingerprint ||
+        predecessor.operation_id !== brief.composition.lessonOperationId ||
+        !matchesAcceptedLessonProjection ||
+        !practiceOperation ||
+        practiceOperation.workspace_id !== brief.workspaceId ||
+        practiceOperation.status !== 'running' ||
+        practiceOperation.operation_type !== 'prepare_teaching_brief' ||
+        (requiresLogicalCallProvenance && !hasLogicalCallProvenance) ||
+        (hasLogicalCallProvenance &&
+          (predecessor.lesson_logical_call_id !== brief.composition.lessonLogicalCallId ||
+            !practiceLogicalCall ||
+            practiceLogicalCall.operation_id !== brief.composition.practiceOperationId ||
+            practiceLogicalCall.workspace_id !== brief.workspaceId ||
+            practiceLogicalCall.study_session_id !== predecessor.study_session_id ||
+            practiceLogicalCall.learning_unit_id !== brief.learningUnitId ||
+            practiceLogicalCall.operation_type !== 'prepare_teaching_brief' ||
+            practiceLogicalCall.schema_fingerprint !== 'practice-content-proposal-v1' ||
+            practiceLogicalCall.source_fingerprint !== brief.sourceContextFingerprint ||
+            practiceLogicalCall.status !== 'completed'))
+      ) {
+        throw new AppError(
+          ApiErrorCode.VersionConflict,
+          'Compositional Teaching Brief persistence requires its exact accepted Lesson predecessor and active Practice operation.',
+        );
+      }
     }
     for (const reference of brief.sourceReferences) {
       const block = db

@@ -129,6 +129,16 @@ export const LessonPracticeItemSchema = z
     authority: z.enum(['exact_source', 'advisory_visual']),
     sourceRefIds: z.array(z.string().min(1).max(40)).max(8),
     visualRefIds: z.array(z.string().regex(/^V[1-9][0-9]*$/u)).max(8),
+    application: z
+      .object({
+        startingState: z.string().min(1).max(900),
+        sourceRuleOrProcedure: z.string().min(1).max(1200),
+        decisionRequired: z.string().min(1).max(700),
+        expectedAction: z.string().min(1).max(700),
+      })
+      .strict()
+      .nullable()
+      .optional(),
     initial: LessonPracticeSurfaceSchema,
     retry: LessonPracticeSurfaceSchema,
   })

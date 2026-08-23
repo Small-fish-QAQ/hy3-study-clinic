@@ -10,8 +10,10 @@ import { FakeProvider } from '../llm/fakeProvider.js';
 import type {
   ConceptAnalysisInput,
   CurriculumProposalInput,
+  LessonSlotContentGenerationInput,
+  PracticeContentGenerationInput,
   ProviderCallOptions,
-  TeachingBriefGenerationInput,
+  StudyPlanProposalInput,
   TutorTurnInput,
   VisualDescriptionInput,
 } from '../llm/provider.js';
@@ -29,7 +31,8 @@ class VisualLearningProvider extends FakeProvider {
   analyzeCalls = 0;
   visualCalls = 0;
   curriculumInput: CurriculumProposalInput | null = null;
-  teachingBriefInput: TeachingBriefGenerationInput | null = null;
+  lessonSlotContentInput: LessonSlotContentGenerationInput | null = null;
+  practiceContentInput: PracticeContentGenerationInput | null = null;
   tutorInput: TutorTurnInput | null = null;
 
   constructor(private readonly targetVisualCall = 1) {
@@ -84,12 +87,38 @@ class VisualLearningProvider extends FakeProvider {
     return super.proposeCurriculum(input, opts);
   }
 
-  override async generateTeachingBrief(
-    input: TeachingBriefGenerationInput,
+  override async proposeStudyPlan(input: StudyPlanProposalInput, opts?: ProviderCallOptions) {
+    const targetUnit = input.units.find((unit) =>
+      unit.title.toLocaleLowerCase().includes('water cycle'),
+    );
+    return super.proposeStudyPlan(
+      targetUnit
+        ? {
+            ...input,
+            requiredLearningUnitIds: [
+              targetUnit.id,
+              ...input.requiredLearningUnitIds.filter((unitId) => unitId !== targetUnit.id),
+            ],
+          }
+        : input,
+      opts,
+    );
+  }
+
+  override async generateLessonSlotContent(
+    input: LessonSlotContentGenerationInput,
     opts?: ProviderCallOptions,
   ) {
-    this.teachingBriefInput = input;
-    return super.generateTeachingBrief(input, opts);
+    this.lessonSlotContentInput = input;
+    return super.generateLessonSlotContent(input, opts);
+  }
+
+  override async generatePracticeContent(
+    input: PracticeContentGenerationInput,
+    opts?: ProviderCallOptions,
+  ) {
+    this.practiceContentInput = input;
+    return super.generatePracticeContent(input, opts);
   }
 
   override async respondToTutorTurn(input: TutorTurnInput, opts?: ProviderCallOptions) {
@@ -377,8 +406,17 @@ describe('prepared image-only learning flow', () => {
     expect(brief.sourceReferences).toEqual([]);
     expect(brief.visualReferences).toHaveLength(1);
     expect(brief.segments.every((segment) => segment.sourceRefIds.length === 0)).toBe(true);
-    expect(provider.teachingBriefInput?.sourceContext.offers).toEqual([]);
-    expect(provider.teachingBriefInput?.visualContext.offers).toHaveLength(1);
+    expect(provider.lessonSlotContentInput?.sourceContext.offers).toEqual([]);
+    expect(provider.lessonSlotContentInput?.visualContext.offers).toHaveLength(1);
+    expect(provider.practiceContentInput?.sourceContext.offers).toEqual([]);
+    expect(provider.practiceContentInput?.visualContext.offers).toHaveLength(1);
+    expect(provider.practiceContentInput?.acceptedLesson).toEqual(
+      expect.arrayContaining(
+        provider.lessonSlotContentInput!.skeleton.lessonSlots.map((slot) =>
+          expect.objectContaining({ slotId: slot.slotId }),
+        ),
+      ),
+    );
 
     const startedLesson = await services.lessonExecution.command(WORKSPACE_ID, startedSession.id, {
       command: command('lesson-start'),
@@ -528,7 +566,7 @@ describe('prepared image-only learning flow', () => {
       (node) => node.learningUnit && node.title.toLocaleLowerCase().includes('water cycle'),
     )!;
     expect(relevantUnit).toBeDefined();
-    services.courseExecution.decideStudyPlan({
+    const acceptedRoute = services.courseExecution.decideStudyPlan({
       command: command('ranked-plan-accept'),
       studyPlanId: plan.id,
       expectedVersion: plan.version,
@@ -537,13 +575,32 @@ describe('prepared image-only learning flow', () => {
       expectedExecutionSourceManifestFingerprint: curriculum.executionSourceManifest.fingerprint,
       decision: 'accept',
       reason: null,
-    });
+    }).activeRoute!;
+    const teachingItem = acceptedRoute.agenda.items.find(
+      (item) => item.kind === 'learning_unit_teaching' && item.learningUnitId === relevantUnit.id,
+    )!;
+    expect(teachingItem.id).toBe(acceptedRoute.agenda.currentItemId);
+    expect(teachingItem.linkedPlanItemId).not.toBeNull();
+    const execution = ctx.repos.courseExecution.get(WORKSPACE_ID);
+    const session = services.studySessions.start(WORKSPACE_ID, {
+      contractVersionId: contract.id,
+      curriculumVersionId: curriculum.id,
+      studyPlanVersionId: plan.id,
+      sessionAgendaId: acceptedRoute.agenda.id,
+      expectedCourseExecutionVersion: execution.version,
+    }).session;
 
     const result = await services.teachingBriefPreparation.prepare({
       workspaceId: WORKSPACE_ID,
       curriculumVersionId: curriculum.id,
       studyPlanVersionId: plan.id,
       learningUnitId: relevantUnit.id,
+      studySessionId: session.id,
+      sessionAgendaId: acceptedRoute.agenda.id,
+      expectedSessionVersion: session.version,
+      expectedAgendaVersion: acceptedRoute.agenda.version,
+      expectedAgendaItemId: teachingItem.id,
+      expectedStudyPlanItemId: teachingItem.linkedPlanItemId!,
       commandId: 'ranked-brief-prepare',
       expectedExecutionSourceManifestFingerprint: curriculum.executionSourceManifest.fingerprint,
     });
@@ -551,7 +608,12 @@ describe('prepared image-only learning flow', () => {
       result.brief.visualReferences.some((reference) => reference.assetId === relevantAssetId),
     ).toBe(true);
     expect(
-      provider.teachingBriefInput?.visualContext.offers.some(
+      provider.lessonSlotContentInput?.visualContext.offers.some(
+        (offer) => offer.explanation.text === VISUAL_DESCRIPTION,
+      ),
+    ).toBe(true);
+    expect(
+      provider.practiceContentInput?.visualContext.offers.some(
         (offer) => offer.explanation.text === VISUAL_DESCRIPTION,
       ),
     ).toBe(true);

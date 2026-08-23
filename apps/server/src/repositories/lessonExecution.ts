@@ -14,6 +14,7 @@ interface StateRow {
   study_plan_id: string;
   learning_unit_id: string;
   teaching_brief_id: string | null;
+  accepted_lesson_checkpoint_id: string | null;
   manifest_fingerprint: string;
   source_context_fingerprint: string | null;
   preparation_status: LessonExecutionState['preparationStatus'];
@@ -48,6 +49,7 @@ function hydrateState(row: StateRow): LessonExecutionState {
     studyPlanVersionId: row.study_plan_id,
     learningUnitId: row.learning_unit_id,
     teachingBriefId: row.teaching_brief_id,
+    acceptedLessonCheckpointId: row.accepted_lesson_checkpoint_id,
     executionSourceManifestFingerprint: row.manifest_fingerprint,
     sourceContextFingerprint: row.source_context_fingerprint,
     preparationStatus: row.preparation_status,
@@ -127,13 +129,15 @@ export function createLessonExecutionRepo(db: SqliteDb) {
         `INSERT INTO lesson_execution_states
            (id, session_id, agenda_item_id, curriculum_id, study_plan_id, learning_unit_id,
             teaching_brief_id, manifest_fingerprint, source_context_fingerprint,
+            accepted_lesson_checkpoint_id,
             preparation_status, preparation_operation_id, version, current_segment_index,
              presented_segment_indexes, informal_interactions, presentation_completed_at,
              practice_interactions, practice_completed_at,
              created_at, updated_at)
          VALUES (@id, @sessionId, @agendaItemId, @curriculumVersionId, @studyPlanVersionId,
             @learningUnitId, @teachingBriefId, @executionSourceManifestFingerprint,
-            @sourceContextFingerprint, @preparationStatus, @preparationOperationId, @version,
+            @sourceContextFingerprint, @acceptedLessonCheckpointId, @preparationStatus,
+            @preparationOperationId, @version,
              @currentSegmentIndex, @presentedSegmentIndexes, @informalInteractions,
              @presentationCompletedAt, @practiceInteractions, @practiceCompletedAt,
              @createdAt, @updatedAt)`,
@@ -153,6 +157,7 @@ export function createLessonExecutionRepo(db: SqliteDb) {
       const result = db
         .prepare(
           `UPDATE lesson_execution_states SET teaching_brief_id = @teachingBriefId,
+             accepted_lesson_checkpoint_id = @acceptedLessonCheckpointId,
              manifest_fingerprint = @executionSourceManifestFingerprint,
              source_context_fingerprint = @sourceContextFingerprint,
              preparation_status = @preparationStatus,

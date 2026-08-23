@@ -31,6 +31,10 @@ import {
   TeachingBriefProposalPayloadSchema,
   VisualDescriptionPayloadSchema,
   type TeachingBriefProposalPayload,
+  LessonSlotContentProposalPayloadSchema,
+  PracticeContentProposalPayloadSchema,
+  type LessonSlotContentProposalPayload,
+  type PracticeContentProposalPayload,
   type TutorStepPayload,
   type TutorTurnPayload,
   type TutorPedagogicalMove,
@@ -59,6 +63,8 @@ import type {
   ShortAnswerGradingInput,
   StudyPlanProposalInput,
   TeachingBriefGenerationInput,
+  LessonSlotContentGenerationInput,
+  PracticeContentGenerationInput,
   TutorStepInput,
   TutorTurnInput,
   VisualDescriptionInput,
@@ -120,6 +126,28 @@ function sentences(text: string): string[] {
     .split(/(?<=[。!?;!?;])/u)
     .map((s) => s.trim())
     .filter((s) => s.length >= 4);
+}
+
+/** Keep Fake semantic-relation propositions distinct and verbatim-source compatible. */
+function relationPropositions(text: string): [string, string] {
+  const normalized = text.trim();
+  const clauses = normalized
+    .split(
+      /(?:[.!?;。！？；]+|,\s*(?:and|but|so|then|while|whereas)\s+|，\s*(?:(?:而|但|并且?|所以|因此|然后)\s*)?|\s*(?:→|->)\s*)/iu,
+    )
+    .map((clause) => clause.trim())
+    .filter((clause) => clause.length >= 8);
+  if (clauses.length >= 2) return [clauses[0]!, clauses.slice(1).join(' ')];
+
+  const words = normalized.split(/\s+/u).filter(Boolean);
+  if (words.length >= 4) {
+    const windowSize = Math.max(2, Math.ceil(words.length * 0.6));
+    return [words.slice(0, windowSize).join(' '), words.slice(-windowSize).join(' ')];
+  }
+
+  const characters = [...normalized];
+  const windowSize = Math.max(2, Math.ceil(characters.length * 0.6));
+  return [characters.slice(0, windowSize).join(''), characters.slice(-windowSize).join('')];
 }
 
 /** Pick the n-th (mod count) substantial sentence of a block, verbatim. */
@@ -1251,6 +1279,274 @@ export class FakeProvider implements LlmProvider {
           });
         })(),
       },
+    });
+    const validation = opts?.validateCandidate?.(payload);
+    if (validation && !validation.valid) {
+      throw ProviderError.invalidOutput(
+        validation.diagnostics.join('; '),
+        'candidate',
+        'SEMANTIC_VALIDATION_FAILURE',
+        false,
+        validation.failureArtifact,
+      );
+    }
+    return payload;
+  }
+
+  async generateLessonSlotContent(
+    input: LessonSlotContentGenerationInput,
+    opts?: ProviderCallOptions,
+  ): Promise<LessonSlotContentProposalPayload> {
+    await this.gate(opts);
+    const sourceByRef = new Map(
+      input.sourceContext.offers.map((offer) => [offer.sourceRef, offer]),
+    );
+    const objectiveByRef = new Map(
+      input.skeleton.objectives.map((objective) => [objective.objectiveRef, objective]),
+    );
+    const payload = LessonSlotContentProposalPayloadSchema.parse({
+      slots: input.skeleton.lessonSlots.map((slot) => {
+        const objective = objectiveByRef.get(slot.objectiveRefs[0]!);
+        const sourceRef = slot.allowedSourceRefs[0];
+        const visualRef = slot.allowedVisualRefs[0];
+        const sourceText = sourceRef ? sourceByRef.get(sourceRef)?.text : undefined;
+        const relationSourceText = sourceText?.slice(0, 560);
+        const topic = objective?.title ?? input.skeleton.learningUnitTitle;
+        const sourceRefs = sourceRef ? [sourceRef] : [];
+        const visualRefs = sourceRef || !visualRef ? [] : [visualRef];
+        const relationKind = slot.allowedRelations[0];
+        const [fromProposition, toProposition] = relationSourceText
+          ? relationPropositions(relationSourceText)
+          : [
+              `The advisory visual presents a bounded state for ${topic}.`,
+              `That visual state supports a bounded distinction for ${topic}.`,
+            ];
+        const semanticRelations =
+          slot.qualityContract === 'semantic_relation' && relationKind
+            ? [
+                {
+                  kind: relationKind,
+                  fromProposition,
+                  toProposition,
+                  relevanceToObjective: `This relation makes the requested ${objective?.construct ?? 'identify'} capability for ${topic} observable.`,
+                  sourceRefs,
+                },
+              ]
+            : [];
+        const workedProcess =
+          slot.qualityContract === 'worked_process' && sourceRef && sourceText
+            ? {
+                startingState: `A learner is at the beginning of the source-stated ${topic} procedure with the bounded case facts visible.`,
+                ruleOrProcedure: sourceText,
+                steps: [
+                  {
+                    action: `Inspect the current ${topic} case state and identify the source-stated condition that applies.`,
+                    reason: 'The condition bounds which transition is authorized by the source.',
+                    resultingState: `The applicable ${topic} condition and current procedural state are explicit.`,
+                  },
+                  {
+                    action: `Choose the source-stated next ${topic} action and carry it out in the bounded case.`,
+                    reason: 'This applies the rule instead of merely naming or repeating it.',
+                    resultingState: `The ${topic} case advances to the result authorized by the procedure.`,
+                  },
+                ],
+                learnerDecision: `Decide which source-stated ${topic} action follows from the current condition.`,
+                result: `The case reaches the bounded result for ${topic} without adding unsupported steps.`,
+                whyResultFollows:
+                  'Each transition uses the offered rule and preserves its stated condition, so the result follows from the source-supported procedure.',
+                sourceRefs,
+              }
+            : null;
+        const informalCheck = slot.learnerActionRequired
+          ? {
+              kind:
+                objective?.construct === 'apply'
+                  ? ('apply_simple_example' as const)
+                  : objective?.construct === 'explain'
+                    ? ('own_words' as const)
+                    : ('choose_alternative' as const),
+              prompt:
+                objective?.construct === 'apply'
+                  ? `Given the bounded current state for ${topic}, choose the next action authorized by the offered procedure and explain why.`
+                  : objective?.construct === 'explain'
+                    ? `Explain how the offered condition changes the result for ${topic}.`
+                    : `Choose the case that meaningfully distinguishes ${topic} and name the defining feature.`,
+              expectedSignal: `Commit to a response that demonstrates the locally planned ${objective?.construct ?? 'identify'} capability before coaching appears.`,
+            }
+          : undefined;
+        const base = {
+          slotId: slot.slotId,
+          explanation:
+            slot.qualityContract === 'orientation'
+              ? `This session builds ${topic} now so the learner can make the later reasoning or decision observable.`
+              : sourceText
+                ? `Use the offered source boundary for ${topic}: ${sourceText} Then connect that bounded fact to the slot purpose: ${slot.purpose}`
+                : `Use the advisory visual only as non-authoritative teaching context for ${topic}, and make this learner-facing purpose observable: ${slot.purpose}`,
+          sourceRefs,
+          visualRefs,
+          semanticRelations,
+          workedProcess,
+          ...(informalCheck ? { informalCheck } : {}),
+        };
+        if (slot.role === 'worked_example') {
+          return {
+            ...base,
+            example: {
+              text: workedProcess
+                ? `Start with the stated case, inspect the governing condition, choose the authorized transition, and verify the bounded result.`
+                : `Compare a concrete ${topic} case against the offered boundary before stating the result.`,
+              sourceRefs,
+              visualRefs,
+            },
+          };
+        }
+        if (slot.role === 'contrast') {
+          return {
+            ...base,
+            contrast: {
+              text: `One response uses the offered condition to distinguish ${topic}; the surface-similar response only repeats its label.`,
+              sourceRefs,
+              visualRefs,
+            },
+          };
+        }
+        if (slot.role === 'misconception') {
+          return {
+            ...base,
+            misconception: {
+              hypothesis: `A learner may repeat the ${topic} label without using its source-stated boundary.`,
+              correction:
+                'Return to the offered condition, connect it to the result, and keep the conclusion bounded.',
+              sourceRefs,
+              visualRefs,
+            },
+          };
+        }
+        return base;
+      }),
+    });
+    const validation = opts?.validateCandidate?.(payload);
+    if (validation && !validation.valid) {
+      throw ProviderError.invalidOutput(
+        validation.diagnostics.join('; '),
+        'candidate',
+        'SEMANTIC_VALIDATION_FAILURE',
+        false,
+        validation.failureArtifact,
+      );
+    }
+    return payload;
+  }
+
+  async generatePracticeContent(
+    input: PracticeContentGenerationInput,
+    opts?: ProviderCallOptions,
+  ): Promise<PracticeContentProposalPayload> {
+    await this.gate(opts);
+    const objectiveByRef = new Map(
+      input.skeleton.objectives.map((objective) => [objective.objectiveRef, objective]),
+    );
+    const sourceByRef = new Map(
+      input.sourceContext.offers.map((offer) => [offer.sourceRef, offer]),
+    );
+    const payload = PracticeContentProposalPayloadSchema.parse({
+      items: input.skeleton.practicePlan.slots.map((slot) => {
+        const objective = objectiveByRef.get(slot.objectiveRef)!;
+        const sourceRef = slot.allowedSourceRefs[0];
+        const visualRef = slot.allowedVisualRefs[0];
+        const sourceRefs = sourceRef ? [sourceRef] : [];
+        const visualRefs = sourceRef || !visualRef ? [] : [visualRef];
+        const sourceText = sourceRef ? sourceByRef.get(sourceRef)?.text : undefined;
+        const application =
+          slot.construct === 'apply' && sourceText
+            ? {
+                startingState: `The learner has a bounded current ${objective.title} state and the source-stated procedure has begun.`,
+                sourceRuleOrProcedure: sourceText,
+                decisionRequired: `Choose which source-stated ${objective.title} action follows from the current procedural state.`,
+                expectedAction: `Inspect the current ${objective.title} condition, then perform the next authorized procedure step.`,
+              }
+            : null;
+        const initialPrompt =
+          slot.construct === 'apply'
+            ? `${application?.startingState} Which action should happen next under the offered procedure?`
+            : slot.construct === 'explain'
+              ? `Which response explains how and why the offered condition changes ${objective.title}?`
+              : `Which case meaningfully distinguishes ${objective.title} by its offered defining feature?`;
+        const retryPrompt =
+          slot.construct === 'apply'
+            ? `In a changed ${objective.title} case, the condition has been checked but the next procedural action is missing. Which action completes the source-stated transition?`
+            : slot.construct === 'explain'
+              ? `In a changed case, which mechanism best accounts for the consequence of ${objective.title}?`
+              : `In a changed case, which alternative still has the defining feature of ${objective.title}?`;
+        return {
+          practiceSlotId: slot.practiceSlotId,
+          capabilityTested: slot.capabilityToObserve,
+          pedagogicalReason: `The learner must demonstrate ${slot.construct} rather than recall a source location or repeat a label.`,
+          sourceRefs,
+          visualRefs,
+          application,
+          initial: {
+            prompt: initialPrompt,
+            options: [
+              {
+                optionRef: 'A',
+                text:
+                  slot.construct === 'apply'
+                    ? application!.expectedAction
+                    : 'Use the defining condition to connect the case to the bounded conclusion.',
+                feedbackIfSelected:
+                  'Correct: this response uses the offered boundary to demonstrate the planned capability.',
+              },
+              {
+                optionRef: 'B',
+                text: 'Choose the response that repeats the most source vocabulary without using its condition.',
+                feedbackIfSelected:
+                  'This is surface recall. Identify what the offered condition makes you conclude or do.',
+              },
+              {
+                optionRef: 'C',
+                text: 'Generalize the idea to every context even when the stated condition is absent.',
+                feedbackIfSelected:
+                  'This exceeds the authority boundary. Return to the offered condition.',
+              },
+            ],
+            correctOptionRef: 'A',
+            hint: 'Use the condition to make a decision; do not rely on a familiar label.',
+            explanation:
+              'The correct response makes the source-stated boundary do observable reasoning work.',
+          },
+          retry: {
+            prompt: retryPrompt,
+            options: [
+              {
+                optionRef: 'A',
+                text: 'Keep the original answer because the topic label is unchanged.',
+                feedbackIfSelected:
+                  'The changed case facts matter; the label alone cannot justify the same response.',
+              },
+              {
+                optionRef: 'B',
+                text:
+                  slot.construct === 'apply'
+                    ? 'Re-evaluate the changed condition, then select the source-authorized next action.'
+                    : 'Re-evaluate the changed condition and connect it to the corresponding bounded result.',
+                feedbackIfSelected:
+                  'Correct: this changed surface preserves the same construct and authority boundary.',
+              },
+              {
+                optionRef: 'C',
+                text: 'Use an unrelated rule of thumb to avoid checking the offered condition.',
+                feedbackIfSelected:
+                  'An unrelated heuristic does not demonstrate the planned capability.',
+              },
+            ],
+            correctOptionRef: 'B',
+            hint: 'Ask how the changed condition should change your reasoning or action.',
+            explanation:
+              'The retry remains bounded to the same capability while requiring a new contextual judgment.',
+          },
+        };
+      }),
     });
     const validation = opts?.validateCandidate?.(payload);
     if (validation && !validation.valid) {

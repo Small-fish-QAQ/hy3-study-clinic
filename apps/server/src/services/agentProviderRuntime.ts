@@ -116,6 +116,8 @@ interface TrackedProviderOperation<T> {
   schemaFingerprint: string;
   policyFingerprint: string | null;
   sourceFingerprint: string | null;
+  /** Stable phase-local identity when one durable operation owns multiple logical calls. */
+  logicalCallId?: string | undefined;
   providerOptions?: ProviderCallOptions | undefined;
   invoke: (options?: ProviderCallOptions) => Promise<T>;
 }
@@ -136,6 +138,7 @@ export async function runTrackedAgentProviderOperation<T>({
   schemaFingerprint,
   policyFingerprint,
   sourceFingerprint,
+  logicalCallId,
   providerOptions,
   invoke,
 }: TrackedProviderOperation<T>): Promise<T> {
@@ -178,6 +181,7 @@ export async function runTrackedAgentProviderOperation<T>({
       policyFingerprint,
       sourceFingerprint,
       fencingToken,
+      ...(logicalCallId ? { logicalCallId } : {}),
     },
   });
   return result;

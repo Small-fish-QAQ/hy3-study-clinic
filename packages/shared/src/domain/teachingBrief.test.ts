@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TeachingBriefSchema } from './teachingBrief.js';
+import { TeachingBriefCompositionSchema, TeachingBriefSchema } from './teachingBrief.js';
 
 function validBrief() {
   return {
@@ -97,6 +97,50 @@ function validBrief() {
 }
 
 describe('TeachingBrief domain', () => {
+  it('keeps legacy composition readable and requires distinct paired logical-call provenance', () => {
+    const legacy = {
+      schemaVersion: 1 as const,
+      skeletonId: `teaching_skeleton_${'a'.repeat(40)}`,
+      skeletonSchemaVersion: 1 as const,
+      skeletonPlannerVersion: 'teaching-skeleton-planner-v1',
+      skeletonFingerprint: `sha256:${'b'.repeat(64)}`,
+      acceptedLessonCheckpointId: 'accepted_lesson_1',
+      lessonOperationId: 'operation_1',
+      practiceOperationId: 'operation_1',
+      lessonPromptVersion: 'lesson-prompt-v1',
+      practicePromptVersion: 'practice-prompt-v1',
+      targetMinutes: 12,
+      acceptableActiveMinutes: { min: 8, max: 15 },
+      protectedActivityMinutes: { min: 6, max: 10 },
+      plannedActivityMinutes: { min: 8, max: 14 },
+    };
+
+    expect(TeachingBriefCompositionSchema.parse(legacy)).toEqual(legacy);
+    expect(
+      TeachingBriefCompositionSchema.parse({
+        ...legacy,
+        lessonLogicalCallId: 'logical_lesson_1',
+        practiceLogicalCallId: 'logical_practice_1',
+      }),
+    ).toMatchObject({
+      lessonLogicalCallId: 'logical_lesson_1',
+      practiceLogicalCallId: 'logical_practice_1',
+    });
+    expect(
+      TeachingBriefCompositionSchema.safeParse({
+        ...legacy,
+        lessonLogicalCallId: 'logical_lesson_1',
+      }).success,
+    ).toBe(false);
+    expect(
+      TeachingBriefCompositionSchema.safeParse({
+        ...legacy,
+        lessonLogicalCallId: 'logical_shared_1',
+        practiceLogicalCallId: 'logical_shared_1',
+      }).success,
+    ).toBe(false);
+  });
+
   it('accepts an ordered source-visible Brief with advisory misconception metadata', () => {
     const parsed = TeachingBriefSchema.parse(validBrief());
     expect(parsed.segments[0]!.misconception?.authority).toBe('pedagogical_risk_candidate');

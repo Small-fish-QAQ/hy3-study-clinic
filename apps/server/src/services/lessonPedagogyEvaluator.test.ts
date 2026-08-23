@@ -1,7 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import type { TeachingBriefProposalPayload } from '@hy3-clinic/shared';
-import type { TeachingBriefGenerationInput } from '../llm/provider.js';
-import { evaluateLessonPedagogy, evaluatePracticeQuality } from './lessonPedagogyEvaluator.js';
+import {
+  LessonSlotContentProposalPayloadSchema,
+  PracticeContentProposalPayloadSchema,
+  type LessonSlotContentProposalPayload,
+  type PracticeContentProposalPayload,
+  type TeachingBriefProposalPayload,
+} from '@hy3-clinic/shared';
+import type {
+  LessonSlotContentGenerationInput,
+  PracticeContentGenerationInput,
+  TeachingBriefGenerationInput,
+} from '../llm/provider.js';
+import {
+  evaluateLessonPedagogy,
+  evaluateLessonSlotPedagogy,
+  evaluatePlannedPracticeQuality,
+  evaluatePracticeQuality,
+} from './lessonPedagogyEvaluator.js';
+import { planTeachingSkeleton } from './teachingSkeletonPlanner.js';
 
 function input(): TeachingBriefGenerationInput {
   return {
@@ -189,8 +205,10 @@ const evaluatedAt = '2026-08-23T00:00:00.000Z';
 
 describe('independent Lesson and Practice semantic evaluators', () => {
   it('passes a pedagogically complete, construct-valid source-grounded candidate', () => {
-    expect(evaluateLessonPedagogy(candidate(), input(), { evaluatedAt }).status).toBe('pass');
-    expect(evaluatePracticeQuality(candidate(), input(), { evaluatedAt }).status).toBe('pass');
+    const lesson = evaluateLessonPedagogy(candidate(), input(), { evaluatedAt });
+    const practice = evaluatePracticeQuality(candidate(), input(), { evaluatedAt });
+    expect(lesson.findings).toEqual([]);
+    expect(practice.findings).toEqual([]);
   });
 
   const cases: Array<{
@@ -220,6 +238,21 @@ describe('independent Lesson and Practice semantic evaluators', () => {
       },
     },
     {
+      name: 'English causal keywords cannot authorize a tautological explanation',
+      code: 'declarative_explanation_without_reasoning',
+      mutate: (payload) => {
+        payload.segments[1]!.explanation =
+          'Because bounded retrieval is important, therefore bounded retrieval is important.';
+      },
+    },
+    {
+      name: 'Chinese causal keywords cannot authorize a tautological explanation',
+      code: 'declarative_explanation_without_reasoning',
+      mutate: (payload) => {
+        payload.segments[1]!.explanation = '因为检索很重要，所以检索很重要。';
+      },
+    },
+    {
       name: 'a missing worked example is rejected',
       code: 'missing_worked_example',
       mutate: (payload) => {
@@ -235,6 +268,16 @@ describe('independent Lesson and Practice semantic evaluators', () => {
         const worked = payload.segments.find((segment) => segment.purpose === 'worked_example')!;
         worked.explanation = 'A retrieval illustration.';
         worked.example!.text = 'A retrieval illustration.';
+      },
+    },
+    {
+      name: 'worked-process sequence keywords cannot replace actual state progression',
+      code: 'worked_example_has_no_visible_reasoning',
+      mutate: (payload) => {
+        const worked = payload.segments.find((segment) => segment.purpose === 'worked_example')!;
+        worked.explanation =
+          'Given retrieval input: first, next, then, finally; apply, inspect, choose a condition.';
+        worked.example!.text = 'Starting state, step, transition, decision, therefore result.';
       },
     },
     {
@@ -316,6 +359,14 @@ describe('independent Lesson and Practice semantic evaluators', () => {
       },
     },
     {
+      name: 'construct and action keywords cannot authorize a Practice surface',
+      code: 'practice_does_not_elicit_authorized_capability',
+      mutate: (payload) => {
+        payload.practice.items[0]!.initial.prompt =
+          'Explain bounded retrieval: because, why, mechanism, therefore, result.';
+      },
+    },
+    {
       name: 'duplicate options make a Practice item invalid',
       code: 'invalid_or_duplicate_practice_options',
       mutate: (payload) => {
@@ -394,6 +445,22 @@ describe('independent Lesson and Practice semantic evaluators', () => {
     ).toContain('practice_does_not_elicit_authorized_capability');
   });
 
+  it('rejects APPLY/action marker stuffing without a meaningful state-to-action surface', () => {
+    const payload = candidate();
+    const context = input();
+    context.learningUnit.objectives[0]!.construct = 'apply';
+    payload.practice.items[0]!.construct = 'apply';
+    payload.practice.items[0]!.capabilityTested =
+      'Apply the bounded retrieval procedure to a stated case.';
+    payload.practice.items[0]!.initial.prompt =
+      'Apply bounded retrieval: choose the next step; condition, action, result.';
+    expect(
+      evaluatePracticeQuality(payload, context, { evaluatedAt }).findings.map(
+        (finding) => finding.code,
+      ),
+    ).toContain('practice_does_not_elicit_authorized_capability');
+  });
+
   it('accepts a source-bounded apply decision about the next procedural step', () => {
     const payload = candidate();
     const context = input();
@@ -465,5 +532,484 @@ describe('independent Lesson and Practice semantic evaluators', () => {
     expect(evaluation.findings.map((finding) => finding.code)).toContain(
       'agenda_duration_not_supported_by_learning_actions',
     );
+  });
+});
+
+function compositionalInputs(
+  construct: 'identify' | 'explain' | 'apply',
+  targetMinutes = construct === 'identify' ? 14 : construct === 'apply' ? 20 : 18,
+): {
+  lessonInput: LessonSlotContentGenerationInput;
+  practiceInput: PracticeContentGenerationInput;
+  lesson: LessonSlotContentProposalPayload;
+  practice: PracticeContentProposalPayload;
+} {
+  const title =
+    construct === 'apply'
+      ? 'Use the bounded retrieval procedure'
+      : construct === 'identify'
+        ? 'Identify eligible retrieval candidates'
+        : 'Explain bounded retrieval';
+  const description =
+    construct === 'apply'
+      ? 'Use the source-stated retrieval condition to exclude incompatible candidates and return the eligible result.'
+      : construct === 'identify'
+        ? 'Distinguish candidates that satisfy the retrieval condition from candidates that do not.'
+        : 'Explain how the retrieval condition controls candidate eligibility and the returned result.';
+  const skeleton = planTeachingSkeleton({
+    learningUnitTitle: 'Bounded retrieval',
+    targetMinutes,
+    objectives: [
+      {
+        objectiveRef: 'O1',
+        title,
+        description,
+        priority: 'required',
+        construct,
+        authorityMode: 'exact_source',
+        allowedSourceRefs: ['S1', 'S2'],
+        allowedVisualRefs: [],
+      },
+    ],
+  });
+  const sourceContext = {
+    fingerprint: 'context_compositional',
+    blockCount: 2,
+    offerCount: 2,
+    serializedBytes: 500,
+    materialCount: 1,
+    sectionCount: 1,
+    offers: [
+      {
+        sourceRef: 'S1',
+        materialTitle: 'Retrieval notes',
+        headingPath: ['Bounded retrieval'],
+        pageNumber: 1,
+        slideNumber: null,
+        text: 'The bounded retrieval procedure checks each candidate against a retrieval condition and excludes candidates that fail it.',
+        authorizedObjectiveRefs: ['O1'],
+      },
+      {
+        sourceRef: 'S2',
+        materialTitle: 'Retrieval notes',
+        headingPath: ['Bounded retrieval'],
+        pageNumber: 2,
+        slideNumber: null,
+        text: 'After incompatible candidates are removed, the remaining eligible passage is returned as the retrieval result.',
+        authorizedObjectiveRefs: ['O1'],
+      },
+    ],
+  };
+  const visualContext = { offerCount: 0, serializedBytes: 0, offers: [] };
+  const lessonInput: LessonSlotContentGenerationInput = {
+    workspaceName: 'Course',
+    skeleton,
+    sourceContext,
+    visualContext,
+    learningContext: {
+      concepts: [],
+      canonicalConcepts: [],
+      prerequisites: [],
+      nextConnection: null,
+    },
+  };
+  const lesson = LessonSlotContentProposalPayloadSchema.parse({
+    slots: skeleton.lessonSlots.map((slot) => ({
+      slotId: slot.slotId,
+      explanation:
+        slot.qualityContract === 'orientation'
+          ? 'Bounded retrieval prepares the learner to make grounded candidate decisions.'
+          : slot.qualityContract === 'semantic_relation'
+            ? 'The retrieval condition filters candidate eligibility and changes the returned set.'
+            : slot.qualityContract === 'worked_process'
+              ? 'A concrete query is traced through the bounded retrieval procedure.'
+              : slot.qualityContract === 'boundary_work'
+                ? 'Eligible candidates satisfy the retrieval condition; surface similarity alone is insufficient.'
+                : 'The learner commits to a retrieval decision before guidance is shown.',
+      sourceRefs: slot.authorityMode === 'exact_source' ? ['S1', 'S2'] : [],
+      visualRefs: [],
+      semanticRelations:
+        slot.qualityContract === 'semantic_relation'
+          ? [
+              {
+                kind: slot.allowedRelations[0],
+                fromProposition:
+                  'The retrieval condition is checked against each candidate passage.',
+                toProposition:
+                  'Candidates that violate the condition are excluded from the returned set.',
+                relevanceToObjective:
+                  'This relation connects bounded retrieval to candidate eligibility and the returned result.',
+                sourceRefs: ['S1', 'S2'],
+              },
+            ]
+          : [],
+      workedProcess:
+        slot.qualityContract === 'worked_process'
+          ? {
+              startingState:
+                'A query has three candidate passages, but only one satisfies the retrieval condition.',
+              ruleOrProcedure:
+                'The bounded retrieval procedure checks every candidate against the condition and excludes each failing candidate.',
+              steps: [
+                {
+                  action: 'Inspect every candidate against the retrieval condition.',
+                  reason: 'The condition defines which candidate passage is eligible.',
+                  resultingState:
+                    'Two incompatible candidates are marked for exclusion from the returned set.',
+                },
+                {
+                  action: 'Exclude the two candidates that fail the retrieval condition.',
+                  reason: 'Only a candidate satisfying the condition may remain eligible.',
+                  resultingState: 'One eligible candidate passage remains for retrieval.',
+                },
+              ],
+              learnerDecision:
+                'Choose whether each candidate satisfies the retrieval condition before returning a passage.',
+              result: 'The single eligible candidate passage is returned as the retrieval result.',
+              whyResultFollows:
+                'The final passage follows from excluding every candidate that fails the retrieval condition.',
+              sourceRefs: ['S1', 'S2'],
+            }
+          : null,
+      ...(slot.learnerActionRequired
+        ? {
+            informalCheck: {
+              kind: construct === 'apply' ? 'apply_simple_example' : 'choose_alternative',
+              prompt:
+                'Which candidate decision preserves the retrieval condition and the eligible returned result?',
+              expectedSignal:
+                'The learner connects the retrieval condition to candidate eligibility.',
+            },
+          }
+        : {}),
+      ...(slot.qualityContract === 'boundary_work'
+        ? {
+            contrast: {
+              text: 'A condition-eligible passage differs from a merely similar passage that fails the condition.',
+              sourceRefs: ['S1'],
+              visualRefs: [],
+            },
+          }
+        : {}),
+    })),
+  });
+  const practice = PracticeContentProposalPayloadSchema.parse({
+    items: skeleton.practicePlan.slots.map((slot) => ({
+      practiceSlotId: slot.practiceSlotId,
+      capabilityTested:
+        construct === 'apply'
+          ? 'Use the retrieval condition to choose which candidate action preserves eligibility.'
+          : construct === 'identify'
+            ? 'Distinguish a retrieval candidate that satisfies the condition.'
+            : 'Connect a changed retrieval condition to candidate eligibility and the returned result.',
+      pedagogicalReason:
+        'The selected account reveals whether the learner can connect retrieval conditions to candidate outcomes.',
+      sourceRefs: ['S1', 'S2'],
+      visualRefs: [],
+      application:
+        construct === 'apply'
+          ? {
+              startingState:
+                'A query has three candidate passages and two fail the retrieval condition.',
+              sourceRuleOrProcedure:
+                'Check each candidate against the retrieval condition, exclude failures, and return the remaining eligible passage.',
+              decisionRequired:
+                'Choose what the retrieval pipeline should do with candidates that fail the condition.',
+              expectedAction:
+                'Exclude the failing candidates and return the remaining eligible passage.',
+            }
+          : null,
+      initial: {
+        prompt:
+          'A query has two candidates that fail its retrieval condition. Which system response preserves the eligible result?',
+        options: [
+          {
+            optionRef: 'A',
+            text: 'Exclude the failing candidates and return the remaining eligible passage.',
+            feedbackIfSelected: 'Correct: the condition removes ineligible candidates.',
+          },
+          {
+            optionRef: 'B',
+            text: 'Return every candidate regardless of the retrieval condition.',
+            feedbackIfSelected: 'This ignores candidate eligibility.',
+          },
+          {
+            optionRef: 'C',
+            text: 'Choose the passage with the most repeated words.',
+            feedbackIfSelected: 'Surface repetition does not satisfy the condition.',
+          },
+        ],
+        correctOptionRef: 'A',
+        hint: 'Track which candidate remains eligible under the condition.',
+        explanation:
+          'Failing candidates are excluded, leaving the eligible passage as the retrieval result.',
+      },
+      retry: {
+        prompt:
+          'A later query changes the retrieval condition, making one former candidate ineligible. Which response respects the new boundary?',
+        options: [
+          {
+            optionRef: 'A',
+            text: 'Keep the former candidate because it was previously eligible.',
+            feedbackIfSelected: 'Past eligibility does not override the changed condition.',
+          },
+          {
+            optionRef: 'B',
+            text: 'Exclude the newly failing candidate and return the remaining eligible passage.',
+            feedbackIfSelected: 'Correct: eligibility follows the current condition.',
+          },
+          {
+            optionRef: 'C',
+            text: 'Return all candidates without checking the condition.',
+            feedbackIfSelected: 'This removes the retrieval boundary.',
+          },
+        ],
+        correctOptionRef: 'B',
+        hint: 'Use the current condition, not the earlier result.',
+        explanation:
+          'The changed condition excludes the newly failing candidate and preserves the eligible result.',
+      },
+    })),
+  });
+  const practiceInput: PracticeContentGenerationInput = {
+    workspaceName: 'Course',
+    skeleton,
+    acceptedLesson: lesson.slots,
+    sourceContext,
+    visualContext,
+  };
+  return { lessonInput, practiceInput, lesson, practice };
+}
+
+describe('compositional Lesson and Practice evaluators', () => {
+  it('accepts an objective-aligned orientation', () => {
+    const fixture = compositionalInputs('explain');
+    const orientation = fixture.lesson.slots.find(
+      (slot) =>
+        fixture.lessonInput.skeleton.lessonSlots.find((planned) => planned.slotId === slot.slotId)
+          ?.qualityContract === 'orientation',
+    )!;
+    expect(orientation.explanation).toContain('Bounded retrieval');
+    expect(
+      evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, { evaluatedAt }).findings,
+    ).toEqual([]);
+  });
+
+  it('rejects an unrelated orientation even when the immutable slot is present', () => {
+    const fixture = compositionalInputs('explain');
+    const orientation = fixture.lesson.slots.find(
+      (slot) =>
+        fixture.lessonInput.skeleton.lessonSlots.find((planned) => planned.slotId === slot.slotId)
+          ?.qualityContract === 'orientation',
+    )!;
+    orientation.explanation =
+      'Emperor penguins incubate eggs through the Antarctic winter while whales migrate north.';
+    expect(
+      evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, {
+        evaluatedAt,
+      }).findings.map((finding) => finding.code),
+    ).toContain('lesson_slot_content_not_objective_aligned');
+  });
+
+  it('rejects unrelated boundary work that is masked by an aligned slot explanation', () => {
+    const fixture = compositionalInputs('explain', 30);
+    const boundary = fixture.lesson.slots.find(
+      (slot) =>
+        fixture.lessonInput.skeleton.lessonSlots.find((planned) => planned.slotId === slot.slotId)
+          ?.qualityContract === 'boundary_work',
+    )!;
+    expect(boundary.explanation).toContain('retrieval');
+    boundary.contrast!.text =
+      'Emperor penguins incubate eggs through the Antarctic winter while whales migrate north.';
+    expect(
+      evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, {
+        evaluatedAt,
+      }).findings.map((finding) => finding.code),
+    ).toContain('lesson_slot_content_not_objective_aligned');
+  });
+
+  it('accepts a keyword-free typed relation and uses the full skeleton activity range', () => {
+    const fixture = compositionalInputs('explain');
+    const relation = fixture.lesson.slots.flatMap((slot) => slot.semanticRelations)[0]!;
+    expect(
+      `${relation.fromProposition} ${relation.toProposition} ${relation.relevanceToObjective}`,
+    ).not.toMatch(/\b(?:because|therefore|why|how)\b|因为|所以|因此|导致/iu);
+    const evaluation = evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, {
+      evaluatedAt,
+    });
+    expect(evaluation.findings).toEqual([]);
+    expect(evaluation.estimatedActiveMinutes).toEqual({
+      min: fixture.lessonInput.skeleton.plannedActivityBudget.minMinutes,
+      max: fixture.lessonInput.skeleton.plannedActivityBudget.maxMinutes,
+    });
+    expect(evaluation.claimedAgendaMinutes).toBe(fixture.lessonInput.skeleton.targetMinutes);
+  });
+
+  it('rejects lexical reasoning markers without typed propositions', () => {
+    const fixture = compositionalInputs('explain');
+    const relationSlot = fixture.lesson.slots.find((slot) => slot.semanticRelations.length > 0)!;
+    relationSlot.explanation =
+      'Because bounded retrieval is important, therefore bounded retrieval is important.';
+    relationSlot.semanticRelations = [];
+    const evaluation = evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, {
+      evaluatedAt,
+    });
+    expect(evaluation.findings.map((finding) => finding.code)).toContain(
+      'missing_typed_semantic_relation',
+    );
+  });
+
+  it('rejects typed relations whose only authority anchor is repeated topic wording', () => {
+    const fixture = compositionalInputs('explain');
+    const relationSlot = fixture.lesson.slots.find((slot) => slot.semanticRelations.length > 0)!;
+    relationSlot.semanticRelations = [
+      {
+        kind: 'mechanism_effect',
+        fromProposition:
+          'Bounded retrieval dragons guarantee perfect security for every deployment.',
+        toProposition: 'Bounded retrieval unicorns eliminate every privacy and performance risk.',
+        relevanceToObjective:
+          'These bounded retrieval claims explain the returned result objective.',
+        sourceRefs: ['S1', 'S2'],
+      },
+    ];
+    const evaluation = evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, {
+      evaluatedAt,
+    });
+    expect(evaluation.status).toBe('fail');
+    expect(evaluation.findings.map((finding) => finding.code)).toEqual(
+      expect.arrayContaining([
+        'semantic_relation_source_incompatible',
+        'missing_typed_semantic_relation',
+      ]),
+    );
+  });
+
+  it('rejects a worked-process field whose start, rule, transitions, result, and why are labels', () => {
+    const fixture = compositionalInputs('apply');
+    const worked = fixture.lesson.slots.find((slot) => slot.workedProcess)!;
+    worked.workedProcess = {
+      startingState: 'Starting state details for this generic example.',
+      ruleOrProcedure: 'Rule or procedure details for this generic example.',
+      steps: [
+        {
+          action: 'Transition action details.',
+          reason: 'Transition reason details.',
+          resultingState: 'Resulting state details.',
+        },
+      ],
+      learnerDecision: 'Learner decision details for the example.',
+      result: 'Final result details for the generic example.',
+      whyResultFollows: 'Why the result follows details for the example.',
+      sourceRefs: ['S1'],
+    };
+    const evaluation = evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, {
+      evaluatedAt,
+    });
+    expect(evaluation.status).toBe('fail');
+    expect(evaluation.findings.map((finding) => finding.code)).toEqual(
+      expect.arrayContaining([
+        'worked_process_missing_required_structure',
+        'worked_process_source_incompatible',
+      ]),
+    );
+  });
+
+  it('does not require or permit a provider-added worked process for IDENTIFY', () => {
+    const fixture = compositionalInputs('identify');
+    expect(
+      evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, { evaluatedAt }).findings,
+    ).toEqual([]);
+    fixture.lesson.slots[0]!.workedProcess = compositionalInputs('apply').lesson.slots.find(
+      (slot) => slot.workedProcess,
+    )!.workedProcess;
+    expect(
+      evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, {
+        evaluatedAt,
+      }).findings.map((finding) => finding.code),
+    ).toContain('unplanned_worked_process');
+  });
+
+  it('accepts a source-compatible typed APPLY decision without apply/next-step wording', () => {
+    const fixture = compositionalInputs('apply');
+    expect(fixture.practice.items[0]!.initial.prompt).not.toMatch(/\bapply\b|next step/iu);
+    expect(
+      evaluatePlannedPracticeQuality(fixture.practice, fixture.practiceInput, {
+        evaluatedAt,
+      }).findings,
+    ).toEqual([]);
+  });
+
+  it('rejects apply/下一步 markers when typed application data is absent', () => {
+    const fixture = compositionalInputs('apply');
+    fixture.practice.items[0]!.application = null;
+    fixture.practice.items[0]!.initial.prompt =
+      'Apply the retrieval procedure: which next step preserves the eligible candidate?';
+    const evaluation = evaluatePlannedPracticeQuality(fixture.practice, fixture.practiceInput, {
+      evaluatedAt,
+    });
+    expect(evaluation.findings.map((finding) => finding.code)).toContain(
+      'practice_apply_missing_typed_application',
+    );
+  });
+
+  it('rejects typed APPLY facts whose only authority anchor is repeated topic wording', () => {
+    const fixture = compositionalInputs('apply');
+    fixture.practice.items[0]!.application = {
+      startingState: 'Bounded retrieval dragons guarantee perfect security for every deployment.',
+      sourceRuleOrProcedure:
+        'Bounded retrieval unicorns eliminate every privacy and performance risk.',
+      decisionRequired:
+        'Choose whether the unsupported security guarantee should control the deployment.',
+      expectedAction:
+        'Trust the bounded retrieval unicorn and ignore every privacy or performance risk.',
+    };
+    const evaluation = evaluatePlannedPracticeQuality(fixture.practice, fixture.practiceInput, {
+      evaluatedAt,
+    });
+    expect(evaluation.status).toBe('fail');
+    expect(evaluation.findings.map((finding) => finding.code)).toEqual(
+      expect.arrayContaining([
+        'practice_application_missing_real_state_or_action',
+        'practice_application_source_incompatible',
+      ]),
+    );
+  });
+
+  it('rejects source-location trivia in compositional Practice', () => {
+    const fixture = compositionalInputs('explain');
+    fixture.practice.items[0]!.retry.prompt = 'On which page is the retrieval condition described?';
+    expect(
+      evaluatePlannedPracticeQuality(fixture.practice, fixture.practiceInput, {
+        evaluatedAt,
+      }).findings.map((finding) => finding.code),
+    ).toContain('source_location_trivia');
+  });
+
+  it('accepts source-stated procedural action questions without treating them as location trivia', () => {
+    const fixture = compositionalInputs('apply');
+    fixture.practice.items[0]!.initial.prompt =
+      'The bounded retrieval procedure has begun. Which action should happen next under the source-stated procedure?';
+    fixture.practice.items[0]!.retry.prompt =
+      'Which action completes the source-stated transition after the retrieval condition changes?';
+    expect(
+      evaluatePlannedPracticeQuality(fixture.practice, fixture.practiceInput, {
+        evaluatedAt,
+      }).findings,
+    ).toEqual([]);
+  });
+
+  it.each([
+    'On which page is the retrieval condition described?',
+    'Which section contains the retrieval condition?',
+    'Which source mentions the retrieval condition?',
+  ])('continues to reject actual source-location trivia: %s', (prompt) => {
+    const fixture = compositionalInputs('explain');
+    fixture.practice.items[0]!.retry.prompt = prompt;
+    expect(
+      evaluatePlannedPracticeQuality(fixture.practice, fixture.practiceInput, {
+        evaluatedAt,
+      }).findings.map((finding) => finding.code),
+    ).toContain('source_location_trivia');
   });
 });

@@ -20,13 +20,20 @@ import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
 import type { CourseCommandService } from './courseCommands.js';
-import type { TeachingBriefPreparationService } from './teachingBriefPreparation.js';
+import {
+  COMPOSITIONAL_PREPARATION_LEASE_MS,
+  type AcceptedLessonPreview,
+  type TeachingBriefPreparationService,
+} from './teachingBriefPreparation.js';
 
 interface LessonExecutionDeps {
   repos: Repositories;
   clock: Clock;
   commands: CourseCommandService;
-  teachingBriefPreparation: Pick<TeachingBriefPreparationService, 'prepare' | 'getCurrent'>;
+  teachingBriefPreparation: Pick<
+    TeachingBriefPreparationService,
+    'prepare' | 'getCurrent' | 'getAcceptedLessonPreview'
+  >;
 }
 
 interface RouteContext {
@@ -39,7 +46,15 @@ interface RouteContext {
   courseTitle: string;
 }
 
-function sourceProjection(brief: TeachingBrief, repos: Repositories): LessonSourceProjection[] {
+// The outer command owns the complete child composition. Keeping two full
+// child lease windows prevents a later-claimed Teaching Brief operation from
+// remaining live after the outer command is eligible for recovery.
+const LESSON_EXECUTION_PREPARATION_LEASE_MS = COMPOSITIONAL_PREPARATION_LEASE_MS * 2;
+
+function sourceProjection(
+  brief: Pick<TeachingBrief, 'sourceReferences'>,
+  repos: Repositories,
+): LessonSourceProjection[] {
   return brief.sourceReferences.map((reference) => {
     const material = repos.materials.get(reference.materialId);
     return {
@@ -95,6 +110,23 @@ export function createLessonExecutionService({
   commands,
   teachingBriefPreparation,
 }: LessonExecutionDeps) {
+  function preparationRouteInput(context: RouteContext) {
+    return {
+      workspaceId: context.session.workspaceId,
+      curriculumVersionId: context.session.curriculumVersionId,
+      studyPlanVersionId: context.session.studyPlanVersionId,
+      learningUnitId: context.item.learningUnitId!,
+      studySessionId: context.session.id,
+      sessionAgendaId: context.agenda.id,
+      expectedSessionVersion: context.session.version,
+      expectedAgendaVersion: context.agenda.version,
+      expectedAgendaItemId: context.item.id,
+      expectedStudyPlanItemId: context.planItem.id,
+      expectedExecutionSourceManifestFingerprint:
+        context.session.executionSourceManifestFingerprint,
+    };
+  }
+
   function requireSession(workspaceId: string, sessionId: string): StudySession {
     if (!repos.workspaces.get(workspaceId)) throw notFound('Course not found.');
     const session = repos.studySessions.get(sessionId);
@@ -170,14 +202,52 @@ export function createLessonExecutionService({
 
   function currentBrief(context: RouteContext): TeachingBrief | null {
     if (!executable(context)) return null;
-    return teachingBriefPreparation.getCurrent({
-      workspaceId: context.session.workspaceId,
-      curriculumVersionId: context.session.curriculumVersionId,
-      studyPlanVersionId: context.session.studyPlanVersionId,
-      learningUnitId: context.item.learningUnitId!,
-      expectedExecutionSourceManifestFingerprint:
-        context.session.executionSourceManifestFingerprint,
-    });
+    const state = stateFor(context);
+    if (state?.preparationStatus !== 'ready' || !state.teachingBriefId) return null;
+    const brief = repos.teachingBriefs.get(state.teachingBriefId);
+    if (
+      !brief ||
+      state.sessionId !== context.session.id ||
+      state.agendaItemId !== context.item.id ||
+      state.curriculumVersionId !== context.curriculum.id ||
+      state.studyPlanVersionId !== context.plan.id ||
+      state.learningUnitId !== context.item.learningUnitId ||
+      state.executionSourceManifestFingerprint !==
+        context.session.executionSourceManifestFingerprint ||
+      state.sourceContextFingerprint !== brief.sourceContextFingerprint ||
+      brief.workspaceId !== context.session.workspaceId ||
+      brief.curriculumVersionId !== context.curriculum.id ||
+      brief.studyPlanVersionId !== context.plan.id ||
+      brief.learningUnitId !== context.item.learningUnitId ||
+      brief.executionSourceManifestFingerprint !==
+        context.session.executionSourceManifestFingerprint
+    ) {
+      return null;
+    }
+    if (brief.composition) {
+      const checkpoint = repos.acceptedLessonCheckpoints.get(
+        brief.composition.acceptedLessonCheckpointId,
+      );
+      if (
+        !checkpoint ||
+        checkpoint.studySessionId !== context.session.id ||
+        checkpoint.sessionAgendaId !== context.agenda.id ||
+        checkpoint.agendaItemId !== context.item.id ||
+        checkpoint.studyPlanItemId !== context.planItem.id ||
+        checkpoint.learningUnitId !== context.item.learningUnitId ||
+        checkpoint.executionSourceManifestFingerprint !==
+          context.session.executionSourceManifestFingerprint ||
+        checkpoint.sourceContextFingerprint !== brief.sourceContextFingerprint
+      ) {
+        return null;
+      }
+    }
+    return brief;
+  }
+
+  function currentAcceptedLesson(context: RouteContext): AcceptedLessonPreview | null {
+    if (!executable(context)) return null;
+    return teachingBriefPreparation.getAcceptedLessonPreview(preparationRouteInput(context));
   }
 
   function preparationOperationFailed(state: LessonExecutionState | undefined): boolean {
@@ -190,6 +260,7 @@ export function createLessonExecutionService({
     context: RouteContext,
     state: LessonExecutionState | undefined,
     brief: TeachingBrief | null,
+    acceptedLesson: AcceptedLessonPreview | null = null,
   ): LessonExecutionProjection {
     if (!executable(context)) {
       return LessonExecutionProjectionSchema.parse({
@@ -229,6 +300,32 @@ export function createLessonExecutionService({
         progress: null,
         currentInformalCheck: null,
         allowedActions: ['wait_for_preparation'],
+      });
+    }
+    if (
+      state?.preparationStatus === 'retryable_failure' &&
+      state.acceptedLessonCheckpointId &&
+      acceptedLesson?.checkpointId === state.acceptedLessonCheckpointId
+    ) {
+      return LessonExecutionProjectionSchema.parse({
+        status: 'practice_retry_available',
+        message:
+          'The accepted Lesson is preserved. Retry preparation to generate only its informal Practice.',
+        course: { title: context.courseTitle },
+        session: { status: context.session.status, version: context.session.version },
+        agenda: { version: context.agenda.version, itemState: context.item.state },
+        lesson: projectLesson(acceptedLesson, state),
+        progress: {
+          stateVersion: state.version,
+          currentSegmentIndex: 0,
+          segmentCount: acceptedLesson.segments.length,
+          presentedSegmentIndexes: [],
+          presentationStatus: 'not_started',
+          presentationCompletedAt: null,
+        },
+        currentInformalCheck: null,
+        practice: null,
+        allowedActions: ['retry_preparation'],
       });
     }
     if (!brief || !state || state.preparationStatus !== 'ready') {
@@ -320,7 +417,7 @@ export function createLessonExecutionService({
   }
 
   function projectLesson(
-    brief: TeachingBrief,
+    brief: TeachingBrief | AcceptedLessonPreview,
     state: LessonExecutionState,
   ): LessonExecutionProjection['lesson'] {
     const sources = sourceProjection(brief, repos);
@@ -335,6 +432,32 @@ export function createLessonExecutionService({
       explanation: segment.explanation,
       explanationOrigin: authority(segment.explanationAuthority),
       sources: refs(segment.sourceRefIds),
+      ...(segment.semanticRelations
+        ? {
+            semanticRelations: segment.semanticRelations.map(
+              ({ kind, fromProposition, toProposition, relevanceToObjective }) => ({
+                kind,
+                fromProposition,
+                toProposition,
+                relevanceToObjective,
+              }),
+            ),
+          }
+        : {}),
+      ...(segment.workedProcess !== undefined
+        ? {
+            workedProcess: segment.workedProcess
+              ? {
+                  startingState: segment.workedProcess.startingState,
+                  ruleOrProcedure: segment.workedProcess.ruleOrProcedure,
+                  steps: segment.workedProcess.steps,
+                  learnerDecision: segment.workedProcess.learnerDecision,
+                  result: segment.workedProcess.result,
+                  whyResultFollows: segment.workedProcess.whyResultFollows,
+                }
+              : null,
+          }
+        : {}),
       example: segment.example
         ? {
             text: segment.example.text,
@@ -469,13 +592,91 @@ export function createLessonExecutionService({
     return repos.lessonExecution.getForSession(context.session.id, context.item.id);
   }
 
+  function recoverStrandedPreparation(
+    context: RouteContext,
+    state: LessonExecutionState | undefined,
+  ): void {
+    if (state?.preparationStatus !== 'preparing' || !state.preparationOperationId) return;
+    const now = clock.now().toISOString();
+    let operation = repos.operations.get(state.preparationOperationId);
+    if (
+      operation?.status === 'running' &&
+      operation.leaseExpiresAt !== null &&
+      operation.leaseExpiresAt <= now
+    ) {
+      repos.operations.recoverExpiredForWorkspace(
+        context.session.workspaceId,
+        'prepare_lesson_execution',
+        now,
+      );
+      operation = repos.operations.get(state.preparationOperationId);
+    }
+    if (
+      !operation ||
+      (operation.status !== 'failed' &&
+        operation.status !== 'interrupted' &&
+        operation.status !== 'cancelled')
+    ) {
+      return;
+    }
+    const strandedOperation = operation;
+
+    let acceptedLesson: AcceptedLessonPreview | null;
+    try {
+      acceptedLesson = currentAcceptedLesson(context);
+    } catch {
+      // A changed source/plan binding remains fail-closed. In that case the
+      // existing failed-operation projection explains that Course preparation
+      // must be repaired instead of offering an unsafe Lesson retry.
+      return;
+    }
+
+    repos.transaction(() => {
+      const latest = repos.lessonExecution.getForSession(context.session.id, context.item.id);
+      if (
+        latest?.preparationStatus !== 'preparing' ||
+        latest.preparationOperationId !== strandedOperation.id
+      ) {
+        return;
+      }
+      const next = repos.lessonExecution.update(
+        {
+          ...latest,
+          acceptedLessonCheckpointId:
+            acceptedLesson?.checkpointId ?? latest.acceptedLessonCheckpointId,
+          preparationStatus: 'retryable_failure',
+          preparationOperationId: null,
+          version: latest.version + 1,
+          updatedAt: now,
+        },
+        latest.version,
+      );
+      repos.lessonExecution.appendEvent({
+        id: newId('lesson_event'),
+        lessonExecutionStateId: next.id,
+        seq: repos.lessonExecution.listEvents(next.id).length + 1,
+        commandId: strandedOperation.commandId,
+        kind: 'preparation_failed',
+        payload: {
+          retryable: true,
+          recovered: true,
+          recoveryReason: strandedOperation.status,
+          acceptedLessonPreserved: Boolean(next.acceptedLessonCheckpointId),
+        },
+        createdAt: now,
+      });
+    });
+  }
+
   function get(workspaceId: string, sessionId: string): LessonExecutionProjection {
     const context = route(workspaceId, sessionId);
+    recoverStrandedPreparation(context, stateFor(context));
     const state = stateFor(context);
     return projection(
       context,
       state,
       state?.preparationStatus === 'ready' ? currentBrief(context) : null,
+      state?.acceptedLessonCheckpointId ? currentAcceptedLesson(context) : null,
     );
   }
 
@@ -494,6 +695,91 @@ export function createLessonExecutionService({
     }
   }
 
+  function recoverRetryablePreparationFailure(
+    workspaceId: string,
+    sessionId: string,
+    expected: {
+      sessionVersion: number;
+      agendaVersion: number;
+      agendaItemId: string;
+    },
+    operationId: string,
+    commandId: string,
+    cancelled: boolean,
+    recoverCurrentRoute = true,
+  ): LessonExecutionProjection | null {
+    let context: RouteContext | null = null;
+    let acceptedLesson: AcceptedLessonPreview | null = null;
+    let routeError: unknown;
+    try {
+      const current = route(workspaceId, sessionId, false);
+      assertExpected(
+        current,
+        expected.sessionVersion,
+        expected.agendaVersion,
+        expected.agendaItemId,
+      );
+      context = current;
+      try {
+        acceptedLesson = currentAcceptedLesson(current);
+      } catch {
+        // Preview reconstruction is optional during failure cleanup. The
+        // original preparation error remains authoritative if source or plan
+        // validation now prevents reconstructing the accepted Lesson.
+        acceptedLesson = null;
+      }
+    } catch (error) {
+      routeError = error;
+    }
+
+    // A same-route source/version conflict remains fail-closed. A stale or
+    // deleted route still needs the exact predecessor cleanup below.
+    if (!routeError && !recoverCurrentRoute) return null;
+
+    const recovered = repos.transaction(() => {
+      const latest = repos.lessonExecution.getForSession(sessionId, expected.agendaItemId);
+      if (!latest || latest.preparationOperationId !== operationId) return null;
+      const now = clock.now().toISOString();
+      const next = repos.lessonExecution.update(
+        {
+          ...latest,
+          acceptedLessonCheckpointId:
+            acceptedLesson?.checkpointId ?? latest.acceptedLessonCheckpointId,
+          preparationStatus: 'retryable_failure',
+          preparationOperationId: null,
+          version: latest.version + 1,
+          updatedAt: now,
+        },
+        latest.version,
+      );
+      repos.lessonExecution.appendEvent({
+        id: newId('lesson_event'),
+        lessonExecutionStateId: next.id,
+        seq: repos.lessonExecution.listEvents(next.id).length + 1,
+        commandId,
+        kind: 'preparation_failed',
+        payload: {
+          retryable: true,
+          ...(cancelled ? { cancelled: true } : {}),
+          acceptedLessonPreserved: Boolean(next.acceptedLessonCheckpointId),
+        },
+        createdAt: now,
+      });
+      return next;
+    });
+
+    // The exact predecessor cleanup above is intentionally committed before a
+    // stale or deleted live route is surfaced to the caller.
+    if (routeError) throw routeError;
+    if (!context || !recovered) {
+      throw new AppError(
+        ApiErrorCode.VersionConflict,
+        'Lesson preparation failure recovery was superseded.',
+      );
+    }
+    return projection(context, recovered, null, acceptedLesson);
+  }
+
   async function ensure(
     workspaceId: string,
     sessionId: string,
@@ -509,12 +795,17 @@ export function createLessonExecutionService({
       input.expectedAgendaVersion,
       input.expectedAgendaItemId,
     );
-    const claim = commands.begin(input.command, 'prepare_lesson_execution', {
-      sessionId,
-      expectedSessionVersion: input.expectedSessionVersion,
-      expectedAgendaVersion: input.expectedAgendaVersion,
-      agendaItemId: input.expectedAgendaItemId,
-    });
+    const claim = commands.begin(
+      input.command,
+      'prepare_lesson_execution',
+      {
+        sessionId,
+        expectedSessionVersion: input.expectedSessionVersion,
+        expectedAgendaVersion: input.expectedAgendaVersion,
+        agendaItemId: input.expectedAgendaItemId,
+      },
+      { leaseMs: LESSON_EXECUTION_PREPARATION_LEASE_MS },
+    );
     if (claim.replayPayload) return LessonExecutionProjectionSchema.parse(claim.replayPayload);
     let claimedState: LessonExecutionState;
     try {
@@ -560,6 +851,7 @@ export function createLessonExecutionService({
               studyPlanVersionId: context.plan.id,
               learningUnitId: context.item.learningUnitId!,
               teachingBriefId: null,
+              acceptedLessonCheckpointId: null,
               executionSourceManifestFingerprint:
                 context.session.executionSourceManifestFingerprint,
               sourceContextFingerprint: null,
@@ -596,19 +888,16 @@ export function createLessonExecutionService({
     }
     try {
       const context = route(workspaceId, sessionId, false);
+      commands.renew(claim, LESSON_EXECUTION_PREPARATION_LEASE_MS);
       const response = await teachingBriefPreparation.prepare(
         {
-          workspaceId,
-          curriculumVersionId: context.curriculum.id,
-          studyPlanVersionId: context.plan.id,
-          learningUnitId: context.item.learningUnitId!,
+          ...preparationRouteInput(context),
           commandId: claim.operationId,
-          expectedExecutionSourceManifestFingerprint:
-            context.session.executionSourceManifestFingerprint,
           confirmedCostPolicyIds: input.confirmedCostPolicyIds,
         },
         options,
       );
+      commands.renew(claim, LESSON_EXECUTION_PREPARATION_LEASE_MS);
       const ready = repos.transaction(() => {
         const latestContext = route(workspaceId, sessionId, false);
         assertExpected(
@@ -625,6 +914,7 @@ export function createLessonExecutionService({
           {
             ...latest,
             teachingBriefId: response.brief.id,
+            acceptedLessonCheckpointId: null,
             sourceContextFingerprint: response.brief.sourceContextFingerprint,
             preparationStatus: 'ready',
             preparationOperationId: null,
@@ -648,75 +938,69 @@ export function createLessonExecutionService({
         projection(route(workspaceId, sessionId), ready, response.brief),
       );
     } catch (error) {
+      if (error instanceof ProviderError && error.code === ApiErrorCode.RequestCancelled) {
+        try {
+          recoverRetryablePreparationFailure(
+            workspaceId,
+            sessionId,
+            {
+              sessionVersion: input.expectedSessionVersion,
+              agendaVersion: input.expectedAgendaVersion,
+              agendaItemId: input.expectedAgendaItemId,
+            },
+            claim.operationId,
+            input.command.commandId,
+            true,
+          );
+        } catch {
+          // Cancellation remains the terminal result when the exact route was
+          // concurrently switched, deleted, or superseded. Any matching exact
+          // predecessor cleanup has already committed.
+        } finally {
+          // Failure cleanup must not depend on the route still existing. The
+          // operation itself may already have cascaded with a deleted Course.
+          commands.fail(claim, error);
+        }
+        throw error;
+      }
+      let recovered: LessonExecutionProjection | null;
+      try {
+        recovered = recoverRetryablePreparationFailure(
+          workspaceId,
+          sessionId,
+          {
+            sessionVersion: input.expectedSessionVersion,
+            agendaVersion: input.expectedAgendaVersion,
+            agendaItemId: input.expectedAgendaItemId,
+          },
+          claim.operationId,
+          input.command.commandId,
+          false,
+          !(error instanceof AppError && error.code === ApiErrorCode.VersionConflict),
+        );
+      } catch (recoveryError) {
+        commands.fail(claim, recoveryError);
+        throw recoveryError;
+      }
+      if (!recovered) {
+        commands.fail(claim, error);
+        throw error;
+      }
       if (
         error instanceof AppError &&
-        (error.code === ApiErrorCode.VersionConflict || error.code === ApiErrorCode.ValidationError)
+        (error.code === ApiErrorCode.VersionConflict ||
+          (error.code === ApiErrorCode.ValidationError &&
+            recovered.status !== 'practice_retry_available'))
       ) {
         commands.fail(claim, error);
         throw error;
       }
-      if (error instanceof ProviderError && error.code === ApiErrorCode.RequestCancelled) {
-        const context = route(workspaceId, sessionId);
-        const latest = stateFor(context);
-        if (latest?.preparationOperationId === claim.operationId) {
-          const now = clock.now().toISOString();
-          const retry = repos.transaction(() => {
-            const current = stateFor(route(workspaceId, sessionId));
-            if (!current || current.preparationOperationId !== claim.operationId) return current;
-            const next = repos.lessonExecution.update(
-              {
-                ...current,
-                preparationStatus: 'retryable_failure',
-                preparationOperationId: null,
-                version: current.version + 1,
-                updatedAt: now,
-              },
-              current.version,
-            );
-            repos.lessonExecution.appendEvent({
-              id: newId('lesson_event'),
-              lessonExecutionStateId: next.id,
-              seq: repos.lessonExecution.listEvents(next.id).length + 1,
-              commandId: input.command.commandId,
-              kind: 'preparation_failed',
-              payload: { retryable: true, cancelled: true },
-              createdAt: now,
-            });
-            return next;
-          });
-          void retry;
-        }
-        commands.fail(claim, error);
-        throw error;
+      try {
+        return commands.complete(claim, () => recovered);
+      } catch (completionError) {
+        commands.fail(claim, completionError);
+        throw completionError;
       }
-      const retry = repos.transaction(() => {
-        const context = route(workspaceId, sessionId);
-        const latest = stateFor(context);
-        if (!latest || latest.preparationOperationId !== claim.operationId) return latest;
-        const now = clock.now().toISOString();
-        const next = repos.lessonExecution.update(
-          {
-            ...latest,
-            preparationStatus: 'retryable_failure',
-            preparationOperationId: null,
-            version: latest.version + 1,
-            updatedAt: now,
-          },
-          latest.version,
-        );
-        repos.lessonExecution.appendEvent({
-          id: newId('lesson_event'),
-          lessonExecutionStateId: next.id,
-          seq: repos.lessonExecution.listEvents(next.id).length + 1,
-          commandId: input.command.commandId,
-          kind: 'preparation_failed',
-          payload: { retryable: true },
-          createdAt: now,
-        });
-        return next;
-      });
-      const result = projection(route(workspaceId, sessionId), retry, null);
-      return commands.complete(claim, () => result);
     }
   }
 

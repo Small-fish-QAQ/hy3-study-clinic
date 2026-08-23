@@ -1,8 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { TeachingBriefProposalPayloadSchema, type TeachingBriefSegment } from '@hy3-clinic/shared';
-import type { TeachingBriefGenerationInput } from '../llm/provider.js';
-import { validateTeachingBriefCandidate } from './teachingBriefContract.js';
+import type {
+  LessonSlotContentGenerationInput,
+  PracticeContentGenerationInput,
+  TeachingBriefGenerationInput,
+} from '../llm/provider.js';
+import { FakeProvider } from '../llm/fakeProvider.js';
+import { lessonSlotContentMessages } from '../llm/prompts.js';
+import {
+  validateLessonSlotContentCandidate,
+  validatePracticeContentCandidate,
+  validateTeachingBriefCandidate,
+} from './teachingBriefContract.js';
 import { profileTeachingBrief } from './teachingBriefQuality.js';
+import { planTeachingSkeleton } from './teachingSkeletonPlanner.js';
 
 function input(): TeachingBriefGenerationInput {
   return {
@@ -265,5 +276,175 @@ describe('Teaching Brief quality profile', () => {
     });
     expect(profile.nonclaims.join(' ')).toContain('does not prove teaching effectiveness');
     expect(profile).not.toHaveProperty('score');
+  });
+});
+
+function compositionalContractInput(): LessonSlotContentGenerationInput {
+  const skeleton = planTeachingSkeleton({
+    learningUnitTitle: 'Bounded retrieval',
+    targetMinutes: 18,
+    objectives: [
+      {
+        objectiveRef: 'O1',
+        title: 'Explain bounded retrieval',
+        description:
+          'Explain how a retrieval condition controls candidate eligibility and the returned result.',
+        priority: 'required',
+        construct: 'explain',
+        authorityMode: 'exact_source',
+        allowedSourceRefs: ['S1', 'S2'],
+        allowedVisualRefs: [],
+      },
+    ],
+  });
+  return {
+    workspaceName: 'Course',
+    skeleton,
+    sourceContext: {
+      fingerprint: 'context_contract',
+      blockCount: 2,
+      offerCount: 2,
+      serializedBytes: 500,
+      materialCount: 1,
+      sectionCount: 1,
+      offers: [
+        {
+          sourceRef: 'S1',
+          materialTitle: 'Retrieval notes',
+          headingPath: ['Mechanism'],
+          pageNumber: 1,
+          slideNumber: null,
+          text: 'A retrieval condition is checked against each candidate, and candidates that fail the condition are excluded.',
+          authorizedObjectiveRefs: ['O1'],
+        },
+        {
+          sourceRef: 'S2',
+          materialTitle: 'Retrieval notes',
+          headingPath: ['Result'],
+          pageNumber: 2,
+          slideNumber: null,
+          text: 'The remaining eligible candidate is returned as the bounded retrieval result.',
+          authorizedObjectiveRefs: ['O1'],
+        },
+      ],
+    },
+    visualContext: { offerCount: 0, serializedBytes: 0, offers: [] },
+    learningContext: {
+      concepts: [],
+      canonicalConcepts: [],
+      prerequisites: [],
+      nextConnection: null,
+    },
+  };
+}
+
+describe('compositional provider candidate validation', () => {
+  it('prompts for the minimum sufficient worked-process contract without a duplicate relation', () => {
+    const prompt = lessonSlotContentMessages(compositionalContractInput())
+      .map((message) => message.content)
+      .join('\n');
+    expect(prompt).toContain('worked_process needs a complete workedProcess');
+    expect(prompt).toContain('semanticRelations are optional');
+    expect(prompt).not.toContain('worked_process needs both a semantic relation');
+  });
+
+  it('accepts Fake Lesson then Practice content inside the immutable plans', async () => {
+    const provider = new FakeProvider();
+    const lessonInput = compositionalContractInput();
+    const lesson = await provider.generateLessonSlotContent(lessonInput);
+    expect(validateLessonSlotContentCandidate(lesson, lessonInput)).toEqual({
+      valid: true,
+      diagnostics: [],
+      diagnosticCodes: [],
+    });
+    const practiceInput: PracticeContentGenerationInput = {
+      workspaceName: 'Course',
+      skeleton: lessonInput.skeleton,
+      acceptedLesson: lesson.slots,
+      sourceContext: lessonInput.sourceContext,
+      visualContext: lessonInput.visualContext,
+    };
+    const practice = await provider.generatePracticeContent(practiceInput);
+    expect(validatePracticeContentCandidate(practice, practiceInput)).toEqual({
+      valid: true,
+      diagnostics: [],
+      diagnosticCodes: [],
+    });
+  });
+
+  it('reports one invalid Lesson slot and freezes every unaffected stable slot', async () => {
+    const input = compositionalContractInput();
+    const candidate = await new FakeProvider().generateLessonSlotContent(input);
+    const invalidSlotId = input.skeleton.lessonSlots.find(
+      (slot) => slot.qualityContract === 'semantic_relation',
+    )!.slotId;
+    candidate.slots.find((slot) => slot.slotId === invalidSlotId)!.semanticRelations = [];
+    const result = validateLessonSlotContentCandidate(candidate, input);
+    expect(result.valid).toBe(false);
+    expect(result.diagnosticCodes).toContain('missing_typed_semantic_relation');
+    expect(result.targetedRepair).toEqual({ invalidItemIds: [invalidSlotId] });
+    expect(result.failureArtifact?.context).toMatchObject({
+      invalidItemIds: [invalidSlotId],
+      frozenValidItemIds: input.skeleton.lessonSlots
+        .map((slot) => slot.slotId)
+        .filter((slotId) => slotId !== invalidSlotId),
+    });
+  });
+
+  it('rejects missing, unknown, duplicate, and provider-authored local Lesson authority', async () => {
+    const input = compositionalContractInput();
+    const valid = await new FakeProvider().generateLessonSlotContent(input);
+    const missing = structuredClone(valid);
+    const removedId = missing.slots.splice(1, 1)[0]!.slotId;
+    expect(validateLessonSlotContentCandidate(missing, input).diagnosticCodes).toContain(
+      'missing_lesson_slot',
+    );
+
+    const unknown = structuredClone(valid);
+    unknown.slots[1]!.slotId = 'L99';
+    expect(validateLessonSlotContentCandidate(unknown, input).diagnosticCodes).toEqual(
+      expect.arrayContaining(['missing_lesson_slot', 'unknown_lesson_slot']),
+    );
+
+    const duplicate = structuredClone(valid);
+    duplicate.slots.push(structuredClone(duplicate.slots[0]!));
+    expect(validateLessonSlotContentCandidate(duplicate, input).diagnosticCodes).toContain(
+      'duplicate_lesson_slot',
+    );
+
+    const mutation = structuredClone(valid) as unknown as {
+      slots: Array<Record<string, unknown>>;
+    };
+    mutation.slots[1]!.construct = 'evaluate';
+    const mutationResult = validateLessonSlotContentCandidate(mutation, input);
+    expect(mutationResult.diagnosticCodes).toContain('lesson_attempted_local_authority_mutation');
+    expect(mutationResult.targetedRepair?.invalidItemIds).toContain(
+      input.skeleton.lessonSlots[1]!.slotId,
+    );
+    expect(removedId).toBe(input.skeleton.lessonSlots[1]!.slotId);
+  });
+
+  it('rejects Lesson aliases outside a slot and source-location Practice trivia', async () => {
+    const provider = new FakeProvider();
+    const lessonInput = compositionalContractInput();
+    const lesson = await provider.generateLessonSlotContent(lessonInput);
+    lesson.slots[1]!.sourceRefs = ['S9'];
+    expect(validateLessonSlotContentCandidate(lesson, lessonInput).diagnosticCodes).toContain(
+      'lesson_source_alias_outside_slot_authority',
+    );
+
+    const acceptedLesson = await provider.generateLessonSlotContent(lessonInput);
+    const practiceInput: PracticeContentGenerationInput = {
+      workspaceName: 'Course',
+      skeleton: lessonInput.skeleton,
+      acceptedLesson: acceptedLesson.slots,
+      sourceContext: lessonInput.sourceContext,
+      visualContext: lessonInput.visualContext,
+    };
+    const practice = await provider.generatePracticeContent(practiceInput);
+    practice.items[0]!.initial.prompt = 'On which page is bounded retrieval described?';
+    const result = validatePracticeContentCandidate(practice, practiceInput);
+    expect(result.diagnosticCodes).toContain('source_location_trivia');
+    expect(result.targetedRepair).toEqual({ invalidItemIds: ['PR1'] });
   });
 });

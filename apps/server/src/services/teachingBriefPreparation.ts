@@ -4,17 +4,29 @@ import {
   TeachingBriefPreparationRequestSchema,
   TeachingBriefPreparationResponseSchema,
   TeachingBriefSchema,
+  projectAcceptedLessonSegments,
+  type AcceptedLessonCheckpoint,
   type SourceBlockRevision,
   type CurriculumObjective,
+  type TeachingBriefObjective,
+  type TeachingBriefPrerequisite,
+  type TeachingBriefSegment,
+  type TeachingBriefSourceReference,
+  type TeachingBriefVisualReference,
+  type LessonPedagogyEvaluation,
+  type PracticeContentProposalPayload,
+  type PracticeQualityEvaluation,
+  type TeachingSkeleton,
   type TeachingBrief,
   type TeachingBriefPreparationResponse,
-  type TeachingBriefProposalPayload,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import { curriculumSourceBlockFingerprint } from '../grounding/sourceFingerprint.js';
 import { ProviderError } from '../llm/errors.js';
 import type {
   LlmProvider,
+  LessonSlotContentGenerationInput,
+  PracticeContentGenerationInput,
   ProviderCallOptions,
   TeachingBriefGenerationInput,
 } from '../llm/provider.js';
@@ -26,14 +38,31 @@ import {
   enforceAgentCostPolicies,
   runTrackedAgentProviderOperation,
 } from './agentProviderRuntime.js';
-import { validateTeachingBriefCandidate } from './teachingBriefContract.js';
+import {
+  validateLessonSlotContentCandidate,
+  validatePracticeContentCandidate,
+} from './teachingBriefContract.js';
 import { buildTeachingBriefSourceContext } from './teachingBriefContext.js';
 import { profileTeachingBrief } from './teachingBriefQuality.js';
-import { evaluateLessonPedagogy, evaluatePracticeQuality } from './lessonPedagogyEvaluator.js';
+import {
+  COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION,
+  COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION,
+  evaluateLessonSlotPedagogy,
+  evaluatePlannedPracticeQuality,
+} from './lessonPedagogyEvaluator.js';
 import { visualManifestMatchesCurrentDerivations } from './advisoryVisuals.js';
+import {
+  planTeachingSkeleton,
+  TeachingSkeletonPlanningError,
+  type TeachingSkeletonPlanningInput,
+} from './teachingSkeletonPlanner.js';
+import { createTelemetryProvider } from './providerTelemetry.js';
 
-export const TEACHING_BRIEF_PROMPT_VERSION = 'teaching-brief-v2-pedagogy-practice-authority-v2';
-const PREPARATION_LEASE_MS = 10 * 60 * 1000;
+export const TEACHING_BRIEF_PROMPT_VERSION = 'teaching-brief-v3-compositional-v1';
+export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v1-compositional';
+export const PRACTICE_CONTENT_PROMPT_VERSION = 'teaching-practice-content-v1-compositional';
+/** Two logical calls, each original + one repair at the configured 5-minute ceiling. */
+export const COMPOSITIONAL_PREPARATION_LEASE_MS = 22 * 60 * 1000;
 
 interface TeachingBriefPreparationDeps {
   repos: Repositories;
@@ -42,8 +71,101 @@ interface TeachingBriefPreparationDeps {
   providerModel?: string | null;
 }
 
+interface TeachingBriefRouteInput {
+  workspaceId: string;
+  curriculumVersionId: string;
+  studyPlanVersionId: string;
+  learningUnitId: string;
+  studySessionId: string;
+  sessionAgendaId: string;
+  expectedSessionVersion: number;
+  expectedAgendaVersion: number;
+  expectedAgendaItemId: string;
+  expectedStudyPlanItemId: string;
+  expectedExecutionSourceManifestFingerprint: string;
+}
+
+/** Read-only accepted-Lesson view used only while its Practice successor is retried. */
+export interface AcceptedLessonPreview {
+  checkpointId: string;
+  objective: TeachingBrief['objective'];
+  prerequisites: TeachingBriefPrerequisite[];
+  segments: TeachingBriefSegment[];
+  formalOpportunities: string[];
+  summary: string;
+  nextConnection: string | null;
+  sourceReferences: TeachingBriefSourceReference[];
+  visualReferences: TeachingBriefVisualReference[];
+  pedagogyEvaluation: LessonPedagogyEvaluation;
+}
+
 function fingerprint(value: unknown): string {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex');
+}
+
+export function compositionFingerprint(
+  contextFingerprint: string,
+  skeleton: Pick<TeachingSkeleton, 'fingerprint'>,
+  policyVersions: {
+    lessonPedagogy: string;
+    practiceQuality: string;
+  } = {
+    lessonPedagogy: COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION,
+    practiceQuality: COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION,
+  },
+): string {
+  return `lesson_context_${fingerprint({
+    sourceContextFingerprint: contextFingerprint,
+    skeletonFingerprint: skeleton.fingerprint,
+    teachingBriefPromptVersion: TEACHING_BRIEF_PROMPT_VERSION,
+    lessonPromptVersion: LESSON_CONTENT_PROMPT_VERSION,
+    practicePromptVersion: PRACTICE_CONTENT_PROMPT_VERSION,
+    lessonPedagogyPolicyVersion: policyVersions.lessonPedagogy,
+    practiceQualityPolicyVersion: policyVersions.practiceQuality,
+  }).slice(0, 40)}`;
+}
+
+export function isCurrentAcceptedLessonCheckpoint(
+  checkpoint: AcceptedLessonCheckpoint | undefined,
+): checkpoint is AcceptedLessonCheckpoint {
+  return (
+    checkpoint?.promptVersion === LESSON_CONTENT_PROMPT_VERSION &&
+    checkpoint.lessonEvaluation.policyVersion === COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION &&
+    checkpoint.lessonEvaluation.status === 'pass' &&
+    checkpoint.lessonLogicalCallId !== null
+  );
+}
+
+export function selectCurrentAcceptedLessonCheckpoint(
+  checkpoint: AcceptedLessonCheckpoint | undefined,
+): AcceptedLessonCheckpoint | undefined {
+  if (!checkpoint) return undefined;
+  if (!isCurrentAcceptedLessonCheckpoint(checkpoint)) {
+    throw new AppError(
+      ApiErrorCode.VersionConflict,
+      'The accepted Lesson checkpoint is legacy or lacks current evaluation and logical-call provenance.',
+    );
+  }
+  return checkpoint;
+}
+
+export function isCurrentCompositionalBrief(
+  candidate: TeachingBrief | undefined,
+  skeleton: Pick<TeachingSkeleton, 'fingerprint'>,
+): candidate is TeachingBrief {
+  return (
+    candidate?.promptVersion === TEACHING_BRIEF_PROMPT_VERSION &&
+    candidate.composition?.skeletonFingerprint === skeleton.fingerprint &&
+    candidate.composition.lessonPromptVersion === LESSON_CONTENT_PROMPT_VERSION &&
+    candidate.composition.practicePromptVersion === PRACTICE_CONTENT_PROMPT_VERSION &&
+    candidate.composition.lessonLogicalCallId !== undefined &&
+    candidate.composition.practiceLogicalCallId !== undefined &&
+    candidate.pedagogyEvaluation?.policyVersion === COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION &&
+    candidate.pedagogyEvaluation?.status === 'pass' &&
+    candidate.practice?.qualityEvaluation.policyVersion ===
+      COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION &&
+    candidate.practice?.qualityEvaluation.status === 'pass'
+  );
 }
 
 export function createTeachingBriefPreparationService({
@@ -52,39 +174,63 @@ export function createTeachingBriefPreparationService({
   clock,
   providerModel = null,
 }: TeachingBriefPreparationDeps) {
-  function routeContext(input: {
-    workspaceId: string;
-    curriculumVersionId: string;
-    studyPlanVersionId: string;
-    learningUnitId: string;
-    expectedExecutionSourceManifestFingerprint: string;
-  }) {
+  const inferenceProvider = createTelemetryProvider({
+    repos,
+    clock,
+    provider,
+    providerGeneration: () => 1,
+  });
+  function routeContext(input: TeachingBriefRouteInput, requireActive = true) {
     const workspace = repos.workspaces.get(input.workspaceId);
     if (!workspace) throw notFound('Course workspace not found.');
     const state = repos.courseExecution.get(input.workspaceId);
     const curriculum = repos.curricula.get(input.curriculumVersionId);
     const plan = repos.studyPlans.get(input.studyPlanVersionId);
+    const session = repos.studySessions.get(input.studySessionId);
+    const agenda = repos.sessionAgendas.get(input.sessionAgendaId);
     if (
       !curriculum ||
       !plan ||
+      !session ||
+      !agenda ||
       curriculum.workspaceId !== input.workspaceId ||
       plan.workspaceId !== input.workspaceId ||
+      session.workspaceId !== input.workspaceId ||
+      agenda.workspaceId !== input.workspaceId ||
       curriculum.status !== 'accepted' ||
       plan.status !== 'accepted' ||
       plan.curriculumVersionId !== curriculum.id ||
       state.activeCurriculumId !== curriculum.id ||
       state.acceptedPlanId !== plan.id ||
+      state.activeAgendaId !== agenda.id ||
+      session.curriculumVersionId !== curriculum.id ||
+      session.studyPlanVersionId !== plan.id ||
+      session.sessionAgendaId !== agenda.id ||
+      agenda.curriculumVersionId !== curriculum.id ||
+      agenda.studyPlanVersionId !== plan.id ||
+      session.version !== input.expectedSessionVersion ||
+      agenda.version !== input.expectedAgendaVersion ||
+      session.currentAgendaItemId !== input.expectedAgendaItemId ||
+      agenda.currentItemId !== input.expectedAgendaItemId ||
+      (requireActive
+        ? session.status !== 'active' || agenda.status !== 'active'
+        : (session.status !== 'active' && session.status !== 'paused') ||
+          (agenda.status !== 'active' && agenda.status !== 'paused')) ||
       state.routeValidationStatus !== 'valid'
     ) {
       throw new AppError(
         ApiErrorCode.VersionConflict,
-        'Teaching Brief preparation requires the current accepted Course route.',
+        'Teaching Brief preparation requires the exact active Session and Agenda route.',
       );
     }
     if (
       curriculum.executionSourceManifest.fingerprint !==
         input.expectedExecutionSourceManifestFingerprint ||
-      plan.executionSourceManifestFingerprint !== input.expectedExecutionSourceManifestFingerprint
+      plan.executionSourceManifestFingerprint !==
+        input.expectedExecutionSourceManifestFingerprint ||
+      session.executionSourceManifestFingerprint !==
+        input.expectedExecutionSourceManifestFingerprint ||
+      agenda.executionSourceManifestFingerprint !== input.expectedExecutionSourceManifestFingerprint
     ) {
       throw new AppError(ApiErrorCode.VersionConflict, 'Teaching Brief source route is stale.');
     }
@@ -95,17 +241,62 @@ export function createTeachingBriefPreparationService({
       );
     }
     const node = curriculum.nodes.find((candidate) => candidate.id === input.learningUnitId);
-    const planItem = plan.items.find(
-      (item) =>
-        item.curriculumLearningUnitId === input.learningUnitId && item.kind === 'teach_unit',
-    );
-    if (!node?.learningUnit || !planItem) {
+    const agendaItem = agenda.items.find((item) => item.id === input.expectedAgendaItemId);
+    const planItem = plan.items.find((item) => item.id === input.expectedStudyPlanItemId);
+    if (
+      !node?.learningUnit ||
+      !agendaItem ||
+      !planItem ||
+      agendaItem.kind !== 'learning_unit_teaching' ||
+      (agendaItem.state !== 'queued' && agendaItem.state !== 'active') ||
+      agendaItem.launch.status !== 'launchable' ||
+      agendaItem.launch.capability !== 'lesson' ||
+      agendaItem.learningUnitId !== input.learningUnitId ||
+      agendaItem.linkedPlanItemId !== input.expectedStudyPlanItemId ||
+      planItem.kind !== 'teach_unit' ||
+      planItem.curriculumLearningUnitId !== input.learningUnitId
+    ) {
       throw new AppError(
         ApiErrorCode.ValidationError,
-        'LearningUnit is not executable teaching work in the accepted StudyPlan.',
+        'LearningUnit is not the exact executable Session Agenda teaching item.',
       );
     }
-    return { workspace, state, curriculum, plan, node, planItem };
+    if (planItem.objectiveIds.length === 0) {
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        'The accepted StudyPlan teaching item must reference at least one objective.',
+      );
+    }
+    if (new Set(planItem.objectiveIds).size !== planItem.objectiveIds.length) {
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        'The accepted StudyPlan teaching item contains duplicate objective IDs.',
+      );
+    }
+    const objectiveById = new Map(
+      node.learningUnit.objectives.map((objective) => [objective.id, objective]),
+    );
+    const routeObjectives = planItem.objectiveIds.map((objectiveId) =>
+      objectiveById.get(objectiveId),
+    );
+    if (routeObjectives.some((objective) => objective === undefined)) {
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        'The accepted StudyPlan teaching item references an unknown or missing LearningUnit objective.',
+      );
+    }
+    return {
+      workspace,
+      state,
+      curriculum,
+      plan,
+      session,
+      agenda,
+      agendaItem,
+      node,
+      planItem,
+      routeObjectives: routeObjectives as CurriculumObjective[],
+    };
   }
 
   function sourceContext(input: ReturnType<typeof routeContext>) {
@@ -163,10 +354,7 @@ export function createTeachingBriefPreparationService({
         : visualCandidates.filter(({ asset }) => relevantMaterialIds.has(asset.materialId));
     const visualQuery = [
       input.node.title,
-      ...input.node.learningUnit!.objectives.flatMap((objective) => [
-        objective.title,
-        objective.description,
-      ]),
+      ...input.routeObjectives.flatMap((objective) => [objective.title, objective.description]),
       ...input.node.learningUnit!.conceptIds.flatMap((conceptId) => {
         const concept = repos.materials.getConcept(conceptId);
         return concept ? [concept.name, concept.summary] : [];
@@ -200,13 +388,7 @@ export function createTeachingBriefPreparationService({
       concepts: repos.materials.getConceptsByWorkspace(input.workspace.id),
       visuals,
     });
-    return {
-      ...built,
-      fingerprint: `lesson_context_${fingerprint({
-        sourceContextFingerprint: built.fingerprint,
-        promptVersion: TEACHING_BRIEF_PROMPT_VERSION,
-      }).slice(0, 40)}`,
-    };
+    return built;
   }
 
   function providerInput(
@@ -267,10 +449,8 @@ export function createTeachingBriefPreparationService({
       design: ['evaluate'],
       evaluate: [],
     };
-    const objectiveRefs = route.node.learningUnit!.objectives.map(
-      (_objective, index) => `O${index + 1}`,
-    );
-    const durationTarget = route.planItem.estimatedMinutes;
+    const objectiveRefs = route.routeObjectives.map((_objective, index) => `O${index + 1}`);
+    const durationTarget = route.agendaItem.estimatedMinutes;
     const isSourceAuthorizedForObjective = (
       offer: (typeof context.offers)[number],
       objective: CurriculumObjective,
@@ -292,7 +472,7 @@ export function createTeachingBriefPreparationService({
       workspaceName: route.workspace.name,
       learningUnit: {
         title: route.node.title,
-        objectives: route.node.learningUnit!.objectives.map((objective, index) => ({
+        objectives: route.routeObjectives.map((objective, index) => ({
           objectiveRef: `O${index + 1}`,
           title: objective.title,
           description: objective.description,
@@ -310,9 +490,7 @@ export function createTeachingBriefPreparationService({
                   : 'unavailable',
           practiceEnvelope: (() => {
             const exactEvidence = context.offers
-              .filter((offer) =>
-                isSourceAuthorizedForObjective(offer, route.node.learningUnit!.objectives[index]!),
-              )
+              .filter((offer) => isSourceAuthorizedForObjective(offer, objective))
               .map((offer) => ({ sourceRef: offer.sourceRef, text: offer.text.slice(0, 600) }));
             const requiresFormalAuthority =
               Boolean(objective.formalAssessmentConstruct) &&
@@ -361,23 +539,21 @@ export function createTeachingBriefPreparationService({
           );
           return {
             ...offer,
-            authorizedObjectiveRefs: route.node.learningUnit!.objectives.flatMap(
-              (objective, index) => {
-                if (!reference) return [];
-                const formallyAuthorized = objective.formalEvidenceSourceBlockIds?.includes(
-                  reference.sourceBlockId,
-                );
-                const teachingAuthorized = route.node.sourceReferences.some(
-                  (candidate) => candidate.sourceBlockId === reference.sourceBlockId,
-                );
-                const hasExactFormalAuthority =
-                  Boolean(objective.formalAssessmentConstruct) &&
-                  (objective.formalEvidenceSourceBlockIds?.length ?? 0) > 0;
-                return (hasExactFormalAuthority ? formallyAuthorized : teachingAuthorized)
-                  ? [`O${index + 1}`]
-                  : [];
-              },
-            ),
+            authorizedObjectiveRefs: route.routeObjectives.flatMap((objective, index) => {
+              if (!reference) return [];
+              const formallyAuthorized = objective.formalEvidenceSourceBlockIds?.includes(
+                reference.sourceBlockId,
+              );
+              const teachingAuthorized = route.node.sourceReferences.some(
+                (candidate) => candidate.sourceBlockId === reference.sourceBlockId,
+              );
+              const hasExactFormalAuthority =
+                Boolean(objective.formalAssessmentConstruct) &&
+                (objective.formalEvidenceSourceBlockIds?.length ?? 0) > 0;
+              return (hasExactFormalAuthority ? formallyAuthorized : teachingAuthorized)
+                ? [`O${index + 1}`]
+                : [];
+            }),
           };
         }),
       },
@@ -418,106 +594,202 @@ export function createTeachingBriefPreparationService({
     };
   }
 
+  function planningInput(
+    route: ReturnType<typeof routeContext>,
+    context: ReturnType<typeof sourceContext>,
+    input: TeachingBriefGenerationInput,
+  ): TeachingSkeletonPlanningInput {
+    return {
+      learningUnitTitle: route.node.title,
+      targetMinutes: route.agendaItem.estimatedMinutes,
+      maxLessonSlots: input.limits.maxSegments,
+      maxPracticeSlots: 8,
+      objectives: input.learningUnit.objectives.map((objective) => ({
+        objectiveRef: objective.objectiveRef,
+        title: objective.title,
+        description: objective.description,
+        priority: objective.priority,
+        construct: objective.construct ?? 'identify',
+        authorityMode: objective.practiceEnvelope?.authorityMode ?? 'unavailable',
+        allowedSourceRefs:
+          objective.practiceEnvelope?.evidenceAliases.map((evidence) => evidence.sourceRef) ?? [],
+        allowedVisualRefs:
+          objective.practiceEnvelope?.authorityMode === 'advisory_visual'
+            ? context.visualOffers.map((offer) => offer.referenceKey)
+            : [],
+      })),
+    };
+  }
+
+  function lessonInput(
+    route: ReturnType<typeof routeContext>,
+    input: TeachingBriefGenerationInput,
+    skeleton: TeachingSkeleton,
+  ): LessonSlotContentGenerationInput {
+    const lessonSkeleton: LessonSlotContentGenerationInput['skeleton'] = {
+      id: skeleton.id,
+      schemaVersion: skeleton.schemaVersion,
+      plannerVersion: skeleton.plannerVersion,
+      fingerprint: skeleton.fingerprint,
+      learningUnitTitle: skeleton.learningUnitTitle,
+      objectives: skeleton.objectives,
+      targetMinutes: skeleton.targetMinutes,
+      acceptableActiveMinutes: skeleton.acceptableActiveMinutes,
+      lessonSlots: skeleton.lessonSlots,
+      synthesisActivityBudget: skeleton.synthesisActivityBudget,
+      protectedActivityBudget: skeleton.protectedActivityBudget,
+      plannedActivityBudget: skeleton.plannedActivityBudget,
+    };
+    return {
+      workspaceName: route.workspace.name,
+      skeleton: lessonSkeleton,
+      sourceContext: input.sourceContext,
+      visualContext: input.visualContext,
+      learningContext: {
+        concepts: input.learningUnit.concepts,
+        canonicalConcepts: input.learningUnit.canonicalConcepts,
+        prerequisites: input.prerequisites,
+        nextConnection: input.nextConnection,
+      },
+    };
+  }
+
+  function practiceInput(
+    route: ReturnType<typeof routeContext>,
+    input: TeachingBriefGenerationInput,
+    checkpoint: AcceptedLessonCheckpoint,
+  ): PracticeContentGenerationInput {
+    return {
+      workspaceName: route.workspace.name,
+      skeleton: checkpoint.skeleton,
+      acceptedLesson: checkpoint.lessonContent,
+      sourceContext: input.sourceContext,
+      visualContext: input.visualContext,
+    };
+  }
+
+  function derivedObjective(
+    route: ReturnType<typeof routeContext>,
+    skeleton: TeachingSkeleton,
+  ): TeachingBriefObjective[] {
+    return route.routeObjectives.map((objective, index) => {
+      const planned = skeleton.objectives[index]!;
+      return {
+        id: objective.id,
+        title: objective.title,
+        description: objective.description,
+        priority: planned.priority,
+        formalAssessmentReady: objective.formalAssessmentReady,
+        construct: planned.construct,
+        authorityEnvelopeTier: objective.authorityEnvelopeTier,
+        formalEvidenceSourceBlockIds: objective.formalEvidenceSourceBlockIds,
+      };
+    });
+  }
+
+  function derivedPrerequisites(
+    route: ReturnType<typeof routeContext>,
+    input: TeachingBriefGenerationInput,
+  ): TeachingBriefPrerequisite[] {
+    return input.prerequisites.flatMap((prerequisite, index) => {
+      const node = route.curriculum.nodes.find(
+        (candidate) => candidate.id === route.node.learningUnit!.prerequisiteUnitIds[index],
+      );
+      return node
+        ? [
+            {
+              learningUnitId: node.id,
+              title: node.title,
+              reason: `This accepted Curriculum prerequisite supports ${route.node.title}.`,
+              readinessHint:
+                prerequisite.objectiveSummaries.length > 0
+                  ? `Recall: ${prerequisite.objectiveSummaries.join('; ')}`.slice(0, 500)
+                  : null,
+            },
+          ]
+        : [];
+    });
+  }
+
+  function assembleSegments(
+    route: ReturnType<typeof routeContext>,
+    checkpoint: AcceptedLessonCheckpoint,
+  ): TeachingBriefSegment[] {
+    return projectAcceptedLessonSegments(
+      checkpoint,
+      route.routeObjectives.map((objective) => objective.id),
+    );
+  }
+
+  function localLessonMetadata(
+    route: ReturnType<typeof routeContext>,
+    input: TeachingBriefGenerationInput,
+    skeleton: TeachingSkeleton,
+  ) {
+    const objectiveTitles = route.routeObjectives.map((objective) => objective.title);
+    return {
+      objective: {
+        title: route.node.title,
+        whyNow: route.agendaItem.reason,
+        objectives: derivedObjective(route, skeleton),
+      },
+      prerequisites: derivedPrerequisites(route, input),
+      formalOpportunities: [],
+      summary:
+        `This Lesson develops ${objectiveTitles.join('; ')} through the locally planned instructional spine.`.slice(
+          0,
+          1200,
+        ),
+      nextConnection: input.nextConnection
+        ? `Next in the accepted StudyPlan: ${input.nextConnection.title}.`
+        : null,
+    };
+  }
+
   function materialize(
     route: ReturnType<typeof routeContext>,
     context: ReturnType<typeof sourceContext>,
     input: TeachingBriefGenerationInput,
-    payload: TeachingBriefProposalPayload,
-    boundedRepairAttempted: boolean,
+    checkpoint: AcceptedLessonCheckpoint,
+    practicePayload: PracticeContentProposalPayload,
+    practiceEvaluation: PracticeQualityEvaluation,
+    practiceOperationId: string,
+    practiceLogicalCallId: string,
   ): TeachingBrief {
-    const objectiveIdByRef = new Map(
-      route.node.learningUnit!.objectives.map((objective, index) => [
-        `O${index + 1}`,
-        objective.id,
-      ]),
-    );
-    const prerequisiteByRef = new Map(
-      input.prerequisites.map((prerequisite, index) => [
-        prerequisite.prerequisiteRef,
-        route.curriculum.nodes.find(
-          (candidate) => candidate.id === route.node.learningUnit!.prerequisiteUnitIds[index],
-        )!,
-      ]),
-    );
     const briefId = newId('teaching_brief');
-    const segments = payload.segments.map((segment, index) => ({
-      index,
-      purpose: segment.purpose,
-      objectiveIds: segment.objectiveRefs.map((ref) => objectiveIdByRef.get(ref)!),
-      explanation: segment.explanation,
-      explanationAuthority: segment.explanationAuthority,
-      sourceRefIds: segment.sourceRefs,
-      ...(segment.example
-        ? {
-            example: {
-              text: segment.example.text,
-              authority: segment.example.authority,
-              sourceRefIds: segment.example.sourceRefs,
-            },
-          }
-        : {}),
-      ...(segment.contrast
-        ? {
-            contrast: {
-              text: segment.contrast.text,
-              authority: segment.contrast.authority,
-              sourceRefIds: segment.contrast.sourceRefs,
-            },
-          }
-        : {}),
-      ...(segment.misconception
-        ? {
-            misconception: {
-              authority: 'pedagogical_risk_candidate' as const,
-              hypothesis: segment.misconception.hypothesis,
-              correction: segment.misconception.correction,
-              sourceRefIds: segment.misconception.sourceRefs,
-            },
-          }
-        : {}),
-      ...(segment.informalCheck ? { informalCheck: segment.informalCheck } : {}),
-    }));
-    const prerequisites = payload.prerequisites.map((prerequisite) => {
-      const node = prerequisiteByRef.get(prerequisite.prerequisiteRef)!;
-      return {
-        learningUnitId: node.id,
-        title: node.title,
-        reason: prerequisite.reason,
-        readinessHint: prerequisite.readinessHint,
-      };
-    });
-    const objectiveIds = route.node.learningUnit!.objectives.map((objective) => objective.id);
+    const segments = assembleSegments(route, checkpoint);
+    const metadata = localLessonMetadata(route, input, checkpoint.skeleton);
+    const objectiveIds = route.routeObjectives.map((objective) => objective.id);
     const qualityProfile = profileTeachingBrief({
       objectiveIds,
       segments,
       sourceReferences: context.references,
-      prerequisiteCount: prerequisites.length,
-      formalOpportunityCount: payload.formalOpportunities.length,
-      summary: payload.summary,
-      nextConnection: payload.nextConnection,
+      prerequisiteCount: metadata.prerequisites.length,
+      formalOpportunityCount: 0,
+      summary: metadata.summary,
+      nextConnection: metadata.nextConnection,
     });
-    const evaluatedAt = clock.now().toISOString();
-    const pedagogyEvaluation = evaluateLessonPedagogy(payload, input, {
-      evaluatedAt,
-      boundedRepairAttempted,
-    });
-    const practiceEvaluation = evaluatePracticeQuality(payload, input, {
-      evaluatedAt,
-      boundedRepairAttempted,
-    });
-    if (pedagogyEvaluation.status !== 'pass' || practiceEvaluation.status !== 'pass') {
+    if (
+      checkpoint.lessonEvaluation.status !== 'pass' ||
+      practiceEvaluation.status !== 'pass' ||
+      checkpoint.lessonLogicalCallId === null
+    ) {
       throw new AppError(
         ApiErrorCode.ValidationError,
-        'Teaching Brief candidate failed independent Lesson or Practice evaluation.',
+        'Teaching Brief candidate requires accepted Lesson, Practice, and logical-call provenance.',
       );
     }
     const objectiveByRef = new Map(
-      route.node.learningUnit!.objectives.map((objective, index) => [`O${index + 1}`, objective]),
+      route.routeObjectives.map((objective, index) => [`O${index + 1}`, objective]),
+    );
+    const practiceContentById = new Map(
+      practicePayload.items.map((item) => [item.practiceSlotId, item]),
     );
     const practice = {
       schemaVersion: 1 as const,
-      items: payload.practice.items.map((item, itemIndex) => {
-        const objective = objectiveByRef.get(item.objectiveRef)!;
+      items: checkpoint.skeleton.practicePlan.slots.map((slot, itemIndex) => {
+        const item = practiceContentById.get(slot.practiceSlotId)!;
+        const objective = objectiveByRef.get(slot.objectiveRef)!;
         const itemId = `${briefId}_practice_${itemIndex + 1}`;
         const surface = (
           value: (typeof item)['initial'] | (typeof item)['retry'],
@@ -537,12 +809,13 @@ export function createTeachingBriefPreparationService({
           id: itemId,
           objectiveId: objective.id,
           objectiveTitle: objective.title,
-          construct: item.construct,
+          construct: slot.construct,
           capabilityTested: item.capabilityTested,
           pedagogicalReason: item.pedagogicalReason,
-          authority: item.authority,
+          authority: slot.authorityMode,
           sourceRefIds: item.sourceRefs,
           visualRefIds: item.visualRefs,
+          application: item.application,
           initial: surface(item.initial, 'initial'),
           retry: surface(item.retry, 'retry'),
         };
@@ -557,33 +830,47 @@ export function createTeachingBriefPreparationService({
       studyPlanVersionId: route.plan.id,
       learningUnitId: route.node.id,
       executionSourceManifestFingerprint: route.curriculum.executionSourceManifest.fingerprint,
-      sourceContextFingerprint: context.fingerprint,
+      sourceContextFingerprint: checkpoint.sourceContextFingerprint,
       sourceManifest: route.curriculum.executionSourceManifest,
       conceptIds: route.node.learningUnit!.conceptIds,
       canonicalConceptIds: route.node.learningUnit!.canonicalConceptIds,
-      objective: {
-        title: route.node.title,
-        whyNow: payload.whyNow,
-        objectives: route.node.learningUnit!.objectives.map((objective) => ({
-          id: objective.id,
-          title: objective.title,
-          description: objective.description,
-          priority: objective.priority,
-          formalAssessmentReady: objective.formalAssessmentReady,
-          construct: objective.formalAssessmentConstruct,
-          authorityEnvelopeTier: objective.authorityEnvelopeTier,
-          formalEvidenceSourceBlockIds: objective.formalEvidenceSourceBlockIds,
-        })),
-      },
-      prerequisites,
+      objective: metadata.objective,
+      prerequisites: metadata.prerequisites,
       segments,
-      formalOpportunities: payload.formalOpportunities,
-      summary: payload.summary,
-      nextConnection: payload.nextConnection,
+      formalOpportunities: metadata.formalOpportunities,
+      summary: metadata.summary,
+      nextConnection: metadata.nextConnection,
       sourceReferences: context.references,
       visualReferences: context.visualReferences,
       qualityProfile,
-      pedagogyEvaluation,
+      composition: {
+        schemaVersion: 1,
+        skeletonId: checkpoint.skeleton.id,
+        skeletonSchemaVersion: checkpoint.skeleton.schemaVersion,
+        skeletonPlannerVersion: checkpoint.skeleton.plannerVersion,
+        skeletonFingerprint: checkpoint.skeleton.fingerprint,
+        acceptedLessonCheckpointId: checkpoint.id,
+        lessonOperationId: checkpoint.operationId,
+        practiceOperationId,
+        lessonLogicalCallId: checkpoint.lessonLogicalCallId,
+        practiceLogicalCallId,
+        lessonPromptVersion: checkpoint.promptVersion,
+        practicePromptVersion: PRACTICE_CONTENT_PROMPT_VERSION,
+        targetMinutes: checkpoint.skeleton.targetMinutes,
+        acceptableActiveMinutes: {
+          min: checkpoint.skeleton.acceptableActiveMinutes.minMinutes,
+          max: checkpoint.skeleton.acceptableActiveMinutes.maxMinutes,
+        },
+        protectedActivityMinutes: {
+          min: checkpoint.skeleton.protectedActivityBudget.minMinutes,
+          max: checkpoint.skeleton.protectedActivityBudget.maxMinutes,
+        },
+        plannedActivityMinutes: {
+          min: checkpoint.skeleton.plannedActivityBudget.minMinutes,
+          max: checkpoint.skeleton.plannedActivityBudget.maxMinutes,
+        },
+      },
+      pedagogyEvaluation: checkpoint.lessonEvaluation,
       practice,
       provider: provider.name,
       providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
@@ -614,12 +901,98 @@ export function createTeachingBriefPreparationService({
     return previous.sourceContextFingerprint === contextFingerprint ? 'none' : 'context_changed';
   }
 
+  function routeStillCurrent(input: TeachingBriefRouteInput, expectedContextFingerprint: string) {
+    const currentRoute = routeContext(input);
+    const currentContext = sourceContext(currentRoute);
+    if (currentContext.fingerprint !== expectedContextFingerprint) {
+      throw new AppError(
+        ApiErrorCode.VersionConflict,
+        'Teaching Brief source context changed during generation.',
+      );
+    }
+    return { route: currentRoute, context: currentContext };
+  }
+
+  function checkpointIdentity(
+    input: TeachingBriefRouteInput,
+    contextFingerprint: string,
+    skeleton: TeachingSkeleton,
+  ) {
+    return {
+      workspaceId: input.workspaceId,
+      studySessionId: input.studySessionId,
+      sessionAgendaId: input.sessionAgendaId,
+      agendaItemId: input.expectedAgendaItemId,
+      expectedSessionVersion: input.expectedSessionVersion,
+      expectedAgendaVersion: input.expectedAgendaVersion,
+      curriculumVersionId: input.curriculumVersionId,
+      studyPlanVersionId: input.studyPlanVersionId,
+      studyPlanItemId: input.expectedStudyPlanItemId,
+      learningUnitId: input.learningUnitId,
+      executionSourceManifestFingerprint: input.expectedExecutionSourceManifestFingerprint,
+      sourceContextFingerprint: compositionFingerprint(contextFingerprint, skeleton),
+      skeletonFingerprint: skeleton.fingerprint,
+      promptVersion: LESSON_CONTENT_PROMPT_VERSION,
+    };
+  }
+
+  function renewPreparationLease(operationId: string, owner: string, fencingToken: number): void {
+    const now = clock.now();
+    const renewed = repos.operations.renewLease(
+      operationId,
+      owner,
+      fencingToken,
+      new Date(now.getTime() + COMPOSITIONAL_PREPARATION_LEASE_MS).toISOString(),
+      now.toISOString(),
+    );
+    if (!renewed) {
+      throw new AppError(
+        ApiErrorCode.VersionConflict,
+        'Teaching Brief preparation lost its operation lease.',
+      );
+    }
+  }
+
+  function acceptedLessonPreview(input: TeachingBriefRouteInput): AcceptedLessonPreview | null {
+    const route = routeContext(input, false);
+    const context = sourceContext(route);
+    const generationInput = providerInput(route, context);
+    let skeleton: TeachingSkeleton;
+    try {
+      skeleton = planTeachingSkeleton(planningInput(route, context, generationInput));
+    } catch (error) {
+      if (error instanceof TeachingSkeletonPlanningError) return null;
+      throw error;
+    }
+    const checkpoint = repos.acceptedLessonCheckpoints.findReusable(
+      checkpointIdentity(input, context.fingerprint, skeleton),
+    );
+    if (!isCurrentAcceptedLessonCheckpoint(checkpoint)) {
+      return null;
+    }
+    const metadata = localLessonMetadata(route, generationInput, checkpoint.skeleton);
+    return {
+      checkpointId: checkpoint.id,
+      objective: metadata.objective,
+      prerequisites: metadata.prerequisites,
+      segments: assembleSegments(route, checkpoint),
+      formalOpportunities: metadata.formalOpportunities,
+      summary: metadata.summary,
+      nextConnection: metadata.nextConnection,
+      sourceReferences: context.references,
+      visualReferences: context.visualReferences,
+      pedagogyEvaluation: checkpoint.lessonEvaluation,
+    };
+  }
+
   async function prepare(
     rawInput: unknown,
     options?: ProviderCallOptions,
   ): Promise<TeachingBriefPreparationResponse> {
     const input = TeachingBriefPreparationRequestSchema.parse(rawInput);
     const operationKey = `teaching-brief:${input.learningUnitId}:${input.commandId}`;
+    const lessonLogicalCallId = `${operationKey}:lesson`;
+    const practiceLogicalCallId = `${operationKey}:practice`;
     const startedAt = clock.now();
     const operation = repos.operations.createOrGet({
       id: newId('op'),
@@ -646,7 +1019,7 @@ export function createTeachingBriefPreparationService({
     const claim = repos.operations.claim(
       operation.id,
       owner,
-      new Date(startedAt.getTime() + PREPARATION_LEASE_MS).toISOString(),
+      new Date(startedAt.getTime() + COMPOSITIONAL_PREPARATION_LEASE_MS).toISOString(),
       startedAt.toISOString(),
     );
     if (!claim) {
@@ -670,21 +1043,39 @@ export function createTeachingBriefPreparationService({
             : 'Teaching Brief source context is stale or unavailable.',
         );
       }
+      const generationInput = providerInput(route, context);
+      let skeleton: TeachingSkeleton;
+      try {
+        skeleton = planTeachingSkeleton(planningInput(route, context, generationInput));
+      } catch (error) {
+        if (error instanceof TeachingSkeletonPlanningError) {
+          throw new AppError(ApiErrorCode.ValidationError, error.message, {
+            planningCode: error.code,
+            ...error.details,
+          });
+        }
+        throw error;
+      }
+      const scopedFingerprint = compositionFingerprint(context.fingerprint, skeleton);
       const history = repos.teachingBriefs.listForUnit(input.workspaceId, input.learningUnitId);
-      const reusableCandidate = repos.teachingBriefs.findReusable({
-        workspaceId: input.workspaceId,
-        curriculumVersionId: input.curriculumVersionId,
-        studyPlanVersionId: input.studyPlanVersionId,
-        learningUnitId: input.learningUnitId,
-        manifestFingerprint: input.expectedExecutionSourceManifestFingerprint,
-        sourceContextFingerprint: context.fingerprint,
-      });
-      const reuse =
-        reusableCandidate?.promptVersion === TEACHING_BRIEF_PROMPT_VERSION &&
-        reusableCandidate.pedagogyEvaluation?.status === 'pass' &&
-        reusableCandidate.practice?.qualityEvaluation.status === 'pass'
-          ? reusableCandidate
-          : undefined;
+      const reusableCheckpoint = repos.acceptedLessonCheckpoints.findReusable(
+        checkpointIdentity(input, context.fingerprint, skeleton),
+      );
+      let checkpoint = selectCurrentAcceptedLessonCheckpoint(reusableCheckpoint);
+      const reusableCandidate = checkpoint
+        ? repos.teachingBriefs.findReusable({
+            workspaceId: input.workspaceId,
+            curriculumVersionId: input.curriculumVersionId,
+            studyPlanVersionId: input.studyPlanVersionId,
+            learningUnitId: input.learningUnitId,
+            manifestFingerprint: input.expectedExecutionSourceManifestFingerprint,
+            sourceContextFingerprint: scopedFingerprint,
+            acceptedLessonCheckpointId: checkpoint.id,
+          })
+        : undefined;
+      const reuse = isCurrentCompositionalBrief(reusableCandidate, skeleton)
+        ? reusableCandidate
+        : undefined;
       if (reuse) {
         const response = TeachingBriefPreparationResponseSchema.parse({
           status: 'reused',
@@ -709,16 +1100,109 @@ export function createTeachingBriefPreparationService({
         return response;
       }
 
-      const generationInput = providerInput(route, context);
-      const policyFingerprint = enforceAgentCostPolicies(repos, {
+      if (!checkpoint) {
+        const compositionalLessonInput = lessonInput(route, generationInput, skeleton);
+        const lessonProviderInput = structuredClone(compositionalLessonInput);
+        let lessonRepairAttempted = false;
+        const lessonPolicyFingerprint = enforceAgentCostPolicies(repos, {
+          workspaceId: input.workspaceId,
+          operationType: 'prepare_teaching_brief',
+          studySessionId: input.studySessionId,
+          at: clock.now().toISOString(),
+          confirmedPolicyIds: input.confirmedCostPolicyIds ?? [],
+        });
+        const lessonPayload = await runTrackedAgentProviderOperation({
+          repos,
+          clock,
+          provider,
+          providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
+          operationId: claim.id,
+          fencingToken: claim.fencingToken,
+          workspaceId: input.workspaceId,
+          studySessionId: input.studySessionId,
+          learningUnitId: input.learningUnitId,
+          assessmentId: null,
+          operationType: 'prepare_teaching_brief',
+          logicalCallId: lessonLogicalCallId,
+          schemaFingerprint: 'lesson-slot-content-proposal-v1',
+          policyFingerprint: lessonPolicyFingerprint,
+          sourceFingerprint: scopedFingerprint,
+          providerOptions: options,
+          invoke: (providerOptions) =>
+            inferenceProvider.generateLessonSlotContent(lessonProviderInput, {
+              ...providerOptions,
+              onRepairAttempt: (reason, category) => {
+                lessonRepairAttempted = true;
+                providerOptions?.onRepairAttempt?.(reason, category);
+              },
+              validateCandidate: (candidate) => {
+                return validateLessonSlotContentCandidate(candidate, compositionalLessonInput);
+              },
+            }),
+        });
+        const lessonEvaluation = evaluateLessonSlotPedagogy(
+          lessonPayload,
+          compositionalLessonInput,
+          {
+            evaluatedAt: clock.now().toISOString(),
+            boundedRepairAttempted: lessonRepairAttempted,
+          },
+        );
+        if (lessonEvaluation.status !== 'pass') {
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            'Lesson slot content failed independent pedagogy evaluation.',
+          );
+        }
+        checkpoint = repos.transaction(() => {
+          routeStillCurrent(input, context.fingerprint);
+          const concurrentCandidate = repos.acceptedLessonCheckpoints.findReusable(
+            checkpointIdentity(input, context.fingerprint, skeleton),
+          );
+          const concurrent = selectCurrentAcceptedLessonCheckpoint(concurrentCandidate);
+          return (
+            concurrent ??
+            repos.acceptedLessonCheckpoints.create({
+              id: newId('accepted_lesson'),
+              workspaceId: input.workspaceId,
+              studySessionId: input.studySessionId,
+              sessionAgendaId: input.sessionAgendaId,
+              agendaItemId: input.expectedAgendaItemId,
+              expectedSessionVersion: input.expectedSessionVersion,
+              expectedAgendaVersion: input.expectedAgendaVersion,
+              curriculumVersionId: input.curriculumVersionId,
+              studyPlanVersionId: input.studyPlanVersionId,
+              studyPlanItemId: input.expectedStudyPlanItemId,
+              learningUnitId: input.learningUnitId,
+              executionSourceManifestFingerprint: input.expectedExecutionSourceManifestFingerprint,
+              sourceContextFingerprint: scopedFingerprint,
+              skeleton,
+              lessonContent: lessonPayload.slots,
+              lessonEvaluation,
+              operationId: claim.id,
+              lessonLogicalCallId,
+              provider: provider.name,
+              providerModel:
+                provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
+              promptVersion: LESSON_CONTENT_PROMPT_VERSION,
+              createdAt: clock.now().toISOString(),
+            })
+          );
+        });
+      }
+      routeStillCurrent(input, context.fingerprint);
+      renewPreparationLease(claim.id, owner, claim.fencingToken);
+      const compositionalPracticeInput = practiceInput(route, generationInput, checkpoint);
+      const practiceProviderInput = structuredClone(compositionalPracticeInput);
+      let practiceRepairAttempted = false;
+      const practicePolicyFingerprint = enforceAgentCostPolicies(repos, {
         workspaceId: input.workspaceId,
         operationType: 'prepare_teaching_brief',
-        studySessionId: null,
+        studySessionId: input.studySessionId,
         at: clock.now().toISOString(),
         confirmedPolicyIds: input.confirmedCostPolicyIds ?? [],
       });
-      let semanticEvaluationCount = 0;
-      const payload = await runTrackedAgentProviderOperation({
+      const practicePayload = await runTrackedAgentProviderOperation({
         repos,
         clock,
         provider,
@@ -726,57 +1210,69 @@ export function createTeachingBriefPreparationService({
         operationId: claim.id,
         fencingToken: claim.fencingToken,
         workspaceId: input.workspaceId,
-        studySessionId: null,
+        studySessionId: input.studySessionId,
         learningUnitId: input.learningUnitId,
         assessmentId: null,
         operationType: 'prepare_teaching_brief',
-        schemaFingerprint: 'teaching-brief-proposal-v2-pedagogy-practice',
-        policyFingerprint,
-        sourceFingerprint: context.fingerprint,
+        logicalCallId: practiceLogicalCallId,
+        schemaFingerprint: 'practice-content-proposal-v1',
+        policyFingerprint: practicePolicyFingerprint,
+        sourceFingerprint: scopedFingerprint,
         providerOptions: options,
         invoke: (providerOptions) =>
-          provider.generateTeachingBrief(generationInput, {
+          inferenceProvider.generatePracticeContent(practiceProviderInput, {
             ...providerOptions,
+            onRepairAttempt: (reason, category) => {
+              practiceRepairAttempted = true;
+              providerOptions?.onRepairAttempt?.(reason, category);
+            },
             validateCandidate: (candidate) => {
-              semanticEvaluationCount += 1;
-              return validateTeachingBriefCandidate(candidate, generationInput);
+              return validatePracticeContentCandidate(candidate, compositionalPracticeInput);
             },
           }),
       });
+      const practiceEvaluation = evaluatePlannedPracticeQuality(
+        practicePayload,
+        compositionalPracticeInput,
+        {
+          evaluatedAt: clock.now().toISOString(),
+          boundedRepairAttempted: practiceRepairAttempted,
+        },
+      );
+      if (practiceEvaluation.status !== 'pass') {
+        throw new AppError(
+          ApiErrorCode.ValidationError,
+          'Practice content failed independent quality evaluation.',
+        );
+      }
       const brief = materialize(
         route,
         context,
         generationInput,
-        payload,
-        semanticEvaluationCount > 1,
+        checkpoint,
+        practicePayload,
+        practiceEvaluation,
+        claim.id,
+        practiceLogicalCallId,
       );
       return repos.transaction(() => {
-        const currentRoute = routeContext(input);
-        const currentContext = sourceContext(currentRoute);
-        if (currentContext.fingerprint !== context.fingerprint) {
-          throw new AppError(
-            ApiErrorCode.VersionConflict,
-            'Teaching Brief source context changed during generation.',
-          );
-        }
+        routeStillCurrent(input, context.fingerprint);
         const concurrentCandidate = repos.teachingBriefs.findReusable({
           workspaceId: input.workspaceId,
           curriculumVersionId: input.curriculumVersionId,
           studyPlanVersionId: input.studyPlanVersionId,
           learningUnitId: input.learningUnitId,
           manifestFingerprint: input.expectedExecutionSourceManifestFingerprint,
-          sourceContextFingerprint: context.fingerprint,
+          sourceContextFingerprint: scopedFingerprint,
+          acceptedLessonCheckpointId: checkpoint.id,
         });
-        const concurrent =
-          concurrentCandidate?.promptVersion === TEACHING_BRIEF_PROMPT_VERSION &&
-          concurrentCandidate.pedagogyEvaluation?.status === 'pass' &&
-          concurrentCandidate.practice?.qualityEvaluation.status === 'pass'
-            ? concurrentCandidate
-            : undefined;
+        const concurrent = isCurrentCompositionalBrief(concurrentCandidate, skeleton)
+          ? concurrentCandidate
+          : undefined;
         const stored = concurrent ?? repos.teachingBriefs.create(brief);
         const response = TeachingBriefPreparationResponseSchema.parse({
           status: concurrent ? 'reused' : 'prepared',
-          staleReason: concurrent ? 'none' : staleReason(history, route, context.fingerprint),
+          staleReason: concurrent ? 'none' : staleReason(history, route, scopedFingerprint),
           brief: stored,
         });
         const completed = repos.operations.finalize(
@@ -842,28 +1338,32 @@ export function createTeachingBriefPreparationService({
 
   return {
     prepare,
-    getCurrent(input: {
-      workspaceId: string;
-      curriculumVersionId: string;
-      studyPlanVersionId: string;
-      learningUnitId: string;
-      expectedExecutionSourceManifestFingerprint: string;
-    }): TeachingBrief | null {
-      const route = routeContext(input);
+    getAcceptedLessonPreview: acceptedLessonPreview,
+    getCurrent(input: TeachingBriefRouteInput): TeachingBrief | null {
+      const route = routeContext(input, false);
       const context = sourceContext(route);
+      const generationInput = providerInput(route, context);
+      let skeleton: TeachingSkeleton;
+      try {
+        skeleton = planTeachingSkeleton(planningInput(route, context, generationInput));
+      } catch (error) {
+        if (error instanceof TeachingSkeletonPlanningError) return null;
+        throw error;
+      }
+      const checkpoint = repos.acceptedLessonCheckpoints.findReusable(
+        checkpointIdentity(input, context.fingerprint, skeleton),
+      );
+      if (!isCurrentAcceptedLessonCheckpoint(checkpoint)) return null;
       const candidate = repos.teachingBriefs.findReusable({
         workspaceId: input.workspaceId,
         curriculumVersionId: input.curriculumVersionId,
         studyPlanVersionId: input.studyPlanVersionId,
         learningUnitId: input.learningUnitId,
         manifestFingerprint: input.expectedExecutionSourceManifestFingerprint,
-        sourceContextFingerprint: context.fingerprint,
+        sourceContextFingerprint: compositionFingerprint(context.fingerprint, skeleton),
+        acceptedLessonCheckpointId: checkpoint.id,
       });
-      return candidate?.promptVersion === TEACHING_BRIEF_PROMPT_VERSION &&
-        candidate.pedagogyEvaluation?.status === 'pass' &&
-        candidate.practice?.qualityEvaluation.status === 'pass'
-        ? candidate
-        : null;
+      return isCurrentCompositionalBrief(candidate, skeleton) ? candidate : null;
     },
     history: (workspaceId: string, learningUnitId: string) =>
       repos.teachingBriefs.listForUnit(workspaceId, learningUnitId),

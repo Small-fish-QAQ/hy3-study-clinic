@@ -90,6 +90,10 @@ export const TeachingBriefIllustrationSchema = z
     text: z.string().min(1).max(1800),
     authority: z.enum(['source_backed_teaching', 'ai_teaching_synthesis']),
     sourceRefIds: z.array(z.string().min(1).max(40)).max(8),
+    visualRefIds: z
+      .array(z.string().regex(/^V[1-9][0-9]*$/u))
+      .max(8)
+      .optional(),
   })
   .strict()
   .superRefine((illustration, ctx) => {
@@ -112,6 +116,10 @@ export const TeachingBriefMisconceptionSchema = z
     hypothesis: z.string().min(1).max(600),
     correction: z.string().min(1).max(1000),
     sourceRefIds: z.array(z.string().min(1).max(40)).max(8),
+    visualRefIds: z
+      .array(z.string().regex(/^V[1-9][0-9]*$/u))
+      .max(8)
+      .optional(),
   })
   .strict();
 export type TeachingBriefMisconception = z.infer<typeof TeachingBriefMisconceptionSchema>;
@@ -125,6 +133,50 @@ export const TeachingBriefInformalCheckSchema = z
   .strict();
 export type TeachingBriefInformalCheck = z.infer<typeof TeachingBriefInformalCheckSchema>;
 
+export const TeachingBriefSemanticRelationSchema = z
+  .object({
+    kind: z.enum([
+      'cause_consequence',
+      'mechanism_effect',
+      'step_purpose',
+      'omission_failure',
+      'condition_action',
+      'misconception_correction',
+      'difference_discrimination',
+      'evidence_conclusion',
+    ]),
+    fromProposition: z.string().min(1).max(700),
+    toProposition: z.string().min(1).max(700),
+    relevanceToObjective: z.string().min(1).max(700),
+    sourceRefIds: z.array(z.string().min(1).max(40)).max(8),
+  })
+  .strict();
+export type TeachingBriefSemanticRelation = z.infer<typeof TeachingBriefSemanticRelationSchema>;
+
+export const TeachingBriefWorkedProcessSchema = z
+  .object({
+    startingState: z.string().min(1).max(900),
+    ruleOrProcedure: z.string().min(1).max(1200),
+    steps: z
+      .array(
+        z
+          .object({
+            action: z.string().min(1).max(700),
+            reason: z.string().min(1).max(700),
+            resultingState: z.string().min(1).max(700),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(8),
+    learnerDecision: z.string().min(1).max(700).nullable(),
+    result: z.string().min(1).max(900),
+    whyResultFollows: z.string().min(1).max(900),
+    sourceRefIds: z.array(z.string().min(1).max(40)).min(1).max(8),
+  })
+  .strict();
+export type TeachingBriefWorkedProcess = z.infer<typeof TeachingBriefWorkedProcessSchema>;
+
 export const TeachingBriefSegmentSchema = z
   .object({
     index: z.number().int().nonnegative(),
@@ -133,6 +185,12 @@ export const TeachingBriefSegmentSchema = z
     explanation: z.string().min(1).max(2400),
     explanationAuthority: z.enum(['source_backed_teaching', 'ai_teaching_synthesis']),
     sourceRefIds: z.array(z.string().min(1).max(40)).max(8),
+    visualRefIds: z
+      .array(z.string().regex(/^V[1-9][0-9]*$/u))
+      .max(8)
+      .optional(),
+    semanticRelations: z.array(TeachingBriefSemanticRelationSchema).max(4).optional(),
+    workedProcess: TeachingBriefWorkedProcessSchema.nullable().optional(),
     example: TeachingBriefIllustrationSchema.optional(),
     contrast: TeachingBriefIllustrationSchema.optional(),
     misconception: TeachingBriefMisconceptionSchema.optional(),
@@ -217,6 +275,80 @@ export const TeachingBriefQualityProfileSchema = z
   .strict();
 export type TeachingBriefQualityProfile = z.infer<typeof TeachingBriefQualityProfileSchema>;
 
+/** Local composition provenance; provider output cannot author this object. */
+export const TeachingBriefCompositionSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    skeletonId: z.string().regex(/^teaching_skeleton_[0-9a-f]{40}$/u),
+    skeletonSchemaVersion: z.literal(1),
+    skeletonPlannerVersion: z.string().min(1).max(100),
+    skeletonFingerprint: z.string().regex(/^sha256:[0-9a-f]{64}$/u),
+    acceptedLessonCheckpointId: z.string().min(1),
+    lessonOperationId: z.string().min(1),
+    practiceOperationId: z.string().min(1),
+    /** Absent together only on persisted compositional Briefs created before call provenance. */
+    lessonLogicalCallId: z.string().min(1).optional(),
+    practiceLogicalCallId: z.string().min(1).optional(),
+    lessonPromptVersion: z.string().min(1).max(100),
+    practicePromptVersion: z.string().min(1).max(100),
+    targetMinutes: z.number().int().positive(),
+    acceptableActiveMinutes: z
+      .object({ min: z.number().int().nonnegative(), max: z.number().int().nonnegative() })
+      .strict(),
+    protectedActivityMinutes: z
+      .object({ min: z.number().int().nonnegative(), max: z.number().int().nonnegative() })
+      .strict(),
+    plannedActivityMinutes: z
+      .object({ min: z.number().int().nonnegative(), max: z.number().int().nonnegative() })
+      .strict(),
+  })
+  .strict()
+  .superRefine((composition, ctx) => {
+    if (
+      (composition.lessonLogicalCallId === undefined) !==
+      (composition.practiceLogicalCallId === undefined)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['lessonLogicalCallId'],
+        message: 'Lesson and Practice logical-call provenance must be present together',
+      });
+    } else if (
+      composition.lessonLogicalCallId !== undefined &&
+      composition.lessonLogicalCallId === composition.practiceLogicalCallId
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['practiceLogicalCallId'],
+        message: 'Lesson and Practice must retain distinct logical-call identities',
+      });
+    }
+    for (const [key, range] of [
+      ['acceptableActiveMinutes', composition.acceptableActiveMinutes],
+      ['protectedActivityMinutes', composition.protectedActivityMinutes],
+      ['plannedActivityMinutes', composition.plannedActivityMinutes],
+    ] as const) {
+      if (range.max < range.min) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [key, 'max'],
+          message: 'composition activity maximum must not be below its minimum',
+        });
+      }
+    }
+    if (
+      composition.targetMinutes < composition.acceptableActiveMinutes.min ||
+      composition.targetMinutes > composition.acceptableActiveMinutes.max
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['targetMinutes'],
+        message: 'composition target must lie inside its accepted active-time window',
+      });
+    }
+  });
+export type TeachingBriefComposition = z.infer<typeof TeachingBriefCompositionSchema>;
+
 export const TeachingBriefSchema = z
   .object({
     id: z.string().min(1),
@@ -244,6 +376,8 @@ export const TeachingBriefSchema = z
     sourceReferences: z.array(TeachingBriefSourceReferenceSchema).max(160),
     visualReferences: z.array(TeachingBriefVisualReferenceSchema).max(8).default([]),
     qualityProfile: TeachingBriefQualityProfileSchema,
+    /** Present on compositional Briefs; absent only on legacy persisted Briefs. */
+    composition: TeachingBriefCompositionSchema.optional(),
     /** Independent local acceptance result; absent only on legacy persisted Briefs. */
     pedagogyEvaluation: LessonPedagogyEvaluationSchema.optional(),
     /** Informal, non-credit Practice; absent only on legacy persisted Briefs. */
@@ -309,6 +443,8 @@ export const TeachingBriefSchema = z
         ...(segment.example?.sourceRefIds ?? []),
         ...(segment.contrast?.sourceRefIds ?? []),
         ...(segment.misconception?.sourceRefIds ?? []),
+        ...(segment.semanticRelations?.flatMap((relation) => relation.sourceRefIds) ?? []),
+        ...(segment.workedProcess?.sourceRefIds ?? []),
       ]) {
         if (!ids.has(refId)) {
           ctx.addIssue({
@@ -318,8 +454,25 @@ export const TeachingBriefSchema = z
           });
         }
       }
+      for (const refId of [
+        ...(segment.visualRefIds ?? []),
+        ...(segment.example?.visualRefIds ?? []),
+        ...(segment.contrast?.visualRefIds ?? []),
+        ...(segment.misconception?.visualRefIds ?? []),
+      ]) {
+        if (!visualIds.has(refId)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['segments', index, 'visualRefIds'],
+            message: `unknown Teaching Brief visual reference: ${refId}`,
+          });
+        }
+      }
     }
-    if (brief.promptVersion?.startsWith('teaching-brief-v2-pedagogy-practice')) {
+    const requiresIndependentEvaluations =
+      brief.promptVersion?.startsWith('teaching-brief-v2-pedagogy-practice') ||
+      brief.promptVersion?.startsWith('teaching-brief-v3-compositional');
+    if (requiresIndependentEvaluations) {
       if (brief.pedagogyEvaluation?.status !== 'pass') {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -332,6 +485,23 @@ export const TeachingBriefSchema = z
           code: z.ZodIssueCode.custom,
           path: ['practice'],
           message: 'current Teaching Briefs require passing construct-valid informal Practice',
+        });
+      }
+    }
+    if (brief.promptVersion?.startsWith('teaching-brief-v3-compositional')) {
+      if (!brief.composition) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['composition'],
+          message: 'compositional Teaching Briefs require local skeleton provenance',
+        });
+      } else if (
+        brief.composition.targetMinutes !== brief.pedagogyEvaluation?.claimedAgendaMinutes
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['composition', 'targetMinutes'],
+          message: 'compositional duration must match the independent Lesson evaluation',
         });
       }
     }
@@ -365,6 +535,22 @@ export const TeachingBriefSchema = z
           });
         }
       }
+      if (brief.promptVersion?.startsWith('teaching-brief-v3-compositional')) {
+        if (item.construct === 'apply' && !item.application) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['practice', 'items', itemIndex, 'application'],
+            message: 'compositional apply Practice requires typed procedural application facts',
+          });
+        }
+        if (item.construct !== 'apply' && item.application) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['practice', 'items', itemIndex, 'application'],
+            message: 'typed procedural application facts are reserved for apply Practice',
+          });
+        }
+      }
     }
   });
 export type TeachingBrief = z.infer<typeof TeachingBriefSchema>;
@@ -375,6 +561,12 @@ export const TeachingBriefPreparationRequestSchema = z
     curriculumVersionId: z.string().min(1),
     studyPlanVersionId: z.string().min(1),
     learningUnitId: z.string().min(1),
+    studySessionId: z.string().min(1),
+    sessionAgendaId: z.string().min(1),
+    expectedSessionVersion: z.number().int().positive(),
+    expectedAgendaVersion: z.number().int().positive(),
+    expectedAgendaItemId: z.string().min(1),
+    expectedStudyPlanItemId: z.string().min(1),
     commandId: z.string().min(1),
     expectedExecutionSourceManifestFingerprint: z.string().min(1).max(200),
     confirmedCostPolicyIds: z.array(z.string().min(1)).max(20).optional(),
