@@ -1065,12 +1065,15 @@ export class FakeProvider implements LlmProvider {
       );
     }
     const explanation = firstSource
-      ? `Start from the course excerpt for ${input.learningUnit.title}: ${firstSource.text}`
-      : `Use the advisory visual explanation for ${input.learningUnit.title}: ${firstVisual!.explanation.text}`;
+      ? `Start from the course excerpt for ${input.learningUnit.title}. It matters because the stated conditions determine when the mechanism applies: ${firstSource.text}`
+      : `Use the advisory visual explanation for ${input.learningUnit.title}. Explain how the represented parts relate and why that relationship changes the result: ${firstVisual!.explanation.text}`;
     const explanationAuthority = firstSource
       ? ('source_backed_teaching' as const)
       : ('ai_teaching_synthesis' as const);
     const sourceRefs = firstSource ? [firstSource.sourceRef] : [];
+    const objectiveCapabilities = input.learningUnit.objectives
+      .map((objective) => `${objective.title}: ${objective.description}`)
+      .join('; ');
     const payload = TeachingBriefProposalPayloadSchema.parse({
       whyNow: `This lesson establishes ${input.learningUnit.title} before the next route step.`,
       prerequisites: input.prerequisites.map((prerequisite) => ({
@@ -1080,26 +1083,42 @@ export class FakeProvider implements LlmProvider {
       })),
       segments: [
         {
+          purpose: 'objective_orientation',
+          objectiveRefs: input.learningUnit.objectives.map((objective) => objective.objectiveRef),
+          explanation: `By the end, you will explain how ${input.learningUnit.title} works and use its stated conditions in a concrete decision. This is useful now because later route steps depend on that capability.`,
+          explanationAuthority: 'ai_teaching_synthesis',
+          sourceRefs,
+        },
+        {
           purpose: 'explanation',
           objectiveRefs: input.learningUnit.objectives.map((objective) => objective.objectiveRef),
-          explanation,
+          explanation: `${explanation} The accepted objective capabilities are: ${objectiveCapabilities}`,
           explanationAuthority,
           sourceRefs,
+        },
+        {
+          purpose: 'mechanism',
+          objectiveRefs: input.learningUnit.objectives.map((objective) => objective.objectiveRef),
+          explanation: `The mechanism works by checking the source-stated conditions first; because those conditions bound the claim, the conclusion must stay within them. If a condition changes, the result can change as well.`,
+          explanationAuthority,
+          sourceRefs,
+        },
+        {
+          purpose: 'worked_example',
+          objectiveRefs: input.learningUnit.objectives.map((objective) => objective.objectiveRef),
+          explanation: `Worked reasoning: first identify the case facts, then compare each fact with the stated conditions, and finally choose the conclusion that follows. The result is justified because every step remains inside the sourced boundary.`,
+          explanationAuthority: 'ai_teaching_synthesis',
+          sourceRefs,
           example: {
-            text: `Teaching illustration: apply ${input.learningUnit.title} to a small concrete case and inspect each step.`,
+            text: `Example: given a small case about ${input.learningUnit.title}, first mark the relevant condition, next trace its consequence, then reject the tempting alternative that ignores that condition.`,
             authority: 'ai_teaching_synthesis',
             sourceRefs: [],
-          },
-          informalCheck: {
-            kind: 'own_words',
-            prompt: `Explain the central idea of ${input.learningUnit.title} in your own words.`,
-            expectedSignal: firstObjective.title,
           },
         },
         {
           purpose: 'contrast',
-          objectiveRefs: [firstObjective.objectiveRef],
-          explanation: `Separate the defining mechanism of ${input.learningUnit.title} from a merely similar surface description.`,
+          objectiveRefs: input.learningUnit.objectives.map((objective) => objective.objectiveRef),
+          explanation: `Compare the defining mechanism of ${input.learningUnit.title} with a surface-similar description. The first explains how the conditions produce a result; the second merely repeats vocabulary without causal support.`,
           explanationAuthority: 'ai_teaching_synthesis',
           sourceRefs,
           contrast: {
@@ -1115,6 +1134,18 @@ export class FakeProvider implements LlmProvider {
             sourceRefs,
           },
         },
+        {
+          purpose: 'guided_practice',
+          objectiveRefs: input.learningUnit.objectives.map((objective) => objective.objectiveRef),
+          explanation: `Now make the reasoning observable: explain why the stated condition changes the conclusion, then apply that reason to the small case. Commit your response before opening the coaching signal.`,
+          explanationAuthority: 'ai_teaching_synthesis',
+          sourceRefs,
+          informalCheck: {
+            kind: 'apply_simple_example',
+            prompt: `Apply ${input.learningUnit.title}: explain which condition you would inspect first in a new small case and why it controls the next step.`,
+            expectedSignal: `Name a source-stated condition, connect it causally to the result, and keep the claim within ${firstObjective.title}.`,
+          },
+        },
       ],
       formalOpportunities: firstSource
         ? [`A later formal assessment may align with ${firstObjective.title}.`]
@@ -1125,10 +1156,111 @@ export class FakeProvider implements LlmProvider {
       nextConnection: input.nextConnection
         ? `Next, connect this lesson to ${input.nextConnection.title}.`
         : null,
+      practice: {
+        items: (() => {
+          const eligible = input.learningUnit.objectives.filter(
+            (objective) =>
+              objective.construct &&
+              objective.practiceAuthority !== 'unavailable' &&
+              (objective.practiceAuthority === 'advisory_visual' ||
+                input.sourceContext.offers.some((offer) =>
+                  offer.authorizedObjectiveRefs.includes(objective.objectiveRef),
+                )),
+          );
+          const required = eligible.filter(
+            (objective) => objective.priority === 'required' || objective.priority === 'high',
+          );
+          return (required.length > 0 ? required : eligible.slice(0, 1)).map((objective) => {
+            const source = input.sourceContext.offers.find((offer) =>
+              offer.authorizedObjectiveRefs.includes(objective.objectiveRef),
+            );
+            const visual = input.visualContext.offers[0];
+            const action =
+              objective.construct === 'apply'
+                ? `Apply ${objective.title} in this scenario: a learner must choose the next step while preserving the source-stated condition. Which option best uses that condition?`
+                : objective.construct === 'explain'
+                  ? `Which explanation best accounts for how and why ${objective.title} works under the source-stated condition?`
+                  : objective.construct === 'evaluate'
+                    ? `Evaluate this case about ${objective.title}: which judgment is best justified by the source-stated condition?`
+                    : objective.construct === 'design'
+                      ? `Design a bounded plan for ${objective.title}: which option preserves every source-stated constraint?`
+                      : `Identify which case correctly distinguishes ${objective.title} by its source-stated condition.`;
+            return {
+              objectiveRef: objective.objectiveRef,
+              construct: objective.construct!,
+              capabilityTested: `${objective.construct} ${objective.title} using the exact authorized source boundary.`,
+              pedagogicalReason: `This reveals whether the learner can ${objective.construct} the objective rather than recall a source location.`,
+              authority: source ? 'exact_source' : 'advisory_visual',
+              sourceRefs: source ? [source.sourceRef] : [],
+              visualRefs: source || !visual ? [] : [visual.referenceKey],
+              initial: {
+                prompt: action,
+                options: [
+                  {
+                    optionRef: 'A',
+                    text: 'Check the stated condition, trace its consequence, and choose only the bounded conclusion.',
+                    feedbackIfSelected:
+                      'Correct: this uses the condition as a reasoning constraint and keeps the conclusion bounded.',
+                  },
+                  {
+                    optionRef: 'B',
+                    text: 'Choose the option that repeats the most terms from the lesson without testing conditions.',
+                    feedbackIfSelected:
+                      'This relies on surface vocabulary. Recheck which condition actually changes the result.',
+                  },
+                  {
+                    optionRef: 'C',
+                    text: 'Assume the idea transfers to every context even when the stated conditions are absent.',
+                    feedbackIfSelected:
+                      'This overgeneralizes beyond the source boundary. Identify the required condition first.',
+                  },
+                ],
+                correctOptionRef: 'A',
+                hint: 'Look for the option that makes the condition do reasoning work, not merely appear as a label.',
+                explanation:
+                  'The correct reasoning checks the authorized condition and follows its consequence without expanding the claim.',
+              },
+              retry: {
+                prompt: `In a changed case, ${objective.title} appears with one condition removed. Which decision best ${objective.construct}s the objective without overclaiming?`,
+                options: [
+                  {
+                    optionRef: 'A',
+                    text: 'Keep the original conclusion unchanged because the same label appears.',
+                    feedbackIfSelected:
+                      'The label alone is insufficient; the changed condition must affect the decision.',
+                  },
+                  {
+                    optionRef: 'B',
+                    text: 'Recheck the remaining conditions and narrow or withhold the conclusion accordingly.',
+                    feedbackIfSelected:
+                      'Correct: the changed surface still tests the same construct while respecting the authority boundary.',
+                  },
+                  {
+                    optionRef: 'C',
+                    text: 'Replace the source-stated procedure with an unrelated rule of thumb.',
+                    feedbackIfSelected:
+                      'An unrelated heuristic does not demonstrate the selected objective or construct.',
+                  },
+                ],
+                correctOptionRef: 'B',
+                hint: 'Ask what must change when a required condition is no longer present.',
+                explanation:
+                  'A valid retry response notices the changed condition and adjusts the conclusion within the exact source authority.',
+              },
+            };
+          });
+        })(),
+      },
     });
     const validation = opts?.validateCandidate?.(payload);
     if (validation && !validation.valid) {
-      throw ProviderError.invalidOutput(validation.diagnostics.join('; '), 'candidate');
+      throw ProviderError.invalidOutput(
+        validation.diagnostics.join('; '),
+        'candidate',
+        'SEMANTIC_VALIDATION_FAILURE',
+        false,
+        validation.failureArtifact,
+      );
     }
     return payload;
   }

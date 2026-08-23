@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { ExecutionSourceManifestSchema } from './curriculum.js';
 import { VisualAdvisoryContextSchema } from './visual.js';
+import { LessonPedagogyEvaluationSchema, LessonPracticeSchema } from './lessonPractice.js';
+import {
+  CurriculumAuthorityEnvelopeTierSchema,
+  FormalAssessmentConstructSchema,
+} from './sourceAuthority.js';
 
 /** A Teaching Brief teaches from a route snapshot; it is never Course Truth. */
 export const TeachingBriefAuthoritySchema = z.enum([
@@ -168,6 +173,11 @@ export const TeachingBriefObjectiveSchema = z
     id: z.string().min(1),
     title: z.string().min(1).max(300),
     description: z.string().min(1).max(1000),
+    priority: z.enum(['required', 'high', 'normal', 'optional']).optional(),
+    formalAssessmentReady: z.boolean().optional(),
+    construct: FormalAssessmentConstructSchema.optional(),
+    authorityEnvelopeTier: CurriculumAuthorityEnvelopeTierSchema.optional(),
+    formalEvidenceSourceBlockIds: z.array(z.string().min(1)).max(100).optional(),
   })
   .strict();
 export type TeachingBriefObjective = z.infer<typeof TeachingBriefObjectiveSchema>;
@@ -234,6 +244,10 @@ export const TeachingBriefSchema = z
     sourceReferences: z.array(TeachingBriefSourceReferenceSchema).max(160),
     visualReferences: z.array(TeachingBriefVisualReferenceSchema).max(8).default([]),
     qualityProfile: TeachingBriefQualityProfileSchema,
+    /** Independent local acceptance result; absent only on legacy persisted Briefs. */
+    pedagogyEvaluation: LessonPedagogyEvaluationSchema.optional(),
+    /** Informal, non-credit Practice; absent only on legacy persisted Briefs. */
+    practice: LessonPracticeSchema.optional(),
     provider: z.string().min(1).max(40),
     providerModel: z.string().max(120).nullable(),
     promptVersion: z.string().min(1).max(80),
@@ -301,6 +315,53 @@ export const TeachingBriefSchema = z
             code: z.ZodIssueCode.custom,
             path: ['segments', index],
             message: `unknown Teaching Brief source reference: ${refId}`,
+          });
+        }
+      }
+    }
+    if (brief.promptVersion?.startsWith('teaching-brief-v2-pedagogy-practice')) {
+      if (brief.pedagogyEvaluation?.status !== 'pass') {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['pedagogyEvaluation'],
+          message: 'current Teaching Briefs require a passing independent Lesson evaluation',
+        });
+      }
+      if (brief.practice?.qualityEvaluation.status !== 'pass') {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['practice'],
+          message: 'current Teaching Briefs require passing construct-valid informal Practice',
+        });
+      }
+    }
+    const objectiveById = new Map(
+      brief.objective.objectives.map((objective) => [objective.id, objective]),
+    );
+    for (const [itemIndex, item] of (brief.practice?.items ?? []).entries()) {
+      const objective = objectiveById.get(item.objectiveId);
+      if (!objective || (objective.construct && objective.construct !== item.construct)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['practice', 'items', itemIndex, 'objectiveId'],
+          message: 'Practice must preserve an exact Teaching Brief objective and construct',
+        });
+      }
+      for (const refId of item.sourceRefIds) {
+        if (!ids.has(refId)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['practice', 'items', itemIndex, 'sourceRefIds'],
+            message: `unknown Practice source reference: ${refId}`,
+          });
+        }
+      }
+      for (const refId of item.visualRefIds) {
+        if (!visualIds.has(refId)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['practice', 'items', itemIndex, 'visualRefIds'],
+            message: `unknown Practice visual reference: ${refId}`,
           });
         }
       }

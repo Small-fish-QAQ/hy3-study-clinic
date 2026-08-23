@@ -6,6 +6,7 @@ import {
   LessonTutorContextSchema,
   type LessonExecutionProjection,
   type LessonExecutionState,
+  type LearnerPracticeProjection,
   type LessonSegmentProjection,
   type LessonSourceProjection,
   type LessonTutorContext,
@@ -245,14 +246,17 @@ export function createLessonExecutionService({
       });
     }
     const lesson = projectLesson(brief, state)!;
-    const completed = Boolean(state.presentationCompletedAt);
+    const presentationCompleted = Boolean(state.presentationCompletedAt);
+    const completed = Boolean(state.practiceCompletedAt);
     const presentationStatus = completed
       ? 'presentation_completed'
-      : state.presentedSegmentIndexes.length === 0
-        ? 'not_started'
-        : state.presentedSegmentIndexes.length === brief.segments.length
-          ? 'summary_ready'
-          : 'in_progress';
+      : presentationCompleted
+        ? 'presentation_completed'
+        : state.presentedSegmentIndexes.length === 0
+          ? 'not_started'
+          : state.presentedSegmentIndexes.length === brief.segments.length
+            ? 'summary_ready'
+            : 'in_progress';
     const current = lesson.segments[state.currentSegmentIndex];
     const interaction = state.informalInteractions.find(
       (entry) => entry.segmentIndex === state.currentSegmentIndex,
@@ -260,33 +264,43 @@ export function createLessonExecutionService({
     const informal = current?.informalCheck
       ? {
           ...current.informalCheck,
+          guidance: interaction?.response ? current.informalCheck.guidance : null,
           presented: Boolean(interaction),
           response: interaction?.response ?? null,
           respondedAt: interaction?.respondedAt ?? null,
         }
       : null;
+    const practice = projectPractice(brief, state);
     const allowed =
       context.session.status === 'paused'
         ? (['resume_study_session'] as const)
         : completed
           ? (['review_lesson'] as const)
-          : state.presentedSegmentIndexes.length === 0
-            ? (['start_lesson'] as const)
-            : [
-                ...(current?.informalCheck && !interaction?.response
-                  ? (['respond_to_informal_check'] as const)
-                  : []),
-                ...(state.currentSegmentIndex < brief.segments.length - 1
-                  ? (['move_to_next_segment'] as const)
-                  : []),
-                ...(state.currentSegmentIndex > 0 ? (['revisit_segment'] as const) : []),
-                ...(state.presentedSegmentIndexes.length === brief.segments.length
-                  ? (['complete_presentation'] as const)
-                  : []),
-              ];
+          : presentationCompleted
+            ? (['submit_practice_response'] as const)
+            : state.presentedSegmentIndexes.length === 0
+              ? (['start_lesson'] as const)
+              : [
+                  ...(current?.informalCheck && !interaction?.response
+                    ? (['respond_to_informal_check'] as const)
+                    : []),
+                  ...(state.currentSegmentIndex < brief.segments.length - 1 &&
+                  (!current?.informalCheck || Boolean(interaction?.response))
+                    ? (['move_to_next_segment'] as const)
+                    : []),
+                  ...(state.currentSegmentIndex > 0 ? (['revisit_segment'] as const) : []),
+                  ...(state.presentedSegmentIndexes.length === brief.segments.length &&
+                  (!current?.informalCheck || Boolean(interaction?.response))
+                    ? (['complete_presentation'] as const)
+                    : []),
+                ];
     return LessonExecutionProjectionSchema.parse({
       status: 'ready',
-      message: completed ? 'Lesson presentation complete.' : 'Lesson is ready.',
+      message: completed
+        ? 'Lesson and informal Practice complete. Formal credit remains a separate action.'
+        : presentationCompleted
+          ? 'Lesson presentation complete. Continue with informal Practice.'
+          : 'Lesson is ready.',
       course: { title: context.courseTitle },
       session: { status: context.session.status, version: context.session.version },
       agenda: { version: context.agenda.version, itemState: context.item.state },
@@ -300,6 +314,7 @@ export function createLessonExecutionService({
         presentationCompletedAt: state.presentationCompletedAt,
       },
       currentInformalCheck: informal,
+      practice,
       allowedActions: [...allowed],
     });
   }
@@ -346,7 +361,11 @@ export function createLessonExecutionService({
         ? {
             kind: informalKind(segment.informalCheck.kind),
             prompt: segment.informalCheck.prompt,
-            guidance: segment.informalCheck.expectedSignal,
+            guidance: state.informalInteractions.find(
+              (entry) => entry.segmentIndex === segment.index,
+            )?.response
+              ? segment.informalCheck.expectedSignal
+              : null,
             presented: state.informalInteractions.some(
               (entry) => entry.segmentIndex === segment.index,
             ),
@@ -383,6 +402,66 @@ export function createLessonExecutionService({
         nextConnection: brief.nextConnection,
         formalOpportunities: brief.formalOpportunities,
       },
+      ...(brief.pedagogyEvaluation
+        ? {
+            plannedTime: {
+              agendaMinutes: brief.pedagogyEvaluation.claimedAgendaMinutes,
+              activeMinutesMin: brief.pedagogyEvaluation.estimatedActiveMinutes.min,
+              activeMinutesMax: brief.pedagogyEvaluation.estimatedActiveMinutes.max,
+              basis: 'locally_evaluated_learning_actions' as const,
+            },
+          }
+        : {}),
+    };
+  }
+
+  function projectPractice(
+    brief: TeachingBrief,
+    state: LessonExecutionState,
+  ): LearnerPracticeProjection | null {
+    if (!brief.practice) return null;
+    const completedItem = (itemIndex: number) => {
+      const attempts = state.practiceInteractions.filter(
+        (attempt) => attempt.itemIndex === itemIndex,
+      );
+      return attempts.some((attempt) => attempt.correct) || attempts.length >= 2;
+    };
+    const unresolvedIndex = brief.practice.items.findIndex((_, index) => !completedItem(index));
+    const currentItemIndex =
+      unresolvedIndex === -1 ? brief.practice.items.length - 1 : unresolvedIndex;
+    const item = brief.practice.items[currentItemIndex]!;
+    const itemAttempts = state.practiceInteractions.filter(
+      (attempt) => attempt.itemIndex === currentItemIndex,
+    );
+    const surfaceName =
+      itemAttempts.length === 1 && !itemAttempts[0]!.correct ? 'retry' : 'initial';
+    const surface = item[surfaceName];
+    const status = state.practiceCompletedAt
+      ? 'completed'
+      : !state.presentationCompletedAt
+        ? 'locked'
+        : state.practiceInteractions.length === 0
+          ? 'available'
+          : 'in_progress';
+    return {
+      status,
+      currentItemIndex,
+      itemCount: brief.practice.items.length,
+      item: state.practiceCompletedAt
+        ? null
+        : {
+            index: currentItemIndex,
+            objectiveTitle: item.objectiveTitle,
+            construct: item.construct,
+            capabilityTested: item.capabilityTested,
+            pedagogicalReason: item.pedagogicalReason,
+            surface: surfaceName,
+            prompt: surface.prompt,
+            options: surface.options.map(({ id, text }) => ({ id, text })),
+          },
+      attempts: state.practiceInteractions,
+      completedAt: state.practiceCompletedAt,
+      credit: 'none',
     };
   }
 
@@ -491,6 +570,8 @@ export function createLessonExecutionService({
               presentedSegmentIndexes: [],
               informalInteractions: [],
               presentationCompletedAt: null,
+              practiceInteractions: [],
+              practiceCompletedAt: null,
               createdAt: now,
               updatedAt: now,
             });
@@ -686,7 +767,10 @@ export function createLessonExecutionService({
           | 'segment_presented'
           | 'segment_revisited'
           | 'informal_response_recorded'
+          | 'practice_response_recorded'
+          | 'practice_completed'
           | 'presentation_completed' = 'segment_presented';
+        let eventPayload: Record<string, unknown> = action;
         let next: LessonExecutionState = current;
         if (action.kind === 'start_lesson') {
           if (current.presentedSegmentIndexes.length > 0)
@@ -706,6 +790,20 @@ export function createLessonExecutionService({
           if (action.segmentIndex >= brief.segments.length)
             throw new AppError(ApiErrorCode.ValidationError, 'Unknown lesson segment.');
           const nextIndex = action.segmentIndex;
+          const currentSegment = brief.segments[current.currentSegmentIndex];
+          const currentInteraction = current.informalInteractions.find(
+            (entry) => entry.segmentIndex === current.currentSegmentIndex,
+          );
+          if (
+            nextIndex > current.currentSegmentIndex &&
+            currentSegment?.informalCheck &&
+            !currentInteraction?.response
+          ) {
+            throw new AppError(
+              ApiErrorCode.ValidationError,
+              'Commit a response to the current learning check before continuing.',
+            );
+          }
           if (
             nextIndex > current.currentSegmentIndex + 1 &&
             !current.presentedSegmentIndexes.includes(nextIndex)
@@ -769,7 +867,84 @@ export function createLessonExecutionService({
             },
             current.version,
           );
+        } else if (action.kind === 'submit_practice_response') {
+          if (!current.presentationCompletedAt || current.practiceCompletedAt || !brief.practice) {
+            throw new AppError(
+              ApiErrorCode.ValidationError,
+              'Practice is available only after Lesson presentation and before Practice completion.',
+            );
+          }
+          const completedItem = (itemIndex: number) => {
+            const attempts = current.practiceInteractions.filter(
+              (attempt) => attempt.itemIndex === itemIndex,
+            );
+            return attempts.some((attempt) => attempt.correct) || attempts.length >= 2;
+          };
+          const expectedItemIndex = brief.practice.items.findIndex(
+            (_, index) => !completedItem(index),
+          );
+          if (expectedItemIndex < 0 || action.itemIndex !== expectedItemIndex) {
+            throw new AppError(
+              ApiErrorCode.ValidationError,
+              'Respond to the current Practice item.',
+            );
+          }
+          const item = brief.practice.items[expectedItemIndex]!;
+          const priorAttempts = current.practiceInteractions.filter(
+            (attempt) => attempt.itemIndex === expectedItemIndex,
+          );
+          const attemptNumber = priorAttempts.length === 0 ? (1 as const) : (2 as const);
+          const surfaceName = attemptNumber === 1 ? ('initial' as const) : ('retry' as const);
+          const surface = item[surfaceName];
+          const selected = surface.options.find((option) => option.id === action.optionId);
+          if (!selected) {
+            throw new AppError(ApiErrorCode.ValidationError, 'Select one offered Practice option.');
+          }
+          const correct = selected.id === surface.correctOptionId;
+          const attempt = {
+            itemIndex: expectedItemIndex,
+            attemptNumber,
+            surface: surfaceName,
+            selectedOptionId: selected.id,
+            correct,
+            feedback:
+              correct || attemptNumber === 2
+                ? `${selected.feedbackIfSelected} ${surface.explanation}`
+                : selected.feedbackIfSelected,
+            hint: !correct && attemptNumber === 1 ? surface.hint : null,
+            respondedAt: now,
+            credit: 'none' as const,
+          };
+          const interactions = [...current.practiceInteractions, attempt];
+          const itemDone = correct || attemptNumber === 2;
+          const practiceDone = itemDone && expectedItemIndex === brief.practice.items.length - 1;
+          eventKind = practiceDone ? 'practice_completed' : 'practice_response_recorded';
+          eventPayload = {
+            ...action,
+            attemptNumber,
+            surface: surfaceName,
+            correct,
+            feedback: attempt.feedback,
+            hint: attempt.hint,
+            credit: 'none',
+          };
+          next = repos.lessonExecution.update(
+            {
+              ...current,
+              practiceInteractions: interactions,
+              practiceCompletedAt: practiceDone ? now : null,
+              version: current.version + 1,
+              updatedAt: now,
+            },
+            current.version,
+          );
         } else {
+          if (current.presentationCompletedAt) {
+            throw new AppError(
+              ApiErrorCode.ValidationError,
+              'Lesson presentation is already complete.',
+            );
+          }
           if (
             current.presentedSegmentIndexes.length !== brief.segments.length ||
             current.currentSegmentIndex !== brief.segments.length - 1
@@ -778,6 +953,20 @@ export function createLessonExecutionService({
               ApiErrorCode.ValidationError,
               'Present every lesson segment before completing the presentation.',
             );
+          const unansweredChecks = brief.segments.filter(
+            (segment) =>
+              segment.informalCheck &&
+              !current.informalInteractions.some(
+                (interaction) =>
+                  interaction.segmentIndex === segment.index && Boolean(interaction.response),
+              ),
+          );
+          if (unansweredChecks.length > 0) {
+            throw new AppError(
+              ApiErrorCode.ValidationError,
+              'Commit a response to every Lesson learning check before Practice.',
+            );
+          }
           next = repos.lessonExecution.update(
             {
               ...current,
@@ -795,7 +984,7 @@ export function createLessonExecutionService({
           seq: repos.lessonExecution.listEvents(next.id).length + 1,
           commandId: input.command.commandId,
           kind: eventKind,
-          payload: action,
+          payload: eventPayload,
           createdAt: now,
         });
         const latestSession = repos.studySessions.get(sessionId)!;

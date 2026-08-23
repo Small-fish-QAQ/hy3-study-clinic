@@ -466,8 +466,8 @@ export class Hy3Provider implements LlmProvider {
       teachingBriefMessages(input),
       TeachingBriefProposalPayloadSchema,
       opts,
-      'Use only offered O*, P*, and S* references; remove duplicates and cover every objective.',
-      { maxTokens: 8_000, schemaName: 'teaching-brief-proposal-v1-local-refs' },
+      'Repair only the cited Lesson/Practice failures. Every segments item must retain purpose, objectiveRefs, explanation, explanationAuthority, and sourceRefs; example, contrast, misconception, and informalCheck are the only optional nested segment components. Always include nextConnection as a string or JSON null. Use offered O*, P*, and S* aliases; preserve exact construct/authorizedObjectiveRefs boundaries; add real reasoning and learner action rather than padding; replace source-location trivia; make the retry a changed context. Return the full corrected object.',
+      { maxTokens: 12_000, schemaName: 'teaching-brief-proposal-v2-pedagogy-practice' },
     );
   }
 
@@ -699,19 +699,17 @@ export class Hy3Provider implements LlmProvider {
       'original',
     );
     const first = this.tryParse(original, schema, opts);
-    this.emitDiagnostic(
-      opts,
-      buildStructuredOutputDiagnostic({
-        schemaName,
-        operationType: opts?.telemetry?.operationType ?? null,
-        attemptNumber: 1,
-        attemptKind: 'original',
-        model: this.config.model,
-        response: original.response,
-        parse: first.parse,
-        repairAction: first.ok ? 'none' : first.repairable ? 'requested' : 'none',
-      }),
-    );
+    const firstDiagnostic = buildStructuredOutputDiagnostic({
+      schemaName,
+      operationType: opts?.telemetry?.operationType ?? null,
+      attemptNumber: 1,
+      attemptKind: 'original',
+      model: this.config.model,
+      response: original.response,
+      parse: first.parse,
+      repairAction: first.ok ? 'none' : first.repairable ? 'requested' : 'none',
+    });
+    this.emitDiagnostic(opts, firstDiagnostic);
     if (first.ok) return first.value;
     if (!first.repairable) {
       throw ProviderError.invalidOutput(
@@ -720,6 +718,7 @@ export class Hy3Provider implements LlmProvider {
         first.category,
         false,
         first.candidateFailure,
+        firstDiagnostic,
       );
     }
 
@@ -750,19 +749,17 @@ export class Hy3Provider implements LlmProvider {
     const second = this.tryParse(repaired, schema, opts);
     const independentRepairAllowed =
       !second.ok && second.repairable && second.reason !== first.reason;
-    this.emitDiagnostic(
-      opts,
-      buildStructuredOutputDiagnostic({
-        schemaName,
-        operationType: opts?.telemetry?.operationType ?? null,
-        attemptNumber: 2,
-        attemptKind: 'repair',
-        model: this.config.model,
-        response: repaired.response,
-        parse: second.parse,
-        repairAction: second.ok ? 'none' : independentRepairAllowed ? 'requested' : 'exhausted',
-      }),
-    );
+    const secondDiagnostic = buildStructuredOutputDiagnostic({
+      schemaName,
+      operationType: opts?.telemetry?.operationType ?? null,
+      attemptNumber: 2,
+      attemptKind: 'repair',
+      model: this.config.model,
+      response: repaired.response,
+      parse: second.parse,
+      repairAction: second.ok ? 'none' : independentRepairAllowed ? 'requested' : 'exhausted',
+    });
+    this.emitDiagnostic(opts, secondDiagnostic);
     if (second.ok) return second.value;
     if (independentRepairAllowed) {
       const independentRepairMessages: ChatMessage[] = [
@@ -789,19 +786,17 @@ export class Hy3Provider implements LlmProvider {
         'repair',
       );
       const third = this.tryParse(independentlyRepaired, schema, opts);
-      this.emitDiagnostic(
-        opts,
-        buildStructuredOutputDiagnostic({
-          schemaName,
-          operationType: opts?.telemetry?.operationType ?? null,
-          attemptNumber: 3,
-          attemptKind: 'repair',
-          model: this.config.model,
-          response: independentlyRepaired.response,
-          parse: third.parse,
-          repairAction: third.ok ? 'none' : 'exhausted',
-        }),
-      );
+      const thirdDiagnostic = buildStructuredOutputDiagnostic({
+        schemaName,
+        operationType: opts?.telemetry?.operationType ?? null,
+        attemptNumber: 3,
+        attemptKind: 'repair',
+        model: this.config.model,
+        response: independentlyRepaired.response,
+        parse: third.parse,
+        repairAction: third.ok ? 'none' : 'exhausted',
+      });
+      this.emitDiagnostic(opts, thirdDiagnostic);
       if (third.ok) return third.value;
       throw ProviderError.invalidOutput(
         third.error,
@@ -809,6 +804,7 @@ export class Hy3Provider implements LlmProvider {
         third.category,
         true,
         third.candidateFailure,
+        thirdDiagnostic,
       );
     }
 
@@ -818,6 +814,7 @@ export class Hy3Provider implements LlmProvider {
       second.category,
       true,
       second.candidateFailure,
+      secondDiagnostic,
     );
   }
 

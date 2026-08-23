@@ -288,6 +288,32 @@ describe('migrations', () => {
     db.close();
   });
 
+  it('adds weak informal Practice state without creating Formal authority paths', () => {
+    const db = openDatabase(':memory:');
+    migrate(db);
+    const columns = db.pragma('table_info(lesson_execution_states)') as Array<{
+      name: string;
+      notnull: number;
+      dflt_value: string | null;
+    }>;
+    expect(columns.find((column) => column.name === 'practice_interactions')).toMatchObject({
+      notnull: 1,
+      dflt_value: "'[]'",
+    });
+    expect(columns.find((column) => column.name === 'practice_completed_at')).toMatchObject({
+      notnull: 0,
+    });
+    const eventSql = db
+      .prepare(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'lesson_execution_events'",
+      )
+      .get() as { sql: string };
+    expect(eventSql.sql).toContain("'practice_response_recorded'");
+    expect(eventSql.sql).toContain("'practice_completed'");
+    expect(eventSql.sql).not.toMatch(/mastery|formal_evidence|progression_decision/iu);
+    db.close();
+  });
+
   it('adds nullable page_end to source_blocks (migration 9)', () => {
     const db = openDatabase(':memory:');
     migrate(db);

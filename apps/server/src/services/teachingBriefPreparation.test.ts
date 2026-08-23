@@ -7,6 +7,7 @@ import { FakeProvider } from '../llm/fakeProvider.js';
 import { ProviderError } from '../llm/errors.js';
 import type {
   ProviderCallOptions,
+  StructuredOutputDiagnostic,
   TeachingBriefGenerationInput,
   TutorTurnInput,
 } from '../llm/provider.js';
@@ -21,6 +22,8 @@ const databases: SqliteDb[] = [];
 class CountingProvider extends FakeProvider {
   teachingBriefCalls = 0;
   failTeachingBrief = false;
+  failTeachingBriefWithSchemaDetails = false;
+  simulateOneCandidateRepair = false;
   lastTeachingBriefInput: TeachingBriefGenerationInput | null = null;
   lastTutorInput: TutorTurnInput | null = null;
 
@@ -31,6 +34,58 @@ class CountingProvider extends FakeProvider {
     this.teachingBriefCalls += 1;
     this.lastTeachingBriefInput = input;
     if (this.failTeachingBrief) throw ProviderError.network();
+    if (this.failTeachingBriefWithSchemaDetails) {
+      throw ProviderError.invalidOutput(
+        'provider-controlled summary must not be persisted',
+        'schema',
+        'SCHEMA_VALIDATION_FAILURE',
+        true,
+        undefined,
+        {
+          schemaName: 'TeachingBriefProposalPayloadSchema',
+          operationType: 'prepare_teaching_brief',
+          attemptNumber: 2,
+          attemptKind: 'repair',
+          provider: 'hy3',
+          model: 'private-model-name',
+          transportSuccess: true,
+          httpStatus: 200,
+          responseBodyBytes: 1234,
+          contentType: 'string',
+          contentBytes: 1000,
+          contentFingerprint: 'sha256:private',
+          finishReason: 'stop',
+          truncated: false,
+          possiblyIncomplete: false,
+          jsonParseSuccess: true,
+          jsonFormat: 'direct',
+          topLevelType: 'object',
+          topLevelKeys: ['segments'],
+          schemaIssueCount: 1,
+          schemaIssues: [{ path: 'practice.items.0.authority', code: 'invalid_enum_value' }],
+          semanticIssueCodes: [],
+          failureCategory: 'SCHEMA_VALIDATION_FAILURE',
+          repairAction: 'exhausted',
+          structuralPreview: { privateSourceText: '<string>' },
+        } satisfies StructuredOutputDiagnostic,
+      );
+    }
+    if (this.simulateOneCandidateRepair && opts?.validateCandidate) {
+      let evaluatedRepairCandidate = false;
+      const validateCandidate = opts.validateCandidate;
+      return super.generateTeachingBrief(input, {
+        ...opts,
+        validateCandidate(candidate) {
+          if (!evaluatedRepairCandidate) {
+            evaluatedRepairCandidate = true;
+            const shallow = structuredClone(candidate) as { segments?: unknown[] };
+            if (Array.isArray(shallow.segments)) shallow.segments = shallow.segments.slice(0, 1);
+            validateCandidate(shallow);
+          }
+          return validateCandidate(candidate);
+        },
+      });
+    }
     return super.generateTeachingBrief(input, opts);
   }
 
@@ -95,12 +150,12 @@ interface Harness {
   manifestFingerprint: string;
 }
 
-async function createHarness(): Promise<Harness> {
+async function createHarness(providerDelayMs = 0): Promise<Harness> {
   const db = openDatabase(':memory:');
   databases.push(db);
   migrate(db);
   const repos = createRepositories(db);
-  const provider = new CountingProvider();
+  const provider = new CountingProvider({ delayMs: providerDelayMs });
   repos.workspaces.insert(makeWorkspace());
   const content = 'Working memory has limited capacity.';
   const visualBytes = Buffer.from('bounded exact visual fixture');
@@ -444,6 +499,118 @@ describe('Teaching Brief preparation', () => {
     expect(harness.provider.teachingBriefCalls).toBe(1);
   });
 
+  it('persists only sanitized schema issue metadata for a failed Teaching Brief', async () => {
+    const harness = await createHarness();
+    harness.provider.failTeachingBriefWithSchemaDetails = true;
+
+    await expect(
+      harness.services.teachingBriefPreparation.prepare({
+        workspaceId: 'ws_1',
+        curriculumVersionId: harness.curriculumId,
+        studyPlanVersionId: harness.planId,
+        learningUnitId: harness.learningUnitId,
+        commandId: 'brief-schema-observability',
+        expectedExecutionSourceManifestFingerprint: harness.manifestFingerprint,
+      }),
+    ).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
+
+    const operation = harness.repos.operations
+      .listForWorkspace('ws_1', 'prepare_teaching_brief')
+      .find((candidate) => candidate.commandId.endsWith('brief-schema-observability'))!;
+    const result = harness.repos.operations.getResult(operation.id)!;
+    expect(result).toMatchObject({
+      status: 'failed',
+      payload: {
+        structuredFailure: {
+          attemptNumber: 2,
+          attemptKind: 'repair',
+          jsonParseSuccess: true,
+          schemaIssueCount: 1,
+          schemaIssues: [{ path: 'practice.items.0.authority', code: 'invalid_enum_value' }],
+          failureCategory: 'SCHEMA_VALIDATION_FAILURE',
+          repairAction: 'exhausted',
+        },
+      },
+    });
+    const serialized = JSON.stringify(result.payload);
+    expect(serialized).not.toContain('provider-controlled summary');
+    expect(serialized).not.toContain('private-model-name');
+    expect(serialized).not.toContain('privateSourceText');
+    expect(serialized).not.toContain('sha256:private');
+  });
+
+  it('records one bounded candidate repair only after a fresh passing reevaluation', async () => {
+    const harness = await createHarness();
+    harness.provider.simulateOneCandidateRepair = true;
+    const prepared = await harness.services.teachingBriefPreparation.prepare({
+      workspaceId: 'ws_1',
+      curriculumVersionId: harness.curriculumId,
+      studyPlanVersionId: harness.planId,
+      learningUnitId: harness.learningUnitId,
+      commandId: 'brief-bounded-candidate-repair',
+      expectedExecutionSourceManifestFingerprint: harness.manifestFingerprint,
+    });
+
+    expect(prepared.status).toBe('prepared');
+    expect(prepared.brief.pedagogyEvaluation).toMatchObject({
+      status: 'pass',
+      boundedRepairAttempted: true,
+      independent: true,
+    });
+    expect(prepared.brief.practice?.qualityEvaluation).toMatchObject({
+      status: 'pass',
+      boundedRepairAttempted: true,
+      independent: true,
+    });
+    expect(harness.provider.teachingBriefCalls).toBe(1);
+  });
+
+  it('cancels delayed preparation without accepting a late result and permits an explicit retry', async () => {
+    const harness = await createHarness(100);
+    const agenda = harness.repos.sessionAgendas.list('ws_1').at(-1)!;
+    const execution = harness.repos.courseExecution.get('ws_1');
+    const started = harness.services.studySessions.start('ws_1', {
+      contractVersionId: agenda.contractVersionId,
+      curriculumVersionId: agenda.curriculumVersionId,
+      studyPlanVersionId: agenda.studyPlanVersionId,
+      sessionAgendaId: agenda.id,
+      expectedCourseExecutionVersion: execution.version,
+    });
+    const abort = new AbortController();
+    const pending = harness.services.lessonExecution.ensure(
+      'ws_1',
+      started.session.id,
+      {
+        command: command('lesson-cancelled-preparation'),
+        expectedSessionVersion: started.session.version,
+        expectedAgendaVersion: agenda.version,
+        expectedAgendaItemId: started.session.currentAgendaItemId,
+      },
+      { signal: abort.signal },
+    );
+    abort.abort();
+
+    await expect(pending).rejects.toMatchObject({ code: 'REQUEST_CANCELLED' });
+    const cancelled = harness.services.lessonExecution.get('ws_1', started.session.id);
+    expect(cancelled.status).toBe('retry_available');
+    expect(cancelled.allowedActions).toEqual(['retry_preparation']);
+    expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toHaveLength(
+      0,
+    );
+
+    const retried = await harness.services.lessonExecution.ensure('ws_1', started.session.id, {
+      command: command('lesson-cancelled-preparation-retry'),
+      expectedSessionVersion: cancelled.session!.version,
+      expectedAgendaVersion: cancelled.agenda!.version,
+      expectedAgendaItemId: started.session.currentAgendaItemId,
+    });
+    expect(retried.status).toBe('ready');
+    expect(retried.lesson).not.toBeNull();
+    expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toHaveLength(
+      1,
+    );
+  });
+
   it('prepares and presents a lesson inside a StudySession without formal credit', async () => {
     const harness = await createHarness();
     const agenda = harness.repos.sessionAgendas.list('ws_1').at(-1)!;
@@ -503,6 +670,109 @@ describe('Teaching Brief preparation', () => {
         reference.referenceKey.startsWith('V'),
       ),
     ).toBe(false);
+    const authorityBefore = {
+      evidence: harness.repos.formalProgression.listEvidenceForWorkspace('ws_1'),
+      decisions: harness.repos.formalProgression.listDecisionsForWorkspace('ws_1'),
+      unitProgress: harness.repos.formalProgression.listUnitProgress('ws_1', harness.curriculumId),
+      mistakes: harness.repos.mistakes.listOpenByWorkspace('ws_1'),
+      mastery: harness.repos.mastery.listByWorkspace('ws_1'),
+      agendaItemState: harness.repos.sessionAgendas
+        .get(agenda.id)!
+        .items.find((item) => item.id === session.currentAgendaItemId)!.state,
+    };
+
+    let current = harness.services.lessonExecution.get('ws_1', session.id);
+    for (let segmentIndex = 1; segmentIndex < current.progress!.segmentCount; segmentIndex += 1) {
+      current = await harness.services.lessonExecution.command('ws_1', session.id, {
+        command: command(`lesson-segment-${segmentIndex}`),
+        expectedSessionVersion: current.session.version,
+        expectedAgendaVersion: current.agenda!.version,
+        expectedAgendaItemId: session.currentAgendaItemId!,
+        expectedLessonStateVersion: current.progress!.stateVersion,
+        action: { kind: 'move_to_segment', segmentIndex },
+      });
+    }
+    expect(current.currentInformalCheck?.guidance).toBeNull();
+    expect(current.allowedActions).not.toContain('complete_presentation');
+    current = await harness.services.lessonExecution.command('ws_1', session.id, {
+      command: command('lesson-deliberate-response'),
+      expectedSessionVersion: current.session.version,
+      expectedAgendaVersion: current.agenda!.version,
+      expectedAgendaItemId: session.currentAgendaItemId!,
+      expectedLessonStateVersion: current.progress!.stateVersion,
+      action: {
+        kind: 'respond_to_informal_check',
+        segmentIndex: current.progress!.currentSegmentIndex,
+        response: 'The condition changes which candidate remains eligible.',
+      },
+    });
+    expect(current.currentInformalCheck?.guidance).toContain('source-stated condition');
+    expect(current.allowedActions).toContain('complete_presentation');
+    current = await harness.services.lessonExecution.command('ws_1', session.id, {
+      command: command('lesson-presentation-complete'),
+      expectedSessionVersion: current.session.version,
+      expectedAgendaVersion: current.agenda!.version,
+      expectedAgendaItemId: session.currentAgendaItemId!,
+      expectedLessonStateVersion: current.progress!.stateVersion,
+      action: { kind: 'complete_presentation' },
+    });
+    expect(current.practice?.status).toBe('available');
+    const initialItem = current.practice!.item!;
+    current = await harness.services.lessonExecution.command('ws_1', session.id, {
+      command: command('practice-wrong-answer'),
+      expectedSessionVersion: current.session.version,
+      expectedAgendaVersion: current.agenda!.version,
+      expectedAgendaItemId: session.currentAgendaItemId!,
+      expectedLessonStateVersion: current.progress!.stateVersion,
+      action: {
+        kind: 'submit_practice_response',
+        itemIndex: initialItem.index,
+        optionId: initialItem.options[1]!.id,
+      },
+    });
+    expect(current.practice?.attempts.at(-1)).toMatchObject({
+      correct: false,
+      attemptNumber: 1,
+      surface: 'initial',
+      credit: 'none',
+    });
+    expect(current.practice?.attempts.at(-1)?.hint).toBeTruthy();
+    expect(current.practice?.item?.surface).toBe('retry');
+    const retryItem = current.practice!.item!;
+    expect(retryItem.prompt).not.toBe(initialItem.prompt);
+    current = await harness.services.lessonExecution.command('ws_1', session.id, {
+      command: command('practice-correct-retry'),
+      expectedSessionVersion: current.session.version,
+      expectedAgendaVersion: current.agenda!.version,
+      expectedAgendaItemId: session.currentAgendaItemId!,
+      expectedLessonStateVersion: current.progress!.stateVersion,
+      action: {
+        kind: 'submit_practice_response',
+        itemIndex: retryItem.index,
+        optionId: retryItem.options[1]!.id,
+      },
+    });
+    expect(current.practice?.status).toBe('completed');
+    expect(current.allowedActions).toEqual(['review_lesson']);
+    const executionState = harness.repos.lessonExecution.getForSession(
+      session.id,
+      session.currentAgendaItemId!,
+    )!;
+    expect(
+      harness.repos.lessonExecution.listEvents(executionState.id).map((event) => event.kind),
+    ).toEqual(expect.arrayContaining(['practice_response_recorded', 'practice_completed']));
+
+    const authorityAfter = {
+      evidence: harness.repos.formalProgression.listEvidenceForWorkspace('ws_1'),
+      decisions: harness.repos.formalProgression.listDecisionsForWorkspace('ws_1'),
+      unitProgress: harness.repos.formalProgression.listUnitProgress('ws_1', harness.curriculumId),
+      mistakes: harness.repos.mistakes.listOpenByWorkspace('ws_1'),
+      mastery: harness.repos.mastery.listByWorkspace('ws_1'),
+      agendaItemState: harness.repos.sessionAgendas
+        .get(agenda.id)!
+        .items.find((item) => item.id === session.currentAgendaItemId)!.state,
+    };
+    expect(authorityAfter).toEqual(authorityBefore);
     expect(harness.repos.formalProgression.listEvidenceForWorkspace('ws_1')).toHaveLength(0);
     expect(harness.repos.mistakes.listOpenByWorkspace('ws_1')).toHaveLength(0);
     expect(harness.repos.mastery.listByWorkspace('ws_1')).toHaveLength(0);

@@ -42,6 +42,7 @@ export * from './domain/masteryRedTeam.js';
 export * from './domain/lesson.js';
 export * from './domain/teachingBrief.js';
 export * from './domain/lessonExecution.js';
+export * from './domain/lessonPractice.js';
 export * from './domain/tutor.js';
 export * from './domain/errors.js';
 export * from './domain/providerConfig.js';

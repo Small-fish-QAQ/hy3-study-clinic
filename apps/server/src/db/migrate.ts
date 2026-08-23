@@ -2648,6 +2648,43 @@ const MIGRATIONS: Migration[] = [
         BEGIN SELECT RAISE(ABORT, 'Curriculum quality evaluations are append-only'); END;
     `,
   },
+  {
+    version: 36,
+    name: 'informal_lesson_practice_execution',
+    rebuildsTables: true,
+    // Practice attempts are weak, session-owned interactions. They are kept
+    // beside Lesson presentation state and have no foreign-key path to
+    // Evidence, mastery, mistakes, or Formal progression.
+    up: `
+      ALTER TABLE lesson_execution_states
+        ADD COLUMN practice_interactions TEXT NOT NULL DEFAULT '[]';
+      ALTER TABLE lesson_execution_states
+        ADD COLUMN practice_completed_at TEXT;
+
+      CREATE TABLE lesson_execution_events_v36 (
+        id TEXT PRIMARY KEY,
+        lesson_execution_state_id TEXT NOT NULL
+          REFERENCES lesson_execution_states(id) ON DELETE CASCADE,
+        seq INTEGER NOT NULL CHECK (seq > 0),
+        command_id TEXT NOT NULL,
+        kind TEXT NOT NULL CHECK (kind IN (
+          'preparation_started', 'preparation_ready', 'preparation_failed',
+          'segment_presented', 'segment_revisited',
+          'informal_response_recorded', 'presentation_completed',
+          'practice_response_recorded', 'practice_completed'
+        )),
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE (lesson_execution_state_id, seq)
+      );
+      INSERT INTO lesson_execution_events_v36
+        SELECT * FROM lesson_execution_events;
+      DROP TABLE lesson_execution_events;
+      ALTER TABLE lesson_execution_events_v36 RENAME TO lesson_execution_events;
+      CREATE INDEX idx_lesson_execution_events_state
+        ON lesson_execution_events(lesson_execution_state_id, seq);
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

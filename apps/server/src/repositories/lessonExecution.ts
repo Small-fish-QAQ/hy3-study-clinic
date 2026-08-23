@@ -23,6 +23,8 @@ interface StateRow {
   presented_segment_indexes: string;
   informal_interactions: string;
   presentation_completed_at: string | null;
+  practice_interactions: string;
+  practice_completed_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -55,6 +57,8 @@ function hydrateState(row: StateRow): LessonExecutionState {
     presentedSegmentIndexes: JSON.parse(row.presented_segment_indexes),
     informalInteractions: JSON.parse(row.informal_interactions),
     presentationCompletedAt: row.presentation_completed_at,
+    practiceInteractions: JSON.parse(row.practice_interactions),
+    practiceCompletedAt: row.practice_completed_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   });
@@ -124,17 +128,20 @@ export function createLessonExecutionRepo(db: SqliteDb) {
            (id, session_id, agenda_item_id, curriculum_id, study_plan_id, learning_unit_id,
             teaching_brief_id, manifest_fingerprint, source_context_fingerprint,
             preparation_status, preparation_operation_id, version, current_segment_index,
-            presented_segment_indexes, informal_interactions, presentation_completed_at,
-            created_at, updated_at)
+             presented_segment_indexes, informal_interactions, presentation_completed_at,
+             practice_interactions, practice_completed_at,
+             created_at, updated_at)
          VALUES (@id, @sessionId, @agendaItemId, @curriculumVersionId, @studyPlanVersionId,
             @learningUnitId, @teachingBriefId, @executionSourceManifestFingerprint,
             @sourceContextFingerprint, @preparationStatus, @preparationOperationId, @version,
-            @currentSegmentIndex, @presentedSegmentIndexes, @informalInteractions,
-            @presentationCompletedAt, @createdAt, @updatedAt)`,
+             @currentSegmentIndex, @presentedSegmentIndexes, @informalInteractions,
+             @presentationCompletedAt, @practiceInteractions, @practiceCompletedAt,
+             @createdAt, @updatedAt)`,
       ).run({
         ...state,
         presentedSegmentIndexes: JSON.stringify(state.presentedSegmentIndexes),
         informalInteractions: JSON.stringify(state.informalInteractions),
+        practiceInteractions: JSON.stringify(state.practiceInteractions),
       });
       return get(state.id)!;
     },
@@ -154,6 +161,8 @@ export function createLessonExecutionRepo(db: SqliteDb) {
              presented_segment_indexes = @presentedSegmentIndexes,
              informal_interactions = @informalInteractions,
              presentation_completed_at = @presentationCompletedAt,
+             practice_interactions = @practiceInteractions,
+             practice_completed_at = @practiceCompletedAt,
              updated_at = @updatedAt
            WHERE id = @id AND version = @expectedVersion`,
         )
@@ -162,6 +171,7 @@ export function createLessonExecutionRepo(db: SqliteDb) {
           expectedVersion,
           presentedSegmentIndexes: JSON.stringify(state.presentedSegmentIndexes),
           informalInteractions: JSON.stringify(state.informalInteractions),
+          practiceInteractions: JSON.stringify(state.practiceInteractions),
         });
       if (result.changes !== 1) throw new Error('Lesson execution state is stale.');
       return get(state.id)!;

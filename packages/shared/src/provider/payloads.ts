@@ -17,6 +17,7 @@ import {
   InformalCheckKindSchema,
   TeachingBriefSegmentPurposeSchema,
 } from '../domain/teachingBrief.js';
+import { FormalAssessmentConstructSchema } from '../domain/sourceAuthority.js';
 
 /**
  * Structured payloads that LLM providers must return.
@@ -1007,6 +1008,44 @@ export const ProposedTeachingSegmentSchema = z
   .strict();
 export type ProposedTeachingSegment = z.infer<typeof ProposedTeachingSegmentSchema>;
 
+const ProposedLessonPracticeOptionSchema = z
+  .object({
+    optionRef: z.string().regex(/^[A-E]$/u),
+    text: z.string().min(1).max(600),
+    feedbackIfSelected: z.string().min(1).max(900),
+  })
+  .strict();
+
+const ProposedLessonPracticeSurfaceSchema = z
+  .object({
+    prompt: z.string().min(1).max(1200),
+    options: z.array(ProposedLessonPracticeOptionSchema).min(3).max(5),
+    correctOptionRef: z.string().regex(/^[A-E]$/u),
+    hint: z.string().min(1).max(700),
+    explanation: z.string().min(1).max(1200),
+  })
+  .strict();
+
+export const ProposedLessonPracticeItemSchema = z
+  .object({
+    objectiveRef: z.string().min(1).max(40),
+    construct: FormalAssessmentConstructSchema,
+    capabilityTested: z.string().min(1).max(700),
+    pedagogicalReason: z.string().min(1).max(700),
+    authority: z.enum(['exact_source', 'advisory_visual']),
+    sourceRefs: z.array(z.string().min(1).max(40)).max(8),
+    visualRefs: z.array(z.string().regex(/^V[1-9][0-9]*$/u)).max(8),
+    initial: ProposedLessonPracticeSurfaceSchema,
+    retry: ProposedLessonPracticeSurfaceSchema,
+  })
+  .strict();
+export type ProposedLessonPracticeItem = z.infer<typeof ProposedLessonPracticeItemSchema>;
+
+export const ProposedLessonPracticeSchema = z
+  .object({ items: z.array(ProposedLessonPracticeItemSchema).min(1).max(8) })
+  .strict();
+export type ProposedLessonPractice = z.infer<typeof ProposedLessonPracticeSchema>;
+
 export const TeachingBriefProposalPayloadSchema = z
   .object({
     whyNow: z.string().min(1).max(1000),
@@ -1025,6 +1064,7 @@ export const TeachingBriefProposalPayloadSchema = z
     formalOpportunities: z.array(z.string().min(1).max(500)).max(8),
     summary: z.string().min(1).max(1200),
     nextConnection: z.string().max(800).nullable(),
+    practice: ProposedLessonPracticeSchema,
   })
   .strict();
 export type TeachingBriefProposalPayload = z.infer<typeof TeachingBriefProposalPayloadSchema>;

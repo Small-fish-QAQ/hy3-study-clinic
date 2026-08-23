@@ -1,5 +1,6 @@
 import type { TeachingBriefProposalPayload } from '@hy3-clinic/shared';
 import type { ProviderCandidateValidation, TeachingBriefGenerationInput } from '../llm/provider.js';
+import { evaluateLessonPedagogy, evaluatePracticeQuality } from './lessonPedagogyEvaluator.js';
 
 function allSourceRefs(segment: TeachingBriefProposalPayload['segments'][number]): string[] {
   return [
@@ -19,6 +20,9 @@ export function validateTeachingBriefCandidate(
   const diagnostics: string[] = [];
   const codes: string[] = [];
   const sourceRefs = new Set(input.sourceContext.offers.map((offer) => offer.sourceRef));
+  const visualRefs = new Set(
+    (input.visualContext?.offers ?? []).map((offer) => offer.referenceKey),
+  );
   const objectiveRefs = new Set(
     input.learningUnit.objectives.map((objective) => objective.objectiveRef),
   );
@@ -92,9 +96,56 @@ export function validateTeachingBriefCandidate(
     codes.push('no_source_backed_segment');
   }
 
+  for (const [itemIndex, item] of payload.practice.items.entries()) {
+    if (!objectiveRefs.has(item.objectiveRef)) {
+      diagnostics.push(`Unknown Practice objective ref: ${item.objectiveRef}.`);
+      codes.push('unknown_practice_objective_ref');
+    }
+    for (const ref of item.sourceRefs) {
+      if (!sourceRefs.has(ref)) {
+        diagnostics.push(`Unknown Practice source ref at item ${itemIndex}: ${ref}.`);
+        codes.push('unknown_practice_source_ref');
+      }
+    }
+    for (const ref of item.visualRefs) {
+      if (!visualRefs.has(ref)) {
+        diagnostics.push(`Unknown Practice visual ref at item ${itemIndex}: ${ref}.`);
+        codes.push('unknown_practice_visual_ref');
+      }
+    }
+  }
+
+  if (diagnostics.length === 0) {
+    const evaluatedAt = '1970-01-01T00:00:00.000Z';
+    const lessonEvaluation = evaluateLessonPedagogy(payload, input, { evaluatedAt });
+    const practiceEvaluation = evaluatePracticeQuality(payload, input, { evaluatedAt });
+    for (const finding of [...lessonEvaluation.findings, ...practiceEvaluation.findings]) {
+      if (finding.severity !== 'error') continue;
+      diagnostics.push(finding.message);
+      codes.push(finding.code);
+    }
+  }
+
   return {
     valid: diagnostics.length === 0,
     diagnostics: [...new Set(diagnostics)].slice(0, 20),
     diagnosticCodes: [...new Set(codes)].slice(0, 20),
+    ...(diagnostics.length > 0
+      ? {
+          failureArtifact: {
+            kind: 'lesson_practice_quality_rejection',
+            context: {
+              learningUnitTitle: input.learningUnit.title,
+              claimedAgendaMinutes: input.plannedMinutes,
+              segmentCount: payload.segments.length,
+              practiceItemCount: payload.practice.items.length,
+            },
+            diagnostics: [...new Set(diagnostics)].slice(0, 20).map((message, index) => ({
+              code: [...new Set(codes)][index] ?? 'lesson_practice_quality_rejection',
+              message,
+            })),
+          },
+        }
+      : {}),
   };
 }

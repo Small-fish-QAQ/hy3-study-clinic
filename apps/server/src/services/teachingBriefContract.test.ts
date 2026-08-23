@@ -9,7 +9,17 @@ function input(): TeachingBriefGenerationInput {
     workspaceName: 'Course',
     learningUnit: {
       title: 'Unit',
-      objectives: [{ objectiveRef: 'O1', title: 'Objective', description: 'Explain it.' }],
+      objectives: [
+        {
+          objectiveRef: 'O1',
+          title: 'Objective mechanism',
+          description: 'Explain how the objective mechanism works.',
+          priority: 'required',
+          construct: 'explain',
+          authorityEnvelopeTier: 'teaching_only',
+          practiceAuthority: 'exact_teaching',
+        },
+      ],
       concepts: [],
       canonicalConcepts: [],
     },
@@ -28,11 +38,14 @@ function input(): TeachingBriefGenerationInput {
           materialTitle: 'Material',
           headingPath: ['Section'],
           pageNumber: null,
+          slideNumber: null,
           text: 'Source.',
+          authorizedObjectiveRefs: ['O1'],
         },
       ],
     },
     limits: { maxSegments: 12, maxSourceRefsPerSegment: 8, maxFormalOpportunities: 8 },
+    plannedMinutes: 20,
   };
 }
 
@@ -42,18 +55,128 @@ function payload() {
     prerequisites: [{ prerequisiteRef: 'P1', reason: 'Needed.', readinessHint: null }],
     segments: [
       {
+        purpose: 'objective_orientation',
+        objectiveRefs: ['O1'],
+        explanation: 'Learn the Objective mechanism now because later decisions depend on it.',
+        explanationAuthority: 'ai_teaching_synthesis',
+        sourceRefs: [],
+      },
+      {
         purpose: 'explanation',
         objectiveRefs: ['O1'],
-        explanation: 'Source-backed explanation.',
+        explanation:
+          'The Objective mechanism works because the source condition controls the result.',
         explanationAuthority: 'source_backed_teaching',
         sourceRefs: ['S1'],
-        example: { text: 'An illustration.', authority: 'ai_teaching_synthesis', sourceRefs: [] },
-        informalCheck: { kind: 'own_words', prompt: 'Explain it.', expectedSignal: null },
+      },
+      {
+        purpose: 'mechanism',
+        objectiveRefs: ['O1'],
+        explanation:
+          'When the source condition holds, the Objective mechanism therefore changes the result.',
+        explanationAuthority: 'source_backed_teaching',
+        sourceRefs: ['S1'],
+      },
+      {
+        purpose: 'worked_example',
+        objectiveRefs: ['O1'],
+        explanation:
+          'First inspect the condition, then trace its effect, and finally justify the result.',
+        explanationAuthority: 'ai_teaching_synthesis',
+        sourceRefs: ['S1'],
+        example: {
+          text: 'Given a small case, first mark the condition, next infer the consequence, then state the result.',
+          authority: 'ai_teaching_synthesis',
+          sourceRefs: [],
+        },
+      },
+      {
+        purpose: 'contrast',
+        objectiveRefs: ['O1'],
+        explanation:
+          'Compare causal Objective reasoning with a surface label that does not explain why.',
+        explanationAuthority: 'ai_teaching_synthesis',
+        sourceRefs: ['S1'],
+        contrast: {
+          text: 'One account uses the condition; the other only repeats vocabulary.',
+          authority: 'ai_teaching_synthesis',
+          sourceRefs: [],
+        },
+      },
+      {
+        purpose: 'guided_practice',
+        objectiveRefs: ['O1'],
+        explanation:
+          'Explain why the Objective condition controls a new case, then commit your reasoning.',
+        explanationAuthority: 'ai_teaching_synthesis',
+        sourceRefs: ['S1'],
+        informalCheck: {
+          kind: 'own_words',
+          prompt: 'Explain how the Objective mechanism controls the result.',
+          expectedSignal: 'Connect the condition to the result.',
+        },
       },
     ],
     formalOpportunities: ['A later assessment can attach here.'],
     summary: 'Summary.',
     nextConnection: null,
+    practice: {
+      items: [
+        {
+          objectiveRef: 'O1',
+          construct: 'explain',
+          capabilityTested: 'Explain the Objective mechanism from condition to result.',
+          pedagogicalReason: 'This checks causal explanation rather than source-location recall.',
+          authority: 'exact_source',
+          sourceRefs: ['S1'],
+          visualRefs: [],
+          initial: {
+            prompt:
+              'Which explanation best shows how and why the Objective mechanism changes the result?',
+            options: [
+              {
+                optionRef: 'A',
+                text: 'It traces the condition to its consequence.',
+                feedbackIfSelected: 'Correct.',
+              },
+              {
+                optionRef: 'B',
+                text: 'It repeats the label.',
+                feedbackIfSelected: 'Surface recall.',
+              },
+              {
+                optionRef: 'C',
+                text: 'It ignores the condition.',
+                feedbackIfSelected: 'Missing cause.',
+              },
+            ],
+            correctOptionRef: 'A',
+            hint: 'Look for causal reasoning.',
+            explanation: 'The condition explains the consequence.',
+          },
+          retry: {
+            prompt:
+              'In a changed case, which account best explains why the Objective result must be narrowed?',
+            options: [
+              {
+                optionRef: 'A',
+                text: 'The label looks similar.',
+                feedbackIfSelected: 'Not causal.',
+              },
+              {
+                optionRef: 'B',
+                text: 'A required condition changed.',
+                feedbackIfSelected: 'Correct.',
+              },
+              { optionRef: 'C', text: 'The page is longer.', feedbackIfSelected: 'Irrelevant.' },
+            ],
+            correctOptionRef: 'B',
+            hint: 'Inspect the changed condition.',
+            explanation: 'Changed conditions change the supported conclusion.',
+          },
+        },
+      ],
+    },
   });
 }
 

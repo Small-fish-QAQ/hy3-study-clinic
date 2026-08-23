@@ -5,12 +5,14 @@ import {
   TeachingBriefPreparationResponseSchema,
   TeachingBriefSchema,
   type SourceBlockRevision,
+  type CurriculumObjective,
   type TeachingBrief,
   type TeachingBriefPreparationResponse,
   type TeachingBriefProposalPayload,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import { curriculumSourceBlockFingerprint } from '../grounding/sourceFingerprint.js';
+import { ProviderError } from '../llm/errors.js';
 import type {
   LlmProvider,
   ProviderCallOptions,
@@ -27,9 +29,10 @@ import {
 import { validateTeachingBriefCandidate } from './teachingBriefContract.js';
 import { buildTeachingBriefSourceContext } from './teachingBriefContext.js';
 import { profileTeachingBrief } from './teachingBriefQuality.js';
+import { evaluateLessonPedagogy, evaluatePracticeQuality } from './lessonPedagogyEvaluator.js';
 import { visualManifestMatchesCurrentDerivations } from './advisoryVisuals.js';
 
-export const TEACHING_BRIEF_PROMPT_VERSION = 'teaching-brief-v1';
+export const TEACHING_BRIEF_PROMPT_VERSION = 'teaching-brief-v2-pedagogy-practice-authority-v2';
 const PREPARATION_LEASE_MS = 10 * 60 * 1000;
 
 interface TeachingBriefPreparationDeps {
@@ -188,7 +191,7 @@ export function createTeachingBriefPreparationService({
       return candidate ? [candidate] : [];
     });
     const visuals = rankedVisuals.length > 0 ? rankedVisuals : scopedVisuals.slice(0, 8);
-    return buildTeachingBriefSourceContext({
+    const built = buildTeachingBriefSourceContext({
       workspaceId: input.workspace.id,
       curriculum: input.curriculum,
       learningUnitId: input.node.id,
@@ -197,12 +200,27 @@ export function createTeachingBriefPreparationService({
       concepts: repos.materials.getConceptsByWorkspace(input.workspace.id),
       visuals,
     });
+    return {
+      ...built,
+      fingerprint: `lesson_context_${fingerprint({
+        sourceContextFingerprint: built.fingerprint,
+        promptVersion: TEACHING_BRIEF_PROMPT_VERSION,
+      }).slice(0, 40)}`,
+    };
   }
 
   function providerInput(
     route: ReturnType<typeof routeContext>,
     context: ReturnType<typeof sourceContext>,
   ): TeachingBriefGenerationInput {
+    const teachingConstruct = (objective: CurriculumObjective) => {
+      if (objective.formalAssessmentConstruct) return objective.formalAssessmentConstruct;
+      return /(?:\b(?:explain|why|how|reason|mechanism)\b|解释|为什么|如何|原因|机制)/iu.test(
+        `${objective.title} ${objective.description}`,
+      )
+        ? ('explain' as const)
+        : ('identify' as const);
+    };
     const concepts = route.node.learningUnit!.conceptIds.flatMap((conceptId) => {
       const concept = repos.materials.getConcept(conceptId);
       return concept ? [{ name: concept.name, summary: concept.summary }] : [];
@@ -247,6 +265,18 @@ export function createTeachingBriefPreparationService({
           objectiveRef: `O${index + 1}`,
           title: objective.title,
           description: objective.description,
+          priority: objective.priority ?? 'normal',
+          construct: teachingConstruct(objective),
+          authorityEnvelopeTier: objective.authorityEnvelopeTier ?? 'unavailable',
+          practiceAuthority:
+            objective.formalAssessmentConstruct &&
+            (objective.formalEvidenceSourceBlockIds?.length ?? 0) > 0
+              ? 'exact_formal'
+              : route.node.sourceReferences.some((reference) => reference.sourceBlockId !== null)
+                ? 'exact_teaching'
+                : context.visualOffers.length > 0
+                  ? 'advisory_visual'
+                  : 'unavailable',
         })),
         concepts,
         canonicalConcepts,
@@ -259,7 +289,31 @@ export function createTeachingBriefPreparationService({
         serializedBytes: context.serializedBytes,
         materialCount: context.materialCount,
         sectionCount: context.sectionCount,
-        offers: context.offers,
+        offers: context.offers.map((offer) => {
+          const reference = context.references.find(
+            (candidate) => candidate.refId === offer.sourceRef,
+          );
+          return {
+            ...offer,
+            authorizedObjectiveRefs: route.node.learningUnit!.objectives.flatMap(
+              (objective, index) => {
+                if (!reference) return [];
+                const formallyAuthorized = objective.formalEvidenceSourceBlockIds?.includes(
+                  reference.sourceBlockId,
+                );
+                const teachingAuthorized = route.node.sourceReferences.some(
+                  (candidate) => candidate.sourceBlockId === reference.sourceBlockId,
+                );
+                const hasExactFormalAuthority =
+                  Boolean(objective.formalAssessmentConstruct) &&
+                  (objective.formalEvidenceSourceBlockIds?.length ?? 0) > 0;
+                return (hasExactFormalAuthority ? formallyAuthorized : teachingAuthorized)
+                  ? [`O${index + 1}`]
+                  : [];
+              },
+            ),
+          };
+        }),
       },
       visualContext: {
         offerCount: context.visualOfferCount,
@@ -271,6 +325,7 @@ export function createTeachingBriefPreparationService({
         maxSourceRefsPerSegment: 8,
         maxFormalOpportunities: 8,
       },
+      plannedMinutes: route.planItem.estimatedMinutes,
     };
   }
 
@@ -279,6 +334,7 @@ export function createTeachingBriefPreparationService({
     context: ReturnType<typeof sourceContext>,
     input: TeachingBriefGenerationInput,
     payload: TeachingBriefProposalPayload,
+    boundedRepairAttempted: boolean,
   ): TeachingBrief {
     const objectiveIdByRef = new Map(
       route.node.learningUnit!.objectives.map((objective, index) => [
@@ -294,6 +350,7 @@ export function createTeachingBriefPreparationService({
         )!,
       ]),
     );
+    const briefId = newId('teaching_brief');
     const segments = payload.segments.map((segment, index) => ({
       index,
       purpose: segment.purpose,
@@ -350,8 +407,62 @@ export function createTeachingBriefPreparationService({
       summary: payload.summary,
       nextConnection: payload.nextConnection,
     });
+    const evaluatedAt = clock.now().toISOString();
+    const pedagogyEvaluation = evaluateLessonPedagogy(payload, input, {
+      evaluatedAt,
+      boundedRepairAttempted,
+    });
+    const practiceEvaluation = evaluatePracticeQuality(payload, input, {
+      evaluatedAt,
+      boundedRepairAttempted,
+    });
+    if (pedagogyEvaluation.status !== 'pass' || practiceEvaluation.status !== 'pass') {
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        'Teaching Brief candidate failed independent Lesson or Practice evaluation.',
+      );
+    }
+    const objectiveByRef = new Map(
+      route.node.learningUnit!.objectives.map((objective, index) => [`O${index + 1}`, objective]),
+    );
+    const practice = {
+      schemaVersion: 1 as const,
+      items: payload.practice.items.map((item, itemIndex) => {
+        const objective = objectiveByRef.get(item.objectiveRef)!;
+        const itemId = `${briefId}_practice_${itemIndex + 1}`;
+        const surface = (
+          value: (typeof item)['initial'] | (typeof item)['retry'],
+          name: 'initial' | 'retry',
+        ) => ({
+          prompt: value.prompt,
+          options: value.options.map((option) => ({
+            id: `${itemId}_${name}_${option.optionRef}`,
+            text: option.text,
+            feedbackIfSelected: option.feedbackIfSelected,
+          })),
+          correctOptionId: `${itemId}_${name}_${value.correctOptionRef}`,
+          hint: value.hint,
+          explanation: value.explanation,
+        });
+        return {
+          id: itemId,
+          objectiveId: objective.id,
+          objectiveTitle: objective.title,
+          construct: item.construct,
+          capabilityTested: item.capabilityTested,
+          pedagogicalReason: item.pedagogicalReason,
+          authority: item.authority,
+          sourceRefIds: item.sourceRefs,
+          visualRefIds: item.visualRefs,
+          initial: surface(item.initial, 'initial'),
+          retry: surface(item.retry, 'retry'),
+        };
+      }),
+      qualityEvaluation: practiceEvaluation,
+      credit: 'none' as const,
+    };
     return TeachingBriefSchema.parse({
-      id: newId('teaching_brief'),
+      id: briefId,
       workspaceId: route.workspace.id,
       curriculumVersionId: route.curriculum.id,
       studyPlanVersionId: route.plan.id,
@@ -368,6 +479,11 @@ export function createTeachingBriefPreparationService({
           id: objective.id,
           title: objective.title,
           description: objective.description,
+          priority: objective.priority,
+          formalAssessmentReady: objective.formalAssessmentReady,
+          construct: objective.formalAssessmentConstruct,
+          authorityEnvelopeTier: objective.authorityEnvelopeTier,
+          formalEvidenceSourceBlockIds: objective.formalEvidenceSourceBlockIds,
         })),
       },
       prerequisites,
@@ -378,6 +494,8 @@ export function createTeachingBriefPreparationService({
       sourceReferences: context.references,
       visualReferences: context.visualReferences,
       qualityProfile,
+      pedagogyEvaluation,
+      practice,
       provider: provider.name,
       providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
       promptVersion: TEACHING_BRIEF_PROMPT_VERSION,
@@ -464,7 +582,7 @@ export function createTeachingBriefPreparationService({
         );
       }
       const history = repos.teachingBriefs.listForUnit(input.workspaceId, input.learningUnitId);
-      const reuse = repos.teachingBriefs.findReusable({
+      const reusableCandidate = repos.teachingBriefs.findReusable({
         workspaceId: input.workspaceId,
         curriculumVersionId: input.curriculumVersionId,
         studyPlanVersionId: input.studyPlanVersionId,
@@ -472,6 +590,12 @@ export function createTeachingBriefPreparationService({
         manifestFingerprint: input.expectedExecutionSourceManifestFingerprint,
         sourceContextFingerprint: context.fingerprint,
       });
+      const reuse =
+        reusableCandidate?.promptVersion === TEACHING_BRIEF_PROMPT_VERSION &&
+        reusableCandidate.pedagogyEvaluation?.status === 'pass' &&
+        reusableCandidate.practice?.qualityEvaluation.status === 'pass'
+          ? reusableCandidate
+          : undefined;
       if (reuse) {
         const response = TeachingBriefPreparationResponseSchema.parse({
           status: 'reused',
@@ -504,6 +628,7 @@ export function createTeachingBriefPreparationService({
         at: clock.now().toISOString(),
         confirmedPolicyIds: input.confirmedCostPolicyIds ?? [],
       });
+      let semanticEvaluationCount = 0;
       const payload = await runTrackedAgentProviderOperation({
         repos,
         clock,
@@ -516,18 +641,26 @@ export function createTeachingBriefPreparationService({
         learningUnitId: input.learningUnitId,
         assessmentId: null,
         operationType: 'prepare_teaching_brief',
-        schemaFingerprint: 'teaching-brief-proposal-v1-local-refs',
+        schemaFingerprint: 'teaching-brief-proposal-v2-pedagogy-practice',
         policyFingerprint,
         sourceFingerprint: context.fingerprint,
         providerOptions: options,
         invoke: (providerOptions) =>
           provider.generateTeachingBrief(generationInput, {
             ...providerOptions,
-            validateCandidate: (candidate) =>
-              validateTeachingBriefCandidate(candidate, generationInput),
+            validateCandidate: (candidate) => {
+              semanticEvaluationCount += 1;
+              return validateTeachingBriefCandidate(candidate, generationInput);
+            },
           }),
       });
-      const brief = materialize(route, context, generationInput, payload);
+      const brief = materialize(
+        route,
+        context,
+        generationInput,
+        payload,
+        semanticEvaluationCount > 1,
+      );
       return repos.transaction(() => {
         const currentRoute = routeContext(input);
         const currentContext = sourceContext(currentRoute);
@@ -537,7 +670,7 @@ export function createTeachingBriefPreparationService({
             'Teaching Brief source context changed during generation.',
           );
         }
-        const concurrent = repos.teachingBriefs.findReusable({
+        const concurrentCandidate = repos.teachingBriefs.findReusable({
           workspaceId: input.workspaceId,
           curriculumVersionId: input.curriculumVersionId,
           studyPlanVersionId: input.studyPlanVersionId,
@@ -545,6 +678,12 @@ export function createTeachingBriefPreparationService({
           manifestFingerprint: input.expectedExecutionSourceManifestFingerprint,
           sourceContextFingerprint: context.fingerprint,
         });
+        const concurrent =
+          concurrentCandidate?.promptVersion === TEACHING_BRIEF_PROMPT_VERSION &&
+          concurrentCandidate.pedagogyEvaluation?.status === 'pass' &&
+          concurrentCandidate.practice?.qualityEvaluation.status === 'pass'
+            ? concurrentCandidate
+            : undefined;
         const stored = concurrent ?? repos.teachingBriefs.create(brief);
         const response = TeachingBriefPreparationResponseSchema.parse({
           status: concurrent ? 'reused' : 'prepared',
@@ -570,6 +709,20 @@ export function createTeachingBriefPreparationService({
         return response;
       });
     } catch (error) {
+      const candidateFailure =
+        error instanceof ProviderError &&
+        error.details &&
+        typeof error.details === 'object' &&
+        'candidateFailure' in error.details
+          ? error.details.candidateFailure
+          : undefined;
+      const structuredFailure =
+        error instanceof ProviderError &&
+        error.details &&
+        typeof error.details === 'object' &&
+        'structuredFailure' in error.details
+          ? error.details.structuredFailure
+          : undefined;
       const current = repos.operations.get(claim.id);
       if (
         current?.status === 'running' &&
@@ -585,6 +738,8 @@ export function createTeachingBriefPreparationService({
                 error instanceof Error
                   ? error.message.slice(0, 500)
                   : 'Teaching Brief preparation failed.',
+              ...(candidateFailure ? { candidateFailure } : {}),
+              ...(structuredFailure ? { structuredFailure } : {}),
             },
             createdAt: clock.now().toISOString(),
           },
@@ -607,16 +762,19 @@ export function createTeachingBriefPreparationService({
     }): TeachingBrief | null {
       const route = routeContext(input);
       const context = sourceContext(route);
-      return (
-        repos.teachingBriefs.findReusable({
-          workspaceId: input.workspaceId,
-          curriculumVersionId: input.curriculumVersionId,
-          studyPlanVersionId: input.studyPlanVersionId,
-          learningUnitId: input.learningUnitId,
-          manifestFingerprint: input.expectedExecutionSourceManifestFingerprint,
-          sourceContextFingerprint: context.fingerprint,
-        }) ?? null
-      );
+      const candidate = repos.teachingBriefs.findReusable({
+        workspaceId: input.workspaceId,
+        curriculumVersionId: input.curriculumVersionId,
+        studyPlanVersionId: input.studyPlanVersionId,
+        learningUnitId: input.learningUnitId,
+        manifestFingerprint: input.expectedExecutionSourceManifestFingerprint,
+        sourceContextFingerprint: context.fingerprint,
+      });
+      return candidate?.promptVersion === TEACHING_BRIEF_PROMPT_VERSION &&
+        candidate.pedagogyEvaluation?.status === 'pass' &&
+        candidate.practice?.qualityEvaluation.status === 'pass'
+        ? candidate
+        : null;
     },
     history: (workspaceId: string, learningUnitId: string) =>
       repos.teachingBriefs.listForUnit(workspaceId, learningUnitId),

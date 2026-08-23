@@ -2,6 +2,10 @@ import { z } from 'zod';
 import { VisualAdvisoryContextSchema } from './visual.js';
 import { CourseExecutionCommandEnvelopeSchema } from './learningContract.js';
 import { StudySessionStatusSchema } from './studySession.js';
+import {
+  LearnerPracticeProjectionSchema,
+  LessonPracticeAttemptStateSchema,
+} from './lessonPractice.js';
 
 /** Weak, session-owned lesson-presentation state. It carries no learning credit. */
 export const LessonExecutionPreparationStatusSchema = z.enum([
@@ -41,6 +45,8 @@ export const LessonExecutionStateSchema = z
     presentedSegmentIndexes: z.array(z.number().int().nonnegative()).max(12),
     informalInteractions: z.array(LessonInformalInteractionStateSchema).max(12),
     presentationCompletedAt: z.string().datetime().nullable(),
+    practiceInteractions: z.array(LessonPracticeAttemptStateSchema).max(16).default([]),
+    practiceCompletedAt: z.string().datetime().nullable().default(null),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
   })
@@ -85,6 +91,16 @@ export const LessonExecutionStateSchema = z
         message: 'informal interaction state must be unique per segment',
       });
     }
+    const practiceAttemptKeys = state.practiceInteractions.map(
+      (attempt) => `${attempt.itemIndex}:${attempt.attemptNumber}`,
+    );
+    if (new Set(practiceAttemptKeys).size !== practiceAttemptKeys.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['practiceInteractions'],
+        message: 'Practice attempts must be unique per item and attempt number',
+      });
+    }
   });
 export type LessonExecutionState = z.infer<typeof LessonExecutionStateSchema>;
 
@@ -101,6 +117,8 @@ export const LessonExecutionEventSchema = z
       'segment_presented',
       'segment_revisited',
       'informal_response_recorded',
+      'practice_response_recorded',
+      'practice_completed',
       'presentation_completed',
     ]),
     payload: z.record(z.unknown()),
@@ -196,6 +214,7 @@ export const LessonExecutionAllowedActionSchema = z.enum([
   'revisit_segment',
   'respond_to_informal_check',
   'complete_presentation',
+  'submit_practice_response',
   'review_lesson',
   'resume_study_session',
   'wait_for_preparation',
@@ -243,6 +262,15 @@ export const LearnerLessonProjectionSchema = z
         formalOpportunities: z.array(z.string().min(1).max(500)).max(8),
       })
       .strict(),
+    plannedTime: z
+      .object({
+        agendaMinutes: z.number().int().positive(),
+        activeMinutesMin: z.number().int().nonnegative(),
+        activeMinutesMax: z.number().int().nonnegative(),
+        basis: z.literal('locally_evaluated_learning_actions'),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 export type LearnerLessonProjection = z.infer<typeof LearnerLessonProjectionSchema>;
@@ -284,6 +312,7 @@ export const LessonExecutionProjectionSchema = z
       .strict()
       .nullable(),
     currentInformalCheck: LessonInformalCheckProjectionSchema.nullable(),
+    practice: LearnerPracticeProjectionSchema.nullable().optional(),
     allowedActions: z.array(LessonExecutionAllowedActionSchema).max(10),
   })
   .strict();
@@ -323,6 +352,13 @@ export const LessonExecutionCommandRequestSchema = z
         })
         .strict(),
       z.object({ kind: z.literal('complete_presentation') }).strict(),
+      z
+        .object({
+          kind: z.literal('submit_practice_response'),
+          itemIndex: z.number().int().nonnegative(),
+          optionId: z.string().min(1).max(80),
+        })
+        .strict(),
     ]),
   })
   .strict();

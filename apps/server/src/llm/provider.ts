@@ -52,6 +52,8 @@ import type {
   MasteryChallengeProposalPayload,
   MasteryChallengeFamily,
   MasteryFragilityBasis,
+  CurriculumAuthorityEnvelopeTier,
+  FormalAssessmentConstruct,
 } from '@hy3-clinic/shared';
 
 /** One original plus independently bounded schema and candidate repairs. */
@@ -441,7 +443,15 @@ export interface TeachingBriefGenerationInput {
   workspaceName: string;
   learningUnit: {
     title: string;
-    objectives: Array<{ objectiveRef: string; title: string; description: string }>;
+    objectives: Array<{
+      objectiveRef: string;
+      title: string;
+      description: string;
+      priority: 'required' | 'high' | 'normal' | 'optional';
+      construct: FormalAssessmentConstruct | null;
+      authorityEnvelopeTier: CurriculumAuthorityEnvelopeTier;
+      practiceAuthority: 'exact_formal' | 'exact_teaching' | 'advisory_visual' | 'unavailable';
+    }>;
     concepts: Array<{ name: string; summary: string }>;
     canonicalConcepts: Array<{ name: string }>;
   };
@@ -464,6 +474,8 @@ export interface TeachingBriefGenerationInput {
       pageNumber: number | null;
       slideNumber: number | null;
       text: string;
+      /** Locally derived alias boundary; no database authority identity is exposed. */
+      authorizedObjectiveRefs: string[];
     }>;
   };
   /** Visual source and Hy3 explanation stay explicitly separate and advisory. */
@@ -477,6 +489,8 @@ export interface TeachingBriefGenerationInput {
     maxSourceRefsPerSegment: number;
     maxFormalOpportunities: number;
   };
+  /** Accepted Agenda estimate; independent evaluation must justify it from learning actions. */
+  plannedMinutes: number;
 }
 
 /** One prior validated observation shown back to the Tutor model. */

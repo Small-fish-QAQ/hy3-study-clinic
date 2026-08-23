@@ -2,6 +2,7 @@ import { ApiErrorCode, type ApiErrorCodeValue } from '@hy3-clinic/shared';
 import type {
   ProviderCandidateFailureArtifact,
   ProviderCandidateFailureValue,
+  StructuredOutputDiagnostic,
   StructuredOutputFailureCategory,
 } from './provider.js';
 
@@ -69,6 +70,26 @@ export function sanitizeProviderCandidateFailureArtifact(
   };
 }
 
+function sanitizeStructuredOutputFailure(diagnostic: StructuredOutputDiagnostic | undefined) {
+  if (!diagnostic || diagnostic.failureCategory === null) return undefined;
+  return {
+    attemptNumber: diagnostic.attemptNumber,
+    attemptKind: diagnostic.attemptKind,
+    finishReason: diagnostic.finishReason,
+    truncated: diagnostic.truncated,
+    possiblyIncomplete: diagnostic.possiblyIncomplete,
+    jsonParseSuccess: diagnostic.jsonParseSuccess,
+    jsonFormat: diagnostic.jsonFormat,
+    schemaIssueCount: diagnostic.schemaIssueCount,
+    schemaIssues: diagnostic.schemaIssues.slice(0, 20).map((issue) => ({
+      path: issue.path.slice(0, 500),
+      code: issue.code.slice(0, 100),
+    })),
+    failureCategory: diagnostic.failureCategory,
+    repairAction: diagnostic.repairAction,
+  };
+}
+
 /**
  * Structured provider failure. Messages are user-facing and MUST NOT contain
  * API keys, endpoint URLs, raw HTTP bodies, or stack traces.
@@ -103,8 +124,10 @@ export class ProviderError extends Error {
     failureCategory?: StructuredOutputFailureCategory,
     repairExhausted = false,
     candidateFailure?: ProviderCandidateFailureArtifact,
+    structuredOutputDiagnostic?: StructuredOutputDiagnostic,
   ): ProviderError {
     const safeCandidateFailure = sanitizeProviderCandidateFailureArtifact(candidateFailure);
+    const structuredFailure = sanitizeStructuredOutputFailure(structuredOutputDiagnostic);
     return new ProviderError(
       ApiErrorCode.ProviderInvalidOutput,
       repairExhausted
@@ -114,6 +137,7 @@ export class ProviderError extends Error {
         ? {
             validationKind,
             ...(safeCandidateFailure ? { candidateFailure: safeCandidateFailure } : {}),
+            ...(structuredFailure ? { structuredFailure } : {}),
           }
         : undefined,
       failureCategory

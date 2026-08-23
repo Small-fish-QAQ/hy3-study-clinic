@@ -531,7 +531,18 @@ describe('Hy3Provider large StudyPlan output', () => {
 
     await expect(makeProvider(fetchImpl).proposeStudyPlan(input)).rejects.toMatchObject({
       code: 'PROVIDER_INVALID_OUTPUT',
-      details: { validationKind: 'schema' },
+      details: {
+        validationKind: 'schema',
+        structuredFailure: {
+          attemptNumber: 2,
+          attemptKind: 'repair',
+          jsonParseSuccess: true,
+          schemaIssueCount: 1,
+          schemaIssues: [{ path: 'groups.0.kind', code: 'invalid_enum_value' }],
+          failureCategory: 'SCHEMA_VALIDATION_FAILURE',
+          repairAction: 'exhausted',
+        },
+      },
       technicalFailureCode: 'REPAIR_EXHAUSTED:SCHEMA_VALIDATION_FAILURE',
     });
     expect(fetchImpl).toHaveBeenCalledTimes(2);
