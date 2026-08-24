@@ -589,7 +589,7 @@ export class Hy3Provider implements LlmProvider {
         'Repair only locally identified L* slots. Every other first-pass slot is frozen and cannot be changed, deleted, or reordered.',
         'Return only slotId plus bounded content fields. Never output objective refs, construct, role, duration, protection, authority mode, Practice, Formal Evidence, mastery, or progression.',
         'Use only the slot-specific offered S*/V* aliases. A semantic relation needs two distinct propositions and objective relevance; keywords alone never prove reasoning.',
-        'For a worked-process failure, provide the source-stated starting state/rule, transitions with reasons, result, and why it follows. Do not substitute a label or generic checklist.',
+        'For a worked-process failure, provide the source-stated starting state/rule, transitions with reasons, result, and why it follows. If the repaired slot has learnerActionRequired=true, also provide an aligned pre-guidance informalCheck that requires the learner to decide/predict/act before any explanation. Do not substitute a label or generic checklist.',
         'Return a slots object containing only replacements for the named invalid L* identities. Local code will reassemble it with every frozen valid slot exactly.',
       ].join('\n'),
       {

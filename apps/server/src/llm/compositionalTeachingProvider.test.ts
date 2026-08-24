@@ -331,6 +331,8 @@ describe('compositional Teaching providers', () => {
     const practicePrompt = practiceBody.messages.map((message) => message.content).join('\n');
     expect(lessonPrompt).toContain('immutable Hy3 Study Clinic instructional spine');
     expect(lessonPrompt).toContain('semantic relation requires two distinct');
+    expect(lessonPrompt).toContain('every slot whose learnerActionRequired is true');
+    expect(lessonPrompt).toContain('including consolidated worked_process slots');
     expect(lessonPrompt).not.toContain('"practicePlan"');
     expect(lessonPrompt).not.toContain('"acceptedLesson"');
     expect(practicePrompt).toContain('already accepted Hy3 Study Clinic Lesson');
@@ -363,6 +365,7 @@ describe('compositional Teaching providers', () => {
     ) as { messages: Array<{ content: string }> };
     expect(repairBody.messages.at(-1)?.content).toContain('L2');
     expect(repairBody.messages.at(-1)?.content).toContain('frozen');
+    expect(repairBody.messages.at(-1)?.content).toContain('learnerActionRequired=true');
   });
 
   it('freezes valid Lesson peers when one first-pass slot is schema-invalid', async () => {
