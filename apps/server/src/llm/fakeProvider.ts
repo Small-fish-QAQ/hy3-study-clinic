@@ -1468,7 +1468,7 @@ export class FakeProvider implements LlmProvider {
             : null;
         const initialPrompt =
           slot.construct === 'apply'
-            ? `${application?.startingState} Which action should happen next under the offered procedure?`
+            ? `${application?.startingState} Which next step should the learner choose under the offered procedure, and what action follows?`
             : slot.construct === 'explain'
               ? `Which response explains how and why the offered condition changes ${objective.title}?`
               : `Which case meaningfully distinguishes ${objective.title} by its offered defining feature?`;
@@ -1492,7 +1492,7 @@ export class FakeProvider implements LlmProvider {
                 optionRef: 'A',
                 text:
                   slot.construct === 'apply'
-                    ? application!.expectedAction
+                    ? `${application!.expectedAction} This keeps the ${objective.title} transition inside its source-stated boundary.`
                     : 'Use the defining condition to connect the case to the bounded conclusion.',
                 feedbackIfSelected:
                   'Correct: this response uses the offered boundary to demonstrate the planned capability.',
@@ -1528,7 +1528,7 @@ export class FakeProvider implements LlmProvider {
                 optionRef: 'B',
                 text:
                   slot.construct === 'apply'
-                    ? 'Re-evaluate the changed condition, then select the source-authorized next action.'
+                    ? `Re-evaluate the changed ${objective.title} condition, then select the source-authorized next ${objective.title} action.`
                     : 'Re-evaluate the changed condition and connect it to the corresponding bounded result.',
                 feedbackIfSelected:
                   'Correct: this changed surface preserves the same construct and authority boundary.',
