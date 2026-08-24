@@ -569,7 +569,79 @@ describe('FakeProvider Curriculum capability recovery', () => {
     };
     await expect(provider.proposeCourseMap(unrelatedOnly)).rejects.toMatchObject({
       code: 'PROVIDER_INVALID_OUTPUT',
+      technicalFailureCode: 'SEMANTIC_VALIDATION_FAILURE',
+      details: {
+        validationKind: 'candidate',
+        candidateFailure: {
+          kind: 'course_map_recovery_semantic_placement_unavailable',
+          context: {
+            capabilityRef: 'capability-photosynthesis',
+            construct: 'explain',
+          },
+          diagnostics: [
+            expect.objectContaining({
+              code: 'recovery_capability_semantic_evidence_unavailable',
+              facts: expect.objectContaining({
+                capabilityRef: 'capability-photosynthesis',
+                construct: 'explain',
+                allowedSourceRegionCount: 1,
+                allowedEvidenceCount: 1,
+              }),
+            }),
+          ],
+        },
+      },
     });
+
+    const laterUnplaceable = structuredClone(input);
+    laterUnplaceable.capabilityRecovery = {
+      evidenceOffers: [
+        {
+          recoveryEvidenceRef: 'CE1',
+          sourceRegionRef: 'R1',
+          text: '[SUPPORTS:explain] A bounded supported relation.',
+        },
+        {
+          recoveryEvidenceRef: 'CE2',
+          sourceRegionRef: 'R1',
+          text: 'Mitochondria produce ATP through cellular respiration.',
+        },
+      ],
+      requirements: [
+        {
+          capabilityRef: 'capability-supported-first',
+          title: 'Explain a bounded relation',
+          description: 'Explain the explicitly supported bounded relation.',
+          originalProposition:
+            'Explain a bounded relation\nExplain the explicitly supported bounded relation.',
+          construct: 'explain',
+          priority: 'required',
+          allowedSourceRegionRefs: ['R1'],
+          allowedRecoveryEvidenceRefs: ['CE1'],
+        },
+        unrelatedOnly.capabilityRecovery.requirements[0]!,
+      ],
+    };
+    laterUnplaceable.capabilityRecovery.requirements[1] = {
+      ...laterUnplaceable.capabilityRecovery.requirements[1]!,
+      allowedRecoveryEvidenceRefs: ['CE2'],
+    };
+    let repairAttempts = 0;
+    await expect(
+      provider.proposeCourseMap(laterUnplaceable, {
+        onRepairAttempt: () => {
+          repairAttempts += 1;
+        },
+      }),
+    ).rejects.toMatchObject({
+      code: 'PROVIDER_INVALID_OUTPUT',
+      details: {
+        candidateFailure: {
+          context: { capabilityRef: 'capability-photosynthesis' },
+        },
+      },
+    });
+    expect(repairAttempts).toBe(0);
   });
 
   it('materializes exact recovery objectives from only allowed same-construct evidence', async () => {

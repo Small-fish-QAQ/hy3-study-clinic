@@ -359,6 +359,8 @@ Saved Settings intentionally take precedence over `LLM_PROVIDER`. Automated brow
 
 Fake and real Hy3 use the same objective-authority semantic evaluation and repair contracts, compositional Lesson/Practice payloads, local authority checks, evaluators, repair ceilings, and telemetry boundaries. Fake mode is deterministic integration evidence only; it does not prove how a configured real model will follow the contracts or that generated instruction is educationally effective. Automated tests and `npm run eval:fake` never call the real Hy3 API. Real calls require an explicit complete Hy3 configuration and remain separate from the offline verification gate; the application does not silently fall back to Fake during an active real-provider operation.
 
+Fake semantic success is intentionally fixture-backed. Course Map recovery does not treat an arbitrary legacy proposition authored by real Hy3 as supported merely because its accepted evidence is an exact quote or shares keywords. If a required recovery capability has no explicit same-construct Fake fixture inside its allowed evidence, Fake fails closed before candidate generation and identifies the first unsupported capability. This diagnostic proves deterministic wiring; it is not semantic evidence and is not permission to trust a legacy binding or add lexical entailment heuristics.
+
 Rich-document extraction is local and deterministic in both provider modes. It does not call Hy3, so Fake and real-Hy3 setup is unchanged.
 
 For the real API, set the server-side variables in `.env`:

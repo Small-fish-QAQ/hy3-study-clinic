@@ -1815,6 +1815,38 @@ export class FakeProvider implements LlmProvider {
             allowedRegionRefs.has(region.sourceRegionRef) && Number.isFinite(supportRank),
         );
     });
+    const firstUnplaceableRequirementIndex = rankedCourseMapCandidates.findIndex(
+      (candidates) => candidates.length === 0,
+    );
+    if (firstUnplaceableRequirementIndex >= 0) {
+      const requirement = capabilityRequirements[firstUnplaceableRequirementIndex]!;
+      throw ProviderError.invalidOutput(
+        `No semantically supported allowed Course Map evidence exists for recovery capability ${requirement.capabilityRef}`,
+        'candidate',
+        'SEMANTIC_VALIDATION_FAILURE',
+        false,
+        {
+          kind: 'course_map_recovery_semantic_placement_unavailable',
+          context: {
+            capabilityRef: requirement.capabilityRef,
+            construct: requirement.construct,
+          },
+          diagnostics: [
+            {
+              code: 'recovery_capability_semantic_evidence_unavailable',
+              message:
+                "The deterministic Fake provider has no explicit same-construct semantic fixture inside this capability's allowed recovery evidence.",
+              facts: {
+                capabilityRef: requirement.capabilityRef,
+                construct: requirement.construct,
+                allowedSourceRegionCount: requirement.allowedSourceRegionRefs.length,
+                allowedEvidenceCount: requirement.allowedRecoveryEvidenceRefs.length,
+              },
+            },
+          ],
+        },
+      );
+    }
     const candidateKeysByRequirement = rankedCourseMapCandidates.map((candidates) =>
       candidates.map((candidate) => candidate.region.sourceRegionRef),
     );
