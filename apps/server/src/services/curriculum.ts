@@ -1286,6 +1286,7 @@ export function createCurriculumService({
         ),
     ];
     let evidenceCatalog: ReturnType<typeof selectCurriculumEvidenceOffers>;
+    let recoveryEvidenceIdsByLearningUnitId: ReadonlyMap<string, readonly string[]> = new Map();
     try {
       const selectedEvidenceCatalog = selectCurriculumEvidenceOffers({
         catalog: fullEvidenceCatalog,
@@ -1298,13 +1299,17 @@ export function createCurriculumService({
         sourceMap,
         policy: CURRICULUM_EVIDENCE_PRODUCTION_POLICY,
       });
-      evidenceCatalog = capabilityRecoveryPredecessor
-        ? reserveCurriculumCapabilityRecoveryEvidence({
-            predecessor: capabilityRecoveryPredecessor,
-            fullEvidenceCatalog,
-            selectedEvidenceCatalog,
-          })
-        : selectedEvidenceCatalog;
+      if (capabilityRecoveryPredecessor) {
+        const reservation = reserveCurriculumCapabilityRecoveryEvidence({
+          predecessor: capabilityRecoveryPredecessor,
+          fullEvidenceCatalog,
+          selectedEvidenceCatalog,
+        });
+        evidenceCatalog = reservation.evidenceCatalog;
+        recoveryEvidenceIdsByLearningUnitId = reservation.recoveryEvidenceIdsByLearningUnitId;
+      } else {
+        evidenceCatalog = selectedEvidenceCatalog;
+      }
     } catch (error) {
       commands.fail(claim, error);
       throw error;
@@ -1319,6 +1324,7 @@ export function createCurriculumService({
             manifest: context.manifest,
             sourceBlocks: context.blocks,
             evidenceCatalog,
+            recoveryEvidenceIdsByLearningUnitId,
           }),
         );
       } catch (error) {
@@ -1429,6 +1435,7 @@ export function createCurriculumService({
                 manifest: context.manifest,
                 sourceBlocks: context.blocks,
                 evidenceCatalog,
+                recoveryEvidenceIdsByLearningUnitId,
               }),
             )
           : null;

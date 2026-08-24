@@ -215,12 +215,35 @@ function recoveryFixture(
 }
 
 function buildFrontier(fixture: RecoveryFixture): CurriculumCapabilityRecoveryFrontier {
+  const recoveryEvidenceIdsByLearningUnitId = new Map(
+    fixture.predecessor.nodes.flatMap((node) => {
+      const hasNonOptionalObjective =
+        node.learningUnit?.objectives.some(
+          (objective) => (objective.priority ?? 'normal') !== 'optional',
+        ) ?? false;
+      if (!hasNonOptionalObjective) return [];
+      const sourceBlockIds = new Set(
+        node.sourceReferences.flatMap((reference) =>
+          reference.sourceBlockId ? [reference.sourceBlockId] : [],
+        ),
+      );
+      return [
+        [
+          node.id,
+          fixture.evidenceCatalog
+            .filter((offer) => sourceBlockIds.has(offer.blockId))
+            .map((offer) => offer.id),
+        ] as const,
+      ];
+    }),
+  );
   return buildCurriculumCapabilityRecoveryFrontier({
     predecessor: fixture.predecessor,
     contract: fixture.contract,
     manifest: fixture.manifest,
     sourceBlocks: fixture.blocks,
     evidenceCatalog: fixture.evidenceCatalog,
+    recoveryEvidenceIdsByLearningUnitId,
   });
 }
 
@@ -370,6 +393,112 @@ describe('Curriculum capability recovery frontier', () => {
         recoveryOrigin: expect.objectContaining({ predecessorPriority: 'normal' }),
       }),
     ]);
+  });
+
+  it('fails closed for missing, foreign, optional-only, duplicate, unknown, and escaped recovery reservations', () => {
+    const missing = recoveryFixture();
+    expectRecoveryError(
+      () =>
+        buildCurriculumCapabilityRecoveryFrontier({
+          predecessor: missing.predecessor,
+          contract: missing.contract,
+          manifest: missing.manifest,
+          sourceBlocks: missing.blocks,
+          evidenceCatalog: missing.evidenceCatalog,
+          recoveryEvidenceIdsByLearningUnitId: new Map(),
+        }),
+      'recovery_capability_evidence_reservation_missing',
+    );
+
+    const foreign = recoveryFixture();
+    const foreignReservations = new Map<string, readonly string[]>([
+      [foreign.predecessor.nodes[1]!.id, foreign.evidenceCatalog.map((offer) => offer.id)],
+      ['unit_foreign', [foreign.evidenceCatalog[0]!.id]],
+    ]);
+    expectRecoveryError(
+      () =>
+        buildCurriculumCapabilityRecoveryFrontier({
+          predecessor: foreign.predecessor,
+          contract: foreign.contract,
+          manifest: foreign.manifest,
+          sourceBlocks: foreign.blocks,
+          evidenceCatalog: foreign.evidenceCatalog,
+          recoveryEvidenceIdsByLearningUnitId: foreignReservations,
+        }),
+      'recovery_capability_evidence_reservation_foreign',
+    );
+
+    const optionalOnly = recoveryFixture([
+      curriculumObjective('objective_optional_only', { priority: 'optional' }),
+    ]);
+    expectRecoveryError(
+      () =>
+        buildCurriculumCapabilityRecoveryFrontier({
+          predecessor: optionalOnly.predecessor,
+          contract: optionalOnly.contract,
+          manifest: optionalOnly.manifest,
+          sourceBlocks: optionalOnly.blocks,
+          evidenceCatalog: optionalOnly.evidenceCatalog,
+          recoveryEvidenceIdsByLearningUnitId: new Map([
+            [optionalOnly.predecessor.nodes[1]!.id, [optionalOnly.evidenceCatalog[0]!.id]],
+          ]),
+        }),
+      'recovery_capability_evidence_reservation_unbound',
+    );
+
+    const duplicate = recoveryFixture();
+    expectRecoveryError(
+      () =>
+        buildCurriculumCapabilityRecoveryFrontier({
+          predecessor: duplicate.predecessor,
+          contract: duplicate.contract,
+          manifest: duplicate.manifest,
+          sourceBlocks: duplicate.blocks,
+          evidenceCatalog: duplicate.evidenceCatalog,
+          recoveryEvidenceIdsByLearningUnitId: new Map([
+            [
+              duplicate.predecessor.nodes[1]!.id,
+              [duplicate.evidenceCatalog[0]!.id, duplicate.evidenceCatalog[0]!.id],
+            ],
+          ]),
+        }),
+      'recovery_capability_evidence_reservation_duplicate',
+    );
+
+    const unknown = recoveryFixture();
+    expectRecoveryError(
+      () =>
+        buildCurriculumCapabilityRecoveryFrontier({
+          predecessor: unknown.predecessor,
+          contract: unknown.contract,
+          manifest: unknown.manifest,
+          sourceBlocks: unknown.blocks,
+          evidenceCatalog: unknown.evidenceCatalog,
+          recoveryEvidenceIdsByLearningUnitId: new Map([
+            [unknown.predecessor.nodes[1]!.id, ['E_unknown']],
+          ]),
+        }),
+      'recovery_capability_evidence_unknown',
+    );
+
+    const escaped = recoveryFixture();
+    escaped.predecessor.nodes[1]!.sourceReferences = [
+      escaped.predecessor.nodes[1]!.sourceReferences[0]!,
+    ];
+    expectRecoveryError(
+      () =>
+        buildCurriculumCapabilityRecoveryFrontier({
+          predecessor: escaped.predecessor,
+          contract: escaped.contract,
+          manifest: escaped.manifest,
+          sourceBlocks: escaped.blocks,
+          evidenceCatalog: escaped.evidenceCatalog,
+          recoveryEvidenceIdsByLearningUnitId: new Map([
+            [escaped.predecessor.nodes[1]!.id, [escaped.evidenceCatalog[1]!.id]],
+          ]),
+        }),
+      'recovery_capability_evidence_outside_source_envelope',
+    );
   });
 
   it.each([
@@ -558,7 +687,7 @@ describe('Curriculum capability recovery source allocation', () => {
       id: 'E1',
     };
 
-    const reserved = reserveCurriculumCapabilityRecoveryEvidence({
+    const reservation = reserveCurriculumCapabilityRecoveryEvidence({
       predecessor: fixture.predecessor,
       fullEvidenceCatalog: fixture.evidenceCatalog.map((offer, index) => ({
         ...offer,
@@ -566,6 +695,7 @@ describe('Curriculum capability recovery source allocation', () => {
       })),
       selectedEvidenceCatalog: [selectedAlias],
     });
+    const reserved = reservation.evidenceCatalog;
 
     expect(reserved.map((offer) => offer.blockId)).toEqual([
       fixture.blocks[1]!.id,
@@ -579,6 +709,7 @@ describe('Curriculum capability recovery source allocation', () => {
       manifest: fixture.manifest,
       sourceBlocks: fixture.blocks,
       evidenceCatalog: reserved,
+      recoveryEvidenceIdsByLearningUnitId: reservation.recoveryEvidenceIdsByLearningUnitId,
     });
     expect(frontier.requirements[0]!.allowedEvidenceIds).toEqual(['E1', 'E2']);
   });
@@ -618,17 +749,19 @@ describe('Curriculum capability recovery source allocation', () => {
     ];
     fixture.evidenceCatalog = fixture.blocks.map(evidenceOffer);
 
-    const reserved = reserveCurriculumCapabilityRecoveryEvidence({
+    const reservation = reserveCurriculumCapabilityRecoveryEvidence({
       predecessor: fixture.predecessor,
       fullEvidenceCatalog: fixture.evidenceCatalog,
       selectedEvidenceCatalog: [],
     });
+    const reserved = reservation.evidenceCatalog;
     const reservedFrontier = buildCurriculumCapabilityRecoveryFrontier({
       predecessor: fixture.predecessor,
       contract: fixture.contract,
       manifest: fixture.manifest,
       sourceBlocks: fixture.blocks,
       evidenceCatalog: reserved,
+      recoveryEvidenceIdsByLearningUnitId: reservation.recoveryEvidenceIdsByLearningUnitId,
     });
 
     expect(reservedFrontier.requirements).toHaveLength(unitCount);
@@ -691,11 +824,12 @@ describe('Curriculum capability recovery source allocation', () => {
     fixture.evidenceCatalog = fixture.blocks.map(evidenceOffer);
     const ordinaryOffers = fixture.evidenceCatalog.slice(-ordinaryBlocks.length);
 
-    const reserved = reserveCurriculumCapabilityRecoveryEvidence({
+    const reservation = reserveCurriculumCapabilityRecoveryEvidence({
       predecessor: fixture.predecessor,
       fullEvidenceCatalog: fixture.evidenceCatalog,
       selectedEvidenceCatalog: ordinaryOffers,
     });
+    const reserved = reservation.evidenceCatalog;
     const reservedBindingIds = new Set(reserved.map((offer) => offer.bindingId));
     const reservedFrontier = buildCurriculumCapabilityRecoveryFrontier({
       predecessor: fixture.predecessor,
@@ -703,6 +837,7 @@ describe('Curriculum capability recovery source allocation', () => {
       manifest: fixture.manifest,
       sourceBlocks: fixture.blocks,
       evidenceCatalog: reserved,
+      recoveryEvidenceIdsByLearningUnitId: reservation.recoveryEvidenceIdsByLearningUnitId,
     });
     const evidenceCounts = reservedFrontier.requirements.map(
       (requirement) => requirement.allowedEvidenceIds.length,
@@ -765,11 +900,12 @@ describe('Curriculum capability recovery source allocation', () => {
     fixture.evidenceCatalog = fixture.blocks.map(evidenceOffer);
     const ordinaryOffers = fixture.evidenceCatalog.slice(unitCount);
 
-    const reserved = reserveCurriculumCapabilityRecoveryEvidence({
+    const reservation = reserveCurriculumCapabilityRecoveryEvidence({
       predecessor: fixture.predecessor,
       fullEvidenceCatalog: fixture.evidenceCatalog,
       selectedEvidenceCatalog: ordinaryOffers,
     });
+    const reserved = reservation.evidenceCatalog;
     const reservedBindingIds = new Set(reserved.map((offer) => offer.bindingId));
     const reservedBlockIds = new Set(reserved.map((offer) => offer.blockId));
     const reservedFrontier = buildCurriculumCapabilityRecoveryFrontier({
@@ -778,6 +914,7 @@ describe('Curriculum capability recovery source allocation', () => {
       manifest: fixture.manifest,
       sourceBlocks: fixture.blocks,
       evidenceCatalog: reserved,
+      recoveryEvidenceIdsByLearningUnitId: reservation.recoveryEvidenceIdsByLearningUnitId,
     });
 
     expect(ordinaryOffers).toHaveLength(CURRICULUM_CAPABILITY_RECOVERY_MAX_EVIDENCE_TOTAL);
@@ -790,6 +927,153 @@ describe('Curriculum capability recovery source allocation', () => {
         (requirement) => requirement.allowedEvidenceIds.length === 1,
       ),
     ).toBe(true);
+  });
+
+  it('keeps 160 ordinary blocks visible while bounding a 102-block recovery envelope to 29', () => {
+    const fixture = recoveryFixture();
+    fixture.blocks = Array.from({ length: 160 }, (_, index) =>
+      sourceBlock(`block_large_ordinary_${index + 1}`, index),
+    );
+    fixture.manifest = executionManifest(fixture.blocks);
+    fixture.predecessor.executionSourceManifest = fixture.manifest;
+    const largeUnitBlocks = fixture.blocks.slice(0, 102);
+    fixture.predecessor.nodes[1] = {
+      ...structuredClone(fixture.predecessor.nodes[1]!),
+      id: 'unit_large_ordinary_recovery',
+      sourceReferences: largeUnitBlocks.map((block) => ({
+        materialId: MATERIAL_ID,
+        materialRevisionId: REVISION_ID,
+        structuralUnitId: null,
+        sourceBlockId: block.id,
+        sourceBlockRevisionFingerprint: curriculumSourceBlockFingerprint(block, REVISION_ID),
+      })),
+      learningUnit: {
+        ...structuredClone(fixture.predecessor.nodes[1]!.learningUnit!),
+        objectives: [
+          curriculumObjective('objective_large_ordinary_recovery_1'),
+          curriculumObjective('objective_large_ordinary_recovery_2'),
+        ],
+      },
+    };
+    fixture.evidenceCatalog = fixture.blocks.map(evidenceOffer);
+
+    const reservation = reserveCurriculumCapabilityRecoveryEvidence({
+      predecessor: fixture.predecessor,
+      fullEvidenceCatalog: fixture.evidenceCatalog,
+      selectedEvidenceCatalog: fixture.evidenceCatalog,
+    });
+    const repeatedReservation = reserveCurriculumCapabilityRecoveryEvidence({
+      predecessor: fixture.predecessor,
+      fullEvidenceCatalog: fixture.evidenceCatalog,
+      selectedEvidenceCatalog: fixture.evidenceCatalog,
+    });
+    const recoveryEvidenceIds = reservation.recoveryEvidenceIdsByLearningUnitId.get(
+      'unit_large_ordinary_recovery',
+    );
+    const reservedById = new Map(
+      reservation.evidenceCatalog.map((offer) => [offer.id, offer] as const),
+    );
+    const largeUnitBlockIds = new Set(largeUnitBlocks.map((block) => block.id));
+    const recoveryBindingIds = new Set(
+      recoveryEvidenceIds?.map((evidenceId) => reservedById.get(evidenceId)!.bindingId),
+    );
+    const frontier = buildCurriculumCapabilityRecoveryFrontier({
+      predecessor: fixture.predecessor,
+      contract: fixture.contract,
+      manifest: fixture.manifest,
+      sourceBlocks: fixture.blocks,
+      evidenceCatalog: reservation.evidenceCatalog,
+      recoveryEvidenceIdsByLearningUnitId: reservation.recoveryEvidenceIdsByLearningUnitId,
+    });
+
+    expect(reservation.evidenceCatalog).toHaveLength(160);
+    expect(repeatedReservation).toEqual(reservation);
+    expect(
+      fixture.evidenceCatalog.every((offer) =>
+        reservation.evidenceCatalog.some((reserved) => reserved.bindingId === offer.bindingId),
+      ),
+    ).toBe(true);
+    expect(recoveryEvidenceIds).toHaveLength(
+      CURRICULUM_CAPABILITY_RECOVERY_MAX_EVIDENCE_PER_REQUIREMENT,
+    );
+    expect(new Set(recoveryEvidenceIds).size).toBe(recoveryEvidenceIds?.length);
+    expect(
+      recoveryEvidenceIds?.every((evidenceId) =>
+        largeUnitBlockIds.has(reservedById.get(evidenceId)!.blockId),
+      ),
+    ).toBe(true);
+    expect(
+      reservation.evidenceCatalog.some(
+        (offer) => largeUnitBlockIds.has(offer.blockId) && !recoveryBindingIds.has(offer.bindingId),
+      ),
+    ).toBe(true);
+    expect(
+      reservation.evidenceCatalog
+        .filter((offer) => !largeUnitBlockIds.has(offer.blockId))
+        .every((offer) => !recoveryBindingIds.has(offer.bindingId)),
+    ).toBe(true);
+    expect(frontier.requirements).toHaveLength(2);
+    expect(
+      frontier.requirements.every(
+        (requirement) =>
+          JSON.stringify(requirement.allowedEvidenceIds) === JSON.stringify(recoveryEvidenceIds),
+      ),
+    ).toBe(true);
+  });
+
+  it('fails closed when mandatory ordinary coverage plus recovery minima exceeds 240 offers', () => {
+    const fixture = recoveryFixture();
+    const ordinaryBlockCount = 160;
+    const recoveryUnitCount =
+      CURRICULUM_CAPABILITY_RECOVERY_MAX_EVIDENCE_TOTAL - ordinaryBlockCount + 1;
+    const recoveryBlocks = Array.from({ length: recoveryUnitCount }, (_, index) =>
+      sourceBlock(`block_global_recovery_${index + 1}`, index),
+    );
+    const ordinaryBlocks = Array.from({ length: ordinaryBlockCount }, (_, index) =>
+      sourceBlock(`block_global_ordinary_${index + 1}`, recoveryUnitCount + index),
+    );
+    fixture.blocks = [...recoveryBlocks, ...ordinaryBlocks];
+    fixture.manifest = executionManifest(fixture.blocks);
+    fixture.predecessor.executionSourceManifest = fixture.manifest;
+    fixture.predecessor.nodes = [
+      fixture.predecessor.nodes[0]!,
+      ...recoveryBlocks.map((block, index) => ({
+        ...structuredClone(fixture.predecessor.nodes[1]!),
+        id: `unit_global_recovery_${index + 1}`,
+        sourceReferences: [
+          {
+            materialId: MATERIAL_ID,
+            materialRevisionId: REVISION_ID,
+            structuralUnitId: null,
+            sourceBlockId: block.id,
+            sourceBlockRevisionFingerprint: curriculumSourceBlockFingerprint(block, REVISION_ID),
+          },
+        ],
+        learningUnit: {
+          ...structuredClone(fixture.predecessor.nodes[1]!.learningUnit!),
+          objectives: [curriculumObjective(`objective_global_recovery_${index + 1}`)],
+        },
+      })),
+    ];
+    fixture.evidenceCatalog = fixture.blocks.map(evidenceOffer);
+    const ordinaryOffers = fixture.evidenceCatalog.slice(recoveryUnitCount);
+
+    const error = expectRecoveryError(
+      () =>
+        reserveCurriculumCapabilityRecoveryEvidence({
+          predecessor: fixture.predecessor,
+          fullEvidenceCatalog: fixture.evidenceCatalog,
+          selectedEvidenceCatalog: ordinaryOffers,
+        }),
+      'recovery_ordinary_evidence_coverage_budget_exceeded',
+    );
+
+    expect(recoveryUnitCount + ordinaryOffers.length).toBe(
+      CURRICULUM_CAPABILITY_RECOVERY_MAX_EVIDENCE_TOTAL + 1,
+    );
+    expect(error.details).toMatchObject({
+      evidenceLimit: CURRICULUM_CAPABILITY_RECOVERY_MAX_EVIDENCE_TOTAL,
+    });
   });
 
   it('allocates by complete region block membership when allowed evidence is absent from the capped sample', () => {

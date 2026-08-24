@@ -61,6 +61,13 @@ export interface CurriculumCapabilityRecoveryFrontier {
 export type SourceAllocatedCurriculumCapabilityRecoveryRequirement =
   CurriculumCapabilityRecoveryRequirement;
 
+export interface CurriculumCapabilityRecoveryEvidenceReservation {
+  /** Merged provider-visible catalog: ordinary coverage plus bounded recovery additions. */
+  evidenceCatalog: CurriculumEvidenceOffer[];
+  /** Exact bounded recovery subset for each predecessor LearningUnit. */
+  recoveryEvidenceIdsByLearningUnitId: ReadonlyMap<string, readonly string[]>;
+}
+
 interface RecoveryDiagnostic {
   code: string;
   message: string;
@@ -166,19 +173,20 @@ function assertRecoveryPredecessorCurrent(input: {
 }
 
 /**
- * Recovery receives a fair, source-diverse reserve for every non-optional
- * predecessor LearningUnit, even when the ordinary global selector omitted
- * its first legitimate source. The minimum recovery pass runs before ordinary
- * evidence, while recovery enrichment runs after it, so reaching the global
- * ceiling cannot silently erase the selector's ordinary source coverage. Each
- * LearningUnit stays within the same per-capability ceiling and the union stays
- * inside the fixed provider budget.
+ * Build one provider-visible catalog while separately freezing the bounded
+ * recovery subset for every non-optional predecessor LearningUnit. The minimum
+ * recovery pass runs before ordinary evidence, while recovery enrichment runs
+ * after it, so reaching the global catalog ceiling cannot silently erase the
+ * selector's ordinary source coverage. Ordinary offers remain visible without
+ * automatically becoming recovery-eligible; each LearningUnit subset stays
+ * within the recovery ceiling and their catalog union stays within the
+ * fixed provider budget.
  */
 export function reserveCurriculumCapabilityRecoveryEvidence(input: {
   predecessor: Curriculum;
   fullEvidenceCatalog: readonly CurriculumEvidenceOffer[];
   selectedEvidenceCatalog: readonly CurriculumEvidenceOffer[];
-}): CurriculumEvidenceOffer[] {
+}): CurriculumCapabilityRecoveryEvidenceReservation {
   const sameBinding = (left: CurriculumEvidenceOffer, right: CurriculumEvidenceOffer): boolean => {
     const { id: _leftId, ...leftBinding } = left;
     const { id: _rightId, ...rightBinding } = right;
@@ -213,7 +221,7 @@ export function reserveCurriculumCapabilityRecoveryEvidence(input: {
     sourceBlockIds: Set<string>;
     ordinaryCandidates: CurriculumEvidenceOffer[];
     candidates: CurriculumEvidenceOffer[];
-    selectedIds: Set<string>;
+    recoveryBindingIds: Set<string>;
     cursor: number;
   }> = [];
   for (const node of input.predecessor.nodes) {
@@ -254,7 +262,7 @@ export function reserveCurriculumCapabilityRecoveryEvidence(input: {
       sourceBlockIds,
       ordinaryCandidates,
       candidates,
-      selectedIds: new Set(),
+      recoveryBindingIds: new Set(),
       cursor: 0,
     });
   }
@@ -267,34 +275,36 @@ export function reserveCurriculumCapabilityRecoveryEvidence(input: {
     }
   }
   const merged = new Map<string, CurriculumEvidenceOffer>();
-  const tryAdd = (offer: CurriculumEvidenceOffer): boolean => {
-    if (merged.has(offer.bindingId)) return false;
-    const memberships = groupsByBlockId.get(offer.blockId) ?? [];
+  const tryAddToCatalog = (offer: CurriculumEvidenceOffer): boolean => {
+    if (merged.has(offer.bindingId)) return true;
+    if (merged.size >= CURRICULUM_CAPABILITY_RECOVERY_MAX_EVIDENCE_TOTAL) return false;
+    merged.set(offer.bindingId, offer);
+    return true;
+  };
+  const trySelectRecoveryEvidence = (
+    group: (typeof groups)[number],
+    offer: CurriculumEvidenceOffer,
+  ): boolean => {
+    if (group.recoveryBindingIds.has(offer.bindingId)) return false;
     if (
-      memberships.some(
-        (group) =>
-          group.selectedIds.size >= CURRICULUM_CAPABILITY_RECOVERY_MAX_EVIDENCE_PER_REQUIREMENT,
-      ) ||
-      merged.size >= CURRICULUM_CAPABILITY_RECOVERY_MAX_EVIDENCE_TOTAL
+      group.recoveryBindingIds.size >= CURRICULUM_CAPABILITY_RECOVERY_MAX_EVIDENCE_PER_REQUIREMENT
     ) {
       return false;
     }
-    merged.set(offer.bindingId, offer);
-    for (const group of memberships) group.selectedIds.add(offer.bindingId);
+    if (!tryAddToCatalog(offer)) return false;
+    group.recoveryBindingIds.add(offer.bindingId);
     return true;
   };
   const addNextCandidate = (group: (typeof groups)[number]): boolean => {
     while (group.cursor < group.candidates.length) {
       const candidate = group.candidates[group.cursor++]!;
-      if (merged.has(candidate.bindingId)) continue;
-      if (tryAdd(candidate)) return true;
+      if (trySelectRecoveryEvidence(group, candidate)) return true;
     }
     return false;
   };
   const addMinimumCandidate = (group: (typeof groups)[number]): boolean => {
     for (const candidate of group.ordinaryCandidates) {
-      if (merged.has(candidate.bindingId)) continue;
-      if (tryAdd(candidate)) return true;
+      if (trySelectRecoveryEvidence(group, candidate)) return true;
     }
     return addNextCandidate(group);
   };
@@ -304,9 +314,9 @@ export function reserveCurriculumCapabilityRecoveryEvidence(input: {
   // coverage, avoiding a second global slot for the same LearningUnit. A
   // shared binding can satisfy more than one source envelope.
   for (const group of groups) {
-    if (group.selectedIds.size === 0) addMinimumCandidate(group);
+    if (group.recoveryBindingIds.size === 0) addMinimumCandidate(group);
   }
-  const unservedGroup = groups.find((group) => group.selectedIds.size === 0);
+  const unservedGroup = groups.find((group) => group.recoveryBindingIds.size === 0);
   if (unservedGroup) {
     throw recoveryError(
       'recovery_capability_source_envelope_missing',
@@ -327,11 +337,10 @@ export function reserveCurriculumCapabilityRecoveryEvidence(input: {
     if (ordinaryCoverageBlockIds.has(offer.blockId)) continue;
     ordinaryCoverageBlockIds.add(offer.blockId);
     ordinaryCoverageBindingIds.add(offer.bindingId);
-    if (merged.has(offer.bindingId)) continue;
-    if (!tryAdd(offer)) {
+    if (!tryAddToCatalog(offer)) {
       throw recoveryError(
         'recovery_ordinary_evidence_coverage_budget_exceeded',
-        'The bounded recovery reserve cannot preserve ordinary exact source coverage.',
+        'The combined provider evidence catalog cannot preserve ordinary exact source coverage.',
         {
           evidenceId: offer.id,
           bindingId: offer.bindingId,
@@ -339,7 +348,6 @@ export function reserveCurriculumCapabilityRecoveryEvidence(input: {
           recoveryLearningUnitIds:
             groupsByBlockId.get(offer.blockId)?.map((group) => group.nodeId) ?? [],
           evidenceLimit: CURRICULUM_CAPABILITY_RECOVERY_MAX_EVIDENCE_TOTAL,
-          perCapabilityEvidenceLimit: CURRICULUM_CAPABILITY_RECOVERY_MAX_EVIDENCE_PER_REQUIREMENT,
         },
       );
     }
@@ -349,26 +357,49 @@ export function reserveCurriculumCapabilityRecoveryEvidence(input: {
   // recovery enrichment. The first-pass coverage above is never best-effort.
   for (const offer of ordinarySelected) {
     if (ordinaryCoverageBindingIds.has(offer.bindingId)) continue;
-    tryAdd(offer);
+    tryAddToCatalog(offer);
   }
 
   for (
     let round = 0;
-    round < CURRICULUM_CAPABILITY_RECOVERY_MAX_EVIDENCE_PER_REQUIREMENT &&
-    merged.size < CURRICULUM_CAPABILITY_RECOVERY_MAX_EVIDENCE_TOTAL;
+    round < CURRICULUM_CAPABILITY_RECOVERY_MAX_EVIDENCE_PER_REQUIREMENT;
     round += 1
   ) {
     for (const group of groups) {
       if (
-        group.selectedIds.size >= CURRICULUM_CAPABILITY_RECOVERY_MAX_EVIDENCE_PER_REQUIREMENT ||
-        merged.size >= CURRICULUM_CAPABILITY_RECOVERY_MAX_EVIDENCE_TOTAL
+        group.recoveryBindingIds.size >= CURRICULUM_CAPABILITY_RECOVERY_MAX_EVIDENCE_PER_REQUIREMENT
       ) {
         continue;
       }
       addNextCandidate(group);
     }
   }
-  return [...merged.values()].map((offer, index) => ({ ...offer, id: `E${index + 1}` }));
+  const evidenceCatalog = [...merged.values()].map((offer, index) => ({
+    ...offer,
+    id: `E${index + 1}`,
+  }));
+  const evidenceIdByBindingId = new Map(
+    evidenceCatalog.map((offer) => [offer.bindingId, offer.id] as const),
+  );
+  return {
+    evidenceCatalog,
+    recoveryEvidenceIdsByLearningUnitId: new Map(
+      groups.map((group) => [
+        group.nodeId,
+        [...group.recoveryBindingIds].map((bindingId) => {
+          const evidenceId = evidenceIdByBindingId.get(bindingId);
+          if (!evidenceId) {
+            throw recoveryError(
+              'recovery_capability_evidence_alias_missing',
+              'A selected recovery evidence binding has no provider-visible alias.',
+              { predecessorLearningUnitId: group.nodeId, bindingId },
+            );
+          }
+          return evidenceId;
+        }),
+      ]),
+    ),
+  };
 }
 
 /**
@@ -382,14 +413,23 @@ export function buildCurriculumCapabilityRecoveryFrontier(input: {
   manifest: ExecutionSourceManifest;
   sourceBlocks: readonly SourceBlock[];
   evidenceCatalog: readonly CurriculumEvidenceOffer[];
+  recoveryEvidenceIdsByLearningUnitId: ReadonlyMap<string, readonly string[]>;
 }): CurriculumCapabilityRecoveryFrontier {
   assertRecoveryPredecessorCurrent(input);
   const blockById = new Map(input.sourceBlocks.map((block) => [block.id, block] as const));
   const manifestBlockIds = new Set(
     input.manifest.revisions.flatMap((revision) => revision.sourceBlockRevisionIds),
   );
+  const evidenceById = new Map(input.evidenceCatalog.map((offer) => [offer.id, offer] as const));
+  if (evidenceById.size !== input.evidenceCatalog.length) {
+    throw recoveryError(
+      'recovery_capability_evidence_identity_duplicate',
+      'Recovery evidence identities must be unique before freezing the predecessor frontier.',
+    );
+  }
   const bindings: CurriculumCapabilityRecoveryBinding[] = [];
   const objectiveIds = new Set<string>();
+  const consumedRecoveryLearningUnitIds = new Set<string>();
   for (const node of input.predecessor.nodes) {
     if (!node.learningUnit) continue;
     const sourceBlockIds = [
@@ -424,9 +464,65 @@ export function buildCurriculumCapabilityRecoveryFrontier(input: {
         );
       }
     }
-    const allowedEvidence = input.evidenceCatalog.filter((offer) =>
-      sourceBlockIds.includes(offer.blockId),
+    const nonOptionalObjectives = node.learningUnit.objectives.filter(
+      (objective) => normalizedPriority(objective.priority) !== 'optional',
     );
+    const configuredEvidenceIds = input.recoveryEvidenceIdsByLearningUnitId.get(node.id);
+    if (nonOptionalObjectives.length === 0 && configuredEvidenceIds) {
+      throw recoveryError(
+        'recovery_capability_evidence_reservation_unbound',
+        'Recovery evidence cannot be reserved for an optional-only predecessor LearningUnit.',
+        { predecessorLearningUnitId: node.id },
+      );
+    }
+    if (nonOptionalObjectives.length > 0 && !configuredEvidenceIds) {
+      throw recoveryError(
+        'recovery_capability_evidence_reservation_missing',
+        'A non-optional predecessor LearningUnit has no bounded recovery evidence reservation.',
+        { predecessorLearningUnitId: node.id },
+      );
+    }
+    if (configuredEvidenceIds) consumedRecoveryLearningUnitIds.add(node.id);
+    const uniqueConfiguredEvidenceIds = [...new Set(configuredEvidenceIds ?? [])];
+    if (uniqueConfiguredEvidenceIds.length !== (configuredEvidenceIds?.length ?? 0)) {
+      throw recoveryError(
+        'recovery_capability_evidence_reservation_duplicate',
+        'A predecessor LearningUnit repeats a recovery evidence identity.',
+        { predecessorLearningUnitId: node.id },
+      );
+    }
+    if (
+      uniqueConfiguredEvidenceIds.length >
+      CURRICULUM_CAPABILITY_RECOVERY_MAX_EVIDENCE_PER_REQUIREMENT
+    ) {
+      throw recoveryError(
+        'recovery_capability_evidence_budget_exceeded',
+        'A predecessor LearningUnit exceeds the bounded recovery evidence budget.',
+        {
+          predecessorLearningUnitId: node.id,
+          evidenceCount: uniqueConfiguredEvidenceIds.length,
+          evidenceLimit: CURRICULUM_CAPABILITY_RECOVERY_MAX_EVIDENCE_PER_REQUIREMENT,
+        },
+      );
+    }
+    const allowedEvidence = uniqueConfiguredEvidenceIds.flatMap((evidenceId) => {
+      const offer = evidenceById.get(evidenceId);
+      if (!offer) {
+        throw recoveryError(
+          'recovery_capability_evidence_unknown',
+          'A predecessor capability references recovery evidence outside the provider catalog.',
+          { predecessorLearningUnitId: node.id, evidenceId },
+        );
+      }
+      if (!sourceBlockIds.includes(offer.blockId)) {
+        throw recoveryError(
+          'recovery_capability_evidence_outside_source_envelope',
+          'A predecessor capability references evidence outside its LearningUnit source envelope.',
+          { predecessorLearningUnitId: node.id, evidenceId, sourceBlockId: offer.blockId },
+        );
+      }
+      return [offer];
+    });
     for (const objective of node.learningUnit.objectives) {
       const priority = normalizedPriority(objective.priority);
       if (priority === 'optional') continue;
@@ -471,18 +567,6 @@ export function buildCurriculumCapabilityRecoveryFrontier(input: {
           },
         );
       }
-      if (allowedEvidence.length > CURRICULUM_CAPABILITY_RECOVERY_MAX_EVIDENCE_PER_REQUIREMENT) {
-        throw recoveryError(
-          'recovery_capability_evidence_budget_exceeded',
-          'A predecessor capability exceeds the bounded recovery evidence budget.',
-          {
-            predecessorLearningUnitId: node.id,
-            predecessorObjectiveId: objective.id,
-            evidenceCount: allowedEvidence.length,
-            evidenceLimit: CURRICULUM_CAPABILITY_RECOVERY_MAX_EVIDENCE_PER_REQUIREMENT,
-          },
-        );
-      }
       const capabilityRef = `recovery_capability_${bindings.length + 1}`;
       const originalProposition = curriculumObjectiveProposition(objective);
       const requirement: CurriculumCapabilityRecoveryRequirementInput = {
@@ -523,6 +607,16 @@ export function buildCurriculumCapabilityRecoveryFrontier(input: {
         allowedSourceBlockIds: sourceBlockIds,
       });
     }
+  }
+  if (consumedRecoveryLearningUnitIds.size !== input.recoveryEvidenceIdsByLearningUnitId.size) {
+    const foreignLearningUnitId = [...input.recoveryEvidenceIdsByLearningUnitId.keys()].find(
+      (nodeId) => !consumedRecoveryLearningUnitIds.has(nodeId),
+    );
+    throw recoveryError(
+      'recovery_capability_evidence_reservation_foreign',
+      'Recovery evidence was reserved for a foreign predecessor LearningUnit.',
+      { predecessorLearningUnitId: foreignLearningUnitId ?? null },
+    );
   }
   if (bindings.length > CURRICULUM_CAPABILITY_RECOVERY_MAX_REQUIREMENTS) {
     throw recoveryError(
