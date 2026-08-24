@@ -1463,7 +1463,7 @@ export class FakeProvider implements LlmProvider {
                 startingState: `The learner has a bounded current ${objective.title} state and the source-stated procedure has begun.`,
                 sourceRuleOrProcedure: sourceText,
                 decisionRequired: `Choose which source-stated ${objective.title} action follows from the current procedural state.`,
-                expectedAction: `Inspect the current ${objective.title} condition, then perform the next authorized procedure step.`,
+                expectedAction: `Inspect the current ${objective.title} condition, then perform the next authorized procedure step. This keeps the ${objective.title} transition inside its source-stated boundary.`,
               }
             : null;
         const initialPrompt =
@@ -1492,7 +1492,7 @@ export class FakeProvider implements LlmProvider {
                 optionRef: 'A',
                 text:
                   slot.construct === 'apply'
-                    ? `${application!.expectedAction} This keeps the ${objective.title} transition inside its source-stated boundary.`
+                    ? application!.expectedAction
                     : 'Use the defining condition to connect the case to the bounded conclusion.',
                 feedbackIfSelected:
                   'Correct: this response uses the offered boundary to demonstrate the planned capability.',
