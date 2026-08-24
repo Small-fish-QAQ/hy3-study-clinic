@@ -58,6 +58,10 @@ import type {
   MasteryFragilityBasis,
   CurriculumAuthorityEnvelopeTier,
   FormalAssessmentConstruct,
+  ObjectiveAuthoritySemanticEvaluationInput,
+  ObjectiveAuthoritySemanticEvaluationProposal,
+  ObjectiveAuthoritySemanticRepairInput,
+  ObjectiveAuthoritySemanticRepairProposal,
 } from '@hy3-clinic/shared';
 
 /** One original plus independently bounded schema and candidate repairs. */
@@ -1051,6 +1055,16 @@ export interface LlmProvider extends VisualDescriptionProvider {
     input: CurriculumDetailProposalInput,
     opts?: ProviderCallOptions,
   ): Promise<CurriculumDetailProposalPayload>;
+  /** Independently judge each objective against only its exact offered authority aliases. */
+  evaluateObjectiveAuthoritySupport(
+    input: ObjectiveAuthoritySemanticEvaluationInput,
+    opts?: ProviderCallOptions,
+  ): Promise<ObjectiveAuthoritySemanticEvaluationProposal>;
+  /** Propose one bounded same-construct repair for only the failed objectives supplied locally. */
+  repairObjectiveAuthoritySupport(
+    input: ObjectiveAuthoritySemanticRepairInput,
+    opts?: ProviderCallOptions,
+  ): Promise<ObjectiveAuthoritySemanticRepairProposal>;
   /** Propose learner-visible Curriculum semantics; local code validates and versions it. */
   proposeCurriculum(
     input: CurriculumProposalInput,

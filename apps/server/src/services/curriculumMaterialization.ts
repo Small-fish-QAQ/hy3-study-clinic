@@ -24,10 +24,7 @@ import { assertCourseMapSourceAllocationIntegrity } from './courseMap.js';
 import { hasCurriculumSemanticAnchor } from './curriculumSemanticEvaluator.js';
 import {
   curriculumTargetRequestsApplication,
-  detectFormalConstruct,
-  formatNarrowedFormalObjective,
-  isFormalObjectiveSupported,
-  strongestNarrowableConstruct,
+  isConstructSupported,
 } from './curriculumAuthority.js';
 
 export const MAX_DETAIL_BATCHES = 2;
@@ -444,13 +441,11 @@ export function validateCurriculumDetailCandidate(
     const evidenceById = new Map(
       region.evidence.map((offer) => [offer.evidenceId, offer] as const),
     );
-    const selectedAuthorityEnvelopes = (objective: (typeof unit.objectives)[number]) => {
-      const exact = objective.evidence.flatMap((selection) => {
+    const selectedAuthorityEnvelopes = (objective: (typeof unit.objectives)[number]) =>
+      objective.evidence.flatMap((selection) => {
         const envelope = evidenceById.get(selection.evidenceId)?.authorityEnvelope;
         return envelope ? [envelope] : [];
       });
-      return exact.length > 0 ? exact : region.authorityEnvelope ? [region.authorityEnvelope] : [];
-    };
     const siblingUnitTitles = payload.units
       .filter((candidate) => candidate.regionId !== unit.regionId)
       .map((candidate) => candidate.title);
@@ -484,16 +479,13 @@ export function validateCurriculumDetailCandidate(
     if (region.authorityEnvelope || region.evidence.some((offer) => offer.authorityEnvelope)) {
       for (const objective of unit.objectives) {
         if (objective.priority !== 'required') continue;
-        const construct = detectFormalConstruct(`${objective.title} ${objective.description}`);
+        const construct = objective.construct;
         const envelopes = selectedAuthorityEnvelopes(objective);
-        const objectiveClaim = `${objective.title} ${objective.description}`;
-        if (envelopes.some((envelope) => isFormalObjectiveSupported(objectiveClaim, envelope))) {
+        if (envelopes.some((envelope) => isConstructSupported(construct, envelope))) {
           continue;
         }
         const repairEnvelope =
-          envelopes.find((envelope) => envelope.supportedConstructs.includes('apply')) ??
-          envelopes.find((envelope) => envelope.supportedConstructs.includes('explain')) ??
-          envelopes.find((envelope) => envelope.supportedConstructs.includes('identify')) ??
+          envelopes.find((envelope) => envelope.supportedConstructs.includes(construct)) ??
           envelopes[0];
         const message = `required_objective_formal_authority_missing: objective ${objective.key} claims ${construct}, but its exact selected evidence in source region ${region.regionId} supports ${repairEnvelope?.supportedConstructs.join(', ') || 'no formal construct'}; narrowerClaim=${repairEnvelope?.narrowerClaim ?? 'none'}; protectedPriority=required.`;
         addDiagnostic('required_objective_formal_authority_missing', message, {
@@ -606,13 +598,12 @@ export function validateCurriculumDetailCandidate(
         region.evidence.map((offer) => [offer.evidenceId, offer] as const),
       );
       return unit.objectives.some((objective) => {
-        const claim = `${objective.title} ${objective.description}`;
-        if (objective.priority !== 'required' || detectFormalConstruct(claim) !== 'apply') {
+        if (objective.priority !== 'required' || objective.construct !== 'apply') {
           return false;
         }
         return objective.evidence.some((selection) => {
           const envelope = evidenceById.get(selection.evidenceId)?.authorityEnvelope;
-          return envelope ? isFormalObjectiveSupported(claim, envelope) : false;
+          return envelope ? isConstructSupported(objective.construct, envelope) : false;
         });
       });
     });
@@ -653,56 +644,6 @@ export function validateCurriculumDetailCandidate(
         }
       : {}),
   };
-}
-
-/** Narrow one over-broad required detail objective using its local envelope. */
-export function repairCurriculumDetailAuthorityCandidate(
-  candidate: CurriculumDetailProposalPayload,
-  input: CurriculumDetailProposalInput,
-): { candidate: CurriculumDetailProposalPayload; repaired: boolean } {
-  const parsed = CurriculumDetailProposalPayloadSchema.parse(candidate);
-  let repaired = false;
-  for (const unit of parsed.units) {
-    const region = input.regions.find((candidate) => candidate.regionId === unit.regionId);
-    if (!region) continue;
-    const evidenceById = new Map(
-      region.evidence.map((offer) => [offer.evidenceId, offer] as const),
-    );
-    for (const objective of unit.objectives) {
-      if (objective.priority !== 'required') continue;
-      const exactEnvelopes = objective.evidence.flatMap((selection) => {
-        const envelope = evidenceById.get(selection.evidenceId)?.authorityEnvelope;
-        return envelope ? [envelope] : [];
-      });
-      const envelopes =
-        exactEnvelopes.length > 0
-          ? exactEnvelopes
-          : region.authorityEnvelope
-            ? [region.authorityEnvelope]
-            : [];
-      const envelope =
-        envelopes.find((candidate) => candidate.supportedConstructs.includes('apply')) ??
-        envelopes.find((candidate) => candidate.supportedConstructs.includes('explain')) ??
-        envelopes.find((candidate) => candidate.supportedConstructs.includes('identify'));
-      if (
-        envelopes.some((candidate) =>
-          isFormalObjectiveSupported(`${objective.title} ${objective.description}`, candidate),
-        ) ||
-        !envelope ||
-        !envelope.narrowerClaim ||
-        (envelope.tier !== 'formal_sufficient' && envelope.tier !== 'narrower_formal') ||
-        envelope.supportedConstructs.length === 0
-      )
-        continue;
-      const narrowerConstruct = strongestNarrowableConstruct(envelope);
-      if (!narrowerConstruct) continue;
-      const wording = formatNarrowedFormalObjective(narrowerConstruct, envelope.narrowerClaim);
-      objective.title = wording.title;
-      objective.description = wording.description;
-      repaired = true;
-    }
-  }
-  return { candidate: parsed, repaired };
 }
 
 export interface CurriculumDetailAssembly {

@@ -33,6 +33,8 @@ import {
   type TeachingBriefProposalPayload,
   LessonSlotContentProposalPayloadSchema,
   PracticeContentProposalPayloadSchema,
+  ObjectiveAuthoritySemanticEvaluationProposalSchema,
+  ObjectiveAuthoritySemanticRepairProposalSchema,
   type LessonSlotContentProposalPayload,
   type PracticeContentProposalPayload,
   type TutorStepPayload,
@@ -40,6 +42,11 @@ import {
   type TutorPedagogicalMove,
   type VisualDescriptionPayload,
   type RepairGenerationPayload,
+  type ObjectiveAuthoritySemanticEvaluationProposal,
+  type ObjectiveAuthoritySemanticRepairProposal,
+  type ObjectiveAuthoritySemanticEvaluationInput,
+  type ObjectiveAuthoritySemanticRepairInput,
+  type ObjectiveAuthoritySupportType,
 } from '@hy3-clinic/shared';
 import { ProviderError } from './errors.js';
 import { alignPointToStem, charCoverageRatio } from '../grading/rubricAlignment.js';
@@ -1703,6 +1710,13 @@ export class FakeProvider implements LlmProvider {
             offer.authorityEnvelope?.supportedConstructs.includes('apply'),
           )
         : undefined;
+      const objectiveConstruct = applyOffer
+        ? ('apply' as const)
+        : region.evidence.some((offer) =>
+              offer.authorityEnvelope?.supportedConstructs.includes('explain'),
+            )
+          ? ('explain' as const)
+          : ('identify' as const);
       const selectedEvidence = region.sourceAllocationRegionIds.flatMap((sourceRegionId) => {
         const offer =
           (applyOffer?.sourceAllocationRegionId === sourceRegionId ? applyOffer : undefined) ??
@@ -1730,6 +1744,7 @@ export class FakeProvider implements LlmProvider {
         objectives: [
           {
             key: `detail-objective-${index + 1}`,
+            construct: objectiveConstruct,
             title: (applyOffer
               ? 'Apply the source-stated procedure'
               : `Understand ${region.title}`
@@ -1767,6 +1782,143 @@ export class FakeProvider implements LlmProvider {
     );
   }
 
+  async evaluateObjectiveAuthoritySupport(
+    input: ObjectiveAuthoritySemanticEvaluationInput,
+    opts?: ProviderCallOptions,
+  ): Promise<ObjectiveAuthoritySemanticEvaluationProposal> {
+    await this.gate(opts);
+    const supportType = (
+      construct: ObjectiveAuthoritySemanticEvaluationInput['objectives'][number]['construct'],
+    ): ObjectiveAuthoritySupportType | null => {
+      if (construct === 'identify') return 'definition';
+      if (construct === 'explain') return 'relationship';
+      if (construct === 'apply') return 'procedure';
+      return null;
+    };
+    const candidate = ObjectiveAuthoritySemanticEvaluationProposalSchema.parse({
+      schemaVersion: 1,
+      evaluations: input.objectives.map((objective) => {
+        const explicitSupport = objective.evidence.find((offer) =>
+          offer.text.includes(`[SUPPORTS:${objective.construct}]`),
+        );
+        const offered = explicitSupport ?? objective.evidence[0];
+        const fixtureUnsupported =
+          objective.evidence.length === 0 ||
+          objective.evidence.some((offer) => offer.text.includes('[UNSUPPORTED]'));
+        const type = supportType(objective.construct);
+        const authoritySupported = Boolean(offered && !fixtureUnsupported && type);
+        const fragmentId = `${objective.objectiveRef}:F1`.slice(0, 100);
+        const preservationRequirement = objective.requiredCapabilityPreservation;
+        const capabilityPreserved =
+          !preservationRequirement ||
+          preservationRequirement.originalProposition === objective.proposition;
+        const supported = authoritySupported && capabilityPreserved;
+        return {
+          objectiveRef: objective.objectiveRef,
+          proposition: objective.proposition,
+          construct: objective.construct,
+          fragments: [
+            {
+              fragmentId,
+              text: objective.proposition,
+              status: authoritySupported ? ('supported' as const) : ('unsupported' as const),
+              supportType: authoritySupported ? type : null,
+              evidenceRefs: authoritySupported && offered ? [offered.evidenceRef] : [],
+              rationale: authoritySupported
+                ? 'The deterministic fake fixture explicitly offers authority for this complete proposition.'
+                : 'The deterministic fake fixture does not offer same-construct semantic support.',
+            },
+          ],
+          unsupportedFragmentIds: authoritySupported ? [] : [fragmentId],
+          conflicts: [],
+          overreach: [],
+          ...(preservationRequirement
+            ? {
+                capabilityPreservation: {
+                  originalProposition: preservationRequirement.originalProposition,
+                  mappings: preservationRequirement.originalFragments.map((original) => ({
+                    originalFragmentId: original.fragmentId,
+                    originalText: original.text,
+                    repairedFragmentIds: [fragmentId],
+                    status: capabilityPreserved ? ('preserved' as const) : ('lost' as const),
+                    rationale: capabilityPreserved
+                      ? 'The deterministic fake repair preserved the exact original proposition.'
+                      : 'The repaired proposition differs from the required original capability.',
+                  })),
+                  lostOriginalFragmentIds: capabilityPreserved
+                    ? []
+                    : preservationRequirement.originalFragments.map(
+                        (original) => original.fragmentId,
+                      ),
+                  verdict: capabilityPreserved ? ('pass' as const) : ('fail' as const),
+                  rationale: capabilityPreserved
+                    ? 'Every original capability fragment remains present in the repaired proposition.'
+                    : 'The repair changed the original proposition and is rejected by the deterministic fake evaluator.',
+                },
+              }
+            : {}),
+          verdict: supported ? ('pass' as const) : ('fail' as const),
+          rationale: supported
+            ? 'All proposition content is supported and every required original capability is preserved.'
+            : authoritySupported
+              ? 'Authority supports the replacement, but the original learning capability was not preserved.'
+              : 'At least one proposition fragment lacks exact same-construct support.',
+        };
+      }),
+    });
+    const firstValidation = opts?.validateCandidate?.(candidate);
+    if (!firstValidation || firstValidation.valid) return candidate;
+    opts?.onRepairAttempt?.('candidate', 'SEMANTIC_VALIDATION_FAILURE');
+    await this.gate(opts);
+    const repairedValidation = opts?.validateCandidate?.(candidate);
+    if (!repairedValidation || repairedValidation.valid) return candidate;
+    throw ProviderError.invalidOutput(
+      repairedValidation.diagnostics.join('; ').slice(0, 8_000),
+      'candidate',
+      'SEMANTIC_VALIDATION_FAILURE',
+      true,
+    );
+  }
+
+  async repairObjectiveAuthoritySupport(
+    input: ObjectiveAuthoritySemanticRepairInput,
+    opts?: ProviderCallOptions,
+  ): Promise<ObjectiveAuthoritySemanticRepairProposal> {
+    await this.gate(opts);
+    const marker = (construct: string) => `[SUPPORTS:${construct}]`;
+    const candidate = ObjectiveAuthoritySemanticRepairProposalSchema.parse({
+      schemaVersion: 1,
+      replacements: input.objectives.map((objective) => {
+        const supporting = objective.allowedEvidence.find((offer) =>
+          offer.text.includes(marker(objective.construct)),
+        );
+        const current = objective.allowedEvidence.filter((offer) => offer.selected);
+        const evidenceRefs = supporting
+          ? [supporting.evidenceRef]
+          : current.map((offer) => offer.evidenceRef).slice(0, 5);
+        return {
+          objectiveRef: objective.objectiveRef,
+          title: objective.title,
+          description: objective.description,
+          construct: objective.construct,
+          evidenceRefs,
+        };
+      }),
+    });
+    const firstValidation = opts?.validateCandidate?.(candidate);
+    if (!firstValidation || firstValidation.valid) return candidate;
+    opts?.onRepairAttempt?.('candidate', 'SEMANTIC_VALIDATION_FAILURE');
+    await this.gate(opts);
+    const repairedValidation = opts?.validateCandidate?.(candidate);
+    if (!repairedValidation || repairedValidation.valid) return candidate;
+    throw ProviderError.invalidOutput(
+      repairedValidation.diagnostics.join('; ').slice(0, 8_000),
+      'candidate',
+      'SEMANTIC_VALIDATION_FAILURE',
+      true,
+    );
+  }
+
   async proposeCurriculum(
     input: CurriculumProposalInput,
     opts?: ProviderCallOptions,
@@ -1793,17 +1945,44 @@ export class FakeProvider implements LlmProvider {
         material.disposition === 'included' && manifestMaterialIds.has(material.materialId),
     );
     const allowedBlocks = input.blocks.filter((block) => manifestBlockIds.has(block.id));
-    const materialBudget = Math.min(
-      scopedMaterials.length,
-      maxObjectives,
-      Math.max(0, Math.floor((maxNodes - 1) / 2)),
-    );
-    const materials = scopedMaterials.slice(0, materialBudget);
-    if (materials.length === 0) {
+    if (scopedMaterials.length === 0) {
       throw ProviderError.invalidOutput(
         'Curriculum proposal requires an included manifested Material',
       );
     }
+    const authoritativeMaterialIds = new Set(allowedBlocks.map((block) => block.materialId));
+    const sourceBackedMaterials = scopedMaterials.filter((material) =>
+      authoritativeMaterialIds.has(material.materialId),
+    );
+    if (sourceBackedMaterials.length === 0) {
+      const diagnostic =
+        'Curriculum objectives require exact source evidence; advisory visual-only Materials cannot independently support or originate LearningUnit objectives.';
+      throw ProviderError.invalidOutput(
+        diagnostic,
+        'candidate',
+        'SEMANTIC_VALIDATION_FAILURE',
+        false,
+        {
+          kind: 'curriculum_objective_authority_unavailable',
+          context: {
+            includedManifestedMaterialCount: scopedMaterials.length,
+            authoritativeMaterialCount: 0,
+          },
+          diagnostics: [
+            {
+              code: 'visual_only_material_cannot_originate_objective',
+              message: diagnostic,
+            },
+          ],
+        },
+      );
+    }
+    const materialBudget = Math.min(
+      sourceBackedMaterials.length,
+      maxObjectives,
+      Math.max(0, Math.floor((maxNodes - 1) / 2)),
+    );
+    const materials = sourceBackedMaterials.slice(0, materialBudget);
 
     const nodes: ProposedCurriculumNode[] = [
       {
@@ -1966,6 +2145,7 @@ export class FakeProvider implements LlmProvider {
           objectives: [
             {
               key: `objective-${unitNumber}`,
+              construct: supportsExplain ? ('explain' as const) : ('identify' as const),
               title: `Understand ${title}`.slice(0, 300),
               description: objectiveDescription.slice(0, 1000),
               evidence: evidence.slice(0, 5),

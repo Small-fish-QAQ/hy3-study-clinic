@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { Concept, SourceBlock } from '@hy3-clinic/shared';
+import type {
+  Concept,
+  ObjectiveAuthoritySemanticEvaluationInput,
+  ObjectiveAuthoritySemanticRepairInput,
+  SourceBlock,
+} from '@hy3-clinic/shared';
 import {
   conceptAnalysisMessages,
   courseMapPromptContext,
@@ -12,6 +17,8 @@ import {
   shortAnswerGradingMessages,
   curriculumProposalMessages,
   measureCurriculumRequest,
+  objectiveAuthoritySemanticEvaluationMessages,
+  objectiveAuthoritySemanticRepairMessages,
 } from './prompts.js';
 import type {
   CourseMapProposalInput,
@@ -31,6 +38,109 @@ const blocks: SourceBlock[] = [
     endOffset: 9,
   },
 ];
+
+const semanticEvaluationInput: ObjectiveAuthoritySemanticEvaluationInput = {
+  schemaVersion: 1,
+  policyVersion: 'objective-authority-semantic-v1',
+  objectives: [
+    {
+      objectiveRef: 'O1',
+      proposition: 'Explain how the components jointly position the system.',
+      construct: 'explain',
+      evidence: [
+        {
+          evidenceRef: 'E1',
+          text: 'The system combines documents, search, language models, permissions, and tools.',
+          claimKinds: ['claim'],
+          headingPath: ['Positioning'],
+        },
+      ],
+    },
+  ],
+};
+
+const semanticRepairInput: ObjectiveAuthoritySemanticRepairInput = {
+  schemaVersion: 1,
+  policyVersion: 'objective-authority-semantic-v1',
+  objectives: [
+    {
+      objectiveRef: 'O1',
+      title: 'Explain the system positioning',
+      description: semanticEvaluationInput.objectives[0]!.proposition,
+      construct: 'explain',
+      priority: 'required',
+      currentEvidenceRefs: ['E1'],
+      allowedEvidence: [
+        { ...semanticEvaluationInput.objectives[0]!.evidence[0]!, selected: true },
+        {
+          evidenceRef: 'E2',
+          text: 'A second locally allowed exact authority.',
+          claimKinds: ['claim'],
+          headingPath: ['Positioning'],
+          selected: false,
+        },
+      ],
+      fragments: [
+        {
+          fragmentId: 'F1',
+          text: semanticEvaluationInput.objectives[0]!.proposition,
+          status: 'unsupported',
+          supportType: null,
+          evidenceRefs: [],
+          rationale: 'The current evidence describes a different proposition.',
+        },
+      ],
+      unsupportedFragmentIds: ['F1'],
+      conflicts: [],
+      overreach: [],
+      verdict: 'fail',
+      rationale: 'The exact current binding does not entail the objective.',
+    },
+  ],
+};
+
+describe('Objective-authority semantic prompts', () => {
+  it('separates exact provenance from semantic entailment and states construct rules', () => {
+    const content = objectiveAuthoritySemanticEvaluationMessages(semanticEvaluationInput)
+      .map((message) => message.content)
+      .join('\n');
+
+    expect(content).toContain('Exact provenance or quotation existence is not semantic entailment');
+    expect(content).toContain('Topic or keyword overlap never establishes support');
+    expect(content).toContain('IDENTIFY requires meaningful recognition');
+    expect(content).toContain('EXPLAIN requires authority for the actual relationship');
+    expect(content).toContain('APPLY requires a source-stated procedure');
+    expect(content).toContain(
+      'DESIGN and EVALUATE are not authorized by the current v1 source-authority policy',
+    );
+    expect(content).toContain('Partition each proposition completely');
+    expect(content).toContain('Same topic, verb, construct, or broad domain is not preservation');
+    expect(content).toContain('one ordered mapping for every offered originalFragment');
+    expect(content).toContain('Mark a mapping lost whenever');
+    expect(content).toContain('Deterministic local code recomputes the verdict');
+    expect(content).toContain('E1');
+    const delimiters = content.match(/OBJECTIVE_AUTHORITY_EVALUATION_INPUT_[a-f0-9]{32}/gu) ?? [];
+    expect(delimiters).toHaveLength(3);
+  });
+
+  it('freezes construct and scope during bounded objective-only repair', () => {
+    const content = objectiveAuthoritySemanticRepairMessages(semanticRepairInput)
+      .map((message) => message.content)
+      .join('\n');
+
+    expect(content).toContain('Preserve every objectiveRef, priority, and construct');
+    expect(content).toContain('Never lower EXPLAIN to IDENTIFY');
+    expect(content).toContain('Never cite an alias outside allowedEvidence');
+    expect(content).toContain('same topic, verb, or construct alone is not preservation');
+    expect(content).toContain('omit, trivialize, substitute, or narrow away');
+    expect(content).toContain('touch an unrelated objective');
+    expect(content).toContain('fresh independent evaluation fails closed');
+    expect(content).toContain('E1');
+    expect(content).toContain('E2');
+    const delimiters = content.match(/OBJECTIVE_AUTHORITY_REPAIR_INPUT_[a-f0-9]{32}/gu) ?? [];
+    expect(delimiters).toHaveLength(3);
+  });
+});
 
 describe('Repair semantic contract prompt', () => {
   const cases = [
@@ -264,8 +374,18 @@ describe('prompt trust boundaries', () => {
     expect(content).toContain(
       'never copy, rewrite, paraphrase, or invent authoritative quote text',
     );
+    expect(content).toContain(
+      'Exact source evidence is mandatory for every LearningUnit objective',
+    );
+    expect(content).toContain('Never create a LearningUnit or objective solely from V*');
+    expect(content).toContain(
+      'A visual-only Material without exact source evidence must not originate an independent objective',
+    );
+    expect(content).not.toContain('unverified teaching objectives');
     expect(content).toContain('evidenceId');
     expect(content).toContain('"formalEvidenceCount":1');
+    expect(content).toContain('"construct":"identify|explain|apply|design|evaluate"');
+    expect(content).toContain('construct is frozen after proposal');
     expect(content).not.toContain('PRIVATE_AUTHORITY_REGION_ID');
     expect(content).not.toContain('PRIVATE_AUTHORITY_BLOCK_ID');
     expect(content).not.toContain('PRIVATE_FORMAL_EVIDENCE_ID');

@@ -5,12 +5,21 @@ import type {
   CurriculumProposalPayload,
   LearningContract,
   LearningContractDraftFields,
+  ObjectiveAuthoritySemanticEvaluationInput,
+  ObjectiveAuthoritySemanticEvaluationProposal,
+  ObjectiveAuthoritySemanticRepairInput,
+  ObjectiveAuthoritySemanticRepairProposal,
 } from '@hy3-clinic/shared';
 import { openDatabase, type SqliteDb } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
 import { FakeProvider } from '../llm/fakeProvider.js';
 import { Hy3Provider } from '../llm/hy3Provider.js';
-import type { CurriculumProposalInput, ProviderCallOptions } from '../llm/provider.js';
+import { ProviderError } from '../llm/errors.js';
+import type {
+  CurriculumDetailProposalInput,
+  CurriculumProposalInput,
+  ProviderCallOptions,
+} from '../llm/provider.js';
 import { createRepositories, type Repositories } from '../repositories/index.js';
 import { makeBlock, makeMaterial, makeWorkspace, T0 } from '../testing/fixtures.js';
 import { fixedClock, type Clock } from '../util/ids.js';
@@ -22,6 +31,8 @@ import {
   COURSE_MAP_CURRICULUM_GENERATION_POLICY,
   createCurriculumService,
   CURRICULUM_GENERATION_POLICY,
+  CURRICULUM_MAX_OBJECTIVE_AUTHORITY_EVALUATION_BATCHES,
+  CURRICULUM_MAX_OBJECTIVE_AUTHORITY_REPAIR_CALLS,
   curriculumGenerationPolicyForOutline,
   curriculumOperationLeaseMs,
   LEGACY_CURRICULUM_GENERATION_POLICY,
@@ -35,6 +46,7 @@ import { preflightStudyPlan } from './studyPlansAgent.js';
 import { buildCurriculumEvidenceCatalog } from './curriculumEvidence.js';
 
 const QUOTE = 'Working memory is limited.';
+const PROCEDURE = 'Working memory workflow: inspect → select the bounded rule → act.';
 const clock = fixedClock(T0);
 
 class ControlledCurriculumProvider extends FakeProvider {
@@ -92,6 +104,7 @@ class ControlledCurriculumProvider extends FakeProvider {
             key: 'objective-1',
             title: QUOTE,
             description: QUOTE,
+            construct: 'identify',
             evidence: [
               {
                 evidenceId:
@@ -134,6 +147,236 @@ class SourceOnlyFakeProvider extends FakeProvider {
       },
       opts,
     );
+  }
+}
+
+function controlledSemanticEvaluation(
+  input: ObjectiveAuthoritySemanticEvaluationInput,
+  failedObjectiveIndexes: ReadonlySet<number>,
+): ObjectiveAuthoritySemanticEvaluationProposal {
+  return {
+    schemaVersion: 1,
+    evaluations: input.objectives.map((objective, index) => {
+      const authorityFailed = failedObjectiveIndexes.has(index);
+      const fragmentId = `fragment_${index + 1}`;
+      const preservationRequirement = objective.requiredCapabilityPreservation;
+      const capabilityPreserved =
+        !preservationRequirement ||
+        preservationRequirement.originalProposition === objective.proposition;
+      const failed = authorityFailed || !capabilityPreserved;
+      const supportType =
+        objective.construct === 'apply'
+          ? ('procedure' as const)
+          : objective.construct === 'explain'
+            ? ('relationship' as const)
+            : ('definition' as const);
+      return {
+        objectiveRef: objective.objectiveRef,
+        proposition: objective.proposition,
+        construct: objective.construct,
+        fragments: [
+          {
+            fragmentId,
+            text: objective.proposition,
+            status: authorityFailed ? ('unsupported' as const) : ('supported' as const),
+            supportType: authorityFailed ? null : supportType,
+            evidenceRefs:
+              authorityFailed || !objective.evidence[0] ? [] : [objective.evidence[0].evidenceRef],
+            rationale: authorityFailed
+              ? 'The controlled evaluator rejects this exact objective-authority pair.'
+              : 'The controlled evaluator accepts this complete exact proposition.',
+          },
+        ],
+        unsupportedFragmentIds: authorityFailed ? [fragmentId] : [],
+        conflicts: [],
+        overreach: [],
+        ...(preservationRequirement
+          ? {
+              capabilityPreservation: {
+                originalProposition: preservationRequirement.originalProposition,
+                mappings: preservationRequirement.originalFragments.map((original) => ({
+                  originalFragmentId: original.fragmentId,
+                  originalText: original.text,
+                  repairedFragmentIds: [fragmentId],
+                  status: capabilityPreserved ? ('preserved' as const) : ('lost' as const),
+                  rationale: capabilityPreserved
+                    ? 'The exact original controlled proposition is unchanged.'
+                    : 'The controlled replacement deleted or substituted the original capability.',
+                })),
+                lostOriginalFragmentIds: capabilityPreserved
+                  ? []
+                  : preservationRequirement.originalFragments.map(
+                      (original) => original.fragmentId,
+                    ),
+                verdict: capabilityPreserved ? ('pass' as const) : ('fail' as const),
+                rationale: capabilityPreserved
+                  ? 'The complete original controlled capability is preserved.'
+                  : 'At least one original controlled capability fragment was lost.',
+              },
+            }
+          : {}),
+        verdict: failed ? ('fail' as const) : ('pass' as const),
+        rationale: failed
+          ? authorityFailed
+            ? 'At least one complete proposition fragment is unsupported.'
+            : 'The replacement is supported but deletes or substitutes the original capability.'
+          : 'Every complete proposition fragment is supported.',
+      };
+    }),
+  };
+}
+
+class ControlledSemanticRepairProvider extends ControlledCurriculumProvider {
+  readonly evaluationInputs: ObjectiveAuthoritySemanticEvaluationInput[] = [];
+  readonly repairInputs: ObjectiveAuthoritySemanticRepairInput[] = [];
+  initialPayload: CurriculumProposalPayload | null = null;
+
+  constructor(
+    private readonly failAfterRepair: boolean,
+    private readonly beforeEvaluation?: (round: number) => void,
+    objectiveCount = 2,
+    private readonly repairText?: (
+      objective: ObjectiveAuthoritySemanticRepairInput['objectives'][number],
+    ) => { title: string; description: string },
+  ) {
+    super();
+    this.makePayload = (input) => {
+      const payload = new ControlledCurriculumProvider().makePayload(input);
+      const template = payload.nodes[2]!.objectives[0]!;
+      payload.nodes[2]!.objectives = Array.from({ length: objectiveCount }, (_, index) => ({
+        ...structuredClone(template),
+        key: `objective-${index + 1}`,
+        title:
+          index === 0 ? 'Identify the repaired capacity claim' : `Capacity checkpoint ${index + 1}`,
+        description:
+          index === 0
+            ? 'Identify the exact source-stated working-memory capacity claim.'
+            : `Identify exact source-stated working-memory capacity checkpoint ${index + 1}.`,
+        priority: index === 0 ? ('required' as const) : ('optional' as const),
+      }));
+      this.initialPayload = structuredClone(payload);
+      return payload;
+    };
+  }
+
+  override async evaluateObjectiveAuthoritySupport(
+    input: ObjectiveAuthoritySemanticEvaluationInput,
+    opts?: ProviderCallOptions,
+  ): Promise<ObjectiveAuthoritySemanticEvaluationProposal> {
+    const round = this.evaluationInputs.length;
+    this.evaluationInputs.push(structuredClone(input));
+    this.beforeEvaluation?.(round);
+    if (opts?.signal?.aborted) throw ProviderError.cancelled();
+    const failed = round === 0 || this.failAfterRepair ? new Set([0]) : new Set<number>();
+    const candidate = controlledSemanticEvaluation(input, failed);
+    const validation = opts?.validateCandidate?.(candidate);
+    if (validation && !validation.valid) {
+      throw ProviderError.invalidOutput(validation.diagnostics.join('; '), 'candidate');
+    }
+    return candidate;
+  }
+
+  override async repairObjectiveAuthoritySupport(
+    input: ObjectiveAuthoritySemanticRepairInput,
+    opts?: ProviderCallOptions,
+  ): Promise<ObjectiveAuthoritySemanticRepairProposal> {
+    this.repairInputs.push(structuredClone(input));
+    if (opts?.signal?.aborted) throw ProviderError.cancelled();
+    const candidate: ObjectiveAuthoritySemanticRepairProposal = {
+      schemaVersion: 1,
+      replacements: input.objectives.map((objective) => {
+        const text = this.repairText?.(objective) ?? {
+          title: objective.title,
+          description: objective.description,
+        };
+        return {
+          objectiveRef: objective.objectiveRef,
+          ...text,
+          construct: objective.construct,
+          evidenceRefs: [
+            (objective.allowedEvidence.find((evidence) => evidence.selected) ??
+              objective.allowedEvidence[0])!.evidenceRef,
+          ],
+        };
+      }),
+    };
+    const validation = opts?.validateCandidate?.(candidate);
+    if (validation && !validation.valid) {
+      throw ProviderError.invalidOutput(validation.diagnostics.join('; '), 'candidate');
+    }
+    return candidate;
+  }
+}
+
+class ControlledCourseMapSemanticRepairProvider extends ControlledSemanticRepairProvider {
+  readonly detailOutputPropositions: string[] = [];
+
+  constructor(
+    private readonly broadTitle: string,
+    private readonly broadDescription: string,
+    repairText: { title: string; description: string },
+  ) {
+    super(false, undefined, 1, () => repairText);
+  }
+
+  override async proposeCurriculumDetails(
+    input: CurriculumDetailProposalInput,
+    opts?: ProviderCallOptions,
+  ) {
+    const candidate = await super.proposeCurriculumDetails(input);
+    const region = input.regions.find((candidateRegion) =>
+      candidateRegion.evidence.some((offer) =>
+        offer.authorityEnvelope?.supportedConstructs.includes('apply'),
+      ),
+    );
+    const unit = candidate.units.find(
+      (candidateUnit) => candidateUnit.regionId === region?.regionId,
+    );
+    const objective = unit?.objectives[0];
+    const applyOffer = region?.evidence.find((offer) =>
+      offer.authorityEnvelope?.supportedConstructs.includes('apply'),
+    );
+    if (!region || !unit || !objective || !applyOffer) {
+      throw new Error('Controlled Course Map regression requires exact APPLY authority.');
+    }
+    unit.title = this.broadTitle;
+    unit.sourceEvidence = [{ evidenceId: applyOffer.evidenceId }];
+    objective.title = this.broadTitle;
+    objective.description = this.broadDescription;
+    objective.construct = 'apply';
+    objective.priority = 'required';
+    objective.evidence = [{ evidenceId: applyOffer.evidenceId }];
+    const proposition = `${objective.title}\n${objective.description}`;
+    this.detailOutputPropositions.push(proposition);
+    const validation = opts?.validateCandidate?.(candidate);
+    if (validation && !validation.valid) {
+      throw ProviderError.invalidOutput(validation.diagnostics.join('; '), 'candidate');
+    }
+    return candidate;
+  }
+
+  override async evaluateObjectiveAuthoritySupport(
+    input: ObjectiveAuthoritySemanticEvaluationInput,
+    opts?: ProviderCallOptions,
+  ): Promise<ObjectiveAuthoritySemanticEvaluationProposal> {
+    const round = this.evaluationInputs.length;
+    this.evaluationInputs.push(structuredClone(input));
+    if (opts?.signal?.aborted) throw ProviderError.cancelled();
+    const broadIndex = input.objectives.findIndex(
+      (objective) => objective.proposition === `${this.broadTitle}\n${this.broadDescription}`,
+    );
+    if (round === 0 && broadIndex < 0) {
+      throw new Error('Controlled Course Map regression lost its broad provider proposition.');
+    }
+    const candidate = controlledSemanticEvaluation(
+      input,
+      round === 0 ? new Set([broadIndex]) : new Set<number>(),
+    );
+    const validation = opts?.validateCandidate?.(candidate);
+    if (validation && !validation.valid) {
+      throw ProviderError.invalidOutput(validation.diagnostics.join('; '), 'candidate');
+    }
+    return candidate;
   }
 }
 
@@ -253,6 +496,35 @@ function useMockedHy3(contents: string[], beforeResponse?: (index: number) => vo
   return fetchMock;
 }
 
+function passingObjectiveAuthorityEvaluationForQuote(): string {
+  const proposition = `${QUOTE}\n${QUOTE}`;
+  return JSON.stringify({
+    schemaVersion: 1,
+    evaluations: [
+      {
+        objectiveRef: 'objective_1',
+        proposition,
+        construct: 'identify',
+        fragments: [
+          {
+            fragmentId: 'objective_1_fragment_1',
+            text: proposition,
+            status: 'supported',
+            supportType: 'definition',
+            evidenceRefs: ['evidence_1'],
+            rationale: 'The exact offered source states the complete bounded proposition.',
+          },
+        ],
+        unsupportedFragmentIds: [],
+        conflicts: [],
+        overreach: [],
+        verdict: 'pass',
+        rationale: 'Every proposition fragment is supported by exact bound authority.',
+      },
+    ],
+  });
+}
+
 function attemptsForCommand(commandId: string) {
   const row = db
     .prepare(
@@ -278,6 +550,68 @@ function usageRowsForCommand(commandId: string): number {
       )
       .get(commandId) as { count: number }
   ).count;
+}
+
+function modelCallLedgerForCommand(commandId: string): {
+  logicalCalls: number;
+  physicalAttempts: number;
+  schemaFingerprints: Array<string | null>;
+} {
+  const counts = db
+    .prepare(
+      `SELECT COUNT(DISTINCT lc.id) AS logicalCalls,
+              COUNT(a.id) AS physicalAttempts
+       FROM agent_operations op
+       LEFT JOIN model_logical_calls lc ON lc.operation_id = op.id
+       LEFT JOIN model_call_attempts a ON a.logical_call_id = lc.id
+       WHERE op.command_id = ?`,
+    )
+    .get(commandId) as { logicalCalls: number; physicalAttempts: number };
+  const schemaFingerprints = (
+    db
+      .prepare(
+        `SELECT lc.schema_fingerprint AS schemaFingerprint
+         FROM model_logical_calls lc
+         JOIN agent_operations op ON op.id = lc.operation_id
+         WHERE op.command_id = ?
+         ORDER BY lc.rowid`,
+      )
+      .all(commandId) as Array<{ schemaFingerprint: string | null }>
+  ).map((row) => row.schemaFingerprint);
+  return { ...counts, schemaFingerprints };
+}
+
+function removeCanonicalSemanticSupportForLegacyFixture(
+  curriculumId: string,
+  objectiveId: string,
+): void {
+  // Explicitly manufacture the state produced by migrating a version-40
+  // Curriculum: its objective/index rows exist, but no canonical migration-41
+  // semantic-support evidence was fabricated. This test-only transaction
+  // restores the production immutability trigger before exposing the fixture.
+  db.transaction(() => {
+    db.exec('DROP TRIGGER prevent_curriculum_objective_semantic_support_delete');
+    const removed = db
+      .prepare(
+        `DELETE FROM curriculum_objective_semantic_support
+         WHERE curriculum_id = ? AND objective_id = ?`,
+      )
+      .run(curriculumId, objectiveId);
+    if (removed.changes !== 1) {
+      throw new Error('Legacy semantic-support fixture objective is missing.');
+    }
+    db.exec(`
+      CREATE TRIGGER prevent_curriculum_objective_semantic_support_delete
+      BEFORE DELETE ON curriculum_objective_semantic_support
+      WHEN EXISTS (
+        SELECT 1 FROM curriculum_objective_index
+        WHERE curriculum_id = OLD.curriculum_id AND objective_id = OLD.objective_id
+      )
+      BEGIN
+        SELECT RAISE(ABORT, 'Curriculum objective semantic support is immutable');
+      END;
+    `);
+  })();
 }
 
 async function acceptSourceOnlyCurriculum(id: string) {
@@ -312,6 +646,54 @@ function addGroundedConcept(id: string, blockId = 'blk_1', quote = QUOTE) {
   };
   repos.materials.addConcepts([concept]);
   return concept;
+}
+
+function activateChangedSourceRevision(id: string): void {
+  const content = `${QUOTE} Changed source revision ${id}.`;
+  repos.materialRevisions.stage({
+    revisionId: id,
+    material: makeMaterial({ content, charCount: content.length, title: 'Memory notes' }),
+    blocks: [
+      makeBlock({
+        id: `blk_${id}`,
+        content,
+        startOffset: 0,
+        endOffset: content.length,
+      }),
+    ],
+    originalData: null,
+    parserFingerprint: `parser_${id}`,
+    contentFingerprint: `content_${id}`,
+    parserAttemptId: `attempt_${id}`,
+    createdAt: T0,
+  });
+  repos.materialRevisions.activate('mat_1', id, T0);
+}
+
+function activateProcedureSourceRevision(id: string): void {
+  repos.materialRevisions.stage({
+    revisionId: id,
+    material: makeMaterial({
+      content: PROCEDURE,
+      charCount: PROCEDURE.length,
+      title: 'Working memory production design',
+    }),
+    blocks: [
+      makeBlock({
+        id: `blk_${id}`,
+        content: PROCEDURE,
+        startOffset: 0,
+        endOffset: PROCEDURE.length,
+        heading: 'Working memory production design',
+      }),
+    ],
+    originalData: null,
+    parserFingerprint: `parser_${id}`,
+    contentFingerprint: `content_${id}`,
+    parserAttemptId: `attempt_${id}`,
+    createdAt: T0,
+  });
+  repos.materialRevisions.activate('mat_1', id, T0);
 }
 
 beforeEach(() => {
@@ -391,9 +773,9 @@ describe('Curriculum proposal and authority boundaries', () => {
 
   it('defaults production generation to the legacy direct policy', () => {
     expect(CURRICULUM_GENERATION_POLICY).toBe(LEGACY_CURRICULUM_GENERATION_POLICY);
-    expect(curriculumOperationLeaseMs(240_000)).toBe(14 * 60 * 1000);
+    expect(curriculumOperationLeaseMs(240_000)).toBe(218 * 60 * 1000);
     expect(curriculumOperationLeaseMs(240_000, COURSE_MAP_CURRICULUM_GENERATION_POLICY)).toBe(
-      38 * 60 * 1000,
+      242 * 60 * 1000,
     );
   });
 
@@ -755,7 +1137,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       sourceBlockRevisionFingerprint: expect.stringMatching(/^block_/),
     });
     expect(attemptsForCommand('curriculum-verified')).toHaveLength(1);
-    expect(usageRowsForCommand('curriculum-verified')).toBe(1);
+    expect(usageRowsForCommand('curriculum-verified')).toBe(2);
   });
 
   it('links ordinary Fake Curriculum premises to exact locally admitted source claims', async () => {
@@ -794,7 +1176,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       db
         .prepare('SELECT COUNT(*) AS count FROM model_logical_calls WHERE operation_id = ?')
         .get((proposalEvent?.payload as { generationOperationId: string }).generationOperationId),
-    ).toMatchObject({ count: 1 });
+    ).toMatchObject({ count: 2 });
   });
 
   it('rejects a client-fabricated manifest and resolves provider context locally', async () => {
@@ -1201,6 +1583,29 @@ describe('Curriculum proposal and authority boundaries', () => {
   });
 
   it('applies the same empty-frontier remediation contract to the Fake provider', async () => {
+    const validFakeCurriculum = createCurriculumService({
+      repos,
+      provider: new FakeProvider(),
+      clock,
+      commands,
+      sourceAuthority: createSourceAuthorityService({
+        sourceAuthority: repos.sourceAuthority,
+        clock,
+      }),
+      generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
+    });
+    const first = await validFakeCurriculum.propose(
+      proposalRequest('curriculum-fake-parity-first'),
+    );
+    const accepted = validFakeCurriculum.accept({
+      command: command('curriculum-fake-parity-first-accept', 'learner'),
+      curriculumId: first.curriculum.id,
+      expectedVersion: first.curriculum.version,
+      expectedContractId: contract.id,
+      expectedExecutionSourceManifestFingerprint:
+        first.curriculum.executionSourceManifest.fingerprint,
+      acceptanceBasis: 'learner_review',
+    }).curriculum;
     const fakeCurriculum = createCurriculumService({
       repos,
       provider: new SourceOnlyFakeProvider(),
@@ -1212,16 +1617,6 @@ describe('Curriculum proposal and authority boundaries', () => {
       }),
       generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
     });
-    const first = await fakeCurriculum.propose(proposalRequest('curriculum-fake-parity-first'));
-    const accepted = fakeCurriculum.accept({
-      command: command('curriculum-fake-parity-first-accept', 'learner'),
-      curriculumId: first.curriculum.id,
-      expectedVersion: first.curriculum.version,
-      expectedContractId: contract.id,
-      expectedExecutionSourceManifestFingerprint:
-        first.curriculum.executionSourceManifest.fingerprint,
-      acceptanceBasis: 'learner_review',
-    }).curriculum;
     addGroundedConcept('concept_fake_empty_frontier');
 
     await expect(
@@ -1320,11 +1715,11 @@ describe('Curriculum proposal and authority boundaries', () => {
     expect(await curriculum.propose(proposal)).toEqual(first);
     expect(provider.calls).toBe(1);
     expect(repos.telemetry.usageSummary('ws_1')).toMatchObject({
-      logicalCalls: 1,
-      physicalAttempts: 1,
-      attemptsWithKnownCost: 1,
+      logicalCalls: 2,
+      physicalAttempts: 2,
+      attemptsWithKnownCost: 2,
     });
-    expect(usageRowsForCommand('curriculum-first')).toBe(1);
+    expect(usageRowsForCommand('curriculum-first')).toBe(2);
     const acceptance = {
       command: command('curriculum-accept', 'learner'),
       curriculumId: first.curriculum.id,
@@ -1442,14 +1837,546 @@ describe('Curriculum proposal and authority boundaries', () => {
     expect(repos.curricula.get(proposed.curriculum.id)?.status).toBe('proposed');
   });
 
+  it('rejects acceptance when canonical semantic support is missing and preserves both versions', async () => {
+    const predecessorProposal = await curriculum.propose(
+      proposalRequest('curriculum-semantic-acceptance-predecessor'),
+    );
+    const predecessor = curriculum.accept({
+      command: command('curriculum-semantic-acceptance-predecessor-accept', 'learner'),
+      curriculumId: predecessorProposal.curriculum.id,
+      expectedVersion: predecessorProposal.curriculum.version,
+      expectedContractId: contract.id,
+      expectedExecutionSourceManifestFingerprint:
+        predecessorProposal.curriculum.executionSourceManifest.fingerprint,
+      acceptanceBasis: 'learner_review',
+    }).curriculum;
+    const predecessorSnapshot = structuredClone(predecessor);
+    addGroundedConcept('concept_semantic_acceptance_successor');
+    const successor = await curriculum.propose(
+      proposalRequest('curriculum-semantic-acceptance-successor', predecessor.id),
+    );
+    const objectiveId = successor.curriculum.nodes
+      .flatMap((node) => node.learningUnit?.objectives ?? [])
+      .at(0)!.id;
+    removeCanonicalSemanticSupportForLegacyFixture(successor.curriculum.id, objectiveId);
+
+    let rejection: unknown;
+    try {
+      curriculum.accept({
+        command: command('curriculum-semantic-acceptance-rejected', 'learner'),
+        curriculumId: successor.curriculum.id,
+        expectedVersion: successor.curriculum.version,
+        expectedContractId: contract.id,
+        expectedExecutionSourceManifestFingerprint:
+          successor.curriculum.executionSourceManifest.fingerprint,
+        acceptanceBasis: 'learner_review',
+      });
+    } catch (error) {
+      rejection = error;
+    }
+
+    expect(rejection).toMatchObject({
+      code: ApiErrorCode.ValidationError,
+      details: {
+        kind: 'objective_authority_semantic_support_invalid',
+        boundary: 'acceptance',
+        diagnosticCodes: expect.arrayContaining(['semantic_support_missing']),
+      },
+    });
+    expect(repos.curricula.get(successor.curriculum.id)?.status).toBe('proposed');
+    expect(repos.curricula.get(predecessor.id)).toEqual(predecessorSnapshot);
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+  });
+
+  it('repairs only the failed objective once, preserves the passing evaluation byte-for-byte, and reevaluates all objectives', async () => {
+    const semanticProvider = new ControlledSemanticRepairProvider(false);
+    curriculum = createCurriculumService({
+      repos,
+      provider: semanticProvider,
+      clock,
+      commands,
+      sourceAuthority: createSourceAuthorityService({
+        sourceAuthority: repos.sourceAuthority,
+        clock,
+      }),
+      generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
+    });
+
+    const proposed = await curriculum.propose(
+      proposalRequest('curriculum-objective-semantic-repair-success'),
+    );
+
+    expect(semanticProvider.evaluationInputs).toHaveLength(2);
+    expect(semanticProvider.repairInputs).toHaveLength(1);
+    expect(semanticProvider.repairInputs[0]!.objectives).toHaveLength(1);
+    expect(semanticProvider.repairInputs[0]!.objectives[0]!.objectiveRef).toBe(
+      semanticProvider.evaluationInputs[0]!.objectives[0]!.objectiveRef,
+    );
+    expect(semanticProvider.repairInputs[0]!.objectives[0]!.objectiveRef).not.toBe(
+      semanticProvider.evaluationInputs[0]!.objectives[1]!.objectiveRef,
+    );
+    expect(
+      semanticProvider.evaluationInputs[1]!.objectives[0]!.requiredCapabilityPreservation,
+    ).toEqual({
+      originalProposition: semanticProvider.evaluationInputs[0]!.objectives[0]!.proposition,
+      originalFragments: [
+        {
+          fragmentId: 'fragment_1',
+          text: semanticProvider.evaluationInputs[0]!.objectives[0]!.proposition,
+        },
+      ],
+    });
+    expect(
+      semanticProvider.evaluationInputs[1]!.objectives[1]!.requiredCapabilityPreservation,
+    ).toBeUndefined();
+    expect(semanticProvider.evaluationInputs[1]!.objectives[1]).toEqual(
+      semanticProvider.evaluationInputs[0]!.objectives[1],
+    );
+    expect(
+      proposed.curriculum.nodes
+        .flatMap((node) => node.learningUnit?.objectives ?? [])
+        .map((objective) => ({
+          title: objective.title,
+          description: objective.description,
+          verdict: objective.semanticSupport?.verdict,
+        })),
+    ).toEqual([
+      {
+        title: 'Identify the repaired capacity claim',
+        description: 'Identify the exact source-stated working-memory capacity claim.',
+        verdict: 'pass',
+      },
+      {
+        title: 'Capacity checkpoint 2',
+        description: 'Identify exact source-stated working-memory capacity checkpoint 2.',
+        verdict: 'pass',
+      },
+    ]);
+    expect(
+      proposed.curriculum.nodes.flatMap((node) => node.learningUnit?.objectives ?? []).at(0)
+        ?.semanticSupport?.capabilityPreservation,
+    ).toMatchObject({
+      originalProposition: semanticProvider.evaluationInputs[0]!.objectives[0]!.proposition,
+      verdict: 'pass',
+      lostOriginalFragmentIds: [],
+    });
+    expect(modelCallLedgerForCommand('curriculum-objective-semantic-repair-success')).toEqual({
+      logicalCalls: 4,
+      physicalAttempts: 4,
+      schemaFingerprints: [
+        'curriculum-proposal-v2-evidence-identity',
+        'objective-authority-semantic-evaluation-v1',
+        'objective-authority-semantic-repair-v1',
+        'objective-authority-semantic-evaluation-v1',
+      ],
+    });
+  });
+
+  it.each([
+    {
+      label: 'trivial same-construct substitution',
+      title: 'Identify one source word',
+      description: 'Identify the word capacity.',
+    },
+    {
+      label: 'unrelated same-construct substitution',
+      title: 'Identify the document heading',
+      description: 'Identify the heading printed above the source block.',
+    },
+    {
+      label: 'narrowed-away important capability',
+      title: 'Identify capacity',
+      description: 'Identify that capacity exists without its source-stated limit.',
+    },
+  ])(
+    'rejects a supported $label during the required fresh preservation evaluation',
+    async ({ title, description }) => {
+      const semanticProvider = new ControlledSemanticRepairProvider(false, undefined, 2, () => ({
+        title,
+        description,
+      }));
+      curriculum = createCurriculumService({
+        repos,
+        provider: semanticProvider,
+        clock,
+        commands,
+        sourceAuthority: createSourceAuthorityService({
+          sourceAuthority: repos.sourceAuthority,
+          clock,
+        }),
+        generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
+      });
+
+      await expect(
+        curriculum.propose(
+          proposalRequest(
+            `curriculum-objective-preservation-${title.replace(/\W+/gu, '-').toLowerCase()}`,
+          ),
+        ),
+      ).rejects.toMatchObject({
+        code: ApiErrorCode.GroundingFailed,
+        details: {
+          kind: 'objective_authority_semantic_support_failed',
+          repairAttempted: true,
+        },
+      });
+
+      expect(semanticProvider.evaluationInputs).toHaveLength(2);
+      expect(semanticProvider.repairInputs).toHaveLength(1);
+      expect(
+        semanticProvider.evaluationInputs[1]!.objectives[0]!.requiredCapabilityPreservation
+          ?.originalProposition,
+      ).toBe(semanticProvider.evaluationInputs[0]!.objectives[0]!.proposition);
+      expect(repos.curricula.list('ws_1')).toEqual([]);
+    },
+  );
+
+  it('sends the exact legacy provider proposition to semantic evaluation before any bounded repair', async () => {
+    activateProcedureSourceRevision('procedure_legacy_semantic_contract');
+    const originalTitle = 'Working memory production design';
+    const originalDescription = 'Apply every layer in an unbounded production deployment.';
+    const repairedTitle = 'Apply the source-stated working memory workflow';
+    const repairedDescription =
+      'Apply the exact inspect, select, and act workflow within its source-stated context.';
+    const semanticProvider = new ControlledSemanticRepairProvider(false, undefined, 1, () => ({
+      title: repairedTitle,
+      description: repairedDescription,
+    }));
+    const makePayload = semanticProvider.makePayload.bind(semanticProvider);
+    semanticProvider.makePayload = (input) => {
+      const payload = makePayload(input);
+      const unit = payload.nodes.find((node) => node.kind === 'learning_unit');
+      const objective = unit?.objectives[0];
+      const procedureEvidence = input.evidenceCatalog.find((offer) => offer.quote === PROCEDURE);
+      if (!unit || !objective || !procedureEvidence) {
+        throw new Error('Controlled legacy regression requires exact procedure evidence.');
+      }
+      unit.sourceEvidence = [{ evidenceId: procedureEvidence.id }];
+      objective.title = originalTitle;
+      objective.description = originalDescription;
+      objective.construct = 'apply';
+      objective.priority = 'required';
+      objective.evidence = [{ evidenceId: procedureEvidence.id }];
+      semanticProvider.initialPayload = structuredClone(payload);
+      return payload;
+    };
+    curriculum = createCurriculumService({
+      repos,
+      provider: semanticProvider,
+      clock,
+      commands,
+      sourceAuthority: createSourceAuthorityService({
+        sourceAuthority: repos.sourceAuthority,
+        clock,
+      }),
+      generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
+    });
+
+    await expect(
+      curriculum.propose(proposalRequest('curriculum-legacy-exact-semantic-proposition')),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.GroundingFailed,
+      details: {
+        kind: 'objective_authority_semantic_support_failed',
+        repairAttempted: true,
+      },
+    });
+
+    const originalProposition = `${originalTitle}\n${originalDescription}`;
+    expect(semanticProvider.initialPayload?.nodes[2]?.objectives[0]).toMatchObject({
+      title: originalTitle,
+      description: originalDescription,
+      construct: 'apply',
+    });
+    expect(semanticProvider.evaluationInputs).toHaveLength(2);
+    expect(semanticProvider.evaluationInputs[0]!.objectives[0]!.proposition).toBe(
+      originalProposition,
+    );
+    expect(semanticProvider.repairInputs[0]!.objectives[0]).toMatchObject({
+      title: originalTitle,
+      description: originalDescription,
+      construct: 'apply',
+    });
+    expect(semanticProvider.evaluationInputs[1]!.objectives[0]).toMatchObject({
+      proposition: `${repairedTitle}\n${repairedDescription}`,
+      requiredCapabilityPreservation: { originalProposition },
+    });
+    expect(repos.curricula.list('ws_1')).toEqual([]);
+  });
+
+  it('sends the exact Course Map detail proposition to semantic evaluation before any bounded repair', async () => {
+    activateProcedureSourceRevision('procedure_course_map_semantic_contract');
+    const concept = addGroundedConcept(
+      'concept_course_map_semantic_contract',
+      'blk_procedure_course_map_semantic_contract',
+      PROCEDURE,
+    );
+    repos.alignment.ensureBaseline('ws_1', [concept], T0);
+    const originalTitle = 'Working memory production design';
+    const originalDescription = 'Apply every layer in an unbounded production deployment.';
+    const repairedTitle = 'Apply the source-stated working memory workflow';
+    const repairedDescription =
+      'Apply the exact inspect, select, and act workflow within its source-stated context.';
+    const semanticProvider = new ControlledCourseMapSemanticRepairProvider(
+      originalTitle,
+      originalDescription,
+      { title: repairedTitle, description: repairedDescription },
+    );
+    curriculum = createCurriculumService({
+      repos,
+      provider: semanticProvider,
+      clock,
+      commands,
+      sourceAuthority: createSourceAuthorityService({
+        sourceAuthority: repos.sourceAuthority,
+        clock,
+      }),
+      generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
+    });
+
+    await expect(
+      curriculum.propose(proposalRequest('curriculum-course-map-exact-semantic-proposition'), {
+        generationPolicy: COURSE_MAP_CURRICULUM_GENERATION_POLICY,
+      }),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.GroundingFailed,
+      details: {
+        kind: 'objective_authority_semantic_support_failed',
+        repairAttempted: true,
+      },
+    });
+
+    const originalProposition = `${originalTitle}\n${originalDescription}`;
+    expect(semanticProvider.detailOutputPropositions).toEqual([originalProposition]);
+    expect(semanticProvider.evaluationInputs).toHaveLength(2);
+    expect(
+      semanticProvider.evaluationInputs[0]!.objectives.find(
+        (objective) => objective.proposition === originalProposition,
+      )?.proposition,
+    ).toBe(originalProposition);
+    expect(semanticProvider.repairInputs[0]!.objectives[0]).toMatchObject({
+      title: originalTitle,
+      description: originalDescription,
+      construct: 'apply',
+    });
+    expect(
+      semanticProvider.evaluationInputs[1]!.objectives.find(
+        (objective) =>
+          objective.requiredCapabilityPreservation?.originalProposition === originalProposition,
+      ),
+    ).toMatchObject({
+      proposition: `${repairedTitle}\n${repairedDescription}`,
+      requiredCapabilityPreservation: { originalProposition },
+    });
+    expect(repos.curricula.list('ws_1')).toEqual([]);
+  });
+
+  it('bounds failed semantic repair to one call and leaves the accepted predecessor byte-identical', async () => {
+    const predecessorProposal = await curriculum.propose(
+      proposalRequest('curriculum-objective-repair-predecessor'),
+    );
+    const predecessor = curriculum.accept({
+      command: command('curriculum-objective-repair-predecessor-accept', 'learner'),
+      curriculumId: predecessorProposal.curriculum.id,
+      expectedVersion: predecessorProposal.curriculum.version,
+      expectedContractId: contract.id,
+      expectedExecutionSourceManifestFingerprint:
+        predecessorProposal.curriculum.executionSourceManifest.fingerprint,
+      acceptanceBasis: 'learner_review',
+    }).curriculum;
+    const predecessorSnapshot = structuredClone(predecessor);
+    addGroundedConcept('concept_failed_objective_repair');
+    const semanticProvider = new ControlledSemanticRepairProvider(true);
+    curriculum = createCurriculumService({
+      repos,
+      provider: semanticProvider,
+      clock,
+      commands,
+      sourceAuthority: createSourceAuthorityService({
+        sourceAuthority: repos.sourceAuthority,
+        clock,
+      }),
+      generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
+    });
+
+    await expect(
+      curriculum.propose(
+        currentProposalRequest('curriculum-objective-repair-exhausted', predecessor.id),
+      ),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.GroundingFailed,
+      details: {
+        kind: 'objective_authority_semantic_support_failed',
+        repairAttempted: true,
+      },
+    });
+
+    expect(semanticProvider.evaluationInputs).toHaveLength(2);
+    expect(semanticProvider.repairInputs).toHaveLength(
+      CURRICULUM_MAX_OBJECTIVE_AUTHORITY_REPAIR_CALLS,
+    );
+    expect(modelCallLedgerForCommand('curriculum-objective-repair-exhausted')).toEqual({
+      logicalCalls: 4,
+      physicalAttempts: 4,
+      schemaFingerprints: [
+        'curriculum-proposal-v2-evidence-identity',
+        'objective-authority-semantic-evaluation-v1',
+        'objective-authority-semantic-repair-v1',
+        'objective-authority-semantic-evaluation-v1',
+      ],
+    });
+    expect(repos.curricula.list('ws_1').map((item) => item.id)).toEqual([predecessor.id]);
+    expect(repos.curricula.get(predecessor.id)).toEqual(predecessorSnapshot);
+  });
+
+  it('rejects an over-budget semantic evaluation set before any evaluator or repair call', async () => {
+    const objectiveCount = CURRICULUM_MAX_OBJECTIVE_AUTHORITY_EVALUATION_BATCHES * 24 + 1;
+    const semanticProvider = new ControlledSemanticRepairProvider(false, undefined, 1);
+    semanticProvider.makePayload = (input) => {
+      const payload = new ControlledCurriculumProvider().makePayload(input);
+      const templateUnit = payload.nodes[2]!;
+      const templateObjective = templateUnit.objectives[0]!;
+      payload.nodes = [
+        ...payload.nodes.slice(0, 2),
+        ...Array.from({ length: Math.ceil(objectiveCount / 30) }, (_, unitIndex) => ({
+          ...structuredClone(templateUnit),
+          key: `unit-budget-${unitIndex + 1}`,
+          index: unitIndex,
+          title: `Capacity budget unit ${unitIndex + 1}`,
+          objectives: Array.from(
+            {
+              length: Math.min(30, objectiveCount - unitIndex * 30),
+            },
+            (_, localIndex) => {
+              const objectiveIndex = unitIndex * 30 + localIndex + 1;
+              return {
+                ...structuredClone(templateObjective),
+                key: `objective-budget-${objectiveIndex}`,
+                title: `Capacity fact ${objectiveIndex}`,
+                description: `Identify the exact source-stated capacity fact ${objectiveIndex}.`,
+                construct: 'identify' as const,
+              };
+            },
+          ),
+        })),
+      ];
+      return payload;
+    };
+    curriculum = createCurriculumService({
+      repos,
+      provider: semanticProvider,
+      clock,
+      commands,
+      sourceAuthority: createSourceAuthorityService({
+        sourceAuthority: repos.sourceAuthority,
+        clock,
+      }),
+      generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
+    });
+
+    await expect(
+      curriculum.propose(proposalRequest('curriculum-objective-evaluation-over-budget')),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.ValidationError,
+      details: {
+        kind: 'objective_authority_semantic_support_budget_exceeded',
+        objectiveCount,
+        maxObjectives: objectiveCount - 1,
+        maxBatches: CURRICULUM_MAX_OBJECTIVE_AUTHORITY_EVALUATION_BATCHES,
+      },
+    });
+
+    expect(semanticProvider.evaluationInputs).toHaveLength(0);
+    expect(semanticProvider.repairInputs).toHaveLength(0);
+    expect(modelCallLedgerForCommand('curriculum-objective-evaluation-over-budget')).toEqual({
+      logicalCalls: 1,
+      physicalAttempts: 1,
+      schemaFingerprints: ['curriculum-proposal-v2-evidence-identity'],
+    });
+    expect(repos.curricula.list('ws_1')).toEqual([]);
+  });
+
+  it('honors cancellation at the semantic evaluator boundary without repair or persistence', async () => {
+    const controller = new AbortController();
+    const semanticProvider = new ControlledSemanticRepairProvider(false, (round) => {
+      if (round === 0) controller.abort();
+    });
+    curriculum = createCurriculumService({
+      repos,
+      provider: semanticProvider,
+      clock,
+      commands,
+      sourceAuthority: createSourceAuthorityService({
+        sourceAuthority: repos.sourceAuthority,
+        clock,
+      }),
+      generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
+    });
+
+    await expect(
+      curriculum.propose(proposalRequest('curriculum-objective-evaluation-cancelled'), {
+        signal: controller.signal,
+      }),
+    ).rejects.toMatchObject({ code: ApiErrorCode.RequestCancelled });
+
+    expect(semanticProvider.evaluationInputs).toHaveLength(1);
+    expect(semanticProvider.repairInputs).toHaveLength(0);
+    expect(modelCallLedgerForCommand('curriculum-objective-evaluation-cancelled')).toEqual({
+      logicalCalls: 2,
+      physicalAttempts: 2,
+      schemaFingerprints: [
+        'curriculum-proposal-v2-evidence-identity',
+        'objective-authority-semantic-evaluation-v1',
+      ],
+    });
+    expect(repos.curricula.list('ws_1')).toEqual([]);
+  });
+
+  it('fences a source revision change during semantic evaluation before repair or persistence', async () => {
+    const semanticProvider = new ControlledSemanticRepairProvider(false, (round) => {
+      if (round === 0) activateChangedSourceRevision('revision_semantic_evaluation_race');
+    });
+    curriculum = createCurriculumService({
+      repos,
+      provider: semanticProvider,
+      clock,
+      commands,
+      sourceAuthority: createSourceAuthorityService({
+        sourceAuthority: repos.sourceAuthority,
+        clock,
+      }),
+      generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
+    });
+
+    await expect(
+      curriculum.propose(proposalRequest('curriculum-objective-evaluation-stale')),
+    ).rejects.toMatchObject({ code: ApiErrorCode.VersionConflict });
+
+    expect(semanticProvider.evaluationInputs).toHaveLength(1);
+    expect(semanticProvider.repairInputs).toHaveLength(0);
+    expect(modelCallLedgerForCommand('curriculum-objective-evaluation-stale')).toEqual({
+      logicalCalls: 2,
+      physicalAttempts: 2,
+      schemaFingerprints: [
+        'curriculum-proposal-v2-evidence-identity',
+        'objective-authority-semantic-evaluation-v1',
+      ],
+    });
+    expect(repos.curricula.list('ws_1')).toEqual([]);
+  });
+
   it('repairs a schema-valid invalid evidence selection once and persists only the repaired candidate', async () => {
     const invalid = payloadForFetch('cev_not_offered');
     const valid = payloadForFetch();
-    const fetchMock = useMockedHy3([JSON.stringify(invalid), JSON.stringify(valid)]);
+    const fetchMock = useMockedHy3([
+      JSON.stringify(invalid),
+      JSON.stringify(valid),
+      passingObjectiveAuthorityEvaluationForQuote(),
+    ]);
 
     const proposed = await curriculum.propose(proposalRequest('curriculum-semantic-repair'));
 
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(proposed.curriculum.validation.valid).toBe(true);
     expect(repos.curricula.list('ws_1')).toHaveLength(1);
     expect(attemptsForCommand('curriculum-semantic-repair')).toMatchObject([
@@ -1461,11 +2388,11 @@ describe('Curriculum proposal and authority boundaries', () => {
       { attemptKind: 'repair', status: 'completed' },
     ]);
     expect(repos.telemetry.usageSummary('ws_1')).toMatchObject({
-      logicalCalls: 1,
-      physicalAttempts: 2,
+      logicalCalls: 2,
+      physicalAttempts: 3,
       attemptsWithKnownCost: 0,
     });
-    expect(usageRowsForCommand('curriculum-semantic-repair')).toBe(2);
+    expect(usageRowsForCommand('curriculum-semantic-repair')).toBe(3);
   });
 
   it('fails after one semantic repair, preserves the accepted Curriculum, and persists safe details', async () => {
@@ -1524,18 +2451,19 @@ describe('Curriculum proposal and authority boundaries', () => {
       '{}',
       JSON.stringify(invalidSemantic),
       JSON.stringify(payloadForFetch()),
+      passingObjectiveAuthorityEvaluationForQuote(),
     ]);
 
     const proposed = await curriculum.propose(proposalRequest('curriculum-schema-then-semantic'));
 
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
     expect(proposed.curriculum.validation.valid).toBe(true);
     expect(attemptsForCommand('curriculum-schema-then-semantic')).toMatchObject([
       { attemptKind: 'original', errorCode: 'SCHEMA_VALIDATION_FAILURE_REPAIR_REQUIRED' },
       { attemptKind: 'repair', errorCode: 'SEMANTIC_VALIDATION_FAILURE_REPAIR_REQUIRED' },
       { attemptKind: 'repair', status: 'completed' },
     ]);
-    expect(usageRowsForCommand('curriculum-schema-then-semantic')).toBe(3);
+    expect(usageRowsForCommand('curriculum-schema-then-semantic')).toBe(4);
     expect(repos.curricula.list('ws_1')).toHaveLength(1);
   });
 
@@ -1609,7 +2537,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       .get('curriculum-long-repair') as { id: string; leaseExpiresAt: string | null };
 
     expect(curriculumOperationLeaseMs(240_000, LEGACY_CURRICULUM_GENERATION_POLICY)).toBe(
-      14 * 60 * 1000,
+      218 * 60 * 1000,
     );
     expect(proposed.curriculum.status).toBe('proposed');
     expect(attemptsForCommand('curriculum-long-repair')).toHaveLength(2);

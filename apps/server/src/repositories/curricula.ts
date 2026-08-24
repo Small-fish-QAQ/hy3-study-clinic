@@ -2,15 +2,19 @@ import {
   CurriculumSchema,
   CurriculumSemanticEvaluationSchema,
   ExecutionSourceManifestSchema,
+  ObjectiveAuthoritySemanticSupportSchema,
   type Curriculum,
   type ExecutionSourceManifest,
+  type ObjectiveAuthoritySemanticSupport,
 } from '@hy3-clinic/shared';
 import type { SqliteDb } from '../db/database.js';
+import { assertCurriculumObjectiveAuthoritySemanticSupport } from '../services/objectiveAuthoritySemanticSupport.js';
 
 interface CurriculumRow {
   id: string;
   workspace_id: string;
   contract_id: string;
+  manifest_id: string;
   manifest_fingerprint: string;
   version: number;
   predecessor_id: string | null;
@@ -57,8 +61,37 @@ interface CurriculumEventRow {
   created_at: string;
 }
 
-function hydrate(row: CurriculumRow): Curriculum {
-  return CurriculumSchema.parse({
+export class CurriculumExactAuthorityClaimHydrationError extends Error {
+  constructor() {
+    super('Curriculum references a missing or inexact authority claim ownership.');
+    this.name = 'CurriculumExactAuthorityClaimHydrationError';
+  }
+}
+
+function withoutSemanticSupport(curriculum: Curriculum): Curriculum {
+  return {
+    ...curriculum,
+    nodes: curriculum.nodes.map((node) =>
+      node.learningUnit
+        ? {
+            ...node,
+            learningUnit: {
+              ...node.learningUnit,
+              objectives: node.learningUnit.objectives.map(
+                ({ semanticSupport: _, ...objective }) => objective,
+              ),
+            },
+          }
+        : node,
+    ),
+  };
+}
+
+function hydrate(
+  row: CurriculumRow,
+  semanticSupportByObjectiveId: ReadonlyMap<string, ObjectiveAuthoritySemanticSupport>,
+): Curriculum {
+  const aggregate = CurriculumSchema.parse({
     ...(JSON.parse(row.payload) as object),
     id: row.id,
     workspaceId: row.workspace_id,
@@ -68,6 +101,35 @@ function hydrate(row: CurriculumRow): Curriculum {
     status: row.status,
     createdAt: row.created_at,
     acceptedAt: row.accepted_at,
+  });
+  const aggregateObjectiveIds = new Set(
+    aggregate.nodes.flatMap(
+      (node) => node.learningUnit?.objectives.map((objective) => objective.id) ?? [],
+    ),
+  );
+  for (const objectiveId of semanticSupportByObjectiveId.keys()) {
+    if (!aggregateObjectiveIds.has(objectiveId)) {
+      throw new Error('Persisted semantic support references an unknown Curriculum objective.');
+    }
+  }
+  return CurriculumSchema.parse({
+    ...aggregate,
+    nodes: aggregate.nodes.map((node) =>
+      node.learningUnit
+        ? {
+            ...node,
+            learningUnit: {
+              ...node.learningUnit,
+              objectives: node.learningUnit.objectives.map(
+                ({ semanticSupport: _, ...objective }) => {
+                  const semanticSupport = semanticSupportByObjectiveId.get(objective.id);
+                  return semanticSupport ? { ...objective, semanticSupport } : objective;
+                },
+              ),
+            },
+          }
+        : node,
+    ),
   });
 }
 
@@ -85,11 +147,84 @@ interface CurriculumQualityEvaluationRow {
   payload: string;
 }
 
+interface ObjectiveSemanticSupportRow {
+  curriculum_id: string;
+  objective_id: string;
+  policy_version: string;
+  evaluator: string;
+  provider: string;
+  provider_model: string | null;
+  status: ObjectiveAuthoritySemanticSupport['verdict'];
+  proposition_fingerprint: string;
+  binding_fingerprint: string;
+  payload: string;
+  evaluated_at: string;
+}
+
 export function createCurriculaRepo(db: SqliteDb) {
+  const isAuthorityBlockingEligible = (authorityRecordId: string): boolean => {
+    const row = db
+      .prepare(
+        `SELECT EXISTS(
+           SELECT 1 FROM truth_authority_records r
+           JOIN material_revisions mr ON mr.id = r.material_revision_id
+           JOIN materials m ON m.id = r.material_id
+           WHERE r.id = ?
+             AND r.validation_state = 'validated'
+             AND r.conflict_state IN ('none', 'resolved')
+             AND mr.status = 'active'
+             AND m.availability = 'active'
+             AND m.active_revision_id = mr.id
+             AND EXISTS(
+               SELECT 1
+               FROM truth_authority_claims c
+               JOIN source_blocks b ON b.id = c.source_block_id
+               WHERE c.authority_record_id = r.id
+                 AND (b.content_origin IS NULL OR b.content_origin = 'extracted_original')
+             )
+         ) AS eligible`,
+      )
+      .get(authorityRecordId) as { eligible: number };
+    return row.eligible === 1;
+  };
+
+  function getObjectiveSemanticSupport(curriculumId: string): ObjectiveAuthoritySemanticSupport[] {
+    return (
+      db
+        .prepare(
+          `SELECT curriculum_id, objective_id, policy_version, evaluator, provider,
+                  provider_model, status, proposition_fingerprint, binding_fingerprint,
+                  payload, evaluated_at
+           FROM curriculum_objective_semantic_support
+           WHERE curriculum_id = ? ORDER BY objective_id`,
+        )
+        .all(curriculumId) as ObjectiveSemanticSupportRow[]
+    ).map((row) => {
+      const semanticSupport = ObjectiveAuthoritySemanticSupportSchema.parse(
+        JSON.parse(row.payload) as unknown,
+      );
+      if (
+        semanticSupport.objectiveId !== row.objective_id ||
+        semanticSupport.policyVersion !== row.policy_version ||
+        semanticSupport.evaluator !== row.evaluator ||
+        semanticSupport.provider !== row.provider ||
+        semanticSupport.providerModel !== row.provider_model ||
+        semanticSupport.verdict !== row.status ||
+        semanticSupport.propositionFingerprint !== row.proposition_fingerprint ||
+        semanticSupport.bindingFingerprint !== row.binding_fingerprint ||
+        semanticSupport.evaluatedAt !== row.evaluated_at
+      ) {
+        throw new Error('Persisted objective semantic-support metadata is inconsistent.');
+      }
+      return semanticSupport;
+    });
+  }
+
   function get(id: string): Curriculum | undefined {
     const row = db.prepare('SELECT * FROM curriculum_versions WHERE id = ?').get(id) as
       CurriculumRow | undefined;
-    return row ? hydrate(row) : undefined;
+    if (!row) return undefined;
+    return hydrateStoredCurriculum(row);
   }
 
   function getManifest(workspaceId: string, fingerprint: string) {
@@ -210,21 +345,219 @@ export function createCurriculaRepo(db: SqliteDb) {
     },
   );
 
-  function validateCurriculum(curriculum: Curriculum, manifestId: string): void {
-    if (!curriculum.validation.valid && curriculum.status === 'accepted') {
-      throw new Error('Invalid Curriculum cannot be accepted.');
-    }
-    const contract = db
-      .prepare('SELECT workspace_id FROM learning_contract_versions WHERE id = ?')
-      .get(curriculum.contractVersionId) as { workspace_id: string } | undefined;
-    if (!contract || contract.workspace_id !== curriculum.workspaceId) {
-      throw new Error('Curriculum Contract does not belong to this Course.');
+  function validateCurriculum(
+    curriculum: Curriculum,
+    manifestId: string,
+    options: { exactAuthorityOnly?: boolean } = {},
+  ): void {
+    if (!options.exactAuthorityOnly) {
+      if (!curriculum.validation.valid && curriculum.status === 'accepted') {
+        throw new Error('Invalid Curriculum cannot be accepted.');
+      }
+      const contract = db
+        .prepare('SELECT workspace_id FROM learning_contract_versions WHERE id = ?')
+        .get(curriculum.contractVersionId) as { workspace_id: string } | undefined;
+      if (!contract || contract.workspace_id !== curriculum.workspaceId) {
+        throw new Error('Curriculum Contract does not belong to this Course.');
+      }
     }
     const manifest = db
       .prepare('SELECT fingerprint FROM execution_source_manifests WHERE id = ?')
       .get(manifestId) as { fingerprint: string } | undefined;
     if (!manifest || manifest.fingerprint !== curriculum.executionSourceManifest.fingerprint) {
       throw new Error('Curriculum execution-source manifest is inconsistent.');
+    }
+
+    const exactClaimCache = new Map<string, boolean>();
+    interface ExactManifestClaim {
+      id: string;
+      authority_record_id: string;
+      source_block_id: string;
+      quote: string;
+      start_offset: number;
+      end_offset: number;
+      content: string;
+    }
+    const exactClaimByIdCache = new Map<string, ExactManifestClaim | null>();
+    const exactManifestClaimById = (claimId: string): ExactManifestClaim | null => {
+      if (exactClaimByIdCache.has(claimId)) return exactClaimByIdCache.get(claimId) ?? null;
+      const row = db
+        .prepare(
+          `SELECT c.id, c.authority_record_id, c.source_block_id,
+                  c.quote, c.start_offset, c.end_offset, b.content
+           FROM truth_authority_claims c
+           JOIN truth_authority_records r ON r.id = c.authority_record_id
+           JOIN source_blocks b ON b.id = c.source_block_id
+           JOIN execution_source_manifest_blocks mb
+             ON mb.source_block_id = c.source_block_id AND mb.manifest_id = ?
+           WHERE c.id = ?
+             AND r.workspace_id = ?
+             AND b.material_id = r.material_id
+             AND b.material_revision_id = r.material_revision_id
+             AND mb.material_revision_id = b.material_revision_id
+             AND (b.content_origin IS NULL OR b.content_origin = 'extracted_original')`,
+        )
+        .get(manifestId, claimId, curriculum.workspaceId) as ExactManifestClaim | undefined;
+      const exact =
+        row &&
+        row.start_offset >= 0 &&
+        row.end_offset <= row.content.length &&
+        row.content.slice(row.start_offset, row.end_offset) === row.quote
+          ? row
+          : null;
+      exactClaimByIdCache.set(claimId, exact);
+      return exact;
+    };
+    const hasExactManifestClaim = (authorityRecordId: string, sourceBlockId: string): boolean => {
+      const key = `${authorityRecordId}\u0000${sourceBlockId}`;
+      const cached = exactClaimCache.get(key);
+      if (cached !== undefined) return cached;
+      const rows = db
+        .prepare(
+          `SELECT c.quote, c.start_offset, c.end_offset, b.content
+           FROM truth_authority_claims c
+           JOIN truth_authority_records r ON r.id = c.authority_record_id
+           JOIN source_blocks b ON b.id = c.source_block_id
+           JOIN execution_source_manifest_blocks mb
+             ON mb.source_block_id = c.source_block_id AND mb.manifest_id = ?
+           WHERE c.authority_record_id = ? AND c.source_block_id = ?
+             AND r.workspace_id = ?
+             AND b.material_id = r.material_id
+             AND b.material_revision_id = r.material_revision_id
+             AND mb.material_revision_id = b.material_revision_id
+             AND (b.content_origin IS NULL OR b.content_origin = 'extracted_original')`,
+        )
+        .all(manifestId, authorityRecordId, sourceBlockId, curriculum.workspaceId) as Array<{
+        quote: string;
+        start_offset: number;
+        end_offset: number;
+        content: string;
+      }>;
+      const exact = rows.some(
+        (row) =>
+          row.start_offset >= 0 &&
+          row.end_offset <= row.content.length &&
+          row.content.slice(row.start_offset, row.end_offset) === row.quote,
+      );
+      exactClaimCache.set(key, exact);
+      return exact;
+    };
+    const assertExactAuthorityMapping = (
+      sourceBlockIds: readonly string[],
+      authorityRecordIds: readonly string[],
+      label: string,
+      authorityClaimIds?: readonly string[],
+    ): void => {
+      for (const sourceBlockId of sourceBlockIds) {
+        const inManifest = db
+          .prepare(
+            `SELECT 1 FROM execution_source_manifest_blocks
+             WHERE manifest_id = ? AND source_block_id = ?`,
+          )
+          .get(manifestId, sourceBlockId);
+        if (!inManifest) {
+          throw new Error(`${label} references a source block outside its manifest.`);
+        }
+      }
+      if (authorityClaimIds) {
+        const sourceBlockSet = new Set(sourceBlockIds);
+        const authorityRecordSet = new Set(authorityRecordIds);
+        const exactClaims = authorityClaimIds.map((claimId) => {
+          const claim = exactManifestClaimById(claimId);
+          if (!claim) throw new Error(`${label} references a missing or inexact authority claim.`);
+          if (
+            !sourceBlockSet.has(claim.source_block_id) ||
+            !authorityRecordSet.has(claim.authority_record_id)
+          ) {
+            throw new Error(`${label} authority claim falls outside its mapped record or block.`);
+          }
+          return claim;
+        });
+        for (const sourceBlockId of sourceBlockIds) {
+          if (!exactClaims.some((claim) => claim.source_block_id === sourceBlockId)) {
+            throw new Error(`${label} source block has no exact mapped authority claim identity.`);
+          }
+        }
+        for (const authorityRecordId of authorityRecordIds) {
+          if (!exactClaims.some((claim) => claim.authority_record_id === authorityRecordId)) {
+            throw new Error(`${label} authority has no exact mapped claim identity.`);
+          }
+        }
+        return;
+      }
+      for (const sourceBlockId of sourceBlockIds) {
+        if (
+          !authorityRecordIds.some((authorityRecordId) =>
+            hasExactManifestClaim(authorityRecordId, sourceBlockId),
+          )
+        ) {
+          throw new Error(`${label} source block has no exact claim from its mapped authority.`);
+        }
+      }
+      for (const authorityRecordId of authorityRecordIds) {
+        if (
+          !sourceBlockIds.some((sourceBlockId) =>
+            hasExactManifestClaim(authorityRecordId, sourceBlockId),
+          )
+        ) {
+          throw new Error(`${label} authority has no exact claim in its mapped source blocks.`);
+        }
+      }
+    };
+
+    const validateExactAuthorityMappings = (): void => {
+      for (const objective of curriculum.nodes.flatMap(
+        (node) => node.learningUnit?.objectives ?? [],
+      )) {
+        // Legacy and partially migrated Curricula intentionally remain
+        // readable so consequential service boundaries can diagnose missing
+        // semantic support and offer immutable successor recovery. Any
+        // objective that does carry canonical support is a current artifact
+        // and must still pass the complete exact-claim ownership audit below.
+        if (options.exactAuthorityOnly && !objective.semanticSupport) continue;
+        // On ordinary create/accept boundaries, validate the aggregate
+        // objective binding too. During hydration, aggregate/support drift is
+        // deliberately left to the canonical semantic-support assertion so a
+        // stale accepted route remains readable for immutable recovery. The
+        // support artifact's own exact selected claims are still audited here.
+        if (!options.exactAuthorityOnly) {
+          assertExactAuthorityMapping(
+            objective.authoritySourceBlockIds ?? [],
+            objective.truthAuthorityRecordIds,
+            `Curriculum objective ${objective.id}`,
+            objective.authorityClaimIds,
+          );
+        }
+        if (!objective.semanticSupport) continue;
+        assertExactAuthorityMapping(
+          objective.semanticSupport.boundSourceBlockIds,
+          objective.semanticSupport.boundAuthorityRecordIds,
+          `Curriculum objective ${objective.id} semantic-support binding`,
+          objective.semanticSupport.boundAuthorityClaimIds,
+        );
+        const mappings = [
+          ...objective.semanticSupport.fragments,
+          ...objective.semanticSupport.conflicts,
+          ...objective.semanticSupport.overreach,
+        ];
+        for (const mapping of mappings) {
+          assertExactAuthorityMapping(
+            mapping.sourceBlockIds,
+            mapping.authorityRecordIds,
+            `Curriculum objective ${objective.id} semantic-support mapping`,
+            mapping.authorityClaimIds,
+          );
+        }
+      }
+    };
+    if (options.exactAuthorityOnly) {
+      try {
+        validateExactAuthorityMappings();
+      } catch (error) {
+        if (error instanceof CurriculumExactAuthorityClaimHydrationError) throw error;
+        throw new CurriculumExactAuthorityClaimHydrationError();
+      }
+      return;
     }
 
     const nodeIds = new Set(curriculum.nodes.map((node) => node.id));
@@ -346,6 +679,20 @@ export function createCurriculaRepo(db: SqliteDb) {
         }
       }
     }
+    validateExactAuthorityMappings();
+  }
+
+  function hydrateStoredCurriculum(row: CurriculumRow): Curriculum {
+    const support = getObjectiveSemanticSupport(row.id);
+    const curriculum = hydrate(row, new Map(support.map((entry) => [entry.objectiveId, entry])));
+    // Migration-40 Curricula intentionally remain readable without fabricated
+    // semantic support. Once migration-41 support exists, however, hydration is
+    // a current-artifact boundary and must revalidate every exact claim against
+    // its persisted manifest and present source ownership.
+    if (support.length > 0) {
+      validateCurriculum(curriculum, row.manifest_id, { exactAuthorityOnly: true });
+    }
+    return curriculum;
   }
 
   const createVersionTx = db.transaction(
@@ -364,6 +711,10 @@ export function createCurriculaRepo(db: SqliteDb) {
       ) {
         throw new Error('Curriculum requires its exact persisted execution-source manifest.');
       }
+      const objectives = curriculum.nodes.flatMap((node) => node.learningUnit?.objectives ?? []);
+      assertCurriculumObjectiveAuthoritySemanticSupport(curriculum, {
+        isBlockingEligible: isAuthorityBlockingEligible,
+      });
       validateCurriculum(curriculum, manifest.id);
       const latest = db
         .prepare(
@@ -392,7 +743,7 @@ export function createCurriculaRepo(db: SqliteDb) {
         curriculum.predecessorId,
         curriculum.status,
         curriculum.validation.valid ? 1 : 0,
-        JSON.stringify(curriculum),
+        JSON.stringify(withoutSemanticSupport(curriculum)),
         curriculum.createdAt,
         curriculum.acceptedAt,
       );
@@ -456,6 +807,29 @@ export function createCurriculaRepo(db: SqliteDb) {
           }
         }
       }
+      const insertSemanticSupport = db.prepare(
+        `INSERT INTO curriculum_objective_semantic_support
+           (curriculum_id, objective_id, policy_version, evaluator, provider,
+            provider_model, status, proposition_fingerprint, binding_fingerprint,
+            payload, evaluated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      );
+      for (const objective of objectives) {
+        const support = objective.semanticSupport!;
+        insertSemanticSupport.run(
+          curriculum.id,
+          objective.id,
+          support.policyVersion,
+          support.evaluator,
+          support.provider,
+          support.providerModel,
+          support.verdict,
+          support.propositionFingerprint,
+          support.bindingFingerprint,
+          JSON.stringify(support),
+          support.evaluatedAt,
+        );
+      }
       appendEvent(curriculum.id, event);
       return get(curriculum.id)!;
     },
@@ -466,6 +840,12 @@ export function createCurriculaRepo(db: SqliteDb) {
     if (!current || current.status !== 'proposed' || !current.validation.valid) {
       throw new Error('Only a valid proposed Curriculum may be accepted.');
     }
+    assertCurriculumObjectiveAuthoritySemanticSupport(current, {
+      isBlockingEligible: isAuthorityBlockingEligible,
+    });
+    const manifest = getManifest(current.workspaceId, current.executionSourceManifest.fingerprint);
+    if (!manifest) throw new Error('Curriculum execution-source manifest is missing.');
+    validateCurriculum(current, manifest.id);
     const accepted = CurriculumSchema.parse({ ...current, status: 'accepted', acceptedAt });
     const changed = db
       .prepare(
@@ -473,7 +853,7 @@ export function createCurriculaRepo(db: SqliteDb) {
          SET status = 'accepted', accepted_at = ?, payload = ?
          WHERE id = ? AND status = 'proposed' AND validation_valid = 1`,
       )
-      .run(acceptedAt, JSON.stringify(accepted), id).changes;
+      .run(acceptedAt, JSON.stringify(withoutSemanticSupport(accepted)), id).changes;
     if (changed !== 1) throw new Error('Curriculum proposal changed concurrently.');
     appendEvent(id, event);
     return get(id)!;
@@ -500,7 +880,7 @@ export function createCurriculaRepo(db: SqliteDb) {
           `UPDATE curriculum_versions SET status = 'rejected', payload = ?
            WHERE id = ? AND status = ?`,
         )
-        .run(JSON.stringify(rejected), id, current.status).changes;
+        .run(JSON.stringify(withoutSemanticSupport(rejected)), id, current.status).changes;
       if (changed !== 1) throw new Error('Curriculum changed concurrently.');
       appendEvent(id, { ...event, payload: { reason, detail: event.payload } });
       return get(id)!;
@@ -511,6 +891,7 @@ export function createCurriculaRepo(db: SqliteDb) {
     get,
     getManifest,
     getQualityEvaluation,
+    getObjectiveSemanticSupport,
     createManifest: createManifestTx,
     createVersion: createVersionTx,
     accept: acceptTx,
@@ -539,7 +920,7 @@ export function createCurriculaRepo(db: SqliteDb) {
         db
           .prepare(`SELECT * FROM curriculum_versions WHERE workspace_id = ? ORDER BY version ASC`)
           .all(workspaceId) as CurriculumRow[]
-      ).map(hydrate);
+      ).map(hydrateStoredCurriculum);
     },
   };
 }

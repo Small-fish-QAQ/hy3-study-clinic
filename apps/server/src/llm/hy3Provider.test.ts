@@ -1,5 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
-import { SAMPLE_MATERIAL_TITLE, type SourceBlock } from '@hy3-clinic/shared';
+import {
+  ObjectiveAuthoritySemanticEvaluationProposalSchema,
+  ObjectiveAuthoritySemanticRepairProposalSchema,
+  SAMPLE_MATERIAL_TITLE,
+  type ObjectiveAuthoritySemanticEvaluationInput,
+  type ObjectiveAuthoritySemanticRepairInput,
+  type SourceBlock,
+} from '@hy3-clinic/shared';
 import { Hy3Provider } from './hy3Provider.js';
 import { ProviderError } from './errors.js';
 import type {
@@ -55,6 +62,176 @@ const visualInput: VisualDescriptionInput = {
     maxUncertaintyItems: 6,
   },
 };
+
+const semanticEvaluationInput: ObjectiveAuthoritySemanticEvaluationInput = {
+  schemaVersion: 1,
+  policyVersion: 'objective-authority-semantic-v1',
+  objectives: [
+    {
+      objectiveRef: 'O1',
+      proposition: 'Explain how the components jointly position the system.',
+      construct: 'explain',
+      evidence: [
+        {
+          evidenceRef: 'E1',
+          text: 'The system combines documents, search, language models, permissions, and tools.',
+          claimKinds: ['claim'],
+          headingPath: ['Positioning'],
+        },
+      ],
+    },
+  ],
+};
+
+const semanticEvaluationProposal = ObjectiveAuthoritySemanticEvaluationProposalSchema.parse({
+  schemaVersion: 1,
+  evaluations: [
+    {
+      objectiveRef: 'O1',
+      proposition: semanticEvaluationInput.objectives[0]!.proposition,
+      construct: 'explain',
+      fragments: [
+        {
+          fragmentId: 'F1',
+          text: semanticEvaluationInput.objectives[0]!.proposition,
+          status: 'supported',
+          supportType: 'positioning',
+          evidenceRefs: ['E1'],
+          rationale: 'The exact offered claim states the integrated positioning.',
+        },
+      ],
+      unsupportedFragmentIds: [],
+      conflicts: [],
+      overreach: [],
+      verdict: 'pass',
+      rationale: 'The complete proposition is supported by the exact offered authority.',
+    },
+  ],
+});
+
+const semanticRepairInput: ObjectiveAuthoritySemanticRepairInput = {
+  schemaVersion: 1,
+  policyVersion: 'objective-authority-semantic-v1',
+  objectives: [
+    {
+      objectiveRef: 'O1',
+      title: 'Explain the system positioning',
+      description: semanticEvaluationInput.objectives[0]!.proposition,
+      construct: 'explain',
+      priority: 'required',
+      currentEvidenceRefs: ['E1'],
+      allowedEvidence: [
+        {
+          ...semanticEvaluationInput.objectives[0]!.evidence[0]!,
+          selected: true,
+        },
+      ],
+      fragments: [
+        {
+          fragmentId: 'F1',
+          text: semanticEvaluationInput.objectives[0]!.proposition,
+          status: 'unsupported',
+          supportType: null,
+          evidenceRefs: [],
+          rationale: 'The current wording overstates the exact offered claim.',
+        },
+      ],
+      unsupportedFragmentIds: ['F1'],
+      conflicts: [],
+      overreach: [],
+      verdict: 'fail',
+      rationale: 'A bounded same-construct repair is required.',
+    },
+  ],
+};
+
+const semanticRepairProposal = ObjectiveAuthoritySemanticRepairProposalSchema.parse({
+  schemaVersion: 1,
+  replacements: [
+    {
+      objectiveRef: 'O1',
+      title: 'Explain the integrated system positioning',
+      description:
+        'Explain how documents, search, language models, permissions, and tools combine.',
+      construct: 'explain',
+      evidenceRefs: ['E1'],
+    },
+  ],
+});
+
+describe('Hy3Provider objective-authority semantic methods', () => {
+  it('parses strict evaluation/repair payloads and reports fixed schema fingerprints', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(semanticEvaluationProposal)))
+      .mockResolvedValueOnce(
+        jsonResponse(JSON.stringify(semanticRepairProposal)),
+      ) as unknown as typeof fetch;
+    const provider = makeProvider(fetchImpl);
+    const schemaNames: string[] = [];
+
+    await expect(
+      provider.evaluateObjectiveAuthoritySupport(semanticEvaluationInput, {
+        onStructuredOutputDiagnostic: (diagnostic) => schemaNames.push(diagnostic.schemaName),
+      }),
+    ).resolves.toEqual(semanticEvaluationProposal);
+    await expect(
+      provider.repairObjectiveAuthoritySupport(semanticRepairInput, {
+        onStructuredOutputDiagnostic: (diagnostic) => schemaNames.push(diagnostic.schemaName),
+      }),
+    ).resolves.toEqual(semanticRepairProposal);
+    expect(schemaNames).toEqual([
+      'objective-authority-semantic-evaluation-v1',
+      'objective-authority-semantic-repair-v1',
+    ]);
+  });
+
+  it('uses one bounded schema repair for malformed evaluator output', async () => {
+    const malformed = {
+      ...semanticEvaluationProposal,
+      evaluations: [
+        {
+          ...semanticEvaluationProposal.evaluations[0]!,
+          modelGrantedAuthority: true,
+        },
+      ],
+    };
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(malformed)))
+      .mockResolvedValueOnce(
+        jsonResponse(JSON.stringify(semanticEvaluationProposal)),
+      ) as unknown as typeof fetch;
+    const onRepairAttempt = vi.fn();
+
+    await expect(
+      makeProvider(fetchImpl).evaluateObjectiveAuthoritySupport(semanticEvaluationInput, {
+        onRepairAttempt,
+      }),
+    ).resolves.toEqual(semanticEvaluationProposal);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(onRepairAttempt).toHaveBeenCalledExactlyOnceWith('schema', 'SCHEMA_VALIDATION_FAILURE');
+  });
+
+  it('preserves already-aborted evaluation and repair without fetching', async () => {
+    const fetchImpl = vi.fn() as unknown as typeof fetch;
+    const provider = makeProvider(fetchImpl);
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      provider.evaluateObjectiveAuthoritySupport(semanticEvaluationInput, {
+        signal: controller.signal,
+      }),
+    ).rejects.toMatchObject({ code: 'REQUEST_CANCELLED' });
+    await expect(
+      provider.repairObjectiveAuthoritySupport(semanticRepairInput, {
+        signal: controller.signal,
+      }),
+    ).rejects.toMatchObject({ code: 'REQUEST_CANCELLED' });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+});
 
 describe('Hy3Provider visual transport boundary', () => {
   it('fails closed without fetching when image transport is not configured', async () => {

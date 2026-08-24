@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { openDatabase } from './database.js';
 import { LATEST_MIGRATION_VERSION, migrate } from './migrate.js';
+import { createCurriculaRepo } from '../repositories/curricula.js';
 
 function providerGenerationSchema(db: ReturnType<typeof openDatabase>) {
   const column = (
@@ -121,6 +122,145 @@ function insertAcceptedLessonCascadeFixture(db: ReturnType<typeof openDatabase>)
        'skeleton-checkpoint-cascade', '{}', '[]', '{}', 'operation_checkpoint_cascade',
        'fake', 'fake-deterministic', 'lesson-content-v1-compositional', ?)`,
   ).run(at);
+}
+
+function objectiveSemanticSupportPayload() {
+  return {
+    schemaVersion: 1 as const,
+    policyVersion: 'objective-authority-semantic-support-v1',
+    evaluator: 'independent-semantic-evaluator-v1',
+    provider: 'fake',
+    providerModel: null,
+    independent: true as const,
+    objectiveId: 'objective_v41',
+    proposition: 'Explain the exact source relationship.',
+    propositionFingerprint: 'proposition-v41',
+    construct: 'explain' as const,
+    boundAuthorityRecordIds: ['authority_v41'],
+    boundSourceBlockIds: ['block_v41'],
+    boundAuthorityClaimIds: ['claim_v41'],
+    bindingFingerprint: 'binding-v41',
+    fragments: [
+      {
+        fragmentId: 'fragment_v41',
+        text: 'Explain the exact source relationship.',
+        status: 'supported' as const,
+        supportType: 'relationship' as const,
+        sourceBlockIds: ['block_v41'],
+        authorityRecordIds: ['authority_v41'],
+        authorityClaimIds: ['claim_v41'],
+        rationale: 'The bound claim states the requested relationship.',
+      },
+    ],
+    unsupportedFragmentIds: [],
+    conflicts: [],
+    overreach: [],
+    verdict: 'pass' as const,
+    rationale: 'Every objective fragment is supported by bound authority.',
+    evaluatedAt: '2026-01-01T00:00:00.000Z',
+  };
+}
+
+function insertObjectiveSemanticSupportMigrationFixture(
+  db: ReturnType<typeof openDatabase>,
+): string {
+  const at = '2026-01-01T00:00:00.000Z';
+  const curriculumPayload = JSON.stringify({
+    id: 'curriculum_v41',
+    workspaceId: 'ws_v41',
+    contractVersionId: 'contract_v41',
+    version: 1,
+    predecessorId: null,
+    status: 'accepted',
+    executionSourceManifest: {
+      fingerprint: 'manifest-v41',
+      revisions: [
+        {
+          materialId: 'material_v41',
+          materialRevisionId: 'revision_v41',
+          parserVersion: 'fixture-v1',
+          parserFingerprint: null,
+          sourceBlockRevisionIds: ['block_v41'],
+        },
+      ],
+    },
+    nodes: [
+      {
+        id: 'root_v41',
+        parentId: null,
+        kind: 'course',
+        index: 0,
+        title: 'Legacy Curriculum',
+        sourceReferences: [],
+        learningUnit: null,
+      },
+      {
+        id: 'unit_v41',
+        parentId: 'root_v41',
+        kind: 'learning_unit',
+        index: 0,
+        title: 'Legacy unit',
+        sourceReferences: [],
+        learningUnit: {
+          conceptIds: [],
+          canonicalConceptIds: [],
+          objectives: [
+            {
+              id: 'objective_v41',
+              title: 'Explain the relationship',
+              description: 'Explain the exact source relationship.',
+              truthPremiseStatus: 'independently_verified',
+              truthAuthorityRecordIds: ['authority_v41'],
+              authorityClaimIds: ['claim_v41'],
+              formalAssessmentConstruct: 'explain',
+            },
+          ],
+          prerequisiteUnitIds: [],
+          graphRelationIds: [],
+          riskIds: [],
+        },
+      },
+    ],
+    synthesisGroups: [],
+    validation: { valid: true, errors: [], warnings: [], unmappedStructuralUnitIds: [] },
+    provider: 'fake',
+    providerModel: null,
+    createdAt: at,
+    acceptedAt: at,
+  });
+  db.prepare(
+    `INSERT INTO workspaces (id, name, origin, created_at, updated_at)
+     VALUES ('ws_v41', 'Semantic support migration', 'manual', ?, ?)`,
+  ).run(at, at);
+  db.prepare(
+    `INSERT INTO learning_contract_versions
+       (id, workspace_id, version, status, payload, created_at)
+     VALUES ('contract_v41', 'ws_v41', 1, 'active', '{}', ?)`,
+  ).run(at);
+  db.prepare(
+    `INSERT INTO execution_source_manifests
+       (id, workspace_id, fingerprint, payload, created_at)
+     VALUES ('manifest_v41', 'ws_v41', 'manifest-v41', '{}', ?)`,
+  ).run(at);
+  db.prepare(
+    `INSERT INTO curriculum_versions
+       (id, workspace_id, contract_id, manifest_id, manifest_fingerprint, version,
+        status, validation_valid, payload, created_at, accepted_at)
+     VALUES ('curriculum_v41', 'ws_v41', 'contract_v41', 'manifest_v41',
+       'manifest-v41', 1, 'accepted', 1, ?, ?, ?)`,
+  ).run(curriculumPayload, at, at);
+  db.prepare(
+    `INSERT INTO curriculum_node_index
+       (curriculum_id, node_id, parent_node_id, kind, idx, title)
+     VALUES ('curriculum_v41', 'root_v41', NULL, 'course', 0, 'Legacy Curriculum'),
+            ('curriculum_v41', 'unit_v41', 'root_v41', 'learning_unit', 0, 'Legacy unit')`,
+  ).run();
+  db.prepare(
+    `INSERT INTO curriculum_objective_index
+       (curriculum_id, learning_unit_id, objective_id, truth_premise_status)
+     VALUES ('curriculum_v41', 'unit_v41', 'objective_v41', 'independently_verified')`,
+  ).run();
+  return curriculumPayload;
 }
 
 function insertTelemetryFixture(
@@ -659,6 +799,231 @@ describe('migrations', () => {
       'UNIQUE (curriculum_id, study_plan_id, learning_unit_id, manifest_fingerprint, source_context_fingerprint)',
     );
     expect(db.prepare('SELECT COUNT(*) AS count FROM teaching_briefs').get()).toEqual({ count: 2 });
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+    db.close();
+  });
+
+  it('adds immutable objective semantic support with composite objective ownership', () => {
+    const db = openDatabase(':memory:');
+    migrate(db, { toVersion: 40 });
+    insertObjectiveSemanticSupportMigrationFixture(db);
+    migrate(db);
+
+    expect(
+      db.prepare('SELECT version, name FROM schema_migrations WHERE version = 41').get(),
+    ).toEqual({ version: 41, name: 'objective_authority_semantic_support' });
+    const columns = db.pragma('table_info(curriculum_objective_semantic_support)') as Array<{
+      name: string;
+      notnull: number;
+    }>;
+    expect(columns.map(({ name, notnull }) => ({ name, notnull }))).toEqual([
+      { name: 'curriculum_id', notnull: 1 },
+      { name: 'objective_id', notnull: 1 },
+      { name: 'policy_version', notnull: 1 },
+      { name: 'evaluator', notnull: 1 },
+      { name: 'provider', notnull: 1 },
+      { name: 'provider_model', notnull: 0 },
+      { name: 'status', notnull: 1 },
+      { name: 'proposition_fingerprint', notnull: 1 },
+      { name: 'binding_fingerprint', notnull: 1 },
+      { name: 'payload', notnull: 1 },
+      { name: 'evaluated_at', notnull: 1 },
+    ]);
+
+    const support = objectiveSemanticSupportPayload();
+    const insertSupport = db.prepare(
+      `INSERT INTO curriculum_objective_semantic_support
+         (curriculum_id, objective_id, policy_version, evaluator, provider,
+          provider_model, status, proposition_fingerprint, binding_fingerprint,
+          payload, evaluated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    );
+    expect(() =>
+      insertSupport.run(
+        'curriculum_v41',
+        'unknown_objective',
+        support.policyVersion,
+        support.evaluator,
+        support.provider,
+        support.providerModel,
+        support.verdict,
+        support.propositionFingerprint,
+        support.bindingFingerprint,
+        JSON.stringify(support),
+        support.evaluatedAt,
+      ),
+    ).toThrow(/FOREIGN KEY/);
+    insertSupport.run(
+      'curriculum_v41',
+      support.objectiveId,
+      support.policyVersion,
+      support.evaluator,
+      support.provider,
+      support.providerModel,
+      support.verdict,
+      support.propositionFingerprint,
+      support.bindingFingerprint,
+      JSON.stringify(support),
+      support.evaluatedAt,
+    );
+    const replacementSupport = {
+      ...support,
+      evaluator: 'replacement-evaluator-must-not-persist',
+    };
+    expect(() =>
+      db
+        .prepare(
+          `INSERT OR REPLACE INTO curriculum_objective_semantic_support
+             (curriculum_id, objective_id, policy_version, evaluator, provider,
+              provider_model, status, proposition_fingerprint, binding_fingerprint,
+              payload, evaluated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          'curriculum_v41',
+          replacementSupport.objectiveId,
+          replacementSupport.policyVersion,
+          replacementSupport.evaluator,
+          replacementSupport.provider,
+          replacementSupport.providerModel,
+          replacementSupport.verdict,
+          replacementSupport.propositionFingerprint,
+          replacementSupport.bindingFingerprint,
+          JSON.stringify(replacementSupport),
+          replacementSupport.evaluatedAt,
+        ),
+    ).toThrow(/semantic support is immutable/i);
+    expect(
+      db
+        .prepare(
+          `SELECT evaluator, payload FROM curriculum_objective_semantic_support
+           WHERE curriculum_id = 'curriculum_v41' AND objective_id = 'objective_v41'`,
+        )
+        .get(),
+    ).toEqual({ evaluator: support.evaluator, payload: JSON.stringify(support) });
+    expect(() =>
+      db
+        .prepare(
+          `UPDATE curriculum_objective_semantic_support SET status = 'fail'
+           WHERE curriculum_id = 'curriculum_v41' AND objective_id = 'objective_v41'`,
+        )
+        .run(),
+    ).toThrow(/semantic support is immutable/i);
+    expect(() =>
+      db
+        .prepare(
+          `DELETE FROM curriculum_objective_semantic_support
+           WHERE curriculum_id = 'curriculum_v41' AND objective_id = 'objective_v41'`,
+        )
+        .run(),
+    ).toThrow(/semantic support is immutable/i);
+
+    expect(() => db.prepare("DELETE FROM workspaces WHERE id = 'ws_v41'").run()).not.toThrow();
+    expect(
+      db.prepare('SELECT COUNT(*) AS count FROM curriculum_objective_semantic_support').get(),
+    ).toEqual({ count: 0 });
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+    db.close();
+  });
+
+  it('prevents erasing semantic support through its objective index owner', () => {
+    const db = openDatabase(':memory:');
+    migrate(db, { toVersion: 40 });
+    insertObjectiveSemanticSupportMigrationFixture(db);
+    migrate(db);
+
+    const support = objectiveSemanticSupportPayload();
+    db.prepare(
+      `INSERT INTO curriculum_objective_semantic_support
+         (curriculum_id, objective_id, policy_version, evaluator, provider,
+          provider_model, status, proposition_fingerprint, binding_fingerprint,
+          payload, evaluated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      'curriculum_v41',
+      support.objectiveId,
+      support.policyVersion,
+      support.evaluator,
+      support.provider,
+      support.providerModel,
+      support.verdict,
+      support.propositionFingerprint,
+      support.bindingFingerprint,
+      JSON.stringify(support),
+      support.evaluatedAt,
+    );
+
+    const eraseAndReinsertOwner = db.transaction(() => {
+      db.prepare(
+        `DELETE FROM curriculum_objective_index
+         WHERE curriculum_id = 'curriculum_v41' AND objective_id = 'objective_v41'`,
+      ).run();
+      db.prepare(
+        `INSERT INTO curriculum_objective_index
+           (curriculum_id, learning_unit_id, objective_id, truth_premise_status)
+         VALUES ('curriculum_v41', 'unit_v41', 'objective_v41', 'independently_verified')`,
+      ).run();
+    });
+    expect(() => eraseAndReinsertOwner()).toThrow(/semantic support ownership is immutable/i);
+    expect(() =>
+      db
+        .prepare(
+          `INSERT OR REPLACE INTO curriculum_objective_index
+             (curriculum_id, learning_unit_id, objective_id, truth_premise_status)
+           VALUES ('curriculum_v41', 'unit_v41', 'objective_v41', 'unverified')`,
+        )
+        .run(),
+    ).toThrow(/semantic support ownership is immutable/i);
+    expect(
+      db
+        .prepare(
+          `SELECT truth_premise_status FROM curriculum_objective_index
+           WHERE curriculum_id = 'curriculum_v41' AND objective_id = 'objective_v41'`,
+        )
+        .get(),
+    ).toEqual({ truth_premise_status: 'independently_verified' });
+    expect(
+      db
+        .prepare(
+          `SELECT COUNT(*) AS count FROM curriculum_objective_index
+           WHERE curriculum_id = 'curriculum_v41' AND objective_id = 'objective_v41'`,
+        )
+        .get(),
+    ).toEqual({ count: 1 });
+    expect(
+      db
+        .prepare(
+          `SELECT COUNT(*) AS count FROM curriculum_objective_semantic_support
+           WHERE curriculum_id = 'curriculum_v41' AND objective_id = 'objective_v41'`,
+        )
+        .get(),
+    ).toEqual({ count: 1 });
+
+    expect(() =>
+      db.prepare("DELETE FROM curriculum_versions WHERE id = 'curriculum_v41'").run(),
+    ).not.toThrow();
+    expect(db.prepare('SELECT COUNT(*) AS count FROM curriculum_objective_index').get()).toEqual({
+      count: 0,
+    });
+    expect(
+      db.prepare('SELECT COUNT(*) AS count FROM curriculum_objective_semantic_support').get(),
+    ).toEqual({ count: 0 });
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+    db.close();
+  });
+
+  it('keeps migration-40 Curricula readable without fabricating semantic support', () => {
+    const db = openDatabase(':memory:');
+    migrate(db, { toVersion: 40 });
+    const legacyPayload = insertObjectiveSemanticSupportMigrationFixture(db);
+
+    migrate(db);
+
+    expect(
+      db.prepare("SELECT payload FROM curriculum_versions WHERE id = 'curriculum_v41'").get(),
+    ).toEqual({ payload: legacyPayload });
+    const curriculum = createCurriculaRepo(db).get('curriculum_v41');
+    expect(curriculum?.nodes[1]?.learningUnit?.objectives[0]?.semanticSupport).toBeUndefined();
     expect(db.pragma('foreign_key_check')).toEqual([]);
     db.close();
   });

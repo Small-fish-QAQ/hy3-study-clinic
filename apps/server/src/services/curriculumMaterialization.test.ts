@@ -9,7 +9,6 @@ import {
   assembleCurriculumDetailBatches,
   buildCourseMapDeterministicCoverage,
   planCurriculumDetailBatches,
-  repairCurriculumDetailAuthorityCandidate,
   validateCurriculumDetailCandidate,
 } from './curriculumMaterialization.js';
 
@@ -340,12 +339,13 @@ describe('Curriculum detail Hy3 provider contract', () => {
     );
   });
 
-  it('reapplies deterministic evidence authority repair after a schema repair', async () => {
+  it('preserves provider objective wording after a schema retry at the authority boundary', async () => {
     const batch = planCurriculumDetailBatches(planningInput())[0]!;
     const candidate = await new FakeProvider().proposeCurriculumDetails(batch.input);
     candidate.units[0]!.title = 'Alpha material source boundary';
     const objective = candidate.units[0]!.objectives[0]!;
     objective.priority = 'required';
+    objective.construct = 'apply';
     objective.title = 'Apply the source in production';
     objective.description = 'Apply a broader procedure than the evidence supports.';
     const selectedEvidenceId = objective.evidence[0]!.evidenceId;
@@ -356,44 +356,37 @@ describe('Curriculum detail Hy3 provider contract', () => {
       sourceRegionId: selectedEvidenceId,
       sourceBlockIds: ['block-1'],
       formalEvidenceIds: [selectedEvidenceId],
-      supportedConstructs: ['identify'],
-      strongestSupportedConstruct: 'identify',
+      supportedConstructs: ['identify', 'explain', 'apply'],
+      strongestSupportedConstruct: 'apply',
       narrowerClaim: selectedOffer.text,
       tier: 'narrower_formal',
-      rationale: 'The exact selected evidence supports identification only.',
+      rationale: 'The exact selected evidence supports the bounded application procedure.',
     };
+    const originalObjective = structuredClone(objective);
     const fetchImpl = vi
       .fn()
       .mockResolvedValueOnce(jsonResponse('not json'))
       .mockResolvedValueOnce(jsonResponse(JSON.stringify(candidate))) as unknown as typeof fetch;
 
     const payload = await makeHy3Provider(fetchImpl).proposeCurriculumDetails(batch.input, {
-      validateCandidate: (value) => {
-        let validation = validateCurriculumDetailCandidate(value, batch.input);
-        if (!validation.valid) {
-          const repaired = repairCurriculumDetailAuthorityCandidate(
-            value as typeof candidate,
-            batch.input,
-          );
-          if (repaired.repaired) {
-            Object.assign(value as object, repaired.candidate);
-            validation = validateCurriculumDetailCandidate(value, batch.input);
-          }
-        }
-        return validation;
-      },
+      validateCandidate: (value) => validateCurriculumDetailCandidate(value, batch.input),
     });
 
     expect(fetchImpl).toHaveBeenCalledTimes(2);
     expect(payload.units[0]!.objectives[0]).toMatchObject({
+      construct: 'apply',
       priority: 'required',
       evidence: [{ evidenceId: selectedEvidenceId }],
     });
-    expect(payload.units[0]!.objectives[0]!.title).toMatch(/^Identify:/u);
+    expect(payload.units[0]!.objectives[0]).toEqual(originalObjective);
+    expect(payload.units[0]!.objectives[0]).toMatchObject({
+      title: 'Apply the source in production',
+      description: 'Apply a broader procedure than the evidence supports.',
+    });
     expect(validateCurriculumDetailCandidate(payload, batch.input).valid).toBe(true);
   });
 
-  it('preserves exact repaired candidate diagnostics in a bounded safe failure artifact', async () => {
+  it('preserves exact candidate diagnostics in a bounded safe failure artifact', async () => {
     const batch = planCurriculumDetailBatches(planningInput())[0]!;
     const candidate = await new FakeProvider().proposeCurriculumDetails(batch.input);
     candidate.units[0]!.title = 'Unsupported provider claim boundary';
@@ -404,6 +397,7 @@ describe('Curriculum detail Hy3 provider contract', () => {
     )!;
     const boundedNarrowerClaim = 'Only identify the exact source-supported boundary.';
     objective.priority = 'required';
+    objective.construct = 'apply';
     objective.title = 'Apply an unsupported private provider claim';
     objective.description = 'PRIVATE_REPAIRED_PROVIDER_RESPONSE_TEXT';
     selectedOffer.authorityEnvelope = {
@@ -423,20 +417,7 @@ describe('Curriculum detail Hy3 provider contract', () => {
     let thrown: unknown;
     try {
       await makeHy3Provider(fetchImpl).proposeCurriculumDetails(batch.input, {
-        validateCandidate: (value) => {
-          let validation = validateCurriculumDetailCandidate(value, batch.input);
-          if (!validation.valid) {
-            const repaired = repairCurriculumDetailAuthorityCandidate(
-              value as typeof candidate,
-              batch.input,
-            );
-            if (repaired.repaired) {
-              Object.assign(value as object, repaired.candidate);
-              validation = validateCurriculumDetailCandidate(value, batch.input);
-            }
-          }
-          return validation;
-        },
+        validateCandidate: (value) => validateCurriculumDetailCandidate(value, batch.input),
       });
     } catch (error) {
       thrown = error;

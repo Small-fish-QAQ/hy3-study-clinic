@@ -283,6 +283,8 @@ export const ProposedCurriculumObjectiveSchema = z
     key: z.string().min(1).max(100),
     title: z.string().min(1).max(300),
     description: z.string().min(1).max(1000),
+    /** Construct is explicit and immutable across bounded semantic repair. */
+    construct: FormalAssessmentConstructSchema,
     /** Optional server-offered evidence selections; local authority decides their meaning. */
     evidence: z.array(CurriculumEvidenceSelectionSchema).max(5),
     priority: z.enum(['required', 'high', 'normal', 'optional']).optional(),

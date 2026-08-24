@@ -22,6 +22,7 @@ import {
   type CurriculumProposalResponse,
   type ExecutionSourceManifest,
   type LearningContract,
+  type ObjectiveAuthorityRequiredCapabilityPreservation,
   type ProposeCurriculumRequest,
   type RejectCurriculumRequest,
   type StudyPlanPreflight,
@@ -48,7 +49,6 @@ import {
   assertValidMaterializedCurriculum,
   curriculumSourceBlockFingerprint,
   materializeCurriculumProposal,
-  repairCurriculumAuthorityCandidate,
   type CurriculumValidationContext,
   type CurriculumDeterministicCoverageMembership,
   type MaterializedCurriculum,
@@ -88,7 +88,6 @@ import {
   assembleCurriculumDetailBatches,
   buildCourseMapDeterministicCoverage,
   planCurriculumDetailBatches,
-  repairCurriculumDetailAuthorityCandidate,
   validateCurriculumDetailCandidate,
 } from './curriculumMaterialization.js';
 import { visualAwareManifestFingerprint } from './advisoryVisuals.js';
@@ -97,6 +96,21 @@ import {
   curriculumTargetRequestsApplication,
   selectApplyCapableProcedureGroundings,
 } from './curriculumAuthority.js';
+import {
+  OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_BATCH,
+  assertCurrentCurriculumObjectiveAuthoritySemanticSupport,
+  attachObjectiveAuthoritySemanticSupport,
+  buildObjectiveAuthoritySemanticEvaluationBatches,
+  materializeObjectiveAuthoritySemanticSupport,
+  objectiveAuthoritySemanticEvaluationSourceFingerprint,
+  validateObjectiveAuthoritySemanticEvaluationProposal,
+} from './objectiveAuthoritySemanticSupport.js';
+import {
+  applyObjectiveAuthoritySemanticRepairProposal,
+  objectiveAuthoritySemanticRepairSourceFingerprint,
+  prepareObjectiveAuthoritySemanticRepair,
+  validateObjectiveAuthoritySemanticRepairProposal,
+} from './objectiveAuthoritySemanticRepair.js';
 
 /** HTTP/service request: the server, never the client, resolves exact revisions. */
 export const ProposeCurriculumCommandRequestSchema = ProposeCurriculumRequestSchema.omit({
@@ -150,7 +164,14 @@ export function curriculumGenerationPolicyForOutline(
   }
   return requested;
 }
-export const CURRICULUM_MAX_LOGICAL_PROVIDER_CALLS = 1 + MAX_DETAIL_BATCHES;
+/** Initial evaluation, one failed-objective repair, and a fresh full reevaluation. */
+export const CURRICULUM_MAX_OBJECTIVE_AUTHORITY_EVALUATION_BATCHES = 8;
+export const CURRICULUM_MAX_OBJECTIVE_AUTHORITY_REPAIR_CALLS = 1;
+export const CURRICULUM_MAX_OBJECTIVE_AUTHORITY_LOGICAL_CALLS =
+  CURRICULUM_MAX_OBJECTIVE_AUTHORITY_EVALUATION_BATCHES * 2 +
+  CURRICULUM_MAX_OBJECTIVE_AUTHORITY_REPAIR_CALLS;
+export const CURRICULUM_MAX_LOGICAL_PROVIDER_CALLS =
+  1 + MAX_DETAIL_BATCHES + CURRICULUM_MAX_OBJECTIVE_AUTHORITY_LOGICAL_CALLS;
 export const CURRICULUM_MAX_PHYSICAL_PROVIDER_CALLS =
   CURRICULUM_MAX_LOGICAL_PROVIDER_CALLS * MAX_STRUCTURED_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL;
 export const CURRICULUM_OPERATION_LEASE_MS =
@@ -231,10 +252,11 @@ export function curriculumOperationLeaseMs(
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
     throw new AppError(ApiErrorCode.ValidationError, 'Curriculum provider timeout is invalid.');
   }
+  const generationLogicalCalls =
+    generationPolicy === LEGACY_CURRICULUM_GENERATION_POLICY ? 1 : 1 + MAX_DETAIL_BATCHES;
   const physicalCalls =
-    generationPolicy === LEGACY_CURRICULUM_GENERATION_POLICY
-      ? MAX_STRUCTURED_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL
-      : CURRICULUM_MAX_PHYSICAL_PROVIDER_CALLS;
+    (generationLogicalCalls + CURRICULUM_MAX_OBJECTIVE_AUTHORITY_LOGICAL_CALLS) *
+    MAX_STRUCTURED_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL;
   return timeoutMs * physicalCalls + PROVIDER_REPAIR_LEASE_MARGIN_MS;
 }
 
@@ -663,6 +685,7 @@ export function validateExecutionRepairCandidate(input: {
     input.contract,
     candidate,
     input.workspaceName,
+    { requireObjectiveAuthoritySemanticSupport: false },
   );
   const errors = executionRepairErrors(preflight);
   if (errors.length === 0) return input.materialized;
@@ -1051,6 +1074,37 @@ export function createCurriculumService({
       blocks: context.blocks,
       preferredGroundings,
     });
+    if (fullEvidenceCatalog.length === 0) {
+      const diagnostic =
+        'Curriculum objectives require exact source evidence; advisory visual-only Materials cannot independently support or originate LearningUnit objectives.';
+      const manifestMaterialIds = new Set(
+        context.manifest.revisions.map((revision) => revision.materialId),
+      );
+      const error = ProviderError.invalidOutput(
+        diagnostic,
+        'candidate',
+        'SEMANTIC_VALIDATION_FAILURE',
+        false,
+        {
+          kind: 'curriculum_objective_authority_unavailable',
+          context: {
+            includedManifestedMaterialCount: context.contractContext.materials.filter(
+              (material) =>
+                material.disposition === 'included' && manifestMaterialIds.has(material.materialId),
+            ).length,
+            authoritativeMaterialCount: 0,
+          },
+          diagnostics: [
+            {
+              code: 'visual_only_material_cannot_originate_objective',
+              message: diagnostic,
+            },
+          ],
+        },
+      );
+      commands.fail(claim, error);
+      throw error;
+    }
     const predecessor = latest ?? null;
     let sourceMap: CourseSourceMap;
     try {
@@ -1189,7 +1243,6 @@ export function createCurriculumService({
       isAuthorityBlockingEligible: (id) => repos.sourceAuthority.isBlockingEligible(id),
     };
     let repairAttempted = false;
-    let authorityRepairAttempted = false;
     let lastCandidateValidation: MaterializedCurriculum | null = null;
     let semanticSourceRegions: CurriculumSemanticSourceRegion[] = sourceMap.materials.flatMap(
       (material) =>
@@ -1222,6 +1275,131 @@ export function createCurriculumService({
           at: clock.now().toISOString(),
           confirmedPolicyIds: parsed.confirmedCostPolicyIds ?? [],
         });
+      const evaluateObjectiveAuthority = async (
+        candidate: MaterializedCurriculum,
+        phase: 'initial' | 'post_repair',
+        requiredCapabilityPreservationByObjectiveId?: ReadonlyMap<
+          string,
+          ObjectiveAuthorityRequiredCapabilityPreservation
+        >,
+      ) => {
+        const batches = buildObjectiveAuthoritySemanticEvaluationBatches(
+          {
+            nodes: candidate.nodes,
+            sourceBlocks: context.blocks,
+            authorityBundles: context.authorityBundles,
+            isBlockingEligible: (authorityRecordId) =>
+              repos.sourceAuthority.isBlockingEligible(authorityRecordId),
+            requiredCapabilityPreservationByObjectiveId,
+          },
+          OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_BATCH,
+        );
+        if (batches.length === 0) {
+          throw new AppError(
+            ApiErrorCode.GroundingFailed,
+            'Curriculum semantic-support evaluation requires at least one objective.',
+            { kind: 'objective_authority_semantic_support_empty' },
+          );
+        }
+        if (batches.length > CURRICULUM_MAX_OBJECTIVE_AUTHORITY_EVALUATION_BATCHES) {
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            'Curriculum objective-authority evaluation exceeds the fixed provider-call budget.',
+            {
+              kind: 'objective_authority_semantic_support_budget_exceeded',
+              objectiveCount: batches.reduce(
+                (count, batch) => count + batch.input.objectives.length,
+                0,
+              ),
+              maxObjectives:
+                CURRICULUM_MAX_OBJECTIVE_AUTHORITY_EVALUATION_BATCHES *
+                OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_BATCH,
+              batchSize: OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_BATCH,
+              maxBatches: CURRICULUM_MAX_OBJECTIVE_AUTHORITY_EVALUATION_BATCHES,
+            },
+          );
+        }
+        const supportByObjectiveId = new Map<
+          string,
+          NonNullable<
+            NonNullable<
+              Curriculum['nodes'][number]['learningUnit']
+            >['objectives'][number]['semanticSupport']
+          >
+        >();
+        const firstPass = [] as Array<{
+          batch: (typeof batches)[number];
+          proposal: Awaited<ReturnType<LlmProvider['evaluateObjectiveAuthoritySupport']>>;
+        }>;
+        for (const [batchIndex, batch] of batches.entries()) {
+          assertGenerationSnapshotCurrent();
+          const policyFingerprint = enforceCurrentCostPolicy();
+          const proposal = await runTrackedAgentProviderOperation({
+            repos,
+            clock,
+            provider,
+            providerModel:
+              provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
+            operationId: claim.operationId,
+            fencingToken: claim.fencingToken,
+            workspaceId: parsed.command.workspaceId,
+            studySessionId: null,
+            learningUnitId: null,
+            assessmentId: null,
+            operationType: 'propose_curriculum',
+            schemaFingerprint: 'objective-authority-semantic-evaluation-v1',
+            policyFingerprint,
+            sourceFingerprint: objectiveAuthoritySemanticEvaluationSourceFingerprint(batch),
+            providerOptions: opts,
+            invoke: (options) =>
+              inferenceProvider.evaluateObjectiveAuthoritySupport(structuredClone(batch.input), {
+                ...options,
+                timeoutMs: providerTimeoutMs,
+                onRepairAttempt: (reason, category) => {
+                  repairAttempted = true;
+                  assertGenerationSnapshotCurrent();
+                  if (category) options?.onRepairAttempt?.(reason, category);
+                  else options?.onRepairAttempt?.(reason);
+                },
+                validateCandidate: (providerCandidate) => {
+                  assertGenerationSnapshotCurrent();
+                  return validateObjectiveAuthoritySemanticEvaluationProposal(
+                    batch,
+                    providerCandidate,
+                  );
+                },
+              }),
+          });
+          assertGenerationSnapshotCurrent();
+          const evaluated = materializeObjectiveAuthoritySemanticSupport(batch, proposal, {
+            evaluator: 'independent-objective-authority-semantic-evaluator-v1',
+            provider: provider.name,
+            providerModel:
+              provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
+            evaluatedAt: clock.now().toISOString(),
+          });
+          firstPass.push({ batch, proposal });
+          for (const [objectiveId, support] of evaluated) {
+            if (supportByObjectiveId.has(objectiveId)) {
+              throw new Error(
+                `Duplicate objective semantic-support result across ${phase} batch ${batchIndex + 1}: ${objectiveId}`,
+              );
+            }
+            supportByObjectiveId.set(objectiveId, support);
+          }
+        }
+        return {
+          materialized: {
+            ...candidate,
+            nodes: attachObjectiveAuthoritySemanticSupport(candidate.nodes, supportByObjectiveId),
+          },
+          supportByObjectiveId,
+          firstPass,
+          failedObjectiveIds: [...supportByObjectiveId.values()]
+            .filter((support) => support.verdict === 'fail')
+            .map((support) => support.objectiveId),
+        };
+      };
       let payload: CurriculumProposalPayload;
       let requiredExecutionPreflight = executionRepairRequired;
       let expectedRegionCount: number | null = null;
@@ -1256,7 +1434,7 @@ export function createCurriculumService({
               },
               validateCandidate: (candidate) => {
                 assertGenerationSnapshotCurrent();
-                let candidateValue = candidate as CurriculumProposalPayload;
+                const candidateValue = candidate as CurriculumProposalPayload;
                 lastCandidateValidation = validateExecutionRepairCandidate({
                   repos,
                   clock,
@@ -1266,33 +1444,6 @@ export function createCurriculumService({
                   manifest: context.manifest,
                   materialized: materializeCurriculumProposal(candidateValue, validationContext),
                 });
-                if (
-                  lastCandidateValidation.authorityCritiques.length > 0 &&
-                  !authorityRepairAttempted
-                ) {
-                  const repaired = repairCurriculumAuthorityCandidate(
-                    candidateValue,
-                    validationContext,
-                  );
-                  if (repaired.repaired) {
-                    authorityRepairAttempted = true;
-                    repairAttempted = true;
-                    Object.assign(candidate as object, repaired.payload);
-                    candidateValue = repaired.payload;
-                    lastCandidateValidation = validateExecutionRepairCandidate({
-                      repos,
-                      clock,
-                      contract,
-                      executionRepairRequired,
-                      workspaceName: workspace.name,
-                      manifest: context.manifest,
-                      materialized: materializeCurriculumProposal(
-                        candidateValue,
-                        validationContext,
-                      ),
-                    });
-                  }
-                }
                 const authorityDiagnostics = lastCandidateValidation.authorityCritiques.map(
                   (critique) =>
                     `Curriculum authority critique: objective=${critique.objectiveKey ?? critique.objectiveId ?? 'unknown'}; sourceRegions=${critique.affectedSourceRegionIds.join(',') || 'none'}; sourceBlocks=${critique.affectedSourceBlockIds.join(',') || 'none'}; tier=${critique.authorityTier}; supportedConstructs=${critique.supportedConstructs.join(',') || 'none'}; narrowerClaim=${critique.narrowerClaim ?? 'none'}; protectedPriority=${critique.protectedPriority}; reason=${critique.reason}`,
@@ -1478,25 +1629,7 @@ export function createCurriculumService({
                 },
                 validateCandidate: (candidate) => {
                   assertGenerationSnapshotCurrent();
-                  let validation = validateCurriculumDetailCandidate(candidate, batch.input);
-                  // A schema repair can replace the locally narrowed first
-                  // candidate with a fresh provider response. Reapply the
-                  // same deterministic authority narrowing to that response;
-                  // the bounded repair remains local and cannot change scope
-                  // or priority.
-                  if (!validation.valid) {
-                    const repaired = repairCurriculumDetailAuthorityCandidate(
-                      candidate as CurriculumDetailProposalPayload,
-                      batch.input,
-                    );
-                    if (repaired.repaired) {
-                      authorityRepairAttempted = true;
-                      repairAttempted = true;
-                      Object.assign(candidate as object, repaired.candidate);
-                      validation = validateCurriculumDetailCandidate(candidate, batch.input);
-                    }
-                  }
-                  return validation;
+                  return validateCurriculumDetailCandidate(candidate, batch.input);
                 },
               }),
           });
@@ -1534,7 +1667,7 @@ export function createCurriculumService({
         expectedPrerequisiteCount = assembly.prerequisiteCount;
         requiredExecutionPreflight = true;
       }
-      const materialized = validateExecutionRepairCandidate({
+      let materialized = validateExecutionRepairCandidate({
         repos,
         clock,
         contract,
@@ -1569,6 +1702,149 @@ export function createCurriculumService({
       }
       lastCandidateValidation = materialized;
       assertValidMaterializedCurriculum(materialized, repairAttempted);
+      const objectiveAuthorityEvaluation = await evaluateObjectiveAuthority(
+        materialized,
+        'initial',
+      );
+      materialized = objectiveAuthorityEvaluation.materialized;
+      if (objectiveAuthorityEvaluation.failedObjectiveIds.length > 0) {
+        const preparation = prepareObjectiveAuthoritySemanticRepair({
+          candidate: payload,
+          objectiveIdByProposalKey: materialized.objectiveIdByProposalKey ?? new Map(),
+          firstPass: objectiveAuthorityEvaluation.firstPass,
+          context: {
+            workspaceId: parsed.command.workspaceId,
+            evidenceCatalog: validationContext.evidenceCatalog,
+            authorityBundles: context.authorityBundles,
+            isAuthorityBlockingEligible: (authorityRecordId) =>
+              repos.sourceAuthority.isBlockingEligible(authorityRecordId),
+            deterministicCoverageByNodeKey:
+              validationContext.deterministicCoverageByNodeKey &&
+              validationContext.deterministicCoverageByNodeKey.size > 0
+                ? validationContext.deterministicCoverageByNodeKey
+                : undefined,
+          },
+        });
+        if (!preparation.validation.valid || !preparation.batch) {
+          throw new AppError(
+            ApiErrorCode.GroundingFailed,
+            'Curriculum objectives failed semantic support and no bounded local repair scope could be prepared.',
+            {
+              kind: 'objective_authority_semantic_repair_preparation_failed',
+              failedObjectiveIds: objectiveAuthorityEvaluation.failedObjectiveIds,
+              diagnosticCodes: preparation.validation.diagnosticCodes ?? [],
+              diagnostics: preparation.validation.diagnostics.slice(0, 20),
+              repairAttempted: false,
+            },
+          );
+        }
+        assertGenerationSnapshotCurrent();
+        const repairPolicyFingerprint = enforceCurrentCostPolicy();
+        repairAttempted = true;
+        const repairBatch = preparation.batch;
+        const repairProposal = await runTrackedAgentProviderOperation({
+          repos,
+          clock,
+          provider,
+          providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
+          operationId: claim.operationId,
+          fencingToken: claim.fencingToken,
+          workspaceId: parsed.command.workspaceId,
+          studySessionId: null,
+          learningUnitId: null,
+          assessmentId: null,
+          operationType: 'propose_curriculum',
+          schemaFingerprint: 'objective-authority-semantic-repair-v1',
+          policyFingerprint: repairPolicyFingerprint,
+          sourceFingerprint: objectiveAuthoritySemanticRepairSourceFingerprint(repairBatch),
+          providerOptions: opts,
+          invoke: (options) =>
+            inferenceProvider.repairObjectiveAuthoritySupport(structuredClone(repairBatch.input), {
+              ...options,
+              timeoutMs: providerTimeoutMs,
+              onRepairAttempt: (reason, category) => {
+                assertGenerationSnapshotCurrent();
+                if (category) options?.onRepairAttempt?.(reason, category);
+                else options?.onRepairAttempt?.(reason);
+              },
+              validateCandidate: (providerCandidate) => {
+                assertGenerationSnapshotCurrent();
+                return validateObjectiveAuthoritySemanticRepairProposal(
+                  repairBatch,
+                  providerCandidate,
+                );
+              },
+            }),
+        });
+        assertGenerationSnapshotCurrent();
+        const application = applyObjectiveAuthoritySemanticRepairProposal(
+          repairBatch,
+          repairProposal,
+        );
+        if (!application.validation.valid || !application.payload) {
+          throw new AppError(
+            ApiErrorCode.GroundingFailed,
+            'The bounded objective-authority repair failed local validation.',
+            {
+              kind: 'objective_authority_semantic_repair_invalid',
+              diagnosticCodes: application.validation.diagnosticCodes ?? [],
+              diagnostics: application.validation.diagnostics.slice(0, 20),
+              repairAttempted: true,
+            },
+          );
+        }
+        payload = application.payload;
+        materialized = validateExecutionRepairCandidate({
+          repos,
+          clock,
+          contract,
+          executionRepairRequired: requiredExecutionPreflight,
+          workspaceName: workspace.name,
+          manifest: context.manifest,
+          materialized: materializeCurriculumProposal(payload, validationContext),
+        });
+        lastCandidateValidation = materialized;
+        assertValidMaterializedCurriculum(materialized, repairAttempted);
+        const requiredCapabilityPreservationByObjectiveId = new Map<
+          string,
+          ObjectiveAuthorityRequiredCapabilityPreservation
+        >();
+        for (const [
+          objectiveKey,
+          requirement,
+        ] of repairBatch.requiredCapabilityPreservationByObjectiveKey) {
+          const objectiveId = materialized.objectiveIdByProposalKey?.get(objectiveKey);
+          if (!objectiveId || requiredCapabilityPreservationByObjectiveId.has(objectiveId)) {
+            throw new AppError(
+              ApiErrorCode.GroundingFailed,
+              'The repaired objective cannot be bound to its original capability requirement.',
+              {
+                kind: 'objective_authority_semantic_preservation_binding_failed',
+                objectiveKey,
+                repairAttempted: true,
+              },
+            );
+          }
+          requiredCapabilityPreservationByObjectiveId.set(objectiveId, requirement);
+        }
+        const freshEvaluation = await evaluateObjectiveAuthority(
+          materialized,
+          'post_repair',
+          requiredCapabilityPreservationByObjectiveId,
+        );
+        materialized = freshEvaluation.materialized;
+        if (freshEvaluation.failedObjectiveIds.length > 0) {
+          throw new AppError(
+            ApiErrorCode.GroundingFailed,
+            'Curriculum objectives remain semantically unsupported after one bounded repair.',
+            {
+              kind: 'objective_authority_semantic_support_failed',
+              failedObjectiveIds: freshEvaluation.failedObjectiveIds,
+              repairAttempted: true,
+            },
+          );
+        }
+      }
       const now = clock.now().toISOString();
       let curriculum: Curriculum = {
         id: newId('curriculum'),
@@ -1586,6 +1862,11 @@ export function createCurriculumService({
         createdAt: now,
         acceptedAt: null,
       };
+      assertCurrentCurriculumObjectiveAuthoritySemanticSupport(curriculum, {
+        boundary: 'proposal',
+        isBlockingEligible: (authorityRecordId) =>
+          repos.sourceAuthority.isBlockingEligible(authorityRecordId),
+      });
       const semantic = evaluateCurriculumSemantics({
         curriculum,
         sourceMapFingerprint: sourceMap.fingerprint,
@@ -1725,6 +2006,11 @@ export function createCurriculumService({
       if (!manifestsEqual(context.manifest, current.executionSourceManifest)) {
         throw new AppError(ApiErrorCode.VersionConflict, 'Curriculum source manifest is stale.');
       }
+      assertCurrentCurriculumObjectiveAuthoritySemanticSupport(current, {
+        boundary: 'acceptance',
+        isBlockingEligible: (authorityRecordId) =>
+          repos.sourceAuthority.isBlockingEligible(authorityRecordId),
+      });
       if (parsed.acceptanceBasis === 'explicit_local_policy') {
         const proposalEvent = repos.curricula
           .listEvents(current.id)
@@ -1781,6 +2067,14 @@ export function createCurriculumService({
         }
       }
       return commands.complete(claim, () => {
+        assertCurrentCurriculumObjectiveAuthoritySemanticSupport(
+          requireCurriculum(current.workspaceId, current.id),
+          {
+            boundary: 'acceptance',
+            isBlockingEligible: (authorityRecordId) =>
+              repos.sourceAuthority.isBlockingEligible(authorityRecordId),
+          },
+        );
         if (
           parsed.acceptanceBasis === 'explicit_local_policy' &&
           repos.curricula.list(current.workspaceId).at(-1)?.id !== current.id

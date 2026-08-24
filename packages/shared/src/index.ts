@@ -14,6 +14,7 @@ export * from './domain/visual.js';
 export * from './domain/materialRoleApi.js';
 export * from './domain/learningContract.js';
 export * from './domain/sourceAuthority.js';
+export * from './domain/objectiveAuthoritySemanticSupport.js';
 export * from './domain/curriculum.js';
 export * from './domain/courseMap.js';
 export * from './domain/studyPlan.js';

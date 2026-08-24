@@ -1,17 +1,84 @@
 import type {
   Concept,
+  CurriculumObjective,
   Material,
   MistakeRecord,
+  ObjectiveAuthoritySemanticSupport,
+  ObjectiveAuthoritySupportType,
   Question,
   Quiz,
   SourceBlock,
   VerifiedGrounding,
   Workspace,
 } from '@hy3-clinic/shared';
+import { ObjectiveAuthoritySemanticSupportSchema } from '@hy3-clinic/shared';
+import {
+  OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_POLICY,
+  curriculumObjectiveProposition,
+  fingerprintObjectiveAuthorityBinding,
+  fingerprintObjectiveAuthorityProposition,
+} from '../services/objectiveAuthoritySemanticSupport.js';
 
 /** Deterministic domain-object builders shared by server tests. */
 
 export const T0 = '2026-01-01T00:00:00.000Z';
+
+type CurrentCurriculumObjective = Omit<
+  CurriculumObjective,
+  'semanticSupport' | 'formalAssessmentConstruct' | 'authoritySourceBlockIds' | 'authorityClaimIds'
+> & {
+  formalAssessmentConstruct: NonNullable<CurriculumObjective['formalAssessmentConstruct']>;
+  authoritySourceBlockIds: string[];
+  authorityClaimIds: string[];
+};
+
+/** Build a current passing objective while retaining exact production fingerprints. */
+export function makeSemanticallySupportedObjective(
+  objective: CurrentCurriculumObjective,
+  supportType: ObjectiveAuthoritySupportType,
+): CurriculumObjective {
+  const proposition = curriculumObjectiveProposition(objective);
+  const semanticSupport: ObjectiveAuthoritySemanticSupport =
+    ObjectiveAuthoritySemanticSupportSchema.parse({
+      schemaVersion: 1,
+      policyVersion: OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_POLICY,
+      evaluator: 'test-independent-semantic-evaluator',
+      provider: 'fake',
+      providerModel: null,
+      independent: true,
+      objectiveId: objective.id,
+      proposition,
+      propositionFingerprint: fingerprintObjectiveAuthorityProposition(proposition),
+      construct: objective.formalAssessmentConstruct,
+      boundAuthorityRecordIds: [...objective.truthAuthorityRecordIds],
+      boundSourceBlockIds: [...objective.authoritySourceBlockIds],
+      boundAuthorityClaimIds: [...objective.authorityClaimIds],
+      bindingFingerprint: fingerprintObjectiveAuthorityBinding({
+        authorityRecordIds: objective.truthAuthorityRecordIds,
+        sourceBlockIds: objective.authoritySourceBlockIds,
+        authorityClaimIds: objective.authorityClaimIds,
+      }),
+      fragments: [
+        {
+          fragmentId: 'fragment_1',
+          text: proposition,
+          status: 'supported',
+          supportType,
+          sourceBlockIds: [...objective.authoritySourceBlockIds],
+          authorityRecordIds: [...objective.truthAuthorityRecordIds],
+          authorityClaimIds: [...objective.authorityClaimIds],
+          rationale: 'The exact bound source authority directly supports this test objective.',
+        },
+      ],
+      unsupportedFragmentIds: [],
+      conflicts: [],
+      overreach: [],
+      verdict: 'pass',
+      rationale: 'All proposition fragments are supported by the exact bound source authority.',
+      evaluatedAt: T0,
+    });
+  return { ...objective, semanticSupport };
+}
 
 export function makeGrounding(overrides: Partial<VerifiedGrounding> = {}): VerifiedGrounding {
   return {

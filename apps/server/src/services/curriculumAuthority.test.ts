@@ -10,13 +10,9 @@ import {
   buildCurriculumAuthorityEnvelope,
   detectFormalConstruct,
   isExplicitSourceProcedure,
-  isFormalObjectiveSupported,
   selectApplyCapableProcedureGroundings,
 } from './curriculumAuthority.js';
-import {
-  repairCurriculumDetailAuthorityCandidate,
-  validateCurriculumDetailCandidate,
-} from './curriculumMaterialization.js';
+import { validateCurriculumDetailCandidate } from './curriculumMaterialization.js';
 import { buildCourseMapRegionAuthorityEnvelopeMap } from './curriculum.js';
 
 const NOW = '2026-08-23T00:00:00.000Z';
@@ -152,7 +148,14 @@ function detailInput(
         synthesisGroups: [],
         concepts: [],
         canonicalConcepts: [],
-        evidence: [{ evidenceId: 'evidence-1', sourceAllocationRegionId: 'region-1', text: CLAIM }],
+        evidence: [
+          {
+            evidenceId: 'evidence-1',
+            sourceAllocationRegionId: 'region-1',
+            text: CLAIM,
+            authorityEnvelope,
+          },
+        ],
         authorityEnvelope,
       },
     ],
@@ -160,7 +163,11 @@ function detailInput(
   };
 }
 
-function detailCandidate(title: string, description: string): CurriculumDetailProposalPayload {
+function detailCandidate(
+  title: string,
+  description: string,
+  construct: 'identify' | 'explain' | 'apply',
+): CurriculumDetailProposalPayload {
   return {
     courseMapId: 'course_map_000000000000000000000001',
     sourceAllocationFingerprint:
@@ -177,6 +184,7 @@ function detailCandidate(title: string, description: string): CurriculumDetailPr
             key: 'objective-1',
             title,
             description,
+            construct,
             evidence: [{ evidenceId: 'evidence-1' }],
             priority: 'required',
           },
@@ -268,7 +276,7 @@ describe('Curriculum source-authority envelope', () => {
     expect(onlyExpected.supportedConstructs).not.toContain('apply');
   });
 
-  it('keeps apply within the exact source-stated procedure and learner target', () => {
+  it('accepts broad apply wording unchanged when exact selected evidence supports apply', () => {
     const procedure = '查询流程：识别实体 → 定位节点 → 结合原文。';
     const authority = envelope({
       supportedConstructs: ['identify', 'explain', 'apply'],
@@ -284,25 +292,23 @@ describe('Curriculum source-authority envelope', () => {
     const broad = detailCandidate(
       'Apply the workflow in production',
       'Transfer the workflow to an unbounded deployment scenario.',
+      'apply',
     );
+    const originalObjective = structuredClone(broad.units[0]!.objectives[0]!);
 
-    expect(validateCurriculumDetailCandidate(broad, input)).toMatchObject({
-      valid: false,
-      diagnosticCodes: expect.arrayContaining(['required_objective_formal_authority_missing']),
+    expect(validateCurriculumDetailCandidate(broad, input).valid).toBe(true);
+    expect(broad.units[0]!.objectives[0]).toEqual(originalObjective);
+    expect(broad.units[0]!.objectives[0]).toMatchObject({
+      construct: 'apply',
+      title: 'Apply the workflow in production',
+      description: 'Transfer the workflow to an unbounded deployment scenario.',
+      evidence: [{ evidenceId: 'evidence-1' }],
     });
-    const repaired = repairCurriculumDetailAuthorityCandidate(broad, input);
-    const objective = repaired.candidate.units[0]!.objectives[0]!;
-    expect(repaired.repaired).toBe(true);
-    expect(objective.title).toMatch(/^Apply:/u);
-    expect(objective.description).toContain(`Source-supported procedure: ${procedure}`);
-    expect(
-      isFormalObjectiveSupported(`${objective.title} ${objective.description}`, authority),
-    ).toBe(true);
-    expect(validateCurriculumDetailCandidate(repaired.candidate, input).valid).toBe(true);
 
     const flattened = detailCandidate(
       'Explain the workflow',
       'Explain the exact source-stated workflow.',
+      'explain',
     );
     expect(validateCurriculumDetailCandidate(flattened, input)).toMatchObject({
       valid: false,
@@ -315,6 +321,7 @@ describe('Curriculum source-authority envelope', () => {
     const candidate = detailCandidate(
       'Explain the knowledge rebuild workflow',
       'Explain when the knowledge rebuild workflow is triggered.',
+      'explain',
     );
     candidate.units[0]!.title = 'RBAC roles and backend checks';
     const siblingRegionId = 'course_map_region_000000000000000000000002';
@@ -336,6 +343,7 @@ describe('Curriculum source-authority envelope', () => {
           key: 'objective-2',
           title: 'Explain source workflow layers',
           description: 'Explain the source workflow layers.',
+          construct: 'explain',
           evidence: [{ evidenceId: 'evidence-1' }],
           priority: 'normal',
         },
@@ -356,6 +364,7 @@ describe('Curriculum source-authority envelope', () => {
     const candidate = detailCandidate(
       'Explain IVF vector retrieval',
       'Explain how IVF retrieval selects candidate buckets.',
+      'explain',
     );
     candidate.units[0]!.title = 'RBAC roles and backend security';
 
@@ -368,28 +377,32 @@ describe('Curriculum source-authority envelope', () => {
     expect(validateCurriculumDetailCandidate(candidate, input).valid).toBe(true);
   });
 
-  it('narrows an over-broad required objective without changing priority or provenance', () => {
-    const input = detailInput(envelope());
+  it('preserves an over-broad apply proposition byte-identically for semantic evaluation', () => {
+    const procedure = '必须：先检索 → 按权限过滤 → 再给模型。';
+    const input = detailInput(
+      envelope({
+        supportedConstructs: ['identify', 'explain', 'apply'],
+        strongestSupportedConstruct: 'apply',
+        narrowerClaim: procedure,
+      }),
+    );
     const candidate = detailCandidate(
       'Design and evaluate a secure deployment',
       'Apply every layer in production.',
+      'apply',
     );
-    expect(validateCurriculumDetailCandidate(candidate, input)).toMatchObject({
-      valid: false,
-      diagnosticCodes: expect.arrayContaining(['required_objective_formal_authority_missing']),
-    });
+    candidate.units[0]!.title = 'Secure deployment workflow';
+    const originalObjective = structuredClone(candidate.units[0]!.objectives[0]!);
 
-    const repaired = repairCurriculumDetailAuthorityCandidate(candidate, input);
-    expect(repaired.repaired).toBe(true);
-    expect(repaired.candidate.units[0]!.objectives[0]).toMatchObject({
+    expect(validateCurriculumDetailCandidate(candidate, input).valid).toBe(true);
+    expect(candidate.units[0]!.objectives[0]).toEqual(originalObjective);
+    expect(candidate.units[0]!.objectives[0]).toMatchObject({
+      construct: 'apply',
       priority: 'required',
+      title: 'Design and evaluate a secure deployment',
+      description: 'Apply every layer in production.',
       evidence: [{ evidenceId: 'evidence-1' }],
     });
-    expect(repaired.candidate.units[0]!.objectives[0]!.title).toMatch(/^Explain:/u);
-    expect(validateCurriculumDetailCandidate(repaired.candidate, input).valid).toBe(true);
-    expect(repairCurriculumDetailAuthorityCandidate(repaired.candidate, input).repaired).toBe(
-      false,
-    );
   });
 
   it('uses the selected evidence envelope instead of borrowing broader region authority', () => {
@@ -403,16 +416,15 @@ describe('Curriculum source-authority envelope', () => {
     const candidate = detailCandidate(
       'Explain the source-supported architecture',
       'Explain relationships that the selected evidence does not authorize.',
+      'explain',
     );
+    const originalObjective = structuredClone(candidate.units[0]!.objectives[0]!);
 
     expect(validateCurriculumDetailCandidate(candidate, input)).toMatchObject({
       valid: false,
       diagnosticCodes: expect.arrayContaining(['required_objective_formal_authority_missing']),
     });
-    const repaired = repairCurriculumDetailAuthorityCandidate(candidate, input);
-    expect(repaired.repaired).toBe(true);
-    expect(repaired.candidate.units[0]!.objectives[0]!.title).toMatch(/^Identify:/u);
-    expect(validateCurriculumDetailCandidate(repaired.candidate, input).valid).toBe(true);
+    expect(candidate.units[0]!.objectives[0]).toEqual(originalObjective);
   });
 
   it('keeps selected unavailable evidence fail-closed even when the region has broader authority', () => {
@@ -425,14 +437,71 @@ describe('Curriculum source-authority envelope', () => {
       narrowerClaim: null,
       tier: 'unavailable',
     });
-    const candidate = detailCandidate('Explain the architecture', 'Explain the system.');
+    const candidate = detailCandidate('Explain the architecture', 'Explain the system.', 'explain');
 
-    expect(repairCurriculumDetailAuthorityCandidate(candidate, input).repaired).toBe(false);
     expect(validateCurriculumDetailCandidate(candidate, input)).toMatchObject({
       valid: false,
       diagnosticCodes: expect.arrayContaining(['required_objective_formal_authority_missing']),
     });
     expect(candidate.units[0]!.objectives[0]!.priority).toBe('required');
+  });
+
+  it('does not borrow region authority when an objective selects no evidence', () => {
+    const input = detailInput(envelope());
+    const candidate = detailCandidate(
+      'Explain the architecture',
+      'Explain the source-supported relationship.',
+      'explain',
+    );
+    candidate.units[0]!.objectives[0]!.evidence = [];
+
+    expect(validateCurriculumDetailCandidate(candidate, input)).toMatchObject({
+      valid: false,
+      diagnosticCodes: expect.arrayContaining(['required_objective_formal_authority_missing']),
+      failureArtifact: {
+        diagnostics: expect.arrayContaining([
+          expect.objectContaining({
+            code: 'required_objective_formal_authority_missing',
+            facts: expect.objectContaining({ selectedEvidenceIds: [] }),
+          }),
+        ]),
+      },
+    });
+  });
+
+  it('rejects foreign selected evidence without borrowing region authority', () => {
+    const input = detailInput(envelope());
+    const candidate = detailCandidate(
+      'Explain the source architecture',
+      'Explain the source-supported relationship.',
+      'explain',
+    );
+    candidate.units[0]!.objectives[0]!.evidence = [{ evidenceId: 'foreign-evidence' }];
+
+    expect(validateCurriculumDetailCandidate(candidate, input)).toMatchObject({
+      valid: false,
+      diagnosticCodes: expect.arrayContaining([
+        'required_objective_formal_authority_missing',
+        'unknown_evidence',
+      ]),
+      failureArtifact: {
+        diagnostics: expect.arrayContaining([
+          expect.objectContaining({
+            code: 'required_objective_formal_authority_missing',
+            facts: expect.objectContaining({
+              selectedEvidenceIds: ['foreign-evidence'],
+              selectedEvidenceAuthority: [
+                expect.objectContaining({
+                  evidenceId: 'foreign-evidence',
+                  available: false,
+                }),
+              ],
+            }),
+          }),
+          expect.objectContaining({ code: 'unknown_evidence' }),
+        ]),
+      },
+    });
   });
 
   it('rekeys source-allocation authority onto the final Course Map region identity', () => {
@@ -477,10 +546,8 @@ describe('Curriculum source-authority envelope', () => {
     const teachingCandidate = detailCandidate(
       'Design a secure deployment',
       'Evaluate the architecture.',
+      'apply',
     );
-    expect(
-      repairCurriculumDetailAuthorityCandidate(teachingCandidate, teachingInput).repaired,
-    ).toBe(false);
     expect(validateCurriculumDetailCandidate(teachingCandidate, teachingInput)).toMatchObject({
       valid: false,
       diagnosticCodes: expect.arrayContaining(['required_objective_formal_authority_missing']),
@@ -499,10 +566,14 @@ describe('Curriculum source-authority envelope', () => {
     const unavailableCandidate = detailCandidate(
       'Design a secure deployment',
       'Evaluate the architecture.',
+      'apply',
     );
-    expect(
-      repairCurriculumDetailAuthorityCandidate(unavailableCandidate, unavailableInput).repaired,
-    ).toBe(false);
+    expect(validateCurriculumDetailCandidate(unavailableCandidate, unavailableInput)).toMatchObject(
+      {
+        valid: false,
+        diagnosticCodes: expect.arrayContaining(['required_objective_formal_authority_missing']),
+      },
+    );
     expect(unavailableCandidate.units[0]!.objectives[0]!.priority).toBe('required');
   });
 
@@ -512,23 +583,25 @@ describe('Curriculum source-authority envelope', () => {
     expect(detectFormalConstruct('Evaluate the security boundary')).toBe('evaluate');
   });
 
-  it('keeps a locally narrowed construct distinct from higher-order topical words', () => {
+  it('never lowers an explicit construct to match weaker selected evidence', () => {
     const cases = [
       {
-        supportedConstructs: ['identify', 'explain'] as const,
-        strongestSupportedConstruct: 'explain' as const,
-        tier: 'formal_sufficient' as const,
-        narrowerClaim: '# Weknora学习：概念层（它们是什么）+ 实现层（工程上怎么做）。',
-        expectedConstruct: 'explain' as const,
-        expectedPrefix: 'Explain:',
-      },
-      {
+        construct: 'explain' as const,
         supportedConstructs: ['identify'] as const,
         strongestSupportedConstruct: 'identify' as const,
         tier: 'narrower_formal' as const,
+        narrowerClaim: '# Weknora学习：概念层（它们是什么）+ 实现层（工程上怎么做）。',
+        title: 'Explain the system relationship',
+        description: 'Explain how the parts relate.',
+      },
+      {
+        construct: 'apply' as const,
+        supportedConstructs: ['identify', 'explain'] as const,
+        strongestSupportedConstruct: 'explain' as const,
+        tier: 'formal_sufficient' as const,
         narrowerClaim: '安全原则：前端负责体验，后端负责安全。',
-        expectedConstruct: 'identify' as const,
-        expectedPrefix: 'Identify:',
+        title: 'Apply the security boundary',
+        description: 'Apply the rule to a new deployment.',
       },
     ];
 
@@ -541,20 +614,15 @@ describe('Curriculum source-authority envelope', () => {
       });
       const input = detailInput(authority);
       input.regions[0]!.evidence[0]!.authorityEnvelope = authority;
-      const candidate = detailCandidate(
-        'Design and apply an unsupported operation',
-        'Deploy the result in production.',
-      );
+      const candidate = detailCandidate(item.title, item.description, item.construct);
+      const original = structuredClone(candidate.units[0]!.objectives[0]!);
 
-      const repaired = repairCurriculumDetailAuthorityCandidate(candidate, input);
-      const objective = repaired.candidate.units[0]!.objectives[0]!;
-      expect(repaired.repaired).toBe(true);
-      expect(objective.title).toMatch(new RegExp(`^${item.expectedPrefix}`, 'u'));
-      expect(detectFormalConstruct(`${objective.title} ${objective.description}`)).toBe(
-        item.expectedConstruct,
-      );
-      expect(objective.description).toContain(item.narrowerClaim);
-      expect(validateCurriculumDetailCandidate(repaired.candidate, input).valid).toBe(true);
+      expect(validateCurriculumDetailCandidate(candidate, input)).toMatchObject({
+        valid: false,
+        diagnosticCodes: expect.arrayContaining(['required_objective_formal_authority_missing']),
+      });
+      expect(candidate.units[0]!.objectives[0]).toEqual(original);
+      expect(candidate.units[0]!.objectives[0]!.construct).toBe(item.construct);
     }
   });
 });

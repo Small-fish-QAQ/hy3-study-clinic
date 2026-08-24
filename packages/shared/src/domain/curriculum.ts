@@ -6,6 +6,7 @@ import {
   FormalAssessmentConstructSchema,
   TruthPremiseStatusSchema,
 } from './sourceAuthority.js';
+import { ObjectiveAuthoritySemanticSupportSchema } from './objectiveAuthoritySemanticSupport.js';
 
 export const ExecutionSourceRevisionSchema = z
   .object({
@@ -63,6 +64,8 @@ export const CurriculumObjectiveSchema = z
     description: z.string().min(1).max(1000),
     truthPremiseStatus: TruthPremiseStatusSchema,
     truthAuthorityRecordIds: z.array(z.string().min(1)).max(20),
+    /** Exact selected SourceAuthorityClaim identities; absent only on readable legacy artifacts. */
+    authorityClaimIds: z.array(z.string().min(1)).max(200).optional(),
     /** Goal-specific emphasis; Curriculum truth remains unchanged. */
     priority: z.enum(['required', 'high', 'normal', 'optional']).optional(),
     priorityRationale: z.string().min(1).max(500).optional(),
@@ -71,7 +74,9 @@ export const CurriculumObjectiveSchema = z
     formalAssessmentReadinessRationale: z.string().min(1).max(500).optional(),
     formalAssessmentConstruct: FormalAssessmentConstructSchema.optional(),
     authorityEnvelopeTier: CurriculumAuthorityEnvelopeTierSchema.optional(),
+    authoritySourceBlockIds: z.array(z.string().min(1)).max(100).optional(),
     formalEvidenceSourceBlockIds: z.array(z.string().min(1)).max(100).optional(),
+    semanticSupport: ObjectiveAuthoritySemanticSupportSchema.optional(),
   })
   .strict()
   .superRefine((objective, ctx) => {
@@ -83,6 +88,16 @@ export const CurriculumObjectiveSchema = z
         code: z.ZodIssueCode.custom,
         path: ['truthAuthorityRecordIds'],
         message: 'verified objectives require independent truth-authority records',
+      });
+    }
+    if (
+      objective.authorityClaimIds &&
+      new Set(objective.authorityClaimIds).size !== objective.authorityClaimIds.length
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['authorityClaimIds'],
+        message: 'objective authority-claim identities must be unique',
       });
     }
   });

@@ -2833,6 +2833,78 @@ const MIGRATIONS: Migration[] = [
         );
     `,
   },
+  {
+    version: 41,
+    name: 'objective_authority_semantic_support',
+    // Semantic support is immutable, objective-scoped evidence. Legacy
+    // Curricula remain readable without fabricated evaluation rows.
+    up: `
+      CREATE TABLE curriculum_objective_semantic_support (
+        curriculum_id TEXT NOT NULL,
+        objective_id TEXT NOT NULL,
+        policy_version TEXT NOT NULL,
+        evaluator TEXT NOT NULL,
+        provider TEXT NOT NULL,
+        provider_model TEXT,
+        status TEXT NOT NULL CHECK (status IN ('pass', 'fail')),
+        proposition_fingerprint TEXT NOT NULL,
+        binding_fingerprint TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        evaluated_at TEXT NOT NULL,
+        PRIMARY KEY (curriculum_id, objective_id),
+        FOREIGN KEY (curriculum_id, objective_id)
+          REFERENCES curriculum_objective_index(curriculum_id, objective_id) ON DELETE CASCADE
+      );
+      CREATE INDEX idx_curriculum_objective_semantic_support_status
+        ON curriculum_objective_semantic_support(curriculum_id, status, objective_id);
+      CREATE TRIGGER prevent_curriculum_objective_semantic_support_replacement
+        BEFORE INSERT ON curriculum_objective_semantic_support
+        WHEN EXISTS (
+          SELECT 1 FROM curriculum_objective_semantic_support
+          WHERE curriculum_id = NEW.curriculum_id AND objective_id = NEW.objective_id
+        )
+        BEGIN
+          SELECT RAISE(ABORT, 'Curriculum objective semantic support is immutable');
+        END;
+      CREATE TRIGGER prevent_curriculum_objective_semantic_support_update
+        BEFORE UPDATE ON curriculum_objective_semantic_support
+        BEGIN
+          SELECT RAISE(ABORT, 'Curriculum objective semantic support is immutable');
+        END;
+      CREATE TRIGGER prevent_curriculum_objective_semantic_support_delete
+        BEFORE DELETE ON curriculum_objective_semantic_support
+        WHEN EXISTS (
+          SELECT 1 FROM curriculum_objective_index
+          WHERE curriculum_id = OLD.curriculum_id AND objective_id = OLD.objective_id
+        )
+        BEGIN
+          SELECT RAISE(ABORT, 'Curriculum objective semantic support is immutable');
+        END;
+      CREATE TRIGGER prevent_curriculum_objective_semantic_support_owner_delete
+        BEFORE DELETE ON curriculum_objective_index
+        WHEN EXISTS (
+          SELECT 1 FROM curriculum_objective_semantic_support
+          WHERE curriculum_id = OLD.curriculum_id AND objective_id = OLD.objective_id
+        ) AND EXISTS (
+          SELECT 1 FROM curriculum_versions WHERE id = OLD.curriculum_id
+        )
+        BEGIN
+          SELECT RAISE(ABORT, 'Curriculum objective semantic support ownership is immutable');
+        END;
+      CREATE TRIGGER prevent_curriculum_objective_semantic_support_owner_replacement
+        BEFORE INSERT ON curriculum_objective_index
+        WHEN EXISTS (
+          SELECT 1 FROM curriculum_objective_index
+          WHERE curriculum_id = NEW.curriculum_id AND objective_id = NEW.objective_id
+        ) AND EXISTS (
+          SELECT 1 FROM curriculum_objective_semantic_support
+          WHERE curriculum_id = NEW.curriculum_id AND objective_id = NEW.objective_id
+        )
+        BEGIN
+          SELECT RAISE(ABORT, 'Curriculum objective semantic support ownership is immutable');
+        END;
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

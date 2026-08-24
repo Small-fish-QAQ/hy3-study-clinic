@@ -17,6 +17,8 @@ import {
   TeachingBriefProposalPayloadSchema,
   LessonSlotContentProposalPayloadSchema,
   PracticeContentProposalPayloadSchema,
+  ObjectiveAuthoritySemanticEvaluationProposalSchema,
+  ObjectiveAuthoritySemanticRepairProposalSchema,
   ProposedPracticeSlotContentSchema,
   RubricGradeSchema,
   TeachingLessonSlotContentSchema,
@@ -44,6 +46,10 @@ import {
   type TutorTurnPayload,
   type VisualDescriptionPayload,
   type RepairGenerationPayload,
+  type ObjectiveAuthoritySemanticEvaluationProposal,
+  type ObjectiveAuthoritySemanticRepairProposal,
+  type ObjectiveAuthoritySemanticEvaluationInput,
+  type ObjectiveAuthoritySemanticRepairInput,
 } from '@hy3-clinic/shared';
 import { z, type ZodType, type ZodTypeDef } from 'zod';
 import { ProviderError } from './errors.js';
@@ -71,6 +77,8 @@ import {
   teachingBriefMessages,
   lessonSlotContentMessages,
   practiceContentMessages,
+  objectiveAuthoritySemanticEvaluationMessages,
+  objectiveAuthoritySemanticRepairMessages,
   type ChatMessage,
 } from './prompts.js';
 import type {
@@ -704,6 +712,47 @@ export class Hy3Provider implements LlmProvider {
       {
         maxTokens: CURRICULUM_MAX_OUTPUT_TOKENS,
         schemaName: 'curriculum-detail-proposal-v1',
+      },
+    );
+  }
+
+  async evaluateObjectiveAuthoritySupport(
+    input: ObjectiveAuthoritySemanticEvaluationInput,
+    opts?: ProviderCallOptions,
+  ): Promise<ObjectiveAuthoritySemanticEvaluationProposal> {
+    return this.complete(
+      objectiveAuthoritySemanticEvaluationMessages(input),
+      ObjectiveAuthoritySemanticEvaluationProposalSchema,
+      opts,
+      [
+        'Repair only the malformed or locally rejected semantic evaluation fields.',
+        'Keep objectiveRef, proposition, construct, and the per-objective offered evidence boundary exact.',
+        'Partition every proposition completely; keyword overlap is never entailment; explicitly fail unsupported clauses.',
+        'Never cite evidence from another objective or invent an alias. Return the complete corrected evaluation object.',
+      ].join('\n'),
+      {
+        maxTokens: 12_000,
+        schemaName: 'objective-authority-semantic-evaluation-v1',
+      },
+    );
+  }
+
+  async repairObjectiveAuthoritySupport(
+    input: ObjectiveAuthoritySemanticRepairInput,
+    opts?: ProviderCallOptions,
+  ): Promise<ObjectiveAuthoritySemanticRepairProposal> {
+    return this.complete(
+      objectiveAuthoritySemanticRepairMessages(input),
+      ObjectiveAuthoritySemanticRepairProposalSchema,
+      opts,
+      [
+        'Repair only supplied failed objectiveRefs and return exactly one replacement for each.',
+        'Preserve construct and select only aliases in that objective allowedEvidence.',
+        'Never lower construct, omit important capability, broaden authority, or rewrite unrelated objectives.',
+      ].join('\n'),
+      {
+        maxTokens: 8_000,
+        schemaName: 'objective-authority-semantic-repair-v1',
       },
     );
   }

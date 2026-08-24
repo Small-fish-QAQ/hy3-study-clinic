@@ -8,7 +8,11 @@ import {
   SAMPLE_MATERIAL_CONTENT,
   SAMPLE_MATERIAL_TITLE,
   TutorTurnPayloadSchema,
+  ObjectiveAuthoritySemanticEvaluationProposalSchema,
+  ObjectiveAuthoritySemanticRepairProposalSchema,
   type Concept,
+  type ObjectiveAuthoritySemanticEvaluationInput,
+  type ObjectiveAuthoritySemanticRepairInput,
   type SourceBlock,
 } from '@hy3-clinic/shared';
 import { segmentMaterial } from '../ingestion/segment.js';
@@ -29,6 +33,198 @@ import { validateTutorTurnCandidate } from '../tutor/pedagogy.js';
 const materialId = 'mat_fixture';
 const blocks = segmentMaterial(materialId, SAMPLE_MATERIAL_CONTENT.replace(/\r\n?/g, '\n'));
 const provider = new FakeProvider();
+
+const semanticEvaluationInput: ObjectiveAuthoritySemanticEvaluationInput = {
+  schemaVersion: 1,
+  policyVersion: 'objective-authority-semantic-v1',
+  objectives: [
+    {
+      objectiveRef: 'O1',
+      proposition: 'Explain how the components jointly position the system.',
+      construct: 'explain',
+      evidence: [
+        {
+          evidenceRef: 'E1',
+          text: 'The system combines documents, search, language models, permissions, and tools.',
+          claimKinds: ['claim'],
+          headingPath: [],
+        },
+      ],
+    },
+  ],
+};
+
+function semanticRepairInput(): ObjectiveAuthoritySemanticRepairInput {
+  return {
+    schemaVersion: 1,
+    policyVersion: 'objective-authority-semantic-v1',
+    objectives: [
+      {
+        objectiveRef: 'O1',
+        title: 'Explain the system positioning',
+        description: semanticEvaluationInput.objectives[0]!.proposition,
+        construct: 'explain',
+        priority: 'required',
+        currentEvidenceRefs: ['E1'],
+        allowedEvidence: [
+          {
+            ...semanticEvaluationInput.objectives[0]!.evidence[0]!,
+            text: '[UNSUPPORTED] The ingestion procedure has five ordered steps.',
+            selected: true,
+          },
+          {
+            evidenceRef: 'E2',
+            text: '[SUPPORTS:explain] The system combines documents, search, language models, permissions, and tools.',
+            claimKinds: ['claim'],
+            headingPath: [],
+            selected: false,
+          },
+        ],
+        fragments: [
+          {
+            fragmentId: 'F1',
+            text: semanticEvaluationInput.objectives[0]!.proposition,
+            status: 'unsupported',
+            supportType: null,
+            evidenceRefs: [],
+            rationale: 'The current binding supports a different proposition.',
+          },
+        ],
+        unsupportedFragmentIds: ['F1'],
+        conflicts: [],
+        overreach: [],
+        verdict: 'fail',
+        rationale: 'Same-topic evidence does not entail the objective.',
+      },
+    ],
+  };
+}
+
+describe('FakeProvider objective-authority semantic contract', () => {
+  it('returns a deterministic same-construct support mapping without token-overlap scoring', async () => {
+    const first = await provider.evaluateObjectiveAuthoritySupport(semanticEvaluationInput);
+    const second = await provider.evaluateObjectiveAuthoritySupport(
+      structuredClone(semanticEvaluationInput),
+    );
+
+    expect(ObjectiveAuthoritySemanticEvaluationProposalSchema.parse(first)).toEqual(second);
+    expect(first.evaluations[0]).toMatchObject({
+      objectiveRef: 'O1',
+      construct: 'explain',
+      verdict: 'pass',
+      unsupportedFragmentIds: [],
+    });
+    expect(first.evaluations[0]!.fragments[0]).toMatchObject({
+      text: semanticEvaluationInput.objectives[0]!.proposition,
+      status: 'supported',
+      supportType: 'relationship',
+      evidenceRefs: ['E1'],
+    });
+  });
+
+  it('fails the complete proposition when the explicit fake authority sentinel is unsupported', async () => {
+    const result = await provider.evaluateObjectiveAuthoritySupport({
+      ...semanticEvaluationInput,
+      objectives: [
+        {
+          ...semanticEvaluationInput.objectives[0]!,
+          evidence: [
+            {
+              ...semanticEvaluationInput.objectives[0]!.evidence[0]!,
+              text: '[UNSUPPORTED] The ingestion procedure has five ordered steps.',
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(result.evaluations[0]).toMatchObject({
+      verdict: 'fail',
+      unsupportedFragmentIds: ['O1:F1'],
+    });
+    expect(result.evaluations[0]!.fragments[0]).toMatchObject({
+      status: 'unsupported',
+      supportType: null,
+      evidenceRefs: [],
+    });
+  });
+
+  it('selects only an explicitly allowed same-construct repair offer', async () => {
+    const result = await provider.repairObjectiveAuthoritySupport(semanticRepairInput());
+
+    expect(ObjectiveAuthoritySemanticRepairProposalSchema.parse(result)).toEqual(result);
+    expect(result.replacements).toEqual([
+      expect.objectContaining({
+        objectiveRef: 'O1',
+        construct: 'explain',
+        evidenceRefs: ['E2'],
+      }),
+    ]);
+    expect(result.replacements[0]).toMatchObject({
+      title: 'Explain the system positioning',
+      description: semanticEvaluationInput.objectives[0]!.proposition,
+    });
+  });
+
+  it('passes exact learning-goal preservation and rejects a supported changed proposition', async () => {
+    const originalProposition = semanticEvaluationInput.objectives[0]!.proposition;
+    const originalFragments = [{ fragmentId: 'original_F1', text: originalProposition }];
+    const preserved = await provider.evaluateObjectiveAuthoritySupport({
+      ...semanticEvaluationInput,
+      objectives: [
+        {
+          ...semanticEvaluationInput.objectives[0]!,
+          requiredCapabilityPreservation: { originalProposition, originalFragments },
+        },
+      ],
+    });
+    expect(preserved.evaluations[0]).toMatchObject({
+      verdict: 'pass',
+      capabilityPreservation: {
+        verdict: 'pass',
+        lostOriginalFragmentIds: [],
+        mappings: [{ originalFragmentId: 'original_F1', status: 'preserved' }],
+      },
+    });
+
+    const changed = await provider.evaluateObjectiveAuthoritySupport({
+      ...semanticEvaluationInput,
+      objectives: [
+        {
+          ...semanticEvaluationInput.objectives[0]!,
+          proposition: 'Explain only that a system exists.',
+          requiredCapabilityPreservation: { originalProposition, originalFragments },
+        },
+      ],
+    });
+    expect(changed.evaluations[0]).toMatchObject({
+      verdict: 'fail',
+      unsupportedFragmentIds: [],
+      capabilityPreservation: {
+        verdict: 'fail',
+        lostOriginalFragmentIds: ['original_F1'],
+        mappings: [{ originalFragmentId: 'original_F1', status: 'lost' }],
+      },
+    });
+  });
+
+  it('preserves cancellation for evaluation and repair', async () => {
+    const delayed = new FakeProvider({ delayMs: 30 });
+    const evaluationAbort = new AbortController();
+    const evaluation = delayed.evaluateObjectiveAuthoritySupport(semanticEvaluationInput, {
+      signal: evaluationAbort.signal,
+    });
+    evaluationAbort.abort();
+    await expect(evaluation).rejects.toMatchObject({ code: 'REQUEST_CANCELLED' });
+
+    const repairAbort = new AbortController();
+    const repair = delayed.repairObjectiveAuthoritySupport(semanticRepairInput(), {
+      signal: repairAbort.signal,
+    });
+    repairAbort.abort();
+    await expect(repair).rejects.toMatchObject({ code: 'REQUEST_CANCELLED' });
+  });
+});
 
 const tutorInput: TutorTurnInput = {
   workspaceName: 'Fixture course',
@@ -347,6 +543,154 @@ describe('FakeProvider.proposeCurriculum', () => {
       limits: { maxNodes: 100, maxObjectives: 100, maxSynthesisGroups: 10 },
     };
   }
+
+  function sourceBackedFixtureInput(): CurriculumProposalInput {
+    const content = 'Evaporation, condensation, and precipitation form a repeating water cycle.';
+    const sourceBlock: SourceBlock = {
+      id: 'block_water_cycle_authority',
+      materialId: 'material_water_cycle_authority',
+      materialRevisionId: 'revision_water_cycle_authority',
+      index: 0,
+      heading: 'Water cycle',
+      headingPath: ['Water cycle'],
+      pageNumber: null,
+      pageEnd: null,
+      content,
+      startOffset: 0,
+      endOffset: content.length,
+    };
+    return curriculumInputFor(
+      [sourceBlock],
+      [
+        {
+          structuralUnitId: null,
+          materialId: sourceBlock.materialId,
+          materialRevisionId: sourceBlock.materialRevisionId!,
+          parentStructuralUnitId: null,
+          kind: 'section',
+          index: 0,
+          title: sourceBlock.heading,
+          headingPath: sourceBlock.headingPath,
+          sourceBlockIds: [sourceBlock.id],
+        },
+      ],
+    );
+  }
+
+  it('omits independent visual-only units from a mixed source-backed course', async () => {
+    const sourceBackedInput = sourceBackedFixtureInput();
+    const input: CurriculumProposalInput = {
+      ...sourceBackedInput,
+      contract: {
+        ...sourceBackedInput.contract,
+        materials: [
+          ...sourceBackedInput.contract.materials,
+          {
+            materialId: 'material_water_cycle_visual',
+            title: 'Advisory water-cycle diagram',
+            materialRoleAssignmentId: 'role_water_cycle_visual',
+            materialRoleAssignmentVersion: 1,
+            role: 'course_material',
+            disposition: 'included',
+          },
+        ],
+      },
+      executionSourceManifest: {
+        ...sourceBackedInput.executionSourceManifest,
+        revisions: [
+          ...sourceBackedInput.executionSourceManifest.revisions,
+          {
+            materialId: 'material_water_cycle_visual',
+            materialRevisionId: 'revision_water_cycle_visual',
+            parserVersion: 'image-asset-v1',
+            parserFingerprint: null,
+            sourceBlockRevisionIds: [],
+          },
+        ],
+      },
+    };
+
+    const payload = await provider.proposeCurriculum(input);
+    const units = payload.nodes.filter((node) => node.kind === 'learning_unit');
+    const sections = payload.nodes.filter((node) => node.kind === 'section');
+
+    expect(units).toHaveLength(1);
+    expect(sections.map((section) => section.title)).not.toContain('Advisory water-cycle diagram');
+    expect(
+      units.every(
+        (unit) =>
+          unit.sourceEvidence.length > 0 &&
+          unit.objectives.every((objective) => objective.evidence.length > 0),
+      ),
+    ).toBe(true);
+    expect(
+      units.flatMap((unit) => unit.sourceEvidence.map((evidence) => evidence.evidenceId)),
+    ).toEqual(['block_water_cycle_authority']);
+  });
+
+  it('fails before emitting a candidate for a pure visual-only course', async () => {
+    const sourceBackedInput = sourceBackedFixtureInput();
+    const input: CurriculumProposalInput = {
+      ...sourceBackedInput,
+      contract: {
+        ...sourceBackedInput.contract,
+        materials: [
+          {
+            materialId: 'material_visual_only',
+            title: 'Advisory visual only',
+            materialRoleAssignmentId: 'role_visual_only',
+            materialRoleAssignmentVersion: 1,
+            role: 'course_material',
+            disposition: 'included',
+          },
+        ],
+      },
+      executionSourceManifest: {
+        fingerprint: 'manifest_visual_only',
+        revisions: [
+          {
+            materialId: 'material_visual_only',
+            materialRevisionId: 'revision_visual_only',
+            parserVersion: 'image-asset-v1',
+            parserFingerprint: null,
+            sourceBlockRevisionIds: [],
+          },
+        ],
+      },
+      outline: [],
+      concepts: [],
+      graphEdges: [],
+      allowedCanonicalConceptIds: [],
+      canonicalConcepts: [],
+      blocks: [],
+      evidenceCatalog: [],
+    };
+    let validationCalls = 0;
+
+    await expect(
+      provider.proposeCurriculum(input, {
+        validateCandidate: () => {
+          validationCalls += 1;
+          return { valid: true, diagnostics: [] };
+        },
+      }),
+    ).rejects.toMatchObject({
+      code: 'PROVIDER_INVALID_OUTPUT',
+      details: {
+        validationKind: 'candidate',
+        candidateFailure: {
+          kind: 'curriculum_objective_authority_unavailable',
+          diagnostics: [
+            {
+              code: 'visual_only_material_cannot_originate_objective',
+              message: expect.stringContaining('advisory visual-only Materials'),
+            },
+          ],
+        },
+      },
+    });
+    expect(validationCalls).toBe(0);
+  });
 
   it('turns a 277-block headed document into source-complete pedagogical units', async () => {
     const topicSizes = [

@@ -25,13 +25,7 @@ export { curriculumSourceBlockFingerprint } from '../grounding/sourceFingerprint
 import type { SourceAuthorityBundle } from '../repositories/sourceAuthority.js';
 import type { CurriculumEvidenceOffer } from '../llm/provider.js';
 import { newId } from '../util/ids.js';
-import {
-  buildCurriculumAuthorityEnvelope,
-  detectFormalConstruct,
-  formatNarrowedFormalObjective,
-  isFormalObjectiveSupported,
-  strongestNarrowableConstruct,
-} from './curriculumAuthority.js';
+import { buildCurriculumAuthorityEnvelope, isConstructSupported } from './curriculumAuthority.js';
 
 export interface CurriculumStructuralUnitOwner {
   materialId: string;
@@ -76,6 +70,9 @@ export interface MaterializedCurriculum {
   synthesisGroups: Curriculum['synthesisGroups'];
   validation: Curriculum['validation'];
   authorityCritiques: CurriculumAuthorityCritique[];
+  /** Proposal-local identity maps used only by bounded pre-persistence repair. */
+  objectiveIdByProposalKey?: Map<string, string>;
+  nodeIdByProposalKey?: Map<string, string>;
 }
 
 function revisionForBlock(
@@ -207,8 +204,10 @@ export function normalizeDuplicateLearningUnitTitles(
 interface AuthorityAssessment {
   status: TruthPremiseStatus;
   authorityIds: string[];
+  authorityClaimIds: string[];
   construct: FormalAssessmentConstruct;
   envelopeTier: CurriculumAuthorityEnvelopeTier;
+  authoritySourceBlockIds: string[];
   formalEvidenceSourceBlockIds: string[];
   readinessRationale: string;
   critique: CurriculumAuthorityCritique | undefined;
@@ -219,35 +218,46 @@ function authorityStatus(
     key: string;
     title: string;
     description: string;
+    construct: FormalAssessmentConstruct;
     priority?: 'required' | 'high' | 'normal' | 'optional';
   },
   evidence: VerifiedGrounding[],
   ctx: CurriculumValidationContext,
   nodeId: string,
 ): AuthorityAssessment {
-  const evidenceKeys = new Set(evidence.map((item) => `${item.blockId}\u0000${item.quote}`));
+  const evidenceKey = (item: {
+    blockId: string;
+    quote: string;
+    startOffset: number;
+    endOffset: number;
+  }): string =>
+    `${item.blockId}\u0000${item.startOffset}\u0000${item.endOffset}\u0000${item.quote}`;
+  const evidenceKeys = new Set(evidence.map(evidenceKey));
+  const exactSelectedClaims = (bundle: SourceAuthorityBundle) => {
+    const revision = ctx.executionSourceManifest.revisions.find(
+      (candidate) => candidate.materialRevisionId === bundle.record.materialRevisionId,
+    );
+    if (!revision) return [];
+    return bundle.claims.filter(
+      (claim) =>
+        revision.sourceBlockRevisionIds.includes(claim.sourceBlockId) &&
+        evidenceKeys.has(evidenceKey({ blockId: claim.sourceBlockId, ...claim })) &&
+        normalize(claim.claim) === normalize(claim.quote),
+    );
+  };
   const matched = ctx.authorityBundles.filter((bundle) => {
     const record = bundle.record;
     if (record.workspaceId !== ctx.workspaceId || record.validationState === 'rejected') {
       return false;
     }
-    const revision = ctx.executionSourceManifest.revisions.find(
-      (candidate) => candidate.materialRevisionId === record.materialRevisionId,
-    );
-    if (!revision) return false;
     // `truthPremiseStatus` describes the exact cited source premises, never
     // the model-authored objective title or description. A locally admitted
     // verbatim claim may support formal premise binding while the learner-
     // visible instructional wording remains ordinary AI-authored structure.
-    return bundle.claims.some(
-      (claim) =>
-        revision.sourceBlockRevisionIds.includes(claim.sourceBlockId) &&
-        evidenceKeys.has(`${claim.sourceBlockId}\u0000${claim.quote}`) &&
-        normalize(claim.claim) === normalize(claim.quote),
-    );
+    return exactSelectedClaims(bundle).length > 0;
   });
   const evidenceOffers = ctx.evidenceCatalog.filter((offer) =>
-    evidenceKeys.has(`${offer.blockId}\u0000${offer.quote}`),
+    evidenceKeys.has(evidenceKey(offer)),
   );
   const envelope = buildCurriculumAuthorityEnvelope({
     sourceRegionId: nodeId,
@@ -256,14 +266,26 @@ function authorityStatus(
     authorityBundles: matched,
     isBlockingEligible: ctx.isAuthorityBlockingEligible,
   });
-  const construct = detectFormalConstruct(`${objective.title} ${objective.description}`);
+  const construct = objective.construct;
   const conflicted = matched.filter((bundle) => bundle.record.conflictState === 'unresolved');
   if (conflicted.length > 0) {
+    const conflictedAuthorityIds = conflicted.map((bundle) => bundle.record.id).slice(0, 20);
+    const conflictedAuthorityIdSet = new Set(conflictedAuthorityIds);
     return {
       status: 'conflicted',
-      authorityIds: conflicted.map((bundle) => bundle.record.id).slice(0, 20),
+      authorityIds: conflictedAuthorityIds,
+      authorityClaimIds: [
+        ...new Set(
+          conflicted.flatMap((bundle) =>
+            conflictedAuthorityIdSet.has(bundle.record.id)
+              ? exactSelectedClaims(bundle).map((claim) => claim.id)
+              : [],
+          ),
+        ),
+      ].slice(0, 200),
       construct,
       envelopeTier: envelope.tier,
+      authoritySourceBlockIds: [],
       formalEvidenceSourceBlockIds: [],
       readinessRationale: '当前来源存在未解决的权威冲突，不能用于正式评估。',
       critique:
@@ -284,12 +306,9 @@ function authorityStatus(
     };
   }
   const eligible = envelope.formalEvidenceIds.length > 0;
-  const supported = isFormalObjectiveSupported(
-    `${objective.title} ${objective.description}`,
-    envelope,
-  );
+  const supported = isConstructSupported(construct, envelope);
   const ready = eligible && supported;
-  const authorityIds = matched
+  const blockingEligibleAuthorityIds = matched
     .filter(
       (bundle) =>
         bundle.record.validationState === 'validated' &&
@@ -297,6 +316,18 @@ function authorityStatus(
     )
     .map((bundle) => bundle.record.id)
     .slice(0, 20);
+  const authorityIds =
+    blockingEligibleAuthorityIds.length > 0
+      ? blockingEligibleAuthorityIds
+      : matched.map((bundle) => bundle.record.id).slice(0, 20);
+  const retainedAuthorityIds = new Set(authorityIds);
+  const retainedExactClaims = matched.flatMap((bundle) =>
+    retainedAuthorityIds.has(bundle.record.id) ? exactSelectedClaims(bundle) : [],
+  );
+  const authorityClaimIds = [...new Set(retainedExactClaims.map((claim) => claim.id))].slice(
+    0,
+    200,
+  );
   const reason = !eligible
     ? envelope.tier === 'teaching_only'
       ? '当前来源可用于教学解释，但没有独立验证的正式证据。'
@@ -304,18 +335,22 @@ function authorityStatus(
     : !supported
       ? `当前来源的正式权威仅支持 ${envelope.supportedConstructs.join('、') || '更窄'} 构念，不能支持 ${construct}。`
       : '当前版本存在已验证且无冲突的精确来源权威。';
+  const exactTeachingSourceBlockIds = [
+    ...new Set(retainedExactClaims.map((claim) => claim.sourceBlockId)),
+  ].slice(0, 100);
+  const formalEvidenceSourceBlockIds = ready ? [...exactTeachingSourceBlockIds] : [];
   return {
     status: ready ? 'independently_verified' : 'unverified',
-    authorityIds:
-      authorityIds.length > 0
-        ? authorityIds
-        : matched.map((bundle) => bundle.record.id).slice(0, 20),
+    authorityIds,
+    authorityClaimIds,
     construct,
     envelopeTier: envelope.tier,
-    formalEvidenceSourceBlockIds: evidenceOffers
-      .filter((offer) => envelope.formalEvidenceIds.includes(offer.id))
-      .map((offer) => offer.blockId)
-      .slice(0, 100),
+    // This is the exact semantic/teaching envelope. Once an objective has
+    // Formal authority, semantic evaluation and teaching must use precisely
+    // the same source blocks as Formal evidence. Teaching-only objectives
+    // retain their exact selected source claims without gaining Formal status.
+    authoritySourceBlockIds: exactTeachingSourceBlockIds,
+    formalEvidenceSourceBlockIds,
     readinessRationale: reason,
     critique:
       objective.priority === 'required' && !ready
@@ -718,6 +753,7 @@ export function materializeCurriculumProposal(
           description: objective.description,
           truthPremiseStatus: authority.status,
           truthAuthorityRecordIds: authority.authorityIds,
+          authorityClaimIds: authority.authorityClaimIds,
           ...(objective.priority ? { priority: objective.priority } : {}),
           ...(objective.priorityRationale
             ? { priorityRationale: objective.priorityRationale }
@@ -732,6 +768,7 @@ export function materializeCurriculumProposal(
             : {}),
           formalAssessmentConstruct: authority.construct,
           authorityEnvelopeTier: authority.envelopeTier,
+          authoritySourceBlockIds: authority.authoritySourceBlockIds,
           formalEvidenceSourceBlockIds: authority.formalEvidenceSourceBlockIds,
         });
       }
@@ -910,49 +947,14 @@ export function materializeCurriculumProposal(
   // Keep this helper useful to callers that want to inspect a failed candidate,
   // while the service fails closed before persisting invalid active state.
   CurriculumValidationSchema.parse(validation);
-  return { nodes, synthesisGroups, validation, authorityCritiques };
-}
-
-/**
- * Apply one deterministic authority repair to a provider candidate. The repair
- * only narrows wording to an exact local claim and never changes protected
- * priority, source selections, ids, or learner scope.
- */
-export function repairCurriculumAuthorityCandidate(
-  payload: CurriculumProposalPayload,
-  ctx: CurriculumValidationContext,
-): { payload: CurriculumProposalPayload; repaired: boolean } {
-  const candidate = CurriculumProposalPayloadSchema.parse(payload);
-  const materialized = materializeCurriculumProposal(candidate, ctx);
-  if (materialized.authorityCritiques.length === 0) return { payload: candidate, repaired: false };
-  const critiqueByKey = new Map(
-    materialized.authorityCritiques
-      .filter((critique) => critique.objectiveKey)
-      .map((critique) => [critique.objectiveKey!, critique]),
-  );
-  let repaired = false;
-  for (const node of candidate.nodes) {
-    if (node.kind !== 'learning_unit') continue;
-    for (const objective of node.objectives) {
-      const critique = critiqueByKey.get(objective.key);
-      if (
-        !critique?.narrowerClaim ||
-        (critique.authorityTier !== 'formal_sufficient' &&
-          critique.authorityTier !== 'narrower_formal') ||
-        critique.supportedConstructs.length === 0
-      )
-        continue;
-      const construct = strongestNarrowableConstruct(critique);
-      if (!construct) continue;
-      const wording = formatNarrowedFormalObjective(construct, critique.narrowerClaim);
-      objective.title = wording.title;
-      objective.description = wording.description;
-      // Required priority is intentionally preserved. The provider cannot
-      // satisfy an authority critique by downgrading learner scope.
-      repaired = true;
-    }
-  }
-  return { payload: candidate, repaired };
+  return {
+    nodes,
+    synthesisGroups,
+    validation,
+    authorityCritiques,
+    objectiveIdByProposalKey: objectiveIdByKey,
+    nodeIdByProposalKey: nodeIdByKey,
+  };
 }
 
 export function assertValidMaterializedCurriculum(

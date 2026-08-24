@@ -51,6 +51,7 @@ function curriculumPayload(): unknown {
             key: 'objective-1',
             title: 'Explain the first idea',
             description: 'Explain it from the accepted course material.',
+            construct: 'explain',
             evidence: [{ evidenceId: 'evidence_1' }],
           },
         ],
@@ -72,6 +73,7 @@ function curriculumPayload(): unknown {
             key: 'objective-2',
             title: 'Explore the second idea',
             description: 'A learner-scoped objective without verified source evidence.',
+            construct: 'identify',
             evidence: [],
           },
         ],
@@ -157,6 +159,14 @@ describe('CurriculumProposalPayloadSchema', () => {
       nodes: Array<{ sourceEvidence: Array<Record<string, unknown>> }>;
     };
     payload.nodes[2]!.sourceEvidence = [{ blockId: 'blk_1', quote: 'paraphrased' }];
+    expect(CurriculumProposalPayloadSchema.safeParse(payload).success).toBe(false);
+  });
+
+  it('requires every proposed objective to declare its immutable construct', () => {
+    const payload = curriculumPayload() as {
+      nodes: Array<{ objectives: Array<Record<string, unknown>> }>;
+    };
+    delete payload.nodes[2]!.objectives[0]!.construct;
     expect(CurriculumProposalPayloadSchema.safeParse(payload).success).toBe(false);
   });
 });

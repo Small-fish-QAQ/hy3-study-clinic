@@ -126,7 +126,13 @@ export function buildCurriculumAuthorityEnvelope(
   const evidenceByKey = new Map(
     input.evidence
       .filter((offer) => blockIds.has(offer.blockId))
-      .map((offer) => [`${offer.blockId}\u0000${offer.quote}`, offer] as const),
+      .map(
+        (offer) =>
+          [
+            `${offer.blockId}\u0000${offer.startOffset}\u0000${offer.endOffset}\u0000${offer.quote}`,
+            offer,
+          ] as const,
+      ),
   );
   const exactClaims = input.authorityBundles.flatMap((bundle) =>
     bundle.claims
@@ -134,7 +140,9 @@ export function buildCurriculumAuthorityEnvelope(
       .map((claim) => ({
         bundle,
         claim,
-        offer: evidenceByKey.get(`${claim.sourceBlockId}\u0000${claim.quote}`),
+        offer: evidenceByKey.get(
+          `${claim.sourceBlockId}\u0000${claim.startOffset}\u0000${claim.endOffset}\u0000${claim.quote}`,
+        ),
       }))
       .filter((item) => item.offer),
   );
@@ -270,8 +278,9 @@ export function isConstructSupported(
 export function isFormalObjectiveSupported(
   claim: string,
   envelope: CurriculumAuthorityEnvelope,
+  requestedConstruct: FormalAssessmentConstruct = detectFormalConstruct(claim),
 ): boolean {
-  const construct = detectFormalConstruct(claim);
+  const construct = requestedConstruct;
   if (!isConstructSupported(construct, envelope)) return false;
   if (construct !== 'apply') return true;
   const procedure = envelope.narrowerClaim;
