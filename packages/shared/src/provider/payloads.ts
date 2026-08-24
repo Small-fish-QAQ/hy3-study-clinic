@@ -287,6 +287,12 @@ export const ProposedCurriculumObjectiveSchema = z
     construct: FormalAssessmentConstructSchema,
     /** Optional server-offered evidence selections; local authority decides their meaning. */
     evidence: z.array(CurriculumEvidenceSelectionSchema).max(5),
+    /**
+     * Operation-local alias for one immutable predecessor capability that a
+     * same-contract recovery candidate must reconcile. Persistent predecessor
+     * identities never cross this provider-output boundary.
+     */
+    capabilityRequirementRef: z.string().min(1).max(100).optional(),
     priority: z.enum(['required', 'high', 'normal', 'optional']).optional(),
     priorityRationale: z.string().min(1).max(500).optional(),
   })
@@ -371,6 +377,8 @@ export const ProposedCourseMapRegionSchema = z
     learningIntent: z.string().min(1).max(700),
     approximateScope: z.enum(['focused', 'standard', 'extended']),
     anchorOptionRefs: z.array(CourseMapAnchorOptionRefSchema).max(30),
+    /** Recovery capabilities assigned to this exact source region. */
+    capabilityRequirementRefs: z.array(z.string().min(1).max(100)).max(4).optional(),
   })
   .strict()
   .superRefine((region, ctx) => {
@@ -379,6 +387,16 @@ export const ProposedCourseMapRegionSchema = z
         code: z.ZodIssueCode.custom,
         path: ['anchorOptionRefs'],
         message: 'Course Map region anchor-option references must be unique.',
+      });
+    }
+    if (
+      region.capabilityRequirementRefs &&
+      new Set(region.capabilityRequirementRefs).size !== region.capabilityRequirementRefs.length
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['capabilityRequirementRefs'],
+        message: 'Course Map region capability-requirement references must be unique.',
       });
     }
   });
@@ -442,7 +460,24 @@ export const CourseMapProposalPayloadSchema = z
     synthesisGroups: z.array(ProposedCourseMapSynthesisGroupSchema).max(100),
     sourceDispositions: z.array(ProposedCourseMapSourceDispositionSchema).max(120).optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((payload, ctx) => {
+    const capabilityRefs = new Set<string>();
+    for (const [moduleIndex, module] of payload.modules.entries()) {
+      for (const [regionIndex, region] of module.regions.entries()) {
+        for (const capabilityRef of region.capabilityRequirementRefs ?? []) {
+          if (capabilityRefs.has(capabilityRef)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ['modules', moduleIndex, 'regions', regionIndex, 'capabilityRequirementRefs'],
+              message: `duplicate Course Map capability requirement: ${capabilityRef}`,
+            });
+          }
+          capabilityRefs.add(capabilityRef);
+        }
+      }
+    }
+  });
 export type CourseMapProposalPayload = z.infer<typeof CourseMapProposalPayloadSchema>;
 
 /** One bounded LearningUnit detail proposal for a server-owned Course Map region. */
@@ -495,6 +530,7 @@ export const CurriculumDetailProposalPayloadSchema = z
   .superRefine((payload, ctx) => {
     const regionIds = new Set<string>();
     const objectiveKeys = new Set<string>();
+    const capabilityRefs = new Set<string>();
     for (const [unitIndex, unit] of payload.units.entries()) {
       if (regionIds.has(unit.regionId)) {
         ctx.addIssue({
@@ -513,6 +549,17 @@ export const CurriculumDetailProposalPayloadSchema = z
           });
         }
         objectiveKeys.add(objective.key);
+        const capabilityRef = objective.capabilityRequirementRef;
+        if (capabilityRef) {
+          if (capabilityRefs.has(capabilityRef)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ['units', unitIndex, 'objectives', objectiveIndex, 'capabilityRequirementRef'],
+              message: `duplicate Curriculum detail capability requirement: ${capabilityRef}`,
+            });
+          }
+          capabilityRefs.add(capabilityRef);
+        }
       }
     }
   });
@@ -528,6 +575,7 @@ export const CurriculumProposalPayloadSchema = z
   .superRefine((payload, ctx) => {
     const nodesByKey = new Map<string, (typeof payload.nodes)[number]>();
     const objectiveKeys = new Set<string>();
+    const capabilityRefs = new Set<string>();
     let learningUnitCount = 0;
 
     for (const [index, node] of payload.nodes.entries()) {
@@ -550,6 +598,17 @@ export const CurriculumProposalPayloadSchema = z
           });
         }
         objectiveKeys.add(objective.key);
+        const capabilityRef = objective.capabilityRequirementRef;
+        if (capabilityRef) {
+          if (capabilityRefs.has(capabilityRef)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ['nodes', index, 'objectives', objectiveIndex, 'capabilityRequirementRef'],
+              message: `duplicate Curriculum capability requirement: ${capabilityRef}`,
+            });
+          }
+          capabilityRefs.add(capabilityRef);
+        }
       }
     }
 

@@ -12,6 +12,7 @@ import {
 } from '@hy3-clinic/shared';
 import type {
   CurriculumCanonicalConceptOffer,
+  CurriculumCapabilityRecoveryRequirementInput,
   CurriculumContractContext,
   CurriculumDetailProposalInput,
   CurriculumDetailRegionInput,
@@ -20,12 +21,18 @@ import type {
   ProviderCandidateValidation,
 } from '../llm/provider.js';
 import { measureCurriculumDetailRequest } from '../llm/prompts.js';
-import { assertCourseMapSourceAllocationIntegrity } from './courseMap.js';
+import {
+  COURSE_MAP_CAPABILITY_REQUIREMENT_LIMIT,
+  COURSE_MAP_CAPABILITY_REQUIREMENTS_PER_REGION_LIMIT,
+  assertCourseMapSourceAllocationIntegrity,
+  type CurriculumCapabilityRecoveryRequirement,
+} from './courseMap.js';
 import { hasCurriculumSemanticAnchor } from './curriculumSemanticEvaluator.js';
 import {
   curriculumTargetRequestsApplication,
   isConstructSupported,
 } from './curriculumAuthority.js';
+import { OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES } from './objectiveAuthoritySemanticSupport.js';
 
 export const MAX_DETAIL_BATCHES = 2;
 export const MAX_DETAIL_REGIONS_PER_BATCH = 50;
@@ -33,7 +40,27 @@ export const MAX_DETAIL_EVIDENCE_OFFERS_PER_BATCH = 120;
 export const MAX_DETAIL_REQUEST_BYTES = 120_000;
 export const MAX_DETAIL_OUTPUT_ESTIMATE_BYTES = 62_000;
 export const DETAIL_OUTPUT_BYTES_PER_REGION_ESTIMATE = 1_200;
+export const DETAIL_OUTPUT_BYTES_PER_RECOVERY_OBJECTIVE_ESTIMATE = 2_200;
 const DETAIL_OUTPUT_BASE_BYTES_ESTIMATE = 2_000;
+
+function minimumRecoveryDetailOutputBytes(requirementCount: number): number {
+  const minimumRegionCount = Math.ceil(
+    requirementCount / COURSE_MAP_CAPABILITY_REQUIREMENTS_PER_REGION_LIMIT,
+  );
+  return (
+    DETAIL_OUTPUT_BASE_BYTES_ESTIMATE +
+    minimumRegionCount * DETAIL_OUTPUT_BYTES_PER_REGION_ESTIMATE +
+    requirementCount * DETAIL_OUTPUT_BYTES_PER_RECOVERY_OBJECTIVE_ESTIMATE
+  );
+}
+
+const MAX_RECOVERY_REQUIREMENTS_PER_DETAIL_BATCH = (() => {
+  let count = 0;
+  while (minimumRecoveryDetailOutputBytes(count + 1) <= MAX_DETAIL_OUTPUT_ESTIMATE_BYTES) {
+    count += 1;
+  }
+  return count;
+})();
 
 export interface CurriculumDetailPlanningInput {
   workspaceName: string;
@@ -45,6 +72,16 @@ export interface CurriculumDetailPlanningInput {
   canonicalConcepts: CurriculumCanonicalConceptOffer[];
   authorityEnvelopesByRegionId?: Map<string, CurriculumAuthorityEnvelope>;
   authorityEnvelopesByEvidenceId?: Map<string, CurriculumAuthorityEnvelope>;
+  capabilityRecoveryRequirements?: CurriculumCapabilityRecoveryRequirement[];
+}
+
+export interface CurriculumCapabilityRecoveryDetailFeasibilityContext {
+  workspaceName: string;
+  contract: CurriculumContractContext;
+  sourceAllocation: CourseMapSourceAllocation;
+  evidenceCatalog: CurriculumEvidenceOffer[];
+  authorityEnvelopesBySourceAllocationRegionId?: ReadonlyMap<string, CurriculumAuthorityEnvelope>;
+  authorityEnvelopesByEvidenceId?: ReadonlyMap<string, CurriculumAuthorityEnvelope>;
 }
 
 export interface CurriculumDetailBatch {
@@ -52,6 +89,62 @@ export interface CurriculumDetailBatch {
   input: CurriculumDetailProposalInput;
   requestBytes: number;
   outputEstimateBytes: number;
+}
+
+/**
+ * Every detail region needs one objective, while each immutable recovery
+ * capability needs its own exact objective. An application target also needs
+ * one required apply objective in a batch that exposes exact apply authority,
+ * unless an ordinary slot or a required apply recovery capability can carry
+ * that obligation.
+ */
+export function minimumCurriculumDetailObjectiveCount(
+  regions: readonly Pick<CurriculumDetailRegionInput, 'capabilityRequirements' | 'evidence'>[],
+  targetOutcomeDescription = '',
+): number {
+  const recoveryMinimum = regions.reduce(
+    (count, region) => count + Math.max(1, region.capabilityRequirements?.length ?? 0),
+    0,
+  );
+  if (!curriculumTargetRequestsApplication(targetOutcomeDescription)) return recoveryMinimum;
+
+  const applyRegions = regions.filter((region) =>
+    region.evidence.some((offer) => offer.authorityEnvelope?.supportedConstructs.includes('apply')),
+  );
+  if (applyRegions.length === 0) return recoveryMinimum;
+
+  const hasCoincidentRequiredApply = applyRegions.some((region) => {
+    const evidenceById = new Map(
+      region.evidence.map((offer) => [offer.evidenceId, offer] as const),
+    );
+    return (region.capabilityRequirements ?? []).some(
+      (requirement) =>
+        requirement.construct === 'apply' &&
+        requirement.priority === 'required' &&
+        requirement.allowedEvidenceIds.some((evidenceId) =>
+          evidenceById.get(evidenceId)?.authorityEnvelope?.supportedConstructs.includes('apply'),
+        ),
+    );
+  });
+  if (hasCoincidentRequiredApply) return recoveryMinimum;
+
+  if (applyRegions.some((region) => (region.capabilityRequirements?.length ?? 0) === 0)) {
+    return recoveryMinimum;
+  }
+  const applyRegionWithFreeObjective = applyRegions.find(
+    (region) =>
+      (region.capabilityRequirements?.length ?? 0) <
+      COURSE_MAP_CAPABILITY_REQUIREMENTS_PER_REGION_LIMIT,
+  );
+  if (!applyRegionWithFreeObjective) {
+    throw new CurriculumDetailBatchPlanningError(
+      [
+        'Application authority is available, but every eligible detail region is filled by four non-coincident recovery capabilities.',
+      ],
+      ['required_target_apply_capacity_unavailable'],
+    );
+  }
+  return recoveryMinimum + 1;
 }
 
 /**
@@ -94,12 +187,323 @@ export function buildCourseMapDeterministicCoverage(
 
 export class CurriculumDetailBatchPlanningError extends Error {
   readonly diagnostics: string[];
+  readonly diagnosticCodes: string[];
 
-  constructor(diagnostics: string[]) {
+  constructor(
+    diagnostics: string[],
+    diagnosticCodes: string[] = diagnostics.map(() => 'curriculum_detail_planning_failed'),
+  ) {
     super(diagnostics.join(' '));
     this.name = 'CurriculumDetailBatchPlanningError';
     this.diagnostics = diagnostics;
+    this.diagnosticCodes = diagnosticCodes;
   }
+}
+
+function hasRecoveryPlacementMatching(
+  requirements: readonly CurriculumCapabilityRecoveryRequirement[],
+): boolean {
+  const ownerBySlot = new Map<string, number>();
+  const assign = (requirementIndex: number, seen: Set<string>): boolean => {
+    const requirement = requirements[requirementIndex]!;
+    for (const allocationId of requirement.allowedSourceAllocationRegionIds) {
+      for (
+        let slotIndex = 0;
+        slotIndex < COURSE_MAP_CAPABILITY_REQUIREMENTS_PER_REGION_LIMIT;
+        slotIndex += 1
+      ) {
+        const slot = `${allocationId}\u0000${slotIndex}`;
+        if (seen.has(slot)) continue;
+        seen.add(slot);
+        const owner = ownerBySlot.get(slot);
+        if (owner === undefined || assign(owner, seen)) {
+          ownerBySlot.set(slot, requirementIndex);
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+  return requirements.every((_requirement, index) => assign(index, new Set()));
+}
+
+/**
+ * Requirements whose eligible allocation sets overlap belong to one flexible
+ * placement component. Different components can never share a Course Map
+ * region, so their independently rounded capacities form a sound occupancy
+ * lower bound without fixing any placement inside a flexible component.
+ */
+function minimumRecoveryRegionOccupancy(
+  requirements: readonly CurriculumCapabilityRecoveryRequirement[],
+): number {
+  const parent = new Map<string, string>();
+  const find = (id: string): string => {
+    const current = parent.get(id);
+    if (!current) {
+      parent.set(id, id);
+      return id;
+    }
+    if (current === id) return id;
+    const root = find(current);
+    parent.set(id, root);
+    return root;
+  };
+  const union = (left: string, right: string): void => {
+    const leftRoot = find(left);
+    const rightRoot = find(right);
+    if (leftRoot !== rightRoot) parent.set(rightRoot, leftRoot);
+  };
+  for (const requirement of requirements) {
+    const [first, ...rest] = requirement.allowedSourceAllocationRegionIds;
+    if (!first) continue;
+    find(first);
+    for (const allocationId of rest) union(first, allocationId);
+  }
+  const requirementCountByComponent = new Map<string, number>();
+  for (const requirement of requirements) {
+    const allocationId = requirement.allowedSourceAllocationRegionIds[0];
+    if (!allocationId) continue;
+    const root = find(allocationId);
+    requirementCountByComponent.set(root, (requirementCountByComponent.get(root) ?? 0) + 1);
+  }
+  return [...requirementCountByComponent.values()].reduce(
+    (count, componentRequirementCount) =>
+      count +
+      Math.ceil(componentRequirementCount / COURSE_MAP_CAPABILITY_REQUIREMENTS_PER_REGION_LIMIT),
+    0,
+  );
+}
+
+function optimisticForcedRecoveryRegions(
+  requirements: readonly CurriculumCapabilityRecoveryRequirement[],
+  context: CurriculumCapabilityRecoveryDetailFeasibilityContext,
+): CurriculumDetailRegionInput[] {
+  assertCourseMapSourceAllocationIntegrity(context.sourceAllocation);
+  const allocationById = new Map(
+    context.sourceAllocation.regions.map((region) => [region.id, region] as const),
+  );
+  const evidenceById = new Map(context.evidenceCatalog.map((offer) => [offer.id, offer] as const));
+  if (evidenceById.size !== context.evidenceCatalog.length) {
+    throw new CurriculumDetailBatchPlanningError(
+      ['Recovery detail feasibility received duplicate evidence identities.'],
+      ['recovery_capability_detail_evidence_identity_duplicate'],
+    );
+  }
+  const forcedByAllocationId = new Map<string, CurriculumCapabilityRecoveryRequirement[]>();
+  for (const requirement of requirements) {
+    for (const allocationId of requirement.allowedSourceAllocationRegionIds) {
+      if (!allocationById.has(allocationId)) {
+        throw new CurriculumDetailBatchPlanningError(
+          [
+            `Recovery capability ${requirement.capabilityRef} references an unknown source allocation before Course Map generation.`,
+          ],
+          ['recovery_capability_detail_source_allocation_unknown'],
+        );
+      }
+    }
+    if (requirement.allowedSourceAllocationRegionIds.length !== 1) continue;
+    const allocationId = requirement.allowedSourceAllocationRegionIds[0]!;
+    const entries = forcedByAllocationId.get(allocationId) ?? [];
+    entries.push(requirement);
+    forcedByAllocationId.set(allocationId, entries);
+  }
+
+  return [...forcedByAllocationId].map(([allocationId, forcedRequirements], index) => {
+    const allocation = allocationById.get(allocationId)!;
+    const offeredEvidence = new Map<string, CurriculumDetailRegionInput['evidence'][number]>();
+    const addEvidence = (evidenceId: string): void => {
+      const offer = evidenceById.get(evidenceId);
+      if (
+        !offer ||
+        offer.materialId !== allocation.materialId ||
+        offer.materialRevisionId !== allocation.materialRevisionId ||
+        !allocation.sourceBlockIds.includes(offer.blockId)
+      ) {
+        throw new CurriculumDetailBatchPlanningError(
+          [
+            `Recovery capability detail feasibility contains stale or foreign evidence ${evidenceId} for ${allocationId}.`,
+          ],
+          ['recovery_capability_detail_evidence_outside_source_allocation'],
+        );
+      }
+      offeredEvidence.set(evidenceId, {
+        evidenceId,
+        sourceAllocationRegionId: allocationId,
+        text: offer.quote,
+        ...(context.authorityEnvelopesByEvidenceId?.has(evidenceId)
+          ? { authorityEnvelope: context.authorityEnvelopesByEvidenceId.get(evidenceId) }
+          : {}),
+      });
+    };
+    for (const visibility of allocation.evidence) addEvidence(visibility.evidenceId);
+    for (const requirement of forcedRequirements) {
+      for (const evidenceId of requirement.allowedEvidenceIds) addEvidence(evidenceId);
+    }
+    return {
+      regionId: `course_map_region_${(index + 1).toString(16).padStart(24, '0')}`,
+      moduleId: `course_map_module_${'0'.repeat(24)}`,
+      moduleIndex: 0,
+      moduleTitle: 'x',
+      regionIndex: index,
+      title: 'x',
+      learningIntent: 'x',
+      approximateScope: 'focused',
+      sourceAllocationRegionIds: [allocationId],
+      prerequisiteRegionIds: [],
+      synthesisGroups: [],
+      concepts: [],
+      canonicalConcepts: [],
+      evidence: [...offeredEvidence.values()],
+      capabilityRequirements: forcedRequirements.map((requirement) => ({
+        capabilityRef: requirement.capabilityRef,
+        title: requirement.title,
+        description: requirement.description,
+        originalProposition: requirement.originalProposition,
+        construct: requirement.construct,
+        priority: requirement.priority,
+        allowedEvidenceIds: [...requirement.allowedEvidenceIds],
+      })),
+      ...(context.authorityEnvelopesBySourceAllocationRegionId?.has(allocationId)
+        ? {
+            authorityEnvelope:
+              context.authorityEnvelopesBySourceAllocationRegionId.get(allocationId),
+          }
+        : {}),
+    };
+  });
+}
+
+function assertForcedRecoveryOfferAndRequestFeasible(
+  requirements: readonly CurriculumCapabilityRecoveryRequirement[],
+  context: CurriculumCapabilityRecoveryDetailFeasibilityContext,
+): void {
+  const regions = optimisticForcedRecoveryRegions(requirements, context);
+  if (regions.length === 0) return;
+  for (const region of regions) {
+    if (region.evidence.length > MAX_DETAIL_EVIDENCE_OFFERS_PER_BATCH) {
+      throw new CurriculumDetailBatchPlanningError(
+        [
+          `Recovery capabilities forced into source allocation ${region.sourceAllocationRegionIds[0]} require ${region.evidence.length} exact offers, exceeding the unsplittable detail limit of ${MAX_DETAIL_EVIDENCE_OFFERS_PER_BATCH}.`,
+        ],
+        ['recovery_capability_detail_evidence_budget_exceeded'],
+      );
+    }
+  }
+  const forcedEvidenceCount = regions.reduce((count, region) => count + region.evidence.length, 0);
+  if (forcedEvidenceCount > MAX_DETAIL_BATCHES * MAX_DETAIL_EVIDENCE_OFFERS_PER_BATCH) {
+    throw new CurriculumDetailBatchPlanningError(
+      [
+        `Forced recovery placements require at least ${forcedEvidenceCount} exact detail offers, exceeding the ${MAX_DETAIL_BATCHES}-batch capacity of ${MAX_DETAIL_BATCHES * MAX_DETAIL_EVIDENCE_OFFERS_PER_BATCH}.`,
+      ],
+      ['recovery_capability_detail_evidence_budget_exceeded'],
+    );
+  }
+
+  const minimalInput = (selectedRegions: CurriculumDetailRegionInput[]) => ({
+    workspaceName: context.workspaceName,
+    contract: {
+      intent: context.contract.intent,
+      targetOutcome: context.contract.targetOutcome,
+      desiredDepth: context.contract.desiredDepth,
+      subjectBoundaries: context.contract.subjectBoundaries,
+      includedTopics: context.contract.includedTopics,
+      excludedTopics: context.contract.excludedTopics,
+    },
+    courseMapId: `course_map_${'0'.repeat(24)}`,
+    sourceAllocationFingerprint: context.sourceAllocation.fingerprint,
+    batchKey: `detail_batch_${'0'.repeat(24)}`,
+    regions: selectedRegions,
+    limits: {
+      maxUnits: MAX_DETAIL_REGIONS_PER_BATCH,
+      maxObjectivesPerUnit: 4,
+      maxObjectivesTotal: OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES,
+      maxEvidenceSelectionsPerUnit: 32,
+    },
+  });
+  const emptyRequestBytes = measureCurriculumDetailRequest(minimalInput([])).messages.bytes;
+  let mandatoryMarginalRequestBytes = 0;
+  for (const region of regions) {
+    const requestBytes = measureCurriculumDetailRequest(minimalInput([region])).messages.bytes;
+    if (requestBytes > MAX_DETAIL_REQUEST_BYTES) {
+      throw new CurriculumDetailBatchPlanningError(
+        [
+          `Recovery capabilities forced into source allocation ${region.sourceAllocationRegionIds[0]} require an optimistic ${requestBytes}-byte detail request, exceeding the unsplittable ${MAX_DETAIL_REQUEST_BYTES}-byte limit.`,
+        ],
+        ['recovery_capability_detail_request_budget_exceeded'],
+      );
+    }
+    mandatoryMarginalRequestBytes += Math.max(0, requestBytes - emptyRequestBytes);
+  }
+  const minimumBatchCount = Math.max(
+    1,
+    Math.ceil(regions.length / MAX_DETAIL_REGIONS_PER_BATCH),
+    Math.ceil(forcedEvidenceCount / MAX_DETAIL_EVIDENCE_OFFERS_PER_BATCH),
+  );
+  const requestLowerBound = mandatoryMarginalRequestBytes + minimumBatchCount * emptyRequestBytes;
+  if (requestLowerBound > MAX_DETAIL_BATCHES * MAX_DETAIL_REQUEST_BYTES) {
+    throw new CurriculumDetailBatchPlanningError(
+      [
+        `Forced recovery content has an optimistic request lower bound of ${requestLowerBound} bytes, exceeding the ${MAX_DETAIL_BATCHES}-batch request capacity of ${MAX_DETAIL_BATCHES * MAX_DETAIL_REQUEST_BYTES}.`,
+      ],
+      ['recovery_capability_detail_request_budget_exceeded'],
+    );
+  }
+}
+
+/** Reject globally impossible recovery detail work before paying for a Course Map proposal. */
+export function assertCurriculumCapabilityRecoveryDetailOutputFeasible(
+  requirements: readonly CurriculumCapabilityRecoveryRequirement[],
+  context?: CurriculumCapabilityRecoveryDetailFeasibilityContext,
+): void {
+  const capabilityRefs = requirements.map((requirement) => requirement.capabilityRef);
+  if (new Set(capabilityRefs).size !== capabilityRefs.length) {
+    throw new CurriculumDetailBatchPlanningError(
+      ['Recovery capability references must be unique before Course Map generation.'],
+      ['recovery_capability_detail_placement_invalid'],
+    );
+  }
+  for (const requirement of requirements) {
+    if (
+      requirement.allowedSourceAllocationRegionIds.length === 0 ||
+      new Set(requirement.allowedSourceAllocationRegionIds).size !==
+        requirement.allowedSourceAllocationRegionIds.length
+    ) {
+      throw new CurriculumDetailBatchPlanningError(
+        [
+          `Recovery capability ${requirement.capabilityRef} has an empty or duplicate source-allocation scope.`,
+        ],
+        ['recovery_capability_detail_placement_invalid'],
+      );
+    }
+  }
+  if (!hasRecoveryPlacementMatching(requirements)) {
+    throw new CurriculumDetailBatchPlanningError(
+      [
+        `The immutable recovery frontier cannot fit its ${requirements.length} capabilities into eligible source-allocation regions at ${COURSE_MAP_CAPABILITY_REQUIREMENTS_PER_REGION_LIMIT} per region.`,
+      ],
+      ['recovery_capability_detail_placement_invalid'],
+    );
+  }
+  const maximumRequirementCount = MAX_RECOVERY_REQUIREMENTS_PER_DETAIL_BATCH * MAX_DETAIL_BATCHES;
+  const minimumRegionCount = minimumRecoveryRegionOccupancy(requirements);
+  const minimumContentBytes =
+    minimumRegionCount * DETAIL_OUTPUT_BYTES_PER_REGION_ESTIMATE +
+    requirements.length * DETAIL_OUTPUT_BYTES_PER_RECOVERY_OBJECTIVE_ESTIMATE;
+  const contentCapacityBytes =
+    MAX_DETAIL_BATCHES * (MAX_DETAIL_OUTPUT_ESTIMATE_BYTES - DETAIL_OUTPUT_BASE_BYTES_ESTIMATE);
+  if (
+    requirements.length > maximumRequirementCount ||
+    minimumRegionCount > MAX_DETAIL_BATCHES * MAX_DETAIL_REGIONS_PER_BATCH ||
+    minimumContentBytes > contentCapacityBytes
+  ) {
+    throw new CurriculumDetailBatchPlanningError(
+      [
+        `The immutable recovery frontier requires ${requirements.length} detail objectives and at least ${minimumRegionCount} distinct eligible regions, but the fixed ${MAX_DETAIL_BATCHES}-batch output budget can contain at most ${maximumRequirementCount} objectives only under optimal ${COURSE_MAP_CAPABILITY_REQUIREMENTS_PER_REGION_LIMIT}-per-region packing.`,
+      ],
+      ['recovery_capability_detail_output_budget_exceeded'],
+    );
+  }
+  if (context) assertForcedRecoveryOfferAndRequestFeasible(requirements, context);
 }
 
 function batchKey(courseMapId: string, regions: CurriculumDetailRegionInput[]): string {
@@ -107,6 +511,28 @@ function batchKey(courseMapId: string, regions: CurriculumDetailRegionInput[]): 
     .update(JSON.stringify({ courseMapId, regionIds: regions.map((region) => region.regionId) }))
     .digest('hex')
     .slice(0, 24)}`;
+}
+
+function assertUniqueStrings(values: readonly string[], message: string): void {
+  if (new Set(values).size !== values.length) {
+    throw new CurriculumDetailBatchPlanningError([message]);
+  }
+}
+
+function evidenceAllocationId(
+  offer: CurriculumEvidenceOffer,
+  allocationById: ReadonlyMap<string, CourseMapSourceAllocation['regions'][number]>,
+  candidateAllocationIds: readonly string[],
+): string | null {
+  const matches = candidateAllocationIds.filter((allocationId) => {
+    const allocation = allocationById.get(allocationId);
+    return (
+      allocation?.materialId === offer.materialId &&
+      allocation.materialRevisionId === offer.materialRevisionId &&
+      allocation.sourceBlockIds.includes(offer.blockId)
+    );
+  });
+  return matches.length === 1 ? matches[0]! : null;
 }
 
 function buildDetailRegions(input: CurriculumDetailPlanningInput): CurriculumDetailRegionInput[][] {
@@ -128,6 +554,96 @@ function buildDetailRegions(input: CurriculumDetailPlanningInput): CurriculumDet
       'Curriculum detail evidence catalog identities must be unique.',
     ]);
   }
+  const recoveryRequirements = input.capabilityRecoveryRequirements ?? [];
+  if (recoveryRequirements.length > COURSE_MAP_CAPABILITY_REQUIREMENT_LIMIT) {
+    throw new CurriculumDetailBatchPlanningError([
+      'Curriculum detail capability recovery exceeds its hard requirement limit.',
+    ]);
+  }
+  assertUniqueStrings(
+    recoveryRequirements.map((requirement) => requirement.capabilityRef),
+    'Curriculum detail capability recovery references must be unique.',
+  );
+  const recoveryRequirementByRef = new Map(
+    recoveryRequirements.map((requirement) => [requirement.capabilityRef, requirement] as const),
+  );
+  for (const requirement of recoveryRequirements) {
+    assertUniqueStrings(
+      requirement.allowedSourceAllocationRegionIds,
+      `Curriculum detail recovery capability ${requirement.capabilityRef} source scope must be unique.`,
+    );
+    assertUniqueStrings(
+      requirement.allowedEvidenceIds,
+      `Curriculum detail recovery capability ${requirement.capabilityRef} evidence scope must be unique.`,
+    );
+    if (
+      requirement.allowedSourceAllocationRegionIds.length === 0 ||
+      requirement.allowedEvidenceIds.length === 0
+    ) {
+      throw new CurriculumDetailBatchPlanningError([
+        `Curriculum detail recovery capability ${requirement.capabilityRef} has an empty source or evidence scope.`,
+      ]);
+    }
+    for (const allocationId of requirement.allowedSourceAllocationRegionIds) {
+      if (!allocationById.has(allocationId)) {
+        throw new CurriculumDetailBatchPlanningError([
+          `Curriculum detail recovery capability ${requirement.capabilityRef} references an unknown source allocation.`,
+        ]);
+      }
+    }
+    for (const evidenceId of requirement.allowedEvidenceIds) {
+      const offer = evidenceById.get(evidenceId);
+      if (
+        !offer ||
+        !evidenceAllocationId(offer, allocationById, requirement.allowedSourceAllocationRegionIds)
+      ) {
+        throw new CurriculumDetailBatchPlanningError([
+          `Curriculum detail recovery capability ${requirement.capabilityRef} contains stale or foreign evidence ${evidenceId}.`,
+        ]);
+      }
+    }
+  }
+  const capabilityPlacementCount = new Map<string, number>();
+  for (const region of input.courseMap.modules.flatMap((module) => module.regions)) {
+    const capabilityRefs = region.capabilityRequirementRefs ?? [];
+    if (capabilityRefs.length > COURSE_MAP_CAPABILITY_REQUIREMENTS_PER_REGION_LIMIT) {
+      throw new CurriculumDetailBatchPlanningError([
+        `Course Map region ${region.id} exceeds the recovery-capability detail capacity.`,
+      ]);
+    }
+    assertUniqueStrings(
+      capabilityRefs,
+      `Course Map region ${region.id} repeats a recovery capability.`,
+    );
+    for (const capabilityRef of capabilityRefs) {
+      const requirement = recoveryRequirementByRef.get(capabilityRef);
+      if (!requirement) {
+        throw new CurriculumDetailBatchPlanningError([
+          `Course Map region ${region.id} references an unknown or unsolicited recovery capability ${capabilityRef}.`,
+        ]);
+      }
+      if (
+        !region.sourceAllocationRegionIds.some((allocationId) =>
+          requirement.allowedSourceAllocationRegionIds.includes(allocationId),
+        )
+      ) {
+        throw new CurriculumDetailBatchPlanningError([
+          `Course Map region ${region.id} places recovery capability ${capabilityRef} outside its source envelope.`,
+        ]);
+      }
+      capabilityPlacementCount.set(
+        capabilityRef,
+        (capabilityPlacementCount.get(capabilityRef) ?? 0) + 1,
+      );
+    }
+  }
+  for (const requirement of recoveryRequirements) {
+    if ((capabilityPlacementCount.get(requirement.capabilityRef) ?? 0) !== 1) {
+      throw new CurriculumDetailBatchPlanningError([
+        `Curriculum detail recovery capability ${requirement.capabilityRef} must be placed exactly once.`,
+      ]);
+    }
+  }
   const conceptById = new Map(input.concepts.map((concept) => [concept.id, concept] as const));
   const canonicalById = new Map(
     input.canonicalConcepts.map((canonical) => [canonical.id, canonical] as const),
@@ -147,7 +663,7 @@ function buildDetailRegions(input: CurriculumDetailPlanningInput): CurriculumDet
           `Course Map detail region references an unknown source allocation: ${region.id}.`,
         ]);
       }
-      const evidence = allocations.flatMap((allocation) =>
+      const baseEvidence = allocations.flatMap((allocation) =>
         allocation!.evidence.map((visibility) => {
           const offer = evidenceById.get(visibility.evidenceId);
           if (
@@ -174,6 +690,57 @@ function buildDetailRegions(input: CurriculumDetailPlanningInput): CurriculumDet
           };
         }),
       );
+      const evidenceByOfferedId = new Map(
+        baseEvidence.map((offer) => [offer.evidenceId, offer] as const),
+      );
+      const capabilityRequirements: CurriculumCapabilityRecoveryRequirementInput[] = [];
+      for (const capabilityRef of region.capabilityRequirementRefs ?? []) {
+        const requirement = recoveryRequirementByRef.get(capabilityRef)!;
+        const allowedEvidenceIds: string[] = [];
+        for (const evidenceId of requirement.allowedEvidenceIds) {
+          const offer = evidenceById.get(evidenceId)!;
+          const sourceAllocationRegionId = evidenceAllocationId(
+            offer,
+            allocationById,
+            region.sourceAllocationRegionIds,
+          );
+          if (!sourceAllocationRegionId) continue;
+          allowedEvidenceIds.push(evidenceId);
+          if (!evidenceByOfferedId.has(evidenceId)) {
+            evidenceByOfferedId.set(evidenceId, {
+              evidenceId,
+              sourceAllocationRegionId,
+              text: offer.quote,
+              ...(input.authorityEnvelopesByEvidenceId?.has(evidenceId)
+                ? { authorityEnvelope: input.authorityEnvelopesByEvidenceId.get(evidenceId) }
+                : {}),
+            });
+          }
+        }
+        if (allowedEvidenceIds.length === 0) {
+          throw new CurriculumDetailBatchPlanningError([
+            `Course Map region ${region.id} has no eligible exact evidence for recovery capability ${capabilityRef}.`,
+          ]);
+        }
+        capabilityRequirements.push({
+          capabilityRef: requirement.capabilityRef,
+          title: requirement.title,
+          description: requirement.description,
+          originalProposition: requirement.originalProposition,
+          construct: requirement.construct,
+          priority: requirement.priority,
+          allowedEvidenceIds,
+        });
+      }
+      const evidence = [...evidenceByOfferedId.values()];
+      if (evidence.length > MAX_DETAIL_EVIDENCE_OFFERS_PER_BATCH) {
+        throw new CurriculumDetailBatchPlanningError(
+          [
+            `A Course Map recovery region offers ${evidence.length} exact excerpts, exceeding the unsplittable detail limit of ${MAX_DETAIL_EVIDENCE_OFFERS_PER_BATCH}. Redistribute flexible capabilityRef values within their allowed source scopes.`,
+          ],
+          ['recovery_capability_detail_evidence_budget_exceeded'],
+        );
+      }
       const evidenceSourceRegionIds = new Set(
         evidence.map((offer) => offer.sourceAllocationRegionId),
       );
@@ -227,6 +794,7 @@ function buildDetailRegions(input: CurriculumDetailPlanningInput): CurriculumDet
           sourceConceptIds: [...canonical!.sourceConceptIds],
         })),
         evidence,
+        ...(capabilityRequirements.length > 0 ? { capabilityRequirements } : {}),
         ...(input.authorityEnvelopesByRegionId?.has(region.id)
           ? { authorityEnvelope: input.authorityEnvelopesByRegionId.get(region.id) }
           : {}),
@@ -256,6 +824,7 @@ function detailInput(
     limits: {
       maxUnits: MAX_DETAIL_REGIONS_PER_BATCH,
       maxObjectivesPerUnit: 4,
+      maxObjectivesTotal: OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES,
       maxEvidenceSelectionsPerUnit: 32,
     },
   };
@@ -272,7 +841,15 @@ function measuredBatch(
   const input = detailInput(planning, regions);
   const requestBytes = measureCurriculumDetailRequest(input).messages.bytes;
   const outputEstimateBytes =
-    DETAIL_OUTPUT_BASE_BYTES_ESTIMATE + regions.length * DETAIL_OUTPUT_BYTES_PER_REGION_ESTIMATE;
+    DETAIL_OUTPUT_BASE_BYTES_ESTIMATE +
+    regions.length * DETAIL_OUTPUT_BYTES_PER_REGION_ESTIMATE +
+    regions.reduce(
+      (bytes, region) =>
+        bytes +
+        (region.capabilityRequirements?.length ?? 0) *
+          DETAIL_OUTPUT_BYTES_PER_RECOVERY_OBJECTIVE_ESTIMATE,
+      0,
+    );
   if (
     requestBytes > MAX_DETAIL_REQUEST_BYTES ||
     outputEstimateBytes > MAX_DETAIL_OUTPUT_ESTIMATE_BYTES
@@ -288,6 +865,18 @@ export function planCurriculumDetailBatches(
 ): CurriculumDetailBatch[] {
   const moduleRegions = buildDetailRegions(planning);
   const allRegions = moduleRegions.flat();
+  const minimumObjectiveCount = minimumCurriculumDetailObjectiveCount(
+    allRegions,
+    planning.contract.targetOutcome.description,
+  );
+  if (minimumObjectiveCount > OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES) {
+    throw new CurriculumDetailBatchPlanningError(
+      [
+        `Course Map requires at least ${minimumObjectiveCount} objectives, exceeding the global semantic-evaluation ceiling of ${OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES}.`,
+      ],
+      ['objective_authority_semantic_support_budget_exceeded'],
+    );
+  }
   const single = measuredBatch(planning, allRegions, 0);
   if (single) return [single];
 
@@ -315,9 +904,30 @@ export function planCurriculumDetailBatches(
       }
       flush();
       if (!measuredBatch(planning, [region], partitions.length)) {
-        throw new CurriculumDetailBatchPlanningError([
-          `Course Map region ${region.regionId} exceeds an individual detail request budget.`,
-        ]);
+        const exactInput = detailInput(planning, [region]);
+        const evidenceOfferCount = region.evidence.length;
+        const requestBytes = measureCurriculumDetailRequest(exactInput).messages.bytes;
+        const outputEstimateBytes =
+          DETAIL_OUTPUT_BASE_BYTES_ESTIMATE +
+          DETAIL_OUTPUT_BYTES_PER_REGION_ESTIMATE +
+          (region.capabilityRequirements?.length ?? 0) *
+            DETAIL_OUTPUT_BYTES_PER_RECOVERY_OBJECTIVE_ESTIMATE;
+        const capabilityRefs = (region.capabilityRequirements ?? []).map(
+          (requirement) => requirement.capabilityRef,
+        );
+        const recoveryBound = capabilityRefs.length > 0;
+        throw new CurriculumDetailBatchPlanningError(
+          [
+            recoveryBound
+              ? `A Course Map region containing recovery capabilities [${capabilityRefs.join(', ')}] exceeds an individual detail budget (evidenceOffers=${evidenceOfferCount}/${MAX_DETAIL_EVIDENCE_OFFERS_PER_BATCH}, requestBytes=${requestBytes}/${MAX_DETAIL_REQUEST_BYTES}, outputEstimateBytes=${outputEstimateBytes}/${MAX_DETAIL_OUTPUT_ESTIMATE_BYTES}). Redistribute only flexible capabilityRef values within their allowed R* source scopes.`
+              : `A Course Map region exceeds an individual detail request budget (evidenceOffers=${evidenceOfferCount}/${MAX_DETAIL_EVIDENCE_OFFERS_PER_BATCH}, requestBytes=${requestBytes}/${MAX_DETAIL_REQUEST_BYTES}, outputEstimateBytes=${outputEstimateBytes}/${MAX_DETAIL_OUTPUT_ESTIMATE_BYTES}).`,
+          ],
+          [
+            recoveryBound
+              ? 'recovery_capability_detail_budget_exceeded'
+              : 'curriculum_detail_region_budget_exceeded',
+          ],
+        );
       }
       current.push(region);
     }
@@ -334,6 +944,23 @@ export function planCurriculumDetailBatches(
       'Course Map detail partition no longer satisfies its exact request and output budgets.',
     ]);
   }
+  const partitionMinimumObjectiveCount = (batches as CurriculumDetailBatch[]).reduce(
+    (count, batch) =>
+      count +
+      minimumCurriculumDetailObjectiveCount(
+        batch.input.regions,
+        batch.input.contract.targetOutcome.description,
+      ),
+    0,
+  );
+  if (partitionMinimumObjectiveCount > OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES) {
+    throw new CurriculumDetailBatchPlanningError(
+      [
+        `Course Map detail partitions require at least ${partitionMinimumObjectiveCount} objectives, exceeding the global semantic-evaluation ceiling of ${OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES}.`,
+      ],
+      ['objective_authority_semantic_support_budget_exceeded'],
+    );
+  }
   const assignedIds = batches.flatMap((batch) =>
     batch!.input.regions.map((region) => region.regionId),
   );
@@ -348,6 +975,31 @@ export function planCurriculumDetailBatches(
     ]);
   }
   return batches as CurriculumDetailBatch[];
+}
+
+/** Fail a Course Map candidate before any detail-provider call. */
+export function validateCurriculumDetailPlan(
+  planning: CurriculumDetailPlanningInput,
+): ProviderCandidateValidation {
+  try {
+    planCurriculumDetailBatches(planning);
+    return { valid: true, diagnostics: [], diagnosticCodes: [] };
+  } catch (error) {
+    if (!(error instanceof CurriculumDetailBatchPlanningError)) throw error;
+    return {
+      valid: false,
+      diagnostics: error.diagnostics.slice(0, 20),
+      diagnosticCodes: error.diagnosticCodes.slice(0, 20),
+      failureArtifact: {
+        kind: 'curriculum_detail_plan_invalid',
+        context: {},
+        diagnostics: error.diagnostics.slice(0, 20).map((message, index) => ({
+          code: error.diagnosticCodes[index] ?? 'curriculum_detail_planning_failed',
+          message,
+        })),
+      },
+    };
+  }
 }
 
 export function validateCurriculumDetailCandidate(
@@ -392,6 +1044,38 @@ export function validateCurriculumDetailCandidate(
     }
   };
   const payload = parsed.data;
+  const batchObjectiveLimit =
+    input.limits.maxObjectivesTotal ?? input.regions.length * input.limits.maxObjectivesPerUnit;
+  const minimumObjectiveCount = minimumCurriculumDetailObjectiveCount(
+    input.regions,
+    input.contract.targetOutcome.description,
+  );
+  const objectiveCount = payload.units.reduce((count, unit) => count + unit.objectives.length, 0);
+  if (
+    !Number.isSafeInteger(batchObjectiveLimit) ||
+    batchObjectiveLimit < minimumObjectiveCount ||
+    batchObjectiveLimit > OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES
+  ) {
+    addDiagnostic(
+      'curriculum_detail_objective_budget_invalid',
+      'Curriculum detail input contains an invalid batch-wide objective budget.',
+      {
+        batchObjectiveLimit,
+        minimumObjectiveCount,
+        globalObjectiveLimit: OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES,
+      },
+    );
+  } else if (objectiveCount > batchObjectiveLimit) {
+    addDiagnostic(
+      'curriculum_detail_objective_authority_semantic_budget_exceeded',
+      `Curriculum detail response contains ${objectiveCount} objectives, exceeding this batch's remaining semantic-evaluation budget of ${batchObjectiveLimit}.`,
+      {
+        objectiveCount,
+        batchObjectiveLimit,
+        globalObjectiveLimit: OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES,
+      },
+    );
+  }
   if (payload.courseMapId !== input.courseMapId) {
     addDiagnostic(
       'foreign_course_map',
@@ -441,6 +1125,20 @@ export function validateCurriculumDetailCandidate(
     const evidenceById = new Map(
       region.evidence.map((offer) => [offer.evidenceId, offer] as const),
     );
+    const capabilityRequirementByRef = new Map(
+      (region.capabilityRequirements ?? []).map((requirement) => [
+        requirement.capabilityRef,
+        requirement,
+      ]),
+    );
+    if (capabilityRequirementByRef.size !== (region.capabilityRequirements ?? []).length) {
+      addDiagnostic(
+        'recovery_capability_input_duplicate',
+        `Curriculum detail region ${unit.regionId} has duplicate recovery-capability requirements.`,
+        { courseMapRegionId: unit.regionId },
+      );
+    }
+    const capabilityUseCount = new Map<string, number>();
     const selectedAuthorityEnvelopes = (objective: (typeof unit.objectives)[number]) =>
       objective.evidence.flatMap((selection) => {
         const envelope = evidenceById.get(selection.evidenceId)?.authorityEnvelope;
@@ -456,6 +1154,78 @@ export function validateCurriculumDetailCandidate(
       hasCurriculumSemanticAnchor(`${objective.title} ${objective.description}`, [unit.title]),
     ).length;
     for (const objective of unit.objectives) {
+      const capabilityRef = objective.capabilityRequirementRef;
+      if (capabilityRef) {
+        const requirement = capabilityRequirementByRef.get(capabilityRef);
+        if (!requirement) {
+          addDiagnostic(
+            'recovery_capability_unknown',
+            `Curriculum detail objective ${objective.key} references an unknown or unsolicited recovery capability ${capabilityRef}.`,
+            { courseMapRegionId: unit.regionId, objectiveKey: objective.key, capabilityRef },
+          );
+        } else {
+          capabilityUseCount.set(capabilityRef, (capabilityUseCount.get(capabilityRef) ?? 0) + 1);
+          if (
+            objective.title !== requirement.title ||
+            objective.description !== requirement.description
+          ) {
+            addDiagnostic(
+              'recovery_capability_proposition_changed',
+              `Curriculum detail objective ${objective.key} changes the frozen proposition for recovery capability ${capabilityRef}.`,
+              {
+                courseMapRegionId: unit.regionId,
+                objectiveKey: objective.key,
+                capabilityRef,
+              },
+            );
+          }
+          if (objective.construct !== requirement.construct) {
+            addDiagnostic(
+              'recovery_capability_construct_changed',
+              `Curriculum detail objective ${objective.key} changes the frozen construct for recovery capability ${capabilityRef}.`,
+              {
+                courseMapRegionId: unit.regionId,
+                objectiveKey: objective.key,
+                capabilityRef,
+                expectedConstruct: requirement.construct,
+                actualConstruct: objective.construct,
+              },
+            );
+          }
+          const normalizedPriority = objective.priority ?? 'normal';
+          if (normalizedPriority !== requirement.priority) {
+            addDiagnostic(
+              'recovery_capability_priority_changed',
+              `Curriculum detail objective ${objective.key} changes the frozen priority for recovery capability ${capabilityRef}.`,
+              {
+                courseMapRegionId: unit.regionId,
+                objectiveKey: objective.key,
+                capabilityRef,
+                expectedPriority: requirement.priority,
+                actualPriority: normalizedPriority,
+              },
+            );
+          }
+          const allowedEvidenceIds = new Set(requirement.allowedEvidenceIds);
+          const selectedEvidenceIds = objective.evidence.map((selection) => selection.evidenceId);
+          if (
+            selectedEvidenceIds.length === 0 ||
+            selectedEvidenceIds.some((evidenceId) => !allowedEvidenceIds.has(evidenceId))
+          ) {
+            addDiagnostic(
+              'recovery_capability_evidence_outside_scope',
+              `Curriculum detail objective ${objective.key} must select exact evidence entirely inside recovery capability ${capabilityRef}'s offered scope.`,
+              {
+                courseMapRegionId: unit.regionId,
+                objectiveKey: objective.key,
+                capabilityRef,
+                selectedEvidenceIds,
+                allowedEvidenceIds: requirement.allowedEvidenceIds,
+              },
+            );
+          }
+        }
+      }
       if (objective.priority !== 'required') continue;
       const objectiveClaim = `${objective.title} ${objective.description}`;
       const matchingSiblingUnitTitles = siblingUnitTitles.filter((title) =>
@@ -473,6 +1243,22 @@ export function validateCurriculumDetailCandidate(
             ownAnchoredRequiredObjectiveCount,
             matchingSiblingUnitTitles: matchingSiblingUnitTitles.slice(0, 20),
           },
+        );
+      }
+    }
+    for (const capabilityRef of capabilityRequirementByRef.keys()) {
+      const useCount = capabilityUseCount.get(capabilityRef) ?? 0;
+      if (useCount === 0) {
+        addDiagnostic(
+          'recovery_capability_missing',
+          `Curriculum detail region ${unit.regionId} omitted recovery capability ${capabilityRef}.`,
+          { courseMapRegionId: unit.regionId, capabilityRef },
+        );
+      } else if (useCount > 1) {
+        addDiagnostic(
+          'recovery_capability_duplicate',
+          `Curriculum detail region ${unit.regionId} mapped recovery capability ${capabilityRef} more than once.`,
+          { courseMapRegionId: unit.regionId, capabilityRef },
         );
       }
     }
@@ -725,6 +1511,17 @@ export function assembleCurriculumDetailBatches(
   }>,
 ): CurriculumDetailAssembly {
   assertCurriculumAssemblyStructure(courseMap);
+  const objectiveCount = batches.reduce(
+    (count, batch) =>
+      count +
+      batch.payload.units.reduce((batchCount, unit) => batchCount + unit.objectives.length, 0),
+    0,
+  );
+  if (objectiveCount > OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES) {
+    throw new Error(
+      `Curriculum detail assembly contains ${objectiveCount} objectives, exceeding the global semantic-evaluation ceiling of ${OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES}.`,
+    );
+  }
   const units = new Map<
     string,
     { input: CurriculumDetailRegionInput; output: CurriculumDetailProposalPayload['units'][number] }
@@ -773,6 +1570,12 @@ export function assembleCurriculumDetailBatches(
         !sameStringArray(
           expected.region.canonicalConceptIds,
           inputRegion.canonicalConcepts.map((concept) => concept.id),
+        ) ||
+        !sameStringArray(
+          expected.region.capabilityRequirementRefs ?? [],
+          (inputRegion.capabilityRequirements ?? []).map(
+            (requirement) => requirement.capabilityRef,
+          ),
         ) ||
         !sameStringArray(expectedPrerequisites, inputRegion.prerequisiteRegionIds) ||
         !sameStringArray(

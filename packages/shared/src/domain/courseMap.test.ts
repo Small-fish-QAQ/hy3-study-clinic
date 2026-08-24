@@ -136,6 +136,41 @@ describe('CourseMapProposalPayloadSchema', () => {
     expect(CourseMapProposalPayloadSchema.parse(crossRegion)).toEqual(crossRegion);
   });
 
+  it('accepts bounded recovery aliases and rejects duplicate or over-capacity placement', () => {
+    const accepted = proposal();
+    Object.assign(accepted.modules[0]!.regions[0]!, {
+      capabilityRequirementRefs: ['capability-1', 'capability-2'],
+    });
+    expect(CourseMapProposalPayloadSchema.parse(accepted)).toEqual(accepted);
+
+    const duplicateWithinRegion = proposal();
+    Object.assign(duplicateWithinRegion.modules[0]!.regions[0]!, {
+      capabilityRequirementRefs: ['capability-1', 'capability-1'],
+    });
+    expect(() => CourseMapProposalPayloadSchema.parse(duplicateWithinRegion)).toThrow(
+      /capability-requirement references must be unique/u,
+    );
+
+    const duplicateAcrossRegions = proposal();
+    const secondRegion = structuredClone(duplicateAcrossRegions.modules[0]!.regions[0]!);
+    secondRegion.sourceRegionRef = 'R2';
+    secondRegion.anchorOptionRefs = ['R2:A1'];
+    Object.assign(duplicateAcrossRegions.modules[0]!.regions[0]!, {
+      capabilityRequirementRefs: ['capability-1'],
+    });
+    Object.assign(secondRegion, { capabilityRequirementRefs: ['capability-1'] });
+    duplicateAcrossRegions.modules[0]!.regions.push(secondRegion);
+    expect(() => CourseMapProposalPayloadSchema.parse(duplicateAcrossRegions)).toThrow(
+      /duplicate Course Map capability requirement/u,
+    );
+
+    const overCapacity = proposal();
+    Object.assign(overCapacity.modules[0]!.regions[0]!, {
+      capabilityRequirementRefs: Array.from({ length: 5 }, (_, index) => `capability-${index + 1}`),
+    });
+    expect(CourseMapProposalPayloadSchema.safeParse(overCapacity).success).toBe(false);
+  });
+
   it('rejects extra prerequisite keys and old prerequisite field names', () => {
     const extraKey = proposal();
     extraKey.prerequisites.push({ prerequisiteRegionRef: 'R1', dependentRegionRef: 'R2' });

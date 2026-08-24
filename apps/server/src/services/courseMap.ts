@@ -18,6 +18,7 @@ import {
 import { ProviderError } from '../llm/errors.js';
 import type {
   CourseMapProposalInput,
+  CurriculumCapabilityRecoveryRequirementInput,
   CurriculumCanonicalConceptOffer,
   CurriculumContractContext,
   CurriculumEvidenceOffer,
@@ -35,6 +36,17 @@ export const COURSE_MAP_SOURCE_EVIDENCE_LIMIT = 160;
 export const COURSE_MAP_SOURCE_EVIDENCE_PER_REGION_LIMIT = 2;
 export const COURSE_MAP_CONCEPT_OFFER_LIMIT = 160;
 export const COURSE_MAP_CANONICAL_OFFER_LIMIT = 120;
+export const COURSE_MAP_CAPABILITY_REQUIREMENT_LIMIT = 192;
+export const COURSE_MAP_CAPABILITY_REQUIREMENTS_PER_REGION_LIMIT = 4;
+export const COURSE_MAP_RECOVERY_EVIDENCE_LIMIT = 240;
+
+/**
+ * Local recovery binding. Source-allocation identities and exact evidence
+ * remain server-owned while the provider sees only operation-local aliases.
+ */
+export interface CurriculumCapabilityRecoveryRequirement extends CurriculumCapabilityRecoveryRequirementInput {
+  allowedSourceAllocationRegionIds: string[];
+}
 
 export const COURSE_MAP_DEFAULT_LIMITS: CourseMapProposalInput['limits'] = {
   maxModules: 24,
@@ -71,6 +83,133 @@ function boundedInteger(value: number, min: number, max: number, label: string):
     throw new RangeError(`${label} must be an integer between ${min} and ${max}.`);
   }
   return value;
+}
+
+function hasFeasibleCapabilityPlacement(
+  requirements: NonNullable<CourseMapProposalInput['capabilityRecovery']>['requirements'],
+): boolean {
+  const slotOwner = new Map<string, number>();
+  const assign = (requirementIndex: number, visitedSlots: Set<string>): boolean => {
+    const requirement = requirements[requirementIndex]!;
+    for (const sourceRegionRef of requirement.allowedSourceRegionRefs) {
+      for (
+        let slotIndex = 0;
+        slotIndex < COURSE_MAP_CAPABILITY_REQUIREMENTS_PER_REGION_LIMIT;
+        slotIndex += 1
+      ) {
+        const slot = `${sourceRegionRef}\u0000${slotIndex}`;
+        if (visitedSlots.has(slot)) continue;
+        visitedSlots.add(slot);
+        const owner = slotOwner.get(slot);
+        if (owner === undefined || assign(owner, visitedSlots)) {
+          slotOwner.set(slot, requirementIndex);
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+  return requirements.every((_requirement, index) => assign(index, new Set()));
+}
+
+function assertCourseMapCapabilityRecoveryInputIntegrity(
+  providerInput: CourseMapProposalInput,
+): void {
+  const recovery = providerInput.capabilityRecovery;
+  const requirements = recovery?.requirements;
+  if (!requirements) return;
+  if (requirements.length === 0) {
+    throw new Error('Course Map capability recovery must not contain an empty requirement set.');
+  }
+  if (requirements.length > COURSE_MAP_CAPABILITY_REQUIREMENT_LIMIT) {
+    throw new Error('Course Map capability recovery exceeds its hard requirement limit.');
+  }
+  assertUnique(
+    requirements.map((requirement) => requirement.capabilityRef),
+    'Course Map capability recovery references',
+  );
+  const knownSourceRegionRefs = new Set(
+    providerInput.sourceRegions.map((region) => region.sourceRegionRef),
+  );
+  if (recovery.evidenceOffers.length === 0) {
+    throw new Error('Course Map capability recovery requires exact placement evidence.');
+  }
+  if (recovery.evidenceOffers.length > COURSE_MAP_RECOVERY_EVIDENCE_LIMIT) {
+    throw new Error('Course Map capability recovery exceeds its exact evidence hard limit.');
+  }
+  assertUnique(
+    recovery.evidenceOffers.map((offer) => offer.recoveryEvidenceRef),
+    'Course Map recovery evidence references',
+  );
+  const recoveryEvidenceByRef = new Map(
+    recovery.evidenceOffers.map((offer, index) => {
+      if (offer.recoveryEvidenceRef !== `CE${index + 1}`) {
+        throw new Error(
+          'Course Map recovery evidence references must be contiguous and deterministic.',
+        );
+      }
+      if (
+        offer.text.length === 0 ||
+        offer.text.length > 320 ||
+        !knownSourceRegionRefs.has(offer.sourceRegionRef)
+      ) {
+        throw new Error('Course Map recovery evidence is stale or outside its source region.');
+      }
+      return [offer.recoveryEvidenceRef, offer] as const;
+    }),
+  );
+  const referencedRecoveryEvidenceRefs = new Set<string>();
+  for (const requirement of requirements) {
+    if (requirement.allowedSourceRegionRefs.length === 0) {
+      throw new Error(
+        `Course Map recovery capability ${requirement.capabilityRef} has no eligible source region.`,
+      );
+    }
+    assertUnique(
+      requirement.allowedSourceRegionRefs,
+      `Course Map recovery capability ${requirement.capabilityRef} source-region references`,
+    );
+    if (requirement.allowedSourceRegionRefs.some((ref) => !knownSourceRegionRefs.has(ref))) {
+      throw new Error(
+        `Course Map recovery capability ${requirement.capabilityRef} references an unknown source region.`,
+      );
+    }
+    if (requirement.allowedRecoveryEvidenceRefs.length === 0) {
+      throw new Error(
+        `Course Map recovery capability ${requirement.capabilityRef} has no exact placement evidence.`,
+      );
+    }
+    assertUnique(
+      requirement.allowedRecoveryEvidenceRefs,
+      `Course Map recovery capability ${requirement.capabilityRef} evidence references`,
+    );
+    const evidenceSourceRegionRefs = new Set<string>();
+    for (const evidenceRef of requirement.allowedRecoveryEvidenceRefs) {
+      const offer = recoveryEvidenceByRef.get(evidenceRef);
+      if (!offer) {
+        throw new Error(
+          `Course Map recovery capability ${requirement.capabilityRef} references unknown placement evidence.`,
+        );
+      }
+      referencedRecoveryEvidenceRefs.add(evidenceRef);
+      evidenceSourceRegionRefs.add(offer.sourceRegionRef);
+    }
+    assertSameSet(
+      evidenceSourceRegionRefs,
+      new Set(requirement.allowedSourceRegionRefs),
+      `Course Map recovery capability ${requirement.capabilityRef} source scope must derive exactly from its placement evidence.`,
+    );
+  }
+  assertSameSet(
+    referencedRecoveryEvidenceRefs,
+    new Set(recoveryEvidenceByRef.keys()),
+    'Course Map recovery evidence pool must contain exactly the referenced placement evidence.',
+  );
+  if (!hasFeasibleCapabilityPlacement(requirements)) {
+    throw new Error(
+      'Course Map capability recovery cannot satisfy the fixed four-objective region capacity.',
+    );
+  }
 }
 
 /** Recompute the content fingerprint before any allocation crosses a trust boundary. */
@@ -131,6 +270,7 @@ function assertCourseMapProviderInputIntegrity(
   if (providerInput.sourceRegions.length !== allocation.regions.length) {
     throw new Error('Course Map provider context must expose every source-allocation region.');
   }
+  assertCourseMapCapabilityRecoveryInputIntegrity(providerInput);
   const materialTitleById = new Map(
     providerInput.contract.materials.map((material) => [material.materialId, material.title]),
   );
@@ -464,6 +604,9 @@ export interface BuildCourseMapProposalInput {
   canonicalConcepts: CurriculumCanonicalConceptOffer[];
   limits?: Partial<CourseMapProposalInput['limits']>;
   authorityEnvelopesByRegionId?: Map<string, CurriculumAuthorityEnvelope>;
+  capabilityRecoveryRequirements?: CurriculumCapabilityRecoveryRequirement[];
+  /** Complete exact catalog is required only to construct recovery aliases. */
+  evidenceCatalog?: CurriculumEvidenceOffer[];
 }
 
 /** Build the only provider-visible Course Map context; it contains no full SourceBlocks. */
@@ -475,6 +618,8 @@ export function buildCourseMapProposalInput({
   canonicalConcepts,
   limits: overrides = {},
   authorityEnvelopesByRegionId,
+  capabilityRecoveryRequirements = [],
+  evidenceCatalog = [],
 }: BuildCourseMapProposalInput): CourseMapProposalInput {
   const sourceAllocation = CourseMapSourceAllocationSchema.parse(rawAllocation);
   assertCourseMapSourceAllocationIntegrity(sourceAllocation);
@@ -546,6 +691,117 @@ export function buildCourseMapProposalInput({
   const materialTitleById = new Map(
     contract.materials.map((material) => [material.materialId, material.title]),
   );
+  if (capabilityRecoveryRequirements.length > COURSE_MAP_CAPABILITY_REQUIREMENT_LIMIT) {
+    throw new Error('Course Map capability recovery exceeds its hard requirement limit.');
+  }
+  assertUnique(
+    capabilityRecoveryRequirements.map((requirement) => requirement.capabilityRef),
+    'Course Map capability recovery references',
+  );
+  const sourceRegionRefByAllocationId = new Map(
+    sourceAllocation.regions.map((region, index) => [region.id, `R${index + 1}`] as const),
+  );
+  assertUnique(
+    evidenceCatalog.map((offer) => offer.id),
+    'Course Map recovery evidence identities',
+  );
+  const evidenceById = new Map(evidenceCatalog.map((offer) => [offer.id, offer] as const));
+  const referencedEvidenceIds = new Set(
+    capabilityRecoveryRequirements.flatMap((requirement) => requirement.allowedEvidenceIds),
+  );
+  if (referencedEvidenceIds.size > COURSE_MAP_RECOVERY_EVIDENCE_LIMIT) {
+    throw new Error('Course Map capability recovery exceeds its exact evidence hard limit.');
+  }
+  const recoveryEvidenceBindings = evidenceCatalog
+    .filter((offer) => referencedEvidenceIds.has(offer.id))
+    .map((offer, index) => {
+      const matchingRegions = sourceAllocation.regions.filter(
+        (region) =>
+          region.materialId === offer.materialId &&
+          region.materialRevisionId === offer.materialRevisionId &&
+          region.sourceBlockIds.includes(offer.blockId),
+      );
+      if (matchingRegions.length !== 1) {
+        throw new Error('Course Map recovery evidence is stale or outside the source allocation.');
+      }
+      const sourceAllocationRegionId = matchingRegions[0]!.id;
+      return {
+        recoveryEvidenceRef: `CE${index + 1}`,
+        sourceRegionRef: sourceRegionRefByAllocationId.get(sourceAllocationRegionId)!,
+        text: offer.quote,
+        evidenceId: offer.id,
+        sourceAllocationRegionId,
+      };
+    });
+  if (recoveryEvidenceBindings.length !== referencedEvidenceIds.size) {
+    throw new Error('Course Map recovery capability references unknown exact evidence.');
+  }
+  const recoveryEvidenceRefById = new Map(
+    recoveryEvidenceBindings.map((offer) => [offer.evidenceId, offer.recoveryEvidenceRef]),
+  );
+  const recoveryEvidenceOffers = recoveryEvidenceBindings.map(
+    ({ evidenceId: _evidenceId, sourceAllocationRegionId: _allocationId, ...offer }) => offer,
+  );
+  const providerCapabilityRequirements = capabilityRecoveryRequirements.map((requirement) => {
+    assertUnique(
+      requirement.allowedSourceAllocationRegionIds,
+      `Course Map recovery capability ${requirement.capabilityRef} source-allocation identities`,
+    );
+    assertUnique(
+      requirement.allowedEvidenceIds,
+      `Course Map recovery capability ${requirement.capabilityRef} evidence identities`,
+    );
+    if (
+      requirement.allowedSourceAllocationRegionIds.length === 0 ||
+      requirement.allowedEvidenceIds.length === 0
+    ) {
+      throw new Error(
+        `Course Map recovery capability ${requirement.capabilityRef} requires eligible source and evidence scope.`,
+      );
+    }
+    if (
+      requirement.allowedSourceAllocationRegionIds.some(
+        (sourceAllocationRegionId) => !sourceRegionRefByAllocationId.has(sourceAllocationRegionId),
+      )
+    ) {
+      throw new Error(
+        `Course Map recovery capability ${requirement.capabilityRef} references an unknown source allocation.`,
+      );
+    }
+    const exactAllocationIds = new Set<string>();
+    const allowedRecoveryEvidenceRefs = requirement.allowedEvidenceIds.map((evidenceId) => {
+      const offer = evidenceById.get(evidenceId);
+      const evidenceRef = recoveryEvidenceRefById.get(evidenceId);
+      const recoveryOffer = recoveryEvidenceBindings.find(
+        (candidate) => candidate.recoveryEvidenceRef === evidenceRef,
+      );
+      if (!offer || !evidenceRef || !recoveryOffer) {
+        throw new Error(
+          `Course Map recovery capability ${requirement.capabilityRef} references unknown exact evidence.`,
+        );
+      }
+      exactAllocationIds.add(recoveryOffer.sourceAllocationRegionId);
+      return evidenceRef;
+    });
+    assertSameSet(
+      exactAllocationIds,
+      new Set(requirement.allowedSourceAllocationRegionIds),
+      `Course Map recovery capability ${requirement.capabilityRef} source scope must derive exactly from its allowed evidence.`,
+    );
+    const allowedSourceRegionRefs = sourceAllocation.regions.flatMap((region) =>
+      exactAllocationIds.has(region.id) ? [sourceRegionRefByAllocationId.get(region.id)!] : [],
+    );
+    return {
+      capabilityRef: requirement.capabilityRef,
+      title: requirement.title,
+      description: requirement.description,
+      originalProposition: requirement.originalProposition,
+      construct: requirement.construct,
+      priority: requirement.priority,
+      allowedSourceRegionRefs,
+      allowedRecoveryEvidenceRefs,
+    };
+  });
   const regionCount = sourceAllocation.regions.length;
   const limits: CourseMapProposalInput['limits'] = {
     maxModules: boundedInteger(
@@ -628,6 +884,14 @@ export function buildCourseMapProposalInput({
           : {}),
       };
     }),
+    ...(providerCapabilityRequirements.length > 0
+      ? {
+          capabilityRecovery: {
+            evidenceOffers: recoveryEvidenceOffers,
+            requirements: providerCapabilityRequirements,
+          },
+        }
+      : {}),
     limits,
   };
   assertCourseMapProviderInputIntegrity(sourceAllocation, providerInput);
@@ -756,6 +1020,13 @@ export function analyzeCourseMapProposal(
   const regionOrderByRef = new Map<string, number>();
   const regionModuleKeyByRef = new Map<string, string>();
   const materializedModules: CourseMap['modules'] = [];
+  const capabilityRequirementByRef = new Map(
+    (context.providerInput.capabilityRecovery?.requirements ?? []).map((requirement) => [
+      requirement.capabilityRef,
+      requirement,
+    ]),
+  );
+  const capabilityRequirementUseCount = new Map<string, number>();
   const allocationUseCount = new Map<string, number>();
   const sourceBlockIdsByProposedRegion = new Map<string, Set<string>>();
   let unsupportedRegionCount = 0;
@@ -834,6 +1105,39 @@ export function analyzeCourseMapProposal(
           regionKey,
         ]);
       }
+      const capabilityRequirementRefs = proposedRegion.capabilityRequirementRefs ?? [];
+      if (capabilityRequirementRefs.length > COURSE_MAP_CAPABILITY_REQUIREMENTS_PER_REGION_LIMIT) {
+        add(
+          'error',
+          'recovery_capability_region_capacity_exceeded',
+          'Course Map region exceeds the fixed recovery-capability capacity.',
+          [regionKey],
+        );
+      }
+      for (const capabilityRef of capabilityRequirementRefs) {
+        const requirement = capabilityRequirementByRef.get(capabilityRef);
+        if (!requirement) {
+          add(
+            'error',
+            'recovery_capability_unknown',
+            'Course Map region references an unknown or unsolicited recovery capability.',
+            [regionKey, capabilityRef],
+          );
+          continue;
+        }
+        capabilityRequirementUseCount.set(
+          capabilityRef,
+          (capabilityRequirementUseCount.get(capabilityRef) ?? 0) + 1,
+        );
+        if (!requirement.allowedSourceRegionRefs.includes(proposedRegion.sourceRegionRef)) {
+          add(
+            'error',
+            'recovery_capability_outside_source_envelope',
+            'Course Map placed a recovery capability outside its eligible source envelope.',
+            [regionKey, capabilityRef, proposedRegion.sourceRegionRef],
+          );
+        }
+      }
       const regionId = stableId('course_map_region', {
         allocation: sourceAllocation.fingerprint,
         proposal: proposalFingerprint,
@@ -862,6 +1166,9 @@ export function analyzeCourseMapProposal(
         conceptIds,
         canonicalConceptIds,
         expectedOutcome: proposedRegion.learningIntent.slice(0, 500),
+        ...(capabilityRequirementRefs.length > 0
+          ? { capabilityRequirementRefs: [...capabilityRequirementRefs] }
+          : {}),
       });
     }
     materializedModules.push({
@@ -873,6 +1180,25 @@ export function analyzeCourseMapProposal(
       sequenceRationale: `按“${proposedModule.learningIntent}”建立从基础到应用的连续学习顺序。`,
       regions,
     });
+  }
+
+  for (const capabilityRef of capabilityRequirementByRef.keys()) {
+    const useCount = capabilityRequirementUseCount.get(capabilityRef) ?? 0;
+    if (useCount === 0) {
+      add(
+        'error',
+        'recovery_capability_missing',
+        'Course Map omitted an offered recovery capability.',
+        [capabilityRef],
+      );
+    } else if (useCount > 1) {
+      add(
+        'error',
+        'recovery_capability_duplicate',
+        'Course Map placed a recovery capability more than once.',
+        [capabilityRef],
+      );
+    }
   }
 
   let duplicateAllocationCount = 0;
@@ -1273,11 +1599,81 @@ export function analyzeCourseMapProposal(
 
 export interface GenerateCourseMapPrototypeInput extends CourseMapValidationContext {
   provider: LlmProvider;
+  /** Exact downstream detail-budget preflight for each candidate analysis. */
+  validateAnalysis?: (analysis: CourseMapAnalysis) => ProviderCandidateValidation;
 }
 
 export interface CourseMapPrototypeResult {
   analysis: CourseMapAnalysis;
   repairAttempted: boolean;
+}
+
+/**
+ * Candidate diagnostics retain local identities for server-side inspection,
+ * but a REAL_HY3 repair request may receive only the operation-local aliases
+ * already present in the original Course Map prompt. Strip structured facts
+ * and replace any local identity that reached a diagnostic string before the
+ * validation result crosses that provider boundary.
+ */
+function courseMapProviderFacingValidation(
+  validation: ProviderCandidateValidation,
+  sourceAllocation: CourseMapSourceAllocation,
+  courseMap: CourseMap,
+): ProviderCandidateValidation {
+  const sourceRefByAllocationId = new Map<string, string>(
+    sourceAllocation.regions.map((region, index) => [region.id, `R${index + 1}`] as const),
+  );
+  const replacements: Array<readonly [string, string]> = [];
+  for (const [index, region] of sourceAllocation.regions.entries()) {
+    const sourceRef = `R${index + 1}`;
+    replacements.push([`${sourceRef}:${region.id}`, sourceRef], [region.id, sourceRef]);
+  }
+  for (const [moduleIndex, module] of courseMap.modules.entries()) {
+    replacements.push([module.id, `module-${moduleIndex + 1}`]);
+    for (const [regionIndex, region] of module.regions.entries()) {
+      const sourceRefs = region.sourceAllocationRegionIds
+        .map((allocationId) => sourceRefByAllocationId.get(allocationId))
+        .filter((value): value is string => value !== undefined);
+      replacements.push([region.id, sourceRefs.join('+') || `region-${regionIndex + 1}`]);
+    }
+  }
+  for (const [index, group] of courseMap.synthesisGroups.entries()) {
+    replacements.push([group.id, `synthesis-${index + 1}`]);
+  }
+  replacements.push(
+    [courseMap.id, 'course-map'],
+    [sourceAllocation.fingerprint, 'source-allocation'],
+    [sourceAllocation.courseSourceMapFingerprint, 'course-source-map'],
+  );
+  replacements.sort((left, right) => right[0].length - left[0].length);
+  const sanitize = (value: string): string => {
+    let result = value;
+    for (const [localIdentity, alias] of replacements) {
+      result = result.replaceAll(localIdentity, alias);
+    }
+    return result;
+  };
+  const {
+    failureArtifact,
+    targetedRepair: _targetedRepair,
+    ...withoutProviderUnsafeDetails
+  } = validation;
+  return {
+    ...withoutProviderUnsafeDetails,
+    diagnostics: validation.diagnostics.map(sanitize),
+    ...(failureArtifact
+      ? {
+          failureArtifact: {
+            kind: failureArtifact.kind,
+            context: {},
+            diagnostics: failureArtifact.diagnostics.map((diagnostic) => ({
+              code: diagnostic.code,
+              message: sanitize(diagnostic.message),
+            })),
+          },
+        }
+      : {}),
+  };
 }
 
 /**
@@ -1334,13 +1730,13 @@ export function repairOmittedCourseMapCoverage(
 
 /** Operation-local Course Map generation. It performs no persistence or learner governance. */
 export async function generateCourseMapPrototype(
-  { provider, providerInput, sourceAllocation }: GenerateCourseMapPrototypeInput,
+  { provider, providerInput, sourceAllocation, validateAnalysis }: GenerateCourseMapPrototypeInput,
   opts?: ProviderCallOptions,
 ): Promise<CourseMapPrototypeResult> {
   assertCourseMapProviderInputIntegrity(sourceAllocation, providerInput);
   let repairAttempted = false;
   let repairArmed = false;
-  const payload = await provider.proposeCourseMap(providerInput, {
+  const payload = await provider.proposeCourseMap(structuredClone(providerInput), {
     ...opts,
     onRepairAttempt: (reason, category) => {
       repairAttempted = true;
@@ -1402,8 +1798,16 @@ export async function generateCourseMapPrototype(
         analysis.courseMap,
         analysis.sourceAllocation,
       );
+      const detailPlan = validateAnalysis?.(analysis);
       const external = opts?.validateCandidate?.(candidate);
-      const validations = [local, semantic, ...(external ? [external] : [])];
+      const validations = [
+        local,
+        semantic,
+        ...(detailPlan ? [detailPlan] : []),
+        ...(external ? [external] : []),
+      ].map((validation) =>
+        courseMapProviderFacingValidation(validation, sourceAllocation, analysis.courseMap),
+      );
       const failedValidations = validations.filter((validation) => !validation.valid);
       const failureDiagnostics: ProviderCandidateFailureArtifact['diagnostics'] = failedValidations
         .flatMap(
@@ -1425,10 +1829,7 @@ export async function generateCourseMapPrototype(
           ? {
               failureArtifact: {
                 kind: 'course_map_candidate_validation_failed',
-                context: {
-                  courseMapId: analysis.courseMap.id,
-                  sourceAllocationFingerprint: sourceAllocation.fingerprint,
-                },
+                context: {},
                 diagnostics: failureDiagnostics,
               },
             }
@@ -1453,6 +1854,16 @@ export async function generateCourseMapPrototype(
   );
   if (!semantic.valid) {
     throw ProviderError.invalidOutput(semantic.diagnostics.slice(0, 20).join('; '), 'candidate');
+  }
+  const detailPlan = validateAnalysis?.(analysis);
+  if (detailPlan && !detailPlan.valid) {
+    throw ProviderError.invalidOutput(
+      detailPlan.diagnostics.slice(0, 20).join('; '),
+      'candidate',
+      'SEMANTIC_VALIDATION_FAILURE',
+      false,
+      detailPlan.failureArtifact,
+    );
   }
   return { analysis, repairAttempted };
 }

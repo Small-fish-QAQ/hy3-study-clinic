@@ -22,6 +22,7 @@ import {
   type CurriculumProposalResponse,
   type ExecutionSourceManifest,
   type LearningContract,
+  type ObjectiveAuthorityCapabilityRecoveryOrigin,
   type ObjectiveAuthorityRequiredCapabilityPreservation,
   type ProposeCurriculumRequest,
   type RejectCurriculumRequest,
@@ -85,9 +86,12 @@ import {
 import {
   CurriculumDetailBatchPlanningError,
   MAX_DETAIL_BATCHES,
+  assertCurriculumCapabilityRecoveryDetailOutputFeasible,
   assembleCurriculumDetailBatches,
   buildCourseMapDeterministicCoverage,
+  minimumCurriculumDetailObjectiveCount,
   planCurriculumDetailBatches,
+  validateCurriculumDetailPlan,
   validateCurriculumDetailCandidate,
 } from './curriculumMaterialization.js';
 import { visualAwareManifestFingerprint } from './advisoryVisuals.js';
@@ -98,6 +102,7 @@ import {
 } from './curriculumAuthority.js';
 import {
   OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_BATCH,
+  OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES,
   assertCurrentCurriculumObjectiveAuthoritySemanticSupport,
   attachObjectiveAuthoritySemanticSupport,
   buildObjectiveAuthoritySemanticEvaluationBatches,
@@ -111,6 +116,15 @@ import {
   prepareObjectiveAuthoritySemanticRepair,
   validateObjectiveAuthoritySemanticRepairProposal,
 } from './objectiveAuthoritySemanticRepair.js';
+import {
+  allocateCurriculumCapabilityRecoveryFrontier,
+  assertCurriculumCapabilityRecoveryLineage,
+  bindMaterializedCurriculumCapabilityRecovery,
+  buildCurriculumCapabilityRecoveryFrontier,
+  reserveCurriculumCapabilityRecoveryEvidence,
+  validateCurriculumCapabilityRecoveryCandidate,
+  type CurriculumCapabilityRecoveryFrontier,
+} from './curriculumCapabilityRecovery.js';
 
 /** HTTP/service request: the server, never the client, resolves exact revisions. */
 export const ProposeCurriculumCommandRequestSchema = ProposeCurriculumRequestSchema.omit({
@@ -165,7 +179,9 @@ export function curriculumGenerationPolicyForOutline(
   return requested;
 }
 /** Initial evaluation, one failed-objective repair, and a fresh full reevaluation. */
-export const CURRICULUM_MAX_OBJECTIVE_AUTHORITY_EVALUATION_BATCHES = 8;
+export const CURRICULUM_MAX_OBJECTIVE_AUTHORITY_EVALUATION_BATCHES =
+  OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES /
+  OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_BATCH;
 export const CURRICULUM_MAX_OBJECTIVE_AUTHORITY_REPAIR_CALLS = 1;
 export const CURRICULUM_MAX_OBJECTIVE_AUTHORITY_LOGICAL_CALLS =
   CURRICULUM_MAX_OBJECTIVE_AUTHORITY_EVALUATION_BATCHES * 2 +
@@ -180,6 +196,60 @@ export const CURRICULUM_OPERATION_LEASE_MS =
 export const COURSE_PREPARATION_POLICY_ID = 'course_preparation_v1';
 export const CURRICULUM_MAX_VISUAL_OFFERS = 24;
 export const CURRICULUM_MAX_SERIALIZED_VISUAL_BYTES = 32_768;
+
+function isCurriculumDetailPlanningDiagnosticCode(code: string): boolean {
+  return (
+    code === 'curriculum_detail_planning_failed' ||
+    code.startsWith('curriculum_detail_') ||
+    code.startsWith('recovery_capability_detail_')
+  );
+}
+
+function curriculumDetailPlanningFailure(error: unknown): {
+  diagnostics: string[];
+  diagnosticCodes: string[];
+} | null {
+  if (error instanceof CurriculumDetailBatchPlanningError) {
+    return {
+      diagnostics: error.diagnostics.slice(0, 20),
+      diagnosticCodes: error.diagnosticCodes.slice(0, 20),
+    };
+  }
+  if (!(error instanceof ProviderError) || error.code !== ApiErrorCode.ProviderInvalidOutput) {
+    return null;
+  }
+  if (!error.details || typeof error.details !== 'object' || Array.isArray(error.details)) {
+    return null;
+  }
+  const candidateFailure = (error.details as Record<string, unknown>).candidateFailure;
+  if (
+    !candidateFailure ||
+    typeof candidateFailure !== 'object' ||
+    Array.isArray(candidateFailure)
+  ) {
+    return null;
+  }
+  const rawDiagnostics = (candidateFailure as Record<string, unknown>).diagnostics;
+  if (!Array.isArray(rawDiagnostics)) return null;
+  const detailDiagnostics = rawDiagnostics.flatMap((raw) => {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return [];
+    const diagnostic = raw as Record<string, unknown>;
+    if (
+      typeof diagnostic.code !== 'string' ||
+      typeof diagnostic.message !== 'string' ||
+      !isCurriculumDetailPlanningDiagnosticCode(diagnostic.code)
+    ) {
+      return [];
+    }
+    return [{ code: diagnostic.code, message: diagnostic.message }];
+  });
+  return detailDiagnostics.length > 0
+    ? {
+        diagnostics: detailDiagnostics.map((diagnostic) => diagnostic.message).slice(0, 20),
+        diagnosticCodes: detailDiagnostics.map((diagnostic) => diagnostic.code).slice(0, 20),
+      }
+    : null;
+}
 
 interface CurriculumVisualCandidate {
   materialTitle: string;
@@ -641,6 +711,49 @@ export function requiresStudyPlanExecutionRepair(
       : null;
   }
   return false;
+}
+
+/**
+ * Nearest accepted execution-repair ancestor whose Contract and complete
+ * source manifest are identical to the candidate operation. Only that narrow
+ * lineage may impose immutable capability-preservation obligations.
+ */
+export function acceptedCurriculumCapabilityRecoveryPredecessor(
+  repos: Repositories,
+  clock: Clock,
+  contract: LearningContract,
+  manifest: ExecutionSourceManifest,
+  predecessor: Curriculum | null,
+  workspaceName: string,
+): Curriculum | null {
+  const visited = new Set<string>();
+  let ancestor = predecessor;
+  while (ancestor && !visited.has(ancestor.id)) {
+    if (ancestor.acceptedAt) {
+      if (
+        ancestor.workspaceId !== contract.workspaceId ||
+        ancestor.contractVersionId !== contract.id ||
+        ancestor.executionSourceManifest.fingerprint !== manifest.fingerprint ||
+        JSON.stringify(ancestor.executionSourceManifest) !== JSON.stringify(manifest)
+      ) {
+        return null;
+      }
+      return preflightStudyPlan(repos, clock, contract, ancestor, workspaceName).canGenerate
+        ? null
+        : ancestor;
+    }
+    visited.add(ancestor.id);
+    ancestor = ancestor.predecessorId
+      ? (repos.curricula.get(ancestor.predecessorId) ?? null)
+      : null;
+  }
+  return null;
+}
+
+function nonEmptyCurriculumCapabilityRecoveryFrontier(
+  frontier: CurriculumCapabilityRecoveryFrontier,
+): CurriculumCapabilityRecoveryFrontier | null {
+  return frontier.requirements.length > 0 ? frontier : null;
 }
 
 function executionRepairErrors(preflight: StudyPlanPreflight): string[] {
@@ -1113,13 +1226,23 @@ export function createCurriculumService({
       commands.fail(claim, error);
       throw error;
     }
-    const executionRepairRequired = requiresStudyPlanExecutionRepair(
+    const statusBasedExecutionRepairRequired = requiresStudyPlanExecutionRepair(
       repos,
       clock,
       contract,
       predecessor,
       workspace.name,
     );
+    const capabilityRecoveryPredecessor = acceptedCurriculumCapabilityRecoveryPredecessor(
+      repos,
+      clock,
+      contract,
+      context.manifest,
+      predecessor,
+      workspace.name,
+    );
+    const executionRepairRequired =
+      statusBasedExecutionRepairRequired || capabilityRecoveryPredecessor !== null;
     if (executionRepairRequired) {
       const recovery = assessCurriculumRecovery(repos, contract, {
         remediationRequired: true,
@@ -1164,7 +1287,7 @@ export function createCurriculumService({
     ];
     let evidenceCatalog: ReturnType<typeof selectCurriculumEvidenceOffers>;
     try {
-      evidenceCatalog = selectCurriculumEvidenceOffers({
+      const selectedEvidenceCatalog = selectCurriculumEvidenceOffers({
         catalog: fullEvidenceCatalog,
         blocks: context.blocks,
         predecessor,
@@ -1175,9 +1298,33 @@ export function createCurriculumService({
         sourceMap,
         policy: CURRICULUM_EVIDENCE_PRODUCTION_POLICY,
       });
+      evidenceCatalog = capabilityRecoveryPredecessor
+        ? reserveCurriculumCapabilityRecoveryEvidence({
+            predecessor: capabilityRecoveryPredecessor,
+            fullEvidenceCatalog,
+            selectedEvidenceCatalog,
+          })
+        : selectedEvidenceCatalog;
     } catch (error) {
       commands.fail(claim, error);
       throw error;
+    }
+    let capabilityRecoveryFrontier: CurriculumCapabilityRecoveryFrontier | null = null;
+    if (capabilityRecoveryPredecessor) {
+      try {
+        capabilityRecoveryFrontier = nonEmptyCurriculumCapabilityRecoveryFrontier(
+          buildCurriculumCapabilityRecoveryFrontier({
+            predecessor: capabilityRecoveryPredecessor,
+            contract,
+            manifest: context.manifest,
+            sourceBlocks: context.blocks,
+            evidenceCatalog,
+          }),
+        );
+      } catch (error) {
+        commands.fail(claim, error);
+        throw error;
+      }
     }
     const legacyAuthorityEnvelopes = [
       ...buildAuthorityEnvelopeMap(
@@ -1200,6 +1347,9 @@ export function createCurriculumService({
       allowedCanonicalConceptIds,
       canonicalConcepts,
       predecessor,
+      ...(capabilityRecoveryFrontier
+        ? { capabilityRecovery: { requirements: capabilityRecoveryFrontier.requirements } }
+        : {}),
       blocks: context.blocks,
       evidenceCatalog,
       authorityEnvelopes: legacyAuthorityEnvelopes,
@@ -1242,6 +1392,10 @@ export function createCurriculumService({
       authorityBundles: context.authorityBundles,
       isAuthorityBlockingEligible: (id) => repos.sourceAuthority.isBlockingEligible(id),
     };
+    const recoveryFencedSourceFingerprint = (fingerprint: string): string =>
+      capabilityRecoveryFrontier
+        ? `${fingerprint}:${capabilityRecoveryFrontier.fingerprint}`
+        : fingerprint;
     let repairAttempted = false;
     let lastCandidateValidation: MaterializedCurriculum | null = null;
     let semanticSourceRegions: CurriculumSemanticSourceRegion[] = sourceMap.materials.flatMap(
@@ -1256,6 +1410,48 @@ export function createCurriculumService({
           charCount: section.charCount,
         })),
     );
+    const assertCapabilityRecoverySnapshotCurrent = (): void => {
+      try {
+        const currentLatest = repos.curricula.list(parsed.command.workspaceId).at(-1) ?? null;
+        const currentPredecessor = acceptedCurriculumCapabilityRecoveryPredecessor(
+          repos,
+          clock,
+          contract,
+          context.manifest,
+          currentLatest,
+          workspace.name,
+        );
+        const currentFrontier = currentPredecessor
+          ? nonEmptyCurriculumCapabilityRecoveryFrontier(
+              buildCurriculumCapabilityRecoveryFrontier({
+                predecessor: currentPredecessor,
+                contract,
+                manifest: context.manifest,
+                sourceBlocks: context.blocks,
+                evidenceCatalog,
+              }),
+            )
+          : null;
+        if (
+          currentFrontier?.predecessorCurriculumId !==
+            capabilityRecoveryFrontier?.predecessorCurriculumId ||
+          currentFrontier?.predecessorCurriculumVersion !==
+            capabilityRecoveryFrontier?.predecessorCurriculumVersion ||
+          currentFrontier?.fingerprint !== capabilityRecoveryFrontier?.fingerprint
+        ) {
+          throw new AppError(
+            ApiErrorCode.VersionConflict,
+            'The accepted Curriculum recovery frontier changed while the successor proposal was running.',
+          );
+        }
+      } catch (error) {
+        if (error instanceof AppError && error.code === ApiErrorCode.VersionConflict) throw error;
+        throw new AppError(
+          ApiErrorCode.VersionConflict,
+          'The accepted Curriculum recovery frontier changed while the successor proposal was running.',
+        );
+      }
+    };
     let assertGenerationSnapshotCurrent = (): void => {
       if (opts?.signal?.aborted) throw ProviderError.cancelled();
       assertProposalAuthorityCurrent(
@@ -1265,6 +1461,7 @@ export function createCurriculumService({
         context.manifest,
         offeredKnowledge.fingerprint,
       );
+      assertCapabilityRecoverySnapshotCurrent();
     };
     try {
       const enforceCurrentCostPolicy = (): string | null =>
@@ -1282,7 +1479,18 @@ export function createCurriculumService({
           string,
           ObjectiveAuthorityRequiredCapabilityPreservation
         >,
+        recoveryOriginByObjectiveId?: ReadonlyMap<
+          string,
+          ObjectiveAuthorityCapabilityRecoveryOrigin
+        >,
       ) => {
+        for (const objectiveId of recoveryOriginByObjectiveId?.keys() ?? []) {
+          if (!requiredCapabilityPreservationByObjectiveId?.has(objectiveId)) {
+            throw new Error(
+              `Curriculum recovery origin lacks a capability-preservation requirement: ${objectiveId}`,
+            );
+          }
+        }
         const batches = buildObjectiveAuthoritySemanticEvaluationBatches(
           {
             nodes: candidate.nodes,
@@ -1311,9 +1519,7 @@ export function createCurriculumService({
                 (count, batch) => count + batch.input.objectives.length,
                 0,
               ),
-              maxObjectives:
-                CURRICULUM_MAX_OBJECTIVE_AUTHORITY_EVALUATION_BATCHES *
-                OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_BATCH,
+              maxObjectives: OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES,
               batchSize: OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_BATCH,
               maxBatches: CURRICULUM_MAX_OBJECTIVE_AUTHORITY_EVALUATION_BATCHES,
             },
@@ -1349,7 +1555,9 @@ export function createCurriculumService({
             operationType: 'propose_curriculum',
             schemaFingerprint: 'objective-authority-semantic-evaluation-v1',
             policyFingerprint,
-            sourceFingerprint: objectiveAuthoritySemanticEvaluationSourceFingerprint(batch),
+            sourceFingerprint: recoveryFencedSourceFingerprint(
+              objectiveAuthoritySemanticEvaluationSourceFingerprint(batch),
+            ),
             providerOptions: opts,
             invoke: (options) =>
               inferenceProvider.evaluateObjectiveAuthoritySupport(structuredClone(batch.input), {
@@ -1377,6 +1585,7 @@ export function createCurriculumService({
             providerModel:
               provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
             evaluatedAt: clock.now().toISOString(),
+            recoveryOriginByObjectiveId,
           });
           firstPass.push({ batch, proposal });
           for (const [objectiveId, support] of evaluated) {
@@ -1420,10 +1629,10 @@ export function createCurriculumService({
           operationType: 'propose_curriculum',
           schemaFingerprint: 'curriculum-proposal-v2-evidence-identity',
           policyFingerprint,
-          sourceFingerprint: context.manifest.fingerprint,
+          sourceFingerprint: recoveryFencedSourceFingerprint(context.manifest.fingerprint),
           providerOptions: opts,
           invoke: (options) =>
-            inferenceProvider.proposeCurriculum(providerInput, {
+            inferenceProvider.proposeCurriculum(structuredClone(providerInput), {
               ...options,
               timeoutMs: providerTimeoutMs,
               onRepairAttempt: (reason, category) => {
@@ -1435,6 +1644,10 @@ export function createCurriculumService({
               validateCandidate: (candidate) => {
                 assertGenerationSnapshotCurrent();
                 const candidateValue = candidate as CurriculumProposalPayload;
+                const capabilityRecoveryValidation = validateCurriculumCapabilityRecoveryCandidate(
+                  candidateValue,
+                  capabilityRecoveryFrontier,
+                );
                 lastCandidateValidation = validateExecutionRepairCandidate({
                   repos,
                   clock,
@@ -1451,21 +1664,29 @@ export function createCurriculumService({
                 return {
                   valid:
                     lastCandidateValidation.validation.valid &&
-                    lastCandidateValidation.authorityCritiques.length === 0,
+                    lastCandidateValidation.authorityCritiques.length === 0 &&
+                    capabilityRecoveryValidation.valid,
                   diagnostics: [
                     ...lastCandidateValidation.validation.errors,
                     ...authorityDiagnostics,
+                    ...capabilityRecoveryValidation.diagnostics,
                   ].slice(0, 100),
                   diagnosticCodes:
                     lastCandidateValidation.validation.valid &&
-                    lastCandidateValidation.authorityCritiques.length === 0
+                    lastCandidateValidation.authorityCritiques.length === 0 &&
+                    capabilityRecoveryValidation.valid
                       ? []
                       : [
                           'curriculum_candidate_invalid',
                           ...(lastCandidateValidation.authorityCritiques.length > 0
                             ? ['required_objective_formal_authority_missing']
                             : []),
+                          ...(capabilityRecoveryValidation.diagnosticCodes ?? []),
                         ],
+                  ...(!capabilityRecoveryValidation.valid &&
+                  capabilityRecoveryValidation.failureArtifact
+                    ? { failureArtifact: capabilityRecoveryValidation.failureArtifact }
+                    : {}),
                 };
               },
             }),
@@ -1477,12 +1698,32 @@ export function createCurriculumService({
           blocks: context.blocks,
           evidenceCatalog,
         });
+        const capabilityRecoveryRequirements = capabilityRecoveryFrontier
+          ? allocateCurriculumCapabilityRecoveryFrontier(
+              capabilityRecoveryFrontier,
+              sourceAllocation,
+              evidenceCatalog,
+            )
+          : [];
         const authorityEnvelopesByRegionId = buildAuthorityEnvelopeMap(
           sourceAllocation.regions,
           evidenceCatalog,
           context,
           repos,
         );
+        const authorityEnvelopesByEvidenceId = buildEvidenceAuthorityEnvelopeMap(
+          evidenceCatalog,
+          context,
+          repos,
+        );
+        assertCurriculumCapabilityRecoveryDetailOutputFeasible(capabilityRecoveryRequirements, {
+          workspaceName: workspace.name,
+          contract: context.contractContext,
+          sourceAllocation,
+          evidenceCatalog,
+          authorityEnvelopesBySourceAllocationRegionId: authorityEnvelopesByRegionId,
+          authorityEnvelopesByEvidenceId,
+        });
         const courseMapProviderInput = buildCourseMapProposalInput({
           workspaceName: workspace.name,
           contract: context.contractContext,
@@ -1490,6 +1731,8 @@ export function createCurriculumService({
           concepts,
           canonicalConcepts,
           authorityEnvelopesByRegionId,
+          capabilityRecoveryRequirements,
+          evidenceCatalog,
         });
         assertGenerationSnapshotCurrent = (): void => {
           if (opts?.signal?.aborted) throw ProviderError.cancelled();
@@ -1533,6 +1776,7 @@ export function createCurriculumService({
               'Course Map source allocation changed while the Curriculum proposal was running.',
             );
           }
+          assertCapabilityRecoverySnapshotCurrent();
         };
         assertGenerationSnapshotCurrent();
         const courseMapPolicyFingerprint = enforceCurrentCostPolicy();
@@ -1550,7 +1794,7 @@ export function createCurriculumService({
           operationType: 'propose_curriculum',
           schemaFingerprint: 'course-map-proposal-v2-local-refs',
           policyFingerprint: courseMapPolicyFingerprint,
-          sourceFingerprint: sourceAllocation.fingerprint,
+          sourceFingerprint: recoveryFencedSourceFingerprint(sourceAllocation.fingerprint),
           providerOptions: opts,
           invoke: (options) =>
             generateCourseMapPrototype(
@@ -1558,6 +1802,27 @@ export function createCurriculumService({
                 provider: inferenceProvider,
                 providerInput: courseMapProviderInput,
                 sourceAllocation,
+                validateAnalysis: (analysis) => {
+                  assertGenerationSnapshotCurrent();
+                  return validateCurriculumDetailPlan({
+                    workspaceName: workspace.name,
+                    contract: context.contractContext,
+                    courseMap: analysis.courseMap,
+                    sourceAllocation,
+                    evidenceCatalog,
+                    concepts,
+                    canonicalConcepts,
+                    authorityEnvelopesByRegionId: buildCourseMapRegionAuthorityEnvelopeMap(
+                      analysis.courseMap,
+                      sourceAllocation,
+                      evidenceCatalog,
+                      context,
+                      repos,
+                    ),
+                    authorityEnvelopesByEvidenceId,
+                    capabilityRecoveryRequirements,
+                  });
+                },
               },
               {
                 ...options,
@@ -1587,18 +1852,58 @@ export function createCurriculumService({
             context,
             repos,
           ),
-          authorityEnvelopesByEvidenceId: buildEvidenceAuthorityEnvelopeMap(
-            evidenceCatalog,
-            context,
-            repos,
-          ),
+          authorityEnvelopesByEvidenceId,
+          capabilityRecoveryRequirements,
         });
         const completedBatches: Array<{
           input: (typeof detailBatches)[number]['input'];
           payload: CurriculumDetailProposalPayload;
         }> = [];
-        for (const batch of detailBatches) {
+        for (const [batchIndex, batch] of detailBatches.entries()) {
           assertGenerationSnapshotCurrent();
+          const completedObjectiveCount = completedBatches.reduce(
+            (count, completed) =>
+              count +
+              completed.payload.units.reduce(
+                (batchCount, unit) => batchCount + unit.objectives.length,
+                0,
+              ),
+            0,
+          );
+          const remainingObjectiveMinimum = detailBatches
+            .slice(batchIndex + 1)
+            .reduce(
+              (count, remaining) =>
+                count +
+                minimumCurriculumDetailObjectiveCount(
+                  remaining.input.regions,
+                  remaining.input.contract.targetOutcome.description,
+                ),
+              0,
+            );
+          const maxObjectivesTotal =
+            OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES -
+            completedObjectiveCount -
+            remainingObjectiveMinimum;
+          const currentObjectiveMinimum = minimumCurriculumDetailObjectiveCount(
+            batch.input.regions,
+            batch.input.contract.targetOutcome.description,
+          );
+          if (maxObjectivesTotal < currentObjectiveMinimum) {
+            throw new CurriculumDetailBatchPlanningError(
+              [
+                `Curriculum detail batch ${batchIndex + 1} cannot reserve every current and remaining recovery objective within the global semantic-evaluation ceiling.`,
+              ],
+              ['curriculum_detail_objective_authority_semantic_budget_exceeded'],
+            );
+          }
+          const detailInput = {
+            ...batch.input,
+            limits: {
+              ...batch.input.limits,
+              maxObjectivesTotal,
+            },
+          };
           const detailPolicyFingerprint = enforceCurrentCostPolicy();
           const detailPayload = await runTrackedAgentProviderOperation({
             repos,
@@ -1615,10 +1920,12 @@ export function createCurriculumService({
             operationType: 'propose_curriculum',
             schemaFingerprint: 'curriculum-detail-proposal-v1',
             policyFingerprint: detailPolicyFingerprint,
-            sourceFingerprint: `${sourceAllocation.fingerprint}:${batch.input.batchKey}`,
+            sourceFingerprint: recoveryFencedSourceFingerprint(
+              `${sourceAllocation.fingerprint}:${detailInput.batchKey}:objective-budget-${maxObjectivesTotal}`,
+            ),
             providerOptions: opts,
             invoke: (options) =>
-              inferenceProvider.proposeCurriculumDetails(batch.input, {
+              inferenceProvider.proposeCurriculumDetails(structuredClone(detailInput), {
                 ...options,
                 timeoutMs: providerTimeoutMs,
                 onRepairAttempt: (reason, category) => {
@@ -1629,11 +1936,11 @@ export function createCurriculumService({
                 },
                 validateCandidate: (candidate) => {
                   assertGenerationSnapshotCurrent();
-                  return validateCurriculumDetailCandidate(candidate, batch.input);
+                  return validateCurriculumDetailCandidate(candidate, detailInput);
                 },
               }),
           });
-          completedBatches.push({ input: batch.input, payload: detailPayload });
+          completedBatches.push({ input: detailInput, payload: detailPayload });
         }
         const assembly = assembleCurriculumDetailBatches(
           courseMapResult.analysis.courseMap,
@@ -1666,6 +1973,21 @@ export function createCurriculumService({
         expectedRegionCount = assembly.regionCount;
         expectedPrerequisiteCount = assembly.prerequisiteCount;
         requiredExecutionPreflight = true;
+      }
+      const capabilityRecoveryCandidateValidation = validateCurriculumCapabilityRecoveryCandidate(
+        payload,
+        capabilityRecoveryFrontier,
+      );
+      if (!capabilityRecoveryCandidateValidation.valid) {
+        throw new AppError(
+          ApiErrorCode.GroundingFailed,
+          'The successor Curriculum did not preserve its immutable predecessor capability frontier.',
+          {
+            kind: 'curriculum_capability_recovery_candidate_invalid',
+            diagnosticCodes: capabilityRecoveryCandidateValidation.diagnosticCodes ?? [],
+            diagnostics: capabilityRecoveryCandidateValidation.diagnostics.slice(0, 20),
+          },
+        );
       }
       let materialized = validateExecutionRepairCandidate({
         repos,
@@ -1702,9 +2024,16 @@ export function createCurriculumService({
       }
       lastCandidateValidation = materialized;
       assertValidMaterializedCurriculum(materialized, repairAttempted);
+      let materializedCapabilityRecovery = bindMaterializedCurriculumCapabilityRecovery({
+        candidate: payload,
+        objectiveIdByProposalKey: materialized.objectiveIdByProposalKey ?? new Map(),
+        frontier: capabilityRecoveryFrontier,
+      });
       const objectiveAuthorityEvaluation = await evaluateObjectiveAuthority(
         materialized,
         'initial',
+        materializedCapabilityRecovery.requiredCapabilityPreservationByObjectiveId,
+        materializedCapabilityRecovery.recoveryOriginByObjectiveId,
       );
       materialized = objectiveAuthorityEvaluation.materialized;
       if (objectiveAuthorityEvaluation.failedObjectiveIds.length > 0) {
@@ -1712,6 +2041,10 @@ export function createCurriculumService({
           candidate: payload,
           objectiveIdByProposalKey: materialized.objectiveIdByProposalKey ?? new Map(),
           firstPass: objectiveAuthorityEvaluation.firstPass,
+          requiredCapabilityPreservationByObjectiveId:
+            materializedCapabilityRecovery.requiredCapabilityPreservationByObjectiveId,
+          recoveryEvidenceScopeByObjectiveId:
+            materializedCapabilityRecovery.repairEvidenceScopeByObjectiveId,
           context: {
             workspaceId: parsed.command.workspaceId,
             evidenceCatalog: validationContext.evidenceCatalog,
@@ -1756,7 +2089,9 @@ export function createCurriculumService({
           operationType: 'propose_curriculum',
           schemaFingerprint: 'objective-authority-semantic-repair-v1',
           policyFingerprint: repairPolicyFingerprint,
-          sourceFingerprint: objectiveAuthoritySemanticRepairSourceFingerprint(repairBatch),
+          sourceFingerprint: recoveryFencedSourceFingerprint(
+            objectiveAuthoritySemanticRepairSourceFingerprint(repairBatch),
+          ),
           providerOptions: opts,
           invoke: (options) =>
             inferenceProvider.repairObjectiveAuthoritySupport(structuredClone(repairBatch.input), {
@@ -1794,6 +2129,22 @@ export function createCurriculumService({
           );
         }
         payload = application.payload;
+        const repairedCapabilityRecoveryValidation = validateCurriculumCapabilityRecoveryCandidate(
+          payload,
+          capabilityRecoveryFrontier,
+        );
+        if (!repairedCapabilityRecoveryValidation.valid) {
+          throw new AppError(
+            ApiErrorCode.GroundingFailed,
+            'The bounded repair changed the immutable predecessor capability frontier.',
+            {
+              kind: 'curriculum_capability_recovery_repair_invalid',
+              diagnosticCodes: repairedCapabilityRecoveryValidation.diagnosticCodes ?? [],
+              diagnostics: repairedCapabilityRecoveryValidation.diagnostics.slice(0, 20),
+              repairAttempted: true,
+            },
+          );
+        }
         materialized = validateExecutionRepairCandidate({
           repos,
           clock,
@@ -1805,6 +2156,11 @@ export function createCurriculumService({
         });
         lastCandidateValidation = materialized;
         assertValidMaterializedCurriculum(materialized, repairAttempted);
+        materializedCapabilityRecovery = bindMaterializedCurriculumCapabilityRecovery({
+          candidate: payload,
+          objectiveIdByProposalKey: materialized.objectiveIdByProposalKey ?? new Map(),
+          frontier: capabilityRecoveryFrontier,
+        });
         const requiredCapabilityPreservationByObjectiveId = new Map<
           string,
           ObjectiveAuthorityRequiredCapabilityPreservation
@@ -1827,10 +2183,29 @@ export function createCurriculumService({
           }
           requiredCapabilityPreservationByObjectiveId.set(objectiveId, requirement);
         }
+        for (const [
+          objectiveId,
+          requirement,
+        ] of materializedCapabilityRecovery.requiredCapabilityPreservationByObjectiveId) {
+          const existing = requiredCapabilityPreservationByObjectiveId.get(objectiveId);
+          if (existing && JSON.stringify(existing) !== JSON.stringify(requirement)) {
+            throw new AppError(
+              ApiErrorCode.GroundingFailed,
+              'The repaired objective changed its predecessor capability-preservation requirement.',
+              {
+                kind: 'objective_authority_semantic_preservation_requirement_mismatch',
+                objectiveId,
+                repairAttempted: true,
+              },
+            );
+          }
+          requiredCapabilityPreservationByObjectiveId.set(objectiveId, requirement);
+        }
         const freshEvaluation = await evaluateObjectiveAuthority(
           materialized,
           'post_repair',
           requiredCapabilityPreservationByObjectiveId,
+          materializedCapabilityRecovery.recoveryOriginByObjectiveId,
         );
         materialized = freshEvaluation.materialized;
         if (freshEvaluation.failedObjectiveIds.length > 0) {
@@ -1867,6 +2242,7 @@ export function createCurriculumService({
         isBlockingEligible: (authorityRecordId) =>
           repos.sourceAuthority.isBlockingEligible(authorityRecordId),
       });
+      assertCurriculumCapabilityRecoveryLineage(curriculum, capabilityRecoveryFrontier);
       const semantic = evaluateCurriculumSemantics({
         curriculum,
         sourceMapFingerprint: sourceMap.fingerprint,
@@ -1903,18 +2279,27 @@ export function createCurriculumService({
           curriculum.executionSourceManifest,
           now,
         );
-        const stored = repos.curricula.createVersion(curriculum, {
-          id: newId('curriculum_evt'),
-          eventType: 'proposed',
-          actor: parsed.command.actor,
-          payload: {
-            contractId: contract.id,
-            manifestFingerprint: context.manifest.fingerprint,
-            generationOperationId: claim.operationId,
-            ...(opts?.preparationPolicyId ? { preparationPolicyId: opts.preparationPolicyId } : {}),
+        const stored = repos.curricula.createVersion(
+          curriculum,
+          {
+            id: newId('curriculum_evt'),
+            eventType: 'proposed',
+            actor: parsed.command.actor,
+            payload: {
+              contractId: contract.id,
+              manifestFingerprint: context.manifest.fingerprint,
+              generationOperationId: claim.operationId,
+              ...(opts?.preparationPolicyId
+                ? { preparationPolicyId: opts.preparationPolicyId }
+                : {}),
+            },
+            createdAt: now,
           },
-          createdAt: now,
-        });
+          {
+            capabilityRecoveryPredecessorId:
+              capabilityRecoveryFrontier?.predecessorCurriculumId ?? null,
+          },
+        );
         coverageRisks.seedCurriculum(contract, stored);
         return CurriculumProposalResponseSchema.parse({
           curriculum: stored,
@@ -1936,14 +2321,16 @@ export function createCurriculumService({
           },
         );
       }
-      if (error instanceof CurriculumDetailBatchPlanningError) {
+      const detailPlanningFailure = curriculumDetailPlanningFailure(error);
+      if (detailPlanningFailure) {
         failure = new AppError(
           ApiErrorCode.ValidationError,
           '当前课程结构无法在固定的详细规划预算内完成，本次没有修改现有课程结构。',
           {
             kind: 'curriculum_detail_batch_bound_exceeded',
             maxDetailBatches: MAX_DETAIL_BATCHES,
-            diagnostics: error.diagnostics.slice(0, 20),
+            diagnostics: detailPlanningFailure.diagnostics,
+            diagnosticCodes: detailPlanningFailure.diagnosticCodes,
           },
         );
       }
@@ -2050,7 +2437,17 @@ export function createCurriculumService({
         ? (repos.curricula.get(current.predecessorId) ?? null)
         : null;
       const workspaceName = repos.workspaces.get(current.workspaceId)?.name ?? 'Course';
-      if (requiresStudyPlanExecutionRepair(repos, clock, contract, predecessor, workspaceName)) {
+      const executionRepairRequired =
+        requiresStudyPlanExecutionRepair(repos, clock, contract, predecessor, workspaceName) ||
+        acceptedCurriculumCapabilityRecoveryPredecessor(
+          repos,
+          clock,
+          contract,
+          current.executionSourceManifest,
+          predecessor,
+          workspaceName,
+        ) !== null;
+      if (executionRepairRequired) {
         const preflight = preflightStudyPlan(repos, clock, contract, current, workspaceName);
         const errors = executionRepairErrors(preflight);
         if (errors.length > 0) {
@@ -2075,13 +2472,10 @@ export function createCurriculumService({
               repos.sourceAuthority.isBlockingEligible(authorityRecordId),
           },
         );
-        if (
-          parsed.acceptanceBasis === 'explicit_local_policy' &&
-          repos.curricula.list(current.workspaceId).at(-1)?.id !== current.id
-        ) {
+        if (repos.curricula.list(current.workspaceId).at(-1)?.id !== current.id) {
           throw new AppError(
             ApiErrorCode.VersionConflict,
-            'Prepared Curriculum candidate is no longer the latest version.',
+            'Curriculum is no longer the latest version.',
           );
         }
         const accepted = repos.curricula.accept(current.id, clock.now().toISOString(), {

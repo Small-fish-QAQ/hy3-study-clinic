@@ -577,9 +577,30 @@ export type ObjectiveAuthoritySemanticSupportOverreach = z.infer<
   typeof ObjectiveAuthoritySemanticSupportOverreachSchema
 >;
 
+export const ObjectiveAuthorityCapabilityRecoveryOriginSchema = z
+  .object({
+    predecessorCurriculumId: z.string().min(1),
+    predecessorCurriculumVersion: z.number().int().positive(),
+    predecessorLearningUnitId: z.string().min(1),
+    predecessorObjectiveId: z.string().min(1),
+    predecessorPriority: z.enum(['required', 'high', 'normal']),
+    contractVersionId: z.string().min(1),
+    executionSourceManifestFingerprint: z.string().min(1).max(200),
+    sourceEnvelopeFingerprint: z.string().min(1).max(200),
+  })
+  .strict();
+export type ObjectiveAuthorityCapabilityRecoveryOrigin = z.infer<
+  typeof ObjectiveAuthorityCapabilityRecoveryOriginSchema
+>;
+
 export const ObjectiveAuthorityCapabilityPreservationSupportSchema =
   ObjectiveAuthorityCapabilityPreservationBaseSchema.extend({
     originalPropositionFingerprint: z.string().min(1).max(200),
+    /**
+     * Local immutable lineage for same-contract versioned recovery. This is
+     * attached after provider evaluation and is never provider-authored.
+     */
+    recoveryOrigin: ObjectiveAuthorityCapabilityRecoveryOriginSchema.optional(),
   })
     .strict()
     .superRefine(validateCapabilityPreservationConsistency);
@@ -747,6 +768,9 @@ export const ObjectiveAuthoritySemanticRepairObjectiveInputSchema = z
     overreach: z.array(ObjectiveAuthoritySemanticOverreachProposalSchema).max(32),
     verdict: z.literal('fail'),
     rationale: z.string().min(1).max(1_000),
+    /** Original predecessor capability when this is a versioned recovery. */
+    requiredCapabilityPreservation:
+      ObjectiveAuthorityRequiredCapabilityPreservationSchema.optional(),
   })
   .strict()
   .superRefine((objective, ctx) => {

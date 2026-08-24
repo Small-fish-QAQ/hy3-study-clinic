@@ -4,11 +4,17 @@ import {
   ExecutionSourceManifestSchema,
   ObjectiveAuthoritySemanticSupportSchema,
   type Curriculum,
+  type CurriculumObjective,
   type ExecutionSourceManifest,
   type ObjectiveAuthoritySemanticSupport,
 } from '@hy3-clinic/shared';
 import type { SqliteDb } from '../db/database.js';
-import { assertCurriculumObjectiveAuthoritySemanticSupport } from '../services/objectiveAuthoritySemanticSupport.js';
+import { fingerprintCurriculumCapabilitySourceEnvelope } from '../services/curriculumCapabilityRecovery.js';
+import {
+  assertCurriculumObjectiveAuthoritySemanticSupport,
+  curriculumObjectiveProposition,
+  fingerprintObjectiveAuthorityProposition,
+} from '../services/objectiveAuthoritySemanticSupport.js';
 
 interface CurriculumRow {
   id: string;
@@ -47,6 +53,15 @@ export interface CurriculumEventInput {
   createdAt: string;
 }
 
+export interface CurriculumVersionPersistenceContext {
+  /**
+   * Locally computed by CurriculumService before provider work. A non-null
+   * value makes the complete accepted-predecessor capability frontier
+   * mandatory at the atomic persistence boundary.
+   */
+  capabilityRecoveryPredecessorId: string | null;
+}
+
 export interface StoredCurriculumEvent extends CurriculumEventInput {
   curriculumId: string;
   seq: number;
@@ -65,6 +80,13 @@ export class CurriculumExactAuthorityClaimHydrationError extends Error {
   constructor() {
     super('Curriculum references a missing or inexact authority claim ownership.');
     this.name = 'CurriculumExactAuthorityClaimHydrationError';
+  }
+}
+
+export class CurriculumCapabilityRecoveryLineageError extends Error {
+  constructor() {
+    super('Curriculum capability-recovery lineage does not match its accepted predecessor.');
+    this.name = 'CurriculumCapabilityRecoveryLineageError';
   }
 }
 
@@ -220,9 +242,230 @@ export function createCurriculaRepo(db: SqliteDb) {
     });
   }
 
-  function get(id: string): Curriculum | undefined {
-    const row = db.prepare('SELECT * FROM curriculum_versions WHERE id = ?').get(id) as
+  function curriculumRow(id: string): CurriculumRow | undefined {
+    return db.prepare('SELECT * FROM curriculum_versions WHERE id = ?').get(id) as
       CurriculumRow | undefined;
+  }
+
+  function ancestorRows(predecessorId: string | null): ReadonlyMap<string, CurriculumRow> {
+    const visited = new Set<string>();
+    const rows = new Map<string, CurriculumRow>();
+    let currentId = predecessorId;
+    while (currentId) {
+      if (visited.has(currentId)) throw new CurriculumCapabilityRecoveryLineageError();
+      visited.add(currentId);
+      const row = curriculumRow(currentId);
+      if (!row) throw new CurriculumCapabilityRecoveryLineageError();
+      rows.set(row.id, row);
+      currentId = row.predecessor_id;
+    }
+    return rows;
+  }
+
+  function normalizedObjectivePriority(
+    objective: CurriculumObjective,
+  ): 'required' | 'high' | 'normal' | 'optional' {
+    return objective.priority ?? 'normal';
+  }
+
+  function nearestHistoricallyAcceptedAncestor(predecessorId: string | null): CurriculumRow | null {
+    for (const row of ancestorRows(predecessorId).values()) {
+      if (row.accepted_at) return row;
+    }
+    return null;
+  }
+
+  function compatibleRecoveryAncestor(
+    curriculum: Curriculum,
+    row: CurriculumRow | null,
+  ): Curriculum | null {
+    if (!row) return null;
+    const support = getObjectiveSemanticSupport(row.id);
+    const predecessor = hydrate(row, new Map(support.map((entry) => [entry.objectiveId, entry])));
+    return predecessor.workspaceId === curriculum.workspaceId &&
+      predecessor.contractVersionId === curriculum.contractVersionId &&
+      predecessor.executionSourceManifest.fingerprint ===
+        curriculum.executionSourceManifest.fingerprint &&
+      JSON.stringify(predecessor.executionSourceManifest) ===
+        JSON.stringify(curriculum.executionSourceManifest)
+      ? predecessor
+      : null;
+  }
+
+  function requiresOriginatedCapabilityRecovery(
+    curriculum: Curriculum,
+    predecessor: Curriculum,
+  ): boolean {
+    try {
+      assertCurriculumObjectiveAuthoritySemanticSupport(curriculum, {
+        isBlockingEligible: isAuthorityBlockingEligible,
+      });
+    } catch {
+      // Legacy or partially supported successors remain readable so the
+      // ordinary structured-recovery path can diagnose them.
+      return false;
+    }
+    const hasNonOptionalPredecessorCapability = predecessor.nodes.some((node) =>
+      (node.learningUnit?.objectives ?? []).some(
+        (objective) => normalizedObjectivePriority(objective) !== 'optional',
+      ),
+    );
+    if (!hasNonOptionalPredecessorCapability) return false;
+    try {
+      assertCurriculumObjectiveAuthoritySemanticSupport(predecessor, {
+        isBlockingEligible: isAuthorityBlockingEligible,
+      });
+      return false;
+    } catch {
+      return true;
+    }
+  }
+
+  /**
+   * Recovery lineage is locally owned. A shape-valid support payload is not
+   * sufficient: every origin must reconcile exactly with the nearest accepted
+   * ancestor's complete non-optional objective frontier.
+   */
+  function assertCapabilityRecoveryLineage(
+    curriculum: Curriculum,
+    expectedRecoveryPredecessorId?: string | null,
+  ): void {
+    const successorObjectives = curriculum.nodes.flatMap(
+      (node) => node.learningUnit?.objectives ?? [],
+    );
+    const recoveredObjectives = successorObjectives.filter(
+      (objective) => objective.semanticSupport?.capabilityPreservation?.recoveryOrigin,
+    );
+    const preservingObjectives = successorObjectives.filter(
+      (objective) => objective.semanticSupport?.capabilityPreservation,
+    );
+
+    try {
+      const nearestAcceptedRow = nearestHistoricallyAcceptedAncestor(curriculum.predecessorId);
+      const predecessor = compatibleRecoveryAncestor(curriculum, nearestAcceptedRow);
+      if (
+        expectedRecoveryPredecessorId !== undefined &&
+        ((expectedRecoveryPredecessorId === null && recoveredObjectives.length > 0) ||
+          (expectedRecoveryPredecessorId !== null &&
+            (!predecessor || nearestAcceptedRow?.id !== expectedRecoveryPredecessorId)))
+      ) {
+        throw new CurriculumCapabilityRecoveryLineageError();
+      }
+      const requiresRecovery =
+        expectedRecoveryPredecessorId !== undefined && expectedRecoveryPredecessorId !== null
+          ? true
+          : predecessor
+            ? requiresOriginatedCapabilityRecovery(curriculum, predecessor)
+            : false;
+      if (preservingObjectives.length === 0) {
+        if (requiresRecovery) throw new CurriculumCapabilityRecoveryLineageError();
+        return;
+      }
+      if (recoveredObjectives.length === 0) {
+        if (requiresRecovery) {
+          throw new CurriculumCapabilityRecoveryLineageError();
+        }
+        return;
+      }
+      assertCurriculumObjectiveAuthoritySemanticSupport(curriculum);
+      const originPredecessorIds = new Set(
+        recoveredObjectives.map(
+          (objective) =>
+            objective.semanticSupport!.capabilityPreservation!.recoveryOrigin!
+              .predecessorCurriculumId,
+        ),
+      );
+      if (originPredecessorIds.size !== 1) {
+        throw new CurriculumCapabilityRecoveryLineageError();
+      }
+      const predecessorId = [...originPredecessorIds][0]!;
+      if (!predecessor || nearestAcceptedRow?.id !== predecessorId) {
+        throw new CurriculumCapabilityRecoveryLineageError();
+      }
+
+      const expectedByObjectiveId = new Map<
+        string,
+        {
+          node: Curriculum['nodes'][number];
+          objective: CurriculumObjective;
+          priority: 'required' | 'high' | 'normal';
+        }
+      >();
+      for (const node of predecessor.nodes) {
+        for (const objective of node.learningUnit?.objectives ?? []) {
+          const priority = normalizedObjectivePriority(objective);
+          if (priority === 'optional') continue;
+          if (
+            expectedByObjectiveId.has(objective.id) ||
+            !objective.formalAssessmentConstruct ||
+            objective.formalAssessmentConstruct === 'design' ||
+            objective.formalAssessmentConstruct === 'evaluate'
+          ) {
+            throw new CurriculumCapabilityRecoveryLineageError();
+          }
+          expectedByObjectiveId.set(objective.id, { node, objective, priority });
+        }
+      }
+      if (recoveredObjectives.length !== expectedByObjectiveId.size) {
+        throw new CurriculumCapabilityRecoveryLineageError();
+      }
+
+      const seenPredecessorObjectiveIds = new Set<string>();
+      for (const successorObjective of recoveredObjectives) {
+        const support = successorObjective.semanticSupport!;
+        const preservation = support.capabilityPreservation!;
+        const origin = preservation.recoveryOrigin!;
+        const expected = expectedByObjectiveId.get(origin.predecessorObjectiveId);
+        if (!expected || seenPredecessorObjectiveIds.has(origin.predecessorObjectiveId)) {
+          throw new CurriculumCapabilityRecoveryLineageError();
+        }
+        seenPredecessorObjectiveIds.add(origin.predecessorObjectiveId);
+        const proposition = curriculumObjectiveProposition(expected.objective);
+        const allowedSourceBlockIds = new Set(
+          expected.node.sourceReferences.flatMap((reference) =>
+            reference.sourceBlockId ? [reference.sourceBlockId] : [],
+          ),
+        );
+        if (
+          origin.predecessorCurriculumId !== predecessor.id ||
+          origin.predecessorCurriculumVersion !== predecessor.version ||
+          origin.predecessorLearningUnitId !== expected.node.id ||
+          origin.predecessorPriority !== expected.priority ||
+          origin.contractVersionId !== predecessor.contractVersionId ||
+          origin.executionSourceManifestFingerprint !==
+            predecessor.executionSourceManifest.fingerprint ||
+          origin.sourceEnvelopeFingerprint !==
+            fingerprintCurriculumCapabilitySourceEnvelope(expected.node) ||
+          successorObjective.title !== expected.objective.title ||
+          successorObjective.description !== expected.objective.description ||
+          normalizedObjectivePriority(successorObjective) !== expected.priority ||
+          successorObjective.formalAssessmentConstruct !==
+            expected.objective.formalAssessmentConstruct ||
+          support.construct !== expected.objective.formalAssessmentConstruct ||
+          support.verdict !== 'pass' ||
+          support.boundSourceBlockIds.some(
+            (sourceBlockId) => !allowedSourceBlockIds.has(sourceBlockId),
+          ) ||
+          preservation.verdict !== 'pass' ||
+          preservation.originalProposition !== proposition ||
+          preservation.originalPropositionFingerprint !==
+            fingerprintObjectiveAuthorityProposition(proposition) ||
+          preservation.mappings.map((mapping) => mapping.originalText).join('') !== proposition
+        ) {
+          throw new CurriculumCapabilityRecoveryLineageError();
+        }
+      }
+      if (seenPredecessorObjectiveIds.size !== expectedByObjectiveId.size) {
+        throw new CurriculumCapabilityRecoveryLineageError();
+      }
+    } catch (error) {
+      if (error instanceof CurriculumCapabilityRecoveryLineageError) throw error;
+      throw new CurriculumCapabilityRecoveryLineageError();
+    }
+  }
+
+  function get(id: string): Curriculum | undefined {
+    const row = curriculumRow(id);
     if (!row) return undefined;
     return hydrateStoredCurriculum(row);
   }
@@ -692,11 +935,16 @@ export function createCurriculaRepo(db: SqliteDb) {
     if (support.length > 0) {
       validateCurriculum(curriculum, row.manifest_id, { exactAuthorityOnly: true });
     }
+    assertCapabilityRecoveryLineage(curriculum);
     return curriculum;
   }
 
   const createVersionTx = db.transaction(
-    (curriculumInput: Curriculum, event: CurriculumEventInput): Curriculum => {
+    (
+      curriculumInput: Curriculum,
+      event: CurriculumEventInput,
+      persistenceContext: CurriculumVersionPersistenceContext,
+    ): Curriculum => {
       const curriculum = CurriculumSchema.parse(curriculumInput);
       if (curriculum.status === 'accepted') {
         throw new Error('Persist a Curriculum proposal before accepting it.');
@@ -715,6 +963,10 @@ export function createCurriculaRepo(db: SqliteDb) {
       assertCurriculumObjectiveAuthoritySemanticSupport(curriculum, {
         isBlockingEligible: isAuthorityBlockingEligible,
       });
+      assertCapabilityRecoveryLineage(
+        curriculum,
+        persistenceContext.capabilityRecoveryPredecessorId,
+      );
       validateCurriculum(curriculum, manifest.id);
       const latest = db
         .prepare(
@@ -839,6 +1091,15 @@ export function createCurriculaRepo(db: SqliteDb) {
     const current = get(id);
     if (!current || current.status !== 'proposed' || !current.validation.valid) {
       throw new Error('Only a valid proposed Curriculum may be accepted.');
+    }
+    const latest = db
+      .prepare(
+        `SELECT id FROM curriculum_versions
+         WHERE workspace_id = ? ORDER BY version DESC LIMIT 1`,
+      )
+      .get(current.workspaceId) as { id: string } | undefined;
+    if (latest?.id !== current.id) {
+      throw new Error('Only the latest Curriculum version may be accepted.');
     }
     assertCurriculumObjectiveAuthoritySemanticSupport(current, {
       isBlockingEligible: isAuthorityBlockingEligible,

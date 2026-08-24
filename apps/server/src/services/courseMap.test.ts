@@ -189,6 +189,7 @@ describe('Course Map bounded source allocation', () => {
     expect(measured.counts).toEqual({
       sourceRegions: 6,
       evidenceOffers: 6,
+      recoveryEvidenceOffers: 0,
       anchorOptions: 2,
       canonicalAnchorOptions: 1,
     });
@@ -553,5 +554,148 @@ describe('Course Map prerequisite validation', () => {
         (item) => item.code,
       ),
     ).toContain('prerequisite_degree_exceeded');
+  });
+});
+
+describe('Course Map immutable capability recovery placement', () => {
+  function recoveryRequirement(
+    fixture: ReturnType<typeof createCourseMapFixture>,
+    overrides: Partial<{
+      capabilityRef: string;
+      allowedSourceAllocationRegionIds: string[];
+      allowedEvidenceIds: string[];
+    }> = {},
+  ) {
+    return {
+      capabilityRef: overrides.capabilityRef ?? 'legacy-capability-1',
+      title: 'Explain the predecessor capability',
+      description: 'Preserve the exact predecessor relation and learner capability.',
+      originalProposition:
+        'Explain the exact predecessor relation and its complete source-bounded scope.',
+      construct: 'explain' as const,
+      priority: 'required' as const,
+      allowedEvidenceIds: overrides.allowedEvidenceIds ?? [fixture.evidenceCatalog[0]!.id],
+      allowedSourceAllocationRegionIds: overrides.allowedSourceAllocationRegionIds ?? [
+        fixture.sourceAllocation.regions[0]!.id,
+      ],
+    };
+  }
+
+  function recoveryContext(
+    fixture: ReturnType<typeof createCourseMapFixture>,
+    requirements = [recoveryRequirement(fixture)],
+  ) {
+    const providerInput = buildCourseMapProposalInput({
+      workspaceName: fixture.providerInput.workspaceName,
+      contract: fixture.providerInput.contract,
+      sourceAllocation: fixture.sourceAllocation,
+      concepts: fixture.concepts,
+      canonicalConcepts: fixture.canonicalConcepts,
+      capabilityRecoveryRequirements: requirements,
+      evidenceCatalog: fixture.evidenceCatalog,
+    });
+    return { sourceAllocation: fixture.sourceAllocation, providerInput };
+  }
+
+  it('exposes aliases and eligible source refs while retaining exact placement locally', () => {
+    const fixture = createCourseMapFixture();
+    const requirement = recoveryRequirement(fixture, {
+      allowedSourceAllocationRegionIds: [
+        fixture.sourceAllocation.regions[0]!.id,
+        fixture.sourceAllocation.regions[1]!.id,
+      ],
+      allowedEvidenceIds: [
+        fixture.sourceAllocation.regions[0]!.evidence[0]!.evidenceId,
+        fixture.sourceAllocation.regions[1]!.evidence[0]!.evidenceId,
+      ],
+    });
+    const context = recoveryContext(fixture, [requirement]);
+    expect(context.providerInput.capabilityRecovery?.requirements).toEqual([
+      expect.objectContaining({
+        capabilityRef: requirement.capabilityRef,
+        allowedSourceRegionRefs: ['R1', 'R2'],
+        allowedRecoveryEvidenceRefs: ['CE1', 'CE2'],
+      }),
+    ]);
+    expect(context.providerInput.capabilityRecovery?.evidenceOffers).toEqual([
+      expect.objectContaining({ recoveryEvidenceRef: 'CE1', sourceRegionRef: 'R1' }),
+      expect.objectContaining({ recoveryEvidenceRef: 'CE2', sourceRegionRef: 'R2' }),
+    ]);
+    expect(JSON.stringify(context.providerInput.capabilityRecovery)).not.toContain('evidenceId');
+    expect(JSON.stringify(context.providerInput.capabilityRecovery)).not.toContain(
+      requirement.allowedSourceAllocationRegionIds[0],
+    );
+
+    const candidate = structuredClone(fixture.good);
+    candidate.modules[0]!.regions[0]!.capabilityRequirementRefs = [requirement.capabilityRef];
+    const analysis = analyzeCourseMapProposal(candidate, context);
+    expect(analysis.validation.valid).toBe(true);
+    expect(analysis.courseMap.modules[0]!.regions[0]!.capabilityRequirementRefs).toEqual([
+      requirement.capabilityRef,
+    ]);
+  });
+
+  it('rejects missing, duplicate, foreign, and out-of-envelope placements', () => {
+    const fixture = createCourseMapFixture();
+    const requirement = recoveryRequirement(fixture);
+    const context = recoveryContext(fixture, [requirement]);
+
+    const missing = analyzeCourseMapProposal(fixture.good, context);
+    expect(missing.validation.diagnostics.map((item) => item.code)).toContain(
+      'recovery_capability_missing',
+    );
+
+    const duplicate = structuredClone(fixture.good);
+    duplicate.modules[0]!.regions[0]!.capabilityRequirementRefs = [requirement.capabilityRef];
+    duplicate.modules[0]!.regions[1]!.capabilityRequirementRefs = [requirement.capabilityRef];
+    expect(() => analyzeCourseMapProposal(duplicate, context)).toThrow(
+      /duplicate Course Map capability requirement/u,
+    );
+
+    const foreign = structuredClone(fixture.good);
+    foreign.modules[0]!.regions[0]!.capabilityRequirementRefs = ['foreign-capability'];
+    expect(
+      analyzeCourseMapProposal(foreign, context).validation.diagnostics.map((item) => item.code),
+    ).toEqual(
+      expect.arrayContaining(['recovery_capability_unknown', 'recovery_capability_missing']),
+    );
+
+    const narrowContext = recoveryContext(fixture);
+    const outside = structuredClone(fixture.good);
+    outside.modules[0]!.regions[1]!.capabilityRequirementRefs = [requirement.capabilityRef];
+    expect(
+      analyzeCourseMapProposal(outside, narrowContext).validation.diagnostics.map(
+        (item) => item.code,
+      ),
+    ).toContain('recovery_capability_outside_source_envelope');
+
+    const ordinary = structuredClone(fixture.good);
+    ordinary.modules[0]!.regions[0]!.capabilityRequirementRefs = [requirement.capabilityRef];
+    expect(
+      analyzeCourseMapProposal(ordinary, fixture).validation.diagnostics.map((item) => item.code),
+    ).toContain('recovery_capability_unknown');
+  });
+
+  it('fails before provider work when source scope is foreign or placement capacity is impossible', () => {
+    const fixture = createCourseMapFixture();
+    expect(() =>
+      recoveryContext(fixture, [
+        recoveryRequirement(fixture, {
+          allowedSourceAllocationRegionIds: ['foreign-source-allocation'],
+        }),
+      ]),
+    ).toThrow(/unknown source allocation/u);
+
+    const overCapacity = Array.from({ length: 5 }, (_, index) =>
+      recoveryRequirement(fixture, { capabilityRef: `legacy-capability-${index + 1}` }),
+    );
+    expect(() => recoveryContext(fixture, overCapacity)).toThrow(/four-objective region capacity/u);
+
+    const staleProviderContext = recoveryContext(fixture);
+    staleProviderContext.providerInput.capabilityRecovery!.requirements[0]!.allowedSourceRegionRefs =
+      ['R999'];
+    expect(() => analyzeCourseMapProposal(fixture.good, staleProviderContext)).toThrow(
+      /unknown source region/u,
+    );
   });
 });

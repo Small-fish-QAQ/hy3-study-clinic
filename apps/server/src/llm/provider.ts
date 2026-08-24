@@ -755,6 +755,24 @@ export interface CurriculumCanonicalConceptOffer {
   sourceConceptIds: string[];
 }
 
+/**
+ * Bounded provider-visible alias for one non-optional predecessor capability.
+ * Persistent predecessor identities remain in local service bindings.
+ */
+export interface CurriculumCapabilityRecoveryRequirementInput {
+  capabilityRef: string;
+  title: string;
+  description: string;
+  originalProposition: string;
+  construct: FormalAssessmentConstruct;
+  priority: 'required' | 'high' | 'normal';
+  allowedEvidenceIds: string[];
+}
+
+export interface CurriculumCapabilityRecoveryInput {
+  requirements: CurriculumCapabilityRecoveryRequirementInput[];
+}
+
 export interface CurriculumProposalInput {
   workspaceName: string;
   contract: CurriculumContractContext;
@@ -769,6 +787,8 @@ export interface CurriculumProposalInput {
   canonicalConcepts: CurriculumCanonicalConceptOffer[];
   /** Accepted predecessor used only as compact semantic/locality context. */
   predecessor: Curriculum | null;
+  /** Present only for same-contract, same-manifest immutable recovery. */
+  capabilityRecovery?: CurriculumCapabilityRecoveryInput;
   /** Source blocks remain local provider input; output cannot quote them directly. */
   blocks: SourceBlock[];
   /** Exact evidence universe. Curriculum output may select only these identities. */
@@ -822,6 +842,17 @@ export interface CourseMapSourceRegionOffer {
   authorityEnvelope?: CurriculumAuthorityEnvelope;
 }
 
+/**
+ * Operation-local exact excerpt used only to place an immutable predecessor
+ * capability. Persistent evidence and allocation identities stay in the
+ * local binding and are removed by prompt construction.
+ */
+export interface CourseMapRecoveryEvidenceOffer {
+  recoveryEvidenceRef: string;
+  sourceRegionRef: string;
+  text: string;
+}
+
 /** Internal skeleton-generation input. Full SourceBlocks never cross this boundary. */
 export interface CourseMapProposalInput {
   contractVersion: 'course_map_proposal_v2';
@@ -830,6 +861,16 @@ export interface CourseMapProposalInput {
   courseSourceMapFingerprint: string;
   sourceAllocationFingerprint: string;
   sourceRegions: CourseMapSourceRegionOffer[];
+  /** Semantic placement obligations for immutable predecessor capabilities. */
+  capabilityRecovery?: {
+    evidenceOffers: CourseMapRecoveryEvidenceOffer[];
+    requirements: Array<
+      Omit<CurriculumCapabilityRecoveryRequirementInput, 'allowedEvidenceIds'> & {
+        allowedSourceRegionRefs: string[];
+        allowedRecoveryEvidenceRefs: string[];
+      }
+    >;
+  };
   limits: {
     maxModules: number;
     maxRegions: number;
@@ -865,6 +906,8 @@ export interface CurriculumDetailRegionInput {
     authorityEnvelope?: CurriculumAuthorityEnvelope;
   }>;
   authorityEnvelope?: CurriculumAuthorityEnvelope;
+  /** Exact capabilities assigned by the validated Course Map to this region. */
+  capabilityRequirements?: CurriculumCapabilityRecoveryRequirementInput[];
 }
 
 /** One fixed-batch, operation-local detail request over server-owned Course Map regions. */
@@ -886,6 +929,8 @@ export interface CurriculumDetailProposalInput {
   limits: {
     maxUnits: number;
     maxObjectivesPerUnit: number;
+    /** Batch-wide ceiling reserved from the operation's global semantic-evaluation budget. */
+    maxObjectivesTotal?: number;
     maxEvidenceSelectionsPerUnit: number;
   };
 }

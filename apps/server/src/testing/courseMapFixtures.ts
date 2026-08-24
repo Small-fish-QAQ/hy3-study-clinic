@@ -49,7 +49,7 @@ export function createCourseMapFixture(): CourseMapFixture {
     let offset = 0;
     for (let blockIndex = 0; blockIndex < 6; blockIndex += 1) {
       const topicIndex = Math.floor(blockIndex / 2) + 1;
-      const content = `${material.title} topic ${topicIndex} fragment ${blockIndex + 1} contains exact source content. ${'Stable fixture evidence for this instructional region. '
+      const content = `[SUPPORTS:identify] [SUPPORTS:explain] ${material.title} topic ${topicIndex} fragment ${blockIndex + 1} contains exact source content. ${'Stable fixture evidence for this instructional region. '
         .repeat(5)
         .trimEnd()}`;
       blocks.push({

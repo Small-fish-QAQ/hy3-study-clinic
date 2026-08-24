@@ -142,6 +142,40 @@ describe('Course Map Fake provider prototype', () => {
     expect(alwaysInvalid).toHaveBeenCalledTimes(2);
   });
 
+  it('fails the Course Map candidate before detail work when exact downstream planning is impossible', async () => {
+    const fixture = createCourseMapFixture();
+    const validateAnalysis = vi.fn(() => ({
+      valid: false,
+      diagnostics: ['Recovery detail request exceeds its exact byte budget.'],
+      diagnosticCodes: ['recovery_capability_detail_budget_exceeded'],
+      failureArtifact: {
+        kind: 'curriculum_detail_plan_invalid',
+        context: {},
+        diagnostics: [
+          {
+            code: 'recovery_capability_detail_budget_exceeded',
+            message: 'Recovery detail request exceeds its exact byte budget.',
+          },
+        ],
+      },
+    }));
+    const onRepairAttempt = vi.fn();
+
+    await expect(
+      generateCourseMapPrototype(
+        {
+          provider: new FakeProvider(),
+          providerInput: fixture.providerInput,
+          sourceAllocation: fixture.sourceAllocation,
+          validateAnalysis,
+        },
+        { onRepairAttempt },
+      ),
+    ).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
+    expect(validateAnalysis).toHaveBeenCalledTimes(2);
+    expect(onRepairAttempt).toHaveBeenCalledExactlyOnceWith('candidate');
+  });
+
   it('honors a zero prerequisite-degree bound', async () => {
     const fixture = createCourseMapFixture();
     const providerInput = {
@@ -205,8 +239,10 @@ describe('Course Map Fake provider prototype', () => {
     const repairBody = JSON.parse(
       String((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[1]![1]!.body),
     ) as { messages: Array<{ content: string }> };
-    expect(repairBody.messages.at(-1)!.content).toContain('R2');
-    expect(repairBody.messages.at(-1)!.content).toContain(fixture.sourceAllocation.regions[1]!.id);
+    const repairPrompt = repairBody.messages.at(-1)!.content;
+    expect(repairPrompt).toContain('R2');
+    expect(repairPrompt).not.toContain(fixture.sourceAllocation.regions[1]!.id);
+    expect(repairPrompt).not.toContain(fixture.sourceAllocation.fingerprint);
   });
 
   it('preserves explicit dispositions while repairing other omitted regions', () => {
@@ -388,6 +424,71 @@ describe('Course Map Hy3 provider contract', () => {
     expect(repairBody.messages.at(-1)!.content).toContain('prerequisite_cycle');
   });
 
+  it('keeps private Course Map allocation identities out of a REAL-shaped recovery retry', async () => {
+    const fixture = createCourseMapFixture();
+    const sourceAllocation = structuredClone(fixture.sourceAllocation);
+    const privateAllocationId = `course_map_source_region_${'f'.repeat(24)}` as const;
+    sourceAllocation.regions[0]!.id = privateAllocationId;
+    const { fingerprint: _oldFingerprint, ...withoutFingerprint } = sourceAllocation;
+    sourceAllocation.fingerprint = `course_map_source_allocation_${createHash('sha256')
+      .update(JSON.stringify(withoutFingerprint))
+      .digest('hex')
+      .slice(0, 40)}` as CourseMapSourceAllocation['fingerprint'];
+    const providerInput = structuredClone(fixture.providerInput);
+    providerInput.sourceAllocationFingerprint = sourceAllocation.fingerprint;
+    providerInput.sourceRegions[0]!.sourceAllocationRegionId = privateAllocationId;
+    const capabilityRef = 'recovery-capability-private-boundary';
+    providerInput.capabilityRecovery = {
+      evidenceOffers: [
+        {
+          recoveryEvidenceRef: 'CE1',
+          sourceRegionRef: 'R1',
+          text: providerInput.sourceRegions[0]!.evidence[0]!.text,
+        },
+      ],
+      requirements: [
+        {
+          capabilityRef,
+          title: 'Explain the preserved predecessor capability',
+          description: 'Explain the complete source-bounded predecessor capability.',
+          originalProposition:
+            'Explain the preserved predecessor capability\nExplain the complete source-bounded predecessor capability.',
+          construct: 'explain',
+          priority: 'required',
+          allowedSourceRegionRefs: ['R1'],
+          allowedRecoveryEvidenceRefs: ['CE1'],
+        },
+      ],
+    };
+    const repaired = structuredClone(fixture.good);
+    repaired.modules[0]!.regions[0]!.capabilityRequirementRefs = [capabilityRef];
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(fixture.sparse)))
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(repaired))) as unknown as typeof fetch;
+
+    const result = await generateCourseMapPrototype({
+      provider: makeHy3Provider(fetchImpl),
+      providerInput,
+      sourceAllocation,
+    });
+
+    expect(result.repairAttempted).toBe(true);
+    expect(result.analysis.validation.valid).toBe(true);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    const repairBody = JSON.parse(
+      String((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[1]![1]!.body),
+    ) as { messages: Array<{ content: string }> };
+    const repairPrompt = repairBody.messages.at(-1)!.content;
+    expect(repairPrompt).toContain('R1');
+    expect(repairPrompt).toContain(capabilityRef);
+    expect(repairPrompt).not.toContain(privateAllocationId);
+    expect(repairPrompt).not.toContain(sourceAllocation.fingerprint);
+    for (const region of sourceAllocation.regions) {
+      expect(repairPrompt).not.toContain(region.id);
+    }
+  });
+
   it('repairs exact cross-module semantic scattering once using module and source identities', async () => {
     const { fixture, sourceAllocation, providerInput, scattered, repaired } =
       semanticScatteringFixture();
@@ -412,8 +513,11 @@ describe('Course Map Hy3 provider contract', () => {
     expect(repairPrompt).toContain('semantic_topic_scattering');
     expect(repairPrompt).toContain('module-1 (Permissions foundations)');
     expect(repairPrompt).toContain('module-2 (Permissions operations)');
-    expect(repairPrompt).toContain(`R1:${sourceAllocation.regions[0]!.id}`);
-    expect(repairPrompt).toContain(`R2:${sourceAllocation.regions[1]!.id}`);
+    expect(repairPrompt).toContain('R1');
+    expect(repairPrompt).toContain('R2');
+    expect(repairPrompt).not.toContain(sourceAllocation.regions[0]!.id);
+    expect(repairPrompt).not.toContain(sourceAllocation.regions[1]!.id);
+    expect(repairPrompt).not.toContain(sourceAllocation.fingerprint);
     expect(result.analysis.courseMap.modules[0]!.regions.map((region) => region.title)).toEqual(
       expect.arrayContaining(['Permissions model', 'Permissions boundaries']),
     );
@@ -476,29 +580,11 @@ describe('Course Map Hy3 provider contract', () => {
         validationKind: 'candidate',
         candidateFailure: {
           kind: 'course_map_candidate_validation_failed',
+          context: {},
           diagnostics: [
             {
               code: 'semantic_topic_scattering',
-              facts: {
-                modules: [
-                  {
-                    moduleTitle: 'Permissions foundations',
-                  },
-                  {
-                    moduleTitle: 'Permissions operations',
-                  },
-                ],
-                sourceRegions: expect.arrayContaining([
-                  expect.objectContaining({
-                    sourceRegionRef: 'R1',
-                    sourceAllocationRegionId: sourceAllocation.regions[0]!.id,
-                  }),
-                  expect.objectContaining({
-                    sourceRegionRef: 'R2',
-                    sourceAllocationRegionId: sourceAllocation.regions[1]!.id,
-                  }),
-                ]),
-              },
+              message: expect.any(String),
             },
           ],
         },

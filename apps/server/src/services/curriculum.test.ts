@@ -53,73 +53,93 @@ class ControlledCurriculumProvider extends FakeProvider {
   calls = 0;
   fail = false;
   lastInput: CurriculumProposalInput | null = null;
-  makePayload: (input: CurriculumProposalInput) => CurriculumProposalPayload = (input) => ({
-    nodes: [
-      {
-        key: 'chapter-1',
-        parentKey: null,
-        kind: 'chapter',
-        index: 0,
-        title: 'Foundations',
-        structuralUnitIds: [],
-        sourceEvidence: [],
-        conceptIds: [],
-        canonicalConceptIds: [],
-        objectives: [],
-        prerequisiteUnitKeys: [],
-        graphRelationIds: [],
-      },
-      {
-        key: 'section-1',
-        parentKey: 'chapter-1',
-        kind: 'section',
-        index: 0,
-        title: 'Memory',
-        structuralUnitIds: [],
-        sourceEvidence: [],
-        conceptIds: [],
-        canonicalConceptIds: [],
-        objectives: [],
-        prerequisiteUnitKeys: [],
-        graphRelationIds: [],
-      },
-      {
-        key: 'unit-1',
-        parentKey: 'section-1',
-        kind: 'learning_unit',
-        index: 0,
-        title: 'Working memory capacity',
-        structuralUnitIds: [],
-        sourceEvidence: [
-          {
-            evidenceId:
-              input.evidenceCatalog.find((offer) => offer.quote === QUOTE)?.id ??
-              input.evidenceCatalog[0]!.id,
-          },
-        ],
-        conceptIds: [],
-        canonicalConceptIds: [],
-        objectives: [
-          {
-            key: 'objective-1',
-            title: QUOTE,
-            description: QUOTE,
-            construct: 'identify',
-            evidence: [
-              {
-                evidenceId:
-                  input.evidenceCatalog.find((offer) => offer.quote === QUOTE)?.id ??
-                  input.evidenceCatalog[0]!.id,
-              },
-            ],
-          },
-        ],
-        prerequisiteUnitKeys: [],
-        graphRelationIds: [],
-      },
-    ],
-    synthesisGroups: [],
-  });
+  makePayload: (input: CurriculumProposalInput) => CurriculumProposalPayload = (input) => {
+    const defaultEvidenceId =
+      input.evidenceCatalog.find((offer) => offer.quote === QUOTE)?.id ??
+      input.evidenceCatalog[0]!.id;
+    const recoveryRequirements = input.capabilityRecovery?.requirements ?? [];
+    const objectives =
+      recoveryRequirements.length > 0
+        ? recoveryRequirements.map((requirement, index) => {
+            const evidenceId = requirement.allowedEvidenceIds[0];
+            if (!evidenceId) {
+              throw new Error(`Recovery capability ${requirement.capabilityRef} has no evidence.`);
+            }
+            return {
+              key: `objective-recovery-${index + 1}`,
+              title: requirement.title,
+              description: requirement.description,
+              construct: requirement.construct,
+              evidence: [{ evidenceId }],
+              capabilityRequirementRef: requirement.capabilityRef,
+              priority: requirement.priority,
+            };
+          })
+        : [
+            {
+              key: 'objective-1',
+              title: QUOTE,
+              description: QUOTE,
+              construct: 'identify' as const,
+              evidence: [{ evidenceId: defaultEvidenceId }],
+            },
+          ];
+    const sourceEvidenceIds =
+      recoveryRequirements.length > 0
+        ? [
+            ...new Set(
+              recoveryRequirements.flatMap((requirement) => requirement.allowedEvidenceIds),
+            ),
+          ]
+        : [defaultEvidenceId];
+    return {
+      nodes: [
+        {
+          key: 'chapter-1',
+          parentKey: null,
+          kind: 'chapter',
+          index: 0,
+          title: 'Foundations',
+          structuralUnitIds: [],
+          sourceEvidence: [],
+          conceptIds: [],
+          canonicalConceptIds: [],
+          objectives: [],
+          prerequisiteUnitKeys: [],
+          graphRelationIds: [],
+        },
+        {
+          key: 'section-1',
+          parentKey: 'chapter-1',
+          kind: 'section',
+          index: 0,
+          title: 'Memory',
+          structuralUnitIds: [],
+          sourceEvidence: [],
+          conceptIds: [],
+          canonicalConceptIds: [],
+          objectives: [],
+          prerequisiteUnitKeys: [],
+          graphRelationIds: [],
+        },
+        {
+          key: 'unit-1',
+          parentKey: 'section-1',
+          kind: 'learning_unit',
+          index: 0,
+          title: 'Working memory capacity',
+          structuralUnitIds: [],
+          sourceEvidence: sourceEvidenceIds.map((evidenceId) => ({ evidenceId })),
+          conceptIds: [],
+          canonicalConceptIds: [],
+          objectives,
+          prerequisiteUnitKeys: [],
+          graphRelationIds: [],
+        },
+      ],
+      synthesisGroups: [],
+    };
+  };
 
   override async proposeCurriculum(
     input: CurriculumProposalInput,
@@ -242,6 +262,10 @@ class ControlledSemanticRepairProvider extends ControlledCurriculumProvider {
     super();
     this.makePayload = (input) => {
       const payload = new ControlledCurriculumProvider().makePayload(input);
+      if ((input.capabilityRecovery?.requirements.length ?? 0) > 0) {
+        this.initialPayload = structuredClone(payload);
+        return payload;
+      }
       const template = payload.nodes[2]!.objectives[0]!;
       payload.nodes[2]!.objectives = Array.from({ length: objectiveCount }, (_, index) => ({
         ...structuredClone(template),
@@ -1371,6 +1395,97 @@ describe('Curriculum proposal and authority boundaries', () => {
     expect(provider.calls).toBe(2);
   });
 
+  it.each(['rejected', 'superseded'] as const)(
+    'requires a launchable legacy successor for a historically accepted %s recovery predecessor at proposal and acceptance',
+    async (historicalStatus) => {
+      const unrelatedQuote = `Unrelated ${historicalStatus} recovery evidence.`;
+      const unrelatedBlockId = `blk_historical_${historicalStatus}`;
+      const revisionId = repos.materialRevisions.getActive('mat_1')!.id;
+      db.prepare(
+        `INSERT INTO source_blocks
+           (id, material_id, material_revision_id, idx, heading, heading_path,
+            page_number, page_end, content, start_offset, end_offset)
+         VALUES (?, 'mat_1', ?, 1, 'Unrelated recovery evidence',
+                 '["Unrelated recovery evidence"]', NULL, NULL, ?, 0, ?)`,
+      ).run(unrelatedBlockId, revisionId, unrelatedQuote, unrelatedQuote.length);
+      const accepted = await acceptSourceOnlyCurriculum(
+        `curriculum-historical-${historicalStatus}`,
+      );
+      expect(
+        preflightStudyPlan(repos, clock, contract, accepted, 'Memory course').canGenerate,
+      ).toBe(false);
+
+      if (historicalStatus === 'rejected') {
+        curriculum.reject({
+          command: command(`curriculum-historical-${historicalStatus}-reject`, 'learner'),
+          curriculumId: accepted.id,
+          expectedVersion: accepted.version,
+          reason: 'Retain this historically accepted Curriculum only as recovery lineage.',
+        });
+      } else {
+        const row = db
+          .prepare('SELECT payload FROM curriculum_versions WHERE id = ?')
+          .get(accepted.id) as { payload: string };
+        const aggregate = JSON.parse(row.payload) as Record<string, unknown>;
+        db.prepare(
+          `UPDATE curriculum_versions SET status = 'superseded', payload = ? WHERE id = ?`,
+        ).run(JSON.stringify({ ...aggregate, status: 'superseded' }), accepted.id);
+      }
+      expect(repos.curricula.get(accepted.id)).toMatchObject({
+        status: historicalStatus,
+        acceptedAt: T0,
+      });
+
+      addGroundedConcept(
+        `concept_historical_${historicalStatus}_unrelated`,
+        unrelatedBlockId,
+        unrelatedQuote,
+      );
+      const persistedIdsBefore = repos.curricula.list('ws_1').map((item) => item.id);
+      await expect(
+        curriculum.propose(
+          proposalRequest(`curriculum-historical-${historicalStatus}-invalid`, accepted.id),
+        ),
+      ).rejects.toMatchObject({
+        code: ApiErrorCode.GroundingFailed,
+        message: expect.stringContaining('仍不能支持下一步学习'),
+        details: expect.objectContaining({
+          errors: expect.arrayContaining([
+            expect.stringContaining('StudyPlan execution repair: 0 of 1 LearningUnits'),
+          ]),
+        }),
+      });
+      expect(repos.curricula.list('ws_1').map((item) => item.id)).toEqual(persistedIdsBefore);
+
+      const launchConcept = addGroundedConcept(`concept_historical_${historicalStatus}_launchable`);
+      const successor = await curriculum.propose(
+        proposalRequest(`curriculum-historical-${historicalStatus}-valid`, accepted.id),
+      );
+      expect(
+        preflightStudyPlan(repos, clock, contract, successor.curriculum, 'Memory course')
+          .canGenerate,
+      ).toBe(true);
+
+      db.prepare('DELETE FROM concepts WHERE id = ?').run(launchConcept.id);
+      expect(() =>
+        curriculum.accept({
+          command: command(`curriculum-historical-${historicalStatus}-successor-accept`, 'learner'),
+          curriculumId: successor.curriculum.id,
+          expectedVersion: successor.curriculum.version,
+          expectedContractId: contract.id,
+          expectedExecutionSourceManifestFingerprint:
+            successor.curriculum.executionSourceManifest.fingerprint,
+          acceptanceBasis: 'learner_review',
+        }),
+      ).toThrow('仍不能支持下一步学习');
+      expect(repos.curricula.get(successor.curriculum.id)?.status).toBe('proposed');
+      expect(repos.curricula.get(accepted.id)).toMatchObject({
+        status: historicalStatus,
+        acceptedAt: T0,
+      });
+    },
+  );
+
   it('reports stale Concept grounding and routes recovery to rebuilding', async () => {
     const accepted = await acceptSourceOnlyCurriculum('curriculum-stale-concepts');
     addGroundedConcept('concept_stale');
@@ -1531,6 +1646,271 @@ describe('Curriculum proposal and authority boundaries', () => {
     expect(repos.curricula.get(accepted.id)?.status).toBe('accepted');
   });
 
+  it('persists an ordinary execution repair when a legacy-invalid predecessor has only optional objectives', async () => {
+    const ordinaryPayload = provider.makePayload;
+    provider.makePayload = (input) => {
+      const payload = ordinaryPayload(input);
+      if (!input.predecessor) {
+        for (const objective of payload.nodes.flatMap((node) => node.objectives)) {
+          objective.priority = 'optional';
+        }
+      }
+      return payload;
+    };
+    const accepted = await acceptSourceOnlyCurriculum('curriculum-optional-legacy');
+    const acceptedObjective = accepted.nodes.find((node) => node.learningUnit)?.learningUnit
+      ?.objectives[0];
+    expect(acceptedObjective?.priority).toBe('optional');
+    removeCanonicalSemanticSupportForLegacyFixture(accepted.id, acceptedObjective!.id);
+    const legacyPredecessor = repos.curricula.get(accepted.id)!;
+    const predecessorSnapshot = structuredClone(legacyPredecessor);
+
+    const concept = addGroundedConcept('concept_optional_legacy_repair');
+    repos.alignment.ensureBaseline('ws_1', [concept], T0);
+    expect(
+      preflightStudyPlan(repos, clock, contract, legacyPredecessor, 'Memory course').canGenerate,
+    ).toBe(false);
+
+    const successor = await curriculum.propose(
+      proposalRequest('curriculum-optional-legacy-successor', accepted.id),
+    );
+    const successorObjective = successor.curriculum.nodes.find((node) => node.learningUnit)
+      ?.learningUnit?.objectives[0];
+
+    expect(provider.lastInput?.capabilityRecovery).toBeUndefined();
+    expect(
+      successorObjective?.semanticSupport?.capabilityPreservation?.recoveryOrigin,
+    ).toBeUndefined();
+    expect(
+      preflightStudyPlan(repos, clock, contract, successor.curriculum, 'Memory course').canGenerate,
+    ).toBe(true);
+    expect(repos.curricula.get(accepted.id)).toEqual(predecessorSnapshot);
+  });
+
+  it.each(['learning_contract', 'source_manifest'] as const)(
+    'does not carry recovery aliases across a changed %s boundary',
+    async (boundary) => {
+      const accepted = await acceptSourceOnlyCurriculum(`curriculum-boundary-${boundary}`);
+      const acceptedSnapshot = structuredClone(accepted);
+      let concept;
+
+      if (boundary === 'learning_contract') {
+        concept = addGroundedConcept('concept_contract_boundary');
+        const currentRole = repos.materialRoles.getCurrent('mat_1')!;
+        const contracts = createLearningContractService({ repos, clock, commands });
+        const draft = contracts.createDraft({
+          command: command('contract-boundary-create', 'learner'),
+          fields: {
+            ...contractFields(currentRole.id, currentRole.version),
+            intent: 'Continue studying working memory under a revised learning intention.',
+          },
+          predecessorContractId: contract.id,
+          expectedActiveContractId: repos.courseExecution.get('ws_1').activeContractId,
+        }).contract;
+        const proposed = contracts.transition({
+          command: command('contract-boundary-propose', 'learner'),
+          contractId: draft.id,
+          expectedVersion: draft.version,
+          transition: 'propose',
+        }).contract;
+        contract = contracts.transition({
+          command: command('contract-boundary-confirm', 'learner'),
+          contractId: proposed.id,
+          expectedVersion: proposed.version,
+          transition: 'confirm',
+        }).contract;
+      } else {
+        const revisionId = 'revision_manifest_boundary';
+        const revisedQuote = `${QUOTE} Changed source revision ${revisionId}.`;
+        activateChangedSourceRevision(revisionId);
+        concept = addGroundedConcept(
+          'concept_manifest_boundary',
+          `blk_${revisionId}`,
+          revisedQuote,
+        );
+      }
+      repos.alignment.ensureBaseline('ws_1', [concept], T0);
+
+      const successor = await curriculum.propose(
+        proposalRequest(`curriculum-boundary-${boundary}-successor`, accepted.id),
+      );
+
+      expect(provider.lastInput?.capabilityRecovery).toBeUndefined();
+      expect(successor.curriculum.contractVersionId).toBe(contract.id);
+      expect(
+        successor.curriculum.nodes.find((node) => node.learningUnit)?.learningUnit?.conceptIds,
+      ).toContain(concept.id);
+      expect(
+        successor.curriculum.nodes.flatMap(
+          (node) =>
+            node.learningUnit?.objectives.map(
+              (objective) => objective.semanticSupport?.capabilityPreservation,
+            ) ?? [],
+        ),
+      ).toEqual([undefined]);
+      expect(repos.curricula.get(accepted.id)).toEqual(acceptedSnapshot);
+    },
+  );
+
+  it('fences an accepted recovery-predecessor race before semantic evaluation or persistence', async () => {
+    const accepted = await acceptSourceOnlyCurriculum('curriculum-recovery-race');
+    const concept = addGroundedConcept('concept_recovery_race');
+    repos.alignment.ensureBaseline('ws_1', [concept], T0);
+    const intermediate = await curriculum.propose(
+      proposalRequest('curriculum-recovery-race-intermediate', accepted.id),
+    );
+
+    class AcceptingRecoveryRaceProvider extends ControlledSemanticRepairProvider {
+      override async proposeCurriculum(
+        input: CurriculumProposalInput,
+        opts?: ProviderCallOptions,
+      ): Promise<CurriculumProposalPayload> {
+        const candidate = await super.proposeCurriculum(input, opts);
+        curriculum.accept({
+          command: command('curriculum-recovery-race-intermediate-accept', 'learner'),
+          curriculumId: intermediate.curriculum.id,
+          expectedVersion: intermediate.curriculum.version,
+          expectedContractId: contract.id,
+          expectedExecutionSourceManifestFingerprint:
+            intermediate.curriculum.executionSourceManifest.fingerprint,
+          acceptanceBasis: 'learner_review',
+        });
+        return candidate;
+      }
+    }
+
+    const raceProvider = new AcceptingRecoveryRaceProvider(false);
+    curriculum = createCurriculumService({
+      repos,
+      provider: raceProvider,
+      clock,
+      commands,
+      sourceAuthority: createSourceAuthorityService({
+        sourceAuthority: repos.sourceAuthority,
+        clock,
+      }),
+      generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
+    });
+    const persistedIdsBefore = repos.curricula.list('ws_1').map((item) => item.id);
+
+    await expect(
+      curriculum.propose(
+        proposalRequest('curriculum-recovery-race-successor', intermediate.curriculum.id),
+      ),
+    ).rejects.toMatchObject({ code: ApiErrorCode.VersionConflict });
+
+    expect(raceProvider.evaluationInputs).toHaveLength(0);
+    expect(raceProvider.repairInputs).toHaveLength(0);
+    expect(repos.curricula.list('ws_1').map((item) => item.id)).toEqual(persistedIdsBefore);
+    expect(repos.curricula.get(intermediate.curriculum.id)?.status).toBe('accepted');
+    expect(repos.curricula.get(accepted.id)?.status).toBe('accepted');
+  });
+
+  it('keeps the local recovery evidence frontier immutable against provider-input mutation', async () => {
+    const unrelatedQuote = 'Long-term memory stores durable knowledge.';
+    const revisionId = repos.materialRevisions.getActive('mat_1')!.id;
+    db.prepare(
+      `INSERT INTO source_blocks
+         (id, material_id, material_revision_id, idx, heading, heading_path,
+          page_number, page_end, content, start_offset, end_offset)
+       VALUES ('blk_recovery_mutation_extra', 'mat_1', ?, 1, 'Long-term memory',
+               '["Long-term memory"]', NULL, NULL, ?, 0, ?)`,
+    ).run(revisionId, unrelatedQuote, unrelatedQuote.length);
+    const accepted = await acceptSourceOnlyCurriculum('curriculum-recovery-mutation');
+    const acceptedSnapshot = structuredClone(accepted);
+    const concept = addGroundedConcept('concept_recovery_mutation');
+    repos.alignment.ensureBaseline('ws_1', [concept], T0);
+
+    class MutatingRecoveryProvider extends ControlledCurriculumProvider {
+      originalAllowedEvidenceIds: string[][] = [];
+      injectedEvidenceId: string | null = null;
+
+      override async proposeCurriculum(
+        input: CurriculumProposalInput,
+        opts?: ProviderCallOptions,
+      ): Promise<CurriculumProposalPayload> {
+        const requirements = input.capabilityRecovery?.requirements;
+        if (!requirements?.[0]) {
+          throw new Error('The mutation regression requires a recovery capability frontier.');
+        }
+        this.originalAllowedEvidenceIds = requirements.map((requirement) => [
+          ...requirement.allowedEvidenceIds,
+        ]);
+        const originalIds = new Set(this.originalAllowedEvidenceIds.flat());
+        const unrelatedOffer = input.evidenceCatalog.find(
+          (offer) => offer.blockId === 'blk_recovery_mutation_extra' && !originalIds.has(offer.id),
+        );
+        if (!unrelatedOffer) {
+          throw new Error('The mutation regression requires an unrelated offered evidence ID.');
+        }
+        this.injectedEvidenceId = unrelatedOffer.id;
+        requirements[0].allowedEvidenceIds.splice(
+          0,
+          requirements[0].allowedEvidenceIds.length,
+          unrelatedOffer.id,
+        );
+        return super.proposeCurriculum(input, opts);
+      }
+    }
+
+    const mutatingProvider = new MutatingRecoveryProvider();
+    curriculum = createCurriculumService({
+      repos,
+      provider: mutatingProvider,
+      clock,
+      commands,
+      sourceAuthority: createSourceAuthorityService({
+        sourceAuthority: repos.sourceAuthority,
+        clock,
+      }),
+      generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
+    });
+
+    await expect(
+      curriculum.propose(proposalRequest('curriculum-recovery-mutation-attempt', accepted.id)),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.GroundingFailed,
+      details: expect.objectContaining({
+        kind: 'curriculum_capability_recovery_candidate_invalid',
+        diagnosticCodes: expect.arrayContaining(['recovery_capability_evidence_outside_envelope']),
+      }),
+    });
+    expect(repos.curricula.list('ws_1').map((item) => item.id)).toEqual([accepted.id]);
+    expect(repos.curricula.get(accepted.id)).toEqual(acceptedSnapshot);
+
+    const legitimateProvider = new ControlledCurriculumProvider();
+    curriculum = createCurriculumService({
+      repos,
+      provider: legitimateProvider,
+      clock,
+      commands,
+      sourceAuthority: createSourceAuthorityService({
+        sourceAuthority: repos.sourceAuthority,
+        clock,
+      }),
+      generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
+    });
+    const successor = await curriculum.propose(
+      proposalRequest('curriculum-recovery-mutation-legitimate', accepted.id),
+    );
+    const legitimateAllowedEvidenceIds =
+      legitimateProvider.lastInput?.capabilityRecovery?.requirements.map((requirement) => [
+        ...requirement.allowedEvidenceIds,
+      ]);
+    const recoveredObjective = successor.curriculum.nodes
+      .flatMap((node) => node.learningUnit?.objectives ?? [])
+      .find(
+        (objective) =>
+          objective.semanticSupport?.capabilityPreservation?.recoveryOrigin
+            ?.predecessorCurriculumId === accepted.id,
+      );
+
+    expect(legitimateAllowedEvidenceIds).toEqual(mutatingProvider.originalAllowedEvidenceIds);
+    expect(legitimateAllowedEvidenceIds?.flat()).not.toContain(mutatingProvider.injectedEvidenceId);
+    expect(recoveredObjective?.authoritySourceBlockIds).toEqual(['blk_1']);
+    expect(repos.curricula.get(accepted.id)).toEqual(acceptedSnapshot);
+  });
+
   it('revalidates remediation launchability at acceptance after a Concept disappears', async () => {
     const first = await curriculum.propose(proposalRequest('curriculum-accept-gate-first'));
     const accepted = curriculum.accept({
@@ -1582,7 +1962,389 @@ describe('Curriculum proposal and authority boundaries', () => {
     expect(repos.curricula.get(accepted.id)?.status).toBe('accepted');
   });
 
-  it('applies the same empty-frontier remediation contract to the Fake provider', async () => {
+  it('reports a historically accepted recovery successor as unlaunchable before acceptance', async () => {
+    const first = await curriculum.propose(
+      proposalRequest('curriculum-historical-accept-gate-first'),
+    );
+    const accepted = curriculum.accept({
+      command: command('curriculum-historical-accept-gate-first-accept', 'learner'),
+      curriculumId: first.curriculum.id,
+      expectedVersion: first.curriculum.version,
+      expectedContractId: contract.id,
+      expectedExecutionSourceManifestFingerprint:
+        first.curriculum.executionSourceManifest.fingerprint,
+      acceptanceBasis: 'learner_review',
+    }).curriculum;
+    repos.curricula.reject(accepted.id, 'Exercise recovery from immutable accepted history.', {
+      id: 'curriculum_evt_historical_accept_gate_reject',
+      eventType: 'rejected',
+      actor: 'learner',
+      payload: {},
+      createdAt: T0,
+    });
+    const concept = {
+      id: 'concept_historical_acceptance_gate',
+      materialId: 'mat_1',
+      name: 'Working memory',
+      summary: QUOTE,
+      importance: 'high' as const,
+      grounding: {
+        blockId: 'blk_1',
+        quote: QUOTE,
+        startOffset: 0,
+        endOffset: QUOTE.length,
+        occurrenceCount: 1,
+        reanchored: false,
+      },
+      createdAt: T0,
+    };
+    repos.materials.addConcepts([concept]);
+    const successor = await curriculum.propose(
+      proposalRequest('curriculum-historical-accept-gate-successor', accepted.id),
+    );
+    const courseOverview = createCourseOverviewService({ repos, clock });
+    expect(courseOverview.get('ws_1').capabilities.canAcceptCurriculum).toBe(true);
+
+    db.prepare('DELETE FROM concepts WHERE id = ?').run(concept.id);
+
+    expect(courseOverview.get('ws_1').capabilities.canAcceptCurriculum).toBe(false);
+    expect(() =>
+      curriculum.accept({
+        command: command('curriculum-historical-accept-gate-rejected', 'learner'),
+        curriculumId: successor.curriculum.id,
+        expectedVersion: successor.curriculum.version,
+        expectedContractId: contract.id,
+        expectedExecutionSourceManifestFingerprint:
+          successor.curriculum.executionSourceManifest.fingerprint,
+        acceptanceBasis: 'learner_review',
+      }),
+    ).toThrow('仍不能支持下一步学习');
+    expect(repos.curricula.get(successor.curriculum.id)?.status).toBe('proposed');
+    expect(repos.curricula.get(accepted.id)?.status).toBe('rejected');
+    expect(repos.curricula.get(accepted.id)?.acceptedAt).toBe(accepted.acceptedAt);
+  });
+
+  it('repairs legacy B7C2 recovery from selected E1 to unselected frozen E2 and accepts it', async () => {
+    const title = '解释 WeKnora 综合系统定位';
+    const description =
+      '解释 WeKnora 是集文档系统、搜索系统、大模型、权限系统、工具调用系统于一体的综合系统，而非单纯大模型或搜索引擎。';
+    const proposition = `${title}\n${description}`;
+    const ingestionBlockId = 'blk_3_87594204';
+    const ingestion = '入库：上传 → 解析 → 切 chunk → embedding → 写入向量库';
+    const positioningBlockId = 'blk_1_706f25b9';
+    const positioning =
+      '### 一、概念层1. 系统定位与 RAG 全景\n\nWeKnora 不是单纯的大模型或搜索引擎，而是：文档系统 + 搜索系统 + 大模型 + 权限系统 + 工具调用系统。';
+    const separator = '\n\n';
+    const content = `${ingestion}${separator}${positioning}`;
+    const positioningStart = ingestion.length + separator.length;
+    const revisionId = 'revision_b7c2_exact_recovery';
+    const heading = '系统定位与 RAG 全景';
+    repos.materialRevisions.stage({
+      revisionId,
+      material: makeMaterial({ content, charCount: content.length, title: 'WeKnora notes' }),
+      blocks: [
+        makeBlock({
+          id: ingestionBlockId,
+          index: 0,
+          heading,
+          headingPath: [heading],
+          content: ingestion,
+          startOffset: 0,
+          endOffset: ingestion.length,
+        }),
+        makeBlock({
+          id: positioningBlockId,
+          index: 1,
+          heading,
+          headingPath: [heading],
+          content: positioning,
+          startOffset: positioningStart,
+          endOffset: positioningStart + positioning.length,
+        }),
+      ],
+      originalData: null,
+      parserFingerprint: 'parser_b7c2_exact_recovery',
+      contentFingerprint: 'content_b7c2_exact_recovery',
+      parserAttemptId: 'attempt_b7c2_exact_recovery',
+      createdAt: T0,
+    });
+    repos.materialRevisions.activate('mat_1', revisionId, T0);
+
+    class HistoricalB7C2Provider extends ControlledCurriculumProvider {
+      constructor() {
+        super();
+        this.makePayload = (input) => {
+          const ingestionOffer = input.evidenceCatalog.find(
+            (offer) => offer.blockId === ingestionBlockId,
+          );
+          const positioningOffer = input.evidenceCatalog.find(
+            (offer) => offer.blockId === positioningBlockId,
+          );
+          if (!ingestionOffer || !positioningOffer) {
+            throw new Error('The historical B7C2 fixture requires both exact evidence offers.');
+          }
+          const payload = new ControlledCurriculumProvider().makePayload(input);
+          const unit = payload.nodes[2]!;
+          unit.title = title;
+          unit.sourceEvidence = [ingestionOffer, positioningOffer].map((offer) => ({
+            evidenceId: offer.id,
+          }));
+          unit.objectives = [
+            {
+              key: 'objective-b7c2-positioning',
+              title,
+              description,
+              construct: 'explain',
+              evidence: [{ evidenceId: ingestionOffer.id }],
+              priority: 'required',
+              priorityRationale:
+                'Historical fixture for the exact accepted B7C2 authority contradiction.',
+            },
+          ];
+          return payload;
+        };
+      }
+
+      override async evaluateObjectiveAuthoritySupport(
+        input: ObjectiveAuthoritySemanticEvaluationInput,
+        opts?: ProviderCallOptions,
+      ): Promise<ObjectiveAuthoritySemanticEvaluationProposal> {
+        if (opts?.signal?.aborted) throw ProviderError.cancelled();
+        const candidate = controlledSemanticEvaluation(input, new Set());
+        const validation = opts?.validateCandidate?.(candidate);
+        if (validation && !validation.valid) {
+          throw ProviderError.invalidOutput(validation.diagnostics.join('; '), 'candidate');
+        }
+        return candidate;
+      }
+    }
+
+    const historicalCurriculum = createCurriculumService({
+      repos,
+      provider: new HistoricalB7C2Provider(),
+      clock,
+      commands,
+      sourceAuthority: createSourceAuthorityService({
+        sourceAuthority: repos.sourceAuthority,
+        clock,
+      }),
+      generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
+    });
+    const historicalProposal = await historicalCurriculum.propose(
+      proposalRequest('curriculum-b7c2-historical-propose'),
+    );
+    const predecessor = historicalCurriculum.accept({
+      command: command('curriculum-b7c2-historical-accept', 'learner'),
+      curriculumId: historicalProposal.curriculum.id,
+      expectedVersion: historicalProposal.curriculum.version,
+      expectedContractId: contract.id,
+      expectedExecutionSourceManifestFingerprint:
+        historicalProposal.curriculum.executionSourceManifest.fingerprint,
+      acceptanceBasis: 'learner_review',
+    }).curriculum;
+    const predecessorSnapshot = structuredClone(predecessor);
+    const predecessorUnit = predecessor.nodes.find((node) => node.learningUnit)!;
+    const predecessorObjective = predecessorUnit.learningUnit!.objectives[0]!;
+    expect(predecessorUnit.sourceReferences.map((reference) => reference.sourceBlockId)).toEqual(
+      expect.arrayContaining([ingestionBlockId, positioningBlockId]),
+    );
+    expect(predecessorObjective).toMatchObject({
+      title,
+      description,
+      formalAssessmentConstruct: 'explain',
+      priority: 'required',
+      authoritySourceBlockIds: [ingestionBlockId],
+      formalEvidenceSourceBlockIds: [ingestionBlockId],
+      semanticSupport: {
+        boundSourceBlockIds: [ingestionBlockId],
+        verdict: 'pass',
+      },
+    });
+    const predecessorBytes = {
+      aggregate: db
+        .prepare('SELECT hex(payload) AS payload FROM curriculum_versions WHERE id = ?')
+        .get(predecessor.id),
+      semanticSupport: db
+        .prepare(
+          `SELECT objective_id AS objectiveId, hex(payload) AS payload
+           FROM curriculum_objective_semantic_support
+           WHERE curriculum_id = ? ORDER BY objective_id`,
+        )
+        .all(predecessor.id),
+    };
+
+    const concept = addGroundedConcept(
+      'concept_b7c2_exact_positioning',
+      positioningBlockId,
+      positioning,
+    );
+    repos.alignment.ensureBaseline('ws_1', [concept], T0);
+    class LegacyB7C2SemanticRepairProvider extends ControlledSemanticRepairProvider {
+      constructor() {
+        super(false, undefined, 1);
+      }
+
+      override async proposeCurriculum(
+        input: CurriculumProposalInput,
+        opts?: ProviderCallOptions,
+      ): Promise<CurriculumProposalPayload> {
+        const candidate = await super.proposeCurriculum(input, opts);
+        if (!input.capabilityRecovery?.requirements[0]) {
+          throw new Error('The legacy semantic-repair fixture requires a recovery capability.');
+        }
+        const ingestionOffer = input.evidenceCatalog.find(
+          (offer) => offer.blockId === ingestionBlockId,
+        );
+        if (!ingestionOffer) {
+          throw new Error('The legacy semantic-repair fixture requires the initial E1 offer.');
+        }
+        const unit = candidate.nodes.find((node) => node.kind === 'learning_unit')!;
+        unit.sourceEvidence = [{ evidenceId: ingestionOffer.id }];
+        unit.conceptIds = [concept.id];
+        unit.objectives[0]!.evidence = [{ evidenceId: ingestionOffer.id }];
+        this.initialPayload = structuredClone(candidate);
+        return candidate;
+      }
+
+      override async repairObjectiveAuthoritySupport(
+        input: ObjectiveAuthoritySemanticRepairInput,
+        opts?: ProviderCallOptions,
+      ): Promise<ObjectiveAuthoritySemanticRepairProposal> {
+        this.repairInputs.push(structuredClone(input));
+        if (opts?.signal?.aborted) throw ProviderError.cancelled();
+        const candidate: ObjectiveAuthoritySemanticRepairProposal = {
+          schemaVersion: 1,
+          replacements: input.objectives.map((objective) => {
+            const unselectedSupportingOffer = objective.allowedEvidence.find(
+              (offer) => !offer.selected && offer.text === positioning,
+            );
+            if (!unselectedSupportingOffer) {
+              throw new Error('Frozen E2 was not exposed as unselected recovery evidence.');
+            }
+            return {
+              objectiveRef: objective.objectiveRef,
+              title: objective.title,
+              description: objective.description,
+              construct: objective.construct,
+              evidenceRefs: [unselectedSupportingOffer.evidenceRef],
+            };
+          }),
+        };
+        const validation = opts?.validateCandidate?.(candidate);
+        if (validation && !validation.valid) {
+          throw ProviderError.invalidOutput(validation.diagnostics.join('; '), 'candidate');
+        }
+        return candidate;
+      }
+    }
+    const recoveryProvider = new LegacyB7C2SemanticRepairProvider();
+    const recoveryCurriculum = createCurriculumService({
+      repos,
+      provider: recoveryProvider,
+      clock,
+      commands,
+      sourceAuthority: createSourceAuthorityService({
+        sourceAuthority: repos.sourceAuthority,
+        clock,
+      }),
+      generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
+    });
+    const successor = (
+      await recoveryCurriculum.propose(
+        proposalRequest('curriculum-b7c2-successor-propose', predecessor.id),
+      )
+    ).curriculum;
+    const recoveredObjective = successor.nodes
+      .flatMap((node) => node.learningUnit?.objectives ?? [])
+      .find(
+        (objective) =>
+          objective.semanticSupport?.capabilityPreservation?.recoveryOrigin
+            ?.predecessorCurriculumId === predecessor.id,
+      )!;
+    const preservation = recoveredObjective.semanticSupport!.capabilityPreservation!;
+    expect(recoveryProvider.evaluationInputs).toHaveLength(2);
+    expect(recoveryProvider.repairInputs).toHaveLength(1);
+    expect(
+      recoveryProvider.repairInputs[0]!.objectives[0]!.allowedEvidence.map((offer) => [
+        offer.text,
+        offer.selected,
+      ]),
+    ).toEqual(
+      expect.arrayContaining([
+        [ingestion, true],
+        [positioning, false],
+      ]),
+    );
+    expect(recoveredObjective).toMatchObject({
+      title,
+      description,
+      formalAssessmentConstruct: 'explain',
+      priority: 'required',
+      authoritySourceBlockIds: [positioningBlockId],
+      formalEvidenceSourceBlockIds: [positioningBlockId],
+      semanticSupport: {
+        boundSourceBlockIds: [positioningBlockId],
+        verdict: 'pass',
+      },
+    });
+    expect([
+      ...recoveredObjective.authoritySourceBlockIds,
+      ...recoveredObjective.formalEvidenceSourceBlockIds,
+      ...recoveredObjective.semanticSupport!.boundSourceBlockIds,
+    ]).not.toContain(ingestionBlockId);
+    expect(preservation).toMatchObject({
+      originalProposition: proposition,
+      verdict: 'pass',
+      lostOriginalFragmentIds: [],
+      recoveryOrigin: {
+        predecessorCurriculumId: predecessor.id,
+        predecessorCurriculumVersion: predecessor.version,
+        predecessorLearningUnitId: predecessorUnit.id,
+        predecessorObjectiveId: predecessorObjective.id,
+        predecessorPriority: 'required',
+        contractVersionId: contract.id,
+        executionSourceManifestFingerprint: predecessor.executionSourceManifest.fingerprint,
+      },
+    });
+    expect(preservation.recoveryOrigin!.sourceEnvelopeFingerprint.length).toBeGreaterThan(0);
+    expect(preflightStudyPlan(repos, clock, contract, successor, 'Memory course').canGenerate).toBe(
+      true,
+    );
+    expect(repos.curricula.get(successor.id)).toEqual(successor);
+    expect(
+      repos.curricula
+        .getObjectiveSemanticSupport(successor.id)
+        .find((support) => support.objectiveId === recoveredObjective.id)?.capabilityPreservation
+        ?.recoveryOrigin,
+    ).toEqual(preservation.recoveryOrigin);
+
+    const acceptedSuccessor = recoveryCurriculum.accept({
+      command: command('curriculum-b7c2-successor-accept', 'learner'),
+      curriculumId: successor.id,
+      expectedVersion: successor.version,
+      expectedContractId: contract.id,
+      expectedExecutionSourceManifestFingerprint: successor.executionSourceManifest.fingerprint,
+      acceptanceBasis: 'learner_review',
+    }).curriculum;
+    expect(acceptedSuccessor.status).toBe('accepted');
+    expect(repos.curricula.get(acceptedSuccessor.id)).toEqual(acceptedSuccessor);
+    expect(repos.curricula.get(predecessor.id)).toEqual(predecessorSnapshot);
+    expect(repos.curricula.get(predecessor.id)?.status).toBe('accepted');
+    expect({
+      aggregate: db
+        .prepare('SELECT hex(payload) AS payload FROM curriculum_versions WHERE id = ?')
+        .get(predecessor.id),
+      semanticSupport: db
+        .prepare(
+          `SELECT objective_id AS objectiveId, hex(payload) AS payload
+           FROM curriculum_objective_semantic_support
+           WHERE curriculum_id = ? ORDER BY objective_id`,
+        )
+        .all(predecessor.id),
+    }).toEqual(predecessorBytes);
+  });
+
+  it('fails Fake recovery before semantic repair when no exact evidence can place the predecessor capability', async () => {
     const validFakeCurriculum = createCurriculumService({
       repos,
       provider: new FakeProvider(),
@@ -1606,6 +2368,7 @@ describe('Curriculum proposal and authority boundaries', () => {
         first.curriculum.executionSourceManifest.fingerprint,
       acceptanceBasis: 'learner_review',
     }).curriculum;
+    const acceptedSnapshot = structuredClone(accepted);
     const fakeCurriculum = createCurriculumService({
       repos,
       provider: new SourceOnlyFakeProvider(),
@@ -1622,11 +2385,12 @@ describe('Curriculum proposal and authority boundaries', () => {
     await expect(
       fakeCurriculum.propose(proposalRequest('curriculum-fake-parity-successor', accepted.id)),
     ).rejects.toMatchObject({
-      code: ApiErrorCode.GroundingFailed,
-      details: expect.objectContaining({ repairAttempted: true }),
+      code: ApiErrorCode.ProviderInvalidOutput,
+      message: expect.stringContaining('约定格式'),
     });
     expect(repos.curricula.list('ws_1').map((item) => item.id)).toEqual([accepted.id]);
-    expect(attemptsForCommand('curriculum-fake-parity-successor')).toHaveLength(2);
+    expect(repos.curricula.get(accepted.id)).toEqual(acceptedSnapshot);
+    expect(attemptsForCommand('curriculum-fake-parity-successor')).toHaveLength(1);
   });
 
   it('keeps the earliest Concept prerequisite through a rejected intermediate version', async () => {

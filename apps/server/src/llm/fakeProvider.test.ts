@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   ConceptAnalysisPayloadSchema,
+  CourseMapProposalPayloadSchema,
+  CurriculumDetailProposalPayloadSchema,
   CurriculumProposalPayloadSchema,
   MasteryChallengeProposalPayloadSchema,
   QuizGenerationPayloadSchema,
@@ -24,6 +26,8 @@ import {
 } from './fakeProvider.js';
 import { ProviderError } from './errors.js';
 import type {
+  CourseMapProposalInput,
+  CurriculumDetailProposalInput,
   CurriculumProposalInput,
   MasteryChallengeProposalInput,
   TutorTurnInput,
@@ -33,6 +37,11 @@ import { validateTutorTurnCandidate } from '../tutor/pedagogy.js';
 const materialId = 'mat_fixture';
 const blocks = segmentMaterial(materialId, SAMPLE_MATERIAL_CONTENT.replace(/\r\n?/g, '\n'));
 const provider = new FakeProvider();
+const B7C2_POSITIONING_PROPOSITION =
+  '解释 WeKnora 综合系统定位\n解释 WeKnora 是集文档系统、搜索系统、大模型、权限系统、工具调用系统于一体的综合系统，而非单纯大模型或搜索引擎。';
+const B7C2_INGESTION = '入库：上传 → 解析 → 切 chunk → embedding → 写入向量库';
+const B7C2_POSITIONING =
+  '### 一、概念层1. 系统定位与 RAG 全景\n\nWeKnora 不是单纯的大模型或搜索引擎，而是：文档系统 + 搜索系统 + 大模型 + 权限系统 + 工具调用系统。';
 
 const semanticEvaluationInput: ObjectiveAuthoritySemanticEvaluationInput = {
   schemaVersion: 1,
@@ -45,7 +54,7 @@ const semanticEvaluationInput: ObjectiveAuthoritySemanticEvaluationInput = {
       evidence: [
         {
           evidenceRef: 'E1',
-          text: 'The system combines documents, search, language models, permissions, and tools.',
+          text: '[SUPPORTS:explain] The system combines documents, search, language models, permissions, and tools.',
           claimKinds: ['claim'],
           headingPath: [],
         },
@@ -149,6 +158,144 @@ describe('FakeProvider objective-authority semantic contract', () => {
     });
   });
 
+  it('fails exact required preservation when unmarked evidence supports an unrelated proposition', async () => {
+    const proposition = 'Explain how photosynthesis converts light into stored chemical energy.';
+    const result = await provider.evaluateObjectiveAuthoritySupport({
+      schemaVersion: 1,
+      policyVersion: 'objective-authority-semantic-v1',
+      objectives: [
+        {
+          objectiveRef: 'O1',
+          proposition,
+          construct: 'explain',
+          evidence: [
+            {
+              evidenceRef: 'E-mitochondria',
+              text: 'Mitochondria produce ATP through cellular respiration.',
+              claimKinds: ['claim'],
+              headingPath: ['Cellular respiration'],
+            },
+          ],
+          requiredCapabilityPreservation: {
+            originalProposition: proposition,
+            originalFragments: [{ fragmentId: 'capability:F1', text: proposition }],
+          },
+        },
+      ],
+    });
+
+    expect(result.evaluations[0]).toMatchObject({
+      verdict: 'fail',
+      unsupportedFragmentIds: ['O1:F1'],
+      capabilityPreservation: {
+        verdict: 'pass',
+        lostOriginalFragmentIds: [],
+      },
+    });
+    expect(result.evaluations[0]!.fragments[0]).toMatchObject({
+      status: 'unsupported',
+      supportType: null,
+      evidenceRefs: [],
+    });
+  });
+
+  it('distinguishes the exact B7C2 integrated-positioning authority from ingestion-only evidence', async () => {
+    const ingestionOnly: ObjectiveAuthoritySemanticEvaluationInput = {
+      schemaVersion: 1,
+      policyVersion: 'objective-authority-semantic-v1',
+      objectives: [
+        {
+          objectiveRef: 'O1',
+          proposition: B7C2_POSITIONING_PROPOSITION,
+          construct: 'explain',
+          evidence: [
+            {
+              evidenceRef: 'E-ingestion',
+              text: B7C2_INGESTION,
+              claimKinds: ['procedure'],
+              headingPath: ['RAG'],
+            },
+          ],
+        },
+      ],
+    };
+    const invalid = await provider.evaluateObjectiveAuthoritySupport(ingestionOnly);
+    expect(invalid.evaluations[0]).toMatchObject({
+      verdict: 'fail',
+      unsupportedFragmentIds: ['O1:F1'],
+    });
+
+    const repairedInput: ObjectiveAuthoritySemanticRepairInput = {
+      schemaVersion: 1,
+      policyVersion: 'objective-authority-semantic-v1',
+      objectives: [
+        {
+          objectiveRef: 'O1',
+          title: '解释 WeKnora 综合系统定位',
+          description:
+            '解释 WeKnora 是集文档系统、搜索系统、大模型、权限系统、工具调用系统于一体的综合系统，而非单纯大模型或搜索引擎。',
+          construct: 'explain',
+          priority: 'required',
+          currentEvidenceRefs: ['E-ingestion'],
+          allowedEvidence: [
+            { ...ingestionOnly.objectives[0]!.evidence[0]!, selected: true },
+            {
+              evidenceRef: 'E-positioning',
+              text: B7C2_POSITIONING,
+              claimKinds: ['claim'],
+              headingPath: ['系统定位与 RAG 全景'],
+              selected: false,
+            },
+          ],
+          fragments: [
+            {
+              fragmentId: 'O1:F1',
+              text: B7C2_POSITIONING_PROPOSITION,
+              status: 'unsupported',
+              supportType: null,
+              evidenceRefs: [],
+              rationale: 'The ingestion procedure does not support integrated positioning.',
+            },
+          ],
+          unsupportedFragmentIds: ['O1:F1'],
+          conflicts: [],
+          overreach: [],
+          verdict: 'fail',
+          rationale: 'The exact accepted binding is semantically unsupported.',
+          requiredCapabilityPreservation: {
+            originalProposition: B7C2_POSITIONING_PROPOSITION,
+            originalFragments: [
+              { fragmentId: 'recovery_capability_1:F1', text: B7C2_POSITIONING_PROPOSITION },
+            ],
+          },
+        },
+      ],
+    };
+    const repair = await provider.repairObjectiveAuthoritySupport(repairedInput);
+    expect(repair.replacements[0]).toMatchObject({
+      title: '解释 WeKnora 综合系统定位',
+      construct: 'explain',
+      evidenceRefs: ['E-positioning'],
+    });
+
+    const supported = await provider.evaluateObjectiveAuthoritySupport({
+      ...ingestionOnly,
+      objectives: [
+        {
+          ...ingestionOnly.objectives[0]!,
+          evidence: [repairedInput.objectives[0]!.allowedEvidence[1]!],
+          requiredCapabilityPreservation:
+            repairedInput.objectives[0]!.requiredCapabilityPreservation,
+        },
+      ],
+    });
+    expect(supported.evaluations[0]).toMatchObject({
+      verdict: 'pass',
+      capabilityPreservation: { verdict: 'pass' },
+      fragments: [{ evidenceRefs: ['E-positioning'], status: 'supported' }],
+    });
+  });
+
   it('selects only an explicitly allowed same-construct repair offer', async () => {
     const result = await provider.repairObjectiveAuthoritySupport(semanticRepairInput());
 
@@ -208,6 +355,32 @@ describe('FakeProvider objective-authority semantic contract', () => {
     });
   });
 
+  it('restores the immutable predecessor proposition during recovery repair', async () => {
+    const input = semanticRepairInput();
+    input.objectives[0]!.title = 'Generic replacement title';
+    input.objectives[0]!.description = 'A generic replacement description.';
+    input.objectives[0]!.requiredCapabilityPreservation = {
+      originalProposition:
+        'Explain the original integrated system\nExplain how all original components jointly position the system.',
+      originalFragments: [
+        {
+          fragmentId: 'original_F1',
+          text: 'Explain the original integrated system\nExplain how all original components jointly position the system.',
+        },
+      ],
+    };
+
+    const result = await provider.repairObjectiveAuthoritySupport(input);
+
+    expect(result.replacements[0]).toEqual({
+      objectiveRef: 'O1',
+      title: 'Explain the original integrated system',
+      description: 'Explain how all original components jointly position the system.',
+      construct: 'explain',
+      evidenceRefs: ['E2'],
+    });
+  });
+
   it('preserves cancellation for evaluation and repair', async () => {
     const delayed = new FakeProvider({ delayMs: 30 });
     const evaluationAbort = new AbortController();
@@ -223,6 +396,407 @@ describe('FakeProvider objective-authority semantic contract', () => {
     });
     repairAbort.abort();
     await expect(repair).rejects.toMatchObject({ code: 'REQUEST_CANCELLED' });
+  });
+});
+
+describe('FakeProvider Curriculum capability recovery', () => {
+  it('assigns every Course Map capability once within its source envelope and region capacity', async () => {
+    const requirements: NonNullable<CourseMapProposalInput['capabilityRecovery']>['requirements'] =
+      [
+        {
+          capabilityRef: 'capability-marker',
+          title: '解释 WeKnora 综合系统定位',
+          description:
+            '解释 WeKnora 是集文档系统、搜索系统、大模型、权限系统、工具调用系统于一体的综合系统，而非单纯大模型或搜索引擎。',
+          originalProposition: B7C2_POSITIONING_PROPOSITION,
+          construct: 'explain',
+          priority: 'required',
+          allowedSourceRegionRefs: ['R1', 'R2'],
+          allowedRecoveryEvidenceRefs: ['CE1', 'CE2'],
+        },
+        ...Array.from({ length: 4 }, (_, index) => ({
+          capabilityRef: `capability-r1-${index + 1}`,
+          title: `Explain bounded relation ${index + 1}`,
+          description: `Explain the source-bounded relation ${index + 1}.`,
+          originalProposition: `Explain bounded relation ${index + 1}\nExplain the source-bounded relation ${index + 1}.`,
+          construct: 'explain' as const,
+          priority: 'high' as const,
+          allowedSourceRegionRefs: ['R1'],
+          allowedRecoveryEvidenceRefs: ['CE1'],
+        })),
+      ];
+    const input: CourseMapProposalInput = {
+      contractVersion: 'course_map_proposal_v2',
+      workspaceName: 'Recovery course',
+      contract: {
+        contractVersionId: 'contract-recovery',
+        intent: 'Recover predecessor capabilities.',
+        targetOutcome: { description: 'Explain the course.', targetScore: null },
+        desiredDepth: 'working_fluency',
+        subjectBoundaries: [],
+        materials: [
+          {
+            materialId: 'material-recovery',
+            title: 'Recovery source',
+            materialRoleAssignmentId: 'role-recovery',
+            materialRoleAssignmentVersion: 1,
+            role: 'course_material',
+            disposition: 'included',
+          },
+        ],
+        includedTopics: [],
+        excludedTopics: [],
+      },
+      courseSourceMapFingerprint: 'course-source-map-recovery',
+      sourceAllocationFingerprint: 'course-map-source-allocation-recovery',
+      sourceRegions: [
+        {
+          sourceRegionRef: 'R1',
+          sourceAllocationRegionId: 'source-region-1',
+          materialId: 'material-recovery',
+          materialTitle: 'Recovery source',
+          title: 'Bounded relations',
+          sectionCount: 1,
+          blockCount: 1,
+          charCount: 120,
+          anchorOptions: [],
+          evidence: [{ evidenceId: 'E1', text: 'A capped generic navigation excerpt.' }],
+          authorityEnvelope: {
+            sourceRegionId: 'source-region-1',
+            sourceBlockIds: ['block-1'],
+            formalEvidenceIds: ['E1'],
+            supportedConstructs: ['identify', 'explain'],
+            strongestSupportedConstruct: 'explain',
+            narrowerClaim: null,
+            tier: 'formal_sufficient',
+            rationale: 'The exact source supports explanation.',
+          },
+        },
+        {
+          sourceRegionRef: 'R2',
+          sourceAllocationRegionId: 'source-region-2',
+          materialId: 'material-recovery',
+          materialTitle: 'Recovery source',
+          title: 'Integrated positioning',
+          sectionCount: 1,
+          blockCount: 1,
+          charCount: 140,
+          anchorOptions: [],
+          evidence: [
+            {
+              evidenceId: 'E2',
+              text: 'A second capped generic navigation excerpt.',
+            },
+          ],
+        },
+      ],
+      capabilityRecovery: {
+        evidenceOffers: [
+          {
+            recoveryEvidenceRef: 'CE1',
+            sourceRegionRef: 'R1',
+            text: `[SUPPORTS:explain] ${B7C2_INGESTION}`,
+          },
+          {
+            recoveryEvidenceRef: 'CE2',
+            sourceRegionRef: 'R2',
+            text: B7C2_POSITIONING,
+          },
+        ],
+        requirements,
+      },
+      limits: {
+        maxModules: 1,
+        maxRegions: 2,
+        maxPrerequisiteEdges: 0,
+        maxPrerequisiteDegree: 0,
+        maxSynthesisGroups: 0,
+      },
+    };
+
+    const payload = await provider.proposeCourseMap(input);
+    expect(CourseMapProposalPayloadSchema.parse(payload)).toEqual(payload);
+    const regions = payload.modules.flatMap((module) => module.regions);
+    const emitted = regions.flatMap((region) =>
+      (region.capabilityRequirementRefs ?? []).map((capabilityRef) => ({
+        capabilityRef,
+        sourceRegionRef: region.sourceRegionRef,
+      })),
+    );
+    expect(emitted.map((row) => row.capabilityRef).sort()).toEqual(
+      requirements.map((requirement) => requirement.capabilityRef).sort(),
+    );
+    expect(new Set(emitted.map((row) => row.capabilityRef)).size).toBe(requirements.length);
+    for (const row of emitted) {
+      const requirement = requirements.find(
+        (candidate) => candidate.capabilityRef === row.capabilityRef,
+      )!;
+      expect(requirement.allowedSourceRegionRefs).toContain(row.sourceRegionRef);
+    }
+    expect(
+      regions.find((region) => region.sourceRegionRef === 'R1')!.capabilityRequirementRefs,
+    ).toHaveLength(4);
+    expect(
+      regions.find((region) => region.sourceRegionRef === 'R2')!.capabilityRequirementRefs,
+    ).toEqual(['capability-marker']);
+    expect(input.sourceRegions[1]!.evidence.map((offer) => offer.text)).not.toContain(
+      B7C2_POSITIONING,
+    );
+    expect(input.capabilityRecovery.evidenceOffers[1]!.text).toBe(B7C2_POSITIONING);
+
+    const unrelatedOnly = structuredClone(input);
+    unrelatedOnly.capabilityRecovery = {
+      evidenceOffers: [
+        {
+          recoveryEvidenceRef: 'CE-unrelated',
+          sourceRegionRef: 'R1',
+          text: 'Mitochondria produce ATP through cellular respiration.',
+        },
+      ],
+      requirements: [
+        {
+          capabilityRef: 'capability-photosynthesis',
+          title: 'Explain photosynthesis',
+          description: 'Explain how photosynthesis converts light into stored chemical energy.',
+          originalProposition:
+            'Explain photosynthesis\nExplain how photosynthesis converts light into stored chemical energy.',
+          construct: 'explain',
+          priority: 'required',
+          allowedSourceRegionRefs: ['R1'],
+          allowedRecoveryEvidenceRefs: ['CE-unrelated'],
+        },
+      ],
+    };
+    await expect(provider.proposeCourseMap(unrelatedOnly)).rejects.toMatchObject({
+      code: 'PROVIDER_INVALID_OUTPUT',
+    });
+  });
+
+  it('materializes exact recovery objectives from only allowed same-construct evidence', async () => {
+    const input: CurriculumDetailProposalInput = {
+      workspaceName: 'Recovery course',
+      contract: {
+        intent: 'Recover predecessor capabilities.',
+        targetOutcome: { description: 'Explain the course.', targetScore: null },
+        desiredDepth: 'working_fluency',
+        subjectBoundaries: [],
+        includedTopics: [],
+        excludedTopics: [],
+      },
+      courseMapId: `course_map_${'a'.repeat(24)}`,
+      sourceAllocationFingerprint: `course_map_source_allocation_${'b'.repeat(40)}`,
+      batchKey: 'recovery-batch-1',
+      regions: [
+        {
+          regionId: `course_map_region_${'c'.repeat(24)}`,
+          moduleId: 'module-recovery',
+          moduleIndex: 0,
+          moduleTitle: 'Recovery',
+          regionIndex: 0,
+          title: 'Integrated positioning',
+          learningIntent: 'Explain the integrated positioning.',
+          approximateScope: 'focused',
+          sourceAllocationRegionIds: ['source-region-recovery'],
+          prerequisiteRegionIds: [],
+          synthesisGroups: [],
+          concepts: [],
+          canonicalConcepts: [],
+          evidence: [
+            {
+              evidenceId: 'E-plain',
+              sourceAllocationRegionId: 'source-region-recovery',
+              text: 'A same-topic but weaker statement.',
+            },
+            {
+              evidenceId: 'E-support',
+              sourceAllocationRegionId: 'source-region-recovery',
+              text: '[SUPPORTS:explain] The components jointly position the integrated system.',
+            },
+          ],
+          capabilityRequirements: [
+            {
+              capabilityRef: 'capability-explain',
+              title: 'Explain the integrated system',
+              description: 'Explain how the components jointly position the system.',
+              originalProposition:
+                'Explain the integrated system\nExplain how the components jointly position the system.',
+              construct: 'explain',
+              priority: 'required',
+              allowedEvidenceIds: ['E-plain', 'E-support'],
+            },
+          ],
+        },
+      ],
+      limits: { maxUnits: 1, maxObjectivesPerUnit: 1, maxEvidenceSelectionsPerUnit: 2 },
+    };
+
+    const payload = await provider.proposeCurriculumDetails(input);
+    expect(CurriculumDetailProposalPayloadSchema.parse(payload)).toEqual(payload);
+    expect(payload.units[0]!.objectives).toEqual([
+      expect.objectContaining({
+        title: 'Explain the integrated system',
+        description: 'Explain how the components jointly position the system.',
+        construct: 'explain',
+        priority: 'required',
+        capabilityRequirementRef: 'capability-explain',
+        evidence: [{ evidenceId: 'E-support' }],
+      }),
+    ]);
+
+    const noAllowedEvidence = structuredClone(input);
+    noAllowedEvidence.regions[0]!.capabilityRequirements![0]!.allowedEvidenceIds = ['E-missing'];
+    await expect(provider.proposeCurriculumDetails(noAllowedEvidence)).rejects.toMatchObject({
+      code: 'PROVIDER_INVALID_OUTPUT',
+    });
+
+    const unrelatedAllowedEvidence = structuredClone(input);
+    unrelatedAllowedEvidence.regions[0]!.capabilityRequirements![0]!.allowedEvidenceIds = [
+      'E-plain',
+    ];
+    await expect(provider.proposeCurriculumDetails(unrelatedAllowedEvidence)).rejects.toMatchObject(
+      {
+        code: 'PROVIDER_INVALID_OUTPUT',
+      },
+    );
+
+    const applicationInput = structuredClone(input);
+    applicationInput.contract.targetOutcome.description =
+      'Apply the source-stated procedure in a bounded decision.';
+    applicationInput.limits.maxObjectivesPerUnit = 4;
+    applicationInput.limits.maxEvidenceSelectionsPerUnit = 4;
+    applicationInput.regions[0]!.evidence.push({
+      evidenceId: 'E-apply',
+      sourceAllocationRegionId: 'source-region-recovery',
+      text: '[SUPPORTS:apply] Apply the bounded procedure by checking its stated condition.',
+      authorityEnvelope: {
+        sourceRegionId: 'source-region-recovery',
+        sourceBlockIds: ['block-apply'],
+        formalEvidenceIds: ['E-apply'],
+        supportedConstructs: ['identify', 'explain', 'apply'],
+        strongestSupportedConstruct: 'apply',
+        narrowerClaim: null,
+        tier: 'formal_sufficient',
+        rationale: 'The exact source states a bounded procedure for application.',
+      },
+    });
+    applicationInput.regions[0]!.capabilityRequirements = Array.from({ length: 3 }, (_, index) => ({
+      capabilityRef: `capability-explain-${index + 1}`,
+      title: `Explain bounded relation ${index + 1}`,
+      description: `Explain how bounded relation ${index + 1} follows from the source.`,
+      originalProposition: `Explain bounded relation ${index + 1}\nExplain how bounded relation ${index + 1} follows from the source.`,
+      construct: 'explain' as const,
+      priority: 'high' as const,
+      allowedEvidenceIds: ['E-support'],
+    }));
+
+    const applicationPayload = await provider.proposeCurriculumDetails(applicationInput);
+    expect(applicationPayload.units[0]!.objectives).toHaveLength(4);
+    expect(
+      applicationPayload.units[0]!.objectives.filter(
+        (objective) => objective.capabilityRequirementRef,
+      ).map((objective) => objective.capabilityRequirementRef),
+    ).toEqual(['capability-explain-1', 'capability-explain-2', 'capability-explain-3']);
+    expect(applicationPayload.units[0]!.objectives.at(-1)).toMatchObject({
+      construct: 'apply',
+      priority: 'required',
+      evidence: [{ evidenceId: 'E-apply' }],
+    });
+
+    const applicationWithoutCapacity = structuredClone(applicationInput);
+    applicationWithoutCapacity.limits.maxObjectivesPerUnit = 3;
+    await expect(
+      provider.proposeCurriculumDetails(applicationWithoutCapacity),
+    ).rejects.toMatchObject({
+      code: 'PROVIDER_INVALID_OUTPUT',
+    });
+  });
+
+  it('selects the exact B7C2 positioning block instead of the earlier ingestion block', async () => {
+    const input: CurriculumDetailProposalInput = {
+      workspaceName: 'WeKnora recovery',
+      contract: {
+        intent: 'Recover the accepted WeKnora capability.',
+        targetOutcome: { description: 'Explain WeKnora positioning.', targetScore: null },
+        desiredDepth: 'working_fluency',
+        subjectBoundaries: [],
+        includedTopics: [],
+        excludedTopics: [],
+      },
+      courseMapId: `course_map_${'d'.repeat(24)}`,
+      sourceAllocationFingerprint: `course_map_source_allocation_${'e'.repeat(40)}`,
+      batchKey: 'b7c2-recovery-batch',
+      regions: [
+        {
+          regionId: `course_map_region_${'f'.repeat(24)}`,
+          moduleId: 'module-weknora',
+          moduleIndex: 0,
+          moduleTitle: 'WeKnora',
+          regionIndex: 0,
+          title: '系统定位与 RAG 全景',
+          learningIntent: '解释 WeKnora 综合系统定位。',
+          approximateScope: 'focused',
+          sourceAllocationRegionIds: ['source-region-weknora'],
+          prerequisiteRegionIds: [],
+          synthesisGroups: [],
+          concepts: [],
+          canonicalConcepts: [],
+          evidence: [
+            {
+              evidenceId: 'E-ingestion',
+              sourceAllocationRegionId: 'source-region-weknora',
+              text: B7C2_INGESTION,
+              authorityEnvelope: {
+                sourceRegionId: 'E-ingestion',
+                sourceBlockIds: ['blk_3_87594204'],
+                formalEvidenceIds: ['E-ingestion'],
+                supportedConstructs: ['identify', 'explain'],
+                strongestSupportedConstruct: 'explain',
+                narrowerClaim: null,
+                tier: 'formal_sufficient',
+                rationale: 'Coarse exact-occurrence authority does not prove semantic support.',
+              },
+            },
+            {
+              evidenceId: 'E-positioning',
+              sourceAllocationRegionId: 'source-region-weknora',
+              text: B7C2_POSITIONING,
+              authorityEnvelope: {
+                sourceRegionId: 'E-positioning',
+                sourceBlockIds: ['blk_1_706f25b9'],
+                formalEvidenceIds: ['E-positioning'],
+                supportedConstructs: ['identify', 'explain'],
+                strongestSupportedConstruct: 'explain',
+                narrowerClaim: null,
+                tier: 'formal_sufficient',
+                rationale: 'Exact positioning authority is available for independent evaluation.',
+              },
+            },
+          ],
+          capabilityRequirements: [
+            {
+              capabilityRef: 'recovery_capability_1',
+              title: '解释 WeKnora 综合系统定位',
+              description:
+                '解释 WeKnora 是集文档系统、搜索系统、大模型、权限系统、工具调用系统于一体的综合系统，而非单纯大模型或搜索引擎。',
+              originalProposition: B7C2_POSITIONING_PROPOSITION,
+              construct: 'explain',
+              priority: 'required',
+              allowedEvidenceIds: ['E-ingestion', 'E-positioning'],
+            },
+          ],
+        },
+      ],
+      limits: { maxUnits: 1, maxObjectivesPerUnit: 1, maxEvidenceSelectionsPerUnit: 2 },
+    };
+
+    const payload = await provider.proposeCurriculumDetails(input);
+
+    expect(payload.units[0]!.objectives[0]).toMatchObject({
+      title: '解释 WeKnora 综合系统定位',
+      construct: 'explain',
+      capabilityRequirementRef: 'recovery_capability_1',
+      evidence: [{ evidenceId: 'E-positioning' }],
+    });
   });
 });
 
@@ -576,6 +1150,249 @@ describe('FakeProvider.proposeCurriculum', () => {
       ],
     );
   }
+
+  it('places every direct recovery capability once and prefers matching support markers', async () => {
+    const sourceContents = [
+      'A same-topic statement without explicit construct support.',
+      '[SUPPORTS:explain] The components jointly position the integrated system.',
+      '[SUPPORTS:identify] The integrated system has a recognizable bounded definition.',
+    ];
+    const sourceBlocks: SourceBlock[] = sourceContents.map((content, index) => ({
+      id: `block-recovery-${index + 1}`,
+      materialId: 'material-recovery-direct',
+      materialRevisionId: 'revision-recovery-direct',
+      index,
+      heading: 'Recovery topic',
+      headingPath: ['Recovery topic'],
+      pageNumber: null,
+      pageEnd: null,
+      content,
+      startOffset: 0,
+      endOffset: content.length,
+    }));
+    const input = curriculumInputFor(
+      sourceBlocks,
+      sourceBlocks.map((block) => ({
+        structuralUnitId: null,
+        materialId: block.materialId,
+        materialRevisionId: block.materialRevisionId!,
+        parentStructuralUnitId: null,
+        kind: 'section' as const,
+        index: block.index,
+        title: block.heading,
+        headingPath: block.headingPath,
+        sourceBlockIds: [block.id],
+      })),
+    );
+    input.capabilityRecovery = {
+      requirements: [
+        {
+          capabilityRef: 'capability-explain',
+          title: 'Explain the integrated system',
+          description: 'Explain how the components jointly position the system.',
+          originalProposition:
+            'Explain the integrated system\nExplain how the components jointly position the system.',
+          construct: 'explain',
+          priority: 'required',
+          allowedEvidenceIds: ['block-recovery-1', 'block-recovery-2'],
+        },
+        {
+          capabilityRef: 'capability-identify',
+          title: 'Identify the integrated system',
+          description: 'Identify the source-stated integrated-system definition.',
+          originalProposition:
+            'Identify the integrated system\nIdentify the source-stated integrated-system definition.',
+          construct: 'identify',
+          priority: 'high',
+          allowedEvidenceIds: ['block-recovery-1', 'block-recovery-3'],
+        },
+      ],
+    };
+
+    const payload = await provider.proposeCurriculum(input);
+    expect(CurriculumProposalPayloadSchema.parse(payload)).toEqual(payload);
+    const objectives = payload.nodes.flatMap((node) => node.objectives);
+    expect(objectives.map((objective) => objective.capabilityRequirementRef)).toEqual([
+      'capability-explain',
+      'capability-identify',
+    ]);
+    expect(objectives[0]).toMatchObject({
+      title: 'Explain the integrated system',
+      description: 'Explain how the components jointly position the system.',
+      construct: 'explain',
+      priority: 'required',
+      evidence: [{ evidenceId: 'block-recovery-2' }],
+    });
+    expect(objectives[1]).toMatchObject({
+      title: 'Identify the integrated system',
+      description: 'Identify the source-stated integrated-system definition.',
+      construct: 'identify',
+      priority: 'high',
+      evidence: [{ evidenceId: 'block-recovery-3' }],
+    });
+
+    const unrelatedOnly = structuredClone(input);
+    unrelatedOnly.capabilityRecovery = {
+      requirements: [
+        {
+          ...input.capabilityRecovery.requirements[0]!,
+          allowedEvidenceIds: ['block-recovery-1'],
+        },
+      ],
+    };
+    await expect(provider.proposeCurriculum(unrelatedOnly)).rejects.toMatchObject({
+      code: 'PROVIDER_INVALID_OUTPUT',
+    });
+  });
+
+  it('keeps a second same-block recovery excerpt outside a full 100-entry unit summary', async () => {
+    const navigation = 'Generic navigation excerpt.';
+    const support =
+      '[SUPPORTS:explain] The bounded components jointly position the integrated system.';
+    const sourceBlocks: SourceBlock[] = Array.from({ length: 100 }, (_, index) => {
+      const content = index === 0 ? `${navigation} ${support}` : `Exact source block ${index + 1}.`;
+      return {
+        id: `block-source-summary-boundary-${index + 1}`,
+        materialId: 'material-source-summary-boundary',
+        materialRevisionId: 'revision-source-summary-boundary',
+        index,
+        heading: 'One bounded source region',
+        headingPath: ['One bounded source region'],
+        pageNumber: null,
+        pageEnd: null,
+        content,
+        startOffset: 0,
+        endOffset: content.length,
+      };
+    });
+    const input = curriculumInputFor(sourceBlocks, [
+      {
+        structuralUnitId: 'structural-source-summary-boundary',
+        materialId: sourceBlocks[0]!.materialId,
+        materialRevisionId: sourceBlocks[0]!.materialRevisionId!,
+        parentStructuralUnitId: null,
+        kind: 'section',
+        index: 0,
+        title: 'One bounded source region',
+        headingPath: ['One bounded source region'],
+        sourceBlockIds: sourceBlocks.map((block) => block.id),
+      },
+    ]);
+    input.evidenceCatalog[0] = {
+      ...input.evidenceCatalog[0]!,
+      endOffset: navigation.length,
+      quote: navigation,
+    };
+    const supportingEvidenceId = 'evidence-source-summary-boundary-support';
+    input.evidenceCatalog.push({
+      ...input.evidenceCatalog[0]!,
+      id: supportingEvidenceId,
+      startOffset: navigation.length + 1,
+      endOffset: navigation.length + 1 + support.length,
+      quote: support,
+    });
+    input.capabilityRecovery = {
+      requirements: [
+        {
+          capabilityRef: 'capability-source-summary-boundary',
+          title: 'Explain the integrated system',
+          description: 'Explain how the bounded components jointly position the system.',
+          originalProposition:
+            'Explain the integrated system\nExplain how the bounded components jointly position the system.',
+          construct: 'explain',
+          priority: 'required',
+          allowedEvidenceIds: [supportingEvidenceId],
+        },
+      ],
+    };
+
+    const payload = await provider.proposeCurriculum(input);
+    expect(CurriculumProposalPayloadSchema.parse(payload)).toEqual(payload);
+    const unit = payload.nodes.find((node) => node.kind === 'learning_unit')!;
+    expect(unit.sourceEvidence).toHaveLength(100);
+    expect(unit.sourceEvidence).not.toContainEqual({ evidenceId: supportingEvidenceId });
+    expect(unit.objectives).toEqual([
+      expect.objectContaining({
+        capabilityRequirementRef: 'capability-source-summary-boundary',
+        evidence: [{ evidenceId: supportingEvidenceId }],
+      }),
+    ]);
+  });
+
+  it('preserves a feasible legacy 30-slot placement when a flexible capability arrives first', async () => {
+    const sourceBlocks: SourceBlock[] = ['R1', 'R2'].map((heading, index) => {
+      const content = `[SUPPORTS:explain] Exact recovery evidence for ${heading}.`;
+      return {
+        id: `block-legacy-matching-${index + 1}`,
+        materialId: 'material-legacy-matching',
+        materialRevisionId: 'revision-legacy-matching',
+        index,
+        heading,
+        headingPath: [heading],
+        pageNumber: null,
+        pageEnd: null,
+        content,
+        startOffset: 0,
+        endOffset: content.length,
+      };
+    });
+    const input = curriculumInputFor(
+      sourceBlocks,
+      sourceBlocks.map((block, index) => ({
+        structuralUnitId: `structural-legacy-matching-${index + 1}`,
+        materialId: block.materialId,
+        materialRevisionId: block.materialRevisionId!,
+        parentStructuralUnitId: null,
+        kind: 'section' as const,
+        index,
+        title: block.heading,
+        headingPath: block.headingPath,
+        sourceBlockIds: [block.id],
+      })),
+    );
+    input.capabilityRecovery = {
+      requirements: [
+        {
+          capabilityRef: 'capability-flexible',
+          title: 'Explain the flexible predecessor capability',
+          description: 'Explain the complete flexible capability.',
+          originalProposition:
+            'Explain the flexible predecessor capability\nExplain the complete flexible capability.',
+          construct: 'explain',
+          priority: 'required',
+          allowedEvidenceIds: sourceBlocks.map((block) => block.id),
+        },
+        ...Array.from({ length: 30 }, (_, index) => ({
+          capabilityRef: `capability-r1-only-${index + 1}`,
+          title: `Explain constrained predecessor capability ${index + 1}`,
+          description: `Explain constrained capability ${index + 1} from R1.`,
+          originalProposition: `Explain constrained predecessor capability ${index + 1}\nExplain constrained capability ${index + 1} from R1.`,
+          construct: 'explain' as const,
+          priority: 'high' as const,
+          allowedEvidenceIds: [sourceBlocks[0]!.id],
+        })),
+      ],
+    };
+
+    const payload = await provider.proposeCurriculum(input);
+    const placements = payload.nodes.flatMap((node) =>
+      node.objectives.flatMap((objective) =>
+        objective.capabilityRequirementRef ? [{ node, objective }] : [],
+      ),
+    );
+
+    expect(placements).toHaveLength(31);
+    expect(
+      placements.find(
+        ({ objective }) => objective.capabilityRequirementRef === 'capability-flexible',
+      )?.objective.evidence,
+    ).toEqual([{ evidenceId: sourceBlocks[1]!.id }]);
+    expect(
+      placements.filter(({ objective }) =>
+        objective.capabilityRequirementRef?.startsWith('capability-r1-only-'),
+      ),
+    ).toHaveLength(30);
+  });
 
   it('omits independent visual-only units from a mixed source-backed course', async () => {
     const sourceBackedInput = sourceBackedFixtureInput();

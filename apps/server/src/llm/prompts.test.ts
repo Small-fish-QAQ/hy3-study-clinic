@@ -10,6 +10,7 @@ import {
   courseMapPromptContext,
   courseMapProposalMessages,
   curriculumDetailProposalMessages,
+  curriculumPromptContext,
   measureCourseMapRequest,
   quizGenerationMessages,
   remediationMessages,
@@ -95,6 +96,16 @@ const semanticRepairInput: ObjectiveAuthoritySemanticRepairInput = {
       overreach: [],
       verdict: 'fail',
       rationale: 'The exact current binding does not entail the objective.',
+      requiredCapabilityPreservation: {
+        originalProposition:
+          'Explain the original system positioning\nExplain how every original component jointly positions the system.',
+        originalFragments: [
+          {
+            fragmentId: 'original_F1',
+            text: 'Explain the original system positioning\nExplain how every original component jointly positions the system.',
+          },
+        ],
+      },
     },
   ],
 };
@@ -135,6 +146,8 @@ describe('Objective-authority semantic prompts', () => {
     expect(content).toContain('omit, trivialize, substitute, or narrow away');
     expect(content).toContain('touch an unrelated objective');
     expect(content).toContain('fresh independent evaluation fails closed');
+    expect(content).toContain('immutable predecessor capability');
+    expect(content).toContain('Explain the original system positioning');
     expect(content).toContain('E1');
     expect(content).toContain('E2');
     const delimiters = content.match(/OBJECTIVE_AUTHORITY_REPAIR_INPUT_[a-f0-9]{32}/gu) ?? [];
@@ -362,8 +375,24 @@ describe('prompt trust boundaries', () => {
           rationale: 'Exact local authority.',
         },
       ],
+      capabilityRecovery: {
+        requirements: [
+          {
+            capabilityRef: 'capability-recovery-1',
+            title: 'Explain the original system positioning',
+            description: 'Explain how every original component jointly positions the system.',
+            originalProposition:
+              'Explain the original system positioning\nExplain how every original component jointly positions the system.',
+            construct: 'explain',
+            priority: 'required',
+            allowedEvidenceIds: ['cev_exact_1'],
+            predecessorObjectiveId: 'PRIVATE_PREDECESSOR_OBJECTIVE_ID',
+          },
+        ],
+      },
       limits: { maxNodes: 10, maxObjectives: 10, maxSynthesisGroups: 1 },
     } as unknown as CurriculumProposalInput;
+    const context = curriculumPromptContext(input);
     const content = curriculumProposalMessages(input)
       .map((message) => message.content)
       .join('\n');
@@ -386,6 +415,25 @@ describe('prompt trust boundaries', () => {
     expect(content).toContain('"formalEvidenceCount":1');
     expect(content).toContain('"construct":"identify|explain|apply|design|evaluate"');
     expect(content).toContain('construct is frozen after proposal');
+    expect(context.capabilityRecovery).toEqual({
+      requirements: [
+        {
+          capabilityRef: 'capability-recovery-1',
+          title: 'Explain the original system positioning',
+          description: 'Explain how every original component jointly positions the system.',
+          originalProposition:
+            'Explain the original system positioning\nExplain how every original component jointly positions the system.',
+          construct: 'explain',
+          priority: 'required',
+          allowedEvidenceIds: ['cev_exact_1'],
+        },
+      ],
+    });
+    expect(content).toContain('emit exactly one objective for every capabilityRef');
+    expect(content).toContain('frozen construct and priority');
+    expect(content).toContain('allowedEvidenceIds');
+    expect(content).not.toContain('PRIVATE_PREDECESSOR_OBJECTIVE_ID');
+    expect(content).not.toContain('predecessorObjectiveId');
     expect(content).not.toContain('PRIVATE_AUTHORITY_REGION_ID');
     expect(content).not.toContain('PRIVATE_AUTHORITY_BLOCK_ID');
     expect(content).not.toContain('PRIVATE_FORMAL_EVIDENCE_ID');
@@ -448,6 +496,28 @@ describe('prompt trust boundaries', () => {
           evidence: [{ evidenceId: 'PRIVATE_EVIDENCE_ID', text: 'Bounded source excerpt.' }],
         },
       ],
+      capabilityRecovery: {
+        evidenceOffers: [
+          {
+            recoveryEvidenceRef: 'CE1',
+            sourceRegionRef: 'R1',
+            text: 'Exact integrated-system positioning excerpt.',
+          },
+        ],
+        requirements: [
+          {
+            capabilityRef: 'capability-course-map-1',
+            title: 'Explain the original system positioning',
+            description: 'Explain how every original component jointly positions the system.',
+            originalProposition:
+              'Explain the original system positioning\nExplain how every original component jointly positions the system.',
+            construct: 'explain',
+            priority: 'required',
+            allowedSourceRegionRefs: ['R1'],
+            allowedRecoveryEvidenceRefs: ['CE1'],
+          },
+        ],
+      },
       limits: {
         maxModules: 3,
         maxRegions: 7,
@@ -479,6 +549,28 @@ describe('prompt trust boundaries', () => {
       ],
       evidence: [{ text: 'Bounded source excerpt.' }],
     });
+    expect(context.capabilityRecovery).toEqual({
+      evidenceOffers: [
+        {
+          recoveryEvidenceRef: 'CE1',
+          sourceRegionRef: 'R1',
+          text: 'Exact integrated-system positioning excerpt.',
+        },
+      ],
+      requirements: [
+        {
+          capabilityRef: 'capability-course-map-1',
+          title: 'Explain the original system positioning',
+          description: 'Explain how every original component jointly positions the system.',
+          originalProposition:
+            'Explain the original system positioning\nExplain how every original component jointly positions the system.',
+          construct: 'explain',
+          priority: 'required',
+          allowedSourceRegionRefs: ['R1'],
+          allowedRecoveryEvidenceRefs: ['CE1'],
+        },
+      ],
+    });
     const serializedContext = JSON.stringify(context);
     for (const privateId of [
       'PRIVATE_MATERIAL_ID',
@@ -496,6 +588,15 @@ describe('prompt trust boundaries', () => {
     expect(content).toContain('"prerequisiteRegionRef":"R1"');
     expect(content).toContain('"regionRefs":["R1","R2"]');
     expect(content).toContain('Use every offered sourceRegionRef exactly once');
+    expect(content).toContain('assign every offered capabilityRef exactly once');
+    expect(content).toContain('allowedSourceRegionRefs');
+    expect(content).toContain('allowedRecoveryEvidenceRefs');
+    expect(content).toContain('Exact integrated-system positioning excerpt.');
+    expect(content).toContain('exact quotation and source location only');
+    expect(content).toContain('grants no authority');
+    expect(content).toContain('at most four capability requirements');
+    expect(content).toContain('frozen');
+    expect(content).not.toContain('predecessorObjectiveId');
     expect(content).toContain('Do not output keys, numeric indexes, fingerprints');
     expect(content).not.toContain('sourceAllocationFingerprint":"course_map_source_allocation_');
     expect(content).not.toContain('"index":0');
@@ -503,6 +604,7 @@ describe('prompt trust boundaries', () => {
     expect(measureCourseMapRequest(input).counts).toEqual({
       sourceRegions: 1,
       evidenceOffers: 1,
+      recoveryEvidenceOffers: 1,
       anchorOptions: 1,
       canonicalAnchorOptions: 1,
     });
@@ -554,6 +656,19 @@ describe('prompt trust boundaries', () => {
             tier: 'narrower_formal',
             rationale: 'Exact local authority.',
           },
+          capabilityRequirements: [
+            {
+              capabilityRef: 'capability-detail-1',
+              title: 'Explain the original system positioning',
+              description: 'Explain how every original component jointly positions the system.',
+              originalProposition:
+                'Explain the original system positioning\nExplain how every original component jointly positions the system.',
+              construct: 'explain',
+              priority: 'required',
+              allowedEvidenceIds: ['PRIVATE_EVIDENCE_ID'],
+              predecessorObjectiveId: 'PRIVATE_DETAIL_PREDECESSOR_OBJECTIVE_ID',
+            },
+          ],
         },
       ],
       limits: { maxUnits: 1, maxObjectivesPerUnit: 1, maxEvidenceSelectionsPerUnit: 1 },
@@ -565,5 +680,12 @@ describe('prompt trust boundaries', () => {
     expect(content).not.toContain('PRIVATE_AUTHORITY_REGION_ID');
     expect(content).not.toContain('PRIVATE_AUTHORITY_BLOCK_ID');
     expect(content).not.toContain('PRIVATE_FORMAL_EVIDENCE_ID');
+    expect(content).toContain('capability-detail-1');
+    expect(content).toContain('Explain the original system positioning');
+    expect(content).toContain('allowedEvidenceIds');
+    expect(content).toContain('emit exactly one objective for every capabilityRef');
+    expect(content).toContain('frozen construct and priority');
+    expect(content).not.toContain('PRIVATE_DETAIL_PREDECESSOR_OBJECTIVE_ID');
+    expect(content).not.toContain('predecessorObjectiveId');
   });
 });

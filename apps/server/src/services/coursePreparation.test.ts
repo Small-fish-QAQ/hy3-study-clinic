@@ -52,6 +52,7 @@ class TrackingProvider extends FakeProvider {
   detailGateAtCall: number | null = null;
   detailGate: Promise<void> | null = null;
   failDetailAtCall: number | null = null;
+  nextLegacyNonOptionalObjectiveLimit: number | null = null;
 
   constructor(options: FakeProviderOptions = {}) {
     super(options);
@@ -79,7 +80,30 @@ class TrackingProvider extends FakeProvider {
     started?.();
     if (gate) await gate;
     if (this.failCurriculum) throw new Error('controlled Curriculum failure');
-    return super.proposeCurriculum(input, opts);
+    const nonOptionalObjectiveLimit = this.nextLegacyNonOptionalObjectiveLimit;
+    this.nextLegacyNonOptionalObjectiveLimit = null;
+    return super.proposeCurriculum(
+      input,
+      nonOptionalObjectiveLimit === null
+        ? opts
+        : {
+            ...opts,
+            validateCandidate: (candidate) => {
+              let objectiveIndex = 0;
+              for (const node of (candidate as CurriculumProposalPayload).nodes) {
+                for (const objective of node.objectives) {
+                  if (objectiveIndex >= nonOptionalObjectiveLimit) {
+                    objective.priority = 'optional';
+                    objective.priorityRationale =
+                      'This fixture keeps unrelated objectives outside the recovery frontier.';
+                  }
+                  objectiveIndex += 1;
+                }
+              }
+              return opts?.validateCandidate?.(candidate) ?? { valid: true, diagnostics: [] };
+            },
+          },
+    );
   }
 
   override async proposeCourseMap(
@@ -489,7 +513,11 @@ describe('Course Preparation coordinator', () => {
       ),
     ).rejects.toMatchObject({
       code: ApiErrorCode.ValidationError,
-      details: { kind: 'curriculum_detail_batch_bound_exceeded', maxDetailBatches: 2 },
+      details: {
+        kind: 'curriculum_detail_batch_bound_exceeded',
+        maxDetailBatches: 2,
+        diagnosticCodes: ['curriculum_detail_planning_failed'],
+      },
     });
     expect(harness.repos.curricula.list('ws_1')).toEqual([]);
   });
@@ -558,8 +586,16 @@ describe('Course Preparation coordinator', () => {
 
   it('preserves an accepted predecessor when the second detail batch fails', async () => {
     const harness = createHarness({ withConcept: true, sectionCount: 51 });
+    // Keep one predecessor capability in scope so the recovery path remains
+    // exercised without making its independent output budget mask batch 2.
+    harness.provider.nextLegacyNonOptionalObjectiveLimit = 1;
     const predecessorId = await acceptSourceOnlyCurriculum(harness);
     const predecessor = structuredClone(harness.repos.curricula.get(predecessorId));
+    expect(
+      predecessor?.nodes
+        .flatMap((node) => node.learningUnit?.objectives ?? [])
+        .filter((objective) => objective.priority !== 'optional'),
+    ).toHaveLength(1);
     harness.provider.detailCalls = 0;
     harness.provider.failDetailAtCall = 2;
 
@@ -578,6 +614,46 @@ describe('Course Preparation coordinator', () => {
     expect(harness.provider.detailCalls).toBe(2);
     expect(harness.repos.curricula.get(predecessorId)).toEqual(predecessor);
     expect(harness.repos.curricula.list('ws_1')).toHaveLength(1);
+  });
+
+  it('rejects a globally impossible recovery output before Course Map provider work', async () => {
+    const harness = createHarness({
+      withConcept: true,
+      sectionCount: 49,
+    });
+    const predecessorId = await acceptSourceOnlyCurriculum(harness);
+    const predecessor = structuredClone(harness.repos.curricula.get(predecessorId));
+    expect(
+      predecessor?.nodes
+        .flatMap((node) => node.learningUnit?.objectives ?? [])
+        .filter((objective) => objective.priority !== 'optional'),
+    ).toHaveLength(49);
+    harness.provider.curriculumCalls = 0;
+    harness.provider.detailCalls = 0;
+
+    await expect(
+      harness.services.curriculum.propose(
+        {
+          command: command('recovery-detail-output-overflow'),
+          contractId: harness.contract.id,
+          expectedContractVersion: harness.contract.version,
+          predecessorCurriculumId: predecessorId,
+          expectedActiveCurriculumId: harness.repos.courseExecution.get('ws_1').activeCurriculumId,
+        },
+        { generationPolicy: COURSE_MAP_CURRICULUM_GENERATION_POLICY },
+      ),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.ValidationError,
+      details: {
+        kind: 'curriculum_detail_batch_bound_exceeded',
+        maxDetailBatches: 2,
+        diagnosticCodes: ['recovery_capability_detail_output_budget_exceeded'],
+      },
+    });
+    expect(harness.provider.curriculumCalls).toBe(0);
+    expect(harness.provider.detailCalls).toBe(0);
+    expect(harness.repos.curricula.list('ws_1')).toHaveLength(1);
+    expect(harness.repos.curricula.get(predecessorId)).toEqual(predecessor);
   });
 
   it('rebuilds Concepts for a replacement revision while rejecting the stale request', async () => {

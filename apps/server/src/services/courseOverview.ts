@@ -10,7 +10,11 @@ import {
 import { notFound } from '../errors.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
-import { curriculumHierarchy, requiresStudyPlanExecutionRepair } from './curriculum.js';
+import {
+  acceptedCurriculumCapabilityRecoveryPredecessor,
+  curriculumHierarchy,
+  requiresStudyPlanExecutionRepair,
+} from './curriculum.js';
 import { preflightStudyPlan } from './studyPlansAgent.js';
 import { assessCurriculumRecovery } from './curriculumRecovery.js';
 import { assessLearningContractScope } from './learningContractScope.js';
@@ -308,19 +312,32 @@ export function createCourseOverviewService({ repos, clock, reviewSuccessor }: C
       selectedContract && planningCurriculum && contractScopeCurrent
         ? preflightStudyPlan(repos, clock, selectedContract, planningCurriculum, workspace.name)
         : null;
+    const proposedCurriculumPredecessor = proposedCurriculum?.predecessorId
+      ? (repos.curricula.get(proposedCurriculum.predecessorId) ?? null)
+      : null;
+    const proposedCurriculumRequiresExecutionPreflight =
+      selectedContract && contractScopeCurrent && proposedCurriculum
+        ? requiresStudyPlanExecutionRepair(
+            repos,
+            clock,
+            selectedContract,
+            proposedCurriculumPredecessor,
+            workspace.name,
+          ) ||
+          acceptedCurriculumCapabilityRecoveryPredecessor(
+            repos,
+            clock,
+            selectedContract,
+            proposedCurriculum.executionSourceManifest,
+            proposedCurriculumPredecessor,
+            workspace.name,
+          ) !== null
+        : false;
     const proposedCurriculumPreflight =
       selectedContract &&
       contractScopeCurrent &&
       proposedCurriculum &&
-      requiresStudyPlanExecutionRepair(
-        repos,
-        clock,
-        selectedContract,
-        proposedCurriculum.predecessorId
-          ? (repos.curricula.get(proposedCurriculum.predecessorId) ?? null)
-          : null,
-        workspace.name,
-      )
+      proposedCurriculumRequiresExecutionPreflight
         ? preflightStudyPlan(repos, clock, selectedContract, proposedCurriculum, workspace.name)
         : null;
     const curriculumRecovery =

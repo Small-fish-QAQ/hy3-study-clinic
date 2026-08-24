@@ -316,13 +316,17 @@ function stageRoute(
     createdAt: T0,
     acceptedAt: null,
   };
-  repos.curricula.createVersion(curriculum, {
-    id: `curriculum_created_${suffix}`,
-    eventType: 'proposed',
-    actor: 'local',
-    payload: {},
-    createdAt: T0,
-  });
+  repos.curricula.createVersion(
+    curriculum,
+    {
+      id: `curriculum_created_${suffix}`,
+      eventType: 'proposed',
+      actor: 'local',
+      payload: {},
+      createdAt: T0,
+    },
+    { capabilityRecoveryPredecessorId: null },
+  );
   const acceptedCurriculum = repos.curricula.accept(curriculumId, T2, {
     id: `curriculum_accepted_${suffix}`,
     eventType: 'accepted',

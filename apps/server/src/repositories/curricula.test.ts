@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { Curriculum, ObjectiveAuthoritySemanticSupport } from '@hy3-clinic/shared';
+import type {
+  Curriculum,
+  ObjectiveAuthorityCapabilityRecoveryOrigin,
+  ObjectiveAuthoritySemanticSupport,
+} from '@hy3-clinic/shared';
 import { openDatabase, type SqliteDb } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
 import {
@@ -8,7 +12,9 @@ import {
   fingerprintObjectiveAuthorityBinding,
   fingerprintObjectiveAuthorityProposition,
 } from '../services/objectiveAuthoritySemanticSupport.js';
+import { fingerprintCurriculumCapabilitySourceEnvelope } from '../services/curriculumCapabilityRecovery.js';
 import { makeBlock, makeMaterial, makeWorkspace, T0 } from '../testing/fixtures.js';
+import { CurriculumCapabilityRecoveryLineageError } from './curricula.js';
 import { createRepositories, type Repositories } from './index.js';
 
 let db: SqliteDb;
@@ -24,10 +30,17 @@ const OBJECTIVE_PROPOSITION = curriculumObjectiveProposition({
 const SECOND_BLOCK_CONTENT = 'Long-term memory has a different retrieval relationship.';
 const THIRD_BLOCK_CONTENT = 'This exact claim exists outside the Curriculum manifest.';
 
-function semanticSupport(objectiveId = 'objective_1'): ObjectiveAuthoritySemanticSupport {
+function semanticSupport(
+  objectiveId = 'objective_1',
+  objective: { title: string; description: string } = {
+    title: OBJECTIVE_TITLE,
+    description: OBJECTIVE_DESCRIPTION,
+  },
+): ObjectiveAuthoritySemanticSupport {
   const authorityRecordIds = ['authority_1'];
   const sourceBlockIds = ['blk_1'];
   const authorityClaimIds = ['claim_1'];
+  const proposition = curriculumObjectiveProposition(objective);
   return {
     schemaVersion: 1,
     policyVersion: 'objective-authority-semantic-support-v1',
@@ -36,8 +49,8 @@ function semanticSupport(objectiveId = 'objective_1'): ObjectiveAuthoritySemanti
     providerModel: null,
     independent: true,
     objectiveId,
-    proposition: OBJECTIVE_PROPOSITION,
-    propositionFingerprint: fingerprintObjectiveAuthorityProposition(OBJECTIVE_PROPOSITION),
+    proposition,
+    propositionFingerprint: fingerprintObjectiveAuthorityProposition(proposition),
     construct: 'explain',
     boundAuthorityRecordIds: authorityRecordIds,
     boundSourceBlockIds: sourceBlockIds,
@@ -50,7 +63,7 @@ function semanticSupport(objectiveId = 'objective_1'): ObjectiveAuthoritySemanti
     fragments: [
       {
         fragmentId: 'fragment_1',
-        text: OBJECTIVE_PROPOSITION,
+        text: proposition,
         status: 'supported',
         supportType: 'relationship',
         sourceBlockIds: ['blk_1'],
@@ -89,6 +102,51 @@ function rebindSemanticSupport(
     fragment.authorityClaimIds = [...authorityClaimIds];
   }
   return rebound;
+}
+
+function recoveryOrigin(
+  predecessor: Curriculum,
+  overrides: Partial<ObjectiveAuthorityCapabilityRecoveryOrigin> = {},
+): ObjectiveAuthorityCapabilityRecoveryOrigin {
+  const predecessorNode = predecessor.nodes[1]!;
+  const predecessorObjective = predecessorNode.learningUnit!.objectives[0]!;
+  return {
+    predecessorCurriculumId: predecessor.id,
+    predecessorCurriculumVersion: predecessor.version,
+    predecessorLearningUnitId: predecessorNode.id,
+    predecessorObjectiveId: predecessorObjective.id,
+    predecessorPriority: 'normal',
+    contractVersionId: predecessor.contractVersionId,
+    executionSourceManifestFingerprint: predecessor.executionSourceManifest.fingerprint,
+    sourceEnvelopeFingerprint: fingerprintCurriculumCapabilitySourceEnvelope(predecessorNode),
+    ...overrides,
+  };
+}
+
+function recoverySemanticSupport(
+  predecessor: Curriculum,
+  objectiveId = 'objective_2',
+  originOverrides: Partial<ObjectiveAuthorityCapabilityRecoveryOrigin> = {},
+): ObjectiveAuthoritySemanticSupport {
+  const support = semanticSupport(objectiveId);
+  support.capabilityPreservation = {
+    originalProposition: OBJECTIVE_PROPOSITION,
+    originalPropositionFingerprint: fingerprintObjectiveAuthorityProposition(OBJECTIVE_PROPOSITION),
+    mappings: [
+      {
+        originalFragmentId: 'recovery_capability_1:F1',
+        originalText: OBJECTIVE_PROPOSITION,
+        repairedFragmentIds: ['fragment_1'],
+        status: 'preserved',
+        rationale: 'The successor preserves the complete accepted predecessor capability.',
+      },
+    ],
+    lostOriginalFragmentIds: [],
+    verdict: 'pass',
+    rationale: 'The accepted predecessor capability is preserved exactly once.',
+    recoveryOrigin: recoveryOrigin(predecessor, originOverrides),
+  };
+  return support;
 }
 
 function curriculum(
@@ -178,14 +236,45 @@ function curriculum(
   };
 }
 
-function createVersion(input: Curriculum): Curriculum {
-  return repos.curricula.createVersion(input, {
-    id: `event_${input.id}`,
-    eventType: 'proposed',
-    actor: 'local',
-    payload: {},
-    createdAt: T0,
+function recoverySuccessor(
+  predecessor: Curriculum,
+  options: {
+    id?: string;
+    originOverrides?: Partial<ObjectiveAuthorityCapabilityRecoveryOrigin>;
+    semanticSupport?: ObjectiveAuthoritySemanticSupport;
+  } = {},
+): Curriculum {
+  const objectiveId = 'objective_2';
+  const successor = curriculum({
+    id: options.id ?? 'curriculum_2',
+    semanticSupport:
+      options.semanticSupport ??
+      recoverySemanticSupport(predecessor, objectiveId, options.originOverrides),
   });
+  successor.version = predecessor.version + 1;
+  successor.predecessorId = predecessor.id;
+  successor.nodes[0]!.id = 'root_2';
+  successor.nodes[1]!.id = 'unit_2';
+  successor.nodes[1]!.parentId = 'root_2';
+  successor.nodes[1]!.learningUnit!.objectives[0]!.id = objectiveId;
+  return successor;
+}
+
+function createVersion(
+  input: Curriculum,
+  capabilityRecoveryPredecessorId: string | null = null,
+): Curriculum {
+  return repos.curricula.createVersion(
+    input,
+    {
+      id: `event_${input.id}`,
+      eventType: 'proposed',
+      actor: 'local',
+      payload: {},
+      createdAt: T0,
+    },
+    { capabilityRecoveryPredecessorId },
+  );
 }
 
 function acceptVersion(id: string): Curriculum {
@@ -195,6 +284,47 @@ function acceptVersion(id: string): Curriculum {
     actor: 'learner',
     payload: {},
     createdAt: T0,
+  });
+}
+
+function createSecondAuthority(): void {
+  repos.sourceAuthority.createVersion({
+    id: 'authority_2',
+    workspaceId: 'ws_1',
+    logicalSourceId: 'logical_authority_2',
+    materialId: 'mat_1',
+    materialRevisionId,
+    predecessorId: null,
+    premiseScope: 'long-term-memory-relationship',
+    policyBasis: {
+      policyVersion: 'truth-v1',
+      premiseKind: 'claim',
+      basis: 'exact-source',
+    },
+    validationState: 'validated',
+    conflictState: 'none',
+    actor: 'local_validator',
+    createdAt: T0,
+    updatedAt: T0,
+    claims: [
+      {
+        id: 'claim_2',
+        sourceBlockId: 'blk_2',
+        claim: SECOND_BLOCK_CONTENT,
+        quote: SECOND_BLOCK_CONTENT,
+        startOffset: 0,
+        endOffset: SECOND_BLOCK_CONTENT.length,
+        occurrenceCount: 1,
+        createdAt: T0,
+      },
+    ],
+    event: {
+      id: 'authority_event_2',
+      eventType: 'validated',
+      actor: 'local_validator',
+      payload: {},
+      createdAt: T0,
+    },
   });
 }
 
@@ -729,5 +859,479 @@ describe('Curriculum objective semantic-support persistence', () => {
     ).not.toThrow();
     expect(repos.curricula.getObjectiveSemanticSupport(stored.id)).toEqual([]);
     expect(db.pragma('foreign_key_check')).toEqual([]);
+  });
+});
+
+describe('Curriculum capability-recovery lineage persistence', () => {
+  it('round-trips one exact accepted-ancestor recovery origin', () => {
+    const predecessor = acceptVersion(
+      createVersion(curriculum({ id: 'curriculum_predecessor' })).id,
+    );
+    const expected = recoverySuccessor(predecessor);
+
+    const stored = createVersion(expected, predecessor.id);
+
+    expect(stored).toEqual(expected);
+    expect(repos.curricula.get(stored.id)).toEqual(expected);
+    expect(repos.curricula.list('ws_1')).toEqual([predecessor, expected]);
+    expect(repos.curricula.getObjectiveSemanticSupport(stored.id)).toEqual([
+      recoverySemanticSupport(predecessor),
+    ]);
+    expect(
+      stored.nodes[1]!.learningUnit!.objectives[0]!.semanticSupport!.capabilityPreservation!
+        .recoveryOrigin,
+    ).toEqual(recoveryOrigin(predecessor));
+  });
+
+  it('rejects B acceptance after C persists with A recovery lineage', () => {
+    const acceptedAncestor = acceptVersion(
+      createVersion(curriculum({ id: 'curriculum_accepted_ancestor' })).id,
+    );
+    const intermediate = createVersion(
+      recoverySuccessor(acceptedAncestor, { id: 'curriculum_intermediate' }),
+      acceptedAncestor.id,
+    );
+    const descendantCandidate = recoverySuccessor(acceptedAncestor, {
+      id: 'curriculum_descendant',
+    });
+    descendantCandidate.version = intermediate.version + 1;
+    descendantCandidate.predecessorId = intermediate.id;
+    const descendant = createVersion(descendantCandidate, acceptedAncestor.id);
+    expect(acceptedAncestor.status).toBe('accepted');
+    expect(intermediate).toMatchObject({
+      predecessorId: acceptedAncestor.id,
+      status: 'proposed',
+    });
+    expect(descendant).toMatchObject({ predecessorId: intermediate.id, status: 'proposed' });
+    expect(
+      descendant.nodes[1]!.learningUnit!.objectives[0]!.semanticSupport!.capabilityPreservation!
+        .recoveryOrigin?.predecessorCurriculumId,
+    ).toBe(acceptedAncestor.id);
+    const descendantSnapshot = structuredClone(descendant);
+    const persistedDescendantBefore = {
+      aggregate: db
+        .prepare(
+          'SELECT status, accepted_at, hex(payload) AS payload FROM curriculum_versions WHERE id = ?',
+        )
+        .get(descendant.id),
+      semanticSupport: db
+        .prepare(
+          `SELECT objective_id, hex(payload) AS payload
+           FROM curriculum_objective_semantic_support
+           WHERE curriculum_id = ? ORDER BY objective_id`,
+        )
+        .all(descendant.id),
+    };
+
+    expect(() => acceptVersion(intermediate.id)).toThrow(
+      /Only the latest Curriculum version may be accepted/u,
+    );
+
+    expect(repos.curricula.get(intermediate.id)?.status).toBe('proposed');
+    expect(repos.curricula.listEvents(intermediate.id)).toHaveLength(1);
+    expect(repos.curricula.get(descendant.id)).toEqual(descendantSnapshot);
+    expect(repos.curricula.list('ws_1')).toEqual([
+      acceptedAncestor,
+      intermediate,
+      descendantSnapshot,
+    ]);
+    expect({
+      aggregate: db
+        .prepare(
+          'SELECT status, accepted_at, hex(payload) AS payload FROM curriculum_versions WHERE id = ?',
+        )
+        .get(descendant.id),
+      semanticSupport: db
+        .prepare(
+          `SELECT objective_id, hex(payload) AS payload
+           FROM curriculum_objective_semantic_support
+           WHERE curriculum_id = ? ORDER BY objective_id`,
+        )
+        .all(descendant.id),
+    }).toEqual(persistedDescendantBefore);
+  });
+
+  it.each(['superseded', 'rejected'] as const)(
+    'hydrates recovery lineage after the accepted predecessor becomes %s',
+    (status) => {
+      const predecessor = acceptVersion(
+        createVersion(curriculum({ id: 'curriculum_predecessor' })).id,
+      );
+      const successor = createVersion(recoverySuccessor(predecessor), predecessor.id);
+
+      if (status === 'rejected') {
+        repos.curricula.reject(predecessor.id, 'Historical artifact is no longer active.', {
+          id: 'event_reject_predecessor',
+          eventType: 'rejected',
+          actor: 'learner',
+          payload: {},
+          createdAt: T0,
+        });
+      } else {
+        const row = db
+          .prepare('SELECT payload FROM curriculum_versions WHERE id = ?')
+          .get(predecessor.id) as { payload: string };
+        const aggregate = JSON.parse(row.payload) as Curriculum;
+        db.prepare(
+          `UPDATE curriculum_versions SET status = 'superseded', payload = ? WHERE id = ?`,
+        ).run(JSON.stringify({ ...aggregate, status: 'superseded' }), predecessor.id);
+      }
+
+      expect(
+        db
+          .prepare('SELECT status, accepted_at FROM curriculum_versions WHERE id = ?')
+          .get(predecessor.id),
+      ).toEqual({ status, accepted_at: T0 });
+      expect(repos.curricula.get(successor.id)).toEqual(successor);
+      expect(repos.curricula.list('ws_1').at(-1)).toEqual(successor);
+    },
+  );
+
+  it('rejects every forged accepted-predecessor origin field atomically', () => {
+    const predecessor = acceptVersion(
+      createVersion(curriculum({ id: 'curriculum_predecessor' })).id,
+    );
+    const cases: Array<{
+      label: string;
+      overrides: Partial<ObjectiveAuthorityCapabilityRecoveryOrigin>;
+    }> = [
+      {
+        label: 'predecessor version',
+        overrides: { predecessorCurriculumVersion: predecessor.version + 1 },
+      },
+      {
+        label: 'LearningUnit identity',
+        overrides: { predecessorLearningUnitId: 'unit_forged' },
+      },
+      {
+        label: 'objective identity',
+        overrides: { predecessorObjectiveId: 'objective_forged' },
+      },
+      { label: 'priority', overrides: { predecessorPriority: 'high' } },
+      { label: 'Contract identity', overrides: { contractVersionId: 'contract_forged' } },
+      {
+        label: 'manifest fingerprint',
+        overrides: { executionSourceManifestFingerprint: 'manifest_forged' },
+      },
+      {
+        label: 'source-envelope fingerprint',
+        overrides: { sourceEnvelopeFingerprint: 'source_envelope_forged' },
+      },
+    ];
+
+    for (const testCase of cases) {
+      expect(
+        () =>
+          createVersion(
+            recoverySuccessor(predecessor, { originOverrides: testCase.overrides }),
+            predecessor.id,
+          ),
+        testCase.label,
+      ).toThrow(CurriculumCapabilityRecoveryLineageError);
+      expect(db.prepare('SELECT COUNT(*) AS count FROM curriculum_versions').get()).toEqual({
+        count: 1,
+      });
+      expect(
+        db.prepare('SELECT COUNT(*) AS count FROM curriculum_objective_semantic_support').get(),
+      ).toEqual({ count: 1 });
+    }
+  });
+
+  it('fails hydration when a persisted origin is changed to an existing non-ancestor', () => {
+    const predecessor = acceptVersion(
+      createVersion(curriculum({ id: 'curriculum_predecessor' })).id,
+    );
+    const successor = createVersion(recoverySuccessor(predecessor), predecessor.id);
+    db.exec('DROP TRIGGER prevent_curriculum_objective_semantic_support_update');
+    const row = db
+      .prepare(
+        `SELECT payload FROM curriculum_objective_semantic_support
+         WHERE curriculum_id = ? AND objective_id = ?`,
+      )
+      .get(successor.id, 'objective_2') as { payload: string };
+    const support = JSON.parse(row.payload) as ObjectiveAuthoritySemanticSupport;
+    support.capabilityPreservation!.recoveryOrigin!.predecessorCurriculumId = successor.id;
+    db.prepare(
+      `UPDATE curriculum_objective_semantic_support SET payload = ?
+       WHERE curriculum_id = ? AND objective_id = ?`,
+    ).run(JSON.stringify(support), successor.id, 'objective_2');
+
+    expect(() => repos.curricula.get(successor.id)).toThrow(
+      CurriculumCapabilityRecoveryLineageError,
+    );
+    expect(() => repos.curricula.list('ws_1')).toThrow(CurriculumCapabilityRecoveryLineageError);
+    expect(
+      db.prepare('SELECT predecessor_id FROM curriculum_versions WHERE id = ?').get(successor.id),
+    ).toEqual({ predecessor_id: predecessor.id });
+  });
+
+  it('rejects an older compatible accepted ancestor when a nearer accepted predecessor exists', () => {
+    const oldest = acceptVersion(createVersion(curriculum({ id: 'curriculum_predecessor' })).id);
+    const nearest = acceptVersion(createVersion(recoverySuccessor(oldest), oldest.id).id);
+    const successor = recoverySuccessor(nearest, {
+      id: 'curriculum_3',
+      originOverrides: recoveryOrigin(oldest),
+    });
+
+    expect(() => createVersion(successor, nearest.id)).toThrow(
+      CurriculumCapabilityRecoveryLineageError,
+    );
+    expect(db.prepare('SELECT COUNT(*) AS count FROM curriculum_versions').get()).toEqual({
+      count: 2,
+    });
+  });
+
+  it('rejects a recovery-shaped full frontier when every local origin is stripped', () => {
+    const predecessor = acceptVersion(
+      createVersion(curriculum({ id: 'curriculum_predecessor' })).id,
+    );
+    const support = recoverySemanticSupport(predecessor);
+    delete support.capabilityPreservation!.recoveryOrigin;
+
+    expect(() =>
+      createVersion(recoverySuccessor(predecessor, { semanticSupport: support }), predecessor.id),
+    ).toThrow(CurriculumCapabilityRecoveryLineageError);
+    expect(db.prepare('SELECT COUNT(*) AS count FROM curriculum_versions').get()).toEqual({
+      count: 1,
+    });
+  });
+
+  it.each(['priority', 'preserved proposition'] as const)(
+    'rejects stripped origins even when the forged successor changes %s',
+    (field) => {
+      const predecessor = acceptVersion(
+        createVersion(curriculum({ id: 'curriculum_predecessor' })).id,
+      );
+      const support = recoverySemanticSupport(predecessor);
+      delete support.capabilityPreservation!.recoveryOrigin;
+      const successor = recoverySuccessor(predecessor, { semanticSupport: support });
+      const objective = successor.nodes[1]!.learningUnit!.objectives[0]!;
+      if (field === 'priority') {
+        objective.priority = 'high';
+      } else {
+        const forged = 'A forged replacement capability.';
+        support.capabilityPreservation!.originalProposition = forged;
+        support.capabilityPreservation!.originalPropositionFingerprint =
+          fingerprintObjectiveAuthorityProposition(forged);
+        support.capabilityPreservation!.mappings[0]!.originalText = forged;
+      }
+
+      expect(() => createVersion(successor, predecessor.id)).toThrow(
+        CurriculumCapabilityRecoveryLineageError,
+      );
+      expect(db.prepare('SELECT COUNT(*) AS count FROM curriculum_versions').get()).toEqual({
+        count: 1,
+      });
+    },
+  );
+
+  it('rejects a current successor that strips the full recovery preservation from a legacy-invalid predecessor', () => {
+    const predecessor = acceptVersion(
+      createVersion(curriculum({ id: 'curriculum_predecessor' })).id,
+    );
+    db.exec('DROP TRIGGER prevent_curriculum_objective_semantic_support_delete');
+    db.prepare('DELETE FROM curriculum_objective_semantic_support WHERE curriculum_id = ?').run(
+      predecessor.id,
+    );
+    expect(
+      repos.curricula.get(predecessor.id)!.nodes[1]!.learningUnit!.objectives[0]!.semanticSupport,
+    ).toBeUndefined();
+    const support = recoverySemanticSupport(predecessor);
+    delete support.capabilityPreservation;
+
+    expect(() =>
+      createVersion(recoverySuccessor(predecessor, { semanticSupport: support }), predecessor.id),
+    ).toThrow(CurriculumCapabilityRecoveryLineageError);
+    expect(db.prepare('SELECT COUNT(*) AS count FROM curriculum_versions').get()).toEqual({
+      count: 1,
+    });
+  });
+
+  it('does not invent recovery lineage for optional objectives on a legacy-invalid predecessor', () => {
+    const predecessorCandidate = curriculum({ id: 'curriculum_predecessor' });
+    predecessorCandidate.nodes[1]!.learningUnit!.objectives[0]!.priority = 'optional';
+    const predecessor = acceptVersion(createVersion(predecessorCandidate).id);
+    db.exec('DROP TRIGGER prevent_curriculum_objective_semantic_support_delete');
+    db.prepare('DELETE FROM curriculum_objective_semantic_support WHERE curriculum_id = ?').run(
+      predecessor.id,
+    );
+    const legacyPredecessor = repos.curricula.get(predecessor.id)!;
+    const predecessorSnapshot = structuredClone(legacyPredecessor);
+    const successor = recoverySuccessor(predecessor, {
+      semanticSupport: semanticSupport('objective_2'),
+    });
+
+    const stored = createVersion(successor, null);
+
+    expect(
+      stored.nodes[1]!.learningUnit!.objectives[0]!.semanticSupport!.capabilityPreservation,
+    ).toBeUndefined();
+    expect(repos.curricula.get(predecessor.id)).toEqual(predecessorSnapshot);
+    expect(repos.curricula.get(stored.id)).toEqual(stored);
+  });
+
+  it('rejects an originless successor when local preflight requires recovery from a semantically valid predecessor', () => {
+    const predecessor = acceptVersion(
+      createVersion(curriculum({ id: 'curriculum_predecessor' })).id,
+    );
+    const originlessSupport = semanticSupport('objective_2');
+    const successor = recoverySuccessor(predecessor, {
+      semanticSupport: originlessSupport,
+    });
+
+    expect(() => createVersion(successor, predecessor.id)).toThrow(
+      CurriculumCapabilityRecoveryLineageError,
+    );
+    expect(db.prepare('SELECT COUNT(*) AS count FROM curriculum_versions').get()).toEqual({
+      count: 1,
+    });
+    expect(db.prepare('SELECT COUNT(*) AS count FROM curriculum_events').get()).toEqual({
+      count: 2,
+    });
+  });
+
+  it('rejects a partial originless preservation frontier from a legacy-invalid predecessor', () => {
+    const predecessorCandidate = curriculum({ id: 'curriculum_predecessor' });
+    const secondTitle = 'Explain retrieval';
+    const secondDescription = 'Explain the stated long-term-memory retrieval relationship.';
+    const secondObjective = structuredClone(
+      predecessorCandidate.nodes[1]!.learningUnit!.objectives[0]!,
+    );
+    secondObjective.id = 'objective_predecessor_2';
+    secondObjective.title = secondTitle;
+    secondObjective.description = secondDescription;
+    secondObjective.semanticSupport = semanticSupport(secondObjective.id, {
+      title: secondTitle,
+      description: secondDescription,
+    });
+    predecessorCandidate.nodes[1]!.learningUnit!.objectives.push(secondObjective);
+    const predecessor = acceptVersion(createVersion(predecessorCandidate).id);
+
+    db.exec('DROP TRIGGER prevent_curriculum_objective_semantic_support_delete');
+    db.prepare('DELETE FROM curriculum_objective_semantic_support WHERE curriculum_id = ?').run(
+      predecessor.id,
+    );
+
+    const firstSupport = recoverySemanticSupport(predecessor);
+    delete firstSupport.capabilityPreservation!.recoveryOrigin;
+    const successor = recoverySuccessor(predecessor, { semanticSupport: firstSupport });
+    const ordinarySecondObjective = structuredClone(secondObjective);
+    ordinarySecondObjective.id = 'objective_successor_2';
+    ordinarySecondObjective.semanticSupport = semanticSupport(ordinarySecondObjective.id, {
+      title: secondTitle,
+      description: secondDescription,
+    });
+    successor.nodes[1]!.learningUnit!.objectives.push(ordinarySecondObjective);
+
+    expect(() => createVersion(successor, predecessor.id)).toThrow(
+      CurriculumCapabilityRecoveryLineageError,
+    );
+    expect(db.prepare('SELECT COUNT(*) AS count FROM curriculum_versions').get()).toEqual({
+      count: 1,
+    });
+  });
+
+  it('rejects coordinated proposition and objective rewrites with stripped origins from a legacy-invalid predecessor', () => {
+    const predecessor = acceptVersion(
+      createVersion(curriculum({ id: 'curriculum_predecessor' })).id,
+    );
+    db.exec('DROP TRIGGER prevent_curriculum_objective_semantic_support_delete');
+    db.prepare('DELETE FROM curriculum_objective_semantic_support WHERE curriculum_id = ?').run(
+      predecessor.id,
+    );
+
+    const support = recoverySemanticSupport(predecessor);
+    delete support.capabilityPreservation!.recoveryOrigin;
+    const successor = recoverySuccessor(predecessor, { semanticSupport: support });
+    const objective = successor.nodes[1]!.learningUnit!.objectives[0]!;
+    objective.title = 'Explain a forged replacement';
+    objective.description = 'Explain a different relationship while hiding its recovery origin.';
+    const forgedProposition = curriculumObjectiveProposition(objective);
+    support.proposition = forgedProposition;
+    support.propositionFingerprint = fingerprintObjectiveAuthorityProposition(forgedProposition);
+    support.fragments[0]!.text = forgedProposition;
+    support.capabilityPreservation!.originalProposition = forgedProposition;
+    support.capabilityPreservation!.originalPropositionFingerprint =
+      fingerprintObjectiveAuthorityProposition(forgedProposition);
+    support.capabilityPreservation!.mappings[0]!.originalText = forgedProposition;
+
+    expect(() => createVersion(successor, predecessor.id)).toThrow(
+      CurriculumCapabilityRecoveryLineageError,
+    );
+    expect(db.prepare('SELECT COUNT(*) AS count FROM curriculum_versions').get()).toEqual({
+      count: 1,
+    });
+  });
+
+  it('rejects successor authority that escapes the predecessor LearningUnit envelope', () => {
+    const predecessor = acceptVersion(
+      createVersion(curriculum({ id: 'curriculum_predecessor' })).id,
+    );
+    createSecondAuthority();
+    const support = rebindSemanticSupport(
+      recoverySemanticSupport(predecessor),
+      ['authority_2'],
+      ['blk_2'],
+      ['claim_2'],
+    );
+    const successor = recoverySuccessor(predecessor, { semanticSupport: support });
+    const objective = successor.nodes[1]!.learningUnit!.objectives[0]!;
+    objective.truthAuthorityRecordIds = ['authority_2'];
+    objective.authorityClaimIds = ['claim_2'];
+    objective.authoritySourceBlockIds = ['blk_2'];
+    objective.formalEvidenceSourceBlockIds = ['blk_2'];
+
+    expect(() => createVersion(successor, predecessor.id)).toThrow(
+      CurriculumCapabilityRecoveryLineageError,
+    );
+    expect(db.prepare('SELECT COUNT(*) AS count FROM curriculum_versions').get()).toEqual({
+      count: 1,
+    });
+  });
+
+  it('rejects duplicate successor origins for one predecessor capability', () => {
+    const predecessor = acceptVersion(
+      createVersion(curriculum({ id: 'curriculum_predecessor' })).id,
+    );
+    const successor = recoverySuccessor(predecessor);
+    const duplicate = structuredClone(successor.nodes[1]!.learningUnit!.objectives[0]!);
+    duplicate.id = 'objective_3';
+    duplicate.semanticSupport = recoverySemanticSupport(predecessor, duplicate.id);
+    successor.nodes[1]!.learningUnit!.objectives.push(duplicate);
+
+    expect(() => createVersion(successor, predecessor.id)).toThrow(
+      CurriculumCapabilityRecoveryLineageError,
+    );
+    expect(db.prepare('SELECT COUNT(*) AS count FROM curriculum_versions').get()).toEqual({
+      count: 1,
+    });
+  });
+
+  it('leaves ordinary non-recovery semantic-support artifacts unaffected', () => {
+    const proposed = createVersion(curriculum());
+
+    expect(
+      proposed.nodes[1]!.learningUnit!.objectives[0]!.semanticSupport!.capabilityPreservation,
+    ).toBeUndefined();
+    expect(repos.curricula.get(proposed.id)).toEqual(proposed);
+    const accepted = acceptVersion(proposed.id);
+    expect(repos.curricula.get(accepted.id)).toEqual(accepted);
+    expect(repos.curricula.list('ws_1')).toEqual([accepted]);
+  });
+
+  it('keeps an originless bounded semantic repair when local persistence declares no recovery frontier', () => {
+    const predecessor = acceptVersion(
+      createVersion(curriculum({ id: 'curriculum_predecessor' })).id,
+    );
+    const support = recoverySemanticSupport(predecessor);
+    delete support.capabilityPreservation!.recoveryOrigin;
+    const ordinaryRepair = recoverySuccessor(predecessor, { semanticSupport: support });
+
+    const stored = createVersion(ordinaryRepair, null);
+
+    expect(
+      stored.nodes[1]!.learningUnit!.objectives[0]!.semanticSupport!.capabilityPreservation,
+    ).toEqual(support.capabilityPreservation);
+    expect(repos.curricula.get(stored.id)).toEqual(stored);
   });
 });

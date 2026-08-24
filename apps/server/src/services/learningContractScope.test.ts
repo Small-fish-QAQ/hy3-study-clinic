@@ -187,13 +187,17 @@ describe('Learning Contract stable scope readiness', () => {
       createdAt: T0,
       acceptedAt: null,
     };
-    repos.curricula.createVersion(derivedCurriculum, {
-      id: 'curriculum_revision_2_created',
-      eventType: 'proposed',
-      actor: 'local',
-      payload: {},
-      createdAt: T0,
-    });
+    repos.curricula.createVersion(
+      derivedCurriculum,
+      {
+        id: 'curriculum_revision_2_created',
+        eventType: 'proposed',
+        actor: 'local',
+        payload: {},
+        createdAt: T0,
+      },
+      { capabilityRecoveryPredecessorId: null },
+    );
 
     expect(assessLearningContractScope(repos, contract)).toEqual({
       state: 'current',

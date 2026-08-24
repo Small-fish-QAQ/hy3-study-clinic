@@ -185,13 +185,17 @@ function acceptSuccessorCurriculum(id: string): Curriculum {
     status: 'proposed',
     acceptedAt: null,
   };
-  repos.curricula.createVersion(proposed, {
-    id: `${id}_proposed`,
-    eventType: 'proposed',
-    actor: 'local',
-    payload: {},
-    createdAt: T2,
-  });
+  repos.curricula.createVersion(
+    proposed,
+    {
+      id: `${id}_proposed`,
+      eventType: 'proposed',
+      actor: 'local',
+      payload: {},
+      createdAt: T2,
+    },
+    { capabilityRecoveryPredecessorId: null },
+  );
   curriculum = repos.curricula.accept(id, T2, {
     id: `${id}_accepted`,
     eventType: 'accepted',
@@ -436,13 +440,17 @@ beforeEach(() => {
     createdAt: T0,
     acceptedAt: null,
   };
-  repos.curricula.createVersion(proposedCurriculum, {
-    id: 'curriculum_event_created',
-    eventType: 'proposed',
-    actor: 'local',
-    payload: {},
-    createdAt: T0,
-  });
+  repos.curricula.createVersion(
+    proposedCurriculum,
+    {
+      id: 'curriculum_event_created',
+      eventType: 'proposed',
+      actor: 'local',
+      payload: {},
+      createdAt: T0,
+    },
+    { capabilityRecoveryPredecessorId: null },
+  );
   curriculum = repos.curricula.accept(proposedCurriculum.id, T2, {
     id: 'curriculum_event_accepted',
     eventType: 'accepted',

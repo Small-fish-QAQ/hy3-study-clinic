@@ -197,6 +197,7 @@ function evaluationProposal(
     schemaVersion: 1,
     evaluations: batch.input.objectives.map((item, index) => {
       const verdict = index === 0 ? 'fail' : secondVerdict;
+      const fragmentId = `fragment_${index + 1}`;
       return {
         objectiveRef: item.objectiveRef,
         proposition: item.proposition,
@@ -204,7 +205,7 @@ function evaluationProposal(
         fragments: [
           verdict === 'fail'
             ? {
-                fragmentId: `fragment_${index + 1}`,
+                fragmentId,
                 text: item.proposition,
                 status: 'unsupported' as const,
                 supportType: null,
@@ -212,7 +213,7 @@ function evaluationProposal(
                 rationale: 'The exact current evidence supports a different proposition.',
               }
             : {
-                fragmentId: `fragment_${index + 1}`,
+                fragmentId,
                 text: item.proposition,
                 status: 'supported' as const,
                 supportType: 'recognition' as const,
@@ -220,9 +221,26 @@ function evaluationProposal(
                 rationale: 'The exact evidence supports recognition.',
               },
         ],
-        unsupportedFragmentIds: verdict === 'fail' ? [`fragment_${index + 1}`] : [],
+        unsupportedFragmentIds: verdict === 'fail' ? [fragmentId] : [],
         conflicts: [],
         overreach: [],
+        ...(item.requiredCapabilityPreservation
+          ? {
+              capabilityPreservation: {
+                originalProposition: item.requiredCapabilityPreservation.originalProposition,
+                mappings: item.requiredCapabilityPreservation.originalFragments.map((original) => ({
+                  originalFragmentId: original.fragmentId,
+                  originalText: original.text,
+                  repairedFragmentIds: [fragmentId],
+                  status: 'preserved' as const,
+                  rationale: 'The frozen capability proposition remains unchanged.',
+                })),
+                lostOriginalFragmentIds: [],
+                verdict: 'pass' as const,
+                rationale: 'The complete frozen capability remains present.',
+              },
+            }
+          : {}),
         verdict,
         rationale:
           verdict === 'fail'
@@ -389,6 +407,250 @@ describe('bounded objective-authority semantic repair', () => {
         ],
       ]),
     );
+  });
+
+  it('keeps two disjoint 29-offer recovery scopes separate inside one merged unit', () => {
+    const scopeSize = 29;
+    const blocks = ['alpha', 'beta'].flatMap((scope) =>
+      Array.from({ length: scopeSize }, (_, index) =>
+        block(`block_${scope}_${index + 1}`, `${scope} exact recovery claim ${index + 1}`),
+      ),
+    );
+    const offers = blocks.map((sourceBlock, index) =>
+      evidence(`evidence_${index + 1}`, sourceBlock),
+    );
+    const bundles = blocks.map((sourceBlock, index) =>
+      authority(`authority_${index + 1}`, sourceBlock),
+    );
+    const original = proposal();
+    const unit = original.nodes.find((node) => node.key === 'unit')!;
+    const objectiveDefinitions = ['alpha', 'beta'].map((scope, index) => ({
+      key: `recovery_${scope}`,
+      title: `Explain ${scope}`,
+      description: `Explain the complete ${scope} recovery capability.`,
+      construct: 'explain' as const,
+      priority: 'required' as const,
+      priorityRationale: 'Frozen predecessor capability.',
+      evidence: [{ evidenceId: offers[index * scopeSize]!.id }],
+    }));
+    unit.sourceEvidence = offers.map((offer) => ({ evidenceId: offer.id }));
+    unit.objectives = objectiveDefinitions;
+    const objectiveIds = ['objective_alpha', 'objective_beta'];
+    const requirements = new Map(
+      objectiveDefinitions.map((objectiveDefinition, index) => {
+        const proposition = `${objectiveDefinition.title}\n${objectiveDefinition.description}`;
+        return [
+          objectiveIds[index]!,
+          {
+            originalProposition: proposition,
+            originalFragments: [
+              {
+                fragmentId: `recovery_${index + 1}:F1`,
+                text: proposition,
+              },
+            ],
+          },
+        ] as const;
+      }),
+    );
+    const materializedNodes: CurriculumNode[] = [
+      {
+        id: 'unit_merged_recovery',
+        parentId: null,
+        kind: 'learning_unit',
+        index: 0,
+        title: unit.title,
+        sourceReferences: [],
+        learningUnit: {
+          conceptIds: [],
+          canonicalConceptIds: [],
+          objectives: objectiveDefinitions.map((definition, index) =>
+            objective(
+              objectiveIds[index]!,
+              definition,
+              `authority_${index * scopeSize + 1}`,
+              blocks[index * scopeSize]!.id,
+            ),
+          ),
+          prerequisiteUnitIds: [],
+          graphRelationIds: [],
+          riskIds: [],
+        },
+      },
+    ];
+    const [firstPassBatch] = buildObjectiveAuthoritySemanticEvaluationBatches({
+      nodes: materializedNodes,
+      sourceBlocks: blocks,
+      authorityBundles: bundles,
+      isBlockingEligible: () => true,
+      requiredCapabilityPreservationByObjectiveId: requirements,
+    });
+    const recoveryEvidenceScopeByObjectiveId = new Map(
+      objectiveIds.map((objectiveId, index) => {
+        const scopedOffers = offers.slice(index * scopeSize, (index + 1) * scopeSize);
+        return [
+          objectiveId,
+          {
+            allowedEvidenceIds: scopedOffers.map((offer) => offer.id),
+            allowedSourceBlockIds: scopedOffers.map((offer) => offer.blockId),
+          },
+        ] as const;
+      }),
+    );
+
+    const prepared = prepareObjectiveAuthoritySemanticRepair({
+      candidate: original,
+      objectiveIdByProposalKey: new Map([
+        ['recovery_alpha', objectiveIds[0]!],
+        ['recovery_beta', objectiveIds[1]!],
+      ]),
+      firstPass: [
+        {
+          batch: firstPassBatch!,
+          proposal: evaluationProposal(firstPassBatch!, 'fail'),
+        },
+      ],
+      requiredCapabilityPreservationByObjectiveId: requirements,
+      recoveryEvidenceScopeByObjectiveId,
+      context: {
+        workspaceId: 'workspace_1',
+        evidenceCatalog: offers,
+        authorityBundles: bundles,
+        isAuthorityBlockingEligible: () => true,
+        deterministicCoverageByNodeKey: new Map([
+          ['unit', { structuralUnitIds: [], sourceBlockIds: blocks.map((item) => item.id) }],
+        ]),
+      },
+    });
+
+    expect(prepared.validation).toMatchObject({ valid: true, diagnostics: [] });
+    expect(prepared.batch?.input.objectives).toHaveLength(2);
+    for (const [index, repairObjective] of prepared.batch!.input.objectives.entries()) {
+      const scopedOffers = offers.slice(index * scopeSize, (index + 1) * scopeSize);
+      expect(repairObjective.allowedEvidence).toHaveLength(scopeSize);
+      expect(repairObjective.allowedEvidence.map((offer) => offer.text)).toEqual(
+        scopedOffers.map((offer) => offer.quote),
+      );
+      expect(prepared.batch!.aliasBindings.get(repairObjective.objectiveRef)).toMatchObject({
+        allowedEvidenceIds: scopedOffers.map((offer) => offer.id),
+        allowedSourceBlockIds: scopedOffers.map((offer) => offer.blockId),
+      });
+    }
+  });
+
+  it('lets legacy recovery repair E1 with an unselected frozen E2 offer', () => {
+    const e1Block = block('block_legacy_1', 'E1 is initially selected but does not support B.');
+    const e2Block = block('block_legacy_2', 'E2 is the exact supporting statement for B.');
+    const e1 = evidence('evidence_legacy_e1', e1Block);
+    const e2 = evidence('evidence_legacy_e2', e2Block);
+    const bundles = [
+      authority('authority_legacy_e1', e1Block),
+      authority('authority_legacy_e2', e2Block),
+    ];
+    const original = proposal();
+    const unit = original.nodes.find((node) => node.key === 'unit')!;
+    unit.sourceEvidence = [{ evidenceId: e1.id }];
+    unit.objectives = [
+      {
+        key: 'legacy_recovery',
+        title: 'Explain B',
+        description: 'Explain the complete source-stated B capability.',
+        construct: 'explain',
+        priority: 'required',
+        priorityRationale: 'Frozen predecessor capability.',
+        evidence: [{ evidenceId: e1.id }],
+      },
+    ];
+    const proposition = 'Explain B\nExplain the complete source-stated B capability.';
+    const requirement = {
+      originalProposition: proposition,
+      originalFragments: [{ fragmentId: 'legacy_recovery:F1', text: proposition }],
+    };
+    const materializedNodes: CurriculumNode[] = [
+      {
+        id: 'unit_legacy_recovery',
+        parentId: null,
+        kind: 'learning_unit',
+        index: 0,
+        title: unit.title,
+        sourceReferences: [],
+        learningUnit: {
+          conceptIds: [],
+          canonicalConceptIds: [],
+          objectives: [
+            objective(
+              'objective_legacy_recovery',
+              unit.objectives[0]!,
+              'authority_legacy_e1',
+              e1Block.id,
+            ),
+          ],
+          prerequisiteUnitIds: [],
+          graphRelationIds: [],
+          riskIds: [],
+        },
+      },
+    ];
+    const requiredCapabilityPreservationByObjectiveId = new Map([
+      ['objective_legacy_recovery', requirement],
+    ]);
+    const [firstPassBatch] = buildObjectiveAuthoritySemanticEvaluationBatches({
+      nodes: materializedNodes,
+      sourceBlocks: [e1Block, e2Block],
+      authorityBundles: bundles,
+      isBlockingEligible: () => true,
+      requiredCapabilityPreservationByObjectiveId,
+    });
+    const prepared = prepareObjectiveAuthoritySemanticRepair({
+      candidate: original,
+      objectiveIdByProposalKey: new Map([['legacy_recovery', 'objective_legacy_recovery']]),
+      firstPass: [
+        {
+          batch: firstPassBatch!,
+          proposal: evaluationProposal(firstPassBatch!, 'pass'),
+        },
+      ],
+      requiredCapabilityPreservationByObjectiveId,
+      recoveryEvidenceScopeByObjectiveId: new Map([
+        [
+          'objective_legacy_recovery',
+          {
+            allowedEvidenceIds: [e1.id, e2.id],
+            allowedSourceBlockIds: [e1.blockId, e2.blockId],
+          },
+        ],
+      ]),
+      context: {
+        workspaceId: 'workspace_1',
+        evidenceCatalog: [e1, e2],
+        authorityBundles: bundles,
+        isAuthorityBlockingEligible: () => true,
+      },
+    });
+
+    expect(prepared.validation).toMatchObject({ valid: true, diagnostics: [] });
+    const repairObjective = prepared.batch!.input.objectives[0]!;
+    expect(repairObjective.allowedEvidence.map((offer) => [offer.text, offer.selected])).toEqual([
+      [e1.quote, true],
+      [e2.quote, false],
+    ]);
+    const e2Ref = repairObjective.allowedEvidence[1]!.evidenceRef;
+    const applied = applyObjectiveAuthoritySemanticRepairProposal(prepared.batch!, {
+      schemaVersion: 1,
+      replacements: [
+        {
+          objectiveRef: repairObjective.objectiveRef,
+          title: repairObjective.title,
+          description: repairObjective.description,
+          construct: repairObjective.construct,
+          evidenceRefs: [e2Ref],
+        },
+      ],
+    });
+    expect(applied.validation).toMatchObject({ valid: true, diagnostics: [] });
+    expect(
+      applied.payload!.nodes.find((node) => node.key === 'unit')!.objectives[0]!.evidence,
+    ).toEqual([{ evidenceId: e2.id }]);
   });
 
   it('rejects foreign or out-of-unit aliases and construct lowering', () => {

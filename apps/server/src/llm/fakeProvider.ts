@@ -176,6 +176,158 @@ function bodyBlocks(blocks: SourceBlock[]): SourceBlock[] {
   return body.length > 0 ? body : blocks;
 }
 
+function normalizedFakeSemanticFixtureText(text: string): string {
+  return text.normalize('NFKC').toLocaleLowerCase('en-US').replace(/\s+/gu, ' ').trim();
+}
+
+function containsAny(text: string, values: readonly string[]): boolean {
+  return values.some((value) => text.includes(value));
+}
+
+/**
+ * Exact offline simulation for the persisted B7C2 counterexample. This is
+ * provider-side Fake behavior only; deterministic product validators never
+ * infer entailment from these words. REAL_HY3 remains the semantic judge.
+ */
+function isB7C2IntegratedPositioningProposition(text: string): boolean {
+  const normalized = normalizedFakeSemanticFixtureText(text);
+  return (
+    normalized.includes('weknora') &&
+    containsAny(normalized, ['综合系统', '集成系统', '于一体', 'integrat']) &&
+    containsAny(normalized, ['文档', 'document']) &&
+    containsAny(normalized, ['搜索', 'search']) &&
+    containsAny(normalized, ['大模型', 'llm', 'language model']) &&
+    containsAny(normalized, ['权限', 'permission']) &&
+    containsAny(normalized, ['工具调用', 'tool call', 'tool-call'])
+  );
+}
+
+function isB7C2IntegratedPositioningEvidence(text: string): boolean {
+  const normalized = normalizedFakeSemanticFixtureText(text);
+  return (
+    normalized.includes('weknora') &&
+    containsAny(normalized, ['不是单纯', '而非单纯', 'not merely', 'not simply']) &&
+    containsAny(normalized, ['文档', 'document']) &&
+    containsAny(normalized, ['搜索', 'search']) &&
+    containsAny(normalized, ['大模型', 'llm', 'language model']) &&
+    containsAny(normalized, ['权限', 'permission']) &&
+    containsAny(normalized, ['工具调用', 'tool call', 'tool-call'])
+  );
+}
+
+const FAKE_EXACT_IDENTIFY_DESCRIPTION_PREFIX = 'Identify this exact source statement: ';
+
+function isExactFakeIdentifyFixture(
+  proposition: string,
+  construct: string,
+  evidence: string,
+): boolean {
+  if (construct !== 'identify') return false;
+  const normalizedEvidence = normalizedFakeSemanticFixtureText(evidence);
+  const propositionLines = proposition
+    .split('\n')
+    .map((line) => normalizedFakeSemanticFixtureText(line))
+    .filter(Boolean);
+  if (
+    propositionLines.length > 0 &&
+    propositionLines.every((line) => normalizedEvidence.includes(line))
+  ) {
+    return true;
+  }
+  if (propositionLines.length !== 2 || !propositionLines[0]!.startsWith('understand ')) {
+    return false;
+  }
+  const titleStatement = propositionLines[0]!.slice('understand '.length).trim();
+  const normalizedDescriptionPrefix = normalizedFakeSemanticFixtureText(
+    FAKE_EXACT_IDENTIFY_DESCRIPTION_PREFIX,
+  );
+  if (!propositionLines[1]!.startsWith(normalizedDescriptionPrefix)) return false;
+  const descriptionStatement = propositionLines[1]!
+    .slice(normalizedDescriptionPrefix.length)
+    .trim();
+  return (
+    titleStatement.length > 0 &&
+    titleStatement === descriptionStatement &&
+    normalizedEvidence.includes(titleStatement)
+  );
+}
+
+function fakeFixtureEvidenceSupportsProposition(
+  proposition: string,
+  construct: string,
+  evidence: string,
+): boolean {
+  return (
+    isExactFakeIdentifyFixture(proposition, construct, evidence) ||
+    (construct === 'explain' &&
+      isB7C2IntegratedPositioningProposition(proposition) &&
+      isB7C2IntegratedPositioningEvidence(evidence))
+  );
+}
+
+function fakeSemanticEvidenceSupportRank(input: {
+  proposition: string;
+  construct: string;
+  evidence: string;
+}): number | null {
+  if (input.evidence.includes('[UNSUPPORTED]')) return null;
+  if (input.evidence.includes(`[SUPPORTS:${input.construct}]`)) return 0;
+  if (fakeFixtureEvidenceSupportsProposition(input.proposition, input.construct, input.evidence)) {
+    return 1;
+  }
+  return null;
+}
+
+function fakeVisibleEvidenceStatement(text: string, fallback: string): string {
+  const visible = text
+    .replace(/\[(?:SUPPORTS:[^\]]+|UNSUPPORTED)\]\s*/gu, '')
+    .replace(/\s+/gu, ' ')
+    .split(/(?<=[.!?。！？；;])\s*/u)[0]
+    ?.trim();
+  return (visible || fallback).slice(0, 240);
+}
+
+function fakeExactIdentifyObjective(text: string, fallback: string) {
+  const statement = fakeVisibleEvidenceStatement(text, fallback);
+  return {
+    construct: 'identify' as const,
+    title: `Understand ${statement}`.slice(0, 300),
+    description: `${FAKE_EXACT_IDENTIFY_DESCRIPTION_PREFIX}${statement}`.slice(0, 1_000),
+  };
+}
+
+/**
+ * Determine whether every requirement from startIndex can still occupy one
+ * bounded slot. Previous assignments are represented by reduced capacities.
+ */
+function hasResidualPlacement(
+  candidateKeysByRequirement: readonly (readonly string[])[],
+  startIndex: number,
+  remainingCapacityByKey: ReadonlyMap<string, number>,
+): boolean {
+  const slotOwner = new Map<string, number>();
+  const assign = (requirementIndex: number, visitedSlots: Set<string>): boolean => {
+    for (const key of candidateKeysByRequirement[requirementIndex] ?? []) {
+      const capacity = remainingCapacityByKey.get(key) ?? 0;
+      for (let slotIndex = 0; slotIndex < capacity; slotIndex += 1) {
+        const slot = `${key}\u0000${slotIndex}`;
+        if (visitedSlots.has(slot)) continue;
+        visitedSlots.add(slot);
+        const owner = slotOwner.get(slot);
+        if (owner === undefined || assign(owner, visitedSlots)) {
+          slotOwner.set(slot, requirementIndex);
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+  for (let index = startIndex; index < candidateKeysByRequirement.length; index += 1) {
+    if (!assign(index, new Set())) return false;
+  }
+  return true;
+}
+
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   if (ms <= 0) return Promise.resolve();
   return new Promise((resolve, reject) => {
@@ -1617,6 +1769,88 @@ export class FakeProvider implements LlmProvider {
       input.limits.maxModules,
       Math.max(1, Math.ceil(input.sourceRegions.length / 4)),
     );
+    const capabilityRequirementRefsByRegion = new Map<string, string[]>();
+    const seenCapabilityRefs = new Set<string>();
+    const capabilityRequirements = input.capabilityRecovery?.requirements ?? [];
+    const recoveryEvidenceByRef = new Map(
+      (input.capabilityRecovery?.evidenceOffers ?? []).map(
+        (offer) => [offer.recoveryEvidenceRef, offer] as const,
+      ),
+    );
+    const rankedCourseMapCandidates = capabilityRequirements.map((requirement) => {
+      if (seenCapabilityRefs.has(requirement.capabilityRef)) {
+        throw ProviderError.invalidOutput(
+          `Duplicate Course Map recovery capability: ${requirement.capabilityRef}`,
+        );
+      }
+      seenCapabilityRefs.add(requirement.capabilityRef);
+      const allowedRegionRefs = new Set(requirement.allowedSourceRegionRefs);
+      const allowedEvidenceRefs = new Set(requirement.allowedRecoveryEvidenceRefs);
+      return input.sourceRegions
+        .map((region, index) => {
+          const exactPlacementEvidence = [...allowedEvidenceRefs]
+            .map((evidenceRef) => recoveryEvidenceByRef.get(evidenceRef))
+            .filter(
+              (offer): offer is NonNullable<typeof offer> =>
+                offer !== undefined && offer.sourceRegionRef === region.sourceRegionRef,
+            );
+          const supportRank = Math.min(
+            ...exactPlacementEvidence.flatMap((offer) => {
+              const rank = fakeSemanticEvidenceSupportRank({
+                proposition: requirement.originalProposition,
+                construct: requirement.construct,
+                evidence: offer.text,
+              });
+              return rank === null ? [] : [rank];
+            }),
+          );
+          return {
+            region,
+            index,
+            supportRank,
+          };
+        })
+        .filter(
+          ({ region, supportRank }) =>
+            allowedRegionRefs.has(region.sourceRegionRef) && Number.isFinite(supportRank),
+        );
+    });
+    const candidateKeysByRequirement = rankedCourseMapCandidates.map((candidates) =>
+      candidates.map((candidate) => candidate.region.sourceRegionRef),
+    );
+    const remainingCapacityByRegionRef = new Map<string, number>(
+      input.sourceRegions.map((region) => [region.sourceRegionRef, 4] as const),
+    );
+    for (const [requirementIndex, requirement] of capabilityRequirements.entries()) {
+      const eligible = rankedCourseMapCandidates[requirementIndex]!.filter(
+        ({ region }) => (remainingCapacityByRegionRef.get(region.sourceRegionRef) ?? 0) > 0,
+      ).sort((left, right) => {
+        const leftAssigned = capabilityRequirementRefsByRegion.get(left.region.sourceRegionRef);
+        const rightAssigned = capabilityRequirementRefsByRegion.get(right.region.sourceRegionRef);
+        return (
+          left.supportRank - right.supportRank ||
+          (leftAssigned?.length ?? 0) - (rightAssigned?.length ?? 0) ||
+          left.index - right.index
+        );
+      });
+      const selected = eligible.find(({ region }) => {
+        const remaining = new Map(remainingCapacityByRegionRef);
+        remaining.set(region.sourceRegionRef, remaining.get(region.sourceRegionRef)! - 1);
+        return hasResidualPlacement(candidateKeysByRequirement, requirementIndex + 1, remaining);
+      })?.region;
+      if (!selected) {
+        throw ProviderError.invalidOutput(
+          `No allowed Course Map region has capacity for recovery capability ${requirement.capabilityRef}`,
+        );
+      }
+      const assigned = capabilityRequirementRefsByRegion.get(selected.sourceRegionRef) ?? [];
+      assigned.push(requirement.capabilityRef);
+      capabilityRequirementRefsByRegion.set(selected.sourceRegionRef, assigned);
+      remainingCapacityByRegionRef.set(
+        selected.sourceRegionRef,
+        remainingCapacityByRegionRef.get(selected.sourceRegionRef)! - 1,
+      );
+    }
     const modules: CourseMapProposalPayload['modules'] = [];
     const orderedRegionRefs: string[] = [];
     for (let moduleIndex = 0; moduleIndex < moduleCount; moduleIndex += 1) {
@@ -1629,6 +1863,9 @@ export class FakeProvider implements LlmProvider {
           : `${sourceRegions[0]!.title} - ${sourceRegions.at(-1)!.title}`;
       const regions = sourceRegions.map((sourceRegion) => {
         orderedRegionRefs.push(sourceRegion.sourceRegionRef);
+        const capabilityRequirementRefs = capabilityRequirementRefsByRegion.get(
+          sourceRegion.sourceRegionRef,
+        );
         return {
           sourceRegionRef: sourceRegion.sourceRegionRef,
           title: sourceRegion.title,
@@ -1642,6 +1879,9 @@ export class FakeProvider implements LlmProvider {
           anchorOptionRefs: sourceRegion.anchorOptions
             .slice(0, 1)
             .map((option) => option.anchorOptionId),
+          ...(capabilityRequirementRefs && capabilityRequirementRefs.length > 0
+            ? { capabilityRequirementRefs }
+            : {}),
         };
       });
       modules.push({
@@ -1696,6 +1936,9 @@ export class FakeProvider implements LlmProvider {
     throw ProviderError.invalidOutput(
       repairedValidation.diagnostics.join('; ').slice(0, 8_000),
       'candidate',
+      'SEMANTIC_VALIDATION_FAILURE',
+      true,
+      repairedValidation.failureArtifact,
     );
   }
 
@@ -1704,22 +1947,63 @@ export class FakeProvider implements LlmProvider {
     opts?: ProviderCallOptions,
   ): Promise<CurriculumDetailProposalPayload> {
     await this.gate(opts);
+    const seenCapabilityRefs = new Set<string>();
+    const targetRequestsApplication = /(?:\bapply\b|应用)/iu.test(
+      input.contract.targetOutcome.description,
+    );
+    const hasRequiredApplyRecovery = input.regions.some((region) =>
+      (region.capabilityRequirements ?? []).some(
+        (requirement) => requirement.construct === 'apply' && requirement.priority === 'required',
+      ),
+    );
+    const explicitApplyRegions = targetRequestsApplication
+      ? input.regions.filter((region) =>
+          region.evidence.some(
+            (offer) =>
+              offer.text.includes('[SUPPORTS:apply]') &&
+              offer.authorityEnvelope?.supportedConstructs.includes('apply'),
+          ),
+        )
+      : [];
+    const reservedGenericApplyRegionId =
+      targetRequestsApplication && !hasRequiredApplyRecovery
+        ? explicitApplyRegions.find(
+            (region) =>
+              (region.capabilityRequirements?.length ?? 0) < input.limits.maxObjectivesPerUnit,
+          )?.regionId
+        : undefined;
+    if (
+      !hasRequiredApplyRecovery &&
+      explicitApplyRegions.length > 0 &&
+      !reservedGenericApplyRegionId
+    ) {
+      throw ProviderError.invalidOutput(
+        'No Curriculum detail objective slot remains for the required application target',
+      );
+    }
     const units = input.regions.map((region, index) => {
-      const applyOffer = /(?:\bapply\b|应用)/iu.test(input.contract.targetOutcome.description)
-        ? region.evidence.find((offer) =>
-            offer.authorityEnvelope?.supportedConstructs.includes('apply'),
+      const applyOffer = targetRequestsApplication
+        ? region.evidence.find(
+            (offer) =>
+              offer.text.includes('[SUPPORTS:apply]') &&
+              offer.authorityEnvelope?.supportedConstructs.includes('apply'),
           )
         : undefined;
+      const explainOffer = region.evidence.find((offer) =>
+        offer.text.includes('[SUPPORTS:explain]'),
+      );
       const objectiveConstruct = applyOffer
         ? ('apply' as const)
-        : region.evidence.some((offer) =>
-              offer.authorityEnvelope?.supportedConstructs.includes('explain'),
-            )
+        : explainOffer
           ? ('explain' as const)
           : ('identify' as const);
+      const appendGenericApplyObjective =
+        (region.capabilityRequirements?.length ?? 0) > 0 &&
+        region.regionId === reservedGenericApplyRegionId;
       const selectedEvidence = region.sourceAllocationRegionIds.flatMap((sourceRegionId) => {
         const offer =
           (applyOffer?.sourceAllocationRegionId === sourceRegionId ? applyOffer : undefined) ??
+          (explainOffer?.sourceAllocationRegionId === sourceRegionId ? explainOffer : undefined) ??
           region.evidence.find(
             (candidate) => candidate.sourceAllocationRegionId === sourceRegionId,
           );
@@ -1735,34 +2019,98 @@ export class FakeProvider implements LlmProvider {
         sourceHint ??
         region.title
       ).slice(0, 300);
+      const capabilityRequirements = region.capabilityRequirements ?? [];
+      const objectiveCount =
+        capabilityRequirements.length +
+        (capabilityRequirements.length === 0 || appendGenericApplyObjective ? 1 : 0);
+      if (objectiveCount > input.limits.maxObjectivesPerUnit) {
+        throw ProviderError.invalidOutput(
+          `Recovery capabilities exceed the objective budget for region ${region.regionId}`,
+        );
+      }
+      const recoveryObjectives = capabilityRequirements.map((requirement, requirementIndex) => {
+        if (seenCapabilityRefs.has(requirement.capabilityRef)) {
+          throw ProviderError.invalidOutput(
+            `Duplicate Curriculum detail recovery capability: ${requirement.capabilityRef}`,
+          );
+        }
+        seenCapabilityRefs.add(requirement.capabilityRef);
+        const allowedEvidenceIds = new Set(requirement.allowedEvidenceIds);
+        const selectedOffer = region.evidence
+          .flatMap((offer, offerIndex) => {
+            if (!allowedEvidenceIds.has(offer.evidenceId)) return [];
+            const supportRank = fakeSemanticEvidenceSupportRank({
+              proposition: requirement.originalProposition,
+              construct: requirement.construct,
+              evidence: offer.text,
+            });
+            return supportRank === null ? [] : [{ offer, offerIndex, supportRank }];
+          })
+          .sort(
+            (left, right) =>
+              left.supportRank - right.supportRank || left.offerIndex - right.offerIndex,
+          )[0]?.offer;
+        if (!selectedOffer) {
+          throw ProviderError.invalidOutput(
+            `No semantically supported allowed evidence exists for recovery capability ${requirement.capabilityRef}`,
+          );
+        }
+        return {
+          key: `detail-recovery-objective-${index + 1}-${requirementIndex + 1}`,
+          construct: requirement.construct,
+          title: requirement.title,
+          description: requirement.description,
+          evidence: [{ evidenceId: selectedOffer.evidenceId }],
+          capabilityRequirementRef: requirement.capabilityRef,
+          priority: requirement.priority,
+          priorityRationale:
+            'This objective preserves a non-optional predecessor capability for independent evaluation.',
+        };
+      });
+      const exactIdentify = fakeExactIdentifyObjective(
+        region.evidence.find((offer) =>
+          selectedEvidence.some((selection) => selection.evidenceId === offer.evidenceId),
+        )?.text ?? '',
+        region.title,
+      );
+      const genericObjective = {
+        key: `detail-objective-${index + 1}`,
+        construct: objectiveConstruct,
+        title:
+          objectiveConstruct === 'identify'
+            ? exactIdentify.title
+            : (applyOffer
+                ? 'Apply the source-stated procedure'
+                : `Understand ${region.title}`
+              ).slice(0, 300),
+        description:
+          objectiveConstruct === 'identify'
+            ? exactIdentify.description
+            : (applyOffer
+                ? 'Apply the exact ordered procedure within its source-stated context.'
+                : region.learningIntent
+              ).slice(0, 1_000),
+        evidence: selectedEvidence.slice(0, 3),
+        ...(applyOffer
+          ? {
+              priority: 'required' as const,
+              priorityRationale:
+                'The exact selected evidence exposes a locally bounded apply construct.',
+            }
+          : {}),
+      };
       return {
         regionId: region.regionId,
         title,
         sourceEvidence: selectedEvidence,
         conceptIds: region.concepts.slice(0, 3).map((concept) => concept.id),
         canonicalConceptIds: region.canonicalConcepts.slice(0, 2).map((concept) => concept.id),
-        objectives: [
-          {
-            key: `detail-objective-${index + 1}`,
-            construct: objectiveConstruct,
-            title: (applyOffer
-              ? 'Apply the source-stated procedure'
-              : `Understand ${region.title}`
-            ).slice(0, 300),
-            description: (applyOffer
-              ? 'Apply the exact ordered procedure within its source-stated context.'
-              : region.learningIntent
-            ).slice(0, 1_000),
-            evidence: selectedEvidence.slice(0, 3),
-            ...(applyOffer
-              ? {
-                  priority: 'required' as const,
-                  priorityRationale:
-                    'The exact selected evidence exposes a locally bounded apply construct.',
-                }
-              : {}),
-          },
-        ],
+        objectives:
+          recoveryObjectives.length === 0
+            ? [genericObjective]
+            : appendGenericApplyObjective
+              ? [...recoveryObjectives, genericObjective]
+              : recoveryObjectives,
       };
     });
     const candidate: CurriculumDetailProposalPayload = {
@@ -1798,15 +2146,16 @@ export class FakeProvider implements LlmProvider {
     const candidate = ObjectiveAuthoritySemanticEvaluationProposalSchema.parse({
       schemaVersion: 1,
       evaluations: input.objectives.map((objective) => {
-        const explicitSupport = objective.evidence.find((offer) =>
-          offer.text.includes(`[SUPPORTS:${objective.construct}]`),
+        const offered = objective.evidence.find(
+          (offer) =>
+            fakeSemanticEvidenceSupportRank({
+              proposition: objective.proposition,
+              construct: objective.construct,
+              evidence: offer.text,
+            }) !== null,
         );
-        const offered = explicitSupport ?? objective.evidence[0];
-        const fixtureUnsupported =
-          objective.evidence.length === 0 ||
-          objective.evidence.some((offer) => offer.text.includes('[UNSUPPORTED]'));
         const type = supportType(objective.construct);
-        const authoritySupported = Boolean(offered && !fixtureUnsupported && type);
+        const authoritySupported = Boolean(offered && type);
         const fragmentId = `${objective.objectiveRef}:F1`.slice(0, 100);
         const preservationRequirement = objective.requiredCapabilityPreservation;
         const capabilityPreserved =
@@ -1885,21 +2234,34 @@ export class FakeProvider implements LlmProvider {
     opts?: ProviderCallOptions,
   ): Promise<ObjectiveAuthoritySemanticRepairProposal> {
     await this.gate(opts);
-    const marker = (construct: string) => `[SUPPORTS:${construct}]`;
     const candidate = ObjectiveAuthoritySemanticRepairProposalSchema.parse({
       schemaVersion: 1,
       replacements: input.objectives.map((objective) => {
-        const supporting = objective.allowedEvidence.find((offer) =>
-          offer.text.includes(marker(objective.construct)),
+        const originalProposition = objective.requiredCapabilityPreservation?.originalProposition;
+        const proposition = originalProposition ?? `${objective.title}\n${objective.description}`;
+        const supporting = objective.allowedEvidence.find(
+          (offer) =>
+            fakeSemanticEvidenceSupportRank({
+              proposition,
+              construct: objective.construct,
+              evidence: offer.text,
+            }) !== null,
         );
         const current = objective.allowedEvidence.filter((offer) => offer.selected);
         const evidenceRefs = supporting
           ? [supporting.evidenceRef]
           : current.map((offer) => offer.evidenceRef).slice(0, 5);
+        const propositionSeparator = originalProposition?.indexOf('\n') ?? -1;
         return {
           objectiveRef: objective.objectiveRef,
-          title: objective.title,
-          description: objective.description,
+          title:
+            originalProposition && propositionSeparator >= 0
+              ? originalProposition.slice(0, propositionSeparator)
+              : objective.title,
+          description:
+            originalProposition && propositionSeparator >= 0
+              ? originalProposition.slice(propositionSeparator + 1)
+              : objective.description,
           construct: objective.construct,
           evidenceRefs,
         };
@@ -1930,6 +2292,16 @@ export class FakeProvider implements LlmProvider {
       throw ProviderError.invalidOutput(
         'Curriculum limits cannot represent one complete hierarchy',
       );
+    }
+    const capabilityRequirements = input.capabilityRecovery?.requirements ?? [];
+    if (capabilityRequirements.length > maxObjectives) {
+      throw ProviderError.invalidOutput(
+        'Curriculum recovery capabilities exceed the objective budget',
+      );
+    }
+    const capabilityRefs = capabilityRequirements.map((requirement) => requirement.capabilityRef);
+    if (new Set(capabilityRefs).size !== capabilityRefs.length) {
+      throw ProviderError.invalidOutput('Curriculum recovery capability references must be unique');
     }
 
     const manifestMaterialIds = new Set(
@@ -2109,10 +2481,6 @@ export class FakeProvider implements LlmProvider {
         const authorityEnvelope = input.authorityEnvelopes?.find((envelope) =>
           envelope.sourceBlockIds.some((blockId) => sourceBlockIds.has(blockId)),
         );
-        const supportsExplain = authorityEnvelope?.supportedConstructs.includes('explain') ?? false;
-        const objectiveDescription = supportsExplain
-          ? `Explain the source-supported ideas in ${title}.`
-          : `Identify the source-supported statements in ${title}.`;
         const evidence = input.evidenceCatalog
           .filter((offer) => sourceBlockIds.has(offer.blockId))
           .filter(
@@ -2121,6 +2489,20 @@ export class FakeProvider implements LlmProvider {
           )
           .slice(0, 100)
           .map((offer) => ({ evidenceId: offer.id }));
+        const primaryEvidenceOffer = input.evidenceCatalog.find(
+          (offer) => offer.id === evidence[0]?.evidenceId,
+        );
+        const supportsExplain = Boolean(
+          primaryEvidenceOffer?.quote.includes('[SUPPORTS:explain]') &&
+          authorityEnvelope?.supportedConstructs.includes('explain'),
+        );
+        const exactIdentify = fakeExactIdentifyObjective(primaryEvidenceOffer?.quote ?? '', title);
+        const objectiveTitle = supportsExplain
+          ? `Understand ${title}`.slice(0, 300)
+          : exactIdentify.title;
+        const objectiveDescription = supportsExplain
+          ? `Explain the source-supported ideas in ${title}.`
+          : exactIdentify.description;
         const conceptIdSet = new Set(concepts.map((concept) => concept.id));
         const canonicalConceptIds = input.canonicalConcepts
           .filter((canonical) =>
@@ -2146,7 +2528,7 @@ export class FakeProvider implements LlmProvider {
             {
               key: `objective-${unitNumber}`,
               construct: supportsExplain ? ('explain' as const) : ('identify' as const),
-              title: `Understand ${title}`.slice(0, 300),
+              title: objectiveTitle,
               description: objectiveDescription.slice(0, 1000),
               evidence: evidence.slice(0, 5),
             },
@@ -2159,6 +2541,132 @@ export class FakeProvider implements LlmProvider {
         nodes.push(unit);
         remainingUnitSlots -= 1;
       }
+    }
+
+    const recoveryAssignments = new Map<
+      ProposedCurriculumNode,
+      Array<{
+        requirement: (typeof capabilityRequirements)[number];
+        evidenceId: string;
+        requirementIndex: number;
+      }>
+    >();
+    const evidenceOfferById = new Map(input.evidenceCatalog.map((offer) => [offer.id, offer]));
+    const rankedLegacyCandidates = capabilityRequirements.map((requirement) => {
+      const allowedEvidenceIds = new Set(requirement.allowedEvidenceIds);
+      return learningUnits
+        .map((unit, unitIndex) => {
+          const unitSourceBlockIds = new Set(
+            unit.sourceEvidence.flatMap((selection) => {
+              const blockId = evidenceOfferById.get(selection.evidenceId)?.blockId;
+              return blockId ? [blockId] : [];
+            }),
+          );
+          const evidence = input.evidenceCatalog
+            .flatMap((offer, evidenceIndex) => {
+              const supportRank = fakeSemanticEvidenceSupportRank({
+                proposition: requirement.originalProposition,
+                construct: requirement.construct,
+                evidence: offer.quote,
+              });
+              if (supportRank === null) return [];
+              return [
+                {
+                  selection: { evidenceId: offer.id },
+                  offer,
+                  evidenceIndex,
+                  supportRank,
+                },
+              ];
+            })
+            .filter(
+              ({ selection, offer }) =>
+                allowedEvidenceIds.has(selection.evidenceId) &&
+                unitSourceBlockIds.has(offer.blockId),
+            )
+            .sort(
+              (left, right) =>
+                left.supportRank - right.supportRank || left.evidenceIndex - right.evidenceIndex,
+            )[0];
+          return {
+            unit,
+            unitIndex,
+            evidence,
+          };
+        })
+        .filter(
+          (
+            candidate,
+          ): candidate is typeof candidate & { evidence: NonNullable<typeof candidate.evidence> } =>
+            candidate.evidence !== undefined,
+        );
+    });
+    const legacyCandidateKeysByRequirement = rankedLegacyCandidates.map((candidates) =>
+      candidates.map((candidate) => candidate.unit.key),
+    );
+    const remainingCapacityByUnitKey = new Map<string, number>(
+      learningUnits.map((unit) => [unit.key, 30] as const),
+    );
+    for (const [requirementIndex, requirement] of capabilityRequirements.entries()) {
+      const eligible = rankedLegacyCandidates[requirementIndex]!.filter(
+        ({ unit }) => (remainingCapacityByUnitKey.get(unit.key) ?? 0) > 0,
+      ).sort((left, right) => {
+        const leftAssigned = recoveryAssignments.get(left.unit)?.length ?? 0;
+        const rightAssigned = recoveryAssignments.get(right.unit)?.length ?? 0;
+        return (
+          left.evidence.supportRank - right.evidence.supportRank ||
+          Number(leftAssigned === 0) - Number(rightAssigned === 0) ||
+          left.unitIndex - right.unitIndex
+        );
+      });
+      const selected = eligible.find(({ unit }) => {
+        const remaining = new Map(remainingCapacityByUnitKey);
+        remaining.set(unit.key, remaining.get(unit.key)! - 1);
+        return hasResidualPlacement(
+          legacyCandidateKeysByRequirement,
+          requirementIndex + 1,
+          remaining,
+        );
+      });
+      if (!selected?.evidence) {
+        throw ProviderError.invalidOutput(
+          `No eligible LearningUnit can preserve recovery capability ${requirement.capabilityRef}`,
+        );
+      }
+      const assignments = recoveryAssignments.get(selected.unit) ?? [];
+      assignments.push({
+        requirement,
+        evidenceId: selected.evidence.selection.evidenceId,
+        requirementIndex,
+      });
+      recoveryAssignments.set(selected.unit, assignments);
+      remainingCapacityByUnitKey.set(
+        selected.unit.key,
+        remainingCapacityByUnitKey.get(selected.unit.key)! - 1,
+      );
+    }
+    let objectiveCount = 0;
+    for (const unit of learningUnits) {
+      const assignments = recoveryAssignments.get(unit);
+      if (assignments && assignments.length > 0) {
+        unit.objectives = assignments.map(({ requirement, evidenceId, requirementIndex }) => ({
+          key: `recovery-objective-${requirementIndex + 1}`,
+          title: requirement.title,
+          description: requirement.description,
+          construct: requirement.construct,
+          evidence: [{ evidenceId }],
+          capabilityRequirementRef: requirement.capabilityRef,
+          priority: requirement.priority,
+          priorityRationale:
+            'This objective preserves a non-optional predecessor capability for independent evaluation.',
+        }));
+      }
+      objectiveCount += unit.objectives.length;
+    }
+    if (objectiveCount > maxObjectives) {
+      throw ProviderError.invalidOutput(
+        'Curriculum recovery placement exceeds the objective budget',
+      );
     }
 
     for (const edge of input.graphEdges) {

@@ -13,6 +13,7 @@ import {
   type ObjectiveAuthoritySemanticEvaluationObjectiveInput,
   type ObjectiveAuthoritySemanticEvaluationProposal,
   type ObjectiveAuthoritySemanticObjectiveProposal,
+  type ObjectiveAuthorityCapabilityRecoveryOrigin,
   type ObjectiveAuthorityRequiredCapabilityPreservation,
   type ObjectiveAuthoritySemanticSupport,
   type ObjectiveAuthoritySupportType,
@@ -25,6 +26,8 @@ import type { ProviderCandidateValidation } from '../llm/provider.js';
 export const OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_POLICY =
   'objective-authority-semantic-support-v1';
 export const OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_BATCH = 24;
+/** Eight fixed evaluator batches; detail generation must stay below this before evaluation. */
+export const OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES = 192;
 
 export interface ObjectiveAuthoritySemanticEvidenceAliasBinding {
   evidenceRef: string;
@@ -73,6 +76,9 @@ export interface MaterializeObjectiveAuthoritySemanticSupportMetadata {
   provider: string;
   providerModel: string | null;
   evaluatedAt: string;
+  /** Local-only immutable predecessor lineage; never provider-authored. */
+  recoveryOriginByObjectiveId?:
+    ReadonlyMap<string, ObjectiveAuthorityCapabilityRecoveryOrigin> | undefined;
 }
 
 export interface ValidateCurriculumObjectiveAuthoritySemanticSupportOptions {
@@ -736,6 +742,11 @@ export function materializeObjectiveAuthoritySemanticSupport(
               ],
               verdict: evaluation.capabilityPreservation.verdict,
               rationale: evaluation.capabilityPreservation.rationale,
+              ...(metadata.recoveryOriginByObjectiveId?.has(binding.objectiveId)
+                ? {
+                    recoveryOrigin: metadata.recoveryOriginByObjectiveId.get(binding.objectiveId),
+                  }
+                : {}),
             },
           }
         : {}),

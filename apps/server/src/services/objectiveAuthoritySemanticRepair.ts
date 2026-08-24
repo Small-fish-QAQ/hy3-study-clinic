@@ -61,7 +61,24 @@ export interface PrepareObjectiveAuthoritySemanticRepairInput {
   /** Local IDs assigned by the exact first materialization of `candidate`. */
   objectiveIdByProposalKey: ReadonlyMap<string, string>;
   firstPass: readonly ObjectiveAuthoritySemanticFirstPassBatch[];
+  /** Predecessor capability requirements already enforced in the first pass. */
+  requiredCapabilityPreservationByObjectiveId?:
+    ReadonlyMap<string, ObjectiveAuthorityRequiredCapabilityPreservation> | undefined;
+  /**
+   * Local-only frozen recovery scope. Course Map units may merge disjoint
+   * capability envelopes, while legacy candidates may not select every offer
+   * that recovery is allowed to use.
+   */
+  recoveryEvidenceScopeByObjectiveId?:
+    ReadonlyMap<string, ObjectiveAuthoritySemanticRepairEvidenceScope> | undefined;
   context: ObjectiveAuthoritySemanticRepairContext;
+}
+
+export interface ObjectiveAuthoritySemanticRepairEvidenceScope {
+  /** Exact operation-scoped evidence identities frozen for one capability. */
+  allowedEvidenceIds: readonly string[];
+  /** Complete predecessor LearningUnit source envelope behind those offers. */
+  allowedSourceBlockIds: readonly string[];
 }
 
 export interface ObjectiveAuthoritySemanticRepairAliasBinding {
@@ -73,6 +90,8 @@ export interface ObjectiveAuthoritySemanticRepairAliasBinding {
   priority: 'required' | 'high' | 'normal' | 'optional';
   currentEvidenceIds: string[];
   allowedEvidenceIds: string[];
+  /** Local source envelope retained without exposing persistent identities. */
+  allowedSourceBlockIds: string[];
   /** Provider-visible repair alias to exact operation-scoped evidence ID. */
   evidenceIdByRef: ReadonlyMap<string, string>;
   /** Ordered exact SourceAuthorityClaim identities behind each repair alias. */
@@ -118,6 +137,7 @@ export function objectiveAuthoritySemanticRepairSourceFingerprint(
       nodeKey: binding.nodeKey,
       currentEvidenceIds: binding.currentEvidenceIds,
       allowedEvidenceIds: binding.allowedEvidenceIds,
+      allowedSourceBlockIds: binding.allowedSourceBlockIds,
       evidence: objective.allowedEvidence.map((offer) => {
         const evidenceId = binding.evidenceIdByRef.get(offer.evidenceRef);
         const authorityClaimIds = binding.authorityClaimIdsByRef.get(offer.evidenceRef);
@@ -337,6 +357,34 @@ export function prepareObjectiveAuthoritySemanticRepair(
   const candidateByObjectiveId = new Map(
     candidateLocations.map((location) => [location.objectiveId, location] as const),
   );
+  for (const objectiveId of input.requiredCapabilityPreservationByObjectiveId?.keys() ?? []) {
+    if (!candidateByObjectiveId.has(objectiveId)) {
+      diagnostics.push({
+        code: 'semantic_repair_capability_preservation_objective_foreign',
+        message: `Semantic repair received a predecessor capability for foreign objective ${objectiveId}.`,
+      });
+    }
+    if (!input.recoveryEvidenceScopeByObjectiveId?.has(objectiveId)) {
+      diagnostics.push({
+        code: 'semantic_repair_recovery_evidence_scope_missing',
+        message: `Semantic repair is missing the frozen recovery evidence scope for ${objectiveId}.`,
+      });
+    }
+  }
+  for (const objectiveId of input.recoveryEvidenceScopeByObjectiveId?.keys() ?? []) {
+    if (!candidateByObjectiveId.has(objectiveId)) {
+      diagnostics.push({
+        code: 'semantic_repair_recovery_evidence_scope_objective_foreign',
+        message: `Semantic repair received a frozen evidence scope for foreign objective ${objectiveId}.`,
+      });
+    }
+    if (!input.requiredCapabilityPreservationByObjectiveId?.has(objectiveId)) {
+      diagnostics.push({
+        code: 'semantic_repair_recovery_evidence_scope_unbound',
+        message: `Semantic repair received a frozen evidence scope without a predecessor capability for ${objectiveId}.`,
+      });
+    }
+  }
 
   const seenObjectiveIds: string[] = [];
   const failed: FailedEvaluationLocation[] = [];
@@ -376,6 +424,9 @@ export function prepareObjectiveAuthoritySemanticRepair(
         continue;
       }
       const proposition = curriculumObjectiveProposition(location.objective);
+      const requiredCapabilityPreservation = input.requiredCapabilityPreservationByObjectiveId?.get(
+        location.objectiveId,
+      );
       if (
         evaluationBinding.objectiveRef !== evaluation.objectiveRef ||
         evaluationBinding.proposition !== proposition ||
@@ -386,6 +437,17 @@ export function prepareObjectiveAuthoritySemanticRepair(
         diagnostics.push({
           code: 'semantic_repair_first_pass_candidate_mismatch',
           message: `First-pass objective ${evaluation.objectiveRef} is stale for the candidate.`,
+        });
+        continue;
+      }
+      if (
+        requiredCapabilityPreservation &&
+        JSON.stringify(evaluationInput.requiredCapabilityPreservation) !==
+          JSON.stringify(requiredCapabilityPreservation)
+      ) {
+        diagnostics.push({
+          code: 'semantic_repair_capability_preservation_requirement_mismatch',
+          message: `First-pass objective ${evaluation.objectiveRef} changed its required predecessor capability.`,
         });
         continue;
       }
@@ -454,6 +516,9 @@ export function prepareObjectiveAuthoritySemanticRepair(
     ObjectiveAuthorityRequiredCapabilityPreservation
   >();
   for (const location of failed) {
+    const recoveryEvidenceScope = input.recoveryEvidenceScopeByObjectiveId?.get(
+      location.objectiveId,
+    );
     const coverage = input.context.deterministicCoverageByNodeKey?.get(location.node.key);
     if (input.context.deterministicCoverageByNodeKey && !coverage) {
       diagnostics.push({
@@ -485,9 +550,81 @@ export function prepareObjectiveAuthoritySemanticRepair(
       });
       continue;
     }
-    const envelopeOffers = coverageBlocks
-      ? input.context.evidenceCatalog.filter((offer) => coverageBlocks.has(offer.blockId))
-      : candidateEnvelopeOffers;
+    let allowedSourceBlockIds: string[];
+    let envelopeOffers: CurriculumEvidenceOffer[];
+    if (recoveryEvidenceScope) {
+      const uniqueAllowedEvidenceIds = uniqueInOrder(recoveryEvidenceScope.allowedEvidenceIds);
+      const uniqueAllowedSourceBlockIds = uniqueInOrder(
+        recoveryEvidenceScope.allowedSourceBlockIds,
+      );
+      if (uniqueAllowedEvidenceIds.length !== recoveryEvidenceScope.allowedEvidenceIds.length) {
+        diagnostics.push({
+          code: 'semantic_repair_recovery_evidence_scope_duplicate',
+          message: `Recovery evidence scope for ${location.objective.key} repeats an exact evidence identity.`,
+        });
+        continue;
+      }
+      if (
+        uniqueAllowedSourceBlockIds.length !== recoveryEvidenceScope.allowedSourceBlockIds.length
+      ) {
+        diagnostics.push({
+          code: 'semantic_repair_recovery_source_scope_duplicate',
+          message: `Recovery source scope for ${location.objective.key} repeats a source block identity.`,
+        });
+        continue;
+      }
+      if (uniqueAllowedEvidenceIds.length === 0 || uniqueAllowedSourceBlockIds.length === 0) {
+        diagnostics.push({
+          code: 'semantic_repair_recovery_evidence_scope_empty',
+          message: `Recovery evidence scope for ${location.objective.key} must remain non-empty.`,
+        });
+        continue;
+      }
+      if (uniqueAllowedEvidenceIds.length > MAX_REPAIR_EVIDENCE_OFFERS) {
+        diagnostics.push({
+          code: 'semantic_repair_recovery_evidence_limit_exceeded',
+          message: `Recovery evidence scope for ${location.objective.key} exceeds the bounded semantic repair evidence limit.`,
+          facts: {
+            offeredEvidenceCount: uniqueAllowedEvidenceIds.length,
+            limit: MAX_REPAIR_EVIDENCE_OFFERS,
+          },
+        });
+        continue;
+      }
+      const frozenSourceBlocks = new Set(uniqueAllowedSourceBlockIds);
+      const frozenOffers: CurriculumEvidenceOffer[] = [];
+      let frozenScopeInvalid = false;
+      for (const evidenceId of uniqueAllowedEvidenceIds) {
+        const offer = evidenceById.get(evidenceId);
+        if (!offer) {
+          diagnostics.push({
+            code: 'semantic_repair_recovery_evidence_unknown',
+            message: `Recovery evidence scope for ${location.objective.key} contains unknown evidence ${evidenceId}.`,
+          });
+          frozenScopeInvalid = true;
+          continue;
+        }
+        if (!frozenSourceBlocks.has(offer.blockId)) {
+          diagnostics.push({
+            code: 'semantic_repair_recovery_evidence_outside_source_scope',
+            message: `Recovery evidence ${evidenceId} is outside the frozen source scope for ${location.objective.key}.`,
+          });
+          frozenScopeInvalid = true;
+          continue;
+        }
+        if (!coverageBlocks || coverageBlocks.has(offer.blockId)) frozenOffers.push(offer);
+      }
+      if (frozenScopeInvalid) continue;
+      allowedSourceBlockIds = uniqueAllowedSourceBlockIds;
+      envelopeOffers = frozenOffers;
+    } else {
+      allowedSourceBlockIds = coverageBlocks
+        ? [...coverageBlocks]
+        : uniqueInOrder(candidateEnvelopeOffers.map((offer) => offer.blockId));
+      envelopeOffers = coverageBlocks
+        ? input.context.evidenceCatalog.filter((offer) => coverageBlocks.has(offer.blockId))
+        : candidateEnvelopeOffers;
+    }
     const eligible = envelopeOffers.flatMap((offer) => {
       const entry = buildEligibleEvidence(offer, input.context);
       return entry ? [entry] : [];
@@ -594,6 +731,11 @@ export function prepareObjectiveAuthoritySemanticRepair(
       })),
       verdict: 'fail',
       rationale: location.evaluation.rationale,
+      ...(location.evaluationInput.requiredCapabilityPreservation
+        ? {
+            requiredCapabilityPreservation: location.evaluationInput.requiredCapabilityPreservation,
+          }
+        : {}),
     });
     aliasBindings.set(location.evaluation.objectiveRef, {
       objectiveRef: location.evaluation.objectiveRef,
@@ -604,18 +746,20 @@ export function prepareObjectiveAuthoritySemanticRepair(
       priority: location.objective.priority ?? 'normal',
       currentEvidenceIds: [...currentEvidenceIds],
       allowedEvidenceIds: eligible.map((entry) => entry.offer.id),
+      allowedSourceBlockIds,
       evidenceIdByRef,
       authorityClaimIdsByRef,
     });
     requiredCapabilityPreservationByObjectiveKey.set(
       location.objective.key,
-      ObjectiveAuthorityRequiredCapabilityPreservationSchema.parse({
-        originalProposition: location.evaluationInput.proposition,
-        originalFragments: location.evaluation.fragments.map((fragment) => ({
-          fragmentId: fragment.fragmentId,
-          text: fragment.text,
-        })),
-      }),
+      location.evaluationInput.requiredCapabilityPreservation ??
+        ObjectiveAuthorityRequiredCapabilityPreservationSchema.parse({
+          originalProposition: location.evaluationInput.proposition,
+          originalFragments: location.evaluation.fragments.map((fragment) => ({
+            fragmentId: fragment.fragmentId,
+            text: fragment.text,
+          })),
+        }),
     );
   }
   if (diagnostics.length > 0) {

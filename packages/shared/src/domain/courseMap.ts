@@ -248,6 +248,8 @@ export const CourseMapRegionSchema = z
     conceptIds: z.array(z.string().min(1)).max(20),
     canonicalConceptIds: z.array(z.string().min(1)).max(10),
     expectedOutcome: z.string().min(1).max(500).optional(),
+    /** Operation-local recovery aliases retained through detail materialization. */
+    capabilityRequirementRefs: z.array(z.string().min(1).max(100)).max(4).optional(),
   })
   .strict();
 export type CourseMapRegion = z.infer<typeof CourseMapRegionSchema>;
@@ -341,6 +343,11 @@ export const CourseMapDiagnosticCodeSchema = z.enum([
   'flat_hierarchy',
   'unknown_source_disposition_region',
   'source_disposition_inconsistent',
+  'recovery_capability_unknown',
+  'recovery_capability_missing',
+  'recovery_capability_duplicate',
+  'recovery_capability_outside_source_envelope',
+  'recovery_capability_region_capacity_exceeded',
 ]);
 export type CourseMapDiagnosticCode = z.infer<typeof CourseMapDiagnosticCodeSchema>;
 

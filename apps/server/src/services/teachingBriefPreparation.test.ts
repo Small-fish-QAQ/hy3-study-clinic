@@ -334,7 +334,7 @@ async function createHarness(providerDelayMs = 0): Promise<Harness> {
   const repos = createRepositories(db);
   const provider = new CountingProvider({ delayMs: providerDelayMs });
   repos.workspaces.insert(makeWorkspace());
-  const content = 'Working memory has limited capacity.';
+  const content = '[SUPPORTS:explain] Working memory has limited capacity.';
   const visualBytes = Buffer.from('bounded exact visual fixture');
   const visualHash = `sha256:${createHash('sha256').update(visualBytes).digest('hex')}` as const;
   repos.materials.insertWithBlocks(

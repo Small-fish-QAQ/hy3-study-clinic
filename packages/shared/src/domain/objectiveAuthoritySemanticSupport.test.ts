@@ -306,6 +306,49 @@ describe('objective-authority semantic-support contracts', () => {
     expect(ObjectiveAuthoritySemanticSupportSchema.safeParse(foreign).success).toBe(false);
   });
 
+  it('accepts complete local recovery lineage and rejects missing or unknown lineage fields', () => {
+    const recovered = structuredClone(persistedPass()) as Record<string, unknown>;
+    recovered.capabilityPreservation = {
+      originalProposition: 'Explain the integrated-system positioning.',
+      originalPropositionFingerprint: 'sha256:original-proposition',
+      mappings: [
+        {
+          originalFragmentId: 'original_1',
+          originalText: 'Explain the integrated-system positioning.',
+          repairedFragmentIds: ['fragment_1'],
+          status: 'preserved',
+          rationale: 'The complete predecessor capability remains.',
+        },
+      ],
+      lostOriginalFragmentIds: [],
+      verdict: 'pass',
+      rationale: 'Every predecessor capability fragment remains.',
+      recoveryOrigin: {
+        predecessorCurriculumId: 'curriculum_predecessor',
+        predecessorCurriculumVersion: 3,
+        predecessorLearningUnitId: 'unit_predecessor',
+        predecessorObjectiveId: 'objective_predecessor',
+        predecessorPriority: 'required',
+        contractVersionId: 'contract_version_1',
+        executionSourceManifestFingerprint: 'manifest_fingerprint_1',
+        sourceEnvelopeFingerprint: 'source_envelope_fingerprint_1',
+      },
+    };
+    expect(ObjectiveAuthoritySemanticSupportSchema.safeParse(recovered).success).toBe(true);
+
+    const missingLineage = structuredClone(recovered) as {
+      capabilityPreservation: { recoveryOrigin: Record<string, unknown> };
+    };
+    delete missingLineage.capabilityPreservation.recoveryOrigin.predecessorObjectiveId;
+    expect(ObjectiveAuthoritySemanticSupportSchema.safeParse(missingLineage).success).toBe(false);
+
+    const unknownLineage = structuredClone(recovered) as {
+      capabilityPreservation: { recoveryOrigin: Record<string, unknown> };
+    };
+    unknownLineage.capabilityPreservation.recoveryOrigin.providerAuthoredLineage = true;
+    expect(ObjectiveAuthoritySemanticSupportSchema.safeParse(unknownLineage).success).toBe(false);
+  });
+
   it('accepts failed-objective repair input and exact replacement output', () => {
     const critique = structuredClone(
       (passProposal() as { evaluations: unknown[] }).evaluations[0],
@@ -349,6 +392,16 @@ describe('objective-authority semantic-support contracts', () => {
           overreach: critique.overreach,
           verdict: critique.verdict,
           rationale: critique.rationale,
+          requiredCapabilityPreservation: {
+            originalProposition:
+              'Explain the integrated system\nExplain the integrated-system positioning.',
+            originalFragments: [
+              {
+                fragmentId: 'original_1',
+                text: 'Explain the integrated system\nExplain the integrated-system positioning.',
+              },
+            ],
+          },
         },
       ],
     };

@@ -765,6 +765,19 @@ export function curriculumPromptContext(input: CurriculumProposalInput) {
           })),
         }
       : null,
+    capabilityRecovery: input.capabilityRecovery
+      ? {
+          requirements: input.capabilityRecovery.requirements.map((requirement) => ({
+            capabilityRef: requirement.capabilityRef,
+            title: requirement.title,
+            description: requirement.description,
+            originalProposition: requirement.originalProposition,
+            construct: requirement.construct,
+            priority: requirement.priority,
+            allowedEvidenceIds: requirement.allowedEvidenceIds,
+          })),
+        }
+      : null,
     evidenceCatalog: input.evidenceCatalog.map((offer) => {
       const block = blockById.get(offer.blockId);
       const key = sectionKey(
@@ -824,6 +837,25 @@ export function courseMapPromptContext(input: CourseMapProposalInput) {
         ? { authorityEnvelope: authorityEnvelopePromptContext(region.authorityEnvelope) }
         : {}),
     })),
+    capabilityRecovery: input.capabilityRecovery
+      ? {
+          evidenceOffers: input.capabilityRecovery.evidenceOffers.map((offer) => ({
+            recoveryEvidenceRef: offer.recoveryEvidenceRef,
+            sourceRegionRef: offer.sourceRegionRef,
+            text: offer.text,
+          })),
+          requirements: input.capabilityRecovery.requirements.map((requirement) => ({
+            capabilityRef: requirement.capabilityRef,
+            title: requirement.title,
+            description: requirement.description,
+            originalProposition: requirement.originalProposition,
+            construct: requirement.construct,
+            priority: requirement.priority,
+            allowedSourceRegionRefs: requirement.allowedSourceRegionRefs,
+            allowedRecoveryEvidenceRefs: requirement.allowedRecoveryEvidenceRefs,
+          })),
+        }
+      : null,
     limits: input.limits,
   };
 }
@@ -847,13 +879,16 @@ export function courseMapProposalMessages(input: CourseMapProposalInput): ChatMe
         context.guard,
         context.body,
         'Return exactly this shape:',
-        '{"modules":[{"title":"...","learningIntent":"...","regions":[{"sourceRegionRef":"R1","title":"...","learningIntent":"...","approximateScope":"focused|standard|extended","anchorOptionRefs":["R1:A1"]}]}],"prerequisites":[{"prerequisiteRegionRef":"R1","dependentRegionRef":"R2"}],"synthesisGroups":[{"title":"...","level":"module|course|transfer","regionRefs":["R1","R2"]}],"sourceDispositions":[{"sourceRegionRef":"R3","disposition":"represented_by_parent_or_synthesis|duplicate/redundant|boilerplate/navigation/non-learning-content|explicitly_out_of_scope|unresolved_candidate_gap","rationale":"...","representedRegionRefs":["R1"]}]}',
+        '{"modules":[{"title":"...","learningIntent":"...","regions":[{"sourceRegionRef":"R1","title":"...","learningIntent":"...","approximateScope":"focused|standard|extended","anchorOptionRefs":["R1:A1"],"capabilityRequirementRefs":["capability-1"]}]}],"prerequisites":[{"prerequisiteRegionRef":"R1","dependentRegionRef":"R2"}],"synthesisGroups":[{"title":"...","level":"module|course|transfer","regionRefs":["R1","R2"]}],"sourceDispositions":[{"sourceRegionRef":"R3","disposition":"represented_by_parent_or_synthesis|duplicate/redundant|boilerplate/navigation/non-learning-content|explicitly_out_of_scope|unresolved_candidate_gap","rationale":"...","representedRegionRefs":["R1"]}]}',
         'Create a coherent ordered hierarchy before any detailed objectives or LearningUnits.',
         'Module and region titles are learner-visible pedagogical identities, not parser headings. Remove source-order numbering, do not copy numbered source headings, and do not distinguish repeated headings by merely appending counters such as (1)/(2). Name the semantic learning boundary represented by each exact sourceRegionRef.',
         'Module array order and region array order are the pedagogical order. Do not output keys, numeric indexes, fingerprints, counts, allocation ids, Concept ids, canonical Concept ids, evidence ids, or any other identity not present in the requested shape.',
         'Use every offered sourceRegionRef exactly once: create exactly one instructional region for every meaningful offered sourceRegionRef. If a region is not a direct unit, include exactly one sourceDispositions row with a concrete rationale. Never classify meaningful learning content as boilerplate merely to improve coverage.',
         'For systematic or deep goals, unresolved_candidate_gap is a failing disposition and must be avoided or made explicit for local rejection. Duplicate, boilerplate, and out-of-scope dispositions require a bounded rationale and never silently disappear.',
         'Select anchorOptionRefs only from the anchorOptions adjacent to that same sourceRegionRef. An empty selection is allowed. Do not copy or invent Concept or canonical Concept ids.',
+        "When capabilityRecovery is present, assign every offered capabilityRef exactly once as a capabilityRequirementRef in one region listed by that requirement's allowedSourceRegionRefs. Inspect only that requirement's allowedRecoveryEvidenceRefs in evidenceOffers when judging semantic placement. Never omit, duplicate, rename, alter its frozen construct and priority, or assign a capability outside its allowed exact-evidence source envelope. A region may receive at most four capability requirements.",
+        'Recovery evidence aliases establish exact quotation and source location only; they do not independently prove semantic entailment. Assignment is a planning obligation, grants no authority, and remains subject to local detail-budget and independent semantic-support validation.',
+        'If local repair diagnostics report a recovery detail offer/byte capacity failure, redistribute only flexible capabilityRef values among their allowedSourceRegionRefs. Never output CE* aliases, evidence selections, raw ids, or authority claims.',
         'Propose prerequisites only when pedagogically meaningful. Reference only offered sourceRegionRefs, and place every prerequisite before its dependent region in the module/region array order.',
         'Use synthesis groups to mark meaningful module, course, or transfer boundaries. Reference only offered sourceRegionRefs. Module-level groups must stay within one module.',
         'Allocation and anchor options provide bounded planning visibility only; they do not prove relevance, entailment, prerequisite truth, or teaching quality.',
@@ -874,6 +909,7 @@ export function measureCourseMapRequest(input: CourseMapProposalInput) {
         (count, region) => count + region.evidence.length,
         0,
       ),
+      recoveryEvidenceOffers: input.capabilityRecovery?.evidenceOffers.length ?? 0,
       anchorOptions: input.sourceRegions.reduce(
         (count, region) => count + region.anchorOptions.length,
         0,
@@ -897,6 +933,19 @@ export function curriculumDetailProposalMessages(
     ...input,
     regions: input.regions.map((region) => ({
       ...region,
+      ...(region.capabilityRequirements
+        ? {
+            capabilityRequirements: region.capabilityRequirements.map((requirement) => ({
+              capabilityRef: requirement.capabilityRef,
+              title: requirement.title,
+              description: requirement.description,
+              originalProposition: requirement.originalProposition,
+              construct: requirement.construct,
+              priority: requirement.priority,
+              allowedEvidenceIds: requirement.allowedEvidenceIds,
+            })),
+          }
+        : {}),
       evidence: region.evidence.map((offer) => ({
         ...offer,
         ...(offer.authorityEnvelope
@@ -925,11 +974,12 @@ export function curriculumDetailProposalMessages(
         context.guard,
         context.body,
         'Return exactly this shape:',
-        '{"courseMapId":"course_map_...","sourceAllocationFingerprint":"course_map_source_allocation_...","units":[{"regionId":"course_map_region_...","title":"...","sourceEvidence":[{"evidenceId":"server-offered-id"}],"conceptIds":[],"canonicalConceptIds":[],"objectives":[{"key":"objective-1","title":"...","description":"...","construct":"identify|explain|apply|design|evaluate","priority":"required|high|normal|optional","priorityRationale":"...","evidence":[{"evidenceId":"server-offered-id"}]}]}]}',
+        '{"courseMapId":"course_map_...","sourceAllocationFingerprint":"course_map_source_allocation_...","units":[{"regionId":"course_map_region_...","title":"...","sourceEvidence":[{"evidenceId":"server-offered-id"}],"conceptIds":[],"canonicalConceptIds":[],"objectives":[{"key":"objective-1","title":"...","description":"...","construct":"identify|explain|apply|design|evaluate","priority":"required|high|normal|optional","priorityRationale":"...","evidence":[{"evidenceId":"server-offered-id"}],"capabilityRequirementRef":"capability-1"}]}]}',
         'Return exactly one unit for every offered region, in the offered order. Do not omit, duplicate, merge, or add regions.',
         'Use only evidence, Concept, and canonical Concept identities offered inside that same region. Select at least one exact evidence offer from every listed sourceAllocationRegionId.',
         'Prerequisite and synthesis context is informational: the server maps the validated Course Map structure into the final Curriculum. Do not output prerequisite or synthesis identities.',
         'Each unit needs one to four concrete instructional objectives. Use priority required only when the exact evidence can support an independently authorized Formal Assessment path; narrow a broader teaching intention when its source authority is narrower.',
+        'When a region contains capabilityRequirements, emit exactly one objective for every capabilityRef and no duplicate. Echo its capabilityRef as capabilityRequirementRef, copy its frozen title and description plus its frozen construct and priority exactly, and select evidence only from its allowedEvidenceIds. Never omit, rename, substitute, trivialize, or narrow any predecessor capability. Local independent evaluation decides preservation and semantic support.',
         'Assign every objective one explicit construct matching the observable learner capability in its title and description. This construct is frozen after proposal and cannot be lowered during repair merely to pass validation.',
         'Each exact evidence offer has its own authorityEnvelope. That evidence-level envelope is decisive for an objective that selects the offer; the broader region envelope is planning context only and cannot lend authority across evidence offers. formalEvidenceCount and supportedConstructs describe the strongest permitted Formal construct.',
         'A teaching_only or unavailable evidence envelope may still guide non-required explanation, but cannot justify a required formal claim. For every required objective, select exact evidence whose own envelope supports the objective construct. Preserve required priority while narrowing or splitting the claim; never invent authority or silently make it optional.',
@@ -1017,6 +1067,7 @@ export function objectiveAuthoritySemanticRepairMessages(
         'Never cite an alias outside allowedEvidence, broaden authority, fabricate evidence, omit, trivialize, substitute, or narrow away an important learner capability, or touch an unrelated objective.',
         "A convenient block is unusable unless its alias appears in that objective's allowedEvidence. selected merely records the current binding; a new binding must still come from the allowed universe.",
         'If no honest repair preserves the complete original learning goal at the same construct, preserve the original title/description and current evidence so the fresh independent evaluation fails closed; do not weaken semantics.',
+        'When requiredCapabilityPreservation is present, it is the immutable predecessor capability. Preserve that complete original proposition in the replacement; do not preserve a generic current substitute at the expense of the predecessor capability.',
         'Return exactly one replacement for every supplied objectiveRef and no others. Echo construct exactly. Deterministic local code validates identities, scope, bindings, preservation, and the fresh evaluation.',
         JSON_RULES,
       ].join('\n'),
@@ -1051,13 +1102,14 @@ export function curriculumProposalMessages(input: CurriculumProposalInput): Chat
         context.guard,
         context.body,
         'Return exactly this shape:',
-        '{"nodes":[{"key":"chapter-1","parentKey":null,"kind":"chapter|section|learning_unit","index":0,"title":"...","structuralUnitIds":[],"sourceEvidence":[{"evidenceId":"server-offered-id"}],"conceptIds":[],"canonicalConceptIds":[],"objectives":[{"key":"objective-1","title":"...","description":"...","construct":"identify|explain|apply|design|evaluate","evidence":[{"evidenceId":"server-offered-id"}]}],"prerequisiteUnitKeys":[],"graphRelationIds":[]}],"synthesisGroups":[{"key":"synthesis-1","title":"...","level":"section|chapter|course|transfer","learningUnitKeys":["unit-1","unit-2"],"objectiveKeys":["objective-1"]}]}',
+        '{"nodes":[{"key":"chapter-1","parentKey":null,"kind":"chapter|section|learning_unit","index":0,"title":"...","structuralUnitIds":[],"sourceEvidence":[{"evidenceId":"server-offered-id"}],"conceptIds":[],"canonicalConceptIds":[],"objectives":[{"key":"objective-1","title":"...","description":"...","construct":"identify|explain|apply|design|evaluate","evidence":[{"evidenceId":"server-offered-id"}],"capabilityRequirementRef":"capability-1"}],"prerequisiteUnitKeys":[],"graphRelationIds":[]}],"synthesisGroups":[{"key":"synthesis-1","title":"...","level":"section|chapter|course|transfer","learningUnitKeys":["unit-1","unit-2"],"objectiveKeys":["objective-1"]}]}',
         'Required hierarchy: chapter nodes have parentKey null; sections reference chapters; learning units reference sections.',
         'Use proposal-local keys. Reference only offered structural units, concepts, canonical concepts, graph relations, and evidence IDs.',
         'When no non-null structuralUnitId is offered, every structuralUnitIds array must be empty.',
         'A learning unit needs at least one objective. Non-learning-unit nodes must keep all unit-only arrays empty.',
         'Exact source evidence is mandatory for every LearningUnit objective. Select evidenceId only from evidenceCatalog; never copy, rewrite, paraphrase, or invent authoritative quote text.',
         'Assign every objective one explicit construct matching its observable learner capability. The construct is frozen after proposal; never lower it during repair merely to fit weaker evidence.',
+        'When capabilityRecovery is present, emit exactly one objective for every capabilityRef and echo it as capabilityRequirementRef. Keep the offered frozen construct and priority, preserve the complete original proposition represented by its title and description, and select evidence only from its allowedEvidenceIds. Never omit, duplicate, rename, substitute, trivialize, or narrow a predecessor capability. Unrelated generated objectives remain allowed. Local independent evaluation decides preservation and semantic support.',
         'Use the supplied authorityEnvelopes to design objectives backward from the strongest supported Formal construct. A required objective must stay within that envelope; if the requested goal exceeds every envelope, leave the mismatch visible for local fail-closed handling.',
         'Visual V* context may shape learner-visible organization or advisory context only for objectives fully supported by selected exact source evidence. Never create a LearningUnit or objective solely from V*. A visual-only Material without exact source evidence must not originate an independent objective. V* is a generated advisory explanation of an original visual, not quoted course text or evidence; never copy V* into evidence IDs, structural-unit IDs, Concept IDs, graph IDs, or any Formal authority field.',
         'The predecessor is compact advisory context. Improve it where useful; do not blindly copy its structure or evidence selections.',

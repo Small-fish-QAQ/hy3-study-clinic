@@ -169,6 +169,27 @@ describe('CurriculumProposalPayloadSchema', () => {
     delete payload.nodes[2]!.objectives[0]!.construct;
     expect(CurriculumProposalPayloadSchema.safeParse(payload).success).toBe(false);
   });
+
+  it('accepts an operation-local recovery capability reference on an objective', () => {
+    const payload = curriculumPayload() as {
+      nodes: Array<{ objectives: Array<Record<string, unknown>> }>;
+    };
+    payload.nodes[2]!.objectives[0]!.capabilityRequirementRef = 'capability-1';
+
+    expect(CurriculumProposalPayloadSchema.safeParse(payload).success).toBe(true);
+  });
+
+  it('rejects one recovery capability emitted by more than one objective', () => {
+    const payload = curriculumPayload() as {
+      nodes: Array<{ objectives: Array<Record<string, unknown>> }>;
+    };
+    payload.nodes[2]!.objectives[0]!.capabilityRequirementRef = 'capability-1';
+    payload.nodes[3]!.objectives[0]!.capabilityRequirementRef = 'capability-1';
+
+    expect(() => CurriculumProposalPayloadSchema.parse(payload)).toThrow(
+      /duplicate Curriculum capability requirement/u,
+    );
+  });
 });
 
 describe('StudyPlanProposalPayloadSchema', () => {

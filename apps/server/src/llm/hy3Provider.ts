@@ -680,7 +680,7 @@ export class Hy3Provider implements LlmProvider {
       CourseMapProposalPayloadSchema,
       opts,
       [
-        'Course Map coverage repair is bounded to this one retry. Consume the exact source-region references (R1, R2, ...) and source-allocation identities named in the validation diagnostics.',
+        'Course Map coverage repair is bounded to this one retry. Consume only the operation-local source-region aliases (R1, R2, ...), module aliases, and capabilityRef aliases named in the validation diagnostics.',
         'For every omitted meaningful region, add a direct region using that exact offered R# title and anchor-option references, or provide a valid explicit source disposition with a truthful rationale and representedRegionRefs.',
         'Preserve existing represented_by_parent_or_synthesis, duplicate/redundant, boilerplate/navigation/non-learning-content, explicitly_out_of_scope, and unresolved_candidate_gap dispositions; do not drop source identities or return the unchanged candidate.',
         'For semantic_topic_scattering, use the exact modules and R# source regions in the diagnostic. Regroup the affected regions under one coherent module, or add a narrowly named synthesis group across them only when there is a real cross-module teaching integration. Never add a broad bookkeeping-only synthesis group merely to silence validation.',
