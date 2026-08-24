@@ -1059,6 +1059,13 @@ export function createTeachingBriefPreparationService({
     options?: ProviderCallOptions,
   ): Promise<TeachingBriefPreparationResponse> {
     const input = TeachingBriefPreparationRequestSchema.parse(rawInput);
+    const operationStudySession = repos.studySessions.get(input.studySessionId);
+    if (!operationStudySession || operationStudySession.workspaceId !== input.workspaceId) {
+      throw new AppError(
+        ApiErrorCode.VersionConflict,
+        'Teaching Brief preparation requires the exact active Session and Agenda route.',
+      );
+    }
     const operationKey = `teaching-brief:${input.learningUnitId}:${input.commandId}`;
     const lessonLogicalCallId = `${operationKey}:lesson`;
     const practiceLogicalCallId = `${operationKey}:practice`;
@@ -1070,6 +1077,7 @@ export function createTeachingBriefPreparationService({
       idempotencyKey: operationKey,
       logicalOperationId: operationKey,
       operationType: 'prepare_teaching_brief',
+      studySessionId: input.studySessionId,
       expectedFingerprint: fingerprint(input),
       createdAt: startedAt.toISOString(),
       updatedAt: startedAt.toISOString(),

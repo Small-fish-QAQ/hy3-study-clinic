@@ -2905,6 +2905,239 @@ const MIGRATIONS: Migration[] = [
         END;
     `,
   },
+  {
+    version: 42,
+    name: 'durable_study_session_operation_ownership',
+    // StudySession-owned operations must remain directly discoverable even
+    // when no provider logical call exists. Legacy ownership is backfilled
+    // only when every durable signal agrees on one existing same-workspace
+    // StudySession; ambiguous or stale evidence remains explicitly unknown.
+    up: `
+      ALTER TABLE agent_operations
+        ADD COLUMN study_session_id TEXT
+          REFERENCES study_sessions(id) ON DELETE SET NULL;
+
+      WITH ownership_signals(operation_id, study_session_id, signal_valid) AS (
+        SELECT logical_call.operation_id, logical_call.study_session_id,
+          CASE WHEN
+            (logical_call.workspace_id IS NULL OR
+             logical_call.workspace_id = operation.workspace_id)
+            AND EXISTS (
+              SELECT 1 FROM study_sessions session
+              WHERE session.id = logical_call.study_session_id
+                AND session.workspace_id = operation.workspace_id
+            )
+          THEN 1 ELSE 0 END
+        FROM model_logical_calls logical_call
+        JOIN agent_operations operation ON operation.id = logical_call.operation_id
+        WHERE logical_call.operation_id IS NOT NULL
+          AND logical_call.study_session_id IS NOT NULL
+
+        UNION ALL
+
+        SELECT lesson.preparation_operation_id, lesson.session_id,
+          CASE WHEN operation.operation_type = 'prepare_lesson_execution'
+            AND EXISTS (
+              SELECT 1 FROM study_sessions session
+              WHERE session.id = lesson.session_id
+                AND session.workspace_id = operation.workspace_id
+            ) THEN 1 ELSE 0 END
+        FROM lesson_execution_states lesson
+        JOIN agent_operations operation ON operation.id = lesson.preparation_operation_id
+        WHERE lesson.preparation_operation_id IS NOT NULL
+
+        UNION ALL
+
+        SELECT inner_operation.id, lesson.session_id,
+          CASE WHEN outer_operation.operation_type = 'prepare_lesson_execution'
+            AND EXISTS (
+              SELECT 1 FROM study_sessions session
+              WHERE session.id = lesson.session_id
+                AND session.workspace_id = outer_operation.workspace_id
+                AND session.workspace_id = inner_operation.workspace_id
+            ) THEN 1 ELSE 0 END
+        FROM lesson_execution_states lesson
+        JOIN agent_operations outer_operation
+          ON outer_operation.id = lesson.preparation_operation_id
+        JOIN agent_operations inner_operation
+         ON inner_operation.operation_type = 'prepare_teaching_brief'
+        WHERE lesson.preparation_operation_id IS NOT NULL
+          AND inner_operation.command_id =
+            'teaching-brief:' || lesson.learning_unit_id || ':' ||
+            lesson.preparation_operation_id
+
+        UNION ALL
+
+        SELECT operation.id, lesson.session_id,
+          CASE WHEN EXISTS (
+            SELECT 1 FROM study_sessions session
+            WHERE session.id = lesson.session_id
+              AND session.workspace_id = operation.workspace_id
+          ) THEN 1 ELSE 0 END
+        FROM lesson_execution_events event
+        JOIN lesson_execution_states lesson ON lesson.id = event.lesson_execution_state_id
+        JOIN agent_operations operation
+          ON operation.command_id = event.command_id
+         AND operation.operation_type IN (
+           'prepare_lesson_execution', 'lesson_execution_command'
+         )
+
+        UNION ALL
+
+        SELECT operation.id, session.id, 1
+        FROM agent_operations operation
+        JOIN study_sessions session ON session.workspace_id = operation.workspace_id
+        WHERE
+          (
+            operation.operation_type = 'study_session_turn'
+            AND substr(
+              operation.command_id,
+              1,
+              length('study-turn:' || session.id || ':')
+            ) = 'study-turn:' || session.id || ':'
+          )
+          OR
+          (
+            operation.operation_type = 'study_session_command'
+            AND substr(
+              operation.command_id,
+              1,
+              length('study-command:' || session.id || ':')
+            ) = 'study-command:' || session.id || ':'
+          )
+          OR
+          (
+            operation.operation_type IN (
+              'study_session_pause', 'study_session_resume', 'study_session_stop'
+            )
+            AND substr(
+              operation.command_id,
+              1,
+              length('study-lifecycle:' || session.id || ':')
+            ) = 'study-lifecycle:' || session.id || ':'
+          )
+      ),
+      invalid_prefix_operations(operation_id) AS (
+        SELECT operation.id
+        FROM agent_operations operation
+        WHERE
+          (
+            operation.operation_type = 'study_session_turn'
+            AND substr(operation.command_id, 1, length('study-turn:')) = 'study-turn:'
+            AND NOT EXISTS (
+              SELECT 1 FROM study_sessions session
+              WHERE session.workspace_id = operation.workspace_id
+                AND substr(
+                  operation.command_id,
+                  1,
+                  length('study-turn:' || session.id || ':')
+                ) = 'study-turn:' || session.id || ':'
+            )
+          )
+          OR
+          (
+            operation.operation_type = 'study_session_command'
+            AND substr(operation.command_id, 1, length('study-command:')) = 'study-command:'
+            AND NOT EXISTS (
+              SELECT 1 FROM study_sessions session
+              WHERE session.workspace_id = operation.workspace_id
+                AND substr(
+                  operation.command_id,
+                  1,
+                  length('study-command:' || session.id || ':')
+                ) = 'study-command:' || session.id || ':'
+            )
+          )
+          OR
+          (
+            operation.operation_type IN (
+              'study_session_pause', 'study_session_resume', 'study_session_stop'
+            )
+            AND substr(operation.command_id, 1, length('study-lifecycle:')) =
+              'study-lifecycle:'
+            AND NOT EXISTS (
+              SELECT 1 FROM study_sessions session
+              WHERE session.workspace_id = operation.workspace_id
+                AND substr(
+                  operation.command_id,
+                  1,
+                  length('study-lifecycle:' || session.id || ':')
+                ) = 'study-lifecycle:' || session.id || ':'
+            )
+          )
+      ),
+      unambiguous_ownership AS (
+        SELECT operation_id, MIN(study_session_id) AS study_session_id
+        FROM ownership_signals
+        GROUP BY operation_id
+        HAVING COUNT(DISTINCT study_session_id) = 1
+          AND MIN(signal_valid) = 1
+          AND operation_id NOT IN (SELECT operation_id FROM invalid_prefix_operations)
+      ),
+      valid_ownership AS (
+        SELECT ownership.operation_id, ownership.study_session_id
+        FROM unambiguous_ownership ownership
+        JOIN agent_operations operation ON operation.id = ownership.operation_id
+        JOIN study_sessions session
+          ON session.id = ownership.study_session_id
+         AND session.workspace_id = operation.workspace_id
+      )
+      UPDATE agent_operations
+      SET study_session_id = (
+        SELECT ownership.study_session_id
+        FROM valid_ownership ownership
+        WHERE ownership.operation_id = agent_operations.id
+      )
+      WHERE id IN (SELECT operation_id FROM valid_ownership);
+
+      CREATE TRIGGER enforce_agent_operation_study_session_workspace_insert
+        BEFORE INSERT ON agent_operations
+        WHEN NEW.study_session_id IS NOT NULL AND NOT EXISTS (
+          SELECT 1 FROM study_sessions session
+          WHERE session.id = NEW.study_session_id
+            AND session.workspace_id = NEW.workspace_id
+        )
+        BEGIN
+          SELECT RAISE(ABORT, 'Agent operation StudySession must belong to its workspace');
+        END;
+      CREATE TRIGGER enforce_agent_operation_study_session_workspace_update
+        BEFORE UPDATE OF study_session_id, workspace_id ON agent_operations
+        WHEN NEW.study_session_id IS NOT NULL AND NOT EXISTS (
+          SELECT 1 FROM study_sessions session
+          WHERE session.id = NEW.study_session_id
+            AND session.workspace_id = NEW.workspace_id
+        )
+        BEGIN
+          SELECT RAISE(ABORT, 'Agent operation StudySession must belong to its workspace');
+        END;
+      CREATE TRIGGER prevent_agent_operation_study_session_rebinding
+        BEFORE UPDATE OF study_session_id ON agent_operations
+        WHEN OLD.study_session_id IS NOT NEW.study_session_id
+          AND (
+            OLD.study_session_id IS NULL OR EXISTS (
+              SELECT 1 FROM study_sessions session
+              WHERE session.id = OLD.study_session_id
+            )
+          )
+        BEGIN
+          SELECT RAISE(ABORT, 'Agent operation StudySession ownership is immutable');
+        END;
+      CREATE TRIGGER prevent_owned_study_session_workspace_change
+        BEFORE UPDATE OF workspace_id ON study_sessions
+        WHEN EXISTS (
+          SELECT 1 FROM agent_operations operation
+          WHERE operation.study_session_id = OLD.id
+            AND operation.workspace_id IS NOT NEW.workspace_id
+        )
+        BEGIN
+          SELECT RAISE(ABORT, 'StudySession workspace is fixed by owned Agent operations');
+        END;
+
+      CREATE INDEX idx_agent_operations_study_session_status
+        ON agent_operations(study_session_id, status, created_at, id)
+        WHERE study_session_id IS NOT NULL;
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

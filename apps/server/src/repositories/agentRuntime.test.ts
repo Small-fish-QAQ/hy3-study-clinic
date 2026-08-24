@@ -18,10 +18,11 @@ beforeEach(() => {
   repos.workspaces.insert(makeWorkspace());
 });
 
-function createOperation(id = 'op_1') {
+function createOperation(id = 'op_1', studySessionId?: string | null) {
   return repos.operations.createOrGet({
     id,
     workspaceId: 'ws_1',
+    studySessionId,
     commandId: `cmd_${id}`,
     idempotencyKey: `idem_${id}`,
     logicalOperationId: `logical_${id}`,
@@ -30,6 +31,51 @@ function createOperation(id = 'op_1') {
     createdAt: T0,
     updatedAt: T0,
   });
+}
+
+function insertOperationOwnershipSessions(): void {
+  db.prepare(
+    `INSERT INTO learning_contract_versions
+       (id, workspace_id, version, status, payload, created_at)
+     VALUES ('contract_operations', 'ws_1', 1, 'active', '{}', ?)`,
+  ).run(T0);
+  db.prepare(
+    `INSERT INTO execution_source_manifests
+       (id, workspace_id, fingerprint, payload, created_at)
+     VALUES ('manifest_operations', 'ws_1', 'manifest-operations', '{}', ?)`,
+  ).run(T0);
+  db.prepare(
+    `INSERT INTO curriculum_versions
+       (id, workspace_id, contract_id, manifest_id, manifest_fingerprint, version,
+        status, validation_valid, payload, created_at)
+     VALUES ('curriculum_operations', 'ws_1', 'contract_operations', 'manifest_operations',
+       'manifest-operations', 1, 'accepted', 1, '{}', ?)`,
+  ).run(T0);
+  db.prepare(
+    `INSERT INTO study_plan_versions
+       (id, workspace_id, contract_id, curriculum_id, manifest_fingerprint, version,
+        status, payload, created_at)
+     VALUES ('plan_operations', 'ws_1', 'contract_operations', 'curriculum_operations',
+       'manifest-operations', 1, 'accepted', '{}', ?)`,
+  ).run(T0);
+  db.prepare(
+    `INSERT INTO session_agendas
+       (id, workspace_id, contract_id, curriculum_id, plan_id, manifest_fingerprint,
+        version, status, payload, created_at, updated_at)
+     VALUES ('agenda_operations', 'ws_1', 'contract_operations', 'curriculum_operations',
+       'plan_operations', 'manifest-operations', 1, 'active', '{}', ?, ?)`,
+  ).run(T0, T0);
+  for (const sessionId of ['session_operations_a', 'session_operations_b']) {
+    db.prepare(
+      `INSERT INTO study_sessions
+         (id, workspace_id, contract_id, curriculum_id, plan_id, agenda_id,
+          manifest_fingerprint, version, status, route_state, current_agenda_item_id,
+          route_stack, transcript_watermark, created_at, updated_at)
+       VALUES (?, 'ws_1', 'contract_operations', 'curriculum_operations', 'plan_operations',
+         'agenda_operations', 'manifest-operations', 1, 'active', 'on_route', NULL,
+         '[]', 0, ?, ?)`,
+    ).run(sessionId, T0, T0);
+  }
 }
 
 function logicalCall(
@@ -97,6 +143,55 @@ describe('durable agent operations repository', () => {
         updatedAt: T1,
       }),
     ).toThrow(/Idempotency key/);
+  });
+
+  it('persists StudySession ownership as idempotent identity without widening projections', () => {
+    insertOperationOwnershipSessions();
+    const first = createOperation('op_owned', 'session_operations_a');
+    const retry = createOperation('op_owned', 'session_operations_a');
+
+    expect(first.created).toBe(true);
+    expect(retry).toEqual({ operation: first.operation, created: false });
+    expect(
+      db.prepare('SELECT study_session_id FROM agent_operations WHERE id = ?').get('op_owned'),
+    ).toEqual({ study_session_id: 'session_operations_a' });
+    expect(first.operation).not.toHaveProperty('studySessionId');
+    expect(Object.keys(first.operation)).toEqual([
+      'id',
+      'workspaceId',
+      'commandId',
+      'idempotencyKey',
+      'logicalOperationId',
+      'operationType',
+      'expectedFingerprint',
+      'status',
+      'leaseOwner',
+      'leaseExpiresAt',
+      'fencingToken',
+      'createdAt',
+      'updatedAt',
+    ]);
+
+    expect(() =>
+      repos.operations.createOrGet({
+        ...first.operation,
+        id: 'op_owned_other_session',
+        studySessionId: 'session_operations_b',
+        createdAt: T1,
+        updatedAt: T1,
+      }),
+    ).toThrow(/Idempotency key/);
+    expect(() =>
+      repos.operations.createOrGet({
+        ...first.operation,
+        id: 'op_owned_missing_session',
+        createdAt: T1,
+        updatedAt: T1,
+      }),
+    ).toThrow(/Idempotency key/);
+    expect(() => createOperation('op_invalid_session', 'missing_session')).toThrow(
+      /StudySession ownership/,
+    );
   });
 
   it('orders events and permits exactly one terminal result from the current lease owner', () => {

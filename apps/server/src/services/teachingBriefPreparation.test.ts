@@ -37,6 +37,14 @@ const databases: SqliteDb[] = [];
 const LESSON_INPUT_MUTATION_SENTINEL = 'LESSON_PROVIDER_INPUT_MUTATION_SENTINEL';
 const PRACTICE_INPUT_MUTATION_SENTINEL = 'PRACTICE_PROVIDER_INPUT_MUTATION_SENTINEL';
 
+function operationStudySessionId(db: SqliteDb, operationId: string): string | null | undefined {
+  return (
+    db
+      .prepare('SELECT study_session_id AS studySessionId FROM agent_operations WHERE id = ?')
+      .get(operationId) as { studySessionId: string | null } | undefined
+  )?.studySessionId;
+}
+
 class CountingProvider extends FakeProvider {
   lessonContentCalls = 0;
   practiceContentCalls = 0;
@@ -823,6 +831,7 @@ function preparationRequest(
   commandId: string,
   overrides: {
     learningUnitId?: string;
+    studySessionId?: string;
     expectedExecutionSourceManifestFingerprint?: string;
   } = {},
 ) {
@@ -831,7 +840,7 @@ function preparationRequest(
     curriculumVersionId: harness.curriculumId,
     studyPlanVersionId: harness.planId,
     learningUnitId: overrides.learningUnitId ?? harness.learningUnitId,
-    studySessionId: route.session.id,
+    studySessionId: overrides.studySessionId ?? route.session.id,
     sessionAgendaId: route.agenda.id,
     expectedSessionVersion: route.session.version,
     expectedAgendaVersion: route.agenda.version,
@@ -954,6 +963,11 @@ describe('Teaching Brief preparation', () => {
     const input = preparationRequest(harness, route, 'brief-prepare-1');
     const first = await harness.services.teachingBriefPreparation.prepare(input);
     expect(first.status).toBe('prepared');
+    const operation = harness.repos.operations.getByIdempotencyKey(
+      'ws_1',
+      `teaching-brief:${harness.learningUnitId}:brief-prepare-1`,
+    )!;
+    expect(operationStudySessionId(harness.db, operation.id)).toBe(input.studySessionId);
     expect(first.brief.sourceReferences.length).toBeGreaterThan(0);
     expect(first.brief.visualReferences).toHaveLength(1);
     expect(first.brief.visualReferences[0]).toMatchObject({
@@ -1699,6 +1713,83 @@ describe('Teaching Brief preparation', () => {
         }),
       ),
     ).rejects.toMatchObject({ code: 'VERSION_CONFLICT' });
+    await expect(
+      harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, 'brief-missing-session', {
+          studySessionId: 'study_session_missing',
+        }),
+      ),
+    ).rejects.toMatchObject({
+      code: 'VERSION_CONFLICT',
+      message: 'Teaching Brief preparation requires the exact active Session and Agenda route.',
+    });
+    expect(
+      harness.repos.operations.getByIdempotencyKey(
+        'ws_1',
+        `teaching-brief:${harness.learningUnitId}:brief-missing-session`,
+      ),
+    ).toBeUndefined();
+    harness.repos.workspaces.insert(
+      makeWorkspace({ id: 'ws_teaching_other', name: 'Other teaching Course' }),
+    );
+    harness.db
+      .prepare(
+        `INSERT INTO study_sessions
+           (id, workspace_id, contract_id, curriculum_id, plan_id, agenda_id,
+            manifest_fingerprint, version, status, route_state, current_agenda_item_id,
+            route_stack, transcript_watermark, created_at, updated_at)
+         SELECT ?, ?, contract_id, curriculum_id, plan_id, agenda_id,
+            manifest_fingerprint, version, status, route_state, current_agenda_item_id,
+            route_stack, transcript_watermark, created_at, updated_at
+         FROM study_sessions WHERE id = ?`,
+      )
+      .run('study_session_teaching_other_workspace', 'ws_teaching_other', route.session.id);
+    const crossWorkspaceSession = harness.repos.studySessions.get(
+      'study_session_teaching_other_workspace',
+    )!;
+    const crossWorkspaceStateBefore = harness.db
+      .prepare(
+        `SELECT
+           (SELECT COUNT(*) FROM agent_operations) AS operations,
+           (SELECT COUNT(*) FROM model_logical_calls) AS logicalCalls,
+           (SELECT COUNT(*) FROM model_call_attempts) AS attempts,
+           (SELECT COUNT(*) FROM accepted_lesson_checkpoints) AS lessonCheckpoints,
+           (SELECT COUNT(*) FROM teaching_briefs) AS teachingBriefs,
+           (SELECT COUNT(*) FROM lesson_execution_states) AS lessonStates`,
+      )
+      .get();
+    await expect(
+      harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, 'brief-cross-workspace-session', {
+          studySessionId: crossWorkspaceSession.id,
+        }),
+      ),
+    ).rejects.toMatchObject({
+      code: 'VERSION_CONFLICT',
+      message: 'Teaching Brief preparation requires the exact active Session and Agenda route.',
+    });
+    expect(
+      harness.repos.operations.getByIdempotencyKey(
+        'ws_1',
+        `teaching-brief:${harness.learningUnitId}:brief-cross-workspace-session`,
+      ),
+    ).toBeUndefined();
+    expect(harness.repos.studySessions.get(crossWorkspaceSession.id)).toEqual(
+      crossWorkspaceSession,
+    );
+    expect(
+      harness.db
+        .prepare(
+          `SELECT
+             (SELECT COUNT(*) FROM agent_operations) AS operations,
+             (SELECT COUNT(*) FROM model_logical_calls) AS logicalCalls,
+             (SELECT COUNT(*) FROM model_call_attempts) AS attempts,
+             (SELECT COUNT(*) FROM accepted_lesson_checkpoints) AS lessonCheckpoints,
+             (SELECT COUNT(*) FROM teaching_briefs) AS teachingBriefs,
+             (SELECT COUNT(*) FROM lesson_execution_states) AS lessonStates`,
+        )
+        .get(),
+    ).toEqual(crossWorkspaceStateBefore);
     expect(harness.provider.lessonContentCalls).toBe(0);
     expect(harness.provider.practiceContentCalls).toBe(0);
   });
@@ -2032,6 +2123,8 @@ describe('Teaching Brief preparation', () => {
       .find((operation) => operation.commandId.endsWith(`:${outer.id}`))!;
     expect(outer).toMatchObject({ status: 'running' });
     expect(child).toMatchObject({ status: 'running' });
+    expect(operationStudySessionId(harness.db, outer.id)).toBe(route.session.id);
+    expect(operationStudySessionId(harness.db, child.id)).toBe(route.session.id);
     expect(Date.parse(outer.leaseExpiresAt!) - Date.parse(child.leaseExpiresAt!)).toBe(
       COMPOSITIONAL_PREPARATION_LEASE_MS,
     );
@@ -2601,6 +2694,8 @@ describe('Teaching Brief preparation', () => {
       action: { kind: 'start_lesson' },
     });
     expect(startedLesson.progress?.presentedSegmentIndexes).toContain(0);
+    const lessonCommand = harness.repos.operations.getByIdempotencyKey('ws_1', 'lesson-start')!;
+    expect(operationStudySessionId(harness.db, lessonCommand.id)).toBe(session.id);
     expect(harness.services.lessonExecution.tutorContext('ws_1', session.id)?.visuals).toHaveLength(
       1,
     );

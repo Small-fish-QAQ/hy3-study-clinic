@@ -263,6 +263,247 @@ function insertObjectiveSemanticSupportMigrationFixture(
   return curriculumPayload;
 }
 
+function insertOperationOwnershipMigrationFixture(db: ReturnType<typeof openDatabase>): void {
+  const at = '2026-01-01T00:00:00.000Z';
+  db.prepare(
+    `INSERT INTO workspaces (id, name, origin, created_at, updated_at)
+     VALUES ('ws_v42', 'Operation ownership migration', 'manual', ?, ?),
+            ('ws_v42_other', 'Other operation workspace', 'manual', ?, ?)`,
+  ).run(at, at, at, at);
+  db.prepare(
+    `INSERT INTO learning_contract_versions
+       (id, workspace_id, version, status, payload, created_at)
+     VALUES ('contract_v42', 'ws_v42', 1, 'active', '{}', ?)`,
+  ).run(at);
+  db.prepare(
+    `INSERT INTO execution_source_manifests
+       (id, workspace_id, fingerprint, payload, created_at)
+     VALUES ('manifest_v42', 'ws_v42', 'manifest-v42', '{}', ?)`,
+  ).run(at);
+  db.prepare(
+    `INSERT INTO curriculum_versions
+       (id, workspace_id, contract_id, manifest_id, manifest_fingerprint, version,
+        status, validation_valid, payload, created_at)
+     VALUES ('curriculum_v42', 'ws_v42', 'contract_v42', 'manifest_v42',
+       'manifest-v42', 1, 'accepted', 1, '{}', ?)`,
+  ).run(at);
+  db.prepare(
+    `INSERT INTO study_plan_versions
+       (id, workspace_id, contract_id, curriculum_id, manifest_fingerprint, version,
+        status, payload, created_at)
+     VALUES ('plan_v42', 'ws_v42', 'contract_v42', 'curriculum_v42',
+       'manifest-v42', 1, 'accepted', '{}', ?)`,
+  ).run(at);
+  db.prepare(
+    `INSERT INTO session_agendas
+       (id, workspace_id, contract_id, curriculum_id, plan_id, manifest_fingerprint,
+        version, status, payload, created_at, updated_at)
+     VALUES ('agenda_v42', 'ws_v42', 'contract_v42', 'curriculum_v42', 'plan_v42',
+       'manifest-v42', 1, 'active', '{}', ?, ?)`,
+  ).run(at, at);
+  for (const sessionId of ['session_v42_a', 'session_v42_b', 'session_v42_delete']) {
+    db.prepare(
+      `INSERT INTO study_sessions
+         (id, workspace_id, contract_id, curriculum_id, plan_id, agenda_id,
+          manifest_fingerprint, version, status, route_state, current_agenda_item_id,
+          route_stack, transcript_watermark, created_at, updated_at)
+       VALUES (?, 'ws_v42', 'contract_v42', 'curriculum_v42', 'plan_v42', 'agenda_v42',
+         'manifest-v42', 1, 'active', 'on_route', NULL, '[]', 0, ?, ?)`,
+    ).run(sessionId, at, at);
+  }
+  db.prepare(
+    `INSERT INTO study_sessions
+       (id, workspace_id, contract_id, curriculum_id, plan_id, agenda_id,
+        manifest_fingerprint, version, status, route_state, current_agenda_item_id,
+        route_stack, transcript_watermark, created_at, updated_at)
+     VALUES ('session_v42_other_workspace', 'ws_v42_other', 'contract_v42',
+       'curriculum_v42', 'plan_v42', 'agenda_v42', 'manifest-v42', 1, 'active',
+       'on_route', NULL, '[]', 0, ?, ?)`,
+  ).run(at, at);
+
+  const insertOperation = (
+    id: string,
+    operationType: string,
+    commandId = `command_${id}`,
+  ): void => {
+    db.prepare(
+      `INSERT INTO agent_operations
+         (id, workspace_id, command_id, idempotency_key, logical_operation_id,
+          operation_type, expected_fingerprint, status, lease_owner, lease_expires_at,
+          fencing_token, created_at, updated_at)
+       VALUES (?, 'ws_v42', ?, ?, ?, ?, 'fixture-fingerprint', 'queued', NULL, NULL, 0, ?, ?)`,
+    ).run(id, commandId, `idem_${id}`, `logical_${id}`, operationType, at, at);
+  };
+  insertOperation('operation_v42_logical', 'prepare_teaching_brief');
+  insertOperation('operation_v42_delete_survivor', 'prepare_teaching_brief');
+  insertOperation('operation_v42_lesson', 'prepare_lesson_execution');
+  insertOperation(
+    'operation_v42_inner_brief',
+    'prepare_teaching_brief',
+    'teaching-brief:unit_v42:operation_v42_lesson',
+  );
+  insertOperation(
+    'operation_v42_inner_wrong_unit',
+    'prepare_teaching_brief',
+    'teaching-brief:other_unit_v42:operation_v42_lesson',
+  );
+  insertOperation(
+    'operation_v42_lesson_event',
+    'lesson_execution_command',
+    'legacy_lesson_command_v42',
+  );
+  insertOperation(
+    'operation_v42_turn_prefix',
+    'study_session_turn',
+    'study-turn:session_v42_a:turn-command',
+  );
+  insertOperation(
+    'operation_v42_command_prefix',
+    'study_session_command',
+    'study-command:session_v42_a:mixed-command',
+  );
+  insertOperation(
+    'operation_v42_lifecycle_prefix',
+    'study_session_pause',
+    'study-lifecycle:session_v42_a:pause-command',
+  );
+  insertOperation(
+    'operation_v42_wrong_prefix_type',
+    'propose_curriculum',
+    'study-turn:session_v42_a:not-a-turn-operation',
+  );
+  insertOperation('operation_v42_wrong_lesson_type', 'propose_curriculum');
+  insertOperation('operation_v42_ambiguous_calls', 'study_session_turn');
+  insertOperation('operation_v42_call_workspace_conflict', 'prepare_lesson_execution');
+  insertOperation(
+    'operation_v42_conflicting_event',
+    'lesson_execution_command',
+    'legacy_lesson_conflicting_command_v42',
+  );
+  insertOperation(
+    'operation_v42_conflicting_inner',
+    'prepare_teaching_brief',
+    'teaching-brief:unit_v42:operation_v42_nested_outer_b',
+  );
+  insertOperation('operation_v42_conflicting_sources', 'prepare_lesson_execution');
+  insertOperation('operation_v42_cross_workspace_lesson', 'prepare_lesson_execution');
+  insertOperation('operation_v42_nested_outer_b', 'prepare_lesson_execution');
+  insertOperation('operation_v42_stale_call', 'study_session_turn');
+  insertOperation('operation_v42_stale_call_with_lesson', 'prepare_lesson_execution');
+  insertOperation(
+    'operation_v42_stale_prefix_with_call',
+    'study_session_turn',
+    'study-turn:missing_session_v42:turn-command',
+  );
+  insertOperation('operation_v42_unknown', 'propose_curriculum');
+
+  const insertLogicalCall = (
+    id: string,
+    operationId: string,
+    studySessionId: string,
+    workspaceId = 'ws_v42',
+  ): void => {
+    db.prepare(
+      `INSERT INTO model_logical_calls
+         (id, operation_id, workspace_id, study_session_id, learning_unit_id, assessment_id,
+          operation_type, cache_key, cache_status, prompt_fingerprint, schema_fingerprint,
+          policy_fingerprint, source_fingerprint, status, created_at, completed_at)
+       VALUES (?, ?, ?, ?, NULL, NULL, 'migration_fixture', NULL, 'not_checked',
+         NULL, NULL, NULL, NULL, 'completed', ?, ?)`,
+    ).run(id, operationId, workspaceId, studySessionId, at, at);
+  };
+  insertLogicalCall('call_v42_logical', 'operation_v42_logical', 'session_v42_a');
+  insertLogicalCall(
+    'call_v42_delete_survivor',
+    'operation_v42_delete_survivor',
+    'session_v42_delete',
+  );
+  insertLogicalCall('call_v42_ambiguous_a', 'operation_v42_ambiguous_calls', 'session_v42_a');
+  insertLogicalCall('call_v42_ambiguous_b', 'operation_v42_ambiguous_calls', 'session_v42_b');
+  insertLogicalCall(
+    'call_v42_workspace_conflict',
+    'operation_v42_call_workspace_conflict',
+    'session_v42_a',
+    'ws_v42_other',
+  );
+  insertLogicalCall(
+    'call_v42_conflicting_event',
+    'operation_v42_conflicting_event',
+    'session_v42_a',
+  );
+  insertLogicalCall(
+    'call_v42_conflicting_inner',
+    'operation_v42_conflicting_inner',
+    'session_v42_a',
+  );
+  insertLogicalCall('call_v42_conflicting', 'operation_v42_conflicting_sources', 'session_v42_a');
+  insertLogicalCall(
+    'call_v42_cross_workspace_lesson',
+    'operation_v42_cross_workspace_lesson',
+    'session_v42_a',
+  );
+  insertLogicalCall('call_v42_stale', 'operation_v42_stale_call', 'missing_session_v42');
+  insertLogicalCall(
+    'call_v42_stale_with_lesson',
+    'operation_v42_stale_call_with_lesson',
+    'missing_session_v42',
+  );
+  insertLogicalCall(
+    'call_v42_stale_prefix',
+    'operation_v42_stale_prefix_with_call',
+    'session_v42_a',
+  );
+  insertLogicalCall(
+    'call_v42_wrong_lesson_type',
+    'operation_v42_wrong_lesson_type',
+    'session_v42_a',
+  );
+
+  const insertLessonState = (id: string, sessionId: string, operationId: string): void => {
+    db.prepare(
+      `INSERT INTO lesson_execution_states
+         (id, session_id, agenda_item_id, curriculum_id, study_plan_id, learning_unit_id,
+          teaching_brief_id, manifest_fingerprint, source_context_fingerprint,
+          preparation_status, preparation_operation_id, version, current_segment_index,
+          presented_segment_indexes, informal_interactions, presentation_completed_at,
+          created_at, updated_at)
+       VALUES (?, ?, ?, 'curriculum_v42', 'plan_v42', 'unit_v42', NULL,
+         'manifest-v42', NULL, 'preparing', ?, 1, 0, '[]', '[]', NULL, ?, ?)`,
+    ).run(id, sessionId, `agenda_item_${id}`, operationId, at, at);
+  };
+  insertLessonState('lesson_v42_owned', 'session_v42_a', 'operation_v42_lesson');
+  insertLessonState('lesson_v42_conflicting', 'session_v42_b', 'operation_v42_conflicting_sources');
+  insertLessonState(
+    'lesson_v42_cross_workspace',
+    'session_v42_other_workspace',
+    'operation_v42_cross_workspace_lesson',
+  );
+  insertLessonState(
+    'lesson_v42_workspace_conflict',
+    'session_v42_a',
+    'operation_v42_call_workspace_conflict',
+  );
+  insertLessonState(
+    'lesson_v42_stale_call',
+    'session_v42_a',
+    'operation_v42_stale_call_with_lesson',
+  );
+  insertLessonState('lesson_v42_nested_b', 'session_v42_b', 'operation_v42_nested_outer_b');
+  insertLessonState(
+    'lesson_v42_wrong_operation_type',
+    'session_v42_a',
+    'operation_v42_wrong_lesson_type',
+  );
+  db.prepare(
+    `INSERT INTO lesson_execution_events
+       (id, lesson_execution_state_id, seq, command_id, kind, payload, created_at)
+     VALUES ('lesson_event_v42', 'lesson_v42_owned', 1, 'legacy_lesson_command_v42',
+       'segment_presented', '{}', ?),
+       ('lesson_event_v42_conflict', 'lesson_v42_conflicting', 1,
+        'legacy_lesson_conflicting_command_v42', 'segment_presented', '{}', ?)`,
+  ).run(at, at);
+}
+
 function insertTelemetryFixture(
   db: ReturnType<typeof openDatabase>,
   id: string,
@@ -1024,6 +1265,175 @@ describe('migrations', () => {
     ).toEqual({ payload: legacyPayload });
     const curriculum = createCurriculaRepo(db).get('curriculum_v41');
     expect(curriculum?.nodes[1]?.learningUnit?.objectives[0]?.semanticSupport).toBeUndefined();
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+    db.close();
+  });
+
+  it('backfills only unambiguous durable StudySession operation ownership in migration 42', () => {
+    const db = openDatabase(':memory:');
+    migrate(db, { toVersion: 41 });
+    insertOperationOwnershipMigrationFixture(db);
+
+    migrate(db);
+
+    expect(
+      db
+        .prepare(
+          `SELECT id, study_session_id
+           FROM agent_operations WHERE workspace_id = 'ws_v42' ORDER BY id`,
+        )
+        .all(),
+    ).toEqual([
+      { id: 'operation_v42_ambiguous_calls', study_session_id: null },
+      { id: 'operation_v42_call_workspace_conflict', study_session_id: null },
+      { id: 'operation_v42_command_prefix', study_session_id: 'session_v42_a' },
+      { id: 'operation_v42_conflicting_event', study_session_id: null },
+      { id: 'operation_v42_conflicting_inner', study_session_id: null },
+      { id: 'operation_v42_conflicting_sources', study_session_id: null },
+      { id: 'operation_v42_cross_workspace_lesson', study_session_id: null },
+      { id: 'operation_v42_delete_survivor', study_session_id: 'session_v42_delete' },
+      { id: 'operation_v42_inner_brief', study_session_id: 'session_v42_a' },
+      { id: 'operation_v42_inner_wrong_unit', study_session_id: null },
+      { id: 'operation_v42_lesson', study_session_id: 'session_v42_a' },
+      { id: 'operation_v42_lesson_event', study_session_id: 'session_v42_a' },
+      { id: 'operation_v42_lifecycle_prefix', study_session_id: 'session_v42_a' },
+      { id: 'operation_v42_logical', study_session_id: 'session_v42_a' },
+      { id: 'operation_v42_nested_outer_b', study_session_id: 'session_v42_b' },
+      { id: 'operation_v42_stale_call', study_session_id: null },
+      { id: 'operation_v42_stale_call_with_lesson', study_session_id: null },
+      { id: 'operation_v42_stale_prefix_with_call', study_session_id: null },
+      { id: 'operation_v42_turn_prefix', study_session_id: 'session_v42_a' },
+      { id: 'operation_v42_unknown', study_session_id: null },
+      { id: 'operation_v42_wrong_lesson_type', study_session_id: null },
+      { id: 'operation_v42_wrong_prefix_type', study_session_id: null },
+    ]);
+    expect(
+      db.prepare('SELECT version, name FROM schema_migrations WHERE version = 42').get(),
+    ).toEqual({ version: 42, name: 'durable_study_session_operation_ownership' });
+    expect(
+      (
+        db.pragma('table_info(agent_operations)') as Array<{
+          name: string;
+          notnull: number;
+          dflt_value: string | null;
+        }>
+      ).find((column) => column.name === 'study_session_id'),
+    ).toMatchObject({ name: 'study_session_id', notnull: 0, dflt_value: null });
+    expect(
+      (
+        db.pragma('foreign_key_list(agent_operations)') as Array<{
+          table: string;
+          from: string;
+          to: string;
+          on_delete: string;
+        }>
+      ).find((foreignKey) => foreignKey.from === 'study_session_id'),
+    ).toMatchObject({
+      table: 'study_sessions',
+      from: 'study_session_id',
+      to: 'id',
+      on_delete: 'SET NULL',
+    });
+    expect(
+      (
+        db.pragma('index_info(idx_agent_operations_study_session_status)') as Array<{
+          name: string;
+        }>
+      ).map((column) => column.name),
+    ).toEqual(['study_session_id', 'status', 'created_at', 'id']);
+    expect(
+      (
+        db.pragma('index_list(agent_operations)') as Array<{
+          name: string;
+          partial: number;
+        }>
+      ).find((index) => index.name === 'idx_agent_operations_study_session_status'),
+    ).toMatchObject({ partial: 1 });
+    expect(() =>
+      db
+        .prepare(
+          `INSERT INTO agent_operations
+             (id, workspace_id, study_session_id, command_id, idempotency_key,
+              logical_operation_id, operation_type, expected_fingerprint, status,
+              fencing_token, created_at, updated_at)
+           VALUES ('operation_v42_cross_workspace', 'ws_v42_other', 'session_v42_a',
+             'command_v42_cross_workspace', 'idem_v42_cross_workspace',
+             'logical_v42_cross_workspace', 'study_session_turn', 'fixture-fingerprint',
+             'queued', 0, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z')`,
+        )
+        .run(),
+    ).toThrow(/must belong to its workspace/);
+    expect(() =>
+      db
+        .prepare(
+          `UPDATE agent_operations SET study_session_id = 'session_v42_b'
+           WHERE id = 'operation_v42_logical'`,
+        )
+        .run(),
+    ).toThrow(/ownership is immutable/);
+    expect(() =>
+      db
+        .prepare(
+          `UPDATE agent_operations SET workspace_id = 'ws_v42_other'
+           WHERE id = 'operation_v42_logical'`,
+        )
+        .run(),
+    ).toThrow(/must belong to its workspace/);
+    expect(() =>
+      db
+        .prepare(
+          `UPDATE study_sessions SET workspace_id = 'ws_v42_other'
+           WHERE id = 'session_v42_a'`,
+        )
+        .run(),
+    ).toThrow(/fixed by owned Agent operations/);
+    expect(() =>
+      db
+        .prepare(
+          `UPDATE agent_operations
+           SET status = 'running', fencing_token = 1,
+               lease_owner = 'worker-v42', lease_expires_at = '2026-01-01T00:01:00.000Z'
+           WHERE id = 'operation_v42_logical'`,
+        )
+        .run(),
+    ).not.toThrow();
+    expect(
+      db
+        .prepare(
+          `SELECT status, fencing_token, study_session_id
+           FROM agent_operations WHERE id = 'operation_v42_logical'`,
+        )
+        .get(),
+    ).toEqual({
+      status: 'running',
+      fencing_token: 1,
+      study_session_id: 'session_v42_a',
+    });
+    expect(() =>
+      db.prepare("DELETE FROM study_sessions WHERE id = 'session_v42_delete'").run(),
+    ).not.toThrow();
+    expect(
+      db
+        .prepare(
+          `SELECT id, study_session_id FROM agent_operations
+           WHERE id = 'operation_v42_delete_survivor'`,
+        )
+        .get(),
+    ).toEqual({ id: 'operation_v42_delete_survivor', study_session_id: null });
+    expect(
+      db
+        .prepare(
+          "SELECT operation_id FROM model_logical_calls WHERE id = 'call_v42_delete_survivor'",
+        )
+        .get(),
+    ).toEqual({ operation_id: 'operation_v42_delete_survivor' });
+    db.prepare("DELETE FROM study_sessions WHERE id = 'session_v42_other_workspace'").run();
+    expect(() => db.prepare("DELETE FROM workspaces WHERE id = 'ws_v42'").run()).not.toThrow();
+    expect(
+      db
+        .prepare("SELECT COUNT(*) AS count FROM agent_operations WHERE workspace_id = 'ws_v42'")
+        .get(),
+    ).toEqual({ count: 0 });
     expect(db.pragma('foreign_key_check')).toEqual([]);
     db.close();
   });

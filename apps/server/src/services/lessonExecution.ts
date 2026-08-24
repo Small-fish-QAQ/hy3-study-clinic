@@ -804,7 +804,10 @@ export function createLessonExecutionService({
         expectedAgendaVersion: input.expectedAgendaVersion,
         agendaItemId: input.expectedAgendaItemId,
       },
-      { leaseMs: LESSON_EXECUTION_PREPARATION_LEASE_MS },
+      {
+        leaseMs: LESSON_EXECUTION_PREPARATION_LEASE_MS,
+        studySessionId: sessionId,
+      },
     );
     if (claim.replayPayload) return LessonExecutionProjectionSchema.parse(claim.replayPayload);
     let claimedState: LessonExecutionState;
@@ -1018,14 +1021,19 @@ export function createLessonExecutionService({
       input.expectedAgendaVersion,
       input.expectedAgendaItemId,
     );
-    const claim = commands.begin(input.command, 'lesson_execution_command', {
-      sessionId,
-      expectedSessionVersion: input.expectedSessionVersion,
-      expectedAgendaVersion: input.expectedAgendaVersion,
-      expectedAgendaItemId: input.expectedAgendaItemId,
-      expectedLessonStateVersion: input.expectedLessonStateVersion,
-      action: input.action,
-    });
+    const claim = commands.begin(
+      input.command,
+      'lesson_execution_command',
+      {
+        sessionId,
+        expectedSessionVersion: input.expectedSessionVersion,
+        expectedAgendaVersion: input.expectedAgendaVersion,
+        expectedAgendaItemId: input.expectedAgendaItemId,
+        expectedLessonStateVersion: input.expectedLessonStateVersion,
+        action: input.action,
+      },
+      { studySessionId: sessionId },
+    );
     if (claim.replayPayload) return LessonExecutionProjectionSchema.parse(claim.replayPayload);
     try {
       const result = repos.transaction(() => {

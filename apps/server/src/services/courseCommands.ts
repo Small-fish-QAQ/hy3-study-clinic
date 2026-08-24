@@ -93,7 +93,7 @@ export function createCourseCommandService({ repos, clock }: CourseCommandDeps) 
     command: CourseExecutionCommandEnvelope,
     operationType: string,
     expectedState: unknown,
-    options: { leaseMs?: number } = {},
+    options: { leaseMs?: number; studySessionId?: string | null } = {},
   ): ClaimedCourseCommand {
     const now = clock.now();
     let created: ReturnType<Repositories['operations']['createOrGet']>;
@@ -105,6 +105,7 @@ export function createCourseCommandService({ repos, clock }: CourseCommandDeps) 
         idempotencyKey: command.idempotencyKey,
         logicalOperationId: `command:${command.commandId}`,
         operationType,
+        studySessionId: options.studySessionId ?? null,
         expectedFingerprint: commandFingerprint(expectedState),
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),

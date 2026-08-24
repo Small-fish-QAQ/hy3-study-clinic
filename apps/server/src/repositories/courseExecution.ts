@@ -88,6 +88,37 @@ interface PayloadRow {
   status: string;
 }
 
+type RouteTerminalPayload =
+  | { reason: 'route_superseded'; successorPlanId: string }
+  | {
+      reason: 'goal_terminal';
+      outcomeId: string;
+      outcomeStatus: TerminateCourseRouteInput['outcomeStatus'];
+    };
+
+interface ExactRouteCleanupInput {
+  workspaceId: string;
+  contractId: string;
+  curriculumId: string;
+  planId: string;
+  agendaId: string;
+  eventId: string;
+  terminalAt: string;
+  payload: RouteTerminalPayload;
+}
+
+interface RouteSessionRow {
+  id: string;
+  version: number;
+  status: 'active' | 'paused' | 'completed' | 'abandoned' | 'interrupted';
+}
+
+interface PendingOperationRow {
+  id: string;
+  fencing_token: number;
+  status: 'queued' | 'running' | 'interrupted';
+}
+
 function toState(row: StateRow): CourseExecutionState {
   return {
     workspaceId: row.workspace_id,
@@ -431,6 +462,362 @@ export function createCourseExecutionRepo(db: SqliteDb) {
     );
   }
 
+  function cleanupExactRoute(input: ExactRouteCleanupInput): string[] {
+    const terminalKind = input.payload.reason;
+    const terminalPayload = JSON.stringify(input.payload);
+    const attemptErrorCode =
+      terminalKind === 'route_superseded' ? 'ROUTE_SUPERSEDED' : 'GOAL_TERMINAL';
+    const attemptErrorMessage =
+      terminalKind === 'route_superseded'
+        ? 'Successor route fenced this attempt.'
+        : 'Goal termination fenced this attempt.';
+    const turnErrorMessage =
+      terminalKind === 'route_superseded'
+        ? 'route_superseded: learner accepted a successor StudyPlan.'
+        : 'goal_terminal: Course goal terminated before this turn completed.';
+    const routeParams = {
+      workspaceId: input.workspaceId,
+      contractId: input.contractId,
+      curriculumId: input.curriculumId,
+      planId: input.planId,
+      agendaId: input.agendaId,
+    };
+    const routeSessions = db
+      .prepare(
+        `SELECT id, version, status
+         FROM study_sessions
+         WHERE workspace_id = @workspaceId
+           AND contract_id = @contractId
+           AND curriculum_id = @curriculumId
+           AND plan_id = @planId
+           AND agenda_id = @agendaId
+         ORDER BY created_at, id`,
+      )
+      .all(routeParams) as RouteSessionRow[];
+    const transitionedSessionIds: string[] = [];
+
+    for (const session of routeSessions) {
+      const pendingTurns = db
+        .prepare(
+          `SELECT id FROM study_session_turns
+           WHERE session_id = ? AND status IN ('queued', 'running', 'interrupted')
+           ORDER BY seq, id`,
+        )
+        .all(session.id) as Array<{ id: string }>;
+      for (const turn of pendingTurns) {
+        const nextTurnEventSeq = (
+          db
+            .prepare(
+              `SELECT COALESCE(MAX(seq), -1) + 1 AS seq
+               FROM study_turn_events WHERE turn_id = ?`,
+            )
+            .get(turn.id) as { seq: number }
+        ).seq;
+        const turnCancelled = db
+          .prepare(
+            `UPDATE study_session_turns
+             SET status = 'cancelled', error_message = ?, completed_at = ?
+             WHERE id = ? AND status IN ('queued', 'running', 'interrupted')`,
+          )
+          .run(turnErrorMessage, input.terminalAt, turn.id).changes;
+        if (turnCancelled !== 1) {
+          throw new Error('Predecessor StudySession turn changed concurrently.');
+        }
+        db.prepare(
+          `INSERT INTO study_turn_events
+             (id, session_id, turn_id, seq, kind, provisional, content, created_at)
+           VALUES (?, ?, ?, ?, 'cancelled', 0, ?, ?)`,
+        ).run(
+          `${turn.id}:${input.eventId}:${terminalKind}`,
+          session.id,
+          turn.id,
+          nextTurnEventSeq,
+          terminalKind,
+          input.terminalAt,
+        );
+      }
+
+      if (['active', 'paused', 'interrupted'].includes(session.status)) {
+        const sessionClosed = db
+          .prepare(
+            `UPDATE study_sessions
+             SET status = 'abandoned', route_state = 'on_route', current_agenda_item_id = NULL,
+                 version = ?, updated_at = ?
+             WHERE id = ? AND version = ? AND status = ?`,
+          )
+          .run(
+            session.version + 1,
+            input.terminalAt,
+            session.id,
+            session.version,
+            session.status,
+          ).changes;
+        if (sessionClosed !== 1) {
+          throw new Error('Predecessor StudySession changed concurrently.');
+        }
+        transitionedSessionIds.push(session.id);
+      }
+    }
+
+    const pendingOperations = db
+      .prepare(
+        `WITH target_operations AS (
+           SELECT * FROM agent_operations
+           WHERE workspace_id = @workspaceId
+             AND status IN ('queued', 'running', 'interrupted')
+         ),
+         ownership_signals(operation_id, study_session_id, signal_valid) AS (
+           SELECT logical_call.operation_id, logical_call.study_session_id,
+             CASE WHEN
+               (logical_call.workspace_id IS NULL OR
+                logical_call.workspace_id = operation.workspace_id)
+               AND EXISTS (
+                 SELECT 1 FROM study_sessions session
+                 WHERE session.id = logical_call.study_session_id
+                   AND session.workspace_id = operation.workspace_id
+               )
+             THEN 1 ELSE 0 END
+           FROM model_logical_calls logical_call
+           JOIN target_operations operation ON operation.id = logical_call.operation_id
+           WHERE logical_call.study_session_id IS NOT NULL
+
+           UNION ALL
+
+           SELECT lesson.preparation_operation_id, lesson.session_id,
+             CASE WHEN operation.operation_type = 'prepare_lesson_execution'
+               AND EXISTS (
+                 SELECT 1 FROM study_sessions session
+                 WHERE session.id = lesson.session_id
+                   AND session.workspace_id = operation.workspace_id
+               ) THEN 1 ELSE 0 END
+           FROM lesson_execution_states lesson
+           JOIN target_operations operation ON operation.id = lesson.preparation_operation_id
+           WHERE lesson.preparation_operation_id IS NOT NULL
+
+           UNION ALL
+
+           SELECT inner_operation.id, lesson.session_id,
+             CASE WHEN outer_operation.operation_type = 'prepare_lesson_execution'
+               AND EXISTS (
+                 SELECT 1 FROM study_sessions session
+                 WHERE session.id = lesson.session_id
+                   AND session.workspace_id = outer_operation.workspace_id
+                   AND session.workspace_id = inner_operation.workspace_id
+               ) THEN 1 ELSE 0 END
+           FROM lesson_execution_states lesson
+           JOIN agent_operations outer_operation
+             ON outer_operation.id = lesson.preparation_operation_id
+           JOIN target_operations inner_operation
+             ON inner_operation.operation_type = 'prepare_teaching_brief'
+           WHERE lesson.preparation_operation_id IS NOT NULL
+             AND inner_operation.command_id =
+               'teaching-brief:' || lesson.learning_unit_id || ':' ||
+               lesson.preparation_operation_id
+
+           UNION ALL
+
+           SELECT operation.id, lesson.session_id,
+             CASE WHEN EXISTS (
+               SELECT 1 FROM study_sessions session
+               WHERE session.id = lesson.session_id
+                 AND session.workspace_id = operation.workspace_id
+             ) THEN 1 ELSE 0 END
+           FROM lesson_execution_events event
+           JOIN lesson_execution_states lesson ON lesson.id = event.lesson_execution_state_id
+           JOIN target_operations operation
+             ON operation.command_id = event.command_id
+            AND operation.operation_type IN (
+              'prepare_lesson_execution', 'lesson_execution_command'
+            )
+
+           UNION ALL
+
+           SELECT operation.id, session.id, 1
+           FROM target_operations operation
+           JOIN study_sessions session ON session.workspace_id = operation.workspace_id
+           WHERE
+             (
+               operation.operation_type = 'study_session_turn'
+               AND substr(
+                 operation.command_id,
+                 1,
+                 length('study-turn:' || session.id || ':')
+               ) = 'study-turn:' || session.id || ':'
+             )
+             OR
+             (
+               operation.operation_type = 'study_session_command'
+               AND substr(
+                 operation.command_id,
+                 1,
+                 length('study-command:' || session.id || ':')
+               ) = 'study-command:' || session.id || ':'
+             )
+             OR
+             (
+               operation.operation_type IN (
+                 'study_session_pause', 'study_session_resume', 'study_session_stop'
+               )
+               AND substr(
+                 operation.command_id,
+                 1,
+                 length('study-lifecycle:' || session.id || ':')
+               ) = 'study-lifecycle:' || session.id || ':'
+             )
+         ),
+         invalid_prefix_operations(operation_id) AS (
+           SELECT operation.id
+           FROM target_operations operation
+           WHERE
+             (
+               operation.operation_type = 'study_session_turn'
+               AND substr(operation.command_id, 1, length('study-turn:')) = 'study-turn:'
+               AND NOT EXISTS (
+                 SELECT 1 FROM study_sessions session
+                 WHERE session.workspace_id = operation.workspace_id
+                   AND substr(
+                     operation.command_id,
+                     1,
+                     length('study-turn:' || session.id || ':')
+                   ) = 'study-turn:' || session.id || ':'
+               )
+             )
+             OR
+             (
+               operation.operation_type = 'study_session_command'
+               AND substr(operation.command_id, 1, length('study-command:')) = 'study-command:'
+               AND NOT EXISTS (
+                 SELECT 1 FROM study_sessions session
+                 WHERE session.workspace_id = operation.workspace_id
+                   AND substr(
+                     operation.command_id,
+                     1,
+                     length('study-command:' || session.id || ':')
+                   ) = 'study-command:' || session.id || ':'
+               )
+             )
+             OR
+             (
+               operation.operation_type IN (
+                 'study_session_pause', 'study_session_resume', 'study_session_stop'
+               )
+               AND substr(operation.command_id, 1, length('study-lifecycle:')) =
+                 'study-lifecycle:'
+               AND NOT EXISTS (
+                 SELECT 1 FROM study_sessions session
+                 WHERE session.workspace_id = operation.workspace_id
+                   AND substr(
+                     operation.command_id,
+                     1,
+                     length('study-lifecycle:' || session.id || ':')
+                   ) = 'study-lifecycle:' || session.id || ':'
+               )
+             )
+         ),
+         unambiguous_ownership AS (
+           SELECT operation_id, MIN(study_session_id) AS study_session_id
+           FROM ownership_signals
+           GROUP BY operation_id
+           HAVING COUNT(DISTINCT study_session_id) = 1
+             AND MIN(signal_valid) = 1
+             AND operation_id NOT IN (SELECT operation_id FROM invalid_prefix_operations)
+         ),
+         valid_ownership AS (
+           SELECT ownership.operation_id, ownership.study_session_id
+           FROM unambiguous_ownership ownership
+           JOIN target_operations operation ON operation.id = ownership.operation_id
+           JOIN study_sessions session
+             ON session.id = ownership.study_session_id
+            AND session.workspace_id = operation.workspace_id
+         )
+         SELECT operation.id, operation.fencing_token, operation.status
+         FROM target_operations operation
+         WHERE EXISTS (
+           SELECT 1 FROM study_sessions route_session
+           WHERE route_session.workspace_id = @workspaceId
+             AND route_session.contract_id = @contractId
+             AND route_session.curriculum_id = @curriculumId
+             AND route_session.plan_id = @planId
+             AND route_session.agenda_id = @agendaId
+             AND (
+               operation.study_session_id = route_session.id
+               OR (
+                 operation.study_session_id IS NULL
+                 AND EXISTS (
+                   SELECT 1 FROM valid_ownership ownership
+                   WHERE ownership.operation_id = operation.id
+                     AND ownership.study_session_id = route_session.id
+                 )
+               )
+             )
+         )
+         ORDER BY operation.created_at, operation.id`,
+      )
+      .all(routeParams) as PendingOperationRow[];
+
+    for (const operation of pendingOperations) {
+      const terminalFencingToken = Math.max(operation.fencing_token, 1);
+      db.prepare(
+        `UPDATE model_call_attempts
+         SET status = CASE WHEN status = 'sent' THEN 'outcome_unknown' ELSE 'interrupted' END,
+             completed_at = COALESCE(completed_at, ?),
+             error_code = COALESCE(error_code, ?),
+             error_message = COALESCE(error_message, ?)
+         WHERE logical_call_id IN
+           (SELECT id FROM model_logical_calls WHERE operation_id = ?)
+           AND status IN ('queued', 'sent')`,
+      ).run(input.terminalAt, attemptErrorCode, attemptErrorMessage, operation.id);
+      db.prepare(
+        `UPDATE model_logical_calls SET status = 'cancelled', completed_at = ?
+         WHERE operation_id = ? AND status = 'open'`,
+      ).run(input.terminalAt, operation.id);
+      const operationFenced = db
+        .prepare(
+          `UPDATE agent_operations
+           SET status = 'cancelled', lease_owner = NULL, lease_expires_at = NULL,
+               fencing_token = ?, updated_at = ?
+           WHERE id = ? AND status = ? AND fencing_token = ?`,
+        )
+        .run(
+          terminalFencingToken,
+          input.terminalAt,
+          operation.id,
+          operation.status,
+          operation.fencing_token,
+        ).changes;
+      if (operationFenced !== 1) {
+        throw new Error('Predecessor StudySession operation changed concurrently.');
+      }
+      const nextOperationEventSeq = (
+        db
+          .prepare(
+            `SELECT COALESCE(MAX(seq), -1) + 1 AS seq
+             FROM agent_operation_events WHERE operation_id = ?`,
+          )
+          .get(operation.id) as { seq: number }
+      ).seq;
+      db.prepare(
+        `INSERT INTO agent_operation_events
+           (id, operation_id, seq, fencing_token, kind, payload, created_at)
+         VALUES (?, ?, ?, ?, 'operation_interrupted', ?, ?)`,
+      ).run(
+        `${operation.id}:${input.eventId}:${terminalKind}`,
+        operation.id,
+        nextOperationEventSeq,
+        terminalFencingToken,
+        terminalPayload,
+        input.terminalAt,
+      );
+      db.prepare(
+        `INSERT INTO agent_operation_results
+           (operation_id, fencing_token, status, payload, created_at)
+         VALUES (?, ?, 'cancelled', ?, ?)`,
+      ).run(operation.id, terminalFencingToken, terminalPayload, input.terminalAt);
+    }
+
+    return transitionedSessionIds;
+  }
+
   const activateRouteTx = db.transaction(
     (input: ActivateCourseRouteInput): CourseExecutionState => {
       const current = get(input.workspaceId);
@@ -448,6 +835,19 @@ export function createCourseExecutionRepo(db: SqliteDb) {
         updatedAt: input.acceptedAt,
       });
       const supersededSessionIds: string[] = [];
+      const predecessorPlan = current.acceptedPlanId ? readPlan(current.acceptedPlanId) : null;
+
+      if (predecessorPlan) {
+        const existingOutcome = db
+          .prepare(
+            `SELECT 1 FROM goal_outcomes
+             WHERE contract_id = ? AND plan_id = ?`,
+          )
+          .get(predecessorPlan.contractVersionId, predecessorPlan.id);
+        if (existingOutcome) {
+          throw new Error('Active predecessor StudyPlan already has a GoalOutcome.');
+        }
+      }
 
       if (current.activeContractId && current.activeContractId !== contract.id) {
         const oldContract = readContract(current.activeContractId);
@@ -461,8 +861,8 @@ export function createCourseExecutionRepo(db: SqliteDb) {
           `UPDATE curriculum_versions SET status = 'superseded', payload = ? WHERE id = ?`,
         ).run(JSON.stringify({ ...oldCurriculum, status: 'superseded' }), oldCurriculum.id);
       }
-      if (current.acceptedPlanId) {
-        const oldPlan = readPlan(current.acceptedPlanId);
+      if (predecessorPlan) {
+        const oldPlan = predecessorPlan;
         const evidenceIds = (
           db
             .prepare(
@@ -493,12 +893,17 @@ export function createCourseExecutionRepo(db: SqliteDb) {
           actor: 'learner',
           createdAt: input.acceptedAt,
         });
-        db.prepare(
-          `INSERT OR IGNORE INTO goal_outcomes
+        const outcomeInserted = db
+          .prepare(
+            `INSERT INTO goal_outcomes
              (id, workspace_id, contract_id, plan_id, status, payload, created_at)
            VALUES (@id, @workspaceId, @contractVersionId, @studyPlanVersionId,
-             @status, @payload, @createdAt)`,
-        ).run({ ...supersededOutcome, payload: JSON.stringify(supersededOutcome) });
+              @status, @payload, @createdAt)`,
+          )
+          .run({ ...supersededOutcome, payload: JSON.stringify(supersededOutcome) }).changes;
+        if (outcomeInserted !== 1) {
+          throw new Error('Predecessor GoalOutcome was not inserted exactly once.');
+        }
         db.prepare(
           `UPDATE study_plan_versions SET status = 'superseded', payload = ? WHERE id = ?`,
         ).run(JSON.stringify({ ...oldPlan, status: 'superseded' }), oldPlan.id);
@@ -520,143 +925,18 @@ export function createCourseExecutionRepo(db: SqliteDb) {
         current.acceptedPlanId &&
         current.activeAgendaId
       ) {
-        const openSessions = db
-          .prepare(
-            `SELECT id, version FROM study_sessions
-             WHERE workspace_id = ? AND contract_id = ? AND curriculum_id = ?
-               AND plan_id = ? AND agenda_id = ?
-               AND status IN ('active', 'paused', 'interrupted')
-             ORDER BY created_at, id`,
-          )
-          .all(
-            input.workspaceId,
-            current.activeContractId,
-            current.activeCurriculumId,
-            current.acceptedPlanId,
-            current.activeAgendaId,
-          ) as Array<{ id: string; version: number }>;
-        for (const session of openSessions) {
-          supersededSessionIds.push(session.id);
-          const openTurns = db
-            .prepare(
-              `SELECT id FROM study_session_turns
-               WHERE session_id = ? AND status IN ('queued', 'running', 'interrupted') ORDER BY seq`,
-            )
-            .all(session.id) as Array<{ id: string }>;
-          for (const turn of openTurns) {
-            const nextTurnEventSeq = (
-              db
-                .prepare(
-                  `SELECT COALESCE(MAX(seq), -1) + 1 AS seq
-                   FROM study_turn_events WHERE turn_id = ?`,
-                )
-                .get(turn.id) as { seq: number }
-            ).seq;
-            db.prepare(
-              `UPDATE study_session_turns SET status = 'cancelled',
-                 error_message = 'route_superseded: learner accepted a successor StudyPlan.',
-                 completed_at = ?
-               WHERE id = ? AND status IN ('queued', 'running', 'interrupted')`,
-            ).run(input.acceptedAt, turn.id);
-            db.prepare(
-              `INSERT INTO study_turn_events
-                 (id, session_id, turn_id, seq, kind, provisional, content, created_at)
-               VALUES (?, ?, ?, ?, 'cancelled', 0, 'route_superseded', ?)`,
-            ).run(
-              `${turn.id}:${input.eventId}:route_superseded`,
-              session.id,
-              turn.id,
-              nextTurnEventSeq,
-              input.acceptedAt,
-            );
-          }
-
-          const runningOperations = db
-            .prepare(
-              `SELECT DISTINCT o.id, o.fencing_token, o.status
-               FROM agent_operations o
-               LEFT JOIN model_logical_calls lc ON lc.operation_id = o.id
-               WHERE o.status IN ('running', 'interrupted')
-                 AND (lc.study_session_id = ? OR
-                   (o.operation_type = 'study_session_turn' AND
-                    substr(o.command_id, 1, length(?)) = ?))
-               ORDER BY o.created_at, o.id`,
-            )
-            .all(session.id, `study-turn:${session.id}:`, `study-turn:${session.id}:`) as Array<{
-            id: string;
-            fencing_token: number;
-            status: 'running' | 'interrupted';
-          }>;
-          for (const operation of runningOperations) {
-            db.prepare(
-              `UPDATE model_call_attempts
-               SET status = CASE WHEN status = 'sent' THEN 'outcome_unknown' ELSE 'interrupted' END,
-                   completed_at = COALESCE(completed_at, ?),
-                   error_code = COALESCE(error_code, 'ROUTE_SUPERSEDED'),
-                   error_message = COALESCE(error_message, 'Successor route fenced this attempt.')
-               WHERE logical_call_id IN
-                 (SELECT id FROM model_logical_calls WHERE operation_id = ?)
-                 AND status IN ('queued', 'sent')`,
-            ).run(input.acceptedAt, operation.id);
-            db.prepare(
-              `UPDATE model_logical_calls SET status = 'cancelled', completed_at = ?
-               WHERE operation_id = ? AND status = 'open'`,
-            ).run(input.acceptedAt, operation.id);
-            const nextOperationEventSeq = (
-              db
-                .prepare(
-                  `SELECT COALESCE(MAX(seq), -1) + 1 AS seq
-                   FROM agent_operation_events WHERE operation_id = ?`,
-                )
-                .get(operation.id) as { seq: number }
-            ).seq;
-            db.prepare(
-              `INSERT INTO agent_operation_events
-                 (id, operation_id, seq, fencing_token, kind, payload, created_at)
-               VALUES (?, ?, ?, ?, 'operation_interrupted', ?, ?)`,
-            ).run(
-              `${operation.id}:${input.eventId}:route_superseded`,
-              operation.id,
-              nextOperationEventSeq,
-              operation.fencing_token,
-              JSON.stringify({ reason: 'route_superseded', successorPlanId: input.planId }),
-              input.acceptedAt,
-            );
-            db.prepare(
-              `INSERT INTO agent_operation_results
-                 (operation_id, fencing_token, status, payload, created_at)
-               VALUES (?, ?, 'cancelled', ?, ?)`,
-            ).run(
-              operation.id,
-              operation.fencing_token,
-              JSON.stringify({ reason: 'route_superseded', successorPlanId: input.planId }),
-              input.acceptedAt,
-            );
-            const fenced = db
-              .prepare(
-                `UPDATE agent_operations
-                 SET status = 'cancelled', lease_owner = NULL, lease_expires_at = NULL, updated_at = ?
-                 WHERE id = ? AND status = ? AND fencing_token = ?`,
-              )
-              .run(
-                input.acceptedAt,
-                operation.id,
-                operation.status,
-                operation.fencing_token,
-              ).changes;
-            if (fenced !== 1) throw new Error('Predecessor Tutor operation changed concurrently.');
-          }
-
-          const sessionClosed = db
-            .prepare(
-              `UPDATE study_sessions
-             SET status = 'abandoned', route_state = 'on_route', current_agenda_item_id = NULL,
-                 version = ?, updated_at = ? WHERE id = ? AND version = ?`,
-            )
-            .run(session.version + 1, input.acceptedAt, session.id, session.version).changes;
-          if (sessionClosed !== 1)
-            throw new Error('Predecessor StudySession changed concurrently.');
-        }
+        supersededSessionIds.push(
+          ...cleanupExactRoute({
+            workspaceId: input.workspaceId,
+            contractId: current.activeContractId,
+            curriculumId: current.activeCurriculumId,
+            planId: current.acceptedPlanId,
+            agendaId: current.activeAgendaId,
+            eventId: input.eventId,
+            terminalAt: input.acceptedAt,
+            payload: { reason: 'route_superseded', successorPlanId: input.planId },
+          }),
+        );
       }
 
       db.prepare(
@@ -766,28 +1046,20 @@ export function createCourseExecutionRepo(db: SqliteDb) {
          WHERE agenda_id = ? AND state IN ('queued', 'active')`,
       ).run(agenda.id);
 
-      const openSessions = db
-        .prepare(
-          `SELECT id FROM study_sessions
-           WHERE workspace_id = ? AND plan_id = ? AND status IN ('active', 'paused', 'interrupted')`,
-        )
-        .all(input.workspaceId, plan.id) as Array<{ id: string }>;
-      for (const sessionRow of openSessions) {
-        const row = db.prepare('SELECT * FROM study_sessions WHERE id = ?').get(sessionRow.id) as {
-          version: number;
-        };
-        db.prepare(
-          `UPDATE study_sessions
-           SET status = 'abandoned', route_state = 'on_route', current_agenda_item_id = NULL,
-               version = ?, updated_at = ? WHERE id = ?`,
-        ).run(row.version + 1, input.terminatedAt, sessionRow.id);
-        db.prepare(
-          `UPDATE study_session_turns SET status = 'interrupted',
-             error_message = 'Course goal terminated before this turn completed.',
-             completed_at = ?
-           WHERE session_id = ? AND status IN ('queued', 'running')`,
-        ).run(input.terminatedAt, sessionRow.id);
-      }
+      cleanupExactRoute({
+        workspaceId: input.workspaceId,
+        contractId: contract.id,
+        curriculumId: input.expectedCurriculumId,
+        planId: plan.id,
+        agendaId: agenda.id,
+        eventId: input.eventId,
+        terminalAt: input.terminatedAt,
+        payload: {
+          reason: 'goal_terminal',
+          outcomeId: input.outcomeId,
+          outcomeStatus: input.outcomeStatus,
+        },
+      });
 
       const resultingVersion = current.version + 1;
       const changed = db

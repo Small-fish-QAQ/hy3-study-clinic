@@ -41,6 +41,7 @@ export interface AgentOperationResult {
 interface OperationRow {
   id: string;
   workspace_id: string;
+  study_session_id: string | null;
   command_id: string;
   idempotency_key: string;
   logical_operation_id: string;
@@ -112,13 +113,25 @@ function rowToResult(row: ResultRow): AgentOperationResult {
   };
 }
 
-function sameIdentity(existing: AgentOperation, requested: AgentOperation): boolean {
+type CreateAgentOperationInput = Omit<
+  AgentOperation,
+  'status' | 'leaseOwner' | 'leaseExpiresAt' | 'fencingToken'
+> & {
+  studySessionId?: string | null;
+};
+
+type AgentOperationWrite = AgentOperation & {
+  studySessionId: string | null;
+};
+
+function sameIdentity(existing: OperationRow, requested: AgentOperationWrite): boolean {
   return (
-    existing.commandId === requested.commandId &&
-    existing.idempotencyKey === requested.idempotencyKey &&
-    existing.logicalOperationId === requested.logicalOperationId &&
-    existing.operationType === requested.operationType &&
-    existing.expectedFingerprint === requested.expectedFingerprint
+    existing.command_id === requested.commandId &&
+    existing.idempotency_key === requested.idempotencyKey &&
+    existing.logical_operation_id === requested.logicalOperationId &&
+    existing.operation_type === requested.operationType &&
+    existing.expected_fingerprint === requested.expectedFingerprint &&
+    existing.study_session_id === requested.studySessionId
   );
 }
 
@@ -225,13 +238,21 @@ export function createOperationsRepo(db: SqliteDb) {
   }
 
   const createOrGetTx = db.transaction(
-    (operation: AgentOperation): { operation: AgentOperation; created: boolean } => {
+    (operation: AgentOperationWrite): { operation: AgentOperation; created: boolean } => {
+      if (operation.studySessionId !== null) {
+        const ownedSession = db
+          .prepare('SELECT 1 FROM study_sessions WHERE id = ? AND workspace_id = ?')
+          .get(operation.studySessionId, operation.workspaceId);
+        if (!ownedSession) {
+          throw new Error('Operation StudySession ownership must belong to its workspace.');
+        }
+      }
       const byIdempotency = db
         .prepare('SELECT * FROM agent_operations WHERE workspace_id = ? AND idempotency_key = ?')
         .get(operation.workspaceId, operation.idempotencyKey) as OperationRow | undefined;
       if (byIdempotency) {
         const existing = rowToOperation(byIdempotency);
-        if (!sameIdentity(existing, operation)) {
+        if (!sameIdentity(byIdempotency, operation)) {
           throw new Error('Idempotency key was already used for a different operation identity.');
         }
         if (
@@ -257,11 +278,11 @@ export function createOperationsRepo(db: SqliteDb) {
 
       db.prepare(
         `INSERT INTO agent_operations
-           (id, workspace_id, command_id, idempotency_key, logical_operation_id,
+           (id, workspace_id, study_session_id, command_id, idempotency_key, logical_operation_id,
             operation_type, expected_fingerprint, status, lease_owner,
             lease_expires_at, fencing_token, created_at, updated_at)
          VALUES
-           (@id, @workspaceId, @commandId, @idempotencyKey, @logicalOperationId,
+           (@id, @workspaceId, @studySessionId, @commandId, @idempotencyKey, @logicalOperationId,
             @operationType, @expectedFingerprint, 'queued', NULL, NULL, 0,
             @createdAt, @updatedAt)`,
       ).run({ ...operation, status: undefined, leaseOwner: undefined, leaseExpiresAt: undefined });
@@ -420,11 +441,13 @@ export function createOperationsRepo(db: SqliteDb) {
   );
 
   return {
-    createOrGet(
-      operation: Omit<AgentOperation, 'status' | 'leaseOwner' | 'leaseExpiresAt' | 'fencingToken'>,
-    ): { operation: AgentOperation; created: boolean } {
+    createOrGet(operation: CreateAgentOperationInput): {
+      operation: AgentOperation;
+      created: boolean;
+    } {
       return createOrGetTx({
         ...operation,
+        studySessionId: operation.studySessionId ?? null,
         status: 'queued',
         leaseOwner: null,
         leaseExpiresAt: null,

@@ -20,6 +20,17 @@ let db: SqliteDb;
 let repos: Repositories;
 let service: StudySessionService;
 
+function operationStudySessionId(idempotencyKey: string): string | null | undefined {
+  return (
+    db
+      .prepare(
+        `SELECT study_session_id AS studySessionId
+         FROM agent_operations WHERE workspace_id = ? AND idempotency_key = ?`,
+      )
+      .get('ws_1', idempotencyKey) as { studySessionId: string | null } | undefined
+  )?.studySessionId;
+}
+
 function installRoute(): void {
   const contract: LearningContract = {
     id: 'contract_1',
@@ -319,6 +330,9 @@ describe('StudySession service', () => {
       policyVersion: 'lesson-aware-v1',
     });
     expect(repos.studySessions.listTurns(started.session.id)).toHaveLength(1);
+    expect(operationStudySessionId(`study-turn:${started.session.id}:${input.commandId}`)).toBe(
+      started.session.id,
+    );
     expect(repos.telemetry.usageSummary('ws_1')).toMatchObject({
       logicalCalls: 1,
       physicalAttempts: 1,
@@ -558,6 +572,7 @@ describe('StudySession service', () => {
     });
     session = detour.session;
     expect(session).toMatchObject({ routeState: 'detour_active' });
+    expect(operationStudySessionId(`study-command:${session.id}:detour_1`)).toBe(session.id);
     expect(session.routeStack).toHaveLength(1);
     expect(detour.agenda.items.at(-1)).toMatchObject({ origin: 'learner_detour', state: 'active' });
 
@@ -578,6 +593,7 @@ describe('StudySession service', () => {
     });
     expect(paused.session.status).toBe('paused');
     expect(paused.agenda.status).toBe('paused');
+    expect(operationStudySessionId(`study-lifecycle:${session.id}:pause_1`)).toBe(session.id);
     expect(repos.courseExecution.get('ws_1')).toMatchObject({
       executionStatus: 'paused',
       acceptedPlanId: 'plan_1',
@@ -596,6 +612,7 @@ describe('StudySession service', () => {
     });
     expect(resumed.session.status).toBe('active');
     expect(resumed.agenda.status).toBe('active');
+    expect(operationStudySessionId(`study-lifecycle:${session.id}:resume_1`)).toBe(session.id);
     expect(repos.courseExecution.get('ws_1')).toMatchObject({
       executionStatus: 'active',
       acceptedPlanId: 'plan_1',

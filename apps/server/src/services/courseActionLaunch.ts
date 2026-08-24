@@ -126,16 +126,29 @@ export function createCourseActionLaunchService({
   ): Promise<CourseActionLaunchResult> {
     let reviewExecutionId: string | null = null;
     const parsed = LaunchCourseActionRequestSchema.parse(input);
-    const claim = commands.begin(parsed.command, 'launch_course_action', {
-      agendaId: parsed.agendaId,
-      expectedAgendaVersion: parsed.expectedAgendaVersion,
-      agendaItemId: parsed.agendaItemId,
-      expectedContractId: parsed.expectedContractId,
-      expectedStudyPlanId: parsed.expectedStudyPlanId,
-      expectedExecutionSourceManifestFingerprint: parsed.expectedExecutionSourceManifestFingerprint,
-      studySessionId: parsed.studySessionId ?? null,
-      confirmedCostPolicyIds: parsed.confirmedCostPolicyIds ?? [],
-    });
+    const operationStudySession = parsed.studySessionId
+      ? repos.studySessions.get(parsed.studySessionId)
+      : undefined;
+    const operationStudySessionId =
+      operationStudySession?.workspaceId === parsed.command.workspaceId
+        ? operationStudySession.id
+        : null;
+    const claim = commands.begin(
+      parsed.command,
+      'launch_course_action',
+      {
+        agendaId: parsed.agendaId,
+        expectedAgendaVersion: parsed.expectedAgendaVersion,
+        agendaItemId: parsed.agendaItemId,
+        expectedContractId: parsed.expectedContractId,
+        expectedStudyPlanId: parsed.expectedStudyPlanId,
+        expectedExecutionSourceManifestFingerprint:
+          parsed.expectedExecutionSourceManifestFingerprint,
+        studySessionId: parsed.studySessionId ?? null,
+        confirmedCostPolicyIds: parsed.confirmedCostPolicyIds ?? [],
+      },
+      { studySessionId: operationStudySessionId },
+    );
     if (claim.replayPayload !== undefined) {
       return CourseActionLaunchResultSchema.parse(claim.replayPayload);
     }

@@ -33,6 +33,7 @@ import { createReviewBackfillService } from './reviewBackfill.js';
 const T1 = '2026-01-01T00:01:00.000Z';
 const T2 = '2026-01-01T00:02:00.000Z';
 const T3 = '2026-01-01T00:03:00.000Z';
+const T4 = '2026-01-01T00:04:00.000Z';
 
 let db: SqliteDb;
 let repos: Repositories;
@@ -1944,6 +1945,93 @@ describe('formal progression service', () => {
       referencedCurriculumNodeIds: ['unit_1'],
     });
 
+    const terminalOperation = repos.operations.createOrGet({
+      id: 'goal_terminal_session_operation',
+      workspaceId: 'ws_1',
+      studySessionId: session.id,
+      commandId: 'goal_terminal_session_operation_command',
+      idempotencyKey: 'goal_terminal_session_operation_command',
+      logicalOperationId: 'goal_terminal_session_operation_command',
+      operationType: 'prepare_lesson_execution',
+      expectedFingerprint: 'goal-terminal-session-operation-fingerprint',
+      createdAt: T2,
+      updatedAt: T2,
+    }).operation;
+    const terminalClaim = repos.operations.claim(terminalOperation.id, 'terminal-worker', T4, T2)!;
+    repos.telemetry.insertLogicalCall({
+      id: 'goal_terminal_logical_call',
+      operationId: terminalOperation.id,
+      workspaceId: 'ws_1',
+      studySessionId: session.id,
+      learningUnitId: null,
+      assessmentId: null,
+      operationType: 'prepare_lesson_execution',
+      cacheKey: null,
+      cacheStatus: 'not_checked',
+      promptFingerprint: null,
+      schemaFingerprint: 'goal-terminal-operation-v1',
+      policyFingerprint: null,
+      sourceFingerprint: 'manifest-fp',
+      status: 'open',
+      createdAt: T2,
+      completedAt: null,
+    });
+    repos.telemetry.insertAttempt({
+      id: 'goal_terminal_sent_attempt',
+      logicalCallId: 'goal_terminal_logical_call',
+      attemptNumber: 1,
+      attemptKind: 'original',
+      provider: 'fake',
+      model: null,
+      fencingToken: terminalClaim.fencingToken,
+      status: 'sent',
+      startedAt: T2,
+      sentAt: T2,
+      firstTokenAt: null,
+      completedAt: null,
+      latencyMs: null,
+      timeToFirstTokenMs: null,
+      errorCode: null,
+      errorMessage: null,
+    });
+    const terminalSession = repos.studySessions.get(session.id)!;
+    const terminalAgenda = repos.sessionAgendas.get('agenda_1')!;
+    repos.studySessions.insertTurn({
+      id: 'goal_terminal_running_turn',
+      sessionId: session.id,
+      seq: 0,
+      commandId: 'goal_terminal_running_turn_command',
+      status: 'running',
+      contextManifest: {
+        fingerprint: 'goal-terminal-turn-context',
+        contractScopeFingerprint: 'goal-terminal-contract-scope',
+        contractVersionId: 'contract_1',
+        curriculumVersionId: 'curriculum_1',
+        studyPlanVersionId: 'plan_1',
+        sessionAgendaVersionId: `agenda_1:v${terminalAgenda.version}`,
+        studySessionVersion: terminalSession.version,
+        executionSourceManifestFingerprint: 'manifest-fp',
+        transcriptWatermark: terminalSession.transcriptWatermark,
+        sourceBlockRevisionIds: ['blk_1'],
+        formalEvidenceIds: [],
+        riskIds: [risk.id],
+      },
+      logicalCallId: 'goal_terminal_logical_call',
+      errorMessage: null,
+      createdAt: T2,
+      completedAt: null,
+    });
+    repos.studySessions.insertTurnEvent({
+      id: 'goal_terminal_running_turn_started',
+      sessionId: session.id,
+      turnId: 'goal_terminal_running_turn',
+      seq: 0,
+      kind: 'started',
+      provisional: true,
+      content: null,
+      createdAt: T2,
+    });
+
     const activeState = repos.courseExecution.get('ws_1');
     expect(() =>
       services.formalProgression.recordGoalOutcome({
@@ -2014,6 +2102,62 @@ describe('formal progression service', () => {
     });
     expect(repos.studyPlans.get('plan_1')?.status).toBe('closed');
     expect(repos.studySessions.get(session.id)?.status).toBe('abandoned');
+    expect(repos.studySessions.getTurn('goal_terminal_running_turn')).toMatchObject({
+      status: 'cancelled',
+      errorMessage: expect.stringContaining('goal_terminal'),
+      completedAt: T3,
+    });
+    expect(repos.studySessions.listTurnEvents('goal_terminal_running_turn')).toMatchObject([
+      { kind: 'started' },
+      { kind: 'cancelled', content: 'goal_terminal' },
+    ]);
+    expect(repos.telemetry.getLogicalCall('goal_terminal_logical_call')).toMatchObject({
+      status: 'cancelled',
+      completedAt: T3,
+    });
+    expect(repos.telemetry.getAttempt('goal_terminal_sent_attempt')).toMatchObject({
+      status: 'outcome_unknown',
+      errorCode: 'GOAL_TERMINAL',
+      completedAt: T3,
+    });
+    expect(repos.operations.get(terminalOperation.id)).toMatchObject({
+      status: 'cancelled',
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      fencingToken: terminalClaim.fencingToken,
+    });
+    expect(repos.operations.getResult(terminalOperation.id)).toMatchObject({
+      fencingToken: terminalClaim.fencingToken,
+      status: 'cancelled',
+      payload: {
+        reason: 'goal_terminal',
+        outcomeId: outcome.id,
+        outcomeStatus: 'finished_with_gaps',
+      },
+    });
+    expect(repos.operations.listEvents(terminalOperation.id)).toMatchObject([
+      {
+        fencingToken: terminalClaim.fencingToken,
+        kind: 'operation_interrupted',
+        payload: {
+          reason: 'goal_terminal',
+          outcomeId: outcome.id,
+          outcomeStatus: 'finished_with_gaps',
+        },
+      },
+    ]);
+    expect(
+      repos.operations.finalize(
+        {
+          operationId: terminalOperation.id,
+          status: 'completed',
+          payload: { stale: true },
+          createdAt: T3,
+        },
+        'terminal-worker',
+        terminalClaim.fencingToken,
+      ),
+    ).toBe(false);
     expect(
       (
         db
@@ -2420,6 +2564,47 @@ describe('formal progression service', () => {
       sessionAgendaId: checkpointAgenda.id,
       expectedCourseExecutionVersion: execution.version,
     });
+    repos.workspaces.insert(makeWorkspace({ id: 'ws_other', name: 'Other course' }));
+    // Bypass the repository's route-coherence guard to exercise the service's
+    // cross-workspace ownership boundary against an otherwise resolvable ID.
+    db.prepare(
+      `INSERT INTO study_sessions
+         (id, workspace_id, contract_id, curriculum_id, plan_id, agenda_id,
+          manifest_fingerprint, version, status, route_state, current_agenda_item_id,
+          route_stack, transcript_watermark, created_at, updated_at)
+       SELECT ?, ?, contract_id, curriculum_id, plan_id, agenda_id,
+          manifest_fingerprint, version, status, route_state, current_agenda_item_id,
+          route_stack, transcript_watermark, created_at, updated_at
+       FROM study_sessions WHERE id = ?`,
+    ).run('study_session_other_workspace', 'ws_other', session.id);
+    const crossWorkspaceSession = repos.studySessions.get('study_session_other_workspace')!;
+    for (const [commandId, studySessionId] of [
+      ['launch_unknown_session', 'study_session_missing'],
+      ['launch_cross_workspace_session', crossWorkspaceSession.id],
+    ] as const) {
+      await expect(
+        services.courseActionLaunch.launch({
+          command: command(commandId, 'learner'),
+          agendaId: checkpointAgenda.id,
+          expectedAgendaVersion: checkpointAgenda.version,
+          agendaItemId: 'agenda_item_1',
+          expectedContractId: 'contract_1',
+          expectedStudyPlanId: 'plan_1',
+          expectedExecutionSourceManifestFingerprint: 'manifest-fp',
+          studySessionId,
+        }),
+      ).rejects.toMatchObject({
+        code: 'VERSION_CONFLICT',
+        message: 'StudySession launch context is stale.',
+      });
+      const failedOperation = repos.operations.getByIdempotencyKey('ws_1', commandId)!;
+      expect(failedOperation).toMatchObject({ status: 'failed' });
+      expect(
+        db
+          .prepare('SELECT study_session_id AS studySessionId FROM agent_operations WHERE id = ?')
+          .get(failedOperation.id),
+      ).toEqual({ studySessionId: null });
+    }
 
     const launched = await services.courseActionLaunch.launch({
       command: command('launch_tracked_checkpoint', 'learner'),
@@ -2434,6 +2619,15 @@ describe('formal progression service', () => {
 
     expect(launched.kind).toBe('assessment');
     if (launched.kind !== 'assessment') throw new Error('Expected a formal assessment.');
+    const launchOperation = repos.operations.getByIdempotencyKey(
+      'ws_1',
+      'launch_tracked_checkpoint',
+    )!;
+    expect(
+      db
+        .prepare('SELECT study_session_id AS studySessionId FROM agent_operations WHERE id = ?')
+        .get(launchOperation.id),
+    ).toEqual({ studySessionId: session.id });
     expect(repos.formalProgression.listQuestionContractsForQuiz(launched.quiz.id)[0]).toMatchObject(
       { studySessionId: session.id, admissibilityTier: 'tier_1_authorized_truth' },
     );
