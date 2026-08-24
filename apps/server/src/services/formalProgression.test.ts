@@ -21,6 +21,7 @@ import {
   makeMaterial,
   makeQuestion,
   makeQuiz,
+  makeSemanticallySupportedObjective,
   makeWorkspace,
   T0,
 } from '../testing/fixtures.js';
@@ -189,20 +190,45 @@ function stageAndActivateRoute() {
           conceptIds: ['con_1'],
           canonicalConceptIds: [],
           objectives: [
-            {
-              id: 'objective_1',
-              title: 'Explain capacity',
-              description: 'Explain the capacity limit.',
-              truthPremiseStatus: 'independently_verified',
-              truthAuthorityRecordIds: [authorityId, rubricAuthorityId],
-            },
-            {
-              id: 'objective_2',
-              title: 'Apply capacity',
-              description: 'Apply the capacity limit.',
-              truthPremiseStatus: 'independently_verified',
-              truthAuthorityRecordIds: [authorityId, rubricAuthorityId],
-            },
+            makeSemanticallySupportedObjective(
+              {
+                id: 'objective_1',
+                title: 'Explain capacity',
+                description:
+                  'Explain the source-stated relationship that working-memory capacity is limited.',
+                truthPremiseStatus: 'independently_verified',
+                truthAuthorityRecordIds: [authorityId, rubricAuthorityId],
+                authorityClaimIds: ['claim_1', 'claim_rubric_1'],
+                priority: 'required',
+                formalAssessmentReady: true,
+                formalAssessmentReadinessRationale:
+                  'The exact source states the working-memory capacity relationship.',
+                formalAssessmentConstruct: 'explain',
+                authorityEnvelopeTier: 'formal_sufficient',
+                authoritySourceBlockIds: ['blk_1'],
+                formalEvidenceSourceBlockIds: ['blk_1'],
+              },
+              'relationship',
+            ),
+            makeSemanticallySupportedObjective(
+              {
+                id: 'objective_2',
+                title: 'Identify capacity',
+                description: 'Identify the source-stated limit on working-memory capacity.',
+                truthPremiseStatus: 'independently_verified',
+                truthAuthorityRecordIds: [authorityId, rubricAuthorityId],
+                authorityClaimIds: ['claim_1', 'claim_rubric_1'],
+                priority: 'normal',
+                formalAssessmentReady: true,
+                formalAssessmentReadinessRationale:
+                  'The exact source states the working-memory capacity limit.',
+                formalAssessmentConstruct: 'identify',
+                authorityEnvelopeTier: 'formal_sufficient',
+                authoritySourceBlockIds: ['blk_1'],
+                formalEvidenceSourceBlockIds: ['blk_1'],
+              },
+              'recognition',
+            ),
           ],
           prerequisiteUnitIds: [],
           graphRelationIds: [],
@@ -2305,7 +2331,7 @@ describe('formal progression service', () => {
                 {
                   id: 'requirement_objective_2_guard',
                   objectiveIds: ['objective_2'],
-                  description: 'Verify the application objective.',
+                  description: 'Verify the capacity-identification objective.',
                   blocking: true,
                   admissibilityTier: 'tier_1_authorized_truth' as const,
                 },
@@ -3420,8 +3446,8 @@ describe('Mastery Red Team shadow service', () => {
     expect(JSON.stringify(providerInput)).not.toContain('internal_misconception_do_not_expose');
     expect(providerInput.objectives[1]).toMatchObject({
       objectiveRef: 'O2',
-      title: 'Apply capacity',
-      description: 'Apply the capacity limit.',
+      title: 'Identify capacity',
+      description: 'Identify the source-stated limit on working-memory capacity.',
       primary: false,
     });
     expect(providerInput.sources.every((source) => /^S[1-9][0-9]*$/.test(source.sourceRef))).toBe(

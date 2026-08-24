@@ -4,10 +4,11 @@ import type {
   Curriculum,
   EmbeddedAsset,
   Material,
+  SourceAuthorityBundle,
   SourceBlockRevision,
   VisualDerivation,
 } from '@hy3-clinic/shared';
-import { makeMaterial, T0 } from '../testing/fixtures.js';
+import { makeMaterial, makeSemanticallySupportedObjective, T0 } from '../testing/fixtures.js';
 import { curriculumSourceBlockFingerprint } from '../grounding/sourceFingerprint.js';
 import {
   buildTeachingBriefSourceContext,
@@ -272,6 +273,125 @@ describe('Teaching Brief source context', () => {
     expect(context.references[0]!.quote).toContain('Mapped exact evidence');
     expect(context.materialCount).toBe(2);
     expect(context.references.map((reference) => reference.sourceBlockId)).toContain('block_a0');
+  });
+
+  it('offers the complete late exact semantic claim first without authorizing a block prefix or unselected same-block claim', () => {
+    const prefix = 'context-only-prefix '.repeat(70);
+    expect(prefix.length).toBeGreaterThan(1200);
+    const selectedQuote = `SELECTED_EXACT_CLAIM:${'s'.repeat(1280)}`;
+    expect(selectedQuote.length).toBeGreaterThan(1200);
+    const unselectedQuote = 'UNSELECTED_SAME_BLOCK_CLAIM';
+    const content = `${prefix}${selectedQuote}\n${unselectedQuote}`;
+    const base = fixture();
+    const blocks = base.blocks.map((candidate) =>
+      candidate.id === 'block_a1'
+        ? block({
+            id: candidate.id,
+            materialId: candidate.materialId,
+            revisionId: candidate.materialRevisionId,
+            index: candidate.index,
+            content,
+            heading: candidate.heading ?? 'Late claim section',
+          })
+        : candidate,
+    );
+    const input = fixture(blocks);
+    input.curriculum.nodes[1]!.learningUnit!.conceptIds = [];
+    input.concepts = [];
+    const objective = input.curriculum.nodes[1]!.learningUnit!.objectives[0]!;
+    const supportedClaimId = 'claim_supported_late';
+    const unselectedClaimId = 'claim_unselected_same_block';
+    const supported = makeSemanticallySupportedObjective(
+      {
+        ...objective,
+        truthPremiseStatus: 'independently_verified',
+        truthAuthorityRecordIds: ['authority_1'],
+        formalAssessmentConstruct: 'explain',
+        authoritySourceBlockIds: ['block_a1'],
+        authorityClaimIds: [supportedClaimId, unselectedClaimId],
+      },
+      'relationship',
+    );
+    supported.semanticSupport!.fragments[0]!.authorityClaimIds = [supportedClaimId];
+    input.curriculum.nodes[1]!.learningUnit!.objectives = [supported];
+    const selectedStart = prefix.length;
+    const unselectedStart = content.indexOf(unselectedQuote);
+    const authorityBundle: SourceAuthorityBundle = {
+      record: {
+        id: 'authority_1',
+        workspaceId: 'ws_1',
+        logicalSourceId: 'logical_authority_1',
+        materialId: 'material_a',
+        materialRevisionId: 'revision_a',
+        version: 1,
+        predecessorId: null,
+        premiseScope: 'Exact late-claim Teaching authority fixture.',
+        policyBasis: {
+          policyVersion: 'test-policy-v1',
+          premiseKind: 'claim',
+          basis: 'Exact quotation fixture.',
+        },
+        validationState: 'validated',
+        conflictState: 'none',
+        actor: 'local_validator',
+        createdAt: T0,
+        updatedAt: T0,
+      },
+      claims: [
+        {
+          id: supportedClaimId,
+          authorityRecordId: 'authority_1',
+          sourceBlockId: 'block_a1',
+          claim: 'The selected late claim is the supported Teaching premise.',
+          quote: selectedQuote,
+          startOffset: selectedStart,
+          endOffset: selectedStart + selectedQuote.length,
+          occurrenceCount: 1,
+          createdAt: T0,
+        },
+        {
+          id: unselectedClaimId,
+          authorityRecordId: 'authority_1',
+          sourceBlockId: 'block_a1',
+          claim: 'This second same-block claim was not mapped as semantic support.',
+          quote: unselectedQuote,
+          startOffset: unselectedStart,
+          endOffset: unselectedStart + unselectedQuote.length,
+          occurrenceCount: 1,
+          createdAt: T0,
+        },
+      ],
+      events: [],
+    };
+
+    const context = buildTeachingBriefSourceContext({
+      ...input,
+      authorizedObjectiveIds: [supported.id],
+      sourceAuthorityBundles: [authorityBundle],
+    });
+
+    expect(context.offers[0]).toMatchObject({ sourceRef: 'S1', text: selectedQuote });
+    expect(context.offers[0]!.text).toHaveLength(selectedQuote.length);
+    expect(context.references[0]).toMatchObject({
+      refId: 'S1',
+      sourceBlockId: 'block_a1',
+      startOffset: selectedStart,
+      endOffset: selectedStart + selectedQuote.length,
+      quote: selectedQuote,
+      authorityClaimIds: [supportedClaimId],
+    });
+    const contextualPrefix = context.references.find(
+      (reference) =>
+        reference.sourceBlockId === 'block_a1' && reference.refId !== context.references[0]!.refId,
+    );
+    expect(contextualPrefix).toMatchObject({
+      startOffset: 0,
+      quote: content.slice(0, 1200),
+    });
+    expect(contextualPrefix).not.toHaveProperty('authorityClaimIds');
+    expect(
+      context.references.flatMap((reference) => reference.authorityClaimIds ?? []),
+    ).not.toContain(unselectedClaimId);
   });
 
   it('is deterministic and enforces exact block and byte budgets independently of corpus size', () => {

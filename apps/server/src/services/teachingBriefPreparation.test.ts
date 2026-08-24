@@ -1,8 +1,10 @@
 import { createHash } from 'node:crypto';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { LearningContractDraftFields } from '@hy3-clinic/shared';
+import { ApiErrorCode, type LearningContractDraftFields } from '@hy3-clinic/shared';
 import { openDatabase, type SqliteDb } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
+import { AppError } from '../errors.js';
+import { curriculumSourceBlockFingerprint } from '../grounding/sourceFingerprint.js';
 import { FakeProvider } from '../llm/fakeProvider.js';
 import { ProviderError } from '../llm/errors.js';
 import type {
@@ -16,6 +18,14 @@ import { createRepositories, type Repositories } from '../repositories/index.js'
 import { makeBlock, makeConcept, makeMaterial, makeWorkspace, T0 } from '../testing/fixtures.js';
 import { fixedClock } from '../util/ids.js';
 import { createServices, type Services } from './index.js';
+import {
+  fingerprintObjectiveAuthorityBinding,
+  fingerprintObjectiveAuthorityProposition,
+} from './objectiveAuthoritySemanticSupport.js';
+import {
+  serializedTeachingProviderSourceEnvelopeBytes,
+  TEACHING_BRIEF_MAX_SERIALIZED_OFFER_BYTES,
+} from './teachingBriefContext.js';
 import {
   COMPOSITIONAL_PREPARATION_LEASE_MS,
   LESSON_CONTENT_PROMPT_VERSION,
@@ -39,6 +49,8 @@ class CountingProvider extends FakeProvider {
   simulatePracticeSchemaRepair = false;
   mutateLessonInputAfterGeneration = false;
   mutatePracticeInputAfterGeneration = false;
+  onLessonContentGenerated: (() => void | Promise<void>) | null = null;
+  onPracticeContentGenerated: (() => void | Promise<void>) | null = null;
   lessonContentFailureGate: Promise<void> | null = null;
   practiceContentGate: Promise<void> | null = null;
   onPracticeContentStarted: (() => void) | null = null;
@@ -133,6 +145,7 @@ class CountingProvider extends FakeProvider {
       });
     }
     const payload = await super.generateLessonSlotContent(input, opts);
+    await this.onLessonContentGenerated?.();
     if (this.mutateLessonInputAfterGeneration) {
       this.lessonSkeletonBytesBeforeMutation = JSON.stringify(input.skeleton);
       this.lessonContentBytesBeforeMutation = JSON.stringify(payload.slots);
@@ -179,6 +192,7 @@ class CountingProvider extends FakeProvider {
       });
     }
     const payload = await super.generatePracticeContent(input, opts);
+    await this.onPracticeContentGenerated?.();
     if (this.mutatePracticeInputAfterGeneration) {
       this.practiceSkeletonBytesBeforeMutation = JSON.stringify(input.skeleton);
       this.practiceAcceptedLessonBytesBeforeMutation = JSON.stringify(input.acceptedLesson);
@@ -510,28 +524,247 @@ function addSameUnitRouteAndDeferredObjectives(harness: Harness) {
   const curriculum = structuredClone(harness.repos.curricula.get(harness.curriculumId)!);
   const node = curriculum.nodes.find((candidate) => candidate.id === harness.learningUnitId)!;
   const baseObjective = node.learningUnit!.objectives[0]!;
+  const cloneSemanticSupport = (
+    id: string,
+    title: string,
+    description: string,
+  ): typeof baseObjective.semanticSupport => {
+    const base = structuredClone(baseObjective.semanticSupport!);
+    const proposition = `${title}\n${description}`;
+    return {
+      ...base,
+      objectiveId: id,
+      proposition,
+      propositionFingerprint: fingerprintObjectiveAuthorityProposition(proposition),
+      fragments: [
+        {
+          ...base.fragments[0]!,
+          fragmentId: `${id}_fragment`,
+          text: proposition,
+        },
+      ],
+    };
+  };
+  const routeSecondId = 'obj_route_second';
+  const routeSecondTitle = 'Route-scoped follow-up objective';
+  const routeSecondDescription =
+    'Identify a second source-supported capability assigned to this exact accepted Plan item.';
   const routeSecond: typeof baseObjective = {
     ...baseObjective,
-    id: 'obj_route_second',
-    title: 'Route-scoped follow-up objective',
-    description: 'Explain a second capability assigned to this exact accepted Plan item.',
+    id: routeSecondId,
+    title: routeSecondTitle,
+    description: routeSecondDescription,
     priority: 'optional',
+    semanticSupport: cloneSemanticSupport(routeSecondId, routeSecondTitle, routeSecondDescription),
   };
+  const deferredId = 'obj_deferred_same_unit';
+  const deferredTitle = 'DEFERRED_OBJECTIVE_MUST_NOT_LEAK';
+  const deferredDescription =
+    'Identify this exact source-supported objective only when its own Plan item selects it.';
   const deferred: typeof baseObjective = {
     ...baseObjective,
-    id: 'obj_deferred_same_unit',
-    title: 'DEFERRED_OBJECTIVE_MUST_NOT_LEAK',
-    description:
-      'This same-unit objective belongs elsewhere and must not enter this teaching item.',
+    id: deferredId,
+    title: deferredTitle,
+    description: deferredDescription,
     priority: 'optional',
+    semanticSupport: cloneSemanticSupport(deferredId, deferredTitle, deferredDescription),
   };
   node.learningUnit!.objectives.push(routeSecond, deferred);
   harness.db
     .prepare('UPDATE curriculum_versions SET payload = ? WHERE id = ?')
     .run(JSON.stringify(curriculum), curriculum.id);
+  for (const objective of [routeSecond, deferred]) {
+    const support = objective.semanticSupport!;
+    harness.db
+      .prepare(
+        `INSERT INTO curriculum_objective_index
+           (curriculum_id, learning_unit_id, objective_id, truth_premise_status)
+         VALUES (?, ?, ?, ?)`,
+      )
+      .run(curriculum.id, node.id, objective.id, objective.truthPremiseStatus);
+    for (const authorityRecordId of objective.truthAuthorityRecordIds) {
+      harness.db
+        .prepare(
+          `INSERT INTO curriculum_objective_authority
+             (curriculum_id, objective_id, authority_record_id) VALUES (?, ?, ?)`,
+        )
+        .run(curriculum.id, objective.id, authorityRecordId);
+    }
+    harness.db
+      .prepare(
+        `INSERT INTO curriculum_objective_semantic_support
+           (curriculum_id, objective_id, policy_version, evaluator, provider,
+            provider_model, status, proposition_fingerprint, binding_fingerprint,
+            payload, evaluated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        curriculum.id,
+        objective.id,
+        support.policyVersion,
+        support.evaluator,
+        support.provider,
+        support.providerModel,
+        support.verdict,
+        support.propositionFingerprint,
+        support.bindingFingerprint,
+        JSON.stringify(support),
+        support.evaluatedAt,
+      );
+  }
   const routeObjectiveIds = [baseObjective.id];
   setTeachingPlanObjectiveIds(harness, routeObjectiveIds);
   return { routeObjectiveIds, routeSecond, baseObjective, deferred };
+}
+
+function configureTeachingSourceEnvelopeBoundary(
+  harness: Harness,
+  claimLength: number,
+  objectiveCount = 4,
+  claimCount = 7,
+): string[] {
+  const curriculum = structuredClone(harness.repos.curricula.get(harness.curriculumId)!);
+  const node = curriculum.nodes.find((candidate) => candidate.id === harness.learningUnitId)!;
+  const baseObjective = node.learningUnit!.objectives[0]!;
+  const supportedClaimId = baseObjective
+    .semanticSupport!.fragments.filter((fragment) => fragment.status === 'supported')
+    .flatMap((fragment) => fragment.authorityClaimIds)[0]!;
+  const authorityRecordId = baseObjective.truthAuthorityRecordIds[0]!;
+  const blockId = baseObjective.authoritySourceBlockIds![0]!;
+  const claimIds = Array.from({ length: claimCount }, (_, index) =>
+    index === 0 ? supportedClaimId : `claim_budget_${index + 1}`,
+  );
+  const quotes = claimIds.map((_claimId, index) =>
+    String.fromCharCode('A'.charCodeAt(0) + index).repeat(claimLength),
+  );
+  const content = quotes.join('');
+
+  harness.db
+    .prepare('UPDATE source_blocks SET content = ?, start_offset = 0, end_offset = ? WHERE id = ?')
+    .run(content, content.length, blockId);
+  for (const baseClaimId of baseObjective.authorityClaimIds ?? [supportedClaimId]) {
+    harness.db
+      .prepare(
+        `UPDATE truth_authority_claims
+         SET quote = ?, start_offset = 0, end_offset = ?, occurrence_count = 1
+         WHERE id = ?`,
+      )
+      .run(quotes[0], claimLength, baseClaimId);
+  }
+  for (let index = 1; index < claimIds.length; index += 1) {
+    harness.db
+      .prepare(
+        `INSERT INTO truth_authority_claims
+           (id, authority_record_id, source_block_id, claim, quote, start_offset,
+            end_offset, occurrence_count, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)`,
+      )
+      .run(
+        claimIds[index],
+        authorityRecordId,
+        blockId,
+        `Supported exact Teaching claim ${index + 1}.`,
+        quotes[index],
+        index * claimLength,
+        (index + 1) * claimLength,
+        T0,
+      );
+  }
+
+  const currentBlock = harness.repos.materials.getBlock(blockId)!;
+  const blockFingerprint = curriculumSourceBlockFingerprint(
+    currentBlock,
+    currentBlock.materialRevisionId!,
+  );
+  for (const reference of node.sourceReferences) {
+    if (reference.sourceBlockId === blockId) {
+      reference.sourceBlockRevisionFingerprint = blockFingerprint;
+    }
+  }
+  node.learningUnit!.conceptIds = [];
+
+  const objectives = Array.from({ length: objectiveCount }, (_, index) => {
+    const objective = structuredClone(baseObjective);
+    if (index === 0) return objective;
+    objective.id = `obj_budget_${index + 1}`;
+    objective.title = `Budget objective ${index + 1}`;
+    objective.description = `Explain supported budget capability ${index + 1}.`;
+    objective.priority = 'optional';
+    objective.truthAuthorityRecordIds = [authorityRecordId];
+    const proposition = `${objective.title}\n${objective.description}`;
+    objective.authorityClaimIds = [...claimIds];
+    objective.semanticSupport = {
+      ...objective.semanticSupport!,
+      objectiveId: objective.id,
+      proposition,
+      propositionFingerprint: fingerprintObjectiveAuthorityProposition(proposition),
+      bindingFingerprint: fingerprintObjectiveAuthorityBinding({
+        authorityRecordIds: objective.truthAuthorityRecordIds,
+        sourceBlockIds: objective.authoritySourceBlockIds ?? [],
+        authorityClaimIds: claimIds,
+      }),
+      boundAuthorityClaimIds: [...claimIds],
+      boundAuthorityRecordIds: [authorityRecordId],
+      fragments: [
+        {
+          ...objective.semanticSupport!.fragments[0]!,
+          fragmentId: `${objective.id}_fragment`,
+          text: proposition,
+          authorityRecordIds: [authorityRecordId],
+          authorityClaimIds: [...claimIds],
+        },
+      ],
+    };
+    return objective;
+  });
+  node.learningUnit!.objectives = objectives;
+  harness.db
+    .prepare('UPDATE curriculum_versions SET payload = ? WHERE id = ?')
+    .run(JSON.stringify(curriculum), curriculum.id);
+
+  for (const objective of objectives) {
+    const support = objective.semanticSupport!;
+    if (objective.id === baseObjective.id) continue;
+    harness.db
+      .prepare(
+        `INSERT INTO curriculum_objective_index
+             (curriculum_id, learning_unit_id, objective_id, truth_premise_status)
+           VALUES (?, ?, ?, ?)`,
+      )
+      .run(curriculum.id, node.id, objective.id, objective.truthPremiseStatus);
+    for (const recordId of objective.truthAuthorityRecordIds) {
+      harness.db
+        .prepare(
+          `INSERT INTO curriculum_objective_authority
+               (curriculum_id, objective_id, authority_record_id) VALUES (?, ?, ?)`,
+        )
+        .run(curriculum.id, objective.id, recordId);
+    }
+    harness.db
+      .prepare(
+        `INSERT INTO curriculum_objective_semantic_support
+             (curriculum_id, objective_id, policy_version, evaluator, provider,
+              provider_model, status, proposition_fingerprint, binding_fingerprint,
+              payload, evaluated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        curriculum.id,
+        objective.id,
+        support.policyVersion,
+        support.evaluator,
+        support.provider,
+        support.providerModel,
+        support.verdict,
+        support.propositionFingerprint,
+        support.bindingFingerprint,
+        JSON.stringify(support),
+        support.evaluatedAt,
+      );
+  }
+  const objectiveIds = objectives.map((objective) => objective.id);
+  setTeachingPlanObjectiveIds(harness, objectiveIds);
+  return quotes;
 }
 
 function switchToSuccessorTeachingRoute(harness: Harness, route: TeachingRoute) {
@@ -610,11 +843,111 @@ function preparationRequest(
   };
 }
 
+function staleCurrentCurriculumSemanticSupport(harness: Harness, reason: string): void {
+  const curriculum = structuredClone(harness.repos.curricula.get(harness.curriculumId)!);
+  const planItem = harness.repos.studyPlans
+    .get(harness.planId)!
+    .items.find(
+      (item) =>
+        item.kind === 'teach_unit' && item.curriculumLearningUnitId === harness.learningUnitId,
+    )!;
+  const objective = curriculum.nodes
+    .find((node) => node.id === harness.learningUnitId)!
+    .learningUnit!.objectives.find((candidate) => planItem.objectiveIds.includes(candidate.id))!;
+  objective.description = `${objective.description} ${reason}`;
+  harness.db
+    .prepare('UPDATE curriculum_versions SET payload = ? WHERE id = ?')
+    .run(JSON.stringify(curriculum), curriculum.id);
+}
+
 afterEach(() => {
   while (databases.length > 0) databases.pop()!.close();
 });
 
 describe('Teaching Brief preparation', () => {
+  it('accepts the exact just-under-budget annotated multi-objective source envelope', () => {
+    const buildEnvelope = (quoteLength: number) => {
+      const objectiveRefs = ['O1', 'O2', 'O3', 'O4'];
+      const offers = Array.from({ length: 7 }, (_, index) => ({
+        sourceRef: `S${index + 1}`,
+        materialTitle: 'Bounded source',
+        headingPath: ['Budget boundary'],
+        pageNumber: 1,
+        slideNumber: null,
+        text: String.fromCharCode('A'.charCodeAt(0) + index).repeat(quoteLength),
+        authorizedObjectiveRefs: [...objectiveRefs],
+      }));
+      return {
+        offers,
+        objectiveEvidenceAliases: objectiveRefs.map((objectiveRef) => ({
+          objectiveRef,
+          evidenceAliases: offers.map((offer) => ({
+            sourceRef: offer.sourceRef,
+            text: offer.text,
+          })),
+        })),
+      };
+    };
+    let low = 1;
+    let high = 2_000;
+    while (low < high) {
+      const candidate = Math.ceil((low + high) / 2);
+      if (
+        serializedTeachingProviderSourceEnvelopeBytes(buildEnvelope(candidate)) <=
+        TEACHING_BRIEF_MAX_SERIALIZED_OFFER_BYTES
+      ) {
+        low = candidate;
+      } else {
+        high = candidate - 1;
+      }
+    }
+    const envelope = buildEnvelope(low);
+    const auditedBytes = serializedTeachingProviderSourceEnvelopeBytes(envelope);
+    expect(auditedBytes).toBeLessThanOrEqual(TEACHING_BRIEF_MAX_SERIALIZED_OFFER_BYTES);
+    expect(serializedTeachingProviderSourceEnvelopeBytes(buildEnvelope(low + 1))).toBeGreaterThan(
+      TEACHING_BRIEF_MAX_SERIALIZED_OFFER_BYTES,
+    );
+    expect(envelope.offers.every((offer) => offer.text.length === low)).toBe(true);
+    for (const objective of envelope.objectiveEvidenceAliases) {
+      expect(objective.evidenceAliases.map((alias) => alias.text)).toEqual(
+        envelope.offers.map((offer) => offer.text),
+      );
+    }
+  });
+
+  it('fails a multi-objective full-claim envelope over 32KB before either provider call', async () => {
+    const harness = await createHarness();
+    configureTeachingSourceEnvelopeBoundary(harness, 1_100);
+    const route = startTeachingRoute(harness);
+    const commandId = 'brief-source-envelope-over-budget';
+
+    await expect(
+      harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, commandId),
+      ),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.ValidationError,
+      message: 'Teaching Brief exact provider source envelope exceeds the byte budget.',
+      details: {
+        serializedBytes: expect.any(Number),
+        maxSerializedBytes: TEACHING_BRIEF_MAX_SERIALIZED_OFFER_BYTES,
+      },
+    });
+
+    expect(harness.provider.lessonContentCalls).toBe(0);
+    expect(harness.provider.practiceContentCalls).toBe(0);
+    const operation = harness.repos.operations.getByIdempotencyKey(
+      'ws_1',
+      `teaching-brief:${harness.learningUnitId}:${commandId}`,
+    )!;
+    expect(operation.status).toBe('failed');
+    expect(
+      harness.db
+        .prepare('SELECT COUNT(*) AS count FROM model_logical_calls WHERE operation_id = ?')
+        .get(operation.id),
+    ).toEqual({ count: 0 });
+  });
+
   it('prepares and reuses an immutable Brief for the accepted executable route', async () => {
     const harness = await createHarness();
     const route = startTeachingRoute(harness);
@@ -637,6 +970,49 @@ describe('Teaching Brief preparation', () => {
     expect(harness.provider.lastLessonContentInput?.visualContext.offers[0]).not.toHaveProperty(
       'assetId',
     );
+    const routeObjective = harness.repos.curricula
+      .get(harness.curriculumId)!
+      .nodes.find((node) => node.id === harness.learningUnitId)!.learningUnit!.objectives[0]!;
+    const supportedClaimIds = new Set(
+      routeObjective
+        .semanticSupport!.fragments.filter((fragment) => fragment.status === 'supported')
+        .flatMap((fragment) => fragment.authorityClaimIds),
+    );
+    const authorizedLessonOffers =
+      harness.provider.lastLessonContentInput?.sourceContext.offers.filter((offer) =>
+        offer.authorizedObjectiveRefs.includes('O1'),
+      ) ?? [];
+    expect(authorizedLessonOffers.length).toBeGreaterThan(0);
+    for (const offer of authorizedLessonOffers) {
+      const reference = first.brief.sourceReferences.find(
+        (candidate) => candidate.refId === offer.sourceRef,
+      )!;
+      expect(reference.authorityClaimIds?.length).toBeGreaterThan(0);
+      expect(reference.authorityClaimIds!.every((claimId) => supportedClaimIds.has(claimId))).toBe(
+        true,
+      );
+      const exactClaim = routeObjective.truthAuthorityRecordIds
+        .flatMap((recordId) => harness.repos.sourceAuthority.getBundle(recordId)?.claims ?? [])
+        .find((claim) => reference.authorityClaimIds!.includes(claim.id))!;
+      expect(reference).toMatchObject({
+        sourceBlockId: exactClaim.sourceBlockId,
+        startOffset: exactClaim.startOffset,
+        endOffset: exactClaim.endOffset,
+        quote: exactClaim.quote,
+      });
+      expect(offer.text).toBe(exactClaim.quote);
+    }
+    expect(
+      harness.provider.lastLessonContentInput?.sourceContext.offers.some(
+        (offer) => offer.authorizedObjectiveRefs.length === 0,
+      ),
+    ).toBe(true);
+    expect(harness.provider.lastPracticeContentInput?.sourceContext).toEqual(
+      harness.provider.lastLessonContentInput?.sourceContext,
+    );
+    expect(
+      harness.provider.lastLessonContentInput?.skeleton.objectives[0]?.allowedSourceRefs,
+    ).toEqual(authorizedLessonOffers.map((offer) => offer.sourceRef));
     expect(harness.provider.lastLessonContentInput?.skeleton).not.toHaveProperty('practicePlan');
     expect(harness.provider.lastPracticeContentInput?.acceptedLesson).toEqual(
       harness.provider.lastLessonContentInput?.skeleton.lessonSlots.map((slot) =>
@@ -676,6 +1052,405 @@ describe('Teaching Brief preparation', () => {
     expect(
       harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)[0]!.visualReferences,
     ).toHaveLength(1);
+  });
+
+  for (const corruption of ['tampered', 'missing'] as const) {
+    it(`rejects a ${corruption} exact supported authority claim before the Lesson provider call`, async () => {
+      const harness = await createHarness();
+      const route = startTeachingRoute(harness);
+      const curriculum = harness.repos.curricula.get(harness.curriculumId)!;
+      const objective = curriculum.nodes.find((node) => node.id === harness.learningUnitId)!
+        .learningUnit!.objectives[0]!;
+      const claimId = objective
+        .semanticSupport!.fragments.filter((fragment) => fragment.status === 'supported')
+        .flatMap((fragment) => fragment.authorityClaimIds)[0]!;
+      const changed =
+        corruption === 'missing'
+          ? harness.db.prepare('DELETE FROM truth_authority_claims WHERE id = ?').run(claimId)
+          : harness.db
+              .prepare('UPDATE truth_authority_claims SET quote = ? WHERE id = ?')
+              .run('Tampered but schema-valid quote.', claimId);
+      expect(changed.changes).toBe(1);
+
+      let thrown: unknown;
+      try {
+        await harness.services.teachingBriefPreparation.prepare(
+          preparationRequest(harness, route, `brief-${corruption}-exact-claim`),
+        );
+      } catch (error) {
+        thrown = error;
+      }
+
+      expect(thrown).toBeInstanceOf(AppError);
+      expect((thrown as Error).message).toMatch(/semantic|authority|claim|source/iu);
+      expect(harness.provider.lessonContentCalls).toBe(0);
+      expect(harness.provider.practiceContentCalls).toBe(0);
+      const operation = harness.repos.operations.getByIdempotencyKey(
+        'ws_1',
+        `teaching-brief:${harness.learningUnitId}:brief-${corruption}-exact-claim`,
+      )!;
+      expect(
+        harness.db
+          .prepare(
+            `SELECT COUNT(DISTINCT calls.id) AS logicalCalls,
+                    COUNT(attempts.id) AS attempts
+             FROM model_logical_calls calls
+             LEFT JOIN model_call_attempts attempts ON attempts.logical_call_id = calls.id
+             WHERE calls.operation_id = ?`,
+          )
+          .get(operation.id),
+      ).toEqual({ logicalCalls: 0, attempts: 0 });
+    });
+  }
+
+  it('rejects corrupt Curriculum semantic support at the Lesson provider boundary without a model call', async () => {
+    const harness = await createHarness();
+    const route = startTeachingRoute(harness);
+    const commandId = 'brief-corrupt-objective-semantic-support';
+    const curriculum = structuredClone(harness.repos.curricula.get(harness.curriculumId)!);
+    const planItem = harness.repos.studyPlans
+      .get(harness.planId)!
+      .items.find((item) => item.id === route.agendaItem.linkedPlanItemId)!;
+    const objective = curriculum.nodes
+      .find((node) => node.id === harness.learningUnitId)!
+      .learningUnit!.objectives.find((candidate) => planItem.objectiveIds.includes(candidate.id))!;
+
+    // Test-only persistence corruption after route activation: the exact source
+    // authority remains untouched, but its accepted semantic artifact is now stale.
+    objective.description = `${objective.description} Corrupted after route activation.`;
+    harness.db
+      .prepare('UPDATE curriculum_versions SET payload = ? WHERE id = ?')
+      .run(JSON.stringify(curriculum), curriculum.id);
+
+    let thrown: unknown;
+    try {
+      await harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, commandId),
+      );
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toBeInstanceOf(AppError);
+    expect(thrown).toMatchObject({
+      code: ApiErrorCode.ValidationError,
+      details: {
+        kind: 'objective_authority_semantic_support_invalid',
+        boundary: 'lesson_provider',
+        diagnosticCodes: expect.arrayContaining(['semantic_proposition_mismatch']),
+      },
+    });
+    expect(harness.provider.lessonContentCalls).toBe(0);
+    expect(harness.provider.practiceContentCalls).toBe(0);
+
+    const operation = harness.repos.operations.getByIdempotencyKey(
+      'ws_1',
+      `teaching-brief:${harness.learningUnitId}:${commandId}`,
+    )!;
+    expect(operation.status).toBe('failed');
+    expect(
+      harness.db
+        .prepare(
+          `SELECT COUNT(DISTINCT calls.id) AS logicalCalls,
+                  COUNT(attempts.id) AS attempts
+           FROM model_logical_calls calls
+           LEFT JOIN model_call_attempts attempts ON attempts.logical_call_id = calls.id
+           WHERE calls.operation_id = ?`,
+        )
+        .get(operation.id),
+    ).toEqual({ logicalCalls: 0, attempts: 0 });
+    expect(
+      harness.db
+        .prepare(
+          'SELECT COUNT(*) AS checkpoints FROM accepted_lesson_checkpoints WHERE study_session_id = ?',
+        )
+        .get(route.session.id),
+    ).toEqual({ checkpoints: 0 });
+    expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toHaveLength(
+      0,
+    );
+  });
+
+  it('rejects divergent semantic and Formal source envelopes before either provider phase', async () => {
+    const harness = await createHarness();
+    const route = startTeachingRoute(harness);
+    const commandId = 'brief-divergent-semantic-formal-envelope';
+    const curriculum = structuredClone(harness.repos.curricula.get(harness.curriculumId)!);
+    const planItem = harness.repos.studyPlans
+      .get(harness.planId)!
+      .items.find((item) => item.id === route.agendaItem.linkedPlanItemId)!;
+    const objective = curriculum.nodes
+      .find((node) => node.id === harness.learningUnitId)!
+      .learningUnit!.objectives.find((candidate) => planItem.objectiveIds.includes(candidate.id))!;
+
+    // Test-only persisted corruption: the semantic artifact still binds the
+    // original exact objective envelope, while Formal evidence points elsewhere.
+    objective.formalEvidenceSourceBlockIds = ['blk_formal_envelope_mismatch'];
+    harness.db
+      .prepare('UPDATE curriculum_versions SET payload = ? WHERE id = ?')
+      .run(JSON.stringify(curriculum), curriculum.id);
+
+    expect(() =>
+      harness.services.teachingBriefPreparation.getCurrent(
+        preparationRequest(harness, route, 'brief-read-after-semantic-support-staleness'),
+      ),
+    ).toThrow('Curriculum objective authority is not semantically supported');
+
+    await expect(
+      harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, commandId),
+      ),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.ValidationError,
+      details: {
+        kind: 'objective_authority_semantic_support_invalid',
+        boundary: 'lesson_provider',
+        diagnosticCodes: expect.arrayContaining(['semantic_formal_authority_envelope_mismatch']),
+      },
+    });
+    expect(harness.provider.lessonContentCalls).toBe(0);
+    expect(harness.provider.practiceContentCalls).toBe(0);
+
+    const operation = harness.repos.operations.getByIdempotencyKey(
+      'ws_1',
+      `teaching-brief:${harness.learningUnitId}:${commandId}`,
+    )!;
+    expect(operation.status).toBe('failed');
+    expect(
+      harness.db
+        .prepare(
+          `SELECT COUNT(DISTINCT calls.id) AS logicalCalls,
+                  COUNT(attempts.id) AS attempts
+           FROM model_logical_calls calls
+           LEFT JOIN model_call_attempts attempts ON attempts.logical_call_id = calls.id
+           WHERE calls.operation_id = ?`,
+        )
+        .get(operation.id),
+    ).toEqual({ logicalCalls: 0, attempts: 0 });
+    expect(
+      harness.db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get(),
+    ).toEqual({ count: 0 });
+    expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual([]);
+  });
+
+  it('rejects stale semantic support before reusing an immutable Teaching Brief', async () => {
+    const harness = await createHarness();
+    const route = startTeachingRoute(harness);
+    const first = await harness.services.teachingBriefPreparation.prepare(
+      preparationRequest(harness, route, 'brief-before-semantic-support-staleness'),
+    );
+    const briefBytes = JSON.stringify(first.brief);
+    const commandId = 'brief-reuse-after-semantic-support-staleness';
+    const curriculum = structuredClone(harness.repos.curricula.get(harness.curriculumId)!);
+    const objective = curriculum.nodes.find((node) => node.id === harness.learningUnitId)!
+      .learningUnit!.objectives[0]!;
+    objective.description = `${objective.description} Changed after the immutable Brief was accepted.`;
+    harness.db
+      .prepare('UPDATE curriculum_versions SET payload = ? WHERE id = ?')
+      .run(JSON.stringify(curriculum), curriculum.id);
+
+    await expect(
+      harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, commandId),
+      ),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.ValidationError,
+      details: {
+        kind: 'objective_authority_semantic_support_invalid',
+        boundary: 'lesson_provider',
+        diagnosticCodes: expect.arrayContaining(['semantic_proposition_mismatch']),
+      },
+    });
+
+    expect(harness.provider.lessonContentCalls).toBe(1);
+    expect(harness.provider.practiceContentCalls).toBe(1);
+    expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toHaveLength(
+      1,
+    );
+    expect(
+      JSON.stringify(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)[0]),
+    ).toBe(briefBytes);
+    const operation = harness.repos.operations.getByIdempotencyKey(
+      'ws_1',
+      `teaching-brief:${harness.learningUnitId}:${commandId}`,
+    )!;
+    expect(operation.status).toBe('failed');
+    expect(
+      harness.db
+        .prepare(
+          `SELECT COUNT(DISTINCT calls.id) AS logicalCalls,
+                  COUNT(attempts.id) AS attempts
+           FROM model_logical_calls calls
+           LEFT JOIN model_call_attempts attempts ON attempts.logical_call_id = calls.id
+           WHERE calls.operation_id = ?`,
+        )
+        .get(operation.id),
+    ).toEqual({ logicalCalls: 0, attempts: 0 });
+  });
+
+  it('rejects stale semantic support before retrying Practice from an accepted Lesson', async () => {
+    const harness = await createHarness();
+    const route = startTeachingRoute(harness);
+    harness.provider.failPracticeContentOnce = true;
+
+    await expect(
+      harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, 'brief-practice-failure-before-support-staleness'),
+      ),
+    ).rejects.toMatchObject({ code: ApiErrorCode.ProviderError });
+    expect(harness.provider.lessonContentCalls).toBe(1);
+    expect(harness.provider.practiceContentCalls).toBe(1);
+    const checkpointRow = harness.db
+      .prepare('SELECT id FROM accepted_lesson_checkpoints WHERE study_session_id = ?')
+      .get(route.session.id) as { id: string };
+    const checkpoint = harness.repos.acceptedLessonCheckpoints.get(checkpointRow.id)!;
+    const checkpointBytes = JSON.stringify(checkpoint);
+    expect(checkpoint).toBeDefined();
+    expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual([]);
+
+    const curriculum = structuredClone(harness.repos.curricula.get(harness.curriculumId)!);
+    const objective = curriculum.nodes.find((node) => node.id === harness.learningUnitId)!
+      .learningUnit!.objectives[0]!;
+    objective.description = `${objective.description} Changed after Lesson acceptance.`;
+    harness.db
+      .prepare('UPDATE curriculum_versions SET payload = ? WHERE id = ?')
+      .run(JSON.stringify(curriculum), curriculum.id);
+    expect(() =>
+      harness.services.teachingBriefPreparation.getAcceptedLessonPreview(
+        preparationRequest(harness, route, 'lesson-preview-after-support-staleness'),
+      ),
+    ).toThrow('Curriculum objective authority is not semantically supported');
+    const commandId = 'brief-practice-retry-after-support-staleness';
+    await expect(
+      harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, commandId),
+      ),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.ValidationError,
+      details: {
+        kind: 'objective_authority_semantic_support_invalid',
+        boundary: 'lesson_provider',
+        diagnosticCodes: expect.arrayContaining(['semantic_proposition_mismatch']),
+      },
+    });
+
+    expect(harness.provider.lessonContentCalls).toBe(1);
+    expect(harness.provider.practiceContentCalls).toBe(1);
+    expect(JSON.stringify(harness.repos.acceptedLessonCheckpoints.get(checkpoint.id))).toBe(
+      checkpointBytes,
+    );
+    expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual([]);
+    const operation = harness.repos.operations.getByIdempotencyKey(
+      'ws_1',
+      `teaching-brief:${harness.learningUnitId}:${commandId}`,
+    )!;
+    expect(operation.status).toBe('failed');
+    expect(
+      harness.db
+        .prepare(
+          `SELECT COUNT(DISTINCT calls.id) AS logicalCalls,
+                  COUNT(attempts.id) AS attempts
+           FROM model_logical_calls calls
+           LEFT JOIN model_call_attempts attempts ON attempts.logical_call_id = calls.id
+           WHERE calls.operation_id = ?`,
+        )
+        .get(operation.id),
+    ).toEqual({ logicalCalls: 0, attempts: 0 });
+  });
+
+  it('fences stale semantic support after Lesson generation before checkpoint persistence', async () => {
+    const harness = await createHarness();
+    const route = startTeachingRoute(harness);
+    harness.provider.onLessonContentGenerated = () => {
+      staleCurrentCurriculumSemanticSupport(harness, 'Changed after Lesson generation.');
+    };
+
+    await expect(
+      harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, 'brief-support-stale-after-lesson-generation'),
+      ),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.ValidationError,
+      details: {
+        kind: 'objective_authority_semantic_support_invalid',
+        boundary: 'lesson_provider',
+        diagnosticCodes: expect.arrayContaining(['semantic_proposition_mismatch']),
+      },
+    });
+
+    expect(harness.provider.lessonContentCalls).toBe(1);
+    expect(harness.provider.practiceContentCalls).toBe(0);
+    expect(
+      harness.db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get(),
+    ).toEqual({ count: 0 });
+    expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual([]);
+  });
+
+  it('preserves the accepted Lesson while fencing support that stales before Practice', async () => {
+    const harness = await createHarness();
+    const route = startTeachingRoute(harness);
+    const originalCreate = harness.repos.acceptedLessonCheckpoints.create;
+    let acceptedLessonId: string | null = null;
+    harness.repos.acceptedLessonCheckpoints.create = (candidate) => {
+      const accepted = originalCreate(candidate);
+      acceptedLessonId = accepted.id;
+      staleCurrentCurriculumSemanticSupport(harness, 'Changed after Lesson acceptance.');
+      return accepted;
+    };
+
+    try {
+      await expect(
+        harness.services.teachingBriefPreparation.prepare(
+          preparationRequest(harness, route, 'brief-support-stale-before-practice'),
+        ),
+      ).rejects.toMatchObject({
+        code: ApiErrorCode.ValidationError,
+        details: {
+          kind: 'objective_authority_semantic_support_invalid',
+          boundary: 'lesson_provider',
+          diagnosticCodes: expect.arrayContaining(['semantic_proposition_mismatch']),
+        },
+      });
+    } finally {
+      harness.repos.acceptedLessonCheckpoints.create = originalCreate;
+    }
+
+    expect(harness.provider.lessonContentCalls).toBe(1);
+    expect(harness.provider.practiceContentCalls).toBe(0);
+    expect(acceptedLessonId).not.toBeNull();
+    expect(harness.repos.acceptedLessonCheckpoints.get(acceptedLessonId!)).toBeDefined();
+    expect(
+      harness.db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get(),
+    ).toEqual({ count: 1 });
+    expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual([]);
+  });
+
+  it('preserves the accepted Lesson while fencing stale support after Practice generation', async () => {
+    const harness = await createHarness();
+    const route = startTeachingRoute(harness);
+    harness.provider.onPracticeContentGenerated = () => {
+      staleCurrentCurriculumSemanticSupport(harness, 'Changed after Practice generation.');
+    };
+
+    await expect(
+      harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, 'brief-support-stale-after-practice-generation'),
+      ),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.ValidationError,
+      details: {
+        kind: 'objective_authority_semantic_support_invalid',
+        boundary: 'lesson_provider',
+        diagnosticCodes: expect.arrayContaining(['semantic_proposition_mismatch']),
+      },
+    });
+
+    expect(harness.provider.lessonContentCalls).toBe(1);
+    expect(harness.provider.practiceContentCalls).toBe(1);
+    expect(
+      harness.db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get(),
+    ).toEqual({ count: 1 });
+    expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual([]);
   });
 
   it('isolates the local Teaching Skeleton from Lesson provider input mutation', async () => {

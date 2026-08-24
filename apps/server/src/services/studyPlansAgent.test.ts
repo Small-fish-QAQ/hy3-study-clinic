@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  ApiErrorCode,
   type Curriculum,
   type LearningContract,
   type StudyPlanItem,
@@ -11,7 +12,14 @@ import { migrate } from '../db/migrate.js';
 import { FakeProvider } from '../llm/fakeProvider.js';
 import type { ProviderCallOptions, StudyPlanProposalInput } from '../llm/provider.js';
 import { createRepositories, type Repositories } from '../repositories/index.js';
-import { makeBlock, makeConcept, makeMaterial, makeWorkspace, T0 } from '../testing/fixtures.js';
+import {
+  makeBlock,
+  makeConcept,
+  makeMaterial,
+  makeSemanticallySupportedObjective,
+  makeWorkspace,
+  T0,
+} from '../testing/fixtures.js';
 import { fixedClock, type Clock } from '../util/ids.js';
 import { createCourseCommandService } from './courseCommands.js';
 import { createCourseExecutionService } from './courseExecution.js';
@@ -74,6 +82,32 @@ function proposalRequest(id: string, predecessorStudyPlanId: string | null = nul
   };
 }
 
+function proposalWithDeferredOptionalObjective(): StudyPlanProposalPayload {
+  return {
+    rationale: 'Teach the required objective and explicitly defer the optional extension.',
+    items: [
+      {
+        key: 'teach-required',
+        phase: 'Core route',
+        kind: 'teach_unit',
+        curriculumLearningUnitId: 'unit_1',
+        rationale: 'Teach the required working-memory relationship.',
+        estimatedMinutes: 20,
+        targetDepth: 'working_fluency',
+        objectiveIds: ['objective_verified'],
+        prerequisiteItemKeys: [],
+      },
+    ],
+    deferrals: [
+      {
+        curriculumLearningUnitId: 'unit_1',
+        objectiveIds: ['objective_unverified'],
+        reason: 'Defer the optional recognition extension.',
+      },
+    ],
+  };
+}
+
 function decisionRequest(id: string, planId: string, decision: 'accept' | 'reject') {
   const plan = repos.studyPlans.get(planId)!;
   return {
@@ -86,6 +120,59 @@ function decisionRequest(id: string, planId: string, decision: 'accept' | 'rejec
     decision,
     reason: decision === 'reject' ? 'Learner wants a different route.' : null,
   };
+}
+
+function removeCanonicalSemanticSupportForLegacyFixture(
+  curriculumId: string,
+  objectiveId: string,
+): void {
+  // Explicitly manufacture the state produced by migrating a version-40
+  // Curriculum: its objective/index rows exist, but no canonical migration-41
+  // semantic-support evidence was fabricated. This test-only transaction
+  // restores the production immutability trigger before exposing the fixture.
+  db.transaction(() => {
+    db.exec('DROP TRIGGER prevent_curriculum_objective_semantic_support_delete');
+    const removed = db
+      .prepare(
+        `DELETE FROM curriculum_objective_semantic_support
+         WHERE curriculum_id = ? AND objective_id = ?`,
+      )
+      .run(curriculumId, objectiveId);
+    if (removed.changes !== 1) {
+      throw new Error('Legacy semantic-support fixture objective is missing.');
+    }
+    db.exec(`
+      CREATE TRIGGER prevent_curriculum_objective_semantic_support_delete
+      BEFORE DELETE ON curriculum_objective_semantic_support
+      WHEN EXISTS (
+        SELECT 1 FROM curriculum_objective_index
+        WHERE curriculum_id = OLD.curriculum_id AND objective_id = OLD.objective_id
+      )
+      BEGIN
+        SELECT RAISE(ABORT, 'Curriculum objective semantic support is immutable');
+      END;
+    `);
+  })();
+}
+
+function makePersistedObjectivePropositionStaleForFixture(
+  curriculumId: string,
+  objectiveId: string,
+): void {
+  const row = db
+    .prepare('SELECT payload FROM curriculum_versions WHERE id = ?')
+    .get(curriculumId) as { payload: string } | undefined;
+  if (!row) throw new Error('Stale semantic-support fixture Curriculum is missing.');
+  const aggregate = JSON.parse(row.payload) as Curriculum;
+  const objective = aggregate.nodes
+    .flatMap((node) => node.learningUnit?.objectives ?? [])
+    .find((candidate) => candidate.id === objectiveId);
+  if (!objective) throw new Error('Stale semantic-support fixture objective is missing.');
+  objective.description = `${objective.description} Corrupt persisted proposition change.`;
+  db.prepare('UPDATE curriculum_versions SET payload = ? WHERE id = ?').run(
+    JSON.stringify(aggregate),
+    curriculumId,
+  );
 }
 
 function acceptSuccessorCurriculum(id: string): Curriculum {
@@ -296,20 +383,45 @@ beforeEach(() => {
           conceptIds: ['con_1'],
           canonicalConceptIds: [],
           objectives: [
-            {
-              id: 'objective_verified',
-              title: 'Explain capacity',
-              description: 'Explain the capacity claim from the source.',
-              truthPremiseStatus: 'independently_verified',
-              truthAuthorityRecordIds: ['authority_1'],
-            },
-            {
-              id: 'objective_unverified',
-              title: 'Speculate about mechanisms',
-              description: 'Explore a mechanism not established by Course Truth.',
-              truthPremiseStatus: 'unverified',
-              truthAuthorityRecordIds: [],
-            },
+            makeSemanticallySupportedObjective(
+              {
+                id: 'objective_verified',
+                title: 'Explain capacity',
+                description:
+                  'Explain the source-stated relationship that working-memory capacity is limited.',
+                truthPremiseStatus: 'independently_verified',
+                truthAuthorityRecordIds: ['authority_1'],
+                authorityClaimIds: ['claim_1'],
+                priority: 'required',
+                formalAssessmentReady: true,
+                formalAssessmentReadinessRationale:
+                  'The exact source states the working-memory capacity relationship.',
+                formalAssessmentConstruct: 'explain',
+                authorityEnvelopeTier: 'formal_sufficient',
+                authoritySourceBlockIds: ['blk_1'],
+                formalEvidenceSourceBlockIds: ['blk_1'],
+              },
+              'relationship',
+            ),
+            makeSemanticallySupportedObjective(
+              {
+                id: 'objective_unverified',
+                title: 'Identify capacity statement',
+                description: 'Identify the source-stated limit on working-memory capacity.',
+                truthPremiseStatus: 'unverified',
+                truthAuthorityRecordIds: ['authority_1'],
+                authorityClaimIds: ['claim_1'],
+                priority: 'optional',
+                formalAssessmentReady: false,
+                formalAssessmentReadinessRationale:
+                  'This advisory fixture intentionally retains unverified premise status.',
+                formalAssessmentConstruct: 'identify',
+                authorityEnvelopeTier: 'formal_sufficient',
+                authoritySourceBlockIds: ['blk_1'],
+                formalEvidenceSourceBlockIds: [],
+              },
+              'recognition',
+            ),
           ],
           prerequisiteUnitIds: [],
           graphRelationIds: [],
@@ -356,6 +468,29 @@ function services(provider: CapturingPlanProvider, serviceClock: Clock = clock) 
   };
 }
 
+function studyPlanAuthorityPersistenceSnapshot() {
+  return {
+    plans: structuredClone(repos.studyPlans.list('ws_1')),
+    risks: structuredClone(repos.coverageRisks.list('ws_1')),
+    agendas: structuredClone(repos.sessionAgendas.list('ws_1')),
+    execution: structuredClone(repos.courseExecution.get('ws_1')),
+    planEvents: db.prepare('SELECT * FROM study_plan_events ORDER BY plan_id, seq').all(),
+    planLaunches: db
+      .prepare('SELECT * FROM study_plan_launch_validations ORDER BY plan_id, plan_item_id')
+      .all(),
+    planDeferrals: db
+      .prepare('SELECT * FROM study_plan_deferrals ORDER BY plan_id, curriculum_learning_unit_id')
+      .all(),
+    planProgress: db
+      .prepare('SELECT * FROM study_plan_progress ORDER BY plan_id, plan_item_id')
+      .all(),
+    riskEvents: db.prepare('SELECT * FROM coverage_risk_events ORDER BY risk_id, seq').all(),
+    executionEvents: db
+      .prepare('SELECT * FROM course_execution_events ORDER BY workspace_id, seq')
+      .all(),
+  };
+}
+
 describe('StudyPlan proposal and accepted Course route', () => {
   it('allows synthesis items to account for objectives from every declared synthesis unit', () => {
     const secondUnit = {
@@ -365,13 +500,25 @@ describe('StudyPlan proposal and accepted Course route', () => {
       learningUnit: {
         ...curriculum.nodes.find((node) => node.id === 'unit_1')!.learningUnit!,
         objectives: [
-          {
-            id: 'objective_transfer',
-            title: 'Apply transfer',
-            description: 'Apply the source claim in a new situation.',
-            truthPremiseStatus: 'unverified' as const,
-            truthAuthorityRecordIds: [],
-          },
+          makeSemanticallySupportedObjective(
+            {
+              id: 'objective_transfer',
+              title: 'Identify capacity statement',
+              description: 'Identify the source-stated limit on working-memory capacity.',
+              truthPremiseStatus: 'unverified' as const,
+              truthAuthorityRecordIds: ['authority_1'],
+              authorityClaimIds: ['claim_1'],
+              priority: 'optional',
+              formalAssessmentReady: false,
+              formalAssessmentReadinessRationale:
+                'This advisory fixture intentionally retains unverified premise status.',
+              formalAssessmentConstruct: 'identify',
+              authorityEnvelopeTier: 'formal_sufficient',
+              authoritySourceBlockIds: ['blk_1'],
+              formalEvidenceSourceBlockIds: [],
+            },
+            'recognition',
+          ),
         ],
       },
     };
@@ -504,6 +651,42 @@ describe('StudyPlan proposal and accepted Course route', () => {
     expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBeNull();
   });
 
+  it('rejects an accepted legacy Curriculum before any StudyPlan provider or persistence attempt', async () => {
+    const provider = new CapturingPlanProvider();
+    const { plans } = services(provider);
+    removeCanonicalSemanticSupportForLegacyFixture(curriculum.id, 'objective_verified');
+    const before = {
+      plans: repos.studyPlans.list('ws_1').length,
+      logicalCalls: (
+        db.prepare('SELECT COUNT(*) AS count FROM model_logical_calls').get() as { count: number }
+      ).count,
+      physicalAttempts: (
+        db.prepare('SELECT COUNT(*) AS count FROM model_call_attempts').get() as { count: number }
+      ).count,
+    };
+
+    await expect(
+      plans.propose(proposalRequest('legacy-curriculum-plan-blocked')),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.ValidationError,
+      details: {
+        kind: 'objective_authority_semantic_support_invalid',
+        boundary: 'study_plan',
+        diagnosticCodes: expect.arrayContaining(['semantic_support_missing']),
+      },
+    });
+
+    expect(provider.calls).toBe(0);
+    expect(repos.studyPlans.list('ws_1')).toHaveLength(before.plans);
+    expect(db.prepare('SELECT COUNT(*) AS count FROM model_logical_calls').get()).toEqual({
+      count: before.logicalCalls,
+    });
+    expect(db.prepare('SELECT COUNT(*) AS count FROM model_call_attempts').get()).toEqual({
+      count: before.physicalAttempts,
+    });
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+  });
+
   it('blocks a direct StudyPlan command after a confirmed scope-role change without provider work', async () => {
     const acceptedSnapshot = structuredClone(repos.learningContracts.get(contract.id));
     const current = repos.materialRoles.getCurrent('mat_1')!;
@@ -540,6 +723,133 @@ describe('StudyPlan proposal and accepted Course route', () => {
     expect(provider.calls).toBe(0);
     expect(repos.studyPlans.list('ws_1')).toEqual([]);
     expect(repos.learningContracts.get(contract.id)).toEqual(acceptedSnapshot);
+  });
+
+  it('fences direct StudyPlan and risk persistence when semantic authority changes before commit', async () => {
+    const provider = new CapturingPlanProvider(proposalWithDeferredOptionalObjective());
+    const { plans } = services(provider);
+    const curriculumSnapshot = structuredClone(repos.curricula.get(curriculum.id));
+    const riskSnapshot = repos.coverageRisks.list('ws_1');
+
+    await expect(
+      plans.propose(proposalRequest('semantic-change-before-plan-persist'), undefined, {
+        beforePersist: () =>
+          makePersistedObjectivePropositionStaleForFixture(curriculum.id, 'objective_verified'),
+      }),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.ValidationError,
+      details: {
+        kind: 'objective_authority_semantic_support_invalid',
+        boundary: 'study_plan',
+        diagnosticCodes: expect.arrayContaining([
+          'semantic_proposition_mismatch',
+          'semantic_proposition_fingerprint_mismatch',
+        ]),
+      },
+    });
+
+    expect(provider.calls).toBe(1);
+    expect(repos.studyPlans.list('ws_1')).toEqual([]);
+    expect(repos.coverageRisks.list('ws_1')).toEqual(riskSnapshot);
+    expect(repos.curricula.get(curriculum.id)).toEqual(curriculumSnapshot);
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+  });
+
+  it('fences direct StudyPlan and risk persistence when Contract scope changes before commit', async () => {
+    const provider = new CapturingPlanProvider(proposalWithDeferredOptionalObjective());
+    const { plans } = services(provider);
+    const roleSnapshot = repos.materialRoles.getCurrent('mat_1')!;
+    const riskSnapshot = repos.coverageRisks.list('ws_1');
+
+    await expect(
+      plans.propose(proposalRequest('scope-change-before-plan-persist'), undefined, {
+        beforePersist: () => {
+          const proposal = repos.materialRoles.createVersion({
+            id: 'role_scope_changed_during_plan',
+            materialId: 'mat_1',
+            version: roleSnapshot.version + 1,
+            predecessorId: roleSnapshot.id,
+            role: 'supplementary_reference',
+            status: 'proposed',
+            proposedBy: 'learner',
+            learnerConfirmedAt: null,
+            createdAt: T2,
+          });
+          repos.materialRoles.confirm(proposal.id, T2);
+        },
+      }),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.VersionConflict,
+      details: {
+        kind: 'learning_contract_scope_changed',
+        state: 'reconfirmation_required',
+        issues: [
+          {
+            kind: 'material_role_changed',
+            materialId: 'mat_1',
+            contractedRole: 'course_material',
+            currentConfirmedRole: 'supplementary_reference',
+          },
+        ],
+      },
+    });
+
+    expect(provider.calls).toBe(1);
+    expect(repos.studyPlans.list('ws_1')).toEqual([]);
+    expect(repos.coverageRisks.list('ws_1')).toEqual(riskSnapshot);
+    expect(repos.materialRoles.getCurrent('mat_1')).toEqual(roleSnapshot);
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+  });
+
+  it('rolls back a current-route version race before direct Plan or risk persistence', async () => {
+    const initialServices = services(new CapturingPlanProvider());
+    const acceptedProposal = await initialServices.plans.propose(
+      proposalRequest('accepted-plan-before-proposal-route-race'),
+    );
+    initialServices.execution.decideStudyPlan(
+      decisionRequest(
+        'accept-plan-before-proposal-route-race',
+        acceptedProposal.studyPlan.id,
+        'accept',
+      ),
+    );
+    const provider = new CapturingPlanProvider(proposalWithDeferredOptionalObjective());
+    const { plans } = services(provider);
+    const before = studyPlanAuthorityPersistenceSnapshot();
+    const createRisk = vi.spyOn(repos.coverageRisks, 'create');
+    const createPlan = vi.spyOn(repos.studyPlans, 'createVersion');
+    const activeState = repos.courseExecution.get('ws_1');
+
+    await expect(
+      plans.propose(
+        proposalRequest('successor-proposal-route-race', acceptedProposal.studyPlan.id),
+        undefined,
+        {
+          beforePersist: () => {
+            repos.courseExecution.transitionExecution({
+              workspaceId: 'ws_1',
+              expectedVersion: activeState.version,
+              expectedAcceptedPlanId: activeState.acceptedPlanId!,
+              expectedAgendaId: activeState.activeAgendaId!,
+              transition: 'pause',
+              eventId: 'execution_event_proposal_route_race',
+              reason: 'Simulated proposal route-version race.',
+              actor: 'learner',
+              at: T2,
+            });
+          },
+        },
+      ),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.VersionConflict,
+      details: { kind: 'study_plan_route_state_changed' },
+    });
+
+    expect(provider.calls).toBe(1);
+    expect(createRisk).not.toHaveBeenCalled();
+    expect(createPlan).not.toHaveBeenCalled();
+    expect(studyPlanAuthorityPersistenceSnapshot()).toEqual(before);
+    expect(repos.studyPlans.get(acceptedProposal.studyPlan.id)?.status).toBe('accepted');
   });
 
   it('keeps authority policy, identifiers, and feasibility local and replays exactly once', async () => {
@@ -711,6 +1021,131 @@ describe('StudyPlan proposal and accepted Course route', () => {
     ).toBe(false);
   });
 
+  it('rolls back a draft edit when semantic authority becomes stale before completion', async () => {
+    const { plans } = services(new CapturingPlanProvider());
+    const original = await plans.propose(proposalRequest('plan-before-stale-edit'));
+    const request = {
+      command: command('plan-edit-stale-semantic'),
+      studyPlanId: original.studyPlan.id,
+      expectedVersion: original.studyPlan.version,
+      expectedContractId: contract.id,
+      expectedCurriculumId: curriculum.id,
+      expectedExecutionSourceManifestFingerprint: curriculum.executionSourceManifest.fingerprint,
+      edit: {
+        kind: 'defer' as const,
+        curriculumLearningUnitId: 'unit_1',
+        objectiveIds: ['objective_unverified'],
+        reason: 'Defer the unverified extension.',
+        riskIds: ['risk_stale_semantic_edit'],
+      },
+    };
+    const curriculumSnapshot = structuredClone(repos.curricula.get(curriculum.id));
+    const plansSnapshot = structuredClone(repos.studyPlans.list('ws_1'));
+    const riskSnapshot = structuredClone(repos.coverageRisks.list('ws_1'));
+    const executionSnapshot = structuredClone(repos.courseExecution.get('ws_1'));
+    const eventSnapshot = db
+      .prepare(
+        `SELECT id, plan_id, seq, event_type, actor, payload, created_at
+         FROM study_plan_events WHERE plan_id = ? ORDER BY seq`,
+      )
+      .all(original.studyPlan.id);
+
+    let rejection: unknown;
+    try {
+      plans.applyDraftEdit(request, {
+        beforePersist: () =>
+          makePersistedObjectivePropositionStaleForFixture(curriculum.id, 'objective_verified'),
+      });
+    } catch (error) {
+      rejection = error;
+    }
+
+    expect(rejection).toMatchObject({
+      code: ApiErrorCode.ValidationError,
+      details: {
+        kind: 'objective_authority_semantic_support_invalid',
+        boundary: 'study_plan',
+        diagnosticCodes: expect.arrayContaining([
+          'semantic_proposition_mismatch',
+          'semantic_proposition_fingerprint_mismatch',
+        ]),
+      },
+    });
+    expect(repos.curricula.get(curriculum.id)).toEqual(curriculumSnapshot);
+    expect(repos.studyPlans.list('ws_1')).toEqual(plansSnapshot);
+    expect(repos.studyPlans.get(original.studyPlan.id)?.status).toBe('proposed');
+    expect(repos.coverageRisks.list('ws_1')).toEqual(riskSnapshot);
+    expect(
+      db
+        .prepare(
+          `SELECT id, plan_id, seq, event_type, actor, payload, created_at
+           FROM study_plan_events WHERE plan_id = ? ORDER BY seq`,
+        )
+        .all(original.studyPlan.id),
+    ).toEqual(eventSnapshot);
+    expect(repos.courseExecution.get('ws_1')).toEqual(executionSnapshot);
+  });
+
+  it('rolls back a current-route version race before any draft-edit mutation', async () => {
+    const { plans, execution } = services(new CapturingPlanProvider());
+    const acceptedProposal = await plans.propose(proposalRequest('plan-before-route-race'));
+    execution.decideStudyPlan(
+      decisionRequest('accept-plan-before-route-race', acceptedProposal.studyPlan.id, 'accept'),
+    );
+    const proposed = await plans.propose(
+      proposalRequest('successor-before-route-race', acceptedProposal.studyPlan.id),
+    );
+    const request = {
+      command: command('plan-edit-route-race'),
+      studyPlanId: proposed.studyPlan.id,
+      expectedVersion: proposed.studyPlan.version,
+      expectedContractId: contract.id,
+      expectedCurriculumId: curriculum.id,
+      expectedExecutionSourceManifestFingerprint: curriculum.executionSourceManifest.fingerprint,
+      edit: {
+        kind: 'defer' as const,
+        curriculumLearningUnitId: 'unit_1',
+        objectiveIds: ['objective_unverified'],
+        reason: 'Defer the optional extension after the route race.',
+        riskIds: ['risk_route_race_edit'],
+      },
+    };
+    const before = studyPlanAuthorityPersistenceSnapshot();
+    const createRisk = vi.spyOn(repos.coverageRisks, 'create');
+    const rejectPlan = vi.spyOn(repos.studyPlans, 'reject');
+    const createPlan = vi.spyOn(repos.studyPlans, 'createVersion');
+    const activeState = repos.courseExecution.get('ws_1');
+
+    expect(() =>
+      plans.applyDraftEdit(request, {
+        beforePersist: () => {
+          repos.courseExecution.transitionExecution({
+            workspaceId: 'ws_1',
+            expectedVersion: activeState.version,
+            expectedAcceptedPlanId: activeState.acceptedPlanId!,
+            expectedAgendaId: activeState.activeAgendaId!,
+            transition: 'pause',
+            eventId: 'execution_event_route_race',
+            reason: 'Simulated route-version race.',
+            actor: 'learner',
+            at: T2,
+          });
+        },
+      }),
+    ).toThrowError(
+      expect.objectContaining({
+        code: ApiErrorCode.VersionConflict,
+        details: expect.objectContaining({ kind: 'study_plan_route_state_changed' }),
+      }),
+    );
+
+    expect(createRisk).not.toHaveBeenCalled();
+    expect(rejectPlan).not.toHaveBeenCalled();
+    expect(createPlan).not.toHaveBeenCalled();
+    expect(studyPlanAuthorityPersistenceSnapshot()).toEqual(before);
+    expect(repos.studyPlans.get(proposed.studyPlan.id)?.status).toBe('proposed');
+  });
+
   it('atomically accepts a launchable route and exact replay creates no second Agenda', async () => {
     const provider = new CapturingPlanProvider();
     const { plans, execution } = services(provider);
@@ -728,6 +1163,98 @@ describe('StudyPlan proposal and accepted Course route', () => {
     expect(replay.activeRoute?.agenda.id).toBe(accepted.activeRoute?.agenda.id);
     expect(repos.sessionAgendas.list('ws_1')).toHaveLength(1);
     expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBe(proposed.studyPlan.id);
+  });
+
+  it('activates an exact Curriculum and StudyPlan successor lineage without rewriting predecessor content', async () => {
+    const { plans, execution } = services(new CapturingPlanProvider());
+    const predecessorPlanProposal = await plans.propose(
+      proposalRequest('semantic-lineage-predecessor-plan'),
+    );
+    const predecessorRoute = execution.decideStudyPlan(
+      decisionRequest(
+        'semantic-lineage-predecessor-activate',
+        predecessorPlanProposal.studyPlan.id,
+        'accept',
+      ),
+    );
+    const predecessorCurriculum = predecessorRoute.activeRoute!.curriculum;
+    const predecessorPlan = predecessorRoute.activeRoute!.studyPlan;
+
+    const successorCurriculum = acceptSuccessorCurriculum('curriculum_semantic_successor');
+    const successorPlanProposal = await plans.propose(
+      proposalRequest('semantic-lineage-successor-plan', predecessorPlan.id),
+    );
+
+    expect(successorCurriculum).toMatchObject({
+      predecessorId: predecessorCurriculum.id,
+      version: predecessorCurriculum.version + 1,
+      status: 'accepted',
+    });
+    expect(successorPlanProposal.studyPlan).toMatchObject({
+      predecessorId: predecessorPlan.id,
+      curriculumVersionId: successorCurriculum.id,
+      version: predecessorPlan.version + 1,
+      status: 'proposed',
+    });
+
+    const successorRoute = execution.decideStudyPlan(
+      decisionRequest(
+        'semantic-lineage-successor-activate',
+        successorPlanProposal.studyPlan.id,
+        'accept',
+      ),
+    );
+
+    expect(successorRoute.activeRoute).toMatchObject({
+      curriculum: { id: successorCurriculum.id, predecessorId: predecessorCurriculum.id },
+      studyPlan: {
+        id: successorPlanProposal.studyPlan.id,
+        predecessorId: predecessorPlan.id,
+        curriculumVersionId: successorCurriculum.id,
+      },
+    });
+    const storedPredecessorCurriculum = repos.curricula.get(predecessorCurriculum.id)!;
+    const storedPredecessorPlan = repos.studyPlans.get(predecessorPlan.id)!;
+    expect(storedPredecessorCurriculum.status).toBe('superseded');
+    expect({ ...storedPredecessorCurriculum, status: predecessorCurriculum.status }).toEqual(
+      predecessorCurriculum,
+    );
+    expect(storedPredecessorPlan.status).toBe('superseded');
+    expect({ ...storedPredecessorPlan, status: predecessorPlan.status }).toEqual(predecessorPlan);
+  });
+
+  it('rejects route activation when semantic support becomes stale before Agenda or pointer mutation', async () => {
+    const provider = new CapturingPlanProvider();
+    const { plans, execution, agendas } = services(provider);
+    const proposed = await plans.propose(proposalRequest('plan-before-semantic-staleness'));
+    const executionSnapshot = structuredClone(repos.courseExecution.get('ws_1'));
+    const composeDraft = vi.spyOn(agendas, 'composeDraft');
+    makePersistedObjectivePropositionStaleForFixture(curriculum.id, 'objective_verified');
+
+    let rejection: unknown;
+    try {
+      execution.decideStudyPlan(
+        decisionRequest('reject-stale-semantic-route', proposed.studyPlan.id, 'accept'),
+      );
+    } catch (error) {
+      rejection = error;
+    }
+
+    expect(rejection).toMatchObject({
+      code: ApiErrorCode.ValidationError,
+      details: {
+        kind: 'objective_authority_semantic_support_invalid',
+        boundary: 'route_activation',
+        diagnosticCodes: expect.arrayContaining([
+          'semantic_proposition_mismatch',
+          'semantic_proposition_fingerprint_mismatch',
+        ]),
+      },
+    });
+    expect(composeDraft).not.toHaveBeenCalled();
+    expect(repos.studyPlans.get(proposed.studyPlan.id)?.status).toBe('proposed');
+    expect(repos.sessionAgendas.list('ws_1')).toHaveLength(0);
+    expect(repos.courseExecution.get('ws_1')).toEqual(executionSnapshot);
   });
 
   it('rejects stale Plan acceptance after a newer accepted Curriculum and keeps history auditable', async () => {

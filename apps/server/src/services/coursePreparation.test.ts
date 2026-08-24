@@ -31,7 +31,8 @@ import {
 } from './curriculum.js';
 import { createServices, type Services } from './index.js';
 
-const QUOTE = 'Working memory is limited.';
+const SEMANTIC_SUPPORT_MARKERS = '[SUPPORTS:identify] [SUPPORTS:explain]';
+const QUOTE = `Working memory is limited ${SEMANTIC_SUPPORT_MARKERS}!`;
 const clock = fixedClock(T0);
 const databases: SqliteDb[] = [];
 
@@ -41,7 +42,6 @@ class TrackingProvider extends FakeProvider {
   detailCalls = 0;
   studyPlanCalls = 0;
   failCurriculum = false;
-  sourceOnlyCurriculum = false;
   onAnalyzeStarted: (() => void) | null = null;
   analyzeGate: Promise<void> | null = null;
   onCurriculumStarted: (() => void) | null = null;
@@ -79,18 +79,7 @@ class TrackingProvider extends FakeProvider {
     started?.();
     if (gate) await gate;
     if (this.failCurriculum) throw new Error('controlled Curriculum failure');
-    return super.proposeCurriculum(
-      this.sourceOnlyCurriculum
-        ? {
-            ...input,
-            concepts: [],
-            canonicalConcepts: [],
-            allowedCanonicalConceptIds: [],
-            evidenceCatalog: [],
-          }
-        : input,
-      opts,
-    );
+    return super.proposeCurriculum(input, opts);
   }
 
   override async proposeCourseMap(
@@ -212,7 +201,7 @@ function createHarness(
     const base =
       index === 0
         ? `${QUOTE} Working memory section ${index + 1} has a bounded claim.`
-        : `Working memory section ${index + 1} has a bounded claim.`;
+        : `Working memory section ${index + 1} has a bounded claim ${SEMANTIC_SUPPORT_MARKERS}!`;
     return options.compactMaterial ? base : base.padEnd(520, 'x');
   });
   const materialContent = sections.join('\n');
@@ -307,30 +296,79 @@ function runRequest(preparation: ReturnType<Services['coursePreparation']['get']
 }
 
 async function acceptSourceOnlyCurriculum(harness: Harness): Promise<string> {
-  const { repos, provider, services, contract } = harness;
-  provider.sourceOnlyCurriculum = true;
-  const proposed = await services.curriculum.propose(
-    {
-      command: command('source-only-propose'),
-      contractId: contract.id,
-      expectedContractVersion: contract.version,
-      predecessorCurriculumId: null,
-      expectedActiveCurriculumId: null,
-    },
-    { generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY },
-  );
-  const accepted = services.curriculum.accept({
-    command: command('source-only-accept'),
-    curriculumId: proposed.curriculum.id,
-    expectedVersion: proposed.curriculum.version,
-    expectedContractId: contract.id,
-    expectedExecutionSourceManifestFingerprint:
-      proposed.curriculum.executionSourceManifest.fingerprint,
-    acceptanceBasis: 'learner_review',
-  }).curriculum;
-  provider.sourceOnlyCurriculum = false;
-  expect(repos.studyPlans.list('ws_1')).toEqual([]);
-  return accepted.id;
+  const { db, repos, services, contract } = harness;
+  const originalConcepts = repos.materials.getConcepts('mat_1');
+  const authoritySelectionConcepts = repos.materials.getBlocks('mat_1').map((block, index) => {
+    const markerEnd = block.content.indexOf('!') + 1;
+    const quote = block.content.slice(0, markerEnd);
+    return makeConcept({
+      id: `con_source_only_authority_${index + 1}`,
+      materialId: 'mat_1',
+      name: `Source-only authority ${index + 1}`,
+      summary: quote,
+      grounding: {
+        blockId: block.id,
+        quote,
+        startOffset: 0,
+        endOffset: quote.length,
+        occurrenceCount: 1,
+        reanchored: false,
+      },
+    });
+  });
+  repos.materials.replaceConcepts('mat_1', [...originalConcepts, ...authoritySelectionConcepts]);
+  try {
+    const proposed = await services.curriculum.propose(
+      {
+        command: command('source-only-propose'),
+        contractId: contract.id,
+        expectedContractVersion: contract.version,
+        predecessorCurriculumId: null,
+        expectedActiveCurriculumId: null,
+      },
+      { generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY },
+    );
+    const accepted = services.curriculum.accept({
+      command: command('source-only-accept'),
+      curriculumId: proposed.curriculum.id,
+      expectedVersion: proposed.curriculum.version,
+      expectedContractId: contract.id,
+      expectedExecutionSourceManifestFingerprint:
+        proposed.curriculum.executionSourceManifest.fingerprint,
+      acceptanceBasis: 'learner_review',
+    }).curriculum;
+
+    // Simulate a readable historical source-only aggregate. The objective's
+    // independently validated semantic-support rows remain untouched; only
+    // the pre-concept Curriculum linkage is absent and requires a successor.
+    const row = db
+      .prepare('SELECT payload FROM curriculum_versions WHERE id = ?')
+      .get(accepted.id) as {
+      payload: string;
+    };
+    const payload = JSON.parse(row.payload) as typeof accepted;
+    for (const node of payload.nodes) {
+      if (!node.learningUnit) continue;
+      node.learningUnit.conceptIds = [];
+      node.learningUnit.canonicalConceptIds = [];
+    }
+    db.prepare('UPDATE curriculum_versions SET payload = ? WHERE id = ?').run(
+      JSON.stringify(payload),
+      accepted.id,
+    );
+
+    const sourceOnly = repos.curricula.get(accepted.id)!;
+    expect(sourceOnly.nodes.flatMap((node) => node.learningUnit?.conceptIds ?? [])).toEqual([]);
+    expect(
+      sourceOnly.nodes
+        .flatMap((node) => node.learningUnit?.objectives ?? [])
+        .every((objective) => objective.semanticSupport?.verdict === 'pass'),
+    ).toBe(true);
+    expect(repos.studyPlans.list('ws_1')).toEqual([]);
+    return accepted.id;
+  } finally {
+    repos.materials.replaceConcepts('mat_1', originalConcepts);
+  }
 }
 
 function activateReplacementRevision(repos: Repositories): void {
@@ -589,6 +627,122 @@ describe('Course Preparation coordinator', () => {
     expect(harness.repos.curricula.get(predecessorId)?.status).toBe('accepted');
     expect(harness.repos.curricula.list('ws_1')).toHaveLength(2);
     expect(harness.repos.studyPlans.list('ws_1')).toHaveLength(1);
+  });
+
+  it('prepares and activates an immutable successor when an active legacy route lacks semantic support', async () => {
+    const harness = createHarness({ withConcept: true });
+    const prepared = await harness.services.coursePreparation.run(
+      runRequest(harness.services.coursePreparation.get('ws_1')),
+    );
+    expect(prepared.preparation.state).toBe('course_plan_ready');
+
+    const predecessorPlan = harness.repos.studyPlans.list('ws_1').at(-1)!;
+    const predecessorCurriculum = harness.repos.curricula.get(predecessorPlan.curriculumVersionId)!;
+    harness.services.courseExecution.decideStudyPlan({
+      command: command('accept-predecessor-route'),
+      studyPlanId: predecessorPlan.id,
+      expectedVersion: predecessorPlan.version,
+      expectedContractId: harness.contract.id,
+      expectedCurriculumId: predecessorCurriculum.id,
+      expectedExecutionSourceManifestFingerprint:
+        predecessorCurriculum.executionSourceManifest.fingerprint,
+      decision: 'accept',
+      reason: null,
+    });
+
+    // Simulate the explicit migration-40 compatibility case: the accepted
+    // aggregate and route predate migration 41, so no semantic-support rows
+    // exist. The predecessor payload itself is never edited during recovery.
+    harness.db.exec('DROP TRIGGER prevent_curriculum_objective_semantic_support_delete');
+    harness.db
+      .prepare('DELETE FROM curriculum_objective_semantic_support WHERE curriculum_id = ?')
+      .run(predecessorCurriculum.id);
+    const legacyPredecessor = harness.repos.curricula.get(predecessorCurriculum.id)!;
+    expect(
+      legacyPredecessor.nodes
+        .flatMap((node) => node.learningUnit?.objectives ?? [])
+        .every((objective) => objective.semanticSupport === undefined),
+    ).toBe(true);
+    const predecessorPayloadBefore = (
+      harness.db
+        .prepare('SELECT payload FROM curriculum_versions WHERE id = ?')
+        .get(predecessorCurriculum.id) as { payload: string }
+    ).payload;
+
+    const curriculumCallsBefore = harness.provider.curriculumCalls;
+    const studyPlanCallsBefore = harness.provider.studyPlanCalls;
+    const recovery = harness.services.coursePreparation.get('ws_1');
+    expect(recovery).toMatchObject({
+      state: 'preparing_course_structure',
+      machineAction: 'prepare_course_structure',
+      learnerAction: 'resume_preparation',
+      learnerDecisionRequired: false,
+    });
+    const successorReady = await harness.services.coursePreparation.run(runRequest(recovery));
+    expect(successorReady.preparation.state).toBe('course_plan_ready');
+    expect(harness.provider.curriculumCalls).toBe(curriculumCallsBefore + 1);
+    expect(harness.provider.studyPlanCalls).toBe(studyPlanCallsBefore + 1);
+
+    const successorCurriculum = harness.repos.curricula.list('ws_1').at(-1)!;
+    const successorPlan = harness.repos.studyPlans.list('ws_1').at(-1)!;
+    expect(successorCurriculum).toMatchObject({
+      predecessorId: predecessorCurriculum.id,
+      status: 'accepted',
+    });
+    expect(
+      successorCurriculum.nodes
+        .flatMap((node) => node.learningUnit?.objectives ?? [])
+        .every((objective) => objective.semanticSupport?.verdict === 'pass'),
+    ).toBe(true);
+    expect(successorPlan).toMatchObject({
+      predecessorId: predecessorPlan.id,
+      curriculumVersionId: successorCurriculum.id,
+      status: 'proposed',
+    });
+    expect(harness.repos.courseExecution.get('ws_1')).toMatchObject({
+      activeCurriculumId: predecessorCurriculum.id,
+      acceptedPlanId: predecessorPlan.id,
+    });
+    expect(
+      (
+        harness.db
+          .prepare('SELECT payload FROM curriculum_versions WHERE id = ?')
+          .get(predecessorCurriculum.id) as { payload: string }
+      ).payload,
+    ).toBe(predecessorPayloadBefore);
+
+    harness.services.courseExecution.decideStudyPlan({
+      command: command('accept-successor-route'),
+      studyPlanId: successorPlan.id,
+      expectedVersion: successorPlan.version,
+      expectedContractId: harness.contract.id,
+      expectedCurriculumId: successorCurriculum.id,
+      expectedExecutionSourceManifestFingerprint:
+        successorCurriculum.executionSourceManifest.fingerprint,
+      decision: 'accept',
+      reason: null,
+    });
+    expect(harness.repos.courseExecution.get('ws_1')).toMatchObject({
+      activeCurriculumId: successorCurriculum.id,
+      acceptedPlanId: successorPlan.id,
+    });
+    const predecessorPayloadAfterActivation = (
+      harness.db
+        .prepare('SELECT payload FROM curriculum_versions WHERE id = ?')
+        .get(predecessorCurriculum.id) as { payload: string }
+    ).payload;
+    const predecessorAggregateBefore = JSON.parse(predecessorPayloadBefore) as Record<
+      string,
+      unknown
+    >;
+    const predecessorAggregateAfter = JSON.parse(predecessorPayloadAfterActivation) as Record<
+      string,
+      unknown
+    >;
+    expect(predecessorAggregateAfter.status).toBe('superseded');
+    expect({ ...predecessorAggregateAfter, status: predecessorAggregateBefore.status }).toEqual(
+      predecessorAggregateBefore,
+    );
   });
 
   it('stops at a learner-governed Curriculum proposal and does not duplicate work on reads or run', async () => {
@@ -1050,6 +1204,96 @@ describe('Course Preparation coordinator', () => {
     });
   });
 
+  it('rejects a stale assessment-readiness request when semantic recovery becomes required', async () => {
+    const harness = createHarness({ withConcept: true });
+    const prepared = await harness.services.coursePreparation.run(
+      runRequest(harness.services.coursePreparation.get('ws_1')),
+    );
+    expect(prepared.preparation.state).toBe('course_plan_ready');
+    const plan = harness.repos.studyPlans.list('ws_1').at(-1)!;
+    const curriculum = harness.repos.curricula.get(plan.curriculumVersionId)!;
+    harness.services.courseExecution.decideStudyPlan({
+      command: command('accept-stale-readiness-route'),
+      studyPlanId: plan.id,
+      expectedVersion: plan.version,
+      expectedContractId: harness.contract.id,
+      expectedCurriculumId: curriculum.id,
+      expectedExecutionSourceManifestFingerprint: curriculum.executionSourceManifest.fingerprint,
+      decision: 'accept',
+      reason: null,
+    });
+
+    const stale = harness.services.coursePreparation.get('ws_1');
+    expect(stale).toMatchObject({
+      state: 'preparing_assessment_readiness',
+      machineAction: 'prepare_assessment_readiness',
+      formalReadiness: { status: 'blocked' },
+    });
+    expect(harness.services.courseOverview.get('ws_1')).toMatchObject({
+      studyPlanPreflight: { canGenerate: true, blockers: [] },
+      curriculumRecovery: {
+        remediationRequired: false,
+        nextAction: 'none',
+      },
+    });
+
+    harness.db.exec('DROP TRIGGER prevent_curriculum_objective_semantic_support_delete');
+    harness.db
+      .prepare('DELETE FROM curriculum_objective_semantic_support WHERE curriculum_id = ?')
+      .run(curriculum.id);
+
+    const recovery = harness.services.coursePreparation.get('ws_1');
+    expect(recovery).toMatchObject({
+      state: 'preparing_course_structure',
+      machineAction: 'prepare_course_structure',
+      formalReadiness: { status: 'pending' },
+    });
+    expect(recovery.revision).not.toBe(stale.revision);
+    expect(recovery.operationKey).not.toBe(stale.operationKey);
+    expect(harness.services.coursePreparation.get('ws_1').revision).toBe(recovery.revision);
+    expect(harness.services.courseOverview.get('ws_1')).toMatchObject({
+      studyPlanPreflight: {
+        canGenerate: false,
+        blockers: [{ code: 'objective_authority_semantic_support_invalid' }],
+      },
+      curriculumRecovery: {
+        remediationRequired: true,
+        nextAction: 'propose_curriculum_successor',
+      },
+    });
+
+    const analyzeCallsBefore = harness.provider.analyzeCalls;
+    const curriculumCallsBefore = harness.provider.curriculumCalls;
+    const detailCallsBefore = harness.provider.detailCalls;
+    const studyPlanCallsBefore = harness.provider.studyPlanCalls;
+    const curriculaBefore = structuredClone(harness.repos.curricula.list('ws_1'));
+    const studyPlansBefore = structuredClone(harness.repos.studyPlans.list('ws_1'));
+    const executionBefore = structuredClone(harness.repos.courseExecution.get('ws_1'));
+    const operationsBefore = structuredClone(
+      harness.repos.operations.listForWorkspace('ws_1', 'course_preparation', 200),
+    );
+    const totalChangesBefore = (
+      harness.db.prepare('SELECT total_changes() AS count').get() as { count: number }
+    ).count;
+
+    await expect(harness.services.coursePreparation.run(runRequest(stale))).rejects.toMatchObject({
+      code: ApiErrorCode.VersionConflict,
+    });
+    expect(harness.provider.analyzeCalls).toBe(analyzeCallsBefore);
+    expect(harness.provider.curriculumCalls).toBe(curriculumCallsBefore);
+    expect(harness.provider.detailCalls).toBe(detailCallsBefore);
+    expect(harness.provider.studyPlanCalls).toBe(studyPlanCallsBefore);
+    expect(harness.repos.curricula.list('ws_1')).toEqual(curriculaBefore);
+    expect(harness.repos.studyPlans.list('ws_1')).toEqual(studyPlansBefore);
+    expect(harness.repos.courseExecution.get('ws_1')).toEqual(executionBefore);
+    expect(harness.repos.operations.listForWorkspace('ws_1', 'course_preparation', 200)).toEqual(
+      operationsBefore,
+    );
+    expect(
+      (harness.db.prepare('SELECT total_changes() AS count').get() as { count: number }).count,
+    ).toBe(totalChangesBefore);
+  });
+
   it('completes readiness when current premises and a formal checkpoint are valid', async () => {
     const harness = createHarness({
       compactMaterial: true,
@@ -1089,7 +1333,7 @@ describe('Course Preparation coordinator', () => {
     });
   });
 
-  it('fails closed when a teaching-ready objective has no current authorized premise', async () => {
+  it('routes an active objective with no current authorized premise through immutable Curriculum recovery', async () => {
     const harness = createHarness({ withConcept: true });
     const first = await harness.services.coursePreparation.run(
       runRequest(harness.services.coursePreparation.get('ws_1')),
@@ -1118,26 +1362,40 @@ describe('Course Preparation coordinator', () => {
       .prepare('UPDATE curriculum_versions SET payload = ? WHERE id = ?')
       .run(JSON.stringify(payload), curriculum.id);
 
-    const blocked = harness.services.coursePreparation.get('ws_1');
-    expect(blocked).toMatchObject({
-      state: 'preparing_assessment_readiness',
-      formalReadiness: {
-        status: 'blocked',
-        unresolvedObjectiveIds: [objective!.id],
-        teachingOnlyObjectiveIds: [objective!.id],
-      },
+    const predecessorPayload = JSON.stringify(payload);
+    const curriculumCallsBefore = harness.provider.curriculumCalls;
+    const recovery = harness.services.coursePreparation.get('ws_1');
+    expect(recovery).toMatchObject({
+      state: 'preparing_course_structure',
+      machineAction: 'prepare_course_structure',
+      checkpoints: { courseStructure: 'in_progress' },
       learnerDecisionRequired: false,
       learnerAction: 'resume_preparation',
     });
-    const after = await harness.services.coursePreparation.run(runRequest(blocked));
-    expect(after.preparation).toMatchObject({
-      state: 'blocked',
-      canResume: false,
-      learnerDecisionRequired: false,
-      blocker: { code: 'formal_assessment_readiness_unavailable' },
-      formalReadiness: { status: 'blocked', unresolvedObjectiveIds: [objective!.id] },
+    const after = await harness.services.coursePreparation.run(runRequest(recovery));
+    expect(after.preparation.state).toBe('course_plan_ready');
+    expect(harness.provider.curriculumCalls).toBe(curriculumCallsBefore + 1);
+    const successor = harness.repos.curricula.list('ws_1').at(-1)!;
+    expect(successor).toMatchObject({
+      predecessorId: curriculum.id,
+      status: 'accepted',
     });
-    expect(after.preparation.blocker?.message).not.toContain('请你');
+    expect(
+      successor.nodes
+        .flatMap((node) => node.learningUnit?.objectives ?? [])
+        .every((item) => item.semanticSupport?.verdict === 'pass'),
+    ).toBe(true);
+    expect(harness.repos.courseExecution.get('ws_1')).toMatchObject({
+      activeCurriculumId: curriculum.id,
+      acceptedPlanId: plan.id,
+    });
+    expect(
+      (
+        harness.db
+          .prepare('SELECT payload FROM curriculum_versions WHERE id = ?')
+          .get(curriculum.id) as { payload: string }
+      ).payload,
+    ).toBe(predecessorPayload);
     expect(first.preparation.state).toBe('course_plan_ready');
   });
 

@@ -20,6 +20,7 @@ import {
 import { AppError, notFound } from '../errors.js';
 import type { LlmProvider, ProviderCallOptions, StudyPlanProposalInput } from '../llm/provider.js';
 import { groupedStudyPlanProposalMessages, studyPlanProposalMessages } from '../llm/prompts.js';
+import type { CourseExecutionState } from '../repositories/courseExecution.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
@@ -42,6 +43,10 @@ import {
 import { createTelemetryProvider } from './providerTelemetry.js';
 import { assertLearningContractScopeCurrent } from './learningContractScope.js';
 import { buildPlanningRecommendations } from './planningRecommendations.js';
+import {
+  assertCurrentCurriculumObjectiveAuthoritySemanticSupport,
+  validateCurriculumObjectiveAuthoritySemanticSupport,
+} from './objectiveAuthoritySemanticSupport.js';
 
 interface StudyPlanAgentDeps {
   repos: Repositories;
@@ -55,8 +60,51 @@ interface StudyPlanProposalPersistenceOptions {
   beforePersist?: () => void;
 }
 
+interface StudyPlanDraftEditPersistenceOptions {
+  beforePersist?: () => void;
+}
+
 export const STUDY_PLAN_PROVIDER_TIMEOUT_MS = 240_000;
 export const STUDY_PLAN_OPERATION_LEASE_MS = STUDY_PLAN_PROVIDER_TIMEOUT_MS * 2 + 120_000;
+
+type StudyPlanRouteStateIdentity = Pick<
+  CourseExecutionState,
+  'version' | 'activeContractId' | 'activeCurriculumId' | 'acceptedPlanId' | 'activeAgendaId'
+>;
+
+function assertStudyPlanRouteStateUnchanged(
+  repos: Repositories,
+  workspaceId: string,
+  expected: StudyPlanRouteStateIdentity,
+): CourseExecutionState {
+  const current = repos.courseExecution.get(workspaceId);
+  if (
+    current.version !== expected.version ||
+    current.activeContractId !== expected.activeContractId ||
+    current.activeCurriculumId !== expected.activeCurriculumId ||
+    current.acceptedPlanId !== expected.acceptedPlanId ||
+    current.activeAgendaId !== expected.activeAgendaId
+  ) {
+    throw new AppError(ApiErrorCode.VersionConflict, 'StudyPlan current route changed.', {
+      kind: 'study_plan_route_state_changed',
+      expected: {
+        version: expected.version,
+        activeContractId: expected.activeContractId,
+        activeCurriculumId: expected.activeCurriculumId,
+        acceptedPlanId: expected.acceptedPlanId,
+        activeAgendaId: expected.activeAgendaId,
+      },
+      current: {
+        version: current.version,
+        activeContractId: current.activeContractId,
+        activeCurriculumId: current.activeCurriculumId,
+        acceptedPlanId: current.acceptedPlanId,
+        activeAgendaId: current.activeAgendaId,
+      },
+    });
+  }
+  return current;
+}
 
 function requireContract(
   repos: Repositories,
@@ -305,9 +353,32 @@ export function preflightStudyPlan(
   contract: LearningContract,
   curriculum: Curriculum,
   workspaceName: string,
+  options: { requireObjectiveAuthoritySemanticSupport?: boolean } = {},
 ): StudyPlanPreflight {
   const context = buildProviderInput(repos, clock, contract, curriculum, workspaceName);
-  return studyPlanPreflightFromContext(contract, context.input, context.profiles);
+  const preflight = studyPlanPreflightFromContext(contract, context.input, context.profiles);
+  if (options.requireObjectiveAuthoritySemanticSupport === false) return preflight;
+  const semanticAuthority = validateCurriculumObjectiveAuthoritySemanticSupport(curriculum, {
+    isBlockingEligible: (authorityRecordId) =>
+      repos.sourceAuthority.isBlockingEligible(authorityRecordId),
+  });
+  if (semanticAuthority.valid) return preflight;
+  return StudyPlanPreflightSchema.parse({
+    ...preflight,
+    promptStrategy: 'blocked',
+    providerPromptCharacters: null,
+    approximatePromptTokens: null,
+    canGenerate: false,
+    blockers: [
+      ...preflight.blockers,
+      {
+        code: 'objective_authority_semantic_support_invalid',
+        message:
+          'The Curriculum has no current passing objective-authority semantic-support contract.',
+        affectedLearningUnitCount: context.input.units.length,
+      },
+    ],
+  });
 }
 
 function assertExecutableProviderScope(preflight: StudyPlanPreflight): void {
@@ -338,6 +409,11 @@ function assertExecutableProviderScope(preflight: StudyPlanPreflight): void {
       },
     );
   }
+  throw new AppError(
+    ApiErrorCode.ValidationError,
+    'StudyPlan generation requires current passing objective-authority semantic support.',
+    { reason: blocker.code },
+  );
 }
 
 function paceBaseline(
@@ -398,6 +474,103 @@ function assertPlanRequestPointers(
   return latest;
 }
 
+function assertPlanProposalAuthorityCurrent(
+  repos: Repositories,
+  request: ProposeStudyPlanRequest,
+): {
+  contract: LearningContract;
+  curriculum: Curriculum;
+  predecessor: StudyPlan | undefined;
+} {
+  const contract = requireContract(
+    repos,
+    request.command.workspaceId,
+    request.contractId,
+    request.expectedContractVersion,
+  );
+  assertLearningContractScopeCurrent(repos, contract);
+  const curriculum = requireCurriculum(
+    repos,
+    request.command.workspaceId,
+    request.curriculumId,
+    request.expectedCurriculumVersion,
+    contract.id,
+    request.expectedExecutionSourceManifestFingerprint,
+  );
+  assertCurrentCurriculumObjectiveAuthoritySemanticSupport(curriculum, {
+    boundary: 'study_plan',
+    isBlockingEligible: (authorityRecordId) =>
+      repos.sourceAuthority.isBlockingEligible(authorityRecordId),
+  });
+  return {
+    contract,
+    curriculum,
+    predecessor: assertPlanRequestPointers(repos, request),
+  };
+}
+
+function assertDraftEditAuthorityCurrent(
+  repos: Repositories,
+  request: ApplyStudyPlanDraftEditRequest,
+): {
+  plan: StudyPlan;
+  contract: LearningContract;
+  curriculum: Curriculum;
+} {
+  const plan = repos.studyPlans.get(request.studyPlanId);
+  const latestPlan = repos.studyPlans.list(request.command.workspaceId).at(-1);
+  if (
+    !plan ||
+    plan.workspaceId !== request.command.workspaceId ||
+    latestPlan?.id !== plan.id ||
+    plan.status !== 'proposed' ||
+    plan.version !== request.expectedVersion ||
+    plan.contractVersionId !== request.expectedContractId ||
+    plan.curriculumVersionId !== request.expectedCurriculumId ||
+    plan.executionSourceManifestFingerprint !== request.expectedExecutionSourceManifestFingerprint
+  ) {
+    throw new AppError(ApiErrorCode.VersionConflict, 'StudyPlan proposal is stale.');
+  }
+
+  const contract = repos.learningContracts.get(plan.contractVersionId);
+  if (
+    !contract ||
+    contract.workspaceId !== request.command.workspaceId ||
+    (contract.status !== 'learner_confirmed' && contract.status !== 'active')
+  ) {
+    throw new AppError(
+      ApiErrorCode.VersionConflict,
+      'StudyPlan Contract route is stale or incompatible.',
+    );
+  }
+  assertLearningContractScopeCurrent(repos, contract);
+
+  const curriculum = repos.curricula.get(plan.curriculumVersionId);
+  const currentAcceptedCurriculum = repos.curricula
+    .list(request.command.workspaceId)
+    .filter((candidate) => candidate.status === 'accepted')
+    .at(-1);
+  if (
+    !curriculum ||
+    curriculum.workspaceId !== request.command.workspaceId ||
+    currentAcceptedCurriculum?.id !== curriculum.id ||
+    curriculum.status !== 'accepted' ||
+    curriculum.contractVersionId !== contract.id ||
+    curriculum.executionSourceManifest.fingerprint !== plan.executionSourceManifestFingerprint
+  ) {
+    throw new AppError(
+      ApiErrorCode.VersionConflict,
+      'StudyPlan Curriculum route is stale or incompatible.',
+    );
+  }
+  assertCurrentCurriculumObjectiveAuthoritySemanticSupport(curriculum, {
+    boundary: 'study_plan',
+    isBlockingEligible: (authorityRecordId) =>
+      repos.sourceAuthority.isBlockingEligible(authorityRecordId),
+  });
+  return { plan, contract, curriculum };
+}
+
 export function createStudyPlanAgentService({
   repos,
   provider,
@@ -439,22 +612,11 @@ export function createStudyPlanAgentService({
       return StudyPlanProposalResponseSchema.parse(claim.replayPayload);
     }
     try {
-      const contract = requireContract(
+      const { contract, curriculum, predecessor } = assertPlanProposalAuthorityCurrent(
         repos,
-        parsed.command.workspaceId,
-        parsed.contractId,
-        parsed.expectedContractVersion,
+        parsed,
       );
-      assertLearningContractScopeCurrent(repos, contract);
-      const curriculum = requireCurriculum(
-        repos,
-        parsed.command.workspaceId,
-        parsed.curriculumId,
-        parsed.expectedCurriculumVersion,
-        contract.id,
-        parsed.expectedExecutionSourceManifestFingerprint,
-      );
-      const predecessor = assertPlanRequestPointers(repos, parsed);
+      const initialRouteState = repos.courseExecution.get(parsed.command.workspaceId);
       const providerContext = buildProviderInput(
         repos,
         clock,
@@ -555,8 +717,9 @@ export function createStudyPlanAgentService({
         createdAt: now,
       };
       const response = commands.complete(claim, () => {
-        assertPlanRequestPointers(repos, parsed);
         persistenceOptions?.beforePersist?.();
+        assertStudyPlanRouteStateUnchanged(repos, parsed.command.workspaceId, initialRouteState);
+        assertPlanProposalAuthorityCurrent(repos, parsed);
         for (const risk of materialized.risks) {
           if (repos.coverageRisks.get(risk.id)) continue;
           repos.coverageRisks.create(risk, {
@@ -625,7 +788,10 @@ export function createStudyPlanAgentService({
     return plan;
   }
 
-  function applyDraftEdit(input: ApplyStudyPlanDraftEditRequest): StudyPlanProposalResponse {
+  function applyDraftEdit(
+    input: ApplyStudyPlanDraftEditRequest,
+    persistenceOptions?: StudyPlanDraftEditPersistenceOptions,
+  ): StudyPlanProposalResponse {
     const parsed = ApplyStudyPlanDraftEditRequestSchema.parse(input);
     const claim = commands.begin(parsed.command, 'edit_study_plan', {
       studyPlanId: parsed.studyPlanId,
@@ -639,19 +805,12 @@ export function createStudyPlanAgentService({
       return StudyPlanProposalResponseSchema.parse(claim.replayPayload);
     }
     try {
-      const current = get(parsed.command.workspaceId, parsed.studyPlanId);
-      if (
-        current.status !== 'proposed' ||
-        current.version !== parsed.expectedVersion ||
-        current.contractVersionId !== parsed.expectedContractId ||
-        current.curriculumVersionId !== parsed.expectedCurriculumId ||
-        current.executionSourceManifestFingerprint !==
-          parsed.expectedExecutionSourceManifestFingerprint
-      ) {
-        throw new AppError(ApiErrorCode.VersionConflict, 'StudyPlan proposal is stale.');
-      }
-      const contract = repos.learningContracts.get(current.contractVersionId)!;
-      const curriculum = repos.curricula.get(current.curriculumVersionId)!;
+      const {
+        plan: current,
+        contract,
+        curriculum,
+      } = assertDraftEditAuthorityCurrent(repos, parsed);
+      const initialRouteState = repos.courseExecution.get(parsed.command.workspaceId);
       const items = current.items.map((item) => ({
         ...item,
         objectiveIds: [...item.objectiveIds],
@@ -911,6 +1070,19 @@ export function createStudyPlanAgentService({
         createdAt: now,
       };
       const response = commands.complete(claim, () => {
+        persistenceOptions?.beforePersist?.();
+        const authoritativeRouteState = assertStudyPlanRouteStateUnchanged(
+          repos,
+          parsed.command.workspaceId,
+          initialRouteState,
+        );
+        const authoritative = assertDraftEditAuthorityCurrent(repos, parsed);
+        if (JSON.stringify(authoritative.plan) !== JSON.stringify(current)) {
+          throw new AppError(
+            ApiErrorCode.VersionConflict,
+            'StudyPlan proposal changed before edit persistence.',
+          );
+        }
         for (const risk of newRisks) {
           repos.coverageRisks.create(risk, {
             id: newId('risk_evt'),
@@ -936,8 +1108,7 @@ export function createStudyPlanAgentService({
         });
         return StudyPlanProposalResponseSchema.parse({
           studyPlan: stored,
-          retainedAcceptedStudyPlanId: repos.courseExecution.get(current.workspaceId)
-            .acceptedPlanId,
+          retainedAcceptedStudyPlanId: authoritativeRouteState.acceptedPlanId,
           knownScopeAccounted: true,
           launchabilityValid: true,
           validationErrors: [],

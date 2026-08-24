@@ -102,6 +102,39 @@ function operationKey(workspaceId: string, revision: string, attempt: number): s
   return `course-preparation:${fnv1a32(workspaceId).toString(16)}:${revision}:${attempt}`;
 }
 
+function recoveryAuthorityIdentity(overview: CourseExecutionOverview) {
+  const recovery = overview.curriculumRecovery;
+  const preflight = overview.studyPlanPreflight;
+  return {
+    curriculumRecovery: recovery
+      ? {
+          state: recovery.state,
+          nextAction: recovery.nextAction,
+          remediationRequired: recovery.remediationRequired,
+        }
+      : null,
+    studyPlanPreflight: preflight
+      ? {
+          curriculumVersionId: preflight.curriculumVersionId,
+          promptStrategy: preflight.promptStrategy,
+          canGenerate: preflight.canGenerate,
+          blockers: preflight.blockers
+            .slice(0, 10)
+            .map((blocker) => ({
+              code: blocker.code,
+              affectedLearningUnitCount: blocker.affectedLearningUnitCount,
+            }))
+            .sort((left, right) => {
+              if (left.code === right.code) {
+                return left.affectedLearningUnitCount - right.affectedLearningUnitCount;
+              }
+              return left.code < right.code ? -1 : 1;
+            }),
+        }
+      : null,
+  };
+}
+
 function failurePayloadDetails(payload: unknown): { code: string | null; details: unknown } {
   if (typeof payload !== 'object' || payload === null) return { code: null, details: null };
   const code =
@@ -463,6 +496,7 @@ export function createCoursePreparationService({
       })),
       executionVersion: overview.courseExecutionVersion,
       formalReadiness,
+      recoveryAuthority: recoveryAuthorityIdentity(overview),
     });
     const readinessAttempted = repos.operations
       .listForWorkspace(workspaceId, OPERATION_TYPE, 200)
@@ -558,7 +592,17 @@ export function createCoursePreparationService({
       };
     }
 
-    if (activeRouteCurrent && !overview.pendingContract) {
+    // A current route remains usable while its immutable successor is prepared,
+    // but it must not hide a diagnosed Curriculum-recovery transition. In
+    // particular, legacy accepted Curricula without the current semantic-support
+    // contract need to reach the ordinary versioned successor path before
+    // assessment-readiness work can resume.
+    if (
+      activeRouteCurrent &&
+      !overview.pendingContract &&
+      overview.curriculumRecovery?.remediationRequired !== true &&
+      !proposedCurriculum
+    ) {
       if (formalReadiness.status !== 'ready') {
         if (readinessAttempted) {
           return {

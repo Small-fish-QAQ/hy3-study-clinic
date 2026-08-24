@@ -11,7 +11,13 @@ import {
 } from '@hy3-clinic/shared';
 import { openDatabase, type SqliteDb } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
-import { makeBlock, makeMaterial, makeWorkspace, T0 } from '../testing/fixtures.js';
+import {
+  makeBlock,
+  makeMaterial,
+  makeSemanticallySupportedObjective,
+  makeWorkspace,
+  T0,
+} from '../testing/fixtures.js';
 import { createRepositories, type Repositories } from './index.js';
 import type { CourseExecutionState } from './courseExecution.js';
 
@@ -222,20 +228,43 @@ function stageRoute(
   };
   repos.curricula.createManifest(`manifest_${suffix}`, 'ws_1', manifest, T0);
   const objectives = [
-    {
-      id: objectiveOne,
-      title: 'Explain capacity',
-      description: 'Explain the stated capacity limit.',
-      truthPremiseStatus: 'independently_verified' as const,
-      truthAuthorityRecordIds: [authorityId],
-    },
-    {
-      id: objectiveTwo,
-      title: 'Apply capacity',
-      description: 'Apply the capacity limit to a scenario.',
-      truthPremiseStatus: 'independently_verified' as const,
-      truthAuthorityRecordIds: [authorityId],
-    },
+    makeSemanticallySupportedObjective(
+      {
+        id: objectiveOne,
+        title: 'Explain capacity',
+        description:
+          'Explain the source-stated relationship that working-memory capacity is limited.',
+        truthPremiseStatus: 'independently_verified' as const,
+        truthAuthorityRecordIds: [authorityId],
+        authorityClaimIds: ['claim_1'],
+        priority: 'required',
+        formalAssessmentReady: true,
+        formalAssessmentReadinessRationale: 'The exact source states the capacity relationship.',
+        formalAssessmentConstruct: 'explain',
+        authorityEnvelopeTier: 'formal_sufficient',
+        authoritySourceBlockIds: ['blk_1'],
+        formalEvidenceSourceBlockIds: ['blk_1'],
+      },
+      'relationship',
+    ),
+    makeSemanticallySupportedObjective(
+      {
+        id: objectiveTwo,
+        title: 'Identify capacity',
+        description: 'Identify the source-stated limit on working-memory capacity.',
+        truthPremiseStatus: 'independently_verified' as const,
+        truthAuthorityRecordIds: [authorityId],
+        authorityClaimIds: ['claim_1'],
+        priority: 'normal',
+        formalAssessmentReady: true,
+        formalAssessmentReadinessRationale: 'The exact source states the capacity limit.',
+        formalAssessmentConstruct: 'identify',
+        authorityEnvelopeTier: 'formal_sufficient',
+        authoritySourceBlockIds: ['blk_1'],
+        formalEvidenceSourceBlockIds: ['blk_1'],
+      },
+      'recognition',
+    ),
   ];
   const curriculum: Curriculum = {
     id: curriculumId,

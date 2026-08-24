@@ -45,6 +45,8 @@ export const TeachingBriefSourceReferenceSchema = z
     startOffset: z.number().int().nonnegative(),
     endOffset: z.number().int().positive(),
     quote: z.string().min(1).max(2000),
+    /** Exact supported SourceAuthorityClaim identities; absent on legacy/context-only refs. */
+    authorityClaimIds: z.array(z.string().min(1)).max(200).optional(),
     headingPath: z.array(z.string().max(300)).max(10),
     pageNumber: z.number().int().positive().nullable(),
     slideNumber: z.number().int().positive().nullable().default(null),
@@ -56,6 +58,16 @@ export const TeachingBriefSourceReferenceSchema = z
         code: z.ZodIssueCode.custom,
         path: ['endOffset'],
         message: 'source reference endOffset must be after startOffset',
+      });
+    }
+    if (
+      reference.authorityClaimIds &&
+      new Set(reference.authorityClaimIds).size !== reference.authorityClaimIds.length
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['authorityClaimIds'],
+        message: 'source reference authority-claim identities must be unique',
       });
     }
   });

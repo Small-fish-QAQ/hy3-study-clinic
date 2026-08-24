@@ -390,7 +390,11 @@ export const StudyPlanPreflightSchema = z
       .array(
         z
           .object({
-            code: z.enum(['no_launchable_learning_unit', 'unlaunchable_unit_deferral_forbidden']),
+            code: z.enum([
+              'no_launchable_learning_unit',
+              'unlaunchable_unit_deferral_forbidden',
+              'objective_authority_semantic_support_invalid',
+            ]),
             message: z.string().min(1).max(500),
             affectedLearningUnitCount: z.number().int().nonnegative(),
           })

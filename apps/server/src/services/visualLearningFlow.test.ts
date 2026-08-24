@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import sharp from 'sharp';
-import type {
-  ConceptAnalysisPayload,
-  CurriculumProposalPayload,
-  LearningContractDraftFields,
-  VisualDescriptionPayload,
+import {
+  ApiErrorCode,
+  type ConceptAnalysisPayload,
+  type CurriculumProposalPayload,
+  type LearningContractDraftFields,
+  type ObjectiveAuthoritySemanticEvaluationInput,
+  type VisualDescriptionPayload,
 } from '@hy3-clinic/shared';
 import { FakeProvider } from '../llm/fakeProvider.js';
 import type {
@@ -25,15 +27,20 @@ import { createServices } from './index.js';
 const WORKSPACE_ID = 'ws_1';
 const VISUAL_DESCRIPTION =
   'A water cycle diagram shows evaporation rising from a lake, condensation forming clouds, and precipitation returning water to the surface.';
+const WATER_CYCLE_AUTHORITY = `# Water cycle
+
+Liquid water evaporates from the surface into water vapor. Cooling water vapor condenses into clouds, and precipitation returns water from clouds to the surface. These stages move water through a repeating cycle.`;
 const testApps: TestApp[] = [];
 
 class VisualLearningProvider extends FakeProvider {
   analyzeCalls = 0;
   visualCalls = 0;
+  curriculumProposalCalls = 0;
   curriculumInput: CurriculumProposalInput | null = null;
   lessonSlotContentInput: LessonSlotContentGenerationInput | null = null;
   practiceContentInput: PracticeContentGenerationInput | null = null;
   tutorInput: TutorTurnInput | null = null;
+  objectiveAuthorityInputs: ObjectiveAuthoritySemanticEvaluationInput[] = [];
 
   constructor(private readonly targetVisualCall = 1) {
     super();
@@ -83,6 +90,7 @@ class VisualLearningProvider extends FakeProvider {
     input: CurriculumProposalInput,
     opts?: ProviderCallOptions,
   ): Promise<CurriculumProposalPayload> {
+    this.curriculumProposalCalls += 1;
     this.curriculumInput = input;
     return super.proposeCurriculum(input, opts);
   }
@@ -103,6 +111,14 @@ class VisualLearningProvider extends FakeProvider {
         : input,
       opts,
     );
+  }
+
+  override async evaluateObjectiveAuthoritySupport(
+    input: ObjectiveAuthoritySemanticEvaluationInput,
+    opts?: ProviderCallOptions,
+  ) {
+    this.objectiveAuthorityInputs.push(structuredClone(input));
+    return super.evaluateObjectiveAuthoritySupport(input, opts);
   }
 
   override async generateLessonSlotContent(
@@ -185,12 +201,147 @@ async function pngBase64(variant = 0): Promise<string> {
   ).toString('base64');
 }
 
+async function addWaterCycleAuthorityMaterial(
+  ctx: TestApp,
+  services: ReturnType<typeof createServices>,
+  commandPrefix: string,
+): Promise<LearningContractDraftFields['courseScope']['materials'][number]> {
+  const uploaded = await ctx.app.inject({
+    method: 'POST',
+    url: `/api/workspaces/${WORKSPACE_ID}/documents`,
+    payload: {
+      kind: 'text',
+      filename: 'water-cycle-authority.md',
+      content: WATER_CYCLE_AUTHORITY,
+    },
+  });
+  expect(uploaded.statusCode, uploaded.body).toBe(201);
+  const materialId = uploaded.json().material.id as string;
+  const roleProposal = services.materialRoles.propose({
+    command: command(`${commandPrefix}-role-propose`, 'local'),
+    materialId,
+    role: 'course_material',
+    expectedCurrentAssignmentId: ctx.repos.materialRoles.getCurrent(materialId)!.id,
+  });
+  const role = services.materialRoles.confirm({
+    command: command(`${commandPrefix}-role-confirm`),
+    assignmentId: roleProposal.id,
+    expectedVersion: roleProposal.version,
+  });
+  return {
+    materialId,
+    materialRoleAssignmentId: role.id,
+    materialRoleAssignmentVersion: role.version,
+    role: 'course_material',
+    disposition: 'included',
+  };
+}
+
 afterEach(async () => {
   while (testApps.length > 0) await testApps.pop()!.app.close();
 });
 
-describe('prepared image-only learning flow', () => {
-  it('keeps visual semantics advisory while enabling teaching from preparation through Tutor', async () => {
+describe('prepared standalone-image advisory learning flow', () => {
+  it('fails closed when an image-only course has no authoritative text for its objectives', async () => {
+    const provider = new VisualLearningProvider();
+    const clock = fixedClock(T0);
+    const ctx = buildTestApp({ provider, clock });
+    testApps.push(ctx);
+
+    const uploaded = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/workspaces/${WORKSPACE_ID}/documents`,
+      payload: {
+        kind: 'file',
+        filename: 'water-cycle-only.png',
+        mediaType: 'image/png',
+        dataBase64: await pngBase64(),
+      },
+    });
+    expect(uploaded.statusCode, uploaded.body).toBe(201);
+    const materialId = uploaded.json().material.id as string;
+    const listed = await ctx.app.inject({
+      method: 'GET',
+      url: `/api/workspaces/${WORKSPACE_ID}/documents/${materialId}/visuals`,
+    });
+    const visualRef = listed.json().visuals[0].visualRef as string;
+    const preparedVisual = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/workspaces/${WORKSPACE_ID}/documents/${materialId}/visuals/${visualRef}/prepare`,
+      payload: { commandId: 'prepare-image-only-water-cycle' },
+    });
+    expect(preparedVisual.statusCode, preparedVisual.body).toBe(200);
+
+    const services = createServices({ repos: ctx.repos, provider, clock });
+    const roleProposal = services.materialRoles.propose({
+      command: command('image-only-role-propose', 'local'),
+      materialId,
+      role: 'course_material',
+      expectedCurrentAssignmentId: ctx.repos.materialRoles.getCurrent(materialId)!.id,
+    });
+    const role = services.materialRoles.confirm({
+      command: command('image-only-role-confirm'),
+      assignmentId: roleProposal.id,
+      expectedVersion: roleProposal.version,
+    });
+    const draft = services.learningContracts.createDraft({
+      command: command('image-only-contract-create'),
+      fields: contractFields([
+        {
+          materialId,
+          materialRoleAssignmentId: role.id,
+          materialRoleAssignmentVersion: role.version,
+          role: 'course_material',
+          disposition: 'included',
+        },
+      ]),
+      predecessorContractId: null,
+      expectedActiveContractId: null,
+    }).contract;
+    const proposed = services.learningContracts.transition({
+      command: command('image-only-contract-propose'),
+      contractId: draft.id,
+      expectedVersion: draft.version,
+      transition: 'propose',
+    }).contract;
+    services.learningContracts.transition({
+      command: command('image-only-contract-confirm'),
+      contractId: proposed.id,
+      expectedVersion: proposed.version,
+      transition: 'confirm',
+    });
+
+    const preparation = services.coursePreparation.get(WORKSPACE_ID);
+    await expect(
+      services.coursePreparation.run({
+        command: command(preparation.operationKey!),
+        expectedRevision: preparation.revision,
+      }),
+    ).rejects.toMatchObject({
+      code: ApiErrorCode.ProviderInvalidOutput,
+      details: {
+        validationKind: 'candidate',
+        candidateFailure: {
+          kind: 'curriculum_objective_authority_unavailable',
+          diagnostics: [
+            {
+              code: 'visual_only_material_cannot_originate_objective',
+              message: expect.stringContaining('advisory visual-only Materials'),
+            },
+          ],
+        },
+      },
+    });
+    expect(provider.analyzeCalls).toBe(0);
+    expect(provider.curriculumProposalCalls).toBe(0);
+    expect(provider.curriculumInput).toBeNull();
+    expect(provider.objectiveAuthorityInputs).toEqual([]);
+    expect(ctx.repos.curricula.list(WORKSPACE_ID)).toEqual([]);
+    expect(ctx.repos.studyPlans.list(WORKSPACE_ID)).toEqual([]);
+    expect(ctx.repos.formalProgression.listEvidenceForWorkspace(WORKSPACE_ID)).toEqual([]);
+  });
+
+  it('keeps visual semantics advisory while enabling source-backed teaching through Tutor', async () => {
     const provider = new VisualLearningProvider();
     const clock = fixedClock(T0);
     const ctx = buildTestApp({ provider, clock });
@@ -236,6 +387,11 @@ describe('prepared image-only learning flow', () => {
     });
 
     const services = createServices({ repos: ctx.repos, provider, clock });
+    const authorityMaterial = await addWaterCycleAuthorityMaterial(
+      ctx,
+      services,
+      'water-cycle-authority',
+    );
     const roleProposal = services.materialRoles.propose({
       command: command('role-propose', 'local'),
       materialId,
@@ -257,6 +413,7 @@ describe('prepared image-only learning flow', () => {
           role: 'course_material',
           disposition: 'included',
         },
+        authorityMaterial,
       ]),
       predecessorContractId: null,
       expectedActiveContractId: null,
@@ -275,11 +432,7 @@ describe('prepared image-only learning flow', () => {
     }).contract;
 
     const preparation = services.coursePreparation.get(WORKSPACE_ID);
-    expect(preparation).toMatchObject({
-      state: 'preparing_course_structure',
-      machineAction: 'prepare_course_structure',
-      checkpoints: { materials: 'complete', concepts: 'complete' },
-    });
+    expect(preparation.canResume).toBe(true);
     expect(preparation.operationKey).not.toBeNull();
     const preparedCourse = await services.coursePreparation.run({
       command: command(preparation.operationKey!),
@@ -295,7 +448,7 @@ describe('prepared image-only learning flow', () => {
         coursePlan: 'complete',
       },
     });
-    expect(provider.analyzeCalls).toBe(0);
+    expect(provider.analyzeCalls).toBe(1);
     expect(ctx.repos.materials.getConcepts(materialId)).toEqual([]);
 
     const visualInput = provider.curriculumInput?.visualContext;
@@ -330,6 +483,45 @@ describe('prepared image-only learning flow', () => {
     const learningUnit = curriculum.nodes.find((node) => node.learningUnit)!;
     expect(learningUnit.title.toLocaleLowerCase()).toContain('water cycle');
     expect(
+      curriculum.executionSourceManifest.revisions.some(
+        (revisionEntry) => revisionEntry.materialId === materialId,
+      ),
+    ).toBe(true);
+    expect(
+      learningUnit.sourceReferences.every((reference) => reference.materialId !== materialId),
+    ).toBe(true);
+    expect(
+      curriculum.nodes
+        .flatMap((node) => node.learningUnit?.objectives ?? [])
+        .every(
+          (objective) =>
+            objective.semanticSupport?.verdict === 'pass' &&
+            objective.semanticSupport.boundSourceBlockIds.length > 0,
+        ),
+    ).toBe(true);
+    expect(
+      curriculum.nodes
+        .flatMap((node) => node.learningUnit?.objectives ?? [])
+        .flatMap((objective) => [
+          ...(objective.semanticSupport?.boundSourceBlockIds ?? []),
+          ...(objective.formalEvidenceSourceBlockIds ?? []),
+        ])
+        .every(
+          (sourceBlockId) =>
+            ctx.repos.materials.getBlock(sourceBlockId)?.materialId ===
+            authorityMaterial.materialId,
+        ),
+    ).toBe(true);
+    expect(
+      provider.objectiveAuthorityInputs
+        .flatMap((input) => input.objectives)
+        .every(
+          (objective) =>
+            objective.evidence.length > 0 &&
+            objective.evidence.every((evidence) => evidence.text !== VISUAL_DESCRIPTION),
+        ),
+    ).toBe(true);
+    expect(
       learningUnit
         .learningUnit!.objectives.map((objective) => `${objective.title} ${objective.description}`)
         .join(' ')
@@ -338,10 +530,19 @@ describe('prepared image-only learning flow', () => {
     expect(learningUnit.title.toLocaleLowerCase()).not.toContain('misleading');
     expect(plan.items.some((item) => item.kind === 'teach_unit')).toBe(true);
     expect(
-      plan.items.some((item) =>
-        ['formal_checkpoint', 'targeted_repair', 'due_review', 'synthesis'].includes(item.kind),
-      ),
-    ).toBe(false);
+      plan.items
+        .filter((item) => item.kind === 'formal_checkpoint')
+        .every((item) =>
+          item.objectiveIds.every((objectiveId) =>
+            learningUnit.learningUnit!.objectives.some(
+              (objective) =>
+                objective.id === objectiveId &&
+                objective.semanticSupport?.verdict === 'pass' &&
+                objective.semanticSupport.boundSourceBlockIds.length > 0,
+            ),
+          ),
+        ),
+    ).toBe(true);
 
     const acceptedRoute = services.courseExecution.decideStudyPlan({
       command: command('plan-accept'),
@@ -369,7 +570,7 @@ describe('prepared image-only learning flow', () => {
       kind: 'lesson',
       agendaItemId: teachingItem.id,
       learningUnitId: learningUnit.id,
-      conceptId: null,
+      conceptId: expect.any(String),
       lessonId: null,
     });
 
@@ -389,7 +590,7 @@ describe('prepared image-only learning flow', () => {
     });
     expect(preparedLesson.status).toBe('ready');
     expect(preparedLesson.lesson).toMatchObject({
-      sourceReferencesAvailable: false,
+      sourceReferencesAvailable: true,
       visuals: [
         {
           source: { authority: 'original_visual' },
@@ -403,12 +604,11 @@ describe('prepared image-only learning flow', () => {
       ],
     });
     const brief = ctx.repos.teachingBriefs.listForUnit(WORKSPACE_ID, learningUnit.id)[0]!;
-    expect(brief.sourceReferences).toEqual([]);
+    expect(brief.sourceReferences.length).toBeGreaterThan(0);
     expect(brief.visualReferences).toHaveLength(1);
-    expect(brief.segments.every((segment) => segment.sourceRefIds.length === 0)).toBe(true);
-    expect(provider.lessonSlotContentInput?.sourceContext.offers).toEqual([]);
+    expect(provider.lessonSlotContentInput?.sourceContext.offers.length).toBeGreaterThan(0);
     expect(provider.lessonSlotContentInput?.visualContext.offers).toHaveLength(1);
-    expect(provider.practiceContentInput?.sourceContext.offers).toEqual([]);
+    expect(provider.practiceContentInput?.sourceContext.offers.length).toBeGreaterThan(0);
     expect(provider.practiceContentInput?.visualContext.offers).toHaveLength(1);
     expect(provider.practiceContentInput?.acceptedLesson).toEqual(
       expect.arrayContaining(
@@ -429,7 +629,7 @@ describe('prepared image-only learning flow', () => {
     expect(
       services.lessonExecution.tutorContext(WORKSPACE_ID, startedSession.id)?.visuals,
     ).toHaveLength(1);
-    await services.studySessions.submitTurn(WORKSPACE_ID, startedSession.id, {
+    const tutorTurn = await services.studySessions.submitTurn(WORKSPACE_ID, startedSession.id, {
       commandId: 'visual-tutor-turn',
       expectedSessionVersion: startedLesson.session.version,
       content: 'Walk me through the water cycle diagram.',
@@ -461,7 +661,7 @@ describe('prepared image-only learning flow', () => {
       },
       createdAt: new Date(Date.parse(derivation.createdAt) + 1_000).toISOString(),
     });
-    const staleLaunch = await services.courseActionLaunch.launch({
+    const sourceBackedLaunch = await services.courseActionLaunch.launch({
       command: command('launch-after-visual-derivation-change'),
       agendaId: agenda.id,
       expectedAgendaVersion: agenda.version,
@@ -470,11 +670,27 @@ describe('prepared image-only learning flow', () => {
       expectedStudyPlanId: plan.id,
       expectedExecutionSourceManifestFingerprint: curriculum.executionSourceManifest.fingerprint,
     });
-    expect(staleLaunch).toMatchObject({
-      kind: 'blocked',
-      stale: true,
-      reason: expect.stringContaining('visual source manifest is stale'),
+    expect(sourceBackedLaunch).toMatchObject({
+      kind: 'lesson',
+      conceptId: expect.any(String),
     });
+    const currentAgenda = ctx.repos.sessionAgendas.get(agenda.id)!;
+    await expect(
+      services.teachingBriefPreparation.prepare({
+        workspaceId: WORKSPACE_ID,
+        curriculumVersionId: curriculum.id,
+        studyPlanVersionId: plan.id,
+        learningUnitId: learningUnit.id,
+        studySessionId: tutorTurn.session.id,
+        sessionAgendaId: currentAgenda.id,
+        expectedSessionVersion: tutorTurn.session.version,
+        expectedAgendaVersion: currentAgenda.version,
+        expectedAgendaItemId: teachingItem.id,
+        expectedStudyPlanItemId: teachingItem.linkedPlanItemId!,
+        commandId: 'brief-after-visual-derivation-change',
+        expectedExecutionSourceManifestFingerprint: curriculum.executionSourceManifest.fingerprint,
+      }),
+    ).rejects.toMatchObject({ code: ApiErrorCode.VersionConflict });
   });
 
   it('retrieves a relevant prepared visual even when its occurrence is ninth', async () => {
@@ -535,6 +751,8 @@ describe('prepared image-only learning flow', () => {
       }
     }
 
+    scope.push(await addWaterCycleAuthorityMaterial(ctx, services, 'ranked-authority'));
+
     const draft = services.learningContracts.createDraft({
       command: command('ranked-contract-create'),
       fields: contractFields(scope),
@@ -559,13 +777,41 @@ describe('prepared image-only learning flow', () => {
       command: command(preparation.operationKey!),
       expectedRevision: preparation.revision,
     });
-    expect(provider.analyzeCalls).toBe(0);
+    expect(provider.analyzeCalls).toBe(1);
     const plan = ctx.repos.studyPlans.list(WORKSPACE_ID).at(-1)!;
     const curriculum = ctx.repos.curricula.get(plan.curriculumVersionId)!;
     const relevantUnit = curriculum.nodes.find(
       (node) => node.learningUnit && node.title.toLocaleLowerCase().includes('water cycle'),
     )!;
     expect(relevantUnit).toBeDefined();
+    expect(
+      curriculum.executionSourceManifest.revisions.some(
+        (revisionEntry) => revisionEntry.materialId === relevantMaterialId,
+      ),
+    ).toBe(true);
+    expect(
+      relevantUnit.sourceReferences.every(
+        (reference) => reference.materialId !== relevantMaterialId,
+      ),
+    ).toBe(true);
+    expect(
+      relevantUnit.learningUnit!.objectives.every(
+        (objective) =>
+          objective.semanticSupport?.verdict === 'pass' &&
+          objective.semanticSupport.boundSourceBlockIds.length > 0,
+      ),
+    ).toBe(true);
+    expect(
+      relevantUnit
+        .learningUnit!.objectives.flatMap((objective) => [
+          ...(objective.semanticSupport?.boundSourceBlockIds ?? []),
+          ...(objective.formalEvidenceSourceBlockIds ?? []),
+        ])
+        .every(
+          (sourceBlockId) =>
+            ctx.repos.materials.getBlock(sourceBlockId)?.materialId !== relevantMaterialId,
+        ),
+    ).toBe(true);
     const acceptedRoute = services.courseExecution.decideStudyPlan({
       command: command('ranked-plan-accept'),
       studyPlanId: plan.id,

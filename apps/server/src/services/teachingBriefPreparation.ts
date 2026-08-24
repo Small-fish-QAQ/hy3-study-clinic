@@ -31,6 +31,7 @@ import type {
   TeachingBriefGenerationInput,
 } from '../llm/provider.js';
 import type { Repositories } from '../repositories/index.js';
+import { CurriculumExactAuthorityClaimHydrationError } from '../repositories/curricula.js';
 import { searchRetrievalUnits, visualDerivationToRetrievalUnit } from '../retrieval/lexical.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
@@ -42,7 +43,12 @@ import {
   validateLessonSlotContentCandidate,
   validatePracticeContentCandidate,
 } from './teachingBriefContract.js';
-import { buildTeachingBriefSourceContext } from './teachingBriefContext.js';
+import {
+  buildTeachingBriefSourceContext,
+  serializedTeachingProviderSourceEnvelopeBytes,
+  TEACHING_BRIEF_MAX_SERIALIZED_OFFER_BYTES,
+  type TeachingBriefProviderSourceOffer,
+} from './teachingBriefContext.js';
 import { profileTeachingBrief } from './teachingBriefQuality.js';
 import {
   COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION,
@@ -57,6 +63,7 @@ import {
   type TeachingSkeletonPlanningInput,
 } from './teachingSkeletonPlanner.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
+import { assertCurrentCurriculumObjectiveAuthoritySemanticSupport } from './objectiveAuthoritySemanticSupport.js';
 
 export const TEACHING_BRIEF_PROMPT_VERSION = 'teaching-brief-v3-compositional-v1';
 export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v1-compositional';
@@ -184,7 +191,22 @@ export function createTeachingBriefPreparationService({
     const workspace = repos.workspaces.get(input.workspaceId);
     if (!workspace) throw notFound('Course workspace not found.');
     const state = repos.courseExecution.get(input.workspaceId);
-    const curriculum = repos.curricula.get(input.curriculumVersionId);
+    let curriculum;
+    try {
+      curriculum = repos.curricula.get(input.curriculumVersionId);
+    } catch (error) {
+      if (!(error instanceof CurriculumExactAuthorityClaimHydrationError)) throw error;
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        'Curriculum objective authority is not semantically supported for this operation.',
+        {
+          kind: 'objective_authority_semantic_support_invalid',
+          boundary: 'lesson_provider',
+          diagnosticCodes: ['semantic_exact_claim_hydration_invalid'],
+          diagnostics: [error.message],
+        },
+      );
+    }
     const plan = repos.studyPlans.get(input.studyPlanVersionId);
     const session = repos.studySessions.get(input.studySessionId);
     const agenda = repos.sessionAgendas.get(input.sessionAgendaId);
@@ -348,10 +370,18 @@ export function createTeachingBriefPreparationService({
         return derivation ? [{ asset, derivation }] : [];
       });
     });
+    const directlyScopedVisuals = visualCandidates.filter(({ asset }) =>
+      relevantMaterialIds.has(asset.materialId),
+    );
+    // A source-backed LearningUnit may legitimately use a separately scoped
+    // course image as advisory teaching context. Prefer visuals attached to
+    // its exact source materials, but when those materials have none, retain
+    // the manifest-bounded candidates for relevance ranking below. This never
+    // changes the objective's exact source authority or Formal evidence.
     const scopedVisuals =
-      relevantMaterialIds.size === 0
+      relevantMaterialIds.size === 0 || directlyScopedVisuals.length === 0
         ? visualCandidates
-        : visualCandidates.filter(({ asset }) => relevantMaterialIds.has(asset.materialId));
+        : directlyScopedVisuals;
     const visualQuery = [
       input.node.title,
       ...input.routeObjectives.flatMap((objective) => [objective.title, objective.description]),
@@ -379,6 +409,15 @@ export function createTeachingBriefPreparationService({
       return candidate ? [candidate] : [];
     });
     const visuals = rankedVisuals.length > 0 ? rankedVisuals : scopedVisuals.slice(0, 8);
+    const sourceAuthorityBundles = [
+      ...new Set(input.routeObjectives.flatMap((objective) => objective.truthAuthorityRecordIds)),
+    ].map((authorityRecordId) => {
+      const bundle = repos.sourceAuthority.getBundle(authorityRecordId);
+      if (!bundle) {
+        throw new Error('Teaching Brief semantically supported source authority is unavailable.');
+      }
+      return bundle;
+    });
     const built = buildTeachingBriefSourceContext({
       workspaceId: input.workspace.id,
       curriculum: input.curriculum,
@@ -386,6 +425,8 @@ export function createTeachingBriefPreparationService({
       materials,
       blocks,
       concepts: repos.materials.getConceptsByWorkspace(input.workspace.id),
+      authorizedObjectiveIds: input.routeObjectives.map((objective) => objective.id),
+      sourceAuthorityBundles,
       visuals,
     });
     return built;
@@ -451,77 +492,116 @@ export function createTeachingBriefPreparationService({
     };
     const objectiveRefs = route.routeObjectives.map((_objective, index) => `O${index + 1}`);
     const durationTarget = route.agendaItem.estimatedMinutes;
+    const supportedClaimIdsByObjective = new Map(
+      route.routeObjectives.map((objective) => [
+        objective.id,
+        new Set(
+          objective.semanticSupport?.fragments
+            .filter((fragment) => fragment.status === 'supported')
+            .flatMap((fragment) => fragment.authorityClaimIds) ?? [],
+        ),
+      ]),
+    );
     const isSourceAuthorizedForObjective = (
       offer: (typeof context.offers)[number],
       objective: CurriculumObjective,
     ) => {
       const reference = context.references.find((candidate) => candidate.refId === offer.sourceRef);
       if (!reference) return false;
-      const formallyAuthorized = objective.formalEvidenceSourceBlockIds?.includes(
-        reference.sourceBlockId,
+      const supportedClaimIds = supportedClaimIdsByObjective.get(objective.id);
+      return (
+        Boolean(reference.authorityClaimIds?.length) &&
+        reference.authorityClaimIds!.some((claimId) => supportedClaimIds?.has(claimId))
       );
-      const teachingAuthorized = route.node.sourceReferences.some(
-        (candidate) => candidate.sourceBlockId === reference.sourceBlockId,
-      );
-      const hasExactFormalAuthority =
-        Boolean(objective.formalAssessmentConstruct) &&
-        (objective.formalEvidenceSourceBlockIds?.length ?? 0) > 0;
-      return hasExactFormalAuthority ? formallyAuthorized : teachingAuthorized;
     };
+    const providerObjectives: TeachingBriefGenerationInput['learningUnit']['objectives'] =
+      route.routeObjectives.map((objective, index) => ({
+        objectiveRef: `O${index + 1}`,
+        title: objective.title,
+        description: objective.description,
+        priority: objective.priority ?? 'normal',
+        construct: teachingConstruct(objective),
+        authorityEnvelopeTier: objective.authorityEnvelopeTier ?? 'unavailable',
+        practiceAuthority:
+          context.offers.some((offer) => isSourceAuthorizedForObjective(offer, objective)) &&
+          objective.formalAssessmentConstruct &&
+          (objective.formalEvidenceSourceBlockIds?.length ?? 0) > 0
+            ? 'exact_formal'
+            : context.offers.some((offer) => isSourceAuthorizedForObjective(offer, objective))
+              ? 'exact_teaching'
+              : context.visualOffers.length > 0
+                ? 'advisory_visual'
+                : 'unavailable',
+        practiceEnvelope: (() => {
+          const exactEvidence = context.offers
+            .filter((offer) => isSourceAuthorizedForObjective(offer, objective))
+            .map((offer) => ({ sourceRef: offer.sourceRef, text: offer.text }));
+          const requiresFormalAuthority =
+            Boolean(objective.formalAssessmentConstruct) &&
+            (objective.formalEvidenceSourceBlockIds?.length ?? 0) > 0;
+          const authorityMode =
+            exactEvidence.length > 0
+              ? ('exact_source' as const)
+              : requiresFormalAuthority
+                ? ('unavailable' as const)
+                : context.visualOffers.length > 0
+                  ? ('advisory_visual' as const)
+                  : ('unavailable' as const);
+          const targetConstruct = teachingConstruct(objective);
+          return {
+            targetConstruct,
+            authorityMode,
+            evidenceAliases: exactEvidence,
+            allowedCapability:
+              targetConstruct === 'apply'
+                ? 'Use a source-stated rule or procedure in its supported context to choose a next step, order a step, detect a missing step, or diagnose a bounded procedure failure.'
+                : targetConstruct === 'explain'
+                  ? 'Express a mechanism, relation, reason, consequence, or conceptual connection.'
+                  : targetConstruct === 'identify'
+                    ? 'Select, name, distinguish, or classify the correct entity or component.'
+                    : `Demonstrate the locally authorized ${targetConstruct} capability without promoting it to a stronger construct.`,
+            prohibitedStrongerConstructs: targetConstruct
+              ? strongerConstructs[targetConstruct]
+              : [],
+          };
+        })(),
+      }));
+    const providerSourceOffers: TeachingBriefProviderSourceOffer[] = context.offers.map((offer) => {
+      const reference = context.references.find((candidate) => candidate.refId === offer.sourceRef);
+      return {
+        ...offer,
+        authorizedObjectiveRefs: route.routeObjectives.flatMap((objective, index) => {
+          if (!reference) return [];
+          return reference.authorityClaimIds?.some((claimId) =>
+            supportedClaimIdsByObjective.get(objective.id)?.has(claimId),
+          )
+            ? [`O${index + 1}`]
+            : [];
+        }),
+      };
+    });
+    const providerSourceEnvelopeBytes = serializedTeachingProviderSourceEnvelopeBytes({
+      offers: providerSourceOffers,
+      objectiveEvidenceAliases: providerObjectives.map((objective) => ({
+        objectiveRef: objective.objectiveRef,
+        evidenceAliases: objective.practiceEnvelope?.evidenceAliases ?? [],
+      })),
+    });
+    if (providerSourceEnvelopeBytes > TEACHING_BRIEF_MAX_SERIALIZED_OFFER_BYTES) {
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        'Teaching Brief exact provider source envelope exceeds the byte budget.',
+        {
+          serializedBytes: providerSourceEnvelopeBytes,
+          maxSerializedBytes: TEACHING_BRIEF_MAX_SERIALIZED_OFFER_BYTES,
+        },
+      );
+    }
     return {
       workspaceName: route.workspace.name,
       learningUnit: {
         title: route.node.title,
-        objectives: route.routeObjectives.map((objective, index) => ({
-          objectiveRef: `O${index + 1}`,
-          title: objective.title,
-          description: objective.description,
-          priority: objective.priority ?? 'normal',
-          construct: teachingConstruct(objective),
-          authorityEnvelopeTier: objective.authorityEnvelopeTier ?? 'unavailable',
-          practiceAuthority:
-            objective.formalAssessmentConstruct &&
-            (objective.formalEvidenceSourceBlockIds?.length ?? 0) > 0
-              ? 'exact_formal'
-              : route.node.sourceReferences.some((reference) => reference.sourceBlockId !== null)
-                ? 'exact_teaching'
-                : context.visualOffers.length > 0
-                  ? 'advisory_visual'
-                  : 'unavailable',
-          practiceEnvelope: (() => {
-            const exactEvidence = context.offers
-              .filter((offer) => isSourceAuthorizedForObjective(offer, objective))
-              .map((offer) => ({ sourceRef: offer.sourceRef, text: offer.text.slice(0, 600) }));
-            const requiresFormalAuthority =
-              Boolean(objective.formalAssessmentConstruct) &&
-              (objective.formalEvidenceSourceBlockIds?.length ?? 0) > 0;
-            const authorityMode =
-              exactEvidence.length > 0
-                ? ('exact_source' as const)
-                : requiresFormalAuthority
-                  ? ('unavailable' as const)
-                  : context.visualOffers.length > 0
-                    ? ('advisory_visual' as const)
-                    : ('unavailable' as const);
-            const targetConstruct = teachingConstruct(objective);
-            return {
-              targetConstruct,
-              authorityMode,
-              evidenceAliases: exactEvidence,
-              allowedCapability:
-                targetConstruct === 'apply'
-                  ? 'Use a source-stated rule or procedure in its supported context to choose a next step, order a step, detect a missing step, or diagnose a bounded procedure failure.'
-                  : targetConstruct === 'explain'
-                    ? 'Express a mechanism, relation, reason, consequence, or conceptual connection.'
-                    : targetConstruct === 'identify'
-                      ? 'Select, name, distinguish, or classify the correct entity or component.'
-                      : `Demonstrate the locally authorized ${targetConstruct} capability without promoting it to a stronger construct.`,
-              prohibitedStrongerConstructs: targetConstruct
-                ? strongerConstructs[targetConstruct]
-                : [],
-            };
-          })(),
-        })),
+        objectives: providerObjectives,
         concepts,
         canonicalConcepts,
       },
@@ -530,32 +610,10 @@ export function createTeachingBriefPreparationService({
       sourceContext: {
         blockCount: context.blockCount,
         offerCount: context.offerCount,
-        serializedBytes: context.serializedBytes,
+        serializedBytes: providerSourceEnvelopeBytes,
         materialCount: context.materialCount,
         sectionCount: context.sectionCount,
-        offers: context.offers.map((offer) => {
-          const reference = context.references.find(
-            (candidate) => candidate.refId === offer.sourceRef,
-          );
-          return {
-            ...offer,
-            authorizedObjectiveRefs: route.routeObjectives.flatMap((objective, index) => {
-              if (!reference) return [];
-              const formallyAuthorized = objective.formalEvidenceSourceBlockIds?.includes(
-                reference.sourceBlockId,
-              );
-              const teachingAuthorized = route.node.sourceReferences.some(
-                (candidate) => candidate.sourceBlockId === reference.sourceBlockId,
-              );
-              const hasExactFormalAuthority =
-                Boolean(objective.formalAssessmentConstruct) &&
-                (objective.formalEvidenceSourceBlockIds?.length ?? 0) > 0;
-              return (hasExactFormalAuthority ? formallyAuthorized : teachingAuthorized)
-                ? [`O${index + 1}`]
-                : [];
-            }),
-          };
-        }),
+        offers: providerSourceOffers,
       },
       visualContext: {
         offerCount: context.visualOfferCount,
@@ -913,6 +971,16 @@ export function createTeachingBriefPreparationService({
     return { route: currentRoute, context: currentContext };
   }
 
+  function assertCurrentObjectiveAuthoritySemanticSupport(
+    route: ReturnType<typeof routeContext>,
+  ): void {
+    assertCurrentCurriculumObjectiveAuthoritySemanticSupport(route.curriculum, {
+      boundary: 'lesson_provider',
+      isBlockingEligible: (authorityRecordId) =>
+        repos.sourceAuthority.isBlockingEligible(authorityRecordId),
+    });
+  }
+
   function checkpointIdentity(
     input: TeachingBriefRouteInput,
     contextFingerprint: string,
@@ -955,6 +1023,7 @@ export function createTeachingBriefPreparationService({
 
   function acceptedLessonPreview(input: TeachingBriefRouteInput): AcceptedLessonPreview | null {
     const route = routeContext(input, false);
+    assertCurrentObjectiveAuthoritySemanticSupport(route);
     const context = sourceContext(route);
     const generationInput = providerInput(route, context);
     let skeleton: TeachingSkeleton;
@@ -1031,6 +1100,11 @@ export function createTeachingBriefPreparationService({
 
     try {
       const route = routeContext(input);
+      // This canonical defensive check covers every downstream
+      // composition path: fresh Lesson generation, accepted-Lesson Practice
+      // retry, and immutable Teaching Brief reuse. No checkpoint may outlive
+      // the exact accepted objective-authority contract that authorized it.
+      assertCurrentObjectiveAuthoritySemanticSupport(route);
       let context: ReturnType<typeof sourceContext>;
       try {
         context = sourceContext(route);
@@ -1155,7 +1229,8 @@ export function createTeachingBriefPreparationService({
           );
         }
         checkpoint = repos.transaction(() => {
-          routeStillCurrent(input, context.fingerprint);
+          const current = routeStillCurrent(input, context.fingerprint);
+          assertCurrentObjectiveAuthoritySemanticSupport(current.route);
           const concurrentCandidate = repos.acceptedLessonCheckpoints.findReusable(
             checkpointIdentity(input, context.fingerprint, skeleton),
           );
@@ -1190,7 +1265,8 @@ export function createTeachingBriefPreparationService({
           );
         });
       }
-      routeStillCurrent(input, context.fingerprint);
+      const currentBeforePractice = routeStillCurrent(input, context.fingerprint);
+      assertCurrentObjectiveAuthoritySemanticSupport(currentBeforePractice.route);
       renewPreparationLease(claim.id, owner, claim.fencingToken);
       const compositionalPracticeInput = practiceInput(route, generationInput, checkpoint);
       const practiceProviderInput = structuredClone(compositionalPracticeInput);
@@ -1256,7 +1332,8 @@ export function createTeachingBriefPreparationService({
         practiceLogicalCallId,
       );
       return repos.transaction(() => {
-        routeStillCurrent(input, context.fingerprint);
+        const current = routeStillCurrent(input, context.fingerprint);
+        assertCurrentObjectiveAuthoritySemanticSupport(current.route);
         const concurrentCandidate = repos.teachingBriefs.findReusable({
           workspaceId: input.workspaceId,
           curriculumVersionId: input.curriculumVersionId,
@@ -1341,6 +1418,7 @@ export function createTeachingBriefPreparationService({
     getAcceptedLessonPreview: acceptedLessonPreview,
     getCurrent(input: TeachingBriefRouteInput): TeachingBrief | null {
       const route = routeContext(input, false);
+      assertCurrentObjectiveAuthoritySemanticSupport(route);
       const context = sourceContext(route);
       const generationInput = providerInput(route, context);
       let skeleton: TeachingSkeleton;
