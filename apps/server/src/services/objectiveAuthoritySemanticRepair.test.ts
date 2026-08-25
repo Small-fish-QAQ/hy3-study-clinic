@@ -538,6 +538,96 @@ describe('bounded objective-authority semantic repair', () => {
     }
   });
 
+  it('fails closed when one failing objective legitimately exceeds the 32-offer envelope', () => {
+    const offerCount = 33;
+    const blocks = Array.from({ length: offerCount }, (_, index) =>
+      block(`block_limit_${index + 1}`, `Exact bounded repair claim ${index + 1}.`),
+    );
+    const offers = blocks.map((sourceBlock, index) =>
+      evidence(`evidence_limit_${index + 1}`, sourceBlock),
+    );
+    const bundles = blocks.map((sourceBlock, index) =>
+      authority(`authority_limit_${index + 1}`, sourceBlock),
+    );
+    const original = proposal();
+    const unit = original.nodes.find((node) => node.key === 'unit')!;
+    unit.sourceEvidence = offers.map((offer) => ({ evidenceId: offer.id }));
+    unit.objectives[0]!.evidence = [{ evidenceId: offers[0]!.id }];
+    unit.objectives[1]!.evidence = [{ evidenceId: offers[1]!.id }];
+    const materializedNodes: CurriculumNode[] = [
+      {
+        id: 'unit_limit',
+        parentId: null,
+        kind: 'learning_unit',
+        index: 0,
+        title: unit.title,
+        sourceReferences: [],
+        learningUnit: {
+          conceptIds: [],
+          canonicalConceptIds: [],
+          objectives: [
+            objective(
+              'objective_limit_failed',
+              unit.objectives[0]!,
+              bundles[0]!.record.id,
+              blocks[0]!.id,
+            ),
+            objective(
+              'objective_limit_passing',
+              unit.objectives[1]!,
+              bundles[1]!.record.id,
+              blocks[1]!.id,
+            ),
+          ],
+          prerequisiteUnitIds: [],
+          graphRelationIds: [],
+          riskIds: [],
+        },
+      },
+    ];
+    const [firstPassBatch] = buildObjectiveAuthoritySemanticEvaluationBatches({
+      nodes: materializedNodes,
+      sourceBlocks: blocks,
+      authorityBundles: bundles,
+      isBlockingEligible: () => true,
+    });
+    const prepared = prepareObjectiveAuthoritySemanticRepair({
+      candidate: original,
+      objectiveIdByProposalKey: new Map([
+        ['failed', 'objective_limit_failed'],
+        ['passing', 'objective_limit_passing'],
+      ]),
+      firstPass: [
+        {
+          batch: firstPassBatch!,
+          proposal: evaluationProposal(firstPassBatch!, 'pass'),
+        },
+      ],
+      context: {
+        workspaceId: 'workspace_1',
+        evidenceCatalog: offers,
+        authorityBundles: bundles,
+        isAuthorityBlockingEligible: () => true,
+        deterministicCoverageByNodeKey: new Map([
+          ['unit', { structuralUnitIds: [], sourceBlockIds: blocks.map((item) => item.id) }],
+        ]),
+      },
+    });
+
+    expect(prepared.batch).toBeNull();
+    expect(prepared.validation).toMatchObject({
+      valid: false,
+      diagnosticCodes: ['semantic_repair_unit_evidence_limit_exceeded'],
+      failureArtifact: {
+        diagnostics: [
+          {
+            facts: { offeredEvidenceCount: offerCount, limit: 32 },
+          },
+        ],
+      },
+    });
+  });
+
   it('lets legacy recovery repair E1 with an unselected frozen E2 offer', () => {
     const e1Block = block('block_legacy_1', 'E1 is initially selected but does not support B.');
     const e2Block = block('block_legacy_2', 'E2 is the exact supporting statement for B.');

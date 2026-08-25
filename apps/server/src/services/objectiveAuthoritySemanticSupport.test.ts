@@ -663,6 +663,39 @@ describe('objective-authority semantic proposal validation', () => {
     );
   });
 
+  it('reports only invalid objective identities for bounded evaluator repair', () => {
+    const objectives = [
+      objective({ id: 'objective_1' }),
+      objective({ id: 'objective_2' }),
+      objective({ id: 'objective_3' }),
+    ];
+    const [batch] = batchesFor({ objectives });
+    const template = singleEvaluation(batch!).evaluations[0]!;
+    const proposal: ObjectiveAuthoritySemanticEvaluationProposal = {
+      schemaVersion: 1,
+      evaluations: batch!.input.objectives.map((expected, index) => ({
+        ...structuredClone(template),
+        objectiveRef: expected.objectiveRef,
+        proposition: expected.proposition,
+        fragments: [
+          {
+            ...structuredClone(template.fragments[0]!),
+            fragmentId: `fragment_${index + 1}`,
+            text: expected.proposition,
+            evidenceRefs: [expected.evidence[0]!.evidenceRef],
+          },
+        ],
+      })),
+    };
+    proposal.evaluations[1]!.proposition = 'The second objective was changed.';
+
+    expect(validateObjectiveAuthoritySemanticEvaluationProposal(batch!, proposal)).toMatchObject({
+      valid: false,
+      diagnosticCodes: ['semantic_proposition_mismatch'],
+      targetedRepair: { invalidItemIds: ['objective_2'] },
+    });
+  });
+
   it('accepts bound positioning support across Chinese evidence and an English objective', () => {
     const repairedObjective = objective({
       truthAuthorityRecordIds: ['authority_1'],

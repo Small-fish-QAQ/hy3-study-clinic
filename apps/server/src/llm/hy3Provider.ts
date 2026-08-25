@@ -18,6 +18,7 @@ import {
   LessonSlotContentProposalPayloadSchema,
   PracticeContentProposalPayloadSchema,
   ObjectiveAuthoritySemanticEvaluationProposalSchema,
+  ObjectiveAuthoritySemanticObjectiveProposalSchema,
   ObjectiveAuthoritySemanticRepairProposalSchema,
   ProposedPracticeSlotContentSchema,
   RubricGradeSchema,
@@ -160,8 +161,8 @@ interface ChatCompletionResult {
 }
 
 interface TargetedRepairCollection {
-  collectionKey: 'slots' | 'items';
-  identityKey: 'slotId' | 'practiceSlotId';
+  collectionKey: 'slots' | 'items' | 'evaluations';
+  identityKey: 'slotId' | 'practiceSlotId' | 'objectiveRef';
   itemSchema: ZodType<unknown, ZodTypeDef, unknown>;
 }
 
@@ -179,8 +180,14 @@ function normalizeTargetedRepairScope(
   scope: ProviderTargetedRepairScope,
   collection: TargetedRepairCollection,
 ): ProviderTargetedRepairScope | null {
-  const pattern = collection.identityKey === 'slotId' ? /^L[1-9][0-9]*$/u : /^PR[1-9][0-9]*$/u;
-  const limit = collection.collectionKey === 'slots' ? 24 : 16;
+  const pattern =
+    collection.collectionKey === 'slots'
+      ? /^L[1-9][0-9]*$/u
+      : collection.collectionKey === 'items'
+        ? /^PR[1-9][0-9]*$/u
+        : /^[A-Za-z][A-Za-z0-9_-]{0,99}$/u;
+  const limit =
+    collection.collectionKey === 'slots' ? 24 : collection.collectionKey === 'items' ? 16 : 24;
   const invalidItemIds = [...new Set(scope.invalidItemIds)]
     .filter((id) => pattern.test(id))
     .slice(0, limit);
@@ -205,7 +212,12 @@ function schemaTargetedRepairBase(
   if (!isRecord(parsed)) return null;
   const items = parsed[collection.collectionKey];
   if (!Array.isArray(items) || items.length < 2) return null;
-  const pattern = collection.identityKey === 'slotId' ? /^L[1-9][0-9]*$/u : /^PR[1-9][0-9]*$/u;
+  const pattern =
+    collection.collectionKey === 'slots'
+      ? /^L[1-9][0-9]*$/u
+      : collection.collectionKey === 'items'
+        ? /^PR[1-9][0-9]*$/u
+        : /^[A-Za-z][A-Za-z0-9_-]{0,99}$/u;
   const seen = new Set<string>();
   const invalidItemIds: string[] = [];
   let validItemCount = 0;
@@ -758,6 +770,11 @@ export class Hy3Provider implements LlmProvider {
       {
         maxTokens: OBJECTIVE_AUTHORITY_SEMANTIC_EVALUATION_MAX_OUTPUT_TOKENS,
         schemaName: 'objective-authority-semantic-evaluation-v1',
+        targetedRepairCollection: {
+          collectionKey: 'evaluations',
+          identityKey: 'objectiveRef',
+          itemSchema: ObjectiveAuthoritySemanticObjectiveProposalSchema,
+        },
       },
     );
   }

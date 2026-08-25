@@ -559,36 +559,51 @@ export function validateObjectiveAuthoritySemanticEvaluationProposal(
   }
   const expectedObjectives = parsedInput.data.objectives;
   const evaluations = parsedProposal.data.evaluations;
+  const invalidObjectiveRefs = new Set<string>();
+  const markInvalid = (expectedRef: string | undefined, actualRef?: string): void => {
+    if (expectedRef) invalidObjectiveRefs.add(expectedRef);
+    if (actualRef) invalidObjectiveRefs.add(actualRef);
+  };
   if (evaluations.length !== expectedObjectives.length) {
     add(
       'semantic_objective_set_mismatch',
       'Semantic evaluation proposal does not preserve the exact objective set.',
     );
+    expectedObjectives
+      .slice(evaluations.length)
+      .forEach((objective) => markInvalid(objective.objectiveRef));
+    evaluations.slice(expectedObjectives.length).forEach((evaluation) => {
+      markInvalid(undefined, evaluation.objectiveRef);
+    });
   }
   const count = Math.min(evaluations.length, expectedObjectives.length);
   for (let index = 0; index < count; index += 1) {
     const expected = expectedObjectives[index]!;
     const evaluation = evaluations[index]!;
+    const addObjective = (code: string, message: string): void => {
+      markInvalid(expected.objectiveRef, evaluation.objectiveRef);
+      add(code, message);
+    };
     if (evaluation.objectiveRef !== expected.objectiveRef) {
-      add(
+      addObjective(
         'semantic_objective_ref_mismatch',
         `Semantic evaluation changed objective identity at position ${index + 1}.`,
       );
     }
     if (evaluation.proposition !== expected.proposition) {
-      add(
+      addObjective(
         'semantic_proposition_mismatch',
         `Semantic evaluation changed the proposition for ${expected.objectiveRef}.`,
       );
     }
     if (evaluation.construct !== expected.construct) {
-      add(
+      addObjective(
         'semantic_construct_mismatch',
         `Semantic evaluation changed the construct for ${expected.objectiveRef}.`,
       );
     }
     if (evaluation.fragments.map((fragment) => fragment.text).join('') !== expected.proposition) {
-      add(
+      addObjective(
         'semantic_fragment_partition_incomplete',
         `Semantic fragments do not exactly partition ${expected.objectiveRef}.`,
       );
@@ -598,26 +613,26 @@ export function validateObjectiveAuthoritySemanticEvaluationProposal(
     for (const fragment of evaluation.fragments) {
       if (fragment.status === 'unsupported') {
         if (fragment.supportType !== null || fragment.evidenceRefs.length > 0) {
-          add(
+          addObjective(
             'semantic_unsupported_mapping_invalid',
             `Unsupported fragment ${fragment.fragmentId} must not claim support or evidence.`,
           );
         }
       } else if (fragment.status === 'conflicted') {
         if (fragment.supportType !== null) {
-          add(
+          addObjective(
             'semantic_conflicted_mapping_invalid',
             `Conflicted fragment ${fragment.fragmentId} must not claim a support type.`,
           );
         }
       } else if (fragment.supportType === null || fragment.evidenceRefs.length === 0) {
-        add(
+        addObjective(
           'semantic_supported_mapping_incomplete',
           `Supported fragment ${fragment.fragmentId} lacks a support type or evidence.`,
         );
       }
       if (fragment.evidenceRefs.some((evidenceRef) => !allowedEvidenceRefs.has(evidenceRef))) {
-        add(
+        addObjective(
           'semantic_unbound_evidence_ref',
           `Fragment ${fragment.fragmentId} cites evidence outside ${expected.objectiveRef}.`,
         );
@@ -625,25 +640,28 @@ export function validateObjectiveAuthoritySemanticEvaluationProposal(
     }
     for (const row of [...evaluation.conflicts, ...evaluation.overreach]) {
       if (row.fragmentIds.some((fragmentId) => !fragmentIds.has(fragmentId))) {
-        add(
+        addObjective(
           'semantic_unknown_fragment_ref',
           `A semantic finding for ${expected.objectiveRef} cites an unknown fragment.`,
         );
       }
       if (row.evidenceRefs.some((evidenceRef) => !allowedEvidenceRefs.has(evidenceRef))) {
-        add(
+        addObjective(
           'semantic_unbound_evidence_ref',
           `A semantic finding for ${expected.objectiveRef} cites unbound evidence.`,
         );
       }
     }
-    validateCapabilityPreservation(expected, evaluation, add);
-    validateConstructMapping(evaluation, add);
+    validateCapabilityPreservation(expected, evaluation, addObjective);
+    validateConstructMapping(evaluation, addObjective);
   }
   return {
     valid: diagnostics.length === 0,
     diagnostics: diagnostics.slice(0, 100),
     diagnosticCodes: diagnosticCodes.slice(0, 100),
+    ...(invalidObjectiveRefs.size > 0
+      ? { targetedRepair: { invalidItemIds: [...invalidObjectiveRefs] } }
+      : {}),
   };
 }
 

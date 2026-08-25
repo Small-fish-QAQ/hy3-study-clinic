@@ -22,6 +22,7 @@ import {
   groupedStudyPlanProposalMessages,
   OBJECTIVE_AUTHORITY_SEMANTIC_VOCABULARY_RULES,
 } from './prompts.js';
+import { validateObjectiveAuthoritySemanticEvaluationProposal } from '../services/objectiveAuthoritySemanticSupport.js';
 
 const blocks: SourceBlock[] = [
   {
@@ -114,6 +115,36 @@ const semanticEvaluationProposal = ObjectiveAuthoritySemanticEvaluationProposalS
       rationale: 'The complete proposition is supported by the exact offered authority.',
     },
   ],
+});
+
+const multiSemanticEvaluationInput: ObjectiveAuthoritySemanticEvaluationInput = {
+  ...semanticEvaluationInput,
+  objectives: Array.from({ length: 3 }, (_, index) => ({
+    ...semanticEvaluationInput.objectives[0]!,
+    objectiveRef: `objective_${index + 1}`,
+    evidence: [
+      {
+        ...semanticEvaluationInput.objectives[0]!.evidence[0]!,
+        evidenceRef: `evidence_${index + 1}`,
+      },
+    ],
+  })),
+};
+
+const multiSemanticEvaluationProposal = ObjectiveAuthoritySemanticEvaluationProposalSchema.parse({
+  schemaVersion: 1,
+  evaluations: multiSemanticEvaluationInput.objectives.map((objective, index) => ({
+    ...semanticEvaluationProposal.evaluations[0]!,
+    objectiveRef: objective.objectiveRef,
+    proposition: objective.proposition,
+    fragments: [
+      {
+        ...semanticEvaluationProposal.evaluations[0]!.fragments[0]!,
+        fragmentId: `F${index + 1}`,
+        evidenceRefs: [objective.evidence[0]!.evidenceRef],
+      },
+    ],
+  })),
 });
 
 const semanticRepairInput: ObjectiveAuthoritySemanticRepairInput = {
@@ -349,6 +380,39 @@ describe('Hy3Provider objective-authority semantic methods', () => {
     expect(JSON.parse(String(calls[1]![1]!.body)) as { max_tokens: number }).toMatchObject({
       max_tokens: OBJECTIVE_AUTHORITY_SEMANTIC_EVALUATION_MAX_OUTPUT_TOKENS,
     });
+  });
+
+  it('freezes valid evaluation peers and repairs only locally invalid objective identities', async () => {
+    const firstPass = structuredClone(multiSemanticEvaluationProposal);
+    firstPass.evaluations[1]!.proposition = 'The provider changed this objective.';
+    const providerRepair = structuredClone(multiSemanticEvaluationProposal);
+    providerRepair.evaluations[0]!.rationale = 'Provider attempted to rewrite a passing peer.';
+    providerRepair.evaluations[2]!.rationale = 'Provider attempted to rewrite another peer.';
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(firstPass)))
+      .mockResolvedValueOnce(
+        jsonResponse(JSON.stringify(providerRepair)),
+      ) as unknown as typeof fetch;
+    const validateCandidate = (candidate: unknown) =>
+      validateObjectiveAuthoritySemanticEvaluationProposal(multiSemanticEvaluationInput, candidate);
+
+    const result = await makeProvider(fetchImpl).evaluateObjectiveAuthoritySupport(
+      multiSemanticEvaluationInput,
+      { validateCandidate },
+    );
+
+    expect(result).toEqual(multiSemanticEvaluationProposal);
+    const calls = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls;
+    const repairBody = JSON.parse(String(calls[1]![1]!.body)) as {
+      messages: Array<{ content: string }>;
+    };
+    expect(repairBody.messages.at(-1)!.content).toContain(
+      'Only these stable item identities may change: objective_2.',
+    );
+    expect(result.evaluations[0]).toEqual(multiSemanticEvaluationProposal.evaluations[0]);
+    expect(result.evaluations[2]).toEqual(multiSemanticEvaluationProposal.evaluations[2]);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
   it('preserves already-aborted evaluation and repair without fetching', async () => {
