@@ -134,6 +134,9 @@ export interface Hy3ProviderConfig {
 /** Observed Curriculum responses peaked at 10,962 tokens; retain bounded headroom. */
 export const CURRICULUM_MAX_OUTPUT_TOKENS = 16_000;
 export const COURSE_MAP_MAX_OUTPUT_TOKENS = 8_000;
+/** Semantic evaluation hit the former 12,000-token cap; reuse the existing bounded Curriculum budget. */
+export const OBJECTIVE_AUTHORITY_SEMANTIC_EVALUATION_MAX_OUTPUT_TOKENS =
+  CURRICULUM_MAX_OUTPUT_TOKENS;
 
 interface ChatCompletionResponse {
   choices?: Array<{ message?: { content?: unknown }; finish_reason?: unknown }>;
@@ -753,7 +756,7 @@ export class Hy3Provider implements LlmProvider {
         OBJECTIVE_AUTHORITY_SEMANTIC_VOCABULARY_RULES,
       ].join('\n'),
       {
-        maxTokens: 12_000,
+        maxTokens: OBJECTIVE_AUTHORITY_SEMANTIC_EVALUATION_MAX_OUTPUT_TOKENS,
         schemaName: 'objective-authority-semantic-evaluation-v1',
       },
     );

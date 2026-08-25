@@ -519,8 +519,8 @@ describe('objective-authority semantic evaluation scope', () => {
     );
   });
 
-  it('partitions fixed objective order into batches no larger than 24', () => {
-    const many = Array.from({ length: 25 }, (_, index) =>
+  it('partitions every objective exactly once in stable order across bounded batches', () => {
+    const many = Array.from({ length: 49 }, (_, index) =>
       objective({
         id: `objective_${index + 1}`,
         truthPremiseStatus: 'unverified',
@@ -537,7 +537,12 @@ describe('objective-authority semantic evaluation scope', () => {
     });
     const batches = partitionObjectiveAuthoritySemanticEvaluationScopes(scopes);
     expect(OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_BATCH).toBe(24);
-    expect(batches.map((batch) => batch.input.objectives.length)).toEqual([24, 1]);
+    expect(batches.map((batch) => batch.input.objectives.length)).toEqual([24, 24, 1]);
+    const refs = batches.flatMap((batch) =>
+      batch.input.objectives.map((item) => item.objectiveRef),
+    );
+    expect(refs).toEqual(many.map((_, index) => `objective_${index + 1}`));
+    expect(new Set(refs)).toHaveLength(many.length);
   });
 });
 

@@ -7,7 +7,10 @@ import {
   type ObjectiveAuthoritySemanticRepairInput,
   type SourceBlock,
 } from '@hy3-clinic/shared';
-import { Hy3Provider } from './hy3Provider.js';
+import {
+  Hy3Provider,
+  OBJECTIVE_AUTHORITY_SEMANTIC_EVALUATION_MAX_OUTPUT_TOKENS,
+} from './hy3Provider.js';
 import { ProviderError } from './errors.js';
 import type {
   CurriculumProposalInput,
@@ -299,6 +302,13 @@ describe('Hy3Provider objective-authority semantic methods', () => {
       'objective-authority-semantic-evaluation-v1',
       'objective-authority-semantic-repair-v1',
     ]);
+    const calls = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls;
+    expect(JSON.parse(String(calls[0]![1]!.body)) as { max_tokens: number }).toMatchObject({
+      max_tokens: OBJECTIVE_AUTHORITY_SEMANTIC_EVALUATION_MAX_OUTPUT_TOKENS,
+    });
+    expect(JSON.parse(String(calls[1]![1]!.body)) as { max_tokens: number }).toMatchObject({
+      max_tokens: 8_000,
+    });
   });
 
   it('uses one bounded schema repair for malformed evaluator output', async () => {
@@ -333,6 +343,12 @@ describe('Hy3Provider objective-authority semantic methods', () => {
     expect(repairBody.messages.at(-1)!.content).toContain(
       OBJECTIVE_AUTHORITY_SEMANTIC_VOCABULARY_RULES,
     );
+    expect(JSON.parse(String(calls[0]![1]!.body)) as { max_tokens: number }).toMatchObject({
+      max_tokens: OBJECTIVE_AUTHORITY_SEMANTIC_EVALUATION_MAX_OUTPUT_TOKENS,
+    });
+    expect(JSON.parse(String(calls[1]![1]!.body)) as { max_tokens: number }).toMatchObject({
+      max_tokens: OBJECTIVE_AUTHORITY_SEMANTIC_EVALUATION_MAX_OUTPUT_TOKENS,
+    });
   });
 
   it('preserves already-aborted evaluation and repair without fetching', async () => {
