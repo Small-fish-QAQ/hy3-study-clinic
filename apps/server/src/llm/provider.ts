@@ -175,6 +175,9 @@ export interface ProviderTargetedRepairScope {
   invalidItemIds: string[];
 }
 
+/** Internal provider boundary normalization for representation-only fields. */
+export type ProviderCandidatePreprocessor = (candidate: unknown) => unknown;
+
 export type ProviderCandidateFailureValue =
   | string
   | number

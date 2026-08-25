@@ -6,6 +6,11 @@ import type {
   SourceBlock,
 } from '@hy3-clinic/shared';
 import {
+  ObjectiveAuthoritySemanticConflictKindSchema,
+  ObjectiveAuthoritySemanticOverreachKindSchema,
+  ObjectiveAuthoritySupportTypeSchema,
+} from '@hy3-clinic/shared';
+import {
   conceptAnalysisMessages,
   courseMapPromptContext,
   courseMapProposalMessages,
@@ -20,6 +25,7 @@ import {
   measureCurriculumRequest,
   objectiveAuthoritySemanticEvaluationMessages,
   objectiveAuthoritySemanticRepairMessages,
+  OBJECTIVE_AUTHORITY_SEMANTIC_VOCABULARY_RULES,
 } from './prompts.js';
 import type {
   CourseMapProposalInput,
@@ -110,6 +116,129 @@ const semanticRepairInput: ObjectiveAuthoritySemanticRepairInput = {
   ],
 };
 
+const recoveryRequirement = {
+  capabilityRef: 'recovery-capability-42',
+  title: 'Recover the original capability',
+  description: 'Explain the original capability exactly.',
+  originalProposition: 'Explain the original capability exactly.',
+  construct: 'explain',
+  priority: 'required',
+  allowedEvidenceIds: ['E1'],
+};
+
+function promptShape(content: string): string {
+  return content.match(/Return exactly this shape:\n([^\n]+)/u)?.[1] ?? '';
+}
+
+function courseMapPromptInput(withRecovery: boolean): CourseMapProposalInput {
+  return {
+    contractVersion: 'course_map_proposal_v2',
+    workspaceName: 'Workspace',
+    contract: {
+      intent: 'Learn',
+      targetOutcome: { description: 'Understand the subject.' },
+      desiredDepth: 'standard',
+      subjectBoundaries: [],
+      includedTopics: [],
+      excludedTopics: [],
+      materials: [],
+    },
+    courseSourceMapFingerprint: 'course_source_map_fingerprint',
+    sourceAllocationFingerprint: 'course_map_source_allocation_fingerprint',
+    sourceRegions: [],
+    ...(withRecovery
+      ? {
+          capabilityRecovery: {
+            evidenceOffers: [],
+            requirements: [
+              {
+                ...recoveryRequirement,
+                allowedSourceRegionRefs: ['R1'],
+                allowedRecoveryEvidenceRefs: ['CE1'],
+              },
+            ],
+          },
+        }
+      : {}),
+    limits: {
+      maxModules: 4,
+      maxRegions: 8,
+      maxPrerequisiteEdges: 8,
+      maxPrerequisiteDegree: 4,
+      maxSynthesisGroups: 4,
+    },
+  } as unknown as CourseMapProposalInput;
+}
+
+function curriculumDetailPromptInput(withRecovery: boolean): CurriculumDetailProposalInput {
+  return {
+    workspaceName: 'Workspace',
+    contract: {
+      intent: 'Learn',
+      targetOutcome: { description: 'Understand the subject.' },
+      desiredDepth: 'standard',
+      subjectBoundaries: [],
+      includedTopics: [],
+      excludedTopics: [],
+    },
+    courseMapId: 'course_map_000000000000000000000001',
+    sourceAllocationFingerprint:
+      'course_map_source_allocation_0000000000000000000000000000000000000001',
+    batchKey: 'batch-1',
+    regions: [
+      {
+        regionId: 'course_map_region_000000000000000000000001',
+        moduleId: 'course_map_module_000000000000000000000001',
+        moduleIndex: 0,
+        moduleTitle: 'Module',
+        regionIndex: 0,
+        title: 'Region',
+        learningIntent: 'Learn',
+        approximateScope: 'focused',
+        sourceAllocationRegionIds: [],
+        prerequisiteRegionIds: [],
+        synthesisGroups: [],
+        concepts: [],
+        canonicalConcepts: [],
+        evidence: [],
+        ...(withRecovery ? { capabilityRequirements: [recoveryRequirement] } : {}),
+      },
+    ],
+    limits: {
+      maxUnits: 4,
+      maxObjectivesPerUnit: 4,
+      maxObjectivesTotal: 4,
+      maxEvidenceSelectionsPerUnit: 4,
+    },
+  } as unknown as CurriculumDetailProposalInput;
+}
+
+function curriculumPromptInput(withRecovery: boolean): CurriculumProposalInput {
+  return {
+    workspaceName: 'Workspace',
+    contract: {
+      intent: 'Learn',
+      targetOutcome: { description: 'Understand the subject.' },
+      desiredDepth: 'standard',
+      subjectBoundaries: [],
+      includedTopics: [],
+      excludedTopics: [],
+      materials: [],
+    },
+    executionSourceManifest: { fingerprint: 'manifest', revisions: [] },
+    outline: [],
+    concepts: [],
+    graphEdges: [],
+    allowedCanonicalConceptIds: [],
+    canonicalConcepts: [],
+    predecessor: null,
+    ...(withRecovery ? { capabilityRecovery: { requirements: [recoveryRequirement] } } : {}),
+    blocks: [],
+    evidenceCatalog: [],
+    limits: { maxNodes: 4, maxObjectives: 4, maxSynthesisGroups: 4 },
+  } as unknown as CurriculumProposalInput;
+}
+
 describe('Objective-authority semantic prompts', () => {
   it('separates exact provenance from semantic entailment and states construct rules', () => {
     const content = objectiveAuthoritySemanticEvaluationMessages(semanticEvaluationInput)
@@ -152,6 +281,64 @@ describe('Objective-authority semantic prompts', () => {
     expect(content).toContain('E2');
     const delimiters = content.match(/OBJECTIVE_AUTHORITY_REPAIR_INPUT_[a-f0-9]{32}/gu) ?? [];
     expect(delimiters).toHaveLength(3);
+  });
+
+  it('states exactly the runtime support, conflict, and overreach vocabularies', () => {
+    const content = objectiveAuthoritySemanticEvaluationMessages(semanticEvaluationInput)
+      .map((message) => message.content)
+      .join('\n');
+
+    expect(content).toContain(OBJECTIVE_AUTHORITY_SEMANTIC_VOCABULARY_RULES);
+    const vocabularyLines = OBJECTIVE_AUTHORITY_SEMANTIC_VOCABULARY_RULES.split('\n');
+    expect(content).toContain(vocabularyLines[0]!);
+    expect(content).toContain(vocabularyLines[1]!);
+    expect(content).toContain(vocabularyLines[2]!);
+    for (const value of ObjectiveAuthoritySupportTypeSchema.options)
+      expect(content).toContain(value);
+    for (const value of ObjectiveAuthoritySemanticConflictKindSchema.options)
+      expect(content).toContain(value);
+    for (const value of ObjectiveAuthoritySemanticOverreachKindSchema.options)
+      expect(content).toContain(value);
+    expect(content).not.toContain('decision rule |');
+    expect(content).not.toContain('state transition |');
+  });
+
+  it('uses the same closed vocabulary in the bounded evaluation repair contract', () => {
+    const content = objectiveAuthoritySemanticEvaluationMessages(semanticEvaluationInput)
+      .map((message) => message.content)
+      .join('\n');
+    expect(content).toContain(OBJECTIVE_AUTHORITY_SEMANTIC_VOCABULARY_RULES);
+  });
+});
+
+describe('Curriculum recovery prompt contract', () => {
+  it.each([
+    ['Course Map', () => courseMapProposalMessages(courseMapPromptInput(false))],
+    ['detail', () => curriculumDetailProposalMessages(curriculumDetailPromptInput(false))],
+    ['legacy', () => curriculumProposalMessages(curriculumPromptInput(false))],
+  ])('does not advertise a recovery alias for a fresh %s request', (_name, buildMessages) => {
+    const shape = promptShape(
+      buildMessages()
+        .map((message) => message.content)
+        .join('\n'),
+    );
+    expect(shape).not.toContain('capabilityRequirementRef');
+    expect(shape).not.toContain('capabilityRequirementRefs');
+    expect(shape).not.toContain('capability-1');
+  });
+
+  it.each([
+    ['Course Map', () => courseMapProposalMessages(courseMapPromptInput(true))],
+    ['detail', () => curriculumDetailProposalMessages(curriculumDetailPromptInput(true))],
+    ['legacy', () => curriculumProposalMessages(curriculumPromptInput(true))],
+  ])('shows only actual recovery aliases for a recovery %s request', (_name, buildMessages) => {
+    const shape = promptShape(
+      buildMessages()
+        .map((message) => message.content)
+        .join('\n'),
+    );
+    expect(shape).toContain('recovery-capability-42');
+    expect(shape).not.toContain('capability-1');
   });
 });
 

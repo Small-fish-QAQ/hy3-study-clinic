@@ -10,11 +10,15 @@ import {
 import { Hy3Provider } from './hy3Provider.js';
 import { ProviderError } from './errors.js';
 import type {
+  CurriculumProposalInput,
   RepairGenerationInput,
   StudyPlanProposalInput,
   VisualDescriptionInput,
 } from './provider.js';
-import { groupedStudyPlanProposalMessages } from './prompts.js';
+import {
+  groupedStudyPlanProposalMessages,
+  OBJECTIVE_AUTHORITY_SEMANTIC_VOCABULARY_RULES,
+} from './prompts.js';
 
 const blocks: SourceBlock[] = [
   {
@@ -159,6 +163,117 @@ const semanticRepairProposal = ObjectiveAuthoritySemanticRepairProposalSchema.pa
   ],
 });
 
+const curriculumProposalCandidate = (capabilityRequirementRef?: string) => ({
+  nodes: [
+    {
+      key: 'chapter-1',
+      parentKey: null,
+      kind: 'chapter',
+      index: 0,
+      title: 'Chapter',
+      structuralUnitIds: [],
+      sourceEvidence: [],
+      conceptIds: [],
+      canonicalConceptIds: [],
+      objectives: [],
+      prerequisiteUnitKeys: [],
+      graphRelationIds: [],
+    },
+    {
+      key: 'section-1',
+      parentKey: 'chapter-1',
+      kind: 'section',
+      index: 0,
+      title: 'Section',
+      structuralUnitIds: [],
+      sourceEvidence: [],
+      conceptIds: [],
+      canonicalConceptIds: [],
+      objectives: [],
+      prerequisiteUnitKeys: [],
+      graphRelationIds: [],
+    },
+    {
+      key: 'unit-1',
+      parentKey: 'section-1',
+      kind: 'learning_unit',
+      index: 0,
+      title: 'Unit',
+      structuralUnitIds: [],
+      sourceEvidence: [{ evidenceId: 'E1' }],
+      conceptIds: [],
+      canonicalConceptIds: [],
+      objectives: [
+        {
+          key: 'objective-1',
+          title: 'Objective one',
+          description: 'Explain one thing.',
+          construct: 'explain',
+          evidence: [{ evidenceId: 'E1' }],
+          ...(capabilityRequirementRef ? { capabilityRequirementRef } : {}),
+        },
+        ...(capabilityRequirementRef
+          ? [
+              {
+                key: 'objective-2',
+                title: 'Objective two',
+                description: 'Explain another thing.',
+                construct: 'explain' as const,
+                evidence: [{ evidenceId: 'E1' }],
+                capabilityRequirementRef,
+              },
+            ]
+          : []),
+      ],
+      prerequisiteUnitKeys: [],
+      graphRelationIds: [],
+    },
+  ],
+  synthesisGroups: [],
+});
+
+function curriculumProviderInput(withRecovery: boolean): CurriculumProposalInput {
+  return {
+    workspaceName: 'Workspace',
+    contract: {
+      intent: 'Learn',
+      targetOutcome: { description: 'Understand the subject.' },
+      desiredDepth: 'standard',
+      subjectBoundaries: [],
+      includedTopics: [],
+      excludedTopics: [],
+      materials: [],
+    },
+    executionSourceManifest: { fingerprint: 'manifest', revisions: [] },
+    outline: [],
+    concepts: [],
+    graphEdges: [],
+    allowedCanonicalConceptIds: [],
+    canonicalConcepts: [],
+    predecessor: null,
+    ...(withRecovery
+      ? {
+          capabilityRecovery: {
+            requirements: [
+              {
+                capabilityRef: 'recovery-capability-42',
+                title: 'Recover the original capability',
+                description: 'Explain the original capability exactly.',
+                originalProposition: 'Explain the original capability exactly.',
+                construct: 'explain',
+                priority: 'required',
+                allowedEvidenceIds: ['E1'],
+              },
+            ],
+          },
+        }
+      : {}),
+    blocks: [],
+    evidenceCatalog: [],
+    limits: { maxNodes: 4, maxObjectives: 4, maxSynthesisGroups: 4 },
+  } as unknown as CurriculumProposalInput;
+}
+
 describe('Hy3Provider objective-authority semantic methods', () => {
   it('parses strict evaluation/repair payloads and reports fixed schema fingerprints', async () => {
     const fetchImpl = vi
@@ -211,6 +326,13 @@ describe('Hy3Provider objective-authority semantic methods', () => {
     ).resolves.toEqual(semanticEvaluationProposal);
     expect(fetchImpl).toHaveBeenCalledTimes(2);
     expect(onRepairAttempt).toHaveBeenCalledExactlyOnceWith('schema', 'SCHEMA_VALIDATION_FAILURE');
+    const calls = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls;
+    const repairBody = JSON.parse(String(calls[1]![1]!.body)) as {
+      messages: Array<{ content: string }>;
+    };
+    expect(repairBody.messages.at(-1)!.content).toContain(
+      OBJECTIVE_AUTHORITY_SEMANTIC_VOCABULARY_RULES,
+    );
   });
 
   it('preserves already-aborted evaluation and repair without fetching', async () => {
@@ -230,6 +352,38 @@ describe('Hy3Provider objective-authority semantic methods', () => {
       }),
     ).rejects.toMatchObject({ code: 'REQUEST_CANCELLED' });
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+});
+
+describe('Hy3Provider Curriculum capability contract', () => {
+  it('drops unsolicited recovery aliases from a fresh Curriculum before strict parsing', async () => {
+    const candidate = curriculumProposalCandidate('capability-1');
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(jsonResponse(JSON.stringify(candidate))) as unknown as typeof fetch;
+
+    const result = await makeProvider(fetchImpl).proposeCurriculum(curriculumProviderInput(false));
+
+    expect(result.nodes.flatMap((node) => node.objectives)).toEqual(
+      expect.not.arrayContaining([
+        expect.objectContaining({ capabilityRequirementRef: 'capability-1' }),
+      ]),
+    );
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps recovery alias strictness when a real recovery frontier is offered', async () => {
+    const candidate = curriculumProposalCandidate('recovery-capability-42');
+    const fetchImpl = vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(jsonResponse(JSON.stringify(candidate))),
+      ) as unknown as typeof fetch;
+
+    await expect(
+      makeProvider(fetchImpl).proposeCurriculum(curriculumProviderInput(true)),
+    ).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 });
 

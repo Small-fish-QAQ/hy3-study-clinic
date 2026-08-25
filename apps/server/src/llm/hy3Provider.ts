@@ -79,6 +79,7 @@ import {
   practiceContentMessages,
   objectiveAuthoritySemanticEvaluationMessages,
   objectiveAuthoritySemanticRepairMessages,
+  OBJECTIVE_AUTHORITY_SEMANTIC_VOCABULARY_RULES,
   type ChatMessage,
 } from './prompts.js';
 import type {
@@ -94,6 +95,7 @@ import type {
   MisconceptionProposalInput,
   MasteryChallengeProposalInput,
   ProviderCandidateFailureArtifact,
+  ProviderCandidatePreprocessor,
   ProviderCallOptions,
   ProviderTargetedRepairScope,
   QuizGenerationInput,
@@ -158,6 +160,16 @@ interface TargetedRepairCollection {
   collectionKey: 'slots' | 'items';
   identityKey: 'slotId' | 'practiceSlotId';
   itemSchema: ZodType<unknown, ZodTypeDef, unknown>;
+}
+
+function stripCapabilityRecoveryRefs(candidate: unknown): unknown {
+  if (Array.isArray(candidate)) return candidate.map(stripCapabilityRecoveryRefs);
+  if (!isRecord(candidate)) return candidate;
+  return Object.fromEntries(
+    Object.entries(candidate)
+      .filter(([key]) => key !== 'capabilityRequirementRef' && key !== 'capabilityRequirementRefs')
+      .map(([key, value]) => [key, stripCapabilityRecoveryRefs(value)]),
+  );
 }
 
 function normalizeTargetedRepairScope(
@@ -667,6 +679,9 @@ export class Hy3Provider implements LlmProvider {
       {
         maxTokens: CURRICULUM_MAX_OUTPUT_TOKENS,
         schemaName: 'curriculum-proposal-v2-evidence-identity',
+        ...(input.capabilityRecovery?.requirements.length
+          ? {}
+          : { candidatePreprocessor: stripCapabilityRecoveryRefs }),
       },
     );
   }
@@ -690,6 +705,9 @@ export class Hy3Provider implements LlmProvider {
       {
         maxTokens: COURSE_MAP_MAX_OUTPUT_TOKENS,
         schemaName: 'course-map-proposal-v2-local-refs',
+        ...(input.capabilityRecovery?.requirements.length
+          ? {}
+          : { candidatePreprocessor: stripCapabilityRecoveryRefs }),
       },
     );
   }
@@ -712,6 +730,9 @@ export class Hy3Provider implements LlmProvider {
       {
         maxTokens: CURRICULUM_MAX_OUTPUT_TOKENS,
         schemaName: 'curriculum-detail-proposal-v1',
+        ...(input.regions.some((region) => (region.capabilityRequirements?.length ?? 0) > 0)
+          ? {}
+          : { candidatePreprocessor: stripCapabilityRecoveryRefs }),
       },
     );
   }
@@ -729,6 +750,7 @@ export class Hy3Provider implements LlmProvider {
         'Keep objectiveRef, proposition, construct, and the per-objective offered evidence boundary exact.',
         'Partition every proposition completely; keyword overlap is never entailment; explicitly fail unsupported clauses.',
         'Never cite evidence from another objective or invent an alias. Return the complete corrected evaluation object.',
+        OBJECTIVE_AUTHORITY_SEMANTIC_VOCABULARY_RULES,
       ].join('\n'),
       {
         maxTokens: 12_000,
@@ -898,6 +920,7 @@ export class Hy3Provider implements LlmProvider {
       maxTokens?: number;
       schemaName?: string;
       targetedRepairCollection?: TargetedRepairCollection;
+      candidatePreprocessor?: ProviderCandidatePreprocessor;
       /** Legacy calls may spend independent schema/candidate repairs; compositional calls do not. */
       allowIndependentRepair?: boolean;
     } = {},
@@ -915,7 +938,13 @@ export class Hy3Provider implements LlmProvider {
       1,
       'original',
     );
-    const first = this.tryParse(original, schema, opts);
+    const first = this.tryParse(
+      original,
+      schema,
+      opts,
+      undefined,
+      requestOptions.candidatePreprocessor,
+    );
     const firstCandidateTargetedRepair =
       requestOptions.targetedRepairCollection &&
       !first.ok &&
@@ -1007,6 +1036,7 @@ export class Hy3Provider implements LlmProvider {
               targetedRepairBase!.scope,
             )
         : undefined,
+      requestOptions.candidatePreprocessor,
     );
     if (
       requestOptions.targetedRepairCollection &&
@@ -1086,6 +1116,7 @@ export class Hy3Provider implements LlmProvider {
                 targetedRepairBase!.scope,
               )
           : undefined,
+        requestOptions.candidatePreprocessor,
       );
       const thirdDiagnostic = buildStructuredOutputDiagnostic({
         schemaName,
@@ -1124,6 +1155,7 @@ export class Hy3Provider implements LlmProvider {
     schema: ZodType<T, ZodTypeDef, unknown>,
     opts?: ProviderCallOptions,
     candidateTransform?: ((candidate: T) => unknown) | undefined,
+    candidatePreprocessor?: ProviderCandidatePreprocessor | undefined,
   ):
     | { ok: true; value: T; parse: StructuredParseMetadata }
     | {
@@ -1190,7 +1222,10 @@ export class Hy3Provider implements LlmProvider {
       throw err;
     }
 
-    let parsed = schema.safeParse(extracted.value);
+    const preprocessed = candidatePreprocessor
+      ? candidatePreprocessor(extracted.value)
+      : extracted.value;
+    let parsed = schema.safeParse(preprocessed);
     if (parsed.success && candidateTransform) {
       parsed = schema.safeParse(candidateTransform(parsed.data));
     }
