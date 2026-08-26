@@ -14,6 +14,7 @@ import type {
   CurriculumAuthorityEnvelope,
   DesiredDepth,
   ExecutionSourceManifest,
+  EvidenceRepresentation,
   GraphEdge,
   GraphProposalPayload,
   GraphRelation,
@@ -400,6 +401,8 @@ export interface AssessmentProposalInput {
   /** Question types the assessment may use. */
   allowedTypes: QuestionType[];
   questionCount: number;
+  /** Local request metadata; the provider does not decide learner-state consequences. */
+  requiredRepresentation: EvidenceRepresentation | null;
   /** Misconception to discriminate (misconception_check mode only). */
   misconception: MisconceptionRecord | null;
 }

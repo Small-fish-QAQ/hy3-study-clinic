@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { EvidenceRepresentationSchema } from './formalProgression.js';
 
 export const FormalAssessmentQuestionTypeSchema = z.enum([
   'short_answer',
@@ -50,6 +51,8 @@ export const FormalAssessmentItemSchema = z.object({
   index: z.number().int().nonnegative(),
   targetLearningUnitId: z.string().min(1),
   targetObjectiveId: z.string().min(1),
+  /** Locally assigned demand/representation contract; legacy items are conservatively recall. */
+  representation: EvidenceRepresentationSchema.default('recall'),
   questionType: FormalAssessmentQuestionTypeSchema,
   prompt: z.string().min(1).max(2000),
   options: z
@@ -63,6 +66,22 @@ export const FormalAssessmentItemSchema = z.object({
   policyReason: FormalAssessmentPolicyReasonSchema,
 });
 export type FormalAssessmentItem = z.infer<typeof FormalAssessmentItemSchema>;
+
+export const AssessmentItemExposureSchema = z
+  .object({
+    id: z.string().min(1),
+    workspaceId: z.string().min(1),
+    assessmentVersionId: z.string().min(1),
+    attemptId: z.string().min(1),
+    itemId: z.string().min(1),
+    itemFingerprint: z.string().min(1),
+    surface: z.enum(['formal_assessment', 'mastery_red_team_shadow']),
+    /** Null means a pre-cutover presentation may exist but cannot be proven. */
+    seenBeforeAttempt: z.boolean().nullable(),
+    exposedAt: z.string().datetime(),
+  })
+  .strict();
+export type AssessmentItemExposure = z.infer<typeof AssessmentItemExposureSchema>;
 
 export const AssessmentDefinitionSchema = z.object({
   id: z.string().min(1),

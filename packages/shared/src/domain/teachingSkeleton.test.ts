@@ -311,10 +311,10 @@ describe('accepted Lesson checkpoint contract', () => {
     });
   });
 
-  it('rejects a failed Lesson evaluation, a deleted protected slot, or an unknown slot', () => {
+  it('retains a failed Lesson diagnostic while rejecting deleted or unknown slots', () => {
     const failed = structuredClone(checkpoint());
     failed.lessonEvaluation.status = 'fail';
-    expect(AcceptedLessonCheckpointSchema.safeParse(failed).success).toBe(false);
+    expect(AcceptedLessonCheckpointSchema.safeParse(failed).success).toBe(true);
 
     const deleted = structuredClone(checkpoint());
     deleted.lessonContent = deleted.lessonContent.filter((entry) => entry.slotId !== 'L2');

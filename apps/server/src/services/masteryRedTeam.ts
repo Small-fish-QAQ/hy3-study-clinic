@@ -8,6 +8,7 @@ import {
   type AssessmentVersion,
   type FormalAssessmentItem,
   type MasteryChallengeCandidate,
+  type MasteryRedTeamRun,
   type MasteryRedTeamRunDetail,
   type MasterySnapshot,
 } from '@hy3-clinic/shared';
@@ -541,6 +542,19 @@ export function createMasteryRedTeamService({
     });
   }
 
+  function exposeSelectedRun(run: MasteryRedTeamRun): void {
+    if (!run.assessmentVersionId || !['selected', 'evaluated'].includes(run.status)) return;
+    const attempt =
+      repos.formalAssessments
+        .listAttemptsForWorkspace(run.workspaceId)
+        .find(
+          (candidate) =>
+            candidate.assessmentVersionId === run.assessmentVersionId &&
+            candidate.status !== 'cancelled',
+        ) ?? formalAssessments.startShadowAttempt(run.assessmentVersionId, run.workspaceId);
+    formalAssessments.recordAttemptExposure(attempt.id);
+  }
+
   function itemFromCandidate(
     snapshot: MasterySnapshot,
     candidate: MasteryChallengeCandidate,
@@ -565,6 +579,7 @@ export function createMasteryRedTeamService({
       index: 0,
       targetLearningUnitId: snapshot.target.learningUnitId,
       targetObjectiveId: snapshot.target.objectiveId,
+      representation: 'transfer',
       questionType: 'short_answer',
       prompt: candidate.prompt,
       rubric: candidate.rubric.map((criterion) => ({
@@ -607,6 +622,7 @@ export function createMasteryRedTeamService({
           'Mastery Red Team 启动键已被用于不同的目标或父运行。',
         );
       }
+      exposeSelectedRun(existing);
       return runDetail(existing.id);
     }
     let snapshot: MasterySnapshot;
@@ -762,6 +778,7 @@ export function createMasteryRedTeamService({
         updatedAt: clock.now().toISOString(),
       });
       repos.masteryRedTeam.updateRun(selectedRun);
+      exposeSelectedRun(selectedRun);
       return runDetail(run.id);
     } catch (error) {
       const existingRun = repos.masteryRedTeam.findRunByIdempotencyKey(

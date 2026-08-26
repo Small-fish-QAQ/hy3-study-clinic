@@ -5,6 +5,7 @@ import {
   MAX_ASSESSMENT_QUESTIONS,
   type AssessmentMode,
   type Concept,
+  type EvidenceRepresentation,
   type PublicBlueprint,
   type QuestionBlueprint,
   type Question,
@@ -42,6 +43,10 @@ export interface AssessmentCreation {
   quiz: Quiz;
   blueprints: QuestionBlueprint[];
   rejected: Array<{ stem: string; reason: string }>;
+}
+
+interface AssessmentGenerationPolicy {
+  requiredRepresentation: EvidenceRepresentation | null;
 }
 
 /** Question types each assessment mode may draw on. */
@@ -235,6 +240,7 @@ export function createAssessmentService({
     workspaceId: string,
     input: unknown,
     opts?: ProviderCallOptions,
+    generationPolicy: AssessmentGenerationPolicy = { requiredRepresentation: null },
   ): Promise<AssessmentCreation> {
     const workspace = requireWorkspace(workspaceId);
     const request = CreateAssessmentRequestSchema.parse(input);
@@ -301,6 +307,7 @@ export function createAssessmentService({
       blocks,
       allowedTypes,
       questionCount,
+      requiredRepresentation: generationPolicy.requiredRepresentation,
       misconception: misconceptionTarget ? misconceptions.get(misconceptionTarget) : null,
     };
     const payload = await inferenceProvider.proposeAssessment(providerInput, {

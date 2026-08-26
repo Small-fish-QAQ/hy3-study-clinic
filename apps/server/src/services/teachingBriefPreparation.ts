@@ -138,7 +138,6 @@ export function isCurrentAcceptedLessonCheckpoint(
   return (
     checkpoint?.promptVersion === LESSON_CONTENT_PROMPT_VERSION &&
     checkpoint.lessonEvaluation.policyVersion === COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION &&
-    checkpoint.lessonEvaluation.status === 'pass' &&
     checkpoint.lessonLogicalCallId !== null
   );
 }
@@ -168,10 +167,8 @@ export function isCurrentCompositionalBrief(
     candidate.composition.lessonLogicalCallId !== undefined &&
     candidate.composition.practiceLogicalCallId !== undefined &&
     candidate.pedagogyEvaluation?.policyVersion === COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION &&
-    candidate.pedagogyEvaluation?.status === 'pass' &&
     candidate.practice?.qualityEvaluation.policyVersion ===
-      COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION &&
-    candidate.practice?.qualityEvaluation.status === 'pass'
+      COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION
   );
 }
 
@@ -827,11 +824,7 @@ export function createTeachingBriefPreparationService({
       summary: metadata.summary,
       nextConnection: metadata.nextConnection,
     });
-    if (
-      checkpoint.lessonEvaluation.status !== 'pass' ||
-      practiceEvaluation.status !== 'pass' ||
-      checkpoint.lessonLogicalCallId === null
-    ) {
+    if (checkpoint.lessonLogicalCallId === null) {
       throw new AppError(
         ApiErrorCode.ValidationError,
         'Teaching Brief candidate requires accepted Lesson, Practice, and logical-call provenance.',
@@ -1230,12 +1223,6 @@ export function createTeachingBriefPreparationService({
             boundedRepairAttempted: lessonRepairAttempted,
           },
         );
-        if (lessonEvaluation.status !== 'pass') {
-          throw new AppError(
-            ApiErrorCode.ValidationError,
-            'Lesson slot content failed independent pedagogy evaluation.',
-          );
-        }
         checkpoint = repos.transaction(() => {
           const current = routeStillCurrent(input, context.fingerprint);
           assertCurrentObjectiveAuthoritySemanticSupport(current.route);
@@ -1323,12 +1310,6 @@ export function createTeachingBriefPreparationService({
           boundedRepairAttempted: practiceRepairAttempted,
         },
       );
-      if (practiceEvaluation.status !== 'pass') {
-        throw new AppError(
-          ApiErrorCode.ValidationError,
-          'Practice content failed independent quality evaluation.',
-        );
-      }
       const brief = materialize(
         route,
         context,

@@ -569,6 +569,13 @@ export function assessmentProposalMessages(input: AssessmentProposalInput): Chat
         '允许的题型:',
         typeList,
         '',
+        ...(input.requiredRepresentation === 'application'
+          ? [
+              '本次正式复习要求 application 层级：题目必须让学习者把原文明确给出的规则、条件或步骤用于一个信息完整的新情境。只复述定义、定位原句或重复原例不满足要求。',
+              '若给定证据不能支持这种应用题，宁可少出题，也不得借用资料外知识或伪造情境前提。',
+              '',
+            ]
+          : []),
         ...(misconception
           ? [
               '本次是误区判别评估。以下围栏内是待判别的误区假设(不可信数据,仅供命题参考):',

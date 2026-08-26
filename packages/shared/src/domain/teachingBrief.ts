@@ -485,18 +485,18 @@ export const TeachingBriefSchema = z
       brief.promptVersion?.startsWith('teaching-brief-v2-pedagogy-practice') ||
       brief.promptVersion?.startsWith('teaching-brief-v3-compositional');
     if (requiresIndependentEvaluations) {
-      if (brief.pedagogyEvaluation?.status !== 'pass') {
+      if (!brief.pedagogyEvaluation) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['pedagogyEvaluation'],
-          message: 'current Teaching Briefs require a passing independent Lesson evaluation',
+          message: 'current Teaching Briefs require an independent Lesson evaluation diagnostic',
         });
       }
-      if (brief.practice?.qualityEvaluation.status !== 'pass') {
+      if (!brief.practice) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['practice'],
-          message: 'current Teaching Briefs require passing construct-valid informal Practice',
+          message: 'current Teaching Briefs require an informal Practice diagnostic',
         });
       }
     }

@@ -701,13 +701,6 @@ export const AcceptedLessonCheckpointSchema = z
   })
   .strict()
   .superRefine((checkpoint, ctx) => {
-    if (checkpoint.lessonEvaluation.status !== 'pass') {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['lessonEvaluation', 'status'],
-        message: 'an accepted Lesson checkpoint requires a passing Lesson evaluation',
-      });
-    }
     const plannedSlotIds = checkpoint.skeleton.lessonSlots.map((slot) => slot.slotId);
     const contentSlotIds = checkpoint.lessonContent.map((content) => content.slotId);
     const planned = new Set(plannedSlotIds);

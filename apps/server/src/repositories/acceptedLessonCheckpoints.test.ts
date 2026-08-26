@@ -323,12 +323,13 @@ describe('accepted Lesson checkpoints repository', () => {
     },
   );
 
-  it('does not persist a checkpoint whose independent Lesson evaluation failed', () => {
+  it('persists a failed independent Lesson evaluation as an immutable diagnostic', () => {
     const failed = checkpoint();
     failed.lessonEvaluation.status = 'fail';
-    expect(() => repos.acceptedLessonCheckpoints.create(failed)).toThrow();
+    const stored = repos.acceptedLessonCheckpoints.create(failed);
+    expect(stored.lessonEvaluation.status).toBe('fail');
     expect(db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get()).toEqual({
-      count: 0,
+      count: 1,
     });
   });
 

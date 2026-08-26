@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  AssessmentAttemptSchema,
   GradeRecordSchema,
   FormalQuestionContractSchema,
   type Curriculum,
@@ -27,6 +28,10 @@ import {
 } from '../testing/fixtures.js';
 import { fixedClock } from '../util/ids.js';
 import { buildCurriculumExecutionContext } from './curriculum.js';
+import {
+  assessmentItemFingerprint,
+  lessonExecutionExposureFingerprints,
+} from './formalAssessments.js';
 import { createServices, type Services } from './index.js';
 import { createReviewBackfillService } from './reviewBackfill.js';
 
@@ -404,7 +409,7 @@ function stageAndActivateRoute() {
   return { contract: confirmedContract, curriculum: acceptedCurriculum, plan, agenda };
 }
 
-function insertGrade(suffix: string, score: number, blockId = 'blk_1') {
+function insertGrade(suffix: string, score: number, blockId = 'blk_1', stem?: string) {
   const quizId = `quiz_${suffix}`;
   const questionId = `question_${suffix}`;
   const admittedPremise = repos.materials.getBlock(blockId)!.content;
@@ -420,6 +425,7 @@ function insertGrade(suffix: string, score: number, blockId = 'blk_1') {
           id: questionId,
           quizId,
           type: 'short_answer',
+          ...(stem ? { stem } : {}),
           options: undefined,
           correctOptionIds: undefined,
           expectedAnswer: admittedPremise,
@@ -479,6 +485,7 @@ function createAssessmentEvidence(suffix: string, createdAt = T3) {
     title: `Bridge ${suffix}`,
     targetLearningUnitId: 'unit_1',
     targetObjectiveId: 'objective_1',
+    representation: 'recall',
     progressionContext: {
       quizId: source.quizId,
       contractVersionId: 'contract_1',
@@ -525,6 +532,19 @@ function createAssessmentEvidence(suffix: string, createdAt = T3) {
     grade,
     evidence: repos.formalAssessments.getEvidence(evidence.id)!,
   };
+}
+
+function createExposureVersion(suffix: string, stem: string) {
+  const source = insertGrade(`exposure_${suffix}`, 1, 'blk_1', stem);
+  return services.formalAssessments.createAcceptedFromQuiz({
+    workspaceId: 'ws_1',
+    quiz: repos.quizzes.get(source.quizId)!,
+    logicalKey: `exposure-${suffix}`,
+    title: `Exposure ${suffix}`,
+    targetLearningUnitId: 'unit_1',
+    targetObjectiveId: 'objective_1',
+    representation: 'recall',
+  });
 }
 
 function installSameUnitFormalActions() {
@@ -1012,6 +1032,36 @@ function correctCurriculumSourceFingerprints() {
   );
 }
 
+function makePrimaryObjectiveApplicationCapable() {
+  const curriculum = repos.curricula.get('curriculum_1')!;
+  const nodes = curriculum.nodes.map((node) => {
+    if (node.id !== 'unit_1' || !node.learningUnit) return node;
+    return {
+      ...node,
+      learningUnit: {
+        ...node.learningUnit,
+        objectives: node.learningUnit.objectives.map((objective) => {
+          if (objective.id !== 'objective_1') return objective;
+          const { semanticSupport: _semanticSupport, ...withoutSemanticSupport } = objective;
+          return makeSemanticallySupportedObjective(
+            {
+              ...withoutSemanticSupport,
+              formalAssessmentConstruct: 'apply',
+              authoritySourceBlockIds: objective.authoritySourceBlockIds ?? [],
+              authorityClaimIds: objective.authorityClaimIds ?? [],
+            },
+            'relationship',
+          );
+        }),
+      },
+    };
+  });
+  db.prepare('UPDATE curriculum_versions SET payload = ? WHERE id = ?').run(
+    JSON.stringify({ ...curriculum, nodes }),
+    curriculum.id,
+  );
+}
+
 async function seedEligibleMasteryRedTeamState(suffix: string) {
   const { historical, targetId } = makeDueReview(suffix);
   const { launched } = await launchDueReview(suffix);
@@ -1132,6 +1182,24 @@ describe('formal progression service', () => {
     expect(repos.reviewSuccessor.activeExecution(targetId)?.id).toBe(execution.id);
   });
 
+  it('requests and records application demand only for an application-capable due Review', async () => {
+    makePrimaryObjectiveApplicationCapable();
+    makeDueReview('application_demand');
+    const proposalCall = vi.spyOn(provider, 'proposeAssessment');
+
+    const { launched } = await launchDueReview('application_demand');
+    const version = repos.formalAssessments.getVersion(launched.formalAssessmentVersionId!)!;
+
+    expect(proposalCall).toHaveBeenCalledTimes(1);
+    expect(proposalCall.mock.calls[0]?.[0].requiredRepresentation).toBe('application');
+    expect(version.items).toEqual([
+      expect.objectContaining({ representation: 'application', formalEligible: true }),
+    ]);
+    expect(
+      repos.formalProgression.listQuestionContractsForQuiz(version.progressionContext!.quizId),
+    ).toEqual([expect.objectContaining({ representation: 'application' })]);
+  });
+
   it('resolves direct supported recall with one Good and no mastery mutation', async () => {
     const { historical, targetId } = makeDueReview('direct');
     const masteryBefore = repos.mastery.listByWorkspace('ws_1');
@@ -1141,6 +1209,7 @@ describe('formal progression service', () => {
     expect(resumed.attempt.id).toBe(first.attempt.id);
     expect(first.review).toMatchObject({ phase: 'retrieval', resolved: false });
     const version = repos.formalAssessments.getVersion(launched.formalAssessmentVersionId!)!;
+    expect(version.items[0]?.representation).toBe('recall');
     const answer = version.items[0]!.rubric!.map((criterion) => criterion.text).join(' ');
 
     const result = await services.learnerAssessments.submit(first.attempt.id, {
@@ -1358,6 +1427,7 @@ describe('formal progression service', () => {
       title: 'Unlaunched due Review',
       targetLearningUnitId: 'unit_1',
       targetObjectiveId: 'objective_1',
+      representation: 'recall',
       progressionContext: {
         quizId: source.quizId,
         contractVersionId: 'contract_1',
@@ -1405,6 +1475,199 @@ describe('formal progression service', () => {
     ).toHaveLength(0);
   });
 
+  it('records first, reused, and historically unknown exact-item exposure conservatively', () => {
+    const historical = createExposureVersion(
+      'historical_source',
+      'Explain why working-memory capacity is limited.',
+    );
+    repos.formalAssessments.insertAttempt(
+      AssessmentAttemptSchema.parse({
+        id: 'historical_attempt_without_exposure',
+        assessmentVersionId: historical.id,
+        workspaceId: 'ws_1',
+        ordinal: 1,
+        status: 'started',
+        responses: {},
+        startedAt: T0,
+        submittedAt: null,
+        cancelledAt: null,
+      }),
+    );
+    db.prepare('UPDATE assessment_attempts SET exposure_tracking_version = 0 WHERE id = ?').run(
+      'historical_attempt_without_exposure',
+    );
+    services.formalAssessments.recordAttemptExposure('historical_attempt_without_exposure');
+    expect(
+      repos.formalAssessments.getExposure(
+        'historical_attempt_without_exposure',
+        historical.items[0]!.id,
+      ),
+    ).toMatchObject({ seenBeforeAttempt: null });
+
+    const uncertainHistorical = createExposureVersion(
+      'historical_uncertain_source',
+      'Describe the bounded relationship between processing and available capacity.',
+    );
+    repos.formalAssessments.insertAttempt(
+      AssessmentAttemptSchema.parse({
+        id: 'historical_uncertain_attempt',
+        assessmentVersionId: uncertainHistorical.id,
+        workspaceId: 'ws_1',
+        ordinal: 1,
+        status: 'started',
+        responses: {},
+        startedAt: T0,
+        submittedAt: null,
+        cancelledAt: null,
+      }),
+    );
+    db.prepare('UPDATE assessment_attempts SET exposure_tracking_version = 0 WHERE id = ?').run(
+      'historical_uncertain_attempt',
+    );
+    const historicalReplay = createExposureVersion(
+      'historical_replay',
+      'Describe the bounded relationship between processing and available capacity.',
+    );
+    const historicalReplayAttempt = services.formalAssessments.startAttempt(
+      historicalReplay.id,
+      'ws_1',
+    );
+    expect(
+      repos.formalAssessments.getExposure(
+        historicalReplayAttempt.id,
+        historicalReplay.items[0]!.id,
+      ),
+    ).toBeUndefined();
+    services.formalAssessments.recordAttemptExposure(historicalReplayAttempt.id);
+    expect(
+      repos.formalAssessments.getExposure(
+        historicalReplayAttempt.id,
+        historicalReplay.items[0]!.id,
+      ),
+    ).toMatchObject({ seenBeforeAttempt: null });
+
+    const first = createExposureVersion(
+      'first',
+      'State the source relationship between capacity and active processing.',
+    );
+    const firstAttempt = services.formalAssessments.startAttempt(first.id, 'ws_1');
+    expect(
+      repos.formalAssessments.getExposure(firstAttempt.id, first.items[0]!.id),
+    ).toBeUndefined();
+    services.formalAssessments.recordAttemptExposure(firstAttempt.id);
+    expect(repos.formalAssessments.getExposure(firstAttempt.id, first.items[0]!.id)).toMatchObject({
+      seenBeforeAttempt: false,
+    });
+
+    const reused = createExposureVersion(
+      'reused',
+      'State the source relationship between capacity and active processing.',
+    );
+    expect(assessmentItemFingerprint(reused.items[0]!)).toBe(
+      assessmentItemFingerprint(first.items[0]!),
+    );
+    const reusedAttempt = services.formalAssessments.startAttempt(reused.id, 'ws_1');
+    services.formalAssessments.recordAttemptExposure(reusedAttempt.id);
+    expect(
+      repos.formalAssessments.getExposure(reusedAttempt.id, reused.items[0]!.id),
+    ).toMatchObject({ seenBeforeAttempt: true });
+  });
+
+  it('does not treat a current unpresented Attempt as historical exposure uncertainty', () => {
+    const prompt = 'Apply the capacity rule to the stated current condition.';
+    const unpresented = createExposureVersion('current_unpresented', prompt);
+    const unpresentedAttempt = services.formalAssessments.startAttempt(unpresented.id, 'ws_1');
+    expect(
+      repos.formalAssessments.getExposure(unpresentedAttempt.id, unpresented.items[0]!.id),
+    ).toBeUndefined();
+
+    const firstPresentation = createExposureVersion('after_unpresented', prompt);
+    const firstPresentationAttempt = services.formalAssessments.startAttempt(
+      firstPresentation.id,
+      'ws_1',
+    );
+    services.formalAssessments.recordAttemptExposure(firstPresentationAttempt.id);
+
+    expect(
+      repos.formalAssessments.getExposure(
+        firstPresentationAttempt.id,
+        firstPresentation.items[0]!.id,
+      ),
+    ).toMatchObject({ seenBeforeAttempt: false });
+  });
+
+  it('treats an exact learner-visible Lesson prompt as seen before a formal Attempt', () => {
+    const prompt = 'Apply the source rule to the stated working-memory condition.';
+    const brief = {
+      segments: [{ index: 0, informalCheck: { prompt } }],
+      practice: undefined,
+    } as unknown as Parameters<typeof lessonExecutionExposureFingerprints>[0];
+    const lessonState = {
+      teachingBriefId: 'brief_exposure',
+      presentedSegmentIndexes: [0],
+      presentationCompletedAt: null,
+      practiceInteractions: [],
+      practiceCompletedAt: null,
+    } as unknown as ReturnType<Repositories['lessonExecution']['listForWorkspace']>[number];
+    vi.spyOn(repos.lessonExecution, 'listForWorkspace').mockReturnValue([lessonState]);
+    vi.spyOn(repos.teachingBriefs, 'get').mockReturnValue(
+      brief as ReturnType<Repositories['teachingBriefs']['get']>,
+    );
+
+    const version = createExposureVersion('lesson_prompt_reuse', prompt);
+    expect(lessonExecutionExposureFingerprints(brief, lessonState)).toEqual([
+      assessmentItemFingerprint(version.items[0]!),
+    ]);
+    const attempt = services.formalAssessments.startAttempt(version.id, 'ws_1');
+    services.formalAssessments.recordAttemptExposure(attempt.id);
+
+    expect(repos.formalAssessments.getExposure(attempt.id, version.items[0]!.id)).toMatchObject({
+      seenBeforeAttempt: true,
+    });
+  });
+
+  it('treats the currently presented non-credit Practice prompt as seen', () => {
+    const prompt = 'Which action follows from the source rule in this new condition?';
+    const options = [
+      { id: 'a', text: 'Apply the bounded rule.' },
+      { id: 'b', text: 'Ignore the stated condition.' },
+      { id: 'c', text: 'Replace the source rule.' },
+    ];
+    const brief = {
+      segments: [{ index: 0, informalCheck: null }],
+      practice: {
+        items: [
+          {
+            initial: { prompt, options },
+            retry: { prompt: `Retry: ${prompt}`, options },
+          },
+        ],
+      },
+    } as unknown as Parameters<typeof lessonExecutionExposureFingerprints>[0];
+    const lessonState = {
+      teachingBriefId: 'brief_practice_exposure',
+      presentedSegmentIndexes: [0],
+      presentationCompletedAt: T3,
+      practiceInteractions: [],
+      practiceCompletedAt: null,
+    } as unknown as ReturnType<Repositories['lessonExecution']['listForWorkspace']>[number];
+    vi.spyOn(repos.lessonExecution, 'listForWorkspace').mockReturnValue([lessonState]);
+    vi.spyOn(repos.teachingBriefs, 'get').mockReturnValue(
+      brief as ReturnType<Repositories['teachingBriefs']['get']>,
+    );
+
+    const version = createExposureVersion('practice_prompt_reuse', prompt);
+    expect(lessonExecutionExposureFingerprints(brief, lessonState)).toContain(
+      assessmentItemFingerprint(version.items[0]!),
+    );
+    const attempt = services.formalAssessments.startAttempt(version.id, 'ws_1');
+    services.formalAssessments.recordAttemptExposure(attempt.id);
+
+    expect(repos.formalAssessments.getExposure(attempt.id, version.items[0]!.id)).toMatchObject({
+      seenBeforeAttempt: true,
+    });
+  });
+
   it('bridges supported Assessment Evidence through the existing progression projection exactly once', () => {
     const source = insertGrade('assessment_bridge', 1);
     services.formalProgression.registerAssessmentContracts({
@@ -1425,6 +1688,7 @@ describe('formal progression service', () => {
       title: 'Bridge assessment',
       targetLearningUnitId: 'unit_1',
       targetObjectiveId: 'objective_1',
+      representation: 'recall',
       progressionContext: {
         quizId: source.quizId,
         contractVersionId: 'contract_1',

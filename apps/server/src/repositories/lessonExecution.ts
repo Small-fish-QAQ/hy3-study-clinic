@@ -107,6 +107,18 @@ export function createLessonExecutionRepo(db: SqliteDb) {
           .all(sessionId) as StateRow[]
       ).map(hydrateState);
     },
+    listForWorkspace(workspaceId: string): LessonExecutionState[] {
+      return (
+        db
+          .prepare(
+            `SELECT l.* FROM lesson_execution_states l
+             JOIN study_sessions s ON s.id = l.session_id
+             WHERE s.workspace_id = ?
+             ORDER BY l.updated_at, l.id`,
+          )
+          .all(workspaceId) as StateRow[]
+      ).map(hydrateState);
+    },
     listForRoute(
       workspaceId: string,
       curriculumVersionId: string,

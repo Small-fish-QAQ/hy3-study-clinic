@@ -3138,6 +3138,47 @@ const MIGRATIONS: Migration[] = [
         WHERE study_session_id IS NOT NULL;
     `,
   },
+  {
+    version: 43,
+    name: 'formal_assessment_item_exposure',
+    // No historical backfill is intentional: an old Attempt proves that an
+    // item may have been shown, but cannot prove it was unseen beforehand.
+    up: `
+      ALTER TABLE assessment_attempts ADD COLUMN exposure_tracking_version INTEGER NOT NULL
+        DEFAULT 0 CHECK (exposure_tracking_version BETWEEN 0 AND 1);
+
+      CREATE TABLE assessment_item_exposures (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        assessment_version_id TEXT NOT NULL
+          REFERENCES assessment_versions(id) ON DELETE CASCADE,
+        attempt_id TEXT NOT NULL REFERENCES assessment_attempts(id) ON DELETE CASCADE,
+        item_id TEXT NOT NULL,
+        item_fingerprint TEXT NOT NULL,
+        surface TEXT NOT NULL CHECK (
+          surface IN ('formal_assessment', 'mastery_red_team_shadow')
+        ),
+        seen_before_attempt INTEGER CHECK (
+          seen_before_attempt IS NULL OR seen_before_attempt IN (0, 1)
+        ),
+        exposed_at TEXT NOT NULL,
+        UNIQUE (attempt_id, item_id)
+      );
+      CREATE INDEX idx_assessment_item_exposures_fingerprint
+        ON assessment_item_exposures(workspace_id, item_fingerprint, exposed_at, id);
+      CREATE INDEX idx_assessment_item_exposures_attempt
+        ON assessment_item_exposures(attempt_id, item_id);
+
+      CREATE TRIGGER prevent_assessment_item_exposure_update
+        BEFORE UPDATE ON assessment_item_exposures
+        BEGIN SELECT RAISE(ABORT, 'Assessment item exposure is immutable'); END;
+      CREATE TRIGGER prevent_assessment_item_exposure_delete
+        BEFORE DELETE ON assessment_item_exposures
+        WHEN EXISTS (SELECT 1 FROM workspaces WHERE id = OLD.workspace_id)
+          AND EXISTS (SELECT 1 FROM assessment_attempts WHERE id = OLD.attempt_id)
+        BEGIN SELECT RAISE(ABORT, 'Assessment item exposure is append-only'); END;
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

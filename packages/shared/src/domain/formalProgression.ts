@@ -22,6 +22,23 @@ export const EvidenceRepresentationSchema = z.enum([
 ]);
 export type EvidenceRepresentation = z.infer<typeof EvidenceRepresentationSchema>;
 
+export const EVIDENCE_DEMAND_ORDER: Readonly<Record<EvidenceRepresentation, number>> = {
+  recognition: 0,
+  recall: 1,
+  explanation: 2,
+  application: 3,
+  comparison: 4,
+  transfer: 5,
+  synthesis: 6,
+};
+
+export function evidenceDemandAtLeast(
+  representation: EvidenceRepresentation,
+  minimum: EvidenceRepresentation,
+): boolean {
+  return EVIDENCE_DEMAND_ORDER[representation] >= EVIDENCE_DEMAND_ORDER[minimum];
+}
+
 export const EvidenceProvenanceSchema = z
   .object({
     materialId: z.string().min(1),
@@ -180,6 +197,18 @@ export const CompletionPolicySchema = z
     minimumEligibleEvidenceCount: z.number().int().positive().max(20),
     minimumScore: z.number().min(0).max(1),
     requireSynthesis: z.boolean(),
+    durableMastery: z
+      .object({
+        minimumRepresentationCount: z.number().int().min(2).max(7),
+        minimumDemand: EvidenceRepresentationSchema,
+        requireDelayedUnseenEvidence: z.boolean(),
+      })
+      .strict()
+      .default({
+        minimumRepresentationCount: 2,
+        minimumDemand: 'application',
+        requireDelayedUnseenEvidence: true,
+      }),
     permittedTiers: z
       .array(z.enum(['tier_1_authorized_truth', 'tier_2_validated_representation']))
       .min(1)
@@ -188,6 +217,80 @@ export const CompletionPolicySchema = z
   })
   .strict();
 export type CompletionPolicy = z.infer<typeof CompletionPolicySchema>;
+
+export const DurableMasteryEvidenceFactSchema = z
+  .object({
+    evidenceId: z.string().min(1),
+    representation: EvidenceRepresentationSchema,
+    supported: z.boolean(),
+    reconciled: z.boolean(),
+    delayedReview: z.boolean(),
+    /** Null means historical or otherwise unproven exposure history. */
+    unseenBeforeAttempt: z.boolean().nullable(),
+  })
+  .strict();
+export type DurableMasteryEvidenceFact = z.infer<typeof DurableMasteryEvidenceFactSchema>;
+
+export const DurableMasteryReasonSchema = z.enum([
+  'route_progress_incomplete',
+  'supported_evidence_missing',
+  'representation_diversity_missing',
+  'application_demand_missing',
+  'delayed_unseen_evidence_missing',
+  'current_review_failure',
+  'durable_mastery_demonstrated',
+]);
+export type DurableMasteryReason = z.infer<typeof DurableMasteryReasonSchema>;
+
+export const DurableMasteryEvaluationSchema = z
+  .object({
+    status: z.enum(['evidence_backed', 'mastered']),
+    evidenceIds: z.array(z.string().min(1)).max(100),
+    representations: z.array(EvidenceRepresentationSchema).max(7),
+    reasonCodes: z.array(DurableMasteryReasonSchema).min(1).max(10),
+  })
+  .strict();
+export type DurableMasteryEvaluation = z.infer<typeof DurableMasteryEvaluationSchema>;
+
+/** Deterministic strong-state policy; ordinary route completion is an independent input. */
+export function evaluateDurableMastery(input: {
+  routeProgressComplete: boolean;
+  currentReviewFailure: boolean;
+  policy: CompletionPolicy['durableMastery'];
+  evidence: readonly DurableMasteryEvidenceFact[];
+}): DurableMasteryEvaluation {
+  const qualifying = input.evidence.filter((item) => item.supported && item.reconciled);
+  const representations = [...new Set(qualifying.map((item) => item.representation))].sort(
+    (left, right) => EVIDENCE_DEMAND_ORDER[left] - EVIDENCE_DEMAND_ORDER[right],
+  );
+  const demandSatisfied = qualifying.some((item) =>
+    evidenceDemandAtLeast(item.representation, input.policy.minimumDemand),
+  );
+  const delayedUnseenSatisfied = qualifying.some(
+    (item) =>
+      item.delayedReview &&
+      item.unseenBeforeAttempt === true &&
+      evidenceDemandAtLeast(item.representation, input.policy.minimumDemand),
+  );
+  const reasons: DurableMasteryReason[] = [];
+  if (!input.routeProgressComplete) reasons.push('route_progress_incomplete');
+  if (qualifying.length === 0) reasons.push('supported_evidence_missing');
+  if (representations.length < input.policy.minimumRepresentationCount) {
+    reasons.push('representation_diversity_missing');
+  }
+  if (!demandSatisfied) reasons.push('application_demand_missing');
+  if (input.policy.requireDelayedUnseenEvidence && !delayedUnseenSatisfied) {
+    reasons.push('delayed_unseen_evidence_missing');
+  }
+  if (input.currentReviewFailure) reasons.push('current_review_failure');
+  if (reasons.length === 0) reasons.push('durable_mastery_demonstrated');
+  return DurableMasteryEvaluationSchema.parse({
+    status: reasons[0] === 'durable_mastery_demonstrated' ? 'mastered' : 'evidence_backed',
+    evidenceIds: qualifying.map((item) => item.evidenceId).slice(0, 100),
+    representations,
+    reasonCodes: reasons,
+  });
+}
 
 export const ProgressionDecisionKindSchema = z.enum([
   'complete',

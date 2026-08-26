@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import {
   AssessmentAttemptSchema,
   AssessmentDefinitionSchema,
@@ -14,10 +15,13 @@ import {
   type AssessmentDefinition,
   type AssessmentVersion,
   type EvidenceRecord,
+  type EvidenceRepresentation,
   type FormalAssessmentItem,
   type GradeRecord,
+  type LessonExecutionState,
   type ProgressionReconciliationRecord,
   type Quiz,
+  type TeachingBrief,
   decideFormalCredit,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
@@ -30,6 +34,63 @@ import type { FormalProgressionService } from './formalProgression.js';
 import type { ReviewSuccessorService } from './reviewSuccessor.js';
 
 const POLICY_VERSION = FORMAL_EVIDENCE_POLICY_VERSION;
+
+function learnerVisibleItemFingerprint(prompt: string): string {
+  return createHash('sha256').update(JSON.stringify({ prompt })).digest('hex');
+}
+
+export function assessmentItemFingerprint(item: FormalAssessmentItem): string {
+  return learnerVisibleItemFingerprint(item.prompt);
+}
+
+/** Exact learner-visible Lesson/Practice surfaces already proven presented by durable state. */
+export function lessonExecutionExposureFingerprints(
+  brief: Pick<TeachingBrief, 'segments' | 'practice'>,
+  state: Pick<
+    LessonExecutionState,
+    | 'presentedSegmentIndexes'
+    | 'presentationCompletedAt'
+    | 'practiceInteractions'
+    | 'practiceCompletedAt'
+  >,
+): string[] {
+  const fingerprints = new Set<string>();
+  const presentedSegments = new Set(state.presentedSegmentIndexes);
+  for (const segment of brief.segments) {
+    if (presentedSegments.has(segment.index) && segment.informalCheck) {
+      fingerprints.add(learnerVisibleItemFingerprint(segment.informalCheck.prompt));
+    }
+  }
+  if (!brief.practice || !state.presentationCompletedAt) return [...fingerprints];
+
+  for (const interaction of state.practiceInteractions) {
+    const item = brief.practice.items[interaction.itemIndex];
+    const surface = item?.[interaction.surface];
+    if (surface) {
+      fingerprints.add(learnerVisibleItemFingerprint(surface.prompt));
+    }
+  }
+
+  if (!state.practiceCompletedAt) {
+    const completed = (itemIndex: number) => {
+      const attempts = state.practiceInteractions.filter(
+        (interaction) => interaction.itemIndex === itemIndex,
+      );
+      return attempts.some((interaction) => interaction.correct) || attempts.length >= 2;
+    };
+    const unresolvedIndex = brief.practice.items.findIndex((_, index) => !completed(index));
+    const itemIndex = unresolvedIndex === -1 ? brief.practice.items.length - 1 : unresolvedIndex;
+    const item = brief.practice.items[itemIndex];
+    if (item) {
+      const attempts = state.practiceInteractions.filter(
+        (interaction) => interaction.itemIndex === itemIndex,
+      );
+      const surface = attempts.length === 1 && !attempts[0]!.correct ? item.retry : item.initial;
+      fingerprints.add(learnerVisibleItemFingerprint(surface.prompt));
+    }
+  }
+  return [...fingerprints];
+}
 
 export function createFormalAssessmentsService({
   repos,
@@ -198,6 +259,91 @@ export function createFormalAssessmentsService({
     );
   }
 
+  function recordAttemptExposure(attemptId: string): AssessmentAttempt {
+    const attempt = repos.formalAssessments.getAttempt(attemptId);
+    if (!attempt) throw new AppError(ApiErrorCode.ValidationError, '评估尝试不存在。');
+    const version = getVersion(attempt.assessmentVersionId);
+    const definition = repos.formalAssessments.getDefinition(version.definitionId);
+    if (!definition || definition.workspaceId !== attempt.workspaceId) {
+      throw new AppError(ApiErrorCode.ValidationError, '评估尝试不属于当前课程空间。');
+    }
+    const visibleItems =
+      version.authorityMode === 'formal'
+        ? version.items.filter((item) => item.formalEligible)
+        : version.items;
+    if (visibleItems.every((item) => repos.formalAssessments.getExposure(attempt.id, item.id))) {
+      return attempt;
+    }
+
+    const priorRecords = repos.formalAssessments.listProjectionRecords(attempt.workspaceId);
+    const priorVersionById = new Map(
+      priorRecords.versions.map((candidate) => [candidate.id, candidate]),
+    );
+    const recordedExposureKeys = new Set(
+      priorRecords.exposures.map((exposure) => `${exposure.attemptId}:${exposure.itemId}`),
+    );
+    const exposureTrackedAttemptIds = new Set(
+      repos.formalAssessments.listExposureTrackedAttemptIds(attempt.workspaceId),
+    );
+    const currentAttemptExposureTracked = exposureTrackedAttemptIds.has(attempt.id);
+    const knownSeenFingerprints = new Set(
+      priorRecords.exposures
+        .filter((exposure) => exposure.attemptId !== attempt.id)
+        .map((exposure) => exposure.itemFingerprint),
+    );
+    for (const lessonState of repos.lessonExecution.listForWorkspace(attempt.workspaceId)) {
+      const brief = lessonState.teachingBriefId
+        ? repos.teachingBriefs.get(lessonState.teachingBriefId)
+        : undefined;
+      if (!brief) continue;
+      for (const fingerprint of lessonExecutionExposureFingerprints(brief, lessonState)) {
+        knownSeenFingerprints.add(fingerprint);
+      }
+    }
+    const historicallyUncertainFingerprints = new Set<string>();
+    for (const priorAttempt of priorRecords.attempts) {
+      if (priorAttempt.id === attempt.id) continue;
+      const priorVersion = priorVersionById.get(priorAttempt.assessmentVersionId);
+      if (!priorVersion) continue;
+      const priorVisibleItems =
+        priorVersion.authorityMode === 'formal'
+          ? priorVersion.items.filter((item) => item.formalEligible)
+          : priorVersion.items;
+      for (const priorItem of priorVisibleItems) {
+        if (
+          !exposureTrackedAttemptIds.has(priorAttempt.id) &&
+          !recordedExposureKeys.has(`${priorAttempt.id}:${priorItem.id}`)
+        ) {
+          historicallyUncertainFingerprints.add(assessmentItemFingerprint(priorItem));
+        }
+      }
+    }
+    const now = clock.now().toISOString();
+    repos.transaction(() => {
+      for (const item of visibleItems) {
+        const itemFingerprint = assessmentItemFingerprint(item);
+        repos.formalAssessments.insertExposure({
+          id: newId('item_exposure'),
+          workspaceId: attempt.workspaceId,
+          assessmentVersionId: version.id,
+          attemptId: attempt.id,
+          itemId: item.id,
+          itemFingerprint,
+          surface:
+            version.authorityMode === 'formal' ? 'formal_assessment' : 'mastery_red_team_shadow',
+          seenBeforeAttempt: knownSeenFingerprints.has(itemFingerprint)
+            ? true
+            : !currentAttemptExposureTracked ||
+                historicallyUncertainFingerprints.has(itemFingerprint)
+              ? null
+              : false,
+          exposedAt: now,
+        });
+      }
+    });
+    return attempt;
+  }
+
   function recordGradeForMode(input: GradeRecord, authorityMode: AssessmentAuthorityMode) {
     const attempt = repos.formalAssessments.getAttempt(input.attemptId);
     const version = repos.formalAssessments.getVersion(input.assessmentVersionId);
@@ -256,6 +402,7 @@ export function createFormalAssessmentsService({
       title: string;
       targetLearningUnitId: string;
       targetObjectiveId: string;
+      representation: EvidenceRepresentation;
       progressionContext?: NonNullable<AssessmentVersion['progressionContext']>;
     }): AssessmentVersion {
       const questions = input.quiz.questions.filter(
@@ -296,6 +443,7 @@ export function createFormalAssessmentsService({
           index,
           targetLearningUnitId: input.targetLearningUnitId,
           targetObjectiveId: input.targetObjectiveId,
+          representation: input.representation,
           questionType: 'short_answer',
           prompt: question.stem,
           rubric: question.rubric!.keyPoints.map((criterion) => ({
@@ -335,6 +483,7 @@ export function createFormalAssessmentsService({
     startShadowAttempt(assessmentVersionId: string, workspaceId: string): AssessmentAttempt {
       return startAttemptForMode(assessmentVersionId, workspaceId, 'mastery_red_team_shadow');
     },
+    recordAttemptExposure,
     submitAttempt(id: string, responses: Record<string, string>) {
       return repos.formalAssessments.submitAttempt(id, responses, clock.now().toISOString());
     },

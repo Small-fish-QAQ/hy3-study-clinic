@@ -60,7 +60,7 @@ describe('learner-facing Knowledge Map', () => {
     expect(
       screen.getByRole('heading', { name: '我学到了什么，还有哪些内容需要验证？' }),
     ).toBeInTheDocument();
-    expect(nodeWrapper('工作记忆基础')).toHaveTextContent('有正式证据支持');
+    expect(nodeWrapper('工作记忆基础')).toHaveTextContent('有证据支持（尚未稳固）');
     expect(nodeWrapper('工作记忆基础')).not.toHaveTextContent('当前薄弱');
 
     await user.click(screen.getByRole('tab', { name: '学习路线' }));

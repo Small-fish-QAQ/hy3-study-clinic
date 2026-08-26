@@ -12,7 +12,7 @@ describe('Knowledge Map projection presentation', () => {
     const reviewDue = projection.nodes.find((node) => node.label === '工作记忆基础')!;
     expect(reviewDue.weaknesses.map((item) => item.kind)).toContain('review_due');
     expect(primaryNodeCue(reviewDue, 'learning_progress')).toEqual({
-      label: '有正式证据支持',
+      label: '有证据支持（尚未稳固）',
       tone: 'evidence_backed',
     });
   });

@@ -50,6 +50,7 @@ class CountingProvider extends FakeProvider {
   practiceContentCalls = 0;
   failLessonContent = false;
   failLessonContentWithSchemaDetails = false;
+  failLessonIndependentEvaluationOnce = false;
   failPracticeContentOnce = false;
   failPracticeIndependentEvaluationOnce = false;
   simulateOneCandidateRepair = false;
@@ -161,6 +162,16 @@ class CountingProvider extends FakeProvider {
       const slot = input.skeleton.lessonSlots[0]!;
       objective.title = `${objective.title} ${LESSON_INPUT_MUTATION_SENTINEL}`;
       slot.purpose = `${slot.purpose} ${LESSON_INPUT_MUTATION_SENTINEL}`;
+    }
+    if (this.failLessonIndependentEvaluationOnce) {
+      this.failLessonIndependentEvaluationOnce = false;
+      const advisory = structuredClone(payload);
+      const planned = input.skeleton.lessonSlots.find(
+        (slot) => slot.qualityContract === 'semantic_relation',
+      );
+      const content = advisory.slots.find((slot) => slot.slotId === planned?.slotId);
+      if (content) content.semanticRelations = [];
+      return advisory;
     }
     return payload;
   }
@@ -1945,45 +1956,73 @@ describe('Teaching Brief preparation', () => {
     ).toEqual({ status: 'failed' });
   });
 
-  it('preserves an accepted Lesson preview when independent Practice evaluation rejects content', async () => {
+  it('delivers source-valid Lesson and Practice content with advisory quality findings', async () => {
     const harness = await createHarness();
     const route = startTeachingRoute(harness);
     harness.provider.failPracticeIndependentEvaluationOnce = true;
 
-    const retryable = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+    const ready = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
       command: command('lesson-practice-independent-evaluation-failure'),
       expectedSessionVersion: route.session.version,
       expectedAgendaVersion: route.agenda.version,
       expectedAgendaItemId: route.agendaItem.id,
     });
 
-    expect(retryable.status).toBe('practice_retry_available');
-    expect(retryable.lesson).not.toBeNull();
-    expect(retryable.practice).toBeNull();
-    expect(retryable.currentInformalCheck).toBeNull();
-    expect(retryable.allowedActions).toEqual(['retry_preparation']);
+    expect(ready.status).toBe('ready');
+    expect(ready.lesson).not.toBeNull();
+    expect(ready.practice).not.toBeNull();
+    expect(ready.allowedActions).toContain('start_lesson');
     expect(harness.provider.lessonContentCalls).toBe(1);
     expect(harness.provider.practiceContentCalls).toBe(1);
-    const failedState = harness.repos.lessonExecution.getForSession(
+    const preparedState = harness.repos.lessonExecution.getForSession(
       route.session.id,
       route.agendaItem.id,
     )!;
-    expect(failedState).toMatchObject({
-      preparationStatus: 'retryable_failure',
+    expect(preparedState).toMatchObject({
+      preparationStatus: 'ready',
       preparationOperationId: null,
     });
-    expect(failedState.acceptedLessonCheckpointId).not.toBeNull();
+    expect(preparedState.acceptedLessonCheckpointId).toBeNull();
+    const brief = harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)[0]!;
     expect(
-      harness.repos.acceptedLessonCheckpoints.get(failedState.acceptedLessonCheckpointId!),
+      harness.repos.acceptedLessonCheckpoints.get(brief.composition!.acceptedLessonCheckpointId),
     ).toMatchObject({ lessonEvaluation: { status: 'pass' } });
-    expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toHaveLength(
-      0,
-    );
+    expect(brief).toMatchObject({ practice: { qualityEvaluation: { status: 'fail' } } });
     expect(
       harness.db
         .prepare('SELECT status FROM agent_operations WHERE command_id = ?')
         .get('lesson-practice-independent-evaluation-failure'),
     ).toEqual({ status: 'completed' });
+  });
+
+  it('delivers a source-valid Lesson when its pedagogy evaluation is advisory fail', async () => {
+    const harness = await createHarness();
+    const route = startTeachingRoute(harness);
+    harness.provider.failLessonIndependentEvaluationOnce = true;
+
+    const ready = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+      command: command('lesson-independent-evaluation-advisory'),
+      expectedSessionVersion: route.session.version,
+      expectedAgendaVersion: route.agenda.version,
+      expectedAgendaItemId: route.agendaItem.id,
+    });
+
+    expect(ready.status).toBe('ready');
+    expect(ready.lesson).not.toBeNull();
+    expect(ready.practice).not.toBeNull();
+    expect(ready.allowedActions).toContain('start_lesson');
+    expect(harness.provider.lessonContentCalls).toBe(1);
+    expect(harness.provider.practiceContentCalls).toBe(1);
+    const brief = harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)[0]!;
+    expect(brief.pedagogyEvaluation).toMatchObject({
+      status: 'fail',
+      findings: expect.arrayContaining([
+        expect.objectContaining({ code: 'missing_typed_semantic_relation' }),
+      ]),
+    });
+    expect(
+      harness.repos.acceptedLessonCheckpoints.get(brief.composition!.acceptedLessonCheckpointId),
+    ).toMatchObject({ lessonEvaluation: { status: 'fail' } });
   });
 
   it('recovers an expired exact-route preparation lease as a retry instead of waiting forever', async () => {

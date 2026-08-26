@@ -143,6 +143,7 @@ export const KnowledgeMapMilestoneSchema = z.enum([
   'taught',
   'formal_evidence_supported',
   'progression_complete',
+  'durable_mastery_demonstrated',
   'legacy_mastery_stable',
 ]);
 
@@ -158,9 +159,11 @@ export const KnowledgeMapStateReasonSchema = z.enum([
   'current_formal_failure',
   'current_progression_complete',
   'current_progression_repair_needed',
+  'durable_mastery_demonstrated',
   'active_repair',
   'legacy_mastery_stable',
   'legacy_mastery_developing',
+  'legacy_mastery_provisional',
   'legacy_mastery_weak',
   'no_current_learning_activity',
 ]);

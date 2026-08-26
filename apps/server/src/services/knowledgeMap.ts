@@ -3,8 +3,10 @@ import {
   KnowledgeMapProjectionSchema,
   KNOWLEDGE_MAP_ABSTRACTION_VERSION,
   aggregateKnowledgeMapPrimaryState,
+  evaluateDurableMastery,
   type Concept,
   type Curriculum,
+  type DurableMasteryEvaluation,
   type FormalEvidenceRecord,
   type KnowledgeMapAuthorityRef,
   type KnowledgeMapEdge,
@@ -97,6 +99,7 @@ interface UnitFacts {
     status: 'none' | 'awaiting' | 'supported' | 'failure';
     records: FormalEvidenceRecord[];
   };
+  durableMastery: DurableMasteryEvaluation;
   repairs: ReturnType<Repositories['repair']['listByWorkspace']>;
   reviewDue: ReviewProjection[];
   reviewConcern: ReviewProjection[];
@@ -955,6 +958,115 @@ export function createKnowledgeMapService({
           );
         }
       }
+      const durableMasteryByUnit = new Map<string, DurableMasteryEvaluation>();
+      const completionPolicy = route.contract
+        ? repos.formalProgression.latestCompletionPolicy(route.contract.id)
+        : undefined;
+      if (route.current && route.curriculum && route.plan && completionPolicy) {
+        const versionById = new Map(
+          assessmentRecords.versions.map((version) => [version.id, version]),
+        );
+        const attemptById = new Map(
+          assessmentRecords.attempts.map((attempt) => [attempt.id, attempt]),
+        );
+        const reconciliationByEvidenceId = new Map(
+          assessmentRecords.reconciliations.map((record) => [record.evidenceRecordId, record]),
+        );
+        const currentGradeIds = new Set(
+          assessmentRecords.grades
+            .filter((grade) => grade.status === 'current')
+            .map((grade) => grade.id),
+        );
+        const exposureByAttemptItem = new Map(
+          assessmentRecords.exposures.map((exposure) => [
+            `${exposure.attemptId}:${exposure.itemId}`,
+            exposure,
+          ]),
+        );
+        const currentReviewTargetIdsByUnit = new Map<string, Set<string>>();
+        for (const binding of reviewRecords.bindings) {
+          if (
+            binding.validTo !== null ||
+            binding.contractVersionId !== route.contract!.id ||
+            binding.curriculumVersionId !== route.curriculum.id ||
+            binding.executionSourceManifestFingerprint !==
+              route.plan.executionSourceManifestFingerprint
+          ) {
+            continue;
+          }
+          const ids = currentReviewTargetIdsByUnit.get(binding.learningUnitId) ?? new Set<string>();
+          ids.add(binding.reviewTargetId);
+          currentReviewTargetIdsByUnit.set(binding.learningUnitId, ids);
+        }
+        for (const unit of allUnitNodes) {
+          const targetIds = currentReviewTargetIdsByUnit.get(unit.id) ?? new Set<string>();
+          const latestEvents = [...targetIds].flatMap((targetId) => {
+            const events = reviewRecords.events.filter(
+              (event) => event.reviewTargetId === targetId,
+            );
+            return events.length > 0 ? [events.at(-1)!] : [];
+          });
+          const evidence = assessmentRecords.evidence.flatMap((record) => {
+            if (record.targetLearningUnitId !== unit.id) return [];
+            const version = versionById.get(record.assessmentVersionId);
+            const context = version?.progressionContext;
+            const attempt = attemptById.get(record.attemptId);
+            const item = version?.items.find((candidate) => candidate.id === record.itemId);
+            if (
+              !version ||
+              version.status !== 'accepted' ||
+              version.authorityMode !== 'formal' ||
+              !context ||
+              context.contractVersionId !== route.contract!.id ||
+              context.curriculumVersionId !== route.curriculum!.id ||
+              context.studyPlanVersionId !== route.plan!.id ||
+              context.executionSourceManifestFingerprint !==
+                route.plan!.executionSourceManifestFingerprint ||
+              !attempt ||
+              attempt.status !== 'submitted' ||
+              !currentGradeIds.has(record.gradeRecordId) ||
+              !item
+            ) {
+              return [];
+            }
+            const exposure = exposureByAttemptItem.get(`${attempt.id}:${item.id}`);
+            const delayedReview =
+              context.assessmentKind === 'due_review' &&
+              reviewRecords.events.some(
+                (event) =>
+                  targetIds.has(event.reviewTargetId) &&
+                  event.kind === 'fresh_verification_success' &&
+                  event.sourceOutcomeId === record.id,
+              );
+            return [
+              {
+                evidenceId: record.id,
+                representation: item.representation,
+                supported: record.conclusion === 'supported',
+                reconciled: reconciliationByEvidenceId.get(record.id)?.status === 'applied',
+                delayedReview,
+                unseenBeforeAttempt:
+                  exposure?.seenBeforeAttempt === false
+                    ? true
+                    : exposure?.seenBeforeAttempt === true
+                      ? false
+                      : null,
+              },
+            ];
+          });
+          durableMasteryByUnit.set(
+            unit.id,
+            evaluateDurableMastery({
+              routeProgressComplete: progressByUnitId.get(unit.id)?.state === 'complete',
+              currentReviewFailure: latestEvents.some(
+                (event) => event.kind === 'retrieval_failure',
+              ),
+              policy: completionPolicy.durableMastery,
+              evidence,
+            }),
+          );
+        }
+      }
       const redTeamRecords = repos.masteryRedTeam.listProjectionRecords(workspaceId);
       const redTeamByUnit = new Map<string, typeof redTeamRecords>();
       for (const record of redTeamRecords) {
@@ -984,6 +1096,18 @@ export function createKnowledgeMapService({
         lessonCompleted: !!lessonByUnit.get(unitId)?.presentationCompletedAt,
         lessonStarted: !!lessonByUnit.get(unitId),
         formal: formalFactByUnit.get(unitId) ?? { status: 'none', records: [] },
+        durableMastery:
+          durableMasteryByUnit.get(unitId) ??
+          evaluateDurableMastery({
+            routeProgressComplete: false,
+            currentReviewFailure: false,
+            policy: {
+              minimumRepresentationCount: 2,
+              minimumDemand: 'application',
+              requireDelayedUnseenEvidence: true,
+            },
+            evidence: [],
+          }),
         repairs: repairsByUnit.get(unitId) ?? [],
         reviewDue: reviewByUnitDue.get(unitId) ?? [],
         reviewConcern: reviewByUnitConcern.get(unitId) ?? [],
@@ -995,6 +1119,13 @@ export function createKnowledgeMapService({
       });
       const sourceNodeForConcept = (concept: Concept): KnowledgeMapNode => {
         const learnerState = mastery.get(concept.id);
+        const linkedDurableMastery = allUnitNodes
+          .filter((node) => node.learningUnit!.conceptIds.includes(concept.id))
+          .map((node) => durableMasteryByUnit.get(node.id))
+          .filter((evaluation): evaluation is DurableMasteryEvaluation => Boolean(evaluation));
+        const durableMasteryDemonstrated =
+          linkedDurableMastery.length > 0 &&
+          linkedDurableMastery.every((evaluation) => evaluation.status === 'mastered');
         const mistakes = openMistakes.get(concept.id) ?? [];
         const conceptProvenance = sourceProvenance(
           concept,
@@ -1048,9 +1179,17 @@ export function createKnowledgeMapService({
         if (mistakes.length || learnerState?.state === 'weak') {
           primaryState = 'weak';
           reason = mistakes.length ? 'no_current_learning_activity' : 'legacy_mastery_weak';
-        } else if (learnerState?.state === 'stable') {
+        } else if (durableMasteryDemonstrated) {
           primaryState = 'mastered';
-          reason = 'legacy_mastery_stable';
+          reason = 'durable_mastery_demonstrated';
+          for (const evaluation of linkedDurableMastery) {
+            for (const evidenceId of evaluation.evidenceIds) {
+              refs.push(authority('formal_assessment', evidenceId, 'mastered', true));
+            }
+          }
+        } else if (learnerState?.state === 'stable') {
+          primaryState = 'developing';
+          reason = 'legacy_mastery_provisional';
         } else if (learnerState?.state === 'developing') {
           primaryState = 'developing';
           reason = 'legacy_mastery_developing';
@@ -1184,6 +1323,9 @@ export function createKnowledgeMapService({
               formal.status === 'failure'
                 ? 'current_formal_failure'
                 : 'current_progression_repair_needed';
+          } else if (facts.durableMastery.status === 'mastered') {
+            primaryState = 'mastered';
+            reason = 'durable_mastery_demonstrated';
           } else if (facts.progress?.state === 'complete' || planCompleted) {
             primaryState = 'evidence_backed';
             reason =
@@ -1345,6 +1487,9 @@ export function createKnowledgeMapService({
             ...(formal.status === 'supported' ? ['formal_evidence_supported' as const] : []),
             ...(facts.progress?.state === 'complete' || planCompleted
               ? ['progression_complete' as const]
+              : []),
+            ...(facts.durableMastery.status === 'mastered'
+              ? ['durable_mastery_demonstrated' as const]
               : []),
           ],
           formalValidation:

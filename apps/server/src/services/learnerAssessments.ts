@@ -229,6 +229,7 @@ export function createLearnerAssessmentsService({
     version: AssessmentVersion,
     attempt: AssessmentAttempt,
   ): LearnerAssessmentExecution {
+    formalAssessments.recordAttemptExposure(attempt.id);
     const grade = repos.formalAssessments
       .listGrades(attempt.id)
       .find((candidate) => candidate.status === 'current');

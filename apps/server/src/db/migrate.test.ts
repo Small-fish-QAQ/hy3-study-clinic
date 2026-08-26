@@ -1438,6 +1438,82 @@ describe('migrations', () => {
     db.close();
   });
 
+  it('adds immutable nullable item exposure and marks historical attempts as untracked', () => {
+    const db = openDatabase(':memory:');
+    migrate(db, { toVersion: 42 });
+    db.prepare(
+      `INSERT INTO workspaces (id, name, origin, created_at, updated_at)
+       VALUES ('ws_v43', 'Exposure migration', 'manual', ?, ?)`,
+    ).run('2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z');
+    db.prepare(
+      `INSERT INTO assessment_definitions
+         (id, workspace_id, logical_key, title, created_at, updated_at)
+       VALUES ('definition_v43', 'ws_v43', 'historical', 'Historical assessment', ?, ?)`,
+    ).run('2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z');
+    db.prepare(
+      `INSERT INTO assessment_versions
+         (id, definition_id, version, predecessor_id, status, payload,
+          source_revision_ids, created_at, accepted_at, progression_context, authority_mode)
+       VALUES ('version_v43', 'definition_v43', 1, NULL, 'accepted', '{}', '[]', ?, ?,
+         NULL, 'formal')`,
+    ).run('2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z');
+    db.prepare(
+      `INSERT INTO assessment_attempts
+         (id, assessment_version_id, workspace_id, ordinal, status, responses,
+          started_at, submitted_at, cancelled_at)
+       VALUES ('attempt_v43', 'version_v43', 'ws_v43', 1, 'submitted', '{}', ?, ?, NULL)`,
+    ).run('2026-01-01T00:01:00.000Z', '2026-01-01T00:02:00.000Z');
+
+    migrate(db);
+
+    expect(db.prepare('SELECT COUNT(*) AS count FROM assessment_item_exposures').get()).toEqual({
+      count: 0,
+    });
+    expect(
+      db.prepare('SELECT version, name FROM schema_migrations WHERE version = 43').get(),
+    ).toEqual({ version: 43, name: 'formal_assessment_item_exposure' });
+    expect(
+      (
+        db.pragma('table_info(assessment_item_exposures)') as Array<{
+          name: string;
+          notnull: number;
+        }>
+      ).find((column) => column.name === 'seen_before_attempt'),
+    ).toMatchObject({ name: 'seen_before_attempt', notnull: 0 });
+    expect(
+      db
+        .prepare(
+          'SELECT exposure_tracking_version AS version FROM assessment_attempts WHERE id = ?',
+        )
+        .get('attempt_v43'),
+    ).toEqual({ version: 0 });
+
+    db.prepare(
+      `INSERT INTO assessment_item_exposures
+         (id, workspace_id, assessment_version_id, attempt_id, item_id,
+          item_fingerprint, surface, seen_before_attempt, exposed_at)
+       VALUES ('exposure_v43', 'ws_v43', 'version_v43', 'attempt_v43', 'item_v43',
+         'fingerprint-v43', 'formal_assessment', NULL, ?)`,
+    ).run('2026-01-01T00:01:00.000Z');
+    expect(() =>
+      db
+        .prepare(
+          "UPDATE assessment_item_exposures SET seen_before_attempt = 1 WHERE id = 'exposure_v43'",
+        )
+        .run(),
+    ).toThrow(/immutable/i);
+    expect(() =>
+      db.prepare("DELETE FROM assessment_item_exposures WHERE id = 'exposure_v43'").run(),
+    ).toThrow(/append-only/i);
+
+    expect(() => db.prepare("DELETE FROM workspaces WHERE id = 'ws_v43'").run()).not.toThrow();
+    expect(db.prepare('SELECT COUNT(*) AS count FROM assessment_item_exposures').get()).toEqual({
+      count: 0,
+    });
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+    db.close();
+  });
+
   it('adds nullable page_end to source_blocks (migration 9)', () => {
     const db = openDatabase(':memory:');
     migrate(db);

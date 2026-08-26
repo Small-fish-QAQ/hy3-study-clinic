@@ -50,20 +50,25 @@ function learningUnits(curriculum: Curriculum) {
   return curriculum.nodes.filter((node) => node.kind === 'learning_unit' && node.learningUnit);
 }
 
-function policyFor(
+export function completionPolicyFor(
   contract: ReturnType<Repositories['learningContracts']['get']>,
 ): CompletionPolicy {
   if (!contract) throw new Error('Learning Contract is unavailable.');
   const desiredDepth = contract.desiredDepth;
   return CompletionPolicySchema.parse({
-    id: `completion:${contract.id}`,
-    version: 1,
+    id: `completion:${contract.id}:v2`,
+    version: 2,
     contractVersionId: contract.id,
     desiredDepth,
     minimumEligibleEvidenceCount: desiredDepth === 'deep_transfer' ? 2 : 1,
     minimumScore:
       desiredDepth === 'pass_oriented' ? 0.6 : desiredDepth === 'high_performance' ? 0.75 : 0.7,
     requireSynthesis: desiredDepth === 'deep_transfer',
+    durableMastery: {
+      minimumRepresentationCount: 2,
+      minimumDemand: 'application',
+      requireDelayedUnseenEvidence: true,
+    },
     permittedTiers: ['tier_1_authorized_truth', 'tier_2_validated_representation'],
     createdAt: contract.createdAt,
   });
@@ -513,6 +518,9 @@ export function createFormalProgressionService({
       );
       if (!objective)
         throw new AppError(ApiErrorCode.ValidationError, 'Assessment objective is unknown.');
+      const dueApplicationSupported =
+        input.assessmentKind === 'due_review' &&
+        ['apply', 'design', 'evaluate'].includes(objective.formalAssessmentConstruct ?? 'identify');
       const objectiveAttributionVerified =
         input.assessmentKind === 'synthesis'
           ? Boolean(synthesisMapping) && synthesisBreadthVerified
@@ -592,9 +600,11 @@ export function createFormalProgressionService({
         representation:
           input.assessmentKind === 'synthesis'
             ? 'synthesis'
-            : question.type === 'short_answer'
-              ? 'explanation'
-              : 'recognition',
+            : dueApplicationSupported
+              ? 'application'
+              : question.type === 'short_answer'
+                ? 'recall'
+                : 'recognition',
         admissibilityTier: tier,
         stableScopeFingerprint: commandFingerprint(contract.courseScope),
         contractVersionId: contract.id,
@@ -623,10 +633,11 @@ export function createFormalProgressionService({
 
   function createPolicy(contractId: string): CompletionPolicy {
     const existing = progression.latestCompletionPolicy(contractId);
-    if (existing) return existing;
     const contract = repos.learningContracts.get(contractId);
     if (!contract) throw notFound('Learning Contract not found.');
-    return progression.insertCompletionPolicy(policyFor(contract));
+    const expected = completionPolicyFor(contract);
+    if (existing && existing.version >= expected.version) return existing;
+    return progression.insertCompletionPolicy(expected);
   }
 
   function projectDecisionToExecutionRoute(
@@ -1524,7 +1535,7 @@ export function createFormalProgressionService({
         qualifyingOccurrences = eligibleEvidence.length;
         qualifies = qualifyingOccurrences >= 2;
       } else if (parsed.kind === 'synthesis_failure') {
-        const policy = policyFor(contract);
+        const policy = completionPolicyFor(contract);
         const failures = eligibleEvidence.filter(
           ({ record, questionContract }) =>
             questionContract.assessmentKind === 'synthesis' &&
@@ -1533,7 +1544,7 @@ export function createFormalProgressionService({
         qualifyingOccurrences = failures.length;
         qualifies = failures.length > 0;
       } else if (parsed.kind === 'strong_prerequisite_failure') {
-        const policy = policyFor(contract);
+        const policy = completionPolicyFor(contract);
         const failedUnitIds = new Set(
           eligibleEvidence
             .filter(({ record }) => record.normalizedScore < policy.minimumScore)
@@ -1708,7 +1719,7 @@ export function createFormalProgressionService({
         const evidence = trigger.evidenceIds
           .map((id) => progression.getEvidence(id))
           .filter((record): record is FormalEvidenceRecord => Boolean(record));
-        const policy = policyFor(contract);
+        const policy = completionPolicyFor(contract);
         const hasFailure = evidence.some((record) => record.normalizedScore < policy.minimumScore);
         target.estimatedMinutes = hasFailure
           ? Math.min(240, target.estimatedMinutes + 10)

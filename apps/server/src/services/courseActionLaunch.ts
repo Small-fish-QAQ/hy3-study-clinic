@@ -299,6 +299,18 @@ export function createCourseActionLaunchService({
           assessmentKind === 'targeted_repair' ||
           assessmentKind === 'due_review';
         const assessmentRequest = { ...request, ...(formalOnly ? { formalOnly: true } : {}) };
+        const routeUnit = curriculum.nodes.find(
+          (node) => node.id === bound.planItem.curriculumLearningUnitId && node.learningUnit,
+        );
+        const routeObjective = routeUnit?.learningUnit?.objectives.find(
+          (objective) => objective.id === bound.planItem.objectiveIds[0],
+        );
+        const dueApplicationSupported =
+          assessmentKind === 'due_review' &&
+          ['apply', 'design', 'evaluate'].includes(
+            routeObjective?.formalAssessmentConstruct ?? 'identify',
+          );
+        const evidenceRepresentation = dueApplicationSupported ? 'application' : 'recall';
         if (assessmentKind === 'due_review') {
           const targetId = request.mode === 'review' ? request.conceptIds?.[0] : undefined;
           if (!targetId || request.conceptIds?.length !== 1) {
@@ -368,7 +380,9 @@ export function createCourseActionLaunchService({
           sourceFingerprint: parsed.expectedExecutionSourceManifestFingerprint,
           providerOptions: opts,
           invoke: (options) =>
-            assessment.prepare(parsed.command.workspaceId, assessmentRequest, options),
+            assessment.prepare(parsed.command.workspaceId, assessmentRequest, options, {
+              requiredRepresentation: dueApplicationSupported ? 'application' : null,
+            }),
         });
         return commands.complete(claim, () => {
           const currentState = repos.courseExecution.get(parsed.command.workspaceId);
@@ -476,6 +490,7 @@ export function createCourseActionLaunchService({
                     : currentPlanItem.rationale || '理解检查',
                 targetLearningUnitId,
                 targetObjectiveId,
+                representation: evidenceRepresentation,
                 progressionContext: {
                   quizId: creation.quiz.id,
                   contractVersionId: currentPlan.contractVersionId,

@@ -182,6 +182,7 @@ function installCurrentRoute(
       grades: [],
       evidence: [],
       reconciliations: [],
+      exposures: [],
     }) as never,
   );
   vi.spyOn(repos.repair, 'listByWorkspace').mockReturnValue((overrides.repairs ?? []) as never);
@@ -259,6 +260,263 @@ describe('Knowledge Map projection service', () => {
     expect(projection.nodes).toEqual([]);
     expect(context.db.prepare('SELECT COUNT(*) AS count FROM concepts').get()).toEqual({
       count: 1,
+    });
+  });
+
+  it('projects immediate route completion as evidence-backed rather than mastered', () => {
+    context = buildTestApp();
+    const { repos } = context;
+    repos.materials.insertWithBlocks(makeMaterial(), [makeBlock()]);
+    repos.materials.addConcepts([makeConcept()]);
+    installCurrentRoute({
+      progression: [
+        {
+          learningUnitId: 'unit_1',
+          state: 'complete',
+          version: 1,
+          lastDecisionId: 'decision_immediate',
+          updatedAt: T0,
+        },
+      ],
+      assessments: {
+        versions: [
+          {
+            id: 'assessment_immediate',
+            status: 'accepted',
+            authorityMode: 'formal',
+            progressionContext: {
+              contractVersionId: 'contract_1',
+              curriculumVersionId: 'curriculum_1',
+              studyPlanVersionId: 'plan_1',
+              executionSourceManifestFingerprint: 'manifest-fp',
+              assessmentKind: 'formal_checkpoint',
+            },
+            items: [{ id: 'item_immediate', representation: 'recall' }],
+          },
+        ],
+        attempts: [
+          {
+            id: 'attempt_immediate',
+            assessmentVersionId: 'assessment_immediate',
+            status: 'submitted',
+          },
+        ],
+        grades: [{ id: 'grade_immediate', status: 'current' }],
+        evidence: [
+          {
+            id: 'evidence_immediate',
+            attemptId: 'attempt_immediate',
+            gradeRecordId: 'grade_immediate',
+            assessmentVersionId: 'assessment_immediate',
+            itemId: 'item_immediate',
+            targetLearningUnitId: 'unit_1',
+            conclusion: 'supported',
+          },
+        ],
+        reconciliations: [{ evidenceRecordId: 'evidence_immediate', status: 'applied' }],
+        exposures: [
+          { attemptId: 'attempt_immediate', itemId: 'item_immediate', seenBeforeAttempt: false },
+        ],
+      },
+    });
+    vi.spyOn(repos.formalProgression, 'latestCompletionPolicy').mockReturnValue({
+      durableMastery: {
+        minimumRepresentationCount: 2,
+        minimumDemand: 'application',
+        requireDelayedUnseenEvidence: true,
+      },
+    } as never);
+
+    const projection = createServices({
+      repos,
+      provider: context.provider,
+      clock: fixedClock(T0),
+    }).knowledgeMap.get('ws_1');
+    const unit = projection.nodes.find((node) => node.kind === 'learning_unit');
+
+    expect(unit?.learner).toMatchObject({
+      primaryState: 'evidence_backed',
+      reasonCodes: ['current_progression_complete'],
+    });
+    expect(unit?.learner.milestones).not.toContain('durable_mastery_demonstrated');
+  });
+
+  it('projects diverse application evidence from a successful unseen due Review as mastered', () => {
+    context = buildTestApp();
+    const { repos } = context;
+    repos.materials.insertWithBlocks(makeMaterial(), [makeBlock()]);
+    repos.materials.addConcepts([makeConcept()]);
+    installCurrentRoute({
+      progression: [
+        {
+          learningUnitId: 'unit_1',
+          state: 'complete',
+          version: 1,
+          lastDecisionId: 'decision_durable',
+          updatedAt: T0,
+        },
+      ],
+      assessments: {
+        versions: [
+          {
+            id: 'assessment_immediate',
+            status: 'accepted',
+            authorityMode: 'formal',
+            progressionContext: {
+              contractVersionId: 'contract_1',
+              curriculumVersionId: 'curriculum_1',
+              studyPlanVersionId: 'plan_1',
+              executionSourceManifestFingerprint: 'manifest-fp',
+              assessmentKind: 'formal_checkpoint',
+            },
+            items: [{ id: 'item_immediate', representation: 'recall' }],
+          },
+          {
+            id: 'assessment_due',
+            status: 'accepted',
+            authorityMode: 'formal',
+            progressionContext: {
+              contractVersionId: 'contract_1',
+              curriculumVersionId: 'curriculum_1',
+              studyPlanVersionId: 'plan_1',
+              executionSourceManifestFingerprint: 'manifest-fp',
+              assessmentKind: 'due_review',
+            },
+            items: [{ id: 'item_due', representation: 'application' }],
+          },
+        ],
+        attempts: [
+          {
+            id: 'attempt_immediate',
+            assessmentVersionId: 'assessment_immediate',
+            status: 'submitted',
+          },
+          { id: 'attempt_due', assessmentVersionId: 'assessment_due', status: 'submitted' },
+        ],
+        grades: [
+          { id: 'grade_immediate', status: 'current' },
+          { id: 'grade_due', status: 'current' },
+        ],
+        evidence: [
+          {
+            id: 'evidence_immediate',
+            attemptId: 'attempt_immediate',
+            gradeRecordId: 'grade_immediate',
+            assessmentVersionId: 'assessment_immediate',
+            itemId: 'item_immediate',
+            targetLearningUnitId: 'unit_1',
+            conclusion: 'supported',
+          },
+          {
+            id: 'evidence_due',
+            attemptId: 'attempt_due',
+            gradeRecordId: 'grade_due',
+            assessmentVersionId: 'assessment_due',
+            itemId: 'item_due',
+            targetLearningUnitId: 'unit_1',
+            conclusion: 'supported',
+          },
+        ],
+        reconciliations: [
+          { evidenceRecordId: 'evidence_immediate', status: 'applied' },
+          { evidenceRecordId: 'evidence_due', status: 'applied' },
+        ],
+        exposures: [
+          { attemptId: 'attempt_immediate', itemId: 'item_immediate', seenBeforeAttempt: false },
+          { attemptId: 'attempt_due', itemId: 'item_due', seenBeforeAttempt: false },
+        ],
+      },
+      review: {
+        targets: [],
+        bindings: [
+          {
+            reviewTargetId: 'review_target_1',
+            contractVersionId: 'contract_1',
+            curriculumVersionId: 'curriculum_1',
+            learningUnitId: 'unit_1',
+            executionSourceManifestFingerprint: 'manifest-fp',
+            validTo: null,
+          },
+        ],
+        states: [],
+        executions: [],
+        events: [
+          {
+            reviewTargetId: 'review_target_1',
+            kind: 'fresh_verification_success',
+            sourceOutcomeId: 'evidence_due',
+          },
+        ],
+      },
+    });
+    vi.spyOn(repos.formalProgression, 'latestCompletionPolicy').mockReturnValue({
+      durableMastery: {
+        minimumRepresentationCount: 2,
+        minimumDemand: 'application',
+        requireDelayedUnseenEvidence: true,
+      },
+    } as never);
+
+    const projection = createServices({
+      repos,
+      provider: context.provider,
+      clock: fixedClock(T0),
+    }).knowledgeMap.get('ws_1');
+    const unit = projection.nodes.find((node) => node.kind === 'learning_unit');
+
+    expect(unit?.learner).toMatchObject({
+      primaryState: 'mastered',
+      reasonCodes: ['durable_mastery_demonstrated'],
+    });
+    expect(unit?.learner.milestones).toContain('durable_mastery_demonstrated');
+
+    const records = repos.formalAssessments.listProjectionRecords('ws_1');
+    vi.mocked(repos.formalAssessments.listProjectionRecords).mockReturnValue({
+      ...records,
+      grades: records.grades.map((grade) =>
+        grade.id === 'grade_due' ? { ...grade, status: 'superseded' } : grade,
+      ),
+    } as never);
+    const afterSupersedingReviewGrade = createServices({
+      repos,
+      provider: context.provider,
+      clock: fixedClock(T0),
+    }).knowledgeMap.get('ws_1');
+    expect(
+      afterSupersedingReviewGrade.nodes.find((node) => node.kind === 'learning_unit')?.learner,
+    ).toMatchObject({
+      primaryState: 'evidence_backed',
+      reasonCodes: ['current_progression_complete'],
+    });
+  });
+
+  it('keeps legacy stable quiz state provisional without qualifying formal durability', () => {
+    context = buildTestApp();
+    const { repos } = context;
+    repos.materials.insertWithBlocks(makeMaterial(), [makeBlock()]);
+    repos.materials.addConcepts([makeConcept()]);
+    repos.mastery.upsert({
+      materialId: 'mat_1',
+      conceptId: 'con_1',
+      conceptName: '工作记忆',
+      mastery: 0.9,
+      attempts: 3,
+      correctCount: 3,
+      lastScore: 1,
+      updatedAt: T0,
+    });
+    installCurrentRoute();
+
+    const projection = createServices({
+      repos,
+      provider: context.provider,
+      clock: fixedClock(T0),
+    }).knowledgeMap.get('ws_1');
+    const concept = projection.nodes.find((node) => node.kind === 'concept');
+
+    expect(concept?.learner).toMatchObject({
+      primaryState: 'developing',
+      reasonCodes: ['legacy_mastery_provisional'],
     });
   });
 

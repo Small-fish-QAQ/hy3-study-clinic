@@ -1,4 +1,5 @@
 import {
+  AssessmentItemExposureSchema,
   AssessmentAttemptSchema,
   AssessmentDefinitionSchema,
   AssessmentVersionSchema,
@@ -6,6 +7,7 @@ import {
   GradeRecordSchema,
   ProgressionReconciliationRecordSchema,
   type AssessmentAttempt,
+  type AssessmentItemExposure,
   type AssessmentDefinition,
   type AssessmentVersion,
   type EvidenceRecord,
@@ -21,6 +23,53 @@ const parse = <T>(row: PayloadRow | undefined, schema: { parse: (v: unknown) => 
   row ? schema.parse(JSON.parse(row.payload)) : undefined;
 
 export function createFormalAssessmentsRepo(db: SqliteDb) {
+  const exposure = (attemptId: string, itemId: string) => {
+    const row = db
+      .prepare(
+        `SELECT id, workspace_id, assessment_version_id, attempt_id, item_id,
+                item_fingerprint, surface, seen_before_attempt, exposed_at
+         FROM assessment_item_exposures WHERE attempt_id = ? AND item_id = ?`,
+      )
+      .get(attemptId, itemId) as Record<string, unknown> | undefined;
+    return row
+      ? AssessmentItemExposureSchema.parse({
+          id: row.id,
+          workspaceId: row.workspace_id,
+          assessmentVersionId: row.assessment_version_id,
+          attemptId: row.attempt_id,
+          itemId: row.item_id,
+          itemFingerprint: row.item_fingerprint,
+          surface: row.surface,
+          seenBeforeAttempt:
+            row.seen_before_attempt === null ? null : row.seen_before_attempt === 1,
+          exposedAt: row.exposed_at,
+        })
+      : undefined;
+  };
+  const listExposuresForWorkspace = (workspaceId: string) => {
+    const rows = db
+      .prepare(
+        `SELECT id, workspace_id, assessment_version_id, attempt_id, item_id,
+                item_fingerprint, surface, seen_before_attempt, exposed_at
+         FROM assessment_item_exposures
+         WHERE workspace_id = ? ORDER BY exposed_at, id`,
+      )
+      .all(workspaceId) as Array<Record<string, unknown>>;
+    return rows.map((row) =>
+      AssessmentItemExposureSchema.parse({
+        id: row.id,
+        workspaceId: row.workspace_id,
+        assessmentVersionId: row.assessment_version_id,
+        attemptId: row.attempt_id,
+        itemId: row.item_id,
+        itemFingerprint: row.item_fingerprint,
+        surface: row.surface,
+        seenBeforeAttempt: row.seen_before_attempt === null ? null : row.seen_before_attempt === 1,
+        exposedAt: row.exposed_at,
+      }),
+    );
+  };
+
   function listAttemptsForWorkspace(workspaceId: string) {
     return (
       db
@@ -162,7 +211,7 @@ export function createFormalAssessmentsRepo(db: SqliteDb) {
     insertAttempt(input: AssessmentAttempt) {
       const item = AssessmentAttemptSchema.parse(input);
       db.prepare(
-        'INSERT INTO assessment_attempts (id, assessment_version_id, workspace_id, ordinal, status, responses, started_at, submitted_at, cancelled_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO assessment_attempts (id, assessment_version_id, workspace_id, ordinal, status, responses, started_at, submitted_at, cancelled_at, exposure_tracking_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)',
       ).run(
         item.id,
         item.assessmentVersionId,
@@ -175,6 +224,41 @@ export function createFormalAssessmentsRepo(db: SqliteDb) {
         item.cancelledAt,
       );
       return item;
+    },
+    insertExposure(input: AssessmentItemExposure) {
+      const item = AssessmentItemExposureSchema.parse(input);
+      const existing = exposure(item.attemptId, item.itemId);
+      if (existing) return existing;
+      db.prepare(
+        `INSERT INTO assessment_item_exposures
+           (id, workspace_id, assessment_version_id, attempt_id, item_id,
+            item_fingerprint, surface, seen_before_attempt, exposed_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        item.id,
+        item.workspaceId,
+        item.assessmentVersionId,
+        item.attemptId,
+        item.itemId,
+        item.itemFingerprint,
+        item.surface,
+        item.seenBeforeAttempt === null ? null : item.seenBeforeAttempt ? 1 : 0,
+        item.exposedAt,
+      );
+      return exposure(item.attemptId, item.itemId)!;
+    },
+    getExposure: exposure,
+    listExposuresForWorkspace,
+    listExposureTrackedAttemptIds(workspaceId: string) {
+      return (
+        db
+          .prepare(
+            `SELECT id FROM assessment_attempts
+             WHERE workspace_id = ? AND exposure_tracking_version >= 1
+             ORDER BY started_at, id`,
+          )
+          .all(workspaceId) as Array<{ id: string }>
+      ).map((row) => row.id);
     },
     getAttempt: attempt,
     listAttemptsForWorkspace,
@@ -362,7 +446,14 @@ export function createFormalAssessmentsRepo(db: SqliteDb) {
           )
           .all(workspaceId) as Array<{ id: string }>
       ).map((row) => reconciliation(row.id)!);
-      return { versions, attempts, grades, evidence: evidenceRecords, reconciliations };
+      return {
+        versions,
+        attempts,
+        grades,
+        evidence: evidenceRecords,
+        reconciliations,
+        exposures: listExposuresForWorkspace(workspaceId),
+      };
     },
     insertReconciliation(input: ProgressionReconciliationRecord) {
       const item = ProgressionReconciliationRecordSchema.parse(input);
