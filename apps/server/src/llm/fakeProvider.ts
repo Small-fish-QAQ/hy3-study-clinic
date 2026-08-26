@@ -2216,10 +2216,22 @@ export class FakeProvider implements LlmProvider {
           !preservationRequirement ||
           preservationRequirement.originalProposition === objective.proposition;
         const supported = authoritySupported && capabilityPreserved;
+        const normalizedProposition = objective.proposition.toLowerCase();
+        const generalSufficient =
+          !normalizedProposition.includes('weknora') &&
+          normalizedProposition.includes(
+            'lexical and dense retrieval are complementary in hybrid retrieval',
+          );
         return {
           objectiveRef: objective.objectiveRef,
           proposition: objective.proposition,
           construct: objective.construct,
+          subjectDependency: generalSufficient
+            ? ('general_sufficient' as const)
+            : ('source_specific_required' as const),
+          subjectDependencyRationale: generalSufficient
+            ? 'The deterministic Fake fixture can complete this objective using stable public retrieval knowledge.'
+            : 'The conservative deterministic Fake fixture requires source-specific truth unless an explicit general fixture matches.',
           fragments: [
             {
               fragmentId,

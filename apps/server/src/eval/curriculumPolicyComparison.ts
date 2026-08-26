@@ -61,6 +61,7 @@ import {
   type CurriculumValidationContext,
   type MaterializedCurriculum,
 } from '../services/curriculumValidation.js';
+import { isConfinedGeneralTeachingLaneSemanticFailure } from '../services/objectiveAuthoritySemanticSupport.js';
 import {
   buildUnitLaunchProfiles,
   type UnitLaunchProfile,
@@ -173,6 +174,59 @@ export interface CurriculumCourseMapEvaluation {
   regionAllocationComplete: boolean;
 }
 
+export interface CurriculumSubjectClassTelemetry {
+  objectiveCount: number;
+  attestedObjectiveCount: number;
+  generatorGeneralCount: number;
+  generatorGeneralShare: number | null;
+  blindGeneralSufficientCount: number;
+  blindGeneralSufficientShare: number | null;
+  toleratedAnchoredGeneralCount: number;
+  toleratedAnchoredGeneralShare: number | null;
+  disagreementCount: number;
+  disagreementShare: number | null;
+}
+
+/** Visibility only: this projection never participates in admission or authority. */
+export function curriculumSubjectClassTelemetry(
+  curriculum: Pick<Curriculum, 'nodes'>,
+): CurriculumSubjectClassTelemetry {
+  const objectives = curriculum.nodes.flatMap((node) => node.learningUnit?.objectives ?? []);
+  const objectiveCount = objectives.length;
+  const generatorGeneralCount = objectives.filter(
+    (objective) => objective.subjectClass === 'general',
+  ).length;
+  const attested = objectives.filter(
+    (objective) => objective.semanticSupport?.subjectDependency !== undefined,
+  );
+  const blindGeneralSufficientCount = attested.filter(
+    (objective) => objective.semanticSupport?.subjectDependency === 'general_sufficient',
+  ).length;
+  const toleratedAnchoredGeneralCount = objectives.filter((objective) =>
+    isConfinedGeneralTeachingLaneSemanticFailure(objective, objective.semanticSupport),
+  ).length;
+  const disagreementCount = attested.filter((objective) => {
+    if (objective.subjectClass === undefined) return false;
+    const generatorGeneral = objective.subjectClass === 'general';
+    const blindGeneral = objective.semanticSupport?.subjectDependency === 'general_sufficient';
+    return generatorGeneral !== blindGeneral;
+  }).length;
+  const share = (count: number): number | null =>
+    objectiveCount === 0 ? null : count / objectiveCount;
+  return {
+    objectiveCount,
+    attestedObjectiveCount: attested.length,
+    generatorGeneralCount,
+    generatorGeneralShare: share(generatorGeneralCount),
+    blindGeneralSufficientCount,
+    blindGeneralSufficientShare: share(blindGeneralSufficientCount),
+    toleratedAnchoredGeneralCount,
+    toleratedAnchoredGeneralShare: share(toleratedAnchoredGeneralCount),
+    disagreementCount,
+    disagreementShare: share(disagreementCount),
+  };
+}
+
 export interface CurriculumPolicyEvaluationResult {
   schemaVersion: 1;
   inputFingerprint: string;
@@ -185,6 +239,7 @@ export interface CurriculumPolicyEvaluationResult {
   qualityProfile: CurriculumQualityProfile;
   evidenceSelectionTrace: CurriculumEvidenceSelectionTrace;
   evidenceUse: CurriculumEvidenceUseMetrics;
+  subjectClassTelemetry: CurriculumSubjectClassTelemetry;
   stages: CurriculumEvaluationStageTelemetry[];
   totals: {
     logicalCalls: number;
@@ -883,6 +938,7 @@ export async function evaluateCurriculumPolicy(
       qualityProfile,
       evidenceSelectionTrace: prepared.evidenceTrace,
       evidenceUse: evidenceUseMetrics(prepared, curriculum, visibleOffers),
+      subjectClassTelemetry: curriculumSubjectClassTelemetry(curriculum),
       stages,
       totals: {
         logicalCalls,

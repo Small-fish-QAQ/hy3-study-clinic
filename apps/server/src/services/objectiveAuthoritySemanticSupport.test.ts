@@ -9,6 +9,7 @@ import type {
   SourceAuthorityBundle,
   SourceBlock,
 } from '@hy3-clinic/shared';
+import { ObjectiveAuthoritySemanticEvaluationObjectiveInputSchema } from '@hy3-clinic/shared';
 import {
   OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_BATCH,
   OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_POLICY,
@@ -16,9 +17,11 @@ import {
   attachObjectiveAuthoritySemanticSupport,
   buildObjectiveAuthoritySemanticEvaluationBatches,
   buildObjectiveAuthoritySemanticEvaluationScopes,
+  deriveEffectiveObjectiveSubjectClass,
   fingerprintObjectiveAuthorityBinding,
   fingerprintObjectiveAuthorityProposition,
   materializeObjectiveAuthoritySemanticSupport,
+  isConfinedGeneralTeachingLaneSemanticFailure,
   objectiveAuthoritySemanticEvaluationSourceFingerprint,
   partitionObjectiveAuthoritySemanticEvaluationScopes,
   validateCurriculumObjectiveAuthoritySemanticSupport,
@@ -200,6 +203,7 @@ function singleEvaluation(
     construct?: CurriculumObjective['formalAssessmentConstruct'];
     objectiveRef?: string;
     proposition?: string;
+    subjectDependency?: 'source_specific_required' | 'general_sufficient';
   } = {},
 ): ObjectiveAuthoritySemanticEvaluationProposal {
   const expected = batch.input.objectives[0]!;
@@ -220,6 +224,11 @@ function singleEvaluation(
         objectiveRef: options.objectiveRef ?? expected.objectiveRef,
         proposition: options.proposition ?? expected.proposition,
         construct: options.construct ?? expected.construct,
+        subjectDependency: options.subjectDependency ?? 'source_specific_required',
+        subjectDependencyRationale:
+          options.subjectDependency === 'general_sufficient'
+            ? 'Stable public field knowledge is sufficient for this controlled objective.'
+            : 'This controlled objective requires at least one source-local proposition.',
         fragments: [
           {
             fragmentId: 'fragment_1',
@@ -275,6 +284,9 @@ function preservationBatch(): {
   requirement: ObjectiveAuthorityRequiredCapabilityPreservation;
 } {
   const repairedObjective = objective({
+    subjectClass: 'general',
+    scopeOrigin: 'anchored',
+    priority: 'normal',
     truthAuthorityRecordIds: ['authority_1'],
     authoritySourceBlockIds: ['block_1'],
     formalEvidenceSourceBlockIds: ['block_1'],
@@ -333,6 +345,61 @@ function addCapabilityPreservation(
 }
 
 describe('objective-authority semantic evaluation scope', () => {
+  it('keeps the evaluator structurally and byte-wise blind to generator classification', () => {
+    const baseInput = {
+      objectiveRef: 'objective_1',
+      proposition: `${O1_TITLE}\n${O1_DESCRIPTION}`,
+      construct: 'explain' as const,
+      evidence: [],
+    };
+    expect(
+      ObjectiveAuthoritySemanticEvaluationObjectiveInputSchema.safeParse({
+        ...baseInput,
+        subjectClass: 'general',
+      }).success,
+    ).toBe(false);
+    expect(
+      ObjectiveAuthoritySemanticEvaluationObjectiveInputSchema.safeParse({
+        ...baseInput,
+        scopeOrigin: 'anchored',
+      }).success,
+    ).toBe(false);
+    expect(
+      ObjectiveAuthoritySemanticEvaluationObjectiveInputSchema.safeParse({
+        ...baseInput,
+        generatorClassificationRationale: 'The generator called this general.',
+      }).success,
+    ).toBe(false);
+
+    const labelledNodes = (first: 'general' | 'source_specific') =>
+      nodesFor(
+        objective({
+          id: 'objective_a',
+          subjectClass: first,
+          scopeOrigin: 'anchored',
+        }),
+        objective({
+          id: 'objective_b',
+          subjectClass: first === 'general' ? 'source_specific' : 'general',
+          scopeOrigin: 'anchored',
+        }),
+      );
+    const build = (first: 'general' | 'source_specific') =>
+      buildObjectiveAuthoritySemanticEvaluationBatches({
+        nodes: labelledNodes(first),
+        sourceBlocks: [block('block_3', INGESTION)],
+        authorityBundles: [authority('authority_3', 'block_3', INGESTION)],
+        isBlockingEligible: () => true,
+      }).map((batch) => batch.input);
+
+    const generalFirst = build('general');
+    const sourceSpecificFirst = build('source_specific');
+    expect(JSON.stringify(generalFirst)).toBe(JSON.stringify(sourceSpecificFirst));
+    expect(
+      generalFirst.flatMap((batch) => batch.objectives.map((item) => item.objectiveRef)),
+    ).toEqual(['objective_1', 'objective_2']);
+  });
+
   it('permanently regresses the exact persisted B7C2 O1 and block identities', () => {
     const persistedObjectiveId = 'obj_8298c6b4-0e35-4ec0-b3c9-690e2449ad4b';
     const ingestionBlockId = 'blk_3_87594204';
@@ -785,6 +852,9 @@ describe('objective-authority semantic proposal validation', () => {
           objectiveRef: expected.objectiveRef,
           proposition: expected.proposition,
           construct: expected.construct,
+          subjectDependency: 'source_specific_required',
+          subjectDependencyRationale:
+            'The mixed objective requires at least one source-local proposition.',
           fragments: [
             {
               fragmentId: 'supported_clause',
@@ -865,6 +935,245 @@ describe('objective-authority semantic proposal validation', () => {
 });
 
 describe('persisted objective-authority semantic support', () => {
+  it('derives effective subject class with a conservative two-key trust table', () => {
+    const attestation = (subjectDependency: 'source_specific_required' | 'general_sufficient') => ({
+      subjectDependency,
+    });
+    expect(
+      deriveEffectiveObjectiveSubjectClass(
+        { subjectClass: 'general' },
+        attestation('general_sufficient'),
+      ),
+    ).toBe('general');
+    expect(
+      deriveEffectiveObjectiveSubjectClass(
+        { subjectClass: 'general' },
+        attestation('source_specific_required'),
+      ),
+    ).toBe('source_specific');
+    expect(
+      deriveEffectiveObjectiveSubjectClass(
+        { subjectClass: 'source_specific' },
+        attestation('general_sufficient'),
+      ),
+    ).toBe('source_specific');
+    expect(
+      deriveEffectiveObjectiveSubjectClass(
+        { subjectClass: 'source_specific' },
+        attestation('source_specific_required'),
+      ),
+    ).toBe('source_specific');
+    expect(
+      deriveEffectiveObjectiveSubjectClass(
+        { subjectClass: undefined },
+        attestation('general_sufficient'),
+      ),
+    ).toBe('source_specific');
+    expect(deriveEffectiveObjectiveSubjectClass({ subjectClass: 'general' }, undefined)).toBe(
+      'source_specific',
+    );
+  });
+
+  it('admits only an anchored double-general unsupported failure and confines all authority', () => {
+    const generalObjective = objective({
+      subjectClass: 'general',
+      scopeOrigin: 'anchored',
+      priority: 'normal',
+    });
+    const [batch] = batchesFor({ objectives: [generalObjective] });
+    const failure = singleEvaluation(batch!, {
+      verdict: 'fail',
+      subjectDependency: 'general_sufficient',
+    });
+    const attached = materializeAndAttach(nodesFor(generalObjective), batch!, failure);
+    const confined = attached[0]!.learningUnit!.objectives[0]!;
+
+    expect(isConfinedGeneralTeachingLaneSemanticFailure(confined, confined.semanticSupport)).toBe(
+      true,
+    );
+    expect(confined.semanticSupport?.verdict).toBe('fail');
+    expect(confined.truthPremiseStatus).toBe('unverified');
+    expect(confined.formalEvidenceSourceBlockIds).toEqual([]);
+    expect(confined.formalAssessmentReady).toBe(false);
+    expect(confined.authoritySourceBlockIds).toEqual(['block_3']);
+    expect(validateCurriculumObjectiveAuthoritySemanticSupport(curriculum(attached))).toEqual({
+      valid: true,
+      diagnostics: [],
+      diagnosticCodes: [],
+    });
+  });
+
+  it('never tolerates conflicts, capability loss, construct defects, or stale authority', () => {
+    const generalObjective = objective({
+      subjectClass: 'general',
+      scopeOrigin: 'anchored',
+      priority: 'normal',
+    });
+    const [batch] = batchesFor({ objectives: [generalObjective] });
+    const conflicted = singleEvaluation(batch!, {
+      verdict: 'fail',
+      status: 'conflicted',
+      evidenceRefs: ['evidence_1'],
+      subjectDependency: 'general_sufficient',
+    });
+    const conflictedNodes = materializeAndAttach(nodesFor(generalObjective), batch!, conflicted);
+    expect(
+      validateCurriculumObjectiveAuthoritySemanticSupport(curriculum(conflictedNodes))
+        .diagnosticCodes,
+    ).toContain('semantic_support_failed');
+
+    const { batch: recoveryBatch, requirement } = preservationBatch();
+    const lost = singleEvaluation(recoveryBatch, {
+      supportType: 'positioning',
+      subjectDependency: 'general_sufficient',
+    });
+    addCapabilityPreservation(lost, requirement, 'lost');
+    const lostObjective = objective({
+      subjectClass: 'general',
+      scopeOrigin: 'anchored',
+      priority: 'normal',
+      truthAuthorityRecordIds: ['authority_1'],
+      authoritySourceBlockIds: ['block_1'],
+      formalEvidenceSourceBlockIds: ['block_1'],
+    });
+    const lostNodes = materializeAndAttach(nodesFor(lostObjective), recoveryBatch, lost);
+    const lostValidation = validateCurriculumObjectiveAuthoritySemanticSupport(
+      curriculum(lostNodes),
+    );
+    expect(lostValidation.diagnosticCodes).toContain('semantic_capability_preservation_failed');
+    expect(lostValidation.diagnosticCodes).toContain('semantic_support_failed');
+
+    const designObjective = objective({
+      subjectClass: 'general',
+      scopeOrigin: 'anchored',
+      priority: 'normal',
+      formalAssessmentConstruct: 'design',
+    });
+    const [designBatch] = batchesFor({ objectives: [designObjective] });
+    const designFailure = singleEvaluation(designBatch!, {
+      verdict: 'fail',
+      subjectDependency: 'general_sufficient',
+    });
+    const designNodes = materializeAndAttach(
+      nodesFor(designObjective),
+      designBatch!,
+      designFailure,
+    );
+    const designValidation = validateCurriculumObjectiveAuthoritySemanticSupport(
+      curriculum(designNodes),
+    );
+    expect(designValidation.diagnosticCodes).toContain('semantic_construct_prohibited_v1');
+    expect(designValidation.diagnosticCodes).toContain('semantic_support_failed');
+
+    const unsupportedFailure = singleEvaluation(batch!, {
+      verdict: 'fail',
+      subjectDependency: 'general_sufficient',
+    });
+    const staleNodes = materializeAndAttach(nodesFor(generalObjective), batch!, unsupportedFailure);
+    staleNodes[0]!.learningUnit!.objectives[0]!.semanticSupport!.propositionFingerprint = 'stale';
+    const staleValidation = validateCurriculumObjectiveAuthoritySemanticSupport(
+      curriculum(staleNodes),
+    );
+    expect(staleValidation.diagnosticCodes).toContain('semantic_proposition_fingerprint_mismatch');
+    expect(staleValidation.diagnosticCodes).toContain('semantic_support_failed');
+
+    const ineligibleNodes = materializeAndAttach(
+      nodesFor(generalObjective),
+      batch!,
+      unsupportedFailure,
+    );
+    const ineligibleValidation = validateCurriculumObjectiveAuthoritySemanticSupport(
+      curriculum(ineligibleNodes),
+      { isBlockingEligible: () => false },
+    );
+    expect(ineligibleValidation.diagnosticCodes).toContain(
+      'semantic_authority_not_blocking_eligible',
+    );
+    expect(ineligibleValidation.diagnosticCodes).toContain('semantic_support_failed');
+  });
+
+  it('keeps one-key, required, supplemental, and legacy failures on the full gate', () => {
+    const cases: Array<{
+      name: string;
+      objective: CurriculumObjective;
+      subjectDependency: 'source_specific_required' | 'general_sufficient';
+      expectedCode?: string;
+    }> = [
+      {
+        name: 'generator only',
+        objective: objective({
+          subjectClass: 'general',
+          scopeOrigin: 'anchored',
+          priority: 'normal',
+        }),
+        subjectDependency: 'source_specific_required',
+      },
+      {
+        name: 'attester only',
+        objective: objective({
+          subjectClass: 'source_specific',
+          scopeOrigin: 'anchored',
+          priority: 'normal',
+        }),
+        subjectDependency: 'general_sufficient',
+      },
+      {
+        name: 'supplemental',
+        objective: objective({
+          subjectClass: 'general',
+          scopeOrigin: 'supplemental',
+          priority: 'normal',
+        }),
+        subjectDependency: 'general_sufficient',
+      },
+      {
+        name: 'required',
+        objective: objective({
+          subjectClass: 'general',
+          scopeOrigin: 'anchored',
+          priority: 'required',
+        }),
+        subjectDependency: 'general_sufficient',
+        expectedCode: 'semantic_required_objective_not_ready',
+      },
+      {
+        name: 'legacy objective',
+        objective: objective({ priority: 'normal' }),
+        subjectDependency: 'general_sufficient',
+      },
+    ];
+
+    for (const item of cases) {
+      const [batch] = batchesFor({ objectives: [item.objective] });
+      const failure = singleEvaluation(batch!, {
+        verdict: 'fail',
+        subjectDependency: item.subjectDependency,
+      });
+      const attached = materializeAndAttach(nodesFor(item.objective), batch!, failure);
+      const validation = validateCurriculumObjectiveAuthoritySemanticSupport(curriculum(attached));
+      expect(validation.diagnosticCodes, item.name).toContain('semantic_support_failed');
+      if (item.expectedCode)
+        expect(validation.diagnosticCodes, item.name).toContain(item.expectedCode);
+    }
+
+    const generalObjective = objective({
+      subjectClass: 'general',
+      scopeOrigin: 'anchored',
+      priority: 'normal',
+    });
+    const [batch] = batchesFor({ objectives: [generalObjective] });
+    const failure = singleEvaluation(batch!, {
+      verdict: 'fail',
+      subjectDependency: 'general_sufficient',
+    });
+    const attached = materializeAndAttach(nodesFor(generalObjective), batch!, failure);
+    delete attached[0]!.learningUnit!.objectives[0]!.semanticSupport!.subjectDependency;
+    delete attached[0]!.learningUnit!.objectives[0]!.semanticSupport!.subjectDependencyRationale;
+    expect(
+      validateCurriculumObjectiveAuthoritySemanticSupport(curriculum(attached)).diagnosticCodes,
+    ).toContain('semantic_support_failed');
+  });
+
   it('validates an explicit objective scope without changing the whole-Curriculum default', () => {
     const baseObjective = objective({
       truthAuthorityRecordIds: ['authority_1'],
@@ -900,6 +1209,52 @@ describe('persisted objective-authority semantic support', () => {
     );
     expect(validateCurriculumObjectiveAuthoritySemanticSupport(combined).diagnosticCodes).toEqual(
       expect.arrayContaining(['semantic_proposition_mismatch']),
+    );
+  });
+
+  it('keeps Lesson-style exact scope while allowing only an eligible relevant general failure', () => {
+    const targetObjective = objective({
+      id: 'objective_target_general',
+      subjectClass: 'general',
+      scopeOrigin: 'anchored',
+      priority: 'normal',
+    });
+    const unrelatedObjective = objective({
+      id: 'objective_unrelated_source_specific',
+      subjectClass: 'source_specific',
+      scopeOrigin: 'anchored',
+      priority: 'normal',
+    });
+    const [targetBatch] = batchesFor({ objectives: [targetObjective] });
+    const [unrelatedBatch] = batchesFor({ objectives: [unrelatedObjective] });
+    const target = materializeAndAttach(
+      nodesFor(targetObjective),
+      targetBatch!,
+      singleEvaluation(targetBatch!, {
+        verdict: 'fail',
+        subjectDependency: 'general_sufficient',
+      }),
+    )[0]!.learningUnit!.objectives[0]!;
+    const unrelated = materializeAndAttach(
+      nodesFor(unrelatedObjective),
+      unrelatedBatch!,
+      singleEvaluation(unrelatedBatch!, {
+        verdict: 'fail',
+        subjectDependency: 'general_sufficient',
+      }),
+    )[0]!.learningUnit!.objectives[0]!;
+    const combined = curriculum(nodesFor(target, unrelated));
+
+    expect(validateObjectiveAuthoritySemanticSupport(combined, [target])).toEqual({
+      valid: true,
+      diagnostics: [],
+      diagnosticCodes: [],
+    });
+    expect(
+      validateObjectiveAuthoritySemanticSupport(combined, [unrelated]).diagnosticCodes,
+    ).toContain('semantic_support_failed');
+    expect(validateCurriculumObjectiveAuthoritySemanticSupport(combined).diagnosticCodes).toContain(
+      'semantic_support_failed',
     );
   });
 

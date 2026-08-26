@@ -19,6 +19,7 @@ import { createSourceAuthorityService } from '../services/sourceAuthority.js';
 import { createTelemetryProvider } from '../services/providerTelemetry.js';
 import {
   prepareCurriculumPolicyEvaluation,
+  curriculumSubjectClassTelemetry,
   evaluateCurriculumPolicy,
   CurriculumPolicyEvaluationError,
 } from './curriculumPolicyComparison.js';
@@ -204,6 +205,61 @@ afterEach(() => {
 });
 
 describe('Curriculum policy comparison coordinator', () => {
+  it('reports subject-class agreement and confined-lane drift without gating', () => {
+    const artifact = (subjectDependency: 'general_sufficient' | 'source_specific_required') =>
+      ({
+        subjectDependency,
+        verdict: 'fail',
+        construct: 'explain',
+        fragments: [{ status: 'unsupported', supportType: null }],
+        conflicts: [],
+        overreach: [],
+      }) as never;
+    const report = curriculumSubjectClassTelemetry({
+      nodes: [
+        {
+          learningUnit: {
+            objectives: [
+              {
+                subjectClass: 'general',
+                scopeOrigin: 'anchored',
+                semanticSupport: artifact('general_sufficient'),
+              },
+              {
+                subjectClass: 'general',
+                scopeOrigin: 'anchored',
+                semanticSupport: artifact('source_specific_required'),
+              },
+              {
+                subjectClass: 'source_specific',
+                scopeOrigin: 'anchored',
+                semanticSupport: artifact('general_sufficient'),
+              },
+              {
+                subjectClass: 'source_specific',
+                scopeOrigin: 'anchored',
+                semanticSupport: artifact('source_specific_required'),
+              },
+            ],
+          },
+        },
+      ],
+    } as never);
+
+    expect(report).toEqual({
+      objectiveCount: 4,
+      attestedObjectiveCount: 4,
+      generatorGeneralCount: 2,
+      generatorGeneralShare: 0.5,
+      blindGeneralSufficientCount: 2,
+      blindGeneralSufficientShare: 0.5,
+      toleratedAnchoredGeneralCount: 1,
+      toleratedAnchoredGeneralShare: 0.25,
+      disagreementCount: 2,
+      disagreementShare: 0.5,
+    });
+  });
+
   it('freezes a deterministic input fingerprint for identical prepared inputs', () => {
     const fixture = createFixture();
     expect(prepare(fixture).fingerprint).toBe(prepare(fixture).fingerprint);

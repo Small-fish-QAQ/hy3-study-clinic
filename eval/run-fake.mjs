@@ -27,6 +27,7 @@ import { wrapSourceBlocks } from '../apps/server/dist/grounding/wrapSource.js';
 import { searchSourceBlocks } from '../apps/server/dist/retrieval/lexical.js';
 import { scheduleFirst, scheduleNext } from '../apps/server/dist/review/scheduler.js';
 import { evaluateTutorPedagogyProfile } from '../apps/server/dist/eval/tutorPedagogy.js';
+import { curriculumSubjectClassTelemetry } from '../apps/server/dist/eval/curriculumPolicyComparison.js';
 import { assertResolvedFakeProvider } from '../scripts/assert-fake-provider.mjs';
 
 const evalDir = dirname(fileURLToPath(import.meta.url));
@@ -696,6 +697,69 @@ section('14. Tutor 教学策略离线画像(lesson-aware pedagogy profile)');
     '教学对话保持非正式、非权威边界',
     profile.nonAuthorityMutation === true &&
       profile.profile.deterministic.includes('authority_safe'),
+  );
+}
+
+// ---------------------------------------------------------------------------
+section('15. 盲审主题分类漂移(subject-class drift visibility)');
+{
+  const artifact = (subjectDependency) => ({
+    subjectDependency,
+    verdict: 'fail',
+    construct: 'explain',
+    fragments: [{ status: 'unsupported', supportType: null }],
+    conflicts: [],
+    overreach: [],
+  });
+  const metrics = curriculumSubjectClassTelemetry({
+    nodes: [
+      {
+        learningUnit: {
+          objectives: [
+            {
+              subjectClass: 'general',
+              scopeOrigin: 'anchored',
+              semanticSupport: artifact('general_sufficient'),
+            },
+            {
+              subjectClass: 'general',
+              scopeOrigin: 'anchored',
+              semanticSupport: artifact('source_specific_required'),
+            },
+            {
+              subjectClass: 'source_specific',
+              scopeOrigin: 'anchored',
+              semanticSupport: artifact('general_sufficient'),
+            },
+            {
+              subjectClass: 'source_specific',
+              scopeOrigin: 'anchored',
+              semanticSupport: artifact('source_specific_required'),
+            },
+          ],
+        },
+      },
+    ],
+  });
+  check(
+    '生成器 general 数量与占比可见',
+    metrics.generatorGeneralCount === 2 && metrics.generatorGeneralShare === 0.5,
+    `count=${metrics.generatorGeneralCount},share=${metrics.generatorGeneralShare}`,
+  );
+  check(
+    '盲审 general_sufficient 数量与占比可见',
+    metrics.blindGeneralSufficientCount === 2 && metrics.blindGeneralSufficientShare === 0.5,
+    `count=${metrics.blindGeneralSufficientCount},share=${metrics.blindGeneralSufficientShare}`,
+  );
+  check(
+    '双 general 且 anchored 的实际容忍通道数量与占比可见',
+    metrics.toleratedAnchoredGeneralCount === 1 && metrics.toleratedAnchoredGeneralShare === 0.25,
+    `count=${metrics.toleratedAnchoredGeneralCount},share=${metrics.toleratedAnchoredGeneralShare}`,
+  );
+  check(
+    '生成器与盲审分歧数量与占比可见',
+    metrics.disagreementCount === 2 && metrics.disagreementShare === 0.5,
+    `count=${metrics.disagreementCount},share=${metrics.disagreementShare}`,
   );
 }
 

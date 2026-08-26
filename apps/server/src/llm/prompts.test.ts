@@ -260,6 +260,25 @@ describe('Objective-authority semantic prompts', () => {
     expect(content).toContain('one ordered mapping for every offered originalFragment');
     expect(content).toContain('Mark a mapping lost whenever');
     expect(content).toContain('Deterministic local code recomputes the verdict');
+    expect(content).toContain('attest subject dependency from the objective proposition itself');
+    expect(content).toContain(
+      'Do not infer subject dependency from whether the offered evidence supports the objective',
+    );
+    expect(content).toContain('Lack of support does not imply general_sufficient');
+    expect(content).toContain(
+      'presence of source evidence does not automatically imply source_specific_required',
+    );
+    expect(content).toContain(
+      'A mixed objective is source_specific_required when any necessary proposition is source-specific',
+    );
+    expect(content).toContain('On uncertainty choose source_specific_required');
+    expect(content).toContain(
+      'Do not use product names or proper nouns as a simplistic syntactic heuristic',
+    );
+    expect(content).toContain(
+      'Do not change the existing full entailment findings or verdict semantics',
+    );
+    expect(content).toContain('subjectDependencyRationale');
     expect(content).toContain('E1');
     const delimiters = content.match(/OBJECTIVE_AUTHORITY_EVALUATION_INPUT_[a-f0-9]{32}/gu) ?? [];
     expect(delimiters).toHaveLength(3);

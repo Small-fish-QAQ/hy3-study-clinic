@@ -68,6 +68,14 @@ export type ObjectiveAuthoritySemanticOverreachKind = z.infer<
   typeof ObjectiveAuthoritySemanticOverreachKindSchema
 >;
 
+export const ObjectiveAuthoritySubjectDependencySchema = z.enum([
+  'source_specific_required',
+  'general_sufficient',
+]);
+export type ObjectiveAuthoritySubjectDependency = z.infer<
+  typeof ObjectiveAuthoritySubjectDependencySchema
+>;
+
 export const ObjectiveAuthoritySemanticEvidenceOfferSchema = z
   .object({
     evidenceRef: z.string().min(1).max(100),
@@ -337,6 +345,8 @@ export const ObjectiveAuthoritySemanticObjectiveProposalSchema = z
     objectiveRef: z.string().min(1).max(100),
     proposition: z.string().min(1).max(1_500),
     construct: FormalAssessmentConstructSchema,
+    subjectDependency: ObjectiveAuthoritySubjectDependencySchema,
+    subjectDependencyRationale: z.string().min(1).max(300),
     fragments: z.array(ObjectiveAuthoritySemanticFragmentProposalSchema).min(1).max(64),
     unsupportedFragmentIds: z.array(z.string().min(1).max(100)).max(64),
     conflicts: z.array(ObjectiveAuthoritySemanticConflictProposalSchema).max(32),
@@ -626,6 +636,8 @@ export const ObjectiveAuthoritySemanticSupportSchema = z
     proposition: z.string().min(1).max(1_500),
     propositionFingerprint: z.string().min(1).max(200),
     construct: FormalAssessmentConstructSchema,
+    subjectDependency: ObjectiveAuthoritySubjectDependencySchema.optional(),
+    subjectDependencyRationale: z.string().min(1).max(300).optional(),
     boundAuthorityRecordIds: z.array(z.string().min(1)).max(20),
     boundSourceBlockIds: z.array(z.string().min(1)).max(100),
     boundAuthorityClaimIds: z.array(z.string().min(1)).max(200),
@@ -641,6 +653,17 @@ export const ObjectiveAuthoritySemanticSupportSchema = z
   })
   .strict()
   .superRefine((evaluation, ctx) => {
+    if (
+      (evaluation.subjectDependency === undefined) !==
+      (evaluation.subjectDependencyRationale === undefined)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['subjectDependency'],
+        message:
+          'persisted subject dependency and rationale must either both be present or both be absent',
+      });
+    }
     if (evaluation.fragments.map((fragment) => fragment.text).join('') !== evaluation.proposition) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

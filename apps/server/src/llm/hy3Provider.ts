@@ -764,12 +764,13 @@ export class Hy3Provider implements LlmProvider {
         'Repair only the malformed or locally rejected semantic evaluation fields.',
         'Keep objectiveRef, proposition, construct, and the per-objective offered evidence boundary exact.',
         'Partition every proposition completely; keyword overlap is never entailment; explicitly fail unsupported clauses.',
+        'Return subjectDependency and subjectDependencyRationale for every objective. Decide dependency from the proposition, independently of evidence support; mixed or uncertain objectives are source_specific_required.',
         'Never cite evidence from another objective or invent an alias. Return the complete corrected evaluation object.',
         OBJECTIVE_AUTHORITY_SEMANTIC_VOCABULARY_RULES,
       ].join('\n'),
       {
         maxTokens: OBJECTIVE_AUTHORITY_SEMANTIC_EVALUATION_MAX_OUTPUT_TOKENS,
-        schemaName: 'objective-authority-semantic-evaluation-v1',
+        schemaName: 'objective-authority-semantic-evaluation-v2',
         targetedRepairCollection: {
           collectionKey: 'evaluations',
           identityKey: 'objectiveRef',

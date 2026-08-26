@@ -198,6 +198,9 @@ function controlledSemanticEvaluation(
         objectiveRef: objective.objectiveRef,
         proposition: objective.proposition,
         construct: objective.construct,
+        subjectDependency: 'source_specific_required' as const,
+        subjectDependencyRationale:
+          'The controlled evaluator conservatively requires source-specific truth.',
         fragments: [
           {
             fragmentId,
@@ -330,6 +333,46 @@ class ControlledSemanticRepairProvider extends ControlledCurriculumProvider {
         };
       }),
     };
+    const validation = opts?.validateCandidate?.(candidate);
+    if (validation && !validation.valid) {
+      throw ProviderError.invalidOutput(validation.diagnostics.join('; '), 'candidate');
+    }
+    return candidate;
+  }
+}
+
+class ConfinedGeneralTeachingLaneProvider extends ControlledSemanticRepairProvider {
+  constructor() {
+    super(true);
+    const makePayload = this.makePayload;
+    this.makePayload = (input) => {
+      const payload = makePayload(input);
+      const objectives = payload.nodes.flatMap((node) => node.objectives);
+      const generalObjective = objectives[1];
+      if (!generalObjective) {
+        throw new Error('The confined general fixture requires one optional objective.');
+      }
+      generalObjective.subjectClass = 'general';
+      generalObjective.scopeOrigin = 'anchored';
+      this.initialPayload = structuredClone(payload);
+      return payload;
+    };
+  }
+
+  override async evaluateObjectiveAuthoritySupport(
+    input: ObjectiveAuthoritySemanticEvaluationInput,
+    opts?: ProviderCallOptions,
+  ): Promise<ObjectiveAuthoritySemanticEvaluationProposal> {
+    this.evaluationInputs.push(structuredClone(input));
+    if (opts?.signal?.aborted) throw ProviderError.cancelled();
+    const candidate = controlledSemanticEvaluation(input, new Set([1]));
+    const generalEvaluation = candidate.evaluations[1];
+    if (!generalEvaluation) {
+      throw new Error('The confined general fixture lost its optional evaluation.');
+    }
+    generalEvaluation.subjectDependency = 'general_sufficient';
+    generalEvaluation.subjectDependencyRationale =
+      'Stable public field knowledge is sufficient for the optional controlled objective.';
     const validation = opts?.validateCandidate?.(candidate);
     if (validation && !validation.valid) {
       throw ProviderError.invalidOutput(validation.diagnostics.join('; '), 'candidate');
@@ -535,6 +578,8 @@ function passingObjectiveAuthorityEvaluationForQuote(): string {
         objectiveRef: 'objective_1',
         proposition,
         construct: 'identify',
+        subjectDependency: 'source_specific_required',
+        subjectDependencyRationale: 'The controlled quote fixture requires source-specific truth.',
         fragments: [
           {
             fragmentId: 'objective_1_fragment_1',
@@ -2739,14 +2784,14 @@ describe('Curriculum proposal and authority boundaries', () => {
       physicalAttempts: 4,
       schemaFingerprints: [
         'curriculum-proposal-v3-claim-scope',
-        'objective-authority-semantic-evaluation-v1',
+        'objective-authority-semantic-evaluation-v2',
         'objective-authority-semantic-repair-v2-claim-scope',
-        'objective-authority-semantic-evaluation-v1',
+        'objective-authority-semantic-evaluation-v2',
       ],
     });
   });
 
-  it('does not let a provider general label bypass the universal semantic-support gate', async () => {
+  it('does not let generator general alone bypass the semantic-support gate', async () => {
     const semanticProvider = new ControlledSemanticRepairProvider(true);
     const makePayload = semanticProvider.makePayload;
     semanticProvider.makePayload = (input) => {
@@ -2787,11 +2832,76 @@ describe('Curriculum proposal and authority boundaries', () => {
       physicalAttempts: 4,
       schemaFingerprints: [
         'curriculum-proposal-v3-claim-scope',
-        'objective-authority-semantic-evaluation-v1',
+        'objective-authority-semantic-evaluation-v2',
         'objective-authority-semantic-repair-v2-claim-scope',
-        'objective-authority-semantic-evaluation-v1',
+        'objective-authority-semantic-evaluation-v2',
       ],
     });
+  });
+
+  it('admits and persists an anchored double-general failure without semantic repair or new calls', async () => {
+    const semanticProvider = new ConfinedGeneralTeachingLaneProvider();
+    curriculum = createCurriculumService({
+      repos,
+      provider: semanticProvider,
+      clock,
+      commands,
+      sourceAuthority: createSourceAuthorityService({
+        sourceAuthority: repos.sourceAuthority,
+        clock,
+      }),
+      generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
+    });
+
+    const proposed = await curriculum.propose(
+      proposalRequest('curriculum-confined-general-teaching-lane'),
+    );
+    const objectives = proposed.curriculum.nodes.flatMap(
+      (node) => node.learningUnit?.objectives ?? [],
+    );
+    const confined = objectives.find((objective) => objective.semanticSupport?.verdict === 'fail');
+    expect(confined).toMatchObject({
+      subjectClass: 'general',
+      scopeOrigin: 'anchored',
+      priority: 'optional',
+      truthPremiseStatus: 'unverified',
+      formalEvidenceSourceBlockIds: [],
+      authoritySourceBlockIds: expect.arrayContaining([expect.any(String)]),
+      semanticSupport: {
+        subjectDependency: 'general_sufficient',
+        verdict: 'fail',
+      },
+    });
+    expect(confined?.formalAssessmentReady).not.toBe(true);
+    expect(semanticProvider.evaluationInputs).toHaveLength(1);
+    expect(semanticProvider.repairInputs).toHaveLength(0);
+    expect(modelCallLedgerForCommand('curriculum-confined-general-teaching-lane')).toEqual({
+      logicalCalls: 2,
+      physicalAttempts: 2,
+      schemaFingerprints: [
+        'curriculum-proposal-v3-claim-scope',
+        'objective-authority-semantic-evaluation-v2',
+      ],
+    });
+
+    const accepted = curriculum.accept({
+      command: command('curriculum-confined-general-teaching-lane-accept', 'learner'),
+      curriculumId: proposed.curriculum.id,
+      expectedVersion: proposed.curriculum.version,
+      expectedContractId: contract.id,
+      expectedExecutionSourceManifestFingerprint:
+        proposed.curriculum.executionSourceManifest.fingerprint,
+      acceptanceBasis: 'learner_review',
+    }).curriculum;
+    const acceptedConfined = accepted.nodes
+      .flatMap((node) => node.learningUnit?.objectives ?? [])
+      .find((objective) => objective.id === confined?.id);
+    expect(acceptedConfined?.semanticSupport).toMatchObject({
+      subjectDependency: 'general_sufficient',
+      verdict: 'fail',
+    });
+    expect(acceptedConfined?.truthPremiseStatus).toBe('unverified');
+    expect(acceptedConfined?.formalEvidenceSourceBlockIds).toEqual([]);
   });
 
   it.each([
@@ -3042,9 +3152,9 @@ describe('Curriculum proposal and authority boundaries', () => {
       physicalAttempts: 4,
       schemaFingerprints: [
         'curriculum-proposal-v3-claim-scope',
-        'objective-authority-semantic-evaluation-v1',
+        'objective-authority-semantic-evaluation-v2',
         'objective-authority-semantic-repair-v2-claim-scope',
-        'objective-authority-semantic-evaluation-v1',
+        'objective-authority-semantic-evaluation-v2',
       ],
     });
     expect(repos.curricula.list('ws_1').map((item) => item.id)).toEqual([predecessor.id]);
@@ -3148,7 +3258,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       physicalAttempts: 2,
       schemaFingerprints: [
         'curriculum-proposal-v3-claim-scope',
-        'objective-authority-semantic-evaluation-v1',
+        'objective-authority-semantic-evaluation-v2',
       ],
     });
     expect(repos.curricula.list('ws_1')).toEqual([]);
@@ -3181,7 +3291,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       physicalAttempts: 2,
       schemaFingerprints: [
         'curriculum-proposal-v3-claim-scope',
-        'objective-authority-semantic-evaluation-v1',
+        'objective-authority-semantic-evaluation-v2',
       ],
     });
     expect(repos.curricula.list('ws_1')).toEqual([]);

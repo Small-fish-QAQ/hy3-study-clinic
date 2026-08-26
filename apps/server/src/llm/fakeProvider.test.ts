@@ -122,6 +122,8 @@ describe('FakeProvider objective-authority semantic contract', () => {
     expect(first.evaluations[0]).toMatchObject({
       objectiveRef: 'O1',
       construct: 'explain',
+      subjectDependency: 'source_specific_required',
+      subjectDependencyRationale: expect.any(String),
       verdict: 'pass',
       unsupportedFragmentIds: [],
     });
@@ -131,6 +133,41 @@ describe('FakeProvider objective-authority semantic contract', () => {
       supportType: 'relationship',
       evidenceRefs: ['E1'],
     });
+  });
+
+  it('blindly attests every objective with deterministic general and source-specific fixtures', async () => {
+    const result = await provider.evaluateObjectiveAuthoritySupport({
+      schemaVersion: 1,
+      policyVersion: 'objective-authority-semantic-v1',
+      objectives: [
+        {
+          objectiveRef: 'general_objective',
+          proposition:
+            'Explain why lexical and dense retrieval are complementary in hybrid retrieval.',
+          construct: 'explain',
+          evidence: [],
+        },
+        {
+          objectiveRef: 'source_objective',
+          proposition: "Explain WeKnora's documented permission-filtering behavior.",
+          construct: 'explain',
+          evidence: [],
+        },
+      ],
+    });
+
+    expect(result.evaluations).toHaveLength(2);
+    expect(result.evaluations.map((evaluation) => evaluation.subjectDependency)).toEqual([
+      'general_sufficient',
+      'source_specific_required',
+    ]);
+    expect(
+      result.evaluations.every(
+        (evaluation) =>
+          evaluation.subjectDependencyRationale.length > 0 &&
+          evaluation.subjectDependencyRationale.length <= 300,
+      ),
+    ).toBe(true);
   });
 
   it('fails the complete proposition when the explicit fake authority sentinel is unsupported', async () => {

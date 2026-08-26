@@ -107,6 +107,7 @@ import {
   attachObjectiveAuthoritySemanticSupport,
   buildObjectiveAuthoritySemanticEvaluationBatches,
   materializeObjectiveAuthoritySemanticSupport,
+  isConfinedGeneralTeachingLaneSemanticFailure,
   objectiveAuthoritySemanticEvaluationSourceFingerprint,
   validateObjectiveAuthoritySemanticEvaluationProposal,
 } from './objectiveAuthoritySemanticSupport.js';
@@ -1560,7 +1561,7 @@ export function createCurriculumService({
             learningUnitId: null,
             assessmentId: null,
             operationType: 'propose_curriculum',
-            schemaFingerprint: 'objective-authority-semantic-evaluation-v1',
+            schemaFingerprint: 'objective-authority-semantic-evaluation-v2',
             policyFingerprint,
             sourceFingerprint: recoveryFencedSourceFingerprint(
               objectiveAuthoritySemanticEvaluationSourceFingerprint(batch),
@@ -1587,7 +1588,7 @@ export function createCurriculumService({
           });
           assertGenerationSnapshotCurrent();
           const evaluated = materializeObjectiveAuthoritySemanticSupport(batch, proposal, {
-            evaluator: 'independent-objective-authority-semantic-evaluator-v1',
+            evaluator: 'independent-objective-authority-semantic-evaluator-v2',
             provider: provider.name,
             providerModel:
               provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
@@ -1604,15 +1605,32 @@ export function createCurriculumService({
             supportByObjectiveId.set(objectiveId, support);
           }
         }
+        const attachedNodes = attachObjectiveAuthoritySemanticSupport(
+          candidate.nodes,
+          supportByObjectiveId,
+        );
+        const objectiveById = new Map(
+          attachedNodes.flatMap((node) =>
+            (node.learningUnit?.objectives ?? []).map(
+              (objective) => [objective.id, objective] as const,
+            ),
+          ),
+        );
         return {
           materialized: {
             ...candidate,
-            nodes: attachObjectiveAuthoritySemanticSupport(candidate.nodes, supportByObjectiveId),
+            nodes: attachedNodes,
           },
           supportByObjectiveId,
           firstPass,
           failedObjectiveIds: [...supportByObjectiveId.values()]
-            .filter((support) => support.verdict === 'fail')
+            .filter((support) => {
+              const objective = objectiveById.get(support.objectiveId);
+              return (
+                support.verdict === 'fail' &&
+                (!objective || !isConfinedGeneralTeachingLaneSemanticFailure(objective, support))
+              );
+            })
             .map((support) => support.objectiveId),
         };
       };

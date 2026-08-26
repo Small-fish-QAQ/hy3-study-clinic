@@ -208,6 +208,9 @@ function evaluationProposal(
         objectiveRef: item.objectiveRef,
         proposition: item.proposition,
         construct: item.construct,
+        subjectDependency: 'source_specific_required' as const,
+        subjectDependencyRationale:
+          'The repair fixture conservatively requires source-specific truth.',
         fragments: [
           verdict === 'fail'
             ? {

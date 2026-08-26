@@ -8,6 +8,7 @@ import {
   type Curriculum,
   type CurriculumNode,
   type CurriculumObjective,
+  type CurriculumSubjectClass,
   type FormalAssessmentConstruct,
   type ObjectiveAuthoritySemanticEvaluationInput,
   type ObjectiveAuthoritySemanticEvaluationObjectiveInput,
@@ -115,6 +116,18 @@ export function curriculumObjectiveProposition(
   objective: Pick<CurriculumObjective, 'title' | 'description'>,
 ): string {
   return `${objective.title}\n${objective.description}`;
+}
+
+/** Generator metadata and blind evaluator attestation must agree before local relaxation. */
+export function deriveEffectiveObjectiveSubjectClass(
+  objective: Pick<CurriculumObjective, 'subjectClass'>,
+  semanticSupport:
+    Partial<Pick<ObjectiveAuthoritySemanticSupport, 'subjectDependency'>> | null | undefined,
+): CurriculumSubjectClass {
+  return objective.subjectClass === 'general' &&
+    semanticSupport?.subjectDependency === 'general_sufficient'
+    ? 'general'
+    : 'source_specific';
 }
 
 function uniqueInOrder(values: readonly string[]): string[] {
@@ -418,6 +431,33 @@ function allowedSupportTypes(
     return new Set([...IDENTIFY_CORE, ...EXPLAIN_CORE, ...APPLY_CORE, 'qualification']);
   }
   return new Set([...IDENTIFY_CORE, ...EXPLAIN_CORE, ...APPLY_CORE, 'qualification']);
+}
+
+/** The only failed-artifact shape eligible for the anchored general teaching lane. */
+export function isConfinedGeneralTeachingLaneSemanticFailure(
+  objective: Pick<CurriculumObjective, 'subjectClass' | 'scopeOrigin'>,
+  artifact: ObjectiveAuthoritySemanticSupport | null | undefined,
+): boolean {
+  if (
+    !artifact ||
+    deriveEffectiveObjectiveSubjectClass(objective, artifact) !== 'general' ||
+    objective.scopeOrigin !== 'anchored' ||
+    artifact.verdict !== 'fail' ||
+    artifact.fragments.some((fragment) => fragment.status === 'conflicted') ||
+    artifact.conflicts.length > 0 ||
+    artifact.capabilityPreservation?.verdict === 'fail' ||
+    artifact.construct === 'design' ||
+    artifact.construct === 'evaluate'
+  ) {
+    return false;
+  }
+  const allowed = allowedSupportTypes(artifact.construct);
+  return !artifact.fragments.some(
+    (fragment) =>
+      fragment.status === 'supported' &&
+      fragment.supportType !== null &&
+      !allowed.has(fragment.supportType),
+  );
 }
 
 function requiredCore(
@@ -732,6 +772,8 @@ export function materializeObjectiveAuthoritySemanticSupport(
       proposition: binding.proposition,
       propositionFingerprint: fingerprintObjectiveAuthorityProposition(binding.proposition),
       construct: binding.construct,
+      subjectDependency: evaluation.subjectDependency,
+      subjectDependencyRationale: evaluation.subjectDependencyRationale,
       boundAuthorityRecordIds: [...binding.boundAuthorityRecordIds],
       boundSourceBlockIds: [...binding.boundSourceBlockIds],
       boundAuthorityClaimIds: [...binding.boundAuthorityClaimIds],
@@ -797,6 +839,10 @@ export function attachObjectiveAuthoritySemanticSupport(
             ...objective,
             ...(semanticSupport ? { semanticSupport } : {}),
           };
+          if (isConfinedGeneralTeachingLaneSemanticFailure(objective, semanticSupport)) {
+            clone.truthPremiseStatus = 'unverified';
+            clone.formalEvidenceSourceBlockIds = [];
+          }
           if (objective.priority === 'required' || objective.formalAssessmentReady !== undefined) {
             clone.formalAssessmentReady =
               objective.formalAssessmentReady === true && semanticSupport?.verdict === 'pass';
@@ -812,6 +858,7 @@ function validatePersistedConstructMapping(
   artifact: ObjectiveAuthoritySemanticSupport,
   objectiveId: string,
   add: (code: string, message: string) => void,
+  options: { skipCoreMissing?: boolean } = {},
 ): void {
   const supportedTypes = artifact.fragments.flatMap((fragment) =>
     fragment.status === 'supported' && fragment.supportType ? [fragment.supportType] : [],
@@ -830,6 +877,7 @@ function validatePersistedConstructMapping(
       `Objective ${objectiveId} has a support type outside its fixed construct.`,
     );
   }
+  if (options.skipCoreMissing) return;
   const core = requiredCore(artifact.construct);
   if (!supportedTypes.some((supportType) => core.has(supportType))) {
     add(
@@ -853,6 +901,7 @@ function validateCurriculumObjectiveAuthoritySemanticSupportScope(
   for (const node of curriculum.nodes) {
     for (const objective of node.learningUnit?.objectives ?? []) {
       if (objectiveScope && !objectiveScope.has(objective)) continue;
+      const objectiveDiagnosticStart = diagnostics.length;
       const proposition = curriculumObjectiveProposition(objective);
       if (!objective.formalAssessmentConstruct) {
         add(
@@ -895,6 +944,10 @@ function validateCurriculumObjectiveAuthoritySemanticSupportScope(
         continue;
       }
       const artifact = parsed.data;
+      const confinedGeneralFailure = isConfinedGeneralTeachingLaneSemanticFailure(
+        objective,
+        artifact,
+      );
       if (artifact.policyVersion !== OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_POLICY) {
         add(
           'semantic_policy_stale',
@@ -1046,14 +1099,9 @@ function validateCurriculumObjectiveAuthoritySemanticSupportScope(
           `Objective ${objective.id} maps semantic support outside its exact binding.`,
         );
       }
-      if (artifact.verdict !== 'pass') {
-        add(
-          'semantic_support_failed',
-          `Objective ${objective.id} did not pass objective-authority semantic support.`,
-        );
-      } else {
-        validatePersistedConstructMapping(artifact, objective.id, add);
-      }
+      validatePersistedConstructMapping(artifact, objective.id, add, {
+        skipCoreMissing: artifact.verdict !== 'pass',
+      });
       if (options.isBlockingEligible) {
         for (const authorityRecordId of objective.truthAuthorityRecordIds) {
           if (!options.isBlockingEligible(authorityRecordId)) {
@@ -1063,6 +1111,15 @@ function validateCurriculumObjectiveAuthoritySemanticSupportScope(
             );
           }
         }
+      }
+      if (
+        artifact.verdict !== 'pass' &&
+        (!confinedGeneralFailure || diagnostics.length > objectiveDiagnosticStart)
+      ) {
+        add(
+          'semantic_support_failed',
+          `Objective ${objective.id} did not pass objective-authority semantic support.`,
+        );
       }
     }
   }

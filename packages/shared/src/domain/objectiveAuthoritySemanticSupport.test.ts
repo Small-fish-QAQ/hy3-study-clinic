@@ -24,6 +24,9 @@ function passProposal(): unknown {
         objectiveRef: 'objective_1',
         proposition: 'Explain the integrated-system positioning.',
         construct: 'explain',
+        subjectDependency: 'source_specific_required',
+        subjectDependencyRationale:
+          'The objective asserts source-local integrated-system positioning.',
         fragments: [
           {
             fragmentId: 'fragment_1',
@@ -56,6 +59,8 @@ function persistedPass(): unknown {
     proposition: 'Explain the integrated-system positioning.',
     propositionFingerprint: 'sha256:proposition',
     construct: 'explain',
+    subjectDependency: 'source_specific_required',
+    subjectDependencyRationale: 'The objective asserts source-local integrated-system positioning.',
     boundAuthorityRecordIds: ['authority_1'],
     boundSourceBlockIds: ['block_1'],
     boundAuthorityClaimIds: ['claim_1'],
@@ -113,6 +118,52 @@ describe('objective-authority semantic-support contracts', () => {
     expect(ObjectiveAuthoritySemanticEvaluationProposalSchema.safeParse(malformed).success).toBe(
       false,
     );
+  });
+
+  it('requires a bounded blind subject-dependency attestation on new evaluator output', () => {
+    const missing = structuredClone(passProposal()) as {
+      evaluations: Array<{
+        subjectDependency?: string;
+        subjectDependencyRationale?: string;
+      }>;
+    };
+    delete missing.evaluations[0]!.subjectDependency;
+    delete missing.evaluations[0]!.subjectDependencyRationale;
+    expect(ObjectiveAuthoritySemanticEvaluationProposalSchema.safeParse(missing).success).toBe(
+      false,
+    );
+
+    const invalid = structuredClone(passProposal()) as {
+      evaluations: Array<{
+        subjectDependency: string;
+        subjectDependencyRationale: string;
+      }>;
+    };
+    invalid.evaluations[0]!.subjectDependency = 'uncertain';
+    expect(ObjectiveAuthoritySemanticEvaluationProposalSchema.safeParse(invalid).success).toBe(
+      false,
+    );
+    invalid.evaluations[0]!.subjectDependency = 'general_sufficient';
+    invalid.evaluations[0]!.subjectDependencyRationale = '';
+    expect(ObjectiveAuthoritySemanticEvaluationProposalSchema.safeParse(invalid).success).toBe(
+      false,
+    );
+  });
+
+  it('reads historical persisted support without fabricating a subject attestation', () => {
+    const historical = structuredClone(persistedPass()) as {
+      subjectDependency?: string;
+      subjectDependencyRationale?: string;
+    };
+    delete historical.subjectDependency;
+    delete historical.subjectDependencyRationale;
+    const parsed = ObjectiveAuthoritySemanticSupportSchema.parse(historical);
+    expect(parsed.subjectDependency).toBeUndefined();
+    expect(parsed.subjectDependencyRationale).toBeUndefined();
+
+    const partial = structuredClone(historical);
+    partial.subjectDependency = 'general_sufficient';
+    expect(ObjectiveAuthoritySemanticSupportSchema.safeParse(partial).success).toBe(false);
   });
 
   it('requires an exact ordered original-capability partition', () => {
@@ -408,6 +459,13 @@ describe('objective-authority semantic-support contracts', () => {
       ],
     };
     expect(ObjectiveAuthoritySemanticRepairInputSchema.safeParse(input).success).toBe(true);
+    const attestationAsRepairInput = structuredClone(input) as {
+      objectives: Array<Record<string, unknown>>;
+    };
+    attestationAsRepairInput.objectives[0]!.subjectDependency = 'general_sufficient';
+    expect(
+      ObjectiveAuthoritySemanticRepairInputSchema.safeParse(attestationAsRepairInput).success,
+    ).toBe(false);
     expect(
       ObjectiveAuthoritySemanticRepairProposalSchema.safeParse({
         schemaVersion: 1,
@@ -424,6 +482,23 @@ describe('objective-authority semantic-support contracts', () => {
         ],
       }).success,
     ).toBe(true);
+    expect(
+      ObjectiveAuthoritySemanticRepairProposalSchema.safeParse({
+        schemaVersion: 1,
+        replacements: [
+          {
+            objectiveRef: 'objective_1',
+            title: 'Explain the integrated system',
+            description: 'Explain the integrated-system positioning.',
+            subjectClass: 'source_specific',
+            scopeOrigin: 'anchored',
+            construct: 'explain',
+            evidenceRefs: ['evidence_1'],
+            subjectDependency: 'general_sufficient',
+          },
+        ],
+      }).success,
+    ).toBe(false);
   });
 
   it('keeps legacy Curriculum objectives readable only when both classifications are absent', () => {

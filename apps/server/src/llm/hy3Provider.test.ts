@@ -98,6 +98,9 @@ const semanticEvaluationProposal = ObjectiveAuthoritySemanticEvaluationProposalS
       objectiveRef: 'O1',
       proposition: semanticEvaluationInput.objectives[0]!.proposition,
       construct: 'explain',
+      subjectDependency: 'source_specific_required',
+      subjectDependencyRationale:
+        'The objective asserts how the source-specific system components jointly position it.',
       fragments: [
         {
           fragmentId: 'F1',
@@ -338,7 +341,7 @@ describe('Hy3Provider objective-authority semantic methods', () => {
       }),
     ).resolves.toEqual(semanticRepairProposal);
     expect(schemaNames).toEqual([
-      'objective-authority-semantic-evaluation-v1',
+      'objective-authority-semantic-evaluation-v2',
       'objective-authority-semantic-repair-v2-claim-scope',
     ]);
     const calls = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls;

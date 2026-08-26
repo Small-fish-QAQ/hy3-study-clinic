@@ -52,6 +52,8 @@ function semanticSupport(
     proposition,
     propositionFingerprint: fingerprintObjectiveAuthorityProposition(proposition),
     construct: 'explain',
+    subjectDependency: 'source_specific_required',
+    subjectDependencyRationale: 'The repository fixture asserts a source-local relationship.',
     boundAuthorityRecordIds: authorityRecordIds,
     boundSourceBlockIds: sourceBlockIds,
     boundAuthorityClaimIds: authorityClaimIds,
@@ -528,6 +530,38 @@ describe('Curriculum objective semantic-support persistence', () => {
       binding_fingerprint: expectedSupport.bindingFingerprint,
       evaluated_at: expectedSupport.evaluatedAt,
     });
+  });
+
+  it('persists blind attestation in the sidecar and hydrates historical support without it', () => {
+    const expectedSupport = semanticSupport();
+    const stored = createVersion(curriculum({ semanticSupport: expectedSupport }));
+    expect(
+      repos.curricula.get(stored.id)?.nodes[1]?.learningUnit?.objectives[0]?.semanticSupport,
+    ).toMatchObject({
+      subjectDependency: 'source_specific_required',
+      subjectDependencyRationale: expect.any(String),
+    });
+
+    db.exec('DROP TRIGGER prevent_curriculum_objective_semantic_support_update');
+    const row = db
+      .prepare(
+        `SELECT payload FROM curriculum_objective_semantic_support
+         WHERE curriculum_id = ? AND objective_id = ?`,
+      )
+      .get(stored.id, 'objective_1') as { payload: string };
+    const historical = JSON.parse(row.payload) as ObjectiveAuthoritySemanticSupport;
+    delete historical.subjectDependency;
+    delete historical.subjectDependencyRationale;
+    db.prepare(
+      `UPDATE curriculum_objective_semantic_support SET payload = ?
+       WHERE curriculum_id = ? AND objective_id = ?`,
+    ).run(JSON.stringify(historical), stored.id, 'objective_1');
+
+    const hydrated = repos.curricula.get(stored.id)!.nodes[1]!.learningUnit!.objectives[0]!
+      .semanticSupport!;
+    expect(hydrated.subjectDependency).toBeUndefined();
+    expect(hydrated.subjectDependencyRationale).toBeUndefined();
+    expect(hydrated.verdict).toBe('pass');
   });
 
   it('rejects missing, failed, or stale semantic support without leaving partial rows', () => {
