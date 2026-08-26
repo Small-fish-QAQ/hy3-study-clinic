@@ -839,10 +839,10 @@ function validatePersistedConstructMapping(
   }
 }
 
-/** Defensive reusable gate for accepted, proposed, or legacy Curriculum objects. */
-export function validateCurriculumObjectiveAuthoritySemanticSupport(
+function validateCurriculumObjectiveAuthoritySemanticSupportScope(
   curriculum: Curriculum,
   options: ValidateCurriculumObjectiveAuthoritySemanticSupportOptions = {},
+  objectiveScope: ReadonlySet<CurriculumObjective> | null = null,
 ): ProviderCandidateValidation {
   const diagnostics: string[] = [];
   const diagnosticCodes: string[] = [];
@@ -852,6 +852,7 @@ export function validateCurriculumObjectiveAuthoritySemanticSupport(
   };
   for (const node of curriculum.nodes) {
     for (const objective of node.learningUnit?.objectives ?? []) {
+      if (objectiveScope && !objectiveScope.has(objective)) continue;
       const proposition = curriculumObjectiveProposition(objective);
       if (!objective.formalAssessmentConstruct) {
         add(
@@ -1072,6 +1073,27 @@ export function validateCurriculumObjectiveAuthoritySemanticSupport(
   };
 }
 
+/** Canonical semantic-support rules for an explicit deterministic objective scope. */
+export function validateObjectiveAuthoritySemanticSupport(
+  curriculum: Curriculum,
+  objectives: readonly CurriculumObjective[],
+  options: ValidateCurriculumObjectiveAuthoritySemanticSupportOptions = {},
+): ProviderCandidateValidation {
+  return validateCurriculumObjectiveAuthoritySemanticSupportScope(
+    curriculum,
+    options,
+    new Set(objectives),
+  );
+}
+
+/** Defensive whole-Curriculum gate for proposal, acceptance, planning, and activation. */
+export function validateCurriculumObjectiveAuthoritySemanticSupport(
+  curriculum: Curriculum,
+  options: ValidateCurriculumObjectiveAuthoritySemanticSupportOptions = {},
+): ProviderCandidateValidation {
+  return validateCurriculumObjectiveAuthoritySemanticSupportScope(curriculum, options);
+}
+
 export class CurriculumObjectiveAuthoritySemanticSupportError extends Error {
   readonly diagnostics: string[];
   readonly diagnosticCodes: string[];
@@ -1098,17 +1120,34 @@ export function assertCurriculumObjectiveAuthoritySemanticSupport(
 export function assertCurrentCurriculumObjectiveAuthoritySemanticSupport(
   curriculum: Curriculum,
   options: ValidateCurriculumObjectiveAuthoritySemanticSupportOptions & {
-    boundary: 'proposal' | 'acceptance' | 'study_plan' | 'route_activation' | 'lesson_provider';
+    boundary: 'proposal' | 'acceptance' | 'study_plan' | 'route_activation';
   },
 ): void {
   const validation = validateCurriculumObjectiveAuthoritySemanticSupport(curriculum, options);
+  assertCurrentObjectiveAuthoritySemanticSupportValidation(validation, options.boundary);
+}
+
+/** Validate all and only the objectives bound to the exact active Lesson route. */
+export function assertCurrentLessonObjectiveAuthoritySemanticSupport(
+  curriculum: Curriculum,
+  objectives: readonly CurriculumObjective[],
+  options: ValidateCurriculumObjectiveAuthoritySemanticSupportOptions,
+): void {
+  const validation = validateObjectiveAuthoritySemanticSupport(curriculum, objectives, options);
+  assertCurrentObjectiveAuthoritySemanticSupportValidation(validation, 'lesson_provider');
+}
+
+function assertCurrentObjectiveAuthoritySemanticSupportValidation(
+  validation: ProviderCandidateValidation,
+  boundary: 'proposal' | 'acceptance' | 'study_plan' | 'route_activation' | 'lesson_provider',
+): void {
   if (validation.valid) return;
   throw new AppError(
     ApiErrorCode.ValidationError,
     'Curriculum objective authority is not semantically supported for this operation.',
     {
       kind: 'objective_authority_semantic_support_invalid',
-      boundary: options.boundary,
+      boundary,
       diagnosticCodes: (validation.diagnosticCodes ?? []).slice(0, 50),
       diagnostics: validation.diagnostics.slice(0, 20),
     },

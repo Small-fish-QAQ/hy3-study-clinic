@@ -22,6 +22,7 @@ import {
   objectiveAuthoritySemanticEvaluationSourceFingerprint,
   partitionObjectiveAuthoritySemanticEvaluationScopes,
   validateCurriculumObjectiveAuthoritySemanticSupport,
+  validateObjectiveAuthoritySemanticSupport,
   validateObjectiveAuthoritySemanticEvaluationProposal,
   type ObjectiveAuthoritySemanticEvaluationBatch,
 } from './objectiveAuthoritySemanticSupport.js';
@@ -864,6 +865,44 @@ describe('objective-authority semantic proposal validation', () => {
 });
 
 describe('persisted objective-authority semantic support', () => {
+  it('validates an explicit objective scope without changing the whole-Curriculum default', () => {
+    const baseObjective = objective({
+      truthAuthorityRecordIds: ['authority_1'],
+      authoritySourceBlockIds: ['block_1'],
+      formalEvidenceSourceBlockIds: ['block_1'],
+    });
+    const [batch] = batchesFor({ objectives: [baseObjective] });
+    const attached = materializeAndAttach(
+      nodesFor(baseObjective),
+      batch!,
+      singleEvaluation(batch!, { supportType: 'positioning' }),
+    );
+    const target = attached[0]!.learningUnit!.objectives[0]!;
+    const unrelated = structuredClone(target);
+    unrelated.id = 'objective_unrelated';
+    unrelated.semanticSupport!.objectiveId = unrelated.id;
+    unrelated.description = `${unrelated.description} Stale outside the selected Lesson scope.`;
+
+    const combined = curriculum(nodesFor(target, unrelated));
+    expect(validateObjectiveAuthoritySemanticSupport(combined, [target])).toEqual({
+      valid: true,
+      diagnostics: [],
+      diagnosticCodes: [],
+    });
+    expect(
+      validateObjectiveAuthoritySemanticSupport(combined, [unrelated]).diagnosticCodes,
+    ).toEqual(
+      expect.arrayContaining([
+        'semantic_proposition_mismatch',
+        'semantic_proposition_fingerprint_mismatch',
+        'semantic_fragment_partition_incomplete',
+      ]),
+    );
+    expect(validateCurriculumObjectiveAuthoritySemanticSupport(combined).diagnosticCodes).toEqual(
+      expect.arrayContaining(['semantic_proposition_mismatch']),
+    );
+  });
+
   it('persists and defensively fingerprints the independently evaluated original capability', () => {
     const { batch, requirement } = preservationBatch();
     const pass = singleEvaluation(batch, { supportType: 'positioning' });

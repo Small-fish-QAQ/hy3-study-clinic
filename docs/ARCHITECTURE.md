@@ -890,6 +890,13 @@ Curriculum candidate persistence and acceptance
     -> provider work
 ```
 
+Proposal, acceptance, StudyPlan, and route activation retain the whole-Curriculum gate. At the
+Lesson boundary, the same canonical rules apply to all and only the ordered objective IDs on the
+exact active `teach_unit` StudyPlan item, after local code proves that every ID belongs to the
+active LearningUnit. An invalid objective in another unit therefore cannot gate this Lesson, while
+any invalid objective selected for the Lesson still fails before provider work and at each later
+stale-response fence.
+
 Missing, failed, stale, fingerprint-mismatched, nonblocking, or capability-losing support stops before the next provider call or persistent route mutation. This makes the immediate pre-Lesson assertion a defense for legacy or corrupted data, not the primary discovery or repair path.
 
 ### Immutable successor recovery and ownership

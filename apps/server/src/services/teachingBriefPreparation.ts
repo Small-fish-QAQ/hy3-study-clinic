@@ -63,7 +63,7 @@ import {
   type TeachingSkeletonPlanningInput,
 } from './teachingSkeletonPlanner.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
-import { assertCurrentCurriculumObjectiveAuthoritySemanticSupport } from './objectiveAuthoritySemanticSupport.js';
+import { assertCurrentLessonObjectiveAuthoritySemanticSupport } from './objectiveAuthoritySemanticSupport.js';
 
 export const TEACHING_BRIEF_PROMPT_VERSION = 'teaching-brief-v3-compositional-v1';
 export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v1-compositional';
@@ -964,11 +964,10 @@ export function createTeachingBriefPreparationService({
     return { route: currentRoute, context: currentContext };
   }
 
-  function assertCurrentObjectiveAuthoritySemanticSupport(
+  function assertLessonObjectiveAuthoritySemanticSupport(
     route: ReturnType<typeof routeContext>,
   ): void {
-    assertCurrentCurriculumObjectiveAuthoritySemanticSupport(route.curriculum, {
-      boundary: 'lesson_provider',
+    assertCurrentLessonObjectiveAuthoritySemanticSupport(route.curriculum, route.routeObjectives, {
       isBlockingEligible: (authorityRecordId) =>
         repos.sourceAuthority.isBlockingEligible(authorityRecordId),
     });
@@ -1016,7 +1015,7 @@ export function createTeachingBriefPreparationService({
 
   function acceptedLessonPreview(input: TeachingBriefRouteInput): AcceptedLessonPreview | null {
     const route = routeContext(input, false);
-    assertCurrentObjectiveAuthoritySemanticSupport(route);
+    assertLessonObjectiveAuthoritySemanticSupport(route);
     const context = sourceContext(route);
     const generationInput = providerInput(route, context);
     let skeleton: TeachingSkeleton;
@@ -1104,8 +1103,8 @@ export function createTeachingBriefPreparationService({
       // This canonical defensive check covers every downstream
       // composition path: fresh Lesson generation, accepted-Lesson Practice
       // retry, and immutable Teaching Brief reuse. No checkpoint may outlive
-      // the exact accepted objective-authority contract that authorized it.
-      assertCurrentObjectiveAuthoritySemanticSupport(route);
+      // every objective on the exact accepted Plan item that authorized it.
+      assertLessonObjectiveAuthoritySemanticSupport(route);
       let context: ReturnType<typeof sourceContext>;
       try {
         context = sourceContext(route);
@@ -1225,7 +1224,7 @@ export function createTeachingBriefPreparationService({
         );
         checkpoint = repos.transaction(() => {
           const current = routeStillCurrent(input, context.fingerprint);
-          assertCurrentObjectiveAuthoritySemanticSupport(current.route);
+          assertLessonObjectiveAuthoritySemanticSupport(current.route);
           const concurrentCandidate = repos.acceptedLessonCheckpoints.findReusable(
             checkpointIdentity(input, context.fingerprint, skeleton),
           );
@@ -1261,7 +1260,7 @@ export function createTeachingBriefPreparationService({
         });
       }
       const currentBeforePractice = routeStillCurrent(input, context.fingerprint);
-      assertCurrentObjectiveAuthoritySemanticSupport(currentBeforePractice.route);
+      assertLessonObjectiveAuthoritySemanticSupport(currentBeforePractice.route);
       renewPreparationLease(claim.id, owner, claim.fencingToken);
       const compositionalPracticeInput = practiceInput(route, generationInput, checkpoint);
       const practiceProviderInput = structuredClone(compositionalPracticeInput);
@@ -1322,7 +1321,7 @@ export function createTeachingBriefPreparationService({
       );
       return repos.transaction(() => {
         const current = routeStillCurrent(input, context.fingerprint);
-        assertCurrentObjectiveAuthoritySemanticSupport(current.route);
+        assertLessonObjectiveAuthoritySemanticSupport(current.route);
         const concurrentCandidate = repos.teachingBriefs.findReusable({
           workspaceId: input.workspaceId,
           curriculumVersionId: input.curriculumVersionId,
@@ -1407,7 +1406,7 @@ export function createTeachingBriefPreparationService({
     getAcceptedLessonPreview: acceptedLessonPreview,
     getCurrent(input: TeachingBriefRouteInput): TeachingBrief | null {
       const route = routeContext(input, false);
-      assertCurrentObjectiveAuthoritySemanticSupport(route);
+      assertLessonObjectiveAuthoritySemanticSupport(route);
       const context = sourceContext(route);
       const generationInput = providerInput(route, context);
       let skeleton: TeachingSkeleton;
