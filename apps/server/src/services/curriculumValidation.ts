@@ -751,6 +751,8 @@ export function materializeCurriculumProposal(
           id: objectiveId,
           title: objective.title,
           description: objective.description,
+          subjectClass: objective.subjectClass,
+          scopeOrigin: objective.scopeOrigin,
           truthPremiseStatus: authority.status,
           truthAuthorityRecordIds: authority.authorityIds,
           authorityClaimIds: authority.authorityClaimIds,

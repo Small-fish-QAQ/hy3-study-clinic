@@ -574,6 +574,8 @@ describe('Course Map immutable capability recovery placement', () => {
         'Explain the exact predecessor relation and its complete source-bounded scope.',
       construct: 'explain' as const,
       priority: 'required' as const,
+      subjectClass: 'source_specific' as const,
+      scopeOrigin: 'anchored' as const,
       allowedEvidenceIds: overrides.allowedEvidenceIds ?? [fixture.evidenceCatalog[0]!.id],
       allowedSourceAllocationRegionIds: overrides.allowedSourceAllocationRegionIds ?? [
         fixture.sourceAllocation.regions[0]!.id,
@@ -625,6 +627,10 @@ describe('Course Map immutable capability recovery placement', () => {
     expect(JSON.stringify(context.providerInput.capabilityRecovery)).not.toContain(
       requirement.allowedSourceAllocationRegionIds[0],
     );
+    expect(context.providerInput.capabilityRecovery?.requirements[0]).toMatchObject({
+      subjectClass: requirement.subjectClass,
+      scopeOrigin: requirement.scopeOrigin,
+    });
 
     const candidate = structuredClone(fixture.good);
     candidate.modules[0]!.regions[0]!.capabilityRequirementRefs = [requirement.capabilityRef];

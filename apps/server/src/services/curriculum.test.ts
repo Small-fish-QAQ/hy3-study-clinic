@@ -69,6 +69,8 @@ class ControlledCurriculumProvider extends FakeProvider {
               key: `objective-recovery-${index + 1}`,
               title: requirement.title,
               description: requirement.description,
+              subjectClass: requirement.subjectClass ?? ('source_specific' as const),
+              scopeOrigin: requirement.scopeOrigin ?? ('anchored' as const),
               construct: requirement.construct,
               evidence: [{ evidenceId }],
               capabilityRequirementRef: requirement.capabilityRef,
@@ -80,6 +82,8 @@ class ControlledCurriculumProvider extends FakeProvider {
               key: 'objective-1',
               title: QUOTE,
               description: QUOTE,
+              subjectClass: 'source_specific' as const,
+              scopeOrigin: 'anchored' as const,
               construct: 'identify' as const,
               evidence: [{ evidenceId: defaultEvidenceId }],
             },
@@ -316,6 +320,8 @@ class ControlledSemanticRepairProvider extends ControlledCurriculumProvider {
         return {
           objectiveRef: objective.objectiveRef,
           ...text,
+          subjectClass: objective.subjectClass,
+          scopeOrigin: objective.scopeOrigin,
           construct: objective.construct,
           evidenceRefs: [
             (objective.allowedEvidence.find((evidence) => evidence.selected) ??
@@ -2094,6 +2100,8 @@ describe('Curriculum proposal and authority boundaries', () => {
               key: 'objective-b7c2-positioning',
               title,
               description,
+              subjectClass: 'source_specific',
+              scopeOrigin: 'anchored',
               construct: 'explain',
               evidence: [{ evidenceId: ingestionOffer.id }],
               priority: 'required',
@@ -2225,6 +2233,8 @@ describe('Curriculum proposal and authority boundaries', () => {
               objectiveRef: objective.objectiveRef,
               title: objective.title,
               description: objective.description,
+              subjectClass: objective.subjectClass,
+              scopeOrigin: objective.scopeOrigin,
               construct: objective.construct,
               evidenceRefs: [unselectedSupportingOffer.evidenceRef],
             };
@@ -2728,9 +2738,57 @@ describe('Curriculum proposal and authority boundaries', () => {
       logicalCalls: 4,
       physicalAttempts: 4,
       schemaFingerprints: [
-        'curriculum-proposal-v2-evidence-identity',
+        'curriculum-proposal-v3-claim-scope',
         'objective-authority-semantic-evaluation-v1',
-        'objective-authority-semantic-repair-v1',
+        'objective-authority-semantic-repair-v2-claim-scope',
+        'objective-authority-semantic-evaluation-v1',
+      ],
+    });
+  });
+
+  it('does not let a provider general label bypass the universal semantic-support gate', async () => {
+    const semanticProvider = new ControlledSemanticRepairProvider(true);
+    const makePayload = semanticProvider.makePayload;
+    semanticProvider.makePayload = (input) => {
+      const payload = makePayload(input);
+      for (const objective of payload.nodes.flatMap((node) => node.objectives)) {
+        objective.subjectClass = 'general';
+        objective.scopeOrigin = 'anchored';
+      }
+      semanticProvider.initialPayload = structuredClone(payload);
+      return payload;
+    };
+    curriculum = createCurriculumService({
+      repos,
+      provider: semanticProvider,
+      clock,
+      commands,
+      sourceAuthority: createSourceAuthorityService({
+        sourceAuthority: repos.sourceAuthority,
+        clock,
+      }),
+      generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
+    });
+
+    await expect(
+      curriculum.propose(proposalRequest('curriculum-general-semantic-gate')),
+    ).rejects.toMatchObject({ code: ApiErrorCode.GroundingFailed });
+
+    expect(semanticProvider.initialPayload?.nodes[2]!.objectives).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ subjectClass: 'general', scopeOrigin: 'anchored' }),
+      ]),
+    );
+    expect(semanticProvider.evaluationInputs).toHaveLength(2);
+    expect(semanticProvider.repairInputs).toHaveLength(1);
+    expect(repos.curricula.list('ws_1')).toEqual([]);
+    expect(modelCallLedgerForCommand('curriculum-general-semantic-gate')).toEqual({
+      logicalCalls: 4,
+      physicalAttempts: 4,
+      schemaFingerprints: [
+        'curriculum-proposal-v3-claim-scope',
+        'objective-authority-semantic-evaluation-v1',
+        'objective-authority-semantic-repair-v2-claim-scope',
         'objective-authority-semantic-evaluation-v1',
       ],
     });
@@ -2983,9 +3041,9 @@ describe('Curriculum proposal and authority boundaries', () => {
       logicalCalls: 4,
       physicalAttempts: 4,
       schemaFingerprints: [
-        'curriculum-proposal-v2-evidence-identity',
+        'curriculum-proposal-v3-claim-scope',
         'objective-authority-semantic-evaluation-v1',
-        'objective-authority-semantic-repair-v1',
+        'objective-authority-semantic-repair-v2-claim-scope',
         'objective-authority-semantic-evaluation-v1',
       ],
     });
@@ -3055,7 +3113,7 @@ describe('Curriculum proposal and authority boundaries', () => {
     expect(modelCallLedgerForCommand('curriculum-objective-evaluation-over-budget')).toEqual({
       logicalCalls: 1,
       physicalAttempts: 1,
-      schemaFingerprints: ['curriculum-proposal-v2-evidence-identity'],
+      schemaFingerprints: ['curriculum-proposal-v3-claim-scope'],
     });
     expect(repos.curricula.list('ws_1')).toEqual([]);
   });
@@ -3089,7 +3147,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       logicalCalls: 2,
       physicalAttempts: 2,
       schemaFingerprints: [
-        'curriculum-proposal-v2-evidence-identity',
+        'curriculum-proposal-v3-claim-scope',
         'objective-authority-semantic-evaluation-v1',
       ],
     });
@@ -3122,7 +3180,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       logicalCalls: 2,
       physicalAttempts: 2,
       schemaFingerprints: [
-        'curriculum-proposal-v2-evidence-identity',
+        'curriculum-proposal-v3-claim-scope',
         'objective-authority-semantic-evaluation-v1',
       ],
     });

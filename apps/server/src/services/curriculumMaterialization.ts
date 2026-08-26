@@ -361,6 +361,8 @@ function optimisticForcedRecoveryRegions(
         originalProposition: requirement.originalProposition,
         construct: requirement.construct,
         priority: requirement.priority,
+        subjectClass: requirement.subjectClass,
+        scopeOrigin: requirement.scopeOrigin,
         allowedEvidenceIds: [...requirement.allowedEvidenceIds],
       })),
       ...(context.authorityEnvelopesBySourceAllocationRegionId?.has(allocationId)
@@ -729,6 +731,8 @@ function buildDetailRegions(input: CurriculumDetailPlanningInput): CurriculumDet
           originalProposition: requirement.originalProposition,
           construct: requirement.construct,
           priority: requirement.priority,
+          subjectClass: requirement.subjectClass,
+          scopeOrigin: requirement.scopeOrigin,
           allowedEvidenceIds,
         });
       }
@@ -1189,6 +1193,38 @@ export function validateCurriculumDetailCandidate(
                 capabilityRef,
                 expectedConstruct: requirement.construct,
                 actualConstruct: objective.construct,
+              },
+            );
+          }
+          if (
+            requirement.subjectClass !== null &&
+            objective.subjectClass !== requirement.subjectClass
+          ) {
+            addDiagnostic(
+              'recovery_capability_subject_class_changed',
+              `Curriculum detail objective ${objective.key} changes the frozen subject class for recovery capability ${capabilityRef}.`,
+              {
+                courseMapRegionId: unit.regionId,
+                objectiveKey: objective.key,
+                capabilityRef,
+                expectedSubjectClass: requirement.subjectClass,
+                actualSubjectClass: objective.subjectClass,
+              },
+            );
+          }
+          if (
+            requirement.scopeOrigin !== null &&
+            objective.scopeOrigin !== requirement.scopeOrigin
+          ) {
+            addDiagnostic(
+              'recovery_capability_scope_origin_changed',
+              `Curriculum detail objective ${objective.key} changes the frozen scope origin for recovery capability ${capabilityRef}.`,
+              {
+                courseMapRegionId: unit.regionId,
+                objectiveKey: objective.key,
+                capabilityRef,
+                expectedScopeOrigin: requirement.scopeOrigin,
+                actualScopeOrigin: objective.scopeOrigin,
               },
             );
           }

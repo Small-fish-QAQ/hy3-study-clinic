@@ -6,6 +6,8 @@ import {
   ObjectiveAuthoritySemanticRepairProposalSchema,
   type AuthorityPremiseKind,
   type CurriculumProposalPayload,
+  type CurriculumScopeOrigin,
+  type CurriculumSubjectClass,
   type FormalAssessmentConstruct,
   type ObjectiveAuthoritySemanticEvaluationProposal,
   type ObjectiveAuthorityRequiredCapabilityPreservation,
@@ -86,6 +88,8 @@ export interface ObjectiveAuthoritySemanticRepairAliasBinding {
   objectiveId: string;
   objectiveKey: string;
   nodeKey: string;
+  subjectClass: CurriculumSubjectClass;
+  scopeOrigin: CurriculumScopeOrigin;
   construct: FormalAssessmentConstruct;
   priority: 'required' | 'high' | 'normal' | 'optional';
   currentEvidenceIds: string[];
@@ -704,6 +708,8 @@ export function prepareObjectiveAuthoritySemanticRepair(
       objectiveRef: location.evaluation.objectiveRef,
       title: location.objective.title,
       description: location.objective.description,
+      subjectClass: location.objective.subjectClass,
+      scopeOrigin: location.objective.scopeOrigin,
       construct: location.objective.construct,
       priority: location.objective.priority ?? 'normal',
       currentEvidenceRefs: currentEvidenceIds.map((evidenceId) => evidenceRefById.get(evidenceId)!),
@@ -742,6 +748,8 @@ export function prepareObjectiveAuthoritySemanticRepair(
       objectiveId: location.objectiveId,
       objectiveKey: location.objective.key,
       nodeKey: location.node.key,
+      subjectClass: location.objective.subjectClass,
+      scopeOrigin: location.objective.scopeOrigin,
       construct: location.objective.construct,
       priority: location.objective.priority ?? 'normal',
       currentEvidenceIds: [...currentEvidenceIds],
@@ -844,6 +852,18 @@ export function validateObjectiveAuthoritySemanticRepairProposal(
         message: `Semantic repair changed the frozen construct for ${replacement.objectiveRef}.`,
       });
     }
+    if (replacement.subjectClass !== binding.subjectClass) {
+      diagnostics.push({
+        code: 'semantic_repair_subject_class_changed',
+        message: `Semantic repair changed the frozen subject class for ${replacement.objectiveRef}.`,
+      });
+    }
+    if (replacement.scopeOrigin !== binding.scopeOrigin) {
+      diagnostics.push({
+        code: 'semantic_repair_scope_origin_changed',
+        message: `Semantic repair changed the frozen scope origin for ${replacement.objectiveRef}.`,
+      });
+    }
     if (replacement.evidenceRefs.length > 5) {
       diagnostics.push({
         code: 'semantic_repair_evidence_limit_exceeded',
@@ -895,6 +915,8 @@ export function applyObjectiveAuthoritySemanticRepairProposal(
         ...objective,
         title: scoped.replacement.title,
         description: scoped.replacement.description,
+        subjectClass: scoped.replacement.subjectClass,
+        scopeOrigin: scoped.replacement.scopeOrigin,
         evidence: scoped.replacement.evidenceRefs.map((evidenceRef) => ({
           evidenceId: scoped.binding.evidenceIdByRef.get(evidenceRef)!,
         })),

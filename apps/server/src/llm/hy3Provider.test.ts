@@ -155,6 +155,8 @@ const semanticRepairInput: ObjectiveAuthoritySemanticRepairInput = {
       objectiveRef: 'O1',
       title: 'Explain the system positioning',
       description: semanticEvaluationInput.objectives[0]!.proposition,
+      subjectClass: 'source_specific',
+      scopeOrigin: 'anchored',
       construct: 'explain',
       priority: 'required',
       currentEvidenceRefs: ['E1'],
@@ -191,6 +193,8 @@ const semanticRepairProposal = ObjectiveAuthoritySemanticRepairProposalSchema.pa
       title: 'Explain the integrated system positioning',
       description:
         'Explain how documents, search, language models, permissions, and tools combine.',
+      subjectClass: 'source_specific',
+      scopeOrigin: 'anchored',
       construct: 'explain',
       evidenceRefs: ['E1'],
     },
@@ -242,6 +246,8 @@ const curriculumProposalCandidate = (capabilityRequirementRef?: string) => ({
           key: 'objective-1',
           title: 'Objective one',
           description: 'Explain one thing.',
+          subjectClass: 'source_specific',
+          scopeOrigin: 'anchored',
           construct: 'explain',
           evidence: [{ evidenceId: 'E1' }],
           ...(capabilityRequirementRef ? { capabilityRequirementRef } : {}),
@@ -252,6 +258,8 @@ const curriculumProposalCandidate = (capabilityRequirementRef?: string) => ({
                 key: 'objective-2',
                 title: 'Objective two',
                 description: 'Explain another thing.',
+                subjectClass: 'source_specific' as const,
+                scopeOrigin: 'anchored' as const,
                 construct: 'explain' as const,
                 evidence: [{ evidenceId: 'E1' }],
                 capabilityRequirementRef,
@@ -331,7 +339,7 @@ describe('Hy3Provider objective-authority semantic methods', () => {
     ).resolves.toEqual(semanticRepairProposal);
     expect(schemaNames).toEqual([
       'objective-authority-semantic-evaluation-v1',
-      'objective-authority-semantic-repair-v1',
+      'objective-authority-semantic-repair-v2-claim-scope',
     ]);
     const calls = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls;
     expect(JSON.parse(String(calls[0]![1]!.body)) as { max_tokens: number }).toMatchObject({

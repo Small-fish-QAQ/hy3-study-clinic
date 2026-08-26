@@ -265,6 +265,8 @@ describe('Curriculum objective authority materialization', () => {
               key: 'objective-formal',
               title: 'Identify working memory',
               description: 'Identify the exact source-supported working-memory statement.',
+              subjectClass: 'source_specific',
+              scopeOrigin: 'anchored',
               construct: 'identify',
               priority: 'required',
               evidence: [{ evidenceId: evidenceCatalog[0]!.id }],
@@ -273,6 +275,8 @@ describe('Curriculum objective authority materialization', () => {
               key: 'objective-teaching',
               title: 'Explain the teaching-only statement',
               description: 'Explain only what the second exact teaching statement means.',
+              subjectClass: 'source_specific',
+              scopeOrigin: 'anchored',
               construct: 'explain',
               priority: 'normal',
               evidence: [
@@ -324,6 +328,8 @@ describe('Curriculum objective authority materialization', () => {
       .objectives;
 
     expect(objectives[0]).toMatchObject({
+      subjectClass: 'source_specific',
+      scopeOrigin: 'anchored',
       truthPremiseStatus: 'independently_verified',
       truthAuthorityRecordIds: ['authority_formal'],
       authorityClaimIds: ['claim_authority_formal_selected'],
@@ -332,6 +338,8 @@ describe('Curriculum objective authority materialization', () => {
       formalEvidenceSourceBlockIds: ['block_1'],
     });
     expect(objectives[1]).toMatchObject({
+      subjectClass: 'source_specific',
+      scopeOrigin: 'anchored',
       truthPremiseStatus: 'unverified',
       truthAuthorityRecordIds: ['authority_teaching'],
       authorityClaimIds: ['claim_authority_teaching'],

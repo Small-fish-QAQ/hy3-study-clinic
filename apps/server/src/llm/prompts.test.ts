@@ -659,12 +659,18 @@ describe('prompt trust boundaries', () => {
             'Explain the original system positioning\nExplain how every original component jointly positions the system.',
           construct: 'explain',
           priority: 'required',
+          subjectClass: null,
+          scopeOrigin: null,
           allowedEvidenceIds: ['cev_exact_1'],
         },
       ],
     });
     expect(content).toContain('emit exactly one objective for every capabilityRef');
     expect(content).toContain('frozen construct and priority');
+    expect(content).toContain('subjectClass asks what type of truth authority');
+    expect(content).toContain('scopeOrigin asks why the capability belongs');
+    expect(content).toContain('source_specific + supplemental is invalid');
+    expect(content).toContain('A general label does not waive any current exact-evidence');
     expect(content).toContain('allowedEvidenceIds');
     expect(content).not.toContain('PRIVATE_PREDECESSOR_OBJECTIVE_ID');
     expect(content).not.toContain('predecessorObjectiveId');
@@ -747,6 +753,8 @@ describe('prompt trust boundaries', () => {
               'Explain the original system positioning\nExplain how every original component jointly positions the system.',
             construct: 'explain',
             priority: 'required',
+            subjectClass: 'source_specific',
+            scopeOrigin: 'anchored',
             allowedSourceRegionRefs: ['R1'],
             allowedRecoveryEvidenceRefs: ['CE1'],
           },
@@ -800,6 +808,8 @@ describe('prompt trust boundaries', () => {
             'Explain the original system positioning\nExplain how every original component jointly positions the system.',
           construct: 'explain',
           priority: 'required',
+          subjectClass: 'source_specific',
+          scopeOrigin: 'anchored',
           allowedSourceRegionRefs: ['R1'],
           allowedRecoveryEvidenceRefs: ['CE1'],
         },

@@ -446,6 +446,14 @@ apps/server (Fastify)
 packages/shared -- Zod schemas, domain types, payloads, and deterministic utilities
 ```
 
+### Curriculum claim class and scope origin
+
+Every newly generated Curriculum objective carries two independent policy labels. `subjectClass` is `source_specific` when successful completion necessarily depends on a claim about the learner's admitted material, Course, repository, project, local convention, or other source-local truth; it is `general` when stable public field knowledge is sufficient. `scopeOrigin` is `anchored` when admitted material legitimately introduced the capability, even if it does not contain all teaching depth; it is `supplemental` when the Learning Contract or explicit learner-authorized expansion is the only reason the capability enters course scope. `source_specific + supplemental` is rejected because scope authorization cannot manufacture private or Course-specific truth.
+
+Hy3 or FakeProvider proposes both labels inside the existing Curriculum-generation call. Local Zod/service/repository code validates the enums and forbidden pair, persists them immutably with the versioned Curriculum JSON, and prevents semantic repair or capability recovery from silently changing known values. Historical Curricula with neither field remain readable as legacy unknown; partial metadata is invalid, no historical classification is guessed, and every new Curriculum version requires both fields. No database migration, provider operation, or additional model call is used.
+
+These labels are classification metadata, not independent proof of epistemic correctness. In the current foundation, `general` does not skip or weaken objective semantic-support evaluation, `anchored` does not prove entailment or teaching depth, and `supplemental` grants neither source truth nor acceptance authority. Existing evidence, acceptance, StudyPlan, Lesson, assessment, grading, mastery, and learner-state gates remain unchanged.
+
 The browser never calls Hy3 directly. SQLite holds course workspaces, logical materials and immutable revisions, normalized structural units, hash-addressed original asset blobs and revision-local asset provenance, source blocks, source authority, Contracts, Curricula, StudyPlans, SessionAgendas, StudySessions, formal progression records, graph versions, assessments, completed attempts, mistakes, mastery, misconception hypotheses, review events, operations, and model-call telemetry. The browser retains only lightweight selection and graph-position preferences.
 
 Formal progression is deliberately layered: an immutable Attempt produces an append-only GradeRecord; the criterion-gated local policy derives supported Formal Evidence; and a separate reconciliation adapter projects that Evidence through the existing completion policy and Course route. Duplicate reconciliation is idempotent, stale accepted routes are fenced, and a projection failure leaves the Grade/Evidence durable for retry.

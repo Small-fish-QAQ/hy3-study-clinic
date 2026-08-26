@@ -2110,6 +2110,8 @@ export class FakeProvider implements LlmProvider {
           construct: requirement.construct,
           title: requirement.title,
           description: requirement.description,
+          subjectClass: requirement.subjectClass ?? ('source_specific' as const),
+          scopeOrigin: requirement.scopeOrigin ?? ('anchored' as const),
           evidence: [{ evidenceId: selectedOffer.evidenceId }],
           capabilityRequirementRef: requirement.capabilityRef,
           priority: requirement.priority,
@@ -2126,6 +2128,8 @@ export class FakeProvider implements LlmProvider {
       const genericObjective = {
         key: `detail-objective-${index + 1}`,
         construct: objectiveConstruct,
+        subjectClass: 'source_specific' as const,
+        scopeOrigin: 'anchored' as const,
         title:
           objectiveConstruct === 'identify'
             ? exactIdentify.title
@@ -2312,6 +2316,8 @@ export class FakeProvider implements LlmProvider {
             originalProposition && propositionSeparator >= 0
               ? originalProposition.slice(propositionSeparator + 1)
               : objective.description,
+          subjectClass: objective.subjectClass,
+          scopeOrigin: objective.scopeOrigin,
           construct: objective.construct,
           evidenceRefs,
         };
@@ -2580,6 +2586,8 @@ export class FakeProvider implements LlmProvider {
               construct: supportsExplain ? ('explain' as const) : ('identify' as const),
               title: objectiveTitle,
               description: objectiveDescription.slice(0, 1000),
+              subjectClass: 'source_specific' as const,
+              scopeOrigin: 'anchored' as const,
               evidence: evidence.slice(0, 5),
             },
           ],
@@ -2704,6 +2712,8 @@ export class FakeProvider implements LlmProvider {
           title: requirement.title,
           description: requirement.description,
           construct: requirement.construct,
+          subjectClass: requirement.subjectClass ?? ('source_specific' as const),
+          scopeOrigin: requirement.scopeOrigin ?? ('anchored' as const),
           evidence: [{ evidenceId }],
           capabilityRequirementRef: requirement.capabilityRef,
           priority: requirement.priority,

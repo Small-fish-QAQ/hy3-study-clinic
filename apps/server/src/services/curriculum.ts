@@ -1634,7 +1634,7 @@ export function createCurriculumService({
           learningUnitId: null,
           assessmentId: null,
           operationType: 'propose_curriculum',
-          schemaFingerprint: 'curriculum-proposal-v2-evidence-identity',
+          schemaFingerprint: 'curriculum-proposal-v3-claim-scope',
           policyFingerprint,
           sourceFingerprint: recoveryFencedSourceFingerprint(context.manifest.fingerprint),
           providerOptions: opts,
@@ -1925,7 +1925,7 @@ export function createCurriculumService({
             learningUnitId: null,
             assessmentId: null,
             operationType: 'propose_curriculum',
-            schemaFingerprint: 'curriculum-detail-proposal-v1',
+            schemaFingerprint: 'curriculum-detail-proposal-v2-claim-scope',
             policyFingerprint: detailPolicyFingerprint,
             sourceFingerprint: recoveryFencedSourceFingerprint(
               `${sourceAllocation.fingerprint}:${detailInput.batchKey}:objective-budget-${maxObjectivesTotal}`,
@@ -2094,7 +2094,7 @@ export function createCurriculumService({
           learningUnitId: null,
           assessmentId: null,
           operationType: 'propose_curriculum',
-          schemaFingerprint: 'objective-authority-semantic-repair-v1',
+          schemaFingerprint: 'objective-authority-semantic-repair-v2-claim-scope',
           policyFingerprint: repairPolicyFingerprint,
           sourceFingerprint: recoveryFencedSourceFingerprint(
             objectiveAuthoritySemanticRepairSourceFingerprint(repairBatch),

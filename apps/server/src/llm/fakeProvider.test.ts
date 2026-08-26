@@ -72,6 +72,8 @@ function semanticRepairInput(): ObjectiveAuthoritySemanticRepairInput {
         objectiveRef: 'O1',
         title: 'Explain the system positioning',
         description: semanticEvaluationInput.objectives[0]!.proposition,
+        subjectClass: 'source_specific',
+        scopeOrigin: 'anchored',
         construct: 'explain',
         priority: 'required',
         currentEvidenceRefs: ['E1'],
@@ -234,6 +236,8 @@ describe('FakeProvider objective-authority semantic contract', () => {
           title: '解释 WeKnora 综合系统定位',
           description:
             '解释 WeKnora 是集文档系统、搜索系统、大模型、权限系统、工具调用系统于一体的综合系统，而非单纯大模型或搜索引擎。',
+          subjectClass: 'source_specific',
+          scopeOrigin: 'anchored',
           construct: 'explain',
           priority: 'required',
           currentEvidenceRefs: ['E-ingestion'],
@@ -376,6 +380,8 @@ describe('FakeProvider objective-authority semantic contract', () => {
       objectiveRef: 'O1',
       title: 'Explain the original integrated system',
       description: 'Explain how all original components jointly position the system.',
+      subjectClass: 'source_specific',
+      scopeOrigin: 'anchored',
       construct: 'explain',
       evidenceRefs: ['E2'],
     });
@@ -708,6 +714,8 @@ describe('FakeProvider Curriculum capability recovery', () => {
       expect.objectContaining({
         title: 'Explain the integrated system',
         description: 'Explain how the components jointly position the system.',
+        subjectClass: 'source_specific',
+        scopeOrigin: 'anchored',
         construct: 'explain',
         priority: 'required',
         capabilityRequirementRef: 'capability-explain',
@@ -1266,6 +1274,8 @@ describe('FakeProvider.proposeCurriculum', () => {
             'Explain the integrated system\nExplain how the components jointly position the system.',
           construct: 'explain',
           priority: 'required',
+          subjectClass: 'source_specific',
+          scopeOrigin: 'anchored',
           allowedEvidenceIds: ['block-recovery-1', 'block-recovery-2'],
         },
         {
@@ -1276,6 +1286,8 @@ describe('FakeProvider.proposeCurriculum', () => {
             'Identify the integrated system\nIdentify the source-stated integrated-system definition.',
           construct: 'identify',
           priority: 'high',
+          subjectClass: 'general',
+          scopeOrigin: 'anchored',
           allowedEvidenceIds: ['block-recovery-1', 'block-recovery-3'],
         },
       ],
@@ -1291,6 +1303,8 @@ describe('FakeProvider.proposeCurriculum', () => {
     expect(objectives[0]).toMatchObject({
       title: 'Explain the integrated system',
       description: 'Explain how the components jointly position the system.',
+      subjectClass: 'source_specific',
+      scopeOrigin: 'anchored',
       construct: 'explain',
       priority: 'required',
       evidence: [{ evidenceId: 'block-recovery-2' }],
@@ -1298,6 +1312,8 @@ describe('FakeProvider.proposeCurriculum', () => {
     expect(objectives[1]).toMatchObject({
       title: 'Identify the integrated system',
       description: 'Identify the source-stated integrated-system definition.',
+      subjectClass: 'general',
+      scopeOrigin: 'anchored',
       construct: 'identify',
       priority: 'high',
       evidence: [{ evidenceId: 'block-recovery-3' }],
@@ -1509,12 +1525,25 @@ describe('FakeProvider.proposeCurriculum', () => {
       units.every(
         (unit) =>
           unit.sourceEvidence.length > 0 &&
-          unit.objectives.every((objective) => objective.evidence.length > 0),
+          unit.objectives.every(
+            (objective) =>
+              objective.evidence.length > 0 &&
+              objective.subjectClass !== undefined &&
+              objective.scopeOrigin !== undefined,
+          ),
       ),
     ).toBe(true);
     expect(
       units.flatMap((unit) => unit.sourceEvidence.map((evidence) => evidence.evidenceId)),
     ).toEqual(['block_water_cycle_authority']);
+    expect(units.flatMap((unit) => unit.objectives)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          subjectClass: 'source_specific',
+          scopeOrigin: 'anchored',
+        }),
+      ]),
+    );
   });
 
   it('fails before emitting a candidate for a pure visual-only course', async () => {

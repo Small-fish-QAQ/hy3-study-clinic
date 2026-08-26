@@ -32,7 +32,7 @@ type CurrentCurriculumObjective = Omit<
   authorityClaimIds: string[];
 };
 
-/** Build a current passing objective while retaining exact production fingerprints. */
+/** Build a current passing source-backed objective while retaining exact production fingerprints. */
 export function makeSemanticallySupportedObjective(
   objective: CurrentCurriculumObjective,
   supportType: ObjectiveAuthoritySupportType,
@@ -77,7 +77,12 @@ export function makeSemanticallySupportedObjective(
       rationale: 'All proposition fragments are supported by the exact bound source authority.',
       evaluatedAt: T0,
     });
-  return { ...objective, semanticSupport };
+  return {
+    subjectClass: 'source_specific',
+    scopeOrigin: 'anchored',
+    ...objective,
+    semanticSupport,
+  };
 }
 
 export function makeGrounding(overrides: Partial<VerifiedGrounding> = {}): VerifiedGrounding {

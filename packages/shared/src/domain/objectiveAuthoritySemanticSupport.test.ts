@@ -374,6 +374,8 @@ describe('objective-authority semantic-support contracts', () => {
           objectiveRef: 'objective_1',
           title: 'Explain the integrated system',
           description: 'Explain the integrated-system positioning.',
+          subjectClass: 'source_specific',
+          scopeOrigin: 'anchored',
           construct: 'explain',
           priority: 'required',
           currentEvidenceRefs: ['evidence_2'],
@@ -414,6 +416,8 @@ describe('objective-authority semantic-support contracts', () => {
             objectiveRef: 'objective_1',
             title: 'Explain the integrated system',
             description: 'Explain the integrated-system positioning.',
+            subjectClass: 'source_specific',
+            scopeOrigin: 'anchored',
             construct: 'explain',
             evidenceRefs: ['evidence_1'],
           },
@@ -422,15 +426,52 @@ describe('objective-authority semantic-support contracts', () => {
     ).toBe(true);
   });
 
-  it('keeps legacy Curriculum objectives readable without semantic-support fields', () => {
+  it('keeps legacy Curriculum objectives readable only when both classifications are absent', () => {
+    const legacyObjective = {
+      id: 'objective_legacy',
+      title: 'Identify the concept',
+      description: 'Identify it in the accepted material.',
+      truthPremiseStatus: 'unverified',
+      truthAuthorityRecordIds: [],
+    };
+    expect(CurriculumObjectiveSchema.safeParse(legacyObjective).success).toBe(true);
     expect(
       CurriculumObjectiveSchema.safeParse({
-        id: 'objective_legacy',
-        title: 'Identify the concept',
-        description: 'Identify it in the accepted material.',
-        truthPremiseStatus: 'unverified',
-        truthAuthorityRecordIds: [],
+        ...legacyObjective,
+        subjectClass: 'general',
       }).success,
-    ).toBe(true);
+    ).toBe(false);
+    expect(
+      CurriculumObjectiveSchema.safeParse({
+        ...legacyObjective,
+        scopeOrigin: 'anchored',
+      }).success,
+    ).toBe(false);
+  });
+
+  it('accepts valid persisted classifications and rejects source-specific supplemental scope', () => {
+    const objective = {
+      id: 'objective_current',
+      title: 'Identify the concept',
+      description: 'Identify it in the accepted material.',
+      truthPremiseStatus: 'unverified',
+      truthAuthorityRecordIds: [],
+    };
+    for (const [subjectClass, scopeOrigin] of [
+      ['source_specific', 'anchored'],
+      ['general', 'anchored'],
+      ['general', 'supplemental'],
+    ] as const) {
+      expect(
+        CurriculumObjectiveSchema.safeParse({ ...objective, subjectClass, scopeOrigin }).success,
+      ).toBe(true);
+    }
+    expect(
+      CurriculumObjectiveSchema.safeParse({
+        ...objective,
+        subjectClass: 'source_specific',
+        scopeOrigin: 'supplemental',
+      }).success,
+    ).toBe(false);
   });
 });

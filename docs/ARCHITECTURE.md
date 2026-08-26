@@ -899,6 +899,19 @@ stale-response fence.
 
 Missing, failed, stale, fingerprint-mismatched, nonblocking, or capability-losing support stops before the next provider call or persistent route mutation. This makes the immediate pre-Lesson assertion a defense for legacy or corrupted data, not the primary discovery or repair path.
 
+### Claim class and scope origin foundation
+
+Curriculum objectives now keep two orthogonal classification axes:
+
+- `subjectClass = source_specific | general` describes truth-authority risk. `source_specific` means successful completion necessarily depends on at least one claim about the learner's admitted material, Course, repository, project, local convention, private behavior, or source-local value. `general` means stable public field knowledge is sufficient. A mixed objective is conservatively `source_specific` when any necessary proposition is source-specific.
+- `scopeOrigin = anchored | supplemental` describes membership origin. `anchored` means admitted material legitimately introduced the topic or capability, even briefly; it does not claim complete teaching depth or entailment. `supplemental` means the Learning Contract or explicit learner-authorized expansion is the only membership basis.
+
+The provider proposes both values as part of the existing direct-Curriculum or detail-generation call. There is no classification operation and no second model call. Runtime provider schemas require both fields, and local validation rejects unknown values and `source_specific + supplemental` before materialization. Learner acceptance cannot launder that forbidden pair. Existing source references, authority source-block IDs, formal evidence IDs, claims, and LearningUnit membership remain the anchor representation; no parallel anchor field is introduced.
+
+The fields are immutable accepted-Curriculum policy metadata, not independently verified epistemic facts. The current implementation has no deterministic classifier that can prove a model-proposed `general` label, so it adds no keyword, proper-name, regex, embedding, or fuzzy heuristic. Most importantly, no semantic-support code branches on either value: `general` cannot bypass the universal semantic gate, `anchored` is not proof of entailment, and `supplemental` grants no truth or acceptance authority. Existing Curriculum acceptance, StudyPlan, Lesson, Practice, Formal Assessment, grading, progression, mastery, and learner-state semantics are unchanged.
+
+The versioned aggregate already lives in `curriculum_versions.payload`, so the labels persist in immutable JSON without a migration. New version creation requires both fields. Historical payloads may omit both, which means legacy unknown rather than `general`, `anchored`, or `supplemental`; partial metadata is invalid and no backfill or text inference occurs. Semantic repair must echo both fields unchanged. Capability recovery carries known predecessor values and rejects mutation; when a historical predecessor has neither value, only the newly proposed successor receives explicit classification. The labels do not enter the existing proposition fingerprint (title plus description) or authority-binding fingerprint (authority/source/claim identities), because they neither change the proposition nor grant evidence authority in this foundation.
+
 ### Immutable successor recovery and ownership
 
 Historical accepted Curricula remain immutable. Recovery reuses the existing versioned Course Preparation path:

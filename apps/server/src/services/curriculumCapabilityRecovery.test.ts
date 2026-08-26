@@ -116,6 +116,8 @@ function curriculumObjective(
     id,
     title: `Capability ${id}`,
     description: `Explain the exact proposition for ${id}.`,
+    subjectClass: 'source_specific',
+    scopeOrigin: 'anchored',
     truthPremiseStatus: 'unverified',
     truthAuthorityRecordIds: [],
     formalAssessmentConstruct: 'explain',
@@ -309,6 +311,8 @@ function exactCandidate(frontier: CurriculumCapabilityRecoveryFrontier): Curricu
             key: 'objective_1',
             title: requirement.title,
             description: requirement.description,
+            subjectClass: requirement.subjectClass ?? 'source_specific',
+            scopeOrigin: requirement.scopeOrigin ?? 'anchored',
             construct: requirement.construct,
             evidence: [{ evidenceId: requirement.allowedEvidenceIds[0]! }],
             capabilityRequirementRef: requirement.capabilityRef,
@@ -595,6 +599,48 @@ describe('Curriculum capability recovery candidate validation', () => {
       diagnostics: [],
       diagnosticCodes: [],
     });
+  });
+
+  it('preserves known classifications and explicitly classifies a legacy-unknown successor', () => {
+    const sourceSpecificFrontier = buildFrontier(recoveryFixture());
+    const changedSubjectClass = exactCandidate(sourceSpecificFrontier);
+    changedSubjectClass.nodes[2]!.objectives[0]!.subjectClass = 'general';
+    expect(
+      validateCurriculumCapabilityRecoveryCandidate(changedSubjectClass, sourceSpecificFrontier)
+        .diagnosticCodes,
+    ).toContain('recovery_capability_subject_class_changed');
+
+    const generalFrontier = buildFrontier(
+      recoveryFixture([
+        curriculumObjective('objective_1', {
+          subjectClass: 'general',
+          scopeOrigin: 'anchored',
+        }),
+      ]),
+    );
+    const changedScopeOrigin = exactCandidate(generalFrontier);
+    changedScopeOrigin.nodes[2]!.objectives[0]!.scopeOrigin = 'supplemental';
+    expect(
+      validateCurriculumCapabilityRecoveryCandidate(changedScopeOrigin, generalFrontier)
+        .diagnosticCodes,
+    ).toContain('recovery_capability_scope_origin_changed');
+
+    const legacy = recoveryFixture();
+    delete legacy.predecessor.nodes[1]!.learningUnit!.objectives[0]!.subjectClass;
+    delete legacy.predecessor.nodes[1]!.learningUnit!.objectives[0]!.scopeOrigin;
+    const legacyFrontier = buildFrontier(legacy);
+    expect(legacyFrontier.requirements[0]).toMatchObject({
+      subjectClass: null,
+      scopeOrigin: null,
+    });
+    const successor = exactCandidate(legacyFrontier);
+    expect(successor.nodes[2]!.objectives[0]).toMatchObject({
+      subjectClass: 'source_specific',
+      scopeOrigin: 'anchored',
+    });
+    expect(validateCurriculumCapabilityRecoveryCandidate(successor, legacyFrontier).valid).toBe(
+      true,
+    );
   });
 
   it('fails closed for missing and foreign capability aliases', () => {

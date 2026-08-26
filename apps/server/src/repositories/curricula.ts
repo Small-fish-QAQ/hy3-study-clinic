@@ -109,6 +109,16 @@ function withoutSemanticSupport(curriculum: Curriculum): Curriculum {
   };
 }
 
+function assertExplicitObjectiveClassifications(curriculum: Curriculum): void {
+  for (const objective of curriculum.nodes.flatMap((node) => node.learningUnit?.objectives ?? [])) {
+    if (objective.subjectClass === undefined || objective.scopeOrigin === undefined) {
+      throw new Error(
+        `New Curriculum objective ${objective.id} requires explicit subjectClass and scopeOrigin.`,
+      );
+    }
+  }
+}
+
 function hydrate(
   row: CurriculumRow,
   semanticSupportByObjectiveId: ReadonlyMap<string, ObjectiveAuthoritySemanticSupport>,
@@ -441,6 +451,10 @@ export function createCurriculaRepo(db: SqliteDb) {
           normalizedObjectivePriority(successorObjective) !== expected.priority ||
           successorObjective.formalAssessmentConstruct !==
             expected.objective.formalAssessmentConstruct ||
+          (expected.objective.subjectClass !== undefined &&
+            successorObjective.subjectClass !== expected.objective.subjectClass) ||
+          (expected.objective.scopeOrigin !== undefined &&
+            successorObjective.scopeOrigin !== expected.objective.scopeOrigin) ||
           support.construct !== expected.objective.formalAssessmentConstruct ||
           support.verdict !== 'pass' ||
           support.boundSourceBlockIds.some(
@@ -960,6 +974,7 @@ export function createCurriculaRepo(db: SqliteDb) {
         throw new Error('Curriculum requires its exact persisted execution-source manifest.');
       }
       const objectives = curriculum.nodes.flatMap((node) => node.learningUnit?.objectives ?? []);
+      assertExplicitObjectiveClassifications(curriculum);
       assertCurriculumObjectiveAuthoritySemanticSupport(curriculum, {
         isBlockingEligible: isAuthorityBlockingEligible,
       });

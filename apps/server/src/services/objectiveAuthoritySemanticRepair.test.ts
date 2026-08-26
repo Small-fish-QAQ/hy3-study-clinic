@@ -143,6 +143,8 @@ function proposal(): CurriculumProposalPayload {
             title: 'Explain WeKnora positioning',
             description:
               'Explain WeKnora’s integrated document/search/LLM/permission/tool positioning.',
+            subjectClass: 'source_specific',
+            scopeOrigin: 'anchored',
             construct: 'explain',
             evidence: [{ evidenceId: 'evidence_ingestion' }],
             priority: 'required',
@@ -152,6 +154,8 @@ function proposal(): CurriculumProposalPayload {
             key: 'passing',
             title: 'Identify the integrated-system statement',
             description: 'Recognize the source-stated positioning of WeKnora.',
+            subjectClass: 'source_specific',
+            scopeOrigin: 'anchored',
             construct: 'identify',
             evidence: [{ evidenceId: 'evidence_positioning' }],
             priority: 'high',
@@ -176,6 +180,8 @@ function objective(
     id,
     title: candidateObjective.title,
     description: candidateObjective.description,
+    subjectClass: candidateObjective.subjectClass,
+    scopeOrigin: candidateObjective.scopeOrigin,
     truthPremiseStatus: 'independently_verified',
     truthAuthorityRecordIds: [authorityId],
     authorityClaimIds: [`claim_${authorityId}`],
@@ -336,6 +342,8 @@ function validReplacement(batch: ObjectiveAuthoritySemanticRepairBatch) {
         title: 'Explain WeKnora as an integrated system',
         description:
           'Explain the source-stated integration of documents, search, LLMs, permissions, and tools.',
+        subjectClass: objective.subjectClass,
+        scopeOrigin: objective.scopeOrigin,
         construct: objective.construct,
         evidenceRefs: [positioningRef],
       },
@@ -428,6 +436,8 @@ describe('bounded objective-authority semantic repair', () => {
       key: `recovery_${scope}`,
       title: `Explain ${scope}`,
       description: `Explain the complete ${scope} recovery capability.`,
+      subjectClass: 'source_specific' as const,
+      scopeOrigin: 'anchored' as const,
       construct: 'explain' as const,
       priority: 'required' as const,
       priorityRationale: 'Frozen predecessor capability.',
@@ -645,6 +655,8 @@ describe('bounded objective-authority semantic repair', () => {
         key: 'legacy_recovery',
         title: 'Explain B',
         description: 'Explain the complete source-stated B capability.',
+        subjectClass: 'source_specific',
+        scopeOrigin: 'anchored',
         construct: 'explain',
         priority: 'required',
         priorityRationale: 'Frozen predecessor capability.',
@@ -732,6 +744,8 @@ describe('bounded objective-authority semantic repair', () => {
           objectiveRef: repairObjective.objectiveRef,
           title: repairObjective.title,
           description: repairObjective.description,
+          subjectClass: repairObjective.subjectClass,
+          scopeOrigin: repairObjective.scopeOrigin,
           construct: repairObjective.construct,
           evidenceRefs: [e2Ref],
         },
@@ -759,6 +773,28 @@ describe('bounded objective-authority semantic repair', () => {
       valid: false,
       diagnosticCodes: ['semantic_repair_construct_changed'],
     });
+
+    const changedSubjectClass = structuredClone(valid);
+    changedSubjectClass.replacements[0]!.subjectClass = 'general';
+    expect(
+      validateObjectiveAuthoritySemanticRepairProposal(batch, changedSubjectClass),
+    ).toMatchObject({
+      valid: false,
+      diagnosticCodes: ['semantic_repair_subject_class_changed'],
+    });
+
+    const changedScopeOrigin = structuredClone(valid);
+    changedScopeOrigin.replacements[0]!.subjectClass = 'general';
+    changedScopeOrigin.replacements[0]!.scopeOrigin = 'supplemental';
+    expect(
+      validateObjectiveAuthoritySemanticRepairProposal(batch, changedScopeOrigin),
+    ).toMatchObject({
+      valid: false,
+      diagnosticCodes: expect.arrayContaining([
+        'semantic_repair_subject_class_changed',
+        'semantic_repair_scope_origin_changed',
+      ]),
+    });
   });
 
   it('rejects missing, extra, or reordered failed-objective replacements', () => {
@@ -767,6 +803,8 @@ describe('bounded objective-authority semantic repair', () => {
       objectiveRef: objective.objectiveRef,
       title: objective.title,
       description: objective.description,
+      subjectClass: objective.subjectClass,
+      scopeOrigin: objective.scopeOrigin,
       construct: objective.construct,
       evidenceRefs: [objective.allowedEvidence[0]!.evidenceRef],
     }));
@@ -782,6 +820,8 @@ describe('bounded objective-authority semantic repair', () => {
           objectiveRef: 'objective_unrelated',
           title: 'Unrelated',
           description: 'This objective was not failed.',
+          subjectClass: 'general' as const,
+          scopeOrigin: 'supplemental' as const,
           construct: 'identify' as const,
           evidenceRefs: [],
         },
@@ -831,6 +871,8 @@ describe('bounded objective-authority semantic repair', () => {
     expect(repairedUnit.objectives[1]).toEqual(originalPassing);
     expect(repairedUnit.objectives[0]).toMatchObject({
       key: 'failed',
+      subjectClass: 'source_specific',
+      scopeOrigin: 'anchored',
       construct: 'explain',
       priority: 'required',
       priorityRationale: 'This is the central course outcome.',

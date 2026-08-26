@@ -1,5 +1,11 @@
 import { z } from 'zod';
-import { AuthorityPremiseKindSchema, FormalAssessmentConstructSchema } from './sourceAuthority.js';
+import {
+  AuthorityPremiseKindSchema,
+  CurriculumScopeOriginSchema,
+  CurriculumSubjectClassSchema,
+  FormalAssessmentConstructSchema,
+  isForbiddenCurriculumObjectiveClassification,
+} from './sourceAuthority.js';
 
 function requireUniqueIdentityValues(
   values: readonly string[],
@@ -758,6 +764,8 @@ export const ObjectiveAuthoritySemanticRepairObjectiveInputSchema = z
     objectiveRef: z.string().min(1).max(100),
     title: z.string().min(1).max(300),
     description: z.string().min(1).max(1_000),
+    subjectClass: CurriculumSubjectClassSchema,
+    scopeOrigin: CurriculumScopeOriginSchema,
     construct: FormalAssessmentConstructSchema,
     priority: z.enum(['required', 'high', 'normal', 'optional']),
     currentEvidenceRefs: z.array(z.string().min(1).max(100)).max(5),
@@ -774,6 +782,13 @@ export const ObjectiveAuthoritySemanticRepairObjectiveInputSchema = z
   })
   .strict()
   .superRefine((objective, ctx) => {
+    if (isForbiddenCurriculumObjectiveClassification(objective)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['scopeOrigin'],
+        message: 'source-specific objectives cannot have supplemental scope origin',
+      });
+    }
     const allowedRefs = new Set(objective.allowedEvidence.map((offer) => offer.evidenceRef));
     if (allowedRefs.size !== objective.allowedEvidence.length) {
       ctx.addIssue({
@@ -833,11 +848,20 @@ export const ObjectiveAuthoritySemanticRepairReplacementSchema = z
     objectiveRef: z.string().min(1).max(100),
     title: z.string().min(1).max(300),
     description: z.string().min(1).max(1_000),
+    subjectClass: CurriculumSubjectClassSchema,
+    scopeOrigin: CurriculumScopeOriginSchema,
     construct: FormalAssessmentConstructSchema,
     evidenceRefs: z.array(z.string().min(1).max(100)).max(5),
   })
   .strict()
   .superRefine((replacement, ctx) => {
+    if (isForbiddenCurriculumObjectiveClassification(replacement)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['scopeOrigin'],
+        message: 'source-specific objectives cannot have supplemental scope origin',
+      });
+    }
     if (new Set(replacement.evidenceRefs).size !== replacement.evidenceRefs.length) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

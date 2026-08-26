@@ -798,6 +798,8 @@ export function buildCourseMapProposalInput({
       originalProposition: requirement.originalProposition,
       construct: requirement.construct,
       priority: requirement.priority,
+      subjectClass: requirement.subjectClass,
+      scopeOrigin: requirement.scopeOrigin,
       allowedSourceRegionRefs,
       allowedRecoveryEvidenceRefs,
     };

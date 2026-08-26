@@ -638,7 +638,7 @@ export async function evaluateCurriculumPolicy(
       let lastCandidate: MaterializedCurriculum | null = null;
       const payload = await runStage({
         stage: 'legacy_curriculum',
-        schemaFingerprint: 'curriculum-proposal-v2-evidence-identity',
+        schemaFingerprint: 'curriculum-proposal-v3-claim-scope',
         sourceFingerprint: prepared.context.manifest.fingerprint,
         request: measureCurriculumRequest(prepared.providerInput),
         invoke: (options) =>
@@ -735,7 +735,7 @@ export async function evaluateCurriculumPolicy(
         const payload = await runStage({
           stage: 'curriculum_detail',
           detailBatchIndex: batch.index,
-          schemaFingerprint: 'curriculum-detail-proposal-v1',
+          schemaFingerprint: 'curriculum-detail-proposal-v2-claim-scope',
           sourceFingerprint: `${sourceAllocation.fingerprint}:${batch.input.batchKey}`,
           request: measureCurriculumDetailRequest(batch.input),
           invoke: (options) =>

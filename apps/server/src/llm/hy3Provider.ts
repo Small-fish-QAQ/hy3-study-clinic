@@ -693,7 +693,7 @@ export class Hy3Provider implements LlmProvider {
       'For required_objective_formal_authority_missing, narrow or split the objective to the supplied authority envelope and preserve required priority. Never mark it optional, invent evidence, or repeat the unchanged claim.',
       {
         maxTokens: CURRICULUM_MAX_OUTPUT_TOKENS,
-        schemaName: 'curriculum-proposal-v2-evidence-identity',
+        schemaName: 'curriculum-proposal-v3-claim-scope',
         ...(input.capabilityRecovery?.requirements.length
           ? {}
           : { candidatePreprocessor: stripCapabilityRecoveryRefs }),
@@ -744,7 +744,7 @@ export class Hy3Provider implements LlmProvider {
       ].join('\n'),
       {
         maxTokens: CURRICULUM_MAX_OUTPUT_TOKENS,
-        schemaName: 'curriculum-detail-proposal-v1',
+        schemaName: 'curriculum-detail-proposal-v2-claim-scope',
         ...(input.regions.some((region) => (region.capabilityRequirements?.length ?? 0) > 0)
           ? {}
           : { candidatePreprocessor: stripCapabilityRecoveryRefs }),
@@ -794,7 +794,7 @@ export class Hy3Provider implements LlmProvider {
       ].join('\n'),
       {
         maxTokens: 8_000,
-        schemaName: 'objective-authority-semantic-repair-v1',
+        schemaName: 'objective-authority-semantic-repair-v2-claim-scope',
       },
     );
   }

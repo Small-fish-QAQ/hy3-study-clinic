@@ -13,6 +13,24 @@ export const TruthPremiseStatusSchema = z.enum([
 ]);
 export type TruthPremiseStatus = z.infer<typeof TruthPremiseStatusSchema>;
 
+/** What kind of truth authority an objective's successful completion requires. */
+export const CurriculumSubjectClassSchema = z.enum(['source_specific', 'general']);
+export type CurriculumSubjectClass = z.infer<typeof CurriculumSubjectClassSchema>;
+
+/** Why an objective belongs in this learner's Course scope. */
+export const CurriculumScopeOriginSchema = z.enum(['anchored', 'supplemental']);
+export type CurriculumScopeOrigin = z.infer<typeof CurriculumScopeOriginSchema>;
+
+export function isForbiddenCurriculumObjectiveClassification(classification: {
+  subjectClass: CurriculumSubjectClass;
+  scopeOrigin: CurriculumScopeOrigin;
+}): boolean {
+  return (
+    classification.subjectClass === 'source_specific' &&
+    classification.scopeOrigin === 'supplemental'
+  );
+}
+
 /** Controlled assessment constructs exposed to Curriculum objective design. */
 export const FormalAssessmentConstructSchema = z.enum([
   'identify',

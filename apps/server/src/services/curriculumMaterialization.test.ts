@@ -48,6 +48,8 @@ function recoveryPlanningFixture() {
     originalProposition: 'Recognize the complete predecessor capability and its exact scope.',
     construct: 'identify' as const,
     priority: 'normal' as const,
+    subjectClass: 'general' as const,
+    scopeOrigin: 'anchored' as const,
     // E2 is deliberately outside the one-offer Course Map visibility sample,
     // but remains exact evidence in R1's server-owned source allocation.
     allowedEvidenceIds: [fixture.evidenceCatalog[1]!.id],
@@ -109,6 +111,8 @@ function recoveryEvidenceBoundaryPlanning(offersPerRequirement: number, heavyAut
     originalProposition: `Explain bounded recovery capability ${requirementIndex + 1}\nExplain the complete source-bounded recovery capability ${requirementIndex + 1}.`,
     construct: 'explain' as const,
     priority: 'required' as const,
+    subjectClass: 'source_specific' as const,
+    scopeOrigin: 'anchored' as const,
     allowedEvidenceIds: recoveryOffers
       .slice(requirementIndex * offersPerRequirement, (requirementIndex + 1) * offersPerRequirement)
       .map((offer) => offer.id),
@@ -436,6 +440,8 @@ describe('bounded Curriculum detail materialization', () => {
     expect(region.capabilityRequirements).toEqual([
       expect.objectContaining({
         capabilityRef: requirement.capabilityRef,
+        subjectClass: requirement.subjectClass,
+        scopeOrigin: requirement.scopeOrigin,
         allowedEvidenceIds: requirement.allowedEvidenceIds,
       }),
     ]);
@@ -497,6 +503,18 @@ describe('bounded Curriculum detail materialization', () => {
     expect(
       validateCurriculumDetailCandidate(changedConstruct, batch.input).diagnosticCodes,
     ).toContain('recovery_capability_construct_changed');
+
+    const changedSubjectClass = structuredClone(valid);
+    changedSubjectClass.units[0]!.objectives[0]!.subjectClass = 'source_specific';
+    expect(
+      validateCurriculumDetailCandidate(changedSubjectClass, batch.input).diagnosticCodes,
+    ).toContain('recovery_capability_subject_class_changed');
+
+    const changedScopeOrigin = structuredClone(valid);
+    changedScopeOrigin.units[0]!.objectives[0]!.scopeOrigin = 'supplemental';
+    expect(
+      validateCurriculumDetailCandidate(changedScopeOrigin, batch.input).diagnosticCodes,
+    ).toContain('recovery_capability_scope_origin_changed');
 
     const changedPriority = structuredClone(valid);
     changedPriority.units[0]!.objectives[0]!.priority = 'optional';
@@ -761,6 +779,8 @@ describe('bounded Curriculum detail materialization', () => {
             key: `minimum-budget-objective-${index + 1}`,
             title: capability.title,
             description: capability.description,
+            subjectClass: capability.subjectClass ?? ('source_specific' as const),
+            scopeOrigin: capability.scopeOrigin ?? ('anchored' as const),
             construct: capability.construct,
             priority: capability.priority,
             evidence: [{ evidenceId: applyEvidence.evidenceId }],

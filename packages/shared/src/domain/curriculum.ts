@@ -3,8 +3,11 @@ import { CourseExecutionCommandEnvelopeSchema } from './learningContract.js';
 import {
   CurriculumAuthorityCritiqueSchema,
   CurriculumAuthorityEnvelopeTierSchema,
+  CurriculumScopeOriginSchema,
+  CurriculumSubjectClassSchema,
   FormalAssessmentConstructSchema,
   TruthPremiseStatusSchema,
+  isForbiddenCurriculumObjectiveClassification,
 } from './sourceAuthority.js';
 import { ObjectiveAuthoritySemanticSupportSchema } from './objectiveAuthoritySemanticSupport.js';
 
@@ -62,6 +65,10 @@ export const CurriculumObjectiveSchema = z
     id: z.string().min(1),
     title: z.string().min(1).max(300),
     description: z.string().min(1).max(1000),
+    /** Truth-authority risk class; absent only on readable legacy artifacts. */
+    subjectClass: CurriculumSubjectClassSchema.optional(),
+    /** Course-membership origin; absent only on readable legacy artifacts. */
+    scopeOrigin: CurriculumScopeOriginSchema.optional(),
     truthPremiseStatus: TruthPremiseStatusSchema,
     truthAuthorityRecordIds: z.array(z.string().min(1)).max(20),
     /** Exact selected SourceAuthorityClaim identities; absent only on readable legacy artifacts. */
@@ -80,6 +87,29 @@ export const CurriculumObjectiveSchema = z
   })
   .strict()
   .superRefine((objective, ctx) => {
+    const hasSubjectClass = objective.subjectClass !== undefined;
+    const hasScopeOrigin = objective.scopeOrigin !== undefined;
+    if (hasSubjectClass !== hasScopeOrigin) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: hasSubjectClass ? ['scopeOrigin'] : ['subjectClass'],
+        message: 'objective classification must provide both subjectClass and scopeOrigin',
+      });
+    }
+    if (
+      objective.subjectClass &&
+      objective.scopeOrigin &&
+      isForbiddenCurriculumObjectiveClassification({
+        subjectClass: objective.subjectClass,
+        scopeOrigin: objective.scopeOrigin,
+      })
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['scopeOrigin'],
+        message: 'source-specific objectives cannot have supplemental scope origin',
+      });
+    }
     if (
       objective.truthPremiseStatus === 'independently_verified' &&
       objective.truthAuthorityRecordIds.length === 0

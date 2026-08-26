@@ -576,6 +576,8 @@ export function buildCurriculumCapabilityRecoveryFrontier(input: {
         originalProposition,
         construct,
         priority,
+        subjectClass: objective.subjectClass ?? null,
+        scopeOrigin: objective.scopeOrigin ?? null,
         allowedEvidenceIds: allowedEvidence.map((offer) => offer.id),
       };
       const requiredCapabilityPreservation =
@@ -855,6 +857,28 @@ export function validateCurriculumCapabilityRecoveryCandidate(
           capabilityRef: requirement.capabilityRef,
           expectedPriority: requirement.priority,
           actualPriority,
+        },
+      });
+    }
+    if (requirement.subjectClass !== null && objective.subjectClass !== requirement.subjectClass) {
+      diagnostics.push({
+        code: 'recovery_capability_subject_class_changed',
+        message: `Recovery capability ${requirement.capabilityRef} changed its subject class.`,
+        facts: {
+          capabilityRef: requirement.capabilityRef,
+          expectedSubjectClass: requirement.subjectClass,
+          actualSubjectClass: objective.subjectClass,
+        },
+      });
+    }
+    if (requirement.scopeOrigin !== null && objective.scopeOrigin !== requirement.scopeOrigin) {
+      diagnostics.push({
+        code: 'recovery_capability_scope_origin_changed',
+        message: `Recovery capability ${requirement.capabilityRef} changed its scope origin.`,
+        facts: {
+          capabilityRef: requirement.capabilityRef,
+          expectedScopeOrigin: requirement.scopeOrigin,
+          actualScopeOrigin: objective.scopeOrigin,
         },
       });
     }

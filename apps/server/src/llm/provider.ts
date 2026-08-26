@@ -58,6 +58,8 @@ import type {
   MasteryChallengeFamily,
   MasteryFragilityBasis,
   CurriculumAuthorityEnvelopeTier,
+  CurriculumScopeOrigin,
+  CurriculumSubjectClass,
   FormalAssessmentConstruct,
   ObjectiveAuthoritySemanticEvaluationInput,
   ObjectiveAuthoritySemanticEvaluationProposal,
@@ -774,6 +776,10 @@ export interface CurriculumCapabilityRecoveryRequirementInput {
   originalProposition: string;
   construct: FormalAssessmentConstruct;
   priority: 'required' | 'high' | 'normal';
+  /** Null only when the accepted predecessor is a readable legacy Curriculum. */
+  subjectClass: CurriculumSubjectClass | null;
+  /** Null only when the accepted predecessor is a readable legacy Curriculum. */
+  scopeOrigin: CurriculumScopeOrigin | null;
   allowedEvidenceIds: string[];
 }
 

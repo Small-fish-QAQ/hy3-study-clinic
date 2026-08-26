@@ -21,7 +21,12 @@ import {
   TeachingLessonSlotContentsSchema,
   TeachingPracticeApplicationContentSchema,
 } from '../domain/teachingSkeleton.js';
-import { FormalAssessmentConstructSchema } from '../domain/sourceAuthority.js';
+import {
+  CurriculumScopeOriginSchema,
+  CurriculumSubjectClassSchema,
+  FormalAssessmentConstructSchema,
+  isForbiddenCurriculumObjectiveClassification,
+} from '../domain/sourceAuthority.js';
 
 /**
  * Structured payloads that LLM providers must return.
@@ -283,6 +288,10 @@ export const ProposedCurriculumObjectiveSchema = z
     key: z.string().min(1).max(100),
     title: z.string().min(1).max(300),
     description: z.string().min(1).max(1000),
+    /** What type of truth authority successful completion requires. */
+    subjectClass: CurriculumSubjectClassSchema,
+    /** Why the objective belongs in the learner's Course scope. */
+    scopeOrigin: CurriculumScopeOriginSchema,
     /** Construct is explicit and immutable across bounded semantic repair. */
     construct: FormalAssessmentConstructSchema,
     /** Optional server-offered evidence selections; local authority decides their meaning. */
@@ -296,7 +305,16 @@ export const ProposedCurriculumObjectiveSchema = z
     priority: z.enum(['required', 'high', 'normal', 'optional']).optional(),
     priorityRationale: z.string().min(1).max(500).optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((objective, ctx) => {
+    if (isForbiddenCurriculumObjectiveClassification(objective)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['scopeOrigin'],
+        message: 'source-specific objectives cannot have supplemental scope origin',
+      });
+    }
+  });
 export type ProposedCurriculumObjective = z.infer<typeof ProposedCurriculumObjectiveSchema>;
 
 /**

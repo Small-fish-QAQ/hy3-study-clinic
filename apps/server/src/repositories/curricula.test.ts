@@ -209,6 +209,8 @@ function curriculum(
               id: 'objective_1',
               title: OBJECTIVE_TITLE,
               description: OBJECTIVE_DESCRIPTION,
+              subjectClass: 'source_specific',
+              scopeOrigin: 'anchored',
               truthPremiseStatus: 'independently_verified',
               truthAuthorityRecordIds: ['authority_1'],
               authorityClaimIds: ['claim_1'],
@@ -418,6 +420,64 @@ function expectNoCurriculumPersistence(): void {
 }
 
 describe('Curriculum objective semantic-support persistence', () => {
+  it.each([
+    ['source_specific', 'anchored'],
+    ['general', 'anchored'],
+    ['general', 'supplemental'],
+  ] as const)(
+    'persists and reads back %s + %s classification metadata',
+    (subjectClass, scopeOrigin) => {
+      const candidate = curriculum();
+      const objective = candidate.nodes[1]!.learningUnit!.objectives[0]!;
+      objective.subjectClass = subjectClass;
+      objective.scopeOrigin = scopeOrigin;
+
+      const stored = createVersion(candidate);
+
+      expect(repos.curricula.get(stored.id)?.nodes[1]?.learningUnit?.objectives[0]).toMatchObject({
+        subjectClass,
+        scopeOrigin,
+      });
+    },
+  );
+
+  it('requires valid explicit classifications for new versions and reads legacy unknown metadata', () => {
+    const missingClassification = curriculum();
+    delete missingClassification.nodes[1]!.learningUnit!.objectives[0]!.subjectClass;
+    delete missingClassification.nodes[1]!.learningUnit!.objectives[0]!.scopeOrigin;
+    expect(() => createVersion(missingClassification)).toThrow(
+      /requires explicit subjectClass and scopeOrigin/u,
+    );
+    expectNoCurriculumPersistence();
+
+    const forbiddenClassification = curriculum();
+    forbiddenClassification.nodes[1]!.learningUnit!.objectives[0]!.scopeOrigin = 'supplemental';
+    expect(() => createVersion(forbiddenClassification)).toThrow(
+      /source-specific objectives cannot have supplemental scope origin/u,
+    );
+    expectNoCurriculumPersistence();
+
+    const stored = createVersion(curriculum());
+    const row = db
+      .prepare('SELECT payload FROM curriculum_versions WHERE id = ?')
+      .get(stored.id) as {
+      payload: string;
+    };
+    const historicalPayload = JSON.parse(row.payload) as Curriculum;
+    delete historicalPayload.nodes[1]!.learningUnit!.objectives[0]!.subjectClass;
+    delete historicalPayload.nodes[1]!.learningUnit!.objectives[0]!.scopeOrigin;
+    db.prepare('UPDATE curriculum_versions SET payload = ? WHERE id = ?').run(
+      JSON.stringify(historicalPayload),
+      stored.id,
+    );
+
+    const hydrated = repos.curricula.get(stored.id)!;
+    const historicalObjective = hydrated.nodes[1]!.learningUnit!.objectives[0]!;
+    expect(historicalObjective.id).toBe('objective_1');
+    expect('subjectClass' in historicalObjective).toBe(false);
+    expect('scopeOrigin' in historicalObjective).toBe(false);
+  });
+
   it('persists support atomically outside aggregate JSON and hydrates canonical rows', () => {
     const expectedSupport = semanticSupport();
 
@@ -425,6 +485,10 @@ describe('Curriculum objective semantic-support persistence', () => {
 
     expect(repos.curricula.getObjectiveSemanticSupport(stored.id)).toEqual([expectedSupport]);
     expect(stored.nodes[1]?.learningUnit?.objectives[0]?.semanticSupport).toEqual(expectedSupport);
+    expect(stored.nodes[1]?.learningUnit?.objectives[0]).toMatchObject({
+      subjectClass: 'source_specific',
+      scopeOrigin: 'anchored',
+    });
     expect(repos.curricula.get(stored.id)).toEqual(stored);
     expect(repos.curricula.list('ws_1')).toEqual([stored]);
     const accepted = repos.curricula.accept(stored.id, T0, {

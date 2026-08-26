@@ -51,6 +51,8 @@ function curriculumPayload(): unknown {
             key: 'objective-1',
             title: 'Explain the first idea',
             description: 'Explain it from the accepted course material.',
+            subjectClass: 'source_specific',
+            scopeOrigin: 'anchored',
             construct: 'explain',
             evidence: [{ evidenceId: 'evidence_1' }],
           },
@@ -73,6 +75,8 @@ function curriculumPayload(): unknown {
             key: 'objective-2',
             title: 'Explore the second idea',
             description: 'A learner-scoped objective without verified source evidence.',
+            subjectClass: 'general',
+            scopeOrigin: 'supplemental',
             construct: 'identify',
             evidence: [],
           },
@@ -168,6 +172,48 @@ describe('CurriculumProposalPayloadSchema', () => {
     };
     delete payload.nodes[2]!.objectives[0]!.construct;
     expect(CurriculumProposalPayloadSchema.safeParse(payload).success).toBe(false);
+  });
+
+  it('accepts all valid subject-class and scope-origin combinations', () => {
+    for (const [subjectClass, scopeOrigin] of [
+      ['source_specific', 'anchored'],
+      ['general', 'anchored'],
+      ['general', 'supplemental'],
+    ] as const) {
+      const payload = curriculumPayload() as {
+        nodes: Array<{ objectives: Array<Record<string, unknown>> }>;
+      };
+      payload.nodes[2]!.objectives[0]!.subjectClass = subjectClass;
+      payload.nodes[2]!.objectives[0]!.scopeOrigin = scopeOrigin;
+      expect(CurriculumProposalPayloadSchema.safeParse(payload).success).toBe(true);
+    }
+  });
+
+  it('rejects forbidden, missing, and partial provider classification metadata', () => {
+    const forbidden = curriculumPayload() as {
+      nodes: Array<{ objectives: Array<Record<string, unknown>> }>;
+    };
+    forbidden.nodes[2]!.objectives[0]!.scopeOrigin = 'supplemental';
+    expect(CurriculumProposalPayloadSchema.safeParse(forbidden).success).toBe(false);
+
+    const missingBoth = curriculumPayload() as {
+      nodes: Array<{ objectives: Array<Record<string, unknown>> }>;
+    };
+    delete missingBoth.nodes[2]!.objectives[0]!.subjectClass;
+    delete missingBoth.nodes[2]!.objectives[0]!.scopeOrigin;
+    expect(CurriculumProposalPayloadSchema.safeParse(missingBoth).success).toBe(false);
+
+    const missingSubjectClass = curriculumPayload() as {
+      nodes: Array<{ objectives: Array<Record<string, unknown>> }>;
+    };
+    delete missingSubjectClass.nodes[2]!.objectives[0]!.subjectClass;
+    expect(CurriculumProposalPayloadSchema.safeParse(missingSubjectClass).success).toBe(false);
+
+    const missingScopeOrigin = curriculumPayload() as {
+      nodes: Array<{ objectives: Array<Record<string, unknown>> }>;
+    };
+    delete missingScopeOrigin.nodes[2]!.objectives[0]!.scopeOrigin;
+    expect(CurriculumProposalPayloadSchema.safeParse(missingScopeOrigin).success).toBe(false);
   });
 
   it('accepts an operation-local recovery capability reference on an objective', () => {
