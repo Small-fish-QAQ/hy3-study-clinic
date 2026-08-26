@@ -12,6 +12,7 @@ import {
 } from '@hy3-clinic/shared';
 import {
   conceptAnalysisMessages,
+  assessmentProposalMessages,
   courseMapPromptContext,
   courseMapProposalMessages,
   curriculumDetailProposalMessages,
@@ -28,6 +29,7 @@ import {
   OBJECTIVE_AUTHORITY_SEMANTIC_VOCABULARY_RULES,
 } from './prompts.js';
 import type {
+  AssessmentProposalInput,
   CourseMapProposalInput,
   CurriculumDetailProposalInput,
   CurriculumProposalInput,
@@ -385,6 +387,51 @@ const concept: Concept = {
   },
   createdAt: new Date(0).toISOString(),
 };
+
+describe('assessment diversity prompt contract', () => {
+  const input: AssessmentProposalInput = {
+    workspaceName: 'Course',
+    mode: 'review',
+    targets: [
+      {
+        concept,
+        documentTitle: 'Notes',
+        alignedSiblings: [],
+        mastery: null,
+        openMistakes: 0,
+      },
+    ],
+    blocks,
+    allowedTypes: ['short_answer'],
+    questionCount: 1,
+    requiredRepresentation: 'application',
+    requestedChallengeFamily: 'transfer',
+    misconception: null,
+  };
+
+  it('treats local transfer as changed-context generation intent rather than proof', () => {
+    const content = assessmentProposalMessages(input)
+      .map((message) => message.content)
+      .join('\n');
+    expect(content).toContain('本次本地策略请求的命题意图是 transfer');
+    expect(content).toContain('表面形式或应用情境有变化的新场景');
+    expect(content).toContain('这是命题要求，不是学习者已证明该能力的标签');
+    expect(content).toContain('不要在输出中新增、回显或改写 challenge family 字段');
+    expect(content).not.toContain('"requestedChallengeFamily"');
+  });
+
+  it('requests a meaningful application representation shift through the same prompt', () => {
+    const content = assessmentProposalMessages({
+      ...input,
+      requestedChallengeFamily: 'representation_shift',
+    })
+      .map((message) => message.content)
+      .join('\n');
+    expect(content).toContain('representation_shift');
+    expect(content).toContain('application 层级');
+    expect(content).toContain('不能只靠熟悉措辞作答');
+  });
+});
 
 describe('prompt trust boundaries', () => {
   it('does not interpolate an untrusted material title into prompts', () => {

@@ -1071,13 +1071,31 @@ export class FakeProvider implements LlmProvider {
         block,
         { difficulty: 'medium', variant: items.length },
       );
+      if (type === 'short_answer' && input.requestedChallengeFamily === 'representation_shift') {
+        question.stem = `请用一个与直接复述不同的应用形式说明「${target.concept.name}」如何依据资料成立。`;
+      }
+      if (type === 'short_answer' && input.requestedChallengeFamily === 'transfer') {
+        question.stem = `在表面情境改变但仍满足资料条件时，如何应用「${target.concept.name}」？请说明依据。`;
+      }
       items.push({
         blueprint: {
           conceptIds: [target.concept.id],
           questionType: type,
           difficulty: 'medium',
-          learningObjective: `检验「${target.concept.name}」的原文理解。`,
-          reasoningSteps: [{ description: '依据原文判断或复述概念要点。', evidenceIndexes: [0] }],
+          learningObjective:
+            input.requestedChallengeFamily === 'representation_shift'
+              ? `用不同表示检验「${target.concept.name}」的应用。`
+              : input.requestedChallengeFamily === 'transfer'
+                ? `检验「${target.concept.name}」在变化情境中的应用。`
+                : `检验「${target.concept.name}」的原文理解。`,
+          reasoningSteps: [
+            {
+              description: input.requestedChallengeFamily
+                ? '识别资料条件，并将同一能力用于题目给出的变化形式。'
+                : '依据原文判断或复述概念要点。',
+              evidenceIndexes: [0],
+            },
+          ],
         },
         question,
         extraEvidence: [],

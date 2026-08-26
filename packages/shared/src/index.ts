@@ -23,6 +23,15 @@ export * from './domain/sessionAgenda.js';
 export * from './domain/coursePreparation.js';
 export * from './domain/studySession.js';
 export * from './domain/formalProgression.js';
+export {
+  ASSESSMENT_INTENT_POLICY_VERSION,
+  AssessmentIntentSelectionReasonSchema,
+  AssessmentIntentSelectionSchema,
+  AssessmentItemIntentSchema,
+  type AssessmentIntentSelectionReason,
+  type AssessmentIntentSelection,
+  type AssessmentItemIntent,
+} from './domain/assessmentIntent.js';
 export * from './domain/coverageRisk.js';
 export * from './domain/telemetry.js';
 export * from './domain/workspace.js';

@@ -403,6 +403,8 @@ export interface AssessmentProposalInput {
   questionCount: number;
   /** Local request metadata; the provider does not decide learner-state consequences. */
   requiredRepresentation: EvidenceRepresentation | null;
+  /** Local generation intent; provider output cannot select or overwrite it. */
+  requestedChallengeFamily: MasteryChallengeFamily | null;
   /** Misconception to discriminate (misconception_check mode only). */
   misconception: MisconceptionRecord | null;
 }

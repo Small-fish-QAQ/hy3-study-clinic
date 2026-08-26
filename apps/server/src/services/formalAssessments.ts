@@ -12,6 +12,7 @@ import {
   classifyFormalAssessmentItem,
   type AssessmentAttempt,
   type AssessmentAuthorityMode,
+  type AssessmentIntentSelection,
   type AssessmentDefinition,
   type AssessmentVersion,
   type EvidenceRecord,
@@ -180,6 +181,7 @@ export function createFormalAssessmentsService({
     predecessorId?: string | null;
     progressionContext?: AssessmentVersion['progressionContext'];
     authorityMode?: AssessmentAuthorityMode;
+    assessmentIntent?: AssessmentIntentSelection;
   }): AssessmentVersion {
     const definition = repos.formalAssessments.getDefinition(input.definitionId);
     if (!definition) throw notFound(`正式评估定义不存在:${input.definitionId}`);
@@ -205,22 +207,43 @@ export function createFormalAssessmentsService({
         '影子 Mastery Red Team 评估不能携带进度上下文。',
       );
     }
+    if (input.assessmentIntent && !input.progressionContext) {
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        'Assessment intent requires an immutable progression stage.',
+      );
+    }
     const now = clock.now().toISOString();
-    return repos.formalAssessments.insertVersion(
-      AssessmentVersionSchema.parse({
-        id: newId('assessment_version'),
-        definitionId: input.definitionId,
-        version: (previous?.version ?? 0) + 1,
-        predecessorId: input.predecessorId ?? previous?.id ?? null,
-        status: 'draft',
-        items,
-        sourceRevisionIds: [...new Set(input.sourceRevisionIds)],
-        createdAt: now,
-        acceptedAt: null,
-        authorityMode,
-        progressionContext: input.progressionContext ?? null,
-      }),
-    );
+    const version = AssessmentVersionSchema.parse({
+      id: newId('assessment_version'),
+      definitionId: input.definitionId,
+      version: (previous?.version ?? 0) + 1,
+      predecessorId: input.predecessorId ?? previous?.id ?? null,
+      status: 'draft',
+      items,
+      sourceRevisionIds: [...new Set(input.sourceRevisionIds)],
+      createdAt: now,
+      acceptedAt: null,
+      authorityMode,
+      progressionContext: input.progressionContext ?? null,
+    });
+    return repos.transaction(() => {
+      const inserted = repos.formalAssessments.insertVersion(version);
+      if (input.assessmentIntent && inserted.progressionContext) {
+        repos.formalAssessments.insertItemIntents(
+          inserted.items.map((item) => ({
+            id: newId('assessment_intent'),
+            workspaceId: definition.workspaceId,
+            assessmentVersionId: inserted.id,
+            itemId: item.id,
+            assessmentStage: inserted.progressionContext!.assessmentKind,
+            ...input.assessmentIntent!,
+            createdAt: now,
+          })),
+        );
+      }
+      return inserted;
+    });
   }
 
   function startAttemptForMode(
@@ -403,6 +426,7 @@ export function createFormalAssessmentsService({
       targetLearningUnitId: string;
       targetObjectiveId: string;
       representation: EvidenceRepresentation;
+      assessmentIntent?: AssessmentIntentSelection;
       progressionContext?: NonNullable<AssessmentVersion['progressionContext']>;
     }): AssessmentVersion {
       const questions = input.quiz.questions.filter(
@@ -468,6 +492,7 @@ export function createFormalAssessmentsService({
           ),
         ],
         progressionContext: input.progressionContext,
+        assessmentIntent: input.assessmentIntent,
       });
       if (!version.items.every((item) => item.formalEligible)) {
         throw new AppError(

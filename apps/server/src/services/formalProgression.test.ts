@@ -465,7 +465,11 @@ function insertGrade(suffix: string, score: number, blockId = 'blk_1', stem?: st
   return { quizId, questionId, gradingResultId: `grading_${suffix}` };
 }
 
-function createAssessmentEvidence(suffix: string, createdAt = T3) {
+function createAssessmentEvidence(
+  suffix: string,
+  createdAt = T3,
+  representation: 'recall' | 'application' = 'recall',
+) {
   const source = insertGrade(`assessment_${suffix}`, 1);
   services.formalProgression.registerAssessmentContracts({
     workspaceId: 'ws_1',
@@ -485,7 +489,7 @@ function createAssessmentEvidence(suffix: string, createdAt = T3) {
     title: `Bridge ${suffix}`,
     targetLearningUnitId: 'unit_1',
     targetObjectiveId: 'objective_1',
-    representation: 'recall',
+    representation,
     progressionContext: {
       quizId: source.quizId,
       contractVersionId: 'contract_1',
@@ -1185,19 +1189,112 @@ describe('formal progression service', () => {
   it('requests and records application demand only for an application-capable due Review', async () => {
     makePrimaryObjectiveApplicationCapable();
     makeDueReview('application_demand');
-    const proposalCall = vi.spyOn(provider, 'proposeAssessment');
+    const proposeAssessment = provider.proposeAssessment.bind(provider);
+    const proposalCall = vi
+      .spyOn(provider, 'proposeAssessment')
+      .mockImplementation(async (input, options) => {
+        const payload = await proposeAssessment(input, options);
+        return {
+          ...payload,
+          items: payload.items.map((item) => ({
+            ...item,
+            requestedChallengeFamily: 'counterexample',
+          })),
+        };
+      });
 
     const { launched } = await launchDueReview('application_demand');
     const version = repos.formalAssessments.getVersion(launched.formalAssessmentVersionId!)!;
 
     expect(proposalCall).toHaveBeenCalledTimes(1);
     expect(proposalCall.mock.calls[0]?.[0].requiredRepresentation).toBe('application');
+    expect(proposalCall.mock.calls[0]?.[0].requestedChallengeFamily).toBe('representation_shift');
     expect(version.items).toEqual([
       expect.objectContaining({ representation: 'application', formalEligible: true }),
     ]);
+    expect(repos.formalAssessments.getItemIntent(version.id, version.items[0]!.id)).toMatchObject({
+      assessmentStage: 'due_review',
+      requestedChallengeFamily: 'representation_shift',
+      requestedRepresentation: 'application',
+      selectionReason: 'representation_diversity_missing',
+    });
     expect(
       repos.formalProgression.listQuestionContractsForQuiz(version.progressionContext!.quizId),
     ).toEqual([expect.objectContaining({ representation: 'application' })]);
+  });
+
+  it('requests transfer through the existing due-Review call after application evidence exists', async () => {
+    makePrimaryObjectiveApplicationCapable();
+    const application = createAssessmentEvidence('transfer_application', T3, 'application');
+    expect(services.formalAssessments.reconcileEvidence(application.evidence.id).status).toBe(
+      'applied',
+    );
+    makeDueReview('transfer');
+    const proposalCall = vi.spyOn(provider, 'proposeAssessment');
+    const masteryBefore = repos.mastery.listByWorkspace('ws_1');
+
+    const { launched } = await launchDueReview('transfer');
+    const version = repos.formalAssessments.getVersion(launched.formalAssessmentVersionId!)!;
+
+    expect(proposalCall).toHaveBeenCalledTimes(1);
+    expect(proposalCall.mock.calls[0]?.[0]).toMatchObject({
+      requiredRepresentation: 'application',
+      requestedChallengeFamily: 'transfer',
+    });
+    expect(repos.formalAssessments.getItemIntent(version.id, version.items[0]!.id)).toMatchObject({
+      assessmentStage: 'due_review',
+      requestedChallengeFamily: 'transfer',
+      requestedRepresentation: 'application',
+      selectionReason: 'transfer_context_missing',
+    });
+    expect(version.items[0]?.representation).toBe('application');
+    expect(repos.mastery.listByWorkspace('ws_1')).toEqual(masteryBefore);
+  });
+
+  it('rejects generated Review content when qualifying evidence changes during the provider call', async () => {
+    makePrimaryObjectiveApplicationCapable();
+    const { historical } = makeDueReview('diversity_stale');
+    const { agenda, item } = dueAgendaItem();
+    const versionCountBefore =
+      repos.formalAssessments.listProjectionRecords('ws_1').versions.length;
+    const proposeAssessment = provider.proposeAssessment.bind(provider);
+    const proposalCall = vi
+      .spyOn(provider, 'proposeAssessment')
+      .mockImplementation(async (input, options) => {
+        const payload = await proposeAssessment(input, options);
+        repos.formalAssessments.insertGrade(
+          GradeRecordSchema.parse({
+            ...historical.grade,
+            id: 'assessment_grade_diversity_stale_superseding',
+            status: 'current',
+            supersedesId: historical.grade.id,
+            createdAt: T4,
+          }),
+        );
+        return payload;
+      });
+
+    await expect(
+      services.courseActionLaunch.launch({
+        command: command('launch_due_review_diversity_stale', 'learner'),
+        agendaId: agenda.id,
+        expectedAgendaVersion: agenda.version,
+        agendaItemId: item.id,
+        expectedContractId: 'contract_1',
+        expectedStudyPlanId: 'plan_1',
+        expectedExecutionSourceManifestFingerprint: 'manifest-fp',
+      }),
+    ).rejects.toMatchObject({
+      code: 'VERSION_CONFLICT',
+      message: 'Assessment evidence changed while the question was generated.',
+    });
+
+    expect(proposalCall).toHaveBeenCalledTimes(1);
+    expect(proposalCall.mock.calls[0]?.[0].requestedChallengeFamily).toBe('representation_shift');
+    expect(repos.formalAssessments.listProjectionRecords('ws_1').versions).toHaveLength(
+      versionCountBefore,
+    );
+    expect(repos.formalAssessments.listItemIntentsForWorkspace('ws_1')).toEqual([]);
   });
 
   it('resolves direct supported recall with one Good and no mastery mutation', async () => {
@@ -2870,6 +2967,7 @@ describe('formal progression service', () => {
       ).toEqual({ studySessionId: null });
     }
 
+    const proposalCall = vi.spyOn(provider, 'proposeAssessment');
     const launched = await services.courseActionLaunch.launch({
       command: command('launch_tracked_checkpoint', 'learner'),
       agendaId: checkpointAgenda.id,
@@ -2883,6 +2981,20 @@ describe('formal progression service', () => {
 
     expect(launched.kind).toBe('assessment');
     if (launched.kind !== 'assessment') throw new Error('Expected a formal assessment.');
+    expect(proposalCall).toHaveBeenCalledTimes(1);
+    expect(proposalCall.mock.calls[0]?.[0]).toMatchObject({
+      requiredRepresentation: null,
+      requestedChallengeFamily: null,
+    });
+    const formalVersion = repos.formalAssessments.getVersion(launched.formalAssessmentVersionId!)!;
+    expect(
+      repos.formalAssessments.getItemIntent(formalVersion.id, formalVersion.items[0]!.id),
+    ).toMatchObject({
+      assessmentStage: 'formal_checkpoint',
+      requestedChallengeFamily: null,
+      requestedRepresentation: null,
+      selectionReason: 'ordinary_formal_check',
+    });
     const launchOperation = repos.operations.getByIdempotencyKey(
       'ws_1',
       'launch_tracked_checkpoint',

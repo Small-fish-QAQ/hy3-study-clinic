@@ -3179,6 +3179,63 @@ const MIGRATIONS: Migration[] = [
         BEGIN SELECT RAISE(ABORT, 'Assessment item exposure is append-only'); END;
     `,
   },
+  {
+    version: 44,
+    name: 'formal_assessment_item_intent',
+    // Historical assessment items have unknown design intent. Do not infer or
+    // backfill challenge coverage from their prompt text or representation.
+    up: `
+      CREATE TABLE assessment_item_intents (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        assessment_version_id TEXT NOT NULL
+          REFERENCES assessment_versions(id) ON DELETE CASCADE,
+        item_id TEXT NOT NULL,
+        assessment_stage TEXT NOT NULL CHECK (assessment_stage IN (
+          'formal_checkpoint', 'due_review', 'targeted_repair', 'synthesis',
+          'direct_checkpoint'
+        )),
+        policy_version TEXT NOT NULL,
+        requested_challenge_family TEXT CHECK (
+          requested_challenge_family IS NULL OR requested_challenge_family IN (
+            'transfer', 'boundary_conditions', 'near_neighbor_confusion',
+            'hidden_premise_change', 'counterexample', 'error_diagnosis',
+            'plausible_alternative_refutation', 'cross_learning_unit_synthesis',
+            'historical_misconception', 'adversarial_distractor',
+            'discriminative_follow_up', 'representation_shift'
+          )
+        ),
+        requested_representation TEXT CHECK (
+          requested_representation IS NULL OR requested_representation IN (
+            'recognition', 'recall', 'explanation', 'application', 'comparison',
+            'transfer', 'synthesis'
+          )
+        ),
+        selection_reason TEXT NOT NULL CHECK (selection_reason IN (
+          'ordinary_formal_check', 'ordinary_due_review',
+          'representation_diversity_missing', 'transfer_context_missing',
+          'no_supported_alternative'
+        )),
+        created_at TEXT NOT NULL,
+        UNIQUE (assessment_version_id, item_id)
+      );
+      CREATE INDEX idx_assessment_item_intents_workspace
+        ON assessment_item_intents(workspace_id, created_at, id);
+      CREATE INDEX idx_assessment_item_intents_version
+        ON assessment_item_intents(assessment_version_id, item_id);
+
+      CREATE TRIGGER prevent_assessment_item_intent_update
+        BEFORE UPDATE ON assessment_item_intents
+        BEGIN SELECT RAISE(ABORT, 'Assessment item intent is immutable'); END;
+      CREATE TRIGGER prevent_assessment_item_intent_delete
+        BEFORE DELETE ON assessment_item_intents
+        WHEN EXISTS (SELECT 1 FROM workspaces WHERE id = OLD.workspace_id)
+          AND EXISTS (
+            SELECT 1 FROM assessment_versions WHERE id = OLD.assessment_version_id
+          )
+        BEGIN SELECT RAISE(ABORT, 'Assessment item intent is append-only'); END;
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

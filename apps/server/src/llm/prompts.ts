@@ -529,6 +529,26 @@ const ASSESSMENT_TYPE_TEXT: Record<string, string> = {
     'concept_comparison 概念对比题(要求综合多份文档比较同一概念,expectedAnswer + rubricKeyPoints;必须提供来自另一文档的 extraEvidence)',
 };
 
+const ASSESSMENT_CHALLENGE_TEXT: Record<string, string> = {
+  representation_shift:
+    '用本次 locally requested representation 呈现同一能力，使学习者不能只靠熟悉措辞作答；必须真正使用资料支持的能力。',
+  transfer:
+    '把同一底层能力用于一个信息完整、表面形式或应用情境有变化的新场景；不得只做同义改写，也不得引入资料无法支持的评分前提。',
+  near_neighbor_confusion:
+    '要求学习者区分本地提供的相邻概念，并说明决定性差异；不得自行发明相邻概念。',
+  boundary_conditions: '考查资料明确支持的适用条件或边界；不得把资料未说明的例外当作事实。',
+  counterexample: '要求学习者用资料支持的反例或不成立情形检验主张；不得虚构反例前提。',
+  hidden_premise_change:
+    '显式呈现一个改变的前提，并要求学习者判断结论如何变化；所有作答所需前提必须对学习者可见。',
+  error_diagnosis: '给出一个可信但有错的推理，要求定位并修正资料可判定的错误。',
+  plausible_alternative_refutation:
+    '要求说明一个可信替代解释为何不符合所给资料，而不是只报出正确答案。',
+  cross_learning_unit_synthesis: '只综合本地提供且已获准的多个学习单元目标，不得新增课程关系。',
+  historical_misconception: '针对本地提供的历史误区设计辨别题，但不得把历史误区写成当前事实。',
+  adversarial_distractor: '设计一个资料可判定、表面可信的干扰项，避免文字游戏或无依据陷阱。',
+  discriminative_follow_up: '针对本地提供的未决差异设计一次更具判别力的后续问题。',
+};
+
 export function assessmentProposalMessages(input: AssessmentProposalInput): ChatMessage[] {
   const wrapped = wrapSourceBlocks(input.blocks);
   const targetList = input.targets
@@ -573,6 +593,15 @@ export function assessmentProposalMessages(input: AssessmentProposalInput): Chat
           ? [
               '本次正式复习要求 application 层级：题目必须让学习者把原文明确给出的规则、条件或步骤用于一个信息完整的新情境。只复述定义、定位原句或重复原例不满足要求。',
               '若给定证据不能支持这种应用题，宁可少出题，也不得借用资料外知识或伪造情境前提。',
+              '',
+            ]
+          : []),
+        ...(input.requestedChallengeFamily
+          ? [
+              `本次本地策略请求的命题意图是 ${input.requestedChallengeFamily}。这是命题要求，不是学习者已证明该能力的标签。`,
+              ASSESSMENT_CHALLENGE_TEXT[input.requestedChallengeFamily] ??
+                '按本地请求设计有判别力且来源有据的问题。',
+              '不要在输出中新增、回显或改写 challenge family 字段；本地代码独立持有该请求。',
               '',
             ]
           : []),

@@ -1,4 +1,7 @@
 import { z } from 'zod';
+import { MasteryChallengeFamilySchema, type MasteryChallengeFamily } from './assessmentIntent.js';
+
+export { MasteryChallengeFamilySchema, type MasteryChallengeFamily };
 
 export const MASTERY_RED_TEAM_SNAPSHOT_POLICY = 'mastery-red-team-snapshot-v1';
 export const MASTERY_RED_TEAM_HYPOTHESIS_POLICY = 'mastery-red-team-hypothesis-v1';
@@ -11,22 +14,6 @@ export const MASTERY_RED_TEAM_MAX_CANDIDATES = 3;
 export const MASTERY_RED_TEAM_MAX_OBJECTIVES = 8;
 export const MASTERY_RED_TEAM_MAX_FOLLOW_UP_DEPTH = 1;
 export const MASTERY_RED_TEAM_MAX_OVERLAP = 0.82;
-
-export const MasteryChallengeFamilySchema = z.enum([
-  'transfer',
-  'boundary_conditions',
-  'near_neighbor_confusion',
-  'hidden_premise_change',
-  'counterexample',
-  'error_diagnosis',
-  'plausible_alternative_refutation',
-  'cross_learning_unit_synthesis',
-  'historical_misconception',
-  'adversarial_distractor',
-  'discriminative_follow_up',
-  'representation_shift',
-]);
-export type MasteryChallengeFamily = z.infer<typeof MasteryChallengeFamilySchema>;
 
 export const MasteryFragilityBasisSchema = z.enum([
   'direct_recall_only',

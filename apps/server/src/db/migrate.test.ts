@@ -1514,6 +1514,76 @@ describe('migrations', () => {
     db.close();
   });
 
+  it('adds immutable assessment intent without synthesizing historical challenge coverage', () => {
+    const db = openDatabase(':memory:');
+    migrate(db, { toVersion: 43 });
+    const at = '2026-01-01T00:00:00.000Z';
+    db.prepare(
+      `INSERT INTO workspaces (id, name, origin, created_at, updated_at)
+       VALUES ('ws_v44', 'Intent migration', 'manual', ?, ?)`,
+    ).run(at, at);
+    db.prepare(
+      `INSERT INTO assessment_definitions
+         (id, workspace_id, logical_key, title, created_at, updated_at)
+       VALUES ('definition_v44', 'ws_v44', 'historical', 'Historical assessment', ?, ?)`,
+    ).run(at, at);
+    db.prepare(
+      `INSERT INTO assessment_versions
+         (id, definition_id, version, predecessor_id, status, payload,
+          source_revision_ids, created_at, accepted_at, progression_context, authority_mode)
+       VALUES ('version_v44', 'definition_v44', 1, NULL, 'accepted', '{}', '[]', ?, ?,
+         ?, 'formal')`,
+    ).run(
+      at,
+      at,
+      JSON.stringify({
+        quizId: 'quiz_v44',
+        contractVersionId: 'contract_v44',
+        curriculumVersionId: 'curriculum_v44',
+        studyPlanVersionId: 'plan_v44',
+        agendaId: 'agenda_v44',
+        agendaItemId: 'agenda_item_v44',
+        assessmentKind: 'due_review',
+        executionSourceManifestFingerprint: 'manifest_v44',
+      }),
+    );
+
+    migrate(db);
+
+    expect(
+      db.prepare('SELECT version, name FROM schema_migrations WHERE version = 44').get(),
+    ).toEqual({ version: 44, name: 'formal_assessment_item_intent' });
+    expect(db.prepare('SELECT COUNT(*) AS count FROM assessment_item_intents').get()).toEqual({
+      count: 0,
+    });
+
+    db.prepare(
+      `INSERT INTO assessment_item_intents
+         (id, workspace_id, assessment_version_id, item_id, assessment_stage,
+          policy_version, requested_challenge_family, requested_representation,
+          selection_reason, created_at)
+       VALUES ('intent_v44', 'ws_v44', 'version_v44', 'item_v44', 'due_review',
+         'assessment-diversity-intent-v1', 'representation_shift', 'application',
+         'representation_diversity_missing', ?)`,
+    ).run(at);
+    expect(() =>
+      db
+        .prepare(
+          "UPDATE assessment_item_intents SET requested_challenge_family = 'transfer' WHERE id = 'intent_v44'",
+        )
+        .run(),
+    ).toThrow(/immutable/i);
+    expect(() =>
+      db.prepare("DELETE FROM assessment_item_intents WHERE id = 'intent_v44'").run(),
+    ).toThrow(/append-only/i);
+    expect(() => db.prepare("DELETE FROM workspaces WHERE id = 'ws_v44'").run()).not.toThrow();
+    expect(db.prepare('SELECT COUNT(*) AS count FROM assessment_item_intents').get()).toEqual({
+      count: 0,
+    });
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+    db.close();
+  });
+
   it('adds nullable page_end to source_blocks (migration 9)', () => {
     const db = openDatabase(':memory:');
     migrate(db);

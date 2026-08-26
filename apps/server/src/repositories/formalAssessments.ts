@@ -1,4 +1,5 @@
 import {
+  AssessmentItemIntentSchema,
   AssessmentItemExposureSchema,
   AssessmentAttemptSchema,
   AssessmentDefinitionSchema,
@@ -7,6 +8,7 @@ import {
   GradeRecordSchema,
   ProgressionReconciliationRecordSchema,
   type AssessmentAttempt,
+  type AssessmentItemIntent,
   type AssessmentItemExposure,
   type AssessmentDefinition,
   type AssessmentVersion,
@@ -19,10 +21,50 @@ import type { SqliteDb } from '../db/database.js';
 interface PayloadRow {
   payload: string;
 }
+
+interface AssessmentIntentRow {
+  id: string;
+  workspace_id: string;
+  assessment_version_id: string;
+  item_id: string;
+  assessment_stage: string;
+  policy_version: string;
+  requested_challenge_family: string | null;
+  requested_representation: string | null;
+  selection_reason: string;
+  created_at: string;
+}
 const parse = <T>(row: PayloadRow | undefined, schema: { parse: (v: unknown) => T }) =>
   row ? schema.parse(JSON.parse(row.payload)) : undefined;
 
 export function createFormalAssessmentsRepo(db: SqliteDb) {
+  const parseIntent = (row: AssessmentIntentRow | undefined) =>
+    row
+      ? AssessmentItemIntentSchema.parse({
+          id: row.id,
+          workspaceId: row.workspace_id,
+          assessmentVersionId: row.assessment_version_id,
+          itemId: row.item_id,
+          assessmentStage: row.assessment_stage,
+          policyVersion: row.policy_version,
+          requestedChallengeFamily: row.requested_challenge_family,
+          requestedRepresentation: row.requested_representation,
+          selectionReason: row.selection_reason,
+          createdAt: row.created_at,
+        })
+      : undefined;
+  const intent = (assessmentVersionId: string, itemId: string) =>
+    parseIntent(
+      db
+        .prepare(
+          `SELECT id, workspace_id, assessment_version_id, item_id, assessment_stage,
+                  policy_version, requested_challenge_family, requested_representation,
+                  selection_reason, created_at
+           FROM assessment_item_intents
+           WHERE assessment_version_id = ? AND item_id = ?`,
+        )
+        .get(assessmentVersionId, itemId) as AssessmentIntentRow | undefined,
+    );
   const exposure = (attemptId: string, itemId: string) => {
     const row = db
       .prepare(
@@ -187,6 +229,52 @@ export function createFormalAssessmentsRepo(db: SqliteDb) {
         item.acceptedAt,
       );
       return item;
+    },
+    insertItemIntents(inputs: AssessmentItemIntent[]): AssessmentItemIntent[] {
+      const items = inputs.map((input) => AssessmentItemIntentSchema.parse(input));
+      const insert = db.prepare(
+        `INSERT INTO assessment_item_intents
+           (id, workspace_id, assessment_version_id, item_id, assessment_stage,
+            policy_version, requested_challenge_family, requested_representation,
+            selection_reason, created_at)
+         VALUES (@id, @workspaceId, @assessmentVersionId, @itemId, @assessmentStage,
+            @policyVersion, @requestedChallengeFamily, @requestedRepresentation,
+            @selectionReason, @createdAt)`,
+      );
+      db.transaction(() => {
+        for (const item of items) {
+          const assessmentVersion = version(item.assessmentVersionId);
+          const definition = assessmentVersion
+            ? db
+                .prepare('SELECT workspace_id FROM assessment_definitions WHERE id = ?')
+                .get(assessmentVersion.definitionId)
+            : undefined;
+          if (
+            !assessmentVersion ||
+            !assessmentVersion.items.some((candidate) => candidate.id === item.itemId) ||
+            assessmentVersion.progressionContext?.assessmentKind !== item.assessmentStage ||
+            (definition as { workspace_id: string } | undefined)?.workspace_id !== item.workspaceId
+          ) {
+            throw new Error('Assessment item intent does not match its local version context.');
+          }
+          insert.run(item);
+        }
+      })();
+      return items;
+    },
+    getItemIntent: intent,
+    listItemIntentsForWorkspace(workspaceId: string): AssessmentItemIntent[] {
+      return (
+        db
+          .prepare(
+            `SELECT id, workspace_id, assessment_version_id, item_id, assessment_stage,
+                    policy_version, requested_challenge_family, requested_representation,
+                    selection_reason, created_at
+             FROM assessment_item_intents
+             WHERE workspace_id = ? ORDER BY created_at, id`,
+          )
+          .all(workspaceId) as AssessmentIntentRow[]
+      ).map((row) => parseIntent(row)!);
     },
     getVersion: version,
     listVersions(definitionId: string) {

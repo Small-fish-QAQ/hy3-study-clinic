@@ -6,6 +6,7 @@ import {
   type AssessmentMode,
   type Concept,
   type EvidenceRepresentation,
+  type MasteryChallengeFamily,
   type PublicBlueprint,
   type QuestionBlueprint,
   type Question,
@@ -47,6 +48,7 @@ export interface AssessmentCreation {
 
 interface AssessmentGenerationPolicy {
   requiredRepresentation: EvidenceRepresentation | null;
+  requestedChallengeFamily: MasteryChallengeFamily | null;
 }
 
 /** Question types each assessment mode may draw on. */
@@ -240,7 +242,10 @@ export function createAssessmentService({
     workspaceId: string,
     input: unknown,
     opts?: ProviderCallOptions,
-    generationPolicy: AssessmentGenerationPolicy = { requiredRepresentation: null },
+    generationPolicy: AssessmentGenerationPolicy = {
+      requiredRepresentation: null,
+      requestedChallengeFamily: null,
+    },
   ): Promise<AssessmentCreation> {
     const workspace = requireWorkspace(workspaceId);
     const request = CreateAssessmentRequestSchema.parse(input);
@@ -308,6 +313,7 @@ export function createAssessmentService({
       allowedTypes,
       questionCount,
       requiredRepresentation: generationPolicy.requiredRepresentation,
+      requestedChallengeFamily: generationPolicy.requestedChallengeFamily,
       misconception: misconceptionTarget ? misconceptions.get(misconceptionTarget) : null,
     };
     const payload = await inferenceProvider.proposeAssessment(providerInput, {

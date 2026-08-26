@@ -4,6 +4,8 @@ import {
   CreateAssessmentRequestSchema,
   LaunchCourseActionRequestSchema,
   type CourseActionLaunchResult,
+  type Curriculum,
+  type FormalAssessmentKind,
   type LaunchCourseActionRequest,
   type SessionAgendaItem,
   type StudyPlan,
@@ -15,6 +17,10 @@ import type { LlmProvider, ProviderCallOptions } from '../llm/provider.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import type { AssessmentService } from './assessment.js';
+import {
+  qualifyingAssessmentIntentEvidence,
+  selectAssessmentDiversityIntent,
+} from './assessmentDiversityPolicy.js';
 import {
   enforceAgentCostPolicies,
   runTrackedAgentProviderOperation,
@@ -107,6 +113,36 @@ function agendaBoundPlanItem(
     return { ok: false, reason: 'Agenda item kind is inconsistent with its accepted Plan item.' };
   }
   return { ok: true, planItem };
+}
+
+function assessmentDiversityForRoute(input: {
+  repos: Repositories;
+  workspaceId: string;
+  assessmentKind: FormalAssessmentKind;
+  curriculum: Curriculum;
+  plan: StudyPlan;
+  learningUnitId: string | null;
+  objectiveId: string | undefined;
+}) {
+  const objective = input.curriculum.nodes
+    .find((node) => node.id === input.learningUnitId)
+    ?.learningUnit?.objectives.find((candidate) => candidate.id === input.objectiveId);
+  const priorEvidence = objective
+    ? qualifyingAssessmentIntentEvidence({
+        repos: input.repos,
+        workspaceId: input.workspaceId,
+        objectiveId: objective.id,
+        contractVersionId: input.plan.contractVersionId,
+        curriculumVersionId: input.curriculum.id,
+        studyPlanVersionId: input.plan.id,
+        executionSourceManifestFingerprint: input.plan.executionSourceManifestFingerprint,
+      })
+    : [];
+  return selectAssessmentDiversityIntent({
+    assessmentKind: input.assessmentKind,
+    objectiveConstruct: objective?.formalAssessmentConstruct ?? null,
+    priorEvidence,
+  });
 }
 
 export function createCourseActionLaunchService({
@@ -299,18 +335,15 @@ export function createCourseActionLaunchService({
           assessmentKind === 'targeted_repair' ||
           assessmentKind === 'due_review';
         const assessmentRequest = { ...request, ...(formalOnly ? { formalOnly: true } : {}) };
-        const routeUnit = curriculum.nodes.find(
-          (node) => node.id === bound.planItem.curriculumLearningUnitId && node.learningUnit,
-        );
-        const routeObjective = routeUnit?.learningUnit?.objectives.find(
-          (objective) => objective.id === bound.planItem.objectiveIds[0],
-        );
-        const dueApplicationSupported =
-          assessmentKind === 'due_review' &&
-          ['apply', 'design', 'evaluate'].includes(
-            routeObjective?.formalAssessmentConstruct ?? 'identify',
-          );
-        const evidenceRepresentation = dueApplicationSupported ? 'application' : 'recall';
+        const assessmentDiversity = assessmentDiversityForRoute({
+          repos,
+          workspaceId: parsed.command.workspaceId,
+          assessmentKind,
+          curriculum,
+          plan,
+          learningUnitId: bound.planItem.curriculumLearningUnitId,
+          objectiveId: bound.planItem.objectiveIds[0],
+        });
         if (assessmentKind === 'due_review') {
           const targetId = request.mode === 'review' ? request.conceptIds?.[0] : undefined;
           if (!targetId || request.conceptIds?.length !== 1) {
@@ -381,7 +414,8 @@ export function createCourseActionLaunchService({
           providerOptions: opts,
           invoke: (options) =>
             assessment.prepare(parsed.command.workspaceId, assessmentRequest, options, {
-              requiredRepresentation: dueApplicationSupported ? 'application' : null,
+              requiredRepresentation: assessmentDiversity.selection.requestedRepresentation,
+              requestedChallengeFamily: assessmentDiversity.selection.requestedChallengeFamily,
             }),
         });
         return commands.complete(claim, () => {
@@ -444,6 +478,21 @@ export function createCourseActionLaunchService({
               'Assessment action is no longer launchable.',
             );
           }
+          const currentAssessmentDiversity = assessmentDiversityForRoute({
+            repos,
+            workspaceId: parsed.command.workspaceId,
+            assessmentKind,
+            curriculum: currentCurriculum,
+            plan: currentPlan,
+            learningUnitId: finalBound.planItem.curriculumLearningUnitId,
+            objectiveId: finalBound.planItem.objectiveIds[0],
+          });
+          if (JSON.stringify(currentAssessmentDiversity) !== JSON.stringify(assessmentDiversity)) {
+            throw new AppError(
+              ApiErrorCode.VersionConflict,
+              'Assessment evidence changed while the question was generated.',
+            );
+          }
           if (assessmentKind === 'due_review' && reviewExecutionId) {
             const execution = repos.reviewSuccessor.getExecution(reviewExecutionId);
             if (execution?.assessmentVersionId) {
@@ -490,7 +539,8 @@ export function createCourseActionLaunchService({
                     : currentPlanItem.rationale || '理解检查',
                 targetLearningUnitId,
                 targetObjectiveId,
-                representation: evidenceRepresentation,
+                representation: assessmentDiversity.evidenceRepresentation,
+                assessmentIntent: assessmentDiversity.selection,
                 progressionContext: {
                   quizId: creation.quiz.id,
                   contractVersionId: currentPlan.contractVersionId,

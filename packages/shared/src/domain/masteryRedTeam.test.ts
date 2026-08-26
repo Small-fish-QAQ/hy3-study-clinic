@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  MasteryChallengeFamilySchema,
   MasteryChallengeProposalPayloadSchema,
   MasteryRedTeamEvaluationSchema,
   MasteryRedTeamRunSchema,
@@ -7,6 +8,10 @@ import {
   StartMasteryRedTeamRunRequestSchema,
   SubmitMasteryRedTeamRunRequestSchema,
 } from './masteryRedTeam.js';
+
+it('retains the Mastery challenge-family export after shared extraction', () => {
+  expect(MasteryChallengeFamilySchema.options).toContain('representation_shift');
+});
 
 const hypothesis = {
   id: 'hypothesis_1',
