@@ -24,6 +24,7 @@ import {
   fingerprintObjectiveAuthorityProposition,
   materializeObjectiveAuthoritySemanticSupport,
   isConfinedGeneralTeachingLaneSemanticFailure,
+  objectiveAuthoritySemanticallySupportedClaimIds,
   objectiveAuthoritySemanticEvaluationSourceFingerprint,
   partitionObjectiveAuthoritySemanticEvaluationScopes,
   validateCurriculumObjectiveAuthoritySemanticSupport,
@@ -835,8 +836,10 @@ describe('objective-authority semantic evaluation scope', () => {
       bundles: [primary, alternate],
     });
     const pass = singleEvaluation(batch!, { supportType: 'positioning' });
+    const batchInputBeforeProjection = structuredClone(batch!.input);
     const attached = materializeAndAttach(nodesFor(boundObjective), batch!, pass);
     const support = attached[0]!.learningUnit!.objectives[0]!.semanticSupport!;
+    const supportBeforeProjection = structuredClone(support);
 
     expect(support).toMatchObject({
       schemaVersion: 2,
@@ -848,6 +851,14 @@ describe('objective-authority semantic evaluation scope', () => {
       ],
       verdict: 'pass',
     });
+    expect(
+      batch!.aliasBindings
+        .get(batch!.input.objectives[0]!.objectiveRef)!
+        .evidenceByRef.get('evidence_1')?.authorityClaimIds,
+    ).toEqual(['claim_authority_1', 'claim_authority_alternate']);
+    expect(objectiveAuthoritySemanticallySupportedClaimIds(support)).toEqual(['claim_authority_1']);
+    expect(support).toEqual(supportBeforeProjection);
+    expect(batch!.input).toEqual(batchInputBeforeProjection);
     expect(validateCurriculumObjectiveAuthoritySemanticSupport(curriculum(attached))).toEqual({
       valid: true,
       diagnostics: [],

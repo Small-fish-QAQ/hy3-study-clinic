@@ -635,11 +635,13 @@ export function objectiveAuthoritySemanticallySupportedClaimIds(
     }),
   );
   return uniqueInOrder(
-    boundGroups.flatMap((group) =>
-      group.candidateIndexes.flatMap(
-        (candidateIndex) => candidateByIndex.get(candidateIndex)?.authorityClaimIds ?? [],
-      ),
-    ),
+    boundGroups
+      .flatMap((group) =>
+        group.candidateIndexes.flatMap(
+          (candidateIndex) => candidateByIndex.get(candidateIndex)?.authorityClaimIds ?? [],
+        ),
+      )
+      .filter((claimId) => artifact.boundAuthorityClaimIds.includes(claimId)),
   );
 }
 
