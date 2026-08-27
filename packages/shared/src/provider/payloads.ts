@@ -75,9 +75,45 @@ export const ProposedRubricPointSchema = z.preprocess(
   z.object({
     text: z.string().min(1).max(200),
     required: z.boolean(),
+    sourceRefs: z.array(z.string().min(1)).max(10).optional(),
   }),
 );
 export type ProposedRubricPoint = z.infer<typeof ProposedRubricPointSchema>;
+
+export const ProposedAssessmentPremiseSchema = z
+  .object({
+    premiseKey: z.string().min(1).max(100).optional(),
+    text: z.string().min(1).max(1000),
+    sourceRefs: z.array(z.string().min(1)).max(10),
+    teachingSurfaceRefs: z.array(z.string().regex(/^T[1-9][0-9]*$/u)).max(10),
+    learnerVisible: z.boolean(),
+    scenarioLocal: z.boolean(),
+    visibilityBasis: z.enum([
+      'stem',
+      'cited_source',
+      'taught_exposure',
+      'assumed_prerequisite',
+      'scenario_local',
+    ]),
+  })
+  .strict()
+  .superRefine((premise, ctx) => {
+    if (new Set(premise.sourceRefs).size !== premise.sourceRefs.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['sourceRefs'],
+        message: 'assessment premise source refs must be unique',
+      });
+    }
+    if (new Set(premise.teachingSurfaceRefs).size !== premise.teachingSurfaceRefs.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['teachingSurfaceRefs'],
+        message: 'assessment premise teaching-surface refs must be unique',
+      });
+    }
+  });
+export type ProposedAssessmentPremise = z.infer<typeof ProposedAssessmentPremiseSchema>;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -966,9 +1002,17 @@ export type ProposedBlueprint = z.infer<typeof ProposedBlueprintSchema>;
  * verified evidence from at least two distinct documents.
  */
 export const ProposedAssessmentItemSchema = z.object({
+  objectiveRef: z
+    .string()
+    .regex(/^O[1-9][0-9]*$/u)
+    .optional(),
   blueprint: ProposedBlueprintSchema,
   question: ProposedQuestionSchema,
   extraEvidence: z.array(ProposedEvidenceSchema).max(3),
+  premises: z.array(ProposedAssessmentPremiseSchema).max(20).optional(),
+  requiresExternalKnowledge: z.boolean().optional(),
+  ambiguity: z.enum(['none', 'resolved', 'unresolved']).optional(),
+  undefinedTerms: z.array(z.string().min(1).max(200)).max(20).optional(),
 });
 export type ProposedAssessmentItem = z.infer<typeof ProposedAssessmentItemSchema>;
 
@@ -977,6 +1021,59 @@ export const AssessmentProposalPayloadSchema = z.object({
   items: z.array(ProposedAssessmentItemSchema).min(1).max(8),
 });
 export type AssessmentProposalPayload = z.infer<typeof AssessmentProposalPayloadSchema>;
+
+/** Formal proposals require the complete S1 declaration shape for schema repair. */
+export const FormalAssessmentProposalPayloadSchema = AssessmentProposalPayloadSchema.superRefine(
+  (payload, ctx) => {
+    payload.items.forEach((item, index) => {
+      const path = ['items', index] as const;
+      if (!item.objectiveRef) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [...path, 'objectiveRef'],
+          message: 'formal assessment items require an objectiveRef',
+        });
+      }
+      if (!item.premises?.length) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [...path, 'premises'],
+          message: 'formal assessment items require at least one declared premise',
+        });
+      }
+      if (item.requiresExternalKnowledge === undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [...path, 'requiresExternalKnowledge'],
+          message: 'formal assessment items must declare external-knowledge requirements',
+        });
+      }
+      if (item.ambiguity === undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [...path, 'ambiguity'],
+          message: 'formal assessment items must declare ambiguity',
+        });
+      }
+      if (item.undefinedTerms === undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [...path, 'undefinedTerms'],
+          message: 'formal assessment items must declare undefined terms',
+        });
+      }
+      item.question.rubricKeyPoints?.forEach((point, pointIndex) => {
+        if (typeof point === 'string' || (point.required && !point.sourceRefs?.length)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [...path, 'question', 'rubricKeyPoints', pointIndex, 'sourceRefs'],
+            message: 'required formal rubric points require sourceRefs',
+          });
+        }
+      });
+    });
+  },
+);
 
 export const RepairGenerationPayloadSchema = z.object({
   interventionMode: RepairInterventionModeSchema.describe(

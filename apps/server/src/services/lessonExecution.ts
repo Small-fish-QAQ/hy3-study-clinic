@@ -917,7 +917,8 @@ export function createLessonExecutionService({
           {
             ...latest,
             teachingBriefId: response.brief.id,
-            acceptedLessonCheckpointId: null,
+            acceptedLessonCheckpointId:
+              response.brief.composition?.acceptedLessonCheckpointId ?? null,
             sourceContextFingerprint: response.brief.sourceContextFingerprint,
             preparationStatus: 'ready',
             preparationOperationId: null,

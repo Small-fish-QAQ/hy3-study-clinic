@@ -978,6 +978,9 @@ export class FakeProvider implements LlmProvider {
           text: optionTexts[origIdx]!,
         }));
         items.push({
+          ...(input.objectiveCatalogue?.[0]
+            ? { objectiveRef: input.objectiveCatalogue[0].objectiveRef }
+            : {}),
           blueprint: {
             conceptIds: [target.concept.id],
             questionType: 'single_choice',
@@ -997,16 +1000,37 @@ export class FakeProvider implements LlmProvider {
             quote,
             explanation: `依据资料原文:「${quote}」`,
           },
+          ...(input.objectiveCatalogue?.[0]
+            ? {
+                premises: [
+                  {
+                    premiseKey: 'source:0',
+                    text: quote,
+                    sourceRefs: [block.id],
+                    teachingSurfaceRefs: [],
+                    learnerVisible: true,
+                    scenarioLocal: false,
+                    visibilityBasis: 'cited_source' as const,
+                  },
+                ],
+                requiresExternalKnowledge: false,
+                ambiguity: 'none' as const,
+                undefinedTerms: [],
+              }
+            : {}),
           extraEvidence: [],
         });
       }
       return { items };
     }
 
-    for (const target of input.targets) {
+    for (const [targetIndex, target] of input.targets.entries()) {
       if (items.length >= input.questionCount) break;
       const block = blockOf(target.concept);
       if (!block) continue;
+      const formalObjectiveRef =
+        input.objectiveCatalogue?.[targetIndex]?.objectiveRef ??
+        input.objectiveCatalogue?.[0]?.objectiveRef;
 
       const sibling = target.alignedSiblings.find(
         (s) => s.concept.materialId !== target.concept.materialId && blockOf(s.concept),
@@ -1021,6 +1045,7 @@ export class FakeProvider implements LlmProvider {
         const quoteA = pickQuote(block);
         const quoteB = pickQuote(siblingBlock);
         items.push({
+          ...(formalObjectiveRef ? { objectiveRef: formalObjectiveRef } : {}),
           blueprint: {
             conceptIds: [target.concept.id, sibling.concept.id],
             questionType: 'concept_comparison',
@@ -1042,14 +1067,41 @@ export class FakeProvider implements LlmProvider {
             stem: `「${target.concept.name}」在《${target.documentTitle}》与《${sibling.documentTitle}》中均有描述。请结合两份资料,说明两处表述的共同要点,以及各自补充了什么信息。`,
             expectedAnswer: `${quoteA}${quoteB}`.slice(0, 900),
             rubricKeyPoints: [
-              { text: quoteA.slice(0, 80), required: true },
-              { text: quoteB.slice(0, 80), required: true },
+              { text: quoteA.slice(0, 80), required: true, sourceRefs: [block.id] },
+              { text: quoteB.slice(0, 80), required: true, sourceRefs: [siblingBlock.id] },
             ],
             conceptId: target.concept.id,
             blockId: block.id,
             quote: quoteA,
             explanation: `两份资料分别指出:「${quoteA.slice(0, 100)}」与「${quoteB.slice(0, 100)}」。`,
           },
+          ...(formalObjectiveRef
+            ? {
+                premises: [
+                  {
+                    premiseKey: 'source:1',
+                    text: quoteA,
+                    sourceRefs: [block.id],
+                    teachingSurfaceRefs: [],
+                    learnerVisible: true,
+                    scenarioLocal: false,
+                    visibilityBasis: 'cited_source' as const,
+                  },
+                  {
+                    premiseKey: 'source:2',
+                    text: quoteB,
+                    sourceRefs: [siblingBlock.id],
+                    teachingSurfaceRefs: [],
+                    learnerVisible: true,
+                    scenarioLocal: false,
+                    visibilityBasis: 'cited_source' as const,
+                  },
+                ],
+                requiresExternalKnowledge: false,
+                ambiguity: 'none' as const,
+                undefinedTerms: [],
+              }
+            : {}),
           extraEvidence: [{ blockId: siblingBlock.id, quote: quoteB }],
         });
         continue;
@@ -1071,6 +1123,12 @@ export class FakeProvider implements LlmProvider {
         block,
         { difficulty: 'medium', variant: items.length },
       );
+      if (question.rubricKeyPoints) {
+        question.rubricKeyPoints = question.rubricKeyPoints.map((point) => ({
+          ...(typeof point === 'string' ? { text: point, required: true } : point),
+          sourceRefs: [block.id],
+        }));
+      }
       if (type === 'short_answer' && input.requestedChallengeFamily === 'representation_shift') {
         question.stem = `请用一个与直接复述不同的应用形式说明「${target.concept.name}」如何依据资料成立。`;
       }
@@ -1078,6 +1136,7 @@ export class FakeProvider implements LlmProvider {
         question.stem = `在表面情境改变但仍满足资料条件时，如何应用「${target.concept.name}」？请说明依据。`;
       }
       items.push({
+        ...(formalObjectiveRef ? { objectiveRef: formalObjectiveRef } : {}),
         blueprint: {
           conceptIds: [target.concept.id],
           questionType: type,
@@ -1098,6 +1157,24 @@ export class FakeProvider implements LlmProvider {
           ],
         },
         question,
+        ...(formalObjectiveRef
+          ? {
+              premises: [
+                {
+                  premiseKey: 'source:0',
+                  text: block ? pickQuote(block) : target.concept.name,
+                  sourceRefs: block ? [block.id] : [],
+                  teachingSurfaceRefs: [],
+                  learnerVisible: true,
+                  scenarioLocal: false,
+                  visibilityBasis: 'cited_source' as const,
+                },
+              ],
+              requiresExternalKnowledge: false,
+              ambiguity: 'none' as const,
+              undefinedTerms: [],
+            }
+          : {}),
         extraEvidence: [],
       });
     }

@@ -1,6 +1,7 @@
 import {
   AlignmentProposalPayloadSchema,
   AssessmentProposalPayloadSchema,
+  FormalAssessmentProposalPayloadSchema,
   ConceptAnalysisPayloadSchema,
   ConceptLessonPayloadSchema,
   CourseMapProposalPayloadSchema,
@@ -562,7 +563,13 @@ export class Hy3Provider implements LlmProvider {
     input: AssessmentProposalInput,
     opts?: ProviderCallOptions,
   ): Promise<AssessmentProposalPayload> {
-    return this.complete(assessmentProposalMessages(input), AssessmentProposalPayloadSchema, opts);
+    return this.complete(
+      assessmentProposalMessages(input),
+      input.objectiveCatalogue?.length
+        ? FormalAssessmentProposalPayloadSchema
+        : AssessmentProposalPayloadSchema,
+      opts,
+    );
   }
 
   async proposeMasteryChallenges(

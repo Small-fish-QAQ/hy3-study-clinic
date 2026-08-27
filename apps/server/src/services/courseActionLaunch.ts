@@ -26,7 +26,10 @@ import {
   runTrackedAgentProviderOperation,
 } from './agentProviderRuntime.js';
 import type { CourseCommandService } from './courseCommands.js';
-import type { FormalProgressionService } from './formalProgression.js';
+import {
+  buildFormalAssessmentProposalCatalogue,
+  type FormalProgressionService,
+} from './formalProgression.js';
 import type { FormalAssessmentsService } from './formalAssessments.js';
 import { toPublicQuiz } from './quizzes.js';
 import type { ReviewSuccessorService } from './reviewSuccessor.js';
@@ -335,6 +338,14 @@ export function createCourseActionLaunchService({
           assessmentKind === 'targeted_repair' ||
           assessmentKind === 'due_review';
         const assessmentRequest = { ...request, ...(formalOnly ? { formalOnly: true } : {}) };
+        const proposalCatalogue = buildFormalAssessmentProposalCatalogue({
+          repos,
+          workspaceId: parsed.command.workspaceId,
+          curriculum,
+          plan,
+          planItemId: bound.planItem.id,
+          learningUnitId: bound.planItem.curriculumLearningUnitId!,
+        });
         const assessmentDiversity = assessmentDiversityForRoute({
           repos,
           workspaceId: parsed.command.workspaceId,
@@ -408,7 +419,7 @@ export function createCourseActionLaunchService({
           learningUnitId: item.learningUnitId,
           assessmentId: null,
           operationType,
-          schemaFingerprint: 'formal-assessment-proposal-v1',
+          schemaFingerprint: 'formal-assessment-proposal-v2-taught-premises-objectives',
           policyFingerprint,
           sourceFingerprint: parsed.expectedExecutionSourceManifestFingerprint,
           providerOptions: opts,
@@ -416,6 +427,8 @@ export function createCourseActionLaunchService({
             assessment.prepare(parsed.command.workspaceId, assessmentRequest, options, {
               requiredRepresentation: assessmentDiversity.selection.requestedRepresentation,
               requestedChallengeFamily: assessmentDiversity.selection.requestedChallengeFamily,
+              objectiveCatalogue: proposalCatalogue?.objectiveCatalogue,
+              teachingSurfaceCatalogue: proposalCatalogue?.teachingSurfaceCatalogue,
             }),
         });
         return commands.complete(claim, () => {
@@ -570,6 +583,7 @@ export function createCourseActionLaunchService({
             curriculumVersionId: currentPlan.curriculumVersionId,
             studyPlanVersionId: currentPlan.id,
             executionSourceManifestFingerprint: currentPlan.executionSourceManifestFingerprint,
+            proposalCatalogue,
           });
           return CourseActionLaunchResultSchema.parse({
             kind: 'assessment',

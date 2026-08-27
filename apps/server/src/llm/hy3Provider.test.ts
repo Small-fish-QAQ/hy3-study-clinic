@@ -13,11 +13,13 @@ import {
 } from './hy3Provider.js';
 import { ProviderError } from './errors.js';
 import type {
+  AssessmentProposalInput,
   CurriculumProposalInput,
   RepairGenerationInput,
   StudyPlanProposalInput,
   VisualDescriptionInput,
 } from './provider.js';
+import { makeConcept, makeGrounding } from '../testing/fixtures.js';
 import {
   groupedStudyPlanProposalMessages,
   OBJECTIVE_AUTHORITY_SEMANTIC_VOCABULARY_RULES,
@@ -36,6 +38,64 @@ const blocks: SourceBlock[] = [
     endOffset: 12,
   },
 ];
+
+const assessmentInput: AssessmentProposalInput = {
+  workspaceName: 'Memory course',
+  mode: 'concept_practice',
+  targets: [
+    {
+      concept: makeConcept({
+        id: 'con_0',
+        materialId: 'mat_1',
+        grounding: makeGrounding({
+          blockId: 'blk_0',
+          quote: blocks[0]!.content,
+          startOffset: 0,
+          endOffset: blocks[0]!.content.length,
+          occurrenceCount: 1,
+        }),
+      }),
+      documentTitle: 'Memory notes',
+      alignedSiblings: [],
+      mastery: null,
+      openMistakes: 0,
+    },
+  ],
+  blocks,
+  allowedTypes: ['single_choice'],
+  questionCount: 1,
+  requiredRepresentation: null,
+  requestedChallengeFamily: null,
+  misconception: null,
+};
+
+const genericAssessmentProposal = {
+  items: [
+    {
+      blueprint: {
+        conceptIds: ['con_0'],
+        questionType: 'single_choice',
+        difficulty: 'medium',
+        learningObjective: 'Identify the source-stated capacity limit.',
+        reasoningSteps: [{ description: 'Read the exact source.', evidenceIndexes: [0] }],
+      },
+      question: {
+        type: 'single_choice',
+        stem: 'What does the source state about working-memory capacity?',
+        options: [
+          { id: 'A', text: 'It is limited.' },
+          { id: 'B', text: 'It is unlimited.' },
+        ],
+        correctOptionIds: ['A'],
+        conceptId: 'con_0',
+        blockId: 'blk_0',
+        quote: blocks[0]!.content,
+        explanation: 'The exact source states that capacity is limited.',
+      },
+      extraEvidence: [],
+    },
+  ],
+};
 
 function jsonResponse(content: string, usage?: unknown): Response {
   return new Response(JSON.stringify({ choices: [{ message: { content } }], usage }), {
@@ -610,6 +670,67 @@ function validDetailedProposal() {
 }
 
 describe('Hy3Provider happy path', () => {
+  it('repairs formal assessment proposals that omit the S1 declaration shape', async () => {
+    const formalProposal = {
+      items: [
+        {
+          ...genericAssessmentProposal.items[0],
+          objectiveRef: 'O1',
+          premises: [
+            {
+              premiseKey: 'source:0',
+              text: blocks[0]!.content,
+              sourceRefs: ['blk_0'],
+              teachingSurfaceRefs: [],
+              learnerVisible: true,
+              scenarioLocal: false,
+              visibilityBasis: 'cited_source',
+            },
+          ],
+          requiresExternalKnowledge: false,
+          ambiguity: 'none',
+          undefinedTerms: [],
+        },
+      ],
+    };
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(genericAssessmentProposal)))
+      .mockResolvedValueOnce(
+        jsonResponse(JSON.stringify(formalProposal)),
+      ) as unknown as typeof fetch;
+
+    const payload = await makeProvider(fetchImpl).proposeAssessment({
+      ...assessmentInput,
+      objectiveCatalogue: [
+        {
+          objectiveRef: 'O1',
+          title: 'Explain capacity',
+          description: 'Explain the source-stated limit.',
+        },
+      ],
+      teachingSurfaceCatalogue: [],
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(payload.items[0]).toMatchObject({
+      objectiveRef: 'O1',
+      ambiguity: 'none',
+      requiresExternalKnowledge: false,
+    });
+  });
+
+  it('preserves the generic assessment payload contract outside formal proposal scope', async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse(JSON.stringify(genericAssessmentProposal)),
+    ) as unknown as typeof fetch;
+
+    const payload = await makeProvider(fetchImpl).proposeAssessment(assessmentInput);
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(payload.items[0]?.objectiveRef).toBeUndefined();
+  });
+
   it('sends a bearer token and parses a valid concept payload', async () => {
     const fetchImpl = vi.fn(async () =>
       jsonResponse(

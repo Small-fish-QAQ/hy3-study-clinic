@@ -75,6 +75,89 @@ export const FormalAssessmentPremiseBindingSchema = z
   .strict();
 export type FormalAssessmentPremiseBinding = z.infer<typeof FormalAssessmentPremiseBindingSchema>;
 
+export const TaughtExposureBindingSchema = z
+  .object({
+    objectiveId: z.string().min(1),
+    checkpointId: z.string().min(1),
+    skeletonFingerprint: z.string().min(1),
+    sourceContextFingerprint: z.string().min(1),
+    curriculumVersionId: z.string().min(1),
+    studyPlanVersionId: z.string().min(1),
+    learningUnitId: z.string().min(1),
+    executionSourceManifestFingerprint: z.string().min(1),
+    presentedSegmentIndexes: z.array(z.number().int().nonnegative()).max(12),
+    exposureClass: z.enum(['source_backed', 'ai_teaching', 'mixed']),
+  })
+  .strict();
+export type TaughtExposureBinding = z.infer<typeof TaughtExposureBindingSchema>;
+
+export const PresentedTeachingSurfaceBindingSchema = z
+  .object({
+    premiseKey: z.string().min(1).max(100),
+    checkpointId: z.string().min(1),
+    skeletonFingerprint: z.string().min(1),
+    segmentIndex: z.number().int().nonnegative(),
+    surfaceKind: z.enum([
+      'explanation',
+      'semantic_relation',
+      'worked_process',
+      'example',
+      'contrast',
+      'misconception',
+    ]),
+    surfaceOrdinal: z.number().int().nonnegative().max(8),
+    surfaceFingerprint: z.string().min(1),
+  })
+  .strict();
+export type PresentedTeachingSurfaceBinding = z.infer<typeof PresentedTeachingSurfaceBindingSchema>;
+
+export const DeclaredFormalPremiseSchema = z
+  .object({
+    premiseKey: z.string().min(1).max(100),
+    text: z.string().min(1).max(1000),
+    sourceRefIds: z.array(z.string().min(1)).max(10),
+    teachingSurfaceRefs: z.array(z.string().regex(/^T[1-9][0-9]*$/u)).max(10),
+    learnerVisible: z.boolean(),
+    scenarioLocal: z.boolean(),
+    visibilityBasis: z.enum([
+      'stem',
+      'cited_source',
+      'taught_exposure',
+      'assumed_prerequisite',
+      'scenario_local',
+    ]),
+  })
+  .strict()
+  .superRefine((premise, ctx) => {
+    if (new Set(premise.sourceRefIds).size !== premise.sourceRefIds.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['sourceRefIds'],
+        message: 'declared premise source refs must be unique',
+      });
+    }
+    if (new Set(premise.teachingSurfaceRefs).size !== premise.teachingSurfaceRefs.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['teachingSurfaceRefs'],
+        message: 'declared premise teaching-surface refs must be unique',
+      });
+    }
+  });
+export type DeclaredFormalPremise = z.infer<typeof DeclaredFormalPremiseSchema>;
+
+export const ResolvedObjectiveBindingSchema = z
+  .object({
+    objectiveRef: z
+      .string()
+      .regex(/^O[1-9][0-9]*$/u)
+      .nullable(),
+    objectiveId: z.string().min(1),
+    source: z.enum(['provider_alias', 'single_objective_plan_item', 'synthesis_mapping']),
+  })
+  .strict();
+export type ResolvedObjectiveBinding = z.infer<typeof ResolvedObjectiveBindingSchema>;
+
 /** Immutable contract installed when an Agent-launched formal question is created. */
 export const FormalQuestionContractSchema = z
   .object({
@@ -99,6 +182,14 @@ export const FormalQuestionContractSchema = z
     executionSourceManifestFingerprint: z.string().min(1),
     provenance: z.array(EvidenceProvenanceSchema).max(20),
     assessmentPremiseBindings: z.array(FormalAssessmentPremiseBindingSchema).max(20).default([]),
+    taughtExposureBindings: z.array(TaughtExposureBindingSchema).max(20).optional(),
+    presentedTeachingSurfaceBindings: z
+      .array(PresentedTeachingSurfaceBindingSchema)
+      .max(20)
+      .optional(),
+    declaredPremises: z.array(DeclaredFormalPremiseSchema).max(20).optional(),
+    premiseVisibilityVerdict: z.enum(['satisfied', 'unsatisfied']).optional(),
+    resolvedObjectiveBinding: ResolvedObjectiveBindingSchema.optional(),
     limitations: z.array(z.string().min(1).max(500)).max(20),
     createdAt: z.string().datetime(),
   })
@@ -115,6 +206,97 @@ export const FormalQuestionContractSchema = z
         path: ['provenance'],
         message:
           'state-crediting question contracts require explicit independently authorized scoring-premise bindings',
+      });
+    }
+    if (
+      contract.admissibilityTier !== 'tier_3_advisory' &&
+      (contract.premiseVisibilityVerdict !== 'satisfied' ||
+        !contract.resolvedObjectiveBinding ||
+        !contract.taughtExposureBindings?.length ||
+        !contract.declaredPremises?.length)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['premiseVisibilityVerdict'],
+        message:
+          'state-crediting contracts require current taught exposure, visible premises, and a resolved objective binding',
+      });
+    }
+    if (
+      contract.resolvedObjectiveBinding &&
+      contract.resolvedObjectiveBinding.objectiveId !== contract.primaryObjectiveId
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['resolvedObjectiveBinding', 'objectiveId'],
+        message: 'resolved objective binding must match the contract primary objective',
+      });
+    }
+    if (
+      contract.taughtExposureBindings?.some(
+        (binding) =>
+          binding.objectiveId !== contract.primaryObjectiveId ||
+          binding.curriculumVersionId !== contract.curriculumVersionId ||
+          binding.studyPlanVersionId !== contract.studyPlanVersionId ||
+          binding.learningUnitId !== contract.curriculumLearningUnitId ||
+          binding.executionSourceManifestFingerprint !==
+            contract.executionSourceManifestFingerprint,
+      )
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['taughtExposureBindings'],
+        message: 'taught exposure bindings must match the immutable question route and objective',
+      });
+    }
+
+    const declaredKeys = contract.declaredPremises?.map((premise) => premise.premiseKey) ?? [];
+    if (new Set(declaredKeys).size !== declaredKeys.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['declaredPremises'],
+        message: 'declared premise keys must be unique',
+      });
+    }
+    const surfaceBindingKeys =
+      contract.presentedTeachingSurfaceBindings?.map(
+        (binding) =>
+          `${binding.premiseKey}:${binding.checkpointId}:${binding.skeletonFingerprint}:` +
+          `${binding.segmentIndex}:${binding.surfaceKind}:${binding.surfaceOrdinal}`,
+      ) ?? [];
+    if (new Set(surfaceBindingKeys).size !== surfaceBindingKeys.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['presentedTeachingSurfaceBindings'],
+        message: 'presented teaching-surface bindings must be unique per premise and alias',
+      });
+    }
+    if (
+      contract.presentedTeachingSurfaceBindings?.some(
+        (binding) => !declaredKeys.includes(binding.premiseKey),
+      )
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['presentedTeachingSurfaceBindings'],
+        message: 'presented teaching-surface bindings must reference a declared premise',
+      });
+    }
+    if (
+      contract.admissibilityTier !== 'tier_3_advisory' &&
+      contract.declaredPremises?.some(
+        (premise) =>
+          premise.teachingSurfaceRefs.length !==
+          (contract.presentedTeachingSurfaceBindings?.filter(
+            (binding) => binding.premiseKey === premise.premiseKey,
+          ).length ?? 0),
+      )
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['presentedTeachingSurfaceBindings'],
+        message:
+          'state-crediting contracts require an exact binding for every teaching-surface alias',
       });
     }
 

@@ -121,6 +121,42 @@ describe('FormalProgressView', () => {
     });
   });
 
+  it('shows the persisted reason when formal evidence is advisory', async () => {
+    vi.mocked(api.formalProgression).mockResolvedValue({
+      ...progression,
+      evidence: [
+        {
+          ...progression.evidence[0]!,
+          admissibilityTier: 'tier_3_advisory',
+          stateCreditable: false,
+          limitations: [
+            'The resolved objective has no current, presented Lesson exposure on this route; result is advisory only.',
+          ],
+        },
+      ],
+    });
+    render(
+      <FormalProgressView
+        workspaceId="ws_1"
+        overview={null}
+        command={() => ({
+          commandId: 'cmd_1',
+          idempotencyKey: 'cmd_1',
+          workspaceId: 'ws_1',
+          actor: 'learner',
+        })}
+        onAcceptProposedPlan={vi.fn()}
+        onRejectProposedPlan={vi.fn()}
+        onCourseChanged={vi.fn()}
+        onOpenProgress={vi.fn()}
+      />,
+    );
+
+    expect(
+      await screen.findByText(/仅供参考原因：.*no current, presented Lesson exposure/),
+    ).toHaveAttribute('role', 'note');
+  });
+
   it('requires an active route before exposing outcome controls', async () => {
     vi.mocked(api.formalProgression).mockResolvedValue(progression);
     const user = userEvent.setup();

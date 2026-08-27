@@ -2257,8 +2257,10 @@ describe('Teaching Brief preparation', () => {
       preparationStatus: 'ready',
       preparationOperationId: null,
     });
-    expect(preparedState.acceptedLessonCheckpointId).toBeNull();
     const brief = harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)[0]!;
+    expect(preparedState.acceptedLessonCheckpointId).toBe(
+      brief.composition!.acceptedLessonCheckpointId,
+    );
     expect(
       harness.repos.acceptedLessonCheckpoints.get(brief.composition!.acceptedLessonCheckpointId),
     ).toMatchObject({ lessonEvaluation: { status: 'pass' } });

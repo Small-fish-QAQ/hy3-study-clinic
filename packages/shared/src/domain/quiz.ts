@@ -66,6 +66,63 @@ export const RubricSchema = z
   );
 export type Rubric = z.infer<typeof RubricSchema>;
 
+const FormalProposalMetadataSchema = z
+  .object({
+    objectiveRef: z
+      .string()
+      .regex(/^O[1-9][0-9]*$/u)
+      .optional(),
+    premises: z
+      .array(
+        z
+          .object({
+            premiseKey: z.string().min(1).max(100).optional(),
+            text: z.string().min(1).max(1000),
+            sourceRefs: z.array(z.string().min(1)).max(10),
+            teachingSurfaceRefs: z.array(z.string().regex(/^T[1-9][0-9]*$/u)).max(10),
+            learnerVisible: z.boolean(),
+            scenarioLocal: z.boolean(),
+            visibilityBasis: z.enum([
+              'stem',
+              'cited_source',
+              'taught_exposure',
+              'assumed_prerequisite',
+              'scenario_local',
+            ]),
+          })
+          .strict()
+          .superRefine((premise, ctx) => {
+            if (new Set(premise.sourceRefs).size !== premise.sourceRefs.length) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['sourceRefs'],
+                message: 'formal premise source refs must be unique',
+              });
+            }
+            if (new Set(premise.teachingSurfaceRefs).size !== premise.teachingSurfaceRefs.length) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['teachingSurfaceRefs'],
+                message: 'formal premise teaching-surface refs must be unique',
+              });
+            }
+          }),
+      )
+      .max(20),
+    requiresExternalKnowledge: z.boolean(),
+    ambiguity: z.enum(['none', 'resolved', 'unresolved']),
+    undefinedTerms: z.array(z.string().min(1).max(200)).max(20),
+    rubricSourceRefs: z
+      .array(
+        z
+          .object({ text: z.string().min(1), sourceRefs: z.array(z.string().min(1)).max(10) })
+          .strict(),
+      )
+      .max(6),
+  })
+  .strict();
+export type FormalProposalMetadata = z.infer<typeof FormalProposalMetadataSchema>;
+
 /**
  * A fully-specified question as stored on the server.
  * `correctOptionIds`, `expectedAnswer` and `rubric` are server-side secrets
@@ -104,6 +161,8 @@ export const QuestionSchema = z
     points: z.number().positive(),
     /** For remediation questions: the mistakes this question re-tests. */
     sourceMistakeIds: z.array(z.string()).optional(),
+    /** Server-only declaration metadata retained for formal contract registration. */
+    formalProposal: FormalProposalMetadataSchema.optional(),
   })
   .superRefine((q, ctx) => {
     if (isTextAnswerType(q.type)) {

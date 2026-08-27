@@ -38,6 +38,8 @@ import { newId } from '../util/ids.js';
 import { commandFingerprint } from './courseCommands.js';
 import type { CourseCommandService } from './courseCommands.js';
 import { resolveLaunchForPlanItem } from './studyPlanValidation.js';
+import { createHash } from 'node:crypto';
+import { projectTaughtExposure, type PresentedTeachingSurface } from '@hy3-clinic/shared';
 
 interface FormalProgressionDeps {
   repos: Repositories;
@@ -76,6 +78,143 @@ export function completionPolicyFor(
 
 function unitFor(curriculum: Curriculum, id: string) {
   return learningUnits(curriculum).find((node) => node.id === id);
+}
+
+export interface FormalAssessmentProposalCatalogue {
+  objectiveCatalogue: Array<{ objectiveRef: string; title: string; description: string }>;
+  teachingSurfaceCatalogue: Array<{
+    teachingSurfaceRef: string;
+    surfaceKind: PresentedTeachingSurface['surfaceKind'];
+    objectiveRefs: string[];
+    text: string;
+  }>;
+  /** Local-only identity map; never passed to the provider. */
+  surfaceRecords: Map<string, PresentedTeachingSurface>;
+}
+
+function surfaceFingerprint(text: string): string {
+  return createHash('sha256')
+    .update(JSON.stringify({ prompt: text }))
+    .digest('hex');
+}
+
+/** Build provider-blind O/T aliases over all accepted objectives before one proposal call. */
+export function buildFormalAssessmentProposalCatalogue(input: {
+  repos: Repositories;
+  workspaceId: string;
+  curriculum: Curriculum;
+  plan: StudyPlan;
+  planItemId: string;
+  learningUnitId: string;
+}): FormalAssessmentProposalCatalogue {
+  const unit = unitFor(input.curriculum, input.learningUnitId);
+  const planItem = input.plan.items.find((item) => item.id === input.planItemId);
+  const objectiveIds = planItem?.objectiveIds.length
+    ? planItem.objectiveIds
+    : (unit?.learningUnit?.objectives.map((objective) => objective.id) ?? []);
+  const objectiveById = new Map(
+    learningUnits(input.curriculum).flatMap((candidateUnit) =>
+      candidateUnit.learningUnit!.objectives.map((objective) => [objective.id, objective] as const),
+    ),
+  );
+  const objectiveCatalogue = objectiveIds
+    .map((id, index) => {
+      const objective = objectiveById.get(id);
+      return objective
+        ? {
+            objectiveRef: `O${index + 1}`,
+            title: objective.title,
+            description: objective.description,
+          }
+        : null;
+    })
+    .filter(
+      (value): value is { objectiveRef: string; title: string; description: string } =>
+        value !== null,
+    );
+  const objectiveRefById = new Map(objectiveIds.map((id, index) => [id, `O${index + 1}`]));
+  const candidateUnitIds = new Set(
+    learningUnits(input.curriculum)
+      .filter((candidateUnit) =>
+        candidateUnit.learningUnit!.objectives.some((objective) =>
+          objectiveIds.includes(objective.id),
+        ),
+      )
+      .map((candidateUnit) => candidateUnit.id),
+  );
+  const teachingSurfaceCatalogue: FormalAssessmentProposalCatalogue['teachingSurfaceCatalogue'] =
+    [];
+  const surfaceRecords = new Map<string, PresentedTeachingSurface>();
+  let surfaceIndex = 1;
+  for (const state of input.repos.lessonExecution.listForWorkspace(input.workspaceId)) {
+    if (state.preparationStatus !== 'ready') continue;
+    if (
+      state.curriculumVersionId !== input.curriculum.id ||
+      state.studyPlanVersionId !== input.plan.id ||
+      !candidateUnitIds.has(state.learningUnitId) ||
+      state.executionSourceManifestFingerprint !== input.plan.executionSourceManifestFingerprint ||
+      !state.teachingBriefId
+    )
+      continue;
+    const brief = input.repos.teachingBriefs.get(state.teachingBriefId);
+    const checkpointId = brief?.composition?.acceptedLessonCheckpointId;
+    const checkpoint = checkpointId
+      ? input.repos.acceptedLessonCheckpoints.get(checkpointId)
+      : undefined;
+    if (!brief || !checkpoint) continue;
+    const projection = projectTaughtExposure({ brief, state, checkpoint });
+    if (!projection) continue;
+    for (const surface of projection.surfaces) {
+      const objectiveRefs = surface.objectiveIds
+        .map((objectiveId) => objectiveRefById.get(objectiveId))
+        .filter((value): value is string => value !== undefined);
+      if (objectiveRefs.length === 0) continue;
+      teachingSurfaceCatalogue.push({
+        teachingSurfaceRef: `T${surfaceIndex++}`,
+        surfaceKind: surface.surfaceKind,
+        objectiveRefs,
+        text: surface.text,
+      });
+      surfaceRecords.set(`T${surfaceIndex - 1}`, surface);
+    }
+  }
+  return { objectiveCatalogue, teachingSurfaceCatalogue, surfaceRecords };
+}
+
+function currentTaughtExposure(input: {
+  repos: Repositories;
+  workspaceId: string;
+  curriculumVersionId: string;
+  studyPlanVersionId: string;
+  learningUnitId: string;
+  executionSourceManifestFingerprint: string;
+}) {
+  const result: Array<{
+    projection: ReturnType<typeof projectTaughtExposure>;
+    state: ReturnType<Repositories['lessonExecution']['listForWorkspace']>[number];
+    brief: ReturnType<Repositories['teachingBriefs']['get']>;
+    checkpoint: ReturnType<Repositories['acceptedLessonCheckpoints']['get']>;
+  }> = [];
+  for (const state of input.repos.lessonExecution.listForWorkspace(input.workspaceId)) {
+    if (
+      state.preparationStatus !== 'ready' ||
+      state.curriculumVersionId !== input.curriculumVersionId ||
+      state.studyPlanVersionId !== input.studyPlanVersionId ||
+      state.learningUnitId !== input.learningUnitId ||
+      state.executionSourceManifestFingerprint !== input.executionSourceManifestFingerprint ||
+      !state.teachingBriefId
+    )
+      continue;
+    const brief = input.repos.teachingBriefs.get(state.teachingBriefId);
+    const checkpointId = brief?.composition?.acceptedLessonCheckpointId;
+    const checkpoint = checkpointId
+      ? input.repos.acceptedLessonCheckpoints.get(checkpointId)
+      : undefined;
+    if (!brief || !checkpoint) continue;
+    const projection = projectTaughtExposure({ brief, state, checkpoint });
+    if (projection) result.push({ projection, state, brief, checkpoint });
+  }
+  return result;
 }
 
 interface RequiredAssessmentPremise {
@@ -244,6 +383,187 @@ function contractHasCurrentPremiseAuthority(
           )
         );
       });
+    })
+  ) {
+    return false;
+  }
+  // S1 proof fields are additive: historical contracts without them are
+  // deliberately unproven rather than backfilled from current state.
+  if (
+    !contract.taughtExposureBindings ||
+    contract.taughtExposureBindings.length === 0 ||
+    !contract.declaredPremises ||
+    contract.declaredPremises.length === 0 ||
+    contract.premiseVisibilityVerdict !== 'satisfied' ||
+    !contract.resolvedObjectiveBinding
+  ) {
+    return false;
+  }
+  if (contract.resolvedObjectiveBinding.objectiveId !== contract.primaryObjectiveId) return false;
+  if (
+    (contract.resolvedObjectiveBinding.source === 'provider_alias' &&
+      question.formalProposal?.objectiveRef !== contract.resolvedObjectiveBinding.objectiveRef) ||
+    (contract.resolvedObjectiveBinding.source === 'single_objective_plan_item' &&
+      question.formalProposal?.objectiveRef !== undefined) ||
+    (contract.resolvedObjectiveBinding.source === 'synthesis_mapping' &&
+      contract.assessmentKind !== 'synthesis')
+  ) {
+    return false;
+  }
+  const currentDeclarations = question.formalProposal?.premises.map((premise, index) => ({
+    premiseKey: premise.premiseKey ?? `premise:${index + 1}`,
+    text: premise.text,
+    sourceRefIds: premise.sourceRefs,
+    teachingSurfaceRefs: premise.teachingSurfaceRefs,
+    learnerVisible: premise.learnerVisible,
+    scenarioLocal: premise.scenarioLocal,
+    visibilityBasis: premise.visibilityBasis,
+  }));
+  if (
+    !currentDeclarations ||
+    JSON.stringify(currentDeclarations) !== JSON.stringify(contract.declaredPremises) ||
+    question.formalProposal?.requiresExternalKnowledge ||
+    question.formalProposal?.ambiguity === 'unresolved' ||
+    (question.formalProposal?.undefinedTerms.length ?? 0) > 0
+  ) {
+    return false;
+  }
+  const relevantBlockIds = new Set([
+    question.grounding.blockId,
+    ...(question.supplementaryEvidence ?? []).map((item) => item.blockId),
+  ]);
+  const workspaceBlockTexts = repos.materials
+    .listByWorkspace(contract.workspaceId)
+    .flatMap((material) => repos.materials.getBlocks(material.id).map((block) => block.content));
+  const requiredRubric = question.rubric?.keyPoints.filter((point) => point.required) ?? [];
+  if (
+    requiredRubric.some((point) => {
+      const declaration = question.formalProposal?.rubricSourceRefs.find(
+        (candidate) => normalizedPremise(candidate.text) === normalizedPremise(point.text),
+      );
+      return (
+        !declaration?.sourceRefs.length ||
+        declaration.sourceRefs.some((ref) => !relevantBlockIds.has(ref))
+      );
+    })
+  ) {
+    return false;
+  }
+  const taughtEntries = currentTaughtExposure({
+    repos,
+    workspaceId: contract.workspaceId,
+    curriculumVersionId: contract.curriculumVersionId,
+    studyPlanVersionId: contract.studyPlanVersionId,
+    learningUnitId: contract.curriculumLearningUnitId,
+    executionSourceManifestFingerprint: contract.executionSourceManifestFingerprint,
+  });
+  const validTaughtBindings = contract.taughtExposureBindings.every((binding) =>
+    taughtEntries.some(({ projection }) => {
+      if (!projection || !projection.objectiveIds.includes(binding.objectiveId)) return false;
+      const objectiveSurfaces = projection.surfaces.filter((surface) =>
+        surface.objectiveIds.includes(binding.objectiveId),
+      );
+      const surface = objectiveSurfaces[0];
+      return Boolean(
+        surface &&
+        surface.checkpointId === binding.checkpointId &&
+        surface.skeletonFingerprint === binding.skeletonFingerprint &&
+        surface.sourceContextFingerprint === binding.sourceContextFingerprint &&
+        binding.curriculumVersionId === contract.curriculumVersionId &&
+        binding.studyPlanVersionId === contract.studyPlanVersionId &&
+        binding.learningUnitId === contract.curriculumLearningUnitId &&
+        binding.executionSourceManifestFingerprint ===
+          contract.executionSourceManifestFingerprint &&
+        binding.presentedSegmentIndexes.every((index) =>
+          objectiveSurfaces.some((candidate) => candidate.segmentIndex === index),
+        ),
+      );
+    }),
+  );
+  if (!validTaughtBindings) return false;
+  const surfaceBindings = contract.presentedTeachingSurfaceBindings ?? [];
+  const currentSurfaceBindingAuthorities = new Map<
+    string,
+    PresentedTeachingSurface['authority'][]
+  >();
+  for (const binding of surfaceBindings) {
+    const current = taughtEntries
+      .flatMap(({ projection }) => projection?.surfaces ?? [])
+      .find(
+        (surface) =>
+          surface.checkpointId === binding.checkpointId &&
+          surface.skeletonFingerprint === binding.skeletonFingerprint &&
+          surface.segmentIndex === binding.segmentIndex &&
+          surface.surfaceKind === binding.surfaceKind &&
+          surface.surfaceOrdinal === binding.surfaceOrdinal &&
+          surface.objectiveIds.includes(contract.primaryObjectiveId),
+      );
+    if (!current || surfaceFingerprint(current.text) !== binding.surfaceFingerprint) return false;
+    const authorities = currentSurfaceBindingAuthorities.get(binding.premiseKey) ?? [];
+    authorities.push(current.authority);
+    currentSurfaceBindingAuthorities.set(binding.premiseKey, authorities);
+  }
+  if (
+    contract.declaredPremises.some(
+      (premise) =>
+        premise.teachingSurfaceRefs.length !==
+        (currentSurfaceBindingAuthorities.get(premise.premiseKey)?.length ?? 0),
+    )
+  ) {
+    return false;
+  }
+  if (
+    !contract.declaredPremises.every((premise) => {
+      if (!premise.learnerVisible) return false;
+      const textInStem = normalizedPremise(question.stem).includes(normalizedPremise(premise.text));
+      const exactlyCourseSourced = workspaceBlockTexts.some((sourceText) =>
+        normalizedPremise(sourceText).includes(normalizedPremise(premise.text)),
+      );
+      if (premise.visibilityBasis === 'stem') return textInStem;
+      if (premise.visibilityBasis === 'scenario_local') {
+        return (
+          premise.scenarioLocal &&
+          premise.sourceRefIds.length === 0 &&
+          textInStem &&
+          !exactlyCourseSourced
+        );
+      }
+      if (premise.visibilityBasis === 'assumed_prerequisite') return textInStem;
+      if (premise.visibilityBasis === 'cited_source') {
+        return (
+          premise.sourceRefIds.length > 0 &&
+          premise.sourceRefIds.every((ref) => {
+            const sourceText = repos.materials.getBlock(ref)?.content;
+            return (
+              relevantBlockIds.has(ref) &&
+              Boolean(
+                sourceText &&
+                normalizedPremise(sourceText).includes(normalizedPremise(premise.text)),
+              )
+            );
+          })
+        );
+      }
+      if (
+        premise.sourceRefIds.length > 0 &&
+        premise.sourceRefIds.every((ref) => {
+          const sourceText = repos.materials.getBlock(ref)?.content;
+          return (
+            relevantBlockIds.has(ref) &&
+            Boolean(
+              sourceText && normalizedPremise(sourceText).includes(normalizedPremise(premise.text)),
+            )
+          );
+        })
+      ) {
+        return true;
+      }
+      return (
+        premise.teachingSurfaceRefs.length > 0 &&
+        currentSurfaceBindingAuthorities
+          .get(premise.premiseKey)
+          ?.every((authority) => authority === 'ai_teaching_synthesis') === true
+      );
     })
   ) {
     return false;
@@ -438,6 +758,7 @@ export function createFormalProgressionService({
     curriculumVersionId: string;
     studyPlanVersionId: string;
     executionSourceManifestFingerprint: string;
+    proposalCatalogue?: FormalAssessmentProposalCatalogue;
   }): FormalQuestionContract[] {
     const curriculum = repos.curricula.get(input.curriculumVersionId);
     const contract = repos.learningContracts.get(input.contractVersionId);
@@ -507,12 +828,34 @@ export function createFormalProgressionService({
     // every question to exactly one group unit and one objective, and the quiz
     // must cover at least two distinct units before any question can earn
     // state credit.
-    const ordinaryObjectiveAttributionVerified = objectiveIds.length === 1;
+    const proposalCatalogue =
+      input.proposalCatalogue ??
+      buildFormalAssessmentProposalCatalogue({
+        repos,
+        workspaceId: input.workspaceId,
+        curriculum,
+        plan,
+        planItemId: planItem?.id ?? '',
+        learningUnitId: unit.id,
+      });
+    const objectiveRefById = new Map(
+      objectiveIds.map((objectiveId, index) => [objectiveId, `O${index + 1}`]),
+    );
+    const objectiveIdByRef = new Map(
+      objectiveIds.map((objectiveId, index) => [`O${index + 1}`, objectiveId]),
+    );
+    const surfaceRecords = proposalCatalogue.surfaceRecords;
     const output = quiz.questions.map((question, index) => {
       const synthesisMapping = synthesisMappings[index];
       const questionUnit = synthesisMapping?.unit ?? unit;
+      const providerObjectiveRef = question.formalProposal?.objectiveRef;
+      const providerObjectiveId = providerObjectiveRef
+        ? objectiveIdByRef.get(providerObjectiveRef)
+        : undefined;
       const objectiveId =
-        synthesisMapping?.objective.id ?? objectiveIds[index % objectiveIds.length]!;
+        synthesisMapping?.objective.id ??
+        providerObjectiveId ??
+        objectiveIds[index % objectiveIds.length]!;
       const objective = questionUnit.learningUnit!.objectives.find(
         (candidate) => candidate.id === objectiveId,
       );
@@ -524,14 +867,208 @@ export function createFormalProgressionService({
       const objectiveAttributionVerified =
         input.assessmentKind === 'synthesis'
           ? Boolean(synthesisMapping) && synthesisBreadthVerified
-          : ordinaryObjectiveAttributionVerified;
-      // Formal authority follows the question's actual verified evidence
-      // blocks. A different authorized block elsewhere in the unit cannot
-      // authorize this question's hidden scoring premises.
+          : objectiveIds.length === 1
+            ? providerObjectiveRef === undefined || providerObjectiveId === objective.id
+            : providerObjectiveRef !== undefined && providerObjectiveId === objective.id;
+      const resolvedObjectiveBinding =
+        input.assessmentKind === 'synthesis' && synthesisMapping
+          ? {
+              objectiveRef: null,
+              objectiveId: objective.id,
+              source: 'synthesis_mapping' as const,
+            }
+          : objectiveIds.length === 1 && providerObjectiveRef === undefined
+            ? {
+                objectiveRef: objectiveRefById.get(objective.id) ?? null,
+                objectiveId: objective.id,
+                source: 'single_objective_plan_item' as const,
+              }
+            : objectiveAttributionVerified && providerObjectiveRef
+              ? {
+                  objectiveRef: providerObjectiveRef,
+                  objectiveId: objective.id,
+                  source: 'provider_alias' as const,
+                }
+              : undefined;
+      // Formal authority follows the question's actual verified evidence blocks.
       const relevantBlockIds = new Set([
         question.grounding.blockId,
         ...(question.supplementaryEvidence ?? []).map((item) => item.blockId),
       ]);
+      const proposalPremises = question.formalProposal?.premises;
+      const declaredPremises = proposalPremises?.map((premise, premiseIndex) => ({
+        premiseKey: premise.premiseKey ?? `premise:${premiseIndex + 1}`,
+        text: premise.text,
+        sourceRefIds: premise.sourceRefs,
+        teachingSurfaceRefs: premise.teachingSurfaceRefs,
+        learnerVisible: premise.learnerVisible,
+        scenarioLocal: premise.scenarioLocal,
+        visibilityBasis: premise.visibilityBasis,
+      }));
+      const taughtEntries = currentTaughtExposure({
+        repos,
+        workspaceId: input.workspaceId,
+        curriculumVersionId: curriculum.id,
+        studyPlanVersionId: plan.id,
+        learningUnitId: questionUnit.id,
+        executionSourceManifestFingerprint: input.executionSourceManifestFingerprint,
+      });
+      const currentSurfaces = taughtEntries.flatMap(({ projection }) => projection?.surfaces ?? []);
+      const currentSurfaceForRef = (ref: string): PresentedTeachingSurface | undefined => {
+        const catalogued = surfaceRecords.get(ref);
+        if (!catalogued || !catalogued.objectiveIds.includes(objective.id)) return undefined;
+        return currentSurfaces.find(
+          (surface) =>
+            surface.checkpointId === catalogued.checkpointId &&
+            surface.skeletonFingerprint === catalogued.skeletonFingerprint &&
+            surface.sourceContextFingerprint === catalogued.sourceContextFingerprint &&
+            surface.curriculumVersionId === catalogued.curriculumVersionId &&
+            surface.studyPlanVersionId === catalogued.studyPlanVersionId &&
+            surface.learningUnitId === catalogued.learningUnitId &&
+            surface.executionSourceManifestFingerprint ===
+              catalogued.executionSourceManifestFingerprint &&
+            surface.segmentIndex === catalogued.segmentIndex &&
+            surface.surfaceKind === catalogued.surfaceKind &&
+            surface.surfaceOrdinal === catalogued.surfaceOrdinal &&
+            surface.objectiveIds.includes(objective.id) &&
+            surfaceFingerprint(surface.text) === surfaceFingerprint(catalogued.text),
+        );
+      };
+      const premiseVisibilitySatisfied = (() => {
+        if (!declaredPremises || declaredPremises.length === 0) return false;
+        const currentSources = new Set(relevantBlockIds);
+        const workspaceBlockTexts = repos.materials
+          .listByWorkspace(input.workspaceId)
+          .flatMap((material) =>
+            repos.materials.getBlocks(material.id).map((block) => block.content),
+          );
+        const currentObjectiveRef = objectiveRefById.get(objective.id);
+        const requiredRubric = question.rubric?.keyPoints.filter((point) => point.required) ?? [];
+        if (
+          requiredRubric.some((point) => {
+            const declaration = question.formalProposal?.rubricSourceRefs.find(
+              (candidate) => normalizedPremise(candidate.text) === normalizedPremise(point.text),
+            );
+            return (
+              !declaration ||
+              declaration.sourceRefs.length === 0 ||
+              declaration.sourceRefs.some((ref) => !currentSources.has(ref))
+            );
+          })
+        )
+          return false;
+        return declaredPremises.every((premise) => {
+          if (premise.teachingSurfaceRefs.some((ref) => !currentSurfaceForRef(ref))) return false;
+          if (
+            !premise.learnerVisible ||
+            question.formalProposal?.requiresExternalKnowledge ||
+            question.formalProposal?.ambiguity === 'unresolved' ||
+            (question.formalProposal?.undefinedTerms.length ?? 0) > 0
+          )
+            return false;
+          const textInStem = normalizedPremise(question.stem).includes(
+            normalizedPremise(premise.text),
+          );
+          const exactlyCourseSourced = workspaceBlockTexts.some((sourceText) =>
+            normalizedPremise(sourceText).includes(normalizedPremise(premise.text)),
+          );
+          if (premise.visibilityBasis === 'stem') return textInStem;
+          if (premise.visibilityBasis === 'scenario_local') {
+            return (
+              premise.scenarioLocal &&
+              premise.sourceRefIds.length === 0 &&
+              textInStem &&
+              !exactlyCourseSourced
+            );
+          }
+          if (premise.visibilityBasis === 'assumed_prerequisite') return textInStem;
+          if (premise.visibilityBasis === 'cited_source') {
+            return (
+              premise.sourceRefIds.length > 0 &&
+              premise.sourceRefIds.every((ref) => {
+                const sourceText = repos.materials.getBlock(ref)?.content;
+                return (
+                  currentSources.has(ref) &&
+                  Boolean(
+                    sourceText &&
+                    normalizedPremise(sourceText).includes(normalizedPremise(premise.text)),
+                  )
+                );
+              })
+            );
+          }
+          if (
+            premise.sourceRefIds.length > 0 &&
+            premise.sourceRefIds.every((ref) => {
+              const sourceText = repos.materials.getBlock(ref)?.content;
+              return (
+                currentSources.has(ref) &&
+                Boolean(
+                  sourceText &&
+                  normalizedPremise(sourceText).includes(normalizedPremise(premise.text)),
+                )
+              );
+            })
+          ) {
+            return true;
+          }
+          if (!currentObjectiveRef || premise.teachingSurfaceRefs.length === 0) return false;
+          return premise.teachingSurfaceRefs.every(
+            (ref) => currentSurfaceForRef(ref)?.authority === 'ai_teaching_synthesis',
+          );
+        });
+      })();
+      const taughtExposureBindings = taughtEntries
+        .flatMap(({ projection }) =>
+          projection?.objectiveIds.includes(objective.id)
+            ? (() => {
+                const objectiveSurfaces = projection.surfaces.filter((surface) =>
+                  surface.objectiveIds.includes(objective.id),
+                );
+                const surface = objectiveSurfaces[0];
+                return surface
+                  ? [
+                      {
+                        objectiveId: objective.id,
+                        checkpointId: surface.checkpointId,
+                        skeletonFingerprint: surface.skeletonFingerprint,
+                        sourceContextFingerprint: surface.sourceContextFingerprint,
+                        curriculumVersionId: curriculum.id,
+                        studyPlanVersionId: plan.id,
+                        learningUnitId: questionUnit.id,
+                        executionSourceManifestFingerprint:
+                          input.executionSourceManifestFingerprint,
+                        presentedSegmentIndexes: [
+                          ...new Set(objectiveSurfaces.map((candidate) => candidate.segmentIndex)),
+                        ],
+                        exposureClass: projection.exposureClass,
+                      },
+                    ]
+                  : [];
+              })()
+            : [],
+        )
+        .slice(0, 1);
+      const presentedTeachingSurfaceBindings = (question.formalProposal?.premises ?? []).flatMap(
+        (premise, premiseIndex) =>
+          premise.teachingSurfaceRefs.flatMap((ref) => {
+            const surface = currentSurfaceForRef(ref);
+            return surface
+              ? [
+                  {
+                    premiseKey: premise.premiseKey ?? `premise:${premiseIndex + 1}`,
+                    checkpointId: surface.checkpointId,
+                    skeletonFingerprint: surface.skeletonFingerprint,
+                    segmentIndex: surface.segmentIndex,
+                    surfaceKind: surface.surfaceKind,
+                    surfaceOrdinal: surface.surfaceOrdinal,
+                    surfaceFingerprint: surfaceFingerprint(surface.text),
+                  },
+                ]
+              : [];
+          }),
+      );
+      // A different authorized block elsewhere in the unit cannot authorize this question's hidden scoring premises.
       const refs = questionUnit.sourceReferences
         .filter(
           (reference) =>
@@ -575,6 +1112,8 @@ export function createFormalProgressionService({
       );
       const tier =
         objectiveAttributionVerified &&
+        taughtExposureBindings.length > 0 &&
+        premiseVisibilitySatisfied &&
         objective.truthPremiseStatus === 'independently_verified' &&
         premiseBindingsComplete &&
         fullChoiceClassificationAuthorized &&
@@ -613,6 +1152,19 @@ export function createFormalProgressionService({
         executionSourceManifestFingerprint: input.executionSourceManifestFingerprint,
         provenance,
         assessmentPremiseBindings: premiseResolution.bindings,
+        ...(taughtExposureBindings.length > 0 ? { taughtExposureBindings } : {}),
+        ...(presentedTeachingSurfaceBindings.length > 0
+          ? { presentedTeachingSurfaceBindings }
+          : {}),
+        ...(declaredPremises
+          ? {
+              declaredPremises,
+              premiseVisibilityVerdict: premiseVisibilitySatisfied
+                ? ('satisfied' as const)
+                : ('unsatisfied' as const),
+            }
+          : {}),
+        ...(resolvedObjectiveBinding ? { resolvedObjectiveBinding } : {}),
         limitations:
           tier === 'tier_3_advisory'
             ? [
@@ -620,9 +1172,15 @@ export function createFormalProgressionService({
                   ? 'Choice-question state credit requires independently validated classification authority for the full option set; correct-option truth alone is insufficient.'
                   : input.assessmentKind === 'synthesis' && !synthesisBreadthVerified
                     ? 'Synthesis state credit requires unambiguous objective attribution across at least two Curriculum LearningUnits; narrow or ambiguous results are advisory only.'
-                    : objectiveAttributionVerified
+                    : !premiseBindingsComplete
                       ? 'One or more scoring answer/options/rubric premises lack an explicit independently authorized binding; result is advisory only.'
-                      : 'The question has no validated one-to-one objective attribution; result is advisory only.',
+                      : !objectiveAttributionVerified
+                        ? 'The question has no validated one-to-one objective attribution; result is advisory only.'
+                        : !taughtExposureBindings.length
+                          ? 'The resolved objective has no current, presented Lesson exposure on this route; result is advisory only.'
+                          : !premiseVisibilitySatisfied
+                            ? 'One or more declared premises are not structurally visible from the stem, cited source, prerequisite, or exact presented teaching surface; result is advisory only.'
+                            : 'The question is advisory under the current formal-evidence policy.',
               ]
             : [],
         createdAt: clock.now().toISOString(),

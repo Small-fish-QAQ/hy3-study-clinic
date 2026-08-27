@@ -582,6 +582,22 @@ export function assessmentProposalMessages(input: AssessmentProposalInput): Chat
         category: input.misconception.category,
       })
     : null;
+  const objectiveCatalogue = input.objectiveCatalogue?.length
+    ? input.objectiveCatalogue
+        .map(
+          (objective) =>
+            `- ${objective.objectiveRef} | ${objective.title} | ${objective.description}`,
+        )
+        .join('\n')
+    : '';
+  const teachingSurfaceCatalogue = input.teachingSurfaceCatalogue?.length
+    ? input.teachingSurfaceCatalogue
+        .map(
+          (surface) =>
+            `- ${surface.teachingSurfaceRef} | ${surface.surfaceKind} | objectives=${surface.objectiveRefs.join(',')} | ${surface.text}`,
+        )
+        .join('\n')
+    : '';
 
   return [
     {
@@ -595,6 +611,16 @@ export function assessmentProposalMessages(input: AssessmentProposalInput): Chat
         '',
         '目标概念(question.conceptId 与 blueprint.conceptIds 只能取下列 conceptId):',
         targetList,
+        ...(objectiveCatalogue
+          ? ['', '正式评估目标别名(每道题必须选择一个 objectiveRef):', objectiveCatalogue]
+          : []),
+        ...(teachingSurfaceCatalogue
+          ? [
+              '',
+              '已实际呈现的教学表面别名(仅可引用与 objectiveRef 对应的 T 别名):',
+              teachingSurfaceCatalogue,
+            ]
+          : []),
         '',
         '允许的题型:',
         typeList,
@@ -627,13 +653,19 @@ export function assessmentProposalMessages(input: AssessmentProposalInput): Chat
         wrapped.body,
         '',
         '输出 JSON,格式:',
-        '{"items":[{"blueprint":{"conceptIds":["..."],"questionType":"single_choice|multiple_choice|short_answer|concept_comparison","difficulty":"easy|medium|hard","learningObjective":"考查目标(不超过120字)","reasoningSteps":[{"description":"作答应完成的推理步骤","evidenceIndexes":[0]}]},"question":{"type":"...","stem":"...","conceptId":"...","blockId":"...","quote":"...","explanation":"...","options":[],"correctOptionIds":[],"expectedAnswer":"...","rubricKeyPoints":[{"text":"评分要点","required":true}]},"extraEvidence":[{"blockId":"另一文档的来源块id","quote":"逐字原文"}]}]}',
+        '{"items":[{"objectiveRef":"O1","blueprint":{"conceptIds":["..."],"questionType":"single_choice|multiple_choice|short_answer|concept_comparison","difficulty":"easy|medium|hard","learningObjective":"考查目标(不超过120字)","reasoningSteps":[{"description":"作答应完成的推理步骤","evidenceIndexes":[0]}]},"question":{"type":"...","stem":"...","conceptId":"...","blockId":"...","quote":"...","explanation":"...","options":[],"correctOptionIds":[],"expectedAnswer":"...","rubricKeyPoints":[{"text":"评分要点","required":true,"sourceRefs":["block-id"]}]},"premises":[{"premiseKey":"p1","text":"作答所需前提","sourceRefs":["block-id"],"teachingSurfaceRefs":["T1"],"learnerVisible":true,"scenarioLocal":false,"visibilityBasis":"taught_exposure"}],"requiresExternalKnowledge":false,"ambiguity":"none","undefinedTerms":[],"extraEvidence":[{"blockId":"另一文档的来源块id","quote":"逐字原文"}]}]}',
         '要求:',
         '1. question 的 (blockId, quote) 是第 0 条证据,extraEvidence 依次是第 1、2 条;reasoningSteps 的 evidenceIndexes 引用这些序号;',
         '2. concept_comparison 题必须提供至少 1 条来自不同文档的 extraEvidence,并要求学习者综合两份资料作答;',
         '3. 单选题不得出现 expectedAnswer 或 rubricKeyPoints;简答/对比题不得出现 options 或 correctOptionIds;不适用字段必须完全省略;',
         '4. 选项 id 使用大写字母 A-H;',
         '5. 每道题的答案必须能仅凭给出的证据推出,不得依赖资料之外的知识。',
+        ...(objectiveCatalogue
+          ? [
+              '6. objectiveRef 只能从上面的 O 别名中选择；premises 的 teachingSurfaceRefs 只能从上面的 T 别名中选择，且只能引用与该题 objectiveRef 对应的表面。',
+              '7. 每个 premise 必须标记 learnerVisible、scenarioLocal、visibilityBasis；requiresExternalKnowledge/ambiguity/undefinedTerms 必须如实填写。',
+            ]
+          : []),
         RUBRIC_RULES,
         CITATION_RULES,
         JSON_RULES,

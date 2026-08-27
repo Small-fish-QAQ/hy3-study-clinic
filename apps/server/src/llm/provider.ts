@@ -409,6 +409,20 @@ export interface AssessmentProposalInput {
   requestedChallengeFamily: MasteryChallengeFamily | null;
   /** Misconception to discriminate (misconception_check mode only). */
   misconception: MisconceptionRecord | null;
+  /** Formal-only proposal-scope aliases. Durable ids and fingerprints are intentionally absent. */
+  objectiveCatalogue?: Array<{ objectiveRef: string; title: string; description: string }>;
+  teachingSurfaceCatalogue?: Array<{
+    teachingSurfaceRef: string;
+    surfaceKind:
+      | 'explanation'
+      | 'semantic_relation'
+      | 'worked_process'
+      | 'example'
+      | 'contrast'
+      | 'misconception';
+    objectiveRefs: string[];
+    text: string;
+  }>;
 }
 
 /** Bounded alias-only context for one non-authoritative Mastery Red Team proposal. */

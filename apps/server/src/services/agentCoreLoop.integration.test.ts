@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { LearningContractDraftFields } from '@hy3-clinic/shared';
+import { projectTaughtExposure, type LearningContractDraftFields } from '@hy3-clinic/shared';
 import { openDatabase } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
 import { FakeProvider } from '../llm/fakeProvider.js';
@@ -167,6 +167,73 @@ describe('ordinary Fake learning execution core loop', () => {
     expect(checkpoint?.launch).toMatchObject({
       status: 'launchable',
       capability: 'assessment',
+    });
+
+    const teachingItem = route.agenda.items.find(
+      (item) =>
+        item.kind === 'learning_unit_teaching' &&
+        item.learningUnitId === checkpoint?.learningUnitId,
+    );
+    expect(teachingItem?.launch).toMatchObject({
+      status: 'launchable',
+      capability: 'lesson',
+    });
+    const lessonLaunch = await services.courseActionLaunch.launch({
+      command: command(workspace.id, 'lesson-launch'),
+      agendaId: route.agenda.id,
+      expectedAgendaVersion: route.agenda.version,
+      agendaItemId: teachingItem!.id,
+      expectedContractId: contract.id,
+      expectedStudyPlanId: route.studyPlan.id,
+      expectedExecutionSourceManifestFingerprint: curriculum.executionSourceManifest.fingerprint,
+    });
+    expect(lessonLaunch).toMatchObject({
+      kind: 'lesson',
+      agendaItemId: teachingItem!.id,
+      learningUnitId: checkpoint!.learningUnitId,
+    });
+    const execution = repos.courseExecution.get(workspace.id);
+    const startedSession = services.studySessions.start(workspace.id, {
+      contractVersionId: contract.id,
+      curriculumVersionId: curriculum.id,
+      studyPlanVersionId: route.studyPlan.id,
+      sessionAgendaId: route.agenda.id,
+      expectedCourseExecutionVersion: execution.version,
+    }).session;
+    expect(startedSession.currentAgendaItemId).toBe(teachingItem!.id);
+    const preparedLesson = await services.lessonExecution.ensure(workspace.id, startedSession.id, {
+      command: command(workspace.id, 'lesson-prepare'),
+      expectedSessionVersion: startedSession.version,
+      expectedAgendaVersion: route.agenda.version,
+      expectedAgendaItemId: teachingItem!.id,
+    });
+    expect(preparedLesson.status).toBe('ready');
+    const startedLesson = await services.lessonExecution.command(workspace.id, startedSession.id, {
+      command: command(workspace.id, 'lesson-start'),
+      expectedSessionVersion: preparedLesson.session.version,
+      expectedAgendaVersion: preparedLesson.agenda!.version,
+      expectedAgendaItemId: teachingItem!.id,
+      expectedLessonStateVersion: preparedLesson.progress!.stateVersion,
+      action: { kind: 'start_lesson' },
+    });
+    expect(startedLesson.progress).toMatchObject({
+      presentedSegmentIndexes: [0],
+      presentationCompletedAt: null,
+    });
+    const lessonState = repos.lessonExecution.getForSession(startedSession.id, teachingItem!.id)!;
+    const teachingBrief = repos.teachingBriefs.get(lessonState.teachingBriefId!)!;
+    const acceptedLessonCheckpoint = repos.acceptedLessonCheckpoints.get(
+      lessonState.acceptedLessonCheckpointId!,
+    )!;
+    expect(
+      projectTaughtExposure({
+        brief: teachingBrief,
+        state: lessonState,
+        checkpoint: acceptedLessonCheckpoint,
+      }),
+    ).toMatchObject({
+      objectiveIds: expect.arrayContaining([objective!.id]),
+      presentedSegmentIndexes: [0],
     });
 
     let launchAgenda = route.agenda;

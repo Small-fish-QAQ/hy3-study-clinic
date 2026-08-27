@@ -49,6 +49,8 @@ export interface AssessmentCreation {
 interface AssessmentGenerationPolicy {
   requiredRepresentation: EvidenceRepresentation | null;
   requestedChallengeFamily: MasteryChallengeFamily | null;
+  objectiveCatalogue?: AssessmentProposalInput['objectiveCatalogue'];
+  teachingSurfaceCatalogue?: AssessmentProposalInput['teachingSurfaceCatalogue'];
 }
 
 /** Question types each assessment mode may draw on. */
@@ -245,6 +247,8 @@ export function createAssessmentService({
     generationPolicy: AssessmentGenerationPolicy = {
       requiredRepresentation: null,
       requestedChallengeFamily: null,
+      objectiveCatalogue: undefined,
+      teachingSurfaceCatalogue: undefined,
     },
   ): Promise<AssessmentCreation> {
     const workspace = requireWorkspace(workspaceId);
@@ -315,6 +319,8 @@ export function createAssessmentService({
       requiredRepresentation: generationPolicy.requiredRepresentation,
       requestedChallengeFamily: generationPolicy.requestedChallengeFamily,
       misconception: misconceptionTarget ? misconceptions.get(misconceptionTarget) : null,
+      objectiveCatalogue: generationPolicy.objectiveCatalogue,
+      teachingSurfaceCatalogue: generationPolicy.teachingSurfaceCatalogue,
     };
     const payload = await inferenceProvider.proposeAssessment(providerInput, {
       ...opts,
@@ -482,6 +488,33 @@ export function createAssessmentService({
         ...(q.correctOptionIds ? { correctOptionIds: q.correctOptionIds } : {}),
         ...(q.expectedAnswer ? { expectedAnswer: q.expectedAnswer } : {}),
         ...(rubric ? { rubric } : {}),
+        ...(item.objectiveRef ||
+        item.premises ||
+        item.requiresExternalKnowledge !== undefined ||
+        item.ambiguity ||
+        item.undefinedTerms
+          ? {
+              formalProposal: {
+                ...(item.objectiveRef ? { objectiveRef: item.objectiveRef } : {}),
+                premises: (item.premises ?? []).map((premise, premiseIndex) => ({
+                  premiseKey: premise.premiseKey ?? `premise:${premiseIndex + 1}`,
+                  text: premise.text,
+                  sourceRefs: premise.sourceRefs,
+                  teachingSurfaceRefs: premise.teachingSurfaceRefs,
+                  learnerVisible: premise.learnerVisible,
+                  scenarioLocal: premise.scenarioLocal,
+                  visibilityBasis: premise.visibilityBasis,
+                })),
+                requiresExternalKnowledge: item.requiresExternalKnowledge ?? false,
+                ambiguity: item.ambiguity ?? 'none',
+                undefinedTerms: item.undefinedTerms ?? [],
+                rubricSourceRefs: (q.rubricKeyPoints ?? []).map((point) => ({
+                  text: typeof point === 'string' ? point : point.text,
+                  sourceRefs: typeof point === 'string' ? [] : (point.sourceRefs ?? []),
+                })),
+              },
+            }
+          : {}),
       };
 
       questions.push(question);

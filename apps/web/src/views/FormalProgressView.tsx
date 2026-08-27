@@ -323,6 +323,11 @@ export function FormalProgressView({
                     {unitTitleById.get(evidence.curriculumLearningUnitId) ?? '学习单元'}
                   </strong>
                   <span className="small muted">{evidence.curriculumLearningUnitId}</span>
+                  {!evidence.stateCreditable && evidence.limitations.length > 0 ? (
+                    <span className="small muted" role="note">
+                      仅供参考原因：{evidence.limitations.join('；')}
+                    </span>
+                  ) : null}
                 </span>
                 <span role="cell" data-label="证据级别">
                   {tierLabel[evidence.admissibilityTier] ?? '证据级别已记录'}

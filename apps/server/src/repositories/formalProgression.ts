@@ -36,13 +36,45 @@ function parsePayload<T>(row: PayloadRow | undefined, parse: (value: unknown) =>
   return row ? parse(JSON.parse(row.payload) as unknown) : undefined;
 }
 
+function parseStoredQuestionContract(value: unknown): FormalQuestionContract {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return FormalQuestionContractSchema.parse(value);
+  }
+  const contract = value as Record<string, unknown>;
+  const stateCrediting =
+    contract.admissibilityTier === 'tier_1_authorized_truth' ||
+    contract.admissibilityTier === 'tier_2_validated_representation';
+  const hasS1Proof =
+    Array.isArray(contract.taughtExposureBindings) &&
+    contract.taughtExposureBindings.length > 0 &&
+    Array.isArray(contract.declaredPremises) &&
+    contract.declaredPremises.length > 0 &&
+    contract.premiseVisibilityVerdict === 'satisfied' &&
+    typeof contract.resolvedObjectiveBinding === 'object' &&
+    contract.resolvedObjectiveBinding !== null;
+  if (!stateCrediting || hasS1Proof) return FormalQuestionContractSchema.parse(contract);
+
+  const historicalLimitation =
+    'Historical question contract lacks taught-exposure and premise-visibility proof; result is advisory only.';
+  return FormalQuestionContractSchema.parse({
+    ...contract,
+    admissibilityTier: 'tier_3_advisory',
+    limitations: [
+      ...(Array.isArray(contract.limitations)
+        ? contract.limitations.filter((item): item is string => typeof item === 'string')
+        : []),
+      historicalLimitation,
+    ].slice(0, 20),
+  });
+}
+
 /** Formal-evidence linkage and retryable progression persistence. */
 export function createFormalProgressionRepo(db: SqliteDb) {
   function questionContract(id: string): FormalQuestionContract | undefined {
     return parsePayload(
       db.prepare('SELECT payload FROM formal_question_contracts WHERE id = ?').get(id) as
         PayloadRow | undefined,
-      FormalQuestionContractSchema.parse,
+      parseStoredQuestionContract,
     );
   }
 
@@ -125,7 +157,7 @@ export function createFormalProgressionRepo(db: SqliteDb) {
              WHERE quiz_id = ? ORDER BY question_id, id`,
           )
           .all(quizId) as PayloadRow[]
-      ).map((row) => FormalQuestionContractSchema.parse(JSON.parse(row.payload)));
+      ).map((row) => parseStoredQuestionContract(JSON.parse(row.payload) as unknown));
     },
 
     insertEvidence(input: FormalEvidenceRecord): FormalEvidenceRecord {
