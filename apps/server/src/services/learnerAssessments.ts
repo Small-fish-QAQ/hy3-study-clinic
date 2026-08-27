@@ -421,11 +421,11 @@ export function createLearnerAssessmentsService({
         return projection(version(submitted.assessmentVersionId), submitted);
       }
       const grade = await gradeAttempt(submitted, version(submitted.assessmentVersionId), opts);
-      formalAssessments.recordGrade(grade);
+      const authoritativeGrade = formalAssessments.recordGrade(grade);
       // Formal Evidence is durable before this explicit, separately retryable
       // projection step. A projection failure must not discard the grade or
       // make the learner repeat the provider-backed assessment.
-      finalizeGrade(version(submitted.assessmentVersionId), submitted, grade);
+      finalizeGrade(version(submitted.assessmentVersionId), submitted, authoritativeGrade);
       return projection(version(submitted.assessmentVersionId), submitted);
     },
     async gradeShadowAttempt(attemptId: string, opts?: ProviderCallOptions) {

@@ -3236,6 +3236,17 @@ const MIGRATIONS: Migration[] = [
         BEGIN SELECT RAISE(ABORT, 'Assessment item intent is append-only'); END;
     `,
   },
+  {
+    version: 45,
+    name: 'formal_assessment_current_grade_fence',
+    // One authoritative current grade is the database-level concurrency fence
+    // for learner-submit. Historical superseded grades remain append-only.
+    up: `
+      CREATE UNIQUE INDEX idx_assessment_grades_current_attempt
+        ON assessment_grade_records(attempt_id)
+        WHERE status = 'current';
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

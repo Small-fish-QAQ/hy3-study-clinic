@@ -383,30 +383,51 @@ export function createFormalAssessmentsRepo(db: SqliteDb) {
     },
     insertGrade(input: GradeRecord) {
       const item = GradeRecordSchema.parse(input);
-      db.transaction(() => {
-        if (item.supersedesId) {
-          const prior = grade(item.supersedesId);
-          if (prior) {
-            db.prepare(
-              "UPDATE assessment_grade_records SET status = 'superseded', payload = ? WHERE id = ?",
-            ).run(JSON.stringify({ ...prior, status: 'superseded' }), item.supersedesId);
+      try {
+        db.transaction(() => {
+          if (item.supersedesId) {
+            const prior = grade(item.supersedesId);
+            if (prior) {
+              db.prepare(
+                "UPDATE assessment_grade_records SET status = 'superseded', payload = ? WHERE id = ?",
+              ).run(JSON.stringify({ ...prior, status: 'superseded' }), item.supersedesId);
+            }
           }
+          db.prepare(
+            'INSERT INTO assessment_grade_records (id, attempt_id, assessment_version_id, grader, rubric_version, status, payload, supersedes_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          ).run(
+            item.id,
+            item.attemptId,
+            item.assessmentVersionId,
+            item.grader,
+            item.rubricVersion,
+            item.status,
+            JSON.stringify(item),
+            item.supersedesId,
+            item.createdAt,
+          );
+        })();
+        return item;
+      } catch (error) {
+        const code =
+          error && typeof error === 'object' && 'code' in error
+            ? String((error as { code?: unknown }).code)
+            : '';
+        const message = error instanceof Error ? error.message : String(error);
+        if (
+          item.status === 'current' &&
+          code === 'SQLITE_CONSTRAINT_UNIQUE' &&
+          message.includes('assessment_grade_records.attempt_id')
+        ) {
+          const existing = db
+            .prepare(
+              "SELECT payload FROM assessment_grade_records WHERE attempt_id = ? AND status = 'current' ORDER BY created_at, id LIMIT 1",
+            )
+            .get(item.attemptId) as PayloadRow | undefined;
+          if (existing) return GradeRecordSchema.parse(JSON.parse(existing.payload));
         }
-        db.prepare(
-          'INSERT INTO assessment_grade_records (id, attempt_id, assessment_version_id, grader, rubric_version, status, payload, supersedes_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        ).run(
-          item.id,
-          item.attemptId,
-          item.assessmentVersionId,
-          item.grader,
-          item.rubricVersion,
-          item.status,
-          JSON.stringify(item),
-          item.supersedesId,
-          item.createdAt,
-        );
-      })();
-      return item;
+        throw error;
+      }
     },
     getGrade: grade,
     listGrades(attemptId: string) {
