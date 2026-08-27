@@ -112,6 +112,7 @@ import {
   validateObjectiveAuthoritySemanticEvaluationProposal,
 } from './objectiveAuthoritySemanticSupport.js';
 import {
+  applyObjectiveAuthoritySemanticDeterministicRebind,
   applyObjectiveAuthoritySemanticRepairProposal,
   objectiveAuthoritySemanticRepairSourceFingerprint,
   prepareObjectiveAuthoritySemanticRepair,
@@ -1482,7 +1483,7 @@ export function createCurriculumService({
         });
       const evaluateObjectiveAuthority = async (
         candidate: MaterializedCurriculum,
-        phase: 'initial' | 'post_repair',
+        phase: 'initial' | 'post_rebind' | 'post_repair',
         requiredCapabilityPreservationByObjectiveId?: ReadonlyMap<
           string,
           ObjectiveAuthorityRequiredCapabilityPreservation
@@ -1491,6 +1492,7 @@ export function createCurriculumService({
           string,
           ObjectiveAuthorityCapabilityRecoveryOrigin
         >,
+        localValidationDiagnosticCodesByObjectiveId?: ReadonlyMap<string, readonly string[]>,
       ) => {
         for (const objectiveId of recoveryOriginByObjectiveId?.keys() ?? []) {
           if (!requiredCapabilityPreservationByObjectiveId?.has(objectiveId)) {
@@ -1504,6 +1506,7 @@ export function createCurriculumService({
             nodes: candidate.nodes,
             sourceBlocks: context.blocks,
             authorityBundles: context.authorityBundles,
+            evidenceCatalog: validationContext.evidenceCatalog,
             isBlockingEligible: (authorityRecordId) =>
               repos.sourceAuthority.isBlockingEligible(authorityRecordId),
             requiredCapabilityPreservationByObjectiveId,
@@ -1561,7 +1564,7 @@ export function createCurriculumService({
             learningUnitId: null,
             assessmentId: null,
             operationType: 'propose_curriculum',
-            schemaFingerprint: 'objective-authority-semantic-evaluation-v2',
+            schemaFingerprint: 'objective-authority-semantic-evaluation-v3',
             policyFingerprint,
             sourceFingerprint: recoveryFencedSourceFingerprint(
               objectiveAuthoritySemanticEvaluationSourceFingerprint(batch),
@@ -1588,12 +1591,13 @@ export function createCurriculumService({
           });
           assertGenerationSnapshotCurrent();
           const evaluated = materializeObjectiveAuthoritySemanticSupport(batch, proposal, {
-            evaluator: 'independent-objective-authority-semantic-evaluator-v2',
+            evaluator: 'independent-objective-authority-semantic-evaluator-v3',
             provider: provider.name,
             providerModel:
               provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
             evaluatedAt: clock.now().toISOString(),
             recoveryOriginByObjectiveId,
+            localValidationDiagnosticCodesByObjectiveId,
           });
           firstPass.push({ batch, proposal });
           for (const [objectiveId, support] of evaluated) {
@@ -2054,13 +2058,86 @@ export function createCurriculumService({
         objectiveIdByProposalKey: materialized.objectiveIdByProposalKey ?? new Map(),
         frontier: capabilityRecoveryFrontier,
       });
-      const objectiveAuthorityEvaluation = await evaluateObjectiveAuthority(
+      let objectiveAuthorityEvaluation = await evaluateObjectiveAuthority(
         materialized,
         'initial',
         materializedCapabilityRecovery.requiredCapabilityPreservationByObjectiveId,
         materializedCapabilityRecovery.recoveryOriginByObjectiveId,
       );
       materialized = objectiveAuthorityEvaluation.materialized;
+      if (objectiveAuthorityEvaluation.failedObjectiveIds.length > 0) {
+        const deterministicRebind = applyObjectiveAuthoritySemanticDeterministicRebind({
+          candidate: payload,
+          objectiveIdByProposalKey: materialized.objectiveIdByProposalKey ?? new Map(),
+          firstPass: objectiveAuthorityEvaluation.firstPass,
+        });
+        if (!deterministicRebind.validation.valid || !deterministicRebind.payload) {
+          throw new AppError(
+            ApiErrorCode.GroundingFailed,
+            'Curriculum semantic mis-binding could not be resolved deterministically.',
+            {
+              kind: 'objective_authority_semantic_rebind_failed',
+              failedObjectiveIds: objectiveAuthorityEvaluation.failedObjectiveIds,
+              diagnosticCodes: deterministicRebind.validation.diagnosticCodes ?? [],
+              diagnostics: deterministicRebind.validation.diagnostics.slice(0, 20),
+              repairAttempted: false,
+            },
+          );
+        }
+        if (deterministicRebind.reboundObjectiveIds.length > 0) {
+          payload = deterministicRebind.payload;
+          const reboundCapabilityRecoveryValidation = validateCurriculumCapabilityRecoveryCandidate(
+            payload,
+            capabilityRecoveryFrontier,
+          );
+          if (!reboundCapabilityRecoveryValidation.valid) {
+            throw new AppError(
+              ApiErrorCode.GroundingFailed,
+              'Deterministic semantic rebinding changed the immutable predecessor capability frontier.',
+              {
+                kind: 'curriculum_capability_recovery_rebind_invalid',
+                diagnosticCodes: reboundCapabilityRecoveryValidation.diagnosticCodes ?? [],
+                diagnostics: reboundCapabilityRecoveryValidation.diagnostics.slice(0, 20),
+                repairAttempted: false,
+              },
+            );
+          }
+          materialized = validateExecutionRepairCandidate({
+            repos,
+            clock,
+            contract,
+            executionRepairRequired: requiredExecutionPreflight,
+            workspaceName: workspace.name,
+            manifest: context.manifest,
+            materialized: materializeCurriculumProposal(payload, validationContext),
+          });
+          lastCandidateValidation = materialized;
+          assertValidMaterializedCurriculum(materialized, repairAttempted);
+          materializedCapabilityRecovery = bindMaterializedCurriculumCapabilityRecovery({
+            candidate: payload,
+            objectiveIdByProposalKey: materialized.objectiveIdByProposalKey ?? new Map(),
+            frontier: capabilityRecoveryFrontier,
+          });
+          objectiveAuthorityEvaluation = await evaluateObjectiveAuthority(
+            materialized,
+            'post_rebind',
+            materializedCapabilityRecovery.requiredCapabilityPreservationByObjectiveId,
+            materializedCapabilityRecovery.recoveryOriginByObjectiveId,
+            new Map(
+              deterministicRebind.reboundObjectiveKeys.map((objectiveKey) => {
+                const objectiveId = materialized.objectiveIdByProposalKey?.get(objectiveKey);
+                if (!objectiveId) {
+                  throw new Error(
+                    `Deterministically rebound objective ${objectiveKey} was not rematerialized.`,
+                  );
+                }
+                return [objectiveId, ['semantic_deterministic_rebind_applied']] as const;
+              }),
+            ),
+          );
+          materialized = objectiveAuthorityEvaluation.materialized;
+        }
+      }
       if (objectiveAuthorityEvaluation.failedObjectiveIds.length > 0) {
         const preparation = prepareObjectiveAuthoritySemanticRepair({
           candidate: payload,

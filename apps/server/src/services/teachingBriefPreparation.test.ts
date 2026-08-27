@@ -21,6 +21,7 @@ import { createServices, type Services } from './index.js';
 import {
   fingerprintObjectiveAuthorityBinding,
   fingerprintObjectiveAuthorityProposition,
+  objectiveAuthoritySemanticallySupportedClaimIds,
   validateCurriculumObjectiveAuthoritySemanticSupport,
 } from './objectiveAuthoritySemanticSupport.js';
 import {
@@ -551,19 +552,24 @@ function addSameUnitRouteAndDeferredObjectives(harness: Harness) {
   ): typeof baseObjective.semanticSupport => {
     const base = structuredClone(baseObjective.semanticSupport!);
     const proposition = `${title}\n${description}`;
-    return {
+    const updated = {
       ...base,
       objectiveId: id,
       proposition,
       propositionFingerprint: fingerprintObjectiveAuthorityProposition(proposition),
-      fragments: [
-        {
-          ...base.fragments[0]!,
-          fragmentId: `${id}_fragment`,
-          text: proposition,
-        },
-      ],
     };
+    return base.schemaVersion === 1
+      ? {
+          ...updated,
+          fragments: [
+            {
+              ...base.fragments[0]!,
+              fragmentId: `${id}_fragment`,
+              text: proposition,
+            },
+          ],
+        }
+      : updated;
   };
   const routeSecondId = 'obj_route_second';
   const routeSecondTitle = 'Route-scoped follow-up objective';
@@ -652,28 +658,33 @@ function addUnrelatedLearningUnitObjective(harness: Harness, semanticState: 'fai
   support.objectiveId = unrelatedObjective.id;
   support.proposition = proposition;
   support.propositionFingerprint = fingerprintObjectiveAuthorityProposition(proposition);
-  support.fragments = [
-    {
-      ...support.fragments[0]!,
-      fragmentId: `${unrelatedObjective.id}_fragment`,
-      text: proposition,
-    },
-  ];
-  if (semanticState === 'failed') {
-    support.fragments[0] = {
-      ...support.fragments[0]!,
-      status: 'unsupported',
-      supportType: null,
-      sourceBlockIds: [],
-      authorityRecordIds: [],
-      authorityClaimIds: [],
-      rationale: 'The independently evaluated unrelated proposition is unsupported.',
-    };
-    support.unsupportedFragmentIds = [support.fragments[0].fragmentId];
-    support.conflicts = [];
-    support.overreach = [];
+  if (support.schemaVersion === 1) {
+    support.fragments = [
+      {
+        ...support.fragments[0]!,
+        fragmentId: `${unrelatedObjective.id}_fragment`,
+        text: proposition,
+      },
+    ];
+    if (semanticState === 'failed') {
+      support.fragments[0] = {
+        ...support.fragments[0]!,
+        status: 'unsupported',
+        supportType: null,
+        sourceBlockIds: [],
+        authorityRecordIds: [],
+        authorityClaimIds: [],
+        rationale: 'The independently evaluated unrelated proposition is unsupported.',
+      };
+      support.unsupportedFragmentIds = [support.fragments[0].fragmentId];
+      support.conflicts = [];
+      support.overreach = [];
+      support.verdict = 'fail';
+      support.rationale = 'The unrelated objective does not pass semantic support.';
+    }
+  } else if (semanticState === 'failed') {
+    support.supportGroups = [];
     support.verdict = 'fail';
-    support.rationale = 'The unrelated objective does not pass semantic support.';
   }
   unrelatedObjective.semanticSupport = support;
 
@@ -803,9 +814,9 @@ function configureTeachingSourceEnvelopeBoundary(
   const curriculum = structuredClone(harness.repos.curricula.get(harness.curriculumId)!);
   const node = curriculum.nodes.find((candidate) => candidate.id === harness.learningUnitId)!;
   const baseObjective = node.learningUnit!.objectives[0]!;
-  const supportedClaimId = baseObjective
-    .semanticSupport!.fragments.filter((fragment) => fragment.status === 'supported')
-    .flatMap((fragment) => fragment.authorityClaimIds)[0]!;
+  const supportedClaimId = objectiveAuthoritySemanticallySupportedClaimIds(
+    baseObjective.semanticSupport!,
+  )[0]!;
   const authorityRecordId = baseObjective.truthAuthorityRecordIds[0]!;
   const blockId = baseObjective.authoritySourceBlockIds![0]!;
   const claimIds = Array.from({ length: claimCount }, (_, index) =>
@@ -870,8 +881,9 @@ function configureTeachingSourceEnvelopeBoundary(
     objective.truthAuthorityRecordIds = [authorityRecordId];
     const proposition = `${objective.title}\n${objective.description}`;
     objective.authorityClaimIds = [...claimIds];
-    objective.semanticSupport = {
-      ...objective.semanticSupport!,
+    const baseSupport = objective.semanticSupport!;
+    const updatedSupport = {
+      ...baseSupport,
       objectiveId: objective.id,
       proposition,
       propositionFingerprint: fingerprintObjectiveAuthorityProposition(proposition),
@@ -882,16 +894,33 @@ function configureTeachingSourceEnvelopeBoundary(
       }),
       boundAuthorityClaimIds: [...claimIds],
       boundAuthorityRecordIds: [authorityRecordId],
-      fragments: [
-        {
-          ...objective.semanticSupport!.fragments[0]!,
-          fragmentId: `${objective.id}_fragment`,
-          text: proposition,
-          authorityRecordIds: [authorityRecordId],
-          authorityClaimIds: [...claimIds],
-        },
-      ],
     };
+    objective.semanticSupport =
+      baseSupport.schemaVersion === 1
+        ? {
+            ...updatedSupport,
+            fragments: [
+              {
+                ...baseSupport.fragments[0]!,
+                fragmentId: `${objective.id}_fragment`,
+                text: proposition,
+                authorityRecordIds: [authorityRecordId],
+                authorityClaimIds: [...claimIds],
+              },
+            ],
+          }
+        : {
+            ...updatedSupport,
+            candidateLabels: baseSupport.candidateLabels.map((candidate, candidateIndex) =>
+              candidateIndex === 0
+                ? {
+                    ...candidate,
+                    authorityRecordIds: [authorityRecordId],
+                    authorityClaimIds: [...claimIds],
+                  }
+                : candidate,
+            ),
+          };
     return objective;
   });
   node.learningUnit!.objectives = objectives;
@@ -1157,9 +1186,7 @@ describe('Teaching Brief preparation', () => {
       .get(harness.curriculumId)!
       .nodes.find((node) => node.id === harness.learningUnitId)!.learningUnit!.objectives[0]!;
     const supportedClaimIds = new Set(
-      routeObjective
-        .semanticSupport!.fragments.filter((fragment) => fragment.status === 'supported')
-        .flatMap((fragment) => fragment.authorityClaimIds),
+      objectiveAuthoritySemanticallySupportedClaimIds(routeObjective.semanticSupport!),
     );
     const authorizedLessonOffers =
       harness.provider.lastLessonContentInput?.sourceContext.offers.filter((offer) =>
@@ -1244,9 +1271,9 @@ describe('Teaching Brief preparation', () => {
       const curriculum = harness.repos.curricula.get(harness.curriculumId)!;
       const objective = curriculum.nodes.find((node) => node.id === harness.learningUnitId)!
         .learningUnit!.objectives[0]!;
-      const claimId = objective
-        .semanticSupport!.fragments.filter((fragment) => fragment.status === 'supported')
-        .flatMap((fragment) => fragment.authorityClaimIds)[0]!;
+      const claimId = objectiveAuthoritySemanticallySupportedClaimIds(
+        objective.semanticSupport!,
+      )[0]!;
       const changed =
         corruption === 'missing'
           ? harness.db.prepare('DELETE FROM truth_authority_claims WHERE id = ?').run(claimId)

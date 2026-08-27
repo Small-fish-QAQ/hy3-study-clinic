@@ -61,7 +61,11 @@ import {
   type CurriculumValidationContext,
   type MaterializedCurriculum,
 } from '../services/curriculumValidation.js';
-import { isConfinedGeneralTeachingLaneSemanticFailure } from '../services/objectiveAuthoritySemanticSupport.js';
+import {
+  deriveEffectiveObjectiveSubjectClass,
+  deriveObjectiveAuthoritySemanticSupportV2,
+  isConfinedGeneralTeachingLaneSemanticFailure,
+} from '../services/objectiveAuthoritySemanticSupport.js';
 import {
   buildUnitLaunchProfiles,
   type UnitLaunchProfile,
@@ -185,6 +189,21 @@ export interface CurriculumSubjectClassTelemetry {
   toleratedAnchoredGeneralShare: number | null;
   disagreementCount: number;
   disagreementShare: number | null;
+  v2ObjectiveCount: number;
+  candidateWindowTruncationCount: number;
+  candidateWindowTruncationShare: number | null;
+  sourceSpecificObjectiveCount: number;
+  sourceSpecificPassCount: number;
+  sourceSpecificPassShare: number | null;
+  misBindingCount: number;
+  misBindingShare: number | null;
+  deterministicRebindCount: number;
+  unsupportedNoCoverageCount: number;
+  compositionalSupportGroupObjectiveCount: number;
+  compositionalSupportGroupObjectiveShare: number | null;
+  invalidOrInconsistentGroupDiagnosticCount: number;
+  boundContradictionCount: number;
+  nonBoundAdvisoryContradictionCount: number;
 }
 
 /** Visibility only: this projection never participates in admission or authority. */
@@ -213,6 +232,72 @@ export function curriculumSubjectClassTelemetry(
   }).length;
   const share = (count: number): number | null =>
     objectiveCount === 0 ? null : count / objectiveCount;
+  const v2Objectives = objectives.filter(
+    (objective) => objective.semanticSupport?.schemaVersion === 2,
+  );
+  const v2Share = (count: number): number | null =>
+    v2Objectives.length === 0 ? null : count / v2Objectives.length;
+  const v2Observations = v2Objectives.map((objective) => ({
+    objective,
+    support: objective.semanticSupport as Extract<
+      NonNullable<(typeof objective)['semanticSupport']>,
+      { schemaVersion: 2 }
+    >,
+  }));
+  const sourceSpecificObjectives = objectives.filter(
+    (objective) =>
+      deriveEffectiveObjectiveSubjectClass(objective, objective.semanticSupport) ===
+      'source_specific',
+  );
+  const sourceSpecificPassCount = sourceSpecificObjectives.filter(
+    (objective) => objective.semanticSupport?.verdict === 'pass',
+  ).length;
+  const candidateWindowTruncationCount = v2Observations.filter(
+    ({ support }) => support.candidateWindow.truncated,
+  ).length;
+  const deterministicRebindCount = v2Observations.filter(({ support }) =>
+    support.validationDiagnosticCodes.includes('semantic_deterministic_rebind_applied'),
+  ).length;
+  const misBindingCount = v2Observations.filter(({ support }) => {
+    const derived = deriveObjectiveAuthoritySemanticSupportV2(support);
+    return (
+      derived.misBinding ||
+      support.validationDiagnosticCodes.includes('semantic_deterministic_rebind_applied')
+    );
+  }).length;
+  const unsupportedNoCoverageCount = v2Observations.filter(
+    ({ objective, support }) =>
+      deriveEffectiveObjectiveSubjectClass(objective, support) === 'source_specific' &&
+      !deriveObjectiveAuthoritySemanticSupportV2(support).coverage,
+  ).length;
+  const compositionalSupportGroupObjectiveCount = v2Observations.filter(({ support }) =>
+    support.supportGroups.some((group) => group.candidateIndexes.length > 1),
+  ).length;
+  const invalidOrInconsistentGroupDiagnosticCount = v2Observations.reduce(
+    (count, { support }) =>
+      count +
+      support.validationDiagnosticCodes.filter((code) =>
+        [
+          'semantic_support_group_label_inconsistent',
+          'semantic_support_group_not_minimal',
+        ].includes(code),
+      ).length,
+    0,
+  );
+  const boundContradictionCount = v2Observations.filter(
+    ({ support }) => deriveObjectiveAuthoritySemanticSupportV2(support).contradiction,
+  ).length;
+  const nonBoundAdvisoryContradictionCount = v2Observations.reduce((count, { support }) => {
+    const boundClaimIds = new Set(support.boundAuthorityClaimIds);
+    return (
+      count +
+      support.candidateLabels.filter(
+        (candidate) =>
+          candidate.relation === 'contradicts_claim' &&
+          !candidate.authorityClaimIds.some((claimId) => boundClaimIds.has(claimId)),
+      ).length
+    );
+  }, 0);
   return {
     objectiveCount,
     attestedObjectiveCount: attested.length,
@@ -224,6 +309,24 @@ export function curriculumSubjectClassTelemetry(
     toleratedAnchoredGeneralShare: share(toleratedAnchoredGeneralCount),
     disagreementCount,
     disagreementShare: share(disagreementCount),
+    v2ObjectiveCount: v2Objectives.length,
+    candidateWindowTruncationCount,
+    candidateWindowTruncationShare: v2Share(candidateWindowTruncationCount),
+    sourceSpecificObjectiveCount: sourceSpecificObjectives.length,
+    sourceSpecificPassCount,
+    sourceSpecificPassShare:
+      sourceSpecificObjectives.length === 0
+        ? null
+        : sourceSpecificPassCount / sourceSpecificObjectives.length,
+    misBindingCount,
+    misBindingShare: v2Share(misBindingCount),
+    deterministicRebindCount,
+    unsupportedNoCoverageCount,
+    compositionalSupportGroupObjectiveCount,
+    compositionalSupportGroupObjectiveShare: v2Share(compositionalSupportGroupObjectiveCount),
+    invalidOrInconsistentGroupDiagnosticCount,
+    boundContradictionCount,
+    nonBoundAdvisoryContradictionCount,
   };
 }
 

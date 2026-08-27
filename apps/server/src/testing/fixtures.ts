@@ -13,7 +13,7 @@ import type {
 } from '@hy3-clinic/shared';
 import { ObjectiveAuthoritySemanticSupportSchema } from '@hy3-clinic/shared';
 import {
-  OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_POLICY,
+  OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_V1_POLICY,
   curriculumObjectiveProposition,
   fingerprintObjectiveAuthorityBinding,
   fingerprintObjectiveAuthorityProposition,
@@ -41,7 +41,7 @@ export function makeSemanticallySupportedObjective(
   const semanticSupport: ObjectiveAuthoritySemanticSupport =
     ObjectiveAuthoritySemanticSupportSchema.parse({
       schemaVersion: 1,
-      policyVersion: OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_POLICY,
+      policyVersion: OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_V1_POLICY,
       evaluator: 'test-independent-semantic-evaluator',
       provider: 'fake',
       providerModel: null,

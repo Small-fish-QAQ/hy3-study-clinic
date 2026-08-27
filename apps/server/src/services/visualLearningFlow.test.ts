@@ -517,8 +517,8 @@ describe('prepared standalone-image advisory learning flow', () => {
         .flatMap((input) => input.objectives)
         .every(
           (objective) =>
-            objective.evidence.length > 0 &&
-            objective.evidence.every((evidence) => evidence.text !== VISUAL_DESCRIPTION),
+            objective.candidates.length > 0 &&
+            objective.candidates.every((candidate) => candidate.text !== VISUAL_DESCRIPTION),
         ),
     ).toBe(true);
     expect(

@@ -10,6 +10,7 @@ import type {
   SourceBlock,
 } from '@hy3-clinic/shared';
 import { ObjectiveAuthoritySemanticEvaluationObjectiveInputSchema } from '@hy3-clinic/shared';
+import type { CurriculumEvidenceOffer } from '../llm/provider.js';
 import {
   OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_BATCH,
   OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_POLICY,
@@ -18,6 +19,7 @@ import {
   buildObjectiveAuthoritySemanticEvaluationBatches,
   buildObjectiveAuthoritySemanticEvaluationScopes,
   deriveEffectiveObjectiveSubjectClass,
+  deriveObjectiveAuthoritySemanticEvaluationDecision,
   fingerprintObjectiveAuthorityBinding,
   fingerprintObjectiveAuthorityProposition,
   materializeObjectiveAuthoritySemanticSupport,
@@ -140,6 +142,35 @@ function nodesFor(...objectives: CurriculumObjective[]): CurriculumNode[] {
   ];
 }
 
+function evidenceCatalogFor(blocks: readonly SourceBlock[]): CurriculumEvidenceOffer[] {
+  return blocks.map((sourceBlock, index) => ({
+    id: `evidence_${index + 1}`,
+    materialId: sourceBlock.materialId,
+    materialRevisionId: sourceBlock.materialRevisionId!,
+    blockId: sourceBlock.id,
+    quote: sourceBlock.content,
+    startOffset: 0,
+    endOffset: sourceBlock.content.length,
+    headingPath: [...sourceBlock.headingPath],
+  }));
+}
+
+function nodesWithSourceReferences(
+  nodes: CurriculumNode[],
+  blocks: readonly SourceBlock[],
+): CurriculumNode[] {
+  return nodes.map((node) => ({
+    ...node,
+    sourceReferences: blocks.map((sourceBlock) => ({
+      materialId: sourceBlock.materialId,
+      materialRevisionId: sourceBlock.materialRevisionId!,
+      structuralUnitId: null,
+      sourceBlockId: sourceBlock.id,
+      sourceBlockRevisionFingerprint: null,
+    })),
+  }));
+}
+
 function curriculum(nodes: CurriculumNode[]): Curriculum {
   return {
     id: 'curriculum_1',
@@ -182,13 +213,15 @@ function batchesFor(
     bundles?: SourceAuthorityBundle[];
   } = {},
 ): ObjectiveAuthoritySemanticEvaluationBatch[] {
+  const blocks = input.blocks ?? [block('block_3', INGESTION), block('block_1', POSITIONING)];
   return buildObjectiveAuthoritySemanticEvaluationBatches({
-    nodes: nodesFor(...(input.objectives ?? [objective()])),
-    sourceBlocks: input.blocks ?? [block('block_3', INGESTION), block('block_1', POSITIONING)],
+    nodes: nodesWithSourceReferences(nodesFor(...(input.objectives ?? [objective()])), blocks),
+    sourceBlocks: blocks,
     authorityBundles: input.bundles ?? [
       authority('authority_3', 'block_3', INGESTION),
       authority('authority_1', 'block_1', POSITIONING),
     ],
+    evidenceCatalog: evidenceCatalogFor(blocks),
     isBlockingEligible: () => true,
   });
 }
@@ -216,53 +249,49 @@ function singleEvaluation(
         : null
       : options.supportType;
   const evidenceRefs =
-    options.evidenceRefs ?? (status === 'supported' ? [expected.evidence[0]!.evidenceRef] : []);
-  return {
-    schemaVersion: 1,
-    evaluations: [
-      {
-        objectiveRef: options.objectiveRef ?? expected.objectiveRef,
-        proposition: options.proposition ?? expected.proposition,
-        construct: options.construct ?? expected.construct,
-        subjectDependency: options.subjectDependency ?? 'source_specific_required',
-        subjectDependencyRationale:
-          options.subjectDependency === 'general_sufficient'
-            ? 'Stable public field knowledge is sufficient for this controlled objective.'
-            : 'This controlled objective requires at least one source-local proposition.',
-        fragments: [
-          {
-            fragmentId: 'fragment_1',
-            text: expected.proposition,
-            status,
-            supportType,
-            evidenceRefs,
-            rationale:
-              status === 'supported'
-                ? 'The exact bound evidence supports this proposition.'
-                : 'The exact bound evidence supports a different proposition.',
-          },
-        ],
-        unsupportedFragmentIds: status === 'unsupported' ? ['fragment_1'] : [],
-        conflicts:
-          status === 'conflicted'
-            ? [
-                {
-                  kind: 'scope_mismatch',
-                  fragmentIds: ['fragment_1'],
-                  evidenceRefs,
-                  rationale: 'The source scope conflicts with the proposition.',
-                },
-              ]
-            : [],
-        overreach: [],
-        verdict,
-        rationale:
-          verdict === 'pass'
-            ? 'Every fragment has exact bound semantic support.'
-            : 'At least one proposition fragment is unsupported.',
-      },
-    ],
+    options.evidenceRefs ??
+    (status === 'supported'
+      ? [batch.aliasBindings.get(expected.objectiveRef)!.boundEvidenceRefs[0]!]
+      : []);
+  const relevantEvidenceRefs =
+    evidenceRefs.length > 0
+      ? evidenceRefs
+      : options.subjectDependency === 'general_sufficient'
+        ? batch.aliasBindings.get(expected.objectiveRef)!.boundEvidenceRefs
+        : [];
+  const evaluation: Record<string, unknown> = {
+    objectiveRef: options.objectiveRef ?? expected.objectiveRef,
+    subjectDependency: options.subjectDependency ?? 'source_specific_required',
+    subjectDependencyRationale:
+      options.subjectDependency === 'general_sufficient'
+        ? 'Stable public field knowledge is sufficient for this controlled objective.'
+        : 'This controlled objective requires at least one source-local proposition.',
+    candidateLabels: expected.candidates.map((candidate) => ({
+      evidenceRef: candidate.evidenceRef,
+      relation:
+        status === 'conflicted' && evidenceRefs.includes(candidate.evidenceRef)
+          ? 'contradicts_claim'
+          : relevantEvidenceRefs.includes(candidate.evidenceRef)
+            ? 'relevant'
+            : 'unrelated',
+    })),
+    supportGroups:
+      status === 'supported' && supportType && evidenceRefs.length > 0
+        ? [
+            {
+              evidenceRefs,
+              supportType,
+              rationale: 'The exact candidates jointly support this proposition.',
+            },
+          ]
+        : [],
   };
+  if (options.construct !== undefined) evaluation.construct = options.construct;
+  if (options.proposition !== undefined) evaluation.proposition = options.proposition;
+  return {
+    schemaVersion: 2,
+    evaluations: [evaluation],
+  } as ObjectiveAuthoritySemanticEvaluationProposal;
 }
 
 function materializeAndAttach(
@@ -305,6 +334,7 @@ function preservationBatch(): {
     nodes: nodesFor(repairedObjective),
     sourceBlocks: [block('block_1', POSITIONING)],
     authorityBundles: [authority('authority_1', 'block_1', POSITIONING)],
+    evidenceCatalog: evidenceCatalogFor([block('block_1', POSITIONING)]),
     isBlockingEligible: () => true,
     requiredCapabilityPreservationByObjectiveId: new Map([[repairedObjective.id, requirement]]),
   });
@@ -317,12 +347,32 @@ function addCapabilityPreservation(
   status: 'preserved' | 'lost' = 'preserved',
 ): void {
   const evaluation = proposal.evaluations[0]!;
+  const mutable = evaluation as typeof evaluation & {
+    fragments: Array<{
+      fragmentId: string;
+      text: string;
+      status: 'supported';
+      supportType: ObjectiveAuthoritySupportType;
+      evidenceRefs: string[];
+      rationale: string;
+    }>;
+  };
+  mutable.fragments = [
+    {
+      fragmentId: 'fragment_1',
+      text: `${O1_TITLE}\n${O1_DESCRIPTION}`,
+      status: 'supported',
+      supportType: 'positioning',
+      evidenceRefs: ['evidence_1'],
+      rationale: 'The repaired proposition retains its source support.',
+    },
+  ];
   evaluation.capabilityPreservation = {
     originalProposition: requirement.originalProposition,
     mappings: requirement.originalFragments.map((original) => ({
       originalFragmentId: original.fragmentId,
       originalText: original.text,
-      repairedFragmentIds: [evaluation.fragments[0]!.fragmentId],
+      repairedFragmentIds: [mutable.fragments[0]!.fragmentId],
       status,
       rationale:
         status === 'preserved'
@@ -337,11 +387,6 @@ function addCapabilityPreservation(
         ? 'Every original capability is preserved.'
         : 'At least one original capability is lost.',
   };
-  if (status === 'lost') {
-    evaluation.verdict = 'fail';
-    evaluation.rationale =
-      'The repaired authority is supported, but the original capability is lost.';
-  }
 }
 
 describe('objective-authority semantic evaluation scope', () => {
@@ -350,8 +395,11 @@ describe('objective-authority semantic evaluation scope', () => {
       objectiveRef: 'objective_1',
       proposition: `${O1_TITLE}\n${O1_DESCRIPTION}`,
       construct: 'explain' as const,
-      evidence: [],
+      candidates: [],
     };
+    expect(
+      ObjectiveAuthoritySemanticEvaluationObjectiveInputSchema.safeParse(baseInput).success,
+    ).toBe(true);
     expect(
       ObjectiveAuthoritySemanticEvaluationObjectiveInputSchema.safeParse({
         ...baseInput,
@@ -370,6 +418,12 @@ describe('objective-authority semantic evaluation scope', () => {
         generatorClassificationRationale: 'The generator called this general.',
       }).success,
     ).toBe(false);
+    expect(
+      ObjectiveAuthoritySemanticEvaluationObjectiveInputSchema.safeParse({
+        ...baseInput,
+        selected: true,
+      }).success,
+    ).toBe(false);
 
     const labelledNodes = (first: 'general' | 'source_specific') =>
       nodesFor(
@@ -386,9 +440,10 @@ describe('objective-authority semantic evaluation scope', () => {
       );
     const build = (first: 'general' | 'source_specific') =>
       buildObjectiveAuthoritySemanticEvaluationBatches({
-        nodes: labelledNodes(first),
+        nodes: nodesWithSourceReferences(labelledNodes(first), [block('block_3', INGESTION)]),
         sourceBlocks: [block('block_3', INGESTION)],
         authorityBundles: [authority('authority_3', 'block_3', INGESTION)],
+        evidenceCatalog: evidenceCatalogFor([block('block_3', INGESTION)]),
         isBlockingEligible: () => true,
       }).map((batch) => batch.input);
 
@@ -398,6 +453,28 @@ describe('objective-authority semantic evaluation scope', () => {
     expect(
       generalFirst.flatMap((batch) => batch.objectives.map((item) => item.objectiveRef)),
     ).toEqual(['objective_1', 'objective_2']);
+
+    const supplemental = buildObjectiveAuthoritySemanticEvaluationBatches({
+      nodes: nodesWithSourceReferences(
+        nodesFor(objective({ subjectClass: 'general', scopeOrigin: 'supplemental' })),
+        [block('block_3', INGESTION)],
+      ),
+      sourceBlocks: [block('block_3', INGESTION)],
+      authorityBundles: [authority('authority_3', 'block_3', INGESTION)],
+      evidenceCatalog: evidenceCatalogFor([block('block_3', INGESTION)]),
+      isBlockingEligible: () => true,
+    })[0]!.input;
+    const anchored = buildObjectiveAuthoritySemanticEvaluationBatches({
+      nodes: nodesWithSourceReferences(
+        nodesFor(objective({ subjectClass: 'general', scopeOrigin: 'anchored' })),
+        [block('block_3', INGESTION)],
+      ),
+      sourceBlocks: [block('block_3', INGESTION)],
+      authorityBundles: [authority('authority_3', 'block_3', INGESTION)],
+      evidenceCatalog: evidenceCatalogFor([block('block_3', INGESTION)]),
+      isBlockingEligible: () => true,
+    })[0]!.input;
+    expect(JSON.stringify(supplemental)).toBe(JSON.stringify(anchored));
   });
 
   it('permanently regresses the exact persisted B7C2 O1 and block identities', () => {
@@ -422,8 +499,10 @@ describe('objective-authority semantic evaluation scope', () => {
         authority('authority_positioning_unbound', positioningBlockId, POSITIONING),
       ],
     });
-    expect(batch!.input.objectives[0]!.evidence.map((offer) => offer.text)).toEqual([INGESTION]);
-    expect(JSON.stringify(batch!.input)).not.toContain(POSITIONING);
+    expect(batch!.input.objectives[0]!.candidates.map((offer) => offer.text)).toEqual([
+      INGESTION,
+      POSITIONING,
+    ]);
     const honestFailure = singleEvaluation(batch!, { verdict: 'fail' });
     const attached = materializeAndAttach(nodesFor(persisted), batch!, honestFailure);
     expect(
@@ -431,23 +510,24 @@ describe('objective-authority semantic evaluation scope', () => {
     ).toContain('semantic_support_failed');
   });
 
-  it('keeps the B7C2 O1 provider scope bound to ingestion and rejects unbound positioning', () => {
+  it('exposes the B7C2 unit window without bound markers and rejects foreign aliases', () => {
     const [batch] = batchesFor();
     expect(batch).toBeDefined();
     expect(batch!.input.policyVersion).toBe(OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_POLICY);
-    expect(batch!.input.objectives[0]!.evidence).toHaveLength(1);
-    expect(batch!.input.objectives[0]!.evidence[0]!.text).toBe(INGESTION);
-    expect(batch!.input.objectives[0]!.evidence.some((offer) => offer.text === POSITIONING)).toBe(
-      false,
-    );
+    expect(batch!.input.objectives[0]!.candidates).toHaveLength(2);
+    expect(batch!.input.objectives[0]!.candidates.map((offer) => offer.text)).toEqual([
+      INGESTION,
+      POSITIONING,
+    ]);
+    expect(JSON.stringify(batch!.input)).not.toContain('bound');
 
     const unbound = singleEvaluation(batch!, {
       supportType: 'positioning',
-      evidenceRefs: ['evidence_2'],
+      evidenceRefs: ['evidence_foreign'],
     });
     const validation = validateObjectiveAuthoritySemanticEvaluationProposal(batch!, unbound);
     expect(validation.valid).toBe(false);
-    expect(validation.diagnosticCodes).toContain('semantic_unbound_evidence_ref');
+    expect(validation.diagnosticCodes).toContain('semantic_support_group_unbound_evidence_ref');
   });
 
   it('derives a legacy exact block only from bound claims intersecting Formal evidence', () => {
@@ -457,48 +537,60 @@ describe('objective-authority semantic evaluation scope', () => {
       authorityClaimIds: ['claim_authority_1'],
       formalEvidenceSourceBlockIds: ['block_1'],
     });
+    const blocks = [block('block_1', POSITIONING), block('block_3', INGESTION)];
     const scopes = buildObjectiveAuthoritySemanticEvaluationScopes({
-      nodes: nodesFor(legacy),
-      sourceBlocks: [block('block_1', POSITIONING), block('block_3', INGESTION)],
+      nodes: nodesWithSourceReferences(nodesFor(legacy), blocks),
+      sourceBlocks: blocks,
       authorityBundles: [
         authority('authority_1', 'block_1', POSITIONING),
         authority('authority_3', 'block_3', INGESTION),
       ],
+      evidenceCatalog: evidenceCatalogFor(blocks),
       isBlockingEligible: () => true,
     });
     expect(scopes[0]!.aliasBinding.boundSourceBlockIds).toEqual(['block_1']);
-    expect(scopes[0]!.input.evidence.map((offer) => offer.text)).toEqual([POSITIONING]);
+    expect(scopes[0]!.input.candidates.map((offer) => offer.text)).toEqual([
+      POSITIONING,
+      INGESTION,
+    ]);
   });
 
   it('exposes only exact current eligible claims and keeps aliases local', () => {
+    const blocks = [block('block_1', POSITIONING), block('block_3', INGESTION)];
     const [batch] = buildObjectiveAuthoritySemanticEvaluationBatches({
-      nodes: nodesFor(
-        objective({
-          truthAuthorityRecordIds: ['authority_1'],
-          authorityClaimIds: ['claim_authority_1'],
-          authoritySourceBlockIds: ['block_1'],
-          formalEvidenceSourceBlockIds: ['block_1'],
-        }),
+      nodes: nodesWithSourceReferences(
+        nodesFor(
+          objective({
+            truthAuthorityRecordIds: ['authority_1'],
+            authorityClaimIds: ['claim_authority_1'],
+            authoritySourceBlockIds: ['block_1'],
+            formalEvidenceSourceBlockIds: ['block_1'],
+          }),
+        ),
+        blocks,
       ),
-      sourceBlocks: [block('block_1', POSITIONING), block('block_3', INGESTION)],
+      sourceBlocks: blocks,
       authorityBundles: [
         authority('authority_1', 'block_1', POSITIONING),
         authority('authority_3', 'block_3', INGESTION),
       ],
+      evidenceCatalog: evidenceCatalogFor(blocks),
       isBlockingEligible: (id) => id === 'authority_1',
     });
-    expect(batch!.input.objectives[0]!.evidence).toHaveLength(1);
-    expect(batch!.input.objectives[0]!.evidence[0]!.text).toBe(POSITIONING);
+    expect(batch!.input.objectives[0]!.candidates).toHaveLength(1);
+    expect(batch!.input.objectives[0]!.candidates[0]!.text).toBe(POSITIONING);
     expect(JSON.stringify(batch!.input)).not.toContain('block_1');
     expect(batch!.aliasBindings.get('objective_1')!.evidenceByRef.get('evidence_1')).toEqual({
       evidenceRef: 'evidence_1',
+      evidenceId: 'evidence_1',
+      candidateIndex: 0,
       sourceBlockId: 'block_1',
       authorityRecordIds: ['authority_1'],
       authorityClaimIds: ['claim_authority_1'],
     });
   });
 
-  it('does not expose an unselected convenient claim from the same authority record and block', () => {
+  it('exposes exact alternate claims without revealing which claim is bound', () => {
     const selectedIrrelevantClaim = 'The ingestion queue is blue.';
     const content = `${selectedIrrelevantClaim} ${POSITIONING}`;
     const convenientStart = selectedIrrelevantClaim.length + 1;
@@ -517,64 +609,204 @@ describe('objective-authority semantic evaluation scope', () => {
         endOffset: convenientStart + POSITIONING.length,
       },
     ];
+    const sourceBlock = block('block_1', content);
+    const evidenceCatalog: CurriculumEvidenceOffer[] = [
+      {
+        id: 'evidence_selected',
+        materialId: 'material_1',
+        materialRevisionId: 'revision_1',
+        blockId: 'block_1',
+        quote: selectedIrrelevantClaim,
+        startOffset: 0,
+        endOffset: selectedIrrelevantClaim.length,
+        headingPath: ['Authority'],
+      },
+      {
+        id: 'evidence_alternate',
+        materialId: 'material_1',
+        materialRevisionId: 'revision_1',
+        blockId: 'block_1',
+        quote: POSITIONING,
+        startOffset: convenientStart,
+        endOffset: convenientStart + POSITIONING.length,
+        headingPath: ['Authority'],
+      },
+    ];
     const [batch] = buildObjectiveAuthoritySemanticEvaluationBatches({
-      nodes: nodesFor(
-        objective({
-          truthAuthorityRecordIds: ['authority_1'],
-          authorityClaimIds: ['claim_selected_irrelevant'],
-          authoritySourceBlockIds: ['block_1'],
-          formalEvidenceSourceBlockIds: ['block_1'],
-        }),
+      nodes: nodesWithSourceReferences(
+        nodesFor(
+          objective({
+            truthAuthorityRecordIds: ['authority_1'],
+            authorityClaimIds: ['claim_selected_irrelevant'],
+            authoritySourceBlockIds: ['block_1'],
+            formalEvidenceSourceBlockIds: ['block_1'],
+          }),
+        ),
+        [sourceBlock],
       ),
-      sourceBlocks: [block('block_1', content)],
+      sourceBlocks: [sourceBlock],
       authorityBundles: [bundle],
+      evidenceCatalog,
       isBlockingEligible: () => true,
     });
 
-    expect(batch!.input.objectives[0]!.evidence.map((evidence) => evidence.text)).toEqual([
+    expect(batch!.input.objectives[0]!.candidates.map((evidence) => evidence.text)).toEqual([
       selectedIrrelevantClaim,
+      POSITIONING,
     ]);
-    expect(JSON.stringify(batch!.input)).not.toContain(POSITIONING);
     expect(batch!.aliasBindings.get('objective_1')).toMatchObject({
       boundAuthorityClaimIds: ['claim_selected_irrelevant'],
+      boundEvidenceRefs: ['evidence_1'],
     });
     expect(batch!.aliasBindings.get('objective_1')!.evidenceByRef.get('evidence_1')).toEqual({
       evidenceRef: 'evidence_1',
+      evidenceId: 'evidence_selected',
+      candidateIndex: 0,
       sourceBlockId: 'block_1',
       authorityRecordIds: ['authority_1'],
       authorityClaimIds: ['claim_selected_irrelevant'],
     });
 
-    const support = materializeObjectiveAuthoritySemanticSupport(
-      batch!,
-      singleEvaluation(batch!, { supportType: 'positioning' }),
+    expect(batch!.aliasBindings.get('objective_1')!.evidenceByRef.get('evidence_2')).toMatchObject({
+      evidenceId: 'evidence_alternate',
+      authorityClaimIds: ['claim_unselected_convenient'],
+    });
+  });
+
+  it('keeps provider bytes identical when only private bound membership changes', () => {
+    const firstText = 'The first exact candidate describes ingestion.';
+    const secondText = 'The second exact candidate describes integrated positioning.';
+    const separator = ' ';
+    const content = `${firstText}${separator}${secondText}`;
+    const secondStart = firstText.length + separator.length;
+    const bundle = authority('authority_1', 'block_1', firstText);
+    bundle.claims = [
+      { ...bundle.claims[0]!, id: 'claim_first' },
       {
+        ...bundle.claims[0]!,
+        id: 'claim_second',
+        claim: secondText,
+        quote: secondText,
+        startOffset: secondStart,
+        endOffset: secondStart + secondText.length,
+      },
+    ];
+    const sourceBlock = block('block_1', content);
+    const evidenceCatalog: CurriculumEvidenceOffer[] = [
+      {
+        id: 'evidence_first',
+        materialId: 'material_1',
+        materialRevisionId: 'revision_1',
+        blockId: sourceBlock.id,
+        quote: firstText,
+        startOffset: 0,
+        endOffset: firstText.length,
+        headingPath: [...sourceBlock.headingPath],
+      },
+      {
+        id: 'evidence_second',
+        materialId: 'material_1',
+        materialRevisionId: 'revision_1',
+        blockId: sourceBlock.id,
+        quote: secondText,
+        startOffset: secondStart,
+        endOffset: secondStart + secondText.length,
+        headingPath: [...sourceBlock.headingPath],
+      },
+    ];
+    const makeBatch = (claimId: string) =>
+      buildObjectiveAuthoritySemanticEvaluationBatches({
+        nodes: nodesWithSourceReferences(
+          nodesFor(
+            objective({
+              truthAuthorityRecordIds: ['authority_1'],
+              authorityClaimIds: [claimId],
+              authoritySourceBlockIds: ['block_1'],
+              formalEvidenceSourceBlockIds: ['block_1'],
+            }),
+          ),
+          [sourceBlock],
+        ),
+        sourceBlocks: [sourceBlock],
+        authorityBundles: [bundle],
+        evidenceCatalog,
+        isBlockingEligible: () => true,
+      })[0]!;
+
+    const firstBound = makeBatch('claim_first');
+    const secondBound = makeBatch('claim_second');
+    expect(JSON.stringify(firstBound.input)).toBe(JSON.stringify(secondBound.input));
+    expect(firstBound.aliasBindings.get('objective_1')!.boundEvidenceRefs).toEqual(['evidence_1']);
+    expect(secondBound.aliasBindings.get('objective_1')!.boundEvidenceRefs).toEqual(['evidence_2']);
+  });
+
+  it('retains every bound candidate and reports non-fatal candidate-window truncation', () => {
+    const blocks = Array.from({ length: 14 }, (_, index) =>
+      block(`block_${index + 1}`, `Exact candidate ${index + 1}.`),
+    );
+    const bundles = blocks.map((sourceBlock, index) =>
+      authority(`authority_${index + 1}`, sourceBlock.id, sourceBlock.content),
+    );
+    const bound = objective({
+      truthAuthorityRecordIds: ['authority_14'],
+      authorityClaimIds: ['claim_authority_14'],
+      authoritySourceBlockIds: ['block_14'],
+      formalEvidenceSourceBlockIds: ['block_14'],
+    });
+    const [batch] = batchesFor({ objectives: [bound], blocks, bundles });
+    const input = batch!.input.objectives[0]!;
+    const binding = batch!.aliasBindings.get(input.objectiveRef)!;
+
+    expect(input.candidates).toHaveLength(12);
+    expect(input.candidates.map((candidate) => candidate.text)).toEqual([
+      ...blocks.slice(0, 11).map((sourceBlock) => sourceBlock.content),
+      blocks[13]!.content,
+    ]);
+    expect(binding).toMatchObject({
+      totalCandidateCount: 14,
+      candidateWindowTruncated: true,
+      boundEvidenceRefs: ['evidence_12'],
+    });
+    const noCoverage = singleEvaluation(batch!, { verdict: 'fail' });
+    const decision = deriveObjectiveAuthoritySemanticEvaluationDecision(
+      batch!,
+      input.objectiveRef,
+      noCoverage.evaluations[0]!,
+    );
+    expect(decision).toMatchObject({ coverage: false, candidateWindowTruncated: true });
+    expect(
+      materializeObjectiveAuthoritySemanticSupport(batch!, noCoverage, {
         evaluator: 'independent-objective-authority-evaluator',
         provider: 'fake',
         providerModel: null,
         evaluatedAt: NOW,
-      },
-    ).get('objective_1')!;
-    expect(support.boundAuthorityClaimIds).toEqual(['claim_selected_irrelevant']);
-    expect(support.fragments[0]!.authorityClaimIds).toEqual(['claim_selected_irrelevant']);
-    expect(JSON.stringify(support)).not.toContain('claim_unselected_convenient');
+      }).get(bound.id),
+    ).toMatchObject({
+      candidateWindow: { totalCandidateCount: 14, offeredCandidateCount: 12, truncated: true },
+      verdict: 'fail',
+    });
   });
 
   it('fingerprints exact local claim aliases even when provider-visible evidence is identical', () => {
     const makeBatch = (claimId: string) => {
       const exactAuthority = authority('authority_1', 'block_1', POSITIONING);
       exactAuthority.claims[0]!.id = claimId;
+      const blocks = [block('block_1', POSITIONING)];
       return buildObjectiveAuthoritySemanticEvaluationBatches({
-        nodes: nodesFor(
-          objective({
-            truthAuthorityRecordIds: ['authority_1'],
-            authorityClaimIds: [claimId],
-            authoritySourceBlockIds: ['block_1'],
-            formalEvidenceSourceBlockIds: ['block_1'],
-          }),
+        nodes: nodesWithSourceReferences(
+          nodesFor(
+            objective({
+              truthAuthorityRecordIds: ['authority_1'],
+              authorityClaimIds: [claimId],
+              authoritySourceBlockIds: ['block_1'],
+              formalEvidenceSourceBlockIds: ['block_1'],
+            }),
+          ),
+          blocks,
         ),
-        sourceBlocks: [block('block_1', POSITIONING)],
+        sourceBlocks: blocks,
         authorityBundles: [exactAuthority],
+        evidenceCatalog: evidenceCatalogFor(blocks),
         isBlockingEligible: () => true,
       })[0]!;
     };
@@ -585,6 +817,42 @@ describe('objective-authority semantic evaluation scope', () => {
     expect(objectiveAuthoritySemanticEvaluationSourceFingerprint(second)).not.toBe(
       objectiveAuthoritySemanticEvaluationSourceFingerprint(first),
     );
+  });
+
+  it('re-derives a merged exact candidate as bound when any merged claim is bound', () => {
+    const sourceBlock = block('block_1', POSITIONING);
+    const primary = authority('authority_1', sourceBlock.id, POSITIONING);
+    const alternate = authority('authority_alternate', sourceBlock.id, POSITIONING);
+    const boundObjective = objective({
+      truthAuthorityRecordIds: ['authority_1'],
+      authorityClaimIds: ['claim_authority_1'],
+      authoritySourceBlockIds: [sourceBlock.id],
+      formalEvidenceSourceBlockIds: [sourceBlock.id],
+    });
+    const [batch] = batchesFor({
+      objectives: [boundObjective],
+      blocks: [sourceBlock],
+      bundles: [primary, alternate],
+    });
+    const pass = singleEvaluation(batch!, { supportType: 'positioning' });
+    const attached = materializeAndAttach(nodesFor(boundObjective), batch!, pass);
+    const support = attached[0]!.learningUnit!.objectives[0]!.semanticSupport!;
+
+    expect(support).toMatchObject({
+      schemaVersion: 2,
+      candidateLabels: [
+        {
+          authorityClaimIds: ['claim_authority_1', 'claim_authority_alternate'],
+          relation: 'relevant',
+        },
+      ],
+      verdict: 'pass',
+    });
+    expect(validateCurriculumObjectiveAuthoritySemanticSupport(curriculum(attached))).toEqual({
+      valid: true,
+      diagnostics: [],
+      diagnosticCodes: [],
+    });
   });
 
   it('partitions every objective exactly once in stable order across bounded batches', () => {
@@ -601,6 +869,7 @@ describe('objective-authority semantic evaluation scope', () => {
       nodes: nodesFor(...many),
       sourceBlocks: [],
       authorityBundles: [],
+      evidenceCatalog: [],
       isBlockingEligible: () => false,
     });
     const batches = partitionObjectiveAuthoritySemanticEvaluationScopes(scopes);
@@ -738,28 +1007,29 @@ describe('objective-authority semantic proposal validation', () => {
       objective({ id: 'objective_3' }),
     ];
     const [batch] = batchesFor({ objectives });
-    const template = singleEvaluation(batch!).evaluations[0]!;
     const proposal: ObjectiveAuthoritySemanticEvaluationProposal = {
-      schemaVersion: 1,
-      evaluations: batch!.input.objectives.map((expected, index) => ({
-        ...structuredClone(template),
+      schemaVersion: 2,
+      evaluations: batch!.input.objectives.map((expected) => ({
         objectiveRef: expected.objectiveRef,
-        proposition: expected.proposition,
-        fragments: [
+        subjectDependency: 'source_specific_required',
+        subjectDependencyRationale: 'The objective requires source-local truth.',
+        candidateLabels: expected.candidates.map((candidate) => ({
+          evidenceRef: candidate.evidenceRef,
+          relation: 'relevant' as const,
+        })),
+        supportGroups: [
           {
-            ...structuredClone(template.fragments[0]!),
-            fragmentId: `fragment_${index + 1}`,
-            text: expected.proposition,
-            evidenceRefs: [expected.evidence[0]!.evidenceRef],
+            evidenceRefs: [batch!.aliasBindings.get(expected.objectiveRef)!.boundEvidenceRefs[0]!],
+            supportType: 'positioning',
           },
         ],
       })),
     };
-    proposal.evaluations[1]!.proposition = 'The second objective was changed.';
+    proposal.evaluations[1]!.candidateLabels = [];
 
     expect(validateObjectiveAuthoritySemanticEvaluationProposal(batch!, proposal)).toMatchObject({
       valid: false,
-      diagnosticCodes: ['semantic_proposition_mismatch'],
+      diagnosticCodes: ['semantic_candidate_label_set_mismatch'],
       targetedRepair: { invalidItemIds: ['objective_2'] },
     });
   });
@@ -794,15 +1064,25 @@ describe('objective-authority semantic proposal validation', () => {
     expect(validateObjectiveAuthoritySemanticEvaluationProposal(batch!, pass).valid).toBe(true);
   });
 
-  it('rejects definition-only support for EXPLAIN and explanation-only support for APPLY', () => {
+  it('locally fails definition-only EXPLAIN and explanation-only APPLY support', () => {
     const [explainBatch] = batchesFor();
     const definitionOnly = singleEvaluation(explainBatch!, { supportType: 'definition' });
     const explainValidation = validateObjectiveAuthoritySemanticEvaluationProposal(
       explainBatch!,
       definitionOnly,
     );
-    expect(explainValidation.valid).toBe(false);
-    expect(explainValidation.diagnosticCodes).toContain('semantic_construct_core_missing');
+    expect(explainValidation.valid).toBe(true);
+    const explainSupport = materializeObjectiveAuthoritySemanticSupport(
+      explainBatch!,
+      definitionOnly,
+      {
+        evaluator: 'independent-objective-authority-evaluator',
+        provider: 'fake',
+        providerModel: null,
+        evaluatedAt: NOW,
+      },
+    ).get('objective_1')!;
+    expect(explainSupport.verdict).toBe('fail');
 
     const applyObjective = objective({ formalAssessmentConstruct: 'apply' });
     const [applyBatch] = batchesFor({ objectives: [applyObjective] });
@@ -811,8 +1091,18 @@ describe('objective-authority semantic proposal validation', () => {
       applyBatch!,
       explanationOnly,
     );
-    expect(applyValidation.valid).toBe(false);
-    expect(applyValidation.diagnosticCodes).toContain('semantic_construct_core_missing');
+    expect(applyValidation.valid).toBe(true);
+    const applySupport = materializeObjectiveAuthoritySemanticSupport(
+      applyBatch!,
+      explanationOnly,
+      {
+        evaluator: 'independent-objective-authority-evaluator',
+        provider: 'fake',
+        providerModel: null,
+        evaluatedAt: NOW,
+      },
+    ).get('objective_1')!;
+    expect(applySupport.verdict).toBe('fail');
   });
 
   it('accepts an exact procedure mapping for APPLY', () => {
@@ -828,7 +1118,7 @@ describe('objective-authority semantic proposal validation', () => {
     );
   });
 
-  it('rejects an incomplete mixed-clause partition and accepts an honestly reported unsupported clause', () => {
+  it('accepts a complete no-coverage observation and derives a local failure', () => {
     const mixedObjective = objective({
       title: 'Explain the positioning',
       description: 'Explain the integration and diagnose every deployment failure.',
@@ -837,58 +1127,21 @@ describe('objective-authority semantic proposal validation', () => {
       formalEvidenceSourceBlockIds: ['block_1'],
     });
     const [batch] = batchesFor({ objectives: [mixedObjective] });
-    const expected = batch!.input.objectives[0]!;
-    const incomplete = singleEvaluation(batch!, { verdict: 'fail' });
-    incomplete.evaluations[0]!.fragments[0]!.text = 'Explain the integration';
-    expect(
-      validateObjectiveAuthoritySemanticEvaluationProposal(batch!, incomplete).diagnosticCodes,
-    ).toContain('semantic_fragment_partition_incomplete');
-
-    const splitAt = expected.proposition.indexOf(' and diagnose');
-    const mixed: ObjectiveAuthoritySemanticEvaluationProposal = {
-      schemaVersion: 1,
-      evaluations: [
-        {
-          objectiveRef: expected.objectiveRef,
-          proposition: expected.proposition,
-          construct: expected.construct,
-          subjectDependency: 'source_specific_required',
-          subjectDependencyRationale:
-            'The mixed objective requires at least one source-local proposition.',
-          fragments: [
-            {
-              fragmentId: 'supported_clause',
-              text: expected.proposition.slice(0, splitAt),
-              status: 'supported',
-              supportType: 'positioning',
-              evidenceRefs: ['evidence_1'],
-              rationale: 'The source states the positioning.',
-            },
-            {
-              fragmentId: 'unsupported_clause',
-              text: expected.proposition.slice(splitAt),
-              status: 'unsupported',
-              supportType: null,
-              evidenceRefs: [],
-              rationale: 'The source does not support universal diagnosis.',
-            },
-          ],
-          unsupportedFragmentIds: ['unsupported_clause'],
-          conflicts: [],
-          overreach: [
-            {
-              kind: 'unsupported_capability',
-              fragmentIds: ['unsupported_clause'],
-              evidenceRefs: [],
-              rationale: 'Universal diagnosis exceeds the exact source.',
-            },
-          ],
-          verdict: 'fail',
-          rationale: 'One required clause is unsupported.',
-        },
-      ],
-    };
-    expect(validateObjectiveAuthoritySemanticEvaluationProposal(batch!, mixed).valid).toBe(true);
+    const observation = singleEvaluation(batch!, { verdict: 'fail' });
+    expect(validateObjectiveAuthoritySemanticEvaluationProposal(batch!, observation).valid).toBe(
+      true,
+    );
+    const support = materializeObjectiveAuthoritySemanticSupport(batch!, observation, {
+      evaluator: 'independent-objective-authority-evaluator',
+      provider: 'fake',
+      providerModel: null,
+      evaluatedAt: NOW,
+    }).get('objective_1')!;
+    expect(support).toMatchObject({
+      schemaVersion: 2,
+      supportGroups: [],
+      verdict: 'fail',
+    });
   });
 
   it('accepts joint support from multiple exact bound blocks', () => {
@@ -898,7 +1151,7 @@ describe('objective-authority semantic proposal validation', () => {
       formalEvidenceSourceBlockIds: ['block_1', 'block_3'],
     });
     const [batch] = batchesFor({ objectives: [jointObjective] });
-    expect(batch!.input.objectives[0]!.evidence).toHaveLength(2);
+    expect(batch!.input.objectives[0]!.candidates).toHaveLength(2);
     const joint = singleEvaluation(batch!, {
       supportType: 'positioning',
       evidenceRefs: ['evidence_1', 'evidence_2'],
@@ -910,8 +1163,120 @@ describe('objective-authority semantic proposal validation', () => {
       providerModel: null,
       evaluatedAt: NOW,
     }).get('objective_1')!;
-    expect(support.fragments[0]!.sourceBlockIds).toEqual(['block_1', 'block_3']);
+    expect(support.supportGroups[0]!.candidateIndexes).toEqual([0, 1]);
+    expect(support.candidateLabels.map((candidate) => candidate.sourceBlockId)).toEqual([
+      'block_3',
+      'block_1',
+    ]);
     expect(support.boundSourceBlockIds).toEqual(['block_1', 'block_3']);
+  });
+
+  it('discards label-inconsistent and non-minimal groups before local derivation', () => {
+    const jointObjective = objective({
+      truthAuthorityRecordIds: ['authority_3', 'authority_1'],
+      authorityClaimIds: ['claim_authority_3', 'claim_authority_1'],
+      authoritySourceBlockIds: ['block_3', 'block_1'],
+      formalEvidenceSourceBlockIds: ['block_3', 'block_1'],
+    });
+    const [batch] = batchesFor({ objectives: [jointObjective] });
+    const inconsistent = singleEvaluation(batch!, {
+      supportType: 'positioning',
+      evidenceRefs: ['evidence_1', 'evidence_2'],
+    });
+    inconsistent.evaluations[0]!.candidateLabels[1] = {
+      evidenceRef: 'evidence_2',
+      relation: 'unrelated',
+    };
+    expect(validateObjectiveAuthoritySemanticEvaluationProposal(batch!, inconsistent).valid).toBe(
+      true,
+    );
+    const inconsistentSupport = materializeObjectiveAuthoritySemanticSupport(batch!, inconsistent, {
+      evaluator: 'independent-objective-authority-evaluator',
+      provider: 'fake',
+      providerModel: null,
+      evaluatedAt: NOW,
+    }).get(jointObjective.id)!;
+    expect(inconsistentSupport).toMatchObject({
+      supportGroups: [],
+      validationDiagnosticCodes: ['semantic_support_group_label_inconsistent'],
+      verdict: 'fail',
+    });
+
+    const nonMinimal = singleEvaluation(batch!, {
+      supportType: 'positioning',
+      evidenceRefs: ['evidence_1'],
+    });
+    nonMinimal.evaluations[0]!.candidateLabels = [
+      { evidenceRef: 'evidence_1', relation: 'relevant' },
+      { evidenceRef: 'evidence_2', relation: 'relevant' },
+    ];
+    nonMinimal.evaluations[0]!.supportGroups.push({
+      evidenceRefs: ['evidence_1', 'evidence_2'],
+      supportType: 'positioning',
+      rationale: 'This padded group is a strict superset.',
+    });
+    const minimalSupport = materializeObjectiveAuthoritySemanticSupport(batch!, nonMinimal, {
+      evaluator: 'independent-objective-authority-evaluator',
+      provider: 'fake',
+      providerModel: null,
+      evaluatedAt: NOW,
+    }).get(jointObjective.id)!;
+    expect(minimalSupport).toMatchObject({
+      supportGroups: [{ candidateIndexes: [0] }],
+      validationDiagnosticCodes: ['semantic_support_group_not_minimal'],
+      verdict: 'pass',
+    });
+  });
+
+  it('blocks only contradictions on privately bound candidates', () => {
+    const nonBoundObjective = objective({
+      truthAuthorityRecordIds: ['authority_3'],
+      authorityClaimIds: ['claim_authority_3'],
+      authoritySourceBlockIds: ['block_3'],
+      formalEvidenceSourceBlockIds: ['block_3'],
+    });
+    const boundBothObjective = objective({
+      truthAuthorityRecordIds: ['authority_3', 'authority_1'],
+      authorityClaimIds: ['claim_authority_3', 'claim_authority_1'],
+      authoritySourceBlockIds: ['block_3', 'block_1'],
+      formalEvidenceSourceBlockIds: ['block_3', 'block_1'],
+    });
+    const [nonBoundBatch] = batchesFor({ objectives: [nonBoundObjective] });
+    const [boundBatch] = batchesFor({ objectives: [boundBothObjective] });
+    expect(nonBoundBatch!.input).toEqual(boundBatch!.input);
+
+    const observation = singleEvaluation(nonBoundBatch!, {
+      supportType: 'positioning',
+      evidenceRefs: ['evidence_1'],
+    });
+    observation.evaluations[0]!.candidateLabels = [
+      { evidenceRef: 'evidence_1', relation: 'relevant' },
+      {
+        evidenceRef: 'evidence_2',
+        relation: 'contradicts_claim',
+        rationale: 'The alternate exact candidate contradicts the proposition.',
+      },
+    ];
+    const advisory = deriveObjectiveAuthoritySemanticEvaluationDecision(
+      nonBoundBatch!,
+      'objective_1',
+      observation.evaluations[0]!,
+    );
+    const blocking = deriveObjectiveAuthoritySemanticEvaluationDecision(
+      boundBatch!,
+      'objective_1',
+      observation.evaluations[0]!,
+    );
+    expect(advisory).toMatchObject({
+      contradiction: false,
+      nonBoundContradictionCount: 1,
+      verdict: 'pass',
+    });
+    expect(blocking).toMatchObject({
+      contradiction: true,
+      nonBoundContradictionCount: 0,
+      verdict: 'fail',
+    });
   });
 
   it('fails closed on malformed, foreign, and duplicate provider output', () => {
@@ -927,7 +1292,7 @@ describe('objective-authority semantic proposal validation', () => {
     ).toContain('semantic_objective_ref_mismatch');
 
     const duplicate = singleEvaluation(batch!);
-    duplicate.evaluations[0]!.fragments[0]!.evidenceRefs = ['evidence_1', 'evidence_1'];
+    duplicate.evaluations[0]!.supportGroups[0]!.evidenceRefs = ['evidence_1', 'evidence_1'];
     expect(
       validateObjectiveAuthoritySemanticEvaluationProposal(batch!, duplicate).diagnosticCodes,
     ).toContain('semantic_evaluation_schema_invalid');
@@ -1171,7 +1536,7 @@ describe('persisted objective-authority semantic support', () => {
     delete attached[0]!.learningUnit!.objectives[0]!.semanticSupport!.subjectDependencyRationale;
     expect(
       validateCurriculumObjectiveAuthoritySemanticSupport(curriculum(attached)).diagnosticCodes,
-    ).toContain('semantic_support_failed');
+    ).toContain('semantic_support_malformed');
   });
 
   it('validates an explicit objective scope without changing the whole-Curriculum default', () => {
@@ -1204,7 +1569,6 @@ describe('persisted objective-authority semantic support', () => {
       expect.arrayContaining([
         'semantic_proposition_mismatch',
         'semantic_proposition_fingerprint_mismatch',
-        'semantic_fragment_partition_incomplete',
       ]),
     );
     expect(validateCurriculumObjectiveAuthoritySemanticSupport(combined).diagnosticCodes).toEqual(
@@ -1270,7 +1634,7 @@ describe('persisted objective-authority semantic support', () => {
     const attached = materializeAndAttach(nodesFor(repairedObjective), batch, pass);
     const artifact = attached[0]!.learningUnit!.objectives[0]!.semanticSupport!;
     expect(artifact.boundAuthorityClaimIds).toEqual(['claim_authority_1']);
-    expect(artifact.fragments[0]!.authorityClaimIds).toEqual(['claim_authority_1']);
+    expect(artifact.fragments![0]!.authorityClaimIds).toEqual(['claim_authority_1']);
     expect(artifact.capabilityPreservation).toMatchObject({
       originalProposition: requirement.originalProposition,
       originalPropositionFingerprint: fingerprintObjectiveAuthorityProposition(

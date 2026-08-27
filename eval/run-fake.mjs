@@ -704,6 +704,7 @@ section('14. Tutor 教学策略离线画像(lesson-aware pedagogy profile)');
 section('15. 盲审主题分类漂移(subject-class drift visibility)');
 {
   const artifact = (subjectDependency) => ({
+    schemaVersion: 1,
     subjectDependency,
     verdict: 'fail',
     construct: 'explain',

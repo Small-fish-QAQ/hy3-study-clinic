@@ -424,7 +424,11 @@ export const CourseExecutionOverviewSchema = z
   });
 export type CourseExecutionOverview = z.infer<typeof CourseExecutionOverviewSchema>;
 
-export const CourseExecutionOverviewResponseSchema = z
-  .object({ overview: CourseExecutionOverviewSchema })
-  .strict();
+export const CourseExecutionOverviewResponseSchema: z.ZodType<
+  {
+    overview: CourseExecutionOverview;
+  },
+  z.ZodTypeDef,
+  unknown
+> = z.object({ overview: CourseExecutionOverviewSchema }).strict();
 export type CourseExecutionOverviewResponse = z.infer<typeof CourseExecutionOverviewResponseSchema>;

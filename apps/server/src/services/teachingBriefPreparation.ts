@@ -63,7 +63,10 @@ import {
   type TeachingSkeletonPlanningInput,
 } from './teachingSkeletonPlanner.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
-import { assertCurrentLessonObjectiveAuthoritySemanticSupport } from './objectiveAuthoritySemanticSupport.js';
+import {
+  assertCurrentLessonObjectiveAuthoritySemanticSupport,
+  objectiveAuthoritySemanticallySupportedClaimIds,
+} from './objectiveAuthoritySemanticSupport.js';
 
 export const TEACHING_BRIEF_PROMPT_VERSION = 'teaching-brief-v3-compositional-v1';
 export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v1-compositional';
@@ -493,9 +496,9 @@ export function createTeachingBriefPreparationService({
       route.routeObjectives.map((objective) => [
         objective.id,
         new Set(
-          objective.semanticSupport?.fragments
-            .filter((fragment) => fragment.status === 'supported')
-            .flatMap((fragment) => fragment.authorityClaimIds) ?? [],
+          objective.semanticSupport
+            ? objectiveAuthoritySemanticallySupportedClaimIds(objective.semanticSupport)
+            : [],
         ),
       ]),
     );

@@ -18,30 +18,21 @@ const evidenceOffer = {
 
 function passProposal(): unknown {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     evaluations: [
       {
         objectiveRef: 'objective_1',
-        proposition: 'Explain the integrated-system positioning.',
-        construct: 'explain',
         subjectDependency: 'source_specific_required',
         subjectDependencyRationale:
           'The objective asserts source-local integrated-system positioning.',
-        fragments: [
+        candidateLabels: [{ evidenceRef: 'evidence_1', relation: 'relevant' }],
+        supportGroups: [
           {
-            fragmentId: 'fragment_1',
-            text: 'integrated-system positioning',
-            status: 'supported',
-            supportType: 'positioning',
             evidenceRefs: ['evidence_1'],
+            supportType: 'positioning',
             rationale: 'The bound claim explicitly states the integrated positioning.',
           },
         ],
-        unsupportedFragmentIds: [],
-        conflicts: [],
-        overreach: [],
-        verdict: 'pass',
-        rationale: 'Every objective fragment is supported by bound evidence.',
       },
     ],
   };
@@ -89,14 +80,14 @@ function persistedPass(): unknown {
 describe('objective-authority semantic-support contracts', () => {
   it('accepts bounded evaluation input and rejects unknown fields', () => {
     const input = {
-      schemaVersion: 1,
-      policyVersion: 'objective-authority-semantic-support-v1',
+      schemaVersion: 2,
+      policyVersion: 'objective-authority-semantic-support-v2',
       objectives: [
         {
           objectiveRef: 'objective_1',
           proposition: 'Explain the integrated-system positioning.',
           construct: 'explain',
-          evidence: [evidenceOffer],
+          candidates: [evidenceOffer],
         },
       ],
     };
@@ -107,14 +98,14 @@ describe('objective-authority semantic-support contracts', () => {
     ).toBe(false);
   });
 
-  it('requires supported fragments to map a non-null support type and evidence', () => {
+  it('requires support groups to contain unique bounded candidate references', () => {
     expect(
       ObjectiveAuthoritySemanticEvaluationProposalSchema.safeParse(passProposal()).success,
     ).toBe(true);
     const malformed = structuredClone(passProposal()) as {
-      evaluations: Array<{ fragments: Array<{ supportType: string | null }> }>;
+      evaluations: Array<{ supportGroups: Array<{ evidenceRefs: string[] }> }>;
     };
-    malformed.evaluations[0]!.fragments[0]!.supportType = null;
+    malformed.evaluations[0]!.supportGroups[0]!.evidenceRefs = ['evidence_1', 'evidence_1'];
     expect(ObjectiveAuthoritySemanticEvaluationProposalSchema.safeParse(malformed).success).toBe(
       false,
     );
@@ -195,6 +186,16 @@ describe('objective-authority semantic-support contracts', () => {
     const preserved = structuredClone(passProposal()) as {
       evaluations: Array<Record<string, unknown>>;
     };
+    preserved.evaluations[0]!.fragments = [
+      {
+        fragmentId: 'fragment_1',
+        text: 'Explain the integrated-system positioning.',
+        status: 'supported',
+        supportType: 'positioning',
+        evidenceRefs: ['evidence_1'],
+        rationale: 'The complete repaired proposition remains represented.',
+      },
+    ];
     preserved.evaluations[0]!.capabilityPreservation = {
       originalProposition: 'Explain the original integrated-system positioning.',
       mappings: [
@@ -232,35 +233,23 @@ describe('objective-authority semantic-support contracts', () => {
     honestLoss.evaluations[0]!.capabilityPreservation.lostOriginalFragmentIds = ['original_1'];
     honestLoss.evaluations[0]!.capabilityPreservation.verdict = 'fail';
     expect(ObjectiveAuthoritySemanticEvaluationProposalSchema.safeParse(honestLoss).success).toBe(
-      false,
-    );
-    (honestLoss.evaluations[0] as Record<string, unknown>).verdict = 'fail';
-    expect(ObjectiveAuthoritySemanticEvaluationProposalSchema.safeParse(honestLoss).success).toBe(
       true,
     );
   });
 
-  it('represents a mixed objective as a fail with its unsupported fragment', () => {
-    const mixed = structuredClone(passProposal()) as {
-      evaluations: Array<{
-        fragments: Array<Record<string, unknown>>;
-        unsupportedFragmentIds: string[];
-        verdict: string;
-        rationale: string;
-      }>;
+  it('forbids a model verdict and fragment partition on the normal path', () => {
+    const authoritative = structuredClone(passProposal()) as {
+      evaluations: Array<Record<string, unknown>>;
     };
-    mixed.evaluations[0]!.fragments.push({
-      fragmentId: 'fragment_2',
-      text: 'and diagnose every deployment failure',
-      status: 'unsupported',
-      supportType: null,
-      evidenceRefs: [],
-      rationale: 'No bound evidence supports this capability.',
-    });
-    mixed.evaluations[0]!.unsupportedFragmentIds = ['fragment_2'];
-    mixed.evaluations[0]!.verdict = 'fail';
-    mixed.evaluations[0]!.rationale = 'One required capability is unsupported.';
-    expect(ObjectiveAuthoritySemanticEvaluationProposalSchema.safeParse(mixed).success).toBe(true);
+    authoritative.evaluations[0]!.verdict = 'pass';
+    expect(
+      ObjectiveAuthoritySemanticEvaluationProposalSchema.safeParse(authoritative).success,
+    ).toBe(false);
+    delete authoritative.evaluations[0]!.verdict;
+    authoritative.evaluations[0]!.fragments = [];
+    expect(
+      ObjectiveAuthoritySemanticEvaluationProposalSchema.safeParse(authoritative).success,
+    ).toBe(false);
   });
 
   it('keeps persisted mappings nullable only at the support-type boundary', () => {
@@ -401,22 +390,23 @@ describe('objective-authority semantic-support contracts', () => {
   });
 
   it('accepts failed-objective repair input and exact replacement output', () => {
-    const critique = structuredClone(
-      (passProposal() as { evaluations: unknown[] }).evaluations[0],
-    ) as Record<string, unknown>;
-    critique.verdict = 'fail';
-    critique.fragments = [
-      {
-        fragmentId: 'fragment_1',
-        text: 'integrated-system positioning',
-        status: 'unsupported',
-        supportType: null,
-        evidenceRefs: [],
-        rationale: 'The selected procedure does not state the positioning.',
-      },
-    ];
-    critique.unsupportedFragmentIds = ['fragment_1'];
-    critique.rationale = 'The selected authority supports a different proposition.';
+    const critique: Record<string, unknown> = {
+      fragments: [
+        {
+          fragmentId: 'fragment_1',
+          text: 'integrated-system positioning',
+          status: 'unsupported',
+          supportType: null,
+          evidenceRefs: [],
+          rationale: 'The selected procedure does not state the positioning.',
+        },
+      ],
+      unsupportedFragmentIds: ['fragment_1'],
+      conflicts: [],
+      overreach: [],
+      verdict: 'fail',
+      rationale: 'The selected authority supports a different proposition.',
+    };
     const input = {
       schemaVersion: 1,
       policyVersion: 'objective-authority-semantic-support-v1',

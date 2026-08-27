@@ -72,14 +72,14 @@ const visualInput: VisualDescriptionInput = {
 };
 
 const semanticEvaluationInput: ObjectiveAuthoritySemanticEvaluationInput = {
-  schemaVersion: 1,
-  policyVersion: 'objective-authority-semantic-v1',
+  schemaVersion: 2,
+  policyVersion: 'objective-authority-semantic-support-v2',
   objectives: [
     {
       objectiveRef: 'O1',
       proposition: 'Explain how the components jointly position the system.',
       construct: 'explain',
-      evidence: [
+      candidates: [
         {
           evidenceRef: 'E1',
           text: 'The system combines documents, search, language models, permissions, and tools.',
@@ -92,30 +92,21 @@ const semanticEvaluationInput: ObjectiveAuthoritySemanticEvaluationInput = {
 };
 
 const semanticEvaluationProposal = ObjectiveAuthoritySemanticEvaluationProposalSchema.parse({
-  schemaVersion: 1,
+  schemaVersion: 2,
   evaluations: [
     {
       objectiveRef: 'O1',
-      proposition: semanticEvaluationInput.objectives[0]!.proposition,
-      construct: 'explain',
       subjectDependency: 'source_specific_required',
       subjectDependencyRationale:
         'The objective asserts how the source-specific system components jointly position it.',
-      fragments: [
+      candidateLabels: [{ evidenceRef: 'E1', relation: 'relevant' }],
+      supportGroups: [
         {
-          fragmentId: 'F1',
-          text: semanticEvaluationInput.objectives[0]!.proposition,
-          status: 'supported',
-          supportType: 'positioning',
           evidenceRefs: ['E1'],
+          supportType: 'positioning',
           rationale: 'The exact offered claim states the integrated positioning.',
         },
       ],
-      unsupportedFragmentIds: [],
-      conflicts: [],
-      overreach: [],
-      verdict: 'pass',
-      rationale: 'The complete proposition is supported by the exact offered authority.',
     },
   ],
 });
@@ -125,9 +116,9 @@ const multiSemanticEvaluationInput: ObjectiveAuthoritySemanticEvaluationInput = 
   objectives: Array.from({ length: 3 }, (_, index) => ({
     ...semanticEvaluationInput.objectives[0]!,
     objectiveRef: `objective_${index + 1}`,
-    evidence: [
+    candidates: [
       {
-        ...semanticEvaluationInput.objectives[0]!.evidence[0]!,
+        ...semanticEvaluationInput.objectives[0]!.candidates[0]!,
         evidenceRef: `evidence_${index + 1}`,
       },
     ],
@@ -135,16 +126,20 @@ const multiSemanticEvaluationInput: ObjectiveAuthoritySemanticEvaluationInput = 
 };
 
 const multiSemanticEvaluationProposal = ObjectiveAuthoritySemanticEvaluationProposalSchema.parse({
-  schemaVersion: 1,
-  evaluations: multiSemanticEvaluationInput.objectives.map((objective, index) => ({
+  schemaVersion: 2,
+  evaluations: multiSemanticEvaluationInput.objectives.map((objective) => ({
     ...semanticEvaluationProposal.evaluations[0]!,
     objectiveRef: objective.objectiveRef,
-    proposition: objective.proposition,
-    fragments: [
+    candidateLabels: [
       {
-        ...semanticEvaluationProposal.evaluations[0]!.fragments[0]!,
-        fragmentId: `F${index + 1}`,
-        evidenceRefs: [objective.evidence[0]!.evidenceRef],
+        evidenceRef: objective.candidates[0]!.evidenceRef,
+        relation: 'relevant' as const,
+      },
+    ],
+    supportGroups: [
+      {
+        evidenceRefs: [objective.candidates[0]!.evidenceRef],
+        supportType: 'positioning' as const,
       },
     ],
   })),
@@ -165,7 +160,7 @@ const semanticRepairInput: ObjectiveAuthoritySemanticRepairInput = {
       currentEvidenceRefs: ['E1'],
       allowedEvidence: [
         {
-          ...semanticEvaluationInput.objectives[0]!.evidence[0]!,
+          ...semanticEvaluationInput.objectives[0]!.candidates[0]!,
           selected: true,
         },
       ],
@@ -341,7 +336,7 @@ describe('Hy3Provider objective-authority semantic methods', () => {
       }),
     ).resolves.toEqual(semanticRepairProposal);
     expect(schemaNames).toEqual([
-      'objective-authority-semantic-evaluation-v2',
+      'objective-authority-semantic-evaluation-v3',
       'objective-authority-semantic-repair-v2-claim-scope',
     ]);
     const calls = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls;
@@ -395,10 +390,12 @@ describe('Hy3Provider objective-authority semantic methods', () => {
 
   it('freezes valid evaluation peers and repairs only locally invalid objective identities', async () => {
     const firstPass = structuredClone(multiSemanticEvaluationProposal);
-    firstPass.evaluations[1]!.proposition = 'The provider changed this objective.';
+    firstPass.evaluations[1]!.candidateLabels = [];
     const providerRepair = structuredClone(multiSemanticEvaluationProposal);
-    providerRepair.evaluations[0]!.rationale = 'Provider attempted to rewrite a passing peer.';
-    providerRepair.evaluations[2]!.rationale = 'Provider attempted to rewrite another peer.';
+    providerRepair.evaluations[0]!.subjectDependencyRationale =
+      'Provider attempted to rewrite a passing peer.';
+    providerRepair.evaluations[2]!.subjectDependencyRationale =
+      'Provider attempted to rewrite another peer.';
     const fetchImpl = vi
       .fn()
       .mockResolvedValueOnce(jsonResponse(JSON.stringify(firstPass)))

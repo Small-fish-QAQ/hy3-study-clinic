@@ -208,6 +208,7 @@ describe('Curriculum policy comparison coordinator', () => {
   it('reports subject-class agreement and confined-lane drift without gating', () => {
     const artifact = (subjectDependency: 'general_sufficient' | 'source_specific_required') =>
       ({
+        schemaVersion: 1,
         subjectDependency,
         verdict: 'fail',
         construct: 'explain',
@@ -257,6 +258,145 @@ describe('Curriculum policy comparison coordinator', () => {
       toleratedAnchoredGeneralShare: 0.25,
       disagreementCount: 2,
       disagreementShare: 0.5,
+      v2ObjectiveCount: 0,
+      candidateWindowTruncationCount: 0,
+      candidateWindowTruncationShare: null,
+      sourceSpecificObjectiveCount: 3,
+      sourceSpecificPassCount: 0,
+      sourceSpecificPassShare: 0,
+      misBindingCount: 0,
+      misBindingShare: null,
+      deterministicRebindCount: 0,
+      unsupportedNoCoverageCount: 0,
+      compositionalSupportGroupObjectiveCount: 0,
+      compositionalSupportGroupObjectiveShare: null,
+      invalidOrInconsistentGroupDiagnosticCount: 0,
+      boundContradictionCount: 0,
+      nonBoundAdvisoryContradictionCount: 0,
+    });
+  });
+
+  it('surfaces v2 semantic-window, group, rebind, and contradiction observations without gating', () => {
+    const candidate = (
+      candidateIndex: number,
+      relation: 'relevant' | 'unrelated' | 'contradicts_claim',
+      bound: boolean,
+    ) => ({
+      candidateIndex,
+      evidenceId: `evidence_${candidateIndex + 1}`,
+      sourceBlockId: `block_${candidateIndex + 1}`,
+      authorityRecordIds: [`authority_${candidateIndex + 1}`],
+      authorityClaimIds: [
+        bound ? `bound_claim_${candidateIndex + 1}` : `other_claim_${candidateIndex + 1}`,
+      ],
+      relation,
+    });
+    const artifact = (
+      subjectDependency: 'general_sufficient' | 'source_specific_required',
+      options: {
+        candidates: ReturnType<typeof candidate>[];
+        groups?: Array<{ candidateIndexes: number[]; supportType: 'relationship' }>;
+        diagnostics?: string[];
+        verdict: 'pass' | 'fail';
+        truncated?: boolean;
+      },
+    ) => ({
+      schemaVersion: 2,
+      subjectDependency,
+      construct: 'explain',
+      verdict: options.verdict,
+      boundSourceBlockIds: options.candidates
+        .filter((item) => item.authorityClaimIds[0]!.startsWith('bound_'))
+        .map((item) => item.sourceBlockId),
+      boundAuthorityClaimIds: options.candidates
+        .filter((item) => item.authorityClaimIds[0]!.startsWith('bound_'))
+        .flatMap((item) => item.authorityClaimIds),
+      candidateWindow: {
+        totalCandidateCount: options.candidates.length + (options.truncated ? 1 : 0),
+        offeredCandidateCount: options.candidates.length,
+        truncated: options.truncated ?? false,
+      },
+      candidateLabels: options.candidates,
+      supportGroups: options.groups ?? [],
+      validationDiagnosticCodes: options.diagnostics ?? [],
+    });
+    const curriculum = {
+      nodes: [
+        {
+          learningUnit: {
+            objectives: [
+              {
+                subjectClass: 'general',
+                scopeOrigin: 'anchored',
+                semanticSupport: artifact('general_sufficient', {
+                  candidates: [candidate(0, 'relevant', true)],
+                  verdict: 'fail',
+                }),
+              },
+              {
+                subjectClass: 'general',
+                scopeOrigin: 'anchored',
+                semanticSupport: artifact('source_specific_required', {
+                  candidates: [
+                    candidate(0, 'relevant', true),
+                    candidate(1, 'contradicts_claim', false),
+                  ],
+                  groups: [{ candidateIndexes: [0], supportType: 'relationship' }],
+                  diagnostics: ['semantic_support_group_label_inconsistent'],
+                  verdict: 'pass',
+                }),
+              },
+              {
+                subjectClass: 'source_specific',
+                scopeOrigin: 'anchored',
+                semanticSupport: artifact('general_sufficient', {
+                  candidates: [candidate(0, 'relevant', true), candidate(1, 'relevant', true)],
+                  groups: [{ candidateIndexes: [0, 1], supportType: 'relationship' }],
+                  diagnostics: ['semantic_deterministic_rebind_applied'],
+                  verdict: 'pass',
+                }),
+              },
+              {
+                subjectClass: 'source_specific',
+                scopeOrigin: 'anchored',
+                semanticSupport: artifact('source_specific_required', {
+                  candidates: [candidate(0, 'contradicts_claim', true)],
+                  verdict: 'fail',
+                  truncated: true,
+                }),
+              },
+            ],
+          },
+        },
+      ],
+    } as never;
+
+    expect(curriculumSubjectClassTelemetry(curriculum)).toEqual({
+      objectiveCount: 4,
+      attestedObjectiveCount: 4,
+      generatorGeneralCount: 2,
+      generatorGeneralShare: 0.5,
+      blindGeneralSufficientCount: 2,
+      blindGeneralSufficientShare: 0.5,
+      toleratedAnchoredGeneralCount: 1,
+      toleratedAnchoredGeneralShare: 0.25,
+      disagreementCount: 2,
+      disagreementShare: 0.5,
+      v2ObjectiveCount: 4,
+      candidateWindowTruncationCount: 1,
+      candidateWindowTruncationShare: 0.25,
+      sourceSpecificObjectiveCount: 3,
+      sourceSpecificPassCount: 2,
+      sourceSpecificPassShare: 2 / 3,
+      misBindingCount: 1,
+      misBindingShare: 0.25,
+      deterministicRebindCount: 1,
+      unsupportedNoCoverageCount: 1,
+      compositionalSupportGroupObjectiveCount: 1,
+      compositionalSupportGroupObjectiveShare: 0.25,
+      invalidOrInconsistentGroupDiagnosticCount: 1,
+      boundContradictionCount: 1,
+      nonBoundAdvisoryContradictionCount: 1,
     });
   });
 

@@ -25,9 +25,11 @@ import type { CurriculumDeterministicCoverageMembership } from './curriculumVali
 import {
   OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_POLICY,
   curriculumObjectiveProposition,
+  deriveObjectiveAuthoritySemanticEvaluationDecision,
   fingerprintObjectiveAuthorityAuditValue,
   validateObjectiveAuthoritySemanticEvaluationProposal,
   type ObjectiveAuthoritySemanticEvaluationBatch,
+  type ObjectiveAuthoritySemanticEvaluationDecision,
   type ObjectiveAuthoritySemanticObjectiveAliasBinding,
 } from './objectiveAuthoritySemanticSupport.js';
 
@@ -175,6 +177,7 @@ interface FailedEvaluationLocation extends CandidateObjectiveLocation {
   evaluation: ObjectiveAuthoritySemanticEvaluationProposal['evaluations'][number];
   evaluationInput: ObjectiveAuthoritySemanticEvaluationBatch['input']['objectives'][number];
   evaluationBinding: ObjectiveAuthoritySemanticObjectiveAliasBinding;
+  decision: ObjectiveAuthoritySemanticEvaluationDecision;
 }
 
 function uniqueInOrder(values: readonly string[]): string[] {
@@ -289,6 +292,189 @@ function appendFirstPassValidation(
       message,
     });
   });
+}
+
+export interface ObjectiveAuthoritySemanticDeterministicRebindApplication {
+  validation: ProviderCandidateValidation;
+  payload: CurriculumProposalPayload | null;
+  reboundObjectiveIds: string[];
+  reboundObjectiveKeys: string[];
+}
+
+function compareCandidatePositionTuples(left: readonly number[], right: readonly number[]): number {
+  const count = Math.min(left.length, right.length);
+  for (let index = 0; index < count; index += 1) {
+    const delta = left[index]! - right[index]!;
+    if (delta !== 0) return delta;
+  }
+  return left.length - right.length;
+}
+
+/** Apply only locally detected mis-bindings; objective meaning remains byte-preserved. */
+export function applyObjectiveAuthoritySemanticDeterministicRebind(input: {
+  candidate: CurriculumProposalPayload | unknown;
+  objectiveIdByProposalKey: ReadonlyMap<string, string>;
+  firstPass: readonly ObjectiveAuthoritySemanticFirstPassBatch[];
+}): ObjectiveAuthoritySemanticDeterministicRebindApplication {
+  const parsedCandidate = CurriculumProposalPayloadSchema.safeParse(input.candidate);
+  if (!parsedCandidate.success) {
+    return {
+      validation: failedValidation(
+        'objective_authority_semantic_rebind_failed',
+        schemaDiagnostics(
+          'semantic_rebind_candidate_schema_invalid',
+          'The Curriculum candidate is invalid before deterministic rebinding.',
+          parsedCandidate.error.issues,
+        ),
+      ),
+      payload: null,
+      reboundObjectiveIds: [],
+      reboundObjectiveKeys: [],
+    };
+  }
+  const candidate = structuredClone(parsedCandidate.data);
+  const objectiveById = new Map<
+    string,
+    CurriculumProposalPayload['nodes'][number]['objectives'][number]
+  >();
+  const objectiveKeyById = new Map<string, string>();
+  const diagnostics: RepairDiagnostic[] = [];
+  for (const node of candidate.nodes) {
+    for (const objective of node.objectives) {
+      const objectiveId = input.objectiveIdByProposalKey.get(objective.key);
+      if (!objectiveId || objectiveById.has(objectiveId)) {
+        diagnostics.push({
+          code: objectiveId
+            ? 'semantic_rebind_objective_binding_duplicate'
+            : 'semantic_rebind_objective_binding_missing',
+          message: objectiveId
+            ? `Deterministic rebind objective identity ${objectiveId} is not unique.`
+            : `Deterministic rebind is missing the local objective binding for ${objective.key}.`,
+        });
+        continue;
+      }
+      objectiveById.set(objectiveId, objective);
+      objectiveKeyById.set(objectiveId, objective.key);
+    }
+  }
+  const seenObjectiveIds = new Set<string>();
+  const reboundObjectiveIds: string[] = [];
+  const reboundObjectiveKeys: string[] = [];
+  for (const firstPass of input.firstPass) {
+    const validation = validateObjectiveAuthoritySemanticEvaluationProposal(
+      firstPass.batch,
+      firstPass.proposal,
+    );
+    if (!validation.valid) {
+      appendFirstPassValidation(diagnostics, validation);
+      continue;
+    }
+    const proposal = ObjectiveAuthoritySemanticEvaluationProposalSchema.parse(firstPass.proposal);
+    for (const [index, evaluation] of proposal.evaluations.entries()) {
+      const evaluationInput = firstPass.batch.input.objectives[index]!;
+      const binding = firstPass.batch.aliasBindings.get(evaluation.objectiveRef);
+      if (!binding || seenObjectiveIds.has(binding.objectiveId)) {
+        diagnostics.push({
+          code: binding
+            ? 'semantic_rebind_first_pass_objective_duplicate'
+            : 'semantic_rebind_first_pass_alias_missing',
+          message: binding
+            ? `Deterministic rebind received duplicate objective ${binding.objectiveId}.`
+            : `Deterministic rebind is missing local aliases for ${evaluation.objectiveRef}.`,
+        });
+        continue;
+      }
+      seenObjectiveIds.add(binding.objectiveId);
+      const objective = objectiveById.get(binding.objectiveId);
+      if (
+        !objective ||
+        curriculumObjectiveProposition(objective) !== binding.proposition ||
+        objective.construct !== binding.construct
+      ) {
+        diagnostics.push({
+          code: 'semantic_rebind_first_pass_candidate_mismatch',
+          message: `Deterministic rebind received a stale objective ${evaluation.objectiveRef}.`,
+        });
+        continue;
+      }
+      const decision = deriveObjectiveAuthoritySemanticEvaluationDecision(
+        firstPass.batch,
+        evaluation.objectiveRef,
+        evaluation,
+      );
+      if (!decision.misBinding) continue;
+      const positionByRef = new Map(
+        evaluationInput.candidates.map((candidateOffer, candidateIndex) => [
+          candidateOffer.evidenceRef,
+          candidateIndex,
+        ]),
+      );
+      const selectedGroup = [...decision.validGroups].sort((left, right) => {
+        if (left.evidenceRefs.length !== right.evidenceRefs.length) {
+          return left.evidenceRefs.length - right.evidenceRefs.length;
+        }
+        return compareCandidatePositionTuples(
+          left.evidenceRefs.map((evidenceRef) => positionByRef.get(evidenceRef)!),
+          right.evidenceRefs.map((evidenceRef) => positionByRef.get(evidenceRef)!),
+        );
+      })[0];
+      const evidenceIds = selectedGroup?.evidenceRefs.map(
+        (evidenceRef) => binding.evidenceByRef.get(evidenceRef)?.evidenceId,
+      );
+      if (
+        !selectedGroup ||
+        !evidenceIds ||
+        evidenceIds.some((evidenceId) => !evidenceId) ||
+        new Set(evidenceIds).size !== evidenceIds.length ||
+        evidenceIds.length > 5
+      ) {
+        diagnostics.push({
+          code: 'semantic_rebind_support_group_unresolvable',
+          message: `The selected support group for ${evaluation.objectiveRef} cannot be resolved to exact evidence identities.`,
+        });
+        continue;
+      }
+      objective.evidence = evidenceIds.map((evidenceId) => ({ evidenceId: evidenceId! }));
+      reboundObjectiveIds.push(binding.objectiveId);
+      reboundObjectiveKeys.push(objectiveKeyById.get(binding.objectiveId)!);
+    }
+  }
+  if (seenObjectiveIds.size !== objectiveById.size) {
+    diagnostics.push({
+      code: 'semantic_rebind_first_pass_objective_set_mismatch',
+      message: 'Deterministic rebind requires one complete first-pass result per objective.',
+    });
+  }
+  if (diagnostics.length > 0) {
+    return {
+      validation: failedValidation('objective_authority_semantic_rebind_failed', diagnostics),
+      payload: null,
+      reboundObjectiveIds: [],
+      reboundObjectiveKeys: [],
+    };
+  }
+  const rebound = CurriculumProposalPayloadSchema.safeParse(candidate);
+  if (!rebound.success) {
+    return {
+      validation: failedValidation(
+        'objective_authority_semantic_rebind_failed',
+        schemaDiagnostics(
+          'semantic_rebind_result_schema_invalid',
+          'The deterministically rebound Curriculum candidate is invalid.',
+          rebound.error.issues,
+        ),
+      ),
+      payload: null,
+      reboundObjectiveIds: [],
+      reboundObjectiveKeys: [],
+    };
+  }
+  return {
+    validation: successfulValidation(),
+    payload: rebound.data,
+    reboundObjectiveIds,
+    reboundObjectiveKeys,
+  };
 }
 
 /**
@@ -455,37 +641,59 @@ export function prepareObjectiveAuthoritySemanticRepair(
         });
         continue;
       }
-      const inputEvidenceRefs = evaluationInput.evidence.map((offer) => offer.evidenceRef);
-      const boundEvidenceRefs = [...evaluationBinding.evidenceByRef.keys()];
+      const inputEvidenceRefs = evaluationInput.candidates.map((offer) => offer.evidenceRef);
+      const aliasEvidenceRefs = [...evaluationBinding.evidenceByRef.keys()];
+      const boundEvidenceRefs = evaluationBinding.boundEvidenceRefs;
       const boundSourceBlockIds = new Set(evaluationBinding.boundSourceBlockIds);
       const boundAuthorityRecordIds = new Set(evaluationBinding.boundAuthorityRecordIds);
       if (
-        boundEvidenceRefs.length !== inputEvidenceRefs.length ||
-        boundEvidenceRefs.some(
+        aliasEvidenceRefs.length !== inputEvidenceRefs.length ||
+        aliasEvidenceRefs.some(
           (evidenceRef, evidenceIndex) => evidenceRef !== inputEvidenceRefs[evidenceIndex],
         ) ||
-        [...evaluationBinding.evidenceByRef.values()].some(
-          (evidence) =>
-            !inputEvidenceRefs.includes(evidence.evidenceRef) ||
+        new Set(boundEvidenceRefs).size !== boundEvidenceRefs.length ||
+        boundEvidenceRefs.some((evidenceRef) => !inputEvidenceRefs.includes(evidenceRef)) ||
+        boundEvidenceRefs.some((evidenceRef) => {
+          const evidence = evaluationBinding.evidenceByRef.get(evidenceRef);
+          return (
+            !evidence ||
             !boundSourceBlockIds.has(evidence.sourceBlockId) ||
             evidence.authorityRecordIds.some(
               (authorityRecordId) => !boundAuthorityRecordIds.has(authorityRecordId),
-            ),
-        )
+            )
+          );
+        })
       ) {
         diagnostics.push({
           code: 'semantic_repair_first_pass_alias_invalid',
-          message: `First-pass aliases for ${evaluation.objectiveRef} do not match its exact binding.`,
+          message: `First-pass aliases for ${evaluation.objectiveRef} do not retain its exact private binding.`,
         });
         continue;
       }
+      const decision = deriveObjectiveAuthoritySemanticEvaluationDecision(
+        firstPass.batch,
+        evaluation.objectiveRef,
+        evaluation,
+      );
       seenObjectiveIds.push(location.objectiveId);
-      if (evaluation.verdict === 'fail') {
+      const confinedGeneralFailure =
+        location.objective.subjectClass === 'general' &&
+        evaluation.subjectDependency === 'general_sufficient' &&
+        location.objective.scopeOrigin === 'anchored' &&
+        location.objective.construct !== 'design' &&
+        location.objective.construct !== 'evaluate' &&
+        (!('capabilityPreservation' in evaluation) ||
+          evaluation.capabilityPreservation.verdict !== 'fail') &&
+        decision.anchorValid &&
+        !decision.contradiction &&
+        !decision.misBinding;
+      if (decision.verdict === 'fail' && !confinedGeneralFailure) {
         failed.push({
           ...location,
           evaluation,
           evaluationInput,
           evaluationBinding,
+          decision,
         });
       }
     }
@@ -520,6 +728,13 @@ export function prepareObjectiveAuthoritySemanticRepair(
     ObjectiveAuthorityRequiredCapabilityPreservation
   >();
   for (const location of failed) {
+    if (location.decision.misBinding) {
+      diagnostics.push({
+        code: 'semantic_repair_misbinding_requires_local_rebind',
+        message: `Objective ${location.objective.key} has usable semantic coverage and must be rebound locally before provider repair.`,
+      });
+      continue;
+    }
     const recoveryEvidenceScope = input.recoveryEvidenceScopeByObjectiveId?.get(
       location.objectiveId,
     );
@@ -668,31 +883,8 @@ export function prepareObjectiveAuthoritySemanticRepair(
       authorityClaimIdsByRef.set(evidenceRef, [...entry.authorityClaimIds]);
     }
     const firstPassRefTranslation = new Map<string, string>();
-    const evaluationInputByRef = new Map(
-      location.evaluationInput.evidence.map((offer) => [offer.evidenceRef, offer] as const),
-    );
     for (const [firstPassRef, firstPassBinding] of location.evaluationBinding.evidenceByRef) {
-      const evaluationOffer = evaluationInputByRef.get(firstPassRef);
-      const matches = evaluationOffer
-        ? eligible.filter(
-            (entry) =>
-              entry.offer.blockId === firstPassBinding.sourceBlockId &&
-              entry.offer.quote === evaluationOffer.text &&
-              entry.authorityRecordIds.some((authorityRecordId) =>
-                firstPassBinding.authorityRecordIds.includes(authorityRecordId),
-              ),
-          )
-        : [];
-      const selectedMatches = matches.filter((entry) =>
-        currentEvidenceIds.includes(entry.offer.id),
-      );
-      const match =
-        selectedMatches.length === 1
-          ? selectedMatches[0]
-          : matches.length === 1
-            ? matches[0]
-            : undefined;
-      const repairRef = match ? evidenceRefById.get(match.offer.id) : undefined;
+      const repairRef = evidenceRefById.get(firstPassBinding.evidenceId);
       if (!repairRef) {
         diagnostics.push({
           code: 'semantic_repair_first_pass_evidence_unresolved',
@@ -703,6 +895,20 @@ export function prepareObjectiveAuthoritySemanticRepair(
       firstPassRefTranslation.set(firstPassRef, repairRef);
     }
     if (diagnostics.length > 0) continue;
+
+    const recoveryFragments =
+      'fragments' in location.evaluation ? location.evaluation.fragments : undefined;
+    const repairFragments = recoveryFragments ?? [
+      {
+        fragmentId: `${location.evaluation.objectiveRef}:F1`.slice(0, 100),
+        text: location.evaluationInput.proposition,
+        status: 'unsupported' as const,
+        supportType: null,
+        evidenceRefs: [],
+        rationale:
+          'Local candidate-group evaluation found no usable support under the current objective.',
+      },
+    ];
 
     repairObjectives.push({
       objectiveRef: location.evaluation.objectiveRef,
@@ -720,23 +926,19 @@ export function prepareObjectiveAuthoritySemanticRepair(
         headingPath: [...entry.offer.headingPath],
         selected: currentEvidenceIds.includes(entry.offer.id),
       })),
-      fragments: location.evaluation.fragments.map((fragment) => ({
+      fragments: repairFragments.map((fragment) => ({
         ...fragment,
         evidenceRefs: translateEvidenceRefs(fragment.evidenceRefs, firstPassRefTranslation),
       })),
-      unsupportedFragmentIds: [...location.evaluation.unsupportedFragmentIds],
-      conflicts: location.evaluation.conflicts.map((conflict) => ({
-        ...conflict,
-        fragmentIds: [...conflict.fragmentIds],
-        evidenceRefs: translateEvidenceRefs(conflict.evidenceRefs, firstPassRefTranslation),
-      })),
-      overreach: location.evaluation.overreach.map((item) => ({
-        ...item,
-        fragmentIds: [...item.fragmentIds],
-        evidenceRefs: translateEvidenceRefs(item.evidenceRefs, firstPassRefTranslation),
-      })),
+      unsupportedFragmentIds: repairFragments
+        .filter((fragment) => fragment.status === 'unsupported')
+        .map((fragment) => fragment.fragmentId),
+      conflicts: [],
+      overreach: [],
       verdict: 'fail',
-      rationale: location.evaluation.rationale,
+      rationale: location.decision.candidateWindowTruncated
+        ? 'The bounded candidate window was truncated and exposed no usable support group; wider repair remains conservative.'
+        : 'The local evaluator found no usable support group for the current source-specific objective.',
       ...(location.evaluationInput.requiredCapabilityPreservation
         ? {
             requiredCapabilityPreservation: location.evaluationInput.requiredCapabilityPreservation,
@@ -763,7 +965,7 @@ export function prepareObjectiveAuthoritySemanticRepair(
       location.evaluationInput.requiredCapabilityPreservation ??
         ObjectiveAuthorityRequiredCapabilityPreservationSchema.parse({
           originalProposition: location.evaluationInput.proposition,
-          originalFragments: location.evaluation.fragments.map((fragment) => ({
+          originalFragments: repairFragments.map((fragment) => ({
             fragmentId: fragment.fragmentId,
             text: fragment.text,
           })),

@@ -2198,9 +2198,9 @@ export class FakeProvider implements LlmProvider {
       return null;
     };
     const candidate = ObjectiveAuthoritySemanticEvaluationProposalSchema.parse({
-      schemaVersion: 1,
+      schemaVersion: 2,
       evaluations: input.objectives.map((objective) => {
-        const offered = objective.evidence.find(
+        const offered = objective.candidates.find(
           (offer) =>
             fakeSemanticEvidenceSupportRank({
               proposition: objective.proposition,
@@ -2215,7 +2215,6 @@ export class FakeProvider implements LlmProvider {
         const capabilityPreserved =
           !preservationRequirement ||
           preservationRequirement.originalProposition === objective.proposition;
-        const supported = authoritySupported && capabilityPreserved;
         const normalizedProposition = objective.proposition.toLowerCase();
         const generalSufficient =
           !normalizedProposition.includes('weknora') &&
@@ -2224,31 +2223,48 @@ export class FakeProvider implements LlmProvider {
           );
         return {
           objectiveRef: objective.objectiveRef,
-          proposition: objective.proposition,
-          construct: objective.construct,
           subjectDependency: generalSufficient
             ? ('general_sufficient' as const)
             : ('source_specific_required' as const),
           subjectDependencyRationale: generalSufficient
             ? 'The deterministic Fake fixture can complete this objective using stable public retrieval knowledge.'
             : 'The conservative deterministic Fake fixture requires source-specific truth unless an explicit general fixture matches.',
-          fragments: [
-            {
-              fragmentId,
-              text: objective.proposition,
-              status: authoritySupported ? ('supported' as const) : ('unsupported' as const),
-              supportType: authoritySupported ? type : null,
-              evidenceRefs: authoritySupported && offered ? [offered.evidenceRef] : [],
-              rationale: authoritySupported
-                ? 'The deterministic fake fixture explicitly offers authority for this complete proposition.'
-                : 'The deterministic fake fixture does not offer same-construct semantic support.',
-            },
-          ],
-          unsupportedFragmentIds: authoritySupported ? [] : [fragmentId],
-          conflicts: [],
-          overreach: [],
+          candidateLabels: objective.candidates.map((candidateOffer) => ({
+            evidenceRef: candidateOffer.evidenceRef,
+            relation:
+              fakeSemanticEvidenceSupportRank({
+                proposition: objective.proposition,
+                construct: objective.construct,
+                evidence: candidateOffer.text,
+              }) === null
+                ? ('unrelated' as const)
+                : ('relevant' as const),
+          })),
+          supportGroups:
+            authoritySupported && offered && type
+              ? [
+                  {
+                    evidenceRefs: [offered.evidenceRef],
+                    supportType: type,
+                    rationale:
+                      'The deterministic fake fixture treats this exact candidate as sufficient source support.',
+                  },
+                ]
+              : [],
           ...(preservationRequirement
             ? {
+                fragments: [
+                  {
+                    fragmentId,
+                    text: objective.proposition,
+                    status: authoritySupported ? ('supported' as const) : ('unsupported' as const),
+                    supportType: authoritySupported ? type : null,
+                    evidenceRefs: authoritySupported && offered ? [offered.evidenceRef] : [],
+                    rationale: authoritySupported
+                      ? 'The deterministic fake fixture explicitly offers authority for this complete proposition.'
+                      : 'The deterministic fake fixture does not offer same-construct semantic support.',
+                  },
+                ],
                 capabilityPreservation: {
                   originalProposition: preservationRequirement.originalProposition,
                   mappings: preservationRequirement.originalFragments.map((original) => ({
@@ -2272,12 +2288,6 @@ export class FakeProvider implements LlmProvider {
                 },
               }
             : {}),
-          verdict: supported ? ('pass' as const) : ('fail' as const),
-          rationale: supported
-            ? 'All proposition content is supported and every required original capability is preserved.'
-            : authoritySupported
-              ? 'Authority supports the replacement, but the original learning capability was not preserved.'
-              : 'At least one proposition fragment lacks exact same-construct support.',
         };
       }),
     });

@@ -13,6 +13,7 @@ import {
   type ObjectiveAuthoritySemanticEvaluationBatch,
 } from './objectiveAuthoritySemanticSupport.js';
 import {
+  applyObjectiveAuthoritySemanticDeterministicRebind,
   applyObjectiveAuthoritySemanticRepairProposal,
   objectiveAuthoritySemanticRepairSourceFingerprint,
   prepareObjectiveAuthoritySemanticRepair,
@@ -200,41 +201,45 @@ function evaluationProposal(
   secondVerdict: 'pass' | 'fail',
 ): ObjectiveAuthoritySemanticEvaluationProposal {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     evaluations: batch.input.objectives.map((item, index) => {
       const verdict = index === 0 ? 'fail' : secondVerdict;
       const fragmentId = `fragment_${index + 1}`;
+      const boundEvidenceRef = batch.aliasBindings.get(item.objectiveRef)!.boundEvidenceRefs[0]!;
       return {
         objectiveRef: item.objectiveRef,
-        proposition: item.proposition,
-        construct: item.construct,
         subjectDependency: 'source_specific_required' as const,
         subjectDependencyRationale:
           'The repair fixture conservatively requires source-specific truth.',
-        fragments: [
-          verdict === 'fail'
-            ? {
-                fragmentId,
-                text: item.proposition,
-                status: 'unsupported' as const,
-                supportType: null,
-                evidenceRefs: [],
-                rationale: 'The exact current evidence supports a different proposition.',
-              }
-            : {
-                fragmentId,
-                text: item.proposition,
-                status: 'supported' as const,
-                supportType: 'recognition' as const,
-                evidenceRefs: [item.evidence[0]!.evidenceRef],
-                rationale: 'The exact evidence supports recognition.',
-              },
-        ],
-        unsupportedFragmentIds: verdict === 'fail' ? [fragmentId] : [],
-        conflicts: [],
-        overreach: [],
+        candidateLabels: item.candidates.map((candidate) => ({
+          evidenceRef: candidate.evidenceRef,
+          relation:
+            verdict === 'pass' && candidate.evidenceRef === boundEvidenceRef
+              ? ('relevant' as const)
+              : ('unrelated' as const),
+        })),
+        supportGroups:
+          verdict === 'pass'
+            ? [
+                {
+                  evidenceRefs: [boundEvidenceRef],
+                  supportType: 'recognition' as const,
+                  rationale: 'The exact evidence supports recognition.',
+                },
+              ]
+            : [],
         ...(item.requiredCapabilityPreservation
           ? {
+              fragments: [
+                {
+                  fragmentId,
+                  text: item.proposition,
+                  status: verdict === 'pass' ? ('supported' as const) : ('unsupported' as const),
+                  supportType: verdict === 'pass' ? ('recognition' as const) : null,
+                  evidenceRefs: verdict === 'pass' ? [boundEvidenceRef] : [],
+                  rationale: 'The exact recovery proposition remains partitioned.',
+                },
+              ],
               capabilityPreservation: {
                 originalProposition: item.requiredCapabilityPreservation.originalProposition,
                 mappings: item.requiredCapabilityPreservation.originalFragments.map((original) => ({
@@ -250,11 +255,6 @@ function evaluationProposal(
               },
             }
           : {}),
-        verdict,
-        rationale:
-          verdict === 'fail'
-            ? 'The proposition is unsupported by its exact binding.'
-            : 'The proposition is supported by its exact binding.',
       };
     }),
   };
@@ -263,6 +263,7 @@ function evaluationProposal(
 function setup(secondVerdict: 'pass' | 'fail' = 'pass'): {
   original: CurriculumProposalPayload;
   batch: ObjectiveAuthoritySemanticRepairBatch;
+  evaluationBatch: ObjectiveAuthoritySemanticEvaluationBatch;
 } {
   const original = proposal();
   const unit = original.nodes.find((node) => node.key === 'unit')!;
@@ -281,7 +282,13 @@ function setup(secondVerdict: 'pass' | 'fail' = 'pass'): {
       kind: 'learning_unit',
       index: 0,
       title: unit.title,
-      sourceReferences: [],
+      sourceReferences: [ingestionBlock, positioningBlock].map((sourceBlock) => ({
+        materialId: sourceBlock.materialId,
+        materialRevisionId: sourceBlock.materialRevisionId!,
+        structuralUnitId: null,
+        sourceBlockId: sourceBlock.id,
+        sourceBlockRevisionFingerprint: null,
+      })),
       learningUnit: {
         conceptIds: [],
         canonicalConceptIds: [],
@@ -295,10 +302,16 @@ function setup(secondVerdict: 'pass' | 'fail' = 'pass'): {
       },
     },
   ];
+  const evaluationCatalog = [
+    evidence('evidence_ingestion', ingestionBlock),
+    evidence('evidence_positioning', positioningBlock),
+    evidence('evidence_foreign', foreignBlock),
+  ];
   const [firstPassBatch] = buildObjectiveAuthoritySemanticEvaluationBatches({
     nodes: materializedNodes,
     sourceBlocks: [ingestionBlock, positioningBlock, foreignBlock],
     authorityBundles: bundles,
+    evidenceCatalog: evaluationCatalog,
     isBlockingEligible: () => true,
   });
   const prepared = prepareObjectiveAuthoritySemanticRepair({
@@ -315,11 +328,7 @@ function setup(secondVerdict: 'pass' | 'fail' = 'pass'): {
     ],
     context: {
       workspaceId: 'workspace_1',
-      evidenceCatalog: [
-        evidence('evidence_ingestion', ingestionBlock),
-        evidence('evidence_positioning', positioningBlock),
-        evidence('evidence_foreign', foreignBlock),
-      ],
+      evidenceCatalog: evaluationCatalog,
       authorityBundles: bundles,
       isAuthorityBlockingEligible: () => true,
       deterministicCoverageByNodeKey: new Map([
@@ -329,7 +338,7 @@ function setup(secondVerdict: 'pass' | 'fail' = 'pass'): {
   });
   expect(prepared.validation).toMatchObject({ valid: true, diagnostics: [] });
   expect(prepared.batch).not.toBeNull();
-  return { original, batch: prepared.batch! };
+  return { original, batch: prepared.batch!, evaluationBatch: firstPassBatch! };
 }
 
 function validReplacement(batch: ObjectiveAuthoritySemanticRepairBatch) {
@@ -410,7 +419,7 @@ describe('bounded objective-authority semantic repair', () => {
               'Explain WeKnora positioning\nExplain WeKnora’s integrated document/search/LLM/permission/tool positioning.',
             originalFragments: [
               {
-                fragmentId: 'fragment_1',
+                fragmentId: 'objective_1:F1',
                 text: 'Explain WeKnora positioning\nExplain WeKnora’s integrated document/search/LLM/permission/tool positioning.',
               },
             ],
@@ -495,6 +504,7 @@ describe('bounded objective-authority semantic repair', () => {
       nodes: materializedNodes,
       sourceBlocks: blocks,
       authorityBundles: bundles,
+      evidenceCatalog: offers,
       isBlockingEligible: () => true,
       requiredCapabilityPreservationByObjectiveId: requirements,
     });
@@ -602,6 +612,7 @@ describe('bounded objective-authority semantic repair', () => {
       nodes: materializedNodes,
       sourceBlocks: blocks,
       authorityBundles: bundles,
+      evidenceCatalog: offers,
       isBlockingEligible: () => true,
     });
     const prepared = prepareObjectiveAuthoritySemanticRepair({
@@ -703,6 +714,7 @@ describe('bounded objective-authority semantic repair', () => {
       nodes: materializedNodes,
       sourceBlocks: [e1Block, e2Block],
       authorityBundles: bundles,
+      evidenceCatalog: [e1, e2],
       isBlockingEligible: () => true,
       requiredCapabilityPreservationByObjectiveId,
     });
@@ -885,5 +897,61 @@ describe('bounded objective-authority semantic repair', () => {
     expect(batch.candidate.nodes.find((node) => node.key === 'unit')!.objectives[0]).toEqual(
       originalUnit.objectives[0],
     );
+  });
+
+  it('deterministically rebinds a partially bound compositional group without changing objective text', () => {
+    const { original, evaluationBatch } = setup();
+    const before = JSON.stringify(original);
+    const originalUnit = original.nodes.find((node) => node.key === 'unit')!;
+    const originalFailedObjective = structuredClone(originalUnit.objectives[0]!);
+    const proposal = evaluationProposal(evaluationBatch, 'pass');
+    const failedEvaluation = proposal.evaluations[0]!;
+    const candidateRefs = evaluationBatch.input.objectives[0]!.candidates.map(
+      (candidate) => candidate.evidenceRef,
+    );
+    failedEvaluation.candidateLabels = candidateRefs.map((evidenceRef) => ({
+      evidenceRef,
+      relation: 'relevant',
+    }));
+    failedEvaluation.supportGroups = [
+      {
+        evidenceRefs: candidateRefs,
+        supportType: 'relationship',
+        rationale: 'Both exact candidates are jointly required for the proposition.',
+      },
+    ];
+
+    const result = applyObjectiveAuthoritySemanticDeterministicRebind({
+      candidate: original,
+      objectiveIdByProposalKey: new Map([
+        ['failed', 'objective_failed'],
+        ['passing', 'objective_passing'],
+      ]),
+      firstPass: [{ batch: evaluationBatch, proposal }],
+    });
+
+    expect(result.validation).toMatchObject({ valid: true, diagnostics: [] });
+    expect(result.reboundObjectiveIds).toEqual(['objective_failed']);
+    expect(result.reboundObjectiveKeys).toEqual(['failed']);
+    expect(JSON.stringify(original)).toBe(before);
+    const reboundUnit = result.payload!.nodes.find((node) => node.key === 'unit')!;
+    expect(reboundUnit.objectives[0]).toMatchObject({
+      ...originalFailedObjective,
+      evidence: [{ evidenceId: 'evidence_ingestion' }, { evidenceId: 'evidence_positioning' }],
+    });
+    expect({
+      title: reboundUnit.objectives[0]!.title,
+      description: reboundUnit.objectives[0]!.description,
+      construct: reboundUnit.objectives[0]!.construct,
+      subjectClass: reboundUnit.objectives[0]!.subjectClass,
+      scopeOrigin: reboundUnit.objectives[0]!.scopeOrigin,
+    }).toEqual({
+      title: originalFailedObjective.title,
+      description: originalFailedObjective.description,
+      construct: originalFailedObjective.construct,
+      subjectClass: originalFailedObjective.subjectClass,
+      scopeOrigin: originalFailedObjective.scopeOrigin,
+    });
+    expect(reboundUnit.objectives[1]).toEqual(originalUnit.objectives[1]);
   });
 });

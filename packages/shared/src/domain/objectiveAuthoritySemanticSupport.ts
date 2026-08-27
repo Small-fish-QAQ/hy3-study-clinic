@@ -88,6 +88,12 @@ export type ObjectiveAuthoritySemanticEvidenceOffer = z.infer<
   typeof ObjectiveAuthoritySemanticEvidenceOfferSchema
 >;
 
+export const ObjectiveAuthoritySemanticCandidateOfferSchema =
+  ObjectiveAuthoritySemanticEvidenceOfferSchema;
+export type ObjectiveAuthoritySemanticCandidateOffer = z.infer<
+  typeof ObjectiveAuthoritySemanticCandidateOfferSchema
+>;
+
 export const ObjectiveAuthorityRequiredCapabilityFragmentSchema = z
   .object({
     fragmentId: z.string().min(1).max(100),
@@ -138,18 +144,18 @@ export const ObjectiveAuthoritySemanticEvaluationObjectiveInputSchema = z
     objectiveRef: z.string().min(1).max(100),
     proposition: z.string().min(1).max(1_500),
     construct: FormalAssessmentConstructSchema,
-    evidence: z.array(ObjectiveAuthoritySemanticEvidenceOfferSchema).max(32),
+    candidates: z.array(ObjectiveAuthoritySemanticCandidateOfferSchema).max(12),
     requiredCapabilityPreservation:
       ObjectiveAuthorityRequiredCapabilityPreservationSchema.optional(),
   })
   .strict()
   .superRefine((objective, ctx) => {
-    const evidenceRefs = objective.evidence.map((offer) => offer.evidenceRef);
+    const evidenceRefs = objective.candidates.map((offer) => offer.evidenceRef);
     if (new Set(evidenceRefs).size !== evidenceRefs.length) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ['evidence'],
-        message: 'semantic evaluation evidence references must be unique per objective',
+        path: ['candidates'],
+        message: 'semantic evaluation candidate references must be unique per objective',
       });
     }
   });
@@ -159,7 +165,7 @@ export type ObjectiveAuthoritySemanticEvaluationObjectiveInput = z.infer<
 
 export const ObjectiveAuthoritySemanticEvaluationInputSchema = z
   .object({
-    schemaVersion: z.literal(1),
+    schemaVersion: z.literal(2),
     policyVersion: z.string().min(1).max(80),
     objectives: z.array(ObjectiveAuthoritySemanticEvaluationObjectiveInputSchema).min(1).max(24),
   })
@@ -340,91 +346,106 @@ export type ObjectiveAuthorityCapabilityPreservationProposal = z.infer<
   typeof ObjectiveAuthorityCapabilityPreservationProposalSchema
 >;
 
-export const ObjectiveAuthoritySemanticObjectiveProposalSchema = z
+export const ObjectiveAuthorityCandidateRelationSchema = z.enum([
+  'relevant',
+  'unrelated',
+  'contradicts_claim',
+]);
+export type ObjectiveAuthorityCandidateRelation = z.infer<
+  typeof ObjectiveAuthorityCandidateRelationSchema
+>;
+
+const ObjectiveAuthorityRelevantCandidateLabelProposalSchema = z
   .object({
-    objectiveRef: z.string().min(1).max(100),
-    proposition: z.string().min(1).max(1_500),
-    construct: FormalAssessmentConstructSchema,
-    subjectDependency: ObjectiveAuthoritySubjectDependencySchema,
-    subjectDependencyRationale: z.string().min(1).max(300),
-    fragments: z.array(ObjectiveAuthoritySemanticFragmentProposalSchema).min(1).max(64),
-    unsupportedFragmentIds: z.array(z.string().min(1).max(100)).max(64),
-    conflicts: z.array(ObjectiveAuthoritySemanticConflictProposalSchema).max(32),
-    overreach: z.array(ObjectiveAuthoritySemanticOverreachProposalSchema).max(32),
-    capabilityPreservation: ObjectiveAuthorityCapabilityPreservationProposalSchema.optional(),
-    verdict: z.enum(['pass', 'fail']),
-    rationale: z.string().min(1).max(1_000),
+    evidenceRef: z.string().min(1).max(100),
+    relation: z.literal('relevant'),
+  })
+  .strict();
+
+const ObjectiveAuthorityUnrelatedCandidateLabelProposalSchema = z
+  .object({
+    evidenceRef: z.string().min(1).max(100),
+    relation: z.literal('unrelated'),
+  })
+  .strict();
+
+const ObjectiveAuthorityContradictingCandidateLabelProposalSchema = z
+  .object({
+    evidenceRef: z.string().min(1).max(100),
+    relation: z.literal('contradicts_claim'),
+    rationale: z.string().min(1).max(200).optional(),
+  })
+  .strict();
+
+export const ObjectiveAuthoritySemanticCandidateLabelProposalSchema = z.discriminatedUnion(
+  'relation',
+  [
+    ObjectiveAuthorityRelevantCandidateLabelProposalSchema,
+    ObjectiveAuthorityUnrelatedCandidateLabelProposalSchema,
+    ObjectiveAuthorityContradictingCandidateLabelProposalSchema,
+  ],
+);
+export type ObjectiveAuthoritySemanticCandidateLabelProposal = z.infer<
+  typeof ObjectiveAuthoritySemanticCandidateLabelProposalSchema
+>;
+
+export const ObjectiveAuthoritySemanticSupportGroupProposalSchema = z
+  .object({
+    evidenceRefs: z.array(z.string().min(1).max(100)).min(1).max(5),
+    supportType: ObjectiveAuthoritySupportTypeSchema,
+    rationale: z.string().min(1).max(200).optional(),
   })
   .strict()
-  .superRefine((evaluation, ctx) => {
-    const fragmentIds = evaluation.fragments.map((fragment) => fragment.fragmentId);
-    const knownFragmentIds = new Set(fragmentIds);
-    if (knownFragmentIds.size !== fragmentIds.length) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['fragments'],
-        message: 'semantic support fragment identities must be unique',
-      });
-    }
-    const unsupportedIds = new Set(evaluation.unsupportedFragmentIds);
-    if (unsupportedIds.size !== evaluation.unsupportedFragmentIds.length) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['unsupportedFragmentIds'],
-        message: 'unsupported fragment identities must be unique',
-      });
-    }
-    const actualUnsupportedIds = new Set(
-      evaluation.fragments
-        .filter((fragment) => fragment.status === 'unsupported')
-        .map((fragment) => fragment.fragmentId),
+  .superRefine((group, ctx) => {
+    requireUniqueIdentityValues(
+      group.evidenceRefs,
+      ctx,
+      ['evidenceRefs'],
+      'semantic support-group candidate references must be unique',
     );
-    if (
-      evaluation.unsupportedFragmentIds.some(
-        (fragmentId) => !actualUnsupportedIds.has(fragmentId),
-      ) ||
-      [...actualUnsupportedIds].some((fragmentId) => !unsupportedIds.has(fragmentId))
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['unsupportedFragmentIds'],
-        message: 'unsupported fragment identities must exactly match unsupported fragments',
-      });
-    }
-    for (const [field, rows] of [
-      ['conflicts', evaluation.conflicts],
-      ['overreach', evaluation.overreach],
-    ] as const) {
-      if (
-        rows.some((row) => row.fragmentIds.some((fragmentId) => !knownFragmentIds.has(fragmentId)))
-      ) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: [field],
-          message: `${field} may reference only declared semantic fragments`,
-        });
-      }
-    }
-    const hasFailure =
-      evaluation.fragments.some((fragment) => fragment.status !== 'supported') ||
-      evaluation.conflicts.length > 0 ||
-      evaluation.overreach.length > 0 ||
-      evaluation.capabilityPreservation?.verdict === 'fail';
-    if ((evaluation.verdict === 'pass') === hasFailure) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['verdict'],
-        message: 'semantic support verdict is inconsistent with its structured findings',
-      });
-    }
   });
+export type ObjectiveAuthoritySemanticSupportGroupProposal = z.infer<
+  typeof ObjectiveAuthoritySemanticSupportGroupProposalSchema
+>;
+
+const ObjectiveAuthoritySemanticObjectiveProposalBaseSchema = z.object({
+  objectiveRef: z.string().min(1).max(100),
+  subjectDependency: ObjectiveAuthoritySubjectDependencySchema,
+  subjectDependencyRationale: z.string().min(1).max(300),
+  candidateLabels: z.array(ObjectiveAuthoritySemanticCandidateLabelProposalSchema).max(12),
+  supportGroups: z.array(ObjectiveAuthoritySemanticSupportGroupProposalSchema).max(4),
+});
+
+const ObjectiveAuthoritySemanticNormalObjectiveProposalSchema =
+  ObjectiveAuthoritySemanticObjectiveProposalBaseSchema.strict();
+
+const ObjectiveAuthoritySemanticRecoveryObjectiveProposalSchema =
+  ObjectiveAuthoritySemanticObjectiveProposalBaseSchema.extend({
+    fragments: z.array(ObjectiveAuthoritySemanticFragmentProposalSchema).min(1).max(64),
+    capabilityPreservation: ObjectiveAuthorityCapabilityPreservationProposalSchema,
+  })
+    .strict()
+    .superRefine((evaluation, ctx) => {
+      const fragmentIds = evaluation.fragments.map((fragment) => fragment.fragmentId);
+      requireUniqueIdentityValues(
+        fragmentIds,
+        ctx,
+        ['fragments'],
+        'semantic capability-recovery fragment identities must be unique',
+      );
+    });
+
+export const ObjectiveAuthoritySemanticObjectiveProposalSchema = z.union([
+  ObjectiveAuthoritySemanticNormalObjectiveProposalSchema,
+  ObjectiveAuthoritySemanticRecoveryObjectiveProposalSchema,
+]);
 export type ObjectiveAuthoritySemanticObjectiveProposal = z.infer<
   typeof ObjectiveAuthoritySemanticObjectiveProposalSchema
 >;
 
 export const ObjectiveAuthoritySemanticEvaluationProposalSchema = z
   .object({
-    schemaVersion: z.literal(1),
+    schemaVersion: z.literal(2),
     evaluations: z.array(ObjectiveAuthoritySemanticObjectiveProposalSchema).min(1).max(24),
   })
   .strict()
@@ -624,7 +645,7 @@ export type ObjectiveAuthorityCapabilityPreservationSupport = z.infer<
   typeof ObjectiveAuthorityCapabilityPreservationSupportSchema
 >;
 
-export const ObjectiveAuthoritySemanticSupportSchema = z
+export const ObjectiveAuthoritySemanticSupportV1Schema = z
   .object({
     schemaVersion: z.literal(1),
     policyVersion: z.string().min(1).max(80),
@@ -770,6 +791,231 @@ export const ObjectiveAuthoritySemanticSupportSchema = z
       });
     }
   });
+export type ObjectiveAuthoritySemanticSupportV1 = z.infer<
+  typeof ObjectiveAuthoritySemanticSupportV1Schema
+>;
+
+const ObjectiveAuthoritySemanticPersistedCandidateIdentitySchema = z
+  .object({
+    candidateIndex: z.number().int().min(0).max(11),
+    evidenceId: z.string().min(1).max(100),
+    sourceBlockId: z.string().min(1),
+    authorityRecordIds: z.array(z.string().min(1)).min(1).max(20),
+    authorityClaimIds: z.array(z.string().min(1)).min(1).max(200),
+  })
+  .strict();
+
+export const ObjectiveAuthoritySemanticPersistedCandidateSchema =
+  ObjectiveAuthoritySemanticPersistedCandidateIdentitySchema.extend({
+    relation: ObjectiveAuthorityCandidateRelationSchema,
+    rationale: z.string().min(1).max(200).optional(),
+  })
+    .strict()
+    .superRefine((candidate, ctx) => {
+      requireUniqueIdentityValues(
+        candidate.authorityRecordIds,
+        ctx,
+        ['authorityRecordIds'],
+        'persisted candidate authority-record identities must be unique',
+      );
+      requireUniqueIdentityValues(
+        candidate.authorityClaimIds,
+        ctx,
+        ['authorityClaimIds'],
+        'persisted candidate authority-claim identities must be unique',
+      );
+      if (candidate.relation !== 'contradicts_claim' && candidate.rationale !== undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['rationale'],
+          message: 'only a contradicting persisted candidate may carry a rationale',
+        });
+      }
+    });
+export type ObjectiveAuthoritySemanticPersistedCandidate = z.infer<
+  typeof ObjectiveAuthoritySemanticPersistedCandidateSchema
+>;
+
+export const ObjectiveAuthoritySemanticPersistedSupportGroupSchema = z
+  .object({
+    candidateIndexes: z.array(z.number().int().min(0).max(11)).min(1).max(5),
+    supportType: ObjectiveAuthoritySupportTypeSchema,
+    rationale: z.string().min(1).max(200).optional(),
+  })
+  .strict()
+  .superRefine((group, ctx) => {
+    requireUniqueIdentityValues(
+      group.candidateIndexes.map(String),
+      ctx,
+      ['candidateIndexes'],
+      'persisted support-group candidate indexes must be unique',
+    );
+    if (
+      group.candidateIndexes.some(
+        (candidateIndex, index) => index > 0 && candidateIndex < group.candidateIndexes[index - 1]!,
+      )
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['candidateIndexes'],
+        message: 'persisted support-group candidate indexes must use candidate-window order',
+      });
+    }
+  });
+export type ObjectiveAuthoritySemanticPersistedSupportGroup = z.infer<
+  typeof ObjectiveAuthoritySemanticPersistedSupportGroupSchema
+>;
+
+const ObjectiveAuthoritySemanticSupportV2BaseSchema = z.object({
+  schemaVersion: z.literal(2),
+  policyVersion: z.string().min(1).max(80),
+  evaluator: z.string().min(1).max(120),
+  provider: z.string().min(1).max(40),
+  providerModel: z.string().min(1).max(120).nullable(),
+  independent: z.literal(true),
+  objectiveId: z.string().min(1),
+  proposition: z.string().min(1).max(1_500),
+  propositionFingerprint: z.string().min(1).max(200),
+  construct: FormalAssessmentConstructSchema,
+  subjectDependency: ObjectiveAuthoritySubjectDependencySchema,
+  subjectDependencyRationale: z.string().min(1).max(300),
+  boundAuthorityRecordIds: z.array(z.string().min(1)).max(20),
+  boundSourceBlockIds: z.array(z.string().min(1)).max(100),
+  boundAuthorityClaimIds: z.array(z.string().min(1)).max(200),
+  bindingFingerprint: z.string().min(1).max(200),
+  candidateWindow: z
+    .object({
+      totalCandidateCount: z.number().int().nonnegative(),
+      offeredCandidateCount: z.number().int().min(0).max(12),
+      truncated: z.boolean(),
+    })
+    .strict(),
+  candidateLabels: z.array(ObjectiveAuthoritySemanticPersistedCandidateSchema).max(12),
+  supportGroups: z.array(ObjectiveAuthoritySemanticPersistedSupportGroupSchema).max(4),
+  validationDiagnosticCodes: z.array(z.string().min(1).max(100)).max(100),
+  verdict: z.enum(['pass', 'fail']),
+  evaluatedAt: z.string().datetime(),
+});
+
+function validateObjectiveAuthoritySemanticSupportV2Consistency(
+  support: z.infer<typeof ObjectiveAuthoritySemanticSupportV2BaseSchema>,
+  ctx: z.RefinementCtx,
+): void {
+  for (const [field, values] of [
+    ['boundAuthorityRecordIds', support.boundAuthorityRecordIds],
+    ['boundSourceBlockIds', support.boundSourceBlockIds],
+    ['boundAuthorityClaimIds', support.boundAuthorityClaimIds],
+    ['validationDiagnosticCodes', support.validationDiagnosticCodes],
+  ] as const) {
+    requireUniqueIdentityValues(
+      values,
+      ctx,
+      [field],
+      `persisted v2 semantic-support ${field} values must be unique`,
+    );
+  }
+  if (
+    support.candidateWindow.offeredCandidateCount !== support.candidateLabels.length ||
+    support.candidateWindow.totalCandidateCount < support.candidateLabels.length ||
+    support.candidateWindow.truncated !==
+      support.candidateWindow.totalCandidateCount > support.candidateLabels.length
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['candidateWindow'],
+      message: 'persisted candidate-window counts and truncation flag are inconsistent',
+    });
+  }
+  if (support.candidateLabels.some((candidate, index) => candidate.candidateIndex !== index)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['candidateLabels'],
+      message: 'persisted candidates must retain contiguous candidate-window order',
+    });
+  }
+  const candidateByIndex = new Map(
+    support.candidateLabels.map((candidate) => [candidate.candidateIndex, candidate] as const),
+  );
+  const normalizedGroups = support.supportGroups.map((group) => group.candidateIndexes.join(','));
+  if (new Set(normalizedGroups).size !== normalizedGroups.length) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['supportGroups'],
+      message: 'persisted semantic support groups must be unique',
+    });
+  }
+  for (const [groupIndex, group] of support.supportGroups.entries()) {
+    if (group.candidateIndexes.some((candidateIndex) => !candidateByIndex.has(candidateIndex))) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['supportGroups', groupIndex, 'candidateIndexes'],
+        message: 'persisted support groups may reference only persisted candidates',
+      });
+    }
+    if (
+      group.candidateIndexes.some(
+        (candidateIndex) => candidateByIndex.get(candidateIndex)?.relation !== 'relevant',
+      )
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['supportGroups', groupIndex],
+        message: 'persisted support groups may contain only relevant candidates',
+      });
+    }
+    const groupIndexes = new Set(group.candidateIndexes);
+    if (
+      support.supportGroups.some(
+        (other, otherIndex) =>
+          otherIndex !== groupIndex &&
+          other.candidateIndexes.length < group.candidateIndexes.length &&
+          other.candidateIndexes.every((candidateIndex) => groupIndexes.has(candidateIndex)),
+      )
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['supportGroups', groupIndex],
+        message: 'persisted support groups must not retain a strict superset group',
+      });
+    }
+  }
+}
+
+export const ObjectiveAuthoritySemanticSupportV2Schema =
+  ObjectiveAuthoritySemanticSupportV2BaseSchema.extend({
+    fragments: z.array(ObjectiveAuthoritySemanticSupportFragmentSchema).min(1).max(64).optional(),
+    capabilityPreservation: ObjectiveAuthorityCapabilityPreservationSupportSchema.optional(),
+  })
+    .strict()
+    .superRefine((support, ctx) => {
+      validateObjectiveAuthoritySemanticSupportV2Consistency(support, ctx);
+      if ((support.fragments === undefined) !== (support.capabilityPreservation === undefined)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['fragments'],
+          message:
+            'v2 recovery fragments and capability preservation must either both be present or both be absent',
+        });
+      }
+      if (
+        support.fragments &&
+        support.fragments.map((fragment) => fragment.text).join('') !== support.proposition
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['fragments'],
+          message: 'v2 recovery fragments must exactly partition the successor proposition',
+        });
+      }
+    });
+export type ObjectiveAuthoritySemanticSupportV2 = z.infer<
+  typeof ObjectiveAuthoritySemanticSupportV2Schema
+>;
+
+export const ObjectiveAuthoritySemanticSupportSchema = z.union([
+  ObjectiveAuthoritySemanticSupportV1Schema,
+  ObjectiveAuthoritySemanticSupportV2Schema,
+]);
 export type ObjectiveAuthoritySemanticSupport = z.infer<
   typeof ObjectiveAuthoritySemanticSupportSchema
 >;

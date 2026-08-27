@@ -12,6 +12,10 @@ import type {
   VisualDerivation,
 } from '@hy3-clinic/shared';
 import { VisualAdvisoryContextSchema, VisualMediaTypeSchema } from '@hy3-clinic/shared';
+import {
+  objectiveAuthoritySemanticallySupportedClaimIds,
+  objectiveAuthoritySemanticProvenanceMappings,
+} from './objectiveAuthoritySemanticSupport.js';
 
 export const TEACHING_BRIEF_MAX_BLOCKS = 24;
 export const TEACHING_BRIEF_MAX_OFFERS = 24;
@@ -223,12 +227,12 @@ export function buildTeachingBriefSourceContext({
     }
     const selectedClaimIds = new Set(objective.authorityClaimIds ?? []);
     const boundClaimIds = new Set(objective.semanticSupport.boundAuthorityClaimIds);
-    const supportedFragments = objective.semanticSupport.fragments.filter(
-      (fragment) => fragment.status === 'supported',
+    const supportedClaimIds = objectiveAuthoritySemanticallySupportedClaimIds(
+      objective.semanticSupport,
     );
-    const supportedClaimIds = [
-      ...new Set(supportedFragments.flatMap((fragment) => fragment.authorityClaimIds)),
-    ];
+    const semanticMappings = objectiveAuthoritySemanticProvenanceMappings(
+      objective.semanticSupport,
+    );
     if (supportedClaimIds.length === 0) {
       throw new Error('Teaching Brief objective has no exact semantically supported source claim.');
     }
@@ -244,13 +248,13 @@ export function buildTeachingBriefSourceContext({
         throw new Error('Teaching Brief semantically supported source claim is unavailable.');
       }
       const { bundle, claim } = resolved;
-      const fragment = supportedFragments.find((candidate) =>
+      const mapping = semanticMappings.find((candidate) =>
         candidate.authorityClaimIds.includes(claimId),
       )!;
       if (
         !objective.truthAuthorityRecordIds.includes(bundle.record.id) ||
-        !fragment.authorityRecordIds.includes(bundle.record.id) ||
-        !fragment.sourceBlockIds.includes(claim.sourceBlockId) ||
+        !mapping.authorityRecordIds.includes(bundle.record.id) ||
+        !mapping.sourceBlockIds.includes(claim.sourceBlockId) ||
         bundle.record.workspaceId !== workspaceId ||
         bundle.record.materialId === null ||
         bundle.record.materialRevisionId === null

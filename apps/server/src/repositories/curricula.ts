@@ -14,6 +14,7 @@ import {
   assertCurriculumObjectiveAuthoritySemanticSupport,
   curriculumObjectiveProposition,
   fingerprintObjectiveAuthorityProposition,
+  objectiveAuthoritySemanticProvenanceMappings,
 } from '../services/objectiveAuthoritySemanticSupport.js';
 
 interface CurriculumRow {
@@ -792,11 +793,7 @@ export function createCurriculaRepo(db: SqliteDb) {
           `Curriculum objective ${objective.id} semantic-support binding`,
           objective.semanticSupport.boundAuthorityClaimIds,
         );
-        const mappings = [
-          ...objective.semanticSupport.fragments,
-          ...objective.semanticSupport.conflicts,
-          ...objective.semanticSupport.overreach,
-        ];
+        const mappings = objectiveAuthoritySemanticProvenanceMappings(objective.semanticSupport);
         for (const mapping of mappings) {
           assertExactAuthorityMapping(
             mapping.sourceBlockIds,

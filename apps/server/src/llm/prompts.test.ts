@@ -49,14 +49,14 @@ const blocks: SourceBlock[] = [
 ];
 
 const semanticEvaluationInput: ObjectiveAuthoritySemanticEvaluationInput = {
-  schemaVersion: 1,
-  policyVersion: 'objective-authority-semantic-v1',
+  schemaVersion: 2,
+  policyVersion: 'objective-authority-semantic-support-v2',
   objectives: [
     {
       objectiveRef: 'O1',
       proposition: 'Explain how the components jointly position the system.',
       construct: 'explain',
-      evidence: [
+      candidates: [
         {
           evidenceRef: 'E1',
           text: 'The system combines documents, search, language models, permissions, and tools.',
@@ -80,7 +80,7 @@ const semanticRepairInput: ObjectiveAuthoritySemanticRepairInput = {
       priority: 'required',
       currentEvidenceRefs: ['E1'],
       allowedEvidence: [
-        { ...semanticEvaluationInput.objectives[0]!.evidence[0]!, selected: true },
+        { ...semanticEvaluationInput.objectives[0]!.candidates[0]!, selected: true },
         {
           evidenceRef: 'E2',
           text: 'A second locally allowed exact authority.',
@@ -248,26 +248,22 @@ describe('Objective-authority semantic prompts', () => {
       .join('\n');
 
     expect(content).toContain('Exact provenance or quotation existence is not semantic entailment');
-    expect(content).toContain('Topic or keyword overlap never establishes support');
+    expect(content).toContain('Topic or keyword overlap never establishes group support');
     expect(content).toContain('IDENTIFY requires meaningful recognition');
     expect(content).toContain('EXPLAIN requires authority for the actual relationship');
     expect(content).toContain('APPLY requires a source-stated procedure');
     expect(content).toContain(
-      'DESIGN and EVALUATE are not authorized by the current v1 source-authority policy',
+      'DESIGN and EVALUATE are not authorized by the current source-authority policy',
     );
-    expect(content).toContain('Partition each proposition completely');
+    expect(content).toContain('Only when requiredCapabilityPreservation is present, partition');
     expect(content).toContain('Same topic, verb, construct, or broad domain is not preservation');
     expect(content).toContain('one ordered mapping for every offered originalFragment');
     expect(content).toContain('Mark a mapping lost whenever');
-    expect(content).toContain('Deterministic local code recomputes the verdict');
-    expect(content).toContain('attest subject dependency from the objective proposition itself');
-    expect(content).toContain(
-      'Do not infer subject dependency from whether the offered evidence supports the objective',
-    );
-    expect(content).toContain('Lack of support does not imply general_sufficient');
-    expect(content).toContain(
-      'presence of source evidence does not automatically imply source_specific_required',
-    );
+    expect(content).toContain('Do not emit an authoritative objective verdict');
+    expect(content).toContain('attest subject dependency from only the objective proposition');
+    expect(content).toContain('Do not infer subject dependency from candidate coverage');
+    expect(content).toContain('Missing support does not imply general_sufficient');
+    expect(content).toContain('Strong candidate support does not imply source_specific_required');
     expect(content).toContain(
       'A mixed objective is source_specific_required when any necessary proposition is source-specific',
     );
@@ -275,9 +271,9 @@ describe('Objective-authority semantic prompts', () => {
     expect(content).toContain(
       'Do not use product names or proper nouns as a simplistic syntactic heuristic',
     );
-    expect(content).toContain(
-      'Do not change the existing full entailment findings or verdict semantics',
-    );
+    expect(content).toContain('On the normal path, omit fragments entirely');
+    expect(content).toContain('You do not know which candidates are currently bound');
+    expect(content).toContain('Groups must be minimal');
     expect(content).toContain('subjectDependencyRationale');
     expect(content).toContain('E1');
     const delimiters = content.match(/OBJECTIVE_AUTHORITY_EVALUATION_INPUT_[a-f0-9]{32}/gu) ?? [];

@@ -179,7 +179,7 @@ function controlledSemanticEvaluation(
   failedObjectiveIndexes: ReadonlySet<number>,
 ): ObjectiveAuthoritySemanticEvaluationProposal {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     evaluations: input.objectives.map((objective, index) => {
       const authorityFailed = failedObjectiveIndexes.has(index);
       const fragmentId = `fragment_${index + 1}`;
@@ -187,7 +187,6 @@ function controlledSemanticEvaluation(
       const capabilityPreserved =
         !preservationRequirement ||
         preservationRequirement.originalProposition === objective.proposition;
-      const failed = authorityFailed || !capabilityPreserved;
       const supportType =
         objective.construct === 'apply'
           ? ('procedure' as const)
@@ -196,29 +195,40 @@ function controlledSemanticEvaluation(
             : ('definition' as const);
       return {
         objectiveRef: objective.objectiveRef,
-        proposition: objective.proposition,
-        construct: objective.construct,
         subjectDependency: 'source_specific_required' as const,
         subjectDependencyRationale:
           'The controlled evaluator conservatively requires source-specific truth.',
-        fragments: [
-          {
-            fragmentId,
-            text: objective.proposition,
-            status: authorityFailed ? ('unsupported' as const) : ('supported' as const),
-            supportType: authorityFailed ? null : supportType,
-            evidenceRefs:
-              authorityFailed || !objective.evidence[0] ? [] : [objective.evidence[0].evidenceRef],
-            rationale: authorityFailed
-              ? 'The controlled evaluator rejects this exact objective-authority pair.'
-              : 'The controlled evaluator accepts this complete exact proposition.',
-          },
-        ],
-        unsupportedFragmentIds: authorityFailed ? [fragmentId] : [],
-        conflicts: [],
-        overreach: [],
+        candidateLabels: objective.candidates.map((candidate) => ({
+          evidenceRef: candidate.evidenceRef,
+          relation: 'relevant' as const,
+        })),
+        supportGroups:
+          authorityFailed || !objective.candidates[0]
+            ? []
+            : [
+                {
+                  evidenceRefs: [objective.candidates[0].evidenceRef],
+                  supportType,
+                  rationale: 'The exact candidate supports the complete controlled proposition.',
+                },
+              ],
         ...(preservationRequirement
           ? {
+              fragments: [
+                {
+                  fragmentId,
+                  text: objective.proposition,
+                  status: authorityFailed ? ('unsupported' as const) : ('supported' as const),
+                  supportType: authorityFailed ? null : supportType,
+                  evidenceRefs:
+                    authorityFailed || !objective.candidates[0]
+                      ? []
+                      : [objective.candidates[0].evidenceRef],
+                  rationale: authorityFailed
+                    ? 'The controlled evaluator rejects this exact objective-authority pair.'
+                    : 'The controlled evaluator accepts this complete exact proposition.',
+                },
+              ],
               capabilityPreservation: {
                 originalProposition: preservationRequirement.originalProposition,
                 mappings: preservationRequirement.originalFragments.map((original) => ({
@@ -242,12 +252,6 @@ function controlledSemanticEvaluation(
               },
             }
           : {}),
-        verdict: failed ? ('fail' as const) : ('pass' as const),
-        rationale: failed
-          ? authorityFailed
-            ? 'At least one complete proposition fragment is unsupported.'
-            : 'The replacement is supported but deletes or substitutes the original capability.'
-          : 'Every complete proposition fragment is supported.',
       };
     }),
   };
@@ -570,31 +574,21 @@ function useMockedHy3(contents: string[], beforeResponse?: (index: number) => vo
 }
 
 function passingObjectiveAuthorityEvaluationForQuote(): string {
-  const proposition = `${QUOTE}\n${QUOTE}`;
   return JSON.stringify({
-    schemaVersion: 1,
+    schemaVersion: 2,
     evaluations: [
       {
         objectiveRef: 'objective_1',
-        proposition,
-        construct: 'identify',
         subjectDependency: 'source_specific_required',
         subjectDependencyRationale: 'The controlled quote fixture requires source-specific truth.',
-        fragments: [
+        candidateLabels: [{ evidenceRef: 'evidence_1', relation: 'relevant' }],
+        supportGroups: [
           {
-            fragmentId: 'objective_1_fragment_1',
-            text: proposition,
-            status: 'supported',
             supportType: 'definition',
             evidenceRefs: ['evidence_1'],
             rationale: 'The exact offered source states the complete bounded proposition.',
           },
         ],
-        unsupportedFragmentIds: [],
-        conflicts: [],
-        overreach: [],
-        verdict: 'pass',
-        rationale: 'Every proposition fragment is supported by exact bound authority.',
       },
     ],
   });
@@ -2075,7 +2069,7 @@ describe('Curriculum proposal and authority boundaries', () => {
     expect(repos.curricula.get(accepted.id)?.acceptedAt).toBe(accepted.acceptedAt);
   });
 
-  it('repairs legacy B7C2 recovery from selected E1 to unselected frozen E2 and accepts it', async () => {
+  it('deterministically rebinds legacy B7C2 recovery from selected E1 to unselected frozen E2 and accepts it', async () => {
     const title = '解释 WeKnora 综合系统定位';
     const description =
       '解释 WeKnora 是集文档系统、搜索系统、大模型、权限系统、工具调用系统于一体的综合系统，而非单纯大模型或搜索引擎。';
@@ -2259,32 +2253,40 @@ describe('Curriculum proposal and authority boundaries', () => {
         return candidate;
       }
 
-      override async repairObjectiveAuthoritySupport(
-        input: ObjectiveAuthoritySemanticRepairInput,
+      override async evaluateObjectiveAuthoritySupport(
+        input: ObjectiveAuthoritySemanticEvaluationInput,
         opts?: ProviderCallOptions,
-      ): Promise<ObjectiveAuthoritySemanticRepairProposal> {
-        this.repairInputs.push(structuredClone(input));
+      ): Promise<ObjectiveAuthoritySemanticEvaluationProposal> {
+        this.evaluationInputs.push(structuredClone(input));
         if (opts?.signal?.aborted) throw ProviderError.cancelled();
-        const candidate: ObjectiveAuthoritySemanticRepairProposal = {
-          schemaVersion: 1,
-          replacements: input.objectives.map((objective) => {
-            const unselectedSupportingOffer = objective.allowedEvidence.find(
-              (offer) => !offer.selected && offer.text === positioning,
-            );
-            if (!unselectedSupportingOffer) {
-              throw new Error('Frozen E2 was not exposed as unselected recovery evidence.');
-            }
-            return {
-              objectiveRef: objective.objectiveRef,
-              title: objective.title,
-              description: objective.description,
-              subjectClass: objective.subjectClass,
-              scopeOrigin: objective.scopeOrigin,
-              construct: objective.construct,
-              evidenceRefs: [unselectedSupportingOffer.evidenceRef],
-            };
-          }),
-        };
+        const candidate = controlledSemanticEvaluation(input, new Set());
+        const objective = input.objectives[0]!;
+        const positioningRef = objective.candidates.find(
+          (offer) => offer.text === positioning,
+        )?.evidenceRef;
+        if (!positioningRef) {
+          throw new Error('Frozen E2 was not exposed in the blind semantic candidate window.');
+        }
+        const evaluation = candidate.evaluations[0]!;
+        evaluation.candidateLabels = objective.candidates.map((offer) => ({
+          evidenceRef: offer.evidenceRef,
+          relation: offer.evidenceRef === positioningRef ? 'relevant' : 'unrelated',
+        }));
+        evaluation.supportGroups = [
+          {
+            evidenceRefs: [positioningRef],
+            supportType: 'relationship',
+            rationale: 'The exact positioning statement supports the recovery proposition.',
+          },
+        ];
+        if ('fragments' in evaluation) {
+          evaluation.fragments = evaluation.fragments.map((fragment) => ({
+            ...fragment,
+            status: 'supported',
+            supportType: 'relationship',
+            evidenceRefs: [positioningRef],
+          }));
+        }
         const validation = opts?.validateCandidate?.(candidate);
         if (validation && !validation.valid) {
           throw ProviderError.invalidOutput(validation.diagnostics.join('; '), 'candidate');
@@ -2318,18 +2320,8 @@ describe('Curriculum proposal and authority boundaries', () => {
       )!;
     const preservation = recoveredObjective.semanticSupport!.capabilityPreservation!;
     expect(recoveryProvider.evaluationInputs).toHaveLength(2);
-    expect(recoveryProvider.repairInputs).toHaveLength(1);
-    expect(
-      recoveryProvider.repairInputs[0]!.objectives[0]!.allowedEvidence.map((offer) => [
-        offer.text,
-        offer.selected,
-      ]),
-    ).toEqual(
-      expect.arrayContaining([
-        [ingestion, true],
-        [positioning, false],
-      ]),
-    );
+    expect(recoveryProvider.repairInputs).toHaveLength(0);
+    expect(recoveryProvider.evaluationInputs[1]).toEqual(recoveryProvider.evaluationInputs[0]);
     expect(recoveredObjective).toMatchObject({
       title,
       description,
@@ -2339,6 +2331,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       formalEvidenceSourceBlockIds: [positioningBlockId],
       semanticSupport: {
         boundSourceBlockIds: [positioningBlockId],
+        validationDiagnosticCodes: ['semantic_deterministic_rebind_applied'],
         verdict: 'pass',
       },
     });
@@ -2740,7 +2733,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       originalProposition: semanticProvider.evaluationInputs[0]!.objectives[0]!.proposition,
       originalFragments: [
         {
-          fragmentId: 'fragment_1',
+          fragmentId: 'objective_1:F1',
           text: semanticProvider.evaluationInputs[0]!.objectives[0]!.proposition,
         },
       ],
@@ -2784,9 +2777,9 @@ describe('Curriculum proposal and authority boundaries', () => {
       physicalAttempts: 4,
       schemaFingerprints: [
         'curriculum-proposal-v3-claim-scope',
-        'objective-authority-semantic-evaluation-v2',
+        'objective-authority-semantic-evaluation-v3',
         'objective-authority-semantic-repair-v2-claim-scope',
-        'objective-authority-semantic-evaluation-v2',
+        'objective-authority-semantic-evaluation-v3',
       ],
     });
   });
@@ -2832,9 +2825,9 @@ describe('Curriculum proposal and authority boundaries', () => {
       physicalAttempts: 4,
       schemaFingerprints: [
         'curriculum-proposal-v3-claim-scope',
-        'objective-authority-semantic-evaluation-v2',
+        'objective-authority-semantic-evaluation-v3',
         'objective-authority-semantic-repair-v2-claim-scope',
-        'objective-authority-semantic-evaluation-v2',
+        'objective-authority-semantic-evaluation-v3',
       ],
     });
   });
@@ -2880,7 +2873,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       physicalAttempts: 2,
       schemaFingerprints: [
         'curriculum-proposal-v3-claim-scope',
-        'objective-authority-semantic-evaluation-v2',
+        'objective-authority-semantic-evaluation-v3',
       ],
     });
 
@@ -3152,9 +3145,9 @@ describe('Curriculum proposal and authority boundaries', () => {
       physicalAttempts: 4,
       schemaFingerprints: [
         'curriculum-proposal-v3-claim-scope',
-        'objective-authority-semantic-evaluation-v2',
+        'objective-authority-semantic-evaluation-v3',
         'objective-authority-semantic-repair-v2-claim-scope',
-        'objective-authority-semantic-evaluation-v2',
+        'objective-authority-semantic-evaluation-v3',
       ],
     });
     expect(repos.curricula.list('ws_1').map((item) => item.id)).toEqual([predecessor.id]);
@@ -3258,7 +3251,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       physicalAttempts: 2,
       schemaFingerprints: [
         'curriculum-proposal-v3-claim-scope',
-        'objective-authority-semantic-evaluation-v2',
+        'objective-authority-semantic-evaluation-v3',
       ],
     });
     expect(repos.curricula.list('ws_1')).toEqual([]);
@@ -3291,7 +3284,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       physicalAttempts: 2,
       schemaFingerprints: [
         'curriculum-proposal-v3-claim-scope',
-        'objective-authority-semantic-evaluation-v2',
+        'objective-authority-semantic-evaluation-v3',
       ],
     });
     expect(repos.curricula.list('ws_1')).toEqual([]);

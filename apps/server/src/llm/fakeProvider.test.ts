@@ -44,14 +44,14 @@ const B7C2_POSITIONING =
   '### 一、概念层1. 系统定位与 RAG 全景\n\nWeKnora 不是单纯的大模型或搜索引擎，而是：文档系统 + 搜索系统 + 大模型 + 权限系统 + 工具调用系统。';
 
 const semanticEvaluationInput: ObjectiveAuthoritySemanticEvaluationInput = {
-  schemaVersion: 1,
-  policyVersion: 'objective-authority-semantic-v1',
+  schemaVersion: 2,
+  policyVersion: 'objective-authority-semantic-support-v2',
   objectives: [
     {
       objectiveRef: 'O1',
       proposition: 'Explain how the components jointly position the system.',
       construct: 'explain',
-      evidence: [
+      candidates: [
         {
           evidenceRef: 'E1',
           text: '[SUPPORTS:explain] The system combines documents, search, language models, permissions, and tools.',
@@ -79,7 +79,7 @@ function semanticRepairInput(): ObjectiveAuthoritySemanticRepairInput {
         currentEvidenceRefs: ['E1'],
         allowedEvidence: [
           {
-            ...semanticEvaluationInput.objectives[0]!.evidence[0]!,
+            ...semanticEvaluationInput.objectives[0]!.candidates[0]!,
             text: '[UNSUPPORTED] The ingestion procedure has five ordered steps.',
             selected: true,
           },
@@ -121,15 +121,11 @@ describe('FakeProvider objective-authority semantic contract', () => {
     expect(ObjectiveAuthoritySemanticEvaluationProposalSchema.parse(first)).toEqual(second);
     expect(first.evaluations[0]).toMatchObject({
       objectiveRef: 'O1',
-      construct: 'explain',
       subjectDependency: 'source_specific_required',
       subjectDependencyRationale: expect.any(String),
-      verdict: 'pass',
-      unsupportedFragmentIds: [],
+      candidateLabels: [{ evidenceRef: 'E1', relation: 'relevant' }],
     });
-    expect(first.evaluations[0]!.fragments[0]).toMatchObject({
-      text: semanticEvaluationInput.objectives[0]!.proposition,
-      status: 'supported',
+    expect(first.evaluations[0]!.supportGroups[0]).toMatchObject({
       supportType: 'relationship',
       evidenceRefs: ['E1'],
     });
@@ -137,21 +133,21 @@ describe('FakeProvider objective-authority semantic contract', () => {
 
   it('blindly attests every objective with deterministic general and source-specific fixtures', async () => {
     const result = await provider.evaluateObjectiveAuthoritySupport({
-      schemaVersion: 1,
-      policyVersion: 'objective-authority-semantic-v1',
+      schemaVersion: 2,
+      policyVersion: 'objective-authority-semantic-support-v2',
       objectives: [
         {
           objectiveRef: 'general_objective',
           proposition:
             'Explain why lexical and dense retrieval are complementary in hybrid retrieval.',
           construct: 'explain',
-          evidence: [],
+          candidates: [],
         },
         {
           objectiveRef: 'source_objective',
           proposition: "Explain WeKnora's documented permission-filtering behavior.",
           construct: 'explain',
-          evidence: [],
+          candidates: [],
         },
       ],
     });
@@ -176,9 +172,9 @@ describe('FakeProvider objective-authority semantic contract', () => {
       objectives: [
         {
           ...semanticEvaluationInput.objectives[0]!,
-          evidence: [
+          candidates: [
             {
-              ...semanticEvaluationInput.objectives[0]!.evidence[0]!,
+              ...semanticEvaluationInput.objectives[0]!.candidates[0]!,
               text: '[UNSUPPORTED] The ingestion procedure has five ordered steps.',
             },
           ],
@@ -187,27 +183,22 @@ describe('FakeProvider objective-authority semantic contract', () => {
     });
 
     expect(result.evaluations[0]).toMatchObject({
-      verdict: 'fail',
-      unsupportedFragmentIds: ['O1:F1'],
-    });
-    expect(result.evaluations[0]!.fragments[0]).toMatchObject({
-      status: 'unsupported',
-      supportType: null,
-      evidenceRefs: [],
+      candidateLabels: [{ evidenceRef: 'E1', relation: 'unrelated' }],
+      supportGroups: [],
     });
   });
 
   it('fails exact required preservation when unmarked evidence supports an unrelated proposition', async () => {
     const proposition = 'Explain how photosynthesis converts light into stored chemical energy.';
     const result = await provider.evaluateObjectiveAuthoritySupport({
-      schemaVersion: 1,
-      policyVersion: 'objective-authority-semantic-v1',
+      schemaVersion: 2,
+      policyVersion: 'objective-authority-semantic-support-v2',
       objectives: [
         {
           objectiveRef: 'O1',
           proposition,
           construct: 'explain',
-          evidence: [
+          candidates: [
             {
               evidenceRef: 'E-mitochondria',
               text: 'Mitochondria produce ATP through cellular respiration.',
@@ -224,8 +215,8 @@ describe('FakeProvider objective-authority semantic contract', () => {
     });
 
     expect(result.evaluations[0]).toMatchObject({
-      verdict: 'fail',
-      unsupportedFragmentIds: ['O1:F1'],
+      candidateLabels: [{ evidenceRef: 'E-mitochondria', relation: 'unrelated' }],
+      supportGroups: [],
       capabilityPreservation: {
         verdict: 'pass',
         lostOriginalFragmentIds: [],
@@ -240,14 +231,14 @@ describe('FakeProvider objective-authority semantic contract', () => {
 
   it('distinguishes the exact B7C2 integrated-positioning authority from ingestion-only evidence', async () => {
     const ingestionOnly: ObjectiveAuthoritySemanticEvaluationInput = {
-      schemaVersion: 1,
-      policyVersion: 'objective-authority-semantic-v1',
+      schemaVersion: 2,
+      policyVersion: 'objective-authority-semantic-support-v2',
       objectives: [
         {
           objectiveRef: 'O1',
           proposition: B7C2_POSITIONING_PROPOSITION,
           construct: 'explain',
-          evidence: [
+          candidates: [
             {
               evidenceRef: 'E-ingestion',
               text: B7C2_INGESTION,
@@ -260,8 +251,8 @@ describe('FakeProvider objective-authority semantic contract', () => {
     };
     const invalid = await provider.evaluateObjectiveAuthoritySupport(ingestionOnly);
     expect(invalid.evaluations[0]).toMatchObject({
-      verdict: 'fail',
-      unsupportedFragmentIds: ['O1:F1'],
+      candidateLabels: [{ evidenceRef: 'E-ingestion', relation: 'unrelated' }],
+      supportGroups: [],
     });
 
     const repairedInput: ObjectiveAuthoritySemanticRepairInput = {
@@ -279,7 +270,7 @@ describe('FakeProvider objective-authority semantic contract', () => {
           priority: 'required',
           currentEvidenceRefs: ['E-ingestion'],
           allowedEvidence: [
-            { ...ingestionOnly.objectives[0]!.evidence[0]!, selected: true },
+            { ...ingestionOnly.objectives[0]!.candidates[0]!, selected: true },
             {
               evidenceRef: 'E-positioning',
               text: B7C2_POSITIONING,
@@ -324,16 +315,27 @@ describe('FakeProvider objective-authority semantic contract', () => {
       objectives: [
         {
           ...ingestionOnly.objectives[0]!,
-          evidence: [repairedInput.objectives[0]!.allowedEvidence[1]!],
+          candidates: [
+            ingestionOnly.objectives[0]!.candidates[0]!,
+            {
+              evidenceRef: 'E-positioning',
+              text: B7C2_POSITIONING,
+              claimKinds: ['claim'],
+              headingPath: ['系统定位与 RAG 全景'],
+            },
+          ],
           requiredCapabilityPreservation:
             repairedInput.objectives[0]!.requiredCapabilityPreservation,
         },
       ],
     });
     expect(supported.evaluations[0]).toMatchObject({
-      verdict: 'pass',
       capabilityPreservation: { verdict: 'pass' },
-      fragments: [{ evidenceRefs: ['E-positioning'], status: 'supported' }],
+      candidateLabels: [
+        { evidenceRef: 'E-ingestion', relation: 'unrelated' },
+        { evidenceRef: 'E-positioning', relation: 'relevant' },
+      ],
+      supportGroups: [{ evidenceRefs: ['E-positioning'] }],
     });
   });
 
@@ -367,7 +369,6 @@ describe('FakeProvider objective-authority semantic contract', () => {
       ],
     });
     expect(preserved.evaluations[0]).toMatchObject({
-      verdict: 'pass',
       capabilityPreservation: {
         verdict: 'pass',
         lostOriginalFragmentIds: [],
@@ -386,8 +387,6 @@ describe('FakeProvider objective-authority semantic contract', () => {
       ],
     });
     expect(changed.evaluations[0]).toMatchObject({
-      verdict: 'fail',
-      unsupportedFragmentIds: [],
       capabilityPreservation: {
         verdict: 'fail',
         lostOriginalFragmentIds: ['original_F1'],

@@ -14,6 +14,8 @@ import {
   type ObjectiveAuthoritySemanticEvaluationObjectiveInput,
   type ObjectiveAuthoritySemanticEvaluationProposal,
   type ObjectiveAuthoritySemanticObjectiveProposal,
+  type ObjectiveAuthoritySemanticPersistedCandidate,
+  type ObjectiveAuthoritySemanticPersistedSupportGroup,
   type ObjectiveAuthorityCapabilityRecoveryOrigin,
   type ObjectiveAuthorityRequiredCapabilityPreservation,
   type ObjectiveAuthoritySemanticSupport,
@@ -22,16 +24,25 @@ import {
   type SourceBlock,
 } from '@hy3-clinic/shared';
 import { AppError } from '../errors.js';
-import type { ProviderCandidateValidation } from '../llm/provider.js';
+import type { CurriculumEvidenceOffer, ProviderCandidateValidation } from '../llm/provider.js';
 
-export const OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_POLICY =
+export const OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_V1_POLICY =
   'objective-authority-semantic-support-v1';
+export const OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_POLICY =
+  'objective-authority-semantic-support-v2';
+export const OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_ACCEPTED_POLICIES = new Set([
+  OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_V1_POLICY,
+  OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_POLICY,
+]);
 export const OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_BATCH = 24;
+export const OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_CANDIDATES = 12;
 /** Eight fixed evaluator batches; detail generation must stay below this before evaluation. */
 export const OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES = 192;
 
 export interface ObjectiveAuthoritySemanticEvidenceAliasBinding {
   evidenceRef: string;
+  evidenceId: string;
+  candidateIndex: number;
   sourceBlockId: string;
   authorityRecordIds: string[];
   authorityClaimIds: string[];
@@ -45,6 +56,9 @@ export interface ObjectiveAuthoritySemanticObjectiveAliasBinding {
   boundAuthorityRecordIds: string[];
   boundSourceBlockIds: string[];
   boundAuthorityClaimIds: string[];
+  boundEvidenceRefs: string[];
+  totalCandidateCount: number;
+  candidateWindowTruncated: boolean;
   evidenceByRef: Map<string, ObjectiveAuthoritySemanticEvidenceAliasBinding>;
 }
 
@@ -63,6 +77,7 @@ export interface BuildObjectiveAuthoritySemanticEvaluationScopesInput {
   nodes: CurriculumNode[];
   sourceBlocks: SourceBlock[];
   authorityBundles: SourceAuthorityBundle[];
+  evidenceCatalog: readonly CurriculumEvidenceOffer[];
   isBlockingEligible: (authorityRecordId: string) => boolean;
   /**
    * Original failed-objective meaning to preserve during a fresh post-repair
@@ -80,6 +95,8 @@ export interface MaterializeObjectiveAuthoritySemanticSupportMetadata {
   /** Local-only immutable predecessor lineage; never provider-authored. */
   recoveryOriginByObjectiveId?:
     ReadonlyMap<string, ObjectiveAuthorityCapabilityRecoveryOrigin> | undefined;
+  /** Deterministic orchestration observations retained only for audit/telemetry. */
+  localValidationDiagnosticCodesByObjectiveId?: ReadonlyMap<string, readonly string[]> | undefined;
 }
 
 export interface ValidateCurriculumObjectiveAuthoritySemanticSupportOptions {
@@ -165,66 +182,135 @@ function deriveBoundSourceBlockIds(
 }
 
 interface MutableEvidenceOffer {
+  evidenceId: string;
+  startOffset: number;
+  endOffset: number;
+  documentPosition: number;
   text: string;
-  claimKinds: ObjectiveAuthoritySemanticEvaluationObjectiveInput['evidence'][number]['claimKinds'];
+  claimKinds: ObjectiveAuthoritySemanticEvaluationObjectiveInput['candidates'][number]['claimKinds'];
   headingPath: string[];
   sourceBlockId: string;
   authorityRecordIds: string[];
   authorityClaimIds: string[];
 }
 
-function buildObjectiveEvidence(
-  objective: CurriculumObjective,
-  boundSourceBlockIds: readonly string[],
-  boundAuthorityClaimIds: readonly string[],
+function buildEligibleCandidates(
+  evidenceCatalog: readonly CurriculumEvidenceOffer[],
   authorityById: ReadonlyMap<string, SourceAuthorityBundle>,
   sourceBlockById: ReadonlyMap<string, SourceBlock>,
+  sourceBlockPositionById: ReadonlyMap<string, number>,
   isBlockingEligible: (authorityRecordId: string) => boolean,
-): {
-  evidence: ObjectiveAuthoritySemanticEvaluationObjectiveInput['evidence'];
-  evidenceByRef: Map<string, ObjectiveAuthoritySemanticEvidenceAliasBinding>;
-} {
-  const boundBlocks = new Set(boundSourceBlockIds);
-  const boundClaims = new Set(boundAuthorityClaimIds);
+): MutableEvidenceOffer[] {
   const grouped = new Map<string, MutableEvidenceOffer>();
-  for (const authorityRecordId of objective.truthAuthorityRecordIds) {
-    const bundle = authorityById.get(authorityRecordId);
-    if (!bundle || !isBlockingEligible(authorityRecordId)) continue;
-    const premiseKind = bundle.record.policyBasis.premiseKind;
-    for (const claim of bundle.claims) {
-      if (!boundBlocks.has(claim.sourceBlockId) || !boundClaims.has(claim.id)) continue;
-      const block = sourceBlockById.get(claim.sourceBlockId);
+  for (const offer of evidenceCatalog) {
+    const block = sourceBlockById.get(offer.blockId);
+    if (
+      !block ||
+      (block.contentOrigin !== undefined &&
+        block.contentOrigin !== null &&
+        block.contentOrigin !== 'extracted_original') ||
+      block.materialId !== offer.materialId ||
+      block.materialRevisionId !== offer.materialRevisionId ||
+      offer.startOffset < 0 ||
+      offer.endOffset > block.content.length ||
+      block.content.slice(offer.startOffset, offer.endOffset) !== offer.quote
+    ) {
+      continue;
+    }
+    const key = `${offer.blockId}\u0000${offer.startOffset}\u0000${offer.endOffset}\u0000${offer.quote}`;
+    const current: MutableEvidenceOffer = grouped.get(key) ?? {
+      evidenceId: offer.id,
+      startOffset: offer.startOffset,
+      endOffset: offer.endOffset,
+      documentPosition: sourceBlockPositionById.get(offer.blockId) ?? Number.MAX_SAFE_INTEGER,
+      text: offer.quote,
+      claimKinds: [],
+      headingPath: [...block.headingPath],
+      sourceBlockId: offer.blockId,
+      authorityRecordIds: [],
+      authorityClaimIds: [],
+    };
+    for (const [authorityRecordId, bundle] of authorityById) {
+      const record = bundle.record;
       if (
-        !block ||
-        claim.startOffset < 0 ||
-        claim.endOffset > block.content.length ||
-        block.content.slice(claim.startOffset, claim.endOffset) !== claim.quote
+        record.validationState !== 'validated' ||
+        record.conflictState === 'unresolved' ||
+        record.materialId !== offer.materialId ||
+        record.materialRevisionId !== offer.materialRevisionId ||
+        !isBlockingEligible(authorityRecordId)
       ) {
         continue;
       }
-      const key = `${claim.sourceBlockId}\u0000${claim.startOffset}\u0000${claim.endOffset}\u0000${claim.quote}`;
-      const current = grouped.get(key) ?? {
-        text: claim.quote,
-        claimKinds: [],
-        headingPath: [...block.headingPath],
-        sourceBlockId: claim.sourceBlockId,
-        authorityRecordIds: [],
-        authorityClaimIds: [],
-      };
+      const exactClaims = bundle.claims.filter(
+        (claim) =>
+          claim.sourceBlockId === offer.blockId &&
+          claim.startOffset === offer.startOffset &&
+          claim.endOffset === offer.endOffset &&
+          claim.quote === offer.quote &&
+          block.content.slice(claim.startOffset, claim.endOffset) === claim.quote,
+      );
+      if (exactClaims.length === 0) continue;
+      const premiseKind = record.policyBasis.premiseKind;
       if (!current.claimKinds.includes(premiseKind)) current.claimKinds.push(premiseKind);
       if (!current.authorityRecordIds.includes(authorityRecordId)) {
         current.authorityRecordIds.push(authorityRecordId);
       }
-      if (!current.authorityClaimIds.includes(claim.id)) current.authorityClaimIds.push(claim.id);
-      grouped.set(key, current);
+      for (const claim of exactClaims) {
+        if (!current.authorityClaimIds.includes(claim.id)) current.authorityClaimIds.push(claim.id);
+      }
     }
+    if (current.authorityClaimIds.length > 0) grouped.set(key, current);
   }
+  return [...grouped.values()].sort(
+    (left, right) =>
+      left.documentPosition - right.documentPosition ||
+      left.startOffset - right.startOffset ||
+      left.endOffset - right.endOffset ||
+      left.evidenceId.localeCompare(right.evidenceId),
+  );
+}
 
+function serializeCandidateWindow(
+  candidates: readonly MutableEvidenceOffer[],
+  boundAuthorityClaimIds: readonly string[],
+): {
+  candidates: ObjectiveAuthoritySemanticEvaluationObjectiveInput['candidates'];
+  evidenceByRef: Map<string, ObjectiveAuthoritySemanticEvidenceAliasBinding>;
+  boundEvidenceRefs: string[];
+  truncated: boolean;
+} {
+  const boundClaimIds = new Set(boundAuthorityClaimIds);
+  const boundCandidates = candidates.filter((candidate) =>
+    candidate.authorityClaimIds.some((claimId) => boundClaimIds.has(claimId)),
+  );
+  if (boundCandidates.length > OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_CANDIDATES) {
+    throw new Error('Objective bound evidence exceeds the semantic candidate-window limit.');
+  }
+  const retained =
+    candidates.length <= OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_CANDIDATES
+      ? [...candidates]
+      : [
+          ...boundCandidates,
+          ...candidates
+            .filter((candidate) => !boundCandidates.includes(candidate))
+            .slice(0, OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_CANDIDATES - boundCandidates.length),
+        ].sort(
+          (left, right) =>
+            left.documentPosition - right.documentPosition ||
+            left.startOffset - right.startOffset ||
+            left.endOffset - right.endOffset ||
+            left.evidenceId.localeCompare(right.evidenceId),
+        );
   const evidenceByRef = new Map<string, ObjectiveAuthoritySemanticEvidenceAliasBinding>();
-  const evidence = [...grouped.values()].map((offer, index) => {
+  const boundEvidenceRefs: string[] = [];
+  const serialized = retained.map((offer, index) => {
     const evidenceRef = `evidence_${index + 1}`;
+    const bound = offer.authorityClaimIds.some((claimId) => boundClaimIds.has(claimId));
+    if (bound) boundEvidenceRefs.push(evidenceRef);
     evidenceByRef.set(evidenceRef, {
       evidenceRef,
+      evidenceId: offer.evidenceId,
+      candidateIndex: index,
       sourceBlockId: offer.sourceBlockId,
       authorityRecordIds: [...offer.authorityRecordIds],
       authorityClaimIds: [...offer.authorityClaimIds],
@@ -236,12 +322,17 @@ function buildObjectiveEvidence(
       headingPath: [...offer.headingPath],
     };
   });
-  return { evidence, evidenceByRef };
+  return {
+    candidates: serialized,
+    evidenceByRef,
+    boundEvidenceRefs,
+    truncated: candidates.length > retained.length,
+  };
 }
 
 /**
- * Build one local scope per Curriculum objective. Only exact, bound, current,
- * blocking-eligible claim aliases enter provider-visible input.
+ * Build one local scope per Curriculum objective. Exact current candidates
+ * come from the bound set plus the LearningUnit envelope; binding stays local.
  */
 export function buildObjectiveAuthoritySemanticEvaluationScopes(
   input: BuildObjectiveAuthoritySemanticEvaluationScopesInput,
@@ -250,7 +341,20 @@ export function buildObjectiveAuthoritySemanticEvaluationScopes(
     input.authorityBundles.map((bundle) => [bundle.record.id, bundle] as const),
   );
   const sourceBlockById = new Map(input.sourceBlocks.map((block) => [block.id, block] as const));
-  const objectives = input.nodes.flatMap((node) => node.learningUnit?.objectives ?? []);
+  const sourceBlockPositionById = new Map(
+    input.sourceBlocks.map((block, index) => [block.id, index] as const),
+  );
+  const eligibleCandidates = buildEligibleCandidates(
+    input.evidenceCatalog,
+    authorityById,
+    sourceBlockById,
+    sourceBlockPositionById,
+    input.isBlockingEligible,
+  );
+  const objectiveLocations = input.nodes.flatMap((node) =>
+    (node.learningUnit?.objectives ?? []).map((objective) => ({ node, objective })),
+  );
+  const objectives = objectiveLocations.map((location) => location.objective);
   const objectiveIds = new Set(objectives.map((objective) => objective.id));
   for (const objectiveId of input.requiredCapabilityPreservationByObjectiveId?.keys() ?? []) {
     if (!objectiveIds.has(objectiveId)) {
@@ -259,7 +363,7 @@ export function buildObjectiveAuthoritySemanticEvaluationScopes(
       );
     }
   }
-  return objectives.map((objective, objectiveIndex) => {
+  return objectiveLocations.map(({ node, objective }, objectiveIndex) => {
     if (!objective.formalAssessmentConstruct) {
       throw new Error(
         `Objective ${objective.id} has no explicit Formal Assessment construct for semantic evaluation.`,
@@ -272,18 +376,27 @@ export function buildObjectiveAuthoritySemanticEvaluationScopes(
     requireUnique(boundAuthorityClaimIds, 'Authority-claim binding', objective.id);
     const objectiveRef = `objective_${objectiveIndex + 1}`;
     const proposition = curriculumObjectiveProposition(objective);
-    const { evidence, evidenceByRef } = buildObjectiveEvidence(
-      objective,
-      boundSourceBlockIds,
+    const unitSourceBlockIds = new Set(
+      node.sourceReferences.flatMap((reference) =>
+        reference.sourceBlockId ? [reference.sourceBlockId] : [],
+      ),
+    );
+    const boundClaimIds = new Set(boundAuthorityClaimIds);
+    const candidateUniverse = eligibleCandidates.filter(
+      (candidate) =>
+        unitSourceBlockIds.has(candidate.sourceBlockId) ||
+        candidate.authorityClaimIds.some((claimId) => boundClaimIds.has(claimId)),
+    );
+    const { candidates, evidenceByRef, boundEvidenceRefs, truncated } = serializeCandidateWindow(
+      candidateUniverse,
       boundAuthorityClaimIds,
-      authorityById,
-      sourceBlockById,
-      input.isBlockingEligible,
     );
-    const materializedAuthorityClaimIds = uniqueInOrder(
-      [...evidenceByRef.values()].flatMap((evidence) => evidence.authorityClaimIds),
+    const materializedBoundClaimIds = new Set(
+      [...evidenceByRef.values()]
+        .filter((evidence) => boundEvidenceRefs.includes(evidence.evidenceRef))
+        .flatMap((evidence) => evidence.authorityClaimIds),
     );
-    if (!sameOrderedStrings(materializedAuthorityClaimIds, boundAuthorityClaimIds)) {
+    if (boundAuthorityClaimIds.some((claimId) => !materializedBoundClaimIds.has(claimId))) {
       throw new Error(
         `Objective ${objective.id} exact authority-claim binding cannot be materialized from current selected evidence.`,
       );
@@ -292,7 +405,7 @@ export function buildObjectiveAuthoritySemanticEvaluationScopes(
       objectiveRef,
       proposition,
       construct: objective.formalAssessmentConstruct,
-      evidence,
+      candidates,
       ...(input.requiredCapabilityPreservationByObjectiveId?.get(objective.id)
         ? {
             requiredCapabilityPreservation: input.requiredCapabilityPreservationByObjectiveId.get(
@@ -311,6 +424,9 @@ export function buildObjectiveAuthoritySemanticEvaluationScopes(
         boundAuthorityRecordIds: [...objective.truthAuthorityRecordIds],
         boundSourceBlockIds,
         boundAuthorityClaimIds,
+        boundEvidenceRefs,
+        totalCandidateCount: candidateUniverse.length,
+        candidateWindowTruncated: truncated,
         evidenceByRef,
       },
     };
@@ -334,7 +450,7 @@ export function partitionObjectiveAuthoritySemanticEvaluationScopes(
   for (let index = 0; index < scopes.length; index += maxBatchSize) {
     const slice = scopes.slice(index, index + maxBatchSize);
     const batchInput = ObjectiveAuthoritySemanticEvaluationInputSchema.parse({
-      schemaVersion: 1,
+      schemaVersion: 2,
       policyVersion: OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_POLICY,
       objectives: slice.map((scope) => scope.input),
     });
@@ -374,7 +490,7 @@ export function objectiveAuthoritySemanticEvaluationSourceFingerprint(
       boundAuthorityRecordIds: binding.boundAuthorityRecordIds,
       boundSourceBlockIds: binding.boundSourceBlockIds,
       boundAuthorityClaimIds: binding.boundAuthorityClaimIds,
-      evidence: objective.evidence.map((offer) => {
+      candidates: objective.candidates.map((offer) => {
         const evidence = binding.evidenceByRef.get(offer.evidenceRef);
         if (!evidence) {
           throw new Error(
@@ -433,6 +549,117 @@ function allowedSupportTypes(
   return new Set([...IDENTIFY_CORE, ...EXPLAIN_CORE, ...APPLY_CORE, 'qualification']);
 }
 
+export interface ObjectiveAuthoritySemanticLocalDerivation {
+  anchorValid: boolean;
+  coverage: boolean;
+  bindingMatch: boolean;
+  misBinding: boolean;
+  coreValid: boolean;
+  contradiction: boolean;
+  verdict: 'pass' | 'fail';
+}
+
+function isV1SemanticSupport(
+  artifact: ObjectiveAuthoritySemanticSupport,
+): artifact is Extract<ObjectiveAuthoritySemanticSupport, { schemaVersion: 1 }> {
+  return artifact.schemaVersion === 1;
+}
+
+function persistedCandidateIsBound(
+  candidate: ObjectiveAuthoritySemanticPersistedCandidate,
+  artifact: Extract<ObjectiveAuthoritySemanticSupport, { schemaVersion: 2 }>,
+): boolean {
+  const boundSourceBlockIds = new Set(artifact.boundSourceBlockIds);
+  const boundAuthorityClaimIds = new Set(artifact.boundAuthorityClaimIds);
+  return (
+    boundSourceBlockIds.has(candidate.sourceBlockId) &&
+    candidate.authorityClaimIds.some((id) => boundAuthorityClaimIds.has(id))
+  );
+}
+
+export function deriveObjectiveAuthoritySemanticSupportV2(
+  artifact: Extract<ObjectiveAuthoritySemanticSupport, { schemaVersion: 2 }>,
+): ObjectiveAuthoritySemanticLocalDerivation {
+  const boundCandidateIndexes = new Set(
+    artifact.candidateLabels
+      .filter((candidate) => persistedCandidateIsBound(candidate, artifact))
+      .map((candidate) => candidate.candidateIndex),
+  );
+  const boundSatisfiedGroups = artifact.supportGroups.filter((group) =>
+    group.candidateIndexes.every((candidateIndex) => boundCandidateIndexes.has(candidateIndex)),
+  );
+  const anchorValid = artifact.candidateLabels.some(
+    (candidate) =>
+      boundCandidateIndexes.has(candidate.candidateIndex) && candidate.relation === 'relevant',
+  );
+  const coverage = artifact.supportGroups.length > 0;
+  const bindingMatch = boundSatisfiedGroups.length > 0;
+  const core = requiredCore(artifact.construct);
+  const coreValid = boundSatisfiedGroups.some((group) => core.has(group.supportType));
+  const contradiction = artifact.candidateLabels.some(
+    (candidate) =>
+      boundCandidateIndexes.has(candidate.candidateIndex) &&
+      candidate.relation === 'contradicts_claim',
+  );
+  const capabilityPreserved = artifact.capabilityPreservation?.verdict !== 'fail';
+  const verdict =
+    bindingMatch && !contradiction && coreValid && capabilityPreserved ? 'pass' : 'fail';
+  return {
+    anchorValid,
+    coverage,
+    bindingMatch,
+    misBinding: coverage && !bindingMatch,
+    coreValid,
+    contradiction,
+    verdict,
+  };
+}
+
+export function objectiveAuthoritySemanticallySupportedClaimIds(
+  artifact: ObjectiveAuthoritySemanticSupport,
+): string[] {
+  if (isV1SemanticSupport(artifact)) {
+    return uniqueInOrder(
+      artifact.fragments
+        .filter((fragment) => fragment.status === 'supported')
+        .flatMap((fragment) => fragment.authorityClaimIds),
+    );
+  }
+  const candidateByIndex = new Map(
+    artifact.candidateLabels.map((candidate) => [candidate.candidateIndex, candidate] as const),
+  );
+  const boundGroups = artifact.supportGroups.filter((group) =>
+    group.candidateIndexes.every((candidateIndex) => {
+      const candidate = candidateByIndex.get(candidateIndex);
+      return candidate ? persistedCandidateIsBound(candidate, artifact) : false;
+    }),
+  );
+  return uniqueInOrder(
+    boundGroups.flatMap((group) =>
+      group.candidateIndexes.flatMap(
+        (candidateIndex) => candidateByIndex.get(candidateIndex)?.authorityClaimIds ?? [],
+      ),
+    ),
+  );
+}
+
+export function objectiveAuthoritySemanticProvenanceMappings(
+  artifact: ObjectiveAuthoritySemanticSupport,
+): Array<{
+  sourceBlockIds: string[];
+  authorityRecordIds: string[];
+  authorityClaimIds: string[];
+}> {
+  if (isV1SemanticSupport(artifact)) {
+    return [...artifact.fragments, ...artifact.conflicts, ...artifact.overreach];
+  }
+  return artifact.candidateLabels.map((candidate) => ({
+    sourceBlockIds: [candidate.sourceBlockId],
+    authorityRecordIds: candidate.authorityRecordIds,
+    authorityClaimIds: candidate.authorityClaimIds,
+  }));
+}
+
 /** The only failed-artifact shape eligible for the anchored general teaching lane. */
 export function isConfinedGeneralTeachingLaneSemanticFailure(
   objective: Pick<CurriculumObjective, 'subjectClass' | 'scopeOrigin'>,
@@ -443,11 +670,19 @@ export function isConfinedGeneralTeachingLaneSemanticFailure(
     deriveEffectiveObjectiveSubjectClass(objective, artifact) !== 'general' ||
     objective.scopeOrigin !== 'anchored' ||
     artifact.verdict !== 'fail' ||
-    artifact.fragments.some((fragment) => fragment.status === 'conflicted') ||
-    artifact.conflicts.length > 0 ||
     artifact.capabilityPreservation?.verdict === 'fail' ||
     artifact.construct === 'design' ||
     artifact.construct === 'evaluate'
+  ) {
+    return false;
+  }
+  if (!isV1SemanticSupport(artifact)) {
+    const derived = deriveObjectiveAuthoritySemanticSupportV2(artifact);
+    return derived.anchorValid && !derived.contradiction && !derived.misBinding;
+  }
+  if (
+    artifact.fragments.some((fragment) => fragment.status === 'conflicted') ||
+    artifact.conflicts.length > 0
   ) {
     return false;
   }
@@ -469,44 +704,15 @@ function requiredCore(
   return new Set();
 }
 
-function validateConstructMapping(
-  evaluation: ObjectiveAuthoritySemanticObjectiveProposal,
-  add: (code: string, message: string) => void,
-): void {
-  const supportedTypes = evaluation.fragments.flatMap((fragment) =>
-    fragment.status === 'supported' && fragment.supportType ? [fragment.supportType] : [],
-  );
-  const allowed = allowedSupportTypes(evaluation.construct);
-  if (supportedTypes.some((supportType) => !allowed.has(supportType))) {
-    add(
-      'semantic_support_type_construct_mismatch',
-      `Objective ${evaluation.objectiveRef} maps a support type outside its fixed construct.`,
-    );
-  }
-  if (evaluation.verdict !== 'pass') return;
-  if (evaluation.construct === 'design' || evaluation.construct === 'evaluate') {
-    add(
-      'semantic_construct_prohibited_v1',
-      `Objective ${evaluation.objectiveRef} cannot pass the v1 semantic-support policy at its construct.`,
-    );
-    return;
-  }
-  const core = requiredCore(evaluation.construct);
-  if (!supportedTypes.some((supportType) => core.has(supportType))) {
-    add(
-      'semantic_construct_core_missing',
-      `Objective ${evaluation.objectiveRef} has no construct-specific core support mapping.`,
-    );
-  }
-}
-
 function validateCapabilityPreservation(
   expected: ObjectiveAuthoritySemanticEvaluationObjectiveInput,
   evaluation: ObjectiveAuthoritySemanticObjectiveProposal,
   add: (code: string, message: string) => void,
 ): void {
   const requirement = expected.requiredCapabilityPreservation;
-  const preservation = evaluation.capabilityPreservation;
+  const preservation =
+    'capabilityPreservation' in evaluation ? evaluation.capabilityPreservation : undefined;
+  const fragments = 'fragments' in evaluation ? evaluation.fragments : undefined;
   if (!requirement && preservation) {
     add(
       'semantic_capability_preservation_unexpected',
@@ -514,14 +720,21 @@ function validateCapabilityPreservation(
     );
     return;
   }
-  if (requirement && !preservation) {
+  if (requirement && (!preservation || !fragments)) {
     add(
       'semantic_capability_preservation_missing',
       `Objective ${expected.objectiveRef} omitted the required original-capability preservation result.`,
     );
     return;
   }
-  if (!requirement || !preservation) return;
+  if (!requirement || !preservation || !fragments) return;
+
+  if (fragments.map((fragment) => fragment.text).join('') !== expected.proposition) {
+    add(
+      'semantic_fragment_partition_incomplete',
+      `Capability-recovery fragments do not exactly partition ${expected.objectiveRef}.`,
+    );
+  }
 
   if (preservation.originalProposition !== requirement.originalProposition) {
     add(
@@ -536,7 +749,7 @@ function validateCapabilityPreservation(
     );
   }
   const count = Math.min(preservation.mappings.length, requirement.originalFragments.length);
-  const repairedFragmentIds = new Set(evaluation.fragments.map((fragment) => fragment.fragmentId));
+  const repairedFragmentIds = new Set(fragments.map((fragment) => fragment.fragmentId));
   const coveredRepairedFragmentIds = new Set<string>();
   for (let index = 0; index < count; index += 1) {
     const mapping = preservation.mappings[index]!;
@@ -561,14 +774,123 @@ function validateCapabilityPreservation(
       }
     }
   }
-  if (
-    evaluation.fragments.some((fragment) => !coveredRepairedFragmentIds.has(fragment.fragmentId))
-  ) {
+  if (fragments.some((fragment) => !coveredRepairedFragmentIds.has(fragment.fragmentId))) {
     add(
       'semantic_capability_repaired_fragment_coverage_incomplete',
       `Objective ${expected.objectiveRef} does not account for every repaired proposition fragment.`,
     );
   }
+}
+
+export interface ObjectiveAuthoritySemanticEvaluationDecision extends ObjectiveAuthoritySemanticLocalDerivation {
+  objectiveRef: string;
+  objectiveId: string;
+  candidateWindowTruncated: boolean;
+  validGroups: Array<{
+    evidenceRefs: string[];
+    supportType: ObjectiveAuthoritySupportType;
+    rationale?: string | undefined;
+  }>;
+  validationDiagnosticCodes: string[];
+  nonBoundContradictionCount: number;
+}
+
+function normalizedEvidenceRefSet(evidenceRefs: readonly string[]): string {
+  return [...evidenceRefs].sort((left, right) => left.localeCompare(right)).join('\u0000');
+}
+
+function resolveObjectiveAuthoritySemanticEvaluation(
+  expected: ObjectiveAuthoritySemanticEvaluationObjectiveInput,
+  binding: ObjectiveAuthoritySemanticObjectiveAliasBinding,
+  evaluation: ObjectiveAuthoritySemanticObjectiveProposal,
+): ObjectiveAuthoritySemanticEvaluationDecision {
+  const relationByRef = new Map(
+    evaluation.candidateLabels.map((candidate) => [candidate.evidenceRef, candidate.relation]),
+  );
+  const structurallyConsistentGroups = evaluation.supportGroups.filter((group) =>
+    group.evidenceRefs.every((evidenceRef) => relationByRef.get(evidenceRef) === 'relevant'),
+  );
+  const labelInconsistentCount =
+    evaluation.supportGroups.length - structurallyConsistentGroups.length;
+  const minimalGroups = structurallyConsistentGroups.filter((group, groupIndex) => {
+    const refs = new Set(group.evidenceRefs);
+    return !structurallyConsistentGroups.some(
+      (other, otherIndex) =>
+        otherIndex !== groupIndex &&
+        other.evidenceRefs.length < group.evidenceRefs.length &&
+        other.evidenceRefs.every((evidenceRef) => refs.has(evidenceRef)),
+    );
+  });
+  const nonMinimalCount = structurallyConsistentGroups.length - minimalGroups.length;
+  const candidatePosition = new Map(
+    expected.candidates.map((candidate, index) => [candidate.evidenceRef, index] as const),
+  );
+  const validGroups = minimalGroups.map((group) => ({
+    evidenceRefs: [...group.evidenceRefs].sort(
+      (left, right) => candidatePosition.get(left)! - candidatePosition.get(right)!,
+    ),
+    supportType: group.supportType,
+    ...(group.rationale ? { rationale: group.rationale } : {}),
+  }));
+  const boundRefs = new Set(binding.boundEvidenceRefs);
+  const boundSatisfiedGroups = validGroups.filter((group) =>
+    group.evidenceRefs.every((evidenceRef) => boundRefs.has(evidenceRef)),
+  );
+  const anchorValid = evaluation.candidateLabels.some(
+    (candidate) => boundRefs.has(candidate.evidenceRef) && candidate.relation === 'relevant',
+  );
+  const coverage = validGroups.length > 0;
+  const bindingMatch = boundSatisfiedGroups.length > 0;
+  const core = requiredCore(binding.construct);
+  const coreValid = boundSatisfiedGroups.some((group) => core.has(group.supportType));
+  const contradiction = evaluation.candidateLabels.some(
+    (candidate) =>
+      boundRefs.has(candidate.evidenceRef) && candidate.relation === 'contradicts_claim',
+  );
+  const validationDiagnosticCodes = [
+    ...(labelInconsistentCount > 0 ? ['semantic_support_group_label_inconsistent'] : []),
+    ...(nonMinimalCount > 0 ? ['semantic_support_group_not_minimal'] : []),
+  ];
+  return {
+    objectiveRef: evaluation.objectiveRef,
+    objectiveId: binding.objectiveId,
+    candidateWindowTruncated: binding.candidateWindowTruncated,
+    validGroups,
+    validationDiagnosticCodes,
+    anchorValid,
+    coverage,
+    bindingMatch,
+    misBinding: coverage && !bindingMatch,
+    coreValid,
+    contradiction,
+    verdict:
+      bindingMatch &&
+      !contradiction &&
+      coreValid &&
+      (!('capabilityPreservation' in evaluation) ||
+        evaluation.capabilityPreservation.verdict !== 'fail')
+        ? 'pass'
+        : 'fail',
+    nonBoundContradictionCount: evaluation.candidateLabels.filter(
+      (candidate) =>
+        !boundRefs.has(candidate.evidenceRef) && candidate.relation === 'contradicts_claim',
+    ).length,
+  };
+}
+
+export function deriveObjectiveAuthoritySemanticEvaluationDecision(
+  batch: ObjectiveAuthoritySemanticEvaluationBatch,
+  objectiveRef: string,
+  evaluation: ObjectiveAuthoritySemanticObjectiveProposal,
+): ObjectiveAuthoritySemanticEvaluationDecision {
+  const expected = batch.input.objectives.find(
+    (objective) => objective.objectiveRef === objectiveRef,
+  );
+  const binding = batch.aliasBindings.get(objectiveRef);
+  if (!expected || !binding || evaluation.objectiveRef !== objectiveRef) {
+    throw new Error(`Cannot derive semantic authority for foreign objective ${objectiveRef}.`);
+  }
+  return resolveObjectiveAuthoritySemanticEvaluation(expected, binding, evaluation);
 }
 
 /** Validate provider structure and provenance scope without pretending to judge entailment lexically. */
@@ -630,70 +952,60 @@ export function validateObjectiveAuthoritySemanticEvaluationProposal(
         `Semantic evaluation changed objective identity at position ${index + 1}.`,
       );
     }
-    if (evaluation.proposition !== expected.proposition) {
+    const expectedCandidateRefs = expected.candidates.map((candidate) => candidate.evidenceRef);
+    const actualCandidateRefs = evaluation.candidateLabels.map(
+      (candidate) => candidate.evidenceRef,
+    );
+    if (
+      actualCandidateRefs.length !== expectedCandidateRefs.length ||
+      actualCandidateRefs.some(
+        (evidenceRef, candidateIndex) => evidenceRef !== expectedCandidateRefs[candidateIndex],
+      ) ||
+      new Set(actualCandidateRefs).size !== actualCandidateRefs.length
+    ) {
       addObjective(
-        'semantic_proposition_mismatch',
-        `Semantic evaluation changed the proposition for ${expected.objectiveRef}.`,
+        'semantic_candidate_label_set_mismatch',
+        `Semantic evaluation did not label the exact ordered candidate set for ${expected.objectiveRef}.`,
       );
     }
-    if (evaluation.construct !== expected.construct) {
+    const allowedEvidenceRefs = new Set(expectedCandidateRefs);
+    const normalizedGroups = evaluation.supportGroups.map((group) =>
+      normalizedEvidenceRefSet(group.evidenceRefs),
+    );
+    if (new Set(normalizedGroups).size !== normalizedGroups.length) {
       addObjective(
-        'semantic_construct_mismatch',
-        `Semantic evaluation changed the construct for ${expected.objectiveRef}.`,
+        'semantic_support_group_duplicate',
+        `Semantic evaluation returned a duplicate support group for ${expected.objectiveRef}.`,
       );
     }
-    if (evaluation.fragments.map((fragment) => fragment.text).join('') !== expected.proposition) {
+    if (
+      evaluation.supportGroups.some((group) =>
+        group.evidenceRefs.some((evidenceRef) => !allowedEvidenceRefs.has(evidenceRef)),
+      )
+    ) {
       addObjective(
-        'semantic_fragment_partition_incomplete',
-        `Semantic fragments do not exactly partition ${expected.objectiveRef}.`,
+        'semantic_support_group_unbound_evidence_ref',
+        `A support group for ${expected.objectiveRef} cites an unoffered candidate.`,
       );
     }
-    const fragmentIds = new Set(evaluation.fragments.map((fragment) => fragment.fragmentId));
-    const allowedEvidenceRefs = new Set(expected.evidence.map((offer) => offer.evidenceRef));
-    for (const fragment of evaluation.fragments) {
-      if (fragment.status === 'unsupported') {
-        if (fragment.supportType !== null || fragment.evidenceRefs.length > 0) {
+    const allowed = allowedSupportTypes(expected.construct);
+    if (evaluation.supportGroups.some((group) => !allowed.has(group.supportType))) {
+      addObjective(
+        'semantic_support_type_construct_mismatch',
+        `A support group for ${expected.objectiveRef} maps outside its fixed construct.`,
+      );
+    }
+    if ('fragments' in evaluation) {
+      for (const fragment of evaluation.fragments) {
+        if (fragment.evidenceRefs.some((evidenceRef) => !allowedEvidenceRefs.has(evidenceRef))) {
           addObjective(
-            'semantic_unsupported_mapping_invalid',
-            `Unsupported fragment ${fragment.fragmentId} must not claim support or evidence.`,
+            'semantic_unbound_evidence_ref',
+            `Capability fragment ${fragment.fragmentId} cites an unoffered candidate.`,
           );
         }
-      } else if (fragment.status === 'conflicted') {
-        if (fragment.supportType !== null) {
-          addObjective(
-            'semantic_conflicted_mapping_invalid',
-            `Conflicted fragment ${fragment.fragmentId} must not claim a support type.`,
-          );
-        }
-      } else if (fragment.supportType === null || fragment.evidenceRefs.length === 0) {
-        addObjective(
-          'semantic_supported_mapping_incomplete',
-          `Supported fragment ${fragment.fragmentId} lacks a support type or evidence.`,
-        );
-      }
-      if (fragment.evidenceRefs.some((evidenceRef) => !allowedEvidenceRefs.has(evidenceRef))) {
-        addObjective(
-          'semantic_unbound_evidence_ref',
-          `Fragment ${fragment.fragmentId} cites evidence outside ${expected.objectiveRef}.`,
-        );
-      }
-    }
-    for (const row of [...evaluation.conflicts, ...evaluation.overreach]) {
-      if (row.fragmentIds.some((fragmentId) => !fragmentIds.has(fragmentId))) {
-        addObjective(
-          'semantic_unknown_fragment_ref',
-          `A semantic finding for ${expected.objectiveRef} cites an unknown fragment.`,
-        );
-      }
-      if (row.evidenceRefs.some((evidenceRef) => !allowedEvidenceRefs.has(evidenceRef))) {
-        addObjective(
-          'semantic_unbound_evidence_ref',
-          `A semantic finding for ${expected.objectiveRef} cites unbound evidence.`,
-        );
       }
     }
     validateCapabilityPreservation(expected, evaluation, addObjective);
-    validateConstructMapping(evaluation, addObjective);
   }
   return {
     valid: diagnostics.length === 0,
@@ -741,28 +1053,46 @@ export function materializeObjectiveAuthoritySemanticSupport(
     if (!binding) {
       throw new Error(`Missing local alias binding for ${evaluation.objectiveRef}.`);
     }
-    const fragments = evaluation.fragments.map((fragment) => ({
-      fragmentId: fragment.fragmentId,
-      text: fragment.text,
-      status: fragment.status,
-      supportType: fragment.supportType,
-      ...mapEvidenceRefs(fragment.evidenceRefs, binding),
-      rationale: fragment.rationale,
-    }));
-    const conflicts = evaluation.conflicts.map((conflict) => ({
-      kind: conflict.kind,
-      fragmentIds: [...conflict.fragmentIds],
-      ...mapEvidenceRefs(conflict.evidenceRefs, binding),
-      rationale: conflict.rationale,
-    }));
-    const overreach = evaluation.overreach.map((item) => ({
-      kind: item.kind,
-      fragmentIds: [...item.fragmentIds],
-      ...mapEvidenceRefs(item.evidenceRefs, binding),
-      rationale: item.rationale,
-    }));
+    const expected = batch.input.objectives.find(
+      (objective) => objective.objectiveRef === evaluation.objectiveRef,
+    )!;
+    const decision = resolveObjectiveAuthoritySemanticEvaluation(expected, binding, evaluation);
+    const candidateLabels = evaluation.candidateLabels.map((candidate) => {
+      const mapped = binding.evidenceByRef.get(candidate.evidenceRef)!;
+      return {
+        candidateIndex: mapped.candidateIndex,
+        evidenceId: mapped.evidenceId,
+        sourceBlockId: mapped.sourceBlockId,
+        authorityRecordIds: [...mapped.authorityRecordIds],
+        authorityClaimIds: [...mapped.authorityClaimIds],
+        relation: candidate.relation,
+        ...('rationale' in candidate && candidate.rationale
+          ? { rationale: candidate.rationale }
+          : {}),
+      } satisfies ObjectiveAuthoritySemanticPersistedCandidate;
+    });
+    const supportGroups = decision.validGroups.map((group) => ({
+      candidateIndexes: group.evidenceRefs.map(
+        (evidenceRef) => binding.evidenceByRef.get(evidenceRef)!.candidateIndex,
+      ),
+      supportType: group.supportType,
+      ...(group.rationale ? { rationale: group.rationale } : {}),
+    })) satisfies ObjectiveAuthoritySemanticPersistedSupportGroup[];
+    const fragments =
+      'fragments' in evaluation
+        ? evaluation.fragments.map((fragment) => ({
+            fragmentId: fragment.fragmentId,
+            text: fragment.text,
+            status: fragment.status,
+            supportType: fragment.supportType,
+            ...mapEvidenceRefs(fragment.evidenceRefs, binding),
+            rationale: fragment.rationale,
+          }))
+        : undefined;
+    const capabilityPreservation =
+      'capabilityPreservation' in evaluation ? evaluation.capabilityPreservation : undefined;
     const artifact = ObjectiveAuthoritySemanticSupportSchema.parse({
-      schemaVersion: 1,
+      schemaVersion: 2,
       policyVersion: batch.input.policyVersion,
       evaluator: metadata.evaluator,
       provider: metadata.provider,
@@ -782,26 +1112,32 @@ export function materializeObjectiveAuthoritySemanticSupport(
         sourceBlockIds: binding.boundSourceBlockIds,
         authorityClaimIds: binding.boundAuthorityClaimIds,
       }),
-      fragments,
-      unsupportedFragmentIds: [...evaluation.unsupportedFragmentIds],
-      conflicts,
-      overreach,
-      ...(evaluation.capabilityPreservation
+      candidateWindow: {
+        totalCandidateCount: binding.totalCandidateCount,
+        offeredCandidateCount: candidateLabels.length,
+        truncated: binding.candidateWindowTruncated,
+      },
+      candidateLabels,
+      supportGroups,
+      validationDiagnosticCodes: uniqueInOrder([
+        ...decision.validationDiagnosticCodes,
+        ...(metadata.localValidationDiagnosticCodesByObjectiveId?.get(binding.objectiveId) ?? []),
+      ]),
+      ...(fragments && capabilityPreservation
         ? {
+            fragments,
             capabilityPreservation: {
-              originalProposition: evaluation.capabilityPreservation.originalProposition,
+              originalProposition: capabilityPreservation.originalProposition,
               originalPropositionFingerprint: fingerprintObjectiveAuthorityProposition(
-                evaluation.capabilityPreservation.originalProposition,
+                capabilityPreservation.originalProposition,
               ),
-              mappings: evaluation.capabilityPreservation.mappings.map((mapping) => ({
+              mappings: capabilityPreservation.mappings.map((mapping) => ({
                 ...mapping,
                 repairedFragmentIds: [...mapping.repairedFragmentIds],
               })),
-              lostOriginalFragmentIds: [
-                ...evaluation.capabilityPreservation.lostOriginalFragmentIds,
-              ],
-              verdict: evaluation.capabilityPreservation.verdict,
-              rationale: evaluation.capabilityPreservation.rationale,
+              lostOriginalFragmentIds: [...capabilityPreservation.lostOriginalFragmentIds],
+              verdict: capabilityPreservation.verdict,
+              rationale: capabilityPreservation.rationale,
               ...(metadata.recoveryOriginByObjectiveId?.has(binding.objectiveId)
                 ? {
                     recoveryOrigin: metadata.recoveryOriginByObjectiveId.get(binding.objectiveId),
@@ -810,8 +1146,7 @@ export function materializeObjectiveAuthoritySemanticSupport(
             },
           }
         : {}),
-      verdict: evaluation.verdict,
-      rationale: evaluation.rationale,
+      verdict: decision.verdict,
       evaluatedAt: metadata.evaluatedAt,
     });
     if (result.has(binding.objectiveId)) {
@@ -860,9 +1195,11 @@ function validatePersistedConstructMapping(
   add: (code: string, message: string) => void,
   options: { skipCoreMissing?: boolean } = {},
 ): void {
-  const supportedTypes = artifact.fragments.flatMap((fragment) =>
-    fragment.status === 'supported' && fragment.supportType ? [fragment.supportType] : [],
-  );
+  const supportedTypes = isV1SemanticSupport(artifact)
+    ? artifact.fragments.flatMap((fragment) =>
+        fragment.status === 'supported' && fragment.supportType ? [fragment.supportType] : [],
+      )
+    : artifact.supportGroups.map((group) => group.supportType);
   if (artifact.construct === 'design' || artifact.construct === 'evaluate') {
     add(
       'semantic_construct_prohibited_v1',
@@ -948,7 +1285,13 @@ function validateCurriculumObjectiveAuthoritySemanticSupportScope(
         objective,
         artifact,
       );
-      if (artifact.policyVersion !== OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_POLICY) {
+      const expectedPolicy = isV1SemanticSupport(artifact)
+        ? OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_V1_POLICY
+        : OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_POLICY;
+      if (
+        !OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_ACCEPTED_POLICIES.has(artifact.policyVersion) ||
+        artifact.policyVersion !== expectedPolicy
+      ) {
         add(
           'semantic_policy_stale',
           `Objective ${objective.id} uses a stale semantic-support policy.`,
@@ -1023,7 +1366,10 @@ function validateCurriculumObjectiveAuthoritySemanticSupportScope(
           `Objective ${objective.id} has a stale authority-binding fingerprint.`,
         );
       }
-      if (artifact.fragments.map((fragment) => fragment.text).join('') !== proposition) {
+      if (
+        isV1SemanticSupport(artifact) &&
+        artifact.fragments.map((fragment) => fragment.text).join('') !== proposition
+      ) {
         add(
           'semantic_fragment_partition_incomplete',
           `Objective ${objective.id} does not retain an exact proposition partition.`,
@@ -1049,8 +1395,9 @@ function validateCurriculumObjectiveAuthoritySemanticSupportScope(
             `Objective ${objective.id} does not retain an exact original-capability partition.`,
           );
         }
+        const recoveryFragments = artifact.fragments ?? [];
         const repairedFragmentIds = new Set(
-          artifact.fragments.map((fragment) => fragment.fragmentId),
+          recoveryFragments.map((fragment) => fragment.fragmentId),
         );
         const coveredRepairedFragmentIds = new Set<string>();
         for (const mapping of preservation.mappings) {
@@ -1066,9 +1413,7 @@ function validateCurriculumObjectiveAuthoritySemanticSupportScope(
           }
         }
         if (
-          artifact.fragments.some(
-            (fragment) => !coveredRepairedFragmentIds.has(fragment.fragmentId),
-          )
+          recoveryFragments.some((fragment) => !coveredRepairedFragmentIds.has(fragment.fragmentId))
         ) {
           add(
             'semantic_capability_repaired_fragment_coverage_incomplete',
@@ -1082,22 +1427,32 @@ function validateCurriculumObjectiveAuthoritySemanticSupportScope(
           );
         }
       }
-      const boundRecordIds = new Set(artifact.boundAuthorityRecordIds);
-      const boundSourceBlockIds = new Set(artifact.boundSourceBlockIds);
-      const boundClaimIds = new Set(artifact.boundAuthorityClaimIds);
-      const mappings = [...artifact.fragments, ...artifact.conflicts, ...artifact.overreach];
-      if (
-        mappings.some(
-          (mapping) =>
-            mapping.authorityRecordIds.some((id) => !boundRecordIds.has(id)) ||
-            mapping.sourceBlockIds.some((id) => !boundSourceBlockIds.has(id)) ||
-            mapping.authorityClaimIds.some((id) => !boundClaimIds.has(id)),
-        )
-      ) {
-        add(
-          'semantic_mapping_outside_binding',
-          `Objective ${objective.id} maps semantic support outside its exact binding.`,
-        );
+      if (isV1SemanticSupport(artifact)) {
+        const boundRecordIds = new Set(artifact.boundAuthorityRecordIds);
+        const boundSourceBlockIds = new Set(artifact.boundSourceBlockIds);
+        const boundClaimIds = new Set(artifact.boundAuthorityClaimIds);
+        const mappings = [...artifact.fragments, ...artifact.conflicts, ...artifact.overreach];
+        if (
+          mappings.some(
+            (mapping) =>
+              mapping.authorityRecordIds.some((id) => !boundRecordIds.has(id)) ||
+              mapping.sourceBlockIds.some((id) => !boundSourceBlockIds.has(id)) ||
+              mapping.authorityClaimIds.some((id) => !boundClaimIds.has(id)),
+          )
+        ) {
+          add(
+            'semantic_mapping_outside_binding',
+            `Objective ${objective.id} maps semantic support outside its exact binding.`,
+          );
+        }
+      } else {
+        const derived = deriveObjectiveAuthoritySemanticSupportV2(artifact);
+        if (artifact.verdict !== derived.verdict) {
+          add(
+            'semantic_local_verdict_mismatch',
+            `Objective ${objective.id} retains a verdict inconsistent with its local candidate and support-group derivation.`,
+          );
+        }
       }
       validatePersistedConstructMapping(artifact, objective.id, add, {
         skipCoreMissing: artifact.verdict !== 'pass',
