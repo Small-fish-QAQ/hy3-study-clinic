@@ -238,6 +238,9 @@ intentionally testing interruption and restart behavior.
 | **Fake** (default) | nothing to configure | Deterministic offline provider. Full workflows, no network, no credentials, no cost. This is the normal development and test runtime, not a degraded state. |
 | **Hy3** | copy `.env.example` to `.env`, set `LLM_PROVIDER=hy3` plus `HY3_BASE_URL`, `HY3_API_KEY`, `HY3_MODEL` | Real Hy3 over an OpenAI-compatible endpoint. Configure your own endpoint and credentials. |
 
+Real Hy3 outputs are model-generated and may vary between runs; deterministic local
+validation and authority boundaries remain unchanged.
+
 Credentials are read from environment variables or a git-ignored local config file. **No
 key is ever committed** - `.env` and `**/provider-config.json` are git-ignored, and the
 evidence publisher fails closed if a credential, token, or local path would be written to
