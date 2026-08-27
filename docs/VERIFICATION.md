@@ -1,17 +1,8 @@
 # Verification and Reviewer Evidence
 
-This document is the reproducibility and reviewer-evidence companion to the [Hy3 Study Clinic README](../README.md). It separates verification detail from the product overview while keeping every published claim auditable.
-
-## Release lineage
-
-| Purpose                    | Commit or ref                                                            | Meaning                                                                                                     |
-| -------------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| Real Hy3 evaluation source | `46d34f288d6c619d396ee5f39e12cb33249161da`                               | The six-operation `eval:hy3` suite ran from this clean worktree.                                            |
-| Final submitted release    | `c67ac6d5a42295a21197794e5055ef7785df3b0b`                               | Direct child of the evaluated commit; adds the sanitized evidence, its regression guard, and documentation. |
-| Immutable final tag        | `issue-4-final`                                                          | Annotated tag pointing to `c67ac6d`; it is intentionally not moved by later documentation maintenance.      |
-| Upstream submission        | [Tencent-Hunyuan/Hy3#77](https://github.com/Tencent-Hunyuan/Hy3/pull/77) | Wrapper PR targeting upstream branch `rhinobird2026` and linking the independent repository.                |
-
-This post-tag audit improves documentation and reviewer-facing metadata. It does not rewrite the historical evaluation or move the release tag.
+This document is the reproducibility companion to the [Hy3 Study Clinic README](../README.md).
+It keeps current commands, evidence boundaries, and the competition requirements visible without
+turning historical implementation logs into current claims.
 
 ## Standard verification
 
@@ -23,135 +14,69 @@ npm run build
 npm run lint
 npm test
 npm run eval:fake
+npx prettier --check .
 git diff --check
 ```
 
-The root commands map to the existing monorepo workspaces:
+The root commands run the existing workspaces:
 
-- `npm run build` runs the shared and server TypeScript builds plus the web TypeScript check and Vite production build.
-- `npm run lint` runs ESLint and `prettier --check .`.
-- `npm test` first builds the shared package, then runs every workspace Vitest suite.
-- Migration and HTTP integration coverage live inside the server Vitest suite; there are no separate commands that must be run to obtain those results.
-- `npm run eval:fake` uses the deterministic fake provider and makes no real Hy3 request.
-- Fake/offline automation verifies the final resolved provider before its first provider-capable operation. For a launched server fixture, set `AUTOMATION_EXPECT_PROVIDER=fake`, use an isolated `PROVIDER_CONFIG_PATH`, disable external visual transport, and require `GET /api/config` to report `provider: fake`.
+- `npm run build` builds shared and server TypeScript and the web TypeScript/Vite bundle.
+- `npm run lint` runs ESLint and the repository Prettier check.
+- `npm test` builds shared code and runs every shared, server, and web Vitest suite.
+- `npm run eval:fake` runs the real server in process with in-memory SQLite and the deterministic Fake provider.
+- `npx prettier --check .` is the direct formatting gate; `git diff --check` catches whitespace errors.
 
-Phase 8B-R coverage includes migration-31 upgrade repair, null-memory pending state, exact-binding pre-cutover backfill, durable audit/idempotency and pre/post-cutover separation; successor-only queue, assessment, Tutor, and API reads; event/state/execution atomicity; retry after a durable Formal reconciliation; and exact Again-before-Good ordering. Legacy Review rows are seeded only to prove historical preservation and the absence of current fallback authority.
-
-- `git diff --check` checks the final patch for whitespace errors. `npm run lint` already includes the repository-wide `prettier --check .`; run `npx prettier --check README.md docs/ARCHITECTURE.md docs/VERIFICATION.md` for a documentation-only formatting check.
-
-CI executes `npm ci`, build, lint, and tests on:
-
-- Ubuntu with Node.js 20;
-- Ubuntu with Node.js 24; and
-- Windows with Node.js 24.
-
-The immutable final tag passed all three jobs in [CI run 30604963718](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/runs/30604963718).
+Migration, repository, route, integration, and frontend coverage is included in the workspace test
+suites; there is no second hidden verification command. Tests, CI, and Fake evaluation never call
+the real Hy3 API. The optional external connection test and `npm run eval:hy3` require explicit
+credentials and are never run implicitly.
 
 ## Current-state verification
 
-The immutable final tag's historical results remain recorded in the release lineage above. Do not use those historical file or test totals as a claim about the current implementation. Run the standard commands from this document against the checked-out revision to obtain current results.
+Run the commands above against the checked-out revision. Do not copy historical test totals or
+latency figures into a current claim.
 
-`npm run eval:fake` covers provenance, alignment, cross-document blueprint scope, Tutor budgets, misconception transitions, review scheduling, retrieval isolation, prompt-injection defenses, mastery bounds, database foreign-key integrity, activity executability, grading state safety, course-understanding fixtures, and lesson provenance. It is deterministic and writes its reports under ignored `eval/reports/`.
+`eval:fake` covers provenance retention; alignment validation and graph preservation;
+cross-document assessment scope; Tutor iteration budgets and zero-state-on-failure; misconception
+transitions; fixed-clock Review scheduling and its separation from mastery; retrieval bounds and
+workspace isolation; prompt-injection fencing; mastery bounds and foreign-key integrity; activity
+launchability; duplicate/stale grading safety; section-aware course-understanding fixtures;
+lesson provenance; and the lesson-aware Tutor policy profile.
 
-Phase 5A's named offline Tutor profile is `lesson-aware-tutor-v1`. Its focused checks are:
-
-```bash
-npm run test -w @hy3-clinic/server -- src/llm/fakeProvider.test.ts src/tutor/pedagogy.test.ts src/eval/tutorPedagogy.test.ts src/services/studySessions.test.ts src/repositories/studySessions.test.ts
-```
-
-The profile evaluates 23 deterministic scenarios (direct questions, confusion, examples, contrasts, detours, return-to-route, formal-check readiness, source identity, repetition, and non-credit authority). Helpfulness, clarity, naturalness, and misconception-repair quality remain human/model-judged dimensions; the profile is not an educational-effectiveness score. `npm run eval:fake` also records the profile result as its final section.
-
-The server and shared suites also cover the implemented Phase 1-4 route: MaterialRevision lineage and source authority; Contract/Curriculum/StudyPlan/Agenda validation and atomic activation; production Course Map planning and bounded LearningUnit materialization; deterministic Course Preparation with learner-governed stops, durable StudySession lifecycle, idempotency, transcript recovery, and mixed-initiative controls; and formal-evidence progression, replan candidates, and goal outcomes. Web suites cover the Course selection shell, Course Home primary action and preparation checkpoints, Course Materials, Curriculum, Chinese-named `学习` workspace, consolidated Progress destination, embedded Explore graph, and the focused Settings surface. They also assert legacy-destination consolidation, useful empty states, formal/informal separation, prose-independent completion state, request cancellation and post-cancel reconciliation, stale responses, and Course/document switching safety.
-
-The reusable Curriculum quality, Course Source Map, and retrieval-policy evaluation checks are offline and make no provider call:
+The focused suites below are useful when reviewing one boundary:
 
 ```bash
-npm run test -w @hy3-clinic/server -- src/eval/curriculumQuality.test.ts src/services/curriculumEvidence.test.ts src/services/courseSourceMap.test.ts src/eval/curriculumRetrievalBenchmark.test.ts src/services/curriculumEvidencePolicyValidation.test.ts src/services/curriculum.test.ts
+npm run test -w @hy3-clinic/shared -- src/domain/objectiveAuthoritySemanticSupport.test.ts src/domain/courseMap.test.ts src/domain/providerConfig.test.ts
+npm run test -w @hy3-clinic/server -- src/services/curriculum.test.ts src/services/coursePreparation.test.ts src/services/teachingBriefPreparation.test.ts
+npm run test -w @hy3-clinic/server -- src/services/formalProgression.test.ts src/services/visualPreparation.test.ts src/services/agentProviderRuntime.test.ts
+npm run test -w @hy3-clinic/server -- src/routes/workspaces.test.ts src/routes/flows.test.ts src/app.test.ts
+npm run test -w @hy3-clinic/web -- src/views/AgentCourseWorkspace.live01.test.tsx src/views/AgentCourseViews.test.tsx
+npm run test -w @hy3-clinic/web -- src/views/KnowledgeMapView.test.tsx src/views/StudySessionView.test.tsx
 ```
 
-The quality-profile suite verifies deterministic repeated output and capped comparisons, a root-only Curriculum, multi-module hierarchy and distribution metrics, source/material/section mapping and exact revision fingerprints, prerequisite cycles and invalid references, synthesis integrity, current Concept/canonical membership authority, explicitly supplied execution capability/frontier eligibility, cross-Course and stale-revision rejection, and the heuristic/nonclaim boundary. The evidence suite verifies byte-for-byte parity with the pre-refactor production selector, the unchanged bounded offer list plus its opt-in selection trace, named signal rankings and contributions, configured block/offer limits, fallback behavior, priority offer ordering, exact internal-offer UTF-8 JSON bytes, explicitly estimated token counts, and exact required-SourceBlock recall at block, internal-offer byte, and estimated-token budgets.
-
-The Course Source Map suite covers deterministic multi-Material construction, exact manifest/source order, parser hierarchy boundaries, derived budgeting sections, current Concept and predecessor intersections, revision fingerprints, and rejection of stale revisions, foreign Courses, duplicates, incomplete corpora, and reordered blocks. Curriculum service coverage proves that the real request path projects current persisted multi-Material facts before selection. The policy-benchmark suite covers caller-supplied baseline parity, deterministic repeated runs, whole-offer byte truncation, fixed global and per-block budgets, section reserve/cap redistribution, weighted-RRF ties and named contributions, hierarchy child provenance, exact-ID recall, balance/overlap/diagnostic profiles, and rejection of unknown, foreign, stale, duplicate, or catalog-mismatched identities. The representative synthetic multi-Material gate saturates the production block budget, compares both named policies, preserves fixed labeled predecessor/Concept/priority evidence and material coverage, protects baseline priority evidence when sections exceed capacity, checks exact internal-offer bytes and whole-object truncation, and demonstrates recovery of otherwise starved derived sections. These tests evaluate local organization and comparison logic, not teaching quality or semantic entailment, and make no Hy3 call.
-
-The production Course Map and bounded Curriculum-materialization path has focused offline checks:
-
-```bash
-npm run test -w @hy3-clinic/shared -- src/domain/courseMap.test.ts
-npm run test -w @hy3-clinic/server -- src/llm/prompts.test.ts src/llm/json.test.ts src/llm/structuredOutputCompatibility.test.ts src/services/courseMap.test.ts src/services/courseMapProvider.test.ts src/llm/fakeProvider.test.ts src/llm/hy3Provider.test.ts src/services/providerTelemetry.test.ts src/services/curriculumMaterialization.test.ts src/eval/curriculumPolicyComparison.test.ts src/services/coursePreparation.test.ts src/services/curriculum.test.ts
-```
-
-These suites cover the strict compact-ref payload; rejection of old model-owned keys, indexes, fingerprints, raw anchors, and extra prerequisite fields; deterministic multi-module and multi-Material allocation; complete section/SourceBlock representation under fixed prompt caps; stale/foreign, duplicate, omitted, and unknown ref rejection; adjacent anchor-option ownership and exact local Concept/canonical resolution; hierarchy, allocation, synthesis, and duplicate-intent diagnostics; prerequisite cycles, self-edges, unknown refs, duplicates, order, degree, and edge bounds; deterministic Fake output; strict whole-response JSON handling and scalar-safe diagnostics; and Hy3-shaped valid, malformed, repaired, and semantically invalid mocked responses. They also exercise the production legacy direct default, deterministic internal Course Map detail planning and exact request-byte measurement, complete region assembly, prerequisite preservation, rejection of unknown, foreign, or omitted region evidence, and fixed-bound overflow. Provider-contract coverage proves one shared schema/candidate repair per logical request, repair failure, timeout without blind retry, cancellation during generation and repair, and physical-attempt callback compatibility. All calls are Fake or mocked; this focused run makes no real Hy3 request.
-
-The production generation policy is `legacy_direct_v1`, with one logical direct-Curriculum call, at most two physical requests including repair, and a 600000 ms (10-minute) lease at the default 240000 ms provider timeout. The internal/testable `course_map_materialization_v1` policy retains its fixed `MAX_DETAIL_BATCHES=2` ceiling: one Course Map logical call plus at most two detail logical calls, or at most three logical calls and six physical requests when every logical call uses its one repair. Its coordinator rechecks the frozen authority snapshot, cancellation, lease, and fencing around staged work; runs unchanged StudyPlan preflight; and persists only the complete assembled Curriculum. Its maximum lease remains 1560000 ms (26 minutes). Both policies preserve the accepted predecessor on failure and require no migration.
-
-Focused provider/settings checks can be run without calling a real provider:
-
-```bash
-npm run test -w @hy3-clinic/shared -- src/domain/providerConfig.test.ts
-npm run test -w @hy3-clinic/server -- src/services/providerRuntime.test.ts src/llm/hy3Provider.test.ts src/llm/structuredOutputCompatibility.test.ts src/llm/json.test.ts src/app.test.ts src/config.test.ts
-npm run test -w @hy3-clinic/web -- src/views/SettingsView.test.tsx src/views/AgentCourseWorkspace.live01.test.tsx
-npm run test -w @hy3-clinic/web -- src/views/AgentCourseViews.test.tsx src/App.test.tsx
-npm run test -w @hy3-clinic/server -- src/llm/fakeProvider.test.ts src/services/studyPlansAgent.test.ts
-npm run test -w @hy3-clinic/server -- src/services/providerTelemetry.test.ts src/routes/flows.test.ts src/services/lessons.test.ts src/services/remediation.test.ts
-npm run test -w @hy3-clinic/server -- src/services/curriculum.test.ts src/services/curriculumEvidence.test.ts src/services/studyPlansAgent.test.ts
-npm run test -w @hy3-clinic/server -- src/services/learningContractScope.test.ts src/services/learningContracts.test.ts src/services/curriculum.test.ts src/services/studyPlansAgent.test.ts
-npm run test -w @hy3-clinic/shared -- src/domain/phase2ApiSchemas.test.ts
-npm run test -w @hy3-clinic/shared -- src/domain/coursePreparation.test.ts
-npm run test -w @hy3-clinic/server -- src/services/coursePreparation.test.ts src/services/analysis.test.ts
-npm run test -w @hy3-clinic/web -- src/views/AgentCourseViews.test.tsx src/views/GraphWorkspaceView.test.tsx
-npm run test -w @hy3-clinic/web -- src/views/AgentCourseViews.test.tsx src/views/AgentCourseWorkspace.live01.test.tsx
-```
-
-The Course Preparation suites cover fresh confirmed Courses, missing/current/replacement-revision Concept grounding, Curriculum remediation, already-ready plans, learner-governed stops, provider failure, cancellation, exact replay, concurrent duplication, expired leases, stale Material writes, accepted-predecessor preservation, side-effect-free reads/navigation, public authority rejection, deterministic Home actions, compact learner-safe checkpoints, and Course-switch stale-response fencing. They use only Fake or mocked providers.
-
-`providerConfig.test.ts`, `providerRuntime.test.ts`, `hy3Provider.test.ts`, `structuredOutputCompatibility.test.ts`, `json.test.ts`, and `app.test.ts` cover strict safe contracts, precedence and persistence, atomic activation/rollback, request snapshots, stale connection tests, loopback mutation guards, Fake no-call behavior, complete/direct and whole-fence JSON compatibility, rejected prose/wrappers/null/enum/malformed output, finish-reason truncation, schema and semantic classifications, bounded repair exhaustion, scalar-redacted structural previews, learner-facing diagnostic suppression, explicit secret actions, and provider switching without learning-state writes. `SettingsView.test.tsx` covers fake/Hy3 editing, safe secret replacement/removal/cancellation, unsaved drafts, save cancellation and stale responses, the deliberately local scope of Check Local Service Status, authoritative refresh, external-test cancellation, configuration authority, current-Course diagnostics, and the sidebar-preference callback. `fakeProvider.test.ts` covers source-complete parser-fragment grouping within the Curriculum contract bounds, while `studyPlansAgent.test.ts` covers exact-input preflight and fail-closed provider suppression for a source-only accepted Curriculum. The remaining suites cover the existing course, curriculum, LIVE-01, and App continuity gates. These are behavioral assertions rather than visual snapshots.
-
-Post-red-team correctness regressions exercise the production boundaries rather than only constructing repository state:
-
-- a real HTTP Tutor request reserves a turn, reaches a sent provider attempt, is recovered after application restart, and completes an identical retry as one logical learner turn with two fenced physical attempts;
-- a separate live-process HTTP test advances the clock beyond the operation lease, performs demand-driven recovery on the identical retry, records the old sent attempt as `outcome_unknown`, and proves the late old worker cannot replace the fencing-token-2 result;
-- repository tests prove that changed operation identity/fingerprint is rejected before expired-lease recovery, and that successor activation or ordinary GoalOutcome closure atomically closes predecessor sessions, unfinished turns, logical calls, and operations while preserving rollback behavior;
-- the StudySession view selects only active/paused sessions matching the current Contract, Curriculum, StudyPlan, and SessionAgenda IDs, and reloads after route/version changes;
-- Material-role route tests send mismatched URL/body and URL/assignment identities, assert unchanged role histories and operation/result tables, then prove the correctly addressed request still succeeds; and
-- LIVE-01 regressions exercise the wrapped proposal/confirmation response contract, fail-closed stale scope, confirmation/refetch durability, Contract progression after confirmation, learner-facing concurrent-conflict recovery, and future role-version re-staleness without changing the logical Material identity.
-
-The pre-dogfood closure regressions additionally cover all nine major repair paths: current-Curriculum Plan acceptance across retained historical lineage; duplicate headings under different parser paths and headingless Fake outlines; detailed-path input-aware one-repair behavior; unit-local `due_review`; Agenda state/kind/repair launch gates; Home/Progress-owned failures without route leakage; definitive Tutor failure followed by authoritative Session refresh and a successful distinct command; exactly-once physical inference telemetry across direct, nested, repair, retry, timeout, cancellation, and stale-lease cases; and a time-controlled StudyPlan repair that crosses the former five-minute lease while stale tokens remain fenced. Rendered browser QA is still required for the user-visible error and Tutor-recovery flows; component tests alone are not treated as visual evidence.
-
-Deliberate behavior changes in the upgrade, each with updated tests: duplicate submissions of one quiz now return `409 DUPLICATE_SUBMISSION` (learner state applies at most once; the graph smoke asserts this instead of double-grading); pending quizzes whose required concepts are no longer available are rejected instead of dishonestly succeeding; material/document removal retires the source while preserving revisions and longitudinal history; remediation performs one targeted regeneration of missing required pieces before failing; an empty concept-extraction payload is schema-legal (thin sections may yield nothing); and small fixture documents in several suites grew to realistic section sizes required by size-aware extraction budgets.
-
-Application and integration tests use the fake provider by default. Hy3 provider-contract tests inject a mocked `fetch`; ordinary automated tests and CI never require or contact the real Hy3 API.
-
-Provider-isolation regressions prove that `AUTOMATION_EXPECT_PROVIDER=fake`
-plus a complete saved Hy3 configuration refuses startup before provider use,
-that guarded runtime updates cannot activate Hy3, and that guarded automation
-cannot retain external TokenHub visual transport. Normal saved-over-environment
-precedence remains covered separately.
-
-The B3 Curriculum latency regression suite also reconstructs provider requests without network access. It asserts deterministic section-size reporting, bounded candidate selection for large documents, predecessor/neighbor retention, lexical fallback widening, compact evidence-key resolution, full local binding preservation, omission of manifest/revision/hash internals from the prompt, the 16000-token output ceiling, one-attempt timeout telemetry with no synthetic usage row, accepted-Curriculum preservation, safe learner copy, cancellation, and the shared original-plus-one-repair ceiling. The affected 277-block Course measured 288059 characters / 345831 UTF-8 bytes and 551 visible offers before compaction, versus 41218 characters / 55681 bytes and 204 offers across 148 blocks afterward. Selection still starts from the complete 551-offer exact local catalog; validation accepts only the compact operation-local IDs actually offered to Hy3 and resolves each through its retained full binding. These are offline request-shape results; exactly one controlled human retry is required to observe real post-fix latency.
-
-The Curriculum execution-contract regressions use real-provider-shaped payloads whose Concept and canonical arrays are empty. They prove exact deterministic Concept/canonical derivation, rejection of unknown provider-selected Concepts, an executable remediation frontier, fail-closed empty-frontier successors, accepted-predecessor preservation across rejected intermediate versions, acceptance-time Concept disappearance, dynamic `canAcceptCurriculum`, and Fake/real semantic parity. The same focused run includes the B2 exact evidence-identity and B3 bounded-context cases plus the unchanged StudyPlan preflight suite. The web run proves learner-safe Chinese coverage warnings and execution-remediation diagnostics without exposing raw `Unmapped source blocks...` or `StudyPlan execution repair...` text. All are offline and must not contact Hy3.
-
-The recovery-orchestration regressions add the missing B5 boundary. They cover zero Concepts, stale-revision Concepts, invalid exact grounding, valid current grounding, canonical membership counts, capability suppression, direct-command failure before provider attempts, accepted-history immutability, transition to successor review only after unchanged StudyPlan preflight, and repeated impossible commands without provider retry. Shared schema tests validate the structured recovery and coverage-warning read models. Web tests prove Home and Curriculum route to the existing Concept flow, opening Explore performs GETs only, readiness refresh occurs only after explicit extraction, workspace identity fences late refreshes, and historical raw English warnings remain hidden from the primary learner UI while available under technical disclosure. These tests use Fake or mocked providers only.
-
-The B6 Contract-scope regressions separate learner intent from revision-bound execution state. They keep the accepted Contract current across same-Material reprocessing, parser/fingerprint changes, Concept/graph/Curriculum changes, pending role proposals, and confirmed same-role successors. They fail closed for logical Material retirement/replacement and a confirmed semantic-role change, expose matching structured overview/API state, suppress both Curriculum and StudyPlan provider calls, and preserve accepted Contract history. Shared tests reject inconsistent readiness state/issue combinations. Web tests route valid-scope B5 recovery to Concept extraction without opening the Contract editor, route genuine role changes to Chinese reconfirmation copy, select the latest confirmed role beneath a pending proposal, replace raw stale-predecessor diagnostics, and retain established operation-owned error behavior. All coverage is in-memory or uses mocked/Fake providers; it makes no real Hy3 request.
+These suites cover the current Course-centred route: immutable MaterialRevision provenance,
+source/claim authority, learner-confirmed Contract, Curriculum and StudyPlan proposals, atomic
+route activation, flexible SessionAgenda, durable StudySession pause/resume/stop and detours,
+Teaching Brief provenance, non-credit Lesson/Practice/Tutor work, Formal Evidence and progression,
+mistakes and Repair, FSRS Review state, semantic-support validation and recovery, cancellation,
+idempotency, stale responses, and Course/document switching safety.
 
 ## End-to-end smoke workflows
 
-The in-process fake-provider smoke is self-contained:
+The in-process smoke is self-contained:
 
 ```bash
 npm run build
 npm run demo:offline
 ```
 
-The HTTP scripts require a running Fake server in another terminal. Use an
-isolated provider file and the final-resolution guard:
+For the HTTP smoke, start an isolated Fake server in one terminal:
 
 ```bash
 AUTOMATION_EXPECT_PROVIDER=fake PROVIDER_CONFIG_PATH=./data/smoke-provider-config.json LLM_PROVIDER=fake VISUAL_PROVIDER=disabled npm run dev:server
 ```
 
-Then run:
+Then, from another terminal:
 
 ```bash
 npm run demo:http
@@ -159,518 +84,68 @@ npm run demo:graph
 npm run demo:adaptive
 ```
 
-The graph and adaptive scripts print IDs that can be checked after a server restart:
+The graph and adaptive scripts accept their documented `verify` arguments after a restart.
+These scripts are observational smoke checks; invariant claims belong to Vitest and `eval:fake`.
+The server-side provider-isolation tests prove that a Fake expectation and an enabled external
+visual transport cannot coexist in guarded automation.
 
-```bash
-node scripts/smoke-graph.mjs verify <workspaceId> <conceptId>
-node scripts/smoke-adaptive.mjs verify <workspaceId> <conceptId> <runId>
-```
+## Document and migration checks
 
-The restart checks verify persisted documents, active graph data, learner state, accepted plans, canonical alignment, misconception/review state, daily-queue data, and completed Tutor runs. The Phase 3 StudySession endpoints additionally persist detail, events, exchanges, and summaries for reload after an interrupted or detached client. The server integration suite, rather than these observational smoke scripts, proves the reachable reserve -> sent -> restart -> identical-retry sequence and the corresponding logical/physical attempt accounting.
+Rich-document tests cover text-layer PDF, DOCX, PPTX, standalone PNG/JPEG/WebP assets, static HTML
+snapshots, parser signatures, exact page/slide/heading provenance, immutable source revisions,
+OOXML/XML safety, bounded input, and malformed/unsupported files. OCR, browser-perfect archiving,
+semantic chart/equation interpretation, and spreadsheet support remain outside the current product.
 
-`demo:http` is a lightweight observational smoke script. It fails on HTTP errors, but some displayed booleans and remediation counts are logs rather than strict assertions. Use the Vitest suite, `eval:fake`, and the graph/adaptive workflows for invariant claims; do not treat `ALL FLOWS OK` by itself as proof that every logged semantic condition passed.
-
-## Migration verification
-
-The server suite covers every current numbered migration directly: applying them from scratch and re-running them safely;
-
-- populated v1 -> current migration without deleting source, quiz, grading, mistake, mastery, or history rows;
-- honest `unknown` origin for workspaces whose historical creation path cannot be reconstructed;
-- populated v3 -> current migration, including the SQLite quiz-table rebuild;
-- nullable provider/state-change fields for historical completed attempts, without fabricated backfill;
-- foreign-key integrity and re-enablement after table rebuilds;
-- all-or-nothing rollback after a forced migration failure; and
-- conservative legacy migration behavior plus current material/document retirement and explicit workspace-deletion behavior.
-
-Route and repository tests add transaction, cascade, cross-workspace isolation, legacy request compatibility, and historical-result degradation coverage. Migration 12 (`concept_lessons`) is additive; a direct populated-v11 regression verifies that migration 12 creates the lesson table without changing an existing concept row. Migrations 13-14 verify honest revision-1 adoption without invented fingerprints, preservation of existing learning history, active-revision foreign keys, source-authority separation, operation idempotency/fencing/orphan recovery, and optional cost-policy persistence. Migration 15 verifies the accepted Course route and revalidation after source revision. Migration 16 verifies durable StudySession persistence and Agenda mutation invariants. Migration 17 verifies formal evidence, progression, replan, and goal-outcome persistence. Migration 18 rebuilds the telemetry call/attempt/usage foreign-key chain, permits workspace-less probes and nullable non-agent fencing, preserves populated v17 rows, and backfills historical provider generation as unknown (`NULL`) rather than inventing a value. Migration 19 forward-repairs databases that may already report v18 with either the canonical nullable column or an interim `NOT NULL DEFAULT 1` column. Both paths converge on the nullable, no-default schema without losing calls, attempts, or usage. The interim backfill and a genuine observed generation 1 have no reliable row-level discriminator: telemetry timestamps use an injectable application clock, while migration time uses the wall clock. Compatibility tests therefore prove that v19 preserves ambiguous values instead of guessing, while canonical-v18 `NULL` remains unknown and future unknown values can again be stored as `NULL`. A real pre-upgrade database copy was also migrated v11 -> v12 during upgrade verification with clean foreign keys, intact history, and an honest deterministic adjustment when launching a pre-upgrade Tutor recommendation.
-
-## Phase 6B1 rich-document verification
-
-Phase 6B1 is deterministic local extraction only. It adds bounded PDF structural warnings, PPTX and rich DOCX parsing, exact slide/page/document provenance, immutable revision-local original assets, and OOXML archive/XML safety. It does not call Hy3 and does not implement OCR, visual descriptions, semantic image search, or HTML/Web Snapshot ingestion.
-
-Run the focused suites:
-
-```bash
-npm run test -w @hy3-clinic/shared -- src/domain/richDocumentSchemas.test.ts
-npm run test -w @hy3-clinic/server -- src/ingestion/ooxmlPackage.test.ts src/ingestion/richDocuments.test.ts src/ingestion/pdfLayout.test.ts src/ingestion/normalized.test.ts src/ingestion/documents.test.ts src/repositories/richAssets.test.ts src/db/richAssetsMigration.test.ts src/services/slideProvenance.test.ts
-npm run test -w @hy3-clinic/web -- src/upload.test.ts src/views/GraphWorkspaceView.test.tsx src/App.test.tsx src/components/SourceEvidencePanel.test.tsx src/components/LessonExecutionPanel.test.tsx
-```
-
-The OOXML tests cover traversal, duplicate paths, member/expanded-byte/compression-ratio limits, encryption, malformed packages, invalid relationships, and no-network/no-filesystem extraction. Rich parser tests cover deterministic slide order, visible text, lists, tables, notes, grouped/hidden shapes, DOCX headings/lists/tables/headers, embedded-image hashes and dimensions, honest DOCX no-page locations, PDF page parents/warnings, partial extraction, and cross-format rejection. Repository and route tests cover immutable revision ownership, blob deduplication, historical asset retention, purge cleanup, legacy nullable slide hydration, and downstream retrieval/Teaching Brief/source display provenance.
-
-## Phase 6B2A visual verification
-
-Phase 6B2A adds bounded standalone Image ingestion and explicit visual semantic
-preparation on top of the Phase 6B1 original-asset authority. It does not call
-Hy3. The real provider adapter intentionally rejects visual calls until Phase
-6B2B freezes a documented image transport and model configuration.
-
-Run the focused offline suites:
-
-```bash
-npm run test -w @hy3-clinic/server -- src/ingestion/images.test.ts src/ingestion/documents.test.ts src/services/visualPreparation.test.ts src/services/visualLearningFlow.test.ts src/retrieval/lexical.test.ts src/llm/fakeProvider.test.ts src/llm/hy3Provider.test.ts src/db/migrate.test.ts src/db/richAssetsMigration.test.ts src/db/visualDerivationsMigration.test.ts src/routes/workspaces.test.ts src/services/courseSourceMap.test.ts src/services/curriculum.test.ts src/services/teachingBriefContext.test.ts src/services/teachingBriefPreparation.test.ts src/tutor/pedagogy.test.ts
-npm run test -w @hy3-clinic/shared -- src/domain/schemas.test.ts src/domain/richDocumentSchemas.test.ts
-```
-
-The focused visual tests cover valid PNG/JPEG/WebP signatures and exact bytes,
-MIME mismatch, malformed/truncated input, dimensions and transport limits,
-animation policy, image-only revisions, immutable original authority,
-embedded occurrence provenance, duplicate-byte semantic reuse without
-occurrence collapse, derivation identity and versioning, advisory/nonblocking
-authority, retrieval origin metadata, Teaching Brief/Tutor visual projections,
-stale revision fencing, idempotent replay, failure preservation, one bounded
-schema/semantic repair, repair exhaustion, timeout, cancellation, and the
-unsupported real-Hy3 visual transport boundary. Migration tests cover clean
-creation and upgrade of `visual_derivations` without mutating original asset
-blobs or historical revisions.
-
-Run the private machine-property benchmark from the private workspace (the
-benchmark is not distributed in this repository):
-
-```powershell
-node research/benchmarks/phase6b2a/run.mjs
-```
-
-The benchmark writes `result.json` beside the script and measures properties
-separately: actual-byte format detection, exact source hashes and dimensions,
-bounded normalized transport, duplicate-byte occurrence provenance, malformed
-input rejection, and oversized-dimension rejection. Focused tests separately
-verify persistence, retrieval, downstream projections, and the original-versus-
-derived authority boundary. The benchmark uses deterministic synthetic/legal
-fixtures and does not claim OCR accuracy, visual semantic quality, semantic
-entailment, latency, token usage, or cost. FakeProvider output is a contract
-fixture, not a visual quality score.
-
-The complete offline verification remains:
-
-```bash
-npm run build
-npm run lint
-npm test
-npm run eval:fake
-git diff --check
-```
-
-Do not run `eval:hy3` for Phase 6B2A. Phase 6B2B must first select the frozen
-provider/model, document the image payload contract, compare provider visible-
-text behavior with text-heavy fixtures, and enforce source/authority gates and
-request/latency/token/cost ceilings.
-
-## Real Hy3 evaluation
-
-The optional real-provider suite is intentionally separate from tests and CI:
-
-```bash
-npm run build
-HY3_BASE_URL=... HY3_API_KEY=... HY3_MODEL=... npm run eval:hy3
-```
-
-On PowerShell, set those values in the environment or a local `.env` before running the command. Missing credentials cause a non-zero exit; there is no fake-provider fallback path.
-
-The suite runs the six original operations plus two optional upgrade operations: `semantic_recall` (section-aware extraction of the long fixture against hand-authored must-find labels) and `lesson_generation`. A 2026-08-09 local run of the extended suite completed 8/8 operations without schema/grounding failures: semantic recall was 7/8 (87.5%) with 7/7 extracted concepts grounded, and lesson anchors verified 3/3 on the first pass. These are small-fixture diagnostics, not teaching-quality or human-study claims. The raw report stays gitignored, and the COMMITTED sanitized evidence below remains the six-operation record of the tagged release — it was intentionally not regenerated.
-
-The raw Markdown/JSON reports are written under ignored `eval/reports/`. They include run provenance and per-operation detail and must not be committed. See [eval/README.md](../eval/README.md) for the schema, metrics, and fail-closed publication rules.
+Migration tests apply the numbered migrations from scratch, re-run them idempotently, upgrade
+populated legacy databases conservatively, preserve source and learning history, re-enable foreign
+keys, and verify all-or-nothing rollback. They also cover telemetry ownership, Review cutover,
+visual derivation identity, formal progression, repair episodes, and StudySession recovery.
 
 ## Published online evidence
 
-The repository publishes a sanitized pair derived from a successful raw report:
+[docs/evidence/hy3-online-verification.md](evidence/hy3-online-verification.md) is a sanitized
+real-provider record. **It is historical:** it was generated from an earlier commit, predates the
+current Curriculum, Lesson, and semantic-support layers, and therefore does not exercise those
+layers. It will be regenerated at a current commit before final submission. The paired JSON remains
+byte-unchanged in this cleanup. The record’s generated metrics and “what this does not prove”
+section are not hand-edited.
 
-- [hy3-online-verification.md](evidence/hy3-online-verification.md), for reviewers;
-- [hy3-online-verification.json](evidence/hy3-online-verification.json), for machine-readable sanitized aggregates.
+`eval:evidence` is a publication command for a deliberate credentialed run; it is not part of
+ordinary offline verification. The exporter fails closed on dirty provenance, missing/unknown
+operations, credential or local-path leakage, invalid schema, or non-Hy3 reports.
 
-The committed record reports 6/6 successful operations, nine requests, one bounded schema-repair request, 43.6 seconds of provider latency, 4/4 and 3/3 proposed concepts passing exact-quote grounding across two fixture documents, agreement on one comparable alignment decision, agreement on three grading samples, 2/2 truly cross-document assessment items, and a valid first Tutor action.
+## Competition evaluation
 
-Publication is fail-closed. `npm run eval:evidence` rejects:
+The open-ended StudyEval harness, frozen corpus, and result tables are planned and not yet
+implemented. The method specification, written level anchors, sample design, anti-circularity
+controls, validity protocols, and runtime model are in [docs/EVALUATION.md](EVALUATION.md).
+When implemented, its semantic-judging path will require explicit Hy3 credentials, while the
+offline aggregation path will require none. Every such run sets `VISUAL_PROVIDER=disabled`.
 
-- the wrong suite, a non-`hy3` provider, or any fake fallback;
-- missing Git provenance or a dirty evaluation worktree;
-- failed, skipped, duplicate, missing, or unknown operations;
-- no comparable alignment, no truly cross-document item, or an invalid Tutor first step; and
-- any derived JSON/Markdown that triggers the credential, URL-credential, token, or local-path scanner.
-
-The exporter keeps only whitelisted aggregate fields. Per-sample details, prompts, raw model output, credentials, endpoint paths/query strings, and local paths never enter the public record. `publishedEvidence.test.ts` verifies that the Markdown is rendered from the same JSON object and that the committed pair remains provenance-complete and secret-free.
-
-## Phase 8C due Review verification
-
-Phase 8C verification is offline and uses FakeProvider/deterministic fixtures only. The focused workflow suites are:
-
-```bash
-npx vitest run apps/server/src/services/formalProgression.test.ts apps/server/src/services/reviewSuccessor.test.ts apps/server/src/routes/workspaces.test.ts
-npx vitest run apps/web/src/components/FormalAssessmentPanel.test.tsx apps/web/src/components/LessonExecutionPanel.test.tsx apps/web/src/views/StudySessionView.test.tsx apps/web/src/views/AgentCourseViews.test.tsx
-npx vitest run packages/shared/src/domain/formalAssessment.test.ts packages/shared/src/domain/review.test.ts
-```
-
-They cover due Agenda reconciliation and idempotency, active StudySession preservation, exact and stale launch fences, one ReviewExecution and exact current-source AssessmentVersion binding, direct supported retrieval to one `Good`, failed retrieval to one `Again` plus targeted Repair, non-credit Repair practice, changed-context fresh verification, historical Evidence retention, duplicate/retry idempotency, scheduler-failure retry without regrading, no legacy Review fallback, no FSRS-to-mastery mutation, and learner-safe Study/Progress states. The UI assertions explicitly reject scheduler internals from the default learner projection.
-
-The complete Phase 8C gate remains:
-
-```bash
-npm test
-npm run eval:fake
-npm run build
-npm run lint
-npx prettier --check .
-git diff --check
-```
-
-`npm run lint` includes the repository-wide Prettier check. Real Hy3 calls are not part of this phase; `eval:hy3` remains an explicit credentialed evaluation and must not be used to make the deterministic suite pass. The private closure record is `reports/08c-due-review-execution-workflow.md`, with deterministic benchmark outputs under `research/benchmarks/phase8c/`.
-
-Do not rerun `eval:hy3` during ordinary tests or documentation maintenance. Do not rerun `eval:evidence` merely as a read-only check: it is a publication command and intentionally writes tracked artifacts with a new generation timestamp.
-
-## Phase 09A Mastery Red Team shadow verification
-
-Phase 09A is offline and uses FakeProvider/deterministic fixtures only. Focused verification exercises the strict shared contracts, hypothesis/family policy, candidate novelty and authority validation, provider schema/semantic repair fixtures, immutable migration ledgers, current route/source/Review fences, shadow Grade reuse, retry/idempotency, and exact preservation of Evidence, mastery, progression, Review, Repair, mistakes, and Course Truth.
-
-```bash
-npm run build -w @hy3-clinic/shared
-npm run test -w @hy3-clinic/shared -- src/domain/masteryRedTeam.test.ts src/domain/formalAssessment.test.ts
-npm run test -w @hy3-clinic/server -- src/services/masteryRedTeamPolicy.test.ts src/services/formalProgression.test.ts src/llm/fakeProvider.test.ts src/llm/hy3Provider.test.ts src/db/masteryRedTeamMigration.test.ts src/db/migrate.test.ts src/db/migrateCompat.test.ts
-npm run build
-npm run lint
-npm test
-npm run eval:fake
-npx prettier --check .
-git diff --check
-```
-
-No real Hy3 call is part of this gate. Exact quote validation proves that a quote occurs in the frozen current SourceBlock; it does not prove complete semantic entailment, universal fairness, or calibrated mastery. The developer/audit API is not a learner workflow and shadow results cannot mutate authoritative learning state.
-
-## Media verification
-
-The reviewer assets are:
-
-- seven PNG screenshots, each 2560x1600;
-- one H.264 MP4, 1920x1200 at 30 fps;
-- no audio stream; and
-- duration 113.066667 seconds (1:53.07), below the two-minute Issue #4 limit.
-
-The README captions map the screenshots to PDF provenance, graph evidence, bounded tutoring, assessment/state changes, semantic grading, resolved remediation, and persistent learning progress. The video and screenshots are repository files rather than external embeds, so the tagged release retains them.
+The existing `npm run eval:hy3` command is a separate adapter evaluation, not a product-level
+browser or human acceptance gate. It must be invoked explicitly with credentials and never runs
+in tests or CI.
 
 ## Evidence-to-requirement matrix
 
-| Issue #4 claim                           | Implementation                                                                                                         | Reviewer evidence                                                                                     | Automated evidence                                                                                                                     |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Hy3 powers production semantic workflows | [`hy3Provider.ts`](../apps/server/src/llm/hy3Provider.ts), [`provider.ts`](../apps/server/src/llm/provider.ts)         | [Online verification](evidence/hy3-online-verification.md), [demo](assets/hy3-study-clinic-demo.mp4)  | [`hy3Provider.test.ts`](../apps/server/src/llm/hy3Provider.test.ts), [`flows.test.ts`](../apps/server/src/routes/flows.test.ts)        |
-| Interactive web frontend                 | [`App.tsx`](../apps/web/src/App.tsx), [`views/`](../apps/web/src/views)                                                | Seven screenshots and the final demo                                                                  | [`App.test.tsx`](../apps/web/src/App.test.tsx) and focused view/component suites                                                       |
-| Page/section source provenance           | [`documents.ts`](../apps/server/src/ingestion/documents.ts), [`verify.ts`](../apps/server/src/grounding/verify.ts)     | [Screenshot 01](assets/01-pdf-page-evidence.png)                                                      | [`documents.test.ts`](../apps/server/src/ingestion/documents.test.ts), [`verify.test.ts`](../apps/server/src/grounding/verify.test.ts) |
-| Locally validated concept graph          | [`graph.ts`](../apps/server/src/services/graph.ts), [`validate.ts`](../apps/server/src/graph/validate.ts)              | [Screenshot 02](assets/02-learning-graph-evidence.png)                                                | Graph validator, service, route, and frontend graph suites                                                                             |
-| Bounded graph-grounded Tutor             | [`tutor.ts`](../apps/server/src/services/tutor.ts), [`tools.ts`](../apps/server/src/tutor/tools.ts)                    | [Screenshot 03](assets/03-hy3-graph-tutoring.png)                                                     | [`tutor.test.ts`](../apps/server/src/services/tutor.test.ts), [`tools.test.ts`](../apps/server/src/tutor/tools.test.ts)                |
-| Hybrid deterministic/semantic grading    | [`grading.ts`](../apps/server/src/services/grading.ts), [`score.ts`](../apps/server/src/grading/score.ts)              | [Screenshots 04](assets/04-assessment-result-overview.png) and [05](assets/05-hy3-rubric-grading.png) | Score, rubric-alignment, flow, and results-view suites                                                                                 |
-| Mistake-remediation loop                 | [`remediation.ts`](../apps/server/src/services/remediation.ts), [`grading.ts`](../apps/server/src/services/grading.ts) | [Screenshot 06](assets/06-remediation-resolved.png)                                                   | Flow, remediation, service, and repository tests                                                                                       |
-| Persistent learner state                 | [`database.ts`](../apps/server/src/db/database.ts), [`study.ts`](../apps/server/src/routes/study.ts)                   | [Screenshot 07](assets/07-learning-progress.png)                                                      | Repository, migration, flow, history, misconception, and review tests                                                                  |
-| Reproducible open-source delivery        | [`package.json`](../package.json), [`.env.example`](../.env.example), [`ci.yml`](../.github/workflows/ci.yml)          | Final Release, tag, PR, and this document                                                             | Full offline suite and three-platform CI matrix                                                                                        |
-
-## Honest scope
-
-- A successful Settings **Check Local Service Status** proves only that local `/api/health` and `/api/config` responded. The separate external connection action is user-triggered; campaign verification uses Fake mode and never calls the real Hy3 API.
-- Curriculum disclosure tests prove bounded initial rendering, accessibility state, and semantic labels. They do not benchmark scan time, teaching quality, or performance for every possible hierarchy shape.
-- The small hand-authored labels and fixtures make the online record an integration check, not a quality benchmark.
-- Exact quotation validation proves location, not complete semantic entailment.
-- `eval:fake` checks deterministic boundaries and state invariants, not the pedagogical quality of generated content.
-- Real-provider latency and output depend on the configured endpoint and model.
-- The current automated suite is broad but is not a formal proof of security, psychometric validity, or perfect PDF reconstruction.
-
-## Phase 4A Teaching Brief coverage
-
-The Phase 4A focused suites cover the runtime Teaching Brief domain, compact source-context prioritization and byte budgets, unknown/duplicate provider refs, objective coverage, source-authority labels, structural quality profiles, strict Hy3 parsing, one bounded repair, timeout/cancellation without retry, and migration 20 creation/upgrades. The preparation service is internal and does not add a new learner route or alter Study/Tutor rendering. Full verification remains offline and uses Fake or mocked providers only:
-
-```bash
-npm run build
-npm run lint
-npm test
-npm run eval:fake
-git diff --check
-```
-
-The historical Phase 4A run recorded 1,437 tests (149 shared, 890 server, and 398 web). That snapshot predates Phase 6B1; use the standard commands and the focused Phase 6B1 section above for current totals. `npm run eval:fake` remains the deterministic campaign check; no real Hy3 call is required or made. Structural quality dimensions are diagnostics, not a teaching-effectiveness score. Teaching Briefs do not create Formal Evidence, mastery, progression, or durable mistakes, and no claim is made that the unshipped learner-facing lesson execution is complete.
-
-## Phase 10A Knowledge Map projection verification
-
-The Knowledge Map projection is deterministic and local. Its GET path does not
-call Hy3, reconcile due Agenda work, or mutate learner state. The focused
-contract/service checks are:
-
-```bash
-npm run test -w @hy3-clinic/shared -- src/domain/knowledgeMap.test.ts
-npm run test -w @hy3-clinic/server -- src/services/knowledgeMap.test.ts
-```
-
-The shared contract pins `knowledge-map-projection-v1` and
-`knowledge-map-precedence-v1`, all four modes, provenance and edge endpoint
-validation, node/edge limits, route unknown reasons, and the distinction between
-formal failure, Repair, Review due/retrievability, legacy weak mastery, and
-Mastery Red Team advisory `possible_gap`. The server service verifies a fresh
-workspace, active source grounding, course-scoped GET, foreign-workspace 404,
-idempotent repeated reads, and no writes from projection reads. The complete
-repository gate remains:
-
-```bash
-npm test
-npm run eval:fake
-npm run build
-npm run lint
-npx prettier --check .
-git diff --check
-```
-
-No real-provider call is required for this phase. Exact quote validation proves
-source occurrence at the claimed location; it does not prove complete semantic
-entailment. Phase 10B consumes this single contract without re-deriving
-authority in the frontend.
-
-## Phase 10B learner-facing Knowledge Map verification
-
-Phase 10B remains offline and adds no production dependency or migration. The
-focused suites are:
-
-```bash
-npm run test -w @hy3-clinic/server -- src/services/knowledgeMap.test.ts
-npm run test -w @hy3-clinic/web -- src/views/KnowledgeMapView.test.tsx src/knowledgeMapPresentation.test.ts src/knowledgeMapLayout.test.ts
-npm run test -w @hy3-clinic/web -- src/views/AgentCourseViews.test.tsx src/views/StudySessionView.test.tsx src/views/AgentCourseWorkspace.live01.test.tsx
-```
-
-They verify all four projection-driven modes; direct enum-to-wording mapping;
-formal failure, Repair, due Review, retrievability, and advisory distinctions;
-current/completed/next/locked routes; selected-node retention and inspector
-actions; Home/Study/Progress cross-navigation; no Study action for a stale,
-locked, non-current, or blocked Agenda item; search, camera controls, deterministic
-layout and local presentation preferences; unconfigured/failure/retry states;
-120-node rendering; keyboard tabs; narrow dialog focus/Escape restoration; and
-AbortController plus request-sequence fencing against a late previous-Course
-response. Existing Phase 10A authority tests remain unchanged.
-
-Browser-level review uses a disposable SQLite database, Fake provider, and an
-isolated deterministic projection fixture. Desktop, 1024 px, and 390 px
-viewports cover Structure, Progress, Route, Weakness, selected inspector,
-formal/Review/advisory distinctions, a 120-node map, and unconfigured/error
-states. The full gate remains the repository commands above. It makes no real
-Hy3 request; opening the Knowledge Map is a local GET and no persistent learner
-state is written.
-
-## Phase 10C legacy surface consolidation verification
-
-Phase 10C is a frontend route and information-architecture change. It adds no
-migration, backend authority, production dependency, or real Hy3 call. Run the
-focused web gate through the web workspace so Vitest uses its jsdom setup:
-
-```bash
-npm run test -w @hy3-clinic/web -- src/appRoutes.test.ts src/App.test.tsx src/views/CourseAssessmentView.test.tsx src/views/AgentCourseViews.test.tsx src/views/AgentCourseWorkspace.live01.test.tsx src/views/GraphWorkspaceView.test.tsx
-```
-
-These suites cover the canonical top-level shell, absence of peer legacy
-products, every alias class, unknown-path fallback, no redirect loop, direct
-advanced bookmarks, browser history between Progress subsections, Course-switch
-reset, provider-bootstrap fencing, manual generation/grading, immutable history
-refresh, Formal Evidence and read-only result history, Mistake/Repair launch and
-history, mastery/Review visibility, grounding extraction/alignment/version
-governance, learner-overlay isolation, request cancellation, and stale Course
-responses.
-
-Browser review must use a disposable SQLite file, `LLM_PROVIDER=fake`,
-`AUTOMATION_EXPECT_PROVIDER=fake`, `VISUAL_PROVIDER=disabled`, and an isolated
-`PROVIDER_CONFIG_PATH`. The server must refuse startup if the final resolved
-provider is not Fake. Before seeding or opening the UI, also require
-`GET /api/config` to report `provider: fake`; the saved provider configuration
-takes precedence over the environment default.
-Check desktop and narrow navigation; Home, Study, Curriculum, Knowledge Map,
-Progress, Materials, and Settings; representative legacy bookmarks; Formal
-history; Repair; mastery/Review; advanced grounding; manual assessment;
-back/forward; and Course switching. Confirm that no retired shell appears in
-history and no learner overlay/plan request is made by Course grounding.
-
-The complete gate is:
-
-```bash
-npm test
-npm run eval:fake
-npm run build
-npm run lint
-npx prettier --check .
-git diff --check
-```
-
-Also inspect the changed-file diff for credentials, private workspace or
-attachment paths, obsolete peer-navigation labels, and noncanonical internal
-links. Do not run `eval:hy3` or edit a live SQLite database.
-
-## Phase 11 product integration and lifecycle verification
-
-Phase 11 adds no migration, backend authority, production dependency, archive
-state, or real Hy3 call. It exposes the existing Course create/rename/delete
-contracts in canonical Settings and extends frontend cancellation/fencing. Run:
-
-```bash
-npm run test -w @hy3-clinic/web -- src/views/SettingsView.test.tsx src/views/AgentCourseWorkspace.live01.test.tsx src/views/AgentCourseViews.test.tsx
-```
-
-These suites cover create/rename delegation, exact-name destructive
-confirmation, consequence disclosure, initial focus, Tab containment, Escape,
-focus restoration, inert outside content, busy/failure preservation, delete
-404 idempotence, deletion during pending Course preparation, stale detail
-rejection, and Materials cancellation when the Course identity changes. The
-complete gate and isolated Fake browser requirements remain the commands and
-environment policy above.
-
-## Phase 12B7B4 real-Hy3 Curriculum closure verification
-
-The offline regression gate covers the learner-owned preparation state,
-Course Map membership, exact source accountability, evidence-level objective
-authority, independent semantic evaluation, bounded schema/candidate repair,
-provider telemetry, lease ceilings, and accepted-predecessor preservation:
-
-```bash
-npm run test -w @hy3-clinic/server -- src/services/coursePreparation.test.ts src/services/courseMap.test.ts src/services/courseMapProvider.test.ts src/services/curriculumMaterialization.test.ts src/services/curriculumAuthority.test.ts src/services/curriculumEvidence.test.ts src/services/curriculumSemanticEvaluator.test.ts src/services/curriculum.test.ts src/services/courseCommands.test.ts src/services/studyPlansAgent.test.ts src/eval/curriculumPolicyComparison.test.ts
-npm run test -w @hy3-clinic/shared -- src/domain/schemas.test.ts
-npm run test -w @hy3-clinic/web -- src/views/AgentCourseViews.test.tsx src/views/AgentCourseWorkspace.live01.test.tsx
-```
-
-The complete repository gate remains:
-
-```bash
-npm test
-npm run eval:fake
-npm run build
-npm run lint
-npx prettier --check .
-git diff --check
-```
-
-The live acceptance gate is intentionally separate because Fake tests cannot
-prove real structured-output behavior or actual-browser ownership. With the
-already configured local provider, use a fresh Course and one rendered Prepare
-action. While the backend owns Curriculum preparation, Home may expose progress
-and Stop, and Curriculum is observation-only: no `检查课程结构`, `生成结构`,
-duplicate continuation, or manual Curriculum acceptance action is valid. PASS
-requires persisted REAL_HY3 provider/model telemetry, an accepted current
-source-bound Curriculum, automatic StudyPlan continuation, and reconstructible
-`generationOperationId` joins.
-
-The Phase 12B7B4 acceptance artifact contained 295/295 mapped SourceBlocks and
-295/295 mapped structural units, seven directly represented meaningful regions,
-zero unresolved regions, and zero deterministic validation errors or warnings.
-Every required objective was Formal-ready. The independent semantic evaluator
-passed with one non-blocking optional, explicitly non-assessed MCP title note.
-This live check does not weaken the offline requirement, guarantee future
-provider conformance, or prove complete semantic entailment or learning
-effectiveness.
-
-## Phase 12B7C Lesson and informal Practice verification
-
-The focused gate exercises schema evolution, lesson-role and reasoning quality,
-active-time feasibility, objective/construct alignment, exact-source authority,
-visual-advisory restrictions, source-location trivia, answer leakage, changed
-retry behavior, final materialization reevaluation, sanitized provider failure
-diagnostics, cancellation/stale-result fencing, migration compatibility, and the
-learner-safe non-credit UI:
-
-```bash
-npm run test -w @hy3-clinic/shared -- src/domain/teachingBrief.test.ts src/domain/lessonExecution.test.ts
-npm run test -w @hy3-clinic/server -- src/services/lessonPedagogyEvaluator.test.ts src/services/teachingBriefContract.test.ts src/llm/teachingBriefProvider.test.ts src/llm/hy3Provider.test.ts src/services/teachingBriefPreparation.test.ts src/db/migrate.test.ts
-npm run test -w @hy3-clinic/web -- src/components/LessonExecutionPanel.test.tsx
-```
-
-The complete repository gate remains:
-
-```bash
-npm test
-npm run eval:fake
-npm run build
-npm run lint
-npx prettier --check .
-git diff --check
-```
-
-Automated tests never call the real Hy3 API. A credentialed real-provider gate
-is separate and must use the actual browser plus persisted sanitized telemetry.
-PASS requires an accepted current-source Brief, a human-audited instructional
-Lesson and construct-valid Practice, commit-before-guidance behavior, a visibly
-changed bounded retry, and proof that Practice changed no Formal Evidence,
-mastery, mistakes, Review, Agenda, or Plan progress. A schema-valid candidate
-that fails the independent semantic evaluator is an honest blocked result, not
-a reason to relax the gate or substitute FakeProvider output. Exact quotation
-checks establish source occurrence only; they do not establish complete
-semantic entailment or educational effectiveness.
-
-## Phase 12B7C2 compositional Teaching generation verification
-
-The current focused gate verifies the spine-first path without a real provider. Run it from the repository root with Node.js 20.9 or newer:
-
-```bash
-npm run build -w @hy3-clinic/shared
-npm run test -w @hy3-clinic/shared -- src/domain/teachingSkeleton.test.ts src/provider/compositionalTeachingPayloads.test.ts src/domain/teachingBrief.test.ts src/domain/lessonExecution.test.ts
-npm run test -w @hy3-clinic/server -- src/services/teachingSkeletonPlanner.test.ts src/services/lessonPedagogyEvaluator.test.ts src/services/teachingBriefContract.test.ts src/llm/compositionalTeachingProvider.test.ts src/llm/hy3Provider.test.ts src/services/teachingBriefPreparation.test.ts src/repositories/acceptedLessonCheckpoints.test.ts src/db/migrate.test.ts
-npm run test -w @hy3-clinic/web -- src/components/LessonExecutionPanel.test.tsx
-```
-
-These suites cover the critical composition boundaries:
-
-- the linked accepted Plan item's nonempty, unique, ordered objective subset; rejection of foreign objective IDs; and consistent use of that subset for planning, provider projection, evaluation, and final Brief metadata;
-- exact local construct, source/visual authority, stable `L*`/`PR*` identity, and schema ownership;
-- construct-aware deterministic planning, including no automatic worked procedure for `identify`, semantic-relation and learner-action slots for `explain`, exact-authority worked application for `apply`, and rejection rather than construct promotion when authority is insufficient;
-- pre-provider Agenda-duration feasibility, protected-work incompatibility, slot ceilings, and rejection of a changed minute label when the learning actions still do not fit;
-- Lesson-only and Practice-after-acceptance provider projections, complete runtime schemas, one targeted repair per logical phase, restoration of frozen valid peers, unknown/missing/duplicate slot rejection, and Fake/Hy3 contract parity;
-- distinct Lesson/Practice logical IDs and schema fingerprints under the canonical Teaching Brief operation type, per-phase cost-policy enforcement, and checkpoint preservation when Practice is refused or fails;
-- reasoning without required keywords, rejection of lexical marker stuffing, real structured worked-process requirements, source-location-trivia rejection, observable apply decisions, exact per-slot evidence envelopes, and independent fresh Lesson/Practice evaluation;
-- no Practice call or checkpoint after Lesson failure; immutable accepted-Lesson checkpoint creation only after a passing Lesson and completed Lesson logical call; byte-identical Lesson reuse after Practice failure; and Practice retry without a second Lesson call;
-- migration 37 checkpoint creation and runtime immutability, migration 38 logical-call provenance/backfill compatibility, migration 39 workspace-cascade compatibility, exact active Session/Agenda/Plan persistence fences, and validated hydration; and
-- learner-safe read-only accepted-Lesson recovery, `practice_retry_available`, contingent feedback/hint, one changed retry, `credit: none`, and browser request abort/stale-response behavior during Agenda switches.
-
-The complete repository gate remains:
-
-```bash
-npm test
-npm run eval:fake
-npm run build
-npm run lint
-npx prettier --check .
-git diff --check
-```
-
-`npm run lint` already includes the same repository-wide Prettier check; the explicit `npx prettier --check .` line is retained as an independently visible release gate. TypeScript checks run through the workspace builds. Migration and integration coverage are part of `npm test`; no hidden real-provider step is needed to make the automated gate pass.
-
-All commands above are offline/Fake or mocked-provider checks and must never contact the real Hy3 API. For isolated Fake server or browser work, set `AUTOMATION_EXPECT_PROVIDER=fake`, use a disposable `PROVIDER_CONFIG_PATH`, keep external visual transport disabled, and verify `GET /api/config` reports `provider: fake` before a provider-capable action. Fake acceptance establishes deterministic wiring and authority invariants only; it is not evidence of real structured-output conformance, teaching quality, or educational effectiveness.
-
-Real-provider acceptance is a separate, explicit product check with a complete server-owned Hy3 configuration, a disposable SQLite-safe database copy, a fresh StudySession created through supported APIs, and the actual browser. It must reconstruct separate Lesson and Practice logical calls and physical attempts, show that Lesson acceptance precedes Practice, preserve the accepted checkpoint across a Practice failure/retry, and audit before/after SQLite state for unchanged Formal/assessment Evidence, mastery, mistakes, Review, accepted StudyPlan progress, and Agenda item state; every informal interaction must remain `credit: none`. A human must read the accepted Lesson and Practice for reasoning, worked-process quality, duration plausibility, construct validity, contingent feedback, changed retry, and genuine source-bounded application. `npm run eval:hy3` remains an optional credentialed adapter evaluation; it is not a substitute for that StudySession/browser gate. No Fake, real-Hy3, Chrome, human-audit, SQL-audit, or current test-count result is asserted by this section.
-
-## Phase 12B7D objective-authority semantic support verification
-
-Phase 12B7D adds a fourth Curriculum authority gate: the exact bound evidence must semantically support the complete objective proposition at its frozen construct. The focused offline commands are:
-
-```bash
-npm run build -w @hy3-clinic/shared
-npm run test -w @hy3-clinic/shared -- src/domain/objectiveAuthoritySemanticSupport.test.ts src/provider/agentPayloads.test.ts
-npm run test -w @hy3-clinic/server -- src/services/objectiveAuthoritySemanticSupport.test.ts src/services/objectiveAuthoritySemanticRepair.test.ts src/repositories/curricula.test.ts src/db/migrate.test.ts src/llm/fakeProvider.test.ts src/llm/hy3Provider.test.ts src/llm/prompts.test.ts
-npm run test -w @hy3-clinic/server -- src/services/curriculumCapabilityRecovery.test.ts src/services/curriculumMaterialization.test.ts src/services/curriculumAuthority.test.ts src/services/curriculumValidation.test.ts src/services/curriculum.test.ts src/services/coursePreparation.test.ts
-npm run test -w @hy3-clinic/server -- src/services/studyPlansAgent.test.ts src/repositories/courseExecution.test.ts src/services/teachingBriefContext.test.ts src/services/teachingBriefPreparation.test.ts src/services/visualLearningFlow.test.ts
-```
-
-The shared and semantic-service suites cover strict runtime schemas, complete ordered proposition partitioning, construct identity, controlled support types, independent verdict recomputation, malformed/foreign/duplicate output, current fingerprints, and repaired-capability preservation. Adversarial fixtures include an ingestion procedure falsely offered for an integrated-system-positioning explanation, exact quotes supporting another proposition, misleading Chinese/English keyword overlap, definition-only evidence for `explain`, explanation-only evidence for `apply`, valid procedure support for `apply`, valid support without lexical overlap, joint multi-block support, a mixed supported/unsupported proposition, and a useful LearningUnit block that remains unusable while unbound. Public tests retain the exact opaque counterexample identities and proposition class without depending on the private source database.
-
-Repair tests prove that only failed objective wording and exact evidence selections can change inside the deterministic LearningUnit source envelope. Construct and priority remain frozen, at most five eligible exact offers may be selected per repaired objective, unrelated objectives and all non-objective candidate fields remain unchanged, and the fresh evaluator must map every original capability fragment to the repaired proposition with no loss. A provider cannot consume an unoffered alias, lower `explain` to `identify`, broaden to unrelated evidence, or pass by narrowing away the original learning capability.
-
-Persistence and migration tests cover migration 41's canonical `curriculum_objective_semantic_support` rows, atomic write/hydration outside aggregate Curriculum JSON, immutable triggers, legacy readability without fabricated support, metadata/payload consistency, current proposition and binding fingerprints, acceptance-time revalidation, and owning-Curriculum cascade behavior. Exact selected claim IDs are propagated from block/quote/offset materialization into evaluator aliases, canonical mappings, telemetry fingerprints, and repository hydration. Claims are rechecked for current Course workspace, authority-to-SourceBlock Material and MaterialRevision ownership, manifest-block revision ownership, original extracted content, and exact quote offsets. Tests delete or drift the selected claim while leaving another valid same-record/same-block claim in place and prove it cannot mask the stale identity; two provider-visible identical quotes with different claim IDs also produce distinct audit fingerprints.
-
-Migration 42 tests start from a populated migration-41 database and prove unambiguous StudySession ownership backfill from logical calls, Lesson execution state/events, exact nested Teaching Brief identity, and controlled StudySession command prefixes. Conflicting, stale, wrong-type, wrong-unit, and unknown signals remain unowned; the nullable foreign key, same-workspace triggers, partial fencing index, ordinary lease updates, direct StudySession deletion, workspace cascade, and foreign-key integrity are checked. Repository/service tests prove ownership is part of idempotent operation identity without widening the public projection. Route-activation regressions cover running, interrupted, and queued owned work, queued/sent attempt outcomes, terminal token promotion, unexpired-lease and late-worker rejection, completed/abandoned Session cleanup, unrelated-work preservation, exact automatic `GoalOutcome`, and full rollback when a conflicting predecessor outcome already exists. Runtime compatibility tests mirror the migration's workspace, operation-type, nested Teaching Brief, Lesson-event, controlled-prefix, ambiguity, and invalid-signal gates. Ordinary GoalOutcome tests prove the same exact-route cleanup cancels turns, logical calls, attempts, and operations with one typed `goal_terminal` payload.
-
-The downstream suites prove that the same validator fails before provider work or route mutation at StudyPlan preflight/proposal, route activation, immutable Brief reuse, Practice retry, and immediate Lesson preparation. StudyPlan proposal and deterministic draft-edit race tests freeze the entire execution version and route pointer set and assert exact rollback of Plans, risks, Agendas, events, progress, and pointers. Teaching tests authorize aliases only from the exact claims mapped by passing fragments, preserve a claim after character 1,200, reject same-block prefixes/other claims, budget the final annotated provider envelope at 24 offers/32 KiB, and revalidate inside the Lesson checkpoint and final Brief transactions plus immediately before Practice. Recovery tests start from an active legacy route with no semantic rows or a stale binding, prioritize an immutable Curriculum successor over assessment-readiness work, change the preparation revision when semantic recovery state changes, retain the old route until learner acceptance, and prove successor Curriculum/StudyPlan lineage and predecessor content preservation. Missing migration-41 support on a legacy accepted Curriculum is an expected fail-closed recovery signal, not permission to fabricate a pass.
-
-Capability-frontier regressions additionally freeze every non-optional objective from the nearest historically accepted same-Contract/same-manifest predecessor, preserve proposition/construct/priority and LearningUnit source scope through operation-local Course Map/detail aliases, and require one independently passing recovery origin per predecessor objective. Tests reject missing, duplicate, escaped, rewritten, stale, non-nearest, and retroactively accepted lineage while preserving an honest all-optional empty frontier. Budget tests separate ordinary catalog visibility from recovery eligibility: 160 ordinary blocks remain provider-visible while a 102-block predecessor envelope receives a deterministic 29-alias allowlist shared by its two capabilities. They also cover fair multi-unit enrichment, the merged 240-offer ceiling, fail-closed overflow when mandatory ordinary coverage plus recovery minima requires 241 offers, exact capacity matching, 48 forced-distinct-region rejection, request/offer/output lower bounds, the 192-objective ceiling, future-batch reservation, and a non-coincident required APPLY objective. Fake semantic fixtures also reject arbitrary unrelated evidence rather than treating an unmarked exact quote as entailment.
-
-The complete offline/Fake release gate remains:
-
-```bash
-npm run build
-npm run lint
-npm test
-npm run eval:fake
-npx prettier --check .
-git diff --check
-```
-
-All commands above are deterministic Fake or mocked-provider checks and must not call the real Hy3 API. Fake conformance proves schema wiring, local authority ownership, persistence, repair bounds, and state isolation; it does not prove model-level semantic judgment, real structured-output behavior, browser ownership, instructional quality, or educational effectiveness.
-
-REAL_HY3 and actual-Chrome acceptance are a separate required release gate. Configure real Hy3 exactly as described in the README, use a disposable database, preserve an authoritative before-state snapshot, and create the corrected Curriculum and StudyPlan only through supported successor Course Preparation and acceptance APIs. Do not mutate the accepted predecessor or manually rebind a known useful block. After atomic successor route activation, use the actual backend, frontend, and Chrome to create a fresh StudySession and test this concrete hypothesis: the semantically supported exact-authority successor reaches fresh Lesson validation and independent Lesson evaluation without the former objective-authority contradiction.
-
-If Lesson passes, first verify and preserve its immutable accepted checkpoint, provider/model telemetry, logical call, and physical attempts. Then run the separate Practice call; a Practice failure or bounded retry must reuse the byte-identical Lesson and make no second Lesson call. Complete browser acceptance also requires learner commitment before guidance, a plausible wrong answer, contingent feedback/hint, one materially changed retry, genuine source-bounded `apply`, permanent `credit: none`, unchanged Formal Evidence/mastery/mistakes/Review/Agenda/StudyPlan progression, SQLite foreign-key integrity, and one bounded human review of objective teachability, Lesson reasoning, Practice construct validity, and capability preservation.
-
-`npm run eval:hy3` is an optional adapter evaluation and is not a substitute for this product-level successor/StudySession/browser protocol. No REAL_HY3, actual-Chrome, human-audit, or live database-integrity pass for Phase 12B7D is claimed by this document; those results must be recorded only after the separate gate actually runs.
+The matrix is keyed to the official Task 1 requirements. Cells marked PLANNED are deliberately
+not current claims.
+
+| Requirement | Current implementation / source | Reviewer evidence | Status |
+| --- | --- | --- | --- |
+| S1–S5 scenario, user value, personal/activity-work framing | README, Course routes, workspace/material services | README, `docs/ARCHITECTURE.md`, `routes/workspaces.ts`, `routes/agentCourse.ts` | Implemented |
+| A1–A3 substantive Hy3 semantic role | Hy3 provider contracts and Curriculum/Lesson/Assessment services | `apps/server/src/llm/hy3Provider.ts`, provider tests, historical online record (qualified above) | Implemented; current real-run refresh planned |
+| E1–E5 open-ended evaluation method | StudyEval specification | [docs/EVALUATION.md](EVALUATION.md) | Method published; executable harness/corpus/results PLANNED before final submission |
+| V1–V3 provenance, deterministic authority, and state auditability | Grounding, semantic-support, grading, progression, migrations | `apps/server/src/grounding`, `apps/server/src/services`, Vitest suites, `eval:fake` | Implemented |
+| X1 limitations and failure analysis | Capability-boundary register and observed Hy3 patterns | [docs/LIMITATIONS.md](LIMITATIONS.md), private observations summarized there without frequencies | Implemented as limitation register |
+| D1 competition model path | Hy3 is the only enabled model-capability path; visual adapter excluded | README provider boundary, ARCHITECTURE visual-provider paragraph, all evaluation runs require disabled visual provider | Implemented boundary |
+| D2 evaluation method specification | Layer A/Layer B separation, seven dimensions, anchors, scorer protocols | [docs/EVALUATION.md](EVALUATION.md) | Published; harness PLANNED |
+| D3 corpus and executable evaluator | Frozen cases, corpus hash, offline aggregation, credentialed semantic observation collection | No public corpus or result artifact yet | PLANNED for 8/31–9/5 |
+| D4 proposal and analysis report | Scenario, architecture, method, limitations, schedule | [docs/PROJECT_PROPOSAL.md](PROJECT_PROPOSAL.md) | Published |
+| D5 demonstration media | Current workflow demonstration | Obsolete media deleted; replacement recording is scheduled before final submission | PLANNED |
+
+## Historical phase verification
+
+Earlier implementation phases and their individual checks remain reproducible from Git history.
+This current document intentionally keeps only the commands and boundaries needed to reproduce the
+checked-out product; historical design and chronology are in [docs/HISTORY.md](HISTORY.md).

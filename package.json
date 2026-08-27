@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "Apache-2.0",
-  "description": "Evidence-grounded adaptive-learning app with course workspaces, a personal concept graph, deterministic learner state, and a bounded Hy3 tutor.",
+  "description": "Hy3 Study Clinic - Course-centred, source-grounded, evidence-gated, learner-governed learning execution built on Hy3; a personal activity project, not an official Tencent release.",
   "type": "module",
   "engines": {
     "node": ">=20.9.0"

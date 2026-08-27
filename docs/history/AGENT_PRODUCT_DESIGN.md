@@ -1,17 +1,15 @@
 # Hy3 Study Clinic — Learning Execution Agent Product Design
 
-Status:
-AUTHORITATIVE PRODUCT DESIGN FOR NEXT IMPLEMENTATION
+> **Historical status.** This is a historical design document from the 2026-07/08
+> Learning Execution Agent design phase. It is **not** current product truth. Current
+> architecture lives in [`docs/ARCHITECTURE.md`](../ARCHITECTURE.md); current
+> verification lives in [`docs/VERIFICATION.md`](../VERIFICATION.md). Sections that
+> describe future work may already be implemented, changed, or dropped. Use this file
+> for design history only.
 
-Authority order:
-
-1. repository-local AGENTS.md / CLAUDE.md
-2. STUDY_CLINIC_AGENT_PRODUCT_DESIGN.md
-3. current implemented code/tests for current-state facts
-
-Superseded historical product-design documents are context only and MUST NOT override this design.
-
-Research and repository snapshot: 2026-08-10. This is a product and architecture design, not an implementation claim. No Agent capability described as “target” exists merely because it appears here. Current behavior remains documented in [ARCHITECTURE.md](ARCHITECTURE.md), current verification in [VERIFICATION.md](VERIFICATION.md), and the project chronology in [PROJECT_EVOLUTION.md](PROJECT_EVOLUTION.md).
+Research and repository snapshot: 2026-08-10. This is a product and architecture design,
+not an implementation claim. No capability described as “target” exists merely because it
+appears here.
 
 ## 1. Executive verdict
 
@@ -157,207 +155,24 @@ Contract → Curriculum → accepted Plan
 
 Graph becomes supporting Explore infrastructure. Course Home and Study Session become the primary learner journey.
 
-## 5. Competitive and prior-art analysis
+## 5. Historical competitive context (stripped)
 
-### Research method and inspected revisions
+The former design document contained a detailed prior-art comparison. Those strategy
+notes and named-competitor references were removed from the public historical copy;
+current product truth is documented in [`docs/ARCHITECTURE.md`](../ARCHITECTURE.md).
 
-The review used current public repository source trees, root documentation, release notes, architecture/status documents, and license files as of 2026-08-10. Marketing claims were not treated as proof. The inspected HEAD revisions were:
+### Prior-art verdict (removed)
 
-| Project | Inspected HEAD | Current license | What the source/release record establishes |
-| --- | --- | --- | --- |
-| [OpenTutor](https://github.com/zijinz456/OpenTutor) | 5f1aefdf9a93cdb65645f3e474b2c90cc568971e | MIT | Local single-user public beta with a block workspace, grounded Tutor chat, PDF/DOCX/PPTX intake, quizzes, flashcards, plan/calendar, FSRS, multiple providers, and explicit experimental flags for advanced graph/semantic-review flows |
-| [DeepTutor](https://github.com/HKUDS/DeepTutor) | 456f9c24226e008f1ff07a7e3455d7b4d39f6221 | Apache-2.0 | A broad agent-native tutoring platform with a shared agent loop, persistent conversations, restart-safe turn handling, HTTP/SSE, three-layer inspectable memory, mastery paths, typed learning books, versioned knowledge indexes, and selectable document parsers |
-| [Engram](https://github.com/nagisanzenin/engram) | d0a61cd671301ce7fe05d46616d1fbc7e2af6382 | MIT | A shipped file-backed learning engine for Claude Code with first-principles curricula, Tutor/assessor separation, blind free-recall grading, evidence receipts, deterministic FSRS scheduling, adversarial grader audits, and explicit source artifacts |
-| [Studyield](https://github.com/studyield/studyield) | 32d2bf35739ecea599160046e899d5b117635777 | AGPL-3.0 | Source modules and UI surfaces for exam cloning, chat, problem solving, knowledge bases, learning paths, quizzes, research, teach-back, streaming, and analytics on a large NestJS/React/Postgres/Redis/Qdrant/ClickHouse stack; its own project brief also records incomplete integration and deployment work |
+The public current-product documents carry only the resulting design decisions;
+named competitor strategy and novelty analysis are intentionally not retained here.
 
-Studyield has contradictory stale licensing statements: its root license and current README footer identify AGPL-3.0, while its NOTICE, an older project brief, and a README comparison row still say Apache-2.0. The conservative reuse decision is therefore AGPL-3.0 and no source reuse.
+## 6. Historical differentiation note (stripped)
 
-No source is proposed for reuse from any of the four. If that decision changes, OpenTutor/Engram MIT source requires preservation of copyright and license notices; DeepTutor Apache-2.0 source requires the license, modification notices, applicable NOTICE content, and patent-term review; Studyield source must be avoided unless its controlling license is clarified and the AGPL obligations are deliberately accepted. High-level ideas and independently implemented patterns do not import code lineage, but research links remain recorded here.
+The original design also contained a commodity-capability inventory and falsification
+questions. Those strategy notes were intentionally removed from the public historical
+copy; current product boundaries and evaluation criteria are maintained elsewhere.
 
-### OpenTutor
-
-Actual overlap:
-
-- course/material intake, grounded chat, generated notes/questions, error tracking;
-- a learner-visible study plan and calendar;
-- FSRS review and adaptive practice;
-- knowledge graph and learner-adaptation ideas;
-- multiple provider routing and circuit-breaker-style operational concerns;
-- a block-based workspace that treats study artifacts as composable.
-
-Source-level implementation details strengthen the overlap:
-
-- durable agent tasks persist status, bounded attempts, risk/approval fields, checkpoints, step results, provenance, cancellation, retry, and status history;
-- an agenda engine ranks/deduplicates signals and queues/resumes tasks;
-- incremental summaries, memory flushing, emergency trimming, token estimates, and tool-schema pruning bound context;
-- model-call usage records attribute provider/model, input/output tokens, estimated cost, cache/agent/course, and operational metadata;
-- extractors cover PDF, DOCX, PPTX, XLSX, CSV, and text, with important fidelity differences by adapter.
-
-Useful patterns:
-
-- Course Home should combine current work, plan, review, and artifacts without forcing graph navigation.
-- Format ingestion and provider routing are commodity concerns.
-- Advanced research-derived adaptations should be explicitly feature-gated and labeled experimental.
-
-Tradeoffs to avoid:
-
-- copying its Python/Next architecture, hybrid vector retrieval, or broad multi-provider surface;
-- treating behavioral signals such as message brevity as authoritative cognitive state;
-- conflating an adaptive layout, a plan, and evidence-gated course execution.
-
-Its study-plan JSON is not established as a learner-accepted immutable version with a machine diff, and its agenda primarily coordinates agent tasks rather than the learner-visible today/now route defined here. Study Clinic difference: accepted versioned execution state, formal evidence isolation, route-preserving detours, explicit risk accounting, and learner-confirmed consequential changes are not established as OpenTutor’s organizing contract.
-
-### DeepTutor
-
-Actual overlap:
-
-- natural multi-turn tutoring, question generation, quizzes, mastery paths, and persistent learning artifacts;
-- resumable conversations and a restart-safe turn runtime;
-- bounded tool/capability surfaces, SSE, event correlation, and memory consolidation;
-- typed course/book structures with learner review of an outline;
-- versioned knowledge indexes that preserve the working version during rebuild;
-- parser adapters including Docling, MinerU, markitdown, and PyMuPDF4LLM.
-
-The shipped runtime persists sessions, messages, turns, and ordered turn events; supports request snapshots, event replay/live catch-up, cancellation with partial-output preservation, and orphan recovery. Its parser protocol produces a canonical parsed-document shape with blocks/assets, stable parser signatures, content-addressed caches, manifest-last writes, and failed-cache cleanup. Lightweight Office adapters retain page/slide/sheet identity. Per-turn token and cost estimates exist, though the reviewed design is less clearly centralized around Course/Session/operation attribution than OpenTutor’s call ledger.
-
-Useful patterns:
-
-- persist a turn before execution, detect orphaned work after restart, and terminate streams honestly;
-- keep raw events beneath curated summaries and make summary lineage inspectable;
-- stage a replacement artifact and activate it only after validation;
-- separate parser adapters from a normalized document representation.
-
-Tradeoffs to avoid:
-
-- adopting a full agent framework, vector/RAG platform, multi-user/auth surface, or Python service;
-- importing its much broader tools, partner agents, MCP, research, media, and provider ecosystems;
-- treating generic memory consolidation as formal learning evidence.
-
-Its mastery-path implementation also demonstrates a boundary to avoid: some qualitative concept/design assessment can accept a Tutor-provided passed value and record mastery. Study Clinic requires independent formal evidence and local reconciliation. Model-authored mastery-map replacement also needs stronger revision lineage than the reviewed source exposes.
-
-Study Clinic difference: DeepTutor demonstrates that persistence, agent loops, learning paths, and conversational breadth are not novel. Study Clinic’s narrower claim is deterministic course execution governed by accepted route versions and formal progression evidence.
-
-### Engram
-
-Actual overlap:
-
-- curriculum construction and prerequisite ordering;
-- ordinary Tutor dialogue separated from a blind assessor;
-- “no receipt, no mastery claim” evidence discipline;
-- deterministic scheduling, free recall, transfer/procedure probes, and adversarial grader evaluation;
-- append-only file artifacts, inspectable audits, and learner-controlled adaptations.
-
-The concrete safety patterns are strong: learner productions are stashed before grading; fresh-context assessment sees rubric/probe/production but not Tutor dialogue; stable settlement IDs make stash→assessment→receipt application idempotent; append-only receipts gate progression; and harder transfer failure does not erase valid memory evidence. Its public adversarial gold set measures leniency, agreement, test-retest behavior, and external adjudication.
-
-Useful patterns:
-
-- strict separation of the party that teaches from the authority that advances state;
-- conservative grading and explicit receipts;
-- adversarial gold sets, independent adjudication, and evaluation of the evaluator;
-- a short daily review habit driven by durable evidence rather than Tutor enthusiasm.
-
-Tradeoffs to avoid:
-
-- copying its Claude Code/plugin workflow or file schema into the SQLite web application;
-- assuming first-principles dependency order should always override a supplied course’s learner-visible organization;
-- treating one blind assessor or one model family as ground truth.
-
-Engram has no general document/SourceBlock intake, durable web StudySession turn runtime, provider abstraction, or API-cost ledger. It directly invalidates any claim that “blind examiner,” evidence receipts, deterministic scheduling, Tutor/examiner separation, route parking, or adversarial grading are novel. Study Clinic’s proposed contribution is their integration with source-grounded multi-document course scope, an accepted route, mixed-initiative detours, a Coverage/Risk Ledger, and local transactional learner state.
-
-### Studyield
-
-Actual overlap:
-
-- exam-clone, teach-back, learning-path, quiz, knowledge-base, chat, research, and problem-solver modules;
-- streaming multi-agent problem solving;
-- exam-oriented practice and progress analytics;
-- broad study-tool information architecture.
-
-The source persists chat/citations, sequential analysis→solver→verifier stage outputs, generated learning-path JSON, exam analysis/generation/attempts/reviews, teach-back scores/misconceptions, and PDF/text/DOCX knowledge-base intake. This is real feature code, not only screenshots. Its own project brief nevertheless records missing endpoints, duplicate migration numbers, incomplete Docker files, and unfinished polish.
-
-Useful patterns:
-
-- past-exam artifacts deserve their own intake and analysis path;
-- question format, representation, and combinations are useful observed evidence;
-- rich assessment and teach-back surfaces can coexist with conversational learning.
-
-Tradeoffs to avoid:
-
-- its large operational footprint and dependencies explicitly disallowed here;
-- source reuse under the current AGPL license;
-- language such as “perfectly matched” future exams or implied prediction from a small historical sample;
-- equating module presence or generated output with verified progression.
-
-Specific evidence boundaries are weaker than required here: learning-path progress is a manual completed flag; important generated JSON is often parsed/cast without an equivalent runtime contract; exam analysis converts a small observed sample into model-authored percentages; a teach-back challenge can be generated and accepted by the same model; OCR confidence can be synthetic rather than measured; and the reviewed streaming path has no comparable durable event/idempotency/restart ledger. Provider usage is returned in places, but no persistent Course/Session token-cost ledger was found.
-
-Study Clinic difference: Exam/Question Blueprint observations are evidence for priority and risk, never an oracle. State-changing assessment remains isolated and deterministic.
-
-### Prior-art verdict
-
-The search substantially narrows the thesis. AI tutors, study plans, curricula, persistent sessions, knowledge graphs, exam cloning, quizzes, mastery paths, FSRS, blind assessors, evidence receipts, source citations, multiple agents, and durable runtime patterns all have relevant prior art.
-
-No inspected project clearly establishes the exact combined contract of:
-
-1. a learner-confirmed, versioned Learning Contract;
-2. an accepted executable StudyPlan distinct from a flexible SessionAgenda;
-3. free detours with a persisted return path;
-4. conversation that cannot silently become formal evidence;
-5. a provenance-bearing Coverage/Risk Ledger that admits semantic unknowns;
-6. adversarial readiness integrated with progression and user-confirmed replanning.
-
-That is evidence of a meaningful product positioning, not a novelty or exclusivity proof. A broader market search could still find the same combination.
-
-## 6. What is explicitly NOT novel
-
-Study Clinic must not present any of the following as a differentiator by itself:
-
-- AI Tutor or natural-language chat;
-- course outline or Curriculum;
-- study plan, learning path, calendar, or next-action recommendation;
-- graph, concept map, or prerequisite ordering;
-- grounded RAG, citations, document chat, or source evidence;
-- PDF, DOCX, PPTX, image, or OCR intake;
-- quizzes, teach-back, mastery, mistakes, or progress tracking;
-- spaced repetition or FSRS;
-- persistent transcripts, memory, resume, streaming, or cancellation;
-- multi-agent systems, tools, MCP, or provider abstraction;
-- blind examiner, separate assessor, adversarial question, or evidence receipt;
-- exam cloning or question-format analysis;
-- cost/token telemetry, caching, or audit logs.
-
-These are established capabilities or commodity infrastructure. Study Clinic should reuse libraries or adapt proven patterns where possible and invest product reasoning in execution semantics.
-
-## 7. Proposed product differentiation
-
-The serious-learner value is not “a smarter answer.” It is a trustworthy execution scaffold around the same strong model:
-
-- the accepted goal and route survive across sessions;
-- the software explains why the next action is next;
-- a spontaneous question does not destroy the route;
-- only valid formal evidence advances progression;
-- easier evidence remains valid when a stretch challenge fails;
-- unresolved, deferred, and semantically uncertain areas stay visible;
-- past-exam evidence informs priorities without pretending to predict the future;
-- apparently strong mastery is challenged across representation and transfer;
-- consequential changes arrive as a proposal with trigger, version, and diff;
-- the complete state and cost history is inspectable.
-
-### Falsification conditions
-
-The thesis should be rejected or narrowed if same-model studies show that:
-
-- learners do not return more reliably across sessions;
-- manual “what next?” and plan-repair interventions do not decrease;
-- accepted routes create more friction than clarity;
-- risk ledgers produce noise without finding meaningful gaps;
-- adversarial checks mainly generate unfair or out-of-scope questions;
-- formal evidence gates make learning feel bureaucratic without reducing false completion;
-- a plain conversational Tutor achieves equal drift, completion, retention, and cost outcomes;
-- users routinely abandon Study Clinic for general chat.
-
-The product must earn its scaffold.
-
-## 8. Learning Contract
+## 7. Learning Contract
 
 The Learning Contract is the smallest persisted, learner-confirmed representation of intention and constraints. It replaces prompt-only intent and the historical design’s looser LearningGoal concept.
 
@@ -1149,7 +964,7 @@ The assessment pipeline independently validates scope authority, truth/premise a
 
 Both Agent-triggered readiness gates and learner-triggered “try to really challenge me” detours are supported. A learner-triggered challenge remains a detour unless its formal result is explicitly reconciled with plan objectives.
 
-Engram proves that blind/adversarial assessment and receipts are prior art. Study Clinic’s design focus is integration with accepted plan state, source/exam risk, mixed initiative, and transactional progression.
+Prior methodology proves that blind/adversarial assessment and receipts are prior art. Study Clinic’s design focus is integration with accepted plan state, source/exam risk, mixed initiative, and transactional progression.
 
 ## 24. Input Fidelity / material roadmap
 
@@ -1206,30 +1021,30 @@ No source-level reuse is proposed in this design.
 
 | Capability | Study Clinic need | Relevant prior art | Underlying project/library/standard | What is reusable | Decision | License | Attribution/NOTICE impact | Integration risk | Maintenance risk | Effect on product differentiation |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Text PDF | Page-aware text/source identity | OpenTutor, DeepTutor, Docling | [unpdf](https://github.com/unjs/unpdf) / [PDF.js](https://github.com/mozilla/pdf.js) | Existing extraction/render APIs | USE LIBRARY | MIT / Apache-2.0 | Retain licenses and any PDF.js NOTICE | Medium: reading order/layout | Medium: pin runtime-compatible versions | None; commodity |
-| Scanned PDF/OCR | Recover printed scans with page/region provenance | DeepTutor parser choices; Docling | [Tesseract.js](https://github.com/naptha/tesseract.js) after PDF.js page render | OCR worker and word/region output after a future gate | DEFER | Apache-2.0; model data separately | License/NOTICE and language-model inventory | High: CPU, layout, math, language | Medium/high | None; commodity |
-| DOCX | Semantic headings/lists/tables/images | OpenTutor, DeepTutor | [Mammoth](https://github.com/mwilliamson/mammoth.js) | Existing semantic conversion and image hooks | USE LIBRARY | BSD-2-Clause | Preserve copyright/license | Medium: sanitize, no page identity | Low/medium | None |
-| PPTX | Slide/notes/order/assets/tables/equations | OpenTutor, DeepTutor | [officeParser](https://github.com/harshankur/officeParser) candidate | Typed AST and AbortSignal after fixture/security spike | DEFER | MIT | Preserve license; audit transitive SBOM | High: broad deps, OOXML edge cases | Medium/high: fast-moving | None |
-| Images/screenshots | Original asset plus OCR-ready derivative | Docling; OpenTutor multimodal intake | [Sharp](https://github.com/lovell/sharp) + Tesseract.js | Decode/rotate/resize plus OCR after a future gate | DEFER | Apache-2.0 | Preserve notices; audit libvips/model terms | High: native binaries/resource bounds | Medium | None |
+| Text PDF | Page-aware text/source identity | Prior-art research | [unpdf](https://github.com/unjs/unpdf) / [PDF.js](https://github.com/mozilla/pdf.js) | Existing extraction/render APIs | USE LIBRARY | MIT / Apache-2.0 | Retain licenses and any PDF.js NOTICE | Medium: reading order/layout | Medium: pin runtime-compatible versions | None; commodity |
+| Scanned PDF/OCR | Recover printed scans with page/region provenance | Prior-art research | [Tesseract.js](https://github.com/naptha/tesseract.js) after PDF.js page render | OCR worker and word/region output after a future gate | DEFER | Apache-2.0; model data separately | License/NOTICE and language-model inventory | High: CPU, layout, math, language | Medium/high | None; commodity |
+| DOCX | Semantic headings/lists/tables/images | Prior-art research | [Mammoth](https://github.com/mwilliamson/mammoth.js) | Existing semantic conversion and image hooks | USE LIBRARY | BSD-2-Clause | Preserve copyright/license | Medium: sanitize, no page identity | Low/medium | None |
+| PPTX | Slide/notes/order/assets/tables/equations | Prior-art research | [officeParser](https://github.com/harshankur/officeParser) candidate | Typed AST and AbortSignal after fixture/security spike | DEFER | MIT | Preserve license; audit transitive SBOM | High: broad deps, OOXML edge cases | Medium/high: fast-moving | None |
+| Images/screenshots | Original asset plus OCR-ready derivative | Prior-art research | [Sharp](https://github.com/lovell/sharp) + Tesseract.js | Decode/rotate/resize plus OCR after a future gate | DEFER | Apache-2.0 | Preserve notices; audit libvips/model terms | High: native binaries/resource bounds | Medium | None |
 | Tables/formulas | Preserve structure or declare loss | Docling, officeParser | Docling structural model; OOXML nodes | Typed node/partial-result pattern | DEFER | MIT code; model licenses vary | No copied source; later model audit | High | High | None |
 | Normalized intake | One truth path for all formats | Docling, officeParser | Study Clinic schema over parser adapters | Structural-unit and warning pattern | BUILD | Existing project; pattern only | None | Medium | Medium | Supports trust, but not a moat |
-| Transcript persistence | Durable ordered exchanges/resume | DeepTutor | SQLite | Append-only exchanges, watermarks, statuses | BUILD | SQLite public domain | None | Medium: ordering/idempotency | Low | Core enabling semantics |
-| Rolling context summary | Bounded long sessions with lineage | DeepTutor three-layer memory | Zod + SQLite | Raw-to-derived layering and provenance | BUILD | MIT existing Zod; SQLite public domain | Existing notices only | High: summary drift | Medium | Supporting, not differentiating alone |
-| Streaming/cancellation | Responsive turns and honest interruption | DeepTutor restart-safe SSE | WHATWG Streams, AbortSignal; current NDJSON | Standards and current requestSignal/epochs | ADAPT PATTERN | Open standards | None | Medium: late chunks are not rollback | Low | Reliability, not novelty |
-| Retry/idempotency | At-most-once actions; billed-attempt audit | DeepTutor runtime; current grading | SQLite unique constraints and transactions | Command IDs, expected versions, fencing | BUILD | No new license | None | Medium/high | Low | Essential core guarantee |
-| Provider abstraction | Fake/Hy3 parity and typed operations | OpenTutor/DeepTutor multi-provider routing | Existing LlmProvider | Narrow operation contracts, usage metadata | BUILD | Existing project | None | Medium | Medium | None; avoid generic expansion |
+| Transcript persistence | Durable ordered exchanges/resume | Prior-art research | SQLite | Append-only exchanges, watermarks, statuses | BUILD | SQLite public domain | None | Medium: ordering/idempotency | Low | Core enabling semantics |
+| Rolling context summary | Bounded long sessions with lineage | Prior-art research | Zod + SQLite | Raw-to-derived layering and provenance | BUILD | MIT existing Zod; SQLite public domain | Existing notices only | High: summary drift | Medium | Supporting, not differentiating alone |
+| Streaming/cancellation | Responsive turns and honest interruption | Prior-art research | WHATWG Streams, AbortSignal; current NDJSON | Standards and current requestSignal/epochs | ADAPT PATTERN | Open standards | None | Medium: late chunks are not rollback | Low | Reliability, not novelty |
+| Retry/idempotency | At-most-once actions; billed-attempt audit | Prior-art research | SQLite unique constraints and transactions | Command IDs, expected versions, fencing | BUILD | No new license | None | Medium/high | Low | Essential core guarantee |
+| Provider abstraction | Fake/Hy3 parity and typed operations | Prior-art research | Existing LlmProvider | Narrow operation contracts, usage metadata | BUILD | Existing project | None | Medium | Medium | None; avoid generic expansion |
 | Structured output validation | Runtime contracts and bounded repair | Broad prior art | [Zod](https://github.com/colinhacks/zod) | Existing schemas/validation | USE LIBRARY | MIT | Existing license inventory | Low; semantic checks still local | Low | Trust enabler, not novel |
 | Semantic caching | Reuse setup/artifacts safely | General LLM platforms | SQLite; [RFC 9111](https://www.rfc-editor.org/rfc/rfc9111) concepts | Content fingerprints/invalidation concepts | BUILD | Public domain / standard | None | High: false hits | Medium | Cost enabler |
-| Token/cost telemetry | Session/course/operation cost answers | OpenTutor call ledger; DeepTutor turn estimates | [OpenTelemetry GenAI conventions](https://github.com/open-telemetry/semantic-conventions-genai) | Field naming and trace correlation | BUILD | Apache-2.0 | Pattern only; license if SDK later used | Medium: provider usage gaps | Medium: evolving convention | Necessary economics, not novel |
-| Spaced repetition | Durable review scheduling | OpenTutor, Engram | Current scheduler; [ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs) if migration justified | Mature FSRS implementation later | DEFER | MIT | Preserve license if adopted | High: due-date/history migration | Medium | Explicitly not differentiating |
+| Token/cost telemetry | Session/course/operation cost answers | Prior-art research | [OpenTelemetry GenAI conventions](https://github.com/open-telemetry/semantic-conventions-genai) | Field naming and trace correlation | BUILD | Apache-2.0 | Pattern only; license if SDK later used | Medium: provider usage gaps | Medium: evolving convention | Necessary economics, not novel |
+| Spaced repetition | Durable review scheduling | Prior-art research | Current scheduler; [ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs) if migration justified | Mature FSRS implementation later | DEFER | MIT | Preserve license if adopted | High: due-date/history migration | Medium | Explicitly not differentiating |
 | Question/assessment rendering | Accessible typed formal activities | All four projects | Existing QuizView/ResultsView | Existing UI and attempt isolation | BUILD | Existing project | None | Medium | Low/medium | Formal boundary is core; widgets are not |
-| Markdown/LaTeX rendering | Safe explanations, tables, formulas, code | DeepTutor, Studyield | [react-markdown](https://github.com/remarkjs/react-markdown), remark-gfm, remark-math, rehype-katex, [KaTeX](https://github.com/KaTeX/KaTeX), rehype-sanitize | Maintained parse/render/sanitize stack | USE LIBRARY | MIT | Preserve licenses and KaTeX font notices | Medium: sanitization/bundle | Low/medium | None |
-| Curriculum UX | Hierarchy, route mapping, risk/progress | OpenTutor blocks, DeepTutor books, Engram maps | Existing React plus adapted patterns | Outline review, typed blocks, progress disclosure | BUILD | Pattern only | None | Medium | Medium | Product semantics remain core |
-| Session UX | Free chat plus current route/actions | OpenTutor, DeepTutor | Existing React and streaming stack | Transcript/recents/interruption patterns | BUILD | Pattern only | None | Medium/high | Medium | Integrated route/evidence semantics matter |
-| Agent workflow/runtime | Durable bounded execution | DeepTutor; Temporal patterns | SQLite state machine; [XState](https://github.com/statelyai/xstate) as reference; [Temporal](https://github.com/temporalio/temporal) only as reference | Explicit transitions, durable history, signals; frameworks remain unadopted | BUILD | Pattern refs MIT | No source reuse | Medium | Low/medium locally; framework would be high | Core execution semantics |
-| Audit/event logs | Causation, version, validation history | Engram receipts, DeepTutor trace | [CloudEvents](https://github.com/cloudevents/spec), W3C Trace Context | Envelope/correlation vocabulary | BUILD | Apache-2.0 / standard | Pattern only | Medium: privacy/payload growth | Low | Core audit integration |
-| Evaluation infrastructure | Fixtures, replay, ablation, human review | Engram grader audit | Existing Vitest/eval scripts; [Promptfoo](https://github.com/promptfoo/promptfoo) later | Existing harness; generic runner only if scale demands | BUILD | MIT | Existing notices; add if later adopted | Medium: LLM judge bias | Medium | Proves value; not product feature |
-| Full observability platform | Optional future trace export | DeepTutor operational surfaces | OTel export; Langfuse considered | Export seam only | DEFER | OTel Apache-2.0; Langfuse core MIT with separately licensed areas | Audit on adoption | High operational footprint | High | None |
+| Markdown/LaTeX rendering | Safe explanations, tables, formulas, code | Prior-art research | [react-markdown](https://github.com/remarkjs/react-markdown), remark-gfm, remark-math, rehype-katex, [KaTeX](https://github.com/KaTeX/KaTeX), rehype-sanitize | Maintained parse/render/sanitize stack | USE LIBRARY | MIT | Preserve licenses and KaTeX font notices | Medium: sanitization/bundle | Low/medium | None |
+| Curriculum UX | Hierarchy, route mapping, risk/progress | Prior-art research | Existing React plus adapted patterns | Outline review, typed blocks, progress disclosure | BUILD | Pattern only | None | Medium | Medium | Product semantics remain core |
+| Session UX | Free chat plus current route/actions | Prior-art research | Existing React and streaming stack | Transcript/recents/interruption patterns | BUILD | Pattern only | None | Medium/high | Medium | Integrated route/evidence semantics matter |
+| Agent workflow/runtime | Durable bounded execution | Prior-art research | SQLite state machine; [XState](https://github.com/statelyai/xstate) as reference; [Temporal](https://github.com/temporalio/temporal) only as reference | Explicit transitions, durable history, signals; frameworks remain unadopted | BUILD | Pattern refs MIT | No source reuse | Medium | Low/medium locally; framework would be high | Core execution semantics |
+| Audit/event logs | Causation, version, validation history | Prior-art research | [CloudEvents](https://github.com/cloudevents/spec), W3C Trace Context | Envelope/correlation vocabulary | BUILD | Apache-2.0 / standard | Pattern only | Medium: privacy/payload growth | Low | Core audit integration |
+| Evaluation infrastructure | Fixtures, replay, ablation, human review | Prior-art research | Existing Vitest/eval scripts; [Promptfoo](https://github.com/promptfoo/promptfoo) later | Existing harness; generic runner only if scale demands | BUILD | MIT | Existing notices; add if later adopted | Medium: LLM judge bias | Medium | Proves value; not product feature |
+| Full observability platform | Optional future trace export | Prior-art research | OTel export; Langfuse considered | Export seam only | DEFER | OTel Apache-2.0; Langfuse core MIT with separately licensed areas | Audit on adoption | High operational footprint | High | None |
 
 ### Reuse policy
 
@@ -1243,7 +1058,7 @@ For a future dependency:
 6. keep the Study Clinic adapter and normalized schema authoritative;
 7. record why a library remains preferable to local code.
 
-MIT/BSD notices must accompany applicable distributions. Apache-2.0 dependencies require preservation of the license and any upstream NOTICE. Model files need a separate license audit. AGPL Studyield source must not be copied. There is currently no exact module/file/revision proposed for source reuse because the decision is none.
+MIT/BSD notices must accompany applicable distributions. Apache-2.0 dependencies require preservation of the license and any upstream NOTICE. Model files need a separate license audit. There is currently no exact module/file/revision proposed for source reuse because the decision is none.
 
 This design does not authorize adding officeParser, Sharp, Tesseract.js, react-markdown, remark, rehype, or KaTeX. Each remains a future gated dependency decision.
 
@@ -1437,7 +1252,8 @@ No Temporal, LangGraph, LangChain, Redis queue, event bus, or second persistence
 
 ## 29. API changes
 
-Preserve existing routes and add focused modules under the existing /api/workspaces/:workspaceId scope. Do not label this “API v2.”
+Preserve existing routes and add focused modules under the existing
+`/api/workspaces/:workspaceId` scope. Do not assign a separate versioned product label.
 
 Illustrative resources:
 
@@ -1728,7 +1544,7 @@ Extend existing deterministic fake evaluation with:
 - reproducible operation/cost records;
 - sanitized evidence exports.
 
-Model-quality evaluation uses fixed prompts/material/model/settings and stores raw outputs privately with sanitized aggregate publication. LLM judges are advisory; important claims use blinded human review. Engram’s adversarial gold-set and adjudication discipline is a useful pattern: measure leniency, consistency, disagreement, and evaluator expiry rather than assuming the grader is an oracle.
+Model-quality evaluation uses fixed prompts/material/model/settings and stores raw outputs privately with sanitized aggregate publication. LLM judges are advisory; important claims use blinded human review. Prior adversarial gold-set and adjudication discipline is a useful pattern: measure leniency, consistency, disagreement, and evaluator expiry rather than assuming the grader is an oracle.
 
 Delayed retention requires real follow-up intervals. Architecture and immediate quiz scores cannot prove durable learning.
 
@@ -2067,7 +1883,7 @@ This review was completed before the historical current-tree reports were retire
 - REJECT universal completion thresholds; policy is Contract-sensitive and versioned.
 - REJECT structural/weighted coverage as proof of semantic completeness.
 - REJECT automatic conversion of standard-course supplements into course truth.
-- REJECT “blind examiner” as a novelty claim; Engram is direct prior art.
+- REJECT “blind examiner” as a novelty claim; prior work already establishes this pattern.
 - SUPERSEDE a single examiner step with candidate risk scan followed by selected formal readiness check.
 - REJECT harder-challenge failure erasing valid simpler evidence.
 - REJECT relaxing question contracts when generation misses required pieces; retain one targeted bounded regeneration.

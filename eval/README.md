@@ -1,6 +1,17 @@
 # Hy3 Study Clinic Evaluation
 
-This directory provides reproducible evidence for the system's main structural guarantees: provenance, local validation, budgets, state machines, isolation, and injection defenses. It verifies that those boundaries execute in the real server application; it does not merely check that feature entry points exist.
+This directory currently contains the structural-safety evaluation (`eval:fake` and the
+optional `eval:hy3` adapter run). The separate competition open-ended evaluation,
+StudyEval, is specified in [docs/EVALUATION.md](../docs/EVALUATION.md); its executable
+harness, frozen corpus, and result tables are planned and are not implemented at this
+commit. No future StudyEval command is documented here as available.
+
+The current runners provide reproducible evidence for the system's main structural
+guarantees: provenance, local validation, budgets, state machines, isolation, and
+injection defenses. They verify that those boundaries execute in the real server
+application; they do not merely check that feature entry points exist. Every evaluation
+run requires `VISUAL_PROVIDER=disabled`; the runners fail before provider-capable work
+when another value is configured.
 
 ## Directory layout
 
@@ -23,7 +34,7 @@ npm run build
 npm run eval:fake
 ```
 
-The runner starts the real server application in process with in-memory SQLite and executes 44 checks:
+The runner starts the real server application in process with in-memory SQLite and executes the current structural checks:
 
 - provenance retention: exact block offsets, concept evidence anchored to source blocks, and robust malformed-text ingestion;
 - canonical alignment: exact-normalization auto-acceptance, review for semantic merges, rejection of unauthorized proposals, and source-graph preservation;
@@ -108,6 +119,6 @@ Only whitelisted aggregate metrics are public. Per-sample `detail`, prompts, stu
 - The sample is deliberately small: four alignment labels and three grading answers. Real-provider rates are indicative, model/API-dependent, and not a benchmark.
 - `eval:fake` validates structure and safety boundaries, not teaching quality.
 - Exact quotation validation proves location, not complete semantic entailment.
-- The latest committed real-provider result is the sanitized [online-verification record](../docs/evidence/hy3-online-verification.md). It identifies the exact evaluated commit, model, endpoint hostname, and aggregate metrics. The raw report is gitignored and contains no value that reviewers need to reproduce with their own credentials.
+- The latest committed real-provider result is the sanitized [online-verification record](../docs/evidence/hy3-online-verification.md). It is historical: it predates the current Curriculum, Lesson, and semantic-support layers and does not exercise them. It identifies the exact evaluated commit, model, endpoint hostname, and aggregate metrics, and will be regenerated at a current commit before final submission. The raw report is gitignored and contains no value that reviewers need to reproduce with their own credentials.
 
-The broader test, CI, media, migration, and release evidence is documented in [Verification and Reviewer Evidence](../docs/VERIFICATION.md).
+The broader test, CI, migration, and current-state evidence is documented in [Verification and Reviewer Evidence](../docs/VERIFICATION.md).
