@@ -31,9 +31,11 @@ import { ingestSource } from '../apps/server/dist/ingestion/ingest.js';
 import { computeSections, conceptBudgetFor } from '../apps/server/dist/ingestion/sections.js';
 import { verifyGrounding } from '../apps/server/dist/grounding/verify.js';
 import { normalizeConceptKey } from '../packages/shared/dist/index.js';
+import { assertEvaluationVisualProviderDisabled } from '../scripts/assert-fake-provider.mjs';
 
 const evalDir = dirname(fileURLToPath(import.meta.url));
 loadDotenv({ path: join(evalDir, '..', '.env') });
+assertEvaluationVisualProviderDisabled(process.env, 'Hy3 evaluation');
 
 const baseUrl = process.env.HY3_BASE_URL;
 const apiKey = process.env.HY3_API_KEY;

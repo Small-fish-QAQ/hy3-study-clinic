@@ -1,4 +1,14 @@
 /** Fail closed before an offline workflow can reach any provider-backed operation. */
+export function assertEvaluationVisualProviderDisabled(env = process.env, context = 'Evaluation') {
+  const resolved = env.VISUAL_PROVIDER || 'disabled';
+  if (resolved !== 'disabled') {
+    throw new Error(
+      `${context} refused to run: VISUAL_PROVIDER resolved to ${resolved}, not disabled.`,
+    );
+  }
+  return resolved;
+}
+
 export function assertResolvedFakeProvider(config, context = 'Offline automation') {
   if (!config || config.provider !== 'fake') {
     const resolved = config?.provider ?? 'unknown';

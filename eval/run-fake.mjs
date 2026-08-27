@@ -28,7 +28,12 @@ import { searchSourceBlocks } from '../apps/server/dist/retrieval/lexical.js';
 import { scheduleFirst, scheduleNext } from '../apps/server/dist/review/scheduler.js';
 import { evaluateTutorPedagogyProfile } from '../apps/server/dist/eval/tutorPedagogy.js';
 import { curriculumSubjectClassTelemetry } from '../apps/server/dist/eval/curriculumPolicyComparison.js';
-import { assertResolvedFakeProvider } from '../scripts/assert-fake-provider.mjs';
+import {
+  assertEvaluationVisualProviderDisabled,
+  assertResolvedFakeProvider,
+} from '../scripts/assert-fake-provider.mjs';
+
+assertEvaluationVisualProviderDisabled(process.env, 'Fake evaluation');
 
 const evalDir = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => readFileSync(join(evalDir, 'fixtures', name), 'utf8');
