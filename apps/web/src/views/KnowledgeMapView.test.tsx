@@ -41,6 +41,14 @@ function nodeWrapper(label: string): HTMLElement {
   throw new Error(`Knowledge Map node not found: ${label}`);
 }
 
+function expectNodeToHaveText(label: string, text: string): Promise<HTMLElement> {
+  return waitFor(() => {
+    const wrapper = nodeWrapper(label);
+    expect(wrapper).toHaveTextContent(text);
+    return wrapper;
+  });
+}
+
 describe('learner-facing Knowledge Map', () => {
   it('renders four distinct modes from one local projection read', async () => {
     const user = userEvent.setup();
@@ -54,30 +62,30 @@ describe('learner-facing Knowledge Map', () => {
     ).toBeInTheDocument();
     expect(get).toHaveBeenCalledTimes(1);
     expect(screen.getAllByRole('tab')).toHaveLength(4);
-    expect(nodeWrapper('工作记忆基础')).toHaveTextContent('学习单元');
+    await expectNodeToHaveText('工作记忆基础', '学习单元');
 
     await user.click(screen.getByRole('tab', { name: '学习进展' }));
     expect(
       screen.getByRole('heading', { name: '我学到了什么，还有哪些内容需要验证？' }),
     ).toBeInTheDocument();
-    expect(nodeWrapper('工作记忆基础')).toHaveTextContent('有证据支持（尚未稳固）');
-    expect(nodeWrapper('工作记忆基础')).not.toHaveTextContent('当前薄弱');
+    const progressNode = await expectNodeToHaveText('工作记忆基础', '有证据支持（尚未稳固）');
+    expect(progressNode).not.toHaveTextContent('当前薄弱');
 
     await user.click(screen.getByRole('tab', { name: '学习路线' }));
     expect(
       screen.getByRole('heading', { name: '我在哪里，下一步是什么，为什么？' }),
     ).toBeInTheDocument();
-    expect(nodeWrapper('认知负荷应用')).toHaveTextContent('当前位置');
-    expect(nodeWrapper('提取练习')).toHaveTextContent('下一步');
-    expect(nodeWrapper('迁移练习')).toHaveTextContent('先修未完成');
+    await expectNodeToHaveText('认知负荷应用', '当前位置');
+    await expectNodeToHaveText('提取练习', '下一步');
+    await expectNodeToHaveText('迁移练习', '先修未完成');
 
     await user.click(screen.getByRole('tab', { name: '关注地图' }));
     expect(
       screen.getByRole('heading', { name: '哪里需要关注，属于哪一种问题？' }),
     ).toBeInTheDocument();
-    expect(nodeWrapper('认知负荷应用')).toHaveTextContent('修复进行中');
-    expect(nodeWrapper('工作记忆基础')).toHaveTextContent('复习到期');
-    expect(nodeWrapper('间隔效应')).toHaveTextContent('可能缺口（提示）');
+    await expectNodeToHaveText('认知负荷应用', '修复进行中');
+    await expectNodeToHaveText('工作记忆基础', '复习到期');
+    await expectNodeToHaveText('间隔效应', '可能缺口（提示）');
     expect(get).toHaveBeenCalledTimes(1);
   });
 
