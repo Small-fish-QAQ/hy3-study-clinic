@@ -18,6 +18,7 @@ import {
   objectiveAuthoritySemanticRepairSourceFingerprint,
   prepareObjectiveAuthoritySemanticRepair,
   validateObjectiveAuthoritySemanticRepairProposal,
+  type PrepareObjectiveAuthoritySemanticRepairInput,
   type ObjectiveAuthoritySemanticRepairBatch,
 } from './objectiveAuthoritySemanticRepair.js';
 
@@ -363,7 +364,331 @@ function validReplacement(batch: ObjectiveAuthoritySemanticRepairBatch) {
   };
 }
 
+function singlePassFixture(withCapabilityPreservation = false) {
+  const blocks = Array.from({ length: 5 }, (_, index) =>
+    block(`block_single_pass_${index + 1}`, `Exact single-pass authority claim ${index + 1}.`),
+  );
+  const offers = blocks.map((sourceBlock, index) =>
+    evidence(`catalog_offer_${index + 1}`, sourceBlock),
+  );
+  const bundles = blocks.map((sourceBlock, index) =>
+    authority(`authority_single_pass_${index + 1}`, sourceBlock),
+  );
+  const original = proposal();
+  const unit = original.nodes.find((node) => node.key === 'unit')!;
+  unit.sourceEvidence = [{ evidenceId: offers[0]!.id }];
+  unit.objectives[0]!.evidence = [{ evidenceId: offers[0]!.id }];
+  unit.objectives[1]!.evidence = [{ evidenceId: offers[1]!.id }];
+  const requiredCapabilityPreservationByObjectiveId = withCapabilityPreservation
+    ? new Map([
+        [
+          'objective_single_pass_failed',
+          {
+            originalProposition: `${unit.objectives[0]!.title}\n${unit.objectives[0]!.description}`,
+            originalFragments: [
+              {
+                fragmentId: 'single_pass_original:F1',
+                text: `${unit.objectives[0]!.title}\n${unit.objectives[0]!.description}`,
+              },
+            ],
+          },
+        ],
+      ])
+    : undefined;
+  const materializedNodes: CurriculumNode[] = [
+    {
+      id: 'unit_single_pass',
+      parentId: null,
+      kind: 'learning_unit',
+      index: 0,
+      title: unit.title,
+      sourceReferences: blocks.map((sourceBlock) => ({
+        materialId: sourceBlock.materialId,
+        materialRevisionId: sourceBlock.materialRevisionId!,
+        structuralUnitId: null,
+        sourceBlockId: sourceBlock.id,
+        sourceBlockRevisionFingerprint: null,
+      })),
+      learningUnit: {
+        conceptIds: [],
+        canonicalConceptIds: [],
+        objectives: [
+          objective(
+            'objective_single_pass_failed',
+            unit.objectives[0]!,
+            bundles[0]!.record.id,
+            blocks[0]!.id,
+          ),
+          objective(
+            'objective_single_pass_passing',
+            unit.objectives[1]!,
+            bundles[1]!.record.id,
+            blocks[1]!.id,
+          ),
+        ],
+        prerequisiteUnitIds: [],
+        graphRelationIds: [],
+        riskIds: [],
+      },
+    },
+  ];
+  const [firstPassBatch] = buildObjectiveAuthoritySemanticEvaluationBatches({
+    nodes: materializedNodes,
+    sourceBlocks: blocks,
+    authorityBundles: bundles,
+    evidenceCatalog: offers,
+    isBlockingEligible: () => true,
+    ...(requiredCapabilityPreservationByObjectiveId
+      ? { requiredCapabilityPreservationByObjectiveId }
+      : {}),
+  });
+  const baseInput = {
+    candidate: original,
+    objectiveIdByProposalKey: new Map([
+      ['failed', 'objective_single_pass_failed'],
+      ['passing', 'objective_single_pass_passing'],
+    ]),
+    firstPass: [
+      {
+        batch: firstPassBatch!,
+        proposal: evaluationProposal(firstPassBatch!, 'pass'),
+      },
+    ],
+    ...(requiredCapabilityPreservationByObjectiveId
+      ? { requiredCapabilityPreservationByObjectiveId }
+      : {}),
+    context: {
+      workspaceId: 'workspace_1',
+      evidenceCatalog: offers,
+      authorityBundles: bundles,
+      isAuthorityBlockingEligible: () => true,
+    },
+  } satisfies PrepareObjectiveAuthoritySemanticRepairInput;
+  return {
+    original,
+    unit,
+    blocks,
+    offers,
+    bundles,
+    firstPassBatch: firstPassBatch!,
+    requiredCapabilityPreservationByObjectiveId,
+    prepare(overrides: Partial<PrepareObjectiveAuthoritySemanticRepairInput> = {}) {
+      return prepareObjectiveAuthoritySemanticRepair({
+        ...baseInput,
+        ...overrides,
+        context: { ...baseInput.context, ...(overrides.context ?? {}) },
+      });
+    },
+  };
+}
+
+function replaceFirstPassEvidenceId(
+  batch: ObjectiveAuthoritySemanticEvaluationBatch,
+  objectiveRef: string,
+  evidenceRef: string,
+  evidenceId: string,
+): ObjectiveAuthoritySemanticEvaluationBatch {
+  const binding = batch.aliasBindings.get(objectiveRef)!;
+  const evidenceByRef = new Map(binding.evidenceByRef);
+  evidenceByRef.set(evidenceRef, { ...evidenceByRef.get(evidenceRef)!, evidenceId });
+  return {
+    ...batch,
+    aliasBindings: new Map(
+      [...batch.aliasBindings].map(([candidateObjectiveRef, candidateBinding]) =>
+        candidateObjectiveRef === objectiveRef
+          ? [candidateObjectiveRef, { ...candidateBinding, evidenceByRef }]
+          : [candidateObjectiveRef, candidateBinding],
+      ),
+    ),
+  };
+}
+
 describe('bounded objective-authority semantic repair', () => {
+  it('prepares normal single-pass repair from the complete first-pass candidate window', () => {
+    const fixture = singlePassFixture();
+    expect(fixture.firstPassBatch.input.objectives).toHaveLength(2);
+    expect(fixture.firstPassBatch.input.objectives[0]!.candidates).toHaveLength(5);
+    const selectedEvidenceIds = [
+      ...fixture.unit.sourceEvidence.map((selection) => selection.evidenceId),
+      ...fixture.unit.objectives.flatMap((item) =>
+        item.evidence.map((selection) => selection.evidenceId),
+      ),
+    ];
+    expect(new Set(selectedEvidenceIds).size).toBeLessThan(fixture.offers.length);
+
+    const prepared = fixture.prepare();
+
+    expect(prepared.validation.diagnosticCodes).not.toContain(
+      'semantic_repair_first_pass_evidence_unresolved',
+    );
+    expect(prepared.validation).toMatchObject({ valid: true, diagnostics: [] });
+    expect(prepared.batch).not.toBeNull();
+    expect(prepared.batch!.aliasBindings.get('objective_1')!.allowedEvidenceIds).toEqual(
+      fixture.offers.map((offer) => offer.id),
+    );
+  });
+
+  it('fails closed when a cited first-pass evidence identity cannot be resolved', () => {
+    const fixture = singlePassFixture(true);
+    const unresolvedRef =
+      fixture.firstPassBatch.input.objectives[0]!.candidates.at(-1)!.evidenceRef;
+    const proposal = evaluationProposal(fixture.firstPassBatch, 'pass');
+    const failedEvaluation = proposal.evaluations[0]!;
+    if (!('fragments' in failedEvaluation)) throw new Error('Expected recovery fragments.');
+    failedEvaluation.fragments[0]!.evidenceRefs = [unresolvedRef];
+    const corruptedBatch = replaceFirstPassEvidenceId(
+      fixture.firstPassBatch,
+      'objective_1',
+      unresolvedRef,
+      'catalog_offer_missing',
+    );
+
+    const prepared = fixture.prepare({
+      firstPass: [{ batch: corruptedBatch, proposal }],
+      recoveryEvidenceScopeByObjectiveId: new Map([
+        [
+          'objective_single_pass_failed',
+          {
+            allowedEvidenceIds: fixture.offers.slice(0, -1).map((offer) => offer.id),
+            allowedSourceBlockIds: fixture.blocks.slice(0, -1).map((sourceBlock) => sourceBlock.id),
+          },
+        ],
+      ]),
+    });
+
+    expect(prepared.validation).toMatchObject({
+      valid: false,
+      diagnosticCodes: ['semantic_repair_first_pass_evidence_unresolved'],
+    });
+    expect(prepared.batch).toBeNull();
+  });
+
+  it('drops an uncited unresolvable first-pass candidate without guessing', () => {
+    const fixture = singlePassFixture(true);
+    const unresolvedRef =
+      fixture.firstPassBatch.input.objectives[0]!.candidates.at(-1)!.evidenceRef;
+    const corruptedBatch = replaceFirstPassEvidenceId(
+      fixture.firstPassBatch,
+      'objective_1',
+      unresolvedRef,
+      'catalog_offer_missing',
+    );
+
+    const prepared = fixture.prepare({
+      firstPass: [
+        {
+          batch: corruptedBatch,
+          proposal: evaluationProposal(fixture.firstPassBatch, 'pass'),
+        },
+      ],
+      recoveryEvidenceScopeByObjectiveId: new Map([
+        [
+          'objective_single_pass_failed',
+          {
+            allowedEvidenceIds: fixture.offers.slice(0, -1).map((offer) => offer.id),
+            allowedSourceBlockIds: fixture.blocks.slice(0, -1).map((sourceBlock) => sourceBlock.id),
+          },
+        ],
+      ]),
+    });
+
+    expect(prepared.validation).toMatchObject({ valid: true, diagnostics: [] });
+    expect(prepared.batch).not.toBeNull();
+    const binding = prepared.batch!.aliasBindings.get('objective_1')!;
+    expect(binding.allowedEvidenceIds).toEqual(
+      fixture.offers.slice(0, -1).map((offer) => offer.id),
+    );
+    expect([...binding.evidenceIdByRef.values()]).not.toContain('catalog_offer_missing');
+    expect([...binding.evidenceIdByRef.values()]).not.toContain(fixture.offers.at(-1)!.id);
+  });
+
+  it('binds every repair alias injectively inside the selected and first-pass candidate union', () => {
+    const fixture = singlePassFixture();
+    const prepared = fixture.prepare();
+    const repairObjective = prepared.batch!.input.objectives[0]!;
+    const repairBinding = prepared.batch!.aliasBindings.get(repairObjective.objectiveRef)!;
+    const firstPassBinding = fixture.firstPassBatch.aliasBindings.get(
+      repairObjective.objectiveRef,
+    )!;
+    const allowedDurableIds = new Set([
+      ...fixture.unit.sourceEvidence.map((selection) => selection.evidenceId),
+      ...fixture.unit.objectives.flatMap((item) =>
+        item.evidence.map((selection) => selection.evidenceId),
+      ),
+      ...[...firstPassBinding.evidenceByRef.values()].map((binding) => binding.evidenceId),
+    ]);
+    const durableIds = [...repairBinding.evidenceIdByRef.values()];
+
+    expect(prepared.validation.valid).toBe(true);
+    expect([...repairBinding.evidenceIdByRef.keys()]).toEqual(
+      repairObjective.allowedEvidence.map((offer) => offer.evidenceRef),
+    );
+    expect(new Set(durableIds).size).toBe(durableIds.length);
+    expect(durableIds.every((evidenceId) => allowedDurableIds.has(evidenceId))).toBe(true);
+    expect([...repairBinding.evidenceIdByRef.keys()]).toEqual(
+      durableIds.map((_, index) => `repair_evidence_${index + 1}`),
+    );
+  });
+
+  it('keeps frozen recovery and deterministic coverage envelopes ordered and separate', () => {
+    const coverageBatch = setup().batch;
+    const coverageObjective = coverageBatch.input.objectives[0]!;
+    expect(coverageBatch.aliasBindings.get(coverageObjective.objectiveRef)).toMatchObject({
+      allowedEvidenceIds: ['evidence_ingestion', 'evidence_positioning'],
+      allowedSourceBlockIds: ['block_3', 'block_1'],
+    });
+
+    const recoveryFixture = singlePassFixture(true);
+    const recoveryPrepared = recoveryFixture.prepare({
+      recoveryEvidenceScopeByObjectiveId: new Map([
+        [
+          'objective_single_pass_failed',
+          {
+            allowedEvidenceIds: [recoveryFixture.offers[0]!.id, recoveryFixture.offers[2]!.id],
+            allowedSourceBlockIds: [recoveryFixture.blocks[0]!.id, recoveryFixture.blocks[2]!.id],
+          },
+        ],
+      ]),
+    });
+    expect(recoveryPrepared.validation).toMatchObject({ valid: true, diagnostics: [] });
+    expect(recoveryPrepared.batch!.aliasBindings.get('objective_1')).toMatchObject({
+      allowedEvidenceIds: [recoveryFixture.offers[0]!.id, recoveryFixture.offers[2]!.id],
+      allowedSourceBlockIds: [recoveryFixture.blocks[0]!.id, recoveryFixture.blocks[2]!.id],
+    });
+  });
+
+  it('keeps durable repair identities out of serialized provider input', () => {
+    const fixture = singlePassFixture();
+    const prepared = fixture.prepare();
+    const serialized = JSON.stringify(prepared.batch!.input);
+    const durableIds = [
+      'workspace_1',
+      'unit_single_pass',
+      'objective_single_pass_failed',
+      'objective_single_pass_passing',
+      'material_1',
+      'revision_1',
+      ...fixture.blocks.map((sourceBlock) => sourceBlock.id),
+      ...fixture.offers.map((offer) => offer.id),
+      ...fixture.bundles.flatMap((bundle) => [
+        bundle.record.id,
+        ...bundle.claims.map((claim) => claim.id),
+      ]),
+    ];
+
+    expect(prepared.validation.valid).toBe(true);
+    durableIds.forEach((durableId) => expect(serialized).not.toContain(durableId));
+    prepared.batch!.input.objectives.forEach((item) => {
+      expect(item.currentEvidenceRefs.every((ref) => /^repair_evidence_\d+$/u.test(ref))).toBe(
+        true,
+      );
+      expect(
+        item.allowedEvidence.every((offer) => /^repair_evidence_\d+$/u.test(offer.evidenceRef)),
+      ).toBe(true);
+    });
+    expect(serialized).not.toMatch(/checkpoint|fingerprint/iu);
+  });
+
   it('fingerprints exact repair claim aliases when provider-visible evidence is unchanged', () => {
     const { batch } = setup();
     const changedBindings = new Map(

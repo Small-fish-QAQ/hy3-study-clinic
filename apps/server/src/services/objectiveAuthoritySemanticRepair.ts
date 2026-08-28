@@ -54,7 +54,7 @@ export interface ObjectiveAuthoritySemanticRepairContext {
   isAuthorityBlockingEligible: (authorityRecordId: string) => boolean;
   /**
    * Exact Course Map membership when available. Without it, the candidate
-   * LearningUnit's own source/objective selections are the closed envelope.
+   * LearningUnit's selections and first-pass candidates are the closed envelope.
    */
   deterministicCoverageByNodeKey?:
     ReadonlyMap<string, CurriculumDeterministicCoverageMembership> | undefined;
@@ -746,14 +746,25 @@ export function prepareObjectiveAuthoritySemanticRepair(
       });
       continue;
     }
-    const candidateEnvelopeIds = selectedUnitEvidenceIds(location.node);
+    const selectedEnvelopeIds = selectedUnitEvidenceIds(location.node);
+    const candidateEnvelopeIds =
+      !recoveryEvidenceScope && !coverage
+        ? uniqueInOrder([
+            ...selectedEnvelopeIds,
+            ...[...location.evaluationBinding.evidenceByRef.values()].map(
+              (binding) => binding.evidenceId,
+            ),
+          ])
+        : selectedEnvelopeIds;
     const candidateEnvelopeOffers = candidateEnvelopeIds.flatMap((evidenceId) => {
       const offer = evidenceById.get(evidenceId);
       if (!offer) {
-        diagnostics.push({
-          code: 'semantic_repair_unit_evidence_unknown',
-          message: `LearningUnit ${location.node.key} contains unknown evidence ${evidenceId}.`,
-        });
+        if (selectedEnvelopeIds.includes(evidenceId)) {
+          diagnostics.push({
+            code: 'semantic_repair_unit_evidence_unknown',
+            message: `LearningUnit ${location.node.key} contains unknown evidence ${evidenceId}.`,
+          });
+        }
         return [];
       }
       return [offer];
@@ -873,29 +884,6 @@ export function prepareObjectiveAuthoritySemanticRepair(
       continue;
     }
 
-    const evidenceIdByRef = new Map<string, string>();
-    const evidenceRefById = new Map<string, string>();
-    const authorityClaimIdsByRef = new Map<string, readonly string[]>();
-    for (const [index, entry] of eligible.entries()) {
-      const evidenceRef = `repair_evidence_${index + 1}`;
-      evidenceIdByRef.set(evidenceRef, entry.offer.id);
-      evidenceRefById.set(entry.offer.id, evidenceRef);
-      authorityClaimIdsByRef.set(evidenceRef, [...entry.authorityClaimIds]);
-    }
-    const firstPassRefTranslation = new Map<string, string>();
-    for (const [firstPassRef, firstPassBinding] of location.evaluationBinding.evidenceByRef) {
-      const repairRef = evidenceRefById.get(firstPassBinding.evidenceId);
-      if (!repairRef) {
-        diagnostics.push({
-          code: 'semantic_repair_first_pass_evidence_unresolved',
-          message: `First-pass evidence ${firstPassRef} cannot be resolved uniquely inside ${location.node.key}.`,
-        });
-        continue;
-      }
-      firstPassRefTranslation.set(firstPassRef, repairRef);
-    }
-    if (diagnostics.length > 0) continue;
-
     const recoveryFragments =
       'fragments' in location.evaluation ? location.evaluation.fragments : undefined;
     const repairFragments = recoveryFragments ?? [
@@ -909,6 +897,33 @@ export function prepareObjectiveAuthoritySemanticRepair(
           'Local candidate-group evaluation found no usable support under the current objective.',
       },
     ];
+
+    const evidenceIdByRef = new Map<string, string>();
+    const evidenceRefById = new Map<string, string>();
+    const authorityClaimIdsByRef = new Map<string, readonly string[]>();
+    for (const [index, entry] of eligible.entries()) {
+      const evidenceRef = `repair_evidence_${index + 1}`;
+      evidenceIdByRef.set(evidenceRef, entry.offer.id);
+      evidenceRefById.set(entry.offer.id, evidenceRef);
+      authorityClaimIdsByRef.set(evidenceRef, [...entry.authorityClaimIds]);
+    }
+    const firstPassRefTranslation = new Map<string, string>();
+    const citedFirstPassRefs = new Set(
+      repairFragments.flatMap((fragment) => fragment.evidenceRefs),
+    );
+    for (const [firstPassRef, firstPassBinding] of location.evaluationBinding.evidenceByRef) {
+      if (!citedFirstPassRefs.has(firstPassRef)) continue;
+      const repairRef = evidenceRefById.get(firstPassBinding.evidenceId);
+      if (!repairRef) {
+        diagnostics.push({
+          code: 'semantic_repair_first_pass_evidence_unresolved',
+          message: `First-pass evidence ${firstPassRef} cannot be resolved uniquely inside ${location.node.key}.`,
+        });
+        continue;
+      }
+      firstPassRefTranslation.set(firstPassRef, repairRef);
+    }
+    if (diagnostics.length > 0) continue;
 
     repairObjectives.push({
       objectiveRef: location.evaluation.objectiveRef,

@@ -345,6 +345,71 @@ class ControlledSemanticRepairProvider extends ControlledCurriculumProvider {
   }
 }
 
+class SinglePassWindowSemanticRepairProvider extends ControlledSemanticRepairProvider {
+  private selectedEvidenceText: string | null = null;
+
+  constructor() {
+    super(false, undefined, 1);
+    const makePayload = this.makePayload;
+    this.makePayload = (input) => {
+      const payload = makePayload(input);
+      const formalEvidenceIds = new Set(
+        input.authorityEnvelopes?.flatMap((envelope) => envelope.formalEvidenceIds) ?? [],
+      );
+      const formalEvidenceId =
+        input.evidenceCatalog.find(
+          (offer) => formalEvidenceIds.has(offer.id) && offer.quote === QUOTE,
+        )?.id ?? input.evidenceCatalog.find((offer) => formalEvidenceIds.has(offer.id))?.id;
+      const unit = payload.nodes.find((node) => node.kind === 'learning_unit');
+      if (!formalEvidenceId || !unit?.objectives[0]) {
+        throw new Error('Single-pass repair fixture requires one exact formal evidence offer.');
+      }
+      unit.sourceEvidence = [{ evidenceId: formalEvidenceId }];
+      unit.objectives[0].evidence = [{ evidenceId: formalEvidenceId }];
+      this.initialPayload = structuredClone(payload);
+      return payload;
+    };
+  }
+
+  override async proposeCurriculum(
+    input: CurriculumProposalInput,
+    opts?: ProviderCallOptions,
+  ): Promise<CurriculumProposalPayload> {
+    const payload = await super.proposeCurriculum(input, opts);
+    const selectedEvidenceId = payload.nodes.find((node) => node.kind === 'learning_unit')
+      ?.objectives[0]?.evidence[0]?.evidenceId;
+    this.selectedEvidenceText =
+      input.evidenceCatalog.find((offer) => offer.id === selectedEvidenceId)?.quote ?? null;
+    return payload;
+  }
+
+  override async evaluateObjectiveAuthoritySupport(
+    input: ObjectiveAuthoritySemanticEvaluationInput,
+    opts?: ProviderCallOptions,
+  ): Promise<ObjectiveAuthoritySemanticEvaluationProposal> {
+    const round = this.evaluationInputs.length;
+    this.evaluationInputs.push(structuredClone(input));
+    if (opts?.signal?.aborted) throw ProviderError.cancelled();
+    const candidate = controlledSemanticEvaluation(
+      input,
+      round === 0 ? new Set([0]) : new Set<number>(),
+    );
+    candidate.evaluations.forEach((evaluation, index) => {
+      const selectedRef = input.objectives[index]!.candidates.find(
+        (offer) => offer.text === this.selectedEvidenceText,
+      )?.evidenceRef;
+      if (evaluation.supportGroups[0] && selectedRef) {
+        evaluation.supportGroups[0].evidenceRefs = [selectedRef];
+      }
+    });
+    const validation = opts?.validateCandidate?.(candidate);
+    if (validation && !validation.valid) {
+      throw ProviderError.invalidOutput(validation.diagnostics.join('; '), 'candidate');
+    }
+    return candidate;
+  }
+}
+
 class ConfinedGeneralTeachingLaneProvider extends ControlledSemanticRepairProvider {
   constructor() {
     super(true);
@@ -2773,6 +2838,89 @@ describe('Curriculum proposal and authority boundaries', () => {
       lostOriginalFragmentIds: [],
     });
     expect(modelCallLedgerForCommand('curriculum-objective-semantic-repair-success')).toEqual({
+      logicalCalls: 4,
+      physicalAttempts: 4,
+      schemaFingerprints: [
+        'curriculum-proposal-v3-claim-scope',
+        'objective-authority-semantic-evaluation-v3',
+        'objective-authority-semantic-repair-v2-claim-scope',
+        'objective-authority-semantic-evaluation-v3',
+      ],
+    });
+  });
+
+  it('reaches bounded semantic repair for a single-pass unit whose candidate window exceeds its selection', async () => {
+    const alternativeClaim = 'Attention selects the information that enters working memory.';
+    const content = `${QUOTE}\n${alternativeClaim}`;
+    repos.materialRevisions.stage({
+      revisionId: 'revision_single_pass_semantic_repair',
+      material: makeMaterial({ content, charCount: content.length, title: 'Memory principles' }),
+      blocks: [
+        makeBlock({
+          id: 'blk_single_pass_selected',
+          content: QUOTE,
+          startOffset: 0,
+          endOffset: QUOTE.length,
+          heading: 'Memory principles',
+        }),
+        makeBlock({
+          id: 'blk_single_pass_alternative',
+          index: 1,
+          content: alternativeClaim,
+          startOffset: QUOTE.length + 1,
+          endOffset: content.length,
+          heading: 'Attention',
+        }),
+      ],
+      originalData: null,
+      parserFingerprint: 'parser_single_pass_semantic_repair',
+      contentFingerprint: 'content_single_pass_semantic_repair',
+      parserAttemptId: 'attempt_single_pass_semantic_repair',
+      createdAt: T0,
+    });
+    repos.materialRevisions.activate('mat_1', 'revision_single_pass_semantic_repair', T0);
+    const alternativeConcept = addGroundedConcept(
+      'concept_single_pass_alternative',
+      'blk_single_pass_alternative',
+      alternativeClaim,
+    );
+    const semanticProvider = new SinglePassWindowSemanticRepairProvider();
+    const makePayload = semanticProvider.makePayload;
+    semanticProvider.makePayload = (input) => {
+      const payload = makePayload(input);
+      payload.nodes.find((node) => node.kind === 'learning_unit')!.conceptIds = [
+        alternativeConcept.id,
+      ];
+      semanticProvider.initialPayload = structuredClone(payload);
+      return payload;
+    };
+    curriculum = createCurriculumService({
+      repos,
+      provider: semanticProvider,
+      clock,
+      commands,
+      sourceAuthority: createSourceAuthorityService({
+        sourceAuthority: repos.sourceAuthority,
+        clock,
+      }),
+      generationPolicy: LEGACY_CURRICULUM_GENERATION_POLICY,
+    });
+
+    const proposed = await curriculum.propose(
+      proposalRequest('curriculum-single-pass-semantic-repair-window'),
+    );
+
+    const firstPassObjective = semanticProvider.evaluationInputs[0]!.objectives[0]!;
+    const repairObjective = semanticProvider.repairInputs[0]!.objectives[0]!;
+    expect(firstPassObjective.candidates.length).toBeGreaterThan(1);
+    expect(repairObjective.currentEvidenceRefs).toHaveLength(1);
+    expect(repairObjective.allowedEvidence.length).toBeGreaterThan(
+      repairObjective.currentEvidenceRefs.length,
+    );
+    expect(semanticProvider.repairInputs).toHaveLength(1);
+    expect(semanticProvider.evaluationInputs).toHaveLength(2);
+    expect(proposed.curriculum.validation.valid).toBe(true);
+    expect(modelCallLedgerForCommand('curriculum-single-pass-semantic-repair-window')).toEqual({
       logicalCalls: 4,
       physicalAttempts: 4,
       schemaFingerprints: [
