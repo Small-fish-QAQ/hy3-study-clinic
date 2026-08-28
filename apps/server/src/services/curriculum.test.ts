@@ -2841,7 +2841,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       logicalCalls: 4,
       physicalAttempts: 4,
       schemaFingerprints: [
-        'curriculum-proposal-v3-claim-scope',
+        'curriculum-proposal-v4-node-key-presence',
         'objective-authority-semantic-evaluation-v4',
         'objective-authority-semantic-repair-v2-claim-scope',
         'objective-authority-semantic-evaluation-v4',
@@ -2924,7 +2924,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       logicalCalls: 4,
       physicalAttempts: 4,
       schemaFingerprints: [
-        'curriculum-proposal-v3-claim-scope',
+        'curriculum-proposal-v4-node-key-presence',
         'objective-authority-semantic-evaluation-v4',
         'objective-authority-semantic-repair-v2-claim-scope',
         'objective-authority-semantic-evaluation-v4',
@@ -2972,7 +2972,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       logicalCalls: 4,
       physicalAttempts: 4,
       schemaFingerprints: [
-        'curriculum-proposal-v3-claim-scope',
+        'curriculum-proposal-v4-node-key-presence',
         'objective-authority-semantic-evaluation-v4',
         'objective-authority-semantic-repair-v2-claim-scope',
         'objective-authority-semantic-evaluation-v4',
@@ -3020,7 +3020,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       logicalCalls: 2,
       physicalAttempts: 2,
       schemaFingerprints: [
-        'curriculum-proposal-v3-claim-scope',
+        'curriculum-proposal-v4-node-key-presence',
         'objective-authority-semantic-evaluation-v4',
       ],
     });
@@ -3292,7 +3292,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       logicalCalls: 4,
       physicalAttempts: 4,
       schemaFingerprints: [
-        'curriculum-proposal-v3-claim-scope',
+        'curriculum-proposal-v4-node-key-presence',
         'objective-authority-semantic-evaluation-v4',
         'objective-authority-semantic-repair-v2-claim-scope',
         'objective-authority-semantic-evaluation-v4',
@@ -3364,7 +3364,7 @@ describe('Curriculum proposal and authority boundaries', () => {
     expect(modelCallLedgerForCommand('curriculum-objective-evaluation-over-budget')).toEqual({
       logicalCalls: 1,
       physicalAttempts: 1,
-      schemaFingerprints: ['curriculum-proposal-v3-claim-scope'],
+      schemaFingerprints: ['curriculum-proposal-v4-node-key-presence'],
     });
     expect(repos.curricula.list('ws_1')).toEqual([]);
   });
@@ -3398,7 +3398,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       logicalCalls: 2,
       physicalAttempts: 2,
       schemaFingerprints: [
-        'curriculum-proposal-v3-claim-scope',
+        'curriculum-proposal-v4-node-key-presence',
         'objective-authority-semantic-evaluation-v4',
       ],
     });
@@ -3431,7 +3431,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       logicalCalls: 2,
       physicalAttempts: 2,
       schemaFingerprints: [
-        'curriculum-proposal-v3-claim-scope',
+        'curriculum-proposal-v4-node-key-presence',
         'objective-authority-semantic-evaluation-v4',
       ],
     });

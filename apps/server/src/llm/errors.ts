@@ -84,6 +84,10 @@ function sanitizeStructuredOutputFailure(diagnostic: StructuredOutputDiagnostic 
     schemaIssues: diagnostic.schemaIssues.slice(0, 20).map((issue) => ({
       path: issue.path.slice(0, 500),
       code: issue.code.slice(0, 100),
+      // Structural type tags come from a closed Zod vocabulary, so a missing
+      // required array stays distinguishable from a wrongly typed one.
+      ...(issue.expected === undefined ? {} : { expected: issue.expected.slice(0, 40) }),
+      ...(issue.received === undefined ? {} : { received: issue.received.slice(0, 40) }),
       ...(issue.unknownKeyCount === undefined ? {} : { unknownKeyCount: issue.unknownKeyCount }),
       ...(issue.unknownKeyTokens
         ? {

@@ -4,7 +4,10 @@ import { z } from 'zod';
 import { Hy3Provider } from './hy3Provider.js';
 import { ProviderError } from './errors.js';
 import type { StructuredOutputDiagnostic } from './provider.js';
-import { buildStructuredOutputDiagnostic } from './structuredOutputDiagnostics.js';
+import {
+  buildStructuredOutputDiagnostic,
+  summarizeSchemaIssuesForRepair,
+} from './structuredOutputDiagnostics.js';
 
 const PRIVATE_SOURCE = 'PRIVATE_SOURCE_SCALAR_WORKING_MEMORY';
 const PRIVATE_MODEL_TEXT = 'PRIVATE_MODEL_SCALAR_SUMMARY';
@@ -489,5 +492,201 @@ describe('Hy3 structured-output compatibility diagnostics', () => {
         repairAction: 'none',
       },
     ]);
+  });
+
+  it('persists closed-vocabulary structural type tags for a missing required array', async () => {
+    const parsed = z
+      .object({ nodes: z.array(z.object({ objectives: z.array(z.string()) })) })
+      .safeParse({ nodes: [{}, { objectives: null }] });
+    expect(parsed.success).toBe(false);
+    if (parsed.success) throw new Error('Expected the fixture to fail.');
+
+    const diagnostic = buildStructuredOutputDiagnostic({
+      schemaName: 'structural-type-fixture',
+      operationType: null,
+      attemptNumber: 2,
+      attemptKind: 'repair',
+      model: 'hy3-test',
+      response: {
+        transportSuccess: true,
+        httpStatus: 200,
+        responseBodyBytes: 1,
+        contentType: 'string',
+        contentBytes: 1,
+        contentFingerprint: null,
+        finishReason: 'stop',
+        truncated: false,
+        possiblyIncomplete: false,
+      },
+      parse: {
+        jsonParseSuccess: true,
+        jsonFormat: 'direct',
+        parsed: { nodes: [{}, { objectives: null }] },
+        schemaIssues: parsed.error.issues,
+        failureCategory: 'SCHEMA_VALIDATION_FAILURE',
+      },
+      repairAction: 'exhausted',
+    });
+
+    expect(diagnostic.schemaIssues).toEqual([
+      {
+        path: 'nodes.0.objectives',
+        code: 'invalid_type',
+        expected: 'array',
+        received: 'undefined',
+      },
+      { path: 'nodes.1.objectives', code: 'invalid_type', expected: 'array', received: 'null' },
+    ]);
+    const error = ProviderError.invalidOutput(
+      'summary',
+      'schema',
+      'SCHEMA_VALIDATION_FAILURE',
+      true,
+      undefined,
+      diagnostic,
+    );
+    expect(JSON.stringify(error.details)).toContain('"expected":"array","received":"undefined"');
+  });
+});
+
+/**
+ * The grouping path exists so one systematic mistake cannot hide behind a
+ * first-N slice. These cases are deliberately non-Curriculum: the summarizer is
+ * shared by every structured-output operation, so small error sets must keep
+ * their historical rendering and no model-authored text may enter the summary.
+ */
+describe('schema-issue repair disclosure', () => {
+  const smallSchema = z
+    .object({ regions: z.array(z.object({ title: z.string(), regionId: z.string() }).strict()) })
+    .strict();
+
+  it('renders a small issue list per issue, exactly as before grouping existed', () => {
+    const parsed = smallSchema.safeParse({ regions: [{ title: 1 }] });
+    if (parsed.success) throw new Error('Expected the fixture to fail.');
+    const disclosure = summarizeSchemaIssuesForRepair(parsed.error.issues);
+
+    expect(disclosure).toEqual({
+      grouped: false,
+      complete: true,
+      summary: parsed.error.issues
+        .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+        .join('; '),
+    });
+    expect(disclosure.summary).toContain('regions.0.title: Expected string, received number');
+    expect(disclosure.summary).toContain('regions.0.regionId: Required');
+  });
+
+  it('keeps the per-issue rendering at exactly the disclosure limit', () => {
+    const parsed = smallSchema.safeParse({
+      regions: Array.from({ length: 5 }, () => ({})),
+    });
+    if (parsed.success) throw new Error('Expected the fixture to fail.');
+    expect(parsed.error.issues).toHaveLength(10);
+
+    const disclosure = summarizeSchemaIssuesForRepair(parsed.error.issues);
+    expect(disclosure.grouped).toBe(false);
+    expect(disclosure.summary.split('; ')).toHaveLength(10);
+  });
+
+  it('groups one systematic class over the limit with every affected index and a count', () => {
+    const parsed = smallSchema.safeParse({ regions: Array.from({ length: 6 }, () => ({})) });
+    if (parsed.success) throw new Error('Expected the fixture to fail.');
+    expect(parsed.error.issues).toHaveLength(12);
+
+    const disclosure = summarizeSchemaIssuesForRepair(parsed.error.issues);
+    expect(disclosure).toEqual({
+      grouped: true,
+      complete: true,
+      summary: [
+        'regions.{0,1,2,3,4,5}.title: invalid_type, expected string, received undefined, 6 occurrences',
+        'regions.{0,1,2,3,4,5}.regionId: invalid_type, expected string, received undefined, 6 occurrences',
+      ].join('; '),
+    });
+  });
+
+  it('separates classes by received type and lists concrete paths for multi-index classes', () => {
+    const nested = z
+      .object({ regions: z.array(z.object({ segments: z.array(z.object({ text: z.string() })) })) })
+      .strict();
+    const parsed = nested.safeParse({
+      regions: Array.from({ length: 4 }, () => ({
+        segments: [{ text: 1 }, { text: null }, { text: 2 }],
+      })),
+    });
+    if (parsed.success) throw new Error('Expected the fixture to fail.');
+    expect(parsed.error.issues).toHaveLength(12);
+
+    const disclosure = summarizeSchemaIssuesForRepair(parsed.error.issues);
+    expect(disclosure.grouped).toBe(true);
+    expect(disclosure.complete).toBe(true);
+    expect(disclosure.summary).toContain('received number, 8 occurrences');
+    expect(disclosure.summary).toContain('received null, 4 occurrences');
+    // Two varying index positions must not be rendered as a misleading cross product.
+    expect(disclosure.summary).toContain('regions.0.segments.0.text / regions.0.segments.2.text');
+    expect(disclosure.summary).toContain('+2 more');
+    expect(disclosure.summary).toContain('regions.{0,1,2,3}.segments.1.text');
+  });
+
+  it('reduces unknown model-authored keys to a count and never names them', () => {
+    const unknownKeys = Array.from({ length: 11 }, (_, index) => `${PRIVATE_MODEL_TEXT}_${index}`);
+    const parsed = smallSchema.safeParse({
+      regions: [
+        {
+          title: 'ok',
+          regionId: 'r1',
+          ...Object.fromEntries(unknownKeys.map((key) => [key, PRIVATE_SOURCE])),
+        },
+        ...Array.from({ length: 11 }, () => ({ title: 'ok', regionId: 'r2' })),
+      ],
+    });
+    if (parsed.success) throw new Error('Expected the fixture to fail.');
+
+    const disclosure = summarizeSchemaIssuesForRepair([
+      ...parsed.error.issues,
+      ...smallSchema.safeParse({ regions: Array.from({ length: 6 }, () => ({})) }).error!.issues,
+    ]);
+    expect(disclosure.grouped).toBe(true);
+    expect(disclosure.summary).toContain('unrecognized_keys, 11 unknown keys, 1 occurrence');
+    for (const key of unknownKeys) expect(disclosure.summary).not.toContain(key);
+    expect(disclosure.summary).not.toContain(PRIVATE_SOURCE);
+  });
+
+  it('hashes a model-authored record key instead of echoing it into the summary', () => {
+    const record = z.record(z.string());
+    const issues = Array.from({ length: 11 }, (_, index) => {
+      const parsed = record.safeParse({ [`${PRIVATE_MODEL_TEXT}_${index}`]: index });
+      if (parsed.success) throw new Error('Expected the record fixture to fail.');
+      return parsed.error.issues[0]!;
+    });
+
+    const disclosure = summarizeSchemaIssuesForRepair(issues);
+    expect(disclosure.grouped).toBe(true);
+    expect(disclosure.summary).not.toContain(PRIVATE_MODEL_TEXT);
+    expect(disclosure.summary).toMatch(/<key:sha256:[0-9a-f]{64}>/u);
+  });
+
+  it('stays bounded and reports incompleteness when classes exceed the disclosure cap', () => {
+    const wide = z.object(
+      Object.fromEntries(
+        Array.from({ length: 40 }, (_, index) => [`field_${index}`, z.string()]),
+      ) as Record<string, z.ZodString>,
+    );
+    const parsed = wide.safeParse({});
+    if (parsed.success) throw new Error('Expected the fixture to fail.');
+    expect(parsed.error.issues).toHaveLength(40);
+
+    const disclosure = summarizeSchemaIssuesForRepair(parsed.error.issues);
+    expect(disclosure.grouped).toBe(true);
+    expect(disclosure.complete).toBe(false);
+    expect(disclosure.summary.split('; ')).toHaveLength(24);
+    expect(disclosure.summary.length).toBeLessThanOrEqual(8_000);
+  });
+
+  it('is deterministic for the same issue list', () => {
+    const parsed = smallSchema.safeParse({ regions: Array.from({ length: 6 }, () => ({})) });
+    if (parsed.success) throw new Error('Expected the fixture to fail.');
+    expect(summarizeSchemaIssuesForRepair(parsed.error.issues)).toEqual(
+      summarizeSchemaIssuesForRepair(parsed.error.issues),
+    );
   });
 });

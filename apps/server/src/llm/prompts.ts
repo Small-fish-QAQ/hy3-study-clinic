@@ -130,6 +130,22 @@ export const OBJECTIVE_AUTHORITY_SEMANTIC_CLOSED_KEY_RULES = [
   'This closed-key contract is invariant. It still applies when the reported problem is local candidate validation rather than output format.',
 ].join('\n');
 
+/**
+ * Curriculum node key-presence contract.
+ *
+ * The strict node schema requires every array key on every node kind, and on a
+ * chapter or section the only legal value is the literal empty array. Saying
+ * only "keep the unit-only arrays empty" is satisfiable by omitting the key, so
+ * the presence requirement is stated separately from the value requirement.
+ */
+export const CURRICULUM_NODE_KEY_PRESENCE_RULES = [
+  'Every node object contains all required node keys. Never omit a required key and never use null for a required array.',
+  'objectives, prerequisiteUnitKeys, and graphRelationIds must always be JSON arrays. conceptIds, canonicalConceptIds, structuralUnitIds, and sourceEvidence must always be JSON arrays too.',
+  'A learning unit needs at least one objective. On chapter and section nodes emit every unit-only array explicitly as []: conceptIds, canonicalConceptIds, objectives, prerequisiteUnitKeys, and graphRelationIds.',
+  'Empty means the literal JSON value []. An omitted key, null, "", {}, 0, or a prose placeholder is not empty and is rejected.',
+  'Example section node: {"key":"section-1","parentKey":"chapter-1","kind":"section","index":0,"title":"...","structuralUnitIds":[],"sourceEvidence":[],"conceptIds":[],"canonicalConceptIds":[],"objectives":[],"prerequisiteUnitKeys":[],"graphRelationIds":[]}',
+].join('\n');
+
 function recoveryCapabilityRefs(
   requirements: readonly { capabilityRef: string }[] | undefined,
 ): string[] {
@@ -1261,7 +1277,7 @@ export function curriculumProposalMessages(input: CurriculumProposalInput): Chat
         'Required hierarchy: chapter nodes have parentKey null; sections reference chapters; learning units reference sections.',
         'Use proposal-local keys. Reference only offered structural units, concepts, canonical concepts, graph relations, and evidence IDs.',
         'When no non-null structuralUnitId is offered, every structuralUnitIds array must be empty.',
-        'A learning unit needs at least one objective. Non-learning-unit nodes must keep all unit-only arrays empty.',
+        CURRICULUM_NODE_KEY_PRESENCE_RULES,
         'Exact source evidence is mandatory for every LearningUnit objective. Select evidenceId only from evidenceCatalog; never copy, rewrite, paraphrase, or invent authoritative quote text.',
         'Assign every objective one explicit construct matching its observable learner capability. The construct is frozen after proposal; never lower it during repair merely to fit weaker evidence.',
         'When capabilityRecovery is present, emit exactly one objective for every capabilityRef and echo it as capabilityRequirementRef. Keep the offered frozen construct and priority, preserve the complete original proposition represented by its title and description, preserve non-null subjectClass and scopeOrigin exactly, and select evidence only from its allowedEvidenceIds. When both classifications are null for a legacy predecessor, propose both explicitly for the new successor. Never omit, duplicate, rename, substitute, trivialize, or narrow a predecessor capability. Unrelated generated objectives remain allowed. Local independent evaluation decides preservation and semantic support.',

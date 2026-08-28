@@ -23,6 +23,7 @@ import {
   repairGenerationMessages,
   shortAnswerGradingMessages,
   curriculumProposalMessages,
+  CURRICULUM_NODE_KEY_PRESENCE_RULES,
   measureCurriculumRequest,
   objectiveAuthoritySemanticEvaluationMessages,
   objectiveAuthoritySemanticRepairMessages,
@@ -698,6 +699,34 @@ describe('prompt trust boundaries', () => {
     expect(report.evidenceExcerpt.chars).toBe(blocks[0]!.content.length);
     expect(report.sections).toHaveProperty('sourceSections');
     expect(report.responseFormatSchema).toEqual({ chars: 0, bytes: 0 });
+  });
+
+  it('states node key presence separately from the empty-value rule', () => {
+    const content = curriculumProposalMessages(curriculumPromptInput(false))
+      .map((message) => message.content)
+      .join('\n');
+
+    expect(content).toContain(CURRICULUM_NODE_KEY_PRESENCE_RULES);
+    expect(content).toContain(
+      'Every node object contains all required node keys. Never omit a required key and never use null for a required array.',
+    );
+    expect(content).toContain(
+      'objectives, prerequisiteUnitKeys, and graphRelationIds must always be JSON arrays.',
+    );
+    expect(content).toContain('conceptIds, canonicalConceptIds');
+    expect(content).toContain('A learning unit needs at least one objective.');
+    expect(content).toContain('emit every unit-only array explicitly as []');
+    expect(content).toContain('Empty means the literal JSON value [].');
+    expect(content).toContain(
+      'An omitted key, null, "", {}, 0, or a prose placeholder is not empty and is rejected.',
+    );
+    // Exactly one concrete non-unit exemplar, with every unit-only array literal.
+    expect(content).toContain(
+      'Example section node: {"key":"section-1","parentKey":"chapter-1","kind":"section","index":0,"title":"...","structuralUnitIds":[],"sourceEvidence":[],"conceptIds":[],"canonicalConceptIds":[],"objectives":[],"prerequisiteUnitKeys":[],"graphRelationIds":[]}',
+    );
+    expect(content.match(/Example section node:/gu)).toHaveLength(1);
+    // The superseded wording admitted omission as a way to "keep an array empty".
+    expect(content).not.toContain('Non-learning-unit nodes must keep all unit-only arrays empty');
   });
 
   it('exposes only compact Course Map refs and adjacent anchor options', () => {

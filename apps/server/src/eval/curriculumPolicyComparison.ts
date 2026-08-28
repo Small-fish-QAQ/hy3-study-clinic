@@ -796,7 +796,7 @@ export async function evaluateCurriculumPolicy(
       let lastCandidate: MaterializedCurriculum | null = null;
       const payload = await runStage({
         stage: 'legacy_curriculum',
-        schemaFingerprint: 'curriculum-proposal-v3-claim-scope',
+        schemaFingerprint: 'curriculum-proposal-v4-node-key-presence',
         sourceFingerprint: prepared.context.manifest.fingerprint,
         request: measureCurriculumRequest(prepared.providerInput),
         invoke: (options) =>

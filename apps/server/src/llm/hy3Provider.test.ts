@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  CurriculumProposalPayloadSchema,
   ObjectiveAuthoritySemanticEvaluationProposalSchema,
   ObjectiveAuthoritySemanticRepairProposalSchema,
   SAMPLE_MATERIAL_TITLE,
@@ -22,6 +23,7 @@ import type {
 } from './provider.js';
 import { makeConcept, makeGrounding } from '../testing/fixtures.js';
 import {
+  CURRICULUM_NODE_KEY_PRESENCE_RULES,
   groupedStudyPlanProposalMessages,
   OBJECTIVE_AUTHORITY_SEMANTIC_CLOSED_KEY_RULES,
   OBJECTIVE_AUTHORITY_SEMANTIC_VOCABULARY_RULES,
@@ -502,6 +504,273 @@ describe('Hy3Provider objective-authority semantic methods', () => {
       }),
     ).rejects.toMatchObject({ code: 'REQUEST_CANCELLED' });
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * Reproduce the exact REAL_HY3 structural signature: 12 non-learning_unit nodes
+ * that each omit the three mandatory unit-only arrays, i.e. 36 invalid_type
+ * issues from one systematic kind-conditional mistake.
+ *
+ * These fixtures are literal JSON on purpose. FakeProvider hard-codes the correct
+ * empty arrays on chapter and section nodes, so a fake-provider payload cannot
+ * express this defect and would silently pass.
+ */
+const CURRICULUM_UNIT_ONLY_ARRAY_KEYS = [
+  'objectives',
+  'prerequisiteUnitKeys',
+  'graphRelationIds',
+] as const;
+
+/** Chapter, then repeating section/unit pairs, so unit indexes fall in the gaps. */
+const NON_UNIT_NODE_INDEXES = [0, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21] as const;
+
+function wideCurriculumProposal(): { nodes: Array<Record<string, unknown>> } {
+  const nodes: Array<Record<string, unknown>> = [
+    {
+      key: 'chapter-1',
+      parentKey: null,
+      kind: 'chapter',
+      index: 0,
+      title: 'Chapter one',
+      structuralUnitIds: [],
+      sourceEvidence: [],
+      conceptIds: [],
+      canonicalConceptIds: [],
+      objectives: [],
+      prerequisiteUnitKeys: [],
+      graphRelationIds: [],
+    },
+  ];
+  for (let pair = 1; pair <= 11; pair += 1) {
+    nodes.push({
+      key: `section-${pair}`,
+      parentKey: 'chapter-1',
+      kind: 'section',
+      index: pair - 1,
+      title: `Section ${pair}`,
+      structuralUnitIds: [],
+      sourceEvidence: [],
+      conceptIds: [],
+      canonicalConceptIds: [],
+      objectives: [],
+      prerequisiteUnitKeys: [],
+      graphRelationIds: [],
+    });
+    nodes.push({
+      key: `unit-${pair}`,
+      parentKey: `section-${pair}`,
+      kind: 'learning_unit',
+      index: 0,
+      title: `Unit ${pair}`,
+      structuralUnitIds: [],
+      sourceEvidence: [{ evidenceId: 'E1' }],
+      conceptIds: [],
+      canonicalConceptIds: [],
+      objectives: [
+        {
+          key: `objective-${pair}`,
+          title: `Objective ${pair}`,
+          description: 'Explain one thing from the accepted course material.',
+          subjectClass: 'source_specific',
+          scopeOrigin: 'anchored',
+          construct: 'explain',
+          evidence: [{ evidenceId: 'E1' }],
+        },
+      ],
+      prerequisiteUnitKeys: [],
+      graphRelationIds: [],
+    });
+  }
+  return { nodes, synthesisGroups: [] } as unknown as {
+    nodes: Array<Record<string, unknown>>;
+  };
+}
+
+/** The model's systematic mistake: unit-only arrays omitted on every non-unit node. */
+function curriculumProposalOmittingNonUnitArrays(): { nodes: Array<Record<string, unknown>> } {
+  const payload = wideCurriculumProposal();
+  for (const node of payload.nodes) {
+    if (node.kind === 'learning_unit') continue;
+    for (const key of CURRICULUM_UNIT_ONLY_ARRAY_KEYS) delete node[key];
+  }
+  return payload;
+}
+
+function lastRequestPrompt(fetchImpl: typeof fetch, call: number): string {
+  const body = JSON.parse(
+    String((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[call]![1]!.body),
+  ) as { messages: Array<{ content: string }> };
+  return body.messages.at(-1)!.content;
+}
+
+describe('Hy3Provider Curriculum node-array schema repair disclosure', () => {
+  it('reproduces 36 = 12 x 3 invalid_type issues before any repair text is built', () => {
+    const parsed = CurriculumProposalPayloadSchema.safeParse(
+      curriculumProposalOmittingNonUnitArrays(),
+    );
+    expect(parsed.success).toBe(false);
+    if (parsed.success) throw new Error('Expected the omitted unit-only arrays to reject.');
+    expect(parsed.error.issues).toHaveLength(36);
+    expect(new Set(parsed.error.issues.map((issue) => issue.code))).toEqual(
+      new Set(['invalid_type']),
+    );
+    for (const key of CURRICULUM_UNIT_ONLY_ARRAY_KEYS) {
+      const affected = parsed.error.issues
+        .filter((issue) => issue.path.at(-1) === key)
+        .map((issue) => issue.path[1]);
+      expect(affected).toEqual([...NON_UNIT_NODE_INDEXES]);
+    }
+    expect(CurriculumProposalPayloadSchema.safeParse(wideCurriculumProposal()).success).toBe(true);
+  });
+
+  it('discloses all three systematic classes with every affected node index and the expected array type', async () => {
+    const malformed = JSON.stringify(curriculumProposalOmittingNonUnitArrays());
+    const fetchImpl = vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(jsonResponse(malformed)),
+      ) as unknown as typeof fetch;
+
+    await expect(
+      makeProvider(fetchImpl).proposeCurriculum(curriculumProviderInput(false)),
+    ).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
+
+    const repairPrompt = lastRequestPrompt(fetchImpl, 1);
+    const indexes = NON_UNIT_NODE_INDEXES.join(',');
+    for (const key of CURRICULUM_UNIT_ONLY_ARRAY_KEYS) {
+      expect(repairPrompt).toContain(
+        `nodes.{${indexes}}.${key}: invalid_type, expected array, received undefined, 12 occurrences`,
+      );
+    }
+    // The pre-fix summary stopped after 10 individual issues, so nodes beyond the
+    // fourth affected node were never named at all.
+    for (const index of NON_UNIT_NODE_INDEXES.slice(4)) {
+      expect(repairPrompt).not.toContain(`nodes.${index}.objectives: Required`);
+    }
+    expect(repairPrompt).not.toContain('请仅修复这些问题');
+    expect(repairPrompt).toContain('没有被省略的类别');
+    expect(repairPrompt).toContain('请修复其中每一个类别在输出中的每一次出现');
+    expect(repairPrompt).toContain('请用原始要求的 JSON 结构重新校验整个输出');
+    expect(repairPrompt).toContain(CURRICULUM_NODE_KEY_PRESENCE_RULES);
+    expect(repairPrompt).toContain('objectives, prerequisiteUnitKeys, and graphRelationIds');
+    expect(repairPrompt).toContain('emit every unit-only array explicitly as []');
+  });
+
+  it('spends exactly one repair and fails closed when the repair keeps omitting the arrays', async () => {
+    const malformed = JSON.stringify(curriculumProposalOmittingNonUnitArrays());
+    const fetchImpl = vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(jsonResponse(malformed)),
+      ) as unknown as typeof fetch;
+    const onRepairAttempt = vi.fn();
+    const diagnostics: StructuredOutputDiagnostic[] = [];
+
+    await expect(
+      makeProvider(fetchImpl).proposeCurriculum(curriculumProviderInput(false), {
+        onRepairAttempt,
+        onStructuredOutputDiagnostic: (diagnostic) => diagnostics.push(diagnostic),
+      }),
+    ).rejects.toMatchObject({
+      code: 'PROVIDER_INVALID_OUTPUT',
+      technicalFailureCode: 'REPAIR_EXHAUSTED:SCHEMA_VALIDATION_FAILURE',
+      details: { validationKind: 'schema' },
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(onRepairAttempt).toHaveBeenCalledExactlyOnceWith('schema', 'SCHEMA_VALIDATION_FAILURE');
+    expect(
+      diagnostics.map((diagnostic) => ({
+        attemptNumber: diagnostic.attemptNumber,
+        attemptKind: diagnostic.attemptKind,
+        schemaName: diagnostic.schemaName,
+        schemaIssueCount: diagnostic.schemaIssueCount,
+        repairAction: diagnostic.repairAction,
+      })),
+    ).toEqual([
+      {
+        attemptNumber: 1,
+        attemptKind: 'original',
+        schemaName: 'curriculum-proposal-v4-node-key-presence',
+        schemaIssueCount: 36,
+        repairAction: 'requested',
+      },
+      {
+        attemptNumber: 2,
+        attemptKind: 'repair',
+        schemaName: 'curriculum-proposal-v4-node-key-presence',
+        schemaIssueCount: 36,
+        repairAction: 'exhausted',
+      },
+    ]);
+  });
+
+  it('accepts a regenerated payload whose non-unit arrays are explicit, without local coercion', async () => {
+    const repaired = wideCurriculumProposal();
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse(JSON.stringify(curriculumProposalOmittingNonUnitArrays())),
+      )
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(repaired))) as unknown as typeof fetch;
+
+    const result = await makeProvider(fetchImpl).proposeCurriculum(curriculumProviderInput(false));
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(result.nodes).toHaveLength(23);
+    for (const index of NON_UNIT_NODE_INDEXES) {
+      const node = result.nodes[index]!;
+      expect(node.kind).not.toBe('learning_unit');
+      expect(node.objectives).toEqual([]);
+      expect(node.prerequisiteUnitKeys).toEqual([]);
+      expect(node.graphRelationIds).toEqual([]);
+    }
+    // The accepted arrays came from the provider payload, never from a schema
+    // default: the same payload without them still fails.
+    expect(
+      CurriculumProposalPayloadSchema.safeParse(curriculumProposalOmittingNonUnitArrays()).success,
+    ).toBe(false);
+  });
+
+  it('binds the v4 contract marker to the prompt that declares node key presence', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(
+        jsonResponse(JSON.stringify(curriculumProposalCandidate())),
+      ) as unknown as typeof fetch;
+    const diagnostics: StructuredOutputDiagnostic[] = [];
+
+    await makeProvider(fetchImpl).proposeCurriculum(curriculumProviderInput(false), {
+      onStructuredOutputDiagnostic: (diagnostic) => diagnostics.push(diagnostic),
+    });
+
+    // The marker names the contract, so it may not drift from the prompt text it
+    // describes: bumping one without the other fails here.
+    expect(diagnostics.map((diagnostic) => diagnostic.schemaName)).toEqual([
+      'curriculum-proposal-v4-node-key-presence',
+    ]);
+    expect(lastRequestPrompt(fetchImpl, 0)).toContain(CURRICULUM_NODE_KEY_PRESENCE_RULES);
+  });
+
+  it('keeps the historical per-issue summary and scope wording for a small schema failure', async () => {
+    const malformed = curriculumProposalCandidate() as { nodes: Array<Record<string, unknown>> };
+    delete malformed.nodes[1]!.graphRelationIds;
+    const fetchImpl = vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(jsonResponse(JSON.stringify(malformed))),
+      ) as unknown as typeof fetch;
+
+    await expect(
+      makeProvider(fetchImpl).proposeCurriculum(curriculumProviderInput(false)),
+    ).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
+
+    const repairPrompt = lastRequestPrompt(fetchImpl, 1);
+    expect(repairPrompt).toContain('nodes.1.graphRelationIds: Required');
+    expect(repairPrompt).toContain('请仅修复这些问题,重新输出符合要求的 JSON。');
+    expect(repairPrompt).not.toContain('没有被省略的类别');
+    expect(repairPrompt).not.toContain('occurrences');
   });
 });
 

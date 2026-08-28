@@ -151,6 +151,193 @@ const SAFE_SEMANTIC_CODES = new Set([
   'unsupported_region',
 ]);
 
+/**
+ * Zod's own structural type vocabulary. `expected` and `received` are drawn from
+ * this closed set for the codes that carry them, so they are safe to disclose and
+ * to persist: they name a JSON shape and can never carry model-authored scalar
+ * content, unknown key names, or source text. Anything outside the set (for
+ * example a literal value on `invalid_literal`) is dropped.
+ */
+const ZOD_STRUCTURAL_TYPES = new Set([
+  'array',
+  'bigint',
+  'boolean',
+  'date',
+  'float',
+  'function',
+  'integer',
+  'map',
+  'nan',
+  'never',
+  'null',
+  'number',
+  'object',
+  'promise',
+  'set',
+  'string',
+  'symbol',
+  'undefined',
+  'unknown',
+  'void',
+]);
+
+/** Issues at or below this count are disclosed individually, exactly as before. */
+const SCHEMA_ISSUE_DISCLOSURE_LIMIT = 10;
+const MAX_DISCLOSED_ISSUE_CLASSES = 24;
+const MAX_DISCLOSED_CLASS_INDEXES = 60;
+const MAX_DISCLOSED_CLASS_PATHS = 6;
+const MAX_SCHEMA_SUMMARY_CHARS = 8_000;
+
+export function safeStructuralTypeTag(value: unknown): string | undefined {
+  return typeof value === 'string' && ZOD_STRUCTURAL_TYPES.has(value) ? value : undefined;
+}
+
+function safePathSegments(issue: ZodIssue): string[] {
+  return issue.path.map((part) =>
+    typeof part === 'number' ? String(part) : safeStructuralKey(String(part)),
+  );
+}
+
+interface SchemaIssueClass {
+  shape: string;
+  code: string;
+  expected: string | undefined;
+  received: string | undefined;
+  /** Distinct values seen at each numeric position of the shape, in path order. */
+  slots: Array<Set<number>>;
+  paths: string[];
+  occurrences: number;
+  unknownKeyCount: number;
+}
+
+function classify(issues: readonly ZodIssue[]): SchemaIssueClass[] {
+  const classes = new Map<string, SchemaIssueClass>();
+  for (const issue of issues) {
+    const segments = safePathSegments(issue);
+    const numeric = issue.path
+      .map((part, position) => ({ part, position }))
+      .filter(
+        (entry): entry is { part: number; position: number } => typeof entry.part === 'number',
+      );
+    const shape = segments
+      .map((segment, position) => (typeof issue.path[position] === 'number' ? '{index}' : segment))
+      .join('.');
+    const expected = safeStructuralTypeTag((issue as { expected?: unknown }).expected);
+    const received = safeStructuralTypeTag((issue as { received?: unknown }).received);
+    const key = [issue.code, shape, expected ?? '-', received ?? '-'].join('|');
+    const existing = classes.get(key);
+    const bucket: SchemaIssueClass = existing ?? {
+      shape,
+      code: issue.code,
+      expected,
+      received,
+      slots: numeric.map(() => new Set<number>()),
+      paths: [],
+      occurrences: 0,
+      unknownKeyCount: 0,
+    };
+    numeric.forEach((entry, slot) => bucket.slots[slot]?.add(entry.part));
+    bucket.occurrences += 1;
+    if (bucket.paths.length < MAX_DISCLOSED_CLASS_PATHS + 1) bucket.paths.push(segments.join('.'));
+    if (issue.code === 'unrecognized_keys') {
+      bucket.unknownKeyCount += (issue as { keys?: readonly string[] }).keys?.length ?? 0;
+    }
+    if (!existing) classes.set(key, bucket);
+  }
+  return [...classes.values()];
+}
+
+function renderIndexes(values: Set<number>): string {
+  const sorted = [...values].sort((a, b) => a - b);
+  const shown = sorted.slice(0, MAX_DISCLOSED_CLASS_INDEXES);
+  const remaining = sorted.length - shown.length;
+  return `{${shown.join(',')}${remaining > 0 ? `,+${remaining} more` : ''}}`;
+}
+
+/**
+ * Render one class as a single line naming every affected location. When exactly
+ * one numeric position varies, the indexes are expanded inline so the complete
+ * affected set stays visible in one line; otherwise concrete paths are listed so
+ * a multi-index class is never described as a misleading cross product.
+ */
+function renderClass(bucket: SchemaIssueClass): string {
+  const varying = bucket.slots.filter((slot) => slot.size > 1).length;
+  let location: string;
+  if (varying <= 1) {
+    let slot = -1;
+    location = bucket.shape
+      .split('.')
+      .map((segment) => {
+        if (segment !== '{index}') return segment;
+        slot += 1;
+        const values = bucket.slots[slot];
+        if (!values) return segment;
+        return values.size === 1 ? String([...values][0]) : renderIndexes(values);
+      })
+      .join('.');
+  } else {
+    const shown = bucket.paths.slice(0, MAX_DISCLOSED_CLASS_PATHS);
+    const remaining = bucket.occurrences - shown.length;
+    location = `${shown.join(' / ')}${remaining > 0 ? ` / +${remaining} more` : ''}`;
+  }
+  const tags = [
+    bucket.code,
+    ...(bucket.expected ? [`expected ${bucket.expected}`] : []),
+    ...(bucket.received ? [`received ${bucket.received}`] : []),
+    ...(bucket.code === 'unrecognized_keys' ? [`${bucket.unknownKeyCount} unknown keys`] : []),
+    `${bucket.occurrences} ${bucket.occurrences === 1 ? 'occurrence' : 'occurrences'}`,
+  ].join(', ');
+  return `${location}: ${tags}`;
+}
+
+export interface SchemaIssueDisclosure {
+  summary: string;
+  /** True when the summary is grouped by structural class rather than per issue. */
+  grouped: boolean;
+  /** True when every validation class present in the issue list is represented. */
+  complete: boolean;
+}
+
+/**
+ * Build the schema-failure text handed to a bounded repair turn.
+ *
+ * Small issue lists keep the historical per-issue rendering verbatim. Once one
+ * systematic mistake produces more issues than can be listed individually, the
+ * list is grouped by structural class so every class survives disclosure with its
+ * complete affected-index set, its occurrence count, and its expected/received
+ * structural tags. Silently truncating to the first N issues while instructing
+ * the model to fix only what it was shown cannot converge, because the
+ * undisclosed remainder is explicitly placed out of scope.
+ *
+ * Nothing model-authored is emitted: path segments run through the same safe-key
+ * whitelist as persisted diagnostics, unknown key names are reduced to a count,
+ * and only closed-vocabulary Zod type tags are named.
+ */
+export function summarizeSchemaIssuesForRepair(issues: readonly ZodIssue[]): SchemaIssueDisclosure {
+  if (issues.length <= SCHEMA_ISSUE_DISCLOSURE_LIMIT) {
+    return {
+      summary: issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join('; '),
+      grouped: false,
+      complete: true,
+    };
+  }
+  const classes = classify(issues);
+  const disclosed = classes.slice(0, MAX_DISCLOSED_ISSUE_CLASSES);
+  let complete = disclosed.length === classes.length;
+  const lines: string[] = [];
+  let length = 0;
+  for (const bucket of disclosed) {
+    const line = renderClass(bucket);
+    if (length + line.length + 2 > MAX_SCHEMA_SUMMARY_CHARS) {
+      complete = false;
+      break;
+    }
+    lines.push(line);
+    length += line.length + 2;
+  }
+  return { summary: lines.join('; '), grouped: true, complete };
+}
+
 export interface StructuredResponseMetadata {
   transportSuccess: boolean;
   httpStatus: number | null;
@@ -272,6 +459,15 @@ export function buildStructuredOutputDiagnostic(input: {
       .join('.')
       .slice(0, 500),
     code: issue.code,
+    // Closed-vocabulary Zod type tags only. They distinguish a missing required
+    // array from a wrongly typed one, which a bare code cannot, and they can
+    // never carry model-authored content.
+    ...(safeStructuralTypeTag((issue as { expected?: unknown }).expected)
+      ? { expected: safeStructuralTypeTag((issue as { expected?: unknown }).expected)! }
+      : {}),
+    ...(safeStructuralTypeTag((issue as { received?: unknown }).received)
+      ? { received: safeStructuralTypeTag((issue as { received?: unknown }).received)! }
+      : {}),
     // Unknown keys are model-authored, so only a bounded count and hashed
     // tokens are exposed. The names themselves are never persisted.
     ...(issue.code === 'unrecognized_keys'

@@ -1656,7 +1656,7 @@ export function createCurriculumService({
           learningUnitId: null,
           assessmentId: null,
           operationType: 'propose_curriculum',
-          schemaFingerprint: 'curriculum-proposal-v3-claim-scope',
+          schemaFingerprint: 'curriculum-proposal-v4-node-key-presence',
           policyFingerprint,
           sourceFingerprint: recoveryFencedSourceFingerprint(context.manifest.fingerprint),
           providerOptions: opts,

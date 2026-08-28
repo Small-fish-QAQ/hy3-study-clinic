@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CurriculumProposalPayloadSchema,
   GroupedStudyPlanProposalPayloadSchema,
+  ProposedCurriculumNodeSchema,
   StudyPlanProposalPayloadSchema,
 } from './payloads.js';
 
@@ -234,6 +235,107 @@ describe('CurriculumProposalPayloadSchema', () => {
 
     expect(() => CurriculumProposalPayloadSchema.parse(payload)).toThrow(
       /duplicate Curriculum capability requirement/u,
+    );
+  });
+});
+
+/**
+ * The unit-only arrays are mandatory on every node kind and their only legal
+ * value on a chapter or section is the literal empty array. Omission is not a
+ * synonym for empty: converting a silent absence into `[]` would turn "the
+ * model said nothing about this node" into "this node has no objectives".
+ * These cases pin that contract so a future convenience default cannot weaken
+ * it silently.
+ */
+describe('ProposedCurriculumNodeSchema unit-only array presence', () => {
+  const UNIT_ONLY_ARRAY_KEYS = ['objectives', 'prerequisiteUnitKeys', 'graphRelationIds'] as const;
+
+  function nonUnitNode(): Record<string, unknown> {
+    return {
+      key: 'section-2',
+      parentKey: 'chapter-1',
+      kind: 'section',
+      index: 1,
+      title: 'Presence contract',
+      structuralUnitIds: [],
+      sourceEvidence: [],
+      conceptIds: [],
+      canonicalConceptIds: [],
+      objectives: [],
+      prerequisiteUnitKeys: [],
+      graphRelationIds: [],
+    };
+  }
+
+  it('reports exactly one invalid_type issue per omitted unit-only array', () => {
+    const node = nonUnitNode();
+    for (const key of UNIT_ONLY_ARRAY_KEYS) delete node[key];
+
+    const parsed = ProposedCurriculumNodeSchema.safeParse(node);
+    expect(parsed.success).toBe(false);
+    if (parsed.success) throw new Error('Expected the omitted unit-only arrays to reject.');
+    expect(
+      parsed.error.issues.map((issue) => ({
+        path: issue.path.join('.'),
+        code: issue.code,
+        expected: (issue as { expected?: unknown }).expected,
+        received: (issue as { received?: unknown }).received,
+      })),
+    ).toEqual([
+      { path: 'objectives', code: 'invalid_type', expected: 'array', received: 'undefined' },
+      {
+        path: 'prerequisiteUnitKeys',
+        code: 'invalid_type',
+        expected: 'array',
+        received: 'undefined',
+      },
+      { path: 'graphRelationIds', code: 'invalid_type', expected: 'array', received: 'undefined' },
+    ]);
+  });
+
+  it('accepts a non-unit node whose unit-only arrays are explicit empty arrays', () => {
+    const parsed = ProposedCurriculumNodeSchema.safeParse(nonUnitNode());
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) throw new Error('Expected explicit empty arrays to parse.');
+    expect(parsed.data.objectives).toEqual([]);
+    expect(parsed.data.prerequisiteUnitKeys).toEqual([]);
+    expect(parsed.data.graphRelationIds).toEqual([]);
+  });
+
+  it('rejects null for a required unit-only array instead of reading it as empty', () => {
+    for (const key of UNIT_ONLY_ARRAY_KEYS) {
+      const node = nonUnitNode();
+      node[key] = null;
+      const parsed = ProposedCurriculumNodeSchema.safeParse(node);
+      expect(parsed.success).toBe(false);
+      if (parsed.success) throw new Error(`Expected null ${key} to reject.`);
+      expect(parsed.error.issues).toMatchObject([
+        { path: [key], code: 'invalid_type', expected: 'array', received: 'null' },
+      ]);
+    }
+  });
+
+  it('surfaces one issue per omitted array on every non-unit node of a whole proposal', () => {
+    const payload = curriculumPayload() as { nodes: Array<Record<string, unknown>> };
+    for (const node of payload.nodes) {
+      if (node.kind === 'learning_unit') continue;
+      for (const key of UNIT_ONLY_ARRAY_KEYS) delete node[key];
+    }
+
+    const parsed = CurriculumProposalPayloadSchema.safeParse(payload);
+    expect(parsed.success).toBe(false);
+    if (parsed.success) throw new Error('Expected the incomplete node objects to reject.');
+    expect(parsed.error.issues).toHaveLength(6);
+    expect(parsed.error.issues.map((issue) => issue.path.join('.'))).toEqual([
+      'nodes.0.objectives',
+      'nodes.0.prerequisiteUnitKeys',
+      'nodes.0.graphRelationIds',
+      'nodes.1.objectives',
+      'nodes.1.prerequisiteUnitKeys',
+      'nodes.1.graphRelationIds',
+    ]);
+    expect(new Set(parsed.error.issues.map((issue) => issue.code))).toEqual(
+      new Set(['invalid_type']),
     );
   });
 });

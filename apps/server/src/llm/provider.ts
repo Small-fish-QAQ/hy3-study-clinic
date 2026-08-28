@@ -145,10 +145,16 @@ export interface StructuredOutputDiagnostic {
   topLevelType: 'object' | 'array' | 'string' | 'number' | 'boolean' | 'null' | null;
   topLevelKeys: string[];
   schemaIssueCount: number;
-  /** Unknown-key names are never exposed; only bounded counts and hashed tokens. */
+  /**
+   * Unknown-key names are never exposed; only bounded counts and hashed tokens.
+   * `expected`/`received` are closed-vocabulary Zod structural type tags, present
+   * only for the codes that carry them.
+   */
   schemaIssues: Array<{
     path: string;
     code: string;
+    expected?: string;
+    received?: string;
     unknownKeyCount?: number;
     unknownKeyTokens?: string[];
   }>;

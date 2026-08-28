@@ -62,6 +62,7 @@ import {
   conceptAnalysisMessages,
   conceptLessonMessages,
   courseMapProposalMessages,
+  CURRICULUM_NODE_KEY_PRESENCE_RULES,
   curriculumDetailProposalMessages,
   curriculumProposalMessages,
   graphProposalMessages,
@@ -120,6 +121,8 @@ import {
   buildStructuredOutputDiagnostic,
   contentShape,
   safeFinishReason,
+  summarizeSchemaIssuesForRepair,
+  type SchemaIssueDisclosure,
   type StructuredParseMetadata,
   type StructuredResponseMetadata,
 } from './structuredOutputDiagnostics.js';
@@ -160,6 +163,35 @@ interface ChatCompletionResult {
         summary: string;
       }
     | undefined;
+}
+
+/**
+ * Close the repair turn honestly.
+ *
+ * "Repair only these problems" is correct only while the disclosed list is the
+ * whole list. When one systematic mistake is summarized by structural class, the
+ * model must be told to fix every listed class at every occurrence and to
+ * revalidate the entire output, otherwise the classes that were folded into a
+ * count would be read as out of scope.
+ */
+function repairScopeInstruction(
+  disclosure: SchemaIssueDisclosure | undefined,
+  final: boolean,
+): string[] {
+  if (!disclosure?.grouped) {
+    return [
+      final
+        ? '这是最后一次有界修复。请仅修复当前问题,重新输出符合要求的 JSON。仍然只输出 JSON,不要解释。'
+        : '请仅修复这些问题,重新输出符合要求的 JSON。仍然只输出 JSON,不要解释。',
+    ];
+  }
+  return [
+    disclosure.complete
+      ? '以上按结构类别归纳的清单已覆盖本次全部校验失败类别,没有被省略的类别。请修复其中每一个类别在输出中的每一次出现,不要只修复被点名的前几个位置。'
+      : '以上清单已按结构类别归纳,但类别数量超出可披露上限,仍可能存在未列出的失败。请修复其中每一个类别在输出中的每一次出现,并同时修正任何其他不符合要求结构的地方。',
+    '重新输出完整 JSON 前,请用原始要求的 JSON 结构重新校验整个输出:每个必需键都存在,每个必需数组都是 JSON 数组,没有键被省略或写成 null。',
+    final ? '这是最后一次有界修复。仍然只输出 JSON,不要解释。' : '仍然只输出 JSON,不要解释。',
+  ];
 }
 
 interface TargetedRepairCollection {
@@ -698,10 +730,13 @@ export class Hy3Provider implements LlmProvider {
       curriculumProposalMessages(input),
       CurriculumProposalPayloadSchema,
       opts,
-      'For required_objective_formal_authority_missing, narrow or split the objective to the supplied authority envelope and preserve required priority. Never mark it optional, invent evidence, or repeat the unchanged claim.',
+      [
+        'For required_objective_formal_authority_missing, narrow or split the objective to the supplied authority envelope and preserve required priority. Never mark it optional, invent evidence, or repeat the unchanged claim.',
+        CURRICULUM_NODE_KEY_PRESENCE_RULES,
+      ].join('\n'),
       {
         maxTokens: CURRICULUM_MAX_OUTPUT_TOKENS,
-        schemaName: 'curriculum-proposal-v3-claim-scope',
+        schemaName: 'curriculum-proposal-v4-node-key-presence',
         ...(input.capabilityRecovery?.requirements.length
           ? {}
           : { candidatePreprocessor: stripCapabilityRecoveryRefs }),
@@ -1040,7 +1075,7 @@ export class Hy3Provider implements LlmProvider {
               ]
             : []),
           ...(repairGuidance ? ['本次请求的精确修复约束:', repairGuidance] : []),
-          '请仅修复这些问题,重新输出符合要求的 JSON。仍然只输出 JSON,不要解释。',
+          ...repairScopeInstruction(first.disclosure, false),
         ].join('\n'),
       },
     ];
@@ -1120,7 +1155,7 @@ export class Hy3Provider implements LlmProvider {
                 ]
               : []),
             ...(repairGuidance ? ['本次请求的精确修复约束:', repairGuidance] : []),
-            '这是最后一次有界修复。请仅修复当前问题,重新输出符合要求的 JSON。仍然只输出 JSON,不要解释。',
+            ...repairScopeInstruction(second.disclosure, true),
           ].join('\n'),
         },
       ];
@@ -1192,6 +1227,8 @@ export class Hy3Provider implements LlmProvider {
     | {
         ok: false;
         error: string;
+        /** Present only for schema failures whose issue list was summarized. */
+        disclosure?: SchemaIssueDisclosure | undefined;
         reason: 'schema' | 'candidate';
         category: StructuredOutputFailureCategory;
         repairable: boolean;
@@ -1324,13 +1361,11 @@ export class Hy3Provider implements LlmProvider {
         },
       };
     }
-    const summary = parsed.error.issues
-      .slice(0, 10)
-      .map((i) => `${i.path.join('.')}: ${i.message}`)
-      .join('; ');
+    const disclosure = summarizeSchemaIssuesForRepair(parsed.error.issues);
     return {
       ok: false,
-      error: summary,
+      error: disclosure.summary,
+      disclosure,
       reason: 'schema',
       category: 'SCHEMA_VALIDATION_FAILURE',
       repairable: true,
