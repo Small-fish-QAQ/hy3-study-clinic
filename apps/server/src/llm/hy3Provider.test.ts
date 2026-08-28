@@ -16,12 +16,14 @@ import type {
   AssessmentProposalInput,
   CurriculumProposalInput,
   RepairGenerationInput,
+  StructuredOutputDiagnostic,
   StudyPlanProposalInput,
   VisualDescriptionInput,
 } from './provider.js';
 import { makeConcept, makeGrounding } from '../testing/fixtures.js';
 import {
   groupedStudyPlanProposalMessages,
+  OBJECTIVE_AUTHORITY_SEMANTIC_CLOSED_KEY_RULES,
   OBJECTIVE_AUTHORITY_SEMANTIC_VOCABULARY_RULES,
 } from './prompts.js';
 import { validateObjectiveAuthoritySemanticEvaluationProposal } from '../services/objectiveAuthoritySemanticSupport.js';
@@ -396,7 +398,7 @@ describe('Hy3Provider objective-authority semantic methods', () => {
       }),
     ).resolves.toEqual(semanticRepairProposal);
     expect(schemaNames).toEqual([
-      'objective-authority-semantic-evaluation-v3',
+      'objective-authority-semantic-evaluation-v4',
       'objective-authority-semantic-repair-v2-claim-scope',
     ]);
     const calls = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls;
@@ -1309,5 +1311,371 @@ describe('Hy3Provider response-body cancellation', () => {
     );
     setTimeout(() => controller.abort(), 10);
     await expect(pending).rejects.toMatchObject({ code: 'REQUEST_CANCELLED' });
+  });
+});
+
+/**
+ * Real REAL_HY3 failure shape: one logical evaluator call spent three physical
+ * attempts as schema failure -> deterministic candidate failure -> schema
+ * failure again because the final candidate repair reintroduced an unknown key
+ * in a later evaluation item. The model must produce a conforming payload; the
+ * strict schema is never widened and unknown keys are never stripped.
+ */
+const STRICT_EVALUATION_OBJECTIVE_COUNT = 8;
+const UNKNOWN_MODEL_KEY = 'modelAuthorityCommentaryNeverPersisted';
+const UNKNOWN_MODEL_VALUE = 'MODEL_SCALAR_TEXT_NEVER_PERSISTED';
+
+const strictEvaluationInput: ObjectiveAuthoritySemanticEvaluationInput = {
+  ...semanticEvaluationInput,
+  objectives: Array.from({ length: STRICT_EVALUATION_OBJECTIVE_COUNT }, (_, index) => ({
+    ...semanticEvaluationInput.objectives[0]!,
+    objectiveRef: `objective_${index + 1}`,
+    candidates: [
+      {
+        ...semanticEvaluationInput.objectives[0]!.candidates[0]!,
+        evidenceRef: `evidence_${index + 1}`,
+      },
+    ],
+  })),
+};
+
+const strictEvaluationProposal = ObjectiveAuthoritySemanticEvaluationProposalSchema.parse({
+  schemaVersion: 2,
+  evaluations: strictEvaluationInput.objectives.map((objective) => ({
+    ...semanticEvaluationProposal.evaluations[0]!,
+    objectiveRef: objective.objectiveRef,
+    candidateLabels: [
+      { evidenceRef: objective.candidates[0]!.evidenceRef, relation: 'relevant' as const },
+    ],
+    supportGroups: [
+      {
+        evidenceRefs: [objective.candidates[0]!.evidenceRef],
+        supportType: 'positioning' as const,
+      },
+    ],
+  })),
+});
+
+/** Schema-valid JSON carrying one model-authored key the strict item forbids. */
+function withUnknownKeyAt(index: number): unknown {
+  const payload = structuredClone(strictEvaluationProposal) as {
+    evaluations: Array<Record<string, unknown>>;
+  };
+  payload.evaluations[index] = {
+    ...payload.evaluations[index]!,
+    [UNKNOWN_MODEL_KEY]: UNKNOWN_MODEL_VALUE,
+  };
+  return payload;
+}
+
+/** Strictly schema-valid, but the deterministic candidate validator rejects it. */
+function withCandidateFailureAtFirstObjective(): unknown {
+  const payload = structuredClone(strictEvaluationProposal);
+  payload.evaluations[0]!.candidateLabels = [];
+  return payload;
+}
+
+interface StrictRepairRun {
+  promise: Promise<unknown>;
+  fetchImpl: ReturnType<typeof vi.fn>;
+  onRepairAttempt: ReturnType<typeof vi.fn>;
+  diagnostics: StructuredOutputDiagnostic[];
+  requestBodies: () => Array<{ messages: Array<{ role: string; content: string }> }>;
+}
+
+/** Drive the real complete()/tryParse() machinery over exact physical responses. */
+function runStrictEvaluation(responses: unknown[]): StrictRepairRun {
+  const fetchImpl = vi.fn();
+  for (const response of responses) {
+    fetchImpl.mockResolvedValueOnce(jsonResponse(JSON.stringify(response)));
+  }
+  const onRepairAttempt = vi.fn();
+  const diagnostics: StructuredOutputDiagnostic[] = [];
+  const promise = makeProvider(fetchImpl as unknown as typeof fetch)
+    .evaluateObjectiveAuthoritySupport(strictEvaluationInput, {
+      onRepairAttempt,
+      onStructuredOutputDiagnostic: (diagnostic) => diagnostics.push(diagnostic),
+      validateCandidate: (candidate) =>
+        validateObjectiveAuthoritySemanticEvaluationProposal(strictEvaluationInput, candidate),
+    })
+    .catch((error: unknown) => {
+      throw error;
+    });
+  return {
+    promise,
+    fetchImpl,
+    onRepairAttempt,
+    diagnostics,
+    requestBodies: () =>
+      fetchImpl.mock.calls.map(
+        (call) =>
+          JSON.parse(String((call[1] as RequestInit).body)) as {
+            messages: Array<{ role: string; content: string }>;
+          },
+      ),
+  };
+}
+
+describe('Hy3Provider objective semantic evaluator strict-output repair', () => {
+  it('fails closed after schema -> candidate -> schema repair without a fourth request', async () => {
+    const run = runStrictEvaluation([
+      withUnknownKeyAt(0),
+      withCandidateFailureAtFirstObjective(),
+      withUnknownKeyAt(STRICT_EVALUATION_OBJECTIVE_COUNT - 1),
+    ]);
+
+    await expect(run.promise).rejects.toMatchObject({
+      code: 'PROVIDER_INVALID_OUTPUT',
+      technicalFailureCode: 'REPAIR_EXHAUSTED:SCHEMA_VALIDATION_FAILURE',
+      details: { validationKind: 'schema' },
+    });
+
+    expect(run.fetchImpl).toHaveBeenCalledTimes(3);
+    expect(run.onRepairAttempt.mock.calls).toEqual([
+      ['schema', 'SCHEMA_VALIDATION_FAILURE'],
+      ['candidate', 'SEMANTIC_VALIDATION_FAILURE'],
+    ]);
+    expect(
+      run.diagnostics.map((diagnostic) => ({
+        attemptNumber: diagnostic.attemptNumber,
+        attemptKind: diagnostic.attemptKind,
+        failureCategory: diagnostic.failureCategory,
+        repairAction: diagnostic.repairAction,
+      })),
+    ).toEqual([
+      {
+        attemptNumber: 1,
+        attemptKind: 'original',
+        failureCategory: 'SCHEMA_VALIDATION_FAILURE',
+        repairAction: 'requested',
+      },
+      {
+        attemptNumber: 2,
+        attemptKind: 'repair',
+        failureCategory: 'SEMANTIC_VALIDATION_FAILURE',
+        repairAction: 'requested',
+      },
+      {
+        attemptNumber: 3,
+        attemptKind: 'repair',
+        failureCategory: 'SCHEMA_VALIDATION_FAILURE',
+        repairAction: 'exhausted',
+      },
+    ]);
+  });
+
+  it('reports the exact unrecognized-key location without leaking the model key', async () => {
+    const run = runStrictEvaluation([
+      withUnknownKeyAt(0),
+      withCandidateFailureAtFirstObjective(),
+      withUnknownKeyAt(STRICT_EVALUATION_OBJECTIVE_COUNT - 1),
+    ]);
+    const error = await run.promise.then(
+      () => {
+        throw new Error('Expected the strict evaluator contract to fail closed.');
+      },
+      (thrown: unknown) => thrown as ProviderError,
+    );
+
+    const terminal = run.diagnostics.at(-1)!;
+    expect(terminal.schemaIssues).toEqual([
+      {
+        path: 'evaluations.7',
+        code: 'unrecognized_keys',
+        unknownKeyCount: 1,
+        unknownKeyTokens: [expect.stringMatching(/^<key:sha256:[0-9a-f]{64}>$/u)],
+      },
+    ]);
+    expect(terminal.schemaIssueCount).toBe(1);
+
+    const persisted = JSON.stringify({ message: error.message, details: error.details });
+    expect(persisted).toContain('"path":"evaluations.7"');
+    expect(persisted).not.toContain(UNKNOWN_MODEL_KEY);
+    expect(persisted).not.toContain(UNKNOWN_MODEL_VALUE);
+    expect(JSON.stringify(run.diagnostics)).not.toContain(UNKNOWN_MODEL_KEY);
+    expect(JSON.stringify(run.diagnostics)).not.toContain(UNKNOWN_MODEL_VALUE);
+  });
+
+  it('accepts a third attempt that fixes the candidate and removes every unknown key', async () => {
+    const run = runStrictEvaluation([
+      withUnknownKeyAt(0),
+      withCandidateFailureAtFirstObjective(),
+      structuredClone(strictEvaluationProposal),
+    ]);
+
+    await expect(run.promise).resolves.toEqual(strictEvaluationProposal);
+    expect(run.fetchImpl).toHaveBeenCalledTimes(3);
+    expect(run.onRepairAttempt.mock.calls).toEqual([
+      ['schema', 'SCHEMA_VALIDATION_FAILURE'],
+      ['candidate', 'SEMANTIC_VALIDATION_FAILURE'],
+    ]);
+    expect(run.diagnostics.at(-1)).toMatchObject({
+      attemptNumber: 3,
+      attemptKind: 'repair',
+      failureCategory: null,
+      repairAction: 'none',
+    });
+    const accepted = await run.promise;
+    for (const evaluation of (accepted as { evaluations: Array<Record<string, unknown>> })
+      .evaluations) {
+      expect(Object.keys(evaluation).sort()).toEqual([
+        'candidateLabels',
+        'objectiveRef',
+        'subjectDependency',
+        'subjectDependencyRationale',
+        'supportGroups',
+      ]);
+    }
+  });
+
+  it('states the exact normal-item key whitelist in the final cross-kind repair prompt', async () => {
+    const run = runStrictEvaluation([
+      withUnknownKeyAt(0),
+      withCandidateFailureAtFirstObjective(),
+      withUnknownKeyAt(STRICT_EVALUATION_OBJECTIVE_COUNT - 1),
+    ]);
+    await expect(run.promise).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
+
+    const finalPrompt = run.requestBodies()[2]!.messages.at(-1)!.content;
+    expect(finalPrompt).toContain(
+      'Every normal evaluation object contains only these keys: objectiveRef, subjectDependency, subjectDependencyRationale, candidateLabels, supportGroups.',
+    );
+    expect(finalPrompt).toContain('Delete every other key from every evaluation object.');
+    expect(finalPrompt).toContain(
+      'Preserve the exact {"schemaVersion":2,"evaluations":[...]} top-level shape and never wrap evaluations in another object.',
+    );
+  });
+
+  it('keeps the recovery-only key allowance explicit in the final repair prompt', async () => {
+    const run = runStrictEvaluation([
+      withUnknownKeyAt(0),
+      withCandidateFailureAtFirstObjective(),
+      withUnknownKeyAt(STRICT_EVALUATION_OBJECTIVE_COUNT - 1),
+    ]);
+    await expect(run.promise).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
+
+    expect(run.requestBodies()[2]!.messages.at(-1)!.content).toContain(
+      'Only a required capability-recovery evaluation may add these two keys: fragments, capabilityPreservation.',
+    );
+  });
+
+  it('retains the invariant closed-schema contract on a candidate-only repair', async () => {
+    const run = runStrictEvaluation([
+      withCandidateFailureAtFirstObjective(),
+      structuredClone(strictEvaluationProposal),
+    ]);
+
+    await expect(run.promise).resolves.toEqual(strictEvaluationProposal);
+    expect(run.onRepairAttempt).toHaveBeenCalledExactlyOnceWith(
+      'candidate',
+      'SEMANTIC_VALIDATION_FAILURE',
+    );
+    const repairPrompt = run.requestBodies()[1]!.messages.at(-1)!.content;
+    expect(repairPrompt).toContain(OBJECTIVE_AUTHORITY_SEMANTIC_CLOSED_KEY_RULES);
+    expect(repairPrompt).toContain(
+      'It still applies when the reported problem is local candidate validation rather than output format.',
+    );
+  });
+
+  it('keeps rejecting an unknown key nested inside a strict evaluation sub-object', () => {
+    const payload = structuredClone(strictEvaluationProposal) as {
+      evaluations: Array<Record<string, unknown>>;
+    };
+    payload.evaluations[7]!.candidateLabels = [
+      { evidenceRef: 'evidence_8', relation: 'relevant', [UNKNOWN_MODEL_KEY]: UNKNOWN_MODEL_VALUE },
+    ];
+
+    const parsed = ObjectiveAuthoritySemanticEvaluationProposalSchema.safeParse(payload);
+    expect(parsed.success).toBe(false);
+    if (parsed.success) throw new Error('Expected the nested strict object to reject.');
+    expect(parsed.error.issues).toMatchObject([
+      { code: 'unrecognized_keys', path: ['evaluations', 7, 'candidateLabels', 0] },
+    ]);
+  });
+
+  it('blocks recovery-only keys on a normal evaluation at both enforcement layers', () => {
+    const schemaPayload = structuredClone(strictEvaluationProposal) as {
+      evaluations: Array<Record<string, unknown>>;
+    };
+    schemaPayload.evaluations[7]!.fragments = [
+      {
+        fragmentId: 'F1',
+        text: strictEvaluationInput.objectives[7]!.proposition,
+        status: 'unsupported',
+        supportType: null,
+        evidenceRefs: [],
+        rationale: 'Recovery fragments are not permitted on the normal path.',
+      },
+    ];
+    const parsed = ObjectiveAuthoritySemanticEvaluationProposalSchema.safeParse(schemaPayload);
+    expect(parsed.success).toBe(false);
+    if (parsed.success) throw new Error('Expected recovery-only fragments to reject.');
+    expect(parsed.error.issues).toMatchObject([
+      { code: 'unrecognized_keys', keys: ['fragments'], path: ['evaluations', 7] },
+    ]);
+
+    const recoveryPair = structuredClone(strictEvaluationProposal) as {
+      evaluations: Array<Record<string, unknown>>;
+    };
+    const proposition = strictEvaluationInput.objectives[7]!.proposition;
+    recoveryPair.evaluations[7] = {
+      ...recoveryPair.evaluations[7]!,
+      fragments: [
+        {
+          fragmentId: 'F1',
+          text: proposition,
+          status: 'supported',
+          supportType: 'positioning',
+          evidenceRefs: ['evidence_8'],
+          rationale: 'The offered claim states the integrated positioning.',
+        },
+      ],
+      capabilityPreservation: {
+        originalProposition: proposition,
+        mappings: [
+          {
+            originalFragmentId: 'OF1',
+            originalText: proposition,
+            repairedFragmentIds: ['F1'],
+            status: 'preserved',
+            rationale: 'The repaired wording keeps the original capability.',
+          },
+        ],
+        lostOriginalFragmentIds: [],
+        verdict: 'pass',
+        rationale: 'No original capability was lost.',
+      },
+    };
+    expect(ObjectiveAuthoritySemanticEvaluationProposalSchema.safeParse(recoveryPair).success).toBe(
+      true,
+    );
+    expect(
+      validateObjectiveAuthoritySemanticEvaluationProposal(strictEvaluationInput, recoveryPair),
+    ).toMatchObject({
+      valid: false,
+      diagnosticCodes: expect.arrayContaining(['semantic_capability_preservation_unexpected']),
+    });
+  });
+
+  it('leaves generic non-evaluator repair guidance unchanged', async () => {
+    const malformed = curriculumProposalCandidate() as { nodes: Array<Record<string, unknown>> };
+    malformed.nodes[0] = { ...malformed.nodes[0]!, [UNKNOWN_MODEL_KEY]: UNKNOWN_MODEL_VALUE };
+    const fetchImpl = vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(jsonResponse(JSON.stringify(malformed))),
+      ) as unknown as typeof fetch;
+
+    await expect(
+      makeProvider(fetchImpl).proposeCurriculum(curriculumProviderInput(false)),
+    ).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    const repairPrompt = (
+      JSON.parse(
+        String((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[1]![1]!.body),
+      ) as { messages: Array<{ content: string }> }
+    ).messages.at(-1)!.content;
+    expect(repairPrompt).not.toContain(OBJECTIVE_AUTHORITY_SEMANTIC_CLOSED_KEY_RULES);
+    expect(repairPrompt).not.toContain('Closed-key contract.');
   });
 });

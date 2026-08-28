@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { SourceBlock } from '@hy3-clinic/shared';
 import { z } from 'zod';
 import { Hy3Provider } from './hy3Provider.js';
+import { ProviderError } from './errors.js';
 import type { StructuredOutputDiagnostic } from './provider.js';
 import { buildStructuredOutputDiagnostic } from './structuredOutputDiagnostics.js';
 
@@ -326,6 +327,128 @@ describe('Hy3 structured-output compatibility diagnostics', () => {
     const serializedPathDiagnostic = JSON.stringify(pathDiagnostic);
     expect(serializedPathDiagnostic).not.toContain(privateKey);
     expect(pathDiagnostic.schemaIssues[0]?.path).toMatch(/^<key:sha256:[0-9a-f]{64}>$/u);
+  });
+
+  it('keeps the local structural key evaluations readable in a schema path', () => {
+    const unknownKey = 'PRIVATE_MODEL_AUTHORED_KEY';
+    const schema = z
+      .object({ evaluations: z.array(z.object({ objectiveRef: z.string() }).strict()).min(1) })
+      .strict();
+    const parsed = schema.safeParse({
+      evaluations: [
+        { objectiveRef: 'objective_1' },
+        { objectiveRef: 'objective_2', [unknownKey]: PRIVATE_MODEL_TEXT },
+      ],
+    });
+    expect(parsed.success).toBe(false);
+    if (parsed.success) throw new Error('Expected the strict evaluations fixture to fail.');
+
+    const diagnostic = buildStructuredOutputDiagnostic({
+      schemaName: 'objective-authority-semantic-evaluation-v4',
+      operationType: 'propose_curriculum',
+      attemptNumber: 3,
+      attemptKind: 'repair',
+      model: 'hy3-test',
+      response: {
+        transportSuccess: true,
+        httpStatus: 200,
+        responseBodyBytes: 1,
+        contentType: 'string',
+        contentBytes: 1,
+        contentFingerprint: null,
+        finishReason: 'stop',
+        truncated: false,
+        possiblyIncomplete: false,
+      },
+      parse: {
+        jsonParseSuccess: true,
+        jsonFormat: 'direct',
+        parsed: {},
+        schemaIssues: parsed.error.issues,
+        failureCategory: 'SCHEMA_VALIDATION_FAILURE',
+      },
+      repairAction: 'exhausted',
+    });
+
+    expect(diagnostic.schemaIssues[0]).toEqual({
+      path: 'evaluations.1',
+      code: 'unrecognized_keys',
+      unknownKeyCount: 1,
+      unknownKeyTokens: [
+        expect.stringMatching(/^<key:sha256:[0-9a-f]{64}>$/u) as unknown as string,
+      ],
+    });
+    const serialized = JSON.stringify(diagnostic);
+    expect(serialized).not.toContain(unknownKey);
+    expect(serialized).not.toContain(PRIVATE_MODEL_TEXT);
+  });
+
+  it('bounds unknown-key tokens and keeps raw names out of the persisted envelope', () => {
+    const unknownKeys = Array.from({ length: 9 }, (_, index) => `PRIVATE_MODEL_KEY_${index}`);
+    const schema = z.object({ objectiveRef: z.string() }).strict();
+    const parsed = schema.safeParse({
+      objectiveRef: 'objective_1',
+      ...Object.fromEntries(unknownKeys.map((key) => [key, PRIVATE_MODEL_TEXT])),
+    });
+    expect(parsed.success).toBe(false);
+    if (parsed.success) throw new Error('Expected the strict fixture to fail closed.');
+
+    const diagnostic = buildStructuredOutputDiagnostic({
+      schemaName: 'objective-authority-semantic-evaluation-v4',
+      operationType: 'propose_curriculum',
+      attemptNumber: 3,
+      attemptKind: 'repair',
+      model: 'hy3-test',
+      response: {
+        transportSuccess: true,
+        httpStatus: 200,
+        responseBodyBytes: 1,
+        contentType: 'string',
+        contentBytes: 1,
+        contentFingerprint: null,
+        finishReason: 'stop',
+        truncated: false,
+        possiblyIncomplete: false,
+      },
+      parse: {
+        jsonParseSuccess: true,
+        jsonFormat: 'direct',
+        parsed: {},
+        schemaIssues: parsed.error.issues,
+        failureCategory: 'SCHEMA_VALIDATION_FAILURE',
+      },
+      repairAction: 'exhausted',
+    });
+
+    const issue = diagnostic.schemaIssues[0]!;
+    expect(issue.code).toBe('unrecognized_keys');
+    expect(issue.unknownKeyCount).toBe(unknownKeys.length);
+    expect(issue.unknownKeyTokens).toHaveLength(5);
+
+    // Zod's own message names every offending key; it must not survive.
+    const rawSummary = parsed.error.issues.map((current) => current.message).join('; ');
+    expect(rawSummary).toContain(unknownKeys[0]!);
+    const error = ProviderError.invalidOutput(
+      rawSummary,
+      'schema',
+      'SCHEMA_VALIDATION_FAILURE',
+      true,
+      undefined,
+      diagnostic,
+    );
+    const persisted = JSON.stringify({ message: error.message, details: error.details });
+    const persistedIssue = (
+      JSON.parse(persisted) as {
+        details: { structuredFailure: { schemaIssues: Array<{ unknownKeyTokens: string[] }> } };
+      }
+    ).details.structuredFailure.schemaIssues[0]!;
+    expect(persistedIssue.unknownKeyTokens).toHaveLength(5);
+    expect(persisted).toContain('"unknownKeyCount":9');
+    for (const key of unknownKeys) {
+      expect(persisted).not.toContain(key);
+      expect(JSON.stringify(diagnostic)).not.toContain(key);
+    }
+    expect(persisted).not.toContain(PRIVATE_MODEL_TEXT);
   });
 
   it('caps preview keys, array items, and nesting depth', async () => {

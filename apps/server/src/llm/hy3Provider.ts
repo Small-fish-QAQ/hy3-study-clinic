@@ -81,6 +81,7 @@ import {
   practiceContentMessages,
   objectiveAuthoritySemanticEvaluationMessages,
   objectiveAuthoritySemanticRepairMessages,
+  OBJECTIVE_AUTHORITY_SEMANTIC_CLOSED_KEY_RULES,
   OBJECTIVE_AUTHORITY_SEMANTIC_VOCABULARY_RULES,
   type ChatMessage,
 } from './prompts.js';
@@ -774,11 +775,12 @@ export class Hy3Provider implements LlmProvider {
         'Support groups assert that one to five relevant candidates jointly support the claim; keep groups minimal and return at most four.',
         'Return subjectDependency and subjectDependencyRationale for every objective. Decide dependency only from proposition plus construct, independently of candidate support; strong support does not imply source-specific, absent support does not imply general, and mixed or uncertain objectives are source_specific_required.',
         'Never cite a candidate from another objective or invent an alias. Return the complete corrected evaluation object. Include fragments and capabilityPreservation only when requiredCapabilityPreservation was offered.',
+        OBJECTIVE_AUTHORITY_SEMANTIC_CLOSED_KEY_RULES,
         OBJECTIVE_AUTHORITY_SEMANTIC_VOCABULARY_RULES,
       ].join('\n'),
       {
         maxTokens: OBJECTIVE_AUTHORITY_SEMANTIC_EVALUATION_MAX_OUTPUT_TOKENS,
-        schemaName: 'objective-authority-semantic-evaluation-v3',
+        schemaName: 'objective-authority-semantic-evaluation-v4',
         targetedRepairCollection: {
           collectionKey: 'evaluations',
           identityKey: 'objectiveRef',

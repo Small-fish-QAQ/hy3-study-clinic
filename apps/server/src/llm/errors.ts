@@ -84,6 +84,12 @@ function sanitizeStructuredOutputFailure(diagnostic: StructuredOutputDiagnostic 
     schemaIssues: diagnostic.schemaIssues.slice(0, 20).map((issue) => ({
       path: issue.path.slice(0, 500),
       code: issue.code.slice(0, 100),
+      ...(issue.unknownKeyCount === undefined ? {} : { unknownKeyCount: issue.unknownKeyCount }),
+      ...(issue.unknownKeyTokens
+        ? {
+            unknownKeyTokens: issue.unknownKeyTokens.slice(0, 5).map((token) => token.slice(0, 90)),
+          }
+        : {}),
     })),
     failureCategory: diagnostic.failureCategory,
     repairAction: diagnostic.repairAction,
@@ -131,7 +137,7 @@ export class ProviderError extends Error {
     return new ProviderError(
       ApiErrorCode.ProviderInvalidOutput,
       repairExhausted
-        ? '模型返回的数据不符合约定格式,已在一次修复尝试后放弃。'
+        ? '模型返回的数据经有界修复后仍不符合约定格式。'
         : '模型返回的数据不符合约定格式。',
       validationKind
         ? {

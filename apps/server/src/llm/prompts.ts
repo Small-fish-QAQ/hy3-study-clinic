@@ -115,6 +115,21 @@ export const OBJECTIVE_AUTHORITY_SEMANTIC_VOCABULARY_RULES = [
   enumVocabulary('overreach[].kind', ObjectiveAuthoritySemanticOverreachKindSchema),
 ].join('\n');
 
+/**
+ * Invariant closed-key contract for the objective semantic evaluator. The
+ * strict runtime schema rejects every unlisted key, so this text is repeated on
+ * every repair dimension, including a repair whose reported failure is local
+ * candidate validation rather than output format.
+ */
+export const OBJECTIVE_AUTHORITY_SEMANTIC_CLOSED_KEY_RULES = [
+  'Closed-key contract. Every normal evaluation object contains only these keys: objectiveRef, subjectDependency, subjectDependencyRationale, candidateLabels, supportGroups.',
+  'Only a required capability-recovery evaluation may add these two keys: fragments, capabilityPreservation.',
+  'Delete every other key from every evaluation object. Do not add explanations as extra JSON properties, and do not add proposition, construct, verdict, authority, binding, selection, conflicts, or overreach metadata.',
+  'Do not rename any field. Nested candidateLabels, supportGroups, fragments, and capabilityPreservation objects also contain only their own schema-defined keys.',
+  'Preserve the exact {"schemaVersion":2,"evaluations":[...]} top-level shape and never wrap evaluations in another object.',
+  'This closed-key contract is invariant. It still applies when the reported problem is local candidate validation rather than output format.',
+].join('\n');
+
 function recoveryCapabilityRefs(
   requirements: readonly { capabilityRef: string }[] | undefined,
 ): string[] {
@@ -1176,6 +1191,7 @@ export function objectiveAuthoritySemanticEvaluationMessages(
         wrapped.guard,
         wrapped.body,
         'Return {"schemaVersion":2,"evaluations":[...]}. Each evaluation contains only objectiveRef, subjectDependency, subjectDependencyRationale, candidateLabels, and supportGroups, except that required capability recovery also contains fragments and capabilityPreservation.',
+        OBJECTIVE_AUTHORITY_SEMANTIC_CLOSED_KEY_RULES,
         'subjectDependency must be source_specific_required or general_sufficient. subjectDependencyRationale must be concise, non-empty, and at most 300 characters.',
         'candidateLabels must contain every offered evidenceRef exactly once in offered order. relevant and unrelated rows contain only evidenceRef and relation; contradicts_claim may add a rationale of at most 200 characters.',
         'Each supportGroup contains evidenceRefs, supportType, and an optional rationale of at most 200 characters. Never cite an alias absent from that objective.',

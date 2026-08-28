@@ -1564,7 +1564,7 @@ export function createCurriculumService({
             learningUnitId: null,
             assessmentId: null,
             operationType: 'propose_curriculum',
-            schemaFingerprint: 'objective-authority-semantic-evaluation-v3',
+            schemaFingerprint: 'objective-authority-semantic-evaluation-v4',
             policyFingerprint,
             sourceFingerprint: recoveryFencedSourceFingerprint(
               objectiveAuthoritySemanticEvaluationSourceFingerprint(batch),

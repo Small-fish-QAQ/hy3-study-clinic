@@ -2842,9 +2842,9 @@ describe('Curriculum proposal and authority boundaries', () => {
       physicalAttempts: 4,
       schemaFingerprints: [
         'curriculum-proposal-v3-claim-scope',
-        'objective-authority-semantic-evaluation-v3',
+        'objective-authority-semantic-evaluation-v4',
         'objective-authority-semantic-repair-v2-claim-scope',
-        'objective-authority-semantic-evaluation-v3',
+        'objective-authority-semantic-evaluation-v4',
       ],
     });
   });
@@ -2925,9 +2925,9 @@ describe('Curriculum proposal and authority boundaries', () => {
       physicalAttempts: 4,
       schemaFingerprints: [
         'curriculum-proposal-v3-claim-scope',
-        'objective-authority-semantic-evaluation-v3',
+        'objective-authority-semantic-evaluation-v4',
         'objective-authority-semantic-repair-v2-claim-scope',
-        'objective-authority-semantic-evaluation-v3',
+        'objective-authority-semantic-evaluation-v4',
       ],
     });
   });
@@ -2973,9 +2973,9 @@ describe('Curriculum proposal and authority boundaries', () => {
       physicalAttempts: 4,
       schemaFingerprints: [
         'curriculum-proposal-v3-claim-scope',
-        'objective-authority-semantic-evaluation-v3',
+        'objective-authority-semantic-evaluation-v4',
         'objective-authority-semantic-repair-v2-claim-scope',
-        'objective-authority-semantic-evaluation-v3',
+        'objective-authority-semantic-evaluation-v4',
       ],
     });
   });
@@ -3021,7 +3021,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       physicalAttempts: 2,
       schemaFingerprints: [
         'curriculum-proposal-v3-claim-scope',
-        'objective-authority-semantic-evaluation-v3',
+        'objective-authority-semantic-evaluation-v4',
       ],
     });
 
@@ -3293,9 +3293,9 @@ describe('Curriculum proposal and authority boundaries', () => {
       physicalAttempts: 4,
       schemaFingerprints: [
         'curriculum-proposal-v3-claim-scope',
-        'objective-authority-semantic-evaluation-v3',
+        'objective-authority-semantic-evaluation-v4',
         'objective-authority-semantic-repair-v2-claim-scope',
-        'objective-authority-semantic-evaluation-v3',
+        'objective-authority-semantic-evaluation-v4',
       ],
     });
     expect(repos.curricula.list('ws_1').map((item) => item.id)).toEqual([predecessor.id]);
@@ -3399,7 +3399,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       physicalAttempts: 2,
       schemaFingerprints: [
         'curriculum-proposal-v3-claim-scope',
-        'objective-authority-semantic-evaluation-v3',
+        'objective-authority-semantic-evaluation-v4',
       ],
     });
     expect(repos.curricula.list('ws_1')).toEqual([]);
@@ -3432,7 +3432,7 @@ describe('Curriculum proposal and authority boundaries', () => {
       physicalAttempts: 2,
       schemaFingerprints: [
         'curriculum-proposal-v3-claim-scope',
-        'objective-authority-semantic-evaluation-v3',
+        'objective-authority-semantic-evaluation-v4',
       ],
     });
     expect(repos.curricula.list('ws_1')).toEqual([]);

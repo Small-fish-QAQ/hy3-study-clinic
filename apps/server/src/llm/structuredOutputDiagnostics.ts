@@ -6,6 +6,7 @@ const MAX_PREVIEW_DEPTH = 4;
 const MAX_PREVIEW_KEYS = 12;
 const MAX_PREVIEW_ITEMS = 3;
 const MAX_TOP_LEVEL_KEYS = 30;
+const MAX_UNKNOWN_KEY_TOKENS = 5;
 
 // Only locally declared structured-output schema keys may be shown verbatim.
 // Provider-controlled unknown keys are hashed so a malformed key cannot copy
@@ -35,6 +36,7 @@ const SAFE_STRUCTURAL_KEYS = new Set([
   'description',
   'explanation',
   'explanationAuthority',
+  'evaluations',
   'evidence',
   'evidenceId',
   'example',
@@ -270,6 +272,16 @@ export function buildStructuredOutputDiagnostic(input: {
       .join('.')
       .slice(0, 500),
     code: issue.code,
+    // Unknown keys are model-authored, so only a bounded count and hashed
+    // tokens are exposed. The names themselves are never persisted.
+    ...(issue.code === 'unrecognized_keys'
+      ? {
+          unknownKeyCount: issue.keys.length,
+          unknownKeyTokens: issue.keys
+            .slice(0, MAX_UNKNOWN_KEY_TOKENS)
+            .map((key) => hashToken('key', key)),
+        }
+      : {}),
   }));
   const semanticIssueCodes = [...new Set(input.parse.semanticIssueCodes ?? [])]
     .slice(0, 20)

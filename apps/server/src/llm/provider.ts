@@ -145,7 +145,13 @@ export interface StructuredOutputDiagnostic {
   topLevelType: 'object' | 'array' | 'string' | 'number' | 'boolean' | 'null' | null;
   topLevelKeys: string[];
   schemaIssueCount: number;
-  schemaIssues: Array<{ path: string; code: string }>;
+  /** Unknown-key names are never exposed; only bounded counts and hashed tokens. */
+  schemaIssues: Array<{
+    path: string;
+    code: string;
+    unknownKeyCount?: number;
+    unknownKeyTokens?: string[];
+  }>;
   semanticIssueCodes: string[];
   failureCategory: StructuredOutputFailureCategory | null;
   repairAction: 'none' | 'requested' | 'exhausted';
