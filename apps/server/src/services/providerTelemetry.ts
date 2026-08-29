@@ -5,7 +5,9 @@ import type {
   ProviderCallOptions,
   ProviderTelemetryContext,
   ProviderUsage,
+  RejectedCandidateCapture,
 } from '../llm/provider.js';
+import { buildRejectedArtifactInput } from '../llm/rejectedArtifact.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
@@ -175,8 +177,46 @@ export function createTelemetryProvider<TProvider extends TelemetryProviderSurfa
           recordUsage(completedAt);
         };
 
+        /**
+         * Tier-1 local capture sink.
+         *
+         * The provider reports a rejection before any repair rotates identity, so
+         * the closure `attemptId` read here is always the physical attempt that
+         * produced the rejected candidate. Capture is observational: every failure
+         * is swallowed so the generation path behaves exactly as it did before
+         * this feature existed.
+         */
+        const captureRejectedCandidate = (capture: RejectedCandidateCapture): void => {
+          try {
+            repos.telemetry.insertRejectedArtifact(
+              newId('llm_reject'),
+              buildRejectedArtifactInput(capture, {
+                logicalCallId,
+                attemptId,
+                operationKind: context.operationType,
+                createdAt: clock.now().toISOString(),
+                schemaFingerprint: context.schemaFingerprint ?? null,
+                policyFingerprint,
+                sourceFingerprint: context.sourceFingerprint ?? null,
+                // Validation fingerprints belong to the semantic-cache boundary and
+                // are not part of the inference telemetry context; no new identity
+                // system is introduced here to manufacture one.
+                validationFingerprint: null,
+              }),
+            );
+          } catch {
+            // Retention is diagnostic only and must never alter the operation.
+          }
+          try {
+            supplied.onRejectedCandidate?.(capture);
+          } catch {
+            // An observer's failure must not alter the operation either.
+          }
+        };
+
         const providerOptions: ProviderCallOptions = {
           ...supplied,
+          onRejectedCandidate: captureRejectedCandidate,
           onRequestSent: markSent,
           onUsage: (reported) => {
             usage = reported;

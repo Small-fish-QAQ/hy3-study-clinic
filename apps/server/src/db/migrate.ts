@@ -3247,6 +3247,51 @@ const MIGRATIONS: Migration[] = [
         WHERE status = 'current';
     `,
   },
+  {
+    version: 46,
+    name: 'rejected_generation_artifacts',
+    // Local-only diagnostic retention for model candidates that local
+    // validation rejected. Rows are observational: nothing here is learner
+    // state, nothing here participates in mastery, grading, or progression,
+    // and nothing here is published without a later explicit opt-in.
+    //
+    // Identity is borrowed, never invented: logical_call_id and attempt_id
+    // reference the existing model-call ledger so an artifact is always
+    // attributable to one physical provider attempt.
+    up: `
+      CREATE TABLE rejected_generation_artifacts (
+        id TEXT PRIMARY KEY,
+        logical_call_id TEXT NOT NULL REFERENCES model_logical_calls(id) ON DELETE CASCADE,
+        attempt_id TEXT NOT NULL REFERENCES model_call_attempts(id) ON DELETE CASCADE,
+        attempt_number INTEGER NOT NULL CHECK (attempt_number >= 1),
+        attempt_kind TEXT NOT NULL CHECK (attempt_kind IN ('original', 'repair', 'retry', 'fallback')),
+        operation_kind TEXT NOT NULL,
+        schema_name TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        validation_kind TEXT NOT NULL CHECK (validation_kind IN ('schema', 'candidate')),
+        failure_category TEXT NOT NULL,
+        repair_exhausted INTEGER NOT NULL DEFAULT 0 CHECK (repair_exhausted IN (0, 1)),
+        candidate_representation TEXT NOT NULL
+          CHECK (candidate_representation IN ('json', 'json_truncated', 'text', 'text_truncated', 'unserializable')),
+        candidate_body TEXT,
+        candidate_bytes INTEGER NOT NULL CHECK (candidate_bytes >= 0),
+        candidate_truncated INTEGER NOT NULL DEFAULT 0 CHECK (candidate_truncated IN (0, 1)),
+        candidate_content_hash TEXT,
+        finding_count INTEGER NOT NULL DEFAULT 0 CHECK (finding_count >= 0),
+        findings TEXT NOT NULL,
+        prompt_fingerprint TEXT,
+        schema_fingerprint TEXT,
+        policy_fingerprint TEXT,
+        source_fingerprint TEXT,
+        validation_fingerprint TEXT,
+        UNIQUE (attempt_id)
+      );
+      CREATE INDEX idx_rejected_artifacts_logical_call
+        ON rejected_generation_artifacts(logical_call_id);
+      CREATE INDEX idx_rejected_artifacts_operation
+        ON rejected_generation_artifacts(operation_kind, created_at);
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

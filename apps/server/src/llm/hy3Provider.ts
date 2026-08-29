@@ -53,6 +53,7 @@ import {
   type ObjectiveAuthoritySemanticEvaluationInput,
   type ObjectiveAuthoritySemanticRepairInput,
 } from '@hy3-clinic/shared';
+import { createHash } from 'node:crypto';
 import { z, type ZodType, type ZodTypeDef } from 'zod';
 import { ProviderError } from './errors.js';
 import { extractJsonWithFormat, JsonExtractionError } from './json.js';
@@ -103,6 +104,7 @@ import type {
   ProviderCallOptions,
   ProviderTargetedRepairScope,
   QuizGenerationInput,
+  RejectedCandidateFinding,
   RemediationInput,
   RepairGenerationInput,
   RemediationPlanInput,
@@ -127,6 +129,70 @@ import {
   type StructuredResponseMetadata,
 } from './structuredOutputDiagnostics.js';
 import { detailedStudyPlanSchema, detailedStudyPlanScopeFromInput } from './studyPlanContract.js';
+
+/** One rejected parse attempt: local validation refused the model candidate. */
+interface TryParseFailure<T = unknown> {
+  ok: false;
+  error: string;
+  /** Present only for schema failures whose issue list was summarized. */
+  disclosure?: SchemaIssueDisclosure | undefined;
+  reason: 'schema' | 'candidate';
+  category: StructuredOutputFailureCategory;
+  repairable: boolean;
+  candidateFailure?: ProviderCandidateFailureArtifact | undefined;
+  candidate?: T | undefined;
+  targetedRepair?: ProviderTargetedRepairScope | undefined;
+  parse: StructuredParseMetadata;
+}
+
+const REJECTED_FINDING_LIMIT = 50;
+const REJECTED_FINDING_MESSAGE_LIMIT = 500;
+const REJECTED_FINDING_PATH_LIMIT = 200;
+
+/**
+ * Project bounded local validation findings for one rejected candidate.
+ *
+ * Findings describe what local deterministic code objected to. Schema paths and
+ * codes come from Zod; semantic codes come from the local candidate validator.
+ */
+function rejectedCandidateFindings(failure: TryParseFailure): RejectedCandidateFinding[] {
+  const findings: RejectedCandidateFinding[] = [];
+  for (const issue of failure.parse.schemaIssues ?? []) {
+    if (findings.length >= REJECTED_FINDING_LIMIT) break;
+    findings.push({
+      kind: 'schema',
+      path: issue.path.join('.').slice(0, REJECTED_FINDING_PATH_LIMIT),
+      code: String(issue.code).slice(0, REJECTED_FINDING_PATH_LIMIT),
+      message: String(issue.message ?? '').slice(0, REJECTED_FINDING_MESSAGE_LIMIT),
+    });
+  }
+  for (const code of failure.parse.semanticIssueCodes ?? []) {
+    if (findings.length >= REJECTED_FINDING_LIMIT) break;
+    findings.push({ kind: 'semantic', code: String(code).slice(0, REJECTED_FINDING_PATH_LIMIT) });
+  }
+  if (findings.length === 0) {
+    findings.push({
+      kind: 'semantic',
+      code: failure.category,
+      message: failure.error.slice(0, REJECTED_FINDING_MESSAGE_LIMIT),
+    });
+  }
+  return findings;
+}
+
+/**
+ * Digest the request messages so a rejected candidate can be correlated with the
+ * request that produced it. SECURITY: the digest never carries message content,
+ * and headers/credentials are not part of the input.
+ */
+function promptFingerprintOf(messages: ChatMessage[]): string {
+  const digest = createHash('sha256');
+  for (const message of messages) {
+    // Length-prefix each part so no content can forge a field boundary.
+    digest.update(`${message.role}:${message.content.length}:${message.content}`);
+  }
+  return digest.digest('hex');
+}
 
 export interface Hy3ProviderConfig {
   baseUrl: string;
@@ -1041,7 +1107,19 @@ export class Hy3Provider implements LlmProvider {
       parse: first.parse,
       repairAction: first.ok ? 'none' : first.repairable ? 'requested' : 'none',
     });
-    this.emitDiagnostic(opts, firstDiagnostic);
+    const promptFingerprint = opts?.onRejectedCandidate ? promptFingerprintOf(messages) : null;
+    this.emitDiagnostic(
+      opts,
+      firstDiagnostic,
+      first.ok
+        ? undefined
+        : {
+            result: first,
+            rawContent: original.content,
+            repairExhausted: !first.repairable,
+            promptFingerprint,
+          },
+    );
     if (first.ok) return first.value;
     if (!first.repairable) {
       throw ProviderError.invalidOutput(
@@ -1132,7 +1210,18 @@ export class Hy3Provider implements LlmProvider {
       parse: second.parse,
       repairAction: second.ok ? 'none' : independentRepairAllowed ? 'requested' : 'exhausted',
     });
-    this.emitDiagnostic(opts, secondDiagnostic);
+    this.emitDiagnostic(
+      opts,
+      secondDiagnostic,
+      second.ok
+        ? undefined
+        : {
+            result: second,
+            rawContent: repaired.content,
+            repairExhausted: !independentRepairAllowed,
+            promptFingerprint,
+          },
+    );
     if (second.ok) return second.value;
     if (independentRepairAllowed) {
       const independentRepairMessages: ChatMessage[] = [
@@ -1194,7 +1283,18 @@ export class Hy3Provider implements LlmProvider {
         parse: third.parse,
         repairAction: third.ok ? 'none' : 'exhausted',
       });
-      this.emitDiagnostic(opts, thirdDiagnostic);
+      this.emitDiagnostic(
+        opts,
+        thirdDiagnostic,
+        third.ok
+          ? undefined
+          : {
+              result: third,
+              rawContent: independentlyRepaired.content,
+              repairExhausted: true,
+              promptFingerprint,
+            },
+      );
       if (third.ok) return third.value;
       throw ProviderError.invalidOutput(
         third.error,
@@ -1222,21 +1322,7 @@ export class Hy3Provider implements LlmProvider {
     opts?: ProviderCallOptions,
     candidateTransform?: ((candidate: T) => unknown) | undefined,
     candidatePreprocessor?: ProviderCandidatePreprocessor | undefined,
-  ):
-    | { ok: true; value: T; parse: StructuredParseMetadata }
-    | {
-        ok: false;
-        error: string;
-        /** Present only for schema failures whose issue list was summarized. */
-        disclosure?: SchemaIssueDisclosure | undefined;
-        reason: 'schema' | 'candidate';
-        category: StructuredOutputFailureCategory;
-        repairable: boolean;
-        candidateFailure?: ProviderCandidateFailureArtifact | undefined;
-        candidate?: T | undefined;
-        targetedRepair?: ProviderTargetedRepairScope | undefined;
-        parse: StructuredParseMetadata;
-      } {
+  ): { ok: true; value: T; parse: StructuredParseMetadata } | TryParseFailure<T> {
     const abnormalFinishReason =
       result.response.finishReason === 'sensitive' ||
       result.response.finishReason === 'content_filter' ||
@@ -1382,11 +1468,38 @@ export class Hy3Provider implements LlmProvider {
   private emitDiagnostic(
     opts: ProviderCallOptions | undefined,
     diagnostic: StructuredOutputDiagnostic,
+    rejection?: {
+      /** The tryParse rejection whose candidate local validation refused. */
+      result: TryParseFailure;
+      /** Raw response text, used only when JSON extraction never produced a value. */
+      rawContent: string;
+      repairExhausted: boolean;
+      promptFingerprint: string | null;
+    },
   ): void {
     try {
       opts?.onStructuredOutputDiagnostic?.(diagnostic);
     } catch {
       // Diagnostics are observational and must never change provider behavior.
+    }
+    if (!rejection || !opts?.onRejectedCandidate) return;
+    try {
+      const hasParsedCandidate = rejection.result.parse.parsed !== undefined;
+      opts.onRejectedCandidate({
+        validationKind: rejection.result.reason,
+        failureCategory: rejection.result.category,
+        repairExhausted: rejection.repairExhausted,
+        schemaName: diagnostic.schemaName,
+        operationType: diagnostic.operationType,
+        attemptNumber: diagnostic.attemptNumber,
+        attemptKind: diagnostic.attemptKind,
+        candidate: hasParsedCandidate ? rejection.result.parse.parsed : rejection.rawContent,
+        candidateIsRawText: !hasParsedCandidate,
+        findings: rejectedCandidateFindings(rejection.result),
+        promptFingerprint: rejection.promptFingerprint,
+      });
+    } catch {
+      // Capture is best-effort and must never change provider behavior.
     }
   }
 

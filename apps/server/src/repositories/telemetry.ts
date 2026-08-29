@@ -1,4 +1,10 @@
 import type { SqliteDb } from '../db/database.js';
+import type { RejectedCandidateFinding } from '../llm/provider.js';
+import type {
+  CandidateRepresentation,
+  RejectedGenerationArtifact,
+  RejectedGenerationArtifactInput,
+} from '../llm/rejectedArtifact.js';
 
 export type LogicalCallStatus = 'open' | 'completed' | 'failed' | 'cancelled';
 export type CacheLookupStatus = 'not_checked' | 'hit' | 'miss' | 'bypassed';
@@ -136,6 +142,32 @@ interface AttemptRow {
   error_message: string | null;
 }
 
+interface RejectedArtifactRow {
+  id: string;
+  logical_call_id: string;
+  attempt_id: string;
+  attempt_number: number;
+  attempt_kind: ModelCallAttempt['attemptKind'];
+  operation_kind: string;
+  schema_name: string;
+  created_at: string;
+  validation_kind: 'schema' | 'candidate';
+  failure_category: string;
+  repair_exhausted: number;
+  candidate_representation: CandidateRepresentation;
+  candidate_body: string | null;
+  candidate_bytes: number;
+  candidate_truncated: number;
+  candidate_content_hash: string | null;
+  finding_count: number;
+  findings: string;
+  prompt_fingerprint: string | null;
+  schema_fingerprint: string | null;
+  policy_fingerprint: string | null;
+  source_fingerprint: string | null;
+  validation_fingerprint: string | null;
+}
+
 interface UsageRow {
   id: string;
   attempt_id: string;
@@ -224,6 +256,42 @@ function rowToAttempt(row: AttemptRow): ModelCallAttempt {
     timeToFirstTokenMs: row.time_to_first_token_ms,
     errorCode: row.error_code,
     errorMessage: row.error_message,
+  };
+}
+
+function rowToRejectedArtifact(row: RejectedArtifactRow): RejectedGenerationArtifact {
+  let findings: RejectedCandidateFinding[] = [];
+  try {
+    const decoded: unknown = JSON.parse(row.findings);
+    if (Array.isArray(decoded)) findings = decoded as RejectedCandidateFinding[];
+  } catch {
+    // A malformed findings column must not make the whole artifact unreadable.
+  }
+  return {
+    id: row.id,
+    logicalCallId: row.logical_call_id,
+    attemptId: row.attempt_id,
+    attemptNumber: row.attempt_number,
+    attemptKind: row.attempt_kind,
+    operationKind: row.operation_kind,
+    schemaName: row.schema_name,
+    createdAt: row.created_at,
+    validationKind: row.validation_kind,
+    failureCategory: row.failure_category,
+    repairExhausted: row.repair_exhausted === 1,
+    candidate: {
+      representation: row.candidate_representation,
+      body: row.candidate_body,
+      bytes: row.candidate_bytes,
+      truncated: row.candidate_truncated === 1,
+      contentHash: row.candidate_content_hash,
+    },
+    findings,
+    promptFingerprint: row.prompt_fingerprint,
+    schemaFingerprint: row.schema_fingerprint,
+    policyFingerprint: row.policy_fingerprint,
+    sourceFingerprint: row.source_fingerprint,
+    validationFingerprint: row.validation_fingerprint,
   };
 }
 
@@ -446,6 +514,84 @@ export function createTelemetryRepo(db: SqliteDb) {
         )
         .all(logicalCallId) as AttemptRow[];
       return rows.map(rowToAttempt);
+    },
+
+    /**
+     * Retain one Tier-1 rejected candidate for local diagnosis.
+     *
+     * IDEMPOTENCY: one artifact per physical attempt. A repeated callback for the
+     * same attempt is ignored rather than creating an ambiguous duplicate, so the
+     * `attempt_id` uniqueness invariant always identifies exactly one candidate.
+     * Returns the artifact id when a row was written, otherwise undefined.
+     */
+    insertRejectedArtifact(
+      id: string,
+      artifact: RejectedGenerationArtifactInput,
+    ): string | undefined {
+      const changes = db
+        .prepare(
+          `INSERT OR IGNORE INTO rejected_generation_artifacts
+             (id, logical_call_id, attempt_id, attempt_number, attempt_kind, operation_kind,
+              schema_name, created_at, validation_kind, failure_category, repair_exhausted,
+              candidate_representation, candidate_body, candidate_bytes, candidate_truncated,
+              candidate_content_hash, finding_count, findings, prompt_fingerprint,
+              schema_fingerprint, policy_fingerprint, source_fingerprint, validation_fingerprint)
+           VALUES
+             (@id, @logicalCallId, @attemptId, @attemptNumber, @attemptKind, @operationKind,
+              @schemaName, @createdAt, @validationKind, @failureCategory, @repairExhausted,
+              @candidateRepresentation, @candidateBody, @candidateBytes, @candidateTruncated,
+              @candidateContentHash, @findingCount, @findings, @promptFingerprint,
+              @schemaFingerprint, @policyFingerprint, @sourceFingerprint, @validationFingerprint)`,
+        )
+        .run({
+          id,
+          logicalCallId: artifact.logicalCallId,
+          attemptId: artifact.attemptId,
+          attemptNumber: artifact.attemptNumber,
+          attemptKind: artifact.attemptKind,
+          operationKind: artifact.operationKind,
+          schemaName: artifact.schemaName,
+          createdAt: artifact.createdAt,
+          validationKind: artifact.validationKind,
+          failureCategory: artifact.failureCategory,
+          repairExhausted: artifact.repairExhausted ? 1 : 0,
+          candidateRepresentation: artifact.candidate.representation,
+          candidateBody: artifact.candidate.body,
+          candidateBytes: artifact.candidate.bytes,
+          candidateTruncated: artifact.candidate.truncated ? 1 : 0,
+          candidateContentHash: artifact.candidate.contentHash,
+          findingCount: artifact.findings.length,
+          findings: JSON.stringify(artifact.findings),
+          promptFingerprint: artifact.promptFingerprint,
+          schemaFingerprint: artifact.schemaFingerprint,
+          policyFingerprint: artifact.policyFingerprint,
+          sourceFingerprint: artifact.sourceFingerprint,
+          validationFingerprint: artifact.validationFingerprint,
+        }).changes;
+      return changes === 1 ? id : undefined;
+    },
+
+    getRejectedArtifact(id: string): RejectedGenerationArtifact | undefined {
+      const row = db.prepare('SELECT * FROM rejected_generation_artifacts WHERE id = ?').get(id) as
+        RejectedArtifactRow | undefined;
+      return row ? rowToRejectedArtifact(row) : undefined;
+    },
+
+    getRejectedArtifactByAttempt(attemptId: string): RejectedGenerationArtifact | undefined {
+      const row = db
+        .prepare('SELECT * FROM rejected_generation_artifacts WHERE attempt_id = ?')
+        .get(attemptId) as RejectedArtifactRow | undefined;
+      return row ? rowToRejectedArtifact(row) : undefined;
+    },
+
+    listRejectedArtifacts(logicalCallId: string): RejectedGenerationArtifact[] {
+      const rows = db
+        .prepare(
+          `SELECT * FROM rejected_generation_artifacts WHERE logical_call_id = ?
+           ORDER BY attempt_number ASC, created_at ASC`,
+        )
+        .all(logicalCallId) as RejectedArtifactRow[];
+      return rows.map(rowToRejectedArtifact);
     },
 
     markAttemptSent(id: string, sentAt: string): boolean {

@@ -98,11 +98,53 @@ export interface ProviderCallOptions {
    * Production callers must not expose this envelope to learners.
    */
   onStructuredOutputDiagnostic?: ((diagnostic: StructuredOutputDiagnostic) => void) | undefined;
+  /**
+   * Local-only diagnostic sink for a model candidate that local validation
+   * rejected. Observational: the implementation must never change provider
+   * behavior, repair budgets, error classification, or learner state, and any
+   * throw is swallowed by the provider.
+   */
+  onRejectedCandidate?: ((rejection: RejectedCandidateCapture) => void) | undefined;
   /** Final authority check immediately before successful ledger completion. */
   beforeTelemetryComplete?: (() => void) | undefined;
   /** Internal authoritative metadata for one logical provider inference. */
   telemetry?: ProviderTelemetryContext | undefined;
 }
+
+/**
+ * One rejected model candidate, reported at the moment local validation
+ * rejected it and before any repair attempt rotates physical identity.
+ *
+ * SECURITY: this envelope carries the exact rejected candidate for local
+ * diagnosis. It must never carry credentials, provider configuration, request
+ * headers, or raw prompt text — `promptFingerprint` is a digest, never content.
+ */
+export interface RejectedCandidateCapture {
+  /** Which local gate rejected the candidate. */
+  validationKind: ProviderRepairReason;
+  failureCategory: StructuredOutputFailureCategory;
+  /** True when no further bounded repair allowance remained. */
+  repairExhausted: boolean;
+  schemaName: string;
+  operationType: string | null;
+  attemptNumber: number;
+  attemptKind: 'original' | 'repair';
+  /**
+   * The exact rejected candidate as extracted from the provider response:
+   * parsed JSON when parsing succeeded, otherwise the raw response text.
+   */
+  candidate: unknown;
+  /** True when `candidate` is raw response text rather than parsed JSON. */
+  candidateIsRawText: boolean;
+  /** Bounded local validation findings for the rejected candidate. */
+  findings: RejectedCandidateFinding[];
+  /** Digest of the request messages. Never the message content itself. */
+  promptFingerprint: string | null;
+}
+
+export type RejectedCandidateFinding =
+  | { kind: 'schema'; path: string; code: string; message: string }
+  | { kind: 'semantic'; code: string; message?: string };
 
 export type ProviderRepairReason = 'schema' | 'candidate';
 
