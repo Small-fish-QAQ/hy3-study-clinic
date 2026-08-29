@@ -181,9 +181,12 @@ function rejectedCandidateFindings(failure: TryParseFailure): RejectedCandidateF
 }
 
 /**
- * Digest the request messages so a rejected candidate can be correlated with the
- * request that produced it. SECURITY: the digest never carries message content,
- * and headers/credentials are not part of the input.
+ * Digest the exact outbound message sequence of one physical provider attempt, so a
+ * rejected candidate can be correlated with the request that produced it. Repair
+ * attempts send a longer sequence than the original and therefore digest differently;
+ * grouping the attempts of one logical call is owned by logical_call_id, not by this
+ * digest. SECURITY: the digest never carries message content, and provider config,
+ * base URL, headers, and credentials are not part of the input.
  */
 function promptFingerprintOf(messages: ChatMessage[]): string {
   const digest = createHash('sha256');
@@ -223,6 +226,11 @@ interface ChatCompletionResponse {
 interface ChatCompletionResult {
   content: string;
   response: StructuredResponseMetadata;
+  /**
+   * Digest of the message sequence this physical attempt actually sent. Null when no
+   * rejected-candidate observer is attached, since nothing would consume it.
+   */
+  promptFingerprint: string | null;
   envelopeFailure?:
     | {
         category: 'PROVIDER_FORMAT_INCOMPATIBILITY';
@@ -1107,7 +1115,6 @@ export class Hy3Provider implements LlmProvider {
       parse: first.parse,
       repairAction: first.ok ? 'none' : first.repairable ? 'requested' : 'none',
     });
-    const promptFingerprint = opts?.onRejectedCandidate ? promptFingerprintOf(messages) : null;
     this.emitDiagnostic(
       opts,
       firstDiagnostic,
@@ -1117,7 +1124,7 @@ export class Hy3Provider implements LlmProvider {
             result: first,
             rawContent: original.content,
             repairExhausted: !first.repairable,
-            promptFingerprint,
+            promptFingerprint: original.promptFingerprint,
           },
     );
     if (first.ok) return first.value;
@@ -1219,7 +1226,7 @@ export class Hy3Provider implements LlmProvider {
             result: second,
             rawContent: repaired.content,
             repairExhausted: !independentRepairAllowed,
-            promptFingerprint,
+            promptFingerprint: repaired.promptFingerprint,
           },
     );
     if (second.ok) return second.value;
@@ -1292,7 +1299,7 @@ export class Hy3Provider implements LlmProvider {
               result: third,
               rawContent: independentlyRepaired.content,
               repairExhausted: true,
-              promptFingerprint,
+              promptFingerprint: independentlyRepaired.promptFingerprint,
             },
       );
       if (third.ok) return third.value;
@@ -1573,6 +1580,10 @@ export class Hy3Provider implements LlmProvider {
       return ProviderError.cancelled();
     };
 
+    // Digest the very array that is serialized into the request body below, so the
+    // fingerprint cannot drift from what this physical attempt actually sent.
+    const promptFingerprint = opts?.onRejectedCandidate ? promptFingerprintOf(messages) : null;
+
     try {
       opts?.onRequestSent?.();
       const response = await this.fetchImpl(
@@ -1631,6 +1642,7 @@ export class Hy3Provider implements LlmProvider {
             truncated: false,
             possiblyIncomplete: false,
           },
+          promptFingerprint,
           envelopeFailure: {
             category: 'PROVIDER_FORMAT_INCOMPATIBILITY',
             summary: '模型服务响应不是合法 JSON。',
@@ -1672,13 +1684,14 @@ export class Hy3Provider implements LlmProvider {
         return {
           content: '',
           response: baseResponse,
+          promptFingerprint,
           envelopeFailure: {
             category: 'PROVIDER_FORMAT_INCOMPATIBILITY',
             summary: '模型服务响应缺少字符串 message.content。',
           },
         };
       }
-      return { content, response: baseResponse };
+      return { content, response: baseResponse, promptFingerprint };
     } catch (err) {
       if (err instanceof ProviderError) throw err;
       if (controller.signal.aborted) throw abortError();

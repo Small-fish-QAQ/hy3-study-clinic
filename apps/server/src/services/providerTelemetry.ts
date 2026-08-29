@@ -44,11 +44,37 @@ interface TelemetryProviderSurface {
   readonly model?: string | undefined;
 }
 
+/**
+ * Why a rejected candidate was not retained. Content-free by construction: the
+ * signal carries identity and a failure class only, never candidate bodies,
+ * findings, prompts, source text, learner text, credentials, or response bodies.
+ */
+export interface RejectedArtifactCaptureFailureSignal {
+  event: 'rejected_artifact_capture_failed';
+  failure: 'persistence_error' | 'duplicate_suppressed' | 'observer_error';
+  logicalCallId: string;
+  attemptId: string;
+  attemptKind: string;
+  operationKind: string;
+}
+
+/**
+ * Default sink. Capture loss must be observable after a real provider run, so the
+ * absence of an artifact can be told apart from a broken capture path. `no-console`
+ * is disabled repository-wide and no logger reaches this boundary, so a single
+ * one-line structured warning is the least invasive honest option.
+ */
+function warnCaptureFailure(signal: RejectedArtifactCaptureFailureSignal): void {
+  console.warn(JSON.stringify(signal));
+}
+
 interface TelemetryProviderOptions<TProvider extends TelemetryProviderSurface> {
   repos: Repositories;
   clock: Clock;
   provider: TProvider;
   providerGeneration: () => number;
+  /** Override the content-free capture-failure sink; defaults to a structured warning. */
+  onRejectedArtifactCaptureFailure?: (signal: RejectedArtifactCaptureFailureSignal) => void;
 }
 
 /**
@@ -61,6 +87,7 @@ export function createTelemetryProvider<TProvider extends TelemetryProviderSurfa
   clock,
   provider,
   providerGeneration,
+  onRejectedArtifactCaptureFailure = warnCaptureFailure,
 }: TelemetryProviderOptions<TProvider>): TProvider {
   if ((provider as TProvider & { [TELEMETRY_PROVIDER]?: boolean })[TELEMETRY_PROVIDER]) {
     return provider;
@@ -187,8 +214,29 @@ export function createTelemetryProvider<TProvider extends TelemetryProviderSurfa
          * this feature existed.
          */
         const captureRejectedCandidate = (capture: RejectedCandidateCapture): void => {
+          /**
+           * Report capture loss without becoming a new failure mode: the sink itself
+           * is wrapped, so even a broken observer cannot reach the generation path.
+           */
+          const signalFailure = (
+            failure: RejectedArtifactCaptureFailureSignal['failure'],
+          ): void => {
+            try {
+              onRejectedArtifactCaptureFailure({
+                event: 'rejected_artifact_capture_failed',
+                failure,
+                logicalCallId,
+                attemptId,
+                attemptKind: capture.attemptKind,
+                operationKind: context.operationType,
+              });
+            } catch {
+              // Observability may not itself alter the operation.
+            }
+          };
+
           try {
-            repos.telemetry.insertRejectedArtifact(
+            const retainedId = repos.telemetry.insertRejectedArtifact(
               newId('llm_reject'),
               buildRejectedArtifactInput(capture, {
                 logicalCallId,
@@ -204,13 +252,18 @@ export function createTelemetryProvider<TProvider extends TelemetryProviderSurfa
                 validationFingerprint: null,
               }),
             );
+            // UNIQUE (attempt_id) suppressed the row: the artifact is absent even
+            // though nothing threw, so silence here would look like a clean capture.
+            if (retainedId === undefined) signalFailure('duplicate_suppressed');
           } catch {
             // Retention is diagnostic only and must never alter the operation.
+            signalFailure('persistence_error');
           }
           try {
             supplied.onRejectedCandidate?.(capture);
           } catch {
             // An observer's failure must not alter the operation either.
+            signalFailure('observer_error');
           }
         };
 

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import {
   CurriculumProposalPayloadSchema,
@@ -16,6 +17,7 @@ import { ProviderError } from './errors.js';
 import type {
   AssessmentProposalInput,
   CurriculumProposalInput,
+  RejectedCandidateCapture,
   RepairGenerationInput,
   StructuredOutputDiagnostic,
   StudyPlanProposalInput,
@@ -1653,7 +1655,10 @@ interface StrictRepairRun {
 }
 
 /** Drive the real complete()/tryParse() machinery over exact physical responses. */
-function runStrictEvaluation(responses: unknown[]): StrictRepairRun {
+function runStrictEvaluation(
+  responses: unknown[],
+  rejections?: RejectedCandidateCapture[],
+): StrictRepairRun {
   const fetchImpl = vi.fn();
   for (const response of responses) {
     fetchImpl.mockResolvedValueOnce(jsonResponse(JSON.stringify(response)));
@@ -1664,6 +1669,9 @@ function runStrictEvaluation(responses: unknown[]): StrictRepairRun {
     .evaluateObjectiveAuthoritySupport(strictEvaluationInput, {
       onRepairAttempt,
       onStructuredOutputDiagnostic: (diagnostic) => diagnostics.push(diagnostic),
+      ...(rejections
+        ? { onRejectedCandidate: (rejection) => void rejections.push(rejection) }
+        : {}),
       validateCandidate: (candidate) =>
         validateObjectiveAuthoritySemanticEvaluationProposal(strictEvaluationInput, candidate),
     })
@@ -1795,6 +1803,35 @@ describe('Hy3Provider objective semantic evaluator strict-output repair', () => 
         'supportGroups',
       ]);
     }
+  });
+
+  // N1: all three physical attempts of one logical call are separately identified.
+  it('fingerprints all three physical attempts by their own outbound sequences', async () => {
+    const rejections: RejectedCandidateCapture[] = [];
+    const run = runStrictEvaluation(
+      [
+        withUnknownKeyAt(0),
+        withCandidateFailureAtFirstObjective(),
+        withUnknownKeyAt(STRICT_EVALUATION_OBJECTIVE_COUNT - 1),
+      ],
+      rejections,
+    );
+    await expect(run.promise).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
+
+    const sent = run.requestBodies().map((body) => body.messages);
+    expect(sent).toHaveLength(3);
+    expect(rejections.map((rejection) => rejection.attemptNumber)).toEqual([1, 2, 3]);
+
+    const digest = (messages: Array<{ role: string; content: string }>): string => {
+      const hash = createHash('sha256');
+      for (const message of messages) {
+        hash.update(`${message.role}:${message.content.length}:${message.content}`);
+      }
+      return hash.digest('hex');
+    };
+    expect(rejections.map((rejection) => rejection.promptFingerprint)).toEqual(sent.map(digest));
+    // Three distinct outbound sequences yield three distinct digests.
+    expect(new Set(rejections.map((rejection) => rejection.promptFingerprint)).size).toBe(3);
   });
 
   it('states the exact normal-item key whitelist in the final cross-kind repair prompt', async () => {

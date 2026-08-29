@@ -138,7 +138,11 @@ export interface RejectedCandidateCapture {
   candidateIsRawText: boolean;
   /** Bounded local validation findings for the rejected candidate. */
   findings: RejectedCandidateFinding[];
-  /** Digest of the request messages. Never the message content itself. */
+  /**
+   * Digest of the exact outbound message sequence sent by the physical attempt that
+   * produced this candidate; repair attempts therefore differ from the original.
+   * Never the message content itself.
+   */
   promptFingerprint: string | null;
 }
 
