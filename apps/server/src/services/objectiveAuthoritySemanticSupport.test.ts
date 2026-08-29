@@ -16,6 +16,8 @@ import {
   OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_POLICY,
   assertCurriculumObjectiveAuthoritySemanticSupport,
   attachObjectiveAuthoritySemanticSupport,
+  boundaryRequiresFormalSemanticAuthority,
+  type ObjectiveAuthoritySemanticSupportBoundary,
   buildObjectiveAuthoritySemanticEvaluationBatches,
   buildObjectiveAuthoritySemanticEvaluationScopes,
   deriveEffectiveObjectiveSubjectClass,
@@ -120,6 +122,26 @@ function objective(overrides: Partial<CurriculumObjective> = {}): CurriculumObje
     formalEvidenceSourceBlockIds: ['block_3'],
     ...overrides,
   };
+}
+
+/**
+ * A Curriculum objective accepted before 2026-08-24, when the construct, the
+ * exact block binding, the tier, and the semantic artifact all landed together.
+ * It claims no Formal authority, so it is a teaching candidate and never a
+ * credit candidate.
+ */
+function legacyObjective(overrides: Partial<CurriculumObjective> = {}): CurriculumObjective {
+  const legacy = objective({
+    priority: 'normal',
+    formalAssessmentReady: false,
+    formalEvidenceSourceBlockIds: [],
+    ...overrides,
+  });
+  delete legacy.formalAssessmentConstruct;
+  delete legacy.authorityEnvelopeTier;
+  delete legacy.semanticSupport;
+  if (!('authoritySourceBlockIds' in overrides)) delete legacy.authoritySourceBlockIds;
+  return legacy;
 }
 
 function nodesFor(...objectives: CurriculumObjective[]): CurriculumNode[] {
@@ -1757,6 +1779,185 @@ describe('persisted objective-authority semantic support', () => {
     expect(validation.valid).toBe(false);
     expect(validation.diagnosticCodes).toContain('semantic_support_missing');
     expect(() => assertCurriculumObjectiveAuthoritySemanticSupport(legacy)).toThrow();
+  });
+
+  it('teaches legacy artifact-free Curriculum data while keeping every Formal boundary closed', () => {
+    const legacy = legacyObjective();
+    const combined = curriculum(nodesFor(legacy));
+
+    expect(
+      validateObjectiveAuthoritySemanticSupport(combined, [legacy], {}, 'lesson_provider'),
+    ).toEqual({ valid: true, diagnostics: [], diagnosticCodes: [] });
+    for (const boundary of ['proposal', 'acceptance', 'study_plan', 'route_activation'] as const) {
+      const validation = validateObjectiveAuthoritySemanticSupport(
+        combined,
+        [legacy],
+        {},
+        boundary,
+      );
+      expect(validation.valid, boundary).toBe(false);
+      expect(validation.diagnosticCodes, boundary).toEqual(
+        expect.arrayContaining(['semantic_support_missing', 'semantic_construct_missing']),
+      );
+    }
+    expect(boundaryRequiresFormalSemanticAuthority('lesson_provider')).toBe(false);
+    expect(validateObjectiveAuthoritySemanticSupport(combined, [legacy]).valid).toBe(false);
+  });
+
+  it('treats an absent exact block binding identically to an explicitly empty one at every boundary', () => {
+    const undefinedBinding = legacyObjective();
+    const emptyBinding = legacyObjective({ authoritySourceBlockIds: [] });
+    expect(undefinedBinding.authoritySourceBlockIds).toBeUndefined();
+    expect(emptyBinding.authoritySourceBlockIds).toEqual([]);
+
+    const scope = (
+      objectiveUnderTest: CurriculumObjective,
+      boundary: ObjectiveAuthoritySemanticSupportBoundary,
+    ) =>
+      validateObjectiveAuthoritySemanticSupport(
+        curriculum(nodesFor(objectiveUnderTest)),
+        [objectiveUnderTest],
+        {},
+        boundary,
+      );
+
+    for (const boundary of [
+      'lesson_provider',
+      'proposal',
+      'acceptance',
+      'study_plan',
+      'route_activation',
+    ] as const) {
+      expect(scope(undefinedBinding, boundary), boundary).toEqual(scope(emptyBinding, boundary));
+      expect(scope(undefinedBinding, boundary).diagnosticCodes, boundary).not.toContain(
+        'semantic_exact_block_binding_missing',
+      );
+    }
+    expect(scope(undefinedBinding, 'lesson_provider').valid).toBe(true);
+    expect(scope(undefinedBinding, 'acceptance').diagnosticCodes).toContain(
+      'semantic_support_missing',
+    );
+
+    // Absence is the empty envelope, not a licence: a present artifact bound to real
+    // blocks still contradicts that envelope, and teaching must reject it too.
+    const supported = objective();
+    const [batch] = batchesFor({ objectives: [supported] });
+    const attached = materializeAndAttach(
+      nodesFor(supported),
+      batch!,
+      singleEvaluation(batch!, { supportType: 'positioning' }),
+    );
+    const boundToRealBlocks = attached[0]!.learningUnit!.objectives[0]!;
+    delete boundToRealBlocks.authoritySourceBlockIds;
+    expect(boundToRealBlocks.semanticSupport!.boundSourceBlockIds.length).toBeGreaterThan(0);
+    expect(
+      validateObjectiveAuthoritySemanticSupport(
+        curriculum(attached),
+        [boundToRealBlocks],
+        {},
+        'lesson_provider',
+      ).diagnosticCodes,
+    ).toContain('semantic_source_binding_mismatch');
+  });
+
+  it('still refuses to teach a legacy objective that itself asserts Formal authority', () => {
+    const claimsFormal = legacyObjective({
+      formalAssessmentReady: true,
+      formalEvidenceSourceBlockIds: ['block_3'],
+    });
+    const validation = validateObjectiveAuthoritySemanticSupport(
+      curriculum(nodesFor(claimsFormal)),
+      [claimsFormal],
+      {},
+      'lesson_provider',
+    );
+
+    expect(validation.valid).toBe(false);
+    expect(validation.diagnosticCodes).toContain('semantic_formal_authority_envelope_mismatch');
+  });
+
+  it('still blocks a malformed present artifact at the teaching boundary', () => {
+    const supported = objective();
+    const [batch] = batchesFor({ objectives: [supported] });
+    const attached = materializeAndAttach(
+      nodesFor(supported),
+      batch!,
+      singleEvaluation(batch!, { supportType: 'positioning' }),
+    );
+    const corrupt = structuredClone(attached);
+    const corruptObjective = corrupt[0]!.learningUnit!.objectives[0]!;
+    delete (corruptObjective.semanticSupport as { verdict?: unknown }).verdict;
+
+    const validation = validateObjectiveAuthoritySemanticSupport(
+      curriculum(corrupt),
+      [corruptObjective],
+      {},
+      'lesson_provider',
+    );
+
+    expect(validation.valid).toBe(false);
+    expect(validation.diagnosticCodes).toContain('semantic_support_malformed');
+    expect(validation.diagnosticCodes).not.toContain('semantic_support_missing');
+  });
+
+  it('keeps a failed present artifact and stale authority fatal while teaching', () => {
+    const supported = objective();
+    const [batch] = batchesFor({ objectives: [supported] });
+    const failed = materializeAndAttach(
+      nodesFor(supported),
+      batch!,
+      singleEvaluation(batch!, { verdict: 'fail' }),
+    );
+    const failedObjective = failed[0]!.learningUnit!.objectives[0]!;
+    expect(
+      validateObjectiveAuthoritySemanticSupport(
+        curriculum(failed),
+        [failedObjective],
+        {},
+        'lesson_provider',
+      ).diagnosticCodes,
+    ).toContain('semantic_support_failed');
+
+    const stale = materializeAndAttach(
+      nodesFor(supported),
+      batch!,
+      singleEvaluation(batch!, { supportType: 'positioning' }),
+    );
+    const staleObjective = stale[0]!.learningUnit!.objectives[0]!;
+    staleObjective.semanticSupport!.propositionFingerprint = 'stale';
+    expect(
+      validateObjectiveAuthoritySemanticSupport(
+        curriculum(stale),
+        [staleObjective],
+        {},
+        'lesson_provider',
+      ).diagnosticCodes,
+    ).toContain('semantic_proposition_fingerprint_mismatch');
+  });
+
+  it('isolates a legacy teaching objective from an unrelated corrupt objective', () => {
+    const legacy = legacyObjective({ id: 'objective_legacy_scoped' });
+    const supported = objective({ id: 'objective_corrupt_neighbour' });
+    const [batch] = batchesFor({ objectives: [supported] });
+    const attached = materializeAndAttach(
+      nodesFor(supported),
+      batch!,
+      singleEvaluation(batch!, { supportType: 'positioning' }),
+    );
+    const neighbour = attached[0]!.learningUnit!.objectives[0]!;
+    delete (neighbour.semanticSupport as { verdict?: unknown }).verdict;
+    const combined = curriculum(nodesFor(legacy, neighbour));
+
+    expect(
+      validateObjectiveAuthoritySemanticSupport(combined, [legacy], {}, 'lesson_provider'),
+    ).toEqual({ valid: true, diagnostics: [], diagnosticCodes: [] });
+    expect(
+      validateObjectiveAuthoritySemanticSupport(combined, [neighbour], {}, 'lesson_provider')
+        .diagnosticCodes,
+    ).toContain('semantic_support_malformed');
+    expect(validateCurriculumObjectiveAuthoritySemanticSupport(combined).diagnosticCodes).toEqual(
+      expect.arrayContaining(['semantic_support_missing', 'semantic_support_malformed']),
+    );
   });
 
   it('fails when any exact authority record becomes non-blocking-eligible', () => {

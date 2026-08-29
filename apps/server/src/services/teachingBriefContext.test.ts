@@ -394,6 +394,62 @@ describe('Teaching Brief source context', () => {
     ).not.toContain(unselectedClaimId);
   });
 
+  it('teaches an artifact-free objective from exact manifest-confined text claiming no exact authority', () => {
+    const input = fixture();
+    const legacyObjective = input.curriculum.nodes[1]!.learningUnit!.objectives[0]!;
+    expect(legacyObjective.semanticSupport).toBeUndefined();
+
+    const context = buildTeachingBriefSourceContext({
+      ...input,
+      authorizedObjectiveIds: [legacyObjective.id],
+    });
+
+    expect(context.references.length).toBeGreaterThan(0);
+    const manifestBlockIds = new Set(
+      input.curriculum.executionSourceManifest.revisions.flatMap(
+        (revision) => revision.sourceBlockRevisionIds,
+      ),
+    );
+    const blockById = new Map(input.blocks.map((block) => [block.id, block]));
+    for (const reference of context.references) {
+      expect(reference.authorityClaimIds).toBeUndefined();
+      expect(manifestBlockIds.has(reference.sourceBlockId!)).toBe(true);
+      const block = blockById.get(reference.sourceBlockId!)!;
+      expect(block.content.slice(reference.startOffset, reference.endOffset)).toBe(reference.quote);
+      expect(block.revisionFingerprint).toBe(reference.sourceBlockRevisionFingerprint);
+    }
+    expect(context.offers.map((offer) => offer.text)).toEqual(
+      context.references.map((reference) => reference.quote),
+    );
+  });
+
+  it('refuses an artifact-free objective outside the LearningUnit and a failed present artifact', () => {
+    const input = fixture();
+    expect(() =>
+      buildTeachingBriefSourceContext({ ...input, authorizedObjectiveIds: ['objective_foreign'] }),
+    ).toThrow(/not part of this LearningUnit/u);
+
+    const failed = fixture();
+    const objective = failed.curriculum.nodes[1]!.learningUnit!.objectives[0]!;
+    const supported = makeSemanticallySupportedObjective(
+      {
+        ...objective,
+        truthAuthorityRecordIds: ['authority_1'],
+        formalAssessmentConstruct: 'explain',
+        authoritySourceBlockIds: ['block_a1'],
+        authorityClaimIds: ['claim_authority_1'],
+      },
+      'mechanism',
+    );
+    failed.curriculum.nodes[1]!.learningUnit!.objectives[0] = {
+      ...supported,
+      semanticSupport: { ...supported.semanticSupport!, verdict: 'fail' },
+    };
+    expect(() =>
+      buildTeachingBriefSourceContext({ ...failed, authorizedObjectiveIds: [objective.id] }),
+    ).toThrow(/lacks passing semantic source support/u);
+  });
+
   it('is deterministic and enforces exact block and byte budgets independently of corpus size', () => {
     const many = Array.from({ length: 80 }, (_, index) =>
       block({

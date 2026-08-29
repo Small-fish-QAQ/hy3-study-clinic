@@ -23,6 +23,7 @@ import {
   fingerprintObjectiveAuthorityProposition,
   objectiveAuthoritySemanticallySupportedClaimIds,
   validateCurriculumObjectiveAuthoritySemanticSupport,
+  validateObjectiveAuthoritySemanticSupport,
 } from './objectiveAuthoritySemanticSupport.js';
 import {
   serializedTeachingProviderSourceEnvelopeBytes,
@@ -1067,6 +1068,49 @@ function staleCurrentCurriculumSemanticSupport(harness: Harness, reason: string)
     .run(JSON.stringify(curriculum), curriculum.id);
 }
 
+/**
+ * Rewrite every route objective into the shape a Curriculum accepted before
+ * 2026-08-24 carries: no semantic-support artifact, no persisted construct, no
+ * persisted tier, no explicit exact block binding, and no Formal claim. The
+ * append-only support table is never read back on the teaching path, so the
+ * Curriculum payload is the whole of the objective's authority state.
+ */
+function makeCurrentRouteObjectivesArtifactFree(harness: Harness): string[] {
+  const curriculum = structuredClone(harness.repos.curricula.get(harness.curriculumId)!);
+  const planItem = harness.repos.studyPlans
+    .get(harness.planId)!
+    .items.find(
+      (item) =>
+        item.kind === 'teach_unit' && item.curriculumLearningUnitId === harness.learningUnitId,
+    )!;
+  const objectives = curriculum.nodes
+    .find((node) => node.id === harness.learningUnitId)!
+    .learningUnit!.objectives.filter((candidate) => planItem.objectiveIds.includes(candidate.id));
+  if (objectives.length === 0) throw new Error('Expected at least one route objective.');
+  for (const objective of objectives) {
+    delete objective.semanticSupport;
+    delete objective.formalAssessmentConstruct;
+    delete objective.authorityEnvelopeTier;
+    delete objective.authoritySourceBlockIds;
+    objective.priority = 'normal';
+    objective.formalAssessmentReady = false;
+    objective.formalEvidenceSourceBlockIds = [];
+  }
+  harness.db
+    .prepare('UPDATE curriculum_versions SET payload = ? WHERE id = ?')
+    .run(JSON.stringify(curriculum), curriculum.id);
+  // `curricula.get` rehydrates `semanticSupport` from the append-only support table
+  // rather than from the version payload, so the artifact only truly disappears once
+  // its row does. A genuine pre-artifact Curriculum simply never had one.
+  harness.db.exec('DROP TRIGGER IF EXISTS prevent_curriculum_objective_semantic_support_delete');
+  const deleteSupport = harness.db.prepare(
+    `DELETE FROM curriculum_objective_semantic_support
+     WHERE curriculum_id = ? AND objective_id = ?`,
+  );
+  for (const objective of objectives) deleteSupport.run(harness.curriculumId, objective.id);
+  return objectives.map((objective) => objective.id);
+}
+
 afterEach(() => {
   while (databases.length > 0) databases.pop()!.close();
 });
@@ -1312,6 +1356,81 @@ describe('Teaching Brief preparation', () => {
       ).toEqual({ logicalCalls: 0, attempts: 0 });
     });
   }
+
+  it('teaches an artifact-free legacy route at the honest teaching_only tier without Formal authority', async () => {
+    const harness = await createHarness();
+    const route = startTeachingRoute(harness);
+    const artifactFreeObjectiveIds = makeCurrentRouteObjectivesArtifactFree(harness);
+
+    // C1: the teaching-entry tier admits exactly this route, while every
+    // whole-Curriculum boundary stays closed on the same data.
+    const gateCurriculum = harness.repos.curricula.get(harness.curriculumId)!;
+    const gateObjectives = gateCurriculum.nodes
+      .find((node) => node.id === harness.learningUnitId)!
+      .learningUnit!.objectives.filter((candidate) =>
+        artifactFreeObjectiveIds.includes(candidate.id),
+      );
+    expect(
+      validateObjectiveAuthoritySemanticSupport(
+        gateCurriculum,
+        gateObjectives,
+        {
+          isBlockingEligible: (recordId) =>
+            harness.repos.sourceAuthority.isBlockingEligible(recordId),
+        },
+        'lesson_provider',
+      ),
+    ).toEqual({ valid: true, diagnostics: [], diagnosticCodes: [] });
+    expect(validateCurriculumObjectiveAuthoritySemanticSupport(gateCurriculum).valid).toBe(false);
+
+    const prepared = await harness.services.teachingBriefPreparation.prepare(
+      preparationRequest(harness, route, 'brief-artifact-free-1'),
+    );
+
+    expect(prepared.status).toBe('prepared');
+    expect(harness.provider.lessonContentCalls).toBe(1);
+    expect(harness.provider.practiceContentCalls).toBe(1);
+
+    // C5: the degraded tier is reported honestly rather than silently downgraded to
+    // `unavailable` or silently upgraded to a Formal tier.
+    const briefObjectives = prepared.brief.objective.objectives;
+    expect(briefObjectives.map((objective) => objective.id)).toEqual(artifactFreeObjectiveIds);
+    for (const objective of briefObjectives) {
+      expect(objective.authorityEnvelopeTier).toBe('teaching_only');
+      // C3: teaching runs on a derived construct, and that construct never buys
+      // Formal assessment authority.
+      expect(objective.construct).toBeTruthy();
+      // Preparation propagates the legacy Formal shape instead of recomputing or
+      // upgrading it. Actual credit refusal is proven at the credit boundary in
+      // `formalProgression.test.ts`, not here: this brief cannot grant credit.
+      expect(objective.formalAssessmentReady).toBe(false);
+      expect(objective.formalEvidenceSourceBlockIds).toEqual([]);
+    }
+
+    // C2: the teaching lane still reaches the provider, and every offer it carries is
+    // exactly quoted and manifest-confined.
+    const lessonOffers = harness.provider.lastLessonContentInput!.sourceContext.offers;
+    expect(lessonOffers.length).toBeGreaterThan(0);
+    const manifestBlockIds = new Set(
+      harness.repos.curricula
+        .get(harness.curriculumId)!
+        .executionSourceManifest.revisions.flatMap((revision) => revision.sourceBlockRevisionIds),
+    );
+    for (const offer of lessonOffers) {
+      // `authorizedObjectiveRefs` is claim-identity backed, so an artifact-free
+      // objective can never appear there: it owns no supported claim to match. That
+      // absence is exactly what keeps the teaching lane out of an exact envelope.
+      expect(offer.authorizedObjectiveRefs).toEqual([]);
+      const reference = prepared.brief.sourceReferences.find(
+        (candidate) => candidate.refId === offer.sourceRef,
+      )!;
+      expect(reference.authorityClaimIds ?? []).toEqual([]);
+      expect(manifestBlockIds.has(reference.sourceBlockId)).toBe(true);
+      const block = harness.repos.materials.getBlock(reference.sourceBlockId)!;
+      expect(block.content.slice(reference.startOffset, reference.endOffset)).toBe(reference.quote);
+      expect(offer.text).toBe(reference.quote);
+    }
+  });
 
   it('rejects corrupt Curriculum semantic support at the Lesson provider boundary without a model call', async () => {
     const harness = await createHarness();

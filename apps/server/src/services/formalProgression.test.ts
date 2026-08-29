@@ -2420,6 +2420,87 @@ describe('formal progression service', () => {
     expect(db.prepare('SELECT COUNT(*) AS n FROM mastery_states').get()).toEqual({ n: 0 });
   });
 
+  it('keeps Formal Credit for an artifact-free objective bound to premise authority alone', () => {
+    // `objective_synthesis_2` carries no semantic-support artifact and owns no row
+    // in the append-only support table, so it is exactly the legacy teaching shape
+    // the teaching-entry tier now admits. Formal credit is re-derived from the
+    // authority records at credit time, so relaxing the teaching gate must leave
+    // this decision byte-identical: authority still decides, the artifact never does.
+    const actions = installTwoUnitSynthesisRoute();
+    const secondObjective = repos.curricula
+      .get('curriculum_1')!
+      .nodes.find((node) => node.id === 'unit_2')!
+      .learningUnit!.objectives.find((objective) => objective.id === actions.secondObjectiveId)!;
+    expect(secondObjective.semanticSupport).toBeUndefined();
+    expect(
+      db
+        .prepare(
+          `SELECT COUNT(*) AS n FROM curriculum_objective_semantic_support
+           WHERE curriculum_id = ? AND objective_id = ?`,
+        )
+        .get('curriculum_1', actions.secondObjectiveId),
+    ).toEqual({ n: 0 });
+
+    const quizId = insertSynthesisQuiz(true);
+    const contracts = services.formalProgression.registerAssessmentContracts({
+      workspaceId: 'ws_1',
+      quizId,
+      agendaId: actions.agenda.id,
+      agendaItemId: actions.synthesisAgendaItemId,
+      assessmentKind: 'synthesis',
+      contractVersionId: 'contract_1',
+      curriculumVersionId: 'curriculum_1',
+      studyPlanVersionId: 'plan_1',
+      executionSourceManifestFingerprint: 'manifest-fp',
+    });
+    const artifactFreeContract = contracts.find(
+      (contract) => contract.primaryObjectiveId === actions.secondObjectiveId,
+    )!;
+    expect(artifactFreeContract.admissibilityTier).toBe('tier_1_authorized_truth');
+    expect(services.formalProgression.stateCreditingQuestionIdsForQuiz(quizId)).toEqual([
+      `${quizId}_q1`,
+      `${quizId}_q2`,
+    ]);
+  });
+
+  it('refuses Formal Credit for a teachable artifact-free objective before any state mutation', () => {
+    // Same artifact-free objective, but its premise authority goes stale after the
+    // contract is registered. Credit must fail closed at credit time and no mastery
+    // row may be written, proving the teaching tier grants no residual credit.
+    const actions = installTwoUnitSynthesisRoute();
+    const synthesis = insertSynthesisGrade(1);
+    const contracts = services.formalProgression.registerAssessmentContracts({
+      workspaceId: 'ws_1',
+      quizId: synthesis.quizId,
+      agendaId: actions.agenda.id,
+      agendaItemId: actions.synthesisAgendaItemId,
+      assessmentKind: 'synthesis',
+      contractVersionId: 'contract_1',
+      curriculumVersionId: 'curriculum_1',
+      studyPlanVersionId: 'plan_1',
+      executionSourceManifestFingerprint: 'manifest-fp',
+    });
+    expect(
+      contracts.every((contract) => contract.admissibilityTier === 'tier_1_authorized_truth'),
+    ).toBe(true);
+
+    db.prepare("UPDATE truth_authority_records SET validation_state = 'stale'").run();
+
+    expect(services.formalProgression.stateCreditingQuestionIdsForQuiz(synthesis.quizId)).toEqual(
+      [],
+    );
+    const reconciled = services.formalProgression.reconcileAfterGrading(synthesis.gradingResultId)!;
+    expect(
+      reconciled.evidence.every(
+        (evidence) =>
+          evidence.admissibilityTier === 'tier_1_authorized_truth' &&
+          evidence.stateCreditable === false,
+      ),
+    ).toBe(true);
+    expect(reconciled.reconciliations.every((entry) => entry.status === 'rejected')).toBe(true);
+    expect(db.prepare('SELECT COUNT(*) AS n FROM mastery_states').get()).toEqual({ n: 0 });
+  });
+
   it('applies eligible formal evidence once and preserves grading when a stale retry fails', () => {
     const grade = insertGrade('eligible', 1);
     const contracts = services.formalProgression.registerAssessmentContracts({

@@ -103,6 +103,24 @@ export interface ValidateCurriculumObjectiveAuthoritySemanticSupportOptions {
   isBlockingEligible?: ((authorityRecordId: string) => boolean) | undefined;
 }
 
+/** Every deterministic boundary that asserts objective-authority semantic support. */
+export type ObjectiveAuthoritySemanticSupportBoundary =
+  'proposal' | 'acceptance' | 'study_plan' | 'route_activation' | 'lesson_provider';
+
+/**
+ * The one authority-taxonomy split. Teaching entry keeps exact-quotation
+ * grounding, objective identity, proposition currency, and every
+ * artifact-present integrity rule. Formal boundaries additionally require the
+ * persisted construct, the explicit exact block-binding envelope, and a
+ * semantic-support artifact. Artifact ABSENCE is a lower authority tier;
+ * artifact INVALIDITY stays fatal at every boundary.
+ */
+export function boundaryRequiresFormalSemanticAuthority(
+  boundary: ObjectiveAuthoritySemanticSupportBoundary,
+): boolean {
+  return boundary !== 'lesson_provider';
+}
+
 function sha256(value: string): string {
   return createHash('sha256').update(value, 'utf8').digest('hex');
 }
@@ -1230,7 +1248,9 @@ function validateCurriculumObjectiveAuthoritySemanticSupportScope(
   curriculum: Curriculum,
   options: ValidateCurriculumObjectiveAuthoritySemanticSupportOptions = {},
   objectiveScope: ReadonlySet<CurriculumObjective> | null = null,
+  boundary: ObjectiveAuthoritySemanticSupportBoundary = 'acceptance',
 ): ProviderCandidateValidation {
+  const requiresFormalSemanticAuthority = boundaryRequiresFormalSemanticAuthority(boundary);
   const diagnostics: string[] = [];
   const diagnosticCodes: string[] = [];
   const add = (code: string, message: string): void => {
@@ -1242,16 +1262,11 @@ function validateCurriculumObjectiveAuthoritySemanticSupportScope(
       if (objectiveScope && !objectiveScope.has(objective)) continue;
       const objectiveDiagnosticStart = diagnostics.length;
       const proposition = curriculumObjectiveProposition(objective);
-      if (!objective.formalAssessmentConstruct) {
+      // Teaching derives its own construct; only Formal may assess one.
+      if (requiresFormalSemanticAuthority && !objective.formalAssessmentConstruct) {
         add(
           'semantic_construct_missing',
           `Objective ${objective.id} has no explicit assessment construct.`,
-        );
-      }
-      if (objective.authoritySourceBlockIds === undefined) {
-        add(
-          'semantic_exact_block_binding_missing',
-          `Objective ${objective.id} has no explicit exact source-block binding.`,
         );
       }
       if (objective.priority === 'required' && objective.formalAssessmentReady !== true) {
@@ -1260,6 +1275,10 @@ function validateCurriculumObjectiveAuthoritySemanticSupportScope(
           `Required objective ${objective.id} is not Formal-ready.`,
         );
       }
+      // Absence is the empty envelope, never its own defect: a presence check cannot
+      // distinguish "no authority" from "accepted before the field existed". An
+      // artifact that binds real blocks against an empty envelope still fails
+      // `semantic_source_binding_mismatch` below, at every boundary.
       const exactAuthoritySourceBlockIds = objective.authoritySourceBlockIds ?? [];
       const formalEvidenceSourceBlockIds = objective.formalEvidenceSourceBlockIds ?? [];
       const hasFormalAuthority =
@@ -1276,10 +1295,19 @@ function validateCurriculumObjectiveAuthoritySemanticSupportScope(
       }
       const parsed = ObjectiveAuthoritySemanticSupportSchema.safeParse(objective.semanticSupport);
       if (!parsed.success) {
-        add(
-          objective.semanticSupport ? 'semantic_support_malformed' : 'semantic_support_missing',
-          `Objective ${objective.id} has no valid semantic-support artifact.`,
-        );
+        // Absence downgrades the teaching authority tier. A malformed artifact is
+        // integrity corruption and must never degrade into "artifact absent".
+        if (objective.semanticSupport) {
+          add(
+            'semantic_support_malformed',
+            `Objective ${objective.id} has no valid semantic-support artifact.`,
+          );
+        } else if (requiresFormalSemanticAuthority) {
+          add(
+            'semantic_support_missing',
+            `Objective ${objective.id} has no valid semantic-support artifact.`,
+          );
+        }
         continue;
       }
       const artifact = parsed.data;
@@ -1492,11 +1520,13 @@ export function validateObjectiveAuthoritySemanticSupport(
   curriculum: Curriculum,
   objectives: readonly CurriculumObjective[],
   options: ValidateCurriculumObjectiveAuthoritySemanticSupportOptions = {},
+  boundary: ObjectiveAuthoritySemanticSupportBoundary = 'acceptance',
 ): ProviderCandidateValidation {
   return validateCurriculumObjectiveAuthoritySemanticSupportScope(
     curriculum,
     options,
     new Set(objectives),
+    boundary,
   );
 }
 
@@ -1534,26 +1564,34 @@ export function assertCurriculumObjectiveAuthoritySemanticSupport(
 export function assertCurrentCurriculumObjectiveAuthoritySemanticSupport(
   curriculum: Curriculum,
   options: ValidateCurriculumObjectiveAuthoritySemanticSupportOptions & {
-    boundary: 'proposal' | 'acceptance' | 'study_plan' | 'route_activation';
+    boundary: Exclude<ObjectiveAuthoritySemanticSupportBoundary, 'lesson_provider'>;
   },
 ): void {
   const validation = validateCurriculumObjectiveAuthoritySemanticSupport(curriculum, options);
   assertCurrentObjectiveAuthoritySemanticSupportValidation(validation, options.boundary);
 }
 
-/** Validate all and only the objectives bound to the exact active Lesson route. */
+/**
+ * Validate all and only the objectives bound to the exact active Lesson route,
+ * at the teaching-entry tier. Formal credit stays independently fail-closed.
+ */
 export function assertCurrentLessonObjectiveAuthoritySemanticSupport(
   curriculum: Curriculum,
   objectives: readonly CurriculumObjective[],
   options: ValidateCurriculumObjectiveAuthoritySemanticSupportOptions,
 ): void {
-  const validation = validateObjectiveAuthoritySemanticSupport(curriculum, objectives, options);
+  const validation = validateObjectiveAuthoritySemanticSupport(
+    curriculum,
+    objectives,
+    options,
+    'lesson_provider',
+  );
   assertCurrentObjectiveAuthoritySemanticSupportValidation(validation, 'lesson_provider');
 }
 
 function assertCurrentObjectiveAuthoritySemanticSupportValidation(
   validation: ProviderCandidateValidation,
-  boundary: 'proposal' | 'acceptance' | 'study_plan' | 'route_activation' | 'lesson_provider',
+  boundary: ObjectiveAuthoritySemanticSupportBoundary,
 ): void {
   if (validation.valid) return;
   throw new AppError(

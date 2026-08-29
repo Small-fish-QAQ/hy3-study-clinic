@@ -6,6 +6,7 @@ import {
   TeachingBriefSchema,
   projectAcceptedLessonSegments,
   type AcceptedLessonCheckpoint,
+  type CurriculumAuthorityEnvelopeTier,
   type SourceBlockRevision,
   type CurriculumObjective,
   type TeachingBriefObjective,
@@ -508,12 +509,30 @@ export function createTeachingBriefPreparationService({
     ) => {
       const reference = context.references.find((candidate) => candidate.refId === offer.sourceRef);
       if (!reference) return false;
+      if (!objective.semanticSupport) {
+        // Teaching-only lane: exact current source text that carries no claim
+        // identity, so it can never reach another objective's exact envelope.
+        return !reference.authorityClaimIds?.length;
+      }
       const supportedClaimIds = supportedClaimIdsByObjective.get(objective.id);
       return (
         Boolean(reference.authorityClaimIds?.length) &&
         reference.authorityClaimIds!.some((claimId) => supportedClaimIds?.has(claimId))
       );
     };
+    /**
+     * An objective with no semantic-support artifact but real exact-quotation
+     * teaching context is teaching_only, never unavailable and never formal. A
+     * persisted tier always wins, so formal authority is never upgraded here.
+     */
+    const teachingAuthorityEnvelopeTier = (
+      objective: CurriculumObjective,
+    ): CurriculumAuthorityEnvelopeTier | undefined =>
+      objective.authorityEnvelopeTier ??
+      (!objective.semanticSupport &&
+      context.offers.some((offer) => isSourceAuthorizedForObjective(offer, objective))
+        ? 'teaching_only'
+        : undefined);
     const providerObjectives: TeachingBriefGenerationInput['learningUnit']['objectives'] =
       route.routeObjectives.map((objective, index) => ({
         objectiveRef: `O${index + 1}`,
@@ -521,7 +540,7 @@ export function createTeachingBriefPreparationService({
         description: objective.description,
         priority: objective.priority ?? 'normal',
         construct: teachingConstruct(objective),
-        authorityEnvelopeTier: objective.authorityEnvelopeTier ?? 'unavailable',
+        authorityEnvelopeTier: teachingAuthorityEnvelopeTier(objective) ?? 'unavailable',
         practiceAuthority:
           context.offers.some((offer) => isSourceAuthorizedForObjective(offer, objective)) &&
           objective.formalAssessmentConstruct &&
@@ -728,10 +747,12 @@ export function createTeachingBriefPreparationService({
 
   function derivedObjective(
     route: ReturnType<typeof routeContext>,
+    input: TeachingBriefGenerationInput,
     skeleton: TeachingSkeleton,
   ): TeachingBriefObjective[] {
     return route.routeObjectives.map((objective, index) => {
       const planned = skeleton.objectives[index]!;
+      const providerTier = input.learningUnit.objectives[index]!.authorityEnvelopeTier;
       return {
         id: objective.id,
         title: objective.title,
@@ -739,7 +760,11 @@ export function createTeachingBriefPreparationService({
         priority: planned.priority,
         formalAssessmentReady: objective.formalAssessmentReady,
         construct: planned.construct,
-        authorityEnvelopeTier: objective.authorityEnvelopeTier,
+        // Record the honest degraded tier without inventing one where no exact
+        // teaching grounding exists.
+        authorityEnvelopeTier:
+          objective.authorityEnvelopeTier ??
+          (providerTier === 'teaching_only' ? providerTier : undefined),
         formalEvidenceSourceBlockIds: objective.formalEvidenceSourceBlockIds,
       };
     });
@@ -789,7 +814,7 @@ export function createTeachingBriefPreparationService({
       objective: {
         title: route.node.title,
         whyNow: route.agendaItem.reason,
-        objectives: derivedObjective(route, skeleton),
+        objectives: derivedObjective(route, input, skeleton),
       },
       prerequisites: derivedPrerequisites(route, input),
       formalOpportunities: [],

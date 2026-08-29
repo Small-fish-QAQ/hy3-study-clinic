@@ -222,7 +222,17 @@ export function buildTeachingBriefSourceContext({
     const objective = node.learningUnit.objectives.find(
       (candidate) => candidate.id === objectiveId,
     );
-    if (!objective?.semanticSupport || objective.semanticSupport.verdict !== 'pass') {
+    if (!objective) {
+      throw new Error('Teaching Brief authorized objective is not part of this LearningUnit.');
+    }
+    if (!objective.semanticSupport) {
+      // No artifact exists: this objective teaches from the exact-quotation,
+      // manifest-confined context lane below and claims no exact authority.
+      // A present-but-failing artifact is integrity corruption and still throws.
+      exactCandidateKeysByObjective.set(objectiveId, []);
+      continue;
+    }
+    if (objective.semanticSupport.verdict !== 'pass') {
       throw new Error('Teaching Brief objective lacks passing semantic source support.');
     }
     const selectedClaimIds = new Set(objective.authorityClaimIds ?? []);
