@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   ASSESSMENT_INTENT_POLICY_VERSION,
+  MASTERY_RED_TEAM_MAX_OVERLAP,
   RepairDiagnosticCategorySchema,
   repairCheckIntentLadderFor,
   repairInterventionFor,
@@ -9,6 +10,7 @@ import {
   type GradeRecord,
 } from '@hy3-clinic/shared';
 import { INTERVENTION_LABELS } from './learnerAssessments.js';
+import { lexicalChallengeOverlap } from './masteryRedTeamPolicy.js';
 import { openDatabase, type SqliteDb } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
 import { FakeProvider, type FakeRepairFixture } from '../llm/fakeProvider.js';
@@ -16,6 +18,7 @@ import { createRepositories, type Repositories } from '../repositories/index.js'
 import { fixedClock } from '../util/ids.js';
 import { makeBlock, makeMaterial, makeWorkspace, T0 } from '../testing/fixtures.js';
 import {
+  MAX_REPAIR_VERIFICATION_FAILURES,
   createRepairService,
   diagnosisFromGrade,
   repairDifferentiationContext,
@@ -404,18 +407,35 @@ describe('differentiated Repair remediation', () => {
     ).rejects.toThrow();
   });
 
-  it('T6/A21A rejects the same assessment intent when an alternative exists', async () => {
+  it('T6/A21A rejects a repeated assessment intent only while an alternative exists', async () => {
     const svc = service();
     const episode = svc.createForGrade('grade_1')!;
     const first = await svc.generatePacket(episode.id);
     failVerification(episode.id);
 
-    // Adversarial A: same intent, rewritten wording.
+    // Round 1: an alternative intent is still available, so replaying round 0's
+    // intent is a genuine fault. Adversarial A: same intent, rewritten wording.
+    await expect(service('repeated_intent_exhausted').generatePacket(episode.id)).rejects.toThrow();
+    // Rejection is state-neutral, so this round is still generatable — which is
+    // what makes the control below meaningful.
+    expect(repos.repair.listPackets(episode.id)).toHaveLength(1);
+
+    // Control for that rejection: with the fault removed, the very same round
+    // generates. The rejection above is therefore caused by the repeated intent
+    // and not by an ambient failure to generate at this round at all.
     const repaired = await service('repeated_intent_once').generatePacket(episode.id);
     expect(repaired.checkIntent).not.toBe(first.checkIntent);
 
     failVerification(episode.id);
-    await expect(service('repeated_intent_exhausted').generatePacket(episode.id)).rejects.toThrow();
+    // Round 2: the intent ladder is now exhausted, so local policy itself
+    // requires reusing the first intent. Returning it is no longer a fault, and
+    // differentiation rests on the concrete check instead. That is the semantic
+    // distinction this assertion exists to pin: the rejection above was
+    // conditional on an alternative existing, not a blanket ban on reuse.
+    const third = await service().generatePacket(episode.id);
+    expect(third.checkIntent).toBe(first.checkIntent);
+    expect(third.practicePrompt).not.toBe(first.practicePrompt);
+    expect(third.attemptOrdinal).toBe(2);
   });
 
   it('T9/A21B rejects a repeated concrete check even under a new intent label', async () => {
@@ -599,49 +619,202 @@ describe('differentiated Repair remediation', () => {
   });
 
   it('T8/A21E falls back rather than dead-ending when no alternative intent exists', () => {
-    // SURFACE_SLIP has one legitimate intent. Exhausting it must not block
-    // remediation; the strategy axis carries the differentiation instead.
+    // INCOMPLETE_EXPRESSION is reachable as an episode diagnosis and its intent
+    // ladder (2) is shorter than its strategy ladder (3), so the intent axis
+    // genuinely exhausts first while remediation must still continue. History
+    // here is exactly what rounds 0 and 1 of that diagnosis leave behind.
+    // SURFACE_SLIP is deliberately not used: diagnosisFromGrade remaps it to
+    // UNCERTAIN, so it can never be an episode's diagnosis.
+    const priorInterventionModes = ['TARGETED_PROMPT', 'SCAFFOLD'] as const;
+    const priorCheckIntents = ['discriminative_follow_up', 'boundary_conditions'] as const;
     const requirement = selectRepairDifferentiation({
-      category: 'SURFACE_SLIP',
-      priorInterventionModes: ['NOTICE'],
-      priorCheckIntents: ['discriminative_follow_up'],
+      category: 'INCOMPLETE_EXPRESSION',
+      priorInterventionModes,
+      priorCheckIntents,
     });
     expect(requirement.checkIntentLadderExhausted).toBe(true);
     expect(requirement.requiredCheckIntent).toBe('discriminative_follow_up');
-    expect(requirement.requiredInterventionMode).not.toBe('NOTICE');
+    // The strategy axis is what still carries differentiation here.
+    expect(requirement.interventionLadderExhausted).toBe(false);
+    expect(priorInterventionModes).not.toContain(requirement.requiredInterventionMode);
 
-    // Same broad intent is permitted here, and the structural fence still runs.
+    const history = {
+      priorInterventionModes: [...priorInterventionModes],
+      priorCheckIntents: [...priorCheckIntents],
+      priorCheckPrompts: [
+        'Name the capacity limit of working memory.',
+        'Give the boundary conditions for that limit.',
+      ],
+    };
+    const failedPrompt = 'Explain why working memory is limited.';
+
+    // Reusing the exhausted intent is permitted, and the structural fence still runs.
     const accepted = validateRepairDifferentiation({
       requirement,
-      history: {
-        priorInterventionModes: ['NOTICE'],
-        priorCheckIntents: ['discriminative_follow_up'],
-        priorCheckPrompts: ['Name the capacity limit of working memory.'],
-      },
+      history,
       candidate: {
         interventionMode: requirement.requiredInterventionMode,
         checkIntent: 'discriminative_follow_up',
-        practicePrompt: 'Give the boundary where this stops holding, and say why.',
+        practicePrompt: 'Work through one concrete case and write out each step you used.',
       },
-      failedPrompt: 'Explain why working memory is limited.',
+      failedPrompt,
     });
     expect(accepted.diagnostics).toEqual([]);
 
     const repeated = validateRepairDifferentiation({
       requirement,
-      history: {
-        priorInterventionModes: ['NOTICE'],
-        priorCheckIntents: ['discriminative_follow_up'],
-        priorCheckPrompts: ['Name the capacity limit of working memory.'],
-      },
+      history,
       candidate: {
         interventionMode: requirement.requiredInterventionMode,
         checkIntent: 'discriminative_follow_up',
         practicePrompt: 'Name the capacity limit of working memory.',
       },
-      failedPrompt: 'Explain why working memory is limited.',
+      failedPrompt,
     });
     expect(repeated.diagnosticCodes).toContain('repair_check_prompt_repeated');
+  });
+
+  it('N-REPAIRROUND3 walks every reachable diagnosis through three successful rounds', async () => {
+    // The lifecycle allows MAX_REPAIR_VERIFICATION_FAILURES rounds, so ordinals
+    // 0..2 are all reachable and every one of them must be able to generate.
+    // Several diagnoses have a shorter intent ladder than strategy ladder, so
+    // round 2 legally reuses the first intent; the offline provider must still
+    // produce a materially different check rather than replaying round 0.
+    let ordinal = 1;
+    for (const requested of RepairDiagnosticCategorySchema.options) {
+      ordinal += 1;
+      const attemptId = `attempt_${requested}`;
+      const gradeId = `grade_${requested}`;
+      repos.formalAssessments.insertAttempt({
+        id: attemptId,
+        assessmentVersionId: 'version_1',
+        workspaceId: 'ws_1',
+        ordinal,
+        status: 'submitted',
+        responses: { item_1: 'Some answer' },
+        startedAt: T0,
+        submittedAt: T0,
+        cancelledAt: null,
+      });
+      repos.formalAssessments.insertGrade(
+        grade({
+          id: gradeId,
+          attemptId,
+          judgment: {
+            score: 0.5,
+            criterionResults: [{ criterionId: 'criterion_1', result: 'partial' }],
+            feedback: 'Partial.',
+            diagnostic: {
+              category: requested,
+              affectedCriterionIds: ['criterion_1'],
+              summary: 'Needs the capacity limit stated.',
+              uncertainty: 0.1,
+            },
+          },
+        }),
+      );
+      const episode = service().createForGrade(gradeId)!;
+      const prompts: string[] = [];
+      for (let round = 0; round < MAX_REPAIR_VERIFICATION_FAILURES; round++) {
+        const packet = await service().generatePacket(episode.id);
+        expect(
+          packet.attemptOrdinal,
+          `${requested} round ${round} generated at the wrong ordinal`,
+        ).toBe(round);
+        prompts.push(packet.practicePrompt);
+        if (round < MAX_REPAIR_VERIFICATION_FAILURES - 1) failVerification(episode.id);
+      }
+      // Three distinct concrete checks, which is the learner-visible guarantee.
+      expect(new Set(prompts).size, `${requested} repeated a concrete check`).toBe(prompts.length);
+    }
+  });
+
+  it('N-REPAIRINTENTSCOPE keeps the current round fixed when intent state changes mid-round', async () => {
+    // IRRELEVANT_OR_GUESSING is the only diagnosis whose intent ladder contains
+    // a family assessment_item_intents can actually hold (representation_shift),
+    // because AssessmentIntentSelection binds family 1:1 to selectionReason. Any
+    // other diagnosis would make the planted row inert and the test vacuous.
+    repos.formalAssessments.insertAttempt({
+      id: 'attempt_guessing',
+      assessmentVersionId: 'version_1',
+      workspaceId: 'ws_1',
+      ordinal: 2,
+      status: 'submitted',
+      responses: { item_1: 'Some answer' },
+      startedAt: T0,
+      submittedAt: T0,
+      cancelledAt: null,
+    });
+    repos.formalAssessments.insertGrade(
+      grade({
+        id: 'grade_guessing',
+        attemptId: 'attempt_guessing',
+        judgment: {
+          score: 0,
+          criterionResults: [{ criterionId: 'criterion_1', result: 'not_met' }],
+          feedback: 'Off target.',
+          diagnostic: {
+            category: 'IRRELEVANT_OR_GUESSING',
+            affectedCriterionIds: ['criterion_1'],
+            summary: 'The response did not engage the required idea.',
+            uncertainty: 0.1,
+          },
+        },
+      }),
+    );
+    let calls = 0;
+    const provider = new FakeProvider({});
+    const original = provider.generateRepair.bind(provider);
+    provider.generateRepair = async (input, opts) => {
+      calls++;
+      return original(input, opts);
+    };
+    const svc = createRepairService({ repos, provider, clock: fixedClock(T0) });
+    const episode = svc.createForGrade('grade_guessing')!;
+    expect(episode.diagnosticCategory).toBe('IRRELEVANT_OR_GUESSING');
+    await svc.generatePacket(episode.id);
+    failVerification(episode.id);
+    const current = await svc.generatePacket(episode.id);
+    const callsBefore = calls;
+
+    // assessment_item_intents carries no round identity, so a qualifying row can
+    // appear at any moment. Planting one for this same target mid-round must not
+    // move the round's requirement, spend another provider call, or add a packet.
+    repos.formalAssessments.insertVersion({
+      id: 'version_same',
+      definitionId: 'definition_1',
+      version: 2,
+      predecessorId: 'version_1',
+      status: 'accepted',
+      items: [item('item_same', 'unit_1', revisionId)],
+      sourceRevisionIds: [revisionId],
+      createdAt: T0,
+      acceptedAt: T0,
+    });
+    db.prepare(
+      `INSERT INTO assessment_item_intents (
+        id, workspace_id, assessment_version_id, item_id, assessment_stage,
+        policy_version, requested_challenge_family, requested_representation,
+        selection_reason, created_at
+      ) VALUES ('intent_same', 'ws_1', 'version_same', 'item_same', 'targeted_repair', ?,
+                'representation_shift', 'application', 'representation_diversity_missing', ?)`,
+    ).run(ASSESSMENT_INTENT_POLICY_VERSION, T0);
+
+    const again = await svc.generatePacket(episode.id);
+    expect(again.id).toBe(current.id);
+    expect(again.generationKey).toBe(current.generationKey);
+    expect(calls).toBe(callsBefore);
+    expect(repos.repair.listPackets(episode.id)).toHaveLength(2);
+
+    // The next round is a new decision point and may legitimately see the new
+    // intent state: round scoping bounds when it is read, it does not ignore it.
+    failVerification(episode.id);
+    const next = await svc.generatePacket(episode.id);
+    expect(next.attemptOrdinal).toBe(2);
+    expect(calls).toBe(callsBefore + 1);
+    expect(
+      repairDifferentiationContext({ repos, episode: svc.get(episode.id) }).priorCheckIntents,
+    ).toContain('representation_shift');
   });
 
   it('A21D rejects a permitted strategy paired with an unrequested intent', () => {
@@ -830,5 +1003,60 @@ describe('Fake Repair provider contract', () => {
         },
       ),
     ).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
+  });
+
+  it('varies the check when local policy legally reuses an exhausted intent', async () => {
+    const provider = new FakeProvider();
+    const first = await provider.generateRepair(input);
+    // Same required intent, but this learner has already been asked it once —
+    // which is what an exhausted ladder produces. A check keyed on the intent
+    // alone would replay the first sentence and be correctly rejected as a
+    // repeat, dead-ending remediation inside its own round budget.
+    const reused = await provider.generateRepair({
+      ...input,
+      requiredInterventionMode: 'RETEACH_RETRIEVAL',
+      priorInterventionModes: ['TARGETED_PROMPT', 'SCAFFOLD'],
+      priorCheckIntents: ['discriminative_follow_up', 'boundary_conditions'],
+      priorCheckPrompts: [first.practicePrompt],
+    });
+    expect(reused.checkIntent).toBe(first.checkIntent);
+    expect(reused.practicePrompt).not.toBe(first.practicePrompt);
+    expect(lexicalChallengeOverlap(reused.practicePrompt, first.practicePrompt)).toBeLessThan(
+      MASTERY_RED_TEAM_MAX_OVERLAP,
+    );
+    // Deterministic: the same inputs must always give the same check.
+    const again = await provider.generateRepair({
+      ...input,
+      requiredInterventionMode: 'RETEACH_RETRIEVAL',
+      priorInterventionModes: ['TARGETED_PROMPT', 'SCAFFOLD'],
+      priorCheckIntents: ['discriminative_follow_up', 'boundary_conditions'],
+      priorCheckPrompts: [first.practicePrompt],
+    });
+    expect(again.practicePrompt).toBe(reused.practicePrompt);
+  });
+
+  it('bounds the shared rubric fragment so it cannot dominate the repetition fence', async () => {
+    // The rubric fragment is identical across every check for one criterion, so
+    // an unbounded long criterion swamps the n-gram comparison and makes two
+    // genuinely different task sentences look like a replay. Production overlap
+    // validation is unchanged; the fixture is what must not manufacture a
+    // false positive.
+    const longCriterion =
+      'Explains completely that the capacity limit of working memory is about four chunks, and ' +
+      'why that limit varies with chunking strategy, attention allocation and interference, and ' +
+      'how it differs from long term memory storage in both duration and capacity terms';
+    const provider = new FakeProvider();
+    const withIntent = async (requiredCheckIntent: 'discriminative_follow_up' | 'counterexample') =>
+      (
+        await provider.generateRepair({
+          ...input,
+          requiredCheckIntent,
+          affectedCriteria: [longCriterion],
+        })
+      ).practicePrompt;
+    const a = await withIntent('discriminative_follow_up');
+    const b = await withIntent('counterexample');
+    expect(a).not.toBe(b);
+    expect(lexicalChallengeOverlap(a, b)).toBeLessThan(MASTERY_RED_TEAM_MAX_OVERLAP);
   });
 });

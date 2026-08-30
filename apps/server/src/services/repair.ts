@@ -345,6 +345,18 @@ export function createRepairService({
           );
         }
       }
+      // One episode plus one remediation round yields at most one authoritative
+      // packet. The differentiation context below reads durable state that is
+      // NOT round-stamped — `assessment_item_intents` carries no round identity
+      // and can gain a qualifying row mid-round — so recomputing the
+      // requirement first would let external state shift the current round's
+      // requirement, miss the generation-key cache, and spend a second provider
+      // call inside one round. The round is identified by the packet's own
+      // `attemptOrdinal`, never by `created_at` or list position.
+      const currentRoundPacket = repos.repair
+        .listPackets(id)
+        .find((packet) => packet.attemptOrdinal === episode.attemptCount);
+      if (currentRoundPacket) return currentRoundPacket;
       // Differentiation context is derived before the generation key, because
       // the key must change when the required strategy/intent changes —
       // otherwise a repeat round would return the previous packet verbatim.

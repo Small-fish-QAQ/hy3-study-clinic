@@ -367,6 +367,32 @@ const REPAIR_STRATEGY_OPENERS: Record<string, string> = {
   CLARIFY: '澄清这次回答中不确定的地方',
 };
 
+/**
+ * Re-ask phrasings for an intent the local ladder has legally reused after
+ * exhausting its alternatives. Indexed by how many times this learner has
+ * already been asked this same intent, so a later round asks the same broad
+ * thing a materially different way instead of replaying the earlier sentence.
+ *
+ * Index 0 is unused: on first use the base task below is returned verbatim, so
+ * first-round output is unchanged. A real provider gets `priorCheckPrompts` and
+ * an instruction not to replay them; this is the offline equivalent.
+ */
+const REPAIR_CHECK_REASK_TASKS: readonly string[] = [
+  '',
+  '这次请自己举一个具体情形，用它把同一个判断重新做一遍，并写出中间的推理步骤',
+  '这次请先写下你使用的判断标准，再用这个标准去检验一个你认为最难判断的情形',
+  '这次请把同一个判断改写成一段可以直接教给同学的说明，并标出最容易出错的地方',
+];
+
+/**
+ * Upper bound on the rubric fragment appended to a fake check. The fragment is
+ * shared by every check for one criterion, so an unbounded one dominates n-gram
+ * overlap and can push two genuinely different task sentences over the
+ * repetition fence. Bounding it here keeps the fixture honest; the production
+ * overlap validation is unchanged.
+ */
+const FAKE_CHECK_CRITERION_CHARS = 32;
+
 /** Distinct check task per assessment intent, so an intent change is visible. */
 const REPAIR_CHECK_TASKS: Record<string, string> = {
   discriminative_follow_up: '请说明这个概念与最接近的相邻概念之间的判别依据',
@@ -709,19 +735,39 @@ export class FakeProvider implements LlmProvider {
   ): Promise<RepairGenerationPayload> {
     await this.gate(opts);
     const mode = input.requiredInterventionMode;
-    // Deterministic per-(mode, intent) check so a differentiated round produces
-    // a materially different prompt instead of a reworded copy of the failure.
+    // How many times this learner has already been asked this same intent. The
+    // local ladder legally reuses its first intent once the alternatives are
+    // exhausted, so keying the check on the intent alone would reproduce the
+    // earlier round's sentence byte-for-byte and be correctly rejected as a
+    // repeat. Derived from the bounded history the contract already supplies.
+    const intentReuseCount = input.priorCheckIntents.filter(
+      (intent) => intent === input.requiredCheckIntent,
+    ).length;
+    const baseTask = REPAIR_CHECK_TASKS[input.requiredCheckIntent] ?? '换一个角度作答';
+    const task =
+      intentReuseCount === 0
+        ? baseTask
+        : REPAIR_CHECK_REASK_TASKS[
+            Math.min(intentReuseCount, REPAIR_CHECK_REASK_TASKS.length - 1)
+          ]!;
+    // Bounded so one long rubric criterion cannot dominate the comparison and
+    // make two different task sentences look like a repeat. Marked when cut, so
+    // a truncated fragment does not read as a corrupted criterion.
+    const fullCriterion = input.affectedCriteria[0] ?? '该要点';
+    const criterion =
+      fullCriterion.length > FAKE_CHECK_CRITERION_CHARS
+        ? `${fullCriterion.slice(0, FAKE_CHECK_CRITERION_CHARS)}…`
+        : fullCriterion;
+    // Deterministic per-(mode, intent, reuse) check so a differentiated round
+    // produces a materially different prompt instead of a reworded copy of the
+    // failure.
     const valid: RepairGenerationPayload = {
       interventionMode: mode,
       diagnosticCategory: input.diagnosticCategory,
       checkIntent: input.requiredCheckIntent,
       explanation:
         `${REPAIR_STRATEGY_OPENERS[mode] ?? '换一种方式说明'}：${input.gapSummary}`.slice(0, 1500),
-      practicePrompt:
-        `${REPAIR_CHECK_TASKS[input.requiredCheckIntent] ?? '换一个角度作答'}（针对：${input.affectedCriteria[0] ?? '该要点'}）`.slice(
-          0,
-          1000,
-        ),
+      practicePrompt: `${task}（针对：${criterion}）`.slice(0, 1000),
       hints: input.affectedCriteria.slice(0, 2).map((criterion) => `检查是否说明了：${criterion}`),
     };
     const repeatedStrategy: RepairGenerationPayload = {

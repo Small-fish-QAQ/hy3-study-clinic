@@ -102,6 +102,35 @@ describe('Repair differentiation policy', () => {
     expect(exhausted.structuralDifferentiationOnly).toBe(false);
   });
 
+  it('only ever re-requests the first ladder intent, never a later one', () => {
+    // A required intent is either unused (so it has no history) or the ladder's
+    // first position. Consequently at most ONE intent per diagnosis can ever be
+    // asked twice, which is what lets a provider vary its wording purely on a
+    // repeat count without needing a per-intent variant set.
+    for (const category of categories) {
+      const intents = repairCheckIntentLadderFor(category);
+      for (const subset of [
+        [...intents],
+        [...intents].reverse(),
+        intents.slice(1),
+        [...intents, ...intents],
+      ]) {
+        const step = selectRepairDifferentiation({
+          category,
+          priorInterventionModes: [],
+          priorCheckIntents: subset,
+        });
+        const reused = subset.filter((intent) => intent === step.requiredCheckIntent).length > 0;
+        if (reused) {
+          expect(step.requiredCheckIntent, `${category} re-requested a non-first intent`).toBe(
+            intents[0],
+          );
+          expect(step.checkIntentLadderExhausted).toBe(true);
+        }
+      }
+    }
+  });
+
   it('falls back to structural difference only when both axes are spent', () => {
     const spent = selectRepairDifferentiation({
       category: 'SURFACE_SLIP',
