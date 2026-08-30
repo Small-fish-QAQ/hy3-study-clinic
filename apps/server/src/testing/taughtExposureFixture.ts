@@ -50,6 +50,7 @@ export function seedPresentedTeachingFixture(input: {
   const skeleton = planTeachingSkeleton({
     learningUnitTitle: unit.title,
     targetMinutes: 18,
+    targetDepth: 'pass_oriented',
     objectives: objectives.map((objective, index) => ({
       objectiveRef: `O${index + 1}`,
       title: objective.title,

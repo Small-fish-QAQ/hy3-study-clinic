@@ -3160,7 +3160,30 @@ describe('Teaching Brief preparation', () => {
     };
 
     let current = harness.services.lessonExecution.get('ws_1', session.id);
+    // A learner check gates forward movement, and at working_fluency depth the
+    // planned boundary-work segment follows it, so the check is no longer last.
+    let respondedToCheck = false;
     for (let segmentIndex = 1; segmentIndex < current.progress!.segmentCount; segmentIndex += 1) {
+      if (current.currentInformalCheck && !current.currentInformalCheck.response) {
+        expect(current.currentInformalCheck.guidance).toBeNull();
+        expect(current.allowedActions).not.toContain('complete_presentation');
+        current = await harness.services.lessonExecution.command('ws_1', session.id, {
+          command: command('lesson-deliberate-response'),
+          expectedSessionVersion: current.session.version,
+          expectedAgendaVersion: current.agenda!.version,
+          expectedAgendaItemId: session.currentAgendaItemId!,
+          expectedLessonStateVersion: current.progress!.stateVersion,
+          action: {
+            kind: 'respond_to_informal_check',
+            segmentIndex: current.progress!.currentSegmentIndex,
+            response: 'The condition changes which candidate remains eligible.',
+          },
+        });
+        expect(current.currentInformalCheck?.guidance).toContain(
+          'locally planned explain capability',
+        );
+        respondedToCheck = true;
+      }
       current = await harness.services.lessonExecution.command('ws_1', session.id, {
         command: command(`lesson-segment-${segmentIndex}`),
         expectedSessionVersion: current.session.version,
@@ -3170,21 +3193,7 @@ describe('Teaching Brief preparation', () => {
         action: { kind: 'move_to_segment', segmentIndex },
       });
     }
-    expect(current.currentInformalCheck?.guidance).toBeNull();
-    expect(current.allowedActions).not.toContain('complete_presentation');
-    current = await harness.services.lessonExecution.command('ws_1', session.id, {
-      command: command('lesson-deliberate-response'),
-      expectedSessionVersion: current.session.version,
-      expectedAgendaVersion: current.agenda!.version,
-      expectedAgendaItemId: session.currentAgendaItemId!,
-      expectedLessonStateVersion: current.progress!.stateVersion,
-      action: {
-        kind: 'respond_to_informal_check',
-        segmentIndex: current.progress!.currentSegmentIndex,
-        response: 'The condition changes which candidate remains eligible.',
-      },
-    });
-    expect(current.currentInformalCheck?.guidance).toContain('locally planned explain capability');
+    expect(respondedToCheck).toBe(true);
     expect(current.allowedActions).toContain('complete_presentation');
     current = await harness.services.lessonExecution.command('ws_1', session.id, {
       command: command('lesson-presentation-complete'),

@@ -1,6 +1,10 @@
+import type { DesiredDepth, FormalAssessmentConstruct, TeachingSkeleton } from '@hy3-clinic/shared';
 import { describe, expect, it } from 'vitest';
 import {
+  assertRequiredPairsPlanned,
   planTeachingSkeleton,
+  requiredDepthContracts,
+  TEACHING_SKELETON_PLANNER_VERSION,
   TeachingSkeletonPlanningError,
   type TeachingSkeletonPlanningInput,
 } from './teachingSkeletonPlanner.js';
@@ -29,9 +33,16 @@ function input(
   return {
     learningUnitTitle: 'Grounded retrieval',
     targetMinutes: 30,
+    targetDepth: 'pass_oriented',
     objectives: [objective(construct)],
     ...overrides,
   };
+}
+
+function contractsFor(skeleton: TeachingSkeleton, objectiveRef: string): string[] {
+  return skeleton.lessonSlots
+    .filter((slot) => slot.objectiveRefs.includes(objectiveRef))
+    .map((slot) => slot.qualityContract);
 }
 
 function expectPlanningCode(callback: () => unknown, code: string): void {
@@ -127,6 +138,7 @@ describe('deterministic Teaching Skeleton planning', () => {
     const skeleton = planTeachingSkeleton({
       learningUnitTitle: 'WeKnora 综合系统与 RAG 流程',
       targetMinutes: 30,
+      targetDepth: 'pass_oriented',
       objectives: [
         objective('explain', {
           objectiveRef: 'O1',
@@ -285,4 +297,303 @@ describe('deterministic Teaching Skeleton planning', () => {
     expect(skeleton.id).toMatch(/^teaching_skeleton_[0-9a-f]{40}$/u);
     expect(skeleton.fingerprint).toMatch(/^sha256:[0-9a-f]{64}$/u);
   });
+
+  it('carries the bumped planner version', () => {
+    expect(TEACHING_SKELETON_PLANNER_VERSION).toBe('teaching-skeleton-planner-v2');
+    expect(planTeachingSkeleton(input('explain')).plannerVersion).toBe(
+      'teaching-skeleton-planner-v2',
+    );
+  });
+
+  it('rejects a planning input whose targetDepth is not accepted StudyPlan depth vocabulary', () => {
+    expectPlanningCode(
+      () =>
+        planTeachingSkeleton({
+          ...input('identify'),
+          targetDepth: 'very_deep' as unknown as DesiredDepth,
+        }),
+      'invalid_planning_input',
+    );
+  });
 });
+
+describe('depth-required Lesson obligations', () => {
+  const DEPTHS: DesiredDepth[] = [
+    'pass_oriented',
+    'working_fluency',
+    'high_performance',
+    'deep_transfer',
+  ];
+  const CONSTRUCTS: FormalAssessmentConstruct[] = [
+    'identify',
+    'explain',
+    'apply',
+    'design',
+    'evaluate',
+  ];
+
+  it('is total over every depth and construct, and never adds a worked process', () => {
+    for (const depth of DEPTHS) {
+      for (const construct of CONSTRUCTS) {
+        const contracts = requiredDepthContracts(depth, construct);
+        expect(Array.isArray(contracts)).toBe(true);
+        expect(contracts).not.toContain('worked_process');
+        expect(new Set(contracts).size).toBe(contracts.length);
+      }
+    }
+  });
+
+  it('T1: pass_oriented requires no depth contract and plans only the construct core', () => {
+    for (const construct of CONSTRUCTS) {
+      expect(requiredDepthContracts('pass_oriented', construct)).toEqual([]);
+    }
+
+    // 14 minutes leaves no leftover budget, so nothing optional is added either.
+    const skeleton = planTeachingSkeleton(input('identify', { targetMinutes: 14 }));
+    expect(contractsFor(skeleton, 'O1')).toEqual(['orientation', 'discrimination']);
+  });
+
+  it('T2/T3: working_fluency and high_performance both require boundary work', () => {
+    for (const construct of CONSTRUCTS) {
+      expect(requiredDepthContracts('working_fluency', construct)).toEqual(['boundary_work']);
+      expect(requiredDepthContracts('high_performance', construct)).toEqual(['boundary_work']);
+    }
+
+    for (const depth of ['working_fluency', 'high_performance'] as DesiredDepth[]) {
+      const skeleton = planTeachingSkeleton(
+        input('identify', { targetMinutes: 14, targetDepth: depth }),
+      );
+      expect(contractsFor(skeleton, 'O1')).toEqual([
+        'orientation',
+        'discrimination',
+        'boundary_work',
+      ]);
+      expect(
+        skeleton.lessonSlots.find((slot) => slot.qualityContract === 'boundary_work'),
+      ).toMatchObject({ role: 'contrast', protected: true });
+    }
+  });
+
+  it('T4: deep_transfer identify adds boundary work and a typed relation, never a worked process', () => {
+    const skeleton = planTeachingSkeleton(
+      input('identify', { targetMinutes: 14, targetDepth: 'deep_transfer' }),
+    );
+
+    expect(contractsFor(skeleton, 'O1')).toEqual([
+      'orientation',
+      'discrimination',
+      'boundary_work',
+      'semantic_relation',
+    ]);
+    expect(skeleton.lessonSlots.some((slot) => slot.qualityContract === 'worked_process')).toBe(
+      false,
+    );
+    expect(skeleton.lessonSlots.some((slot) => slot.role === 'worked_example')).toBe(false);
+  });
+
+  it('T5: deep_transfer apply keeps its worked process and gains both depth contracts', () => {
+    const skeleton = planTeachingSkeleton(
+      input('apply', { targetMinutes: 20, targetDepth: 'deep_transfer' }),
+    );
+
+    expect(contractsFor(skeleton, 'O1')).toEqual([
+      'orientation',
+      'worked_process',
+      'boundary_work',
+      'semantic_relation',
+    ]);
+    expect(
+      skeleton.lessonSlots.find((slot) => slot.qualityContract === 'worked_process'),
+    ).toMatchObject({ role: 'worked_example', protected: true, learnerActionRequired: true });
+  });
+
+  it('T6: deep_transfer explain reuses its core relation instead of planning a second one', () => {
+    expect(requiredDepthContracts('deep_transfer', 'explain')).toEqual(['boundary_work']);
+
+    const skeleton = planTeachingSkeleton(
+      input('explain', { targetMinutes: 18, targetDepth: 'deep_transfer' }),
+    );
+
+    expect(contractsFor(skeleton, 'O1')).toEqual([
+      'orientation',
+      'semantic_relation',
+      'learner_action',
+      'boundary_work',
+    ]);
+    expect(
+      skeleton.lessonSlots.filter((slot) => slot.qualityContract === 'semantic_relation'),
+    ).toHaveLength(1);
+    expect(
+      skeleton.lessonSlots.find((slot) => slot.qualityContract === 'semantic_relation'),
+    ).toMatchObject({ role: 'mechanism' });
+  });
+
+  it('T7: required boundary work survives when no leftover enrichment budget exists', () => {
+    const shallow = planTeachingSkeleton(input('identify', { targetMinutes: 14 }));
+    expect(shallow.lessonSlots.some((slot) => slot.qualityContract === 'boundary_work')).toBe(
+      false,
+    );
+
+    const deep = planTeachingSkeleton(
+      input('identify', { targetMinutes: 14, targetDepth: 'working_fluency' }),
+    );
+    const boundary = deep.lessonSlots.filter((slot) => slot.qualityContract === 'boundary_work');
+    expect(boundary).toHaveLength(1);
+    expect(boundary[0]).toMatchObject({ protected: true });
+    // Proves it is required rather than leftover-driven: the same target adds no
+    // optional enrichment at all.
+    expect(deep.lessonSlots.every((slot) => slot.protected)).toBe(true);
+  });
+
+  it('T8: optional enrichment never duplicates a required pair', () => {
+    // 30 minutes does leave leftover budget, so enrichment runs in both cases.
+    const shallow = planTeachingSkeleton(input('identify', { targetMinutes: 30 }));
+    expect(
+      shallow.lessonSlots.filter((slot) => slot.qualityContract === 'boundary_work'),
+    ).toMatchObject([{ protected: false }]);
+
+    const required = planTeachingSkeleton(
+      input('identify', { targetMinutes: 30, targetDepth: 'working_fluency' }),
+    );
+    const boundary = required.lessonSlots.filter(
+      (slot) => slot.qualityContract === 'boundary_work',
+    );
+    expect(boundary).toHaveLength(1);
+    expect(boundary[0]).toMatchObject({ protected: true });
+    // Enrichment still contributes what depth did not require.
+    expect(
+      required.lessonSlots.filter(
+        (slot) => slot.qualityContract === 'semantic_relation' && !slot.protected,
+      ),
+    ).toHaveLength(1);
+  });
+
+  it('T9: identical targetMinutes with different depth produces different required contracts', () => {
+    const shallow = planTeachingSkeleton(input('identify', { targetMinutes: 14 }));
+    const fluent = planTeachingSkeleton(
+      input('identify', { targetMinutes: 14, targetDepth: 'working_fluency' }),
+    );
+
+    expect(shallow.targetMinutes).toBe(fluent.targetMinutes);
+    expect(contractsFor(shallow, 'O1')).not.toEqual(contractsFor(fluent, 'O1'));
+    expect(shallow.fingerprint).not.toBe(fingerprintOf(fluent));
+  });
+
+  it('T10: raising targetMinutes alone never changes the required depth contract set', () => {
+    const short = planTeachingSkeleton(input('identify', { targetMinutes: 14 }));
+    const long = planTeachingSkeleton(input('identify', { targetMinutes: 30 }));
+
+    const protectedContracts = (skeleton: TeachingSkeleton): string[] =>
+      skeleton.lessonSlots.filter((slot) => slot.protected).map((slot) => slot.qualityContract);
+
+    expect(protectedContracts(short)).toEqual(protectedContracts(long));
+    expect(short.protectedActivityBudget).toEqual(long.protectedActivityBudget);
+    // Only optional enrichment differs.
+    expect(long.lessonSlots.length).toBeGreaterThan(short.lessonSlots.length);
+    expect(long.lessonSlots.filter((slot) => !slot.protected).length).toBeGreaterThan(0);
+  });
+
+  it('T11: an infeasible depth fails through the existing budget path with no silent downgrade', () => {
+    // 11 minutes plans at every shallower depth.
+    for (const depth of [
+      'pass_oriented',
+      'working_fluency',
+      'high_performance',
+    ] as DesiredDepth[]) {
+      expect(
+        planTeachingSkeleton(input('identify', { targetMinutes: 11, targetDepth: depth }))
+          .plannerVersion,
+      ).toBe('teaching-skeleton-planner-v2');
+    }
+
+    let thrown: unknown;
+    try {
+      planTeachingSkeleton(input('identify', { targetMinutes: 11, targetDepth: 'deep_transfer' }));
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(TeachingSkeletonPlanningError);
+    expect(thrown).toMatchObject({
+      code: 'protected_budget_exceeds_agenda',
+      details: {
+        targetDepth: 'deep_transfer',
+        requiredDepthContracts: [
+          { objectiveRef: 'O1', qualityContract: 'boundary_work' },
+          { objectiveRef: 'O1', qualityContract: 'semantic_relation' },
+        ],
+      },
+    });
+  });
+
+  it('T12: every depth-required pair is present in the assembled skeleton', () => {
+    const minutes: Record<string, number> = { identify: 25, explain: 25, apply: 25 };
+    for (const depth of DEPTHS) {
+      for (const construct of ['identify', 'explain', 'apply'] as const) {
+        const skeleton = planTeachingSkeleton(
+          input(construct, { targetMinutes: minutes[construct]!, targetDepth: depth }),
+        );
+        for (const contract of requiredDepthContracts(depth, construct)) {
+          expect(
+            skeleton.lessonSlots.some(
+              (slot) => slot.objectiveRefs.includes('O1') && slot.qualityContract === contract,
+            ),
+          ).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('T12: the completeness assertion rejects a skeleton that lost a required pair', () => {
+    const skeleton = planTeachingSkeleton(
+      input('identify', { targetMinutes: 14, targetDepth: 'deep_transfer' }),
+    );
+    const required = [
+      { objectiveRef: 'O1', qualityContract: 'boundary_work' as const },
+      { objectiveRef: 'O1', qualityContract: 'semantic_relation' as const },
+    ];
+
+    expect(() => assertRequiredPairsPlanned(skeleton.lessonSlots, required)).not.toThrow();
+
+    const withoutBoundary = skeleton.lessonSlots.filter(
+      (slot) => slot.qualityContract !== 'boundary_work',
+    );
+    expectPlanningCode(
+      () => assertRequiredPairsPlanned(withoutBoundary, required),
+      'required_quality_contract_missing',
+    );
+  });
+
+  it('keeps the construct-core table in step with the slots the planner actually emits', () => {
+    // pass_oriented adds nothing, and each target below leaves no enrichment budget,
+    // so the non-orientation contracts are exactly the construct core.
+    const core = (construct: 'identify' | 'explain' | 'apply', targetMinutes: number): string[] =>
+      contractsFor(planTeachingSkeleton(input(construct, { targetMinutes })), 'O1').filter(
+        (contract) => contract !== 'orientation',
+      );
+
+    expect(core('identify', 14)).toEqual(['discrimination']);
+    expect(core('explain', 18)).toEqual(['semantic_relation', 'learner_action']);
+    expect(core('apply', 20)).toEqual(['worked_process']);
+  });
+
+  it('applies existing protected semantics to depth-required slots', () => {
+    const skeleton = planTeachingSkeleton(
+      input('identify', {
+        targetMinutes: 14,
+        targetDepth: 'working_fluency',
+        objectives: [objective('identify', { priority: 'optional' })],
+      }),
+    );
+
+    const boundary = skeleton.lessonSlots.filter(
+      (slot) => slot.qualityContract === 'boundary_work',
+    );
+    // An optional objective's depth slot still exists; only budget protection differs.
+    expect(boundary).toHaveLength(1);
+    expect(boundary[0]).toMatchObject({ protected: false });
+  });
+});
+
+function fingerprintOf(skeleton: TeachingSkeleton): string {
+  return skeleton.fingerprint;
+}

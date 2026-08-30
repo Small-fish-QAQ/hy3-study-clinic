@@ -283,6 +283,7 @@ function compositionalContractInput(): LessonSlotContentGenerationInput {
   const skeleton = planTeachingSkeleton({
     learningUnitTitle: 'Bounded retrieval',
     targetMinutes: 18,
+    targetDepth: 'pass_oriented',
     objectives: [
       {
         objectiveRef: 'O1',

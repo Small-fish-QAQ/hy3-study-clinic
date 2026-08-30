@@ -4,6 +4,7 @@ import {
   PracticeContentProposalPayloadSchema,
   type LessonSlotContentProposalPayload,
   type PracticeContentProposalPayload,
+  type DesiredDepth,
   type TeachingBriefProposalPayload,
 } from '@hy3-clinic/shared';
 import type {
@@ -538,6 +539,7 @@ describe('independent Lesson and Practice semantic evaluators', () => {
 function compositionalInputs(
   construct: 'identify' | 'explain' | 'apply',
   targetMinutes = construct === 'identify' ? 14 : construct === 'apply' ? 20 : 18,
+  targetDepth: DesiredDepth = 'pass_oriented',
 ): {
   lessonInput: LessonSlotContentGenerationInput;
   practiceInput: PracticeContentGenerationInput;
@@ -559,6 +561,7 @@ function compositionalInputs(
   const skeleton = planTeachingSkeleton({
     learningUnitTitle: 'Bounded retrieval',
     targetMinutes,
+    targetDepth,
     objectives: [
       {
         objectiveRef: 'O1',
@@ -826,6 +829,77 @@ describe('compositional Lesson and Practice evaluators', () => {
         evaluatedAt,
       }).findings.map((finding) => finding.code),
     ).toContain('lesson_slot_content_not_objective_aligned');
+  });
+
+  it('T13: accepts depth-required boundary work and typed relation without any evaluator change', () => {
+    const fixture = compositionalInputs('apply', 20, 'deep_transfer');
+    const contracts = fixture.lessonInput.skeleton.lessonSlots.map((slot) => slot.qualityContract);
+
+    expect(contracts).toEqual([
+      'orientation',
+      'worked_process',
+      'boundary_work',
+      'semantic_relation',
+    ]);
+    expect(
+      fixture.lessonInput.skeleton.lessonSlots.every(
+        (slot) => slot.qualityContract === 'orientation' || slot.protected,
+      ),
+    ).toBe(true);
+    expect(
+      evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, { evaluatedAt }).findings,
+    ).toEqual([]);
+  });
+
+  it('T13: accepts a depth-added relation on identify when it is relevant to that objective', () => {
+    const fixture = compositionalInputs('identify', 14, 'deep_transfer');
+    const relationSlotId = fixture.lessonInput.skeleton.lessonSlots.find(
+      (slot) => slot.qualityContract === 'semantic_relation',
+    )!.slotId;
+    const relation = fixture.lesson.slots.find((slot) => slot.slotId === relationSlotId)!;
+
+    // The shared harness writes one relevance line aimed at the explain/apply
+    // wording. A depth-added relation on identify must speak to discrimination,
+    // which is the obligation depth is actually adding here.
+    relation.semanticRelations[0]!.relevanceToObjective =
+      'Distinguishing eligible retrieval candidates depends on the condition that separates satisfying candidates from failing candidates.';
+
+    expect(
+      evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, { evaluatedAt }).findings,
+    ).toEqual([]);
+  });
+
+  it('T13: rejects a depth-required boundary slot whose boundary content is absent', () => {
+    const fixture = compositionalInputs('identify', 14, 'deep_transfer');
+    const boundarySlotId = fixture.lessonInput.skeleton.lessonSlots.find(
+      (slot) => slot.qualityContract === 'boundary_work',
+    )!.slotId;
+    const boundary = fixture.lesson.slots.find((slot) => slot.slotId === boundarySlotId)!;
+
+    delete boundary.contrast;
+    delete boundary.misconception;
+
+    expect(
+      evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, {
+        evaluatedAt,
+      }).findings.map((finding) => finding.code),
+    ).toContain('missing_planned_boundary_work');
+  });
+
+  it('T13: rejects a depth-required relation slot that carries no typed relation', () => {
+    const fixture = compositionalInputs('identify', 14, 'deep_transfer');
+    const relationSlotId = fixture.lessonInput.skeleton.lessonSlots.find(
+      (slot) => slot.qualityContract === 'semantic_relation',
+    )!.slotId;
+    const relation = fixture.lesson.slots.find((slot) => slot.slotId === relationSlotId)!;
+
+    relation.semanticRelations = [];
+
+    expect(
+      evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, {
+        evaluatedAt,
+      }).findings.map((finding) => finding.code),
+    ).toContain('missing_typed_semantic_relation');
   });
 
   it('accepts a keyword-free typed relation and uses the full skeleton activity range', () => {

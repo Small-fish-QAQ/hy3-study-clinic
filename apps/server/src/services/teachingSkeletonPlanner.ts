@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 import {
+  DesiredDepthSchema,
   TeachingSkeletonSchema,
+  type DesiredDepth,
   type FormalAssessmentConstruct,
   type TeachingActivityBudget,
   type TeachingPracticePlanSlot,
@@ -8,10 +10,11 @@ import {
   type TeachingSkeleton,
   type TeachingSkeletonAuthorityMode,
   type TeachingSkeletonObjective,
+  type TeachingSkeletonQualityContract,
   type TeachingSkeletonSlot,
 } from '@hy3-clinic/shared';
 
-export const TEACHING_SKELETON_PLANNER_VERSION = 'teaching-skeleton-planner-v1';
+export const TEACHING_SKELETON_PLANNER_VERSION = 'teaching-skeleton-planner-v2';
 
 export type TeachingSkeletonPlanningErrorCode =
   | 'invalid_planning_input'
@@ -21,7 +24,8 @@ export type TeachingSkeletonPlanningErrorCode =
   | 'practice_slot_limit_exceeded'
   | 'protected_budget_exceeds_agenda'
   | 'planned_budget_exceeds_agenda'
-  | 'agenda_budget_underfilled';
+  | 'agenda_budget_underfilled'
+  | 'required_quality_contract_missing';
 
 export class TeachingSkeletonPlanningError extends Error {
   constructor(
@@ -48,9 +52,67 @@ export interface TeachingSkeletonPlanningObjective {
 export interface TeachingSkeletonPlanningInput {
   learningUnitTitle: string;
   targetMinutes: number;
+  /**
+   * Accepted StudyPlan depth for this teaching item. Depth decides WHICH quality
+   * obligations are required; `targetMinutes` only decides whether they fit.
+   */
+  targetDepth: DesiredDepth;
   objectives: TeachingSkeletonPlanningObjective[];
   maxLessonSlots?: number;
   maxPracticeSlots?: number;
+}
+
+/**
+ * The only contracts depth may add. `worked_process` is deliberately absent: it
+ * stays construct-derived, so no depth can make an `identify` objective claim a
+ * procedure its source never states.
+ */
+type DepthAddedContract = Extract<
+  TeachingSkeletonQualityContract,
+  'boundary_work' | 'semantic_relation'
+>;
+
+/** Total over DesiredDepth. Filtered against the construct core before use. */
+const DEPTH_CONTRACTS: Record<DesiredDepth, readonly DepthAddedContract[]> = {
+  pass_oriented: [],
+  working_fluency: ['boundary_work'],
+  high_performance: ['boundary_work'],
+  deep_transfer: ['boundary_work', 'semantic_relation'],
+};
+
+/**
+ * Contracts each construct's core slots already carry. Depth adds an obligation
+ * only where the core does not already supply it, so `explain` never receives a
+ * redundant second `semantic_relation`. Kept in step with `constructCoreSlots`
+ * by a drift test rather than by comment.
+ */
+const CORE_CONTRACTS: Record<
+  FormalAssessmentConstruct,
+  readonly TeachingSkeletonQualityContract[]
+> = {
+  identify: ['discrimination'],
+  explain: ['semantic_relation', 'learner_action'],
+  apply: ['worked_process'],
+  design: ['worked_process'],
+  evaluate: ['worked_process'],
+};
+
+/** Pure and total over DesiredDepth x FormalAssessmentConstruct. */
+export function requiredDepthContracts(
+  targetDepth: DesiredDepth,
+  construct: FormalAssessmentConstruct,
+): DepthAddedContract[] {
+  const core = CORE_CONTRACTS[construct];
+  return DEPTH_CONTRACTS[targetDepth].filter((contract) => !core.includes(contract));
+}
+
+export interface RequiredQualityContractPair {
+  objectiveRef: string;
+  qualityContract: TeachingSkeletonQualityContract;
+}
+
+function samePair(left: RequiredQualityContractPair, right: RequiredQualityContractPair): boolean {
+  return left.objectiveRef === right.objectiveRef && left.qualityContract === right.qualityContract;
 }
 
 const STRONGER_CONSTRUCTS: Record<FormalAssessmentConstruct, FormalAssessmentConstruct[]> = {
@@ -80,6 +142,8 @@ const EXPLAIN_ACTION_BUDGET: TeachingActivityBudget = { minMinutes: 3, maxMinute
 const WORKED_PROCESS_BUDGET: TeachingActivityBudget = { minMinutes: 5, maxMinutes: 7 };
 const PRACTICE_BUDGET: TeachingActivityBudget = { minMinutes: 3, maxMinutes: 5 };
 const SYNTHESIS_BUDGET: TeachingActivityBudget = { minMinutes: 2, maxMinutes: 3 };
+const BOUNDARY_WORK_BUDGET: TeachingActivityBudget = { minMinutes: 2, maxMinutes: 4 };
+const DEPTH_RELATION_BUDGET: TeachingActivityBudget = { minMinutes: 3, maxMinutes: 5 };
 
 function sumBudgets(budgets: TeachingActivityBudget[]): TeachingActivityBudget {
   return budgets.reduce(
@@ -101,6 +165,7 @@ function validatePlanningInput(input: TeachingSkeletonPlanningInput): void {
   const refs = input.objectives.map((objective) => objective.objectiveRef);
   if (
     !input.learningUnitTitle.trim() ||
+    !DesiredDepthSchema.safeParse(input.targetDepth).success ||
     !Number.isInteger(input.targetMinutes) ||
     input.targetMinutes <= 0 ||
     input.targetMinutes > 480 ||
@@ -215,9 +280,124 @@ function relationKinds(construct: FormalAssessmentConstruct): TeachingRelationKi
   }
 }
 
-function coreSlots(objectives: TeachingSkeletonObjective[]): TeachingSkeletonSlot[] {
+type UnnumberedSlot = Omit<TeachingSkeletonSlot, 'slotId'>;
+
+function constructCoreSlots(objective: TeachingSkeletonObjective): UnnumberedSlot[] {
+  const protectedSlot = objective.priority !== 'optional';
+  const authority = slotAuthority(objective);
+  if (objective.construct === 'identify') {
+    return [
+      {
+        objectiveRefs: [objective.objectiveRef],
+        construct: objective.construct,
+        role: 'guided_practice',
+        purpose:
+          'Make the objective observable through meaningful identification or discrimination, not source-location recall.',
+        ...authority,
+        protected: protectedSlot,
+        activityBudget: IDENTIFY_ACTION_BUDGET,
+        learnerActionRequired: true,
+        qualityContract: 'discrimination',
+        allowedRelations: relationKinds(objective.construct),
+      },
+    ];
+  }
+  if (objective.construct === 'explain') {
+    return [
+      {
+        objectiveRefs: [objective.objectiveRef],
+        construct: objective.construct,
+        role: 'mechanism',
+        purpose:
+          'Teach a source-compatible mechanism, relation, reason, or consequence with two meaningful propositions.',
+        ...authority,
+        protected: protectedSlot,
+        activityBudget: EXPLAIN_RELATION_BUDGET,
+        learnerActionRequired: false,
+        qualityContract: 'semantic_relation',
+        allowedRelations: relationKinds(objective.construct),
+      },
+      {
+        objectiveRefs: [objective.objectiveRef],
+        construct: objective.construct,
+        role: 'guided_practice',
+        purpose:
+          'Require the learner to commit to a mechanism or relation before guidance is revealed.',
+        ...authority,
+        protected: protectedSlot,
+        activityBudget: EXPLAIN_ACTION_BUDGET,
+        learnerActionRequired: true,
+        qualityContract: 'learner_action',
+        allowedRelations: relationKinds(objective.construct),
+      },
+    ];
+  }
+  return [
+    {
+      objectiveRefs: [objective.objectiveRef],
+      construct: objective.construct,
+      role: 'worked_example',
+      purpose:
+        'Work from a concrete starting state through the exact source rule and visible transitions, require a bounded learner decision or judgment before guidance, then show the result and why it follows.',
+      ...authority,
+      protected: protectedSlot,
+      activityBudget: WORKED_PROCESS_BUDGET,
+      learnerActionRequired: true,
+      qualityContract: 'worked_process',
+      allowedRelations: relationKinds(objective.construct),
+    },
+  ];
+}
+
+/**
+ * Depth-required obligations, emitted in the required planning phase so they take
+ * part in the protected budget instead of depending on leftover minutes. Reuses
+ * the existing `contrast` and `explanation` roles; introduces no new vocabulary.
+ */
+function depthRequiredSlots(
+  objective: TeachingSkeletonObjective,
+  targetDepth: DesiredDepth,
+): UnnumberedSlot[] {
+  const protectedSlot = objective.priority !== 'optional';
+  const authority = slotAuthority(objective);
+  return requiredDepthContracts(targetDepth, objective.construct).map((contract) => {
+    if (contract === 'boundary_work') {
+      return {
+        objectiveRefs: [objective.objectiveRef],
+        construct: objective.construct,
+        role: 'contrast' as const,
+        purpose:
+          'Establish the source-compatible boundary of the objective: what it excludes, or the misconception it corrects.',
+        ...authority,
+        protected: protectedSlot,
+        activityBudget: BOUNDARY_WORK_BUDGET,
+        learnerActionRequired: false,
+        qualityContract: contract,
+        allowedRelations: ['difference_discrimination'] as TeachingRelationKind[],
+      };
+    }
+    return {
+      objectiveRefs: [objective.objectiveRef],
+      construct: objective.construct,
+      role: 'explanation' as const,
+      purpose:
+        'Teach one typed source-compatible relation the objective depends on, so transfer does not rest on restatement.',
+      ...authority,
+      protected: protectedSlot,
+      activityBudget: DEPTH_RELATION_BUDGET,
+      learnerActionRequired: false,
+      qualityContract: contract,
+      allowedRelations: relationKinds(objective.construct),
+    };
+  });
+}
+
+function requiredSlots(
+  objectives: TeachingSkeletonObjective[],
+  targetDepth: DesiredDepth,
+): TeachingSkeletonSlot[] {
   const slots: TeachingSkeletonSlot[] = [];
-  const push = (slot: Omit<TeachingSkeletonSlot, 'slotId'>): void => {
+  const push = (slot: UnnumberedSlot): void => {
     slots.push({ ...slot, slotId: `L${slots.length + 1}` });
   };
   push({
@@ -236,68 +416,50 @@ function coreSlots(objectives: TeachingSkeletonObjective[]): TeachingSkeletonSlo
     allowedRelations: [],
   });
   for (const objective of objectives) {
-    const protectedSlot = objective.priority !== 'optional';
-    const authority = slotAuthority(objective);
-    if (objective.construct === 'identify') {
-      push({
-        objectiveRefs: [objective.objectiveRef],
-        construct: objective.construct,
-        role: 'guided_practice',
-        purpose:
-          'Make the objective observable through meaningful identification or discrimination, not source-location recall.',
-        ...authority,
-        protected: protectedSlot,
-        activityBudget: IDENTIFY_ACTION_BUDGET,
-        learnerActionRequired: true,
-        qualityContract: 'discrimination',
-        allowedRelations: relationKinds(objective.construct),
-      });
-      continue;
-    }
-    if (objective.construct === 'explain') {
-      push({
-        objectiveRefs: [objective.objectiveRef],
-        construct: objective.construct,
-        role: 'mechanism',
-        purpose:
-          'Teach a source-compatible mechanism, relation, reason, or consequence with two meaningful propositions.',
-        ...authority,
-        protected: protectedSlot,
-        activityBudget: EXPLAIN_RELATION_BUDGET,
-        learnerActionRequired: false,
-        qualityContract: 'semantic_relation',
-        allowedRelations: relationKinds(objective.construct),
-      });
-      push({
-        objectiveRefs: [objective.objectiveRef],
-        construct: objective.construct,
-        role: 'guided_practice',
-        purpose:
-          'Require the learner to commit to a mechanism or relation before guidance is revealed.',
-        ...authority,
-        protected: protectedSlot,
-        activityBudget: EXPLAIN_ACTION_BUDGET,
-        learnerActionRequired: true,
-        qualityContract: 'learner_action',
-        allowedRelations: relationKinds(objective.construct),
-      });
-      continue;
-    }
-    push({
-      objectiveRefs: [objective.objectiveRef],
-      construct: objective.construct,
-      role: 'worked_example',
-      purpose:
-        'Work from a concrete starting state through the exact source rule and visible transitions, require a bounded learner decision or judgment before guidance, then show the result and why it follows.',
-      ...authority,
-      protected: protectedSlot,
-      activityBudget: WORKED_PROCESS_BUDGET,
-      learnerActionRequired: true,
-      qualityContract: 'worked_process',
-      allowedRelations: relationKinds(objective.construct),
-    });
+    for (const slot of constructCoreSlots(objective)) push(slot);
+    for (const slot of depthRequiredSlots(objective, targetDepth)) push(slot);
   }
   return slots;
+}
+
+/** The deterministic depth obligation set the final skeleton must satisfy. */
+function requiredDepthPairs(
+  objectives: TeachingSkeletonObjective[],
+  targetDepth: DesiredDepth,
+): RequiredQualityContractPair[] {
+  return objectives.flatMap((objective) =>
+    requiredDepthContracts(targetDepth, objective.construct).map((qualityContract) => ({
+      objectiveRef: objective.objectiveRef,
+      qualityContract: qualityContract as TeachingSkeletonQualityContract,
+    })),
+  );
+}
+
+/**
+ * Guards slot assembly, not planning arithmetic: a future refactor that computes a
+ * depth obligation and then loses it during assembly must fail loudly here rather
+ * than ship a silently thinner Lesson.
+ */
+export function assertRequiredPairsPlanned(
+  lessonSlots: TeachingSkeletonSlot[],
+  requiredPairs: RequiredQualityContractPair[],
+): void {
+  const planned = lessonSlots.flatMap((slot) =>
+    slot.objectiveRefs.map((objectiveRef) => ({
+      objectiveRef,
+      qualityContract: slot.qualityContract,
+    })),
+  );
+  const missing = requiredPairs.filter(
+    (required) => !planned.some((candidate) => samePair(candidate, required)),
+  );
+  if (missing.length > 0) {
+    throw new TeachingSkeletonPlanningError(
+      'required_quality_contract_missing',
+      'The planned Lesson skeleton is missing a depth-required quality contract.',
+      { missing },
+    );
+  }
 }
 
 function practiceTargets(objectives: TeachingSkeletonObjective[]): TeachingSkeletonObjective[] {
@@ -329,6 +491,7 @@ function withOptionalDurationSupport(
   practiceBudget: TeachingActivityBudget,
   acceptable: TeachingActivityBudget,
   maxLessonSlots: number,
+  requiredPairs: RequiredQualityContractPair[],
 ): TeachingSkeletonSlot[] {
   const slots = [...initialSlots];
   const candidates = objectives.flatMap((objective) => {
@@ -367,6 +530,18 @@ function withOptionalDurationSupport(
   for (const candidate of candidates) {
     if (plannedBudget().maxMinutes >= acceptable.minMinutes) break;
     if (slots.length >= maxLessonSlots) break;
+    // Depth already required this obligation; a second same-contract slot would be
+    // redundant enrichment, not added support.
+    if (
+      requiredPairs.some((required) =>
+        samePair(required, {
+          objectiveRef: candidate.objectiveRefs[0]!,
+          qualityContract: candidate.qualityContract,
+        }),
+      )
+    ) {
+      continue;
+    }
     const nextMinimum = plannedBudget().minMinutes + candidate.activityBudget.minMinutes;
     if (nextMinimum > acceptable.maxMinutes) continue;
     slots.push({ ...candidate, slotId: `L${slots.length + 1}` });
@@ -393,12 +568,13 @@ export function planTeachingSkeleton(input: TeachingSkeletonPlanningInput): Teac
     minMinutes: Math.max(1, input.targetMinutes - 8),
     maxMinutes: input.targetMinutes + 3,
   };
-  const initialSlots = coreSlots(objectives);
+  const requiredPairs = requiredDepthPairs(objectives, input.targetDepth);
+  const initialSlots = requiredSlots(objectives, input.targetDepth);
   if (initialSlots.length > maxLessonSlots) {
     throw new TeachingSkeletonPlanningError(
       'lesson_slot_limit_exceeded',
-      'Construct-required Lesson slots exceed the bounded slot limit.',
-      { requiredSlots: initialSlots.length, maxLessonSlots },
+      'Construct-required and depth-required Lesson slots exceed the bounded slot limit.',
+      { requiredSlots: initialSlots.length, maxLessonSlots, targetDepth: input.targetDepth },
     );
   }
   const protectedBudget = sumBudgets([
@@ -412,8 +588,10 @@ export function planTeachingSkeleton(input: TeachingSkeletonPlanningInput): Teac
       'Protected instructional actions cannot plausibly fit the accepted Agenda duration.',
       {
         targetMinutes: input.targetMinutes,
+        targetDepth: input.targetDepth,
         acceptableActiveMinutes,
         protectedActivityBudget: protectedBudget,
+        requiredDepthContracts: requiredPairs,
       },
     );
   }
@@ -428,8 +606,10 @@ export function planTeachingSkeleton(input: TeachingSkeletonPlanningInput): Teac
       'The selected objective set cannot plausibly fit the accepted Agenda duration.',
       {
         targetMinutes: input.targetMinutes,
+        targetDepth: input.targetDepth,
         acceptableActiveMinutes,
         plannedActivityBudget: initialPlannedBudget,
+        requiredDepthContracts: requiredPairs,
       },
     );
   }
@@ -439,7 +619,9 @@ export function planTeachingSkeleton(input: TeachingSkeletonPlanningInput): Teac
     practiceBudget,
     acceptableActiveMinutes,
     maxLessonSlots,
+    requiredPairs,
   );
+  assertRequiredPairsPlanned(lessonSlots, requiredPairs);
   const plannedActivityBudget = sumBudgets([
     ...lessonSlots.map((slot) => slot.activityBudget),
     practiceBudget,
@@ -451,6 +633,7 @@ export function planTeachingSkeleton(input: TeachingSkeletonPlanningInput): Teac
       'The bounded instructional plan cannot honestly support the accepted Agenda duration.',
       {
         targetMinutes: input.targetMinutes,
+        targetDepth: input.targetDepth,
         acceptableActiveMinutes,
         plannedActivityBudget,
       },

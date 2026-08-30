@@ -1,9 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { AcceptedLessonCheckpoint } from '@hy3-clinic/shared';
+import {
+  AcceptedLessonCheckpointSchema,
+  projectTaughtExposure,
+  TEACHING_SKELETON_SCHEMA_VERSION,
+  TeachingSkeletonSchema,
+  type AcceptedLessonCheckpoint,
+} from '@hy3-clinic/shared';
 import { openDatabase, type SqliteDb } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
-import { planTeachingSkeleton } from '../services/teachingSkeletonPlanner.js';
+import {
+  planTeachingSkeleton,
+  TEACHING_SKELETON_PLANNER_VERSION,
+} from '../services/teachingSkeletonPlanner.js';
 import { makeWorkspace, T0 } from '../testing/fixtures.js';
+import { HISTORICAL_TEACHING_SKELETON_V1 } from '../testing/historicalTeachingSkeletonV1.js';
 import { createRepositories, type Repositories } from './index.js';
 
 const T1 = '2026-01-01T00:01:00.000Z';
@@ -159,6 +169,7 @@ function checkpoint(overrides: Partial<AcceptedLessonCheckpoint> = {}): Accepted
   const skeleton = planTeachingSkeleton({
     learningUnitTitle: 'Bounded retrieval',
     targetMinutes: 18,
+    targetDepth: 'pass_oriented',
     objectives: [
       {
         objectiveRef: 'O1',
@@ -219,6 +230,23 @@ function checkpoint(overrides: Partial<AcceptedLessonCheckpoint> = {}): Accepted
     createdAt: T1,
     ...overrides,
   };
+}
+
+function historicalV1Checkpoint(): AcceptedLessonCheckpoint {
+  const skeleton =
+    HISTORICAL_TEACHING_SKELETON_V1 as unknown as AcceptedLessonCheckpoint['skeleton'];
+  return checkpoint({
+    id: 'accepted_lesson_v1',
+    skeleton,
+    lessonContent: skeleton.lessonSlots.map((slot) => ({
+      slotId: slot.slotId,
+      explanation: `Instructional content for immutable slot ${slot.slotId}.`,
+      sourceRefs: slot.authorityMode === 'exact_source' ? ['S1'] : [],
+      visualRefs: [],
+      semanticRelations: [],
+      workedProcess: null,
+    })),
+  });
 }
 
 beforeEach(() => {
@@ -386,5 +414,112 @@ describe('accepted Lesson checkpoints repository', () => {
         promptVersion: accepted.promptVersion,
       }),
     ).toThrow();
+  });
+});
+
+describe('historical planner-v1 checkpoint compatibility', () => {
+  it('T17: the persisted Teaching Skeleton schema is still version 1 and accepts a v1 planner string', () => {
+    expect(TEACHING_SKELETON_SCHEMA_VERSION).toBe(1);
+    expect(TEACHING_SKELETON_PLANNER_VERSION).toBe('teaching-skeleton-planner-v2');
+
+    const parsed = TeachingSkeletonSchema.parse(HISTORICAL_TEACHING_SKELETON_V1);
+    expect(parsed.schemaVersion).toBe(1);
+    expect(parsed.plannerVersion).toBe('teaching-skeleton-planner-v1');
+    // Depth is a planning input only: it must not have leaked onto the persisted shape.
+    expect(Object.keys(parsed)).not.toContain('targetDepth');
+    expect(parsed.lessonSlots.every((slot) => !('targetDepth' in slot))).toBe(true);
+  });
+
+  it('T15: a stored v1 checkpoint still hydrates through the strict checkpoint schema', () => {
+    const stored = historicalV1Checkpoint();
+
+    expect(() => AcceptedLessonCheckpointSchema.parse(stored)).not.toThrow();
+
+    // The real hydration path: written to SQLite, read back through `hydrate`.
+    expect(repos.acceptedLessonCheckpoints.create(stored)).toEqual(stored);
+    const hydrated = repos.acceptedLessonCheckpoints.get(stored.id);
+    expect(hydrated).toEqual(stored);
+    expect(hydrated?.skeleton.fingerprint).toBe(HISTORICAL_TEACHING_SKELETON_V1.fingerprint);
+    // The point of the test: a stored planner version the current planner no longer
+    // emits still hydrates. If `plannerVersion` were ever pinned to a literal, this
+    // is the assertion that fails.
+    expect(hydrated?.skeleton.plannerVersion).toBe('teaching-skeleton-planner-v1');
+    expect(hydrated?.skeleton.plannerVersion).not.toBe(TEACHING_SKELETON_PLANNER_VERSION);
+  });
+
+  it('T15: the v2 planner no longer reproduces the stored v1 identity for the same input', () => {
+    const replanned = planTeachingSkeleton({
+      learningUnitTitle: 'Bounded retrieval',
+      targetMinutes: 18,
+      targetDepth: 'pass_oriented',
+      objectives: [
+        {
+          objectiveRef: 'O1',
+          title: 'Explain bounded retrieval',
+          description:
+            'Explain how a retrieval condition controls candidate eligibility and the returned result.',
+          priority: 'required',
+          construct: 'explain',
+          authorityMode: 'exact_source',
+          allowedSourceRefs: ['S1'],
+          allowedVisualRefs: [],
+        },
+      ],
+    });
+
+    // Identical slot semantics, deliberately different identity: the bump is what
+    // stops two materially different planners colliding on one fingerprint.
+    expect(replanned.lessonSlots.map((slot) => slot.qualityContract)).toEqual(
+      HISTORICAL_TEACHING_SKELETON_V1.lessonSlots.map((slot) => slot.qualityContract),
+    );
+    expect(replanned.fingerprint).not.toBe(HISTORICAL_TEACHING_SKELETON_V1.fingerprint);
+  });
+
+  it('T16: taught exposure still projects a stored v1 checkpoint', () => {
+    const stored = historicalV1Checkpoint();
+    const brief = {
+      id: 'brief_v1',
+      workspaceId: stored.workspaceId,
+      curriculumVersionId: stored.curriculumVersionId,
+      studyPlanVersionId: stored.studyPlanVersionId,
+      learningUnitId: stored.learningUnitId,
+      executionSourceManifestFingerprint: stored.executionSourceManifestFingerprint,
+      sourceContextFingerprint: stored.sourceContextFingerprint,
+      composition: {
+        acceptedLessonCheckpointId: stored.id,
+        skeletonFingerprint: stored.skeleton.fingerprint,
+      },
+      segments: [
+        {
+          index: 0,
+          objectiveIds: ['objective_1'],
+          explanation: 'Bounded retrieval filters candidates against its condition.',
+          explanationAuthority: 'source_backed_teaching',
+          sourceRefIds: ['S1'],
+        },
+      ],
+    } as unknown as Parameters<typeof projectTaughtExposure>[0]['brief'];
+
+    const projection = projectTaughtExposure({
+      brief,
+      checkpoint: stored,
+      state: {
+        preparationStatus: 'ready',
+        teachingBriefId: 'brief_v1',
+        acceptedLessonCheckpointId: stored.id,
+        curriculumVersionId: stored.curriculumVersionId,
+        studyPlanVersionId: stored.studyPlanVersionId,
+        learningUnitId: stored.learningUnitId,
+        executionSourceManifestFingerprint: stored.executionSourceManifestFingerprint,
+        sourceContextFingerprint: stored.sourceContextFingerprint,
+        presentedSegmentIndexes: [0],
+      },
+    });
+
+    expect(projection).toMatchObject({
+      objectiveIds: ['objective_1'],
+      presentedSegmentIndexes: [0],
+    });
+    expect(projection?.surfaces.length).toBeGreaterThan(0);
   });
 });

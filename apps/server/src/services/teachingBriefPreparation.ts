@@ -679,6 +679,7 @@ export function createTeachingBriefPreparationService({
     return {
       learningUnitTitle: route.node.title,
       targetMinutes: route.agendaItem.estimatedMinutes,
+      targetDepth: route.planItem.targetDepth,
       maxLessonSlots: input.limits.maxSegments,
       maxPracticeSlots: 8,
       objectives: input.learningUnit.objectives.map((objective) => ({

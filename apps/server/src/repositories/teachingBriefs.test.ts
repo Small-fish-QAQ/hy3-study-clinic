@@ -185,6 +185,7 @@ function acceptedLessonCheckpoint(sessionId: 'session_a' | 'session_b'): Accepte
   const skeleton = planTeachingSkeleton({
     learningUnitTitle: 'Working memory',
     targetMinutes: 18,
+    targetDepth: 'pass_oriented',
     objectives: [
       {
         objectiveRef: 'O1',
