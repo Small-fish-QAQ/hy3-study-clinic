@@ -375,10 +375,20 @@ export interface RepairGenerationInput {
   diagnosticCategory: RepairDiagnosticCategory;
   /** Locally authoritative intervention mode; the provider must preserve it. */
   requiredInterventionMode: RepairInterventionMode;
+  /** Locally authoritative assessment intent for this check; preserve it. */
+  requiredCheckIntent: MasteryChallengeFamily;
   gapSummary: string;
   affectedCriteria: string[];
   sourceContext: Array<{ blockId: string; quote: string }>;
   failedPrompt: string;
+  /**
+   * Bounded prior-remediation context for this mistake, so the provider can
+   * avoid repeating itself. Local validation, not this list, is authoritative.
+   */
+  priorInterventionModes: RepairInterventionMode[];
+  priorCheckIntents: MasteryChallengeFamily[];
+  /** Earlier check prompts this learner already saw for the same mistake. */
+  priorCheckPrompts: string[];
 }
 
 export interface GraphProposalInput {

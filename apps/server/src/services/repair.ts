@@ -1,15 +1,20 @@
 import { createHash } from 'node:crypto';
 import {
   ApiErrorCode,
+  MASTERY_RED_TEAM_MAX_OVERLAP,
+  REPAIR_DIFFERENTIATION_POLICY_VERSION,
   RepairEpisodeSchema,
   RepairPacketSchema,
   RepairPracticeEventSchema,
   RepairStatusTransitionSchema,
   isRepairTransitionAllowed,
-  repairInterventionFor,
+  selectRepairDifferentiation,
   type GradeRecord,
+  type MasteryChallengeFamily,
   type RepairDiagnosticCategory,
+  type RepairDifferentiationRequirement,
   type RepairEpisode,
+  type RepairInterventionMode,
   type RepairStatus,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
@@ -17,11 +22,15 @@ import type { LlmProvider, ProviderCallOptions } from '../llm/provider.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
+import { lexicalChallengeOverlap } from './masteryRedTeamPolicy.js';
 
 export const MAX_REPAIR_VERIFICATION_FAILURES = 3;
 const GENERATOR_VERSION = 'diagnostic-repair-v1';
-const PROMPT_VERSION = 'repair-prompt-v2';
+const PROMPT_VERSION = 'repair-prompt-v3';
 const POLICY_VERSION = 'minimum-sufficient-intervention-v1';
+
+/** Bounded history window: the current mistake's own remediation rounds only. */
+const MAX_PRIOR_REMEDIATION_ROUNDS = 4;
 
 function fallbackDiagnosis(grade: GradeRecord): {
   category: RepairDiagnosticCategory;
@@ -67,6 +76,137 @@ export function diagnosisFromGrade(grade: GradeRecord) {
     affectedCriterionIds: affected,
     summary: diagnostic.summary,
   };
+}
+
+export interface RepairDifferentiationContext {
+  priorInterventionModes: RepairInterventionMode[];
+  priorCheckIntents: MasteryChallengeFamily[];
+  priorCheckPrompts: string[];
+}
+
+/**
+ * Bounded, deterministic projection of what this learner has already been shown
+ * for THIS mistake. Not a stored history: it is recomputed on demand from
+ * durable state that already exists — accepted Repair packets plus the
+ * assessment item intents of the same target — so no history table is added.
+ * Another target's context never enters.
+ */
+export function repairDifferentiationContext(input: {
+  repos: Repositories;
+  episode: RepairEpisode;
+}): RepairDifferentiationContext {
+  const { repos, episode } = input;
+  // Strictly earlier rounds only. Including the current round's own packet
+  // would make each repeated call ladder past its own output and defeat the
+  // per-round idempotency the generation key provides.
+  const packets = repos.repair
+    .listPackets(episode.id)
+    .filter((packet) => packet.attemptOrdinal < episode.attemptCount)
+    .slice(-MAX_PRIOR_REMEDIATION_ROUNDS);
+
+  // Check intents already requested for this same target through the formal
+  // lane. Scoped by target learning unit, so a sibling objective cannot
+  // contaminate this decision.
+  const intentsForTarget: MasteryChallengeFamily[] = [];
+  const intents = repos.formalAssessments.listItemIntentsForWorkspace(episode.workspaceId);
+  const versionCache = new Map<string, ReturnType<typeof repos.formalAssessments.getVersion>>();
+  for (const intent of intents) {
+    if (!intent.requestedChallengeFamily) continue;
+    if (!versionCache.has(intent.assessmentVersionId)) {
+      versionCache.set(
+        intent.assessmentVersionId,
+        repos.formalAssessments.getVersion(intent.assessmentVersionId),
+      );
+    }
+    const item = versionCache
+      .get(intent.assessmentVersionId)
+      ?.items.find((candidate) => candidate.id === intent.itemId);
+    if (item?.targetLearningUnitId !== episode.targetLearningUnitId) continue;
+    intentsForTarget.push(intent.requestedChallengeFamily);
+  }
+
+  return {
+    priorInterventionModes: packets.map((packet) => packet.interventionMode),
+    priorCheckIntents: [
+      ...packets.flatMap((packet) => (packet.checkIntent ? [packet.checkIntent] : [])),
+      ...intentsForTarget.slice(-MAX_PRIOR_REMEDIATION_ROUNDS),
+    ],
+    priorCheckPrompts: packets.map((packet) => packet.practicePrompt),
+  };
+}
+
+export interface RepairDifferentiationFinding {
+  diagnostics: string[];
+  diagnosticCodes: string[];
+}
+
+/**
+ * Deterministic differentiation gate. A model claim of being different is not
+ * evidence; this is the only authority on whether the new remediation differs.
+ *
+ * Exact-overlap comparison is a lexical novelty fence, not proof of semantic
+ * non-equivalence — a genuine paraphrase defeats it by construction.
+ */
+export function validateRepairDifferentiation(input: {
+  requirement: RepairDifferentiationRequirement;
+  history: RepairDifferentiationContext;
+  candidate: { interventionMode?: unknown; checkIntent?: unknown; practicePrompt?: unknown };
+  failedPrompt: string;
+}): RepairDifferentiationFinding {
+  const { requirement, history, candidate } = input;
+  const diagnostics: string[] = [];
+  const diagnosticCodes: string[] = [];
+
+  if (candidate.interventionMode !== requirement.requiredInterventionMode) {
+    diagnostics.push(
+      `interventionMode mismatch: returned ${String(candidate.interventionMode)}, required ${requirement.requiredInterventionMode}.`,
+    );
+    diagnosticCodes.push('repair_intervention_mode_mismatch');
+  } else if (
+    !requirement.interventionLadderExhausted &&
+    history.priorInterventionModes.includes(requirement.requiredInterventionMode)
+  ) {
+    // Defensive: selection must never require an already-used mode while an
+    // unused one remains.
+    diagnostics.push(
+      `interventionMode ${requirement.requiredInterventionMode} was already used for this mistake and an alternative exists.`,
+    );
+    diagnosticCodes.push('repair_explanation_strategy_repeated');
+  }
+
+  if (candidate.checkIntent !== requirement.requiredCheckIntent) {
+    diagnostics.push(
+      `checkIntent mismatch: returned ${String(candidate.checkIntent)}, required ${requirement.requiredCheckIntent}.`,
+    );
+    diagnosticCodes.push('repair_check_intent_mismatch');
+  } else if (
+    !requirement.checkIntentLadderExhausted &&
+    history.priorCheckIntents.includes(requirement.requiredCheckIntent)
+  ) {
+    diagnostics.push(
+      `checkIntent ${requirement.requiredCheckIntent} was already used for this mistake and an alternative exists.`,
+    );
+    diagnosticCodes.push('repair_check_intent_repeated');
+  }
+
+  // Structural fence. Always applied: a typed relabel of the same concrete
+  // check is still the same check.
+  const prompt = typeof candidate.practicePrompt === 'string' ? candidate.practicePrompt : '';
+  if (prompt) {
+    const against = [...history.priorCheckPrompts, input.failedPrompt];
+    const worst = against.reduce(
+      (max, prior) => Math.max(max, lexicalChallengeOverlap(prompt, prior)),
+      0,
+    );
+    if (worst >= MASTERY_RED_TEAM_MAX_OVERLAP) {
+      diagnostics.push(
+        `practicePrompt repeats an earlier check for this mistake (lexical overlap ${worst.toFixed(2)} >= ${MASTERY_RED_TEAM_MAX_OVERLAP}). Ask the learner to demonstrate the same idea a different way.`,
+      );
+      diagnosticCodes.push('repair_check_prompt_repeated');
+    }
+  }
+
+  return { diagnostics, diagnosticCodes };
 }
 
 export function createRepairService({
@@ -205,14 +345,29 @@ export function createRepairService({
           );
         }
       }
+      // Differentiation context is derived before the generation key, because
+      // the key must change when the required strategy/intent changes —
+      // otherwise a repeat round would return the previous packet verbatim.
+      const history = repairDifferentiationContext({ repos, episode });
+      const requirement = selectRepairDifferentiation({
+        category: episode.diagnosticCategory,
+        priorInterventionModes: history.priorInterventionModes,
+        priorCheckIntents: history.priorCheckIntents,
+      });
+      // Pinned before any status transition reassigns `episode`, so the
+      // generation key and the stored packet can never disagree on the round.
+      const attemptOrdinal = episode.attemptCount;
       const generationKey = createHash('sha256')
         .update(
           JSON.stringify({
             episodeId: episode.id,
-            attemptCount: episode.attemptCount,
+            attemptCount: attemptOrdinal,
             generator: GENERATOR_VERSION,
             prompt: PROMPT_VERSION,
             policy: POLICY_VERSION,
+            differentiationPolicy: REPAIR_DIFFERENTIATION_POLICY_VERSION,
+            requiredInterventionMode: requirement.requiredInterventionMode,
+            requiredCheckIntent: requirement.requiredCheckIntent,
             source: item.sourceBindings,
           }),
         )
@@ -224,12 +379,13 @@ export function createRepairService({
       const criterionById = new Map(
         item.rubric?.map((criterion) => [criterion.id, criterion.text]) ?? [],
       );
-      const expectedMode = repairInterventionFor(episode.diagnosticCategory);
+      const expectedMode = requirement.requiredInterventionMode;
       const payload = await provider.generateRepair(
         {
           targetLearningUnitId: episode.targetLearningUnitId,
           diagnosticCategory: episode.diagnosticCategory,
           requiredInterventionMode: expectedMode,
+          requiredCheckIntent: requirement.requiredCheckIntent,
           gapSummary: episode.gapSummary,
           affectedCriteria: episode.affectedCriterionIds.map(
             (criterionId) => criterionById.get(criterionId) ?? 'the required idea',
@@ -239,6 +395,9 @@ export function createRepairService({
             quote: binding.quote,
           })),
           failedPrompt: item.prompt,
+          priorInterventionModes: [...history.priorInterventionModes],
+          priorCheckIntents: [...history.priorCheckIntents],
+          priorCheckPrompts: [...history.priorCheckPrompts],
         },
         {
           ...opts,
@@ -253,7 +412,12 @@ export function createRepairService({
             sourceFingerprint: generationKey,
           },
           validateCandidate: (candidate) => {
-            const value = candidate as { diagnosticCategory?: unknown; interventionMode?: unknown };
+            const value = candidate as {
+              diagnosticCategory?: unknown;
+              interventionMode?: unknown;
+              checkIntent?: unknown;
+              practicePrompt?: unknown;
+            };
             const diagnostics: string[] = [];
             const diagnosticCodes: string[] = [];
             if (value.diagnosticCategory !== episode.diagnosticCategory) {
@@ -262,12 +426,14 @@ export function createRepairService({
               );
               diagnosticCodes.push('repair_diagnostic_category_mismatch');
             }
-            if (value.interventionMode !== expectedMode) {
-              diagnostics.push(
-                `interventionMode mismatch: returned ${String(value.interventionMode)}, required ${expectedMode} for ${episode.diagnosticCategory}.`,
-              );
-              diagnosticCodes.push('repair_intervention_mode_mismatch');
-            }
+            const differentiation = validateRepairDifferentiation({
+              requirement,
+              history,
+              candidate: value,
+              failedPrompt: item.prompt,
+            });
+            diagnostics.push(...differentiation.diagnostics);
+            diagnosticCodes.push(...differentiation.diagnosticCodes);
             return {
               valid: diagnostics.length === 0,
               diagnostics,
@@ -288,6 +454,8 @@ export function createRepairService({
           provider: provider.name,
           providerModel: provider.model ?? null,
           interventionMode: payload.interventionMode,
+          checkIntent: payload.checkIntent,
+          attemptOrdinal,
           explanation: payload.explanation,
           practicePrompt: payload.practicePrompt,
           hints: payload.hints,

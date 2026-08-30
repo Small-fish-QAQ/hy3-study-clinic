@@ -630,8 +630,9 @@ export class Hy3Provider implements LlmProvider {
       RepairGenerationPayloadSchema,
       opts,
       [
-        `本地契约要求 diagnosticCategory=${input.diagnosticCategory} 且 interventionMode=${input.requiredInterventionMode}；这两个值不可更改。`,
+        `本地契约要求 diagnosticCategory=${input.diagnosticCategory}、interventionMode=${input.requiredInterventionMode} 且 checkIntent=${input.requiredCheckIntent}；这三个值不可更改。`,
         `请保持 interventionMode=${input.requiredInterventionMode}，不要将其替换为 TARGETED_PROMPT 或任何其他模式；只修复校验报告中的字段。`,
+        '如果校验报告指出讲解策略、考查意图或检查题与之前重复，请真正改变对应内容本身，而不是改写措辞：换教学动作、换考查方式、换检查任务。',
         '保留已经有效的源约束和教学内容，仅提供一个最小充分、不可授予正式学分的修复步骤。',
       ].join('\n'),
     );

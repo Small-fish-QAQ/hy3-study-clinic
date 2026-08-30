@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MasteryChallengeFamilySchema, type MasteryChallengeFamily } from './assessmentIntent.js';
 
 export const RepairDiagnosticCategorySchema = z
   .enum([
@@ -78,6 +79,18 @@ export const RepairPacketSchema = z.object({
   provider: z.enum(['fake', 'hy3']),
   providerModel: z.string().nullable(),
   interventionMode: RepairInterventionModeSchema,
+  /**
+   * Assessment intent locally requested for this packet's check, drawn from the
+   * shared assessment-design vocabulary. Null only for packets written before
+   * differentiation existed; those contribute no intent history.
+   */
+  checkIntent: MasteryChallengeFamilySchema.nullable().default(null),
+  /**
+   * The episode `attemptCount` this packet was generated for. Differentiation
+   * reads only STRICTLY EARLIER rounds, which is what keeps repeated generation
+   * within one round idempotent instead of laddering on its own output.
+   */
+  attemptOrdinal: z.number().int().nonnegative().max(3).default(0),
   explanation: z.string().min(1).max(1500),
   practicePrompt: z.string().min(1).max(1000),
   hints: z.array(z.string().min(1).max(500)).max(4),
@@ -164,4 +177,108 @@ export function repairInterventionFor(category: RepairDiagnosticCategory): Repai
     default:
       return 'CLARIFY';
   }
+}
+
+export const REPAIR_DIFFERENTIATION_POLICY_VERSION = 'repair-differentiation-v1';
+
+/**
+ * Ordered pedagogically permitted intervention modes per diagnosis. Position 0
+ * is exactly `repairInterventionFor`, so a learner's first Repair for a
+ * diagnosis is unchanged; later positions exist only so a repeated failure of
+ * the same diagnosis is not met with the same teaching move again.
+ */
+const interventionLadder: Record<RepairDiagnosticCategory, readonly RepairInterventionMode[]> = {
+  INCOMPLETE_EXPRESSION: ['TARGETED_PROMPT', 'SCAFFOLD', 'RETEACH_RETRIEVAL'],
+  LOCAL_MISCONCEPTION: ['CONTRAST', 'RETEACH_RETRIEVAL', 'SCAFFOLD'],
+  RELATION_REVERSAL: ['CONTRAST', 'SCAFFOLD', 'RETEACH_RETRIEVAL'],
+  PROCEDURAL_GAP: ['SCAFFOLD', 'TARGETED_PROMPT', 'RETEACH_RETRIEVAL'],
+  PREREQUISITE_GAP: ['PREREQUISITE_REVIEW', 'SCAFFOLD', 'RETEACH_RETRIEVAL'],
+  IRRELEVANT_OR_GUESSING: ['RETEACH_RETRIEVAL', 'SCAFFOLD', 'CONTRAST'],
+  SURFACE_SLIP: ['NOTICE', 'TARGETED_PROMPT'],
+  UNCERTAIN: ['CLARIFY', 'TARGETED_PROMPT', 'CONTRAST'],
+};
+
+/**
+ * Assessment intents this diagnosis may legitimately ask for, drawn from the
+ * shared 12-family vocabulary. Position 0 is the ordinary first request; the
+ * rest are the alternatives a repeated failure may be re-checked with.
+ */
+const checkIntentLadder: Record<RepairDiagnosticCategory, readonly MasteryChallengeFamily[]> = {
+  INCOMPLETE_EXPRESSION: ['discriminative_follow_up', 'boundary_conditions'],
+  LOCAL_MISCONCEPTION: ['historical_misconception', 'counterexample', 'near_neighbor_confusion'],
+  RELATION_REVERSAL: ['near_neighbor_confusion', 'counterexample', 'boundary_conditions'],
+  PROCEDURAL_GAP: ['error_diagnosis', 'boundary_conditions'],
+  PREREQUISITE_GAP: ['discriminative_follow_up', 'error_diagnosis'],
+  IRRELEVANT_OR_GUESSING: ['discriminative_follow_up', 'representation_shift'],
+  SURFACE_SLIP: ['discriminative_follow_up'],
+  UNCERTAIN: ['discriminative_follow_up', 'boundary_conditions'],
+};
+
+export function repairInterventionLadderFor(
+  category: RepairDiagnosticCategory,
+): readonly RepairInterventionMode[] {
+  return interventionLadder[category];
+}
+
+export function repairCheckIntentLadderFor(
+  category: RepairDiagnosticCategory,
+): readonly MasteryChallengeFamily[] {
+  return checkIntentLadder[category];
+}
+
+export interface RepairDifferentiationRequirement {
+  policyVersion: typeof REPAIR_DIFFERENTIATION_POLICY_VERSION;
+  requiredInterventionMode: RepairInterventionMode;
+  requiredCheckIntent: MasteryChallengeFamily;
+  permittedInterventionModes: readonly RepairInterventionMode[];
+  permittedCheckIntents: readonly MasteryChallengeFamily[];
+  /** True when every laddered mode for this diagnosis has already been used. */
+  interventionLadderExhausted: boolean;
+  /** True when every laddered intent for this diagnosis has already been used. */
+  checkIntentLadderExhausted: boolean;
+  /**
+   * True only when neither typed axis can still change, so differentiation must
+   * rest on the concrete check being materially different. Never a licence to
+   * repeat a check: the structural fence still applies.
+   */
+  structuralDifferentiationOnly: boolean;
+}
+
+/**
+ * Choose the intervention mode and check intent for the next Repair packet.
+ *
+ * Pure function of the diagnosis plus what this learner has already been shown
+ * for it. With no history it returns exactly the pre-differentiation choice.
+ */
+export function selectRepairDifferentiation(input: {
+  category: RepairDiagnosticCategory;
+  priorInterventionModes: readonly RepairInterventionMode[];
+  priorCheckIntents: readonly MasteryChallengeFamily[];
+}): RepairDifferentiationRequirement {
+  const modes = interventionLadder[input.category];
+  const intents = checkIntentLadder[input.category];
+  const usedModes = new Set(input.priorInterventionModes);
+  const usedIntents = new Set(input.priorCheckIntents);
+
+  const unusedMode = modes.find((mode) => !usedModes.has(mode));
+  const unusedIntent = intents.find((intent) => !usedIntents.has(intent));
+
+  // Exhaustion reuses the most escalated mode rather than cycling back to the
+  // lightest one, and the ordinary intent rather than an arbitrary later one.
+  const requiredInterventionMode = unusedMode ?? modes[modes.length - 1]!;
+  const requiredCheckIntent = unusedIntent ?? intents[0]!;
+
+  const interventionLadderExhausted = unusedMode === undefined;
+  const checkIntentLadderExhausted = unusedIntent === undefined;
+
+  return {
+    policyVersion: REPAIR_DIFFERENTIATION_POLICY_VERSION,
+    requiredInterventionMode,
+    requiredCheckIntent,
+    permittedInterventionModes: modes,
+    permittedCheckIntents: intents,
+    interventionLadderExhausted,
+    checkIntentLadderExhausted,
+    structuralDifferentiationOnly: interventionLadderExhausted && checkIntentLadderExhausted,
+  };
 }

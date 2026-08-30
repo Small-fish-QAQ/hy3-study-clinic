@@ -30,7 +30,13 @@ const DIAGNOSIS_LABELS: Record<string, string> = {
   UNCERTAIN: '这次回答还不足以判断具体卡在哪里，我们先做一个小检查。',
 };
 
-const INTERVENTION_LABELS: Record<string, string> = {
+/**
+ * Learner-facing wording per intervention mode. Exported so tests can pin that
+ * every mode a differentiation ladder can reach has its own distinct wording:
+ * if two ladder positions shared a label, the learner would be told the same
+ * thing twice and would not perceive a different approach.
+ */
+export const INTERVENTION_LABELS: Record<string, string> = {
   TARGETED_PROMPT: '补全关键部分',
   CONTRAST: '对比辨析',
   SCAFFOLD: '分步练习',

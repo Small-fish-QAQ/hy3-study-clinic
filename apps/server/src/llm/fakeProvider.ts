@@ -351,10 +351,54 @@ export interface FakeProviderOptions {
   /** Visual-only deterministic output/fault fixture. */
   visualDescriptionFixture?: FakeVisualDescriptionFixture;
   /** Repair-only semantic fault fixture for bounded-provider tests. */
-  repairFixture?: 'repair_once' | 'repair_exhausted' | 'wrong_mode_once' | 'wrong_mode_exhausted';
+  repairFixture?: FakeRepairFixture;
   /** Mastery Red Team semantic/schema fault fixture. */
   masteryRedTeamFixture?: FakeMasteryRedTeamFixture;
 }
+
+/** Distinct opening move per intervention mode, so a strategy change is visible. */
+const REPAIR_STRATEGY_OPENERS: Record<string, string> = {
+  TARGETED_PROMPT: '只补齐缺失的那一部分',
+  CONTRAST: '把错误关系与资料中的正确关系并列对比',
+  SCAFFOLD: '拆成可执行的步骤逐步完成',
+  PREREQUISITE_REVIEW: '先复习前置概念再回到本题',
+  RETEACH_RETRIEVAL: '重新讲一遍核心概念，然后回忆复述',
+  NOTICE: '先指出表面问题',
+  CLARIFY: '澄清这次回答中不确定的地方',
+};
+
+/** Distinct check task per assessment intent, so an intent change is visible. */
+const REPAIR_CHECK_TASKS: Record<string, string> = {
+  discriminative_follow_up: '请说明这个概念与最接近的相邻概念之间的判别依据',
+  boundary_conditions: '请给出这个结论成立与不成立的边界条件',
+  counterexample: '请举出一个反例并说明它为何是反例',
+  near_neighbor_confusion: '请区分这两个容易混淆的相邻概念，并说明区分依据',
+  error_diagnosis: '请找出下面这段处理中的错误步骤并说明为什么错',
+  historical_misconception: '请指出这个常见误解错在哪里，并给出正确表述',
+  representation_shift: '请换一种表示方式重新表达这个关系',
+  transfer: '请把这个原理应用到一个新的情境中',
+  hidden_premise_change: '请说明前提改变后结论会如何变化',
+  plausible_alternative_refutation: '请反驳一个看起来合理但错误的替代解释',
+  cross_learning_unit_synthesis: '请把这个概念与另一个学习单元的概念联系起来',
+  adversarial_distractor: '请说明为什么最具吸引力的错误选项是错的',
+};
+
+/**
+ * Repair faults. `wrong_mode_*` returns a mode the local contract did not ask
+ * for; `repeated_*` returns output that is well-formed but repeats what the
+ * learner already saw for this same mistake.
+ */
+export type FakeRepairFixture =
+  | 'repair_once'
+  | 'repair_exhausted'
+  | 'wrong_mode_once'
+  | 'wrong_mode_exhausted'
+  | 'repeated_strategy_once'
+  | 'repeated_strategy_exhausted'
+  | 'repeated_intent_once'
+  | 'repeated_intent_exhausted'
+  | 'repeated_prompt_once'
+  | 'repeated_prompt_exhausted';
 
 export type FakeVisualDescriptionFixture =
   | 'photo'
@@ -400,8 +444,7 @@ export class FakeProvider implements LlmProvider {
   private readonly delayMs: number;
   private readonly tutorTurnFixture: FakeTutorTurnFixture | null;
   private readonly visualDescriptionFixture: FakeVisualDescriptionFixture | null;
-  private readonly repairFixture:
-    'repair_once' | 'repair_exhausted' | 'wrong_mode_once' | 'wrong_mode_exhausted' | null;
+  private readonly repairFixture: FakeRepairFixture | null;
   private tutorTurnFixtureCalls = 0;
   private readonly masteryRedTeamFixture: FakeMasteryRedTeamFixture | null;
   private masteryRedTeamCalls = 0;
@@ -666,27 +709,56 @@ export class FakeProvider implements LlmProvider {
   ): Promise<RepairGenerationPayload> {
     await this.gate(opts);
     const mode = input.requiredInterventionMode;
+    // Deterministic per-(mode, intent) check so a differentiated round produces
+    // a materially different prompt instead of a reworded copy of the failure.
     const valid: RepairGenerationPayload = {
       interventionMode: mode,
       diagnosticCategory: input.diagnosticCategory,
-      explanation: input.gapSummary.slice(0, 1500),
-      practicePrompt: `请用不同表述回答：${input.failedPrompt}`.slice(0, 1000),
+      checkIntent: input.requiredCheckIntent,
+      explanation:
+        `${REPAIR_STRATEGY_OPENERS[mode] ?? '换一种方式说明'}：${input.gapSummary}`.slice(0, 1500),
+      practicePrompt:
+        `${REPAIR_CHECK_TASKS[input.requiredCheckIntent] ?? '换一个角度作答'}（针对：${input.affectedCriteria[0] ?? '该要点'}）`.slice(
+          0,
+          1000,
+        ),
       hints: input.affectedCriteria.slice(0, 2).map((criterion) => `检查是否说明了：${criterion}`),
     };
-    const invalid: RepairGenerationPayload = {
+    const repeatedStrategy: RepairGenerationPayload = {
       ...valid,
-      interventionMode:
-        input.requiredInterventionMode === 'TARGETED_PROMPT' ? 'CONTRAST' : 'TARGETED_PROMPT',
+      interventionMode: input.priorInterventionModes[0] ?? mode,
     };
+    const repeatedIntent: RepairGenerationPayload = {
+      ...valid,
+      checkIntent: input.priorCheckIntents[0] ?? input.requiredCheckIntent,
+    };
+    const repeatedPrompt: RepairGenerationPayload = {
+      ...valid,
+      practicePrompt: (input.priorCheckPrompts[0] ?? input.failedPrompt).slice(0, 1000),
+    };
+    const invalid: RepairGenerationPayload =
+      this.repairFixture === 'repeated_strategy_once' ||
+      this.repairFixture === 'repeated_strategy_exhausted'
+        ? repeatedStrategy
+        : this.repairFixture === 'repeated_intent_once' ||
+            this.repairFixture === 'repeated_intent_exhausted'
+          ? repeatedIntent
+          : this.repairFixture === 'repeated_prompt_once' ||
+              this.repairFixture === 'repeated_prompt_exhausted'
+            ? repeatedPrompt
+            : {
+                ...valid,
+                interventionMode:
+                  input.requiredInterventionMode === 'TARGETED_PROMPT'
+                    ? 'CONTRAST'
+                    : 'TARGETED_PROMPT',
+              };
     const first = this.repairFixture ? invalid : valid;
     const firstValidation = opts?.validateCandidate?.(first);
     if (!firstValidation || firstValidation.valid) return first;
     opts?.onRepairAttempt?.('candidate');
     await this.gate(opts);
-    const repaired =
-      this.repairFixture === 'repair_exhausted' || this.repairFixture === 'wrong_mode_exhausted'
-        ? invalid
-        : valid;
+    const repaired = this.repairFixture?.endsWith('_exhausted') ? invalid : valid;
     const repairedValidation = opts?.validateCandidate?.(repaired);
     if (!repairedValidation || repairedValidation.valid) return repaired;
     throw ProviderError.invalidOutput(repairedValidation.diagnostics.join('; '), 'candidate');

@@ -338,12 +338,19 @@ export function repairGenerationMessages(input: {
   targetLearningUnitId: string;
   diagnosticCategory: string;
   requiredInterventionMode: string;
+  requiredCheckIntent: string;
   gapSummary: string;
   affectedCriteria: string[];
   sourceContext: Array<{ blockId: string; quote: string }>;
   failedPrompt: string;
+  priorInterventionModes?: string[];
+  priorCheckIntents?: string[];
+  priorCheckPrompts?: string[];
 }): ChatMessage[] {
   const wrapped = wrapUntrustedJson('REPAIR_DATA', input);
+  const priorModes = input.priorInterventionModes ?? [];
+  const priorIntents = input.priorCheckIntents ?? [];
+  const hasHistory = priorModes.length > 0 || priorIntents.length > 0;
   return [
     {
       role: 'system',
@@ -355,9 +362,17 @@ export function repairGenerationMessages(input: {
       content: [
         wrapped.guard,
         wrapped.body,
-        `本地修复契约已经决定 interventionMode=${input.requiredInterventionMode}。这是确定性的本地权威，不是供你重新选择的建议。diagnosticCategory 必须原样保持为 ${input.diagnosticCategory}。`,
+        `本地修复契约已经决定 interventionMode=${input.requiredInterventionMode} 且 checkIntent=${input.requiredCheckIntent}。这是确定性的本地权威，不是供你重新选择的建议。diagnosticCategory 必须原样保持为 ${input.diagnosticCategory}。`,
         '模式的教学职责：TARGETED_PROMPT=只引出缺失部分；CONTRAST=明确比较错误关系与资料中的正确关系；SCAFFOLD=拆成可执行步骤；RETEACH_RETRIEVAL=短讲解后检索练习；PREREQUISITE_REVIEW=先复习前置概念；NOTICE=只指出表面问题；CLARIFY=澄清不确定回答。',
-        `不要把 ${input.requiredInterventionMode} 改成其他模式，尤其不要把 CONTRAST、SCAFFOLD 或 RETEACH_RETRIEVAL 改写成 TARGETED_PROMPT。只输出 JSON：{"interventionMode":"${input.requiredInterventionMode}","diagnosticCategory":"${input.diagnosticCategory}","explanation":"...","practicePrompt":"...","hints":[]}`,
+        ...(hasHistory
+          ? [
+              `学习者在同一个错误上已经见过的讲解策略：${priorModes.join('、') || '无'}；已经用过的考查意图：${priorIntents.join('、') || '无'}。`,
+              '因此：不要只是把上一次的讲解换个说法重复一遍；explanation 必须真正采用本次指定的 interventionMode 所对应的不同教学动作。',
+              'practicePrompt 也不得复述之前的检查题或原失败题：必须按本次指定的 checkIntent 让学习者用不同的方式证明同一个理解。',
+            ]
+          : []),
+        `checkIntent 的考查职责：discriminative_follow_up=要求给出判别依据；boundary_conditions=要求给出成立与不成立的边界；counterexample=要求举反例；near_neighbor_confusion=要求区分相邻易混概念；error_diagnosis=要求找出并解释错误步骤；historical_misconception=要求指出常见误解错在哪；representation_shift=要求换一种表示方式；transfer=要求迁移到新情境。`,
+        `不要把 ${input.requiredInterventionMode} 改成其他模式，尤其不要把 CONTRAST、SCAFFOLD 或 RETEACH_RETRIEVAL 改写成 TARGETED_PROMPT。只输出 JSON：{"interventionMode":"${input.requiredInterventionMode}","diagnosticCategory":"${input.diagnosticCategory}","checkIntent":"${input.requiredCheckIntent}","explanation":"...","practicePrompt":"...","hints":[]}`,
         '内容必须保持最小充分、源材料有据、非正式学习练习且不泄露完整答案；不要输出数据库 ID、哈希、内部评分或思维链。',
         JSON_RULES,
       ].join('\n'),

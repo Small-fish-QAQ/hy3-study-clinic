@@ -1368,14 +1368,19 @@ describe('Hy3Provider bounded repair', () => {
       targetLearningUnitId: 'unit_1',
       diagnosticCategory: 'RELATION_REVERSAL',
       requiredInterventionMode: 'CONTRAST',
+      requiredCheckIntent: 'near_neighbor_confusion',
       gapSummary: 'The relation was reversed.',
       affectedCriteria: ['States the correct relation.'],
       sourceContext: [{ blockId: 'block_1', quote: 'A precedes B.' }],
       failedPrompt: 'Explain the relation.',
+      priorInterventionModes: [],
+      priorCheckIntents: [],
+      priorCheckPrompts: [],
     };
     const wrong = {
       interventionMode: 'TARGETED_PROMPT',
       diagnosticCategory: 'RELATION_REVERSAL',
+      checkIntent: 'near_neighbor_confusion',
       explanation: 'Ask the learner to reconsider.',
       practicePrompt: 'Try again.',
       hints: [],
@@ -1408,7 +1413,9 @@ describe('Hy3Provider bounded repair', () => {
     expect(repairBody.messages.at(-1)!.content).toContain(
       'returned TARGETED_PROMPT, required CONTRAST for RELATION_REVERSAL',
     );
-    expect(repairBody.messages.at(-1)!.content).toContain('这两个值不可更改');
+    expect(repairBody.messages.at(-1)!.content).toContain('这三个值不可更改');
+    // The locally required check intent travels with the mode into the repair.
+    expect(repairBody.messages.at(-1)!.content).toContain('checkIntent=near_neighbor_confusion');
   });
 
   it('retries exactly once on invalid output, then succeeds', async () => {

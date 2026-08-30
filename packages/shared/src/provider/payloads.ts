@@ -12,6 +12,7 @@ import {
   TutorToolNameSchema,
 } from '../domain/tutor.js';
 import { DesiredDepthSchema } from '../domain/learningContract.js';
+import { MasteryChallengeFamilySchema } from '../domain/assessmentIntent.js';
 import { RepairDiagnosticCategorySchema, RepairInterventionModeSchema } from '../domain/repair.js';
 import {
   InformalCheckKindSchema,
@@ -1084,6 +1085,9 @@ export const RepairGenerationPayloadSchema = z.object({
   hints: z.array(z.string().min(1).max(500)).max(4),
   diagnosticCategory: RepairDiagnosticCategorySchema.describe(
     'Must exactly equal the locally supplied diagnostic category; preserve local authority.',
+  ),
+  checkIntent: MasteryChallengeFamilySchema.describe(
+    'Must exactly equal the locally supplied required check intent; local policy owns which intent a repeated failure is re-checked with.',
   ),
 });
 export type RepairGenerationPayload = z.infer<typeof RepairGenerationPayloadSchema>;
