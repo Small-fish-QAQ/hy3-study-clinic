@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ApiErrorCode,
   type Curriculum,
+  type DesiredDepth,
   type LearningContract,
   type StudyPlanItem,
   type LearningContractFeasibility,
@@ -9,6 +10,7 @@ import {
 } from '@hy3-clinic/shared';
 import { openDatabase, type SqliteDb } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
+import { AppError } from '../errors.js';
 import { FakeProvider } from '../llm/fakeProvider.js';
 import type { ProviderCallOptions, StudyPlanProposalInput } from '../llm/provider.js';
 import { createRepositories, type Repositories } from '../repositories/index.js';
@@ -52,7 +54,7 @@ class CapturingPlanProvider extends FakeProvider {
   inTransaction = false;
   options: ProviderCallOptions | undefined;
 
-  constructor(private readonly output?: StudyPlanProposalPayload) {
+  constructor(public output?: StudyPlanProposalPayload) {
     super();
   }
 
@@ -496,6 +498,120 @@ function studyPlanAuthorityPersistenceSnapshot() {
     executionEvents: db
       .prepare('SELECT * FROM course_execution_events ORDER BY workspace_id, seq')
       .all(),
+  };
+}
+
+interface PlannabilityObjectiveSpec {
+  id: string;
+  construct: SupportedFixtureConstruct;
+  priority: 'required' | 'high' | 'normal' | 'optional';
+}
+
+/**
+ * Core support type per construct, matching `requiredCore` in
+ * `objectiveAuthoritySemanticSupport.ts`. `design` and `evaluate` have no core mapping
+ * at all — the still-unlifted U-11 construct ceiling — so they cannot appear in a
+ * semantically supported fixture and are deliberately absent here.
+ */
+const CORE_SUPPORT_TYPE = {
+  identify: 'recognition',
+  explain: 'relationship',
+  apply: 'procedure',
+} as const;
+
+type SupportedFixtureConstruct = keyof typeof CORE_SUPPORT_TYPE;
+
+interface PlannabilityUnitSpec {
+  id: string;
+  title: string;
+  objectives: PlannabilityObjectiveSpec[];
+}
+
+/**
+ * Persists and accepts a successor Curriculum whose LearningUnits carry exactly the
+ * declared construct/priority shapes. Every objective declares its construct, so the
+ * gate resolves it through the declared path rather than the title cue.
+ */
+function acceptCurriculumWithTeachingUnits(id: string, units: PlannabilityUnitSpec[]): Curriculum {
+  const template = curriculum.nodes.find((node) => node.id === 'unit_1')!;
+  const previous = curriculum;
+  const nodes = [
+    curriculum.nodes.find((node) => node.id === 'course_root')!,
+    ...units.map((unit, unitIndex) => ({
+      ...template,
+      id: unit.id,
+      index: unitIndex,
+      title: unit.title,
+      learningUnit: {
+        ...template.learningUnit!,
+        objectives: unit.objectives.map((spec) =>
+          makeSemanticallySupportedObjective(
+            {
+              id: spec.id,
+              title: `Objective ${spec.id}`,
+              description: `Source-stated capability for ${spec.id} in ${unit.title}.`,
+              truthPremiseStatus: 'independently_verified' as const,
+              truthAuthorityRecordIds: ['authority_1'],
+              authorityClaimIds: ['claim_1'],
+              priority: spec.priority,
+              formalAssessmentReady: true,
+              formalAssessmentReadinessRationale:
+                'The exact source states this capability for the plannability fixture.',
+              formalAssessmentConstruct: spec.construct,
+              authorityEnvelopeTier: 'formal_sufficient',
+              authoritySourceBlockIds: ['blk_1'],
+              formalEvidenceSourceBlockIds: ['blk_1'],
+            },
+            CORE_SUPPORT_TYPE[spec.construct],
+          ),
+        ),
+        prerequisiteUnitIds: [],
+      },
+    })),
+  ];
+  const proposed: Curriculum = {
+    ...previous,
+    id,
+    version: previous.version + 1,
+    predecessorId: previous.id,
+    status: 'proposed',
+    acceptedAt: null,
+    nodes,
+    synthesisGroups: [],
+  };
+  repos.curricula.createVersion(
+    proposed,
+    { id: `${id}_proposed`, eventType: 'proposed', actor: 'local', payload: {}, createdAt: T2 },
+    { capabilityRecoveryPredecessorId: null },
+  );
+  curriculum = repos.curricula.accept(id, T2, {
+    id: `${id}_accepted`,
+    eventType: 'accepted',
+    actor: 'learner',
+    payload: {},
+    createdAt: T2,
+  });
+  return curriculum;
+}
+
+/** One teach_unit per declared unit, covering every objective so scope accounting passes. */
+function teachingProposal(
+  units: Array<{ unitId: string; objectiveIds: string[]; minutes: number; depth: DesiredDepth }>,
+): StudyPlanProposalPayload {
+  return {
+    rationale: 'Teach each accepted unit at the requested depth and duration.',
+    items: units.map((unit, index) => ({
+      key: `teach-${index + 1}`,
+      phase: 'Core route',
+      kind: 'teach_unit' as const,
+      curriculumLearningUnitId: unit.unitId,
+      rationale: `Teach the accepted objective set for ${unit.unitId}.`,
+      estimatedMinutes: unit.minutes,
+      targetDepth: unit.depth,
+      objectiveIds: unit.objectiveIds,
+      prerequisiteItemKeys: [],
+    })),
+    deferrals: [],
   };
 }
 
@@ -1355,5 +1471,390 @@ describe('StudyPlan proposal and accepted Course route', () => {
     expect(repos.studyPlans.get(proposed.studyPlan.id)?.status).toBe('proposed');
     expect(repos.sessionAgendas.list('ws_1')).toHaveLength(0);
     expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBeNull();
+  });
+});
+
+describe('pre-acceptance Lesson plannability gate', () => {
+  it('keeps a slot-infeasible 4x explain plan as an editable proposal and refuses acceptance', async () => {
+    acceptCurriculumWithTeachingUnits('curriculum_slots', [
+      {
+        id: 'unit_1',
+        title: 'Four explain objectives',
+        objectives: [
+          { id: 'obj_e1', construct: 'explain', priority: 'required' },
+          { id: 'obj_e2', construct: 'explain', priority: 'required' },
+          { id: 'obj_e3', construct: 'explain', priority: 'required' },
+          { id: 'obj_e4', construct: 'explain', priority: 'required' },
+        ],
+      },
+    ]);
+    const provider = new CapturingPlanProvider(
+      teachingProposal([
+        {
+          unitId: 'unit_1',
+          objectiveIds: ['obj_e1', 'obj_e2', 'obj_e3', 'obj_e4'],
+          minutes: 45,
+          depth: 'working_fluency',
+        },
+      ]),
+    );
+    const { plans, execution } = services(provider);
+
+    // T1 / T16: the proposal exists, carries the warning, and is not thrown away.
+    const proposed = await plans.propose(proposalRequest('propose-slots'));
+    expect(proposed.studyPlan.status).toBe('proposed');
+    expect(proposed.plannability).toEqual([
+      {
+        planItemId: proposed.studyPlan.items[0]!.id,
+        curriculumLearningUnitId: 'unit_1',
+        planningCode: 'lesson_slot_limit_exceeded',
+        targetDepth: 'working_fluency',
+        estimatedMinutes: 45,
+        remedies: ['reduce_depth', 'revise_plan_structure'],
+      },
+    ]);
+    expect(proposed.validationWarnings.join(' ')).toContain(
+      'more teaching segments than one Lesson allows',
+    );
+    expect(repos.studyPlans.get(proposed.studyPlan.id)?.status).toBe('proposed');
+
+    // T11: a slot ceiling must never be presented as repairable by adding minutes.
+    expect(proposed.plannability[0]!.remedies).not.toContain('increase_minutes');
+    expect(proposed.validationWarnings.join(' ')).toContain(
+      'A longer session cannot resolve a segment limit',
+    );
+
+    const providerCallsBeforeAcceptance = provider.calls;
+    let refusal: unknown;
+    try {
+      execution.decideStudyPlan(decisionRequest('accept-slots', proposed.studyPlan.id, 'accept'));
+      throw new Error('Acceptance should have been refused.');
+    } catch (error) {
+      refusal = error;
+    }
+    expect(refusal).toBeInstanceOf(AppError);
+    expect((refusal as AppError).code).toBe(ApiErrorCode.ValidationError);
+    expect((refusal as AppError).details).toMatchObject({
+      reason: 'lesson_plannability_infeasible',
+      items: [
+        {
+          planItemId: proposed.studyPlan.items[0]!.id,
+          planningCode: 'lesson_slot_limit_exceeded',
+          targetDepth: 'working_fluency',
+          estimatedMinutes: 45,
+          remedies: ['reduce_depth', 'revise_plan_structure'],
+        },
+      ],
+    });
+    // The planner's own arithmetic detail travels with the refusal.
+    expect(
+      ((refusal as AppError).details as { items: Array<{ details: Record<string, unknown> }> })
+        .items[0]!.details,
+    ).toMatchObject({ maxLessonSlots: 12, targetDepth: 'working_fluency' });
+
+    // T5: feasibility validation is provider-free.
+    expect(provider.calls).toBe(providerCallsBeforeAcceptance);
+    // T7 (initial-acceptance case): the refusal wrote nothing.
+    expect(repos.studyPlans.get(proposed.studyPlan.id)?.status).toBe('proposed');
+    expect(repos.sessionAgendas.list('ws_1')).toHaveLength(0);
+    expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBeNull();
+  });
+
+  it('refuses acceptance of a duration-infeasible plan with a budget code', async () => {
+    acceptCurriculumWithTeachingUnits('curriculum_budget', [
+      {
+        id: 'unit_1',
+        title: 'Live three-objective route',
+        objectives: [
+          { id: 'obj_b1', construct: 'explain', priority: 'required' },
+          { id: 'obj_b2', construct: 'apply', priority: 'required' },
+          { id: 'obj_b3', construct: 'apply', priority: 'required' },
+        ],
+      },
+    ]);
+    // 33 minutes is this route's working_fluency floor; 20 is below it.
+    const provider = new CapturingPlanProvider(
+      teachingProposal([
+        {
+          unitId: 'unit_1',
+          objectiveIds: ['obj_b1', 'obj_b2', 'obj_b3'],
+          minutes: 20,
+          depth: 'working_fluency',
+        },
+      ]),
+    );
+    const { plans, execution } = services(provider);
+    const proposed = await plans.propose(proposalRequest('propose-budget'));
+
+    expect(proposed.plannability[0]).toMatchObject({
+      planningCode: 'protected_budget_exceeds_agenda',
+      estimatedMinutes: 20,
+    });
+    // T12: budget failures may offer more minutes, so T11 cannot pass by offering nothing.
+    expect(proposed.plannability[0]!.remedies).toEqual(['increase_minutes', 'reduce_depth']);
+    expect(proposed.validationWarnings.join(' ')).toContain('does not fit the session length');
+
+    expect(() =>
+      execution.decideStudyPlan(decisionRequest('accept-budget', proposed.studyPlan.id, 'accept')),
+    ).toThrow(/cannot be planned as a Lesson/u);
+    expect(repos.studyPlans.get(proposed.studyPlan.id)?.status).toBe('proposed');
+    expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBeNull();
+  });
+
+  it('repairs a duration-infeasible proposal with resize_time and then accepts', async () => {
+    acceptCurriculumWithTeachingUnits('curriculum_resize', [
+      {
+        id: 'unit_1',
+        title: 'Live three-objective route',
+        objectives: [
+          { id: 'obj_r1', construct: 'explain', priority: 'required' },
+          { id: 'obj_r2', construct: 'apply', priority: 'required' },
+          { id: 'obj_r3', construct: 'apply', priority: 'required' },
+        ],
+      },
+    ]);
+    const provider = new CapturingPlanProvider(
+      teachingProposal([
+        {
+          unitId: 'unit_1',
+          objectiveIds: ['obj_r1', 'obj_r2', 'obj_r3'],
+          minutes: 20,
+          depth: 'working_fluency',
+        },
+      ]),
+    );
+    const { plans, execution } = services(provider);
+    const proposed = await plans.propose(proposalRequest('propose-resize'));
+    expect(proposed.plannability).toHaveLength(1);
+
+    const edited = plans.applyDraftEdit({
+      command: command('edit-resize'),
+      studyPlanId: proposed.studyPlan.id,
+      expectedVersion: proposed.studyPlan.version,
+      expectedContractId: proposed.studyPlan.contractVersionId,
+      expectedCurriculumId: proposed.studyPlan.curriculumVersionId,
+      expectedExecutionSourceManifestFingerprint:
+        proposed.studyPlan.executionSourceManifestFingerprint,
+      edit: {
+        kind: 'resize_time',
+        planItemId: proposed.studyPlan.items[0]!.id,
+        estimatedMinutes: 35,
+        reason: 'Give this unit enough time for its required teaching.',
+      },
+    });
+
+    // A NEW proposed version, with the predecessor rejected rather than mutated.
+    expect(edited.studyPlan.id).not.toBe(proposed.studyPlan.id);
+    expect(edited.studyPlan.status).toBe('proposed');
+    expect(edited.studyPlan.version).toBe(proposed.studyPlan.version + 1);
+    expect(edited.studyPlan.predecessorId).toBe(proposed.studyPlan.id);
+    expect(edited.studyPlan.provider).toBe('local');
+    expect(repos.studyPlans.get(proposed.studyPlan.id)?.status).toBe('rejected');
+    // T17: recomputed for the successor, not the hardcoded empty array.
+    expect(edited.plannability).toEqual([]);
+    expect(edited.validationWarnings).toEqual([]);
+    expect(edited.studyPlan.items[0]!.estimatedMinutes).toBe(35);
+
+    const accepted = execution.decideStudyPlan(
+      decisionRequest('accept-resized', edited.studyPlan.id, 'accept'),
+    );
+    expect(accepted.decision).toBe('accepted');
+    expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBe(edited.studyPlan.id);
+    expect(provider.calls).toBe(1);
+  });
+
+  it('repairs a slot-infeasible proposal with change_depth and then accepts', async () => {
+    acceptCurriculumWithTeachingUnits('curriculum_depth', [
+      {
+        id: 'unit_1',
+        title: 'Four explain objectives',
+        objectives: [
+          { id: 'obj_d1', construct: 'explain', priority: 'required' },
+          { id: 'obj_d2', construct: 'explain', priority: 'required' },
+          { id: 'obj_d3', construct: 'explain', priority: 'required' },
+          { id: 'obj_d4', construct: 'explain', priority: 'required' },
+        ],
+      },
+    ]);
+    const provider = new CapturingPlanProvider(
+      teachingProposal([
+        {
+          unitId: 'unit_1',
+          objectiveIds: ['obj_d1', 'obj_d2', 'obj_d3', 'obj_d4'],
+          minutes: 45,
+          depth: 'working_fluency',
+        },
+      ]),
+    );
+    const { plans, execution } = services(provider);
+    const proposed = await plans.propose(proposalRequest('propose-depth'));
+    expect(proposed.plannability[0]!.planningCode).toBe('lesson_slot_limit_exceeded');
+
+    const edited = plans.applyDraftEdit({
+      command: command('edit-depth'),
+      studyPlanId: proposed.studyPlan.id,
+      expectedVersion: proposed.studyPlan.version,
+      expectedContractId: proposed.studyPlan.contractVersionId,
+      expectedCurriculumId: proposed.studyPlan.curriculumVersionId,
+      expectedExecutionSourceManifestFingerprint:
+        proposed.studyPlan.executionSourceManifestFingerprint,
+      edit: {
+        kind: 'change_depth',
+        planItemId: proposed.studyPlan.items[0]!.id,
+        targetDepth: 'pass_oriented',
+        reason: 'Lower the depth so this unit fits one Lesson.',
+      },
+    });
+
+    expect(edited.studyPlan.id).not.toBe(proposed.studyPlan.id);
+    expect(edited.studyPlan.items[0]!.targetDepth).toBe('pass_oriented');
+    expect(edited.plannability).toEqual([]);
+    expect(edited.validationWarnings).toEqual([]);
+    expect(repos.studyPlans.get(proposed.studyPlan.id)?.status).toBe('rejected');
+
+    const accepted = execution.decideStudyPlan(
+      decisionRequest('accept-depth', edited.studyPlan.id, 'accept'),
+    );
+    expect(accepted.decision).toBe('accepted');
+    expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBe(edited.studyPlan.id);
+  });
+
+  it('checks every teach_unit, including one beyond the first Agenda selection window', async () => {
+    acceptCurriculumWithTeachingUnits(
+      'curriculum_window',
+      [1, 2, 3, 4].map((index) => ({
+        id: `unit_${index}`,
+        title: `Unit ${index}`,
+        objectives: [
+          { id: `obj_w${index}`, construct: 'identify' as const, priority: 'required' as const },
+        ],
+      })),
+    );
+    // Only the first three items can reach the draft Agenda (selectSessionItems caps at
+    // three); the fourth is the one an agenda-only gate would miss.
+    const provider = new CapturingPlanProvider(
+      teachingProposal([
+        { unitId: 'unit_1', objectiveIds: ['obj_w1'], minutes: 12, depth: 'pass_oriented' },
+        { unitId: 'unit_2', objectiveIds: ['obj_w2'], minutes: 12, depth: 'pass_oriented' },
+        { unitId: 'unit_3', objectiveIds: ['obj_w3'], minutes: 12, depth: 'pass_oriented' },
+        { unitId: 'unit_4', objectiveIds: ['obj_w4'], minutes: 240, depth: 'pass_oriented' },
+      ]),
+    );
+    const { plans, execution, agendas } = services(provider);
+    const proposed = await plans.propose(proposalRequest('propose-window'));
+
+    const lastItem = proposed.studyPlan.items[3]!;
+    expect(proposed.plannability).toEqual([
+      {
+        planItemId: lastItem.id,
+        curriculumLearningUnitId: 'unit_4',
+        planningCode: 'agenda_budget_underfilled',
+        targetDepth: 'pass_oriented',
+        estimatedMinutes: 240,
+        remedies: ['reduce_minutes', 'raise_depth'],
+      },
+    ]);
+
+    // The unplannable item is genuinely outside the agenda the acceptance would build.
+    const draft = agendas.composeDraft(contract, curriculum, proposed.studyPlan);
+    expect(draft.items.length).toBeLessThan(4);
+    expect(draft.items.map((item) => item.linkedPlanItemId)).not.toContain(lastItem.id);
+
+    expect(() =>
+      execution.decideStudyPlan(decisionRequest('accept-window', proposed.studyPlan.id, 'accept')),
+    ).toThrow(/cannot be planned as a Lesson/u);
+    expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBeNull();
+    expect(repos.sessionAgendas.list('ws_1')).toHaveLength(0);
+  });
+
+  it('preserves the accepted predecessor and active route when a successor is refused', async () => {
+    acceptCurriculumWithTeachingUnits('curriculum_successor', [
+      {
+        id: 'unit_1',
+        title: 'Two identify objectives',
+        objectives: [
+          { id: 'obj_s1', construct: 'identify', priority: 'required' },
+          { id: 'obj_s2', construct: 'identify', priority: 'required' },
+        ],
+      },
+    ]);
+    const feasible = teachingProposal([
+      { unitId: 'unit_1', objectiveIds: ['obj_s1', 'obj_s2'], minutes: 20, depth: 'pass_oriented' },
+    ]);
+    const provider = new CapturingPlanProvider(feasible);
+    const { plans, execution } = services(provider);
+
+    const first = await plans.propose(proposalRequest('propose-first'));
+    execution.decideStudyPlan(decisionRequest('accept-first', first.studyPlan.id, 'accept'));
+    const stateAfterAccept = repos.courseExecution.get('ws_1');
+    const acceptedPayloadBefore = JSON.stringify(repos.studyPlans.get(first.studyPlan.id));
+    const activeAgendaBefore = stateAfterAccept.activeAgendaId;
+    expect(stateAfterAccept.acceptedPlanId).toBe(first.studyPlan.id);
+
+    // A successor that is arithmetically infeasible at the same shape.
+    provider.output = teachingProposal([
+      {
+        unitId: 'unit_1',
+        objectiveIds: ['obj_s1', 'obj_s2'],
+        minutes: 20,
+        depth: 'deep_transfer',
+      },
+    ]);
+    const successor = await plans.propose(proposalRequest('propose-successor', first.studyPlan.id));
+    expect(successor.plannability).toHaveLength(1);
+
+    expect(() =>
+      execution.decideStudyPlan(
+        decisionRequest('accept-successor', successor.studyPlan.id, 'accept'),
+      ),
+    ).toThrow(/cannot be planned as a Lesson/u);
+
+    const stateAfterRefusal = repos.courseExecution.get('ws_1');
+    // T6: the accepted predecessor payload is byte-identical after the refusal.
+    expect(JSON.stringify(repos.studyPlans.get(first.studyPlan.id))).toBe(acceptedPayloadBefore);
+    // T7: proposed successor retained, prior route intact, no new agenda, version unmoved.
+    expect(repos.studyPlans.get(successor.studyPlan.id)?.status).toBe('proposed');
+    expect(repos.studyPlans.get(first.studyPlan.id)?.status).toBe('accepted');
+    expect(stateAfterRefusal.acceptedPlanId).toBe(first.studyPlan.id);
+    expect(stateAfterRefusal.activeAgendaId).toBe(activeAgendaBefore);
+    expect(stateAfterRefusal.version).toBe(stateAfterAccept.version);
+    expect(
+      repos.sessionAgendas.list('ws_1').filter((agenda) => agenda.status === 'active'),
+    ).toHaveLength(1);
+  });
+
+  it('adds no refusal at pass_oriented for a shape depth makes infeasible above it', async () => {
+    acceptCurriculumWithTeachingUnits('curriculum_baseline', [
+      {
+        id: 'unit_1',
+        title: 'Three apply objectives',
+        objectives: [
+          { id: 'obj_p1', construct: 'apply', priority: 'required' },
+          { id: 'obj_p2', construct: 'apply', priority: 'required' },
+          { id: 'obj_p3', construct: 'apply', priority: 'required' },
+        ],
+      },
+    ]);
+    // FakeProvider's shipped 25 minutes: feasible at pass_oriented, and the depth-driven
+    // regression the audit measured at working_fluency.
+    const provider = new CapturingPlanProvider(
+      teachingProposal([
+        {
+          unitId: 'unit_1',
+          objectiveIds: ['obj_p1', 'obj_p2', 'obj_p3'],
+          minutes: 25,
+          depth: 'pass_oriented',
+        },
+      ]),
+    );
+    const { plans, execution } = services(provider);
+    const proposed = await plans.propose(proposalRequest('propose-baseline'));
+
+    expect(proposed.plannability).toEqual([]);
+    expect(proposed.validationWarnings.join(' ')).not.toContain('cannot yet be planned');
+    const accepted = execution.decideStudyPlan(
+      decisionRequest('accept-baseline', proposed.studyPlan.id, 'accept'),
+    );
+    expect(accepted.decision).toBe('accepted');
   });
 });

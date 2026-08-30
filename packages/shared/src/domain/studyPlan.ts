@@ -111,6 +111,48 @@ export const StudyPlanRecommendationSchema = z
   .strict();
 export type StudyPlanRecommendation = z.infer<typeof StudyPlanRecommendationSchema>;
 
+/**
+ * Deterministic remedies for an arithmetically unplannable teaching item. Derived
+ * from the planning error code, never from a generic "try more time" default: a slot
+ * ceiling is not a budget, so `resize_time` up can never repair one.
+ */
+export const StudyPlanPlannabilityRemedySchema = z.enum([
+  'reduce_depth',
+  'raise_depth',
+  'increase_minutes',
+  'reduce_minutes',
+  'revise_plan_structure',
+]);
+export type StudyPlanPlannabilityRemedy = z.infer<typeof StudyPlanPlannabilityRemedySchema>;
+
+/**
+ * Lesson slot/budget plannability for one teaching item. A distinct axis from
+ * `StudyPlanFeasibility`, whose minutes are contract-budget totals; the two are
+ * deliberately not conflated.
+ *
+ * Computed, never persisted. Feasible items are omitted. Passing this check proves no
+ * arithmetic-class Lesson planning failure; it does **not** prove the Lesson will
+ * plan, because authority-class failures depend on retrieval-derived source authority
+ * that does not exist before Lesson preparation.
+ */
+export const StudyPlanItemPlannabilitySchema = z
+  .object({
+    planItemId: z.string().min(1),
+    curriculumLearningUnitId: z.string().min(1).nullable(),
+    planningCode: z.enum([
+      'lesson_slot_limit_exceeded',
+      'practice_slot_limit_exceeded',
+      'protected_budget_exceeds_agenda',
+      'planned_budget_exceeds_agenda',
+      'agenda_budget_underfilled',
+    ]),
+    targetDepth: DesiredDepthSchema,
+    estimatedMinutes: z.number().int().positive(),
+    remedies: z.array(StudyPlanPlannabilityRemedySchema).min(1).max(5),
+  })
+  .strict();
+export type StudyPlanItemPlannability = z.infer<typeof StudyPlanItemPlannabilitySchema>;
+
 export const PaceBaselineSchema = z
   .object({
     id: z.string().min(1),
@@ -442,6 +484,12 @@ export const StudyPlanProposalResponseSchema = z
     launchabilityValid: z.boolean(),
     validationErrors: z.array(z.string().min(1).max(500)).max(100),
     validationWarnings: z.array(z.string().min(1).max(500)).max(100),
+    /**
+     * Non-blocking Lesson plannability warnings for teaching items. Present so an
+     * arithmetically unplannable plan still exists as an editable proposal; acceptance
+     * is where it is refused.
+     */
+    plannability: z.array(StudyPlanItemPlannabilitySchema).max(500).default([]),
   })
   .strict();
 export type StudyPlanProposalResponse = z.infer<typeof StudyPlanProposalResponseSchema>;

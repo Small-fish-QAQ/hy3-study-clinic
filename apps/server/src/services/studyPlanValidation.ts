@@ -12,6 +12,8 @@ import {
   type StudyPlanFeasibility,
   type StudyPlanItem,
   type StudyPlanItemKind,
+  type StudyPlanItemPlannability,
+  type StudyPlanPlannabilityRemedy,
   type StudyPlanProposalPayload,
 } from '@hy3-clinic/shared';
 import type { Repositories } from '../repositories/index.js';
@@ -28,6 +30,11 @@ import {
   visualManifestMatchesCurrentDerivations,
 } from './advisoryVisuals.js';
 import { resolveReviewTargetContext } from './reviewSuccessor.js';
+import { deriveTeachingConstruct } from './teachingConstruct.js';
+import {
+  resolveTeachingSlotFeasibility,
+  type TeachingSlotArithmeticErrorCode,
+} from './teachingSkeletonPlanner.js';
 
 export const STUDY_PLAN_COMPLETION_POLICY_ID = 'learning-unit-completion';
 export const STUDY_PLAN_COMPLETION_POLICY_VERSION = 1;
@@ -710,6 +717,125 @@ export function validateAndMaterializeStudyPlanProposal(input: {
     errors: errors.slice(0, 100),
     warnings: warnings.slice(0, 100),
   };
+}
+
+/**
+ * Local Lesson slot limits, the same constants Lesson preparation passes to the
+ * planner (`teachingBriefPreparation.ts` `limits.maxSegments` and its literal 8).
+ */
+const LESSON_MAX_SLOTS = 12;
+const LESSON_MAX_PRACTICE_SLOTS = 8;
+
+/**
+ * Remedies that are semantically valid for each arithmetic failure, derived from the
+ * code alone.
+ *
+ * `lesson_slot_limit_exceeded` deliberately omits `increase_minutes`: the 12-slot
+ * ceiling is a count, not a budget, so adding minutes cannot repair it. Offering
+ * `resize_time` there would be a false statement to the learner.
+ */
+const PLANNABILITY_REMEDIES: Record<
+  TeachingSlotArithmeticErrorCode,
+  StudyPlanPlannabilityRemedy[]
+> = {
+  lesson_slot_limit_exceeded: ['reduce_depth', 'revise_plan_structure'],
+  practice_slot_limit_exceeded: ['revise_plan_structure'],
+  protected_budget_exceeds_agenda: ['increase_minutes', 'reduce_depth'],
+  planned_budget_exceeds_agenda: ['increase_minutes', 'reduce_depth'],
+  agenda_budget_underfilled: ['reduce_minutes', 'raise_depth'],
+};
+
+export interface StudyPlanItemPlannabilityResult {
+  plannability: StudyPlanItemPlannability;
+  /** Raw planner `details`, for the acceptance error payload. Not learner-facing. */
+  details: Record<string, unknown>;
+  message: string;
+}
+
+/**
+ * Per-item Lesson plannability, structurally parallel to `resolveLaunchForPlanItem`:
+ * deterministic, provider-free, and computed from the accepted Curriculum plus the
+ * item's own `targetDepth` and `estimatedMinutes`.
+ *
+ * Reads no authority envelope and fabricates none. Only the arithmetic class is
+ * decidable here; `objective_authority_unavailable` and
+ * `construct_authority_incompatible` need retrieval-derived authority that first
+ * exists at Lesson preparation, and stay reachable there.
+ *
+ * Returns `null` for a feasible item, a non-teaching item, or an item whose objectives
+ * are not resolvable from the curriculum, since those are already refused by scope
+ * accounting and launchability.
+ */
+export function resolveTeachingItemPlannability(
+  curriculum: Curriculum,
+  item: Pick<
+    StudyPlanItem,
+    'id' | 'kind' | 'curriculumLearningUnitId' | 'objectiveIds' | 'targetDepth' | 'estimatedMinutes'
+  >,
+): StudyPlanItemPlannabilityResult | null {
+  if (item.kind !== 'teach_unit') return null;
+  const objectives = objectiveMap(curriculum);
+  const resolved = item.objectiveIds.flatMap((objectiveId, index) => {
+    const owner = objectives.get(objectiveId);
+    if (!owner) return [];
+    return [
+      {
+        // The planner indexes objectives positionally as O1..On; Lesson preparation
+        // builds the same refs from the same ordered objective list.
+        objectiveRef: `O${index + 1}`,
+        construct: deriveTeachingConstruct(owner.objective),
+        priority: owner.objective.priority ?? 'normal',
+      },
+    ];
+  });
+  if (resolved.length === 0 || resolved.length !== item.objectiveIds.length) return null;
+  const verdict = resolveTeachingSlotFeasibility({
+    targetMinutes: item.estimatedMinutes,
+    targetDepth: item.targetDepth,
+    maxLessonSlots: LESSON_MAX_SLOTS,
+    maxPracticeSlots: LESSON_MAX_PRACTICE_SLOTS,
+    objectives: resolved,
+  });
+  if (verdict.feasible) return null;
+  return {
+    plannability: {
+      planItemId: item.id,
+      curriculumLearningUnitId: item.curriculumLearningUnitId,
+      planningCode: verdict.code,
+      targetDepth: item.targetDepth,
+      estimatedMinutes: item.estimatedMinutes,
+      remedies: PLANNABILITY_REMEDIES[verdict.code],
+    },
+    details: verdict.details,
+    message: verdict.message,
+  };
+}
+
+/** Every arithmetically unplannable teaching item in a plan, in item order. */
+export function resolveStudyPlanPlannability(
+  curriculum: Curriculum,
+  items: StudyPlanItem[],
+): StudyPlanItemPlannabilityResult[] {
+  return items.flatMap((item) => {
+    const result = resolveTeachingItemPlannability(curriculum, item);
+    return result ? [result] : [];
+  });
+}
+
+/** Bounded learner-facing warning text. Wording is chosen by code, never generic. */
+export function plannabilityWarningText(entry: StudyPlanItemPlannability): string {
+  const shared = `Plan item ${entry.planItemId} cannot yet be planned as a Lesson at ${entry.targetDepth} in ${entry.estimatedMinutes} minutes`;
+  switch (entry.planningCode) {
+    case 'lesson_slot_limit_exceeded':
+      return `${shared}: it needs more teaching segments than one Lesson allows. Lower the depth for this item, or revise the proposed route. A longer session cannot resolve a segment limit.`;
+    case 'practice_slot_limit_exceeded':
+      return `${shared}: it needs more Practice slots than one Lesson allows. Revise the proposed route for this item.`;
+    case 'protected_budget_exceeds_agenda':
+    case 'planned_budget_exceeds_agenda':
+      return `${shared}: the required teaching does not fit the session length. Give this item more minutes, or lower its depth.`;
+    case 'agenda_budget_underfilled':
+      return `${shared}: the session is longer than the planned teaching can honestly fill. Give this item fewer minutes, or raise its depth.`;
+  }
 }
 
 export function planFeasibilityFromContract(

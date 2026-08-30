@@ -4,8 +4,10 @@ import {
   assertRequiredPairsPlanned,
   planTeachingSkeleton,
   requiredDepthContracts,
+  resolveTeachingSlotFeasibility,
   TEACHING_SKELETON_PLANNER_VERSION,
   TeachingSkeletonPlanningError,
+  type TeachingSkeletonPlanningErrorCode,
   type TeachingSkeletonPlanningInput,
 } from './teachingSkeletonPlanner.js';
 
@@ -597,3 +599,204 @@ describe('depth-required Lesson obligations', () => {
 function fingerprintOf(skeleton: TeachingSkeleton): string {
   return skeleton.fingerprint;
 }
+
+describe('shared slot/budget arithmetic core', () => {
+  const DEPTHS: DesiredDepth[] = [
+    'pass_oriented',
+    'working_fluency',
+    'high_performance',
+    'deep_transfer',
+  ];
+  const CONSTRUCTS: FormalAssessmentConstruct[] = [
+    'identify',
+    'explain',
+    'apply',
+    'design',
+    'evaluate',
+  ];
+  const PRIORITY_PATTERNS: Array<Array<'required' | 'high' | 'normal' | 'optional'>> = [
+    ['required'],
+    ['optional'],
+    ['normal'],
+    ['high'],
+    ['required', 'optional'],
+    ['required', 'normal', 'optional'],
+    ['optional', 'optional', 'optional', 'optional'],
+  ];
+  const ARITHMETIC_CODES = new Set<TeachingSkeletonPlanningErrorCode>([
+    'lesson_slot_limit_exceeded',
+    'practice_slot_limit_exceeded',
+    'protected_budget_exceeds_agenda',
+    'planned_budget_exceeds_agenda',
+    'agenda_budget_underfilled',
+  ]);
+
+  function authorityValidInput(
+    count: number,
+    construct: FormalAssessmentConstruct,
+    priorities: Array<'required' | 'high' | 'normal' | 'optional'>,
+    targetDepth: DesiredDepth,
+    targetMinutes: number,
+  ): TeachingSkeletonPlanningInput {
+    return {
+      learningUnitTitle: 'Equivalence matrix unit',
+      targetMinutes,
+      targetDepth,
+      maxLessonSlots: 12,
+      maxPracticeSlots: 8,
+      objectives: Array.from({ length: count }, (_, index) =>
+        objective(construct, {
+          objectiveRef: `O${index + 1}`,
+          priority: priorities[index % priorities.length]!,
+        }),
+      ),
+    };
+  }
+
+  /**
+   * The test that keeps the extraction honest. The gate's oracle and the real planner
+   * must agree on every arithmetic-class verdict, or the gate is a second
+   * implementation of the planner's arithmetic wearing its error codes.
+   *
+   * Authority-valid fixtures only: authority is what the core deliberately cannot see,
+   * so a fixture that failed authority would prove nothing about the arithmetic.
+   */
+  it('agrees with the real planner on every arithmetic verdict across the matrix', () => {
+    const minutes = [1, 5, 9, 12, 18, 25, 27, 30, 33, 34, 36, 38, 39, 41, 45, 60, 87, 90, 240, 480];
+    let compared = 0;
+    let feasible = 0;
+    const divergences: string[] = [];
+    const codesSeen = new Set<string>();
+
+    for (const targetDepth of DEPTHS) {
+      for (const construct of CONSTRUCTS) {
+        for (const priorities of PRIORITY_PATTERNS) {
+          for (let count = 1; count <= 4; count += 1) {
+            for (const targetMinutes of minutes) {
+              const planningInput = authorityValidInput(
+                count,
+                construct,
+                priorities,
+                targetDepth,
+                targetMinutes,
+              );
+              let plannerCode: TeachingSkeletonPlanningErrorCode | null = null;
+              try {
+                planTeachingSkeleton(planningInput);
+              } catch (error) {
+                if (!(error instanceof TeachingSkeletonPlanningError)) throw error;
+                plannerCode = error.code;
+              }
+              const verdict = resolveTeachingSlotFeasibility({
+                targetMinutes,
+                targetDepth,
+                maxLessonSlots: 12,
+                maxPracticeSlots: 8,
+                objectives: planningInput.objectives.map((entry) => ({
+                  objectiveRef: entry.objectiveRef,
+                  construct: entry.construct,
+                  priority: entry.priority,
+                })),
+              });
+              compared += 1;
+              const expectedCode =
+                plannerCode !== null && ARITHMETIC_CODES.has(plannerCode) ? plannerCode : null;
+              const coreCode = verdict.feasible ? null : verdict.code;
+              if (coreCode !== expectedCode) {
+                divergences.push(
+                  `${targetDepth}/${construct}/n=${count}/p=${priorities.join('+')}/T=${targetMinutes}: planner=${expectedCode} core=${coreCode}`,
+                );
+              }
+              if (coreCode === null) feasible += 1;
+              else codesSeen.add(coreCode);
+            }
+          }
+        }
+      }
+    }
+
+    expect(divergences).toEqual([]);
+    expect(compared).toBe(DEPTHS.length * CONSTRUCTS.length * PRIORITY_PATTERNS.length * 4 * 20);
+    // The matrix must actually exercise both outcomes, or agreement is vacuous.
+    expect(feasible).toBeGreaterThan(0);
+    expect(codesSeen).toContain('lesson_slot_limit_exceeded');
+    expect(codesSeen).toContain('protected_budget_exceeds_agenda');
+    expect(codesSeen).toContain('planned_budget_exceeds_agenda');
+    expect(codesSeen).toContain('agenda_budget_underfilled');
+  });
+
+  it('reproduces the depth-driven slot ceiling the gate exists to catch', () => {
+    const fourExplain = (targetDepth: DesiredDepth, targetMinutes: number) =>
+      resolveTeachingSlotFeasibility({
+        targetMinutes,
+        targetDepth,
+        maxLessonSlots: 12,
+        maxPracticeSlots: 8,
+        objectives: Array.from({ length: 4 }, (_, index) => ({
+          objectiveRef: `O${index + 1}`,
+          construct: 'explain' as const,
+          priority: 'required' as const,
+        })),
+      });
+
+    // pass_oriented plans this unit; working_fluency and above cannot, at ANY duration.
+    expect(fourExplain('pass_oriented', 41)).toEqual({ feasible: true });
+    for (const targetDepth of ['working_fluency', 'high_performance', 'deep_transfer'] as const) {
+      for (const targetMinutes of [1, 25, 41, 60, 120, 240]) {
+        expect(fourExplain(targetDepth, targetMinutes)).toMatchObject({
+          feasible: false,
+          code: 'lesson_slot_limit_exceeded',
+        });
+      }
+    }
+  });
+
+  it('raises the minimum feasible duration with depth for the live three-objective route', () => {
+    const floor = (targetDepth: DesiredDepth): number | null => {
+      for (let targetMinutes = 1; targetMinutes <= 120; targetMinutes += 1) {
+        const verdict = resolveTeachingSlotFeasibility({
+          targetMinutes,
+          targetDepth,
+          maxLessonSlots: 12,
+          maxPracticeSlots: 8,
+          objectives: [
+            { objectiveRef: 'O1', construct: 'explain', priority: 'required' },
+            { objectiveRef: 'O2', construct: 'apply', priority: 'required' },
+            { objectiveRef: 'O3', construct: 'apply', priority: 'required' },
+          ],
+        });
+        if (verdict.feasible) return targetMinutes;
+      }
+      return null;
+    };
+
+    expect(floor('pass_oriented')).toBe(27);
+    expect(floor('working_fluency')).toBe(33);
+    expect(floor('high_performance')).toBe(33);
+    expect(floor('deep_transfer')).toBe(39);
+  });
+
+  it('refuses the shipped offline 25-minute shapes only once depth requires more', () => {
+    const at25 = (count: number, construct: FormalAssessmentConstruct, targetDepth: DesiredDepth) =>
+      resolveTeachingSlotFeasibility({
+        targetMinutes: 25,
+        targetDepth,
+        maxLessonSlots: 12,
+        maxPracticeSlots: 8,
+        objectives: Array.from({ length: count }, (_, index) => ({
+          objectiveRef: `O${index + 1}`,
+          construct,
+          priority: 'required' as const,
+        })),
+      });
+
+    expect(at25(3, 'apply', 'pass_oriented')).toEqual({ feasible: true });
+    expect(at25(4, 'identify', 'pass_oriented')).toEqual({ feasible: true });
+    expect(at25(3, 'apply', 'working_fluency')).toMatchObject({
+      code: 'protected_budget_exceeds_agenda',
+    });
+    expect(at25(4, 'identify', 'working_fluency')).toMatchObject({
+      code: 'protected_budget_exceeds_agenda',
+    });
+  });
+});

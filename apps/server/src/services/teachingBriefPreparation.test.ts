@@ -18,6 +18,8 @@ import { createRepositories, type Repositories } from '../repositories/index.js'
 import { makeBlock, makeConcept, makeMaterial, makeWorkspace, T0 } from '../testing/fixtures.js';
 import { fixedClock } from '../util/ids.js';
 import { createServices, type Services } from './index.js';
+import { resolveStudyPlanPlannability } from './studyPlanValidation.js';
+import { TEACHING_SKELETON_PLANNER_VERSION } from './teachingSkeletonPlanner.js';
 import {
   fingerprintObjectiveAuthorityBinding,
   fingerprintObjectiveAuthorityProposition,
@@ -1197,6 +1199,34 @@ describe('Teaching Brief preparation', () => {
         .prepare('SELECT COUNT(*) AS count FROM model_logical_calls WHERE operation_id = ?')
         .get(operation.id),
     ).toEqual({ count: 0 });
+  });
+
+  it('reaches Lesson preparation with no arithmetic planning failure once the acceptance gate has passed', async () => {
+    // The harness accepts its route through the real `decideStudyPlan`, so reaching this
+    // point already means every teach_unit passed the pre-acceptance plannability gate.
+    const harness = await createHarness();
+    const acceptedPlan = harness.repos.studyPlans.get(harness.planId)!;
+    const curriculum = harness.repos.curricula.get(harness.curriculumId)!;
+    expect(acceptedPlan.status).toBe('accepted');
+
+    // The gate agrees, over the same accepted plan the route now runs on.
+    expect(resolveStudyPlanPlannability(curriculum, acceptedPlan.items)).toEqual([]);
+    const teachingItems = acceptedPlan.items.filter((item) => item.kind === 'teach_unit');
+    expect(teachingItems.length).toBeGreaterThan(0);
+
+    // And real preparation, which builds the planner input from the Agenda and Curriculum
+    // rather than from the gate's projection, produces no arithmetic-class failure. This
+    // is what pins the two input constructions together: objective order, the
+    // `priority ?? 'normal'` default, the construct rule, minutes, and the slot limits.
+    const route = startTeachingRoute(harness);
+    const prepared = await harness.services.teachingBriefPreparation.prepare(
+      preparationRequest(harness, route, 'brief-gate-agreement'),
+    );
+    expect(prepared.status).toBe('prepared');
+    const plannedSkeleton = harness.provider.lastLessonContentInput?.skeleton;
+    expect(plannedSkeleton?.plannerVersion).toBe(TEACHING_SKELETON_PLANNER_VERSION);
+    expect(plannedSkeleton?.targetMinutes).toBe(route.agendaItem.estimatedMinutes);
+    expect(plannedSkeleton!.lessonSlots.length).toBeLessThanOrEqual(12);
   });
 
   it('prepares and reuses an immutable Brief for the accepted executable route', async () => {

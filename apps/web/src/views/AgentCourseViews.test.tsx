@@ -9,6 +9,7 @@ import type {
   SessionAgenda,
   SourceBlock,
   StudyPlan,
+  StudyPlanItemPlannability,
 } from '@hy3-clinic/shared';
 import { CourseHomeView, type CourseHomeViewProps } from './CourseHomeView.js';
 import { CurriculumView } from './CurriculumView.js';
@@ -1050,6 +1051,233 @@ describe('CourseHomeView action and authority rendering', () => {
       planItemId: 'plan_item_2',
       afterPlanItemId: null,
     });
+  });
+});
+
+describe('StudyPlanPanel deterministic depth and duration repair', () => {
+  function proposedPanel(
+    overrides: {
+      plannability?: StudyPlanItemPlannability[];
+      onEdit?: ReturnType<typeof vi.fn>;
+    } = {},
+  ) {
+    const onEdit = overrides.onEdit ?? vi.fn();
+    const proposed = plan('proposed');
+    render(
+      <StudyPlanPanel
+        plan={proposed}
+        history={[]}
+        canEdit
+        canAccept
+        busyAction={null}
+        launchByPlanItemId={{}}
+        {...(overrides.plannability ? { plannability: overrides.plannability } : {})}
+        onEdit={onEdit}
+        onAccept={vi.fn()}
+        onReject={vi.fn()}
+        onLaunchItem={vi.fn()}
+      />,
+    );
+    return { onEdit, proposed };
+  }
+
+  it('shows each teaching item current depth and dispatches change_depth on learner selection', async () => {
+    const user = userEvent.setup();
+    const { onEdit } = proposedPanel();
+
+    // The current depth is visible, not merely editable.
+    const depthSelect = screen.getByLabelText('深度', { selector: '#depth-plan_item_1' });
+    expect(depthSelect).toHaveValue('high_performance');
+
+    await user.selectOptions(depthSelect, 'pass_oriented');
+
+    expect(onEdit).toHaveBeenCalledTimes(1);
+    expect(onEdit).toHaveBeenCalledWith({
+      kind: 'change_depth',
+      planItemId: 'plan_item_1',
+      targetDepth: 'pass_oriented',
+      reason: expect.stringContaining('高水平表现'),
+    });
+    // Depth is never changed automatically; only the learner's explicit choice sends it.
+    expect(onEdit.mock.calls[0]![0].kind).not.toBe('reorder');
+  });
+
+  it('dispatches resize_time only for a changed, valid positive integer duration', async () => {
+    const user = userEvent.setup();
+    const { onEdit } = proposedPanel();
+
+    const minutes = screen.getByLabelText('时长（分钟）', { selector: '#minutes-plan_item_1' });
+    const apply = screen.getAllByRole('button', { name: '应用时长' })[0]!;
+    // Unchanged duration is not a plan edit.
+    expect(apply).toBeDisabled();
+
+    await user.clear(minutes);
+    await user.type(minutes, '0');
+    expect(screen.getByText('时长需要是正整数分钟。')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: '应用时长' })[0]!).toBeDisabled();
+    expect(onEdit).not.toHaveBeenCalled();
+
+    await user.clear(minutes);
+    await user.type(minutes, '35');
+    await user.click(screen.getAllByRole('button', { name: '应用时长' })[0]!);
+
+    expect(onEdit).toHaveBeenCalledTimes(1);
+    expect(onEdit).toHaveBeenCalledWith({
+      kind: 'resize_time',
+      planItemId: 'plan_item_1',
+      estimatedMinutes: 35,
+      reason: expect.stringContaining('35'),
+    });
+  });
+
+  it('never offers more minutes as the repair for a Lesson segment ceiling', () => {
+    proposedPanel({
+      plannability: [
+        {
+          planItemId: 'plan_item_1',
+          curriculumLearningUnitId: 'unit_1',
+          planningCode: 'lesson_slot_limit_exceeded',
+          targetDepth: 'high_performance',
+          estimatedMinutes: 20,
+          remedies: ['reduce_depth', 'revise_plan_structure'],
+        },
+      ],
+    });
+
+    const region = screen.getByRole('region', { name: '该单元暂时无法排课 plan_item_1' });
+    expect(region).toHaveTextContent('增加时长无法解决环节数量上限');
+    expect(region).toHaveTextContent('降低该单元的深度');
+    expect(region).not.toHaveTextContent('增加该单元的时长');
+    // The proposal itself stays on screen and remains acceptable-looking, not hidden.
+    expect(screen.getByRole('button', { name: '接受并启用路线' })).toBeInTheDocument();
+    // And the honest scope limit is stated rather than implying the Lesson will teach.
+    expect(region).toHaveTextContent('并不代表课程依据已经具备');
+  });
+
+  it('offers more minutes for a duration failure and marks only the affected item', () => {
+    proposedPanel({
+      plannability: [
+        {
+          planItemId: 'plan_item_2',
+          curriculumLearningUnitId: 'unit_2',
+          planningCode: 'protected_budget_exceeds_agenda',
+          targetDepth: 'high_performance',
+          estimatedMinutes: 25,
+          remedies: ['increase_minutes', 'reduce_depth'],
+        },
+      ],
+    });
+
+    const region = screen.getByRole('region', { name: '该单元暂时无法排课 plan_item_2' });
+    expect(region).toHaveTextContent('放不进当前时长');
+    expect(region).toHaveTextContent('增加该单元的时长');
+    expect(
+      screen.queryByRole('region', { name: '该单元暂时无法排课 plan_item_1' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('leaves the existing reorder controls unchanged alongside the new repair controls', async () => {
+    const user = userEvent.setup();
+    const { onEdit } = proposedPanel();
+
+    await user.click(screen.getAllByRole('button', { name: '下移' })[0]!);
+
+    expect(onEdit).toHaveBeenCalledWith({
+      kind: 'reorder',
+      planItemId: 'plan_item_1',
+      afterPlanItemId: 'plan_item_2',
+    });
+  });
+
+  it('disables every repair control while a plan action is in flight', () => {
+    render(
+      <StudyPlanPanel
+        plan={plan('proposed')}
+        history={[]}
+        canEdit
+        canAccept
+        busyAction="edit-plan"
+        launchByPlanItemId={{}}
+        onEdit={vi.fn()}
+        onAccept={vi.fn()}
+        onReject={vi.fn()}
+        onLaunchItem={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText('深度', { selector: '#depth-plan_item_1' })).toBeDisabled();
+    expect(
+      screen.getByLabelText('时长（分钟）', { selector: '#minutes-plan_item_1' }),
+    ).toBeDisabled();
+    expect(screen.getAllByRole('button', { name: '应用时长' })[0]!).toBeDisabled();
+  });
+
+  it('keeps a refused plan decision visible and the proposal repairable', async () => {
+    const value = overview('launchable');
+    value.activeContract = null;
+    value.acceptedStudyPlan = null;
+    value.activeAgenda = null;
+    value.nextAction = null;
+    value.pendingContract = contract('learner_confirmed');
+    value.proposedStudyPlan = plan('proposed');
+    value.setupStage = 'plan_review';
+    value.capabilities.canEditStudyPlan = true;
+    value.capabilities.canAcceptStudyPlan = true;
+    const props = {
+      ...homeProps(value),
+      // The existing stale/failed-decision convention, unchanged by this round.
+      actionFailure: { owner: 'plan' as const, message: '该学习路线提案已过期，请查看最新提案。' },
+      studyPlanPlannability: [
+        {
+          planItemId: 'plan_item_1',
+          curriculumLearningUnitId: 'unit_1',
+          planningCode: 'lesson_slot_limit_exceeded' as const,
+          targetDepth: 'high_performance' as const,
+          estimatedMinutes: 20,
+          remedies: ['reduce_depth' as const, 'revise_plan_structure' as const],
+        },
+      ],
+    };
+    const user = userEvent.setup();
+    render(<CourseHomeView {...props} />);
+
+    // The failure is not obscured by the new controls.
+    expect(screen.getByText(/该学习路线提案已过期/)).toBeInTheDocument();
+    // The proposal, its plannability reason, and the repair route all remain reachable.
+    expect(
+      screen.getByRole('region', { name: '该单元暂时无法排课 plan_item_1' }),
+    ).toHaveTextContent('降低该单元的深度');
+    await user.selectOptions(
+      screen.getByLabelText('深度', { selector: '#depth-plan_item_1' }),
+      'pass_oriented',
+    );
+    expect(props.onEditStudyPlan).toHaveBeenCalledWith({
+      kind: 'change_depth',
+      planItemId: 'plan_item_1',
+      targetDepth: 'pass_oriented',
+      reason: expect.any(String),
+    });
+  });
+
+  it('offers no repair controls on an accepted immutable plan', () => {
+    render(
+      <StudyPlanPanel
+        plan={plan('accepted')}
+        history={[]}
+        canEdit={false}
+        canAccept={false}
+        busyAction={null}
+        launchByPlanItemId={{}}
+        onEdit={vi.fn()}
+        onAccept={vi.fn()}
+        onReject={vi.fn()}
+        onLaunchItem={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByLabelText('时长（分钟）')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '应用时长' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: '调整该单元的深度或时长' })).not.toBeInTheDocument();
   });
 });
 

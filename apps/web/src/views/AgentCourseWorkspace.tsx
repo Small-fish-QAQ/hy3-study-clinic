@@ -16,8 +16,10 @@ import type {
   PublicQuiz,
   SourceBlock,
   StudyPlanDraftEdit,
+  StudyPlanItemPlannability,
   WorkspaceSummary,
 } from '@hy3-clinic/shared';
+import { StudyPlanItemPlannabilitySchema } from '@hy3-clinic/shared';
 import { api, ApiClientError } from '../api.js';
 import type { CourseDestination } from '../appRoutes.js';
 import { Banner, Loading } from '../components/ui.js';
@@ -156,6 +158,21 @@ export interface AgentCourseWorkspaceProps {
   onWorkspaceDeleted?: (workspaceId: string) => void;
 }
 
+/**
+ * Reads per-item Lesson plannability out of a refused acceptance. Validated with the
+ * shared schema rather than trusted, and an unrecognised payload degrades to no
+ * per-item detail instead of throwing over the learner's error message.
+ */
+function readPlannabilityFromError(error: unknown): StudyPlanItemPlannability[] {
+  if (!(error instanceof ApiClientError) || !error.details || typeof error.details !== 'object') {
+    return [];
+  }
+  const parsed = StudyPlanItemPlannabilitySchema.array()
+    .max(500)
+    .safeParse((error.details as { plannability?: unknown }).plannability);
+  return parsed.success ? parsed.data : [];
+}
+
 function viewForDestination(destination: CourseDestination): AgentCourseView {
   if (destination === 'study') return 'session';
   if (destination === 'curriculum') return 'curriculum';
@@ -290,6 +307,14 @@ export function AgentCourseWorkspace({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  /**
+   * Server-computed Lesson plannability for the current proposal. Sourced from the
+   * propose/edit response and from a refused acceptance; never derived locally, because
+   * the slot arithmetic has exactly one implementation and it is on the server.
+   */
+  const [studyPlanPlannability, setStudyPlanPlannability] = useState<StudyPlanItemPlannability[]>(
+    [],
+  );
   const [contractEditorOpen, setContractEditorOpen] = useState(false);
   const [editingContractId, setEditingContractId] = useState<string | null>(null);
   const [contractForm, setContractForm] = useState<ContractFormState>(() => initialForm(null));
@@ -1134,7 +1159,10 @@ export function AgentCourseWorkspace({
           },
           signal,
         );
-        if (capturedWorkspaceId === workspaceIdRef.current) await refresh(signal);
+        if (capturedWorkspaceId === workspaceIdRef.current) {
+          setStudyPlanPlannability(response.plannability ?? []);
+          await refresh(signal);
+        }
         return response;
       } catch (error) {
         if (
@@ -1168,6 +1196,7 @@ export function AgentCourseWorkspace({
   async function editPlan(edit: StudyPlanDraftEdit): Promise<void> {
     if (!workspaceId || !overview?.proposedStudyPlan) return;
     const current = overview.proposedStudyPlan;
+    const capturedWorkspaceId = workspaceId;
     await runAction(
       'edit-plan',
       view === 'progress' ? 'progress' : 'home-plan',
@@ -1186,7 +1215,13 @@ export function AgentCourseWorkspace({
           },
           signal,
         ),
-      async (_result, signal) => refresh(signal),
+      async (result, signal) => {
+        // Recomputed for the successor version, so a repair that worked visibly clears.
+        if (capturedWorkspaceId === workspaceIdRef.current) {
+          setStudyPlanPlannability(result.plannability ?? []);
+        }
+        await refresh(signal);
+      },
     );
   }
 
@@ -1199,26 +1234,40 @@ export function AgentCourseWorkspace({
       setNotice('拒绝学习路线需要填写原因。');
       return;
     }
+    const capturedWorkspaceId = workspaceId;
     await runAction(
       `${decision}-plan`,
       view === 'progress' ? 'progress' : 'home-plan',
-      (signal) =>
-        api.decideStudyPlan(
-          workspaceId,
-          current.id,
-          {
-            command: command(workspaceId, `${decision}_plan`),
-            studyPlanId: current.id,
-            expectedVersion: current.version,
-            expectedContractId: current.contractVersionId,
-            expectedCurriculumId: current.curriculumVersionId,
-            expectedExecutionSourceManifestFingerprint: current.executionSourceManifestFingerprint,
-            decision,
-            reason: reason ?? null,
-          },
-          signal,
-        ),
-      async (_result, signal) => refresh(signal),
+      async (signal) => {
+        try {
+          return await api.decideStudyPlan(
+            workspaceId,
+            current.id,
+            {
+              command: command(workspaceId, `${decision}_plan`),
+              studyPlanId: current.id,
+              expectedVersion: current.version,
+              expectedContractId: current.contractVersionId,
+              expectedCurriculumId: current.curriculumVersionId,
+              expectedExecutionSourceManifestFingerprint:
+                current.executionSourceManifestFingerprint,
+              decision,
+              reason: reason ?? null,
+            },
+            signal,
+          );
+        } catch (error) {
+          // A refused acceptance leaves the proposal editable; surface why, per item.
+          if (capturedWorkspaceId === workspaceIdRef.current) {
+            setStudyPlanPlannability(readPlannabilityFromError(error));
+          }
+          throw error;
+        }
+      },
+      async (_result, signal) => {
+        if (capturedWorkspaceId === workspaceIdRef.current) setStudyPlanPlannability([]);
+        await refresh(signal);
+      },
     );
   }
 
@@ -1565,6 +1614,7 @@ export function AgentCourseWorkspace({
             setSettingsOpen(true);
           }}
           onEditStudyPlan={(edit) => void editPlan(edit)}
+          studyPlanPlannability={studyPlanPlannability}
           onAcceptStudyPlan={() => void decidePlan('accept')}
           onRejectStudyPlan={() => void decidePlan('reject')}
           onLaunchNext={() => void launchNext()}

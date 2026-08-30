@@ -282,9 +282,25 @@ function relationKinds(construct: FormalAssessmentConstruct): TeachingRelationKi
 
 type UnnumberedSlot = Omit<TeachingSkeletonSlot, 'slotId'>;
 
-function constructCoreSlots(objective: TeachingSkeletonObjective): UnnumberedSlot[] {
+/**
+ * A slot decided by arithmetic alone. Authority decorates a slot; it never
+ * participates in slot counts or budgets, so the shared feasibility core works in
+ * blueprints and the planner alone attaches the authority envelope.
+ */
+type TeachingSlotBlueprint = Omit<
+  UnnumberedSlot,
+  'authorityMode' | 'allowedSourceRefs' | 'allowedVisualRefs'
+>;
+
+/** The arithmetic-relevant projection of an objective. No authority, no prose. */
+export interface TeachingSlotArithmeticObjective {
+  objectiveRef: string;
+  construct: FormalAssessmentConstruct;
+  priority: 'required' | 'high' | 'normal' | 'optional';
+}
+
+function constructCoreSlots(objective: TeachingSlotArithmeticObjective): TeachingSlotBlueprint[] {
   const protectedSlot = objective.priority !== 'optional';
-  const authority = slotAuthority(objective);
   if (objective.construct === 'identify') {
     return [
       {
@@ -293,7 +309,6 @@ function constructCoreSlots(objective: TeachingSkeletonObjective): UnnumberedSlo
         role: 'guided_practice',
         purpose:
           'Make the objective observable through meaningful identification or discrimination, not source-location recall.',
-        ...authority,
         protected: protectedSlot,
         activityBudget: IDENTIFY_ACTION_BUDGET,
         learnerActionRequired: true,
@@ -310,7 +325,6 @@ function constructCoreSlots(objective: TeachingSkeletonObjective): UnnumberedSlo
         role: 'mechanism',
         purpose:
           'Teach a source-compatible mechanism, relation, reason, or consequence with two meaningful propositions.',
-        ...authority,
         protected: protectedSlot,
         activityBudget: EXPLAIN_RELATION_BUDGET,
         learnerActionRequired: false,
@@ -323,7 +337,6 @@ function constructCoreSlots(objective: TeachingSkeletonObjective): UnnumberedSlo
         role: 'guided_practice',
         purpose:
           'Require the learner to commit to a mechanism or relation before guidance is revealed.',
-        ...authority,
         protected: protectedSlot,
         activityBudget: EXPLAIN_ACTION_BUDGET,
         learnerActionRequired: true,
@@ -339,7 +352,6 @@ function constructCoreSlots(objective: TeachingSkeletonObjective): UnnumberedSlo
       role: 'worked_example',
       purpose:
         'Work from a concrete starting state through the exact source rule and visible transitions, require a bounded learner decision or judgment before guidance, then show the result and why it follows.',
-      ...authority,
       protected: protectedSlot,
       activityBudget: WORKED_PROCESS_BUDGET,
       learnerActionRequired: true,
@@ -355,11 +367,10 @@ function constructCoreSlots(objective: TeachingSkeletonObjective): UnnumberedSlo
  * the existing `contrast` and `explanation` roles; introduces no new vocabulary.
  */
 function depthRequiredSlots(
-  objective: TeachingSkeletonObjective,
+  objective: TeachingSlotArithmeticObjective,
   targetDepth: DesiredDepth,
-): UnnumberedSlot[] {
+): TeachingSlotBlueprint[] {
   const protectedSlot = objective.priority !== 'optional';
-  const authority = slotAuthority(objective);
   return requiredDepthContracts(targetDepth, objective.construct).map((contract) => {
     if (contract === 'boundary_work') {
       return {
@@ -368,7 +379,6 @@ function depthRequiredSlots(
         role: 'contrast' as const,
         purpose:
           'Establish the source-compatible boundary of the objective: what it excludes, or the misconception it corrects.',
-        ...authority,
         protected: protectedSlot,
         activityBudget: BOUNDARY_WORK_BUDGET,
         learnerActionRequired: false,
@@ -382,7 +392,6 @@ function depthRequiredSlots(
       role: 'explanation' as const,
       purpose:
         'Teach one typed source-compatible relation the objective depends on, so transfer does not rest on restatement.',
-      ...authority,
       protected: protectedSlot,
       activityBudget: DEPTH_RELATION_BUDGET,
       learnerActionRequired: false,
@@ -393,22 +402,16 @@ function depthRequiredSlots(
 }
 
 function requiredSlots(
-  objectives: TeachingSkeletonObjective[],
+  objectives: TeachingSlotArithmeticObjective[],
   targetDepth: DesiredDepth,
-): TeachingSkeletonSlot[] {
-  const slots: TeachingSkeletonSlot[] = [];
-  const push = (slot: UnnumberedSlot): void => {
-    slots.push({ ...slot, slotId: `L${slots.length + 1}` });
-  };
-  push({
+): TeachingSlotBlueprint[] {
+  const slots: TeachingSlotBlueprint[] = [];
+  slots.push({
     objectiveRefs: objectives.map((objective) => objective.objectiveRef),
     construct: null,
     role: 'objective_orientation',
     purpose:
       'Orient the learner to the locally selected capabilities and their place in the current route.',
-    authorityMode: 'bounded_synthesis',
-    allowedSourceRefs: sortedUnique(objectives.flatMap((objective) => objective.allowedSourceRefs)),
-    allowedVisualRefs: sortedUnique(objectives.flatMap((objective) => objective.allowedVisualRefs)),
     protected: true,
     activityBudget: ORIENTATION_BUDGET,
     learnerActionRequired: false,
@@ -416,15 +419,15 @@ function requiredSlots(
     allowedRelations: [],
   });
   for (const objective of objectives) {
-    for (const slot of constructCoreSlots(objective)) push(slot);
-    for (const slot of depthRequiredSlots(objective, targetDepth)) push(slot);
+    for (const slot of constructCoreSlots(objective)) slots.push(slot);
+    for (const slot of depthRequiredSlots(objective, targetDepth)) slots.push(slot);
   }
   return slots;
 }
 
 /** The deterministic depth obligation set the final skeleton must satisfy. */
 function requiredDepthPairs(
-  objectives: TeachingSkeletonObjective[],
+  objectives: TeachingSlotArithmeticObjective[],
   targetDepth: DesiredDepth,
 ): RequiredQualityContractPair[] {
   return objectives.flatMap((objective) =>
@@ -462,7 +465,7 @@ export function assertRequiredPairsPlanned(
   }
 }
 
-function practiceTargets(objectives: TeachingSkeletonObjective[]): TeachingSkeletonObjective[] {
+function practiceTargets<T extends TeachingSlotArithmeticObjective>(objectives: T[]): T[] {
   const required = objectives.filter(
     (objective) => objective.priority === 'required' || objective.priority === 'high',
   );
@@ -470,61 +473,94 @@ function practiceTargets(objectives: TeachingSkeletonObjective[]): TeachingSkele
   return [objectives.find((objective) => objective.priority === 'normal') ?? objectives[0]!];
 }
 
-function practiceSlots(objectives: TeachingSkeletonObjective[]): TeachingPracticePlanSlot[] {
-  return practiceTargets(objectives).map((objective, index) => ({
-    practiceSlotId: `PR${index + 1}`,
-    objectiveRef: objective.objectiveRef,
-    construct: objective.construct,
-    authorityMode: objective.authorityMode,
-    allowedSourceRefs: objective.allowedSourceRefs,
-    allowedVisualRefs: objective.allowedVisualRefs,
-    capabilityToObserve: PRACTICE_CAPABILITIES[objective.construct],
-    prohibitedStrongerConstructs: STRONGER_CONSTRUCTS[objective.construct],
-    retryPermitted: true,
-    activityBudget: PRACTICE_BUDGET,
-  }));
+/** Driven by the shared core's selection, so target choice has one implementation. */
+function practiceSlots(
+  practiceObjectiveRefs: string[],
+  objectivesByRef: Map<string, TeachingSkeletonObjective>,
+): TeachingPracticePlanSlot[] {
+  return practiceObjectiveRefs.map((practiceObjectiveRef, index) => {
+    const objective = objectivesByRef.get(practiceObjectiveRef)!;
+    return {
+      practiceSlotId: `PR${index + 1}`,
+      objectiveRef: objective.objectiveRef,
+      construct: objective.construct,
+      authorityMode: objective.authorityMode,
+      allowedSourceRefs: objective.allowedSourceRefs,
+      allowedVisualRefs: objective.allowedVisualRefs,
+      capabilityToObserve: PRACTICE_CAPABILITIES[objective.construct],
+      prohibitedStrongerConstructs: STRONGER_CONSTRUCTS[objective.construct],
+      retryPermitted: true,
+      activityBudget: PRACTICE_BUDGET,
+    };
+  });
+}
+
+/**
+ * Attaches the authority envelope to an arithmetic blueprint. Field order matches the
+ * pre-extraction slot literals exactly, because the skeleton fingerprint hashes this
+ * object's JSON serialization.
+ */
+function decorateSlot(
+  blueprint: TeachingSlotBlueprint,
+  slotIndex: number,
+  objectivesByRef: Map<string, TeachingSkeletonObjective>,
+  orientationAuthority: ReturnType<typeof slotAuthority>,
+): TeachingSkeletonSlot {
+  const objective =
+    blueprint.construct === null ? undefined : objectivesByRef.get(blueprint.objectiveRefs[0]!);
+  const authority = objective ? slotAuthority(objective) : orientationAuthority;
+  return {
+    objectiveRefs: blueprint.objectiveRefs,
+    construct: blueprint.construct,
+    role: blueprint.role,
+    purpose: blueprint.purpose,
+    authorityMode: authority.authorityMode,
+    allowedSourceRefs: authority.allowedSourceRefs,
+    allowedVisualRefs: authority.allowedVisualRefs,
+    protected: blueprint.protected,
+    activityBudget: blueprint.activityBudget,
+    learnerActionRequired: blueprint.learnerActionRequired,
+    qualityContract: blueprint.qualityContract,
+    allowedRelations: blueprint.allowedRelations,
+    slotId: `L${slotIndex + 1}`,
+  };
 }
 
 function withOptionalDurationSupport(
-  initialSlots: TeachingSkeletonSlot[],
-  objectives: TeachingSkeletonObjective[],
+  initialSlots: TeachingSlotBlueprint[],
+  objectives: TeachingSlotArithmeticObjective[],
   practiceBudget: TeachingActivityBudget,
   acceptable: TeachingActivityBudget,
   maxLessonSlots: number,
   requiredPairs: RequiredQualityContractPair[],
-): TeachingSkeletonSlot[] {
+): TeachingSlotBlueprint[] {
   const slots = [...initialSlots];
-  const candidates = objectives.flatMap((objective) => {
-    const authority = slotAuthority(objective);
-    return [
-      {
-        objectiveRefs: [objective.objectiveRef],
-        construct: objective.construct,
-        role: 'contrast' as const,
-        purpose:
-          'Clarify a useful source-compatible boundary or discrimination only when the Agenda has room.',
-        ...authority,
-        protected: false,
-        activityBudget: { minMinutes: 2, maxMinutes: 4 },
-        learnerActionRequired: false,
-        qualityContract: 'boundary_work' as const,
-        allowedRelations: ['difference_discrimination'] as TeachingRelationKind[],
-      },
-      {
-        objectiveRefs: [objective.objectiveRef],
-        construct: objective.construct,
-        role: 'explanation' as const,
-        purpose:
-          'Deepen one source-compatible relation only after required instruction and Practice fit.',
-        ...authority,
-        protected: false,
-        activityBudget: { minMinutes: 3, maxMinutes: 5 },
-        learnerActionRequired: false,
-        qualityContract: 'semantic_relation' as const,
-        allowedRelations: relationKinds(objective.construct),
-      },
-    ];
-  });
+  const candidates = objectives.flatMap((objective) => [
+    {
+      objectiveRefs: [objective.objectiveRef],
+      construct: objective.construct,
+      role: 'contrast' as const,
+      purpose:
+        'Clarify a useful source-compatible boundary or discrimination only when the Agenda has room.',
+      protected: false,
+      activityBudget: { minMinutes: 2, maxMinutes: 4 },
+      learnerActionRequired: false,
+      qualityContract: 'boundary_work' as const,
+      allowedRelations: ['difference_discrimination'] as TeachingRelationKind[],
+    },
+    {
+      objectiveRefs: [objective.objectiveRef],
+      construct: objective.construct,
+      role: 'explanation' as const,
+      purpose:
+        'Deepen one source-compatible relation only after required instruction and Practice fit.',
+      protected: false,
+      activityBudget: { minMinutes: 3, maxMinutes: 5 },
+      learnerActionRequired: false,
+      qualityContract: 'semantic_relation' as const,
+      allowedRelations: relationKinds(objective.construct),
+    },
+  ]);
   const plannedBudget = () =>
     sumBudgets([...slots.map((slot) => slot.activityBudget), practiceBudget, SYNTHESIS_BUDGET]);
   for (const candidate of candidates) {
@@ -544,32 +580,64 @@ function withOptionalDurationSupport(
     }
     const nextMinimum = plannedBudget().minMinutes + candidate.activityBudget.minMinutes;
     if (nextMinimum > acceptable.maxMinutes) continue;
-    slots.push({ ...candidate, slotId: `L${slots.length + 1}` });
+    slots.push(candidate);
   }
   return slots;
 }
 
-/** Pure deterministic planning: no provider, repository, clock, or learner-state access. */
-export function planTeachingSkeleton(input: TeachingSkeletonPlanningInput): TeachingSkeleton {
-  validatePlanningInput(input);
+/**
+ * Everything the arithmetic class needs and nothing more. Deliberately no
+ * `authorityMode`, `allowedSourceRefs`, `allowedVisualRefs`, `title` or
+ * `description`: those decide the authority class, which is a different question
+ * that cannot be answered before Lesson-preparation source context exists.
+ */
+export interface TeachingSlotArithmeticInput {
+  targetMinutes: number;
+  targetDepth: DesiredDepth;
+  objectives: TeachingSlotArithmeticObjective[];
+  maxLessonSlots?: number;
+  maxPracticeSlots?: number;
+}
+
+/** The arithmetic plan a feasible input yields. Decorated by the planner. */
+interface TeachingSlotArithmeticPlan {
+  lessonSlots: TeachingSlotBlueprint[];
+  practiceObjectiveRefs: string[];
+  practiceBudget: TeachingActivityBudget;
+  acceptableActiveMinutes: TeachingActivityBudget;
+  protectedActivityBudget: TeachingActivityBudget;
+  plannedActivityBudget: TeachingActivityBudget;
+  requiredPairs: RequiredQualityContractPair[];
+}
+
+/**
+ * The single slot/budget implementation. `planTeachingSkeleton` calls it, and so does
+ * the pre-acceptance StudyPlan plannability gate, so the two cannot drift apart.
+ *
+ * Throws `TeachingSkeletonPlanningError` with the same codes, in the same order, with
+ * the same `details` the planner has always thrown. Callers wanting a verdict rather
+ * than an exception use `resolveTeachingSlotFeasibility`.
+ */
+function planTeachingSlotArithmetic(
+  input: TeachingSlotArithmeticInput,
+): TeachingSlotArithmeticPlan {
   const maxLessonSlots = input.maxLessonSlots ?? 12;
   const maxPracticeSlots = input.maxPracticeSlots ?? 8;
-  const objectives = input.objectives.map(plannedObjective);
-  const plannedPracticeSlots = practiceSlots(objectives);
-  if (plannedPracticeSlots.length > maxPracticeSlots) {
+  const plannedPracticeTargets = practiceTargets(input.objectives);
+  if (plannedPracticeTargets.length > maxPracticeSlots) {
     throw new TeachingSkeletonPlanningError(
       'practice_slot_limit_exceeded',
       'Required/high objectives exceed the bounded Practice slot limit.',
-      { requiredSlots: plannedPracticeSlots.length, maxPracticeSlots },
+      { requiredSlots: plannedPracticeTargets.length, maxPracticeSlots },
     );
   }
-  const practiceBudget = sumBudgets(plannedPracticeSlots.map((slot) => slot.activityBudget));
+  const practiceBudget = sumBudgets(plannedPracticeTargets.map(() => PRACTICE_BUDGET));
   const acceptableActiveMinutes = {
     minMinutes: Math.max(1, input.targetMinutes - 8),
     maxMinutes: input.targetMinutes + 3,
   };
-  const requiredPairs = requiredDepthPairs(objectives, input.targetDepth);
-  const initialSlots = requiredSlots(objectives, input.targetDepth);
+  const requiredPairs = requiredDepthPairs(input.objectives, input.targetDepth);
+  const initialSlots = requiredSlots(input.objectives, input.targetDepth);
   if (initialSlots.length > maxLessonSlots) {
     throw new TeachingSkeletonPlanningError(
       'lesson_slot_limit_exceeded',
@@ -615,13 +683,12 @@ export function planTeachingSkeleton(input: TeachingSkeletonPlanningInput): Teac
   }
   const lessonSlots = withOptionalDurationSupport(
     initialSlots,
-    objectives,
+    input.objectives,
     practiceBudget,
     acceptableActiveMinutes,
     maxLessonSlots,
     requiredPairs,
   );
-  assertRequiredPairsPlanned(lessonSlots, requiredPairs);
   const plannedActivityBudget = sumBudgets([
     ...lessonSlots.map((slot) => slot.activityBudget),
     practiceBudget,
@@ -639,6 +706,92 @@ export function planTeachingSkeleton(input: TeachingSkeletonPlanningInput): Teac
       },
     );
   }
+  return {
+    lessonSlots,
+    practiceObjectiveRefs: plannedPracticeTargets.map((objective) => objective.objectiveRef),
+    practiceBudget,
+    acceptableActiveMinutes,
+    protectedActivityBudget: protectedBudget,
+    plannedActivityBudget,
+    requiredPairs,
+  };
+}
+
+/** Arithmetic-class codes only. The authority class is not decidable from arithmetic. */
+export type TeachingSlotArithmeticErrorCode = Extract<
+  TeachingSkeletonPlanningErrorCode,
+  | 'lesson_slot_limit_exceeded'
+  | 'practice_slot_limit_exceeded'
+  | 'protected_budget_exceeds_agenda'
+  | 'planned_budget_exceeds_agenda'
+  | 'agenda_budget_underfilled'
+>;
+
+export type TeachingSlotFeasibility =
+  | { feasible: true }
+  | {
+      feasible: false;
+      code: TeachingSlotArithmeticErrorCode;
+      message: string;
+      details: Record<string, unknown>;
+    };
+
+/**
+ * Non-throwing slot/budget verdict, over the same core the real planner uses.
+ *
+ * `feasible` means no arithmetic-class planning failure. It does **not** prove the
+ * Lesson will plan: `objective_authority_unavailable` and
+ * `construct_authority_incompatible` depend on retrieval-derived authority that does
+ * not exist before Lesson preparation, and remain reachable there.
+ */
+export function resolveTeachingSlotFeasibility(
+  input: TeachingSlotArithmeticInput,
+): TeachingSlotFeasibility {
+  try {
+    planTeachingSlotArithmetic(input);
+    return { feasible: true };
+  } catch (error) {
+    if (error instanceof TeachingSkeletonPlanningError) {
+      return {
+        feasible: false,
+        code: error.code as TeachingSlotArithmeticErrorCode,
+        message: error.message,
+        details: error.details,
+      };
+    }
+    throw error;
+  }
+}
+
+/** Pure deterministic planning: no provider, repository, clock, or learner-state access. */
+export function planTeachingSkeleton(input: TeachingSkeletonPlanningInput): TeachingSkeleton {
+  validatePlanningInput(input);
+  const objectives = input.objectives.map(plannedObjective);
+  const objectivesByRef = new Map(
+    objectives.map((objective) => [objective.objectiveRef, objective] as const),
+  );
+  const arithmetic = planTeachingSlotArithmetic({
+    targetMinutes: input.targetMinutes,
+    targetDepth: input.targetDepth,
+    objectives: objectives.map((objective) => ({
+      objectiveRef: objective.objectiveRef,
+      construct: objective.construct,
+      priority: objective.priority,
+    })),
+    ...(input.maxLessonSlots === undefined ? {} : { maxLessonSlots: input.maxLessonSlots }),
+    ...(input.maxPracticeSlots === undefined ? {} : { maxPracticeSlots: input.maxPracticeSlots }),
+  });
+  const { acceptableActiveMinutes, practiceBudget, plannedActivityBudget } = arithmetic;
+  const orientationAuthority = {
+    authorityMode: 'bounded_synthesis' as const,
+    allowedSourceRefs: sortedUnique(objectives.flatMap((objective) => objective.allowedSourceRefs)),
+    allowedVisualRefs: sortedUnique(objectives.flatMap((objective) => objective.allowedVisualRefs)),
+  };
+  const lessonSlots = arithmetic.lessonSlots.map((blueprint, index) =>
+    decorateSlot(blueprint, index, objectivesByRef, orientationAuthority),
+  );
+  const plannedPracticeSlots = practiceSlots(arithmetic.practiceObjectiveRefs, objectivesByRef);
+  assertRequiredPairsPlanned(lessonSlots, arithmetic.requiredPairs);
   const draft = {
     schemaVersion: 1 as const,
     plannerVersion: TEACHING_SKELETON_PLANNER_VERSION,
@@ -653,7 +806,7 @@ export function planTeachingSkeleton(input: TeachingSkeletonPlanningInput): Teac
       activityBudget: practiceBudget,
     },
     synthesisActivityBudget: SYNTHESIS_BUDGET,
-    protectedActivityBudget: protectedBudget,
+    protectedActivityBudget: arithmetic.protectedActivityBudget,
     plannedActivityBudget,
   };
   const digest = createHash('sha256').update(JSON.stringify(draft)).digest('hex');

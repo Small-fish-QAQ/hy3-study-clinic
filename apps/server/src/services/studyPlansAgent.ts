@@ -32,7 +32,9 @@ import {
   diffStudyPlans,
   materializeDeferralRisk,
   planFeasibilityFromContract,
+  plannabilityWarningText,
   resolveLaunchForPlanItem,
+  resolveStudyPlanPlannability,
   validateAndMaterializeStudyPlanProposal,
   validateStudyPlanScopeAccounting,
 } from './studyPlanValidation.js';
@@ -678,6 +680,10 @@ export function createStudyPlanAgentService({
           },
         );
       }
+      // Non-blocking by design. An arithmetically unplannable plan must still exist as
+      // a proposal the learner can repair with change_depth / resize_time; acceptance
+      // is where it is refused.
+      const plannability = resolveStudyPlanPlannability(curriculum, materialized.items);
       const planId = newId('study_plan');
       const projectedMinutes = materialized.items.reduce(
         (sum, item) => sum + item.estimatedMinutes,
@@ -743,7 +749,11 @@ export function createStudyPlanAgentService({
           knownScopeAccounted: materialized.knownScopeAccounted,
           launchabilityValid: materialized.launchabilityValid,
           validationErrors: materialized.errors,
-          validationWarnings: materialized.warnings,
+          validationWarnings: [
+            ...materialized.warnings,
+            ...plannability.map((entry) => plannabilityWarningText(entry.plannability)),
+          ].slice(0, 100),
+          plannability: plannability.map((entry) => entry.plannability),
         });
       });
       return StudyPlanProposalResponseSchema.parse(response);
@@ -1048,6 +1058,7 @@ export function createStudyPlanAgentService({
         contractFeasibility.state,
         contractFeasibility.assumptions,
       );
+      const plannability = resolveStudyPlanPlannability(curriculum, items);
       const successorId = newId('study_plan');
       const successor: StudyPlan = {
         ...current,
@@ -1112,7 +1123,12 @@ export function createStudyPlanAgentService({
           knownScopeAccounted: true,
           launchabilityValid: true,
           validationErrors: [],
-          validationWarnings: [],
+          // Recomputed for the successor. An edit is the learner's repair operation, so
+          // discarding the diagnostic here would hide whether the repair worked.
+          validationWarnings: plannability
+            .map((entry) => plannabilityWarningText(entry.plannability))
+            .slice(0, 100),
+          plannability: plannability.map((entry) => entry.plannability),
         });
       });
       return StudyPlanProposalResponseSchema.parse(response);

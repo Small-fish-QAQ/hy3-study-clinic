@@ -18,6 +18,7 @@ import type { SessionAgendaAgentService } from './sessionAgendasAgent.js';
 import { buildCurriculumExecutionContext } from './curriculum.js';
 import { isHardAvailability, isHardDeadline } from './feasibility.js';
 import { assertCurrentCurriculumObjectiveAuthoritySemanticSupport } from './objectiveAuthoritySemanticSupport.js';
+import { plannabilityWarningText, resolveStudyPlanPlannability } from './studyPlanValidation.js';
 
 interface CourseExecutionServiceDeps {
   repos: Repositories;
@@ -272,6 +273,32 @@ export function createCourseExecutionService({
           contract,
           curriculum,
         } = requireCurrentPlanRouteAuthority(repos, parsed.command.workspaceId, plan.id);
+        // Every teach_unit, not only the subset the SessionAgenda will select: the
+        // agenda copies teaching minutes verbatim and creates no later teaching items,
+        // so an unselected item would otherwise reach Lesson preparation unchecked.
+        // Refuses before any write, so the proposal and the previously accepted route
+        // are left exactly as they were.
+        const unplannable = resolveStudyPlanPlannability(curriculum, authoritativePlan.items);
+        if (unplannable.length > 0) {
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            'This StudyPlan contains a teaching item that cannot be planned as a Lesson at its current depth and duration. Adjust the item depth or its minutes, then accept the revised route.',
+            {
+              reason: 'lesson_plannability_infeasible',
+              recommendationRequired: true,
+              items: unplannable.map((entry) => ({
+                planItemId: entry.plannability.planItemId,
+                planningCode: entry.plannability.planningCode,
+                targetDepth: entry.plannability.targetDepth,
+                estimatedMinutes: entry.plannability.estimatedMinutes,
+                remedies: entry.plannability.remedies,
+                details: entry.details,
+              })),
+              plannability: unplannable.map((entry) => entry.plannability),
+              warnings: unplannable.map((entry) => plannabilityWarningText(entry.plannability)),
+            },
+          );
+        }
         const predecessor = before.acceptedPlanId
           ? (repos.studyPlans.get(before.acceptedPlanId) ?? null)
           : null;

@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import type {
   AgendaLaunchCapability,
+  DesiredDepth,
   StudyPlan,
   StudyPlanDraftEdit,
   StudyPlanHistoryItem,
+  StudyPlanItemPlannability,
 } from '@hy3-clinic/shared';
 import { Banner } from '../components/ui.js';
 import { StudyPlanDiffList } from './StudyPlanDiffList.js';
@@ -50,6 +53,35 @@ const DEPTH_TEXT: Record<string, string> = {
   deep_transfer: '深入迁移',
 };
 
+const DEPTH_ORDER: DesiredDepth[] = [
+  'pass_oriented',
+  'working_fluency',
+  'high_performance',
+  'deep_transfer',
+];
+
+/**
+ * Why an item cannot yet be taught. Wording is selected by planning code: a segment
+ * ceiling is never described as a duration problem, because more minutes cannot fix it.
+ */
+const PLANNABILITY_TEXT: Record<StudyPlanItemPlannability['planningCode'], string> = {
+  lesson_slot_limit_exceeded:
+    '该单元在当前深度下需要的讲解环节超过单节课上限。增加时长无法解决环节数量上限。',
+  practice_slot_limit_exceeded: '该单元需要的练习环节超过单节课上限。',
+  protected_budget_exceeds_agenda: '该单元在当前深度下需要的讲解放不进当前时长。',
+  planned_budget_exceeds_agenda: '该单元在当前深度下需要的讲解放不进当前时长。',
+  agenda_budget_underfilled: '当前时长超过该单元在这个深度下可以如实支撑的讲解量。',
+};
+
+/** Only remedies the server judged semantically valid for that code are offered. */
+const REMEDY_TEXT: Record<StudyPlanItemPlannability['remedies'][number], string> = {
+  reduce_depth: '降低该单元的深度',
+  raise_depth: '提高该单元的深度',
+  increase_minutes: '增加该单元的时长',
+  reduce_minutes: '减少该单元的时长',
+  revise_plan_structure: '调整提案中该单元的范围或结构',
+};
+
 const ADMISSIBILITY_TEXT: Record<string, string> = {
   tier_1_authorized_truth: '已验证课程依据',
   tier_2_validated_representation: '已验证的表示方式',
@@ -64,10 +96,99 @@ export interface StudyPlanPanelProps {
   showAcceptAction?: boolean;
   busyAction: string | null;
   launchByPlanItemId: Record<string, AgendaLaunchCapability>;
+  /** Server-computed Lesson plannability for teaching items. Feasible items are absent. */
+  plannability?: StudyPlanItemPlannability[];
   onEdit: (edit: StudyPlanDraftEdit) => void;
   onAccept: () => void;
   onReject: () => void;
   onLaunchItem: (planItemId: string) => void;
+}
+
+/**
+ * Learner-driven depth and duration repair for one proposed teaching item. Both send
+ * the existing `edit_plan` command, which creates a new proposed version; neither
+ * changes anything by itself, and depth is never adjusted automatically.
+ */
+function TeachingItemRepairControls({
+  item,
+  disabled,
+  onEdit,
+}: {
+  item: StudyPlan['items'][number];
+  disabled: boolean;
+  onEdit: (edit: StudyPlanDraftEdit) => void;
+}) {
+  const [minutes, setMinutes] = useState(String(item.estimatedMinutes));
+  const parsedMinutes = Number(minutes);
+  const minutesValid =
+    /^\d+$/u.test(minutes.trim()) && Number.isInteger(parsedMinutes) && parsedMinutes > 0;
+  const minutesChanged = minutesValid && parsedMinutes !== item.estimatedMinutes;
+  const depthLabelId = `depth-${item.id}`;
+  const minutesLabelId = `minutes-${item.id}`;
+  return (
+    <div className="row" role="group" aria-label="调整该单元的深度或时长">
+      <label className="small" htmlFor={depthLabelId}>
+        深度
+      </label>
+      <select
+        id={depthLabelId}
+        className="small"
+        value={item.targetDepth}
+        disabled={disabled}
+        onChange={(event) => {
+          const targetDepth = event.target.value as DesiredDepth;
+          if (targetDepth === item.targetDepth) return;
+          onEdit({
+            kind: 'change_depth',
+            planItemId: item.id,
+            targetDepth,
+            reason: `学习者将该单元深度由 ${DEPTH_TEXT[item.targetDepth] ?? item.targetDepth} 调整为 ${
+              DEPTH_TEXT[targetDepth] ?? targetDepth
+            }。`,
+          });
+        }}
+      >
+        {DEPTH_ORDER.map((depth) => (
+          <option key={depth} value={depth}>
+            {DEPTH_TEXT[depth] ?? depth}
+          </option>
+        ))}
+      </select>
+      <label className="small" htmlFor={minutesLabelId}>
+        时长（分钟）
+      </label>
+      <input
+        id={minutesLabelId}
+        className="small"
+        type="number"
+        min={1}
+        step={1}
+        inputMode="numeric"
+        value={minutes}
+        disabled={disabled}
+        aria-invalid={minutes.trim() === '' ? undefined : !minutesValid}
+        onChange={(event) => setMinutes(event.target.value)}
+      />
+      <button
+        type="button"
+        className="ghost small"
+        disabled={disabled || !minutesChanged}
+        onClick={() =>
+          onEdit({
+            kind: 'resize_time',
+            planItemId: item.id,
+            estimatedMinutes: parsedMinutes,
+            reason: `学习者将该单元时长由 ${item.estimatedMinutes} 分钟调整为 ${parsedMinutes} 分钟。`,
+          })
+        }
+      >
+        应用时长
+      </button>
+      {!minutesValid && minutes.trim() !== '' ? (
+        <span className="small wrong">时长需要是正整数分钟。</span>
+      ) : null}
+    </div>
+  );
 }
 
 /** Full StudyPlan inspector. Accepted snapshots are never edited in place. */
@@ -79,11 +200,13 @@ export function StudyPlanPanel({
   showAcceptAction = true,
   busyAction,
   launchByPlanItemId,
+  plannability = [],
   onEdit,
   onAccept,
   onReject,
   onLaunchItem,
 }: StudyPlanPanelProps) {
+  const plannabilityByItemId = new Map(plannability.map((entry) => [entry.planItemId, entry]));
   return (
     <section className="card" aria-label="学习路线">
       <div className="row between">
@@ -129,6 +252,7 @@ export function StudyPlanPanel({
       <ol className="plan-steps">
         {plan.items.map((item, index) => {
           const launch = launchByPlanItemId[item.id];
+          const unplannable = plannabilityByItemId.get(item.id);
           return (
             <li key={item.id} className="block-preview">
               <div className="row between">
@@ -150,6 +274,28 @@ export function StudyPlanPanel({
                   {ADMISSIBILITY_TEXT[requirement.admissibilityTier] ?? '证据规则已记录'}
                 </p>
               ))}
+
+              {unplannable ? (
+                <div role="region" aria-label={`该单元暂时无法排课 ${item.id}`}>
+                  <Banner kind="info">{PLANNABILITY_TEXT[unplannable.planningCode]}</Banner>
+                  <p className="small">
+                    可行的调整：
+                    {unplannable.remedies.map((remedy) => REMEDY_TEXT[remedy]).join('；')}。
+                  </p>
+                  <p className="small muted">
+                    该提案会保留，你可以调整后再接受路线。通过这项检查只说明讲解环节与时长可以成立，
+                    并不代表课程依据已经具备。
+                  </p>
+                </div>
+              ) : null}
+
+              {canEdit && item.kind === 'teach_unit' ? (
+                <TeachingItemRepairControls
+                  item={item}
+                  disabled={busyAction !== null}
+                  onEdit={onEdit}
+                />
+              ) : null}
 
               {canEdit ? (
                 <div className="row">

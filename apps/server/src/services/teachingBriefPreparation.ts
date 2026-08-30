@@ -58,6 +58,7 @@ import {
   evaluatePlannedPracticeQuality,
 } from './lessonPedagogyEvaluator.js';
 import { visualManifestMatchesCurrentDerivations } from './advisoryVisuals.js';
+import { deriveTeachingConstruct } from './teachingConstruct.js';
 import {
   planTeachingSkeleton,
   TeachingSkeletonPlanningError,
@@ -437,14 +438,8 @@ export function createTeachingBriefPreparationService({
     route: ReturnType<typeof routeContext>,
     context: ReturnType<typeof sourceContext>,
   ): TeachingBriefGenerationInput {
-    const teachingConstruct = (objective: CurriculumObjective) => {
-      if (objective.formalAssessmentConstruct) return objective.formalAssessmentConstruct;
-      return /(?:\b(?:explain|why|how|reason|mechanism)\b|解释|为什么|如何|原因|机制)/iu.test(
-        `${objective.title} ${objective.description}`,
-      )
-        ? ('explain' as const)
-        : ('identify' as const);
-    };
+    const teachingConstruct = (objective: CurriculumObjective) =>
+      deriveTeachingConstruct(objective);
     const concepts = route.node.learningUnit!.conceptIds.flatMap((conceptId) => {
       const concept = repos.materials.getConcept(conceptId);
       return concept ? [{ name: concept.name, summary: concept.summary }] : [];

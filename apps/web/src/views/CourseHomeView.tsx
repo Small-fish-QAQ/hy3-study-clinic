@@ -5,6 +5,7 @@ import type {
   LearningContractScopeReadiness,
   MaterialRole,
   StudyPlanDraftEdit,
+  StudyPlanItemPlannability,
 } from '@hy3-clinic/shared';
 import { Banner, Loading } from '../components/ui.js';
 import { StudyPlanPanel } from './StudyPlanPanel.js';
@@ -146,6 +147,8 @@ export interface CourseHomeViewProps {
   onDismissRouteGenerationFailure: () => void;
   onOpenSettings: () => void;
   onEditStudyPlan: (edit: StudyPlanDraftEdit) => void;
+  /** Lesson plannability from the last proposal, edit, or refused acceptance. */
+  studyPlanPlannability?: StudyPlanItemPlannability[];
   onAcceptStudyPlan: () => void;
   onRejectStudyPlan: () => void;
   onLaunchNext: (action: CourseNextAction) => void;
@@ -178,6 +181,7 @@ export function CourseHomeView({
   onDismissRouteGenerationFailure,
   onOpenSettings,
   onEditStudyPlan,
+  studyPlanPlannability,
   onAcceptStudyPlan,
   onRejectStudyPlan,
   onLaunchNext,
@@ -667,6 +671,9 @@ export function CourseHomeView({
             showAcceptAction={preparation?.state !== 'course_plan_ready'}
             busyAction={busyAction}
             launchByPlanItemId={{}}
+            {...(plan.status === 'proposed' && studyPlanPlannability
+              ? { plannability: studyPlanPlannability }
+              : {})}
             onEdit={onEditStudyPlan}
             onAccept={onAcceptStudyPlan}
             onReject={onRejectStudyPlan}
