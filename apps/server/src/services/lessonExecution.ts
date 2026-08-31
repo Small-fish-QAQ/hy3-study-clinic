@@ -19,6 +19,7 @@ import type { ProviderCallOptions } from '../llm/provider.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
+import type { AgendaWindowRolloverService } from './agendaWindowRollover.js';
 import type { CourseCommandService } from './courseCommands.js';
 import {
   COMPOSITIONAL_PREPARATION_LEASE_MS,
@@ -34,6 +35,7 @@ interface LessonExecutionDeps {
     TeachingBriefPreparationService,
     'prepare' | 'getCurrent' | 'getAcceptedLessonPreview'
   >;
+  agendaWindow: AgendaWindowRolloverService;
 }
 
 interface RouteContext {
@@ -109,6 +111,7 @@ export function createLessonExecutionService({
   clock,
   commands,
   teachingBriefPreparation,
+  agendaWindow,
 }: LessonExecutionDeps) {
   function preparationRouteInput(context: RouteContext) {
     return {
@@ -182,10 +185,9 @@ export function createLessonExecutionService({
     };
   }
 
-  function executable(context: RouteContext): boolean {
+  function teachingRouteMatches(context: RouteContext): boolean {
     return (
       context.item.kind === 'learning_unit_teaching' &&
-      (context.item.state === 'queued' || context.item.state === 'active') &&
       context.item.launch.status === 'launchable' &&
       context.item.launch.capability === 'lesson' &&
       context.item.learningUnitId !== null &&
@@ -200,8 +202,24 @@ export function createLessonExecutionService({
     );
   }
 
+  function executable(context: RouteContext): boolean {
+    return (
+      teachingRouteMatches(context) &&
+      (context.item.state === 'queued' || context.item.state === 'active')
+    );
+  }
+
+  /**
+   * A teaching item whose execution already completed. The learner keeps the
+   * finished Lesson to review, and preparation short-circuits on the existing
+   * Brief instead of regenerating one. Actions remain gated by `executable`.
+   */
+  function reviewable(context: RouteContext): boolean {
+    return teachingRouteMatches(context) && context.item.state === 'completed';
+  }
+
   function currentBrief(context: RouteContext): TeachingBrief | null {
-    if (!executable(context)) return null;
+    if (!executable(context) && !reviewable(context)) return null;
     const state = stateFor(context);
     if (state?.preparationStatus !== 'ready' || !state.teachingBriefId) return null;
     const brief = repos.teachingBriefs.get(state.teachingBriefId);
@@ -262,7 +280,7 @@ export function createLessonExecutionService({
     brief: TeachingBrief | null,
     acceptedLesson: AcceptedLessonPreview | null = null,
   ): LessonExecutionProjection {
-    if (!executable(context)) {
+    if (!executable(context) && !reviewable(context)) {
       return LessonExecutionProjectionSchema.parse({
         status: 'lesson_unavailable',
         message: 'The current Agenda item is not executable teaching work.',
@@ -1285,7 +1303,39 @@ export function createLessonExecutionService({
           { ...latestSession, version: latestSession.version + 1, updatedAt: now },
           latestSession.version,
         );
-        return projection(route(workspaceId, sessionId), next, brief);
+        // Teaching execution ends here, edge-triggered on this action's own
+        // transition so a later revisit cannot complete the item twice. The
+        // Agenda item and the linked teach_unit Plan progress advance together,
+        // and a drained window continues the same accepted Plan. No Formal
+        // Evidence, grade, mastery change or GoalOutcome is written.
+        const completesTeaching =
+          eventKind === 'practice_completed' ||
+          (eventKind === 'presentation_completed' && !brief.practice);
+        if (!completesTeaching) return projection(route(workspaceId, sessionId), next, brief);
+        agendaWindow.completeTeachingExecution({
+          workspaceId,
+          sessionId,
+          agenda: context.agenda,
+          item: context.item,
+          plan: context.plan,
+          planItem: context.planItem,
+          commandId: input.command.commandId,
+          at: now,
+        });
+        // The route pointer may now address the successor Agenda, so the
+        // finished window is projected from its own durable rows rather than
+        // through the live-route lookup.
+        const retiredAgenda = repos.sessionAgendas.get(context.agenda.id) ?? context.agenda;
+        return projection(
+          {
+            ...context,
+            agenda: retiredAgenda,
+            item: retiredAgenda.items.find((item) => item.id === context.item.id) ?? context.item,
+            session: repos.studySessions.get(sessionId) ?? context.session,
+          },
+          next,
+          brief,
+        );
       });
       return commands.complete(claim, () => result);
     } catch (error) {

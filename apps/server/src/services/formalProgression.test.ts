@@ -4977,6 +4977,85 @@ describe('formal progression service', () => {
     expect(repos.studyPlans.list('ws_1')).toHaveLength(2);
     expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBe('plan_1');
   });
+
+  it('T16 continues the same Plan when a formal decision drains the Agenda window', () => {
+    // Give the accepted route one more teaching item that the current window
+    // does not cover, so draining it leaves genuine remaining work.
+    const plan = structuredClone(repos.studyPlans.get('plan_1')!);
+    const carried = plan.items[1]!;
+    const extra = {
+      ...carried,
+      id: 'plan_item_3',
+      index: 2,
+      rationale: 'Teach the remaining objective in a later window.',
+      completionRequirements: carried.completionRequirements.map((requirement) => ({
+        ...requirement,
+        id: 'requirement_plan_item_3',
+        blocking: false,
+      })),
+    };
+    plan.items = [...plan.items, extra];
+    db.prepare('UPDATE study_plan_versions SET payload = ? WHERE id = ?').run(
+      JSON.stringify(plan),
+      'plan_1',
+    );
+    db.prepare(
+      `INSERT INTO study_plan_items
+         (plan_id, plan_item_id, idx, kind, curriculum_learning_unit_id,
+          objective_ids, completion_requirements)
+       VALUES ('plan_1', 'plan_item_3', 2, 'teach_unit', 'unit_1', ?, ?)`,
+    ).run(JSON.stringify(extra.objectiveIds), JSON.stringify(extra.completionRequirements));
+    db.prepare(
+      `INSERT INTO study_plan_progress (plan_id, plan_item_id, state, version, updated_at)
+       VALUES ('plan_1', 'plan_item_3', 'not_started', 1, ?)`,
+    ).run(T3);
+    db.prepare(
+      `INSERT INTO study_plan_launch_validations
+         (plan_id, plan_item_id, status, capability, resource_id, reason,
+          source_fingerprint, validated_at)
+       VALUES ('plan_1', 'plan_item_3', 'launchable', 'lesson', ?, NULL, 'manifest-fp', ?)`,
+    ).run(JSON.stringify({ learningUnitId: 'unit_1', conceptId: 'con_1' }), T3);
+
+    // Retire the non-assessed item so the formal decision is the last thing
+    // holding the window open.
+    const agenda = repos.sessionAgendas.get('agenda_1')!;
+    const teachingItem = agenda.items.find((item) => item.linkedPlanItemId === 'plan_item_2')!;
+    services.agendaWindow.completeTeachingExecution({
+      workspaceId: 'ws_1',
+      sessionId: 'session_none',
+      agenda,
+      item: teachingItem,
+      plan: repos.studyPlans.get('plan_1')!,
+      planItem: repos.studyPlans.get('plan_1')!.items.find((item) => item.id === 'plan_item_2')!,
+      commandId: 'retire-second-item',
+      at: T3,
+    });
+    expect(repos.courseExecution.get('ws_1').activeAgendaId).toBe('agenda_1');
+
+    const grade = insertGrade('formal_drain', 1);
+    services.formalProgression.registerAssessmentContracts({
+      workspaceId: 'ws_1',
+      quizId: grade.quizId,
+      agendaId: 'agenda_1',
+      agendaItemId: 'agenda_item_1',
+      assessmentKind: 'formal_checkpoint',
+      contractVersionId: 'contract_1',
+      curriculumVersionId: 'curriculum_1',
+      studyPlanVersionId: 'plan_1',
+      executionSourceManifestFingerprint: 'manifest-fp',
+    });
+    const reconciled = services.formalProgression.reconcileAfterGrading(grade.gradingResultId)!;
+    expect(reconciled.decisions[0]?.kind).toBe('complete');
+
+    const successorId = repos.courseExecution.get('ws_1').activeAgendaId!;
+    const successor = repos.sessionAgendas.get(successorId)!;
+    expect(successorId).not.toBe('agenda_1');
+    expect(repos.sessionAgendas.get('agenda_1')!.status).toBe('completed');
+    expect(successor.status).toBe('active');
+    expect(successor.items.map((item) => item.linkedPlanItemId)).toEqual(['plan_item_3']);
+    expect(repos.studyPlans.get('plan_1')!.status).toBe('accepted');
+    expect(repos.formalProgression.listGoalOutcomes('ws_1')).toHaveLength(0);
+  });
 });
 
 describe('Mastery Red Team shadow service', () => {

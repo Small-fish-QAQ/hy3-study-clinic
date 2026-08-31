@@ -3184,10 +3184,11 @@ describe('Teaching Brief preparation', () => {
       unitProgress: harness.repos.formalProgression.listUnitProgress('ws_1', harness.curriculumId),
       mistakes: harness.repos.mistakes.listOpenByWorkspace('ws_1'),
       mastery: harness.repos.mastery.listByWorkspace('ws_1'),
-      agendaItemState: harness.repos.sessionAgendas
-        .get(agenda.id)!
-        .items.find((item) => item.id === session.currentAgendaItemId)!.state,
     };
+    const agendaItemStateBefore = harness.repos.sessionAgendas
+      .get(agenda.id)!
+      .items.find((item) => item.id === session.currentAgendaItemId)!.state;
+    expect(agendaItemStateBefore).toBe('queued');
 
     let current = harness.services.lessonExecution.get('ws_1', session.id);
     // A learner check gates forward movement, and at working_fluency depth the
@@ -3285,11 +3286,22 @@ describe('Teaching Brief preparation', () => {
       unitProgress: harness.repos.formalProgression.listUnitProgress('ws_1', harness.curriculumId),
       mistakes: harness.repos.mistakes.listOpenByWorkspace('ws_1'),
       mastery: harness.repos.mastery.listByWorkspace('ws_1'),
-      agendaItemState: harness.repos.sessionAgendas
-        .get(agenda.id)!
-        .items.find((item) => item.id === session.currentAgendaItemId)!.state,
     };
     expect(authorityAfter).toEqual(authorityBefore);
+    // Deliberate change (N-TEACHCOMPLETE, SEMANTICS A): finishing the Lesson and
+    // its informal Practice now completes the Agenda item and its linked
+    // teach_unit Plan progress as execution bookkeeping. Every formal-authority
+    // assertion above still holds unchanged.
+    const completedItem = harness.repos.sessionAgendas
+      .get(agenda.id)!
+      .items.find((item) => item.id === session.currentAgendaItemId)!;
+    expect(completedItem.state).toBe('completed');
+    expect(
+      harness.repos.studyPlans
+        .listProgress(harness.planId)
+        .find((entry) => entry.planItemId === completedItem.linkedPlanItemId)?.state,
+    ).toBe('completed');
+    expect(harness.repos.formalProgression.listGoalOutcomes('ws_1')).toHaveLength(0);
     expect(harness.repos.formalProgression.listEvidenceForWorkspace('ws_1')).toHaveLength(0);
     expect(harness.repos.mistakes.listOpenByWorkspace('ws_1')).toHaveLength(0);
     expect(harness.repos.mastery.listByWorkspace('ws_1')).toHaveLength(0);

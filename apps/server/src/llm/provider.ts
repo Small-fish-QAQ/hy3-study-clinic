@@ -1062,7 +1062,12 @@ export interface StudyPlanCurriculumUnit {
 
 export interface StudyPlanLearnerState {
   curriculumLearningUnitId: string;
-  state: 'unassessed' | 'in_progress' | 'formally_supported' | 'repair_needed' | 'deferred';
+  /**
+   * Route execution state, not formal standing. `route_completed` means the
+   * planned work for this unit finished on the accepted route; it does NOT
+   * assert Formal Evidence, mastery or formal LearningUnit completion.
+   */
+  state: 'unassessed' | 'in_progress' | 'route_completed' | 'repair_needed' | 'deferred';
   observedMinutes: number | null;
   openMistakes: number;
 }

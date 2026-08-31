@@ -35,6 +35,7 @@ import type { FormalProgressionRepo } from '../repositories/formalProgression.js
 import type { SourceAuthorityBundle } from '../repositories/sourceAuthority.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
+import type { AgendaWindowRolloverService } from './agendaWindowRollover.js';
 import { commandFingerprint } from './courseCommands.js';
 import type { CourseCommandService } from './courseCommands.js';
 import { resolveLaunchForPlanItem } from './studyPlanValidation.js';
@@ -46,6 +47,7 @@ interface FormalProgressionDeps {
   progression: FormalProgressionRepo;
   commands: CourseCommandService;
   clock: Clock;
+  agendaWindow: AgendaWindowRolloverService;
 }
 
 function learningUnits(curriculum: Curriculum) {
@@ -728,6 +730,7 @@ export function createFormalProgressionService({
   progression,
   commands,
   clock,
+  agendaWindow,
 }: FormalProgressionDeps) {
   function stateCreditingQuestionIdsForQuiz(quizId: string): string[] | null {
     const contracts = progression.listQuestionContractsForQuiz(quizId);
@@ -1422,6 +1425,12 @@ export function createFormalProgressionService({
         },
         session.version,
       );
+    }
+    // A null next item is the assessment-side drain point. It shares the one
+    // continuation predicate with Lesson completion so assessment-bearing and
+    // teaching-only Agendas advance identically.
+    if (nextItemId === null) {
+      agendaWindow.continueIfDrained(plan.workspaceId, decisionId);
     }
   }
 

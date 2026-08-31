@@ -56,6 +56,28 @@ export interface TransitionCourseExecutionInput {
   at: string;
 }
 
+/**
+ * Same-plan Course Execution continuation. Retires a drained SessionAgenda
+ * window and installs its already-composed successor for the SAME accepted
+ * StudyPlan. Deliberately NOT route activation: no plan acceptance, no
+ * supersession, no GoalOutcome, no learner re-decision.
+ */
+export interface RolloverAgendaWindowInput {
+  workspaceId: string;
+  contractId: string;
+  curriculumId: string;
+  planId: string;
+  outgoingAgendaId: string;
+  successorAgendaId: string;
+  expectedStateVersion: number;
+  expectedOutgoingAgendaVersion: number;
+  eventId: string;
+  actor: 'local' | 'learner';
+  at: string;
+  /** Test-only transaction probe; production callers leave this undefined. */
+  beforePointerSwap?: () => void;
+}
+
 export interface TerminateCourseRouteInput {
   workspaceId: string;
   expectedStateVersion: number;
@@ -993,6 +1015,216 @@ export function createCourseExecutionRepo(db: SqliteDb) {
     },
   );
 
+  /**
+   * Verifies that the execution-source manifest behind `curriculumId` still
+   * matches every material's active revision. Shared currency check; the
+   * acceptance-only clauses of `verifyRoute` deliberately do not apply here.
+   */
+  function assertManifestStillCurrent(curriculumId: string): void {
+    const manifest = db
+      .prepare(
+        `SELECT COUNT(*) AS missing
+         FROM execution_source_manifest_revisions r
+         JOIN materials m ON m.id = r.material_id
+         WHERE r.manifest_id = (
+           SELECT manifest_id FROM curriculum_versions WHERE id = ?
+         ) AND m.active_revision_id <> r.material_revision_id`,
+      )
+      .get(curriculumId) as { missing: number };
+    if (manifest.missing > 0) {
+      throw new Error('Execution-source manifest is stale and must be regenerated.');
+    }
+  }
+
+  const rolloverAgendaWindowTx = db.transaction(
+    (input: RolloverAgendaWindowInput): CourseExecutionState => {
+      const current = get(input.workspaceId);
+      if (
+        current.version !== input.expectedStateVersion ||
+        current.activeContractId !== input.contractId ||
+        current.activeCurriculumId !== input.curriculumId ||
+        current.acceptedPlanId !== input.planId ||
+        current.activeAgendaId !== input.outgoingAgendaId
+      ) {
+        throw new Error('Course execution route is stale.');
+      }
+      if (current.executionStatus !== 'active') {
+        throw new Error('Only active Course execution can continue into another Agenda window.');
+      }
+      if (current.routeValidationStatus !== 'valid') {
+        throw new Error('A stale Course route must be revalidated before its next Agenda window.');
+      }
+
+      const contract = readContract(input.contractId);
+      const curriculum = readCurriculum(input.curriculumId);
+      const plan = readPlan(input.planId);
+      const outgoing = readAgenda(input.outgoingAgendaId);
+      const successor = readAgenda(input.successorAgendaId);
+
+      // Currency half of route authority only. The accepted route was already
+      // authorized at acceptance; continuation confirms it has not changed.
+      if (contract.status !== 'active') {
+        throw new Error('An Agenda window continues only under the active Learning Contract.');
+      }
+      if (
+        curriculum.status !== 'accepted' ||
+        !curriculum.validation.valid ||
+        curriculum.contractVersionId !== contract.id
+      ) {
+        throw new Error('An Agenda window continues only under the accepted current Curriculum.');
+      }
+      if (plan.status !== 'accepted') {
+        throw new Error('An Agenda window continues only for the same accepted StudyPlan.');
+      }
+      if (
+        plan.contractVersionId !== contract.id ||
+        plan.curriculumVersionId !== curriculum.id ||
+        plan.executionSourceManifestFingerprint !== curriculum.executionSourceManifest.fingerprint
+      ) {
+        throw new Error('An Agenda window continues only on an unchanged Course route.');
+      }
+      assertManifestStillCurrent(curriculum.id);
+
+      if (outgoing.version !== input.expectedOutgoingAgendaVersion) {
+        throw new Error('SessionAgenda version is stale.');
+      }
+      if (outgoing.status !== 'active' || outgoing.studyPlanVersionId !== plan.id) {
+        throw new Error('Only the active SessionAgenda of the accepted StudyPlan can be retired.');
+      }
+      if (outgoing.items.some((item) => item.state === 'queued' || item.state === 'active')) {
+        throw new Error('An Agenda window is retired only after its actionable items resolve.');
+      }
+      if (
+        successor.id === outgoing.id ||
+        successor.status !== 'draft' ||
+        successor.workspaceId !== input.workspaceId ||
+        successor.contractVersionId !== contract.id ||
+        successor.curriculumVersionId !== curriculum.id ||
+        successor.studyPlanVersionId !== plan.id ||
+        successor.executionSourceManifestFingerprint !== plan.executionSourceManifestFingerprint ||
+        successor.version <= outgoing.version
+      ) {
+        throw new Error('An Agenda window continues only into a compatible draft successor.');
+      }
+      if (
+        !successor.items.some(
+          (item) => item.state === 'queued' && item.launch.status === 'launchable',
+        )
+      ) {
+        throw new Error('An Agenda window continues only into a launchable successor.');
+      }
+
+      // Historical sessions stay historical. Only sessions still presenting
+      // themselves as live work on the retired window are handed off, and only
+      // when nothing is in flight inside them.
+      const liveSessions = db
+        .prepare(
+          `SELECT id, version, status FROM study_sessions
+           WHERE workspace_id = ? AND agenda_id = ? AND status IN ('active', 'paused')
+           ORDER BY created_at, id`,
+        )
+        .all(input.workspaceId, outgoing.id) as RouteSessionRow[];
+      for (const session of liveSessions) {
+        const pending = db
+          .prepare(
+            `SELECT COUNT(*) AS n FROM study_session_turns
+             WHERE session_id = ? AND status IN ('queued', 'running', 'interrupted')`,
+          )
+          .get(session.id) as { n: number };
+        if (pending.n > 0) {
+          throw new Error('An Agenda window cannot be retired while a StudySession turn is live.');
+        }
+      }
+
+      const completedOutgoing = SessionAgendaSchema.parse({
+        ...outgoing,
+        status: 'completed',
+        currentItemId: null,
+        updatedAt: input.at,
+      });
+      db.prepare(
+        `UPDATE session_agendas SET status = 'completed', payload = ?, updated_at = ?
+         WHERE id = ? AND version = ? AND status = 'active'`,
+      ).run(JSON.stringify(completedOutgoing), input.at, outgoing.id, outgoing.version);
+      const activatedSuccessor = SessionAgendaSchema.parse({
+        ...successor,
+        status: 'active',
+        updatedAt: input.at,
+      });
+      const successorActivated = db
+        .prepare(
+          `UPDATE session_agendas SET status = 'active', payload = ?, updated_at = ?
+           WHERE id = ? AND version = ? AND status = 'draft'`,
+        )
+        .run(JSON.stringify(activatedSuccessor), input.at, successor.id, successor.version).changes;
+      if (successorActivated !== 1) {
+        throw new Error('Successor SessionAgenda changed concurrently.');
+      }
+      for (const session of liveSessions) {
+        const handed = db
+          .prepare(
+            `UPDATE study_sessions
+             SET status = 'completed', current_agenda_item_id = NULL,
+                 version = ?, updated_at = ?
+             WHERE id = ? AND version = ?`,
+          )
+          .run(session.version + 1, input.at, session.id, session.version).changes;
+        if (handed !== 1) throw new Error('StudySession changed concurrently.');
+      }
+
+      input.beforePointerSwap?.();
+      const resultingVersion = current.version + 1;
+      const changed = db
+        .prepare(
+          `UPDATE course_execution_state
+           SET active_agenda_id = ?, version = ?, updated_at = ?
+           WHERE workspace_id = ? AND version = ? AND active_contract_id = ?
+             AND active_curriculum_id = ? AND accepted_plan_id = ? AND active_agenda_id = ?`,
+        )
+        .run(
+          successor.id,
+          resultingVersion,
+          input.at,
+          input.workspaceId,
+          current.version,
+          input.contractId,
+          input.curriculumId,
+          input.planId,
+          outgoing.id,
+        ).changes;
+      if (changed !== 1) throw new Error('Course execution state changed concurrently.');
+      const seq = (
+        db
+          .prepare(
+            `SELECT COALESCE(MAX(seq), 0) + 1 AS n
+             FROM course_execution_events WHERE workspace_id = ?`,
+          )
+          .get(input.workspaceId) as { n: number }
+      ).n;
+      db.prepare(
+        `INSERT INTO course_execution_events
+           (id, workspace_id, seq, event_type, actor, expected_version,
+            resulting_version, payload, created_at)
+         VALUES (?, ?, ?, 'agenda_window_rolled_over', ?, ?, ?, ?, ?)`,
+      ).run(
+        input.eventId,
+        input.workspaceId,
+        seq,
+        input.actor,
+        current.version,
+        resultingVersion,
+        JSON.stringify({
+          planId: plan.id,
+          retiredAgendaId: outgoing.id,
+          successorAgendaId: successor.id,
+          handedOffSessionIds: liveSessions.map((session) => session.id),
+        }),
+        input.at,
+      );
+      return get(input.workspaceId);
+    },
+  );
+
   const terminateRouteTx = db.transaction(
     (input: TerminateCourseRouteInput): CourseExecutionState => {
       const current = get(input.workspaceId);
@@ -1194,6 +1426,7 @@ export function createCourseExecutionRepo(db: SqliteDb) {
   return {
     get,
     activateRoute: activateRouteTx,
+    rolloverAgendaWindow: rolloverAgendaWindowTx,
     terminateRoute: terminateRouteTx,
     transitionExecution: transitionExecutionTx,
   };

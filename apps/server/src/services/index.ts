@@ -34,6 +34,10 @@ import {
   createSessionAgendaAgentService,
   type SessionAgendaAgentService,
 } from './sessionAgendasAgent.js';
+import {
+  createAgendaWindowRolloverService,
+  type AgendaWindowRolloverService,
+} from './agendaWindowRollover.js';
 import { createCourseExecutionService, type CourseExecutionService } from './courseExecution.js';
 import { createCourseOverviewService, type CourseOverviewService } from './courseOverview.js';
 import {
@@ -99,6 +103,7 @@ export interface Services {
   curriculum: CurriculumService;
   studyPlansAgent: StudyPlanAgentService;
   sessionAgendasAgent: SessionAgendaAgentService;
+  agendaWindow: AgendaWindowRolloverService;
   courseExecution: CourseExecutionService;
   courseOverview: CourseOverviewService;
   coursePreparation: CoursePreparationService;
@@ -180,6 +185,11 @@ export function createServices({
     providerModel,
   });
   const sessionAgendasAgent = createSessionAgendaAgentService({ repos, clock });
+  const agendaWindow = createAgendaWindowRolloverService({
+    repos,
+    clock,
+    agendas: sessionAgendasAgent,
+  });
   const courseExecution = createCourseExecutionService({
     repos,
     clock,
@@ -202,6 +212,7 @@ export function createServices({
     progression: repos.formalProgression,
     commands: courseCommands,
     clock,
+    agendaWindow,
   });
   const formalAssessments = createFormalAssessmentsService({
     repos,
@@ -231,6 +242,7 @@ export function createServices({
     clock,
     commands: courseCommands,
     teachingBriefPreparation,
+    agendaWindow,
   });
   const visualPreparation = createVisualPreparationService({
     repos,
@@ -292,6 +304,7 @@ export function createServices({
     curriculum,
     studyPlansAgent,
     sessionAgendasAgent,
+    agendaWindow,
     courseExecution,
     courseOverview,
     coursePreparation,

@@ -208,7 +208,9 @@ function buildProviderInput(
       state: states.includes('repair_needed')
         ? ('repair_needed' as const)
         : states.includes('completed')
-          ? ('formally_supported' as const)
+          ? // StudyPlan progress is execution bookkeeping: Lesson completion can
+            // reach it. Formal standing lives in learning_unit_progress.
+            ('route_completed' as const)
           : states.includes('started')
             ? ('in_progress' as const)
             : states.includes('deferred')
