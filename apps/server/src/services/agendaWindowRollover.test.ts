@@ -91,8 +91,101 @@ function completeWindow(agenda: SessionAgenda, commandPrefix: string): void {
   }
 }
 
+/**
+ * Completes exactly one teaching item through the production path, leaving the
+ * rest of the window queued so it does not roll over.
+ */
+function completeTeachingItem(agendaId: string, planItemId: string, commandId: string): string {
+  const live = repos.sessionAgendas.get(agendaId)!;
+  const plan = repos.studyPlans.get('plan_1')!;
+  const item = live.items.find((candidate) => candidate.linkedPlanItemId === planItemId)!;
+  services.agendaWindow.completeTeachingExecution({
+    workspaceId: 'ws_1',
+    sessionId: 'session_none',
+    agenda: live,
+    item,
+    plan,
+    planItem: plan.items.find((candidate) => candidate.id === planItemId)!,
+    commandId,
+    at: AT,
+  });
+  return item.id;
+}
+
 function activeAgenda(): SessionAgenda {
   return repos.sessionAgendas.get(repos.courseExecution.get('ws_1').activeAgendaId!)!;
+}
+
+/** Starts a learner StudySession on the currently active Agenda window. */
+function startSession(agendaId: string) {
+  return services.studySessions.start('ws_1', {
+    contractVersionId: 'contract_1',
+    curriculumVersionId: 'curriculum_1',
+    studyPlanVersionId: 'plan_1',
+    sessionAgendaId: agendaId,
+    expectedCourseExecutionVersion: repos.courseExecution.get('ws_1').version,
+  }).session;
+}
+
+/**
+ * Authoritative learning state that a refused command must leave untouched.
+ * Command bookkeeping (`agent_operations` and friends) is deliberately excluded:
+ * it is append-only by design and is asserted separately.
+ */
+const DOMAIN_TABLES = [
+  'session_agendas',
+  'session_agenda_items',
+  'session_agenda_events',
+  'study_plan_progress',
+  'study_plan_progress_events',
+  'coverage_risk_entries',
+  'coverage_risk_events',
+  'formal_evidence_records',
+  'learning_unit_progress',
+  'mastery_states',
+  'progression_decisions',
+  'progression_reconciliations',
+  'mistakes',
+  'goal_outcomes',
+  'review_items',
+  'study_sessions',
+] as const;
+
+/** Count of deferral events appended to an Agenda's own event log. */
+function deferralEventCount(agendaId: string): number {
+  return (
+    db
+      .prepare(
+        `SELECT COUNT(*) AS n FROM session_agenda_events
+         WHERE agenda_id = ? AND event_type = 'agenda_item_deferred'`,
+      )
+      .get(agendaId) as { n: number }
+  ).n;
+}
+
+/**
+ * Runs a command that must be refused and returns its message. The state
+ * assertions that follow stay reachable, so a lost refusal is reported as the
+ * regression it causes rather than only as a missing throw.
+ */
+function refusalMessage(run: () => unknown): string | null {
+  try {
+    run();
+    return null;
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error);
+  }
+}
+
+function domainDigest(): Record<string, string[]> {
+  return Object.fromEntries(
+    DOMAIN_TABLES.map((table) => [
+      table,
+      (db.prepare(`SELECT * FROM ${table}`).all() as unknown[])
+        .map((row) => JSON.stringify(row))
+        .sort(),
+    ]),
+  );
 }
 
 function durableCreditState() {
@@ -620,5 +713,138 @@ describe('same-plan Agenda window continuation', () => {
     }).session;
     expect(next.id).not.toBe(session.id);
     expect(next.sessionAgendaId).toBe(successor.id);
+  });
+});
+
+describe('learner defer never regresses completed execution bookkeeping', () => {
+  it('T26 refuses a defer naming a teaching item already completed, writing nothing', () => {
+    const first = activateFirstWindow();
+    const taughtItemId = completeTeachingItem(first.id, 'plan_item_1', 'teach-1');
+    // The window still holds its second teaching item, so nothing rolled over
+    // and the completed item is still nameable in the active Agenda.
+    expect(activeAgenda().id).toBe(first.id);
+    expect(activeAgenda().items.find((item) => item.id === taughtItemId)!.state).toBe('completed');
+    expect(
+      repos.studyPlans.listProgress('plan_1').find((entry) => entry.planItemId === 'plan_item_1')!
+        .state,
+    ).toBe('completed');
+    const session = startSession(first.id);
+    const before = domainDigest();
+
+    expect(
+      refusalMessage(() =>
+        services.studySessions.command('ws_1', session.id, {
+          commandId: 'defer_completed_teaching',
+          expectedSessionVersion: session.version,
+          kind: 'defer',
+          targetAgendaItemId: taughtItemId,
+          reason: 'Not now.',
+        }),
+      ),
+    ).toBe('Completed Agenda work cannot be deferred.');
+
+    expect(domainDigest()).toEqual(before);
+    expect(activeAgenda().items.find((item) => item.id === taughtItemId)!.state).toBe('completed');
+    expect(
+      repos.studyPlans.listProgress('plan_1').find((entry) => entry.planItemId === 'plan_item_1')!
+        .state,
+    ).toBe('completed');
+    expect(repos.coverageRisks.list('ws_1', 'contract_1')).toHaveLength(0);
+    expect(deferralEventCount(first.id)).toBe(0);
+
+    // Replaying the same refusal under a fresh command id accumulates nothing.
+    expect(
+      refusalMessage(() =>
+        services.studySessions.command('ws_1', session.id, {
+          commandId: 'defer_completed_teaching_replay',
+          expectedSessionVersion: session.version,
+          kind: 'defer',
+          targetAgendaItemId: taughtItemId,
+          reason: 'Not now.',
+        }),
+      ),
+    ).toBe('Completed Agenda work cannot be deferred.');
+    expect(domainDigest()).toEqual(before);
+  });
+
+  it('T27 still defers an unfinished teaching item and records its risk', () => {
+    const first = activateFirstWindow();
+    completeTeachingItem(first.id, 'plan_item_1', 'teach-1');
+    const unfinished = activeAgenda().items.find(
+      (item) => item.linkedPlanItemId === 'plan_item_2',
+    )!;
+    expect(unfinished.state).toBe('queued');
+    const session = startSession(first.id);
+    const before = domainDigest();
+
+    const deferred = services.studySessions.command('ws_1', session.id, {
+      commandId: 'defer_unfinished_teaching',
+      expectedSessionVersion: session.version,
+      kind: 'defer',
+      targetAgendaItemId: unfinished.id,
+      reason: 'Not now.',
+    });
+
+    // The pre-existing deferral semantics are unchanged.
+    expect(deferred.agenda.items.find((item) => item.id === unfinished.id)!.state).toBe('deferred');
+    expect(
+      repos.studyPlans.listProgress('plan_1').find((entry) => entry.planItemId === 'plan_item_2')!
+        .state,
+    ).toBe('deferred');
+    expect(repos.coverageRisks.list('ws_1', 'contract_1')).toEqual([
+      expect.objectContaining({ facets: ['intentionally_deferred'], status: 'deferred' }),
+    ]);
+    expect(deferralEventCount(first.id)).toBe(1);
+    // The digest genuinely observes a legitimate deferral, so the unchanged
+    // digest asserted for the refusal above is not blind.
+    expect(domainDigest()).not.toEqual(before);
+    // Completed work stayed completed regardless.
+    expect(
+      repos.studyPlans.listProgress('plan_1').find((entry) => entry.planItemId === 'plan_item_1')!
+        .state,
+    ).toBe('completed');
+  });
+
+  it('T28 fails closed when only the linked Plan progress is already completed', () => {
+    const first = activateFirstWindow();
+    const split = first.items.find((item) => item.linkedPlanItemId === 'plan_item_2')!;
+    // Adversarial split state built through the repository writer: the Agenda
+    // item still looks deferable while its durable Plan progress is completed.
+    const progress = repos.studyPlans
+      .listProgress('plan_1')
+      .find((entry) => entry.planItemId === 'plan_item_2')!;
+    repos.studyPlans.updateProgress(
+      'plan_1',
+      'plan_item_2',
+      progress.version,
+      'completed',
+      'split_state_progress_event',
+      'Legacy or adversarial completion without an Agenda state.',
+      AT,
+    );
+    expect(split.state).toBe('queued');
+    const session = startSession(first.id);
+    const before = domainDigest();
+
+    expect(
+      refusalMessage(() =>
+        services.studySessions.command('ws_1', session.id, {
+          commandId: 'defer_split_state',
+          expectedSessionVersion: session.version,
+          kind: 'defer',
+          targetAgendaItemId: split.id,
+          reason: 'Not now.',
+        }),
+      ),
+    ).toBe('Completed StudyPlan work cannot be deferred.');
+
+    // No downgrade, and no half-written contradiction either.
+    expect(
+      repos.studyPlans.listProgress('plan_1').find((entry) => entry.planItemId === 'plan_item_2')!
+        .state,
+    ).toBe('completed');
+    expect(activeAgenda().items.find((item) => item.id === split.id)!.state).toBe('queued');
+    expect(repos.coverageRisks.list('ws_1', 'contract_1')).toHaveLength(0);
+    expect(domainDigest()).toEqual(before);
   });
 });

@@ -1228,6 +1228,26 @@ export function createStudySessionService({
             }
           }
           if (parsed.kind === 'defer') {
+            // A learner "not now" is only ever about unfinished work. Deferring
+            // something already executed would deny work that really happened,
+            // so both halves of the durable record are checked before any write.
+            if (target.state === 'completed') {
+              throw new AppError(
+                ApiErrorCode.ValidationError,
+                'Completed Agenda work cannot be deferred.',
+              );
+            }
+            const linkedProgress = target.linkedPlanItemId
+              ? (repos.studyPlans
+                  .listProgress(current.studyPlanVersionId)
+                  .find((item) => item.planItemId === target.linkedPlanItemId) ?? null)
+              : null;
+            if (linkedProgress?.state === 'completed') {
+              throw new AppError(
+                ApiErrorCode.ValidationError,
+                'Completed StudyPlan work cannot be deferred.',
+              );
+            }
             const deferredItems = currentAgenda.items.map((item) =>
               item.id === target.id ? { ...item, state: 'deferred' as const } : item,
             );
@@ -1247,21 +1267,16 @@ export function createStudySessionService({
                 reason: parsed.reason,
               }),
             );
-            if (target.linkedPlanItemId) {
-              const progress = repos.studyPlans
-                .listProgress(current.studyPlanVersionId)
-                .find((item) => item.planItemId === target.linkedPlanItemId);
-              if (progress && progress.state !== 'deferred') {
-                repos.studyPlans.updateProgress(
-                  current.studyPlanVersionId,
-                  target.linkedPlanItemId,
-                  progress.version,
-                  'deferred',
-                  newId('plan_progress_event'),
-                  parsed.reason,
-                  at,
-                );
-              }
+            if (target.linkedPlanItemId && linkedProgress && linkedProgress.state !== 'deferred') {
+              repos.studyPlans.updateProgress(
+                current.studyPlanVersionId,
+                target.linkedPlanItemId,
+                linkedProgress.version,
+                'deferred',
+                newId('plan_progress_event'),
+                parsed.reason,
+                at,
+              );
             }
             const contract = repos.learningContracts.get(current.contractVersionId);
             const plan = repos.studyPlans.get(current.studyPlanVersionId);

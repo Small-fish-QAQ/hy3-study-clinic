@@ -797,6 +797,70 @@ describe('StudySession service', () => {
     expect(repos.studyPlans.list('ws_1')).toHaveLength(1);
   });
 
+  it('refuses to defer a completed Agenda item of a non-teaching kind', () => {
+    let session = service.start('ws_1', {
+      contractVersionId: 'contract_1',
+      curriculumVersionId: 'curriculum_1',
+      studyPlanVersionId: 'plan_1',
+      sessionAgendaId: 'agenda_1',
+      expectedCourseExecutionVersion: 1,
+    }).session;
+    // A learner detour, completed entirely through production commands.
+    const inserted = service.command('ws_1', session.id, {
+      commandId: 'noteaching_insert',
+      expectedSessionVersion: session.version,
+      kind: 'agenda_insert',
+      targetAgendaItemId: session.currentAgendaItemId,
+      requestedMinutes: 5,
+      reason: 'A short aside before the current topic.',
+    });
+    session = inserted.session;
+    const detourItemId = inserted.agenda.items.at(-1)!.id;
+    const returned = service.command('ws_1', session.id, {
+      commandId: 'noteaching_return',
+      expectedSessionVersion: session.version,
+      kind: 'return',
+      targetAgendaItemId: detourItemId,
+      reason: 'The aside is finished.',
+    });
+    session = returned.session;
+    expect(returned.agenda.items.find((item) => item.id === detourItemId)?.state).toBe('completed');
+    const risksBefore = repos.coverageRisks.list('ws_1', 'contract_1').length;
+    const agendaBefore = repos.sessionAgendas.get('agenda_1');
+
+    let refusal: string | null = null;
+    try {
+      service.command('ws_1', session.id, {
+        commandId: 'noteaching_defer',
+        expectedSessionVersion: session.version,
+        kind: 'defer',
+        targetAgendaItemId: detourItemId,
+        reason: 'Put this aside back on the shelf.',
+      });
+    } catch (error) {
+      refusal = error instanceof Error ? error.message : String(error);
+    }
+
+    // The invariant is generic across Agenda kinds, not special-cased to
+    // teaching, and this item carries no linked Plan progress to fall back on.
+    expect(repos.sessionAgendas.get('agenda_1')).toEqual(agendaBefore);
+    expect(repos.coverageRisks.list('ws_1', 'contract_1')).toHaveLength(risksBefore);
+    expect(refusal).toBe('Completed Agenda work cannot be deferred.');
+
+    // An unfinished item on the same Agenda still defers normally.
+    const deferred = service.command('ws_1', session.id, {
+      commandId: 'noteaching_defer_unfinished',
+      expectedSessionVersion: session.version,
+      kind: 'defer',
+      targetAgendaItemId: 'agenda_item_checkpoint',
+      reason: 'Defer the formal check until tomorrow.',
+    });
+    expect(deferred.agenda.items.find((item) => item.id === 'agenda_item_checkpoint')?.state).toBe(
+      'deferred',
+    );
+    expect(repos.coverageRisks.list('ws_1', 'contract_1')).toHaveLength(risksBefore + 1);
+  });
+
   it('stops only the StudySession and leaves the accepted route immediately reusable', () => {
     const started = service.start('ws_1', {
       contractVersionId: 'contract_1',

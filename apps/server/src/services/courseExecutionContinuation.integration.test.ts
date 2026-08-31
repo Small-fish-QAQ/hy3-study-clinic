@@ -182,6 +182,67 @@ async function prepareAcceptedRoute() {
   return { contract, curriculum, plan: route.studyPlan, agenda: route.agenda };
 }
 
+/**
+ * Authoritative learning state a refused command must leave untouched. Command
+ * bookkeeping (`agent_operations` and friends) is excluded on purpose: it is
+ * append-only by design and is asserted separately.
+ */
+const DOMAIN_TABLES = [
+  'session_agendas',
+  'session_agenda_items',
+  'session_agenda_events',
+  'study_plan_progress',
+  'study_plan_progress_events',
+  'coverage_risk_entries',
+  'coverage_risk_events',
+  'formal_evidence_records',
+  'learning_unit_progress',
+  'mastery_states',
+  'progression_decisions',
+  'progression_reconciliations',
+  'mistakes',
+  'goal_outcomes',
+  'review_items',
+  'study_sessions',
+] as const;
+
+function domainDigest(): Record<string, string[]> {
+  return Object.fromEntries(
+    DOMAIN_TABLES.map((table) => [
+      table,
+      (harness.db.prepare(`SELECT * FROM ${table}`).all() as unknown[])
+        .map((row) => JSON.stringify(row))
+        .sort(),
+    ]),
+  );
+}
+
+/** Count of deferral events appended to an Agenda's own event log. */
+function deferralEventCount(agendaId: string): number {
+  return (
+    harness.db
+      .prepare(
+        `SELECT COUNT(*) AS n FROM session_agenda_events
+         WHERE agenda_id = ? AND event_type = 'agenda_item_deferred'`,
+      )
+      .get(agendaId) as { n: number }
+  ).n;
+}
+
+/**
+ * Runs a command that must be refused and returns its message. The state
+ * assertions that follow stay reachable, so a lost refusal is reported as the
+ * regression it causes rather than only as a missing throw.
+ */
+function refusalMessage(run: () => unknown): string | null {
+  try {
+    run();
+    return null;
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error);
+  }
+}
+
 function planIndexes(agendaId: string, planId: string): number[] {
   const plan = harness.repos.studyPlans.get(planId)!;
   return harness.repos.sessionAgendas
@@ -498,5 +559,83 @@ describe('file-backed Course Execution continuation', () => {
         .items.find((item) => item.id === firstTeaching.id)!.state,
     ).toBe('completed');
     expect(harness.repos.formalProgression.listGoalOutcomes(workspaceId)).toHaveLength(0);
+  }, 240_000);
+
+  it('T25 refuses a learner defer that would regress work a real Lesson completed', async () => {
+    const route = await prepareAcceptedRoute();
+    const plan = harness.repos.studyPlans.get(route.plan.id)!;
+    const firstTeaching = route.agenda.items.find(
+      (item) => item.kind === 'learning_unit_teaching',
+    )!;
+
+    // Real Slice 4 completion path: a Lesson taken to Practice completion.
+    await teachThroughLesson(route.agenda.id, firstTeaching.id, 'w1-teach');
+    const afterLesson = harness.repos.sessionAgendas.get(route.agenda.id)!;
+    expect(afterLesson.items.find((item) => item.id === firstTeaching.id)!.state).toBe('completed');
+    expect(
+      harness.repos.studyPlans
+        .listProgress(plan.id)
+        .find((entry) => entry.planItemId === firstTeaching.linkedPlanItemId)!.state,
+    ).toBe('completed');
+    // The window still holds its checkpoint, so the completed teaching item is
+    // still nameable in the active Agenda.
+    expect(harness.repos.courseExecution.get(workspaceId).activeAgendaId).toBe(route.agenda.id);
+    const stillQueued = afterLesson.items.find((item) => item.state === 'queued')!;
+    const session = harness.services.studySessions.start(workspaceId, {
+      contractVersionId: afterLesson.contractVersionId,
+      curriculumVersionId: afterLesson.curriculumVersionId,
+      studyPlanVersionId: afterLesson.studyPlanVersionId,
+      sessionAgendaId: afterLesson.id,
+      expectedCourseExecutionVersion: harness.repos.courseExecution.get(workspaceId).version,
+    }).session;
+    const before = domainDigest();
+
+    const defer = (commandId: string, targetAgendaItemId: string) =>
+      harness.services.studySessions.command(workspaceId, session.id, {
+        commandId,
+        expectedSessionVersion: harness.repos.studySessions.get(session.id)!.version,
+        kind: 'defer',
+        targetAgendaItemId,
+        reason: 'Not now.',
+      });
+
+    expect(refusalMessage(() => defer('defer-taught', firstTeaching.id))).toBe(
+      'Completed Agenda work cannot be deferred.',
+    );
+    // Replay through the real command layer accumulates no domain mutation.
+    expect(refusalMessage(() => defer('defer-taught-replay', firstTeaching.id))).toBe(
+      'Completed Agenda work cannot be deferred.',
+    );
+
+    expect(domainDigest()).toEqual(before);
+    expect(
+      harness.repos.sessionAgendas
+        .get(route.agenda.id)!
+        .items.find((item) => item.id === firstTeaching.id)!.state,
+    ).toBe('completed');
+    expect(
+      harness.repos.studyPlans
+        .listProgress(plan.id)
+        .find((entry) => entry.planItemId === firstTeaching.linkedPlanItemId)!.state,
+    ).toBe('completed');
+    expect(harness.repos.coverageRisks.list(workspaceId, route.contract.id)).toHaveLength(0);
+    expect(deferralEventCount(route.agenda.id)).toBe(0);
+    expect(harness.repos.formalProgression.listGoalOutcomes(workspaceId)).toHaveLength(0);
+
+    // Positive control on the same database: an unfinished item still defers,
+    // so the unchanged digest above is not a blind assertion.
+    const deferred = defer('defer-unfinished', stillQueued.id);
+    expect(deferred.agenda.items.find((item) => item.id === stillQueued.id)!.state).toBe(
+      'deferred',
+    );
+    expect(domainDigest()).not.toEqual(before);
+    expect(deferralEventCount(route.agenda.id)).toBe(1);
+    expect(harness.repos.coverageRisks.list(workspaceId, route.contract.id)).toHaveLength(1);
+    // And the taught work is still completed after a legitimate deferral.
+    expect(
+      harness.repos.studyPlans
+        .listProgress(plan.id)
+        .find((entry) => entry.planItemId === firstTeaching.linkedPlanItemId)!.state,
+    ).toBe('completed');
   }, 240_000);
 });
