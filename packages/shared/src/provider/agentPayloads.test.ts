@@ -293,6 +293,49 @@ describe('ProposedCurriculumNodeSchema unit-only array presence', () => {
     ]);
   });
 
+  // The presence rules above say the arrays must exist. This says a non-unit
+  // node may not put anything in them. That guard is why one broad proposal
+  // schema is enough and a kind-discriminated wire union is not needed, so it
+  // needs its own test rather than resting on the presence contract.
+  it.each([
+    ['conceptIds', ['con_1']],
+    ['canonicalConceptIds', ['canon_1']],
+    ['prerequisiteUnitKeys', ['unit-1']],
+    ['graphRelationIds', ['rel_1']],
+    [
+      'objectives',
+      [
+        {
+          key: 'objective-1',
+          title: 'Contaminating objective',
+          description: 'A non-unit node must not carry an objective at all.',
+          subjectClass: 'source_specific',
+          scopeOrigin: 'anchored',
+          construct: 'identify',
+          evidence: [],
+        },
+      ],
+    ],
+  ])('rejects a non-unit node carrying %s', (key, value) => {
+    const node = { ...nonUnitNode(), [key]: value };
+    const parsed = ProposedCurriculumNodeSchema.safeParse(node);
+    expect(parsed.success).toBe(false);
+    if (parsed.success) throw new Error(`Expected a section carrying ${key} to reject.`);
+    expect(parsed.error.issues.map((issue) => issue.message)).toContain(
+      'only learning_unit nodes may carry unit details',
+    );
+  });
+
+  it('requires at least one objective on a learning_unit', () => {
+    const unit = { ...nonUnitNode(), key: 'unit-1', kind: 'learning_unit' };
+    const parsed = ProposedCurriculumNodeSchema.safeParse(unit);
+    expect(parsed.success).toBe(false);
+    if (parsed.success) throw new Error('Expected an objective-free learning_unit to reject.');
+    expect(parsed.error.issues.map((issue) => issue.message)).toContain(
+      'learning_unit nodes require at least one objective',
+    );
+  });
+
   it('accepts a non-unit node whose unit-only arrays are explicit empty arrays', () => {
     const parsed = ProposedCurriculumNodeSchema.safeParse(nonUnitNode());
     expect(parsed.success).toBe(true);

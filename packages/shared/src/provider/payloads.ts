@@ -620,7 +620,16 @@ export const CurriculumDetailProposalPayloadSchema = z
   });
 export type CurriculumDetailProposalPayload = z.infer<typeof CurriculumDetailProposalPayloadSchema>;
 
-/** Semantic Curriculum proposal. All consequential fields are assigned locally. */
+/**
+ * Semantic Curriculum proposal. All consequential fields are assigned locally.
+ *
+ * Two writers share this one contract: untrusted provider output, and the
+ * trusted local Course Map assembler. That is why it is neither narrowed to what
+ * a provider may say nor widened to suit local assembly. Narrowing it would
+ * reject the assembler's own output; widening it would weaken the provider gate.
+ * A provider-only tightening belongs in an adapter-level parse, not here. Use
+ * the role aliases below so the intended writer stays visible at call sites.
+ */
 export const CurriculumProposalPayloadSchema = z
   .object({
     nodes: z.array(ProposedCurriculumNodeSchema).min(1).max(1999),
@@ -741,6 +750,10 @@ export const CurriculumProposalPayloadSchema = z
     }
   });
 export type CurriculumProposalPayload = z.infer<typeof CurriculumProposalPayloadSchema>;
+/** Provider-authored and still untrusted. Identical shape, different provenance. */
+export type ProviderAuthoredCurriculumProposal = CurriculumProposalPayload;
+/** Assembled locally from an already validated Course Map, not model-authored. */
+export type LocallyAssembledCurriculumProposal = CurriculumProposalPayload;
 
 /** One executable-route item proposed from an already accepted Curriculum. */
 export const ProposedStudyPlanItemSchema = z

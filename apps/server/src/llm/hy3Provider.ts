@@ -32,7 +32,7 @@ import {
   type ConceptLessonPayload,
   type CourseMapProposalPayload,
   type CurriculumDetailProposalPayload,
-  type CurriculumProposalPayload,
+  type ProviderAuthoredCurriculumProposal,
   type GraphProposalPayload,
   type GroupedStudyPlanProposalPayload,
   type MisconceptionProposalPayload,
@@ -800,7 +800,7 @@ export class Hy3Provider implements LlmProvider {
   async proposeCurriculum(
     input: CurriculumProposalInput,
     opts?: ProviderCallOptions,
-  ): Promise<CurriculumProposalPayload> {
+  ): Promise<ProviderAuthoredCurriculumProposal> {
     return this.complete(
       curriculumProposalMessages(input),
       CurriculumProposalPayloadSchema,

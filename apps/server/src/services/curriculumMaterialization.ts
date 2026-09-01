@@ -8,6 +8,7 @@ import {
   type CurriculumAuthorityEnvelope,
   type CurriculumDetailProposalPayload,
   type CurriculumProposalPayload,
+  type LocallyAssembledCurriculumProposal,
   type SourceBlock,
 } from '@hy3-clinic/shared';
 import type {
@@ -1469,7 +1470,7 @@ export function validateCurriculumDetailCandidate(
 }
 
 export interface CurriculumDetailAssembly {
-  payload: CurriculumProposalPayload;
+  payload: LocallyAssembledCurriculumProposal;
   regionCount: number;
   prerequisiteCount: number;
 }

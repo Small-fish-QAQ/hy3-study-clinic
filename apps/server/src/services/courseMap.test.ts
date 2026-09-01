@@ -513,12 +513,18 @@ describe('Course Map prerequisite validation', () => {
       'duplicate_prerequisite',
     ],
     [
-      'wrong ordering',
+      // A satisfiable order disagreement is canonicalized, not refused, so the
+      // remaining order refusal is the shape no module order can satisfy:
+      // acyclic over regions, cyclic once contracted onto modules.
+      'prerequisites that force modules to interleave',
       (fixture: ReturnType<typeof createCourseMapFixture>) => ({
         ...fixture.good,
-        prerequisites: [{ prerequisiteRegionRef: 'R2', dependentRegionRef: 'R1' }],
+        prerequisites: [
+          { prerequisiteRegionRef: 'R1', dependentRegionRef: 'R4' },
+          { prerequisiteRegionRef: 'R5', dependentRegionRef: 'R2' },
+        ],
       }),
-      'prerequisite_wrong_order',
+      'invalid_module_order',
     ],
   ])('rejects %s', (_name, proposalFor, expectedCode) => {
     const fixture = createCourseMapFixture();

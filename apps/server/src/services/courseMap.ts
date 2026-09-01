@@ -27,6 +27,7 @@ import type {
   ProviderCandidateValidation,
   ProviderCandidateFailureArtifact,
 } from '../llm/provider.js';
+import { canonicalizeCourseMapProposalOrder } from './courseMapOrdering.js';
 import { CourseSourceMapSchema, type CourseSourceMap } from './courseSourceMap.js';
 import { validateCourseSourceMapSelectionCorpus } from './curriculumEvidencePolicy.js';
 import { validateCourseMapSemanticCoherence } from './curriculumSemanticEvaluator.js';
@@ -937,9 +938,22 @@ export function analyzeCourseMapProposal(
   payload: CourseMapProposalPayload,
   context: CourseMapValidationContext,
 ): CourseMapAnalysis {
-  const parsed = CourseMapProposalPayloadSchema.parse(payload);
+  const emitted = CourseMapProposalPayloadSchema.parse(payload);
   const sourceAllocation = CourseMapSourceAllocationSchema.parse(context.sourceAllocation);
   assertCourseMapProviderInputIntegrity(sourceAllocation, context.providerInput);
+  const allocationById = new Map(sourceAllocation.regions.map((region) => [region.id, region]));
+  // Canonicalize before the fingerprint, so identity follows canonical order
+  // rather than the order the provider happened to emit.
+  const canonicalOrder = canonicalizeCourseMapProposalOrder(
+    emitted,
+    new Map(
+      context.providerInput.sourceRegions.flatMap((region) => {
+        const allocation = allocationById.get(region.sourceAllocationRegionId);
+        return allocation ? [[region.sourceRegionRef, allocation.index] as const] : [];
+      }),
+    ),
+  );
+  const parsed = canonicalOrder.payload;
   const proposalFingerprint = fingerprint('course_map_proposal', parsed);
   const diagnostics: CourseMapDiagnostic[] = [];
   const add = (
@@ -1009,7 +1023,6 @@ export function analyzeCourseMapProposal(
     }
   }
 
-  const allocationById = new Map(sourceAllocation.regions.map((region) => [region.id, region]));
   const sourceOfferByRef = new Map(
     context.providerInput.sourceRegions.map((region) => [region.sourceRegionRef, region]),
   );
@@ -1343,6 +1356,16 @@ export function analyzeCourseMapProposal(
   if (hasCycle) {
     prerequisiteTopologyValid = false;
     add('error', 'prerequisite_cycle', 'Course Map prerequisite graph contains a cycle.');
+  }
+  // A region graph can be acyclic while the same edges contracted onto modules
+  // cycle. Module children must stay contiguous, so no canonical order exists.
+  if (!hasCycle && !canonicalOrder.moduleOrderRepresentable) {
+    prerequisiteTopologyValid = false;
+    add(
+      'error',
+      'invalid_module_order',
+      'Course Map prerequisites require modules to interleave, so no module order can satisfy them.',
+    );
   }
   const maxInDegree = Math.max(0, ...inDegree.values());
   const maxOutDegree = Math.max(0, ...outDegree.values());

@@ -329,6 +329,45 @@ describe('bounded Curriculum detail materialization', () => {
     expect(assembled.payload.nodes.some((node) => node.prerequisiteUnitKeys.length > 0)).toBe(true);
   });
 
+  it('emits nodes in the same order a sibling-index traversal produces', async () => {
+    // The stored node array and a traversal by sibling `index` are two carriers
+    // of order. Both derive from the Course Map's canonical order, so on this
+    // path they agree rather than drifting apart.
+    const input = planningInput();
+    const provider = new FakeProvider();
+    const completed = [];
+    for (const batch of planCurriculumDetailBatches(input)) {
+      completed.push({
+        input: batch.input,
+        payload: await provider.proposeCurriculumDetails(batch.input),
+      });
+    }
+    const { payload } = assembleCurriculumDetailBatches(input.courseMap, completed);
+
+    const childrenOf = (parentKey: string | null) =>
+      payload.nodes
+        .filter((node) => node.parentKey === parentKey)
+        .slice()
+        .sort((left, right) => left.index - right.index);
+    const traversal: string[] = [];
+    const walk = (parentKey: string | null): void => {
+      for (const node of childrenOf(parentKey)) {
+        traversal.push(node.key);
+        walk(node.key);
+      }
+    };
+    walk(null);
+
+    expect(traversal.length).toBe(payload.nodes.length);
+    expect(traversal.length).toBeGreaterThan(0);
+    expect(traversal).toEqual(payload.nodes.map((node) => node.key));
+    // Sibling indexes are contiguous from zero within every parent.
+    for (const parentKey of [null, ...payload.nodes.map((node) => node.key)]) {
+      const siblings = childrenOf(parentKey);
+      expect(siblings.map((node) => node.index)).toEqual(siblings.map((_node, index) => index));
+    }
+  });
+
   it('rejects foreign batch snapshots and invalid prerequisite topology during assembly', async () => {
     const input = planningInput();
     const batch = planCurriculumDetailBatches(input)[0]!;
