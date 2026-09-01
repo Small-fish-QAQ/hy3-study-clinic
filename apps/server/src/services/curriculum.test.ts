@@ -24,6 +24,7 @@ import { createRepositories, type Repositories } from '../repositories/index.js'
 import { makeBlock, makeMaterial, makeWorkspace, T0 } from '../testing/fixtures.js';
 import { fixedClock, type Clock } from '../util/ids.js';
 import { createCourseCommandService } from './courseCommands.js';
+import { buildCourseMapSourceAllocation } from './courseMap.js';
 import { createCourseOverviewService } from './courseOverview.js';
 import {
   buildCurriculumCourseSourceMap,
@@ -905,11 +906,30 @@ describe('Curriculum proposal and authority boundaries', () => {
     ).toBe(LEGACY_CURRICULUM_GENERATION_POLICY);
   });
 
-  it('defaults production generation to the legacy direct policy', () => {
-    expect(CURRICULUM_GENERATION_POLICY).toBe(LEGACY_CURRICULUM_GENERATION_POLICY);
-    expect(curriculumOperationLeaseMs(240_000)).toBe(218 * 60 * 1000);
-    expect(curriculumOperationLeaseMs(240_000, COURSE_MAP_CURRICULUM_GENERATION_POLICY)).toBe(
-      242 * 60 * 1000,
+  it('defaults production generation to Course Map materialization for any outline size', () => {
+    expect(CURRICULUM_GENERATION_POLICY).toBe(COURSE_MAP_CURRICULUM_GENERATION_POLICY);
+    // A: small course, no explicit policy. B: large course, no explicit policy.
+    // Neither size reaches legacy, so the >= 80 escalation is now unreachable
+    // from the default and only rewrites an explicitly legacy service default.
+    for (const outlineLength of [0, 1, 12, 79, 80, 500]) {
+      expect(
+        curriculumGenerationPolicyForOutline(outlineLength, CURRICULUM_GENERATION_POLICY),
+      ).toBe(COURSE_MAP_CURRICULUM_GENERATION_POLICY);
+    }
+    // C: explicit Course Map stays Course Map. D: explicit legacy stays legacy
+    // at every outline length, including past the escalation threshold.
+    expect(
+      curriculumGenerationPolicyForOutline(12, COURSE_MAP_CURRICULUM_GENERATION_POLICY, true),
+    ).toBe(COURSE_MAP_CURRICULUM_GENERATION_POLICY);
+    expect(
+      curriculumGenerationPolicyForOutline(12, LEGACY_CURRICULUM_GENERATION_POLICY, true),
+    ).toBe(LEGACY_CURRICULUM_GENERATION_POLICY);
+    expect(
+      curriculumGenerationPolicyForOutline(200, LEGACY_CURRICULUM_GENERATION_POLICY, true),
+    ).toBe(LEGACY_CURRICULUM_GENERATION_POLICY);
+    expect(curriculumOperationLeaseMs(240_000)).toBe(242 * 60 * 1000);
+    expect(curriculumOperationLeaseMs(240_000, LEGACY_CURRICULUM_GENERATION_POLICY)).toBe(
+      218 * 60 * 1000,
     );
   });
 
@@ -1067,7 +1087,20 @@ describe('Curriculum proposal and authority boundaries', () => {
           .get('mat_visual') as { count: number }
       ).count,
     ).toBe(0);
-    expect(CURRICULUM_GENERATION_POLICY).toBe('legacy_direct_v1');
+    // Under the Course Map default this revision has no textual allocation
+    // surface, so it must be accounted for at material level rather than
+    // receiving a fabricated region built from its advisory description.
+    // An all-asset-only course has no textual allocation surface at all, so the
+    // Course Map path fails closed with a typed refusal instead of fabricating a
+    // region from the advisory description or crashing on an empty section list.
+    expect(() =>
+      buildCourseMapSourceAllocation({
+        workspaceId: 'ws_1',
+        sourceMap,
+        blocks: context.blocks,
+        evidenceCatalog,
+      }),
+    ).toThrowError(/authoritative textual allocation surface/);
   });
 
   it('keeps a pending role proposal below Contract authority, then blocks a confirmed role change', async () => {

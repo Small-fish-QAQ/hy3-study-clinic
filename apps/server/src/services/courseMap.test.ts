@@ -91,6 +91,104 @@ describe('Course Map bounded source allocation', () => {
     expect(again.regions.flatMap((region) => region.evidence)).toHaveLength(6);
   });
 
+  it('accounts standalone asset Materials without fabricating regions for them', () => {
+    const fixture = createCourseMapFixture({ assetOnlyMaterialCount: 2 });
+    const textOnly = createCourseMapFixture();
+    const allocation = fixture.sourceAllocation;
+
+    expect(() => CourseMapSourceAllocationSchema.parse(allocation)).not.toThrow();
+
+    // Union exactness: every scoped Material is accounted exactly once, as
+    // either region-backed or explicitly non-regional.
+    const scoped = fixture.sourceMap.materials.map((material) => material.materialId);
+    const regionBacked = new Set(allocation.regions.map((region) => region.materialId));
+    const nonRegional = allocation.assetOnlyMaterials.map((entry) => entry.materialId);
+    expect(new Set([...regionBacked, ...nonRegional])).toEqual(new Set(scoped));
+    expect(nonRegional).toHaveLength(2);
+    expect(new Set(nonRegional).size).toBe(nonRegional.length);
+    expect(allocation.materialCount).toBe(scoped.length);
+
+    // Disjointness: an asset-only Material never also holds a textual region.
+    for (const materialId of nonRegional) {
+      expect(regionBacked.has(materialId)).toBe(false);
+    }
+
+    // No fabricated region, section, block, or title for an asset Material.
+    expect(allocation.regions).toHaveLength(textOnly.sourceAllocation.regions.length);
+    expect(allocation.regions.map((region) => region.title)).toEqual(
+      textOnly.sourceAllocation.regions.map((region) => region.title),
+    );
+    expect(allocation.regions.every((region) => region.sourceSectionIds.length > 0)).toBe(true);
+    expect(allocation.regions.every((region) => region.sourceBlockIds.length > 0)).toBe(true);
+
+    // Positive accounting digest, so this is not merely "did not throw".
+    expect(allocation.assetOnlyMaterials).toEqual([
+      {
+        materialId: 'material_asset_1',
+        materialRevisionId: 'revision_asset_1',
+        reason: 'no_textual_allocation_surface',
+        originalVisualCount: 1,
+      },
+      {
+        materialId: 'material_asset_2',
+        materialRevisionId: 'revision_asset_2',
+        reason: 'no_textual_allocation_surface',
+        originalVisualCount: 1,
+      },
+    ]);
+
+    // Accounting is planning visibility only; it never becomes Formal authority.
+    expect(allocation.authority).toBe('planning_visibility_only');
+
+    // Classification participates in the allocation fingerprint.
+    expect(allocation.fingerprint).not.toBe(textOnly.sourceAllocation.fingerprint);
+  });
+
+  it('fails closed on a zero-section Material with no legitimate asset surface', () => {
+    // A normally text-bearing Material whose parse yielded nothing: zero
+    // sections and no original asset bytes. Zero sections alone must never
+    // qualify as asset-only.
+    expect(() =>
+      createCourseMapFixture({
+        assetOnlyMaterialCount: 1,
+        assetOnlyMaterialsLackAssetBytes: true,
+      }),
+    ).toThrowError(/require original visual occurrences/);
+  });
+
+  it('seals the source map against post-construction asset tampering', () => {
+    // Allocation's own asset-only predicate is defense in depth: reaching it
+    // with an illegitimate Material requires editing a constructed source map,
+    // and the fingerprint seal refuses that first. Pin the seal so the
+    // upstream refusal cannot regress into a silent reclassification.
+    const fixture = createCourseMapFixture({ assetOnlyMaterialCount: 1 });
+    const tampered = structuredClone(fixture.sourceMap) as unknown as {
+      materials: Array<{ materialId: string; visuals: unknown[] }>;
+    };
+    tampered.materials.find((entry) => entry.materialId === 'material_asset_1')!.visuals = [];
+    expect(() =>
+      buildCourseMapSourceAllocation({
+        workspaceId: fixture.workspaceId,
+        sourceMap: tampered as unknown as typeof fixture.sourceMap,
+        blocks: fixture.blocks,
+        evidenceCatalog: fixture.evidenceCatalog,
+      }),
+    ).toThrowError(/fingerprint is stale or mismatched/);
+  });
+
+  it('keeps a Material region-backed when it carries both text and assets', () => {
+    const fixture = createCourseMapFixture({
+      assetOnlyMaterialCount: 1,
+      attachAssetToTextMaterial: true,
+    });
+    const allocation = fixture.sourceAllocation;
+
+    expect(allocation.assetOnlyMaterials.map((entry) => entry.materialId)).toEqual([
+      'material_asset_1',
+    ]);
+    expect(allocation.regions.some((region) => region.materialId === 'material_alpha')).toBe(true);
+  });
+
   it('groups the complete corpus when sections exceed the source-region cap', () => {
     const fixture = createCourseMapFixture();
     const allocation = buildCourseMapSourceAllocation({

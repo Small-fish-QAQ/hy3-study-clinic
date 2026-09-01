@@ -32,18 +32,69 @@ export interface CourseMapFixture {
   unknownSource: CourseMapProposalPayload;
   duplicateIntent: CourseMapProposalPayload;
   sparse: CourseMapProposalPayload;
+  /** Region-acyclic but module-contracted-cyclic; expects `invalid_module_order`. */
+  moduleCycle: CourseMapProposalPayload;
 }
 
 function clone<T>(value: T): T {
   return structuredClone(value);
 }
 
-export function createCourseMapFixture(): CourseMapFixture {
+/**
+ * An extracted original asset: real bytes with a content hash, never a
+ * model-authored derivation. This is the only provenance the non-regional
+ * predicate accepts.
+ */
+function originalVisual(seed: number, contextLabel: string, slug: string) {
+  return {
+    assetOccurrenceId: `asset_occurrence_${slug}`,
+    assetByteHash: `sha256:${String(seed === 0 ? 9 : seed)
+      .repeat(64)
+      .slice(0, 64)}`,
+    mediaType: 'image/png' as const,
+    width: 800,
+    height: 600,
+    location: { pageNumber: 1, slideNumber: null, contextLabel },
+    contentOrigin: 'extracted_original' as const,
+    advisoryDescription: null,
+  };
+}
+
+export interface CourseMapFixtureOptions {
+  /**
+   * Extra standalone-image Materials with original asset bytes and no textual
+   * SourceBlocks. They exercise material-level non-regional accounting; the
+   * default fixture stays text-only and byte-identical for existing callers.
+   */
+  assetOnlyMaterialCount?: number;
+  /**
+   * Emit the extra Materials with neither SourceBlocks nor original asset
+   * bytes: a normally text-bearing Material whose parse yielded nothing. The
+   * legitimate non-text predicate must refuse them rather than silently
+   * classifying them as asset-only.
+   */
+  assetOnlyMaterialsLackAssetBytes?: boolean;
+  /**
+   * Also attach an original asset to the first text Material, so a mixed
+   * text+asset Material stays region-backed.
+   */
+  attachAssetToTextMaterial?: boolean;
+}
+
+export function createCourseMapFixture(options: CourseMapFixtureOptions = {}): CourseMapFixture {
+  const assetOnlyMaterialCount = options.assetOnlyMaterialCount ?? 0;
+  const assetOnlyMaterialsLackAssetBytes = options.assetOnlyMaterialsLackAssetBytes ?? false;
+  const attachAssetToTextMaterial = options.attachAssetToTextMaterial ?? false;
   const workspaceId = 'course_map_workspace';
   const materials = [
     { id: 'material_alpha', revisionId: 'revision_alpha', title: 'Alpha material' },
     { id: 'material_beta', revisionId: 'revision_beta', title: 'Beta material' },
   ];
+  const assetOnlyMaterials = Array.from({ length: assetOnlyMaterialCount }, (_unused, index) => ({
+    id: `material_asset_${index + 1}`,
+    revisionId: `revision_asset_${index + 1}`,
+    title: `Asset-only material ${index + 1}`,
+  }));
   const blocks: SourceBlock[] = [];
   for (const [materialIndex, material] of materials.entries()) {
     let offset = 0;
@@ -68,7 +119,7 @@ export function createCourseMapFixture(): CourseMapFixture {
       offset += content.length + 1;
     }
   }
-  const revisions = materials.map((material) => ({
+  const revisions = [...materials, ...assetOnlyMaterials].map((material) => ({
     materialId: material.id,
     materialRevisionId: material.revisionId,
     parserVersion: 'course-map-fixture-parser',
@@ -104,28 +155,52 @@ export function createCourseMapFixture(): CourseMapFixture {
   const sourceMap = buildCourseSourceMap({
     workspaceId,
     manifest,
-    materials: materials.map((material) => ({
-      materialId: material.id,
-      workspaceId,
-      title: material.title,
-      availability: 'active' as const,
-      activeRevisionId: material.revisionId,
-      revision: {
-        id: material.revisionId,
+    materials: [
+      ...materials.map((material) => ({
         materialId: material.id,
-        status: 'active' as const,
-        parserVersion: 'course-map-fixture-parser',
-        parserFingerprint: `parser_${material.id}`,
-      },
-      blocks: blocks
-        .filter((block) => block.materialId === material.id)
-        .map((block) => ({
-          ...block,
-          materialRevisionId: material.revisionId,
-          structuralUnitId: null,
-          revisionFingerprint: curriculumSourceBlockFingerprint(block, material.revisionId),
-        })),
-    })),
+        workspaceId,
+        title: material.title,
+        availability: 'active' as const,
+        activeRevisionId: material.revisionId,
+        revision: {
+          id: material.revisionId,
+          materialId: material.id,
+          status: 'active' as const,
+          parserVersion: 'course-map-fixture-parser',
+          parserFingerprint: `parser_${material.id}`,
+        },
+        blocks: blocks
+          .filter((block) => block.materialId === material.id)
+          .map((block) => ({
+            ...block,
+            materialRevisionId: material.revisionId,
+            structuralUnitId: null,
+            revisionFingerprint: curriculumSourceBlockFingerprint(block, material.revisionId),
+          })),
+        visuals:
+          attachAssetToTextMaterial && material.id === 'material_alpha'
+            ? [originalVisual(0, material.title, 'mixed')]
+            : [],
+      })),
+      ...assetOnlyMaterials.map((material, index) => ({
+        materialId: material.id,
+        workspaceId,
+        title: material.title,
+        availability: 'active' as const,
+        activeRevisionId: material.revisionId,
+        revision: {
+          id: material.revisionId,
+          materialId: material.id,
+          status: 'active' as const,
+          parserVersion: 'course-map-fixture-parser',
+          parserFingerprint: `parser_${material.id}`,
+        },
+        blocks: [],
+        visuals: assetOnlyMaterialsLackAssetBytes
+          ? []
+          : [originalVisual(index + 1, material.title, `asset_${index + 1}`)],
+      })),
+    ],
     concepts,
     predecessor: null,
   });
@@ -159,7 +234,7 @@ export function createCourseMapFixture(): CourseMapFixture {
     targetOutcome: { description: 'Connect all six topics.', targetScore: null },
     desiredDepth: 'working_fluency',
     subjectBoundaries: [],
-    materials: materials.map((material, index) => ({
+    materials: [...materials, ...assetOnlyMaterials].map((material, index) => ({
       materialId: material.id,
       title: material.title,
       materialRoleAssignmentId: `role_${index + 1}`,
@@ -252,6 +327,18 @@ export function createCourseMapFixture(): CourseMapFixture {
   sparse.modules = sparse.modules.map((module) => ({ ...module, regions: [module.regions[0]!] }));
   sparse.prerequisites = [];
   sparse.synthesisGroups = [];
+  /**
+   * Acyclic over regions, cyclic once contracted onto the provider's own module
+   * grouping: R1->R4 needs module 0 first, R5->R2 needs module 1 first. No
+   * hierarchy-preserving contiguous module order exists, so the analyzer reports
+   * `invalid_module_order` rather than interleaving module children. Regrouping
+   * is the provider's repair to make, which is what the E2E controls exercise.
+   */
+  const moduleCycle = clone(good);
+  moduleCycle.prerequisites = [
+    { prerequisiteRegionRef: 'R1', dependentRegionRef: 'R4' },
+    { prerequisiteRegionRef: 'R5', dependentRegionRef: 'R2' },
+  ];
 
   const valid = analyzeCourseMapProposal(good, { sourceAllocation, providerInput });
   if (!valid.validation.valid) throw new Error('Course Map fixture is invalid.');
@@ -270,5 +357,6 @@ export function createCourseMapFixture(): CourseMapFixture {
     unknownSource,
     duplicateIntent,
     sparse,
+    moduleCycle,
   };
 }

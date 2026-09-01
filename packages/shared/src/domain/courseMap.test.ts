@@ -64,6 +64,10 @@ function sourceAllocation() {
         ],
       },
     ],
+    // This corpus is entirely text-allocatable, so the material-level
+    // non-regional set is empty. Union exactness still holds: the one scoped
+    // Material is accounted for by `regions` above.
+    assetOnlyMaterials: [],
   };
 }
 
@@ -207,6 +211,60 @@ describe('CourseMapSourceAllocationSchema', () => {
     expect(() => CourseMapSourceAllocationSchema.parse(duplicateCoverage)).toThrow(
       /duplicate Course Map source block id/u,
     );
+  });
+
+  /**
+   * Material-level accounting invariants. Every scoped Material is either
+   * region-backed or explicitly non-regional, exactly once. The schema is the
+   * outermost guard, so these hold for any caller that builds an allocation.
+   */
+  it('enforces union exactness, disjointness, and uniqueness of Material accounting', () => {
+    const assetOnly = () => ({
+      materialId: 'material-2',
+      materialRevisionId: 'revision-2',
+      reason: 'no_textual_allocation_surface' as const,
+      originalVisualCount: 2,
+    });
+
+    const accounted = sourceAllocation();
+    accounted.materialCount = 2;
+    accounted.assetOnlyMaterials = [assetOnly()];
+    expect(CourseMapSourceAllocationSchema.parse(accounted)).toEqual(accounted);
+
+    // Union exactness: an unaccounted second Material cannot hide in the count.
+    const unaccounted = sourceAllocation();
+    unaccounted.materialCount = 2;
+    expect(() => CourseMapSourceAllocationSchema.parse(unaccounted)).toThrow(
+      /Material representation is inconsistent with its count/u,
+    );
+
+    // Disjointness: a region-backed Material may not also be non-regional.
+    const both = sourceAllocation();
+    both.assetOnlyMaterials = [{ ...assetOnly(), materialId: 'material-1' }];
+    expect(() => CourseMapSourceAllocationSchema.parse(both)).toThrow(
+      /both region-backed and asset-only/u,
+    );
+
+    // Uniqueness: one Material may be accounted for at most once.
+    const duplicated = sourceAllocation();
+    duplicated.materialCount = 2;
+    duplicated.assetOnlyMaterials = [assetOnly(), assetOnly()];
+    expect(() => CourseMapSourceAllocationSchema.parse(duplicated)).toThrow(
+      /duplicate asset-only Course Map Material accounting/u,
+    );
+
+    // Only the one locally accepted reason is admissible; the provider can never
+    // widen it, and a bare zero-section Material has no legitimate reason to give.
+    const wrongReason = sourceAllocation();
+    wrongReason.materialCount = 2;
+    wrongReason.assetOnlyMaterials = [{ ...assetOnly(), reason: 'parse_failed' as never }];
+    expect(() => CourseMapSourceAllocationSchema.parse(wrongReason)).toThrow();
+
+    // A legitimate non-regional Material must actually carry original assets.
+    const noAssets = sourceAllocation();
+    noAssets.materialCount = 2;
+    noAssets.assetOnlyMaterials = [{ ...assetOnly(), originalVisualCount: 0 }];
+    expect(() => CourseMapSourceAllocationSchema.parse(noAssets)).toThrow();
   });
 
   it('rejects inconsistent revisions, duplicate Concepts, and foreign evidence', () => {

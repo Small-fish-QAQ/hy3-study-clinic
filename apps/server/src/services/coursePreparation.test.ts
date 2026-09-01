@@ -38,7 +38,16 @@ const databases: SqliteDb[] = [];
 
 class TrackingProvider extends FakeProvider {
   analyzeCalls = 0;
+  /**
+   * Aggregate first-stage Curriculum proposals, whichever policy produced them.
+   * It cannot distinguish the policies, so a test that asserts *which* path ran
+   * must use `courseMapCalls` / `legacyCurriculumCalls` instead.
+   */
   curriculumCalls = 0;
+  /** `proposeCourseMap`: the first stage under course_map_materialization_v1. */
+  courseMapCalls = 0;
+  /** `proposeCurriculum`: the first stage under legacy_direct_v1 only. */
+  legacyCurriculumCalls = 0;
   detailCalls = 0;
   studyPlanCalls = 0;
   failCurriculum = false;
@@ -73,6 +82,7 @@ class TrackingProvider extends FakeProvider {
     opts?: ProviderCallOptions,
   ): Promise<CurriculumProposalPayload> {
     this.curriculumCalls += 1;
+    this.legacyCurriculumCalls += 1;
     const gate = this.curriculumGate;
     this.curriculumGate = null;
     const started = this.onCurriculumStarted;
@@ -111,6 +121,7 @@ class TrackingProvider extends FakeProvider {
     opts?: ProviderCallOptions,
   ): Promise<CourseMapProposalPayload> {
     this.curriculumCalls += 1;
+    this.courseMapCalls += 1;
     const gate = this.curriculumGate;
     this.curriculumGate = null;
     const started = this.onCurriculumStarted;
@@ -490,8 +501,12 @@ describe('Course Preparation coordinator', () => {
       },
     });
     expect(provider.analyzeCalls).toBe(1);
-    expect(provider.curriculumCalls).toBe(1);
-    expect(provider.detailCalls).toBe(0);
+    // The ordinary default is Course Map, so generation is one Course Map call
+    // plus its detail batch. Legacy must stay at zero: a silent fallback would
+    // show up here as a legacy call alongside the Course Map one.
+    expect(provider.courseMapCalls).toBe(1);
+    expect(provider.detailCalls).toBe(1);
+    expect(provider.legacyCurriculumCalls).toBe(0);
     expect(provider.studyPlanCalls).toBe(1);
     expect(repos.curricula.list('ws_1').map((item) => item.status)).toEqual(['accepted']);
     expect(repos.studyPlans.list('ws_1').map((item) => item.status)).toEqual(['proposed']);

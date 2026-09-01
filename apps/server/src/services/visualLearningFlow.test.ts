@@ -11,6 +11,8 @@ import {
 import { FakeProvider } from '../llm/fakeProvider.js';
 import type {
   ConceptAnalysisInput,
+  CourseMapProposalInput,
+  CurriculumDetailProposalInput,
   CurriculumProposalInput,
   LessonSlotContentGenerationInput,
   PracticeContentGenerationInput,
@@ -37,6 +39,8 @@ class VisualLearningProvider extends FakeProvider {
   visualCalls = 0;
   curriculumProposalCalls = 0;
   curriculumInput: CurriculumProposalInput | null = null;
+  courseMapInput: CourseMapProposalInput | null = null;
+  curriculumDetailInputs: CurriculumDetailProposalInput[] = [];
   lessonSlotContentInput: LessonSlotContentGenerationInput | null = null;
   practiceContentInput: PracticeContentGenerationInput | null = null;
   tutorInput: TutorTurnInput | null = null;
@@ -93,6 +97,19 @@ class VisualLearningProvider extends FakeProvider {
     this.curriculumProposalCalls += 1;
     this.curriculumInput = input;
     return super.proposeCurriculum(input, opts);
+  }
+
+  override async proposeCourseMap(input: CourseMapProposalInput, opts?: ProviderCallOptions) {
+    this.courseMapInput = input;
+    return super.proposeCourseMap(input, opts);
+  }
+
+  override async proposeCurriculumDetails(
+    input: CurriculumDetailProposalInput,
+    opts?: ProviderCallOptions,
+  ) {
+    this.curriculumDetailInputs.push(input);
+    return super.proposeCurriculumDetails(input, opts);
   }
 
   override async proposeStudyPlan(input: StudyPlanProposalInput, opts?: ProviderCallOptions) {
@@ -451,20 +468,33 @@ describe('prepared standalone-image advisory learning flow', () => {
     expect(provider.analyzeCalls).toBe(1);
     expect(ctx.repos.materials.getConcepts(materialId)).toEqual([]);
 
-    const visualInput = provider.curriculumInput?.visualContext;
-    expect(visualInput?.offers).toHaveLength(1);
-    expect(visualInput?.offers[0]).toMatchObject({
-      explanation: {
-        text: VISUAL_DESCRIPTION,
-        importantConcepts: expect.arrayContaining(['water cycle']),
-        authority: 'advisory',
-        formalEvidenceEligible: false,
-      },
-    });
+    // Under the course_map_materialization_v1 default, structure is proposed from
+    // text regions only, so no visual semantics reach the Course Map or detail
+    // stage. Advisory visuals still reach the teaching stages asserted below.
+    expect(provider.curriculumProposalCalls).toBe(0);
+    expect(provider.courseMapInput).not.toBeNull();
+    expect(provider.curriculumDetailInputs.length).toBeGreaterThan(0);
+    expect(provider.courseMapInput).not.toHaveProperty('visualContext');
+    for (const detailInput of provider.curriculumDetailInputs) {
+      expect(detailInput).not.toHaveProperty('visualContext');
+    }
+
     const revision = ctx.repos.materialRevisions.getActive(materialId)!;
     const asset = ctx.repos.materials.getAssets(materialId)[0]!;
     const derivation = ctx.repos.visualDerivations.listForAsset(asset.id)[0]!;
-    const serializedVisualInput = JSON.stringify(visualInput);
+    // No source region is fabricated for the asset-only image material: the only
+    // offered region belongs to the text authority material.
+    expect(provider.courseMapInput!.sourceRegions).toHaveLength(1);
+    for (const region of provider.courseMapInput!.sourceRegions) {
+      expect(region.materialId).not.toBe(materialId);
+    }
+
+    // Scope: the advisory visual projections themselves. Learning-contract
+    // material identity is pre-existing curriculum context, not a visual leak.
+    const serializedVisualInput = JSON.stringify({
+      lessonSlot: provider.lessonSlotContentInput?.visualContext,
+      practice: provider.practiceContentInput?.visualContext,
+    });
     for (const privateIdentity of [
       materialId,
       revision.id,

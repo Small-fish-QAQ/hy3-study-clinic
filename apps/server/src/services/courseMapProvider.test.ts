@@ -5,7 +5,11 @@ import { FakeProvider } from '../llm/fakeProvider.js';
 import { Hy3Provider } from '../llm/hy3Provider.js';
 import type { ProviderUsage } from '../llm/provider.js';
 import { createCourseMapFixture } from '../testing/courseMapFixtures.js';
-import { generateCourseMapPrototype, repairOmittedCourseMapCoverage } from './courseMap.js';
+import {
+  analyzeCourseMapProposal,
+  generateCourseMapPrototype,
+  repairOmittedCourseMapCoverage,
+} from './courseMap.js';
 
 function jsonResponse(content: string, usage?: unknown): Response {
   return new Response(JSON.stringify({ choices: [{ message: { content } }], usage }), {
@@ -678,5 +682,115 @@ describe('Course Map Hy3 provider contract', () => {
 
     await expect(repair).rejects.toMatchObject({ code: 'REQUEST_CANCELLED' });
     expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+});
+
+/**
+ * `invalid_module_order` is the one order refusal no canonical order can satisfy:
+ * the region graph is acyclic, but contracting it onto the provider's module
+ * grouping cycles. Regrouping is a provider decision, so these controls prove the
+ * refusal travels to the provider as a bounded repair request, that a corrected
+ * regrouping is accepted, that a second same-kind failure exhausts, and that no
+ * local code edits semantic edges to manufacture recovery.
+ */
+describe('invalid_module_order bounded repair', () => {
+  it('recovers when the provider regroups modules in its one bounded repair', async () => {
+    const fixture = createCourseMapFixture();
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(fixture.moduleCycle)))
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(fixture.good))) as unknown as typeof fetch;
+    const onRepairAttempt = vi.fn();
+
+    const result = await generateCourseMapPrototype(
+      {
+        provider: makeHy3Provider(fetchImpl),
+        providerInput: fixture.providerInput,
+        sourceAllocation: fixture.sourceAllocation,
+      },
+      { onRepairAttempt },
+    );
+
+    expect(result.repairAttempted).toBe(true);
+    expect(result.analysis.validation.valid).toBe(true);
+    expect(onRepairAttempt).toHaveBeenCalledExactlyOnceWith(
+      'candidate',
+      'SEMANTIC_VALIDATION_FAILURE',
+    );
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+
+    const repairPrompt = (
+      JSON.parse(
+        String((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[1]![1]!.body),
+      ) as { messages: Array<{ content: string }> }
+    ).messages.at(-1)!.content;
+    expect(repairPrompt).toContain('invalid_module_order');
+    // Bounded structural facts reach the provider: the offending edge arrives as
+    // operation-local R# aliases via the companion order diagnostic.
+    // `invalid_module_order` itself carries no entityKeys, so it names the
+    // contradiction without pointing at any one region.
+    expect(repairPrompt).toContain('prerequisite_wrong_order [R5, R2]');
+    // Durable local identities and learner/source text do not.
+    expect(repairPrompt).not.toContain(fixture.sourceAllocation.fingerprint);
+    for (const region of fixture.sourceAllocation.regions) {
+      expect(repairPrompt).not.toContain(region.id);
+    }
+    for (const block of fixture.blocks) {
+      expect(repairPrompt).not.toContain(block.content);
+    }
+  });
+
+  it('fails closed without a third same-kind candidate attempt', async () => {
+    const fixture = createCourseMapFixture();
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse(JSON.stringify(fixture.moduleCycle)),
+    ) as unknown as typeof fetch;
+    const onRepairAttempt = vi.fn();
+
+    await expect(
+      generateCourseMapPrototype(
+        {
+          provider: makeHy3Provider(fetchImpl),
+          providerInput: fixture.providerInput,
+          sourceAllocation: fixture.sourceAllocation,
+        },
+        { onRepairAttempt },
+      ),
+    ).rejects.toMatchObject({
+      code: 'PROVIDER_INVALID_OUTPUT',
+      details: { validationKind: 'candidate' },
+    });
+    // Attempt 1 + exactly one repair. The shared retry contract only allows a
+    // third attempt when the failure kind changes, and it did not.
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(onRepairAttempt).toHaveBeenCalledExactlyOnceWith(
+      'candidate',
+      'SEMANTIC_VALIDATION_FAILURE',
+    );
+  });
+
+  it('never edits semantic prerequisite edges locally to force recovery', async () => {
+    const fixture = createCourseMapFixture();
+    const submitted = structuredClone(fixture.moduleCycle);
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse(JSON.stringify(fixture.moduleCycle)),
+    ) as unknown as typeof fetch;
+
+    await expect(
+      generateCourseMapPrototype({
+        provider: makeHy3Provider(fetchImpl),
+        providerInput: fixture.providerInput,
+        sourceAllocation: fixture.sourceAllocation,
+      }),
+    ).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
+
+    // The refused candidate keeps exactly the edges the provider proposed: the
+    // local path neither deleted the contradiction nor invented a resolving edge.
+    expect(fixture.moduleCycle.prerequisites).toEqual(submitted.prerequisites);
+    const analysis = analyzeCourseMapProposal(fixture.moduleCycle, fixture);
+    expect(analysis.courseMap.prerequisites).toHaveLength(submitted.prerequisites.length);
+    expect(analysis.validation.diagnostics.map((diagnostic) => diagnostic.code)).toContain(
+      'invalid_module_order',
+    );
   });
 });

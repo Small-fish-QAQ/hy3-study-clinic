@@ -160,7 +160,7 @@ export const CURRICULUM_PROVIDER_TIMEOUT_MS = 240_000;
 const PROVIDER_REPAIR_LEASE_MARGIN_MS = 120_000;
 export const LEGACY_CURRICULUM_GENERATION_POLICY = 'legacy_direct_v1' as const;
 export const COURSE_MAP_CURRICULUM_GENERATION_POLICY = 'course_map_materialization_v1' as const;
-export const CURRICULUM_GENERATION_POLICY = LEGACY_CURRICULUM_GENERATION_POLICY;
+export const CURRICULUM_GENERATION_POLICY = COURSE_MAP_CURRICULUM_GENERATION_POLICY;
 /** Long source outlines use the hierarchy-first path even for legacy callers. */
 export const LARGE_CURRICULUM_OUTLINE_THRESHOLD = 80;
 export type CurriculumGenerationPolicy =

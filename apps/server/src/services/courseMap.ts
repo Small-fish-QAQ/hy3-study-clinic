@@ -237,7 +237,10 @@ function assertCourseMapContractAllocationIntegrity(
       .filter((material) => material.disposition === 'included')
       .map((material) => material.materialId),
   );
-  const allocationMaterialIds = new Set(allocation.regions.map((region) => region.materialId));
+  const allocationMaterialIds = new Set([
+    ...allocation.regions.map((region) => region.materialId),
+    ...allocation.assetOnlyMaterials.map((disposition) => disposition.materialId),
+  ]);
   assertSameSet(
     includedContractMaterialIds,
     allocationMaterialIds,
@@ -453,17 +456,60 @@ export function buildCourseMapSourceAllocation({
     }
   }
 
+  /**
+   * Every scoped Material is accounted exactly once: text-allocatable Materials
+   * receive at least one region, and a Material with no textual allocation
+   * surface receives explicit material-level accounting instead. Zero sections
+   * alone never qualifies; only original asset bytes make it legitimate.
+   */
+  const textAllocatableMaterials = sourceMap.materials.filter(
+    (material) => material.sections.length > 0,
+  );
+  const assetOnlyMaterials: CourseMapSourceAllocation['assetOnlyMaterials'] = [];
+  for (const material of sourceMap.materials) {
+    if (material.sections.length > 0) continue;
+    // Sections derive deterministically from blocks, so surviving text with no
+    // section outline is a defect, never a licence to skip textual allocation.
+    if (material.blocks.length > 0) {
+      throw new Error(
+        `Course Map source allocation cannot account for Material ${material.materialId}: it carries SourceBlocks but no derived section outline.`,
+      );
+    }
+    // Defense in depth: `buildCurriculumCourseSourceMap` already refuses a
+    // scoped Material with neither SourceBlocks nor original assets, and the
+    // sealed source map refuses it again. Keep the check local so allocation
+    // never depends on an upstream caller for its own accounting legitimacy.
+    if (!material.visuals.some((visual) => visual.contentOrigin === 'extracted_original')) {
+      throw new Error(
+        `Course Map source allocation cannot account for Material ${material.materialId}: no textual allocation surface and no original visual asset.`,
+      );
+    }
+    assetOnlyMaterials.push({
+      materialId: material.materialId,
+      materialRevisionId: material.activeMaterialRevisionId,
+      reason: 'no_textual_allocation_surface',
+      originalVisualCount: material.visuals.filter(
+        (visual) => visual.contentOrigin === 'extracted_original',
+      ).length,
+    });
+  }
+  if (textAllocatableMaterials.length === 0) {
+    throw new Error(
+      'Course Map source allocation requires at least one Material with an authoritative textual allocation surface.',
+    );
+  }
+
   const totalSectionCount = sourceMap.materials.reduce(
     (count, material) => count + material.sections.length,
     0,
   );
   const targetRegionCount = Math.min(totalSectionCount, maxRegions);
   const quotaByMaterialId = new Map(
-    sourceMap.materials.map((material) => [material.materialId, 1]),
+    textAllocatableMaterials.map((material) => [material.materialId, 1]),
   );
-  let allocatedQuota = sourceMap.materials.length;
+  let allocatedQuota = textAllocatableMaterials.length;
   while (allocatedQuota < targetRegionCount) {
-    const candidate = sourceMap.materials
+    const candidate = textAllocatableMaterials
       .filter((material) => quotaByMaterialId.get(material.materialId)! < material.sections.length)
       .sort((left, right) => {
         const leftQuota = quotaByMaterialId.get(left.materialId)!;
@@ -482,7 +528,7 @@ export function buildCourseMapSourceAllocation({
   const regionsWithoutEvidence: Array<
     Omit<CourseMapSourceAllocation['regions'][number], 'evidence'>
   > = [];
-  for (const material of sourceMap.materials) {
+  for (const material of textAllocatableMaterials) {
     const quota = quotaByMaterialId.get(material.materialId)!;
     const blockById = new Map(
       material.blocks.map((block) => [block.sourceBlockId, block] as const),
@@ -570,6 +616,7 @@ export function buildCourseMapSourceAllocation({
     materialCount: sourceMap.materialCount,
     sourceSectionCount: sourceMap.sectionCount,
     sourceBlockCount: sourceMap.blockCount,
+    assetOnlyMaterials,
     limits: { maxRegions, maxEvidenceOffers, maxEvidenceOffersPerRegion },
     regions,
   };

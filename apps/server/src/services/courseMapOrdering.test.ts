@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { CourseMapProposalPayload } from '@hy3-clinic/shared';
+import { CourseMapSourceRegionRefSchema, type CourseMapProposalPayload } from '@hy3-clinic/shared';
 import { createCourseMapFixture } from '../testing/courseMapFixtures.js';
 import { analyzeCourseMapProposal } from './courseMap.js';
+import { canonicalizeCourseMapProposalOrder } from './courseMapOrdering.js';
 
 /**
  * Canonical Curriculum ordering. Provider emission order is a presentation
@@ -424,5 +425,171 @@ describe('canonical order drives identity, and only real semantics change it', (
     expect(first.regionIds.every((id) => id.length > 0)).toBe(true);
     expect(second.regionIds).toEqual(first.regionIds);
     expect(second.courseMapId).toEqual(first.courseMapId);
+  });
+});
+
+/**
+ * Side arrays carry no pedagogical order: the schema gives them no ordering
+ * field and the prompt names only module and region arrays as learner order.
+ * Provider permutation of them must not move Curriculum identity, while a real
+ * change of what they mean still must.
+ */
+describe('semantically unordered side arrays do not carry identity', () => {
+  // Refs stay inside R1..R4 so these groups are valid both for the full-coverage
+  // emission and for the reduced one the disposition cases use.
+  const SYNTHESIS_GROUPS = [
+    { level: 'module' as const, title: 'Consolidate the foundation', regionRefs: ['R1', 'R2'] },
+    { level: 'course' as const, title: 'Integrate across materials', regionRefs: ['R3', 'R4'] },
+    { level: 'transfer' as const, title: 'Apply the extensions', regionRefs: ['R2', 'R4'] },
+  ];
+
+  // A disposition explains a source region the modules did NOT allocate, so the
+  // emission below drops R5/R6 (indexes 4 and 5) and accounts for them here.
+  const EMISSION_WITHOUT_LAST_TWO = [0, 1, 2, 3];
+
+  const DISPOSITIONS = [
+    {
+      sourceRegionRef: 'R5',
+      disposition: 'represented_by_parent_or_synthesis' as const,
+      rationale: 'Covered by the module 2 synthesis rather than its own unit.',
+      representedRegionRefs: ['R3', 'R4'],
+    },
+    {
+      sourceRegionRef: 'R6',
+      disposition: 'boilerplate/navigation/non-learning-content' as const,
+      rationale: 'Front matter and navigation with no learning content.',
+      representedRegionRefs: [],
+    },
+  ];
+
+  function withSideArrays(
+    fixture: ReturnType<typeof createCourseMapFixture>,
+    synthesisGroups: CourseMapProposalPayload['synthesisGroups'],
+    sourceDispositions?: CourseMapProposalPayload['sourceDispositions'],
+  ): CourseMapProposalPayload {
+    const emission = sourceDispositions ? EMISSION_WITHOUT_LAST_TWO : [0, 1, 2, 3, 4, 5];
+    const prerequisites = CHAIN.filter(
+      (edge) =>
+        emission.length === 6 ||
+        (!edge.prerequisiteRegionRef.match(/^R[56]$/u) &&
+          !edge.dependentRegionRef.match(/^R[56]$/u)),
+    );
+    return {
+      ...payloadFor(fixture, emission, prerequisites),
+      synthesisGroups,
+      ...(sourceDispositions ? { sourceDispositions } : {}),
+    };
+  }
+
+  function identityOf(observation: Observation): string[] {
+    return [observation.courseMapId, ...observation.moduleIds, ...observation.regionIds];
+  }
+
+  it('SIDE-1: keeps identity when the provider permutes synthesisGroups', () => {
+    const fixture = createCourseMapFixture();
+    const base = observe(fixture, withSideArrays(fixture, SYNTHESIS_GROUPS));
+    const permuted = observe(fixture, withSideArrays(fixture, [...SYNTHESIS_GROUPS].reverse()));
+    expect(base.valid).toBe(true);
+    expect(permuted.valid).toBe(true);
+    expect(identityOf(permuted)).toEqual(identityOf(base));
+  });
+
+  it('SIDE-2: keeps identity when the provider permutes sourceDispositions', () => {
+    const fixture = createCourseMapFixture();
+    const base = observe(fixture, withSideArrays(fixture, SYNTHESIS_GROUPS, DISPOSITIONS));
+    const permuted = observe(
+      fixture,
+      withSideArrays(fixture, SYNTHESIS_GROUPS, [...DISPOSITIONS].reverse()),
+    );
+    expect(base.valid).toBe(true);
+    expect(identityOf(permuted)).toEqual(identityOf(base));
+  });
+
+  it('SIDE-3: keeps identity when refs inside a synthesis group are permuted', () => {
+    const fixture = createCourseMapFixture();
+    const base = observe(fixture, withSideArrays(fixture, SYNTHESIS_GROUPS, DISPOSITIONS));
+    const innerPermuted = SYNTHESIS_GROUPS.map((group) => ({
+      ...group,
+      regionRefs: [...group.regionRefs].reverse(),
+    }));
+    const permuted = observe(fixture, withSideArrays(fixture, innerPermuted, DISPOSITIONS));
+    expect(identityOf(permuted)).toEqual(identityOf(base));
+  });
+
+  it('SIDE-4: changes identity when synthesis membership actually changes', () => {
+    const fixture = createCourseMapFixture();
+    const base = observe(fixture, withSideArrays(fixture, SYNTHESIS_GROUPS, DISPOSITIONS));
+    const changed = SYNTHESIS_GROUPS.map((group, index) =>
+      index === 0 ? { ...group, regionRefs: ['R1', 'R3'] } : group,
+    );
+    const observed = observe(fixture, withSideArrays(fixture, changed, DISPOSITIONS));
+    expect(observed.courseMapId).not.toEqual(base.courseMapId);
+  });
+
+  it('SIDE-5: changes identity when a disposition meaning actually changes', () => {
+    const fixture = createCourseMapFixture();
+    const base = observe(fixture, withSideArrays(fixture, SYNTHESIS_GROUPS, DISPOSITIONS));
+    const changed = DISPOSITIONS.map((disposition) =>
+      disposition.sourceRegionRef === 'R6'
+        ? { ...disposition, disposition: 'explicitly_out_of_scope' as const }
+        : disposition,
+    );
+    const observed = observe(fixture, withSideArrays(fixture, SYNTHESIS_GROUPS, changed));
+    expect(observed.courseMapId).not.toEqual(base.courseMapId);
+  });
+
+  it('SIDE-6: keeps an absent sourceDispositions array absent', () => {
+    const fixture = createCourseMapFixture();
+    const canonical = canonicalizeCourseMapProposalOrder(
+      withSideArrays(fixture, SYNTHESIS_GROUPS),
+      new Map(
+        fixture.providerInput.sourceRegions.map(
+          (region, index) => [region.sourceRegionRef, index] as const,
+        ),
+      ),
+    );
+    expect('sourceDispositions' in canonical.payload).toBe(false);
+  });
+
+  /**
+   * The composite keys join refs with '|'. That is only injective while every
+   * participating field excludes the separator, so assert the grammar rather
+   * than trusting it: a schema loosened to admit '|' must fail here.
+   */
+  it('SIDE-7: keeps every ref-list key participant free of the key separator', () => {
+    const fixture = createCourseMapFixture();
+    const refs = fixture.providerInput.sourceRegions.map((region) => region.sourceRegionRef);
+    for (const ref of refs) {
+      expect(CourseMapSourceRegionRefSchema.safeParse(ref).success).toBe(true);
+      expect(ref).not.toContain('|');
+    }
+    for (const candidate of ['R1|R2', 'R1 R2', 'R|1', '|R1']) {
+      expect(CourseMapSourceRegionRefSchema.safeParse(candidate).success).toBe(false);
+    }
+  });
+
+  /**
+   * Two synthesis groups whose ref sets differ only in grouping must not tie on
+   * the joined key. Under a separator a ref could contain, ['R1|R2'] and
+   * ['R1','R2'] would collide and a stable sort would silently keep provider
+   * order, which is exactly the identity leak SIDE-1 exists to prevent.
+   */
+  it('SIDE-8: distinguishes synthesis groups whose joined refs would collide', () => {
+    const fixture = createCourseMapFixture();
+    const distinctGrouping = [
+      { level: 'module' as const, title: 'Same title', regionRefs: ['R1', 'R2'] },
+      { level: 'module' as const, title: 'Same title', regionRefs: ['R1', 'R2', 'R3'] },
+    ];
+    const base = observe(fixture, withSideArrays(fixture, distinctGrouping));
+    const permuted = observe(fixture, withSideArrays(fixture, [...distinctGrouping].reverse()));
+    expect(base.valid).toBe(true);
+    expect(identityOf(permuted)).toEqual(identityOf(base));
+
+    const realChange = [
+      { level: 'module' as const, title: 'Same title', regionRefs: ['R1', 'R2'] },
+      { level: 'module' as const, title: 'Same title', regionRefs: ['R1', 'R2', 'R4'] },
+    ];
+    const regrouped = observe(fixture, withSideArrays(fixture, realChange));
+    expect(identityOf(regrouped)).not.toEqual(identityOf(base));
   });
 });

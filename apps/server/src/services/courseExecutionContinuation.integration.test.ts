@@ -12,33 +12,102 @@ import { fixedClock } from '../util/ids.js';
 import { createServices, type Services } from './index.js';
 
 const NOW = '2026-01-01T00:00:00.000Z';
+/**
+ * This fixture intentionally yields five Course Map source regions.
+ *
+ * Region count is derived from the deterministic section outline, not from
+ * heading count alone: `computeSections` treats a document under
+ * SINGLE_SECTION_LIMIT (1500) chars as one section, and merges any group
+ * under MIN_SECTION_CHARS (500) into its neighbour. Five headings with terse
+ * bodies therefore collapse to a single section and a single LearningUnit.
+ *
+ * So each section below carries a body above that merge threshold. The
+ * multi-window and restart invariants here need several teach units to be
+ * meaningful; they must come from real source structure rather than from
+ * production granularity tuned to suit a test.
+ */
+function section(heading: string, claims: readonly string[]): string {
+  // One claim per paragraph, blank-line separated. Consecutive lines form a
+  // single block, and a formal `expected_answer` premise admits that whole
+  // block as one claim. Two claims sharing a block therefore admit as
+  // "Claim one;Claim two;", which equals no single authority claim, so the
+  // question loses its exact binding and grades tier_3_advisory instead of
+  // producing the `complete` progression decision these invariants assert.
+  //
+  // The heading stays a bare ATX heading: segmentation keeps heading units as
+  // `headingPath` metadata, so heading text never enters block content.
+  const parts: string[] = [`# ${heading}`];
+  // Repeat the distinct claims until the section clears MIN_SECTION_CHARS, so
+  // the outline stays deterministic without inventing unrelated concepts.
+  while (parts.join('\n\n').length <= 620) {
+    for (const claim of claims) parts.push(claim);
+  }
+  return parts.join('\n\n');
+}
+
 const SOURCE = [
-  '# Working memory',
-  'Working memory has limited capacity;',
-  '',
-  '# Chunking',
-  'Chunking groups items to raise effective capacity;',
-  '',
-  '# Rehearsal',
-  'Rehearsal maintains items in working memory;',
-  '',
-  '# Interference',
-  'Interference displaces items from working memory;',
-  '',
-  '# Retrieval',
-  'Retrieval brings items back into working memory;',
-].join('\n');
+  section('Working memory', [
+    'Working memory has limited capacity;',
+    'Working memory holds items available for immediate use;',
+    'Working memory capacity constrains simultaneous processing;',
+  ]),
+  section('Chunking', [
+    'Chunking groups items to raise effective capacity;',
+    'Chunking replaces several items with one meaningful unit;',
+    'Chunking depends on prior knowledge of the grouped material;',
+  ]),
+  section('Rehearsal', [
+    'Rehearsal maintains items in working memory;',
+    'Rehearsal refreshes items before they decay;',
+    'Rehearsal competes with other processing for capacity;',
+  ]),
+  section('Interference', [
+    'Interference displaces items from working memory;',
+    'Interference grows when competing items resemble each other;',
+    'Interference explains loss that decay alone does not;',
+  ]),
+  section('Retrieval', [
+    'Retrieval brings items back into working memory;',
+    'Retrieval strengthens the retrieved item for later recall;',
+    'Retrieval failure can occur while the item remains stored;',
+  ]),
+].join('\n\n');
 
 /** Fails the compositional Lesson call until cleared, leaving earlier stages alone. */
 class LessonFaultProvider extends FakeProvider {
   failLesson = false;
   lessonAttempts = 0;
+  /**
+   * Every first-stage Curriculum proposal, under either generation policy.
+   *
+   * Counting only `proposeCurriculum` would make a "nothing was regenerated"
+   * assertion vacuous under the course_map_materialization_v1 default, which
+   * reaches `proposeCourseMap` and `proposeCurriculumDetails` instead and would
+   * leave this at 0 whether or not the stage re-ran.
+   */
   curriculumCalls = 0;
+  courseMapCalls = 0;
+  curriculumDetailCalls = 0;
+  legacyCurriculumCalls = 0;
   studyPlanCalls = 0;
 
   override async proposeCurriculum(...args: Parameters<FakeProvider['proposeCurriculum']>) {
     this.curriculumCalls += 1;
+    this.legacyCurriculumCalls += 1;
     return super.proposeCurriculum(...args);
+  }
+
+  override async proposeCourseMap(...args: Parameters<FakeProvider['proposeCourseMap']>) {
+    this.curriculumCalls += 1;
+    this.courseMapCalls += 1;
+    return super.proposeCourseMap(...args);
+  }
+
+  override async proposeCurriculumDetails(
+    ...args: Parameters<FakeProvider['proposeCurriculumDetails']>
+  ) {
+    this.curriculumDetailCalls += 1;
+    return super.proposeCurriculumDetails(...args);
   }
 
   override async proposeStudyPlan(...args: Parameters<FakeProvider['proposeStudyPlan']>) {
@@ -463,7 +532,15 @@ describe('file-backed Course Execution continuation', () => {
       agendas: harness.repos.sessionAgendas.list(workspaceId).length,
       progress: harness.repos.studyPlans.listProgress(plan.id),
       curriculumCalls: harness.provider.curriculumCalls,
+      courseMapCalls: harness.provider.courseMapCalls,
+      curriculumDetailCalls: harness.provider.curriculumDetailCalls,
+      legacyCurriculumCalls: harness.provider.legacyCurriculumCalls,
     };
+    // Preparation reached the Course Map stages, so the post-restart
+    // "regenerated nothing" assertions below cannot pass vacuously.
+    expect(before.courseMapCalls).toBeGreaterThan(0);
+    expect(before.curriculumDetailCalls).toBeGreaterThan(0);
+    expect(before.legacyCurriculumCalls).toBe(0);
 
     // Destroy and rebuild every service, repository and provider object.
     harness.db.close();
@@ -487,6 +564,9 @@ describe('file-backed Course Execution continuation', () => {
       });
     }
     expect(harness.provider.curriculumCalls).toBe(0);
+    expect(harness.provider.courseMapCalls).toBe(0);
+    expect(harness.provider.curriculumDetailCalls).toBe(0);
+    expect(harness.provider.legacyCurriculumCalls).toBe(0);
     expect(harness.provider.studyPlanCalls).toBe(0);
     expect(harness.repos.studyPlans.list(workspaceId)).toHaveLength(before.plans);
     expect(harness.repos.sessionAgendas.list(workspaceId)).toHaveLength(before.agendas);
@@ -518,6 +598,9 @@ describe('file-backed Course Execution continuation', () => {
     const route = await prepareAcceptedRoute();
     const plan = harness.repos.studyPlans.get(route.plan.id)!;
     const curriculumCallsAfterPreparation = harness.provider.curriculumCalls;
+    const courseMapCallsAfterPreparation = harness.provider.courseMapCalls;
+    const detailCallsAfterPreparation = harness.provider.curriculumDetailCalls;
+    const legacyCallsAfterPreparation = harness.provider.legacyCurriculumCalls;
     const planCallsAfterPreparation = harness.provider.studyPlanCalls;
     const firstTeaching = route.agenda.items.find(
       (item) => item.kind === 'learning_unit_teaching',
@@ -550,8 +633,16 @@ describe('file-backed Course Execution continuation', () => {
 
     expect(retried.projection.status).toBe('ready');
     expect(harness.provider.curriculumCalls).toBe(0);
+    expect(harness.provider.courseMapCalls).toBe(0);
+    expect(harness.provider.curriculumDetailCalls).toBe(0);
     expect(harness.provider.studyPlanCalls).toBe(0);
+    // The reuse assertions above are only meaningful because preparation really
+    // did reach the stage-specific counters first: under the Course Map default
+    // that is proposeCourseMap + proposeCurriculumDetails, and no legacy call.
     expect(curriculumCallsAfterPreparation).toBeGreaterThan(0);
+    expect(courseMapCallsAfterPreparation).toBeGreaterThan(0);
+    expect(detailCallsAfterPreparation).toBeGreaterThan(0);
+    expect(legacyCallsAfterPreparation).toBe(0);
     expect(planCallsAfterPreparation).toBeGreaterThan(0);
     expect(
       harness.repos.sessionAgendas

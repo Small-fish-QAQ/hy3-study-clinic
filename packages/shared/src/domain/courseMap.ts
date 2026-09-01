@@ -52,6 +52,34 @@ export const CourseMapSourceDispositionSchema = z
   .strict();
 export type CourseMapSourceDisposition = z.infer<typeof CourseMapSourceDispositionSchema>;
 
+/**
+ * The only locally accepted reason a scoped Material may hold zero textual
+ * regions: its active revision carries original asset bytes and no authoritative
+ * text. A parse failure never reaches this state because empty extraction is
+ * refused at ingestion.
+ */
+export const CourseMapAssetOnlyMaterialReasonSchema = z.literal('no_textual_allocation_surface');
+export type CourseMapAssetOnlyMaterialReason = z.infer<
+  typeof CourseMapAssetOnlyMaterialReasonSchema
+>;
+
+/**
+ * Server-owned material-level accounting for a scoped Material that legitimately
+ * has no textual allocation surface. Planning/accounting state only: it grants no
+ * evidence, mastery, credit, or progression, and the provider never authors it.
+ */
+export const CourseMapAssetOnlyMaterialDispositionSchema = z
+  .object({
+    materialId: z.string().min(1),
+    materialRevisionId: z.string().min(1),
+    reason: CourseMapAssetOnlyMaterialReasonSchema,
+    originalVisualCount: z.number().int().positive().max(10_000),
+  })
+  .strict();
+export type CourseMapAssetOnlyMaterialDisposition = z.infer<
+  typeof CourseMapAssetOnlyMaterialDispositionSchema
+>;
+
 /** Bounded visibility over a complete Course Source Map; never source truth. */
 export const CourseMapSourceAllocationSchema = z
   .object({
@@ -63,6 +91,7 @@ export const CourseMapSourceAllocationSchema = z
     materialCount: z.number().int().positive(),
     sourceSectionCount: z.number().int().positive(),
     sourceBlockCount: z.number().int().positive(),
+    assetOnlyMaterials: z.array(CourseMapAssetOnlyMaterialDispositionSchema).max(100),
     limits: z
       .object({
         maxRegions: z.number().int().positive().max(120),
@@ -218,10 +247,34 @@ export const CourseMapSourceAllocationSchema = z
         message: 'Course Map source blocks are not represented exactly once.',
       });
     }
-    if (
-      new Set(allocation.regions.map((region) => region.materialId)).size !==
-      allocation.materialCount
-    ) {
+    const regionBackedMaterialIds = new Set(allocation.regions.map((region) => region.materialId));
+    const assetOnlyMaterialIds = new Set<string>();
+    for (const [index, disposition] of allocation.assetOnlyMaterials.entries()) {
+      if (assetOnlyMaterialIds.has(disposition.materialId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['assetOnlyMaterials', index, 'materialId'],
+          message: `duplicate asset-only Course Map Material accounting: ${disposition.materialId}`,
+        });
+      }
+      assetOnlyMaterialIds.add(disposition.materialId);
+      if (regionBackedMaterialIds.has(disposition.materialId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['assetOnlyMaterials', index, 'materialId'],
+          message: `Course Map Material ${disposition.materialId} is both region-backed and asset-only.`,
+        });
+      }
+      const knownRevision = materialRevisionById.get(disposition.materialId);
+      if (knownRevision && knownRevision !== disposition.materialRevisionId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['assetOnlyMaterials', index, 'materialRevisionId'],
+          message: `Course Map Material ${disposition.materialId} spans inconsistent revisions.`,
+        });
+      }
+    }
+    if (regionBackedMaterialIds.size + assetOnlyMaterialIds.size !== allocation.materialCount) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['regions'],
