@@ -423,7 +423,7 @@ describe('Teaching Brief source context', () => {
     );
   });
 
-  it('refuses an artifact-free objective outside the LearningUnit and a failed present artifact', () => {
+  it('refuses a foreign objective and keeps a valid semantic FAIL in the unclaimed teaching lane', () => {
     const input = fixture();
     expect(() =>
       buildTeachingBriefSourceContext({ ...input, authorizedObjectiveIds: ['objective_foreign'] }),
@@ -441,13 +441,36 @@ describe('Teaching Brief source context', () => {
       },
       'mechanism',
     );
+    if (supported.semanticSupport?.schemaVersion !== 1) {
+      throw new Error('Expected the v1 semantic-support fixture.');
+    }
+    supported.semanticSupport.fragments = supported.semanticSupport.fragments.map((fragment) => ({
+      ...fragment,
+      status: 'unsupported',
+      supportType: null,
+      sourceBlockIds: [],
+      authorityRecordIds: [],
+      authorityClaimIds: [],
+    }));
+    supported.semanticSupport.unsupportedFragmentIds = supported.semanticSupport.fragments.map(
+      (fragment) => fragment.fragmentId,
+    );
     failed.curriculum.nodes[1]!.learningUnit!.objectives[0] = {
       ...supported,
-      semanticSupport: { ...supported.semanticSupport!, verdict: 'fail' },
+      semanticSupport: {
+        ...supported.semanticSupport,
+        verdict: 'fail',
+        rationale: 'The exact proposition is not semantically supported.',
+      },
     };
-    expect(() =>
-      buildTeachingBriefSourceContext({ ...failed, authorizedObjectiveIds: [objective.id] }),
-    ).toThrow(/lacks passing semantic source support/u);
+    const context = buildTeachingBriefSourceContext({
+      ...failed,
+      authorizedObjectiveIds: [objective.id],
+    });
+    expect(context.references.length).toBeGreaterThan(0);
+    expect(context.references.every((reference) => !reference.authorityClaimIds?.length)).toBe(
+      true,
+    );
   });
 
   it('is deterministic and enforces exact block and byte budgets independently of corpus size', () => {

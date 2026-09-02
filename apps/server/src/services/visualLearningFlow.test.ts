@@ -619,6 +619,23 @@ describe('prepared standalone-image advisory learning flow', () => {
     const brief = ctx.repos.teachingBriefs.listForUnit(WORKSPACE_ID, learningUnit.id)[0]!;
     expect(brief.sourceReferences.length).toBeGreaterThan(0);
     expect(brief.visualReferences).toHaveLength(1);
+    const newlyInstalledObjectives = learningUnit.learningUnit!.objectives;
+    expect(newlyInstalledObjectives.every((objective) => !objective.semanticSupport)).toBe(true);
+    expect(
+      newlyInstalledObjectives.some(
+        (objective) =>
+          objective.authorityEnvelopeTier === 'formal_sufficient' ||
+          objective.authorityEnvelopeTier === 'narrower_formal',
+      ),
+    ).toBe(true);
+    expect(brief.objective.objectives).not.toHaveLength(0);
+    for (const objective of brief.objective.objectives) {
+      expect(objective).toMatchObject({
+        authorityEnvelopeTier: 'teaching_only',
+        formalAssessmentReady: false,
+        formalEvidenceSourceBlockIds: [],
+      });
+    }
     expect(provider.lessonSlotContentInput?.sourceContext.offers.length).toBeGreaterThan(0);
     expect(provider.lessonSlotContentInput?.visualContext.offers).toHaveLength(1);
     expect(provider.practiceContentInput?.sourceContext.offers.length).toBeGreaterThan(0);

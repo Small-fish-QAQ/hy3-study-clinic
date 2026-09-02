@@ -1,4 +1,5 @@
 import {
+  CreateAssessmentRequestSchema,
   fnv1a32,
   type AgendaLaunchCapability,
   type AssessmentMode,
@@ -7,6 +8,7 @@ import {
   type CurriculumNode,
   type LearningContract,
   type ProposedStudyPlanDeferral,
+  type SessionAgendaItem,
   type StudyPlan,
   type StudyPlanDiffOperation,
   type StudyPlanFeasibility,
@@ -39,6 +41,16 @@ import {
 export const STUDY_PLAN_COMPLETION_POLICY_ID = 'learning-unit-completion';
 export const STUDY_PLAN_COMPLETION_POLICY_VERSION = 1;
 export const PACE_BASELINE_POLICY_VERSION = 'pace-baseline-v1';
+
+const AGENDA_KIND_BY_PLAN_KIND: Record<StudyPlanItemKind, SessionAgendaItem['kind']> = {
+  teach_unit: 'learning_unit_teaching',
+  informal_check: 'informal_check',
+  formal_checkpoint: 'formal_checkpoint',
+  synthesis: 'synthesis',
+  targeted_repair: 'targeted_repair',
+  due_review: 'due_review',
+  adversarial_readiness: 'adversarial_readiness',
+};
 
 function contractAllowsDeferral(contract: LearningContract): boolean {
   // Soft availability is advisory: a provider must not turn an estimate into
@@ -117,6 +129,68 @@ function assessmentCapability(
         resourceId: null,
         reason: checked.reason,
       };
+}
+
+/** Resolve the exact current Agenda-to-accepted-Plan authority binding. */
+export function resolveAgendaBoundPlanItem(
+  repos: Repositories,
+  plan: StudyPlan,
+  item: SessionAgendaItem,
+): { ok: true; planItem: StudyPlanItem } | { ok: false; reason: string } {
+  if (item.state !== 'queued' && item.state !== 'active') {
+    return { ok: false, reason: `Agenda item state ${item.state} is not authorized.` };
+  }
+  if (!item.linkedPlanItemId) {
+    return { ok: false, reason: 'Agenda item is not linked to an accepted Plan item.' };
+  }
+  const planItem = plan.items.find((candidate) => candidate.id === item.linkedPlanItemId);
+  if (!planItem) return { ok: false, reason: 'The accepted Plan no longer contains this item.' };
+  if (item.learningUnitId !== planItem.curriculumLearningUnitId) {
+    return { ok: false, reason: 'Agenda and Plan LearningUnit identity do not match.' };
+  }
+
+  if (item.kind === 'due_review') {
+    try {
+      const request = CreateAssessmentRequestSchema.parse(JSON.parse(item.launch.resourceId ?? ''));
+      const targetId = request.mode === 'review' ? request.conceptIds?.[0] : undefined;
+      const target = targetId ? repos.reviewSuccessor.getTarget(targetId) : undefined;
+      const binding =
+        target?.currentBindingVersion !== null && target?.currentBindingVersion !== undefined
+          ? repos.reviewSuccessor.getBinding(target.id, target.currentBindingVersion)
+          : undefined;
+      if (
+        request.conceptIds?.length !== 1 ||
+        !target ||
+        target.status !== 'active' ||
+        !binding ||
+        binding.learningUnitId !== planItem.curriculumLearningUnitId ||
+        !planItem.objectiveIds.includes(binding.objectiveId)
+      ) {
+        return { ok: false, reason: 'The due Review target no longer matches this Plan item.' };
+      }
+      return {
+        ok: true,
+        planItem: { ...planItem, kind: 'due_review', objectiveIds: [binding.objectiveId] },
+      };
+    } catch {
+      return { ok: false, reason: 'The due Review launch binding is invalid.' };
+    }
+  }
+
+  if (item.kind === 'targeted_repair' && planItem.kind !== 'targeted_repair') {
+    const progress = repos.studyPlans
+      .listProgress(plan.id)
+      .find((entry) => entry.planItemId === planItem.id);
+    if (progress?.state !== 'repair_needed') {
+      return { ok: false, reason: 'The linked Plan item no longer requires targeted repair.' };
+    }
+    return { ok: true, planItem: { ...planItem, kind: 'targeted_repair' } };
+  }
+
+  if (item.kind !== AGENDA_KIND_BY_PLAN_KIND[planItem.kind]) {
+    return { ok: false, reason: 'Agenda item kind is inconsistent with its accepted Plan item.' };
+  }
+  return { ok: true, planItem };
 }
 
 export function resolveLaunchForPlanItem(

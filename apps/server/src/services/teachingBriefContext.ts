@@ -13,6 +13,7 @@ import type {
 } from '@hy3-clinic/shared';
 import { VisualAdvisoryContextSchema, VisualMediaTypeSchema } from '@hy3-clinic/shared';
 import {
+  assertCurrentLessonObjectiveAuthoritySemanticSupport,
   objectiveAuthoritySemanticallySupportedClaimIds,
   objectiveAuthoritySemanticProvenanceMappings,
 } from './objectiveAuthoritySemanticSupport.js';
@@ -92,6 +93,7 @@ interface BuildTeachingBriefSourceContextInput {
   authorizedObjectiveIds?: string[];
   /** Private local authority identity; never copied into provider-visible offers. */
   sourceAuthorityBundles?: SourceAuthorityBundle[];
+  isBlockingEligible?: (authorityRecordId: string) => boolean;
   visuals?: TeachingBriefVisualCandidate[];
 }
 
@@ -121,6 +123,7 @@ export function buildTeachingBriefSourceContext({
   concepts,
   authorizedObjectiveIds = [],
   sourceAuthorityBundles = [],
+  isBlockingEligible,
   visuals = [],
 }: BuildTeachingBriefSourceContextInput): TeachingBriefSourceContext {
   if (curriculum.workspaceId !== workspaceId || curriculum.status !== 'accepted') {
@@ -225,15 +228,19 @@ export function buildTeachingBriefSourceContext({
     if (!objective) {
       throw new Error('Teaching Brief authorized objective is not part of this LearningUnit.');
     }
-    if (!objective.semanticSupport) {
-      // No artifact exists: this objective teaches from the exact-quotation,
-      // manifest-confined context lane below and claims no exact authority.
-      // A present-but-failing artifact is integrity corruption and still throws.
+    if (objective.semanticSupport) {
+      assertCurrentLessonObjectiveAuthoritySemanticSupport(curriculum, [objective], {
+        ...(isBlockingEligible ? { isBlockingEligible } : {}),
+      });
+    }
+    if (!objective.semanticSupport || objective.semanticSupport.verdict === 'fail') {
+      // Missing support and an integrity-valid semantic FAIL both teach from
+      // the exact-quotation, manifest-confined context lane below and claim no
+      // exact authority. The preparation boundary validates the complete
+      // artifact before this projection, so malformed, stale, foreign, or
+      // otherwise inconsistent support still fails closed.
       exactCandidateKeysByObjective.set(objectiveId, []);
       continue;
-    }
-    if (objective.semanticSupport.verdict !== 'pass') {
-      throw new Error('Teaching Brief objective lacks passing semantic source support.');
     }
     const selectedClaimIds = new Set(objective.authorityClaimIds ?? []);
     const boundClaimIds = new Set(objective.semanticSupport.boundAuthorityClaimIds);

@@ -286,7 +286,7 @@ function stageAndActivateRoute() {
       id: `plan_item_${index + 1}`,
       index,
       phase: 'Foundations',
-      kind: 'teach_unit' as const,
+      kind: index === 0 ? ('formal_checkpoint' as const) : ('teach_unit' as const),
       curriculumLearningUnitId: 'unit_1',
       rationale: `Teach ${objectiveId}.`,
       estimatedMinutes: 15,
@@ -339,8 +339,10 @@ function stageAndActivateRoute() {
       planItemId: item.id,
       launch: {
         status: 'launchable' as const,
-        capability: 'lesson',
-        resourceId: JSON.stringify({ conceptId: 'con_1' }),
+        capability:
+          item.kind === 'formal_checkpoint' ? ('assessment' as const) : ('lesson' as const),
+        resourceId:
+          item.kind === 'formal_checkpoint' ? null : JSON.stringify({ conceptId: 'con_1' }),
         reason: null,
       },
       sourceFingerprint: 'manifest-fp',
@@ -367,7 +369,10 @@ function stageAndActivateRoute() {
     items: plan.items.map((item, index) => ({
       id: `agenda_item_${index + 1}`,
       index,
-      kind: 'learning_unit_teaching' as const,
+      kind:
+        item.kind === 'formal_checkpoint'
+          ? ('formal_checkpoint' as const)
+          : ('learning_unit_teaching' as const),
       origin: 'accepted_plan' as const,
       reason: item.rationale,
       estimatedMinutes: item.estimatedMinutes,
@@ -377,8 +382,10 @@ function stageAndActivateRoute() {
       state: 'queued' as const,
       launch: {
         status: 'launchable' as const,
-        capability: 'lesson',
-        resourceId: JSON.stringify({ conceptId: 'con_1' }),
+        capability:
+          item.kind === 'formal_checkpoint' ? ('assessment' as const) : ('lesson' as const),
+        resourceId:
+          item.kind === 'formal_checkpoint' ? null : JSON.stringify({ conceptId: 'con_1' }),
         reason: null,
       },
       displacedAgendaItemIds: [],
@@ -497,13 +504,14 @@ function createAssessmentEvidence(
   suffix: string,
   createdAt = T3,
   representation: 'recall' | 'application' = 'recall',
+  agendaItemId = 'agenda_item_1',
 ) {
   const source = insertGrade(`assessment_${suffix}`, 1);
   services.formalProgression.registerAssessmentContracts({
     workspaceId: 'ws_1',
     quizId: source.quizId,
     agendaId: 'agenda_1',
-    agendaItemId: 'agenda_item_1',
+    agendaItemId,
     assessmentKind: 'formal_checkpoint',
     contractVersionId: 'contract_1',
     curriculumVersionId: 'curriculum_1',
@@ -524,7 +532,7 @@ function createAssessmentEvidence(
       curriculumVersionId: 'curriculum_1',
       studyPlanVersionId: 'plan_1',
       agendaId: 'agenda_1',
-      agendaItemId: 'agenda_item_1',
+      agendaItemId,
       assessmentKind: 'formal_checkpoint',
       executionSourceManifestFingerprint: 'manifest-fp',
     },
@@ -934,24 +942,44 @@ function formalCatalogue(planItemId = 'plan_item_1') {
   });
 }
 
-function enableFirstRouteItemAsFormalCheckpoint() {
-  const plan = repos.studyPlans.get('plan_1')!;
+function enableRouteItemsAsFormalCheckpoints(
+  bindings: Array<{ planItemId: string; agendaItemId: string }> = [
+    { planItemId: 'plan_item_1', agendaItemId: 'agenda_item_1' },
+  ],
+  planId = 'plan_1',
+  agendaId = 'agenda_1',
+) {
+  const plan = repos.studyPlans.get(planId)!;
+  const planItemIds = new Set(bindings.map((binding) => binding.planItemId));
+  const agendaItemIds = new Set(bindings.map((binding) => binding.agendaItemId));
   db.prepare('UPDATE study_plan_versions SET payload = ? WHERE id = ?').run(
     JSON.stringify({
       ...plan,
       items: plan.items.map((item) =>
-        item.id === 'plan_item_1' ? { ...item, kind: 'formal_checkpoint' as const } : item,
+        planItemIds.has(item.id) ? { ...item, kind: 'formal_checkpoint' as const } : item,
       ),
     }),
     plan.id,
   );
-  const agenda = repos.sessionAgendas.get('agenda_1')!;
-  return repos.sessionAgendas.update(
+  for (const binding of bindings) {
+    db.prepare('UPDATE study_plan_items SET kind = ? WHERE plan_id = ? AND plan_item_id = ?').run(
+      'formal_checkpoint',
+      plan.id,
+      binding.planItemId,
+    );
+    db.prepare(
+      `UPDATE study_plan_launch_validations
+       SET capability = 'assessment', resource_id = NULL
+       WHERE plan_id = ? AND plan_item_id = ?`,
+    ).run(plan.id, binding.planItemId);
+  }
+  const agenda = repos.sessionAgendas.get(agendaId)!;
+  const updated = repos.sessionAgendas.update(
     {
       ...agenda,
       version: agenda.version + 1,
       items: agenda.items.map((item) =>
-        item.id === 'agenda_item_1'
+        agendaItemIds.has(item.id)
           ? {
               ...item,
               kind: 'formal_checkpoint' as const,
@@ -968,13 +996,25 @@ function enableFirstRouteItemAsFormalCheckpoint() {
     },
     agenda.version,
     {
-      id: `agenda_checkpoint_enabled_${agenda.version}`,
+      id: `agenda_checkpoint_enabled_${agenda.id}_${agenda.version}`,
       eventType: 'test_checkpoint_enabled',
       actor: 'local',
       payload: {},
       createdAt: T3,
     },
   );
+  for (const binding of bindings) {
+    db.prepare(
+      `UPDATE session_agenda_items
+       SET kind = 'formal_checkpoint', launch_capability = 'assessment', launch_resource_id = NULL
+       WHERE agenda_id = ? AND agenda_item_id = ?`,
+    ).run(agenda.id, binding.agendaItemId);
+  }
+  return updated;
+}
+
+function enableFirstRouteItemAsFormalCheckpoint() {
+  return enableRouteItemsAsFormalCheckpoints();
 }
 
 function insertSynthesisQuiz(includeSecondUnit: boolean, suffix = '') {
@@ -1212,8 +1252,13 @@ beforeEach(() => {
   });
 });
 
-function makeDueReview(suffix: string) {
-  const historical = createAssessmentEvidence(`review_seed_${suffix}`);
+function makeDueReview(suffix: string, seedAgendaItemId = 'agenda_item_1') {
+  const historical = createAssessmentEvidence(
+    `review_seed_${suffix}`,
+    T3,
+    'recall',
+    seedAgendaItemId,
+  );
   const reconciliation = services.formalAssessments.reconcileEvidence(historical.evidence.id);
   if (reconciliation.status !== 'applied') throw new Error('Review seed did not reconcile.');
   const targetId = 'review-target:ws_1:objective_1';
@@ -1541,7 +1586,8 @@ describe('formal progression service', () => {
     expect(services.formalAssessments.reconcileEvidence(application.evidence.id).status).toBe(
       'applied',
     );
-    makeDueReview('transfer');
+    const actions = installSameUnitFormalActions();
+    makeDueReview('transfer', actions.checkpointAgendaItemId);
     const proposalCall = vi.spyOn(provider, 'proposeAssessment');
     const masteryBefore = repos.mastery.listByWorkspace('ws_1');
 
@@ -1805,24 +1851,14 @@ describe('formal progression service', () => {
   });
 
   it('rejects due Review Evidence without a learner-launched execution', () => {
-    services.reviewSuccessor.activate({
-      workspaceId: 'ws_1',
-      courseId: 'ws_1',
-      learningUnitId: 'unit_1',
-      objectiveId: 'objective_1',
-      contractVersionId: 'contract_1',
-      curriculumVersionId: 'curriculum_1',
-      manifestFingerprint: 'manifest-fp',
-      sourceOutcomeId: 'unlaunched_seed_evidence',
-      eligible: true,
-      at: T3,
-    });
+    makeDueReview('unlaunched_execution');
+    const { agenda, item } = dueAgendaItem();
     const source = insertGrade('unlaunched_due_review', 1);
     services.formalProgression.registerAssessmentContracts({
       workspaceId: 'ws_1',
       quizId: source.quizId,
-      agendaId: 'agenda_1',
-      agendaItemId: 'agenda_item_1',
+      agendaId: agenda.id,
+      agendaItemId: item.id,
       assessmentKind: 'due_review',
       contractVersionId: 'contract_1',
       curriculumVersionId: 'curriculum_1',
@@ -1842,8 +1878,8 @@ describe('formal progression service', () => {
         contractVersionId: 'contract_1',
         curriculumVersionId: 'curriculum_1',
         studyPlanVersionId: 'plan_1',
-        agendaId: 'agenda_1',
-        agendaItemId: 'agenda_item_1',
+        agendaId: agenda.id,
+        agendaItemId: item.id,
         assessmentKind: 'due_review',
         executionSourceManifestFingerprint: 'manifest-fp',
       },
@@ -2535,6 +2571,133 @@ describe('formal progression service', () => {
     expect(db.prepare('SELECT COUNT(*) AS n FROM mastery_states').get()).toEqual({ n: 0 });
   });
 
+  it('makes an admitted Formal question advisory when its exact Agenda item is cancelled before credit', async () => {
+    const agenda = enableFirstRouteItemAsFormalCheckpoint();
+    const quizId = 'quiz_cancelled_agenda_credit';
+    const questionId = 'question_cancelled_agenda_credit';
+    const admittedPremise = repos.materials.getBlock('blk_1')!.content;
+    repos.quizzes.insert(
+      makeQuiz({
+        id: quizId,
+        materialId: null,
+        workspaceId: 'ws_1',
+        kind: 'adaptive',
+        assessmentMode: 'formal_checkpoint',
+        questions: [
+          makeQuestion({
+            id: questionId,
+            quizId,
+            type: 'short_answer',
+            options: undefined,
+            correctOptionIds: undefined,
+            expectedAnswer: admittedPremise,
+            rubric: { keyPoints: [{ text: admittedPremise, required: true }] },
+            formalProposal: {
+              objectiveRef: 'O1',
+              premises: [
+                {
+                  premiseKey: 'source:0',
+                  text: admittedPremise,
+                  sourceRefs: ['blk_1'],
+                  teachingSurfaceRefs: [],
+                  learnerVisible: true,
+                  scenarioLocal: false,
+                  visibilityBasis: 'cited_source',
+                },
+              ],
+              requiresExternalKnowledge: false,
+              ambiguity: 'none',
+              undefinedTerms: [],
+              rubricSourceRefs: [{ text: admittedPremise, sourceRefs: ['blk_1'] }],
+            },
+          }),
+        ],
+      }),
+    );
+    const contracts = services.formalProgression.registerAssessmentContracts({
+      workspaceId: 'ws_1',
+      quizId,
+      agendaId: agenda.id,
+      agendaItemId: 'agenda_item_1',
+      assessmentKind: 'formal_checkpoint',
+      contractVersionId: 'contract_1',
+      curriculumVersionId: 'curriculum_1',
+      studyPlanVersionId: 'plan_1',
+      executionSourceManifestFingerprint: 'manifest-fp',
+    });
+    expect(contracts[0]?.admissibilityTier).toBe('tier_1_authorized_truth');
+    expect(services.formalProgression.stateCreditingQuestionIdsForQuiz(quizId)).toEqual([
+      questionId,
+    ]);
+
+    const currentAgenda = repos.sessionAgendas.get(agenda.id)!;
+    repos.sessionAgendas.update(
+      {
+        ...currentAgenda,
+        version: currentAgenda.version + 1,
+        items: currentAgenda.items.map((item) =>
+          item.id === 'agenda_item_1' ? { ...item, state: 'cancelled' as const } : item,
+        ),
+        updatedAt: T4,
+      },
+      currentAgenda.version,
+      {
+        id: 'agenda_exact_formal_item_cancelled',
+        eventType: 'exact_formal_item_cancelled',
+        actor: 'local',
+        payload: { agendaItemId: 'agenda_item_1' },
+        createdAt: T4,
+      },
+    );
+    expect(services.formalProgression.stateCreditingQuestionIdsForQuiz(quizId)).toEqual([]);
+
+    const grading = await services.grading.grade(
+      {
+        quizId,
+        answers: [{ questionId, type: 'short_answer', text: admittedPremise }],
+      },
+      {
+        stateCreditResolver: () =>
+          new Set(services.formalProgression.stateCreditingQuestionIdsForQuiz(quizId) ?? []),
+      },
+    );
+    expect(grading.stateChanges).toMatchObject({
+      assessedConceptIds: [],
+      mistakesCreated: 0,
+      mistakesResolved: 0,
+      masteryChanges: [],
+      reviewScheduled: [],
+    });
+    const reconciled = services.formalProgression.reconcileAfterGrading(grading.result.id)!;
+    expect(reconciled.evidence).toEqual([
+      expect.objectContaining({
+        questionId,
+        admissibilityTier: 'tier_1_authorized_truth',
+        stateCreditable: false,
+        limitations: [
+          'Exact Agenda route authority is no longer current; result is advisory only.',
+        ],
+      }),
+    ]);
+    expect(reconciled.reconciliations[0]).toMatchObject({ status: 'rejected' });
+    expect(reconciled.decisions).toEqual([]);
+    expect(repos.formalProgression.getUnitProgress('ws_1', 'curriculum_1', 'unit_1')).toMatchObject(
+      {
+        state: 'not_started',
+        version: 0,
+      },
+    );
+    expect(
+      repos.studyPlans.listProgress('plan_1').find((item) => item.planItemId === 'plan_item_1'),
+    ).toMatchObject({ state: 'not_started', version: 1 });
+    expect(db.prepare('SELECT COUNT(*) AS n FROM mastery_states').get()).toEqual({ n: 0 });
+    expect(db.prepare('SELECT COUNT(*) AS n FROM progression_decisions').get()).toEqual({ n: 0 });
+    expect(db.prepare('SELECT COUNT(*) AS n FROM goal_outcomes').get()).toEqual({ n: 0 });
+    expect(
+      repos.sessionAgendas.get(agenda.id)!.items.find((item) => item.id === 'agenda_item_1')?.state,
+    ).toBe('cancelled');
+  });
+
   it('keeps an artifact-free objective advisory even when premise authority exists', () => {
     // `objective_synthesis_2` carries no semantic-support artifact and owns no row
     // in the append-only support table, so it is exactly the legacy teaching shape
@@ -2974,6 +3137,24 @@ describe('formal progression service', () => {
   });
 
   it('records legitimate achieved only after every required accepted-route item is complete', () => {
+    enableRouteItemsAsFormalCheckpoints([
+      { planItemId: 'plan_item_1', agendaItemId: 'agenda_item_1' },
+      { planItemId: 'plan_item_2', agendaItemId: 'agenda_item_2' },
+    ]);
+    seedPresentedTeachingFixture({
+      db,
+      repos,
+      workspaceId: 'ws_1',
+      curriculum: repos.curricula.get('curriculum_1')!,
+      studyPlanVersionId: 'plan_1',
+      learningUnitId: 'unit_1',
+      objectiveIds: ['objective_2'],
+      sessionAgendaId: 'agenda_1',
+      agendaItemId: 'agenda_item_2',
+      studyPlanItemId: 'plan_item_2',
+      at: T3,
+      suffix: 'goal_achieved_objective_2',
+    });
     for (const [suffix, agendaItemId] of [
       ['goal_achieved_first', 'agenda_item_1'],
       ['goal_achieved_second', 'agenda_item_2'],
@@ -3480,6 +3661,55 @@ describe('formal progression service', () => {
     ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
     expect(evaluationCall).toHaveBeenCalledTimes(1);
     expect(assessmentCall).not.toHaveBeenCalled();
+  });
+
+  it('refuses admission and persists no authoritative question when semantic PASS disappears during provider work', async () => {
+    const agenda = enableFirstRouteItemAsFormalCheckpoint();
+    const proposeAssessment = provider.proposeAssessment.bind(provider);
+    const assessmentCall = vi
+      .spyOn(provider, 'proposeAssessment')
+      .mockImplementation(async (input, options) => {
+        const proposal = await proposeAssessment(input, options);
+        removePrimarySemanticSupportForFixture();
+        return proposal;
+      });
+    const countsBefore = {
+      quizzes: (db.prepare('SELECT COUNT(*) AS n FROM quizzes').get() as { n: number }).n,
+      questions: (db.prepare('SELECT COUNT(*) AS n FROM questions').get() as { n: number }).n,
+      contracts: (
+        db.prepare('SELECT COUNT(*) AS n FROM formal_question_contracts').get() as { n: number }
+      ).n,
+    };
+
+    await expect(
+      services.courseActionLaunch.launch({
+        command: command('launch_semantic_admission_fence', 'learner'),
+        agendaId: agenda.id,
+        expectedAgendaVersion: agenda.version,
+        agendaItemId: 'agenda_item_1',
+        expectedContractId: 'contract_1',
+        expectedStudyPlanId: 'plan_1',
+        expectedExecutionSourceManifestFingerprint: 'manifest-fp',
+      }),
+    ).rejects.toMatchObject({
+      code: 'VALIDATION_ERROR',
+      details: expect.objectContaining({
+        boundary: 'formal_admission',
+        diagnosticCodes: expect.arrayContaining(['semantic_support_missing']),
+      }),
+    });
+
+    expect(assessmentCall).toHaveBeenCalledTimes(1);
+    expect(
+      repos.curricula.get('curriculum_1')!.nodes[1]!.learningUnit!.objectives[0]!.semanticSupport,
+    ).toBeUndefined();
+    expect({
+      quizzes: (db.prepare('SELECT COUNT(*) AS n FROM quizzes').get() as { n: number }).n,
+      questions: (db.prepare('SELECT COUNT(*) AS n FROM questions').get() as { n: number }).n,
+      contracts: (
+        db.prepare('SELECT COUNT(*) AS n FROM formal_question_contracts').get() as { n: number }
+      ).n,
+    }).toEqual(countsBefore);
   });
 
   it('cancels on-demand semantic evaluation without persisting authority or calling the assessment provider', async () => {
@@ -4801,6 +5031,26 @@ describe('formal progression service', () => {
         .filter((risk) => risk.facets.includes('transfer_integration_risk')),
     ).toEqual(expect.arrayContaining([expect.objectContaining({ status: 'planned' })]));
 
+    const agendaAfterRepair = repos.sessionAgendas.get(actions.agenda.id)!;
+    repos.sessionAgendas.update(
+      {
+        ...agendaAfterRepair,
+        version: agendaAfterRepair.version + 1,
+        items: agendaAfterRepair.items.map((item) =>
+          item.id === actions.synthesisAgendaItemId ? { ...item, state: 'queued' as const } : item,
+        ),
+        currentItemId: actions.synthesisAgendaItemId,
+        updatedAt: T4,
+      },
+      agendaAfterRepair.version,
+      {
+        id: 'agenda_synthesis_reauthorized_after_repair',
+        eventType: 'synthesis_reauthorized_after_repair',
+        actor: 'local',
+        payload: { agendaItemId: actions.synthesisAgendaItemId },
+        createdAt: T4,
+      },
+    );
     const repaired = insertSynthesisGrade(1, '_repaired');
     services.formalProgression.registerAssessmentContracts({
       workspaceId: 'ws_1',
@@ -4936,6 +5186,11 @@ describe('formal progression service', () => {
     const successorAgendaItem = successorAgenda.items.find(
       (item) => item.linkedPlanItemId === 'plan_item_2',
     )!;
+    enableRouteItemsAsFormalCheckpoints(
+      [{ planItemId: 'plan_item_2', agendaItemId: successorAgendaItem.id }],
+      successorPlanId,
+      successorAgenda.id,
+    );
     seedPresentedTeachingFixture({
       db,
       repos,
@@ -5056,6 +5311,16 @@ describe('formal progression service', () => {
   });
 
   it('cannot bypass the pre-acceptance Lesson plannability gate through a replan successor', () => {
+    const acceptedPlan = repos.studyPlans.get('plan_1')!;
+    db.prepare('UPDATE study_plan_versions SET payload = ? WHERE id = ?').run(
+      JSON.stringify({
+        ...acceptedPlan,
+        items: acceptedPlan.items.map((item) =>
+          item.id === 'plan_item_1' ? { ...item, kind: 'teach_unit' as const } : item,
+        ),
+      }),
+      acceptedPlan.id,
+    );
     const trigger = services.formalProgression.qualifyReplanTrigger({
       command: command('trigger_gate_bypass', 'learner'),
       expectedAcceptedStudyPlanId: 'plan_1',

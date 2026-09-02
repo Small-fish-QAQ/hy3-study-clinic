@@ -166,6 +166,8 @@ export const FormalQuestionContractSchema = z
     quizId: z.string().min(1),
     questionId: z.string().min(1),
     studySessionId: z.string().min(1).nullable(),
+    /** Exact Agenda identity is additive; historical contracts remain readable but advisory. */
+    sessionAgendaId: z.string().min(1).optional(),
     agendaItemId: z.string().min(1),
     assessmentKind: FormalAssessmentKindSchema,
     primaryObjectiveId: z.string().min(1),

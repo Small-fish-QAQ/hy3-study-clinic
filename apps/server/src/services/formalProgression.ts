@@ -40,7 +40,7 @@ import type { AgendaWindowRolloverService } from './agendaWindowRollover.js';
 import { commandFingerprint } from './courseCommands.js';
 import type { CourseCommandService } from './courseCommands.js';
 import { validateObjectiveAuthoritySemanticSupport } from './objectiveAuthoritySemanticSupport.js';
-import { resolveLaunchForPlanItem } from './studyPlanValidation.js';
+import { resolveAgendaBoundPlanItem, resolveLaunchForPlanItem } from './studyPlanValidation.js';
 import { createHash } from 'node:crypto';
 import { projectTaughtExposure, type PresentedTeachingSurface } from '@hy3-clinic/shared';
 
@@ -343,6 +343,87 @@ function buildAssessmentPremiseBindings(input: {
     });
   }
   return { required, bindings, usesRepresentationEquivalence };
+}
+
+function contractHasCurrentAgendaAuthority(
+  repos: Repositories,
+  contract: FormalQuestionContract,
+): boolean {
+  const route = repos.courseExecution.get(contract.workspaceId);
+  if (
+    route.routeValidationStatus !== 'valid' ||
+    (route.executionStatus !== 'active' && route.executionStatus !== 'paused') ||
+    route.activeContractId !== contract.contractVersionId ||
+    route.activeCurriculumId !== contract.curriculumVersionId ||
+    route.acceptedPlanId !== contract.studyPlanVersionId ||
+    !contract.sessionAgendaId ||
+    route.activeAgendaId !== contract.sessionAgendaId
+  ) {
+    return false;
+  }
+  const learningContract = repos.learningContracts.get(contract.contractVersionId);
+  const curriculum = repos.curricula.get(contract.curriculumVersionId);
+  const plan = repos.studyPlans.get(contract.studyPlanVersionId);
+  const agenda = repos.sessionAgendas.get(contract.sessionAgendaId);
+  if (
+    !learningContract ||
+    learningContract.workspaceId !== contract.workspaceId ||
+    learningContract.status !== 'active' ||
+    commandFingerprint(learningContract.courseScope) !== contract.stableScopeFingerprint ||
+    !curriculum ||
+    curriculum.workspaceId !== contract.workspaceId ||
+    curriculum.status !== 'accepted' ||
+    !curriculum.validation.valid ||
+    curriculum.contractVersionId !== learningContract.id ||
+    curriculum.executionSourceManifest.fingerprint !==
+      contract.executionSourceManifestFingerprint ||
+    !plan ||
+    plan.workspaceId !== contract.workspaceId ||
+    plan.status !== 'accepted' ||
+    plan.contractVersionId !== learningContract.id ||
+    plan.curriculumVersionId !== curriculum.id ||
+    plan.executionSourceManifestFingerprint !== contract.executionSourceManifestFingerprint ||
+    !agenda ||
+    agenda.workspaceId !== contract.workspaceId ||
+    (agenda.status !== 'active' && agenda.status !== 'paused') ||
+    agenda.contractVersionId !== learningContract.id ||
+    agenda.curriculumVersionId !== curriculum.id ||
+    agenda.studyPlanVersionId !== plan.id ||
+    agenda.executionSourceManifestFingerprint !== contract.executionSourceManifestFingerprint
+  ) {
+    return false;
+  }
+  const agendaItem = agenda.items.find((item) => item.id === contract.agendaItemId);
+  if (!agendaItem || agendaItem.launch.status !== 'launchable') return false;
+  const bound = resolveAgendaBoundPlanItem(repos, plan, agendaItem);
+  if (
+    !bound.ok ||
+    bound.planItem.kind !== contract.assessmentKind ||
+    !bound.planItem.objectiveIds.includes(contract.primaryObjectiveId) ||
+    (contract.assessmentKind !== 'synthesis' &&
+      bound.planItem.curriculumLearningUnitId !== contract.curriculumLearningUnitId)
+  ) {
+    return false;
+  }
+  if (agendaItem.launch.capability !== 'assessment') {
+    return false;
+  }
+  if (contract.studySessionId) {
+    const session = repos.studySessions.get(contract.studySessionId);
+    if (
+      !session ||
+      session.workspaceId !== contract.workspaceId ||
+      (session.status !== 'active' && session.status !== 'paused') ||
+      session.contractVersionId !== learningContract.id ||
+      session.curriculumVersionId !== curriculum.id ||
+      session.studyPlanVersionId !== plan.id ||
+      session.sessionAgendaId !== agenda.id ||
+      session.executionSourceManifestFingerprint !== contract.executionSourceManifestFingerprint
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function contractHasCurrentPremiseAuthority(
@@ -748,17 +829,11 @@ export function createFormalProgressionService({
     const contracts = progression.listQuestionContractsForQuiz(quizId);
     if (contracts.length === 0) return null;
     return contracts
-      .filter((contract) => {
-        const route = repos.courseExecution.get(contract.workspaceId);
-        return (
-          route.routeValidationStatus === 'valid' &&
-          (route.executionStatus === 'active' || route.executionStatus === 'paused') &&
-          route.activeContractId === contract.contractVersionId &&
-          route.activeCurriculumId === contract.curriculumVersionId &&
-          route.acceptedPlanId === contract.studyPlanVersionId &&
-          contractHasCurrentPremiseAuthority(repos, contract)
-        );
-      })
+      .filter(
+        (contract) =>
+          contractHasCurrentAgendaAuthority(repos, contract) &&
+          contractHasCurrentPremiseAuthority(repos, contract),
+      )
       .map((contract) => contract.questionId);
   }
 
@@ -1154,6 +1229,7 @@ export function createFormalProgressionService({
         quizId: input.quizId,
         questionId: question.id,
         studySessionId: input.studySessionId ?? null,
+        sessionAgendaId: input.agendaId,
         agendaItemId: input.agendaItemId,
         assessmentKind: input.assessmentKind,
         primaryObjectiveId: objective.id,
@@ -1493,6 +1569,11 @@ export function createFormalProgressionService({
     const decisions: ProgressionDecision[] = [];
     const reconciliations: ProgressionReconciliation[] = [];
     const replanTriggers: ReplanTrigger[] = [];
+    const currentlyAgendaAuthorizedQuestionIds = new Set(
+      contracts
+        .filter((contract) => contractHasCurrentAgendaAuthority(repos, contract))
+        .map((contract) => contract.questionId),
+    );
     const currentlyCreditableQuestionIds = new Set(stateCreditingQuestionIdsForQuiz(quiz.id) ?? []);
     const grouped = new Map<string, FormalQuestionContract[]>();
     for (const contract of contracts) {
@@ -1522,7 +1603,11 @@ export function createFormalProgressionService({
           : [
               ...contract.limitations,
               ...(isStateCreditingAdmissibility(contract.admissibilityTier)
-                ? ['Premise authority is no longer current; result is advisory only.']
+                ? [
+                    currentlyAgendaAuthorizedQuestionIds.has(contract.questionId)
+                      ? 'Premise authority is no longer current; result is advisory only.'
+                      : 'Exact Agenda route authority is no longer current; result is advisory only.',
+                  ]
                 : []),
             ],
         createdAt: clock.now().toISOString(),
@@ -1587,17 +1672,17 @@ export function createFormalProgressionService({
       const eligible = unitEvidence.filter(
         (item) => item.stateCreditable && isStateCreditingAdmissibility(item.admissibilityTier),
       );
-      if (eligible.length === 0) {
+      const currentEligible = eligible.filter((item) => item.gradingResultId === gradingResultId);
+      if (currentEligible.length === 0) {
         reconciliations.push(
           progression.rejectReconciliation(
             reconciliation.id,
-            'No independently admissible evidence; tier-3 results remain advisory.',
+            'No independently admissible evidence from the current authorized Agenda item; the result remains advisory.',
             now,
           ),
         );
         continue;
       }
-      const currentEligible = eligible.filter((item) => item.gradingResultId === gradingResultId);
       const passed = eligible.filter((item) => item.normalizedScore >= policy.minimumScore);
       const currentFailed = currentEligible.some(
         (item) => item.normalizedScore < policy.minimumScore,

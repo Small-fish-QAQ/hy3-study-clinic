@@ -9,10 +9,8 @@ import {
   type CurriculumObjective,
   type FormalAssessmentKind,
   type LaunchCourseActionRequest,
-  type SessionAgendaItem,
   type StudyPlan,
   type StudyPlanItem,
-  type StudyPlanItemKind,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import { ProviderError } from '../llm/errors.js';
@@ -42,7 +40,7 @@ import {
 import type { FormalAssessmentsService } from './formalAssessments.js';
 import { toPublicQuiz } from './quizzes.js';
 import type { ReviewSuccessorService } from './reviewSuccessor.js';
-import { resolveLaunchForPlanItem } from './studyPlanValidation.js';
+import { resolveAgendaBoundPlanItem, resolveLaunchForPlanItem } from './studyPlanValidation.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
 import {
   OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_BATCH,
@@ -66,16 +64,6 @@ interface CourseActionLaunchDeps {
   formalAssessments: FormalAssessmentsService;
   reviewSuccessor: ReviewSuccessorService;
 }
-
-const AGENDA_KIND_BY_PLAN_KIND: Record<StudyPlanItemKind, SessionAgendaItem['kind']> = {
-  teach_unit: 'learning_unit_teaching',
-  informal_check: 'informal_check',
-  formal_checkpoint: 'formal_checkpoint',
-  synthesis: 'synthesis',
-  targeted_repair: 'targeted_repair',
-  due_review: 'due_review',
-  adversarial_readiness: 'adversarial_readiness',
-};
 
 const FORMAL_ON_DEMAND_MAX_BATCHES =
   OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES /
@@ -149,67 +137,6 @@ function contextHasExactExecutionSourceRevisions(
     JSON.stringify(curriculum.executionSourceManifest.revisions) ===
     JSON.stringify(context.manifest.revisions)
   );
-}
-
-function agendaBoundPlanItem(
-  repos: Repositories,
-  plan: StudyPlan,
-  item: SessionAgendaItem,
-): { ok: true; planItem: StudyPlanItem } | { ok: false; reason: string } {
-  if (item.state !== 'queued' && item.state !== 'active') {
-    return { ok: false, reason: `Agenda item state ${item.state} is not launchable.` };
-  }
-  if (!item.linkedPlanItemId) {
-    return { ok: false, reason: 'Agenda item is not linked to an accepted Plan item.' };
-  }
-  const planItem = plan.items.find((candidate) => candidate.id === item.linkedPlanItemId);
-  if (!planItem) return { ok: false, reason: 'The accepted Plan no longer contains this item.' };
-  if (item.learningUnitId !== planItem.curriculumLearningUnitId) {
-    return { ok: false, reason: 'Agenda and Plan LearningUnit identity do not match.' };
-  }
-
-  if (item.kind === 'due_review') {
-    try {
-      const request = CreateAssessmentRequestSchema.parse(JSON.parse(item.launch.resourceId ?? ''));
-      const targetId = request.mode === 'review' ? request.conceptIds?.[0] : undefined;
-      const target = targetId ? repos.reviewSuccessor.getTarget(targetId) : undefined;
-      const binding =
-        target?.currentBindingVersion !== null && target?.currentBindingVersion !== undefined
-          ? repos.reviewSuccessor.getBinding(target.id, target.currentBindingVersion)
-          : undefined;
-      if (
-        request.conceptIds?.length !== 1 ||
-        !target ||
-        target.status !== 'active' ||
-        !binding ||
-        binding.learningUnitId !== planItem.curriculumLearningUnitId ||
-        !planItem.objectiveIds.includes(binding.objectiveId)
-      ) {
-        return { ok: false, reason: 'The due Review target no longer matches this Plan item.' };
-      }
-      return {
-        ok: true,
-        planItem: { ...planItem, kind: 'due_review', objectiveIds: [binding.objectiveId] },
-      };
-    } catch {
-      return { ok: false, reason: 'The due Review launch binding is invalid.' };
-    }
-  }
-
-  if (item.kind === 'targeted_repair' && planItem.kind !== 'targeted_repair') {
-    const progress = repos.studyPlans
-      .listProgress(plan.id)
-      .find((entry) => entry.planItemId === planItem.id);
-    if (progress?.state !== 'repair_needed') {
-      return { ok: false, reason: 'The linked Plan item no longer requires targeted repair.' };
-    }
-    return { ok: true, planItem: { ...planItem, kind: 'targeted_repair' } };
-  }
-
-  if (item.kind !== AGENDA_KIND_BY_PLAN_KIND[planItem.kind]) {
-    return { ok: false, reason: 'Agenda item kind is inconsistent with its accepted Plan item.' };
-  }
-  return { ok: true, planItem };
 }
 
 function assessmentDiversityForRoute(input: {
@@ -560,7 +487,7 @@ export function createCourseActionLaunchService({
           }),
         );
       }
-      const bound = agendaBoundPlanItem(repos, plan, item);
+      const bound = resolveAgendaBoundPlanItem(repos, plan, item);
       if (!bound.ok) {
         return commands.complete(claim, () =>
           CourseActionLaunchResultSchema.parse({
@@ -685,7 +612,7 @@ export function createCourseActionLaunchService({
               'Formal assessment context changed during semantic-authority evaluation.',
             );
           }
-          const currentBound = agendaBoundPlanItem(repos, currentPlan, currentItem);
+          const currentBound = resolveAgendaBoundPlanItem(repos, currentPlan, currentItem);
           if (
             !currentBound.ok ||
             currentBound.planItem.id !== bound.planItem.id ||
@@ -880,7 +807,7 @@ export function createCourseActionLaunchService({
               'Course action context changed while the assessment was generated.',
             );
           }
-          const finalBound = agendaBoundPlanItem(repos, currentPlan, currentItem);
+          const finalBound = resolveAgendaBoundPlanItem(repos, currentPlan, currentItem);
           if (!finalBound.ok) {
             throw new AppError(
               ApiErrorCode.VersionConflict,

@@ -358,7 +358,10 @@ interface Harness {
   manifestFingerprint: string;
 }
 
-async function createHarness(providerDelayMs = 0): Promise<Harness> {
+async function createHarness(
+  providerDelayMs = 0,
+  semanticVerdict: 'pass' | 'fail' = 'pass',
+): Promise<Harness> {
   const db = openDatabase(':memory:');
   databases.push(db);
   migrate(db);
@@ -514,7 +517,7 @@ async function createHarness(providerDelayMs = 0): Promise<Harness> {
         throw new Error('Teaching fixture objective is missing its Formal construct.');
       }
       const { semanticSupport: _semanticSupport, ...withoutSemanticSupport } = objective;
-      return makeSemanticallySupportedObjective(
+      const support = makeSemanticallySupportedObjective(
         {
           ...withoutSemanticSupport,
           formalAssessmentConstruct: objective.formalAssessmentConstruct,
@@ -523,6 +526,23 @@ async function createHarness(providerDelayMs = 0): Promise<Harness> {
         },
         objective.formalAssessmentConstruct === 'identify' ? 'recognition' : 'relationship',
       ).semanticSupport!;
+      if (semanticVerdict === 'fail' && support.schemaVersion === 1) {
+        support.fragments = support.fragments.map((fragment) => ({
+          ...fragment,
+          status: 'unsupported' as const,
+          supportType: null,
+          sourceBlockIds: [],
+          authorityRecordIds: [],
+          authorityClaimIds: [],
+          rationale: 'The independently evaluated objective proposition is unsupported.',
+        }));
+        support.unsupportedFragmentIds = support.fragments.map((fragment) => fragment.fragmentId);
+        support.conflicts = [];
+        support.overreach = [];
+        support.verdict = 'fail';
+        support.rationale = 'The exact objective proposition does not pass semantic support.';
+      }
+      return support;
     });
   repos.curricula.insertObjectiveSemanticSupportsIfAbsent(curriculum.id, semanticSupports);
   const item = plan.items.find(
@@ -1285,6 +1305,13 @@ describe('Teaching Brief preparation', () => {
     const routeObjective = harness.repos.curricula
       .get(harness.curriculumId)!
       .nodes.find((node) => node.id === harness.learningUnitId)!.learningUnit!.objectives[0]!;
+    expect(first.brief.objective.objectives[0]).toMatchObject({
+      authorityEnvelopeTier: routeObjective.authorityEnvelopeTier,
+      formalEvidenceSourceBlockIds: routeObjective.formalEvidenceSourceBlockIds,
+    });
+    expect(first.brief.objective.objectives[0]!.formalAssessmentReady).toBe(
+      routeObjective.formalAssessmentReady,
+    );
     const supportedClaimIds = new Set(
       objectiveAuthoritySemanticallySupportedClaimIds(routeObjective.semanticSupport!),
     );
@@ -1487,6 +1514,130 @@ describe('Teaching Brief preparation', () => {
       expect(offer.text).toBe(reference.quote);
     }
   });
+
+  it('keeps Lesson and Practice reachable at teaching_only for a current validated semantic FAIL', async () => {
+    const harness = await createHarness(0, 'fail');
+    const route = startTeachingRoute(harness);
+    const curriculumBefore = harness.repos.curricula.get(harness.curriculumId)!;
+    const planItem = harness.repos.studyPlans
+      .get(harness.planId)!
+      .items.find((item) => item.id === route.agendaItem.linkedPlanItemId)!;
+    const routeObjectives = curriculumBefore.nodes
+      .find((node) => node.id === harness.learningUnitId)!
+      .learningUnit!.objectives.filter((objective) => planItem.objectiveIds.includes(objective.id));
+    expect(
+      routeObjectives.every((objective) => objective.semanticSupport?.verdict === 'fail'),
+    ).toBe(true);
+    expect(
+      validateObjectiveAuthoritySemanticSupport(
+        curriculumBefore,
+        routeObjectives,
+        {
+          isBlockingEligible: (recordId) =>
+            harness.repos.sourceAuthority.isBlockingEligible(recordId),
+        },
+        'lesson_provider',
+      ),
+    ).toEqual({ valid: true, diagnostics: [], diagnosticCodes: [] });
+    const failRowsBefore = harness.db
+      .prepare(
+        `SELECT objective_id AS objectiveId, status, payload
+         FROM curriculum_objective_semantic_support
+         WHERE curriculum_id = ? ORDER BY objective_id`,
+      )
+      .all(harness.curriculumId);
+
+    const ready = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+      command: command('lesson-valid-semantic-fail'),
+      expectedSessionVersion: route.session.version,
+      expectedAgendaVersion: route.agenda.version,
+      expectedAgendaItemId: route.agendaItem.id,
+    });
+
+    expect(ready.status).toBe('ready');
+    expect(ready.lesson).not.toBeNull();
+    expect(ready.practice).not.toBeNull();
+    expect(harness.provider.lessonContentCalls).toBe(1);
+    expect(harness.provider.practiceContentCalls).toBe(1);
+    const briefObjectives = harness.repos.teachingBriefs.listForUnit(
+      'ws_1',
+      harness.learningUnitId,
+    )[0]!.objective.objectives;
+    expect(briefObjectives).not.toHaveLength(0);
+    for (const objective of briefObjectives) {
+      expect(objective).toMatchObject({
+        authorityEnvelopeTier: 'teaching_only',
+        formalAssessmentReady: false,
+        formalEvidenceSourceBlockIds: [],
+      });
+    }
+    expect(
+      harness.provider.lastLessonContentInput?.sourceContext.offers.every(
+        (offer) => offer.authorizedObjectiveRefs.length === 0,
+      ),
+    ).toBe(true);
+    expect(
+      harness.db
+        .prepare(
+          `SELECT objective_id AS objectiveId, status, payload
+           FROM curriculum_objective_semantic_support
+           WHERE curriculum_id = ? ORDER BY objective_id`,
+        )
+        .all(harness.curriculumId),
+    ).toEqual(failRowsBefore);
+  });
+
+  it.each(['malformed', 'stale', 'foreign'] as const)(
+    'keeps %s semantic FAIL support fatal before Lesson or Practice provider work',
+    async (corruption) => {
+      const harness = await createHarness(0, 'fail');
+      const route = startTeachingRoute(harness);
+      const planItem = harness.repos.studyPlans
+        .get(harness.planId)!
+        .items.find((item) => item.id === route.agendaItem.linkedPlanItemId)!;
+      const objectiveId = planItem.objectiveIds[0]!;
+      if (corruption === 'stale') {
+        const curriculum = structuredClone(harness.repos.curricula.get(harness.curriculumId)!);
+        const objective = curriculum.nodes
+          .find((node) => node.id === harness.learningUnitId)!
+          .learningUnit!.objectives.find((candidate) => candidate.id === objectiveId)!;
+        objective.description = `${objective.description} Stale after semantic evaluation.`;
+        harness.db
+          .prepare('UPDATE curriculum_versions SET payload = ? WHERE id = ?')
+          .run(JSON.stringify(curriculum), curriculum.id);
+      } else {
+        harness.db.exec('DROP TRIGGER prevent_curriculum_objective_semantic_support_update');
+        const row = harness.db
+          .prepare(
+            `SELECT payload FROM curriculum_objective_semantic_support
+             WHERE curriculum_id = ? AND objective_id = ?`,
+          )
+          .get(harness.curriculumId, objectiveId) as { payload: string };
+        const payload = JSON.parse(row.payload) as Record<string, unknown>;
+        harness.db
+          .prepare(
+            `UPDATE curriculum_objective_semantic_support SET payload = ?
+             WHERE curriculum_id = ? AND objective_id = ?`,
+          )
+          .run(
+            corruption === 'malformed'
+              ? JSON.stringify({})
+              : JSON.stringify({ ...payload, objectiveId: 'objective_foreign' }),
+            harness.curriculumId,
+            objectiveId,
+          );
+      }
+
+      await expect(
+        harness.services.teachingBriefPreparation.prepare(
+          preparationRequest(harness, route, `brief-invalid-fail-${corruption}`),
+        ),
+      ).rejects.toThrow();
+      expect(harness.provider.lessonContentCalls).toBe(0);
+      expect(harness.provider.practiceContentCalls).toBe(0);
+      expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual([]);
+    },
+  );
 
   it('rejects corrupt Curriculum semantic support at the Lesson provider boundary without a model call', async () => {
     const harness = await createHarness();

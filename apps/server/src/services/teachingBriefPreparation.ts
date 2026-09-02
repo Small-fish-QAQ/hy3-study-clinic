@@ -430,6 +430,8 @@ export function createTeachingBriefPreparationService({
       concepts: repos.materials.getConceptsByWorkspace(input.workspace.id),
       authorizedObjectiveIds: input.routeObjectives.map((objective) => objective.id),
       sourceAuthorityBundles,
+      isBlockingEligible: (authorityRecordId) =>
+        repos.sourceAuthority.isBlockingEligible(authorityRecordId),
       visuals,
     });
     return built;
@@ -505,7 +507,7 @@ export function createTeachingBriefPreparationService({
     ) => {
       const reference = context.references.find((candidate) => candidate.refId === offer.sourceRef);
       if (!reference) return false;
-      if (!objective.semanticSupport) {
+      if (objective.semanticSupport?.verdict !== 'pass') {
         // Teaching-only lane: exact current source text that carries no claim
         // identity, so it can never reach another objective's exact envelope.
         return !reference.authorityClaimIds?.length;
@@ -516,19 +518,27 @@ export function createTeachingBriefPreparationService({
         reference.authorityClaimIds!.some((claimId) => supportedClaimIds?.has(claimId))
       );
     };
+    const hasExactTeachingContext = (objective: CurriculumObjective) =>
+      context.offers.some((offer) => isSourceAuthorizedForObjective(offer, objective));
+    const hasCurrentFormalProjection = (objective: CurriculumObjective) =>
+      objective.semanticSupport?.verdict === 'pass' &&
+      (objective.authorityEnvelopeTier === 'formal_sufficient' ||
+        objective.authorityEnvelopeTier === 'narrower_formal') &&
+      Boolean(objective.formalAssessmentConstruct) &&
+      (objective.formalEvidenceSourceBlockIds?.length ?? 0) > 0;
     /**
-     * An objective with no semantic-support artifact but real exact-quotation
-     * teaching context is teaching_only, never unavailable and never formal. A
-     * persisted tier always wins, so formal authority is never upgraded here.
+     * Teaching authority follows the current semantic sidecar. A current PASS
+     * may retain the accepted Curriculum projection; missing support or a
+     * validated FAIL can only use exact current text as teaching_only.
      */
     const teachingAuthorityEnvelopeTier = (
       objective: CurriculumObjective,
     ): CurriculumAuthorityEnvelopeTier | undefined =>
-      objective.authorityEnvelopeTier ??
-      (!objective.semanticSupport &&
-      context.offers.some((offer) => isSourceAuthorizedForObjective(offer, objective))
-        ? 'teaching_only'
-        : undefined);
+      objective.semanticSupport?.verdict === 'pass'
+        ? objective.authorityEnvelopeTier
+        : hasExactTeachingContext(objective)
+          ? 'teaching_only'
+          : undefined;
     const providerObjectives: TeachingBriefGenerationInput['learningUnit']['objectives'] =
       route.routeObjectives.map((objective, index) => ({
         objectiveRef: `O${index + 1}`,
@@ -538,11 +548,9 @@ export function createTeachingBriefPreparationService({
         construct: teachingConstruct(objective),
         authorityEnvelopeTier: teachingAuthorityEnvelopeTier(objective) ?? 'unavailable',
         practiceAuthority:
-          context.offers.some((offer) => isSourceAuthorizedForObjective(offer, objective)) &&
-          objective.formalAssessmentConstruct &&
-          (objective.formalEvidenceSourceBlockIds?.length ?? 0) > 0
+          hasExactTeachingContext(objective) && hasCurrentFormalProjection(objective)
             ? 'exact_formal'
-            : context.offers.some((offer) => isSourceAuthorizedForObjective(offer, objective))
+            : hasExactTeachingContext(objective)
               ? 'exact_teaching'
               : context.visualOffers.length > 0
                 ? 'advisory_visual'
@@ -551,9 +559,7 @@ export function createTeachingBriefPreparationService({
           const exactEvidence = context.offers
             .filter((offer) => isSourceAuthorizedForObjective(offer, objective))
             .map((offer) => ({ sourceRef: offer.sourceRef, text: offer.text }));
-          const requiresFormalAuthority =
-            Boolean(objective.formalAssessmentConstruct) &&
-            (objective.formalEvidenceSourceBlockIds?.length ?? 0) > 0;
+          const requiresFormalAuthority = hasCurrentFormalProjection(objective);
           const authorityMode =
             exactEvidence.length > 0
               ? ('exact_source' as const)
@@ -591,7 +597,7 @@ export function createTeachingBriefPreparationService({
       return {
         ...offer,
         authorizedObjectiveRefs: route.routeObjectives.flatMap((objective, index) => {
-          if (!reference) return [];
+          if (!reference || objective.semanticSupport?.verdict !== 'pass') return [];
           return reference.authorityClaimIds?.some((claimId) =>
             supportedClaimIdsByObjective.get(objective.id)?.has(claimId),
           )
@@ -755,19 +761,20 @@ export function createTeachingBriefPreparationService({
     return route.routeObjectives.map((objective, index) => {
       const planned = skeleton.objectives[index]!;
       const providerTier = input.learningUnit.objectives[index]!.authorityEnvelopeTier;
+      const hasCurrentFormalAuthority =
+        objective.semanticSupport?.verdict === 'pass' &&
+        (providerTier === 'formal_sufficient' || providerTier === 'narrower_formal');
       return {
         id: objective.id,
         title: objective.title,
         description: objective.description,
         priority: planned.priority,
-        formalAssessmentReady: objective.formalAssessmentReady,
+        formalAssessmentReady: hasCurrentFormalAuthority ? objective.formalAssessmentReady : false,
         construct: planned.construct,
-        // Record the honest degraded tier without inventing one where no exact
-        // teaching grounding exists.
-        authorityEnvelopeTier:
-          objective.authorityEnvelopeTier ??
-          (providerTier === 'teaching_only' ? providerTier : undefined),
-        formalEvidenceSourceBlockIds: objective.formalEvidenceSourceBlockIds,
+        authorityEnvelopeTier: providerTier,
+        formalEvidenceSourceBlockIds: hasCurrentFormalAuthority
+          ? objective.formalEvidenceSourceBlockIds
+          : [],
       };
     });
   }
@@ -984,6 +991,7 @@ export function createTeachingBriefPreparationService({
 
   function routeStillCurrent(input: TeachingBriefRouteInput, expectedContextFingerprint: string) {
     const currentRoute = routeContext(input);
+    assertLessonObjectiveAuthoritySemanticSupport(currentRoute);
     const currentContext = sourceContext(currentRoute);
     if (currentContext.fingerprint !== expectedContextFingerprint) {
       throw new AppError(
@@ -1161,6 +1169,7 @@ export function createTeachingBriefPreparationService({
         throw error;
       }
       const scopedFingerprint = compositionFingerprint(context.fingerprint, skeleton);
+      const effectiveObjectives = derivedObjective(route, generationInput, skeleton);
       const history = repos.teachingBriefs.listForUnit(input.workspaceId, input.learningUnitId);
       const reusableCheckpoint = repos.acceptedLessonCheckpoints.findReusable(
         checkpointIdentity(input, context.fingerprint, skeleton),
@@ -1177,9 +1186,12 @@ export function createTeachingBriefPreparationService({
             acceptedLessonCheckpointId: checkpoint.id,
           })
         : undefined;
-      const reuse = isCurrentCompositionalBrief(reusableCandidate, skeleton)
-        ? reusableCandidate
-        : undefined;
+      const reuse =
+        isCurrentCompositionalBrief(reusableCandidate, skeleton) &&
+        JSON.stringify(reusableCandidate.objective.objectives) ===
+          JSON.stringify(effectiveObjectives)
+          ? reusableCandidate
+          : undefined;
       if (reuse) {
         const response = TeachingBriefPreparationResponseSchema.parse({
           status: 'reused',
