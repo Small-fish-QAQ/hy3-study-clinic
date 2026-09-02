@@ -31,7 +31,14 @@ export function isForbiddenCurriculumObjectiveClassification(classification: {
   );
 }
 
-/** Controlled assessment constructs exposed to Curriculum objective design. */
+/**
+ * Shared TEACHING construct vocabulary. A Course may legitimately teach or
+ * discuss any of these, and accepted history may contain any of them.
+ *
+ * This is deliberately wider than what Formal assessment can certify: see
+ * `FormalSupportedConstructSchema`. Teaching vocabulary is not assessment
+ * authority, and this enum must never be read as the latter.
+ */
 export const FormalAssessmentConstructSchema = z.enum([
   'identify',
   'explain',
@@ -40,6 +47,63 @@ export const FormalAssessmentConstructSchema = z.enum([
   'evaluate',
 ]);
 export type FormalAssessmentConstruct = z.infer<typeof FormalAssessmentConstructSchema>;
+
+/**
+ * The constructs the deterministic Formal lane can actually support.
+ *
+ * Membership is not a preference: each of these has a local evidence predicate
+ * that can decide it from exact source authority - `identify` from any
+ * validated formal claim, `explain` from an explanation-shaped claim or a
+ * paired procedure, `apply` from a paired procedure claim. `design` and
+ * `evaluate` have no such predicate, so nothing can honestly certify them, and
+ * they remain teaching-only until one exists.
+ */
+export const FORMAL_SUPPORTED_CONSTRUCTS = ['identify', 'explain', 'apply'] as const;
+export const FormalSupportedConstructSchema = z.enum(FORMAL_SUPPORTED_CONSTRUCTS);
+export type FormalSupportedConstruct = z.infer<typeof FormalSupportedConstructSchema>;
+
+/** Teaching constructs that exist for teaching only and carry no Formal authority. */
+export type TeachingOnlyConstruct = Exclude<FormalAssessmentConstruct, FormalSupportedConstruct>;
+
+/** Whether a shared teaching construct crosses into Formal-authority territory. */
+export const ConstructAuthorityClassSchema = z.enum(['formal_supported', 'teaching_only']);
+export type ConstructAuthorityClass = z.infer<typeof ConstructAuthorityClassSchema>;
+
+export function isFormalSupportedConstruct(
+  construct: FormalAssessmentConstruct,
+): construct is FormalSupportedConstruct {
+  return (FORMAL_SUPPORTED_CONSTRUCTS as readonly FormalAssessmentConstruct[]).includes(construct);
+}
+
+/**
+ * The single local classification of a shared teaching construct. Every site
+ * that crosses the teaching/Formal boundary reads this rather than re-deriving
+ * its own list, so widening Formal authority is one edit and one mutation.
+ */
+export function classifyConstructAuthority(
+  construct: FormalAssessmentConstruct,
+): ConstructAuthorityClass {
+  return isFormalSupportedConstruct(construct) ? 'formal_supported' : 'teaching_only';
+}
+
+/**
+ * Whether an objective's construct may claim the `application` rung of the
+ * evidence-demand ladder for Formal evidence.
+ *
+ * Two independent conditions, deliberately not collapsed: the construct must be
+ * Formal-supported at all, and among the supported constructs only `apply`
+ * denotes application-level performance. `design`/`evaluate` name harder
+ * teaching ambitions that no local predicate can certify, so evidence produced
+ * for one of them must not be recorded as application-level - otherwise
+ * teaching vocabulary alone would satisfy the durable-mastery application
+ * demand with no Formal authority behind it.
+ */
+export function supportsFormalApplicationDemand(
+  construct: FormalAssessmentConstruct | null,
+): boolean {
+  if (construct === null || !isFormalSupportedConstruct(construct)) return false;
+  return construct === 'apply';
+}
 
 /** Bounded description of what the current source can support formally. */
 export const CurriculumAuthorityEnvelopeTierSchema = z.enum([
@@ -50,13 +114,22 @@ export const CurriculumAuthorityEnvelopeTierSchema = z.enum([
 ]);
 export type CurriculumAuthorityEnvelopeTier = z.infer<typeof CurriculumAuthorityEnvelopeTierSchema>;
 
+/**
+ * What the current source can support formally.
+ *
+ * `supportedConstructs` is the Formal-authority carrier, so it is typed to the
+ * NARROW vocabulary: no envelope can express `design`/`evaluate` even if a
+ * caller tries, which makes widening Formal authority a schema failure rather
+ * than a silent behaviour change. The envelope is built fresh per operation and
+ * is never persisted, so this narrowing has no historical readability cost.
+ */
 export const CurriculumAuthorityEnvelopeSchema = z
   .object({
     sourceRegionId: z.string().min(1).max(200),
     sourceBlockIds: z.array(z.string().min(1)).max(10_000),
     formalEvidenceIds: z.array(z.string().min(1)).max(100),
-    supportedConstructs: z.array(FormalAssessmentConstructSchema).max(5),
-    strongestSupportedConstruct: FormalAssessmentConstructSchema.nullable(),
+    supportedConstructs: z.array(FormalSupportedConstructSchema).max(3),
+    strongestSupportedConstruct: FormalSupportedConstructSchema.nullable(),
     narrowerClaim: z.string().min(1).max(500).nullable(),
     tier: CurriculumAuthorityEnvelopeTierSchema,
     rationale: z.string().min(1).max(500),

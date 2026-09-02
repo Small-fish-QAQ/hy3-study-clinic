@@ -11,6 +11,7 @@ import {
   type CourseMapProposalPayload,
   type CurriculumDetailProposalPayload,
   type CurriculumProposalPayload,
+  type FormalAssessmentConstruct,
   type GraphProposalPayload,
   type MasteryChallengeProposalPayload,
   type MisconceptionProposalPayload,
@@ -354,6 +355,15 @@ export interface FakeProviderOptions {
   repairFixture?: FakeRepairFixture;
   /** Mastery Red Team semantic/schema fault fixture. */
   masteryRedTeamFixture?: FakeMasteryRedTeamFixture;
+  /**
+   * Force every proposed Curriculum objective to claim this construct.
+   *
+   * Exists so offline tests can drive the ORDINARY Formal lane with a construct
+   * the deterministic policy cannot support - `design`/`evaluate` - and observe
+   * the production refusal rather than a FakeProvider that only ever emits
+   * happy-path constructs. Opt-in only; unset, the provider is unchanged.
+   */
+  curriculumObjectiveConstructFixture?: FormalAssessmentConstruct;
 }
 
 /** Distinct opening move per intervention mode, so a strategy change is visible. */
@@ -474,6 +484,7 @@ export class FakeProvider implements LlmProvider {
   private tutorTurnFixtureCalls = 0;
   private readonly masteryRedTeamFixture: FakeMasteryRedTeamFixture | null;
   private masteryRedTeamCalls = 0;
+  private readonly curriculumObjectiveConstructFixture: FormalAssessmentConstruct | null;
 
   constructor(options: FakeProviderOptions = {}) {
     this.delayMs = options.delayMs ?? 0;
@@ -481,6 +492,7 @@ export class FakeProvider implements LlmProvider {
     this.visualDescriptionFixture = options.visualDescriptionFixture ?? null;
     this.repairFixture = options.repairFixture ?? null;
     this.masteryRedTeamFixture = options.masteryRedTeamFixture ?? null;
+    this.curriculumObjectiveConstructFixture = options.curriculumObjectiveConstructFixture ?? null;
   }
 
   async describeVisual(
@@ -2237,11 +2249,13 @@ export class FakeProvider implements LlmProvider {
       const explainOffer = region.evidence.find((offer) =>
         offer.text.includes('[SUPPORTS:explain]'),
       );
-      const objectiveConstruct = applyOffer
-        ? ('apply' as const)
-        : explainOffer
-          ? ('explain' as const)
-          : ('identify' as const);
+      const objectiveConstruct =
+        this.curriculumObjectiveConstructFixture ??
+        (applyOffer
+          ? ('apply' as const)
+          : explainOffer
+            ? ('explain' as const)
+            : ('identify' as const));
       const appendGenericApplyObjective =
         (region.capabilityRequirements?.length ?? 0) > 0 &&
         region.regionId === reservedGenericApplyRegionId;
@@ -2800,7 +2814,9 @@ export class FakeProvider implements LlmProvider {
           objectives: [
             {
               key: `objective-${unitNumber}`,
-              construct: supportsExplain ? ('explain' as const) : ('identify' as const),
+              construct:
+                this.curriculumObjectiveConstructFixture ??
+                (supportsExplain ? ('explain' as const) : ('identify' as const)),
               title: objectiveTitle,
               description: objectiveDescription.slice(0, 1000),
               subjectClass: 'source_specific' as const,

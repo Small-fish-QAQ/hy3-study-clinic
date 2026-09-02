@@ -1,6 +1,7 @@
 import {
   ASSESSMENT_INTENT_POLICY_VERSION,
   AssessmentIntentSelectionSchema,
+  supportsFormalApplicationDemand,
   type AssessmentIntentSelection,
   type EvidenceRepresentation,
   type FormalAssessmentConstruct,
@@ -51,9 +52,7 @@ export function selectAssessmentDiversityIntent(input: {
     };
   }
 
-  const applicationCapable = ['apply', 'design', 'evaluate'].includes(
-    input.objectiveConstruct ?? 'identify',
-  );
+  const applicationCapable = supportsFormalApplicationDemand(input.objectiveConstruct);
   if (!applicationCapable) {
     return {
       selection: selection({

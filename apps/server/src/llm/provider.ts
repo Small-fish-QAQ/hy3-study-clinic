@@ -60,6 +60,7 @@ import type {
   CurriculumAuthorityEnvelopeTier,
   CurriculumScopeOrigin,
   CurriculumSubjectClass,
+  ConstructAuthorityClass,
   FormalAssessmentConstruct,
   ObjectiveAuthoritySemanticEvaluationInput,
   ObjectiveAuthoritySemanticEvaluationProposal,
@@ -567,6 +568,12 @@ export interface TeachingBriefGenerationInput {
       /** Provider-visible, objective-scoped Practice contract. Local code remains authoritative. */
       practiceEnvelope?: {
         targetConstruct: FormalAssessmentConstruct | null;
+        /**
+         * Whether `targetConstruct` can carry Formal assessment authority at
+         * all. Distinct from `authorityMode`, which only reports whether an
+         * exact evidence alias exists for this objective.
+         */
+        constructAuthority: ConstructAuthorityClass;
         authorityMode: 'exact_source' | 'advisory_visual' | 'unavailable';
         evidenceAliases: Array<{ sourceRef: string; text: string }>;
         allowedCapability: string;

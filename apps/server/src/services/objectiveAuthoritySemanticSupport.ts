@@ -5,6 +5,7 @@ import {
   ObjectiveAuthoritySemanticEvaluationObjectiveInputSchema,
   ObjectiveAuthoritySemanticEvaluationProposalSchema,
   ObjectiveAuthoritySemanticSupportSchema,
+  classifyConstructAuthority,
   type Curriculum,
   type CurriculumNode,
   type CurriculumObjective,
@@ -691,8 +692,10 @@ export function isConfinedGeneralTeachingLaneSemanticFailure(
     objective.scopeOrigin !== 'anchored' ||
     artifact.verdict !== 'fail' ||
     artifact.capabilityPreservation?.verdict === 'fail' ||
-    artifact.construct === 'design' ||
-    artifact.construct === 'evaluate'
+    // A teaching-only construct has no Formal authority to confine, so it never
+    // qualifies for this lane. Read from the single local classification rather
+    // than repeating the construct names here.
+    classifyConstructAuthority(artifact.construct) !== 'formal_supported'
   ) {
     return false;
   }

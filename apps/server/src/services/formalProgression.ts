@@ -13,6 +13,7 @@ import {
   ReconcileProgressionRequestSchema,
   RecordGoalOutcomeRequestSchema,
   ReplanTriggerSchema,
+  supportsFormalApplicationDemand,
   type CompletionPolicy,
   type CoverageRiskEntry,
   type Curriculum,
@@ -866,7 +867,7 @@ export function createFormalProgressionService({
         throw new AppError(ApiErrorCode.ValidationError, 'Assessment objective is unknown.');
       const dueApplicationSupported =
         input.assessmentKind === 'due_review' &&
-        ['apply', 'design', 'evaluate'].includes(objective.formalAssessmentConstruct ?? 'identify');
+        supportsFormalApplicationDemand(objective.formalAssessmentConstruct ?? null);
       const objectiveAttributionVerified =
         input.assessmentKind === 'synthesis'
           ? Boolean(synthesisMapping) && synthesisBreadthVerified

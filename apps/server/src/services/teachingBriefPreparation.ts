@@ -4,6 +4,7 @@ import {
   TeachingBriefPreparationRequestSchema,
   TeachingBriefPreparationResponseSchema,
   TeachingBriefSchema,
+  classifyConstructAuthority,
   projectAcceptedLessonSegments,
   type AcceptedLessonCheckpoint,
   type CurriculumAuthorityEnvelopeTier,
@@ -562,8 +563,13 @@ export function createTeachingBriefPreparationService({
                   ? ('advisory_visual' as const)
                   : ('unavailable' as const);
           const targetConstruct = teachingConstruct(objective);
+          // `authorityMode` answers "is there an exact evidence alias?"; it has
+          // never answered "does this construct have Formal authority?". State
+          // the second separately so no reader can substitute one for the other.
+          const constructAuthority = classifyConstructAuthority(targetConstruct);
           return {
             targetConstruct,
+            constructAuthority,
             authorityMode,
             evidenceAliases: exactEvidence,
             allowedCapability:
@@ -573,7 +579,7 @@ export function createTeachingBriefPreparationService({
                   ? 'Express a mechanism, relation, reason, consequence, or conceptual connection.'
                   : targetConstruct === 'identify'
                     ? 'Select, name, distinguish, or classify the correct entity or component.'
-                    : `Demonstrate the locally authorized ${targetConstruct} capability without promoting it to a stronger construct.`,
+                    : `Practise the ${targetConstruct} capability as teaching only. It carries no Formal assessment authority and earns no Formal evidence or credit; stay inside the cited source and do not promote it to a stronger construct.`,
             prohibitedStrongerConstructs: targetConstruct
               ? strongerConstructs[targetConstruct]
               : [],

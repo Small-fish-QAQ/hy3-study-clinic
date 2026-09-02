@@ -4,6 +4,7 @@ import {
   GradeRecordSchema,
   FormalQuestionContractSchema,
   type Curriculum,
+  type FormalAssessmentConstruct,
   type FormalProposalMetadata,
   type LearningContract,
   type LearningContractFeasibility,
@@ -1233,7 +1234,9 @@ function correctCurriculumSourceFingerprints() {
   );
 }
 
-function makePrimaryObjectiveApplicationCapable() {
+function makePrimaryObjectiveApplicationCapable(
+  formalAssessmentConstruct: FormalAssessmentConstruct = 'apply',
+) {
   const curriculum = repos.curricula.get('curriculum_1')!;
   const nodes = curriculum.nodes.map((node) => {
     if (node.id !== 'unit_1' || !node.learningUnit) return node;
@@ -1247,7 +1250,7 @@ function makePrimaryObjectiveApplicationCapable() {
           return makeSemanticallySupportedObjective(
             {
               ...withoutSemanticSupport,
-              formalAssessmentConstruct: 'apply',
+              formalAssessmentConstruct,
               authoritySourceBlockIds: objective.authoritySourceBlockIds ?? [],
               authorityClaimIds: objective.authorityClaimIds ?? [],
             },
@@ -1419,6 +1422,35 @@ describe('formal progression service', () => {
       repos.formalProgression.listQuestionContractsForQuiz(version.progressionContext!.quizId),
     ).toEqual([expect.objectContaining({ representation: 'application' })]);
   });
+
+  /**
+   * Slice 5B. Same due-Review path, same evidence, only the objective's
+   * construct differs. `design` is a teaching construct with no deterministic
+   * Formal evidence predicate, so it must not stamp the persisted Formal
+   * question contract with the `application` demand rung - that rung is one of
+   * the gates of durable mastery.
+   */
+  it.each(['design', 'evaluate'] as const)(
+    'refuses the application demand rung to a teaching-only %s objective on the same Review path',
+    async (construct) => {
+      makePrimaryObjectiveApplicationCapable(construct);
+      const application = createAssessmentEvidence(`teaching_only_${construct}`, T3, 'application');
+      expect(services.formalAssessments.reconcileEvidence(application.evidence.id).status).toBe(
+        'applied',
+      );
+      makeDueReview(construct);
+      const proposalCall = vi.spyOn(provider, 'proposeAssessment');
+
+      const { launched } = await launchDueReview(construct);
+      const version = repos.formalAssessments.getVersion(launched.formalAssessmentVersionId!)!;
+
+      expect(proposalCall.mock.calls[0]?.[0].requiredRepresentation).not.toBe('application');
+      expect(version.items[0]?.representation).toBe('recall');
+      expect(
+        repos.formalProgression.listQuestionContractsForQuiz(version.progressionContext!.quizId),
+      ).toEqual([expect.objectContaining({ representation: 'recall' })]);
+    },
+  );
 
   it('requests transfer through the existing due-Review call after application evidence exists', async () => {
     makePrimaryObjectiveApplicationCapable();

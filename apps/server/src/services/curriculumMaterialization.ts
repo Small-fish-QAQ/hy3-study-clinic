@@ -1307,9 +1307,10 @@ export function validateCurriculumDetailCandidate(
         if (envelopes.some((envelope) => isConstructSupported(construct, envelope))) {
           continue;
         }
-        const repairEnvelope =
-          envelopes.find((envelope) => envelope.supportedConstructs.includes(construct)) ??
-          envelopes[0];
+        // Reaching here means no selected envelope supports `construct`, so a
+        // "find the envelope that does support it" lookup could only ever
+        // return undefined. Report against the first selected envelope.
+        const repairEnvelope = envelopes[0];
         const message = `required_objective_formal_authority_missing: objective ${objective.key} claims ${construct}, but its exact selected evidence in source region ${region.regionId} supports ${repairEnvelope?.supportedConstructs.join(', ') || 'no formal construct'}; narrowerClaim=${repairEnvelope?.narrowerClaim ?? 'none'}; protectedPriority=required.`;
         addDiagnostic('required_objective_formal_authority_missing', message, {
           courseMapRegionId: region.regionId,

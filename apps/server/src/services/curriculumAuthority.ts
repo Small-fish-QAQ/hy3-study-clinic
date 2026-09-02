@@ -1,7 +1,9 @@
 import {
   CurriculumAuthorityEnvelopeSchema,
+  isFormalSupportedConstruct,
   type CurriculumAuthorityEnvelope,
   type FormalAssessmentConstruct,
+  type FormalSupportedConstruct,
   type VerifiedGrounding,
 } from '@hy3-clinic/shared';
 import type { CurriculumEvidenceOffer } from '../llm/provider.js';
@@ -153,7 +155,7 @@ export function buildCurriculumAuthorityEnvelope(
       input.isBlockingEligible(bundle.record.id),
   );
   const claims = formalClaims.length > 0 ? formalClaims : exactClaims;
-  const supportedConstructs = new Set<FormalAssessmentConstruct>();
+  const supportedConstructs = new Set<FormalSupportedConstruct>();
   const procedureClaim = pairedProcedureClaims(formalClaims)[0];
   if (formalClaims.length > 0) {
     supportedConstructs.add('identify');
@@ -162,13 +164,11 @@ export function buildCurriculumAuthorityEnvelope(
     }
     if (procedureClaim) supportedConstructs.add('apply');
   }
-  const orderedConstructs: FormalAssessmentConstruct[] = [
-    'identify',
-    'explain',
-    'apply',
-    'design',
-    'evaluate',
-  ];
+  // Ordered weakest-to-strongest over the FORMAL-SUPPORTED vocabulary only.
+  // `design`/`evaluate` are deliberately absent: no local predicate can decide
+  // them, so listing them here would imply an authority rung that cannot be
+  // reached. They remain available as teaching constructs elsewhere.
+  const orderedConstructs: FormalSupportedConstruct[] = ['identify', 'explain', 'apply'];
   const constructs = orderedConstructs.filter((construct) => supportedConstructs.has(construct));
   const tier =
     formalClaims.length === 0
@@ -228,7 +228,7 @@ export function detectFormalConstruct(claim: string): FormalAssessmentConstruct 
  * source claim from being mistaken for a higher-order assessment demand.
  */
 export function formatNarrowedFormalObjective(
-  construct: Extract<FormalAssessmentConstruct, 'identify' | 'explain' | 'apply'>,
+  construct: FormalSupportedConstruct,
   narrowerClaim: string,
 ): { title: string; description: string } {
   const verb = construct === 'apply' ? 'Apply' : construct === 'explain' ? 'Explain' : 'Identify';
@@ -255,7 +255,7 @@ export function formatNarrowedFormalObjective(
 
 export function strongestNarrowableConstruct(
   envelope: Pick<CurriculumAuthorityEnvelope, 'supportedConstructs'>,
-): Extract<FormalAssessmentConstruct, 'identify' | 'explain' | 'apply'> | null {
+): FormalSupportedConstruct | null {
   if (envelope.supportedConstructs.includes('apply')) return 'apply';
   if (envelope.supportedConstructs.includes('explain')) return 'explain';
   if (envelope.supportedConstructs.includes('identify')) return 'identify';
@@ -266,6 +266,10 @@ export function isConstructSupported(
   requested: FormalAssessmentConstruct,
   envelope: CurriculumAuthorityEnvelope,
 ): boolean {
+  // Stated, not merely emergent. `supportedConstructs` cannot contain a
+  // teaching-only construct, but the refusal is written here too so that
+  // widening the envelope alone can never grant Formal authority.
+  if (!isFormalSupportedConstruct(requested)) return false;
   return envelope.supportedConstructs.includes(requested);
 }
 
