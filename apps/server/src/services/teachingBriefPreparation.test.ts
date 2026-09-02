@@ -15,7 +15,14 @@ import type {
   TutorTurnInput,
 } from '../llm/provider.js';
 import { createRepositories, type Repositories } from '../repositories/index.js';
-import { makeBlock, makeConcept, makeMaterial, makeWorkspace, T0 } from '../testing/fixtures.js';
+import {
+  makeBlock,
+  makeConcept,
+  makeMaterial,
+  makeSemanticallySupportedObjective,
+  makeWorkspace,
+  T0,
+} from '../testing/fixtures.js';
 import { fixedClock } from '../util/ids.js';
 import { createServices, type Services } from './index.js';
 import { resolveStudyPlanPlannability } from './studyPlanValidation.js';
@@ -499,6 +506,25 @@ async function createHarness(providerDelayMs = 0): Promise<Harness> {
     decision: 'accept',
     reason: null,
   });
+  const acceptedCurriculum = repos.curricula.get(curriculum.id)!;
+  const semanticSupports = acceptedCurriculum.nodes
+    .flatMap((node) => node.learningUnit?.objectives ?? [])
+    .map((objective) => {
+      if (!objective.formalAssessmentConstruct) {
+        throw new Error('Teaching fixture objective is missing its Formal construct.');
+      }
+      const { semanticSupport: _semanticSupport, ...withoutSemanticSupport } = objective;
+      return makeSemanticallySupportedObjective(
+        {
+          ...withoutSemanticSupport,
+          formalAssessmentConstruct: objective.formalAssessmentConstruct,
+          authoritySourceBlockIds: objective.authoritySourceBlockIds ?? [],
+          authorityClaimIds: objective.authorityClaimIds ?? [],
+        },
+        objective.formalAssessmentConstruct === 'identify' ? 'recognition' : 'relationship',
+      ).semanticSupport!;
+    });
+  repos.curricula.insertObjectiveSemanticSupportsIfAbsent(curriculum.id, semanticSupports);
   const item = plan.items.find(
     (candidate) => candidate.kind === 'teach_unit' && candidate.curriculumLearningUnitId,
   )!;

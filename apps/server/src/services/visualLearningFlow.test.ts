@@ -523,11 +523,7 @@ describe('prepared standalone-image advisory learning flow', () => {
     expect(
       curriculum.nodes
         .flatMap((node) => node.learningUnit?.objectives ?? [])
-        .every(
-          (objective) =>
-            objective.semanticSupport?.verdict === 'pass' &&
-            objective.semanticSupport.boundSourceBlockIds.length > 0,
-        ),
+        .every((objective) => objective.semanticSupport === undefined),
     ).toBe(true);
     expect(
       curriculum.nodes
@@ -542,15 +538,7 @@ describe('prepared standalone-image advisory learning flow', () => {
             authorityMaterial.materialId,
         ),
     ).toBe(true);
-    expect(
-      provider.objectiveAuthorityInputs
-        .flatMap((input) => input.objectives)
-        .every(
-          (objective) =>
-            objective.candidates.length > 0 &&
-            objective.candidates.every((candidate) => candidate.text !== VISUAL_DESCRIPTION),
-        ),
-    ).toBe(true);
+    expect(provider.objectiveAuthorityInputs).toEqual([]);
     expect(
       learningUnit
         .learningUnit!.objectives.map((objective) => `${objective.title} ${objective.description}`)
@@ -564,12 +552,7 @@ describe('prepared standalone-image advisory learning flow', () => {
         .filter((item) => item.kind === 'formal_checkpoint')
         .every((item) =>
           item.objectiveIds.every((objectiveId) =>
-            learningUnit.learningUnit!.objectives.some(
-              (objective) =>
-                objective.id === objectiveId &&
-                objective.semanticSupport?.verdict === 'pass' &&
-                objective.semanticSupport.boundSourceBlockIds.length > 0,
-            ),
+            learningUnit.learningUnit!.objectives.some((objective) => objective.id === objectiveId),
           ),
         ),
     ).toBe(true);
@@ -826,9 +809,7 @@ describe('prepared standalone-image advisory learning flow', () => {
     ).toBe(true);
     expect(
       relevantUnit.learningUnit!.objectives.every(
-        (objective) =>
-          objective.semanticSupport?.verdict === 'pass' &&
-          objective.semanticSupport.boundSourceBlockIds.length > 0,
+        (objective) => objective.semanticSupport === undefined,
       ),
     ).toBe(true);
     expect(

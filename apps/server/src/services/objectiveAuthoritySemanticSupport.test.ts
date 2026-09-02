@@ -1900,7 +1900,7 @@ describe('persisted objective-authority semantic support', () => {
     expect(validation.diagnosticCodes).not.toContain('semantic_support_missing');
   });
 
-  it('keeps a failed present artifact and stale authority fatal while teaching', () => {
+  it('keeps a valid failed artifact teachable while stale authority remains fatal', () => {
     const supported = objective();
     const [batch] = batchesFor({ objectives: [supported] });
     const failed = materializeAndAttach(
@@ -1915,6 +1915,14 @@ describe('persisted objective-authority semantic support', () => {
         [failedObjective],
         {},
         'lesson_provider',
+      ),
+    ).toEqual({ valid: true, diagnostics: [], diagnosticCodes: [] });
+    expect(
+      validateObjectiveAuthoritySemanticSupport(
+        curriculum(failed),
+        [failedObjective],
+        {},
+        'formal_provider',
       ).diagnosticCodes,
     ).toContain('semantic_support_failed');
 

@@ -45,10 +45,7 @@ import {
 import { createTelemetryProvider } from './providerTelemetry.js';
 import { assertLearningContractScopeCurrent } from './learningContractScope.js';
 import { buildPlanningRecommendations } from './planningRecommendations.js';
-import {
-  assertCurrentCurriculumObjectiveAuthoritySemanticSupport,
-  validateCurriculumObjectiveAuthoritySemanticSupport,
-} from './objectiveAuthoritySemanticSupport.js';
+import { validateCurriculumObjectiveAuthoritySemanticSupport } from './objectiveAuthoritySemanticSupport.js';
 
 interface StudyPlanAgentDeps {
   repos: Repositories;
@@ -361,7 +358,7 @@ export function preflightStudyPlan(
 ): StudyPlanPreflight {
   const context = buildProviderInput(repos, clock, contract, curriculum, workspaceName);
   const preflight = studyPlanPreflightFromContext(contract, context.input, context.profiles);
-  if (options.requireObjectiveAuthoritySemanticSupport === false) return preflight;
+  if (options.requireObjectiveAuthoritySemanticSupport !== true) return preflight;
   const semanticAuthority = validateCurriculumObjectiveAuthoritySemanticSupport(curriculum, {
     isBlockingEligible: (authorityRecordId) =>
       repos.sourceAuthority.isBlockingEligible(authorityRecordId),
@@ -501,11 +498,6 @@ function assertPlanProposalAuthorityCurrent(
     contract.id,
     request.expectedExecutionSourceManifestFingerprint,
   );
-  assertCurrentCurriculumObjectiveAuthoritySemanticSupport(curriculum, {
-    boundary: 'study_plan',
-    isBlockingEligible: (authorityRecordId) =>
-      repos.sourceAuthority.isBlockingEligible(authorityRecordId),
-  });
   return {
     contract,
     curriculum,
@@ -567,11 +559,6 @@ function assertDraftEditAuthorityCurrent(
       'StudyPlan Curriculum route is stale or incompatible.',
     );
   }
-  assertCurrentCurriculumObjectiveAuthoritySemanticSupport(curriculum, {
-    boundary: 'study_plan',
-    isBlockingEligible: (authorityRecordId) =>
-      repos.sourceAuthority.isBlockingEligible(authorityRecordId),
-  });
   return { plan, contract, curriculum };
 }
 

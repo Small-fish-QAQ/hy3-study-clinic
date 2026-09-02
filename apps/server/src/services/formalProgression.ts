@@ -39,6 +39,7 @@ import { newId } from '../util/ids.js';
 import type { AgendaWindowRolloverService } from './agendaWindowRollover.js';
 import { commandFingerprint } from './courseCommands.js';
 import type { CourseCommandService } from './courseCommands.js';
+import { validateObjectiveAuthoritySemanticSupport } from './objectiveAuthoritySemanticSupport.js';
 import { resolveLaunchForPlanItem } from './studyPlanValidation.js';
 import { createHash } from 'node:crypto';
 import { projectTaughtExposure, type PresentedTeachingSurface } from '@hy3-clinic/shared';
@@ -357,6 +358,16 @@ function contractHasCurrentPremiseAuthority(
     (candidate) => candidate.id === contract.primaryObjectiveId,
   );
   if (!question || !objective || (question.options && question.correctOptionIds)) return false;
+  const semanticAuthority = validateObjectiveAuthoritySemanticSupport(
+    curriculum!,
+    [objective],
+    {
+      isBlockingEligible: (authorityRecordId) =>
+        repos.sourceAuthority.isBlockingEligible(authorityRecordId),
+    },
+    'formal_credit',
+  );
+  if (!semanticAuthority.valid) return false;
   const required = requiredAssessmentPremises(question);
   if (
     required.length === 0 ||
@@ -1114,7 +1125,17 @@ export function createFormalProgressionService({
       const authorizedProvenance = allProvenance.filter(
         (item) => item.truthAuthorityClaimIds.length > 0,
       );
+      const semanticAuthorityReady = validateObjectiveAuthoritySemanticSupport(
+        curriculum,
+        [objective],
+        {
+          isBlockingEligible: (authorityRecordId) =>
+            repos.sourceAuthority.isBlockingEligible(authorityRecordId),
+        },
+        'formal_admission',
+      ).valid;
       const tier =
+        semanticAuthorityReady &&
         objectiveAttributionVerified &&
         taughtExposureBindings.length > 0 &&
         premiseVisibilitySatisfied &&
@@ -1172,19 +1193,21 @@ export function createFormalProgressionService({
         limitations:
           tier === 'tier_3_advisory'
             ? [
-                !fullChoiceClassificationAuthorized
-                  ? 'Choice-question state credit requires independently validated classification authority for the full option set; correct-option truth alone is insufficient.'
-                  : input.assessmentKind === 'synthesis' && !synthesisBreadthVerified
-                    ? 'Synthesis state credit requires unambiguous objective attribution across at least two Curriculum LearningUnits; narrow or ambiguous results are advisory only.'
-                    : !premiseBindingsComplete
-                      ? 'One or more scoring answer/options/rubric premises lack an explicit independently authorized binding; result is advisory only.'
-                      : !objectiveAttributionVerified
-                        ? 'The question has no validated one-to-one objective attribution; result is advisory only.'
-                        : !taughtExposureBindings.length
-                          ? 'The resolved objective has no current, presented Lesson exposure on this route; result is advisory only.'
-                          : !premiseVisibilitySatisfied
-                            ? 'One or more declared premises are not structurally visible from the stem, cited source, prerequisite, or exact presented teaching surface; result is advisory only.'
-                            : 'The question is advisory under the current formal-evidence policy.',
+                !semanticAuthorityReady
+                  ? 'The resolved objective has no current passing semantic-authority support; result is advisory only.'
+                  : !fullChoiceClassificationAuthorized
+                    ? 'Choice-question state credit requires independently validated classification authority for the full option set; correct-option truth alone is insufficient.'
+                    : input.assessmentKind === 'synthesis' && !synthesisBreadthVerified
+                      ? 'Synthesis state credit requires unambiguous objective attribution across at least two Curriculum LearningUnits; narrow or ambiguous results are advisory only.'
+                      : !premiseBindingsComplete
+                        ? 'One or more scoring answer/options/rubric premises lack an explicit independently authorized binding; result is advisory only.'
+                        : !objectiveAttributionVerified
+                          ? 'The question has no validated one-to-one objective attribution; result is advisory only.'
+                          : !taughtExposureBindings.length
+                            ? 'The resolved objective has no current, presented Lesson exposure on this route; result is advisory only.'
+                            : !premiseVisibilitySatisfied
+                              ? 'One or more declared premises are not structurally visible from the stem, cited source, prerequisite, or exact presented teaching surface; result is advisory only.'
+                              : 'The question is advisory under the current formal-evidence policy.',
               ]
             : [],
         createdAt: clock.now().toISOString(),

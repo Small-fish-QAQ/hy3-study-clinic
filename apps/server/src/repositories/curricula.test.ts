@@ -564,28 +564,48 @@ describe('Curriculum objective semantic-support persistence', () => {
     expect(hydrated.verdict).toBe('pass');
   });
 
-  it('rejects missing, failed, or stale semantic support without leaving partial rows', () => {
-    const cases: Array<[string, ObjectiveAuthoritySemanticSupport | null]> = [
-      ['missing support', null],
+  it('creates, accepts, and hydrates a structurally valid Curriculum with zero semantic rows', () => {
+    const stored = createVersion(curriculum({ semanticSupport: null }));
+
+    expect(repos.curricula.getObjectiveSemanticSupport(stored.id)).toEqual([]);
+    expect(stored.nodes[1]?.learningUnit?.objectives[0]?.semanticSupport).toBeUndefined();
+
+    const accepted = acceptVersion(stored.id);
+
+    expect(accepted.status).toBe('accepted');
+    expect(accepted.nodes[1]?.learningUnit?.objectives[0]?.semanticSupport).toBeUndefined();
+    expect(repos.curricula.get(stored.id)).toEqual(accepted);
+    expect(repos.curricula.list('ws_1')).toEqual([accepted]);
+    expect(
+      db.prepare('SELECT COUNT(*) AS count FROM curriculum_objective_semantic_support').get(),
+    ).toEqual({ count: 0 });
+  });
+
+  it('persists a validated FAIL result without treating it as Formal authority', () => {
+    const failed = semanticSupport();
+    failed.fragments = [
+      {
+        ...failed.fragments[0]!,
+        status: 'unsupported',
+        supportType: null,
+        sourceBlockIds: [],
+        authorityRecordIds: [],
+        authorityClaimIds: [],
+      },
+    ];
+    failed.unsupportedFragmentIds = ['fragment_1'];
+    failed.verdict = 'fail';
+
+    const stored = createVersion(curriculum({ semanticSupport: failed }));
+    const accepted = acceptVersion(stored.id);
+
+    expect(repos.curricula.getObjectiveSemanticSupport(stored.id)).toEqual([failed]);
+    expect(accepted.nodes[1]?.learningUnit?.objectives[0]?.semanticSupport).toEqual(failed);
+  });
+
+  it('rejects foreign or stale supplied semantic support without leaving partial rows', () => {
+    const cases: Array<[string, ObjectiveAuthoritySemanticSupport]> = [
       ['foreign objective identity', semanticSupport('different_objective')],
-      [
-        'failed support',
-        {
-          ...semanticSupport(),
-          fragments: [
-            {
-              ...semanticSupport().fragments[0]!,
-              status: 'unsupported',
-              supportType: null,
-              sourceBlockIds: [],
-              authorityRecordIds: [],
-              authorityClaimIds: [],
-            },
-          ],
-          unsupportedFragmentIds: ['fragment_1'],
-          verdict: 'fail',
-        },
-      ],
       ['stale policy', { ...semanticSupport(), policyVersion: 'obsolete-policy' }],
       ['stale proposition fingerprint', { ...semanticSupport(), propositionFingerprint: 'stale' }],
       ['stale binding fingerprint', { ...semanticSupport(), bindingFingerprint: 'stale' }],
@@ -597,7 +617,39 @@ describe('Curriculum objective semantic-support persistence', () => {
       );
       expectNoCurriculumPersistence();
     }
+  });
 
+  it('inserts missing support only for an exact accepted objective and never overwrites it', () => {
+    const proposed = createVersion(curriculum({ semanticSupport: null }));
+    const expectedSupport = semanticSupport();
+    expect(() =>
+      repos.curricula.insertObjectiveSemanticSupportsIfAbsent(proposed.id, [expectedSupport]),
+    ).toThrow(/accepted Curriculum owner/u);
+
+    const accepted = acceptVersion(proposed.id);
+    const supported = repos.curricula.insertObjectiveSemanticSupportsIfAbsent(accepted.id, [
+      expectedSupport,
+    ]);
+    expect(supported.nodes[1]?.learningUnit?.objectives[0]?.semanticSupport).toEqual(
+      expectedSupport,
+    );
+
+    const replacement = { ...expectedSupport, rationale: 'This must never overwrite the row.' };
+    const reused = repos.curricula.insertObjectiveSemanticSupportsIfAbsent(accepted.id, [
+      replacement,
+    ]);
+    expect(reused.nodes[1]?.learningUnit?.objectives[0]?.semanticSupport).toEqual(expectedSupport);
+    expect(repos.curricula.getObjectiveSemanticSupport(accepted.id)).toEqual([expectedSupport]);
+
+    expect(() =>
+      repos.curricula.insertObjectiveSemanticSupportsIfAbsent(accepted.id, [
+        semanticSupport('foreign_objective'),
+      ]),
+    ).toThrow(/foreign Curriculum objective/u);
+    expect(repos.curricula.getObjectiveSemanticSupport(accepted.id)).toEqual([expectedSupport]);
+  });
+
+  it('rolls back the owning Curriculum when initial sidecar insertion fails', () => {
     db.exec(`
       CREATE TRIGGER force_semantic_support_insert_failure
       BEFORE INSERT ON curriculum_objective_semantic_support
@@ -786,7 +838,7 @@ describe('Curriculum objective semantic-support persistence', () => {
     expectNoCurriculumPersistence();
   });
 
-  it('revalidates canonical semantic support before repository acceptance', () => {
+  it('accepts a structurally valid Curriculum whose recorded semantic evaluation is FAIL', () => {
     const stored = createVersion(curriculum());
     db.exec('DROP TRIGGER prevent_curriculum_objective_semantic_support_update');
     const failed = semanticSupport();
@@ -808,20 +860,19 @@ describe('Curriculum objective semantic-support persistence', () => {
        WHERE curriculum_id = ? AND objective_id = ?`,
     ).run(JSON.stringify(failed), stored.id, 'objective_1');
 
-    expect(() =>
-      repos.curricula.accept(stored.id, T0, {
-        id: 'event_accept_invalid',
-        eventType: 'accepted',
-        actor: 'learner',
-        payload: {},
-        createdAt: T0,
-      }),
-    ).toThrow(CurriculumObjectiveAuthoritySemanticSupportError);
-    expect(repos.curricula.get(stored.id)?.status).toBe('proposed');
-    expect(repos.curricula.listEvents(stored.id)).toHaveLength(1);
+    const accepted = repos.curricula.accept(stored.id, T0, {
+      id: 'event_accept_semantic_fail',
+      eventType: 'accepted',
+      actor: 'learner',
+      payload: {},
+      createdAt: T0,
+    });
+    expect(accepted.status).toBe('accepted');
+    expect(accepted.nodes[1]?.learningUnit?.objectives[0]?.semanticSupport?.verdict).toBe('fail');
+    expect(repos.curricula.listEvents(stored.id)).toHaveLength(2);
   });
 
-  it('rechecks blocking authority eligibility before repository acceptance', () => {
+  it('still rejects structurally stale premise authority before repository acceptance', () => {
     const stored = createVersion(curriculum());
     db.prepare(
       `UPDATE truth_authority_records
@@ -837,7 +888,7 @@ describe('Curriculum objective semantic-support persistence', () => {
         payload: {},
         createdAt: T0,
       }),
-    ).toThrow(CurriculumObjectiveAuthoritySemanticSupportError);
+    ).toThrow(/requires valid, unconflicted authority/u);
     expect(repos.curricula.get(stored.id)?.status).toBe('proposed');
     expect(repos.curricula.listEvents(stored.id)).toHaveLength(1);
   });

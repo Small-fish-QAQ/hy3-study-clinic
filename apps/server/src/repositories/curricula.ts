@@ -12,6 +12,7 @@ import type { SqliteDb } from '../db/database.js';
 import { fingerprintCurriculumCapabilitySourceEnvelope } from '../services/curriculumCapabilityRecovery.js';
 import {
   assertCurriculumObjectiveAuthoritySemanticSupport,
+  assertPersistableObjectiveAuthoritySemanticSupport,
   curriculumObjectiveProposition,
   fingerprintObjectiveAuthorityProposition,
   objectiveAuthoritySemanticProvenanceMappings,
@@ -303,35 +304,6 @@ export function createCurriculaRepo(db: SqliteDb) {
       : null;
   }
 
-  function requiresOriginatedCapabilityRecovery(
-    curriculum: Curriculum,
-    predecessor: Curriculum,
-  ): boolean {
-    try {
-      assertCurriculumObjectiveAuthoritySemanticSupport(curriculum, {
-        isBlockingEligible: isAuthorityBlockingEligible,
-      });
-    } catch {
-      // Legacy or partially supported successors remain readable so the
-      // ordinary structured-recovery path can diagnose them.
-      return false;
-    }
-    const hasNonOptionalPredecessorCapability = predecessor.nodes.some((node) =>
-      (node.learningUnit?.objectives ?? []).some(
-        (objective) => normalizedObjectivePriority(objective) !== 'optional',
-      ),
-    );
-    if (!hasNonOptionalPredecessorCapability) return false;
-    try {
-      assertCurriculumObjectiveAuthoritySemanticSupport(predecessor, {
-        isBlockingEligible: isAuthorityBlockingEligible,
-      });
-      return false;
-    } catch {
-      return true;
-    }
-  }
-
   /**
    * Recovery lineage is locally owned. A shape-valid support payload is not
    * sufficient: every origin must reconcile exactly with the nearest accepted
@@ -362,12 +334,12 @@ export function createCurriculaRepo(db: SqliteDb) {
       ) {
         throw new CurriculumCapabilityRecoveryLineageError();
       }
+      // Missing semantic sidecars are now the ordinary unevaluated state, so
+      // their absence cannot imply capability recovery. Creation passes an
+      // explicit predecessor identity when a structural recovery is required;
+      // persisted recovery origins remain independently validated on hydrate.
       const requiresRecovery =
-        expectedRecoveryPredecessorId !== undefined && expectedRecoveryPredecessorId !== null
-          ? true
-          : predecessor
-            ? requiresOriginatedCapabilityRecovery(curriculum, predecessor)
-            : false;
+        expectedRecoveryPredecessorId !== undefined && expectedRecoveryPredecessorId !== null;
       if (preservingObjectives.length === 0) {
         if (requiresRecovery) throw new CurriculumCapabilityRecoveryLineageError();
         return;
@@ -972,9 +944,12 @@ export function createCurriculaRepo(db: SqliteDb) {
       }
       const objectives = curriculum.nodes.flatMap((node) => node.learningUnit?.objectives ?? []);
       assertExplicitObjectiveClassifications(curriculum);
-      assertCurriculumObjectiveAuthoritySemanticSupport(curriculum, {
-        isBlockingEligible: isAuthorityBlockingEligible,
-      });
+      const supportedObjectives = objectives.filter((objective) => objective.semanticSupport);
+      if (supportedObjectives.length > 0) {
+        assertPersistableObjectiveAuthoritySemanticSupport(curriculum, supportedObjectives, {
+          isBlockingEligible: isAuthorityBlockingEligible,
+        });
+      }
       assertCapabilityRecoveryLineage(
         curriculum,
         persistenceContext.capabilityRecoveryPredecessorId,
@@ -1079,7 +1054,8 @@ export function createCurriculaRepo(db: SqliteDb) {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       );
       for (const objective of objectives) {
-        const support = objective.semanticSupport!;
+        const support = objective.semanticSupport;
+        if (!support) continue;
         insertSemanticSupport.run(
           curriculum.id,
           objective.id,
@@ -1113,9 +1089,6 @@ export function createCurriculaRepo(db: SqliteDb) {
     if (latest?.id !== current.id) {
       throw new Error('Only the latest Curriculum version may be accepted.');
     }
-    assertCurriculumObjectiveAuthoritySemanticSupport(current, {
-      isBlockingEligible: isAuthorityBlockingEligible,
-    });
     const manifest = getManifest(current.workspaceId, current.executionSourceManifest.fingerprint);
     if (!manifest) throw new Error('Curriculum execution-source manifest is missing.');
     validateCurriculum(current, manifest.id);
@@ -1160,11 +1133,105 @@ export function createCurriculaRepo(db: SqliteDb) {
     },
   );
 
+  const insertObjectiveSemanticSupportsIfAbsentTx = db.transaction(
+    (
+      curriculumId: string,
+      supportInputs: readonly ObjectiveAuthoritySemanticSupport[],
+    ): Curriculum => {
+      const row = curriculumRow(curriculumId);
+      if (!row || row.status !== 'accepted') {
+        throw new Error('Objective semantic support requires an accepted Curriculum owner.');
+      }
+      const supports = supportInputs.map((support) =>
+        ObjectiveAuthoritySemanticSupportSchema.parse(support),
+      );
+      const objectiveIds = supports.map((support) => support.objectiveId);
+      if (new Set(objectiveIds).size !== objectiveIds.length) {
+        throw new Error('Objective semantic-support insertion contains duplicate objectives.');
+      }
+      const existingSupports = getObjectiveSemanticSupport(curriculumId);
+      const existingByObjectiveId = new Map(
+        existingSupports.map((support) => [support.objectiveId, support] as const),
+      );
+      const missingSupports = supports.filter(
+        (support) => !existingByObjectiveId.has(support.objectiveId),
+      );
+      if (missingSupports.length === 0) return hydrateStoredCurriculum(row);
+
+      const current = hydrateStoredCurriculum(row);
+      const missingByObjectiveId = new Map(
+        missingSupports.map((support) => [support.objectiveId, support] as const),
+      );
+      const foundObjectiveIds = new Set<string>();
+      const candidate = CurriculumSchema.parse({
+        ...current,
+        nodes: current.nodes.map((node) =>
+          node.learningUnit
+            ? {
+                ...node,
+                learningUnit: {
+                  ...node.learningUnit,
+                  objectives: node.learningUnit.objectives.map((objective) => {
+                    const support = missingByObjectiveId.get(objective.id);
+                    if (!support) return objective;
+                    foundObjectiveIds.add(objective.id);
+                    return { ...objective, semanticSupport: support };
+                  }),
+                },
+              }
+            : node,
+        ),
+      });
+      if (foundObjectiveIds.size !== missingSupports.length) {
+        throw new Error('Objective semantic support references a foreign Curriculum objective.');
+      }
+      const targetObjectives = candidate.nodes.flatMap((node) =>
+        (node.learningUnit?.objectives ?? []).filter((objective) =>
+          missingByObjectiveId.has(objective.id),
+        ),
+      );
+      assertPersistableObjectiveAuthoritySemanticSupport(candidate, targetObjectives, {
+        isBlockingEligible: isAuthorityBlockingEligible,
+      });
+      const manifest = getManifest(
+        current.workspaceId,
+        current.executionSourceManifest.fingerprint,
+      );
+      if (!manifest) throw new Error('Curriculum execution-source manifest is missing.');
+      validateCurriculum(candidate, manifest.id, { exactAuthorityOnly: true });
+
+      const insertSemanticSupport = db.prepare(
+        `INSERT INTO curriculum_objective_semantic_support
+           (curriculum_id, objective_id, policy_version, evaluator, provider,
+            provider_model, status, proposition_fingerprint, binding_fingerprint,
+            payload, evaluated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      );
+      for (const support of missingSupports) {
+        insertSemanticSupport.run(
+          curriculumId,
+          support.objectiveId,
+          support.policyVersion,
+          support.evaluator,
+          support.provider,
+          support.providerModel,
+          support.verdict,
+          support.propositionFingerprint,
+          support.bindingFingerprint,
+          JSON.stringify(support),
+          support.evaluatedAt,
+        );
+      }
+      return get(curriculumId)!;
+    },
+  );
+
   return {
     get,
     getManifest,
     getQualityEvaluation,
     getObjectiveSemanticSupport,
+    insertObjectiveSemanticSupportsIfAbsent: insertObjectiveSemanticSupportsIfAbsentTx,
     createManifest: createManifestTx,
     createVersion: createVersionTx,
     accept: acceptTx,

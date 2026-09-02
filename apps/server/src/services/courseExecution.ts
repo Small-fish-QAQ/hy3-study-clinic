@@ -17,7 +17,6 @@ import type { CourseCommandService } from './courseCommands.js';
 import type { SessionAgendaAgentService } from './sessionAgendasAgent.js';
 import { buildCurriculumExecutionContext } from './curriculum.js';
 import { isHardAvailability, isHardDeadline } from './feasibility.js';
-import { assertCurrentCurriculumObjectiveAuthoritySemanticSupport } from './objectiveAuthoritySemanticSupport.js';
 import { plannabilityWarningText, resolveStudyPlanPlannability } from './studyPlanValidation.js';
 
 interface CourseExecutionServiceDeps {
@@ -109,11 +108,6 @@ function requireCurrentPlanRouteAuthority(
   ) {
     throw new AppError(ApiErrorCode.VersionConflict, 'StudyPlan source manifest is stale.');
   }
-  assertCurrentCurriculumObjectiveAuthoritySemanticSupport(curriculum, {
-    boundary: 'route_activation',
-    isBlockingEligible: (authorityRecordId) =>
-      repos.sourceAuthority.isBlockingEligible(authorityRecordId),
-  });
   return { plan, contract, curriculum };
 }
 

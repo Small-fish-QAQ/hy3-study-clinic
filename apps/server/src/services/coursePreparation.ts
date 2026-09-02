@@ -33,6 +33,7 @@ import {
 } from './curriculum.js';
 import { preflightStudyPlan, type StudyPlanAgentService } from './studyPlansAgent.js';
 import { listAcceptedAdvisoryVisuals } from './advisoryVisuals.js';
+import { validateObjectiveAuthoritySemanticSupport } from './objectiveAuthoritySemanticSupport.js';
 
 interface CoursePreparationDeps {
   repos: Repositories;
@@ -257,8 +258,27 @@ function assessFormalReadiness(
     (node) => node.learningUnit?.objectives.map((objective) => ({ node, objective })) ?? [],
   );
   const required = objectives.filter(({ objective }) => objective.priority !== 'optional');
-  const unresolved = required.filter(({ node, objective }) => {
-    if (objective.truthPremiseStatus !== 'independently_verified') return true;
+  const pendingObjectiveIds: string[] = [];
+  const blockedObjectiveIds: string[] = [];
+  const readyObjectiveIds: string[] = [];
+  for (const { node, objective } of required) {
+    if (!objective.semanticSupport) {
+      pendingObjectiveIds.push(objective.id);
+      continue;
+    }
+    const semanticAuthority = validateObjectiveAuthoritySemanticSupport(
+      curriculum,
+      [objective],
+      {
+        isBlockingEligible: (authorityRecordId) =>
+          repos.sourceAuthority.isBlockingEligible(authorityRecordId),
+      },
+      'formal_provider',
+    );
+    if (!semanticAuthority.valid || objective.truthPremiseStatus !== 'independently_verified') {
+      blockedObjectiveIds.push(objective.id);
+      continue;
+    }
     const sourceBlockIds = new Set(
       node.sourceReferences
         .map((reference) => reference.sourceBlockId)
@@ -276,17 +296,26 @@ function assessFormalReadiness(
         ),
       );
     });
-    if (!authorityReady) return true;
+    if (!authorityReady) {
+      blockedObjectiveIds.push(objective.id);
+      continue;
+    }
 
     // Once an accepted route exists, authority alone is insufficient: the
     // objective must have an accepted formal-checkpoint route item and that
     // item must remain launchable on the current Agenda. Question generation
     // itself remains launch-time work, but the path cannot be absent.
-    if (!route?.studyPlan || !route.agenda) return false;
+    if (!route?.studyPlan || !route.agenda) {
+      readyObjectiveIds.push(objective.id);
+      continue;
+    }
     const planItem = route.studyPlan.items.find(
       (item) => item.kind === 'formal_checkpoint' && item.objectiveIds.includes(objective.id),
     );
-    if (!planItem) return true;
+    if (!planItem) {
+      blockedObjectiveIds.push(objective.id);
+      continue;
+    }
     const planLaunch = repos.studyPlans
       .listLaunchValidations(route.studyPlan.id)
       .find((entry) => entry.planItemId === planItem.id);
@@ -295,18 +324,28 @@ function assessFormalReadiness(
       planLaunch.launch.status !== 'launchable' ||
       planLaunch.launch.capability !== 'assessment'
     ) {
-      return true;
+      blockedObjectiveIds.push(objective.id);
+      continue;
     }
     const agendaItem = route.agenda.items.find(
       (item) => item.linkedPlanItemId === planItem.id && item.kind === 'formal_checkpoint',
     );
-    return !agendaItem || agendaItem.launch.status !== 'launchable';
-  });
-  const unresolvedIds = unresolved.map(({ objective }) => objective.id).sort();
+    if (!agendaItem || agendaItem.launch.status !== 'launchable') {
+      blockedObjectiveIds.push(objective.id);
+      continue;
+    }
+    readyObjectiveIds.push(objective.id);
+  }
+  const unresolvedIds = [...pendingObjectiveIds, ...blockedObjectiveIds].sort();
   return {
-    status: unresolvedIds.length === 0 ? 'ready' : 'blocked',
+    status:
+      blockedObjectiveIds.length > 0
+        ? 'blocked'
+        : pendingObjectiveIds.length > 0
+          ? 'pending'
+          : 'ready',
     requiredObjectiveCount: required.length,
-    readyObjectiveCount: required.length - unresolvedIds.length,
+    readyObjectiveCount: readyObjectiveIds.length,
     unresolvedObjectiveIds: unresolvedIds,
     teachingOnlyObjectiveIds: unresolvedIds,
   };
@@ -498,17 +537,6 @@ export function createCoursePreparationService({
       formalReadiness,
       recoveryAuthority: recoveryAuthorityIdentity(overview),
     });
-    const readinessAttempted = repos.operations
-      .listForWorkspace(workspaceId, OPERATION_TYPE, 200)
-      .some((operation) =>
-        repos.operations.listEvents(operation.id).some((event) => {
-          if (event.kind !== 'preparation_step_completed') return false;
-          if (typeof event.payload !== 'object' || event.payload === null) return false;
-          const payload = event.payload as { action?: unknown; revision?: unknown };
-          return payload.action === 'prepare_assessment_readiness' && payload.revision === revision;
-        }),
-      );
-
     const checkpoints: CoursePreparation['checkpoints'] = {
       materials: materialsCurrent ? 'complete' : 'pending',
       concepts: conceptsCurrent ? 'complete' : materialsCurrent ? 'pending' : 'blocked',
@@ -517,11 +545,9 @@ export function createCoursePreparationService({
       assessmentReadiness:
         formalReadiness.status === 'ready'
           ? 'complete'
-          : activeRouteCurrent && readinessAttempted
+          : activeRouteCurrent && formalReadiness.status === 'blocked'
             ? 'blocked'
-            : activeRouteCurrent
-              ? 'pending'
-              : 'in_progress',
+            : 'pending',
     };
     const common = { workspaceId, revision, generatedAt, checkpoints, formalReadiness };
 
@@ -592,59 +618,15 @@ export function createCoursePreparationService({
       };
     }
 
-    // A current route remains usable while its immutable successor is prepared,
-    // but it must not hide a diagnosed Curriculum-recovery transition. In
-    // particular, legacy accepted Curricula without the current semantic-support
-    // contract need to reach the ordinary versioned successor path before
-    // assessment-readiness work can resume.
+    // Formal readiness is projected independently from Course teachability.
+    // Missing or evaluated-unavailable semantic authority never turns an
+    // otherwise current teaching route into a whole-Course failure.
     if (
       activeRouteCurrent &&
       !overview.pendingContract &&
       overview.curriculumRecovery?.remediationRequired !== true &&
       !proposedCurriculum
     ) {
-      if (formalReadiness.status !== 'ready') {
-        if (readinessAttempted) {
-          return {
-            overview,
-            contract,
-            missingConceptMaterialIds,
-            proposedCurriculum,
-            planningCurriculum,
-            formalReadiness,
-            projection: {
-              ...common,
-              state: 'blocked',
-              machineAction: null,
-              learnerAction: 'none',
-              learnerDecisionRequired: false,
-              canResume: false,
-              checkpoints: { ...checkpoints, assessmentReadiness: 'blocked' },
-              blocker: {
-                code: 'formal_assessment_readiness_unavailable',
-                message:
-                  '部分必修目标目前没有可独立验证的正式评估依据；课程仍可教学，但不能宣称已具备完整掌握验证路径。',
-              },
-            },
-          };
-        }
-        return {
-          overview,
-          contract,
-          missingConceptMaterialIds,
-          proposedCurriculum,
-          planningCurriculum,
-          formalReadiness,
-          projection: projectionForAction(
-            workspaceId,
-            revision,
-            generatedAt,
-            'prepare_assessment_readiness',
-            { ...checkpoints, assessmentReadiness: 'in_progress' },
-            formalReadiness,
-          ),
-        };
-      }
       return {
         overview,
         contract,

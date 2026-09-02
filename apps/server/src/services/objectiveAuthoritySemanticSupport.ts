@@ -106,7 +106,15 @@ export interface ValidateCurriculumObjectiveAuthoritySemanticSupportOptions {
 
 /** Every deterministic boundary that asserts objective-authority semantic support. */
 export type ObjectiveAuthoritySemanticSupportBoundary =
-  'proposal' | 'acceptance' | 'study_plan' | 'route_activation' | 'lesson_provider';
+  | 'proposal'
+  | 'acceptance'
+  | 'study_plan'
+  | 'route_activation'
+  | 'lesson_provider'
+  | 'sidecar_persistence'
+  | 'formal_provider'
+  | 'formal_admission'
+  | 'formal_credit';
 
 /**
  * The one authority-taxonomy split. Teaching entry keeps exact-quotation
@@ -117,6 +125,12 @@ export type ObjectiveAuthoritySemanticSupportBoundary =
  * artifact INVALIDITY stays fatal at every boundary.
  */
 export function boundaryRequiresFormalSemanticAuthority(
+  boundary: ObjectiveAuthoritySemanticSupportBoundary,
+): boolean {
+  return boundary !== 'lesson_provider' && boundary !== 'sidecar_persistence';
+}
+
+function boundaryRequiresFormalArtifactShape(
   boundary: ObjectiveAuthoritySemanticSupportBoundary,
 ): boolean {
   return boundary !== 'lesson_provider';
@@ -1254,6 +1268,7 @@ function validateCurriculumObjectiveAuthoritySemanticSupportScope(
   boundary: ObjectiveAuthoritySemanticSupportBoundary = 'acceptance',
 ): ProviderCandidateValidation {
   const requiresFormalSemanticAuthority = boundaryRequiresFormalSemanticAuthority(boundary);
+  const requiresFormalArtifactShape = boundaryRequiresFormalArtifactShape(boundary);
   const diagnostics: string[] = [];
   const diagnosticCodes: string[] = [];
   const add = (code: string, message: string): void => {
@@ -1266,13 +1281,17 @@ function validateCurriculumObjectiveAuthoritySemanticSupportScope(
       const objectiveDiagnosticStart = diagnostics.length;
       const proposition = curriculumObjectiveProposition(objective);
       // Teaching derives its own construct; only Formal may assess one.
-      if (requiresFormalSemanticAuthority && !objective.formalAssessmentConstruct) {
+      if (requiresFormalArtifactShape && !objective.formalAssessmentConstruct) {
         add(
           'semantic_construct_missing',
           `Objective ${objective.id} has no explicit assessment construct.`,
         );
       }
-      if (objective.priority === 'required' && objective.formalAssessmentReady !== true) {
+      if (
+        requiresFormalSemanticAuthority &&
+        objective.priority === 'required' &&
+        objective.formalAssessmentReady !== true
+      ) {
         add(
           'semantic_required_objective_not_ready',
           `Required objective ${objective.id} is not Formal-ready.`,
@@ -1501,6 +1520,7 @@ function validateCurriculumObjectiveAuthoritySemanticSupportScope(
         }
       }
       if (
+        requiresFormalSemanticAuthority &&
         artifact.verdict !== 'pass' &&
         (!confinedGeneralFailure || diagnostics.length > objectiveDiagnosticStart)
       ) {
@@ -1590,6 +1610,42 @@ export function assertCurrentLessonObjectiveAuthoritySemanticSupport(
     'lesson_provider',
   );
   assertCurrentObjectiveAuthoritySemanticSupportValidation(validation, 'lesson_provider');
+}
+
+/**
+ * Persist a schema-valid PASS or FAIL result without confusing evaluation
+ * success with Formal authority. The immutable sidecar may record a negative
+ * result; only Formal boundaries require PASS.
+ */
+export function assertPersistableObjectiveAuthoritySemanticSupport(
+  curriculum: Curriculum,
+  objectives: readonly CurriculumObjective[],
+  options: ValidateCurriculumObjectiveAuthoritySemanticSupportOptions = {},
+): void {
+  const validation = validateObjectiveAuthoritySemanticSupport(
+    curriculum,
+    objectives,
+    options,
+    'sidecar_persistence',
+  );
+  if (!validation.valid) throw new CurriculumObjectiveAuthoritySemanticSupportError(validation);
+}
+
+/** Canonical scoped gate used before Formal generation, admission, and credit. */
+export function assertCurrentFormalObjectiveAuthoritySemanticSupport(
+  curriculum: Curriculum,
+  objectives: readonly CurriculumObjective[],
+  options: ValidateCurriculumObjectiveAuthoritySemanticSupportOptions & {
+    boundary: 'formal_provider' | 'formal_admission' | 'formal_credit';
+  },
+): void {
+  const validation = validateObjectiveAuthoritySemanticSupport(
+    curriculum,
+    objectives,
+    options,
+    options.boundary,
+  );
+  assertCurrentObjectiveAuthoritySemanticSupportValidation(validation, options.boundary);
 }
 
 function assertCurrentObjectiveAuthoritySemanticSupportValidation(

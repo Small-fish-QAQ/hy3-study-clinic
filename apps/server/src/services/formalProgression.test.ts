@@ -680,7 +680,7 @@ function installSameUnitFormalActions() {
   };
 }
 
-function installTwoUnitSynthesisRoute() {
+function installTwoUnitSynthesisRoute(options: { withSecondSemanticSupport?: boolean } = {}) {
   const actions = installSameUnitFormalActions();
   const secondBlock = repos.materials.getBlock('blk_2')!;
   repos.materials.replaceConcepts('mat_1', [
@@ -703,13 +703,44 @@ function installTwoUnitSynthesisRoute() {
     'mat_1',
     revisionId,
   );
-  const secondAuthorityIds = admitted
-    .filter((bundle) => bundle.claims.some((claim) => claim.sourceBlockId === secondBlock.id))
-    .map((bundle) => bundle.record.id);
+  const secondAuthorityBundles = admitted.filter((bundle) =>
+    bundle.claims.some((claim) => claim.sourceBlockId === secondBlock.id),
+  );
+  const secondAuthorityIds = secondAuthorityBundles.map((bundle) => bundle.record.id);
+  const secondAuthorityClaimIds = secondAuthorityBundles.flatMap((bundle) =>
+    bundle.claims
+      .filter((claim) => claim.sourceBlockId === secondBlock.id)
+      .map((claim) => claim.id),
+  );
   expect(secondAuthorityIds).toHaveLength(2);
 
   const curriculum = repos.curricula.get('curriculum_1')!;
   const secondObjectiveId = 'objective_synthesis_2';
+  const supportedSecondObjective = makeSemanticallySupportedObjective(
+    {
+      id: secondObjectiveId,
+      title: 'Apply the second source premise',
+      description: 'Use the second source premise in an integrated response.',
+      truthPremiseStatus: 'independently_verified',
+      truthAuthorityRecordIds: secondAuthorityIds,
+      authorityClaimIds: secondAuthorityClaimIds,
+      priority: 'normal',
+      formalAssessmentReady: true,
+      formalAssessmentReadinessRationale:
+        'The exact second source premise is available for an integrated response.',
+      formalAssessmentConstruct: 'apply',
+      authorityEnvelopeTier: 'formal_sufficient',
+      authoritySourceBlockIds: [secondBlock.id],
+      formalEvidenceSourceBlockIds: [secondBlock.id],
+    },
+    'procedure',
+  );
+  const { semanticSupport: secondSemanticSupport, ...artifactFreeSecondObjective } =
+    supportedSecondObjective;
+  const secondObjective =
+    options.withSecondSemanticSupport === false
+      ? artifactFreeSecondObjective
+      : supportedSecondObjective;
   const secondUnit = {
     id: 'unit_2',
     parentId: 'root_1',
@@ -722,21 +753,13 @@ function installTwoUnitSynthesisRoute() {
         materialRevisionId: revisionId,
         structuralUnitId: null,
         sourceBlockId: secondBlock.id,
-        sourceBlockRevisionFingerprint: 'block-fp-2',
+        sourceBlockRevisionFingerprint: curriculumSourceBlockFingerprint(secondBlock, revisionId),
       },
     ],
     learningUnit: {
       conceptIds: ['con_2'],
       canonicalConceptIds: [],
-      objectives: [
-        {
-          id: secondObjectiveId,
-          title: 'Apply the second source premise',
-          description: 'Use the second source premise in an integrated response.',
-          truthPremiseStatus: 'independently_verified' as const,
-          truthAuthorityRecordIds: secondAuthorityIds,
-        },
-      ],
+      objectives: [secondObjective],
       prerequisiteUnitIds: ['unit_1'],
       graphRelationIds: [],
       riskIds: [],
@@ -775,7 +798,16 @@ function installTwoUnitSynthesisRoute() {
        (curriculum_id, node_id, ordinal, material_id, material_revision_id,
         structural_unit_id, source_block_id, source_block_revision_fingerprint)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).run(curriculum.id, secondUnit.id, 0, 'mat_1', revisionId, null, secondBlock.id, 'block-fp-2');
+  ).run(
+    curriculum.id,
+    secondUnit.id,
+    0,
+    'mat_1',
+    revisionId,
+    null,
+    secondBlock.id,
+    curriculumSourceBlockFingerprint(secondBlock, revisionId),
+  );
   db.prepare(
     `INSERT INTO curriculum_objective_index
        (curriculum_id, learning_unit_id, objective_id, truth_premise_status)
@@ -786,6 +818,11 @@ function installTwoUnitSynthesisRoute() {
       `INSERT INTO curriculum_objective_authority
          (curriculum_id, objective_id, authority_record_id) VALUES (?, ?, ?)`,
     ).run(curriculum.id, secondObjectiveId, authorityRecordId);
+  }
+  if (options.withSecondSemanticSupport !== false) {
+    repos.curricula.insertObjectiveSemanticSupportsIfAbsent(curriculum.id, [
+      secondSemanticSupport!,
+    ]);
   }
   const plan = repos.studyPlans.get('plan_1')!;
   db.prepare('UPDATE study_plan_versions SET payload = ? WHERE id = ?').run(
@@ -1234,6 +1271,30 @@ function correctCurriculumSourceFingerprints() {
   );
 }
 
+function removePrimarySemanticSupportForFixture() {
+  db.exec('DROP TRIGGER prevent_curriculum_objective_semantic_support_delete');
+  const removed = db
+    .prepare(
+      `DELETE FROM curriculum_objective_semantic_support
+       WHERE curriculum_id = ? AND objective_id = ?`,
+    )
+    .run('curriculum_1', 'objective_1');
+  if (removed.changes !== 1) {
+    throw new Error('Expected the primary semantic-support fixture row.');
+  }
+  db.exec(`
+    CREATE TRIGGER prevent_curriculum_objective_semantic_support_delete
+    BEFORE DELETE ON curriculum_objective_semantic_support
+    WHEN EXISTS (
+      SELECT 1 FROM curriculum_objective_index
+      WHERE curriculum_id = OLD.curriculum_id AND objective_id = OLD.objective_id
+    )
+    BEGIN
+      SELECT RAISE(ABORT, 'Curriculum objective semantic support is immutable');
+    END;
+  `);
+}
+
 function makePrimaryObjectiveApplicationCapable(
   formalAssessmentConstruct: FormalAssessmentConstruct = 'apply',
 ) {
@@ -1254,15 +1315,42 @@ function makePrimaryObjectiveApplicationCapable(
               authoritySourceBlockIds: objective.authoritySourceBlockIds ?? [],
               authorityClaimIds: objective.authorityClaimIds ?? [],
             },
-            'relationship',
+            formalAssessmentConstruct === 'identify'
+              ? 'recognition'
+              : formalAssessmentConstruct === 'explain'
+                ? 'relationship'
+                : 'procedure',
           );
         }),
       },
     };
   });
+  const updated = { ...curriculum, nodes };
   db.prepare('UPDATE curriculum_versions SET payload = ? WHERE id = ?').run(
-    JSON.stringify({ ...curriculum, nodes }),
+    JSON.stringify(updated),
     curriculum.id,
+  );
+  const support = updated.nodes
+    .flatMap((node) => node.learningUnit?.objectives ?? [])
+    .find((objective) => objective.id === 'objective_1')!.semanticSupport!;
+  db.exec('DROP TRIGGER IF EXISTS prevent_curriculum_objective_semantic_support_update');
+  db.prepare(
+    `UPDATE curriculum_objective_semantic_support
+     SET policy_version = ?, evaluator = ?, provider = ?, provider_model = ?, status = ?,
+         proposition_fingerprint = ?, binding_fingerprint = ?, payload = ?, evaluated_at = ?
+     WHERE curriculum_id = ? AND objective_id = ?`,
+  ).run(
+    support.policyVersion,
+    support.evaluator,
+    support.provider,
+    support.providerModel,
+    support.verdict,
+    support.propositionFingerprint,
+    support.bindingFingerprint,
+    JSON.stringify(support),
+    support.evaluatedAt,
+    curriculum.id,
+    support.objectiveId,
   );
 }
 
@@ -1424,31 +1512,26 @@ describe('formal progression service', () => {
   });
 
   /**
-   * Slice 5B. Same due-Review path, same evidence, only the objective's
-   * construct differs. `design` is a teaching construct with no deterministic
-   * Formal evidence predicate, so it must not stamp the persisted Formal
-   * question contract with the `application` demand rung - that rung is one of
-   * the gates of durable mastery.
+   * Slice 5B plus DOGFOOD-02A. `design` and `evaluate` remain valid teaching
+   * constructs, but neither has a deterministic Formal evidence predicate.
+   * The on-demand authority boundary now refuses the Formal launch before the
+   * provider can stamp any demand rung into a question contract.
    */
   it.each(['design', 'evaluate'] as const)(
-    'refuses the application demand rung to a teaching-only %s objective on the same Review path',
+    'refuses Formal launch for a teaching-only %s objective on the same Review path',
     async (construct) => {
+      makeDueReview(`teaching_only_${construct}`);
       makePrimaryObjectiveApplicationCapable(construct);
-      const application = createAssessmentEvidence(`teaching_only_${construct}`, T3, 'application');
-      expect(services.formalAssessments.reconcileEvidence(application.evidence.id).status).toBe(
-        'applied',
-      );
-      makeDueReview(construct);
       const proposalCall = vi.spyOn(provider, 'proposeAssessment');
 
-      const { launched } = await launchDueReview(construct);
-      const version = repos.formalAssessments.getVersion(launched.formalAssessmentVersionId!)!;
-
-      expect(proposalCall.mock.calls[0]?.[0].requiredRepresentation).not.toBe('application');
-      expect(version.items[0]?.representation).toBe('recall');
-      expect(
-        repos.formalProgression.listQuestionContractsForQuiz(version.progressionContext!.quizId),
-      ).toEqual([expect.objectContaining({ representation: 'recall' })]);
+      await expect(launchDueReview(construct)).rejects.toMatchObject({
+        code: 'VALIDATION_ERROR',
+        details: expect.objectContaining({
+          boundary: 'formal_provider',
+          diagnosticCodes: expect.arrayContaining(['semantic_construct_prohibited_v1']),
+        }),
+      });
+      expect(proposalCall).not.toHaveBeenCalled();
     },
   );
 
@@ -2452,13 +2535,12 @@ describe('formal progression service', () => {
     expect(db.prepare('SELECT COUNT(*) AS n FROM mastery_states').get()).toEqual({ n: 0 });
   });
 
-  it('keeps Formal Credit for an artifact-free objective bound to premise authority alone', () => {
+  it('keeps an artifact-free objective advisory even when premise authority exists', () => {
     // `objective_synthesis_2` carries no semantic-support artifact and owns no row
     // in the append-only support table, so it is exactly the legacy teaching shape
-    // the teaching-entry tier now admits. Formal credit is re-derived from the
-    // authority records at credit time, so relaxing the teaching gate must leave
-    // this decision byte-identical: authority still decides, the artifact never does.
-    const actions = installTwoUnitSynthesisRoute();
+    // the teaching-entry tier admits. Premise authority alone must not upgrade
+    // the objective into Formal authority.
+    const actions = installTwoUnitSynthesisRoute({ withSecondSemanticSupport: false });
     const secondObjective = repos.curricula
       .get('curriculum_1')!
       .nodes.find((node) => node.id === 'unit_2')!
@@ -2488,11 +2570,43 @@ describe('formal progression service', () => {
     const artifactFreeContract = contracts.find(
       (contract) => contract.primaryObjectiveId === actions.secondObjectiveId,
     )!;
-    expect(artifactFreeContract.admissibilityTier).toBe('tier_1_authorized_truth');
+    expect(artifactFreeContract.admissibilityTier).toBe('tier_3_advisory');
+    expect(artifactFreeContract.limitations).toContain(
+      'The resolved objective has no current passing semantic-authority support; result is advisory only.',
+    );
     expect(services.formalProgression.stateCreditingQuestionIdsForQuiz(quizId)).toEqual([
       `${quizId}_q1`,
-      `${quizId}_q2`,
     ]);
+  });
+
+  it('revalidates semantic PASS at credit time after an authorized contract loses its sidecar', () => {
+    const grade = insertGrade('semantic_credit_revalidation', 1);
+    const contracts = services.formalProgression.registerAssessmentContracts({
+      workspaceId: 'ws_1',
+      quizId: grade.quizId,
+      agendaId: 'agenda_1',
+      agendaItemId: 'agenda_item_1',
+      assessmentKind: 'formal_checkpoint',
+      contractVersionId: 'contract_1',
+      curriculumVersionId: 'curriculum_1',
+      studyPlanVersionId: 'plan_1',
+      executionSourceManifestFingerprint: 'manifest-fp',
+    });
+    expect(contracts[0]?.admissibilityTier).toBe('tier_1_authorized_truth');
+    expect(services.formalProgression.stateCreditingQuestionIdsForQuiz(grade.quizId)).toEqual([
+      grade.questionId,
+    ]);
+
+    removePrimarySemanticSupportForFixture();
+
+    expect(services.formalProgression.stateCreditingQuestionIdsForQuiz(grade.quizId)).toEqual([]);
+    const reconciled = services.formalProgression.reconcileAfterGrading(grade.gradingResultId)!;
+    expect(reconciled.evidence[0]).toMatchObject({
+      admissibilityTier: 'tier_1_authorized_truth',
+      stateCreditable: false,
+    });
+    expect(reconciled.reconciliations[0]?.status).toBe('rejected');
+    expect(db.prepare('SELECT COUNT(*) AS n FROM mastery_states').get()).toEqual({ n: 0 });
   });
 
   it('refuses Formal Credit for a teachable artifact-free objective before any state mutation', () => {
@@ -3201,6 +3315,229 @@ describe('formal progression service', () => {
       nextState: 'in_progress',
       reasonCodes: ['blocking_objective_evidence_missing'],
     });
+  });
+
+  it('evaluates a missing exact Formal objective before assessment generation and reuses the persisted PASS', async () => {
+    const actions = installSameUnitFormalActions();
+    removePrimarySemanticSupportForFixture();
+    expect(
+      repos.curricula
+        .get('curriculum_1')!
+        .nodes.flatMap((node) => node.learningUnit?.objectives ?? [])
+        .find((objective) => objective.id === 'objective_1')?.semanticSupport,
+    ).toBeUndefined();
+
+    const callOrder: string[] = [];
+    const evaluationCall = vi
+      .spyOn(provider, 'evaluateObjectiveAuthoritySupport')
+      .mockImplementation(async (input, options) => {
+        callOrder.push('semantic_evaluation');
+        const candidate = {
+          schemaVersion: 2 as const,
+          evaluations: input.objectives.map((objective) => ({
+            objectiveRef: objective.objectiveRef,
+            subjectDependency: 'source_specific_required' as const,
+            subjectDependencyRationale:
+              'The exact source-specific proposition requires the offered source authority.',
+            candidateLabels: objective.candidates.map((candidateEvidence) => ({
+              evidenceRef: candidateEvidence.evidenceRef,
+              relation: 'relevant' as const,
+            })),
+            supportGroups: [
+              {
+                evidenceRefs: [objective.candidates[0]!.evidenceRef],
+                supportType: 'relationship' as const,
+                rationale: 'The exact source relationship supports the complete proposition.',
+              },
+            ],
+          })),
+        };
+        const validation = options?.validateCandidate?.(candidate);
+        if (validation && !validation.valid) {
+          throw ProviderError.invalidOutput(validation.diagnostics.join('; '), 'candidate');
+        }
+        return candidate;
+      });
+    const proposeAssessment = provider.proposeAssessment.bind(provider);
+    const assessmentCall = vi
+      .spyOn(provider, 'proposeAssessment')
+      .mockImplementation(async (input, options) => {
+        callOrder.push('assessment_generation');
+        return proposeAssessment(input, options);
+      });
+    const firstRequest = {
+      command: command('launch_on_demand_semantic_pass', 'learner'),
+      agendaId: actions.agenda.id,
+      expectedAgendaVersion: actions.agenda.version,
+      agendaItemId: actions.checkpointAgendaItemId,
+      expectedContractId: 'contract_1',
+      expectedStudyPlanId: 'plan_1',
+      expectedExecutionSourceManifestFingerprint: 'manifest-fp',
+    };
+
+    const first = await services.courseActionLaunch.launch(firstRequest);
+    expect(first.kind).toBe('assessment');
+    expect(callOrder).toEqual(['semantic_evaluation', 'assessment_generation']);
+    expect(evaluationCall).toHaveBeenCalledTimes(1);
+    expect(evaluationCall.mock.calls[0]?.[0].objectives).toHaveLength(1);
+    expect(assessmentCall).toHaveBeenCalledTimes(1);
+    expect(
+      repos.curricula
+        .get('curriculum_1')!
+        .nodes.flatMap((node) => node.learningUnit?.objectives ?? [])
+        .find((objective) => objective.id === 'objective_1')?.semanticSupport,
+    ).toMatchObject({ objectiveId: 'objective_1', verdict: 'pass', provider: 'fake' });
+    expect(
+      db
+        .prepare(
+          `SELECT status FROM curriculum_objective_semantic_support
+           WHERE curriculum_id = ? AND objective_id = ?`,
+        )
+        .get('curriculum_1', 'objective_1'),
+    ).toEqual({ status: 'pass' });
+
+    await expect(services.courseActionLaunch.launch(firstRequest)).resolves.toEqual(first);
+    const second = await services.courseActionLaunch.launch({
+      ...firstRequest,
+      command: command('launch_reused_semantic_pass', 'learner'),
+      agendaItemId: actions.laterCheckpointAgendaItemId,
+    });
+    expect(second.kind).toBe('assessment');
+    expect(evaluationCall).toHaveBeenCalledTimes(1);
+    expect(assessmentCall).toHaveBeenCalledTimes(2);
+    expect(callOrder).toEqual([
+      'semantic_evaluation',
+      'assessment_generation',
+      'assessment_generation',
+    ]);
+  });
+
+  it('persists a validated semantic FAIL and refuses later Formal launches without assessment generation', async () => {
+    const actions = installSameUnitFormalActions();
+    removePrimarySemanticSupportForFixture();
+    const evaluationCall = vi
+      .spyOn(provider, 'evaluateObjectiveAuthoritySupport')
+      .mockImplementation(async (input, options) => {
+        const candidate = {
+          schemaVersion: 2 as const,
+          evaluations: input.objectives.map((objective) => ({
+            objectiveRef: objective.objectiveRef,
+            subjectDependency: 'source_specific_required' as const,
+            subjectDependencyRationale:
+              'The exact source-specific proposition was not supported by the offered evidence.',
+            candidateLabels: objective.candidates.map((candidateEvidence) => ({
+              evidenceRef: candidateEvidence.evidenceRef,
+              relation: 'unrelated' as const,
+            })),
+            supportGroups: [],
+          })),
+        };
+        const validation = options?.validateCandidate?.(candidate);
+        if (validation && !validation.valid) {
+          throw ProviderError.invalidOutput(validation.diagnostics.join('; '), 'candidate');
+        }
+        return candidate;
+      });
+    const assessmentCall = vi.spyOn(provider, 'proposeAssessment');
+    const request = {
+      agendaId: actions.agenda.id,
+      expectedAgendaVersion: actions.agenda.version,
+      agendaItemId: actions.checkpointAgendaItemId,
+      expectedContractId: 'contract_1',
+      expectedStudyPlanId: 'plan_1',
+      expectedExecutionSourceManifestFingerprint: 'manifest-fp',
+    };
+
+    await expect(
+      services.courseActionLaunch.launch({
+        command: command('launch_on_demand_semantic_fail', 'learner'),
+        ...request,
+      }),
+    ).rejects.toMatchObject({
+      code: 'VALIDATION_ERROR',
+      details: expect.objectContaining({
+        boundary: 'formal_provider',
+        diagnosticCodes: expect.arrayContaining(['semantic_support_failed']),
+      }),
+    });
+    expect(evaluationCall).toHaveBeenCalledTimes(1);
+    expect(assessmentCall).not.toHaveBeenCalled();
+    expect(
+      db
+        .prepare(
+          `SELECT status FROM curriculum_objective_semantic_support
+           WHERE curriculum_id = ? AND objective_id = ?`,
+        )
+        .get('curriculum_1', 'objective_1'),
+    ).toEqual({ status: 'fail' });
+
+    await expect(
+      services.courseActionLaunch.launch({
+        command: command('launch_existing_semantic_fail', 'learner'),
+        ...request,
+        agendaItemId: actions.laterCheckpointAgendaItemId,
+      }),
+    ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+    expect(evaluationCall).toHaveBeenCalledTimes(1);
+    expect(assessmentCall).not.toHaveBeenCalled();
+  });
+
+  it('cancels on-demand semantic evaluation without persisting authority or calling the assessment provider', async () => {
+    const actions = installSameUnitFormalActions();
+    removePrimarySemanticSupportForFixture();
+    const controller = new AbortController();
+    const evaluationCall = vi
+      .spyOn(provider, 'evaluateObjectiveAuthoritySupport')
+      .mockImplementation(async (input, options) => {
+        const candidate = {
+          schemaVersion: 2 as const,
+          evaluations: input.objectives.map((objective) => ({
+            objectiveRef: objective.objectiveRef,
+            subjectDependency: 'source_specific_required' as const,
+            subjectDependencyRationale: 'The exact source-specific proposition requires evidence.',
+            candidateLabels: objective.candidates.map((candidateEvidence) => ({
+              evidenceRef: candidateEvidence.evidenceRef,
+              relation: 'relevant' as const,
+            })),
+            supportGroups: [
+              {
+                evidenceRefs: [objective.candidates[0]!.evidenceRef],
+                supportType: 'relationship' as const,
+                rationale: 'The exact relationship supports the complete proposition.',
+              },
+            ],
+          })),
+        };
+        controller.abort();
+        options?.validateCandidate?.(candidate);
+        return candidate;
+      });
+    const assessmentCall = vi.spyOn(provider, 'proposeAssessment');
+
+    await expect(
+      services.courseActionLaunch.launch(
+        {
+          command: command('launch_cancelled_semantic_evaluation', 'learner'),
+          agendaId: actions.agenda.id,
+          expectedAgendaVersion: actions.agenda.version,
+          agendaItemId: actions.checkpointAgendaItemId,
+          expectedContractId: 'contract_1',
+          expectedStudyPlanId: 'plan_1',
+          expectedExecutionSourceManifestFingerprint: 'manifest-fp',
+        },
+        { signal: controller.signal },
+      ),
+    ).rejects.toMatchObject({ code: 'REQUEST_CANCELLED' });
+    expect(evaluationCall).toHaveBeenCalledTimes(1);
+    expect(assessmentCall).not.toHaveBeenCalled();
+    expect(
+      db
+        .prepare(
+          `SELECT COUNT(*) AS n FROM curriculum_objective_semantic_support
+           WHERE curriculum_id = ? AND objective_id = ?`,
+        )
+        .get('curriculum_1', 'objective_1'),
+    ).toEqual({ n: 0 });
   });
 
   it('launches a session-bound formal checkpoint through tracked Agent telemetry', async () => {

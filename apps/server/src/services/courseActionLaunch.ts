@@ -5,6 +5,8 @@ import {
   LaunchCourseActionRequestSchema,
   type CourseActionLaunchResult,
   type Curriculum,
+  type CurriculumNode,
+  type CurriculumObjective,
   type FormalAssessmentKind,
   type LaunchCourseActionRequest,
   type SessionAgendaItem,
@@ -13,7 +15,12 @@ import {
   type StudyPlanItemKind,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
-import type { LlmProvider, ProviderCallOptions } from '../llm/provider.js';
+import { ProviderError } from '../llm/errors.js';
+import {
+  MAX_STRUCTURED_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL,
+  type LlmProvider,
+  type ProviderCallOptions,
+} from '../llm/provider.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import type { AssessmentService } from './assessment.js';
@@ -25,6 +32,8 @@ import {
   enforceAgentCostPolicies,
   runTrackedAgentProviderOperation,
 } from './agentProviderRuntime.js';
+import { CURRICULUM_PROVIDER_TIMEOUT_MS, buildCurriculumExecutionContext } from './curriculum.js';
+import { buildCurriculumEvidenceCatalog } from './curriculumEvidence.js';
 import type { CourseCommandService } from './courseCommands.js';
 import {
   buildFormalAssessmentProposalCatalogue,
@@ -34,6 +43,17 @@ import type { FormalAssessmentsService } from './formalAssessments.js';
 import { toPublicQuiz } from './quizzes.js';
 import type { ReviewSuccessorService } from './reviewSuccessor.js';
 import { resolveLaunchForPlanItem } from './studyPlanValidation.js';
+import { createTelemetryProvider } from './providerTelemetry.js';
+import {
+  OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_BATCH,
+  OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES,
+  assertCurrentFormalObjectiveAuthoritySemanticSupport,
+  buildObjectiveAuthoritySemanticEvaluationScopes,
+  materializeObjectiveAuthoritySemanticSupport,
+  objectiveAuthoritySemanticEvaluationSourceFingerprint,
+  partitionObjectiveAuthoritySemanticEvaluationScopes,
+  validateObjectiveAuthoritySemanticEvaluationProposal,
+} from './objectiveAuthoritySemanticSupport.js';
 
 interface CourseActionLaunchDeps {
   repos: Repositories;
@@ -56,6 +76,80 @@ const AGENDA_KIND_BY_PLAN_KIND: Record<StudyPlanItemKind, SessionAgendaItem['kin
   due_review: 'due_review',
   adversarial_readiness: 'adversarial_readiness',
 };
+
+const FORMAL_ON_DEMAND_MAX_BATCHES =
+  OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES /
+  OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_BATCH;
+const COURSE_ACTION_OPERATION_LEASE_MS =
+  CURRICULUM_PROVIDER_TIMEOUT_MS *
+    (FORMAL_ON_DEMAND_MAX_BATCHES + 1) *
+    MAX_STRUCTURED_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL +
+  120_000;
+
+interface FormalObjectiveTarget {
+  node: CurriculumNode;
+  objective: CurriculumObjective;
+}
+
+function formalObjectiveTargets(
+  curriculum: Curriculum,
+  planItem: StudyPlanItem,
+): FormalObjectiveTarget[] {
+  if (planItem.objectiveIds.length === 0) {
+    throw new AppError(
+      ApiErrorCode.ValidationError,
+      'Formal assessment requires an exact Curriculum objective.',
+    );
+  }
+  if (new Set(planItem.objectiveIds).size !== planItem.objectiveIds.length) {
+    throw new AppError(
+      ApiErrorCode.ValidationError,
+      'Formal assessment objective scope contains duplicate identities.',
+    );
+  }
+  return planItem.objectiveIds.map((objectiveId) => {
+    const matches = curriculum.nodes.flatMap((node) =>
+      (node.learningUnit?.objectives ?? [])
+        .filter((objective) => objective.id === objectiveId)
+        .map((objective) => ({ node, objective })),
+    );
+    if (matches.length !== 1) {
+      throw new AppError(
+        ApiErrorCode.VersionConflict,
+        'Formal assessment objective ownership is stale.',
+        { objectiveId },
+      );
+    }
+    return matches[0]!;
+  });
+}
+
+function evaluationNodes(targets: readonly FormalObjectiveTarget[]): CurriculumNode[] {
+  const objectivesByNodeId = new Map<string, CurriculumObjective[]>();
+  for (const target of targets) {
+    objectivesByNodeId.set(target.node.id, [
+      ...(objectivesByNodeId.get(target.node.id) ?? []),
+      target.objective,
+    ]);
+  }
+  return [...objectivesByNodeId].map(([nodeId, objectives]) => {
+    const node = targets.find((target) => target.node.id === nodeId)!.node;
+    return {
+      ...node,
+      learningUnit: node.learningUnit ? { ...node.learningUnit, objectives } : null,
+    };
+  });
+}
+
+function contextHasExactExecutionSourceRevisions(
+  curriculum: Curriculum,
+  context: ReturnType<typeof buildCurriculumExecutionContext>,
+): boolean {
+  return (
+    JSON.stringify(curriculum.executionSourceManifest.revisions) ===
+    JSON.stringify(context.manifest.revisions)
+  );
+}
 
 function agendaBoundPlanItem(
   repos: Repositories,
@@ -159,6 +253,216 @@ export function createCourseActionLaunchService({
   formalAssessments,
   reviewSuccessor,
 }: CourseActionLaunchDeps) {
+  const inferenceProvider = createTelemetryProvider({
+    repos,
+    clock,
+    provider,
+    providerGeneration: () => 1,
+  });
+
+  async function ensureFormalObjectiveSemanticAuthority(input: {
+    curriculum: Curriculum;
+    plan: StudyPlan;
+    planItem: StudyPlanItem;
+    assessmentKind: FormalAssessmentKind;
+    operationId: string;
+    fencingToken: number;
+    studySessionId: string | null;
+    confirmedCostPolicyIds: string[];
+    assertCurrent: () => Curriculum;
+    providerOptions?: ProviderCallOptions;
+  }): Promise<Curriculum> {
+    const assertRequestCurrent = (): Curriculum => {
+      if (input.providerOptions?.signal?.aborted) throw ProviderError.cancelled();
+      return input.assertCurrent();
+    };
+    let current = input.curriculum;
+    let targets = formalObjectiveTargets(current, input.planItem);
+    const evaluatedTargets = targets.filter((target) => target.objective.semanticSupport);
+    if (evaluatedTargets.length > 0) {
+      assertCurrentFormalObjectiveAuthoritySemanticSupport(
+        current,
+        evaluatedTargets.map((target) => target.objective),
+        {
+          boundary: 'formal_provider',
+          isBlockingEligible: (authorityRecordId) =>
+            repos.sourceAuthority.isBlockingEligible(authorityRecordId),
+        },
+      );
+    }
+    const missingTargets = targets.filter((target) => !target.objective.semanticSupport);
+    if (missingTargets.length > 0) {
+      if (missingTargets.length > OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES) {
+        throw new AppError(
+          ApiErrorCode.ValidationError,
+          'Formal semantic-authority evaluation exceeds the fixed objective budget.',
+          {
+            kind: 'formal_objective_authority_semantic_support_budget_exceeded',
+            objectiveCount: missingTargets.length,
+            maxObjectives: OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES,
+          },
+        );
+      }
+      assertRequestCurrent();
+      const contract = repos.learningContracts.get(input.plan.contractVersionId);
+      if (
+        !contract ||
+        contract.workspaceId !== current.workspaceId ||
+        (contract.status !== 'learner_confirmed' && contract.status !== 'active')
+      ) {
+        throw new AppError(
+          ApiErrorCode.VersionConflict,
+          'Formal semantic-authority Contract ownership is stale.',
+        );
+      }
+      const context = buildCurriculumExecutionContext(repos, contract);
+      if (!contextHasExactExecutionSourceRevisions(current, context)) {
+        throw new AppError(
+          ApiErrorCode.VersionConflict,
+          'Formal semantic-authority source ownership is stale.',
+        );
+      }
+      const evidenceCatalog = buildCurriculumEvidenceCatalog({
+        workspaceId: current.workspaceId,
+        manifest: current.executionSourceManifest,
+        blocks: context.blocks,
+        preferredGroundings: context.authorityBundles.flatMap((bundle) =>
+          bundle.claims.map((claim) => ({
+            blockId: claim.sourceBlockId,
+            quote: claim.quote,
+            startOffset: claim.startOffset,
+            endOffset: claim.endOffset,
+            occurrenceCount: claim.occurrenceCount,
+            reanchored: false,
+          })),
+        ),
+      });
+      let batches: ReturnType<typeof partitionObjectiveAuthoritySemanticEvaluationScopes>;
+      try {
+        batches = partitionObjectiveAuthoritySemanticEvaluationScopes(
+          buildObjectiveAuthoritySemanticEvaluationScopes({
+            nodes: evaluationNodes(missingTargets),
+            sourceBlocks: context.blocks,
+            authorityBundles: context.authorityBundles,
+            evidenceCatalog,
+            isBlockingEligible: (authorityRecordId) =>
+              repos.sourceAuthority.isBlockingEligible(authorityRecordId),
+          }),
+          OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_BATCH,
+        );
+      } catch (error) {
+        throw new AppError(
+          ApiErrorCode.ValidationError,
+          'Formal semantic-authority evaluation scope is invalid.',
+          {
+            kind: 'formal_objective_authority_semantic_scope_invalid',
+            reason: error instanceof Error ? error.message : 'unknown',
+          },
+        );
+      }
+      const supportByObjectiveId = new Map<
+        string,
+        NonNullable<CurriculumObjective['semanticSupport']>
+      >();
+      const operationType =
+        input.assessmentKind === 'synthesis'
+          ? 'propose_synthesis_assessment'
+          : 'propose_formal_assessment';
+      for (const batch of batches) {
+        assertRequestCurrent();
+        const policyFingerprint = enforceAgentCostPolicies(repos, {
+          workspaceId: current.workspaceId,
+          operationType,
+          studySessionId: input.studySessionId,
+          at: clock.now().toISOString(),
+          confirmedPolicyIds: input.confirmedCostPolicyIds,
+        });
+        const proposal = await runTrackedAgentProviderOperation({
+          repos,
+          clock,
+          provider,
+          providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
+          operationId: input.operationId,
+          fencingToken: input.fencingToken,
+          workspaceId: current.workspaceId,
+          studySessionId: input.studySessionId,
+          learningUnitId:
+            new Set(missingTargets.map((target) => target.node.id)).size === 1
+              ? missingTargets[0]!.node.id
+              : null,
+          assessmentId: null,
+          operationType,
+          schemaFingerprint: 'objective-authority-semantic-evaluation-v4-formal-on-demand',
+          policyFingerprint,
+          sourceFingerprint: objectiveAuthoritySemanticEvaluationSourceFingerprint(batch),
+          providerOptions: input.providerOptions,
+          invoke: (options) =>
+            inferenceProvider.evaluateObjectiveAuthoritySupport(structuredClone(batch.input), {
+              ...options,
+              timeoutMs: input.providerOptions?.timeoutMs ?? CURRICULUM_PROVIDER_TIMEOUT_MS,
+              onRepairAttempt: (reason, category) => {
+                assertRequestCurrent();
+                if (category) options?.onRepairAttempt?.(reason, category);
+                else options?.onRepairAttempt?.(reason);
+              },
+              validateCandidate: (candidate) => {
+                assertRequestCurrent();
+                return validateObjectiveAuthoritySemanticEvaluationProposal(batch, candidate);
+              },
+            }),
+        });
+        assertRequestCurrent();
+        const evaluated = materializeObjectiveAuthoritySemanticSupport(batch, proposal, {
+          evaluator: 'independent-objective-authority-semantic-evaluator-v3',
+          provider: provider.name,
+          providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
+          evaluatedAt: clock.now().toISOString(),
+        });
+        for (const [objectiveId, support] of evaluated) {
+          if (supportByObjectiveId.has(objectiveId)) {
+            throw new AppError(
+              ApiErrorCode.ValidationError,
+              'Formal semantic-authority evaluation returned a duplicate objective.',
+              { objectiveId },
+            );
+          }
+          supportByObjectiveId.set(objectiveId, support);
+        }
+      }
+      const authoritative = assertRequestCurrent();
+      const authoritativeTargetIds = new Set(
+        formalObjectiveTargets(authoritative, input.planItem).map((target) => target.objective.id),
+      );
+      if (
+        supportByObjectiveId.size !== missingTargets.length ||
+        [...supportByObjectiveId.keys()].some(
+          (objectiveId) => !authoritativeTargetIds.has(objectiveId),
+        )
+      ) {
+        throw new AppError(
+          ApiErrorCode.VersionConflict,
+          'Formal semantic-authority objective scope changed before persistence.',
+        );
+      }
+      current = repos.curricula.insertObjectiveSemanticSupportsIfAbsent(authoritative.id, [
+        ...supportByObjectiveId.values(),
+      ]);
+    }
+
+    current = assertRequestCurrent();
+    targets = formalObjectiveTargets(current, input.planItem);
+    assertCurrentFormalObjectiveAuthoritySemanticSupport(
+      current,
+      targets.map((target) => target.objective),
+      {
+        boundary: 'formal_provider',
+        isBlockingEligible: (authorityRecordId) =>
+          repos.sourceAuthority.isBlockingEligible(authorityRecordId),
+      },
+    );
+    return current;
+  }
+
   async function launch(
     input: LaunchCourseActionRequest,
     opts?: ProviderCallOptions,
@@ -186,7 +490,10 @@ export function createCourseActionLaunchService({
         studySessionId: parsed.studySessionId ?? null,
         confirmedCostPolicyIds: parsed.confirmedCostPolicyIds ?? [],
       },
-      { studySessionId: operationStudySessionId },
+      {
+        studySessionId: operationStudySessionId,
+        leaseMs: COURSE_ACTION_OPERATION_LEASE_MS,
+      },
     );
     if (claim.replayPayload !== undefined) {
       return CourseActionLaunchResultSchema.parse(claim.replayPayload);
@@ -229,7 +536,7 @@ export function createCourseActionLaunchService({
       const item = agenda.items.find((candidate) => candidate.id === parsed.agendaItemId);
       if (!item) throw notFound('SessionAgenda item not found.');
       const plan = repos.studyPlans.get(parsed.expectedStudyPlanId);
-      const curriculum = state.activeCurriculumId
+      let curriculum = state.activeCurriculumId
         ? repos.curricula.get(state.activeCurriculumId)
         : undefined;
       const planItem = item.linkedPlanItemId
@@ -337,6 +644,111 @@ export function createCourseActionLaunchService({
           assessmentKind === 'formal_checkpoint' ||
           assessmentKind === 'targeted_repair' ||
           assessmentKind === 'due_review';
+        const assertFormalContextCurrent = (): Curriculum => {
+          const currentState = repos.courseExecution.get(parsed.command.workspaceId);
+          const currentAgenda = repos.sessionAgendas.get(parsed.agendaId);
+          const currentPlan = repos.studyPlans.get(parsed.expectedStudyPlanId);
+          const currentCurriculum = currentState.activeCurriculumId
+            ? repos.curricula.get(currentState.activeCurriculumId)
+            : undefined;
+          const currentItem = currentAgenda?.items.find(
+            (candidate) => candidate.id === parsed.agendaItemId,
+          );
+          if (
+            currentState.executionStatus !== 'active' ||
+            currentState.routeValidationStatus !== 'valid' ||
+            currentState.activeAgendaId !== parsed.agendaId ||
+            currentState.activeContractId !== parsed.expectedContractId ||
+            currentState.acceptedPlanId !== parsed.expectedStudyPlanId ||
+            !currentAgenda ||
+            currentAgenda.version !== parsed.expectedAgendaVersion ||
+            currentAgenda.executionSourceManifestFingerprint !==
+              parsed.expectedExecutionSourceManifestFingerprint ||
+            !currentPlan ||
+            currentPlan.status !== 'accepted' ||
+            currentPlan.contractVersionId !== parsed.expectedContractId ||
+            !currentCurriculum ||
+            currentCurriculum.status !== 'accepted' ||
+            currentCurriculum.contractVersionId !== parsed.expectedContractId ||
+            currentCurriculum.id !== currentPlan.curriculumVersionId ||
+            currentCurriculum.executionSourceManifest.fingerprint !==
+              parsed.expectedExecutionSourceManifestFingerprint ||
+            currentPlan.executionSourceManifestFingerprint !==
+              parsed.expectedExecutionSourceManifestFingerprint ||
+            currentAgenda.contractVersionId !== parsed.expectedContractId ||
+            currentAgenda.studyPlanVersionId !== currentPlan.id ||
+            currentAgenda.curriculumVersionId !== currentCurriculum.id ||
+            !currentItem
+          ) {
+            throw new AppError(
+              ApiErrorCode.VersionConflict,
+              'Formal assessment context changed during semantic-authority evaluation.',
+            );
+          }
+          const currentBound = agendaBoundPlanItem(repos, currentPlan, currentItem);
+          if (
+            !currentBound.ok ||
+            currentBound.planItem.id !== bound.planItem.id ||
+            currentBound.planItem.kind !== bound.planItem.kind ||
+            currentBound.planItem.curriculumLearningUnitId !==
+              bound.planItem.curriculumLearningUnitId ||
+            JSON.stringify(currentBound.planItem.objectiveIds) !==
+              JSON.stringify(bound.planItem.objectiveIds)
+          ) {
+            throw new AppError(
+              ApiErrorCode.VersionConflict,
+              'Formal assessment objective scope changed during semantic-authority evaluation.',
+            );
+          }
+          const currentLaunch = resolveLaunchForPlanItem(
+            repos,
+            clock,
+            parsed.command.workspaceId,
+            currentCurriculum,
+            currentBound.planItem,
+          );
+          if (
+            currentLaunch.status !== 'launchable' ||
+            currentLaunch.capability !== 'assessment' ||
+            currentLaunch.capability !== currentItem.launch.capability
+          ) {
+            throw new AppError(
+              ApiErrorCode.VersionConflict,
+              'Formal assessment is no longer launchable.',
+            );
+          }
+          const currentContract = repos.learningContracts.get(currentPlan.contractVersionId);
+          if (
+            !currentContract ||
+            currentContract.workspaceId !== parsed.command.workspaceId ||
+            (currentContract.status !== 'learner_confirmed' && currentContract.status !== 'active')
+          ) {
+            throw new AppError(
+              ApiErrorCode.VersionConflict,
+              'Formal assessment Contract is no longer current.',
+            );
+          }
+          const currentContext = buildCurriculumExecutionContext(repos, currentContract);
+          if (!contextHasExactExecutionSourceRevisions(currentCurriculum, currentContext)) {
+            throw new AppError(
+              ApiErrorCode.VersionConflict,
+              'Formal assessment source ownership changed during semantic-authority evaluation.',
+            );
+          }
+          return currentCurriculum;
+        };
+        curriculum = await ensureFormalObjectiveSemanticAuthority({
+          curriculum,
+          plan,
+          planItem: bound.planItem,
+          assessmentKind,
+          operationId: claim.operationId,
+          fencingToken: claim.fencingToken,
+          studySessionId: parsed.studySessionId ?? null,
+          confirmedCostPolicyIds: parsed.confirmedCostPolicyIds ?? [],
+          assertCurrent: assertFormalContextCurrent,
+          providerOptions: opts,
+        });
         const assessmentRequest = { ...request, ...(formalOnly ? { formalOnly: true } : {}) };
         const proposalCatalogue = buildFormalAssessmentProposalCatalogue({
           repos,
@@ -432,6 +844,7 @@ export function createCourseActionLaunchService({
             }),
         });
         return commands.complete(claim, () => {
+          assertFormalContextCurrent();
           const currentState = repos.courseExecution.get(parsed.command.workspaceId);
           const currentAgenda = repos.sessionAgendas.get(parsed.agendaId);
           const currentPlan = repos.studyPlans.get(parsed.expectedStudyPlanId);
@@ -491,6 +904,17 @@ export function createCourseActionLaunchService({
               'Assessment action is no longer launchable.',
             );
           }
+          assertCurrentFormalObjectiveAuthoritySemanticSupport(
+            currentCurriculum,
+            formalObjectiveTargets(currentCurriculum, finalBound.planItem).map(
+              (target) => target.objective,
+            ),
+            {
+              boundary: 'formal_admission',
+              isBlockingEligible: (authorityRecordId) =>
+                repos.sourceAuthority.isBlockingEligible(authorityRecordId),
+            },
+          );
           const currentAssessmentDiversity = assessmentDiversityForRoute({
             repos,
             workspaceId: parsed.command.workspaceId,

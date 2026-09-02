@@ -2053,17 +2053,24 @@ export function createCurriculumService({
       }
       lastCandidateValidation = materialized;
       assertValidMaterializedCurriculum(materialized, repairAttempted);
+      // Ordinary Course installation is structural and teaching-capable. The
+      // exact objective semantic check now runs on demand at the Formal
+      // boundary. Existing capability-recovery successors retain their
+      // stronger predecessor-preservation audit because that is a separate,
+      // explicitly diagnosed recovery operation.
       let materializedCapabilityRecovery = bindMaterializedCurriculumCapabilityRecovery({
         candidate: payload,
         objectiveIdByProposalKey: materialized.objectiveIdByProposalKey ?? new Map(),
         frontier: capabilityRecoveryFrontier,
       });
-      let objectiveAuthorityEvaluation = await evaluateObjectiveAuthority(
-        materialized,
-        'initial',
-        materializedCapabilityRecovery.requiredCapabilityPreservationByObjectiveId,
-        materializedCapabilityRecovery.recoveryOriginByObjectiveId,
-      );
+      let objectiveAuthorityEvaluation = capabilityRecoveryFrontier
+        ? await evaluateObjectiveAuthority(
+            materialized,
+            'initial',
+            materializedCapabilityRecovery.requiredCapabilityPreservationByObjectiveId,
+            materializedCapabilityRecovery.recoveryOriginByObjectiveId,
+          )
+        : { materialized, failedObjectiveIds: [], firstPass: [] };
       materialized = objectiveAuthorityEvaluation.materialized;
       if (objectiveAuthorityEvaluation.failedObjectiveIds.length > 0) {
         const deterministicRebind = applyObjectiveAuthoritySemanticDeterministicRebind({
@@ -2339,11 +2346,13 @@ export function createCurriculumService({
         createdAt: now,
         acceptedAt: null,
       };
-      assertCurrentCurriculumObjectiveAuthoritySemanticSupport(curriculum, {
-        boundary: 'proposal',
-        isBlockingEligible: (authorityRecordId) =>
-          repos.sourceAuthority.isBlockingEligible(authorityRecordId),
-      });
+      if (capabilityRecoveryFrontier) {
+        assertCurrentCurriculumObjectiveAuthoritySemanticSupport(curriculum, {
+          boundary: 'proposal',
+          isBlockingEligible: (authorityRecordId) =>
+            repos.sourceAuthority.isBlockingEligible(authorityRecordId),
+        });
+      }
       assertCurriculumCapabilityRecoveryLineage(curriculum, capabilityRecoveryFrontier);
       const semantic = evaluateCurriculumSemantics({
         curriculum,
@@ -2495,11 +2504,6 @@ export function createCurriculumService({
       if (!manifestsEqual(context.manifest, current.executionSourceManifest)) {
         throw new AppError(ApiErrorCode.VersionConflict, 'Curriculum source manifest is stale.');
       }
-      assertCurrentCurriculumObjectiveAuthoritySemanticSupport(current, {
-        boundary: 'acceptance',
-        isBlockingEligible: (authorityRecordId) =>
-          repos.sourceAuthority.isBlockingEligible(authorityRecordId),
-      });
       if (parsed.acceptanceBasis === 'explicit_local_policy') {
         const proposalEvent = repos.curricula
           .listEvents(current.id)
@@ -2566,14 +2570,6 @@ export function createCurriculumService({
         }
       }
       return commands.complete(claim, () => {
-        assertCurrentCurriculumObjectiveAuthoritySemanticSupport(
-          requireCurriculum(current.workspaceId, current.id),
-          {
-            boundary: 'acceptance',
-            isBlockingEligible: (authorityRecordId) =>
-              repos.sourceAuthority.isBlockingEligible(authorityRecordId),
-          },
-        );
         if (repos.curricula.list(current.workspaceId).at(-1)?.id !== current.id) {
           throw new AppError(
             ApiErrorCode.VersionConflict,

@@ -353,7 +353,7 @@ describe('ordinary Fake learning execution core loop', () => {
            WHERE c.operation_type = 'propose_formal_assessment'`,
         )
         .get(),
-    ).toEqual({ logicalCalls: 2, physicalAttempts: 2 });
+    ).toEqual({ logicalCalls: 3, physicalAttempts: 3 });
 
     const contracts = repos.formalProgression.listQuestionContractsForQuiz(launched.quiz.id);
     expect(contracts).toEqual([
