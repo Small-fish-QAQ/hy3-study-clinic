@@ -307,6 +307,71 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
+ * Replace representation-only detail objective keys with deterministic local
+ * identities before the strict detail schema or candidate validator sees them.
+ *
+ * Region identity and order come from the server-owned detail offer. Objective
+ * order remains exactly as proposed. If the response does not preserve that
+ * unambiguous unit structure, leave it untouched so the existing validators
+ * fail closed instead of guessing a mapping.
+ */
+function normalizeCurriculumDetailObjectiveKeys(
+  input: CurriculumDetailProposalInput,
+  candidate: unknown,
+): unknown {
+  if (!isRecord(candidate) || !Array.isArray(candidate.units)) return candidate;
+  const expectedRegionIds = input.regions.map((region) => region.regionId);
+  if (
+    candidate.units.length !== expectedRegionIds.length ||
+    new Set(expectedRegionIds).size !== expectedRegionIds.length
+  ) {
+    return candidate;
+  }
+
+  const alignedUnits: Array<{
+    unit: Record<string, unknown>;
+    objectives: Record<string, unknown>[];
+    regionId: string;
+  }> = [];
+  for (const [unitIndex, value] of candidate.units.entries()) {
+    const regionId = expectedRegionIds[unitIndex]!;
+    if (!isRecord(value) || value.regionId !== regionId || !Array.isArray(value.objectives)) {
+      return candidate;
+    }
+    const objectives: Record<string, unknown>[] = [];
+    for (const objective of value.objectives) {
+      if (!isRecord(objective)) return candidate;
+      objectives.push(objective);
+    }
+    alignedUnits.push({ unit: value, objectives, regionId });
+  }
+
+  return {
+    ...candidate,
+    units: alignedUnits.map(({ unit, objectives, regionId }) => ({
+      ...unit,
+      objectives: objectives.map((objective, objectiveIndex) => ({
+        ...objective,
+        key: `detail-objective-${regionId}-${objectiveIndex + 1}`,
+      })),
+    })),
+  };
+}
+
+function curriculumDetailCandidatePreprocessor(
+  input: CurriculumDetailProposalInput,
+): ProviderCandidatePreprocessor {
+  const stripUnsolicitedRecoveryRefs = !input.regions.some(
+    (region) => (region.capabilityRequirements?.length ?? 0) > 0,
+  );
+  return (candidate) =>
+    normalizeCurriculumDetailObjectiveKeys(
+      input,
+      stripUnsolicitedRecoveryRefs ? stripCapabilityRecoveryRefs(candidate) : candidate,
+    );
+}
+
+/**
  * Recover stable, individually valid peers from a schema-invalid collection.
  * This is intentionally narrower than permissive root parsing: every item
  * must still expose one unique well-formed local identity, and at least one
@@ -855,6 +920,7 @@ export class Hy3Provider implements LlmProvider {
       opts,
       [
         'Curriculum detail repair is bounded to this one retry. Preserve every offered region exactly once and keep identities within that region.',
+        'Objective keys are server-owned and normalized from each exact offered regionId plus objective ordinal before validation. Never merge, deduplicate, drop, or reorder objectives to change a key; preserve every proposed objective and its semantic fields.',
         "For every required objective, the authorityEnvelope attached to each selected evidence offer is decisive. Select evidence with formalEvidenceCount > 0 and keep the objective construct within that evidence offer's supportedConstructs.",
         "A broader region authorityEnvelope cannot lend authority to a different evidence offer. Never make required scope optional and never invent authority; narrow the wording to the selected evidence's narrowerClaim when necessary.",
         "For required_target_apply_missing, add a required apply objective using one exact evidence offer whose supportedConstructs contains apply. Keep it within that offer's source-stated ordered procedure and stated context; do not claim transfer, design, or broader deployment authority.",
@@ -863,9 +929,7 @@ export class Hy3Provider implements LlmProvider {
       {
         maxTokens: CURRICULUM_MAX_OUTPUT_TOKENS,
         schemaName: 'curriculum-detail-proposal-v2-claim-scope',
-        ...(input.regions.some((region) => (region.capabilityRequirements?.length ?? 0) > 0)
-          ? {}
-          : { candidatePreprocessor: stripCapabilityRecoveryRefs }),
+        candidatePreprocessor: curriculumDetailCandidatePreprocessor(input),
       },
     );
   }

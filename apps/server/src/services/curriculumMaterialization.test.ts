@@ -6,6 +6,7 @@ import {
 } from '@hy3-clinic/shared';
 import { FakeProvider } from '../llm/fakeProvider.js';
 import { Hy3Provider } from '../llm/hy3Provider.js';
+import type { CurriculumDetailProposalInput, RejectedCandidateCapture } from '../llm/provider.js';
 import { createCourseMapFixture } from '../testing/courseMapFixtures.js';
 import {
   analyzeCourseMapProposal,
@@ -228,6 +229,81 @@ function makeHy3Provider(fetchImpl: typeof fetch, timeoutMs = 30_000): Hy3Provid
     timeoutMs,
     fetchImpl,
   });
+}
+
+function sevenRegionDetailInput(): CurriculumDetailProposalInput {
+  const base = planCurriculumDetailBatches(planningInput())[0]!.input;
+  const template = base.regions[0]!;
+  return {
+    ...structuredClone(base),
+    batchKey: 'seven-region-objective-key-regression',
+    regions: Array.from({ length: 7 }, (_, index) => ({
+      ...structuredClone(template),
+      regionId: `course_map_region_${(index + 1).toString(16).padStart(24, '0')}`,
+      regionIndex: index,
+      title: `Objective key regression region ${index + 1}`,
+      learningIntent: `Understand the bounded source content for region ${index + 1}.`,
+      prerequisiteRegionIds: [],
+      synthesisGroups: [],
+    })),
+    limits: {
+      ...base.limits,
+      maxObjectivesTotal: 28,
+    },
+  };
+}
+
+async function repeatedProviderObjectiveKeyCandidate(
+  input: CurriculumDetailProposalInput,
+): Promise<CurriculumDetailProposalPayload> {
+  const candidate = await new FakeProvider().proposeCurriculumDetails(input);
+  for (const [unitIndex, unit] of candidate.units.entries()) {
+    const first = unit.objectives[0]!;
+    unit.objectives = [
+      {
+        ...first,
+        key: 'objective-1',
+        priority: 'normal',
+      },
+      {
+        ...structuredClone(first),
+        key: 'objective-2',
+        title: `Distinguish the second objective in region ${unitIndex + 1}`,
+        description: `Preserve a distinct second semantic objective for region ${unitIndex + 1}.`,
+        priority: 'normal',
+      },
+    ];
+  }
+  return candidate;
+}
+
+function withoutDetailObjectiveKeys(payload: CurriculumDetailProposalPayload): unknown {
+  return {
+    ...payload,
+    units: payload.units.map((unit) => ({
+      ...unit,
+      objectives: unit.objectives.map((objective) =>
+        Object.fromEntries(Object.entries(objective).filter(([key]) => key !== 'key')),
+      ),
+    })),
+  };
+}
+
+function expectedDetailObjectiveKeys(
+  input: CurriculumDetailProposalInput,
+  candidate: CurriculumDetailProposalPayload,
+): string[] {
+  return input.regions.flatMap((region, unitIndex) =>
+    candidate.units[unitIndex]!.objectives.map(
+      (_objective, objectiveIndex) => `detail-objective-${region.regionId}-${objectiveIndex + 1}`,
+    ),
+  );
+}
+
+function withoutObjectiveKey(
+  objective: CurriculumDetailProposalPayload['units'][number]['objectives'][number],
+): unknown {
+  return Object.fromEntries(Object.entries(objective).filter(([key]) => key !== 'key'));
 }
 
 function hangingFetch(): typeof fetch {
@@ -853,6 +929,167 @@ describe('bounded Curriculum detail materialization', () => {
 });
 
 describe('Curriculum detail Hy3 provider contract', () => {
+  it('T1 accepts the exact seven-unit repeated-key failure shape without losing objectives', async () => {
+    const input = sevenRegionDetailInput();
+    const rawCandidate = await repeatedProviderObjectiveKeyCandidate(input);
+    const rawValidation = CurriculumDetailProposalPayloadSchema.safeParse(rawCandidate);
+    expect(rawValidation.success).toBe(false);
+    if (rawValidation.success)
+      throw new Error('The raw duplicate-key fixture must fail the schema.');
+    expect(
+      rawValidation.error.issues.filter((issue) =>
+        issue.message.startsWith('duplicate Curriculum detail objective key:'),
+      ),
+    ).toHaveLength(12);
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse(JSON.stringify(rawCandidate)),
+    ) as unknown as typeof fetch;
+    const onRepairAttempt = vi.fn();
+
+    const payload = await makeHy3Provider(fetchImpl).proposeCurriculumDetails(input, {
+      validateCandidate: (candidate) => validateCurriculumDetailCandidate(candidate, input),
+      onRepairAttempt,
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(onRepairAttempt).not.toHaveBeenCalled();
+    expect(payload.units).toHaveLength(7);
+    expect(payload.units.flatMap((unit) => unit.objectives)).toHaveLength(14);
+    expect(
+      payload.units.flatMap((unit) => unit.objectives.map((objective) => objective.key)),
+    ).toEqual(expectedDetailObjectiveKeys(input, rawCandidate));
+    expect(withoutDetailObjectiveKeys(payload)).toEqual(withoutDetailObjectiveKeys(rawCandidate));
+  });
+
+  it('T2 normalizes repeated provider keys again after an unrelated bounded repair', async () => {
+    const input = sevenRegionDetailInput();
+    const repairedCandidate = await repeatedProviderObjectiveKeyCandidate(input);
+    const originalCandidate = {
+      ...structuredClone(repairedCandidate),
+      courseMapId: 'course_map_ffffffffffffffffffffffff',
+    };
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(originalCandidate)))
+      .mockResolvedValueOnce(
+        jsonResponse(JSON.stringify(repairedCandidate)),
+      ) as unknown as typeof fetch;
+    const onRepairAttempt = vi.fn();
+    const rejections: RejectedCandidateCapture[] = [];
+
+    const payload = await makeHy3Provider(fetchImpl).proposeCurriculumDetails(input, {
+      validateCandidate: (candidate) => validateCurriculumDetailCandidate(candidate, input),
+      onRepairAttempt,
+      onRejectedCandidate: (rejection) => rejections.push(rejection),
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(onRepairAttempt).toHaveBeenCalledExactlyOnceWith(
+      'candidate',
+      'SEMANTIC_VALIDATION_FAILURE',
+    );
+    expect(payload.units.flatMap((unit) => unit.objectives)).toHaveLength(14);
+    expect(
+      payload.units.flatMap((unit) => unit.objectives.map((objective) => objective.key)),
+    ).toEqual(expectedDetailObjectiveKeys(input, repairedCandidate));
+    expect(rejections).toHaveLength(1);
+    expect(rejections[0]!.candidate).toEqual(originalCandidate);
+    const repairRequest = JSON.parse(
+      String((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[1]![1]!.body),
+    ) as { messages: Array<{ content: string }> };
+    expect(repairRequest.messages.at(-1)!.content).toContain(
+      'Objective keys are server-owned and normalized from each exact offered regionId plus objective ordinal before validation.',
+    );
+    expect(repairRequest.messages.at(-1)!.content).toContain(
+      'Never merge, deduplicate, drop, or reorder objectives to change a key',
+    );
+  });
+
+  it('T3/T7 keeps distinct same-key objectives in their original order with all semantics intact', async () => {
+    const input = sevenRegionDetailInput();
+    const rawCandidate = await repeatedProviderObjectiveKeyCandidate(input);
+    rawCandidate.units[0]!.objectives[1]!.key = rawCandidate.units[0]!.objectives[0]!.key;
+    const expectedSemantics = withoutDetailObjectiveKeys(rawCandidate);
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse(JSON.stringify(rawCandidate)),
+    ) as unknown as typeof fetch;
+
+    const payload = await makeHy3Provider(fetchImpl).proposeCurriculumDetails(input, {
+      validateCandidate: (candidate) => validateCurriculumDetailCandidate(candidate, input),
+    });
+
+    expect(payload.units[0]!.objectives).toHaveLength(2);
+    expect(payload.units[0]!.objectives.map((objective) => objective.title)).toEqual([
+      rawCandidate.units[0]!.objectives[0]!.title,
+      rawCandidate.units[0]!.objectives[1]!.title,
+    ]);
+    expect(withoutDetailObjectiveKeys(payload)).toEqual(expectedSemantics);
+  });
+
+  it('T4/T5 derives the same keys when provider placeholders change or are omitted', async () => {
+    const input = sevenRegionDetailInput();
+    const repeated = await repeatedProviderObjectiveKeyCandidate(input);
+    const changed = structuredClone(repeated);
+    for (const [unitIndex, unit] of changed.units.entries()) {
+      for (const [objectiveIndex, objective] of unit.objectives.entries()) {
+        objective.key = `provider-changed-${unitIndex + 1}-${objectiveIndex + 1}`;
+      }
+    }
+    const omitted = structuredClone(changed) as unknown as {
+      units: Array<{ objectives: Array<Record<string, unknown>> }>;
+    };
+    for (const unit of omitted.units) {
+      for (const objective of unit.objectives) delete objective.key;
+    }
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(repeated)))
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(changed)))
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(omitted))) as unknown as typeof fetch;
+    const provider = makeHy3Provider(fetchImpl);
+    const options = {
+      validateCandidate: (candidate: unknown) =>
+        validateCurriculumDetailCandidate(candidate, input),
+    };
+
+    const first = await provider.proposeCurriculumDetails(input, options);
+    const second = await provider.proposeCurriculumDetails(input, options);
+    const third = await provider.proposeCurriculumDetails(input, options);
+
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(second).toEqual(first);
+    expect(third).toEqual(first);
+    expect(
+      first.units.flatMap((unit) => unit.objectives.map((objective) => objective.key)),
+    ).toEqual(expectedDetailObjectiveKeys(input, repeated));
+  });
+
+  it('T6 retains the global uniqueness fence over server-owned detail identities', async () => {
+    const input = sevenRegionDetailInput();
+    const rawCandidate = await repeatedProviderObjectiveKeyCandidate(input);
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse(JSON.stringify(rawCandidate)),
+    ) as unknown as typeof fetch;
+    const normalized = await makeHy3Provider(fetchImpl).proposeCurriculumDetails(input);
+    const canonicalDuplicate = structuredClone(normalized);
+    canonicalDuplicate.units[0]!.objectives[1]!.key =
+      canonicalDuplicate.units[0]!.objectives[0]!.key;
+
+    const parsed = CurriculumDetailProposalPayloadSchema.safeParse(canonicalDuplicate);
+    expect(parsed.success).toBe(false);
+    if (parsed.success)
+      throw new Error('A canonical duplicate objective identity must fail closed.');
+    expect(parsed.error.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'custom',
+          path: ['units', 0, 'objectives', 1, 'key'],
+          message: expect.stringContaining('duplicate Curriculum detail objective key:'),
+        }),
+      ]),
+    );
+  });
+
   it('accepts valid detail output and repairs one semantic failure', async () => {
     const batch = planCurriculumDetailBatches(planningInput())[0]!;
     const valid = await new FakeProvider().proposeCurriculumDetails(batch.input);
@@ -871,7 +1108,10 @@ describe('Curriculum detail Hy3 provider contract', () => {
       onRepairAttempt,
     });
 
-    expect(payload).toEqual(valid);
+    expect(withoutDetailObjectiveKeys(payload)).toEqual(withoutDetailObjectiveKeys(valid));
+    expect(
+      payload.units.flatMap((unit) => unit.objectives.map((objective) => objective.key)),
+    ).toEqual(expectedDetailObjectiveKeys(batch.input, valid));
     expect(fetchImpl).toHaveBeenCalledTimes(2);
     expect(onRepairAttempt).toHaveBeenCalledExactlyOnceWith(
       'candidate',
@@ -935,7 +1175,10 @@ describe('Curriculum detail Hy3 provider contract', () => {
       onRepairAttempt,
     });
 
-    expect(payload).toEqual(valid);
+    expect(withoutDetailObjectiveKeys(payload)).toEqual(withoutDetailObjectiveKeys(valid));
+    expect(
+      payload.units.flatMap((unit) => unit.objectives.map((objective) => objective.key)),
+    ).toEqual(expectedDetailObjectiveKeys(batch.input, valid));
     expect(fetchImpl).toHaveBeenCalledTimes(3);
     expect(onRepairAttempt.mock.calls).toEqual([
       ['schema', 'PROVIDER_FORMAT_INCOMPATIBILITY'],
@@ -1001,7 +1244,12 @@ describe('Curriculum detail Hy3 provider contract', () => {
       priority: 'required',
       evidence: [{ evidenceId: selectedEvidenceId }],
     });
-    expect(payload.units[0]!.objectives[0]).toEqual(originalObjective);
+    expect(withoutObjectiveKey(payload.units[0]!.objectives[0]!)).toEqual(
+      withoutObjectiveKey(originalObjective),
+    );
+    expect(payload.units[0]!.objectives[0]!.key).toBe(
+      `detail-objective-${batch.input.regions[0]!.regionId}-1`,
+    );
     expect(payload.units[0]!.objectives[0]).toMatchObject({
       title: 'Apply the source in production',
       description: 'Apply a broader procedure than the evidence supports.',
@@ -1063,7 +1311,7 @@ describe('Curriculum detail Hy3 provider contract', () => {
               code: 'required_objective_formal_authority_missing',
               facts: {
                 courseMapRegionId: batch.input.regions[0]!.regionId,
-                objectiveKey: objective.key,
+                objectiveKey: `detail-objective-${batch.input.regions[0]!.regionId}-1`,
                 claimedConstruct: 'apply',
                 protectedPriority: 'required',
                 selectedEvidenceIds: [selectedEvidenceId],

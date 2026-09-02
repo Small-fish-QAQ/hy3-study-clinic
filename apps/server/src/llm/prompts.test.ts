@@ -976,4 +976,19 @@ describe('prompt trust boundaries', () => {
     expect(content).not.toContain('PRIVATE_DETAIL_PREDECESSOR_OBJECTIVE_ID');
     expect(content).not.toContain('predecessorObjectiveId');
   });
+
+  it('makes detail objective keys an explicit server-owned representation detail', () => {
+    const content = curriculumDetailProposalMessages(curriculumDetailPromptInput(false))
+      .map((message) => message.content)
+      .join('\n');
+    const shape = promptShape(content);
+
+    expect(shape).not.toContain('"key":');
+    expect(content).not.toContain('"key":"objective-1"');
+    expect(content).toContain('Do not output objective key fields.');
+    expect(content).toContain('exact offered regionId and the objective ordinal');
+    expect(content).toContain(
+      'no semantic, reference, lifecycle, persistence, or learner authority',
+    );
+  });
 });
