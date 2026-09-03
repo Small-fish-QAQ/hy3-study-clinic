@@ -25,7 +25,7 @@ import {
 } from '../testing/fixtures.js';
 import { fixedClock } from '../util/ids.js';
 import { createServices, type Services } from './index.js';
-import { resolveStudyPlanPlannability } from './studyPlanValidation.js';
+import { deriveTeachUnitDurations, resolveStudyPlanPlannability } from './studyPlanValidation.js';
 import { TEACHING_SKELETON_PLANNER_VERSION } from './teachingSkeletonPlanner.js';
 import {
   fingerprintObjectiveAuthorityBinding,
@@ -582,12 +582,26 @@ function setTeachingPlanObjectiveIds(harness: Harness, objectiveIds: string[]): 
       item.kind === 'teach_unit' && item.curriculumLearningUnitId === harness.learningUnitId,
   )!;
   planItem.objectiveIds = objectiveIds;
+  plan.items = deriveTeachUnitDurations(
+    harness.repos.curricula.get(harness.curriculumId)!,
+    plan.items,
+  ).derivedItems;
+  const derivedPlanItem = plan.items.find((item) => item.id === planItem.id)!;
   harness.db
     .prepare('UPDATE study_plan_versions SET payload = ? WHERE id = ?')
     .run(JSON.stringify(plan), plan.id);
   harness.db
     .prepare('UPDATE study_plan_items SET objective_ids = ? WHERE plan_id = ? AND plan_item_id = ?')
     .run(JSON.stringify(objectiveIds), plan.id, planItem.id);
+  const agenda = structuredClone(harness.repos.sessionAgendas.list('ws_1').at(-1)!);
+  agenda.items = agenda.items.map((item) =>
+    item.linkedPlanItemId === derivedPlanItem.id
+      ? { ...item, estimatedMinutes: derivedPlanItem.estimatedMinutes }
+      : item,
+  );
+  harness.db
+    .prepare('UPDATE session_agendas SET payload = ? WHERE id = ?')
+    .run(JSON.stringify(agenda), agenda.id);
 }
 
 function addSameUnitRouteAndDeferredObjectives(harness: Harness) {

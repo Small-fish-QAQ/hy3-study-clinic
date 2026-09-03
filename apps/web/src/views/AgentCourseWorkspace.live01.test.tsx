@@ -304,6 +304,14 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
             version: 1,
             predecessorId: null,
             ...input.fields,
+            deadline: input.fields.deadline ?? null,
+            studyBudget: input.fields.studyBudget ?? {
+              minutesPerDay: null,
+              minutesPerWeek: null,
+              preferredSessionMinutes: null,
+              unavailablePeriods: [],
+              availabilityPolicy: 'estimate',
+            },
             status: 'draft',
             proposedBy: 'learner',
             learnerConfirmedAt: null,
@@ -327,9 +335,14 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
     const firstRender = renderWorkspace();
 
     await openContractEditor(user);
+    expect(screen.queryByText('你能投入多少时间？')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('每天可用分钟')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('每周可用分钟')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('单次学习分钟（可选）')).not.toBeInTheDocument();
+    expect(screen.queryByText('希望何时完成？')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('截止时间（可选）')).not.toBeInTheDocument();
     await user.type(screen.getByLabelText('学习意图'), '掌握课程内容');
     await user.type(screen.getByLabelText('目标结果'), '完成课程学习');
-    await user.type(screen.getByLabelText('每天可用分钟'), '30');
     await user.type(screen.getByLabelText(/课程主题范围/), '认知科学');
     await user.selectOptions(
       screen.getByLabelText(`${documentSummary.title}资料角色`),
@@ -356,6 +369,9 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
       materialRoleAssignmentVersion: strandedProposal.version,
       role: 'course_material',
     });
+    expect(createContract.mock.calls[0]![1].fields).not.toHaveProperty('deadline');
+    expect(createContract.mock.calls[0]![1].fields).not.toHaveProperty('studyBudget');
+    expect(createContract.mock.calls[0]![1].fields.desiredDepth).toBe('working_fluency');
 
     firstRender.unmount();
     renderWorkspace();
@@ -389,7 +405,6 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
     await openContractEditor(user);
     await user.type(screen.getByLabelText('学习意图'), '掌握课程内容');
     await user.type(screen.getByLabelText('目标结果'), '完成课程学习');
-    await user.type(screen.getByLabelText('每天可用分钟'), '30');
     await user.type(screen.getByLabelText(/课程主题范围/), '认知科学');
     await user.selectOptions(
       screen.getByLabelText(`${documentSummary.title}资料角色`),
@@ -424,7 +439,6 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
     await openContractEditor(user);
     await user.type(screen.getByLabelText('学习意图'), '掌握课程内容');
     await user.type(screen.getByLabelText('目标结果'), '完成课程学习');
-    await user.type(screen.getByLabelText('每天可用分钟'), '30');
     await user.type(screen.getByLabelText(/课程主题范围/), '认知科学');
     await user.selectOptions(
       screen.getByLabelText(`${documentSummary.title}资料角色`),

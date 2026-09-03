@@ -5310,7 +5310,7 @@ describe('formal progression service', () => {
     );
   });
 
-  it('cannot bypass the pre-acceptance Lesson plannability gate through a replan successor', () => {
+  it('derives replan duration before persistence and ignores a legacy resize successor input', () => {
     const acceptedPlan = repos.studyPlans.get('plan_1')!;
     db.prepare('UPDATE study_plan_versions SET payload = ? WHERE id = ?').run(
       JSON.stringify({
@@ -5347,12 +5347,12 @@ describe('formal progression service', () => {
     expect(replanned.studyPlan.status).toBe('proposed');
     expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBe('plan_1');
 
-    // Drive the replan successor below the explain item's 13-minute floor. Depth
-    // escalation alone leaves this fixture feasible, so the infeasibility is introduced
-    // deliberately here rather than asserted where it does not occur.
     const explainItem = replanned.studyPlan.items.find((item) =>
       item.objectiveIds.includes('objective_1'),
     )!;
+    const systemMinutes = explainItem.estimatedMinutes;
+    expect(systemMinutes).toBeGreaterThan(11);
+    expect(repos.studyPlans.get(replanned.studyPlan.id)?.items).toEqual(replanned.studyPlan.items);
     const edited = services.studyPlansAgent.applyDraftEdit({
       command: command('shrink_gate_bypass', 'learner'),
       studyPlanId: replanned.studyPlan.id,
@@ -5367,39 +5367,27 @@ describe('formal progression service', () => {
         reason: 'Shrink the teaching item below its required-teaching floor.',
       },
     });
-    expect(edited.plannability).toEqual([
-      {
-        planItemId: explainItem.id,
-        curriculumLearningUnitId: 'unit_1',
-        planningCode: 'protected_budget_exceeds_agenda',
-        targetDepth: explainItem.targetDepth,
-        estimatedMinutes: 11,
-        remedies: ['increase_minutes', 'reduce_depth'],
-      },
-    ]);
+    expect(edited.plannability).toEqual([]);
+    expect(
+      edited.studyPlan.items.find((item) => item.id === explainItem.id)?.estimatedMinutes,
+    ).toBe(systemMinutes);
 
-    const executionBefore = repos.courseExecution.get('ws_1');
-    expect(() =>
-      services.courseExecution.decideStudyPlan({
-        command: command('accept_gate_bypass', 'learner'),
-        studyPlanId: edited.studyPlan.id,
-        expectedVersion: edited.studyPlan.version,
-        expectedContractId: 'contract_1',
-        expectedCurriculumId: 'curriculum_1',
-        expectedExecutionSourceManifestFingerprint: 'manifest-fp',
-        decision: 'accept',
-        reason: null,
-      }),
-    ).toThrow(/cannot be planned as a Lesson/u);
-
-    // The replan lineage is subject to the same gate, and the refusal wrote nothing.
-    expect(repos.studyPlans.get(edited.studyPlan.id)?.status).toBe('proposed');
-    expect(repos.studyPlans.get('plan_1')?.status).toBe('accepted');
-    expect(repos.courseExecution.get('ws_1')).toMatchObject({
-      acceptedPlanId: 'plan_1',
-      version: executionBefore.version,
-      activeAgendaId: executionBefore.activeAgendaId,
+    const proposedItems = JSON.stringify(edited.studyPlan.items);
+    const accepted = services.courseExecution.decideStudyPlan({
+      command: command('accept_gate_bypass', 'learner'),
+      studyPlanId: edited.studyPlan.id,
+      expectedVersion: edited.studyPlan.version,
+      expectedContractId: 'contract_1',
+      expectedCurriculumId: 'curriculum_1',
+      expectedExecutionSourceManifestFingerprint: 'manifest-fp',
+      decision: 'accept',
+      reason: null,
     });
+
+    expect(JSON.stringify(accepted.decidedPlan.items)).toBe(proposedItems);
+    expect(repos.studyPlans.get(edited.studyPlan.id)?.status).toBe('accepted');
+    expect(repos.studyPlans.get('plan_1')?.status).toBe('superseded');
+    expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBe(edited.studyPlan.id);
   });
 
   it('qualifies only meaningful triggers and preserves the route through reject then accept', () => {

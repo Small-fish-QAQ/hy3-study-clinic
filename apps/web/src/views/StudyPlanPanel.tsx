@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type {
   AgendaLaunchCapability,
   DesiredDepth,
@@ -28,13 +27,6 @@ const PLAN_STATUS_TEXT: Record<string, string> = {
   rejected: '已拒绝',
   superseded: '已被新路线替代',
   closed: '已结束',
-};
-
-const FEASIBILITY_TEXT: Record<string, string> = {
-  feasible: '时间可行',
-  at_risk: '时间存在风险',
-  infeasible: '时间不足',
-  unknown: '等待估算',
 };
 
 const RECOMMENDATION_TEXT: Record<string, string> = {
@@ -68,17 +60,17 @@ const PLANNABILITY_TEXT: Record<StudyPlanItemPlannability['planningCode'], strin
   lesson_slot_limit_exceeded:
     '该单元在当前深度下需要的讲解环节超过单节课上限。增加时长无法解决环节数量上限。',
   practice_slot_limit_exceeded: '该单元需要的练习环节超过单节课上限。',
-  protected_budget_exceeds_agenda: '该单元在当前深度下需要的讲解放不进当前时长。',
-  planned_budget_exceeds_agenda: '该单元在当前深度下需要的讲解放不进当前时长。',
-  agenda_budget_underfilled: '当前时长超过该单元在这个深度下可以如实支撑的讲解量。',
+  protected_budget_exceeds_agenda: '该单元记录的系统估算与当前深度不一致，需要重新生成路线。',
+  planned_budget_exceeds_agenda: '该单元记录的系统估算与当前深度不一致，需要重新生成路线。',
+  agenda_budget_underfilled: '该单元记录的系统估算与当前深度不一致，需要重新生成路线。',
 };
 
 /** Only remedies the server judged semantically valid for that code are offered. */
 const REMEDY_TEXT: Record<StudyPlanItemPlannability['remedies'][number], string> = {
   reduce_depth: '降低该单元的深度',
   raise_depth: '提高该单元的深度',
-  increase_minutes: '增加该单元的时长',
-  reduce_minutes: '减少该单元的时长',
+  increase_minutes: '重新生成系统时长估算',
+  reduce_minutes: '重新生成系统时长估算',
   revise_plan_structure: '调整提案中该单元的范围或结构',
 };
 
@@ -105,11 +97,10 @@ export interface StudyPlanPanelProps {
 }
 
 /**
- * Learner-driven depth and duration repair for one proposed teaching item. Both send
- * the existing `edit_plan` command, which creates a new proposed version; neither
- * changes anything by itself, and depth is never adjusted automatically.
+ * Learner-driven depth selection for one proposed teaching item. Duration is displayed
+ * as planner-owned output and has no learner edit control.
  */
-function TeachingItemRepairControls({
+function TeachingItemDepthControl({
   item,
   disabled,
   onEdit,
@@ -118,15 +109,9 @@ function TeachingItemRepairControls({
   disabled: boolean;
   onEdit: (edit: StudyPlanDraftEdit) => void;
 }) {
-  const [minutes, setMinutes] = useState(String(item.estimatedMinutes));
-  const parsedMinutes = Number(minutes);
-  const minutesValid =
-    /^\d+$/u.test(minutes.trim()) && Number.isInteger(parsedMinutes) && parsedMinutes > 0;
-  const minutesChanged = minutesValid && parsedMinutes !== item.estimatedMinutes;
   const depthLabelId = `depth-${item.id}`;
-  const minutesLabelId = `minutes-${item.id}`;
   return (
-    <div className="row" role="group" aria-label="调整该单元的深度或时长">
+    <div className="row" role="group" aria-label="调整该单元的深度">
       <label className="small" htmlFor={depthLabelId}>
         深度
       </label>
@@ -154,39 +139,6 @@ function TeachingItemRepairControls({
           </option>
         ))}
       </select>
-      <label className="small" htmlFor={minutesLabelId}>
-        时长（分钟）
-      </label>
-      <input
-        id={minutesLabelId}
-        className="small"
-        type="number"
-        min={1}
-        step={1}
-        inputMode="numeric"
-        value={minutes}
-        disabled={disabled}
-        aria-invalid={minutes.trim() === '' ? undefined : !minutesValid}
-        onChange={(event) => setMinutes(event.target.value)}
-      />
-      <button
-        type="button"
-        className="ghost small"
-        disabled={disabled || !minutesChanged}
-        onClick={() =>
-          onEdit({
-            kind: 'resize_time',
-            planItemId: item.id,
-            estimatedMinutes: parsedMinutes,
-            reason: `学习者将该单元时长由 ${item.estimatedMinutes} 分钟调整为 ${parsedMinutes} 分钟。`,
-          })
-        }
-      >
-        应用时长
-      </button>
-      {!minutesValid && minutes.trim() !== '' ? (
-        <span className="small wrong">时长需要是正整数分钟。</span>
-      ) : null}
     </div>
   );
 }
@@ -209,17 +161,12 @@ export function StudyPlanPanel({
   const plannabilityByItemId = new Map(plannability.map((entry) => [entry.planItemId, entry]));
   return (
     <section className="card" aria-label="学习路线">
-      <div className="row between">
-        <div>
-          <h3 style={{ marginBottom: 0 }}>学习路线</h3>
-          <p className="small muted" style={{ marginTop: 0 }}>
-            版本 {plan.version} · {PLAN_STATUS_TEXT[plan.status] ?? '已记录'} ·{' '}
-            {plan.feasibility.projectedMinutes} 分钟
-          </p>
-        </div>
-        <span className={`pill ${plan.feasibility.state === 'infeasible' ? 'wrong' : ''}`}>
-          {FEASIBILITY_TEXT[plan.feasibility.state] ?? '等待估算'}
-        </span>
+      <div>
+        <h3 style={{ marginBottom: 0 }}>学习路线</h3>
+        <p className="small muted" style={{ marginTop: 0 }}>
+          版本 {plan.version} · {PLAN_STATUS_TEXT[plan.status] ?? '已记录'} · 预计学习时间：约{' '}
+          {plan.feasibility.projectedMinutes} 分钟
+        </p>
       </div>
 
       <p>{learnerPlanText(plan.rationale)}</p>
@@ -259,7 +206,9 @@ export function StudyPlanPanel({
                 <strong>
                   {learnerPlanText(item.phase)} · {KIND_TEXT[item.kind]}
                 </strong>
-                <span className="small muted">{item.estimatedMinutes} 分钟</span>
+                <span className="small muted">
+                  {item.kind === 'teach_unit' ? '系统估算' : '预计'}约 {item.estimatedMinutes} 分钟
+                </span>
               </div>
               <p className="small">{learnerPlanText(item.rationale)}</p>
               <p className="small muted">
@@ -290,7 +239,7 @@ export function StudyPlanPanel({
               ) : null}
 
               {canEdit && item.kind === 'teach_unit' ? (
-                <TeachingItemRepairControls
+                <TeachingItemDepthControl
                   item={item}
                   disabled={busyAction !== null}
                   onEdit={onEdit}

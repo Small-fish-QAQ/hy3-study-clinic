@@ -1,4 +1,5 @@
 import {
+  ApiErrorCode,
   CreateAssessmentRequestSchema,
   fnv1a32,
   type AgendaLaunchCapability,
@@ -18,6 +19,7 @@ import {
   type StudyPlanPlannabilityRemedy,
   type StudyPlanProposalPayload,
 } from '@hy3-clinic/shared';
+import { AppError } from '../errors.js';
 import type { Repositories } from '../repositories/index.js';
 import { searchRetrievalUnits, visualDerivationToRetrievalUnit } from '../retrieval/lexical.js';
 import type { Clock } from '../util/ids.js';
@@ -897,20 +899,19 @@ export function resolveStudyPlanPlannability(
   });
 }
 
+const MIN_SUPPORTED_LESSON_MINUTES = 1;
+const MAX_SUPPORTED_LESSON_MINUTES = 480;
+
 /**
- * Reconcile teach_unit durations to be feasible. For each teach_unit, if a feasible
- * duration exists, replace estimatedMinutes with max(estimatedMinutes, feasibleMinimum).
- * If no feasible duration exists in [1, 480], the item remains structurally infeasible
- * and acceptance should fail-closed (preserving existing behavior for truly broken plans).
- *
- * Returns reconciled items and a list of structurally infeasible item IDs.
+ * Derive canonical teaching durations from the local Lesson planner. Provider- or
+ * learner-supplied minutes are compatibility input only and never act as a lower bound.
  */
-export function reconcileTeachUnitDurations(
+export function deriveTeachUnitDurations(
   curriculum: Curriculum,
   items: StudyPlanItem[],
-): { reconciledItems: StudyPlanItem[]; structurallyInfeasible: string[] } {
+): { derivedItems: StudyPlanItem[]; structurallyInfeasible: string[] } {
   const structurallyInfeasible: string[] = [];
-  const reconciledItems = items.map((item) => {
+  const derivedItems = items.map((item) => {
     if (item.kind !== 'teach_unit') return item;
 
     const feasibleMinimum = findMinimumFeasibleDuration(curriculum, {
@@ -921,18 +922,40 @@ export function reconcileTeachUnitDurations(
     });
 
     if (feasibleMinimum === null) {
-      // No feasible duration in [1, 480]; keep original and mark as structurally infeasible.
       structurallyInfeasible.push(item.id);
       return item;
     }
 
-    // Reconcile to the feasible minimum, preserving user/provider intent when they
-    // requested more time than the minimum.
-    const reconciledMinutes = Math.max(item.estimatedMinutes, feasibleMinimum);
-    return { ...item, estimatedMinutes: reconciledMinutes };
+    return { ...item, estimatedMinutes: feasibleMinimum };
   });
 
-  return { reconciledItems, structurallyInfeasible };
+  return { derivedItems, structurallyInfeasible };
+}
+
+/** Fail closed before a new proposal identity/version can be persisted. */
+export function deriveTeachUnitDurationsOrThrow(
+  curriculum: Curriculum,
+  items: StudyPlanItem[],
+): StudyPlanItem[] {
+  const { derivedItems, structurallyInfeasible } = deriveTeachUnitDurations(curriculum, items);
+  if (structurallyInfeasible.length === 0) return derivedItems;
+
+  throw new AppError(
+    ApiErrorCode.ValidationError,
+    `This StudyPlan contains teaching items that are structurally infeasible across the entire planner domain [${MIN_SUPPORTED_LESSON_MINUTES}, ${MAX_SUPPORTED_LESSON_MINUTES} minutes]. Revise the selected depth or objective structure.`,
+    {
+      reason: 'lesson_plannability_structurally_infeasible',
+      recommendationRequired: true,
+      items: structurallyInfeasible.map((planItemId) => {
+        const item = items.find((candidate) => candidate.id === planItemId);
+        return {
+          planItemId,
+          targetDepth: item?.targetDepth,
+          objectiveCount: item?.objectiveIds.length,
+        };
+      }),
+    },
+  );
 }
 
 /**
@@ -940,18 +963,12 @@ export function reconcileTeachUnitDurations(
  * objectives. Returns the smallest `targetMinutes` that makes the planner succeed,
  * or null if no feasible duration exists in the supported domain [1, 480].
  *
- * The planner has a feasible *window* [min, max], not a monotonic range: durations
- * below the window fail `protected_budget_exceeds_agenda`, durations in the window
- * pass, durations above fail `agenda_budget_underfilled`. The lower bound of the
- * window is monotonic (all smaller values fail with budget_exceeds), so we binary
- * search for the transition from protected_budget_exceeds_agenda to feasible.
+ * No monotonicity assumption is made. The supported domain is deliberately small, so
+ * every duration is checked in ascending order and the first exact feasible result wins.
  */
 export function findMinimumFeasibleDuration(
   curriculum: Curriculum,
-  item: Pick<
-    StudyPlanItem,
-    'kind' | 'curriculumLearningUnitId' | 'objectiveIds' | 'targetDepth'
-  >,
+  item: Pick<StudyPlanItem, 'kind' | 'curriculumLearningUnitId' | 'objectiveIds' | 'targetDepth'>,
 ): number | null {
   if (item.kind !== 'teach_unit') return null;
   if (item.objectiveIds.length === 0) return null;
@@ -979,31 +996,17 @@ export function findMinimumFeasibleDuration(
     objectives: resolved,
   };
 
-  // Binary search for the lower bound of the feasible window. Below this point,
-  // durations fail with protected_budget_exceeds_agenda (monotonic). At or above
-  // this point, the duration is either feasible or fails with agenda_budget_underfilled.
-  let low = 1;
-  let high = 480;
-  let candidate: number | null = null;
-
-  while (low <= high) {
-    const mid = Math.floor((low + high) / 2);
-    const verdict = resolveTeachingSlotFeasibility({ ...arithmeticInput, targetMinutes: mid });
-
-    if (verdict.feasible) {
-      // Found a feasible point; search lower for the minimum.
-      candidate = mid;
-      high = mid - 1;
-    } else if (!verdict.feasible && verdict.code === 'protected_budget_exceeds_agenda') {
-      // Below the window; search higher.
-      low = mid + 1;
-    } else {
-      // Above the window (agenda_budget_underfilled) or other failure; search lower.
-      high = mid - 1;
+  for (
+    let targetMinutes = MIN_SUPPORTED_LESSON_MINUTES;
+    targetMinutes <= MAX_SUPPORTED_LESSON_MINUTES;
+    targetMinutes += 1
+  ) {
+    if (resolveTeachingSlotFeasibility({ ...arithmeticInput, targetMinutes }).feasible) {
+      return targetMinutes;
     }
   }
 
-  return candidate;
+  return null;
 }
 
 /** Bounded learner-facing warning text. Wording is chosen by code, never generic. */

@@ -1009,7 +1009,7 @@ describe('CourseHomeView action and authority rendering', () => {
     expect(props.onOpenConceptGrounding).not.toHaveBeenCalled();
   });
 
-  it('shows the Contract deadline and deterministic formal progress counts', () => {
+  it('omits the historical Course deadline and shows deterministic formal progress counts', () => {
     const value = overview('launchable');
     value.formalProgress = {
       planItemCount: 5,
@@ -1024,10 +1024,11 @@ describe('CourseHomeView action and authority rendering', () => {
     render(<CourseHomeView {...homeProps(value)} />);
 
     const progress = screen.getByLabelText('目标与正式进度');
-    expect(progress).toHaveTextContent('截止时间');
-    expect(progress).toHaveTextContent('Asia/Shanghai');
+    expect(progress).not.toHaveTextContent('截止时间');
+    expect(progress).not.toHaveTextContent('Asia/Shanghai');
     expect(progress).toHaveTextContent('已完成 2 / 5 · 进行中 1 · 待修复 1 · 已延期 1');
     expect(screen.getByText('可计入状态的正式证据 3 · 仅供参考的证据 2')).toBeInTheDocument();
+    expect(screen.getByText('学习目标与范围')).toBeInTheDocument();
   });
 
   it('forwards enabled Plan edits instead of rendering a dead control', async () => {
@@ -1054,7 +1055,7 @@ describe('CourseHomeView action and authority rendering', () => {
   });
 });
 
-describe('StudyPlanPanel deterministic depth and duration repair', () => {
+describe('StudyPlanPanel learner depth and system-derived duration', () => {
   function proposedPanel(
     overrides: {
       plannability?: StudyPlanItemPlannability[];
@@ -1102,32 +1103,18 @@ describe('StudyPlanPanel deterministic depth and duration repair', () => {
     expect(onEdit.mock.calls[0]![0].kind).not.toBe('reorder');
   });
 
-  it('dispatches resize_time only for a changed, valid positive integer duration', async () => {
-    const user = userEvent.setup();
-    const { onEdit } = proposedPanel();
+  it('presents duration only as system-derived output with no learner minute control', () => {
+    const { onEdit, proposed } = proposedPanel();
 
-    const minutes = screen.getByLabelText('时长（分钟）', { selector: '#minutes-plan_item_1' });
-    const apply = screen.getAllByRole('button', { name: '应用时长' })[0]!;
-    // Unchanged duration is not a plan edit.
-    expect(apply).toBeDisabled();
-
-    await user.clear(minutes);
-    await user.type(minutes, '0');
-    expect(screen.getByText('时长需要是正整数分钟。')).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: '应用时长' })[0]!).toBeDisabled();
+    expect(screen.getByText(/预计学习时间：约/)).toHaveTextContent(
+      `预计学习时间：约 ${proposed.feasibility.projectedMinutes} 分钟`,
+    );
+    expect(
+      screen.getByText(`系统估算约 ${proposed.items[0]!.estimatedMinutes} 分钟`),
+    ).toBeVisible();
+    expect(screen.queryByLabelText('时长（分钟）')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '应用时长' })).not.toBeInTheDocument();
     expect(onEdit).not.toHaveBeenCalled();
-
-    await user.clear(minutes);
-    await user.type(minutes, '35');
-    await user.click(screen.getAllByRole('button', { name: '应用时长' })[0]!);
-
-    expect(onEdit).toHaveBeenCalledTimes(1);
-    expect(onEdit).toHaveBeenCalledWith({
-      kind: 'resize_time',
-      planItemId: 'plan_item_1',
-      estimatedMinutes: 35,
-      reason: expect.stringContaining('35'),
-    });
   });
 
   it('never offers more minutes as the repair for a Lesson segment ceiling', () => {
@@ -1154,7 +1141,7 @@ describe('StudyPlanPanel deterministic depth and duration repair', () => {
     expect(region).toHaveTextContent('并不代表课程依据已经具备');
   });
 
-  it('offers more minutes for a duration failure and marks only the affected item', () => {
+  it('treats a legacy duration mismatch as a system-regeneration issue', () => {
     proposedPanel({
       plannability: [
         {
@@ -1169,8 +1156,9 @@ describe('StudyPlanPanel deterministic depth and duration repair', () => {
     });
 
     const region = screen.getByRole('region', { name: '该单元暂时无法排课 plan_item_2' });
-    expect(region).toHaveTextContent('放不进当前时长');
-    expect(region).toHaveTextContent('增加该单元的时长');
+    expect(region).toHaveTextContent('系统估算与当前深度不一致');
+    expect(region).toHaveTextContent('重新生成系统时长估算');
+    expect(region).not.toHaveTextContent('增加该单元的时长');
     expect(
       screen.queryByRole('region', { name: '该单元暂时无法排课 plan_item_1' }),
     ).not.toBeInTheDocument();
@@ -1189,7 +1177,7 @@ describe('StudyPlanPanel deterministic depth and duration repair', () => {
     });
   });
 
-  it('disables every repair control while a plan action is in flight', () => {
+  it('disables the depth control while a plan action is in flight', () => {
     render(
       <StudyPlanPanel
         plan={plan('proposed')}
@@ -1206,10 +1194,7 @@ describe('StudyPlanPanel deterministic depth and duration repair', () => {
     );
 
     expect(screen.getByLabelText('深度', { selector: '#depth-plan_item_1' })).toBeDisabled();
-    expect(
-      screen.getByLabelText('时长（分钟）', { selector: '#minutes-plan_item_1' }),
-    ).toBeDisabled();
-    expect(screen.getAllByRole('button', { name: '应用时长' })[0]!).toBeDisabled();
+    expect(screen.queryByLabelText('时长（分钟）')).not.toBeInTheDocument();
   });
 
   it('keeps a refused plan decision visible and the proposal repairable', async () => {
@@ -1277,7 +1262,7 @@ describe('StudyPlanPanel deterministic depth and duration repair', () => {
 
     expect(screen.queryByLabelText('时长（分钟）')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '应用时长' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('group', { name: '调整该单元的深度或时长' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: '调整该单元的深度' })).not.toBeInTheDocument();
   });
 });
 

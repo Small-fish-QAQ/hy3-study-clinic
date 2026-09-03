@@ -14,7 +14,15 @@ export function buildPlanningRecommendations(
   curriculum: Curriculum,
   feasibility: StudyPlanFeasibility,
 ): StudyPlanRecommendation[] {
-  if (feasibility.projectedMinutes <= 0 || feasibility.state === 'feasible') return [];
+  // Without a learner-owned time budget/deadline there is no schedule shortfall to
+  // remediate. The projected duration remains advisory output, not a prompt to reduce
+  // depth, scope, or move a completion date.
+  if (
+    feasibility.projectedMinutes <= 0 ||
+    feasibility.availableMinutes === null ||
+    feasibility.state === 'feasible'
+  )
+    return [];
   const units = curriculum.nodes
     .filter((node) => node.kind === 'learning_unit' && node.learningUnit)
     .sort((left, right) => left.index - right.index);

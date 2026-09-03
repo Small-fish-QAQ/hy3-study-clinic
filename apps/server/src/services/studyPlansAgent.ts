@@ -25,10 +25,10 @@ import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
 import type { CourseCommandService } from './courseCommands.js';
-import { computeContractFeasibility } from './feasibility.js';
 import {
   PACE_BASELINE_POLICY_VERSION,
   buildUnitLaunchProfiles,
+  deriveTeachUnitDurationsOrThrow,
   diffStudyPlans,
   materializeDeferralRisk,
   planFeasibilityFromContract,
@@ -153,9 +153,11 @@ function requireCurriculum(
   return curriculum;
 }
 
-function studyPlanFeasibilityInput(availableMinutes: number | null) {
-  return planFeasibilityFromContract(availableMinutes, 0, 'unknown', [
-    'Projected effort will be computed locally after the semantic proposal.',
+function systemDerivedPlanFeasibility(projectedMinutes: number) {
+  return planFeasibilityFromContract(null, projectedMinutes, 'unknown', [
+    projectedMinutes === 0
+      ? 'Projected effort will be computed locally after the semantic proposal.'
+      : 'Teaching-unit time is derived locally from the selected depth and objectives.',
   ]);
 }
 
@@ -217,8 +219,6 @@ function buildProviderInput(
       openMistakes: 0,
     };
   });
-  const availableMinutes =
-    repos.learningContracts.getLatestFeasibility(contract.id)?.availableMinutes ?? null;
   return {
     profiles,
     input: {
@@ -230,12 +230,12 @@ function buildProviderInput(
           description: contract.targetOutcome.description,
           targetScore: contract.targetOutcome.targetScore,
         },
-        deadline: contract.deadline,
+        deadline: null,
         studyBudget: {
-          minutesPerDay: contract.studyBudget.minutesPerDay,
-          minutesPerWeek: contract.studyBudget.minutesPerWeek,
-          preferredSessionMinutes: contract.studyBudget.preferredSessionMinutes,
-          availabilityPolicy: contract.studyBudget.availabilityPolicy,
+          minutesPerDay: null,
+          minutesPerWeek: null,
+          preferredSessionMinutes: null,
+          availabilityPolicy: 'estimate',
         },
         desiredDepth: contract.desiredDepth,
         subjectBoundaries: contract.courseScope.subjectBoundaries,
@@ -267,7 +267,7 @@ function buildProviderInput(
         allowedItemKinds: profile.allowedItemKinds,
         launchableAssessmentModes: profile.launchableAssessmentModes,
       })),
-      feasibility: studyPlanFeasibilityInput(availableMinutes),
+      feasibility: systemDerivedPlanFeasibility(0),
     },
   };
 }
@@ -669,26 +669,13 @@ export function createStudyPlanAgentService({
           },
         );
       }
-      // Non-blocking by design. An arithmetically unplannable plan must still exist as
-      // a proposal the learner can repair with change_depth / resize_time; acceptance
-      // is where it is refused.
-      const plannability = resolveStudyPlanPlannability(curriculum, materialized.items);
+      // Time is proposal output. Derive it before the proposal identity/version is
+      // persisted so the learner confirms the exact content that can be accepted.
+      const derivedItems = deriveTeachUnitDurationsOrThrow(curriculum, materialized.items);
+      const plannability = resolveStudyPlanPlannability(curriculum, derivedItems);
       const planId = newId('study_plan');
-      const projectedMinutes = materialized.items.reduce(
-        (sum, item) => sum + item.estimatedMinutes,
-        0,
-      );
-      const contractFeasibility = computeContractFeasibility(
-        contract,
-        projectedMinutes,
-        clock.now(),
-      );
-      const feasibility = planFeasibilityFromContract(
-        contractFeasibility.availableMinutes,
-        projectedMinutes,
-        contractFeasibility.state,
-        contractFeasibility.assumptions,
-      );
+      const projectedMinutes = derivedItems.reduce((sum, item) => sum + item.estimatedMinutes, 0);
+      const feasibility = systemDerivedPlanFeasibility(projectedMinutes);
       const plan: StudyPlan = {
         id: planId,
         workspaceId: contract.workspaceId,
@@ -700,12 +687,12 @@ export function createStudyPlanAgentService({
         proposalTrigger: parsed.proposalTrigger,
         status: 'proposed',
         rationale: proposal.rationale,
-        items: materialized.items,
+        items: derivedItems,
         deferrals: materialized.deferrals,
         feasibility,
         recommendations: buildPlanningRecommendations(contract, curriculum, feasibility),
         paceBaseline: paceBaseline(contract, planId, projectedMinutes, feasibility.slackMinutes),
-        diff: diffStudyPlans(predecessor, materialized.items),
+        diff: diffStudyPlans(predecessor, derivedItems),
         provider: provider.name,
         providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
         learnerAcceptedAt: null,
@@ -1017,7 +1004,10 @@ export function createStudyPlanAgentService({
           },
         );
       }
-      const launches = items.map((item) => ({
+      // Every edited successor is a new proposal. Legacy resize_time/add-unit minute
+      // fields remain parseable, but the persisted teaching estimate is planner-owned.
+      const derivedItems = deriveTeachUnitDurationsOrThrow(curriculum, items);
+      const launches = derivedItems.map((item) => ({
         planItemId: item.id,
         launch: resolveLaunchForPlanItem(
           repos,
@@ -1035,26 +1025,16 @@ export function createStudyPlanAgentService({
           'Edited StudyPlan contains an unlaunchable item.',
         );
       }
-      const projectedMinutes = items.reduce((sum, item) => sum + item.estimatedMinutes, 0);
-      const contractFeasibility = computeContractFeasibility(
-        contract,
-        projectedMinutes,
-        clock.now(),
-      );
-      const feasibility = planFeasibilityFromContract(
-        contractFeasibility.availableMinutes,
-        projectedMinutes,
-        contractFeasibility.state,
-        contractFeasibility.assumptions,
-      );
-      const plannability = resolveStudyPlanPlannability(curriculum, items);
+      const projectedMinutes = derivedItems.reduce((sum, item) => sum + item.estimatedMinutes, 0);
+      const feasibility = systemDerivedPlanFeasibility(projectedMinutes);
+      const plannability = resolveStudyPlanPlannability(curriculum, derivedItems);
       const successorId = newId('study_plan');
       const successor: StudyPlan = {
         ...current,
         id: successorId,
         version: current.version + 1,
         predecessorId: current.id,
-        items,
+        items: derivedItems,
         deferrals,
         feasibility,
         paceBaseline: paceBaseline(
@@ -1063,7 +1043,7 @@ export function createStudyPlanAgentService({
           projectedMinutes,
           feasibility.slackMinutes,
         ),
-        diff: diffStudyPlans(current, items),
+        diff: diffStudyPlans(current, derivedItems),
         provider: 'local',
         providerModel: null,
         learnerAcceptedAt: null,

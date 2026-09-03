@@ -40,7 +40,11 @@ import type { AgendaWindowRolloverService } from './agendaWindowRollover.js';
 import { commandFingerprint } from './courseCommands.js';
 import type { CourseCommandService } from './courseCommands.js';
 import { validateObjectiveAuthoritySemanticSupport } from './objectiveAuthoritySemanticSupport.js';
-import { resolveAgendaBoundPlanItem, resolveLaunchForPlanItem } from './studyPlanValidation.js';
+import {
+  deriveTeachUnitDurationsOrThrow,
+  resolveAgendaBoundPlanItem,
+  resolveLaunchForPlanItem,
+} from './studyPlanValidation.js';
 import { createHash } from 'node:crypto';
 import { projectTaughtExposure, type PresentedTeachingSurface } from '@hy3-clinic/shared';
 
@@ -2306,7 +2310,7 @@ export function createFormalProgressionService({
         );
       }
       const latest = repos.studyPlans.list(parsed.command.workspaceId).at(-1) ?? accepted;
-      const items = clonePlanItems(accepted);
+      let items = clonePlanItems(accepted);
       let curriculum = repos.curricula.get(accepted.curriculumVersionId);
       if (!curriculum) {
         throw new AppError(ApiErrorCode.VersionConflict, 'Replan Curriculum is unavailable.');
@@ -2430,6 +2434,9 @@ export function createFormalProgressionService({
         if (target) movePlanItem(items, target.id, 0);
       }
       setPlanItemOrder(items);
+      // A replan is a new learner-visible proposal. Any legacy or adaptive minute
+      // adjustment is advisory input only; persist the planner-derived duration.
+      items = deriveTeachUnitDurationsOrThrow(curriculum, items);
 
       const projectedMinutes = items.reduce((sum, item) => sum + item.estimatedMinutes, 0);
       let availableMinutes = accepted.feasibility.availableMinutes;

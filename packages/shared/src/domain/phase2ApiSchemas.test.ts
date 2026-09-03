@@ -292,6 +292,41 @@ describe('Phase 2 command contracts', () => {
     ).toBe(false);
   });
 
+  it('accepts the product Course request without minutes or a deadline and preserves legacy input', () => {
+    const productFields = {
+      intent: contractFields.intent,
+      targetOutcome: contractFields.targetOutcome,
+      desiredDepth: contractFields.desiredDepth,
+      courseScope: contractFields.courseScope,
+      learnerSelfReport: contractFields.learnerSelfReport,
+      examContext: contractFields.examContext,
+      riskTolerance: contractFields.riskTolerance,
+    };
+    const current = CreateLearningContractDraftRequestSchema.parse({
+      command,
+      fields: productFields,
+      predecessorContractId: null,
+      expectedActiveContractId: null,
+    });
+    expect(current.fields.deadline).toBeNull();
+    expect(current.fields.studyBudget).toEqual({
+      minutesPerDay: null,
+      minutesPerWeek: null,
+      preferredSessionMinutes: null,
+      unavailablePeriods: [],
+      availabilityPolicy: 'estimate',
+    });
+
+    const historical = CreateLearningContractDraftRequestSchema.parse({
+      command,
+      fields: contractFields,
+      predecessorContractId: null,
+      expectedActiveContractId: null,
+    });
+    expect(historical.fields.deadline).toEqual(contractFields.deadline);
+    expect(historical.fields.studyBudget).toMatchObject(contractFields.studyBudget);
+  });
+
   it('requires learner authority for Contract confirmation', () => {
     const request = { command, contractId: 'lc_1', expectedVersion: 1, transition: 'confirm' };
     expect(TransitionLearningContractRequestSchema.safeParse(request).success).toBe(true);

@@ -70,16 +70,6 @@ function checkpointLabel(
   }
 }
 
-const FEASIBILITY_TEXT: Record<
-  NonNullable<CourseExecutionOverview['contractFeasibility']>['state'],
-  string
-> = {
-  feasible: '按当前时间安排可行',
-  at_risk: '当前时间安排存在风险',
-  infeasible: '按当前时间安排难以完成',
-  unknown: '还没有足够信息估算时间',
-};
-
 const SCOPE_ROLE_TEXT: Record<MaterialRole, string> = {
   course_material: '课程主资料',
   supplementary_reference: '补充参考',
@@ -102,18 +92,6 @@ function contractScopeChangeText(readiness: LearningContractScopeReadiness): str
     return `学习约定中的 ${unavailableCount} 份课程资料已被移除或不再属于当前课程，需要你重新确认资料范围。`;
   }
   return '课程资料缺少仍然有效的用途确认，需要你检查资料范围并重新确认学习约定。';
-}
-
-function formatDeadline(at: string, timeZone: string): string {
-  return new Intl.DateTimeFormat('zh-CN', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  }).format(new Date(at));
 }
 
 export interface CourseHomeViewProps {
@@ -212,7 +190,6 @@ export function CourseHomeView({
       overview.proposedCurriculum.version > overview.planningCurriculum.version)
       ? overview.proposedCurriculum
       : overview.planningCurriculum;
-  const feasibility = overview.contractFeasibility;
   const next = overview.nextAction;
   const progress = overview.formalProgress;
   const planPreflight = overview.studyPlanPreflight ?? null;
@@ -367,19 +344,6 @@ export function CourseHomeView({
                 {progress.deferredPlanItemCount > 0
                   ? ` · 已延期 ${progress.deferredPlanItemCount}`
                   : ''}
-              </strong>
-            </div>
-            <div>
-              <span className="small muted">截止时间</span>
-              <strong>
-                {contract.deadline ? (
-                  <time dateTime={contract.deadline.at}>
-                    {formatDeadline(contract.deadline.at, contract.deadline.timeZone)}（
-                    {contract.deadline.timeZone}）
-                  </time>
-                ) : (
-                  '未设置'
-                )}
               </strong>
             </div>
           </div>
@@ -608,7 +572,7 @@ export function CourseHomeView({
       ) : null}
 
       <details className="course-detail-disclosure">
-        <summary>学习目标与时间安排</summary>
+        <summary>学习目标与范围</summary>
         {contract ? (
           <div className="detail-content">
             <p>{contract.intent}</p>
@@ -618,7 +582,6 @@ export function CourseHomeView({
               </span>{' '}
               <span className="pill model">不等于事实或评分依据已验证</span>
             </p>
-            {feasibility ? <p>{FEASIBILITY_TEXT[feasibility.state]}</p> : null}
             <p className="small muted">
               可计入状态的正式证据 {progress.stateCreditingEvidenceCount} · 仅供参考的证据{' '}
               {progress.advisoryEvidenceCount}

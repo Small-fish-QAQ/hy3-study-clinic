@@ -105,6 +105,48 @@ describe('learner scope and Learning Contracts', () => {
     expect(JSON.stringify(result.contract)).not.toContain('materialRevisionId');
   });
 
+  it('creates a new Course contract without learner-supplied minutes or a deadline', () => {
+    const commands = createCourseCommandService({ repos, clock });
+    const roles = createMaterialRoleService({ repos, clock, commands });
+    const contracts = createLearningContractService({ repos, clock, commands });
+    const proposed = roles.propose({
+      command: command('product-role-propose'),
+      materialId: 'mat_1',
+      role: 'course_material',
+      expectedCurrentAssignmentId: repos.materialRoles.getCurrent('mat_1')!.id,
+    });
+    const role = roles.confirm({
+      command: command('product-role-confirm'),
+      assignmentId: proposed.id,
+      expectedVersion: proposed.version,
+    });
+    const completeFields = fields(role.id, role.version);
+    const result = contracts.createDraft({
+      command: command('product-contract-create'),
+      fields: {
+        intent: completeFields.intent,
+        targetOutcome: completeFields.targetOutcome,
+        desiredDepth: completeFields.desiredDepth,
+        courseScope: completeFields.courseScope,
+        learnerSelfReport: completeFields.learnerSelfReport,
+        examContext: completeFields.examContext,
+        riskTolerance: completeFields.riskTolerance,
+      },
+      predecessorContractId: null,
+      expectedActiveContractId: null,
+    });
+
+    expect(result.contract.deadline).toBeNull();
+    expect(result.contract.studyBudget).toEqual({
+      minutesPerDay: null,
+      minutesPerWeek: null,
+      preferredSessionMinutes: null,
+      unavailablePeriods: [],
+      availabilityPolicy: 'estimate',
+    });
+    expect(result.contract.desiredDepth).toBe('high_performance');
+  });
+
   it('keeps learner confirmation separate from active route installation', () => {
     const commands = createCourseCommandService({ repos, clock });
     const roles = createMaterialRoleService({ repos, clock, commands });

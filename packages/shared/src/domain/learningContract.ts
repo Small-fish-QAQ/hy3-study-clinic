@@ -223,6 +223,25 @@ export const LearningContractDraftFieldsSchema = z
   .strict();
 export type LearningContractDraftFields = z.infer<typeof LearningContractDraftFieldsSchema>;
 
+/**
+ * Compatibility request boundary for Course creation. Historical callers may still
+ * supply deadline and study-budget fields; current callers omit them and local code
+ * materializes neutral stored values.
+ */
+export const LearningContractDraftRequestFieldsSchema = LearningContractDraftFieldsSchema.extend({
+  deadline: ContractDeadlineSchema.nullable().optional().default(null),
+  studyBudget: ContractStudyBudgetSchema.optional().default({
+    minutesPerDay: null,
+    minutesPerWeek: null,
+    preferredSessionMinutes: null,
+    unavailablePeriods: [],
+    availabilityPolicy: 'estimate',
+  }),
+});
+export type LearningContractDraftRequestFields = z.input<
+  typeof LearningContractDraftRequestFieldsSchema
+>;
+
 export const ContractFeasibilityReasonCodeSchema = z.enum([
   'deadline_absent',
   'effort_unknown',
@@ -279,12 +298,12 @@ export type LearningContractFeasibility = z.infer<typeof LearningContractFeasibi
 export const CreateLearningContractDraftRequestSchema = z
   .object({
     command: CourseExecutionCommandEnvelopeSchema,
-    fields: LearningContractDraftFieldsSchema,
+    fields: LearningContractDraftRequestFieldsSchema,
     predecessorContractId: z.string().min(1).nullable(),
     expectedActiveContractId: z.string().min(1).nullable(),
   })
   .strict();
-export type CreateLearningContractDraftRequest = z.infer<
+export type CreateLearningContractDraftRequest = z.input<
   typeof CreateLearningContractDraftRequestSchema
 >;
 
@@ -293,10 +312,10 @@ export const UpdateLearningContractDraftRequestSchema = z
     command: CourseExecutionCommandEnvelopeSchema,
     contractId: z.string().min(1),
     expectedVersion: z.number().int().positive(),
-    fields: LearningContractDraftFieldsSchema,
+    fields: LearningContractDraftRequestFieldsSchema,
   })
   .strict();
-export type UpdateLearningContractDraftRequest = z.infer<
+export type UpdateLearningContractDraftRequest = z.input<
   typeof UpdateLearningContractDraftRequestSchema
 >;
 

@@ -17,7 +17,11 @@ import type { CourseCommandService } from './courseCommands.js';
 import type { SessionAgendaAgentService } from './sessionAgendasAgent.js';
 import { buildCurriculumExecutionContext } from './curriculum.js';
 import { isHardAvailability, isHardDeadline } from './feasibility.js';
-import { plannabilityWarningText, reconcileTeachUnitDurations, resolveStudyPlanPlannability } from './studyPlanValidation.js';
+import {
+  deriveTeachUnitDurationsOrThrow,
+  plannabilityWarningText,
+  resolveStudyPlanPlannability,
+} from './studyPlanValidation.js';
 
 interface CourseExecutionServiceDeps {
   repos: Repositories;
@@ -268,43 +272,15 @@ export function createCourseExecutionService({
           curriculum,
         } = requireCurrentPlanRouteAuthority(repos, parsed.command.workspaceId, plan.id);
 
-        // Reconcile teach_unit durations to be feasible. Depth is learner authority;
-        // duration is system-derived. For items with a feasible duration in [1, 480],
-        // reconcile estimatedMinutes upward to the minimum feasible. For items with no
-        // feasible duration (structurally infeasible across the entire domain), fail closed.
-        const { reconciledItems, structurallyInfeasible } = reconcileTeachUnitDurations(
-          curriculum,
-          authoritativePlan.items,
-        );
-
-        if (structurallyInfeasible.length > 0) {
-          // Truly structurally infeasible: no duration in [1, 480] works. Fail closed.
-          const infeasibleDetails = structurallyInfeasible.map((itemId) => {
-            const item = authoritativePlan.items.find((i) => i.id === itemId);
-            return {
-              planItemId: itemId,
-              targetDepth: item?.targetDepth,
-              objectiveCount: item?.objectiveIds.length,
-            };
-          });
-          throw new AppError(
-            ApiErrorCode.ValidationError,
-            'This StudyPlan contains teaching items that are structurally infeasible across the entire planner domain [1, 480 minutes]. Revise the item depth or objective selection.',
-            {
-              reason: 'lesson_plannability_structurally_infeasible',
-              recommendationRequired: true,
-              items: infeasibleDetails,
-            },
-          );
-        }
-
-        // After reconciliation, check that all teach_unit items are now plannable. This
-        // catches any edge cases where reconciliation didn't produce a feasible result.
-        const unplannable = resolveStudyPlanPlannability(curriculum, reconciledItems);
+        // Defense in depth only: proposal creation owns derivation. Calling the same
+        // bounded derivation here detects structural impossibility, but its result is
+        // deliberately discarded so acceptance cannot rewrite learner-visible content.
+        deriveTeachUnitDurationsOrThrow(curriculum, authoritativePlan.items);
+        const unplannable = resolveStudyPlanPlannability(curriculum, authoritativePlan.items);
         if (unplannable.length > 0) {
           throw new AppError(
             ApiErrorCode.ValidationError,
-            'This StudyPlan contains a teaching item that cannot be planned as a Lesson at its current depth and duration. Adjust the item depth or its minutes, then accept the revised route.',
+            'This StudyPlan contains a teaching item whose persisted system estimate cannot be planned as a Lesson at its current depth. Generate a corrected proposal before acceptance.',
             {
               reason: 'lesson_plannability_infeasible',
               recommendationRequired: true,
@@ -322,20 +298,16 @@ export function createCourseExecutionService({
           );
         }
 
-        // Use reconciled items for acceptance. The authoritativePlan object is replaced
-        // with one carrying the reconciled durations.
-        const reconciledPlan = { ...authoritativePlan, items: reconciledItems };
-
         const predecessor = before.acceptedPlanId
           ? (repos.studyPlans.get(before.acceptedPlanId) ?? null)
           : null;
         carryCompatiblePlanProgress(
           repos,
           predecessor,
-          reconciledPlan,
+          authoritativePlan,
           clock.now().toISOString(),
         );
-        for (const deferral of reconciledPlan.deferrals) {
+        for (const deferral of authoritativePlan.deferrals) {
           for (const riskId of deferral.riskIds) {
             const risk = repos.coverageRisks.get(riskId);
             if (risk?.facets.includes('planning_recommendation')) {
@@ -347,19 +319,19 @@ export function createCourseExecutionService({
                   id: newId('risk_evt'),
                   eventType: 'learner_accepted_deferral',
                   actor: 'learner',
-                  payload: { studyPlanId: reconciledPlan.id },
+                  payload: { studyPlanId: authoritativePlan.id },
                   createdAt: clock.now().toISOString(),
                 },
               );
             }
           }
         }
-        const draftAgenda = agendas.composeDraft(contract, curriculum, reconciledPlan);
+        const draftAgenda = agendas.composeDraft(contract, curriculum, authoritativePlan);
         const storedAgenda = repos.sessionAgendas.create(draftAgenda, {
           id: newId('agenda_evt'),
           eventType: 'composed_for_route_activation',
           actor: 'local',
-          payload: { studyPlanId: reconciledPlan.id },
+          payload: { studyPlanId: authoritativePlan.id },
           createdAt: draftAgenda.createdAt,
         });
         repos.courseExecution.activateRoute({
@@ -373,7 +345,6 @@ export function createCourseExecutionService({
           expectedActiveCurriculumId: before.activeCurriculumId,
           expectedAcceptedPlanId: before.acceptedPlanId,
           expectedActiveAgendaId: before.activeAgendaId,
-          reconciledItems,
           eventId: newId('course_evt'),
           actor: 'learner',
           acceptedAt: clock.now().toISOString(),

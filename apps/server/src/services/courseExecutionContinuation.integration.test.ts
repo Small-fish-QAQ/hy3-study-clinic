@@ -165,8 +165,9 @@ function contractFields(materialId: string, roleId: string, roleVersion: number,
     studyBudget: {
       minutesPerDay: 120,
       minutesPerWeek: null,
-      // Sized so one window holds a teaching item plus its checkpoint.
-      preferredSessionMinutes: 40,
+      // Legacy compatibility input sized so this continuation fixture still opens
+      // one teaching item plus its checkpoint after teach-unit time is system-derived.
+      preferredSessionMinutes: 20,
       unavailablePeriods: [],
     },
     desiredDepth: 'working_fluency',

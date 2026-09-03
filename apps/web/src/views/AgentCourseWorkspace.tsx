@@ -4,11 +4,11 @@ import type {
   CourseExecutionCommandEnvelope,
   CourseExecutionOverview,
   CoursePreparation,
+  CreateLearningContractDraftRequest,
   CurriculumHierarchyView,
   DesiredDepth,
   DocumentSummary,
   LearningContract,
-  LearningContractDraftFields,
   MaterialRole,
   MaterialRoleAssignment,
   MaterialRoleHistoryResponse,
@@ -127,12 +127,6 @@ interface ContractFormState {
   intent: string;
   targetDescription: string;
   targetScore: string;
-  deadlineLocal: string;
-  deadlineHard: boolean;
-  minutesPerDay: string;
-  minutesPerWeek: string;
-  preferredSessionMinutes: string;
-  availabilityPolicy: 'estimate' | 'hard_cap';
   desiredDepth: DesiredDepth;
   subjectBoundaries: string;
   includedTopics: string;
@@ -225,25 +219,11 @@ function list(text: string): string[] {
     .filter((item, index, values) => item.length > 0 && values.indexOf(item) === index);
 }
 
-function optionalPositiveInt(value: string): number | null {
-  if (value.trim().length === 0) return null;
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
-}
-
 function initialForm(contract: LearningContract | null): ContractFormState {
   return {
     intent: contract?.intent ?? '',
     targetDescription: contract?.targetOutcome.description ?? '',
     targetScore: contract?.targetOutcome.targetScore?.toString() ?? '',
-    deadlineLocal: contract?.deadline?.at ? contract.deadline.at.slice(0, 16) : '',
-    // Historical Contracts had hard-cap arithmetic; show that meaning until
-    // the learner explicitly saves a new soft-estimate Contract.
-    deadlineHard: contract?.deadline ? (contract.deadline.hard ?? true) : false,
-    minutesPerDay: contract?.studyBudget.minutesPerDay?.toString() ?? '',
-    minutesPerWeek: contract?.studyBudget.minutesPerWeek?.toString() ?? '',
-    preferredSessionMinutes: contract?.studyBudget.preferredSessionMinutes?.toString() ?? '',
-    availabilityPolicy: contract?.studyBudget.availabilityPolicy ?? 'hard_cap',
     desiredDepth: contract?.desiredDepth ?? 'working_fluency',
     subjectBoundaries: contract?.courseScope.subjectBoundaries.join(', ') ?? '',
     includedTopics: contract?.courseScope.includedTopics.join(', ') ?? '',
@@ -860,14 +840,11 @@ export function AgentCourseWorkspace({
     return scopes;
   }
 
-  function contractFields(scopes: ContractCourseScope['materials']): LearningContractDraftFields {
-    const minutesPerDay = optionalPositiveInt(contractForm.minutesPerDay);
-    const minutesPerWeek = optionalPositiveInt(contractForm.minutesPerWeek);
+  function contractFields(
+    scopes: ContractCourseScope['materials'],
+  ): CreateLearningContractDraftRequest['fields'] {
     const subjectBoundaries = list(contractForm.subjectBoundaries);
     if (subjectBoundaries.length === 0) throw new Error('请填写课程主题范围。');
-    const deadlineAt = contractForm.deadlineLocal
-      ? new Date(contractForm.deadlineLocal).toISOString()
-      : null;
     return {
       intent: contractForm.intent.trim(),
       targetOutcome: {
@@ -875,20 +852,6 @@ export function AgentCourseWorkspace({
         targetScore:
           contractForm.targetScore.trim() === '' ? null : Number(contractForm.targetScore),
         credential: null,
-      },
-      deadline: deadlineAt
-        ? {
-            at: deadlineAt,
-            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
-            hard: contractForm.deadlineHard,
-          }
-        : null,
-      studyBudget: {
-        minutesPerDay,
-        minutesPerWeek,
-        preferredSessionMinutes: optionalPositiveInt(contractForm.preferredSessionMinutes),
-        unavailablePeriods: [],
-        availabilityPolicy: contractForm.availabilityPolicy,
       },
       desiredDepth: contractForm.desiredDepth,
       courseScope: {
@@ -907,7 +870,7 @@ export function AgentCourseWorkspace({
         : null,
       examContext: contractForm.examFormat.trim()
         ? {
-            examAt: deadlineAt,
+            examAt: null,
             intendedScope: list(contractForm.includedTopics),
             materialIds: scopes
               .filter((scope) => scope.role === 'past_exam' && scope.disposition === 'included')
@@ -1799,7 +1762,9 @@ function ContractEditor({
         <div className="contract-heading">
           <p className="eyebrow">学习约定</p>
           <h2>定义你与 Hy3 的学习约定</h2>
-          <p className="muted">从目标开始。范围、时间与资料用途由你确认，Hy3 据此准备课程方案。</p>
+          <p className="muted">
+            你确认学习目标、深度与资料用途；Hy3 Study Clinic 会据此估算学习时间。
+          </p>
         </div>
         <button type="button" className="ghost" onClick={onCancel} disabled={busy}>
           返回
@@ -1834,26 +1799,6 @@ function ContractEditor({
                 onChange={(event) => change('targetDescription', event.target.value)}
               />
             </label>
-          </div>
-        </fieldset>
-
-        <fieldset className="contract-question">
-          <legend>
-            <span>2</span>
-            希望何时完成？
-          </legend>
-          <p className="contract-question-hint">
-            没有固定日期也可以留空，路线会按当前投入持续调整。
-          </p>
-          <div className="contract-grid contract-grid-compact">
-            <label>
-              截止时间（可选）
-              <input
-                type="datetime-local"
-                value={form.deadlineLocal}
-                onChange={(event) => change('deadlineLocal', event.target.value)}
-              />
-            </label>
             <label>
               目标分数（可选）
               <input
@@ -1865,74 +1810,12 @@ function ContractEditor({
                 onChange={(event) => change('targetScore', event.target.value)}
               />
             </label>
-            <label className="checkbox-row span-2">
-              <input
-                type="checkbox"
-                checked={form.deadlineHard}
-                onChange={(event) => change('deadlineHard', event.target.checked)}
-              />
-              必须在此日期前完成（否则只是目标日期）
-            </label>
           </div>
         </fieldset>
 
         <fieldset className="contract-question">
           <legend>
-            <span>3</span>
-            你能投入多少时间？
-          </legend>
-          <p className="contract-question-hint">
-            可填写大致投入时间，也可以暂时留空；单次时长帮助安排可完成的学习活动。
-          </p>
-          <div className="contract-grid contract-grid-budget">
-            <label>
-              每天可用分钟
-              <input
-                type="number"
-                min="1"
-                value={form.minutesPerDay}
-                placeholder="例如：45"
-                onChange={(event) => change('minutesPerDay', event.target.value)}
-              />
-            </label>
-            <label>
-              每周可用分钟
-              <input
-                type="number"
-                min="1"
-                value={form.minutesPerWeek}
-                placeholder="例如：300"
-                onChange={(event) => change('minutesPerWeek', event.target.value)}
-              />
-            </label>
-            <label>
-              单次学习分钟（可选）
-              <input
-                type="number"
-                min="1"
-                value={form.preferredSessionMinutes}
-                placeholder="例如：30"
-                onChange={(event) => change('preferredSessionMinutes', event.target.value)}
-              />
-            </label>
-            <label>
-              时间含义
-              <select
-                value={form.availabilityPolicy}
-                onChange={(event) =>
-                  change('availabilityPolicy', event.target.value as 'estimate' | 'hard_cap')
-                }
-              >
-                <option value="estimate">大致可投入时间（建议）</option>
-                <option value="hard_cap">明确上限，不能超过</option>
-              </select>
-            </label>
-          </div>
-        </fieldset>
-
-        <fieldset className="contract-question">
-          <legend>
-            <span>4</span>
+            <span>2</span>
             你从哪里开始？
           </legend>
           <p className="contract-question-hint">
@@ -1965,7 +1848,7 @@ function ContractEditor({
 
         <fieldset className="contract-question contract-materials">
           <legend>
-            <span>5</span>
+            <span>3</span>
             哪些课程资料定义学习范围？
           </legend>
           <p className="contract-question-hint">
@@ -2054,7 +1937,7 @@ function ContractEditor({
 
         <fieldset className="contract-question">
           <legend>
-            <span>6</span>
+            <span>4</span>
             还有其他约束吗？
           </legend>
           <p className="contract-question-hint">可选设置不会阻挡你先建立基本约定。</p>
