@@ -1223,6 +1223,10 @@ export function analyzeCourseMapProposal(
         title: proposedRegion.title,
         learningIntent: proposedRegion.learningIntent,
         approximateScope: proposedRegion.approximateScope,
+        focus:
+          context.providerInput.contract.focusRequest?.trim() && proposedRegion.focus === 'focused'
+            ? 'focused'
+            : 'normal',
         sourceAllocationRegionIds: allocation ? [allocation.id] : [proposedRegion.sourceRegionRef],
         materialIds: allocation ? [allocation.materialId] : [],
         conceptIds,
@@ -1794,6 +1798,7 @@ export function repairOmittedCourseMapCoverage(
           : sourceRegion.blockCount >= 12
             ? 'extended'
             : 'standard',
+      focus: 'normal',
       anchorOptionRefs: sourceRegion.anchorOptions.map((option) => option.anchorOptionId),
     });
   }

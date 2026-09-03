@@ -22,6 +22,7 @@ export const CoursePreparationMachineActionSchema = z.enum([
   'prepare_course_structure',
   'accept_prepared_course_structure',
   'prepare_course_plan',
+  'activate_prepared_course_plan',
   'prepare_assessment_readiness',
 ]);
 export type CoursePreparationMachineAction = z.infer<typeof CoursePreparationMachineActionSchema>;

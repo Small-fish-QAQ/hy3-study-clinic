@@ -46,6 +46,10 @@ export type CurriculumStatus = z.infer<typeof CurriculumStatusSchema>;
 export const CurriculumNodeKindSchema = z.enum(['course', 'chapter', 'section', 'learning_unit']);
 export type CurriculumNodeKind = z.infer<typeof CurriculumNodeKindSchema>;
 
+/** Additive instructional-investment state; it grants no truth or Formal authority. */
+export const UnitFocusSchema = z.enum(['normal', 'focused']);
+export type UnitFocus = z.infer<typeof UnitFocusSchema>;
+
 export const CurriculumSourceReferenceSchema = z
   .object({
     materialId: z.string().min(1),
@@ -269,6 +273,8 @@ export type CurriculumSemanticEvaluation = z.infer<typeof CurriculumSemanticEval
 
 export const CurriculumLearningUnitSchema = z
   .object({
+    /** Historical Curriculum payloads omit this field and are treated as normal. */
+    focus: UnitFocusSchema.optional(),
     conceptIds: z.array(z.string().min(1)).max(30),
     canonicalConceptIds: z.array(z.string().min(1)).max(20),
     objectives: z.array(CurriculumObjectiveSchema).min(1).max(30),
@@ -445,6 +451,53 @@ export const ProposeCurriculumRequestSchema = z
   })
   .strict();
 export type ProposeCurriculumRequest = z.infer<typeof ProposeCurriculumRequestSchema>;
+
+/** Bounded learner corrections to a proposed Course Skeleton. */
+export const CurriculumDraftEditSchema = z.discriminatedUnion('kind', [
+  z
+    .object({
+      kind: z.literal('rename_unit'),
+      learningUnitId: z.string().min(1),
+      title: z.string().trim().min(1).max(300),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('reorder_unit'),
+      learningUnitId: z.string().min(1),
+      direction: z.enum(['up', 'down']),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('set_unit_focus'),
+      learningUnitId: z.string().min(1),
+      focus: UnitFocusSchema,
+    })
+    .strict(),
+]);
+export type CurriculumDraftEdit = z.infer<typeof CurriculumDraftEditSchema>;
+
+export const ApplyCurriculumDraftEditRequestSchema = z
+  .object({
+    command: CourseExecutionCommandEnvelopeSchema,
+    curriculumId: z.string().min(1),
+    expectedVersion: z.number().int().positive(),
+    expectedContractId: z.string().min(1),
+    expectedExecutionSourceManifestFingerprint: z.string().min(1).max(200),
+    edit: CurriculumDraftEditSchema,
+  })
+  .strict()
+  .superRefine((request, ctx) => {
+    if (request.command.actor !== 'learner') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['command', 'actor'],
+        message: 'only the learner may edit a proposed Course Skeleton',
+      });
+    }
+  });
+export type ApplyCurriculumDraftEditRequest = z.infer<typeof ApplyCurriculumDraftEditRequestSchema>;
 
 export const AcceptCurriculumRequestSchema = z
   .object({

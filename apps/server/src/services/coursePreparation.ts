@@ -1,6 +1,7 @@
 import {
   ApiErrorCode,
   ApiErrorCodeSchema,
+  COURSE_PREPARATION_PLAN_TRIGGER,
   CoursePreparationResponseSchema,
   CoursePreparationMachineActionSchema,
   CoursePreparationSchema,
@@ -26,6 +27,7 @@ import type { AnalysisService } from './analysis.js';
 import type { ClaimedCourseCommand, CourseCommandService } from './courseCommands.js';
 import { commandFingerprint } from './courseCommands.js';
 import type { CourseOverviewService } from './courseOverview.js';
+import type { CourseExecutionService } from './courseExecution.js';
 import {
   buildCurriculumExecutionContext,
   COURSE_PREPARATION_POLICY_ID,
@@ -43,6 +45,7 @@ interface CoursePreparationDeps {
   analysis: AnalysisService;
   curriculum: CurriculumService;
   studyPlans: StudyPlanAgentService;
+  courseExecution: CourseExecutionService;
   sourceAuthority: {
     ensureVerbatimAssessmentAuthority: (
       workspaceId: string,
@@ -76,6 +79,7 @@ function preparationStateForAction(
       return 'preparing_course_structure';
     case 'accept_prepared_course_structure':
     case 'prepare_course_plan':
+    case 'activate_prepared_course_plan':
       return 'validating_course_plan';
     case 'prepare_assessment_readiness':
       return 'preparing_assessment_readiness';
@@ -92,6 +96,19 @@ function isPreparationCurriculum(repos: Repositories, curriculumId: string): boo
     proposed.payload !== null &&
     'preparationPolicyId' in proposed.payload &&
     proposed.payload.preparationPolicyId === COURSE_PREPARATION_POLICY_ID
+  );
+}
+
+function isPreparationStudyPlan(repos: Repositories, studyPlanId: string): boolean {
+  const proposed = repos.studyPlans
+    .listEvents(studyPlanId)
+    .find((event) => event.eventType === 'proposed');
+  return (
+    proposed?.actor === 'local' &&
+    typeof proposed.payload === 'object' &&
+    proposed.payload !== null &&
+    'proposalTrigger' in proposed.payload &&
+    proposed.payload.proposalTrigger === COURSE_PREPARATION_PLAN_TRIGGER
   );
 }
 
@@ -359,6 +376,7 @@ export function createCoursePreparationService({
   analysis,
   curriculum,
   studyPlans,
+  courseExecution,
   sourceAuthority,
 }: CoursePreparationDeps) {
   function authorityFingerprint(facts: PreparationFacts): string {
@@ -660,6 +678,58 @@ export function createCoursePreparationService({
     }
 
     if (proposedCurriculum) {
+      const simplifiedCourseDesign = Object.prototype.hasOwnProperty.call(contract, 'focusRequest');
+      if (simplifiedCourseDesign && proposedCurriculumSourceCurrent) {
+        const preflight = preflightStudyPlan(
+          repos,
+          clock,
+          contract,
+          proposedCurriculum,
+          workspace.name,
+        );
+        if (!preflight.canGenerate) {
+          return {
+            overview,
+            contract,
+            missingConceptMaterialIds,
+            proposedCurriculum,
+            planningCurriculum,
+            projection: {
+              ...common,
+              state: 'blocked',
+              machineAction: null,
+              learnerAction: 'review_course_structure',
+              learnerDecisionRequired: true,
+              canResume: false,
+              checkpoints: { ...checkpoints, courseStructure: 'blocked' },
+              blocker: {
+                code: 'course_structure_not_executable',
+                message: '生成的课程结构还不能形成可执行课程方案，需要你检查后再继续。',
+              },
+            },
+          };
+        }
+        return {
+          overview,
+          contract,
+          missingConceptMaterialIds,
+          proposedCurriculum,
+          planningCurriculum,
+          projection: {
+            ...common,
+            state: 'awaiting_required_governance',
+            machineAction: null,
+            learnerAction: 'review_course_structure',
+            learnerDecisionRequired: true,
+            canResume: false,
+            checkpoints: { ...checkpoints, courseStructure: 'in_progress' },
+            blocker: {
+              code: 'course_structure_review_required',
+              message: '课程结构已生成，请审阅并接受；系统不会替你接受。',
+            },
+          },
+        };
+      }
       if (!isPreparationCurriculum(repos, proposedCurriculum.id)) {
         return {
           overview,
@@ -744,6 +814,26 @@ export function createCoursePreparationService({
     }
 
     if (proposedPlan) {
+      if (
+        Object.prototype.hasOwnProperty.call(contract, 'focusRequest') &&
+        isPreparationStudyPlan(repos, proposedPlan.id)
+      ) {
+        return {
+          overview,
+          contract,
+          missingConceptMaterialIds,
+          proposedCurriculum,
+          planningCurriculum,
+          projection: projectionForAction(
+            workspaceId,
+            revision,
+            generatedAt,
+            'activate_prepared_course_plan',
+            { ...checkpoints, coursePlan: 'in_progress' },
+            formalReadiness,
+          ),
+        };
+      }
       return {
         overview,
         contract,
@@ -1040,7 +1130,7 @@ export function createCoursePreparationService({
               accepted.executionSourceManifest.fingerprint,
             predecessorStudyPlanId: facts.overview.studyPlanHistory.at(-1)?.id ?? null,
             expectedAcceptedStudyPlanId: facts.overview.acceptedStudyPlan?.id ?? null,
-            proposalTrigger: 'Course Preparation after learner-confirmed scope.',
+            proposalTrigger: COURSE_PREPARATION_PLAN_TRIGGER,
           },
           opts,
           {
@@ -1063,6 +1153,27 @@ export function createCoursePreparationService({
             },
           },
         );
+        return;
+      }
+      case 'activate_prepared_course_plan': {
+        const candidate = facts.overview.proposedStudyPlan;
+        const accepted = facts.planningCurriculum;
+        if (
+          !candidate ||
+          !accepted ||
+          candidate.curriculumVersionId !== accepted.id ||
+          !isPreparationStudyPlan(repos, candidate.id)
+        ) {
+          throw new AppError(ApiErrorCode.VersionConflict, 'Prepared StudyPlan changed.');
+        }
+        courseExecution.acceptDerivedStudyPlan({
+          command,
+          studyPlanId: candidate.id,
+          expectedVersion: candidate.version,
+          expectedContractId: contract.id,
+          expectedCurriculumId: accepted.id,
+          expectedExecutionSourceManifestFingerprint: accepted.executionSourceManifest.fingerprint,
+        });
         return;
       }
       case 'prepare_assessment_readiness': {
@@ -1182,7 +1293,9 @@ export function createCoursePreparationService({
         if (opts?.signal?.aborted) throw ProviderError.cancelled();
         commands.renew(claim, OPERATION_LEASE_MS);
         const after = projectFacts(parsed.command.workspaceId);
-        assertAuthorityCurrent(parsed.command.workspaceId, expectedAuthorityFingerprint);
+        if (action !== 'activate_prepared_course_plan') {
+          assertAuthorityCurrent(parsed.command.workspaceId, expectedAuthorityFingerprint);
+        }
         if (
           after.projection.revision === previousRevision &&
           action !== 'prepare_assessment_readiness'

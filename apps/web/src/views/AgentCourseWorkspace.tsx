@@ -5,6 +5,7 @@ import type {
   CourseExecutionOverview,
   CoursePreparation,
   CreateLearningContractDraftRequest,
+  CurriculumDraftEdit,
   CurriculumHierarchyView,
   DesiredDepth,
   DocumentSummary,
@@ -47,23 +48,19 @@ import {
   type KnowledgeMapNavigationTarget,
 } from './KnowledgeMapView.js';
 
-const ROLE_LABELS: Record<MaterialRole, string> = {
-  course_material: '课程主资料',
-  supplementary_reference: '补充参考',
-  past_exam: '往年试题',
-  exercise_sheet: '练习资料',
-  question_set: '题目集合',
-};
-
 const DEPTH_LABELS: Record<DesiredDepth, string> = {
-  pass_oriented: '通过导向',
-  working_fluency: '熟练应用',
-  high_performance: '高分表现',
+  pass_oriented: '基础理解',
+  working_fluency: '熟练运用',
+  high_performance: '高水平表现',
   deep_transfer: '深入迁移',
 };
 
+const SYSTEM_COURSE_INTENT = '学习课程资料中的重要内容。';
+const SYSTEM_COURSE_OUTCOME = '按学习者选择的全局深度掌握课程资料中的重要内容。';
+const SYSTEM_SUBJECT_BOUNDARY = '课程主题由本课程纳入的资料定义。';
+
 const MATERIAL_ROLE_RECONFIRMATION_MESSAGE =
-  '课程资料已更新，需要重新确认资料用途。请检查资料角色与范围后再次保存学习约定。';
+  '课程资料已更新，需要重新确认资料用途。请检查资料状态后再次保存课程设置。';
 const ROUTE_FAILURE_STORAGE_PREFIX = 'hy3-clinic:route-generation-failure:';
 
 interface RouteGenerationFailure {
@@ -124,16 +121,8 @@ function clearStoredRouteGenerationFailure(workspaceId: string | null): void {
 }
 
 interface ContractFormState {
-  intent: string;
-  targetDescription: string;
-  targetScore: string;
   desiredDepth: DesiredDepth;
-  subjectBoundaries: string;
-  includedTopics: string;
-  excludedTopics: string;
-  priorStudy: string;
-  examFormat: string;
-  allowExplicitDeferral: boolean;
+  focusRequest: string;
 }
 
 interface MaterialScopeChoice {
@@ -212,25 +201,10 @@ function command(workspaceId: string, prefix: string): CourseExecutionCommandEnv
   };
 }
 
-function list(text: string): string[] {
-  return text
-    .split(/[\n,，]/)
-    .map((item) => item.trim())
-    .filter((item, index, values) => item.length > 0 && values.indexOf(item) === index);
-}
-
 function initialForm(contract: LearningContract | null): ContractFormState {
   return {
-    intent: contract?.intent ?? '',
-    targetDescription: contract?.targetOutcome.description ?? '',
-    targetScore: contract?.targetOutcome.targetScore?.toString() ?? '',
     desiredDepth: contract?.desiredDepth ?? 'working_fluency',
-    subjectBoundaries: contract?.courseScope.subjectBoundaries.join(', ') ?? '',
-    includedTopics: contract?.courseScope.includedTopics.join(', ') ?? '',
-    excludedTopics: contract?.courseScope.excludedTopics.join(', ') ?? '',
-    priorStudy: contract?.learnerSelfReport?.priorStudy ?? '',
-    examFormat: contract?.examContext?.format ?? '',
-    allowExplicitDeferral: contract?.riskTolerance?.allowExplicitDeferral ?? true,
+    focusRequest: contract?.focusRequest ?? '',
   };
 }
 
@@ -746,8 +720,8 @@ export function AgentCourseWorkspace({
           return [
             document.id,
             {
-              role: persistedRole || scoped?.role || '',
-              disposition: scoped?.disposition ?? 'included',
+              role: persistedRole || scoped?.role || 'course_material',
+              disposition: 'included',
             },
           ];
         }),
@@ -843,45 +817,26 @@ export function AgentCourseWorkspace({
   function contractFields(
     scopes: ContractCourseScope['materials'],
   ): CreateLearningContractDraftRequest['fields'] {
-    const subjectBoundaries = list(contractForm.subjectBoundaries);
-    if (subjectBoundaries.length === 0) throw new Error('请填写课程主题范围。');
     return {
-      intent: contractForm.intent.trim(),
+      intent: SYSTEM_COURSE_INTENT,
       targetOutcome: {
-        description: contractForm.targetDescription.trim(),
-        targetScore:
-          contractForm.targetScore.trim() === '' ? null : Number(contractForm.targetScore),
+        description: SYSTEM_COURSE_OUTCOME,
+        targetScore: null,
         credential: null,
       },
       desiredDepth: contractForm.desiredDepth,
+      focusRequest: contractForm.focusRequest.trim() || null,
       courseScope: {
-        subjectBoundaries,
+        subjectBoundaries: [SYSTEM_SUBJECT_BOUNDARY],
         materials: scopes,
-        includedTopics: list(contractForm.includedTopics),
-        excludedTopics: list(contractForm.excludedTopics),
+        includedTopics: [],
+        excludedTopics: [],
       },
-      learnerSelfReport: contractForm.priorStudy.trim()
-        ? {
-            priorStudy: contractForm.priorStudy.trim(),
-            confidence: null,
-            strengths: [],
-            knownGaps: [],
-          }
-        : null,
-      examContext: contractForm.examFormat.trim()
-        ? {
-            examAt: null,
-            intendedScope: list(contractForm.includedTopics),
-            materialIds: scopes
-              .filter((scope) => scope.role === 'past_exam' && scope.disposition === 'included')
-              .map((scope) => scope.materialId),
-            format: contractForm.examFormat.trim(),
-            constraints: [],
-          }
-        : null,
+      learnerSelfReport: null,
+      examContext: null,
       riskTolerance: {
         description: null,
-        allowExplicitDeferral: contractForm.allowExplicitDeferral,
+        allowExplicitDeferral: false,
         maximumUnresolvedPriority: null,
       },
     };
@@ -905,7 +860,7 @@ export function AgentCourseWorkspace({
           if (authoritative.pendingContract?.status === 'draft') {
             setEditingContractId(authoritative.pendingContract.id);
           }
-          throw new Error('学习约定状态已更新，请检查当前约定后再保存。');
+          throw new Error('课程设置状态已更新，请检查当前设置后再保存。');
         }
         const scopes = await ensureConfirmedRoles(signal);
         const fields = contractFields(scopes);
@@ -939,7 +894,7 @@ export function AgentCourseWorkspace({
             );
           } catch (error) {
             if (error instanceof ApiClientError && error.code === 'VERSION_CONFLICT') {
-              throw new Error('学习约定状态已更新，请检查当前约定后再保存。');
+              throw new Error('课程设置状态已更新，请检查当前设置后再保存。');
             }
             throw error;
           }
@@ -1050,8 +1005,9 @@ export function AgentCourseWorkspace({
 
   async function decideCurriculum(decision: 'accept' | 'reject'): Promise<void> {
     if (!workspaceId || !overview?.proposedCurriculum) return;
+    const capturedWorkspaceId = workspaceId;
     const curriculum = overview.proposedCurriculum;
-    await runAction(
+    const result = await runAction(
       `${decision}-curriculum`,
       'curriculum',
       (signal) => {
@@ -1085,6 +1041,40 @@ export function AgentCourseWorkspace({
           signal,
         );
       },
+      async (result, signal) => {
+        setHierarchy(result.hierarchy);
+        await refresh(signal);
+      },
+    );
+    if (
+      decision === 'accept' &&
+      result?.curriculum.status === 'accepted' &&
+      workspaceIdRef.current === capturedWorkspaceId
+    ) {
+      await runPreparation();
+    }
+  }
+
+  async function editCurriculum(edit: CurriculumDraftEdit): Promise<void> {
+    if (!workspaceId || !overview?.proposedCurriculum) return;
+    const current = overview.proposedCurriculum;
+    await runAction(
+      'edit-curriculum',
+      'curriculum',
+      (signal) =>
+        api.editCurriculum(
+          workspaceId,
+          current.id,
+          {
+            command: command(workspaceId, 'edit_curriculum'),
+            curriculumId: current.id,
+            expectedVersion: current.version,
+            expectedContractId: current.contractVersionId,
+            expectedExecutionSourceManifestFingerprint: current.executionSourceManifest.fingerprint,
+            edit,
+          },
+          signal,
+        ),
       async (result, signal) => {
         setHierarchy(result.hierarchy);
         await refresh(signal);
@@ -1456,7 +1446,7 @@ export function AgentCourseWorkspace({
             <p className="eyebrow">开始学习</p>
             <h2>选择一门课程</h2>
             <p className="muted">
-              课程会保存资料、学习目标、当前路线和正式进展。请从上方选择已有课程，或现在创建一门课程。
+              课程会保存资料、课程结构、当前路线和正式进展。请从上方选择已有课程，或现在创建一门课程。
             </p>
             {actionFailureOwner === 'course-create' && action.error ? (
               <Banner kind="error">课程暂未创建。{action.error}</Banner>
@@ -1526,11 +1516,8 @@ export function AgentCourseWorkspace({
           <ContractEditor
             documents={documents}
             form={contractForm}
-            materialChoices={materialChoices}
-            roleHistory={roleHistory}
             busy={busyAction !== null}
             onFormChange={setContractForm}
-            onMaterialChoicesChange={setMaterialChoices}
             onSubmit={() => void submitContract()}
             onCancel={() => setContractEditorOpen(false)}
           />
@@ -1607,6 +1594,7 @@ export function AgentCourseWorkspace({
           onCancel={cancelCurriculum}
           onAccept={() => void decideCurriculum('accept')}
           onReject={() => void decideCurriculum('reject')}
+          onEdit={(edit) => void editCurriculum(edit)}
           onSelectHistory={(id) => void selectCurriculumHistory(id)}
           documents={documents}
           sourceBlocks={curriculumSourceBlocks}
@@ -1713,11 +1701,8 @@ export function AgentCourseWorkspace({
 interface ContractEditorProps {
   documents: DocumentSummary[];
   form: ContractFormState;
-  materialChoices: Record<string, MaterialScopeChoice>;
-  roleHistory: Record<string, MaterialRoleHistoryResponse>;
   busy: boolean;
   onFormChange: (value: ContractFormState) => void;
-  onMaterialChoicesChange: (value: Record<string, MaterialScopeChoice>) => void;
   onSubmit: () => void;
   onCancel: () => void;
 }
@@ -1725,34 +1710,17 @@ interface ContractEditorProps {
 function ContractEditor({
   documents,
   form,
-  materialChoices,
-  roleHistory,
   busy,
   onFormChange,
-  onMaterialChoicesChange,
   onSubmit,
   onCancel,
 }: ContractEditorProps) {
   const change = <K extends keyof ContractFormState>(key: K, value: ContractFormState[K]) =>
     onFormChange({ ...form, [key]: value });
-  const needsRoleConfirmation = documents.some((document) => {
-    const current = roleHistory[document.id]?.current;
-    const choice = materialChoices[document.id];
-    return !choice?.role || current?.status !== 'learner_confirmed' || current.role !== choice.role;
-  });
-  const hasChangedRoleAssignment = documents.some((document) => {
-    const history = roleHistory[document.id];
-    const choice = materialChoices[document.id];
-    return Boolean(
-      history &&
-      history.history.length > 1 &&
-      (history.current.status !== 'learner_confirmed' || history.current.role !== choice?.role),
-    );
-  });
   return (
     <form
       className="contract-editor stack"
-      aria-label="学习约定编辑器"
+      aria-label="课程设计设置"
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit();
@@ -1760,10 +1728,10 @@ function ContractEditor({
     >
       <header className="contract-header row between">
         <div className="contract-heading">
-          <p className="eyebrow">学习约定</p>
-          <h2>定义你与 Hy3 的学习约定</h2>
+          <p className="eyebrow">创建课程</p>
+          <h2>准备 Hy3 Study Clinic 课程</h2>
           <p className="muted">
-            你确认学习目标、深度与资料用途；Hy3 Study Clinic 会据此估算学习时间。
+            资料决定学什么，全局深度决定整体教多深；你也可以指定特别想深入的内容。
           </p>
         </div>
         <button type="button" className="ghost" onClick={onCancel} disabled={busy}>
@@ -1772,220 +1740,70 @@ function ContractEditor({
       </header>
 
       <div className="contract-flow">
-        <fieldset className="contract-question">
-          <legend>
-            <span>1</span>
-            你想达成什么？
-          </legend>
-          <p className="contract-question-hint">
-            说清学习动机与可验证的结果，Hy3 才能规划合适的路径。
-          </p>
-          <div className="contract-grid contract-grid-goal">
-            <label>
-              学习意图
-              <input
-                required
-                value={form.intent}
-                placeholder="例如：系统掌握课程核心内容并通过期末考试"
-                onChange={(event) => change('intent', event.target.value)}
-              />
-            </label>
-            <label>
-              目标结果
-              <input
-                required
-                value={form.targetDescription}
-                placeholder="例如：能独立完成综合题并解释关键推导"
-                onChange={(event) => change('targetDescription', event.target.value)}
-              />
-            </label>
-            <label>
-              目标分数（可选）
-              <input
-                type="number"
-                min="0"
-                max="100"
-                value={form.targetScore}
-                placeholder="0-100"
-                onChange={(event) => change('targetScore', event.target.value)}
-              />
-            </label>
-          </div>
-        </fieldset>
-
-        <fieldset className="contract-question">
-          <legend>
-            <span>2</span>
-            你从哪里开始？
-          </legend>
-          <p className="contract-question-hint">
-            简要说明已有基础；这只是你的自述，不会替代正式证据。
-          </p>
-          <div className="contract-grid contract-grid-start">
-            <label>
-              既往学习情况（自述）
-              <textarea
-                value={form.priorStudy}
-                placeholder="学过哪些内容？哪些地方最不确定？"
-                onChange={(event) => change('priorStudy', event.target.value)}
-              />
-            </label>
-            <label>
-              目标深度
-              <select
-                value={form.desiredDepth}
-                onChange={(event) => change('desiredDepth', event.target.value as DesiredDepth)}
-              >
-                {(Object.keys(DEPTH_LABELS) as DesiredDepth[]).map((depth) => (
-                  <option key={depth} value={depth}>
-                    {DEPTH_LABELS[depth]}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </fieldset>
-
         <fieldset className="contract-question contract-materials">
           <legend>
-            <span>3</span>
-            哪些课程资料定义学习范围？
+            <span>1</span>
+            课程资料
           </legend>
-          <p className="contract-question-hint">
-            资料用途决定路线范围，不等于内容已经被验证为事实或评分依据。
-          </p>
-          <label className="contract-subject-boundaries">
-            课程主题范围（逗号或换行分隔）
-            <textarea
-              required
-              value={form.subjectBoundaries}
-              placeholder="例如：核心定义、主要定理、典型应用"
-              onChange={(event) => change('subjectBoundaries', event.target.value)}
-            />
-          </label>
-          {hasChangedRoleAssignment ? (
-            <Banner kind="info">
-              <strong>课程资料已更新，需要重新确认资料用途</strong>
-              <br />
-              资料用途的当前版本发生了变化。请检查资料角色与范围，确认后再继续保存学习约定。
-            </Banner>
-          ) : needsRoleConfirmation && documents.length > 0 ? (
-            <Banner kind="info">
-              <strong>请确认课程资料用途</strong>
-              <br />
-              学习约定会记录你确认的资料角色与范围，确认前不会继续建立课程结构。
-            </Banner>
-          ) : null}
+          <p className="contract-question-hint">当前课程中的资料都会用于确定课程主题。</p>
           {documents.length === 0 ? (
-            <Banner kind="info">课程没有可纳入学习约定的资料。</Banner>
+            <Banner kind="info">请先添加至少一份课程资料。</Banner>
           ) : (
-            <div className="material-scope-list">
-              {documents.map((document) => {
-                const choice = materialChoices[document.id] ?? {
-                  role: '',
-                  disposition: 'included' as const,
-                };
-                return (
-                  <div key={document.id} className="material-scope-row">
-                    <strong>{document.title}</strong>
-                    <label>
-                      角色
-                      <select
-                        aria-label={`${document.title}资料角色`}
-                        required
-                        value={choice.role}
-                        onChange={(event) =>
-                          onMaterialChoicesChange({
-                            ...materialChoices,
-                            [document.id]: { ...choice, role: event.target.value as MaterialRole },
-                          })
-                        }
-                      >
-                        <option value="">请选择</option>
-                        {(Object.keys(ROLE_LABELS) as MaterialRole[]).map((role) => (
-                          <option key={role} value={role}>
-                            {ROLE_LABELS[role]}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      范围
-                      <select
-                        aria-label={`${document.title}范围`}
-                        value={choice.disposition}
-                        onChange={(event) =>
-                          onMaterialChoicesChange({
-                            ...materialChoices,
-                            [document.id]: {
-                              ...choice,
-                              disposition: event.target.value as 'included' | 'excluded',
-                            },
-                          })
-                        }
-                      >
-                        <option value="included">纳入本轮学习</option>
-                        <option value="excluded">明确排除</option>
-                      </select>
-                    </label>
-                  </div>
-                );
-              })}
-            </div>
+            <ul className="material-scope-list" aria-label="本课程资料">
+              {documents.map((document) => (
+                <li key={document.id} className="material-scope-row">
+                  <strong>{document.title}</strong>
+                </li>
+              ))}
+            </ul>
           )}
         </fieldset>
 
         <fieldset className="contract-question">
           <legend>
-            <span>4</span>
-            还有其他约束吗？
+            <span>2</span>
+            全局学习深度
           </legend>
-          <p className="contract-question-hint">可选设置不会阻挡你先建立基本约定。</p>
-          <details className="contract-advanced">
-            <summary>高级范围与考试设置</summary>
-            <div className="contract-grid contract-grid-advanced">
-              <label>
-                明确包含的主题
-                <textarea
-                  value={form.includedTopics}
-                  onChange={(event) => change('includedTopics', event.target.value)}
-                />
-              </label>
-              <label>
-                明确排除的主题
-                <textarea
-                  value={form.excludedTopics}
-                  onChange={(event) => change('excludedTopics', event.target.value)}
-                />
-              </label>
-              <label className="span-2">
-                考试形式或情境（可选）
-                <textarea
-                  value={form.examFormat}
-                  onChange={(event) => change('examFormat', event.target.value)}
-                />
-              </label>
-              <label className="checkbox-row span-2">
-                <input
-                  type="checkbox"
-                  checked={form.allowExplicitDeferral}
-                  onChange={(event) => change('allowExplicitDeferral', event.target.checked)}
-                />
-                允许在路线中明确延期，并持续显示为学习缺口
-              </label>
-            </div>
-          </details>
+          <p className="contract-question-hint">这个选择是整门课程的教学基线，Hy3 不会替你改写。</p>
+          <label>
+            全局学习深度
+            <select
+              value={form.desiredDepth}
+              onChange={(event) => change('desiredDepth', event.target.value as DesiredDepth)}
+            >
+              {(Object.keys(DEPTH_LABELS) as DesiredDepth[]).map((depth) => (
+                <option key={depth} value={depth}>
+                  {DEPTH_LABELS[depth]}
+                </option>
+              ))}
+            </select>
+          </label>
+        </fieldset>
+
+        <fieldset className="contract-question">
+          <legend>
+            <span>3</span>
+            有没有特别想深入的内容？（可选）
+          </legend>
+          <p className="contract-question-hint">
+            例如：Embedding、向量检索、Rerank。留空则均衡安排。
+          </p>
+          <label>
+            特别关注的内容（可选）
+            <textarea
+              value={form.focusRequest}
+              maxLength={500}
+              placeholder="例如：Embedding、向量检索、Rerank"
+              onChange={(event) => change('focusRequest', event.target.value)}
+            />
+          </label>
         </fieldset>
       </div>
 
       <footer className="contract-actions">
-        <p className="small muted">确认后将立即开始准备课程。</p>
+        <p className="small muted">开始后，Hy3 会先提出课程结构供你审阅；此时不会自动接受。</p>
         <button type="submit" className="primary" disabled={busy || documents.length === 0}>
-          {busy
-            ? '正在确认…'
-            : needsRoleConfirmation
-              ? '确认资料用途并准备课程'
-              : '确认目标并准备课程'}
+          {busy ? '正在准备…' : '开始准备课程'}
         </button>
       </footer>
     </form>

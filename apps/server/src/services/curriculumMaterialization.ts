@@ -780,6 +780,7 @@ function buildDetailRegions(input: CurriculumDetailPlanningInput): CurriculumDet
         title: region.title,
         learningIntent: region.learningIntent,
         approximateScope: region.approximateScope,
+        focus: region.focus ?? 'normal',
         sourceAllocationRegionIds: [...region.sourceAllocationRegionIds],
         prerequisiteRegionIds: prerequisitesByDependent.get(region.id) ?? [],
         synthesisGroups: input.courseMap.synthesisGroups
@@ -818,6 +819,7 @@ function detailInput(
       intent: planning.contract.intent,
       targetOutcome: planning.contract.targetOutcome,
       desiredDepth: planning.contract.desiredDepth,
+      focusRequest: planning.contract.focusRequest ?? null,
       subjectBoundaries: planning.contract.subjectBoundaries,
       includedTopics: planning.contract.includedTopics,
       excludedTopics: planning.contract.excludedTopics,
@@ -1597,6 +1599,7 @@ export function assembleCurriculumDetailBatches(
         expected.region.title !== inputRegion.title ||
         expected.region.learningIntent !== inputRegion.learningIntent ||
         expected.region.approximateScope !== inputRegion.approximateScope ||
+        (expected.region.focus ?? 'normal') !== (inputRegion.focus ?? 'normal') ||
         !sameStringArray(
           expected.region.sourceAllocationRegionIds,
           inputRegion.sourceAllocationRegionIds,
@@ -1696,6 +1699,7 @@ export function assembleCurriculumDetailBatches(
         kind: 'learning_unit',
         index: 0,
         title: detail.output.title,
+        focus: region.focus ?? 'normal',
         structuralUnitIds: [],
         sourceEvidence: detail.output.sourceEvidence,
         conceptIds: detail.output.conceptIds,

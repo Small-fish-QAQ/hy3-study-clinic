@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import {
   AcceptCurriculumRequestSchema,
+  ApplyCurriculumDraftEditRequestSchema,
   ApplyStudyPlanDraftEditRequestSchema,
   ConfirmMaterialRoleRequestSchema,
   CreateLearningContractDraftRequestSchema,
@@ -186,6 +187,14 @@ export function registerAgentCourseRoutes(app: FastifyInstance, services: Servic
       ]);
     }
     return services.curriculum.accept(body);
+  });
+
+  app.post('/api/workspaces/:id/curricula/:curriculumId/edits', async (request) => {
+    const params = CurriculumParams.parse(request.params);
+    const body = ApplyCurriculumDraftEditRequestSchema.parse(request.body);
+    assertWorkspace(body, params.id);
+    if (body.curriculumId !== params.curriculumId) throw new z.ZodError([]);
+    return services.curriculum.applyDraftEdit(body);
   });
 
   app.post('/api/workspaces/:id/curricula/:curriculumId/reject', async (request) => {

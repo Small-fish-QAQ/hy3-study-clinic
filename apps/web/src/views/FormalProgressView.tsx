@@ -4,6 +4,7 @@ import type {
   CourseExecutionOverview,
   FormalProgressionOverview,
 } from '@hy3-clinic/shared';
+import { COURSE_PREPARATION_PLAN_TRIGGER } from '@hy3-clinic/shared';
 import { api } from '../api.js';
 import { Banner, Loading } from '../components/ui.js';
 import { useAsyncAction } from '../components/useAsyncAction.js';
@@ -459,7 +460,7 @@ export function FormalProgressView({
               {trigger.status === 'qualified' &&
               CONTRACT_SUCCESSOR_TRIGGER_KINDS.has(trigger.kind) ? (
                 <Banner kind="info">
-                  请先回到课程主页更新并确认新的学习目标，再提出后续路线。
+                  请先回到课程主页更新课程设置并接受新的课程结构，再提出后续路线。
                 </Banner>
               ) : null}
               {trigger.status === 'qualified' &&
@@ -476,7 +477,8 @@ export function FormalProgressView({
               ) : null}
             </article>
           ))}
-        {overview?.proposedStudyPlan ? (
+        {overview?.proposedStudyPlan &&
+        overview.proposedStudyPlan.proposalTrigger !== COURSE_PREPARATION_PLAN_TRIGGER ? (
           <div className="replan-decision">
             <h4>待确认的路线变化</h4>
             {overview.proposedStudyPlan.diff.length === 0 ? (

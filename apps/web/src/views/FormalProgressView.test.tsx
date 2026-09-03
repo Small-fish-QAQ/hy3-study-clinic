@@ -354,7 +354,9 @@ describe('FormalProgressView', () => {
       />,
     );
 
-    expect(await screen.findAllByText(/请先回到课程主页更新并确认新的学习目标/)).toHaveLength(2);
+    expect(
+      await screen.findAllByText(/请先回到课程主页更新课程设置并接受新的课程结构/),
+    ).toHaveLength(2);
     expect(screen.queryByRole('button', { name: 'Create route proposal' })).not.toBeInTheDocument();
     expect(api.proposeQualifiedReplan).not.toHaveBeenCalled();
   });

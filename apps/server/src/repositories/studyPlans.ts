@@ -45,6 +45,11 @@ export interface StudyPlanEventInput {
   createdAt: string;
 }
 
+export interface StoredStudyPlanEvent extends StudyPlanEventInput {
+  planId: string;
+  seq: number;
+}
+
 export interface StudyPlanProgressRecord {
   planId: string;
   planItemId: string;
@@ -459,6 +464,33 @@ export function createStudyPlansRepo(db: SqliteDb) {
           .prepare(`SELECT * FROM study_plan_versions WHERE workspace_id = ? ORDER BY version ASC`)
           .all(workspaceId) as PlanRow[]
       ).map(hydrate);
+    },
+
+    listEvents(planId: string): StoredStudyPlanEvent[] {
+      return (
+        db
+          .prepare(
+            `SELECT id, plan_id, seq, event_type, actor, payload, created_at
+             FROM study_plan_events WHERE plan_id = ? ORDER BY seq`,
+          )
+          .all(planId) as Array<{
+          id: string;
+          plan_id: string;
+          seq: number;
+          event_type: string;
+          actor: string;
+          payload: string;
+          created_at: string;
+        }>
+      ).map((row) => ({
+        id: row.id,
+        planId: row.plan_id,
+        seq: row.seq,
+        eventType: row.event_type,
+        actor: row.actor,
+        payload: JSON.parse(row.payload) as unknown,
+        createdAt: row.created_at,
+      }));
     },
 
     listProgress(planId: string): StudyPlanProgressRecord[] {

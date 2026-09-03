@@ -2,6 +2,8 @@ import { z } from 'zod';
 import { CourseExecutionCommandEnvelopeSchema, DesiredDepthSchema } from './learningContract.js';
 import { EvidenceAdmissibilityTierSchema } from './sourceAuthority.js';
 
+export const COURSE_PREPARATION_PLAN_TRIGGER = 'Course Preparation after learner-confirmed scope.';
+
 export const StudyPlanStatusSchema = z.enum([
   'candidate',
   'proposed',
@@ -231,6 +233,8 @@ export const StudyPlanSchema = z
     diff: z.array(StudyPlanDiffOperationSchema).max(2000),
     provider: z.string().min(1).max(40),
     providerModel: z.string().max(120).nullable(),
+    /** Historical Plans omit this; new derived routes record why no second review occurred. */
+    acceptanceBasis: z.enum(['learner_review', 'derived_from_accepted_curriculum']).optional(),
     learnerAcceptedAt: z.string().datetime().nullable(),
     createdAt: z.string().datetime(),
   })

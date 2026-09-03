@@ -1133,6 +1133,30 @@ export function createCurriculaRepo(db: SqliteDb) {
     },
   );
 
+  /** Atomically retain a validated successor proposal and retire its predecessor. */
+  const replaceProposalTx = db.transaction(
+    (
+      currentId: string,
+      successor: Curriculum,
+      proposedEvent: CurriculumEventInput,
+      replacedEvent: CurriculumEventInput,
+      persistenceContext: CurriculumVersionPersistenceContext,
+    ): Curriculum => {
+      const current = get(currentId);
+      if (
+        !current ||
+        current.status !== 'proposed' ||
+        successor.predecessorId !== current.id ||
+        successor.workspaceId !== current.workspaceId
+      ) {
+        throw new Error('Only the current proposed Curriculum may be replaced by a successor.');
+      }
+      const stored = createVersionTx(successor, proposedEvent, persistenceContext);
+      rejectTx(current.id, 'Replaced by a validated Course Skeleton successor.', replacedEvent);
+      return stored;
+    },
+  );
+
   const insertObjectiveSemanticSupportsIfAbsentTx = db.transaction(
     (
       curriculumId: string,
@@ -1234,6 +1258,7 @@ export function createCurriculaRepo(db: SqliteDb) {
     insertObjectiveSemanticSupportsIfAbsent: insertObjectiveSemanticSupportsIfAbsentTx,
     createManifest: createManifestTx,
     createVersion: createVersionTx,
+    replaceProposal: replaceProposalTx,
     accept: acceptTx,
     reject: rejectTx,
 

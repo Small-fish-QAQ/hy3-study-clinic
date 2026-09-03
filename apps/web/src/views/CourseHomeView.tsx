@@ -7,30 +7,31 @@ import type {
   StudyPlanDraftEdit,
   StudyPlanItemPlannability,
 } from '@hy3-clinic/shared';
+import { COURSE_PREPARATION_PLAN_TRIGGER } from '@hy3-clinic/shared';
 import { Banner, Loading } from '../components/ui.js';
 import { StudyPlanPanel } from './StudyPlanPanel.js';
 import { CurriculumFailureDiagnostics } from './CurriculumView.js';
 import { learnerPlanText } from './learnerLanguage.js';
 
 const SETUP_TEXT: Record<CourseExecutionOverview['setupStage'], string> = {
-  contract_required: '先明确这次学习要达到什么目标',
-  contract_review: '学习目标等待你的确认',
-  curriculum_required: '目标已确认，可以整理课程结构',
+  contract_required: '选择课程资料、全局深度和可选重点',
+  contract_review: '课程设计输入等待提交',
+  curriculum_required: '课程设计输入已保存，可以整理课程结构',
   curriculum_review: '课程结构等待你的审阅',
   plan_required: '课程结构已就绪，可以规划学习路线',
-  plan_review: '学习路线等待你的接受',
+  plan_review: '正在完成学习安排',
   route_active: '学习路线已启用',
-  goal_closed: '本轮学习目标已结束',
+  goal_closed: '本轮课程学习已结束',
 };
 
 const PREPARATION_TEXT: Record<CoursePreparation['state'], string> = {
-  not_started: '确认学习目标后开始准备课程',
+  not_started: '提交课程设计输入后开始准备',
   preparing_materials: '正在整理课程资料',
   preparing_concepts: '正在理解课程资料的核心内容',
   preparing_course_structure: '正在设计课程结构',
   validating_course_plan: '正在检查课程方案是否可以执行',
   preparing_assessment_readiness: '正在检查正式检验依据',
-  course_plan_ready: '课程方案等待你的确认',
+  course_plan_ready: '课程学习安排已生成',
   awaiting_required_governance: '课程准备需要你的决定',
   failed_recoverable: '课程准备暂时中断',
   blocked: '课程准备需要检查',
@@ -50,6 +51,13 @@ const CHECKPOINT_COMPLETE_TEXT: Record<keyof CoursePreparation['checkpoints'], s
   courseStructure: '课程结构已完成',
   coursePlan: '课程方案已检查',
   assessmentReadiness: '正式检验依据已检查',
+};
+
+const COURSE_DEPTH_TEXT: Record<string, string> = {
+  pass_oriented: '基础理解',
+  working_fluency: '熟练运用',
+  high_performance: '高水平表现',
+  deep_transfer: '深入迁移',
 };
 
 function checkpointLabel(
@@ -83,15 +91,15 @@ function contractScopeChangeText(readiness: LearningContractScopeReadiness): str
     (issue) => issue.kind === 'material_role_changed' && issue.currentConfirmedRole,
   );
   if (roleChange?.currentConfirmedRole) {
-    return `课程资料用途已从“${SCOPE_ROLE_TEXT[roleChange.contractedRole]}”改为“${SCOPE_ROLE_TEXT[roleChange.currentConfirmedRole]}”，需要你重新确认学习约定。`;
+    return `课程资料用途已从“${SCOPE_ROLE_TEXT[roleChange.contractedRole]}”改为“${SCOPE_ROLE_TEXT[roleChange.currentConfirmedRole]}”，需要你重新确认课程设置。`;
   }
   const unavailableCount = readiness.issues.filter((issue) =>
     ['material_missing', 'material_retired', 'material_moved'].includes(issue.kind),
   ).length;
   if (unavailableCount > 0) {
-    return `学习约定中的 ${unavailableCount} 份课程资料已被移除或不再属于当前课程，需要你重新确认资料范围。`;
+    return `课程设置中的 ${unavailableCount} 份资料已被移除或不再属于当前课程，需要你重新确认资料范围。`;
   }
-  return '课程资料缺少仍然有效的用途确认，需要你检查资料范围并重新确认学习约定。';
+  return '课程资料缺少仍然有效的用途确认，需要你检查资料范围并重新确认课程设置。';
 }
 
 export interface CourseHomeViewProps {
@@ -178,12 +186,21 @@ export function CourseHomeView({
   }
 
   const contract = overview.pendingContract ?? overview.activeContract;
+  const simplifiedCourseDesign = Boolean(
+    contract && Object.prototype.hasOwnProperty.call(contract, 'focusRequest'),
+  );
+  const courseDesignSurface = contract === null || simplifiedCourseDesign;
   const plan =
     overview.proposedStudyPlan &&
     (!overview.acceptedStudyPlan ||
       overview.proposedStudyPlan.version > overview.acceptedStudyPlan.version)
       ? overview.proposedStudyPlan
       : overview.acceptedStudyPlan;
+  const derivedPreparationPlan = Boolean(
+    simplifiedCourseDesign &&
+    plan?.status === 'proposed' &&
+    plan.proposalTrigger === COURSE_PREPARATION_PLAN_TRIGGER,
+  );
   const curriculum =
     overview.proposedCurriculum &&
     (!overview.planningCurriculum ||
@@ -238,7 +255,7 @@ export function CourseHomeView({
       }
       switch (preparation.learnerAction) {
         case 'reconfirm_learning_goal':
-          return { label: '重新确认学习目标', onClick: onCreateContract, busy: false };
+          return { label: '重新设置课程', onClick: onCreateContract, busy: false };
         case 'review_course_structure':
           return { label: '检查课程结构', onClick: onOpenCurriculum, busy: false };
         case 'review_course_plan':
@@ -252,14 +269,14 @@ export function CourseHomeView({
       }
     }
     if (contractScopeBlocked) {
-      return { label: '重新确认学习约定', onClick: onCreateContract, busy: false };
+      return { label: '重新确认课程设置', onClick: onCreateContract, busy: false };
     }
     switch (overview.setupStage) {
       case 'contract_required':
-        return { label: '设置学习目标', onClick: onCreateContract, busy: false };
+        return { label: '设置课程', onClick: onCreateContract, busy: false };
       case 'contract_review':
         return {
-          label: contract?.status === 'draft' ? '提交学习目标' : '确认学习目标',
+          label: contract?.status === 'draft' ? '提交课程设置' : '开始准备课程',
           onClick: onConfirmContract,
           busy: busyAction === 'confirm-contract',
         };
@@ -298,13 +315,20 @@ export function CourseHomeView({
           busy: busyAction === 'propose-plan',
         };
       case 'plan_review':
+        if (derivedPreparationPlan) {
+          return {
+            label: '继续准备课程',
+            onClick: onRunPreparation,
+            busy: busyAction === 'prepare-course',
+          };
+        }
         return {
           label: '接受学习路线',
           onClick: onAcceptStudyPlan,
           busy: busyAction === 'accept-plan',
         };
       case 'goal_closed':
-        return { label: '设置新的学习目标', onClick: onCreateContract, busy: false };
+        return { label: '设置新的课程', onClick: onCreateContract, busy: false };
       case 'route_active':
         return null;
     }
@@ -326,10 +350,26 @@ export function CourseHomeView({
         </header>
 
         {contract ? (
-          <div className="course-state-grid" aria-label="目标与正式进度">
+          <div
+            className="course-state-grid"
+            aria-label={simplifiedCourseDesign ? '课程设计与正式进度' : '目标与正式进度'}
+          >
             <div>
-              <span className="small muted">本轮目标</span>
-              <strong>{contract.targetOutcome.description}</strong>
+              <span className="small muted">
+                {simplifiedCourseDesign ? '全局深度' : '本轮目标'}
+              </span>
+              <strong>
+                {simplifiedCourseDesign
+                  ? (COURSE_DEPTH_TEXT[contract.desiredDepth] ?? contract.desiredDepth)
+                  : contract.targetOutcome.description}
+              </strong>
+              {simplifiedCourseDesign ? (
+                <span className="small muted">
+                  {contract.focusRequest
+                    ? `重点：${contract.focusRequest}`
+                    : '均衡安排，无额外重点'}
+                </span>
+              ) : null}
             </div>
             <div>
               <span className="small muted">正式进度</span>
@@ -390,7 +430,7 @@ export function CourseHomeView({
         ) : null}
 
         {actionFailure?.owner === 'contract' ? (
-          <Banner kind="error">学习目标暂未确认。{actionFailure.message}</Banner>
+          <Banner kind="error">课程设置暂未保存。{actionFailure.message}</Banner>
         ) : null}
         {actionFailure?.owner === 'curriculum' ? (
           <Banner kind="error">
@@ -572,10 +612,21 @@ export function CourseHomeView({
       ) : null}
 
       <details className="course-detail-disclosure">
-        <summary>学习目标与范围</summary>
+        <summary>{courseDesignSurface ? '课程设计输入' : '学习目标与范围'}</summary>
         {contract ? (
           <div className="detail-content">
-            <p>{contract.intent}</p>
+            {simplifiedCourseDesign ? (
+              <>
+                <p>全局深度：{COURSE_DEPTH_TEXT[contract.desiredDepth] ?? contract.desiredDepth}</p>
+                <p>
+                  {contract.focusRequest
+                    ? `特别关注：${contract.focusRequest}`
+                    : '特别关注：无（均衡安排）'}
+                </p>
+              </>
+            ) : (
+              <p>{contract.intent}</p>
+            )}
             <p className="small">
               <span className="pill">
                 {contractScopeBlocked ? '学习范围待重新确认' : '学习范围已确认'}
@@ -588,12 +639,12 @@ export function CourseHomeView({
             </p>
             {overview.capabilities.canEditContract ? (
               <button type="button" onClick={onEditContract} disabled={busyAction !== null}>
-                编辑学习目标
+                编辑课程设置
               </button>
             ) : null}
           </div>
         ) : (
-          <p className="muted">设置学习目标后，这里会显示范围、时间预算和可行性。</p>
+          <p className="muted">设置课程资料、全局深度和可选重点后，这里会显示课程设计输入。</p>
         )}
       </details>
 
@@ -613,12 +664,12 @@ export function CourseHomeView({
               ) : null}
             </>
           ) : (
-            <p className="muted">确认学习目标后即可生成课程结构。</p>
+            <p className="muted">提交课程设置后即可生成课程结构。</p>
           )}
         </div>
       </details>
 
-      {plan ? (
+      {plan && !derivedPreparationPlan ? (
         <details className="course-detail-disclosure" open={plan.status === 'proposed'}>
           <summary>{plan.status === 'proposed' ? '待确认的课程方案' : '完整学习路线'}</summary>
           {actionFailure?.owner === 'plan' ? (
@@ -627,11 +678,12 @@ export function CourseHomeView({
           <StudyPlanPanel
             plan={plan}
             history={overview.studyPlanHistory}
-            canEdit={overview.capabilities.canEditStudyPlan}
+            canEdit={overview.capabilities.canEditStudyPlan && !derivedPreparationPlan}
             canAccept={
               overview.capabilities.canAcceptStudyPlan && preparation?.state !== 'course_plan_ready'
             }
             showAcceptAction={preparation?.state !== 'course_plan_ready'}
+            showDecisionActions={!derivedPreparationPlan}
             busyAction={busyAction}
             launchByPlanItemId={{}}
             {...(plan.status === 'proposed' && studyPlanPlannability

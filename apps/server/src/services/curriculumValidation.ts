@@ -842,6 +842,7 @@ export function materializeCurriculumProposal(
       learningUnit:
         proposed.kind === 'learning_unit'
           ? {
+              focus: proposed.focus ?? 'normal',
               conceptIds: sourceConceptIds,
               canonicalConceptIds,
               objectives,

@@ -5,7 +5,68 @@ import { AnswerSchema, classifyGradeStatus, RubricGradeSchema } from './grading.
 import { MasteryStateSchema } from './mistake.js';
 import { ApiErrorSchema } from './errors.js';
 import { MATERIAL_TITLE_MAX_LENGTH, UpdateMaterialTitleRequestSchema } from './material.js';
-import { CURRICULUM_SOURCE_REFERENCE_LIMIT, CurriculumNodeSchema } from './curriculum.js';
+import {
+  ApplyCurriculumDraftEditRequestSchema,
+  CURRICULUM_SOURCE_REFERENCE_LIMIT,
+  CurriculumNodeSchema,
+} from './curriculum.js';
+import { CourseFocusRequestSchema } from './learningContract.js';
+
+describe('depth-and-focus Course design schemas', () => {
+  it('keeps focus narrow and validates bounded learner Skeleton edits', () => {
+    expect(CourseFocusRequestSchema.parse('  Embedding、Rerank  ')).toBe('Embedding、Rerank');
+    expect(CourseFocusRequestSchema.safeParse(' '.repeat(10)).success).toBe(false);
+    expect(
+      ApplyCurriculumDraftEditRequestSchema.parse({
+        command: {
+          commandId: 'edit-1',
+          idempotencyKey: 'edit-1',
+          workspaceId: 'workspace-1',
+          actor: 'learner',
+        },
+        curriculumId: 'curriculum-1',
+        expectedVersion: 1,
+        expectedContractId: 'contract-1',
+        expectedExecutionSourceManifestFingerprint: 'manifest-1',
+        edit: { kind: 'set_unit_focus', learningUnitId: 'unit-1', focus: 'focused' },
+      }).edit,
+    ).toEqual({ kind: 'set_unit_focus', learningUnitId: 'unit-1', focus: 'focused' });
+  });
+
+  it('keeps historical LearningUnits readable and defaults focus only at service boundaries', () => {
+    const historical = {
+      id: 'unit_legacy',
+      parentId: 'section_1',
+      kind: 'learning_unit' as const,
+      index: 0,
+      title: 'Historical unit',
+      sourceReferences: [],
+      learningUnit: {
+        conceptIds: [],
+        canonicalConceptIds: [],
+        objectives: [
+          {
+            id: 'objective_legacy',
+            title: 'Identify the topic',
+            description: 'Identify it.',
+            truthPremiseStatus: 'unverified' as const,
+            truthAuthorityRecordIds: [],
+          },
+        ],
+        prerequisiteUnitIds: [],
+        graphRelationIds: [],
+        riskIds: [],
+      },
+    };
+    expect(CurriculumNodeSchema.parse(historical).learningUnit).not.toHaveProperty('focus');
+    expect(
+      CurriculumNodeSchema.parse({
+        ...historical,
+        learningUnit: { ...historical.learningUnit, focus: 'focused' },
+      }).learningUnit?.focus,
+    ).toBe('focused');
+  });
+});
 
 const baseGrounding = {
   blockId: 'b1',

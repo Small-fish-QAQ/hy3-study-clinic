@@ -5,7 +5,8 @@
 
 **A Course-centred, source-grounded, evidence-gated, learner-governed learning-execution Agent built on Hy3.**
 
-You give it your own course material and a goal. Hy3 builds the curriculum, teaches the
+You give it your own course material, choose one global learning depth, and optionally
+name topics that deserve extra attention. Hy3 builds the Course Skeleton, teaches the
 lessons, writes the practice, grades your answers, diagnoses what went wrong, and
 proposes the repair. Deterministic local code decides what any of that is allowed to
 change about your learning record - and can always show you which piece of your own
@@ -26,9 +27,11 @@ material a claim came from.
 **Hy3 Study Clinic** 是一个基于 Hy3 构建的**学习执行 Agent**。它面向的不是「再多一个能
 答题的聊天机器人」，而是一段**可持续数天到数周、可复核、可追溯**的真实学习过程。
 
-学习者提供自己的课程资料（PDF / DOCX / PPTX / Markdown / HTML / 网页快照 / 源码）与学习
-目标，系统据此形成学习契约（Learning Contract）、课程结构（Curriculum）与版本化学习计划
-（StudyPlan），然后逐单元完成讲解、练习、正式测评、诊断与补救，并把「掌握」这件事绑定在
+学习者提供自己的课程资料（PDF / DOCX / PPTX / Markdown / HTML / 网页快照 / 源码），选择
+四档全局学习深度，并可选填写特别想深入的主题。资料定义课程学什么，全局深度定义整门课程的
+教学基线，可选重点决定在哪些资料内主题上投入额外教学资源。Hy3 据此提出课程骨架；学习者可
+重命名、在先修约束内调整顺序、修正重点标记，然后只接受一次。系统再派生版本化学习计划
+（StudyPlan），逐单元完成讲解、练习、正式测评、诊断与补救，并把「掌握」这件事绑定在
 **通过判据门控的正式证据**上，而不是绑定在一次对话或一次做对的题上。
 
 其中，**Hy3 承担全部需要语义理解与生成的开放式工作**：概念抽取、课程结构提案、讲解生成、
@@ -70,7 +73,7 @@ Hy3 performs the open-ended semantic work - the parts with no unique correct ans
 
 | Hy3 proposes | Concretely |
 | --- | --- |
-| Course structuring | concept extraction from your material; Curriculum, LearningUnit and objective proposals; StudyPlan and replan proposals |
+| Course structuring | concept extraction; depth- and optional-focus-aware Course Map, LearningUnit and objective proposals; derived StudyPlan and replan proposals |
 | Teaching | Teaching-Brief lesson slots; practice items (a separate call, made only after the lesson passes its gates); Tutor moves from a controlled vocabulary |
 | Judgement | short-answer semantic grading and rubric-point coverage; blind source-dependency attestation; candidate-evidence relation classification; bounded compositional support groups |
 | Diagnosis | misconception hypotheses; targeted Repair proposals; adversarial mastery-challenge candidates |
@@ -101,13 +104,15 @@ Deterministic local code owns everything consequential:
 ## The loop in 30 seconds
 
 ```text
-your material  ->  immutable revisions + exact source blocks
+materials + global depth + optional focus
                        |
-             Learning Contract          (goal, depth, time - learner-confirmed)
+          immutable revisions + exact source blocks
                        |
-                 Curriculum             (Hy3 proposes, local gates validate, learner accepts)
+          proposed Course Skeleton       (Hy3 proposes; local gates validate)
                        |
-                  StudyPlan             (versioned, accepted route)
+          learner review and acceptance  (rename / safe reorder / focus toggle, once)
+                       |
+          derived StudyPlan + Agenda     (validated locally; no second normal-path decision)
                        |
                SessionAgenda            (what to do now)
                        |
@@ -142,14 +147,20 @@ it is deterministic, versioned, and auditable.
   Course authority chain; it does not own progress.
 - **Accepted versions are immutable.** Corrections happen by proposing a learner-accepted
   successor, never by editing history.
+- **Teaching focus is not evidence authority.** A focused Unit receives an instructional
+  investment signal only; it cannot override global depth, prove source entailment, grant
+  Formal credit, or change mastery.
 - **Failed generation never overwrites valid data.** Schema, source, authority and route
   violations fail closed.
 
 ## Implementation status
 
 Implemented and covered by the automated suite: multi-format ingestion with
-revision-owned provenance; concepts and the validated concept graph; learner-confirmed
-Contracts; Curriculum, StudyPlan and SessionAgenda with atomic accepted-route activation;
+revision-owned provenance; concepts and the validated concept graph; the simplified
+Materials + Global Depth + Optional Focus creation flow; one explicit, versioned Course
+Skeleton review with bounded rename/safe-reorder/focus edits; derived StudyPlan and
+SessionAgenda with atomic accepted-route activation; historical Contract/Curriculum/Plan
+compatibility;
 durable StudySessions with pause/resume/stop and learner-controlled detours; Teaching
 Briefs with per-segment provenance separating verified course excerpts from labelled Hy3
 teaching; gated practice generation; a lesson-aware Tutor over a controlled move
@@ -227,8 +238,9 @@ npm run build
 npm run dev          # API + web dev servers
 ```
 
-Open the web app, create a Course, add material under `课程资料`, and follow the Course
-Home next action. Use a disposable Course workspace or a backed-up database when
+Open the web app, create a Course, add material under `课程资料`, choose the global depth,
+optionally name a material topic to emphasize, review the proposed Course Skeleton once,
+and follow the Course Home next action. Use a disposable Course workspace or a backed-up database when
 intentionally testing interruption and restart behavior.
 
 ### Provider modes

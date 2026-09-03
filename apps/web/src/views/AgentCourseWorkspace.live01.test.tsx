@@ -245,7 +245,7 @@ function renderWorkspace() {
 }
 
 async function openContractEditor(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(await screen.findByRole('button', { name: '设置学习目标' }));
+  await user.click(await screen.findByRole('button', { name: '设置课程' }));
 }
 
 beforeEach(() => {
@@ -266,7 +266,7 @@ afterEach(() => {
 });
 
 describe('LIVE-01 Learning Contract material-role recovery', () => {
-  it('LIVE01-A shows stale assignment state and does not silently progress', async () => {
+  it('LIVE01-A hides role configuration while preserving the authoritative save boundary', async () => {
     vi.spyOn(api, 'materialRoleHistory').mockResolvedValue(roleHistory(strandedProposal));
     const createContract = vi.spyOn(api, 'createLearningContract');
     const user = userEvent.setup();
@@ -274,9 +274,10 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
 
     await openContractEditor(user);
 
-    expect(screen.getByText('课程资料已更新，需要重新确认资料用途')).toBeInTheDocument();
-    expect(screen.getByText(/请检查资料角色与范围，确认后再继续保存学习约定/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '确认资料用途并准备课程' })).toBeInTheDocument();
+    expect(screen.getByText(documentSummary.title)).toBeInTheDocument();
+    expect(screen.queryByLabelText(`${documentSummary.title}资料角色`)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(`${documentSummary.title}范围`)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '开始准备课程' })).toBeInTheDocument();
     expect(createContract).not.toHaveBeenCalled();
   });
 
@@ -341,14 +342,15 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
     expect(screen.queryByLabelText('单次学习分钟（可选）')).not.toBeInTheDocument();
     expect(screen.queryByText('希望何时完成？')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('截止时间（可选）')).not.toBeInTheDocument();
-    await user.type(screen.getByLabelText('学习意图'), '掌握课程内容');
-    await user.type(screen.getByLabelText('目标结果'), '完成课程学习');
-    await user.type(screen.getByLabelText(/课程主题范围/), '认知科学');
-    await user.selectOptions(
-      screen.getByLabelText(`${documentSummary.title}资料角色`),
-      'course_material',
-    );
-    await user.click(screen.getByRole('button', { name: '确认资料用途并准备课程' }));
+    expect(screen.queryByLabelText('学习意图')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('目标结果')).not.toBeInTheDocument();
+    expect(screen.queryByText('目标分数（可选）')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/课程主题范围/)).not.toBeInTheDocument();
+    expect(screen.queryByText('既往学习情况（自述）')).not.toBeInTheDocument();
+    expect(screen.queryByText('高级范围与考试设置')).not.toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText('全局学习深度'), 'deep_transfer');
+    await user.type(screen.getByLabelText('特别关注的内容（可选）'), 'Embedding、Rerank');
+    await user.click(screen.getByRole('button', { name: '开始准备课程' }));
 
     await waitFor(() => expect(createContract).toHaveBeenCalledOnce());
     expect(confirm).toHaveBeenCalledWith(
@@ -371,13 +373,19 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
     });
     expect(createContract.mock.calls[0]![1].fields).not.toHaveProperty('deadline');
     expect(createContract.mock.calls[0]![1].fields).not.toHaveProperty('studyBudget');
-    expect(createContract.mock.calls[0]![1].fields.desiredDepth).toBe('working_fluency');
+    expect(createContract.mock.calls[0]![1].fields).toMatchObject({
+      desiredDepth: 'deep_transfer',
+      focusRequest: 'Embedding、Rerank',
+      targetOutcome: { targetScore: null },
+      courseScope: { includedTopics: [], excludedTopics: [] },
+      learnerSelfReport: null,
+      examContext: null,
+    });
 
     firstRender.unmount();
     renderWorkspace();
     await openContractEditor(user);
-    expect(screen.queryByText('课程资料已更新，需要重新确认资料用途')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '确认目标并准备课程' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '开始准备课程' })).toBeInTheDocument();
   });
 
   it('LIVE01-A refreshes a concurrent stale conflict and replaces raw server copy', async () => {
@@ -386,8 +394,18 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
       status: 'learner_confirmed',
       learnerConfirmedAt: AT,
     };
-    let current = confirmedRole;
-    vi.spyOn(api, 'materialRoleHistory').mockImplementation(async () => roleHistory(current));
+    let current: MaterialRoleAssignment = {
+      ...strandedProposal,
+      id: 'role_3',
+      version: 3,
+      predecessorId: confirmedRole.id,
+      role: 'supplementary_reference',
+    };
+    vi.spyOn(api, 'materialRoleHistory').mockImplementation(async () => ({
+      materialId: documentSummary.id,
+      current,
+      history: [legacyRole, confirmedRole, current],
+    }));
     vi.spyOn(api, 'proposeMaterialRole').mockImplementation(async () => {
       current = {
         ...strandedProposal,
@@ -403,18 +421,11 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
     renderWorkspace();
 
     await openContractEditor(user);
-    await user.type(screen.getByLabelText('学习意图'), '掌握课程内容');
-    await user.type(screen.getByLabelText('目标结果'), '完成课程学习');
-    await user.type(screen.getByLabelText(/课程主题范围/), '认知科学');
-    await user.selectOptions(
-      screen.getByLabelText(`${documentSummary.title}资料角色`),
-      'supplementary_reference',
-    );
-    await user.click(screen.getByRole('button', { name: '确认资料用途并准备课程' }));
+    await user.click(screen.getByRole('button', { name: '开始准备课程' }));
 
     expect(
       await screen.findByText(
-        '课程资料已更新，需要重新确认资料用途。请检查资料角色与范围后再次保存学习约定。',
+        '课程资料已更新，需要重新确认资料用途。请检查资料状态后再次保存课程设置。',
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText('Material role assignment is stale.')).not.toBeInTheDocument();
@@ -437,17 +448,10 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
     renderWorkspace();
 
     await openContractEditor(user);
-    await user.type(screen.getByLabelText('学习意图'), '掌握课程内容');
-    await user.type(screen.getByLabelText('目标结果'), '完成课程学习');
-    await user.type(screen.getByLabelText(/课程主题范围/), '认知科学');
-    await user.selectOptions(
-      screen.getByLabelText(`${documentSummary.title}资料角色`),
-      'course_material',
-    );
-    await user.click(screen.getByRole('button', { name: '确认目标并准备课程' }));
+    await user.click(screen.getByRole('button', { name: '开始准备课程' }));
 
     expect(
-      await screen.findByText('学习约定状态已更新，请检查当前约定后再保存。'),
+      await screen.findByText('课程设置状态已更新，请检查当前设置后再保存。'),
     ).toBeInTheDocument();
     expect(screen.queryByText('Learning Contract pointers are stale.')).not.toBeInTheDocument();
   });
@@ -458,10 +462,10 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
     renderWorkspace();
 
     await openContractEditor(user);
-    expect(screen.getByLabelText('学习约定编辑器')).toBeInTheDocument();
+    expect(screen.getByLabelText('课程设计设置')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '知识地图' }));
 
-    expect(screen.queryByLabelText('学习约定编辑器')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('课程设计设置')).not.toBeInTheDocument();
     expect(screen.getByLabelText('课程学习空间')).toHaveClass('view-explore');
   });
 
@@ -484,7 +488,7 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
     expect(screen.getByRole('tab', { name: '概览' })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('defaults reconfirmation to the latest confirmed role beneath a pending proposal', async () => {
+  it('uses the latest confirmed role as the hidden compatibility default', async () => {
     const contractedRole: MaterialRoleAssignment = {
       ...strandedProposal,
       status: 'superseded',
@@ -534,13 +538,36 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
       current: pendingRole,
       history: [legacyRole, contractedRole, changedRole, pendingRole],
     });
+    const proposeRole = vi.spyOn(api, 'proposeMaterialRole').mockResolvedValue({
+      ...pendingRole,
+      id: 'role_5',
+      version: 5,
+      predecessorId: pendingRole.id,
+      role: 'supplementary_reference',
+    });
+    vi.spyOn(api, 'confirmMaterialRole').mockResolvedValue({
+      ...pendingRole,
+      id: 'role_5',
+      version: 5,
+      predecessorId: pendingRole.id,
+      role: 'supplementary_reference',
+      status: 'learner_confirmed',
+      learnerConfirmedAt: AT,
+    });
+    vi.spyOn(api, 'createLearningContract').mockRejectedValue(new Error('stop after role check'));
     const user = userEvent.setup();
     renderWorkspace();
 
-    await user.click(await screen.findByRole('button', { name: '重新确认学习约定' }));
-
-    expect(screen.getByLabelText(`${documentSummary.title}资料角色`)).toHaveValue(
-      'supplementary_reference',
+    await user.click(await screen.findByRole('button', { name: '重新确认课程设置' }));
+    expect(screen.queryByLabelText(`${documentSummary.title}资料角色`)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '开始准备课程' }));
+    await waitFor(() =>
+      expect(proposeRole).toHaveBeenCalledWith(
+        workspace.id,
+        documentSummary.id,
+        expect.objectContaining({ role: 'supplementary_reference' }),
+        expect.any(AbortSignal),
+      ),
     );
   });
 });
@@ -614,7 +641,7 @@ describe('Course preparation orchestration', () => {
     const user = userEvent.setup();
     renderWorkspace();
 
-    await user.click(await screen.findByRole('button', { name: '确认学习目标' }));
+    await user.click(await screen.findByRole('button', { name: '开始准备课程' }));
 
     await waitFor(() => expect(run).toHaveBeenCalledOnce());
     expect(transition).toHaveBeenCalledOnce();
@@ -1279,8 +1306,8 @@ describe('F-6 operation-owned failures', () => {
     const user = userEvent.setup();
     renderWorkspace();
 
-    await user.click(await screen.findByRole('button', { name: '确认学习目标' }));
-    expect(await screen.findByText('学习目标暂未确认。确认服务暂时不可用。')).toBeInTheDocument();
+    await user.click(await screen.findByRole('button', { name: '开始准备课程' }));
+    expect(await screen.findByText('课程设置暂未保存。确认服务暂时不可用。')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '学习' }));
     expect(screen.getByLabelText('课程学习空间')).toHaveClass('view-session');
@@ -1291,11 +1318,11 @@ describe('F-6 operation-owned failures', () => {
     expect(screen.queryByText('确认服务暂时不可用。')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '主页' }));
-    expect(screen.getByText('学习目标暂未确认。确认服务暂时不可用。')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: '确认学习目标' }));
+    expect(screen.getByText('课程设置暂未保存。确认服务暂时不可用。')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '开始准备课程' }));
 
     await waitFor(() =>
-      expect(screen.queryByText('学习目标暂未确认。确认服务暂时不可用。')).not.toBeInTheDocument(),
+      expect(screen.queryByText('课程设置暂未保存。确认服务暂时不可用。')).not.toBeInTheDocument(),
     );
     expect(transition).toHaveBeenCalledTimes(2);
   });

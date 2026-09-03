@@ -86,6 +86,7 @@ export interface StudyPlanPanelProps {
   canEdit: boolean;
   canAccept: boolean;
   showAcceptAction?: boolean;
+  showDecisionActions?: boolean;
   busyAction: string | null;
   launchByPlanItemId: Record<string, AgendaLaunchCapability>;
   /** Server-computed Lesson plannability for teaching items. Feasible items are absent. */
@@ -150,6 +151,7 @@ export function StudyPlanPanel({
   canEdit,
   canAccept,
   showAcceptAction = true,
+  showDecisionActions = true,
   busyAction,
   launchByPlanItemId,
   plannability = [],
@@ -315,7 +317,7 @@ export function StudyPlanPanel({
         </details>
       ) : null}
 
-      {plan.status === 'proposed' ? (
+      {plan.status === 'proposed' && showDecisionActions ? (
         <div className="row">
           {showAcceptAction ? (
             <button

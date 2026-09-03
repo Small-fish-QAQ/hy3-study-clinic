@@ -1289,6 +1289,31 @@ describe('Teaching Brief preparation', () => {
     expect(plannedSkeleton!.lessonSlots.length).toBeLessThanOrEqual(12);
   });
 
+  it('carries global depth and accepted Unit focus into the later Lesson provider context', async () => {
+    const harness = await createHarness();
+    const row = harness.db
+      .prepare('SELECT payload FROM curriculum_versions WHERE id = ?')
+      .get(harness.curriculumId) as { payload: string };
+    const payload = JSON.parse(row.payload) as {
+      nodes: Array<{ id: string; learningUnit: { focus?: 'normal' | 'focused' } | null }>;
+    };
+    payload.nodes.find((node) => node.id === harness.learningUnitId)!.learningUnit!.focus =
+      'focused';
+    harness.db
+      .prepare('UPDATE curriculum_versions SET payload = ? WHERE id = ?')
+      .run(JSON.stringify(payload), harness.curriculumId);
+
+    const route = startTeachingRoute(harness);
+    await harness.services.teachingBriefPreparation.prepare(
+      preparationRequest(harness, route, 'brief-course-design-context'),
+    );
+
+    expect(harness.provider.lastLessonContentInput?.courseDesign).toEqual({
+      desiredDepth: 'working_fluency',
+      unitFocus: 'focused',
+    });
+  });
+
   it('prepares and reuses an immutable Brief for the accepted executable route', async () => {
     const harness = await createHarness();
     const route = startTeachingRoute(harness);

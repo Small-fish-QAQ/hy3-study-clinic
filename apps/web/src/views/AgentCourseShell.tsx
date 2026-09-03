@@ -16,7 +16,7 @@ const VIEW_LABELS: Record<AgentCourseView, string> = {
 };
 
 const VIEW_DESCRIPTIONS: Record<AgentCourseView, string> = {
-  home: '目标、下一步与今日路线',
+  home: '课程状态、下一步与今日路线',
   session: 'Tutor 对话与当前学习安排',
   curriculum: '已验证的课程层级与版本',
   progress: '正式证据、修复与学习记录',

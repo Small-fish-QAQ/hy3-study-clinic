@@ -1,9 +1,12 @@
 import {
   ActiveCourseRouteSchema,
   ApiErrorCode,
+  COURSE_PREPARATION_PLAN_TRIGGER,
+  CourseExecutionCommandEnvelopeSchema,
   DecideStudyPlanRequestSchema,
   StudyPlanDecisionResponseSchema,
   type ActiveCourseRoute,
+  type CourseExecutionCommandEnvelope,
   type DecideStudyPlanRequest,
   type StudyPlan,
   type StudyPlanProgressState,
@@ -28,6 +31,15 @@ interface CourseExecutionServiceDeps {
   clock: Clock;
   commands: CourseCommandService;
   agendas: SessionAgendaAgentService;
+}
+
+export interface AcceptDerivedStudyPlanRequest {
+  command: CourseExecutionCommandEnvelope & { actor: 'local' };
+  studyPlanId: string;
+  expectedVersion: number;
+  expectedContractId: string;
+  expectedCurriculumId: string;
+  expectedExecutionSourceManifestFingerprint: string;
 }
 
 function readActiveRoute(repos: Repositories, workspaceId: string): ActiveCourseRoute | null {
@@ -192,6 +204,129 @@ export function createCourseExecutionService({
     return readActiveRoute(repos, workspaceId);
   }
 
+  function activateProposedStudyPlan(
+    plan: StudyPlan,
+    before: ReturnType<Repositories['courseExecution']['get']>,
+    authorization: {
+      commandId: string;
+      actor: 'learner' | 'local';
+      acceptanceBasis: 'learner_review' | 'derived_from_accepted_curriculum';
+      learnerConfirmationAt: string;
+    },
+  ): StudyPlanDecisionResponse {
+    const plannedContract = repos.learningContracts.get(plan.contractVersionId);
+    if (
+      plannedContract &&
+      (isHardAvailability(plannedContract) || isHardDeadline(plannedContract)) &&
+      plan.feasibility.state === 'infeasible'
+    ) {
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        'This StudyPlan exceeds an explicit hard Contract constraint. Accept a compressed proposal or change the Contract first.',
+        { reason: 'hard_availability_cap_exceeded', recommendationRequired: true },
+      );
+    }
+
+    const {
+      plan: authoritativePlan,
+      contract,
+      curriculum,
+    } = requireCurrentPlanRouteAuthority(repos, plan.workspaceId, plan.id);
+    deriveTeachUnitDurationsOrThrow(curriculum, authoritativePlan.items);
+    const unplannable = resolveStudyPlanPlannability(curriculum, authoritativePlan.items);
+    if (unplannable.length > 0) {
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        'This StudyPlan contains a teaching item whose persisted system estimate cannot be planned as a Lesson at its current depth. Generate a corrected proposal before acceptance.',
+        {
+          reason: 'lesson_plannability_infeasible',
+          recommendationRequired: true,
+          items: unplannable.map((entry) => ({
+            planItemId: entry.plannability.planItemId,
+            planningCode: entry.plannability.planningCode,
+            targetDepth: entry.plannability.targetDepth,
+            estimatedMinutes: entry.plannability.estimatedMinutes,
+            remedies: entry.plannability.remedies,
+            details: entry.details,
+          })),
+          plannability: unplannable.map((entry) => entry.plannability),
+          warnings: unplannable.map((entry) => plannabilityWarningText(entry.plannability)),
+        },
+      );
+    }
+
+    const predecessor = before.acceptedPlanId
+      ? (repos.studyPlans.get(before.acceptedPlanId) ?? null)
+      : null;
+    carryCompatiblePlanProgress(repos, predecessor, authoritativePlan, clock.now().toISOString());
+    for (const deferral of authoritativePlan.deferrals) {
+      for (const riskId of deferral.riskIds) {
+        const risk = repos.coverageRisks.get(riskId);
+        if (risk?.facets.includes('planning_recommendation')) {
+          repos.coverageRisks.acceptDeferral(
+            riskId,
+            authorization.commandId,
+            clock.now().toISOString(),
+            {
+              id: newId('risk_evt'),
+              eventType:
+                authorization.acceptanceBasis === 'learner_review'
+                  ? 'learner_accepted_deferral'
+                  : 'derived_plan_accepted_deferral',
+              actor: authorization.actor,
+              payload: { studyPlanId: authoritativePlan.id },
+              createdAt: clock.now().toISOString(),
+            },
+          );
+        }
+      }
+    }
+    const draftAgenda = agendas.composeDraft(contract, curriculum, authoritativePlan);
+    const storedAgenda = repos.sessionAgendas.create(draftAgenda, {
+      id: newId('agenda_evt'),
+      eventType: 'composed_for_route_activation',
+      actor: 'local',
+      payload: { studyPlanId: authoritativePlan.id },
+      createdAt: draftAgenda.createdAt,
+    });
+    const acceptedAt = clock.now().toISOString();
+    repos.courseExecution.activateRoute({
+      workspaceId: plan.workspaceId,
+      contractId: contract.id,
+      curriculumId: curriculum.id,
+      planId: authoritativePlan.id,
+      agendaId: storedAgenda.id,
+      expectedStateVersion: before.version,
+      expectedActiveContractId: before.activeContractId,
+      expectedActiveCurriculumId: before.activeCurriculumId,
+      expectedAcceptedPlanId: before.acceptedPlanId,
+      expectedActiveAgendaId: before.activeAgendaId,
+      eventId: newId('course_evt'),
+      actor: authorization.actor,
+      acceptanceBasis: authorization.acceptanceBasis,
+      learnerConfirmationAt: authorization.learnerConfirmationAt,
+      acceptedAt,
+    });
+    const replanTrigger = repos.formalProgression.findReplanTriggerByProposedPlan(
+      authoritativePlan.id,
+    );
+    if (replanTrigger) {
+      repos.formalProgression.updateReplanTrigger({
+        ...replanTrigger,
+        status: 'resolved',
+        updatedAt: clock.now().toISOString(),
+      });
+    }
+    const installed = readActiveRoute(repos, plan.workspaceId);
+    if (!installed) throw new Error('Accepted Course route was not installed.');
+    return StudyPlanDecisionResponseSchema.parse({
+      decision: 'accepted',
+      decidedPlan: installed.studyPlan,
+      activeRoute: installed,
+      retainedRoute: null,
+    });
+  }
+
   function decideStudyPlan(input: DecideStudyPlanRequest): StudyPlanDecisionResponse {
     const parsed = DecideStudyPlanRequestSchema.parse(input);
     if (!repos.workspaces.get(parsed.command.workspaceId)) throw notFound('Course not found.');
@@ -252,122 +387,14 @@ export function createCourseExecutionService({
         return StudyPlanDecisionResponseSchema.parse(response);
       }
 
-      const plannedContract = repos.learningContracts.get(plan.contractVersionId);
-      if (
-        plannedContract &&
-        (isHardAvailability(plannedContract) || isHardDeadline(plannedContract)) &&
-        plan.feasibility.state === 'infeasible'
-      ) {
-        throw new AppError(
-          ApiErrorCode.ValidationError,
-          'This StudyPlan exceeds an explicit hard Contract constraint. Accept a compressed proposal or change the Contract first.',
-          { reason: 'hard_availability_cap_exceeded', recommendationRequired: true },
-        );
-      }
-
-      const response = commands.complete(claim, () => {
-        const {
-          plan: authoritativePlan,
-          contract,
-          curriculum,
-        } = requireCurrentPlanRouteAuthority(repos, parsed.command.workspaceId, plan.id);
-
-        // Defense in depth only: proposal creation owns derivation. Calling the same
-        // bounded derivation here detects structural impossibility, but its result is
-        // deliberately discarded so acceptance cannot rewrite learner-visible content.
-        deriveTeachUnitDurationsOrThrow(curriculum, authoritativePlan.items);
-        const unplannable = resolveStudyPlanPlannability(curriculum, authoritativePlan.items);
-        if (unplannable.length > 0) {
-          throw new AppError(
-            ApiErrorCode.ValidationError,
-            'This StudyPlan contains a teaching item whose persisted system estimate cannot be planned as a Lesson at its current depth. Generate a corrected proposal before acceptance.',
-            {
-              reason: 'lesson_plannability_infeasible',
-              recommendationRequired: true,
-              items: unplannable.map((entry) => ({
-                planItemId: entry.plannability.planItemId,
-                planningCode: entry.plannability.planningCode,
-                targetDepth: entry.plannability.targetDepth,
-                estimatedMinutes: entry.plannability.estimatedMinutes,
-                remedies: entry.plannability.remedies,
-                details: entry.details,
-              })),
-              plannability: unplannable.map((entry) => entry.plannability),
-              warnings: unplannable.map((entry) => plannabilityWarningText(entry.plannability)),
-            },
-          );
-        }
-
-        const predecessor = before.acceptedPlanId
-          ? (repos.studyPlans.get(before.acceptedPlanId) ?? null)
-          : null;
-        carryCompatiblePlanProgress(
-          repos,
-          predecessor,
-          authoritativePlan,
-          clock.now().toISOString(),
-        );
-        for (const deferral of authoritativePlan.deferrals) {
-          for (const riskId of deferral.riskIds) {
-            const risk = repos.coverageRisks.get(riskId);
-            if (risk?.facets.includes('planning_recommendation')) {
-              repos.coverageRisks.acceptDeferral(
-                riskId,
-                parsed.command.commandId,
-                clock.now().toISOString(),
-                {
-                  id: newId('risk_evt'),
-                  eventType: 'learner_accepted_deferral',
-                  actor: 'learner',
-                  payload: { studyPlanId: authoritativePlan.id },
-                  createdAt: clock.now().toISOString(),
-                },
-              );
-            }
-          }
-        }
-        const draftAgenda = agendas.composeDraft(contract, curriculum, authoritativePlan);
-        const storedAgenda = repos.sessionAgendas.create(draftAgenda, {
-          id: newId('agenda_evt'),
-          eventType: 'composed_for_route_activation',
-          actor: 'local',
-          payload: { studyPlanId: authoritativePlan.id },
-          createdAt: draftAgenda.createdAt,
-        });
-        repos.courseExecution.activateRoute({
-          workspaceId: parsed.command.workspaceId,
-          contractId: contract.id,
-          curriculumId: curriculum.id,
-          planId: authoritativePlan.id,
-          agendaId: storedAgenda.id,
-          expectedStateVersion: before.version,
-          expectedActiveContractId: before.activeContractId,
-          expectedActiveCurriculumId: before.activeCurriculumId,
-          expectedAcceptedPlanId: before.acceptedPlanId,
-          expectedActiveAgendaId: before.activeAgendaId,
-          eventId: newId('course_evt'),
+      const response = commands.complete(claim, () =>
+        activateProposedStudyPlan(plan, before, {
+          commandId: parsed.command.commandId,
           actor: 'learner',
-          acceptedAt: clock.now().toISOString(),
-        });
-        const replanTrigger = repos.formalProgression.findReplanTriggerByProposedPlan(
-          authoritativePlan.id,
-        );
-        if (replanTrigger) {
-          repos.formalProgression.updateReplanTrigger({
-            ...replanTrigger,
-            status: 'resolved',
-            updatedAt: clock.now().toISOString(),
-          });
-        }
-        const installed = readActiveRoute(repos, parsed.command.workspaceId);
-        if (!installed) throw new Error('Accepted Course route was not installed.');
-        return StudyPlanDecisionResponseSchema.parse({
-          decision: 'accepted',
-          decidedPlan: installed.studyPlan,
-          activeRoute: installed,
-          retainedRoute: null,
-        });
-      });
+          acceptanceBasis: 'learner_review',
+          learnerConfirmationAt: clock.now().toISOString(),
+        }),
+      );
       return StudyPlanDecisionResponseSchema.parse(response);
     } catch (error) {
       commands.fail(claim, error);
@@ -375,7 +402,78 @@ export function createCourseExecutionService({
     }
   }
 
-  return { activeRoute, decideStudyPlan };
+  function acceptDerivedStudyPlan(input: AcceptDerivedStudyPlanRequest): StudyPlanDecisionResponse {
+    const command = CourseExecutionCommandEnvelopeSchema.parse(input.command);
+    if (command.actor !== 'local') {
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        'Derived StudyPlan activation is local-only.',
+      );
+    }
+    const plan = repos.studyPlans.get(input.studyPlanId);
+    if (
+      !plan ||
+      plan.workspaceId !== command.workspaceId ||
+      plan.status !== 'proposed' ||
+      plan.version !== input.expectedVersion ||
+      plan.contractVersionId !== input.expectedContractId ||
+      plan.curriculumVersionId !== input.expectedCurriculumId ||
+      plan.executionSourceManifestFingerprint !== input.expectedExecutionSourceManifestFingerprint
+    ) {
+      throw new AppError(ApiErrorCode.VersionConflict, 'Derived StudyPlan activation is stale.');
+    }
+    const { contract, curriculum } = requireCurrentPlanRouteAuthority(
+      repos,
+      command.workspaceId,
+      plan.id,
+    );
+    const proposalEvent = repos.studyPlans
+      .listEvents(plan.id)
+      .find((event) => event.eventType === 'proposed');
+    if (
+      !Object.prototype.hasOwnProperty.call(contract, 'focusRequest') ||
+      !curriculum.acceptedAt ||
+      proposalEvent?.actor !== 'local' ||
+      typeof proposalEvent.payload !== 'object' ||
+      proposalEvent.payload === null ||
+      !('proposalTrigger' in proposalEvent.payload) ||
+      proposalEvent.payload.proposalTrigger !== COURSE_PREPARATION_PLAN_TRIGGER
+    ) {
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        'Only the simplified Course flow may derive a StudyPlan from learner-accepted structure.',
+      );
+    }
+    const claim = commands.begin(command, 'activate_derived_study_plan', {
+      studyPlanId: plan.id,
+      version: plan.version,
+      contractId: contract.id,
+      curriculumId: curriculum.id,
+      manifestFingerprint: plan.executionSourceManifestFingerprint,
+      acceptanceBasis: 'derived_from_accepted_curriculum',
+    });
+    if (claim.replayPayload !== undefined) {
+      return StudyPlanDecisionResponseSchema.parse(claim.replayPayload);
+    }
+    try {
+      const before = repos.courseExecution.get(command.workspaceId);
+      return StudyPlanDecisionResponseSchema.parse(
+        commands.complete(claim, () =>
+          activateProposedStudyPlan(plan, before, {
+            commandId: command.commandId,
+            actor: 'local',
+            acceptanceBasis: 'derived_from_accepted_curriculum',
+            learnerConfirmationAt: curriculum.acceptedAt!,
+          }),
+        ),
+      );
+    } catch (error) {
+      commands.fail(claim, error);
+      throw error;
+    }
+  }
+
+  return { activeRoute, decideStudyPlan, acceptDerivedStudyPlan };
 }
 
 export type CourseExecutionService = ReturnType<typeof createCourseExecutionService>;

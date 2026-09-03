@@ -38,8 +38,11 @@ export interface ActivateCourseRouteInput {
   expectedAcceptedPlanId: string | null;
   expectedActiveAgendaId: string | null;
   eventId: string;
-  actor: 'learner';
+  actor: 'learner' | 'local';
   acceptedAt: string;
+  acceptanceBasis?: 'learner_review' | 'derived_from_accepted_curriculum';
+  /** The single learner authorization; for derived Plans this is Skeleton acceptance time. */
+  learnerConfirmationAt?: string;
   /** Test-only transaction probe; production callers leave this undefined. */
   beforePointerSwap?: () => void;
 }
@@ -479,6 +482,7 @@ export function createCourseExecutionRepo(db: SqliteDb) {
         planId: input.planId,
         agendaId: input.agendaId,
         supersededSessionIds,
+        acceptanceBasis: input.acceptanceBasis ?? 'learner_review',
       }),
       input.acceptedAt,
     );
@@ -848,7 +852,8 @@ export function createCourseExecutionRepo(db: SqliteDb) {
       const acceptedPlan = StudyPlanSchema.parse({
         ...plan,
         status: 'accepted',
-        learnerAcceptedAt: input.acceptedAt,
+        acceptanceBasis: input.acceptanceBasis ?? 'learner_review',
+        learnerAcceptedAt: input.learnerConfirmationAt ?? input.acceptedAt,
       });
       const activeContract = LearningContractSchema.parse({ ...contract, status: 'active' });
       const activeAgenda = SessionAgendaSchema.parse({
@@ -967,7 +972,7 @@ export function createCourseExecutionRepo(db: SqliteDb) {
       db.prepare(
         `UPDATE study_plan_versions
        SET status = 'accepted', learner_accepted_at = ?, payload = ? WHERE id = ?`,
-      ).run(input.acceptedAt, JSON.stringify(acceptedPlan), acceptedPlan.id);
+      ).run(acceptedPlan.learnerAcceptedAt, JSON.stringify(acceptedPlan), acceptedPlan.id);
       db.prepare(
         `UPDATE session_agendas SET status = 'active', payload = ?, updated_at = ? WHERE id = ?`,
       ).run(JSON.stringify(activeAgenda), input.acceptedAt, activeAgenda.id);

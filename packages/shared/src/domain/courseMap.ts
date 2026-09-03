@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { UnitFocusSchema } from './curriculum.js';
 
 export const CourseMapSourceVisibilityEvidenceSchema = z
   .object({
@@ -296,6 +297,7 @@ export const CourseMapRegionSchema = z
     title: z.string().min(1).max(300),
     learningIntent: z.string().min(1).max(700),
     approximateScope: CourseMapApproximateScopeSchema,
+    focus: UnitFocusSchema.optional(),
     sourceAllocationRegionIds: z.array(z.string().min(1)).min(1).max(16),
     materialIds: z.array(z.string().min(1)).max(100),
     conceptIds: z.array(z.string().min(1)).max(20),

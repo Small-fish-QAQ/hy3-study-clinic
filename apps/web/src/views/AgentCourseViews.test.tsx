@@ -11,6 +11,7 @@ import type {
   StudyPlan,
   StudyPlanItemPlannability,
 } from '@hy3-clinic/shared';
+import { COURSE_PREPARATION_PLAN_TRIGGER } from '@hy3-clinic/shared';
 import { CourseHomeView, type CourseHomeViewProps } from './CourseHomeView.js';
 import { CurriculumView } from './CurriculumView.js';
 import { StudyPlanPanel } from './StudyPlanPanel.js';
@@ -755,6 +756,36 @@ describe('CourseHomeView action and authority rendering', () => {
     expect(props.onProposeStudyPlan).not.toHaveBeenCalled();
   });
 
+  it('keeps a new derived StudyPlan free of a second learner decision or Unit depth controls', async () => {
+    const value = overview('launchable');
+    value.setupStage = 'plan_review';
+    value.activeContract = { ...value.activeContract!, focusRequest: null };
+    value.acceptedStudyPlan = null;
+    value.proposedStudyPlan = {
+      ...plan('proposed'),
+      proposalTrigger: COURSE_PREPARATION_PLAN_TRIGGER,
+    };
+    value.activeAgenda = null;
+    value.nextAction = null;
+    value.capabilities = {
+      ...value.capabilities,
+      canEditStudyPlan: true,
+      canAcceptStudyPlan: true,
+    };
+    const props = homeProps(value);
+    const user = userEvent.setup();
+
+    render(<CourseHomeView {...props} />);
+
+    expect(screen.queryByRole('button', { name: '接受并启用路线' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '拒绝提案' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: '调整该单元的深度' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '上移' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '继续准备课程' }));
+    expect(props.onRunPreparation).toHaveBeenCalledOnce();
+    expect(props.onAcceptStudyPlan).not.toHaveBeenCalled();
+  });
+
   it('does not display a superseded older Curriculum proposal over its accepted successor', () => {
     const value = overview('launchable');
     value.planningCurriculum = {
@@ -820,7 +851,7 @@ describe('CourseHomeView action and authority rendering', () => {
         actionFailure={{ owner: 'contract', message: '确认操作失败。' }}
       />,
     );
-    expect(screen.getByRole('alert')).toHaveTextContent('学习目标暂未确认。确认操作失败。');
+    expect(screen.getByRole('alert')).toHaveTextContent('课程设置暂未保存。确认操作失败。');
 
     rendered.rerender(
       <CourseHomeView
@@ -1004,7 +1035,7 @@ describe('CourseHomeView action and authority rendering', () => {
     expect(screen.getByText('学习范围待重新确认')).toBeInTheDocument();
     expect(screen.queryByText('学习范围已确认')).not.toBeInTheDocument();
     expect(screen.queryByText(/pointers are stale/i)).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: '重新确认学习约定' }));
+    await user.click(screen.getByRole('button', { name: '重新确认课程设置' }));
     expect(props.onCreateContract).toHaveBeenCalledOnce();
     expect(props.onOpenConceptGrounding).not.toHaveBeenCalled();
   });
@@ -1393,6 +1424,47 @@ describe('StudyPlanPanel decisions', () => {
 });
 
 describe('CurriculumView truth and validation states', () => {
+  it('offers only bounded pre-acceptance rename, safe-order, focus, and regenerate controls', async () => {
+    const onEdit = vi.fn();
+    const onPropose = vi.fn();
+    const user = userEvent.setup();
+    vi.spyOn(window, 'prompt').mockReturnValue('Renamed source objective');
+    render(
+      <CurriculumView
+        hierarchy={hierarchy()}
+        history={[]}
+        loading={false}
+        error={null}
+        canPropose
+        canAccept
+        busyAction={null}
+        onPropose={onPropose}
+        onEdit={onEdit}
+        onAccept={vi.fn()}
+        onReject={vi.fn()}
+        onSelectHistory={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: '重新生成' }));
+    expect(onPropose).toHaveBeenCalledOnce();
+    await user.click(screen.getByRole('button', { name: '查看内容（2 个学习主题）' }));
+    const unit = screen.getByRole('heading', { name: 'Verified source objective' }).closest('li')!;
+    expect(within(unit).getByText('常规')).toBeInTheDocument();
+    expect(within(unit).getByRole('button', { name: '上移' })).toBeDisabled();
+    await user.click(within(unit).getByRole('button', { name: '重命名' }));
+    await user.click(within(unit).getByRole('button', { name: '下移' }));
+    await user.click(within(unit).getByRole('button', { name: '设为重点' }));
+
+    expect(onEdit.mock.calls.map(([edit]) => edit)).toEqual([
+      { kind: 'rename_unit', learningUnitId: 'unit_1', title: 'Renamed source objective' },
+      { kind: 'reorder_unit', learningUnitId: 'unit_1', direction: 'down' },
+      { kind: 'set_unit_focus', learningUnitId: 'unit_1', focus: 'focused' },
+    ]);
+    expect(screen.getByRole('button', { name: '接受课程结构' })).toBeInTheDocument();
+    expect(screen.queryByText(/合并|删除单元|编辑目标/)).not.toBeInTheDocument();
+  });
+
   it('replaces the successor CTA with Concept recovery when grounding is missing', async () => {
     const value = hierarchy();
     value.status = 'accepted';

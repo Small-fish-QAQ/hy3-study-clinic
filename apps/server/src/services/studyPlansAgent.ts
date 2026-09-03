@@ -261,7 +261,9 @@ function buildProviderInput(
       learnerState,
       requiredLearningUnitIds: units.map((unit) => unit.id),
       allowedItemKinds: [...new Set(profiles.flatMap((profile) => profile.allowedItemKinds))],
-      allowedDepths: ['pass_oriented', 'working_fluency', 'high_performance', 'deep_transfer'],
+      allowedDepths: Object.prototype.hasOwnProperty.call(contract, 'focusRequest')
+        ? [contract.desiredDepth]
+        : ['pass_oriented', 'working_fluency', 'high_performance', 'deep_transfer'],
       launchCapabilities: profiles.map((profile) => ({
         curriculumLearningUnitId: profile.curriculumLearningUnitId,
         allowedItemKinds: profile.allowedItemKinds,

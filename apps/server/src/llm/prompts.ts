@@ -891,6 +891,7 @@ export function curriculumPromptContext(input: CurriculumProposalInput) {
       intent: input.contract.intent,
       targetOutcome: input.contract.targetOutcome,
       desiredDepth: input.contract.desiredDepth,
+      focusRequest: input.contract.focusRequest ?? null,
       subjectBoundaries: input.contract.subjectBoundaries,
       materials: input.contract.materials.map((material) => ({
         materialKey: materialKeyById.get(material.materialId),
@@ -992,6 +993,7 @@ export function courseMapPromptContext(input: CourseMapProposalInput) {
       intent: input.contract.intent,
       targetOutcome: input.contract.targetOutcome,
       desiredDepth: input.contract.desiredDepth,
+      focusRequest: input.contract.focusRequest ?? null,
       subjectBoundaries: input.contract.subjectBoundaries,
       includedTopics: input.contract.includedTopics,
       excludedTopics: input.contract.excludedTopics,
@@ -1067,8 +1069,10 @@ export function courseMapProposalMessages(input: CourseMapProposalInput): ChatMe
         context.guard,
         context.body,
         'Return exactly this shape:',
-        `{"modules":[{"title":"...","learningIntent":"...","regions":[{"sourceRegionRef":"R1","title":"...","learningIntent":"...","approximateScope":"focused|standard|extended","anchorOptionRefs":["R1:A1"]${capabilityShape}}]}],"prerequisites":[{"prerequisiteRegionRef":"R1","dependentRegionRef":"R2"}],"synthesisGroups":[{"title":"...","level":"module|course|transfer","regionRefs":["R1","R2"]}],"sourceDispositions":[{"sourceRegionRef":"R3","disposition":"represented_by_parent_or_synthesis|duplicate/redundant|boilerplate/navigation/non-learning-content|explicitly_out_of_scope|unresolved_candidate_gap","rationale":"...","representedRegionRefs":["R1"]}]}`,
+        `{"modules":[{"title":"...","learningIntent":"...","regions":[{"sourceRegionRef":"R1","title":"...","learningIntent":"...","approximateScope":"focused|standard|extended","focus":"normal|focused","anchorOptionRefs":["R1:A1"]${capabilityShape}}]}],"prerequisites":[{"prerequisiteRegionRef":"R1","dependentRegionRef":"R2"}],"synthesisGroups":[{"title":"...","level":"module|course|transfer","regionRefs":["R1","R2"]}],"sourceDispositions":[{"sourceRegionRef":"R3","disposition":"represented_by_parent_or_synthesis|duplicate/redundant|boilerplate/navigation/non-learning-content|explicitly_out_of_scope|unresolved_candidate_gap","rationale":"...","representedRegionRefs":["R1"]}]}`,
         'Create a coherent ordered hierarchy before any detailed objectives or LearningUnits.',
+        'desiredDepth is learner authority and the Course-wide baseline. Never infer, replace, or lower it. Shape Course design through unit and objective granularity, conceptual or mechanistic demand, prerequisite decomposition, supporting background, and reasoning/scenario demand. Greater depth must not merely mean more words, time, citations, or cards.',
+        'focusRequest is narrow topic emphasis inside the supplied subject matter. Mark focus focused only when the request maps meaningfully to this region title, offered Concept anchors, or source evidence; otherwise use normal. No focusRequest means every region is normal. Do not treat scores, requests for more examples, or requests to make teaching easy as topic focus. Focus must not remove unrelated Course coverage or grant source/Formal authority.',
         'Module and region titles are learner-visible pedagogical identities, not parser headings. Remove source-order numbering, do not copy numbered source headings, and do not distinguish repeated headings by merely appending counters such as (1)/(2). Name the semantic learning boundary represented by each exact sourceRegionRef.',
         'Module array order and region array order are the pedagogical order. Do not output keys, numeric indexes, fingerprints, counts, allocation ids, Concept ids, canonical Concept ids, evidence ids, or any other identity not present in the requested shape.',
         'Use every offered sourceRegionRef exactly once: create exactly one instructional region for every meaningful offered sourceRegionRef. If a region is not a direct unit, include exactly one sourceDispositions row with a concrete rationale. Never classify meaningful learning content as boilerplate merely to improve coverage.',
@@ -1174,6 +1178,7 @@ export function curriculumDetailProposalMessages(
         'Use only evidence, Concept, and canonical Concept identities offered inside that same region. Select at least one exact evidence offer from every listed sourceAllocationRegionId.',
         'Prerequisite and synthesis context is informational: the server maps the validated Course Map structure into the final Curriculum. Do not output prerequisite or synthesis identities.',
         'Each unit needs one to four concrete instructional objectives. Use priority required only when the exact evidence can support an independently authorized Formal Assessment path; narrow a broader teaching intention when its source authority is narrower.',
+        'The learner-selected desiredDepth is the Course-wide baseline and region focus is only an additive investment signal. Use both to shape objective granularity, conceptual/mechanistic demand, prerequisite decomposition, background, and scenario demand. Focus does not override desiredDepth or source authority, and greater depth must not merely add words, duration, citations, or cards.',
         'When a region contains capabilityRequirements, emit exactly one objective for every capabilityRef and no duplicate. Echo its capabilityRef as capabilityRequirementRef, copy its frozen title and description plus its frozen construct and priority exactly, preserve non-null subjectClass and scopeOrigin exactly, and select evidence only from its allowedEvidenceIds. When both classifications are null for a legacy predecessor, propose both explicitly for the new successor. Never omit, rename, substitute, trivialize, or narrow any predecessor capability. Local independent evaluation decides preservation and semantic support.',
         'Assign every objective one explicit construct matching the observable learner capability in its title and description. This construct is frozen after proposal and cannot be lowered during repair merely to pass validation.',
         'Each exact evidence offer has its own authorityEnvelope. That evidence-level envelope is decisive for an objective that selects the offer; the broader region envelope is planning context only and cannot lend authority across evidence offers. formalEvidenceCount and supportedConstructs describe the strongest permitted Formal construct.',
@@ -1669,6 +1674,7 @@ export function teachingBriefMessages(input: TeachingBriefGenerationInput): Chat
 export function lessonSlotContentMessages(input: LessonSlotContentGenerationInput): ChatMessage[] {
   const context = wrapUntrustedJson('LESSON_SLOT_CONTENT_CONTEXT', {
     workspaceName: input.workspaceName,
+    courseDesign: input.courseDesign ?? null,
     skeleton: {
       id: input.skeleton.id,
       schemaVersion: input.skeleton.schemaVersion,

@@ -211,10 +211,14 @@ export function createTeachingBriefPreparationService({
       );
     }
     const plan = repos.studyPlans.get(input.studyPlanVersionId);
+    const contract = curriculum
+      ? repos.learningContracts.get(curriculum.contractVersionId)
+      : undefined;
     const session = repos.studySessions.get(input.studySessionId);
     const agenda = repos.sessionAgendas.get(input.sessionAgendaId);
     if (
       !curriculum ||
+      !contract ||
       !plan ||
       !session ||
       !agenda ||
@@ -223,7 +227,10 @@ export function createTeachingBriefPreparationService({
       session.workspaceId !== input.workspaceId ||
       agenda.workspaceId !== input.workspaceId ||
       curriculum.status !== 'accepted' ||
+      contract.status !== 'active' ||
+      state.activeContractId !== contract.id ||
       plan.status !== 'accepted' ||
+      plan.contractVersionId !== contract.id ||
       plan.curriculumVersionId !== curriculum.id ||
       state.activeCurriculumId !== curriculum.id ||
       state.acceptedPlanId !== plan.id ||
@@ -313,6 +320,7 @@ export function createTeachingBriefPreparationService({
     return {
       workspace,
       state,
+      contract,
       curriculum,
       plan,
       session,
@@ -625,6 +633,10 @@ export function createTeachingBriefPreparationService({
     }
     return {
       workspaceName: route.workspace.name,
+      courseDesign: {
+        desiredDepth: route.contract.desiredDepth,
+        unitFocus: route.node.learningUnit!.focus ?? 'normal',
+      },
       learningUnit: {
         title: route.node.title,
         objectives: providerObjectives,
@@ -727,6 +739,7 @@ export function createTeachingBriefPreparationService({
     };
     return {
       workspaceName: route.workspace.name,
+      ...(input.courseDesign ? { courseDesign: input.courseDesign } : {}),
       skeleton: lessonSkeleton,
       sourceContext: input.sourceContext,
       visualContext: input.visualContext,

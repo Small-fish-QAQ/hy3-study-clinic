@@ -20,6 +20,10 @@ export const DesiredDepthSchema = z.enum([
 ]);
 export type DesiredDepth = z.infer<typeof DesiredDepthSchema>;
 
+/** Narrow Course-design emphasis over topics represented by the supplied Materials. */
+export const CourseFocusRequestSchema = z.string().trim().min(1).max(500);
+export type CourseFocusRequest = z.infer<typeof CourseFocusRequestSchema>;
+
 export const ContractTargetOutcomeSchema = z
   .object({
     description: z.string().min(1).max(500),
@@ -124,6 +128,11 @@ export const LearningContractSchema = z
     deadline: ContractDeadlineSchema.nullable(),
     studyBudget: ContractStudyBudgetSchema,
     desiredDepth: DesiredDepthSchema,
+    /**
+     * Presence marks the simplified Materials + Depth + Focus creation flow.
+     * Historical Contracts omit this key and remain readable on their original flow.
+     */
+    focusRequest: CourseFocusRequestSchema.nullable().optional(),
     courseScope: ContractCourseScopeSchema,
     learnerSelfReport: LearnerSelfReportSchema.nullable(),
     examContext: ContractExamContextSchema.nullable(),
@@ -215,6 +224,7 @@ export const LearningContractDraftFieldsSchema = z
     deadline: ContractDeadlineSchema.nullable(),
     studyBudget: ContractStudyBudgetSchema,
     desiredDepth: DesiredDepthSchema,
+    focusRequest: CourseFocusRequestSchema.nullable().optional(),
     courseScope: ContractCourseScopeSchema,
     learnerSelfReport: LearnerSelfReportSchema.nullable(),
     examContext: ContractExamContextSchema.nullable(),

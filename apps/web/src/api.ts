@@ -60,6 +60,7 @@ import {
   PaceObservationResponseSchema,
   SafeProviderConfigSchema,
   type AcceptCurriculumRequest,
+  type ApplyCurriculumDraftEditRequest,
   type ApplyStudyPlanDraftEditRequest,
   type ConfirmMaterialRoleRequest,
   type CourseActionLaunchResult,
@@ -685,6 +686,20 @@ export const api = {
     requestParsed(
       'POST',
       `/api/workspaces/${workspaceId}/curricula/${curriculumId}/accept`,
+      CurriculumProposalResponseSchema,
+      input,
+      signal,
+    ),
+
+  editCurriculum: (
+    workspaceId: string,
+    curriculumId: string,
+    input: ApplyCurriculumDraftEditRequest,
+    signal?: AbortSignal,
+  ): Promise<CurriculumProposalResponse> =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/curricula/${curriculumId}/edits`,
       CurriculumProposalResponseSchema,
       input,
       signal,

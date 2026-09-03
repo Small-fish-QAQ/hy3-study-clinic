@@ -57,6 +57,9 @@ class TrackingProvider extends FakeProvider {
   legacyCurriculumCalls = 0;
   detailCalls = 0;
   studyPlanCalls = 0;
+  lastCourseMapInput: CourseMapProposalInput | null = null;
+  lastDetailInputs: CurriculumDetailProposalInput[] = [];
+  lastStudyPlanInput: StudyPlanProposalInput | null = null;
   failCurriculum = false;
   onAnalyzeStarted: (() => void) | null = null;
   analyzeGate: Promise<void> | null = null;
@@ -69,6 +72,7 @@ class TrackingProvider extends FakeProvider {
   detailGate: Promise<void> | null = null;
   failDetailAtCall: number | null = null;
   nextLegacyNonOptionalObjectiveLimit: number | null = null;
+  omitCourseMapPrerequisites = false;
 
   constructor(options: FakeProviderOptions = {}) {
     super(options);
@@ -129,6 +133,7 @@ class TrackingProvider extends FakeProvider {
   ): Promise<CourseMapProposalPayload> {
     this.curriculumCalls += 1;
     this.courseMapCalls += 1;
+    this.lastCourseMapInput = structuredClone(input);
     const gate = this.curriculumGate;
     this.curriculumGate = null;
     const started = this.onCurriculumStarted;
@@ -136,7 +141,9 @@ class TrackingProvider extends FakeProvider {
     started?.();
     if (gate) await gate;
     if (this.failCurriculum) throw new Error('controlled Curriculum failure');
-    return super.proposeCourseMap(input, opts);
+    const proposal = await super.proposeCourseMap(input, opts);
+    if (this.omitCourseMapPrerequisites) proposal.prerequisites = [];
+    return proposal;
   }
 
   override async proposeCurriculumDetails(
@@ -144,6 +151,7 @@ class TrackingProvider extends FakeProvider {
     opts?: ProviderCallOptions,
   ): Promise<CurriculumDetailProposalPayload> {
     this.detailCalls += 1;
+    this.lastDetailInputs.push(structuredClone(input));
     const call = this.detailCalls;
     this.onDetailStarted?.(call);
     if (this.detailGateAtCall === call && this.detailGate) await this.detailGate;
@@ -156,6 +164,7 @@ class TrackingProvider extends FakeProvider {
     opts?: ProviderCallOptions,
   ): Promise<StudyPlanProposalPayload> {
     this.studyPlanCalls += 1;
+    this.lastStudyPlanInput = structuredClone(input);
     const gate = this.studyPlanGate;
     this.studyPlanGate = null;
     const started = this.onStudyPlanStarted;
@@ -231,6 +240,8 @@ function createHarness(
     compactMaterial?: boolean;
     minutesPerDay?: number;
     preferredSessionMinutes?: number;
+    desiredDepth?: LearningContractDraftFields['desiredDepth'];
+    focusRequest?: string | null;
   } = {},
 ): Harness {
   const db = openDatabase(':memory:');
@@ -284,14 +295,19 @@ function createHarness(
     assignmentId: roleProposal.id,
     expectedVersion: roleProposal.version,
   });
+  const fields = contractFields(
+    role.id,
+    role.version,
+    options.minutesPerDay,
+    options.preferredSessionMinutes,
+  );
+  fields.desiredDepth = options.desiredDepth ?? fields.desiredDepth;
+  if (Object.prototype.hasOwnProperty.call(options, 'focusRequest')) {
+    fields.focusRequest = options.focusRequest ?? null;
+  }
   const draft = services.learningContracts.createDraft({
     command: command('contract-create'),
-    fields: contractFields(
-      role.id,
-      role.version,
-      options.minutesPerDay,
-      options.preferredSessionMinutes,
-    ),
+    fields,
     predecessorContractId: null,
     expectedActiveContractId: null,
   }).contract;
@@ -553,6 +569,339 @@ describe('Course Preparation coordinator', () => {
     expect(provider.studyPlanCalls).toBe(1);
     expect(repos.curricula.list('ws_1').map((item) => item.status)).toEqual(['accepted']);
     expect(repos.studyPlans.list('ws_1').map((item) => item.status)).toEqual(['proposed']);
+  });
+
+  it('keeps a new depth-and-focus Course Skeleton proposed until one learner acceptance', async () => {
+    const { repos, provider, services, contract } = createHarness({
+      withConcept: true,
+      sectionCount: 3,
+      desiredDepth: 'deep_transfer',
+      focusRequest: 'Working memory',
+    });
+    const initial = services.coursePreparation.get('ws_1');
+
+    expect(initial.machineAction).toBe('prepare_course_structure');
+    const result = await services.coursePreparation.run(runRequest(initial));
+
+    expect(result.preparation).toMatchObject({
+      state: 'awaiting_required_governance',
+      machineAction: null,
+      learnerAction: 'review_course_structure',
+      learnerDecisionRequired: true,
+      blocker: { code: 'course_structure_review_required' },
+    });
+    expect(contract.desiredDepth).toBe('deep_transfer');
+    expect(contract.focusRequest).toBe('Working memory');
+    expect(provider.lastCourseMapInput?.contract).toMatchObject({
+      desiredDepth: 'deep_transfer',
+      focusRequest: 'Working memory',
+    });
+    expect(provider.lastDetailInputs).not.toHaveLength(0);
+    expect(
+      provider.lastDetailInputs.every(
+        (input) =>
+          input.contract.desiredDepth === 'deep_transfer' &&
+          input.contract.focusRequest === 'Working memory' &&
+          input.regions.every((region) => region.focus === 'focused'),
+      ),
+    ).toBe(true);
+    const proposed = repos.curricula.list('ws_1').at(-1)!;
+    expect(proposed.status).toBe('proposed');
+    expect(
+      proposed.nodes
+        .filter((node) => node.learningUnit)
+        .every((node) => node.learningUnit?.focus === 'focused'),
+    ).toBe(true);
+    expect(repos.studyPlans.list('ws_1')).toEqual([]);
+    expect(
+      repos.curricula
+        .listEvents(proposed.id)
+        .some(
+          (event) =>
+            event.eventType === 'accepted' &&
+            JSON.stringify(event.payload).includes('explicit_local_policy'),
+        ),
+    ).toBe(false);
+  });
+
+  it('regenerates a proposed Skeleton from the same Materials, depth, and focus', async () => {
+    const { repos, provider, services, contract } = createHarness({
+      withConcept: true,
+      sectionCount: 2,
+      desiredDepth: 'high_performance',
+      focusRequest: 'Working memory',
+    });
+    await services.coursePreparation.run(runRequest(services.coursePreparation.get('ws_1')));
+    const first = repos.curricula.list('ws_1').at(-1)!;
+
+    const regenerated = await services.curriculum.propose({
+      command: command('regenerate-skeleton'),
+      contractId: contract.id,
+      expectedContractVersion: contract.version,
+      predecessorCurriculumId: first.id,
+      expectedActiveCurriculumId: null,
+    });
+
+    expect(provider.courseMapCalls).toBe(2);
+    expect(provider.lastCourseMapInput?.contract).toMatchObject({
+      desiredDepth: 'high_performance',
+      focusRequest: 'Working memory',
+    });
+    expect(regenerated.curriculum).toMatchObject({
+      status: 'proposed',
+      predecessorId: first.id,
+      contractVersionId: contract.id,
+      executionSourceManifest: first.executionSourceManifest,
+    });
+    expect(repos.curricula.get(first.id)?.status).toBe('rejected');
+    expect(
+      regenerated.curriculum.nodes
+        .filter((node) => node.learningUnit)
+        .every((node) => node.learningUnit?.focus === 'focused'),
+    ).toBe(true);
+  });
+
+  it('derives and activates StudyPlan after Skeleton acceptance without a second decision', async () => {
+    const { repos, provider, services } = createHarness({
+      withConcept: true,
+      focusRequest: 'Working memory',
+    });
+    const prepared = await services.coursePreparation.run(
+      runRequest(services.coursePreparation.get('ws_1')),
+    );
+    expect(prepared.preparation.learnerAction).toBe('review_course_structure');
+    const proposed = repos.curricula.list('ws_1').at(-1)!;
+    const accepted = services.curriculum.accept({
+      command: command('accept-simplified-skeleton'),
+      curriculumId: proposed.id,
+      expectedVersion: proposed.version,
+      expectedContractId: proposed.contractVersionId,
+      expectedExecutionSourceManifestFingerprint: proposed.executionSourceManifest.fingerprint,
+      acceptanceBasis: 'learner_review',
+    }).curriculum;
+
+    const planning = services.coursePreparation.get('ws_1');
+    expect(planning.machineAction).toBe('prepare_course_plan');
+    const completed = await services.coursePreparation.run(runRequest(planning));
+
+    expect(completed.preparation).toMatchObject({
+      state: 'complete',
+      machineAction: null,
+      learnerAction: 'continue_study',
+      learnerDecisionRequired: false,
+    });
+    expect(provider.studyPlanCalls).toBe(1);
+    expect(provider.lastStudyPlanInput?.contract.desiredDepth).toBe('working_fluency');
+    expect(provider.lastStudyPlanInput?.allowedDepths).toEqual(['working_fluency']);
+    const plan = repos.studyPlans.list('ws_1').at(-1)!;
+    expect(plan).toMatchObject({
+      status: 'accepted',
+      acceptanceBasis: 'derived_from_accepted_curriculum',
+      learnerAcceptedAt: accepted.acceptedAt,
+    });
+    expect(plan.items.every((item) => item.targetDepth === 'working_fluency')).toBe(true);
+    expect(repos.courseExecution.get('ws_1')).toMatchObject({
+      activeContractId: accepted.contractVersionId,
+      activeCurriculumId: accepted.id,
+      acceptedPlanId: plan.id,
+    });
+    const activeCurriculum = repos.curricula.get(accepted.id)!;
+    const focusedUnitIds = activeCurriculum.nodes
+      .filter((node) => node.learningUnit?.focus === 'focused')
+      .map((node) => node.id);
+    expect(focusedUnitIds.length).toBeGreaterThan(0);
+    expect(
+      plan.items
+        .filter((item) => item.curriculumLearningUnitId !== null)
+        .some((item) => focusedUnitIds.includes(item.curriculumLearningUnitId!)),
+    ).toBe(true);
+    expect(
+      repos.curricula
+        .listEvents(accepted.id)
+        .filter((event) => event.eventType === 'accepted')
+        .map((event) => event.payload),
+    ).toEqual([{ acceptanceBasis: 'learner_review' }]);
+  });
+
+  it('does not auto-activate a learner-authored Plan on the simplified flow', async () => {
+    const { repos, services, contract } = createHarness({
+      withConcept: true,
+      focusRequest: null,
+    });
+    await services.coursePreparation.run(runRequest(services.coursePreparation.get('ws_1')));
+    const proposal = repos.curricula.list('ws_1').at(-1)!;
+    const accepted = services.curriculum.accept({
+      command: command('accept-skeleton-before-learner-plan'),
+      curriculumId: proposal.id,
+      expectedVersion: proposal.version,
+      expectedContractId: proposal.contractVersionId,
+      expectedExecutionSourceManifestFingerprint: proposal.executionSourceManifest.fingerprint,
+      acceptanceBasis: 'learner_review',
+    }).curriculum;
+    const learnerPlan = await services.studyPlansAgent.propose({
+      command: command('learner-authored-plan'),
+      contractId: contract.id,
+      expectedContractVersion: contract.version,
+      curriculumId: accepted.id,
+      expectedCurriculumVersion: accepted.version,
+      expectedExecutionSourceManifestFingerprint: accepted.executionSourceManifest.fingerprint,
+      predecessorStudyPlanId: null,
+      expectedAcceptedStudyPlanId: null,
+      proposalTrigger: 'Learner requested an explicit route proposal.',
+    });
+
+    expect(services.coursePreparation.get('ws_1')).toMatchObject({
+      state: 'course_plan_ready',
+      machineAction: null,
+      learnerAction: 'review_course_plan',
+      learnerDecisionRequired: true,
+    });
+    expect(repos.studyPlans.get(learnerPlan.studyPlan.id)?.status).toBe('proposed');
+    expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBeNull();
+  });
+
+  it('keeps absent and unmappable focus balanced without inventing focused Units', async () => {
+    for (const focusRequest of [null, 'I want 90 points'] as const) {
+      const { repos, services } = createHarness({ withConcept: true, focusRequest });
+      await services.coursePreparation.run(runRequest(services.coursePreparation.get('ws_1')));
+      const units = repos.curricula
+        .list('ws_1')
+        .at(-1)!
+        .nodes.filter((node) => node.learningUnit);
+      expect(units.length).toBeGreaterThan(0);
+      expect(units.every((unit) => unit.learningUnit?.focus === 'normal')).toBe(true);
+    }
+  });
+
+  it('uses global depth to change Course design granularity without dropping source coverage', async () => {
+    const shallow = createHarness({
+      withConcept: true,
+      sectionCount: 6,
+      desiredDepth: 'pass_oriented',
+      focusRequest: null,
+    });
+    const deep = createHarness({
+      withConcept: true,
+      sectionCount: 6,
+      desiredDepth: 'deep_transfer',
+      focusRequest: null,
+    });
+
+    await shallow.services.coursePreparation.run(
+      runRequest(shallow.services.coursePreparation.get('ws_1')),
+    );
+    await deep.services.coursePreparation.run(
+      runRequest(deep.services.coursePreparation.get('ws_1')),
+    );
+    const shallowCurriculum = shallow.repos.curricula.list('ws_1').at(-1)!;
+    const deepCurriculum = deep.repos.curricula.list('ws_1').at(-1)!;
+
+    expect(shallow.provider.lastCourseMapInput?.contract.desiredDepth).toBe('pass_oriented');
+    expect(deep.provider.lastCourseMapInput?.contract.desiredDepth).toBe('deep_transfer');
+    expect(deepCurriculum.nodes.filter((node) => node.kind === 'chapter').length).toBeGreaterThan(
+      shallowCurriculum.nodes.filter((node) => node.kind === 'chapter').length,
+    );
+    expect(deepCurriculum.nodes.filter((node) => node.kind === 'learning_unit').length).toBe(
+      shallowCurriculum.nodes.filter((node) => node.kind === 'learning_unit').length,
+    );
+    expect(deepCurriculum.validation.unmappedSourceBlockIds ?? []).toEqual([]);
+    expect(shallowCurriculum.validation.unmappedSourceBlockIds ?? []).toEqual([]);
+  });
+
+  it('versions bounded Skeleton rename, focus, and prerequisite-safe reorder edits', async () => {
+    const provider = new TrackingProvider();
+    provider.omitCourseMapPrerequisites = true;
+    const { repos, services } = createHarness({
+      provider,
+      withConcept: true,
+      sectionCount: 3,
+      focusRequest: null,
+    });
+    await services.coursePreparation.run(runRequest(services.coursePreparation.get('ws_1')));
+    const original = repos.curricula.list('ws_1').at(-1)!;
+    const originalUnits = original.nodes.filter((node) => node.learningUnit);
+    expect(originalUnits).toHaveLength(3);
+    const target = originalUnits[0]!;
+    const originalIdentity = {
+      id: target.id,
+      sourceReferences: target.sourceReferences,
+      learningUnit: target.learningUnit,
+    };
+
+    const renameRequest = {
+      command: command('rename-skeleton-unit'),
+      curriculumId: original.id,
+      expectedVersion: original.version,
+      expectedContractId: original.contractVersionId,
+      expectedExecutionSourceManifestFingerprint: original.executionSourceManifest.fingerprint,
+      edit: { kind: 'rename_unit', learningUnitId: target.id, title: 'Working memory foundations' },
+    } as const;
+    const renamed = services.curriculum.applyDraftEdit(renameRequest).curriculum;
+    expect(services.curriculum.applyDraftEdit(renameRequest).curriculum).toEqual(renamed);
+    const renamedTarget = renamed.nodes.find((node) => node.id === target.id)!;
+    expect(renamedTarget.title).toBe('Working memory foundations');
+    expect({
+      id: renamedTarget.id,
+      sourceReferences: renamedTarget.sourceReferences,
+      learningUnit: renamedTarget.learningUnit,
+    }).toEqual(originalIdentity);
+    expect(repos.curricula.get(original.id)?.status).toBe('rejected');
+
+    const focused = services.curriculum.applyDraftEdit({
+      command: command('focus-skeleton-unit'),
+      curriculumId: renamed.id,
+      expectedVersion: renamed.version,
+      expectedContractId: renamed.contractVersionId,
+      expectedExecutionSourceManifestFingerprint: renamed.executionSourceManifest.fingerprint,
+      edit: { kind: 'set_unit_focus', learningUnitId: target.id, focus: 'focused' },
+    }).curriculum;
+    expect(focused.nodes.find((node) => node.id === target.id)?.learningUnit?.focus).toBe(
+      'focused',
+    );
+
+    const beforeOrder = focused.nodes.filter((node) => node.learningUnit).map((node) => node.id);
+    const movedId = beforeOrder[2]!;
+    const reordered = services.curriculum.applyDraftEdit({
+      command: command('reorder-skeleton-unit'),
+      curriculumId: focused.id,
+      expectedVersion: focused.version,
+      expectedContractId: focused.contractVersionId,
+      expectedExecutionSourceManifestFingerprint: focused.executionSourceManifest.fingerprint,
+      edit: { kind: 'reorder_unit', learningUnitId: movedId, direction: 'up' },
+    }).curriculum;
+    expect(reordered.nodes.filter((node) => node.learningUnit).map((node) => node.id)).toEqual([
+      beforeOrder[0],
+      beforeOrder[2],
+      beforeOrder[1],
+    ]);
+    expect(reordered.nodes.find((node) => node.id === target.id)?.learningUnit?.focus).toBe(
+      'focused',
+    );
+  });
+
+  it('deterministically rejects a Skeleton reorder that crosses a prerequisite', async () => {
+    const { repos, services } = createHarness({
+      withConcept: true,
+      sectionCount: 3,
+      focusRequest: null,
+    });
+    await services.coursePreparation.run(runRequest(services.coursePreparation.get('ws_1')));
+    const proposal = repos.curricula.list('ws_1').at(-1)!;
+    const units = proposal.nodes.filter((node) => node.learningUnit);
+    expect(units[1]!.learningUnit?.prerequisiteUnitIds).toContain(units[0]!.id);
+
+    expect(() =>
+      services.curriculum.applyDraftEdit({
+        command: command('invalid-reorder-skeleton-unit'),
+        curriculumId: proposal.id,
+        expectedVersion: proposal.version,
+        expectedContractId: proposal.contractVersionId,
+        expectedExecutionSourceManifestFingerprint: proposal.executionSourceManifest.fingerprint,
+        edit: { kind: 'reorder_unit', learningUnitId: units[1]!.id, direction: 'up' },
+      }),
+    ).toThrow('prerequisite after its dependent');
+    expect(repos.curricula.list('ws_1')).toHaveLength(1);
+    expect(repos.curricula.get(proposal.id)?.status).toBe('proposed');
   });
 
   it('returns a bounded diagnostic when detail materialization would exceed two batches', async () => {

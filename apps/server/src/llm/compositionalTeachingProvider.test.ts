@@ -105,6 +105,7 @@ function skeleton() {
 function lessonInput(): LessonSlotContentGenerationInput {
   return {
     workspaceName: 'Course',
+    courseDesign: { desiredDepth: 'deep_transfer', unitFocus: 'focused' },
     skeleton: skeleton(),
     sourceContext: {
       blockCount: 1,
@@ -333,6 +334,8 @@ describe('compositional Teaching providers', () => {
     expect(lessonPrompt).toContain('semantic relation requires two distinct');
     expect(lessonPrompt).toContain('every slot whose learnerActionRequired is true');
     expect(lessonPrompt).toContain('including consolidated worked_process slots');
+    expect(lessonPrompt).toContain('"desiredDepth":"deep_transfer"');
+    expect(lessonPrompt).toContain('"unitFocus":"focused"');
     expect(lessonPrompt).not.toContain('"practicePlan"');
     expect(lessonPrompt).not.toContain('"acceptedLesson"');
     expect(practicePrompt).toContain('already accepted Hy3 Study Clinic Lesson');

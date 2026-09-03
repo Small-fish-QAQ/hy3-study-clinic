@@ -95,6 +95,49 @@ import type {
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as const;
 
+function normalizedFocusKey(value: string): string {
+  return value.toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+}
+
+/**
+ * Offline-only deterministic stand-in for Hy3's semantic topic mapping. It can
+ * select only text already offered for this exact source region, so an
+ * unrelated or teaching-style request cannot invent a focused unit.
+ */
+function fakeCourseMapRegionFocus(
+  focusRequest: string | null | undefined,
+  region: CourseMapProposalInput['sourceRegions'][number],
+): 'normal' | 'focused' {
+  if (!focusRequest?.trim()) return 'normal';
+  const requestKey = normalizedFocusKey(focusRequest);
+  if (!requestKey) return 'normal';
+  const pureTeachingStyleRequest =
+    /^(?:giveme)?(?:lotsof|more)?examples?$|^(?:makeit)?(?:easy|easier|simple|simpler)$/iu.test(
+      requestKey,
+    ) || /^(?:多给|给我)?(?:一些|很多|更多)?例子$/u.test(requestKey);
+  if (
+    pureTeachingStyleRequest ||
+    /(?:^|\D)(?:90|100)(?:分|points?|score)(?:$|\D)/iu.test(focusRequest)
+  ) {
+    return 'normal';
+  }
+  const candidates = [
+    region.title,
+    ...region.anchorOptions.flatMap((option) => [
+      option.conceptName,
+      option.canonicalConceptName ?? '',
+    ]),
+  ]
+    .map(normalizedFocusKey)
+    .filter((candidate) => candidate.length >= 2);
+  return candidates.some(
+    (candidate) =>
+      requestKey.includes(candidate) || (requestKey.length >= 3 && candidate.includes(requestKey)),
+  )
+    ? 'focused'
+    : 'normal';
+}
+
 /**
  * Parser-derived outline rows may split one headed topic into many
  * SourceBlocks. Explicit structural identities stay separate. Anonymous rows
@@ -1990,9 +2033,15 @@ export class FakeProvider implements LlmProvider {
     if (input.sourceRegions.length === 0 || input.limits.maxModules < 1) {
       throw ProviderError.invalidOutput('Course Map requires bounded source regions');
     }
+    const regionsPerModule = {
+      pass_oriented: 5,
+      working_fluency: 4,
+      high_performance: 3,
+      deep_transfer: 2,
+    }[input.contract.desiredDepth];
     const moduleCount = Math.min(
       input.limits.maxModules,
-      Math.max(1, Math.ceil(input.sourceRegions.length / 4)),
+      Math.max(1, Math.ceil(input.sourceRegions.length / regionsPerModule)),
     );
     const capabilityRequirementRefsByRegion = new Map<string, string[]>();
     const seenCapabilityRefs = new Set<string>();
@@ -2133,6 +2182,7 @@ export class FakeProvider implements LlmProvider {
               : sourceRegion.blockCount >= 12
                 ? ('extended' as const)
                 : ('standard' as const),
+          focus: fakeCourseMapRegionFocus(input.contract.focusRequest, sourceRegion),
           anchorOptionRefs: sourceRegion.anchorOptions
             .slice(0, 1)
             .map((option) => option.anchorOptionId),

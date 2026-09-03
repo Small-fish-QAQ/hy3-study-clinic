@@ -66,6 +66,7 @@ import type {
   ObjectiveAuthoritySemanticEvaluationProposal,
   ObjectiveAuthoritySemanticRepairInput,
   ObjectiveAuthoritySemanticRepairProposal,
+  UnitFocus,
 } from '@hy3-clinic/shared';
 
 /** One original plus independently bounded schema and candidate repairs. */
@@ -555,6 +556,11 @@ export interface ConceptLessonInput {
 /** Compact provider view for one route-owned LearningUnit lesson. */
 export interface TeachingBriefGenerationInput {
   workspaceName: string;
+  /** Stable R1 input; informational only in the current Lesson implementation. */
+  courseDesign?: {
+    desiredDepth: DesiredDepth;
+    unitFocus: UnitFocus;
+  };
   learningUnit: {
     title: string;
     objectives: Array<{
@@ -659,6 +665,7 @@ export interface LessonTeachingSkeleton {
 
 export interface LessonSlotContentGenerationInput {
   workspaceName: string;
+  courseDesign?: TeachingBriefGenerationInput['courseDesign'];
   skeleton: LessonTeachingSkeleton;
   sourceContext: TeachingBriefGenerationInput['sourceContext'];
   visualContext: TeachingBriefGenerationInput['visualContext'];
@@ -803,6 +810,8 @@ export interface CurriculumContractContext {
     targetScore: number | null;
   };
   desiredDepth: DesiredDepth;
+  /** Narrow optional emphasis; it never overrides desiredDepth or grants authority. */
+  focusRequest?: string | null;
   subjectBoundaries: string[];
   materials: Array<{
     materialId: string;
@@ -992,6 +1001,7 @@ export interface CurriculumDetailRegionInput {
   title: string;
   learningIntent: string;
   approximateScope: 'focused' | 'standard' | 'extended';
+  focus?: 'normal' | 'focused';
   sourceAllocationRegionIds: string[];
   prerequisiteRegionIds: string[];
   synthesisGroups: Array<{
@@ -1021,6 +1031,7 @@ export interface CurriculumDetailProposalInput {
     | 'intent'
     | 'targetOutcome'
     | 'desiredDepth'
+    | 'focusRequest'
     | 'subjectBoundaries'
     | 'includedTopics'
     | 'excludedTopics'

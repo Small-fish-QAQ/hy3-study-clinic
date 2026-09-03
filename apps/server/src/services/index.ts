@@ -205,6 +205,7 @@ export function createServices({
     analysis,
     curriculum,
     studyPlans: studyPlansAgent,
+    courseExecution,
     sourceAuthority,
   });
   const formalProgression = createFormalProgressionService({

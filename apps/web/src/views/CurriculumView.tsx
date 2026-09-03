@@ -2,6 +2,7 @@ import { useEffect, useId, useMemo, useState } from 'react';
 import { CurriculumProposalFailureDetailsSchema } from '@hy3-clinic/shared';
 import type {
   CurriculumCoverageWarning,
+  CurriculumDraftEdit,
   CurriculumHierarchyNodeView,
   CurriculumHierarchyView,
   CurriculumHistoryItem,
@@ -68,6 +69,7 @@ export interface CurriculumViewProps {
   onCancel?: () => void;
   onAccept: () => void;
   onReject: () => void;
+  onEdit?: (edit: CurriculumDraftEdit) => void;
   onSelectHistory: (curriculumId: string) => void;
   documents?: DocumentSummary[];
   sourceBlocks?: SourceBlock[];
@@ -139,6 +141,18 @@ interface CurriculumTreeResult {
   roots: CurriculumTreeNode[];
   nodeById: ReadonlyMap<string, CurriculumHierarchyNodeView>;
   issues: string[];
+}
+
+function learningUnitsInTreeOrder(
+  roots: readonly CurriculumTreeNode[],
+): CurriculumHierarchyNodeView[] {
+  const units: CurriculumHierarchyNodeView[] = [];
+  const visit = (branch: CurriculumTreeNode): void => {
+    if (branch.node.kind === 'learning_unit') units.push(branch.node);
+    branch.children.forEach(visit);
+  };
+  roots.forEach(visit);
+  return units;
 }
 
 interface BranchSummary {
@@ -292,6 +306,7 @@ function sourceFragmentSignature(node: CurriculumHierarchyNodeView): string | nu
   return JSON.stringify({
     parentId: node.parentId,
     title: normalizedTitle(node.title),
+    focus: unit.focus ?? 'normal',
     objectives: unit.objectives.map((objective) => ({
       title: normalizedTitle(objective.title),
       description: normalizedTitle(objective.description),
@@ -631,6 +646,9 @@ function CurriculumOutlineNode({
   onToggle,
   idPrefix,
   level,
+  editableUnitIds,
+  busyAction,
+  onEdit,
   prominent = false,
 }: {
   branch: CurriculumTreeNode;
@@ -645,6 +663,9 @@ function CurriculumOutlineNode({
   onToggle: (nodeId: string) => void;
   idPrefix: string;
   level: number;
+  editableUnitIds: readonly string[];
+  busyAction: string | null;
+  onEdit: ((edit: CurriculumDraftEdit) => void) | undefined;
   prominent?: boolean;
 }) {
   const { node } = branch;
@@ -668,6 +689,8 @@ function CurriculumOutlineNode({
       ? childTopics.slice(0, DIRECT_UNIT_PREVIEW_LIMIT)
       : childTopics;
   const Heading = prominent ? 'h3' : level <= 2 ? 'h4' : 'h5';
+  const editableIndex = editableUnitIds.indexOf(node.id);
+  const focused = node.learningUnit?.focus === 'focused';
 
   return (
     <li
@@ -688,6 +711,9 @@ function CurriculumOutlineNode({
             <Heading>{node.title}</Heading>
           </div>
           <div className="curriculum-node-state">
+            {node.learningUnit ? (
+              <span className={`pill ${focused ? 'model' : ''}`}>{focused ? '重点' : '常规'}</span>
+            ) : null}
             {containsCurrent && !isCurrent ? (
               <span className="curriculum-current-note">包含当前学习位置</span>
             ) : null}
@@ -701,6 +727,62 @@ function CurriculumOutlineNode({
             ) : null}
           </div>
         </header>
+
+        {node.learningUnit && onEdit ? (
+          <div className="row" aria-label={`调整单元 ${node.title}`}>
+            <button
+              type="button"
+              className="ghost small"
+              disabled={busyAction !== null}
+              onClick={() => {
+                const title = window.prompt('新的单元名称：', node.title)?.trim();
+                if (title && title !== node.title) {
+                  onEdit({ kind: 'rename_unit', learningUnitId: node.id, title });
+                }
+              }}
+            >
+              重命名
+            </button>
+            <button
+              type="button"
+              className="ghost small"
+              disabled={busyAction !== null || editableIndex <= 0}
+              onClick={() =>
+                onEdit({ kind: 'reorder_unit', learningUnitId: node.id, direction: 'up' })
+              }
+            >
+              上移
+            </button>
+            <button
+              type="button"
+              className="ghost small"
+              disabled={
+                busyAction !== null ||
+                editableIndex < 0 ||
+                editableIndex === editableUnitIds.length - 1
+              }
+              onClick={() =>
+                onEdit({ kind: 'reorder_unit', learningUnitId: node.id, direction: 'down' })
+              }
+            >
+              下移
+            </button>
+            <button
+              type="button"
+              className="ghost small"
+              disabled={busyAction !== null}
+              onClick={() =>
+                onEdit({
+                  kind: 'set_unit_focus',
+                  learningUnitId: node.id,
+                  focus: focused ? 'normal' : 'focused',
+                })
+              }
+            >
+              {focused ? '取消重点' : '设为重点'}
+            </button>
+          </div>
+        ) : null}
 
         {prominent ? (
           <div className="curriculum-major-summary">
@@ -773,6 +855,9 @@ function CurriculumOutlineNode({
                 onToggle={onToggle}
                 idPrefix={idPrefix}
                 level={level + 1}
+                editableUnitIds={editableUnitIds}
+                busyAction={busyAction}
+                onEdit={onEdit}
               />
             ))}
           </ol>
@@ -923,6 +1008,7 @@ export function CurriculumView({
   onCancel,
   onAccept,
   onReject,
+  onEdit,
   onSelectHistory,
   documents = [],
   sourceBlocks = [],
@@ -935,6 +1021,7 @@ export function CurriculumView({
   const tree = useMemo(() => (hierarchy ? buildCurriculumTree(hierarchy) : null), [hierarchy]);
   const majors = useMemo(() => majorBranches(tree?.roots ?? []), [tree]);
   const allNodes = tree ? [...tree.nodeById.values()] : [];
+  const orderedLearningUnits = useMemo(() => learningUnitsInTreeOrder(tree?.roots ?? []), [tree]);
   const learningUnitCount = allNodes.filter((node) => node.kind === 'learning_unit').length;
   const topicCount = majors.reduce((count, branch) => count + countPresentationTopics(branch), 0);
   const chapterCount = allNodes.filter((node) => node.kind === 'chapter').length;
@@ -1013,9 +1100,11 @@ export function CurriculumView({
             <button type="button" disabled={loading || busyAction !== null} onClick={onPropose}>
               {busyAction === 'propose-curriculum'
                 ? '正在生成…'
-                : hierarchy
-                  ? '提出新版本'
-                  : '生成结构'}
+                : hierarchy?.status === 'proposed'
+                  ? '重新生成'
+                  : hierarchy
+                    ? '提出新版本'
+                    : '生成结构'}
             </button>
           ) : null}
         </div>
@@ -1127,7 +1216,9 @@ export function CurriculumView({
         >
           <p className="eyebrow">尚未生成</p>
           <h2 id="curriculum-empty-title">还没有课程结构</h2>
-          <p className="muted">确认学习约定后，可让 Hy3 提出一份有资料依据的课程结构供你审阅。</p>
+          <p className="muted">
+            提交课程资料、全局深度和可选重点后，Hy3 会提出一份有资料依据的课程结构供你审阅。
+          </p>
         </section>
       ) : (
         <>
@@ -1183,6 +1274,9 @@ export function CurriculumView({
                   onToggle={toggle}
                   idPrefix={idPrefix}
                   level={1}
+                  editableUnitIds={orderedLearningUnits.map((unit) => unit.id)}
+                  busyAction={busyAction}
+                  onEdit={hierarchy.status === 'proposed' ? onEdit : undefined}
                   prominent
                 />
               ))}

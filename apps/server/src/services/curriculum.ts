@@ -1,5 +1,6 @@
 import {
   AcceptCurriculumRequestSchema,
+  ApplyCurriculumDraftEditRequestSchema,
   ApiErrorCode,
   CurriculumHierarchyViewSchema,
   CurriculumHistoryResponseSchema,
@@ -11,6 +12,7 @@ import {
   RejectCurriculumRequestSchema,
   fnv1a32,
   type AcceptCurriculumRequest,
+  type ApplyCurriculumDraftEditRequest,
   type Curriculum,
   type CurriculumCoverageWarning,
   type CurriculumProposalPayload,
@@ -19,6 +21,7 @@ import {
   type CurriculumAuthorityEnvelope,
   type CurriculumHierarchyView,
   type CurriculumHistoryResponse,
+  type CurriculumNode,
   type CurriculumProposalResponse,
   type ExecutionSourceManifest,
   type LearningContract,
@@ -585,6 +588,9 @@ export function buildCurriculumExecutionContext(
         targetScore: contract.targetOutcome.targetScore,
       },
       desiredDepth: contract.desiredDepth,
+      ...(Object.prototype.hasOwnProperty.call(contract, 'focusRequest')
+        ? { focusRequest: contract.focusRequest ?? null }
+        : {}),
       subjectBoundaries: contract.courseScope.subjectBoundaries,
       materials: contextMaterials,
       includedTopics: contract.courseScope.includedTopics,
@@ -1017,6 +1023,130 @@ export function curriculumHierarchy(curriculum: Curriculum): CurriculumHierarchy
     ...(curriculum.qualityEvaluation ? { qualityEvaluation: curriculum.qualityEvaluation } : {}),
     executionSourceManifest: curriculum.executionSourceManifest,
   });
+}
+
+function nodesInHierarchyOrder(nodes: readonly CurriculumNode[]): CurriculumNode[] {
+  const children = new Map<string | null, CurriculumNode[]>();
+  for (const node of nodes) {
+    const siblings = children.get(node.parentId) ?? [];
+    siblings.push(node);
+    children.set(node.parentId, siblings);
+  }
+  children.forEach((siblings) =>
+    siblings.sort((left, right) => left.index - right.index || left.id.localeCompare(right.id)),
+  );
+  const ordered: CurriculumNode[] = [];
+  const visit = (parentId: string | null): void => {
+    for (const node of children.get(parentId) ?? []) {
+      ordered.push(node);
+      visit(node.id);
+    }
+  };
+  visit(null);
+  if (ordered.length !== nodes.length) {
+    throw new AppError(ApiErrorCode.ValidationError, 'Course Skeleton hierarchy is invalid.');
+  }
+  return ordered;
+}
+
+function unitPaths(nodes: readonly CurriculumNode[]): Map<string, CurriculumNode[]> {
+  const byId = new Map(nodes.map((node) => [node.id, node] as const));
+  const paths = new Map<string, CurriculumNode[]>();
+  for (const unit of nodes.filter((node) => node.kind === 'learning_unit')) {
+    const reversed: CurriculumNode[] = [];
+    const seen = new Set<string>();
+    let current: CurriculumNode | undefined = unit;
+    while (current) {
+      if (seen.has(current.id)) {
+        throw new AppError(ApiErrorCode.ValidationError, 'Course Skeleton hierarchy is cyclic.');
+      }
+      seen.add(current.id);
+      reversed.push(current);
+      current = current.parentId ? byId.get(current.parentId) : undefined;
+    }
+    paths.set(unit.id, reversed.reverse());
+  }
+  return paths;
+}
+
+function assertPrerequisitesPrecedeDependents(nodes: readonly CurriculumNode[]): void {
+  const orderedUnitIds = nodesInHierarchyOrder(nodes)
+    .filter((node) => node.kind === 'learning_unit')
+    .map((node) => node.id);
+  const position = new Map(orderedUnitIds.map((id, index) => [id, index] as const));
+  const byId = new Map(nodes.map((node) => [node.id, node] as const));
+  for (const unitId of orderedUnitIds) {
+    const unit = byId.get(unitId)!;
+    for (const prerequisiteId of unit.learningUnit?.prerequisiteUnitIds ?? []) {
+      if ((position.get(prerequisiteId) ?? Number.POSITIVE_INFINITY) >= position.get(unitId)!) {
+        throw new AppError(
+          ApiErrorCode.ValidationError,
+          'This Unit move would place a prerequisite after its dependent Unit.',
+          { kind: 'curriculum_prerequisite_order_invalid', learningUnitId: unitId, prerequisiteId },
+        );
+      }
+    }
+  }
+}
+
+function reorderLearningUnit(
+  nodes: CurriculumNode[],
+  learningUnitId: string,
+  direction: 'up' | 'down',
+): CurriculumNode[] {
+  const orderedUnits = nodesInHierarchyOrder(nodes).filter((node) => node.kind === 'learning_unit');
+  const index = orderedUnits.findIndex((node) => node.id === learningUnitId);
+  const neighbor = orderedUnits[index + (direction === 'up' ? -1 : 1)];
+  if (index < 0 || !neighbor) {
+    throw new AppError(ApiErrorCode.ValidationError, 'This Unit cannot move farther.');
+  }
+  const paths = unitPaths(nodes);
+  const currentPath = paths.get(learningUnitId)!;
+  const neighborPath = paths.get(neighbor.id)!;
+  let divergence = 0;
+  while (
+    divergence < currentPath.length &&
+    divergence < neighborPath.length &&
+    currentPath[divergence]!.id === neighborPath[divergence]!.id
+  ) {
+    divergence += 1;
+  }
+  const currentCarrier = currentPath[divergence];
+  const neighborCarrier = neighborPath[divergence];
+  if (!currentCarrier || !neighborCarrier || currentCarrier.parentId !== neighborCarrier.parentId) {
+    throw new AppError(
+      ApiErrorCode.ValidationError,
+      'These Units do not share a safe order scope.',
+    );
+  }
+  const carrierUnitCount = (carrierId: string): number =>
+    [...paths.values()].filter((path) => path.some((node) => node.id === carrierId)).length;
+  if (carrierUnitCount(currentCarrier.id) !== 1 || carrierUnitCount(neighborCarrier.id) !== 1) {
+    throw new AppError(
+      ApiErrorCode.ValidationError,
+      'A Unit cannot move across a grouped Course Skeleton boundary.',
+    );
+  }
+  const currentIndex = currentCarrier.index;
+  currentCarrier.index = neighborCarrier.index;
+  neighborCarrier.index = currentIndex;
+  assertPrerequisitesPrecedeDependents(nodes);
+  return nodesInHierarchyOrder(nodes);
+}
+
+function capabilityRecoveryPredecessorId(curriculum: Curriculum): string | null {
+  const ids = new Set(
+    curriculum.nodes.flatMap((node) =>
+      (node.learningUnit?.objectives ?? []).flatMap((objective) => {
+        const id =
+          objective.semanticSupport?.capabilityPreservation?.recoveryOrigin
+            ?.predecessorCurriculumId;
+        return id ? [id] : [];
+      }),
+    ),
+  );
+  if (ids.size > 1) throw new Error('Course Skeleton recovery lineage is inconsistent.');
+  return [...ids][0] ?? null;
 }
 
 export function createCurriculumService({
@@ -2390,27 +2520,39 @@ export function createCurriculumService({
           curriculum.executionSourceManifest,
           now,
         );
-        const stored = repos.curricula.createVersion(
-          curriculum,
-          {
-            id: newId('curriculum_evt'),
-            eventType: 'proposed',
-            actor: parsed.command.actor,
-            payload: {
-              contractId: contract.id,
-              manifestFingerprint: context.manifest.fingerprint,
-              generationOperationId: claim.operationId,
-              ...(opts?.preparationPolicyId
-                ? { preparationPolicyId: opts.preparationPolicyId }
-                : {}),
-            },
-            createdAt: now,
+        const proposedEvent = {
+          id: newId('curriculum_evt'),
+          eventType: 'proposed',
+          actor: parsed.command.actor,
+          payload: {
+            contractId: contract.id,
+            manifestFingerprint: context.manifest.fingerprint,
+            generationOperationId: claim.operationId,
+            ...(opts?.preparationPolicyId ? { preparationPolicyId: opts.preparationPolicyId } : {}),
           },
-          {
-            capabilityRecoveryPredecessorId:
-              capabilityRecoveryFrontier?.predecessorCurriculumId ?? null,
-          },
-        );
+          createdAt: now,
+        };
+        const persistenceContext = {
+          capabilityRecoveryPredecessorId:
+            capabilityRecoveryFrontier?.predecessorCurriculumId ?? null,
+        };
+        const stored =
+          Object.prototype.hasOwnProperty.call(contract, 'focusRequest') &&
+          predecessor?.status === 'proposed'
+            ? repos.curricula.replaceProposal(
+                predecessor.id,
+                curriculum,
+                proposedEvent,
+                {
+                  id: newId('curriculum_evt'),
+                  eventType: 'replaced_by_regeneration',
+                  actor: parsed.command.actor,
+                  payload: { successorId: curriculum.id },
+                  createdAt: now,
+                },
+                persistenceContext,
+              )
+            : repos.curricula.createVersion(curriculum, proposedEvent, persistenceContext);
         coverageRisks.seedCurriculum(contract, stored);
         return CurriculumProposalResponseSchema.parse({
           curriculum: stored,
@@ -2465,6 +2607,129 @@ export function createCurriculumService({
       }
       commands.fail(claim, failure);
       throw failure;
+    }
+  }
+
+  function applyDraftEdit(input: ApplyCurriculumDraftEditRequest): CurriculumProposalResponse {
+    const parsed = ApplyCurriculumDraftEditRequestSchema.parse(input);
+    const current = requireCurriculum(parsed.command.workspaceId, parsed.curriculumId);
+    if (
+      current.version !== parsed.expectedVersion ||
+      current.contractVersionId !== parsed.expectedContractId ||
+      current.executionSourceManifest.fingerprint !==
+        parsed.expectedExecutionSourceManifestFingerprint
+    ) {
+      throw new AppError(ApiErrorCode.VersionConflict, 'Course Skeleton edit is stale.');
+    }
+    const claim = commands.begin(parsed.command, 'edit_curriculum', {
+      curriculumId: current.id,
+      version: current.version,
+      contractId: current.contractVersionId,
+      manifestFingerprint: current.executionSourceManifest.fingerprint,
+      edit: parsed.edit,
+    });
+    if (claim.replayPayload !== undefined) {
+      return CurriculumProposalResponseSchema.parse(claim.replayPayload);
+    }
+    try {
+      if (
+        current.status !== 'proposed' ||
+        repos.curricula.list(current.workspaceId).at(-1)?.id !== current.id
+      ) {
+        throw new AppError(ApiErrorCode.VersionConflict, 'Course Skeleton edit is stale.');
+      }
+      const contract = repos.learningContracts.get(current.contractVersionId);
+      if (
+        !contract ||
+        (contract.status !== 'learner_confirmed' && contract.status !== 'active') ||
+        !manifestsEqual(
+          buildCurriculumExecutionContext(repos, contract).manifest,
+          current.executionSourceManifest,
+        )
+      ) {
+        throw new AppError(ApiErrorCode.VersionConflict, 'Course Skeleton authority is stale.');
+      }
+      const editable = structuredClone(current);
+      const unit = editable.nodes.find(
+        (node) => node.id === parsed.edit.learningUnitId && node.kind === 'learning_unit',
+      );
+      if (!unit?.learningUnit) {
+        throw new AppError(ApiErrorCode.ValidationError, 'Course Skeleton Unit not found.');
+      }
+      if (parsed.edit.kind === 'rename_unit') {
+        const normalizedTitle = parsed.edit.title.trim().toLocaleLowerCase();
+        if (
+          editable.nodes.some(
+            (node) =>
+              node.kind === 'learning_unit' &&
+              node.id !== unit.id &&
+              node.title.trim().toLocaleLowerCase() === normalizedTitle,
+          )
+        ) {
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            'Course Skeleton Unit titles must remain distinct.',
+          );
+        }
+        unit.title = parsed.edit.title.trim();
+      } else if (parsed.edit.kind === 'set_unit_focus') {
+        unit.learningUnit.focus = parsed.edit.focus;
+      } else {
+        editable.nodes = reorderLearningUnit(
+          editable.nodes,
+          parsed.edit.learningUnitId,
+          parsed.edit.direction,
+        );
+      }
+      assertPrerequisitesPrecedeDependents(editable.nodes);
+      const now = clock.now().toISOString();
+      const { qualityEvaluation: _staleQualityEvaluation, ...stable } = editable;
+      const successor: Curriculum = {
+        ...stable,
+        id: newId('curriculum'),
+        version: current.version + 1,
+        predecessorId: current.id,
+        status: 'proposed',
+        nodes: editable.nodes,
+        provider: 'local',
+        providerModel: null,
+        createdAt: now,
+        acceptedAt: null,
+      };
+      return CurriculumProposalResponseSchema.parse(
+        commands.complete(claim, () => {
+          const stored = repos.curricula.replaceProposal(
+            current.id,
+            successor,
+            {
+              id: newId('curriculum_evt'),
+              eventType: 'edited_successor_proposed',
+              actor: parsed.command.actor,
+              payload: { predecessorId: current.id, edit: parsed.edit },
+              createdAt: now,
+            },
+            {
+              id: newId('curriculum_evt'),
+              eventType: 'replaced_by_edit',
+              actor: parsed.command.actor,
+              payload: { successorId: successor.id },
+              createdAt: now,
+            },
+            {
+              capabilityRecoveryPredecessorId: capabilityRecoveryPredecessorId(current),
+            },
+          );
+          return {
+            curriculum: stored,
+            hierarchy: curriculumHierarchy(stored),
+            retainedAcceptedCurriculumId: repos.courseExecution.get(current.workspaceId)
+              .activeCurriculumId,
+          };
+        }),
+      );
+    } catch (error) {
+      commands.fail(claim, error);
+      throw error;
     }
   }
 
@@ -2632,7 +2897,7 @@ export function createCurriculumService({
     }
   }
 
-  return { detail, history, propose, accept, reject };
+  return { detail, history, propose, applyDraftEdit, accept, reject };
 }
 
 export type CurriculumService = ReturnType<typeof createCurriculumService>;

@@ -12,6 +12,7 @@ import {
   TutorToolNameSchema,
 } from '../domain/tutor.js';
 import { DesiredDepthSchema } from '../domain/learningContract.js';
+import { UnitFocusSchema } from '../domain/curriculum.js';
 import { MasteryChallengeFamilySchema } from '../domain/assessmentIntent.js';
 import { RepairDiagnosticCategorySchema, RepairInterventionModeSchema } from '../domain/repair.js';
 import {
@@ -365,6 +366,8 @@ export const ProposedCurriculumNodeSchema = z
     kind: z.enum(['chapter', 'section', 'learning_unit']),
     index: z.number().int().nonnegative(),
     title: z.string().min(1).max(300),
+    /** Trusted local Course Map assembly carries this; legacy provider output may omit it. */
+    focus: UnitFocusSchema.optional(),
     structuralUnitIds: z.array(z.string().min(1)).max(500),
     sourceEvidence: z.array(CurriculumEvidenceSelectionSchema).max(100),
     conceptIds: z.array(z.string().min(1)).max(30),
@@ -392,6 +395,13 @@ export const ProposedCurriculumNodeSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'only learning_unit nodes may carry unit details',
+      });
+    }
+    if (node.kind !== 'learning_unit' && node.focus !== undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['focus'],
+        message: 'only learning_unit nodes may carry focus state',
       });
     }
   });
@@ -431,6 +441,8 @@ export const ProposedCourseMapRegionSchema = z
     title: z.string().min(1).max(300),
     learningIntent: z.string().min(1).max(700),
     approximateScope: z.enum(['focused', 'standard', 'extended']),
+    /** Optional for compatibility; omission is deterministically interpreted as normal. */
+    focus: UnitFocusSchema.optional(),
     anchorOptionRefs: z.array(CourseMapAnchorOptionRefSchema).max(30),
     /** Recovery capabilities assigned to this exact source region. */
     capabilityRequirementRefs: z.array(z.string().min(1).max(100)).max(4).optional(),
