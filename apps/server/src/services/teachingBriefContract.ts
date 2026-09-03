@@ -375,6 +375,7 @@ const LESSON_FORBIDDEN_LOCAL_KEYS = new Set([
   'allowedRelations',
   'allowedSourceRefs',
   'allowedVisualRefs',
+  'lessonNarrative',
   'practice',
   'formalOpportunities',
   'mastery',
@@ -419,6 +420,14 @@ export function validateLessonSlotContentCandidate(
   const invalidIds = new Set<string>();
   const diagnostics: CompositionalDiagnostic[] = [];
 
+  if (!isRecord(candidate) || !isRecord(candidate.narrative)) {
+    expectedIds.forEach((id) => invalidIds.add(id));
+    diagnostics.push({
+      code: 'missing_lesson_narrative',
+      message: 'Lesson content requires one coherent learner-facing opening, summary, and bridge.',
+      itemIds: expectedIds,
+    });
+  }
   if (!isRecord(candidate) || !Array.isArray(candidate.slots)) {
     expectedIds.forEach((id) => invalidIds.add(id));
     diagnostics.push({
@@ -542,6 +551,17 @@ export function validateLessonSlotContentCandidate(
       diagnostics.push({
         code: 'lesson_advisory_visual_authority_invalid',
         message: `${content.slotId} must remain inside its advisory visual-only authority.`,
+        itemIds: [content.slotId],
+      });
+    }
+    if (
+      content.informalCheck?.kind === 'choose_alternative' &&
+      (!content.informalCheck.options || !content.informalCheck.correctOptionId)
+    ) {
+      invalidIds.add(content.slotId);
+      diagnostics.push({
+        code: 'lesson_choice_check_missing_options',
+        message: `${content.slotId} choice check requires structured choices and one locally gradable answer.`,
         itemIds: [content.slotId],
       });
     }

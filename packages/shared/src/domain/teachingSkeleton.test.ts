@@ -92,6 +92,11 @@ function content(): TeachingLessonSlotContent[] {
   return [
     {
       slotId: 'L1',
+      lessonNarrative: {
+        whyNow: 'This boundary matters before the learner makes a retrieval decision.',
+        summary: 'A bounded case applies its defining condition before accepting a candidate.',
+        forwardBridge: 'Next, use the boundary in a changed retrieval case.',
+      },
       explanation: 'This objective prepares a bounded retrieval decision.',
       sourceRefs: ['S1'],
       visualRefs: [],
@@ -117,6 +122,19 @@ function content(): TeachingLessonSlotContent[] {
         kind: 'choose_alternative',
         prompt: 'Which case actually enforces the stated retrieval boundary?',
         expectedSignal: 'Choose the case that tests the condition.',
+        options: [
+          {
+            id: 'A',
+            text: 'The case checks the condition.',
+            feedbackIfSelected: 'Correct: the boundary is enforced.',
+          },
+          {
+            id: 'B',
+            text: 'The case ignores the condition.',
+            feedbackIfSelected: 'This removes the boundary.',
+          },
+        ],
+        correctOptionId: 'A',
       },
     },
   ];
@@ -219,6 +237,24 @@ describe('Teaching Skeleton contracts', () => {
     }
   });
 
+  it('keeps structured choice feedback valid without making reflective checks falsely gradable', () => {
+    const choice = content()[1]!.informalCheck!;
+    expect(choice.options).toHaveLength(2);
+    expect(choice.correctOptionId).toBe('A');
+
+    const invalidChoice = structuredClone(content()[1]!);
+    invalidChoice.informalCheck!.correctOptionId = 'C';
+    expect(TeachingLessonSlotContentSchema.safeParse(invalidChoice).success).toBe(false);
+
+    const reflective = structuredClone(content()[1]!);
+    reflective.informalCheck = {
+      kind: 'own_words',
+      prompt: 'Explain the boundary in your own words.',
+      expectedSignal: 'Mention the governing condition.',
+    };
+    expect(TeachingLessonSlotContentSchema.safeParse(reflective).success).toBe(true);
+  });
+
   it('rejects lexical reasoning without two distinct propositions', () => {
     expect(
       TeachingSemanticRelationSchema.safeParse({
@@ -274,6 +310,23 @@ describe('Teaching Skeleton contracts', () => {
         result: 'The source chunks are available for bounded retrieval.',
         whyResultFollows: 'Every source-stated ingestion step has produced its required state.',
         sourceRefs: ['S1'],
+      }).success,
+    ).toBe(true);
+    expect(
+      TeachingWorkedProcessSchema.safeParse({
+        startingState: 'A new system receives an unfamiliar retrieval case.',
+        ruleOrProcedure: 'Compare the case condition with the candidate boundary.',
+        steps: [
+          {
+            action: 'Change one condition and inspect the candidate set.',
+            reason: 'The changed condition can alter eligibility.',
+            resultingState: 'A different bounded candidate set remains.',
+          },
+        ],
+        learnerDecision: 'Decide whether the earlier conclusion still follows.',
+        result: 'The conclusion is revised for the changed case.',
+        whyResultFollows: 'The boundary changed with the condition.',
+        sourceRefs: [],
       }).success,
     ).toBe(true);
   });

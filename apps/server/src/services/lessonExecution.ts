@@ -444,82 +444,101 @@ export function createLessonExecutionService({
       ids
         .map((id) => byRef.get(id))
         .filter((source): source is LessonSourceProjection => Boolean(source));
-    const segments = brief.segments.map((segment) => ({
-      index: segment.index,
-      purpose: purpose(segment.purpose),
-      explanation: segment.explanation,
-      explanationOrigin: authority(segment.explanationAuthority),
-      sources: refs(segment.sourceRefIds),
-      ...(segment.semanticRelations
-        ? {
-            semanticRelations: segment.semanticRelations.map(
-              ({ kind, fromProposition, toProposition, relevanceToObjective }) => ({
-                kind,
-                fromProposition,
-                toProposition,
-                relevanceToObjective,
-              }),
-            ),
-          }
-        : {}),
-      ...(segment.workedProcess !== undefined
-        ? {
-            workedProcess: segment.workedProcess
-              ? {
-                  startingState: segment.workedProcess.startingState,
-                  ruleOrProcedure: segment.workedProcess.ruleOrProcedure,
-                  steps: segment.workedProcess.steps,
-                  learnerDecision: segment.workedProcess.learnerDecision,
-                  result: segment.workedProcess.result,
-                  whyResultFollows: segment.workedProcess.whyResultFollows,
-                }
-              : null,
-          }
-        : {}),
-      example: segment.example
-        ? {
-            text: segment.example.text,
-            origin: authority(segment.example.authority),
-            sources: refs(segment.example.sourceRefIds),
-          }
-        : null,
-      contrast: segment.contrast
-        ? {
-            text: segment.contrast.text,
-            origin: authority(segment.contrast.authority),
-            sources: refs(segment.contrast.sourceRefIds),
-          }
-        : null,
-      possibleMisconception: segment.misconception
-        ? {
-            hypothesis: segment.misconception.hypothesis,
-            correction: segment.misconception.correction,
-            advisoryOnly: true as const,
-            sources: refs(segment.misconception.sourceRefIds),
-          }
-        : null,
-      informalCheck: segment.informalCheck
-        ? {
-            kind: informalKind(segment.informalCheck.kind),
-            prompt: segment.informalCheck.prompt,
-            guidance: state.informalInteractions.find(
-              (entry) => entry.segmentIndex === segment.index,
-            )?.response
-              ? segment.informalCheck.expectedSignal
-              : null,
-            presented: state.informalInteractions.some(
-              (entry) => entry.segmentIndex === segment.index,
-            ),
-            response:
-              state.informalInteractions.find((entry) => entry.segmentIndex === segment.index)
-                ?.response ?? null,
-            respondedAt:
-              state.informalInteractions.find((entry) => entry.segmentIndex === segment.index)
-                ?.respondedAt ?? null,
-            credit: 'none' as const,
-          }
-        : null,
-    }));
+    const segments = brief.segments.map((segment) => {
+      const interaction = state.informalInteractions.find(
+        (entry) => entry.segmentIndex === segment.index,
+      );
+      const selectedChoice = segment.informalCheck?.options?.find(
+        (option) => option.id === interaction?.response,
+      );
+      return {
+        index: segment.index,
+        purpose: purpose(segment.purpose),
+        explanation: segment.explanation,
+        explanationOrigin: authority(segment.explanationAuthority),
+        sources: refs(segment.sourceRefIds),
+        ...(segment.semanticRelations
+          ? {
+              semanticRelations: segment.semanticRelations.map(
+                ({ kind, fromProposition, toProposition, relevanceToObjective, sourceRefIds }) => ({
+                  kind,
+                  fromProposition,
+                  toProposition,
+                  relevanceToObjective,
+                  origin: authority(
+                    sourceRefIds.length > 0 ? 'source_backed_teaching' : 'ai_teaching_synthesis',
+                  ),
+                  sources: refs(sourceRefIds),
+                }),
+              ),
+            }
+          : {}),
+        ...(segment.workedProcess !== undefined
+          ? {
+              workedProcess: segment.workedProcess
+                ? {
+                    startingState: segment.workedProcess.startingState,
+                    ruleOrProcedure: segment.workedProcess.ruleOrProcedure,
+                    steps: segment.workedProcess.steps,
+                    learnerDecision: segment.workedProcess.learnerDecision,
+                    result: segment.workedProcess.result,
+                    whyResultFollows: segment.workedProcess.whyResultFollows,
+                    origin: authority(
+                      segment.workedProcess.sourceRefIds.length > 0
+                        ? 'source_backed_teaching'
+                        : 'ai_teaching_synthesis',
+                    ),
+                    sources: refs(segment.workedProcess.sourceRefIds),
+                  }
+                : null,
+            }
+          : {}),
+        example: segment.example
+          ? {
+              text: segment.example.text,
+              origin: authority(segment.example.authority),
+              sources: refs(segment.example.sourceRefIds),
+            }
+          : null,
+        contrast: segment.contrast
+          ? {
+              text: segment.contrast.text,
+              origin: authority(segment.contrast.authority),
+              sources: refs(segment.contrast.sourceRefIds),
+            }
+          : null,
+        possibleMisconception: segment.misconception
+          ? {
+              hypothesis: segment.misconception.hypothesis,
+              correction: segment.misconception.correction,
+              advisoryOnly: true as const,
+              origin: authority(
+                segment.misconception.sourceRefIds.length > 0
+                  ? 'source_backed_teaching'
+                  : 'ai_teaching_synthesis',
+              ),
+              sources: refs(segment.misconception.sourceRefIds),
+            }
+          : null,
+        informalCheck: segment.informalCheck
+          ? {
+              kind: informalKind(segment.informalCheck.kind),
+              prompt: segment.informalCheck.prompt,
+              guidance: interaction?.response ? segment.informalCheck.expectedSignal : null,
+              options: segment.informalCheck.options?.map(({ id, text }) => ({ id, text })) ?? [],
+              presented: Boolean(interaction),
+              response: interaction?.response ?? null,
+              respondedAt: interaction?.respondedAt ?? null,
+              correct:
+                interaction?.response && segment.informalCheck.correctOptionId
+                  ? interaction.response === segment.informalCheck.correctOptionId
+                  : null,
+              feedback: selectedChoice?.feedbackIfSelected ?? null,
+              credit: 'none' as const,
+            }
+          : null,
+      };
+    });
     return {
       objective: {
         title: brief.objective.title,
@@ -1150,6 +1169,16 @@ export function createLessonExecutionService({
               ApiErrorCode.ValidationError,
               'Respond to the current informal check.',
             );
+          if (
+            segment.informalCheck.kind === 'choose_alternative' &&
+            segment.informalCheck.options &&
+            !segment.informalCheck.options.some((option) => option.id === action.response)
+          ) {
+            throw new AppError(
+              ApiErrorCode.ValidationError,
+              'Select one offered informal-check option.',
+            );
+          }
           const existing = current.informalInteractions.find(
             (entry) => entry.segmentIndex === action.segmentIndex,
           );

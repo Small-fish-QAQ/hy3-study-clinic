@@ -141,8 +141,52 @@ export const TeachingBriefInformalCheckSchema = z
     kind: InformalCheckKindSchema,
     prompt: z.string().min(1).max(700),
     expectedSignal: z.string().max(500).nullable(),
+    /** Optional only for historical non-structured checks. */
+    options: z
+      .array(
+        z
+          .object({
+            id: z.string().regex(/^[A-E]$/u),
+            text: z.string().min(1).max(600),
+            feedbackIfSelected: z.string().min(1).max(900),
+          })
+          .strict(),
+      )
+      .min(2)
+      .max(5)
+      .optional(),
+    correctOptionId: z
+      .string()
+      .regex(/^[A-E]$/u)
+      .optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((check, ctx) => {
+    if ((check.options === undefined) !== (check.correctOptionId === undefined)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['options'],
+        message: 'informal-check choices and correct option must be present together',
+      });
+    }
+    if (check.options) {
+      const ids = check.options.map((option) => option.id);
+      if (new Set(ids).size !== ids.length) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['options'],
+          message: 'informal-check option identities must be unique',
+        });
+      }
+      if (check.correctOptionId && !ids.includes(check.correctOptionId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['correctOptionId'],
+          message: 'informal-check correct option must reference an offered choice',
+        });
+      }
+    }
+  });
 export type TeachingBriefInformalCheck = z.infer<typeof TeachingBriefInformalCheckSchema>;
 
 export const TeachingBriefSemanticRelationSchema = z
@@ -184,7 +228,8 @@ export const TeachingBriefWorkedProcessSchema = z
     learnerDecision: z.string().min(1).max(700).nullable(),
     result: z.string().min(1).max(900),
     whyResultFollows: z.string().min(1).max(900),
-    sourceRefIds: z.array(z.string().min(1).max(40)).min(1).max(8),
+    /** Empty means the worked case is Hy3 supplementary teaching, not source evidence. */
+    sourceRefIds: z.array(z.string().min(1).max(40)).max(8),
   })
   .strict();
 export type TeachingBriefWorkedProcess = z.infer<typeof TeachingBriefWorkedProcessSchema>;

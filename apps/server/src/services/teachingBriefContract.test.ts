@@ -395,6 +395,11 @@ describe('compositional provider candidate validation', () => {
   it('rejects missing, unknown, duplicate, and provider-authored local Lesson authority', async () => {
     const input = compositionalContractInput();
     const valid = await new FakeProvider().generateLessonSlotContent(input);
+    const missingNarrative = structuredClone(valid);
+    delete missingNarrative.narrative;
+    expect(validateLessonSlotContentCandidate(missingNarrative, input).diagnosticCodes).toContain(
+      'missing_lesson_narrative',
+    );
     const missing = structuredClone(valid);
     const removedId = missing.slots.splice(1, 1)[0]!.slotId;
     expect(validateLessonSlotContentCandidate(missing, input).diagnosticCodes).toContain(
@@ -447,5 +452,78 @@ describe('compositional provider candidate validation', () => {
     const result = validatePracticeContentCandidate(practice, practiceInput);
     expect(result.diagnosticCodes).toContain('source_location_trivia');
     expect(result.targetedRepair).toEqual({ invalidItemIds: ['PR1'] });
+  });
+
+  it('T3/T4/T6 keeps source and supplementary lanes distinct and blocks learner-facing internals', async () => {
+    const provider = new FakeProvider();
+    const input = compositionalContractInput();
+    const valid = await provider.generateLessonSlotContent(input);
+    const supplementary = valid.slots.find((slot) => slot.sourceRefs.length === 0);
+    const sourceBacked = valid.slots.find((slot) => slot.sourceRefs.length > 0);
+    expect(supplementary).toBeDefined();
+    expect(sourceBacked?.sourceRefs).toEqual(expect.arrayContaining(['S1']));
+    expect(validateLessonSlotContentCandidate(valid, input).valid).toBe(true);
+
+    const unknownEvidence = structuredClone(valid);
+    unknownEvidence.slots.find((slot) => slot.sourceRefs.length > 0)!.sourceRefs = ['S9'];
+    expect(validateLessonSlotContentCandidate(unknownEvidence, input).diagnosticCodes).toContain(
+      'lesson_source_alias_outside_slot_authority',
+    );
+
+    const leaked = structuredClone(valid);
+    leaked.narrative!.summary =
+      'This Lesson develops O1 through the locally planned instructional spine and S1.';
+    const leakage = validateLessonSlotContentCandidate(leaked, input);
+    expect(leakage.valid).toBe(false);
+    expect(leakage.diagnosticCodes).toEqual(
+      expect.arrayContaining(['lesson_internal_alias_leak', 'lesson_planning_language_leak']),
+    );
+
+    const copiedPurpose = structuredClone(valid);
+    copiedPurpose.slots[0]!.explanation = input.skeleton.lessonSlots[0]!.purpose;
+    expect(validateLessonSlotContentCandidate(copiedPurpose, input).diagnosticCodes).toContain(
+      'lesson_planning_language_leak',
+    );
+  });
+
+  it('T12-T14 blocks answer-bearing quotations, accepted-Lesson repetition, and same retries', async () => {
+    const provider = new FakeProvider();
+    const lessonInput = compositionalContractInput();
+    const lesson = await provider.generateLessonSlotContent(lessonInput);
+    const practiceInput: PracticeContentGenerationInput = {
+      workspaceName: 'Course',
+      courseDesign: { desiredDepth: 'working_fluency', unitFocus: 'normal' },
+      skeleton: lessonInput.skeleton,
+      acceptedLesson: lesson.slots,
+      sourceContext: lessonInput.sourceContext,
+      visualContext: lessonInput.visualContext,
+    };
+    const practice = await provider.generatePracticeContent(practiceInput);
+
+    const quoted = structuredClone(practice);
+    quoted.items[0]!.initial.prompt = `${lessonInput.sourceContext.offers[0]!.text} Which conclusion follows?`;
+    const quotedResult = validatePracticeContentCandidate(quoted, practiceInput);
+    expect(quotedResult.diagnosticCodes).toContain('practice_prompt_quotes_answer_source');
+    expect(quotedResult.targetedRepair).toEqual({ invalidItemIds: ['PR1'] });
+
+    const repeatedCase =
+      'A concrete retrieval case begins with three candidates, removes two that fail the condition, and returns the remaining eligible passage.';
+    const exposureInput = structuredClone(practiceInput);
+    exposureInput.acceptedLesson[0]!.example = {
+      text: repeatedCase,
+      sourceRefs: [],
+      visualRefs: [],
+    };
+    const repeated = structuredClone(practice);
+    repeated.items[0]!.initial.prompt = `${repeatedCase} Which result should the learner choose?`;
+    const repeatedResult = validatePracticeContentCandidate(repeated, exposureInput);
+    expect(repeatedResult.diagnosticCodes).toContain('practice_repeats_accepted_lesson');
+    expect(repeatedResult.targetedRepair).toEqual({ invalidItemIds: ['PR1'] });
+
+    const sameRetry = structuredClone(practice);
+    sameRetry.items[0]!.retry.prompt = sameRetry.items[0]!.initial.prompt;
+    expect(validatePracticeContentCandidate(sameRetry, practiceInput).diagnosticCodes).toContain(
+      'retry_surface_not_meaningfully_changed',
+    );
   });
 });

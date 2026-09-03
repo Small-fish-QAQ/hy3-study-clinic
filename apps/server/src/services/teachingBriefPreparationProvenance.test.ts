@@ -34,6 +34,15 @@ function acceptedCheckpoint(
       policyVersion: overrides.policyVersion ?? COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION,
       status: overrides.status ?? 'pass',
     },
+    lessonContent: [
+      {
+        lessonNarrative: {
+          whyNow: 'Why this matters now.',
+          summary: 'A coherent Lesson summary.',
+          forwardBridge: null,
+        },
+      },
+    ],
   } as AcceptedLessonCheckpoint;
 }
 

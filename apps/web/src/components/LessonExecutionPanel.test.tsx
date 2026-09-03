@@ -312,7 +312,7 @@ describe('LessonExecutionPanel', () => {
       />,
     );
     expect((await screen.findAllByText('概率论讲义')).length).toBeGreaterThan(0);
-    expect((await screen.findAllByText('Hy3 讲解补充')).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('Hy3 补充讲解')).length).toBeGreaterThan(0);
     expect(screen.queryByText('S1')).not.toBeInTheDocument();
     await user.click(screen.getByLabelText('查看来源：概率论讲义，第 12 页'));
     expect(screen.getByText(source.exactExcerpt)).toBeInTheDocument();
@@ -330,6 +330,71 @@ describe('LessonExecutionPanel', () => {
       ),
     );
     expect(screen.getByText(/不计入正式进展/)).toBeInTheDocument();
+  });
+
+  it('renders a supported choose check as real choices with deterministic feedback', async () => {
+    const user = userEvent.setup();
+    const choice = readyLesson({
+      stateVersion: 2,
+      currentSegmentIndex: 0,
+      segmentCount: 2,
+      presentedSegmentIndexes: [0],
+      presentationStatus: 'in_progress',
+      presentationCompletedAt: null,
+    });
+    choice.allowedActions = ['respond_to_informal_check'];
+    choice.lesson!.segments[0]!.informalCheck = {
+      kind: 'choose',
+      prompt: '条件改变后，哪一个判断仍然成立？',
+      guidance: null,
+      options: [
+        { id: 'A', text: '忽略新条件' },
+        { id: 'B', text: '按新条件重新判断' },
+      ],
+      presented: true,
+      response: null,
+      respondedAt: null,
+      correct: null,
+      feedback: null,
+      credit: 'none',
+    };
+    vi.spyOn(api, 'getLessonExecution').mockResolvedValue(choice);
+    const answered = structuredClone(choice);
+    answered.progress!.stateVersion = 3;
+    answered.lesson!.segments[0]!.informalCheck = {
+      ...answered.lesson!.segments[0]!.informalCheck!,
+      guidance: '变化后的条件决定新的结论。',
+      response: 'B',
+      respondedAt: '2026-08-19T01:00:00.000Z',
+      correct: true,
+      feedback: '正确：先更新条件，再判断结果。',
+    };
+    const command = vi.spyOn(api, 'lessonExecutionCommand').mockResolvedValue(answered);
+
+    render(
+      <LessonExecutionPanel
+        workspaceId="ws_1"
+        sessionId="session_1"
+        agendaItemId="item_1"
+        active
+      />,
+    );
+
+    await user.click(await screen.findByRole('radio', { name: '按新条件重新判断' }));
+    expect(screen.queryByRole('textbox', { name: '练习回应' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '提交选择' }));
+    await waitFor(() =>
+      expect(command).toHaveBeenCalledWith(
+        'ws_1',
+        'session_1',
+        expect.objectContaining({
+          action: { kind: 'respond_to_informal_check', segmentIndex: 0, response: 'B' },
+        }),
+        expect.any(AbortSignal),
+      ),
+    );
+    expect(await screen.findByText('回答正确')).toBeInTheDocument();
+    expect(screen.getByText('正确：先更新条件，再判断结果。')).toBeInTheDocument();
   });
 
   it('shows contingent wrong-answer feedback and a changed retry before Practice completion', async () => {

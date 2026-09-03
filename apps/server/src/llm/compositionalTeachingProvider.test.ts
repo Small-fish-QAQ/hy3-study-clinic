@@ -6,6 +6,7 @@ import {
 } from '@hy3-clinic/shared';
 import { FakeProvider } from './fakeProvider.js';
 import { Hy3Provider } from './hy3Provider.js';
+import { lessonSlotContentMessages, practiceContentMessages } from './prompts.js';
 import { evaluateLessonSlotPedagogy } from '../services/lessonPedagogyEvaluator.js';
 import type {
   LessonSlotContentGenerationInput,
@@ -147,6 +148,11 @@ function relation() {
 
 function lessonPayload(l1 = 'original valid orientation', l2 = 'accepted mechanism') {
   return {
+    narrative: {
+      whyNow: 'Working-memory limits matter because they shape every later reasoning step.',
+      summary: 'Capacity limits explain why added load can reduce performance.',
+      forwardBridge: 'Next, use this model in a changed workload.',
+    },
     slots: [
       {
         slotId: 'L1',
@@ -201,10 +207,14 @@ function practicePayload(pr1 = 'original valid capability', pr2 = 'accepted capa
 
 function practiceInput(): PracticeContentGenerationInput {
   const lesson = lessonInput();
+  const payload = LessonSlotContentProposalPayloadSchema.parse(lessonPayload());
   return {
     workspaceName: lesson.workspaceName,
+    courseDesign: lesson.courseDesign,
     skeleton: lesson.skeleton,
-    acceptedLesson: LessonSlotContentProposalPayloadSchema.parse(lessonPayload()).slots,
+    acceptedLesson: payload.slots.map((content, index) =>
+      index === 0 ? { ...content, lessonNarrative: payload.narrative } : content,
+    ),
     sourceContext: lesson.sourceContext,
     visualContext: lesson.visualContext,
   };
@@ -304,6 +314,47 @@ function practiceValidation(candidate: unknown): ProviderCandidateValidation {
 }
 
 describe('compositional Teaching providers', () => {
+  it('T9-T11 makes depth cognitive and focus an independent investment signal', () => {
+    const lessonPrompt = (
+      desiredDepth: NonNullable<LessonSlotContentGenerationInput['courseDesign']>['desiredDepth'],
+      unitFocus: 'normal' | 'focused',
+    ) =>
+      lessonSlotContentMessages({
+        ...lessonInput(),
+        courseDesign: { desiredDepth, unitFocus },
+      })
+        .map((message) => message.content)
+        .join('\n');
+
+    const working = lessonPrompt('working_fluency', 'normal');
+    const high = lessonPrompt('high_performance', 'normal');
+    const deep = lessonPrompt('deep_transfer', 'normal');
+    const focused = lessonPrompt('working_fluency', 'focused');
+
+    expect(working).toContain('mechanisms and causal relationships');
+    expect(working).toContain('changed-scenario check');
+    expect(high).toContain('edge cases, failure modes, trade-offs');
+    expect(high).toContain('multi-step application');
+    expect(deep).toContain('counterexamples, unfamiliar transfer');
+    expect(deep).toContain('cross-concept synthesis');
+    expect(focused).toContain('keep the same global depth authority');
+    expect(focused).toContain('invest more teaching effort');
+    expect(focused).toContain(
+      'Focus grants no truth, citation, Formal, credit, or mastery authority',
+    );
+    expect(focused).toContain('"desiredDepth":"working_fluency"');
+    expect(focused).not.toContain('"unitDepth"');
+
+    const practice = practiceContentMessages({
+      ...practiceInput(),
+      courseDesign: { desiredDepth: 'working_fluency', unitFocus: 'focused' },
+    })
+      .map((message) => message.content)
+      .join('\n');
+    expect(practice).toContain('materially changed scenario');
+    expect(practice).toContain('focused Unit receives a richer case within the same global depth');
+  });
+
   it('uses separate Lesson and Practice prompts with content-only output responsibilities', async () => {
     const fetchImpl = vi
       .fn()
@@ -330,10 +381,11 @@ describe('compositional Teaching providers', () => {
     };
     const lessonPrompt = lessonBody.messages.map((message) => message.content).join('\n');
     const practicePrompt = practiceBody.messages.map((message) => message.content).join('\n');
-    expect(lessonPrompt).toContain('immutable Hy3 Study Clinic instructional spine');
-    expect(lessonPrompt).toContain('semantic relation requires two distinct');
-    expect(lessonPrompt).toContain('every slot whose learnerActionRequired is true');
-    expect(lessonPrompt).toContain('including consolidated worked_process slots');
+    expect(lessonPrompt).toContain('one competent teacher writing one coherent');
+    expect(lessonPrompt).toContain('determines what the Lesson can prove');
+    expect(lessonPrompt).toContain('does not determine everything you may teach');
+    expect(lessonPrompt).toContain('two strict epistemic lanes');
+    expect(lessonPrompt).not.toContain('immutable Hy3 Study Clinic instructional spine');
     expect(lessonPrompt).toContain('"desiredDepth":"deep_transfer"');
     expect(lessonPrompt).toContain('"unitFocus":"focused"');
     expect(lessonPrompt).not.toContain('"practicePlan"');
@@ -341,10 +393,13 @@ describe('compositional Teaching providers', () => {
     expect(practicePrompt).toContain('already accepted Hy3 Study Clinic Lesson');
     expect(practicePrompt).toContain('"practicePlan"');
     expect(practicePrompt).toContain('"acceptedLesson"');
+    expect(practicePrompt).toContain('"desiredDepth":"deep_transfer"');
+    expect(practicePrompt).toContain('"unitFocus":"focused"');
+    expect(practicePrompt).toContain('Never quote or closely reproduce');
     expect(practicePrompt).toContain('never prove application');
     expect(schemaNames).toEqual([
-      'lesson-slot-content-v1-compositional',
-      'practice-content-v1-compositional',
+      'lesson-slot-content-v2-teacher-narrative',
+      'practice-content-v2-lesson-novelty',
     ]);
   });
 
@@ -553,8 +608,8 @@ describe('compositional Teaching providers', () => {
     });
     expect(lesson.slots.find((slot) => slot.slotId === 'L2')?.informalCheck).toMatchObject({
       kind: 'apply_simple_example',
-      prompt: expect.stringContaining('choose the next action'),
-      expectedSignal: expect.stringContaining('before coaching appears'),
+      prompt: expect.stringContaining('choose the next justified action'),
+      expectedSignal: expect.stringContaining('condition'),
     });
     expect(
       evaluateLessonSlotPedagogy(lesson, input, {

@@ -1731,7 +1731,28 @@ export class FakeProvider implements LlmProvider {
     const objectiveByRef = new Map(
       input.skeleton.objectives.map((objective) => [objective.objectiveRef, objective]),
     );
+    const depthInvestment = {
+      pass_oriented:
+        'We will build the essential mental model first and keep the example deliberately simple.',
+      working_fluency:
+        'We will connect the mechanism to an important boundary, then reason through a changed case.',
+      high_performance:
+        'We will test the mechanism against a realistic failure mode, an edge case, and a competing trade-off.',
+      deep_transfer:
+        'We will connect the mechanism to adjacent ideas, challenge it with a counterexample, and transfer it to an unfamiliar setting.',
+    }[input.courseDesign?.desiredDepth ?? 'working_fluency'];
+    const focusInvestment =
+      input.courseDesign?.unitFocus === 'focused'
+        ? 'We will spend extra time on a richer case, a consequential boundary, and a useful downstream connection.'
+        : 'We will develop the idea fully while avoiding unrelated detours.';
     const payload = LessonSlotContentProposalPayloadSchema.parse({
+      narrative: {
+        whyNow: `${input.skeleton.learningUnitTitle} matters now because it gives the learner a usable model for the decisions that follow. ${depthInvestment}`,
+        summary: `The central idea is now connected to its evidence, mechanism, boundary, and a learner decision. ${focusInvestment}`,
+        forwardBridge: input.learningContext.nextConnection
+          ? `Next, use this model to make sense of ${input.learningContext.nextConnection.title}.`
+          : 'Carry this model into the next unfamiliar case and ask which condition changes the result.',
+      },
       slots: input.skeleton.lessonSlots.map((slot) => {
         const objective = objectiveByRef.get(slot.objectiveRefs[0]!);
         const sourceRef = slot.allowedSourceRefs[0];
@@ -1755,7 +1776,7 @@ export class FakeProvider implements LlmProvider {
                   kind: relationKind,
                   fromProposition,
                   toProposition,
-                  relevanceToObjective: `This relation makes the requested ${objective?.construct ?? 'identify'} capability for ${topic} observable.`,
+                  relevanceToObjective: `This connection shows why the change matters when reasoning about ${topic}.`,
                   sourceRefs,
                 },
               ]
@@ -1785,31 +1806,49 @@ export class FakeProvider implements LlmProvider {
               }
             : null;
         const informalCheck = slot.learnerActionRequired
-          ? {
-              kind:
-                objective?.construct === 'apply'
-                  ? ('apply_simple_example' as const)
-                  : objective?.construct === 'explain'
-                    ? ('own_words' as const)
-                    : ('choose_alternative' as const),
-              prompt:
-                objective?.construct === 'apply'
-                  ? `Given the bounded current state for ${topic}, choose the next action authorized by the offered procedure and explain why.`
-                  : objective?.construct === 'explain'
-                    ? `Explain how the offered condition changes the result for ${topic}.`
-                    : `Choose the case that meaningfully distinguishes ${topic} and name the defining feature.`,
-              expectedSignal: `Commit to a response that demonstrates the locally planned ${objective?.construct ?? 'identify'} capability before coaching appears.`,
-            }
+          ? objective?.construct === 'identify'
+            ? {
+                kind: 'choose_alternative' as const,
+                prompt: `Which case has the defining feature of ${topic}?`,
+                expectedSignal: 'Use the defining condition, not a familiar label.',
+                options: [
+                  {
+                    id: 'A',
+                    text: 'The case that satisfies the defining condition.',
+                    feedbackIfSelected:
+                      'Yes. The defining condition is what makes this the matching case.',
+                  },
+                  {
+                    id: 'B',
+                    text: 'The case that repeats the topic name but lacks the condition.',
+                    feedbackIfSelected:
+                      'The familiar label is not enough; check whether the condition is present.',
+                  },
+                ],
+                correctOptionId: 'A',
+              }
+            : {
+                kind:
+                  objective?.construct === 'apply'
+                    ? ('apply_simple_example' as const)
+                    : ('own_words' as const),
+                prompt:
+                  objective?.construct === 'apply'
+                    ? `Given the current state for ${topic}, choose the next justified action and explain why.`
+                    : `Explain how the key condition changes the result for ${topic}.`,
+                expectedSignal:
+                  'Connect the condition to the resulting effect or decision in your own words.',
+              }
           : undefined;
         const base = {
           slotId: slot.slotId,
           explanation:
             slot.qualityContract === 'orientation'
-              ? `This session builds ${topic} now so the learner can make the later reasoning or decision observable.`
+              ? `Start with a practical question: what changes when the key condition behind ${topic} changes? ${depthInvestment} ${focusInvestment}`
               : sourceText
-                ? `Use the offered source boundary for ${topic}: ${sourceText} Then connect that bounded fact to the slot purpose: ${slot.purpose}`
-                : `Use the advisory visual only as non-authoritative teaching context for ${topic}, and make this learner-facing purpose observable: ${slot.purpose}`,
-          sourceRefs,
+                ? `With that question in mind, the material establishes this bounded fact about ${topic}: ${sourceText}`
+                : `The advisory visual offers a useful way to picture ${topic}, but it is supplementary teaching rather than source evidence.`,
+          sourceRefs: slot.qualityContract === 'orientation' ? [] : sourceRefs,
           visualRefs,
           semanticRelations,
           workedProcess,
@@ -1820,9 +1859,9 @@ export class FakeProvider implements LlmProvider {
             ...base,
             example: {
               text: workedProcess
-                ? `Start with the stated case, inspect the governing condition, choose the authorized transition, and verify the bounded result.`
-                : `Compare a concrete ${topic} case against the offered boundary before stating the result.`,
-              sourceRefs,
+                ? `Now change one condition in the case. Trace how that change alters the available action and check whether the final result still follows.`
+                : `Imagine a concrete ${topic} case, change one condition, and predict how the result should respond.`,
+              sourceRefs: [],
               visualRefs,
             },
           };
@@ -1831,8 +1870,8 @@ export class FakeProvider implements LlmProvider {
           return {
             ...base,
             contrast: {
-              text: `One response uses the offered condition to distinguish ${topic}; the surface-similar response only repeats its label.`,
-              sourceRefs,
+              text: `A sound explanation of ${topic} uses the governing condition to predict a result; a surface-similar answer merely repeats a label.`,
+              sourceRefs: [],
               visualRefs,
             },
           };
@@ -1843,8 +1882,8 @@ export class FakeProvider implements LlmProvider {
             misconception: {
               hypothesis: `A learner may repeat the ${topic} label without using its source-stated boundary.`,
               correction:
-                'Return to the offered condition, connect it to the result, and keep the conclusion bounded.',
-              sourceRefs,
+                'Return to the governing condition, connect it to the result, and test whether the conclusion survives a changed case.',
+              sourceRefs: [],
               visualRefs,
             },
           };
@@ -1870,15 +1909,21 @@ export class FakeProvider implements LlmProvider {
     opts?: ProviderCallOptions,
   ): Promise<PracticeContentProposalPayload> {
     await this.gate(opts);
-    const objectiveByRef = new Map(
-      input.skeleton.objectives.map((objective) => [objective.objectiveRef, objective]),
-    );
     const sourceByRef = new Map(
       input.sourceContext.offers.map((offer) => [offer.sourceRef, offer]),
     );
+    const scenarioDemand = {
+      pass_oriented: 'In a simple new case',
+      working_fluency: 'In a changed case with one important condition altered',
+      high_performance: 'In a realistic failure case with competing constraints',
+      deep_transfer: 'In an unfamiliar transfer case that combines two interacting constraints',
+    }[input.courseDesign?.desiredDepth ?? 'working_fluency'];
+    const focusDetail =
+      input.courseDesign?.unitFocus === 'focused'
+        ? ' Include the boundary condition that would make the tempting alternative fail.'
+        : '';
     const payload = PracticeContentProposalPayloadSchema.parse({
       items: input.skeleton.practicePlan.slots.map((slot) => {
-        const objective = objectiveByRef.get(slot.objectiveRef)!;
         const sourceRef = slot.allowedSourceRefs[0];
         const visualRef = slot.allowedVisualRefs[0];
         const sourceRefs = sourceRef ? [sourceRef] : [];
@@ -1887,24 +1932,27 @@ export class FakeProvider implements LlmProvider {
         const application =
           slot.construct === 'apply' && sourceText
             ? {
-                startingState: `The learner has a bounded current ${objective.title} state and the source-stated procedure has begun.`,
+                startingState:
+                  'A learner has reached a bounded decision point after the relevant procedure has begun.',
                 sourceRuleOrProcedure: sourceText,
-                decisionRequired: `Choose which source-stated ${objective.title} action follows from the current procedural state.`,
-                expectedAction: `Inspect the current ${objective.title} condition, then perform the next authorized procedure step. This keeps the ${objective.title} transition inside its source-stated boundary.`,
+                decisionRequired:
+                  'Choose which source-stated action follows from the current procedural state.',
+                expectedAction:
+                  'Inspect the current condition, then perform the next authorized procedure step while preserving its stated boundary.',
               }
             : null;
         const initialPrompt =
           slot.construct === 'apply'
-            ? `${application?.startingState} Which next step should the learner choose under the offered procedure, and what action follows?`
+            ? `${scenarioDemand}. ${application?.startingState} Which next step follows from the governing condition?${focusDetail}`
             : slot.construct === 'explain'
-              ? `Which response explains how and why the offered condition changes ${objective.title}?`
-              : `Which case meaningfully distinguishes ${objective.title} by its offered defining feature?`;
+              ? `${scenarioDemand}, a system produces a different outcome after one constraint shifts. Which account best connects the shifted constraint to that outcome?${focusDetail}`
+              : `${scenarioDemand}, which case should be classified by the governing feature rather than by a familiar label?${focusDetail}`;
         const retryPrompt =
           slot.construct === 'apply'
-            ? `In a changed ${objective.title} case, the condition has been checked but the next procedural action is missing. Which action completes the source-stated transition?`
+            ? `A second team reaches the same decision point by a different route, but one prerequisite is now absent. Which action should they take next?`
             : slot.construct === 'explain'
-              ? `In a changed case, which mechanism best accounts for the consequence of ${objective.title}?`
-              : `In a changed case, which alternative still has the defining feature of ${objective.title}?`;
+              ? 'A second system changes a different condition. Which mechanism now best accounts for the new consequence?'
+              : 'A troubleshooting report keeps a familiar label but removes one required condition. Which candidate should now be rejected?';
         return {
           practiceSlotId: slot.practiceSlotId,
           capabilityTested: slot.capabilityToObserve,
@@ -1955,7 +2003,7 @@ export class FakeProvider implements LlmProvider {
                 optionRef: 'B',
                 text:
                   slot.construct === 'apply'
-                    ? `Re-evaluate the changed ${objective.title} condition, then select the source-authorized next ${objective.title} action.`
+                    ? 'Re-evaluate the changed condition, then select the source-authorized next action.'
                     : 'Re-evaluate the changed condition and connect it to the corresponding bounded result.',
                 feedbackIfSelected:
                   'Correct: this changed surface preserves the same construct and authority boundary.',

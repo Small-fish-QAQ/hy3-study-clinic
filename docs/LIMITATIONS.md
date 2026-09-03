@@ -25,8 +25,8 @@ from open research questions.
 
 ## Teaching and pedagogy limits
 
-- Lesson cards may teach beyond the uploaded text; such segments are explicitly labeled AI 辅助讲解(非资料原文), are never grading evidence, and their factual quality depends on the configured model.
-- Teaching Skeleton minute ranges are deterministic feasibility bounds, not observed learner time or proof of teaching effectiveness. Independent Lesson/Practice quality findings are advisory diagnostics; schema, source, objective-authority, route, and identity violations still fail closed. An accepted Lesson checkpoint is reusable only for its exact Session/Agenda/Plan route, source context, skeleton, and prompt version.
+- Lesson prose may teach beyond the uploaded text. Such content carries no source reference, is explicitly labeled Hy3 supplementary teaching, is never grading evidence, and its factual quality depends on the configured model. A source marker proves an exact excerpt exists at that location; it does not prove full semantic entailment.
+- Teaching Skeleton minute ranges are deterministic feasibility bounds, not observed learner time or proof of teaching effectiveness. Lexical relevance/compatibility findings are advisory diagnostics; schema, required obligations, source membership/resolution, route, identity, planning-language leakage, and obvious Practice-answer leakage still fail closed. The bounded Practice novelty checks catch substantial verbatim/direct repetition, not semantic paraphrases. An accepted Lesson checkpoint is reusable only for its exact Session/Agenda/Plan route, source context, skeleton, and prompt version.
 - Objective repair cannot silently broaden authority, lower a construct, or narrow away an original required capability. If the legitimate LearningUnit source envelope cannot support the objective, preparation stops instead of manufacturing Formal readiness.
 
 ## Assessment, mastery, and review limits

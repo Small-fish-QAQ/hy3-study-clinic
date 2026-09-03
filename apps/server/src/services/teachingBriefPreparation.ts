@@ -71,9 +71,9 @@ import {
   objectiveAuthoritySemanticallySupportedClaimIds,
 } from './objectiveAuthoritySemanticSupport.js';
 
-export const TEACHING_BRIEF_PROMPT_VERSION = 'teaching-brief-v3-compositional-v1';
-export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v1-compositional';
-export const PRACTICE_CONTENT_PROMPT_VERSION = 'teaching-practice-content-v1-compositional';
+export const TEACHING_BRIEF_PROMPT_VERSION = 'teaching-brief-v3-compositional-r1-pedagogy';
+export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v2-teacher-narrative';
+export const PRACTICE_CONTENT_PROMPT_VERSION = 'teaching-practice-content-v2-lesson-novelty';
 /** Two logical calls, each original + one repair at the configured 5-minute ceiling. */
 export const COMPOSITIONAL_PREPARATION_LEASE_MS = 22 * 60 * 1000;
 
@@ -144,7 +144,8 @@ export function isCurrentAcceptedLessonCheckpoint(
   return (
     checkpoint?.promptVersion === LESSON_CONTENT_PROMPT_VERSION &&
     checkpoint.lessonEvaluation.policyVersion === COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION &&
-    checkpoint.lessonLogicalCallId !== null
+    checkpoint.lessonLogicalCallId !== null &&
+    checkpoint.lessonContent[0]?.lessonNarrative !== undefined
   );
 }
 
@@ -759,6 +760,7 @@ export function createTeachingBriefPreparationService({
   ): PracticeContentGenerationInput {
     return {
       workspaceName: route.workspace.name,
+      ...(input.courseDesign ? { courseDesign: input.courseDesign } : {}),
       skeleton: checkpoint.skeleton,
       acceptedLesson: checkpoint.lessonContent,
       sourceContext: input.sourceContext,
@@ -805,10 +807,13 @@ export function createTeachingBriefPreparationService({
             {
               learningUnitId: node.id,
               title: node.title,
-              reason: `This accepted Curriculum prerequisite supports ${route.node.title}.`,
+              reason: `Understanding ${node.title} will make the ideas in ${route.node.title} easier to follow.`,
               readinessHint:
                 prerequisite.objectiveSummaries.length > 0
-                  ? `Recall: ${prerequisite.objectiveSummaries.join('; ')}`.slice(0, 500)
+                  ? `Before continuing, briefly recall ${prerequisite.objectiveSummaries.join('; ')}.`.slice(
+                      0,
+                      500,
+                    )
                   : null,
             },
           ]
@@ -829,25 +834,25 @@ export function createTeachingBriefPreparationService({
   function localLessonMetadata(
     route: ReturnType<typeof routeContext>,
     input: TeachingBriefGenerationInput,
-    skeleton: TeachingSkeleton,
+    checkpoint: AcceptedLessonCheckpoint,
   ) {
-    const objectiveTitles = route.routeObjectives.map((objective) => objective.title);
+    const narrative = checkpoint.lessonContent[0]?.lessonNarrative;
+    if (!narrative) {
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        'Current accepted Lesson content requires one coherent learner-facing narrative.',
+      );
+    }
     return {
       objective: {
         title: route.node.title,
-        whyNow: route.agendaItem.reason,
-        objectives: derivedObjective(route, input, skeleton),
+        whyNow: narrative.whyNow,
+        objectives: derivedObjective(route, input, checkpoint.skeleton),
       },
       prerequisites: derivedPrerequisites(route, input),
       formalOpportunities: [],
-      summary:
-        `This Lesson develops ${objectiveTitles.join('; ')} through the locally planned instructional spine.`.slice(
-          0,
-          1200,
-        ),
-      nextConnection: input.nextConnection
-        ? `Next in the accepted StudyPlan: ${input.nextConnection.title}.`
-        : null,
+      summary: narrative.summary,
+      nextConnection: narrative.forwardBridge,
     };
   }
 
@@ -863,7 +868,7 @@ export function createTeachingBriefPreparationService({
   ): TeachingBrief {
     const briefId = newId('teaching_brief');
     const segments = assembleSegments(route, checkpoint);
-    const metadata = localLessonMetadata(route, input, checkpoint.skeleton);
+    const metadata = localLessonMetadata(route, input, checkpoint);
     const objectiveIds = route.routeObjectives.map((objective) => objective.id);
     const qualityProfile = profileTeachingBrief({
       objectiveIds,
@@ -1082,7 +1087,7 @@ export function createTeachingBriefPreparationService({
     if (!isCurrentAcceptedLessonCheckpoint(checkpoint)) {
       return null;
     }
-    const metadata = localLessonMetadata(route, generationInput, checkpoint.skeleton);
+    const metadata = localLessonMetadata(route, generationInput, checkpoint);
     return {
       checkpointId: checkpoint.id,
       objective: metadata.objective,
@@ -1277,6 +1282,15 @@ export function createTeachingBriefPreparationService({
             boundedRepairAttempted: lessonRepairAttempted,
           },
         );
+        if (!lessonPayload.narrative) {
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            'Current Lesson generation requires a coherent opening, summary, and forward bridge.',
+          );
+        }
+        const acceptedLessonContent = lessonPayload.slots.map((content, index) =>
+          index === 0 ? { ...content, lessonNarrative: lessonPayload.narrative } : content,
+        );
         checkpoint = repos.transaction(() => {
           const current = routeStillCurrent(input, context.fingerprint);
           assertLessonObjectiveAuthoritySemanticSupport(current.route);
@@ -1301,7 +1315,7 @@ export function createTeachingBriefPreparationService({
               executionSourceManifestFingerprint: input.expectedExecutionSourceManifestFingerprint,
               sourceContextFingerprint: scopedFingerprint,
               skeleton,
-              lessonContent: lessonPayload.slots,
+              lessonContent: acceptedLessonContent,
               lessonEvaluation,
               operationId: claim.id,
               lessonLogicalCallId,

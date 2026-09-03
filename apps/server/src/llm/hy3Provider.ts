@@ -446,7 +446,10 @@ function mergeTargetedRepairCandidate(
       merged.push(item);
     }
   }
-  return { ...repaired, [collection.collectionKey]: merged };
+  // Targeted repairs may intentionally return only the repaired collection.
+  // Preserve immutable whole-response fields (for example the Lesson narrative)
+  // unless the repair explicitly supplies a replacement.
+  return { ...previous, ...repaired, [collection.collectionKey]: merged };
 }
 
 const GROUPED_STUDY_PLAN_KINDS = [
@@ -802,14 +805,15 @@ export class Hy3Provider implements LlmProvider {
       opts,
       [
         'Repair only locally identified L* slots. Every other first-pass slot is frozen and cannot be changed, deleted, or reordered.',
-        'Return only slotId plus bounded content fields. Never output objective refs, construct, role, duration, protection, authority mode, Practice, Formal Evidence, mastery, or progression.',
+        'Preserve the whole-Lesson narrative unless a diagnostic explicitly identifies it. Return only slotId plus bounded content fields for repaired slots. Never output objective refs, construct, role, duration, protection, authority mode, Practice, Formal Evidence, mastery, or progression.',
         'Use only the slot-specific offered S*/V* aliases. A semantic relation needs two distinct propositions and objective relevance; keywords alone never prove reasoning.',
-        'For a worked-process failure, provide the source-stated starting state/rule, transitions with reasons, result, and why it follows. If the repaired slot has learnerActionRequired=true, also provide an aligned pre-guidance informalCheck that requires the learner to decide/predict/act before any explanation. Do not substitute a label or generic checklist.',
+        'For a worked-process failure, provide a concrete starting state, transitions with reasons, result, and why it follows. Cite an offered source only for source-backed claims; supplementary worked cases keep sourceRefs empty. If the repaired slot has learnerActionRequired=true, also provide an aligned pre-guidance informalCheck that requires the learner to decide/predict/act before any explanation. choose_alternative checks require structured choices and one correct option. Do not substitute a label or generic checklist.',
+        'Remove internal aliases and planning vocabulary from every learner-visible string. Write as the same coherent teacher voice as the frozen Lesson.',
         'Return a slots object containing only replacements for the named invalid L* identities. Local code will reassemble it with every frozen valid slot exactly.',
       ].join('\n'),
       {
         maxTokens: 10_000,
-        schemaName: 'lesson-slot-content-v1-compositional',
+        schemaName: 'lesson-slot-content-v2-teacher-narrative',
         targetedRepairCollection: {
           collectionKey: 'slots',
           identityKey: 'slotId',
@@ -833,11 +837,12 @@ export class Hy3Provider implements LlmProvider {
         'Return only practiceSlotId plus bounded item/surface content. Never output objective refs, construct, authority mode, duration, credit, Formal Evidence, mastery, or progression.',
         'Use only slot-specific offered S*/V* aliases and stay inside the locally stated capability and prohibited-construct boundary.',
         'For an apply failure, application must expose a source-stated starting state/rule, real decision, and expected action reflected by both prompt and action options. Lexical apply/next-step markers alone are invalid.',
+        'Remove answer-bearing source quotation, accepted-Lesson worked-case repetition, exposed internal aliases, and same-scenario retries. A retry must use a meaningfully changed scenario.',
         'Return an items object containing only replacements for the named invalid PR* identities. Local code will reassemble it with every frozen valid item exactly.',
       ].join('\n'),
       {
         maxTokens: 8_000,
-        schemaName: 'practice-content-v1-compositional',
+        schemaName: 'practice-content-v2-lesson-novelty',
         targetedRepairCollection: {
           collectionKey: 'items',
           identityKey: 'practiceSlotId',

@@ -4260,7 +4260,7 @@ button.danger {
 
 .lesson-segment-list {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-5);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -4269,19 +4269,18 @@ button.danger {
 .lesson-segment {
   display: grid;
   gap: var(--space-3);
-  padding: var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--surface-raised);
+  padding: 0 0 var(--space-5);
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
 }
 
 .lesson-segment.current {
   border-color: #8eb9ac;
-  box-shadow: 0 0 0 3px rgb(40 95 83 / 9%);
 }
 
 .lesson-segment.upcoming {
-  background: var(--surface-2);
+  background: transparent;
 }
 
 .lesson-segment-heading {
@@ -4476,13 +4475,34 @@ button.danger {
   margin: 0;
 }
 
-.lesson-informal-check textarea {
+.lesson-informal-check textarea,
+.lesson-informal-check input {
   width: 100%;
+}
+
+.lesson-informal-check textarea {
   min-height: 76px;
   resize: vertical;
 }
 
+.lesson-check-options {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.lesson-check-options button {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.lesson-check-options button.selected {
+  border-color: var(--primary);
+  background: var(--primary-weak);
+}
+
 .lesson-check-recorded {
+  display: grid;
+  gap: var(--space-2);
   margin: 0;
   color: var(--success);
 }

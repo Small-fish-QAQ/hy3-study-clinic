@@ -20,8 +20,9 @@ import type {
 
 export const LESSON_PEDAGOGY_POLICY_VERSION = 'lesson-pedagogy-v2';
 export const PRACTICE_QUALITY_POLICY_VERSION = 'lesson-practice-v1';
-export const COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION = 'lesson-pedagogy-v3-compositional';
-export const COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION = 'lesson-practice-v2-compositional';
+export const COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION =
+  'lesson-pedagogy-v4-structural-with-advisory-relevance';
+export const COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION = 'lesson-practice-v3-exposure-novelty';
 
 function normalized(value: string): string {
   return value
@@ -877,6 +878,53 @@ function isSemanticallyDistinct(left: string, right: string): boolean {
   return overlapRatio(left, right) < 0.9;
 }
 
+const INTERNAL_TEACHING_ALIAS = /\b(?:PR|O|S|L)[1-9][0-9]*\b/iu;
+const INTERNAL_PLANNING_LANGUAGE =
+  /\b(?:instructional spine|teaching skeleton|immutable skeleton|slot purpose|quality contract|locally planned|objective ref(?:erence)?|source ref(?:erence)?|selected depth|depth setting|global depth|focused unit|focus flag)\b|教学脊柱|教学骨架|槽位目的|质量契约|本地规划|目标别名|来源别名|深度设置|重点单元/iu;
+const GENERIC_PLACEHOLDER_LANGUAGE =
+  /\bplaceholder\b|\bdetails? for (?:this|the|a) generic (?:example|case)\b|占位符|通用示例的?详情/iu;
+
+function containsInternalTeachingAlias(value: string): boolean {
+  return INTERNAL_TEACHING_ALIAS.test(value);
+}
+
+function containsPlanningLanguage(value: string, purpose?: string): boolean {
+  if (INTERNAL_PLANNING_LANGUAGE.test(value)) return true;
+  if (!purpose) return false;
+  const candidate = normalized(value);
+  const plannedPurpose = normalized(purpose);
+  return plannedPurpose.length >= 16 && candidate.includes(plannedPurpose);
+}
+
+function lessonFindingSeverity(code: string): LessonPedagogyFinding['severity'] {
+  return new Set([
+    'lesson_slot_content_not_objective_aligned',
+    'semantic_relation_not_objective_relevant',
+    'semantic_relation_source_incompatible',
+    'worked_process_relevance_uncertain',
+    'worked_process_result_not_justified',
+    'worked_process_source_incompatible',
+    'worked_process_application_relevance_uncertain',
+    'semantically_redundant_lesson_slots',
+  ]).has(code)
+    ? 'warning'
+    : 'error';
+}
+
+function practiceFindingSeverity(code: string): PracticeQualityFinding['severity'] {
+  return new Set([
+    'practice_capability_not_objective_aligned',
+    'practice_surface_not_objective_aligned',
+    'practice_promotes_construct',
+    'practice_application_relevance_uncertain',
+    'practice_application_source_incompatible',
+    'practice_application_not_observable_in_surface',
+    'semantically_redundant_practice_items',
+  ]).has(code)
+    ? 'warning'
+    : 'error';
+}
+
 function sourceTextForRefs(context: CompositionSourceContext, refs: string[]): string {
   const requested = new Set(refs);
   return context.offers
@@ -908,6 +956,9 @@ function allLessonSourceRefs(content: TeachingLessonSlotContent): string[] {
 
 function allLessonText(content: TeachingLessonSlotContent): string {
   return [
+    content.lessonNarrative?.whyNow,
+    content.lessonNarrative?.summary,
+    content.lessonNarrative?.forwardBridge,
     content.explanation,
     ...content.semanticRelations.flatMap((relation) => [
       relation.fromProposition,
@@ -930,6 +981,10 @@ function allLessonText(content: TeachingLessonSlotContent): string {
     content.misconception?.correction,
     content.informalCheck?.prompt,
     content.informalCheck?.expectedSignal,
+    ...(content.informalCheck?.options?.flatMap((option) => [
+      option.text,
+      option.feedbackIfSelected,
+    ]) ?? []),
   ]
     .filter((value): value is string => Boolean(value))
     .join(' ');
@@ -954,10 +1009,7 @@ function relationIssueCodes(
   }
   if (
     !isSubstantiveText(relation.relevanceToObjective) ||
-    !hasBoundedSemanticCompatibility(
-      relation.relevanceToObjective,
-      `${objectiveTarget} ${slot.purpose}`,
-    )
+    !hasBoundedSemanticCompatibility(relation.relevanceToObjective, objectiveTarget)
   ) {
     issues.push('semantic_relation_not_objective_relevant');
   }
@@ -996,16 +1048,23 @@ function workedProcessIssueCodes(
     ...process.steps.flatMap((step) => [step.action, step.reason, step.resultingState]),
   ];
   if (
-    requiredTexts.some((value) => !isSubstantiveText(value)) ||
+    requiredTexts.some(
+      (value) => !isSubstantiveText(value) || GENERIC_PLACEHOLDER_LANGUAGE.test(value),
+    )
+  ) {
+    issues.push('worked_process_missing_required_structure');
+  }
+  if (
     !hasMeaningfulOverlap(process.startingState, domainTarget) ||
     !hasMeaningfulOverlap(process.ruleOrProcedure, domainTarget) ||
     !hasMeaningfulOverlap(process.result, domainTarget) ||
     process.steps.some(
       (step) => !hasMeaningfulOverlap(`${step.action} ${step.resultingState}`, domainTarget),
-    ) ||
-    !isSemanticallyDistinct(process.startingState, process.result)
-  ) {
-    issues.push('worked_process_missing_required_structure');
+    )
+  )
+    issues.push('worked_process_relevance_uncertain');
+  if (!isSemanticallyDistinct(process.startingState, process.result)) {
+    issues.push('worked_process_has_no_real_transition');
   }
   let precedingState = process.startingState;
   for (const step of process.steps) {
@@ -1034,9 +1093,15 @@ function workedProcessIssueCodes(
   if (
     (slot.construct === 'apply' || slot.construct === 'design' || slot.construct === 'evaluate') &&
     (!isSubstantiveText(process.learnerDecision) ||
-      !hasMeaningfulOverlap(process.learnerDecision, domainTarget))
+      GENERIC_PLACEHOLDER_LANGUAGE.test(process.learnerDecision))
   ) {
     issues.push('worked_process_missing_application_decision');
+  } else if (
+    (slot.construct === 'apply' || slot.construct === 'design' || slot.construct === 'evaluate') &&
+    process.learnerDecision &&
+    !hasMeaningfulOverlap(process.learnerDecision, domainTarget)
+  ) {
+    issues.push('worked_process_application_relevance_uncertain');
   }
   return [...new Set(issues)];
 }
@@ -1045,29 +1110,39 @@ function lessonIssueMessage(code: string, slotId: string): string {
   const messages: Record<string, string> = {
     lesson_slot_content_not_objective_aligned: `${slotId} content is not meaningfully anchored to its locally planned objective or source.`,
     lesson_slot_content_not_substantive: `${slotId} needs substantive instructional content rather than a field label or placeholder.`,
+    lesson_internal_alias_leak: `${slotId} exposes an internal objective, source, Lesson, or Practice alias in learner-facing text.`,
+    lesson_planning_language_leak: `${slotId} exposes internal planning language or copies a private obligation into learner-facing text.`,
     lesson_source_location_trivia: `${slotId} asks where source text appears instead of eliciting the planned capability.`,
     missing_planned_learner_action: `${slotId} must contain the learner action required by the immutable skeleton.`,
+    lesson_choice_check_missing_options: `${slotId} choice check requires structured options and one deterministically gradeable answer.`,
     unplanned_lesson_learner_action: `${slotId} cannot add a learner action outside the immutable skeleton budget.`,
     missing_planned_boundary_work: `${slotId} must fill the planned contrast or misconception boundary role.`,
-    missing_typed_semantic_relation: `${slotId} requires a typed relation between two meaningful source-compatible propositions.`,
+    missing_typed_semantic_relation: `${slotId} requires a typed relation between two distinct meaningful propositions.`,
     semantic_relation_outside_slot_contract: `${slotId} uses a relation kind outside its immutable controlled relation set.`,
     semantic_relation_not_substantive: `${slotId} relation must contain two distinct, meaningful propositions or states.`,
     semantic_relation_not_objective_relevant: `${slotId} relation does not explain its relevance to the locally planned objective.`,
     semantic_relation_source_incompatible: `${slotId} relation is not compatible with a locally allowed cited source.`,
     missing_typed_worked_process: `${slotId} requires a typed worked process with start, rule, transitions, result, and justification.`,
     worked_process_missing_required_structure: `${slotId} worked process contains labels or generic fields instead of an observable start/rule/transition/result path.`,
+    worked_process_relevance_uncertain: `${slotId} worked process has low lexical overlap with its objective or source; retain this only as an advisory relevance signal.`,
     worked_process_has_no_real_transition: `${slotId} worked process does not change state through its stated actions.`,
     worked_process_result_not_justified: `${slotId} worked process does not connect its final result to the rule and transitions.`,
     worked_process_source_incompatible: `${slotId} worked process does not use an exact locally allowed source-stated rule or procedure.`,
-    worked_process_missing_application_decision: `${slotId} worked process needs a source-bounded learner decision for the planned higher-order construct.`,
+    worked_process_missing_application_decision: `${slotId} worked process needs a concrete learner decision for the planned higher-order construct.`,
+    worked_process_application_relevance_uncertain: `${slotId} learner decision has low lexical overlap with the objective or source; retain this only as an advisory relevance signal.`,
     unplanned_worked_process: `${slotId} cannot add a worked process outside the immutable skeleton role.`,
   };
   return messages[code] ?? `${slotId} does not satisfy its immutable Lesson quality contract.`;
 }
 
 function lessonCriterionForCode(code: string): LessonPedagogyFinding['criterion'] {
+  if (code.includes('alias_leak') || code.includes('planning_language')) return 'source_grounding';
   if (code.includes('worked_process')) return 'worked_example';
-  if (code.includes('learner_action') || code === 'lesson_source_location_trivia') {
+  if (
+    code.includes('learner_action') ||
+    code === 'lesson_source_location_trivia' ||
+    code === 'lesson_choice_check_missing_options'
+  ) {
     return 'learner_activity';
   }
   if (code.includes('boundary')) return 'misconception_or_contrast';
@@ -1088,26 +1163,59 @@ export function evaluateLessonSlotPedagogy(
   const findings: LessonPedagogyFinding[] = [];
   const contentById = new Map(payload.slots.map((content) => [content.slotId, content]));
 
+  if (payload.narrative) {
+    const narrativeText = `${payload.narrative.whyNow} ${payload.narrative.summary} ${payload.narrative.forwardBridge ?? ''}`;
+    if (containsInternalTeachingAlias(narrativeText)) {
+      findings.push(
+        lessonFinding(
+          'source_grounding',
+          'lesson_internal_alias_leak',
+          'The learner-facing Lesson narrative exposes an internal objective, source, Lesson, or Practice alias.',
+        ),
+      );
+    }
+    if (containsPlanningLanguage(narrativeText)) {
+      findings.push(
+        lessonFinding(
+          'source_grounding',
+          'lesson_planning_language_leak',
+          'The learner-facing Lesson narrative exposes internal planning language.',
+        ),
+      );
+    }
+  }
+
   for (const [slotIndex, slot] of input.skeleton.lessonSlots.entries()) {
     const content = contentById.get(slot.slotId);
     if (!content) continue;
     const objectiveTarget = objectiveTargetForSlot(slot, input);
     const citedSource = sourceTextForRefs(input.sourceContext, allLessonSourceRefs(content));
-    const domainTarget = `${objectiveTarget} ${slot.purpose} ${citedSource}`;
+    // Private slot purpose is deliberately excluded: parroting planning prose
+    // is not evidence that a Lesson teaches its objective.
+    const domainTarget = `${objectiveTarget} ${citedSource}`;
     const codes = new Set<string>();
+    const visibleText = allLessonText(content);
 
     if (!isSubstantiveText(content.explanation)) {
       codes.add('lesson_slot_content_not_substantive');
     }
-    if (!hasMeaningfulOverlap(allLessonText(content), domainTarget)) {
+    if (containsInternalTeachingAlias(visibleText)) {
+      codes.add('lesson_internal_alias_leak');
+    }
+    if (containsPlanningLanguage(visibleText, slot.purpose)) {
+      codes.add('lesson_planning_language_leak');
+    }
+    if (!hasMeaningfulOverlap(visibleText, domainTarget)) {
       codes.add('lesson_slot_content_not_objective_aligned');
     }
 
     let validRelationCount = 0;
     for (const relation of content.semanticRelations) {
       const relationIssues = relationIssueCodes(relation, slot, objectiveTarget, input);
-      if (relationIssues.length === 0) validRelationCount += 1;
-      else relationIssues.forEach((code) => codes.add(code));
+      if (!relationIssues.some((code) => lessonFindingSeverity(code) === 'error')) {
+        validRelationCount += 1;
+      }
+      relationIssues.forEach((code) => codes.add(code));
     }
     if (slot.qualityContract === 'semantic_relation' && validRelationCount === 0) {
       codes.add('missing_typed_semantic_relation');
@@ -1122,14 +1230,20 @@ export function evaluateLessonSlotPedagogy(
     }
 
     if (slot.learnerActionRequired) {
-      if (
-        !content.informalCheck ||
-        !isSubstantiveText(content.informalCheck.prompt) ||
-        !hasMeaningfulOverlap(content.informalCheck.prompt, domainTarget)
-      ) {
+      if (!content.informalCheck || !isSubstantiveText(content.informalCheck.prompt)) {
         codes.add('missing_planned_learner_action');
       } else if (SOURCE_LOCATION_TRIVIA.test(content.informalCheck.prompt)) {
         codes.add('lesson_source_location_trivia');
+      } else {
+        if (!hasMeaningfulOverlap(content.informalCheck.prompt, domainTarget)) {
+          codes.add('lesson_slot_content_not_objective_aligned');
+        }
+        if (
+          content.informalCheck.kind === 'choose_alternative' &&
+          (!content.informalCheck.options || !content.informalCheck.correctOptionId)
+        ) {
+          codes.add('lesson_choice_check_missing_options');
+        }
       }
     } else if (content.informalCheck) {
       codes.add('unplanned_lesson_learner_action');
@@ -1161,6 +1275,7 @@ export function evaluateLessonSlotPedagogy(
           lessonIssueMessage(code, slot.slotId),
           [slotIndex],
           slot.objectiveRefs,
+          lessonFindingSeverity(code),
         ),
       );
     }
@@ -1185,6 +1300,7 @@ export function evaluateLessonSlotPedagogy(
             `${leftSlot.slotId} and ${rightSlot.slotId} repeat content instead of filling their distinct immutable roles.`,
             [left, right],
             [...new Set([...leftSlot.objectiveRefs, ...rightSlot.objectiveRefs])],
+            'warning',
           ),
         );
       }
@@ -1242,6 +1358,90 @@ function correctOptionText(item: ProposedPracticeSlotContent, surface: 'initial'
   );
 }
 
+function hasLongVerbatimSpan(candidate: string, source: string): boolean {
+  const sourceWords = normalized(source).split(/\s+/u).filter(Boolean);
+  if (sourceWords.length >= 12) {
+    for (let index = 0; index <= sourceWords.length - 12; index += 1) {
+      const span = sourceWords.slice(index, index + 12).join(' ');
+      if (normalized(candidate).includes(span)) return true;
+    }
+  }
+  const compactCandidate = normalized(candidate).replace(/\s+/gu, '');
+  const compactSource = normalized(source).replace(/\s+/gu, '');
+  const hanThreshold = /\p{Script=Han}/u.test(source) ? 24 : 64;
+  if (compactSource.length < hanThreshold) {
+    return compactSource.length >= 16 && compactCandidate.includes(compactSource);
+  }
+  for (let index = 0; index <= compactSource.length - hanThreshold; index += 1) {
+    if (compactCandidate.includes(compactSource.slice(index, index + hanThreshold))) return true;
+  }
+  return false;
+}
+
+function acceptedLessonExposureTexts(input: PracticeContentGenerationInput): string[] {
+  return input.acceptedLesson
+    .flatMap((content) => [
+      content.lessonNarrative?.whyNow,
+      content.lessonNarrative?.summary,
+      content.explanation,
+      ...content.semanticRelations.flatMap((relation) => [
+        relation.fromProposition,
+        relation.toProposition,
+      ]),
+      content.workedProcess?.startingState,
+      content.workedProcess?.ruleOrProcedure,
+      ...(content.workedProcess?.steps.flatMap((step) => [step.action, step.resultingState]) ?? []),
+      content.workedProcess?.result,
+      content.example?.text,
+      content.contrast?.text,
+      content.misconception?.hypothesis,
+      content.misconception?.correction,
+      content.informalCheck?.prompt,
+    ])
+    .filter((value): value is string => Boolean(value));
+}
+
+function repeatsAcceptedLessonSurface(
+  surfaceText: string,
+  input: PracticeContentGenerationInput,
+): boolean {
+  const removeSharedDomainContext = (value: string) => {
+    let result = normalized(value);
+    const sharedContext = [
+      ...input.skeleton.objectives.flatMap((objective) => [objective.title, objective.description]),
+      ...input.sourceContext.offers.map((offer) => offer.text),
+    ];
+    for (const context of sharedContext) {
+      const exact = normalized(context);
+      if (exact.length >= 8) result = result.split(exact).join(' ');
+    }
+    return result.replace(/\s+/gu, ' ').trim();
+  };
+  const candidate = removeSharedDomainContext(surfaceText);
+  if (!candidate) return false;
+  return acceptedLessonExposureTexts(input).some((exposure) => {
+    const comparableExposure = removeSharedDomainContext(exposure);
+    if (!comparableExposure) return false;
+    if (candidate === comparableExposure) return true;
+    return hasLongVerbatimSpan(candidate, comparableExposure);
+  });
+}
+
+function practiceLearnerVisibleText(item: ProposedPracticeSlotContent): string {
+  return [
+    item.capabilityTested,
+    item.pedagogicalReason,
+    item.initial.prompt,
+    item.initial.hint,
+    item.initial.explanation,
+    ...item.initial.options.flatMap((option) => [option.text, option.feedbackIfSelected]),
+    item.retry.prompt,
+    item.retry.hint,
+    item.retry.explanation,
+    ...item.retry.options.flatMap((option) => [option.text, option.feedbackIfSelected]),
+  ].join(' ');
+}
+
 function applicationIssueCodes(
   item: ProposedPracticeSlotContent,
   slot: PlannedPracticeSlot,
@@ -1263,12 +1463,18 @@ function applicationIssueCodes(
     application.expectedAction,
   ];
   if (
-    requiredTexts.some((value) => !isSubstantiveText(value)) ||
-    !hasBoundedSemanticCompatibility(application.startingState, domainTarget) ||
-    !hasBoundedSemanticCompatibility(application.expectedAction, domainTarget) ||
+    requiredTexts.some(
+      (value) => !isSubstantiveText(value) || GENERIC_PLACEHOLDER_LANGUAGE.test(value),
+    ) ||
     !isSemanticallyDistinct(application.startingState, application.expectedAction)
   ) {
     issues.push('practice_application_missing_real_state_or_action');
+  }
+  if (
+    !hasBoundedSemanticCompatibility(application.startingState, domainTarget) ||
+    !hasBoundedSemanticCompatibility(application.expectedAction, domainTarget)
+  ) {
+    issues.push('practice_application_relevance_uncertain');
   }
   if (
     slot.authorityMode !== 'exact_source' ||
@@ -1299,15 +1505,20 @@ function practiceIssueMessage(code: string, practiceSlotId: string): string {
   const messages: Record<string, string> = {
     practice_capability_not_objective_aligned: `${practiceSlotId} does not make its locally planned objective capability observable.`,
     practice_content_not_substantive: `${practiceSlotId} contains labels or placeholders instead of a substantive Practice item.`,
+    practice_internal_alias_leak: `${practiceSlotId} exposes an internal objective, source, Lesson, or Practice alias in learner-facing text.`,
+    practice_planning_language_leak: `${practiceSlotId} exposes private planning language in learner-facing text.`,
     practice_promotes_construct: `${practiceSlotId} asks for a construct that the immutable Practice plan explicitly prohibits.`,
     source_location_trivia: `${practiceSlotId} asks where source text appears rather than testing the planned capability.`,
     invalid_or_duplicate_practice_options: `${practiceSlotId} needs unique options and a correct answer that references an offered option.`,
     practice_prompt_leaks_answer: `${practiceSlotId} repeats the complete correct option in its prompt.`,
+    practice_prompt_quotes_answer_source: `${practiceSlotId} quotes a substantial span of the source that supports its answer.`,
+    practice_repeats_accepted_lesson: `${practiceSlotId} repeats an accepted Lesson explanation or worked case instead of testing a changed situation.`,
     practice_surface_not_objective_aligned: `${practiceSlotId} prompt and answer are not meaningfully anchored to its objective or selected source.`,
     practice_feedback_not_contingent: `${practiceSlotId} must give option-contingent feedback rather than the same response for every choice.`,
     retry_surface_not_meaningfully_changed: `${practiceSlotId} retry must test the same construct in a materially changed context.`,
     practice_apply_missing_typed_application: `${practiceSlotId} cannot satisfy APPLY with lexical apply/next-step wording; it needs typed state, source rule, decision, and expected action data.`,
     practice_application_missing_real_state_or_action: `${practiceSlotId} application fields must describe a real starting state and observable action rather than labels.`,
+    practice_application_relevance_uncertain: `${practiceSlotId} application fields have low lexical overlap with the planned objective or source; retain this only as an advisory relevance signal.`,
     practice_application_source_incompatible: `${practiceSlotId} application does not use an exact locally selected source-stated rule or procedure.`,
     practice_application_not_observable_in_surface: `${practiceSlotId} prompt and action options do not expose the typed application decision.`,
     practice_application_outside_planned_construct: `${practiceSlotId} cannot add an application contract outside the immutable planned construct.`,
@@ -1353,10 +1564,13 @@ export function evaluatePlannedPracticeQuality(
     const citedSource = sourceTextForRefs(input.sourceContext, item.sourceRefs);
     const domainTarget = `${objectiveTarget} ${citedSource}`;
     const codes = new Set<string>();
+    const visibleText = practiceLearnerVisibleText(item);
 
     if (!isSubstantiveText(item.capabilityTested) || !isSubstantiveText(item.pedagogicalReason)) {
       codes.add('practice_content_not_substantive');
     }
+    if (containsInternalTeachingAlias(visibleText)) codes.add('practice_internal_alias_leak');
+    if (containsPlanningLanguage(visibleText)) codes.add('practice_planning_language_leak');
     const itemSemantics = `${item.capabilityTested} ${item.pedagogicalReason} ${item.initial.prompt} ${correctOptionText(item, 'initial')} ${item.initial.explanation}`;
     if (!hasMeaningfulOverlap(itemSemantics, domainTarget)) {
       codes.add('practice_capability_not_objective_aligned');
@@ -1386,6 +1600,12 @@ export function evaluatePlannedPracticeQuality(
       }
       if (correctText && normalized(surface.prompt).includes(normalized(correctText))) {
         codes.add('practice_prompt_leaks_answer');
+      }
+      if (item.sourceRefs.length > 0 && hasLongVerbatimSpan(surface.prompt, citedSource)) {
+        codes.add('practice_prompt_quotes_answer_source');
+      }
+      if (repeatsAcceptedLessonSurface(surface.prompt, input)) {
+        codes.add('practice_repeats_accepted_lesson');
       }
       if (
         !isSubstantiveText(surface.prompt) ||
@@ -1422,6 +1642,7 @@ export function evaluatePlannedPracticeQuality(
           practiceIssueMessage(code, slot.practiceSlotId),
           [slotIndex],
           [slot.objectiveRef],
+          practiceFindingSeverity(code),
         ),
       );
     }
@@ -1446,6 +1667,7 @@ export function evaluatePlannedPracticeQuality(
             `${leftSlot.practiceSlotId} and ${rightSlot.practiceSlotId} repeat the same task instead of sampling the objective differently.`,
             [left, right],
             [leftSlot.objectiveRef],
+            'warning',
           ),
         );
       }

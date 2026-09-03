@@ -1289,7 +1289,7 @@ describe('Teaching Brief preparation', () => {
     expect(plannedSkeleton!.lessonSlots.length).toBeLessThanOrEqual(12);
   });
 
-  it('carries global depth and accepted Unit focus into the later Lesson provider context', async () => {
+  it('T1/T2 carries exact depth, independent focus, current Unit, and objectives into teaching', async () => {
     const harness = await createHarness();
     const row = harness.db
       .prepare('SELECT payload FROM curriculum_versions WHERE id = ?')
@@ -1312,6 +1312,25 @@ describe('Teaching Brief preparation', () => {
       desiredDepth: 'working_fluency',
       unitFocus: 'focused',
     });
+    expect(harness.provider.lastPracticeContentInput?.courseDesign).toEqual({
+      desiredDepth: 'working_fluency',
+      unitFocus: 'focused',
+    });
+    const curriculum = harness.repos.curricula.get(harness.curriculumId)!;
+    const currentUnit = curriculum.nodes.find((node) => node.id === harness.learningUnitId)!;
+    expect(harness.provider.lastLessonContentInput?.skeleton).toMatchObject({
+      learningUnitTitle: currentUnit.title,
+      objectives: currentUnit.learningUnit!.objectives.map((objective, index) => ({
+        objectiveRef: `O${index + 1}`,
+        title: objective.title,
+        description: objective.description,
+      })),
+    });
+    const planItem = harness.repos.studyPlans
+      .get(harness.planId)!
+      .items.find((item) => item.curriculumLearningUnitId === harness.learningUnitId)!;
+    expect(planItem.targetDepth).toBe('working_fluency');
+    expect(harness.provider.lastLessonContentInput?.courseDesign).not.toHaveProperty('unitDepth');
   });
 
   it('prepares and reuses an immutable Brief for the accepted executable route', async () => {
@@ -1350,6 +1369,35 @@ describe('Teaching Brief preparation', () => {
     });
     expect(first.brief.objective.objectives[0]!.formalAssessmentReady).toBe(
       routeObjective.formalAssessmentReady,
+    );
+    const sourceBackedSegments = first.brief.segments.filter(
+      (segment) => segment.explanationAuthority === 'source_backed_teaching',
+    );
+    expect(sourceBackedSegments.length).toBeGreaterThan(0);
+    expect(sourceBackedSegments.every((segment) => segment.sourceRefIds.length > 0)).toBe(true);
+    const supplementarySegments = first.brief.segments.filter(
+      (segment) => segment.explanationAuthority === 'ai_teaching_synthesis',
+    );
+    expect(supplementarySegments.length).toBeGreaterThan(0);
+    expect(supplementarySegments.every((segment) => segment.sourceRefIds.length === 0)).toBe(true);
+    expect(first.brief.objective.whyNow).not.toBe(route.agendaItem.reason);
+    expect(first.brief.summary).not.toContain('locally planned instructional spine');
+    const learnerFacingText = [
+      first.brief.objective.whyNow,
+      first.brief.summary,
+      first.brief.nextConnection,
+      ...first.brief.segments.flatMap((segment) => [
+        segment.explanation,
+        segment.example?.text,
+        segment.contrast?.text,
+        segment.misconception?.hypothesis,
+        segment.misconception?.correction,
+      ]),
+    ]
+      .filter((value): value is string => Boolean(value))
+      .join(' ');
+    expect(learnerFacingText).not.toMatch(
+      /\b(?:PR|O|S|L)[1-9][0-9]*\b|instructional spine|locally planned/iu,
     );
     const supportedClaimIds = new Set(
       objectiveAuthoritySemanticallySupportedClaimIds(routeObjective.semanticSupport!),
@@ -1395,6 +1443,11 @@ describe('Teaching Brief preparation', () => {
         expect.objectContaining({ slotId: slot.slotId }),
       ),
     );
+    expect(harness.provider.lastPracticeContentInput?.acceptedLesson[0]?.lessonNarrative).toEqual({
+      whyNow: first.brief.objective.whyNow,
+      summary: first.brief.summary,
+      forwardBridge: first.brief.nextConnection,
+    });
     expect(harness.provider.lessonContentCalls).toBe(1);
     expect(harness.provider.practiceContentCalls).toBe(1);
     expect(first.brief.composition).toMatchObject({
@@ -1512,6 +1565,11 @@ describe('Teaching Brief preparation', () => {
     expect(prepared.status).toBe('prepared');
     expect(harness.provider.lessonContentCalls).toBe(1);
     expect(harness.provider.practiceContentCalls).toBe(1);
+    const choiceCheck = prepared.brief.segments
+      .map((segment) => segment.informalCheck)
+      .find((check) => check?.kind === 'choose_alternative');
+    expect(choiceCheck?.options?.length).toBeGreaterThanOrEqual(2);
+    expect(choiceCheck?.correctOptionId).toBeTruthy();
 
     // C5: the degraded tier is reported honestly rather than silently downgraded to
     // `unavailable` or silently upgraded to a Formal tier.
@@ -2150,9 +2208,13 @@ describe('Teaching Brief preparation', () => {
     expect(JSON.stringify(checkpointLessonSkeleton)).toBe(
       harness.provider.lessonSkeletonBytesBeforeMutation,
     );
-    expect(JSON.stringify(checkpoint.lessonContent)).toBe(
+    const checkpointProviderContent = checkpoint.lessonContent.map(
+      ({ lessonNarrative: _lessonNarrative, ...content }) => content,
+    );
+    expect(JSON.stringify(checkpointProviderContent)).toBe(
       harness.provider.lessonContentBytesBeforeMutation,
     );
+    expect(checkpoint.lessonContent[0]?.lessonNarrative).toBeDefined();
     expect(checkpoint.skeleton.fingerprint).toBe(
       harness.provider.lastLessonContentInput?.skeleton.fingerprint,
     );
@@ -2596,7 +2658,7 @@ describe('Teaching Brief preparation', () => {
     ).toEqual({ status: 'failed' });
   });
 
-  it('delivers source-valid Lesson and Practice content with advisory quality findings', async () => {
+  it('delivers source-valid Lesson and Practice when lexical quality findings are advisory', async () => {
     const harness = await createHarness();
     const route = startTeachingRoute(harness);
     harness.provider.failPracticeIndependentEvaluationOnce = true;
@@ -2629,7 +2691,11 @@ describe('Teaching Brief preparation', () => {
     expect(
       harness.repos.acceptedLessonCheckpoints.get(brief.composition!.acceptedLessonCheckpointId),
     ).toMatchObject({ lessonEvaluation: { status: 'pass' } });
-    expect(brief).toMatchObject({ practice: { qualityEvaluation: { status: 'fail' } } });
+    expect(brief).toMatchObject({ practice: { qualityEvaluation: { status: 'pass' } } });
+    expect(brief.practice!.qualityEvaluation.findings.length).toBeGreaterThan(0);
+    expect(
+      brief.practice!.qualityEvaluation.findings.every((finding) => finding.severity === 'warning'),
+    ).toBe(true);
     expect(
       harness.db
         .prepare('SELECT status FROM agent_operations WHERE command_id = ?')
@@ -3426,9 +3492,8 @@ describe('Teaching Brief preparation', () => {
             response: 'The condition changes which candidate remains eligible.',
           },
         });
-        expect(current.currentInformalCheck?.guidance).toContain(
-          'locally planned explain capability',
-        );
+        expect(current.currentInformalCheck?.guidance).toContain('condition');
+        expect(current.currentInformalCheck?.correct).toBeNull();
         respondedToCheck = true;
       }
       current = await harness.services.lessonExecution.command('ws_1', session.id, {

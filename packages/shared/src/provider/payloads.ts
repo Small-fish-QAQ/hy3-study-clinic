@@ -20,6 +20,7 @@ import {
   TeachingBriefSegmentPurposeSchema,
 } from '../domain/teachingBrief.js';
 import {
+  TeachingLessonNarrativeSchema,
   TeachingLessonSlotContentsSchema,
   TeachingPracticeApplicationContentSchema,
 } from '../domain/teachingSkeleton.js';
@@ -1288,7 +1289,11 @@ export type TeachingBriefProposalPayload = z.infer<typeof TeachingBriefProposalP
  * the provider can fill only the stable slot content contract.
  */
 export const LessonSlotContentProposalPayloadSchema = z
-  .object({ slots: TeachingLessonSlotContentsSchema })
+  .object({
+    /** Optional at schema level for historical/targeted-repair compatibility. */
+    narrative: TeachingLessonNarrativeSchema.optional(),
+    slots: TeachingLessonSlotContentsSchema,
+  })
   .strict();
 export type LessonSlotContentProposalPayload = z.infer<
   typeof LessonSlotContentProposalPayloadSchema

@@ -687,6 +687,8 @@ export interface LessonSlotContentGenerationInput {
  */
 export interface PracticeContentGenerationInput {
   workspaceName: string;
+  /** Same Course-wide depth and independent Unit focus used for the accepted Lesson. */
+  courseDesign?: TeachingBriefGenerationInput['courseDesign'];
   skeleton: TeachingSkeleton;
   acceptedLesson: TeachingLessonSlotContent[];
   sourceContext: TeachingBriefGenerationInput['sourceContext'];

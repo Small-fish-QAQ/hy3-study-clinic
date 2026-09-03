@@ -682,6 +682,23 @@ function compositionalInputs(
                 'Which candidate decision preserves the retrieval condition and the eligible returned result?',
               expectedSignal:
                 'The learner connects the retrieval condition to candidate eligibility.',
+              ...(construct === 'apply'
+                ? {}
+                : {
+                    options: [
+                      {
+                        id: 'A',
+                        text: 'Exclude candidates that fail the condition.',
+                        feedbackIfSelected: 'Correct: eligibility follows the condition.',
+                      },
+                      {
+                        id: 'B',
+                        text: 'Keep every candidate because its label looks familiar.',
+                        feedbackIfSelected: 'A familiar label does not establish eligibility.',
+                      },
+                    ],
+                    correctOptionId: 'A',
+                  }),
             },
           }
         : {}),
@@ -793,9 +810,11 @@ describe('compositional Lesson and Practice evaluators', () => {
           ?.qualityContract === 'orientation',
     )!;
     expect(orientation.explanation).toContain('Bounded retrieval');
-    expect(
-      evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, { evaluatedAt }).findings,
-    ).toEqual([]);
+    const evaluation = evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, {
+      evaluatedAt,
+    });
+    expect(evaluation.status).toBe('pass');
+    expect(evaluation.findings.every((finding) => finding.severity === 'warning')).toBe(true);
   });
 
   it('rejects an unrelated orientation even when the immutable slot is present', () => {
@@ -846,9 +865,11 @@ describe('compositional Lesson and Practice evaluators', () => {
         (slot) => slot.qualityContract === 'orientation' || slot.protected,
       ),
     ).toBe(true);
-    expect(
-      evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, { evaluatedAt }).findings,
-    ).toEqual([]);
+    const evaluation = evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, {
+      evaluatedAt,
+    });
+    expect(evaluation.status).toBe('pass');
+    expect(evaluation.findings.every((finding) => finding.severity === 'warning')).toBe(true);
   });
 
   it('T13: accepts a depth-added relation on identify when it is relevant to that objective', () => {
@@ -864,9 +885,11 @@ describe('compositional Lesson and Practice evaluators', () => {
     relation.semanticRelations[0]!.relevanceToObjective =
       'Distinguishing eligible retrieval candidates depends on the condition that separates satisfying candidates from failing candidates.';
 
-    expect(
-      evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, { evaluatedAt }).findings,
-    ).toEqual([]);
+    const evaluation = evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, {
+      evaluatedAt,
+    });
+    expect(evaluation.status).toBe('pass');
+    expect(evaluation.findings.every((finding) => finding.severity === 'warning')).toBe(true);
   });
 
   it('T13: rejects a depth-required boundary slot whose boundary content is absent', () => {
@@ -933,7 +956,7 @@ describe('compositional Lesson and Practice evaluators', () => {
     );
   });
 
-  it('rejects typed relations whose only authority anchor is repeated topic wording', () => {
+  it('demotes lexical source compatibility for an otherwise structured relation to a warning', () => {
     const fixture = compositionalInputs('explain');
     const relationSlot = fixture.lesson.slots.find((slot) => slot.semanticRelations.length > 0)!;
     relationSlot.semanticRelations = [
@@ -950,11 +973,13 @@ describe('compositional Lesson and Practice evaluators', () => {
     const evaluation = evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, {
       evaluatedAt,
     });
-    expect(evaluation.status).toBe('fail');
-    expect(evaluation.findings.map((finding) => finding.code)).toEqual(
+    expect(evaluation.status).toBe('pass');
+    expect(evaluation.findings).toEqual(
       expect.arrayContaining([
-        'semantic_relation_source_incompatible',
-        'missing_typed_semantic_relation',
+        expect.objectContaining({
+          code: 'semantic_relation_source_incompatible',
+          severity: 'warning',
+        }),
       ]),
     );
   });
@@ -991,9 +1016,11 @@ describe('compositional Lesson and Practice evaluators', () => {
 
   it('does not require or permit a provider-added worked process for IDENTIFY', () => {
     const fixture = compositionalInputs('identify');
-    expect(
-      evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, { evaluatedAt }).findings,
-    ).toEqual([]);
+    const baseline = evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, {
+      evaluatedAt,
+    });
+    expect(baseline.status).toBe('pass');
+    expect(baseline.findings.every((finding) => finding.severity === 'warning')).toBe(true);
     fixture.lesson.slots[0]!.workedProcess = compositionalInputs('apply').lesson.slots.find(
       (slot) => slot.workedProcess,
     )!.workedProcess;
@@ -1027,7 +1054,7 @@ describe('compositional Lesson and Practice evaluators', () => {
     );
   });
 
-  it('rejects typed APPLY facts whose only authority anchor is repeated topic wording', () => {
+  it('demotes lexical APPLY relevance/source compatibility to warnings', () => {
     const fixture = compositionalInputs('apply');
     fixture.practice.items[0]!.application = {
       startingState: 'Bounded retrieval dragons guarantee perfect security for every deployment.',
@@ -1041,11 +1068,17 @@ describe('compositional Lesson and Practice evaluators', () => {
     const evaluation = evaluatePlannedPracticeQuality(fixture.practice, fixture.practiceInput, {
       evaluatedAt,
     });
-    expect(evaluation.status).toBe('fail');
-    expect(evaluation.findings.map((finding) => finding.code)).toEqual(
+    expect(evaluation.status).toBe('pass');
+    expect(evaluation.findings).toEqual(
       expect.arrayContaining([
-        'practice_application_missing_real_state_or_action',
-        'practice_application_source_incompatible',
+        expect.objectContaining({
+          code: 'practice_application_source_incompatible',
+          severity: 'warning',
+        }),
+        expect.objectContaining({
+          code: 'practice_application_relevance_uncertain',
+          severity: 'warning',
+        }),
       ]),
     );
   });

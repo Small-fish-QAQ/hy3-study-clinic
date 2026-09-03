@@ -358,7 +358,9 @@ async function teachThroughLesson(agendaId: string, agendaItemId: string, tag: s
       ? ({
           kind: 'respond_to_informal_check',
           segmentIndex: current.progress!.currentSegmentIndex,
-          response: 'The source states the limit directly.',
+          response:
+            current.currentInformalCheck?.options?.[0]?.id ??
+            'The source states the limit directly.',
         } as const)
       : ({
           kind: 'move_to_segment',

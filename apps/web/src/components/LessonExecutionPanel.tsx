@@ -65,32 +65,8 @@ function presentationStateLabel(state: LessonExecutionProjection['progress']): s
   }
 }
 
-const PURPOSE_LABELS: Record<LessonSegmentProjection['purpose'], string> = {
-  orientation: '导入',
-  explanation: '核心解释',
-  mechanism: '运作机制',
-  worked_example: '示例',
-  comparison: '对比',
-  common_pitfall: '常见误区',
-  guided_practice: '练习',
-};
-
-const RELATION_LABELS: Record<
-  NonNullable<LessonSegmentProjection['semanticRelations']>[number]['kind'],
-  string
-> = {
-  cause_consequence: '原因 → 结果',
-  mechanism_effect: '机制 → 作用',
-  step_purpose: '步骤 → 目的',
-  omission_failure: '遗漏 → 失败',
-  condition_action: '条件 → 行动',
-  misconception_correction: '误解 → 纠正',
-  difference_discrimination: '差异 → 区分',
-  evidence_conclusion: '证据 → 结论',
-};
-
 function originLabel(origin: LessonSegmentProjection['explanationOrigin']): string {
-  return origin === 'source_grounded' ? '来源原文' : 'Hy3 讲解补充';
+  return origin === 'source_grounded' ? '资料支持' : 'Hy3 补充讲解';
 }
 
 function formatSourceLocation(source: LessonSourceProjection): string {
@@ -139,7 +115,7 @@ function SourceReferences({
           ))}
         </div>
       ) : origin === 'hy3_synthesis' ? (
-        <span className="lesson-no-source">基于课程材料的教学组织</span>
+        <span className="lesson-no-source">补充知识 · 不作为资料证据</span>
       ) : null}
     </div>
   );
@@ -181,6 +157,8 @@ function InformalCheck({
   const check = segment.informalCheck;
   if (!check) return null;
   const responded = Boolean(check.response);
+  const options = check.options ?? [];
+  const isChoice = check.kind === 'choose' && options.length > 0;
   return (
     <section className="lesson-informal-check" aria-label="练习理解检查">
       <div className="lesson-informal-heading">
@@ -193,24 +171,61 @@ function InformalCheck({
         </div>
       </div>
       <p>{check.prompt}</p>
-      {check.guidance ? <p className="small muted">提示：{check.guidance}</p> : null}
       {responded ? (
-        <p className="lesson-check-recorded" role="status">
-          已记录你的练习回应。这不会创建正式证据，也不会改变掌握状态。
-        </p>
+        <div className="lesson-check-recorded" role="status">
+          {isChoice && check.correct !== null && check.correct !== undefined ? (
+            <strong>{check.correct ? '回答正确' : '再检查一下你的判断'}</strong>
+          ) : (
+            <strong>已记录你的想法</strong>
+          )}
+          {check.feedback ? <p>{check.feedback}</p> : null}
+          {check.guidance ? <p className="small muted">讲解提示：{check.guidance}</p> : null}
+          {!isChoice ? <p className="small muted">这是反思性检查，系统不会假装判定正误。</p> : null}
+          <p className="small muted">非正式检查不会创建正式证据，也不会改变掌握状态。</p>
+        </div>
       ) : (
         <>
-          <label htmlFor={`lesson-check-${segment.index}`} className="sr-only">
-            练习回应
-          </label>
-          <textarea
-            id={`lesson-check-${segment.index}`}
-            value={response}
-            disabled={disabled}
-            onChange={(event) => onResponseChange(event.target.value)}
-            placeholder="用自己的话写下想法即可"
-            rows={3}
-          />
+          {isChoice ? (
+            <div className="lesson-check-options" role="radiogroup" aria-label="选择一个答案">
+              {options.map((option) => (
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={response === option.id}
+                  className={response === option.id ? 'selected' : ''}
+                  key={option.id}
+                  disabled={disabled}
+                  onClick={() => onResponseChange(option.id)}
+                >
+                  {option.text}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <>
+              <label htmlFor={`lesson-check-${segment.index}`} className="sr-only">
+                练习回应
+              </label>
+              {check.kind === 'predict' ? (
+                <input
+                  id={`lesson-check-${segment.index}`}
+                  value={response}
+                  disabled={disabled}
+                  onChange={(event) => onResponseChange(event.target.value)}
+                  placeholder="先写下你的预测"
+                />
+              ) : (
+                <textarea
+                  id={`lesson-check-${segment.index}`}
+                  value={response}
+                  disabled={disabled}
+                  onChange={(event) => onResponseChange(event.target.value)}
+                  placeholder="用自己的话写下想法即可"
+                  rows={3}
+                />
+              )}
+            </>
+          )}
           <button
             type="button"
             className="secondary"
@@ -218,7 +233,7 @@ function InformalCheck({
             aria-busy={submitting}
             onClick={onSubmit}
           >
-            {submitting ? '正在记录…' : '提交练习回应'}
+            {submitting ? '正在记录…' : isChoice ? '提交选择' : '提交练习回应'}
           </button>
         </>
       )}
@@ -355,42 +370,19 @@ function ReadyLesson({
         </div>
       ) : null}
 
-      <ol className="lesson-segment-list" aria-label="有序讲解内容">
+      <div className="lesson-segment-list" aria-label="连贯讲解内容">
         {lesson.segments.map((segment) => {
           const isCurrent = !readOnly && segment.index === currentIndex;
           const isPresented = !readOnly && presented.has(segment.index);
           return (
-            <li
+            <section
               key={segment.index}
               className={`lesson-segment ${isCurrent ? 'current' : ''} ${isPresented ? 'presented' : 'upcoming'}`}
               aria-current={isCurrent ? 'step' : undefined}
             >
-              <div className="lesson-segment-heading">
-                <span className="lesson-segment-number">{segment.index + 1}</span>
-                <div>
-                  <p className="eyebrow">{PURPOSE_LABELS[segment.purpose]}</p>
-                  <h4>{isCurrent ? '当前部分' : `第 ${segment.index + 1} 部分`}</h4>
-                </div>
-                {isPresented ? <span className="lesson-segment-state">已呈现</span> : null}
-              </div>
+              <span className="sr-only">讲解第 {segment.index + 1} 部分</span>
               <p className="lesson-segment-explanation">{segment.explanation}</p>
               <SourceReferences sources={segment.sources} origin={segment.explanationOrigin} />
-              {segment.semanticRelations && segment.semanticRelations.length > 0 ? (
-                <section className="lesson-semantic-relations" aria-label="推理关系">
-                  <strong>推理关系</strong>
-                  <ul>
-                    {segment.semanticRelations.map((relation, relationIndex) => (
-                      <li key={`${relation.kind}-${relationIndex}`}>
-                        <span>{RELATION_LABELS[relation.kind]}</span>
-                        <p>
-                          {relation.fromProposition} → {relation.toProposition}
-                        </p>
-                        <small>{relation.relevanceToObjective}</small>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              ) : null}
               {segment.workedProcess ? (
                 <section className="lesson-worked-process" aria-label="完整推演过程">
                   <strong>完整推演过程</strong>
@@ -426,6 +418,10 @@ function ReadyLesson({
                     <b>为什么得到这个结果：</b>
                     {segment.workedProcess.whyResultFollows}
                   </p>
+                  <SourceReferences
+                    sources={segment.workedProcess.sources ?? []}
+                    origin={segment.workedProcess.origin ?? 'hy3_synthesis'}
+                  />
                 </section>
               ) : null}
               {segment.example ? <Illustration label="教学示例" value={segment.example} /> : null}
@@ -437,7 +433,7 @@ function ReadyLesson({
                   <p>{segment.possibleMisconception.correction}</p>
                   <SourceReferences
                     sources={segment.possibleMisconception.sources}
-                    origin="source_grounded"
+                    origin={segment.possibleMisconception.origin ?? 'hy3_synthesis'}
                   />
                   <small>这是提醒，不是对你的判断。</small>
                 </aside>
@@ -501,10 +497,10 @@ function ReadyLesson({
                   ) : null}
                 </div>
               ) : null}
-            </li>
+            </section>
           );
         })}
-      </ol>
+      </div>
 
       {lesson.summary.available &&
       (readOnly || presentationCompleted || progress.presentationStatus === 'summary_ready') ? (

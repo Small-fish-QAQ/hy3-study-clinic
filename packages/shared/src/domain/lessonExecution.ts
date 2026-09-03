@@ -161,9 +161,16 @@ const LessonInformalCheckProjectionSchema = z
     kind: z.enum(['explain_in_your_words', 'predict', 'choose', 'apply']),
     prompt: z.string().min(1).max(700),
     guidance: z.string().max(500).nullable(),
+    options: z
+      .array(z.object({ id: z.string().min(1).max(80), text: z.string().min(1).max(600) }).strict())
+      .max(5)
+      .optional(),
     presented: z.boolean(),
     response: z.string().min(1).max(2000).nullable(),
     respondedAt: z.string().datetime().nullable(),
+    /** Null for reflective checks that local code cannot grade honestly. */
+    correct: z.boolean().nullable().optional(),
+    feedback: z.string().max(900).nullable().optional(),
     credit: z.literal('none'),
   })
   .strict();
@@ -200,6 +207,8 @@ export const LessonSegmentProjectionSchema = z
             fromProposition: z.string().min(1).max(700),
             toProposition: z.string().min(1).max(700),
             relevanceToObjective: z.string().min(1).max(700),
+            origin: LessonTeachingOriginSchema.optional(),
+            sources: z.array(LessonSourceProjectionSchema).max(8).optional(),
           })
           .strict(),
       )
@@ -224,6 +233,8 @@ export const LessonSegmentProjectionSchema = z
         learnerDecision: z.string().min(1).max(700).nullable(),
         result: z.string().min(1).max(900),
         whyResultFollows: z.string().min(1).max(900),
+        origin: LessonTeachingOriginSchema.optional(),
+        sources: z.array(LessonSourceProjectionSchema).max(8).optional(),
       })
       .strict()
       .nullable()
@@ -235,6 +246,7 @@ export const LessonSegmentProjectionSchema = z
         hypothesis: z.string().min(1).max(600),
         correction: z.string().min(1).max(1000),
         advisoryOnly: z.literal(true),
+        origin: LessonTeachingOriginSchema.optional(),
         sources: z.array(LessonSourceProjectionSchema).max(8),
       })
       .strict()

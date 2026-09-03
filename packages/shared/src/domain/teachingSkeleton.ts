@@ -601,7 +601,8 @@ export const TeachingWorkedProcessSchema = z
     learnerDecision: z.string().min(1).max(700).nullable(),
     result: z.string().min(1).max(900),
     whyResultFollows: z.string().min(1).max(900),
-    sourceRefs: z.array(SourceAliasSchema).min(1).max(8),
+    /** Empty means the worked case is explicitly Hy3 supplementary teaching. */
+    sourceRefs: z.array(SourceAliasSchema).max(8),
   })
   .strict()
   .superRefine((process, ctx) => {
@@ -626,13 +627,58 @@ const TeachingLessonMisconceptionContentSchema = z
   })
   .strict();
 
+export const TeachingInformalCheckOptionSchema = z
+  .object({
+    id: z.string().regex(/^[A-E]$/u),
+    text: z.string().min(1).max(600),
+    feedbackIfSelected: z.string().min(1).max(900),
+  })
+  .strict();
+export type TeachingInformalCheckOption = z.infer<typeof TeachingInformalCheckOptionSchema>;
+
 const TeachingLessonInformalCheckContentSchema = z
   .object({
     kind: InformalCheckKindSchema,
     prompt: z.string().min(1).max(700),
     expectedSignal: z.string().max(500).nullable(),
+    /** Structured choices are optional only for persisted pre-R1 content. */
+    options: z.array(TeachingInformalCheckOptionSchema).min(2).max(5).optional(),
+    correctOptionId: z
+      .string()
+      .regex(/^[A-E]$/u)
+      .optional(),
+  })
+  .strict()
+  .superRefine((check, ctx) => {
+    if ((check.options === undefined) !== (check.correctOptionId === undefined)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['options'],
+        message: 'informal-check choices and correct option must be present together',
+      });
+    }
+    if (check.options) {
+      const ids = check.options.map((option) => option.id);
+      addDuplicateIssue(ids, ['options'], 'informal-check option identities', ctx);
+      if (check.correctOptionId && !ids.includes(check.correctOptionId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['correctOptionId'],
+          message: 'informal-check correct option must reference an offered choice',
+        });
+      }
+    }
+  });
+
+/** Learner-facing whole-Lesson prose authored once, before slot fields are filled. */
+export const TeachingLessonNarrativeSchema = z
+  .object({
+    whyNow: z.string().min(1).max(1000),
+    summary: z.string().min(1).max(1200),
+    forwardBridge: z.string().max(800).nullable(),
   })
   .strict();
+export type TeachingLessonNarrative = z.infer<typeof TeachingLessonNarrativeSchema>;
 
 /**
  * Provider-fillable content for exactly one locally owned Lesson slot.
@@ -641,6 +687,8 @@ const TeachingLessonInformalCheckContentSchema = z
 export const TeachingLessonSlotContentSchema = z
   .object({
     slotId: z.string().regex(/^L[1-9][0-9]*$/u),
+    /** Present only on the first slot for current generation; optional for historical rows. */
+    lessonNarrative: TeachingLessonNarrativeSchema.optional(),
     explanation: z.string().min(1).max(2400),
     sourceRefs: z.array(SourceAliasSchema).max(8),
     visualRefs: z.array(VisualAliasSchema).max(8),
@@ -869,6 +917,7 @@ export function teachingBriefMatchesAcceptedLessonProjection(
   });
   if (!objectivesMatch) return false;
   const expectedSegments = projectAcceptedLessonSegments(checkpoint, objectiveIds);
+  const narrative = checkpoint.lessonContent[0]?.lessonNarrative;
   return (
     composition.acceptedLessonCheckpointId === checkpoint.id &&
     composition.skeletonId === checkpoint.skeleton.id &&
@@ -889,6 +938,10 @@ export function teachingBriefMatchesAcceptedLessonProjection(
       checkpoint.skeleton.plannedActivityBudget.minMinutes &&
     composition.plannedActivityMinutes.max ===
       checkpoint.skeleton.plannedActivityBudget.maxMinutes &&
+    (narrative === undefined ||
+      (brief.objective.whyNow === narrative.whyNow &&
+        brief.summary === narrative.summary &&
+        brief.nextConnection === narrative.forwardBridge)) &&
     JSON.stringify(brief.pedagogyEvaluation) === JSON.stringify(checkpoint.lessonEvaluation) &&
     JSON.stringify(brief.segments) === JSON.stringify(expectedSegments)
   );
