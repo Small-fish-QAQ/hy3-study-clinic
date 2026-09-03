@@ -694,6 +694,7 @@ export function validateAndMaterializeStudyPlanProposal(input: {
       }
     }
     const emphasis = objectivePriority(curriculum, item.objectiveIds);
+
     return {
       id: itemIdByKey.get(item.key)!,
       index,
@@ -894,6 +895,115 @@ export function resolveStudyPlanPlannability(
     const result = resolveTeachingItemPlannability(curriculum, item);
     return result ? [result] : [];
   });
+}
+
+/**
+ * Reconcile teach_unit durations to be feasible. For each teach_unit, if a feasible
+ * duration exists, replace estimatedMinutes with max(estimatedMinutes, feasibleMinimum).
+ * If no feasible duration exists in [1, 480], the item remains structurally infeasible
+ * and acceptance should fail-closed (preserving existing behavior for truly broken plans).
+ *
+ * Returns reconciled items and a list of structurally infeasible item IDs.
+ */
+export function reconcileTeachUnitDurations(
+  curriculum: Curriculum,
+  items: StudyPlanItem[],
+): { reconciledItems: StudyPlanItem[]; structurallyInfeasible: string[] } {
+  const structurallyInfeasible: string[] = [];
+  const reconciledItems = items.map((item) => {
+    if (item.kind !== 'teach_unit') return item;
+
+    const feasibleMinimum = findMinimumFeasibleDuration(curriculum, {
+      kind: item.kind,
+      curriculumLearningUnitId: item.curriculumLearningUnitId,
+      objectiveIds: item.objectiveIds,
+      targetDepth: item.targetDepth,
+    });
+
+    if (feasibleMinimum === null) {
+      // No feasible duration in [1, 480]; keep original and mark as structurally infeasible.
+      structurallyInfeasible.push(item.id);
+      return item;
+    }
+
+    // Reconcile to the feasible minimum, preserving user/provider intent when they
+    // requested more time than the minimum.
+    const reconciledMinutes = Math.max(item.estimatedMinutes, feasibleMinimum);
+    return { ...item, estimatedMinutes: reconciledMinutes };
+  });
+
+  return { reconciledItems, structurallyInfeasible };
+}
+
+/**
+ * Find the minimum feasible duration for a teach_unit at the given depth and
+ * objectives. Returns the smallest `targetMinutes` that makes the planner succeed,
+ * or null if no feasible duration exists in the supported domain [1, 480].
+ *
+ * The planner has a feasible *window* [min, max], not a monotonic range: durations
+ * below the window fail `protected_budget_exceeds_agenda`, durations in the window
+ * pass, durations above fail `agenda_budget_underfilled`. The lower bound of the
+ * window is monotonic (all smaller values fail with budget_exceeds), so we binary
+ * search for the transition from protected_budget_exceeds_agenda to feasible.
+ */
+export function findMinimumFeasibleDuration(
+  curriculum: Curriculum,
+  item: Pick<
+    StudyPlanItem,
+    'kind' | 'curriculumLearningUnitId' | 'objectiveIds' | 'targetDepth'
+  >,
+): number | null {
+  if (item.kind !== 'teach_unit') return null;
+  if (item.objectiveIds.length === 0) return null;
+
+  const objectives = objectiveMap(curriculum);
+  const resolved = item.objectiveIds.flatMap((objectiveId, index) => {
+    const owner = objectives.get(objectiveId);
+    if (!owner) return [];
+    return [
+      {
+        objectiveRef: `O${index + 1}`,
+        construct: deriveTeachingConstruct(owner.objective),
+        priority: owner.objective.priority ?? 'normal',
+      },
+    ];
+  });
+
+  // If any objectives couldn't be resolved, cannot determine feasibility.
+  if (resolved.length !== item.objectiveIds.length) return null;
+
+  const arithmeticInput = {
+    targetDepth: item.targetDepth,
+    maxLessonSlots: LESSON_MAX_SLOTS,
+    maxPracticeSlots: LESSON_MAX_PRACTICE_SLOTS,
+    objectives: resolved,
+  };
+
+  // Binary search for the lower bound of the feasible window. Below this point,
+  // durations fail with protected_budget_exceeds_agenda (monotonic). At or above
+  // this point, the duration is either feasible or fails with agenda_budget_underfilled.
+  let low = 1;
+  let high = 480;
+  let candidate: number | null = null;
+
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    const verdict = resolveTeachingSlotFeasibility({ ...arithmeticInput, targetMinutes: mid });
+
+    if (verdict.feasible) {
+      // Found a feasible point; search lower for the minimum.
+      candidate = mid;
+      high = mid - 1;
+    } else if (!verdict.feasible && verdict.code === 'protected_budget_exceeds_agenda') {
+      // Below the window; search higher.
+      low = mid + 1;
+    } else {
+      // Above the window (agenda_budget_underfilled) or other failure; search lower.
+      high = mid - 1;
+    }
+  }
+
+  return candidate;
 }
 
 /** Bounded learner-facing warning text. Wording is chosen by code, never generic. */

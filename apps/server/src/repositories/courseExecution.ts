@@ -9,6 +9,7 @@ import {
   type LearningContract,
   type SessionAgenda,
   type StudyPlan,
+  type StudyPlanItem,
 } from '@hy3-clinic/shared';
 import type { SqliteDb } from '../db/database.js';
 
@@ -40,6 +41,12 @@ export interface ActivateCourseRouteInput {
   eventId: string;
   actor: 'learner';
   acceptedAt: string;
+  /**
+   * Optional reconciled items to replace the plan's items at acceptance. Used for
+   * duration reconciliation: the proposal keeps the original duration, but acceptance
+   * reconciles teach_unit durations to be feasible.
+   */
+  reconciledItems?: StudyPlanItem[];
   /** Test-only transaction probe; production callers leave this undefined. */
   beforePointerSwap?: () => void;
 }
@@ -845,8 +852,13 @@ export function createCourseExecutionRepo(db: SqliteDb) {
       const current = get(input.workspaceId);
       verifyExpectedState(input, current);
       const { contract, plan, agenda } = verifyRoute(input, current);
+      // If reconciled items were provided, use them instead of the original plan items.
+      // This allows acceptance to reconcile teach_unit durations to be feasible.
+      const planForAcceptance = input.reconciledItems
+        ? { ...plan, items: input.reconciledItems }
+        : plan;
       const acceptedPlan = StudyPlanSchema.parse({
-        ...plan,
+        ...planForAcceptance,
         status: 'accepted',
         learnerAcceptedAt: input.acceptedAt,
       });

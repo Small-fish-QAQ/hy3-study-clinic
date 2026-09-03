@@ -1495,22 +1495,14 @@ describe('pre-acceptance Lesson plannability gate', () => {
     expect(refusal).toBeInstanceOf(AppError);
     expect((refusal as AppError).code).toBe(ApiErrorCode.ValidationError);
     expect((refusal as AppError).details).toMatchObject({
-      reason: 'lesson_plannability_infeasible',
+      reason: 'lesson_plannability_structurally_infeasible',
       items: [
         {
           planItemId: proposed.studyPlan.items[0]!.id,
-          planningCode: 'lesson_slot_limit_exceeded',
           targetDepth: 'working_fluency',
-          estimatedMinutes: 45,
-          remedies: ['reduce_depth', 'revise_plan_structure'],
         },
       ],
     });
-    // The planner's own arithmetic detail travels with the refusal.
-    expect(
-      ((refusal as AppError).details as { items: Array<{ details: Record<string, unknown> }> })
-        .items[0]!.details,
-    ).toMatchObject({ maxLessonSlots: 12, targetDepth: 'working_fluency' });
 
     // T5: feasibility validation is provider-free.
     expect(provider.calls).toBe(providerCallsBeforeAcceptance);
@@ -1520,7 +1512,7 @@ describe('pre-acceptance Lesson plannability gate', () => {
     expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBeNull();
   });
 
-  it('refuses acceptance of a duration-infeasible plan with a budget code', async () => {
+  it('accepts a duration-infeasible proposal after reconciling to feasible', async () => {
     acceptCurriculumWithTeachingUnits('curriculum_budget', [
       {
         id: 'unit_1',
@@ -1554,11 +1546,15 @@ describe('pre-acceptance Lesson plannability gate', () => {
     expect(proposed.plannability[0]!.remedies).toEqual(['increase_minutes', 'reduce_depth']);
     expect(proposed.validationWarnings.join(' ')).toContain('does not fit the session length');
 
-    expect(() =>
-      execution.decideStudyPlan(decisionRequest('accept-budget', proposed.studyPlan.id, 'accept')),
-    ).toThrow(/cannot be planned as a Lesson/u);
-    expect(repos.studyPlans.get(proposed.studyPlan.id)?.status).toBe('proposed');
-    expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBeNull();
+    // NEW BEHAVIOR: Acceptance reconciles duration upward to the minimum feasible (33).
+    // Duration is advisory; depth is authoritative. The system derives a feasible duration.
+    const decision = execution.decideStudyPlan(
+      decisionRequest('accept-budget', proposed.studyPlan.id, 'accept'),
+    );
+    expect(decision.decision).toBe('accepted');
+    expect(decision.decidedPlan.status).toBe('accepted');
+    expect(decision.decidedPlan.items[0]?.estimatedMinutes).toBe(33);
+    expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBe(proposed.studyPlan.id);
   });
 
   it('repairs a duration-infeasible proposal with resize_time and then accepts', async () => {
@@ -1731,15 +1727,18 @@ describe('pre-acceptance Lesson plannability gate', () => {
     acceptCurriculumWithTeachingUnits('curriculum_successor', [
       {
         id: 'unit_1',
-        title: 'Two identify objectives',
+        title: 'Four explain objectives for slot limit test',
         objectives: [
-          { id: 'obj_s1', construct: 'identify', priority: 'required' },
-          { id: 'obj_s2', construct: 'identify', priority: 'required' },
+          { id: 'obj_s1', construct: 'explain', priority: 'required' },
+          { id: 'obj_s2', construct: 'explain', priority: 'required' },
+          { id: 'obj_s3', construct: 'explain', priority: 'required' },
+          { id: 'obj_s4', construct: 'explain', priority: 'required' },
         ],
       },
     ]);
+    // First plan: feasible with 4 explain at pass_oriented for 30 minutes.
     const feasible = teachingProposal([
-      { unitId: 'unit_1', objectiveIds: ['obj_s1', 'obj_s2'], minutes: 20, depth: 'pass_oriented' },
+      { unitId: 'unit_1', objectiveIds: ['obj_s1', 'obj_s2', 'obj_s3', 'obj_s4'], minutes: 30, depth: 'pass_oriented' },
     ]);
     const provider = new CapturingPlanProvider(feasible);
     const { plans, execution } = services(provider);
@@ -1751,23 +1750,35 @@ describe('pre-acceptance Lesson plannability gate', () => {
     const activeAgendaBefore = stateAfterAccept.activeAgendaId;
     expect(stateAfterAccept.acceptedPlanId).toBe(first.studyPlan.id);
 
-    // A successor that is arithmetically infeasible at the same shape.
+    // A successor that is structurally infeasible (4 explain at working_fluency exceeds slot limit).
     provider.output = teachingProposal([
       {
         unitId: 'unit_1',
-        objectiveIds: ['obj_s1', 'obj_s2'],
-        minutes: 20,
-        depth: 'deep_transfer',
+        objectiveIds: ['obj_s1', 'obj_s2', 'obj_s3', 'obj_s4'],
+        minutes: 45,
+        depth: 'working_fluency',
       },
     ]);
     const successor = await plans.propose(proposalRequest('propose-successor', first.studyPlan.id));
     expect(successor.plannability).toHaveLength(1);
 
-    expect(() =>
+    let refusal: unknown;
+    try {
       execution.decideStudyPlan(
         decisionRequest('accept-successor', successor.studyPlan.id, 'accept'),
-      ),
-    ).toThrow(/cannot be planned as a Lesson/u);
+      );
+      throw new Error('Acceptance should have been refused.');
+    } catch (error) {
+      refusal = error;
+    }
+
+    // NEW BEHAVIOR: Structurally infeasible items (no duration in [1, 480] works) are
+    // rejected with the new structurally_infeasible reason.
+    expect(refusal).toBeInstanceOf(AppError);
+    expect((refusal as AppError).code).toBe(ApiErrorCode.ValidationError);
+    expect((refusal as AppError).message).toMatch(
+      /structurally infeasible|cannot be planned as a Lesson/u,
+    );
 
     const stateAfterRefusal = repos.courseExecution.get('ws_1');
     // T6: the accepted predecessor payload is byte-identical after the refusal.
