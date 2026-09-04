@@ -590,7 +590,7 @@ describe('compositional Teaching providers', () => {
     expect(practice.items[0]).not.toHaveProperty('authorityMode');
   });
 
-  it('makes Fake apply content expose a worked process and a distinct pre-guidance action', async () => {
+  it('makes Fake apply content expose a staged worked interaction instead of a post-solution check', async () => {
     const provider = new FakeProvider();
     const input = applyLessonInput();
     const lesson = await provider.generateLessonSlotContent(input);
@@ -608,6 +608,7 @@ describe('compositional Teaching providers', () => {
     expect(lesson.slots[0]?.explanation).toContain('先抓住中心模型');
     expect(lesson.slots.find((slot) => slot.slotId === 'L2')?.workedProcess).toMatchObject({
       startingState: expect.any(String),
+      inputs: expect.arrayContaining([expect.any(String)]),
       ruleOrProcedure: expect.stringContaining('limited capacity'),
       steps: [
         expect.objectContaining({
@@ -623,18 +624,37 @@ describe('compositional Teaching providers', () => {
       ],
       result: expect.any(String),
       whyResultFollows: expect.stringContaining('如果跳过条件检查'),
+      interaction: {
+        pauseAfterStepIndex: 0,
+        sourceRefs: [],
+        activity: {
+          prompt: expect.stringContaining('下一步'),
+          options: expect.arrayContaining([
+            expect.objectContaining({ id: 'A', misconception: null }),
+            expect.objectContaining({
+              id: 'B',
+              misconception: {
+                hypothesis: expect.any(String),
+                whyTempting: expect.any(String),
+                correction: expect.any(String),
+              },
+            }),
+          ]),
+          correctDebrief: expect.any(String),
+        },
+        hint: expect.any(String),
+        scaffold: { prompt: expect.any(String), correctOptionId: 'A' },
+        transfer: {
+          changedCondition: expect.stringContaining('边界因素'),
+          prompt: expect.any(String),
+          correctOptionId: 'B',
+        },
+      },
     });
     expect(lesson.slots.find((slot) => slot.slotId === 'L2')?.example?.text).toContain(
       '观察中间状态怎样改变',
     );
-    expect(lesson.slots.find((slot) => slot.slotId === 'L2')?.informalCheck).toMatchObject({
-      kind: 'apply_simple_example',
-      prompt: expect.stringContaining('选择下一项有依据的动作'),
-      expectedSignal: expect.stringContaining('条件、机制和后果'),
-    });
-    expect(lesson.slots.find((slot) => slot.slotId === 'L2')?.informalCheck?.prompt).toContain(
-      '一项关键条件已经被移除',
-    );
+    expect(lesson.slots.find((slot) => slot.slotId === 'L2')?.informalCheck).toBeUndefined();
     expect(
       evaluateLessonSlotPedagogy(lesson, input, {
         evaluatedAt: '2026-08-24T00:00:00.000Z',

@@ -1742,6 +1742,16 @@ export class FakeProvider implements LlmProvider {
       input.courseDesign?.unitFocus === 'focused'
         ? '这里会投入更多讲解，用更丰富的案例、影响结果的边界和有用的后续联系把它讲透。'
         : '我们会完整展开核心思路，同时避免无关岔路。';
+    const focusedInteractionChange =
+      input.courseDesign?.unitFocus === 'focused'
+        ? ' 同时出现一个容易诱发旧判断、但会改变结果的边界因素。'
+        : '';
+    const focusedWorkedInteractionSlotId =
+      input.courseDesign?.unitFocus === 'focused' &&
+      input.courseDesign.desiredDepth !== 'pass_oriented' &&
+      !input.skeleton.lessonSlots.some((slot) => slot.qualityContract === 'worked_process')
+        ? input.skeleton.lessonSlots.find((slot) => slot.learnerActionRequired)?.slotId
+        : undefined;
     const payload = LessonSlotContentProposalPayloadSchema.parse({
       narrative: {
         whyNow: `先看一个具体问题：当“${input.skeleton.learningUnitTitle}”中的关键条件改变时，为什么结果会跟着改变？学习它不是为了记住标签，而是为了建立一幅从条件经过机制走向结果的心智模型。${depthInvestment}`,
@@ -1778,10 +1788,14 @@ export class FakeProvider implements LlmProvider {
                 },
               ]
             : [];
+        const shouldBuildWorkedInteraction =
+          slot.qualityContract === 'worked_process' ||
+          slot.slotId === focusedWorkedInteractionSlotId;
         const workedProcess =
-          slot.qualityContract === 'worked_process' && sourceRef && sourceText
+          shouldBuildWorkedInteraction && sourceRef && sourceText
             ? {
                 startingState: `学习者位于资料所述“${topic}”流程的起点；当前状态、相关输入和必须保留的限定条件都已明确。`,
+                inputs: [`资料所述“${topic}”的当前状态。`, `决定下一步是否适用的关键条件。`],
                 ruleOrProcedure: sourceText,
                 steps: [
                   {
@@ -1799,47 +1813,129 @@ export class FakeProvider implements LlmProvider {
                 result: `案例在没有添加无依据步骤的情况下，得到“${topic}”的限定结果。`,
                 whyResultFollows: `先检查当前“${topic}”条件，再选择资料所述的下一项动作，案例才会推进到流程允许的限定结果。每一次转换都使用给定规则并保留其限定条件，因此结果由资料支持的流程推出；如果跳过条件检查，下一项动作就可能不再适用，最终结果也失去依据。`,
                 sourceRefs,
+                interaction: {
+                  pauseAfterStepIndex: 0,
+                  sourceRefs: [],
+                  activity: {
+                    prompt: `已经先检查了“${topic}”的当前状态和适用条件。下一步怎样做，才能让案例继续推进而不越过资料边界？`,
+                    options: [
+                      {
+                        id: 'A',
+                        text: `依据刚确认的条件，选择并执行资料允许的“${topic}”下一步。`,
+                        feedbackIfSelected:
+                          '这个判断抓住了先确认适用条件、再执行对应动作的因果顺序。',
+                        misconception: null,
+                      },
+                      {
+                        id: 'B',
+                        text: '跳过条件检查，直接采用看起来最熟悉的动作。',
+                        feedbackIfSelected:
+                          '这个选择把“熟悉”误当成“适用”，没有说明当前状态为何允许该动作。',
+                        misconception: {
+                          hypothesis: '把熟悉的流程标签当成足以执行下一步的依据。',
+                          whyTempting: '熟悉动作常在典型案例中出现，所以看起来像安全的默认选择。',
+                          correction: '先用当前条件缩小允许动作的范围，再从范围内选择下一步。',
+                        },
+                      },
+                      {
+                        id: 'C',
+                        text: '只复述规则名称，不说明它如何改变当前状态。',
+                        feedbackIfSelected:
+                          '复述名称没有完成状态转换；需要指出规则在这个输入上允许什么动作。',
+                        misconception: {
+                          hypothesis: '认为说出规则名称就等于已经应用规则。',
+                          whyTempting: '名称与资料措辞相似，容易产生已经完成推理的错觉。',
+                          correction: '把规则落实为一个可观察动作，并说明动作后的状态变化。',
+                        },
+                      },
+                    ],
+                    correctOptionId: 'A',
+                    correctDebrief: `之所以可行，是因为“${topic}”的当前条件先限定了允许动作；随后执行该动作，状态变化才有资料中的规则作为依据。`,
+                  },
+                  hint: `先找出“${topic}”中哪项当前条件真正限制了下一步，而不是寻找最熟悉的词。`,
+                  scaffold: {
+                    prompt: `先缩小问题：判断“${topic}”下一步之前，哪类信息必须先确认？`,
+                    options: [
+                      {
+                        id: 'A',
+                        text: '当前状态是否满足规则的适用条件。',
+                        feedbackIfSelected: '对，这项信息决定哪些动作仍在允许范围内。',
+                      },
+                      {
+                        id: 'B',
+                        text: '哪个动作名称在前文出现得最多。',
+                        feedbackIfSelected: '出现频率不能证明动作适用于当前状态。',
+                      },
+                    ],
+                    correctOptionId: 'A',
+                    debrief: '小问题建立了关键区分：条件决定可执行范围，词语熟悉度不能代替适用性。',
+                  },
+                  transfer: {
+                    changedCondition: `换到另一个“${topic}”案例：原先使下一步成立的一项关键条件现在被移除。${focusedInteractionChange}`,
+                    prompt: `在这个变化后的“${topic}”案例中，哪项处理最合理？`,
+                    options: [
+                      {
+                        id: 'A',
+                        text: '保持原动作不变，因为主题名称没有改变。',
+                        feedbackIfSelected: '主题相同不代表适用条件仍然成立。',
+                      },
+                      {
+                        id: 'B',
+                        text: '重新检查剩余条件，并缩小、改变或暂缓原动作。',
+                        feedbackIfSelected: '正确；条件变化必须传导到下一步决策。',
+                      },
+                      {
+                        id: 'C',
+                        text: '忽略资料规则，改用一个无关的经验做法。',
+                        feedbackIfSelected: '无关经验既不能解释当前变化，也越过了资料边界。',
+                      },
+                    ],
+                    correctOptionId: 'B',
+                    debrief: `支持减少后仍应沿同一心智模型推理：当“${topic}”的支配条件改变，允许动作与预期结果也必须相应调整。`,
+                  },
+                },
               }
             : null;
-        const informalCheck = slot.learnerActionRequired
-          ? objective?.construct === 'identify'
-            ? {
-                kind: 'choose_alternative' as const,
-                prompt: `哪个案例真正具备“${topic}”的定义性特征？`,
-                expectedSignal: '依据定义条件判断，不要只看熟悉的标签。',
-                options: [
-                  {
-                    id: 'A',
-                    text: '满足定义条件的案例。',
-                    feedbackIfSelected: '正确。正是定义条件使它成为匹配的案例。',
-                  },
-                  {
-                    id: 'B',
-                    text: '重复主题名称、但缺少必要条件的案例。',
-                    feedbackIfSelected: '熟悉的标签还不够；请检查必要条件是否真的存在。',
-                  },
-                ],
-                correctOptionId: 'A',
-              }
-            : {
-                kind:
-                  objective?.construct === 'apply'
-                    ? ('apply_simple_example' as const)
-                    : selectedDepth === 'pass_oriented'
-                      ? ('own_words' as const)
-                      : ('predict_next' as const),
-                prompt:
-                  objective?.construct === 'apply'
-                    ? `换到一个没有讲过的“${topic}”案例：一项关键条件已经被移除。请预测后果，选择下一项有依据的动作，并说明原因。`
-                    : selectedDepth === 'pass_oriented'
-                      ? `请用自己的话说明“${topic}”中哪个条件会影响结果。`
-                      : `换到一个没有讲过的“${topic}”情境：如果移除一项关键条件，接下来最可能发生什么，为什么？`,
-                expectedSignal:
-                  selectedDepth === 'pass_oriented'
-                    ? '用自己的话把关键条件与结果连接起来。'
-                    : '先预测变化，再用条件、机制和后果组成完整的因果解释。',
-              }
-          : undefined;
+        const informalCheck =
+          slot.learnerActionRequired && !workedProcess
+            ? objective?.construct === 'identify'
+              ? {
+                  kind: 'choose_alternative' as const,
+                  prompt: `哪个案例真正具备“${topic}”的定义性特征？`,
+                  expectedSignal: '依据定义条件判断，不要只看熟悉的标签。',
+                  options: [
+                    {
+                      id: 'A',
+                      text: '满足定义条件的案例。',
+                      feedbackIfSelected: '正确。正是定义条件使它成为匹配的案例。',
+                    },
+                    {
+                      id: 'B',
+                      text: '重复主题名称、但缺少必要条件的案例。',
+                      feedbackIfSelected: '熟悉的标签还不够；请检查必要条件是否真的存在。',
+                    },
+                  ],
+                  correctOptionId: 'A',
+                }
+              : {
+                  kind:
+                    objective?.construct === 'apply'
+                      ? ('apply_simple_example' as const)
+                      : selectedDepth === 'pass_oriented'
+                        ? ('own_words' as const)
+                        : ('predict_next' as const),
+                  prompt:
+                    objective?.construct === 'apply'
+                      ? `换到一个没有讲过的“${topic}”案例：一项关键条件已经被移除。请预测后果，选择下一项有依据的动作，并说明原因。`
+                      : selectedDepth === 'pass_oriented'
+                        ? `请用自己的话说明“${topic}”中哪个条件会影响结果。`
+                        : `换到一个没有讲过的“${topic}”情境：如果移除一项关键条件，接下来最可能发生什么，为什么？`,
+                  expectedSignal:
+                    selectedDepth === 'pass_oriented'
+                      ? '用自己的话把关键条件与结果连接起来。'
+                      : '先预测变化，再用条件、机制和后果组成完整的因果解释。',
+                }
+            : undefined;
         const base = {
           slotId: slot.slotId,
           explanation:

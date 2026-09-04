@@ -107,6 +107,30 @@ function informalKind(
   }
 }
 
+type WorkedProcess = NonNullable<TeachingBrief['segments'][number]['workedProcess']>;
+type SegmentInteraction = LessonExecutionState['informalInteractions'][number] | undefined;
+
+function workedInteractionStage(
+  process: WorkedProcess,
+  interaction: SegmentInteraction,
+): 'guided' | 'scaffold' | 'transfer' | 'completed' | null {
+  const authored = process.interaction;
+  if (!authored) return null;
+  const state = interaction?.workedInteraction;
+  if (!state?.guidedResponse) return 'guided';
+  const guidedCorrect = state.guidedResponse === authored.activity.correctOptionId;
+  if (!guidedCorrect && !state.scaffoldResponse) return 'scaffold';
+  return state.transferResponse ? 'completed' : 'transfer';
+}
+
+function workedInteractionComplete(
+  segment: TeachingBrief['segments'][number],
+  interaction: SegmentInteraction,
+): boolean {
+  if (!segment.workedProcess?.interaction) return true;
+  return workedInteractionStage(segment.workedProcess, interaction) === 'completed';
+}
+
 export function createLessonExecutionService({
   repos,
   clock,
@@ -368,14 +392,15 @@ export function createLessonExecutionService({
     );
     const presentationCompleted = Boolean(state.presentationCompletedAt);
     const completed = Boolean(state.practiceCompletedAt);
-    const allChecksAnswered = brief.segments.every(
-      (segment) =>
-        !segment.informalCheck ||
-        state.informalInteractions.some(
-          (interaction) =>
-            interaction.segmentIndex === segment.index && Boolean(interaction.response),
-        ),
-    );
+    const allChecksAnswered = brief.segments.every((segment) => {
+      const segmentInteraction = state.informalInteractions.find(
+        (candidate) => candidate.segmentIndex === segment.index,
+      );
+      return (
+        (!segment.informalCheck || Boolean(segmentInteraction?.response)) &&
+        workedInteractionComplete(segment, segmentInteraction)
+      );
+    });
     const presentationStatus = completed
       ? 'presentation_completed'
       : presentationCompleted
@@ -398,6 +423,11 @@ export function createLessonExecutionService({
           respondedAt: interaction?.respondedAt ?? null,
         }
       : null;
+    const currentWorkedInteraction = current?.workedProcess?.interaction;
+    const currentInteractionComplete =
+      !currentWorkedInteraction || currentWorkedInteraction.stage === 'completed';
+    const currentReadyToAdvance =
+      (!current?.informalCheck || Boolean(interaction?.response)) && currentInteractionComplete;
     const practice = projectPractice(brief, state);
     const allowed =
       context.session.status === 'paused'
@@ -412,15 +442,18 @@ export function createLessonExecutionService({
                   ...(current?.informalCheck && !interaction?.response
                     ? (['respond_to_informal_check'] as const)
                     : []),
+                  ...(currentWorkedInteraction && !currentInteractionComplete
+                    ? (['respond_to_worked_interaction'] as const)
+                    : []),
                   ...(currentTeachingSection &&
                   (state.currentSegmentIndex < currentTeachingSection.endSegmentIndex ||
                     currentTeachingSection.index < teachingSections.length - 1) &&
-                  (!current?.informalCheck || Boolean(interaction?.response))
+                  currentReadyToAdvance
                     ? (['move_to_next_segment'] as const)
                     : []),
                   ...(state.currentSegmentIndex > 0 ? (['revisit_segment'] as const) : []),
                   ...(state.presentedSegmentIndexes.length === brief.segments.length &&
-                  (!current?.informalCheck || Boolean(interaction?.response))
+                  allChecksAnswered
                     ? (['complete_presentation'] as const)
                     : []),
                 ];
@@ -466,6 +499,107 @@ export function createLessonExecutionService({
       const selectedChoice = segment.informalCheck?.options?.find(
         (option) => option.id === interaction?.response,
       );
+      const projectWorkedProcess = (process: WorkedProcess) => {
+        const authored = process.interaction;
+        const interactionState = interaction?.workedInteraction;
+        if (!authored) {
+          return {
+            startingState: process.startingState,
+            ...(process.inputs ? { inputs: process.inputs } : {}),
+            ruleOrProcedure: process.ruleOrProcedure,
+            steps: process.steps,
+            learnerDecision: process.learnerDecision,
+            result: process.result,
+            whyResultFollows: process.whyResultFollows,
+            origin: authority(
+              process.sourceRefIds.length > 0 ? 'source_backed_teaching' : 'ai_teaching_synthesis',
+            ),
+            sources: refs(process.sourceRefIds),
+          };
+        }
+        const stage = workedInteractionStage(process, interaction)!;
+        const guidedResponse = interactionState?.guidedResponse ?? null;
+        const guidedOption = authored.activity.options.find(
+          (option) => option.id === guidedResponse,
+        );
+        const guidedCorrect = guidedResponse
+          ? guidedResponse === authored.activity.correctOptionId
+          : null;
+        const scaffoldResponse = interactionState?.scaffoldResponse ?? null;
+        const scaffoldOption = authored.scaffold.options.find(
+          (option) => option.id === scaffoldResponse,
+        );
+        const guidedResolved = guidedCorrect === true || scaffoldResponse !== null;
+        const transferResponse = interactionState?.transferResponse ?? null;
+        const transferOption = authored.transfer.options.find(
+          (option) => option.id === transferResponse,
+        );
+        return {
+          startingState: process.startingState,
+          inputs: process.inputs ?? [],
+          ruleOrProcedure: process.ruleOrProcedure,
+          steps: guidedResolved
+            ? process.steps
+            : process.steps.slice(0, authored.pauseAfterStepIndex + 1),
+          learnerDecision: process.learnerDecision,
+          result: guidedResolved ? process.result : null,
+          whyResultFollows: transferResponse ? process.whyResultFollows : null,
+          origin: authority(
+            process.sourceRefIds.length > 0 ? 'source_backed_teaching' : 'ai_teaching_synthesis',
+          ),
+          sources: refs(process.sourceRefIds),
+          interaction: {
+            stage,
+            modelledStepCount: authored.pauseAfterStepIndex + 1,
+            origin: authority(
+              authored.sourceRefs.length > 0 ? 'source_backed_teaching' : 'ai_teaching_synthesis',
+            ),
+            sources: refs(authored.sourceRefs),
+            activity: {
+              prompt: authored.activity.prompt,
+              options: authored.activity.options.map(({ id, text }) => ({ id, text })),
+              response: guidedResponse,
+              respondedAt: interactionState?.guidedRespondedAt ?? null,
+              correct: guidedCorrect,
+              feedback: guidedOption?.feedbackIfSelected ?? null,
+              misconception: guidedCorrect === false ? (guidedOption?.misconception ?? null) : null,
+              debrief: guidedResolved ? authored.activity.correctDebrief : null,
+              credit: 'none' as const,
+            },
+            hint: guidedCorrect === false ? authored.hint : null,
+            scaffold:
+              guidedCorrect === false
+                ? {
+                    prompt: authored.scaffold.prompt,
+                    options: authored.scaffold.options.map(({ id, text }) => ({ id, text })),
+                    response: scaffoldResponse,
+                    respondedAt: interactionState?.scaffoldRespondedAt ?? null,
+                    correct: scaffoldResponse
+                      ? scaffoldResponse === authored.scaffold.correctOptionId
+                      : null,
+                    feedback: scaffoldOption?.feedbackIfSelected ?? null,
+                    debrief: scaffoldResponse ? authored.scaffold.debrief : null,
+                    credit: 'none' as const,
+                  }
+                : null,
+            transfer: guidedResolved
+              ? {
+                  changedCondition: authored.transfer.changedCondition,
+                  prompt: authored.transfer.prompt,
+                  options: authored.transfer.options.map(({ id, text }) => ({ id, text })),
+                  response: transferResponse,
+                  respondedAt: interactionState?.transferRespondedAt ?? null,
+                  correct: transferResponse
+                    ? transferResponse === authored.transfer.correctOptionId
+                    : null,
+                  feedback: transferOption?.feedbackIfSelected ?? null,
+                  debrief: transferResponse ? authored.transfer.debrief : null,
+                  credit: 'none' as const,
+                }
+              : null,
+          },
+        };
+      };
       return {
         index: segment.index,
         purpose: purpose(segment.purpose),
@@ -491,20 +625,7 @@ export function createLessonExecutionService({
         ...(segment.workedProcess !== undefined
           ? {
               workedProcess: segment.workedProcess
-                ? {
-                    startingState: segment.workedProcess.startingState,
-                    ruleOrProcedure: segment.workedProcess.ruleOrProcedure,
-                    steps: segment.workedProcess.steps,
-                    learnerDecision: segment.workedProcess.learnerDecision,
-                    result: segment.workedProcess.result,
-                    whyResultFollows: segment.workedProcess.whyResultFollows,
-                    origin: authority(
-                      segment.workedProcess.sourceRefIds.length > 0
-                        ? 'source_backed_teaching'
-                        : 'ai_teaching_synthesis',
-                    ),
-                    sources: refs(segment.workedProcess.sourceRefIds),
-                  }
+                ? projectWorkedProcess(segment.workedProcess)
                 : null,
             }
           : {}),
@@ -1148,8 +1269,8 @@ export function createLessonExecutionService({
           );
           if (
             requestedSection.index > currentSection.index &&
-            currentSegment?.informalCheck &&
-            !currentInteraction?.response
+            ((currentSegment?.informalCheck && !currentInteraction?.response) ||
+              (currentSegment && !workedInteractionComplete(currentSegment, currentInteraction)))
           ) {
             throw new AppError(
               ApiErrorCode.ValidationError,
@@ -1221,6 +1342,87 @@ export function createLessonExecutionService({
                   presentedAt: now,
                   response: action.response,
                   respondedAt: now,
+                },
+              ];
+          eventKind = 'informal_response_recorded';
+          next = repos.lessonExecution.update(
+            {
+              ...current,
+              informalInteractions: interactions,
+              version: current.version + 1,
+              updatedAt: now,
+            },
+            current.version,
+          );
+        } else if (action.kind === 'respond_to_worked_interaction') {
+          const segment = brief.segments.find(
+            (candidate) => candidate.index === action.segmentIndex,
+          );
+          const workedProcess = segment?.workedProcess;
+          const authored = workedProcess?.interaction;
+          if (
+            !segment ||
+            !workedProcess ||
+            !authored ||
+            current.currentSegmentIndex !== segment.index
+          ) {
+            throw new AppError(
+              ApiErrorCode.ValidationError,
+              'Respond to the current worked interaction.',
+            );
+          }
+          const existing = current.informalInteractions.find(
+            (entry) => entry.segmentIndex === action.segmentIndex,
+          );
+          const expectedPhase = workedInteractionStage(workedProcess, existing);
+          if (expectedPhase !== action.phase) {
+            throw new AppError(
+              ApiErrorCode.ValidationError,
+              'The worked-interaction response phase is stale.',
+            );
+          }
+          const phaseContent =
+            action.phase === 'guided'
+              ? authored.activity
+              : action.phase === 'scaffold'
+                ? authored.scaffold
+                : authored.transfer;
+          if (!phaseContent.options.some((option) => option.id === action.response)) {
+            throw new AppError(
+              ApiErrorCode.ValidationError,
+              'Select one offered worked-interaction option.',
+            );
+          }
+          const previousWorked = existing?.workedInteraction ?? {
+            guidedResponse: null,
+            guidedRespondedAt: null,
+            scaffoldResponse: null,
+            scaffoldRespondedAt: null,
+            transferResponse: null,
+            transferRespondedAt: null,
+          };
+          const workedInteraction = {
+            ...previousWorked,
+            ...(action.phase === 'guided'
+              ? { guidedResponse: action.response, guidedRespondedAt: now }
+              : action.phase === 'scaffold'
+                ? { scaffoldResponse: action.response, scaffoldRespondedAt: now }
+                : { transferResponse: action.response, transferRespondedAt: now }),
+          };
+          const interactions = existing
+            ? current.informalInteractions.map((entry) =>
+                entry.segmentIndex === action.segmentIndex
+                  ? { ...entry, workedInteraction }
+                  : entry,
+              )
+            : [
+                ...current.informalInteractions,
+                {
+                  segmentIndex: action.segmentIndex,
+                  presentedAt: now,
+                  response: null,
+                  respondedAt: null,
+                  workedInteraction,
                 },
               ];
           eventKind = 'informal_response_recorded';
@@ -1319,14 +1521,15 @@ export function createLessonExecutionService({
               ApiErrorCode.ValidationError,
               'Present every lesson segment before completing the presentation.',
             );
-          const unansweredChecks = brief.segments.filter(
-            (segment) =>
-              segment.informalCheck &&
-              !current.informalInteractions.some(
-                (interaction) =>
-                  interaction.segmentIndex === segment.index && Boolean(interaction.response),
-              ),
-          );
+          const unansweredChecks = brief.segments.filter((segment) => {
+            const segmentInteraction = current.informalInteractions.find(
+              (interaction) => interaction.segmentIndex === segment.index,
+            );
+            return (
+              (segment.informalCheck && !segmentInteraction?.response) ||
+              !workedInteractionComplete(segment, segmentInteraction)
+            );
+          });
           if (unansweredChecks.length > 0) {
             throw new AppError(
               ApiErrorCode.ValidationError,

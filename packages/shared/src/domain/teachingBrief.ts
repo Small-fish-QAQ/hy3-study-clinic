@@ -209,9 +209,150 @@ export const TeachingBriefSemanticRelationSchema = z
   .strict();
 export type TeachingBriefSemanticRelation = z.infer<typeof TeachingBriefSemanticRelationSchema>;
 
+export const TeachingWorkedInteractionMisconceptionSchema = z
+  .object({
+    hypothesis: z.string().min(1).max(600),
+    whyTempting: z.string().min(1).max(700),
+    correction: z.string().min(1).max(900),
+  })
+  .strict();
+export type TeachingWorkedInteractionMisconception = z.infer<
+  typeof TeachingWorkedInteractionMisconceptionSchema
+>;
+
+export const TeachingWorkedInteractionOptionSchema = z
+  .object({
+    id: z.string().regex(/^[A-E]$/u),
+    text: z.string().min(1).max(600),
+    feedbackIfSelected: z.string().min(1).max(900),
+    misconception: TeachingWorkedInteractionMisconceptionSchema.nullable(),
+  })
+  .strict();
+export type TeachingWorkedInteractionOption = z.infer<typeof TeachingWorkedInteractionOptionSchema>;
+
+const TeachingWorkedInteractionSimpleOptionSchema = z
+  .object({
+    id: z.string().regex(/^[A-E]$/u),
+    text: z.string().min(1).max(600),
+    feedbackIfSelected: z.string().min(1).max(900),
+  })
+  .strict();
+
+function validateWorkedInteractionChoices(
+  activity: {
+    options: Array<{ id: string; misconception?: unknown }>;
+    correctOptionId: string;
+  },
+  ctx: z.RefinementCtx,
+  requireMisconceptionMapping: boolean,
+): void {
+  const ids = activity.options.map((option) => option.id);
+  if (new Set(ids).size !== ids.length) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['options'],
+      message: 'worked-interaction option identities must be unique',
+    });
+  }
+  if (!ids.includes(activity.correctOptionId)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['correctOptionId'],
+      message: 'worked-interaction correct option must reference an offered choice',
+    });
+  }
+  if (!requireMisconceptionMapping) return;
+  for (const [index, option] of activity.options.entries()) {
+    const isCorrect = option.id === activity.correctOptionId;
+    if (
+      (isCorrect && option.misconception != null) ||
+      (!isCorrect && option.misconception == null)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['options', index, 'misconception'],
+        message: isCorrect
+          ? 'the correct worked-interaction option cannot claim a misconception'
+          : 'each worked-interaction distractor requires targeted misconception feedback',
+      });
+    }
+  }
+}
+
+export const TeachingWorkedInteractionActivitySchema = z
+  .object({
+    prompt: z.string().min(1).max(900),
+    options: z.array(TeachingWorkedInteractionOptionSchema).min(3).max(5),
+    correctOptionId: z.string().regex(/^[A-E]$/u),
+    correctDebrief: z.string().min(1).max(1200),
+  })
+  .strict()
+  .superRefine((activity, ctx) => validateWorkedInteractionChoices(activity, ctx, true));
+export type TeachingWorkedInteractionActivity = z.infer<
+  typeof TeachingWorkedInteractionActivitySchema
+>;
+
+export const TeachingWorkedInteractionScaffoldSchema = z
+  .object({
+    prompt: z.string().min(1).max(800),
+    options: z.array(TeachingWorkedInteractionSimpleOptionSchema).min(2).max(4),
+    correctOptionId: z.string().regex(/^[A-E]$/u),
+    debrief: z.string().min(1).max(1000),
+  })
+  .strict()
+  .superRefine((activity, ctx) => validateWorkedInteractionChoices(activity, ctx, false));
+export type TeachingWorkedInteractionScaffold = z.infer<
+  typeof TeachingWorkedInteractionScaffoldSchema
+>;
+
+export const TeachingWorkedInteractionTransferSchema = z
+  .object({
+    changedCondition: z.string().min(1).max(800),
+    prompt: z.string().min(1).max(900),
+    options: z.array(TeachingWorkedInteractionSimpleOptionSchema).min(3).max(5),
+    correctOptionId: z.string().regex(/^[A-E]$/u),
+    debrief: z.string().min(1).max(1200),
+  })
+  .strict()
+  .superRefine((activity, ctx) => validateWorkedInteractionChoices(activity, ctx, false));
+export type TeachingWorkedInteractionTransfer = z.infer<
+  typeof TeachingWorkedInteractionTransferSchema
+>;
+
+/**
+ * One bounded, prepared pause inside a worked process. The teacher models a
+ * real step first; local code then handles a guided choice, at most one
+ * hint/scaffold level, and a less-supported changed-condition transfer.
+ */
+export const TeachingWorkedProcessInteractionSchema = z
+  .object({
+    pauseAfterStepIndex: z.number().int().nonnegative().max(6),
+    /** Empty means the worked interaction is explicitly supplementary teaching. */
+    sourceRefs: z.array(z.string().min(1).max(40)).max(8),
+    activity: TeachingWorkedInteractionActivitySchema,
+    hint: z.string().min(1).max(700),
+    scaffold: TeachingWorkedInteractionScaffoldSchema,
+    transfer: TeachingWorkedInteractionTransferSchema,
+  })
+  .strict()
+  .superRefine((interaction, ctx) => {
+    if (new Set(interaction.sourceRefs).size !== interaction.sourceRefs.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['sourceRefs'],
+        message: 'worked-interaction source references must be unique',
+      });
+    }
+  });
+export type TeachingWorkedProcessInteraction = z.infer<
+  typeof TeachingWorkedProcessInteractionSchema
+>;
+
 export const TeachingBriefWorkedProcessSchema = z
   .object({
     startingState: z.string().min(1).max(900),
+    /** Optional only for historical non-interactive worked processes. */
+    inputs: z.array(z.string().min(1).max(500)).min(1).max(6).optional(),
     ruleOrProcedure: z.string().min(1).max(1200),
     steps: z
       .array(
@@ -230,8 +371,34 @@ export const TeachingBriefWorkedProcessSchema = z
     whyResultFollows: z.string().min(1).max(900),
     /** Empty means the worked case is Hy3 supplementary teaching, not source evidence. */
     sourceRefIds: z.array(z.string().min(1).max(40)).max(8),
+    /** Absent on historical worked processes. */
+    interaction: TeachingWorkedProcessInteractionSchema.optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((process, ctx) => {
+    if (!process.interaction) return;
+    if (!process.inputs?.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['inputs'],
+        message: 'interactive worked processes require explicit relevant inputs',
+      });
+    }
+    if (process.learnerDecision === null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['learnerDecision'],
+        message: 'interactive worked processes require a concrete learner decision',
+      });
+    }
+    if (process.interaction.pauseAfterStepIndex >= process.steps.length - 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['interaction', 'pauseAfterStepIndex'],
+        message: 'worked interaction must pause after a modelled step and before a continuation',
+      });
+    }
+  });
 export type TeachingBriefWorkedProcess = z.infer<typeof TeachingBriefWorkedProcessSchema>;
 
 export const TeachingBriefSegmentSchema = z
@@ -255,6 +422,14 @@ export const TeachingBriefSegmentSchema = z
   })
   .strict()
   .superRefine((segment, ctx) => {
+    if (segment.workedProcess?.interaction && segment.informalCheck) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['informalCheck'],
+        message:
+          'an interactive worked process owns its learner action and cannot add a second check',
+      });
+    }
     if (
       segment.explanationAuthority === 'source_backed_teaching' &&
       segment.sourceRefIds.length === 0
@@ -502,6 +677,7 @@ export const TeachingBriefSchema = z
         ...(segment.misconception?.sourceRefIds ?? []),
         ...(segment.semanticRelations?.flatMap((relation) => relation.sourceRefIds) ?? []),
         ...(segment.workedProcess?.sourceRefIds ?? []),
+        ...(segment.workedProcess?.interaction?.sourceRefs ?? []),
       ]) {
         if (!ids.has(refId)) {
           ctx.addIssue({

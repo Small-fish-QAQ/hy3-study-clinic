@@ -6,6 +6,7 @@ import {
   TeachingSemanticRelationSchema,
   TeachingSkeletonSchema,
   TeachingWorkedProcessSchema,
+  projectAcceptedLessonSegments,
   type AcceptedLessonCheckpoint,
   type TeachingLessonSlotContent,
   type TeachingSkeleton,
@@ -177,6 +178,87 @@ function checkpoint(): AcceptedLessonCheckpoint {
   });
 }
 
+function workedInteraction() {
+  return {
+    pauseAfterStepIndex: 0,
+    sourceRefs: [],
+    activity: {
+      prompt: 'Which action should happen after the condition has been checked?',
+      options: [
+        {
+          id: 'A',
+          text: 'Apply the action authorized by the condition.',
+          feedbackIfSelected: 'The condition now justifies this state change.',
+          misconception: null,
+        },
+        {
+          id: 'B',
+          text: 'Choose the most familiar action.',
+          feedbackIfSelected: 'Familiarity does not prove that the action is allowed.',
+          misconception: {
+            hypothesis: 'A familiar action is always applicable.',
+            whyTempting: 'It appeared in the earlier typical case.',
+            correction: 'Check the current condition before selecting the action.',
+          },
+        },
+        {
+          id: 'C',
+          text: 'Jump directly to the final result.',
+          feedbackIfSelected: 'This skips the state transition that supports the result.',
+          misconception: {
+            hypothesis: 'A plausible final result does not need intermediate support.',
+            whyTempting: 'The final result resembles the modelled example.',
+            correction: 'Complete the condition-authorized transition first.',
+          },
+        },
+      ],
+      correctOptionId: 'A',
+      correctDebrief: 'The checked condition makes this the next justified action.',
+    },
+    hint: 'Ask which action the current condition permits.',
+    scaffold: {
+      prompt: 'What determines whether an action is permitted?',
+      options: [
+        {
+          id: 'A',
+          text: 'The current condition.',
+          feedbackIfSelected: 'Correct; it bounds the action set.',
+        },
+        {
+          id: 'B',
+          text: 'The action label.',
+          feedbackIfSelected: 'A label does not establish applicability.',
+        },
+      ],
+      correctOptionId: 'A',
+      debrief: 'The current condition, not the label, bounds the next action.',
+    },
+    transfer: {
+      changedCondition: 'The condition that permitted the original action is absent.',
+      prompt: 'What should happen in the changed case?',
+      options: [
+        {
+          id: 'A',
+          text: 'Repeat the original action.',
+          feedbackIfSelected: 'The original authorization is gone.',
+        },
+        {
+          id: 'B',
+          text: 'Re-evaluate and withhold the original action.',
+          feedbackIfSelected: 'Correct; the changed condition changes the action set.',
+        },
+        {
+          id: 'C',
+          text: 'Ignore the rule entirely.',
+          feedbackIfSelected: 'The rule still bounds the revised decision.',
+        },
+      ],
+      correctOptionId: 'B',
+      debrief: 'Changing the governing condition changes which action is justified.',
+    },
+  } as const;
+}
+
 describe('Teaching Skeleton contracts', () => {
   it('accepts an immutable construct-aware plan without generated prose ownership', () => {
     expect(skeleton()).toMatchObject({
@@ -331,6 +413,48 @@ describe('Teaching Skeleton contracts', () => {
     ).toBe(true);
   });
 
+  it('represents one bounded worked interaction with targeted misconceptions and scaffold help', () => {
+    const process = {
+      startingState: 'Three candidates await a bounded retrieval decision.',
+      inputs: ['The current condition.', 'Three candidate states.'],
+      ruleOrProcedure: 'Check the condition, then apply only an authorized action.',
+      steps: [
+        {
+          action: 'Check the condition against every candidate.',
+          reason: 'The condition establishes eligibility.',
+          resultingState: 'Eligible and ineligible candidates are distinguished.',
+        },
+        {
+          action: 'Apply the authorized action to the eligible candidate.',
+          reason: 'Only eligible candidates may advance.',
+          resultingState: 'One bounded result remains.',
+        },
+      ],
+      learnerDecision: 'Choose the next authorized action.',
+      result: 'The eligible candidate becomes the bounded result.',
+      whyResultFollows: 'The condition justified each state transition.',
+      sourceRefs: ['S1'],
+      interaction: workedInteraction(),
+    };
+    expect(
+      TeachingWorkedProcessSchema.parse(process).interaction?.activity.options[1],
+    ).toMatchObject({
+      misconception: {
+        hypothesis: 'A familiar action is always applicable.',
+        whyTempting: expect.any(String),
+        correction: expect.any(String),
+      },
+    });
+
+    const missingWrongMapping = structuredClone(process);
+    missingWrongMapping.interaction.activity.options[1]!.misconception = null;
+    expect(TeachingWorkedProcessSchema.safeParse(missingWrongMapping).success).toBe(false);
+
+    const noContinuation = structuredClone(process);
+    noContinuation.interaction.pauseAfterStepIndex = 1;
+    expect(TeachingWorkedProcessSchema.safeParse(noContinuation).success).toBe(false);
+  });
+
   it('validates bounded Practice application facts without giving them construct authority', () => {
     expect(
       TeachingPracticeApplicationContentSchema.safeParse({
@@ -382,5 +506,53 @@ describe('accepted Lesson checkpoint contract', () => {
     const foreign = structuredClone(checkpoint());
     foreign.lessonContent[1]!.semanticRelations[0]!.sourceRefs = ['S2'];
     expect(AcceptedLessonCheckpointSchema.safeParse(foreign).success).toBe(false);
+  });
+
+  it('projects additive worked-interaction bytes while historical Lesson payloads remain readable', () => {
+    const historical = checkpoint();
+    expect(AcceptedLessonCheckpointSchema.safeParse(historical).success).toBe(true);
+
+    const interactive = structuredClone(historical);
+    interactive.skeleton.objectives[0]!.construct = 'apply';
+    interactive.skeleton.lessonSlots[1]!.construct = 'apply';
+    interactive.skeleton.lessonSlots[1]!.role = 'worked_example';
+    interactive.skeleton.lessonSlots[1]!.qualityContract = 'worked_process';
+    interactive.skeleton.practicePlan.slots[0]!.construct = 'apply';
+    interactive.skeleton.practicePlan.slots[0]!.prohibitedStrongerConstructs = [
+      'design',
+      'evaluate',
+    ];
+    interactive.lessonContent[1]!.informalCheck = undefined;
+    interactive.lessonContent[1]!.workedProcess = {
+      startingState: 'Three candidates await a bounded retrieval decision.',
+      inputs: ['The current condition.', 'Three candidate states.'],
+      ruleOrProcedure: 'Check the condition, then apply only an authorized action.',
+      steps: [
+        {
+          action: 'Check the condition against every candidate.',
+          reason: 'The condition establishes eligibility.',
+          resultingState: 'Eligible and ineligible candidates are distinguished.',
+        },
+        {
+          action: 'Apply the authorized action to the eligible candidate.',
+          reason: 'Only eligible candidates may advance.',
+          resultingState: 'One bounded result remains.',
+        },
+      ],
+      learnerDecision: 'Choose the next authorized action.',
+      result: 'The eligible candidate becomes the bounded result.',
+      whyResultFollows: 'The condition justified each state transition.',
+      sourceRefs: ['S1'],
+      interaction: workedInteraction(),
+    };
+    const parsed = AcceptedLessonCheckpointSchema.parse(interactive);
+    expect(projectAcceptedLessonSegments(parsed, ['objective_1'])[1]?.workedProcess).toMatchObject({
+      inputs: ['The current condition.', 'Three candidate states.'],
+      interaction: { pauseAfterStepIndex: 0 },
+      sourceRefIds: ['S1'],
+    });
+    const foreignInteractionSource = structuredClone(interactive);
+    foreignInteractionSource.lessonContent[1]!.workedProcess!.interaction!.sourceRefs = ['S2'];
+    expect(AcceptedLessonCheckpointSchema.safeParse(foreignInteractionSource).success).toBe(false);
   });
 });

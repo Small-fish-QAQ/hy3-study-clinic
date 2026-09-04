@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { groupLessonSegmentsForLearner } from '@hy3-clinic/shared';
 import type {
   LessonExecutionProjection,
@@ -242,6 +242,149 @@ function InformalCheck({
   );
 }
 
+function WorkedInteractionChoice({
+  prompt,
+  options,
+  response,
+  correct,
+  feedback,
+  debrief,
+  label,
+  disabled,
+  submitting,
+  onSubmit,
+}: {
+  prompt: string;
+  options: Array<{ id: string; text: string }>;
+  response: string | null;
+  correct: boolean | null;
+  feedback: string | null;
+  debrief: string | null;
+  label: string;
+  disabled: boolean;
+  submitting: boolean;
+  onSubmit: (optionId: string) => void;
+}) {
+  return (
+    <section className="lesson-worked-activity" aria-label={label}>
+      <strong>{label}</strong>
+      <p>{prompt}</p>
+      {response ? (
+        <div className="lesson-check-recorded" role="status">
+          <strong>{correct ? '这个判断成立' : '先修正这一步推理'}</strong>
+          {feedback ? <p>{feedback}</p> : null}
+          {debrief ? <p>{debrief}</p> : null}
+        </div>
+      ) : (
+        <div className="lesson-check-options" role="group" aria-label={`${label}选项`}>
+          {options.map((option) => (
+            <button
+              type="button"
+              key={option.id}
+              disabled={disabled || submitting}
+              onClick={() => onSubmit(option.id)}
+            >
+              {option.text}
+            </button>
+          ))}
+        </div>
+      )}
+      <p className="small muted">这一步只用于教学反馈，不创建正式证据或掌握度。</p>
+    </section>
+  );
+}
+
+function WorkedInteraction({
+  segment,
+  continuation,
+  disabled,
+  submitting,
+  onAction,
+}: {
+  segment: LessonSegmentProjection;
+  continuation: ReactNode;
+  disabled: boolean;
+  submitting: boolean;
+  onAction: (action: LessonExecutionCommandRequest['action']) => void;
+}) {
+  const interaction = segment.workedProcess?.interaction;
+  if (!interaction) return null;
+  const submit = (phase: 'guided' | 'scaffold' | 'transfer', response: string) =>
+    onAction({
+      kind: 'respond_to_worked_interaction',
+      segmentIndex: segment.index,
+      phase,
+      response,
+    });
+  return (
+    <div className="lesson-worked-interaction">
+      <WorkedInteractionChoice
+        prompt={interaction.activity.prompt}
+        options={interaction.activity.options}
+        response={interaction.activity.response}
+        correct={interaction.activity.correct}
+        feedback={interaction.activity.feedback}
+        debrief={interaction.activity.debrief}
+        label="轮到你判断下一步"
+        disabled={disabled}
+        submitting={submitting}
+        onSubmit={(response) => submit('guided', response)}
+      />
+      {interaction.activity.misconception ? (
+        <aside className="lesson-misconception">
+          <strong>这个想法为什么容易出现</strong>
+          <p>{interaction.activity.misconception.hypothesis}</p>
+          <p>{interaction.activity.misconception.whyTempting}</p>
+          <p>{interaction.activity.misconception.correction}</p>
+          <small>这是对本次选择的局部反馈，不是持久化诊断。</small>
+        </aside>
+      ) : null}
+      {interaction.hint ? (
+        <aside className="lesson-worked-hint">
+          <strong>一个小提示</strong>
+          <p>{interaction.hint}</p>
+        </aside>
+      ) : null}
+      {interaction.scaffold ? (
+        <WorkedInteractionChoice
+          prompt={interaction.scaffold.prompt}
+          options={interaction.scaffold.options}
+          response={interaction.scaffold.response}
+          correct={interaction.scaffold.correct}
+          feedback={interaction.scaffold.feedback}
+          debrief={interaction.scaffold.debrief}
+          label="先解决一个更小的问题"
+          disabled={disabled || interaction.stage !== 'scaffold'}
+          submitting={submitting}
+          onSubmit={(response) => submit('scaffold', response)}
+        />
+      ) : null}
+      {continuation}
+      {interaction.transfer ? (
+        <>
+          <div className="lesson-worked-change">
+            <strong>现在改变一个条件</strong>
+            <p>{interaction.transfer.changedCondition}</p>
+          </div>
+          <WorkedInteractionChoice
+            prompt={interaction.transfer.prompt}
+            options={interaction.transfer.options}
+            response={interaction.transfer.response}
+            correct={interaction.transfer.correct}
+            feedback={interaction.transfer.feedback}
+            debrief={interaction.transfer.debrief}
+            label="少一点提示，再判断一次"
+            disabled={disabled || interaction.stage !== 'transfer'}
+            submitting={submitting}
+            onSubmit={(response) => submit('transfer', response)}
+          />
+        </>
+      ) : null}
+      <SourceReferences sources={interaction.sources} origin={interaction.origin} />
+    </div>
+  );
+}
+
 function TeachingSegmentContent({
   segment,
   readOnly,
@@ -274,34 +417,88 @@ function TeachingSegmentContent({
             <b>起始状态：</b>
             {segment.workedProcess.startingState}
           </p>
+          {segment.workedProcess.inputs?.length ? (
+            <div>
+              <b>先看这些输入：</b>
+              <ul>
+                {segment.workedProcess.inputs.map((input, inputIndex) => (
+                  <li key={inputIndex}>{input}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           <p>
             <b>依据的规则或流程：</b>
             {segment.workedProcess.ruleOrProcedure}
           </p>
           <ol>
-            {segment.workedProcess.steps.map((step, stepIndex) => (
-              <li key={stepIndex}>
-                <p>{step.action}</p>
-                <small>
-                  {step.reason} → {step.resultingState}
-                </small>
-              </li>
-            ))}
+            {segment.workedProcess.steps
+              .slice(
+                0,
+                segment.workedProcess.interaction?.modelledStepCount ??
+                  segment.workedProcess.steps.length,
+              )
+              .map((step, stepIndex) => (
+                <li key={stepIndex}>
+                  <p>{step.action}</p>
+                  <small>
+                    {step.reason} → {step.resultingState}
+                  </small>
+                </li>
+              ))}
           </ol>
           {segment.workedProcess.learnerDecision ? (
             <p>
-              <b>需要作出的判断：</b>
+              <b>现在需要你作出的判断：</b>
               {segment.workedProcess.learnerDecision}
             </p>
           ) : null}
-          <p>
-            <b>结果：</b>
-            {segment.workedProcess.result}
-          </p>
-          <p>
-            <b>为什么得到这个结果：</b>
-            {segment.workedProcess.whyResultFollows}
-          </p>
+          {segment.workedProcess.interaction ? (
+            <WorkedInteraction
+              segment={segment}
+              continuation={
+                segment.workedProcess.steps.length >
+                segment.workedProcess.interaction.modelledStepCount ? (
+                  <div className="lesson-worked-continuation">
+                    <strong>沿着你的判断继续推演</strong>
+                    <ol start={segment.workedProcess.interaction.modelledStepCount + 1}>
+                      {segment.workedProcess.steps
+                        .slice(segment.workedProcess.interaction.modelledStepCount)
+                        .map((step, stepIndex) => (
+                          <li key={stepIndex}>
+                            <p>{step.action}</p>
+                            <small>
+                              {step.reason} → {step.resultingState}
+                            </small>
+                          </li>
+                        ))}
+                    </ol>
+                    {segment.workedProcess.result ? (
+                      <p>
+                        <b>这次推演的结果：</b>
+                        {segment.workedProcess.result}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null
+              }
+              disabled={readOnly || !active || busy || commandLoading}
+              submitting={commandLoading}
+              onAction={onAction}
+            />
+          ) : null}
+          {!segment.workedProcess.interaction && segment.workedProcess.result ? (
+            <p>
+              <b>结果：</b>
+              {segment.workedProcess.result}
+            </p>
+          ) : null}
+          {segment.workedProcess.whyResultFollows ? (
+            <p>
+              <b>把案例抽象成一般模型：</b>
+              {segment.workedProcess.whyResultFollows}
+            </p>
+          ) : null}
           <SourceReferences
             sources={segment.workedProcess.sources ?? []}
             origin={segment.workedProcess.origin ?? 'hy3_synthesis'}

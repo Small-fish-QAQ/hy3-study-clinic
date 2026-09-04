@@ -17,12 +17,55 @@ export type LessonExecutionPreparationStatus = z.infer<
   typeof LessonExecutionPreparationStatusSchema
 >;
 
+export const LessonWorkedInteractionStateSchema = z
+  .object({
+    guidedResponse: z.string().min(1).max(80).nullable(),
+    guidedRespondedAt: z.string().datetime().nullable(),
+    scaffoldResponse: z.string().min(1).max(80).nullable(),
+    scaffoldRespondedAt: z.string().datetime().nullable(),
+    transferResponse: z.string().min(1).max(80).nullable(),
+    transferRespondedAt: z.string().datetime().nullable(),
+  })
+  .strict()
+  .superRefine((state, ctx) => {
+    for (const [responseKey, timeKey] of [
+      ['guidedResponse', 'guidedRespondedAt'],
+      ['scaffoldResponse', 'scaffoldRespondedAt'],
+      ['transferResponse', 'transferRespondedAt'],
+    ] as const) {
+      if ((state[responseKey] === null) !== (state[timeKey] === null)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [responseKey],
+          message: 'worked-interaction response and timestamp must be present together',
+        });
+      }
+    }
+    if (state.scaffoldResponse !== null && state.guidedResponse === null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['scaffoldResponse'],
+        message: 'worked-interaction scaffold cannot precede the guided response',
+      });
+    }
+    if (state.transferResponse !== null && state.guidedResponse === null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['transferResponse'],
+        message: 'worked-interaction transfer cannot precede the guided response',
+      });
+    }
+  });
+export type LessonWorkedInteractionState = z.infer<typeof LessonWorkedInteractionStateSchema>;
+
 export const LessonInformalInteractionStateSchema = z
   .object({
     segmentIndex: z.number().int().nonnegative(),
     presentedAt: z.string().datetime(),
     response: z.string().min(1).max(2000).nullable(),
     respondedAt: z.string().datetime().nullable(),
+    /** Absent on historical segment-level informal checks. */
+    workedInteraction: LessonWorkedInteractionStateSchema.optional(),
   })
   .strict();
 export type LessonInformalInteractionState = z.infer<typeof LessonInformalInteractionStateSchema>;
@@ -175,18 +218,186 @@ const LessonInformalCheckProjectionSchema = z
   })
   .strict();
 
+const LessonWorkedInteractionChoiceProjectionSchema = z
+  .object({ id: z.string().min(1).max(80), text: z.string().min(1).max(600) })
+  .strict();
+
+const LessonWorkedInteractionMisconceptionProjectionSchema = z
+  .object({
+    hypothesis: z.string().min(1).max(600),
+    whyTempting: z.string().min(1).max(700),
+    correction: z.string().min(1).max(900),
+  })
+  .strict();
+
+const LessonWorkedInteractionResponseProjectionShape = {
+  prompt: z.string().min(1).max(900),
+  options: z.array(LessonWorkedInteractionChoiceProjectionSchema).min(2).max(5),
+  response: z.string().min(1).max(80).nullable(),
+  respondedAt: z.string().datetime().nullable(),
+  correct: z.boolean().nullable(),
+  feedback: z.string().max(900).nullable(),
+  debrief: z.string().max(1200).nullable(),
+  credit: z.literal('none'),
+};
+
+function validateWorkedInteractionResponseProjection(
+  response: {
+    response: string | null;
+    respondedAt: string | null;
+    correct: boolean | null;
+    feedback: string | null;
+  },
+  ctx: z.RefinementCtx,
+): void {
+  if ((response.response === null) !== (response.respondedAt === null)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['response'],
+      message: 'projected worked-interaction response and timestamp must be present together',
+    });
+  }
+  if (response.response === null && (response.correct !== null || response.feedback !== null)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['feedback'],
+      message: 'unanswered worked-interaction choices cannot expose correctness or feedback',
+    });
+  }
+  if (response.response !== null && (response.correct === null || response.feedback === null)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['feedback'],
+      message: 'answered worked-interaction choices require correctness and targeted feedback',
+    });
+  }
+}
+
+const LessonWorkedInteractionResponseProjectionSchema = z
+  .object(LessonWorkedInteractionResponseProjectionShape)
+  .strict()
+  .superRefine(validateWorkedInteractionResponseProjection);
+
+const LessonWorkedInteractionActivityProjectionSchema = z
+  .object({
+    ...LessonWorkedInteractionResponseProjectionShape,
+    misconception: LessonWorkedInteractionMisconceptionProjectionSchema.nullable(),
+  })
+  .strict()
+  .superRefine(validateWorkedInteractionResponseProjection);
+
+const LessonWorkedInteractionTransferProjectionSchema = z
+  .object({
+    ...LessonWorkedInteractionResponseProjectionShape,
+    changedCondition: z.string().min(1).max(800),
+  })
+  .strict()
+  .superRefine(validateWorkedInteractionResponseProjection);
+
+const LessonWorkedInteractionProjectionSchema = z
+  .object({
+    stage: z.enum(['guided', 'scaffold', 'transfer', 'completed']),
+    modelledStepCount: z.number().int().positive().max(7),
+    origin: LessonTeachingOriginSchema,
+    sources: z.array(LessonSourceProjectionSchema).max(8),
+    activity: LessonWorkedInteractionActivityProjectionSchema,
+    /** Revealed only after an incorrect guided response. */
+    hint: z.string().max(700).nullable(),
+    /** Revealed only after an incorrect guided response. */
+    scaffold: LessonWorkedInteractionResponseProjectionSchema.nullable(),
+    /** Revealed only after the guided decision or its scaffold is resolved. */
+    transfer: LessonWorkedInteractionTransferProjectionSchema.nullable(),
+  })
+  .strict()
+  .superRefine((interaction, ctx) => {
+    const answered = interaction.activity.response !== null;
+    if (
+      interaction.stage === 'guided' &&
+      (answered ||
+        interaction.hint !== null ||
+        interaction.scaffold !== null ||
+        interaction.transfer !== null)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['stage'],
+        message: 'guided worked-interaction stage must still await its first response',
+      });
+    }
+    if (interaction.stage === 'scaffold') {
+      if (
+        interaction.activity.correct !== false ||
+        interaction.hint === null ||
+        interaction.scaffold === null ||
+        interaction.scaffold.response !== null ||
+        interaction.transfer !== null
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['stage'],
+          message: 'scaffold stage requires one wrong guided response and unrevealed continuation',
+        });
+      }
+    }
+    if (
+      interaction.activity.correct === true &&
+      (interaction.hint !== null || interaction.scaffold !== null)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['hint'],
+        message: 'a correct guided response must not expose repair help',
+      });
+    }
+    if (
+      interaction.activity.correct === false &&
+      interaction.stage !== 'scaffold' &&
+      (interaction.hint === null || interaction.scaffold === null)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['hint'],
+        message: 'an incorrect guided response must retain its bounded repair help',
+      });
+    }
+    if (interaction.stage === 'transfer') {
+      const repairResolved =
+        interaction.activity.correct === true ||
+        (interaction.activity.correct === false &&
+          interaction.hint !== null &&
+          interaction.scaffold?.response !== null &&
+          interaction.scaffold?.response !== undefined);
+      if (!repairResolved || interaction.transfer?.response !== null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['stage'],
+          message: 'transfer stage requires a resolved guided path and an unanswered changed case',
+        });
+      }
+    }
+    if (interaction.stage === 'completed' && interaction.transfer?.response == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['stage'],
+        message: 'completed worked interaction requires a changed-case response',
+      });
+    }
+  });
+
+const LessonSegmentPurposeProjectionSchema = z.enum([
+  'orientation',
+  'explanation',
+  'mechanism',
+  'worked_example',
+  'comparison',
+  'common_pitfall',
+  'guided_practice',
+]);
+
 export const LessonSegmentProjectionSchema = z
   .object({
     index: z.number().int().nonnegative(),
-    purpose: z.enum([
-      'orientation',
-      'explanation',
-      'mechanism',
-      'worked_example',
-      'comparison',
-      'common_pitfall',
-      'guided_practice',
-    ]),
+    purpose: LessonSegmentPurposeProjectionSchema,
     explanation: z.string().min(1).max(2400),
     explanationOrigin: LessonTeachingOriginSchema,
     sources: z.array(LessonSourceProjectionSchema).max(8),
@@ -217,6 +428,7 @@ export const LessonSegmentProjectionSchema = z
     workedProcess: z
       .object({
         startingState: z.string().min(1).max(900),
+        inputs: z.array(z.string().min(1).max(500)).max(6).optional(),
         ruleOrProcedure: z.string().min(1).max(1200),
         steps: z
           .array(
@@ -231,10 +443,13 @@ export const LessonSegmentProjectionSchema = z
           .min(1)
           .max(8),
         learnerDecision: z.string().min(1).max(700).nullable(),
-        result: z.string().min(1).max(900),
-        whyResultFollows: z.string().min(1).max(900),
+        /** Null while an interactive continuation is intentionally withheld. */
+        result: z.string().min(1).max(900).nullable(),
+        /** Null while an interactive continuation is intentionally withheld. */
+        whyResultFollows: z.string().min(1).max(900).nullable(),
         origin: LessonTeachingOriginSchema.optional(),
         sources: z.array(LessonSourceProjectionSchema).max(8).optional(),
+        interaction: LessonWorkedInteractionProjectionSchema.optional(),
       })
       .strict()
       .nullable()
@@ -253,7 +468,62 @@ export const LessonSegmentProjectionSchema = z
       .nullable(),
     informalCheck: LessonInformalCheckProjectionSchema.nullable(),
   })
-  .strict();
+  .strict()
+  .superRefine((segment, ctx) => {
+    const process = segment.workedProcess;
+    if (!process) return;
+    const interaction = process.interaction;
+    if (!interaction) {
+      if (process.result === null || process.whyResultFollows === null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['workedProcess'],
+          message: 'historical non-interactive worked processes cannot withhold their result',
+        });
+      }
+      return;
+    }
+    const beforeContinuation = interaction.stage === 'guided' || interaction.stage === 'scaffold';
+    if (
+      interaction.modelledStepCount > process.steps.length ||
+      (beforeContinuation && process.steps.length !== interaction.modelledStepCount) ||
+      (!beforeContinuation && process.steps.length <= interaction.modelledStepCount)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['workedProcess', 'steps'],
+        message:
+          'worked-process projection must reveal only the steps allowed by its current phase',
+      });
+    }
+    if (beforeContinuation && (process.result !== null || process.whyResultFollows !== null)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['workedProcess', 'result'],
+        message: 'worked-process continuation and result must remain hidden before repair resolves',
+      });
+    }
+    if (
+      interaction.stage === 'transfer' &&
+      (process.result === null || process.whyResultFollows !== null)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['workedProcess', 'whyResultFollows'],
+        message: 'transfer phase reveals the continuation but withholds the final abstraction',
+      });
+    }
+    if (
+      interaction.stage === 'completed' &&
+      (process.result === null || process.whyResultFollows === null)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['workedProcess', 'whyResultFollows'],
+        message: 'completed worked interaction must reveal its result and final abstraction',
+      });
+    }
+  });
 export type LessonSegmentProjection = z.infer<typeof LessonSegmentProjectionSchema>;
 
 /**
@@ -272,11 +542,13 @@ export interface LearnerPacingSegment {
   informalCheck?: unknown | null;
   workedProcess?: {
     startingState: string;
+    inputs?: string[];
     ruleOrProcedure: string;
     steps: Array<{ action: string; reason: string; resultingState: string }>;
     learnerDecision: string | null;
-    result: string;
-    whyResultFollows: string;
+    result: string | null;
+    whyResultFollows: string | null;
+    interaction?: unknown;
   } | null;
   example?: { text: string } | null;
   contrast?: { text: string } | null;
@@ -364,7 +636,7 @@ export function groupLessonSegmentsForLearner<T extends LearnerPacingSegment>(
   segments.forEach((segment, index) => {
     current.push(segment);
     visibleCharacters += learnerVisibleCharacterCount(segment);
-    if (segment.informalCheck) {
+    if (segment.workedProcess?.interaction || segment.informalCheck) {
       close('inline_check');
       return;
     }
@@ -396,6 +668,7 @@ export const LessonExecutionAllowedActionSchema = z.enum([
   'move_to_next_segment',
   'revisit_segment',
   'respond_to_informal_check',
+  'respond_to_worked_interaction',
   'complete_presentation',
   'submit_practice_response',
   'review_lesson',
@@ -569,6 +842,14 @@ export const LessonExecutionCommandRequestSchema = z
           response: z.string().trim().min(1).max(2000),
         })
         .strict(),
+      z
+        .object({
+          kind: z.literal('respond_to_worked_interaction'),
+          segmentIndex: z.number().int().nonnegative(),
+          phase: z.enum(['guided', 'scaffold', 'transfer']),
+          response: z.string().trim().min(1).max(80),
+        })
+        .strict(),
       z.object({ kind: z.literal('complete_presentation') }).strict(),
       z
         .object({
@@ -594,7 +875,7 @@ export const LessonTutorContextSchema = z
     currentSegment: z
       .object({
         index: z.number().int().nonnegative(),
-        purpose: LessonSegmentProjectionSchema.shape.purpose,
+        purpose: LessonSegmentPurposeProjectionSchema,
         explanation: z.string().min(1).max(1800),
         explanationOrigin: LessonTeachingOriginSchema,
         example: z.string().max(700).nullable(),
@@ -616,7 +897,7 @@ export const LessonTutorContextSchema = z
         z
           .object({
             relation: z.enum(['previous', 'next']),
-            purpose: LessonSegmentProjectionSchema.shape.purpose,
+            purpose: LessonSegmentPurposeProjectionSchema,
             preview: z.string().min(1).max(300),
           })
           .strict(),

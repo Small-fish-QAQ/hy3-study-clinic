@@ -513,6 +513,7 @@ describe('historical planner-v1 checkpoint compatibility', () => {
         executionSourceManifestFingerprint: stored.executionSourceManifestFingerprint,
         sourceContextFingerprint: stored.sourceContextFingerprint,
         presentedSegmentIndexes: [0],
+        informalInteractions: [],
       },
     });
 

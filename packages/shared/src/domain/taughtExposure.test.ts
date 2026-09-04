@@ -38,12 +38,69 @@ const brief = {
       ],
       workedProcess: {
         startingState: 'Start',
+        inputs: ['Input state'],
         ruleOrProcedure: 'Apply the rule',
-        steps: [{ action: 'Act', reason: 'Reason', resultingState: 'Next' }],
+        steps: [
+          { action: 'Act', reason: 'Reason', resultingState: 'Next' },
+          { action: 'Continue', reason: 'Reason again', resultingState: 'Final' },
+        ],
         learnerDecision: 'Choose',
         result: 'Result',
         whyResultFollows: 'Because the rule applies',
         sourceRefIds: [],
+        interaction: {
+          pauseAfterStepIndex: 0,
+          sourceRefs: [],
+          activity: {
+            prompt: 'Choose the next action.',
+            options: [
+              { id: 'A', text: 'Continue.', feedbackIfSelected: 'Correct.', misconception: null },
+              {
+                id: 'B',
+                text: 'Stop.',
+                feedbackIfSelected: 'The process is incomplete.',
+                misconception: {
+                  hypothesis: 'The first step completes the process.',
+                  whyTempting: 'The intermediate state looks stable.',
+                  correction: 'Check whether the required result exists yet.',
+                },
+              },
+              {
+                id: 'C',
+                text: 'Restart.',
+                feedbackIfSelected: 'No failure requires a restart.',
+                misconception: {
+                  hypothesis: 'Every intermediate pause implies failure.',
+                  whyTempting: 'The final result is not visible yet.',
+                  correction: 'Continue from the valid intermediate state.',
+                },
+              },
+            ],
+            correctOptionId: 'A',
+            correctDebrief: 'The next action follows from the intermediate state.',
+          },
+          hint: 'Inspect the intermediate state.',
+          scaffold: {
+            prompt: 'Is the required result present yet?',
+            options: [
+              { id: 'A', text: 'No.', feedbackIfSelected: 'Correct.' },
+              { id: 'B', text: 'Yes.', feedbackIfSelected: 'The process is incomplete.' },
+            ],
+            correctOptionId: 'A',
+            debrief: 'The missing result means another action is required.',
+          },
+          transfer: {
+            changedCondition: 'The intermediate state changes.',
+            prompt: 'Which action now follows?',
+            options: [
+              { id: 'A', text: 'Old action.', feedbackIfSelected: 'Condition changed.' },
+              { id: 'B', text: 'Re-evaluate.', feedbackIfSelected: 'Correct.' },
+              { id: 'C', text: 'Ignore it.', feedbackIfSelected: 'Condition matters.' },
+            ],
+            correctOptionId: 'B',
+            debrief: 'Changed conditions require a new decision.',
+          },
+        },
       },
       example: {
         text: 'Example surface.',
@@ -90,6 +147,7 @@ function state(
     executionSourceManifestFingerprint: 'manifest_1',
     sourceContextFingerprint: 'source_context_1',
     presentedSegmentIndexes: [1],
+    informalInteractions: [],
     ...overrides,
   };
 }
@@ -107,11 +165,112 @@ describe('projectTaughtExposure', () => {
       'explanation',
       'semantic_relation',
       'worked_process',
+      'worked_interaction',
       'example',
       'contrast',
       'misconception',
     ]);
     expect(projection?.surfaces.some((surface) => surface.text.includes('informal'))).toBe(false);
+    expect(
+      projection?.surfaces.find((surface) => surface.surfaceKind === 'worked_interaction')?.text,
+    ).toContain('Choose the next action.');
+    expect(
+      projection?.surfaces.find((surface) => surface.surfaceKind === 'worked_interaction'),
+    ).toMatchObject({ authority: 'ai_teaching_synthesis', sourceRefIds: [] });
+    expect(
+      projection?.surfaces.some((surface) =>
+        surface.text.includes('Inspect the intermediate state.'),
+      ),
+    ).toBe(false);
+  });
+
+  it('records only the worked-interaction surfaces actually revealed at each response stage', () => {
+    const wrong = projectTaughtExposure({
+      brief,
+      checkpoint,
+      state: state({
+        informalInteractions: [
+          {
+            segmentIndex: 1,
+            presentedAt: '2026-01-01T00:00:00.000Z',
+            response: null,
+            respondedAt: null,
+            workedInteraction: {
+              guidedResponse: 'B',
+              guidedRespondedAt: '2026-01-01T00:01:00.000Z',
+              scaffoldResponse: null,
+              scaffoldRespondedAt: null,
+              transferResponse: null,
+              transferRespondedAt: null,
+            },
+          },
+        ],
+      }),
+    })!;
+    const wrongInteraction = wrong.surfaces.find(
+      (surface) => surface.surfaceKind === 'worked_interaction',
+    )!.text;
+    const wrongProcess = wrong.surfaces.find(
+      (surface) => surface.surfaceKind === 'worked_process',
+    )!.text;
+    expect(wrongInteraction).toContain('Inspect the intermediate state.');
+    expect(wrongInteraction).toContain('The first step completes the process.');
+    expect(wrongInteraction).toContain('Is the required result present yet?');
+    expect(wrongInteraction).not.toContain('The intermediate state changes.');
+    expect(wrongProcess).not.toContain('Continue');
+    expect(wrongProcess).not.toContain('Because the rule applies');
+
+    const scaffoldState = state({
+      informalInteractions: [
+        {
+          segmentIndex: 1,
+          presentedAt: '2026-01-01T00:00:00.000Z',
+          response: null,
+          respondedAt: null,
+          workedInteraction: {
+            guidedResponse: 'B',
+            guidedRespondedAt: '2026-01-01T00:01:00.000Z',
+            scaffoldResponse: 'A',
+            scaffoldRespondedAt: '2026-01-01T00:02:00.000Z',
+            transferResponse: null,
+            transferRespondedAt: null,
+          },
+        },
+      ],
+    });
+    const afterScaffold = projectTaughtExposure({ brief, checkpoint, state: scaffoldState })!;
+    expect(
+      afterScaffold.surfaces.find((surface) => surface.surfaceKind === 'worked_process')?.text,
+    ).toContain('Continue');
+    expect(
+      afterScaffold.surfaces.find((surface) => surface.surfaceKind === 'worked_process')?.text,
+    ).not.toContain('Because the rule applies');
+    expect(
+      afterScaffold.surfaces.find((surface) => surface.surfaceKind === 'worked_interaction')?.text,
+    ).toContain('The intermediate state changes.');
+
+    const completed = projectTaughtExposure({
+      brief,
+      checkpoint,
+      state: state({
+        informalInteractions: [
+          {
+            ...scaffoldState.informalInteractions[0]!,
+            workedInteraction: {
+              ...scaffoldState.informalInteractions[0]!.workedInteraction!,
+              transferResponse: 'B',
+              transferRespondedAt: '2026-01-01T00:03:00.000Z',
+            },
+          },
+        ],
+      }),
+    })!;
+    expect(
+      completed.surfaces.find((surface) => surface.surfaceKind === 'worked_process')?.text,
+    ).toContain('Because the rule applies');
+    expect(
+      completed.surfaces.find((surface) => surface.surfaceKind === 'worked_interaction')?.text,
+    ).toContain('Changed conditions require a new decision.');
   });
 
   it('does not treat an accepted but unpresented Lesson as taught', () => {

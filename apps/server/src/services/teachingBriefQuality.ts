@@ -27,6 +27,9 @@ export function profileTeachingBrief(input: ProfileInput): TeachingBriefQualityP
     ...(segment.example?.sourceRefIds ?? []),
     ...(segment.contrast?.sourceRefIds ?? []),
     ...(segment.misconception?.sourceRefIds ?? []),
+    ...(segment.semanticRelations?.flatMap((relation) => relation.sourceRefIds) ?? []),
+    ...(segment.workedProcess?.sourceRefIds ?? []),
+    ...(segment.workedProcess?.interaction?.sourceRefs ?? []),
   ]);
   const sourceBackedSegmentCount = input.segments.filter(
     (segment) =>
@@ -52,7 +55,9 @@ export function profileTeachingBrief(input: ProfileInput): TeachingBriefQualityP
     exampleCount: input.segments.filter((segment) => segment.example).length,
     contrastCount: input.segments.filter((segment) => segment.contrast).length,
     misconceptionCount: input.segments.filter((segment) => segment.misconception).length,
-    informalCheckCount: input.segments.filter((segment) => segment.informalCheck).length,
+    informalCheckCount: input.segments.filter(
+      (segment) => segment.informalCheck || segment.workedProcess?.interaction,
+    ).length,
     prerequisiteCount: input.prerequisiteCount,
     formalOpportunityCount: input.formalOpportunityCount,
     hasSummary: input.summary.trim().length > 0,

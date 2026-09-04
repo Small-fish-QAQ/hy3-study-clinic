@@ -101,6 +101,7 @@ export const PresentedTeachingSurfaceBindingSchema = z
       'explanation',
       'semantic_relation',
       'worked_process',
+      'worked_interaction',
       'example',
       'contrast',
       'misconception',

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   InformalCheckKindSchema,
   TeachingBriefSegmentPurposeSchema,
+  TeachingWorkedProcessInteractionSchema,
   type TeachingBrief,
   type TeachingBriefSegment,
 } from './teachingBrief.js';
@@ -585,6 +586,8 @@ export type TeachingSemanticRelation = z.infer<typeof TeachingSemanticRelationSc
 export const TeachingWorkedProcessSchema = z
   .object({
     startingState: z.string().min(1).max(900),
+    /** Optional only for historical non-interactive worked processes. */
+    inputs: z.array(z.string().min(1).max(500)).min(1).max(6).optional(),
     ruleOrProcedure: z.string().min(1).max(1200),
     steps: z
       .array(
@@ -603,10 +606,40 @@ export const TeachingWorkedProcessSchema = z
     whyResultFollows: z.string().min(1).max(900),
     /** Empty means the worked case is explicitly Hy3 supplementary teaching. */
     sourceRefs: z.array(SourceAliasSchema).max(8),
+    /** Absent on historical worked processes. */
+    interaction: TeachingWorkedProcessInteractionSchema.optional(),
   })
   .strict()
   .superRefine((process, ctx) => {
     addDuplicateIssue(process.sourceRefs, ['sourceRefs'], 'worked-process source aliases', ctx);
+    if (!process.interaction) return;
+    addDuplicateIssue(
+      process.interaction.sourceRefs,
+      ['interaction', 'sourceRefs'],
+      'worked-interaction source aliases',
+      ctx,
+    );
+    if (!process.inputs?.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['inputs'],
+        message: 'interactive worked processes require explicit relevant inputs',
+      });
+    }
+    if (process.learnerDecision === null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['learnerDecision'],
+        message: 'interactive worked processes require a concrete learner decision',
+      });
+    }
+    if (process.interaction.pauseAfterStepIndex >= process.steps.length - 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['interaction', 'pauseAfterStepIndex'],
+        message: 'worked interaction must pause after a modelled step and before a continuation',
+      });
+    }
   });
 export type TeachingWorkedProcess = z.infer<typeof TeachingWorkedProcessSchema>;
 
@@ -703,6 +736,14 @@ export const TeachingLessonSlotContentSchema = z
   .superRefine((content, ctx) => {
     addDuplicateIssue(content.sourceRefs, ['sourceRefs'], 'slot source aliases', ctx);
     addDuplicateIssue(content.visualRefs, ['visualRefs'], 'slot visual aliases', ctx);
+    if (content.workedProcess?.interaction && content.informalCheck) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['informalCheck'],
+        message:
+          'an interactive worked process owns its learner action and cannot add a second check',
+      });
+    }
   });
 export type TeachingLessonSlotContent = z.infer<typeof TeachingLessonSlotContentSchema>;
 
@@ -771,6 +812,7 @@ export const AcceptedLessonCheckpointSchema = z
         ...slotContent.sourceRefs,
         ...slotContent.semanticRelations.flatMap((relation) => relation.sourceRefs),
         ...(slotContent.workedProcess?.sourceRefs ?? []),
+        ...(slotContent.workedProcess?.interaction?.sourceRefs ?? []),
         ...(slotContent.example?.sourceRefs ?? []),
         ...(slotContent.contrast?.sourceRefs ?? []),
         ...(slotContent.misconception?.sourceRefs ?? []),
@@ -863,12 +905,16 @@ export function projectAcceptedLessonSegments(
       workedProcess: content.workedProcess
         ? {
             startingState: content.workedProcess.startingState,
+            ...(content.workedProcess.inputs ? { inputs: content.workedProcess.inputs } : {}),
             ruleOrProcedure: content.workedProcess.ruleOrProcedure,
             steps: content.workedProcess.steps,
             learnerDecision: content.workedProcess.learnerDecision,
             result: content.workedProcess.result,
             whyResultFollows: content.workedProcess.whyResultFollows,
             sourceRefIds: content.workedProcess.sourceRefs,
+            ...(content.workedProcess.interaction
+              ? { interaction: content.workedProcess.interaction }
+              : {}),
           }
         : null,
       ...(content.example ? { example: illustration(content.example)! } : {}),

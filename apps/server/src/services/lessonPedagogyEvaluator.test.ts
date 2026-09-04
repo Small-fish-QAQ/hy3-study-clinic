@@ -652,6 +652,10 @@ function compositionalInputs(
           ? {
               startingState:
                 'A query has three candidate passages, but only one satisfies the retrieval condition.',
+              inputs: [
+                'Three candidate passages.',
+                'The retrieval condition used to decide eligibility.',
+              ],
               ruleOrProcedure:
                 'The bounded retrieval procedure checks every candidate against the condition and excludes each failing candidate.',
               steps: [
@@ -673,9 +677,99 @@ function compositionalInputs(
               whyResultFollows:
                 'The final passage follows from excluding every candidate that fails the retrieval condition.',
               sourceRefs: ['S1', 'S2'],
+              interaction: {
+                pauseAfterStepIndex: 0,
+                sourceRefs: [],
+                activity: {
+                  prompt:
+                    'After checking candidates against the condition, which action should the retrieval process take next?',
+                  options: [
+                    {
+                      id: 'A',
+                      text: 'Exclude candidates that fail the condition.',
+                      feedbackIfSelected:
+                        'This uses the checked condition to update candidate eligibility.',
+                      misconception: null,
+                    },
+                    {
+                      id: 'B',
+                      text: 'Keep every candidate with familiar wording.',
+                      feedbackIfSelected:
+                        'Familiar wording does not establish eligibility under the condition.',
+                      misconception: {
+                        hypothesis: 'Surface similarity is enough for eligibility.',
+                        whyTempting:
+                          'Similar wording often looks relevant before the condition is applied.',
+                        correction:
+                          'Use the retrieval condition, not familiarity, to decide eligibility.',
+                      },
+                    },
+                    {
+                      id: 'C',
+                      text: 'Return a passage before excluding any failure.',
+                      feedbackIfSelected:
+                        'Returning early skips the procedure that creates the bounded result.',
+                      misconception: {
+                        hypothesis: 'The first plausible candidate can be returned immediately.',
+                        whyTempting:
+                          'An early candidate may look sufficient before all constraints are checked.',
+                        correction:
+                          'Finish excluding failures before returning the remaining candidate.',
+                      },
+                    },
+                  ],
+                  correctOptionId: 'A',
+                  correctDebrief:
+                    'The condition has already classified eligibility, so exclusion is the next justified state change.',
+                },
+                hint: 'Use the condition to decide which candidates are allowed to remain.',
+                scaffold: {
+                  prompt: 'What determines whether a candidate remains eligible?',
+                  options: [
+                    {
+                      id: 'A',
+                      text: 'Whether it satisfies the retrieval condition.',
+                      feedbackIfSelected: 'Yes. The condition defines eligibility.',
+                    },
+                    {
+                      id: 'B',
+                      text: 'Whether its words look familiar.',
+                      feedbackIfSelected: 'Familiarity does not establish the bounded condition.',
+                    },
+                  ],
+                  correctOptionId: 'A',
+                  debrief:
+                    'Candidate eligibility is determined by the current retrieval condition.',
+                },
+                transfer: {
+                  changedCondition:
+                    'The retrieval condition changes and a formerly eligible passage now fails it.',
+                  prompt: 'How should the retrieval result change?',
+                  options: [
+                    {
+                      id: 'A',
+                      text: 'Keep the former result because it was once eligible.',
+                      feedbackIfSelected: 'Past eligibility cannot override the current condition.',
+                    },
+                    {
+                      id: 'B',
+                      text: 'Exclude the newly failing passage and return the remaining eligible one.',
+                      feedbackIfSelected: 'Correct: eligibility follows the changed condition.',
+                    },
+                    {
+                      id: 'C',
+                      text: 'Return every passage without checking again.',
+                      feedbackIfSelected: 'This removes the boundary created by the condition.',
+                    },
+                  ],
+                  correctOptionId: 'B',
+                  debrief:
+                    'A changed condition changes eligibility and therefore the bounded result.',
+                },
+              },
             }
           : null,
-      ...(slot.learnerActionRequired
+      ...(slot.learnerActionRequired && slot.qualityContract !== 'worked_process'
         ? {
             informalCheck: {
               kind: construct === 'apply' ? 'apply_simple_example' : 'choose_alternative',
@@ -815,7 +909,37 @@ describe('compositional Lesson and Practice evaluators', () => {
     const evaluation = evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, {
       evaluatedAt,
     });
-    expect(evaluation.status).toBe('pass');
+    expect(evaluation.status, JSON.stringify(evaluation.findings)).toBe('pass');
+    expect(evaluation.findings.every((finding) => finding.severity === 'warning')).toBe(true);
+  });
+
+  it('requires one conceptual worked interaction in a focused working-fluency Lesson', () => {
+    const fixture = compositionalInputs('explain');
+    fixture.lessonInput.courseDesign = {
+      desiredDepth: 'working_fluency',
+      unitFocus: 'focused',
+    };
+    const learnerSlot = fixture.lessonInput.skeleton.lessonSlots.find(
+      (slot) => slot.learnerActionRequired,
+    )!;
+    const learnerContent = fixture.lesson.slots.find(
+      (content) => content.slotId === learnerSlot.slotId,
+    )!;
+    expect(
+      evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, {
+        evaluatedAt,
+      }).findings.map((finding) => finding.code),
+    ).toContain('missing_focused_worked_interaction');
+
+    learnerContent.workedProcess = structuredClone(
+      compositionalInputs('apply').lesson.slots.find((content) => content.workedProcess)!
+        .workedProcess,
+    );
+    delete learnerContent.informalCheck;
+    const evaluation = evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, {
+      evaluatedAt,
+    });
+    expect(evaluation.status, JSON.stringify(evaluation.findings)).toBe('pass');
     expect(evaluation.findings.every((finding) => finding.severity === 'warning')).toBe(true);
   });
 
@@ -870,7 +994,7 @@ describe('compositional Lesson and Practice evaluators', () => {
     const evaluation = evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, {
       evaluatedAt,
     });
-    expect(evaluation.status).toBe('pass');
+    expect(evaluation.status, JSON.stringify(evaluation.findings)).toBe('pass');
     expect(evaluation.findings.every((finding) => finding.severity === 'warning')).toBe(true);
   });
 
@@ -1083,6 +1207,25 @@ describe('compositional Lesson and Practice evaluators', () => {
         }),
       ]),
     );
+  });
+
+  it('treats worked-interaction hints, scaffolds, feedback, and transfer as Practice exposure', () => {
+    const fixture = compositionalInputs('apply');
+    const interaction = fixture.lesson.slots.find((slot) => slot.workedProcess?.interaction)!
+      .workedProcess!.interaction!;
+    fixture.practice.items[0]!.initial.prompt = interaction.transfer.prompt;
+    expect(
+      evaluatePlannedPracticeQuality(fixture.practice, fixture.practiceInput, {
+        evaluatedAt,
+      }).findings.map((finding) => finding.code),
+    ).toContain('practice_repeats_accepted_lesson');
+
+    fixture.practice.items[0]!.initial.prompt = interaction.scaffold.prompt;
+    expect(
+      evaluatePlannedPracticeQuality(fixture.practice, fixture.practiceInput, {
+        evaluatedAt,
+      }).findings.map((finding) => finding.code),
+    ).toContain('practice_repeats_accepted_lesson');
   });
 
   it('rejects source-location trivia in compositional Practice', () => {

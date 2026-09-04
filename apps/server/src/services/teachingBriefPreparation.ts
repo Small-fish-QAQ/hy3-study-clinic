@@ -72,9 +72,12 @@ import {
   objectiveAuthoritySemanticallySupportedClaimIds,
 } from './objectiveAuthoritySemanticSupport.js';
 
-export const TEACHING_BRIEF_PROMPT_VERSION = 'teaching-brief-v3-compositional-r1-pedagogy';
-export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v4-teacher-arc-deep-pedagogy';
-export const PRACTICE_CONTENT_PROMPT_VERSION = 'teaching-practice-content-v3-zh-cn-novelty';
+export const TEACHING_BRIEF_PROMPT_VERSION =
+  'teaching-brief-v3-compositional-source-guided-interaction';
+export const LESSON_CONTENT_PROMPT_VERSION =
+  'teaching-lesson-content-v5-source-guided-worked-interaction';
+export const PRACTICE_CONTENT_PROMPT_VERSION =
+  'teaching-practice-content-v4-worked-interaction-novelty';
 /** Two logical calls, each original + one repair at the configured 5-minute ceiling. */
 export const COMPOSITIONAL_PREPARATION_LEASE_MS = 22 * 60 * 1000;
 

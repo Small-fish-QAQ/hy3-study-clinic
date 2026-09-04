@@ -104,9 +104,9 @@ describe('Teaching Brief preparation provenance selection', () => {
     );
   });
 
-  it('retains the R1.1 checkpoint payload but refuses to reuse it under the R1.2 contract', () => {
+  it('retains the R1.2 checkpoint payload but refuses to reuse it under the R1.3 contract', () => {
     const previous = acceptedCheckpoint({
-      promptVersion: 'teaching-lesson-content-v3-dogfood-substance-zh-cn',
+      promptVersion: 'teaching-lesson-content-v4-teacher-arc-deep-pedagogy',
     });
 
     expect(previous.lessonContent[0]?.lessonNarrative?.whyNow).toBe('Why this matters now.');

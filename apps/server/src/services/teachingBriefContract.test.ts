@@ -359,6 +359,19 @@ describe('compositional provider candidate validation', () => {
       .join('\n');
     expect(prompt).toContain('worked_process needs a complete workedProcess');
     expect(prompt).toContain('semanticRelations are optional');
+    expect(prompt).toContain('prepared Teacher <-> Learner activity');
+    expect(prompt).toContain('before the continuation, result, or final rationale is revealed');
+    expect(prompt).toContain('hypothesis, whyTempting, and the smallest useful correction');
+    expect(prompt).toContain('hint gives one small piece of information');
+    expect(prompt).toContain('scaffold asks one smaller multiple-choice reasoning action');
+    expect(prompt).toContain('Do not create an unlimited tutoring tree');
+    expect(prompt).toContain('component-level sourceRefs independently');
+    expect(prompt).toContain('keep interaction.sourceRefs empty');
+    expect(prompt).toContain(
+      'first learnerActionRequired slot into the one substantial worked interaction',
+    );
+    expect(prompt).toContain('worked comparison, classification, boundary case, counterexample');
+    expect(prompt).toContain('does not change the objective construct');
     expect(prompt).not.toContain('worked_process needs both a semantic relation');
   });
 

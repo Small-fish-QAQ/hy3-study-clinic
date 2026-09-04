@@ -48,6 +48,8 @@ The focused suites below are useful when reviewing one boundary:
 ```bash
 npm run test -w @hy3-clinic/shared -- src/domain/objectiveAuthoritySemanticSupport.test.ts src/domain/courseMap.test.ts src/domain/providerConfig.test.ts
 npm run test -w @hy3-clinic/server -- src/services/curriculum.test.ts src/services/coursePreparation.test.ts src/services/teachingBriefPreparation.test.ts
+npm run test -w @hy3-clinic/shared -- src/domain/teachingSkeleton.test.ts src/domain/lessonExecution.test.ts src/domain/taughtExposure.test.ts
+npm run test -w @hy3-clinic/web -- src/components/LessonExecutionPanel.test.tsx
 npm run test -w @hy3-clinic/server -- src/services/formalProgression.test.ts src/services/visualPreparation.test.ts src/services/agentProviderRuntime.test.ts
 npm run test -w @hy3-clinic/server -- src/routes/workspaces.test.ts src/routes/flows.test.ts src/app.test.ts
 npm run test -w @hy3-clinic/web -- src/views/AgentCourseWorkspace.live01.test.tsx src/views/AgentCourseViews.test.tsx

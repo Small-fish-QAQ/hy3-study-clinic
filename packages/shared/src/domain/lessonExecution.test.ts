@@ -70,6 +70,75 @@ describe('lesson execution contracts', () => {
     ).toThrow();
   });
 
+  it('persists bounded worked-interaction progress and accepts only explicit response phases', () => {
+    const base = LessonExecutionStateSchema.parse({
+      id: 'lesson_worked_1',
+      sessionId: 'session_1',
+      agendaItemId: 'agenda_item_1',
+      curriculumVersionId: 'curriculum_1',
+      studyPlanVersionId: 'plan_1',
+      learningUnitId: 'unit_1',
+      teachingBriefId: 'brief_1',
+      acceptedLessonCheckpointId: 'checkpoint_1',
+      executionSourceManifestFingerprint: 'manifest',
+      sourceContextFingerprint: 'source',
+      preparationStatus: 'ready',
+      preparationOperationId: null,
+      version: 4,
+      currentSegmentIndex: 1,
+      presentedSegmentIndexes: [0, 1],
+      informalInteractions: [
+        {
+          segmentIndex: 1,
+          presentedAt: '2026-01-01T00:00:00.000Z',
+          response: null,
+          respondedAt: null,
+          workedInteraction: {
+            guidedResponse: 'B',
+            guidedRespondedAt: '2026-01-01T00:01:00.000Z',
+            scaffoldResponse: 'A',
+            scaffoldRespondedAt: '2026-01-01T00:02:00.000Z',
+            transferResponse: null,
+            transferRespondedAt: null,
+          },
+        },
+      ],
+      presentationCompletedAt: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:02:00.000Z',
+    });
+    expect(base.informalInteractions[0]?.workedInteraction).toMatchObject({
+      guidedResponse: 'B',
+      scaffoldResponse: 'A',
+      transferResponse: null,
+    });
+
+    const command = LessonExecutionCommandRequestSchema.parse({
+      command: {
+        commandId: 'cmd_worked_1',
+        idempotencyKey: 'key_worked_1',
+        workspaceId: 'ws_1',
+        actor: 'learner',
+      },
+      expectedSessionVersion: 1,
+      expectedAgendaVersion: 1,
+      expectedAgendaItemId: 'agenda_item_1',
+      expectedLessonStateVersion: 4,
+      action: {
+        kind: 'respond_to_worked_interaction',
+        segmentIndex: 1,
+        phase: 'transfer',
+        response: 'B',
+      },
+    });
+    expect(command.action).toMatchObject({ phase: 'transfer', response: 'B' });
+
+    const impossible = structuredClone(base);
+    impossible.informalInteractions[0]!.workedInteraction!.guidedResponse = null;
+    impossible.informalInteractions[0]!.workedInteraction!.guidedRespondedAt = null;
+    expect(LessonExecutionStateSchema.safeParse(impossible).success).toBe(false);
+  });
+
   it('keeps tutor context bounded and credit-free', () => {
     const context = LessonTutorContextSchema.parse({
       objective: { title: 'Working memory', whyNow: 'It is next.' },
@@ -204,6 +273,40 @@ describe('lesson execution contracts', () => {
     expect(sections[0]!.segments[0]).toBe(segments[0]);
     expect(sections[0]!.segments[0]!.sources).toBe(segments[0]!.sources);
     expect(sections[0]!.segments[1]!.sources).toBe(segments[1]!.sources);
+  });
+
+  it('uses a worked interaction as a meaningful pacing boundary', () => {
+    const sections = groupLessonSegmentsForLearner([
+      {
+        index: 0,
+        purpose: 'orientation',
+        explanation: '先建立问题。',
+        informalCheck: null,
+      },
+      {
+        index: 1,
+        purpose: 'worked_example',
+        explanation: '教师先演示一个关键步骤。',
+        informalCheck: null,
+        workedProcess: {
+          startingState: '起点。',
+          ruleOrProcedure: '规则。',
+          steps: [{ action: '演示。', reason: '原因。', resultingState: '中间状态。' }],
+          learnerDecision: '判断下一步。',
+          result: null,
+          whyResultFollows: null,
+          interaction: {},
+        },
+      },
+      {
+        index: 2,
+        purpose: 'comparison',
+        explanation: '完成互动后再继续抽象。',
+        informalCheck: null,
+      },
+    ]);
+    expect(sections.map((section) => section.boundary)).toEqual(['inline_check', 'lesson_end']);
+    expect(sections[0]?.endSegmentIndex).toBe(1);
   });
 
   it('uses a non-check boundary only after long teaching before a meaningful transition', () => {

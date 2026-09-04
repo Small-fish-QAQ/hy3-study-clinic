@@ -487,6 +487,7 @@ export interface AssessmentProposalInput {
       | 'explanation'
       | 'semantic_relation'
       | 'worked_process'
+      | 'worked_interaction'
       | 'example'
       | 'contrast'
       | 'misconception';

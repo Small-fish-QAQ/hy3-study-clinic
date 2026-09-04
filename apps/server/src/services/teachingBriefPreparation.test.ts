@@ -307,11 +307,18 @@ function deferred<T>() {
   return { promise, reject, resolve };
 }
 
-function contractFields(roleId: string, roleVersion: number): LearningContractDraftFields {
+function contractFields(
+  roleId: string,
+  roleVersion: number,
+  targetConstruct: 'explain' | 'apply' = 'explain',
+): LearningContractDraftFields {
   return {
     intent: 'Learn working-memory capacity.',
     targetOutcome: {
-      description: 'Explain the source accurately.',
+      description:
+        targetConstruct === 'apply'
+          ? 'Apply the source-stated procedure accurately.'
+          : 'Explain the source accurately.',
       targetScore: null,
       credential: null,
     },
@@ -361,14 +368,21 @@ interface Harness {
 async function createHarness(
   providerDelayMs = 0,
   semanticVerdict: 'pass' | 'fail' = 'pass',
+  targetConstruct: 'explain' | 'apply' = 'explain',
 ): Promise<Harness> {
   const db = openDatabase(':memory:');
   databases.push(db);
   migrate(db);
   const repos = createRepositories(db);
-  const provider = new CountingProvider({ delayMs: providerDelayMs });
+  const provider = new CountingProvider({
+    delayMs: providerDelayMs,
+    ...(targetConstruct === 'apply' ? { curriculumObjectiveConstructFixture: 'apply' } : {}),
+  });
   repos.workspaces.insert(makeWorkspace());
-  const content = '[SUPPORTS:explain] Working memory has limited capacity.';
+  const content =
+    targetConstruct === 'apply'
+      ? '[SUPPORTS:apply] Check the current condition, apply the matching action, and inspect the resulting state before continuing.'
+      : '[SUPPORTS:explain] Working memory has limited capacity.';
   const visualBytes = Buffer.from('bounded exact visual fixture');
   const visualHash = `sha256:${createHash('sha256').update(visualBytes).digest('hex')}` as const;
   repos.materials.insertWithBlocks(
@@ -475,7 +489,7 @@ async function createHarness(
   });
   const draft = services.learningContracts.createDraft({
     command: command('contract-create'),
-    fields: contractFields(role.id, role.version),
+    fields: contractFields(role.id, role.version, targetConstruct),
     predecessorContractId: null,
     expectedActiveContractId: null,
   }).contract;
@@ -524,7 +538,11 @@ async function createHarness(
           authoritySourceBlockIds: objective.authoritySourceBlockIds ?? [],
           authorityClaimIds: objective.authorityClaimIds ?? [],
         },
-        objective.formalAssessmentConstruct === 'identify' ? 'recognition' : 'relationship',
+        objective.formalAssessmentConstruct === 'identify'
+          ? 'recognition'
+          : objective.formalAssessmentConstruct === 'apply'
+            ? 'procedure'
+            : 'relationship',
       ).semanticSupport!;
       if (semanticVerdict === 'fail' && support.schemaVersion === 1) {
         support.fragments = support.fragments.map((fragment) => ({
@@ -1304,7 +1322,7 @@ describe('Teaching Brief preparation', () => {
       .run(JSON.stringify(payload), harness.curriculumId);
 
     const route = startTeachingRoute(harness);
-    await harness.services.teachingBriefPreparation.prepare(
+    const prepared = await harness.services.teachingBriefPreparation.prepare(
       preparationRequest(harness, route, 'brief-course-design-context'),
     );
 
@@ -1318,6 +1336,23 @@ describe('Teaching Brief preparation', () => {
     });
     expect(harness.provider.lastLessonContentInput?.learnerLocale).toBe('zh-CN');
     expect(harness.provider.lastPracticeContentInput?.learnerLocale).toBe('zh-CN');
+    const focusedInteraction = prepared.brief.segments.find(
+      (segment) => segment.workedProcess?.interaction,
+    );
+    expect(focusedInteraction).toMatchObject({
+      purpose: 'guided_practice',
+      workedProcess: {
+        inputs: expect.arrayContaining([expect.any(String)]),
+        interaction: {
+          activity: { options: expect.any(Array), correctDebrief: expect.any(String) },
+          hint: expect.any(String),
+          scaffold: { prompt: expect.any(String) },
+          transfer: { changedCondition: expect.stringContaining('边界因素') },
+          sourceRefs: [],
+        },
+      },
+    });
+    expect(focusedInteraction?.informalCheck).toBeUndefined();
     const curriculum = harness.repos.curricula.get(harness.curriculumId)!;
     const currentUnit = curriculum.nodes.find((node) => node.id === harness.learningUnitId)!;
     expect(harness.provider.lastLessonContentInput?.skeleton).toMatchObject({
@@ -3606,6 +3641,264 @@ describe('Teaching Brief preparation', () => {
     expect(harness.repos.mastery.listByWorkspace('ws_1')).toHaveLength(0);
     expect(harness.provider.lessonContentCalls).toBe(1);
     expect(harness.provider.practiceContentCalls).toBe(1);
+  });
+
+  it('runs a prepared worked interaction locally with targeted repair, resume, and fading support', async () => {
+    const harness = await createHarness(0, 'pass', 'apply');
+    const unit = harness.repos.curricula
+      .get(harness.curriculumId)!
+      .nodes.find((node) => node.id === harness.learningUnitId)!;
+    expect(unit.learningUnit?.objectives[0]?.formalAssessmentConstruct).toBe('apply');
+    const { agenda, session, agendaItem } = startTeachingRoute(harness);
+    const prepared = await harness.services.lessonExecution.ensure('ws_1', session.id, {
+      command: command('worked-interaction-prepare'),
+      expectedSessionVersion: session.version,
+      expectedAgendaVersion: agenda.version,
+      expectedAgendaItemId: agendaItem.id,
+    });
+    const authored = prepared.lesson!.segments.find(
+      (segment) => segment.workedProcess?.interaction,
+    )!;
+    expect(authored.workedProcess).toMatchObject({
+      inputs: expect.arrayContaining([expect.any(String)]),
+      result: null,
+      whyResultFollows: null,
+      interaction: {
+        stage: 'guided',
+        origin: 'hy3_synthesis',
+        sources: [],
+        hint: null,
+        scaffold: null,
+        transfer: null,
+      },
+    });
+    expect(authored.workedProcess!.sources?.length).toBeGreaterThan(0);
+
+    const authorityBefore = harness.db
+      .prepare(
+        `SELECT
+           (SELECT COUNT(*) FROM formal_evidence_records) AS formalEvidence,
+           (SELECT COUNT(*) FROM mastery_states) AS mastery,
+           (SELECT COUNT(*) FROM mistakes) AS mistakes,
+           (SELECT COUNT(*) FROM memory_schedule_states) AS schedules`,
+      )
+      .get();
+    const providerCalls = {
+      lesson: harness.provider.lessonContentCalls,
+      practice: harness.provider.practiceContentCalls,
+    };
+    let current = await harness.services.lessonExecution.command('ws_1', session.id, {
+      command: command('worked-interaction-start'),
+      expectedSessionVersion: prepared.session.version,
+      expectedAgendaVersion: prepared.agenda!.version,
+      expectedAgendaItemId: agendaItem.id,
+      expectedLessonStateVersion: prepared.progress!.stateVersion,
+      action: { kind: 'start_lesson' },
+    });
+    expect(current.progress?.currentSegmentIndex).toBe(authored.index);
+    expect(current.allowedActions).toContain('respond_to_worked_interaction');
+    const guided = current.lesson!.segments[authored.index]!.workedProcess!.interaction!;
+    expect(current.lesson!.segments[authored.index]!.workedProcess!.steps).toHaveLength(
+      guided.modelledStepCount,
+    );
+    expect(current.lesson!.segments[authored.index]!.workedProcess!.result).toBeNull();
+
+    current = await harness.services.lessonExecution.command('ws_1', session.id, {
+      command: command('worked-interaction-wrong'),
+      expectedSessionVersion: current.session.version,
+      expectedAgendaVersion: current.agenda!.version,
+      expectedAgendaItemId: agendaItem.id,
+      expectedLessonStateVersion: current.progress!.stateVersion,
+      action: {
+        kind: 'respond_to_worked_interaction',
+        segmentIndex: authored.index,
+        phase: 'guided',
+        response: 'B',
+      },
+    });
+    let projected = current.lesson!.segments[authored.index]!.workedProcess!;
+    expect(projected.interaction).toMatchObject({
+      stage: 'scaffold',
+      activity: {
+        response: 'B',
+        correct: false,
+        feedback: expect.any(String),
+        misconception: {
+          hypothesis: expect.any(String),
+          whyTempting: expect.any(String),
+          correction: expect.any(String),
+        },
+      },
+      hint: expect.any(String),
+      scaffold: { response: null, credit: 'none' },
+      transfer: null,
+    });
+    expect(projected.result).toBeNull();
+    expect(current.allowedActions).not.toContain('move_to_next_segment');
+    const blockedVersion = current.progress!.stateVersion;
+    await expect(
+      harness.services.lessonExecution.command('ws_1', session.id, {
+        command: command('worked-interaction-skip-blocked'),
+        expectedSessionVersion: current.session.version,
+        expectedAgendaVersion: current.agenda!.version,
+        expectedAgendaItemId: agendaItem.id,
+        expectedLessonStateVersion: blockedVersion,
+        action: { kind: 'move_to_segment', segmentIndex: authored.index + 1 },
+      }),
+    ).rejects.toMatchObject({ code: ApiErrorCode.ValidationError });
+    await expect(
+      harness.services.lessonExecution.command('ws_1', session.id, {
+        command: command('worked-interaction-phase-blocked'),
+        expectedSessionVersion: current.session.version,
+        expectedAgendaVersion: current.agenda!.version,
+        expectedAgendaItemId: agendaItem.id,
+        expectedLessonStateVersion: blockedVersion,
+        action: {
+          kind: 'respond_to_worked_interaction',
+          segmentIndex: authored.index,
+          phase: 'transfer',
+          response: 'B',
+        },
+      }),
+    ).rejects.toMatchObject({ code: ApiErrorCode.ValidationError });
+    expect(harness.repos.lessonExecution.getForSession(session.id, agendaItem.id)?.version).toBe(
+      blockedVersion,
+    );
+
+    const reloaded = harness.services.lessonExecution.get('ws_1', session.id);
+    expect(
+      reloaded.lesson!.segments[authored.index]!.workedProcess!.interaction!.activity.response,
+    ).toBe('B');
+    expect(
+      harness.repos.lessonExecution.getForSession(session.id, agendaItem.id)
+        ?.informalInteractions[0]?.workedInteraction,
+    ).toMatchObject({ guidedResponse: 'B', scaffoldResponse: null });
+
+    current = await harness.services.lessonExecution.command('ws_1', session.id, {
+      command: command('worked-interaction-scaffold'),
+      expectedSessionVersion: reloaded.session.version,
+      expectedAgendaVersion: reloaded.agenda!.version,
+      expectedAgendaItemId: agendaItem.id,
+      expectedLessonStateVersion: reloaded.progress!.stateVersion,
+      action: {
+        kind: 'respond_to_worked_interaction',
+        segmentIndex: authored.index,
+        phase: 'scaffold',
+        response: 'A',
+      },
+    });
+    projected = current.lesson!.segments[authored.index]!.workedProcess!;
+    expect(projected.steps.length).toBeGreaterThan(guided.modelledStepCount);
+    expect(projected.result).toEqual(expect.any(String));
+    expect(projected.whyResultFollows).toBeNull();
+    expect(projected.interaction).toMatchObject({
+      stage: 'transfer',
+      activity: { debrief: expect.any(String) },
+      scaffold: { response: 'A', correct: true, debrief: expect.any(String) },
+      transfer: { response: null, credit: 'none' },
+    });
+    expect(current.allowedActions).not.toContain('move_to_next_segment');
+
+    current = await harness.services.lessonExecution.command('ws_1', session.id, {
+      command: command('worked-interaction-transfer'),
+      expectedSessionVersion: current.session.version,
+      expectedAgendaVersion: current.agenda!.version,
+      expectedAgendaItemId: agendaItem.id,
+      expectedLessonStateVersion: current.progress!.stateVersion,
+      action: {
+        kind: 'respond_to_worked_interaction',
+        segmentIndex: authored.index,
+        phase: 'transfer',
+        response: 'B',
+      },
+    });
+    projected = current.lesson!.segments[authored.index]!.workedProcess!;
+    expect(projected.interaction).toMatchObject({
+      stage: 'completed',
+      transfer: { response: 'B', correct: true, debrief: expect.any(String) },
+    });
+    expect(projected.whyResultFollows).toEqual(expect.any(String));
+    expect(current.allowedActions).not.toContain('respond_to_worked_interaction');
+    expect(current.allowedActions).toContain('move_to_next_segment');
+    expect(
+      harness.repos.lessonExecution
+        .listEvents(harness.repos.lessonExecution.getForSession(session.id, agendaItem.id)!.id)
+        .filter(
+          (event) =>
+            event.kind === 'informal_response_recorded' &&
+            event.payload.kind === 'respond_to_worked_interaction',
+        ),
+    ).toHaveLength(3);
+    expect({
+      lesson: harness.provider.lessonContentCalls,
+      practice: harness.provider.practiceContentCalls,
+    }).toEqual(providerCalls);
+    expect(
+      harness.db
+        .prepare(
+          `SELECT
+             (SELECT COUNT(*) FROM formal_evidence_records) AS formalEvidence,
+             (SELECT COUNT(*) FROM mastery_states) AS mastery,
+             (SELECT COUNT(*) FROM mistakes) AS mistakes,
+             (SELECT COUNT(*) FROM memory_schedule_states) AS schedules`,
+        )
+        .get(),
+    ).toEqual(authorityBefore);
+  });
+
+  it('gives a correct worked-interaction choice an explanatory debrief without opening repair help', async () => {
+    const harness = await createHarness(0, 'pass', 'apply');
+    const { agenda, session, agendaItem } = startTeachingRoute(harness);
+    let current = await harness.services.lessonExecution.ensure('ws_1', session.id, {
+      command: command('worked-correct-prepare'),
+      expectedSessionVersion: session.version,
+      expectedAgendaVersion: agenda.version,
+      expectedAgendaItemId: agendaItem.id,
+    });
+    current = await harness.services.lessonExecution.command('ws_1', session.id, {
+      command: command('worked-correct-start'),
+      expectedSessionVersion: current.session.version,
+      expectedAgendaVersion: current.agenda!.version,
+      expectedAgendaItemId: agendaItem.id,
+      expectedLessonStateVersion: current.progress!.stateVersion,
+      action: { kind: 'start_lesson' },
+    });
+    const segment = current.lesson!.segments[current.progress!.currentSegmentIndex]!;
+    expect(segment.workedProcess?.interaction?.stage).toBe('guided');
+    const before = {
+      lesson: harness.provider.lessonContentCalls,
+      practice: harness.provider.practiceContentCalls,
+    };
+    current = await harness.services.lessonExecution.command('ws_1', session.id, {
+      command: command('worked-correct-guided'),
+      expectedSessionVersion: current.session.version,
+      expectedAgendaVersion: current.agenda!.version,
+      expectedAgendaItemId: agendaItem.id,
+      expectedLessonStateVersion: current.progress!.stateVersion,
+      action: {
+        kind: 'respond_to_worked_interaction',
+        segmentIndex: segment.index,
+        phase: 'guided',
+        response: 'A',
+      },
+    });
+    expect(current.lesson!.segments[segment.index]!.workedProcess!.interaction).toMatchObject({
+      stage: 'transfer',
+      activity: {
+        response: 'A',
+        correct: true,
+        feedback: expect.any(String),
+        debrief: expect.any(String),
+        misconception: null,
+      },
+      hint: null,
+      scaffold: null,
+      transfer: { response: null, credit: 'none' },
+    });
+    expect({
+      lesson: harness.provider.lessonContentCalls,
+      practice: harness.provider.practiceContentCalls,
+    }).toEqual(before);
   });
 });
 

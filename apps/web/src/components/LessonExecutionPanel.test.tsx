@@ -561,6 +561,47 @@ describe('LessonExecutionPanel', () => {
   it('preserves an accepted Lesson as a read-only preview while retrying only Practice', async () => {
     const user = userEvent.setup();
     const recovery = practiceRetryLesson();
+    recovery.lesson!.segments[1]!.workedProcess = {
+      startingState: '等待重新准备练习时仍可阅读已接受案例。',
+      inputs: ['已接受的条件'],
+      ruleOrProcedure: '按条件决定动作。',
+      steps: [
+        {
+          action: '先检查条件。',
+          reason: '条件限制动作。',
+          resultingState: '允许范围已经明确。',
+        },
+      ],
+      learnerDecision: '选择下一步。',
+      result: null,
+      whyResultFollows: null,
+      origin: 'hy3_synthesis',
+      sources: [],
+      interaction: {
+        stage: 'guided',
+        modelledStepCount: 1,
+        origin: 'hy3_synthesis',
+        sources: [],
+        activity: {
+          prompt: '哪项动作符合当前条件？',
+          options: [
+            { id: 'A', text: '只读预览选项 A' },
+            { id: 'B', text: '只读预览选项 B' },
+            { id: 'C', text: '只读预览选项 C' },
+          ],
+          response: null,
+          respondedAt: null,
+          correct: null,
+          feedback: null,
+          debrief: null,
+          misconception: null,
+          credit: 'none',
+        },
+        hint: null,
+        scaffold: null,
+        transfer: null,
+      },
+    };
     const retry = deferred<LessonExecutionProjection>();
     vi.spyOn(api, 'getLessonExecution').mockResolvedValue(recovery);
     const prepare = vi.spyOn(api, 'prepareLessonExecution').mockReturnValue(retry.promise);
@@ -585,6 +626,7 @@ describe('LessonExecutionPanel', () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '开始本节讲解' })).not.toBeInTheDocument();
     expect(screen.queryByLabelText('练习回应')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '只读预览选项 A' })).toBeDisabled();
 
     await user.click(screen.getByRole('button', { name: '重新准备非正式练习' }));
     expect(await screen.findByText('正在根据已接受的讲解准备非正式练习…')).toBeInTheDocument();
@@ -736,6 +778,212 @@ describe('LessonExecutionPanel', () => {
     await act(async () => commandResult.resolve(lessonTitled('过期命令结果')));
     expect(screen.getByRole('heading', { name: '命令后的新安排' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: '过期命令结果' })).not.toBeInTheDocument();
+  });
+
+  it('renders a worked interaction as targeted feedback, bounded scaffold, and faded transfer', async () => {
+    const user = userEvent.setup();
+    const initial = readyLesson({
+      stateVersion: 4,
+      currentSegmentIndex: 1,
+      segmentCount: 2,
+      presentedSegmentIndexes: [0, 1],
+      presentationStatus: 'in_progress',
+      presentationCompletedAt: null,
+    });
+    initial.allowedActions = ['respond_to_worked_interaction', 'revisit_segment'];
+    initial.lesson!.segments[1]!.workedProcess = {
+      startingState: '三个候选等待处理。',
+      inputs: ['当前条件', '三个候选状态'],
+      ruleOrProcedure: '先检查条件，再执行被允许的动作。',
+      steps: [
+        {
+          action: '教师先检查三个候选。',
+          reason: '条件决定候选资格。',
+          resultingState: '候选已分为符合与不符合两类。',
+        },
+      ],
+      learnerDecision: '判断下一步。',
+      result: null,
+      whyResultFollows: null,
+      origin: 'source_grounded',
+      sources: [source],
+      interaction: {
+        stage: 'guided',
+        modelledStepCount: 1,
+        origin: 'hy3_synthesis',
+        sources: [],
+        activity: {
+          prompt: '检查条件以后，下一步应该怎样做？',
+          options: [
+            { id: 'A', text: '执行条件允许的动作' },
+            { id: 'B', text: '选择最熟悉的动作' },
+            { id: 'C', text: '直接跳到最终答案' },
+          ],
+          response: null,
+          respondedAt: null,
+          correct: null,
+          feedback: null,
+          debrief: null,
+          misconception: null,
+          credit: 'none',
+        },
+        hint: null,
+        scaffold: null,
+        transfer: null,
+      },
+    };
+    vi.spyOn(api, 'getLessonExecution').mockResolvedValue(initial);
+
+    const wrong = structuredClone(initial);
+    wrong.progress!.stateVersion = 5;
+    const wrongProcess = wrong.lesson!.segments[1]!.workedProcess!;
+    wrongProcess.interaction = {
+      ...wrongProcess.interaction!,
+      stage: 'scaffold',
+      activity: {
+        ...wrongProcess.interaction!.activity,
+        response: 'B',
+        respondedAt: '2026-08-19T01:01:00.000Z',
+        correct: false,
+        feedback: '熟悉并不能证明动作适用于当前条件。',
+        misconception: {
+          hypothesis: '熟悉的动作总是适用。',
+          whyTempting: '它刚刚出现在典型案例中。',
+          correction: '先检查当前条件允许哪些动作。',
+        },
+      },
+      hint: '先找出真正限制下一步的条件。',
+      scaffold: {
+        prompt: '哪项信息决定动作能否执行？',
+        options: [
+          { id: 'A', text: '当前条件' },
+          { id: 'B', text: '动作名称' },
+        ],
+        response: null,
+        respondedAt: null,
+        correct: null,
+        feedback: null,
+        debrief: null,
+        credit: 'none',
+      },
+    };
+    const transfer = structuredClone(wrong);
+    transfer.progress!.stateVersion = 6;
+    const transferProcess = transfer.lesson!.segments[1]!.workedProcess!;
+    transferProcess.steps.push({
+      action: '执行条件允许的动作。',
+      reason: '该动作有当前条件作为依据。',
+      resultingState: '留下一个符合条件的结果。',
+    });
+    transferProcess.result = '得到符合条件的结果。';
+    transferProcess.interaction = {
+      ...transferProcess.interaction!,
+      stage: 'transfer',
+      activity: {
+        ...transferProcess.interaction!.activity,
+        debrief: '条件先限定动作范围，因此这一步有依据。',
+      },
+      scaffold: {
+        ...transferProcess.interaction!.scaffold!,
+        response: 'A',
+        respondedAt: '2026-08-19T01:02:00.000Z',
+        correct: true,
+        feedback: '对，当前条件决定允许范围。',
+        debrief: '条件决定范围，名称不能替代适用性。',
+      },
+      transfer: {
+        changedCondition: '原先允许该动作的条件被移除了。',
+        prompt: '现在应该怎样处理？',
+        options: [
+          { id: 'A', text: '照旧执行' },
+          { id: 'B', text: '重新判断并调整动作' },
+          { id: 'C', text: '忽略规则' },
+        ],
+        response: null,
+        respondedAt: null,
+        correct: null,
+        feedback: null,
+        debrief: null,
+        credit: 'none',
+      },
+    };
+    const completed = structuredClone(transfer);
+    completed.progress!.stateVersion = 7;
+    completed.allowedActions = ['complete_presentation', 'revisit_segment'];
+    completed.lesson!.segments[1]!.workedProcess!.whyResultFollows =
+      '一般模型是：条件变化必须传导到动作与结果。';
+    completed.lesson!.segments[1]!.workedProcess!.interaction = {
+      ...completed.lesson!.segments[1]!.workedProcess!.interaction!,
+      stage: 'completed',
+      transfer: {
+        ...completed.lesson!.segments[1]!.workedProcess!.interaction!.transfer!,
+        response: 'B',
+        respondedAt: '2026-08-19T01:03:00.000Z',
+        correct: true,
+        feedback: '正确，条件变化后要重新限定动作。',
+        debrief: '支持减少后仍使用同一心智模型，而不是照搬旧答案。',
+      },
+    };
+    const command = vi
+      .spyOn(api, 'lessonExecutionCommand')
+      .mockResolvedValueOnce(wrong)
+      .mockResolvedValueOnce(transfer)
+      .mockResolvedValueOnce(completed);
+
+    render(
+      <LessonExecutionPanel
+        workspaceId="ws_1"
+        sessionId="session_1"
+        agendaItemId="item_1"
+        active
+      />,
+    );
+    expect(await screen.findByText('教师先检查三个候选。')).toBeInTheDocument();
+    expect(screen.queryByText('执行条件允许的动作。')).not.toBeInTheDocument();
+    expect(screen.queryByText('得到符合条件的结果。')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '选择最熟悉的动作' }));
+    expect(await screen.findByText('这个想法为什么容易出现')).toBeInTheDocument();
+    expect(screen.getByText('先找出真正限制下一步的条件。')).toBeInTheDocument();
+    expect(screen.getByText('哪项信息决定动作能否执行？')).toBeInTheDocument();
+    expect(screen.queryByText('现在应该怎样处理？')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '当前条件' }));
+    expect(await screen.findByText('执行条件允许的动作。')).toBeInTheDocument();
+    expect(screen.getByText('得到符合条件的结果。')).toBeInTheDocument();
+    expect(screen.getByText('原先允许该动作的条件被移除了。')).toBeInTheDocument();
+    expect(screen.getByText('现在应该怎样处理？')).toBeInTheDocument();
+    expect(
+      screen.queryByText('一般模型是：条件变化必须传导到动作与结果。'),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '重新判断并调整动作' }));
+    expect(
+      await screen.findByText('一般模型是：条件变化必须传导到动作与结果。'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('支持减少后仍使用同一心智模型，而不是照搬旧答案。'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('worked_interaction')).not.toBeInTheDocument();
+    expect(command.mock.calls.map((call) => call[2].action)).toEqual([
+      {
+        kind: 'respond_to_worked_interaction',
+        segmentIndex: 1,
+        phase: 'guided',
+        response: 'B',
+      },
+      {
+        kind: 'respond_to_worked_interaction',
+        segmentIndex: 1,
+        phase: 'scaffold',
+        response: 'A',
+      },
+      {
+        kind: 'respond_to_worked_interaction',
+        segmentIndex: 1,
+        phase: 'transfer',
+        response: 'B',
+      },
+    ]);
   });
 
   it('offers the existing formal handoff only after Lesson and informal Practice completion', async () => {

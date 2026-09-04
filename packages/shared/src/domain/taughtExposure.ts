@@ -1,11 +1,12 @@
 import type { TeachingBrief, TeachingBriefSegment } from './teachingBrief.js';
-import type { LessonExecutionState } from './lessonExecution.js';
+import type { LessonExecutionState, LessonInformalInteractionState } from './lessonExecution.js';
 import type { AcceptedLessonCheckpoint } from './teachingSkeleton.js';
 
 export const TAUGHT_SURFACE_KINDS = [
   'explanation',
   'semantic_relation',
   'worked_process',
+  'worked_interaction',
   'example',
   'contrast',
   'misconception',
@@ -36,17 +37,75 @@ export interface TaughtExposureProjection {
   surfaces: PresentedTeachingSurface[];
 }
 
-function processText(segment: TeachingBriefSegment): string {
+function processText(
+  segment: TeachingBriefSegment,
+  interactionState?: LessonInformalInteractionState,
+): string {
   const process = segment.workedProcess;
   if (!process) return '';
+  const interaction = process.interaction;
+  const progress = interactionState?.workedInteraction;
+  const guidedCorrect = progress?.guidedResponse
+    ? progress.guidedResponse === interaction?.activity.correctOptionId
+    : null;
+  const continuationVisible = Boolean(guidedCorrect || progress?.scaffoldResponse);
+  const visibleSteps = interaction
+    ? continuationVisible
+      ? process.steps
+      : process.steps.slice(0, interaction.pauseAfterStepIndex + 1)
+    : process.steps;
   return [
     process.startingState,
+    ...(process.inputs ?? []),
     process.ruleOrProcedure,
-    ...process.steps.flatMap((step) => [step.action, step.reason, step.resultingState]),
+    ...visibleSteps.flatMap((step) => [step.action, step.reason, step.resultingState]),
     process.learnerDecision ?? '',
-    process.result,
-    process.whyResultFollows,
+    continuationVisible || !interaction ? process.result : '',
+    progress?.transferResponse || !interaction ? process.whyResultFollows : '',
   ].join('\n');
+}
+
+function workedInteractionText(
+  segment: TeachingBriefSegment,
+  interactionState?: LessonInformalInteractionState,
+): string {
+  const interaction = segment.workedProcess?.interaction;
+  if (!interaction) return '';
+  const progress = interactionState?.workedInteraction;
+  const guidedOption = interaction.activity.options.find(
+    (option) => option.id === progress?.guidedResponse,
+  );
+  const guidedCorrect = progress?.guidedResponse
+    ? progress.guidedResponse === interaction.activity.correctOptionId
+    : null;
+  const continuationVisible = Boolean(guidedCorrect || progress?.scaffoldResponse);
+  const scaffoldOption = interaction.scaffold.options.find(
+    (option) => option.id === progress?.scaffoldResponse,
+  );
+  const transferOption = interaction.transfer.options.find(
+    (option) => option.id === progress?.transferResponse,
+  );
+  return [
+    interaction.activity.prompt,
+    ...interaction.activity.options.map((option) => option.text),
+    guidedOption?.feedbackIfSelected,
+    guidedCorrect === false ? guidedOption?.misconception?.hypothesis : undefined,
+    guidedCorrect === false ? guidedOption?.misconception?.whyTempting : undefined,
+    guidedCorrect === false ? guidedOption?.misconception?.correction : undefined,
+    guidedCorrect === false ? interaction.hint : undefined,
+    guidedCorrect === false ? interaction.scaffold.prompt : undefined,
+    ...(guidedCorrect === false ? interaction.scaffold.options.map((option) => option.text) : []),
+    scaffoldOption?.feedbackIfSelected,
+    progress?.scaffoldResponse ? interaction.scaffold.debrief : undefined,
+    continuationVisible ? interaction.activity.correctDebrief : undefined,
+    continuationVisible ? interaction.transfer.changedCondition : undefined,
+    continuationVisible ? interaction.transfer.prompt : undefined,
+    ...(continuationVisible ? interaction.transfer.options.map((option) => option.text) : []),
+    transferOption?.feedbackIfSelected,
+    progress?.transferResponse ? interaction.transfer.debrief : undefined,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .join('\n');
 }
 
 /** Exact learner-visible text for one approved teaching surface. */
@@ -54,6 +113,7 @@ export function teachingSurfaceText(
   segment: TeachingBriefSegment,
   kind: TaughtSurfaceKind,
   ordinal = 0,
+  interactionState?: LessonInformalInteractionState,
 ): string | null {
   switch (kind) {
     case 'explanation':
@@ -65,7 +125,11 @@ export function teachingSurfaceText(
         : null;
     }
     case 'worked_process':
-      return segment.workedProcess ? processText(segment) : null;
+      return segment.workedProcess ? processText(segment, interactionState) : null;
+    case 'worked_interaction':
+      return segment.workedProcess?.interaction
+        ? workedInteractionText(segment, interactionState)
+        : null;
     case 'example':
       return segment.example?.text ?? null;
     case 'contrast':
@@ -80,11 +144,24 @@ export function teachingSurfaceText(
 function surfaceAuthority(
   segment: TeachingBriefSegment,
   kind: TaughtSurfaceKind,
+  ordinal: number,
 ): PresentedTeachingSurface['authority'] {
   if (kind === 'example' && segment.example) return segment.example.authority;
   if (kind === 'contrast' && segment.contrast) return segment.contrast.authority;
   if (kind === 'misconception')
     return segment.misconception?.authority ?? 'pedagogical_risk_candidate';
+  if (kind === 'semantic_relation')
+    return segment.semanticRelations?.[ordinal]?.sourceRefIds.length
+      ? 'source_backed_teaching'
+      : 'ai_teaching_synthesis';
+  if (kind === 'worked_process')
+    return segment.workedProcess?.sourceRefIds.length
+      ? 'source_backed_teaching'
+      : 'ai_teaching_synthesis';
+  if (kind === 'worked_interaction')
+    return segment.workedProcess?.interaction?.sourceRefs.length
+      ? 'source_backed_teaching'
+      : 'ai_teaching_synthesis';
   return segment.explanationAuthority;
 }
 
@@ -98,6 +175,7 @@ function surfaceSources(
   if (kind === 'misconception') return segment.misconception?.sourceRefIds ?? [];
   if (kind === 'semantic_relation') return segment.semanticRelations?.[ordinal]?.sourceRefIds ?? [];
   if (kind === 'worked_process') return segment.workedProcess?.sourceRefIds ?? [];
+  if (kind === 'worked_interaction') return segment.workedProcess?.interaction?.sourceRefs ?? [];
   return segment.sourceRefIds;
 }
 
@@ -130,6 +208,7 @@ export function projectTaughtExposure(input: {
     | 'executionSourceManifestFingerprint'
     | 'sourceContextFingerprint'
     | 'presentedSegmentIndexes'
+    | 'informalInteractions'
   >;
   checkpoint: Pick<
     AcceptedLessonCheckpoint,
@@ -180,16 +259,20 @@ export function projectTaughtExposure(input: {
   const segments = brief.segments.filter((segment) => presented.has(segment.index));
   const surfaces: PresentedTeachingSurface[] = [];
   for (const segment of segments) {
+    const interactionState = state.informalInteractions.find(
+      (interaction) => interaction.segmentIndex === segment.index,
+    );
     const kinds: TaughtSurfaceKind[] = ['explanation'];
     if (segment.semanticRelations?.length) kinds.push('semantic_relation');
     if (segment.workedProcess) kinds.push('worked_process');
+    if (segment.workedProcess?.interaction) kinds.push('worked_interaction');
     if (segment.example) kinds.push('example');
     if (segment.contrast) kinds.push('contrast');
     if (segment.misconception) kinds.push('misconception');
     for (const kind of kinds) {
       const count = kind === 'semantic_relation' ? (segment.semanticRelations?.length ?? 0) : 1;
       for (let ordinal = 0; ordinal < count; ordinal += 1) {
-        const text = teachingSurfaceText(segment, kind, ordinal);
+        const text = teachingSurfaceText(segment, kind, ordinal, interactionState);
         if (!text) continue;
         surfaces.push({
           checkpointId: checkpoint.id,
@@ -204,7 +287,7 @@ export function projectTaughtExposure(input: {
           surfaceOrdinal: ordinal,
           text,
           objectiveIds: [...segment.objectiveIds],
-          authority: surfaceAuthority(segment, kind),
+          authority: surfaceAuthority(segment, kind, ordinal),
           sourceRefIds: surfaceSources(segment, kind, ordinal),
         });
       }

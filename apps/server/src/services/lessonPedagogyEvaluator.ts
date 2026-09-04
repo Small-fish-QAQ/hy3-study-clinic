@@ -21,8 +21,9 @@ import type {
 export const LESSON_PEDAGOGY_POLICY_VERSION = 'lesson-pedagogy-v2';
 export const PRACTICE_QUALITY_POLICY_VERSION = 'lesson-practice-v1';
 export const COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION =
-  'lesson-pedagogy-v4-structural-with-advisory-relevance';
-export const COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION = 'lesson-practice-v3-exposure-novelty';
+  'lesson-pedagogy-v5-source-guided-worked-interaction';
+export const COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION =
+  'lesson-practice-v4-worked-interaction-exposure';
 
 function normalized(value: string): string {
   return value
@@ -905,6 +906,7 @@ function lessonFindingSeverity(code: string): LessonPedagogyFinding['severity'] 
     'worked_process_result_not_justified',
     'worked_process_source_incompatible',
     'worked_process_application_relevance_uncertain',
+    'worked_interaction_relevance_uncertain',
     'semantically_redundant_lesson_slots',
   ]).has(code)
     ? 'warning'
@@ -943,11 +945,30 @@ function objectiveTargetForSlot(
     .join(' ');
 }
 
+/**
+ * A focused, working-fluency-or-deeper Lesson without a construct-required
+ * process uses its first locally planned learner-action slot for one bounded
+ * conceptual worked interaction. This adds no slot, minutes, construct, or
+ * authority; it changes only how the already-required learner action is taught.
+ */
+function focusedWorkedInteractionSlotId(input: LessonSlotContentGenerationInput): string | null {
+  if (
+    !input.courseDesign ||
+    input.courseDesign.unitFocus !== 'focused' ||
+    input.courseDesign.desiredDepth === 'pass_oriented' ||
+    input.skeleton.lessonSlots.some((slot) => slot.qualityContract === 'worked_process')
+  ) {
+    return null;
+  }
+  return input.skeleton.lessonSlots.find((slot) => slot.learnerActionRequired)?.slotId ?? null;
+}
+
 function allLessonSourceRefs(content: TeachingLessonSlotContent): string[] {
   return [
     ...content.sourceRefs,
     ...content.semanticRelations.flatMap((relation) => relation.sourceRefs),
     ...(content.workedProcess?.sourceRefs ?? []),
+    ...(content.workedProcess?.interaction?.sourceRefs ?? []),
     ...(content.example?.sourceRefs ?? []),
     ...(content.contrast?.sourceRefs ?? []),
     ...(content.misconception?.sourceRefs ?? []),
@@ -955,6 +976,7 @@ function allLessonSourceRefs(content: TeachingLessonSlotContent): string[] {
 }
 
 function allLessonText(content: TeachingLessonSlotContent): string {
+  const interaction = content.workedProcess?.interaction;
   return [
     content.lessonNarrative?.whyNow,
     content.lessonNarrative?.summary,
@@ -975,6 +997,30 @@ function allLessonText(content: TeachingLessonSlotContent): string {
     content.workedProcess?.learnerDecision,
     content.workedProcess?.result,
     content.workedProcess?.whyResultFollows,
+    ...(content.workedProcess?.inputs ?? []),
+    interaction?.activity.prompt,
+    interaction?.activity.correctDebrief,
+    ...(interaction?.activity.options.flatMap((option) => [
+      option.text,
+      option.feedbackIfSelected,
+      option.misconception?.hypothesis,
+      option.misconception?.whyTempting,
+      option.misconception?.correction,
+    ]) ?? []),
+    interaction?.hint,
+    interaction?.scaffold.prompt,
+    interaction?.scaffold.debrief,
+    ...(interaction?.scaffold.options.flatMap((option) => [
+      option.text,
+      option.feedbackIfSelected,
+    ]) ?? []),
+    interaction?.transfer.changedCondition,
+    interaction?.transfer.prompt,
+    interaction?.transfer.debrief,
+    ...(interaction?.transfer.options.flatMap((option) => [
+      option.text,
+      option.feedbackIfSelected,
+    ]) ?? []),
     content.example?.text,
     content.contrast?.text,
     content.misconception?.hypothesis,
@@ -1054,6 +1100,61 @@ function workedProcessIssueCodes(
   ) {
     issues.push('worked_process_missing_required_structure');
   }
+  const interaction = process.interaction;
+  if (!interaction) {
+    issues.push('worked_process_missing_interaction');
+  } else {
+    const interactiveTexts = [
+      ...(process.inputs ?? []),
+      interaction.activity.prompt,
+      interaction.activity.correctDebrief,
+      interaction.hint,
+      interaction.scaffold.prompt,
+      interaction.scaffold.debrief,
+      interaction.transfer.changedCondition,
+      interaction.transfer.prompt,
+      interaction.transfer.debrief,
+      ...interaction.activity.options.flatMap((option) => [
+        option.text,
+        option.feedbackIfSelected,
+        option.misconception?.hypothesis ?? '',
+        option.misconception?.whyTempting ?? '',
+        option.misconception?.correction ?? '',
+      ]),
+      ...interaction.scaffold.options.flatMap((option) => [option.text, option.feedbackIfSelected]),
+      ...interaction.transfer.options.flatMap((option) => [option.text, option.feedbackIfSelected]),
+    ];
+    if (
+      interactiveTexts
+        .filter(Boolean)
+        .some((value) => !isSubstantiveText(value) || GENERIC_PLACEHOLDER_LANGUAGE.test(value))
+    ) {
+      issues.push('worked_interaction_missing_required_structure');
+    }
+    if (
+      SOURCE_LOCATION_TRIVIA.test(interaction.activity.prompt) ||
+      SOURCE_LOCATION_TRIVIA.test(interaction.transfer.prompt)
+    ) {
+      issues.push('lesson_source_location_trivia');
+    }
+    if (
+      !hasMeaningfulOverlap(interaction.activity.prompt, domainTarget) ||
+      !hasMeaningfulOverlap(
+        `${interaction.transfer.changedCondition} ${interaction.transfer.prompt}`,
+        domainTarget,
+      )
+    ) {
+      issues.push('worked_interaction_relevance_uncertain');
+    }
+    if (
+      !isSemanticallyDistinct(
+        interaction.activity.prompt,
+        `${interaction.transfer.changedCondition} ${interaction.transfer.prompt}`,
+      )
+    ) {
+      issues.push('worked_interaction_transfer_not_changed');
+    }
+  }
   if (
     !hasMeaningfulOverlap(process.startingState, domainTarget) ||
     !hasMeaningfulOverlap(process.ruleOrProcedure, domainTarget) ||
@@ -1130,6 +1231,11 @@ function lessonIssueMessage(code: string, slotId: string): string {
     worked_process_source_incompatible: `${slotId} worked process does not use an exact locally allowed source-stated rule or procedure.`,
     worked_process_missing_application_decision: `${slotId} worked process needs a concrete learner decision for the planned higher-order construct.`,
     worked_process_application_relevance_uncertain: `${slotId} learner decision has low lexical overlap with the objective or source; retain this only as an advisory relevance signal.`,
+    worked_process_missing_interaction: `${slotId} must pause its worked process for a prepared learner decision before revealing the continuation.`,
+    worked_interaction_missing_required_structure: `${slotId} worked interaction needs a substantive guided choice, targeted feedback, hint, scaffold, debrief, and changed-condition transfer.`,
+    worked_interaction_relevance_uncertain: `${slotId} worked interaction has low lexical overlap with its objective or source; retain this only as an advisory relevance signal.`,
+    worked_interaction_transfer_not_changed: `${slotId} transfer activity must change the case rather than repeat the guided decision.`,
+    missing_focused_worked_interaction: `${slotId} must turn its already-planned learner action into one worked interaction for this focused working-fluency-or-deeper Lesson.`,
     unplanned_worked_process: `${slotId} cannot add a worked process outside the immutable skeleton role.`,
   };
   return messages[code] ?? `${slotId} does not satisfy its immutable Lesson quality contract.`;
@@ -1137,7 +1243,8 @@ function lessonIssueMessage(code: string, slotId: string): string {
 
 function lessonCriterionForCode(code: string): LessonPedagogyFinding['criterion'] {
   if (code.includes('alias_leak') || code.includes('planning_language')) return 'source_grounding';
-  if (code.includes('worked_process')) return 'worked_example';
+  if (code.includes('worked_process') || code.includes('worked_interaction'))
+    return 'worked_example';
   if (
     code.includes('learner_action') ||
     code === 'lesson_source_location_trivia' ||
@@ -1162,6 +1269,7 @@ export function evaluateLessonSlotPedagogy(
 ): LessonPedagogyEvaluation {
   const findings: LessonPedagogyFinding[] = [];
   const contentById = new Map(payload.slots.map((content) => [content.slotId, content]));
+  const focusedInteractionSlotId = focusedWorkedInteractionSlotId(input);
 
   if (payload.narrative) {
     const narrativeText = `${payload.narrative.whyNow} ${payload.narrative.summary} ${payload.narrative.forwardBridge ?? ''}`;
@@ -1221,20 +1329,36 @@ export function evaluateLessonSlotPedagogy(
       codes.add('missing_typed_semantic_relation');
     }
 
+    const ownsFocusedInteraction = slot.slotId === focusedInteractionSlotId;
     if (slot.qualityContract === 'worked_process') {
       workedProcessIssueCodes(content, slot, objectiveTarget, input).forEach((code) =>
         codes.add(code),
       );
+    } else if (ownsFocusedInteraction) {
+      if (!content.workedProcess?.interaction) {
+        codes.add('missing_focused_worked_interaction');
+      } else {
+        workedProcessIssueCodes(content, slot, objectiveTarget, input).forEach((code) =>
+          codes.add(code),
+        );
+      }
     } else if (content.workedProcess) {
       codes.add('unplanned_worked_process');
     }
 
+    const workedInteraction = content.workedProcess?.interaction;
     if (slot.learnerActionRequired) {
-      if (!content.informalCheck || !isSubstantiveText(content.informalCheck.prompt)) {
+      if (
+        (!content.informalCheck || !isSubstantiveText(content.informalCheck.prompt)) &&
+        !workedInteraction
+      ) {
         codes.add('missing_planned_learner_action');
-      } else if (SOURCE_LOCATION_TRIVIA.test(content.informalCheck.prompt)) {
+      } else if (
+        content.informalCheck &&
+        SOURCE_LOCATION_TRIVIA.test(content.informalCheck.prompt)
+      ) {
         codes.add('lesson_source_location_trivia');
-      } else {
+      } else if (content.informalCheck) {
         if (!hasMeaningfulOverlap(content.informalCheck.prompt, domainTarget)) {
           codes.add('lesson_slot_content_not_objective_aligned');
         }
@@ -1245,7 +1369,7 @@ export function evaluateLessonSlotPedagogy(
           codes.add('lesson_choice_check_missing_options');
         }
       }
-    } else if (content.informalCheck) {
+    } else if (content.informalCheck || workedInteraction) {
       codes.add('unplanned_lesson_learner_action');
     }
 
@@ -1380,24 +1504,53 @@ function hasLongVerbatimSpan(candidate: string, source: string): boolean {
 
 function acceptedLessonExposureTexts(input: PracticeContentGenerationInput): string[] {
   return input.acceptedLesson
-    .flatMap((content) => [
-      content.lessonNarrative?.whyNow,
-      content.lessonNarrative?.summary,
-      content.explanation,
-      ...content.semanticRelations.flatMap((relation) => [
-        relation.fromProposition,
-        relation.toProposition,
-      ]),
-      content.workedProcess?.startingState,
-      content.workedProcess?.ruleOrProcedure,
-      ...(content.workedProcess?.steps.flatMap((step) => [step.action, step.resultingState]) ?? []),
-      content.workedProcess?.result,
-      content.example?.text,
-      content.contrast?.text,
-      content.misconception?.hypothesis,
-      content.misconception?.correction,
-      content.informalCheck?.prompt,
-    ])
+    .flatMap((content) => {
+      const interaction = content.workedProcess?.interaction;
+      return [
+        content.lessonNarrative?.whyNow,
+        content.lessonNarrative?.summary,
+        content.explanation,
+        ...content.semanticRelations.flatMap((relation) => [
+          relation.fromProposition,
+          relation.toProposition,
+        ]),
+        content.workedProcess?.startingState,
+        ...(content.workedProcess?.inputs ?? []),
+        content.workedProcess?.ruleOrProcedure,
+        ...(content.workedProcess?.steps.flatMap((step) => [step.action, step.resultingState]) ??
+          []),
+        content.workedProcess?.result,
+        content.workedProcess?.whyResultFollows,
+        interaction?.activity.prompt,
+        interaction?.activity.correctDebrief,
+        ...(interaction?.activity.options.flatMap((option) => [
+          option.text,
+          option.feedbackIfSelected,
+          option.misconception?.hypothesis,
+          option.misconception?.whyTempting,
+          option.misconception?.correction,
+        ]) ?? []),
+        interaction?.hint,
+        interaction?.scaffold.prompt,
+        interaction?.scaffold.debrief,
+        ...(interaction?.scaffold.options.flatMap((option) => [
+          option.text,
+          option.feedbackIfSelected,
+        ]) ?? []),
+        interaction?.transfer.changedCondition,
+        interaction?.transfer.prompt,
+        interaction?.transfer.debrief,
+        ...(interaction?.transfer.options.flatMap((option) => [
+          option.text,
+          option.feedbackIfSelected,
+        ]) ?? []),
+        content.example?.text,
+        content.contrast?.text,
+        content.misconception?.hypothesis,
+        content.misconception?.correction,
+        content.informalCheck?.prompt,
+      ];
+    })
     .filter((value): value is string => Boolean(value));
 }
 

@@ -344,6 +344,7 @@ function lessonContentSourceRefs(content: TeachingLessonSlotContent): string[] {
     ...content.sourceRefs,
     ...content.semanticRelations.flatMap((relation) => relation.sourceRefs),
     ...(content.workedProcess?.sourceRefs ?? []),
+    ...(content.workedProcess?.interaction?.sourceRefs ?? []),
     ...(content.example?.sourceRefs ?? []),
     ...(content.contrast?.sourceRefs ?? []),
     ...(content.misconception?.sourceRefs ?? []),

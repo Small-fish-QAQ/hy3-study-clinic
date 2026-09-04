@@ -35,9 +35,12 @@ material a claim came from.
 **通过判据门控的正式证据**上，而不是绑定在一次对话或一次做对的题上。
 
 单元讲解在内部仍保留细粒度段落与各自来源，但学习界面会把相邻内容组合成连续讲解；理解检查是
-主要停顿点，学习者作答并看到反馈后再继续。当前学习界面与生成契约固定为 `zh-CN` 简体中文，
-技术英文名词可按语境保留。非正式 Practice 只呈现题目、作答控件与学习者反馈，不展示供应商、
-规划器或评估器的内部理由。
+主要停顿点。合适的推演案例会由教师先示范一个有意义的步骤，再让学习者判断下一步；系统按具体
+选择给出反馈，答错时最多展开一个小提示和一个仍需作答的脚手架问题，然后继续案例，并用条件变化
+后的第二次判断逐步减少支持。全部互动材料在 Lesson 准备时一次生成，点击后的执行与断点恢复由本地
+代码确定性完成，不会逐次调用 Hy3，也不产生正式证据或掌握度。当前学习界面与生成契约固定为
+`zh-CN` 简体中文，技术英文名词可按语境保留。非正式 Practice 只呈现题目、作答控件与学习者反馈，
+不展示供应商、规划器或评估器的内部理由。
 
 其中，**Hy3 承担全部需要语义理解与生成的开放式工作**：概念抽取、课程结构提案、讲解生成、
 练习命题、简答语义评分、证据关系判断、错误诊断与补救提案。而**确定性本地代码保留全部权威**：
@@ -145,10 +148,16 @@ it is deterministic, versioned, and auditable.
   model, genuine worked reasoning, causal explanation, boundaries, misconceptions,
   transfer and a forward bridge—not to recite an objective-by-objective outline. The
   internal Teaching Skeleton still owns obligations, identities and budgets.
+- **Worked examples can become worked interactions.** For a suitable planned worked process,
+  Hy3 prepares one intermediate learner decision, choice-specific misconception feedback,
+  one bounded hint/scaffold level, a debrief, and a changed-condition transfer. Local code
+  withholds the continuation until the relevant response, persists each phase for resume,
+  and never calls the provider on a normal learner click.
 - **Exact quotation proves location, not entailment.** Verifying that a quote occurs at a
   claimed offset is not a proof of complete semantic entailment. The codebase, the UI and
   these docs all keep that distinction.
-- **Conversation is not evidence.** Lessons, practice, Tutor turns and informal checks
+- **Conversation is not evidence.** Lessons, worked interactions, hints, scaffolds, practice,
+  Tutor turns and informal checks
   are explicitly non-credit.
 - **A grade is not mastery, and scheduling is not mastery.** Mastery follows
   criterion-gated Formal Evidence plus reconciliation; FSRS review state is tracked
