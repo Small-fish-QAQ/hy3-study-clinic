@@ -3168,6 +3168,61 @@ describe('Teaching Brief preparation', () => {
     });
   });
 
+  it('reuses the accepted Lesson after pause/resume version churn on the same exact route', async () => {
+    const harness = await createHarness();
+    const route = startTeachingRoute(harness);
+    harness.provider.failPracticeContentOnce = true;
+
+    const retryable = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+      command: command('lesson-practice-before-pause'),
+      expectedSessionVersion: route.session.version,
+      expectedAgendaVersion: route.agenda.version,
+      expectedAgendaItemId: route.agendaItem.id,
+    });
+    expect(retryable.status).toBe('practice_retry_available');
+    const checkpointId = harness.repos.lessonExecution.getForSession(
+      route.session.id,
+      route.agendaItem.id,
+    )!.acceptedLessonCheckpointId!;
+    const checkpointBefore = harness.repos.acceptedLessonCheckpoints.get(checkpointId)!;
+
+    const paused = harness.services.studySessions.pause('ws_1', route.session.id, {
+      commandId: 'pause-after-accepted-lesson',
+      expectedSessionVersion: retryable.session.version,
+    });
+    const resumed = harness.services.studySessions.resume('ws_1', route.session.id, {
+      commandId: 'resume-after-accepted-lesson',
+      expectedSessionVersion: paused.session.version,
+    });
+    expect(resumed.session.version).toBeGreaterThan(checkpointBefore.expectedSessionVersion);
+    expect(resumed.agenda.version).toBeGreaterThan(checkpointBefore.expectedAgendaVersion);
+
+    const authoritative = harness.services.lessonExecution.get('ws_1', route.session.id);
+    expect(authoritative).toMatchObject({
+      status: 'practice_retry_available',
+      session: { version: resumed.session.version },
+      agenda: { version: resumed.agenda.version },
+    });
+    expect(authoritative.lesson).not.toBeNull();
+
+    const ready = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+      command: command('lesson-practice-after-pause'),
+      expectedSessionVersion: authoritative.session.version,
+      expectedAgendaVersion: authoritative.agenda!.version,
+      expectedAgendaItemId: route.agendaItem.id,
+    });
+
+    expect(ready.status).toBe('ready');
+    expect(harness.provider.lessonContentCalls).toBe(1);
+    expect(harness.provider.practiceContentCalls).toBe(2);
+    expect(
+      harness.repos.lessonExecution.getForSession(route.session.id, route.agendaItem.id),
+    ).toMatchObject({ acceptedLessonCheckpointId: checkpointId, preparationStatus: 'ready' });
+    expect(JSON.stringify(harness.repos.acceptedLessonCheckpoints.get(checkpointId))).toBe(
+      JSON.stringify(checkpointBefore),
+    );
+  });
+
   it('keeps final Lesson composition session-local when another Session finishes first', async () => {
     const harness = await createHarness();
     const routeA = startTeachingRoute(harness);

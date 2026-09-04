@@ -87,6 +87,10 @@ export function createAcceptedLessonCheckpointsRepo(db: SqliteDb) {
   function findReusable(
     input: AcceptedLessonCheckpointIdentity,
   ): AcceptedLessonCheckpoint | undefined {
+    // Session/Agenda versions fence checkpoint creation and remain immutable
+    // audit data. They are not content identity: pause/resume and other
+    // same-item bookkeeping may advance them while every route, source,
+    // skeleton, prompt, and session binding below remains exact.
     const row = db
       .prepare(
         `SELECT * FROM accepted_lesson_checkpoints
@@ -94,8 +98,6 @@ export function createAcceptedLessonCheckpointsRepo(db: SqliteDb) {
            AND study_session_id = @studySessionId
            AND session_agenda_id = @sessionAgendaId
            AND agenda_item_id = @agendaItemId
-           AND expected_session_version = @expectedSessionVersion
-           AND expected_agenda_version = @expectedAgendaVersion
            AND curriculum_id = @curriculumVersionId
            AND study_plan_id = @studyPlanVersionId
            AND study_plan_item_id = @studyPlanItemId

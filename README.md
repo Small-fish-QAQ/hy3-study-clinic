@@ -179,7 +179,8 @@ it is deterministic, versioned, and auditable.
   truncated response is discarded and regenerated from the same immutable slot inventory;
   an alias-only failure can rewrite only the affected learner-text leaves. Source refs,
   slot identities, accepted Lesson checkpoints, Formal authority and learner state stay
-  locally controlled.
+  locally controlled. Preparing views poll serialized read-only projections, and a retry
+  refetches current authority before it can start work.
 
 ## Implementation status
 

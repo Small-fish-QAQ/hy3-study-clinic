@@ -12,6 +12,9 @@ import { Loading } from './ui.js';
 import { FormalAssessmentPanel } from './FormalAssessmentPanel.js';
 
 let lessonCommandSequence = 0;
+const LESSON_PREPARATION_POLL_MS = 1500;
+type LessonRefreshResult =
+  LessonExecutionProjection['status'] | 'request_failed' | 'request_aborted' | 'route_changed';
 
 function nextCommandId(prefix: string): string {
   lessonCommandSequence += 1;
@@ -877,7 +880,7 @@ export function LessonExecutionPanel({
     [onSessionVersionChange, routeIdentity],
   );
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (): Promise<LessonRefreshResult> => {
     refreshController.current?.abort();
     const controller = new AbortController();
     refreshController.current = controller;
@@ -893,7 +896,9 @@ export function LessonExecutionPanel({
         refreshEpoch === requestEpoch.current
       ) {
         applyProjection(next);
+        return next.status;
       }
+      return 'request_aborted';
     } catch (cause) {
       if (
         !controller.signal.aborted &&
@@ -904,8 +909,10 @@ export function LessonExecutionPanel({
         if (message) setError(message);
         if (cause instanceof ApiClientError && cause.code === 'VERSION_CONFLICT') {
           onRefreshSession?.();
+          return 'route_changed';
         }
       }
+      return controller.signal.aborted ? 'request_aborted' : 'request_failed';
     } finally {
       if (refreshController.current === controller) refreshController.current = null;
       if (epoch === routeEpoch.current && refreshEpoch === requestEpoch.current) setLoading(false);
@@ -947,29 +954,49 @@ export function LessonExecutionPanel({
 
   useEffect(() => {
     if (projection?.status !== 'preparing') return;
-    const timer = window.setTimeout(() => void refresh(), 1500);
-    return () => window.clearTimeout(timer);
+    let cancelled = false;
+    let timer: number | null = null;
+    const schedule = () => {
+      timer = window.setTimeout(() => {
+        void refresh().then((result) => {
+          if (cancelled) return;
+          if (result === 'preparing' || result === 'request_failed') schedule();
+        });
+      }, LESSON_PREPARATION_POLL_MS);
+    };
+    schedule();
+    return () => {
+      cancelled = true;
+      if (timer !== null) window.clearTimeout(timer);
+    };
   }, [projection?.status, refresh]);
 
   const prepare = useCallback(
     async (retry = false) => {
       if (!projection || preparing || prepareController.current) return;
-      const key = `${workspaceId}:${sessionId}:${agendaItemId}:${projection.session.version}:${projection.agenda?.version ?? 0}`;
-      if (!retry && prepareKey.current === key) return;
-      prepareKey.current = key;
-      const commandId = nextCommandId('lesson_prepare');
-      const input: EnsureLessonExecutionRequest = {
-        command: { commandId, idempotencyKey: commandId, workspaceId, actor: 'learner' },
-        expectedSessionVersion: projection.session.version,
-        expectedAgendaVersion: projection.agenda?.version ?? 1,
-        expectedAgendaItemId: agendaItemId,
-      };
       const controller = new AbortController();
       prepareController.current = controller;
       const epoch = routeEpoch.current;
       setPreparing(true);
       setError(null);
       try {
+        let authoritative = projection;
+        if (retry) {
+          authoritative = await api.getLessonExecution(workspaceId, sessionId, controller.signal);
+          if (controller.signal.aborted || epoch !== routeEpoch.current) return;
+          applyProjection(authoritative);
+          if (!authoritative.allowedActions.includes('retry_preparation')) return;
+        }
+        const key = `${workspaceId}:${sessionId}:${agendaItemId}:${authoritative.session.version}:${authoritative.agenda?.version ?? 0}`;
+        if (!retry && prepareKey.current === key) return;
+        prepareKey.current = key;
+        const commandId = nextCommandId('lesson_prepare');
+        const input: EnsureLessonExecutionRequest = {
+          command: { commandId, idempotencyKey: commandId, workspaceId, actor: 'learner' },
+          expectedSessionVersion: authoritative.session.version,
+          expectedAgendaVersion: authoritative.agenda?.version ?? 1,
+          expectedAgendaItemId: agendaItemId,
+        };
         const next = await api.prepareLessonExecution(
           workspaceId,
           sessionId,

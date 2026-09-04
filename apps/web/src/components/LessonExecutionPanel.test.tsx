@@ -2,7 +2,7 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { LessonExecutionProjection } from '@hy3-clinic/shared';
-import { api } from '../api.js';
+import { api, ApiClientError } from '../api.js';
 import { LessonExecutionPanel, LessonSourceReference } from './LessonExecutionPanel.js';
 
 const source = {
@@ -140,7 +140,10 @@ const prepared = readyLesson({
   presentationCompletedAt: null,
 });
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
 
 describe('LessonExecutionPanel', () => {
   it('renders a due Review entry instead of the generic unavailable lesson state', async () => {
@@ -263,6 +266,91 @@ describe('LessonExecutionPanel', () => {
         expect.any(AbortSignal),
       ),
     );
+  });
+
+  it('keeps polling authoritative preparation state until it becomes ready', async () => {
+    vi.useFakeTimers();
+    const preparingProjection: LessonExecutionProjection = {
+      ...needed,
+      status: 'preparing',
+      message: 'Your lesson is being prepared.',
+      allowedActions: ['wait_for_preparation'],
+    };
+    const get = vi
+      .spyOn(api, 'getLessonExecution')
+      .mockResolvedValueOnce(preparingProjection)
+      .mockResolvedValueOnce(preparingProjection)
+      .mockResolvedValueOnce(prepared);
+    const prepare = vi.spyOn(api, 'prepareLessonExecution');
+
+    render(
+      <LessonExecutionPanel
+        workspaceId="ws_1"
+        sessionId="session_1"
+        agendaItemId="item_1"
+        active
+      />,
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(get).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1500);
+    });
+    expect(get).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole('heading', { name: '正在准备一节有顺序的讲解' })).toBeInTheDocument();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1500);
+    });
+    expect(get).toHaveBeenCalledTimes(3);
+    expect(screen.getByRole('heading', { name: '理解条件概率' })).toBeInTheDocument();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4500);
+    });
+    expect(get).toHaveBeenCalledTimes(3);
+    expect(prepare).not.toHaveBeenCalled();
+  });
+
+  it('stops preparation polling after one route conflict while the parent refreshes', async () => {
+    vi.useFakeTimers();
+    const preparingProjection: LessonExecutionProjection = {
+      ...needed,
+      status: 'preparing',
+      message: 'Your lesson is being prepared.',
+      allowedActions: ['wait_for_preparation'],
+    };
+    const get = vi
+      .spyOn(api, 'getLessonExecution')
+      .mockResolvedValueOnce(preparingProjection)
+      .mockRejectedValueOnce(new ApiClientError('VERSION_CONFLICT', 'route changed', 409));
+    const refreshSession = vi.fn();
+
+    render(
+      <LessonExecutionPanel
+        workspaceId="ws_1"
+        sessionId="session_1"
+        agendaItemId="item_1"
+        active
+        onRefreshSession={refreshSession}
+      />,
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1500);
+    });
+    expect(get).toHaveBeenCalledTimes(2);
+    expect(refreshSession).toHaveBeenCalledOnce();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(6000);
+    });
+    expect(get).toHaveBeenCalledTimes(2);
+    expect(refreshSession).toHaveBeenCalledOnce();
   });
 
   it('keeps provenance compact, distinguishes synthesis, and records informal checks without formal language', async () => {
@@ -603,7 +691,13 @@ describe('LessonExecutionPanel', () => {
       },
     };
     const retry = deferred<LessonExecutionProjection>();
-    vi.spyOn(api, 'getLessonExecution').mockResolvedValue(recovery);
+    const authoritativeRecovery = structuredClone(recovery);
+    authoritativeRecovery.session.version = 4;
+    authoritativeRecovery.agenda!.version = 5;
+    const get = vi
+      .spyOn(api, 'getLessonExecution')
+      .mockResolvedValueOnce(recovery)
+      .mockResolvedValueOnce(authoritativeRecovery);
     const prepare = vi.spyOn(api, 'prepareLessonExecution').mockReturnValue(retry.promise);
     const command = vi.spyOn(api, 'lessonExecutionCommand');
 
@@ -635,16 +729,40 @@ describe('LessonExecutionPanel', () => {
       'ws_1',
       'session_1',
       expect.objectContaining({
-        expectedSessionVersion: 2,
-        expectedAgendaVersion: 3,
+        expectedSessionVersion: 4,
+        expectedAgendaVersion: 5,
         expectedAgendaItemId: 'item_1',
       }),
       expect.any(AbortSignal),
     );
+    expect(get).toHaveBeenCalledTimes(2);
     expect(command).not.toHaveBeenCalled();
 
     await act(async () => retry.resolve(prepared));
     expect(await screen.findByRole('button', { name: '开始本节讲解' })).toBeInTheDocument();
+  });
+
+  it('adopts an authoritative ready result instead of starting duplicate retry work', async () => {
+    const user = userEvent.setup();
+    const get = vi
+      .spyOn(api, 'getLessonExecution')
+      .mockResolvedValueOnce(practiceRetryLesson())
+      .mockResolvedValueOnce(prepared);
+    const prepare = vi.spyOn(api, 'prepareLessonExecution');
+
+    render(
+      <LessonExecutionPanel
+        workspaceId="ws_1"
+        sessionId="session_1"
+        agendaItemId="item_1"
+        active
+      />,
+    );
+    await user.click(await screen.findByRole('button', { name: '重新准备非正式练习' }));
+
+    expect(await screen.findByRole('button', { name: '开始本节讲解' })).toBeInTheDocument();
+    expect(get).toHaveBeenCalledTimes(2);
+    expect(prepare).not.toHaveBeenCalled();
   });
 
   it('drops a stale Lesson refresh after the Agenda item identity changes', async () => {
@@ -690,6 +808,7 @@ describe('LessonExecutionPanel', () => {
     let retrySignal: AbortSignal | undefined;
     const successor = lessonTitled('新的安排');
     vi.spyOn(api, 'getLessonExecution')
+      .mockResolvedValueOnce(practiceRetryLesson())
       .mockResolvedValueOnce(practiceRetryLesson())
       .mockResolvedValueOnce(successor);
     vi.spyOn(api, 'prepareLessonExecution').mockImplementation(
