@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type {
-  LessonExecutionProjection,
-  LessonSourceProjection,
-  MixedInitiativeCommandRequest,
-  PublicQuiz,
-  SubmitTutorTurnRequest,
-  SubmitTutorTurnResponse,
-  StudyExchange,
-  StudySession,
-  StudySessionDetailResponse,
-  TutorTurnMetadata,
+import {
+  isPlannedFormalAgendaItemKind,
+  type CourseFormalReadiness,
+  type LessonExecutionProjection,
+  type LessonSourceProjection,
+  type MixedInitiativeCommandRequest,
+  type PublicQuiz,
+  type SubmitTutorTurnRequest,
+  type SubmitTutorTurnResponse,
+  type StudyExchange,
+  type StudySession,
+  type StudySessionDetailResponse,
+  type TutorTurnMetadata,
 } from '@hy3-clinic/shared';
 import { api } from '../api.js';
 import { Banner, Loading } from '../components/ui.js';
@@ -59,6 +61,7 @@ export interface StudySessionRoute {
 export interface StudySessionViewProps {
   workspaceId: string | null;
   route: StudySessionRoute | null;
+  formalReadiness?: CourseFormalReadiness | null;
   courseName?: string;
   curriculumUnits?: Array<{ id: string; title: string }>;
   onSessionChanged?: () => void;
@@ -115,6 +118,7 @@ function sameRoute(left: Readonly<StudySessionRoute>, right: StudySessionRoute):
 export function StudySessionView({
   workspaceId,
   route,
+  formalReadiness = null,
   courseName = '当前课程',
   curriculumUnits = [],
   onSessionChanged,
@@ -147,6 +151,8 @@ export function StudySessionView({
   const studyPrimaryRef = useRef<HTMLDivElement>(null);
   const inspectorTriggerRef = useRef<HTMLButtonElement>(null);
   const inspectorReturnFocusRef = useRef<HTMLButtonElement | null>(null);
+  const sessionChangedRef = useRef(onSessionChanged);
+  sessionChangedRef.current = onSessionChanged;
   const inspectorOpenRef = useRef(inspectorOpen);
   inspectorOpenRef.current = inspectorOpen;
   const action = useAsyncAction();
@@ -164,7 +170,42 @@ export function StudySessionView({
       setLoading(true);
       setLoadError(null);
       try {
-        const next = await api.getStudySession(targetWorkspaceId, sessionId, signal);
+        let next = await api.getStudySession(targetWorkspaceId, sessionId, signal);
+        const loadedSessionVersion = next.session.version;
+        const selected = next.agenda.items.find(
+          (item) => item.id === next.session.currentAgendaItemId,
+        );
+        if (
+          selected?.state === 'queued' &&
+          selected.kind === 'synthesis' &&
+          routeContractVersionId &&
+          routeCurriculumVersionId &&
+          routeStudyPlanVersionId &&
+          routeSessionAgendaId &&
+          routeExecutionVersion !== undefined
+        ) {
+          const reconciled = await api.startStudySession(
+            targetWorkspaceId,
+            {
+              contractVersionId: routeContractVersionId,
+              curriculumVersionId: routeCurriculumVersionId,
+              studyPlanVersionId: routeStudyPlanVersionId,
+              sessionAgendaId: routeSessionAgendaId,
+              expectedCourseExecutionVersion: routeExecutionVersion,
+            },
+            signal,
+          );
+          if (signal.aborted || requestEpoch !== epoch.current) return;
+          next = await api.getStudySession(targetWorkspaceId, sessionId, signal);
+          if (
+            !signal.aborted &&
+            requestEpoch === epoch.current &&
+            (reconciled.session.version !== loadedSessionVersion ||
+              reconciled.session.currentAgendaItemId !== selected.id)
+          ) {
+            sessionChangedRef.current?.();
+          }
+        }
         if (!signal.aborted && requestEpoch === epoch.current) {
           setDetail(next);
           setFormalAssessmentVersionId(null);
@@ -174,6 +215,7 @@ export function StudySessionView({
           if (
             currentItem &&
             (currentItem.kind === 'formal_checkpoint' ||
+              currentItem.kind === 'synthesis' ||
               currentItem.kind === 'targeted_repair' ||
               currentItem.kind === 'due_review')
           ) {
@@ -195,7 +237,13 @@ export function StudySessionView({
         if (!signal.aborted && requestEpoch === epoch.current) setLoading(false);
       }
     },
-    [],
+    [
+      routeContractVersionId,
+      routeCurriculumVersionId,
+      routeExecutionVersion,
+      routeSessionAgendaId,
+      routeStudyPlanVersionId,
+    ],
   );
 
   useEffect(() => {
@@ -705,10 +753,14 @@ export function StudySessionView({
     (unit) => unit.id === currentAgendaItem?.learningUnitId,
   );
   const formalKinds = new Set(['formal_checkpoint', 'synthesis', 'due_review', 'targeted_repair']);
+  const formalAvailable = formalReadiness?.status === 'ready';
+  const formalReadinessAllows = (item: (typeof detail.agenda.items)[number]) =>
+    !isPlannedFormalAgendaItemKind(item.kind) || formalAvailable;
   const availableFormalItems = detail.agenda.items
     .filter(
       (item) =>
         formalKinds.has(item.kind) &&
+        formalReadinessAllows(item) &&
         item.state !== 'completed' &&
         item.state !== 'deferred' &&
         item.state !== 'cancelled' &&
@@ -721,6 +773,7 @@ export function StudySessionView({
   const directCheckpointItem =
     (currentAgendaItem &&
     formalKinds.has(currentAgendaItem.kind) &&
+    formalReadinessAllows(currentAgendaItem) &&
     currentAgendaItem.state !== 'completed' &&
     currentAgendaItem.state !== 'deferred' &&
     currentAgendaItem.state !== 'cancelled' &&

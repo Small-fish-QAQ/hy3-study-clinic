@@ -5,6 +5,7 @@ import {
   LessonExecutionProjectionSchema,
   LessonTutorContextSchema,
   groupLessonSegmentsForLearner,
+  isExecutableTeachingAgendaItem,
   type LessonExecutionProjection,
   type LessonExecutionState,
   type LearnerPracticeProjection,
@@ -228,10 +229,7 @@ export function createLessonExecutionService({
   }
 
   function executable(context: RouteContext): boolean {
-    return (
-      teachingRouteMatches(context) &&
-      (context.item.state === 'queued' || context.item.state === 'active')
-    );
+    return teachingRouteMatches(context) && isExecutableTeachingAgendaItem(context.item);
   }
 
   /**

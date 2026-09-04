@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   type Curriculum,
+  type CurriculumObjective,
   type LearningContract,
   type SessionAgenda,
   type StudyPlan,
@@ -11,7 +12,7 @@ import { migrate } from '../db/migrate.js';
 import { FakeProvider } from '../llm/fakeProvider.js';
 import type { ProviderCallOptions, TutorTurnInput, TutorTurnPayload } from '../llm/provider.js';
 import { createRepositories, type Repositories } from '../repositories/index.js';
-import { makeWorkspace, T0 } from '../testing/fixtures.js';
+import { makeSemanticallySupportedObjective, makeWorkspace, T0 } from '../testing/fixtures.js';
 import { fixedClock } from '../util/ids.js';
 import { createStudySessionService, type StudySessionService } from './studySessions.js';
 
@@ -306,6 +307,230 @@ beforeEach(() => {
 });
 
 describe('StudySession service', () => {
+  it('reuses the same Session while routing a pending synthesis to executable teaching', () => {
+    const request = {
+      contractVersionId: 'contract_1',
+      curriculumVersionId: 'curriculum_1',
+      studyPlanVersionId: 'plan_1',
+      sessionAgendaId: 'agenda_1',
+      expectedCourseExecutionVersion: 1,
+    };
+    const first = service.start('ws_1', request);
+    const pendingObjective = (id: string): CurriculumObjective => {
+      const objective = makeSemanticallySupportedObjective(
+        {
+          id,
+          title: `Objective ${id}`,
+          description: `Explain ${id} from the accepted source.`,
+          truthPremiseStatus: 'independently_verified',
+          truthAuthorityRecordIds: [`authority_${id}`],
+          authorityClaimIds: [`claim_${id}`],
+          priority: 'required',
+          formalAssessmentReady: true,
+          formalAssessmentReadinessRationale:
+            'Exact authority exists but is not semantically evaluated.',
+          formalAssessmentConstruct: 'explain',
+          authorityEnvelopeTier: 'formal_sufficient',
+          authoritySourceBlockIds: [`block_${id}`],
+          formalEvidenceSourceBlockIds: [`block_${id}`],
+        },
+        'relationship',
+      );
+      delete objective.semanticSupport;
+      return objective;
+    };
+    const curriculum = repos.curricula.get('curriculum_1')!;
+    const synthesisObjectiveIds = ['objective_1'];
+    const routedCurriculum: Curriculum = {
+      ...curriculum,
+      nodes: [
+        curriculum.nodes[0]!,
+        {
+          id: 'unit_synthesis',
+          parentId: 'course_node',
+          kind: 'learning_unit',
+          index: 0,
+          title: 'Synthesis anchor',
+          sourceReferences: [],
+          learningUnit: {
+            conceptIds: ['concept_synthesis'],
+            canonicalConceptIds: [],
+            objectives: [pendingObjective('objective_1')],
+            prerequisiteUnitIds: [],
+            graphRelationIds: [],
+            riskIds: [],
+          },
+        },
+        {
+          id: 'unit_teaching',
+          parentId: 'course_node',
+          kind: 'learning_unit',
+          index: 1,
+          title: 'Next teaching unit',
+          sourceReferences: [],
+          learningUnit: {
+            conceptIds: ['concept_teaching'],
+            canonicalConceptIds: [],
+            objectives: [pendingObjective('objective_2')],
+            prerequisiteUnitIds: [],
+            graphRelationIds: [],
+            riskIds: [],
+          },
+        },
+      ],
+      synthesisGroups: [
+        {
+          id: 'synthesis_group_1',
+          title: 'Pending chapter synthesis',
+          level: 'chapter',
+          learningUnitIds: ['unit_synthesis', 'unit_teaching'],
+          objectiveIds: ['objective_1', 'objective_2'],
+        },
+      ],
+    };
+    db.prepare('UPDATE curriculum_versions SET payload = ? WHERE id = ?').run(
+      JSON.stringify(routedCurriculum),
+      curriculum.id,
+    );
+
+    const acceptedPlan = repos.studyPlans.get('plan_1')!;
+    const synthesisPlanItem = {
+      ...acceptedPlan.items[0]!,
+      id: 'plan_synthesis',
+      kind: 'synthesis' as const,
+      curriculumLearningUnitId: 'unit_synthesis',
+      objectiveIds: synthesisObjectiveIds,
+    };
+    const teachingPlanItem = {
+      ...acceptedPlan.items[0]!,
+      id: 'plan_teaching',
+      index: 1,
+      kind: 'teach_unit' as const,
+      curriculumLearningUnitId: 'unit_teaching',
+      objectiveIds: ['objective_2'],
+    };
+    const routedPlan: StudyPlan = {
+      ...acceptedPlan,
+      items: [synthesisPlanItem, teachingPlanItem],
+    };
+    db.prepare('UPDATE study_plan_versions SET payload = ? WHERE id = ?').run(
+      JSON.stringify(routedPlan),
+      acceptedPlan.id,
+    );
+    const insertPlanItem = db.prepare(
+      `INSERT INTO study_plan_items
+         (plan_id, plan_item_id, idx, kind, curriculum_learning_unit_id, objective_ids,
+          completion_requirements)
+       VALUES (?, ?, ?, ?, ?, ?, '[]')`,
+    );
+    const insertProgress = db.prepare(
+      `INSERT INTO study_plan_progress
+         (plan_id, plan_item_id, state, version, updated_at)
+       VALUES (?, ?, 'not_started', 1, ?)`,
+    );
+    for (const item of routedPlan.items) {
+      insertPlanItem.run(
+        routedPlan.id,
+        item.id,
+        item.index,
+        item.kind,
+        item.curriculumLearningUnitId,
+        JSON.stringify(item.objectiveIds),
+      );
+      insertProgress.run(routedPlan.id, item.id, T0);
+    }
+
+    const currentAgenda = repos.sessionAgendas.get('agenda_1')!;
+    const synthesisAgendaItem = {
+      ...currentAgenda.items[0]!,
+      id: 'agenda_synthesis',
+      kind: 'synthesis' as const,
+      linkedPlanItemId: synthesisPlanItem.id,
+      learningUnitId: 'unit_synthesis',
+      launch: {
+        status: 'launchable' as const,
+        capability: 'assessment',
+        resourceId: '{"mode":"concept_practice","conceptIds":["concept_synthesis"]}',
+        reason: null,
+      },
+    };
+    const teachingAgendaItem = {
+      ...currentAgenda.items[0]!,
+      id: 'agenda_teaching',
+      index: 1,
+      linkedPlanItemId: teachingPlanItem.id,
+      learningUnitId: 'unit_teaching',
+      launch: {
+        status: 'launchable' as const,
+        capability: 'lesson',
+        resourceId: '{"learningUnitId":"unit_teaching","conceptId":"concept_teaching"}',
+        reason: null,
+      },
+    };
+    const routedAgenda: SessionAgenda = {
+      ...currentAgenda,
+      items: [synthesisAgendaItem, teachingAgendaItem],
+      currentItemId: synthesisAgendaItem.id,
+    };
+    db.prepare('UPDATE session_agendas SET payload = ? WHERE id = ?').run(
+      JSON.stringify(routedAgenda),
+      routedAgenda.id,
+    );
+    db.prepare('DELETE FROM session_agenda_items WHERE agenda_id = ?').run(routedAgenda.id);
+    const insertAgendaItem = db.prepare(
+      `INSERT INTO session_agenda_items
+         (agenda_id, agenda_item_id, idx, linked_plan_item_id, kind, state,
+          launch_status, launch_capability, launch_resource_id, launch_reason)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    );
+    for (const item of routedAgenda.items) {
+      insertAgendaItem.run(
+        routedAgenda.id,
+        item.id,
+        item.index,
+        item.linkedPlanItemId,
+        item.kind,
+        item.state,
+        item.launch.status,
+        item.launch.capability,
+        item.launch.resourceId,
+        item.launch.reason,
+      );
+    }
+    db.prepare(
+      `UPDATE study_sessions
+       SET current_agenda_item_id = ?
+       WHERE id = ?`,
+    ).run(synthesisAgendaItem.id, first.session.id);
+
+    const resumed = service.start('ws_1', request);
+    const replayed = service.start('ws_1', request);
+    const reconciledAgenda = repos.sessionAgendas.get('agenda_1')!;
+
+    expect(resumed.session.id).toBe(first.session.id);
+    expect(replayed).toEqual(resumed);
+    expect(resumed.session.currentAgendaItemId).toBe(teachingAgendaItem.id);
+    expect(resumed.session.version).toBe(first.session.version + 1);
+    expect(reconciledAgenda.currentItemId).toBe(teachingAgendaItem.id);
+    expect(reconciledAgenda.items.find((item) => item.id === synthesisAgendaItem.id)).toMatchObject(
+      {
+        state: 'blocked',
+        linkedPlanItemId: synthesisPlanItem.id,
+        launch: { status: 'blocked', resourceId: null },
+      },
+    );
+    expect(repos.studyPlans.get('plan_1')?.items[0]?.objectiveIds).toEqual(synthesisObjectiveIds);
+    expect(
+      db
+        .prepare(
+          `SELECT event_type AS eventType
+           FROM session_agenda_events
+           WHERE agenda_id = ? ORDER BY seq DESC LIMIT 1`,
+        )
+        .get('agenda_1'),
+    ).toEqual({ eventType: 'pending_synthesis_routed_to_teaching' });
+  });
+
   it('persists conversation, telemetry, and replays a completed turn idempotently', async () => {
     const started = service.start('ws_1', {
       contractVersionId: 'contract_1',

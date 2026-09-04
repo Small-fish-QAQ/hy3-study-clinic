@@ -1617,6 +1617,83 @@ describe('Course Preparation coordinator', () => {
     });
   });
 
+  it('never emits continue_study for a selected queued synthesis that has no executable teaching fallback', async () => {
+    const harness = createHarness({ withConcept: true });
+    await harness.services.coursePreparation.run(
+      runRequest(harness.services.coursePreparation.get('ws_1')),
+    );
+    const plan = harness.repos.studyPlans.list('ws_1').at(-1)!;
+    const curriculum = harness.repos.curricula.get(plan.curriculumVersionId)!;
+    harness.services.courseExecution.decideStudyPlan({
+      command: command('accept-non-executable-synthesis-route'),
+      studyPlanId: plan.id,
+      expectedVersion: plan.version,
+      expectedContractId: harness.contract.id,
+      expectedCurriculumId: curriculum.id,
+      expectedExecutionSourceManifestFingerprint: curriculum.executionSourceManifest.fingerprint,
+      decision: 'accept',
+      reason: null,
+    });
+
+    const acceptedPlan = harness.repos.studyPlans.get(plan.id)!;
+    const planItem = acceptedPlan.items[0]!;
+    const synthesisPlan = {
+      ...acceptedPlan,
+      items: acceptedPlan.items.map((item) =>
+        item.id === planItem.id ? { ...item, kind: 'synthesis' as const } : item,
+      ),
+    };
+    harness.db
+      .prepare('UPDATE study_plan_versions SET payload = ? WHERE id = ?')
+      .run(JSON.stringify(synthesisPlan), acceptedPlan.id);
+    harness.db
+      .prepare('UPDATE study_plan_items SET kind = ? WHERE plan_id = ? AND plan_item_id = ?')
+      .run('synthesis', acceptedPlan.id, planItem.id);
+
+    const activeAgendaId = harness.repos.courseExecution.get('ws_1').activeAgendaId!;
+    const agenda = harness.repos.sessionAgendas.get(activeAgendaId)!;
+    const agendaItem = agenda.items[0]!;
+    const synthesisAgenda = {
+      ...agenda,
+      items: agenda.items.map((item) =>
+        item.id === agendaItem.id
+          ? {
+              ...item,
+              kind: 'synthesis' as const,
+              launch: {
+                status: 'launchable' as const,
+                capability: 'assessment',
+                resourceId: '{"mode":"concept_practice"}',
+                reason: null,
+              },
+            }
+          : item,
+      ),
+    };
+    harness.db
+      .prepare('UPDATE session_agendas SET payload = ? WHERE id = ?')
+      .run(JSON.stringify(synthesisAgenda), agenda.id);
+    harness.db
+      .prepare(
+        `UPDATE session_agenda_items
+         SET kind = 'synthesis', launch_capability = 'assessment',
+             launch_resource_id = '{"mode":"concept_practice"}'
+         WHERE agenda_id = ? AND agenda_item_id = ?`,
+      )
+      .run(agenda.id, agendaItem.id);
+
+    expect(harness.services.coursePreparation.get('ws_1')).toMatchObject({
+      state: 'blocked',
+      learnerAction: 'none',
+      learnerDecisionRequired: false,
+      formalReadiness: { status: 'pending', readyObjectiveCount: 0 },
+      blocker: { code: 'formal_assessment_readiness_unavailable' },
+    });
+    expect(harness.repos.studyPlans.get(plan.id)?.items[0]?.objectiveIds).toEqual(
+      planItem.objectiveIds,
+    );
+  });
+
   it('projects a recorded semantic FAIL as Formal-blocked without disabling teaching', async () => {
     const harness = createHarness({
       compactMaterial: true,

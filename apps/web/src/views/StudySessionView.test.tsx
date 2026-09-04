@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
+  CourseFormalReadiness,
   LessonExecutionProjection,
   PublicQuiz,
   StudySession,
@@ -175,6 +176,22 @@ const currentRoute = {
   studyPlanVersionId: session.studyPlanVersionId,
   sessionAgendaId: session.sessionAgendaId,
   executionVersion: 4,
+};
+
+const pendingFormalReadiness: CourseFormalReadiness = {
+  status: 'pending',
+  requiredObjectiveCount: 14,
+  readyObjectiveCount: 0,
+  unresolvedObjectiveIds: Array.from({ length: 14 }, (_, index) => `objective_${index + 1}`),
+  teachingOnlyObjectiveIds: Array.from({ length: 14 }, (_, index) => `objective_${index + 1}`),
+};
+
+const readyFormalReadiness: CourseFormalReadiness = {
+  status: 'ready',
+  requiredObjectiveCount: 1,
+  readyObjectiveCount: 1,
+  unresolvedObjectiveIds: [],
+  teachingOnlyObjectiveIds: [],
 };
 
 const completedTutorResponse = {
@@ -706,13 +723,101 @@ describe('StudySessionView', () => {
     vi.spyOn(window, 'prompt').mockReturnValue('Check my understanding');
 
     render(
-      <StudySessionView workspaceId="ws_1" route={currentRoute} onLaunchQuiz={onLaunchQuiz} />,
+      <StudySessionView
+        workspaceId="ws_1"
+        route={currentRoute}
+        formalReadiness={readyFormalReadiness}
+        onLaunchQuiz={onLaunchQuiz}
+      />,
     );
     await user.click(await screen.findByRole('button', { name: '正式评估可用' }));
     await user.click(await screen.findByRole('button', { name: '发起正式评估' }));
 
     await waitFor(() => expect(api.launchAgendaItem).toHaveBeenCalled());
     expect(onLaunchQuiz).toHaveBeenCalledWith(expect.objectContaining({ id: 'quiz_1' }));
+  });
+
+  it('hides Formal availability and reloads the same Session onto teaching while readiness is pending', async () => {
+    const onSessionChanged = vi.fn();
+    const synthesisItem = {
+      ...detail.agenda.items[0]!,
+      id: 'agenda_synthesis',
+      kind: 'synthesis' as const,
+      state: 'queued' as const,
+      reason: 'Integrate objectives from a chapter-level synthesis group.',
+      launch: {
+        status: 'launchable' as const,
+        capability: 'assessment',
+        resourceId: '{"mode":"concept_practice"}',
+        reason: null,
+      },
+    };
+    const teachingItem = {
+      ...detail.agenda.items[0]!,
+      id: 'agenda_teaching_next',
+      index: 1,
+      state: 'queued' as const,
+      reason: 'Teach the next prerequisite-safe unit.',
+      learningUnitId: 'unit_2',
+      launch: {
+        status: 'launchable' as const,
+        capability: 'lesson',
+        resourceId: '{"learningUnitId":"unit_2","conceptId":"concept_2"}',
+        reason: null,
+      },
+    };
+    const pendingCheckpointItem = {
+      ...synthesisItem,
+      id: 'agenda_formal_pending',
+      index: 2,
+      kind: 'formal_checkpoint' as const,
+      reason: 'Formally verify a pending objective.',
+    };
+    const blockedSession = { ...session, currentAgendaItemId: synthesisItem.id };
+    const blockedAgenda = {
+      ...detail.agenda,
+      items: [synthesisItem, teachingItem, pendingCheckpointItem],
+      currentItemId: synthesisItem.id,
+    };
+    const routedSession = {
+      ...blockedSession,
+      version: blockedSession.version + 1,
+      currentAgendaItemId: teachingItem.id,
+    };
+    const routedAgenda = {
+      ...blockedAgenda,
+      version: blockedAgenda.version + 1,
+      currentItemId: teachingItem.id,
+    };
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [blockedSession] });
+    vi.mocked(api.getStudySession)
+      .mockResolvedValueOnce({ ...detail, session: blockedSession, agenda: blockedAgenda })
+      .mockResolvedValue({ ...detail, session: routedSession, agenda: routedAgenda });
+    vi.mocked(api.startStudySession).mockResolvedValue({ session: routedSession });
+    vi.mocked(api.getLessonExecution).mockResolvedValue({
+      ...lessonReady,
+      session: { status: routedSession.status, version: routedSession.version },
+      agenda: { version: routedAgenda.version, itemState: teachingItem.state },
+    });
+
+    render(
+      <StudySessionView
+        workspaceId="ws_1"
+        route={currentRoute}
+        formalReadiness={pendingFormalReadiness}
+        curriculumUnits={[{ id: 'unit_2', title: 'Next executable teaching' }]}
+        onSessionChanged={onSessionChanged}
+      />,
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Next executable teaching' })).toBeVisible();
+    expect(api.startStudySession).toHaveBeenCalledWith(
+      'ws_1',
+      expect.objectContaining({ sessionAgendaId: currentRoute.sessionAgendaId }),
+      expect.any(AbortSignal),
+    );
+    expect(screen.queryByRole('button', { name: '正式评估可用' })).not.toBeInTheDocument();
+    expect(onSessionChanged).toHaveBeenCalledTimes(1);
   });
 
   it('launches the current due Review and clears its formal version when Agenda changes', async () => {
@@ -861,7 +966,12 @@ describe('StudySessionView', () => {
     vi.spyOn(window, 'prompt').mockReturnValue('Tutor says ready');
 
     const { rerender } = render(
-      <StudySessionView workspaceId="ws_1" route={currentRoute} onLaunchQuiz={onLaunchQuiz} />,
+      <StudySessionView
+        workspaceId="ws_1"
+        route={currentRoute}
+        formalReadiness={readyFormalReadiness}
+        onLaunchQuiz={onLaunchQuiz}
+      />,
     );
 
     expect(await screen.findByText('这部分已经讲到可以检验的程度')).toBeInTheDocument();

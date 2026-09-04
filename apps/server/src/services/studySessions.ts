@@ -26,9 +26,11 @@ import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
 import type { FormalProgressionService } from './formalProgression.js';
+import { assessCourseFormalReadiness } from './formalReadiness.js';
 import type { LessonExecutionService } from './lessonExecution.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
 import { enforceAgentCostPolicies } from './agentProviderRuntime.js';
+import { blockUnreadySynthesisItems, resolveStudyContinuationItem } from './studyContinuation.js';
 import {
   TUTOR_CONTEXT_LIMITS,
   TUTOR_PEDAGOGY_POLICY_VERSION,
@@ -187,20 +189,89 @@ export function createStudySessionService({
     ) {
       throw new AppError(ApiErrorCode.VersionConflict, 'StudySession start route is stale.');
     }
-    const agenda = repos.sessionAgendas.get(parsed.sessionAgendaId);
+    let agenda = repos.sessionAgendas.get(parsed.sessionAgendaId);
     if (!agenda || agenda.status !== 'active') {
       throw new AppError(ApiErrorCode.VersionConflict, 'The active SessionAgenda is unavailable.');
     }
-    const existing = repos.studySessions
+    let existing = repos.studySessions
       .list(workspaceId)
       .find(
         (session) =>
           (session.status === 'active' || session.status === 'paused') &&
-          session.sessionAgendaId === agenda.id &&
+          session.sessionAgendaId === parsed.sessionAgendaId &&
           session.contractVersionId === parsed.contractVersionId &&
           session.curriculumVersionId === parsed.curriculumVersionId &&
           session.studyPlanVersionId === parsed.studyPlanVersionId,
       );
+    const plan = repos.studyPlans.get(parsed.studyPlanVersionId);
+    const curriculum = repos.curricula.get(parsed.curriculumVersionId);
+    if (!plan || !curriculum) {
+      throw new AppError(ApiErrorCode.VersionConflict, 'The accepted Study route is incomplete.');
+    }
+    const formalReadiness = assessCourseFormalReadiness(repos, curriculum, {
+      studyPlan: plan,
+      agenda,
+    });
+    const selectedAgendaItemId = agenda.currentItemId;
+    const selectedAgendaItem = agenda.items.find((item) => item.id === selectedAgendaItemId);
+    const continuation =
+      selectedAgendaItem?.kind === 'synthesis'
+        ? resolveStudyContinuationItem({
+            agenda,
+            plan,
+            progress: repos.studyPlans.listProgress(plan.id),
+            formalReadiness,
+          })
+        : selectedAgendaItem;
+    const mustBlockSelectedSynthesis = Boolean(
+      selectedAgendaItem?.kind === 'synthesis' &&
+      selectedAgendaItem.state === 'queued' &&
+      formalReadiness.status !== 'ready',
+    );
+    if (mustBlockSelectedSynthesis || (continuation && continuation.id !== agenda.currentItemId)) {
+      const previousItemId = agenda.currentItemId;
+      const now = clock.now().toISOString();
+      const routedAgenda = blockUnreadySynthesisItems(agenda, formalReadiness);
+      const nextItemId = continuation?.id ?? selectedAgendaItem?.id ?? null;
+      const reconciled = repos.transaction(() => {
+        const nextAgenda = repos.sessionAgendas.update(
+          {
+            ...routedAgenda,
+            version: agenda!.version + 1,
+            currentItemId: nextItemId,
+            updatedAt: now,
+          },
+          agenda!.version,
+          {
+            id: newId('agenda_evt'),
+            eventType: 'pending_synthesis_routed_to_teaching',
+            actor: 'local',
+            payload: {
+              previousAgendaItemId: previousItemId,
+              currentAgendaItemId: nextItemId,
+              formalReadinessStatus: formalReadiness.status,
+              readyObjectiveCount: formalReadiness.readyObjectiveCount,
+              requiredObjectiveCount: formalReadiness.requiredObjectiveCount,
+            },
+            createdAt: now,
+          },
+        );
+        const nextSession = existing
+          ? repos.studySessions.update(
+              {
+                ...existing,
+                version: existing.version + 1,
+                currentAgendaItemId: nextItemId,
+                updatedAt: now,
+              },
+              existing.version,
+            )
+          : undefined;
+        return { agenda: nextAgenda, session: nextSession };
+      });
+      agenda = reconciled.agenda;
+      existing = reconciled.session;
+    }
     if (existing) return StartStudySessionResponseSchema.parse({ session: existing });
 
     const now = clock.now().toISOString();

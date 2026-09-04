@@ -11,7 +11,9 @@ import {
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
+import { assessCourseFormalReadiness } from './formalReadiness.js';
 import { resolveLaunchForPlanItem } from './studyPlanValidation.js';
+import { resolveStudyContinuationItem } from './studyContinuation.js';
 
 interface SessionAgendaAgentDeps {
   repos: Repositories;
@@ -84,9 +86,8 @@ export function createSessionAgendaAgentService({ repos, clock }: SessionAgendaA
     }
     const now = clock.now().toISOString();
     const existing = repos.sessionAgendas.list(contract.workspaceId);
-    const progressByItem = new Map(
-      repos.studyPlans.listProgress(plan.id).map((item) => [item.planItemId, item.state]),
-    );
+    const progress = repos.studyPlans.listProgress(plan.id);
+    const progressByItem = new Map(progress.map((item) => [item.planItemId, item.state]));
     const selected = selectSessionItems(repos, plan, availableMinutes);
     const items: SessionAgendaItem[] = selected.map((planItem, index) => {
       const effectiveKind =
@@ -121,7 +122,7 @@ export function createSessionAgendaAgentService({ repos, clock }: SessionAgendaA
         timeImpactMinutes: 0,
       };
     });
-    return SessionAgendaSchema.parse({
+    const agenda = SessionAgendaSchema.parse({
       id: newId('agenda'),
       workspaceId: contract.workspaceId,
       contractVersionId: contract.id,
@@ -136,6 +137,17 @@ export function createSessionAgendaAgentService({ repos, clock }: SessionAgendaA
       createdAt: now,
       updatedAt: now,
     });
+    const formalReadiness = assessCourseFormalReadiness(repos, curriculum, {
+      studyPlan: plan,
+      agenda,
+    });
+    const continuation = resolveStudyContinuationItem({
+      agenda,
+      plan,
+      progress,
+      formalReadiness,
+    });
+    return SessionAgendaSchema.parse({ ...agenda, currentItemId: continuation?.id ?? null });
   }
 
   return { composeDraft };

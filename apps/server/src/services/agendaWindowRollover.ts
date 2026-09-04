@@ -7,7 +7,9 @@ import type {
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
+import { assessCourseFormalReadiness } from './formalReadiness.js';
 import type { SessionAgendaAgentService } from './sessionAgendasAgent.js';
+import { blockUnreadySynthesisItems, resolveStudyContinuationItem } from './studyContinuation.js';
 
 interface AgendaWindowRolloverDeps {
   repos: Repositories;
@@ -264,14 +266,41 @@ export function createAgendaWindowRolloverService({
         const items = agenda.items.map((item) =>
           item.id === current.id ? { ...item, state: 'completed' as const } : item,
         );
-        const nextItemId =
+        const progressForContinuation = repos.studyPlans
+          .listProgress(input.plan.id)
+          .map((entry) =>
+            entry.planItemId === input.planItem.id
+              ? { ...entry, state: 'completed' as const }
+              : entry,
+          );
+        const firstQueuedId =
           items.find((item) => item.state === 'queued' && item.launch.status === 'launchable')
             ?.id ?? null;
+        const agendaForContinuation = { ...agenda, items, currentItemId: firstQueuedId };
+        const curriculum = repos.curricula.get(input.plan.curriculumVersionId);
+        const formalReadiness = curriculum
+          ? assessCourseFormalReadiness(repos, curriculum, {
+              studyPlan: input.plan,
+              agenda: agendaForContinuation,
+            })
+          : null;
+        const nextItemId =
+          curriculum && formalReadiness
+            ? (resolveStudyContinuationItem({
+                agenda: agendaForContinuation,
+                plan: input.plan,
+                progress: progressForContinuation,
+                formalReadiness,
+              })?.id ?? null)
+            : null;
+        const routedItems = formalReadiness
+          ? blockUnreadySynthesisItems(agendaForContinuation, formalReadiness).items
+          : items;
         repos.sessionAgendas.update(
           {
             ...agenda,
             version: agenda.version + 1,
-            items,
+            items: routedItems,
             currentItemId: nextItemId,
             updatedAt: input.at,
           },

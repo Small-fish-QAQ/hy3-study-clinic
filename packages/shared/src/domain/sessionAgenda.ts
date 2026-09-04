@@ -96,6 +96,33 @@ export const SessionAgendaItemSchema = z
   .strict();
 export type SessionAgendaItem = z.infer<typeof SessionAgendaItemSchema>;
 
+export type PlannedFormalAgendaItemKind = 'formal_checkpoint' | 'synthesis';
+
+/**
+ * Planned Formal work is different from repair/review work that already has a
+ * durable learner-state trigger. A queued checkpoint or synthesis item must not
+ * be treated as ordinary Lesson work merely because its generic assessment
+ * capability is structurally launchable.
+ */
+export function isPlannedFormalAgendaItemKind(
+  kind: SessionAgendaItemKind,
+): kind is PlannedFormalAgendaItemKind {
+  return kind === 'formal_checkpoint' || kind === 'synthesis';
+}
+
+/** The structural half of the Lesson service's executable-route contract. */
+export function isExecutableTeachingAgendaItem(
+  item: Pick<SessionAgendaItem, 'kind' | 'state' | 'learningUnitId' | 'launch'>,
+): boolean {
+  return (
+    item.kind === 'learning_unit_teaching' &&
+    (item.state === 'queued' || item.state === 'active') &&
+    item.learningUnitId !== null &&
+    item.launch.status === 'launchable' &&
+    item.launch.capability === 'lesson'
+  );
+}
+
 export const SessionAgendaSchema = z
   .object({
     id: z.string().min(1),

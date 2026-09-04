@@ -19,6 +19,8 @@ import { preflightStudyPlan } from './studyPlansAgent.js';
 import { assessCurriculumRecovery } from './curriculumRecovery.js';
 import { assessLearningContractScope } from './learningContractScope.js';
 import type { ReviewSuccessorService } from './reviewSuccessor.js';
+import { assessCourseFormalReadiness } from './formalReadiness.js';
+import { resolveStudyContinuationItem } from './studyContinuation.js';
 
 interface CourseOverviewDeps {
   repos: Repositories;
@@ -298,11 +300,19 @@ export function createCourseOverviewService({ repos, clock, reviewSuccessor }: C
       activeContract && acceptedStudyPlan
         ? repos.formalProgression.listEvidenceForRoute(activeContract.id, acceptedStudyPlan.id)
         : [];
-    const currentAgendaItem = activeAgenda
-      ? (activeAgenda.items.find((item) => item.id === activeAgenda.currentItemId) ??
-        activeAgenda.items.find((item) => item.state === 'queued') ??
-        null)
-      : null;
+    const formalReadiness = assessCourseFormalReadiness(repos, acceptedCurriculum, {
+      studyPlan: acceptedStudyPlan,
+      agenda: activeAgenda,
+    });
+    const currentAgendaItem =
+      activeAgenda && acceptedStudyPlan
+        ? resolveStudyContinuationItem({
+            agenda: activeAgenda,
+            plan: acceptedStudyPlan,
+            progress: planProgress,
+            formalReadiness,
+          })
+        : null;
     const selectedCurriculum = proposedCurriculum ?? planningCurriculum;
     const contractScopeReadiness = selectedContract
       ? assessLearningContractScope(repos, selectedContract)
@@ -437,7 +447,7 @@ export function createCourseOverviewService({ repos, clock, reviewSuccessor }: C
             selectedContract?.status === 'active'),
         canEditStudyPlan: proposedStudyPlan?.status === 'proposed',
         canAcceptStudyPlan: proposedStudyPlan?.status === 'proposed',
-        canContinueStudy: currentAgendaItem?.launch.status === 'launchable',
+        canContinueStudy: currentAgendaItem !== null,
       },
       contractHistory: contracts.slice(-50).map((contract) => ({
         id: contract.id,

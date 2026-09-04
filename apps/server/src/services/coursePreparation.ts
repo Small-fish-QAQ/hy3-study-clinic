@@ -7,6 +7,7 @@ import {
   CoursePreparationSchema,
   RunCoursePreparationRequestSchema,
   fnv1a32,
+  isPlannedFormalAgendaItemKind,
   type CourseExecutionOverview,
   type CourseFormalReadiness,
   type CoursePreparation,
@@ -14,8 +15,6 @@ import {
   type Curriculum,
   type LearningContract,
   type RunCoursePreparationRequest,
-  type SessionAgenda,
-  type StudyPlan,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import { verifyGrounding } from '../grounding/verify.js';
@@ -35,7 +34,8 @@ import {
 } from './curriculum.js';
 import { preflightStudyPlan, type StudyPlanAgentService } from './studyPlansAgent.js';
 import { listAcceptedAdvisoryVisuals } from './advisoryVisuals.js';
-import { validateObjectiveAuthoritySemanticSupport } from './objectiveAuthoritySemanticSupport.js';
+import { assessCourseFormalReadiness } from './formalReadiness.js';
+import { isSelectedStudyItemExecutable } from './studyContinuation.js';
 
 interface CoursePreparationDeps {
   repos: Repositories;
@@ -251,123 +251,6 @@ function projectionForAction(
   };
 }
 
-/**
- * Formal readiness is deliberately narrower than teaching readiness. It only
- * accepts objectives whose exact current SourceBlock claims are independently
- * validated and still eligible for blocking use. Curriculum prose or Lesson
- * output never participates in this decision.
- */
-function assessFormalReadiness(
-  repos: Repositories,
-  curriculum: Curriculum | null,
-  route?: { studyPlan: StudyPlan | null; agenda: SessionAgenda | null },
-): CourseFormalReadiness {
-  if (!curriculum) {
-    return {
-      status: 'pending',
-      requiredObjectiveCount: 0,
-      readyObjectiveCount: 0,
-      unresolvedObjectiveIds: [],
-      teachingOnlyObjectiveIds: [],
-    };
-  }
-  const objectives = curriculum.nodes.flatMap(
-    (node) => node.learningUnit?.objectives.map((objective) => ({ node, objective })) ?? [],
-  );
-  const required = objectives.filter(({ objective }) => objective.priority !== 'optional');
-  const pendingObjectiveIds: string[] = [];
-  const blockedObjectiveIds: string[] = [];
-  const readyObjectiveIds: string[] = [];
-  for (const { node, objective } of required) {
-    if (!objective.semanticSupport) {
-      pendingObjectiveIds.push(objective.id);
-      continue;
-    }
-    const semanticAuthority = validateObjectiveAuthoritySemanticSupport(
-      curriculum,
-      [objective],
-      {
-        isBlockingEligible: (authorityRecordId) =>
-          repos.sourceAuthority.isBlockingEligible(authorityRecordId),
-      },
-      'formal_provider',
-    );
-    if (!semanticAuthority.valid || objective.truthPremiseStatus !== 'independently_verified') {
-      blockedObjectiveIds.push(objective.id);
-      continue;
-    }
-    const sourceBlockIds = new Set(
-      node.sourceReferences
-        .map((reference) => reference.sourceBlockId)
-        .filter((id): id is string => id !== null),
-    );
-    const authorityReady = objective.truthAuthorityRecordIds.some((authorityId) => {
-      if (!repos.sourceAuthority.isBlockingEligible(authorityId)) return false;
-      const bundle = repos.sourceAuthority.getBundle(authorityId);
-      return Boolean(
-        bundle?.claims.some(
-          (claim) =>
-            sourceBlockIds.has(claim.sourceBlockId) &&
-            repos.materials.getBlock(claim.sourceBlockId)?.materialRevisionId ===
-              bundle.record.materialRevisionId,
-        ),
-      );
-    });
-    if (!authorityReady) {
-      blockedObjectiveIds.push(objective.id);
-      continue;
-    }
-
-    // Once an accepted route exists, authority alone is insufficient: the
-    // objective must have an accepted formal-checkpoint route item and that
-    // item must remain launchable on the current Agenda. Question generation
-    // itself remains launch-time work, but the path cannot be absent.
-    if (!route?.studyPlan || !route.agenda) {
-      readyObjectiveIds.push(objective.id);
-      continue;
-    }
-    const planItem = route.studyPlan.items.find(
-      (item) => item.kind === 'formal_checkpoint' && item.objectiveIds.includes(objective.id),
-    );
-    if (!planItem) {
-      blockedObjectiveIds.push(objective.id);
-      continue;
-    }
-    const planLaunch = repos.studyPlans
-      .listLaunchValidations(route.studyPlan.id)
-      .find((entry) => entry.planItemId === planItem.id);
-    if (
-      !planLaunch ||
-      planLaunch.launch.status !== 'launchable' ||
-      planLaunch.launch.capability !== 'assessment'
-    ) {
-      blockedObjectiveIds.push(objective.id);
-      continue;
-    }
-    const agendaItem = route.agenda.items.find(
-      (item) => item.linkedPlanItemId === planItem.id && item.kind === 'formal_checkpoint',
-    );
-    if (!agendaItem || agendaItem.launch.status !== 'launchable') {
-      blockedObjectiveIds.push(objective.id);
-      continue;
-    }
-    readyObjectiveIds.push(objective.id);
-  }
-  const unresolvedIds = [...pendingObjectiveIds, ...blockedObjectiveIds].sort();
-  return {
-    status:
-      blockedObjectiveIds.length > 0
-        ? 'blocked'
-        : pendingObjectiveIds.length > 0
-          ? 'pending'
-          : 'ready',
-    requiredObjectiveCount: required.length,
-    readyObjectiveCount: readyObjectiveIds.length,
-    unresolvedObjectiveIds: unresolvedIds,
-    teachingOnlyObjectiveIds: unresolvedIds,
-  };
-}
-
 export function createCoursePreparationService({
   repos,
   clock,
@@ -528,7 +411,7 @@ export function createCoursePreparationService({
         planningCurriculum.executionSourceManifest.fingerprint &&
       overview.activeAgenda,
     );
-    const formalReadiness = assessFormalReadiness(repos, planningCurriculum, {
+    const formalReadiness = assessCourseFormalReadiness(repos, planningCurriculum, {
       studyPlan: overview.acceptedStudyPlan,
       agenda: overview.activeAgenda,
     });
@@ -645,6 +528,52 @@ export function createCoursePreparationService({
       overview.curriculumRecovery?.remediationRequired !== true &&
       !proposedCurriculum
     ) {
+      const selectedItem = overview.activeAgenda?.items.find(
+        (item) => item.id === overview.activeAgenda?.currentItemId,
+      );
+      const selectedItemExecutable = Boolean(
+        selectedItem &&
+        overview.acceptedStudyPlan &&
+        isSelectedStudyItemExecutable(
+          selectedItem,
+          overview.acceptedStudyPlan,
+          repos.studyPlans.listProgress(overview.acceptedStudyPlan.id),
+          formalReadiness,
+        ),
+      );
+      if (!selectedItemExecutable) {
+        const waitingForFormal = Boolean(
+          selectedItem &&
+          selectedItem.state === 'queued' &&
+          isPlannedFormalAgendaItemKind(selectedItem.kind) &&
+          formalReadiness.status !== 'ready',
+        );
+        return {
+          overview,
+          contract,
+          missingConceptMaterialIds,
+          proposedCurriculum,
+          planningCurriculum,
+          projection: {
+            ...common,
+            state: 'blocked',
+            machineAction: null,
+            learnerAction: 'none',
+            learnerDecisionRequired: false,
+            canResume: false,
+            blocker: waitingForFormal
+              ? {
+                  code: 'formal_assessment_readiness_unavailable',
+                  message:
+                    '当前安排是正式检验，但正式评估依据尚未就绪；系统不会把它当作可执行讲解。',
+                }
+              : {
+                  code: 'preparation_failed',
+                  message: '当前课程安排没有可执行的学习活动。',
+                },
+          },
+        };
+      }
       return {
         overview,
         contract,
