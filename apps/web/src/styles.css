@@ -4266,6 +4266,23 @@ button.danger {
   list-style: none;
 }
 
+.lesson-teaching-section {
+  display: grid;
+  gap: var(--space-5);
+  padding: 0 0 var(--space-5);
+  border: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.lesson-teaching-section.current {
+  border-color: #8eb9ac;
+}
+
+.lesson-segment-content {
+  display: grid;
+  gap: var(--space-3);
+}
+
 .lesson-segment {
   display: grid;
   gap: var(--space-3);

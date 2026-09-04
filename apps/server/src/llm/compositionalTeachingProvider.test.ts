@@ -106,6 +106,7 @@ function skeleton() {
 function lessonInput(): LessonSlotContentGenerationInput {
   return {
     workspaceName: 'Course',
+    learnerLocale: 'zh-CN',
     courseDesign: { desiredDepth: 'deep_transfer', unitFocus: 'focused' },
     skeleton: skeleton(),
     sourceContext: {
@@ -210,6 +211,7 @@ function practiceInput(): PracticeContentGenerationInput {
   const payload = LessonSlotContentProposalPayloadSchema.parse(lessonPayload());
   return {
     workspaceName: lesson.workspaceName,
+    learnerLocale: lesson.learnerLocale,
     courseDesign: lesson.courseDesign,
     skeleton: lesson.skeleton,
     acceptedLesson: payload.slots.map((content, index) =>
@@ -608,8 +610,8 @@ describe('compositional Teaching providers', () => {
     });
     expect(lesson.slots.find((slot) => slot.slotId === 'L2')?.informalCheck).toMatchObject({
       kind: 'apply_simple_example',
-      prompt: expect.stringContaining('choose the next justified action'),
-      expectedSignal: expect.stringContaining('condition'),
+      prompt: expect.stringContaining('选择下一项有依据的动作'),
+      expectedSignal: expect.stringContaining('条件'),
     });
     expect(
       evaluateLessonSlotPedagogy(lesson, input, {

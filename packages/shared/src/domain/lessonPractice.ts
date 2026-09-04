@@ -201,8 +201,6 @@ export const LearnerPracticeProjectionSchema = z
         index: z.number().int().nonnegative(),
         objectiveTitle: z.string().min(1).max(300),
         construct: FormalAssessmentConstructSchema,
-        capabilityTested: z.string().min(1).max(700),
-        pedagogicalReason: z.string().min(1).max(700),
         surface: z.enum(['initial', 'retry']),
         prompt: z.string().min(1).max(1200),
         options: z.array(LearnerPracticeOptionSchema).min(3).max(5),

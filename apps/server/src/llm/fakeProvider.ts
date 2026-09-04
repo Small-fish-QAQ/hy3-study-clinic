@@ -1732,26 +1732,22 @@ export class FakeProvider implements LlmProvider {
       input.skeleton.objectives.map((objective) => [objective.objectiveRef, objective]),
     );
     const depthInvestment = {
-      pass_oriented:
-        'We will build the essential mental model first and keep the example deliberately simple.',
-      working_fluency:
-        'We will connect the mechanism to an important boundary, then reason through a changed case.',
-      high_performance:
-        'We will test the mechanism against a realistic failure mode, an edge case, and a competing trade-off.',
-      deep_transfer:
-        'We will connect the mechanism to adjacent ideas, challenge it with a counterexample, and transfer it to an unfamiliar setting.',
+      pass_oriented: '先建立必要的心智模型，并用一个刻意保持简单的例子说明。',
+      working_fluency: '接着把机制和重要边界连起来，再完整推演一个条件发生变化的案例。',
+      high_performance: '还要用真实的失败模式、边界情况和相互竞争的取舍来检验这个机制。',
+      deep_transfer: '进一步把机制连接到相邻概念，用反例检验它，并迁移到陌生情境。',
     }[input.courseDesign?.desiredDepth ?? 'working_fluency'];
     const focusInvestment =
       input.courseDesign?.unitFocus === 'focused'
-        ? 'We will spend extra time on a richer case, a consequential boundary, and a useful downstream connection.'
-        : 'We will develop the idea fully while avoiding unrelated detours.';
+        ? '这里会投入更多讲解，用更丰富的案例、影响结果的边界和有用的后续联系把它讲透。'
+        : '我们会完整展开核心思路，同时避免无关岔路。';
     const payload = LessonSlotContentProposalPayloadSchema.parse({
       narrative: {
-        whyNow: `${input.skeleton.learningUnitTitle} matters now because it gives the learner a usable model for the decisions that follow. ${depthInvestment}`,
-        summary: `The central idea is now connected to its evidence, mechanism, boundary, and a learner decision. ${focusInvestment}`,
+        whyNow: `现在学习“${input.skeleton.learningUnitTitle}”，是因为它能为后续判断建立可用的模型。${depthInvestment}`,
+        summary: `现在，核心思路已经与证据、机制、边界和学习者需要作出的判断连在一起。${focusInvestment}`,
         forwardBridge: input.learningContext.nextConnection
-          ? `Next, use this model to make sense of ${input.learningContext.nextConnection.title}.`
-          : 'Carry this model into the next unfamiliar case and ask which condition changes the result.',
+          ? `接下来，用这个模型理解“${input.learningContext.nextConnection.title}”。`
+          : '接下来把这个模型带入一个陌生案例，判断究竟是哪项条件改变了结果。',
       },
       slots: input.skeleton.lessonSlots.map((slot) => {
         const objective = objectiveByRef.get(slot.objectiveRefs[0]!);
@@ -1766,8 +1762,8 @@ export class FakeProvider implements LlmProvider {
         const [fromProposition, toProposition] = relationSourceText
           ? relationPropositions(relationSourceText)
           : [
-              `The advisory visual presents a bounded state for ${topic}.`,
-              `That visual state supports a bounded distinction for ${topic}.`,
+              `辅助图示呈现了“${topic}”的一个有限状态。`,
+              `这个图示状态帮助我们对“${topic}”作出有限区分。`,
             ];
         const semanticRelations =
           slot.qualityContract === 'semantic_relation' && relationKind
@@ -1776,7 +1772,7 @@ export class FakeProvider implements LlmProvider {
                   kind: relationKind,
                   fromProposition,
                   toProposition,
-                  relevanceToObjective: `This connection shows why the change matters when reasoning about ${topic}.`,
+                  relevanceToObjective: `这个联系说明了推理“${topic}”时，为什么该变化会影响结果。`,
                   sourceRefs,
                 },
               ]
@@ -1784,24 +1780,23 @@ export class FakeProvider implements LlmProvider {
         const workedProcess =
           slot.qualityContract === 'worked_process' && sourceRef && sourceText
             ? {
-                startingState: `A learner is at the beginning of the source-stated ${topic} procedure with the bounded case facts visible.`,
+                startingState: `学习者位于资料所述“${topic}”流程的起点，案例中的限定事实都已明确。`,
                 ruleOrProcedure: sourceText,
                 steps: [
                   {
-                    action: `Inspect the current ${topic} case state and identify the source-stated condition that applies.`,
-                    reason: 'The condition bounds which transition is authorized by the source.',
-                    resultingState: `The applicable ${topic} condition and current procedural state are explicit.`,
+                    action: `检查当前“${topic}”案例的状态，找出资料中适用的条件。`,
+                    reason: '该条件限定了资料允许进行哪一次状态转换。',
+                    resultingState: `适用的“${topic}”条件和当前流程状态已经明确。`,
                   },
                   {
-                    action: `Choose the source-stated next ${topic} action and carry it out in the bounded case.`,
-                    reason: 'This applies the rule instead of merely naming or repeating it.',
-                    resultingState: `The ${topic} case advances to the result authorized by the procedure.`,
+                    action: `选择资料所述“${topic}”的下一步动作，并在这个限定案例中执行。`,
+                    reason: '这样是在应用规则，而不是只说出或复述规则。',
+                    resultingState: `“${topic}”案例推进到流程所允许的结果。`,
                   },
                 ],
-                learnerDecision: `Decide which source-stated ${topic} action follows from the current condition.`,
-                result: `The case reaches the bounded result for ${topic} without adding unsupported steps.`,
-                whyResultFollows:
-                  'Each transition uses the offered rule and preserves its stated condition, so the result follows from the source-supported procedure.',
+                learnerDecision: `根据当前条件，判断接下来应执行资料所述“${topic}”中的哪项动作。`,
+                result: `案例在没有添加无依据步骤的情况下，得到“${topic}”的限定结果。`,
+                whyResultFollows: `先检查当前“${topic}”条件，再选择资料所述的下一项动作，案例才会推进到流程允许的限定结果。每一次转换都使用给定规则并保留其限定条件，因此结果确实由资料支持的流程推出。`,
                 sourceRefs,
               }
             : null;
@@ -1809,20 +1804,18 @@ export class FakeProvider implements LlmProvider {
           ? objective?.construct === 'identify'
             ? {
                 kind: 'choose_alternative' as const,
-                prompt: `Which case has the defining feature of ${topic}?`,
-                expectedSignal: 'Use the defining condition, not a familiar label.',
+                prompt: `哪个案例真正具备“${topic}”的定义性特征？`,
+                expectedSignal: '依据定义条件判断，不要只看熟悉的标签。',
                 options: [
                   {
                     id: 'A',
-                    text: 'The case that satisfies the defining condition.',
-                    feedbackIfSelected:
-                      'Yes. The defining condition is what makes this the matching case.',
+                    text: '满足定义条件的案例。',
+                    feedbackIfSelected: '正确。正是定义条件使它成为匹配的案例。',
                   },
                   {
                     id: 'B',
-                    text: 'The case that repeats the topic name but lacks the condition.',
-                    feedbackIfSelected:
-                      'The familiar label is not enough; check whether the condition is present.',
+                    text: '重复主题名称、但缺少必要条件的案例。',
+                    feedbackIfSelected: '熟悉的标签还不够；请检查必要条件是否真的存在。',
                   },
                 ],
                 correctOptionId: 'A',
@@ -1834,20 +1827,19 @@ export class FakeProvider implements LlmProvider {
                     : ('own_words' as const),
                 prompt:
                   objective?.construct === 'apply'
-                    ? `Given the current state for ${topic}, choose the next justified action and explain why.`
-                    : `Explain how the key condition changes the result for ${topic}.`,
-                expectedSignal:
-                  'Connect the condition to the resulting effect or decision in your own words.',
+                    ? `根据“${topic}”的当前状态，选择下一项有依据的动作，并说明原因。`
+                    : `请解释关键条件如何改变“${topic}”的结果。`,
+                expectedSignal: '用自己的话把条件与由此产生的影响或判断连接起来。',
               }
           : undefined;
         const base = {
           slotId: slot.slotId,
           explanation:
             slot.qualityContract === 'orientation'
-              ? `Start with a practical question: what changes when the key condition behind ${topic} changes? ${depthInvestment} ${focusInvestment}`
+              ? `先从一个实际问题开始：当“${topic}”背后的关键条件改变时，什么会随之改变？${depthInvestment}${focusInvestment}`
               : sourceText
-                ? `With that question in mind, the material establishes this bounded fact about ${topic}: ${sourceText}`
-                : `The advisory visual offers a useful way to picture ${topic}, but it is supplementary teaching rather than source evidence.`,
+                ? `带着这个问题来看，资料给出了关于“${topic}”的这项限定事实：${sourceText}`
+                : `辅助图示提供了一种理解“${topic}”的方式，但它属于补充讲解，不是资料证据。`,
           sourceRefs: slot.qualityContract === 'orientation' ? [] : sourceRefs,
           visualRefs,
           semanticRelations,
@@ -1859,8 +1851,8 @@ export class FakeProvider implements LlmProvider {
             ...base,
             example: {
               text: workedProcess
-                ? `Now change one condition in the case. Trace how that change alters the available action and check whether the final result still follows.`
-                : `Imagine a concrete ${topic} case, change one condition, and predict how the result should respond.`,
+                ? '现在改变案例中的一个条件，逐步追踪它如何改变可选动作，并检查最终结果是否仍然成立。'
+                : `设想一个具体的“${topic}”案例，改变其中一个条件，再预测结果应如何变化。`,
               sourceRefs: [],
               visualRefs,
             },
@@ -1870,7 +1862,7 @@ export class FakeProvider implements LlmProvider {
           return {
             ...base,
             contrast: {
-              text: `A sound explanation of ${topic} uses the governing condition to predict a result; a surface-similar answer merely repeats a label.`,
+              text: `对“${topic}”的可靠解释会用支配条件预测结果；表面相似的回答只会重复标签。`,
               sourceRefs: [],
               visualRefs,
             },
@@ -1880,9 +1872,8 @@ export class FakeProvider implements LlmProvider {
           return {
             ...base,
             misconception: {
-              hypothesis: `A learner may repeat the ${topic} label without using its source-stated boundary.`,
-              correction:
-                'Return to the governing condition, connect it to the result, and test whether the conclusion survives a changed case.',
+              hypothesis: `学习者可能只重复“${topic}”的标签，却没有使用资料所述的边界。`,
+              correction: '回到支配条件，把它与结果连接起来，再检验条件改变后结论是否仍然成立。',
               sourceRefs: [],
               visualRefs,
             },
@@ -1913,14 +1904,14 @@ export class FakeProvider implements LlmProvider {
       input.sourceContext.offers.map((offer) => [offer.sourceRef, offer]),
     );
     const scenarioDemand = {
-      pass_oriented: 'In a simple new case',
-      working_fluency: 'In a changed case with one important condition altered',
-      high_performance: 'In a realistic failure case with competing constraints',
-      deep_transfer: 'In an unfamiliar transfer case that combines two interacting constraints',
+      pass_oriented: '在一个简单的新案例中',
+      working_fluency: '在一个重要条件已经改变的新案例中',
+      high_performance: '在一个存在相互竞争约束的真实失败案例中',
+      deep_transfer: '在一个组合了两项相互作用约束的陌生迁移案例中',
     }[input.courseDesign?.desiredDepth ?? 'working_fluency'];
     const focusDetail =
       input.courseDesign?.unitFocus === 'focused'
-        ? ' Include the boundary condition that would make the tempting alternative fail.'
+        ? ' 请同时考虑会让那个看似诱人的选项失效的边界条件。'
         : '';
     const payload = PracticeContentProposalPayloadSchema.parse({
       items: input.skeleton.practicePlan.slots.map((slot) => {
@@ -1932,31 +1923,29 @@ export class FakeProvider implements LlmProvider {
         const application =
           slot.construct === 'apply' && sourceText
             ? {
-                startingState:
-                  'A learner has reached a bounded decision point after the relevant procedure has begun.',
+                startingState: '相关流程已经开始，学习者来到一个受条件约束的决策点。',
                 sourceRuleOrProcedure: sourceText,
-                decisionRequired:
-                  'Choose which source-stated action follows from the current procedural state.',
+                decisionRequired: '根据当前流程状态，选择资料所述的下一项动作。',
                 expectedAction:
-                  'Inspect the current condition, then perform the next authorized procedure step while preserving its stated boundary.',
+                  '检查当前条件，在保留资料所述边界的前提下执行下一项允许的流程步骤。',
               }
             : null;
         const initialPrompt =
           slot.construct === 'apply'
-            ? `${scenarioDemand}. ${application?.startingState} Which next step follows from the governing condition?${focusDetail}`
+            ? `${scenarioDemand}，${application?.startingState}根据支配条件，下一步应该做什么？${focusDetail}`
             : slot.construct === 'explain'
-              ? `${scenarioDemand}, a system produces a different outcome after one constraint shifts. Which account best connects the shifted constraint to that outcome?${focusDetail}`
-              : `${scenarioDemand}, which case should be classified by the governing feature rather than by a familiar label?${focusDetail}`;
+              ? `${scenarioDemand}，某个约束变化后，系统产生了不同结果。哪项解释最准确地把变化后的约束与结果连接起来？${focusDetail}`
+              : `${scenarioDemand}，哪个案例应依据支配特征分类，而不是依据熟悉的标签分类？${focusDetail}`;
         const retryPrompt =
           slot.construct === 'apply'
-            ? `A second team reaches the same decision point by a different route, but one prerequisite is now absent. Which action should they take next?`
+            ? '另一个团队通过不同路径来到同一决策点，但现在缺少一项先决条件。他们下一步应该采取什么动作？'
             : slot.construct === 'explain'
-              ? 'A second system changes a different condition. Which mechanism now best accounts for the new consequence?'
-              : 'A troubleshooting report keeps a familiar label but removes one required condition. Which candidate should now be rejected?';
+              ? '另一个系统改变了不同的条件。现在，哪种机制最能解释新的后果？'
+              : '一份故障排查报告保留了熟悉的标签，却去掉了一项必要条件。现在应该排除哪个候选？';
         return {
           practiceSlotId: slot.practiceSlotId,
           capabilityTested: slot.capabilityToObserve,
-          pedagogicalReason: `The learner must demonstrate ${slot.construct} rather than recall a source location or repeat a label.`,
+          pedagogicalReason: `学习者需要真正展示 ${slot.construct} 能力，而不是回忆资料位置或重复标签。`,
           sourceRefs,
           visualRefs,
           application,
@@ -1968,57 +1957,50 @@ export class FakeProvider implements LlmProvider {
                 text:
                   slot.construct === 'apply'
                     ? application!.expectedAction
-                    : 'Use the defining condition to connect the case to the bounded conclusion.',
-                feedbackIfSelected:
-                  'Correct: this response uses the offered boundary to demonstrate the planned capability.',
+                    : '使用定义条件，把案例与限定结论连接起来。',
+                feedbackIfSelected: '正确：这项回答确实利用给定边界完成了所需推理。',
               },
               {
                 optionRef: 'B',
-                text: 'Choose the response that repeats the most source vocabulary without using its condition.',
+                text: '选择重复资料词汇最多、却没有使用其条件的回答。',
                 feedbackIfSelected:
-                  'This is surface recall. Identify what the offered condition makes you conclude or do.',
+                  '这只是表面回忆。请判断给定条件会让你得出什么结论或采取什么动作。',
               },
               {
                 optionRef: 'C',
-                text: 'Generalize the idea to every context even when the stated condition is absent.',
-                feedbackIfSelected:
-                  'This exceeds the authority boundary. Return to the offered condition.',
+                text: '即使缺少所述条件，也把这个想法推广到所有情境。',
+                feedbackIfSelected: '这超出了依据边界。请回到给定条件。',
               },
             ],
             correctOptionRef: 'A',
-            hint: 'Use the condition to make a decision; do not rely on a familiar label.',
-            explanation:
-              'The correct response makes the source-stated boundary do observable reasoning work.',
+            hint: '用条件作出判断，不要依赖熟悉的标签。',
+            explanation: '正确回答会让资料所述边界真正参与可观察的推理。',
           },
           retry: {
             prompt: retryPrompt,
             options: [
               {
                 optionRef: 'A',
-                text: 'Keep the original answer because the topic label is unchanged.',
-                feedbackIfSelected:
-                  'The changed case facts matter; the label alone cannot justify the same response.',
+                text: '主题标签没有变化，所以保留原答案。',
+                feedbackIfSelected: '案例事实的变化会影响判断；仅凭标签无法证明原回答仍然成立。',
               },
               {
                 optionRef: 'B',
                 text:
                   slot.construct === 'apply'
-                    ? 'Re-evaluate the changed condition, then select the source-authorized next action.'
-                    : 'Re-evaluate the changed condition and connect it to the corresponding bounded result.',
-                feedbackIfSelected:
-                  'Correct: this changed surface preserves the same construct and authority boundary.',
+                    ? '重新评估变化后的条件，再选择资料允许的下一项动作。'
+                    : '重新评估变化后的条件，并把它连接到对应的限定结果。',
+                feedbackIfSelected: '正确：这个新情境仍然检验同一种能力，并保留相同的依据边界。',
               },
               {
                 optionRef: 'C',
-                text: 'Use an unrelated rule of thumb to avoid checking the offered condition.',
-                feedbackIfSelected:
-                  'An unrelated heuristic does not demonstrate the planned capability.',
+                text: '使用无关的经验法则，避开对给定条件的检查。',
+                feedbackIfSelected: '无关的经验法则不能展示这里要检验的能力。',
               },
             ],
             correctOptionRef: 'B',
-            hint: 'Ask how the changed condition should change your reasoning or action.',
-            explanation:
-              'The retry remains bounded to the same capability while requiring a new contextual judgment.',
+            hint: '想一想：条件改变后，你的推理或动作应该怎样随之改变？',
+            explanation: '重试仍限定在同一种能力上，但要求你在新情境中重新作出判断。',
           },
         };
       }),

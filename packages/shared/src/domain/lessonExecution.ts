@@ -256,6 +256,131 @@ export const LessonSegmentProjectionSchema = z
   .strict();
 export type LessonSegmentProjection = z.infer<typeof LessonSegmentProjectionSchema>;
 
+/**
+ * A learner-facing teaching section is derived at read time. It deliberately
+ * retains references to the immutable underlying segments instead of copying
+ * or merging their content, so segment identity and claim-level provenance stay
+ * precise.
+ */
+export type LearnerTeachingSectionBoundary =
+  'inline_check' | 'conceptual_transition' | 'lesson_end';
+
+export interface LearnerPacingSegment {
+  index: number;
+  purpose: string;
+  explanation: string;
+  informalCheck?: unknown | null;
+  workedProcess?: {
+    startingState: string;
+    ruleOrProcedure: string;
+    steps: Array<{ action: string; reason: string; resultingState: string }>;
+    learnerDecision: string | null;
+    result: string;
+    whyResultFollows: string;
+  } | null;
+  example?: { text: string } | null;
+  contrast?: { text: string } | null;
+  misconception?: { hypothesis: string; correction: string } | null;
+  possibleMisconception?: { hypothesis: string; correction: string } | null;
+}
+
+export interface LearnerTeachingSection<T extends LearnerPacingSegment> {
+  index: number;
+  /** Exact original segment objects, in their persisted order. */
+  segments: T[];
+  startSegmentIndex: number;
+  endSegmentIndex: number;
+  boundary: LearnerTeachingSectionBoundary;
+}
+
+const SECONDARY_PACING_MIN_VISIBLE_CHARACTERS = 2400;
+const MEANINGFUL_TRANSITION_PURPOSES = new Set([
+  'worked_example',
+  'contrast',
+  'comparison',
+  'misconception',
+  'common_pitfall',
+  'guided_practice',
+]);
+
+function learnerVisibleCharacterCount(segment: LearnerPacingSegment): number {
+  const worked = segment.workedProcess;
+  return [
+    segment.explanation,
+    segment.example?.text,
+    segment.contrast?.text,
+    segment.misconception?.hypothesis,
+    segment.misconception?.correction,
+    segment.possibleMisconception?.hypothesis,
+    segment.possibleMisconception?.correction,
+    worked?.startingState,
+    worked?.ruleOrProcedure,
+    ...(worked?.steps.flatMap((step) => [step.action, step.reason, step.resultingState]) ?? []),
+    worked?.learnerDecision,
+    worked?.result,
+    worked?.whyResultFollows,
+  ].reduce((total, value) => total + (value?.trim().length ?? 0), 0);
+}
+
+function beginsMeaningfulTransition(segment: LearnerPacingSegment): boolean {
+  return (
+    MEANINGFUL_TRANSITION_PURPOSES.has(segment.purpose) ||
+    Boolean(
+      segment.workedProcess ||
+      segment.example ||
+      segment.contrast ||
+      segment.misconception ||
+      segment.possibleMisconception,
+    )
+  );
+}
+
+/**
+ * Groups granular Lesson segments for natural learner pacing. Inline checks are
+ * the primary stop. A non-check stop is allowed only after a genuinely long
+ * uninterrupted block and immediately before a meaningful conceptual shift.
+ * Nothing returned by this function is persisted.
+ */
+export function groupLessonSegmentsForLearner<T extends LearnerPacingSegment>(
+  segments: readonly T[],
+): LearnerTeachingSection<T>[] {
+  const sections: LearnerTeachingSection<T>[] = [];
+  let current: T[] = [];
+  let visibleCharacters = 0;
+
+  const close = (boundary: LearnerTeachingSectionBoundary) => {
+    if (current.length === 0) return;
+    sections.push({
+      index: sections.length,
+      segments: current,
+      startSegmentIndex: current[0]!.index,
+      endSegmentIndex: current.at(-1)!.index,
+      boundary,
+    });
+    current = [];
+    visibleCharacters = 0;
+  };
+
+  segments.forEach((segment, index) => {
+    current.push(segment);
+    visibleCharacters += learnerVisibleCharacterCount(segment);
+    if (segment.informalCheck) {
+      close('inline_check');
+      return;
+    }
+    const next = segments[index + 1];
+    if (
+      next &&
+      visibleCharacters >= SECONDARY_PACING_MIN_VISIBLE_CHARACTERS &&
+      beginsMeaningfulTransition(next)
+    ) {
+      close('conceptual_transition');
+    }
+  });
+  close('lesson_end');
+  return sections;
+}
+
 export const LessonPresentationStatusSchema = z.enum([
   'not_started',
   'in_progress',

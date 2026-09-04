@@ -4,6 +4,7 @@ import {
   LessonExecutionProjectionSchema,
   LessonExecutionStateSchema,
   LessonTutorContextSchema,
+  groupLessonSegmentsForLearner,
 } from './lessonExecution.js';
 
 describe('lesson execution contracts', () => {
@@ -157,5 +158,83 @@ describe('lesson execution contracts', () => {
         allowedActions: ['retry_preparation', 'start_lesson'],
       }),
     ).toThrow(/may only retry preparation/);
+  });
+
+  it('groups short granular segments continuously through the next inline check', () => {
+    const sourceA = { referenceKey: 'S1' };
+    const sourceB = { referenceKey: 'S2' };
+    const segments = [
+      {
+        index: 0,
+        purpose: 'orientation',
+        explanation: '建立问题背景。',
+        sources: [sourceA],
+        informalCheck: null,
+      },
+      {
+        index: 1,
+        purpose: 'mechanism',
+        explanation: '追踪条件如何改变中间状态。',
+        sources: [sourceB],
+        informalCheck: null,
+      },
+      {
+        index: 2,
+        purpose: 'guided_practice',
+        explanation: '把机制用于一个具体判断。',
+        sources: [],
+        informalCheck: { prompt: '条件改变后会怎样？' },
+      },
+      {
+        index: 3,
+        purpose: 'comparison',
+        explanation: '最后澄清相邻概念的边界。',
+        sources: [sourceA],
+        informalCheck: null,
+      },
+    ];
+
+    const sections = groupLessonSegmentsForLearner(segments);
+
+    expect(sections.map((section) => section.segments.map((segment) => segment.index))).toEqual([
+      [0, 1, 2],
+      [3],
+    ]);
+    expect(sections.map((section) => section.boundary)).toEqual(['inline_check', 'lesson_end']);
+    expect(sections[0]!.segments[0]).toBe(segments[0]);
+    expect(sections[0]!.segments[0]!.sources).toBe(segments[0]!.sources);
+    expect(sections[0]!.segments[1]!.sources).toBe(segments[1]!.sources);
+  });
+
+  it('uses a non-check boundary only after long teaching before a meaningful transition', () => {
+    const short = [
+      { index: 0, purpose: 'explanation', explanation: '短讲解一。', informalCheck: null },
+      { index: 1, purpose: 'mechanism', explanation: '短讲解二。', informalCheck: null },
+      { index: 2, purpose: 'worked_example', explanation: '短案例。', informalCheck: null },
+    ];
+    expect(groupLessonSegmentsForLearner(short)).toHaveLength(1);
+
+    const long = [
+      {
+        index: 0,
+        purpose: 'explanation',
+        explanation: '实'.repeat(2400),
+        informalCheck: null,
+      },
+      {
+        index: 1,
+        purpose: 'worked_example',
+        explanation: '进入一个有意义的案例转换。',
+        example: { text: '具体案例' },
+        informalCheck: null,
+      },
+    ];
+    const sections = groupLessonSegmentsForLearner(long);
+    expect(sections).toHaveLength(2);
+    expect(sections[0]).toMatchObject({
+      startSegmentIndex: 0,
+      endSegmentIndex: 0,
+      boundary: 'conceptual_transition',
+    });
   });
 });

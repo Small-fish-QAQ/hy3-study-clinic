@@ -1316,6 +1316,8 @@ describe('Teaching Brief preparation', () => {
       desiredDepth: 'working_fluency',
       unitFocus: 'focused',
     });
+    expect(harness.provider.lastLessonContentInput?.learnerLocale).toBe('zh-CN');
+    expect(harness.provider.lastPracticeContentInput?.learnerLocale).toBe('zh-CN');
     const curriculum = harness.repos.curricula.get(harness.curriculumId)!;
     const currentUnit = curriculum.nodes.find((node) => node.id === harness.learningUnitId)!;
     expect(harness.provider.lastLessonContentInput?.skeleton).toMatchObject({
@@ -3440,7 +3442,15 @@ describe('Teaching Brief preparation', () => {
       expectedLessonStateVersion: readyVersion,
       action: { kind: 'start_lesson' },
     });
-    expect(startedLesson.progress?.presentedSegmentIndexes).toContain(0);
+    const firstCheckIndex = startedLesson.lesson!.segments.findIndex(
+      (segment) => segment.informalCheck,
+    );
+    expect(firstCheckIndex).toBeGreaterThan(0);
+    expect(startedLesson.progress?.currentSegmentIndex).toBe(firstCheckIndex);
+    expect(startedLesson.progress?.presentedSegmentIndexes).toEqual(
+      Array.from({ length: firstCheckIndex + 1 }, (_, index) => index),
+    );
+    expect(startedLesson.allowedActions).toContain('respond_to_informal_check');
     const lessonCommand = harness.repos.operations.getByIdempotencyKey('ws_1', 'lesson-start')!;
     expect(operationStudySessionId(harness.db, lessonCommand.id)).toBe(session.id);
     expect(harness.services.lessonExecution.tutorContext('ws_1', session.id)?.visuals).toHaveLength(
@@ -3473,10 +3483,12 @@ describe('Teaching Brief preparation', () => {
     expect(agendaItemStateBefore).toBe('queued');
 
     let current = harness.services.lessonExecution.get('ws_1', session.id);
-    // A learner check gates forward movement, and at working_fluency depth the
-    // planned boundary-work segment follows it, so the check is no longer last.
+    // A learner check is the primary pacing boundary. All short coherent
+    // segments before it were presented by the single start command above.
     let respondedToCheck = false;
-    for (let segmentIndex = 1; segmentIndex < current.progress!.segmentCount; segmentIndex += 1) {
+    let presentationGuard = 0;
+    while (!current.allowedActions.includes('complete_presentation') && presentationGuard < 20) {
+      presentationGuard += 1;
       if (current.currentInformalCheck && !current.currentInformalCheck.response) {
         expect(current.currentInformalCheck.guidance).toBeNull();
         expect(current.allowedActions).not.toContain('complete_presentation');
@@ -3492,17 +3504,21 @@ describe('Teaching Brief preparation', () => {
             response: 'The condition changes which candidate remains eligible.',
           },
         });
-        expect(current.currentInformalCheck?.guidance).toContain('condition');
+        expect(current.currentInformalCheck?.guidance).toContain('条件');
         expect(current.currentInformalCheck?.correct).toBeNull();
         respondedToCheck = true;
+        continue;
       }
       current = await harness.services.lessonExecution.command('ws_1', session.id, {
-        command: command(`lesson-segment-${segmentIndex}`),
+        command: command(`lesson-section-${presentationGuard}`),
         expectedSessionVersion: current.session.version,
         expectedAgendaVersion: current.agenda!.version,
         expectedAgendaItemId: session.currentAgendaItemId!,
         expectedLessonStateVersion: current.progress!.stateVersion,
-        action: { kind: 'move_to_segment', segmentIndex },
+        action: {
+          kind: 'move_to_segment',
+          segmentIndex: current.progress!.currentSegmentIndex + 1,
+        },
       });
     }
     expect(respondedToCheck).toBe(true);
@@ -3517,6 +3533,8 @@ describe('Teaching Brief preparation', () => {
     });
     expect(current.practice?.status).toBe('available');
     const initialItem = current.practice!.item!;
+    expect(initialItem).not.toHaveProperty('capabilityTested');
+    expect(initialItem).not.toHaveProperty('pedagogicalReason');
     current = await harness.services.lessonExecution.command('ws_1', session.id, {
       command: command('practice-wrong-answer'),
       expectedSessionVersion: current.session.version,

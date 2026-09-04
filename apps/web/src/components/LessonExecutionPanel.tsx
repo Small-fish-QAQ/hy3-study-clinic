@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { groupLessonSegmentsForLearner } from '@hy3-clinic/shared';
 import type {
   LessonExecutionProjection,
   LessonExecutionCommandRequest,
@@ -241,6 +242,112 @@ function InformalCheck({
   );
 }
 
+function TeachingSegmentContent({
+  segment,
+  readOnly,
+  checkActive,
+  active,
+  busy,
+  responseDraft,
+  commandLoading,
+  onAction,
+  onResponseChange,
+}: {
+  segment: LessonSegmentProjection;
+  readOnly: boolean;
+  checkActive: boolean;
+  active: boolean;
+  busy: boolean;
+  responseDraft: string;
+  commandLoading: boolean;
+  onAction: (action: LessonExecutionCommandRequest['action']) => void;
+  onResponseChange: (value: string) => void;
+}) {
+  return (
+    <div className="lesson-segment-content">
+      <p className="lesson-segment-explanation">{segment.explanation}</p>
+      <SourceReferences sources={segment.sources} origin={segment.explanationOrigin} />
+      {segment.workedProcess ? (
+        <section className="lesson-worked-process" aria-label="完整推演过程">
+          <strong>完整推演过程</strong>
+          <p>
+            <b>起始状态：</b>
+            {segment.workedProcess.startingState}
+          </p>
+          <p>
+            <b>依据的规则或流程：</b>
+            {segment.workedProcess.ruleOrProcedure}
+          </p>
+          <ol>
+            {segment.workedProcess.steps.map((step, stepIndex) => (
+              <li key={stepIndex}>
+                <p>{step.action}</p>
+                <small>
+                  {step.reason} → {step.resultingState}
+                </small>
+              </li>
+            ))}
+          </ol>
+          {segment.workedProcess.learnerDecision ? (
+            <p>
+              <b>需要作出的判断：</b>
+              {segment.workedProcess.learnerDecision}
+            </p>
+          ) : null}
+          <p>
+            <b>结果：</b>
+            {segment.workedProcess.result}
+          </p>
+          <p>
+            <b>为什么得到这个结果：</b>
+            {segment.workedProcess.whyResultFollows}
+          </p>
+          <SourceReferences
+            sources={segment.workedProcess.sources ?? []}
+            origin={segment.workedProcess.origin ?? 'hy3_synthesis'}
+          />
+        </section>
+      ) : null}
+      {segment.example ? <Illustration label="教学示例" value={segment.example} /> : null}
+      {segment.contrast ? <Illustration label="对比一下" value={segment.contrast} /> : null}
+      {segment.possibleMisconception ? (
+        <aside className="lesson-misconception">
+          <strong>可能混淆的地方</strong>
+          <p>{segment.possibleMisconception.hypothesis}</p>
+          <p>{segment.possibleMisconception.correction}</p>
+          <SourceReferences
+            sources={segment.possibleMisconception.sources}
+            origin={segment.possibleMisconception.origin ?? 'hy3_synthesis'}
+          />
+          <small>这是提醒，不是对你的判断。</small>
+        </aside>
+      ) : null}
+      {readOnly && segment.informalCheck ? (
+        <section className="lesson-informal-check" aria-label="讲解中的思考点">
+          <p className="eyebrow">讲解中的思考点</p>
+          <h5>{segment.informalCheck.prompt}</h5>
+          <p className="small muted">非正式练习准备完成后即可开始并记录回应。</p>
+        </section>
+      ) : checkActive ? (
+        <InformalCheck
+          segment={segment}
+          response={responseDraft}
+          disabled={!active || busy || commandLoading}
+          submitting={commandLoading}
+          onResponseChange={onResponseChange}
+          onSubmit={() =>
+            onAction({
+              kind: 'respond_to_informal_check',
+              segmentIndex: segment.index,
+              response: responseDraft.trim(),
+            })
+          }
+        />
+      ) : null}
+    </div>
+  );
+}
+
 function ReadyLesson({
   projection,
   active,
@@ -264,6 +371,21 @@ function ReadyLesson({
   const progress = projection.progress!;
   const currentIndex = progress.currentSegmentIndex;
   const presented = new Set(progress.presentedSegmentIndexes);
+  const teachingSections = groupLessonSegmentsForLearner(lesson.segments);
+  const currentTeachingSection = teachingSections.find((section) =>
+    section.segments.some((segment) => segment.index === currentIndex),
+  );
+  const presentedSectionCount = teachingSections.filter((section) =>
+    section.segments.every((segment) => presented.has(segment.index)),
+  ).length;
+  const previousTeachingSection = currentTeachingSection
+    ? teachingSections[currentTeachingSection.index - 1]
+    : undefined;
+  const nextTeachingSection = currentTeachingSection
+    ? currentIndex < currentTeachingSection.endSegmentIndex
+      ? currentTeachingSection
+      : teachingSections[currentTeachingSection.index + 1]
+    : undefined;
   const presentationCompleted = progress.presentationStatus === 'presentation_completed';
   const canStart = !readOnly && projection.allowedActions.includes('start_lesson');
   const canNext = !readOnly && projection.allowedActions.includes('move_to_next_segment');
@@ -281,8 +403,8 @@ function ReadyLesson({
               '讲解内容已接受 · 等待非正式练习'
             ) : (
               <>
-                {presentationStateLabel(projection.progress)} · 已呈现 {presented.size}/
-                {lesson.segments.length} 个部分
+                {presentationStateLabel(projection.progress)} · 已呈现 {presentedSectionCount}/
+                {teachingSections.length} 段连续讲解
               </>
             )}
           </p>
@@ -296,29 +418,26 @@ function ReadyLesson({
         </div>
         {!readOnly ? (
           <div className="lesson-segment-progress" aria-label="讲解进度">
-            {lesson.segments.map((segment) => (
-              <button
-                type="button"
-                key={segment.index}
-                className={
-                  segment.index === currentIndex
-                    ? 'current'
-                    : presented.has(segment.index)
-                      ? 'presented'
-                      : ''
-                }
-                aria-label={`第 ${segment.index + 1} 部分${segment.index === currentIndex ? '，当前' : ''}`}
-                aria-current={segment.index === currentIndex ? 'step' : undefined}
-                disabled={
-                  busy ||
-                  !active ||
-                  (!presented.has(segment.index) && segment.index !== currentIndex)
-                }
-                onClick={() => onAction({ kind: 'move_to_segment', segmentIndex: segment.index })}
-              >
-                {segment.index + 1}
-              </button>
-            ))}
+            {teachingSections.map((section) => {
+              const isCurrent =
+                presented.size > 0 && section.index === currentTeachingSection?.index;
+              const isPresented = section.segments.every((segment) => presented.has(segment.index));
+              return (
+                <button
+                  type="button"
+                  key={section.index}
+                  className={isCurrent ? 'current' : isPresented ? 'presented' : ''}
+                  aria-label={`第 ${section.index + 1} 段讲解${isCurrent ? '，当前' : ''}`}
+                  aria-current={isCurrent ? 'step' : undefined}
+                  disabled={busy || !active || presented.size === 0 || (!isPresented && !isCurrent)}
+                  onClick={() =>
+                    onAction({ kind: 'move_to_segment', segmentIndex: section.endSegmentIndex })
+                  }
+                >
+                  {section.index + 1}
+                </button>
+              );
+            })}
           </div>
         ) : null}
       </header>
@@ -358,7 +477,7 @@ function ReadyLesson({
 
       {canStart ? (
         <div className="lesson-start-callout">
-          <p>准备好后，从第一部分开始。你可以随时回看已经呈现的内容。</p>
+          <p>准备好后开始连续讲解。遇到思考题时，我们会停下来等你作答。</p>
           <button
             type="button"
             className="primary"
@@ -371,118 +490,64 @@ function ReadyLesson({
       ) : null}
 
       <div className="lesson-segment-list" aria-label="连贯讲解内容">
-        {lesson.segments.map((segment) => {
-          const isCurrent = !readOnly && segment.index === currentIndex;
-          const isPresented = !readOnly && presented.has(segment.index);
+        {teachingSections.map((section) => {
+          const isCurrent =
+            !readOnly &&
+            presented.size > 0 &&
+            section.segments.some((segment) => segment.index === currentIndex);
+          const visibleSegments = readOnly
+            ? section.segments
+            : section.segments.filter((segment) => presented.has(segment.index));
+          if (visibleSegments.length === 0) return null;
           return (
             <section
-              key={segment.index}
-              className={`lesson-segment ${isCurrent ? 'current' : ''} ${isPresented ? 'presented' : 'upcoming'}`}
+              key={section.index}
+              className={`lesson-teaching-section ${isCurrent ? 'current' : 'presented'}`}
               aria-current={isCurrent ? 'step' : undefined}
             >
-              <span className="sr-only">讲解第 {segment.index + 1} 部分</span>
-              <p className="lesson-segment-explanation">{segment.explanation}</p>
-              <SourceReferences sources={segment.sources} origin={segment.explanationOrigin} />
-              {segment.workedProcess ? (
-                <section className="lesson-worked-process" aria-label="完整推演过程">
-                  <strong>完整推演过程</strong>
-                  <p>
-                    <b>起始状态：</b>
-                    {segment.workedProcess.startingState}
-                  </p>
-                  <p>
-                    <b>依据的规则或流程：</b>
-                    {segment.workedProcess.ruleOrProcedure}
-                  </p>
-                  <ol>
-                    {segment.workedProcess.steps.map((step, stepIndex) => (
-                      <li key={stepIndex}>
-                        <p>{step.action}</p>
-                        <small>
-                          {step.reason} → {step.resultingState}
-                        </small>
-                      </li>
-                    ))}
-                  </ol>
-                  {segment.workedProcess.learnerDecision ? (
-                    <p>
-                      <b>需要作出的判断：</b>
-                      {segment.workedProcess.learnerDecision}
-                    </p>
-                  ) : null}
-                  <p>
-                    <b>结果：</b>
-                    {segment.workedProcess.result}
-                  </p>
-                  <p>
-                    <b>为什么得到这个结果：</b>
-                    {segment.workedProcess.whyResultFollows}
-                  </p>
-                  <SourceReferences
-                    sources={segment.workedProcess.sources ?? []}
-                    origin={segment.workedProcess.origin ?? 'hy3_synthesis'}
-                  />
-                </section>
-              ) : null}
-              {segment.example ? <Illustration label="教学示例" value={segment.example} /> : null}
-              {segment.contrast ? <Illustration label="对比一下" value={segment.contrast} /> : null}
-              {segment.possibleMisconception ? (
-                <aside className="lesson-misconception">
-                  <strong>可能混淆的地方</strong>
-                  <p>{segment.possibleMisconception.hypothesis}</p>
-                  <p>{segment.possibleMisconception.correction}</p>
-                  <SourceReferences
-                    sources={segment.possibleMisconception.sources}
-                    origin={segment.possibleMisconception.origin ?? 'hy3_synthesis'}
-                  />
-                  <small>这是提醒，不是对你的判断。</small>
-                </aside>
-              ) : null}
-              {readOnly && segment.informalCheck ? (
-                <section className="lesson-informal-check" aria-label="讲解中的思考点">
-                  <p className="eyebrow">讲解中的思考点</p>
-                  <h5>{segment.informalCheck.prompt}</h5>
-                  <p className="small muted">非正式练习准备完成后即可开始并记录回应。</p>
-                </section>
-              ) : isCurrent ? (
-                <InformalCheck
+              {visibleSegments.map((segment) => (
+                <TeachingSegmentContent
+                  key={segment.index}
                   segment={segment}
-                  response={responseDraft}
-                  disabled={!active || busy || commandLoading}
-                  submitting={commandLoading}
+                  readOnly={readOnly}
+                  checkActive={isCurrent && segment.index === currentIndex}
+                  active={active}
+                  busy={busy}
+                  responseDraft={responseDraft}
+                  commandLoading={commandLoading}
+                  onAction={onAction}
                   onResponseChange={onResponseChange}
-                  onSubmit={() =>
-                    onAction({
-                      kind: 'respond_to_informal_check',
-                      segmentIndex: segment.index,
-                      response: responseDraft.trim(),
-                    })
-                  }
                 />
-              ) : null}
+              ))}
               {!readOnly && isCurrent && !presentationCompleted ? (
                 <div className="lesson-segment-actions">
-                  {canRevisit && currentIndex > 0 ? (
+                  {canRevisit && previousTeachingSection ? (
                     <button
                       type="button"
                       disabled={!active || busy || commandLoading}
                       onClick={() =>
-                        onAction({ kind: 'move_to_segment', segmentIndex: currentIndex - 1 })
+                        onAction({
+                          kind: 'move_to_segment',
+                          segmentIndex: previousTeachingSection.endSegmentIndex,
+                        })
                       }
                     >
-                      回看上一部分
+                      回看上一段讲解
                     </button>
                   ) : null}
-                  {canNext ? (
+                  {canNext && nextTeachingSection ? (
                     <button
                       type="button"
                       className="primary"
                       disabled={!active || busy || commandLoading}
                       onClick={() =>
-                        onAction({ kind: 'move_to_segment', segmentIndex: currentIndex + 1 })
+                        onAction({
+                          kind: 'move_to_segment',
+                          segmentIndex: nextTeachingSection.endSegmentIndex,
+                        })
                       }
                     >
-                      继续到下一部分
+                      继续讲解
                     </button>
                   ) : null}
                   {canComplete ? (
@@ -502,8 +567,7 @@ function ReadyLesson({
         })}
       </div>
 
-      {lesson.summary.available &&
-      (readOnly || presentationCompleted || progress.presentationStatus === 'summary_ready') ? (
+      {lesson.summary.available && (readOnly || presentationCompleted || canComplete) ? (
         <section className="lesson-summary" aria-label="本节总结">
           <p className="eyebrow">本节总结</p>
           {lesson.summary.text ? <p>{lesson.summary.text}</p> : null}
@@ -544,8 +608,6 @@ function ReadyLesson({
             <div className="lesson-practice-item">
               <div className="lesson-practice-purpose">
                 <strong>{projection.practice.item.objectiveTitle}</strong>
-                <span>检验能力：{projection.practice.item.capabilityTested}</span>
-                <small>为什么练：{projection.practice.item.pedagogicalReason}</small>
               </div>
               <p className="lesson-practice-prompt">{projection.practice.item.prompt}</p>
               <div className="lesson-practice-options">

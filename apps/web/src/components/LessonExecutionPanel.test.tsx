@@ -280,6 +280,11 @@ describe('LessonExecutionPanel', () => {
       response: null,
       respondedAt: null,
     };
+    inProgress.lesson!.segments[0]!.example = {
+      text: '这个补充例子帮助学习者观察条件改变后的结果。',
+      origin: 'hy3_synthesis',
+      sources: [],
+    };
     vi.spyOn(api, 'getLessonExecution').mockResolvedValue(inProgress);
     const command = vi.spyOn(api, 'lessonExecutionCommand').mockResolvedValue({
       ...inProgress,
@@ -332,6 +337,50 @@ describe('LessonExecutionPanel', () => {
     expect(screen.getByText(/不计入正式进展/)).toBeInTheDocument();
   });
 
+  it('presents multiple short teaching segments continuously before one check', async () => {
+    const continuous = readyLesson({
+      stateVersion: 2,
+      currentSegmentIndex: 2,
+      segmentCount: 3,
+      presentedSegmentIndexes: [0, 1, 2],
+      presentationStatus: 'summary_ready',
+      presentationCompletedAt: null,
+    });
+    const check = {
+      ...continuous.lesson!.segments[0]!.informalCheck!,
+      guidance: null,
+      presented: true,
+      response: null,
+      respondedAt: null,
+    };
+    continuous.lesson!.segments[0]!.informalCheck = null;
+    continuous.lesson!.segments.push({
+      ...continuous.lesson!.segments[1]!,
+      index: 2,
+      purpose: 'guided_practice',
+      explanation: '最后把前面的机制用于一个变化后的判断。',
+      informalCheck: check,
+    });
+    continuous.allowedActions = ['respond_to_informal_check'];
+    vi.spyOn(api, 'getLessonExecution').mockResolvedValue(continuous);
+
+    render(
+      <LessonExecutionPanel
+        workspaceId="ws_1"
+        sessionId="session_1"
+        agendaItemId="item_1"
+        active
+      />,
+    );
+
+    expect(await screen.findByText('先把条件概率放回事件与信息的关系中。')).toBeInTheDocument();
+    expect(screen.getByText('再通过一个简单例子观察分母为何来自已知条件。')).toBeInTheDocument();
+    expect(screen.getByText('最后把前面的机制用于一个变化后的判断。')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('已呈现 1/1 段连续讲解');
+    expect(screen.queryByRole('button', { name: '继续讲解' })).not.toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: '练习回应' })).toBeEnabled();
+  });
+
   it('renders a supported choose check as real choices with deterministic feedback', async () => {
     const user = userEvent.setup();
     const choice = readyLesson({
@@ -369,6 +418,7 @@ describe('LessonExecutionPanel', () => {
       correct: true,
       feedback: '正确：先更新条件，再判断结果。',
     };
+    answered.allowedActions = ['move_to_next_segment'];
     const command = vi.spyOn(api, 'lessonExecutionCommand').mockResolvedValue(answered);
 
     render(
@@ -395,6 +445,7 @@ describe('LessonExecutionPanel', () => {
     );
     expect(await screen.findByText('回答正确')).toBeInTheDocument();
     expect(screen.getByText('正确：先更新条件，再判断结果。')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '继续讲解' })).toBeEnabled();
   });
 
   it('shows contingent wrong-answer feedback and a changed retry before Practice completion', async () => {
@@ -416,8 +467,6 @@ describe('LessonExecutionPanel', () => {
         index: 0,
         objectiveTitle: '解释条件概率',
         construct: 'explain',
-        capabilityTested: '解释条件如何改变结果',
-        pedagogicalReason: '区分因果理解和表面复述',
         surface: 'initial',
         prompt: '哪种解释说明了条件如何改变结果？',
         options: [
@@ -499,6 +548,8 @@ describe('LessonExecutionPanel', () => {
       />,
     );
     await user.click(await screen.findByRole('button', { name: '只重复标题中的词' }));
+    expect(screen.queryByText(/检验能力/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/为什么练/)).not.toBeInTheDocument();
     expect(await screen.findByText('这只是表面复述，没有让条件参与推理。')).toBeInTheDocument();
     expect(screen.getByText(/找出条件如何改变候选范围/)).toBeInTheDocument();
     expect(screen.getByText('换一个候选集合后，哪种解释仍然成立？')).toBeInTheDocument();
@@ -667,7 +718,7 @@ describe('LessonExecutionPanel', () => {
         active
       />,
     );
-    await user.click(await screen.findByRole('button', { name: '继续到下一部分' }));
+    await user.click(await screen.findByRole('button', { name: '继续讲解' }));
     await waitFor(() => expect(commandSignal).toBeDefined());
 
     rendered.rerender(

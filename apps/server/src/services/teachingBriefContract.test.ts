@@ -6,7 +6,7 @@ import type {
   TeachingBriefGenerationInput,
 } from '../llm/provider.js';
 import { FakeProvider } from '../llm/fakeProvider.js';
-import { lessonSlotContentMessages } from '../llm/prompts.js';
+import { lessonSlotContentMessages, practiceContentMessages } from '../llm/prompts.js';
 import {
   validateLessonSlotContentCandidate,
   validatePracticeContentCandidate,
@@ -300,6 +300,7 @@ function compositionalContractInput(): LessonSlotContentGenerationInput {
   });
   return {
     workspaceName: 'Course',
+    learnerLocale: 'zh-CN',
     skeleton,
     sourceContext: {
       fingerprint: 'context_contract',
@@ -349,6 +350,75 @@ describe('compositional provider candidate validation', () => {
     expect(prompt).not.toContain('worked_process needs both a semantic relation');
   });
 
+  it('requires substantive working-fluency teaching, focused investment, and a generalized trace', () => {
+    const normalInput = {
+      ...compositionalContractInput(),
+      courseDesign: { desiredDepth: 'working_fluency', unitFocus: 'normal' },
+    } satisfies LessonSlotContentGenerationInput;
+    const focusedInput = {
+      ...normalInput,
+      courseDesign: { desiredDepth: 'working_fluency', unitFocus: 'focused' },
+    } satisfies LessonSlotContentGenerationInput;
+    const normalPrompt = lessonSlotContentMessages(normalInput)
+      .map((message) => message.content)
+      .join('\n');
+    const focusedPrompt = lessonSlotContentMessages(focusedInput)
+      .map((message) => message.content)
+      .join('\n');
+
+    expect(normalPrompt).toContain('enough substantive teaching');
+    expect(normalPrompt).toContain('not merely a compact factual summary');
+    expect(normalPrompt).toContain('mechanisms and causal relationships');
+    expect(normalPrompt).toContain('meaningful misconception or failure mode');
+    expect(normalPrompt).toContain('changed-scenario check or reasoning opportunity');
+    expect(normalPrompt).toContain('process, mechanism, causal chain, architecture, workflow');
+    expect(normalPrompt).toContain('trace at least one concrete instance through the mechanism');
+    expect(normalPrompt).toContain('worked comparison, concrete reasoning case, boundary case');
+    expect(normalPrompt).not.toContain('user query ->');
+
+    expect(focusedPrompt).toContain('same global desiredDepth');
+    expect(focusedPrompt).toContain('rather than treating focus as depth + 1');
+    expect(focusedPrompt).toContain('richer mechanism trace');
+    expect(focusedPrompt).toContain('Do not manufacture this investment');
+    expect(focusedPrompt).toContain('Focus grants no truth, citation, Formal, credit, or mastery');
+    expect(normalPrompt).not.toContain('FOCUSED UNIT');
+  });
+
+  it('propagates zh-CN as a generation contract without adding a lexical hard gate', async () => {
+    const provider = new FakeProvider();
+    const lessonInput = {
+      ...compositionalContractInput(),
+      courseDesign: { desiredDepth: 'working_fluency', unitFocus: 'focused' },
+    } satisfies LessonSlotContentGenerationInput;
+    const lessonPrompt = lessonSlotContentMessages(lessonInput)
+      .map((message) => message.content)
+      .join('\n');
+    const lesson = await provider.generateLessonSlotContent(lessonInput);
+    const practiceInput = {
+      workspaceName: lessonInput.workspaceName,
+      learnerLocale: lessonInput.learnerLocale,
+      courseDesign: lessonInput.courseDesign,
+      skeleton: lessonInput.skeleton,
+      acceptedLesson: lesson.slots,
+      sourceContext: lessonInput.sourceContext,
+      visualContext: lessonInput.visualContext,
+    } satisfies PracticeContentGenerationInput;
+    const practicePrompt = practiceContentMessages(practiceInput)
+      .map((message) => message.content)
+      .join('\n');
+
+    for (const prompt of [lessonPrompt, practicePrompt]) {
+      expect(prompt).toContain('LEARNER LANGUAGE (zh-CN)');
+      expect(prompt).toContain('natural Simplified Chinese');
+      expect(prompt).toContain('Do not drift into Traditional Chinese');
+      expect(prompt).toContain('generation responsibility');
+    }
+    expect(lessonPrompt).toContain('inline-check prompts/options/feedback');
+    expect(practicePrompt).toContain('both attempts and all option-contingent feedback');
+    expect(lessonInput.learnerLocale).toBe('zh-CN');
+    expect(practiceInput.learnerLocale).toBe('zh-CN');
+  });
+
   it('accepts Fake Lesson then Practice content inside the immutable plans', async () => {
     const provider = new FakeProvider();
     const lessonInput = compositionalContractInput();
@@ -360,6 +430,7 @@ describe('compositional provider candidate validation', () => {
     });
     const practiceInput: PracticeContentGenerationInput = {
       workspaceName: 'Course',
+      learnerLocale: 'zh-CN',
       skeleton: lessonInput.skeleton,
       acceptedLesson: lesson.slots,
       sourceContext: lessonInput.sourceContext,
@@ -442,6 +513,7 @@ describe('compositional provider candidate validation', () => {
     const acceptedLesson = await provider.generateLessonSlotContent(lessonInput);
     const practiceInput: PracticeContentGenerationInput = {
       workspaceName: 'Course',
+      learnerLocale: 'zh-CN',
       skeleton: lessonInput.skeleton,
       acceptedLesson: acceptedLesson.slots,
       sourceContext: lessonInput.sourceContext,
@@ -492,6 +564,7 @@ describe('compositional provider candidate validation', () => {
     const lesson = await provider.generateLessonSlotContent(lessonInput);
     const practiceInput: PracticeContentGenerationInput = {
       workspaceName: 'Course',
+      learnerLocale: 'zh-CN',
       courseDesign: { desiredDepth: 'working_fluency', unitFocus: 'normal' },
       skeleton: lessonInput.skeleton,
       acceptedLesson: lesson.slots,

@@ -25,6 +25,7 @@ import {
 import { AppError, notFound } from '../errors.js';
 import { curriculumSourceBlockFingerprint } from '../grounding/sourceFingerprint.js';
 import { ProviderError } from '../llm/errors.js';
+import { LEARNER_CONTENT_LOCALE } from '../llm/provider.js';
 import type {
   LlmProvider,
   LessonSlotContentGenerationInput,
@@ -72,8 +73,8 @@ import {
 } from './objectiveAuthoritySemanticSupport.js';
 
 export const TEACHING_BRIEF_PROMPT_VERSION = 'teaching-brief-v3-compositional-r1-pedagogy';
-export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v2-teacher-narrative';
-export const PRACTICE_CONTENT_PROMPT_VERSION = 'teaching-practice-content-v2-lesson-novelty';
+export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v3-dogfood-substance-zh-cn';
+export const PRACTICE_CONTENT_PROMPT_VERSION = 'teaching-practice-content-v3-zh-cn-novelty';
 /** Two logical calls, each original + one repair at the configured 5-minute ceiling. */
 export const COMPOSITIONAL_PREPARATION_LEASE_MS = 22 * 60 * 1000;
 
@@ -740,6 +741,7 @@ export function createTeachingBriefPreparationService({
     };
     return {
       workspaceName: route.workspace.name,
+      learnerLocale: LEARNER_CONTENT_LOCALE,
       ...(input.courseDesign ? { courseDesign: input.courseDesign } : {}),
       skeleton: lessonSkeleton,
       sourceContext: input.sourceContext,
@@ -760,6 +762,7 @@ export function createTeachingBriefPreparationService({
   ): PracticeContentGenerationInput {
     return {
       workspaceName: route.workspace.name,
+      learnerLocale: LEARNER_CONTENT_LOCALE,
       ...(input.courseDesign ? { courseDesign: input.courseDesign } : {}),
       skeleton: checkpoint.skeleton,
       acceptedLesson: checkpoint.lessonContent,

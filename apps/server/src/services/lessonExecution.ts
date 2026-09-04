@@ -4,6 +4,7 @@ import {
   LessonExecutionCommandRequestSchema,
   LessonExecutionProjectionSchema,
   LessonTutorContextSchema,
+  groupLessonSegmentsForLearner,
   type LessonExecutionProjection,
   type LessonExecutionState,
   type LearnerPracticeProjection,
@@ -361,15 +362,27 @@ export function createLessonExecutionService({
       });
     }
     const lesson = projectLesson(brief, state)!;
+    const teachingSections = groupLessonSegmentsForLearner(brief.segments);
+    const currentTeachingSection = teachingSections.find((section) =>
+      section.segments.some((segment) => segment.index === state.currentSegmentIndex),
+    );
     const presentationCompleted = Boolean(state.presentationCompletedAt);
     const completed = Boolean(state.practiceCompletedAt);
+    const allChecksAnswered = brief.segments.every(
+      (segment) =>
+        !segment.informalCheck ||
+        state.informalInteractions.some(
+          (interaction) =>
+            interaction.segmentIndex === segment.index && Boolean(interaction.response),
+        ),
+    );
     const presentationStatus = completed
       ? 'presentation_completed'
       : presentationCompleted
         ? 'presentation_completed'
         : state.presentedSegmentIndexes.length === 0
           ? 'not_started'
-          : state.presentedSegmentIndexes.length === brief.segments.length
+          : state.presentedSegmentIndexes.length === brief.segments.length && allChecksAnswered
             ? 'summary_ready'
             : 'in_progress';
     const current = lesson.segments[state.currentSegmentIndex];
@@ -399,7 +412,9 @@ export function createLessonExecutionService({
                   ...(current?.informalCheck && !interaction?.response
                     ? (['respond_to_informal_check'] as const)
                     : []),
-                  ...(state.currentSegmentIndex < brief.segments.length - 1 &&
+                  ...(currentTeachingSection &&
+                  (state.currentSegmentIndex < currentTeachingSection.endSegmentIndex ||
+                    currentTeachingSection.index < teachingSections.length - 1) &&
                   (!current?.informalCheck || Boolean(interaction?.response))
                     ? (['move_to_next_segment'] as const)
                     : []),
@@ -613,8 +628,6 @@ export function createLessonExecutionService({
             index: currentItemIndex,
             objectiveTitle: item.objectiveTitle,
             construct: item.construct,
-            capabilityTested: item.capabilityTested,
-            pedagogicalReason: item.pedagogicalReason,
             surface: surfaceName,
             prompt: surface.prompt,
             options: surface.options.map(({ id, text }) => ({ id, text })),
@@ -1105,11 +1118,13 @@ export function createLessonExecutionService({
         if (action.kind === 'start_lesson') {
           if (current.presentedSegmentIndexes.length > 0)
             throw new AppError(ApiErrorCode.ValidationError, 'Lesson has already started.');
+          const firstSection = groupLessonSegmentsForLearner(brief.segments)[0]!;
+          const firstSectionIndexes = firstSection.segments.map((segment) => segment.index);
           next = repos.lessonExecution.update(
             {
               ...current,
-              currentSegmentIndex: 0,
-              presentedSegmentIndexes: [0],
+              currentSegmentIndex: firstSection.endSegmentIndex,
+              presentedSegmentIndexes: firstSectionIndexes,
               version: current.version + 1,
               updatedAt: now,
             },
@@ -1119,13 +1134,20 @@ export function createLessonExecutionService({
         } else if (action.kind === 'move_to_segment') {
           if (action.segmentIndex >= brief.segments.length)
             throw new AppError(ApiErrorCode.ValidationError, 'Unknown lesson segment.');
-          const nextIndex = action.segmentIndex;
+          const sections = groupLessonSegmentsForLearner(brief.segments);
+          const currentSection = sections.find((section) =>
+            section.segments.some((segment) => segment.index === current.currentSegmentIndex),
+          )!;
+          const requestedSection = sections.find((section) =>
+            section.segments.some((segment) => segment.index === action.segmentIndex),
+          )!;
+          const nextIndex = requestedSection.endSegmentIndex;
           const currentSegment = brief.segments[current.currentSegmentIndex];
           const currentInteraction = current.informalInteractions.find(
             (entry) => entry.segmentIndex === current.currentSegmentIndex,
           );
           if (
-            nextIndex > current.currentSegmentIndex &&
+            requestedSection.index > currentSection.index &&
             currentSegment?.informalCheck &&
             !currentInteraction?.response
           ) {
@@ -1135,21 +1157,25 @@ export function createLessonExecutionService({
             );
           }
           if (
-            nextIndex > current.currentSegmentIndex + 1 &&
-            !current.presentedSegmentIndexes.includes(nextIndex)
+            requestedSection.index > currentSection.index + 1 &&
+            !requestedSection.segments.every((segment) =>
+              current.presentedSegmentIndexes.includes(segment.index),
+            )
           )
             throw new AppError(
               ApiErrorCode.ValidationError,
               'Lesson segments must be presented in order.',
             );
-          const presented =
-            nextIndex === current.currentSegmentIndex ||
-            current.presentedSegmentIndexes.includes(nextIndex)
-              ? current.presentedSegmentIndexes
-              : [...current.presentedSegmentIndexes, nextIndex].sort((a, b) => a - b);
-          eventKind = current.presentedSegmentIndexes.includes(nextIndex)
+          const requestedIndexes = requestedSection.segments.map((segment) => segment.index);
+          const presented = [
+            ...new Set([...current.presentedSegmentIndexes, ...requestedIndexes]),
+          ].sort((a, b) => a - b);
+          eventKind = requestedIndexes.every((index) =>
+            current.presentedSegmentIndexes.includes(index),
+          )
             ? 'segment_revisited'
             : 'segment_presented';
+          eventPayload = { ...action, presentedSegmentIndexes: requestedIndexes };
           next = repos.lessonExecution.update(
             {
               ...current,

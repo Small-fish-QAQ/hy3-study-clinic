@@ -216,10 +216,9 @@ describe('ordinary Fake learning execution core loop', () => {
       expectedLessonStateVersion: preparedLesson.progress!.stateVersion,
       action: { kind: 'start_lesson' },
     });
-    expect(startedLesson.progress).toMatchObject({
-      presentedSegmentIndexes: [0],
-      presentationCompletedAt: null,
-    });
+    expect(startedLesson.progress).toMatchObject({ presentationCompletedAt: null });
+    expect(startedLesson.progress!.presentedSegmentIndexes[0]).toBe(0);
+    expect(startedLesson.progress!.presentedSegmentIndexes.length).toBeGreaterThan(1);
     const lessonState = repos.lessonExecution.getForSession(startedSession.id, teachingItem!.id)!;
     const teachingBrief = repos.teachingBriefs.get(lessonState.teachingBriefId!)!;
     const acceptedLessonCheckpoint = repos.acceptedLessonCheckpoints.get(
@@ -233,7 +232,7 @@ describe('ordinary Fake learning execution core loop', () => {
       }),
     ).toMatchObject({
       objectiveIds: expect.arrayContaining([objective!.id]),
-      presentedSegmentIndexes: [0],
+      presentedSegmentIndexes: startedLesson.progress!.presentedSegmentIndexes,
     });
 
     let launchAgenda = route.agenda;

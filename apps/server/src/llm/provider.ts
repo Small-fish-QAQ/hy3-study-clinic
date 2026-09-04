@@ -663,8 +663,13 @@ export interface LessonTeachingSkeleton {
   plannedActivityBudget: TeachingSkeleton['plannedActivityBudget'];
 }
 
+/** The current learner-facing product language; this is not a preference system. */
+export const LEARNER_CONTENT_LOCALE = 'zh-CN' as const;
+export type LearnerContentLocale = typeof LEARNER_CONTENT_LOCALE;
+
 export interface LessonSlotContentGenerationInput {
   workspaceName: string;
+  learnerLocale: LearnerContentLocale;
   courseDesign?: TeachingBriefGenerationInput['courseDesign'];
   skeleton: LessonTeachingSkeleton;
   sourceContext: TeachingBriefGenerationInput['sourceContext'];
@@ -687,6 +692,7 @@ export interface LessonSlotContentGenerationInput {
  */
 export interface PracticeContentGenerationInput {
   workspaceName: string;
+  learnerLocale: LearnerContentLocale;
   /** Same Course-wide depth and independent Unit focus used for the accepted Lesson. */
   courseDesign?: TeachingBriefGenerationInput['courseDesign'];
   skeleton: TeachingSkeleton;

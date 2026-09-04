@@ -606,6 +606,7 @@ function compositionalInputs(
   const visualContext = { offerCount: 0, serializedBytes: 0, offers: [] };
   const lessonInput: LessonSlotContentGenerationInput = {
     workspaceName: 'Course',
+    learnerLocale: 'zh-CN',
     skeleton,
     sourceContext,
     visualContext,
@@ -793,6 +794,7 @@ function compositionalInputs(
   });
   const practiceInput: PracticeContentGenerationInput = {
     workspaceName: 'Course',
+    learnerLocale: 'zh-CN',
     skeleton,
     acceptedLesson: lesson.slots,
     sourceContext,
