@@ -100,8 +100,10 @@ import type {
   MisconceptionProposalInput,
   MasteryChallengeProposalInput,
   ProviderCandidateFailureArtifact,
+  ProviderCandidateNormalizer,
   ProviderCandidatePreprocessor,
   ProviderCallOptions,
+  ProviderRecoveryAction,
   ProviderTargetedRepairScope,
   QuizGenerationInput,
   RejectedCandidateFinding,
@@ -119,6 +121,11 @@ import type {
   TutorStepInput,
   TutorTurnInput,
 } from './provider.js';
+import {
+  mergeLocalizedAliasRepair,
+  normalizeLessonPreparationCandidate,
+  normalizePracticePreparationCandidate,
+} from './preparationRecovery.js';
 import {
   buildStructuredOutputDiagnostic,
   contentShape,
@@ -155,8 +162,24 @@ const REJECTED_FINDING_PATH_LIMIT = 200;
  * Findings describe what local deterministic code objected to. Schema paths and
  * codes come from Zod; semantic codes come from the local candidate validator.
  */
-function rejectedCandidateFindings(failure: TryParseFailure): RejectedCandidateFinding[] {
+function rejectedCandidateFindings(
+  failure: TryParseFailure,
+  diagnostic: StructuredOutputDiagnostic,
+): RejectedCandidateFinding[] {
   const findings: RejectedCandidateFinding[] = [];
+  if (diagnostic.preparationFailure) {
+    findings.push({
+      kind: 'recovery',
+      ...diagnostic.preparationFailure,
+      recoveryAction: diagnostic.recoveryAction ?? 'none',
+      normalizationRan: diagnostic.normalizationRan ?? false,
+      normalizationActions: diagnostic.normalizationActions ?? [],
+      localized: diagnostic.localizedRepair ?? false,
+      immutableItemIds: diagnostic.immutableItemIds ?? [],
+      affectedItemIds: diagnostic.affectedItemIds ?? [],
+      affectedComponents: diagnostic.affectedComponents ?? [],
+    });
+  }
   for (const issue of failure.parse.schemaIssues ?? []) {
     if (findings.length >= REJECTED_FINDING_LIMIT) break;
     findings.push({
@@ -299,7 +322,42 @@ function normalizeTargetedRepairScope(
   const invalidItemIds = [...new Set(scope.invalidItemIds)]
     .filter((id) => pattern.test(id))
     .slice(0, limit);
-  return invalidItemIds.length > 0 ? { invalidItemIds } : null;
+  if (invalidItemIds.length === 0) return null;
+  const invalid = new Set(invalidItemIds);
+  const allowedComponents =
+    collection.collectionKey === 'slots'
+      ? new Set([
+          'explanation',
+          'semanticRelations',
+          'workedProcess',
+          'example',
+          'contrast',
+          'misconception',
+          'informalCheck',
+        ])
+      : collection.collectionKey === 'items'
+        ? new Set(['capabilityTested', 'pedagogicalReason', 'initial', 'retry'])
+        : new Set<string>();
+  const localizedTextRepair = scope.localizedTextRepair
+    ? {
+        rootNarrative:
+          collection.collectionKey === 'slots' && scope.localizedTextRepair.rootNarrative,
+        items: scope.localizedTextRepair.items.flatMap((item) => {
+          if (!invalid.has(item.itemId)) return [];
+          const components = [...new Set(item.components)].filter((component) =>
+            allowedComponents.has(component),
+          );
+          return components.length > 0 ? [{ itemId: item.itemId, components }] : [];
+        }),
+      }
+    : undefined;
+  return {
+    invalidItemIds,
+    ...(localizedTextRepair &&
+    (localizedTextRepair.rootNarrative || localizedTextRepair.items.length > 0)
+      ? { localizedTextRepair }
+      : {}),
+  };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -418,6 +476,19 @@ function mergeTargetedRepairCandidate(
   collection: TargetedRepairCollection,
   scope: ProviderTargetedRepairScope,
 ): unknown {
+  if (
+    scope.localizedTextRepair &&
+    (collection.collectionKey === 'slots' || collection.collectionKey === 'items') &&
+    (collection.identityKey === 'slotId' || collection.identityKey === 'practiceSlotId')
+  ) {
+    return mergeLocalizedAliasRepair(
+      previous,
+      repaired,
+      collection.collectionKey,
+      collection.identityKey,
+      scope.localizedTextRepair,
+    );
+  }
   if (!isRecord(previous) || !isRecord(repaired)) return repaired;
   const previousItems = previous[collection.collectionKey];
   const repairedItems = repaired[collection.collectionKey];
@@ -450,6 +521,68 @@ function mergeTargetedRepairCandidate(
   // Preserve immutable whole-response fields (for example the Lesson narrative)
   // unless the repair explicitly supplies a replacement.
   return { ...previous, ...repaired, [collection.collectionKey]: merged };
+}
+
+function recoveryScopeDiagnostic(
+  scope: ProviderTargetedRepairScope | undefined,
+  immutableItemIds: string[],
+  action: ProviderRecoveryAction,
+) {
+  const localized = scope?.localizedTextRepair;
+  return {
+    action,
+    localized: Boolean(localized),
+    immutableItemIds,
+    affectedItemIds: scope?.invalidItemIds ?? [],
+    affectedComponents: localized
+      ? [
+          ...(localized.rootNarrative ? ['narrative'] : []),
+          ...localized.items.flatMap((item) =>
+            item.components.map((component) => `${item.itemId}.${component}`),
+          ),
+        ]
+      : [],
+  };
+}
+
+function selectRecoveryAction(
+  failure: TryParseFailure,
+  scope: ProviderTargetedRepairScope | undefined,
+): ProviderRecoveryAction {
+  if (!failure.repairable) return 'none';
+  if (failure.category === 'TRUNCATED_OUTPUT' || failure.category === 'EMPTY_RESPONSE') {
+    return 'clean_regeneration';
+  }
+  if (scope?.localizedTextRepair) return 'localized_alias_repair';
+  if (scope) return 'targeted_repair';
+  return 'structured_repair';
+}
+
+function immutableInventoryInstruction(
+  ids: readonly string[],
+  partialReplacementAllowed = false,
+): string[] {
+  return ids.length > 0
+    ? [
+        partialReplacementAllowed
+          ? `Immutable final item inventory and exact order: ${ids.join(', ')}. Local reassembly preserves every frozen peer; return only the named replacement identities. Never add, rename, combine, split, or reorder the final inventory.`
+          : `Immutable item inventory and exact order: ${ids.join(', ')}. Every identity must remain present exactly once; do not add, remove, rename, combine, split, or reorder identities.`,
+      ]
+    : [];
+}
+
+function localizedRepairInstruction(scope: ProviderTargetedRepairScope | undefined): string[] {
+  const localized = scope?.localizedTextRepair;
+  if (!localized) return [];
+  const components = [
+    ...(localized.rootNarrative ? ['narrative'] : []),
+    ...localized.items.flatMap((item) =>
+      item.components.map((component) => `${item.itemId}.${component}`),
+    ),
+  ];
+  return [
+    `Localized learner-text repair components: ${components.join(', ')}. Rewrite only learner-facing strings that expose an internal alias. Preserve all sourceRefs, visualRefs, identities, option identities, correct answers, object/array shape, and every unrelated string; local code will ignore all other changes.`,
+  ];
 }
 
 const GROUPED_STUDY_PLAN_KINDS = [
@@ -808,18 +941,21 @@ export class Hy3Provider implements LlmProvider {
         'Preserve the whole-Lesson narrative unless a diagnostic explicitly identifies it. Return only slotId plus bounded content fields for repaired slots. Never output objective refs, construct, role, duration, protection, authority mode, Practice, Formal Evidence, mastery, or progression.',
         'Use only the slot-specific offered S*/V* aliases. A semantic relation needs two distinct propositions and objective relevance; keywords alone never prove reasoning.',
         'For a worked-process failure, provide a concrete starting state, transitions with reasons, result, and why it follows. Cite an offered source only for source-backed claims; supplementary worked cases keep sourceRefs empty. If the repaired slot has learnerActionRequired=true, also provide an aligned pre-guidance informalCheck that requires the learner to decide/predict/act before any explanation. choose_alternative checks require structured choices and one correct option. Do not substitute a label or generic checklist.',
-        'Remove internal aliases and planning vocabulary from every learner-visible string. Write as the same coherent teacher voice as the frozen Lesson.',
+        'Remove internal aliases and planning vocabulary from every learner-visible string. Citations belong only in structured sourceRefs/visualRefs arrays, never in prose as O1/S1/L1/PR1-style or parenthetical aliases. Write as the same coherent teacher voice as the frozen Lesson.',
         'Return a slots object containing only replacements for the named invalid L* identities. Local code will reassemble it with every frozen valid slot exactly.',
       ].join('\n'),
       {
         maxTokens: 10_000,
         schemaName: 'lesson-slot-content-v2-teacher-narrative',
+        candidateNormalizer: normalizeLessonPreparationCandidate,
+        immutableItemIds: input.skeleton.lessonSlots.map((slot) => slot.slotId),
         targetedRepairCollection: {
           collectionKey: 'slots',
           identityKey: 'slotId',
           itemSchema: TeachingLessonSlotContentSchema,
         },
         allowIndependentRepair: false,
+        allowLocalizedAliasRepairAfterStructuralRepair: true,
       },
     );
   }
@@ -837,18 +973,21 @@ export class Hy3Provider implements LlmProvider {
         'Return only practiceSlotId plus bounded item/surface content. Never output objective refs, construct, authority mode, duration, credit, Formal Evidence, mastery, or progression.',
         'Use only slot-specific offered S*/V* aliases and stay inside the locally stated capability and prohibited-construct boundary.',
         'For an apply failure, application must expose a source-stated starting state/rule, real decision, and expected action reflected by both prompt and action options. Lexical apply/next-step markers alone are invalid.',
-        'Remove answer-bearing source quotation, accepted-Lesson worked-case repetition, exposed internal aliases, and same-scenario retries. A retry must use a meaningfully changed scenario.',
+        'Remove answer-bearing source quotation, accepted-Lesson worked-case repetition, exposed internal aliases, and same-scenario retries. Citations belong only in structured sourceRefs/visualRefs arrays, never in learner prose. A retry must use a meaningfully changed scenario.',
         'Return an items object containing only replacements for the named invalid PR* identities. Local code will reassemble it with every frozen valid item exactly.',
       ].join('\n'),
       {
         maxTokens: 8_000,
         schemaName: 'practice-content-v2-lesson-novelty',
+        candidateNormalizer: normalizePracticePreparationCandidate,
+        immutableItemIds: input.skeleton.practicePlan.slots.map((slot) => slot.practiceSlotId),
         targetedRepairCollection: {
           collectionKey: 'items',
           identityKey: 'practiceSlotId',
           itemSchema: ProposedPracticeSlotContentSchema,
         },
         allowIndependentRepair: false,
+        allowLocalizedAliasRepairAfterStructuralRepair: true,
       },
     );
   }
@@ -1115,11 +1254,11 @@ export class Hy3Provider implements LlmProvider {
   }
 
   /**
-   * Core request/validate loop with independent fixed repair budgets.
-   * At most one schema repair and one deterministic-candidate repair are
-   * allowed. A third physical attempt exists only when attempt 2 crosses from
-   * one failure kind to the other; equivalent repeated failures remain
-   * exhausted after attempt 2.
+   * Core request/validate loop with fixed, failure-class-specific budgets.
+   * Truncation regenerates cleanly without feeding partial bytes back. Current
+   * compositional calls normally stop after one recovery; the only third-call
+   * exception is the observed structural-repair -> alias-only localized repair.
+   * Legacy calls retain their independently bounded schema/candidate behavior.
    */
   private async complete<T>(
     messages: ChatMessage[],
@@ -1131,8 +1270,12 @@ export class Hy3Provider implements LlmProvider {
       schemaName?: string;
       targetedRepairCollection?: TargetedRepairCollection;
       candidatePreprocessor?: ProviderCandidatePreprocessor;
+      candidateNormalizer?: ProviderCandidateNormalizer;
+      immutableItemIds?: string[];
       /** Legacy calls may spend independent schema/candidate repairs; compositional calls do not. */
       allowIndependentRepair?: boolean;
+      /** Narrow R2.1 exception justified by repeated real structural -> alias failures. */
+      allowLocalizedAliasRepairAfterStructuralRepair?: boolean;
     } = {},
   ): Promise<T> {
     const schemaName =
@@ -1140,6 +1283,10 @@ export class Hy3Provider implements LlmProvider {
       opts?.telemetry?.schemaFingerprint ??
       opts?.telemetry?.operationType ??
       'provider-structured-output';
+    const preparationRecoveryEnabled =
+      requestOptions.candidateNormalizer !== undefined ||
+      requestOptions.immutableItemIds !== undefined ||
+      requestOptions.allowLocalizedAliasRepairAfterStructuralRepair === true;
     const original = await this.chatWithDiagnostic(
       messages,
       opts,
@@ -1154,7 +1301,10 @@ export class Hy3Provider implements LlmProvider {
       opts,
       undefined,
       requestOptions.candidatePreprocessor,
+      requestOptions.candidateNormalizer,
+      false,
     );
+    const immutableItemIds = requestOptions.immutableItemIds ?? [];
     const firstCandidateTargetedRepair =
       requestOptions.targetedRepairCollection &&
       !first.ok &&
@@ -1166,15 +1316,35 @@ export class Hy3Provider implements LlmProvider {
             requestOptions.targetedRepairCollection,
           )
         : null;
+    const firstSchemaBaseCandidate = requestOptions.candidateNormalizer
+      ? requestOptions.candidateNormalizer(first.parse.parsed).candidate
+      : first.parse.parsed;
     let targetedRepairBase: {
       candidate: unknown;
       scope: ProviderTargetedRepairScope;
     } | null =
       firstCandidateTargetedRepair && !first.ok && first.candidate !== undefined
         ? { candidate: first.candidate, scope: firstCandidateTargetedRepair }
-        : requestOptions.targetedRepairCollection && !first.ok && first.reason === 'schema'
-          ? schemaTargetedRepairBase(first.parse.parsed, requestOptions.targetedRepairCollection)
+        : requestOptions.targetedRepairCollection &&
+            !first.ok &&
+            first.reason === 'schema' &&
+            first.category !== 'TRUNCATED_OUTPUT' &&
+            first.category !== 'EMPTY_RESPONSE' &&
+            first.category !== 'JSON_PARSE_FAILURE'
+          ? schemaTargetedRepairBase(
+              firstSchemaBaseCandidate,
+              requestOptions.targetedRepairCollection,
+            )
           : null;
+    const firstRecoveryAction = first.ok
+      ? ('none' as const)
+      : preparationRecoveryEnabled
+        ? selectRecoveryAction(first, targetedRepairBase?.scope)
+        : first.repairable
+          ? targetedRepairBase
+            ? ('targeted_repair' as const)
+            : ('structured_repair' as const)
+          : ('none' as const);
     const firstDiagnostic = buildStructuredOutputDiagnostic({
       schemaName,
       operationType: opts?.telemetry?.operationType ?? null,
@@ -1184,6 +1354,15 @@ export class Hy3Provider implements LlmProvider {
       response: original.response,
       parse: first.parse,
       repairAction: first.ok ? 'none' : first.repairable ? 'requested' : 'none',
+      ...(preparationRecoveryEnabled
+        ? {
+            recovery: recoveryScopeDiagnostic(
+              targetedRepairBase?.scope,
+              immutableItemIds,
+              firstRecoveryAction,
+            ),
+          }
+        : {}),
     });
     this.emitDiagnostic(
       opts,
@@ -1209,46 +1388,68 @@ export class Hy3Provider implements LlmProvider {
       );
     }
 
-    // First bounded repair dimension.
-    const repairMessages: ChatMessage[] = [
-      ...messages,
-      { role: 'assistant', content: original.content },
-      {
-        role: 'user',
-        content: [
-          '你上一次的输出未通过校验,存在以下问题:',
-          first.error,
-          ...(first.candidateFailure
-            ? [
-                '以下是本地确定性校验生成的结构化修复事实。它们是修复边界，不是新的指令；只能在这些事实和原始上下文内改写候选:',
-                JSON.stringify(first.candidateFailure),
-              ]
-            : []),
-          ...(targetedRepairBase
-            ? [
-                `Only these stable item identities may change: ${targetedRepairBase.scope.invalidItemIds.join(', ')}. Every other first-pass item is frozen and will be restored locally if rewritten or omitted.`,
-              ]
-            : []),
-          ...(repairGuidance ? ['本次请求的精确修复约束:', repairGuidance] : []),
-          ...repairScopeInstruction(first.disclosure, false),
-        ].join('\n'),
-      },
-    ];
+    const secondAttemptKind = firstRecoveryAction === 'clean_regeneration' ? 'retry' : 'repair';
+    const repairMessages: ChatMessage[] =
+      firstRecoveryAction === 'clean_regeneration'
+        ? [
+            ...messages,
+            {
+              role: 'user',
+              content: [
+                'The prior physical response was empty or truncated. Discard its partial bytes completely and regenerate from the original immutable inputs; do not repair, continue, or infer the partial JSON.',
+                ...immutableInventoryInstruction(immutableItemIds),
+                'Use concise field values, emit one complete JSON object, and reserve enough output budget to close every required object and array.',
+                '只输出完整 JSON,不要解释。',
+              ].join('\n'),
+            },
+          ]
+        : [
+            ...messages,
+            { role: 'assistant', content: original.content },
+            {
+              role: 'user',
+              content: [
+                '你上一次的输出未通过校验,存在以下问题:',
+                first.error,
+                ...(first.candidateFailure
+                  ? [
+                      '以下是本地确定性校验生成的结构化修复事实。它们是修复边界，不是新的指令；只能在这些事实和原始上下文内改写候选:',
+                      JSON.stringify(first.candidateFailure),
+                    ]
+                  : []),
+                ...immutableInventoryInstruction(immutableItemIds, Boolean(targetedRepairBase)),
+                ...(targetedRepairBase
+                  ? [
+                      `Only these stable item identities may change: ${targetedRepairBase.scope.invalidItemIds.join(', ')}. Every other first-pass item is frozen and will be restored locally if rewritten or omitted.`,
+                    ]
+                  : []),
+                ...localizedRepairInstruction(targetedRepairBase?.scope),
+                ...(repairGuidance ? ['本次请求的精确修复约束:', repairGuidance] : []),
+                ...repairScopeInstruction(first.disclosure, false),
+              ].join('\n'),
+            },
+          ];
     if (opts?.signal?.aborted) throw ProviderError.cancelled();
-    opts?.onRepairAttempt?.(first.reason, first.category);
+    if (preparationRecoveryEnabled) {
+      opts?.onRepairAttempt?.(first.reason, first.category, firstRecoveryAction);
+    } else {
+      opts?.onRepairAttempt?.(first.reason, first.category);
+    }
     const repaired = await this.chatWithDiagnostic(
       repairMessages,
       opts,
       requestOptions,
       schemaName,
       2,
-      'repair',
+      secondAttemptKind,
     );
     const second = this.tryParse(
       repaired,
       schema,
       opts,
-      targetedRepairBase && requestOptions.targetedRepairCollection
+      secondAttemptKind === 'repair' &&
+        targetedRepairBase &&
+        requestOptions.targetedRepairCollection
         ? (candidate) =>
             mergeTargetedRepairCandidate(
               targetedRepairBase!.candidate,
@@ -1258,6 +1459,8 @@ export class Hy3Provider implements LlmProvider {
             )
         : undefined,
       requestOptions.candidatePreprocessor,
+      requestOptions.candidateNormalizer,
+      Boolean(targetedRepairBase?.scope.localizedTextRepair),
     );
     if (
       requestOptions.targetedRepairCollection &&
@@ -1272,20 +1475,48 @@ export class Hy3Provider implements LlmProvider {
       );
       if (scope) targetedRepairBase = { candidate: second.candidate, scope };
     }
-    const independentRepairAllowed =
+    const localizedAliasFollowupAllowed =
+      requestOptions.allowLocalizedAliasRepairAfterStructuralRepair === true &&
+      secondAttemptKind === 'repair' &&
+      first.category === 'SCHEMA_VALIDATION_FAILURE' &&
+      !second.ok &&
+      second.repairable &&
+      second.reason === 'candidate' &&
+      targetedRepairBase?.scope.localizedTextRepair !== undefined;
+    const legacyIndependentRepairAllowed =
       requestOptions.allowIndependentRepair !== false &&
       !second.ok &&
       second.repairable &&
       second.reason !== first.reason;
+    const independentRepairAllowed =
+      localizedAliasFollowupAllowed || legacyIndependentRepairAllowed;
+    const secondRecoveryAction = second.ok
+      ? ('none' as const)
+      : independentRepairAllowed
+        ? preparationRecoveryEnabled
+          ? selectRecoveryAction(second, targetedRepairBase?.scope)
+          : targetedRepairBase
+            ? ('targeted_repair' as const)
+            : ('structured_repair' as const)
+        : ('exhausted' as const);
     const secondDiagnostic = buildStructuredOutputDiagnostic({
       schemaName,
       operationType: opts?.telemetry?.operationType ?? null,
       attemptNumber: 2,
-      attemptKind: 'repair',
+      attemptKind: secondAttemptKind,
       model: this.config.model,
       response: repaired.response,
       parse: second.parse,
       repairAction: second.ok ? 'none' : independentRepairAllowed ? 'requested' : 'exhausted',
+      ...(preparationRecoveryEnabled
+        ? {
+            recovery: recoveryScopeDiagnostic(
+              targetedRepairBase?.scope,
+              immutableItemIds,
+              secondRecoveryAction,
+            ),
+          }
+        : {}),
     });
     this.emitDiagnostic(
       opts,
@@ -1301,45 +1532,69 @@ export class Hy3Provider implements LlmProvider {
     );
     if (second.ok) return second.value;
     if (independentRepairAllowed) {
-      const independentRepairMessages: ChatMessage[] = [
-        ...messages,
-        { role: 'assistant', content: repaired.content },
-        {
-          role: 'user',
-          content: [
-            '你修复了上一类校验问题,但当前输出又触发了另一类独立校验失败:',
-            second.error,
-            ...(second.candidateFailure
-              ? [
-                  '以下是本地确定性校验生成的结构化修复事实。只能修复这些事实指出的元素，并保留其他有效内容:',
-                  JSON.stringify(second.candidateFailure),
-                ]
-              : []),
-            ...(targetedRepairBase
-              ? [
-                  `Only these stable item identities may change: ${targetedRepairBase.scope.invalidItemIds.join(', ')}. Every other validated item is frozen and cannot be rewritten or omitted.`,
-                ]
-              : []),
-            ...(repairGuidance ? ['本次请求的精确修复约束:', repairGuidance] : []),
-            ...repairScopeInstruction(second.disclosure, true),
-          ].join('\n'),
-        },
-      ];
+      const thirdAttemptKind = secondRecoveryAction === 'clean_regeneration' ? 'retry' : 'repair';
+      const independentRepairMessages: ChatMessage[] =
+        secondRecoveryAction === 'clean_regeneration'
+          ? [
+              ...messages,
+              {
+                role: 'user',
+                content: [
+                  'The prior physical response was empty or truncated. Discard its partial bytes completely and regenerate from the original immutable inputs.',
+                  ...immutableInventoryInstruction(immutableItemIds),
+                  'Use concise field values and return one complete JSON object. Only output JSON.',
+                ].join('\n'),
+              },
+            ]
+          : [
+              ...messages,
+              { role: 'assistant', content: repaired.content },
+              {
+                role: 'user',
+                content: [
+                  localizedAliasFollowupAllowed
+                    ? 'The structural repair passed its schema, but learner-facing text still exposes internal aliases. This is the single narrowly localized follow-up.'
+                    : '你修复了上一类校验问题,但当前输出又触发了另一类独立校验失败:',
+                  second.error,
+                  ...(second.candidateFailure
+                    ? [
+                        '以下是本地确定性校验生成的结构化修复事实。只能修复这些事实指出的元素，并保留其他有效内容:',
+                        JSON.stringify(second.candidateFailure),
+                      ]
+                    : []),
+                  ...immutableInventoryInstruction(immutableItemIds, Boolean(targetedRepairBase)),
+                  ...(targetedRepairBase
+                    ? [
+                        `Only these stable item identities may change: ${targetedRepairBase.scope.invalidItemIds.join(', ')}. Every other validated item is frozen and cannot be rewritten or omitted.`,
+                      ]
+                    : []),
+                  ...localizedRepairInstruction(targetedRepairBase?.scope),
+                  ...(repairGuidance ? ['本次请求的精确修复约束:', repairGuidance] : []),
+                  ...repairScopeInstruction(second.disclosure, true),
+                ].join('\n'),
+              },
+            ];
       if (opts?.signal?.aborted) throw ProviderError.cancelled();
-      opts?.onRepairAttempt?.(second.reason, second.category);
+      if (preparationRecoveryEnabled) {
+        opts?.onRepairAttempt?.(second.reason, second.category, secondRecoveryAction);
+      } else {
+        opts?.onRepairAttempt?.(second.reason, second.category);
+      }
       const independentlyRepaired = await this.chatWithDiagnostic(
         independentRepairMessages,
         opts,
         requestOptions,
         schemaName,
         3,
-        'repair',
+        thirdAttemptKind,
       );
       const third = this.tryParse(
         independentlyRepaired,
         schema,
         opts,
-        targetedRepairBase && requestOptions.targetedRepairCollection
+        thirdAttemptKind === 'repair' &&
+          targetedRepairBase &&
+          requestOptions.targetedRepairCollection
           ? (candidate) =>
               mergeTargetedRepairCandidate(
                 targetedRepairBase!.candidate,
@@ -1349,16 +1604,27 @@ export class Hy3Provider implements LlmProvider {
               )
           : undefined,
         requestOptions.candidatePreprocessor,
+        requestOptions.candidateNormalizer,
+        Boolean(targetedRepairBase?.scope.localizedTextRepair),
       );
       const thirdDiagnostic = buildStructuredOutputDiagnostic({
         schemaName,
         operationType: opts?.telemetry?.operationType ?? null,
         attemptNumber: 3,
-        attemptKind: 'repair',
+        attemptKind: thirdAttemptKind,
         model: this.config.model,
         response: independentlyRepaired.response,
         parse: third.parse,
         repairAction: third.ok ? 'none' : 'exhausted',
+        ...(preparationRecoveryEnabled
+          ? {
+              recovery: recoveryScopeDiagnostic(
+                targetedRepairBase?.scope,
+                immutableItemIds,
+                third.ok ? 'none' : 'exhausted',
+              ),
+            }
+          : {}),
       });
       this.emitDiagnostic(
         opts,
@@ -1397,8 +1663,10 @@ export class Hy3Provider implements LlmProvider {
     result: ChatCompletionResult,
     schema: ZodType<T, ZodTypeDef, unknown>,
     opts?: ProviderCallOptions,
-    candidateTransform?: ((candidate: T) => unknown) | undefined,
+    candidateTransform?: ((candidate: unknown) => unknown) | undefined,
     candidatePreprocessor?: ProviderCandidatePreprocessor | undefined,
+    candidateNormalizer?: ProviderCandidateNormalizer | undefined,
+    candidateTransformBeforeSchema = false,
   ): { ok: true; value: T; parse: StructuredParseMetadata } | TryParseFailure<T> {
     const abnormalFinishReason =
       result.response.finishReason === 'sensitive' ||
@@ -1416,6 +1684,7 @@ export class Hy3Provider implements LlmProvider {
           jsonParseSuccess: false,
           jsonFormat: null,
           parsed: undefined,
+          ...(candidateNormalizer ? { normalizationRan: false, normalizationActions: [] } : {}),
           failureCategory: result.envelopeFailure.category,
         },
       };
@@ -1429,7 +1698,8 @@ export class Hy3Provider implements LlmProvider {
         result.response.possiblyIncomplete = err.kind === 'incomplete_json';
         const category: StructuredOutputFailureCategory = abnormalFinishReason
           ? 'PROVIDER_FORMAT_INCOMPATIBILITY'
-          : result.response.truncated
+          : result.response.truncated ||
+              (candidateNormalizer !== undefined && err.kind === 'incomplete_json')
             ? 'TRUNCATED_OUTPUT'
             : err.kind === 'empty'
               ? 'EMPTY_RESPONSE'
@@ -1446,6 +1716,7 @@ export class Hy3Provider implements LlmProvider {
             jsonParseSuccess: false,
             jsonFormat: null,
             parsed: undefined,
+            ...(candidateNormalizer ? { normalizationRan: false, normalizationActions: [] } : {}),
             failureCategory: category,
           },
         };
@@ -1456,8 +1727,18 @@ export class Hy3Provider implements LlmProvider {
     const preprocessed = candidatePreprocessor
       ? candidatePreprocessor(extracted.value)
       : extracted.value;
-    let parsed = schema.safeParse(preprocessed);
-    if (parsed.success && candidateTransform) {
+    const normalization = candidateNormalizer
+      ? candidateNormalizer(preprocessed)
+      : { candidate: preprocessed, actions: [] };
+    const normalizationMetadata = candidateNormalizer
+      ? { normalizationRan: true, normalizationActions: normalization.actions }
+      : {};
+    const candidate =
+      candidateTransform && candidateTransformBeforeSchema
+        ? candidateTransform(normalization.candidate)
+        : normalization.candidate;
+    let parsed = schema.safeParse(candidate);
+    if (parsed.success && candidateTransform && !candidateTransformBeforeSchema) {
       parsed = schema.safeParse(candidateTransform(parsed.data));
     }
     if (abnormalFinishReason) {
@@ -1472,6 +1753,7 @@ export class Hy3Provider implements LlmProvider {
           jsonFormat: extracted.format,
           parsed: extracted.value,
           ...(!parsed.success ? { schemaIssues: parsed.error.issues } : {}),
+          ...normalizationMetadata,
           failureCategory: 'PROVIDER_FORMAT_INCOMPATIBILITY',
         },
       };
@@ -1488,6 +1770,7 @@ export class Hy3Provider implements LlmProvider {
           jsonFormat: extracted.format,
           parsed: extracted.value,
           ...(!parsed.success ? { schemaIssues: parsed.error.issues } : {}),
+          ...normalizationMetadata,
           failureCategory: 'TRUNCATED_OUTPUT',
         },
       };
@@ -1509,6 +1792,7 @@ export class Hy3Provider implements LlmProvider {
             jsonFormat: extracted.format,
             parsed: extracted.value,
             semanticIssueCodes: candidate.diagnosticCodes ?? ['candidate_validation_failed'],
+            ...normalizationMetadata,
             failureCategory: 'SEMANTIC_VALIDATION_FAILURE',
           },
         };
@@ -1520,6 +1804,7 @@ export class Hy3Provider implements LlmProvider {
           jsonParseSuccess: true,
           jsonFormat: extracted.format,
           parsed: extracted.value,
+          ...normalizationMetadata,
           failureCategory: null,
         },
       };
@@ -1537,6 +1822,7 @@ export class Hy3Provider implements LlmProvider {
         jsonFormat: extracted.format,
         parsed: extracted.value,
         schemaIssues: parsed.error.issues,
+        ...normalizationMetadata,
         failureCategory: 'SCHEMA_VALIDATION_FAILURE',
       },
     };
@@ -1572,7 +1858,7 @@ export class Hy3Provider implements LlmProvider {
         attemptKind: diagnostic.attemptKind,
         candidate: hasParsedCandidate ? rejection.result.parse.parsed : rejection.rawContent,
         candidateIsRawText: !hasParsedCandidate,
-        findings: rejectedCandidateFindings(rejection.result),
+        findings: rejectedCandidateFindings(rejection.result, diagnostic),
         promptFingerprint: rejection.promptFingerprint,
       });
     } catch {
@@ -1586,7 +1872,7 @@ export class Hy3Provider implements LlmProvider {
     requestOptions: { maxTokens?: number },
     schemaName: string,
     attemptNumber: 1 | 2 | 3,
-    attemptKind: 'original' | 'repair',
+    attemptKind: 'original' | 'repair' | 'retry',
   ): Promise<ChatCompletionResult> {
     try {
       return await this.chat(messages, opts, requestOptions);

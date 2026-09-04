@@ -8,8 +8,10 @@ import type {
   LessonSlotContentGenerationInput,
   PracticeContentGenerationInput,
   ProviderCandidateValidation,
+  ProviderTargetedRepairScope,
   TeachingBriefGenerationInput,
 } from '../llm/provider.js';
+import { containsInternalTeachingAlias } from '../llm/preparationRecovery.js';
 import {
   evaluateLessonPedagogy,
   evaluateLessonSlotPedagogy,
@@ -285,6 +287,8 @@ function compositionValidationResult(options: {
   presentIds: string[];
   invalidIds: Set<string>;
   diagnostics: CompositionalDiagnostic[];
+  localizedTextRepair?: ProviderTargetedRepairScope['localizedTextRepair'];
+  targetedRepairAllowed?: boolean;
 }): ProviderCandidateValidation {
   const uniqueDiagnostics = options.diagnostics.filter(
     (diagnostic, index, all) =>
@@ -335,7 +339,71 @@ function compositionValidationResult(options: {
         facts: { itemIds: diagnostic.itemIds },
       })),
     },
-    ...(invalidItemIds.length > 0 ? { targetedRepair: { invalidItemIds } } : {}),
+    ...(invalidItemIds.length > 0 && options.targetedRepairAllowed !== false
+      ? {
+          targetedRepair: {
+            invalidItemIds,
+            ...(options.localizedTextRepair
+              ? { localizedTextRepair: options.localizedTextRepair }
+              : {}),
+          },
+        }
+      : {}),
+  };
+}
+
+const NON_LEARNER_TEXT_KEYS = new Set([
+  'sourceRefs',
+  'visualRefs',
+  'slotId',
+  'practiceSlotId',
+  'id',
+  'optionRef',
+  'correctOptionId',
+  'correctOptionRef',
+]);
+
+function learnerTextContainsAlias(value: unknown, parentKey = ''): boolean {
+  if (NON_LEARNER_TEXT_KEYS.has(parentKey)) return false;
+  if (typeof value === 'string') return containsInternalTeachingAlias(value);
+  if (Array.isArray(value)) return value.some((item) => learnerTextContainsAlias(item));
+  if (!isRecord(value)) return false;
+  return Object.entries(value).some(([key, item]) => learnerTextContainsAlias(item, key));
+}
+
+function lessonAliasRepairScope(
+  payload: ReturnType<typeof LessonSlotContentProposalPayloadSchema.parse>,
+): NonNullable<ProviderTargetedRepairScope['localizedTextRepair']> {
+  const components = [
+    'explanation',
+    'semanticRelations',
+    'workedProcess',
+    'example',
+    'contrast',
+    'misconception',
+    'informalCheck',
+  ] as const;
+  return {
+    rootNarrative: learnerTextContainsAlias(payload.narrative),
+    items: payload.slots.flatMap((slot) => {
+      const affected = components.filter((component) => learnerTextContainsAlias(slot[component]));
+      return affected.length > 0 ? [{ itemId: slot.slotId, components: [...affected] }] : [];
+    }),
+  };
+}
+
+function practiceAliasRepairScope(
+  payload: ReturnType<typeof PracticeContentProposalPayloadSchema.parse>,
+): NonNullable<ProviderTargetedRepairScope['localizedTextRepair']> {
+  const components = ['capabilityTested', 'pedagogicalReason', 'initial', 'retry'] as const;
+  return {
+    rootNarrative: false,
+    items: payload.items.flatMap((item) => {
+      const affected = components.filter((component) => learnerTextContainsAlias(item[component]));
+      return affected.length > 0
+        ? [{ itemId: item.practiceSlotId, components: [...affected] }]
+        : [];
+    }),
   };
 }
 
@@ -420,6 +488,7 @@ export function validateLessonSlotContentCandidate(
   });
   const invalidIds = new Set<string>();
   const diagnostics: CompositionalDiagnostic[] = [];
+  let immutableOrderMismatch = false;
 
   if (!isRecord(candidate) || !isRecord(candidate.narrative)) {
     expectedIds.forEach((id) => invalidIds.add(id));
@@ -461,6 +530,20 @@ export function validateLessonSlotContentCandidate(
       itemIds: [duplicate],
     });
   }
+  if (
+    presentIds.length === expectedIds.length &&
+    new Set(presentIds).size === presentIds.length &&
+    presentIds.every((id) => expected.has(id)) &&
+    presentIds.some((id, index) => id !== expectedIds[index])
+  ) {
+    immutableOrderMismatch = true;
+    expectedIds.forEach((id) => invalidIds.add(id));
+    diagnostics.push({
+      code: 'lesson_slot_order_mismatch',
+      message: 'Lesson slots do not preserve the immutable skeleton order.',
+      itemIds: expectedIds,
+    });
+  }
   for (const raw of rawSlots) {
     if (!isRecord(raw) || typeof raw.slotId !== 'string') continue;
     if ([...LESSON_FORBIDDEN_LOCAL_KEYS].some((key) => key in raw)) {
@@ -497,6 +580,7 @@ export function validateLessonSlotContentCandidate(
       presentIds,
       invalidIds,
       diagnostics,
+      targetedRepairAllowed: !immutableOrderMismatch,
     });
   }
 
@@ -595,6 +679,11 @@ export function validateLessonSlotContentCandidate(
     presentIds,
     invalidIds,
     diagnostics,
+    targetedRepairAllowed: !immutableOrderMismatch,
+    ...(diagnostics.length > 0 &&
+    diagnostics.every((diagnostic) => diagnostic.code === 'lesson_internal_alias_leak')
+      ? { localizedTextRepair: lessonAliasRepairScope(parsed.data) }
+      : {}),
   });
 }
 
@@ -612,6 +701,7 @@ export function validatePracticeContentCandidate(
   });
   const invalidIds = new Set<string>();
   const diagnostics: CompositionalDiagnostic[] = [];
+  let immutableOrderMismatch = false;
 
   if (!isRecord(candidate) || !Array.isArray(candidate.items)) {
     expectedIds.forEach((id) => invalidIds.add(id));
@@ -643,6 +733,20 @@ export function validatePracticeContentCandidate(
       code: 'duplicate_practice_slot',
       message: `Practice slot ${duplicate} is duplicated.`,
       itemIds: [duplicate],
+    });
+  }
+  if (
+    presentIds.length === expectedIds.length &&
+    new Set(presentIds).size === presentIds.length &&
+    presentIds.every((id) => expected.has(id)) &&
+    presentIds.some((id, index) => id !== expectedIds[index])
+  ) {
+    immutableOrderMismatch = true;
+    expectedIds.forEach((id) => invalidIds.add(id));
+    diagnostics.push({
+      code: 'practice_slot_order_mismatch',
+      message: 'Practice slots do not preserve the immutable plan order.',
+      itemIds: expectedIds,
     });
   }
   for (const raw of rawItems) {
@@ -681,6 +785,7 @@ export function validatePracticeContentCandidate(
       presentIds,
       invalidIds,
       diagnostics,
+      targetedRepairAllowed: !immutableOrderMismatch,
     });
   }
 
@@ -768,5 +873,10 @@ export function validatePracticeContentCandidate(
     presentIds,
     invalidIds,
     diagnostics,
+    targetedRepairAllowed: !immutableOrderMismatch,
+    ...(diagnostics.length > 0 &&
+    diagnostics.every((diagnostic) => diagnostic.code === 'practice_internal_alias_leak')
+      ? { localizedTextRepair: practiceAliasRepairScope(parsed.data) }
+      : {}),
   });
 }

@@ -17,6 +17,7 @@ import type {
   PracticeContentGenerationInput,
   TeachingBriefGenerationInput,
 } from '../llm/provider.js';
+import { containsInternalTeachingAlias } from '../llm/preparationRecovery.js';
 
 export const LESSON_PEDAGOGY_POLICY_VERSION = 'lesson-pedagogy-v2';
 export const PRACTICE_QUALITY_POLICY_VERSION = 'lesson-practice-v1';
@@ -879,15 +880,10 @@ function isSemanticallyDistinct(left: string, right: string): boolean {
   return overlapRatio(left, right) < 0.9;
 }
 
-const INTERNAL_TEACHING_ALIAS = /\b(?:PR|O|S|L)[1-9][0-9]*\b/iu;
 const INTERNAL_PLANNING_LANGUAGE =
   /\b(?:instructional spine|teaching skeleton|immutable skeleton|slot purpose|quality contract|locally planned|objective ref(?:erence)?|source ref(?:erence)?|selected depth|depth setting|global depth|focused unit|focus flag)\b|教学脊柱|教学骨架|槽位目的|质量契约|本地规划|目标别名|来源别名|深度设置|重点单元/iu;
 const GENERIC_PLACEHOLDER_LANGUAGE =
   /\bplaceholder\b|\bdetails? for (?:this|the|a) generic (?:example|case)\b|占位符|通用示例的?详情/iu;
-
-function containsInternalTeachingAlias(value: string): boolean {
-  return INTERNAL_TEACHING_ALIAS.test(value);
-}
 
 function containsPlanningLanguage(value: string, purpose?: string): boolean {
   if (INTERNAL_PLANNING_LANGUAGE.test(value)) return true;

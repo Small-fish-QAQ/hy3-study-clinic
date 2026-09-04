@@ -276,20 +276,31 @@ export function createTelemetryProvider<TProvider extends TelemetryProviderSurfa
             usageReported = true;
             supplied.onUsage?.(reported);
           },
-          onRepairAttempt: (reason, category) => {
-            supplied.onRepairAttempt?.(reason, category);
+          onRepairAttempt: (reason, category, recoveryAction) => {
+            if (recoveryAction !== undefined) {
+              supplied.onRepairAttempt?.(reason, category, recoveryAction);
+            } else if (category !== undefined) {
+              supplied.onRepairAttempt?.(reason, category);
+            } else if (reason !== undefined) {
+              supplied.onRepairAttempt?.(reason);
+            } else {
+              supplied.onRepairAttempt?.();
+            }
             const repairStartedAt = clock.now().toISOString();
+            const cleanRegeneration = recoveryAction === 'clean_regeneration';
             finishAttempt(
               'completed',
               repairStartedAt,
               category
-                ? `${category}_REPAIR_REQUIRED`
+                ? `${category}_${cleanRegeneration ? 'REGENERATION' : 'REPAIR'}_REQUIRED`
                 : reason === 'candidate'
                   ? 'CANDIDATE_VALIDATION_REPAIR_REQUIRED'
                   : 'STRUCTURED_OUTPUT_REPAIR_REQUIRED',
-              reason === 'candidate'
-                ? 'The first response required bounded deterministic candidate repair.'
-                : 'The first response required bounded structured-output repair.',
+              cleanRegeneration
+                ? 'The response required one bounded clean regeneration without partial-byte reuse.'
+                : reason === 'candidate'
+                  ? 'The first response required bounded deterministic candidate repair.'
+                  : 'The first response required bounded structured-output repair.',
             );
             attemptNumber += 1;
             attemptId = newId('llm_attempt');
@@ -297,7 +308,7 @@ export function createTelemetryProvider<TProvider extends TelemetryProviderSurfa
             usage = provider.name === 'fake' ? fakeUsage() : unknownUsage();
             usageReported = provider.name === 'fake';
             sent = false;
-            insertAttempt('repair');
+            insertAttempt(cleanRegeneration ? 'retry' : 'repair');
             if (provider.name === 'fake' && !supplied.signal?.aborted) markSent();
           },
         };

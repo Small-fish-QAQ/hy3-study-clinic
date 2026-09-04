@@ -600,6 +600,12 @@ describe('compositional provider candidate validation', () => {
       'duplicate_lesson_slot',
     );
 
+    const reordered = structuredClone(valid);
+    reordered.slots.reverse();
+    const reorderedResult = validateLessonSlotContentCandidate(reordered, input);
+    expect(reorderedResult.diagnosticCodes).toContain('lesson_slot_order_mismatch');
+    expect(reorderedResult.targetedRepair).toBeUndefined();
+
     const mutation = structuredClone(valid) as unknown as {
       slots: Array<Record<string, unknown>>;
     };
@@ -667,6 +673,45 @@ describe('compositional provider candidate validation', () => {
     expect(validateLessonSlotContentCandidate(copiedPurpose, input).diagnosticCodes).toContain(
       'lesson_planning_language_leak',
     );
+  });
+
+  it('T4/T5 scopes alias-only recovery to the exact learner-facing components', async () => {
+    const provider = new FakeProvider();
+    const lessonInput = compositionalContractInput();
+    const lesson = await provider.generateLessonSlotContent(lessonInput);
+    const target = lesson.slots.find((slot) => slot.sourceRefs.length > 0)!;
+    target.explanation = `${target.explanation} Internal citation S1.`;
+
+    const lessonResult = validateLessonSlotContentCandidate(lesson, lessonInput);
+    expect(lessonResult.diagnosticCodes).toEqual(['lesson_internal_alias_leak']);
+    expect(lessonResult.targetedRepair).toMatchObject({
+      invalidItemIds: [target.slotId],
+      localizedTextRepair: {
+        rootNarrative: false,
+        items: [{ itemId: target.slotId, components: ['explanation'] }],
+      },
+    });
+
+    const cleanLesson = await provider.generateLessonSlotContent(lessonInput);
+    const practiceInput: PracticeContentGenerationInput = {
+      workspaceName: 'Course',
+      learnerLocale: 'zh-CN',
+      skeleton: lessonInput.skeleton,
+      acceptedLesson: cleanLesson.slots,
+      sourceContext: lessonInput.sourceContext,
+      visualContext: lessonInput.visualContext,
+    };
+    const practice = await provider.generatePracticeContent(practiceInput);
+    practice.items[0]!.initial.hint = `${practice.items[0]!.initial.hint} See S1.`;
+    const practiceResult = validatePracticeContentCandidate(practice, practiceInput);
+    expect(practiceResult.diagnosticCodes).toEqual(['practice_internal_alias_leak']);
+    expect(practiceResult.targetedRepair).toMatchObject({
+      invalidItemIds: ['PR1'],
+      localizedTextRepair: {
+        rootNarrative: false,
+        items: [{ itemId: 'PR1', components: ['initial'] }],
+      },
+    });
   });
 
   it('T12-T14 blocks answer-bearing quotations, accepted-Lesson repetition, and same retries', async () => {

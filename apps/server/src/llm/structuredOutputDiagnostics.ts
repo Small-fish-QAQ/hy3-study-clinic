@@ -1,6 +1,12 @@
 import { createHash } from 'node:crypto';
 import type { ZodIssue } from 'zod';
-import type { StructuredOutputDiagnostic, StructuredOutputFailureCategory } from './provider.js';
+import type {
+  ProviderNormalizationAction,
+  ProviderRecoveryAction,
+  StructuredOutputDiagnostic,
+  StructuredOutputFailureCategory,
+} from './provider.js';
+import { classifyStructuredPreparationFailure } from './preparationRecovery.js';
 
 const MAX_PREVIEW_DEPTH = 4;
 const MAX_PREVIEW_KEYS = 12;
@@ -16,6 +22,8 @@ const SAFE_STRUCTURAL_KEYS = new Set([
   'anchorOptionId',
   'anchorOptionRefs',
   'anchorOptions',
+  'application',
+  'activity',
   'authority',
   'blockCount',
   'capabilityTested',
@@ -43,6 +51,7 @@ const SAFE_STRUCTURAL_KEYS = new Set([
   'expectedSignal',
   'feedbackIfSelected',
   'formalOpportunities',
+  'forwardBridge',
   'graphRelationIds',
   'groups',
   'hint',
@@ -51,6 +60,7 @@ const SAFE_STRUCTURAL_KEYS = new Set([
   'index',
   'informalCheck',
   'initial',
+  'inputs',
   'items',
   'key',
   'kind',
@@ -59,6 +69,7 @@ const SAFE_STRUCTURAL_KEYS = new Set([
   'level',
   'modules',
   'misconception',
+  'narrative',
   'name',
   'nextConnection',
   'nodes',
@@ -86,21 +97,26 @@ const SAFE_STRUCTURAL_KEYS = new Set([
   'regionRefs',
   'regions',
   'retry',
+  'scaffold',
   'segments',
+  'semanticRelations',
   'sectionCount',
   'sourceAllocationFingerprint',
   'sourceEvidence',
   'sourceRefs',
   'sourceRegionIds',
   'sourceRegionRef',
+  'slots',
   'structuralUnitIds',
   'summary',
   'synthesisGroups',
   'title',
   'text',
+  'transfer',
   'units',
   'visualRefs',
   'whyNow',
+  'workedProcess',
 ]);
 
 const SAFE_SEMANTIC_CODES = new Set([
@@ -118,10 +134,33 @@ const SAFE_SEMANTIC_CODES = new Set([
   'flat_hierarchy',
   'foreign_course_map',
   'invalid_module_order',
+  'invalid_lesson_slot_content_shape',
+  'invalid_or_duplicate_practice_options',
+  'invalid_practice_content_shape',
   'invalid_region_order',
   'invalid_synthesis_boundary',
+  'lesson_internal_alias_leak',
+  'lesson_advisory_visual_authority_invalid',
+  'lesson_attempted_local_authority_mutation',
+  'lesson_choice_check_missing_options',
+  'lesson_exact_source_slot_has_no_source',
+  'lesson_planning_language_leak',
+  'lesson_slot_content_not_objective_aligned',
+  'lesson_slot_content_not_substantive',
+  'lesson_slot_order_mismatch',
+  'lesson_source_alias_outside_slot_authority',
+  'lesson_source_location_trivia',
+  'lesson_visual_alias_outside_slot_authority',
   'isolated_regions',
   'missing_material_representation',
+  'missing_lesson_slot',
+  'missing_lesson_narrative',
+  'missing_focused_worked_interaction',
+  'missing_planned_boundary_work',
+  'missing_planned_learner_action',
+  'missing_practice_slot',
+  'missing_typed_semantic_relation',
+  'missing_typed_worked_process',
   'missing_synthesis_boundary',
   'module_limit_exceeded',
   'near_duplicate_region_intent',
@@ -129,16 +168,47 @@ const SAFE_SEMANTIC_CODES = new Set([
   'prerequisite_degree_exceeded',
   'prerequisite_edge_limit_exceeded',
   'prerequisite_wrong_order',
+  'practice_internal_alias_leak',
+  'practice_advisory_visual_authority_invalid',
+  'practice_application_missing_real_state_or_action',
+  'practice_application_not_observable_in_surface',
+  'practice_application_outside_planned_construct',
+  'practice_application_relevance_uncertain',
+  'practice_application_source_incompatible',
+  'practice_apply_missing_typed_application',
+  'practice_attempted_local_authority_mutation',
+  'practice_capability_not_objective_aligned',
+  'practice_content_not_substantive',
+  'practice_exact_source_slot_has_no_source',
+  'practice_feedback_not_contingent',
+  'practice_planning_language_leak',
+  'practice_promotes_construct',
+  'practice_prompt_leaks_answer',
+  'practice_prompt_quotes_answer_source',
+  'practice_repeats_accepted_lesson',
+  'practice_source_alias_outside_slot_authority',
+  'practice_slot_order_mismatch',
+  'practice_surface_not_objective_aligned',
+  'practice_visual_alias_outside_slot_authority',
+  'retry_surface_not_meaningfully_changed',
   'region_limit_exceeded',
   'region_set_or_order_mismatch',
   'required_objective_formal_authority_missing',
   'required_objective_parent_topic_mismatch',
   'required_target_apply_missing',
+  'semantic_relation_not_objective_relevant',
+  'semantic_relation_not_substantive',
+  'semantic_relation_outside_slot_contract',
+  'semantic_relation_source_incompatible',
+  'semantically_redundant_lesson_slots',
+  'semantically_redundant_practice_items',
   'source_allocation_concentration',
   'source_allocation_fingerprint_mismatch',
   'source_allocation_omitted',
   'unallocated_source_region',
   'unknown_anchor_option',
+  'unknown_lesson_slot',
+  'unknown_practice_slot',
   'unknown_canonical_anchor',
   'unknown_canonical_concept',
   'unknown_concept',
@@ -149,6 +219,19 @@ const SAFE_SEMANTIC_CODES = new Set([
   'unknown_source_region',
   'unknown_synthesis_region',
   'unsupported_region',
+  'unplanned_lesson_learner_action',
+  'unplanned_worked_process',
+  'worked_interaction_missing_required_structure',
+  'worked_interaction_relevance_uncertain',
+  'worked_interaction_transfer_not_changed',
+  'worked_process_application_relevance_uncertain',
+  'worked_process_has_no_real_transition',
+  'worked_process_missing_application_decision',
+  'worked_process_missing_interaction',
+  'worked_process_missing_required_structure',
+  'worked_process_relevance_uncertain',
+  'worked_process_result_not_justified',
+  'worked_process_source_incompatible',
 ]);
 
 /**
@@ -356,6 +439,8 @@ export interface StructuredParseMetadata {
   parsed: unknown;
   schemaIssues?: ZodIssue[] | undefined;
   semanticIssueCodes?: string[] | undefined;
+  normalizationRan?: boolean | undefined;
+  normalizationActions?: ProviderNormalizationAction[] | undefined;
   failureCategory: StructuredOutputFailureCategory | null;
 }
 
@@ -438,11 +523,20 @@ export function buildStructuredOutputDiagnostic(input: {
   schemaName: string;
   operationType: string | null;
   attemptNumber: 1 | 2 | 3;
-  attemptKind: 'original' | 'repair';
+  attemptKind: 'original' | 'repair' | 'retry';
   model: string;
   response: StructuredResponseMetadata;
   parse: StructuredParseMetadata;
   repairAction: StructuredOutputDiagnostic['repairAction'];
+  recovery?:
+    | {
+        action: ProviderRecoveryAction;
+        localized: boolean;
+        immutableItemIds: string[];
+        affectedItemIds: string[];
+        affectedComponents: string[];
+      }
+    | undefined;
 }): StructuredOutputDiagnostic {
   const parsed = input.parse.jsonParseSuccess ? input.parse.parsed : undefined;
   const structuralPreview = parsed === undefined ? null : preview(parsed);
@@ -504,6 +598,30 @@ export function buildStructuredOutputDiagnostic(input: {
     semanticIssueCodes,
     failureCategory: input.parse.failureCategory,
     repairAction: input.repairAction,
+    ...(input.parse.failureCategory && input.recovery
+      ? {
+          preparationFailure: classifyStructuredPreparationFailure(
+            input.parse.failureCategory,
+            input.parse.semanticIssueCodes ?? [],
+            input.parse.schemaIssues ?? [],
+          ),
+        }
+      : {}),
+    ...(input.recovery ? { recoveryAction: input.recovery.action } : {}),
+    ...(input.parse.normalizationRan !== undefined
+      ? { normalizationRan: input.parse.normalizationRan }
+      : {}),
+    ...(input.parse.normalizationActions
+      ? { normalizationActions: input.parse.normalizationActions }
+      : {}),
+    ...(input.recovery
+      ? {
+          localizedRepair: input.recovery.localized,
+          immutableItemIds: input.recovery.immutableItemIds,
+          affectedItemIds: input.recovery.affectedItemIds,
+          affectedComponents: input.recovery.affectedComponents,
+        }
+      : {}),
     structuralPreview,
   };
 }

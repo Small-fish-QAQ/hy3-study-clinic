@@ -71,8 +71,60 @@ import type {
 
 /** One original plus independently bounded schema and candidate repairs. */
 export const MAX_STRUCTURED_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL = 3;
-/** Original plus one bounded targeted repair for each compositional phase. */
-export const MAX_COMPOSITIONAL_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL = 2;
+/**
+ * Original plus one class-specific recovery. A third request is allowed only
+ * for the observed structural-repair -> alias-only localized-repair sequence.
+ */
+export const MAX_COMPOSITIONAL_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL = 3;
+
+export type PreparationFailureClass = 'TRANSPORT' | 'OUTPUT' | 'STRUCTURAL' | 'SEMANTIC' | 'STATE';
+
+export type PreparationFailureCode =
+  | 'provider_connection_failure'
+  | 'provider_http_failure'
+  | 'provider_timeout'
+  | 'empty_output'
+  | 'malformed_json'
+  | 'truncated_output'
+  | 'provider_format_incompatibility'
+  | 'schema_invalid'
+  | 'missing_mechanical_field'
+  | 'invalid_optional_null'
+  | 'missing_immutable_slot'
+  | 'internal_alias_leak'
+  | 'pedagogy_hard_violation'
+  | 'provenance_violation'
+  | 'practice_novelty_violation'
+  | 'operation_cancelled'
+  | 'stale_operation'
+  | 'checkpoint_conflict'
+  | 'fencing_version_conflict';
+
+export interface PreparationFailureClassification {
+  failureClass: PreparationFailureClass;
+  failureCode: PreparationFailureCode;
+}
+
+export type ProviderRecoveryAction =
+  | 'none'
+  | 'structured_repair'
+  | 'targeted_repair'
+  | 'localized_alias_repair'
+  | 'clean_regeneration'
+  | 'exhausted';
+
+export type ProviderNormalizationActionCode =
+  | 'optional_null_omitted'
+  | 'empty_array_defaulted'
+  | 'nullable_field_defaulted'
+  | 'unsupported_optional_mapping_removed'
+  | 'worked_interaction_fields_relocated';
+
+export interface ProviderNormalizationAction {
+  code: ProviderNormalizationActionCode;
+  /** Schema-owned paths only; never provider scalar content. */
+  paths: string[];
+}
 
 /** Options threaded through every provider call. */
 export interface ProviderCallOptions {
@@ -80,9 +132,13 @@ export interface ProviderCallOptions {
   signal?: AbortSignal | undefined;
   /** Optional bounded timeout override for the owning operation. */
   timeoutMs?: number | undefined;
-  /** Internal telemetry hook: any bounded repair is a new physical request. */
+  /** Internal telemetry hook: any bounded recovery is a new physical request. */
   onRepairAttempt?:
-    | ((reason?: ProviderRepairReason, category?: StructuredOutputFailureCategory) => void)
+    | ((
+        reason?: ProviderRepairReason,
+        category?: StructuredOutputFailureCategory,
+        recoveryAction?: ProviderRecoveryAction,
+      ) => void)
     | undefined;
   /**
    * Local input-aware validation applied after schema parsing. Returning
@@ -130,7 +186,7 @@ export interface RejectedCandidateCapture {
   schemaName: string;
   operationType: string | null;
   attemptNumber: number;
-  attemptKind: 'original' | 'repair';
+  attemptKind: 'original' | 'repair' | 'retry';
   /**
    * The exact rejected candidate as extracted from the provider response:
    * parsed JSON when parsing succeeded, otherwise the raw response text.
@@ -150,7 +206,19 @@ export interface RejectedCandidateCapture {
 
 export type RejectedCandidateFinding =
   | { kind: 'schema'; path: string; code: string; message: string }
-  | { kind: 'semantic'; code: string; message?: string };
+  | { kind: 'semantic'; code: string; message?: string }
+  | {
+      kind: 'recovery';
+      failureClass: PreparationFailureClass;
+      failureCode: PreparationFailureCode;
+      recoveryAction: ProviderRecoveryAction;
+      normalizationRan: boolean;
+      normalizationActions: ProviderNormalizationAction[];
+      localized: boolean;
+      immutableItemIds: string[];
+      affectedItemIds: string[];
+      affectedComponents: string[];
+    };
 
 export type ProviderRepairReason = 'schema' | 'candidate';
 
@@ -168,7 +236,7 @@ export interface StructuredOutputDiagnostic {
   schemaName: string;
   operationType: string | null;
   attemptNumber: 1 | 2 | 3;
-  attemptKind: 'original' | 'repair';
+  attemptKind: 'original' | 'repair' | 'retry';
   provider: 'hy3';
   model: string;
   transportSuccess: boolean;
@@ -209,6 +277,15 @@ export interface StructuredOutputDiagnostic {
   semanticIssueCodes: string[];
   failureCategory: StructuredOutputFailureCategory | null;
   repairAction: 'none' | 'requested' | 'exhausted';
+  /** R2.1 preparation-specific classification and bounded recovery trace. */
+  preparationFailure?: PreparationFailureClassification | undefined;
+  recoveryAction?: ProviderRecoveryAction | undefined;
+  normalizationRan?: boolean | undefined;
+  normalizationActions?: ProviderNormalizationAction[] | undefined;
+  localizedRepair?: boolean | undefined;
+  immutableItemIds?: string[] | undefined;
+  affectedItemIds?: string[] | undefined;
+  affectedComponents?: string[] | undefined;
   structuralPreview: unknown;
 }
 
@@ -236,10 +313,44 @@ export interface ProviderCandidateValidation {
 
 export interface ProviderTargetedRepairScope {
   invalidItemIds: string[];
+  /**
+   * Present only when every hard failure is internal-alias leakage. The provider
+   * may rewrite the named components, but local merge accepts replacement text
+   * only at string leaves that actually leaked an alias.
+   */
+  localizedTextRepair?:
+    | {
+        rootNarrative: boolean;
+        items: Array<{
+          itemId: string;
+          components: Array<
+            | 'explanation'
+            | 'semanticRelations'
+            | 'workedProcess'
+            | 'example'
+            | 'contrast'
+            | 'misconception'
+            | 'informalCheck'
+            | 'capabilityTested'
+            | 'pedagogicalReason'
+            | 'initial'
+            | 'retry'
+          >;
+        }>;
+      }
+    | undefined;
 }
 
 /** Internal provider boundary normalization for representation-only fields. */
 export type ProviderCandidatePreprocessor = (candidate: unknown) => unknown;
+
+export interface ProviderCandidateNormalization {
+  candidate: unknown;
+  actions: ProviderNormalizationAction[];
+}
+
+/** Schema-aware normalization that must never synthesize substantive content. */
+export type ProviderCandidateNormalizer = (candidate: unknown) => ProviderCandidateNormalization;
 
 export type ProviderCandidateFailureValue =
   | string

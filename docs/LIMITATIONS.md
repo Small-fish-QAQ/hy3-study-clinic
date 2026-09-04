@@ -41,6 +41,7 @@ from open research questions.
 ## Provider and structured-output limits
 
 - Hy3 structured-output capabilities depend on the configured OpenAI-compatible serving backend. The adapter does not assume native `response_format` or JSON Schema support; constrained decoding would require an explicit verified endpoint capability and would remain an additional layer before local Zod and semantic validation.
+- Lesson/Practice recovery handles only deterministic representation equivalences, one bounded class-specific repair or clean regeneration, and the documented structural-repair-to-alias-only localized follow-up. It cannot reconstruct substantive teaching from truncated bytes, invent a missing explanation/evidence selection, or make a semantically invalid candidate valid. Recovery exhaustion still requires an explicit learner retry; full background polling/queue recovery is not implemented.
 - The optional visual adapter is disabled in the competition configuration and evaluation runs. It remains advisory-only and can never enter Formal Evidence, grading, mastery, mistakes, Review, Agenda completion, or Plan progression.
 - Settings local-service tests cover only local reachability. The separate external Hy3 test is explicit, minimal, timestamped, and may consume provider usage; a passing probe is not a guarantee for later large requests. Provider configuration edits are validated and activated by the server, while the browser receives only safe non-secret state.
 
@@ -58,6 +59,7 @@ available and no prevalence claim is made:
 - When candidate evidence is made of near-neighbor passages, relation classification can be unstable.
 - When several passages jointly support a proposition, Hy3 can prefer a single evidence group instead of the minimal joint support.
 - Construct depth can be misread, especially when a goal requires application or evaluation rather than identification or explanation.
+- Lesson output has repeatedly used JSON `null` for optional components, omitted mechanically empty arrays, or copied internal `O*`/`S*`/`L*`/`PR*` aliases into learner prose. Practice output has also been observed truncated, and whole-object repair has omitted an immutable Practice slot. The bounded preparation recovery policy normalizes only unambiguous representations, freezes slot inventories and valid peers, localizes alias text repair, and regenerates truncation from clean immutable input; all semantic, provenance, pedagogy, and authority gates remain hard.
 
 These failure modes motivate the blind candidate-relation/support-group verifier,
 construct-specific local gates, and the planned StudyEval adversarial and validity

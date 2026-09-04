@@ -297,6 +297,14 @@ export function createLessonExecutionService({
     return status === 'failed' || status === 'interrupted' || status === 'cancelled';
   }
 
+  function preparationWasCancelled(state: LessonExecutionState | undefined): boolean {
+    if (state?.preparationStatus !== 'retryable_failure') return false;
+    const failure = [...repos.lessonExecution.listEvents(state.id)]
+      .reverse()
+      .find((event) => event.kind === 'preparation_failed');
+    return failure?.payload.cancelled === true || failure?.payload.recoveryReason === 'cancelled';
+  }
+
   function projection(
     context: RouteContext,
     state: LessonExecutionState | undefined,
@@ -367,6 +375,19 @@ export function createLessonExecutionService({
         currentInformalCheck: null,
         practice: null,
         allowedActions: ['retry_preparation'],
+      });
+    }
+    if (state?.preparationStatus === 'retryable_failure' && preparationWasCancelled(state)) {
+      return LessonExecutionProjectionSchema.parse({
+        status: 'preparation_needed',
+        message: 'Lesson preparation was cancelled. Start it again when you are ready.',
+        course: { title: context.courseTitle },
+        session: { status: context.session.status, version: context.session.version },
+        agenda: { version: context.agenda.version, itemState: context.item.state },
+        lesson: null,
+        progress: null,
+        currentInformalCheck: null,
+        allowedActions: ['prepare_lesson'],
       });
     }
     if (!brief || !state || state.preparationStatus !== 'ready') {

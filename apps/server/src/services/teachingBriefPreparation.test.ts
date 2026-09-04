@@ -3105,6 +3105,22 @@ describe('Teaching Brief preparation', () => {
     expect(retryable.practice).toBeNull();
     expect(harness.provider.lessonContentCalls).toBe(1);
     expect(harness.provider.practiceContentCalls).toBe(1);
+    const failedComposition = harness.repos.operations
+      .listForWorkspace('ws_1', 'prepare_teaching_brief')
+      .find((operation) => operation.status === 'failed')!;
+    expect(harness.repos.operations.getResult(failedComposition.id)).toMatchObject({
+      status: 'failed',
+      payload: {
+        preparationFailure: {
+          failureClass: 'TRANSPORT',
+          failureCode: 'provider_connection_failure',
+          phase: 'practice',
+          recoveryAction: 'none',
+          recoveryExhausted: true,
+          checkpointPreserved: true,
+        },
+      },
+    });
 
     const failedState = harness.repos.lessonExecution.getForSession(
       route.session.id,
@@ -3293,6 +3309,21 @@ describe('Teaching Brief preparation', () => {
           failureCategory: 'SCHEMA_VALIDATION_FAILURE',
           repairAction: 'exhausted',
         },
+        preparationFailure: {
+          failureClass: 'STRUCTURAL',
+          failureCode: 'schema_invalid',
+          phase: 'lesson',
+          validatorCodes: [],
+          normalizationRan: false,
+          normalizationActions: [],
+          recoveryAction: 'none',
+          localizedRepair: false,
+          affectedItemIds: [],
+          affectedComponents: [],
+          recoveryExhausted: true,
+          terminalReason: 'REPAIR_EXHAUSTED:SCHEMA_VALIDATION_FAILURE',
+          checkpointPreserved: false,
+        },
       },
     });
     const serialized = JSON.stringify(result.payload);
@@ -3417,8 +3448,9 @@ describe('Teaching Brief preparation', () => {
 
     await expect(pending).rejects.toMatchObject({ code: 'REQUEST_CANCELLED' });
     const cancelled = harness.services.lessonExecution.get('ws_1', started.session.id);
-    expect(cancelled.status).toBe('retry_available');
-    expect(cancelled.allowedActions).toEqual(['retry_preparation']);
+    expect(cancelled.status).toBe('preparation_needed');
+    expect(cancelled.message).toContain('cancelled');
+    expect(cancelled.allowedActions).toEqual(['prepare_lesson']);
     expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toHaveLength(
       0,
     );

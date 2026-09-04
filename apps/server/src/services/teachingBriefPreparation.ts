@@ -26,6 +26,7 @@ import { AppError, notFound } from '../errors.js';
 import { curriculumSourceBlockFingerprint } from '../grounding/sourceFingerprint.js';
 import { ProviderError } from '../llm/errors.js';
 import { LEARNER_CONTENT_LOCALE } from '../llm/provider.js';
+import { classifyPreparationError } from '../llm/preparationRecovery.js';
 import type {
   LlmProvider,
   LessonSlotContentGenerationInput,
@@ -78,8 +79,12 @@ export const LESSON_CONTENT_PROMPT_VERSION =
   'teaching-lesson-content-v5-source-guided-worked-interaction';
 export const PRACTICE_CONTENT_PROMPT_VERSION =
   'teaching-practice-content-v4-worked-interaction-novelty';
-/** Two logical calls, each original + one repair at the configured 5-minute ceiling. */
-export const COMPOSITIONAL_PREPARATION_LEASE_MS = 22 * 60 * 1000;
+/**
+ * Two logical calls, each bounded to three physical requests only in the
+ * structural-repair -> alias-localization case, at the configured 5-minute
+ * ceiling plus a fixed local-finalization margin.
+ */
+export const COMPOSITIONAL_PREPARATION_LEASE_MS = 32 * 60 * 1000;
 
 interface TeachingBriefPreparationDeps {
   repos: Repositories;
@@ -118,6 +123,25 @@ export interface AcceptedLessonPreview {
 
 function fingerprint(value: unknown): string {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex');
+}
+
+function diagnosticRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function candidateValidatorCodes(value: unknown): string[] {
+  const record = diagnosticRecord(value);
+  if (!record || !Array.isArray(record.diagnostics)) return [];
+  return [
+    ...new Set(
+      record.diagnostics.flatMap((entry) => {
+        const diagnostic = diagnosticRecord(entry);
+        return diagnostic && typeof diagnostic.code === 'string' ? [diagnostic.code] : [];
+      }),
+    ),
+  ].slice(0, 20);
 }
 
 export function compositionFingerprint(
@@ -1160,6 +1184,8 @@ export function createTeachingBriefPreparationService({
       );
     }
 
+    let preparationBoundary: 'route' | 'lesson' | 'checkpoint' | 'practice' | 'assembly' = 'route';
+    let checkpointForDiagnostics: AcceptedLessonCheckpoint | undefined;
     try {
       const route = routeContext(input);
       // This canonical defensive check covers every downstream
@@ -1199,6 +1225,7 @@ export function createTeachingBriefPreparationService({
         checkpointIdentity(input, context.fingerprint, skeleton),
       );
       let checkpoint = selectCurrentAcceptedLessonCheckpoint(reusableCheckpoint);
+      checkpointForDiagnostics = checkpoint;
       const reusableCandidate = checkpoint
         ? repos.teachingBriefs.findReusable({
             workspaceId: input.workspaceId,
@@ -1241,6 +1268,7 @@ export function createTeachingBriefPreparationService({
       }
 
       if (!checkpoint) {
+        preparationBoundary = 'lesson';
         const compositionalLessonInput = lessonInput(route, generationInput, skeleton);
         const lessonProviderInput = structuredClone(compositionalLessonInput);
         let lessonRepairAttempted = false;
@@ -1271,9 +1299,9 @@ export function createTeachingBriefPreparationService({
           invoke: (providerOptions) =>
             inferenceProvider.generateLessonSlotContent(lessonProviderInput, {
               ...providerOptions,
-              onRepairAttempt: (reason, category) => {
+              onRepairAttempt: (reason, category, recoveryAction) => {
                 lessonRepairAttempted = true;
-                providerOptions?.onRepairAttempt?.(reason, category);
+                providerOptions?.onRepairAttempt?.(reason, category, recoveryAction);
               },
               validateCandidate: (candidate) => {
                 return validateLessonSlotContentCandidate(candidate, compositionalLessonInput);
@@ -1297,6 +1325,7 @@ export function createTeachingBriefPreparationService({
         const acceptedLessonContent = lessonPayload.slots.map((content, index) =>
           index === 0 ? { ...content, lessonNarrative: lessonPayload.narrative } : content,
         );
+        preparationBoundary = 'checkpoint';
         checkpoint = repos.transaction(() => {
           const current = routeStillCurrent(input, context.fingerprint);
           assertLessonObjectiveAuthoritySemanticSupport(current.route);
@@ -1333,7 +1362,9 @@ export function createTeachingBriefPreparationService({
             })
           );
         });
+        checkpointForDiagnostics = checkpoint;
       }
+      preparationBoundary = 'practice';
       const currentBeforePractice = routeStillCurrent(input, context.fingerprint);
       assertLessonObjectiveAuthoritySemanticSupport(currentBeforePractice.route);
       renewPreparationLease(claim.id, owner, claim.fencingToken);
@@ -1367,9 +1398,9 @@ export function createTeachingBriefPreparationService({
         invoke: (providerOptions) =>
           inferenceProvider.generatePracticeContent(practiceProviderInput, {
             ...providerOptions,
-            onRepairAttempt: (reason, category) => {
+            onRepairAttempt: (reason, category, recoveryAction) => {
               practiceRepairAttempted = true;
-              providerOptions?.onRepairAttempt?.(reason, category);
+              providerOptions?.onRepairAttempt?.(reason, category, recoveryAction);
             },
             validateCandidate: (candidate) => {
               return validatePracticeContentCandidate(candidate, compositionalPracticeInput);
@@ -1384,6 +1415,7 @@ export function createTeachingBriefPreparationService({
           boundedRepairAttempted: practiceRepairAttempted,
         },
       );
+      preparationBoundary = 'assembly';
       const brief = materialize(
         route,
         context,
@@ -1448,6 +1480,24 @@ export function createTeachingBriefPreparationService({
         'structuredFailure' in error.details
           ? error.details.structuredFailure
           : undefined;
+      const structuredRecord = diagnosticRecord(structuredFailure);
+      const classification = classifyPreparationError(error, preparationBoundary);
+      const validatorCodes = [
+        ...new Set([
+          ...candidateValidatorCodes(candidateFailure),
+          ...(Array.isArray(structuredRecord?.semanticIssueCodes)
+            ? structuredRecord.semanticIssueCodes.filter(
+                (value): value is string => typeof value === 'string',
+              )
+            : []),
+        ]),
+      ].slice(0, 20);
+      const terminalReason =
+        error instanceof ProviderError
+          ? (error.technicalFailureCode ?? error.code)
+          : error instanceof AppError
+            ? error.code
+            : 'PREPARATION_FAILED';
       const current = repos.operations.get(claim.id);
       if (
         current?.status === 'running' &&
@@ -1465,6 +1515,31 @@ export function createTeachingBriefPreparationService({
                   : 'Teaching Brief preparation failed.',
               ...(candidateFailure ? { candidateFailure } : {}),
               ...(structuredFailure ? { structuredFailure } : {}),
+              preparationFailure: {
+                ...classification,
+                phase: preparationBoundary,
+                validatorCodes,
+                normalizationRan: structuredRecord?.normalizationRan === true,
+                normalizationActions: Array.isArray(structuredRecord?.normalizationActions)
+                  ? structuredRecord.normalizationActions
+                  : [],
+                recoveryAction:
+                  typeof structuredRecord?.recoveryAction === 'string'
+                    ? structuredRecord.recoveryAction
+                    : 'none',
+                localizedRepair: structuredRecord?.localizedRepair === true,
+                affectedItemIds: Array.isArray(structuredRecord?.affectedItemIds)
+                  ? structuredRecord.affectedItemIds
+                  : [],
+                affectedComponents: Array.isArray(structuredRecord?.affectedComponents)
+                  ? structuredRecord.affectedComponents
+                  : [],
+                recoveryExhausted: structuredRecord
+                  ? structuredRecord.repairAction === 'exhausted'
+                  : true,
+                terminalReason,
+                checkpointPreserved: Boolean(checkpointForDiagnostics),
+              },
             },
             createdAt: clock.now().toISOString(),
           },

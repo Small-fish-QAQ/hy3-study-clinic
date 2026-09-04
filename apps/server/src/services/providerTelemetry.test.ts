@@ -169,6 +169,77 @@ describe('central provider inference telemetry', () => {
     expect(repos.telemetry.usageSummary('ws_1').physicalAttempts).toBe(2);
   });
 
+  it('records truncation recovery as a distinct clean-regeneration retry attempt', async () => {
+    const raw = new FakeProvider();
+    override(raw, 'generatePracticeContent', async (...args) => {
+      const options = args[1] as ProviderCallOptions;
+      options.onRejectedCandidate?.({
+        validationKind: 'schema',
+        failureCategory: 'TRUNCATED_OUTPUT',
+        repairExhausted: false,
+        schemaName: 'practice-content-v2-lesson-novelty',
+        operationType: 'prepare_teaching_brief',
+        attemptNumber: 1,
+        attemptKind: 'original',
+        candidate: '{"items":',
+        candidateIsRawText: true,
+        findings: [
+          {
+            kind: 'recovery',
+            failureClass: 'OUTPUT',
+            failureCode: 'truncated_output',
+            recoveryAction: 'clean_regeneration',
+            normalizationRan: false,
+            normalizationActions: [],
+            localized: false,
+            immutableItemIds: ['PR1'],
+            affectedItemIds: [],
+            affectedComponents: [],
+          },
+        ],
+        promptFingerprint: 'a'.repeat(64),
+      });
+      options.onRepairAttempt?.('schema', 'TRUNCATED_OUTPUT', 'clean_regeneration');
+      return { items: [] };
+    });
+    const provider = createTelemetryProvider({
+      repos,
+      clock: fixedClock(T0),
+      provider: raw,
+      providerGeneration: () => 2,
+    });
+
+    await invoke(provider, 'generatePracticeContent', {
+      telemetry: { workspaceId: 'ws_1', operationType: 'prepare_teaching_brief' },
+    });
+
+    const call = db.prepare('SELECT id FROM model_logical_calls').get() as { id: string };
+    expect(repos.telemetry.listAttempts(call.id)).toMatchObject([
+      {
+        attemptKind: 'original',
+        errorCode: 'TRUNCATED_OUTPUT_REGENERATION_REQUIRED',
+      },
+      { attemptKind: 'retry', status: 'completed' },
+    ]);
+    expect(repos.telemetry.listRejectedArtifacts(call.id)).toMatchObject([
+      {
+        attemptNumber: 1,
+        attemptKind: 'original',
+        failureCategory: 'TRUNCATED_OUTPUT',
+        repairExhausted: false,
+        findings: [
+          expect.objectContaining({
+            kind: 'recovery',
+            failureClass: 'OUTPUT',
+            failureCode: 'truncated_output',
+            recoveryAction: 'clean_regeneration',
+            immutableItemIds: ['PR1'],
+          }),
+        ],
+      },
+    ]);
+  });
+
   it('fails closed after a repaired response is still invalid without a third attempt', async () => {
     const raw = new FakeProvider();
     override(raw, 'analyzeConcepts', async (...args) => {

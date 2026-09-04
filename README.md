@@ -171,6 +171,12 @@ it is deterministic, versioned, and auditable.
   Formal credit, or change mastery.
 - **Failed generation never overwrites valid data.** Schema, source, authority and route
   violations fail closed.
+- **Lesson preparation recovers by failure class.** Local code first applies only
+  schema-proven representation defaults, then permits one bounded targeted repair. A
+  truncated response is discarded and regenerated from the same immutable slot inventory;
+  an alias-only failure can rewrite only the affected learner-text leaves. Source refs,
+  slot identities, accepted Lesson checkpoints, Formal authority and learner state stay
+  locally controlled.
 
 ## Implementation status
 
@@ -182,7 +188,8 @@ SessionAgenda with atomic accepted-route activation; historical Contract/Curricu
 compatibility;
 durable StudySessions with pause/resume/stop and learner-controlled detours; Teaching
 Briefs whose teacher-led pedagogical arc and per-segment provenance separate verified
-course excerpts from labelled Hy3 teaching; gated practice generation; a lesson-aware
+course excerpts from labelled Hy3 teaching; failure-classified, bounded Lesson/Practice
+preparation recovery with accepted-Lesson preservation; gated practice generation; a lesson-aware
 Tutor over a controlled move vocabulary; Formal Assessment with criterion-gated Evidence
 and progression reconciliation; mistakes, misconceptions and targeted Repair; FSRS-6 review scheduling;
 the blind candidate-relation / support-group semantic verifier with locally derived

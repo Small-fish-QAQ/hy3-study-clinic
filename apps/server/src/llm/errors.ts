@@ -95,8 +95,36 @@ function sanitizeStructuredOutputFailure(diagnostic: StructuredOutputDiagnostic 
           }
         : {}),
     })),
+    semanticIssueCodes: diagnostic.semanticIssueCodes
+      .slice(0, 20)
+      .map((code) => code.slice(0, 100)),
     failureCategory: diagnostic.failureCategory,
     repairAction: diagnostic.repairAction,
+    ...(diagnostic.preparationFailure ? { preparationFailure: diagnostic.preparationFailure } : {}),
+    ...(diagnostic.recoveryAction ? { recoveryAction: diagnostic.recoveryAction } : {}),
+    ...(diagnostic.normalizationRan !== undefined
+      ? { normalizationRan: diagnostic.normalizationRan }
+      : {}),
+    ...(diagnostic.normalizationActions
+      ? {
+          normalizationActions: diagnostic.normalizationActions.slice(0, 10).map((action) => ({
+            code: action.code,
+            paths: action.paths.slice(0, 50).map((path) => path.slice(0, 300)),
+          })),
+        }
+      : {}),
+    ...(diagnostic.localizedRepair !== undefined
+      ? { localizedRepair: diagnostic.localizedRepair }
+      : {}),
+    ...(diagnostic.immutableItemIds
+      ? { immutableItemIds: diagnostic.immutableItemIds.slice(0, 24) }
+      : {}),
+    ...(diagnostic.affectedItemIds
+      ? { affectedItemIds: diagnostic.affectedItemIds.slice(0, 24) }
+      : {}),
+    ...(diagnostic.affectedComponents
+      ? { affectedComponents: diagnostic.affectedComponents.slice(0, 50) }
+      : {}),
   };
 }
 

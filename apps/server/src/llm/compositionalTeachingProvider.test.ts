@@ -8,11 +8,13 @@ import { FakeProvider } from './fakeProvider.js';
 import { Hy3Provider } from './hy3Provider.js';
 import { lessonSlotContentMessages, practiceContentMessages } from './prompts.js';
 import { evaluateLessonSlotPedagogy } from '../services/lessonPedagogyEvaluator.js';
+import { validatePracticeContentCandidate } from '../services/teachingBriefContract.js';
 import type {
   LessonSlotContentGenerationInput,
   PracticeContentGenerationInput,
   ProviderCandidateValidation,
 } from './provider.js';
+import { MAX_COMPOSITIONAL_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL } from './provider.js';
 
 function skeleton() {
   return TeachingSkeletonSchema.parse({
@@ -240,9 +242,9 @@ function applyLessonInput(): LessonSlotContentGenerationInput {
   return { ...input, skeleton: TeachingSkeletonSchema.parse(candidate) };
 }
 
-function response(content: string): Response {
+function response(content: string, finishReason = 'stop'): Response {
   return new Response(
-    JSON.stringify({ choices: [{ message: { content }, finish_reason: 'stop' }] }),
+    JSON.stringify({ choices: [{ message: { content }, finish_reason: finishReason }] }),
     { status: 200, headers: { 'content-type': 'application/json' } },
   );
 }
@@ -472,6 +474,31 @@ describe('compositional Teaching providers', () => {
     expect(result.slots[0]?.explanation).toBe('original valid orientation');
   });
 
+  it('T6 repairs reordered Lesson inventory as a whole and restores exact skeleton order', async () => {
+    const first = lessonPayload();
+    first.slots.reverse();
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(response(JSON.stringify(first)))
+      .mockResolvedValueOnce(response(JSON.stringify(lessonPayload()))) as unknown as typeof fetch;
+
+    const result = await hy3(fetchImpl).generateLessonSlotContent(lessonInput(), {
+      validateCandidate: (candidate) => {
+        const parsed = LessonSlotContentProposalPayloadSchema.parse(candidate);
+        return parsed.slots.map((slot) => slot.slotId).join(',') === 'L1,L2'
+          ? { valid: true, diagnostics: [] }
+          : {
+              valid: false,
+              diagnostics: ['Lesson slots do not preserve the immutable skeleton order.'],
+              diagnosticCodes: ['lesson_slot_order_mismatch'],
+            };
+      },
+    });
+
+    expect(result.slots.map((slot) => slot.slotId)).toEqual(['L1', 'L2']);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
   it('repairs a Lesson source selection outside its exact slot authority', async () => {
     const first = lessonPayload();
     first.slots[1]!.sourceRefs = ['S9'];
@@ -554,6 +581,332 @@ describe('compositional Teaching providers', () => {
     expect(result.items[0]?.capabilityTested).toBe('original valid capability');
     expect(result.items[1]?.sourceRefs).toEqual(['S1']);
     expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it('T1/T2 normalizes optional nulls and mechanical omissions before any repair request', async () => {
+    const first = lessonPayload() as unknown as {
+      narrative: Record<string, unknown>;
+      slots: Array<Record<string, unknown>>;
+    };
+    delete first.narrative.forwardBridge;
+    delete first.slots[0]!.visualRefs;
+    delete first.slots[0]!.semanticRelations;
+    delete first.slots[0]!.workedProcess;
+    first.slots[0]!.example = null;
+    first.slots[0]!.contrast = null;
+    first.slots[0]!.misconception = null;
+    first.slots[0]!.informalCheck = null;
+    const diagnostics: Array<{
+      normalizationRan?: boolean;
+      normalizationActions?: Array<{ code: string; paths: string[] }>;
+    }> = [];
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(response(JSON.stringify(first))) as unknown as typeof fetch;
+
+    const result = await hy3(fetchImpl).generateLessonSlotContent(lessonInput(), {
+      validateCandidate: lessonValidation,
+      onStructuredOutputDiagnostic: (diagnostic) => diagnostics.push(diagnostic),
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(result.slots[0]).toMatchObject({
+      slotId: 'L1',
+      visualRefs: [],
+      semanticRelations: [],
+      workedProcess: null,
+    });
+    expect(result.slots[0]).not.toHaveProperty('example');
+    expect(diagnostics[0]).toMatchObject({ normalizationRan: true });
+    expect(diagnostics[0]!.normalizationActions!.map((action) => action.code)).toEqual(
+      expect.arrayContaining([
+        'optional_null_omitted',
+        'empty_array_defaulted',
+        'nullable_field_defaulted',
+      ]),
+    );
+  });
+
+  it('T3 does not normalize a missing substantive explanation or source selection', async () => {
+    const first = lessonPayload() as unknown as { slots: Array<Record<string, unknown>> };
+    delete first.slots[1]!.explanation;
+    delete first.slots[1]!.sourceRefs;
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(response(JSON.stringify(first)))
+      .mockResolvedValueOnce(
+        response(JSON.stringify({ slots: [lessonPayload().slots[1]] })),
+      ) as unknown as typeof fetch;
+    const diagnostics: Array<{ schemaIssues: Array<{ path: string }> }> = [];
+
+    await hy3(fetchImpl).generateLessonSlotContent(lessonInput(), {
+      validateCandidate: lessonValidation,
+      onStructuredOutputDiagnostic: (diagnostic) => diagnostics.push(diagnostic),
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(diagnostics[0]!.schemaIssues.map((issue) => issue.path)).toEqual(
+      expect.arrayContaining(['slots.1.explanation', 'slots.1.sourceRefs']),
+    );
+  });
+
+  it('T5/T6 permits one narrow alias follow-up after structural repair and freezes all other data', async () => {
+    const first = lessonPayload('frozen orientation', 'invalid mechanism') as unknown as {
+      slots: Array<Record<string, unknown>>;
+    };
+    first.slots[1]!.sourceRefs = 'S1';
+    const aliasRepair = {
+      slots: [
+        {
+          ...lessonPayload().slots[1],
+          explanation: 'The accepted mechanism follows from S1.',
+        },
+      ],
+    };
+    const cleanRepair = {
+      slots: [
+        {
+          slotId: 'L2',
+          explanation: 'The accepted mechanism follows from the cited course material.',
+          sourceRefs: ['S9'],
+          workedProcess: {
+            startingState: 'Provider tried to replace unrelated valid R1.3 content.',
+          },
+        },
+      ],
+    };
+    const recoveryActions: string[] = [];
+    const diagnostics: Array<{
+      attemptKind: string;
+      semanticIssueCodes?: string[];
+      recoveryAction?: string;
+      localizedRepair?: boolean;
+      affectedComponents?: string[];
+    }> = [];
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(response(JSON.stringify(first)))
+      .mockResolvedValueOnce(response(JSON.stringify(aliasRepair)))
+      .mockResolvedValueOnce(response(JSON.stringify(cleanRepair))) as unknown as typeof fetch;
+    const validateCandidate = (candidate: unknown): ProviderCandidateValidation => {
+      const parsed = LessonSlotContentProposalPayloadSchema.parse(candidate);
+      const ids = parsed.slots.map((slot) => slot.slotId);
+      if (ids.join(',') !== 'L1,L2') {
+        return {
+          valid: false,
+          diagnostics: ['Immutable Lesson inventory is incomplete.'],
+          diagnosticCodes: ['missing_lesson_slot'],
+          targetedRepair: { invalidItemIds: ['L1', 'L2'] },
+        };
+      }
+      const slot = parsed.slots[1]!;
+      if (/\bS1\b/u.test(slot.explanation)) {
+        return {
+          valid: false,
+          diagnostics: ['L2 exposes an internal source alias.'],
+          diagnosticCodes: ['lesson_internal_alias_leak'],
+          targetedRepair: {
+            invalidItemIds: ['L2'],
+            localizedTextRepair: {
+              rootNarrative: false,
+              items: [{ itemId: 'L2', components: ['explanation'] }],
+            },
+          },
+        };
+      }
+      return slot.explanation.includes('cited course material') &&
+        slot.sourceRefs.join(',') === 'S1' &&
+        slot.semanticRelations.length === 1
+        ? { valid: true, diagnostics: [] }
+        : {
+            valid: false,
+            diagnostics: ['Alias repair changed immutable valid data.'],
+            diagnosticCodes: ['lesson_slot_invalid'],
+          };
+    };
+
+    const result = await hy3(fetchImpl).generateLessonSlotContent(lessonInput(), {
+      validateCandidate,
+      onRepairAttempt: (_reason, _category, action) => recoveryActions.push(action ?? 'none'),
+      onStructuredOutputDiagnostic: (diagnostic) => diagnostics.push(diagnostic),
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(MAX_COMPOSITIONAL_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL);
+    expect(recoveryActions).toEqual(['targeted_repair', 'localized_alias_repair']);
+    expect(result.slots.map((slot) => slot.slotId)).toEqual(['L1', 'L2']);
+    expect(result.slots[0]!.explanation).toBe('frozen orientation');
+    expect(result.slots[1]).toMatchObject({
+      explanation: 'The accepted mechanism follows from the cited course material.',
+      sourceRefs: ['S1'],
+    });
+    expect(result.slots[1]!.semanticRelations).toHaveLength(1);
+    expect(diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          attemptKind: 'repair',
+          semanticIssueCodes: ['lesson_internal_alias_leak'],
+          recoveryAction: 'localized_alias_repair',
+          localizedRepair: true,
+          affectedComponents: ['L2.explanation'],
+        }),
+      ]),
+    );
+    const calls = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls;
+    const thirdBody = JSON.parse(String(calls[2]![1]!.body)) as {
+      messages: Array<{ content: string }>;
+    };
+    expect(thirdBody.messages.at(-1)!.content).toContain('L1, L2');
+    expect(thirdBody.messages.at(-1)!.content).toContain('L2.explanation');
+    expect(thirdBody.messages.at(-1)!.content).toContain(
+      'local code will ignore all other changes',
+    );
+  });
+
+  it('T7 rejects a repair that drops immutable Practice slot PR1', async () => {
+    const first = practicePayload('invalid capability', 'accepted capability');
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(response(JSON.stringify(first)))
+      .mockResolvedValueOnce(
+        response(JSON.stringify({ items: [practicePayload().items[1]] })),
+      ) as unknown as typeof fetch;
+    const validateCandidate = (candidate: unknown): ProviderCandidateValidation => {
+      const parsed = PracticeContentProposalPayloadSchema.parse(candidate);
+      const ids = parsed.items.map((item) => item.practiceSlotId);
+      const missing = ['PR1', 'PR2'].filter((id) => !ids.includes(id));
+      if (missing.length > 0) {
+        return {
+          valid: false,
+          diagnostics: [`Missing immutable Practice slot ${missing[0]}.`],
+          diagnosticCodes: ['missing_practice_slot'],
+          targetedRepair: { invalidItemIds: missing },
+        };
+      }
+      return parsed.items[0]!.capabilityTested === 'accepted capability'
+        ? { valid: true, diagnostics: [] }
+        : {
+            valid: false,
+            diagnostics: ['Repair PR1.'],
+            diagnosticCodes: ['practice_slot_invalid'],
+            targetedRepair: { invalidItemIds: ['PR1'] },
+          };
+    };
+
+    await expect(
+      hy3(fetchImpl).generatePracticeContent(practiceInput(), { validateCandidate }),
+    ).rejects.toMatchObject({
+      code: 'PROVIDER_INVALID_OUTPUT',
+      details: {
+        structuredFailure: {
+          preparationFailure: {
+            failureClass: 'STRUCTURAL',
+            failureCode: 'missing_immutable_slot',
+          },
+          recoveryAction: 'exhausted',
+        },
+      },
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it('T7 treats reordered Practice inventory as a whole-collection structural failure', () => {
+    const reordered = practicePayload();
+    reordered.items.reverse();
+
+    const result = validatePracticeContentCandidate(reordered, practiceInput());
+
+    expect(result.diagnosticCodes).toContain('practice_slot_order_mismatch');
+    expect(result.targetedRepair).toBeUndefined();
+  });
+
+  it('T8 cleanly regenerates truncated output without treating partial bytes as repair context', async () => {
+    const partial = '{"items":[{"practiceSlotId":"PR1","capabilityTested":"UNIQUE_PARTIAL_BYTES"';
+    const recoveryActions: string[] = [];
+    const diagnostics: Array<{
+      attemptKind: string;
+      preparationFailure?: { failureClass: string; failureCode: string };
+      recoveryAction?: string;
+    }> = [];
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(response(partial, 'length'))
+      .mockResolvedValueOnce(
+        response(JSON.stringify(practicePayload())),
+      ) as unknown as typeof fetch;
+
+    const result = await hy3(fetchImpl).generatePracticeContent(practiceInput(), {
+      validateCandidate: practiceValidation,
+      onRepairAttempt: (_reason, _category, action) => recoveryActions.push(action ?? 'none'),
+      onStructuredOutputDiagnostic: (diagnostic) => diagnostics.push(diagnostic),
+    });
+
+    expect(result.items.map((item) => item.practiceSlotId)).toEqual(['PR1', 'PR2']);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(recoveryActions).toEqual(['clean_regeneration']);
+    expect(diagnostics[0]).toMatchObject({
+      attemptKind: 'original',
+      preparationFailure: { failureClass: 'OUTPUT', failureCode: 'truncated_output' },
+      recoveryAction: 'clean_regeneration',
+    });
+    expect(diagnostics[1]).toMatchObject({ attemptKind: 'retry' });
+    const secondBody = JSON.parse(
+      String((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[1]![1]!.body),
+    ) as { messages: Array<{ content: string }> };
+    const secondPrompt = secondBody.messages.map((message) => message.content).join('\n');
+    expect(secondPrompt).not.toContain('UNIQUE_PARTIAL_BYTES');
+    expect(secondPrompt).toContain('Discard its partial bytes completely');
+    expect(secondPrompt).toContain('PR1, PR2');
+  });
+
+  it('T8 treats structurally incomplete preparation JSON as truncation even without finish metadata', async () => {
+    const recoveryActions: string[] = [];
+    const diagnostics: Array<{
+      possiblyIncomplete: boolean;
+      preparationFailure?: { failureCode: string };
+    }> = [];
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(response('{"items":[{"practiceSlotId":"PR1"'))
+      .mockResolvedValueOnce(
+        response(JSON.stringify(practicePayload())),
+      ) as unknown as typeof fetch;
+
+    await hy3(fetchImpl).generatePracticeContent(practiceInput(), {
+      validateCandidate: practiceValidation,
+      onRepairAttempt: (_reason, _category, action) => recoveryActions.push(action ?? 'none'),
+      onStructuredOutputDiagnostic: (diagnostic) => diagnostics.push(diagnostic),
+    });
+
+    expect(recoveryActions).toEqual(['clean_regeneration']);
+    expect(diagnostics[0]).toMatchObject({
+      possiblyIncomplete: true,
+      preparationFailure: { failureCode: 'truncated_output' },
+    });
+  });
+
+  it('T8/T14 exhausts after one clean regeneration even when it omits PR1', async () => {
+    const partial = '{"items":[{"practiceSlotId":"PR1"';
+    const diagnostics: Array<{ attemptKind: string; recoveryAction?: string }> = [];
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(response(partial, 'length'))
+      .mockResolvedValueOnce(
+        response(JSON.stringify({ items: [practicePayload().items[1]] })),
+      ) as unknown as typeof fetch;
+
+    await expect(
+      hy3(fetchImpl).generatePracticeContent(practiceInput(), {
+        validateCandidate: (candidate) =>
+          validatePracticeContentCandidate(candidate, practiceInput()),
+        onStructuredOutputDiagnostic: (diagnostic) => diagnostics.push(diagnostic),
+      }),
+    ).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(diagnostics).toEqual([
+      expect.objectContaining({ attemptKind: 'original', recoveryAction: 'clean_regeneration' }),
+      expect.objectContaining({ attemptKind: 'retry', recoveryAction: 'exhausted' }),
+    ]);
   });
 
   it('permits only original plus one compositional repair even when failure kinds differ', async () => {
