@@ -18,7 +18,7 @@ export function assessLearningContractScope(
   const issues: LearningContractScopeReadiness['issues'] = [];
 
   for (const scoped of contract.courseScope.materials) {
-    const material = repos.materials.get(scoped.materialId);
+    const material = repos.materials.getRouteIdentity(scoped.materialId);
     if (!material) {
       issues.push({
         kind: 'material_missing',

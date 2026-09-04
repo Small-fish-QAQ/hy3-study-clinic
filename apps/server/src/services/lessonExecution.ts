@@ -60,7 +60,7 @@ function sourceProjection(
   repos: Repositories,
 ): LessonSourceProjection[] {
   return brief.sourceReferences.map((reference) => {
-    const material = repos.materials.get(reference.materialId);
+    const material = repos.materials.getRouteIdentity(reference.materialId);
     return {
       referenceKey: reference.refId,
       materialTitle: material?.title ?? 'Course source',

@@ -624,6 +624,56 @@ describe('migrations', () => {
     db.close();
   });
 
+  it('adds bounded learner-read metadata without rewriting Curriculum payloads', () => {
+    const db = openDatabase(':memory:');
+    const at = '2026-01-01T00:00:00.000Z';
+    migrate(db, { toVersion: 46 });
+    db.prepare(
+      `INSERT INTO workspaces (id, name, origin, created_at, updated_at)
+       VALUES ('ws_read_v47', 'Read projection', 'manual', ?, ?)`,
+    ).run(at, at);
+    db.prepare(
+      `INSERT INTO learning_contract_versions
+         (id, workspace_id, version, status, payload, created_at)
+       VALUES ('contract_read_v47', 'ws_read_v47', 1, 'active', '{}', ?)`,
+    ).run(at);
+    db.prepare(
+      `INSERT INTO execution_source_manifests
+         (id, workspace_id, fingerprint, payload, created_at)
+       VALUES ('manifest_read_v47', 'ws_read_v47', 'manifest-read-v47', '{}', ?)`,
+    ).run(at);
+    const payload = JSON.stringify({
+      validation: { unmappedStructuralUnitIds: ['section_a', 'section_b'] },
+    });
+    db.prepare(
+      `INSERT INTO curriculum_versions
+         (id, workspace_id, contract_id, manifest_id, manifest_fingerprint, version,
+          status, validation_valid, payload, created_at)
+       VALUES ('curriculum_read_v47', 'ws_read_v47', 'contract_read_v47',
+         'manifest_read_v47', 'manifest-read-v47', 1, 'accepted', 1, ?, ?)`,
+    ).run(payload, at);
+
+    migrate(db);
+
+    expect(
+      db
+        .prepare(
+          `SELECT unmapped_structural_unit_count AS count, payload
+           FROM curriculum_versions WHERE id = 'curriculum_read_v47'`,
+        )
+        .get(),
+    ).toEqual({ count: 2, payload });
+    expect(
+      db
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_materials_active_revision'",
+        )
+        .get(),
+    ).toEqual({ name: 'idx_materials_active_revision' });
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+    db.close();
+  });
+
   it('adds the append-only Teaching Brief store when upgrading v19 data', () => {
     const db = openDatabase(':memory:');
     migrate(db, { toVersion: 19 });

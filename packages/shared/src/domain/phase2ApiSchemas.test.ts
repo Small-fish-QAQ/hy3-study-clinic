@@ -3,6 +3,8 @@ import {
   ActiveCourseRouteSchema,
   CourseActionLaunchResultSchema,
   CourseExecutionOverviewSchema,
+  CourseExecutionOverviewResponseSchema,
+  compactCourseExecutionOverviewResponse,
   CreateLearningContractDraftRequestSchema,
   CurriculumHierarchyViewSchema,
   LearningContractFeasibilitySchema,
@@ -521,6 +523,13 @@ describe('Phase 2 read models and atomic route results', () => {
       generatedAt: T0,
     };
     expect(CourseExecutionOverviewSchema.safeParse(overview).success).toBe(true);
+    const compact = compactCourseExecutionOverviewResponse(
+      CourseExecutionOverviewSchema.parse(overview),
+    );
+    expect(compact.overview.planningCurriculum).toEqual({ $ref: 'acceptedCurriculum' });
+    expect(compact.overview.activeCurriculumHierarchy).toEqual({ $ref: 'curriculumHierarchy' });
+    expect(CourseExecutionOverviewResponseSchema.parse(compact).overview).toEqual(overview);
+    expect(JSON.stringify(compact).length).toBeLessThan(JSON.stringify({ overview }).length);
     expect(
       CourseExecutionOverviewSchema.safeParse({ ...overview, acceptedStudyPlan: null }).success,
     ).toBe(false);

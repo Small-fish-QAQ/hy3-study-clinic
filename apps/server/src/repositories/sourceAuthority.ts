@@ -225,6 +225,61 @@ export function createSourceAuthorityRepo(db: SqliteDb) {
     ).map(toEvent);
   }
 
+  function chunks<T>(items: readonly T[], size: number): T[][] {
+    const result: T[][] = [];
+    for (let index = 0; index < items.length; index += size) {
+      result.push(items.slice(index, index + size));
+    }
+    return result;
+  }
+
+  function hydrateBundlesInBatches(rows: readonly RecordRow[]): SourceAuthorityBundle[] {
+    if (rows.length === 0) return [];
+    const claimsByRecord = new Map<string, SourceAuthorityClaim[]>();
+    const eventsByRecord = new Map<string, SourceAuthorityEvent[]>();
+    for (const batch of chunks(
+      rows.map((row) => row.id),
+      500,
+    )) {
+      const placeholders = batch.map(() => '?').join(', ');
+      const claims = (
+        db
+          .prepare(
+            `SELECT * FROM truth_authority_claims
+             WHERE authority_record_id IN (${placeholders})
+             ORDER BY authority_record_id, created_at, id`,
+          )
+          .all(...batch) as ClaimRow[]
+      ).map(toClaim);
+      for (const claim of claims) {
+        const current = claimsByRecord.get(claim.authorityRecordId) ?? [];
+        current.push(claim);
+        claimsByRecord.set(claim.authorityRecordId, current);
+      }
+      const events = (
+        db
+          .prepare(
+            `SELECT * FROM truth_authority_events
+             WHERE authority_record_id IN (${placeholders})
+             ORDER BY authority_record_id, seq`,
+          )
+          .all(...batch) as EventRow[]
+      ).map(toEvent);
+      for (const event of events) {
+        const current = eventsByRecord.get(event.authorityRecordId) ?? [];
+        current.push(event);
+        eventsByRecord.set(event.authorityRecordId, current);
+      }
+    }
+    return rows.map((row) =>
+      SourceAuthorityBundleSchema.parse({
+        record: toRecord(row),
+        claims: claimsByRecord.get(row.id) ?? [],
+        events: eventsByRecord.get(row.id) ?? [],
+      }),
+    );
+  }
+
   const createVersionTransaction = db.transaction(
     (input: CreateAuthorityVersionInput): SourceAuthorityBundle => {
       const latest = db
@@ -420,6 +475,40 @@ export function createSourceAuthorityRepo(db: SqliteDb) {
           events: getEvents(row.id),
         }),
       );
+    },
+
+    /**
+     * Batch equivalent of taking the union of `findEligibleByBlock` across
+     * every original SourceBlock in the supplied active revisions.
+     */
+    findEligibleByRevisions(
+      workspaceId: string,
+      materialRevisionIds: readonly string[],
+    ): SourceAuthorityBundle[] {
+      const revisionIds = [...new Set(materialRevisionIds)];
+      if (revisionIds.length === 0) return [];
+      const placeholders = revisionIds.map(() => '?').join(', ');
+      const rows = db
+        .prepare(
+          `SELECT DISTINCT r.*
+           FROM truth_authority_records r
+           JOIN truth_authority_claims c ON c.authority_record_id = r.id
+           JOIN material_revisions mr ON mr.id = r.material_revision_id
+           JOIN materials m ON m.id = r.material_id
+           JOIN source_blocks b ON b.id = c.source_block_id
+           WHERE r.workspace_id = ?
+             AND r.material_revision_id IN (${placeholders})
+             AND b.material_revision_id = r.material_revision_id
+             AND (b.content_origin IS NULL OR b.content_origin = 'extracted_original')
+             AND r.validation_state = 'validated'
+             AND r.conflict_state IN ('none', 'resolved')
+             AND mr.status = 'active'
+             AND m.availability = 'active'
+             AND m.active_revision_id = mr.id
+           ORDER BY r.logical_source_id, r.version DESC, r.id`,
+        )
+        .all(workspaceId, ...revisionIds) as RecordRow[];
+      return hydrateBundlesInBatches(rows);
     },
   };
 }

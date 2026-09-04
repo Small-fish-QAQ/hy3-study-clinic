@@ -3292,6 +3292,30 @@ const MIGRATIONS: Migration[] = [
         ON rejected_generation_artifacts(operation_kind, created_at);
     `,
   },
+  {
+    version: 47,
+    name: 'learner_read_projections',
+    // Course Home reads resolve Concepts through the active MaterialRevision.
+    // Without this index, SQLite scans the large Materials table once per
+    // Concept. The denormalized validation count lets bounded Curriculum
+    // history avoid loading every immutable Curriculum payload merely to
+    // render one scalar summary.
+    up: `
+      CREATE INDEX idx_materials_active_revision
+        ON materials(active_revision_id)
+        WHERE active_revision_id IS NOT NULL;
+
+      ALTER TABLE curriculum_versions
+        ADD COLUMN unmapped_structural_unit_count INTEGER NOT NULL DEFAULT 0
+          CHECK (unmapped_structural_unit_count >= 0);
+
+      UPDATE curriculum_versions
+      SET unmapped_structural_unit_count = COALESCE(
+        json_array_length(json_extract(payload, '$.validation.unmappedStructuralUnitIds')),
+        0
+      );
+    `,
+  },
 ];
 
 export function migrate(db: SqliteDb, options: { toVersion?: number } = {}): void {

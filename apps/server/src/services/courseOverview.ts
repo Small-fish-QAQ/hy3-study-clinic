@@ -2,6 +2,7 @@ import {
   CourseExecutionOverviewSchema,
   CoverageRiskSummarySchema,
   type CourseExecutionOverview,
+  type Curriculum,
   type CoverageRiskEntry,
   type CoverageRiskSummary,
   type CoverageRiskCategory,
@@ -255,8 +256,13 @@ export function createCourseOverviewService({ repos, clock, reviewSuccessor }: C
     const generatedAt = clock.now().toISOString();
     const state = repos.courseExecution.get(workspaceId);
     const contracts = repos.learningContracts.list(workspaceId);
-    const curricula = repos.curricula.list(workspaceId);
+    const curriculumHistory = repos.curricula.listHistory(workspaceId, 50);
     const plans = repos.studyPlans.list(workspaceId);
+    const loadedCurricula = new Map<string, Curriculum | undefined>();
+    const loadCurriculum = (id: string): Curriculum | undefined => {
+      if (!loadedCurricula.has(id)) loadedCurricula.set(id, repos.curricula.get(id));
+      return loadedCurricula.get(id);
+    };
     const activeContract = state.activeContractId
       ? (repos.learningContracts.get(state.activeContractId) ?? null)
       : null;
@@ -269,21 +275,20 @@ export function createCourseOverviewService({ repos, clock, reviewSuccessor }: C
             ['draft', 'proposed', 'learner_confirmed'].includes(contract.status),
         ) ?? null;
     const acceptedCurriculum = state.activeCurriculumId
-      ? (repos.curricula.get(state.activeCurriculumId) ?? null)
+      ? (loadCurriculum(state.activeCurriculumId) ?? null)
       : null;
     const selectedContract = pendingContract ?? activeContract;
     const planningCurriculum = selectedContract
-      ? ([...curricula]
-          .reverse()
-          .find(
-            (item) => item.status === 'accepted' && item.contractVersionId === selectedContract.id,
-          ) ?? null)
+      ? acceptedCurriculum?.contractVersionId === selectedContract.id
+        ? acceptedCurriculum
+        : (repos.curricula.getLatestAcceptedForContract(workspaceId, selectedContract.id) ?? null)
       : null;
-    const latestCurriculum = curricula.at(-1) ?? null;
+    if (planningCurriculum) loadedCurricula.set(planningCurriculum.id, planningCurriculum);
+    const latestCurriculum = curriculumHistory.at(-1) ?? null;
     const proposedCurriculum =
       latestCurriculum?.status === 'proposed' &&
       latestCurriculum.contractVersionId === selectedContract?.id
-        ? latestCurriculum
+        ? (loadCurriculum(latestCurriculum.id) ?? null)
         : null;
     const acceptedStudyPlan = state.acceptedPlanId
       ? (repos.studyPlans.get(state.acceptedPlanId) ?? null)
@@ -323,7 +328,7 @@ export function createCourseOverviewService({ repos, clock, reviewSuccessor }: C
         ? preflightStudyPlan(repos, clock, selectedContract, planningCurriculum, workspace.name)
         : null;
     const proposedCurriculumPredecessor = proposedCurriculum?.predecessorId
-      ? (repos.curricula.get(proposedCurriculum.predecessorId) ?? null)
+      ? (loadCurriculum(proposedCurriculum.predecessorId) ?? null)
       : null;
     const proposedCurriculumRequiresExecutionPreflight =
       selectedContract && contractScopeCurrent && proposedCurriculum
@@ -461,20 +466,7 @@ export function createCourseOverviewService({ repos, clock, reviewSuccessor }: C
         learnerConfirmedAt: contract.learnerConfirmedAt,
         createdAt: contract.createdAt,
       })),
-      curriculumHistory: curricula.slice(-50).map((curriculum) => ({
-        id: curriculum.id,
-        version: curriculum.version,
-        predecessorId: curriculum.predecessorId,
-        contractVersionId: curriculum.contractVersionId,
-        status: curriculum.status,
-        title: curriculum.nodes.find((node) => node.kind === 'course')?.title ?? 'Course',
-        learningUnitCount: curriculum.nodes.filter((node) => node.kind === 'learning_unit').length,
-        unmappedStructuralUnitCount: curriculum.validation.unmappedStructuralUnitIds.length,
-        validationValid: curriculum.validation.valid,
-        executionSourceManifestFingerprint: curriculum.executionSourceManifest.fingerprint,
-        createdAt: curriculum.createdAt,
-        acceptedAt: curriculum.acceptedAt,
-      })),
+      curriculumHistory,
       studyPlanHistory: plans.slice(-50).map((plan) => ({
         id: plan.id,
         version: plan.version,

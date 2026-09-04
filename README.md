@@ -171,6 +171,9 @@ it is deterministic, versioned, and auditable.
   Formal credit, or change mastery.
 - **Failed generation never overwrites valid data.** Schema, source, authority and route
   violations fail closed.
+- **Learner-facing Course reads stay bounded.** Current launchability is evaluated from one
+  request-local snapshot, Curriculum history uses compact indexed metadata, and repeated immutable
+  Curriculum/Hierarchy values are sent once and expanded by the runtime-validated client contract.
 - **Lesson preparation recovers by failure class.** Local code first applies only
   schema-proven representation defaults, then permits one bounded targeted repair. A
   truncated response is discarded and regenerated from the same immutable slot inventory;

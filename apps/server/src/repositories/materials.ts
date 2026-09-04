@@ -28,6 +28,19 @@ export interface MaterialSummary {
   workspaceDocumentCount: number;
 }
 
+/**
+ * Small immutable/current identity used by route validation. Source content,
+ * parser diagnostics, and original bytes are deliberately excluded.
+ */
+export interface MaterialRouteIdentity {
+  id: string;
+  workspaceId: string;
+  activeRevisionId: string | null;
+  availability: 'active' | 'retired';
+  title: string;
+  sourceType: string;
+}
+
 interface MaterialRow {
   id: string;
   workspace_id: string;
@@ -46,6 +59,15 @@ interface MaterialRow {
   parser_version: string | null;
   created_at: string;
   updated_at: string;
+}
+
+interface MaterialRouteRow {
+  id: string;
+  workspace_id: string;
+  active_revision_id: string | null;
+  availability: 'active' | 'retired';
+  title: string;
+  source_type: string;
 }
 
 interface BlockRow {
@@ -126,6 +148,9 @@ const MATERIAL_COLUMNS = `id, workspace_id, active_revision_id, availability, re
   content, char_count, parse_status, page_count, extraction_warnings, parser_version,
   created_at, updated_at`;
 
+const MATERIAL_ROUTE_COLUMNS =
+  'id, workspace_id, active_revision_id, availability, title, source_type';
+
 function rowToMaterial(row: MaterialRow): Material {
   return MaterialSchema.parse({
     id: row.id,
@@ -146,6 +171,17 @@ function rowToMaterial(row: MaterialRow): Material {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   });
+}
+
+function rowToRouteIdentity(row: MaterialRouteRow): MaterialRouteIdentity {
+  return {
+    id: row.id,
+    workspaceId: row.workspace_id,
+    activeRevisionId: row.active_revision_id,
+    availability: row.availability,
+    title: row.title,
+    sourceType: row.source_type,
+  };
 }
 
 function rowToBlock(row: BlockRow): SourceBlock {
@@ -542,6 +578,13 @@ export function createMaterialsRepo(db: SqliteDb) {
       return row ? rowToMaterial(row) : undefined;
     },
 
+    getRouteIdentity(id: string): MaterialRouteIdentity | undefined {
+      const row = db
+        .prepare(`SELECT ${MATERIAL_ROUTE_COLUMNS} FROM materials WHERE id = ?`)
+        .get(id) as MaterialRouteRow | undefined;
+      return row ? rowToRouteIdentity(row) : undefined;
+    },
+
     /** Raw uploaded bytes for reprocessing (PDF/DOCX only; null otherwise). */
     getOriginalData(id: string): Buffer | null {
       const row = db
@@ -611,6 +654,16 @@ export function createMaterialsRepo(db: SqliteDb) {
         )
         .all(workspaceId) as MaterialRow[];
       return rows.map(rowToMaterial);
+    },
+
+    listRouteIdentitiesByWorkspace(workspaceId: string): MaterialRouteIdentity[] {
+      const rows = db
+        .prepare(
+          `SELECT ${MATERIAL_ROUTE_COLUMNS} FROM materials WHERE workspace_id = ?
+           ORDER BY created_at ASC, id ASC`,
+        )
+        .all(workspaceId) as MaterialRouteRow[];
+      return rows.map(rowToRouteIdentity);
     },
 
     getBlocks(materialId: string): SourceBlock[] {

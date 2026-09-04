@@ -277,18 +277,18 @@ export function createCoursePreparationService({
           }
         : null,
       scope: facts.overview.contractScopeReadiness,
-      materials: includedMaterialIds.map((materialId) => ({
-        materialId,
-        revisionId: repos.materialRevisions.getActive(materialId)?.id ?? null,
-        visualDerivationIdentityFingerprints: (() => {
-          const revision = repos.materialRevisions.getActive(materialId);
-          return revision
+      materials: includedMaterialIds.map((materialId) => {
+        const revision = repos.materialRevisions.getActive(materialId);
+        return {
+          materialId,
+          revisionId: revision?.id ?? null,
+          visualDerivationIdentityFingerprints: revision
             ? listAcceptedAdvisoryVisuals(repos, materialId, revision.id)
                 .map(({ derivation }) => derivation.identityFingerprint)
                 .sort()
-            : [];
-        })(),
-      })),
+            : [],
+        };
+      }),
     });
   }
 
@@ -317,7 +317,7 @@ export function createCoursePreparationService({
         .filter((scope) => scope.disposition === 'included')
         .map((scope) => scope.materialId) ?? [];
     const materialFacts = includedMaterialIds.map((materialId) => {
-      const material = repos.materials.get(materialId);
+      const material = repos.materials.getRouteIdentity(materialId);
       const revision = repos.materialRevisions.getActive(materialId);
       const blocks = repos.materials.getBlocks(materialId);
       const concepts = repos.materials.getConcepts(materialId);

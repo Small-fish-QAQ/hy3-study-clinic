@@ -5,6 +5,7 @@ import {
   ApplyCurriculumDraftEditRequestSchema,
   ApplyStudyPlanDraftEditRequestSchema,
   ConfirmMaterialRoleRequestSchema,
+  compactCourseExecutionOverviewResponse,
   CreateLearningContractDraftRequestSchema,
   DecideStudyPlanRequestSchema,
   LaunchCourseActionRequestSchema,
@@ -62,7 +63,7 @@ export function registerAgentCourseRoutes(app: FastifyInstance, services: Servic
 
   app.get('/api/workspaces/:id/execution', async (request) => {
     const { id } = WorkspaceParams.parse(request.params);
-    return { overview: services.courseOverview.get(id) };
+    return compactCourseExecutionOverviewResponse(services.courseOverview.get(id));
   });
 
   app.get('/api/workspaces/:id/preparation', async (request) => {

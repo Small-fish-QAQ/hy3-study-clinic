@@ -89,7 +89,7 @@ export function resolveReviewTargetContext(repos: Repositories, targetId: string
 
   const conceptIds = unit.learningUnit.conceptIds.filter((conceptId) => {
     const concept = repos.materials.getConcept(conceptId);
-    const material = concept ? repos.materials.get(concept.materialId) : undefined;
+    const material = concept ? repos.materials.getRouteIdentity(concept.materialId) : undefined;
     return material?.workspaceId === target.workspaceId;
   });
   if (conceptIds.length === 0) return undefined;

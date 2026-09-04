@@ -42,6 +42,51 @@ export interface ActivityCapabilityRejected {
 
 export type ActivityCapability = ActivityCapabilityOk | ActivityCapabilityRejected;
 
+type CurrentReviewItem = ReturnType<Repositories['reviewSuccessor']['listCurrent']>[number];
+type ReviewTargetContext = NonNullable<ReturnType<typeof resolveReviewTargetContext>>;
+
+/** Request-local read snapshot for evaluating many capabilities atomically. */
+export interface ActivityCapabilityReadSnapshot {
+  workspaceId: string;
+  conceptsById: ReadonlyMap<string, Concept>;
+  prerequisiteSourceIdsByTarget: ReadonlyMap<string, ReadonlySet<string>>;
+  currentReviewItems: readonly CurrentReviewItem[];
+  reviewContextByTargetId: ReadonlyMap<string, ReviewTargetContext>;
+}
+
+export function createActivityCapabilityReadSnapshot(
+  repos: Repositories,
+  workspaceId: string,
+): ActivityCapabilityReadSnapshot {
+  const concepts = repos.materials.getConceptsByWorkspace(workspaceId);
+  const conceptsById = new Map(concepts.map((concept) => [concept.id, concept] as const));
+  const workspace = repos.workspaces.get(workspaceId);
+  const prerequisiteSourceIdsByTarget = new Map<string, Set<string>>();
+  if (workspace?.activeGraphVersionId) {
+    for (const edge of repos.graph.getEdges(workspace.activeGraphVersionId)) {
+      if (edge.relation === 'prerequisite' && conceptsById.has(edge.sourceConceptId)) {
+        const sources =
+          prerequisiteSourceIdsByTarget.get(edge.targetConceptId) ?? new Set<string>();
+        sources.add(edge.sourceConceptId);
+        prerequisiteSourceIdsByTarget.set(edge.targetConceptId, sources);
+      }
+    }
+  }
+  const currentReviewItems = repos.reviewSuccessor.listCurrent(workspaceId);
+  const reviewContextByTargetId = new Map<string, ReviewTargetContext>();
+  for (const { target } of currentReviewItems) {
+    const context = resolveReviewTargetContext(repos, target.id);
+    if (context) reviewContextByTargetId.set(target.id, context);
+  }
+  return {
+    workspaceId,
+    conceptsById,
+    prerequisiteSourceIdsByTarget,
+    currentReviewItems,
+    reviewContextByTargetId,
+  };
+}
+
 export interface ResolvedActivityLaunch {
   launch: CreateAssessmentRequest;
   /** Set when the requested mode was substituted by the fallback chain. */
@@ -59,10 +104,12 @@ function workspaceConcept(
   repos: Repositories,
   workspaceId: string,
   conceptId: string,
+  snapshot?: ActivityCapabilityReadSnapshot,
 ): Concept | null {
+  if (snapshot?.workspaceId === workspaceId) return snapshot.conceptsById.get(conceptId) ?? null;
   const concept = repos.materials.getConcept(conceptId);
   if (!concept) return null;
-  const material = repos.materials.get(concept.materialId);
+  const material = repos.materials.getRouteIdentity(concept.materialId);
   if (!material || material.workspaceId !== workspaceId) return null;
   return concept;
 }
@@ -71,8 +118,11 @@ function validWorkspaceConceptIds(
   repos: Repositories,
   workspaceId: string,
   conceptIds: readonly string[],
+  snapshot?: ActivityCapabilityReadSnapshot,
 ): string[] {
-  return conceptIds.filter((id) => workspaceConcept(repos, workspaceId, id) !== null).slice(0, 3);
+  return conceptIds
+    .filter((id) => workspaceConcept(repos, workspaceId, id, snapshot) !== null)
+    .slice(0, 3);
 }
 
 function isActionable(record: MisconceptionRecord): boolean {
@@ -117,7 +167,16 @@ function hasPrerequisiteCapability(
   repos: Repositories,
   workspaceId: string,
   conceptIds: readonly string[],
+  snapshot?: ActivityCapabilityReadSnapshot,
 ): boolean {
+  if (snapshot?.workspaceId === workspaceId) {
+    const targets = new Set(conceptIds);
+    return conceptIds.some((conceptId) =>
+      [...(snapshot.prerequisiteSourceIdsByTarget.get(conceptId) ?? [])].some(
+        (sourceConceptId) => !targets.has(sourceConceptId),
+      ),
+    );
+  }
   const workspace = repos.workspaces.get(workspaceId);
   if (!workspace?.activeGraphVersionId) return false;
   const targets = new Set(conceptIds);
@@ -138,8 +197,9 @@ export function checkActivityCapability(
   clock: Clock,
   workspaceId: string,
   activity: { mode: AssessmentMode; conceptIds: readonly string[]; misconceptionId?: string },
+  snapshot?: ActivityCapabilityReadSnapshot,
 ): ActivityCapability {
-  const conceptIds = validWorkspaceConceptIds(repos, workspaceId, activity.conceptIds);
+  const conceptIds = validWorkspaceConceptIds(repos, workspaceId, activity.conceptIds, snapshot);
 
   switch (activity.mode) {
     case 'diagnostic': {
@@ -160,7 +220,7 @@ export function checkActivityCapability(
       if (conceptIds.length === 0) {
         return { ok: false, reason: '目标概念不存在或已被删除。' };
       }
-      if (!hasPrerequisiteCapability(repos, workspaceId, conceptIds)) {
+      if (!hasPrerequisiteCapability(repos, workspaceId, conceptIds, snapshot)) {
         return { ok: false, reason: '当前图谱中目标概念没有可用的前置概念。' };
       }
       return { ok: true, launch: { mode: 'prerequisite_repair', conceptIds } };
@@ -168,7 +228,10 @@ export function checkActivityCapability(
 
     case 'review': {
       const now = clock.now();
-      const successor = repos.reviewSuccessor.listCurrent(workspaceId);
+      const successor =
+        snapshot?.workspaceId === workspaceId
+          ? snapshot.currentReviewItems
+          : repos.reviewSuccessor.listCurrent(workspaceId);
       const requestedTargetIds = activity.conceptIds.slice(0, 3);
       if (requestedTargetIds.length > 0) {
         // Named targets follow the queue's advertised semantics: anything due
@@ -176,7 +239,11 @@ export function checkActivityCapability(
         const endOfDay = endOfToday(now).getTime();
         const eligible = requestedTargetIds.filter((targetId) => {
           const item = successor.find(({ target }) => target.id === targetId);
-          const context = item ? resolveReviewTargetContext(repos, targetId) : undefined;
+          const context = item
+            ? snapshot?.workspaceId === workspaceId
+              ? snapshot.reviewContextByTargetId.get(targetId)
+              : resolveReviewTargetContext(repos, targetId)
+            : undefined;
           return context !== undefined && new Date(item!.state.dueAt).getTime() <= endOfDay;
         });
         if (eligible.length === 0) {
@@ -186,7 +253,9 @@ export function checkActivityCapability(
       }
       const dueNow = successor.some(
         ({ target, state }) =>
-          resolveReviewTargetContext(repos, target.id) !== undefined &&
+          (snapshot?.workspaceId === workspaceId
+            ? snapshot.reviewContextByTargetId.has(target.id)
+            : resolveReviewTargetContext(repos, target.id) !== undefined) &&
           new Date(state.dueAt).getTime() <= now.getTime(),
       );
       if (!dueNow) {

@@ -670,6 +670,19 @@ describe('Curriculum proposal and authority boundaries', () => {
     );
   });
 
+  it('loads eligible authority once per source manifest instead of once per SourceBlock', () => {
+    const byRevision = vi.spyOn(repos.sourceAuthority, 'findEligibleByRevisions');
+    const byBlock = vi.spyOn(repos.sourceAuthority, 'findEligibleByBlock');
+    const revision = repos.materialRevisions.getActive('mat_1')!;
+
+    const context = buildCurriculumExecutionContext(repos, contract);
+
+    expect(context.blocks).toHaveLength(1);
+    expect(byRevision).toHaveBeenCalledOnce();
+    expect(byRevision).toHaveBeenCalledWith('ws_1', [revision.id]);
+    expect(byBlock).not.toHaveBeenCalled();
+  });
+
   it('admits an asset-only scoped revision without promoting its advisory description to evidence or authority', () => {
     const bytes = Buffer.from('exact standalone image bytes');
     const byteHash = `sha256:${createHash('sha256').update(bytes).digest('hex')}` as const;

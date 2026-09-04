@@ -24,14 +24,20 @@ import type { Repositories } from '../repositories/index.js';
 import { searchRetrievalUnits, visualDerivationToRetrievalUnit } from '../retrieval/lexical.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
-import { checkActivityCapability } from './activityLaunch.js';
+import {
+  checkActivityCapability,
+  createActivityCapabilityReadSnapshot,
+  type ActivityCapabilityReadSnapshot,
+} from './activityLaunch.js';
 import {
   validateDetailedStudyPlanProposal,
   type DetailedStudyPlanScope,
 } from '../llm/studyPlanContract.js';
 import {
   listAcceptedAdvisoryVisuals,
+  visualAwareManifestFingerprintFromAcceptedVisuals,
   visualManifestMatchesCurrentDerivations,
+  type AcceptedAdvisoryVisual,
 } from './advisoryVisuals.js';
 import { resolveReviewTargetContext } from './reviewSuccessor.js';
 import { deriveTeachingConstruct } from './teachingConstruct.js';
@@ -98,14 +104,58 @@ function learningUnits(
   );
 }
 
+interface UnitLaunchReadSnapshot {
+  activity: ActivityCapabilityReadSnapshot;
+  currentVisuals: readonly AcceptedAdvisoryVisual[];
+  visualManifestCurrent: boolean;
+}
+
+function createUnitLaunchReadSnapshot(
+  repos: Repositories,
+  workspaceId: string,
+  curriculum: Curriculum,
+): UnitLaunchReadSnapshot {
+  const activity = createActivityCapabilityReadSnapshot(repos, workspaceId);
+  const materialById = new Map(
+    repos.materials
+      .listRouteIdentitiesByWorkspace(workspaceId)
+      .map((material) => [material.id, material] as const),
+  );
+  const acceptedVisuals = curriculum.executionSourceManifest.revisions.flatMap((revision) =>
+    listAcceptedAdvisoryVisuals(repos, revision.materialId, revision.materialRevisionId),
+  );
+  const currentVisuals = acceptedVisuals.filter(({ asset }) => {
+    const material = materialById.get(asset.materialId);
+    return (
+      material?.availability === 'active' && material.activeRevisionId === asset.materialRevisionId
+    );
+  });
+  return {
+    activity,
+    currentVisuals,
+    visualManifestCurrent:
+      visualAwareManifestFingerprintFromAcceptedVisuals(
+        curriculum.executionSourceManifest.revisions,
+        acceptedVisuals,
+      ) === curriculum.executionSourceManifest.fingerprint,
+  };
+}
+
 function assessmentCapability(
   repos: Repositories,
   clock: Clock,
   workspaceId: string,
   mode: AssessmentMode,
   conceptIds: string[],
+  snapshot?: ActivityCapabilityReadSnapshot,
 ): AgendaLaunchCapability {
-  const checked = checkActivityCapability(repos, clock, workspaceId, { mode, conceptIds });
+  const checked = checkActivityCapability(
+    repos,
+    clock,
+    workspaceId,
+    { mode, conceptIds },
+    snapshot,
+  );
   if (
     mode === 'review' &&
     (conceptIds.length === 0 ||
@@ -201,6 +251,7 @@ export function resolveLaunchForPlanItem(
   workspaceId: string,
   curriculum: Curriculum,
   item: Pick<StudyPlanItem, 'kind' | 'curriculumLearningUnitId' | 'objectiveIds'>,
+  snapshot?: UnitLaunchReadSnapshot,
 ): AgendaLaunchCapability {
   const unit = item.curriculumLearningUnitId
     ? learningUnits(curriculum).find((candidate) => candidate.id === item.curriculumLearningUnitId)
@@ -208,28 +259,31 @@ export function resolveLaunchForPlanItem(
   const conceptIds = unit?.learningUnit.conceptIds ?? [];
   switch (item.kind) {
     case 'teach_unit': {
-      const conceptId = conceptIds.find((id) => repos.materials.getConcept(id));
-      const currentVisuals = unit
-        ? curriculum.executionSourceManifest.revisions.flatMap((revision) => {
-            const material = repos.materials.get(revision.materialId);
-            if (
-              material?.workspaceId !== workspaceId ||
-              material.availability !== 'active' ||
-              material.activeRevisionId !== revision.materialRevisionId
-            ) {
-              return [];
-            }
-            return listAcceptedAdvisoryVisuals(
-              repos,
-              revision.materialId,
-              revision.materialRevisionId,
-            );
-          })
-        : [];
-      const visualManifestCurrent = visualManifestMatchesCurrentDerivations(
-        repos,
-        curriculum.executionSourceManifest,
+      const conceptId = conceptIds.find((id) =>
+        snapshot ? snapshot.activity.conceptsById.has(id) : repos.materials.getConcept(id),
       );
+      const currentVisuals = unit
+        ? snapshot
+          ? snapshot.currentVisuals
+          : curriculum.executionSourceManifest.revisions.flatMap((revision) => {
+              const material = repos.materials.getRouteIdentity(revision.materialId);
+              if (
+                material?.workspaceId !== workspaceId ||
+                material.availability !== 'active' ||
+                material.activeRevisionId !== revision.materialRevisionId
+              ) {
+                return [];
+              }
+              return listAcceptedAdvisoryVisuals(
+                repos,
+                revision.materialId,
+                revision.materialRevisionId,
+              );
+            })
+        : [];
+      const visualManifestCurrent = snapshot
+        ? snapshot.visualManifestCurrent
+        : visualManifestMatchesCurrentDerivations(repos, curriculum.executionSourceManifest);
       const visualQuery = unit
         ? [
             unit.title,
@@ -264,9 +318,23 @@ export function resolveLaunchForPlanItem(
           };
     }
     case 'formal_checkpoint':
-      return assessmentCapability(repos, clock, workspaceId, 'concept_practice', conceptIds);
+      return assessmentCapability(
+        repos,
+        clock,
+        workspaceId,
+        'concept_practice',
+        conceptIds,
+        snapshot?.activity,
+      );
     case 'targeted_repair':
-      return assessmentCapability(repos, clock, workspaceId, 'prerequisite_repair', conceptIds);
+      return assessmentCapability(
+        repos,
+        clock,
+        workspaceId,
+        'prerequisite_repair',
+        conceptIds,
+        snapshot?.activity,
+      );
     case 'due_review': {
       if (!unit) {
         return {
@@ -277,18 +345,27 @@ export function resolveLaunchForPlanItem(
         };
       }
       const objectiveIds = new Set(item.objectiveIds);
-      const reviewTargetIds = repos.reviewSuccessor
-        .listCurrent(workspaceId)
-        .flatMap(({ target }) => {
-          const context = resolveReviewTargetContext(repos, target.id);
-          return context &&
-            context.binding.learningUnitId === unit.id &&
-            objectiveIds.has(context.binding.objectiveId) &&
-            context.conceptIds.some((conceptId) => conceptIds.includes(conceptId))
-            ? [target.id]
-            : [];
-        });
-      return assessmentCapability(repos, clock, workspaceId, 'review', reviewTargetIds);
+      const reviewTargetIds = (
+        snapshot?.activity.currentReviewItems ?? repos.reviewSuccessor.listCurrent(workspaceId)
+      ).flatMap(({ target }) => {
+        const context = snapshot
+          ? snapshot.activity.reviewContextByTargetId.get(target.id)
+          : resolveReviewTargetContext(repos, target.id);
+        return context &&
+          context.binding.learningUnitId === unit.id &&
+          objectiveIds.has(context.binding.objectiveId) &&
+          context.conceptIds.some((conceptId) => conceptIds.includes(conceptId))
+          ? [target.id]
+          : [];
+      });
+      return assessmentCapability(
+        repos,
+        clock,
+        workspaceId,
+        'review',
+        reviewTargetIds,
+        snapshot?.activity,
+      );
     }
     case 'synthesis': {
       const group = curriculum.synthesisGroups.find(
@@ -316,6 +393,7 @@ export function resolveLaunchForPlanItem(
         workspaceId,
         'concept_practice',
         synthesisConceptIds,
+        snapshot?.activity,
       );
     }
     case 'informal_check':
@@ -341,6 +419,7 @@ export function buildUnitLaunchProfiles(
   workspaceId: string,
   curriculum: Curriculum,
 ): UnitLaunchProfile[] {
+  const snapshot = createUnitLaunchReadSnapshot(repos, workspaceId, curriculum);
   return learningUnits(curriculum).map((unit) => {
     const candidates: Array<{ kind: StudyPlanItemKind; mode?: AssessmentMode }> = [
       { kind: 'teach_unit' },
@@ -352,11 +431,18 @@ export function buildUnitLaunchProfiles(
     const allowedItemKinds: StudyPlanItemKind[] = [];
     const launchableAssessmentModes: AssessmentMode[] = [];
     for (const candidate of candidates) {
-      const launch = resolveLaunchForPlanItem(repos, clock, workspaceId, curriculum, {
-        kind: candidate.kind,
-        curriculumLearningUnitId: unit.id,
-        objectiveIds: unit.learningUnit.objectives.map((objective) => objective.id),
-      });
+      const launch = resolveLaunchForPlanItem(
+        repos,
+        clock,
+        workspaceId,
+        curriculum,
+        {
+          kind: candidate.kind,
+          curriculumLearningUnitId: unit.id,
+          objectiveIds: unit.learningUnit.objectives.map((objective) => objective.id),
+        },
+        snapshot,
+      );
       if (launch.status !== 'launchable') continue;
       allowedItemKinds.push(candidate.kind);
       if (candidate.mode) launchableAssessmentModes.push(candidate.mode);

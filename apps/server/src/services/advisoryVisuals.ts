@@ -67,10 +67,18 @@ export function visualAwareManifestFingerprint(
   repos: Repositories,
   revisions: ExecutionSourceManifest['revisions'],
 ): string {
-  const visualDerivationIdentityFingerprints = revisions
-    .flatMap((revision) =>
-      listAcceptedAdvisoryVisuals(repos, revision.materialId, revision.materialRevisionId),
-    )
+  const acceptedVisuals = revisions.flatMap((revision) =>
+    listAcceptedAdvisoryVisuals(repos, revision.materialId, revision.materialRevisionId),
+  );
+  return visualAwareManifestFingerprintFromAcceptedVisuals(revisions, acceptedVisuals);
+}
+
+/** Pure fingerprint projection for callers that already loaded the accepted visuals. */
+export function visualAwareManifestFingerprintFromAcceptedVisuals(
+  revisions: ExecutionSourceManifest['revisions'],
+  acceptedVisuals: readonly AcceptedAdvisoryVisual[],
+): string {
+  const visualDerivationIdentityFingerprints = acceptedVisuals
     .map(({ derivation }) => derivation.identityFingerprint)
     .sort();
   const identity =

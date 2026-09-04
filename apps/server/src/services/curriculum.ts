@@ -388,7 +388,7 @@ export function buildCurriculumExecutionContext(
   assertLearningContractScopeCurrent(repos, contract);
   const materials = new Map(
     repos.materials
-      .listByWorkspace(contract.workspaceId)
+      .listRouteIdentitiesByWorkspace(contract.workspaceId)
       .map((material) => [material.id, material]),
   );
   const revisions: ExecutionSourceManifest['revisions'] = [];
@@ -550,15 +550,6 @@ export function buildCurriculumExecutionContext(
         headingPath: block.headingPath,
         sourceBlockIds: [block.id],
       });
-      for (const bundle of repos.sourceAuthority.findEligibleByBlock(
-        contract.workspaceId,
-        revision.id,
-        block.id,
-      )) {
-        if (authorityIds.has(bundle.record.id)) continue;
-        authorityIds.add(bundle.record.id);
-        authorityBundles.push(bundle);
-      }
     }
   }
 
@@ -567,6 +558,26 @@ export function buildCurriculumExecutionContext(
       ApiErrorCode.ValidationError,
       'Curriculum proposal requires at least one included active Material.',
     );
+  }
+  const authorityByBlockId = new Map<string, SourceAuthorityBundle[]>();
+  for (const bundle of repos.sourceAuthority.findEligibleByRevisions(
+    contract.workspaceId,
+    revisions.map((revision) => revision.materialRevisionId),
+  )) {
+    for (const claim of bundle.claims) {
+      const matches = authorityByBlockId.get(claim.sourceBlockId) ?? [];
+      matches.push(bundle);
+      authorityByBlockId.set(claim.sourceBlockId, matches);
+    }
+  }
+  // Preserve the former block-first deterministic ordering while replacing
+  // one query per SourceBlock with one revision-bounded read.
+  for (const block of blocks) {
+    for (const bundle of authorityByBlockId.get(block.id) ?? []) {
+      if (authorityIds.has(bundle.record.id)) continue;
+      authorityIds.add(bundle.record.id);
+      authorityBundles.push(bundle);
+    }
   }
   const manifest = ExecutionSourceManifestSchema.parse({
     fingerprint: visualAwareManifestFingerprint(repos, revisions),
@@ -1183,26 +1194,13 @@ export function createCurriculumService({
 
   function history(workspaceId: string): CurriculumHistoryResponse {
     if (!repos.workspaces.get(workspaceId)) throw notFound('Course not found.');
-    const items = repos.curricula.list(workspaceId);
+    const items = repos.curricula.listHistory(workspaceId, 500);
     const state = repos.courseExecution.get(workspaceId);
     return CurriculumHistoryResponseSchema.parse({
       workspaceId,
       acceptedCurriculumId: state.activeCurriculumId,
       proposedCurriculumId: items.at(-1)?.status === 'proposed' ? items.at(-1)!.id : null,
-      items: items.map((item) => ({
-        id: item.id,
-        version: item.version,
-        predecessorId: item.predecessorId,
-        contractVersionId: item.contractVersionId,
-        status: item.status,
-        title: item.nodes.find((node) => node.kind === 'course')?.title ?? 'Course',
-        learningUnitCount: item.nodes.filter((node) => node.kind === 'learning_unit').length,
-        unmappedStructuralUnitCount: item.validation.unmappedStructuralUnitIds.length,
-        validationValid: item.validation.valid,
-        executionSourceManifestFingerprint: item.executionSourceManifest.fingerprint,
-        createdAt: item.createdAt,
-        acceptedAt: item.acceptedAt,
-      })),
+      items,
     });
   }
 

@@ -421,6 +421,31 @@ function expectNoCurriculumPersistence(): void {
   expect(db.prepare('SELECT COUNT(*) AS count FROM curriculum_events').get()).toEqual({ count: 0 });
 }
 
+describe('bounded Curriculum learner-read metadata', () => {
+  it('lists history from indexed metadata without hydrating the large immutable payload', () => {
+    const stored = createVersion(curriculum());
+    db.prepare("UPDATE curriculum_versions SET payload = 'not-json' WHERE id = ?").run(stored.id);
+
+    expect(repos.curricula.listHistory('ws_1', 50)).toEqual([
+      {
+        id: stored.id,
+        version: 1,
+        predecessorId: null,
+        contractVersionId: 'contract_1',
+        status: 'proposed',
+        title: 'Memory course',
+        learningUnitCount: 1,
+        unmappedStructuralUnitCount: 0,
+        validationValid: true,
+        executionSourceManifestFingerprint: 'manifest-fingerprint-1',
+        createdAt: T0,
+        acceptedAt: null,
+      },
+    ]);
+    expect(() => repos.curricula.get(stored.id)).toThrow();
+  });
+});
+
 describe('Curriculum objective semantic-support persistence', () => {
   it.each([
     ['source_specific', 'anchored'],

@@ -1,9 +1,11 @@
 import {
+  CurriculumHistoryItemSchema,
   CurriculumSchema,
   CurriculumSemanticEvaluationSchema,
   ExecutionSourceManifestSchema,
   ObjectiveAuthoritySemanticSupportSchema,
   type Curriculum,
+  type CurriculumHistoryItem,
   type CurriculumObjective,
   type ExecutionSourceManifest,
   type ObjectiveAuthoritySemanticSupport,
@@ -27,6 +29,8 @@ interface CurriculumRow {
   version: number;
   predecessor_id: string | null;
   status: Curriculum['status'];
+  validation_valid: number;
+  unmapped_structural_unit_count: number;
   payload: string;
   created_at: string;
   accepted_at: string | null;
@@ -455,6 +459,74 @@ export function createCurriculaRepo(db: SqliteDb) {
     const row = curriculumRow(id);
     if (!row) return undefined;
     return hydrateStoredCurriculum(row);
+  }
+
+  function getLatestAcceptedForContract(
+    workspaceId: string,
+    contractVersionId: string,
+  ): Curriculum | undefined {
+    const row = db
+      .prepare(
+        `SELECT * FROM curriculum_versions
+         WHERE workspace_id = ? AND contract_id = ? AND status = 'accepted'
+         ORDER BY version DESC LIMIT 1`,
+      )
+      .get(workspaceId, contractVersionId) as CurriculumRow | undefined;
+    return row ? hydrateStoredCurriculum(row) : undefined;
+  }
+
+  function listHistory(workspaceId: string, limit = 500): CurriculumHistoryItem[] {
+    const boundedLimit = Math.max(1, Math.min(500, Math.trunc(limit)));
+    const rows = db
+      .prepare(
+        `WITH recent AS (
+           SELECT id, contract_id, manifest_fingerprint, version, predecessor_id, status,
+                  validation_valid, unmapped_structural_unit_count, created_at, accepted_at
+           FROM curriculum_versions
+           WHERE workspace_id = ?
+           ORDER BY version DESC
+           LIMIT ?
+         )
+         SELECT recent.*,
+                COALESCE(MAX(CASE WHEN nodes.kind = 'course' THEN nodes.title END), 'Course')
+                  AS title,
+                COALESCE(SUM(CASE WHEN nodes.kind = 'learning_unit' THEN 1 ELSE 0 END), 0)
+                  AS learning_unit_count
+         FROM recent
+         LEFT JOIN curriculum_node_index nodes ON nodes.curriculum_id = recent.id
+         GROUP BY recent.id
+         ORDER BY recent.version ASC`,
+      )
+      .all(workspaceId, boundedLimit) as Array<{
+      id: string;
+      contract_id: string;
+      manifest_fingerprint: string;
+      version: number;
+      predecessor_id: string | null;
+      status: Curriculum['status'];
+      validation_valid: number;
+      unmapped_structural_unit_count: number;
+      created_at: string;
+      accepted_at: string | null;
+      title: string;
+      learning_unit_count: number;
+    }>;
+    return rows.map((row) =>
+      CurriculumHistoryItemSchema.parse({
+        id: row.id,
+        version: row.version,
+        predecessorId: row.predecessor_id,
+        contractVersionId: row.contract_id,
+        status: row.status,
+        title: row.title,
+        learningUnitCount: row.learning_unit_count,
+        unmappedStructuralUnitCount: row.unmapped_structural_unit_count,
+        validationValid: row.validation_valid === 1,
+        executionSourceManifestFingerprint: row.manifest_fingerprint,
+        createdAt: row.created_at,
+        acceptedAt: row.accepted_at,
+      }),
+    );
   }
 
   function getManifest(workspaceId: string, fingerprint: string) {
@@ -970,8 +1042,9 @@ export function createCurriculaRepo(db: SqliteDb) {
       db.prepare(
         `INSERT INTO curriculum_versions
            (id, workspace_id, contract_id, manifest_id, manifest_fingerprint,
-            version, predecessor_id, status, validation_valid, payload, created_at, accepted_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            version, predecessor_id, status, validation_valid, unmapped_structural_unit_count,
+            payload, created_at, accepted_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).run(
         curriculum.id,
         curriculum.workspaceId,
@@ -982,6 +1055,7 @@ export function createCurriculaRepo(db: SqliteDb) {
         curriculum.predecessorId,
         curriculum.status,
         curriculum.validation.valid ? 1 : 0,
+        curriculum.validation.unmappedStructuralUnitIds.length,
         JSON.stringify(withoutSemanticSupport(curriculum)),
         curriculum.createdAt,
         curriculum.acceptedAt,
@@ -1252,6 +1326,8 @@ export function createCurriculaRepo(db: SqliteDb) {
 
   return {
     get,
+    getLatestAcceptedForContract,
+    listHistory,
     getManifest,
     getQualityEvaluation,
     getObjectiveSemanticSupport,

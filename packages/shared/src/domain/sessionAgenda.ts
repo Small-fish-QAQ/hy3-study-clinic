@@ -451,11 +451,57 @@ export const CourseExecutionOverviewSchema = z
   });
 export type CourseExecutionOverview = z.infer<typeof CourseExecutionOverviewSchema>;
 
+const CourseOverviewAcceptedCurriculumRefSchema = z
+  .object({ $ref: z.literal('acceptedCurriculum') })
+  .strict();
+const CourseOverviewCurriculumHierarchyRefSchema = z
+  .object({ $ref: z.literal('curriculumHierarchy') })
+  .strict();
+
+function expandCourseExecutionOverviewTransport(value: unknown): unknown {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
+  const overview = value as Record<string, unknown>;
+  let planningCurriculum = overview.planningCurriculum;
+  let activeCurriculumHierarchy = overview.activeCurriculumHierarchy;
+  if (CourseOverviewAcceptedCurriculumRefSchema.safeParse(planningCurriculum).success) {
+    planningCurriculum = overview.acceptedCurriculum;
+  }
+  if (CourseOverviewCurriculumHierarchyRefSchema.safeParse(activeCurriculumHierarchy).success) {
+    activeCurriculumHierarchy = overview.curriculumHierarchy;
+  }
+  return { ...overview, planningCurriculum, activeCurriculumHierarchy };
+}
+
+/**
+ * Normalize repeated immutable Curriculum data for transport. The client
+ * schema expands these two explicit references back to the established
+ * CourseExecutionOverview shape before any consumer sees it.
+ */
+export function compactCourseExecutionOverviewResponse(overview: CourseExecutionOverview) {
+  const planningCurriculum =
+    overview.acceptedCurriculum &&
+    overview.planningCurriculum?.id === overview.acceptedCurriculum.id
+      ? ({ $ref: 'acceptedCurriculum' } as const)
+      : overview.planningCurriculum;
+  const activeCurriculumHierarchy =
+    overview.curriculumHierarchy &&
+    overview.activeCurriculumHierarchy?.curriculumId === overview.curriculumHierarchy.curriculumId
+      ? ({ $ref: 'curriculumHierarchy' } as const)
+      : overview.activeCurriculumHierarchy;
+  return {
+    overview: { ...overview, planningCurriculum, activeCurriculumHierarchy },
+  };
+}
+
 export const CourseExecutionOverviewResponseSchema: z.ZodType<
   {
     overview: CourseExecutionOverview;
   },
   z.ZodTypeDef,
   unknown
-> = z.object({ overview: CourseExecutionOverviewSchema }).strict();
+> = z
+  .object({
+    overview: z.preprocess(expandCourseExecutionOverviewTransport, CourseExecutionOverviewSchema),
+  })
+  .strict();
 export type CourseExecutionOverviewResponse = z.infer<typeof CourseExecutionOverviewResponseSchema>;

@@ -241,7 +241,7 @@ function buildProviderInput(
         subjectBoundaries: contract.courseScope.subjectBoundaries,
         materials: contract.courseScope.materials.map((scope) => ({
           materialId: scope.materialId,
-          title: repos.materials.get(scope.materialId)?.title ?? scope.materialId,
+          title: repos.materials.getRouteIdentity(scope.materialId)?.title ?? scope.materialId,
           materialRoleAssignmentId: scope.materialRoleAssignmentId,
           materialRoleAssignmentVersion: scope.materialRoleAssignmentVersion,
           role: scope.role,

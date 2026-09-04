@@ -33,7 +33,10 @@ import {
   preflightStudyPlan,
   STUDY_PLAN_OPERATION_LEASE_MS,
 } from './studyPlansAgent.js';
-import { validateStudyPlanScopeAccounting } from './studyPlanValidation.js';
+import {
+  buildUnitLaunchProfiles,
+  validateStudyPlanScopeAccounting,
+} from './studyPlanValidation.js';
 import { createReviewSuccessorService } from './reviewSuccessor.js';
 
 const T1 = '2026-01-01T00:01:00.000Z';
@@ -774,6 +777,33 @@ describe('StudyPlan proposal and accepted Course route', () => {
     expect(provider.calls).toBe(0);
     expect(repos.studyPlans.list('ws_1')).toHaveLength(0);
     expect(repos.courseExecution.get('ws_1').acceptedPlanId).toBeNull();
+  });
+
+  it('profiles many LearningUnits from one request-local learner-read snapshot', () => {
+    const template = curriculum.nodes.find((node) => node.kind === 'learning_unit')!;
+    const manyUnits: Curriculum = {
+      ...curriculum,
+      nodes: [
+        curriculum.nodes.find((node) => node.kind === 'course')!,
+        ...Array.from({ length: 25 }, (_, index) => ({
+          ...structuredClone(template),
+          id: `unit_snapshot_${index}`,
+          index,
+        })),
+      ],
+    };
+    const getConcept = vi.spyOn(repos.materials, 'getConcept');
+    const getConcepts = vi.spyOn(repos.materials, 'getConceptsByWorkspace');
+    const listReviews = vi.spyOn(repos.reviewSuccessor, 'listCurrent');
+    const getAssets = vi.spyOn(repos.materialRevisions, 'getAssets');
+
+    const profiles = buildUnitLaunchProfiles(repos, clock, 'ws_1', manyUnits);
+
+    expect(profiles).toHaveLength(25);
+    expect(getConcept).not.toHaveBeenCalled();
+    expect(getConcepts).toHaveBeenCalledOnce();
+    expect(listReviews).toHaveBeenCalledOnce();
+    expect(getAssets).toHaveBeenCalledTimes(manyUnits.executionSourceManifest.revisions.length);
   });
 
   it('allows an accepted Curriculum without semantic support to reach StudyPlan proposal', async () => {
