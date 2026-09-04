@@ -1731,20 +1731,21 @@ export class FakeProvider implements LlmProvider {
     const objectiveByRef = new Map(
       input.skeleton.objectives.map((objective) => [objective.objectiveRef, objective]),
     );
+    const selectedDepth = input.courseDesign?.desiredDepth ?? 'working_fluency';
     const depthInvestment = {
       pass_oriented: '先建立必要的心智模型，并用一个刻意保持简单的例子说明。',
       working_fluency: '接着把机制和重要边界连起来，再完整推演一个条件发生变化的案例。',
       high_performance: '还要用真实的失败模式、边界情况和相互竞争的取舍来检验这个机制。',
       deep_transfer: '进一步把机制连接到相邻概念，用反例检验它，并迁移到陌生情境。',
-    }[input.courseDesign?.desiredDepth ?? 'working_fluency'];
+    }[selectedDepth];
     const focusInvestment =
       input.courseDesign?.unitFocus === 'focused'
         ? '这里会投入更多讲解，用更丰富的案例、影响结果的边界和有用的后续联系把它讲透。'
         : '我们会完整展开核心思路，同时避免无关岔路。';
     const payload = LessonSlotContentProposalPayloadSchema.parse({
       narrative: {
-        whyNow: `现在学习“${input.skeleton.learningUnitTitle}”，是因为它能为后续判断建立可用的模型。${depthInvestment}`,
-        summary: `现在，核心思路已经与证据、机制、边界和学习者需要作出的判断连在一起。${focusInvestment}`,
+        whyNow: `先看一个具体问题：当“${input.skeleton.learningUnitTitle}”中的关键条件改变时，为什么结果会跟着改变？学习它不是为了记住标签，而是为了建立一幅从条件经过机制走向结果的心智模型。${depthInvestment}`,
+        summary: `现在回到开头的问题：关键不是孤立事实，而是条件如何启动机制、机制又如何产生结果。用这幅心智模型，就能解释原案例，也能判断条件变化后的新案例。${focusInvestment}`,
         forwardBridge: input.learningContext.nextConnection
           ? `接下来，用这个模型理解“${input.learningContext.nextConnection.title}”。`
           : '接下来把这个模型带入一个陌生案例，判断究竟是哪项条件改变了结果。',
@@ -1780,7 +1781,7 @@ export class FakeProvider implements LlmProvider {
         const workedProcess =
           slot.qualityContract === 'worked_process' && sourceRef && sourceText
             ? {
-                startingState: `学习者位于资料所述“${topic}”流程的起点，案例中的限定事实都已明确。`,
+                startingState: `学习者位于资料所述“${topic}”流程的起点；当前状态、相关输入和必须保留的限定条件都已明确。`,
                 ruleOrProcedure: sourceText,
                 steps: [
                   {
@@ -1796,7 +1797,7 @@ export class FakeProvider implements LlmProvider {
                 ],
                 learnerDecision: `根据当前条件，判断接下来应执行资料所述“${topic}”中的哪项动作。`,
                 result: `案例在没有添加无依据步骤的情况下，得到“${topic}”的限定结果。`,
-                whyResultFollows: `先检查当前“${topic}”条件，再选择资料所述的下一项动作，案例才会推进到流程允许的限定结果。每一次转换都使用给定规则并保留其限定条件，因此结果确实由资料支持的流程推出。`,
+                whyResultFollows: `先检查当前“${topic}”条件，再选择资料所述的下一项动作，案例才会推进到流程允许的限定结果。每一次转换都使用给定规则并保留其限定条件，因此结果由资料支持的流程推出；如果跳过条件检查，下一项动作就可能不再适用，最终结果也失去依据。`,
                 sourceRefs,
               }
             : null;
@@ -1824,19 +1825,26 @@ export class FakeProvider implements LlmProvider {
                 kind:
                   objective?.construct === 'apply'
                     ? ('apply_simple_example' as const)
-                    : ('own_words' as const),
+                    : selectedDepth === 'pass_oriented'
+                      ? ('own_words' as const)
+                      : ('predict_next' as const),
                 prompt:
                   objective?.construct === 'apply'
-                    ? `根据“${topic}”的当前状态，选择下一项有依据的动作，并说明原因。`
-                    : `请解释关键条件如何改变“${topic}”的结果。`,
-                expectedSignal: '用自己的话把条件与由此产生的影响或判断连接起来。',
+                    ? `换到一个没有讲过的“${topic}”案例：一项关键条件已经被移除。请预测后果，选择下一项有依据的动作，并说明原因。`
+                    : selectedDepth === 'pass_oriented'
+                      ? `请用自己的话说明“${topic}”中哪个条件会影响结果。`
+                      : `换到一个没有讲过的“${topic}”情境：如果移除一项关键条件，接下来最可能发生什么，为什么？`,
+                expectedSignal:
+                  selectedDepth === 'pass_oriented'
+                    ? '用自己的话把关键条件与结果连接起来。'
+                    : '先预测变化，再用条件、机制和后果组成完整的因果解释。',
               }
           : undefined;
         const base = {
           slotId: slot.slotId,
           explanation:
             slot.qualityContract === 'orientation'
-              ? `先从一个实际问题开始：当“${topic}”背后的关键条件改变时，什么会随之改变？${depthInvestment}${focusInvestment}`
+              ? `先从一个实际问题开始：当“${topic}”背后的关键条件改变时，什么会随之改变？先抓住中心模型——不要把事实分开背，而要沿着“条件如何启动机制、机制如何产生结果”来理解。${depthInvestment}${focusInvestment}`
               : sourceText
                 ? `带着这个问题来看，资料给出了关于“${topic}”的这项限定事实：${sourceText}`
                 : `辅助图示提供了一种理解“${topic}”的方式，但它属于补充讲解，不是资料证据。`,
@@ -1851,8 +1859,8 @@ export class FakeProvider implements LlmProvider {
             ...base,
             example: {
               text: workedProcess
-                ? '现在改变案例中的一个条件，逐步追踪它如何改变可选动作，并检查最终结果是否仍然成立。'
-                : `设想一个具体的“${topic}”案例，改变其中一个条件，再预测结果应如何变化。`,
+                ? `把刚才的过程完整走一遍：起点给出当前状态、输入和限制；第一步先检查哪个条件适用，得到可执行动作的范围；第二步执行有依据的动作，观察中间状态怎样改变；最后再检查结果是否仍满足原来的限制。如果省略第一步，表面合理的动作可能在这个案例中根本不适用。`
+                : `设想一个具体的“${topic}”案例：起点给出两个表面相似、但关键条件不同的候选。先用中心模型判断哪个条件会启动机制，再追踪它造成的中间变化，最后预测结果；如果移除那个条件，原结论也必须随之改变。`,
               sourceRefs: [],
               visualRefs,
             },
@@ -1862,7 +1870,7 @@ export class FakeProvider implements LlmProvider {
           return {
             ...base,
             contrast: {
-              text: `对“${topic}”的可靠解释会用支配条件预测结果；表面相似的回答只会重复标签。`,
+              text: `对“${topic}”的可靠解释会用支配条件和中间机制预测结果；表面相似的回答只会重复标签。边界就在这里：条件不成立时，不能沿用原来的结论。`,
               sourceRefs: [],
               visualRefs,
             },
@@ -1873,7 +1881,8 @@ export class FakeProvider implements LlmProvider {
             ...base,
             misconception: {
               hypothesis: `学习者可能只重复“${topic}”的标签，却没有使用资料所述的边界。`,
-              correction: '回到支配条件，把它与结果连接起来，再检验条件改变后结论是否仍然成立。',
+              correction:
+                '回到支配条件，先说明它怎样启动机制，再说明机制怎样造成结果；最后改变该条件，检验原结论是否仍然成立。',
               sourceRefs: [],
               visualRefs,
             },

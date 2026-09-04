@@ -316,7 +316,7 @@ function practiceValidation(candidate: unknown): ProviderCandidateValidation {
 }
 
 describe('compositional Teaching providers', () => {
-  it('T9-T11 makes depth cognitive and focus an independent investment signal', () => {
+  it('keeps depth cognitive and focus an independent investment signal', () => {
     const lessonPrompt = (
       desiredDepth: NonNullable<LessonSlotContentGenerationInput['courseDesign']>['desiredDepth'],
       unitFocus: 'normal' | 'focused',
@@ -336,11 +336,11 @@ describe('compositional Teaching providers', () => {
     expect(working).toContain('mechanisms and causal relationships');
     expect(working).toContain('changed-scenario check');
     expect(high).toContain('edge cases, failure modes, trade-offs');
-    expect(high).toContain('multi-step application');
+    expect(high).toContain('multi-step reasoning or application');
     expect(deep).toContain('counterexamples, unfamiliar transfer');
-    expect(deep).toContain('cross-concept synthesis');
+    expect(deep).toContain('cross-Unit synthesis');
     expect(focused).toContain('keep the same global depth authority');
-    expect(focused).toContain('invest more teaching effort');
+    expect(focused).toContain('greater useful teaching investment');
     expect(focused).toContain(
       'Focus grants no truth, citation, Formal, credit, or mastery authority',
     );
@@ -602,17 +602,39 @@ describe('compositional Teaching providers', () => {
       visualContext: input.visualContext,
     });
 
+    expect(lesson.narrative.whyNow).toContain('具体问题');
+    expect(lesson.narrative.whyNow).toContain('从条件经过机制走向结果的心智模型');
+    expect(lesson.narrative.summary).toContain('现在回到开头的问题');
+    expect(lesson.slots[0]?.explanation).toContain('先抓住中心模型');
     expect(lesson.slots.find((slot) => slot.slotId === 'L2')?.workedProcess).toMatchObject({
       startingState: expect.any(String),
       ruleOrProcedure: expect.stringContaining('limited capacity'),
+      steps: [
+        expect.objectContaining({
+          action: expect.any(String),
+          reason: expect.any(String),
+          resultingState: expect.any(String),
+        }),
+        expect.objectContaining({
+          action: expect.any(String),
+          reason: expect.any(String),
+          resultingState: expect.any(String),
+        }),
+      ],
       result: expect.any(String),
-      whyResultFollows: expect.any(String),
+      whyResultFollows: expect.stringContaining('如果跳过条件检查'),
     });
+    expect(lesson.slots.find((slot) => slot.slotId === 'L2')?.example?.text).toContain(
+      '观察中间状态怎样改变',
+    );
     expect(lesson.slots.find((slot) => slot.slotId === 'L2')?.informalCheck).toMatchObject({
       kind: 'apply_simple_example',
       prompt: expect.stringContaining('选择下一项有依据的动作'),
-      expectedSignal: expect.stringContaining('条件'),
+      expectedSignal: expect.stringContaining('条件、机制和后果'),
     });
+    expect(lesson.slots.find((slot) => slot.slotId === 'L2')?.informalCheck?.prompt).toContain(
+      '一项关键条件已经被移除',
+    );
     expect(
       evaluateLessonSlotPedagogy(lesson, input, {
         evaluatedAt: '2026-08-24T00:00:00.000Z',

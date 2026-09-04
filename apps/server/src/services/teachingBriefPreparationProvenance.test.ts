@@ -104,6 +104,18 @@ describe('Teaching Brief preparation provenance selection', () => {
     );
   });
 
+  it('retains the R1.1 checkpoint payload but refuses to reuse it under the R1.2 contract', () => {
+    const previous = acceptedCheckpoint({
+      promptVersion: 'teaching-lesson-content-v3-dogfood-substance-zh-cn',
+    });
+
+    expect(previous.lessonContent[0]?.lessonNarrative?.whyNow).toBe('Why this matters now.');
+    expect(isCurrentAcceptedLessonCheckpoint(previous)).toBe(false);
+    expect(() => selectCurrentAcceptedLessonCheckpoint(previous)).toThrowError(
+      expect.objectContaining({ code: 'VERSION_CONFLICT' }),
+    );
+  });
+
   it('requires both logical-call identities and both current evaluator policies for Brief reuse', () => {
     const skeleton = { fingerprint: SKELETON_FINGERPRINT };
     const current = compositionalBrief();

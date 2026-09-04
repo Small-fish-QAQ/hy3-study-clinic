@@ -340,6 +340,18 @@ function compositionalContractInput(): LessonSlotContentGenerationInput {
   };
 }
 
+function lessonContractPrompt(
+  desiredDepth: NonNullable<LessonSlotContentGenerationInput['courseDesign']>['desiredDepth'],
+  unitFocus: 'normal' | 'focused' = 'normal',
+): string {
+  return lessonSlotContentMessages({
+    ...compositionalContractInput(),
+    courseDesign: { desiredDepth, unitFocus },
+  })
+    .map((message) => message.content)
+    .join('\n');
+}
+
 describe('compositional provider candidate validation', () => {
   it('prompts for the minimum sufficient worked-process contract without a duplicate relation', () => {
     const prompt = lessonSlotContentMessages(compositionalContractInput())
@@ -350,38 +362,124 @@ describe('compositional provider candidate validation', () => {
     expect(prompt).not.toContain('worked_process needs both a semantic relation');
   });
 
-  it('requires substantive working-fluency teaching, focused investment, and a generalized trace', () => {
-    const normalInput = {
-      ...compositionalContractInput(),
-      courseDesign: { desiredDepth: 'working_fluency', unitFocus: 'normal' },
-    } satisfies LessonSlotContentGenerationInput;
-    const focusedInput = {
-      ...normalInput,
-      courseDesign: { desiredDepth: 'working_fluency', unitFocus: 'focused' },
-    } satisfies LessonSlotContentGenerationInput;
-    const normalPrompt = lessonSlotContentMessages(normalInput)
-      .map((message) => message.content)
-      .join('\n');
-    const focusedPrompt = lessonSlotContentMessages(focusedInput)
-      .map((message) => message.content)
-      .join('\n');
+  it('T1/T2 prioritizes a private whole-Lesson pedagogical arc and central mental model', () => {
+    const prompt = lessonContractPrompt('working_fluency');
 
-    expect(normalPrompt).toContain('enough substantive teaching');
-    expect(normalPrompt).toContain('not merely a compact factual summary');
-    expect(normalPrompt).toContain('mechanisms and causal relationships');
-    expect(normalPrompt).toContain('meaningful misconception or failure mode');
-    expect(normalPrompt).toContain('changed-scenario check or reasoning opportunity');
-    expect(normalPrompt).toContain('process, mechanism, causal chain, architecture, workflow');
-    expect(normalPrompt).toContain('trace at least one concrete instance through the mechanism');
-    expect(normalPrompt).toContain('worked comparison, concrete reasoning case, boundary case');
-    expect(normalPrompt).not.toContain('user query ->');
+    expect(prompt).toContain('Objectives are mandatory teaching obligations');
+    expect(prompt).toContain('They are not the learner-facing Lesson outline');
+    expect(prompt).toContain('whole-Lesson pedagogical arc determines how the learner is taught');
+    expect(prompt).toContain('do not recite Objective 1, then Objective 2, then Objective 3');
+    expect(prompt).toContain('privately design one coherent learner-facing pedagogical arc');
+    expect(prompt).toContain('concrete problem, situation, question, surprising behavior');
+    expect(prompt).toContain('useful central mental model');
+    expect(prompt).toContain('work through a concrete journey');
+    expect(prompt).toContain('abstract that journey back to the general concept');
+    expect(prompt).toContain('test a boundary or nearby contrast');
+    expect(prompt).toContain('repair a plausible misconception or failure mode');
+    expect(prompt).toContain('changed-situation transfer or prediction');
+    expect(prompt).toContain('pedagogical functions, not mandatory cards or headings');
+    expect(prompt).toContain('Do not output this planning object');
+    expect(prompt).toContain('signal the core idea');
+    expect(prompt).toContain('revisit the anchor after explaining the mechanism');
+  });
+
+  it('T3-T5 requires a genuine worked case, end-to-end process trace, and causal explanation', () => {
+    const prompt = lessonContractPrompt('working_fluency');
+
+    expect(prompt).toContain('enough substantive teaching');
+    expect(prompt).toContain('not merely a compact factual summary');
+    expect(prompt).toContain('mechanisms and causal relationships');
+    expect(prompt).toContain('meaningful misconception or failure mode');
+    expect(prompt).toContain('changed-scenario check or reasoning opportunity');
+    expect(prompt).toContain('never a one-sentence example');
+    expect(prompt).toContain('initial situation and relevant inputs');
+    expect(prompt).toContain('intermediate consequence');
+    expect(prompt).toContain('important step or assumption were removed or changed');
+    expect(prompt).toContain('process, mechanism, causal chain, architecture, workflow');
+    expect(prompt).toContain('trace at least one concrete instance end to end');
+    expect(prompt).toContain(
+      'worked comparison, concrete reasoning case, counterexample, boundary case',
+    );
+    expect(prompt).toContain('Teach causality rather than stopping at factual adjacency');
+    expect(prompt).toContain('Fact -> mechanism -> consequence');
+    expect(prompt).not.toContain('user query ->');
+  });
+
+  it('T6/T7 actively uses supplementary teaching without granting it source or Formal authority', () => {
+    const prompt = lessonContractPrompt('working_fluency');
+
+    expect(prompt).toContain('too terse to establish the mental model');
+    expect(prompt).toContain('SHOULD add relevant Hy3 supplementary teaching');
+    expect(prompt).toContain('keeps sourceRefs empty');
+    expect(prompt).toContain('never presented as quoted material or Formal authority');
+    expect(prompt).toContain('Do not generate Practice, grading, Formal Evidence, mastery');
+  });
+
+  it('T8/T9 gives focus more useful investment while rejecting length as a proxy', () => {
+    const normalPrompt = lessonContractPrompt('working_fluency');
+    const focusedPrompt = lessonContractPrompt('working_fluency', 'focused');
 
     expect(focusedPrompt).toContain('same global desiredDepth');
     expect(focusedPrompt).toContain('rather than treating focus as depth + 1');
-    expect(focusedPrompt).toContain('richer mechanism trace');
+    expect(focusedPrompt).toContain('visibly greater useful teaching investment');
+    expect(focusedPrompt).toContain('more complete worked journey');
+    expect(focusedPrompt).toContain('one additional important causal layer');
+    expect(focusedPrompt).toContain('one useful adjacent concept');
+    expect(focusedPrompt).toContain('richer transfer opportunity');
     expect(focusedPrompt).toContain('Do not manufacture this investment');
     expect(focusedPrompt).toContain('Focus grants no truth, citation, Formal, credit, or mastery');
+    expect(focusedPrompt).toContain('Teaching depth is not a length proxy');
+    expect(focusedPrompt).toContain('one excellent worked case');
+    expect(focusedPrompt).toContain('over repeated definitions, generic examples, extra headings');
     expect(normalPrompt).not.toContain('FOCUSED UNIT');
+  });
+
+  it('T10/T11 makes an appropriate inline check reason on a novel surface without adding check volume', () => {
+    const lessonInput = {
+      ...compositionalContractInput(),
+      courseDesign: { desiredDepth: 'working_fluency', unitFocus: 'focused' },
+    } satisfies LessonSlotContentGenerationInput;
+    const lessonPrompt = lessonSlotContentMessages(lessonInput)
+      .map((message) => message.content)
+      .join('\n');
+
+    expect(lessonPrompt).toContain('already planned learnerActionRequired slots');
+    expect(lessonPrompt).toContain(
+      'prediction, changed-situation reasoning, causal consequence, contrast, or boundary recognition',
+    );
+    expect(lessonPrompt).toContain('rather than merely recalling the preceding sentence');
+    expect(lessonPrompt).toContain('understand -> reason -> transfer');
+    expect(lessonPrompt).toContain('Do not simply restate the exact worked case in its check');
+    expect(lessonPrompt).toContain('scenario A');
+    expect(lessonPrompt).toContain('scenario B, a changed variable, a removed stage');
+    expect(lessonPrompt).toContain('Do not add extra checks merely for quantity');
+
+    const acceptedLesson = [
+      {
+        slotId: 'L1',
+        explanation: '一个已接受的讲解。',
+        sourceRefs: [],
+        visualRefs: [],
+        semanticRelations: [],
+        workedProcess: null,
+      },
+    ] satisfies PracticeContentGenerationInput['acceptedLesson'];
+    const practicePrompt = practiceContentMessages({
+      workspaceName: lessonInput.workspaceName,
+      learnerLocale: lessonInput.learnerLocale,
+      courseDesign: lessonInput.courseDesign,
+      skeleton: lessonInput.skeleton,
+      acceptedLesson,
+      sourceContext: lessonInput.sourceContext,
+      visualContext: lessonInput.visualContext,
+    })
+      .map((message) => message.content)
+      .join('\n');
+    expect(practicePrompt).toContain('Never reuse the accepted Lesson worked case');
+    expect(practicePrompt).toContain('use a materially changed scenario');
+    expect(practicePrompt).toContain(
+      'materially changed retry scenario—not merely changed wording',
+    );
   });
 
   it('propagates zh-CN as a generation contract without adding a lexical hard gate', async () => {

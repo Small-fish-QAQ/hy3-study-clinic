@@ -73,7 +73,7 @@ import {
 } from './objectiveAuthoritySemanticSupport.js';
 
 export const TEACHING_BRIEF_PROMPT_VERSION = 'teaching-brief-v3-compositional-r1-pedagogy';
-export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v3-dogfood-substance-zh-cn';
+export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v4-teacher-arc-deep-pedagogy';
 export const PRACTICE_CONTENT_PROMPT_VERSION = 'teaching-practice-content-v3-zh-cn-novelty';
 /** Two logical calls, each original + one repair at the configured 5-minute ceiling. */
 export const COMPOSITIONAL_PREPARATION_LEASE_MS = 22 * 60 * 1000;

@@ -140,6 +140,11 @@ it is deterministic, versioned, and auditable.
   about and which specific facts belong to it. Hy3 may add general explanation, examples
   and analogies - but anything asserted as *your material says so* must resolve to an
   exact verified span.
+- **Objectives constrain; the pedagogical arc teaches.** Objectives remain mandatory,
+  but Hy3 is asked to organize the whole Lesson around a concrete anchor, a usable mental
+  model, genuine worked reasoning, causal explanation, boundaries, misconceptions,
+  transfer and a forward bridge—not to recite an objective-by-objective outline. The
+  internal Teaching Skeleton still owns obligations, identities and budgets.
 - **Exact quotation proves location, not entailment.** Verifying that a quote occurs at a
   claimed offset is not a proof of complete semantic entailment. The codebase, the UI and
   these docs all keep that distinction.
@@ -167,10 +172,10 @@ Skeleton review with bounded rename/safe-reorder/focus edits; derived StudyPlan 
 SessionAgenda with atomic accepted-route activation; historical Contract/Curriculum/Plan
 compatibility;
 durable StudySessions with pause/resume/stop and learner-controlled detours; Teaching
-Briefs with per-segment provenance separating verified course excerpts from labelled Hy3
-teaching; gated practice generation; a lesson-aware Tutor over a controlled move
-vocabulary; Formal Assessment with criterion-gated Evidence and progression
-reconciliation; mistakes, misconceptions and targeted Repair; FSRS-6 review scheduling;
+Briefs whose teacher-led pedagogical arc and per-segment provenance separate verified
+course excerpts from labelled Hy3 teaching; gated practice generation; a lesson-aware
+Tutor over a controlled move vocabulary; Formal Assessment with criterion-gated Evidence
+and progression reconciliation; mistakes, misconceptions and targeted Repair; FSRS-6 review scheduling;
 the blind candidate-relation / support-group semantic verifier with locally derived
 verdicts and deterministic mis-binding repair; and a developer-only adversarial
 mastery-challenge workflow.
