@@ -17,6 +17,7 @@ import { MasteryChallengeFamilySchema } from '../domain/assessmentIntent.js';
 import { RepairDiagnosticCategorySchema, RepairInterventionModeSchema } from '../domain/repair.js';
 import {
   InformalCheckKindSchema,
+  PrivateReasoningFields,
   TeachingBriefSegmentPurposeSchema,
 } from '../domain/teachingBrief.js';
 import {
@@ -1228,6 +1229,7 @@ const ProposedLessonPracticeOptionSchema = z
 
 const ProposedLessonPracticeSurfaceSchema = z
   .object({
+    ...PrivateReasoningFields,
     prompt: z.string().min(1).max(1200),
     options: z.array(ProposedLessonPracticeOptionSchema).min(3).max(5),
     correctOptionRef: z.string().regex(/^[A-E]$/u),

@@ -1,4 +1,11 @@
 import { z } from 'zod';
+import { PrivateReasoningFields } from './reasoningOperation.js';
+export {
+  ReasoningOperationSchema,
+  PrivateReasoningFields,
+  isReasoningOperation,
+  type ReasoningOperation,
+} from './reasoningOperation.js';
 import { ExecutionSourceManifestSchema } from './curriculum.js';
 import { VisualAdvisoryContextSchema } from './visual.js';
 import { LessonPedagogyEvaluationSchema, LessonPracticeSchema } from './lessonPractice.js';
@@ -138,6 +145,7 @@ export type TeachingBriefMisconception = z.infer<typeof TeachingBriefMisconcepti
 
 export const TeachingBriefInformalCheckSchema = z
   .object({
+    ...PrivateReasoningFields,
     kind: InformalCheckKindSchema,
     prompt: z.string().min(1).max(700),
     expectedSignal: z.string().max(500).nullable(),
@@ -281,6 +289,7 @@ function validateWorkedInteractionChoices(
 
 export const TeachingWorkedInteractionActivitySchema = z
   .object({
+    ...PrivateReasoningFields,
     prompt: z.string().min(1).max(900),
     options: z.array(TeachingWorkedInteractionOptionSchema).min(3).max(5),
     correctOptionId: z.string().regex(/^[A-E]$/u),
@@ -294,6 +303,7 @@ export type TeachingWorkedInteractionActivity = z.infer<
 
 export const TeachingWorkedInteractionScaffoldSchema = z
   .object({
+    ...PrivateReasoningFields,
     prompt: z.string().min(1).max(800),
     options: z.array(TeachingWorkedInteractionSimpleOptionSchema).min(2).max(4),
     correctOptionId: z.string().regex(/^[A-E]$/u),
@@ -307,6 +317,8 @@ export type TeachingWorkedInteractionScaffold = z.infer<
 
 export const TeachingWorkedInteractionTransferSchema = z
   .object({
+    reasoningOperation: PrivateReasoningFields.reasoningOperation,
+    requiredInference: PrivateReasoningFields.requiredInference,
     changedCondition: z.string().min(1).max(800),
     prompt: z.string().min(1).max(900),
     options: z.array(TeachingWorkedInteractionSimpleOptionSchema).min(3).max(5),

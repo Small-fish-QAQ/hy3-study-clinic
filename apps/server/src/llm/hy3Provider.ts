@@ -940,13 +940,14 @@ export class Hy3Provider implements LlmProvider {
         'Repair only locally identified L* slots. Every other first-pass slot is frozen and cannot be changed, deleted, or reordered.',
         'Preserve the whole-Lesson narrative unless a diagnostic explicitly identifies it. Return only slotId plus bounded content fields for repaired slots. Never output objective refs, construct, role, duration, protection, authority mode, Practice, Formal Evidence, mastery, or progression.',
         'Use only the slot-specific offered S*/V* aliases. A semantic relation needs two distinct propositions and objective relevance; keywords alone never prove reasoning.',
-        'For a worked-process failure, provide a concrete starting state, transitions with reasons, result, and why it follows. Cite an offered source only for source-backed claims; supplementary worked cases keep sourceRefs empty. If the repaired slot has learnerActionRequired=true, also provide an aligned pre-guidance informalCheck that requires the learner to decide/predict/act before any explanation. choose_alternative checks require structured choices and one correct option. Do not substitute a label or generic checklist.',
+        'For a worked-process failure, provide starting state, meaningful transitions, and a prepared interaction before continuation. An interactive workedProcess owns the learner action: omit informalCheck from that slot. Other learnerActionRequired slots need an aligned pre-guidance informalCheck; choose_alternative requires structured choices and one correct option. Cite only supported components; supplementary worked cases keep sourceRefs empty.',
+        'Every action including scaffold needs private reasoningOperation, requiredInference and decisiveCondition; transfer uses changedCondition. Correct-answer assertion authority stays bounded, independently of learner cognition. Repair answer pre-reveal in the named surface. If whyNow contains the conclusion, return a corrected narrative as well as the named slots. If immutable objectives or frozen peers already state the answer, redesign the affected action around a new withheld inference that consumes the modelled output. Never fix leakage with noun substitution or a dishonest operation label.',
         'Remove internal aliases and planning vocabulary from every learner-visible string. Citations belong only in structured sourceRefs/visualRefs arrays, never in prose as O1/S1/L1/PR1-style or parenthetical aliases. Write as the same coherent teacher voice as the frozen Lesson.',
         'Return a slots object containing only replacements for the named invalid L* identities. Local code will reassemble it with every frozen valid slot exactly.',
       ].join('\n'),
       {
         maxTokens: 10_000,
-        schemaName: 'lesson-slot-content-v2-teacher-narrative',
+        schemaName: 'lesson-slot-content-v4-calibrated-cognition',
         candidateNormalizer: normalizeLessonPreparationCandidate,
         immutableItemIds: input.skeleton.lessonSlots.map((slot) => slot.slotId),
         targetedRepairCollection: {
@@ -973,12 +974,13 @@ export class Hy3Provider implements LlmProvider {
         'Return only practiceSlotId plus bounded item/surface content. Never output objective refs, construct, authority mode, duration, credit, Formal Evidence, mastery, or progression.',
         'Use only slot-specific offered S*/V* aliases and stay inside the locally stated capability and prohibited-construct boundary.',
         'For an apply failure, application must expose a source-stated starting state/rule, real decision, and expected action reflected by both prompt and action options. Lexical apply/next-step markers alone are invalid.',
+        'Both surfaces need private reasoningOperation, decisiveCondition and requiredInference. Repair semantic replay by changing the operation or a materially decisive condition and inference, never only nouns. Missing focused angles can be supplied by these Practice items; do not regenerate the accepted Lesson. Assertion authority does not limit the reasoning operation.',
         'Remove answer-bearing source quotation, accepted-Lesson worked-case repetition, exposed internal aliases, and same-scenario retries. Citations belong only in structured sourceRefs/visualRefs arrays, never in learner prose. A retry must use a meaningfully changed scenario.',
         'Return an items object containing only replacements for the named invalid PR* identities. Local code will reassemble it with every frozen valid item exactly.',
       ].join('\n'),
       {
         maxTokens: 8_000,
-        schemaName: 'practice-content-v2-lesson-novelty',
+        schemaName: 'practice-content-v4-calibrated-novelty',
         candidateNormalizer: normalizePracticePreparationCandidate,
         immutableItemIds: input.skeleton.practicePlan.slots.map((slot) => slot.practiceSlotId),
         targetedRepairCollection: {

@@ -3,6 +3,67 @@ import {
   LessonSlotContentProposalPayloadSchema,
   PracticeContentProposalPayloadSchema,
 } from './payloads.js';
+import { ReasoningOperationSchema } from '../domain/reasoningOperation.js';
+import {
+  LearnerPracticeProjectionSchema,
+  LessonPracticeSurfaceSchema,
+} from '../domain/lessonPractice.js';
+
+it('keeps the eight private cognitive operations out of learner Practice projections', () => {
+  expect(ReasoningOperationSchema.options).toEqual([
+    'recognize',
+    'classify',
+    'predict_outcome',
+    'diagnose_cause',
+    'locate_boundary',
+    'identify_missing',
+    'choose_design',
+    'judge_tradeoff',
+  ]);
+  const authored = {
+    prompt: 'Which delivery path satisfies the changed requirement?',
+    options: ['A', 'B', 'C'].map((id) => ({
+      id,
+      text: `Candidate ${id}`,
+      feedbackIfSelected: `Feedback for ${id}`,
+    })),
+    correctOptionId: 'A',
+    hint: 'Inspect the destination.',
+    explanation: 'The new destination changes the routing decision.',
+    reasoningOperation: 'choose_design',
+    decisiveCondition: 'The destination now requires an independent audit copy.',
+    requiredInference: 'Add a separate audit consumer.',
+  };
+  expect(LessonPracticeSurfaceSchema.parse(authored)).toEqual(authored);
+  const item = {
+    index: 0,
+    objectiveTitle: 'Routing',
+    construct: 'identify',
+    surface: 'initial',
+    prompt: authored.prompt,
+    options: authored.options.map(({ id, text }) => ({ id, text })),
+  };
+  const projection = {
+    status: 'available',
+    currentItemIndex: 0,
+    itemCount: 1,
+    item,
+    attempts: [],
+    completedAt: null,
+    credit: 'none',
+  };
+  expect(LearnerPracticeProjectionSchema.safeParse(projection).success).toBe(true);
+  for (const [key, value] of Object.entries({
+    reasoningOperation: authored.reasoningOperation,
+    decisiveCondition: authored.decisiveCondition,
+    requiredInference: authored.requiredInference,
+  })) {
+    expect(
+      LearnerPracticeProjectionSchema.safeParse({ ...projection, item: { ...item, [key]: value } })
+        .success,
+    ).toBe(false);
+  }
+});
 
 function lessonSlot() {
   return {

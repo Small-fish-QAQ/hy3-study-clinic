@@ -361,10 +361,10 @@ describe('compositional provider candidate validation', () => {
     expect(prompt).toContain('semanticRelations are optional');
     expect(prompt).toContain('prepared Teacher <-> Learner activity');
     expect(prompt).toContain('before the continuation, result, or final rationale is revealed');
-    expect(prompt).toContain('hypothesis, whyTempting, and the smallest useful correction');
-    expect(prompt).toContain('hint gives one small piece of information');
-    expect(prompt).toContain('scaffold asks one smaller multiple-choice reasoning action');
-    expect(prompt).toContain('Do not create an unlimited tutoring tree');
+    expect(prompt).toContain('hypothesis, whyTempting and correction');
+    expect(prompt).toContain('hint points at concrete scenario evidence');
+    expect(prompt).toContain('scaffold asks a smaller independently meaningful sub-inference');
+    expect(prompt).toContain('No live generation during interaction');
     expect(prompt).toContain('component-level sourceRefs independently');
     expect(prompt).toContain('keep interaction.sourceRefs empty');
     expect(prompt).toContain(
@@ -399,11 +399,13 @@ describe('compositional provider candidate validation', () => {
   it('T3-T5 requires a genuine worked case, end-to-end process trace, and causal explanation', () => {
     const prompt = lessonContractPrompt('working_fluency');
 
-    expect(prompt).toContain('enough substantive teaching');
-    expect(prompt).toContain('not merely a compact factual summary');
+    expect(prompt).toContain(
+      'every required objective needs at least one reasoning-class Lesson action',
+    );
+    expect(prompt).toContain('with a withheld inference');
     expect(prompt).toContain('mechanisms and causal relationships');
-    expect(prompt).toContain('meaningful misconception or failure mode');
-    expect(prompt).toContain('changed-scenario check or reasoning opportunity');
+    expect(prompt).toContain('plausible competing model');
+    expect(prompt).toContain('transfer and Practice initial must be reasoning-class');
     expect(prompt).toContain('never a one-sentence example');
     expect(prompt).toContain('initial situation and relevant inputs');
     expect(prompt).toContain('intermediate consequence');
@@ -413,8 +415,8 @@ describe('compositional provider candidate validation', () => {
     expect(prompt).toContain(
       'worked comparison, concrete reasoning case, counterexample, boundary case',
     );
-    expect(prompt).toContain('Teach causality rather than stopping at factual adjacency');
-    expect(prompt).toContain('Fact -> mechanism -> consequence');
+    expect(prompt).toContain('Teach causality with the reveal order');
+    expect(prompt).toContain('Fact -> mechanism -> learner inference -> consequence');
     expect(prompt).not.toContain('user query ->');
   });
 
@@ -433,13 +435,15 @@ describe('compositional provider candidate validation', () => {
     const focusedPrompt = lessonContractPrompt('working_fluency', 'focused');
 
     expect(focusedPrompt).toContain('same global desiredDepth');
-    expect(focusedPrompt).toContain('rather than treating focus as depth + 1');
-    expect(focusedPrompt).toContain('visibly greater useful teaching investment');
-    expect(focusedPrompt).toContain('more complete worked journey');
-    expect(focusedPrompt).toContain('one additional important causal layer');
-    expect(focusedPrompt).toContain('one useful adjacent concept');
-    expect(focusedPrompt).toContain('richer transfer opportunity');
-    expect(focusedPrompt).toContain('Do not manufacture this investment');
+    expect(focusedPrompt).toContain('never depth + 1');
+    expect(focusedPrompt).toContain('Focus is angle coverage');
+    expect(focusedPrompt).toContain('preserve the required worked interaction');
+    expect(focusedPrompt).toContain('at least three reasoning operations');
+    expect(focusedPrompt).toContain(
+      'diagnose_cause or identify_missing AND choose_design or judge_tradeoff',
+    );
+    expect(focusedPrompt).toContain('Transfer changes a component, field, scale');
+    expect(focusedPrompt).toContain('Practice can supply missing Lesson angles');
     expect(focusedPrompt).toContain('Focus grants no truth, citation, Formal, credit, or mastery');
     expect(focusedPrompt).toContain('Teaching depth is not a length proxy');
     expect(focusedPrompt).toContain('one excellent worked case');
@@ -458,9 +462,9 @@ describe('compositional provider candidate validation', () => {
 
     expect(lessonPrompt).toContain('already planned learnerActionRequired slots');
     expect(lessonPrompt).toContain(
-      'prediction, changed-situation reasoning, causal consequence, contrast, or boundary recognition',
+      'every required objective must elicit a reasoning-class operation with a withheld inference',
     );
-    expect(lessonPrompt).toContain('rather than merely recalling the preceding sentence');
+    expect(lessonPrompt).toContain('recognition alone cannot satisfy this depth');
     expect(lessonPrompt).toContain('understand -> reason -> transfer');
     expect(lessonPrompt).toContain('Do not simply restate the exact worked case in its check');
     expect(lessonPrompt).toContain('scenario A');

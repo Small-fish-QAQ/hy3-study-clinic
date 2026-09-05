@@ -78,6 +78,23 @@ function compositionalBrief(
 }
 
 describe('Teaching Brief preparation provenance selection', () => {
+  it('invalidates incompatible R1.3 and reverted R1.4 policies without mutating historical artifacts', () => {
+    for (const promptVersion of [
+      'teaching-lesson-content-v5-source-guided-worked-interaction',
+      'teaching-lesson-content-v6-cognitive-demand',
+    ]) {
+      const historical = acceptedCheckpoint({ promptVersion });
+      const bytes = JSON.stringify(historical);
+      expect(isCurrentAcceptedLessonCheckpoint(historical)).toBe(false);
+      expect(JSON.stringify(historical)).toBe(bytes);
+    }
+    const historical = compositionalBrief({
+      practicePolicyVersion: 'lesson-practice-v4-worked-interaction-exposure',
+    });
+    expect(isCurrentCompositionalBrief(historical, { fingerprint: SKELETON_FINGERPRINT })).toBe(
+      false,
+    );
+  });
   it('returns only an accepted Lesson checkpoint with current evaluation and call provenance', () => {
     const current = acceptedCheckpoint();
 

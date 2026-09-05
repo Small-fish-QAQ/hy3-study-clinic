@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { FormalAssessmentConstructSchema } from './sourceAuthority.js';
+import { PrivateReasoningFields } from './reasoningOperation.js';
 
 export const LessonPedagogyCriterionSchema = z.enum([
   'objective_alignment',
@@ -92,6 +93,7 @@ export type LessonPracticeOption = z.infer<typeof LessonPracticeOptionSchema>;
 
 export const LessonPracticeSurfaceSchema = z
   .object({
+    ...PrivateReasoningFields,
     prompt: z.string().min(1).max(1200),
     options: z.array(LessonPracticeOptionSchema).min(3).max(5),
     correctOptionId: z.string().min(1).max(80),

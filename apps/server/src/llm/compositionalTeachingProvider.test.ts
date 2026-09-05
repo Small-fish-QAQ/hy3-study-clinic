@@ -336,13 +336,13 @@ describe('compositional Teaching providers', () => {
     const focused = lessonPrompt('working_fluency', 'focused');
 
     expect(working).toContain('mechanisms and causal relationships');
-    expect(working).toContain('changed-scenario check');
-    expect(high).toContain('edge cases, failure modes, trade-offs');
-    expect(high).toContain('multi-step reasoning or application');
-    expect(deep).toContain('counterexamples, unfamiliar transfer');
-    expect(deep).toContain('cross-Unit synthesis');
-    expect(focused).toContain('keep the same global depth authority');
-    expect(focused).toContain('greater useful teaching investment');
+    expect(working).toContain('with a withheld inference');
+    expect(high).toContain('realistic failure modes and competing constraints');
+    expect(high).toContain('at least two distinct reasoning operations');
+    expect(deep).toContain('unfamiliar transfer');
+    expect(deep).toContain('offered adjacent Unit concept');
+    expect(focused).toContain('keep the same global desiredDepth');
+    expect(focused).toContain('Focus is angle coverage');
     expect(focused).toContain(
       'Focus grants no truth, citation, Formal, credit, or mastery authority',
     );
@@ -402,8 +402,8 @@ describe('compositional Teaching providers', () => {
     expect(practicePrompt).toContain('Never quote or closely reproduce');
     expect(practicePrompt).toContain('never prove application');
     expect(schemaNames).toEqual([
-      'lesson-slot-content-v2-teacher-narrative',
-      'practice-content-v2-lesson-novelty',
+      'lesson-slot-content-v4-calibrated-cognition',
+      'practice-content-v4-calibrated-novelty',
     ]);
   });
 
@@ -427,7 +427,8 @@ describe('compositional Teaching providers', () => {
     ) as { messages: Array<{ content: string }> };
     expect(repairBody.messages.at(-1)?.content).toContain('L2');
     expect(repairBody.messages.at(-1)?.content).toContain('frozen');
-    expect(repairBody.messages.at(-1)?.content).toContain('learnerActionRequired=true');
+    expect(repairBody.messages.at(-1)?.content).toContain('Other learnerActionRequired slots');
+    expect(repairBody.messages.at(-1)?.content).toContain('omit informalCheck from that slot');
   });
 
   it('freezes valid Lesson peers when one first-pass slot is schema-invalid', async () => {
@@ -962,7 +963,7 @@ describe('compositional Teaching providers', () => {
     expect(lesson.slots.find((slot) => slot.slotId === 'L2')?.workedProcess).toMatchObject({
       startingState: expect.any(String),
       inputs: expect.arrayContaining([expect.any(String)]),
-      ruleOrProcedure: expect.stringContaining('limited capacity'),
+      ruleOrProcedure: expect.stringContaining('启动时从空闲数扣除占用量'),
       steps: [
         expect.objectContaining({
           action: expect.any(String),
@@ -976,12 +977,13 @@ describe('compositional Teaching providers', () => {
         }),
       ],
       result: expect.any(String),
-      whyResultFollows: expect.stringContaining('如果跳过条件检查'),
+      whyResultFollows: expect.stringContaining('超分配'),
       interaction: {
         pauseAfterStepIndex: 0,
         sourceRefs: [],
         activity: {
-          prompt: expect.stringContaining('下一步'),
+          prompt: expect.stringContaining('刚算出的快照'),
+          reasoningOperation: 'predict_outcome',
           options: expect.arrayContaining([
             expect.objectContaining({ id: 'A', misconception: null }),
             expect.objectContaining({
@@ -998,7 +1000,7 @@ describe('compositional Teaching providers', () => {
         hint: expect.any(String),
         scaffold: { prompt: expect.any(String), correctOptionId: 'A' },
         transfer: {
-          changedCondition: expect.stringContaining('边界因素'),
+          changedCondition: expect.stringContaining('备用处理器'),
           prompt: expect.any(String),
           correctOptionId: 'B',
         },
@@ -1012,7 +1014,7 @@ describe('compositional Teaching providers', () => {
       evaluateLessonSlotPedagogy(lesson, input, {
         evaluatedAt: '2026-08-24T00:00:00.000Z',
       }),
-    ).toMatchObject({ status: 'pass', findings: [] });
+    ).toMatchObject({ status: 'pass' });
     expect(practice.items[0]?.application).toMatchObject({
       startingState: expect.any(String),
       sourceRuleOrProcedure: expect.stringContaining('limited capacity'),

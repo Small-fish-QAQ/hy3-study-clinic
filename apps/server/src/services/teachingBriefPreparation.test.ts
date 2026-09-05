@@ -239,6 +239,7 @@ class CountingProvider extends FakeProvider {
     item.capabilityTested = '辨认叶绿体在植物细胞光合作用中的功能。';
     item.pedagogicalReason = '检验对植物细胞器与光能吸收关系的区分。';
     item.initial = {
+      ...item.initial,
       prompt: '植物叶片中负责吸收光能的细胞器是哪一个？',
       options: [
         {
@@ -262,6 +263,7 @@ class CountingProvider extends FakeProvider {
       explanation: '叶绿体色素会吸收光合作用所需的光能。',
     };
     item.retry = {
+      ...item.retry,
       prompt: '阴影中的叶片仍由哪个细胞器携带吸光色素？',
       options: [
         {
@@ -1347,7 +1349,7 @@ describe('Teaching Brief preparation', () => {
           activity: { options: expect.any(Array), correctDebrief: expect.any(String) },
           hint: expect.any(String),
           scaffold: { prompt: expect.any(String) },
-          transfer: { changedCondition: expect.stringContaining('边界因素') },
+          transfer: { changedCondition: expect.stringContaining('备用处理器') },
           sourceRefs: [],
         },
       },
@@ -2770,6 +2772,54 @@ describe('Teaching Brief preparation', () => {
     ).toMatchObject({ lessonEvaluation: { status: 'fail' } });
   });
 
+  it('rejects missing current metadata after provider validation and retries only Practice', async () => {
+    const harness = await createHarness();
+    const route = startTeachingRoute(harness);
+    const generate = harness.provider.generatePracticeContent.bind(harness.provider);
+    harness.provider.generatePracticeContent = async (input, options) => {
+      const payload = await generate(input, options);
+      delete payload.items[0]!.initial.requiredInference;
+      return payload;
+    };
+    const pending = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+      command: command('cognition-invalid-final-practice'),
+      expectedSessionVersion: route.session.version,
+      expectedAgendaVersion: route.agenda.version,
+      expectedAgendaItemId: route.agendaItem.id,
+    });
+    expect(pending.status).toBe('practice_retry_available');
+    expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toHaveLength(
+      0,
+    );
+    const state = harness.repos.lessonExecution.getForSession(
+      route.session.id,
+      route.agendaItem.id,
+    )!;
+    const checkpoint = harness.repos.acceptedLessonCheckpoints.get(
+      state.acceptedLessonCheckpointId!,
+    )!;
+    const bytes = JSON.stringify(checkpoint);
+    harness.provider.generatePracticeContent = generate;
+    const ready = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+      command: command('cognition-practice-only-retry'),
+      expectedSessionVersion: pending.session.version,
+      expectedAgendaVersion: pending.agenda!.version,
+      expectedAgendaItemId: route.agendaItem.id,
+    });
+    expect(ready.status).toBe('ready');
+    expect(harness.provider.lessonContentCalls).toBe(1);
+    expect(harness.provider.practiceContentCalls).toBe(2);
+    expect(JSON.stringify(harness.repos.acceptedLessonCheckpoints.get(checkpoint.id))).toBe(bytes);
+    const brief = harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)[0]!;
+    expect(brief.practice!.items[0]!.initial).toMatchObject({
+      reasoningOperation: 'diagnose_cause',
+      requiredInference: expect.any(String),
+      decisiveCondition: expect.any(String),
+    });
+    for (const key of ['reasoningOperation', 'requiredInference', 'decisiveCondition'])
+      expect(JSON.stringify(ready)).not.toContain(key);
+  });
+
   it('recovers an expired exact-route preparation lease as a retry instead of waiting forever', async () => {
     const harness = await createHarness();
     const route = startTeachingRoute(harness);
@@ -3732,6 +3782,17 @@ describe('Teaching Brief preparation', () => {
 
   it('runs a prepared worked interaction locally with targeted repair, resume, and fading support', async () => {
     const harness = await createHarness(0, 'pass', 'apply');
+    const generate = harness.provider.generateLessonSlotContent.bind(harness.provider);
+    harness.provider.generateLessonSlotContent = async (input, options) => {
+      const lesson = await generate(input, options);
+      const process = lesson.slots.find((slot) => slot.workedProcess)?.workedProcess;
+      if (process) {
+        // Exercise the independent supplementary interaction under a cited source rule.
+        process.ruleOrProcedure = input.sourceContext.offers[0]!.text;
+        process.sourceRefs = [input.sourceContext.offers[0]!.sourceRef];
+      }
+      return lesson;
+    };
     const unit = harness.repos.curricula
       .get(harness.curriculumId)!
       .nodes.find((node) => node.id === harness.learningUnitId)!;
@@ -3760,6 +3821,7 @@ describe('Teaching Brief preparation', () => {
       },
     });
     expect(authored.workedProcess!.sources?.length).toBeGreaterThan(0);
+    expect(authored.workedProcess!.learnerDecision).toBeNull();
 
     const authorityBefore = harness.db
       .prepare(

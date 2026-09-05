@@ -285,6 +285,11 @@ function normalizeWorkedInteraction(
       }
     }
   }
+  for (const key of ['activity', 'scaffold', 'transfer'] as const) {
+    if (isRecord(interaction[key])) {
+      omitNullReasoningDeclarations(interaction[key], `${path}.interaction.${key}`, recorder);
+    }
+  }
   if (isRecord(interaction.scaffold)) {
     removeUnsupportedMisconceptionMappings(
       interaction.scaffold.options,
@@ -339,6 +344,7 @@ export function normalizeLessonPreparationCandidate(
       }
     }
     if (isRecord(slot.informalCheck)) {
+      omitNullReasoningDeclarations(slot.informalCheck, `${basePath}.informalCheck`, recorder);
       defaultNull(
         slot.informalCheck,
         'expectedSignal',
@@ -371,8 +377,22 @@ export function normalizePracticePreparationCandidate(
     const basePath = `items.${itemIndex}`;
     defaultEmptyArray(item, 'visualRefs', `${basePath}.visualRefs`, recorder);
     defaultNull(item, 'application', `${basePath}.application`, recorder);
+    for (const key of ['initial', 'retry'] as const) {
+      if (isRecord(item[key]))
+        omitNullReasoningDeclarations(item[key], `${basePath}.${key}`, recorder);
+    }
   }
   return recorder.result(normalized);
+}
+
+function omitNullReasoningDeclarations(
+  action: Record<string, unknown>,
+  path: string,
+  recorder: NormalizationRecorder,
+): void {
+  for (const key of ['reasoningOperation', 'requiredInference', 'decisiveCondition'] as const) {
+    omitOptionalNull(action, key, `${path}.${key}`, recorder);
+  }
 }
 
 /**

@@ -681,12 +681,17 @@ function compositionalInputs(
                 pauseAfterStepIndex: 0,
                 sourceRefs: [],
                 activity: {
+                  reasoningOperation: 'predict_outcome',
+                  decisiveCondition:
+                    'Three candidates were inspected; two failed the eligibility condition.',
+                  requiredInference:
+                    'The returned set contains one passage and cannot fill a two-passage display.',
                   prompt:
-                    'After checking candidates against the condition, which action should the retrieval process take next?',
+                    'The display requests two passages. Using the inspected candidate state, what will it receive after retrieval?',
                   options: [
                     {
                       id: 'A',
-                      text: 'Exclude candidates that fail the condition.',
+                      text: 'It receives one passage, leaving one display position unfilled.',
                       feedbackIfSelected:
                         'This uses the checked condition to update candidate eligibility.',
                       misconception: null,
@@ -724,6 +729,9 @@ function compositionalInputs(
                 },
                 hint: 'Use the condition to decide which candidates are allowed to remain.',
                 scaffold: {
+                  reasoningOperation: 'predict_outcome',
+                  decisiveCondition: 'Two of the three inspected candidates fail the condition.',
+                  requiredInference: 'One candidate remains eligible.',
                   prompt: 'What determines whether a candidate remains eligible?',
                   options: [
                     {
@@ -742,6 +750,9 @@ function compositionalInputs(
                     'Candidate eligibility is determined by the current retrieval condition.',
                 },
                 transfer: {
+                  reasoningOperation: 'locate_boundary',
+                  requiredInference:
+                    'The formerly eligible result must be replaced because its eligibility changed.',
                   changedCondition:
                     'The retrieval condition changes and a formerly eligible passage now fails it.',
                   prompt: 'How should the retrieval result change?',
@@ -772,6 +783,10 @@ function compositionalInputs(
       ...(slot.learnerActionRequired && slot.qualityContract !== 'worked_process'
         ? {
             informalCheck: {
+              reasoningOperation: 'predict_outcome',
+              decisiveCondition:
+                'A candidate has familiar wording but fails the current condition.',
+              requiredInference: 'That candidate cannot remain in the returned set.',
               kind: construct === 'apply' ? 'apply_simple_example' : 'choose_alternative',
               prompt:
                 'Which candidate decision preserves the retrieval condition and the eligible returned result?',
@@ -835,6 +850,10 @@ function compositionalInputs(
             }
           : null,
       initial: {
+        reasoningOperation: 'predict_outcome',
+        decisiveCondition: 'Two candidates fail the new query condition; the rest are eligible.',
+        requiredInference:
+          'Exclude the failing candidates and return the remaining eligible passage.',
         prompt:
           'A query has two candidates that fail its retrieval condition. Which system response preserves the eligible result?',
         options: [
@@ -860,6 +879,10 @@ function compositionalInputs(
           'Failing candidates are excluded, leaving the eligible passage as the retrieval result.',
       },
       retry: {
+        reasoningOperation: 'locate_boundary',
+        decisiveCondition: 'The later query changes a previously satisfied condition.',
+        requiredInference:
+          'Exclude the newly failing candidate and return the remaining eligible passage.',
         prompt:
           'A later query changes the retrieval condition, making one former candidate ineligible. Which response respects the new boundary?',
         options: [
@@ -1163,8 +1186,11 @@ describe('compositional Lesson and Practice evaluators', () => {
     expect(
       evaluatePlannedPracticeQuality(fixture.practice, fixture.practiceInput, {
         evaluatedAt,
-      }).findings,
-    ).toEqual([]);
+      }).findings.map(({ code, severity }) => ({ code, severity })),
+    ).toEqual([
+      { code: 'practice_novelty_uncertain', severity: 'warning' },
+      { code: 'practice_option_set_replays_lesson', severity: 'warning' },
+    ]);
   });
 
   it('rejects apply/下一步 markers when typed application data is absent', () => {
@@ -1247,8 +1273,11 @@ describe('compositional Lesson and Practice evaluators', () => {
     expect(
       evaluatePlannedPracticeQuality(fixture.practice, fixture.practiceInput, {
         evaluatedAt,
-      }).findings,
-    ).toEqual([]);
+      }).findings.map(({ code, severity }) => ({ code, severity })),
+    ).toEqual([
+      { code: 'practice_novelty_uncertain', severity: 'warning' },
+      { code: 'practice_option_set_replays_lesson', severity: 'warning' },
+    ]);
   });
 
   it.each([

@@ -1742,10 +1742,6 @@ export class FakeProvider implements LlmProvider {
       input.courseDesign?.unitFocus === 'focused'
         ? '这里会投入更多讲解，用更丰富的案例、影响结果的边界和有用的后续联系把它讲透。'
         : '我们会完整展开核心思路，同时避免无关岔路。';
-    const focusedInteractionChange =
-      input.courseDesign?.unitFocus === 'focused'
-        ? ' 同时出现一个容易诱发旧判断、但会改变结果的边界因素。'
-        : '';
     const focusedWorkedInteractionSlotId =
       input.courseDesign?.unitFocus === 'focused' &&
       input.courseDesign.desiredDepth !== 'pass_oriented' &&
@@ -1794,104 +1790,121 @@ export class FakeProvider implements LlmProvider {
         const workedProcess =
           shouldBuildWorkedInteraction && sourceRef && sourceText
             ? {
-                startingState: `学习者位于资料所述“${topic}”流程的起点；当前状态、相关输入和必须保留的限定条件都已明确。`,
-                inputs: [`资料所述“${topic}”的当前状态。`, `决定下一步是否适用的关键条件。`],
-                ruleOrProcedure: sourceText,
+                startingState: `用一个补充调度案例检验“${topic}”的条件边界：处理器有4个空闲配额，甲、乙尚未启动。`,
+                inputs: [
+                  '甲优先启动，占用2个配额；乙需要3个配额。',
+                  '运行中的任务完成后才归还配额。',
+                ],
+                ruleOrProcedure:
+                  '按优先顺序检查任务需要的配额；启动时从空闲数扣除占用量，完成时归还。',
                 steps: [
                   {
-                    action: `检查当前“${topic}”案例的状态，找出资料中适用的条件。`,
-                    reason: '该条件限定了资料允许进行哪一次状态转换。',
-                    resultingState: `适用的“${topic}”条件和当前流程状态已经明确。`,
+                    action: '先启动甲，计算当前空闲配额：4减去2。',
+                    reason: '甲处于运行状态，占用量计入处理器当前状态。',
+                    resultingState: '状态快照：甲运行中，空闲配额为2；乙尚未检查。',
                   },
                   {
-                    action: `选择资料所述“${topic}”的下一步动作，并在这个限定案例中执行。`,
-                    reason: '这样是在应用规则，而不是只说出或复述规则。',
-                    resultingState: `“${topic}”案例推进到流程所允许的结果。`,
+                    action: '比较乙的需求3与当前空闲2，把乙保留在等待队列。',
+                    reason: '乙不能拆分启动，因此尚缺的一个配额阻止了这次启动。',
+                    resultingState: '只有甲运行；乙等待甲完成并归还配额。',
                   },
                 ],
-                learnerDecision: `根据当前条件，判断接下来应执行资料所述“${topic}”中的哪项动作。`,
-                result: `案例在没有添加无依据步骤的情况下，得到“${topic}”的限定结果。`,
-                whyResultFollows: `先检查当前“${topic}”条件，再选择资料所述的下一项动作，案例才会推进到流程允许的限定结果。每一次转换都使用给定规则并保留其限定条件，因此结果由资料支持的流程推出；如果跳过条件检查，下一项动作就可能不再适用，最终结果也失去依据。`,
-                sourceRefs,
+                learnerDecision: '用状态快照判断乙能否在甲完成前启动。',
+                result: '配额没有超分配，乙的启动被延后。',
+                whyResultFollows:
+                  '启动甲使空闲配额从4变为2，乙却需要3；因此检查当前状态会让乙等待，而只看初始容量会造成超分配。',
+                sourceRefs: [],
                 interaction: {
                   pauseAfterStepIndex: 0,
                   sourceRefs: [],
                   activity: {
-                    prompt: `已经先检查了“${topic}”的当前状态和适用条件。下一步怎样做，才能让案例继续推进而不越过资料边界？`,
+                    reasoningOperation: 'predict_outcome',
+                    decisiveCondition: '甲正在运行，当前空闲2个配额，乙需要3个且不能拆分。',
+                    requiredInference: '乙必须留在等待队列，直到至少归还一个配额。',
+                    prompt: `把“${topic}”的条件判断落实到刚算出的快照：甲完成前，乙会进入什么状态？`,
                     options: [
                       {
                         id: 'A',
-                        text: `依据刚确认的条件，选择并执行资料允许的“${topic}”下一步。`,
-                        feedbackIfSelected:
-                          '这个判断抓住了先确认适用条件、再执行对应动作的因果顺序。',
+                        text: '乙继续等待，当前快照不足以支持它启动。',
+                        feedbackIfSelected: '空闲2小于需求3，因此乙需要等待一次配额归还。',
                         misconception: null,
                       },
                       {
                         id: 'B',
-                        text: '跳过条件检查，直接采用看起来最熟悉的动作。',
+                        text: '乙立即运行，处理器容量4大于它的需求3。',
                         feedbackIfSelected:
-                          '这个选择把“熟悉”误当成“适用”，没有说明当前状态为何允许该动作。',
+                          '容量4是初始数值；甲已经占用2，因此继续用4会把已占用资源再次分配。',
                         misconception: {
-                          hypothesis: '把熟悉的流程标签当成足以执行下一步的依据。',
-                          whyTempting: '熟悉动作常在典型案例中出现，所以看起来像安全的默认选择。',
-                          correction: '先用当前条件缩小允许动作的范围，再从范围内选择下一步。',
+                          hypothesis: '把处理器的初始容量当作每次检查时都可用的容量。',
+                          whyTempting: '输入中的4确实大于乙的3，但这个比较忽略了甲运行后的快照。',
+                          correction:
+                            '甲占用的2仍未归还，所以乙面对的是剩余2；先更新状态再检查需求，才能避免重复分配。',
                         },
                       },
                       {
                         id: 'C',
-                        text: '只复述规则名称，不说明它如何改变当前状态。',
+                        text: '乙直接失败退出，配额不足说明任务永远不能运行。',
                         feedbackIfSelected:
-                          '复述名称没有完成状态转换；需要指出规则在这个输入上允许什么动作。',
+                          '配额会在甲完成后归还，因此暂时不能启动不等于永久失败。',
                         misconception: {
-                          hypothesis: '认为说出规则名称就等于已经应用规则。',
-                          whyTempting: '名称与资料措辞相似，容易产生已经完成推理的错觉。',
-                          correction: '把规则落实为一个可观察动作，并说明动作后的状态变化。',
+                          hypothesis: '把当前资源不足误读为任务本身不合法。',
+                          whyTempting: '快照中的2小于需求3，容易把一次检查失败看作永久拒绝。',
+                          correction:
+                            '完成事件会归还甲的配额，因此限制随状态改变；乙需要等待重新检查，而不是退出。',
                         },
                       },
                     ],
                     correctOptionId: 'A',
-                    correctDebrief: `之所以可行，是因为“${topic}”的当前条件先限定了允许动作；随后执行该动作，状态变化才有资料中的规则作为依据。`,
+                    correctDebrief:
+                      '配额是可变化的状态：甲启动后空闲只剩2，而乙一次需要3；因此乙等待一次归还事件，再重新检查准入条件。',
                   },
-                  hint: `先找出“${topic}”中哪项当前条件真正限制了下一步，而不是寻找最熟悉的词。`,
+                  hint: '对照快照中的空闲数与乙的需求，再看甲何时归还配额。',
                   scaffold: {
-                    prompt: `先缩小问题：判断“${topic}”下一步之前，哪类信息必须先确认？`,
+                    reasoningOperation: 'predict_outcome',
+                    decisiveCondition: '乙需要3个配额，快照中空闲2个。',
+                    requiredInference: '乙的需求比当前空闲数多一个。',
+                    prompt: '先只比较两个数：乙的需求与快照中的空闲数相差多少？',
                     options: [
                       {
                         id: 'A',
-                        text: '当前状态是否满足规则的适用条件。',
-                        feedbackIfSelected: '对，这项信息决定哪些动作仍在允许范围内。',
+                        text: '乙比当前空闲数多需要一个配额。',
+                        feedbackIfSelected: '3减2等于1，因此还需要等到一次归还。',
                       },
                       {
                         id: 'B',
-                        text: '哪个动作名称在前文出现得最多。',
-                        feedbackIfSelected: '出现频率不能证明动作适用于当前状态。',
+                        text: '当前空闲数比乙需要的多一个配额。',
+                        feedbackIfSelected: '快照中的2是可用数，3才是需求；比较方向反了。',
                       },
                     ],
                     correctOptionId: 'A',
-                    debrief: '小问题建立了关键区分：条件决定可执行范围，词语熟悉度不能代替适用性。',
+                    debrief:
+                      '缺口是一个配额，因此当前准入条件尚不成立；这个比较建立了等待下一次状态变化的理由。',
                   },
                   transfer: {
-                    changedCondition: `换到另一个“${topic}”案例：原先使下一步成立的一项关键条件现在被移除。${focusedInteractionChange}`,
-                    prompt: `在这个变化后的“${topic}”案例中，哪项处理最合理？`,
+                    reasoningOperation: 'choose_design',
+                    requiredInference: '把乙交给独立的备用处理器，保留各自的配额边界。',
+                    changedCondition: `“${topic}”案例新增截止约束：乙必须在甲结束前启动；另有一个空闲容量3的独立备用处理器。`,
+                    prompt: '怎样安排乙，才能同时满足截止要求和资源限制？',
                     options: [
                       {
                         id: 'A',
-                        text: '保持原动作不变，因为主题名称没有改变。',
-                        feedbackIfSelected: '主题相同不代表适用条件仍然成立。',
+                        text: '仍在原处理器等待甲完成后再检查乙。',
+                        feedbackIfSelected: '资源不会超分配，但等待甲完成会错过新增截止约束。',
                       },
                       {
                         id: 'B',
-                        text: '重新检查剩余条件，并缩小、改变或暂缓原动作。',
-                        feedbackIfSelected: '正确；条件变化必须传导到下一步决策。',
+                        text: '由备用处理器接收乙，并在它自己的容量内分配资源。',
+                        feedbackIfSelected: '备用容量3能覆盖乙需求，因此可以在甲结束前独立启动。',
                       },
                       {
                         id: 'C',
-                        text: '忽略资料规则，改用一个无关的经验做法。',
-                        feedbackIfSelected: '无关经验既不能解释当前变化，也越过了资料边界。',
+                        text: '把原处理器的容量记录改为5，直接与甲并行。',
+                        feedbackIfSelected: '改写计数不会增加真实资源，因此仍然会超分配。',
                       },
                     ],
                     correctOptionId: 'B',
-                    debrief: `支持减少后仍应沿同一心智模型推理：当“${topic}”的支配条件改变，允许动作与预期结果也必须相应调整。`,
+                    debrief:
+                      '新增截止要求使等待不再可行，但备用处理器拥有独立容量；因此责任转移到备用处理器，原处理器的配额边界仍然成立。',
                   },
                 },
               }
@@ -1901,23 +1914,31 @@ export class FakeProvider implements LlmProvider {
             ? objective?.construct === 'identify'
               ? {
                   kind: 'choose_alternative' as const,
-                  prompt: `哪个案例真正具备“${topic}”的定义性特征？`,
-                  expectedSignal: '依据定义条件判断，不要只看熟悉的标签。',
+                  reasoningOperation: 'judge_tradeoff' as const,
+                  decisiveCondition: '请求必须在5秒内完成；甲耗时2秒错误率1%，乙耗时20秒错误率0%。',
+                  requiredInference: '选择甲并记录误差风险，因为乙无法满足截止约束。',
+                  prompt: `给“${topic}”增加一个补充比较案例：请求必须在5秒内完成。方案甲耗时2秒、错误率1%；乙耗时20秒、错误率0%。这次应选择哪个方案？`,
+                  expectedSignal: '截止条件使乙不可行；甲仍有误差，因此需要同时记录风险。',
                   options: [
                     {
                       id: 'A',
-                      text: '满足定义条件的案例。',
-                      feedbackIfSelected: '正确。正是定义条件使它成为匹配的案例。',
+                      text: '选择甲，完成请求并明确保留的误差风险。',
+                      feedbackIfSelected:
+                        '甲能在窗口内完成，因此满足时限；1%的误差仍需被明确管理。',
                     },
                     {
                       id: 'B',
-                      text: '重复主题名称、但缺少必要条件的案例。',
-                      feedbackIfSelected: '熟悉的标签还不够；请检查必要条件是否真的存在。',
+                      text: '选择乙，只要错误率为零就可以忽略完成时间。',
+                      feedbackIfSelected:
+                        '20秒会错过5秒的窗口，因此最高准确率不能满足本次全部约束。',
                     },
                   ],
                   correctOptionId: 'A',
                 }
               : {
+                  reasoningOperation: 'predict_outcome' as const,
+                  decisiveCondition: '原来的必要条件被移除，机制的其余步骤保持不变。',
+                  requiredInference: '依赖被移除条件的那次状态转换不再有依据。',
                   kind:
                     objective?.construct === 'apply'
                       ? ('apply_simple_example' as const)
@@ -2031,22 +2052,12 @@ export class FakeProvider implements LlmProvider {
                 startingState: '相关流程已经开始，学习者来到一个受条件约束的决策点。',
                 sourceRuleOrProcedure: sourceText,
                 decisionRequired: '根据当前流程状态，选择资料所述的下一项动作。',
-                expectedAction:
-                  '检查当前条件，在保留资料所述边界的前提下执行下一项允许的流程步骤。',
+                expectedAction: '检查完成事件是否归还配额，再按当前条件执行允许的下一步。',
               }
             : null;
-        const initialPrompt =
-          slot.construct === 'apply'
-            ? `${scenarioDemand}，${application?.startingState}根据支配条件，下一步应该做什么？${focusDetail}`
-            : slot.construct === 'explain'
-              ? `${scenarioDemand}，某个约束变化后，系统产生了不同结果。哪项解释最准确地把变化后的约束与结果连接起来？${focusDetail}`
-              : `${scenarioDemand}，哪个案例应依据支配特征分类，而不是依据熟悉的标签分类？${focusDetail}`;
+        const initialPrompt = `${scenarioDemand}，${application?.startingState ?? ''}完成日志确认旧任务已结束，但占用计数没有减少，新任务一直无法通过条件检查。应先诊断哪个环节？${focusDetail}`;
         const retryPrompt =
-          slot.construct === 'apply'
-            ? '另一个团队通过不同路径来到同一决策点，但现在缺少一项先决条件。他们下一步应该采取什么动作？'
-            : slot.construct === 'explain'
-              ? '另一个系统改变了不同的条件。现在，哪种机制最能解释新的后果？'
-              : '一份故障排查报告保留了熟悉的标签，却去掉了一项必要条件。现在应该排除哪个候选？';
+          '另一次检查中，占用计数已正确归零，新任务仍不能进入执行阶段。此时继续沿用“完成事件未归还资源”的诊断是否合理，下一步应检查什么？';
         return {
           practiceSlotId: slot.practiceSlotId,
           capabilityTested: slot.capabilityToObserve,
@@ -2055,6 +2066,9 @@ export class FakeProvider implements LlmProvider {
           visualRefs,
           application,
           initial: {
+            reasoningOperation: 'diagnose_cause',
+            decisiveCondition: '完成日志确认任务结束，但占用计数未减少，后续任务持续等待。',
+            requiredInference: '完成事件没有更新配额状态，应先检查归还动作。',
             prompt: initialPrompt,
             options: [
               {
@@ -2062,44 +2076,48 @@ export class FakeProvider implements LlmProvider {
                 text:
                   slot.construct === 'apply'
                     ? application!.expectedAction
-                    : '使用定义条件，把案例与限定结论连接起来。',
+                    : '完成处理没有归还配额，应检查完成事件到计数更新的链路。',
                 feedbackIfSelected: '正确：这项回答确实利用给定边界完成了所需推理。',
               },
               {
                 optionRef: 'B',
-                text: '选择重复资料词汇最多、却没有使用其条件的回答。',
+                text: '新任务的优先级太低，只需提高优先级即可恢复配额。',
                 feedbackIfSelected:
-                  '这只是表面回忆。请判断给定条件会让你得出什么结论或采取什么动作。',
+                  '优先级改变检查顺序，却不会减少占用计数；旧任务结束后的状态才是诊断线索。',
               },
               {
                 optionRef: 'C',
-                text: '即使缺少所述条件，也把这个想法推广到所有情境。',
-                feedbackIfSelected: '这超出了依据边界。请回到给定条件。',
+                text: '旧任务仍在运行，所以当前占用计数完全正常。',
+                feedbackIfSelected: '完成日志已经确认结束，因此需要解释为什么状态没有随事件更新。',
               },
             ],
             correctOptionRef: 'A',
-            hint: '用条件作出判断，不要依赖熟悉的标签。',
-            explanation: '正确回答会让资料所述边界真正参与可观察的推理。',
+            hint: '把完成日志的时间与占用计数的变化并排比较。',
+            explanation:
+              '条件检查读取的是状态，而完成日志只是事件；因此日志出现却没有状态变化时，要追踪更新链路。',
           },
           retry: {
+            reasoningOperation: 'locate_boundary',
+            decisiveCondition: '占用计数正确归零，但新任务仍无法开始，原来的资源归还症状消失。',
+            requiredInference: '计数已恢复使原诊断失去依据，应检查后续调度条件。',
             prompt: retryPrompt,
             options: [
               {
                 optionRef: 'A',
-                text: '主题标签没有变化，所以保留原答案。',
+                text: '任务仍在等待，所以必然还是资源未归还。',
                 feedbackIfSelected: '案例事实的变化会影响判断；仅凭标签无法证明原回答仍然成立。',
               },
               {
                 optionRef: 'B',
                 text:
                   slot.construct === 'apply'
-                    ? '重新评估变化后的条件，再选择资料允许的下一项动作。'
-                    : '重新评估变化后的条件，并把它连接到对应的限定结果。',
+                    ? '先排除资源未归还，再检查后续调度条件允许的动作。'
+                    : '计数恢复使原诊断失去依据，应转查后续调度条件。',
                 feedbackIfSelected: '正确：这个新情境仍然检验同一种能力，并保留相同的依据边界。',
               },
               {
                 optionRef: 'C',
-                text: '使用无关的经验法则，避开对给定条件的检查。',
+                text: '关闭所有条件检查，任何等待任务都直接启动。',
                 feedbackIfSelected: '无关的经验法则不能展示这里要检验的能力。',
               },
             ],

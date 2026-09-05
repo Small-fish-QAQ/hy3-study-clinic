@@ -57,6 +57,7 @@ import { profileTeachingBrief } from './teachingBriefQuality.js';
 import {
   COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION,
   COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION,
+  assertCurrentCognitiveContract,
   evaluateLessonSlotPedagogy,
   evaluatePlannedPracticeQuality,
 } from './lessonPedagogyEvaluator.js';
@@ -75,10 +76,8 @@ import {
 
 export const TEACHING_BRIEF_PROMPT_VERSION =
   'teaching-brief-v3-compositional-source-guided-interaction';
-export const LESSON_CONTENT_PROMPT_VERSION =
-  'teaching-lesson-content-v5-source-guided-worked-interaction';
-export const PRACTICE_CONTENT_PROMPT_VERSION =
-  'teaching-practice-content-v4-worked-interaction-novelty';
+export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v7-calibrated-cognition';
+export const PRACTICE_CONTENT_PROMPT_VERSION = 'teaching-practice-content-v6-calibrated-novelty';
 /**
  * Two logical calls, each bounded to three physical requests only in the
  * structural-repair -> alias-localization case, at the configured 5-minute
@@ -931,6 +930,9 @@ export function createTeachingBriefPreparationService({
           value: (typeof item)['initial'] | (typeof item)['retry'],
           name: 'initial' | 'retry',
         ) => ({
+          reasoningOperation: value.reasoningOperation,
+          requiredInference: value.requiredInference,
+          decisiveCondition: value.decisiveCondition,
           prompt: value.prompt,
           options: value.options.map((option) => ({
             id: `${itemId}_${name}_${option.optionRef}`,
@@ -1316,6 +1318,7 @@ export function createTeachingBriefPreparationService({
             boundedRepairAttempted: lessonRepairAttempted,
           },
         );
+        assertCurrentCognitiveContract(lessonEvaluation);
         if (!lessonPayload.narrative) {
           throw new AppError(
             ApiErrorCode.ValidationError,
@@ -1415,6 +1418,7 @@ export function createTeachingBriefPreparationService({
           boundedRepairAttempted: practiceRepairAttempted,
         },
       );
+      assertCurrentCognitiveContract(practiceEvaluation);
       preparationBoundary = 'assembly';
       const brief = materialize(
         route,

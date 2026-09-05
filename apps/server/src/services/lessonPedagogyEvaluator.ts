@@ -1,6 +1,7 @@
 import {
   LessonPedagogyEvaluationSchema,
   PracticeQualityEvaluationSchema,
+  isReasoningOperation,
   type LessonPedagogyEvaluation,
   type LessonPedagogyFinding,
   type LessonSlotContentProposalPayload,
@@ -8,6 +9,7 @@ import {
   type PracticeQualityEvaluation,
   type PracticeQualityFinding,
   type ProposedPracticeSlotContent,
+  type ReasoningOperation,
   type TeachingBriefProposalPayload,
   type TeachingLessonSlotContent,
   type TeachingSkeletonSlot,
@@ -18,13 +20,14 @@ import type {
   TeachingBriefGenerationInput,
 } from '../llm/provider.js';
 import { containsInternalTeachingAlias } from '../llm/preparationRecovery.js';
+import { ProviderError } from '../llm/errors.js';
 
 export const LESSON_PEDAGOGY_POLICY_VERSION = 'lesson-pedagogy-v2';
 export const PRACTICE_QUALITY_POLICY_VERSION = 'lesson-practice-v1';
 export const COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION =
-  'lesson-pedagogy-v5-source-guided-worked-interaction';
+  'lesson-pedagogy-v7-calibrated-cognition';
 export const COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION =
-  'lesson-practice-v4-worked-interaction-exposure';
+  'lesson-practice-v6-calibrated-novelty';
 
 function normalized(value: string): string {
   return value
@@ -893,6 +896,505 @@ function containsPlanningLanguage(value: string, purpose?: string): boolean {
   return plannedPurpose.length >= 16 && candidate.includes(plannedPurpose);
 }
 
+type CognitiveAction = {
+  reasoningOperation?: ReasoningOperation;
+  requiredInference?: string;
+  decisiveCondition?: string;
+  changedCondition?: string;
+};
+
+/** Bounded, per-objective exposure; scaffolds are assistance, not depth credit. */
+export function lessonReasoningExposure(
+  lesson: TeachingLessonSlotContent[],
+  skeleton: LessonSlotContentGenerationInput['skeleton'],
+) {
+  return skeleton.objectives.map((objective) => ({
+    objectiveRef: objective.objectiveRef,
+    actions: skeleton.lessonSlots
+      .filter((slot) => slot.objectiveRefs.includes(objective.objectiveRef))
+      .flatMap((slot) => {
+        const content = lesson.find((candidate) => candidate.slotId === slot.slotId);
+        const interaction = content?.workedProcess?.interaction;
+        const actions = [
+          ...(interaction
+            ? [
+                { surface: 'guided', ...interaction.activity },
+                { surface: 'transfer', ...interaction.transfer },
+              ]
+            : []),
+          ...(content?.informalCheck
+            ? [{ surface: 'informal_check', ...content.informalCheck }]
+            : []),
+        ];
+        return actions.map((action) => ({
+          surface: action.surface,
+          reasoningOperation: action.reasoningOperation,
+          requiredInference: action.requiredInference,
+          decisiveCondition:
+            'changedCondition' in action ? action.changedCondition : action.decisiveCondition,
+          options: action.options?.map(({ text }) => ({ text })) ?? [],
+        }));
+      }),
+  }));
+}
+
+const COGNITIVE_MESSAGES = {
+  missing_reasoning_declaration:
+    'Every prepared action requires private reasoningOperation, requiredInference and decisiveCondition; transfer uses changedCondition.',
+  reasoning_demand_below_depth:
+    'Each required objective needs a reasoning-class Lesson action, and guided/transfer actions must reason at working_fluency or deeper. Assertion authority does not cap cognition.',
+  worked_interaction_answer_pre_revealed:
+    'The guided inference may already be visible. Withhold the conclusion in the named surface; if immutable objectives already state it, ask a new inference using the modelled output.',
+  worked_interaction_hint_reveals_answer:
+    'The hint may reveal the answer. Point at concrete scenario evidence and leave the inference to the learner.',
+  informal_check_answer_pre_revealed:
+    'The check may repeat an already visible conclusion. Use the mechanism to ask a new inference.',
+  transfer_answer_pre_revealed:
+    'Transfer may repeat an already explained conclusion. Make the changed condition alter the reasoning or responsible component.',
+  transfer_inference_not_changed:
+    'Transfer inferences overlap; verify that the structural changed condition actually matters to the answer.',
+  worked_interaction_correction_not_substantive:
+    'Check that feedback and debrief add a scenario-specific mechanism-to-consequence link rather than restating the explanation.',
+  reasoning_label_suspect:
+    'The reasoning label may conceal recognition or replay; inspect the actual scenario inference.',
+  focused_unit_angle_coverage_insufficient:
+    'Across Lesson and Practice a focused Unit needs three reasoning operations including diagnose_cause or identify_missing, and choose_design or judge_tradeoff. Practice can complete missing Lesson angles.',
+  practice_semantic_replay:
+    'Practice repeats a Lesson operation with the same decisive condition or inference. Change the cognitive task or a materially decisive condition, not just entities.',
+  practice_initial_recognition_at_depth:
+    'Practice initial must be reasoning-class at working_fluency or deeper.',
+  practice_retry_semantic_replay:
+    'Retry repeats the initial operation and decisive condition or inference; prepare a materially different task.',
+  practice_novelty_uncertain:
+    'The operation is reused. Verify that the changed condition and inference create a genuinely new cognitive task.',
+  practice_option_set_replays_lesson:
+    'Multiple Practice options reuse Lesson vocabulary; inspect for noun-swapped option types.',
+  lesson_attribution_voice: 'Use direct teacher discourse; provenance is displayed separately.',
+  lesson_objective_title_echo: 'Avoid repeating the objective title in teaching prose or feedback.',
+  lesson_summary_callback_unanchored: 'Resolve the concrete opening situation in the summary.',
+} as const;
+type CognitiveCode = keyof typeof COGNITIVE_MESSAGES;
+
+function missingDeclaration(action: CognitiveAction): boolean {
+  return (
+    !action.reasoningOperation ||
+    !action.requiredInference?.trim() ||
+    !(action.decisiveCondition ?? action.changedCondition)?.trim()
+  );
+}
+
+function contextRemovedOverlap(left: string, right: string, context: string): number {
+  if (normalized(left) && normalized(left) === normalized(right)) return 1;
+  const a = meaningfulFeatures(left);
+  const b = meaningfulFeatures(right);
+  for (const feature of meaningfulFeatures(context)) {
+    a.delete(feature);
+    b.delete(feature);
+  }
+  return a.size && b.size ? sharedMeaningfulFeatureCount(a, b) / Math.min(a.size, b.size) : 0;
+}
+
+/** Word/bigram containment is advisory; only complete affirmative restatements reject. */
+function revealSeverity(
+  answer: string,
+  inference: string | undefined,
+  distractors: string[],
+  texts: string[],
+): 'error' | 'warning' | undefined {
+  const candidates = [answer, inference ?? ''].filter(
+    (text) => meaningfulFeatures(text).size >= 6 && normalized(text).length >= 16,
+  );
+  for (const text of texts) {
+    for (const sentence of [text, ...text.split(/(?<=[.!?。！？;；])/u)]) {
+      if (/[?？]/u.test(sentence)) continue;
+      const statement = normalized(
+        sentence.replace(
+          /^(?:\s*(?:因此|所以|结论是|结果是|正确答案是|therefore|thus|the answer is)\s*[:：,，]?)/iu,
+          '',
+        ),
+      );
+      if (candidates.some((candidate) => normalized(candidate) === statement)) return 'error';
+    }
+  }
+  const decisive = meaningfulFeatures(answer);
+  for (const distractor of distractors)
+    for (const feature of meaningfulFeatures(distractor)) decisive.delete(feature);
+  if (decisive.size < 6) return undefined;
+  const revealed = meaningfulFeatures(texts.join(' '));
+  return sharedMeaningfulFeatureCount(decisive, revealed) / decisive.size >= 0.75
+    ? 'warning'
+    : undefined;
+}
+
+function focusCoverageInsufficient(operations: Array<ReasoningOperation | undefined>): boolean {
+  const present = new Set(operations.filter(isReasoningOperation));
+  return (
+    present.size < 3 ||
+    !(present.has('diagnose_cause') || present.has('identify_missing')) ||
+    !(present.has('choose_design') || present.has('judge_tradeoff'))
+  );
+}
+
+function definiteReplay(left: CognitiveAction, right: CognitiveAction): boolean {
+  if (!left.reasoningOperation || left.reasoningOperation !== right.reasoningOperation)
+    return false;
+  const same = (a: string | undefined, b: string | undefined) =>
+    Boolean(a?.trim() && b?.trim() && normalized(a) === normalized(b));
+  return (
+    same(left.decisiveCondition, right.decisiveCondition ?? right.changedCondition) ||
+    same(left.requiredInference, right.requiredInference)
+  );
+}
+
+/** Guard the current hard contract if a provider bypasses callback validation. */
+export function assertCurrentCognitiveContract(
+  evaluation: LessonPedagogyEvaluation | PracticeQualityEvaluation,
+): void {
+  const errors = evaluation.findings.filter(
+    (finding) => finding.severity === 'error' && Object.hasOwn(COGNITIVE_MESSAGES, finding.code),
+  );
+  if (errors.length)
+    throw ProviderError.invalidOutput(
+      errors.map(({ code, message }) => `${code}: ${message}`).join('; '),
+      'candidate',
+      'SEMANTIC_VALIDATION_FAILURE',
+      false,
+      {
+        kind: 'cognitive_teaching_rejection',
+        diagnostics: errors.map(({ code, message }) => ({ code, message })),
+      },
+    );
+}
+
+function cognitiveLessonFindings(
+  payload: LessonSlotContentProposalPayload,
+  input: LessonSlotContentGenerationInput,
+): LessonPedagogyFinding[] {
+  const findings: LessonPedagogyFinding[] = [];
+  const add = (
+    code: CognitiveCode,
+    indexes: number[],
+    refs: string[],
+    severity: 'error' | 'warning' = 'error',
+    detail = '',
+  ) => {
+    findings.push(
+      lessonFinding(
+        lessonCriterionForCode(code),
+        code,
+        `${COGNITIVE_MESSAGES[code]}${detail ? ` Surface: ${detail}.` : ''}`,
+        indexes,
+        refs,
+        severity,
+      ),
+    );
+  };
+  const narrative =
+    payload.narrative ?? payload.slots.find((slot) => slot.lessonNarrative)?.lessonNarrative;
+  const exposure = lessonReasoningExposure(payload.slots, input.skeleton);
+  const depth = input.courseDesign?.desiredDepth;
+  const revealed = input.skeleton.objectives.flatMap((o) => [o.title, o.description]);
+  revealed.push(narrative?.whyNow ?? '');
+  for (const [index, slot] of input.skeleton.lessonSlots.entries()) {
+    const content = payload.slots.find((candidate) => candidate.slotId === slot.slotId);
+    if (!content) continue;
+    const target = objectiveTargetForSlot(slot, input);
+    const context = `${target} ${sourceTextForRefs(input.sourceContext, slot.allowedSourceRefs)}`;
+    const process = content.workedProcess;
+    const interaction = process?.interaction;
+    const check = content.informalCheck;
+    const actions = [check, interaction?.activity, interaction?.transfer, interaction?.scaffold];
+    if (actions.some((action) => action && missingDeclaration(action)))
+      add('missing_reasoning_declaration', [index], slot.objectiveRefs);
+    const pre = [
+      ...revealed,
+      content.explanation,
+      content.example?.text ?? '',
+      content.contrast?.text ?? '',
+    ];
+    const inspect = (
+      action: CognitiveAction & {
+        options?: Array<{ id: string; text: string }>;
+        correctOptionId?: string;
+      },
+      texts: string[],
+      code: CognitiveCode,
+      surface: string,
+    ) => {
+      const answer =
+        action.options?.find((option) => option.id === action.correctOptionId)?.text ?? '';
+      const distractors =
+        action.options
+          ?.filter((option) => option.id !== action.correctOptionId)
+          .map((option) => option.text) ?? [];
+      const severity = revealSeverity(answer, action.requiredInference, distractors, texts);
+      if (severity) add(code, [index], slot.objectiveRefs, severity, surface);
+      if (
+        isReasoningOperation(action.reasoningOperation) &&
+        contextRemovedOverlap(answer, target, '') >= 0.75
+      )
+        add('reasoning_label_suspect', [index], slot.objectiveRefs, 'warning');
+    };
+    if (interaction && process) {
+      const modelled = [
+        process.startingState,
+        ...(process.inputs ?? []),
+        process.ruleOrProcedure,
+        ...process.steps
+          .slice(0, interaction.pauseAfterStepIndex + 1)
+          .flatMap((step) => [step.action, step.reason, step.resultingState]),
+      ];
+      inspect(
+        interaction.activity,
+        [...pre, ...modelled, interaction.activity.prompt],
+        'worked_interaction_answer_pre_revealed',
+        'objectives, whyNow, earlier Lesson text, current explanation/modelled state or activity prompt',
+      );
+      inspect(
+        interaction.activity,
+        [interaction.hint],
+        'worked_interaction_hint_reveals_answer',
+        'interaction.hint',
+      );
+      if (
+        depth &&
+        depth !== 'pass_oriented' &&
+        (!isReasoningOperation(interaction.activity.reasoningOperation) ||
+          !isReasoningOperation(interaction.transfer.reasoningOperation))
+      )
+        add('reasoning_demand_below_depth', [index], slot.objectiveRefs);
+      if (
+        contextRemovedOverlap(
+          interaction.activity.requiredInference ?? '',
+          interaction.transfer.requiredInference ?? '',
+          context,
+        ) >= 0.7
+      )
+        add('transfer_inference_not_changed', [index], slot.objectiveRefs, 'warning');
+      const corrections = [
+        interaction.activity.correctDebrief,
+        interaction.transfer.debrief,
+        ...interaction.activity.options.flatMap((option) =>
+          option.misconception ? [option.misconception.correction, option.feedbackIfSelected] : [],
+        ),
+      ];
+      if (
+        corrections.some(
+          (text) =>
+            distinctLegacyClauseCount(text) < 2 ||
+            !EXPLANATION_REASONING.test(text) ||
+            overlapRatio(text, content.explanation) >= 0.7,
+        )
+      )
+        add(
+          'worked_interaction_correction_not_substantive',
+          [index],
+          slot.objectiveRefs,
+          'warning',
+        );
+      inspect(
+        interaction.transfer,
+        [
+          ...pre,
+          ...modelled,
+          interaction.activity.correctDebrief,
+          ...process.steps.flatMap((step) => [step.action, step.reason, step.resultingState]),
+          process.result,
+          interaction.transfer.changedCondition,
+          interaction.transfer.prompt,
+        ],
+        'transfer_answer_pre_revealed',
+        'completed worked case or transfer prompt',
+      );
+    }
+    if (check)
+      inspect(
+        check,
+        [...pre, check.prompt],
+        'informal_check_answer_pre_revealed',
+        'objectives, whyNow, earlier Lesson text, current explanation/example/contrast or check prompt',
+      );
+    const prose = `${allLessonText(content)} ${narrative?.whyNow ?? ''} ${narrative?.summary ?? ''}`;
+    if (
+      /根据材料|材料明确指出|材料指出|资料指出|根据资料|材料中提到|原文指出|文档指出|回想材料|according to (?:the )?(?:material|source)|the (?:material|source) states/iu.test(
+        prose,
+      )
+    )
+      add('lesson_attribution_voice', [index], slot.objectiveRefs, 'warning');
+    if (input.skeleton.objectives.some((o) => o.title.length >= 8 && prose.includes(o.title)))
+      add('lesson_objective_title_echo', [index], slot.objectiveRefs, 'warning');
+    revealed.push(
+      content.explanation,
+      content.example?.text ?? '',
+      content.contrast?.text ?? '',
+      content.misconception?.correction ?? '',
+      check?.expectedSignal ?? '',
+    );
+    if (process)
+      revealed.push(
+        process.ruleOrProcedure,
+        process.result,
+        process.whyResultFollows,
+        ...process.steps.flatMap((step) => [step.action, step.reason, step.resultingState]),
+        interaction?.activity.correctDebrief ?? '',
+        interaction?.transfer.debrief ?? '',
+      );
+  }
+  for (const objective of input.skeleton.objectives.filter(
+    (o) => o.priority === 'required' || o.priority === 'high',
+  )) {
+    const actions =
+      exposure.find((entry) => entry.objectiveRef === objective.objectiveRef)?.actions ?? [];
+    if (
+      depth &&
+      depth !== 'pass_oriented' &&
+      !actions.some((action) => isReasoningOperation(action.reasoningOperation))
+    )
+      add(
+        'reasoning_demand_below_depth',
+        input.skeleton.lessonSlots.flatMap((slot, index) =>
+          slot.learnerActionRequired && slot.objectiveRefs.includes(objective.objectiveRef)
+            ? [index]
+            : [],
+        ),
+        [objective.objectiveRef],
+      );
+  }
+  if (
+    input.courseDesign?.unitFocus === 'focused' &&
+    focusCoverageInsufficient(
+      exposure.flatMap((entry) => entry.actions.map((action) => action.reasoningOperation)),
+    )
+  )
+    add('focused_unit_angle_coverage_insufficient', [], [], 'warning');
+  if (
+    narrative &&
+    sharedMeaningfulFeatureCount(
+      meaningfulFeatures(narrative.whyNow),
+      meaningfulFeatures(narrative.summary),
+    ) < 3
+  )
+    add('lesson_summary_callback_unanchored', [], [], 'warning');
+  return findings;
+}
+
+function cognitivePracticeFindings(
+  payload: PracticeContentProposalPayload,
+  input: PracticeContentGenerationInput,
+): PracticeQualityFinding[] {
+  const findings: PracticeQualityFinding[] = [];
+  const add = (
+    code: CognitiveCode,
+    indexes: number[],
+    refs: string[],
+    severity: 'error' | 'warning' = 'error',
+  ) =>
+    findings.push(
+      practiceFinding(
+        practiceCriterionForCode(code),
+        code,
+        COGNITIVE_MESSAGES[code],
+        indexes,
+        refs,
+        severity,
+      ),
+    );
+  const exposure = lessonReasoningExposure(input.acceptedLesson, input.skeleton);
+  const depth = input.courseDesign?.desiredDepth;
+  for (const [index, slot] of input.skeleton.practicePlan.slots.entries()) {
+    const item = payload.items.find(
+      (candidate) => candidate.practiceSlotId === slot.practiceSlotId,
+    );
+    if (!item) continue;
+    const actions =
+      exposure.find((entry) => entry.objectiveRef === slot.objectiveRef)?.actions ?? [];
+    const context = `${practiceObjectiveTarget(slot, input)} ${sourceTextForRefs(input.sourceContext, slot.allowedSourceRefs)}`;
+    if ([item.initial, item.retry].some(missingDeclaration))
+      add('missing_reasoning_declaration', [index], [slot.objectiveRef]);
+    if (
+      depth &&
+      depth !== 'pass_oriented' &&
+      !isReasoningOperation(item.initial.reasoningOperation)
+    )
+      add('practice_initial_recognition_at_depth', [index], [slot.objectiveRef]);
+    if (actions.some((action) => definiteReplay(item.initial, action)))
+      add('practice_semantic_replay', [index], [slot.objectiveRef]);
+    else if (
+      actions.some((action) => action.reasoningOperation === item.initial.reasoningOperation)
+    )
+      add('practice_novelty_uncertain', [index], [slot.objectiveRef], 'warning');
+    if (definiteReplay(item.initial, item.retry))
+      add('practice_retry_semantic_replay', [index], [slot.objectiveRef]);
+    else if (
+      item.initial.reasoningOperation === item.retry.reasoningOperation &&
+      contextRemovedOverlap(
+        item.initial.decisiveCondition ?? '',
+        item.retry.decisiveCondition ?? '',
+        context,
+      ) >= 0.6
+    )
+      add('practice_novelty_uncertain', [index], [slot.objectiveRef], 'warning');
+    if (
+      [item.initial, item.retry].some(
+        (surface) =>
+          surface.options.filter((option) =>
+            actions.some((action) =>
+              action.options.some(
+                (prior) => contextRemovedOverlap(option.text, prior.text, context) >= 0.5,
+              ),
+            ),
+          ).length >= 2,
+      )
+    )
+      add('practice_option_set_replays_lesson', [index], [slot.objectiveRef], 'warning');
+  }
+  for (const objective of input.skeleton.objectives.filter(
+    (o) => o.priority === 'required' || o.priority === 'high',
+  )) {
+    const indexes = input.skeleton.practicePlan.slots.flatMap((slot, index) =>
+      slot.objectiveRef === objective.objectiveRef ? [index] : [],
+    );
+    const operations = new Set(
+      [
+        ...(exposure
+          .find((entry) => entry.objectiveRef === objective.objectiveRef)
+          ?.actions.map((action) => action.reasoningOperation) ?? []),
+        ...indexes.map(
+          (index) =>
+            payload.items.find(
+              (item) =>
+                item.practiceSlotId === input.skeleton.practicePlan.slots[index]?.practiceSlotId,
+            )?.initial.reasoningOperation,
+        ),
+      ].filter(isReasoningOperation),
+    );
+    if (
+      (depth === 'high_performance' || depth === 'deep_transfer') &&
+      (operations.size < 2 ||
+        !(operations.has('diagnose_cause') || operations.has('judge_tradeoff')) ||
+        (depth === 'deep_transfer' &&
+          !(operations.has('choose_design') || operations.has('judge_tradeoff'))))
+    )
+      add('reasoning_demand_below_depth', indexes, [objective.objectiveRef]);
+  }
+  if (
+    input.courseDesign?.unitFocus === 'focused' &&
+    focusCoverageInsufficient([
+      ...exposure.flatMap((entry) => entry.actions.map((action) => action.reasoningOperation)),
+      ...payload.items.flatMap((item) => [
+        item.initial.reasoningOperation,
+        item.retry.reasoningOperation,
+      ]),
+    ])
+  )
+    add(
+      'focused_unit_angle_coverage_insufficient',
+      input.skeleton.practicePlan.slots.map((_, index) => index),
+      input.skeleton.objectives.map((o) => o.objectiveRef),
+    );
+  return findings;
+}
+
 function lessonFindingSeverity(code: string): LessonPedagogyFinding['severity'] {
   return new Set([
     'lesson_slot_content_not_objective_aligned',
@@ -1263,7 +1765,7 @@ export function evaluateLessonSlotPedagogy(
   input: LessonSlotContentGenerationInput,
   options: { evaluatedAt: string; boundedRepairAttempted?: boolean },
 ): LessonPedagogyEvaluation {
-  const findings: LessonPedagogyFinding[] = [];
+  const findings: LessonPedagogyFinding[] = cognitiveLessonFindings(payload, input);
   const contentById = new Map(payload.slots.map((content) => [content.slotId, content]));
   const focusedInteractionSlotId = focusedWorkedInteractionSlotId(input);
 
@@ -1703,7 +2205,7 @@ export function evaluatePlannedPracticeQuality(
   input: PracticeContentGenerationInput,
   options: { evaluatedAt: string; boundedRepairAttempted?: boolean },
 ): PracticeQualityEvaluation {
-  const findings: PracticeQualityFinding[] = [];
+  const findings: PracticeQualityFinding[] = cognitivePracticeFindings(payload, input);
   const contentById = new Map(payload.items.map((item) => [item.practiceSlotId, item]));
 
   for (const [slotIndex, slot] of input.skeleton.practicePlan.slots.entries()) {
@@ -1726,7 +2228,7 @@ export function evaluatePlannedPracticeQuality(
     }
 
     for (const prohibited of slot.prohibitedStrongerConstructs) {
-      if (PROMOTED_CONSTRUCT_LANGUAGE[prohibited].test(itemSemantics)) {
+      if (PROMOTED_CONSTRUCT_LANGUAGE[prohibited].test(item.capabilityTested)) {
         codes.add('practice_promotes_construct');
         break;
       }

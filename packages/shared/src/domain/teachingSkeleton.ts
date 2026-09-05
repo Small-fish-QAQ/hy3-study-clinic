@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   InformalCheckKindSchema,
+  PrivateReasoningFields,
   TeachingBriefSegmentPurposeSchema,
   TeachingWorkedProcessInteractionSchema,
   type TeachingBrief,
@@ -671,6 +672,7 @@ export type TeachingInformalCheckOption = z.infer<typeof TeachingInformalCheckOp
 
 const TeachingLessonInformalCheckContentSchema = z
   .object({
+    ...PrivateReasoningFields,
     kind: InformalCheckKindSchema,
     prompt: z.string().min(1).max(700),
     expectedSignal: z.string().max(500).nullable(),

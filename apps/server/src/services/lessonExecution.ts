@@ -560,7 +560,7 @@ export function createLessonExecutionService({
           steps: guidedResolved
             ? process.steps
             : process.steps.slice(0, authored.pauseAfterStepIndex + 1),
-          learnerDecision: process.learnerDecision,
+          learnerDecision: null,
           result: guidedResolved ? process.result : null,
           whyResultFollows: transferResponse ? process.whyResultFollows : null,
           origin: authority(
