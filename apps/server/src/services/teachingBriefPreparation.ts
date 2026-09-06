@@ -69,6 +69,7 @@ import {
   type TeachingSkeletonPlanningInput,
 } from './teachingSkeletonPlanner.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
+import { verifyPreparedTeaching } from './teachingContentReview.js';
 import {
   assertCurrentLessonObjectiveAuthoritySemanticSupport,
   objectiveAuthoritySemanticallySupportedClaimIds,
@@ -76,14 +77,14 @@ import {
 
 export const TEACHING_BRIEF_PROMPT_VERSION =
   'teaching-brief-v3-compositional-source-guided-interaction';
-export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v7-calibrated-cognition';
-export const PRACTICE_CONTENT_PROMPT_VERSION = 'teaching-practice-content-v6-calibrated-novelty';
+export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v11-blind-review';
+export const PRACTICE_CONTENT_PROMPT_VERSION = 'teaching-practice-content-v10-blind-review';
 /**
- * Two logical calls, each bounded to three physical requests only in the
+ * Hy3 draft/editor/review paths use at most ten logical calls, each bounded to three physical requests only in the
  * structural-repair -> alias-localization case, at the configured 5-minute
  * ceiling plus a fixed local-finalization margin.
  */
-export const COMPOSITIONAL_PREPARATION_LEASE_MS = 32 * 60 * 1000;
+export const COMPOSITIONAL_PREPARATION_LEASE_MS = 152 * 60 * 1000;
 
 interface TeachingBriefPreparationDeps {
   repos: Repositories;
@@ -933,6 +934,7 @@ export function createTeachingBriefPreparationService({
           reasoningOperation: value.reasoningOperation,
           requiredInference: value.requiredInference,
           decisiveCondition: value.decisiveCondition,
+          evidenceContrast: value.evidenceContrast,
           prompt: value.prompt,
           options: value.options.map((option) => ({
             id: `${itemId}_${name}_${option.optionRef}`,
@@ -1139,6 +1141,12 @@ export function createTeachingBriefPreparationService({
     options?: ProviderCallOptions,
   ): Promise<TeachingBriefPreparationResponse> {
     const input = TeachingBriefPreparationRequestSchema.parse(rawInput);
+    if (provider.name === 'hy3' && !inferenceProvider.reviewTeachingContent) {
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        'REAL teaching requires the preparation content-review capability.',
+      );
+    }
     const operationStudySession = repos.studySessions.get(input.studySessionId);
     if (!operationStudySession || operationStudySession.workspaceId !== input.workspaceId) {
       throw new AppError(
@@ -1147,8 +1155,8 @@ export function createTeachingBriefPreparationService({
       );
     }
     const operationKey = `teaching-brief:${input.learningUnitId}:${input.commandId}`;
-    const lessonLogicalCallId = `${operationKey}:lesson`;
-    const practiceLogicalCallId = `${operationKey}:practice`;
+    let lessonLogicalCallId = `${operationKey}:lesson`;
+    let practiceLogicalCallId = `${operationKey}:practice`;
     const startedAt = clock.now();
     const operation = repos.operations.createOrGet({
       id: newId('op'),
@@ -1269,6 +1277,40 @@ export function createTeachingBriefPreparationService({
         return response;
       }
 
+      const trackedReviewCall = <T>(
+        logicalCallId: string,
+        schemaFingerprint: string,
+        invoke: (providerOptions?: ProviderCallOptions) => Promise<T>,
+      ) => {
+        routeStillCurrent(input, context.fingerprint);
+        renewPreparationLease(claim.id, owner, claim.fencingToken);
+        return runTrackedAgentProviderOperation({
+          repos,
+          clock,
+          provider,
+          providerModel: provider.model ?? providerModel ?? null,
+          operationId: claim.id,
+          fencingToken: claim.fencingToken,
+          workspaceId: input.workspaceId,
+          studySessionId: input.studySessionId,
+          learningUnitId: input.learningUnitId,
+          assessmentId: null,
+          operationType: 'prepare_teaching_brief',
+          logicalCallId,
+          schemaFingerprint,
+          policyFingerprint: enforceAgentCostPolicies(repos, {
+            workspaceId: input.workspaceId,
+            operationType: 'prepare_teaching_brief',
+            studySessionId: input.studySessionId,
+            at: clock.now().toISOString(),
+            confirmedPolicyIds: input.confirmedCostPolicyIds ?? [],
+          }),
+          sourceFingerprint: scopedFingerprint,
+          providerOptions: options,
+          invoke,
+        });
+      };
+
       if (!checkpoint) {
         preparationBoundary = 'lesson';
         const compositionalLessonInput = lessonInput(route, generationInput, skeleton);
@@ -1281,7 +1323,7 @@ export function createTeachingBriefPreparationService({
           at: clock.now().toISOString(),
           confirmedPolicyIds: input.confirmedCostPolicyIds ?? [],
         });
-        const lessonPayload = await runTrackedAgentProviderOperation({
+        let lessonPayload = await runTrackedAgentProviderOperation({
           repos,
           clock,
           provider,
@@ -1305,11 +1347,100 @@ export function createTeachingBriefPreparationService({
                 lessonRepairAttempted = true;
                 providerOptions?.onRepairAttempt?.(reason, category, recoveryAction);
               },
-              validateCandidate: (candidate) => {
-                return validateLessonSlotContentCandidate(candidate, compositionalLessonInput);
-              },
+              // The REAL draft is untrusted input to the editor, never an accepted checkpoint.
+              ...(provider.name === 'hy3'
+                ? {}
+                : {
+                    validateCandidate: (candidate: unknown) =>
+                      validateLessonSlotContentCandidate(candidate, compositionalLessonInput),
+                  }),
             }),
         });
+        if (provider.name === 'hy3') {
+          routeStillCurrent(input, context.fingerprint);
+          renewPreparationLease(claim.id, owner, claim.fencingToken);
+          lessonLogicalCallId = `${operationKey}:lesson-editor`;
+          const editorialInput = {
+            ...structuredClone(compositionalLessonInput),
+            draftForReview: structuredClone(lessonPayload),
+          };
+          lessonPayload = await runTrackedAgentProviderOperation({
+            repos,
+            clock,
+            provider,
+            providerModel: provider.model ?? providerModel ?? null,
+            operationId: claim.id,
+            fencingToken: claim.fencingToken,
+            workspaceId: input.workspaceId,
+            studySessionId: input.studySessionId,
+            learningUnitId: input.learningUnitId,
+            assessmentId: null,
+            operationType: 'prepare_teaching_brief',
+            logicalCallId: lessonLogicalCallId,
+            schemaFingerprint: 'lesson-slot-content-proposal-v1',
+            policyFingerprint: enforceAgentCostPolicies(repos, {
+              workspaceId: input.workspaceId,
+              operationType: 'prepare_teaching_brief',
+              studySessionId: input.studySessionId,
+              at: clock.now().toISOString(),
+              confirmedPolicyIds: input.confirmedCostPolicyIds ?? [],
+            }),
+            sourceFingerprint: scopedFingerprint,
+            providerOptions: options,
+            invoke: (providerOptions) =>
+              inferenceProvider.generateLessonSlotContent(editorialInput, {
+                ...providerOptions,
+                validateCandidate: (candidate) =>
+                  validateLessonSlotContentCandidate(candidate, compositionalLessonInput),
+                onRepairAttempt: (reason, category, action) => {
+                  lessonRepairAttempted = true;
+                  providerOptions?.onRepairAttempt?.(reason, category, action);
+                },
+              }),
+          });
+        }
+        let contentReview: LessonPedagogyEvaluation['contentReview'];
+        if (provider.name === 'hy3' && inferenceProvider.reviewTeachingContent) {
+          const verified = await verifyPreparedTeaching(
+            compositionalLessonInput,
+            lessonPayload,
+            async (prepared, round) => {
+              const logicalCallId = `${operationKey}:lesson-review-${round}`;
+              const result = await trackedReviewCall(
+                logicalCallId,
+                'teaching-content-review-v1',
+                (opts) =>
+                  inferenceProvider.reviewTeachingContent!(prepared.input, {
+                    ...opts,
+                    validateCandidate: prepared.validate,
+                  }),
+              );
+              return { logicalCallId, result };
+            },
+            async (draft, findings) => {
+              lessonLogicalCallId = `${operationKey}:lesson-revision`;
+              return trackedReviewCall(
+                lessonLogicalCallId,
+                'lesson-slot-content-proposal-v1',
+                (opts) =>
+                  inferenceProvider.generateLessonSlotContent(
+                    {
+                      ...structuredClone(compositionalLessonInput),
+                      draftForReview: draft,
+                      editorialFindings: findings,
+                    },
+                    {
+                      ...opts,
+                      validateCandidate: (candidate) =>
+                        validateLessonSlotContentCandidate(candidate, compositionalLessonInput),
+                    },
+                  ),
+              );
+            },
+          );
+          lessonPayload = verified.candidate;
+          contentReview = verified.receipts;
+        }
         const lessonEvaluation = evaluateLessonSlotPedagogy(
           lessonPayload,
           compositionalLessonInput,
@@ -1318,6 +1449,7 @@ export function createTeachingBriefPreparationService({
             boundedRepairAttempted: lessonRepairAttempted,
           },
         );
+        if (contentReview) lessonEvaluation.contentReview = contentReview;
         assertCurrentCognitiveContract(lessonEvaluation);
         if (!lessonPayload.narrative) {
           throw new AppError(
@@ -1381,7 +1513,7 @@ export function createTeachingBriefPreparationService({
         at: clock.now().toISOString(),
         confirmedPolicyIds: input.confirmedCostPolicyIds ?? [],
       });
-      const practicePayload = await runTrackedAgentProviderOperation({
+      let practicePayload = await runTrackedAgentProviderOperation({
         repos,
         clock,
         provider,
@@ -1405,11 +1537,99 @@ export function createTeachingBriefPreparationService({
               practiceRepairAttempted = true;
               providerOptions?.onRepairAttempt?.(reason, category, recoveryAction);
             },
-            validateCandidate: (candidate) => {
-              return validatePracticeContentCandidate(candidate, compositionalPracticeInput);
-            },
+            ...(provider.name === 'hy3'
+              ? {}
+              : {
+                  validateCandidate: (candidate: unknown) =>
+                    validatePracticeContentCandidate(candidate, compositionalPracticeInput),
+                }),
           }),
       });
+      if (provider.name === 'hy3') {
+        routeStillCurrent(input, context.fingerprint);
+        renewPreparationLease(claim.id, owner, claim.fencingToken);
+        practiceLogicalCallId = `${operationKey}:practice-editor`;
+        const editorialInput = {
+          ...structuredClone(compositionalPracticeInput),
+          draftForReview: structuredClone(practicePayload),
+        };
+        practicePayload = await runTrackedAgentProviderOperation({
+          repos,
+          clock,
+          provider,
+          providerModel: provider.model ?? providerModel ?? null,
+          operationId: claim.id,
+          fencingToken: claim.fencingToken,
+          workspaceId: input.workspaceId,
+          studySessionId: input.studySessionId,
+          learningUnitId: input.learningUnitId,
+          assessmentId: null,
+          operationType: 'prepare_teaching_brief',
+          logicalCallId: practiceLogicalCallId,
+          schemaFingerprint: 'practice-content-proposal-v1',
+          policyFingerprint: enforceAgentCostPolicies(repos, {
+            workspaceId: input.workspaceId,
+            operationType: 'prepare_teaching_brief',
+            studySessionId: input.studySessionId,
+            at: clock.now().toISOString(),
+            confirmedPolicyIds: input.confirmedCostPolicyIds ?? [],
+          }),
+          sourceFingerprint: scopedFingerprint,
+          providerOptions: options,
+          invoke: (providerOptions) =>
+            inferenceProvider.generatePracticeContent(editorialInput, {
+              ...providerOptions,
+              validateCandidate: (candidate) =>
+                validatePracticeContentCandidate(candidate, compositionalPracticeInput),
+              onRepairAttempt: (reason, category, action) => {
+                practiceRepairAttempted = true;
+                providerOptions?.onRepairAttempt?.(reason, category, action);
+              },
+            }),
+        });
+      }
+      let contentReview: PracticeQualityEvaluation['contentReview'];
+      if (provider.name === 'hy3' && inferenceProvider.reviewTeachingContent) {
+        const verified = await verifyPreparedTeaching(
+          compositionalPracticeInput,
+          practicePayload,
+          async (prepared, round) => {
+            const logicalCallId = `${operationKey}:practice-review-${round}`;
+            const result = await trackedReviewCall(
+              logicalCallId,
+              'teaching-content-review-v1',
+              (opts) =>
+                inferenceProvider.reviewTeachingContent!(prepared.input, {
+                  ...opts,
+                  validateCandidate: prepared.validate,
+                }),
+            );
+            return { logicalCallId, result };
+          },
+          async (draft, findings) => {
+            practiceLogicalCallId = `${operationKey}:practice-revision`;
+            return trackedReviewCall(
+              practiceLogicalCallId,
+              'practice-content-proposal-v1',
+              (opts) =>
+                inferenceProvider.generatePracticeContent(
+                  {
+                    ...structuredClone(compositionalPracticeInput),
+                    draftForReview: draft,
+                    editorialFindings: findings,
+                  },
+                  {
+                    ...opts,
+                    validateCandidate: (candidate) =>
+                      validatePracticeContentCandidate(candidate, compositionalPracticeInput),
+                  },
+                ),
+            );
+          },
+        );
+        practicePayload = verified.candidate;
+        contentReview = verified.receipts;
+      }
       const practiceEvaluation = evaluatePlannedPracticeQuality(
         practicePayload,
         compositionalPracticeInput,
@@ -1418,6 +1638,7 @@ export function createTeachingBriefPreparationService({
           boundedRepairAttempted: practiceRepairAttempted,
         },
       );
+      if (contentReview) practiceEvaluation.contentReview = contentReview;
       assertCurrentCognitiveContract(practiceEvaluation);
       preparationBoundary = 'assembly';
       const brief = materialize(

@@ -370,7 +370,7 @@ describe('compositional provider candidate validation', () => {
     expect(prompt).toContain(
       'first learnerActionRequired slot into the one substantial worked interaction',
     );
-    expect(prompt).toContain('worked comparison, classification, boundary case, counterexample');
+    expect(prompt).toContain('worked comparison, boundary case, counterexample');
     expect(prompt).toContain('does not change the objective construct');
     expect(prompt).not.toContain('worked_process needs both a semantic relation');
   });

@@ -318,6 +318,85 @@ function practiceValidation(candidate: unknown): ProviderCandidateValidation {
 }
 
 describe('compositional Teaching providers', () => {
+  it('uses a separate bounded content review with independently solved decisions', async () => {
+    const result = {
+      decisions: [
+        {
+          actionId: 'L1.guided',
+          answerId: 'B',
+          requiresCaseInference: true,
+          evidenceUsed: 'Two current grants are combined.',
+        },
+      ],
+      findings: [],
+    };
+    const transport = vi
+      .fn()
+      .mockResolvedValue(response(JSON.stringify(result))) as unknown as typeof fetch;
+    const reviewed = await hy3(transport).reviewTeachingContent({
+      stage: 'lesson',
+      desiredDepth: 'working_fluency',
+      objectives: [
+        { title: 'Role permissions', description: 'Explain indirect permission grants.' },
+      ],
+      sources: [],
+      candidate: { visibleCase: 'Two current grants are combined.' },
+      actionIds: ['L1.guided'],
+    });
+    expect(reviewed).toEqual(result);
+    const body = JSON.parse(
+      String((transport as unknown as ReturnType<typeof vi.fn>).mock.calls[0]![1]!.body),
+    );
+    expect(body.max_tokens).toBe(8000);
+    expect(body.messages[0].content).toContain(
+      'author reasoning labels and answer keys are removed',
+    );
+    expect(body.messages[0].content).toContain(
+      'Direct user permissions alone are not attribute-based',
+    );
+  });
+  it.each(['lesson', 'practice'] as const)(
+    'reserves reasoning time for %s without overriding caller cancellation budgets',
+    async (stage) => {
+      vi.useFakeTimers();
+      try {
+        const fetchImpl = vi.fn(
+          (_url: unknown, init: RequestInit) =>
+            new Promise<Response>((resolve, reject) => {
+              const timer = setTimeout(
+                () =>
+                  resolve(
+                    response(
+                      JSON.stringify(stage === 'lesson' ? lessonPayload() : practicePayload()),
+                    ),
+                  ),
+                130_000,
+              );
+              init.signal?.addEventListener('abort', () => {
+                clearTimeout(timer);
+                reject(new DOMException('Aborted', 'AbortError'));
+              });
+            }),
+        ) as unknown as typeof fetch;
+        const provider = hy3(fetchImpl);
+        const call =
+          stage === 'lesson'
+            ? provider.generateLessonSlotContent(lessonInput())
+            : provider.generatePracticeContent(practiceInput());
+        await vi.advanceTimersByTimeAsync(130_000);
+        await expect(call).resolves.toBeDefined();
+        const bounded =
+          stage === 'lesson'
+            ? provider.generateLessonSlotContent(lessonInput(), { timeoutMs: 1000 })
+            : provider.generatePracticeContent(practiceInput(), { timeoutMs: 1000 });
+        const rejection = expect(bounded).rejects.toMatchObject({ code: 'PROVIDER_TIMEOUT' });
+        await vi.advanceTimersByTimeAsync(1000);
+        await rejection;
+      } finally {
+        vi.useRealTimers();
+      }
+    },
+  );
   it('keeps depth cognitive and focus an independent investment signal', () => {
     const lessonPrompt = (
       desiredDepth: NonNullable<LessonSlotContentGenerationInput['courseDesign']>['desiredDepth'],
@@ -379,10 +458,13 @@ describe('compositional Teaching providers', () => {
     const calls = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls;
     const lessonBody = JSON.parse(String(calls[0]![1]!.body)) as {
       messages: Array<{ content: string }>;
+      max_tokens: number;
     };
     const practiceBody = JSON.parse(String(calls[1]![1]!.body)) as {
       messages: Array<{ content: string }>;
+      max_tokens: number;
     };
+    expect([lessonBody.max_tokens, practiceBody.max_tokens]).toEqual([16000, 16000]);
     const lessonPrompt = lessonBody.messages.map((message) => message.content).join('\n');
     const practicePrompt = practiceBody.messages.map((message) => message.content).join('\n');
     expect(lessonPrompt).toContain('one competent teacher writing one coherent');
@@ -402,8 +484,8 @@ describe('compositional Teaching providers', () => {
     expect(practicePrompt).toContain('Never quote or closely reproduce');
     expect(practicePrompt).toContain('never prove application');
     expect(schemaNames).toEqual([
-      'lesson-slot-content-v4-calibrated-cognition',
-      'practice-content-v4-calibrated-novelty',
+      'lesson-slot-content-v5-evidence-decisions',
+      'practice-content-v5-evidence-decisions',
     ]);
   });
 

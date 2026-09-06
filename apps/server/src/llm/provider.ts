@@ -36,6 +36,7 @@ import type {
   StudyPlanItemKind,
   StudyPlanProposalPayload,
   TeachingBriefProposalPayload,
+  TeachingContentReview,
   LessonSlotContentProposalPayload,
   PracticeContentProposalPayload,
   TeachingLessonSlotContent,
@@ -779,7 +780,20 @@ export interface LessonTeachingSkeleton {
 export const LEARNER_CONTENT_LOCALE = 'zh-CN' as const;
 export type LearnerContentLocale = typeof LEARNER_CONTENT_LOCALE;
 
+export interface TeachingContentReviewInput {
+  stage: 'lesson' | 'practice';
+  desiredDepth: DesiredDepth;
+  objectives: Array<{ title: string; description: string }>;
+  sources: Array<{ sourceRef: string; text: string }>;
+  candidate: unknown;
+  acceptedLesson?: unknown;
+  actionIds: string[];
+}
+
 export interface LessonSlotContentGenerationInput {
+  /** Preparation-only editorial pass; never accepted or shown before validation. */
+  draftForReview?: LessonSlotContentProposalPayload;
+  editorialFindings?: TeachingContentReview['findings'];
   workspaceName: string;
   learnerLocale: LearnerContentLocale;
   courseDesign?: TeachingBriefGenerationInput['courseDesign'];
@@ -803,6 +817,8 @@ export interface LessonSlotContentGenerationInput {
  * Lesson content, but can fill only locally planned Practice slot identities.
  */
 export interface PracticeContentGenerationInput {
+  draftForReview?: PracticeContentProposalPayload;
+  editorialFindings?: TeachingContentReview['findings'];
   workspaceName: string;
   learnerLocale: LearnerContentLocale;
   /** Same Course-wide depth and independent Unit focus used for the accepted Lesson. */
@@ -1245,6 +1261,10 @@ export interface StudyPlanProposalInput {
  * only ProviderError (see errors.ts).
  */
 export interface LlmProvider extends VisualDescriptionProvider {
+  reviewTeachingContent?(
+    input: TeachingContentReviewInput,
+    opts?: ProviderCallOptions,
+  ): Promise<TeachingContentReview>;
   readonly name: 'fake' | 'hy3';
   /** Non-secret model identifier for auditable provider metadata. */
   readonly model?: string | undefined;

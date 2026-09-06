@@ -354,6 +354,30 @@ async function teachThroughLesson(agendaId: string, agendaItemId: string, tag: s
   let guard = 0;
   while (!current.allowedActions.includes('complete_presentation') && guard < 40) {
     guard += 1;
+    if (current.allowedActions.includes('respond_to_worked_interaction')) {
+      const index = current.progress!.currentSegmentIndex;
+      const projected = current.lesson!.segments[index]!.workedProcess!.interaction!;
+      const authored = repos.teachingBriefs.get(
+        repos.lessonExecution.getForSession(session.id, agendaItemId)!.teachingBriefId!,
+      )!.segments[index]!.workedProcess!.interaction!;
+      const phase =
+        projected.stage === 'scaffold'
+          ? 'scaffold'
+          : projected.stage === 'transfer'
+            ? 'transfer'
+            : 'guided';
+      const response =
+        phase === 'guided' ? authored.activity.correctOptionId : authored[phase].correctOptionId;
+      current = await services.lessonExecution.command(workspaceId, session.id, {
+        command: command(`${tag}-worked-${guard}`),
+        expectedSessionVersion: current.session.version,
+        expectedAgendaVersion: current.agenda!.version,
+        expectedAgendaItemId: agendaItemId,
+        expectedLessonStateVersion: current.progress!.stateVersion,
+        action: { kind: 'respond_to_worked_interaction', segmentIndex: index, phase, response },
+      });
+      continue;
+    }
     const action = current.allowedActions.includes('respond_to_informal_check')
       ? ({
           kind: 'respond_to_informal_check',

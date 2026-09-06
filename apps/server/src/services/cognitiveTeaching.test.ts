@@ -8,7 +8,10 @@ import {
 import { FakeProvider } from '../llm/fakeProvider.js';
 import { Hy3Provider } from '../llm/hy3Provider.js';
 import { lessonSlotContentMessages, practiceContentMessages } from '../llm/prompts.js';
-import { normalizeLessonPreparationCandidate } from '../llm/preparationRecovery.js';
+import {
+  mergeLocalizedAliasRepair,
+  normalizeLessonPreparationCandidate,
+} from '../llm/preparationRecovery.js';
 import type {
   LessonSlotContentGenerationInput,
   PracticeContentGenerationInput,
@@ -21,6 +24,7 @@ import {
 } from './lessonPedagogyEvaluator.js';
 import { validateLessonSlotContentCandidate } from './teachingBriefContract.js';
 import { planTeachingSkeleton } from './teachingSkeletonPlanner.js';
+import { prepareTeachingReview, verifyPreparedTeaching } from './teachingContentReview.js';
 
 const at = { evaluatedAt: '2026-09-05T00:00:00.000Z' };
 
@@ -98,6 +102,284 @@ async function fixture(depth: DesiredDepth = 'working_fluency') {
 }
 
 describe('calibrated cognitive teaching contract', () => {
+  it('reviews visible content without author labels or answer keys and requires exact coverage', async () => {
+    const f = await fixture();
+    const prepared = prepareTeachingReview(f.lessonInput, f.lesson);
+    const serialized = JSON.stringify(prepared.input);
+    for (const key of [
+      'reasoningOperation',
+      'requiredInference',
+      'decisiveCondition',
+      'evidenceContrast',
+      'correctOptionId',
+    ])
+      expect(serialized).not.toContain(`"${key}"`);
+    expect(serialized).toContain('空闲配额为2');
+    expect(prepared.validate({ decisions: [], findings: [] }).valid).toBe(false);
+    const decisions = prepared.input.actionIds.map((actionId) => ({
+      actionId,
+      answerId: actionId.endsWith('.transfer') ? 'B' : 'A',
+      requiresCaseInference: true,
+      evidenceUsed: 'Current capacity and the task requirement.',
+    }));
+    expect(prepared.validate({ decisions, findings: [] }).valid).toBe(true);
+    const actionFinding = {
+      itemId: decisions[0]!.actionId,
+      code: 'accuracy' as const,
+      problem: 'The case result contradicts its update.',
+      repairInstruction: 'Recompute the changed state.',
+    };
+    expect(prepared.validate({ decisions, findings: [actionFinding] }).valid).toBe(true);
+    expect(prepared.findings({ decisions, findings: [actionFinding] })[0]!.itemId).toBe(
+      f.worked.slotId,
+    );
+    const reviewedSlots = (
+      prepared.input.candidate as {
+        slots: Array<{ workedProcess?: { interaction?: { activity: Record<string, unknown> } } }>;
+      }
+    ).slots;
+    const reviewedAction = reviewedSlots.find((slot) => slot.workedProcess?.interaction)!
+      .workedProcess!.interaction!.activity;
+    expect(reviewedAction.options).toEqual(
+      f.interaction.activity.options.map(({ id, text }) => ({ id, text })),
+    );
+    expect(reviewedAction.afterResponse).toBeDefined();
+    expect(reviewedAction).not.toHaveProperty('correctDebrief');
+    expect(prepared.findings({ decisions, findings: [] })).toEqual([]);
+    decisions[0]!.answerId = 'C';
+    expect(prepared.findings({ decisions, findings: [] })[0]?.code).toBe('insufficient_evidence');
+    expect(prepared.validate({ decisions: [...decisions, decisions[0]], findings: [] }).valid).toBe(
+      false,
+    );
+    expect(
+      prepared.validate({
+        decisions,
+        findings: [
+          {
+            itemId: 'L999',
+            code: 'accuracy',
+            problem: 'Unknown slot',
+            repairInstruction: 'Ignore',
+          },
+        ],
+      }).valid,
+    ).toBe(false);
+  });
+
+  it('rechecks one concrete revision and binds both reviews to the exact candidates', async () => {
+    const f = await fixture();
+    let revisions = 0;
+    const verified = await verifyPreparedTeaching(
+      f.lessonInput,
+      f.lesson,
+      async (prepared, round) => ({
+        logicalCallId: `review-${round}`,
+        result: {
+          decisions: prepared.input.actionIds.map((actionId) => ({
+            actionId,
+            answerId: actionId.endsWith('.transfer') ? 'B' : 'A',
+            requiresCaseInference: true,
+            evidenceUsed: 'Compare remaining capacity and new task demand.',
+          })),
+          findings:
+            round === 0
+              ? [
+                  {
+                    itemId: f.worked.slotId,
+                    code: 'accuracy',
+                    problem: 'Final state disagrees with the update.',
+                    repairInstruction: 'Recompute the final state.',
+                  },
+                ]
+              : [],
+        },
+      }),
+      async (draft, findings) => {
+        revisions += 1;
+        expect(findings[0]?.code).toBe('accuracy');
+        return { ...draft, narrative: { ...draft.narrative!, summary: 'Updated final state.' } };
+      },
+    );
+    expect(revisions).toBe(1);
+    expect(verified.receipts).toHaveLength(2);
+    expect(verified.receipts[0]!.candidateHash).not.toBe(verified.receipts[1]!.candidateHash);
+    let failures = 0;
+    await expect(
+      verifyPreparedTeaching(
+        f.lessonInput,
+        f.lesson,
+        async (prepared, round) => ({
+          logicalCallId: `failed-review-${round}`,
+          result: {
+            decisions: prepared.input.actionIds.map((actionId) => ({
+              actionId,
+              answerId: null,
+              requiresCaseInference: false,
+              evidenceUsed: 'Required case evidence is absent.',
+            })),
+            findings: [],
+          },
+        }),
+        async (draft) => {
+          failures += 1;
+          return draft;
+        },
+      ),
+    ).rejects.toMatchObject({
+      details: expect.objectContaining({
+        candidateFailure: expect.objectContaining({ kind: 'teaching_content_review_failed' }),
+      }),
+    });
+    expect(failures).toBe(1);
+  });
+  it('requires the worked interaction and evidence choices for normal Units at working fluency', async () => {
+    const f = await fixture();
+    f.lessonInput.courseDesign!.unitFocus = 'normal';
+    const generated = await new FakeProvider().generateLessonSlotContent(f.lessonInput);
+    expect(generated.slots.some((slot) => slot.workedProcess?.interaction)).toBe(true);
+    const check = generated.slots.find((slot) => slot.informalCheck)!.informalCheck!;
+    delete check.options;
+    delete check.correctOptionId;
+    expect(evaluateLessonSlotPedagogy(generated, f.lessonInput, at).findings).toContainEqual(
+      expect.objectContaining({ code: 'reasoning_choice_missing', severity: 'error' }),
+    );
+  });
+  it('binds the decisive evidence to the learner case and a different available answer', async () => {
+    const f = await fixture();
+    expect(f.lessonEvaluation().status).toBe('pass');
+    const contrast = f.interaction.activity.evidenceContrast!;
+    contrast.evidence = 'This fact exists only in private author metadata.';
+    expect(f.lessonEvaluation().findings).toContainEqual(
+      expect.objectContaining({
+        code: 'evidence_contrast_not_visible',
+        severity: 'error',
+      }),
+    );
+    contrast.evidence = '甲运行中，空闲配额为2';
+    contrast.alternativeOptionId = f.interaction.activity.correctOptionId;
+    expect(f.lessonEvaluation().findings).toContainEqual(
+      expect.objectContaining({
+        code: 'evidence_contrast_not_decisive',
+        severity: 'error',
+      }),
+    );
+    contrast.alternativeOptionId = 'B';
+    expect(f.lessonEvaluation().status).toBe('pass');
+    f.practice.items[0]!.initial.prompt = '发生了错误。应先诊断哪个环节？';
+    expect(f.practiceEvaluation().findings).toContainEqual(
+      expect.objectContaining({
+        code: 'evidence_contrast_not_visible',
+        severity: 'error',
+      }),
+    );
+  });
+
+  it('allows a quoted parenthetical prefix while preserving the actual case facts', async () => {
+    const f = await fixture();
+    const surface = f.practice.items[0]!.initial;
+    surface.prompt = 'D7属于另一kb_C2（同租户不同kb，Carol仅对kb_C1有资源权限）。系统会如何处理？';
+    surface.evidenceContrast!.evidence = 'D7属于另一kb_C2（同租户不同kb）';
+    expect(
+      f
+        .practiceEvaluation()
+        .findings.some((finding) => finding.code === 'evidence_contrast_not_visible'),
+    ).toBe(false);
+    surface.evidenceContrast!.evidence = 'D7属于另一kb_C2（不同租户不同kb）';
+    expect(
+      f
+        .practiceEvaluation()
+        .findings.some((finding) => finding.code === 'evidence_contrast_not_visible'),
+    ).toBe(true);
+  });
+
+  it('accepts a concrete state update with shared vocabulary and a concise choice', async () => {
+    const f = await fixture();
+    f.process.steps[1]!.resultingState = f.process.steps[0]!.resultingState.replace(
+      '配额为2',
+      '配额为3',
+    );
+    f.process.steps[1]!.reason = '配额已经归还';
+    f.interaction.activity.options[0]!.text = '等待';
+    f.interaction.scaffold.options[0]!.text = '仅read';
+    f.interaction.scaffold.options[1]!.text = 'read和write';
+    f.process.inputs = ['U1→R1', 'action=reparse'];
+    expect(f.lessonEvaluation().findings.filter((finding) => finding.severity === 'error')).toEqual(
+      [],
+    );
+    f.process.steps[1]!.resultingState = f.process.steps[0]!.resultingState;
+    expect(f.lessonEvaluation().findings).toContainEqual(
+      expect.objectContaining({
+        code: 'worked_process_has_no_real_transition',
+        severity: 'error',
+      }),
+    );
+  });
+
+  it('does not treat a previously wrong candidate answer as an established teacher conclusion', async () => {
+    const f = await fixture();
+    f.interaction.activity.options[1]!.text = f.practice.items[0]!.initial.requiredInference!;
+    expect(
+      f
+        .practiceEvaluation()
+        .findings.some((finding) => finding.code === 'practice_semantic_replay'),
+    ).toBe(false);
+  });
+
+  it('rejects an unchanged inference across different labels and teacher prose', async () => {
+    const f = await fixture();
+    f.practice.items[0]!.initial.requiredInference = f.interaction.activity.requiredInference;
+    expect(f.practiceEvaluation().findings).toContainEqual(
+      expect.objectContaining({
+        code: 'practice_semantic_replay',
+        severity: 'error',
+      }),
+    );
+    f.practice.items[0]!.initial.requiredInference = '完成事件没有更新配额状态，应先检查归还动作。';
+    f.lesson.slots[0]!.explanation = f.practice.items[0]!.initial.requiredInference;
+    expect(f.practiceEvaluation().findings).toContainEqual(
+      expect.objectContaining({
+        code: 'practice_semantic_replay',
+        severity: 'error',
+      }),
+    );
+    expect(
+      lessonReasoningExposure(f.lesson.slots, f.lessonInput.skeleton)[0]!.taughtConclusions,
+    ).toContainEqual(
+      expect.objectContaining({ text: expect.stringContaining('完成事件没有更新配额状态') }),
+    );
+  });
+
+  it('keeps a bound evidence quote consistent through localized alias repair', async () => {
+    const f = await fixture();
+    const first = structuredClone(f.lesson);
+    const worked = first.slots.find((slot) => slot.workedProcess)!;
+    worked.workedProcess!.steps[0]!.resultingState = 'S1: 甲运行中，空闲配额为2';
+    worked.workedProcess!.interaction!.activity.evidenceContrast!.evidence =
+      'S1: 甲运行中，空闲配额为2';
+    const merged = mergeLocalizedAliasRepair(first, f.lesson, 'slots', 'slotId', {
+      rootNarrative: false,
+      items: [{ itemId: worked.slotId, components: ['workedProcess'] }],
+    });
+    expect(LessonSlotContentProposalPayloadSchema.parse(merged)).toEqual(f.lesson);
+    expect(validateLessonSlotContentCandidate(merged, f.lessonInput).valid).toBe(true);
+  });
+
+  it.each([
+    ['Prompt禁令从根源阻断了编造错误。', true],
+    ['明确的提示词消除了虚构的动机。', true],
+    ['Prompt禁令不能保证拒答，仍需校验执行对象。', false],
+    ['校验器只允许清单中的路径进入执行阶段；这不能证明内容真实。', false],
+    ['执行器禁止清单外的路径，确保不会执行未授权路由。', false],
+  ])('calibrates affirmative probabilistic-control claims: %s', async (text, rejected) => {
+    const f = await fixture();
+    f.interaction.activity.correctDebrief = text;
+    expect(
+      f
+        .lessonEvaluation()
+        .findings.some((finding) => finding.code === 'probabilistic_control_overclaimed'),
+    ).toBe(rejected);
+  });
+
   it('accepts reasoning on identify authority with modelled state and diagnostic Practice', async () => {
     const f = await fixture();
     expect(f.lessonEvaluation().status).toBe('pass');

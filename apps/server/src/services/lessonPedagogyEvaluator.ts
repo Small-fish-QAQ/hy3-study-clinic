@@ -24,10 +24,9 @@ import { ProviderError } from '../llm/errors.js';
 
 export const LESSON_PEDAGOGY_POLICY_VERSION = 'lesson-pedagogy-v2';
 export const PRACTICE_QUALITY_POLICY_VERSION = 'lesson-practice-v1';
-export const COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION =
-  'lesson-pedagogy-v7-calibrated-cognition';
+export const COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION = 'lesson-pedagogy-v8-evidence-decisions';
 export const COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION =
-  'lesson-practice-v6-calibrated-novelty';
+  'lesson-practice-v7-evidence-decisions';
 
 function normalized(value: string): string {
   return value
@@ -58,7 +57,7 @@ function overlapRatio(left: string, right: string): number {
 }
 
 const SOURCE_LOCATION_TRIVIA =
-  /(?:\b(?:page|slide|section|chapter|paragraph|line|block|document)\b.{0,35}\b(?:where|which|number|located|mention(?:ed)?)\b|\bsource\b.{0,35}\b(?:where|located|mention(?:ed)?|page|slide|section|chapter|paragraph|line|block)\b|\bwhere\b.{0,35}\b(?:document|source|page|slide|section|chapter|paragraph|line|block)\b|\bwhich\b.{0,35}\b(?:document|page|slide|section|chapter|paragraph|line|block)\b|\bwhich\s+source\b|第.{0,8}(?:页|幻灯片|章节|段|行)|(?:哪一|哪个|何处|哪里).{0,12}(?:页|幻灯片|章节|段落|位置)|(?:原文|资料|文档|来源).{0,12}(?:哪里|何处|哪一页|第几页|哪个章节))/iu;
+  /(?:\b(?:page|slide|section|chapter|paragraph|line|block|document)\b.{0,35}\b(?:where|which|number|located|mention(?:ed)?)\b|\bsource\b.{0,35}\b(?:where|located|mention(?:ed)?|page|slide|section|chapter|paragraph|line|block)\b|\bwhere\b.{0,35}\b(?:document|source|page|slide|section|chapter|paragraph|line|block)\b|\bwhich\b.{0,35}\b(?:document|page|slide|section|chapter|paragraph|line|block)\b|\bwhich\s+source\b|第.{0,8}(?:页|幻灯片|章节|段|行)|(?:哪一|哪个|何处(?!理)|哪里).{0,12}(?:页|幻灯片|章节|段落|位置)|(?:原文|资料|文档|来源).{0,12}(?:哪里|何处(?!理)|哪一页|第几页|哪个章节))/iu;
 
 const EXPLANATION_REASONING =
   /(?:\b(?:because|therefore|so that|depends on|causes?|means that|works by|mechanism|why|how)\b|因为|因|所以|故|因此|从而|导致|前提|必要|取决于|意味着|机制|原理|如何|为什么|通过)/iu;
@@ -901,6 +900,7 @@ type CognitiveAction = {
   requiredInference?: string;
   decisiveCondition?: string;
   changedCondition?: string;
+  evidenceContrast?: { evidence: string; replacement: string; alternativeOptionId: string };
 };
 
 /** Bounded, per-objective exposure; scaffolds are assistance, not depth credit. */
@@ -910,6 +910,14 @@ export function lessonReasoningExposure(
 ) {
   return skeleton.objectives.map((objective) => ({
     objectiveRef: objective.objectiveRef,
+    taughtConclusions: lesson
+      .filter((content) =>
+        skeleton.lessonSlots.some(
+          (slot) =>
+            slot.slotId === content.slotId && slot.objectiveRefs.includes(objective.objectiveRef),
+        ),
+      )
+      .map((content) => ({ slotId: content.slotId, text: lessonTaughtClaims(content).join('\n') })),
     actions: skeleton.lessonSlots
       .filter((slot) => slot.objectiveRefs.includes(objective.objectiveRef))
       .flatMap((slot) => {
@@ -930,6 +938,7 @@ export function lessonReasoningExposure(
           surface: action.surface,
           reasoningOperation: action.reasoningOperation,
           requiredInference: action.requiredInference,
+          evidenceContrast: action.evidenceContrast,
           decisiveCondition:
             'changedCondition' in action ? action.changedCondition : action.decisiveCondition,
           options: action.options?.map(({ text }) => ({ text })) ?? [],
@@ -939,6 +948,18 @@ export function lessonReasoningExposure(
 }
 
 const COGNITIVE_MESSAGES = {
+  relation_objective_reference_outside_slot:
+    'A private relation objective reference must name an objective already bound to this immutable slot.',
+  reasoning_choice_missing:
+    'At working_fluency or deeper each informal check must offer concrete competing choices with evidenceContrast, so the learner commits before the deciding explanation.',
+  evidence_contrast_missing:
+    'A reasoning choice needs evidenceContrast: quote a decisive case fact, replace it with a concrete changed fact, and identify the different offered option that would then be correct. Design the case before explaining its conclusion.',
+  evidence_contrast_not_visible:
+    'evidenceContrast.evidence must occur verbatim in the visible case facts or modelled resultingState, not only in private declarations, a rule, an answer, or feedback. Put sufficient evidence in the learner case.',
+  evidence_contrast_not_decisive:
+    'The replacement must change the quoted fact and make a different offered option correct. A restated fact or unchanged answer does not establish case-dependent reasoning.',
+  probabilistic_control_overclaimed:
+    'A probabilistic model or Prompt instruction cannot guarantee obedience, eliminate fabrication, or prevent all errors. Distinguish risk reduction from an enforced validation boundary and state its limited scope.',
   missing_reasoning_declaration:
     'Every prepared action requires private reasoningOperation, requiredInference and decisiveCondition; transfer uses changedCondition.',
   reasoning_demand_below_depth:
@@ -960,7 +981,7 @@ const COGNITIVE_MESSAGES = {
   focused_unit_angle_coverage_insufficient:
     'Across Lesson and Practice a focused Unit needs three reasoning operations including diagnose_cause or identify_missing, and choose_design or judge_tradeoff. Practice can complete missing Lesson angles.',
   practice_semantic_replay:
-    'Practice repeats a Lesson operation with the same decisive condition or inference. Change the cognitive task or a materially decisive condition, not just entities.',
+    'Practice repeats a taught inference or an unchanged decision, regardless of operation label. Supply new evidence that distinguishes competing explanations; changing entities or labels is insufficient.',
   practice_initial_recognition_at_depth:
     'Practice initial must be reasoning-class at working_fluency or deeper.',
   practice_retry_semantic_replay:
@@ -1036,14 +1057,50 @@ function focusCoverageInsufficient(operations: Array<ReasoningOperation | undefi
 }
 
 function definiteReplay(left: CognitiveAction, right: CognitiveAction): boolean {
-  if (!left.reasoningOperation || left.reasoningOperation !== right.reasoningOperation)
-    return false;
   const same = (a: string | undefined, b: string | undefined) =>
     Boolean(a?.trim() && b?.trim() && normalized(a) === normalized(b));
   return (
-    same(left.decisiveCondition, right.decisiveCondition ?? right.changedCondition) ||
-    same(left.requiredInference, right.requiredInference)
+    same(left.requiredInference, right.requiredInference) ||
+    (left.reasoningOperation === right.reasoningOperation &&
+      same(left.decisiveCondition, right.decisiveCondition ?? right.changedCondition))
   );
+}
+
+function evidenceContrastFinding(
+  action: CognitiveAction,
+  facts: string[],
+  optionIds: string[],
+  correctOptionId: string | undefined,
+): CognitiveCode | undefined {
+  if (!isReasoningOperation(action.reasoningOperation) || optionIds.length === 0) return;
+  const contrast = action.evidenceContrast;
+  if (!contrast) return 'evidence_contrast_missing';
+  const compact = (value: string) => value.normalize('NFKC').replace(/\s+/gu, '');
+  // A quoted parenthetical prefix may end before more case detail in the same parentheses.
+  const quote = compact(contrast.evidence).replace(/\)$/u, '');
+  if (!facts.some((fact) => compact(fact).includes(quote))) return 'evidence_contrast_not_visible';
+  if (
+    normalized(contrast.evidence) === normalized(contrast.replacement) ||
+    contrast.alternativeOptionId === correctOptionId ||
+    !optionIds.includes(contrast.alternativeOptionId)
+  )
+    return 'evidence_contrast_not_decisive';
+  return;
+}
+
+/** Narrow affirmative control claims only; vocabulary overlap is not an accuracy test. */
+function overclaimsProbabilisticControl(text: string): boolean {
+  return text.split(/[。！？.!?\n]/u).some((sentence) => {
+    if (
+      /(?:不能|无法|不(?:能|会)?保证|并不|不意味着|不等于|并非|未必|cannot|does not|not guarantee)/iu.test(
+        sentence,
+      )
+    )
+      return false;
+    return /(?:prompt|提示词|模型指令).{0,100}(?:从根源阻断|消除.{0,12}(?:编造|虚构|幻觉)|保证.{0,18}(?:拒答|不会|不再)|确保.{0,18}(?:不会|不再)|guarantee.{0,25}(?:refus|never|obey)|eliminat.{0,20}(?:hallucinat|fabricat))/iu.test(
+      sentence,
+    );
+  });
 }
 
 /** Guard the current hard contract if a provider bypasses callback validation. */
@@ -1104,6 +1161,14 @@ function cognitiveLessonFindings(
     const interaction = process?.interaction;
     const check = content.informalCheck;
     const actions = [check, interaction?.activity, interaction?.transfer, interaction?.scaffold];
+    if (
+      content.semanticRelations.some(
+        (relation) =>
+          /^O[1-9][0-9]*$/u.test(relation.relevanceToObjective) &&
+          !slot.objectiveRefs.includes(relation.relevanceToObjective),
+      )
+    )
+      add('relation_objective_reference_outside_slot', [index], slot.objectiveRefs);
     if (actions.some((action) => action && missingDeclaration(action)))
       add('missing_reasoning_declaration', [index], slot.objectiveRefs);
     const pre = [
@@ -1135,6 +1200,22 @@ function cognitiveLessonFindings(
       )
         add('reasoning_label_suspect', [index], slot.objectiveRefs, 'warning');
     };
+    const inspectEvidence = (
+      action: CognitiveAction & {
+        options?: Array<{ id: string }>;
+        correctOptionId?: string;
+      },
+      facts: string[],
+      surface: string,
+    ) => {
+      const code = evidenceContrastFinding(
+        action,
+        facts,
+        action.options?.map((option) => option.id) ?? [],
+        action.correctOptionId,
+      );
+      if (code) add(code, [index], slot.objectiveRefs, 'error', surface);
+    };
     if (interaction && process) {
       const modelled = [
         process.startingState,
@@ -1149,6 +1230,18 @@ function cognitiveLessonFindings(
         [...pre, ...modelled, interaction.activity.prompt],
         'worked_interaction_answer_pre_revealed',
         'objectives, whyNow, earlier Lesson text, current explanation/modelled state or activity prompt',
+      );
+      inspectEvidence(
+        interaction.activity,
+        process.steps
+          .slice(0, interaction.pauseAfterStepIndex + 1)
+          .map((step) => step.resultingState),
+        'activity.evidenceContrast must quote the modelled resultingState',
+      );
+      inspectEvidence(
+        interaction.transfer,
+        [interaction.transfer.changedCondition, interaction.transfer.prompt],
+        'transfer.evidenceContrast',
       );
       inspect(
         interaction.activity,
@@ -1207,13 +1300,24 @@ function cognitiveLessonFindings(
         'completed worked case or transfer prompt',
       );
     }
-    if (check)
+    if (check) {
+      if (depth && depth !== 'pass_oriented' && !check.options?.length)
+        add('reasoning_choice_missing', [index], slot.objectiveRefs);
+      inspectEvidence(check, [check.prompt], 'informalCheck.evidenceContrast');
       inspect(
         check,
         [...pre, check.prompt],
         'informal_check_answer_pre_revealed',
         'objectives, whyNow, earlier Lesson text, current explanation/example/contrast or check prompt',
       );
+    }
+    const claims = [
+      ...lessonTaughtClaims(content),
+      narrative?.whyNow ?? '',
+      narrative?.summary ?? '',
+    ];
+    if (claims.some(overclaimsProbabilisticControl))
+      add('probabilistic_control_overclaimed', [index], slot.objectiveRefs);
     const prose = `${allLessonText(content)} ${narrative?.whyNow ?? ''} ${narrative?.summary ?? ''}`;
     if (
       /根据材料|材料明确指出|材料指出|资料指出|根据资料|材料中提到|原文指出|文档指出|回想材料|according to (?:the )?(?:material|source)|the (?:material|source) states/iu.test(
@@ -1311,6 +1415,21 @@ function cognitivePracticeFindings(
     const context = `${practiceObjectiveTarget(slot, input)} ${sourceTextForRefs(input.sourceContext, slot.allowedSourceRefs)}`;
     if ([item.initial, item.retry].some(missingDeclaration))
       add('missing_reasoning_declaration', [index], [slot.objectiveRef]);
+    for (const surface of [item.initial, item.retry]) {
+      const code = evidenceContrastFinding(
+        surface,
+        [surface.prompt],
+        surface.options.map((option) => option.optionRef),
+        surface.correctOptionRef,
+      );
+      if (code) add(code, [index], [slot.objectiveRef]);
+      if (
+        [surface.explanation, ...surface.options.map((option) => option.feedbackIfSelected)].some(
+          overclaimsProbabilisticControl,
+        )
+      )
+        add('probabilistic_control_overclaimed', [index], [slot.objectiveRef]);
+    }
     if (
       depth &&
       depth !== 'pass_oriented' &&
@@ -1323,6 +1442,13 @@ function cognitivePracticeFindings(
       actions.some((action) => action.reasoningOperation === item.initial.reasoningOperation)
     )
       add('practice_novelty_uncertain', [index], [slot.objectiveRef], 'warning');
+    const priorTexts = input.acceptedLesson.flatMap(lessonTaughtClaims);
+    if (
+      [item.initial, item.retry].some(
+        (surface) => revealSeverity('', surface.requiredInference, [], priorTexts) === 'error',
+      )
+    )
+      add('practice_semantic_replay', [index], [slot.objectiveRef]);
     if (definiteReplay(item.initial, item.retry))
       add('practice_retry_semantic_replay', [index], [slot.objectiveRef]);
     else if (
@@ -1381,10 +1507,7 @@ function cognitivePracticeFindings(
     input.courseDesign?.unitFocus === 'focused' &&
     focusCoverageInsufficient([
       ...exposure.flatMap((entry) => entry.actions.map((action) => action.reasoningOperation)),
-      ...payload.items.flatMap((item) => [
-        item.initial.reasoningOperation,
-        item.retry.reasoningOperation,
-      ]),
+      ...payload.items.map((item) => item.initial.reasoningOperation),
     ])
   )
     add(
@@ -1444,15 +1567,14 @@ function objectiveTargetForSlot(
 }
 
 /**
- * A focused, working-fluency-or-deeper Lesson without a construct-required
+ * A working-fluency-or-deeper Lesson without a construct-required
  * process uses its first locally planned learner-action slot for one bounded
  * conceptual worked interaction. This adds no slot, minutes, construct, or
  * authority; it changes only how the already-required learner action is taught.
  */
-function focusedWorkedInteractionSlotId(input: LessonSlotContentGenerationInput): string | null {
+function conceptualWorkedInteractionSlotId(input: LessonSlotContentGenerationInput): string | null {
   if (
     !input.courseDesign ||
-    input.courseDesign.unitFocus !== 'focused' ||
     input.courseDesign.desiredDepth === 'pass_oriented' ||
     input.skeleton.lessonSlots.some((slot) => slot.qualityContract === 'worked_process')
   ) {
@@ -1473,6 +1595,35 @@ function allLessonSourceRefs(content: TeachingLessonSlotContent): string[] {
   ];
 }
 
+/** Teacher assertions exclude candidate answers that were offered as misconceptions. */
+function lessonTaughtClaims(content: TeachingLessonSlotContent): string[] {
+  const process = content.workedProcess;
+  const interaction = process?.interaction;
+  return [
+    content.lessonNarrative?.whyNow,
+    content.lessonNarrative?.summary,
+    content.explanation,
+    content.example?.text,
+    content.contrast?.text,
+    content.misconception?.correction,
+    process?.ruleOrProcedure,
+    process?.result,
+    process?.whyResultFollows,
+    ...(process?.steps.flatMap((step) => [step.action, step.reason, step.resultingState]) ?? []),
+    interaction?.activity.correctDebrief,
+    ...(interaction?.activity.options.flatMap((option) => [
+      option.feedbackIfSelected,
+      option.misconception?.correction,
+    ]) ?? []),
+    interaction?.scaffold.debrief,
+    ...(interaction?.scaffold.options.map((option) => option.feedbackIfSelected) ?? []),
+    interaction?.transfer.debrief,
+    ...(interaction?.transfer.options.map((option) => option.feedbackIfSelected) ?? []),
+    content.informalCheck?.expectedSignal,
+    ...(content.informalCheck?.options?.map((option) => option.feedbackIfSelected) ?? []),
+  ].filter((text): text is string => Boolean(text));
+}
+
 function allLessonText(content: TeachingLessonSlotContent): string {
   const interaction = content.workedProcess?.interaction;
   return [
@@ -1483,7 +1634,6 @@ function allLessonText(content: TeachingLessonSlotContent): string {
     ...content.semanticRelations.flatMap((relation) => [
       relation.fromProposition,
       relation.toProposition,
-      relation.relevanceToObjective,
     ]),
     content.workedProcess?.startingState,
     content.workedProcess?.ruleOrProcedure,
@@ -1541,19 +1691,24 @@ function relationIssueCodes(
   input: LessonSlotContentGenerationInput,
 ): string[] {
   const issues: string[] = [];
+  const substantiveProposition = (value: string) =>
+    (!FIELD_LABEL_ONLY.test(normalized(value)) &&
+      [...value.replace(LEGACY_AUXILIARY_LANGUAGE, '').matchAll(/\p{Script=Han}/gu)].length >= 4) ||
+    isSubstantiveText(value);
   if (!slot.allowedRelations.includes(relation.kind)) {
     issues.push('semantic_relation_outside_slot_contract');
   }
   if (
-    !isSubstantiveText(relation.fromProposition) ||
-    !isSubstantiveText(relation.toProposition) ||
+    !substantiveProposition(relation.fromProposition) ||
+    !substantiveProposition(relation.toProposition) ||
     !isSemanticallyDistinct(relation.fromProposition, relation.toProposition)
   ) {
     issues.push('semantic_relation_not_substantive');
   }
   if (
-    !isSubstantiveText(relation.relevanceToObjective) ||
-    !hasBoundedSemanticCompatibility(relation.relevanceToObjective, objectiveTarget)
+    !slot.objectiveRefs.includes(relation.relevanceToObjective) &&
+    (!isSubstantiveText(relation.relevanceToObjective) ||
+      !hasBoundedSemanticCompatibility(relation.relevanceToObjective, objectiveTarget))
   ) {
     issues.push('semantic_relation_not_objective_relevant');
   }
@@ -1591,9 +1746,15 @@ function workedProcessIssueCodes(
     process.whyResultFollows,
     ...process.steps.flatMap((step) => [step.action, step.reason, step.resultingState]),
   ];
+  const substantiveWorkedText = (value: string) =>
+    (!FIELD_LABEL_ONLY.test(normalized(value)) &&
+      !GENERIC_PLACEHOLDER_LANGUAGE.test(value) &&
+      ([...value.matchAll(/\p{Script=Han}/gu)].length >= 2 ||
+        /^[a-z][a-z0-9_:[\],./ -]{2,}$/iu.test(value.trim()))) ||
+    isSubstantiveText(value);
   if (
     requiredTexts.some(
-      (value) => !isSubstantiveText(value) || GENERIC_PLACEHOLDER_LANGUAGE.test(value),
+      (value) => !substantiveWorkedText(value) || GENERIC_PLACEHOLDER_LANGUAGE.test(value),
     )
   ) {
     issues.push('worked_process_missing_required_structure');
@@ -1603,7 +1764,6 @@ function workedProcessIssueCodes(
     issues.push('worked_process_missing_interaction');
   } else {
     const interactiveTexts = [
-      ...(process.inputs ?? []),
       interaction.activity.prompt,
       interaction.activity.correctDebrief,
       interaction.hint,
@@ -1613,19 +1773,30 @@ function workedProcessIssueCodes(
       interaction.transfer.prompt,
       interaction.transfer.debrief,
       ...interaction.activity.options.flatMap((option) => [
-        option.text,
         option.feedbackIfSelected,
         option.misconception?.hypothesis ?? '',
         option.misconception?.whyTempting ?? '',
         option.misconception?.correction ?? '',
       ]),
-      ...interaction.scaffold.options.flatMap((option) => [option.text, option.feedbackIfSelected]),
-      ...interaction.transfer.options.flatMap((option) => [option.text, option.feedbackIfSelected]),
+      ...interaction.scaffold.options.map((option) => option.feedbackIfSelected),
+      ...interaction.transfer.options.map((option) => option.feedbackIfSelected),
     ];
     if (
       interactiveTexts
         .filter(Boolean)
-        .some((value) => !isSubstantiveText(value) || GENERIC_PLACEHOLDER_LANGUAGE.test(value))
+        .some(
+          (value) => !substantiveWorkedText(value) || GENERIC_PLACEHOLDER_LANGUAGE.test(value),
+        ) ||
+      [
+        ...(process.inputs ?? []).map((text) => ({ text })),
+        ...interaction.activity.options,
+        ...interaction.scaffold.options,
+        ...interaction.transfer.options,
+      ].some(
+        (option) =>
+          FIELD_LABEL_ONLY.test(normalized(option.text)) ||
+          GENERIC_PLACEHOLDER_LANGUAGE.test(option.text),
+      )
     ) {
       issues.push('worked_interaction_missing_required_structure');
     }
@@ -1662,15 +1833,15 @@ function workedProcessIssueCodes(
     )
   )
     issues.push('worked_process_relevance_uncertain');
-  if (!isSemanticallyDistinct(process.startingState, process.result)) {
+  // Added permissions, changed quantities and negation matter even with identical vocabulary.
+  const sameState = (left: string, right: string) =>
+    left.normalize('NFKC').replace(/\s+/gu, '') === right.normalize('NFKC').replace(/\s+/gu, '');
+  if (sameState(process.startingState, process.result)) {
     issues.push('worked_process_has_no_real_transition');
   }
   let precedingState = process.startingState;
   for (const step of process.steps) {
-    if (
-      !isSemanticallyDistinct(precedingState, step.resultingState) ||
-      !isSemanticallyDistinct(step.action, step.resultingState)
-    ) {
+    if (sameState(precedingState, step.resultingState)) {
       issues.push('worked_process_has_no_real_transition');
       break;
     }
@@ -1733,7 +1904,7 @@ function lessonIssueMessage(code: string, slotId: string): string {
     worked_interaction_missing_required_structure: `${slotId} worked interaction needs a substantive guided choice, targeted feedback, hint, scaffold, debrief, and changed-condition transfer.`,
     worked_interaction_relevance_uncertain: `${slotId} worked interaction has low lexical overlap with its objective or source; retain this only as an advisory relevance signal.`,
     worked_interaction_transfer_not_changed: `${slotId} transfer activity must change the case rather than repeat the guided decision.`,
-    missing_focused_worked_interaction: `${slotId} must turn its already-planned learner action into one worked interaction for this focused working-fluency-or-deeper Lesson.`,
+    missing_focused_worked_interaction: `${slotId} must turn its already-planned learner action into one worked interaction for this working-fluency-or-deeper Lesson, including normal Units.`,
     unplanned_worked_process: `${slotId} cannot add a worked process outside the immutable skeleton role.`,
   };
   return messages[code] ?? `${slotId} does not satisfy its immutable Lesson quality contract.`;
@@ -1767,7 +1938,7 @@ export function evaluateLessonSlotPedagogy(
 ): LessonPedagogyEvaluation {
   const findings: LessonPedagogyFinding[] = cognitiveLessonFindings(payload, input);
   const contentById = new Map(payload.slots.map((content) => [content.slotId, content]));
-  const focusedInteractionSlotId = focusedWorkedInteractionSlotId(input);
+  const focusedInteractionSlotId = conceptualWorkedInteractionSlotId(input);
 
   if (payload.narrative) {
     const narrativeText = `${payload.narrative.whyNow} ${payload.narrative.summary} ${payload.narrative.forwardBridge ?? ''}`;

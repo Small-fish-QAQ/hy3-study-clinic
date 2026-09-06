@@ -417,7 +417,8 @@ export const LessonSegmentProjectionSchema = z
             ]),
             fromProposition: z.string().min(1).max(700),
             toProposition: z.string().min(1).max(700),
-            relevanceToObjective: z.string().min(1).max(700),
+            /** Historical projections only; current rationale stays private. */
+            relevanceToObjective: z.string().min(1).max(700).optional(),
             origin: LessonTeachingOriginSchema.optional(),
             sources: z.array(LessonSourceProjectionSchema).max(8).optional(),
           })

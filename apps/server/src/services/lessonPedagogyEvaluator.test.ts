@@ -684,6 +684,11 @@ function compositionalInputs(
                   reasoningOperation: 'predict_outcome',
                   decisiveCondition:
                     'Three candidates were inspected; two failed the eligibility condition.',
+                  evidenceContrast: {
+                    evidence: 'Two incompatible candidates are marked for exclusion',
+                    replacement: 'All three candidates satisfy the condition',
+                    alternativeOptionId: 'B',
+                  },
                   requiredInference:
                     'The returned set contains one passage and cannot fill a two-passage display.',
                   prompt:
@@ -698,7 +703,7 @@ function compositionalInputs(
                     },
                     {
                       id: 'B',
-                      text: 'Keep every candidate with familiar wording.',
+                      text: 'It receives two eligible passages, filling both positions.',
                       feedbackIfSelected:
                         'Familiar wording does not establish eligibility under the condition.',
                       misconception: {
@@ -755,6 +760,11 @@ function compositionalInputs(
                     'The formerly eligible result must be replaced because its eligibility changed.',
                   changedCondition:
                     'The retrieval condition changes and a formerly eligible passage now fails it.',
+                  evidenceContrast: {
+                    evidence: 'a formerly eligible passage now fails it',
+                    replacement: 'the former result is still the only eligible passage',
+                    alternativeOptionId: 'A',
+                  },
                   prompt: 'How should the retrieval result change?',
                   options: [
                     {
@@ -786,10 +796,15 @@ function compositionalInputs(
               reasoningOperation: 'predict_outcome',
               decisiveCondition:
                 'A candidate has familiar wording but fails the current condition.',
+              evidenceContrast: {
+                evidence: 'One candidate fails the condition',
+                replacement: 'Every candidate satisfies the condition',
+                alternativeOptionId: 'B',
+              },
               requiredInference: 'That candidate cannot remain in the returned set.',
               kind: construct === 'apply' ? 'apply_simple_example' : 'choose_alternative',
               prompt:
-                'Which candidate decision preserves the retrieval condition and the eligible returned result?',
+                'One candidate fails the condition. Which candidate decision preserves the retrieval condition and the eligible returned result?',
               expectedSignal:
                 'The learner connects the retrieval condition to candidate eligibility.',
               ...(construct === 'apply'
@@ -803,7 +818,7 @@ function compositionalInputs(
                       },
                       {
                         id: 'B',
-                        text: 'Keep every candidate because its label looks familiar.',
+                        text: 'Keep every candidate in the eligible returned set.',
                         feedbackIfSelected: 'A familiar label does not establish eligibility.',
                       },
                     ],
@@ -852,6 +867,11 @@ function compositionalInputs(
       initial: {
         reasoningOperation: 'predict_outcome',
         decisiveCondition: 'Two candidates fail the new query condition; the rest are eligible.',
+        evidenceContrast: {
+          evidence: 'two candidates that fail its retrieval condition',
+          replacement: 'no candidates that fail its retrieval condition',
+          alternativeOptionId: 'B',
+        },
         requiredInference:
           'Exclude the failing candidates and return the remaining eligible passage.',
         prompt:
@@ -864,7 +884,7 @@ function compositionalInputs(
           },
           {
             optionRef: 'B',
-            text: 'Return every candidate regardless of the retrieval condition.',
+            text: 'Return every candidate in the set.',
             feedbackIfSelected: 'This ignores candidate eligibility.',
           },
           {
@@ -881,6 +901,11 @@ function compositionalInputs(
       retry: {
         reasoningOperation: 'locate_boundary',
         decisiveCondition: 'The later query changes a previously satisfied condition.',
+        evidenceContrast: {
+          evidence: 'making one former candidate ineligible',
+          replacement: 'leaving the former candidate as the only eligible result',
+          alternativeOptionId: 'A',
+        },
         requiredInference:
           'Exclude the newly failing candidate and return the remaining eligible passage.',
         prompt:
@@ -921,6 +946,49 @@ function compositionalInputs(
 }
 
 describe('compositional Lesson and Practice evaluators', () => {
+  it('does not mistake 如何处理 for a question about source location', () => {
+    const fixture = compositionalInputs('explain');
+    const check = fixture.lesson.slots.find((slot) => slot.informalCheck)!.informalCheck!;
+    check.prompt =
+      '当前用户Bob角色Viewer，其Agent发起batch_reparse调用同租户文档。该Agent请求会被如何处理？';
+    expect(
+      evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, { evaluatedAt }).findings.map(
+        (finding) => finding.code,
+      ),
+    ).not.toContain('lesson_source_location_trivia');
+    check.prompt = '当前资料位于文档何处？';
+    expect(
+      evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, { evaluatedAt }).findings.map(
+        (finding) => finding.code,
+      ),
+    ).toContain('lesson_source_location_trivia');
+  });
+  it('accepts a bound private relation reference and a concise Chinese proposition without exposing aliases', () => {
+    const fixture = compositionalInputs('explain');
+    const slot = fixture.lesson.slots.find((candidate) => candidate.semanticRelations.length)!;
+    slot.semanticRelations[0]!.relevanceToObjective = 'O1';
+    slot.semanticRelations[0]!.toProposition = '操作被系统执行';
+    const evaluated = evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, {
+      evaluatedAt,
+    });
+    expect(evaluated.findings.filter((finding) => finding.severity === 'error')).toEqual([]);
+    slot.semanticRelations[0]!.relevanceToObjective = 'O99';
+    expect(
+      evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, { evaluatedAt }).findings,
+    ).toContainEqual(
+      expect.objectContaining({
+        code: 'relation_objective_reference_outside_slot',
+        severity: 'error',
+      }),
+    );
+    slot.semanticRelations[0]!.relevanceToObjective = 'O1';
+    slot.explanation += ' O1';
+    expect(
+      evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, { evaluatedAt }).findings,
+    ).toContainEqual(
+      expect.objectContaining({ code: 'lesson_internal_alias_leak', severity: 'error' }),
+    );
+  });
   it('accepts an objective-aligned orientation', () => {
     const fixture = compositionalInputs('explain');
     const orientation = fixture.lesson.slots.find(
@@ -1267,9 +1335,9 @@ describe('compositional Lesson and Practice evaluators', () => {
   it('accepts source-stated procedural action questions without treating them as location trivia', () => {
     const fixture = compositionalInputs('apply');
     fixture.practice.items[0]!.initial.prompt =
-      'The bounded retrieval procedure has begun. Which action should happen next under the source-stated procedure?';
+      'The bounded retrieval procedure has two candidates that fail its retrieval condition. Which action should happen next under the source-stated procedure?';
     fixture.practice.items[0]!.retry.prompt =
-      'Which action completes the source-stated transition after the retrieval condition changes?';
+      'The condition changed, making one former candidate ineligible. Which action completes the source-stated transition after the retrieval condition changes?';
     expect(
       evaluatePlannedPracticeQuality(fixture.practice, fixture.practiceInput, {
         evaluatedAt,

@@ -33,6 +33,11 @@ it('keeps the eight private cognitive operations out of learner Practice project
     reasoningOperation: 'choose_design',
     decisiveCondition: 'The destination now requires an independent audit copy.',
     requiredInference: 'Add a separate audit consumer.',
+    evidenceContrast: {
+      evidence: 'The destination requires an audit copy.',
+      replacement: 'The destination forbids additional copies.',
+      alternativeOptionId: 'B',
+    },
   };
   expect(LessonPracticeSurfaceSchema.parse(authored)).toEqual(authored);
   const item = {
@@ -57,6 +62,7 @@ it('keeps the eight private cognitive operations out of learner Practice project
     reasoningOperation: authored.reasoningOperation,
     decisiveCondition: authored.decisiveCondition,
     requiredInference: authored.requiredInference,
+    evidenceContrast: authored.evidenceContrast,
   })) {
     expect(
       LearnerPracticeProjectionSchema.safeParse({ ...projection, item: { ...item, [key]: value } })

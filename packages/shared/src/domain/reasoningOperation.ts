@@ -13,11 +13,21 @@ export const ReasoningOperationSchema = z.enum([
 ]);
 export type ReasoningOperation = z.infer<typeof ReasoningOperationSchema>;
 
+/** A case fact and a replacement that would make another offered answer correct. */
+export const EvidenceContrastSchema = z
+  .object({
+    evidence: z.string().trim().min(6).max(250),
+    replacement: z.string().trim().min(6).max(250),
+    alternativeOptionId: z.string().regex(/^[A-E]$/u),
+  })
+  .strict();
+
 /** Optional for historical JSON; current generation policy requires declarations. */
 export const PrivateReasoningFields = {
   reasoningOperation: ReasoningOperationSchema.optional(),
   requiredInference: z.string().trim().min(1).max(300).optional(),
   decisiveCondition: z.string().trim().min(1).max(300).optional(),
+  evidenceContrast: EvidenceContrastSchema.optional(),
 };
 
 export function isReasoningOperation(operation: ReasoningOperation | undefined): boolean {

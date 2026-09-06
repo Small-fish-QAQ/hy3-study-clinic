@@ -390,7 +390,12 @@ function omitNullReasoningDeclarations(
   path: string,
   recorder: NormalizationRecorder,
 ): void {
-  for (const key of ['reasoningOperation', 'requiredInference', 'decisiveCondition'] as const) {
+  for (const key of [
+    'reasoningOperation',
+    'requiredInference',
+    'decisiveCondition',
+    'evidenceContrast',
+  ] as const) {
     omitOptionalNull(action, key, `${path}.${key}`, recorder);
   }
 }
@@ -430,6 +435,8 @@ const LEARNER_TEXT_KEYS = new Set([
   'whyResultFollows',
   'whyTempting',
   'expectedSignal',
+  // This private field quotes a learner-visible fact and must track alias-only corrections.
+  'evidence',
 ]);
 
 function mergeAliasTextLeaves(previous: unknown, repaired: unknown, parentKey: string): unknown {

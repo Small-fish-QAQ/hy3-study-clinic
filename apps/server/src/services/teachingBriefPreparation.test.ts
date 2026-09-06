@@ -13,6 +13,7 @@ import type {
   ProviderCallOptions,
   StructuredOutputDiagnostic,
   TutorTurnInput,
+  TeachingContentReviewInput,
 } from '../llm/provider.js';
 import { createRepositories, type Repositories } from '../repositories/index.js';
 import {
@@ -58,6 +59,18 @@ function operationStudySessionId(db: SqliteDb, operationId: string): string | nu
 }
 
 class CountingProvider extends FakeProvider {
+  async reviewTeachingContent(input: TeachingContentReviewInput, opts?: ProviderCallOptions) {
+    opts?.onRequestSent?.();
+    return {
+      decisions: input.actionIds.map((actionId) => ({
+        actionId,
+        answerId: actionId.endsWith('.transfer') || actionId.endsWith('.retry') ? 'B' : 'A',
+        requiresCaseInference: true,
+        evidenceUsed: 'The fixture has explicit current capacity and a changed constraint.',
+      })),
+      findings: [],
+    };
+  }
   lessonContentCalls = 0;
   practiceContentCalls = 0;
   failLessonContent = false;
@@ -238,54 +251,9 @@ class CountingProvider extends FakeProvider {
     const item = unrelated.items[0]!;
     item.capabilityTested = '辨认叶绿体在植物细胞光合作用中的功能。';
     item.pedagogicalReason = '检验对植物细胞器与光能吸收关系的区分。';
-    item.initial = {
-      ...item.initial,
-      prompt: '植物叶片中负责吸收光能的细胞器是哪一个？',
-      options: [
-        {
-          optionRef: 'A',
-          text: '叶绿体依靠其中的色素吸收光能。',
-          feedbackIfSelected: '正确：叶绿体色素承担吸收光能的功能。',
-        },
-        {
-          optionRef: 'B',
-          text: '细胞核负责吸收全部入射光能。',
-          feedbackIfSelected: '细胞核主要保存遗传物质，并不承担吸光功能。',
-        },
-        {
-          optionRef: 'C',
-          text: '细胞壁把阳光直接转化为遗传物质。',
-          feedbackIfSelected: '细胞壁提供结构支撑，不进行这种转化。',
-        },
-      ],
-      correctOptionRef: 'A',
-      hint: '关注含有吸光色素的植物细胞器。',
-      explanation: '叶绿体色素会吸收光合作用所需的光能。',
-    };
-    item.retry = {
-      ...item.retry,
-      prompt: '阴影中的叶片仍由哪个细胞器携带吸光色素？',
-      options: [
-        {
-          optionRef: 'A',
-          text: '液泡含有主要的吸光色素。',
-          feedbackIfSelected: '液泡主要储存水和溶解物质。',
-        },
-        {
-          optionRef: 'B',
-          text: '叶绿体仍然含有吸光色素。',
-          feedbackIfSelected: '正确：光照变化不会替换承担该功能的细胞器。',
-        },
-        {
-          optionRef: 'C',
-          text: '细胞膜在阴影中会变成吸光细胞器。',
-          feedbackIfSelected: '细胞膜仍是边界结构，不会变成该细胞器。',
-        },
-      ],
-      correctOptionRef: 'B',
-      hint: '光照条件改变不会替换相关细胞器。',
-      explanation: '叶片光照减少时，叶绿体仍保留其色素。',
-    };
+    // Isolate lexical relevance from the hard, case-evidence contract.
+    item.initial.explanation = '叶绿体色素会吸收光合作用所需的光能。';
+    item.retry.explanation = '叶片光照减少时，叶绿体仍保留其色素。';
     return unrelated;
   }
 
@@ -371,6 +339,7 @@ async function createHarness(
   providerDelayMs = 0,
   semanticVerdict: 'pass' | 'fail' = 'pass',
   targetConstruct: 'explain' | 'apply' = 'explain',
+  desiredDepth: 'working_fluency' | 'pass_oriented' = 'working_fluency',
 ): Promise<Harness> {
   const db = openDatabase(':memory:');
   databases.push(db);
@@ -491,7 +460,7 @@ async function createHarness(
   });
   const draft = services.learningContracts.createDraft({
     command: command('contract-create'),
-    fields: contractFields(role.id, role.version, targetConstruct),
+    fields: { ...contractFields(role.id, role.version, targetConstruct), desiredDepth },
     predecessorContractId: null,
     expectedActiveContractId: null,
   }).contract;
@@ -1198,6 +1167,113 @@ afterEach(() => {
 });
 
 describe('Teaching Brief preparation', () => {
+  it('tracks REAL editorial passes and binds the accepted artifacts to their final calls', async () => {
+    const harness = await createHarness();
+    Object.defineProperty(harness.provider, 'name', { value: 'hy3' });
+    const route = startTeachingRoute(harness);
+    harness.provider.failLessonIndependentEvaluationOnce = true;
+    const result = await harness.services.teachingBriefPreparation.prepare(
+      preparationRequest(harness, route, 'reviewed-teaching'),
+    );
+    expect(result.status).toBe('prepared');
+    expect(harness.provider.lessonContentCalls).toBe(2);
+    expect(harness.provider.practiceContentCalls).toBe(2);
+    const reviewedInput = harness.provider.lastLessonContentInput!;
+    const relationSlot = reviewedInput.skeleton.lessonSlots.find(
+      (slot) => slot.qualityContract === 'semantic_relation',
+    )!;
+    expect(
+      reviewedInput.draftForReview!.slots.find((slot) => slot.slotId === relationSlot.slotId)!
+        .semanticRelations,
+    ).toEqual([]);
+    expect(result.brief.pedagogyEvaluation?.status).toBe('pass');
+    expect(harness.provider.lastLessonContentInput?.draftForReview?.slots.length).toBeGreaterThan(
+      0,
+    );
+    expect(harness.provider.lastPracticeContentInput?.draftForReview?.items.length).toBeGreaterThan(
+      0,
+    );
+    expect(result.brief.composition?.lessonLogicalCallId).toMatch(/:lesson-editor$/u);
+    expect(result.brief.composition?.practiceLogicalCallId).toMatch(/:practice-editor$/u);
+    expect(
+      harness.db
+        .prepare('SELECT COUNT(*) AS count FROM model_logical_calls WHERE study_session_id=?')
+        .get(route.session.id),
+    ).toEqual({ count: 6 });
+    const checkpoint = harness.repos.acceptedLessonCheckpoints.get(
+      result.brief.composition!.acceptedLessonCheckpointId,
+    )!;
+    expect(checkpoint.lessonLogicalCallId).toBe(result.brief.composition?.lessonLogicalCallId);
+    expect(checkpoint.lessonEvaluation.contentReview).toHaveLength(1);
+    expect(result.brief.practice?.qualityEvaluation.contentReview).toHaveLength(1);
+  });
+
+  it('never checkpoints an unreviewed REAL draft when the editorial pass fails', async () => {
+    const harness = await createHarness();
+    Object.defineProperty(harness.provider, 'name', { value: 'hy3' });
+    const route = startTeachingRoute(harness);
+    harness.provider.onLessonContentGenerated = () => {
+      harness.provider.failLessonContent = true;
+    };
+    await expect(
+      harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, 'failed-teaching-editor'),
+      ),
+    ).rejects.toBeDefined();
+    expect(harness.provider.lessonContentCalls).toBe(2);
+    expect(harness.provider.practiceContentCalls).toBe(0);
+    expect(
+      harness.db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get(),
+    ).toEqual({ count: 0 });
+  });
+
+  it('preserves the reviewed Lesson across a Practice editor failure and resumes only Practice', async () => {
+    const harness = await createHarness();
+    Object.defineProperty(harness.provider, 'name', { value: 'hy3' });
+    const route = startTeachingRoute(harness);
+    harness.provider.onPracticeContentGenerated = () => {
+      harness.provider.failPracticeContentOnce = true;
+      harness.provider.onPracticeContentGenerated = null;
+    };
+    await expect(
+      harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, 'practice-editor-failure'),
+      ),
+    ).rejects.toBeDefined();
+    const row = harness.db.prepare('SELECT id FROM accepted_lesson_checkpoints').get() as {
+      id: string;
+    };
+    const checkpointBytes = JSON.stringify(harness.repos.acceptedLessonCheckpoints.get(row.id));
+    expect(harness.provider.lessonContentCalls).toBe(2);
+    expect(harness.provider.practiceContentCalls).toBe(2);
+    const ready = await harness.services.teachingBriefPreparation.prepare(
+      preparationRequest(harness, route, 'practice-editor-retry'),
+    );
+    expect(harness.provider.lessonContentCalls).toBe(2);
+    expect(harness.provider.practiceContentCalls).toBe(4);
+    expect(ready.brief.composition?.acceptedLessonCheckpointId).toBe(row.id);
+    expect(JSON.stringify(harness.repos.acceptedLessonCheckpoints.get(row.id))).toBe(
+      checkpointBytes,
+    );
+  });
+
+  it('revalidates current authority before sending the Lesson draft to the editor', async () => {
+    const harness = await createHarness();
+    Object.defineProperty(harness.provider, 'name', { value: 'hy3' });
+    const route = startTeachingRoute(harness);
+    harness.provider.onLessonContentGenerated = () =>
+      staleCurrentCurriculumSemanticSupport(harness, 'Changed before editorial generation.');
+    await expect(
+      harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, 'editor-stale-authority'),
+      ),
+    ).rejects.toMatchObject({ code: ApiErrorCode.ValidationError });
+    expect(harness.provider.lessonContentCalls).toBe(1);
+    expect(harness.provider.practiceContentCalls).toBe(0);
+    expect(
+      harness.db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get(),
+    ).toEqual({ count: 0 });
+  });
   it('accepts the exact just-under-budget annotated multi-objective source envelope', () => {
     const buildEnvelope = (quoteLength: number) => {
       const objectiveRefs = ['O1', 'O2', 'O3', 'O4'];
@@ -1605,8 +1681,8 @@ describe('Teaching Brief preparation', () => {
     expect(harness.provider.lessonContentCalls).toBe(1);
     expect(harness.provider.practiceContentCalls).toBe(1);
     const choiceCheck = prepared.brief.segments
-      .map((segment) => segment.informalCheck)
-      .find((check) => check?.kind === 'choose_alternative');
+      .map((segment) => segment.workedProcess?.interaction?.activity ?? segment.informalCheck)
+      .find((check) => check?.options?.length);
     expect(choiceCheck?.options?.length).toBeGreaterThanOrEqual(2);
     expect(choiceCheck?.correctOptionId).toBeTruthy();
 
@@ -2815,8 +2891,16 @@ describe('Teaching Brief preparation', () => {
       reasoningOperation: 'diagnose_cause',
       requiredInference: expect.any(String),
       decisiveCondition: expect.any(String),
+      evidenceContrast: expect.objectContaining({ evidence: expect.any(String) }),
     });
-    for (const key of ['reasoningOperation', 'requiredInference', 'decisiveCondition'])
+    for (const key of [
+      'reasoningOperation',
+      'requiredInference',
+      'decisiveCondition',
+      'evidenceContrast',
+      'relevanceToObjective',
+      'contentReview',
+    ])
       expect(JSON.stringify(ready)).not.toContain(key);
   });
 
@@ -3573,8 +3657,8 @@ describe('Teaching Brief preparation', () => {
     );
   });
 
-  it('prepares and presents a lesson inside a StudySession without formal credit', async () => {
-    const harness = await createHarness();
+  it('prepares and presents a basic lesson inside a StudySession without formal credit', async () => {
+    const harness = await createHarness(0, 'pass', 'explain', 'pass_oriented');
     const agenda = harness.repos.sessionAgendas.list('ws_1').at(-1)!;
     const execution = harness.repos.courseExecution.get('ws_1');
     const started = harness.services.studySessions.start('ws_1', {

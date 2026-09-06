@@ -319,6 +319,7 @@ export const TeachingWorkedInteractionTransferSchema = z
   .object({
     reasoningOperation: PrivateReasoningFields.reasoningOperation,
     requiredInference: PrivateReasoningFields.requiredInference,
+    evidenceContrast: PrivateReasoningFields.evidenceContrast,
     changedCondition: z.string().min(1).max(800),
     prompt: z.string().min(1).max(900),
     options: z.array(TeachingWorkedInteractionSimpleOptionSchema).min(3).max(5),

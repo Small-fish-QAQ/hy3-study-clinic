@@ -1743,7 +1743,7 @@ export class FakeProvider implements LlmProvider {
         ? '这里会投入更多讲解，用更丰富的案例、影响结果的边界和有用的后续联系把它讲透。'
         : '我们会完整展开核心思路，同时避免无关岔路。';
     const focusedWorkedInteractionSlotId =
-      input.courseDesign?.unitFocus === 'focused' &&
+      input.courseDesign !== undefined &&
       input.courseDesign.desiredDepth !== 'pass_oriented' &&
       !input.skeleton.lessonSlots.some((slot) => slot.qualityContract === 'worked_process')
         ? input.skeleton.lessonSlots.find((slot) => slot.learnerActionRequired)?.slotId
@@ -1820,6 +1820,11 @@ export class FakeProvider implements LlmProvider {
                   activity: {
                     reasoningOperation: 'predict_outcome',
                     decisiveCondition: '甲正在运行，当前空闲2个配额，乙需要3个且不能拆分。',
+                    evidenceContrast: {
+                      evidence: '甲运行中，空闲配额为2',
+                      replacement: '甲已完成，空闲配额为4',
+                      alternativeOptionId: 'B',
+                    },
                     requiredInference: '乙必须留在等待队列，直到至少归还一个配额。',
                     prompt: `把“${topic}”的条件判断落实到刚算出的快照：甲完成前，乙会进入什么状态？`,
                     options: [
@@ -1884,6 +1889,11 @@ export class FakeProvider implements LlmProvider {
                     reasoningOperation: 'choose_design',
                     requiredInference: '把乙交给独立的备用处理器，保留各自的配额边界。',
                     changedCondition: `“${topic}”案例新增截止约束：乙必须在甲结束前启动；另有一个空闲容量3的独立备用处理器。`,
+                    evidenceContrast: {
+                      evidence: '乙必须在甲结束前启动；另有一个空闲容量3的独立备用处理器',
+                      replacement: '乙允许在甲结束后启动，且没有备用处理器',
+                      alternativeOptionId: 'A',
+                    },
                     prompt: '怎样安排乙，才能同时满足截止要求和资源限制？',
                     options: [
                       {
@@ -1911,11 +1921,17 @@ export class FakeProvider implements LlmProvider {
             : null;
         const informalCheck =
           slot.learnerActionRequired && !workedProcess
-            ? objective?.construct === 'identify'
+            ? objective?.construct === 'identify' ||
+              (input.courseDesign !== undefined && selectedDepth !== 'pass_oriented')
               ? {
                   kind: 'choose_alternative' as const,
                   reasoningOperation: 'judge_tradeoff' as const,
                   decisiveCondition: '请求必须在5秒内完成；甲耗时2秒错误率1%，乙耗时20秒错误率0%。',
+                  evidenceContrast: {
+                    evidence: '请求必须在5秒内完成',
+                    replacement: '请求无完成时限，唯一目标是最低错误率',
+                    alternativeOptionId: 'B',
+                  },
                   requiredInference: '选择甲并记录误差风险，因为乙无法满足截止约束。',
                   prompt: `给“${topic}”增加一个补充比较案例：请求必须在5秒内完成。方案甲耗时2秒、错误率1%；乙耗时20秒、错误率0%。这次应选择哪个方案？`,
                   expectedSignal: '截止条件使乙不可行；甲仍有误差，因此需要同时记录风险。',
@@ -2068,6 +2084,11 @@ export class FakeProvider implements LlmProvider {
           initial: {
             reasoningOperation: 'diagnose_cause',
             decisiveCondition: '完成日志确认任务结束，但占用计数未减少，后续任务持续等待。',
+            evidenceContrast: {
+              evidence: '完成日志确认旧任务已结束',
+              replacement: '日志确认旧任务仍在运行',
+              alternativeOptionId: 'C',
+            },
             requiredInference: '完成事件没有更新配额状态，应先检查归还动作。',
             prompt: initialPrompt,
             options: [
@@ -2099,6 +2120,11 @@ export class FakeProvider implements LlmProvider {
           retry: {
             reasoningOperation: 'locate_boundary',
             decisiveCondition: '占用计数正确归零，但新任务仍无法开始，原来的资源归还症状消失。',
+            evidenceContrast: {
+              evidence: '占用计数已正确归零',
+              replacement: '已结束的任务仍占用全部配额',
+              alternativeOptionId: 'A',
+            },
             requiredInference: '计数已恢复使原诊断失去依据，应检查后续调度条件。',
             prompt: retryPrompt,
             options: [

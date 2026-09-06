@@ -628,11 +628,10 @@ export function createLessonExecutionService({
         ...(segment.semanticRelations
           ? {
               semanticRelations: segment.semanticRelations.map(
-                ({ kind, fromProposition, toProposition, relevanceToObjective, sourceRefIds }) => ({
+                ({ kind, fromProposition, toProposition, sourceRefIds }) => ({
                   kind,
                   fromProposition,
                   toProposition,
-                  relevanceToObjective,
                   origin: authority(
                     sourceRefIds.length > 0 ? 'source_backed_teaching' : 'ai_teaching_synthesis',
                   ),

@@ -16,6 +16,7 @@ import {
   RemediationPlanProposalPayloadSchema,
   StudyPlanProposalPayloadSchema,
   TeachingBriefProposalPayloadSchema,
+  TeachingContentReviewSchema,
   LessonSlotContentProposalPayloadSchema,
   PracticeContentProposalPayloadSchema,
   ObjectiveAuthoritySemanticEvaluationProposalSchema,
@@ -41,6 +42,7 @@ import {
   type RemediationPlanProposalPayload,
   type StudyPlanProposalPayload,
   type TeachingBriefProposalPayload,
+  type TeachingContentReview,
   type LessonSlotContentProposalPayload,
   type PracticeContentProposalPayload,
   type RubricGrade,
@@ -81,6 +83,8 @@ import {
   teachingBriefMessages,
   lessonSlotContentMessages,
   practiceContentMessages,
+  teachingContentReviewMessages,
+  EVIDENCE_DECISION_AUTHORING,
   objectiveAuthoritySemanticEvaluationMessages,
   objectiveAuthoritySemanticRepairMessages,
   OBJECTIVE_AUTHORITY_SEMANTIC_CLOSED_KEY_RULES,
@@ -88,6 +92,7 @@ import {
   type ChatMessage,
 } from './prompts.js';
 import type {
+  TeachingContentReviewInput,
   AlignmentProposalInput,
   AssessmentProposalInput,
   ConceptAnalysisInput,
@@ -928,6 +933,19 @@ export class Hy3Provider implements LlmProvider {
     );
   }
 
+  async reviewTeachingContent(
+    input: TeachingContentReviewInput,
+    opts?: ProviderCallOptions,
+  ): Promise<TeachingContentReview> {
+    return this.complete(
+      teachingContentReviewMessages(input),
+      TeachingContentReviewSchema,
+      opts,
+      'Return the complete review. Cover each offered actionId exactly once and use only offered item identities. Keep decisions and concrete findings within the requested schema.',
+      { maxTokens: 8000, schemaName: 'teaching-content-review-v1', allowIndependentRepair: false },
+    );
+  }
+
   async generateLessonSlotContent(
     input: LessonSlotContentGenerationInput,
     opts?: ProviderCallOptions,
@@ -935,9 +953,10 @@ export class Hy3Provider implements LlmProvider {
     return this.complete(
       lessonSlotContentMessages(input),
       LessonSlotContentProposalPayloadSchema,
-      opts,
+      { ...opts, timeoutMs: opts?.timeoutMs ?? Math.max(this.config.timeoutMs, 180_000) },
       [
         'Repair only locally identified L* slots. Every other first-pass slot is frozen and cannot be changed, deleted, or reordered.',
+        EVIDENCE_DECISION_AUTHORING,
         'Preserve the whole-Lesson narrative unless a diagnostic explicitly identifies it. Return only slotId plus bounded content fields for repaired slots. Never output objective refs, construct, role, duration, protection, authority mode, Practice, Formal Evidence, mastery, or progression.',
         'Use only the slot-specific offered S*/V* aliases. A semantic relation needs two distinct propositions and objective relevance; keywords alone never prove reasoning.',
         'For a worked-process failure, provide starting state, meaningful transitions, and a prepared interaction before continuation. An interactive workedProcess owns the learner action: omit informalCheck from that slot. Other learnerActionRequired slots need an aligned pre-guidance informalCheck; choose_alternative requires structured choices and one correct option. Cite only supported components; supplementary worked cases keep sourceRefs empty.',
@@ -946,8 +965,9 @@ export class Hy3Provider implements LlmProvider {
         'Return a slots object containing only replacements for the named invalid L* identities. Local code will reassemble it with every frozen valid slot exactly.',
       ].join('\n'),
       {
-        maxTokens: 10_000,
-        schemaName: 'lesson-slot-content-v4-calibrated-cognition',
+        // Hy3 counts internal reasoning against this same output budget.
+        maxTokens: 16_000,
+        schemaName: 'lesson-slot-content-v5-evidence-decisions',
         candidateNormalizer: normalizeLessonPreparationCandidate,
         immutableItemIds: input.skeleton.lessonSlots.map((slot) => slot.slotId),
         targetedRepairCollection: {
@@ -968,9 +988,10 @@ export class Hy3Provider implements LlmProvider {
     return this.complete(
       practiceContentMessages(input),
       PracticeContentProposalPayloadSchema,
-      opts,
+      { ...opts, timeoutMs: opts?.timeoutMs ?? Math.max(this.config.timeoutMs, 180_000) },
       [
         'Repair only locally identified PR* items. The accepted Lesson and every other first-pass Practice item are frozen.',
+        EVIDENCE_DECISION_AUTHORING,
         'Return only practiceSlotId plus bounded item/surface content. Never output objective refs, construct, authority mode, duration, credit, Formal Evidence, mastery, or progression.',
         'Use only slot-specific offered S*/V* aliases and stay inside the locally stated capability and prohibited-construct boundary.',
         'For an apply failure, application must expose a source-stated starting state/rule, real decision, and expected action reflected by both prompt and action options. Lexical apply/next-step markers alone are invalid.',
@@ -979,8 +1000,8 @@ export class Hy3Provider implements LlmProvider {
         'Return an items object containing only replacements for the named invalid PR* identities. Local code will reassemble it with every frozen valid item exactly.',
       ].join('\n'),
       {
-        maxTokens: 8_000,
-        schemaName: 'practice-content-v4-calibrated-novelty',
+        maxTokens: 16_000,
+        schemaName: 'practice-content-v5-evidence-decisions',
         candidateNormalizer: normalizePracticePreparationCandidate,
         immutableItemIds: input.skeleton.practicePlan.slots.map((slot) => slot.practiceSlotId),
         targetedRepairCollection: {

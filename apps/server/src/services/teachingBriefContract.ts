@@ -353,6 +353,7 @@ function compositionValidationResult(options: {
 }
 
 const NON_LEARNER_TEXT_KEYS = new Set([
+  'relevanceToObjective',
   'sourceRefs',
   'visualRefs',
   'slotId',

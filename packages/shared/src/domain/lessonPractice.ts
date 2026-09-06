@@ -47,6 +47,57 @@ export const PracticeQualityFindingSchema = PedagogyFindingBaseSchema.extend({
 }).strict();
 export type PracticeQualityFinding = z.infer<typeof PracticeQualityFindingSchema>;
 
+export const TeachingContentReviewSchema = z
+  .object({
+    decisions: z
+      .array(
+        z
+          .object({
+            actionId: z.string().min(1).max(40),
+            answerId: z
+              .string()
+              .regex(/^[A-E]$/u)
+              .nullable(),
+            requiresCaseInference: z.boolean(),
+            evidenceUsed: z.string().min(1).max(500),
+          })
+          .strict(),
+      )
+      .max(40),
+    findings: z
+      .array(
+        z
+          .object({
+            itemId: z.string().min(1).max(40),
+            code: z.enum([
+              'answer_leak',
+              'insufficient_evidence',
+              'shallow_task',
+              'weak_transfer',
+              'practice_replay',
+              'accuracy',
+              'grounding',
+              'misconception',
+              'revealing_hint',
+            ]),
+            problem: z.string().min(1).max(800),
+            repairInstruction: z.string().min(1).max(1000),
+          })
+          .strict(),
+      )
+      .max(30),
+  })
+  .strict();
+export type TeachingContentReview = z.infer<typeof TeachingContentReviewSchema>;
+
+const TeachingContentReviewReceiptSchema = z
+  .object({
+    logicalCallId: z.string().min(1),
+    candidateHash: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
+    result: TeachingContentReviewSchema,
+  })
+  .strict();
+
 export const LessonPedagogyEvaluationSchema = z
   .object({
     schemaVersion: z.literal(1),
@@ -64,6 +115,7 @@ export const LessonPedagogyEvaluationSchema = z
     claimedAgendaMinutes: z.number().int().positive(),
     findings: z.array(LessonPedagogyFindingSchema).max(100),
     evaluatedAt: z.string().datetime(),
+    contentReview: z.array(TeachingContentReviewReceiptSchema).min(1).max(2).optional(),
   })
   .strict();
 export type LessonPedagogyEvaluation = z.infer<typeof LessonPedagogyEvaluationSchema>;
@@ -78,6 +130,7 @@ export const PracticeQualityEvaluationSchema = z
     boundedRepairAttempted: z.boolean(),
     findings: z.array(PracticeQualityFindingSchema).max(100),
     evaluatedAt: z.string().datetime(),
+    contentReview: z.array(TeachingContentReviewReceiptSchema).min(1).max(2).optional(),
   })
   .strict();
 export type PracticeQualityEvaluation = z.infer<typeof PracticeQualityEvaluationSchema>;
