@@ -66,6 +66,13 @@ import {
   usesComputedTeachingCases,
 } from './teachingCapsule.js';
 import { validateKernel } from './teachingKernel.js';
+import { confineTeachingCitations } from './teachingCitations.js';
+import {
+  TeachingStrategiesSchema,
+  teachingStrategyMessages,
+  validateTeachingStrategies,
+} from './teachingStrategy.js';
+import type { TeachingStrategyInput } from './provider.js';
 import { compileTeachingKernel } from '../services/compileTeachingKernel.js';
 import {
   TeachingBlueprintSchema,
@@ -948,6 +955,16 @@ export class Hy3Provider implements LlmProvider {
     );
   }
 
+  async planTeachingStrategies(input: TeachingStrategyInput, opts?: ProviderCallOptions) {
+    return this.complete(
+      teachingStrategyMessages(input),
+      TeachingStrategiesSchema,
+      { ...opts, validateCandidate: (raw) => validateTeachingStrategies(raw, input) },
+      'Choose exactly the offered objective identities and a faithful supported representation.',
+      { maxTokens: 4000, schemaName: 'teaching-strategies-v1', allowIndependentRepair: false },
+    );
+  }
+
   async generateTeachingCapsule(
     input: TeachingCapsuleGenerationInput,
     opts?: ProviderCallOptions,
@@ -1009,7 +1026,26 @@ export class Hy3Provider implements LlmProvider {
       {
         maxTokens: 16_000,
         schemaName: 'teaching-capsule-v1',
-        candidateNormalizer: normalizeTeachingCapsuleCandidate,
+        candidateNormalizer: (raw) => {
+          const normalized = normalizeTeachingCapsuleCandidate(raw);
+          const parsed = TeachingCapsulePayloadSchema.safeParse(normalized.candidate);
+          if (!parsed.success) return normalized;
+          const candidate = confineTeachingCitations(parsed.data, input);
+          return {
+            candidate,
+            actions: [
+              ...normalized.actions,
+              ...(JSON.stringify(candidate) !== JSON.stringify(parsed.data)
+                ? [
+                    {
+                      code: 'supplementary_citation_demoted' as const,
+                      paths: ['lesson', 'practice'],
+                    },
+                  ]
+                : []),
+            ],
+          };
+        },
         immutableItemIds: [
           ...input.lesson.skeleton.lessonSlots.map((s) => s.slotId),
           ...input.practiceSlots.map((s) => s.practiceSlotId),

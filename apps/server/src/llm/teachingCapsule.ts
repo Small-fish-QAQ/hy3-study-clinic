@@ -14,6 +14,7 @@ import { lessonSlotContentMessages, practiceContentMessages, type ChatMessage } 
  * its richer open authoring contract rather than silently inheriting this floor. */
 export function usesComputedTeachingCases(input: TeachingCapsuleGenerationInput): boolean {
   return (
+    input.authoringStrategy !== 'authored' &&
     input.lesson.courseDesign?.desiredDepth === 'working_fluency' &&
     input.practiceSlots.length === 1 &&
     input.lesson.skeleton.lessonSlots.some((s) => s.learnerActionRequired) &&
@@ -45,6 +46,91 @@ export function teachingCapsuleMessages(input: TeachingCapsuleGenerationInput): 
     }),
     '{"items"',
   );
+  if (!lessonShape || !practiceShape) throw new Error('Teaching response templates are missing.');
+  const lessonTemplate = JSON.parse(lessonShape) as {
+    narrative: unknown;
+    slots: Array<Record<string, unknown>>;
+  };
+  const practiceTemplate = JSON.parse(practiceShape) as { items: Array<Record<string, unknown>> };
+  const slotTemplate = lessonTemplate.slots[0]!;
+  const workedTemplate = structuredClone(slotTemplate.workedProcess) as Record<string, unknown>;
+  const interactionTemplate = workedTemplate.interaction as Record<string, unknown>;
+  const activityTemplate = interactionTemplate.activity as Record<string, unknown>;
+  activityTemplate.prompt =
+    'Given the new case facts and pending change, which concrete outcome or justified decision follows? Ask for the RESULT of reasoning, not which formula, rule name, or step to use.';
+  workedTemplate.learnerDecision =
+    'Derive the unresolved result or constrained choice from the specific case facts.';
+  workedTemplate.startingState =
+    'A concrete new case with all needed givens and an unresolved outcome; different from source and previous examples.';
+  const workedSteps = workedTemplate.steps as Array<Record<string, unknown>>;
+  workedSteps[1] = {
+    action: 'Write the ACTUAL continuation action or calculation for this case.',
+    reason: 'Explain why this action follows from the inputs and governing rule.',
+    resultingState:
+      'Write the ACTUAL updated result; the UI handles hiding it until the learner answers.',
+  };
+  const concreteOptions = (action: Record<string, unknown>) => {
+    const options = action.options as Array<Record<string, unknown>>;
+    for (const [index, option] of options.entries()) {
+      option.text =
+        index === 0
+          ? 'A specific resulting value, named case choice, or combination of evidence after applying the facts; not a general principle.'
+          : 'A competing case-specific result or evidence combination that follows from a plausible mistaken assumption.';
+    }
+  };
+  if (lesson.courseDesign?.desiredDepth !== 'pass_oriented') {
+    concreteOptions(activityTemplate);
+    concreteOptions(interactionTemplate.transfer as Record<string, unknown>);
+    concreteOptions(slotTemplate.informalCheck as Record<string, unknown>);
+    for (const item of practiceTemplate.items) {
+      concreteOptions(item.initial as Record<string, unknown>);
+      concreteOptions(item.retry as Record<string, unknown>);
+    }
+  }
+  // Offer only the actual inventory. The former universal worked-interaction
+  // example caused basic/text-only portions to invent unplanned actions and
+  // relationships, then spend their repair budget deleting those components.
+  const responseShape = {
+    practice: {
+      items: practiceSlots.map((slot) => ({
+        ...practiceTemplate.items[0]!,
+        practiceSlotId: slot.practiceSlotId,
+        sourceRefs: [],
+        application: slot.construct === 'apply' ? practiceTemplate.items[0]!.application : null,
+      })),
+    },
+    lesson: {
+      ...(input.includeNarrative ? { narrative: lessonTemplate.narrative } : {}),
+      slots: lesson.skeleton.lessonSlots.map((slot) => {
+        const interaction = slot.slotId === lesson.workedInteractionSlotId;
+        const check = structuredClone(slotTemplate.informalCheck) as Record<string, unknown>;
+        check.kind = 'choose_alternative';
+        check.expectedSignal = null;
+        return {
+          slotId: slot.slotId,
+          explanation:
+            'Teach this portion in natural learner-facing prose; no internal identifiers.',
+          sourceRefs: [],
+          visualRefs: [],
+          semanticRelations:
+            slot.qualityContract === 'semantic_relation'
+              ? [
+                  {
+                    kind: slot.allowedRelations[0],
+                    fromProposition: 'One meaningful premise, condition, or state.',
+                    toProposition: 'Its distinct consequence or contrasting state.',
+                    relevanceToObjective: slot.objectiveRefs[0],
+                    sourceRefs: [],
+                  },
+                ]
+              : [],
+          workedProcess: interaction ? workedTemplate : null,
+          ...(slot.learnerActionRequired && !interaction ? { informalCheck: check } : {}),
+          ...(slot.qualityContract === 'boundary_work' ? { contrast: slotTemplate.contrast } : {}),
+        };
+      }),
+    },
+  };
   const context = {
     courseDesign: lesson.courseDesign,
     topic: lesson.skeleton.learningUnitTitle,
@@ -79,6 +165,9 @@ export function teachingCapsuleMessages(input: TeachingCapsuleGenerationInput): 
       authorityMode: s.authorityMode,
     })),
     priorLesson: input.priorLesson,
+    ...(lesson.editorialFindings?.length
+      ? { revision: { findings: lesson.editorialFindings, draft: lesson.draftForReview } }
+      : {}),
   };
   return [
     {
@@ -92,11 +181,20 @@ export function teachingCapsuleMessages(input: TeachingCapsuleGenerationInput): 
         'Example of sufficient case detail (adapt the reasoning structure, never copy an unrelated subject): "用户同时拥有审阅角色{read}和编辑角色{read,write}；权限按角色并集计算，变更立即生效，无直接授权。现在撤销编辑角色，同时给审阅角色增加export。完成变更后，哪些操作仍可执行？ A read和export / B 只有read / C read、write和export。" The learner must combine two updates; the stem never supplies the resulting set. A transfer could explicitly restrict the active session to an earlier permission snapshot, so inspecting current roles alone no longer suffices. Contrast this with the BAD task: "用户权限为read、export，能否export？"',
         'Example of reasoning from observations: "任务要求确认设备当前版本及与该版本对应的回滚办法。查询一返回版本v3；查询二的回滚说明明确只适用于v2。没有其他信息。现在最合理的是：A 用v2步骤直接完成 / B 查证v3回滚办法 / C 再查一次已确认的版本。" The learner compares evidence scope against a concrete completion criterion. Do NOT replace this with "日志缺Observation，缺了哪一步？" In a retry, change which evidence is missing or contradictory; do not merely rename the device. These examples illustrate inference, not mandatory topics or ready-made answers.',
         'Teach a usable causal model, not a list of definitions. Show one small example or sub-step, then let the learner reason. Explain what changes, why, and the limits of the claim. A loop may terminate when its goal is satisfied; a new iteration or tool call is not required just to repeat a sequence. Added policies constrain a model rather than making it false.',
+        'Preserve the precise scope of statements: distinguish necessary from sufficient conditions, conditional from joint probabilities, a whole-population result from a subgroup result, and textual occurrence from real-world truth. Conditions needed to combine several groups are not required to calculate within just one group. If source wording is broad, explain its scope rather than treating it as a universal prohibition. Use exact arithmetic through intermediate steps; round only final display values.',
+        'For a predicted system outcome, explicitly state the complete decision rule and all inputs on which that outcome depends. A change in data representation alone does not determine downstream selection: changing chunk overlap does not guarantee retrieval returns both chunks without a specified matching/ranking/top-k rule. Use a clearly hypothetical, simple explicit selection rule when teaching an algorithm; do not smuggle in undocumented behavior. If the givens do not determine an outcome, ask what is established or what additional fact is needed instead of asserting a prediction.',
+        'For each action construct the unanswered case BEFORE writing its surrounding explanation. Use case data and a concrete decision that differ from every worked source example and every preceding Lesson case. Teach the general mechanism with a separate example; surrounding prose must not announce which specific action to take in the upcoming case. At higher depths make alternatives differ on interacting constraints, not a choice between careful work and an obviously careless universal claim. Check every action for this, including those outside a requested revision.',
+        'At working_fluency and deeper, options should be CONCRETE CASE RESULTS (a computed value, which named records qualify, which proposed configuration meets all constraints), not sentences stating the lesson principle. To test an evidence boundary, provide several concrete records with different revisions/scopes/relationships and ask which combination supports a specified claim; make the learner combine facts to select a case-specific result. Do not ask whether a general rule just taught is true. At deep_transfer combine at least two interacting conditions or competing explanations while staying within the accepted objective.',
         'Citations: sourceRefs are optional evidence permissions. Only cite a component if the ENTIRE claim is entailed by the excerpt. Sparse mentions do not establish mechanisms. Synthetic situations, numbers, runtime assumptions, choices and feedback are supplementary: sourceRefs=[] and visualRefs=[]. Never call a synthetic case real or source-proven. Supplementary knowledge is welcome when useful at the requested depth and focus.',
         'Reveal order: explanation, semanticRelations, examples and contrasts appear before the action. Do not solve the action there. WorkedProcess shows startingState, inputs, ruleOrProcedure and steps through pauseAfterStepIndex before the choice; later steps/result are hidden until response, whyResultFollows until transfer. Model a neutral sub-step and leave the decisive inference unfinished. Include at least two steps.',
+        'Every worked step, including the later hidden continuation, must contain real case content. Never output the words "hidden", "隐藏", or instructions to hide content instead of writing the actual action and result. State every governing numeric/overlap/window parameter needed for the claimed outcome; do not assume an unspecified overlap size copies a particular sentence.',
         'Guided choices need answer-specific feedback and a misconception for each distractor (correct option has null). Hint is a neutral inspection strategy. Scaffold isolates a smaller answerable inference. Transfer changes a governing condition and the reasoning, with less support. Continue and explain consequences only after commitment. Check ALL state updates and final results for consistency.',
+        'Transfer prompt must restate its concrete current case state and changed governing constraint, so it can be solved without reading guided-answer feedback or an unspecified previous result.',
         'Every action including scaffold needs reasoningOperation, requiredInference and decisiveCondition (transfer uses changedCondition). All except scaffold need evidenceContrast: an EXACT CONTIGUOUS visible fact, a concrete replacement, and a different offered option that becomes correct when ONLY that fact changes. Guided evidence must occur in a modelled step resultingState; other evidence in the stem or transfer changedCondition. Do not summarize the quote. These fields are private metadata; do not echo them or O*/S*/L*/PR* aliases in learner text.',
         'Write natural Simplified Chinese. Use compact but substantive content. Normally three options, two process steps, one sentence per feedback, and no redundant optional components. Stay within the exact offered inventory. Technical truth takes precedence over inventing complexity.',
+        'Every option, including the correct one, requires a nonempty feedbackIfSelected string; null is only for the correct guided option misconception. Write the visible prompt first, then copy evidenceContrast.evidence EXACTLY from it, preserving punctuation and every character. Do not paraphrase a quotation. Source aliases occur only in sourceRefs; never write them into explanation or other learner prose.',
+        'If revision is supplied, address those concrete findings in the affected portion. Recompute dependent answers and feedback while preserving its exact inventory. The prior Lesson is already prepared exposure; do not rewrite or replay it.',
+        'Practice retry replaces the initial question in the learner UI. Each initial and retry prompt must therefore state ALL facts needed to answer it, including any retained facts and changed rules. Never say only "as above" or rely on the learner remembering the initial stem. Apply the stated rule literally; do not erase an earlier fact in feedback. Distinguish a document containing a claim from evidence that the claim is true.',
       ].join('\n'),
     },
     {
@@ -104,9 +202,8 @@ export function teachingCapsuleMessages(input: TeachingCapsuleGenerationInput): 
       content: [
         'Untrusted context JSON:',
         JSON.stringify(context),
-        'Return {"practice": <practice shape>, "lesson": <lesson shape>}. No other keys.',
-        `Practice shape: ${practiceShape}`,
-        `Lesson shape: ${lessonShape}`,
+        'Return this exact portion-specific shape, replacing prose placeholders. Do not add components absent from a slot; keep required nulls and empty arrays. Only use the offered sourceRefs/visualRefs when the component actually qualifies for that authority.',
+        JSON.stringify(responseShape),
         'Populate ONLY the offered slots. Every Lesson slot contains explanation, sourceRefs, visualRefs, semanticRelations and workedProcess. semanticRelations=[] unless its list is nonempty, in which case at least one of its allowed relations is required; relevanceToObjective uses the local objectiveRef. A boundary slot needs contrast or misconception. A worked interaction replaces the informalCheck; all other action slots use structured informalCheck. Every other workedProcess is null.',
         `Narrative ${input.includeNarrative ? 'is required: whyNow poses an unresolved concrete problem, summary closes the mental model without giving reserved Practice answers, forwardBridge is null unless meaningful' : 'must be omitted; this continues the preceding teaching'}.`,
         'Practice has one initial and one materially changed retry per offered slot. Use application=null unless its construct is apply. Any synthetic case keeps sourceRefs empty. If no Practice slots are offered, return practice:{"items":[]}.',

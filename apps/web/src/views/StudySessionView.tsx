@@ -939,22 +939,31 @@ export function StudySessionView({
 
         <div className="study-session-layout">
           <div className="study-session-learning-stack">
-            <LessonExecutionPanel
-              workspaceId={workspaceId}
-              sessionId={session.id}
-              agendaItemId={currentAgendaItem?.id ?? session.currentAgendaItemId ?? ''}
-              active={active}
-              busy={busy}
-              directCheckpointItemId={directCheckpointItem?.id ?? null}
-              formalAssessmentVersionId={formalAssessmentVersionId}
-              reviewMode={currentAgendaItem?.kind === 'due_review'}
-              onResumeStudySession={() => void lifecycle('resume')}
-              onStartFormalAssessment={() =>
-                void mixedCommand('direct_checkpoint', directCheckpointItem?.id ?? null)
-              }
-              onSessionVersionChange={updateLessonProjection}
-              onRefreshSession={refreshCurrentSession}
-            />
+            {currentAgendaItem ? (
+              <LessonExecutionPanel
+                workspaceId={workspaceId}
+                sessionId={session.id}
+                agendaItemId={currentAgendaItem?.id ?? session.currentAgendaItemId ?? ''}
+                active={active}
+                busy={busy}
+                directCheckpointItemId={directCheckpointItem?.id ?? null}
+                formalAssessmentVersionId={formalAssessmentVersionId}
+                reviewMode={currentAgendaItem?.kind === 'due_review'}
+                onResumeStudySession={() => void lifecycle('resume')}
+                onStartFormalAssessment={() =>
+                  void mixedCommand('direct_checkpoint', directCheckpointItem?.id ?? null)
+                }
+                onSessionVersionChange={updateLessonProjection}
+                onRefreshSession={refreshCurrentSession}
+              />
+            ) : (
+              <section className="lesson-execution-panel" aria-label="当前学习安排">
+                <h3>本轮学习安排已结束</h3>
+                <p>
+                  已完成的讲解与练习已保存。正式掌握仍需独立证据；你可以从课程主页查看后续安排与课程状态。
+                </p>
+              </section>
+            )}
             <section className="study-tutor-secondary" aria-label="Tutor 辅助">
               <header className="study-tutor-secondary-header">
                 <div>

@@ -70,6 +70,7 @@ import type {
   ObjectiveAuthoritySemanticRepairProposal,
   UnitFocus,
 } from '@hy3-clinic/shared';
+import type { TeachingStrategies } from './teachingStrategy.js';
 
 /** One original plus independently bounded schema and candidate repairs. */
 export const MAX_STRUCTURED_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL = 3;
@@ -120,7 +121,8 @@ export type ProviderNormalizationActionCode =
   | 'empty_array_defaulted'
   | 'nullable_field_defaulted'
   | 'unsupported_optional_mapping_removed'
-  | 'worked_interaction_fields_relocated';
+  | 'worked_interaction_fields_relocated'
+  | 'supplementary_citation_demoted';
 
 export interface ProviderNormalizationAction {
   code: ProviderNormalizationActionCode;
@@ -1272,9 +1274,20 @@ export interface TeachingCapsuleGenerationInput {
   practiceSlots: TeachingSkeleton['practicePlan']['slots'];
   priorLesson: TeachingLessonSlotContent[];
   includeNarrative: boolean;
+  /** Server-selected representation; absent on historical/provider compatibility inputs. */
+  authoringStrategy?: 'computed' | 'authored';
+}
+
+export interface TeachingStrategyInput {
+  courseDesign: LessonSlotContentGenerationInput['courseDesign'];
+  objectives: Array<{ objectiveRef: string; title: string; description: string }>;
 }
 
 export interface LlmProvider extends VisualDescriptionProvider {
+  planTeachingStrategies?(
+    input: TeachingStrategyInput,
+    opts?: ProviderCallOptions,
+  ): Promise<TeachingStrategies>;
   generateTeachingCapsule?(
     input: TeachingCapsuleGenerationInput,
     opts?: ProviderCallOptions,

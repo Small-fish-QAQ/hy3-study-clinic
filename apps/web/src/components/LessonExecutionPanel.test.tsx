@@ -1139,6 +1139,8 @@ describe('LessonExecutionPanel', () => {
     completed.allowedActions = ['review_lesson'];
     vi.spyOn(api, 'getLessonExecution').mockResolvedValue(completed);
     const handoff = vi.fn();
+    const refreshRoute = vi.fn();
+    const lessonCommand = vi.spyOn(api, 'lessonExecutionCommand');
     render(
       <LessonExecutionPanel
         workspaceId="ws_1"
@@ -1147,12 +1149,15 @@ describe('LessonExecutionPanel', () => {
         active
         directCheckpointItemId="checkpoint_1"
         onStartFormalAssessment={handoff}
+        onRefreshSession={refreshRoute}
       />,
     );
-    expect(
-      await screen.findByRole('heading', { name: '接下来可以进行正式检验' }),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/不代表已经掌握/)).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: '本节学习已完成' })).toBeInTheDocument();
+    expect(screen.getByText(/掌握程度仍需独立的正式证据检验/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '继续课程' }));
+    expect(refreshRoute).toHaveBeenCalledOnce();
+    expect(handoff).not.toHaveBeenCalled();
+    expect(lessonCommand).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: '开始正式检验' }));
     expect(handoff).toHaveBeenCalledTimes(1);
   });

@@ -631,6 +631,39 @@ beforeEach(() => {
 });
 
 describe('Curriculum proposal and authority boundaries', () => {
+  it('resumes a failed Detail dependency without regenerating its valid Course Map', async () => {
+    addGroundedConcept('stage-concept');
+    const model = new FakeProvider();
+    const map = vi.spyOn(model, 'proposeCourseMap');
+    const detail = vi.spyOn(model, 'proposeCurriculumDetails');
+    detail.mockRejectedValueOnce(ProviderError.network());
+    const service = () =>
+      createCurriculumService({
+        repos: createRepositories(db),
+        provider: model,
+        clock,
+        commands,
+        sourceAuthority: createSourceAuthorityService({
+          sourceAuthority: repos.sourceAuthority,
+          clock,
+        }),
+      });
+    await expect(service().propose(proposalRequest('detail-failure'))).rejects.toThrow();
+    expect(map).toHaveBeenCalledTimes(1);
+    expect(detail).toHaveBeenCalledTimes(1);
+    expect(repos.curricula.list('ws_1')).toEqual([]);
+    const completed = await service().propose(proposalRequest('detail-resume'));
+    expect(completed.curriculum.status).toBe('proposed');
+    expect(map).toHaveBeenCalledTimes(1);
+    expect(detail).toHaveBeenCalledTimes(2);
+    const hits = db
+      .prepare("SELECT id FROM model_logical_calls WHERE cache_status='hit'")
+      .all() as { id: string }[];
+    expect(hits).toHaveLength(1);
+    expect(repos.telemetry.listAttempts(hits[0]!.id)).toEqual([]);
+    expect(repos.courseExecution.get('ws_1').activeCurriculumId).toBeNull();
+  });
+
   it('selects the hierarchy-first generation path at the large-outline threshold', () => {
     expect(curriculumGenerationPolicyForOutline(79, LEGACY_CURRICULUM_GENERATION_POLICY)).toBe(
       LEGACY_CURRICULUM_GENERATION_POLICY,

@@ -127,6 +127,8 @@ export const LessonPedagogyEvaluationSchema = z
     jointAuthoring: z
       .object({
         executionVerified: z.boolean().optional(),
+        /** Computed Practice can coexist with open-authored Lesson portions. */
+        practiceExecutionVerified: z.boolean().optional(),
         logicalCallIds: z.array(z.string().min(1)).min(1).max(12),
         /** Untrusted until the separate Practice validator/review accepts it. Never projected. */
         practiceCandidate: z.unknown(),

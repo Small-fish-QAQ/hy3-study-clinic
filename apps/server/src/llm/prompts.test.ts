@@ -982,6 +982,11 @@ describe('prompt trust boundaries', () => {
       .map((message) => message.content)
       .join('\n');
     const shape = promptShape(content);
+    expect(content).toContain(
+      'Use high for central teaching obligations even when they lack Formal authority',
+    );
+    expect(content).toContain('Do not replace a central mechanism with a disclaimer');
+    expect(content).toContain('Reserve required for objectives whose exact evidence supports');
 
     expect(shape).not.toContain('"key":');
     expect(content).not.toContain('"key":"objective-1"');

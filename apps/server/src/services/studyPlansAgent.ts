@@ -1,5 +1,6 @@
 import {
   ApiErrorCode,
+  COURSE_PREPARATION_PLAN_TRIGGER,
   ApplyStudyPlanDraftEditRequestSchema,
   ProposeStudyPlanRequestSchema,
   StudyPlanHistoryResponseSchema,
@@ -46,6 +47,7 @@ import { createTelemetryProvider } from './providerTelemetry.js';
 import { assertLearningContractScopeCurrent } from './learningContractScope.js';
 import { buildPlanningRecommendations } from './planningRecommendations.js';
 import { validateCurriculumObjectiveAuthoritySemanticSupport } from './objectiveAuthoritySemanticSupport.js';
+import { deriveAcceptedCoursePlan } from './acceptedCoursePlan.js';
 
 interface StudyPlanAgentDeps {
   repos: Repositories;
@@ -288,10 +290,11 @@ function studyPlanPreflightFromContext(
   contract: LearningContract,
   input: StudyPlanProposalInput,
   profiles: ReturnType<typeof buildUnitLaunchProfiles>,
+  localRoute = Object.prototype.hasOwnProperty.call(contract, 'focusRequest'),
 ): StudyPlanPreflight {
   const grouped = input.units.length >= 80;
   const modelFacingKinds = new Set<StudyPlanItemKind>(
-    grouped ? GROUPED_MODEL_ITEM_KINDS : DETAILED_MODEL_ITEM_KINDS,
+    localRoute ? ['teach_unit'] : grouped ? GROUPED_MODEL_ITEM_KINDS : DETAILED_MODEL_ITEM_KINDS,
   );
   const requiredIds = new Set(input.requiredLearningUnitIds);
   const requiredProfiles = profiles.filter((profile) =>
@@ -317,12 +320,17 @@ function studyPlanPreflightFromContext(
   }
   const canGenerate = blockers.length === 0;
   const planningInputCharacters = JSON.stringify(input).length;
-  const messages = canGenerate
-    ? grouped
-      ? groupedStudyPlanProposalMessages(input)
-      : studyPlanProposalMessages(input)
-    : null;
-  const providerPromptCharacters = messages ? JSON.stringify({ messages }).length : null;
+  const messages =
+    canGenerate && !localRoute
+      ? grouped
+        ? groupedStudyPlanProposalMessages(input)
+        : studyPlanProposalMessages(input)
+      : null;
+  const providerPromptCharacters = localRoute
+    ? 0
+    : messages
+      ? JSON.stringify({ messages }).length
+      : null;
   const allowedItemKindCounts: StudyPlanPreflight['allowedItemKindCounts'] = [
     ...DETAILED_MODEL_ITEM_KINDS.map((kind) => ({
       kind,
@@ -617,40 +625,49 @@ export function createStudyPlanAgentService({
         curriculum,
         workspace.name,
       );
+      const localDerivation =
+        Object.prototype.hasOwnProperty.call(contract, 'focusRequest') &&
+        parsed.proposalTrigger === COURSE_PREPARATION_PLAN_TRIGGER;
       const preflight = studyPlanPreflightFromContext(
         contract,
         providerContext.input,
         providerContext.profiles,
+        localDerivation,
       );
       assertExecutableProviderScope(preflight);
-      const policyFingerprint = enforceAgentCostPolicies(repos, {
-        workspaceId: parsed.command.workspaceId,
-        operationType: 'propose_study_plan',
-        studySessionId: null,
-        at: clock.now().toISOString(),
-        confirmedPolicyIds: parsed.confirmedCostPolicyIds ?? [],
-      });
-      const proposal = await runTrackedAgentProviderOperation({
-        repos,
-        clock,
-        provider,
-        providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
-        operationId: claim.operationId,
-        fencingToken: claim.fencingToken,
-        workspaceId: parsed.command.workspaceId,
-        studySessionId: null,
-        learningUnitId: null,
-        assessmentId: null,
-        operationType: 'propose_study_plan',
-        schemaFingerprint: 'study-plan-proposal-v1',
-        policyFingerprint,
-        sourceFingerprint: curriculum.executionSourceManifest.fingerprint,
-        providerOptions: {
-          ...opts,
-          timeoutMs: opts?.timeoutMs ?? STUDY_PLAN_PROVIDER_TIMEOUT_MS,
-        },
-        invoke: (options) => inferenceProvider.proposeStudyPlan(providerContext.input, options),
-      });
+      const policyFingerprint = localDerivation
+        ? null
+        : enforceAgentCostPolicies(repos, {
+            workspaceId: parsed.command.workspaceId,
+            operationType: 'propose_study_plan',
+            studySessionId: null,
+            at: clock.now().toISOString(),
+            confirmedPolicyIds: parsed.confirmedCostPolicyIds ?? [],
+          });
+      const proposal = localDerivation
+        ? deriveAcceptedCoursePlan(providerContext.input)
+        : await runTrackedAgentProviderOperation({
+            repos,
+            clock,
+            provider,
+            providerModel:
+              provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
+            operationId: claim.operationId,
+            fencingToken: claim.fencingToken,
+            workspaceId: parsed.command.workspaceId,
+            studySessionId: null,
+            learningUnitId: null,
+            assessmentId: null,
+            operationType: 'propose_study_plan',
+            schemaFingerprint: 'study-plan-proposal-v1',
+            policyFingerprint,
+            sourceFingerprint: curriculum.executionSourceManifest.fingerprint,
+            providerOptions: {
+              ...opts,
+              timeoutMs: opts?.timeoutMs ?? STUDY_PLAN_PROVIDER_TIMEOUT_MS,
+            },
+            invoke: (options) => inferenceProvider.proposeStudyPlan(providerContext.input, options),
+          });
       const now = clock.now().toISOString();
       const materialized = validateAndMaterializeStudyPlanProposal({
         repos,
@@ -695,8 +712,11 @@ export function createStudyPlanAgentService({
         recommendations: buildPlanningRecommendations(contract, curriculum, feasibility),
         paceBaseline: paceBaseline(contract, planId, projectedMinutes, feasibility.slackMinutes),
         diff: diffStudyPlans(predecessor, derivedItems),
-        provider: provider.name,
-        providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
+        provider: localDerivation ? 'local' : provider.name,
+        providerModel:
+          !localDerivation && provider.name === 'hy3'
+            ? (provider.model ?? providerModel ?? null)
+            : null,
         learnerAcceptedAt: null,
         createdAt: now,
       };

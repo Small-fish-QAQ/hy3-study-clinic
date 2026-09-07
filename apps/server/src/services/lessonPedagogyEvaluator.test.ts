@@ -946,6 +946,38 @@ function compositionalInputs(
 }
 
 describe('compositional Lesson and Practice evaluators', () => {
+  it('accepts a numeric worked result without inventing prose and still rejects placeholders', () => {
+    const fixture = compositionalInputs('apply');
+    const worked = fixture.lesson.slots.find((slot) => slot.workedProcess)!.workedProcess!;
+    worked.result = '30/128';
+    const codes = () =>
+      evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, { evaluatedAt }).findings.map(
+        (f) => f.code,
+      );
+    expect(codes()).not.toContain('worked_process_missing_required_structure');
+    worked.result = '{read}';
+    expect(codes()).not.toContain('worked_process_missing_required_structure');
+    worked.result = 'placeholder';
+    expect(codes()).toContain('worked_process_missing_required_structure');
+    worked.result = '30/128';
+    worked.steps[1]!.resultingState = '隐藏';
+    expect(codes()).toContain('worked_process_missing_required_structure');
+  });
+  it('accepts concise mathematical premises while still refusing empty relation labels', () => {
+    const fixture = compositionalInputs('explain');
+    const relation = fixture.lesson.slots.find((slot) => slot.semanticRelations.length)!
+      .semanticRelations[0]!;
+    relation.fromProposition = '已知P(B)>0';
+    relation.toProposition = '可以在条件组内部计算目标事件的比例';
+    relation.relevanceToObjective = 'O1';
+    const codes = () =>
+      evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, { evaluatedAt }).findings.map(
+        (f) => f.code,
+      );
+    expect(codes()).not.toContain('semantic_relation_not_substantive');
+    relation.fromProposition = 'P(B)';
+    expect(codes()).toContain('semantic_relation_not_substantive');
+  });
   it('does not mistake 如何处理 for a question about source location', () => {
     const fixture = compositionalInputs('explain');
     const check = fixture.lesson.slots.find((slot) => slot.informalCheck)!.informalCheck!;
@@ -962,6 +994,18 @@ describe('compositional Lesson and Practice evaluators', () => {
         (finding) => finding.code,
       ),
     ).toContain('lesson_source_location_trivia');
+  });
+  it('allows provenance reasoning with numbered passages while rejecting a location question', () => {
+    const fixture = compositionalInputs('explain');
+    const check = fixture.lesson.slots.find((slot) => slot.informalCheck)!.informalCheck!;
+    check.prompt = '文档第一段是一般规则，第二段是例外。检索只返回第一段，能否据此断言不存在例外？';
+    const codes = () =>
+      evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, { evaluatedAt }).findings.map(
+        (f) => f.code,
+      );
+    expect(codes()).not.toContain('lesson_source_location_trivia');
+    check.prompt = '该定义出现在资料的第几页？';
+    expect(codes()).toContain('lesson_source_location_trivia');
   });
   it('accepts a bound private relation reference and a concise Chinese proposition without exposing aliases', () => {
     const fixture = compositionalInputs('explain');

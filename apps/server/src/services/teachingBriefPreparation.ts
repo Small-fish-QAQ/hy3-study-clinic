@@ -5,6 +5,7 @@ import {
   TeachingBriefPreparationResponseSchema,
   TeachingBriefSchema,
   PracticeContentProposalPayloadSchema,
+  TeachingCapsulePayloadSchema,
   type LessonSlotContentProposalPayload,
   classifyConstructAuthority,
   projectAcceptedLessonSegments,
@@ -44,7 +45,12 @@ import { newId } from '../util/ids.js';
 import {
   enforceAgentCostPolicies,
   runTrackedAgentProviderOperation,
+  type TrackedProviderOperation,
 } from './agentProviderRuntime.js';
+import {
+  runRecoverableGenerationStage,
+  invalidateGenerationDependency,
+} from './generationStages.js';
 import {
   validateLessonSlotContentCandidate,
   validatePracticeContentCandidate,
@@ -74,6 +80,8 @@ import { createTelemetryProvider } from './providerTelemetry.js';
 import { verifyPreparedTeaching } from './teachingContentReview.js';
 import { capsuleInputs, assembleCapsules } from './teachingCapsules.js';
 import { validateTeachingCapsule, usesComputedTeachingCases } from '../llm/teachingCapsule.js';
+import { confineTeachingCitations } from '../llm/teachingCitations.js';
+import { TeachingStrategiesSchema, validateTeachingStrategies } from '../llm/teachingStrategy.js';
 import {
   assertCurrentLessonObjectiveAuthoritySemanticSupport,
   objectiveAuthoritySemanticallySupportedClaimIds,
@@ -81,8 +89,8 @@ import {
 
 export const TEACHING_BRIEF_PROMPT_VERSION =
   'teaching-brief-v3-compositional-source-guided-interaction';
-export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v15-executed-transfer';
-export const PRACTICE_CONTENT_PROMPT_VERSION = 'teaching-practice-content-v14-executed-transfer';
+export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v16-scoped-authoring';
+export const PRACTICE_CONTENT_PROMPT_VERSION = 'teaching-practice-content-v15-scoped-authoring';
 /**
  * Retain the accepted R2 lease window. It is renewed before each bounded call;
  * this is a stale-worker fence, not a target preparation duration. Computed
@@ -1212,6 +1220,15 @@ export function createTeachingBriefPreparationService({
 
     let preparationBoundary: 'route' | 'lesson' | 'checkpoint' | 'practice' | 'assembly' = 'route';
     let checkpointForDiagnostics: AcceptedLessonCheckpoint | undefined;
+    const authorCallsByItem = new Map<string, Set<string>>();
+    let rejectedTeachingItems: string[] = [];
+    const registerAuthorCall = (itemIds: string[], logicalCallId: string) => {
+      for (const id of itemIds) {
+        const calls = authorCallsByItem.get(id) ?? new Set<string>();
+        calls.add(logicalCallId);
+        authorCallsByItem.set(id, calls);
+      }
+    };
     try {
       const route = routeContext(input);
       // This canonical defensive check covers every downstream
@@ -1297,10 +1314,19 @@ export function createTeachingBriefPreparationService({
         logicalCallId: string,
         schemaFingerprint: string,
         invoke: (providerOptions?: ProviderCallOptions) => Promise<T>,
+        dependency?: { identity: unknown; validateResult: (value: unknown) => T },
       ) => {
         routeStillCurrent(input, context.fingerprint);
         renewPreparationLease(claim.id, owner, claim.fencingToken);
-        return runTrackedAgentProviderOperation({
+        const costAdmission = () =>
+          enforceAgentCostPolicies(repos, {
+            workspaceId: input.workspaceId,
+            operationType: 'prepare_teaching_brief',
+            studySessionId: input.studySessionId,
+            at: clock.now().toISOString(),
+            confirmedPolicyIds: input.confirmedCostPolicyIds ?? [],
+          });
+        const tracked: TrackedProviderOperation<T> = {
           repos,
           clock,
           provider,
@@ -1314,40 +1340,111 @@ export function createTeachingBriefPreparationService({
           operationType: 'prepare_teaching_brief',
           logicalCallId,
           schemaFingerprint,
-          policyFingerprint: enforceAgentCostPolicies(repos, {
-            workspaceId: input.workspaceId,
-            operationType: 'prepare_teaching_brief',
-            studySessionId: input.studySessionId,
-            at: clock.now().toISOString(),
-            confirmedPolicyIds: input.confirmedCostPolicyIds ?? [],
-          }),
+          policyFingerprint: dependency ? null : costAdmission(),
           sourceFingerprint: scopedFingerprint,
           providerOptions: options,
           invoke,
-        });
+        };
+        return dependency
+          ? runRecoverableGenerationStage({
+              ...tracked,
+              beforeGenerate: costAdmission,
+              owner,
+              stageIdentity: {
+                stageVersion: 'teaching-stages-v3-independent-cases',
+                lessonVersion: LESSON_CONTENT_PROMPT_VERSION,
+                practiceVersion: PRACTICE_CONTENT_PROMPT_VERSION,
+                curriculumId: input.curriculumVersionId,
+                studyPlanId: input.studyPlanVersionId,
+                sessionAgendaId: input.sessionAgendaId,
+                agendaItemId: input.expectedAgendaItemId,
+                studyPlanItemId: input.expectedStudyPlanItemId,
+                input: dependency.identity,
+              },
+              assertCurrent: () => {
+                routeStillCurrent(input, context.fingerprint);
+              },
+              validateResult: dependency.validateResult,
+            })
+          : runTrackedAgentProviderOperation(tracked);
       };
 
       if (!checkpoint) {
         preparationBoundary = 'lesson';
         const compositionalLessonInput = lessonInput(route, generationInput, skeleton);
+        const computedSlotIds = new Set<string>();
         let jointAuthoring: LessonPedagogyEvaluation['jointAuthoring'];
         let jointLesson: LessonSlotContentProposalPayload | undefined;
+        const parts = capsuleInputs(compositionalLessonInput, skeleton);
         if (provider.name === 'hy3' && inferenceProvider.generateTeachingCapsule) {
+          const eligibleObjectives = skeleton.objectives.filter((objective) =>
+            parts.some(
+              (part) =>
+                usesComputedTeachingCases(part) &&
+                part.lesson.skeleton.objectives.some(
+                  (o) => o.objectiveRef === objective.objectiveRef,
+                ),
+            ),
+          );
+          if (eligibleObjectives.length && inferenceProvider.planTeachingStrategies) {
+            const strategyInput = {
+              courseDesign: compositionalLessonInput.courseDesign,
+              objectives: eligibleObjectives.map(({ objectiveRef, title, description }) => ({
+                objectiveRef,
+                title,
+                description,
+              })),
+            };
+            const strategies = await trackedReviewCall(
+              `${operationKey}:strategies`,
+              'teaching-strategies-v1',
+              (opts) => inferenceProvider.planTeachingStrategies!(strategyInput, opts),
+              {
+                identity: strategyInput,
+                validateResult: (raw) => {
+                  if (!validateTeachingStrategies(raw, strategyInput).valid)
+                    throw ProviderError.invalidOutput('Teaching strategy inventory changed.');
+                  return TeachingStrategiesSchema.parse(raw);
+                },
+              },
+            );
+            for (const part of parts) {
+              part.authoringStrategy =
+                strategies.choices.find((choice) =>
+                  part.lesson.skeleton.objectives.some(
+                    (o) => o.objectiveRef === choice.objectiveRef,
+                  ),
+                )?.strategy ?? 'authored';
+            }
+          }
           const slots: LessonSlotContentProposalPayload['slots'] = [];
           const items: PracticeContentProposalPayload['items'] = [];
           let narrative: LessonSlotContentProposalPayload['narrative'];
           const logicalCallIds: string[] = [];
-          for (const [index, capsuleInput] of capsuleInputs(
-            compositionalLessonInput,
-            skeleton,
-          ).entries()) {
+          for (const [index, capsuleInput] of parts.entries()) {
             capsuleInput.priorLesson = structuredClone(slots);
             const logicalCallId = `${operationKey}:capsule-${index + 1}`;
-            const capsule = await trackedReviewCall(logicalCallId, 'teaching-capsule-v1', (opts) =>
-              inferenceProvider.generateTeachingCapsule!(structuredClone(capsuleInput), {
-                ...opts,
-                validateCandidate: (candidate) => validateTeachingCapsule(candidate, capsuleInput),
-              }),
+            const capsule = await trackedReviewCall(
+              logicalCallId,
+              'teaching-capsule-v1',
+              (opts) =>
+                inferenceProvider.generateTeachingCapsule!(structuredClone(capsuleInput), {
+                  ...opts,
+                  validateCandidate: (candidate) =>
+                    validateTeachingCapsule(candidate, capsuleInput),
+                }),
+              {
+                identity: capsuleInput,
+                validateResult: (raw) => {
+                  const result = confineTeachingCitations(
+                    TeachingCapsulePayloadSchema.parse(raw),
+                    capsuleInput,
+                  );
+                  if (!validateTeachingCapsule(result, capsuleInput).valid)
+                    throw ProviderError.invalidOutput('Teaching dependency no longer validates.');
+                  return result;
+                },
+              },
             );
             if (!validateTeachingCapsule(capsule, capsuleInput).valid)
               throw ProviderError.invalidOutput(
@@ -1357,13 +1454,19 @@ export function createTeachingBriefPreparationService({
                 false,
               );
             slots.push(...capsule.lesson.slots);
+            registerAuthorCall(
+              capsule.lesson.slots.map((slot) => slot.slotId),
+              logicalCallId,
+            );
+            if (usesComputedTeachingCases(capsuleInput))
+              for (const slot of capsule.lesson.slots) computedSlotIds.add(slot.slotId);
             items.push(...capsule.practice.items);
             if (index === 0) narrative = capsule.lesson.narrative;
             logicalCallIds.push(logicalCallId);
           }
           const assembled = assembleCapsules(skeleton, slots, narrative, items);
           jointLesson = assembled.lesson;
-          const executionVerified = capsuleInputs(compositionalLessonInput, skeleton).every(
+          const executionVerified = parts.every(
             (part) =>
               !part.lesson.skeleton.lessonSlots.some((s) => s.learnerActionRequired) ||
               usesComputedTeachingCases(part),
@@ -1372,6 +1475,9 @@ export function createTeachingBriefPreparationService({
             logicalCallIds,
             practiceCandidate: assembled.practice,
             executionVerified,
+            practiceExecutionVerified: parts
+              .filter((part) => part.practiceSlots.length > 0)
+              .every(usesComputedTeachingCases),
           };
           lessonLogicalCallId = logicalCallIds.at(-1)!;
           compositionalLessonInput.preparedTogether = true;
@@ -1475,9 +1581,29 @@ export function createTeachingBriefPreparationService({
           !compositionalLessonInput.computedCases &&
           inferenceProvider.reviewTeachingContent
         ) {
+          // A mixed Unit can contain both executed cases and open authored text.
+          // Review only the latter; repeating calculated traces in a whole-Lesson
+          // review needlessly consumes its budget and conflates validation roles.
+          const reviewSlots = compositionalLessonInput.skeleton.lessonSlots.filter(
+            (slot) => !computedSlotIds.has(slot.slotId),
+          );
+          const reviewContext = {
+            ...compositionalLessonInput,
+            skeleton: {
+              ...compositionalLessonInput.skeleton,
+              lessonSlots: reviewSlots,
+              objectives: compositionalLessonInput.skeleton.objectives.filter((objective) =>
+                reviewSlots.some((slot) => slot.objectiveRefs.includes(objective.objectiveRef)),
+              ),
+            },
+          };
+          const reviewScope = (payload: LessonSlotContentProposalPayload) => ({
+            ...(computedSlotIds.size ? {} : { narrative: payload.narrative }),
+            slots: payload.slots.filter((slot) => !computedSlotIds.has(slot.slotId)),
+          });
           const verified = await verifyPreparedTeaching(
-            compositionalLessonInput,
-            lessonPayload,
+            reviewContext,
+            reviewScope(lessonPayload),
             async (prepared, round) => {
               const logicalCallId = `${operationKey}:lesson-review-${round}`;
               const result = await trackedReviewCall(
@@ -1489,15 +1615,22 @@ export function createTeachingBriefPreparationService({
                     validateCandidate: prepared.validate,
                   }),
               );
+              rejectedTeachingItems = prepared.findings(result).map((finding) => finding.itemId);
               return { logicalCallId, result };
             },
             async (draft, findings) => {
               if (jointAuthoring && inferenceProvider.generateTeachingCapsule) {
-                const revised = structuredClone(draft);
+                const revised = {
+                  ...structuredClone(lessonPayload),
+                  ...(draft.narrative ? { narrative: draft.narrative } : {}),
+                  slots: lessonPayload.slots.map((slot) =>
+                    structuredClone(draft.slots.find((s) => s.slotId === slot.slotId) ?? slot),
+                  ),
+                };
                 const practice = PracticeContentProposalPayloadSchema.parse(
                   jointAuthoring.practiceCandidate,
                 );
-                const affected = capsuleInputs(compositionalLessonInput, skeleton).filter((part) =>
+                const affected = structuredClone(parts).filter((part) =>
                   findings.some((f) =>
                     part.lesson.skeleton.lessonSlots.some((s) => s.slotId === f.itemId),
                   ),
@@ -1516,6 +1649,12 @@ export function createTeachingBriefPreparationService({
                   part.lesson.editorialFindings = findings.filter((f) =>
                     part.lesson.skeleton.lessonSlots.some((s) => s.slotId === f.itemId),
                   );
+                  part.lesson.draftForReview = {
+                    ...(part.includeNarrative ? { narrative: revised.narrative } : {}),
+                    slots: revised.slots.filter((s) =>
+                      part.lesson.skeleton.lessonSlots.some((p) => p.slotId === s.slotId),
+                    ),
+                  };
                   lessonLogicalCallId = `${operationKey}:capsule-revision-${index + 1}`;
                   const result = await trackedReviewCall(
                     lessonLogicalCallId,
@@ -1525,6 +1664,24 @@ export function createTeachingBriefPreparationService({
                         ...opts,
                         validateCandidate: (c) => validateTeachingCapsule(c, part),
                       }),
+                    {
+                      identity: part,
+                      validateResult: (raw) => {
+                        const result = confineTeachingCitations(
+                          TeachingCapsulePayloadSchema.parse(raw),
+                          part,
+                        );
+                        if (!validateTeachingCapsule(result, part).valid)
+                          throw ProviderError.invalidOutput(
+                            'Teaching revision dependency no longer validates.',
+                          );
+                        return result;
+                      },
+                    },
+                  );
+                  registerAuthorCall(
+                    result.lesson.slots.map((slot) => slot.slotId),
+                    lessonLogicalCallId,
                   );
                   for (const slot of result.lesson.slots)
                     revised.slots[revised.slots.findIndex((s) => s.slotId === slot.slotId)] = slot;
@@ -1548,7 +1705,7 @@ export function createTeachingBriefPreparationService({
                     true,
                     validation.failureArtifact,
                   );
-                return revised;
+                return reviewScope(revised);
               }
               lessonLogicalCallId = `${operationKey}:lesson-revision`;
               return trackedReviewCall(
@@ -1570,8 +1727,20 @@ export function createTeachingBriefPreparationService({
               );
             },
           );
-          lessonPayload = verified.candidate;
+          lessonPayload = {
+            ...lessonPayload,
+            ...(verified.candidate.narrative ? { narrative: verified.candidate.narrative } : {}),
+            slots: lessonPayload.slots.map(
+              (slot) => verified.candidate.slots.find((s) => s.slotId === slot.slotId) ?? slot,
+            ),
+          };
           contentReview = verified.receipts;
+        }
+        if (provider.name === 'hy3') {
+          lessonPayload = confineTeachingCitations(
+            { lesson: lessonPayload, practice: { items: [] } },
+            { lesson: compositionalLessonInput },
+          ).lesson;
         }
         const lessonEvaluation = evaluateLessonSlotPedagogy(
           lessonPayload,
@@ -1647,7 +1816,9 @@ export function createTeachingBriefPreparationService({
           ? jointPractice.data
           : undefined;
       compositionalPracticeInput.computedCases = Boolean(
-        reusableJointPractice && checkpoint.lessonEvaluation.jointAuthoring?.executionVerified,
+        reusableJointPractice &&
+        (checkpoint.lessonEvaluation.jointAuthoring?.practiceExecutionVerified ??
+          checkpoint.lessonEvaluation.jointAuthoring?.executionVerified),
       );
       if (jointPractice.success) practiceProviderInput.draftForReview = jointPractice.data;
       if (reusableJointPractice)
@@ -1796,6 +1967,12 @@ export function createTeachingBriefPreparationService({
         practicePayload = verified.candidate;
         contentReview = verified.receipts;
       }
+      if (provider.name === 'hy3') {
+        practicePayload = confineTeachingCitations(
+          { lesson: { slots: [] }, practice: practicePayload },
+          { lesson: compositionalPracticeInput },
+        ).practice;
+      }
       const practiceEvaluation = evaluatePlannedPracticeQuality(
         practicePayload,
         compositionalPracticeInput,
@@ -1857,6 +2034,20 @@ export function createTeachingBriefPreparationService({
         return response;
       });
     } catch (error) {
+      const currentOperation = repos.operations.get(claim.id);
+      if (
+        !checkpointForDiagnostics &&
+        currentOperation?.status === 'running' &&
+        currentOperation.leaseOwner === owner &&
+        currentOperation.fencingToken === claim.fencingToken &&
+        currentOperation.leaseExpiresAt !== null &&
+        currentOperation.leaseExpiresAt > clock.now().toISOString()
+      ) {
+        for (const itemId of new Set(rejectedTeachingItems)) {
+          for (const callId of authorCallsByItem.get(itemId) ?? [])
+            invalidateGenerationDependency(repos, callId, clock.now().toISOString());
+        }
+      }
       const candidateFailure =
         error instanceof ProviderError &&
         error.details &&

@@ -276,6 +276,30 @@ async function openInspector(
 }
 
 describe('StudySessionView', () => {
+  it('shows the end of an exhausted Agenda without requesting a nonexistent current Lesson', async () => {
+    const finished = structuredClone(detail);
+    finished.session.currentAgendaItemId = null;
+    finished.agenda.currentItemId = null;
+    finished.agenda.items = finished.agenda.items.map((item) => ({ ...item, state: 'completed' }));
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [finished.session] });
+    vi.mocked(api.getStudySession).mockResolvedValue(finished);
+    render(
+      <StudySessionView
+        workspaceId="ws_1"
+        route={{
+          contractVersionId: 'contract_1',
+          curriculumVersionId: 'curriculum_1',
+          studyPlanVersionId: 'plan_1',
+          sessionAgendaId: 'agenda_1',
+          executionVersion: 1,
+        }}
+      />,
+    );
+    expect(await screen.findByRole('heading', { name: '本轮学习安排已结束' })).toBeInTheDocument();
+    expect(api.getLessonExecution).not.toHaveBeenCalled();
+    expect(api.prepareLessonExecution).not.toHaveBeenCalled();
+    expect(api.lessonExecutionCommand).not.toHaveBeenCalled();
+  });
   it('does not offer session operations until a course workspace is selected', () => {
     render(<StudySessionView workspaceId={null} route={null} />);
 

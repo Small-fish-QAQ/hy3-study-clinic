@@ -101,7 +101,7 @@ export function enforceAgentCostPolicies(
   return `cost_policy_${fnv1a32(JSON.stringify(identity)).toString(16).padStart(8, '0')}`;
 }
 
-interface TrackedProviderOperation<T> {
+export interface TrackedProviderOperation<T> {
   repos: Repositories;
   clock: Clock;
   provider: LlmProvider | VisualDescriptionProvider;

@@ -690,15 +690,24 @@ describe('Course Preparation coordinator', () => {
       learnerAction: 'continue_study',
       learnerDecisionRequired: false,
     });
-    expect(provider.studyPlanCalls).toBe(1);
-    expect(provider.lastStudyPlanInput?.contract.desiredDepth).toBe('working_fluency');
-    expect(provider.lastStudyPlanInput?.allowedDepths).toEqual(['working_fluency']);
+    expect(provider.studyPlanCalls).toBe(0);
     const plan = repos.studyPlans.list('ws_1').at(-1)!;
     expect(plan).toMatchObject({
       status: 'accepted',
       acceptanceBasis: 'derived_from_accepted_curriculum',
       learnerAcceptedAt: accepted.acceptedAt,
+      provider: 'local',
     });
+    expect(
+      plan.items.every(
+        (item) => item.kind === 'teach_unit' && item.targetDepth === 'working_fluency',
+      ),
+    ).toBe(true);
+    expect(plan.items.flatMap((item) => item.objectiveIds)).toEqual(
+      accepted.nodes.flatMap(
+        (node) => node.learningUnit?.objectives.map((objective) => objective.id) ?? [],
+      ),
+    );
     expect(plan.items.every((item) => item.targetDepth === 'working_fluency')).toBe(true);
     expect(repos.courseExecution.get('ws_1')).toMatchObject({
       activeContractId: accepted.contractVersionId,

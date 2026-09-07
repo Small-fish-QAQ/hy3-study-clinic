@@ -1,9 +1,16 @@
 import { describe, it, expect, vi } from 'vitest';
 import { planTeachingSkeleton } from '../services/teachingSkeletonPlanner.js';
 import { Hy3Provider } from './hy3Provider.js';
-import { validateTeachingCapsule, usesComputedTeachingCases } from './teachingCapsule.js';
+import {
+  validateTeachingCapsule,
+  usesComputedTeachingCases,
+  teachingCapsuleMessages,
+} from './teachingCapsule.js';
 import { TeachingBlueprintSchema } from './teachingBlueprint.js';
 import { TeachingCapsulePayloadSchema } from '@hy3-clinic/shared';
+import { confineTeachingCitations } from './teachingCitations.js';
+import { compileTeachingKernel } from '../services/compileTeachingKernel.js';
+import { deriveTeachingKernel } from './teachingBlueprint.js';
 import type { TeachingCapsuleGenerationInput } from './provider.js';
 
 const blueprint = TeachingBlueprintSchema.parse({
@@ -98,6 +105,55 @@ const response = (content: string, finish_reason = 'stop') =>
     headers: { 'content-type': 'application/json' },
   });
 describe('compact teaching generation', () => {
+  it('keeps generated examples supplementary while retaining only complete verbatim component citations', () => {
+    const context = input();
+    const payload = compileTeachingKernel(deriveTeachingKernel(blueprint), context);
+    const original = structuredClone(payload);
+    payload.lesson.slots[0]!.explanation = '用户通过角色获得权限。';
+    payload.lesson.slots[0]!.sourceRefs = ['S1'];
+    payload.lesson.slots[1]!.explanation = '用户通过角色获得权限。设想角色甲撤销了write。';
+    payload.lesson.slots[1]!.sourceRefs = ['S1'];
+    payload.practice.items[0]!.sourceRefs = ['S1'];
+    const scoped = confineTeachingCitations(payload, context);
+    expect(scoped.lesson.slots[0]!.sourceRefs).toEqual(['S1']);
+    expect(scoped.lesson.slots[1]!.sourceRefs).toEqual([]);
+    expect(scoped.practice.items[0]!.sourceRefs).toEqual([]);
+    expect(scoped.practice.items[0]!.initial).toEqual(original.practice.items[0]!.initial);
+    expect(payload.lesson.slots[1]!.sourceRefs).toEqual(['S1']);
+    payload.lesson.slots[1]!.sourceRefs = ['foreign'];
+    expect(confineTeachingCitations(payload, context).lesson.slots[1]!.sourceRefs).toEqual([
+      'foreign',
+    ]);
+  });
+  it('offers only actual open-authoring components and forwards concrete revision findings', () => {
+    const fixture = input();
+    fixture.authoringStrategy = 'authored';
+    fixture.lesson.workedInteractionSlotId = null;
+    fixture.lesson.editorialFindings = [
+      {
+        itemId: 'L1',
+        code: 'accuracy',
+        problem: 'The condition was reversed.',
+        repairInstruction: 'Restore the positive condition.',
+      },
+    ];
+    const messages = teachingCapsuleMessages(fixture);
+    const shape = JSON.parse(
+      messages[1]!.content.split('\n').find((line) => line.startsWith('{"practice":'))!,
+    ) as { lesson: { slots: Array<Record<string, unknown>> } };
+    expect(shape.lesson.slots.map((s) => s.slotId)).toEqual(
+      fixture.lesson.skeleton.lessonSlots.map((s) => s.slotId),
+    );
+    for (const [index, slot] of shape.lesson.slots.entries()) {
+      const planned = fixture.lesson.skeleton.lessonSlots[index]!;
+      expect(slot.workedProcess).toBeNull();
+      if (planned.qualityContract !== 'semantic_relation')
+        expect(slot.semanticRelations).toEqual([]);
+      expect('informalCheck' in slot).toBe(planned.learnerActionRequired);
+    }
+    expect(messages[1]!.content).toContain('Restore the positive condition.');
+    expect(usesComputedTeachingCases(fixture)).toBe(false);
+  });
   it('preserves Global Depth and treats Focus as investment, never a depth increment', () => {
     for (const desiredDepth of [
       'pass_oriented',

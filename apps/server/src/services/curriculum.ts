@@ -5,6 +5,8 @@ import {
   CurriculumHierarchyViewSchema,
   CurriculumHistoryResponseSchema,
   CurriculumProposalResponseSchema,
+  CourseMapAnalysisSchema,
+  CurriculumDetailProposalPayloadSchema,
   ExecutionSourceManifestSchema,
   VisualAdvisoryContextSchema,
   VisualMediaTypeSchema,
@@ -77,6 +79,7 @@ import { preflightStudyPlan } from './studyPlansAgent.js';
 import { assessCurriculumRecovery } from './curriculumRecovery.js';
 import {
   evaluateCurriculumSemantics,
+  validateCourseMapSemanticCoherence,
   type CurriculumSemanticSourceRegion,
 } from './curriculumSemanticEvaluator.js';
 import { assertLearningContractScopeCurrent } from './learningContractScope.js';
@@ -85,7 +88,9 @@ import {
   buildCourseMapProposalInput,
   buildCourseMapSourceAllocation,
   generateCourseMapPrototype,
+  type CourseMapPrototypeResult,
 } from './courseMap.js';
+import { runRecoverableGenerationStage } from './generationStages.js';
 import {
   CurriculumDetailBatchPlanningError,
   MAX_DETAIL_BATCHES,
@@ -1936,8 +1941,56 @@ export function createCurriculumService({
           assertCapabilityRecoverySnapshotCurrent();
         };
         assertGenerationSnapshotCurrent();
-        const courseMapPolicyFingerprint = enforceCurrentCostPolicy();
-        const courseMapResult = await runTrackedAgentProviderOperation({
+        const validateAnalysis: NonNullable<
+          Parameters<typeof generateCourseMapPrototype>[0]['validateAnalysis']
+        > = (analysis) => {
+          assertGenerationSnapshotCurrent();
+          return validateCurriculumDetailPlan({
+            workspaceName: workspace.name,
+            contract: context.contractContext,
+            courseMap: analysis.courseMap,
+            sourceAllocation,
+            evidenceCatalog,
+            concepts,
+            canonicalConcepts,
+            authorityEnvelopesByRegionId: buildCourseMapRegionAuthorityEnvelopeMap(
+              analysis.courseMap,
+              sourceAllocation,
+              evidenceCatalog,
+              context,
+              repos,
+            ),
+            authorityEnvelopesByEvidenceId,
+            capabilityRecoveryRequirements,
+          });
+        };
+        const generationIdentity = {
+          version: 'curriculum-stages-v2-teaching-priority',
+          contractId: contract.id,
+          contractVersion: contract.version,
+          predecessorCurriculumId: parsed.predecessorCurriculumId,
+          expectedActiveCurriculumId: parsed.expectedActiveCurriculumId,
+          knowledgeFingerprint: offeredKnowledge.fingerprint,
+          sourceMapFingerprint: sourceMap.fingerprint,
+        };
+        const courseMapResult = await runRecoverableGenerationStage({
+          beforeGenerate: enforceCurrentCostPolicy,
+          owner: claim.owner,
+          stageIdentity: { ...generationIdentity, input: courseMapProviderInput },
+          assertCurrent: assertGenerationSnapshotCurrent,
+          validateResult: (raw): CourseMapPrototypeResult => {
+            const result = raw as CourseMapPrototypeResult;
+            const analysis = CourseMapAnalysisSchema.parse(result?.analysis);
+            if (
+              analysis.sourceAllocation.fingerprint !== sourceAllocation.fingerprint ||
+              !analysis.validation.valid ||
+              !validateCourseMapSemanticCoherence(analysis.courseMap, sourceAllocation).valid ||
+              !validateAnalysis(analysis).valid
+            ) {
+              throw ProviderError.invalidOutput('Course Map dependency no longer validates.');
+            }
+            return { analysis, repairAttempted: result.repairAttempted === true };
+          },
           repos,
           clock,
           provider,
@@ -1950,7 +2003,7 @@ export function createCurriculumService({
           assessmentId: null,
           operationType: 'propose_curriculum',
           schemaFingerprint: 'course-map-proposal-v2-local-refs',
-          policyFingerprint: courseMapPolicyFingerprint,
+          policyFingerprint: null,
           sourceFingerprint: recoveryFencedSourceFingerprint(sourceAllocation.fingerprint),
           providerOptions: opts,
           invoke: (options) =>
@@ -1959,27 +2012,7 @@ export function createCurriculumService({
                 provider: inferenceProvider,
                 providerInput: courseMapProviderInput,
                 sourceAllocation,
-                validateAnalysis: (analysis) => {
-                  assertGenerationSnapshotCurrent();
-                  return validateCurriculumDetailPlan({
-                    workspaceName: workspace.name,
-                    contract: context.contractContext,
-                    courseMap: analysis.courseMap,
-                    sourceAllocation,
-                    evidenceCatalog,
-                    concepts,
-                    canonicalConcepts,
-                    authorityEnvelopesByRegionId: buildCourseMapRegionAuthorityEnvelopeMap(
-                      analysis.courseMap,
-                      sourceAllocation,
-                      evidenceCatalog,
-                      context,
-                      repos,
-                    ),
-                    authorityEnvelopesByEvidenceId,
-                    capabilityRecoveryRequirements,
-                  });
-                },
+                validateAnalysis,
               },
               {
                 ...options,
@@ -2061,8 +2094,19 @@ export function createCurriculumService({
               maxObjectivesTotal,
             },
           };
-          const detailPolicyFingerprint = enforceCurrentCostPolicy();
-          const detailPayload = await runTrackedAgentProviderOperation({
+          const detailPayload = await runRecoverableGenerationStage({
+            beforeGenerate: enforceCurrentCostPolicy,
+            owner: claim.owner,
+            stageIdentity: { ...generationIdentity, input: detailInput },
+            assertCurrent: assertGenerationSnapshotCurrent,
+            validateResult: (raw) => {
+              const result = CurriculumDetailProposalPayloadSchema.parse(raw);
+              if (!validateCurriculumDetailCandidate(result, detailInput).valid)
+                throw ProviderError.invalidOutput(
+                  'Curriculum Detail dependency no longer validates.',
+                );
+              return result;
+            },
             repos,
             clock,
             provider,
@@ -2076,7 +2120,7 @@ export function createCurriculumService({
             assessmentId: null,
             operationType: 'propose_curriculum',
             schemaFingerprint: 'curriculum-detail-proposal-v2-claim-scope',
-            policyFingerprint: detailPolicyFingerprint,
+            policyFingerprint: null,
             sourceFingerprint: recoveryFencedSourceFingerprint(
               `${sourceAllocation.fingerprint}:${detailInput.batchKey}:objective-budget-${maxObjectivesTotal}`,
             ),

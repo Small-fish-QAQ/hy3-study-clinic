@@ -1288,9 +1288,9 @@ export function LessonExecutionPanel({
         <section className="lesson-handoff" aria-label="正式学习入口">
           <div>
             <p className="eyebrow">Lesson 与 Practice 完成</p>
-            <h3>接下来可以进行正式检验</h3>
+            <h3>本节学习已完成</h3>
             <p>
-              完成讲解与非正式练习不代表已经掌握，也不会自动推进学习安排；正式检验仍是一个明确、独立的动作。
+              本节讲解与练习已记录。掌握程度仍需独立的正式证据检验；你可以继续查看课程的下一步安排。
             </p>
           </div>
           {directCheckpointItemId && onStartFormalAssessment ? (
@@ -1307,6 +1307,16 @@ export function LessonExecutionPanel({
               当前目标还没有可用的正式检验入口。讲解完成不会自动生成正式证据；课程会保留这一限制，直到有可验证的来源依据和正式路线。
             </p>
           )}
+          {onRefreshSession && active ? (
+            <button
+              type="button"
+              className="secondary"
+              disabled={busy || commandLoading}
+              onClick={onRefreshSession}
+            >
+              继续课程
+            </button>
+          ) : null}
         </section>
       ) : null}
     </section>

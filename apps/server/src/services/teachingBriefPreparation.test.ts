@@ -1168,69 +1168,130 @@ afterEach(() => {
 });
 
 describe('Teaching Brief preparation', () => {
-  it('assembles joint authoring, preserves its provenance and withholds reserved Practice from learner projections', async () => {
-    const harness = await createHarness(0, 'pass', 'explain', 'pass_oriented');
-    Object.defineProperty(harness.provider, 'name', { value: 'hy3' });
-    let capsules = 0;
-    Object.assign(harness.provider, {
-      generateTeachingCapsule: async (
-        input: TeachingCapsuleGenerationInput,
-        opts?: ProviderCallOptions,
-      ) => {
-        capsules += 1;
-        opts?.onRequestSent?.();
-        const fake = new FakeProvider();
-        const lesson = await fake.generateLessonSlotContent(input.lesson);
-        const practice = input.practiceSlots.length
-          ? await fake.generatePracticeContent({
-              workspaceName: input.lesson.workspaceName,
-              learnerLocale: input.lesson.learnerLocale,
-              courseDesign: input.lesson.courseDesign,
-              skeleton: {
-                ...input.lesson.skeleton,
-                practicePlan: {
-                  schemaVersion: 1,
-                  slots: input.practiceSlots,
-                  activityBudget: { minMinutes: 1, maxMinutes: 1 },
+  it.each([false, true, 'rejected'] as const)(
+    'assembles private joint authoring with stage recovery=%s and exact provenance',
+    async (recover) => {
+      const harness = await createHarness(0, 'pass', 'explain', 'pass_oriented');
+      Object.defineProperty(harness.provider, 'name', { value: 'hy3' });
+      let capsules = 0;
+      let reviewInterrupted = false;
+      let rejectedReviews = 0;
+      const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+      harness.provider.reviewTeachingContent = async (input, opts) => {
+        if (recover === 'rejected' && rejectedReviews++ < 2) {
+          const result = await review(input, opts);
+          result.findings = [
+            {
+              itemId: (input.candidate as { slots: Array<{ slotId: string }> }).slots[0]!.slotId,
+              code: 'accuracy',
+              problem: 'This capsule has a concrete wrong claim.',
+              repairInstruction: 'Correct the claim in this portion.',
+            },
+          ] as typeof result.findings;
+          return result;
+        }
+        if (recover === true && !reviewInterrupted) {
+          reviewInterrupted = true;
+          throw ProviderError.network();
+        }
+        return review(input, opts);
+      };
+      Object.assign(harness.provider, {
+        generateTeachingCapsule: async (
+          input: TeachingCapsuleGenerationInput,
+          opts?: ProviderCallOptions,
+        ) => {
+          capsules += 1;
+          opts?.onRequestSent?.();
+          const fake = new FakeProvider();
+          const lesson = await fake.generateLessonSlotContent(input.lesson);
+          const practice = input.practiceSlots.length
+            ? await fake.generatePracticeContent({
+                workspaceName: input.lesson.workspaceName,
+                learnerLocale: input.lesson.learnerLocale,
+                courseDesign: input.lesson.courseDesign,
+                skeleton: {
+                  ...input.lesson.skeleton,
+                  practicePlan: {
+                    schemaVersion: 1,
+                    slots: input.practiceSlots,
+                    activityBudget: { minMinutes: 1, maxMinutes: 1 },
+                  },
                 },
-              },
-              acceptedLesson: [...input.priorLesson, ...lesson.slots],
-              sourceContext: input.lesson.sourceContext,
-              visualContext: input.lesson.visualContext,
-            })
-          : { items: [] };
-        return { lesson, practice };
-      },
-    });
-    const route = startTeachingRoute(harness);
-    const result = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
-      command: command('joint-capsule-projection'),
-      expectedSessionVersion: route.session.version,
-      expectedAgendaVersion: route.agenda.version,
-      expectedAgendaItemId: route.agendaItem.id,
-    });
-    expect(
-      result.status,
-      JSON.stringify(
-        harness.db
-          .prepare("SELECT payload FROM agent_operation_results WHERE status='failed'")
-          .all(),
-      ),
-    ).toBe('ready');
-    const brief = harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)[0]!;
-    const checkpoint = harness.repos.acceptedLessonCheckpoints.get(
-      brief.composition!.acceptedLessonCheckpointId,
-    )!;
-    expect(capsules).toBeGreaterThan(0);
-    expect(harness.provider.lessonContentCalls).toBe(0);
-    expect(harness.provider.practiceContentCalls).toBe(0);
-    expect(checkpoint.lessonEvaluation.jointAuthoring?.logicalCallIds).toHaveLength(capsules);
-    expect(checkpoint.lessonLogicalCallId).toMatch(/:capsule-\d+$/u);
-    expect(brief.composition?.practiceLogicalCallId).toMatch(/:capsule-\d+$/u);
-    expect(JSON.stringify(result)).not.toContain('practiceCandidate');
-    expect(JSON.stringify(result)).not.toContain('jointAuthoring');
-    expect(result.lesson).not.toBeNull();
-  });
+                acceptedLesson: [...input.priorLesson, ...lesson.slots],
+                sourceContext: input.lesson.sourceContext,
+                visualContext: input.lesson.visualContext,
+              })
+            : { items: [] };
+          return { lesson, practice };
+        },
+      });
+      const route = startTeachingRoute(harness);
+      let result = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+        command: command('joint-capsule-projection'),
+        expectedSessionVersion: route.session.version,
+        expectedAgendaVersion: route.agenda.version,
+        expectedAgendaItemId: route.agendaItem.id,
+      });
+      if (recover) {
+        expect(result.status).toBe('retry_available');
+        expect(
+          capsules,
+          JSON.stringify(
+            harness.db
+              .prepare("SELECT payload FROM agent_operation_results WHERE status='failed'")
+              .all(),
+          ),
+        ).toBe(recover === 'rejected' ? 2 : 1);
+        expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual(
+          [],
+        );
+        const restarted = createServices({
+          repos: createRepositories(harness.db),
+          provider: harness.provider,
+          clock,
+        });
+        result = await restarted.lessonExecution.ensure('ws_1', route.session.id, {
+          command: command('joint-capsule-retry'),
+          expectedSessionVersion: route.session.version,
+          expectedAgendaVersion: route.agenda.version,
+          expectedAgendaItemId: route.agendaItem.id,
+        });
+        const receipts = harness.db
+          .prepare(
+            "SELECT id FROM model_logical_calls WHERE cache_status='hit' AND schema_fingerprint='teaching-capsule-v1'",
+          )
+          .all() as { id: string }[];
+        expect(receipts).toHaveLength(recover === 'rejected' ? 0 : 1);
+        if (recover === true)
+          expect(harness.repos.telemetry.listAttempts(receipts[0]!.id)).toEqual([]);
+        if (recover === 'rejected') expect(capsules).toBe(3);
+      }
+      expect(
+        result.status,
+        JSON.stringify(
+          harness.db
+            .prepare("SELECT payload FROM agent_operation_results WHERE status='failed'")
+            .all(),
+        ),
+      ).toBe('ready');
+      const brief = harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)[0]!;
+      const checkpoint = harness.repos.acceptedLessonCheckpoints.get(
+        brief.composition!.acceptedLessonCheckpointId,
+      )!;
+      expect(capsules).toBeGreaterThan(0);
+      expect(harness.provider.lessonContentCalls).toBe(0);
+      expect(harness.provider.practiceContentCalls).toBe(0);
+      expect(checkpoint.lessonEvaluation.jointAuthoring?.logicalCallIds).toHaveLength(
+        recover === 'rejected' ? 1 : capsules,
+      );
+      expect(checkpoint.lessonLogicalCallId).toMatch(/:capsule-\d+$/u);
+      expect(brief.composition?.practiceLogicalCallId).toMatch(/:capsule-\d+$/u);
+      expect(JSON.stringify(result)).not.toContain('practiceCandidate');
+      expect(JSON.stringify(result)).not.toContain('jointAuthoring');
+      expect(result.lesson).not.toBeNull();
+    },
+  );
 
   it('tracks REAL editorial passes and binds the accepted artifacts to their final calls', async () => {
     const harness = await createHarness();

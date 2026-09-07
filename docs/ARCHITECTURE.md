@@ -1,5 +1,8 @@
 # Architecture and Design Notes
 
+The current end-to-end preparation, recovery and teaching responsibilities are
+described in [Course preparation and teaching architecture](FRONT_HALF.md).
+
 This document expands the [Hy3 Study Clinic README](../README.md) for maintainers who need to understand or extend the system. It describes the shipped product, not a proposed rewrite.
 
 ## 1. System boundaries
@@ -115,7 +118,7 @@ Source blocks are wrapped with fresh request-specific delimiters and explicitly 
 
 ### Production Course Map and bounded Curriculum materialization
 
-The ordinary policy identity is `course_map_materialization_v1`; `legacy_direct_v1` remains an explicit compatibility override. The hierarchy-first path places `apps/server/src/services/courseMap.ts` and `apps/server/src/services/curriculumMaterialization.ts` between the deterministic Course Source Map and the existing Curriculum materializer. The Course Map and its source allocation are operation-local planning state: neither is persisted, learner-visible, accepted as Course Truth, Evidence, Mastery, or learner state. The only proposed or accepted course-structure artifact remains the existing Curriculum, so the internal policy requires no migration and does not reinterpret historical Curricula.
+The ordinary policy identity is `course_map_materialization_v1`; `legacy_direct_v1` remains an explicit compatibility override. The hierarchy-first path places `apps/server/src/services/courseMap.ts` and `apps/server/src/services/curriculumMaterialization.ts` between the deterministic Course Source Map and the existing Curriculum materializer. Validated Course Map and Detail results can be persisted as private generation dependencies for scoped recovery. They are not learner-visible or accepted as Course Truth, Evidence, Mastery, or learner state. The only proposed or accepted course-structure artifact remains Curriculum. Dependency reuse uses existing private cache and telemetry stores, with no migration or reinterpretation of historical Curricula.
 
 ### Course design inputs and the single learner confirmation
 
@@ -125,7 +128,7 @@ The normal creation surface has three semantic inputs: Materials, one learner-se
 
 Course Preparation stops after a current valid Curriculum proposal on the simplified flow. The learner can create immutable proposed successor versions through three bounded edits: rename a LearningUnit while preserving IDs/objectives/source references, move one Unit only when hierarchy scope and prerequisite order remain valid, and toggle `normal`/`focused`. Regeneration uses the same Contract, source manifest, depth, and focus request. The public acceptance route still requires `learner_review`; `explicit_local_policy` remains only for historical compatibility and is not used by a new normal Course.
 
-After Skeleton acceptance, Course Preparation generates and validates the StudyPlan. New-flow provider depth choices are constrained to the single global `desiredDepth`, and the hidden default forbids autonomous deferral. A valid proposal is installed locally with `acceptanceBasis: derived_from_accepted_curriculum`; its `learnerAcceptedAt` records the prior Skeleton acceptance time, so no second learner decision is fabricated. Invalid or failed Plan preparation remains recoverable and cannot replace an existing valid route. Later Lesson and Practice input explicitly carries `courseDesign.desiredDepth` plus the accepted Unit `focus`, alongside the current Unit and objectives. Focus remains a separate investment signal and never mutates global depth.
+After Skeleton acceptance, ordinary Course Preparation compiles and validates the StudyPlan locally from accepted Units, objectives and prerequisite order. Every teaching item retains global `desiredDepth`; no autonomous deferral or additional model decision is introduced. A valid proposal is installed with `acceptanceBasis: derived_from_accepted_curriculum`; its `learnerAcceptedAt` records the prior Skeleton acceptance time, so no second learner decision is fabricated. Invalid or failed preparation cannot replace an existing valid route. Advanced and historical Plan proposals retain their provider path. Lesson and Practice explicitly carry `courseDesign.desiredDepth` and accepted Unit `focus`; Focus never mutates global depth.
 
 ### Learner-facing Lesson pedagogy and Practice novelty
 
@@ -850,6 +853,11 @@ Migration 36 extends the weak `lesson_execution_states` child and its append-onl
 FakeProvider and Hy3 implement the same contract, but deterministic Fake coverage is not evidence that a real provider candidate is pedagogically acceptable. Real candidates are intentionally allowed to fail the independent gates; successful persistence, actual-browser interaction, and human review remain separate release evidence. Exact quotation validation continues to prove source occurrence, not complete semantic entailment or instructional effectiveness.
 
 ## Spine-first compositional Teaching generation
+
+The phase outline below describes the original independent Lesson/Practice
+interfaces, which remain supported. Production Hy3 authoring now uses bounded
+objective portions with joint Practice authoring, representation selection and
+recoverable dependencies as described in [the front-half architecture](FRONT_HALF.md).
 
 The current Teaching Brief path is compositional responsibility separation, not a new product or a collection of per-slot model agents:
 

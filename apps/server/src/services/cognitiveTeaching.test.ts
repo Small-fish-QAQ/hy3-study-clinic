@@ -144,14 +144,20 @@ describe('calibrated cognitive teaching contract', () => {
       f.interaction.activity.options.map(({ id, text }) => ({ id, text })),
     );
     expect(reviewedAction.afterResponse).toBeDefined();
+    expect(JSON.stringify(reviewedAction.afterResponse)).not.toContain('optionFeedback');
+    expect(JSON.stringify(reviewedAction)).not.toContain(f.interaction.activity.correctDebrief);
     expect(reviewedAction).not.toHaveProperty('correctDebrief');
     const reviewedProcess = reviewedSlots.find(
       (slot) => slot.workedProcess?.interaction,
     )!.workedProcess!;
     expect(reviewedProcess).not.toHaveProperty('result');
     expect(reviewedProcess).not.toHaveProperty('whyResultFollows');
-    expect(reviewedProcess).toHaveProperty('afterGuidedResponse.result');
-    expect(reviewedProcess).toHaveProperty('afterTransferResponse.whyResultFollows');
+    expect(reviewedProcess).not.toHaveProperty('afterGuidedResponse.result');
+    expect(reviewedProcess).not.toHaveProperty('afterTransferResponse.whyResultFollows');
+    expect(reviewedProcess).toHaveProperty(
+      'interaction.afterWrongGuidedResponse.scaffold.actionId',
+    );
+    expect(reviewedProcess).not.toHaveProperty('interaction.scaffold');
     expect(reviewedProcess).toHaveProperty('steps');
     expect(prepared.findings({ decisions, findings: [] })).toEqual([]);
     const computedReview = prepareTeachingReview(
@@ -159,9 +165,20 @@ describe('calibrated cognitive teaching contract', () => {
       f.lesson,
     );
     const binaryDisagreement = decisions.map((d) => ({ ...d, requiresCaseInference: false }));
-    expect(prepared.findings({ decisions: binaryDisagreement, findings: [] })).toEqual(
-      expect.arrayContaining([expect.objectContaining({ code: 'shallow_task' })]),
-    );
+    expect(prepared.findings({ decisions: binaryDisagreement, findings: [] })).toEqual([]);
+    expect(
+      prepared.findings({
+        decisions: binaryDisagreement,
+        findings: [
+          {
+            itemId: f.worked.slotId,
+            code: 'shallow_task',
+            problem: 'The prompt already states the exact keyed result.',
+            repairInstruction: 'Withhold the new result until the learner has answered.',
+          },
+        ],
+      }),
+    ).toEqual([]);
     expect(computedReview.findings({ decisions: binaryDisagreement, findings: [] })).toEqual([]);
     expect(
       computedReview.findings({
@@ -305,6 +322,27 @@ describe('calibrated cognitive teaching contract', () => {
         severity: 'error',
       }),
     );
+  });
+  it('recognizes same-section case facts already visible before an informal check, but never hidden feedback', async () => {
+    const f = await fixture();
+    const slot = f.lesson.slots.find((slot) => slot.informalCheck)!;
+    const check = slot.informalCheck!;
+    const fact = '观察到甲材料和乙材料来自同一修订并重叠第二句。';
+    slot.explanation += fact;
+    check.prompt = '根据上述案例，哪种结果成立？';
+    check.evidenceContrast!.evidence = fact;
+    expect(
+      f
+        .lessonEvaluation()
+        .findings.some((finding) => finding.code === 'evidence_contrast_not_visible'),
+    ).toBe(false);
+    slot.explanation = slot.explanation.replace(fact, '');
+    check.expectedSignal = fact;
+    expect(
+      f
+        .lessonEvaluation()
+        .findings.some((finding) => finding.code === 'evidence_contrast_not_visible'),
+    ).toBe(true);
   });
 
   it('allows a quoted parenthetical prefix while preserving the actual case facts', async () => {

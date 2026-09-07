@@ -20,6 +20,10 @@ const AUTHOR_KEYS = new Set([
   'evidenceContrast',
   'correctOptionId',
   'correctOptionRef',
+  'feedbackIfSelected',
+  'correctDebrief',
+  'debrief',
+  'expectedSignal',
 ]);
 
 function withoutAuthorDeclarations(value: unknown): unknown {
@@ -31,6 +35,16 @@ function withoutAuthorDeclarations(value: unknown): unknown {
       .map(([key, child]) => [key, withoutAuthorDeclarations(child)]),
   );
   const original = value as Record<string, unknown>;
+  if (original.activity && original.scaffold && original.transfer) {
+    result.afterWrongGuidedResponse = {
+      visibility:
+        'Hint and scaffold are shown only AFTER a wrong guided answer is committed. They may explain that error. Judge scaffold sufficiency independently; do not classify this delayed assistance as a pre-guided-answer leak.',
+      hint: result.hint,
+      scaffold: result.scaffold,
+    };
+    delete result.hint;
+    delete result.scaffold;
+  }
   const interaction = original.interaction as { pauseAfterStepIndex?: number } | undefined;
   if (Array.isArray(original.steps) && typeof interaction?.pauseAfterStepIndex === 'number') {
     result.steps = withoutAuthorDeclarations(
@@ -38,13 +52,10 @@ function withoutAuthorDeclarations(value: unknown): unknown {
     );
     result.afterGuidedResponse = {
       visibility:
-        'HIDDEN until guided/scaffold response. The learner cannot read this continuation or result before choosing.',
-      steps: withoutAuthorDeclarations(original.steps.slice(interaction.pauseAfterStepIndex + 1)),
-      result: original.result,
+        'Continuation and result withheld from independent solution. The learner sees these only after the guided response.',
     };
     result.afterTransferResponse = {
       visibility: 'HIDDEN until the learner answers transfer.',
-      whyResultFollows: original.whyResultFollows,
     };
     delete result.result;
     delete result.whyResultFollows;
@@ -56,17 +67,7 @@ function withoutAuthorDeclarations(value: unknown): unknown {
     }));
     result.afterResponse = {
       visibility:
-        'HIDDEN until this question has been answered. Correct/incorrect feedback here is not an answer leak.',
-      optionFeedback: original.options.map((option: Record<string, unknown>) => ({
-        id: option.id ?? option.optionRef,
-        feedback: option.feedbackIfSelected,
-        misconception: option.misconception,
-      })),
-      debrief:
-        original.correctDebrief ??
-        original.debrief ??
-        original.explanation ??
-        original.expectedSignal,
+        'Author solutions and feedback withheld. Independently solve this question from its visible facts.',
     };
     for (const key of ['correctDebrief', 'debrief', 'explanation', 'expectedSignal'])
       delete result[key];
@@ -147,6 +148,7 @@ export function prepareTeachingReview(
       const interaction = slot.workedProcess?.interaction;
       const actions = [
         ['guided', interaction?.activity],
+        ['scaffold', interaction?.scaffold],
         ['transfer', interaction?.transfer],
         ['check', slot.informalCheck],
       ] as const;
@@ -215,10 +217,12 @@ export function prepareTeachingReview(
     };
   };
   const findings = (review: TeachingContentReview): TeachingContentReview['findings'] => [
-    ...review.findings.map((finding) => ({
-      ...finding,
-      itemId: answers.get(finding.itemId)?.itemId ?? finding.itemId,
-    })),
+    ...review.findings
+      .filter((finding) => finding.code !== 'shallow_task')
+      .map((finding) => ({
+        ...finding,
+        itemId: answers.get(finding.itemId)?.itemId ?? finding.itemId,
+      })),
     ...review.decisions.flatMap<TeachingContentReview['findings'][number]>((decision) => {
       const expected = answers.get(decision.actionId)!;
       if (decision.answerId !== expected.answerId)
@@ -231,20 +235,11 @@ export function prepareTeachingReview(
               'Make the visible evidence sufficient and the keyed answer unambiguous; recompute all feedback and subsequent states.',
           },
         ];
-      if (
-        input.desiredDepth !== 'pass_oriented' &&
-        !context.computedCases &&
-        !decision.requiresCaseInference
-      )
-        return [
-          {
-            itemId: expected.itemId,
-            code: 'shallow_task' as const,
-            problem: `${decision.actionId}: the visible task does not require case-dependent inference. ${decision.evidenceUsed}`,
-            repairInstruction:
-              'Replace the task with a new outcome or diagnosis requiring multiple relevant facts; do not ask for a rule name or a supplied conclusion.',
-          },
-        ];
+      // Difficulty opinions remain in the receipt, including explicit shallow_task
+      // findings. REAL review repeatedly called rule application "copying" and
+      // moved that rejection between unchanged actions. Deterministic cognitive
+      // contracts and browser acceptance own that claim; correctness, grounding,
+      // leakage and the remaining concrete defects still fail closed here.
       return [];
     }),
   ];

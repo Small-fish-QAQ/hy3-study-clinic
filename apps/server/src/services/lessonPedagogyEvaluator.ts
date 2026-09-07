@@ -57,7 +57,7 @@ function overlapRatio(left: string, right: string): number {
 }
 
 const SOURCE_LOCATION_TRIVIA =
-  /(?:\b(?:page|slide|section|chapter|paragraph|line|block|document)\b.{0,35}\b(?:where|which|number|located|mention(?:ed)?)\b|\bsource\b.{0,35}\b(?:where|located|mention(?:ed)?|page|slide|section|chapter|paragraph|line|block)\b|\bwhere\b.{0,35}\b(?:document|source|page|slide|section|chapter|paragraph|line|block)\b|\bwhich\b.{0,35}\b(?:document|page|slide|section|chapter|paragraph|line|block)\b|\bwhich\s+source\b|第.{0,8}(?:页|幻灯片|章节|段|行)|(?:哪一|哪个|何处(?!理)|哪里).{0,12}(?:页|幻灯片|章节|段落|位置)|(?:原文|资料|文档|来源).{0,12}(?:哪里|何处(?!理)|哪一页|第几页|哪个章节))/iu;
+  /(?:\b(?:which|what)\s+(?:page|slide|section|chapter|paragraph|line)(?:\s+number)?\b|\bwhere\b.{0,35}\b(?:appear|located|mentioned|document|source)\b|\bwhich\s+(?:source|document|block)\s+(?:states|mentions|contains)\b|第几(?:页|幻灯片|章节|段|行)|(?:哪一|哪个|何处(?!理)|哪里).{0,12}(?:页|幻灯片|章节|段落|位置)|(?:原文|资料|文档|来源).{0,12}(?:哪里|何处(?!理)|哪一页|第几页|哪个章节))/iu;
 
 const EXPLANATION_REASONING =
   /(?:\b(?:because|therefore|so that|depends on|causes?|means that|works by|mechanism|why|how)\b|因为|因|所以|故|因此|从而|导致|前提|必要|取决于|意味着|机制|原理|如何|为什么|通过)/iu;
@@ -885,7 +885,7 @@ function isSemanticallyDistinct(left: string, right: string): boolean {
 const INTERNAL_PLANNING_LANGUAGE =
   /\b(?:instructional spine|teaching skeleton|immutable skeleton|slot purpose|quality contract|locally planned|objective ref(?:erence)?|source ref(?:erence)?|selected depth|depth setting|global depth|focused unit|focus flag)\b|教学脊柱|教学骨架|槽位目的|质量契约|本地规划|目标别名|来源别名|深度设置|重点单元/iu;
 const GENERIC_PLACEHOLDER_LANGUAGE =
-  /\bplaceholder\b|\bdetails? for (?:this|the|a) generic (?:example|case)\b|占位符|通用示例的?详情/iu;
+  /\bplaceholder\b|\bdetails? for (?:this|the|a) generic (?:example|case)\b|占位符|通用示例的?详情|^(?:hidden|隐藏|continuation hidden until response)$/iu;
 
 function containsPlanningLanguage(value: string, purpose?: string): boolean {
   if (INTERNAL_PLANNING_LANGUAGE.test(value)) return true;
@@ -1303,7 +1303,13 @@ function cognitiveLessonFindings(
     if (check) {
       if (depth && depth !== 'pass_oriented' && !check.options?.length)
         add('reasoning_choice_missing', [index], slot.objectiveRefs);
-      inspectEvidence(check, [check.prompt], 'informalCheck.evidenceContrast');
+      inspectEvidence(
+        check,
+        [check.prompt, content.explanation, content.example?.text, content.contrast?.text].filter(
+          (text): text is string => Boolean(text),
+        ),
+        'informalCheck.evidenceContrast',
+      );
       inspect(
         check,
         [...pre, check.prompt],
@@ -1694,6 +1700,11 @@ function relationIssueCodes(
 ): string[] {
   const issues: string[] = [];
   const substantiveProposition = (value: string) =>
+    // Compact mathematical conditions are propositions too. Requiring several
+    // Chinese words rejected P(B)>0 in REAL; identifiers alone remain insufficient.
+    /[A-Za-z\p{Script=Greek}]\w*(?:\([^\r\n)]{1,40}\))?\s*(?:>=|<=|!=|[=<>≤≥≠])\s*(?:-?\d|[A-Za-z\p{Script=Greek}])/u.test(
+      value,
+    ) ||
     (!FIELD_LABEL_ONLY.test(normalized(value)) &&
       [...value.replace(LEGACY_AUXILIARY_LANGUAGE, '').matchAll(/\p{Script=Han}/gu)].length >= 4) ||
     isSubstantiveText(value);
@@ -1748,6 +1759,9 @@ function workedProcessIssueCodes(
     ...process.steps.flatMap((step) => [step.action, step.reason, step.resultingState]),
   ];
   const substantiveWorkedText = (value: string) =>
+    /^\s*\{[\p{L}\p{N}_ ,.-]*\}\s*$/u.test(value) ||
+    // A numeric result is observable content, not an empty prose label.
+    /^\s*-?\d+(?:\.\d+)?(?:\s*[/+*×÷−-]\s*-?\d+(?:\.\d+)?)*(?:\s*%)?\s*$/u.test(value) ||
     (!FIELD_LABEL_ONLY.test(normalized(value)) &&
       !GENERIC_PLACEHOLDER_LANGUAGE.test(value) &&
       ([...value.matchAll(/\p{Script=Han}/gu)].length >= 2 ||

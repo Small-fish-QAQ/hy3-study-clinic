@@ -692,6 +692,13 @@ export function createTelemetryRepo(db: SqliteDb) {
       return putCacheTx({ ...entry, hitCount: 0, lastHitAt: null });
     },
 
+    peekCache(cacheKey: string): SemanticCacheEntry | undefined {
+      const row = db
+        .prepare('SELECT * FROM semantic_cache_entries WHERE cache_key = ?')
+        .get(cacheKey) as CacheRow | undefined;
+      return row ? rowToCache(row) : undefined;
+    },
+
     getCache(
       cacheKey: string,
       validationFingerprint: string,
