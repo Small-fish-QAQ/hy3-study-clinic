@@ -314,6 +314,17 @@ export function createFormalAssessmentsService({
         .filter((exposure) => exposure.attemptId !== attempt.id)
         .map((exposure) => exposure.itemFingerprint),
     );
+    const tutorTeaching = repos.studySessions.listTutorTeaching(
+      attempt.workspaceId,
+      attempt.startedAt,
+    );
+    for (const item of visibleItems) {
+      // Exact prompt containment only; do not claim to detect semantic paraphrases.
+      const prompt = item.prompt.replace(/\s+/gu, '');
+      if (tutorTeaching.some((turn) => turn.content.replace(/\s+/gu, '').includes(prompt))) {
+        knownSeenFingerprints.add(assessmentItemFingerprint(item));
+      }
+    }
     for (const lessonState of repos.lessonExecution.listForWorkspace(attempt.workspaceId)) {
       const brief = lessonState.teachingBriefId
         ? repos.teachingBriefs.get(lessonState.teachingBriefId)

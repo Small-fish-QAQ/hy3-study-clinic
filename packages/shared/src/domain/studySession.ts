@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { SessionAgendaSchema } from './sessionAgenda.js';
-import { TutorTurnMetadataSchema } from './tutor.js';
+import { TutorStudyAnchorSchema, TutorTurnMetadataSchema } from './tutor.js';
 
 export const StudySessionStatusSchema = z.enum([
   'active',
@@ -44,6 +44,7 @@ export const TutorContextManifestSchema = z
     sourceBlockRevisionIds: z.array(z.string().min(1)).max(500),
     formalEvidenceIds: z.array(z.string().min(1)).max(200),
     riskIds: z.array(z.string().min(1)).max(100),
+    studyAnchor: TutorStudyAnchorSchema.optional(),
   })
   .strict();
 export type TutorContextManifest = z.infer<typeof TutorContextManifestSchema>;
@@ -194,6 +195,7 @@ export const SubmitTutorTurnRequestSchema = z
     commandId: z.string().min(1),
     expectedSessionVersion: z.number().int().positive(),
     content: z.string().min(1).max(20000),
+    studyAnchor: TutorStudyAnchorSchema.optional(),
     /** Explicit acknowledgements for configured confirm-style monetary policies. */
     confirmedCostPolicyIds: z.array(z.string().min(1)).max(20).optional(),
   })

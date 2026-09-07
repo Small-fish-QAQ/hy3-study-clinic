@@ -25,6 +25,8 @@ from open research questions.
 
 ## Teaching and pedagogy limits
 
+- Embedded Tutor uses a bounded window of presented teaching and conversation. Exact source snapshots support attribution, not proof of every generated explanation. Reply latency depends on the provider. Tutor exposure checks detect exact reuse and substantial lexical overlap, not every semantic paraphrase; a completed saved reply is conservatively treated as potentially seen after a disconnect. See [Tutor inside Study](TUTOR.md).
+
 - Lesson prose may teach beyond the uploaded text. Such content carries no source reference, is explicitly labeled Hy3 supplementary teaching, is never grading evidence, and its factual quality depends on the configured model. A source marker proves an exact excerpt exists at that location; it does not prove full semantic entailment.
 - The Lesson contract asks for a coherent teacher-led arc, central mental model, worked reasoning, causal explanation, boundaries and transfer, but deterministic structure tests cannot prove that a real learner experiences strong teaching. Final acceptance still requires human dogfood of real-provider output; no learning-effectiveness claim follows from prompt compliance.
 - A prepared worked interaction is intentionally bounded to one guided choice, one optional repair level (an informational hint plus an answerable scaffold), and one changed-condition transfer. It is not a generic tutor tree, does not semantically grade free text, and does not create a durable misconception diagnosis. The quality and completeness of generated distractors, feedback, hints, scaffolds, and debriefs still require real-provider human review.

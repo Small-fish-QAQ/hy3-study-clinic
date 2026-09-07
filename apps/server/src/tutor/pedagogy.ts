@@ -9,16 +9,16 @@ import type { TutorTurnInput } from '../llm/provider.js';
 import type { ProviderCandidateValidation } from '../llm/provider.js';
 
 /** Stable policy identifier stored with each accepted Tutor turn. */
-export const TUTOR_PEDAGOGY_POLICY_VERSION = 'lesson-aware-v1';
+export const TUTOR_PEDAGOGY_POLICY_VERSION = 'embedded-study-v3';
 
 /** Prompt budgets are deliberately independent of the full Study transcript. */
 export const TUTOR_CONTEXT_LIMITS = {
   maxRecentExchanges: 8,
-  maxExchangeChars: 1200,
+  maxExchangeChars: 4000,
   maxRecentMoves: 4,
   maxSourceRefs: 6,
   maxSourceExcerptChars: 900,
-  maxSerializedBytes: 32_000,
+  maxSerializedBytes: 96_000,
 } as const;
 
 const confusionPattern =
@@ -202,6 +202,16 @@ export function constrainTutorTurn(
         : 'stay_on_route';
   return {
     ...payload,
+    text: input.offeredSourceRefs.reduce((text, source) => {
+      // Resolve operation-local labels before persistence, just as the citation
+      // disclosure does. Preserve a label if it is actual terminology in the source.
+      if (!source.title || source.excerpt.includes(source.referenceKey)) return text;
+      const key = source.referenceKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return text.replace(
+        new RegExp(`(?<![A-Za-z0-9])${key}(?![A-Za-z0-9])`, 'g'),
+        () => `《${source.title}》`,
+      );
+    }, payload.text),
     move,
     routeSignal,
   };
@@ -217,6 +227,8 @@ export function tutorSourceOffers(
       referenceKey: source.referenceKey,
       excerpt: source.exactExcerpt.slice(0, TUTOR_CONTEXT_LIMITS.maxSourceExcerptChars),
       origin: 'lesson',
+      title: source.materialTitle,
+      location: source.locationLabel,
     });
   }
   for (const [index, source] of (currentUnit?.sourceTruth ?? []).entries()) {
@@ -265,7 +277,9 @@ export function boundTutorTurnInput(input: TutorTurnInput): TutorTurnInput {
         excerpt: ref.excerpt.slice(0, TUTOR_CONTEXT_LIMITS.maxSourceExcerptChars),
       })),
   };
-  if (JSON.stringify(bounded).length <= TUTOR_CONTEXT_LIMITS.maxSerializedBytes) return bounded;
+  const fits = () =>
+    Buffer.byteLength(JSON.stringify(bounded), 'utf8') <= TUTOR_CONTEXT_LIMITS.maxSerializedBytes;
+  if (fits()) return bounded;
 
   bounded = {
     ...bounded,
@@ -311,11 +325,42 @@ export function boundTutorTurnInput(input: TutorTurnInput): TutorTurnInput {
         }
       : null,
   };
-  if (JSON.stringify(bounded).length <= TUTOR_CONTEXT_LIMITS.maxSerializedBytes) return bounded;
-  return {
+  if (fits()) return bounded;
+  bounded = {
     ...bounded,
     recentExchanges: bounded.recentExchanges.slice(-2),
     offeredSourceRefs: bounded.offeredSourceRefs.slice(0, 3),
     lessonContext: bounded.lessonContext ? { ...bounded.lessonContext, visuals: [] } : null,
   };
+  // Drop the most distant teaching first. Never silently replace the selected
+  // passage, active question or learner's question with another context.
+  while (!fits() && (bounded.lessonContext?.visibleLesson?.length ?? 0) > 1) {
+    const context = bounded.lessonContext!;
+    const ordered = [...context.visibleLesson!].sort(
+      (a, b) =>
+        Math.abs(a.index - context.currentSegment.index) -
+        Math.abs(b.index - context.currentSegment.index),
+    );
+    ordered.pop();
+    bounded = {
+      ...bounded,
+      lessonContext: { ...context, visibleLesson: ordered.sort((a, b) => a.index - b.index) },
+    };
+  }
+  if (!fits())
+    bounded = {
+      ...bounded,
+      summary: null,
+      recentExchanges: [],
+      learnerState: {
+        formalEvidence: [],
+        openMistakes: [],
+        misconceptions: [],
+        reviews: [],
+        mastery: [],
+        riskIds: [],
+      },
+    };
+  if (!fits()) throw new Error('本次提问与学习上下文过长，请缩短问题后重试。');
+  return bounded;
 }

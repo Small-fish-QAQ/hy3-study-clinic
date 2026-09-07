@@ -91,6 +91,7 @@ export interface PracticeRepairInput {
   priorResponses: string[];
   unseenPracticePrompts: string[];
   archivedRetestPrompts: string[];
+  tutorExplanations?: string[];
   revision?: { draft: PracticeRepairContent; findings: string[] };
 }
 /**

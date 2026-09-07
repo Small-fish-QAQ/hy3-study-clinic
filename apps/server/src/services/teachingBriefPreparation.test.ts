@@ -4306,6 +4306,137 @@ function visualAssetId(harness: Harness): string {
   return harness.repos.materials.getAssets('mat_1')[0]!.id;
 }
 
+describe('embedded Study Tutor', () => {
+  it('uses presented teaching and revealed Repair, then only the active Retest question', async () => {
+    const { harness, route, get, act } = await failedPracticeHarness();
+    const lesson = harness.services.lessonExecution;
+    let state = harness.repos.lessonExecution.getForSession(route.session.id, route.agendaItem.id)!;
+    state = harness.repos.lessonExecution.update(
+      {
+        ...state,
+        presentedSegmentIndexes: get().lesson!.segments.map((segment) => segment.index),
+        version: state.version + 1,
+      },
+      state.version,
+    );
+    const segment = get().lesson!.segments[0]!;
+    const anchor = {
+      lessonExecutionStateId: state.id,
+      lessonExecutionVersion: state.version,
+      segmentIndex: 0,
+      selectedText: segment.explanation.slice(0, 30),
+    };
+    const selected = lesson.tutorContext('ws_1', route.session.id, anchor)!;
+    expect(selected.selectedText).toBe(anchor.selectedText);
+    expect(selected.visibleLesson?.map((value) => value.index)).toEqual(
+      state.presentedSegmentIndexes,
+    );
+    expect(() =>
+      lesson.tutorContext('ws_1', route.session.id, {
+        ...anchor,
+        selectedText: 'forged passage not in this Lesson',
+      }),
+    ).toThrow(/重新选择/);
+    expect(() =>
+      lesson.tutorContext('ws_1', route.session.id, {
+        ...anchor,
+        lessonExecutionVersion: state.version - 1,
+      }),
+    ).toThrow(/位置已变化/);
+    await act({
+      kind: 'prepare_practice_repair',
+      learnerNote: 'I confused the rule with its example.',
+    });
+    expect(lesson.tutorContext('ws_1', route.session.id)?.repairTeaching).toContain(
+      get().practice!.recovery!.teaching!.workedExample.steps[0],
+    );
+    expect(lesson.tutorContext('ws_1', route.session.id)?.activeQuestion).toBeUndefined();
+    await act({ kind: 'start_practice_retest' });
+    const retest = lesson.tutorContext('ws_1', route.session.id)!;
+    state = harness.repos.lessonExecution.get(state.id)!;
+    const packet = state.practiceInteractions[0]!.recovery!.rounds.at(-1)!.content;
+    expect(retest.activeQuestion).toMatchObject({
+      kind: 'retest',
+      prompt: get().practice!.recovery!.retest!.prompt,
+    });
+    expect(JSON.stringify(retest)).not.toContain('correctOptionId');
+    expect(retest.repairTeaching).toContain(packet.explanation);
+    expect(JSON.stringify(retest)).not.toContain(packet.retest[1]!.prompt);
+  });
+
+  it('persists exact citations and feeds delivered Tutor teaching to later Repair without progression writes', async () => {
+    const { harness, route, get, act } = await failedPracticeHarness();
+    const state = harness.repos.lessonExecution.getForSession(
+      route.session.id,
+      route.agendaItem.id,
+    )!;
+    const answer =
+      'A new supplementary example: compare the mandatory condition with an optional filter.';
+    const original = harness.provider.respondToTutorTurn.bind(harness.provider);
+    harness.provider.respondToTutorTurn = async (input, opts) => ({
+      ...(await original(input, opts)),
+      text: answer,
+      sourceRefs: input.offeredSourceRefs.slice(0, 1).map((source) => source.referenceKey),
+    });
+    const request = {
+      commandId: 'embedded-tutor-citations',
+      expectedSessionVersion: get().session.version,
+      content: 'Explain this rule.',
+    };
+    const response = await harness.services.studySessions.submitTurn(
+      'ws_1',
+      route.session.id,
+      request,
+    );
+    expect(response.turn.tutorMetadata?.citations?.[0]?.excerpt).toBe(
+      harness.provider.lastTutorInput!.offeredSourceRefs[0]!.excerpt,
+    );
+    expect(harness.repos.lessonExecution.get(state.id)).toEqual(state);
+    expect(harness.repos.mastery.listByWorkspace('ws_1')).toHaveLength(0);
+    expect(harness.repos.formalProgression.listEvidenceForWorkspace('ws_1')).toHaveLength(0);
+    let seen: string[] | undefined;
+    const repair = harness.provider.generatePracticeRepair.bind(harness.provider);
+    harness.provider.generatePracticeRepair = async (input, opts) => {
+      seen = input.tutorExplanations;
+      return repair(input, opts);
+    };
+    await act({ kind: 'prepare_practice_repair', learnerNote: '' });
+    expect(seen).toContain(answer);
+    expect(
+      await harness.services.studySessions.submitTurn('ws_1', route.session.id, request),
+    ).toEqual(response);
+  });
+
+  it('rejects a late Tutor answer when Practice changes during the request', async () => {
+    const { harness, route, get } = await failedPracticeHarness();
+    const started = deferred<void>(),
+      release = deferred<void>();
+    const original = harness.provider.respondToTutorTurn.bind(harness.provider);
+    harness.provider.respondToTutorTurn = async (input, opts) => {
+      started.resolve(undefined);
+      await release.promise;
+      return original(input, opts);
+    };
+    const pending = harness.services.studySessions.submitTurn('ws_1', route.session.id, {
+      commandId: 'late-tutor',
+      expectedSessionVersion: get().session.version,
+      content: 'Help me understand the error.',
+    });
+    await started.promise;
+    const state = harness.repos.lessonExecution.getForSession(
+      route.session.id,
+      route.agendaItem.id,
+    )!;
+    harness.repos.lessonExecution.update({ ...state, version: state.version + 1 }, state.version);
+    release.resolve(undefined);
+    await expect(pending).rejects.toMatchObject({ code: 'VERSION_CONFLICT' });
+    expect(
+      harness.repos.studySessions.listExchanges(route.session.id).map((exchange) => exchange.role),
+    ).toEqual(['learner']);
+    expect(harness.repos.mastery.listByWorkspace('ws_1')).toHaveLength(0);
+  });
+});
+
 async function failedPracticeHarness() {
   const harness = await createHarness(0, 'pass', 'explain', 'pass_oriented');
   const route = startTeachingRoute(harness);

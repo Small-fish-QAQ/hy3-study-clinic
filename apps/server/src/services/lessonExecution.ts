@@ -15,10 +15,12 @@ import {
   type LessonSourceProjection,
   type LessonTutorContext,
   type StudySession,
+  type TutorStudyAnchor,
   type TeachingBrief,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import { ProviderError } from '../llm/errors.js';
+import { enrichTutorContext } from '../tutor/studyContext.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
@@ -387,6 +389,7 @@ export function createLessonExecutionService({
         lesson: projectLesson(acceptedLesson, state),
         progress: {
           stateVersion: state.version,
+          stateId: state.id,
           currentSegmentIndex: 0,
           segmentCount: acceptedLesson.segments.length,
           presentedSegmentIndexes: [],
@@ -519,6 +522,7 @@ export function createLessonExecutionService({
       lesson,
       progress: {
         stateVersion: state.version,
+        stateId: state.id,
         currentSegmentIndex: state.currentSegmentIndex,
         segmentCount: brief.segments.length,
         presentedSegmentIndexes: state.presentedSegmentIndexes,
@@ -1366,6 +1370,18 @@ export function createLessonExecutionService({
               ?.learningUnit?.focus ?? 'normal',
           archivedRetestPrompts,
         });
+        const tutorTeaching = repos.studySessions
+          .listTutorTeaching(workspaceId)
+          .filter(
+            (turn) => turn.agendaItemId === null || turn.agendaItemId === current.agendaItemId,
+          );
+        request.tutorExplanations = tutorTeaching
+          .slice(-8)
+          .map((turn) => turn.content.slice(0, 8000));
+        const noveltyInput = {
+          ...request,
+          tutorExplanations: tutorTeaching.map((turn) => turn.content),
+        };
         if (priorOperation) {
           const rejected = repos.operations
             .listEvents(priorOperation.id)
@@ -1425,13 +1441,13 @@ export function createLessonExecutionService({
               at: clock.now().toISOString(),
               confirmedPolicyIds: [],
             }),
-          validateResult: (value) => validatePracticeRepair(value, request),
+          validateResult: (value) => validatePracticeRepair(value, noveltyInput),
           invoke: (options) =>
             provider.generatePracticeRepair!(structuredClone(request), {
               ...options,
               validateCandidate: (value) => {
                 try {
-                  validatePracticeRepair(value, request);
+                  validatePracticeRepair(value, noveltyInput);
                   return { valid: true, diagnostics: [], diagnosticCodes: [] };
                 } catch (error) {
                   return {
@@ -2042,13 +2058,25 @@ export function createLessonExecutionService({
     }
   }
 
-  function tutorContext(workspaceId: string, sessionId: string): LessonTutorContext | null {
+  function tutorContext(
+    workspaceId: string,
+    sessionId: string,
+    anchor?: TutorStudyAnchor,
+  ): LessonTutorContext | null {
     const context = route(workspaceId, sessionId);
     const state = stateFor(context);
     const brief = state?.preparationStatus === 'ready' ? currentBrief(context) : null;
+    if (
+      anchor &&
+      (!state ||
+        state.id !== anchor.lessonExecutionStateId ||
+        state.version !== anchor.lessonExecutionVersion)
+    ) {
+      throw new AppError(ApiErrorCode.VersionConflict, '讲解位置已变化，请重新选择要问的内容。');
+    }
     if (!state || !brief) return null;
     const lesson = projectLesson(brief, state)!;
-    const current = lesson.segments[state.currentSegmentIndex];
+    const current = lesson.segments[anchor?.segmentIndex ?? state.currentSegmentIndex];
     if (!current) return null;
     const nearbySegments = lesson.segments
       .filter((segment) => Math.abs(segment.index - current.index) === 1)
@@ -2105,36 +2133,17 @@ export function createLessonExecutionService({
           : null,
       },
       nearbySegments,
-      sources: current.sources.slice(0, 4),
+      sources: sourceProjection(brief, repos).slice(0, 6),
       visuals: lesson.visuals.slice(0, 4),
       summary: lesson.summary.text,
       nextConnection: lesson.summary.nextConnection,
     });
-    if (JSON.stringify(result).length > 12_000) {
-      return LessonTutorContextSchema.parse({
-        ...result,
-        currentSegment: {
-          ...result.currentSegment,
-          explanation: result.currentSegment.explanation.slice(0, 900),
-          example: result.currentSegment.example?.slice(0, 250) ?? null,
-          contrast: result.currentSegment.contrast?.slice(0, 250) ?? null,
-          possibleMisconception: result.currentSegment.possibleMisconception?.slice(0, 250) ?? null,
-        },
-        sources: result.sources.slice(0, 2),
-        visuals: (result.visuals ?? []).slice(0, 2).map((visual) => ({
-          ...visual,
-          explanation: {
-            ...visual.explanation,
-            text: visual.explanation.text.slice(0, 600),
-            importantConcepts: visual.explanation.importantConcepts.slice(0, 4),
-            pedagogicalNotes: visual.explanation.pedagogicalNotes.slice(0, 2),
-            uncertainty: visual.explanation.uncertainty.slice(0, 2),
-          },
-        })),
-        summary: result.summary?.slice(0, 300) ?? null,
-      });
-    }
-    return result;
+    return enrichTutorContext(result, lesson, state, projectPractice(brief, state), anchor, {
+      desiredDepth: context.planItem.targetDepth,
+      unitFocus:
+        context.curriculum.nodes.find((node) => node.id === state.learningUnitId)?.learningUnit
+          ?.focus ?? 'normal',
+    });
   }
 
   return { get, ensure, command, tutorContext };

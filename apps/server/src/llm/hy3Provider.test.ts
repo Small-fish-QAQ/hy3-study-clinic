@@ -22,6 +22,7 @@ import type {
   StructuredOutputDiagnostic,
   StudyPlanProposalInput,
   VisualDescriptionInput,
+  TutorTurnInput,
 } from './provider.js';
 import { makeConcept, makeGrounding } from '../testing/fixtures.js';
 import {
@@ -119,6 +120,69 @@ function makeProvider(fetchImpl: typeof fetch, timeoutMs = 30_000): Hy3Provider 
     fetchImpl,
   });
 }
+
+it('accepts a concise Tutor reply without model-authored workflow metadata and validates its sources', async () => {
+  const input: TutorTurnInput = {
+    workspaceName: 'Course',
+    learnerMessage: 'Why does the condition matter?',
+    session: {
+      id: 'session',
+      routeState: 'on_route',
+      currentAgendaItemId: null,
+      currentAgendaItem: null,
+    },
+    summary: null,
+    lessonContext: null,
+    currentUnit: null,
+    allowedMoves: ['ANSWER_QUESTION'],
+    recentMoves: [],
+    formalCheckpointAvailable: false,
+    offeredSourceRefs: [
+      { referenceKey: 'S1', excerpt: 'The condition narrows the population.', origin: 'lesson' },
+    ],
+    learnerState: {
+      formalEvidence: [],
+      openMistakes: [],
+      misconceptions: [],
+      reviews: [],
+      mastery: [],
+      riskIds: [],
+    },
+    recentExchanges: [],
+  };
+  const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+    new Response(
+      JSON.stringify({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({ text: '条件确定了我们观察的群体。', sourceRefs: ['S1'] }),
+            },
+            finish_reason: 'stop',
+          },
+        ],
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    ),
+  );
+  const validate = vi.fn().mockReturnValue({ valid: true, diagnostics: [] });
+  const result = await makeProvider(fetcher).respondToTutorTurn(input, {
+    validateCandidate: validate,
+  });
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  expect(result).toMatchObject({
+    text: '条件确定了我们观察的群体。',
+    sourceRefs: ['S1'],
+    move: 'ANSWER_QUESTION',
+    suggestedActions: [],
+  });
+  expect(validate).toHaveBeenCalledWith(
+    expect.objectContaining({ sourceRefs: ['S1'], move: 'ANSWER_QUESTION' }),
+  );
+  const body = JSON.parse(String(fetcher.mock.calls[0]![1]!.body));
+  expect(body.messages[1].content).toContain('{"text":"...","sourceRefs":[]}');
+  expect(body.messages[1].content).not.toContain('suggestedActions');
+});
 
 const visualInput: VisualDescriptionInput = {
   image: {

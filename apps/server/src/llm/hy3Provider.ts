@@ -1,3 +1,4 @@
+import { inferRequestedTutorMove } from '../tutor/pedagogy.js';
 import {
   AlignmentProposalPayloadSchema,
   AssessmentProposalPayloadSchema,
@@ -28,7 +29,7 @@ import {
   RubricGradeSchema,
   TeachingLessonSlotContentSchema,
   TutorStepPayloadSchema,
-  TutorTurnPayloadSchema,
+  TutorReplyPayloadSchema,
   type AlignmentProposalPayload,
   type AssessmentProposalPayload,
   type ConceptAnalysisPayload,
@@ -1171,7 +1172,31 @@ export class Hy3Provider implements LlmProvider {
     input: TutorTurnInput,
     opts?: ProviderCallOptions,
   ): Promise<TutorTurnPayload> {
-    return this.complete(tutorTurnMessages(input), TutorTurnPayloadSchema, opts);
+    const materialize = (reply: { text: string; sourceRefs: string[] }): TutorTurnPayload => ({
+      ...reply,
+      move: inferRequestedTutorMove(input.learnerMessage) ?? 'ANSWER_QUESTION',
+      routeSignal: 'stay_on_route',
+      summaryDelta: {
+        learnerQuestions: [],
+        unresolvedConfusion: [],
+        explanationsTried: [],
+        learnerReactions: [],
+        openActions: [],
+        safetyFlags: [],
+      },
+      suggestedActions: [],
+    });
+    const reply = await this.complete(tutorTurnMessages(input), TutorReplyPayloadSchema, {
+      ...opts,
+      validateCandidate: (candidate) => {
+        const parsed = TutorReplyPayloadSchema.safeParse(candidate);
+        if (!parsed.success) return { valid: false, diagnostics: ['Invalid Tutor reply.'] };
+        return (
+          opts?.validateCandidate?.(materialize(parsed.data)) ?? { valid: true, diagnostics: [] }
+        );
+      },
+    });
+    return materialize(reply);
   }
 
   async proposeCurriculum(

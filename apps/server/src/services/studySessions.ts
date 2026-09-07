@@ -18,10 +18,11 @@ import {
   type SessionAgendaItem,
   type TutorContextManifest,
   type TutorTurnPayload,
+  type TutorStudyAnchor,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import { ProviderError } from '../llm/errors.js';
-import type { LlmProvider, ProviderCallOptions } from '../llm/provider.js';
+import type { LlmProvider, ProviderCallOptions, TutorTurnInput } from '../llm/provider.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
@@ -153,6 +154,12 @@ export function createStudySessionService({
   }
 
   function detail(workspaceId: string, sessionId: string) {
+    requireSession(repos, workspaceId, sessionId);
+    repos.operations.recoverExpiredForWorkspace(
+      workspaceId,
+      'study_session_turn',
+      clock.now().toISOString(),
+    );
     const session = requireSession(repos, workspaceId, sessionId);
     const agenda = repos.sessionAgendas.get(session.sessionAgendaId);
     if (!agenda) {
@@ -299,6 +306,7 @@ export function createStudySessionService({
     session: StudySession,
     turnNumber: number,
     agendaItem: SessionAgendaItem | null,
+    studyAnchor?: TutorStudyAnchor,
   ): TutorContextManifest {
     const contract = repos.learningContracts.get(session.contractVersionId);
     const curriculum = repos.curricula.get(session.curriculumVersionId);
@@ -320,6 +328,7 @@ export function createStudySessionService({
       sourceBlockRevisionIds,
       formalEvidenceIds: learnerState.formalEvidence.map((evidence) => evidence.id),
       riskIds: learnerState.riskIds,
+      ...(studyAnchor ? { studyAnchor } : {}),
     };
     return { ...base, fingerprint: fingerprint({ ...base, turnNumber }) };
   }
@@ -586,8 +595,13 @@ export function createStudySessionService({
     }
 
     let policyFingerprint: string | null = null;
-    const lessonContext = lessonExecution?.tutorContext(workspaceId, sessionId) ?? null;
+    let lessonContext: ReturnType<LessonExecutionService['tutorContext']> = null;
     try {
+      lessonContext =
+        lessonExecution?.tutorContext(workspaceId, sessionId, parsed.studyAnchor) ?? null;
+      if (parsed.studyAnchor && !lessonContext) {
+        throw new AppError(ApiErrorCode.VersionConflict, '当前讲解已变化，请重新选择提问内容。');
+      }
       policyFingerprint = enforceCostPolicies(
         workspaceId,
         session.id,
@@ -676,7 +690,24 @@ export function createStudySessionService({
         ),
       ),
     };
-    const boundedTutorInput = boundTutorTurnInput(tutorInput);
+    let boundedTutorInput: TutorTurnInput;
+    try {
+      boundedTutorInput = boundTutorTurnInput(tutorInput);
+    } catch (error) {
+      repos.operations.finalize(
+        {
+          operationId: claim.id,
+          status: 'failed',
+          payload: {
+            message: error instanceof Error ? error.message : 'Tutor context unavailable.',
+          },
+          createdAt: clock.now().toISOString(),
+        },
+        owner,
+        claim.fencingToken,
+      );
+      throw error;
+    }
     const turnCreatedAt = clock.now().toISOString();
     const turn: StudyTurn = interruptedTurn
       ? {
@@ -692,11 +723,14 @@ export function createStudySessionService({
           seq: repos.studySessions.listTurns(session.id).length,
           commandId: parsed.commandId,
           status: 'running',
-          contextManifest: contextManifest(
-            session,
-            repos.studySessions.listTurns(session.id).length,
-            currentAgendaItem,
-          ),
+          contextManifest: {
+            ...contextManifest(
+              session,
+              repos.studySessions.listTurns(session.id).length,
+              currentAgendaItem,
+              parsed.studyAnchor,
+            ),
+          },
           logicalCallId,
           errorMessage: null,
           createdAt: turnCreatedAt,
@@ -736,6 +770,18 @@ export function createStudySessionService({
       repos.transaction(() => {
         const current = requireSession(repos, workspaceId, sessionId);
         requireCurrentRoute(repos, current);
+        if (lessonContext?.identity) {
+          const currentLesson = lessonExecution?.tutorContext(workspaceId, sessionId);
+          if (
+            currentLesson?.identity?.stateId !== lessonContext.identity.stateId ||
+            currentLesson.identity.version !== lessonContext.identity.version
+          ) {
+            throw new AppError(
+              ApiErrorCode.VersionConflict,
+              '讲解或练习已变化，本次回答未写入；请在当前位置重新提问。',
+            );
+          }
+        }
         const expectedDurableVersion = ownedInterruptedRetry
           ? parsed.expectedSessionVersion + 1
           : parsed.expectedSessionVersion;
@@ -821,7 +867,7 @@ export function createStudySessionService({
           operationId: claim.id,
           studySessionId: session.id,
           operationType: 'study_session_tutor_turn',
-          schemaFingerprint: 'tutor-turn-v1',
+          schemaFingerprint: 'tutor-reply-v3',
           policyFingerprint,
           sourceFingerprint: session.executionSourceManifestFingerprint,
           fencingToken: claim.fencingToken,
@@ -861,6 +907,18 @@ export function createStudySessionService({
       const response = repos.transaction(() => {
         const current = requireSession(repos, workspaceId, sessionId);
         requireCurrentRoute(repos, current);
+        if (lessonContext?.identity) {
+          const live = lessonExecution?.tutorContext(workspaceId, sessionId);
+          if (
+            live?.identity?.stateId !== lessonContext.identity.stateId ||
+            live.identity.version !== lessonContext.identity.version
+          ) {
+            throw new AppError(
+              ApiErrorCode.VersionConflict,
+              '讲解或练习已变化，请在当前位置重新提问。',
+            );
+          }
+        }
         const reservedSessionVersion = ownedInterruptedRetry
           ? session.version
           : session.version + 1;
@@ -890,6 +948,38 @@ export function createStudySessionService({
             routeSignal: safeResult.routeSignal,
             lessonSegmentIndex: lessonContext?.currentSegment.index ?? null,
             policyVersion: TUTOR_PEDAGOGY_POLICY_VERSION,
+            citations: safeResult.sourceRefs.flatMap((key) => {
+              const source = boundedTutorInput.offeredSourceRefs.find(
+                (ref) => ref.referenceKey === key,
+              );
+              return source
+                ? [
+                    {
+                      referenceKey: key,
+                      title: source.title ?? '课程资料',
+                      location: source.location ?? '',
+                      excerpt: source.excerpt,
+                    },
+                  ]
+                : [];
+            }),
+            studyContext: {
+              agendaItemId: session.currentAgendaItemId,
+              lessonTitle: lessonContext?.objective.title ?? currentUnit?.title ?? '当前学习',
+              phase: lessonContext?.phase ?? 'lesson',
+              anchor: lessonContext?.identity
+                ? {
+                    lessonExecutionStateId: lessonContext.identity.stateId,
+                    lessonExecutionVersion: lessonContext.identity.version,
+                    ...(parsed.studyAnchor?.segmentIndex !== undefined
+                      ? { segmentIndex: parsed.studyAnchor.segmentIndex }
+                      : {}),
+                    ...(parsed.studyAnchor?.selectedText
+                      ? { selectedText: parsed.studyAnchor.selectedText }
+                      : {}),
+                  }
+                : null,
+            },
           },
         });
         repos.studySessions.insertExchange(tutorExchange);

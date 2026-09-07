@@ -146,6 +146,32 @@ afterEach(() => {
 });
 
 describe('LessonExecutionPanel', () => {
+  it('uses the same Session version advanced by Tutor while preserving the Lesson and Agenda fences', async () => {
+    vi.spyOn(api, 'getLessonExecution').mockResolvedValue(prepared);
+    const command = vi.spyOn(api, 'lessonExecutionCommand').mockResolvedValue(prepared);
+    const props = {
+      workspaceId: 'ws_1',
+      sessionId: 'session_1',
+      agendaItemId: 'agenda_item_1',
+      active: true,
+      busy: false,
+    };
+    const view = render(<LessonExecutionPanel {...props} sessionVersion={2} />);
+    await screen.findByRole('button', { name: '开始本节讲解' });
+    view.rerender(<LessonExecutionPanel {...props} sessionVersion={4} />);
+    await userEvent.setup().click(screen.getByRole('button', { name: '开始本节讲解' }));
+    expect(command).toHaveBeenCalledWith(
+      'ws_1',
+      'session_1',
+      expect.objectContaining({
+        expectedSessionVersion: 4,
+        expectedAgendaVersion: 3,
+        expectedLessonStateVersion: 1,
+        expectedAgendaItemId: 'agenda_item_1',
+      }),
+      expect.any(AbortSignal),
+    );
+  });
   it('renders a due Review entry instead of the generic unavailable lesson state', async () => {
     const user = userEvent.setup();
     const startReview = vi.fn();

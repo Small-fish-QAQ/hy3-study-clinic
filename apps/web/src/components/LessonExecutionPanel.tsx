@@ -23,6 +23,8 @@ function nextCommandId(prefix: string): string {
 }
 
 export interface LessonExecutionPanelProps {
+  /** Current version of the same Session, including completed Tutor turns. */
+  sessionVersion?: number;
   workspaceId: string;
   sessionId: string;
   agendaItemId: string;
@@ -411,7 +413,7 @@ function TeachingSegmentContent({
   onResponseChange: (value: string) => void;
 }) {
   return (
-    <div className="lesson-segment-content">
+    <div className="lesson-segment-content" data-tutor-segment={segment.index}>
       <p className="lesson-segment-explanation">{segment.explanation}</p>
       <SourceReferences sources={segment.sources} origin={segment.explanationOrigin} />
       {segment.workedProcess ? (
@@ -859,6 +861,7 @@ function ReadyLesson({
 }
 
 export function LessonExecutionPanel({
+  sessionVersion,
   workspaceId,
   sessionId,
   agendaItemId,
@@ -1073,7 +1076,7 @@ export function LessonExecutionPanel({
       const commandId = nextCommandId('lesson_command');
       const input: LessonExecutionCommandRequest = {
         command: { commandId, idempotencyKey: commandId, workspaceId, actor: 'learner' },
-        expectedSessionVersion: projection.session.version,
+        expectedSessionVersion: Math.max(projection.session.version, sessionVersion ?? 0),
         expectedAgendaVersion: projection.agenda?.version ?? 1,
         expectedAgendaItemId: agendaItemId,
         expectedLessonStateVersion: projection.progress.stateVersion,
@@ -1118,6 +1121,7 @@ export function LessonExecutionPanel({
       projection,
       refresh,
       sessionId,
+      sessionVersion,
       workspaceId,
     ],
   );

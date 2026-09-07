@@ -87,7 +87,7 @@ Hy3 performs the open-ended semantic work - the parts with no unique correct ans
 | Hy3 proposes | Concretely |
 | --- | --- |
 | Course structuring | concept extraction; depth- and optional-focus-aware Course Map, LearningUnit and objective proposals; derived StudyPlan and replan proposals |
-| Teaching | Teaching-Brief lesson slots; practice items (a separate call, made only after the lesson passes its gates); Tutor moves from a controlled vocabulary |
+| Teaching | Teaching-Brief lesson slots; practice items (a separate call, made only after the lesson passes its gates); contextual Tutor explanations with saved source attribution |
 | Judgement | short-answer semantic grading and rubric-point coverage; blind source-dependency attestation; candidate-evidence relation classification; bounded compositional support groups |
 | Diagnosis | misconception hypotheses; targeted Repair proposals; adversarial mastery-challenge candidates |
 
@@ -199,7 +199,7 @@ durable StudySessions with pause/resume/stop and learner-controlled detours; Tea
 Briefs whose teacher-led pedagogical arc and per-segment provenance separate verified
 course excerpts from labelled Hy3 teaching; failure-classified, bounded Lesson/Practice
 preparation recovery with accepted-Lesson preservation; gated practice generation; a lesson-aware
-Tutor over a controlled move vocabulary; Formal Assessment with criterion-gated Evidence
+Tutor embedded alongside Lesson, Practice and Repair; Formal Assessment with criterion-gated Evidence
 and progression reconciliation; mistakes, misconceptions and targeted Repair; FSRS-6 review scheduling;
 the blind candidate-relation / support-group semantic verifier with locally derived
 verdicts and deterministic mis-binding repair; and a developer-only adversarial

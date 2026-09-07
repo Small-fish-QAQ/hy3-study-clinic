@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
@@ -248,12 +248,18 @@ const completedTutorResponse = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  sessionStorage.clear();
   vi.mocked(api.getAgendaFormalAssessment).mockResolvedValue(null);
   vi.mocked(api.getFormalExecution).mockResolvedValue(null);
   vi.mocked(api.getLessonExecution).mockResolvedValue(lessonUnavailable);
   vi.mocked(api.prepareLessonExecution).mockResolvedValue(lessonUnavailable);
   vi.mocked(api.lessonExecutionCommand).mockResolvedValue(lessonUnavailable);
 });
+
+async function openTutor(): Promise<void> {
+  const buttons = await screen.findAllByRole('button', { name: '问 Tutor' });
+  await userEvent.setup().click(buttons[0]!);
+}
 
 async function openStudyControls(user: ReturnType<typeof userEvent.setup>): Promise<void> {
   await openInspector(user, '安排');
@@ -276,6 +282,83 @@ async function openInspector(
 }
 
 describe('StudySessionView', () => {
+  it('synchronizes a running turn after reload before permitting a new question', async () => {
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });
+    vi.mocked(api.getStudySession)
+      .mockResolvedValueOnce({
+        ...detail,
+        turns: [{ ...completedTutorResponse.turn, status: 'running' }],
+        exchanges: [completedTutorResponse.exchanges[0]!],
+      })
+      .mockResolvedValue({
+        ...detail,
+        session: { ...session, version: 2 },
+        turns: [{ ...completedTutorResponse.turn, status: 'cancelled' }],
+        exchanges: [completedTutorResponse.exchanges[0]!],
+      });
+    render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    await openTutor();
+    expect(screen.getByLabelText('向 Tutor 提问')).toBeDisabled();
+    expect(screen.getByText('正在同步上一条提问的结果…')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText('向 Tutor 提问')).toBeEnabled(), {
+      timeout: 2500,
+    });
+    expect(screen.getByRole('button', { name: '重新编辑提问' })).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: '你，对话' })).toContainElement(
+      screen.getByRole('button', { name: '重新编辑提问' }),
+    );
+    expect(api.streamTutorTurn).not.toHaveBeenCalled();
+  });
+  it('opens a selected passage in Tutor without sending, preserves the draft on reload, and submits its exact anchor', async () => {
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });
+    vi.mocked(api.getStudySession).mockResolvedValue(detail);
+    vi.mocked(api.getLessonExecution).mockResolvedValue({
+      ...lessonReady,
+      progress: { ...lessonReady.progress!, stateId: 'lesson_state_1' },
+    });
+    vi.mocked(api.streamTutorTurn).mockResolvedValue(completedTutorResponse);
+    const user = userEvent.setup();
+    const first = render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    const text = await screen.findByText('条件概率会把观察范围收窄到已知条件。');
+    expect(screen.queryByRole('log')).not.toBeInTheDocument();
+    const range = document.createRange();
+    range.selectNodeContents(text);
+    range.getBoundingClientRect = () => ({ left: 20, bottom: 100 }) as DOMRect;
+    const selection = window.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+    fireEvent(document, new Event('selectionchange'));
+    await user.click(await screen.findByRole('button', { name: '就这段问 Tutor' }));
+    expect(api.streamTutorTurn).not.toHaveBeenCalled();
+    await user.type(screen.getByLabelText('向 Tutor 提问'), '为什么要缩小范围？');
+    await waitFor(() =>
+      expect(sessionStorage.getItem('study-tutor-draft:ws_1:session_1')).toContain(
+        '为什么要缩小范围',
+      ),
+    );
+    first.unmount();
+    render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    await openTutor();
+    const composer = screen.getByLabelText('向 Tutor 提问');
+    expect(composer).toHaveValue('为什么要缩小范围？');
+    fireEvent.keyDown(composer, { key: 'Enter', isComposing: true });
+    expect(api.streamTutorTurn).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: '发送' }));
+    await waitFor(() => expect(api.streamTutorTurn).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(api.streamTutorTurn).mock.calls[0]?.[2]).toMatchObject({
+      content: '为什么要缩小范围？',
+      studyAnchor: {
+        lessonExecutionStateId: 'lesson_state_1',
+        lessonExecutionVersion: 1,
+        segmentIndex: 0,
+        selectedText: text.textContent,
+      },
+    });
+    await user.click(screen.getByRole('button', { name: '回到讲解' }));
+    expect(screen.queryByRole('log')).not.toBeInTheDocument();
+    await openTutor();
+    expect(screen.getByRole('article', { name: 'Hy3 Tutor，对话' })).toBeInTheDocument();
+  });
   it('shows the end of an exhausted Agenda without requesting a nonexistent current Lesson', async () => {
     const finished = structuredClone(detail);
     finished.session.currentAgendaItemId = null;
@@ -461,6 +544,7 @@ describe('StudySessionView', () => {
     });
 
     render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    await openTutor();
 
     const transcript = await screen.findByRole('log', { name: '学习对话记录' });
     expect(transcript).toContainElement(screen.getByRole('article', { name: '你，对话' }));
@@ -478,6 +562,7 @@ describe('StudySessionView', () => {
     vi.mocked(api.streamTutorTurn).mockResolvedValue(completedTutorResponse);
 
     render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    await openTutor();
 
     await user.click(await screen.findByRole('button', { name: '举个例子' }));
     await waitFor(() => expect(api.streamTutorTurn).toHaveBeenCalledTimes(1));
@@ -497,6 +582,14 @@ describe('StudySessionView', () => {
       tutorMetadata: {
         move: 'GIVE_EXAMPLE' as const,
         sourceRefs: ['S1'],
+        citations: [
+          {
+            referenceKey: 'S1',
+            title: '概率论讲义',
+            location: '第 12 页 · 条件概率',
+            excerpt: '在已知事件 B 发生时，计算事件 A 的概率。',
+          },
+        ],
         routeSignal: 'detour_started' as const,
         lessonSegmentIndex: 0,
         policyVersion: 'lesson-aware-tutor-v1',
@@ -511,6 +604,7 @@ describe('StudySessionView', () => {
     vi.mocked(api.getLessonExecution).mockResolvedValue(lessonReady);
 
     render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    await openTutor();
 
     expect(await screen.findByText('正在围绕：理解条件概率 · 核心解释')).toBeInTheDocument();
     expect(screen.getAllByText('举个例子')).toHaveLength(2);
@@ -518,7 +612,7 @@ describe('StudySessionView', () => {
     expect(screen.queryByText('GIVE_EXAMPLE')).not.toBeInTheDocument();
     expect(screen.queryByText('S1')).not.toBeInTheDocument();
 
-    const disclosure = screen.getByText('查看来源（1）');
+    const disclosure = screen.getByText('参考资料（1）');
     disclosure.focus();
     await user.keyboard('{Enter}');
     expect(screen.getAllByText('概率论讲义').length).toBeGreaterThan(0);
@@ -547,6 +641,7 @@ describe('StudySessionView', () => {
     vi.mocked(api.streamTutorTurn).mockResolvedValue(completedTutorResponse);
 
     render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    await openTutor();
 
     expect(await screen.findByText('Hy3 补充解释')).toBeInTheDocument();
     expect(screen.queryByText(/查看来源/)).not.toBeInTheDocument();
@@ -573,6 +668,7 @@ describe('StudySessionView', () => {
     );
 
     render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    await openTutor();
     const composer = await screen.findByLabelText('向 Tutor 提问');
     await user.type(composer, 'Explain this step.');
     await user.click(screen.getByRole('button', { name: '发送' }));
@@ -997,6 +1093,7 @@ describe('StudySessionView', () => {
         onLaunchQuiz={onLaunchQuiz}
       />,
     );
+    await openTutor();
 
     expect(await screen.findByText('这部分已经讲到可以检验的程度')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '开始正式检验' })).toBeInTheDocument();
@@ -1355,6 +1452,7 @@ describe('StudySessionView', () => {
     });
 
     render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    await openTutor();
     const composer = await screen.findByPlaceholderText('输入你的问题或想法…');
     await user.type(composer, 'Why?');
     await user.click(screen.getByRole('button', { name: '发送' }));
@@ -1386,6 +1484,7 @@ describe('StudySessionView', () => {
       .mockReturnValueOnce(retryInFlight);
 
     render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    await openTutor();
     const composer = await screen.findByPlaceholderText('输入你的问题或想法…');
     await user.type(composer, ' Why? ');
     await user.click(screen.getByRole('button', { name: '发送' }));
@@ -1467,6 +1566,7 @@ describe('StudySessionView', () => {
     vi.mocked(api.streamTutorTurn).mockImplementation(firstAttempt);
 
     render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    await openTutor();
     const composer = await screen.findByPlaceholderText('输入你的问题或想法…');
     await user.type(composer, 'Why?');
     await user.click(screen.getByRole('button', { name: '发送' }));
@@ -1534,6 +1634,7 @@ describe('StudySessionView', () => {
       .mockResolvedValueOnce(nextResponse);
 
     render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    await openTutor();
     const composer = await screen.findByPlaceholderText('输入你的问题或想法…');
     await user.type(composer, 'Why?');
     await user.click(screen.getByRole('button', { name: '发送' }));
@@ -1543,6 +1644,8 @@ describe('StudySessionView', () => {
     expect(screen.queryByRole('button', { name: '重试此条提问' })).not.toBeInTheDocument();
     expect(composer).toBeEnabled();
 
+    expect(composer).toHaveValue('Why?');
+    await user.clear(composer);
     await user.type(composer, 'What should I try next?');
     await user.click(screen.getByRole('button', { name: '发送' }));
 
@@ -1574,6 +1677,7 @@ describe('StudySessionView', () => {
     );
 
     render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    await openTutor();
     const composer = await screen.findByPlaceholderText('输入你的问题或想法…');
     await user.type(composer, 'Why?');
     await user.click(screen.getByRole('button', { name: '发送' }));
@@ -1612,6 +1716,7 @@ describe('StudySessionView', () => {
     );
 
     const { rerender } = render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    await openTutor();
     const composer = await screen.findByPlaceholderText('输入你的问题或想法…');
     await user.type(composer, 'Why?');
     await user.click(screen.getByRole('button', { name: '发送' }));

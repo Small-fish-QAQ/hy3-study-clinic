@@ -307,6 +307,51 @@ beforeEach(() => {
 });
 
 describe('StudySession service', () => {
+  it('recovers an expired Tutor turn during reload synchronization and fences its late worker', async () => {
+    let reached!: () => void, release!: () => void;
+    const started = new Promise<void>((resolve) => {
+      reached = resolve;
+    });
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    class Delayed extends FakeProvider {
+      override async respondToTutorTurn(input: TutorTurnInput, opts?: ProviderCallOptions) {
+        reached();
+        await gate;
+        return super.respondToTutorTurn(input, opts);
+      }
+    }
+    const app = buildApp({ repos, provider: new Delayed(), clock: fixedClock(T1) });
+    const session = service.start('ws_1', {
+      contractVersionId: 'contract_1',
+      curriculumVersionId: 'curriculum_1',
+      studyPlanVersionId: 'plan_1',
+      sessionAgendaId: 'agenda_1',
+      expectedCourseExecutionVersion: 1,
+    }).session;
+    const request = app.inject({
+      method: 'POST',
+      url: `/api/workspaces/ws_1/study-sessions/${session.id}/turns`,
+      payload: {
+        commandId: 'expired-on-read',
+        expectedSessionVersion: session.version,
+        content: 'Help me understand.',
+      },
+    });
+    void request.then(() => undefined);
+    await started;
+    db.prepare(
+      "UPDATE agent_operations SET lease_expires_at=? WHERE study_session_id=? AND status='running'",
+    ).run(T0, session.id);
+    expect(service.detail('ws_1', session.id).turns.at(-1)?.status).toBe('interrupted');
+    release();
+    expect((await request).statusCode).toBe(409);
+    expect(repos.studySessions.listExchanges(session.id).map((exchange) => exchange.role)).toEqual([
+      'learner',
+    ]);
+    await app.close();
+  });
   it('reuses the same Session while routing a pending synthesis to executable teaching', () => {
     const request = {
       contractVersionId: 'contract_1',
@@ -552,7 +597,7 @@ describe('StudySession service', () => {
     expect(completed.turn.tutorMetadata).toMatchObject({
       move: 'EXPLAIN_DEEPER',
       routeSignal: 'stay_on_route',
-      policyVersion: 'lesson-aware-v1',
+      policyVersion: 'embedded-study-v3',
     });
     expect(repos.studySessions.listTurns(started.session.id)).toHaveLength(1);
     expect(operationStudySessionId(`study-turn:${started.session.id}:${input.commandId}`)).toBe(

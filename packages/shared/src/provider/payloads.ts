@@ -1439,3 +1439,9 @@ export const TutorTurnPayloadSchema = z
   })
   .strict();
 export type TutorTurnPayload = z.infer<typeof TutorTurnPayloadSchema>;
+
+/** Embedded teaching needs prose and attribution, not model-authored workflow signals. */
+export const TutorReplyPayloadSchema = TutorTurnPayloadSchema.pick({
+  text: true,
+  sourceRefs: true,
+});

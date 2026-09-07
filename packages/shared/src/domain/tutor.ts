@@ -33,12 +33,34 @@ export const TutorRouteSignalSchema = z.enum([
 ]);
 export type TutorRouteSignal = z.infer<typeof TutorRouteSignalSchema>;
 
+/** A learner-visible location, checked against the current server projection. */
+export const TutorStudyAnchorSchema = z
+  .object({
+    lessonExecutionStateId: z.string().min(1),
+    lessonExecutionVersion: z.number().int().positive(),
+    segmentIndex: z.number().int().nonnegative().optional(),
+    selectedText: z.string().trim().min(1).max(1800).optional(),
+  })
+  .strict();
+export type TutorStudyAnchor = z.infer<typeof TutorStudyAnchorSchema>;
+
+export const TutorCitationSchema = z
+  .object({
+    referenceKey: z.string().min(1).max(40),
+    title: z.string().min(1).max(500),
+    location: z.string().max(1000),
+    excerpt: z.string().min(1).max(900),
+  })
+  .strict();
+
 /** A compact, operation-local source reference offered to one Tutor turn. */
 export const TutorSourceRefSchema = z
   .object({
     referenceKey: z.string().min(1).max(40),
     excerpt: z.string().min(1).max(900),
     origin: z.enum(['lesson', 'course_truth']),
+    title: z.string().max(500).optional(),
+    location: z.string().max(1000).optional(),
   })
   .strict();
 export type TutorSourceRef = z.infer<typeof TutorSourceRefSchema>;
@@ -59,6 +81,17 @@ export const TutorTurnMetadataSchema = z
     routeSignal: TutorRouteSignalSchema,
     lessonSegmentIndex: z.number().int().nonnegative().nullable(),
     policyVersion: z.string().min(1).max(40),
+    /** Immutable attribution: operation-local source keys must never be rebound on reload. */
+    citations: z.array(TutorCitationSchema).max(6).optional(),
+    studyContext: z
+      .object({
+        agendaItemId: z.string().nullable(),
+        lessonTitle: z.string().max(300),
+        phase: z.string().max(30),
+        anchor: TutorStudyAnchorSchema.nullable(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 export type TutorTurnMetadata = z.infer<typeof TutorTurnMetadataSchema>;

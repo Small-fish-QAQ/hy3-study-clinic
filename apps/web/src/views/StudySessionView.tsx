@@ -3,7 +3,6 @@ import {
   isPlannedFormalAgendaItemKind,
   type CourseFormalReadiness,
   type LessonExecutionProjection,
-  type LessonSourceProjection,
   type MixedInitiativeCommandRequest,
   type PublicQuiz,
   type SubmitTutorTurnRequest,
@@ -12,11 +11,13 @@ import {
   type StudySession,
   type StudySessionDetailResponse,
   type TutorTurnMetadata,
+  type TutorStudyAnchor,
 } from '@hy3-clinic/shared';
 import { api } from '../api.js';
 import { Banner, Loading } from '../components/ui.js';
 import { useAsyncAction } from '../components/useAsyncAction.js';
 import { LessonExecutionPanel } from '../components/LessonExecutionPanel.js';
+import { StudyTutorSurface } from '../components/StudyTutorSurface.js';
 import { StudyInspector, type StudyInspectorTab } from './StudyInspector.js';
 
 const INSPECTOR_MODAL_QUERY = '(max-width: 1279px)';
@@ -24,10 +25,7 @@ const INSPECTOR_MODAL_QUERY = '(max-width: 1279px)';
 const QUICK_HELP_PROMPTS = [
   { label: '没听懂', prompt: '没懂，能简单一点吗？' },
   { label: '举个例子', prompt: '举个例子说明一下。' },
-  { label: '换个说法', prompt: '换一种说法解释一下。' },
-  { label: '对比一下', prompt: '这两个概念有什么区别？' },
-  { label: '为什么？', prompt: '为什么会这样？' },
-  { label: '总结一下', prompt: '总结一下这部分。' },
+  { label: '给点提示', prompt: '请给当前这道题一点思路提示，留下关键判断让我自己完成。' },
 ] as const;
 
 const TUTOR_MOVE_LABELS: Partial<Record<TutorTurnMetadata['move'], string>> = {
@@ -131,9 +129,18 @@ export function StudySessionView({
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [composer, setComposer] = useState('');
+  const [tutorOpen, setTutorOpen] = useState(false);
+  const [studyAnchor, setStudyAnchor] = useState<TutorStudyAnchor | null>(null);
+  const [selection, setSelection] = useState<{
+    anchor: TutorStudyAnchor;
+    x: number;
+    y: number;
+  } | null>(null);
+  const transcriptRef = useRef<HTMLDivElement>(null);
   const [detourLearningUnitId, setDetourLearningUnitId] = useState('');
   const [pendingTutorTurn, setPendingTutorTurn] = useState<PendingTutorTurn | null>(null);
   const [tutorLoading, setTutorLoading] = useState(false);
+  const [sendingContent, setSendingContent] = useState<string | null>(null);
   const [tutorReconciling, setTutorReconciling] = useState(false);
   const [tutorError, setTutorError] = useState<string | null>(null);
   const [tutorReconciliationTarget, setTutorReconciliationTarget] =
@@ -162,7 +169,123 @@ export function StudySessionView({
   const routeSessionAgendaId = route?.sessionAgendaId;
   const routeExecutionVersion = route?.executionVersion;
   const currentSessionId = detail?.session.id;
-  const busy = action.loading || tutorLoading || tutorReconciling || Boolean(pendingTutorTurn);
+  const restoringTutor =
+    !tutorLoading &&
+    Boolean(detail?.turns.some((turn) => turn.status === 'running' || turn.status === 'queued'));
+  const busy =
+    action.loading ||
+    tutorLoading ||
+    tutorReconciling ||
+    restoringTutor ||
+    Boolean(pendingTutorTurn);
+  useEffect(() => {
+    if (!restoringTutor || !workspaceId || !currentSessionId) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      void api
+        .getStudySession(workspaceId, currentSessionId, controller.signal)
+        .then((next) => {
+          if (!controller.signal.aborted)
+            setDetail((current) =>
+              current?.session.id === currentSessionId &&
+              next.session.version >= current.session.version
+                ? next
+                : current,
+            );
+        })
+        .catch(() => {
+          if (!controller.signal.aborted)
+            setTutorError('暂时无法同步上一条回答，请稍后重新打开学习页面。');
+        });
+    }, 1500);
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [restoringTutor, workspaceId, currentSessionId, detail]);
+  const draftKey =
+    currentSessionId && workspaceId ? `study-tutor-draft:${workspaceId}:${currentSessionId}` : null;
+  const loadedDraftKey = useRef<string | null>(null);
+  useEffect(() => {
+    if (!draftKey || loadedDraftKey.current === draftKey) return;
+    loadedDraftKey.current = draftKey;
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(draftKey) ?? 'null');
+      if (saved && typeof saved.content === 'string') {
+        setComposer(saved.content);
+        setStudyAnchor(saved.anchor ?? null);
+      }
+    } catch {
+      /* Storage is optional; server transcript remains durable. */
+    }
+  }, [draftKey]);
+  useEffect(() => {
+    if (!draftKey || loadedDraftKey.current !== draftKey) return;
+    try {
+      sessionStorage.setItem(draftKey, JSON.stringify({ content: composer, anchor: studyAnchor }));
+    } catch {
+      /* optional draft */
+    }
+  }, [draftKey, composer, studyAnchor]);
+  useEffect(() => {
+    if (tutorOpen)
+      requestAnimationFrame(() => {
+        const list = transcriptRef.current;
+        if (list) list.scrollTop = list.scrollHeight;
+      });
+  }, [tutorOpen, detail?.exchanges.length, tutorLoading]);
+  useEffect(() => {
+    const capture = () => {
+      const selected = window.getSelection();
+      if (
+        !selected ||
+        selected.isCollapsed ||
+        selected.rangeCount === 0 ||
+        !lessonProjection?.progress?.stateId
+      ) {
+        setSelection(null);
+        return;
+      }
+      const range = selected.getRangeAt(0);
+      const container = studyPrimaryRef.current?.querySelector('.lesson-execution-panel');
+      const text = selected.toString().trim();
+      if (
+        !container?.contains(range.startContainer) ||
+        !container.contains(range.endContainer) ||
+        text.length < 2 ||
+        text.length > 1800
+      ) {
+        setSelection(null);
+        return;
+      }
+      const start =
+        range.startContainer instanceof Element
+          ? range.startContainer
+          : range.startContainer.parentElement;
+      const segment = start?.closest<HTMLElement>('[data-tutor-segment]');
+      const rect = range.getBoundingClientRect();
+      setSelection({
+        anchor: {
+          lessonExecutionStateId: lessonProjection.progress.stateId,
+          lessonExecutionVersion: lessonProjection.progress.stateVersion,
+          ...(segment ? { segmentIndex: Number(segment.dataset.tutorSegment) } : {}),
+          selectedText: text,
+        },
+        x: Math.max(12, Math.min(window.innerWidth - 138, rect.left)),
+        y: Math.max(10, Math.min(window.innerHeight - 50, rect.bottom + 8)),
+      });
+    };
+    document.addEventListener('selectionchange', capture);
+    return () => document.removeEventListener('selectionchange', capture);
+  }, [lessonProjection]);
+
+  function openTutor(anchor?: TutorStudyAnchor) {
+    setInspectorOpen(false);
+    if (anchor) setStudyAnchor(anchor);
+    setTutorOpen(true);
+    setSelection(null);
+    requestAnimationFrame(() => composerRef.current?.focus());
+  }
 
   const loadSession = useCallback(
     async (targetWorkspaceId: string, sessionId: string, signal: AbortSignal) => {
@@ -256,12 +379,16 @@ export function StudySessionView({
     tutorController.current = null;
     setPendingTutorTurn(null);
     setTutorLoading(false);
+    setSendingContent(null);
     setTutorReconciling(false);
     setTutorError(null);
     setTutorReconciliationTarget(null);
     setDetail(null);
     setLessonProjection(null);
     setComposer('');
+    setStudyAnchor(null);
+    setSelection(null);
+    setTutorOpen(false);
     setDetourLearningUnitId('');
     setInspectorOpen(false);
     setInspectorTab('agenda');
@@ -366,6 +493,7 @@ export function StudySessionView({
     returnFocus: HTMLButtonElement | null = inspectorTriggerRef.current,
   ): void {
     inspectorReturnFocusRef.current = returnFocus;
+    setTutorOpen(false);
     setInspectorTab(tab);
     setInspectorOpen(true);
   }
@@ -457,6 +585,7 @@ export function StudySessionView({
     setTutorReconciliationTarget(null);
     setTutorError(null);
     onSessionChanged?.();
+    setSendingContent(null);
     requestAnimationFrame(() => composerRef.current?.focus());
   }
 
@@ -486,6 +615,15 @@ export function StudySessionView({
         throw new Error('StudySession route changed while reconciling the failed Tutor turn.');
       }
       setDetail((current) => (current?.session.id === target.sessionId ? authoritative : current));
+      if (authoritative.session.currentAgendaItemId) {
+        const lesson = await api.getLessonExecution(
+          target.workspaceId,
+          target.sessionId,
+          controller.signal,
+        );
+        if (requestEpoch !== tutorEpoch.current || controller.signal.aborted) return;
+        updateLessonProjection(lesson);
+      }
       setTutorReconciliationTarget(null);
       setTutorError(target.providerFailure);
       onSessionChanged?.();
@@ -507,6 +645,7 @@ export function StudySessionView({
     const controller = new AbortController();
     tutorController.current = controller;
     setTutorLoading(true);
+    setSendingContent(request.input.content);
     setTutorError(null);
     try {
       const response = await api.streamTutorTurn(
@@ -532,6 +671,8 @@ export function StudySessionView({
         setTutorError(errorMessage(error));
       } else {
         setPendingTutorTurn(null);
+        setComposer(request.input.content);
+        setStudyAnchor(null);
         const providerFailure = errorMessage(error);
         setTutorError(providerFailure);
         setTutorLoading(false);
@@ -564,6 +705,16 @@ export function StudySessionView({
         commandId: commandId('tutor_turn'),
         expectedSessionVersion: detail.session.version,
         content,
+        ...(studyAnchor
+          ? { studyAnchor }
+          : lessonProjection?.progress?.stateId
+            ? {
+                studyAnchor: {
+                  lessonExecutionStateId: lessonProjection.progress.stateId,
+                  lessonExecutionVersion: lessonProjection.progress.stateVersion,
+                },
+              }
+            : {}),
       }),
     });
   }
@@ -573,6 +724,7 @@ export function StudySessionView({
     const request = buildTutorRequest(content);
     if (!request) return;
     setComposer('');
+    setStudyAnchor(null);
     await sendTutorTurn(request);
   }
 
@@ -610,8 +762,23 @@ export function StudySessionView({
     setTutorError(null);
   }
 
-  function cancelTutorTurn(): void {
+  async function cancelTutorTurn(): Promise<void> {
     abandonTutorRetry();
+    if (!workspaceId || !detail || !route) return;
+    const controller = new AbortController();
+    tutorController.current = controller;
+    const requestEpoch = ++tutorEpoch.current;
+    await reconcileTutorSession(
+      {
+        workspaceId,
+        sessionId: detail.session.id,
+        route,
+        providerFailure: '已停止。提问保留在对话记录中，可以继续追问。',
+      },
+      requestEpoch,
+      controller,
+    );
+    if (tutorController.current === controller) tutorController.current = null;
   }
 
   async function mixedCommand(
@@ -809,9 +976,6 @@ export function StudySessionView({
           ''
       ]
     : null;
-  const tutorSourceProjections = lessonProjection?.lesson
-    ? lessonProjection.lesson.segments.flatMap((segment) => segment.sources)
-    : [];
   const latestTutorExchange = [...detail.exchanges]
     .reverse()
     .find((exchange) => exchange.role === 'tutor' && exchange.channel === 'conversation');
@@ -868,6 +1032,15 @@ export function StudySessionView({
               ) : null}
             </div>
             <div className="study-session-header-actions">
+              <button
+                type="button"
+                className="study-tutor-trigger"
+                aria-controls="study-tutor"
+                aria-expanded={tutorOpen}
+                onClick={() => (tutorOpen ? setTutorOpen(false) : openTutor())}
+              >
+                {tutorOpen ? '收起 Tutor' : '问 Tutor'}
+              </button>
               {currentAgendaItem?.learningUnitId && onOpenKnowledgeMap ? (
                 <button
                   type="button"
@@ -943,6 +1116,7 @@ export function StudySessionView({
               <LessonExecutionPanel
                 workspaceId={workspaceId}
                 sessionId={session.id}
+                sessionVersion={session.version}
                 agendaItemId={currentAgendaItem?.id ?? session.currentAgendaItemId ?? ''}
                 active={active}
                 busy={busy}
@@ -964,56 +1138,83 @@ export function StudySessionView({
                 </p>
               </section>
             )}
-            <section className="study-tutor-secondary" aria-label="Tutor 辅助">
-              <header className="study-tutor-secondary-header">
-                <div>
-                  <p className="eyebrow">需要时再问</p>
-                  <h3>Hy3 Tutor</h3>
-                  <p className="study-tutor-context" aria-label="当前讲解范围">
-                    正在围绕：{tutorContextTitle}
-                    {tutorContextPurpose ? ` · ${tutorContextPurpose}` : ''}
-                  </p>
-                </div>
-                <p>讲解是主线；Tutor 可以针对当前讲解补充说明、举例或换一种说法。</p>
-              </header>
-              <section className="study-transcript" aria-label="Tutor 对话">
-                <div
-                  className="study-transcript-list"
-                  role="log"
-                  aria-label="学习对话记录"
-                  aria-live="polite"
-                  aria-relevant="additions text"
-                >
-                  <div className="study-transcript-inner">
-                    {detail.exchanges.length === 0 ? (
-                      <div className="transcript-empty">
-                        <p>讲解过程中有疑问，再把它交给 Tutor。</p>
-                        <p className="small muted">
-                          你可以请 Tutor 换一种解释、举个例子，或针对当前部分展开说明。
+          </div>
+          <StudyTutorSurface open={tutorOpen} onClose={() => setTutorOpen(false)}>
+            <header className="study-tutor-secondary-header">
+              <div>
+                <h3>Hy3 Tutor</h3>
+                <p className="study-tutor-context" aria-label="当前讲解范围">
+                  正在围绕：{tutorContextTitle}
+                  {lessonProjection?.practice?.recovery
+                    ? ' · 修补 / 再检验'
+                    : lessonProjection?.practice?.status === 'in_progress'
+                      ? ' · 练习'
+                      : tutorContextPurpose
+                        ? ` · ${tutorContextPurpose}`
+                        : ''}
+                </p>
+              </div>
+              <button type="button" className="ghost small" onClick={() => setTutorOpen(false)}>
+                回到讲解
+              </button>
+            </header>
+            <section className="study-transcript" aria-label="Tutor 对话">
+              <div
+                className="study-transcript-list"
+                ref={transcriptRef}
+                role="log"
+                aria-label="学习对话记录"
+                aria-live="polite"
+                aria-relevant="additions text"
+              >
+                <div className="study-transcript-inner">
+                  {detail.exchanges.length === 0 ? (
+                    <div className="transcript-empty">
+                      <p>卡在哪一步？一起把它讲明白。</p>
+                      <p className="small muted">
+                        可以直接问当前内容，也可以选中讲解中的一句话再提问。
+                      </p>
+                    </div>
+                  ) : null}
+                  {detail.exchanges.map((exchange) => {
+                    const turn = detail.turns.find((turn) => turn.id === exchange.turnId);
+                    const metadata = turn?.tutorMetadata;
+                    const metadataMatchesCurrentSegment =
+                      metadata?.lessonSegmentIndex !== null &&
+                      metadata?.lessonSegmentIndex ===
+                        lessonProjection?.progress?.currentSegmentIndex;
+                    return (
+                      <Exchange
+                        key={exchange.id}
+                        exchange={exchange}
+                        metadata={metadata}
+                        anchor={turn?.contextManifest.studyAnchor}
+                        failed={
+                          exchange.role === 'learner' &&
+                          Boolean(
+                            turn && ['failed', 'cancelled', 'interrupted'].includes(turn.status),
+                          )
+                        }
+                        editDisabled={busy}
+                        onEdit={() => setComposer(exchange.content)}
+                        routeTitle={metadataMatchesCurrentSegment ? tutorContextTitle : '本节主线'}
+                      />
+                    );
+                  })}
+                  {tutorLoading ? (
+                    <div>
+                      {sendingContent &&
+                      !pendingTutorTurn &&
+                      !detail.exchanges.some(
+                        (exchange) =>
+                          exchange.role === 'learner' && exchange.content === sendingContent,
+                      ) ? (
+                        <p className="study-tutor-pending-question">
+                          <strong>你</strong>
+                          <br />
+                          {sendingContent}
                         </p>
-                      </div>
-                    ) : null}
-                    {detail.exchanges.map((exchange) => {
-                      const metadata = detail.turns.find(
-                        (turn) => turn.id === exchange.turnId,
-                      )?.tutorMetadata;
-                      const metadataMatchesCurrentSegment =
-                        metadata?.lessonSegmentIndex !== null &&
-                        metadata?.lessonSegmentIndex ===
-                          lessonProjection?.progress?.currentSegmentIndex;
-                      return (
-                        <Exchange
-                          key={exchange.id}
-                          exchange={exchange}
-                          metadata={metadata}
-                          sources={metadataMatchesCurrentSegment ? tutorSourceProjections : []}
-                          routeTitle={
-                            metadataMatchesCurrentSegment ? tutorContextTitle : '本节主线'
-                          }
-                        />
-                      );
-                    })}
-                    {tutorLoading ? (
+                      ) : null}
                       <div className="study-tutor-stream" role="status" aria-live="polite">
                         <span className="study-tutor-avatar" aria-hidden="true">
                           H3
@@ -1023,138 +1224,181 @@ export function StudySessionView({
                           <p>Tutor 正在组织这次回应…</p>
                         </div>
                       </div>
-                    ) : null}
-                  </div>
+                    </div>
+                  ) : null}
                 </div>
-                <div className="study-composer-dock">
-                  {tutorError ? (
-                    <div className="study-operation-notice error" role="alert">
-                      <strong>这次 Tutor 请求未完成</strong>
-                      <span>{tutorError}</span>
-                      {tutorReconciliationTarget ? (
-                        <button
-                          type="button"
-                          className="ghost"
-                          disabled={tutorReconciling}
-                          onClick={() => void retryTutorReconciliation()}
-                        >
-                          {tutorReconciling ? '正在同步…' : '重新同步学习记录'}
-                        </button>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  {canRetryTutorTurn(pendingTutorTurn) ? (
-                    <div className="study-retry" role="alert">
-                      <p>
-                        Tutor 请求尚未确认完成，原提问已保留：
-                        <q>{pendingTutorTurn.input.content}</q>
-                      </p>
-                      <div className="row">
-                        <button
-                          type="button"
-                          className="primary"
-                          disabled={tutorLoading}
-                          aria-busy={tutorLoading}
-                          onClick={() => void retryTutorTurn()}
-                        >
-                          重试此条提问
-                        </button>
-                        <button type="button" onClick={abandonTutorRetry}>
-                          放弃重试
-                        </button>
-                      </div>
-                    </div>
-                  ) : null}
-                  {formalReadyCheckpointItem ? (
-                    <div className="study-formal-ready" role="status">
-                      <div>
-                        <strong>这部分已经讲到可以检验的程度</strong>
-                        <span>正式检验会沿用现有学习记录，不会把 Tutor 对话当作成绩。</span>
-                      </div>
+              </div>
+              <div className="study-composer-dock">
+                {restoringTutor ? <p role="status">正在同步上一条提问的结果…</p> : null}
+                {tutorError ? (
+                  <div className="study-operation-notice error" role="alert">
+                    <strong>这次 Tutor 请求未完成</strong>
+                    <span>{tutorError}</span>
+                    {tutorReconciliationTarget ? (
                       <button
                         type="button"
                         className="ghost"
-                        disabled={!active || busy}
-                        onClick={() =>
-                          void mixedCommand('direct_checkpoint', formalReadyCheckpointItem.id)
-                        }
+                        disabled={tutorReconciling}
+                        onClick={() => void retryTutorReconciliation()}
                       >
-                        开始正式检验
+                        {tutorReconciling ? '正在同步…' : '重新同步学习记录'}
                       </button>
-                    </div>
-                  ) : null}
-                  <div className="study-composer">
-                    <div className="study-quick-help" aria-label="快速提问">
-                      {QUICK_HELP_PROMPTS.map(({ label, prompt }) => (
-                        <button
-                          key={label}
-                          type="button"
-                          className="ghost small"
-                          disabled={
-                            !active ||
-                            busy ||
-                            Boolean(pendingTutorTurn) ||
-                            Boolean(tutorReconciliationTarget)
-                          }
-                          onClick={() => void submitTutorIntent(prompt)}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                    <label htmlFor="study-tutor-composer" className="sr-only">
-                      向 Tutor 提问
-                    </label>
-                    <textarea
-                      id="study-tutor-composer"
-                      ref={composerRef}
-                      value={composer}
-                      disabled={
-                        !active ||
-                        action.loading ||
-                        tutorLoading ||
-                        tutorReconciling ||
-                        Boolean(tutorReconciliationTarget)
-                      }
-                      onChange={(event) => setComposer(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' && !event.shiftKey) {
-                          event.preventDefault();
-                          void submitTurn();
-                        }
-                      }}
-                      placeholder={active ? '输入你的问题或想法…' : '继续本次学习后才能发送消息。'}
-                      rows={2}
-                    />
-                    <div className="study-composer-actions">
-                      <span className="small muted">Enter 发送 · Shift+Enter 换行</span>
+                    ) : null}
+                  </div>
+                ) : null}
+                {canRetryTutorTurn(pendingTutorTurn) ? (
+                  <div className="study-retry" role="alert">
+                    <p>
+                      Tutor 请求尚未确认完成，原提问已保留：
+                      <q>{pendingTutorTurn.input.content}</q>
+                    </p>
+                    <div className="row">
                       <button
                         type="button"
-                        className="primary study-send-control"
-                        aria-label={tutorLoading ? '停止生成' : '发送'}
-                        title={tutorLoading ? '停止生成' : '发送'}
+                        className="primary"
+                        disabled={tutorLoading}
                         aria-busy={tutorLoading}
-                        disabled={
-                          tutorLoading
-                            ? false
-                            : !active ||
-                              busy ||
-                              Boolean(pendingTutorTurn) ||
-                              Boolean(tutorReconciliationTarget) ||
-                              composer.trim().length === 0
-                        }
-                        onClick={tutorLoading ? cancelTutorTurn : () => void submitTurn()}
+                        onClick={() => void retryTutorTurn()}
                       >
-                        <span aria-hidden="true">{tutorLoading ? '■' : '↑'}</span>
+                        重试此条提问
+                      </button>
+                      <button type="button" onClick={abandonTutorRetry}>
+                        放弃重试
                       </button>
                     </div>
                   </div>
+                ) : null}
+                {formalReadyCheckpointItem ? (
+                  <div className="study-formal-ready" role="status">
+                    <div>
+                      <strong>这部分已经讲到可以检验的程度</strong>
+                      <span>正式检验会沿用现有学习记录，不会把 Tutor 对话当作成绩。</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="ghost"
+                      disabled={!active || busy}
+                      onClick={() =>
+                        void mixedCommand('direct_checkpoint', formalReadyCheckpointItem.id)
+                      }
+                    >
+                      开始正式检验
+                    </button>
+                  </div>
+                ) : null}
+                <div className="study-composer">
+                  {studyAnchor?.selectedText ? (
+                    <div className="study-tutor-selection">
+                      <span>关于这段讲解</span>
+                      <blockquote>{studyAnchor.selectedText}</blockquote>
+                      <button
+                        type="button"
+                        className="ghost small"
+                        onClick={() => setStudyAnchor(null)}
+                      >
+                        移除引用
+                      </button>
+                    </div>
+                  ) : null}
+                  <div className="study-quick-help" aria-label="快速提问">
+                    {QUICK_HELP_PROMPTS.map(({ label, prompt }) => (
+                      <button
+                        key={label}
+                        type="button"
+                        className="ghost small"
+                        disabled={
+                          !active ||
+                          busy ||
+                          Boolean(pendingTutorTurn) ||
+                          Boolean(tutorReconciliationTarget)
+                        }
+                        onClick={() => void submitTutorIntent(prompt)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <label htmlFor="study-tutor-composer" className="sr-only">
+                    向 Tutor 提问
+                  </label>
+                  <textarea
+                    id="study-tutor-composer"
+                    ref={composerRef}
+                    value={composer}
+                    disabled={
+                      !active ||
+                      action.loading ||
+                      tutorLoading ||
+                      tutorReconciling ||
+                      restoringTutor ||
+                      Boolean(tutorReconciliationTarget)
+                    }
+                    onChange={(event) => setComposer(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (
+                        event.key === 'Enter' &&
+                        !event.shiftKey &&
+                        !event.nativeEvent.isComposing
+                      ) {
+                        event.preventDefault();
+                        void submitTurn();
+                      }
+                    }}
+                    placeholder={active ? '输入你的问题或想法…' : '继续本次学习后才能发送消息。'}
+                    rows={2}
+                  />
+                  <div className="study-composer-actions">
+                    <span className="small muted">Enter 发送 · Shift+Enter 换行</span>
+                    <button
+                      type="button"
+                      className="primary study-send-control"
+                      aria-label={tutorLoading ? '停止生成' : '发送'}
+                      title={tutorLoading ? '停止生成' : '发送'}
+                      aria-busy={tutorLoading}
+                      disabled={
+                        tutorLoading
+                          ? false
+                          : !active ||
+                            busy ||
+                            Boolean(pendingTutorTurn) ||
+                            Boolean(tutorReconciliationTarget) ||
+                            composer.trim().length === 0
+                      }
+                      onClick={
+                        tutorLoading ? () => void cancelTutorTurn() : () => void submitTurn()
+                      }
+                    >
+                      <span aria-hidden="true">{tutorLoading ? '■' : '↑'}</span>
+                    </button>
+                  </div>
                 </div>
-              </section>
+              </div>
             </section>
-          </div>
+          </StudyTutorSurface>
         </div>
       </div>
+      {!tutorOpen ? (
+        <button
+          type="button"
+          className="study-tutor-floating"
+          onClick={() => openTutor()}
+          aria-controls="study-tutor"
+          aria-expanded={false}
+        >
+          {tutorLoading ? 'Tutor 正在回答…' : '问 Tutor'}
+        </button>
+      ) : null}
+      {selection ? (
+        <button
+          type="button"
+          className="study-tutor-selection-trigger"
+          style={{ left: selection.x, top: selection.y }}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => openTutor(selection.anchor)}
+        >
+          就这段问 Tutor
+        </button>
+      ) : null}
       <StudyInspector
         open={inspectorOpen}
         modal={inspectorModal}
@@ -1180,12 +1424,18 @@ export function StudySessionView({
 function Exchange({
   exchange,
   metadata,
-  sources,
+  anchor,
+  failed,
+  editDisabled,
+  onEdit,
   routeTitle,
 }: {
   exchange: StudyExchange;
   metadata?: TutorTurnMetadata | null;
-  sources: LessonSourceProjection[];
+  anchor?: TutorStudyAnchor;
+  failed: boolean;
+  editDisabled: boolean;
+  onEdit: () => void;
   routeTitle: string;
 }) {
   const label =
@@ -1215,11 +1465,33 @@ function Exchange({
           <span className="study-channel-label">状态</span>
         ) : null}
       </header>
+      {exchange.role === 'learner' && metadata?.studyContext ? (
+        <div className="study-tutor-turn-context">
+          <small>
+            {metadata.studyContext.lessonTitle} ·{' '}
+            {metadata.studyContext.phase === 'lesson' ? '讲解' : '练习 / 修补'}
+          </small>
+          {metadata.studyContext.anchor?.selectedText ? (
+            <blockquote>{metadata.studyContext.anchor.selectedText}</blockquote>
+          ) : null}
+        </div>
+      ) : null}
+      {exchange.role === 'learner' && !metadata?.studyContext && anchor?.selectedText ? (
+        <blockquote className="study-tutor-turn-context">{anchor.selectedText}</blockquote>
+      ) : null}
       <div className="study-exchange-content">
         {exchange.role === 'tutor' ? <TutorContent content={exchange.content} /> : exchange.content}
       </div>
+      {failed ? (
+        <p className="study-operation-notice">
+          这条提问的回答未完成，问题已保留。
+          <button type="button" className="ghost small" disabled={editDisabled} onClick={onEdit}>
+            重新编辑提问
+          </button>
+        </p>
+      ) : null}
       {exchange.role === 'tutor' && metadata ? (
-        <TutorResponseDetails metadata={metadata} sources={sources} routeTitle={routeTitle} />
+        <TutorResponseDetails metadata={metadata} routeTitle={routeTitle} />
       ) : null}
     </article>
   );
@@ -1263,18 +1535,13 @@ function TutorContent({ content }: { content: string }) {
 
 function TutorResponseDetails({
   metadata,
-  sources,
   routeTitle,
 }: {
   metadata: TutorTurnMetadata;
-  sources: LessonSourceProjection[];
   routeTitle: string;
 }) {
   const moveLabel = TUTOR_MOVE_LABELS[metadata.move];
-  const sourceByKey = new Map(sources.map((source) => [source.referenceKey, source]));
-  const matchedSources = metadata.sourceRefs
-    .map((referenceKey) => sourceByKey.get(referenceKey))
-    .filter((source): source is LessonSourceProjection => Boolean(source));
+  const matchedSources = metadata.citations ?? [];
   return (
     <div className="study-tutor-response-details">
       {moveLabel ? <span className="study-tutor-move-cue">{moveLabel}</span> : null}
@@ -1282,18 +1549,23 @@ function TutorResponseDetails({
         <span className="study-tutor-synthesis-label">Hy3 补充解释</span>
       ) : matchedSources.length > 0 ? (
         <details className="study-tutor-sources">
-          <summary>查看来源（{matchedSources.length}）</summary>
+          <summary>参考资料（{matchedSources.length}）</summary>
+          <p className="small muted">
+            以下是本次回答参考的原文。举例与延伸说明属于 Tutor 补充讲解。
+          </p>
           <ul>
             {matchedSources.map((source) => (
               <li key={source.referenceKey}>
-                <strong>{source.materialTitle}</strong>
-                <span>{source.locationLabel}</span>
-                <q>{source.exactExcerpt}</q>
+                <strong>{source.title}</strong>
+                <span>{source.location}</span>
+                <q>{source.excerpt}</q>
               </li>
             ))}
           </ul>
         </details>
-      ) : null}
+      ) : (
+        <span className="small muted">历史回答未保存来源摘录</span>
+      )}
       {metadata.routeSignal === 'detour_started' ? (
         <p className="study-tutor-route-cue">这是一个补充问题，回答完可以回到：{routeTitle}</p>
       ) : null}

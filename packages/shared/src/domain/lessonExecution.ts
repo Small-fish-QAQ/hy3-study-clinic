@@ -767,6 +767,7 @@ export const LessonExecutionProjectionSchema = z
     progress: z
       .object({
         stateVersion: z.number().int().nonnegative(),
+        stateId: z.string().min(1).optional(),
         currentSegmentIndex: z.number().int().nonnegative(),
         segmentCount: z.number().int().positive(),
         presentedSegmentIndexes: z.array(z.number().int().nonnegative()).max(12),
@@ -887,6 +888,39 @@ export type LessonExecutionCommandRequest = z.infer<typeof LessonExecutionComman
 /** Deterministic, bounded slice passed to conversational Tutor generation. */
 export const LessonTutorContextSchema = z
   .object({
+    identity: z
+      .object({ stateId: z.string(), version: z.number().int().positive() })
+      .strict()
+      .optional(),
+    phase: z
+      .enum([
+        'lesson',
+        'practice',
+        'diagnosis',
+        'preparing',
+        'repair',
+        'retest',
+        'needs_support',
+        'completed',
+      ])
+      .optional(),
+    selectedText: z.string().max(1800).optional(),
+    courseDesign: z.object({ desiredDepth: z.string(), unitFocus: z.string() }).strict().optional(),
+    /** Only presented teaching and currently visible question/feedback; never future keys. */
+    visibleLesson: z
+      .array(z.object({ index: z.number().int(), text: z.string().max(9000) }).strict())
+      .max(12)
+      .optional(),
+    activeQuestion: z
+      .object({
+        kind: z.enum(['inline_check', 'practice', 'retest']),
+        prompt: z.string().max(1200),
+        options: z.array(z.object({ id: z.string(), text: z.string().max(600) }).strict()).max(5),
+        learnerResponse: z.string().max(2000).nullable(),
+      })
+      .strict()
+      .optional(),
+    repairTeaching: z.string().max(7000).optional(),
     practiceRecovery: z
       .object({
         phase: z.string().max(30),
@@ -937,7 +971,7 @@ export const LessonTutorContextSchema = z
           .strict(),
       )
       .max(2),
-    sources: z.array(LessonSourceProjectionSchema).max(4),
+    sources: z.array(LessonSourceProjectionSchema).max(6),
     visuals: z.array(LessonVisualProjectionSchema).max(4).optional(),
     summary: z.string().max(700).nullable(),
     nextConnection: z.string().max(500).nullable(),

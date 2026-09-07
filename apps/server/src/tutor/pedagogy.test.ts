@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { TutorTurnInput } from '../llm/provider.js';
 import {
   allowedTutorMoves,
+  boundTutorTurnInput,
+  TUTOR_CONTEXT_LIMITS,
   constrainTutorTurn,
   inferRequestedTutorMove,
   tutorRecentMoves,
@@ -99,6 +101,50 @@ function payload(move: TutorTurnInput['allowedMoves'][number], sourceRefs: strin
 }
 
 describe('lesson-aware Tutor pedagogy policy', () => {
+  it('resolves internal source labels in the stored prose without rewriting actual source terminology', () => {
+    const context = input('Why?');
+    context.offeredSourceRefs[0]!.title = 'Course notes';
+    expect(
+      constrainTutorTurn(
+        { ...payload('ANSWER_QUESTION', ['S1']), text: '资料S1说明了条件。' },
+        context,
+      ).text,
+    ).toBe('资料《Course notes》说明了条件。');
+    context.offeredSourceRefs[0]!.excerpt = 'S1 is the name of the first switch.';
+    expect(
+      constrainTutorTurn(
+        { ...payload('ANSWER_QUESTION', ['S1']), text: 'S1 is a switch.' },
+        context,
+      ).text,
+    ).toBe('S1 is a switch.');
+  });
+  it('bounds UTF-8 context while retaining the selected passage, current question and learner intent', () => {
+    const full = input('请解释这个问题。');
+    full.lessonContext!.selectedText = '选中的句子';
+    full.lessonContext!.activeQuestion = {
+      kind: 'retest',
+      prompt: '只读当前题',
+      options: [],
+      learnerResponse: null,
+    };
+    full.lessonContext!.visibleLesson = Array.from({ length: 12 }, (_, index) => ({
+      index,
+      text: '中文案例'.repeat(2200),
+    }));
+    full.recentExchanges = Array.from({ length: 8 }, () => ({
+      role: 'tutor',
+      channel: 'conversation',
+      content: '很长的历史回答'.repeat(700),
+    }));
+    const bounded = boundTutorTurnInput(full);
+    expect(Buffer.byteLength(JSON.stringify(bounded), 'utf8')).toBeLessThanOrEqual(
+      TUTOR_CONTEXT_LIMITS.maxSerializedBytes,
+    );
+    expect(bounded.lessonContext!.selectedText).toBe('选中的句子');
+    expect(bounded.lessonContext!.activeQuestion).toEqual(full.lessonContext!.activeQuestion);
+    expect(bounded.learnerMessage).toBe(full.learnerMessage);
+    expect(bounded.lessonContext!.visibleLesson!.some((segment) => segment.index === 2)).toBe(true);
+  });
   it.each([
     ['?', 'SIMPLIFY'],
     ['没懂', 'SIMPLIFY'],
@@ -161,7 +207,13 @@ describe('lesson-aware Tutor pedagogy policy', () => {
     expect(visualCitation.valid).toBe(false);
     expect(visualCitation.diagnosticCodes).toContain('TUTOR_SOURCE_REF_UNKNOWN');
     expect(tutorSourceOffers(advisoryVisual.lessonContext, null)).toEqual([
-      { referenceKey: 'S1', excerpt: 'Exact source excerpt.', origin: 'lesson' },
+      {
+        referenceKey: 'S1',
+        excerpt: 'Exact source excerpt.',
+        origin: 'lesson',
+        title: 'Notes',
+        location: 'p. 1',
+      },
     ]);
     const unavailable = validateTutorTurnCandidate(
       payload('FORMAL_CHECK_READY'),
@@ -186,7 +238,13 @@ describe('lesson-aware Tutor pedagogy policy', () => {
     }));
     expect(tutorRecentMoves(turns)).toHaveLength(4);
     expect(tutorSourceOffers(input('?', []).lessonContext, null)).toEqual([
-      { referenceKey: 'S1', excerpt: 'Exact source excerpt.', origin: 'lesson' },
+      {
+        referenceKey: 'S1',
+        excerpt: 'Exact source excerpt.',
+        origin: 'lesson',
+        title: 'Notes',
+        location: 'p. 1',
+      },
     ]);
   });
 });

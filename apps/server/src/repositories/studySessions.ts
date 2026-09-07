@@ -345,6 +345,28 @@ export function createStudySessionsRepo(db: SqliteDb) {
       ).map(hydrateExchange);
     },
 
+    /** Existing completed transcript is the exposure record, not a new learner state. */
+    listTutorTeaching(
+      workspaceId: string,
+      before?: string,
+    ): Array<{ content: string; createdAt: string; agendaItemId: string | null }> {
+      return db
+        .prepare(
+          `SELECT e.content, e.created_at AS createdAt,
+        json_extract(t.pedagogy_metadata, '$.studyContext.agendaItemId') AS agendaItemId
+        FROM study_session_exchanges e JOIN study_sessions s ON s.id=e.session_id
+        JOIN study_session_turns t ON t.id=e.turn_id
+        WHERE s.workspace_id=? AND e.role='tutor' AND t.status='completed'
+          AND (? IS NULL OR e.created_at < ?)
+        ORDER BY e.created_at, e.id`,
+        )
+        .all(workspaceId, before ?? null, before ?? null) as Array<{
+        content: string;
+        createdAt: string;
+        agendaItemId: string | null;
+      }>;
+    },
+
     insertTurnEvent(input: StudyTurnEvent): StudyTurnEvent {
       const event = StudyTurnEventSchema.parse(input);
       assertTurnOwner(event.sessionId, event.turnId);

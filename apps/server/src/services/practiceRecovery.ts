@@ -160,6 +160,7 @@ export function validatePracticeRepair(
   const content = PracticeRepairContentSchema.parse(value);
   const prior = [
     input.failedPrompt,
+    ...(input.tutorExplanations ?? []).flatMap((text) => [text, ...text.split(/\n+/u)]),
     ...input.unseenPracticePrompts,
     ...input.archivedRetestPrompts,
     ...input.priorRounds.flatMap((round) => [
@@ -169,7 +170,12 @@ export function validatePracticeRepair(
     content.workedExample.prompt,
   ];
   for (const question of content.retest) {
-    if (prior.some((prompt) => lexicalChallengeOverlap(question.prompt, prompt) >= 0.72)) {
+    if (
+      prior.some((prompt) => lexicalChallengeOverlap(question.prompt, prompt) >= 0.72) ||
+      (input.tutorExplanations ?? []).some((text) =>
+        text.replace(/\s+/gu, '').includes(question.prompt.replace(/\s+/gu, '')),
+      )
+    ) {
       throw new AppError(
         ApiErrorCode.ValidationError,
         'Retest repeats an exposed or reserved case.',

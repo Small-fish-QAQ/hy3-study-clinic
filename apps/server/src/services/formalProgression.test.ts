@@ -2018,6 +2018,25 @@ describe('formal progression service', () => {
     ).toMatchObject({ seenBeforeAttempt: true });
   });
 
+  it('treats an exact question already delivered inside Tutor teaching as seen without awarding evidence', () => {
+    const prompt = 'Explain why a mandatory condition cannot be replaced by an optional filter.';
+    const read = vi.spyOn(repos.studySessions, 'listTutorTeaching').mockReturnValue([
+      {
+        content: `Consider this question: ${prompt}\nHere is a worked answer.`,
+        createdAt: T0,
+        agendaItemId: null,
+      },
+    ]);
+    const version = createExposureVersion('tutor_prompt_reuse', prompt);
+    const attempt = services.formalAssessments.startAttempt(version.id, 'ws_1');
+    services.formalAssessments.recordAttemptExposure(attempt.id);
+    expect(read).toHaveBeenCalledWith('ws_1', attempt.startedAt);
+    expect(repos.formalAssessments.getExposure(attempt.id, version.items[0]!.id)).toMatchObject({
+      seenBeforeAttempt: true,
+    });
+    expect(repos.formalAssessments.listProjectionRecords('ws_1').evidence).toHaveLength(0);
+  });
+
   it('does not treat a current unpresented Attempt as historical exposure uncertainty', () => {
     const prompt = 'Apply the capacity rule to the stated current condition.';
     const unpresented = createExposureVersion('current_unpresented', prompt);
