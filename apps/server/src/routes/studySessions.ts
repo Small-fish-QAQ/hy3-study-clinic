@@ -44,9 +44,11 @@ export function registerStudySessionRoutes(app: FastifyInstance, services: Servi
 
   app.post(
     '/api/workspaces/:workspaceId/study-sessions/:sessionId/lesson-execution/commands',
-    async (request) => {
+    async (request, reply) => {
       const params = SessionParams.parse(request.params);
-      return services.lessonExecution.command(params.workspaceId, params.sessionId, request.body);
+      return services.lessonExecution.command(params.workspaceId, params.sessionId, request.body, {
+        signal: requestSignal(request, reply),
+      });
     },
   );
 

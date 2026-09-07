@@ -13,6 +13,7 @@ import {
   MasteryChallengeProposalPayloadSchema,
   QuizGenerationPayloadSchema,
   RepairGenerationPayloadSchema,
+  PracticeRepairContentSchema,
   RemediationPlanProposalPayloadSchema,
   StudyPlanProposalPayloadSchema,
   TeachingBriefProposalPayloadSchema,
@@ -58,6 +59,8 @@ import {
   type ObjectiveAuthoritySemanticRepairInput,
 } from '@hy3-clinic/shared';
 import { createHash } from 'node:crypto';
+import { practiceRepairMessages } from './practiceRepair.js';
+import type { PracticeRepairInput } from './provider.js';
 import { z, type ZodType, type ZodTypeDef } from 'zod';
 import { ProviderError } from './errors.js';
 import {
@@ -863,6 +866,21 @@ export class Hy3Provider implements LlmProvider {
         '如果校验报告指出讲解策略、考查意图或检查题与之前重复，请真正改变对应内容本身，而不是改写措辞：换教学动作、换考查方式、换检查任务。',
         '保留已经有效的源约束和教学内容，仅提供一个最小充分、不可授予正式学分的修复步骤。',
       ].join('\n'),
+    );
+  }
+
+  async generatePracticeRepair(input: PracticeRepairInput, opts?: ProviderCallOptions) {
+    return this.complete(
+      practiceRepairMessages(input),
+      PracticeRepairContentSchema,
+      opts,
+      'Repair only the reported defects. Keep the same failed capability and return the complete packet.',
+      {
+        maxTokens: 8000,
+        schemaName: 'practice-repair-v1',
+        immutableItemIds: [],
+        allowIndependentRepair: false,
+      },
     );
   }
 

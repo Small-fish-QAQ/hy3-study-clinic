@@ -256,7 +256,66 @@ export const LessonPracticeSchema = z
   .strict();
 export type LessonPractice = z.infer<typeof LessonPracticeSchema>;
 
-export const LessonPracticeAttemptStateSchema = z
+/** Supplementary teaching only. Local response policy owns every transition. */
+export const PracticeRepairContentSchema = z
+  .object({
+    diagnosis: z
+      .object({
+        observation: z.string().min(1).max(700),
+        gap: z.string().min(1).max(700),
+        uncertainty: z.string().min(1).max(500),
+      })
+      .strict(),
+    explanation: z.string().min(1).max(1800),
+    workedExample: z
+      .object({
+        prompt: z.string().min(1).max(900),
+        steps: z.array(z.string().min(1).max(700)).min(2).max(5),
+        conclusion: z.string().min(1).max(700),
+      })
+      .strict(),
+    contrast: z.string().min(1).max(1000),
+    retest: z.array(LessonPracticeSurfaceSchema).length(2),
+  })
+  .strict();
+export type PracticeRepairContent = z.infer<typeof PracticeRepairContentSchema>;
+
+export const PracticeRecoveryStateSchema = z
+  .object({
+    preparationOperationId: z.string().min(1).nullable(),
+    learnerNote: z.string().max(1000).optional(),
+    rounds: z
+      .array(
+        z
+          .object({
+            ordinal: z.number().int().positive().optional(),
+            content: PracticeRepairContentSchema,
+            learnerNote: z.string().max(1000),
+            logicalCallId: z.string().min(1),
+            reviewLogicalCallId: z.string().min(1).optional(),
+            createdAt: z.string().datetime(),
+            startedAt: z.string().datetime().nullable(),
+            responses: z
+              .array(
+                z
+                  .object({
+                    selectedOptionId: z.string().min(1).max(80),
+                    correct: z.boolean(),
+                    feedback: z.string().min(1).max(2200),
+                    respondedAt: z.string().datetime(),
+                  })
+                  .strict(),
+              )
+              .max(2),
+          })
+          .strict(),
+      )
+      .max(3),
+  })
+  .strict();
+export type PracticeRecoveryState = z.infer<typeof PracticeRecoveryStateSchema>;
+
+const LessonPracticeAttemptSummarySchema = z
   .object({
     itemIndex: z.number().int().nonnegative(),
     attemptNumber: z.union([z.literal(1), z.literal(2)]),
@@ -267,13 +326,39 @@ export const LessonPracticeAttemptStateSchema = z
     hint: z.string().min(1).max(700).nullable(),
     respondedAt: z.string().datetime(),
     credit: z.literal('none'),
+    recovered: z.boolean().optional(),
+    recoveryFeedback: z.string().max(2200).optional(),
   })
   .strict();
+export const LessonPracticeAttemptStateSchema = LessonPracticeAttemptSummarySchema.extend({
+  recovery: PracticeRecoveryStateSchema.optional(),
+}).strict();
 export type LessonPracticeAttemptState = z.infer<typeof LessonPracticeAttemptStateSchema>;
 
 const LearnerPracticeOptionSchema = z
   .object({ id: z.string().min(1).max(80), text: z.string().min(1).max(600) })
   .strict();
+
+export const LearnerPracticeRecoverySchema = z
+  .object({
+    phase: z.enum(['diagnosis', 'preparing', 'repair', 'retest', 'needs_support']),
+    selectedAnswer: z.string().min(1).max(600),
+    feedback: z.string().min(1).max(2200),
+    learnerNote: z.string().max(1000).optional(),
+    round: z.number().int().min(1).max(3),
+    diagnosis: PracticeRepairContentSchema.shape.diagnosis.nullable(),
+    teaching: PracticeRepairContentSchema.omit({ diagnosis: true, retest: true }).nullable(),
+    retest: z
+      .object({
+        index: z.number().int().min(0).max(1),
+        prompt: z.string().min(1).max(1200),
+        options: z.array(LearnerPracticeOptionSchema).min(3).max(5),
+      })
+      .strict()
+      .nullable(),
+  })
+  .strict();
+export type LearnerPracticeRecovery = z.infer<typeof LearnerPracticeRecoverySchema>;
 
 export const LearnerPracticeProjectionSchema = z
   .object({
@@ -292,7 +377,8 @@ export const LearnerPracticeProjectionSchema = z
       })
       .strict()
       .nullable(),
-    attempts: z.array(LessonPracticeAttemptStateSchema).max(16),
+    attempts: z.array(LessonPracticeAttemptSummarySchema).max(16),
+    recovery: LearnerPracticeRecoverySchema.nullable().optional(),
     completedAt: z.string().datetime().nullable(),
     credit: z.literal('none'),
   })

@@ -10,6 +10,7 @@ import type {
 import { api, ApiClientError } from '../api.js';
 import { Loading } from './ui.js';
 import { FormalAssessmentPanel } from './FormalAssessmentPanel.js';
+import { PracticeRecoveryPanel } from './PracticeRecoveryPanel.js';
 
 let lessonCommandSequence = 0;
 const LESSON_PREPARATION_POLL_MS = 1500;
@@ -788,21 +789,39 @@ function ReadyLesson({
               ? '练习完成'
               : `第 ${projection.practice.currentItemIndex + 1}/${projection.practice.itemCount} 题`}
           </h3>
-          <p className="small muted">
-            这里的回应只用于即时反馈，不创建正式证据，也不改变掌握度或课程进度。
-          </p>
-          {projection.practice.attempts.length > 0 ? (
+          <p className="small muted">非正式练习 · 不授予掌握状态，正式检验仍按课程安排进行。</p>
+          {projection.practice.attempts.length > 0 && !projection.practice.recovery ? (
             <div className="lesson-practice-feedback" aria-live="polite">
               {projection.practice.attempts.map((attempt) => (
                 <article key={`${attempt.itemIndex}-${attempt.attemptNumber}`}>
-                  <strong>{attempt.correct ? '回答正确' : '再想一步'}</strong>
-                  <p>{attempt.feedback}</p>
-                  {attempt.hint ? (
+                  <strong>
+                    {attempt.recovered
+                      ? '修补后已通过两个新情境的检验'
+                      : attempt.correct
+                        ? '回答正确'
+                        : '再想一步'}
+                  </strong>
+                  <p>{attempt.recovered ? attempt.recoveryFeedback : attempt.feedback}</p>
+                  {attempt.recovered ? (
+                    <details>
+                      <summary>最初的回答反馈</summary>
+                      <p>{attempt.feedback}</p>
+                    </details>
+                  ) : null}
+                  {attempt.hint && !attempt.recovered ? (
                     <p className="lesson-practice-hint">提示：{attempt.hint}</p>
                   ) : null}
                 </article>
               ))}
             </div>
+          ) : null}
+          {projection.practice.recovery ? (
+            <PracticeRecoveryPanel
+              key={`${projection.practice.currentItemIndex}:${projection.practice.recovery.round}:${projection.practice.recovery.phase === 'needs_support'}`}
+              recovery={projection.practice.recovery}
+              disabled={!active || busy || commandLoading}
+              onAction={onAction}
+            />
           ) : null}
           {projection.practice.item ? (
             <div className="lesson-practice-item">
@@ -956,14 +975,24 @@ export function LessonExecutionPanel({
   }, [refresh, routeIdentity]);
 
   useEffect(() => {
-    if (projection?.status !== 'preparing') return;
+    if (
+      projection?.status !== 'preparing' &&
+      projection?.practice?.recovery?.phase !== 'preparing' &&
+      !(commandLoading && projection?.practice?.recovery)
+    )
+      return;
     let cancelled = false;
     let timer: number | null = null;
     const schedule = () => {
       timer = window.setTimeout(() => {
         void refresh().then((result) => {
           if (cancelled) return;
-          if (result === 'preparing' || result === 'request_failed') schedule();
+          if (
+            result === 'preparing' ||
+            result === 'request_failed' ||
+            projection?.practice?.recovery
+          )
+            schedule();
         });
       }, LESSON_PREPARATION_POLL_MS);
     };
@@ -972,7 +1001,7 @@ export function LessonExecutionPanel({
       cancelled = true;
       if (timer !== null) window.clearTimeout(timer);
     };
-  }, [projection?.status, refresh]);
+  }, [projection?.status, projection?.practice?.recovery, commandLoading, refresh]);
 
   const prepare = useCallback(
     async (retry = false) => {
@@ -1265,6 +1294,18 @@ export function LessonExecutionPanel({
         onAction={(action) => void command(action)}
         onResponseChange={setResponseDraft}
       />
+      {commandLoading && projection.practice?.recovery ? (
+        <button
+          type="button"
+          onClick={() => {
+            commandController.current?.abort();
+            setCommandLoading(false);
+            void refresh();
+          }}
+        >
+          取消准备
+        </button>
+      ) : null}
       {formalAssessmentVersionId && completed ? (
         <FormalAssessmentPanel
           workspaceId={workspaceId}

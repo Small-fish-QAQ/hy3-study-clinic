@@ -1,6 +1,10 @@
 import { createHash } from 'node:crypto';
 import { afterEach, describe, expect, it } from 'vitest';
-import { ApiErrorCode, type LearningContractDraftFields } from '@hy3-clinic/shared';
+import {
+  ApiErrorCode,
+  type LearningContractDraftFields,
+  type LessonExecutionCommandRequest,
+} from '@hy3-clinic/shared';
 import { openDatabase, type SqliteDb } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
 import { AppError } from '../errors.js';
@@ -3937,21 +3941,57 @@ describe('Teaching Brief preparation', () => {
       credit: 'none',
     });
     expect(current.practice?.attempts.at(-1)?.hint).toBeTruthy();
-    expect(current.practice?.item?.surface).toBe('retry');
-    const retryItem = current.practice!.item!;
-    expect(retryItem.prompt).not.toBe(initialItem.prompt);
-    current = await harness.services.lessonExecution.command('ws_1', session.id, {
-      command: command('practice-correct-retry'),
-      expectedSessionVersion: current.session.version,
-      expectedAgendaVersion: current.agenda!.version,
-      expectedAgendaItemId: session.currentAgendaItemId!,
-      expectedLessonStateVersion: current.progress!.stateVersion,
-      action: {
-        kind: 'submit_practice_response',
-        itemIndex: retryItem.index,
-        optionId: retryItem.options[1]!.id,
-      },
+    expect(current.practice?.item).toBeNull();
+    expect(current.practice?.recovery?.phase).toBe('diagnosis');
+    let repairCommand = 0;
+    const act = async (action: LessonExecutionCommandRequest['action']) => {
+      current = await harness.services.lessonExecution.command('ws_1', session.id, {
+        command: command(`adaptive-${++repairCommand}`),
+        expectedSessionVersion: current.session.version,
+        expectedAgendaVersion: current.agenda!.version,
+        expectedAgendaItemId: session.currentAgendaItemId!,
+        expectedLessonStateVersion: current.progress!.stateVersion,
+        action,
+      });
+    };
+    await expect(
+      act({ kind: 'submit_practice_response', itemIndex: 0, optionId: 'A' }),
+    ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+    await expect(act({ kind: 'start_practice_retest' })).rejects.toMatchObject({
+      code: 'VALIDATION_ERROR',
     });
+    await act({
+      kind: 'prepare_practice_repair',
+      learnerNote: 'I assumed one condition was sufficient.',
+    });
+    expect(current.practice?.recovery?.phase).toBe('repair');
+    expect(current.practice?.recovery?.retest).toBeNull();
+    expect(JSON.stringify(current.practice)).not.toContain('correctOptionId');
+    expect(harness.repos.formalProgression.listEvidenceForWorkspace('ws_1')).toEqual(
+      authorityBefore.evidence,
+    );
+    current = harness.services.lessonExecution.get('ws_1', session.id);
+    expect(current.practice?.recovery?.teaching).not.toBeNull();
+    await act({ kind: 'start_practice_retest' });
+    expect(current.practice?.recovery?.teaching).toBeNull();
+    await act({ kind: 'submit_practice_retest', index: 0, optionId: 'B' });
+    expect(current.practice?.recovery?.phase).toBe('diagnosis');
+    expect(current.practice?.status).toBe('in_progress');
+    await act({
+      kind: 'prepare_practice_repair',
+      learnerNote: 'I missed the necessary condition.',
+    });
+    await act({ kind: 'start_practice_retest' });
+    const retest = current.practice!.recovery!.retest!;
+    expect(retest.prompt).not.toBe(initialItem.prompt);
+    await act({ kind: 'submit_practice_retest', index: 0, optionId: 'A' });
+    expect(current.practice?.status).toBe('in_progress');
+    current = harness.services.lessonExecution.get('ws_1', session.id);
+    expect(current.practice?.recovery?.retest?.index).toBe(1);
+    await expect(
+      act({ kind: 'submit_practice_retest', index: 0, optionId: 'A' }),
+    ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+    await act({ kind: 'submit_practice_retest', index: 1, optionId: 'A' });
     expect(current.practice?.status).toBe('completed');
     expect(current.allowedActions).toEqual(['review_lesson']);
     const executionState = harness.repos.lessonExecution.getForSession(
@@ -4265,3 +4305,161 @@ describe('Teaching Brief preparation', () => {
 function visualAssetId(harness: Harness): string {
   return harness.repos.materials.getAssets('mat_1')[0]!.id;
 }
+
+async function failedPracticeHarness() {
+  const harness = await createHarness(0, 'pass', 'explain', 'pass_oriented');
+  const route = startTeachingRoute(harness);
+  await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+    command: command('recovery-fixture-prepare'),
+    expectedSessionVersion: route.session.version,
+    expectedAgendaVersion: route.agenda.version,
+    expectedAgendaItemId: route.agendaItem.id,
+  });
+  const state = harness.repos.lessonExecution.getForSession(route.session.id, route.agendaItem.id)!;
+  const brief = harness.repos.teachingBriefs.get(state.teachingBriefId!)!;
+  // This fixture starts at the accepted post-presentation boundary; the preceding
+  // integration test exercises the actual presentation commands as well.
+  harness.repos.lessonExecution.update(
+    { ...state, presentationCompletedAt: T0, version: state.version + 1 },
+    state.version,
+  );
+  let sequence = 0;
+  const get = () => harness.services.lessonExecution.get('ws_1', route.session.id);
+  const act = (action: LessonExecutionCommandRequest['action'], options?: ProviderCallOptions) => {
+    const current = get();
+    return harness.services.lessonExecution.command(
+      'ws_1',
+      route.session.id,
+      {
+        command: command(`recovery-fixture-${++sequence}`),
+        expectedSessionVersion: current.session.version,
+        expectedAgendaVersion: current.agenda!.version,
+        expectedAgendaItemId: route.agendaItem.id,
+        expectedLessonStateVersion: current.progress!.stateVersion,
+        action,
+      },
+      options,
+    );
+  };
+  const item = brief.practice!.items[0]!;
+  await act({
+    kind: 'submit_practice_response',
+    itemIndex: 0,
+    optionId: item.initial.options.find((option) => option.id !== item.initial.correctOptionId)!.id,
+  });
+  return { harness, route, brief, get, act };
+}
+
+describe('Post-Practice recovery', () => {
+  it('recovers the accepted author stage after review interruption and fences concurrent preparation', async () => {
+    const { harness, get, act } = await failedPracticeHarness();
+    const original = harness.provider.generatePracticeRepair.bind(harness.provider);
+    let authorCalls = 0;
+    harness.provider.generatePracticeRepair = async (...args) => {
+      authorCalls++;
+      return original(...args);
+    };
+    const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+    const started = deferred<void>();
+    const gate = deferred<void>();
+    harness.provider.reviewTeachingContent = async (...args) => {
+      started.resolve(undefined);
+      await gate.promise;
+      return review(...args);
+    };
+    const abort = new AbortController();
+    const pending = act(
+      { kind: 'prepare_practice_repair', learnerNote: 'I treated one condition as sufficient.' },
+      { signal: abort.signal },
+    );
+    await started.promise;
+    expect(get().practice?.recovery).toMatchObject({
+      phase: 'preparing',
+      learnerNote: 'I treated one condition as sufficient.',
+    });
+    await expect(act({ kind: 'prepare_practice_repair', learnerNote: '' })).rejects.toMatchObject({
+      code: 'VERSION_CONFLICT',
+    });
+    abort.abort();
+    gate.resolve(undefined);
+    await expect(pending).rejects.toMatchObject({ code: 'REQUEST_CANCELLED' });
+    expect(get().practice?.recovery?.phase).toBe('diagnosis');
+    harness.provider.reviewTeachingContent = review;
+    await act({
+      kind: 'prepare_practice_repair',
+      learnerNote: 'I treated one condition as sufficient.',
+    });
+    expect(authorCalls).toBe(1);
+    expect(get().practice?.recovery?.phase).toBe('repair');
+    expect(
+      harness.db
+        .prepare(
+          "SELECT count(*) AS n FROM model_logical_calls WHERE workspace_id='ws_1' AND cache_status='hit'",
+        )
+        .get(),
+    ).toEqual({ n: 1 });
+  });
+
+  it('rejects a delayed result after the owning lesson changes and leaves mastery untouched', async () => {
+    const { harness, route, act } = await failedPracticeHarness();
+    const original = harness.provider.generatePracticeRepair.bind(harness.provider);
+    const gate = deferred<void>();
+    const started = deferred<void>();
+    harness.provider.generatePracticeRepair = async (...args) => {
+      started.resolve(undefined);
+      await gate.promise;
+      return original(...args);
+    };
+    const pending = act({ kind: 'prepare_practice_repair', learnerNote: '' });
+    await started.promise;
+    const state = harness.repos.lessonExecution.getForSession(
+      route.session.id,
+      route.agendaItem.id,
+    )!;
+    harness.repos.lessonExecution.update({ ...state, version: state.version + 1 }, state.version);
+    gate.resolve(undefined);
+    await expect(pending).rejects.toMatchObject({ code: 'VERSION_CONFLICT' });
+    expect(
+      harness.repos.lessonExecution.get(state.id)!.practiceInteractions[0]!.recovery?.rounds,
+    ).toHaveLength(0);
+    expect(harness.repos.mastery.listByWorkspace('ws_1')).toHaveLength(0);
+  });
+
+  it('retains three failed rounds as unresolved and never advances the course by exhaustion', async () => {
+    const { harness, route, get, act } = await failedPracticeHarness();
+    for (let i = 0; i < 3; i++) {
+      await act({ kind: 'prepare_practice_repair', learnerNote: '' });
+      await act({ kind: 'start_practice_retest' });
+      await act({ kind: 'submit_practice_retest', index: 0, optionId: 'B' });
+    }
+    expect(get().practice?.recovery?.phase).toBe('needs_support');
+    expect(get().practice?.completedAt).toBeNull();
+    await expect(act({ kind: 'prepare_practice_repair', learnerNote: '' })).rejects.toMatchObject({
+      code: 'VALIDATION_ERROR',
+    });
+    expect(
+      harness.services.lessonExecution.tutorContext('ws_1', route.session.id)?.practiceRecovery,
+    ).toMatchObject({ phase: 'needs_support', credit: 'none' });
+    await act({
+      kind: 'prepare_practice_repair',
+      learnerNote: 'After reviewing the rule, I now distinguish the mandatory condition.',
+    });
+    expect(get().practice?.recovery?.phase).toBe('repair');
+    const state = harness.repos.lessonExecution.getForSession(
+      route.session.id,
+      route.agendaItem.id,
+    )!;
+    expect(state.practiceInteractions[0]!.recovery!.rounds).toHaveLength(3);
+    expect(state.practiceInteractions[0]!.recovery!.rounds.at(-1)!.ordinal).toBe(4);
+    expect(
+      harness.repos.lessonExecution
+        .listEvents(state.id)
+        .some((event) => Boolean(event.payload.archivedRound)),
+    ).toBe(true);
+    expect(harness.repos.studySessions.get(route.session.id)?.currentAgendaItemId).toBe(
+      route.agendaItem.id,
+    );
+    expect(harness.repos.mastery.listByWorkspace('ws_1')).toHaveLength(0);
+    expect(harness.repos.formalProgression.listEvidenceForWorkspace('ws_1')).toHaveLength(0);
+  });
+});

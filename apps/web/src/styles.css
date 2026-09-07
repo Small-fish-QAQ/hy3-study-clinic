@@ -4650,6 +4650,37 @@ button.danger {
   color: var(--primary-strong);
 }
 
+.practice-recovery {
+  border-top: 1px solid var(--border);
+  margin-top: 16px;
+  padding-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.practice-recovery p,
+.practice-recovery li {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.75;
+}
+
+.practice-recovery label {
+  display: grid;
+  gap: 8px;
+}
+
+.practice-recovery textarea {
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+}
+
+.practice-repair-teaching {
+  display: grid;
+  gap: 12px;
+}
+
 .lesson-handoff {
   align-items: center;
   border: 1px solid #c9b66b;

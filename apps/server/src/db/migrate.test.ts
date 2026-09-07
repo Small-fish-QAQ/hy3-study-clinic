@@ -602,6 +602,25 @@ function rewriteAsInterimMigration18(db: ReturnType<typeof openDatabase>): void 
 }
 
 describe('migrations', () => {
+  it('preserves historical lesson events when admitting recovery events', () => {
+    const db = openDatabase(':memory:');
+    migrate(db, { toVersion: 47 });
+    insertAcceptedLessonCascadeFixture(db);
+    db.prepare(
+      `INSERT INTO lesson_execution_states (id,session_id,agenda_item_id,curriculum_id,study_plan_id,learning_unit_id,manifest_fingerprint,preparation_status,version,current_segment_index,presented_segment_indexes,informal_interactions,created_at,updated_at) VALUES ('recovery_state','session_checkpoint_cascade','agenda_item_checkpoint_cascade','curriculum_checkpoint_cascade','plan_checkpoint_cascade','unit_checkpoint_cascade','manifest-checkpoint-cascade','preparing',1,0,'[]','[]','2026-01-01T00:00:00.000Z','2026-01-01T00:00:00.000Z')`,
+    ).run();
+    db.prepare(
+      `INSERT INTO lesson_execution_events VALUES ('old_event','recovery_state',1,'old_command','practice_response_recorded','{"correct":false}','2026-01-01T00:00:00.000Z')`,
+    ).run();
+    const before = db.prepare('SELECT * FROM lesson_execution_events').all();
+    migrate(db);
+    expect(db.prepare('SELECT * FROM lesson_execution_events').all()).toEqual(before);
+    db.prepare(
+      `INSERT INTO lesson_execution_events VALUES ('new_event','recovery_state',2,'new_command','practice_repair_prepared','{}','2026-01-01T00:00:00.000Z')`,
+    ).run();
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+    db.close();
+  });
   it('applies all migrations to the latest version', () => {
     const db = openDatabase(':memory:');
     migrate(db);

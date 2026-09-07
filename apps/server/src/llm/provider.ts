@@ -69,11 +69,30 @@ import type {
   ObjectiveAuthoritySemanticRepairInput,
   ObjectiveAuthoritySemanticRepairProposal,
   UnitFocus,
+  PracticeRepairContent,
+  LessonPracticeItem,
 } from '@hy3-clinic/shared';
 import type { TeachingStrategies } from './teachingStrategy.js';
 
 /** One original plus independently bounded schema and candidate repairs. */
 export const MAX_STRUCTURED_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL = 3;
+
+export interface PracticeRepairInput {
+  desiredDepth: DesiredDepth;
+  unitFocus: UnitFocus;
+  objective: Pick<LessonPracticeItem, 'objectiveTitle' | 'construct' | 'capabilityTested'>;
+  failedPrompt: string;
+  selectedAnswer: string;
+  feedback: string;
+  learnerNote: string;
+  teachingContext: string[];
+  sourceExcerpts: string[];
+  priorRounds: PracticeRepairContent[];
+  priorResponses: string[];
+  unseenPracticePrompts: string[];
+  archivedRetestPrompts: string[];
+  revision?: { draft: PracticeRepairContent; findings: string[] };
+}
 /**
  * Original plus one class-specific recovery. A third request is allowed only
  * for the observed structural-repair -> alias-only localized-repair sequence.
@@ -1326,6 +1345,14 @@ export interface LlmProvider extends VisualDescriptionProvider {
     input: RepairGenerationInput,
     opts?: ProviderCallOptions,
   ): Promise<RepairGenerationPayload>;
+  generatePracticeRepair?(
+    input: PracticeRepairInput,
+    opts?: ProviderCallOptions,
+  ): Promise<PracticeRepairContent>;
+  reviewPracticeRepair?(
+    input: TeachingContentReviewInput,
+    opts?: ProviderCallOptions,
+  ): Promise<TeachingContentReview>;
   /** Propose typed, evidence-cited relationships between EXISTING concepts. */
   proposeGraphEdges(
     input: GraphProposalInput,

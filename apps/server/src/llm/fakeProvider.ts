@@ -50,6 +50,7 @@ import {
   type ObjectiveAuthoritySupportType,
 } from '@hy3-clinic/shared';
 import { ProviderError } from './errors.js';
+import type { PracticeRepairInput, TeachingContentReviewInput } from './provider.js';
 import { alignPointToStem, charCoverageRatio } from '../grading/rubricAlignment.js';
 import type {
   AlignmentProposalInput,
@@ -782,6 +783,91 @@ export class FakeProvider implements LlmProvider {
       }
     }
     return { questions };
+  }
+
+  async generatePracticeRepair(input: PracticeRepairInput, opts?: ProviderCallOptions) {
+    await this.gate(opts);
+    const examples = [
+      [
+        'A reservoir supplies two districts. The eastern valve is closed; the western valve stays open. Which district still receives water, and why?',
+        'A courier requires both a valid address and a paid postage label. The address is valid but postage is missing. Can the parcel be dispatched?',
+      ],
+      [
+        'A workshop admits a trainee only with a signed permit. The trainee knows every technique but has no permit. Is entry permitted?',
+        'A laboratory has two independent emergency exits. One corridor is blocked while the other is clear. Must evacuation stop?',
+      ],
+      [
+        'A library lending rule requires both membership and no overdue loans. The member has an overdue book. Is a new loan allowed?',
+        'A railway crossing is closed only when the barrier is down. The warning light is off but the barrier remains down. May traffic cross?',
+      ],
+      [
+        'A tournament permits entry with either a regional pass or an invitation. A player has only an invitation. Is entry possible?',
+        "A locked archive opens only with a badge and a daily code. The badge is valid but yesterday's code expired. Will it open?",
+      ],
+    ];
+    const prompts =
+      examples.find(
+        (pair) =>
+          !input.priorRounds.some((round) =>
+            round.retest.some((item) => pair.includes(item.prompt)),
+          ),
+      ) ?? examples[0]!;
+    return {
+      diagnosis: {
+        observation: `Your chosen answer was: ${input.selectedAnswer}`,
+        gap: input.objective.capabilityTested,
+        uncertainty: 'A single choice may also reflect a reading error.',
+      },
+      explanation:
+        'Separate the required condition from an attractive but insufficient observation. Evaluate every mandatory condition before deciding.',
+      workedExample: {
+        prompt:
+          'A machine runs only when its guard is closed and its power is on. Its guard is open while power is on.',
+        steps: [
+          'List the two mandatory conditions.',
+          'The open guard fails one required condition even though power is present.',
+        ],
+        conclusion: 'The machine cannot run.',
+      },
+      contrast:
+        'One satisfied condition is sufficient for an OR rule but insufficient for an AND rule.',
+      retest: prompts.map((prompt) => ({
+        prompt,
+        options: [
+          {
+            id: 'A',
+            text: 'Apply the stated necessary condition to the current facts.',
+            feedbackIfSelected: 'You checked the governing condition.',
+          },
+          {
+            id: 'B',
+            text: 'Rely on an attractive detail instead.',
+            feedbackIfSelected: 'That detail does not satisfy the governing condition.',
+          },
+          {
+            id: 'C',
+            text: 'Ignore the rule and guess.',
+            feedbackIfSelected: 'The rule must determine the decision.',
+          },
+        ],
+        correctOptionId: 'A',
+        hint: 'Check the necessary condition.',
+        explanation: 'Evaluate the current facts against every required condition.',
+      })),
+    };
+  }
+
+  async reviewPracticeRepair(input: TeachingContentReviewInput, opts?: ProviderCallOptions) {
+    await this.gate(opts);
+    return {
+      decisions: input.actionIds.map((actionId) => ({
+        actionId,
+        answerId: 'A',
+        requiresCaseInference: true,
+        evidenceUsed: 'The deterministic fake fixture uses the stated necessary condition.',
+      })),
+      findings: [],
+    };
   }
 
   async generateRepair(

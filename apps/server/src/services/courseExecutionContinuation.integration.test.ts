@@ -2,7 +2,10 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { LearningContractDraftFields } from '@hy3-clinic/shared';
+import type {
+  LearningContractDraftFields,
+  LessonExecutionCommandRequest,
+} from '@hy3-clinic/shared';
 import { openDatabase, type SqliteDb } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
 import { ProviderError } from '../llm/errors.js';
@@ -325,7 +328,12 @@ function planIndexes(agendaId: string, planId: string): number[] {
 }
 
 /** Runs a real Lesson to completion for the given teaching Agenda item. */
-async function teachThroughLesson(agendaId: string, agendaItemId: string, tag: string) {
+async function teachThroughLesson(
+  agendaId: string,
+  agendaItemId: string,
+  tag: string,
+  failPractice = false,
+) {
   const { services, repos } = harness;
   const execution = repos.courseExecution.get(workspaceId);
   const agenda = repos.sessionAgendas.get(agendaId)!;
@@ -410,18 +418,27 @@ async function teachThroughLesson(agendaId: string, agendaItemId: string, tag: s
   let practiceGuard = 0;
   while (current.practice && current.practice.status !== 'completed' && practiceGuard < 20) {
     practiceGuard += 1;
-    const item = current.practice.item!;
+    const item = current.practice.item;
+    const recovery = current.practice.recovery;
+    const action: LessonExecutionCommandRequest['action'] =
+      recovery?.phase === 'diagnosis'
+        ? { kind: 'prepare_practice_repair', learnerNote: '' }
+        : recovery?.phase === 'repair'
+          ? { kind: 'start_practice_retest' }
+          : recovery?.retest
+            ? { kind: 'submit_practice_retest', index: recovery.retest.index, optionId: 'A' }
+            : {
+                kind: 'submit_practice_response',
+                itemIndex: item!.index,
+                optionId: item!.options[failPractice && practiceGuard === 1 ? 1 : 0]!.id,
+              };
     current = await services.lessonExecution.command(workspaceId, session.id, {
       command: command(`${tag}-practice-${practiceGuard}`),
       expectedSessionVersion: current.session.version,
       expectedAgendaVersion: current.agenda!.version,
       expectedAgendaItemId: agendaItemId,
       expectedLessonStateVersion: current.progress!.stateVersion,
-      action: {
-        kind: 'submit_practice_response',
-        itemIndex: item.index,
-        optionId: item.options[0]!.id,
-      },
+      action,
     });
   }
   return { session, projection: current };
@@ -492,7 +509,12 @@ describe('file-backed Course Execution continuation', () => {
     const firstTeaching = route.agenda.items.find(
       (item) => item.kind === 'learning_unit_teaching',
     )!;
-    await teachThroughLesson(route.agenda.id, firstTeaching.id, 'w1-teach');
+    const repaired = await teachThroughLesson(route.agenda.id, firstTeaching.id, 'w1-teach', true);
+    expect(repaired.projection.practice?.attempts[0]).toMatchObject({
+      correct: false,
+      recovered: true,
+    });
+    expect(harness.repos.formalProgression.listEvidenceForWorkspace(workspaceId)).toHaveLength(0);
 
     // The teaching item completed, but the window still holds its checkpoint.
     const afterLesson = harness.repos.sessionAgendas.get(route.agenda.id)!;

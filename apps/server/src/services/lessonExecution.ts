@@ -4,6 +4,8 @@ import {
   LessonExecutionCommandRequestSchema,
   LessonExecutionProjectionSchema,
   LessonTutorContextSchema,
+  TeachingContentReviewSchema,
+  PracticeRepairContentSchema,
   groupLessonSegmentsForLearner,
   isExecutableTeachingAgendaItem,
   type LessonExecutionProjection,
@@ -17,10 +19,24 @@ import {
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import { ProviderError } from '../llm/errors.js';
-import type { ProviderCallOptions } from '../llm/provider.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
+import type { LlmProvider, ProviderCallOptions } from '../llm/provider.js';
+import { enforceAgentCostPolicies } from './agentProviderRuntime.js';
+import {
+  runRecoverableGenerationStage,
+  invalidateGenerationDependency,
+} from './generationStages.js';
+import { createTelemetryProvider } from './providerTelemetry.js';
+import {
+  failedPracticeAttempt,
+  practiceItemPassed,
+  practiceRecoveryProjection,
+  practiceRepairInput,
+  practiceRepairReview,
+  validatePracticeRepair,
+} from './practiceRecovery.js';
 import type { AgendaWindowRolloverService } from './agendaWindowRollover.js';
 import type { CourseCommandService } from './courseCommands.js';
 import {
@@ -30,6 +46,7 @@ import {
 } from './teachingBriefPreparation.js';
 
 interface LessonExecutionDeps {
+  provider?: LlmProvider;
   repos: Repositories;
   clock: Clock;
   commands: CourseCommandService;
@@ -133,12 +150,16 @@ function workedInteractionComplete(
 }
 
 export function createLessonExecutionService({
+  provider: rawProvider,
   repos,
   clock,
   commands,
   teachingBriefPreparation,
   agendaWindow,
 }: LessonExecutionDeps) {
+  const provider = rawProvider
+    ? createTelemetryProvider({ repos, clock, provider: rawProvider, providerGeneration: () => 1 })
+    : undefined;
   function preparationRouteInput(context: RouteContext) {
     return {
       workspaceId: context.session.workspaceId,
@@ -454,7 +475,16 @@ export function createLessonExecutionService({
         : completed
           ? (['review_lesson'] as const)
           : presentationCompleted
-            ? (['submit_practice_response'] as const)
+            ? practice?.recovery
+              ? practice.recovery.phase === 'diagnosis' ||
+                practice.recovery.phase === 'needs_support'
+                ? (['prepare_practice_repair'] as const)
+                : practice.recovery.phase === 'repair'
+                  ? (['start_practice_retest'] as const)
+                  : practice.recovery.phase === 'retest'
+                    ? (['submit_practice_retest'] as const)
+                    : (['review_lesson'] as const)
+              : (['submit_practice_response'] as const)
             : state.presentedSegmentIndexes.length === 0
               ? (['start_lesson'] as const)
               : [
@@ -735,10 +765,7 @@ export function createLessonExecutionService({
   ): LearnerPracticeProjection | null {
     if (!brief.practice) return null;
     const completedItem = (itemIndex: number) => {
-      const attempts = state.practiceInteractions.filter(
-        (attempt) => attempt.itemIndex === itemIndex,
-      );
-      return attempts.some((attempt) => attempt.correct) || attempts.length >= 2;
+      return practiceItemPassed(state, itemIndex);
     };
     const unresolvedIndex = brief.practice.items.findIndex((_, index) => !completedItem(index));
     const currentItemIndex =
@@ -750,6 +777,13 @@ export function createLessonExecutionService({
     const surfaceName =
       itemAttempts.length === 1 && !itemAttempts[0]!.correct ? 'retry' : 'initial';
     const surface = item[surfaceName];
+    const recoveryOperationId = failedPracticeAttempt(state, currentItemIndex)?.recovery
+      ?.preparationOperationId;
+    const operation = recoveryOperationId ? repos.operations.get(recoveryOperationId) : null;
+    const generating =
+      operation?.status === 'running' &&
+      Boolean(operation.leaseExpiresAt && operation.leaseExpiresAt > clock.now().toISOString());
+    const recovery = practiceRecoveryProjection(state, item, currentItemIndex, generating);
     const status = state.practiceCompletedAt
       ? 'completed'
       : !state.presentationCompletedAt
@@ -761,18 +795,37 @@ export function createLessonExecutionService({
       status,
       currentItemIndex,
       itemCount: brief.practice.items.length,
-      item: state.practiceCompletedAt
-        ? null
-        : {
-            index: currentItemIndex,
-            objectiveTitle: item.objectiveTitle,
-            construct: item.construct,
-            surface: surfaceName,
-            supplementary: item.authority === 'ai_teaching_synthesis',
-            prompt: surface.prompt,
-            options: surface.options.map(({ id, text }) => ({ id, text })),
-          },
-      attempts: state.practiceInteractions,
+      item:
+        state.practiceCompletedAt || recovery
+          ? null
+          : {
+              index: currentItemIndex,
+              objectiveTitle: item.objectiveTitle,
+              construct: item.construct,
+              surface: surfaceName,
+              supplementary: item.authority === 'ai_teaching_synthesis',
+              prompt: surface.prompt,
+              options: surface.options.map(({ id, text }) => ({ id, text })),
+            },
+      attempts: state.practiceInteractions.map(({ recovery, ...attempt }) => ({
+        ...attempt,
+        ...(recovery?.rounds.some(
+          (round) =>
+            round.responses.length === 2 && round.responses.every((response) => response.correct),
+        )
+          ? {
+              recovered: true,
+              recoveryFeedback: recovery.rounds
+                .find(
+                  (round) =>
+                    round.responses.length === 2 &&
+                    round.responses.every((response) => response.correct),
+                )!
+                .responses.at(-1)!.feedback,
+            }
+          : {}),
+      })),
+      recovery,
       completedAt: state.practiceCompletedAt,
       credit: 'none',
     };
@@ -1202,6 +1255,7 @@ export function createLessonExecutionService({
     workspaceId: string,
     sessionId: string,
     rawInput: unknown,
+    opts?: ProviderCallOptions,
   ): Promise<LessonExecutionProjection> {
     const input = LessonExecutionCommandRequestSchema.parse(rawInput);
     if (input.command.workspaceId !== workspaceId) throw notFound('Course not found.');
@@ -1227,6 +1281,282 @@ export function createLessonExecutionService({
     );
     if (claim.replayPayload) return LessonExecutionProjectionSchema.parse(claim.replayPayload);
     try {
+      if (input.action.kind === 'prepare_practice_repair') {
+        const current = stateFor(initial);
+        const brief = current ? currentBrief(initial) : null;
+        if (
+          !current ||
+          !brief?.practice ||
+          !current.presentationCompletedAt ||
+          current.practiceCompletedAt ||
+          current.version !== input.expectedLessonStateVersion
+        )
+          throw new AppError(ApiErrorCode.VersionConflict, 'Practice repair state is stale.');
+        const index = brief.practice.items.findIndex((_, i) => !practiceItemPassed(current, i));
+        const attempt = failedPracticeAttempt(current, index);
+        const recovery = attempt?.recovery ?? { rounds: [], preparationOperationId: null };
+        const last = recovery.rounds.at(-1);
+        if (
+          !attempt ||
+          (recovery.rounds.length >= 3 && !input.action.learnerNote.trim()) ||
+          (last && !last.responses.some((response) => !response.correct))
+        )
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            'Repair requires an unresolved failed response.',
+          );
+        if (!provider?.generatePracticeRepair)
+          throw new AppError(ApiErrorCode.ValidationError, 'Practice repair provider unavailable.');
+        const reviewRepair = provider.reviewTeachingContent ?? provider.reviewPracticeRepair;
+        if (!reviewRepair)
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            'Independent repair review is unavailable.',
+          );
+        const ordinal = (last?.ordinal ?? recovery.rounds.length) + 1;
+        const priorOperation = recovery.preparationOperationId
+          ? repos.operations.get(recovery.preparationOperationId)
+          : null;
+        if (
+          priorOperation?.status === 'running' &&
+          priorOperation.leaseExpiresAt &&
+          priorOperation.leaseExpiresAt > clock.now().toISOString()
+        )
+          throw new AppError(
+            ApiErrorCode.VersionConflict,
+            'Practice repair is already being prepared.',
+          );
+        const preparing = repos.lessonExecution.update(
+          {
+            ...current,
+            practiceInteractions: current.practiceInteractions.map((value) =>
+              value === attempt
+                ? {
+                    ...value,
+                    recovery: {
+                      ...recovery,
+                      learnerNote:
+                        input.action.kind === 'prepare_practice_repair'
+                          ? input.action.learnerNote
+                          : '',
+                      preparationOperationId: claim.operationId,
+                    },
+                  }
+                : value,
+            ),
+            version: current.version + 1,
+            updatedAt: clock.now().toISOString(),
+          },
+          current.version,
+        );
+        const archivedRetestPrompts = repos.lessonExecution
+          .listEvents(current.id)
+          .flatMap((event) => {
+            if (event.kind !== 'practice_repair_prepared' || event.payload.itemIndex !== index)
+              return [];
+            const archived = event.payload.archivedRound as { content?: unknown } | undefined;
+            const parsed = PracticeRepairContentSchema.safeParse(archived?.content);
+            return parsed.success ? parsed.data.retest.map((item) => item.prompt) : [];
+          })
+          .slice(-24);
+        const request = practiceRepairInput(brief, current, index, input.action.learnerNote, {
+          desiredDepth: initial.planItem.targetDepth,
+          unitFocus:
+            initial.curriculum.nodes.find((node) => node.id === current.learningUnitId)
+              ?.learningUnit?.focus ?? 'normal',
+          archivedRetestPrompts,
+        });
+        if (priorOperation) {
+          const rejected = repos.operations
+            .listEvents(priorOperation.id)
+            .findLast((event) => event.kind === 'practice_repair_rejected');
+          if (rejected) request.revision = rejected.payload as NonNullable<typeof request.revision>;
+        }
+        const assertCurrent = () => {
+          const context = route(workspaceId, sessionId, false);
+          assertExpected(
+            context,
+            input.expectedSessionVersion,
+            input.expectedAgendaVersion,
+            input.expectedAgendaItemId,
+          );
+          if (
+            stateFor(context)?.version !== preparing.version ||
+            currentBrief(context)?.id !== brief.id
+          )
+            throw new AppError(
+              ApiErrorCode.VersionConflict,
+              'Practice repair lost its current Lesson binding.',
+            );
+        };
+        const logicalCallId = newId('llm_call');
+        const content = await runRecoverableGenerationStage({
+          repos,
+          clock,
+          provider,
+          providerModel: provider.model ?? null,
+          operationId: claim.operationId,
+          owner: claim.owner,
+          fencingToken: claim.fencingToken,
+          workspaceId,
+          studySessionId: sessionId,
+          learningUnitId: current.learningUnitId,
+          assessmentId: null,
+          operationType: 'prepare_practice_repair',
+          schemaFingerprint: 'practice-repair-v5',
+          policyFingerprint: null,
+          sourceFingerprint: current.sourceContextFingerprint,
+          logicalCallId,
+          providerOptions: opts,
+          stageIdentity: {
+            briefId: brief.id,
+            stateId: current.id,
+            itemIndex: index,
+            round: ordinal,
+            request,
+            version: 'practice-repair-v5',
+          },
+          assertCurrent,
+          beforeGenerate: () =>
+            enforceAgentCostPolicies(repos, {
+              workspaceId,
+              operationType: 'prepare_practice_repair',
+              studySessionId: sessionId,
+              at: clock.now().toISOString(),
+              confirmedPolicyIds: [],
+            }),
+          validateResult: (value) => validatePracticeRepair(value, request),
+          invoke: (options) =>
+            provider.generatePracticeRepair!(structuredClone(request), {
+              ...options,
+              validateCandidate: (value) => {
+                try {
+                  validatePracticeRepair(value, request);
+                  return { valid: true, diagnostics: [], diagnosticCodes: [] };
+                } catch (error) {
+                  return {
+                    valid: false,
+                    diagnostics: [error instanceof Error ? error.message : 'Invalid repair'],
+                    diagnosticCodes: ['practice_repair_invalid'],
+                  };
+                }
+              },
+            }),
+        });
+        const reviewLogicalCallId = newId('llm_call');
+        const reviewInput = practiceRepairReview(request, content);
+        commands.renew(claim, 5 * 60 * 1000);
+        const reviewed = await runRecoverableGenerationStage({
+          repos,
+          clock,
+          provider,
+          providerModel: provider.model ?? null,
+          operationId: claim.operationId,
+          owner: claim.owner,
+          fencingToken: claim.fencingToken,
+          workspaceId,
+          studySessionId: sessionId,
+          learningUnitId: current.learningUnitId,
+          assessmentId: null,
+          operationType: 'review_practice_repair',
+          schemaFingerprint: 'practice-repair-review-v1',
+          policyFingerprint: null,
+          sourceFingerprint: current.sourceContextFingerprint,
+          logicalCallId: reviewLogicalCallId,
+          providerOptions: opts,
+          stageIdentity: { briefId: brief.id, input: reviewInput },
+          assertCurrent,
+          beforeGenerate: () =>
+            enforceAgentCostPolicies(repos, {
+              workspaceId,
+              operationType: 'review_practice_repair',
+              studySessionId: sessionId,
+              at: clock.now().toISOString(),
+              confirmedPolicyIds: [],
+            }),
+          validateResult: (value) => TeachingContentReviewSchema.parse(value),
+          invoke: (options) => reviewRepair.call(provider, structuredClone(reviewInput), options),
+        });
+        const findings = reviewed.findings
+          .filter((finding) => finding.code !== 'shallow_task')
+          .map((finding) => `${finding.problem} ${finding.repairInstruction}`);
+        for (const [i, question] of content.retest.entries()) {
+          const decisions = reviewed.decisions.filter(
+            (decision) => decision.actionId === `retest${i}.check`,
+          );
+          if (decisions.length !== 1 || decisions[0]!.answerId !== question.correctOptionId)
+            findings.push(
+              `Retest ${i + 1} lacks a unique independently confirmed answer. ${decisions[0]?.evidenceUsed ?? ''}`,
+            );
+        }
+        if (findings.length) {
+          invalidateGenerationDependency(repos, logicalCallId, clock.now().toISOString());
+          commands.appendEvent(claim, 'practice_repair_rejected', { draft: content, findings });
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            'The repair needs a content correction. Please retry.',
+          );
+        }
+        return commands.complete(claim, () => {
+          if (opts?.signal?.aborted) throw ProviderError.cancelled();
+          assertCurrent();
+          const now = clock.now().toISOString();
+          const next = repos.lessonExecution.update(
+            {
+              ...preparing,
+              practiceInteractions: preparing.practiceInteractions.map((value) =>
+                value.recovery?.preparationOperationId === claim.operationId
+                  ? {
+                      ...value,
+                      recovery: {
+                        preparationOperationId: null,
+                        learnerNote:
+                          input.action.kind === 'prepare_practice_repair'
+                            ? input.action.learnerNote
+                            : '',
+                        rounds: [
+                          ...recovery.rounds.slice(-2),
+                          {
+                            ordinal,
+                            content,
+                            learnerNote:
+                              input.action.kind === 'prepare_practice_repair'
+                                ? input.action.learnerNote
+                                : '',
+                            logicalCallId,
+                            reviewLogicalCallId,
+                            createdAt: now,
+                            startedAt: null,
+                            responses: [],
+                          },
+                        ],
+                      },
+                    }
+                  : value,
+              ),
+              version: preparing.version + 1,
+              updatedAt: now,
+            },
+            preparing.version,
+          );
+          repos.lessonExecution.appendEvent({
+            id: newId('lesson_event'),
+            lessonExecutionStateId: next.id,
+            seq: repos.lessonExecution.listEvents(next.id).length + 1,
+            commandId: input.command.commandId,
+            kind: 'practice_repair_prepared',
+            payload: {
+              itemIndex: index,
+              round: ordinal,
+              logicalCallId,
+              ...(recovery.rounds.length >= 3 ? { archivedRound: recovery.rounds[0] } : {}),
+              credit: 'none',
+            },
+            createdAt: now,
+          });
+          return projection(route(workspaceId, sessionId), next, brief);
+        });
+      }
       const result = repos.transaction(() => {
         const context = route(workspaceId, sessionId, false);
         assertExpected(
@@ -1251,6 +1581,8 @@ export function createLessonExecutionService({
           | 'segment_revisited'
           | 'informal_response_recorded'
           | 'practice_response_recorded'
+          | 'practice_retest_started'
+          | 'practice_retest_response_recorded'
           | 'practice_completed'
           | 'presentation_completed' = 'segment_presented';
         let eventPayload: Record<string, unknown> = action;
@@ -1454,6 +1786,93 @@ export function createLessonExecutionService({
             },
             current.version,
           );
+        } else if (
+          action.kind === 'start_practice_retest' ||
+          action.kind === 'submit_practice_retest'
+        ) {
+          if (!current.presentationCompletedAt || current.practiceCompletedAt || !brief.practice)
+            throw new AppError(
+              ApiErrorCode.ValidationError,
+              'Retest requires unfinished Practice.',
+            );
+          const index = brief.practice.items.findIndex((_, i) => !practiceItemPassed(current, i));
+          const attempt = failedPracticeAttempt(current, index);
+          const recovery = attempt?.recovery;
+          const round = recovery?.rounds.at(-1);
+          if (
+            !attempt ||
+            !recovery ||
+            !round ||
+            round.responses.some((response) => !response.correct) ||
+            round.responses.length >= 2
+          )
+            throw new AppError(
+              ApiErrorCode.ValidationError,
+              'Prepare targeted Repair before retesting.',
+            );
+          let updatedRound = round;
+          if (action.kind === 'start_practice_retest') {
+            if (round.startedAt)
+              throw new AppError(ApiErrorCode.ValidationError, 'Retest already started.');
+            updatedRound = { ...round, startedAt: now };
+            eventKind = 'practice_retest_started';
+          } else {
+            if (!round.startedAt || action.index !== round.responses.length)
+              throw new AppError(
+                ApiErrorCode.ValidationError,
+                'Respond to the current Retest question.',
+              );
+            const surface = round.content.retest[action.index]!;
+            const option = surface.options.find((value) => value.id === action.optionId);
+            if (!option)
+              throw new AppError(ApiErrorCode.ValidationError, 'Select an offered Retest option.');
+            updatedRound = {
+              ...round,
+              responses: [
+                ...round.responses,
+                {
+                  selectedOptionId: option.id,
+                  correct: option.id === surface.correctOptionId,
+                  feedback: `${option.feedbackIfSelected} ${surface.explanation}`,
+                  respondedAt: now,
+                },
+              ],
+            };
+            eventKind = 'practice_retest_response_recorded';
+            eventPayload = {
+              ...action,
+              correct: option.id === surface.correctOptionId,
+              credit: 'none',
+            };
+          }
+          const candidate = {
+            ...current,
+            practiceInteractions: current.practiceInteractions.map((value) =>
+              value === attempt
+                ? {
+                    ...value,
+                    recovery: {
+                      ...recovery,
+                      ...(updatedRound.responses.some((response) => !response.correct)
+                        ? { learnerNote: '' }
+                        : {}),
+                      rounds: [...recovery.rounds.slice(0, -1), updatedRound],
+                    },
+                  }
+                : value,
+            ),
+          };
+          const done = brief.practice.items.every((_, i) => practiceItemPassed(candidate, i));
+          if (done) eventKind = 'practice_completed';
+          next = repos.lessonExecution.update(
+            {
+              ...candidate,
+              practiceCompletedAt: done ? now : null,
+              version: current.version + 1,
+              updatedAt: now,
+            },
+            current.version,
+          );
         } else if (action.kind === 'submit_practice_response') {
           if (!current.presentationCompletedAt || current.practiceCompletedAt || !brief.practice) {
             throw new AppError(
@@ -1462,10 +1881,7 @@ export function createLessonExecutionService({
             );
           }
           const completedItem = (itemIndex: number) => {
-            const attempts = current.practiceInteractions.filter(
-              (attempt) => attempt.itemIndex === itemIndex,
-            );
-            return attempts.some((attempt) => attempt.correct) || attempts.length >= 2;
+            return practiceItemPassed(current, itemIndex);
           };
           const expectedItemIndex = brief.practice.items.findIndex(
             (_, index) => !completedItem(index),
@@ -1480,6 +1896,11 @@ export function createLessonExecutionService({
           const priorAttempts = current.practiceInteractions.filter(
             (attempt) => attempt.itemIndex === expectedItemIndex,
           );
+          if (priorAttempts.some((attempt) => !attempt.correct))
+            throw new AppError(
+              ApiErrorCode.ValidationError,
+              'Use targeted Repair and Retest after a failed Practice answer.',
+            );
           const attemptNumber = priorAttempts.length === 0 ? (1 as const) : (2 as const);
           const surfaceName = attemptNumber === 1 ? ('initial' as const) : ('retry' as const);
           const surface = item[surfaceName];
@@ -1503,7 +1924,7 @@ export function createLessonExecutionService({
             credit: 'none' as const,
           };
           const interactions = [...current.practiceInteractions, attempt];
-          const itemDone = correct || attemptNumber === 2;
+          const itemDone = correct;
           const practiceDone = itemDone && expectedItemIndex === brief.practice.items.length - 1;
           eventKind = practiceDone ? 'practice_completed' : 'practice_response_recorded';
           eventPayload = {
@@ -1637,6 +2058,34 @@ export function createLessonExecutionService({
         preview: segment.explanation.slice(0, 260),
       }));
     const result = LessonTutorContextSchema.parse({
+      ...(projectPractice(brief, state)?.recovery
+        ? (() => {
+            const practice = projectPractice(brief, state)!;
+            const recovery = practice.recovery!;
+            const attempt = failedPracticeAttempt(state, practice.currentItemIndex)!;
+            const failedRound = attempt.recovery?.rounds.findLast((round) =>
+              round.responses.some((response) => !response.correct),
+            );
+            const failedIndex =
+              failedRound?.responses.findIndex((response) => !response.correct) ?? -1;
+            const question =
+              failedIndex >= 0
+                ? failedRound!.content.retest[failedIndex]!.prompt
+                : brief.practice!.items[practice.currentItemIndex]![attempt.surface].prompt;
+            return {
+              practiceRecovery: {
+                phase: recovery.phase,
+                question,
+                selectedAnswer: recovery.selectedAnswer,
+                feedback: recovery.feedback.slice(0, 700),
+                gap: recovery.diagnosis?.gap ?? null,
+                explanation: recovery.teaching?.explanation.slice(0, 900) ?? null,
+                learnerNote: recovery.learnerNote ?? '',
+                credit: 'none',
+              },
+            };
+          })()
+        : {}),
       objective: { title: lesson.objective.title, whyNow: lesson.objective.whyNow },
       currentSegment: {
         index: current.index,

@@ -2,6 +2,8 @@
 
 The current end-to-end preparation, recovery and teaching responsibilities are
 described in [Course preparation and teaching architecture](FRONT_HALF.md).
+Post-Practice diagnosis, remediation and retesting are described in
+[Post-Practice recovery](PRACTICE_RECOVERY.md).
 
 This document expands the [Hy3 Study Clinic README](../README.md) for maintainers who need to understand or extend the system. It describes the shipped product, not a proposed rewrite.
 

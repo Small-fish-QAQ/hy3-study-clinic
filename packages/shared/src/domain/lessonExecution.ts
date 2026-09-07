@@ -162,6 +162,9 @@ export const LessonExecutionEventSchema = z
       'segment_revisited',
       'informal_response_recorded',
       'practice_response_recorded',
+      'practice_repair_prepared',
+      'practice_retest_started',
+      'practice_retest_response_recorded',
       'practice_completed',
       'presentation_completed',
     ]),
@@ -672,6 +675,9 @@ export const LessonExecutionAllowedActionSchema = z.enum([
   'respond_to_worked_interaction',
   'complete_presentation',
   'submit_practice_response',
+  'prepare_practice_repair',
+  'start_practice_retest',
+  'submit_practice_retest',
   'review_lesson',
   'resume_study_session',
   'wait_for_preparation',
@@ -829,6 +835,20 @@ export const LessonExecutionCommandRequestSchema = z
     expectedAgendaItemId: z.string().min(1),
     expectedLessonStateVersion: z.number().int().positive(),
     action: z.discriminatedUnion('kind', [
+      z
+        .object({
+          kind: z.literal('prepare_practice_repair'),
+          learnerNote: z.string().max(1000).default(''),
+        })
+        .strict(),
+      z.object({ kind: z.literal('start_practice_retest') }).strict(),
+      z
+        .object({
+          kind: z.literal('submit_practice_retest'),
+          index: z.number().int().min(0).max(1),
+          optionId: z.string().min(1).max(80),
+        })
+        .strict(),
       z.object({ kind: z.literal('start_lesson') }).strict(),
       z
         .object({
@@ -867,6 +887,19 @@ export type LessonExecutionCommandRequest = z.infer<typeof LessonExecutionComman
 /** Deterministic, bounded slice passed to conversational Tutor generation. */
 export const LessonTutorContextSchema = z
   .object({
+    practiceRecovery: z
+      .object({
+        phase: z.string().max(30),
+        question: z.string().max(1200),
+        selectedAnswer: z.string().max(600),
+        feedback: z.string().max(700),
+        gap: z.string().max(700).nullable(),
+        explanation: z.string().max(900).nullable(),
+        learnerNote: z.string().max(1000),
+        credit: z.literal('none'),
+      })
+      .strict()
+      .optional(),
     objective: z
       .object({
         title: z.string().min(1).max(300),

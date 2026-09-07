@@ -239,6 +239,7 @@ export function createServices({
     providerModel,
   });
   const lessonExecution = createLessonExecutionService({
+    provider,
     repos,
     clock,
     commands: courseCommands,
