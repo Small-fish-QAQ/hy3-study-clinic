@@ -973,6 +973,8 @@ export function teachingBriefMatchesAcceptedLessonProjection(
     composition.skeletonPlannerVersion === checkpoint.skeleton.plannerVersion &&
     composition.skeletonFingerprint === checkpoint.skeleton.fingerprint &&
     composition.lessonPromptVersion === checkpoint.promptVersion &&
+    JSON.stringify(composition.jointAuthoringLogicalCallIds) ===
+      JSON.stringify(checkpoint.lessonEvaluation.jointAuthoring?.logicalCallIds) &&
     composition.targetMinutes === checkpoint.skeleton.targetMinutes &&
     composition.acceptableActiveMinutes.min ===
       checkpoint.skeleton.acceptableActiveMinutes.minMinutes &&

@@ -37,6 +37,7 @@ import type {
   StudyPlanProposalPayload,
   TeachingBriefProposalPayload,
   TeachingContentReview,
+  TeachingCapsulePayload,
   LessonSlotContentProposalPayload,
   PracticeContentProposalPayload,
   TeachingLessonSlotContent,
@@ -781,6 +782,7 @@ export const LEARNER_CONTENT_LOCALE = 'zh-CN' as const;
 export type LearnerContentLocale = typeof LEARNER_CONTENT_LOCALE;
 
 export interface TeachingContentReviewInput {
+  computedOutcomes?: boolean;
   stage: 'lesson' | 'practice';
   desiredDepth: DesiredDepth;
   objectives: Array<{ title: string; description: string }>;
@@ -791,6 +793,9 @@ export interface TeachingContentReviewInput {
 }
 
 export interface LessonSlotContentGenerationInput {
+  computedCases?: boolean;
+  preparedTogether?: boolean;
+  workedInteractionSlotId?: string | null;
   /** Preparation-only editorial pass; never accepted or shown before validation. */
   draftForReview?: LessonSlotContentProposalPayload;
   editorialFindings?: TeachingContentReview['findings'];
@@ -817,6 +822,8 @@ export interface LessonSlotContentGenerationInput {
  * Lesson content, but can fill only locally planned Practice slot identities.
  */
 export interface PracticeContentGenerationInput {
+  computedCases?: boolean;
+  preparedTogether?: boolean;
   draftForReview?: PracticeContentProposalPayload;
   editorialFindings?: TeachingContentReview['findings'];
   workspaceName: string;
@@ -1260,7 +1267,18 @@ export interface StudyPlanProposalInput {
  * Zod-validated payloads; implementations must never throw raw HTTP errors —
  * only ProviderError (see errors.ts).
  */
+export interface TeachingCapsuleGenerationInput {
+  lesson: LessonSlotContentGenerationInput;
+  practiceSlots: TeachingSkeleton['practicePlan']['slots'];
+  priorLesson: TeachingLessonSlotContent[];
+  includeNarrative: boolean;
+}
+
 export interface LlmProvider extends VisualDescriptionProvider {
+  generateTeachingCapsule?(
+    input: TeachingCapsuleGenerationInput,
+    opts?: ProviderCallOptions,
+  ): Promise<TeachingCapsulePayload>;
   reviewTeachingContent?(
     input: TeachingContentReviewInput,
     opts?: ProviderCallOptions,

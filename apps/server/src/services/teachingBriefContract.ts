@@ -621,14 +621,8 @@ export function validateLessonSlotContentCandidate(
         itemIds: [content.slotId],
       });
     }
-    if (slot.authorityMode === 'exact_source' && sourceRefs.length === 0) {
-      invalidIds.add(content.slotId);
-      diagnostics.push({
-        code: 'lesson_exact_source_slot_has_no_source',
-        message: `${content.slotId} requires at least one locally allowed exact source alias.`,
-        itemIds: [content.slotId],
-      });
-    }
+    // Source permissions bound citations; they do not force unsupported attribution.
+    // Uncited components materialize as supplementary teaching, never source evidence.
     if (
       slot.authorityMode === 'advisory_visual' &&
       (visualRefs.length === 0 || sourceRefs.length > 0)
@@ -826,14 +820,7 @@ export function validatePracticeContentCandidate(
         itemIds: [item.practiceSlotId],
       });
     }
-    if (slot.authorityMode === 'exact_source' && item.sourceRefs.length === 0) {
-      invalidIds.add(item.practiceSlotId);
-      diagnostics.push({
-        code: 'practice_exact_source_slot_has_no_source',
-        message: `${item.practiceSlotId} requires at least one locally allowed exact source alias.`,
-        itemIds: [item.practiceSlotId],
-      });
-    }
+    // An uncited synthetic Practice item is assembled as ai_teaching_synthesis.
     if (
       slot.authorityMode === 'advisory_visual' &&
       (item.visualRefs.length === 0 || item.sourceRefs.length > 0)

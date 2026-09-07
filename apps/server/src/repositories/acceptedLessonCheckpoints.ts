@@ -203,14 +203,39 @@ export function createAcceptedLessonCheckpointsRepo(db: SqliteDb) {
               }
             | undefined)
         : undefined;
+      const jointIds = checkpoint.lessonEvaluation.jointAuthoring?.logicalCallIds;
+      const jointCallsValid =
+        jointIds &&
+        new Set(jointIds).size === jointIds.length &&
+        jointIds.every((id) => {
+          const call = db
+            .prepare(
+              `SELECT COUNT(*) AS n FROM model_logical_calls WHERE id=? AND operation_id=? AND workspace_id=? AND study_session_id=? AND learning_unit_id=? AND operation_type='prepare_teaching_brief' AND schema_fingerprint='teaching-capsule-v1' AND source_fingerprint=? AND status='completed'`,
+            )
+            .get(
+              id,
+              checkpoint.operationId,
+              checkpoint.workspaceId,
+              checkpoint.studySessionId,
+              checkpoint.learningUnitId,
+              checkpoint.sourceContextFingerprint,
+            ) as { n: number };
+          return call.n === 1;
+        });
       if (
+        (jointIds && !jointCallsValid) ||
         !lessonLogicalCall ||
         lessonLogicalCall.operation_id !== checkpoint.operationId ||
         lessonLogicalCall.workspace_id !== checkpoint.workspaceId ||
         lessonLogicalCall.study_session_id !== checkpoint.studySessionId ||
         lessonLogicalCall.learning_unit_id !== checkpoint.learningUnitId ||
         lessonLogicalCall.operation_type !== 'prepare_teaching_brief' ||
-        lessonLogicalCall.schema_fingerprint !== 'lesson-slot-content-proposal-v1' ||
+        (lessonLogicalCall.schema_fingerprint !== 'lesson-slot-content-proposal-v1' &&
+          !(
+            jointCallsValid &&
+            jointIds.includes(checkpoint.lessonLogicalCallId!) &&
+            lessonLogicalCall.schema_fingerprint === 'teaching-capsule-v1'
+          )) ||
         lessonLogicalCall.source_fingerprint !== checkpoint.sourceContextFingerprint ||
         lessonLogicalCall.status !== 'completed'
       ) {

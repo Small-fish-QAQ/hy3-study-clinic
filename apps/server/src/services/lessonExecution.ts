@@ -768,6 +768,7 @@ export function createLessonExecutionService({
             objectiveTitle: item.objectiveTitle,
             construct: item.construct,
             surface: surfaceName,
+            supplementary: item.authority === 'ai_teaching_synthesis',
             prompt: surface.prompt,
             options: surface.options.map(({ id, text }) => ({ id, text })),
           },

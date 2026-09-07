@@ -1351,6 +1351,15 @@ export const PracticeContentProposalPayloadSchema = z
   });
 export type PracticeContentProposalPayload = z.infer<typeof PracticeContentProposalPayloadSchema>;
 
+/** Small joint authoring response; Practice remains unaccepted until Lesson acceptance. */
+export const TeachingCapsulePayloadSchema = z
+  .object({
+    practice: z.object({ items: z.array(ProposedPracticeSlotContentSchema).max(8) }).strict(),
+    lesson: LessonSlotContentProposalPayloadSchema,
+  })
+  .strict();
+export type TeachingCapsulePayload = z.infer<typeof TeachingCapsulePayloadSchema>;
+
 // ---------------------------------------------------------------------------
 // Tutor step
 // ---------------------------------------------------------------------------

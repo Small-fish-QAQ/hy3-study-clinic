@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { FormalAssessmentConstructSchema } from './sourceAuthority.js';
 import { PrivateReasoningFields } from './reasoningOperation.js';
+import { TeachingDesignSchema } from './teachingDesign.js';
 
 export const LessonPedagogyCriterionSchema = z.enum([
   'objective_alignment',
@@ -116,6 +117,22 @@ export const LessonPedagogyEvaluationSchema = z
     findings: z.array(LessonPedagogyFindingSchema).max(100),
     evaluatedAt: z.string().datetime(),
     contentReview: z.array(TeachingContentReviewReceiptSchema).min(1).max(2).optional(),
+    teachingDesign: z
+      .object({
+        logicalCallId: z.string().min(1),
+        content: TeachingDesignSchema,
+      })
+      .strict()
+      .optional(),
+    jointAuthoring: z
+      .object({
+        executionVerified: z.boolean().optional(),
+        logicalCallIds: z.array(z.string().min(1)).min(1).max(12),
+        /** Untrusted until the separate Practice validator/review accepts it. Never projected. */
+        practiceCandidate: z.unknown(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 export type LessonPedagogyEvaluation = z.infer<typeof LessonPedagogyEvaluationSchema>;
@@ -181,7 +198,7 @@ export const LessonPracticeItemSchema = z
     construct: FormalAssessmentConstructSchema,
     capabilityTested: z.string().min(1).max(700),
     pedagogicalReason: z.string().min(1).max(700),
-    authority: z.enum(['exact_source', 'advisory_visual']),
+    authority: z.enum(['exact_source', 'advisory_visual', 'ai_teaching_synthesis']),
     sourceRefIds: z.array(z.string().min(1).max(40)).max(8),
     visualRefIds: z.array(z.string().regex(/^V[1-9][0-9]*$/u)).max(8),
     application: z
@@ -199,6 +216,16 @@ export const LessonPracticeItemSchema = z
   })
   .strict()
   .superRefine((item, ctx) => {
+    if (
+      item.authority === 'ai_teaching_synthesis' &&
+      (item.sourceRefIds.length > 0 || item.visualRefIds.length > 0)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['sourceRefIds'],
+        message: 'supplementary Practice cannot claim source or visual support',
+      });
+    }
     if (item.authority === 'exact_source' && item.sourceRefIds.length === 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -257,6 +284,7 @@ export const LearnerPracticeProjectionSchema = z
         objectiveTitle: z.string().min(1).max(300),
         construct: FormalAssessmentConstructSchema,
         surface: z.enum(['initial', 'retry']),
+        supplementary: z.boolean().optional(),
         prompt: z.string().min(1).max(1200),
         options: z.array(LearnerPracticeOptionSchema).min(3).max(5),
       })

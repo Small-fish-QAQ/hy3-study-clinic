@@ -221,6 +221,15 @@ export function createTeachingBriefsRepo(db: SqliteDb) {
               objectiveIds,
             )
           : false;
+      const jointIds = predecessor
+        ? LessonPedagogyEvaluationSchema.parse(JSON.parse(predecessor.lesson_evaluation_payload))
+            .jointAuthoring?.logicalCallIds
+        : undefined;
+      const practiceFromAcceptedCapsule = Boolean(
+        jointIds?.includes(brief.composition.practiceLogicalCallId!) &&
+        practiceLogicalCall?.schema_fingerprint === 'teaching-capsule-v1' &&
+        practiceLogicalCall.operation_id === predecessor?.operation_id,
+      );
       if (
         !predecessor ||
         predecessor.workspace_id !== brief.workspaceId ||
@@ -241,12 +250,14 @@ export function createTeachingBriefsRepo(db: SqliteDb) {
         (hasLogicalCallProvenance &&
           (predecessor.lesson_logical_call_id !== brief.composition.lessonLogicalCallId ||
             !practiceLogicalCall ||
-            practiceLogicalCall.operation_id !== brief.composition.practiceOperationId ||
+            (!practiceFromAcceptedCapsule &&
+              practiceLogicalCall.operation_id !== brief.composition.practiceOperationId) ||
             practiceLogicalCall.workspace_id !== brief.workspaceId ||
             practiceLogicalCall.study_session_id !== predecessor.study_session_id ||
             practiceLogicalCall.learning_unit_id !== brief.learningUnitId ||
             practiceLogicalCall.operation_type !== 'prepare_teaching_brief' ||
-            practiceLogicalCall.schema_fingerprint !== 'practice-content-proposal-v1' ||
+            (!practiceFromAcceptedCapsule &&
+              practiceLogicalCall.schema_fingerprint !== 'practice-content-proposal-v1') ||
             practiceLogicalCall.source_fingerprint !== brief.sourceContextFingerprint ||
             practiceLogicalCall.status !== 'completed'))
       ) {

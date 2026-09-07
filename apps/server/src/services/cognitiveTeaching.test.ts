@@ -145,9 +145,42 @@ describe('calibrated cognitive teaching contract', () => {
     );
     expect(reviewedAction.afterResponse).toBeDefined();
     expect(reviewedAction).not.toHaveProperty('correctDebrief');
+    const reviewedProcess = reviewedSlots.find(
+      (slot) => slot.workedProcess?.interaction,
+    )!.workedProcess!;
+    expect(reviewedProcess).not.toHaveProperty('result');
+    expect(reviewedProcess).not.toHaveProperty('whyResultFollows');
+    expect(reviewedProcess).toHaveProperty('afterGuidedResponse.result');
+    expect(reviewedProcess).toHaveProperty('afterTransferResponse.whyResultFollows');
+    expect(reviewedProcess).toHaveProperty('steps');
     expect(prepared.findings({ decisions, findings: [] })).toEqual([]);
+    const computedReview = prepareTeachingReview(
+      { ...f.lessonInput, computedCases: true },
+      f.lesson,
+    );
+    const binaryDisagreement = decisions.map((d) => ({ ...d, requiresCaseInference: false }));
+    expect(prepared.findings({ decisions: binaryDisagreement, findings: [] })).toEqual(
+      expect.arrayContaining([expect.objectContaining({ code: 'shallow_task' })]),
+    );
+    expect(computedReview.findings({ decisions: binaryDisagreement, findings: [] })).toEqual([]);
+    expect(
+      computedReview.findings({
+        decisions: binaryDisagreement,
+        findings: [
+          {
+            itemId: f.lesson.slots[0]!.slotId,
+            code: 'accuracy',
+            problem: 'The model asserts an unsupported mechanism.',
+            repairInstruction: 'Correct the assumption.',
+          },
+        ],
+      }),
+    ).toEqual(expect.arrayContaining([expect.objectContaining({ code: 'accuracy' })]));
     decisions[0]!.answerId = 'C';
     expect(prepared.findings({ decisions, findings: [] })[0]?.code).toBe('insufficient_evidence');
+    expect(computedReview.findings({ decisions, findings: [] })[0]?.code).toBe(
+      'insufficient_evidence',
+    );
     expect(prepared.validate({ decisions: [...decisions, decisions[0]], findings: [] }).valid).toBe(
       false,
     );

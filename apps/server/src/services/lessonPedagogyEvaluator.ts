@@ -1573,6 +1573,8 @@ function objectiveTargetForSlot(
  * authority; it changes only how the already-required learner action is taught.
  */
 function conceptualWorkedInteractionSlotId(input: LessonSlotContentGenerationInput): string | null {
+  // A locally partitioned capsule retains the whole Lesson's interaction owner.
+  if (input.workedInteractionSlotId !== undefined) return input.workedInteractionSlotId;
   if (
     !input.courseDesign ||
     input.courseDesign.desiredDepth === 'pass_oriented' ||
@@ -1712,10 +1714,9 @@ function relationIssueCodes(
   ) {
     issues.push('semantic_relation_not_objective_relevant');
   }
-  if (slot.authorityMode === 'exact_source') {
+  if (slot.authorityMode === 'exact_source' && relation.sourceRefs.length > 0) {
     const citedSource = sourceTextForRefs(input.sourceContext, relation.sourceRefs);
     if (
-      relation.sourceRefs.length === 0 ||
       !hasBoundedSemanticCompatibility(relation.fromProposition, citedSource) ||
       !hasBoundedSemanticCompatibility(relation.toProposition, citedSource)
     ) {
@@ -1854,9 +1855,9 @@ function workedProcessIssueCodes(
     issues.push('worked_process_result_not_justified');
   }
   if (
-    slot.authorityMode !== 'exact_source' ||
-    process.sourceRefs.length === 0 ||
-    !hasBoundedSemanticCompatibility(process.ruleOrProcedure, citedSource)
+    process.sourceRefs.length > 0 &&
+    (slot.authorityMode !== 'exact_source' ||
+      !hasBoundedSemanticCompatibility(process.ruleOrProcedure, citedSource))
   ) {
     issues.push('worked_process_source_incompatible');
   }
@@ -2241,11 +2242,28 @@ function repeatsAcceptedLessonSurface(
   };
   const candidate = removeSharedDomainContext(surfaceText);
   if (!candidate) return false;
+  const copiedTeachingProse = input.acceptedLesson
+    .flatMap((content) => [
+      content.explanation,
+      content.example?.text,
+      content.contrast?.text,
+      content.misconception?.correction,
+      content.lessonNarrative?.summary,
+    ])
+    .filter((text): text is string => Boolean(text))
+    .some((text) => {
+      const full = removeSharedDomainContext(text);
+      return full.length >= 24 && candidate.includes(full);
+    });
+  if (copiedTeachingProse) return true;
   return acceptedLessonExposureTexts(input).some((exposure) => {
     const comparableExposure = removeSharedDomainContext(exposure);
     if (!comparableExposure) return false;
     if (candidate === comparableExposure) return true;
-    return hasLongVerbatimSpan(candidate, comparableExposure);
+    // Reusing givens or a learned rule is necessary for a new derivation. A shared
+    // substring cannot distinguish that from replay; exact complete surfaces and
+    // the separate inference/answer checks remain hard.
+    return false;
   });
 }
 
@@ -2299,9 +2317,9 @@ function applicationIssueCodes(
     issues.push('practice_application_relevance_uncertain');
   }
   if (
-    slot.authorityMode !== 'exact_source' ||
-    item.sourceRefs.length === 0 ||
-    !hasBoundedSemanticCompatibility(application.sourceRuleOrProcedure, citedSource)
+    item.sourceRefs.length > 0 &&
+    (slot.authorityMode !== 'exact_source' ||
+      !hasBoundedSemanticCompatibility(application.sourceRuleOrProcedure, citedSource))
   ) {
     issues.push('practice_application_source_incompatible');
   }

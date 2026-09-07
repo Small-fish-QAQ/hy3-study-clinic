@@ -534,6 +534,7 @@ export const TeachingBriefCompositionSchema = z
     /** Absent together only on persisted compositional Briefs created before call provenance. */
     lessonLogicalCallId: z.string().min(1).optional(),
     practiceLogicalCallId: z.string().min(1).optional(),
+    jointAuthoringLogicalCallIds: z.array(z.string().min(1)).min(1).max(12).optional(),
     lessonPromptVersion: z.string().min(1).max(100),
     practicePromptVersion: z.string().min(1).max(100),
     targetMinutes: z.number().int().positive(),
@@ -560,12 +561,14 @@ export const TeachingBriefCompositionSchema = z
       });
     } else if (
       composition.lessonLogicalCallId !== undefined &&
-      composition.lessonLogicalCallId === composition.practiceLogicalCallId
+      composition.lessonLogicalCallId === composition.practiceLogicalCallId &&
+      !composition.jointAuthoringLogicalCallIds?.includes(composition.lessonLogicalCallId)
     ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['practiceLogicalCallId'],
-        message: 'Lesson and Practice must retain distinct logical-call identities',
+        message:
+          'Lesson and Practice must retain distinct logical-call identities unless bound to their joint authoring manifest',
       });
     }
     for (const [key, range] of [

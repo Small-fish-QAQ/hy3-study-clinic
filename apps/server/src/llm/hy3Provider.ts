@@ -17,6 +17,7 @@ import {
   StudyPlanProposalPayloadSchema,
   TeachingBriefProposalPayloadSchema,
   TeachingContentReviewSchema,
+  TeachingCapsulePayloadSchema,
   LessonSlotContentProposalPayloadSchema,
   PracticeContentProposalPayloadSchema,
   ObjectiveAuthoritySemanticEvaluationProposalSchema,
@@ -43,6 +44,7 @@ import {
   type StudyPlanProposalPayload,
   type TeachingBriefProposalPayload,
   type TeachingContentReview,
+  type TeachingCapsulePayload,
   type LessonSlotContentProposalPayload,
   type PracticeContentProposalPayload,
   type RubricGrade,
@@ -58,6 +60,18 @@ import {
 import { createHash } from 'node:crypto';
 import { z, type ZodType, type ZodTypeDef } from 'zod';
 import { ProviderError } from './errors.js';
+import {
+  teachingCapsuleMessages,
+  normalizeTeachingCapsuleCandidate,
+  usesComputedTeachingCases,
+} from './teachingCapsule.js';
+import { validateKernel } from './teachingKernel.js';
+import { compileTeachingKernel } from '../services/compileTeachingKernel.js';
+import {
+  TeachingBlueprintSchema,
+  teachingBlueprintMessages,
+  deriveTeachingKernel,
+} from './teachingBlueprint.js';
 import { extractJsonWithFormat, JsonExtractionError } from './json.js';
 import {
   alignmentProposalMessages,
@@ -93,6 +107,7 @@ import {
 } from './prompts.js';
 import type {
   TeachingContentReviewInput,
+  TeachingCapsuleGenerationInput,
   AlignmentProposalInput,
   AssessmentProposalInput,
   ConceptAnalysisInput,
@@ -933,6 +948,77 @@ export class Hy3Provider implements LlmProvider {
     );
   }
 
+  async generateTeachingCapsule(
+    input: TeachingCapsuleGenerationInput,
+    opts?: ProviderCallOptions,
+  ): Promise<TeachingCapsulePayload> {
+    if (usesComputedTeachingCases(input)) {
+      const blueprint = await this.complete(
+        teachingBlueprintMessages(input),
+        TeachingBlueprintSchema,
+        {
+          ...opts,
+          timeoutMs: opts?.timeoutMs ?? Math.max(this.config.timeoutMs, 180_000),
+          validateCandidate: (candidate) => {
+            let kernel;
+            try {
+              kernel = deriveTeachingKernel(TeachingBlueprintSchema.parse(candidate));
+            } catch (error) {
+              return {
+                valid: false,
+                diagnostics: [error instanceof Error ? error.message : 'Invalid executable model.'],
+                diagnosticCodes: ['teaching_kernel_case_inconsistent'],
+              };
+            }
+            const valid = validateKernel(kernel);
+            if (!valid.valid) return valid;
+            const capsule = compileTeachingKernel(kernel, input);
+            const shape = TeachingCapsulePayloadSchema.safeParse(capsule);
+            if (!shape.success)
+              return {
+                valid: false,
+                diagnostics: shape.error.issues
+                  .slice(0, 8)
+                  .map(
+                    (i) =>
+                      `${i.path.join('.')}: ${i.message}; shorten labels/context while retaining all needed facts.`,
+                  ),
+                diagnosticCodes: ['teaching_kernel_compilation_shape'],
+              };
+            return opts?.validateCandidate?.(capsule) ?? valid;
+          },
+        },
+        'Repair the small rule graph or input value ranges using the diagnostics. Do not emit Lesson, Practice, cases, or answer keys. All dependencies must be declared and the independent outcomes must vary across the input ranges.',
+        {
+          maxTokens: 16_000,
+          schemaName: 'teaching-blueprint-v1',
+          // Enables clean truncation recovery; this model has no Lesson slot keys.
+          immutableItemIds: [],
+          allowIndependentRepair: false,
+        },
+      );
+      return TeachingCapsulePayloadSchema.parse(
+        compileTeachingKernel(deriveTeachingKernel(blueprint), input),
+      );
+    }
+    return this.complete(
+      teachingCapsuleMessages(input),
+      TeachingCapsulePayloadSchema,
+      { ...opts, timeoutMs: opts?.timeoutMs ?? Math.max(this.config.timeoutMs, 180_000) },
+      'Return the entire small capsule with exactly the offered identities. Correct the reported defects without adding prose, authority, objectives, or new activities. Every required action has a unique keyed answer and concrete visible evidence.',
+      {
+        maxTokens: 16_000,
+        schemaName: 'teaching-capsule-v1',
+        candidateNormalizer: normalizeTeachingCapsuleCandidate,
+        immutableItemIds: [
+          ...input.lesson.skeleton.lessonSlots.map((s) => s.slotId),
+          ...input.practiceSlots.map((s) => s.practiceSlotId),
+        ],
+        allowIndependentRepair: false,
+      },
+    );
+  }
+
   async reviewTeachingContent(
     input: TeachingContentReviewInput,
     opts?: ProviderCallOptions,
@@ -942,7 +1028,12 @@ export class Hy3Provider implements LlmProvider {
       TeachingContentReviewSchema,
       opts,
       'Return the complete review. Cover each offered actionId exactly once and use only offered item identities. Keep decisions and concrete findings within the requested schema.',
-      { maxTokens: 8000, schemaName: 'teaching-content-review-v1', allowIndependentRepair: false },
+      {
+        maxTokens: 8000,
+        schemaName: 'teaching-content-review-v1',
+        immutableItemIds: [],
+        allowIndependentRepair: false,
+      },
     );
   }
 

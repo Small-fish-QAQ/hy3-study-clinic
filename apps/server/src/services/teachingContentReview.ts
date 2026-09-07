@@ -31,6 +31,24 @@ function withoutAuthorDeclarations(value: unknown): unknown {
       .map(([key, child]) => [key, withoutAuthorDeclarations(child)]),
   );
   const original = value as Record<string, unknown>;
+  const interaction = original.interaction as { pauseAfterStepIndex?: number } | undefined;
+  if (Array.isArray(original.steps) && typeof interaction?.pauseAfterStepIndex === 'number') {
+    result.steps = withoutAuthorDeclarations(
+      original.steps.slice(0, interaction.pauseAfterStepIndex + 1),
+    );
+    result.afterGuidedResponse = {
+      visibility:
+        'HIDDEN until guided/scaffold response. The learner cannot read this continuation or result before choosing.',
+      steps: withoutAuthorDeclarations(original.steps.slice(interaction.pauseAfterStepIndex + 1)),
+      result: original.result,
+    };
+    result.afterTransferResponse = {
+      visibility: 'HIDDEN until the learner answers transfer.',
+      whyResultFollows: original.whyResultFollows,
+    };
+    delete result.result;
+    delete result.whyResultFollows;
+  }
   if (Array.isArray(original.options)) {
     result.options = original.options.map((option: Record<string, unknown>) => ({
       id: option.id ?? option.optionRef,
@@ -54,6 +72,27 @@ function withoutAuthorDeclarations(value: unknown): unknown {
       delete result[key];
   }
   return result;
+}
+
+/** Calculated traces repeat the same rule graph in every option's feedback.
+ * Review the authored model and actual tasks, not duplicate arithmetic proofs. */
+function compactComputedReview(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(compactComputedReview);
+  if (!value || typeof value !== 'object') return value;
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(
+        ([key]) =>
+          ![
+            'optionFeedback',
+            'semanticRelations',
+            'afterGuidedResponse',
+            'afterTransferResponse',
+            'inputs',
+          ].includes(key),
+      )
+      .map(([key, child]) => [key, compactComputedReview(child)]),
+  );
 }
 
 export async function verifyPreparedTeaching<
@@ -131,15 +170,22 @@ export function prepareTeachingReview(
   }
   const input: TeachingContentReviewInput = {
     stage: 'slots' in candidate ? 'lesson' : 'practice',
+    computedOutcomes: context.computedCases,
     desiredDepth: context.courseDesign?.desiredDepth ?? 'pass_oriented',
     objectives: context.skeleton.objectives.map(({ title, description }) => ({
       title,
       description,
     })),
     sources: context.sourceContext.offers.map(({ sourceRef, text }) => ({ sourceRef, text })),
-    candidate: withoutAuthorDeclarations(annotated),
+    candidate: context.computedCases
+      ? compactComputedReview(withoutAuthorDeclarations(annotated))
+      : withoutAuthorDeclarations(annotated),
     ...('acceptedLesson' in context
-      ? { acceptedLesson: withoutAuthorDeclarations(context.acceptedLesson) }
+      ? {
+          acceptedLesson: context.computedCases
+            ? compactComputedReview(withoutAuthorDeclarations(context.acceptedLesson))
+            : withoutAuthorDeclarations(context.acceptedLesson),
+        }
       : {}),
     actionIds: [...answers.keys()],
   };
@@ -152,8 +198,8 @@ export function prepareTeachingReview(
     const ids = parsed.success ? parsed.data.decisions.map((decision) => decision.actionId) : [];
     const valid =
       parsed.success &&
-      ids.length === answers.size &&
-      new Set(ids).size === answers.size &&
+      ((context.computedCases && ids.length === 0) ||
+        (ids.length === answers.size && new Set(ids).size === answers.size)) &&
       ids.every((id) => answers.has(id)) &&
       parsed.data.findings.every(
         (finding) => itemIds.includes(finding.itemId) || answers.has(finding.itemId),
@@ -185,7 +231,11 @@ export function prepareTeachingReview(
               'Make the visible evidence sufficient and the keyed answer unambiguous; recompute all feedback and subsequent states.',
           },
         ];
-      if (input.desiredDepth !== 'pass_oriented' && !decision.requiresCaseInference)
+      if (
+        input.desiredDepth !== 'pass_oriented' &&
+        !context.computedCases &&
+        !decision.requiresCaseInference
+      )
         return [
           {
             itemId: expected.itemId,

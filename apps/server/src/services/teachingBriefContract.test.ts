@@ -353,6 +353,40 @@ function lessonContractPrompt(
 }
 
 describe('compositional provider candidate validation', () => {
+  it('allows uncited supplementary teaching while still rejecting foreign citation aliases', async () => {
+    const input = compositionalContractInput();
+    const provider = new FakeProvider();
+    const lesson = await provider.generateLessonSlotContent(input);
+    const clearSources = (value: unknown): void => {
+      if (!value || typeof value !== 'object') return;
+      for (const [key, child] of Object.entries(value)) {
+        if (key === 'sourceRefs') (value as Record<string, unknown>)[key] = [];
+        else clearSources(child);
+      }
+    };
+    clearSources(lesson);
+    expect(validateLessonSlotContentCandidate(lesson, input).valid).toBe(true);
+    const practiceInput: PracticeContentGenerationInput = {
+      workspaceName: input.workspaceName,
+      learnerLocale: input.learnerLocale,
+      skeleton: input.skeleton,
+      acceptedLesson: lesson.slots,
+      sourceContext: input.sourceContext,
+      visualContext: input.visualContext,
+    };
+    const practice = await provider.generatePracticeContent(practiceInput);
+    clearSources(practice);
+    expect(validatePracticeContentCandidate(practice, practiceInput).valid).toBe(true);
+    practice.items[0]!.sourceRefs = ['S99'];
+    expect(validatePracticeContentCandidate(practice, practiceInput).diagnosticCodes).toContain(
+      'practice_source_alias_outside_slot_authority',
+    );
+    lesson.slots[0]!.sourceRefs = ['S99'];
+    expect(validateLessonSlotContentCandidate(lesson, input).diagnosticCodes).toContain(
+      'lesson_source_alias_outside_slot_authority',
+    );
+  });
+
   it('prompts for the minimum sufficient worked-process contract without a duplicate relation', () => {
     const prompt = lessonSlotContentMessages(compositionalContractInput())
       .map((message) => message.content)

@@ -14,6 +14,7 @@ import type {
   StructuredOutputDiagnostic,
   TutorTurnInput,
   TeachingContentReviewInput,
+  TeachingCapsuleGenerationInput,
 } from '../llm/provider.js';
 import { createRepositories, type Repositories } from '../repositories/index.js';
 import {
@@ -1167,6 +1168,70 @@ afterEach(() => {
 });
 
 describe('Teaching Brief preparation', () => {
+  it('assembles joint authoring, preserves its provenance and withholds reserved Practice from learner projections', async () => {
+    const harness = await createHarness(0, 'pass', 'explain', 'pass_oriented');
+    Object.defineProperty(harness.provider, 'name', { value: 'hy3' });
+    let capsules = 0;
+    Object.assign(harness.provider, {
+      generateTeachingCapsule: async (
+        input: TeachingCapsuleGenerationInput,
+        opts?: ProviderCallOptions,
+      ) => {
+        capsules += 1;
+        opts?.onRequestSent?.();
+        const fake = new FakeProvider();
+        const lesson = await fake.generateLessonSlotContent(input.lesson);
+        const practice = input.practiceSlots.length
+          ? await fake.generatePracticeContent({
+              workspaceName: input.lesson.workspaceName,
+              learnerLocale: input.lesson.learnerLocale,
+              courseDesign: input.lesson.courseDesign,
+              skeleton: {
+                ...input.lesson.skeleton,
+                practicePlan: {
+                  schemaVersion: 1,
+                  slots: input.practiceSlots,
+                  activityBudget: { minMinutes: 1, maxMinutes: 1 },
+                },
+              },
+              acceptedLesson: [...input.priorLesson, ...lesson.slots],
+              sourceContext: input.lesson.sourceContext,
+              visualContext: input.lesson.visualContext,
+            })
+          : { items: [] };
+        return { lesson, practice };
+      },
+    });
+    const route = startTeachingRoute(harness);
+    const result = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+      command: command('joint-capsule-projection'),
+      expectedSessionVersion: route.session.version,
+      expectedAgendaVersion: route.agenda.version,
+      expectedAgendaItemId: route.agendaItem.id,
+    });
+    expect(
+      result.status,
+      JSON.stringify(
+        harness.db
+          .prepare("SELECT payload FROM agent_operation_results WHERE status='failed'")
+          .all(),
+      ),
+    ).toBe('ready');
+    const brief = harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)[0]!;
+    const checkpoint = harness.repos.acceptedLessonCheckpoints.get(
+      brief.composition!.acceptedLessonCheckpointId,
+    )!;
+    expect(capsules).toBeGreaterThan(0);
+    expect(harness.provider.lessonContentCalls).toBe(0);
+    expect(harness.provider.practiceContentCalls).toBe(0);
+    expect(checkpoint.lessonEvaluation.jointAuthoring?.logicalCallIds).toHaveLength(capsules);
+    expect(checkpoint.lessonLogicalCallId).toMatch(/:capsule-\d+$/u);
+    expect(brief.composition?.practiceLogicalCallId).toMatch(/:capsule-\d+$/u);
+    expect(JSON.stringify(result)).not.toContain('practiceCandidate');
+    expect(JSON.stringify(result)).not.toContain('jointAuthoring');
+    expect(result.lesson).not.toBeNull();
+  });
+
   it('tracks REAL editorial passes and binds the accepted artifacts to their final calls', async () => {
     const harness = await createHarness();
     Object.defineProperty(harness.provider, 'name', { value: 'hy3' });
@@ -2900,6 +2965,7 @@ describe('Teaching Brief preparation', () => {
       'evidenceContrast',
       'relevanceToObjective',
       'contentReview',
+      'teachingDesign',
     ])
       expect(JSON.stringify(ready)).not.toContain(key);
   });

@@ -4,6 +4,8 @@ import {
   TeachingBriefPreparationRequestSchema,
   TeachingBriefPreparationResponseSchema,
   TeachingBriefSchema,
+  PracticeContentProposalPayloadSchema,
+  type LessonSlotContentProposalPayload,
   classifyConstructAuthority,
   projectAcceptedLessonSegments,
   type AcceptedLessonCheckpoint,
@@ -70,6 +72,8 @@ import {
 } from './teachingSkeletonPlanner.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
 import { verifyPreparedTeaching } from './teachingContentReview.js';
+import { capsuleInputs, assembleCapsules } from './teachingCapsules.js';
+import { validateTeachingCapsule, usesComputedTeachingCases } from '../llm/teachingCapsule.js';
 import {
   assertCurrentLessonObjectiveAuthoritySemanticSupport,
   objectiveAuthoritySemanticallySupportedClaimIds,
@@ -77,12 +81,12 @@ import {
 
 export const TEACHING_BRIEF_PROMPT_VERSION =
   'teaching-brief-v3-compositional-source-guided-interaction';
-export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v11-blind-review';
-export const PRACTICE_CONTENT_PROMPT_VERSION = 'teaching-practice-content-v10-blind-review';
+export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v15-executed-transfer';
+export const PRACTICE_CONTENT_PROMPT_VERSION = 'teaching-practice-content-v14-executed-transfer';
 /**
- * Hy3 draft/editor/review paths use at most ten logical calls, each bounded to three physical requests only in the
- * structural-repair -> alias-localization case, at the configured 5-minute
- * ceiling plus a fixed local-finalization margin.
+ * Retain the accepted R2 lease window. It is renewed before each bounded call;
+ * this is a stale-worker fence, not a target preparation duration. Computed
+ * teaching normally needs one compact call per objective, with no editor/reviewer.
  */
 export const COMPOSITIONAL_PREPARATION_LEASE_MS = 152 * 60 * 1000;
 
@@ -793,6 +797,7 @@ export function createTeachingBriefPreparationService({
       ...(input.courseDesign ? { courseDesign: input.courseDesign } : {}),
       skeleton: checkpoint.skeleton,
       acceptedLesson: checkpoint.lessonContent,
+      preparedTogether: Boolean(checkpoint.lessonEvaluation.jointAuthoring),
       sourceContext: input.sourceContext,
       visualContext: input.visualContext,
     };
@@ -952,7 +957,12 @@ export function createTeachingBriefPreparationService({
           construct: slot.construct,
           capabilityTested: item.capabilityTested,
           pedagogicalReason: item.pedagogicalReason,
-          authority: slot.authorityMode,
+          authority:
+            item.sourceRefs.length > 0
+              ? ('exact_source' as const)
+              : item.visualRefs.length > 0
+                ? ('advisory_visual' as const)
+                : ('ai_teaching_synthesis' as const),
           sourceRefIds: item.sourceRefs,
           visualRefIds: item.visualRefs,
           application: item.application,
@@ -994,6 +1004,12 @@ export function createTeachingBriefPreparationService({
         practiceOperationId,
         lessonLogicalCallId: checkpoint.lessonLogicalCallId,
         practiceLogicalCallId,
+        ...(checkpoint.lessonEvaluation.jointAuthoring
+          ? {
+              jointAuthoringLogicalCallIds:
+                checkpoint.lessonEvaluation.jointAuthoring.logicalCallIds,
+            }
+          : {}),
         lessonPromptVersion: checkpoint.promptVersion,
         practicePromptVersion: PRACTICE_CONTENT_PROMPT_VERSION,
         targetMinutes: checkpoint.skeleton.targetMinutes,
@@ -1314,6 +1330,53 @@ export function createTeachingBriefPreparationService({
       if (!checkpoint) {
         preparationBoundary = 'lesson';
         const compositionalLessonInput = lessonInput(route, generationInput, skeleton);
+        let jointAuthoring: LessonPedagogyEvaluation['jointAuthoring'];
+        let jointLesson: LessonSlotContentProposalPayload | undefined;
+        if (provider.name === 'hy3' && inferenceProvider.generateTeachingCapsule) {
+          const slots: LessonSlotContentProposalPayload['slots'] = [];
+          const items: PracticeContentProposalPayload['items'] = [];
+          let narrative: LessonSlotContentProposalPayload['narrative'];
+          const logicalCallIds: string[] = [];
+          for (const [index, capsuleInput] of capsuleInputs(
+            compositionalLessonInput,
+            skeleton,
+          ).entries()) {
+            capsuleInput.priorLesson = structuredClone(slots);
+            const logicalCallId = `${operationKey}:capsule-${index + 1}`;
+            const capsule = await trackedReviewCall(logicalCallId, 'teaching-capsule-v1', (opts) =>
+              inferenceProvider.generateTeachingCapsule!(structuredClone(capsuleInput), {
+                ...opts,
+                validateCandidate: (candidate) => validateTeachingCapsule(candidate, capsuleInput),
+              }),
+            );
+            if (!validateTeachingCapsule(capsule, capsuleInput).valid)
+              throw ProviderError.invalidOutput(
+                'Joint authoring changed its exact slot inventory.',
+                'candidate',
+                'SEMANTIC_VALIDATION_FAILURE',
+                false,
+              );
+            slots.push(...capsule.lesson.slots);
+            items.push(...capsule.practice.items);
+            if (index === 0) narrative = capsule.lesson.narrative;
+            logicalCallIds.push(logicalCallId);
+          }
+          const assembled = assembleCapsules(skeleton, slots, narrative, items);
+          jointLesson = assembled.lesson;
+          const executionVerified = capsuleInputs(compositionalLessonInput, skeleton).every(
+            (part) =>
+              !part.lesson.skeleton.lessonSlots.some((s) => s.learnerActionRequired) ||
+              usesComputedTeachingCases(part),
+          );
+          jointAuthoring = {
+            logicalCallIds,
+            practiceCandidate: assembled.practice,
+            executionVerified,
+          };
+          lessonLogicalCallId = logicalCallIds.at(-1)!;
+          compositionalLessonInput.preparedTogether = true;
+          compositionalLessonInput.computedCases = executionVerified;
+        }
         const lessonProviderInput = structuredClone(compositionalLessonInput);
         let lessonRepairAttempted = false;
         const lessonPolicyFingerprint = enforceAgentCostPolicies(repos, {
@@ -1323,40 +1386,47 @@ export function createTeachingBriefPreparationService({
           at: clock.now().toISOString(),
           confirmedPolicyIds: input.confirmedCostPolicyIds ?? [],
         });
-        let lessonPayload = await runTrackedAgentProviderOperation({
-          repos,
-          clock,
-          provider,
-          providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
-          operationId: claim.id,
-          fencingToken: claim.fencingToken,
-          workspaceId: input.workspaceId,
-          studySessionId: input.studySessionId,
-          learningUnitId: input.learningUnitId,
-          assessmentId: null,
-          operationType: 'prepare_teaching_brief',
-          logicalCallId: lessonLogicalCallId,
-          schemaFingerprint: 'lesson-slot-content-proposal-v1',
-          policyFingerprint: lessonPolicyFingerprint,
-          sourceFingerprint: scopedFingerprint,
-          providerOptions: options,
-          invoke: (providerOptions) =>
-            inferenceProvider.generateLessonSlotContent(lessonProviderInput, {
-              ...providerOptions,
-              onRepairAttempt: (reason, category, recoveryAction) => {
-                lessonRepairAttempted = true;
-                providerOptions?.onRepairAttempt?.(reason, category, recoveryAction);
-              },
-              // The REAL draft is untrusted input to the editor, never an accepted checkpoint.
-              ...(provider.name === 'hy3'
-                ? {}
-                : {
-                    validateCandidate: (candidate: unknown) =>
-                      validateLessonSlotContentCandidate(candidate, compositionalLessonInput),
-                  }),
-            }),
-        });
-        if (provider.name === 'hy3') {
+        let lessonPayload =
+          jointLesson ??
+          (await runTrackedAgentProviderOperation({
+            repos,
+            clock,
+            provider,
+            providerModel:
+              provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
+            operationId: claim.id,
+            fencingToken: claim.fencingToken,
+            workspaceId: input.workspaceId,
+            studySessionId: input.studySessionId,
+            learningUnitId: input.learningUnitId,
+            assessmentId: null,
+            operationType: 'prepare_teaching_brief',
+            logicalCallId: lessonLogicalCallId,
+            schemaFingerprint: 'lesson-slot-content-proposal-v1',
+            policyFingerprint: lessonPolicyFingerprint,
+            sourceFingerprint: scopedFingerprint,
+            providerOptions: options,
+            invoke: (providerOptions) =>
+              inferenceProvider.generateLessonSlotContent(lessonProviderInput, {
+                ...providerOptions,
+                onRepairAttempt: (reason, category, recoveryAction) => {
+                  lessonRepairAttempted = true;
+                  providerOptions?.onRepairAttempt?.(reason, category, recoveryAction);
+                },
+                // The REAL draft is untrusted input to the editor, never an accepted checkpoint.
+                ...(provider.name === 'hy3'
+                  ? {}
+                  : {
+                      validateCandidate: (candidate: unknown) =>
+                        validateLessonSlotContentCandidate(candidate, compositionalLessonInput),
+                    }),
+              }),
+          }));
+        if (
+          provider.name === 'hy3' &&
+          (!jointLesson ||
+            !validateLessonSlotContentCandidate(jointLesson, compositionalLessonInput).valid)
+        ) {
           routeStillCurrent(input, context.fingerprint);
           renewPreparationLease(claim.id, owner, claim.fencingToken);
           lessonLogicalCallId = `${operationKey}:lesson-editor`;
@@ -1400,7 +1470,11 @@ export function createTeachingBriefPreparationService({
           });
         }
         let contentReview: LessonPedagogyEvaluation['contentReview'];
-        if (provider.name === 'hy3' && inferenceProvider.reviewTeachingContent) {
+        if (
+          provider.name === 'hy3' &&
+          !compositionalLessonInput.computedCases &&
+          inferenceProvider.reviewTeachingContent
+        ) {
           const verified = await verifyPreparedTeaching(
             compositionalLessonInput,
             lessonPayload,
@@ -1418,6 +1492,64 @@ export function createTeachingBriefPreparationService({
               return { logicalCallId, result };
             },
             async (draft, findings) => {
+              if (jointAuthoring && inferenceProvider.generateTeachingCapsule) {
+                const revised = structuredClone(draft);
+                const practice = PracticeContentProposalPayloadSchema.parse(
+                  jointAuthoring.practiceCandidate,
+                );
+                const affected = capsuleInputs(compositionalLessonInput, skeleton).filter((part) =>
+                  findings.some((f) =>
+                    part.lesson.skeleton.lessonSlots.some((s) => s.slotId === f.itemId),
+                  ),
+                );
+                if (!affected.length || affected.length > 2)
+                  throw ProviderError.invalidOutput(
+                    'Joint teaching revision exceeds its bounded affected portions.',
+                    'candidate',
+                    'SEMANTIC_VALIDATION_FAILURE',
+                    true,
+                  );
+                for (const [index, part] of affected.entries()) {
+                  part.priorLesson = revised.slots.filter(
+                    (s) => !part.lesson.skeleton.lessonSlots.some((p) => p.slotId === s.slotId),
+                  );
+                  part.lesson.editorialFindings = findings.filter((f) =>
+                    part.lesson.skeleton.lessonSlots.some((s) => s.slotId === f.itemId),
+                  );
+                  lessonLogicalCallId = `${operationKey}:capsule-revision-${index + 1}`;
+                  const result = await trackedReviewCall(
+                    lessonLogicalCallId,
+                    'teaching-capsule-v1',
+                    (opts) =>
+                      inferenceProvider.generateTeachingCapsule!(structuredClone(part), {
+                        ...opts,
+                        validateCandidate: (c) => validateTeachingCapsule(c, part),
+                      }),
+                  );
+                  for (const slot of result.lesson.slots)
+                    revised.slots[revised.slots.findIndex((s) => s.slotId === slot.slotId)] = slot;
+                  if (part.includeNarrative) revised.narrative = result.lesson.narrative;
+                  for (const item of result.practice.items)
+                    practice.items[
+                      practice.items.findIndex((p) => p.practiceSlotId === item.practiceSlotId)
+                    ] = item;
+                  jointAuthoring.logicalCallIds.push(lessonLogicalCallId);
+                }
+                jointAuthoring.practiceCandidate = practice;
+                const validation = validateLessonSlotContentCandidate(
+                  revised,
+                  compositionalLessonInput,
+                );
+                if (!validation.valid)
+                  throw ProviderError.invalidOutput(
+                    'Revised joint Lesson still fails its full immutable contract.',
+                    'candidate',
+                    'SEMANTIC_VALIDATION_FAILURE',
+                    true,
+                    validation.failureArtifact,
+                  );
+                return revised;
+              }
               lessonLogicalCallId = `${operationKey}:lesson-revision`;
               return trackedReviewCall(
                 lessonLogicalCallId,
@@ -1450,6 +1582,7 @@ export function createTeachingBriefPreparationService({
           },
         );
         if (contentReview) lessonEvaluation.contentReview = contentReview;
+        if (jointAuthoring) lessonEvaluation.jointAuthoring = jointAuthoring;
         assertCurrentCognitiveContract(lessonEvaluation);
         if (!lessonPayload.narrative) {
           throw new AppError(
@@ -1505,6 +1638,20 @@ export function createTeachingBriefPreparationService({
       renewPreparationLease(claim.id, owner, claim.fencingToken);
       const compositionalPracticeInput = practiceInput(route, generationInput, checkpoint);
       const practiceProviderInput = structuredClone(compositionalPracticeInput);
+      const jointPractice = PracticeContentProposalPayloadSchema.safeParse(
+        checkpoint.lessonEvaluation.jointAuthoring?.practiceCandidate,
+      );
+      const reusableJointPractice =
+        jointPractice.success &&
+        validatePracticeContentCandidate(jointPractice.data, compositionalPracticeInput).valid
+          ? jointPractice.data
+          : undefined;
+      compositionalPracticeInput.computedCases = Boolean(
+        reusableJointPractice && checkpoint.lessonEvaluation.jointAuthoring?.executionVerified,
+      );
+      if (jointPractice.success) practiceProviderInput.draftForReview = jointPractice.data;
+      if (reusableJointPractice)
+        practiceLogicalCallId = checkpoint.lessonEvaluation.jointAuthoring!.logicalCallIds.at(-1)!;
       let practiceRepairAttempted = false;
       const practicePolicyFingerprint = enforceAgentCostPolicies(repos, {
         workspaceId: input.workspaceId,
@@ -1513,39 +1660,41 @@ export function createTeachingBriefPreparationService({
         at: clock.now().toISOString(),
         confirmedPolicyIds: input.confirmedCostPolicyIds ?? [],
       });
-      let practicePayload = await runTrackedAgentProviderOperation({
-        repos,
-        clock,
-        provider,
-        providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
-        operationId: claim.id,
-        fencingToken: claim.fencingToken,
-        workspaceId: input.workspaceId,
-        studySessionId: input.studySessionId,
-        learningUnitId: input.learningUnitId,
-        assessmentId: null,
-        operationType: 'prepare_teaching_brief',
-        logicalCallId: practiceLogicalCallId,
-        schemaFingerprint: 'practice-content-proposal-v1',
-        policyFingerprint: practicePolicyFingerprint,
-        sourceFingerprint: scopedFingerprint,
-        providerOptions: options,
-        invoke: (providerOptions) =>
-          inferenceProvider.generatePracticeContent(practiceProviderInput, {
-            ...providerOptions,
-            onRepairAttempt: (reason, category, recoveryAction) => {
-              practiceRepairAttempted = true;
-              providerOptions?.onRepairAttempt?.(reason, category, recoveryAction);
-            },
-            ...(provider.name === 'hy3'
-              ? {}
-              : {
-                  validateCandidate: (candidate: unknown) =>
-                    validatePracticeContentCandidate(candidate, compositionalPracticeInput),
-                }),
-          }),
-      });
-      if (provider.name === 'hy3') {
+      let practicePayload =
+        reusableJointPractice ??
+        (await runTrackedAgentProviderOperation({
+          repos,
+          clock,
+          provider,
+          providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
+          operationId: claim.id,
+          fencingToken: claim.fencingToken,
+          workspaceId: input.workspaceId,
+          studySessionId: input.studySessionId,
+          learningUnitId: input.learningUnitId,
+          assessmentId: null,
+          operationType: 'prepare_teaching_brief',
+          logicalCallId: practiceLogicalCallId,
+          schemaFingerprint: 'practice-content-proposal-v1',
+          policyFingerprint: practicePolicyFingerprint,
+          sourceFingerprint: scopedFingerprint,
+          providerOptions: options,
+          invoke: (providerOptions) =>
+            inferenceProvider.generatePracticeContent(practiceProviderInput, {
+              ...providerOptions,
+              onRepairAttempt: (reason, category, recoveryAction) => {
+                practiceRepairAttempted = true;
+                providerOptions?.onRepairAttempt?.(reason, category, recoveryAction);
+              },
+              ...(provider.name === 'hy3' && !compositionalPracticeInput.preparedTogether
+                ? {}
+                : {
+                    validateCandidate: (candidate: unknown) =>
+                      validatePracticeContentCandidate(candidate, compositionalPracticeInput),
+                  }),
+            }),
+        }));
+      if (provider.name === 'hy3' && !compositionalPracticeInput.preparedTogether) {
         routeStillCurrent(input, context.fingerprint);
         renewPreparationLease(claim.id, owner, claim.fencingToken);
         practiceLogicalCallId = `${operationKey}:practice-editor`;
@@ -1589,7 +1738,11 @@ export function createTeachingBriefPreparationService({
         });
       }
       let contentReview: PracticeQualityEvaluation['contentReview'];
-      if (provider.name === 'hy3' && inferenceProvider.reviewTeachingContent) {
+      if (
+        provider.name === 'hy3' &&
+        !compositionalPracticeInput.computedCases &&
+        inferenceProvider.reviewTeachingContent
+      ) {
         const verified = await verifyPreparedTeaching(
           compositionalPracticeInput,
           practicePayload,
@@ -1607,6 +1760,19 @@ export function createTeachingBriefPreparationService({
             return { logicalCallId, result };
           },
           async (draft, findings) => {
+            if (compositionalPracticeInput.computedCases) {
+              throw ProviderError.invalidOutput(
+                'Computed Practice has a material teaching defect; preserve its Lesson and refuse an unverified prose rewrite.',
+                'candidate',
+                'SEMANTIC_VALIDATION_FAILURE',
+                true,
+                {
+                  kind: 'computed_practice_review_failed',
+                  diagnostics: findings.map((f) => ({ code: f.code, message: f.problem })),
+                },
+              );
+            }
+            compositionalPracticeInput.computedCases = false;
             practiceLogicalCallId = `${operationKey}:practice-revision`;
             return trackedReviewCall(
               practiceLogicalCallId,

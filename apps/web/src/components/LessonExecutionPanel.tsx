@@ -810,6 +810,9 @@ function ReadyLesson({
                 <strong>{projection.practice.item.objectiveTitle}</strong>
               </div>
               <p className="lesson-practice-prompt">{projection.practice.item.prompt}</p>
+              {projection.practice.item.supplementary ? (
+                <p className="small muted">Hy3 补充练习 · 情境与推理不作为资料证据</p>
+              ) : null}
               <div className="lesson-practice-options">
                 {projection.practice.item.options.map((option) => (
                   <button
