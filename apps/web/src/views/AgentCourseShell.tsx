@@ -17,8 +17,8 @@ const VIEW_LABELS: Record<AgentCourseView, string> = {
 
 const VIEW_DESCRIPTIONS: Record<AgentCourseView, string> = {
   home: '课程状态、下一步与今日路线',
-  session: 'Tutor 对话与当前学习安排',
-  curriculum: '已验证的课程层级与版本',
+  session: '循着讲解理解，在练习中检验',
+  curriculum: '从课程全貌，走到每一个学习目标',
   progress: '正式证据、修复与学习记录',
   explore: '课程结构、学习路线与当前关注',
 };
@@ -271,8 +271,10 @@ export function AgentCourseShell({
               <img src="/brand-mark.svg" alt="" />
             </span>
             <span className="course-brand-copy">
-              <strong>Hy3 Study Clinic</strong>
-              <small>Guided learning workspace</small>
+              <strong>
+                Study Clinic<span className="brand-period">.</span>
+              </strong>
+              <small>由 Hy3 陪你学明白</small>
             </span>
           </div>
           {narrow && mobileOpen ? (
@@ -289,6 +291,16 @@ export function AgentCourseShell({
         </div>
 
         <div className="course-context">
+          <button
+            type="button"
+            className="course-library-link"
+            aria-label="所有课程"
+            title="所有课程"
+            onClick={() => selectCourse(null)}
+          >
+            <ShellIcon name="course" />
+            <span className="course-nav-label">所有课程</span>
+          </button>
           <label className="course-context-expanded">
             <span>当前课程</span>
             <select
@@ -340,7 +352,6 @@ export function AgentCourseShell({
         ) : null}
 
         <div className="course-sidebar-secondary" aria-label="课程辅助入口">
-          <span className="course-sidebar-section-label">课程资源</span>
           {courseName && onOpenMaterials ? (
             <button
               type="button"
@@ -414,8 +425,11 @@ export function AgentCourseShell({
       <div className="course-workspace" data-course-workspace="">
         <header className="course-workspace-header">
           <div>
-            <p>{settingsActive ? 'Hy3 Study Clinic' : (courseName ?? 'Hy3 Study Clinic')}</p>
-            <h2>{settingsActive || courseId ? destinationLabel : '选择课程'}</h2>
+            <p>{settingsActive ? 'Study Clinic' : (courseName ?? 'Study Clinic')}</p>
+            <span className="course-breadcrumb-divider" aria-hidden="true">
+              /
+            </span>
+            <h2>{settingsActive || courseId ? destinationLabel : '所有课程'}</h2>
           </div>
           <span>
             {settingsActive || courseId ? destinationDescription : '选择或创建课程后开始学习'}

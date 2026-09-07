@@ -1,15 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-labelledby="title">
-  <title id="title">Hy3 Study Clinic guided learning path</title>
-  <path
-    d="M6 23h8.5v-8H23V7"
-    fill="none"
-    stroke="#245f52"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    stroke-width="2.5"
-  />
-  <circle cx="6" cy="23" r="3" fill="#245f52" />
-  <circle cx="14.5" cy="15" r="3" fill="#fff" stroke="#245f52" stroke-width="2.25" />
-  <circle cx="23" cy="7" r="3" fill="#d6a23b" stroke="#fff" stroke-width="1.25" />
-  <path d="M4.5 27h22" stroke="#245f52" stroke-linecap="round" stroke-width="2.5" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" role="img" aria-labelledby="title">
+  <title id="title">Study Clinic — an open book, a continuing path</title>
+  <path d="M20 31c-4-5-9-7-15-6V8c6-1 11 1 15 6 4-5 9-7 15-6v17c-6-1-11 1-15 6Z" fill="none" stroke="#e8edda" stroke-width="2.1" stroke-linejoin="round"/>
+  <path d="M20 14v17M10 14c2.5.2 4.5 1.2 6 2.8M10 19c2.5.2 4.5 1.2 6 2.8" fill="none" stroke="#e8edda" stroke-width="1.7" stroke-linecap="round"/>
+  <path d="M25 21c0-4.5 4-5 4-8" fill="none" stroke="#dbb779" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="29" cy="10" r="2.2" fill="#dbb779"/>
 </svg>

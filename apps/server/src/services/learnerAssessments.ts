@@ -284,7 +284,8 @@ export function createLearnerAssessmentsService({
             ...opts?.telemetry,
             workspaceId: attempt.workspaceId,
             operationType: 'grade_formal_short_answer',
-            operationId: attempt.id,
+            // operationId references agent_operations, not assessment_attempts.
+            // Keep an actual caller operation when one owns this grading call.
             assessmentId: assessmentVersion.id,
             schemaFingerprint: 'formal-grade-v1',
           },

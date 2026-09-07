@@ -414,9 +414,10 @@ export function createRepairService({
         {
           ...opts,
           telemetry: {
+            ...opts?.telemetry,
             workspaceId: episode.workspaceId,
             operationType: 'generate_repair_packet',
-            operationId: episode.id,
+            // Repair episodes are not Agent operation foreign keys.
             learningUnitId: episode.targetLearningUnitId,
             assessmentId: episode.assessmentVersionId,
             schemaFingerprint: 'repair-generation-v1',

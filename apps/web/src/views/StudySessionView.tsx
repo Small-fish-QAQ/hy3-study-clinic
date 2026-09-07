@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   isPlannedFormalAgendaItemKind,
   type CourseFormalReadiness,
@@ -21,6 +21,72 @@ import { StudyTutorSurface } from '../components/StudyTutorSurface.js';
 import { StudyInspector, type StudyInspectorTab } from './StudyInspector.js';
 
 const INSPECTOR_MODAL_QUERY = '(max-width: 1279px)';
+
+/** A compact toolbar disclosure; session actions retain their existing owners. */
+function StudySessionTools({
+  children,
+  inspectorOpen,
+}: {
+  children: ReactNode;
+  inspectorOpen: boolean;
+}) {
+  const [narrowViewport, setNarrowViewport] = useState(
+    () => window.matchMedia?.('(max-width: 1100px)').matches ?? false,
+  );
+  const compact = narrowViewport || inspectorOpen;
+  const [open, setOpen] = useState(false);
+  const element = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    const query = window.matchMedia?.('(max-width: 1100px)');
+    if (!query) return;
+    const update = () => {
+      setNarrowViewport(query.matches);
+      setOpen(false);
+    };
+    query.addEventListener?.('change', update);
+    return () => query.removeEventListener?.('change', update);
+  }, []);
+  useEffect(() => {
+    if (!compact || !open) return;
+    const outside = (event: PointerEvent) => {
+      if (!element.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', outside);
+    return () => document.removeEventListener('pointerdown', outside);
+  }, [compact, open]);
+  return (
+    <details
+      ref={element}
+      className={`study-session-more${compact ? ' compact' : ''}`}
+      open={!compact || open}
+      onToggle={(event) => {
+        if (compact) setOpen(event.currentTarget.open);
+      }}
+      onBlur={(event) => {
+        if (compact && !event.currentTarget.contains(event.relatedTarget)) setOpen(false);
+      }}
+      onKeyDown={(event) => {
+        if (compact && open && event.key === 'Escape') {
+          event.preventDefault();
+          event.stopPropagation();
+          setOpen(false);
+          element.current?.querySelector('summary')?.focus();
+        }
+      }}
+    >
+      <summary>更多</summary>
+      <div
+        className="study-session-more-content"
+        onClick={(event) => {
+          if (compact && (event.target as HTMLElement).closest('button:not(:disabled)'))
+            setOpen(false);
+        }}
+      >
+        {children}
+      </div>
+    </details>
+  );
+}
 
 const QUICK_HELP_PROMPTS = [
   { label: '没听懂', prompt: '没懂，能简单一点吗？' },
@@ -1007,7 +1073,7 @@ export function StudySessionView({
               <p className="eyebrow">当前学习</p>
               <h3>{currentLearningUnit?.title ?? currentAgendaItem?.reason ?? '学习'}</h3>
               <div className="study-session-meta" aria-label="当前学习位置">
-                <span>{currentAgendaItem?.reason ?? '等待选择下一项学习内容'}</span>
+                {!currentAgendaItem ? <span>等待选择下一项学习内容</span> : null}
                 {currentAgendaItem ? (
                   <span>约 {currentAgendaItem.estimatedMinutes} 分钟</span>
                 ) : null}
@@ -1041,15 +1107,6 @@ export function StudySessionView({
               >
                 {tutorOpen ? '收起 Tutor' : '问 Tutor'}
               </button>
-              {currentAgendaItem?.learningUnitId && onOpenKnowledgeMap ? (
-                <button
-                  type="button"
-                  className="study-map-trigger"
-                  onClick={() => onOpenKnowledgeMap(currentAgendaItem.learningUnitId!)}
-                >
-                  在知识地图中定位
-                </button>
-              ) : null}
               <button
                 ref={inspectorTriggerRef}
                 type="button"
@@ -1076,36 +1133,47 @@ export function StudySessionView({
                   正式评估可用
                 </button>
               ) : null}
-              <div className="study-session-lifecycle" aria-label="本次学习控制">
-                <span className={`session-status ${session.status}`}>
-                  {sessionStatusLabel(session.status)}
-                </span>
-                {active ? (
-                  <button type="button" disabled={busy} onClick={() => void lifecycle('pause')}>
-                    暂停
-                  </button>
-                ) : null}
-                {session.status === 'paused' ? (
+              <StudySessionTools inspectorOpen={inspectorOpen}>
+                {currentAgendaItem?.learningUnitId && onOpenKnowledgeMap ? (
                   <button
                     type="button"
-                    className="primary"
-                    disabled={busy}
-                    onClick={() => void lifecycle('resume')}
+                    className="study-map-trigger"
+                    onClick={() => onOpenKnowledgeMap(currentAgendaItem.learningUnitId!)}
                   >
-                    继续
+                    在知识地图中定位
                   </button>
                 ) : null}
-                {active || session.status === 'paused' ? (
-                  <button
-                    type="button"
-                    className="danger"
-                    disabled={busy}
-                    onClick={() => void lifecycle('stop')}
-                  >
-                    结束本次学习
-                  </button>
-                ) : null}
-              </div>
+                <div className="study-session-lifecycle" aria-label="本次学习控制">
+                  <span className={`session-status ${session.status}`}>
+                    {sessionStatusLabel(session.status)}
+                  </span>
+                  {active ? (
+                    <button type="button" disabled={busy} onClick={() => void lifecycle('pause')}>
+                      暂停
+                    </button>
+                  ) : null}
+                  {session.status === 'paused' ? (
+                    <button
+                      type="button"
+                      className="primary"
+                      disabled={busy}
+                      onClick={() => void lifecycle('resume')}
+                    >
+                      继续
+                    </button>
+                  ) : null}
+                  {active || session.status === 'paused' ? (
+                    <button
+                      type="button"
+                      className="danger"
+                      disabled={busy}
+                      onClick={() => void lifecycle('stop')}
+                    >
+                      结束本次学习
+                    </button>
+                  ) : null}
+                </div>
+              </StudySessionTools>
             </div>
           </div>
         </header>

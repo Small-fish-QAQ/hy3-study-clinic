@@ -1443,11 +1443,47 @@ export function AgentCourseWorkspace({
           <Loading label="加载课程…" />
         ) : (
           <section className="no-course-state" aria-label="选择或创建课程">
-            <p className="eyebrow">开始学习</p>
-            <h2>选择一门课程</h2>
-            <p className="muted">
-              课程会保存资料、课程结构、当前路线和正式进展。请从上方选择已有课程，或现在创建一门课程。
-            </p>
+            <header className="course-library-intro">
+              <p className="eyebrow">你的学习工作室</p>
+              <h2>
+                把不懂的地方，
+                <br />
+                <em>一步步学明白。</em>
+              </h2>
+              <p className="muted">
+                从你的资料出发，串起讲解、练习与反馈。每次回来，都从上次停下的地方继续。
+              </p>
+            </header>
+            {workspaces.length > 0 ? (
+              <section className="course-library" aria-label="已有课程">
+                <div className="course-library-heading">
+                  <h3>我的课程</h3>
+                  <span>{workspaces.length} 门课程</span>
+                </div>
+                <div className="course-library-grid">
+                  {workspaces.map((course, index) => (
+                    <button
+                      key={course.id}
+                      type="button"
+                      className="course-library-card"
+                      onClick={() => changeCourse(course.id)}
+                    >
+                      <span className="course-library-number" aria-hidden="true">
+                        {String(index + 1).padStart(2, '0')}
+                      </span>
+                      <strong>{course.name}</strong>
+                      <span className="course-library-open">
+                        进入课程 <span aria-hidden="true">↗</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+            <div className="course-create-heading">
+              <h3>开始一门新课程</h3>
+              <p>给它起个名字，再带上你想学的资料。</p>
+            </div>
             {actionFailureOwner === 'course-create' && action.error ? (
               <Banner kind="error">课程暂未创建。{action.error}</Banner>
             ) : null}

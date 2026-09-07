@@ -15,6 +15,10 @@ export function learnerPlanText(value: string): string {
     'Prioritize repair before new material.': '先修复已有问题，再学习新内容。',
   };
   if (exact[normalized]) return exact[normalized];
+  const assessmentGap = normalized.match(
+    /^Curriculum objective is in learner scope but lacks independently authorized assessment premises:\s*(.+)$/i,
+  );
+  if (assessmentGap) return `这项目标属于学习范围，正式检验的资料依据仍待补充：${assessmentGap[1]}`;
   if (/^Advance the accepted objective set\b/i.test(normalized)) return '按当前学习目标继续推进。';
   if (/^Follow prerequisites first\b/i.test(normalized))
     return '先完成必要基础，再继续后面的学习。';

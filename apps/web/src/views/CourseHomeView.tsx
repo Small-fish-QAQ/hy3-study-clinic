@@ -208,6 +208,8 @@ export function CourseHomeView({
       ? overview.proposedCurriculum
       : overview.planningCurriculum;
   const next = overview.nextAction;
+  const activeUnits = overview.activeCurriculumHierarchy?.nodes ?? [];
+  const nextUnit = activeUnits.find((node) => node.id === next?.item.learningUnitId);
   const progress = overview.formalProgress;
   const planPreflight = overview.studyPlanPreflight ?? null;
   const curriculumRecovery = overview.curriculumRecovery;
@@ -341,7 +343,8 @@ export function CourseHomeView({
       <section className="course-home-hero" aria-label="课程概览">
         <header className="course-page-intro course-home-title row between">
           <div className="course-home-context">
-            <p className="eyebrow">学习概览</p>
+            <p className="eyebrow">COURSE / 学习概览</p>
+            <h2>{courseName}</h2>
             <p className="course-page-summary">{setupText}</p>
           </div>
           <button type="button" className="ghost" onClick={onOpenMaterials}>
@@ -486,8 +489,15 @@ export function CourseHomeView({
           <div className="next-action" aria-label="下一步">
             <div>
               <p className="eyebrow">下一步</p>
-              <h3>{learnerPlanText(next.item.reason)}</h3>
-              <p>{learnerPlanText(next.whyNext)}</p>
+              <h3>{nextUnit?.title ?? learnerPlanText(next.item.reason)}</h3>
+              {nextUnit ? (
+                <details className="next-action-reason">
+                  <summary>为什么从这里继续</summary>
+                  <p>{learnerPlanText(next.whyNext)}</p>
+                </details>
+              ) : (
+                <p>{learnerPlanText(next.whyNext)}</p>
+              )}
               <p className="small muted">预计 {next.item.estimatedMinutes} 分钟</p>
             </div>
             {next.item.launch.status === 'launchable' ? (
@@ -498,6 +508,7 @@ export function CourseHomeView({
                 onClick={() => (onOpenStudySession ? onOpenStudySession() : onLaunchNext(next))}
               >
                 {busyAction === 'launch-next' ? '正在重新验证…' : '继续学习'}
+                <span aria-hidden="true"> →</span>
               </button>
             ) : (
               <div className="course-continuation-blocked">
@@ -582,7 +593,10 @@ export function CourseHomeView({
                 key={item.id}
                 aria-current={item.id === overview.activeAgenda?.currentItemId ? 'step' : undefined}
               >
-                <span>{learnerPlanText(item.reason)}</span>
+                <span>
+                  {activeUnits.find((node) => node.id === item.learningUnitId)?.title ??
+                    learnerPlanText(item.reason)}
+                </span>
                 <span className="small muted">约 {item.estimatedMinutes} 分钟</span>
               </li>
             ))}

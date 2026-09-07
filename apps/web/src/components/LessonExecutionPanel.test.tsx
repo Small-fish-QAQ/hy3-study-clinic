@@ -269,7 +269,7 @@ describe('LessonExecutionPanel', () => {
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: '理解条件概率' })).toBeInTheDocument(),
     );
-    expect(screen.getByText('本节目标')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '本节目标' })).toBeVisible();
     expect(screen.getByText('为什么现在学')).toBeInTheDocument();
     expect(prepare).toHaveBeenCalledTimes(1);
     rerender(

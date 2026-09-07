@@ -12,7 +12,24 @@ export function PracticeRecoveryPanel({
 }) {
   const [note, setNote] = useState(recovery.learnerNote ?? '');
   return (
-    <section className="practice-recovery" aria-label="针对性修补">
+    <section className="practice-recovery" data-phase={recovery.phase} aria-label="针对性修补">
+      <ol className="recovery-steps" aria-label="修补步骤">
+        <li
+          aria-current={
+            ['diagnosis', 'needs_support', 'preparing'].includes(recovery.phase)
+              ? 'step'
+              : undefined
+          }
+        >
+          <span>01</span>找到缺口
+        </li>
+        <li aria-current={recovery.phase === 'repair' ? 'step' : undefined}>
+          <span>02</span>补上理解
+        </li>
+        <li aria-current={recovery.phase === 'retest' ? 'step' : undefined}>
+          <span>03</span>换题检验
+        </li>
+      </ol>
       <p className="eyebrow">
         {recovery.phase === 'retest' ? 'Retest · 再检验' : 'Diagnosis / Repair · 针对性修补'}
       </p>
@@ -51,6 +68,7 @@ export function PracticeRecoveryPanel({
           </label>
           <button
             type="button"
+            className="primary"
             disabled={disabled || (recovery.phase === 'needs_support' && !note.trim())}
             onClick={() => onAction({ kind: 'prepare_practice_repair', learnerNote: note })}
           >
@@ -76,7 +94,7 @@ export function PracticeRecoveryPanel({
           <p>{recovery.teaching.workedExample.prompt}</p>
           <ol>
             {recovery.teaching.workedExample.steps.map((step, index) => (
-              <li key={index}>{step}</li>
+              <li key={index}>{step.replace(/^\s*\d+[.)、]\s+/, '')}</li>
             ))}
           </ol>
           <p>{recovery.teaching.workedExample.conclusion}</p>
@@ -87,6 +105,7 @@ export function PracticeRecoveryPanel({
       {recovery.phase === 'repair' ? (
         <button
           type="button"
+          className="primary"
           disabled={disabled}
           onClick={() => onAction({ kind: 'start_practice_retest' })}
         >

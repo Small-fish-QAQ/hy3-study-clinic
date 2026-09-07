@@ -612,11 +612,14 @@ function ReadyLesson({
             )}
           </p>
           {lesson.plannedTime ? (
-            <p className="small muted">
-              安排约 {lesson.plannedTime.agendaMinutes}{' '}
-              分钟；按讲解、推理示例与主动练习，本地评估为约 {lesson.plannedTime.activeMinutesMin}–
-              {lesson.plannedTime.activeMinutesMax} 分钟。
-            </p>
+            <details className="lesson-time-estimate small muted">
+              <summary>约 {lesson.plannedTime.agendaMinutes} 分钟 · 学习时间说明</summary>
+              <p>
+                安排约 {lesson.plannedTime.agendaMinutes}{' '}
+                分钟；按讲解、推理示例与主动练习，本地评估为约 {lesson.plannedTime.activeMinutesMin}
+                –{lesson.plannedTime.activeMinutesMax} 分钟。
+              </p>
+            </details>
           ) : null}
         </div>
         {!readOnly ? (
@@ -645,23 +648,31 @@ function ReadyLesson({
         ) : null}
       </header>
 
-      <section className="lesson-objective" aria-label="本节目标">
-        <div>
-          <h4>本节目标</h4>
-          <ul>
-            {lesson.objective.outcomes.map((outcome) => (
-              <li key={outcome.title}>
-                <strong>{outcome.title}</strong>
-                <span>{outcome.description}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="lesson-why-now">
-          <h4>为什么现在学</h4>
-          <p>{lesson.objective.whyNow}</p>
-        </div>
-      </section>
+      <details className="lesson-orientation" open={canStart || readOnly}>
+        <summary>
+          <span>本节目标</span>
+          <span className="small muted">
+            {lesson.objective.outcomes.length} 个学习目标 · 为什么现在学
+          </span>
+        </summary>
+        <section className="lesson-objective" aria-label="本节目标">
+          <div>
+            <h4>本节目标</h4>
+            <ul>
+              {lesson.objective.outcomes.map((outcome) => (
+                <li key={outcome.title}>
+                  <strong>{outcome.title}</strong>
+                  <span>{outcome.description}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="lesson-why-now">
+            <h4>为什么现在学</h4>
+            <p>{lesson.objective.whyNow}</p>
+          </div>
+        </section>
+      </details>
 
       {lesson.prerequisites.length > 0 ? (
         <details className="lesson-prerequisites">

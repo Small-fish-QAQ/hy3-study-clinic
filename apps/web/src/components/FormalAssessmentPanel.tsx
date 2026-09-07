@@ -77,7 +77,10 @@ export function FormalAssessmentPanel({
     setBusy(true);
     setError('');
     try {
-      const next = await api.submitFormalExecution(execution.attempt.id, drafts);
+      const next = await api.submitFormalExecution(
+        execution.attempt.id,
+        execution.attempt.status === 'submitted' ? execution.attempt.responses : drafts,
+      );
       setExecution(next);
       if (next.result?.repairEpisodeId) {
         setRepair(await api.startLearnerRepair(next.result.repairEpisodeId));
@@ -96,6 +99,20 @@ export function FormalAssessmentPanel({
       setRepair(await api.learnerRepairAction(repair.episodeId, action));
     } catch (cause) {
       setError(errorText(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function prepareRepair() {
+    const episodeId = repair?.episodeId ?? execution?.result?.repairEpisodeId;
+    if (!episodeId) return;
+    setBusy(true);
+    setError('');
+    try {
+      setRepair(await api.startLearnerRepair(episodeId));
+    } catch {
+      setError('检查结果已保存，修复讲解暂时未准备好。请稍后重试。');
     } finally {
       setBusy(false);
     }
@@ -151,6 +168,8 @@ export function FormalAssessmentPanel({
 
   const submitted = execution.attempt.status === 'submitted';
   const review = execution.review;
+  const repairNeedsPreparation =
+    repair && !repair.packet && (repair.status === 'OPEN' || repair.status === 'ACTIVE');
   return (
     <section className="formal-assessment-panel" aria-label="正式理解检查">
       <header>
@@ -230,18 +249,14 @@ export function FormalAssessmentPanel({
               </li>
             ))}
           </ul>
-          {!execution.result.demonstrated && !repair ? (
+          {!execution.result.demonstrated && (!repair || repairNeedsPreparation) ? (
             <button
               type="button"
               className="primary"
               disabled={busy}
-              onClick={() =>
-                void (execution.result?.repairEpisodeId
-                  ? api.startLearnerRepair(execution.result.repairEpisodeId).then(setRepair)
-                  : undefined)
-              }
+              onClick={() => void prepareRepair()}
             >
-              查看针对性修复
+              {busy ? '正在准备…' : repairNeedsPreparation ? '重试准备修复讲解' : '查看针对性修复'}
             </button>
           ) : null}
           {repair ? (
@@ -270,7 +285,21 @@ export function FormalAssessmentPanel({
             </button>
           ) : null}
         </>
-      ) : null}
+      ) : (
+        <div className="formal-pending-result" role="status">
+          <strong>回答已经保存，检查结果尚未生成。</strong>
+          <p>可以用这份已保存的回答继续检查，无需重新作答。</p>
+          {execution.items.map((item) => (
+            <div className="formal-assessment-item" key={item.itemId}>
+              <h4>{item.prompt}</h4>
+              <blockquote>{execution.attempt.responses[item.itemId] || '未作答'}</blockquote>
+            </div>
+          ))}
+          <button type="button" className="primary" disabled={busy} onClick={() => void submit()}>
+            {busy ? '正在检查…' : '继续检查已保存的回答'}
+          </button>
+        </div>
+      )}
     </section>
   );
 }

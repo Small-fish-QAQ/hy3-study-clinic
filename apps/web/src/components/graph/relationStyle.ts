@@ -11,18 +11,18 @@ export const RELATION_LABELS: Record<GraphRelation, string> = {
 };
 
 /**
- * Restrained semantic relation colors (blue / violet / amber / muted red /
+ * Restrained semantic relation colors (slate blue / moss / amber / muted red /
  * teal / slate). Full strength is reserved for selected or hovered
  * neighborhoods; the default edge state renders these through a low group
  * opacity so nodes stay the visual focus.
  */
 export const RELATION_COLORS: Record<GraphRelation, string> = {
-  prerequisite: '#3b62c4',
-  part_of: '#7048b6',
-  contrasts_with: '#c07a1d',
-  causes: '#b25350',
-  applies_to: '#1d7f78',
-  example_of: '#64748b',
+  prerequisite: '#587990',
+  part_of: '#68856a',
+  contrasts_with: '#b58a46',
+  causes: '#af6657',
+  applies_to: '#417f79',
+  example_of: '#7c8193',
 };
 
 /** Dash patterns keep relation types distinguishable without color alone. */

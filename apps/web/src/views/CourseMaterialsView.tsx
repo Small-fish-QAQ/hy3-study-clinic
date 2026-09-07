@@ -141,6 +141,7 @@ export function CourseMaterialsView({
       <header className="supporting-page-intro course-page-intro material-page-intro row between">
         <div className="material-page-heading">
           <p className="eyebrow">学习所依据的内容</p>
+          <h2>每一步理解，都有来处。</h2>
           <p className="muted">
             在这里管理教材、参考资料和练习内容。资料用途不等于其中的事实已经独立验证。
           </p>
@@ -176,7 +177,7 @@ export function CourseMaterialsView({
               >
                 <div className="material-row-layout">
                   <span className="material-source-mark" aria-hidden="true">
-                    {sourceLabel.slice(0, 4)}
+                    {document.sourceType === 'paste' ? 'TXT' : document.sourceType.toUpperCase()}
                   </span>
                   <div className="material-row-content">
                     <div className="material-row-main">

@@ -106,7 +106,9 @@ function KnowledgeMapNodeCard({ data, selected }: NodeProps<FlowNode<MapNodeData
       <Handle type="target" position={Position.Top} isConnectable={false} />
       <span className="knowledge-map-node-kind">{NODE_KIND_LABELS[data.node.kind]}</span>
       <strong className="knowledge-map-node-title">{data.node.label}</strong>
-      <span className="knowledge-map-node-cue">{cue.label}</span>
+      {cue.label !== NODE_KIND_LABELS[data.node.kind] ? (
+        <span className="knowledge-map-node-cue">{cue.label}</span>
+      ) : null}
       {data.node.route.agendaDiffersFromPlan && data.mode === 'learning_route' ? (
         <span className="knowledge-map-node-note">本次安排临时偏离路线</span>
       ) : null}

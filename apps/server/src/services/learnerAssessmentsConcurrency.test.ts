@@ -129,21 +129,58 @@ function seedAssessment(ctx: ReturnType<typeof buildTestApp>) {
   return { version, attempt };
 }
 
-function seedTelemetryOperation(ctx: ReturnType<typeof buildTestApp>, attemptId: string) {
-  ctx.repos.operations.createOrGet({
-    id: attemptId,
-    workspaceId: 'ws_1',
-    commandId: `${attemptId}_command`,
-    idempotencyKey: `${attemptId}_key`,
-    logicalOperationId: `${attemptId}_logical`,
-    operationType: 'learner_submit',
-    expectedFingerprint: 'learner-submit-test',
-    createdAt: T0,
-    updatedAt: T0,
-  });
-}
-
 describe('formal assessment learner-submit concurrency', () => {
+  it('submits and repairs through production telemetry without synthetic Agent operations', async () => {
+    const provider = new CountingProvider();
+    const ctx = buildTestApp({ provider });
+    contexts.push(ctx);
+    const { attempt, version } = seedAssessment(ctx);
+    const response = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/formal-assessment-attempts/${attempt.id}/learner-submit`,
+      payload: { responses: { [version.items[0]!.id]: '工作记忆' } },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json().execution.result.gradeRecordId).toBeTruthy();
+    expect(provider.calls).toBe(1);
+    expect(
+      ctx.db
+        .prepare(
+          'SELECT operation_id, workspace_id, assessment_id, status FROM model_logical_calls WHERE operation_type = ?',
+        )
+        .all('grade_formal_short_answer'),
+    ).toEqual([
+      {
+        operation_id: null,
+        workspace_id: attempt.workspaceId,
+        assessment_id: version.id,
+        status: 'completed',
+      },
+    ]);
+    const repair = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/repair-episodes/${response.json().execution.result.repairEpisodeId}/learner-start`,
+    });
+    expect(repair.statusCode).toBe(201);
+    expect(repair.json().repair.packet).toBeTruthy();
+    expect(
+      ctx.db
+        .prepare(
+          'SELECT operation_id, workspace_id, assessment_id, status FROM model_logical_calls WHERE operation_type = ?',
+        )
+        .all('generate_repair_packet'),
+    ).toEqual([
+      {
+        operation_id: null,
+        workspace_id: attempt.workspaceId,
+        assessment_id: version.id,
+        status: 'completed',
+      },
+    ]);
+    expect(ctx.db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+  });
+
   it.each([1, 2, 3, 4, 5])(
     'converges two overlapping learner submits on one authoritative grade (repetition %s)',
     async () => {
@@ -151,7 +188,6 @@ describe('formal assessment learner-submit concurrency', () => {
       const ctx = buildTestApp({ provider });
       contexts.push(ctx);
       const { attempt, version } = seedAssessment(ctx);
-      seedTelemetryOperation(ctx, attempt.id);
       const responses = { [version.items[0]!.id]: '工作记忆' };
       const results = await Promise.all([
         ctx.app.inject({

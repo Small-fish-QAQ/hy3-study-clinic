@@ -488,6 +488,23 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
     expect(screen.getByRole('tab', { name: '概览' })).toHaveAttribute('aria-selected', 'true');
   });
 
+  it('does not label ordinary Progress navigation as a Knowledge Map focus', async () => {
+    vi.spyOn(api, 'reviewItems').mockResolvedValue({ items: [] });
+    render(
+      <AgentCourseWorkspace
+        workspaceId={workspace.id}
+        onWorkspaceChange={vi.fn()}
+        refreshKey={0}
+        navigationIntent={{ requestId: 1, destination: 'progress-overview' }}
+      />,
+    );
+    expect(await screen.findByRole('tab', { name: '概览' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(screen.queryByLabelText('知识地图定位结果')).not.toBeInTheDocument();
+  });
+
   it('uses the latest confirmed role as the hidden compatibility default', async () => {
     const contractedRole: MaterialRoleAssignment = {
       ...strandedProposal,
@@ -1018,7 +1035,7 @@ describe('Course Settings navigation continuity', () => {
       />,
     );
 
-    expect(await screen.findByRole('heading', { name: '选择一门课程' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: '我的课程' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '设置' }));
 
     expect(screen.getByLabelText('课程学习空间')).toHaveClass('view-settings');

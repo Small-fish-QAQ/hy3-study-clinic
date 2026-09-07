@@ -238,6 +238,7 @@ export function CourseProgressView({
       <header className="supporting-page-intro course-page-intro">
         <div>
           <p className="eyebrow">有依据的学习进展</p>
+          <h2>看见理解的积累。</h2>
           <p className="muted">
             正式证据、待修复内容和历史决定都汇集在这里。Tutor 对话和一般活动不会自动成为正式进展。
           </p>
@@ -260,7 +261,11 @@ export function CourseProgressView({
 
       {operationError ? <Banner kind="error">这次进展操作未完成。{operationError}</Banner> : null}
 
-      {intent ? (
+      {intent &&
+      (intent.learningUnitId ||
+        intent.objectiveId ||
+        intent.repairEpisodeId ||
+        intent.reviewTargetId) ? (
         <section className="progress-map-focus" aria-label="知识地图定位结果" role="status">
           <div>
             <span className="eyebrow">来自知识地图</span>
