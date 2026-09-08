@@ -12,6 +12,17 @@
   --paper-shadow: 0 1px 2px rgb(34 57 43 / 3%), 0 8px 28px rgb(34 57 43 / 4%);
 }
 
+/* Generated paper relief belongs to the environment; reading panels stay opaque. */
+.course-workspace {
+  background-image: url('/brand/ivory-relief.webp');
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+.study-session {
+  background-color: transparent;
+}
+
 /* Generated cotton-paper light stays behind the persistent navigation. */
 .course-sidebar {
   background:
@@ -1435,6 +1446,7 @@
   }
 }
 @media (forced-colors: active) {
+  .course-workspace,
   .course-sidebar,
   .course-mobile-bar,
   .next-action,
