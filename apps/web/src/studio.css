@@ -12,12 +12,18 @@
   --paper-shadow: 0 1px 2px rgb(34 57 43 / 3%), 0 8px 28px rgb(34 57 43 / 4%);
 }
 
-/* Navigation has depth; its content retains a quiet, legible foreground. */
+/* Generated cotton-paper light stays behind the persistent navigation. */
 .course-sidebar {
   background:
-    radial-gradient(ellipse at 0 0, #345440 0, transparent 52%),
-    linear-gradient(175deg, #23483a, #18372e 75%);
+    linear-gradient(180deg, rgb(33 69 55 / 10%), rgb(24 55 44 / 5%) 65%, rgb(24 55 44 / 25%)),
+    url('/brand/pine-shadows.webp') center / cover no-repeat;
+  background-color: var(--pine);
   box-shadow: inset -1px 0 rgb(255 255 255 / 7%);
+}
+.course-sidebar.is-collapsed {
+  background-position:
+    center,
+    68% center;
 }
 .course-sidebar-brand-row {
   min-height: 100px;
@@ -206,7 +212,7 @@
   color: var(--text-muted);
 }
 
-/* Course overview: restrained physical depth around the next real action. */
+/* Paper folds frame the next real action; setup uses a quieter material. */
 .course-home-context h2 {
   letter-spacing: -0.8px;
 }
@@ -221,13 +227,20 @@
   overflow: hidden;
   padding: 30px 34px;
   background:
-    radial-gradient(ellipse at 95% 0, rgb(163 189 130 / 18%), transparent 55%),
-    linear-gradient(110deg, #1f4737, #315541);
+    linear-gradient(90deg, rgb(33 69 55 / 22%), rgb(25 53 40 / 8%)),
+    url('/brand/pine-pages.webp') center / cover no-repeat;
+  background-color: var(--pine);
   border: 1px solid #315642;
   border-radius: 13px;
   box-shadow:
     inset 0 1px rgb(244 250 227 / 13%),
     0 8px 24px rgb(27 58 40 / 8%);
+}
+.next-action.setup-action {
+  background:
+    radial-gradient(ellipse at 94% 15%, rgb(166 188 137 / 12%), transparent 64%),
+    url('/brand/pine-bookcloth.webp') center / cover no-repeat;
+  background-color: var(--pine);
 }
 .next-action h3 {
   font-size: 25px;
@@ -1128,7 +1141,13 @@
 }
 @media (max-width: 767px) {
   .course-mobile-bar {
-    background: linear-gradient(110deg, #294c3a, #1b3b30);
+    background:
+      linear-gradient(90deg, rgb(33 69 55 / 10%), rgb(24 55 44 / 15%)),
+      url('/brand/pine-shadows.webp') center top / 100% auto no-repeat;
+    background-color: var(--pine);
+  }
+  .course-sidebar.is-mobile-open {
+    background-position: center;
   }
   .course-mobile-identity span {
     font-size: 11px;
@@ -1163,7 +1182,27 @@
     padding-top: 14px;
   }
   .next-action {
+    flex-direction: column;
+    align-items: stretch;
     padding: 24px;
+    /* Protect the full copy height; reveal the folds around the action below it. */
+    background-image:
+      linear-gradient(
+        180deg,
+        rgb(33 69 55 / 70%),
+        rgb(33 69 55 / 70%) calc(100% - 112px),
+        rgb(25 53 40 / 8%)
+      ),
+      url('/brand/pine-pages.webp');
+    background-position:
+      center,
+      52% center;
+  }
+  .next-action.setup-action {
+    background-image:
+      radial-gradient(ellipse at 94% 15%, rgb(166 188 137 / 12%), transparent 64%),
+      url('/brand/pine-bookcloth.webp');
+    background-position: center;
   }
   .next-action h3 {
     font-size: 21px;
@@ -1393,5 +1432,13 @@
 @media (prefers-reduced-motion: reduce) {
   .course-library-card:hover:not(:disabled) {
     transform: none;
+  }
+}
+@media (forced-colors: active) {
+  .course-sidebar,
+  .course-mobile-bar,
+  .next-action,
+  .next-action.setup-action {
+    background-image: none;
   }
 }
