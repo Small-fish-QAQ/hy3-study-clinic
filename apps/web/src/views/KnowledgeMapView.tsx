@@ -31,7 +31,7 @@ import type {
   KnowledgeMapProjection,
 } from '@hy3-clinic/shared';
 import { api } from '../api.js';
-import { Banner, Loading } from '../components/ui.js';
+import { Banner, Loading, ViewportIcon } from '../components/ui.js';
 import {
   EdgeMarkerDefs,
   FloatingLearningEdge,
@@ -576,10 +576,10 @@ function KnowledgeMapCanvas({
               title="适配视图"
               onClick={() => void fitView({ ...FIT_OPTIONS, duration: motionDuration(180) })}
             >
-              ◎
+              <ViewportIcon name="fit" />
             </button>
             <button type="button" aria-label="重置地图布局" title="重置布局" onClick={resetLayout}>
-              ↺
+              <ViewportIcon name="reset" />
             </button>
             <button
               type="button"
@@ -589,7 +589,7 @@ function KnowledgeMapCanvas({
               aria-pressed={Boolean(focusRootId)}
               onClick={() => setFocusRootId((current) => (current ? null : selectedNodeId))}
             >
-              ⊙
+              <ViewportIcon name="focus" />
             </button>
           </Panel>
           {focusRootId ? (

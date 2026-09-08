@@ -1444,6 +1444,13 @@ export function AgentCourseWorkspace({
         ) : (
           <section className="no-course-state" aria-label="选择或创建课程">
             <header className="course-library-intro">
+              <img
+                className="studio-artwork"
+                src="/brand/paper-study.webp"
+                width="1152"
+                height="768"
+                alt=""
+              />
               <p className="eyebrow">你的学习工作室</p>
               <h2>
                 把不懂的地方，

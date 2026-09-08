@@ -160,6 +160,13 @@ export function CourseMaterialsView({
 
       {documents.length === 0 ? (
         <section className="course-empty-state material-empty-state" aria-label="还没有课程资料">
+          <img
+            className="studio-empty-mark"
+            src="/brand/understanding-pine.png"
+            alt=""
+            width="48"
+            height="48"
+          />
           <strong>这门课程还没有资料，这是新课程的正常状态。</strong>
           <p>从下方添加教材或参考资料后，就可以选择全局深度并建立课程结构。</p>
         </section>

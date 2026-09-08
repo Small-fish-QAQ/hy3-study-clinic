@@ -958,6 +958,13 @@ export function StudySessionView({
     return (
       <div ref={studyFocusTargetRef} className="study-session" aria-label="学习" tabIndex={-1}>
         <section className="study-session-empty">
+          <img
+            className="studio-empty-mark"
+            src="/brand/understanding-pine.png"
+            alt=""
+            width="48"
+            height="48"
+          />
           <p className="eyebrow">开始本次学习</p>
           <strong>{route ? '已接受的学习路线已经就绪' : '还没有可执行的学习路线'}</strong>
           <p className="muted">
@@ -1213,7 +1220,10 @@ export function StudySessionView({
           <StudyTutorSurface open={tutorOpen} onClose={() => setTutorOpen(false)}>
             <header className="study-tutor-secondary-header">
               <div>
-                <h3>Hy3 Tutor</h3>
+                <h3>
+                  <img src="/brand/understanding-pine.png" alt="" width="28" height="28" />
+                  Hy3 Tutor
+                </h3>
                 <p className="study-tutor-context" aria-label="当前讲解范围">
                   正在围绕：{tutorContextTitle}
                   {lessonProjection?.practice?.recovery
@@ -1288,7 +1298,7 @@ export function StudySessionView({
                       ) : null}
                       <div className="study-tutor-stream" role="status" aria-live="polite">
                         <span className="study-tutor-avatar" aria-hidden="true">
-                          H3
+                          <img src="/brand/understanding-pine.png" alt="" width="22" height="22" />
                         </span>
                         <div>
                           <strong>Hy3 Tutor</strong>
@@ -1525,7 +1535,7 @@ function Exchange({
       <header className="study-exchange-header">
         {exchange.role === 'tutor' ? (
           <span className="study-tutor-avatar" aria-hidden="true">
-            H3
+            <img src="/brand/understanding-pine.png" alt="" width="22" height="22" />
           </span>
         ) : null}
         <strong>{label}</strong>

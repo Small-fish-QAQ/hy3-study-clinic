@@ -1,5 +1,19 @@
 import type { ReactNode } from 'react';
 
+/** Small viewport controls, using the same strokes as Course navigation. */
+export function ViewportIcon({ name }: { name: 'fit' | 'reset' | 'focus' }) {
+  const paths = {
+    fit: 'M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5',
+    reset: 'M3 10a9 9 0 1 1 2 8M3 4v6h6',
+    focus: 'M12 3v3m0 12v3M3 12h3m12 0h3M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z',
+  };
+  return (
+    <svg className="course-shell-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d={paths[name]} />
+    </svg>
+  );
+}
+
 /**
  * Human label for a block's page provenance: `第 3 页`, or `第 3–5 页` when a
  * block spans pages (layout-aware PDF ingestion can join a paragraph across

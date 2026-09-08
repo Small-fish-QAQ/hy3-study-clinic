@@ -778,6 +778,13 @@ export function SettingsView({
       <details className="settings-disclosure">
         <summary>诊断与关于</summary>
         <div className="settings-diagnostics">
+          <div className="studio-about-brand">
+            <img src="/brand/understanding-pine.png" width="44" height="44" alt="" />
+            <div>
+              <strong>Study Clinic</strong>
+              <p>把不懂的地方，一步步学明白。</p>
+            </div>
+          </div>
           <dl>
             <div>
               <dt>产品</dt>

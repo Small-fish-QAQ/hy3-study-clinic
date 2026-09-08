@@ -160,7 +160,7 @@ export function QuizView({
 
   return (
     <div className="stack">
-      <section className="card">
+      <section className="card quiz-config">
         <h2>
           {isAssessment
             ? `课程空间评估 · ${ASSESSMENT_MODE_LABELS[quiz?.assessmentMode ?? ''] ?? '综合评估'}`
