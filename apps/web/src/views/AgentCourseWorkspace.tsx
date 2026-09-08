@@ -1446,10 +1446,13 @@ export function AgentCourseWorkspace({
             <header className="course-library-intro">
               <img
                 className="studio-artwork"
-                src="/brand/paper-study.webp"
-                width="1152"
-                height="768"
+                src="/brand/study-folio.webp"
+                srcSet="/brand/study-folio-1080.webp 1080w, /brand/study-folio.webp 1728w"
+                sizes="(max-width: 999px) 0px, (max-width: 1200px) 50vw, 770px"
+                width="1728"
+                height="1024"
                 alt=""
+                decoding="async"
               />
               <p className="eyebrow">你的学习工作室</p>
               <h2>

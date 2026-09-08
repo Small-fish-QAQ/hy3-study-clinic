@@ -88,8 +88,8 @@
   position: relative;
   isolation: isolate;
   max-width: none;
-  min-height: 274px;
-  padding: 14px 41% 34px 0;
+  min-height: 304px;
+  padding: 20px 48% 34px 0;
   margin-bottom: 12px;
 }
 .course-library-intro h2 {
@@ -107,13 +107,17 @@
 .studio-artwork {
   position: absolute;
   z-index: -1;
-  top: -30px;
-  right: -35px;
-  width: 48%;
-  height: calc(100% + 12px);
-  object-fit: contain;
+  top: -20px;
+  right: -32px;
+  width: 74%;
+  height: 340px;
+  object-fit: cover;
+  object-position: center;
   mix-blend-mode: multiply;
-  mask-image: radial-gradient(ellipse at 55% 50%, #000 38%, transparent 74%);
+  mask-image:
+    linear-gradient(90deg, transparent, #000 42%, #000 88%, transparent),
+    linear-gradient(0deg, transparent, #000 18%, #000 82%, transparent);
+  mask-composite: intersect;
   pointer-events: none;
 }
 .course-library-heading {
@@ -1101,15 +1105,25 @@
 
 @media (max-width: 1200px) {
   .course-library-intro {
-    padding-right: 36%;
-    min-height: 260px;
+    padding-right: 48%;
+    min-height: 280px;
   }
   .studio-artwork {
-    width: 44%;
-    right: -20px;
+    width: 70%;
+    height: 310px;
+    right: -24px;
   }
   .course-library-intro h2 {
     font-size: 35px;
+  }
+}
+@media (max-width: 999px) {
+  .course-library-intro {
+    min-height: 0;
+    padding-right: 0;
+  }
+  .studio-artwork {
+    display: none;
   }
 }
 @media (max-width: 767px) {
@@ -1131,16 +1145,6 @@
   .course-library-intro > p:last-child {
     max-width: 29rem;
     position: relative;
-  }
-  .studio-artwork {
-    position: relative;
-    float: right;
-    top: -5px;
-    right: -12px;
-    width: 122px;
-    height: 125px;
-    margin: 0 -3px 0 4px;
-    opacity: 0.88;
   }
   .course-library-grid {
     gap: 12px;
@@ -1379,10 +1383,6 @@
   }
 }
 @media (max-width: 374px) {
-  .studio-artwork {
-    width: 90px;
-    height: 100px;
-  }
   .course-library-intro h2 {
     font-size: 28px;
   }
