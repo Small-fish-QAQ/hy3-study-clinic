@@ -31,7 +31,8 @@ const repoRoot = execFileSync('git', ['rev-parse', '--show-toplevel'], {
   .toString('utf8')
   .trim();
 
-const DECLARED_BINARY = /\.(docx|pdf|png|jpg|jpeg|gif|ico|woff2?|ttf|eot|zip|db|sqlite3?|wasm)$/iu;
+const DECLARED_BINARY =
+  /\.(docx|pdf|png|jpg|jpeg|gif|webp|ico|woff2?|ttf|eot|zip|db|sqlite3?|wasm)$/iu;
 
 /** TAB and LF are ordinary text; CR is legal too and does not trigger binary. */
 const isForbiddenControlByte = (byte: number): boolean =>
