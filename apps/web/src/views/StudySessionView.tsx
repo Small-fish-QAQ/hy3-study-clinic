@@ -66,9 +66,12 @@ function StudySessionTools({
         if (compact && !event.currentTarget.contains(event.relatedTarget)) setOpen(false);
       }}
       onKeyDown={(event) => {
-        if (compact && open && event.key === 'Escape') {
+        if (compact && (open || event.currentTarget.open) && event.key === 'Escape') {
           event.preventDefault();
           event.stopPropagation();
+          // Include native state while opening; retain React state while a close is queued.
+          // setOpen(false) alone can be a no-op before the opening toggle arrives.
+          event.currentTarget.open = false;
           setOpen(false);
           element.current?.querySelector('summary')?.focus();
         }

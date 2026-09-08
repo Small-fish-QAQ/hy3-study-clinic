@@ -761,6 +761,53 @@ describe('StudySessionView', () => {
     await waitFor(() => expect(trigger).toHaveFocus());
   });
 
+  it.each([
+    ['summary', 'opening'],
+    ['menu action', 'opening'],
+    ['summary', 'closing'],
+  ])(
+    'handles immediate Escape from the %s while the toolbar menu is %s',
+    async (focusTarget, transition) => {
+      const user = userEvent.setup();
+      vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });
+      vi.mocked(api.getStudySession).mockResolvedValue(detail);
+
+      const { container } = render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+      const trigger = await screen.findByRole('button', { name: /学习上下文/ });
+      await user.click(trigger);
+      const closeInspector = await screen.findByRole('button', { name: '关闭学习上下文' });
+      expect(closeInspector).toHaveFocus();
+      const menu = container.querySelector<HTMLDetailsElement>('.study-session-more')!;
+      const summary = menu.querySelector('summary')!;
+      summary.focus();
+      // Native details opens before its queued toggle event synchronizes React state.
+      menu.open = true;
+      if (transition === 'closing') {
+        fireEvent(menu, new Event('toggle'));
+        // Preserve the existing Escape order while a native close is still queued.
+        menu.open = false;
+      }
+      const target = focusTarget === 'summary' ? summary : menu.querySelector('button')!;
+      target.focus();
+      fireEvent.keyDown(target, { key: 'Escape' });
+
+      expect(menu).not.toHaveAttribute('open');
+      expect(closeInspector).toBeInTheDocument();
+      expect(summary).toHaveFocus();
+
+      // Delivery of the queued toggle must not reopen the menu or close the inspector.
+      fireEvent(menu, new Event('toggle'));
+      expect(menu).not.toHaveAttribute('open');
+      expect(closeInspector).toBeInTheDocument();
+      expect(summary).toHaveFocus();
+
+      await user.keyboard('{Escape}');
+      await waitFor(() => expect(closeInspector).not.toBeInTheDocument());
+      await waitFor(() => expect(trigger).toHaveFocus());
+      expect(menu).toHaveAttribute('open');
+    },
+  );
+
   it('uses modal inspector semantics and an inert Study surface below the desktop threshold', async () => {
     const user = userEvent.setup();
     const matchMedia = vi.spyOn(window, 'matchMedia').mockImplementation(
