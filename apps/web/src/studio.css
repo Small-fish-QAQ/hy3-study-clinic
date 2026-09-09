@@ -12,27 +12,42 @@
   --paper-shadow: 0 1px 2px rgb(34 57 43 / 3%), 0 8px 28px rgb(34 57 43 / 4%);
   --paper-light: url('/backgrounds/reading-light.webp');
   --paper-fiber: url('/backgrounds/cotton-fiber.webp');
+  --paper-motif: none;
   --paper-position: center;
   --paper-veil: rgb(250 249 243 / 0%);
 }
 
-/* One continuous light field behind the scrolling workspace. The generated
-   cotton fibres have their own fixed scale, independent of viewport or page
-   length. All layers are backgrounds: no overlay can intercept selection,
-   focus, map gestures or clicks. The solid base also works without images. */
+/* Logo-derived, tapering arcs belong to open overview surfaces. Lessons,
+   settings and the knowledge map keep the original clean paper; diagram
+   geometry must never be confused with a decorative trajectory. */
+.view-home,
+.view-materials,
+.view-progress,
+.view-curriculum {
+  --paper-motif: url('/backgrounds/understanding-arcs.webp');
+}
+
+/* One non-repeating motif behind the scrolling workspace, with its quiet
+   right-hand curves retained in portrait crops. Its scale follows the viewport,
+   never the document length. Opaque cards keep their clean reading surfaces.
+   The existing paper and solid fallback remain underneath. No overlay, motion,
+   extra DOM or pointer interception. */
 .course-workspace {
   background-color: var(--bg);
   background-image:
-    linear-gradient(var(--paper-veil), var(--paper-veil)), var(--paper-fiber), var(--paper-light);
+    linear-gradient(var(--paper-veil), var(--paper-veil)), var(--paper-motif), var(--paper-fiber),
+    var(--paper-light);
   background-position:
     center,
+    right center,
     left top,
     var(--paper-position);
   background-size:
     auto,
+    cover,
     384px 384px,
     cover;
-  background-repeat: no-repeat, repeat, no-repeat;
+  background-repeat: no-repeat, no-repeat, repeat, no-repeat;
 }
 
 /* Reading and utility views share the same material with a little less light
