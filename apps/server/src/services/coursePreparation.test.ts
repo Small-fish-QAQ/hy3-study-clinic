@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   ApiErrorCode,
   type ConceptAnalysisPayload,
@@ -39,6 +39,7 @@ import {
 import { createServices, type Services } from './index.js';
 import { teachThroughLesson } from '../testing/courseWorkflow.js';
 import { assessCourseFormalReadiness } from './formalReadiness.js';
+import * as curriculumSemanticEvaluator from './curriculumSemanticEvaluator.js';
 
 const SEMANTIC_SUPPORT_MARKERS = '[SUPPORTS:identify] [SUPPORTS:explain]';
 const QUOTE = `Working memory is limited ${SEMANTIC_SUPPORT_MARKERS}!`;
@@ -1839,6 +1840,56 @@ describe('Course Preparation coordinator', () => {
     });
     expect(result.preparation).toEqual(blocked);
     expect(harness.provider.curriculumCalls).toBe(curriculumCalls);
+  });
+
+  it('allows reevaluation after a semantic policy update while preserving the previous failure', async () => {
+    const harness = createHarness();
+    harness.provider.failCurriculum = true;
+    const policy = vi
+      .spyOn(curriculumSemanticEvaluator, 'CURRICULUM_SEMANTIC_EVALUATOR_POLICY_VERSION', 'get')
+      .mockReturnValue(
+        'curriculum-semantic-v1' as typeof curriculumSemanticEvaluator.CURRICULUM_SEMANTIC_EVALUATOR_POLICY_VERSION,
+      );
+    let previousRevision: string;
+    let operationId: string;
+    try {
+      const initial = harness.services.coursePreparation.get('ws_1');
+      await expect(harness.services.coursePreparation.run(runRequest(initial))).rejects.toThrow(
+        'controlled Curriculum failure',
+      );
+      operationId = harness.repos.operations.listForWorkspace('ws_1', 'course_preparation')[0]!.id;
+      harness.db
+        .prepare('UPDATE agent_operation_results SET payload = ? WHERE operation_id = ?')
+        .run(
+          JSON.stringify({
+            code: ApiErrorCode.GroundingFailed,
+            details: {
+              kind: 'curriculum_candidate_validation',
+              errors: ['Pedagogical Curriculum quality: semantic_topic_scattering'],
+            },
+          }),
+          operationId,
+        );
+      const blocked = harness.services.coursePreparation.get('ws_1');
+      expect(blocked).toMatchObject({ state: 'blocked', canResume: false });
+      previousRevision = blocked.revision;
+    } finally {
+      policy.mockRestore();
+    }
+
+    const previousFailure = harness.repos.operations.getResult(operationId!);
+    const current = harness.services.coursePreparation.get('ws_1');
+    expect(current.revision).not.toBe(previousRevision!);
+    expect(current).toMatchObject({
+      machineAction: 'prepare_course_structure',
+      canResume: true,
+      failure: null,
+    });
+    harness.provider.failCurriculum = false;
+    await harness.services.coursePreparation.run(runRequest(current));
+    expect(harness.repos.curricula.list('ws_1')).toHaveLength(1);
+    expect(harness.provider.analyzeCalls).toBe(1);
+    expect(harness.repos.operations.getResult(operationId!)).toEqual(previousFailure);
   });
 
   it('cancels in-flight preparation without persisting a Curriculum or StudyPlan', async () => {

@@ -12,7 +12,7 @@ import {
 } from '@hy3-clinic/shared';
 import type { ProviderCandidateValidation } from '../llm/provider.js';
 
-export const CURRICULUM_SEMANTIC_EVALUATOR_POLICY_VERSION = 'curriculum-semantic-v1';
+export const CURRICULUM_SEMANTIC_EVALUATOR_POLICY_VERSION = 'curriculum-semantic-v2';
 
 export interface CurriculumSemanticSourceRegion {
   id: string;
@@ -367,14 +367,18 @@ function cohesionFindings(
     return descendants;
   });
   const nodeIdsByRegion = sourceRegionNodeIds(curriculum, sourceRegions);
+  const sourceFeaturesByRegionId = new Map(
+    sourceRegions.map((region) => [region.id, features(region.title)]),
+  );
+  const sourceRegionsByChapter = descendantsByChapter.map((descendants) => {
+    const descendantIds = new Set(descendants.map((node) => node.id));
+    return sourceRegions.filter((region) =>
+      (nodeIdsByRegion.get(region.id) ?? []).some((nodeId) => descendantIds.has(nodeId)),
+    );
+  });
   const tokensByChapter = chapters.map((chapter, index) => {
     const descendants = descendantsByChapter[index]!;
-    const descendantIds = new Set(descendants.map((node) => node.id));
-    const sourceTitles = sourceRegions
-      .filter((region) =>
-        (nodeIdsByRegion.get(region.id) ?? []).some((nodeId) => descendantIds.has(nodeId)),
-      )
-      .map((region) => region.title);
+    const sourceTitles = sourceRegionsByChapter[index]!.map((region) => region.title);
     return features(
       [chapter.title, ...descendants.map((node) => node.title), ...sourceTitles].join(' '),
     );
@@ -389,7 +393,7 @@ function cohesionFindings(
   }
   const sourceRegionCountByToken = new Map<string, number>();
   for (const region of sourceRegions) {
-    for (const token of features(region.title)) {
+    for (const token of sourceFeaturesByRegionId.get(region.id)!) {
       sourceRegionCountByToken.set(token, (sourceRegionCountByToken.get(token) ?? 0) + 1);
     }
   }
@@ -414,27 +418,41 @@ function cohesionFindings(
           group.learningUnitIds.some((id) => rightIds.has(id)),
       );
       if (explainedBySynthesis) continue;
-      const matchingSourceRegionIds = (chapterIds: Set<string>) =>
-        sourceRegions
-          .filter((region) => {
-            const sourceFeatures = features(region.title);
-            const mappedIds = nodeIdsByRegion.get(region.id) ?? [];
-            return (
-              mappedIds.some((id) => chapterIds.has(id)) &&
-              meaningfulShared.some((token) => sourceFeatures.has(token))
-            );
-          })
-          .map((region) => region.id);
-      const leftSourceRegionIds = matchingSourceRegionIds(leftIds);
-      const rightSourceRegionIds = matchingSourceRegionIds(rightIds);
-      if (leftSourceRegionIds.length === 0 || rightSourceRegionIds.length === 0) continue;
-      const sourceRegionIds = [...new Set([...leftSourceRegionIds, ...rightSourceRegionIds])];
+      const matchingSourceRegionIds = (chapterIndex: number, token: string) =>
+        sourceRegionsByChapter[chapterIndex]!.filter((region) =>
+          sourceFeaturesByRegionId.get(region.id)!.has(token),
+        ).map((region) => region.id);
+      // The SAME anchor needs source support in both chapters. Expanded detail
+      // titles may mention related topics; matching Embedding on the left and
+      // permissions on the right does not establish a scattered source topic.
+      const groundedShared = meaningfulShared
+        .map((token) => ({
+          token,
+          leftSourceRegionIds: matchingSourceRegionIds(left, token),
+          rightSourceRegionIds: matchingSourceRegionIds(right, token),
+        }))
+        .filter(
+          (anchor) =>
+            anchor.leftSourceRegionIds.length > 0 && anchor.rightSourceRegionIds.length > 0,
+        );
+      if (groundedShared.length === 0) continue;
+      const sourceRegionIds = [
+        ...new Set(
+          groundedShared.flatMap((anchor) => [
+            ...anchor.leftSourceRegionIds,
+            ...anchor.rightSourceRegionIds,
+          ]),
+        ),
+      ];
       findings.push(
         finding(
           'conceptual_cohesion',
           'error',
           'semantic_topic_scattering',
-          `The same semantic anchor appears in unrelated sibling modules (${meaningfulShared.slice(0, 3).join(', ')}); the candidate provides no synthesis or grouping rationale.`,
+          `The same semantic anchor appears in unrelated sibling modules (${groundedShared
+            .slice(0, 3)
+            .map((anchor) => anchor.token)
+            .join(', ')}); the candidate provides no synthesis or grouping rationale.`,
           [chapters[left]!.id, chapters[right]!.id],
           sourceRegionIds,
         ),

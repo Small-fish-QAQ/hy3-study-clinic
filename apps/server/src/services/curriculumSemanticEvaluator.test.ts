@@ -237,6 +237,46 @@ describe('independent Curriculum semantic evaluator', () => {
     );
   });
 
+  it('does not combine different source anchors into a scattering finding after detail titles expand', () => {
+    const candidate = curriculum(['Embedding 映射与文档切片', '权限校验与检索工程']);
+    candidate.nodes.push({
+      id: 'chapter-operations',
+      parentId: 'course',
+      kind: 'chapter',
+      index: 1,
+      title: '工程实践',
+      sourceReferences: [],
+      learningUnit: null,
+    });
+    candidate.nodes[3]!.parentId = 'chapter-operations';
+    const source = regions(2);
+    source[0]!.title = 'Embedding';
+    source[1]!.title = '权限与工程要点';
+    const evaluate = () =>
+      evaluateCurriculumSemantics({
+        curriculum: candidate,
+        sourceMapFingerprint: 'source-map',
+        sourceRegions: source,
+        scope: 'intentional_scope',
+        evaluatedAt,
+      }).evaluation;
+
+    expect(evaluate().status).toBe('pass');
+    // Detailed titles add cross-topic context without moving any source region.
+    // Embedding is grounded only in the first chapter and 权限 only in the second.
+    candidate.nodes[2]!.title = 'Embedding 映射与检索权限过滤基础';
+    candidate.nodes[3]!.title = 'Embedding 不可逆与权限检索工程';
+    expect(evaluate().findings.map((item) => item.code)).not.toContain('semantic_topic_scattering');
+    expect(evaluate().status).toBe('pass');
+
+    // A shared source anchor in both chapters must still trigger the check.
+    source[1]!.title = 'Embedding 不可逆与权限要点';
+    const finding = evaluate().findings.find((item) => item.code === 'semantic_topic_scattering');
+    expect(finding?.severity).toBe('error');
+    expect(finding?.rationale).toContain('(embedding)');
+    expect(finding?.affectedSourceRegionIds).toEqual(['region-1', 'region-2']);
+  });
+
   it('does not treat a corpus-wide domain label as focused topic scattering', () => {
     const candidate = curriculum(['RAG foundations', 'RAG retrieval', 'RAG evaluation']);
     candidate.nodes[1]!.id = 'chapter-foundations';

@@ -39,6 +39,7 @@ import { preflightStudyPlan, type StudyPlanAgentService } from './studyPlansAgen
 import { listAcceptedAdvisoryVisuals } from './advisoryVisuals.js';
 import { assessCourseFormalReadiness } from './formalReadiness.js';
 import { isSelectedStudyItemExecutable } from './studyContinuation.js';
+import { CURRICULUM_SEMANTIC_EVALUATOR_POLICY_VERSION } from './curriculumSemanticEvaluator.js';
 
 interface CoursePreparationDeps {
   repos: Repositories;
@@ -419,6 +420,9 @@ export function createCoursePreparationService({
       agenda: overview.activeAgenda,
     });
     const revision = safeRevision(workspaceId, {
+      // A failure under an older validator must not permanently block a fresh
+      // evaluation. Cached generation stages still pass their current validators.
+      curriculumSemanticPolicy: CURRICULUM_SEMANTIC_EVALUATOR_POLICY_VERSION,
       contract: contract
         ? { id: contract.id, version: contract.version, status: contract.status }
         : null,
