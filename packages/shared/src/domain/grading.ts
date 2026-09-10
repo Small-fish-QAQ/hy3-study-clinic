@@ -1,3 +1,4 @@
+import { TransferPerformanceSchema } from './transferAssessment.js';
 import { z } from 'zod';
 import { isTextAnswerType, QuestionTypeSchema, type QuestionType } from './material.js';
 
@@ -53,6 +54,7 @@ export type GradedBy = z.infer<typeof GradedBySchema>;
  * REQUIRED points only (optional points can never reduce it).
  */
 export const RubricGradeSchema = z.object({
+  transferPerformance: TransferPerformanceSchema.optional(),
   /** Indices into the rubric.keyPoints array that the answer fully satisfied. */
   matchedKeyPointIndexes: z.array(z.number().int().nonnegative()),
   /**
@@ -70,6 +72,7 @@ export type RubricGrade = z.infer<typeof RubricGradeSchema>;
 
 /** The grade for a single question. */
 export const QuestionGradeSchema = z.object({
+  transferPerformance: TransferPerformanceSchema.optional(),
   questionId: z.string().min(1),
   type: QuestionTypeSchema,
   gradedBy: GradedBySchema,

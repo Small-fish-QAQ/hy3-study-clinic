@@ -6,6 +6,7 @@ import {
   decideFormalCredit,
   type AssessmentAttempt,
   type AssessmentVersion,
+  type EvidenceRecord,
   type MemoryScheduleState,
   type ReviewExecution,
   type SessionAgendaItem,
@@ -56,6 +57,31 @@ interface BeginExecutionInput {
   curriculumVersionId: string;
   studyPlanVersionId: string;
   manifestFingerprint: string;
+}
+
+/** Read-only recovery signal for the projection after a first Formal pass. */
+export function initialReviewSchedulingPending(
+  repos: Repositories,
+  version: AssessmentVersion,
+  evidence: readonly EvidenceRecord[],
+): boolean {
+  const context = version.progressionContext;
+  if (!context || context.assessmentKind === 'due_review') return false;
+  return evidence.some((record) => {
+    if (
+      record.conclusion !== 'supported' ||
+      record.createdAt < DEFAULT_CONFIGURATION.effectiveAt ||
+      repos.formalAssessments.getReconciliationForEvidence(record.id)?.status !== 'applied'
+    )
+      return false;
+    const item = version.items.find((candidate) => candidate.id === record.itemId);
+    const definition = repos.formalAssessments.getDefinition(version.definitionId);
+    if (!item || !definition) return false;
+    const target = repos.reviewSuccessor.getTarget(
+      `review-target:${definition.workspaceId}:${item.targetObjectiveId}`,
+    );
+    return !target || target.status === 'pending_initial_review';
+  });
 }
 
 export function resolveReviewTargetContext(repos: Repositories, targetId: string) {

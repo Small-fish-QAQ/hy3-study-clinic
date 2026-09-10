@@ -294,7 +294,7 @@ export function createAgendaWindowRolloverService({
               })?.id ?? null)
             : null;
         const routedItems = formalReadiness
-          ? blockUnreadySynthesisItems(agendaForContinuation, formalReadiness).items
+          ? blockUnreadySynthesisItems(agendaForContinuation, formalReadiness, input.plan).items
           : items;
         repos.sessionAgendas.update(
           {

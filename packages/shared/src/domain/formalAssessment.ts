@@ -1,3 +1,8 @@
+import {
+  TransferTaskSchema,
+  TransferPerformanceSchema,
+  TransferCriterionSchema,
+} from './transferAssessment.js';
 import { z } from 'zod';
 import { EvidenceRepresentationSchema } from './formalProgression.js';
 
@@ -37,6 +42,8 @@ export const FormalAssessmentSourceBindingSchema = z.object({
 export type FormalAssessmentSourceBinding = z.infer<typeof FormalAssessmentSourceBindingSchema>;
 
 export const FormalRubricCriterionSchema = z.object({
+  /** Local task performance requirement, never an additional source-truth claim. */
+  transferCriterion: TransferCriterionSchema.optional(),
   id: z.string().min(1),
   text: z.string().min(1).max(500),
   required: z.boolean(),
@@ -45,6 +52,7 @@ export const FormalRubricCriterionSchema = z.object({
 export type FormalRubricCriterion = z.infer<typeof FormalRubricCriterionSchema>;
 
 export const FormalAssessmentItemSchema = z.object({
+  transferTask: TransferTaskSchema.optional(),
   id: z.string().min(1),
   /** Original quiz question identity used only by the local progression bridge. */
   sourceQuestionId: z.string().min(1).nullable().optional(),
@@ -60,7 +68,7 @@ export const FormalAssessmentItemSchema = z.object({
     .max(8)
     .optional(),
   correctOptionIds: z.array(z.string().min(1)).max(8).optional(),
-  rubric: z.array(FormalRubricCriterionSchema).max(8).optional(),
+  rubric: z.array(FormalRubricCriterionSchema).max(12).optional(),
   sourceBindings: z.array(FormalAssessmentSourceBindingSchema).max(10),
   formalEligible: z.boolean(),
   policyReason: FormalAssessmentPolicyReasonSchema,
@@ -153,6 +161,9 @@ export const GradeRecordSchema = z.object({
   rubricVersion: z.string().min(1),
   status: z.enum(['current', 'superseded']),
   judgment: z.object({
+    transferResults: z
+      .array(z.object({ itemId: z.string(), performance: TransferPerformanceSchema }))
+      .optional(),
     score: z.number().min(0).max(1),
     criterionResults: z.array(
       z.object({ criterionId: z.string().min(1), result: z.enum(['met', 'partial', 'not_met']) }),
@@ -170,7 +181,7 @@ export const GradeRecordSchema = z.object({
           'IRRELEVANT_OR_GUESSING',
           'UNCERTAIN',
         ]),
-        affectedCriterionIds: z.array(z.string().min(1)).max(8),
+        affectedCriterionIds: z.array(z.string().min(1)).max(12),
         summary: z.string().min(1).max(500),
         uncertainty: z.number().min(0).max(1),
       })
@@ -288,10 +299,12 @@ export const LearnerAssessmentExecutionSchema = z.object({
       demonstrated: z.boolean(),
       summary: z.string().min(1).max(1000),
       minorNotice: z.string().max(500).nullable(),
-      criteria: z.array(LearnerCriterionFeedbackSchema).max(8),
+      criteria: z.array(LearnerCriterionFeedbackSchema).max(12),
       sourceReferences: z.array(LearnerSourceReferenceSchema).max(10),
       evidenceStatus: z.enum(['supported', 'partial', 'unavailable']),
       repairEpisodeId: z.string().min(1).nullable(),
+      progressionPending: z.boolean().optional(),
+      reviewSchedulingPending: z.boolean().optional(),
     })
     .nullable(),
   review: z

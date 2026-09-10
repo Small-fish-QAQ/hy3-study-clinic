@@ -147,6 +147,23 @@ describe('FormalAssessmentPanel due Review workflow', () => {
     }
   });
 
+  it('recovers initial Review scheduling after reopening a credited Formal result', async () => {
+    const user = userEvent.setup();
+    const saved = { ...execution('resolved'), review: null };
+    saved.result = { ...saved.result!, reviewSchedulingPending: true };
+    vi.spyOn(api, 'getFormalExecution').mockResolvedValue(saved);
+    const submit = vi.spyOn(api, 'submitFormalExecution').mockResolvedValue({
+      ...saved,
+      result: { ...saved.result, reviewSchedulingPending: false },
+    });
+    render(<FormalAssessmentPanel workspaceId="ws_1" versionId={saved.assessmentVersionId} />);
+    const retry = await screen.findByRole('button', { name: '重试复习安排' });
+    expect(screen.queryByRole('button', { name: '继续下一项学习' })).not.toBeInTheDocument();
+    await user.click(retry);
+    expect(submit).toHaveBeenCalledWith(saved.attempt.id, saved.attempt.responses);
+    expect(await screen.findByRole('button', { name: '继续下一项学习' })).toBeInTheDocument();
+  });
+
   it('retries missing repair teaching after reload and retains the existing repair controls', async () => {
     const user = userEvent.setup();
     const graded = execution('repair');

@@ -48,7 +48,10 @@ export function registerRepairRoutes(app: FastifyInstance, services: Services): 
   app.post('/api/repair-episodes/:id/learner-verification', async (request, reply) => {
     reply.status(201);
     return {
-      execution: services.learnerAssessments.createVerification(idParams.parse(request.params).id),
+      execution: await services.learnerAssessments.createVerification(
+        idParams.parse(request.params).id,
+        { signal: requestSignal(request, reply) },
+      ),
     };
   });
   app.post('/api/repair-episodes/:id/learner-defer', async (request) => ({

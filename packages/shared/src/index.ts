@@ -58,7 +58,9 @@ export * from './domain/teachingDesign.js';
 export * from './domain/taughtExposure.js';
 export * from './domain/tutor.js';
 export * from './domain/errors.js';
+export * from './domain/courseLearningProgress.js';
 export * from './domain/providerConfig.js';
 export * from './provider/payloads.js';
 
 export { SAMPLE_MATERIAL_CONTENT, SAMPLE_MATERIAL_TITLE } from './sampleMaterial.js';
+export * from './domain/transferAssessment.js';

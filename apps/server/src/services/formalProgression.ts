@@ -1,3 +1,4 @@
+import { transferPerformancePassed } from '@hy3-clinic/shared';
 import {
   ApiErrorCode,
   AuthorityPremiseKindSchema,
@@ -65,9 +66,10 @@ export function completionPolicyFor(
 ): CompletionPolicy {
   if (!contract) throw new Error('Learning Contract is unavailable.');
   const desiredDepth = contract.desiredDepth;
+  const version = Object.hasOwn(contract, 'focusRequest') ? 3 : 2;
   return CompletionPolicySchema.parse({
-    id: `completion:${contract.id}:v2`,
-    version: 2,
+    id: `completion:${contract.id}:v${version}`,
+    version,
     contractVersionId: contract.id,
     desiredDepth,
     minimumEligibleEvidenceCount: desiredDepth === 'deep_transfer' ? 2 : 1,
@@ -883,8 +885,10 @@ export function createFormalProgressionService({
       : unit.learningUnit.objectives.map((objective) => objective.id);
     const targetDepth = planItem?.targetDepth ?? contract.desiredDepth;
     const difficulty = quiz.config.difficulty;
+    const unitTransfer =
+      input.assessmentKind === 'synthesis' && planItem?.synthesisMode === 'unit_transfer';
     const synthesisGroup =
-      input.assessmentKind === 'synthesis' && planItem?.kind === 'synthesis'
+      input.assessmentKind === 'synthesis' && !unitTransfer && planItem?.kind === 'synthesis'
         ? curriculum.synthesisGroups.find(
             (group) =>
               group.learningUnitIds.includes(unit.id) &&
@@ -959,7 +963,7 @@ export function createFormalProgressionService({
         input.assessmentKind === 'due_review' &&
         supportsFormalApplicationDemand(objective.formalAssessmentConstruct ?? null);
       const objectiveAttributionVerified =
-        input.assessmentKind === 'synthesis'
+        input.assessmentKind === 'synthesis' && !unitTransfer
           ? Boolean(synthesisMapping) && synthesisBreadthVerified
           : objectiveIds.length === 1
             ? providerObjectiveRef === undefined || providerObjectiveId === objective.id
@@ -1215,6 +1219,7 @@ export function createFormalProgressionService({
       ).valid;
       const tier =
         semanticAuthorityReady &&
+        (!unitTransfer || question.transferTask?.version === 'unit-transfer-v1') &&
         objectiveAttributionVerified &&
         taughtExposureBindings.length > 0 &&
         premiseVisibilitySatisfied &&
@@ -1241,8 +1246,14 @@ export function createFormalProgressionService({
         curriculumLearningUnitId: questionUnit.id,
         difficulty,
         targetDepth,
-        representation:
-          input.assessmentKind === 'synthesis'
+        ...(unitTransfer && question.transferTask ? { transferTask: question.transferTask } : {}),
+        representation: unitTransfer
+          ? supportsFormalApplicationDemand(objective.formalAssessmentConstruct ?? null)
+            ? 'transfer'
+            : objective.formalAssessmentConstruct === 'explain'
+              ? 'explanation'
+              : 'recognition'
+          : input.assessmentKind === 'synthesis'
             ? 'synthesis'
             : dueApplicationSupported
               ? 'application'
@@ -1340,7 +1351,24 @@ export function createFormalProgressionService({
           ? ('repair_needed' as const)
           : decisionKind === 'complete'
             ? ('completed' as const)
-            : ('started' as const);
+            : (executedPlanItem?.kind === 'formal_checkpoint' ||
+                  executedPlanItem?.synthesisMode === 'unit_transfer') &&
+                decisionKind === 'continue' &&
+                executedPlanItem.objectiveIds.every((objectiveId) =>
+                  progression
+                    .listEvidenceForPlanUnit(plan.workspaceId, curriculum.id, plan.id, unitId)
+                    .some(
+                      (evidence) =>
+                        evidence.primaryObjectiveId === objectiveId &&
+                        evidence.stateCreditable &&
+                        evidence.normalizedScore >= policy.minimumScore &&
+                        (executedPlanItem.synthesisMode !== 'unit_transfer' ||
+                          progression.getQuestionContract(evidence.formalQuestionContractId)
+                            ?.transferTask !== undefined),
+                    ),
+                )
+              ? ('completed' as const)
+              : ('started' as const);
     if (executedPlanItem) {
       const current = repos.studyPlans
         .listProgress(plan.id)
@@ -1480,7 +1508,14 @@ export function createFormalProgressionService({
               item.kind === 'synthesis' &&
               item.learningUnitId === unitId &&
               item.state === 'queued' &&
-              item.launch.status === 'launchable',
+              item.launch.status === 'launchable' &&
+              plan.items
+                .find((candidate) => candidate.id === item.linkedPlanItemId)
+                ?.prerequisitePlanItemIds.every((id) =>
+                  repos.studyPlans
+                    .listProgress(plan.id)
+                    .some((entry) => entry.planItemId === id && entry.state === 'completed'),
+                ),
           )?.id ?? null)
         : null;
     const nextItemId =
@@ -1598,7 +1633,9 @@ export function createFormalProgressionService({
         normalizedScore: grade.normalizedScore,
         correct: grade.correct,
         needsReview: grade.needsReview,
-        stateCreditable: currentlyCreditableQuestionIds.has(contract.questionId),
+        stateCreditable:
+          currentlyCreditableQuestionIds.has(contract.questionId) &&
+          (!contract.transferTask || transferPerformancePassed(grade.transferPerformance)),
         assessmentPremiseBindingIds: contract.assessmentPremiseBindings.map(
           (binding) => binding.id,
         ),
@@ -1712,7 +1749,15 @@ export function createFormalProgressionService({
               .flatMap((requirement) => requirement.objectiveIds),
           ),
       );
-      const passedObjectiveIds = new Set(passed.map((item) => item.primaryObjectiveId));
+      const passedObjectiveIds = new Set(
+        passed
+          .filter(
+            (item) =>
+              policy.version < 3 ||
+              !progression.getQuestionContract(item.formalQuestionContractId)?.transferTask,
+          )
+          .map((item) => item.primaryObjectiveId),
+      );
       const blockingObjectivesSatisfied = [...blockingObjectiveIds].every((objectiveId) =>
         passedObjectiveIds.has(objectiveId),
       );
@@ -1723,13 +1768,22 @@ export function createFormalProgressionService({
           progression.getQuestionContract(item.formalQuestionContractId),
         ]),
       );
-      const synthesisEvidence = eligible.filter(
-        (item) => evidenceContracts.get(item.id)?.representation === 'synthesis',
+      const synthesisEvidence = eligible.filter((item) =>
+        policy.version >= 3
+          ? evidenceContracts.get(item.id)?.transferTask !== undefined
+          : evidenceContracts.get(item.id)?.representation === 'synthesis',
       );
       const passedSynthesisEvidence = synthesisEvidence.filter(
         (item) => item.normalizedScore >= policy.minimumScore,
       );
-      const synthesisSatisfied = !synthesisRequired || passedSynthesisEvidence.length > 0;
+      const synthesisSatisfied =
+        !synthesisRequired ||
+        (policy.version >= 3
+          ? blockingObjectiveIds.size > 0 &&
+            [...blockingObjectiveIds].every((id) =>
+              passedSynthesisEvidence.some((item) => item.primaryObjectiveId === id),
+            )
+          : passedSynthesisEvidence.length > 0);
       const currentFailedSynthesisEvidence = currentFailedEvidence.filter(
         (item) => evidenceContracts.get(item.id)?.representation === 'synthesis',
       );

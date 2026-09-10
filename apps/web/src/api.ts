@@ -1,4 +1,5 @@
 import type {
+  CourseExecutionCommandEnvelope,
   AlignmentProposal,
   ApiErrorCodeValue,
   AssessmentMode,
@@ -43,6 +44,7 @@ import type {
   RecordPaceObservationRequest,
 } from '@hy3-clinic/shared';
 import {
+  CourseLearningProgressSchema,
   ApiErrorSchema,
   CourseActionLaunchResultSchema,
   CourseExecutionOverviewResponseSchema,
@@ -1427,6 +1429,27 @@ export const api = {
       'GET',
       `/api/workspaces/${workspaceId}/review`,
       undefined,
+      signal,
+    ),
+  courseLearningProgress: (workspaceId: string, signal?: AbortSignal) =>
+    requestParsed(
+      'GET',
+      `/api/workspaces/${workspaceId}/learning-progress`,
+      CourseLearningProgressSchema,
+      undefined,
+      signal,
+    ),
+  launchProgressReview: (
+    workspaceId: string,
+    targetId: string,
+    body: { command: CourseExecutionCommandEnvelope; expectedCourseExecutionVersion: number },
+    signal?: AbortSignal,
+  ) =>
+    requestParsed(
+      'POST',
+      `/api/workspaces/${workspaceId}/review/${targetId}/launch`,
+      CourseActionLaunchResultSchema,
+      body,
       signal,
     ),
 

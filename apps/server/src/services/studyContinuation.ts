@@ -24,12 +24,18 @@ const FORMAL_READINESS_REASON =
 export function blockUnreadySynthesisItems(
   agenda: SessionAgenda,
   formalReadiness: CourseFormalReadiness,
+  plan?: StudyPlan,
 ): SessionAgenda {
   if (formalReadiness.status === 'ready') return agenda;
   return {
     ...agenda,
     items: agenda.items.map((item) =>
-      item.kind === 'synthesis' && item.state === 'queued'
+      item.kind === 'synthesis' &&
+      item.state === 'queued' &&
+      !plan?.items.some(
+        (candidate) =>
+          candidate.id === item.linkedPlanItemId && candidate.synthesisMode === 'unit_transfer',
+      )
         ? {
             ...item,
             state: 'blocked' as const,
@@ -97,7 +103,9 @@ export function isSelectedStudyItemExecutable(
       planItem &&
       planItem.kind === item.kind &&
       planItem.objectiveIds.length > 0 &&
+      planItem.prerequisitePlanItemIds.every((id) => progressByItem.get(id) === 'completed') &&
       (item.kind === 'formal_checkpoint' ||
+        planItem.synthesisMode === 'unit_transfer' ||
         item.state === 'active' ||
         formalReadiness.status === 'ready'),
     );
@@ -152,6 +160,11 @@ export function resolveStudyContinuationItem(input: {
   return (
     [...input.agenda.items]
       .sort((left, right) => left.index - right.index || left.id.localeCompare(right.id))
-      .find((item) => teachingItemIsPlanSafe(item, input.plan, progressByItem)) ?? null
+      .find(
+        (item) =>
+          teachingItemIsPlanSafe(item, input.plan, progressByItem) ||
+          (item.kind === 'formal_checkpoint' &&
+            isSelectedStudyItemExecutable(item, input.plan, input.progress, input.formalReadiness)),
+      ) ?? null
   );
 }

@@ -19,6 +19,7 @@ export interface FormalProgressViewProps {
   onCourseChanged: () => void;
   onOpenProgress: (view: 'history' | 'mistakes' | 'mastery') => void;
   focusObjectiveId?: string | null;
+  refreshKey?: number;
 }
 
 const tierLabel: Record<string, string> = {
@@ -44,6 +45,7 @@ export function FormalProgressView({
   onCourseChanged,
   onOpenProgress,
   focusObjectiveId = null,
+  refreshKey = 0,
 }: FormalProgressViewProps) {
   const [progression, setProgression] = useState<FormalProgressionOverview | null>(null);
   const [loading, setLoading] = useState(false);
@@ -85,7 +87,7 @@ export function FormalProgressView({
       controller.abort();
       epoch.current += 1;
     };
-  }, [refresh]);
+  }, [refresh, refreshKey]);
 
   useEffect(() => {
     if (!focusObjectiveId || !progression) return;

@@ -1,3 +1,4 @@
+import { TransferTaskSchema } from './transferAssessment.js';
 import { z } from 'zod';
 import { CourseExecutionCommandEnvelopeSchema, DesiredDepthSchema } from './learningContract.js';
 import { EvidenceAdmissibilityTierSchema } from './sourceAuthority.js';
@@ -162,6 +163,7 @@ export type ResolvedObjectiveBinding = z.infer<typeof ResolvedObjectiveBindingSc
 /** Immutable contract installed when an Agent-launched formal question is created. */
 export const FormalQuestionContractSchema = z
   .object({
+    transferTask: TransferTaskSchema.optional(),
     id: z.string().min(1),
     workspaceId: z.string().min(1),
     quizId: z.string().min(1),

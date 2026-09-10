@@ -34,6 +34,67 @@ function input(): StudyPlanProposalInput {
   } as StudyPlanProposalInput;
 }
 describe('accepted course route compilation', () => {
+  it.each(['pass_oriented', 'working_fluency', 'high_performance', 'deep_transfer'] as const)(
+    'schedules all reachable obligations at %s without needing synthesis groups',
+    (depth) => {
+      const context = input();
+      context.contract.desiredDepth = depth;
+      context.synthesisGroups = [];
+      context.units.forEach((unit) => {
+        unit.blockingEligibleObjectiveIds = unit.objectiveIds;
+      });
+      context.launchCapabilities.forEach((launch) => {
+        launch.allowedItemKinds = ['teach_unit', 'formal_checkpoint', 'synthesis'];
+      });
+      const plan = deriveAcceptedCoursePlan(context);
+      const checks = plan.items.filter((item) => item.kind === 'formal_checkpoint');
+      const transfers = plan.items.filter((item) => item.kind === 'synthesis');
+      expect(checks.map((item) => item.objectiveIds[0]).sort()).toEqual([
+        'obj1',
+        'obj2',
+        'obj3',
+        'obj4',
+      ]);
+      expect(transfers).toHaveLength(depth === 'deep_transfer' ? 4 : 0);
+      for (const transfer of transfers) {
+        expect(transfer.synthesisMode).toBe('unit_transfer');
+        const prerequisite = checks.find((item) => item.key === transfer.prerequisiteItemKeys[0]);
+        expect(prerequisite?.objectiveIds).toEqual(transfer.objectiveIds);
+        expect(plan.items.indexOf(prerequisite!)).toBeLessThan(plan.items.indexOf(transfer));
+      }
+    },
+  );
+  it('places one independently admitted checkpoint per eligible objective after all Lesson parts', () => {
+    const context = input();
+    const unit = context.units[1]!;
+    unit.objectiveIds = ['p1', 'p2', 'p3'];
+    unit.blockingEligibleObjectiveIds = ['p1', 'p3'];
+    context.launchCapabilities[1]!.allowedItemKinds = [
+      'teach_unit',
+      'formal_checkpoint',
+      'synthesis',
+    ];
+    const plan = deriveAcceptedCoursePlan(context);
+    const lessons = plan.items.filter(
+      (item) => item.kind === 'teach_unit' && item.curriculumLearningUnitId === unit.id,
+    );
+    const checks = plan.items.filter((item) => item.kind === 'formal_checkpoint');
+    expect(checks.map((item) => item.objectiveIds)).toEqual([['p1'], ['p3']]);
+    expect(
+      checks.every(
+        (item) =>
+          item.prerequisiteItemKeys.length === 1 &&
+          item.prerequisiteItemKeys[0] === lessons.at(-1)!.key,
+      ),
+    ).toBe(true);
+    expect(
+      plan.items.find((item) => item.curriculumLearningUnitId === 'dependent')!
+        .prerequisiteItemKeys,
+    ).toEqual([lessons.at(-1)!.key]);
+    expect(
+      plan.items.filter((item) => item.kind === 'teach_unit').flatMap((item) => item.objectiveIds),
+    ).toContain('p2');
+  });
   it('splits a broad Unit into bounded Lessons and gates its dependent on the final part', () => {
     const context = input();
     context.units[1]!.objectiveIds = ['p1', 'p2', 'p3', 'p4'];

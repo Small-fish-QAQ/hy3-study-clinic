@@ -56,6 +56,46 @@ export function deriveAcceptedCoursePlan(input: StudyPlanProposalInput): StudyPl
       });
       lastItemByUnit.set(unit.id, key);
     }
+    // Admission and question authoring happen at launch, after the Lesson.
+    // One target per checkpoint keeps evidence and repair scoped to that goal.
+    if (launch.allowedItemKinds.includes('formal_checkpoint')) {
+      for (const objectiveId of unit.blockingEligibleObjectiveIds ?? []) {
+        if (!unit.objectiveIds.includes(objectiveId)) continue;
+        const title =
+          unit.objectiveSummaries?.find((objective) => objective.id === objectiveId)?.title ??
+          unit.title;
+        items.push({
+          key: `check-${unit.id}-${objectiveId}`,
+          phase: '正式检查',
+          kind: 'formal_checkpoint',
+          curriculumLearningUnitId: unit.id,
+          rationale: `独立检查：${title}。开始时核对当前原文与评分依据，通过后才计入正式进展。`,
+          estimatedMinutes: 5,
+          targetDepth: input.contract.desiredDepth,
+          objectiveIds: [objectiveId],
+          prerequisiteItemKeys: [lastItemByUnit.get(unit.id)!],
+        });
+        if (input.contract.desiredDepth === 'deep_transfer') {
+          if (!launch.allowedItemKinds.includes('synthesis'))
+            throw new AppError(
+              ApiErrorCode.ValidationError,
+              '当前目标没有可执行的综合迁移检查，请重新准备课程。',
+            );
+          items.push({
+            key: `transfer-${unit.id}-${objectiveId}`,
+            phase: '综合迁移',
+            kind: 'synthesis',
+            synthesisMode: 'unit_transfer',
+            curriculumLearningUnitId: unit.id,
+            rationale: `综合迁移：${title}。构造新情境，用原文解释判断，并比较关键条件变化后的结果；独立评分通过后才计入深度迁移完成。`,
+            estimatedMinutes: 10,
+            targetDepth: input.contract.desiredDepth,
+            objectiveIds: [objectiveId],
+            prerequisiteItemKeys: [`check-${unit.id}-${objectiveId}`],
+          });
+        }
+      }
+    }
     seen.add(unit.id);
   }
   if (seen.size !== required.size)

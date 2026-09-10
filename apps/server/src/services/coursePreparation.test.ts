@@ -37,6 +37,8 @@ import {
   LEGACY_CURRICULUM_GENERATION_POLICY,
 } from './curriculum.js';
 import { createServices, type Services } from './index.js';
+import { teachThroughLesson } from '../testing/courseWorkflow.js';
+import { assessCourseFormalReadiness } from './formalReadiness.js';
 
 const SEMANTIC_SUPPORT_MARKERS = '[SUPPORTS:identify] [SUPPORTS:explain]';
 const QUOTE = `Working memory is limited ${SEMANTIC_SUPPORT_MARKERS}!`;
@@ -238,6 +240,8 @@ function createHarness(
     withConcept?: boolean;
     sectionCount?: number;
     compactMaterial?: boolean;
+    sourceClaimOnly?: boolean;
+    substantiveClaims?: boolean;
     minutesPerDay?: number;
     preferredSessionMinutes?: number;
     desiredDepth?: LearningContractDraftFields['desiredDepth'];
@@ -251,10 +255,13 @@ function createHarness(
   const provider = options.provider ?? new TrackingProvider();
   repos.workspaces.insert(makeWorkspace({ name: 'Memory course' }));
   const sections = Array.from({ length: options.sectionCount ?? 1 }, (_, index) => {
-    const base =
-      index === 0
-        ? `${QUOTE} Working memory section ${index + 1} has a bounded claim.`
-        : `Working memory section ${index + 1} has a bounded claim ${SEMANTIC_SUPPORT_MARKERS}!`;
+    const base = options.substantiveClaims
+      ? `Memory ${index + 1} is bounded ${SEMANTIC_SUPPORT_MARKERS}! Notes preserve excess information;`
+      : options.sourceClaimOnly
+        ? QUOTE
+        : index === 0
+          ? `${QUOTE} Working memory section ${index + 1} has a bounded claim.`
+          : `Working memory section ${index + 1} has a bounded claim ${SEMANTIC_SUPPORT_MARKERS}!`;
     return options.compactMaterial ? base : base.padEnd(520, 'x');
   });
   const materialContent = sections.join('\n');
@@ -517,6 +524,463 @@ afterEach(async () => {
 });
 
 describe('Course Preparation coordinator', () => {
+  it.each([1, 6])(
+    'earns current deep transfer across %i source sections, including reload and repair',
+    async (sectionCount) => {
+      const harness = createHarness({
+        withConcept: sectionCount === 1,
+        sectionCount,
+        focusRequest: null,
+        compactMaterial: sectionCount === 1,
+        sourceClaimOnly: sectionCount === 1,
+        substantiveClaims: sectionCount > 1,
+        desiredDepth: 'deep_transfer',
+      });
+      const { repos, provider } = harness;
+      if (sectionCount > 1) {
+        // Broad Fake material contains padding for source-region partitioning.
+        // Keep this workflow fixture's scoring claim inside its exact source quote.
+        const propose = provider.proposeAssessment.bind(provider);
+        provider.proposeAssessment = async (...args) => {
+          const proposal = await propose(...args);
+          for (const item of proposal.items) {
+            item.question.expectedAnswer = item.question.quote;
+            item.question.rubricKeyPoints = [
+              {
+                text: item.question.quote.slice(0, 80),
+                required: true,
+                sourceRefs: [item.question.blockId],
+              },
+            ];
+          }
+          return proposal;
+        };
+      }
+      const currentClock = fixedClock('2026-09-10T00:00:00.000Z');
+      let services = createServices({ repos, provider, clock: currentClock });
+      await services.coursePreparation.run(runRequest(services.coursePreparation.get('ws_1')));
+      const curriculum = repos.curricula.list('ws_1').at(-1)!;
+      services.curriculum.accept({
+        command: command('transfer-accept'),
+        curriculumId: curriculum.id,
+        expectedVersion: curriculum.version,
+        expectedContractId: curriculum.contractVersionId,
+        expectedExecutionSourceManifestFingerprint: curriculum.executionSourceManifest.fingerprint,
+        acceptanceBasis: 'learner_review',
+      });
+      await services.coursePreparation.run(runRequest(services.coursePreparation.get('ws_1')));
+      const plan = repos.studyPlans.get(repos.courseExecution.get('ws_1').acceptedPlanId!)!;
+      const checks = plan.items.filter((item) => item.kind === 'formal_checkpoint');
+      const transfers = plan.items.filter((item) => item.synthesisMode === 'unit_transfer');
+      expect(checks.length).toBeGreaterThan(0);
+      expect(transfers.map((item) => item.objectiveIds)).toEqual(
+        checks.map((item) => item.objectiveIds),
+      );
+      if (sectionCount === 1) expect(curriculum.synthesisGroups).toEqual([]);
+      if (sectionCount > 1)
+        expect(curriculum.nodes.filter((node) => node.learningUnit).length).toBeGreaterThan(1);
+      let repaired = false;
+      const agendaWindows = new Set<string>();
+      for (let step = 0; step < plan.items.length + 2; step++) {
+        const agenda = repos.sessionAgendas.get(repos.courseExecution.get('ws_1').activeAgendaId!)!;
+        agendaWindows.add(agenda.id);
+        const item = agenda.items.find((entry) => entry.id === agenda.currentItemId);
+        if (!item) {
+          if (repos.studyPlans.listProgress(plan.id).some((entry) => entry.state !== 'completed'))
+            throw new Error(
+              JSON.stringify({ agenda, planProgress: repos.studyPlans.listProgress(plan.id) }),
+            );
+          break;
+        }
+        if (item.kind === 'learning_unit_teaching') {
+          const priorSupport =
+            services.courseLearningProgress.get('ws_1').summary.supportedObjectives;
+          const taught = await teachThroughLesson(
+            { repos, services },
+            'ws_1',
+            agenda.id,
+            item.id,
+            `transfer-teach-${step}`,
+          );
+          expect(taught.projection.status).toBe('ready');
+          expect(services.courseLearningProgress.get('ws_1').summary.supportedObjectives).toBe(
+            priorSupport,
+          );
+          continue;
+        }
+        const launched = await services.courseActionLaunch.launch({
+          command: command(`transfer-launch-${step}`),
+          agendaId: agenda.id,
+          expectedAgendaVersion: agenda.version,
+          agendaItemId: item.id,
+          expectedContractId: agenda.contractVersionId,
+          expectedStudyPlanId: agenda.studyPlanVersionId,
+          expectedExecutionSourceManifestFingerprint: agenda.executionSourceManifestFingerprint,
+        });
+        if (launched.kind !== 'assessment' || !launched.formalAssessmentVersionId)
+          throw new Error(`Unreachable transfer route: ${JSON.stringify(launched)}`);
+        let execution = services.learnerAssessments.start(
+          launched.formalAssessmentVersionId,
+          'ws_1',
+        );
+        services = createServices({ repos, provider, clock: currentClock });
+        expect(
+          services.learnerAssessments.get(execution.assessmentVersionId, 'ws_1')?.attempt.id,
+        ).toBe(execution.attempt.id);
+        let version = repos.formalAssessments.getVersion(execution.assessmentVersionId)!;
+        const sourceAnswer = () =>
+          version.items[0]!.rubric!.filter((point) => !point.transferCriterion)
+            .map((point) => point.text)
+            .join('；');
+        if (item.kind === 'synthesis' && !repaired) {
+          const failed = await services.learnerAssessments.submit(execution.attempt.id, {
+            [version.items[0]!.id]: sourceAnswer(),
+          });
+          expect(failed.result?.demonstrated).toBe(false);
+          expect(failed.result?.evidenceStatus).toBe('unavailable');
+          expect(failed.result?.criteria.some((criterion) => criterion.result === 'met')).toBe(
+            true,
+          );
+          expect(
+            failed.result?.criteria.filter((criterion) => criterion.result === 'not_met').length,
+          ).toBeGreaterThan(0);
+          const episode = failed.result!.repairEpisodeId!;
+          expect(episode).toBeTruthy();
+          services = createServices({ repos, provider, clock: currentClock });
+          await services.learnerAssessments.startRepair(episode);
+          services.learnerAssessments.practice(
+            episode,
+            '改用新情境，解释条件变化。',
+            'READY_FOR_VERIFICATION',
+          );
+          execution = await services.learnerAssessments.createVerification(episode);
+          version = repos.formalAssessments.getVersion(execution.assessmentVersionId)!;
+          expect(version.items[0]!.transferTask?.priorResponses).toContain(sourceAnswer());
+          repaired = true;
+        }
+        const answer =
+          item.kind === 'synthesis'
+            ? `新情境：调度员要同时记住多条临时改道信息。依据：${sourceAnswer()} 条件变化：把部分信息写在外部记录中。结果：需要同时保持在记忆中的信息减少，但不能由资料推出精确容量。`
+            : sourceAnswer();
+        const passed = await services.learnerAssessments.submit(execution.attempt.id, {
+          [version.items[0]!.id]: answer,
+        });
+        expect(passed.result?.demonstrated).toBe(true);
+        expect(passed.result?.progressionPending).toBe(false);
+        if (item.kind === 'formal_checkpoint')
+          expect(
+            services.courseLearningProgress
+              .get('ws_1')
+              .units.find((unit) => unit.id === item.learningUnitId)!.formalState,
+          ).not.toBe('complete');
+      }
+      expect(repaired).toBe(true);
+      if (sectionCount > 1) expect(agendaWindows.size).toBeGreaterThan(1);
+      expect(
+        repos.studyPlans
+          .listProgress(plan.id)
+          .filter((item) => item.state !== 'completed')
+          .map((entry) => ({
+            state: entry.state,
+            item: plan.items.find((item) => item.id === entry.planItemId),
+          })),
+      ).toEqual([]);
+      const progress = services.courseLearningProgress.get('ws_1');
+      expect(progress.units.every((unit) => unit.formalState === 'complete')).toBe(true);
+      expect(progress.units.every((unit) => unit.durableMastery?.status !== 'mastered')).toBe(true);
+      const records = repos.formalAssessments.listProjectionRecords('ws_1');
+      expect(
+        records.versions
+          .filter((version) => version.items.some((item) => item.transferTask))
+          .every((version) =>
+            version.items.every(
+              (item) =>
+                item.representation !== 'synthesis' && item.representation !== 'application',
+            ),
+          ),
+      ).toBe(true);
+    },
+  );
+  it('connects the default route through Lesson, failed Formal check, Repair verification and objective Review', async () => {
+    const harness = createHarness({
+      withConcept: true,
+      focusRequest: null,
+      compactMaterial: true,
+      sourceClaimOnly: true,
+    });
+    const { repos, provider, db } = harness;
+    // Review activation uses the production cutover; advance only this fixture clock.
+    const at = '2026-09-10T00:00:00.000Z';
+    const mutableClock = { now: () => new Date(at) };
+    const currentServices = createServices({ repos, provider, clock: mutableClock });
+    harness.services = currentServices;
+    await currentServices.coursePreparation.run(
+      runRequest(currentServices.coursePreparation.get('ws_1')),
+    );
+    const proposed = repos.curricula.list('ws_1').at(-1)!;
+    currentServices.curriculum.accept({
+      command: command('flow-accept'),
+      curriculumId: proposed.id,
+      expectedVersion: proposed.version,
+      expectedContractId: proposed.contractVersionId,
+      expectedExecutionSourceManifestFingerprint: proposed.executionSourceManifest.fingerprint,
+      acceptanceBasis: 'learner_review',
+    });
+    await currentServices.coursePreparation.run(
+      runRequest(currentServices.coursePreparation.get('ws_1')),
+    );
+    const agenda = repos.sessionAgendas.list('ws_1').at(-1)!;
+    const checkpoint = agenda.items.find((item) => item.kind === 'formal_checkpoint')!;
+    expect(checkpoint).toBeTruthy();
+    const early = await currentServices.courseActionLaunch.launch({
+      command: command('flow-too-early'),
+      agendaId: agenda.id,
+      expectedAgendaVersion: agenda.version,
+      agendaItemId: checkpoint.id,
+      expectedContractId: agenda.contractVersionId,
+      expectedStudyPlanId: agenda.studyPlanVersionId,
+      expectedExecutionSourceManifestFingerprint: agenda.executionSourceManifestFingerprint,
+    });
+    expect(early.kind).toBe('blocked');
+    await teachThroughLesson(
+      harness,
+      'ws_1',
+      agenda.id,
+      agenda.items.find((item) => item.kind === 'learning_unit_teaching')!.id,
+      'flow',
+      true,
+    );
+    const learned = currentServices.courseLearningProgress.get('ws_1');
+    expect(learned.summary.teachingCompleted).toBe(1);
+    expect(learned.summary.supportedObjectives).toBe(0);
+    expect(learned.repairs.some((repair) => repair.kind === 'practice' && repair.resolved)).toBe(
+      true,
+    );
+    const nowAgenda = repos.sessionAgendas.get(agenda.id)!;
+    const proposeAssessment = provider.proposeAssessment.bind(provider);
+    provider.proposeAssessment = async (...args) => {
+      const proposal = await proposeAssessment(...args);
+      for (const item of proposal.items) item.question.expectedAnswer = 'An unbound scoring claim.';
+      return proposal;
+    };
+    const quizCount = (db.prepare('SELECT COUNT(*) AS n FROM quizzes').get() as { n: number }).n;
+    await expect(
+      currentServices.courseActionLaunch.launch({
+        command: command('flow-inadmissible-check'),
+        agendaId: nowAgenda.id,
+        expectedAgendaVersion: nowAgenda.version,
+        agendaItemId: checkpoint.id,
+        expectedContractId: nowAgenda.contractVersionId,
+        expectedStudyPlanId: nowAgenda.studyPlanVersionId,
+        expectedExecutionSourceManifestFingerprint: nowAgenda.executionSourceManifestFingerprint,
+      }),
+    ).rejects.toThrow('评分依据未通过正式准入');
+    expect((db.prepare('SELECT COUNT(*) AS n FROM quizzes').get() as { n: number }).n).toBe(
+      quizCount,
+    );
+    expect(repos.formalAssessments.listProjectionRecords('ws_1').versions).toEqual([]);
+    provider.proposeAssessment = proposeAssessment;
+    const launched = await currentServices.courseActionLaunch.launch({
+      command: command('flow-check'),
+      agendaId: nowAgenda.id,
+      expectedAgendaVersion: nowAgenda.version,
+      agendaItemId: checkpoint.id,
+      expectedContractId: nowAgenda.contractVersionId,
+      expectedStudyPlanId: nowAgenda.studyPlanVersionId,
+      expectedExecutionSourceManifestFingerprint: nowAgenda.executionSourceManifestFingerprint,
+    });
+    expect(launched.kind).toBe('assessment');
+    if (launched.kind !== 'assessment' || !launched.formalAssessmentVersionId)
+      throw new Error('Expected Formal checkpoint');
+    const resumedCheckpoint = await currentServices.courseActionLaunch.launch({
+      command: command('flow-reopen-check'),
+      agendaId: nowAgenda.id,
+      expectedAgendaVersion: nowAgenda.version,
+      agendaItemId: checkpoint.id,
+      expectedContractId: nowAgenda.contractVersionId,
+      expectedStudyPlanId: nowAgenda.studyPlanVersionId,
+      expectedExecutionSourceManifestFingerprint: nowAgenda.executionSourceManifestFingerprint,
+    });
+    expect(resumedCheckpoint).toEqual(launched);
+    const started = currentServices.learnerAssessments.start(
+      launched.formalAssessmentVersionId,
+      'ws_1',
+    );
+    expect(currentServices.courseLearningProgress.get('ws_1').assessments[0]!.items).toEqual([]);
+    const failed = await currentServices.learnerAssessments.submit(
+      started.attempt.id,
+      Object.fromEntries(started.items.map((item) => [item.itemId, '不知道'])),
+    );
+    expect(failed.result?.demonstrated).toBe(false);
+    const episodeId = failed.result!.repairEpisodeId!;
+    expect(episodeId).toBeTruthy();
+    const failedProgress = currentServices.courseLearningProgress.get('ws_1');
+    expect(
+      failedProgress.assessments.some(
+        (record) => record.attemptId === started.attempt.id && record.result === 'unsupported',
+      ),
+    ).toBe(true);
+    expect(
+      failedProgress.repairs.some(
+        (repair) => repair.id === episodeId && repair.current && !repair.resolved,
+      ),
+    ).toBe(true);
+    expect(failedProgress.summary.supportedObjectives).toBe(0);
+    await currentServices.learnerAssessments.startRepair(episodeId);
+    currentServices.learnerAssessments.practice(
+      episodeId,
+      '补充练习后的回答',
+      'READY_FOR_VERIFICATION',
+    );
+    const [verification, repeated] = await Promise.all([
+      currentServices.learnerAssessments.createVerification(episodeId),
+      currentServices.learnerAssessments.createVerification(episodeId),
+    ]);
+    expect(repeated.attempt.id).toBe(verification.attempt.id);
+    expect(
+      (await currentServices.learnerAssessments.createVerification(episodeId)).attempt.id,
+    ).toBe(verification.attempt.id);
+    const version = repos.formalAssessments.getVersion(verification.assessmentVersionId)!;
+    const initialVersion = repos.formalAssessments.getVersion(launched.formalAssessmentVersionId)!;
+    expect(version.definitionId).toBe(initialVersion.definitionId);
+    expect(version.predecessorId).toBe(initialVersion.id);
+    expect(
+      version.items.every((item) =>
+        initialVersion.items.every((prior) => !item.prompt.includes(prior.prompt)),
+      ),
+    ).toBe(true);
+    const passed = await currentServices.learnerAssessments.submit(
+      verification.attempt.id,
+      Object.fromEntries(
+        version.items.map((item) => [item.id, item.rubric!.map((point) => point.text).join('；')]),
+      ),
+    );
+    expect(passed.result?.demonstrated).toBe(true);
+    expect(currentServices.learnerAssessments.getRepair(episodeId).resolved).toBe(true);
+    const completed = currentServices.courseLearningProgress.get('ws_1');
+    expect(
+      completed.summary.supportedObjectives,
+      JSON.stringify({
+        records: repos.formalAssessments.listProjectionRecords('ws_1').reconciliations,
+        formal: repos.formalProgression.listEvidenceForWorkspace('ws_1'),
+      }),
+    ).toBeGreaterThan(0);
+    expect(completed.summary.openRepairs).toBe(0);
+    expect(completed.units.every((unit) => unit.durableMastery?.status !== 'mastered')).toBe(true);
+    expect(completed.assessments).toHaveLength(2);
+    expect(
+      currentServices.learnerAssessments.get(launched.formalAssessmentVersionId, 'ws_1')?.attempt
+        .id,
+    ).toBe(verification.attempt.id);
+    const reviews = currentServices.reviewSuccessor.listCurrentProjection('ws_1');
+    expect(reviews.length).toBeGreaterThan(0);
+    repos.workspaces.insert(makeWorkspace({ id: 'ws_other', name: 'Other course' }));
+    await expect(
+      currentServices.courseActionLaunch.launchReview({
+        command: command('foreign-review', 'learner', 'ws_other'),
+        targetId: reviews[0]!.reviewTargetId,
+        expectedCourseExecutionVersion: repos.courseExecution.get('ws_other').version,
+      }),
+    ).rejects.toThrow('Review target not found');
+    expect(currentServices.courseLearningProgress.get('ws_other').assessments).toEqual([]);
+    db.prepare('UPDATE memory_schedule_states SET due_at = ? WHERE review_target_id = ?').run(
+      at,
+      reviews[0]!.reviewTargetId,
+    );
+    const reviewLaunch = await currentServices.courseActionLaunch.launchReview({
+      command: command('flow-review'),
+      targetId: reviews[0]!.reviewTargetId,
+      expectedCourseExecutionVersion: repos.courseExecution.get('ws_1').version,
+    });
+    expect(reviewLaunch.kind).toBe('assessment');
+    if (reviewLaunch.kind !== 'assessment' || !reviewLaunch.formalAssessmentVersionId)
+      throw new Error('Expected Review');
+    const reviewAttempt = currentServices.learnerAssessments.start(
+      reviewLaunch.formalAssessmentVersionId,
+      'ws_1',
+    );
+    const reviewVersion = repos.formalAssessments.getVersion(
+      reviewLaunch.formalAssessmentVersionId,
+    )!;
+    const reviewResult = await currentServices.learnerAssessments.submit(
+      reviewAttempt.attempt.id,
+      Object.fromEntries(
+        reviewVersion.items.map((item) => [
+          item.id,
+          item.rubric!.map((point) => point.text).join('；'),
+        ]),
+      ),
+    );
+    expect(reviewResult.result?.demonstrated).toBe(true);
+    expect(reviewResult.review?.resolved).toBe(true);
+    expect(currentServices.courseLearningProgress.get('ws_1').assessments).toHaveLength(3);
+    const changesBefore = db.prepare('SELECT total_changes() AS n').get();
+    currentServices.courseLearningProgress.get('ws_1');
+    currentServices.courseLearningProgress.get('ws_1');
+    expect(db.prepare('SELECT total_changes() AS n').get()).toEqual(changesBefore);
+    db.prepare("UPDATE materials SET availability = 'retired' WHERE id = 'mat_1'").run();
+    const stale = currentServices.courseLearningProgress.get('ws_1');
+    expect(stale.summary.supportedObjectives).toBe(0);
+    expect(stale.assessments).toHaveLength(3);
+    expect(stale.assessments.every((record) => !record.current && !record.credited)).toBe(true);
+    expect(stale.units.every((unit) => unit.formalState === 'stale' && !unit.durableMastery)).toBe(
+      true,
+    );
+  });
+  it.each(['during_extraction', 'after_extraction'] as const)(
+    'keeps a cancellation recoverable when partial extraction changes the revision: %s',
+    async (cancelAt) => {
+      const provider = new TrackingProvider();
+      const harness = createHarness({
+        provider,
+        withConcept: false,
+        sectionCount: 3,
+        focusRequest: null,
+      });
+      const original = structuredClone(harness.repos.materials.getConcepts('mat_1'));
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const started = new Promise<void>((resolve) => {
+        if (cancelAt === 'after_extraction') {
+          provider.curriculumGate = gate;
+          provider.onCurriculumStarted = resolve;
+        } else {
+          provider.onAnalyzeStarted = () => {
+            if (provider.analyzeCalls === 2) {
+              provider.analyzeGate = gate;
+              resolve();
+            }
+          };
+        }
+      });
+      const abort = new AbortController();
+      const initial = harness.services.coursePreparation.get('ws_1');
+      const run = harness.services.coursePreparation.run(runRequest(initial), {
+        signal: abort.signal,
+      });
+      await started;
+      const progress = harness.services.coursePreparation.get('ws_1');
+      expect(progress.revision).not.toBe(initial.revision);
+      expect(progress.preparedConceptCount).toBeGreaterThan(original.length);
+      expect(progress.activity?.phase).toBe(
+        cancelAt === 'after_extraction' ? 'course_map' : 'concepts',
+      );
+      expect(progress.canCancel).toBe(true);
+      const saved = structuredClone(harness.repos.materials.getConcepts('mat_1'));
+      abort.abort();
+      release();
+      await expect(run).rejects.toMatchObject({ code: ApiErrorCode.RequestCancelled });
+      expect(harness.services.coursePreparation.get('ws_1')).toMatchObject({
+        state: 'failed_recoverable',
+        canResume: true,
+        canCancel: false,
+      });
+      expect(harness.repos.materials.getConcepts('mat_1')).toEqual(saved);
+      expect(harness.repos.curricula.list('ws_1')).toHaveLength(0);
+    },
+  );
   it('keeps preparation projection reads side-effect free', () => {
     const { repos, provider, services } = createHarness();
 
@@ -607,6 +1071,10 @@ describe('Course Preparation coordinator', () => {
     ).toBe(true);
     const proposed = repos.curricula.list('ws_1').at(-1)!;
     expect(proposed.status).toBe('proposed');
+    // Empty sections remain teachable from exact source references. Preparation
+    // must not loop through expensive extraction to pad every section with a Concept.
+    expect(provider.analyzeCalls).toBe(0);
+    expect(proposed.nodes.some((node) => node.learningUnit?.conceptIds.length === 0)).toBe(true);
     expect(
       proposed.nodes
         .filter((node) => node.learningUnit)
@@ -664,6 +1132,7 @@ describe('Course Preparation coordinator', () => {
   it('derives and activates StudyPlan after Skeleton acceptance without a second decision', async () => {
     const { repos, provider, services } = createHarness({
       withConcept: true,
+      sectionCount: 3,
       focusRequest: 'Working memory',
     });
     const prepared = await services.coursePreparation.run(
@@ -700,10 +1169,14 @@ describe('Course Preparation coordinator', () => {
     });
     expect(
       plan.items.every(
-        (item) => item.kind === 'teach_unit' && item.targetDepth === 'working_fluency',
+        (item) =>
+          ['teach_unit', 'formal_checkpoint'].includes(item.kind) &&
+          item.targetDepth === 'working_fluency',
       ),
     ).toBe(true);
-    expect(plan.items.flatMap((item) => item.objectiveIds)).toEqual(
+    expect(
+      plan.items.filter((item) => item.kind === 'teach_unit').flatMap((item) => item.objectiveIds),
+    ).toEqual(
       accepted.nodes.flatMap(
         (node) => node.learningUnit?.objectives.map((objective) => objective.id) ?? [],
       ),
@@ -715,6 +1188,17 @@ describe('Course Preparation coordinator', () => {
       acceptedPlanId: plan.id,
     });
     const activeCurriculum = repos.curricula.get(accepted.id)!;
+    const sourceOnlyUnits = activeCurriculum.nodes.filter(
+      (node) => node.learningUnit?.conceptIds.length === 0,
+    );
+    expect(sourceOnlyUnits.length).toBeGreaterThan(0);
+    expect(
+      sourceOnlyUnits.every((node) =>
+        plan.items.some(
+          (item) => item.curriculumLearningUnitId === node.id && item.kind === 'teach_unit',
+        ),
+      ),
+    ).toBe(true);
     const focusedUnitIds = activeCurriculum.nodes
       .filter((node) => node.learningUnit?.focus === 'focused')
       .map((node) => node.id);
@@ -730,6 +1214,53 @@ describe('Course Preparation coordinator', () => {
         .filter((event) => event.eventType === 'accepted')
         .map((event) => event.payload),
     ).toEqual([{ acceptanceBasis: 'learner_review' }]);
+  });
+
+  it('keeps abandoned Practice gaps in history without offering an unresumable repair', async () => {
+    const harness = createHarness({
+      withConcept: true,
+      focusRequest: null,
+      compactMaterial: true,
+      sourceClaimOnly: true,
+    });
+    const { services, repos, provider } = harness;
+    await services.coursePreparation.run(runRequest(services.coursePreparation.get('ws_1')));
+    const curriculum = repos.curricula.list('ws_1').at(-1)!;
+    services.curriculum.accept({
+      command: command('abandoned-accept'),
+      curriculumId: curriculum.id,
+      expectedVersion: curriculum.version,
+      expectedContractId: curriculum.contractVersionId,
+      expectedExecutionSourceManifestFingerprint: curriculum.executionSourceManifest.fingerprint,
+      acceptanceBasis: 'learner_review',
+    });
+    await services.coursePreparation.run(runRequest(services.coursePreparation.get('ws_1')));
+    const agenda = repos.sessionAgendas.list('ws_1').at(-1)!;
+    const teaching = agenda.items.find((item) => item.kind === 'learning_unit_teaching')!;
+    provider.generatePracticeRepair = async () => {
+      throw new Error('repair interrupted');
+    };
+    await expect(
+      teachThroughLesson(harness, 'ws_1', agenda.id, teaching.id, 'abandoned', true),
+    ).rejects.toThrow('repair interrupted');
+    expect(services.courseLearningProgress.get('ws_1').summary.openRepairs).toBe(1);
+    const session = repos.studySessions.list('ws_1')[0]!;
+    services.studySessions.pause('ws_1', session.id, {
+      commandId: 'gap-pause',
+      expectedSessionVersion: session.version,
+    });
+    expect(services.courseLearningProgress.get('ws_1').summary.openRepairs).toBe(1);
+    services.studySessions.stop('ws_1', session.id, {
+      commandId: 'gap-stop',
+      expectedSessionVersion: repos.studySessions.get(session.id)!.version,
+    });
+    const progress = services.courseLearningProgress.get('ws_1');
+    expect(progress.summary.openRepairs).toBe(0);
+    expect(progress.repairs).toEqual([
+      expect.objectContaining({ current: false, resolved: false, sessionId: session.id }),
+    ]);
+    expect(progress.lessons).toHaveLength(1);
+    expect(progress.summary.supportedObjectives).toBe(0);
   });
 
   it('does not auto-activate a learner-authored Plan on the simplified flow', async () => {
@@ -1775,6 +2306,18 @@ describe('Course Preparation coordinator', () => {
       },
       checkpoints: { assessmentReadiness: 'complete' },
     });
+    const agenda = harness.repos.sessionAgendas.list('ws_1').at(-1)!;
+    // Later Agenda windows contain only a subset of the accepted route. The
+    // authority of checkpoints in other windows must not disappear.
+    expect(
+      assessCourseFormalReadiness(harness.repos, curriculum, {
+        studyPlan: harness.repos.studyPlans.get(plan.id)!,
+        agenda: {
+          ...agenda,
+          items: agenda.items.filter((item) => item.kind !== 'formal_checkpoint'),
+        },
+      }).status,
+    ).toBe('ready');
   });
 
   it('keeps a route teachable when its unevaluated Formal premise is not currently authorized', async () => {

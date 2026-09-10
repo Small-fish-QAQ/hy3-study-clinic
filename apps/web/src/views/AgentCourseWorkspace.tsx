@@ -251,6 +251,8 @@ export function AgentCourseWorkspace({
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [overview, setOverview] = useState<CourseExecutionOverview | null>(null);
   const [preparation, setPreparation] = useState<CoursePreparation | null>(null);
+  const preparationRequestId = useRef(0);
+  const [preparationSyncError, setPreparationSyncError] = useState<string | null>(null);
   const [hierarchy, setHierarchy] = useState<CurriculumHierarchyView | null>(null);
   const [roleHistory, setRoleHistory] = useState<Record<string, MaterialRoleHistoryResponse>>({});
   const [curriculumSourceBlocks, setCurriculumSourceBlocks] = useState<SourceBlock[]>([]);
@@ -497,6 +499,75 @@ export function AgentCourseWorkspace({
     setHierarchy(execution.overview.curriculumHierarchy);
   }
 
+  // The run request spans multiple model calls. Read persisted progress while
+  // it is in flight; serialize polls and abort them when the course/run changes.
+  useEffect(() => {
+    setPreparationSyncError(null);
+    if (!workspaceId || (busyAction !== 'prepare-course' && !preparation?.canCancel)) return;
+    const targetWorkspaceId = workspaceId;
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout>;
+    let stopped = false;
+    let delay = 5000;
+    let progressKey: string | null = null;
+    let observedRunning = preparation?.canCancel === true;
+    const initialOperationKey = preparation?.operationKey;
+    const poll = async () => {
+      try {
+        const response = await api.coursePreparation(targetWorkspaceId, controller.signal);
+        if (controller.signal.aborted || workspaceIdRef.current !== targetWorkspaceId) return;
+        setPreparationSyncError(null);
+        const nextProgressKey = JSON.stringify({ ...response.preparation, generatedAt: null });
+        delay = nextProgressKey === progressKey ? Math.min(delay * 2, 15000) : 5000;
+        progressKey = nextProgressKey;
+        observedRunning ||= response.preparation.canCancel;
+        // The durable result is authoritative even if the POST response is late.
+        // A stopped run must not keep polling solely because the button is busy.
+        stopped =
+          !response.preparation.canCancel &&
+          (busyAction !== 'prepare-course' ||
+            ([
+              'failed_recoverable',
+              'blocked',
+              'complete',
+              'course_plan_ready',
+              'awaiting_required_governance',
+            ].includes(response.preparation.state) &&
+              (observedRunning ||
+                !response.preparation.operationKey ||
+                response.preparation.operationKey !== initialOperationKey)));
+        if (stopped) {
+          try {
+            const execution = await api.courseExecution(targetWorkspaceId, controller.signal);
+            if (!controller.signal.aborted && workspaceIdRef.current === targetWorkspaceId) {
+              setOverview(execution.overview);
+              setHierarchy(execution.overview.curriculumHierarchy);
+            }
+          } finally {
+            if (!controller.signal.aborted) {
+              setPreparation(response.preparation);
+              setBusyAction((current) => (current === 'prepare-course' ? null : current));
+            }
+          }
+        } else setPreparation(response.preparation);
+      } catch {
+        delay = Math.min(delay * 2, 30000);
+        if (!controller.signal.aborted)
+          setPreparationSyncError(
+            '暂时无法更新准备状态，正在重新连接。下方保留的是最近一次确认的进度。',
+          );
+      } finally {
+        if (!controller.signal.aborted && !stopped)
+          timer = setTimeout(poll, document.hidden ? Math.max(delay, 30000) : delay);
+      }
+    };
+    timer = setTimeout(poll, 500);
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [workspaceId, busyAction, preparation?.canCancel, preparation?.operationKey]);
+
   async function refreshCourse(): Promise<void> {
     const targetWorkspaceId = workspaceIdRef.current;
     if (!targetWorkspaceId) return;
@@ -624,6 +695,7 @@ export function AgentCourseWorkspace({
   async function runPreparation(starting?: CoursePreparation): Promise<void> {
     const capturedWorkspaceId = workspaceIdRef.current;
     if (!capturedWorkspaceId) return;
+    const requestId = ++preparationRequestId.current;
     setBusyAction('prepare-course');
     setNotice(null);
     const response = await preparationAction.run(async (signal) => {
@@ -669,7 +741,11 @@ export function AgentCourseWorkspace({
         throw error;
       }
     });
-    if (workspaceIdRef.current !== capturedWorkspaceId) return;
+    if (
+      workspaceIdRef.current !== capturedWorkspaceId ||
+      preparationRequestId.current !== requestId
+    )
+      return;
     setBusyAction(null);
     if (!response) {
       try {
@@ -1254,7 +1330,10 @@ export function AgentCourseWorkspace({
           signal,
         ),
       async (result, signal) => {
-        if (result.kind === 'assessment') openAssessment(result.quiz);
+        if (result.kind === 'assessment') {
+          if (result.formalAssessmentVersionId) setView('session');
+          else openAssessment(result.quiz);
+        }
         if (result.kind === 'lesson') {
           setNotice('当前学习内容已重新验证，可以在学习页继续。');
           setView('session');
@@ -1574,6 +1653,7 @@ export function AgentCourseWorkspace({
           overview={overview}
           preparation={preparation}
           preparationError={preparationAction.error}
+          preparationSyncError={preparationSyncError}
           loading={loading}
           error={loadError}
           busyAction={busyAction}
@@ -1696,6 +1776,7 @@ export function AgentCourseWorkspace({
           intent={progressIntent}
           onSectionChange={setProgressSection}
           onOpenAssessment={() => openAssessment()}
+          onOpenStudy={() => changeView('session')}
           onOpenKnowledgeMap={() => openKnowledgeMap('weakness_map')}
         />
       ) : exploreSurface === 'concept-grounding' ? (
@@ -1812,6 +1893,11 @@ function ContractEditor({
             全局学习深度
           </legend>
           <p className="contract-question-hint">这个选择是整门课程的教学基线，Hy3 不会替你改写。</p>
+          {form.desiredDepth === 'deep_transfer' ? (
+            <p className="contract-question-hint">
+              深入迁移还包含独立的综合迁移检查：为每个有正式评分依据的目标构造新情境，用原文解释判断，并比较关键条件变化后的结果。通过普通检查和迁移检查后才满足单元完成要求；长期掌握仍需延迟复习。
+            </p>
+          ) : null}
           <label>
             全局学习深度
             <select
@@ -1833,14 +1919,14 @@ function ContractEditor({
             有没有特别想深入的内容？（可选）
           </legend>
           <p className="contract-question-hint">
-            例如：Embedding、向量检索、Rerank。留空则均衡安排。
+            写出具体主题，再补一句你想弄懂什么。可以是易混的概念，也可以是实际应用中的疑问。留空则均衡安排。
           </p>
           <label>
             特别关注的内容（可选）
             <textarea
               value={form.focusRequest}
               maxLength={500}
-              placeholder="例如：Embedding、向量检索、Rerank"
+              placeholder="例如：条件概率与独立性有什么区别？检索与精排分别解决什么问题、怎样一起工作？"
               onChange={(event) => change('focusRequest', event.target.value)}
             />
           </label>

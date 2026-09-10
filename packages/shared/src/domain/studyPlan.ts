@@ -55,6 +55,7 @@ export type PlanCompletionRequirement = z.infer<typeof PlanCompletionRequirement
 
 export const StudyPlanItemSchema = z
   .object({
+    synthesisMode: z.literal('unit_transfer').optional(),
     id: z.string().min(1),
     index: z.number().int().nonnegative(),
     phase: z.string().min(1).max(200),

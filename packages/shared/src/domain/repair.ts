@@ -51,7 +51,7 @@ export const RepairEpisodeSchema = z.object({
   itemId: z.string().min(1),
   targetLearningUnitId: z.string().min(1),
   diagnosticCategory: RepairDiagnosticCategorySchema,
-  affectedCriterionIds: z.array(z.string().min(1)).max(8),
+  affectedCriterionIds: z.array(z.string().min(1)).max(12),
   gapSummary: z.string().min(1).max(500),
   status: RepairStatusSchema,
   attemptCount: z.number().int().nonnegative().max(3),

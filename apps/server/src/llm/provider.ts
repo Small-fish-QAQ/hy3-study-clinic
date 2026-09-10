@@ -1,3 +1,4 @@
+import type { TransferTask } from '@hy3-clinic/shared';
 import type {
   AlignmentLanguage,
   AlignmentProposalPayload,
@@ -483,6 +484,7 @@ export interface QuizGenerationInput {
 }
 
 export interface ShortAnswerGradingInput {
+  transferTask?: TransferTask;
   stem: string;
   expectedAnswer: string;
   /** Full rubric points including their required/optional classification. */
@@ -600,6 +602,10 @@ export interface AssessmentTargetSummary {
 }
 
 export interface AssessmentProposalInput {
+  /** Local task asks the learner to construct the scenario; author source criteria only. */
+  learnerGeneratedTransfer?: boolean;
+  /** Failed or already seen prompts excluded from a fresh verification. */
+  previousPrompts?: string[];
   workspaceName: string;
   mode: AssessmentMode;
   targets: AssessmentTargetSummary[];

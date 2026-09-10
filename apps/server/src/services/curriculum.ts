@@ -6,6 +6,7 @@ import {
   CurriculumHistoryResponseSchema,
   CurriculumProposalResponseSchema,
   CourseMapAnalysisSchema,
+  type CoursePreparationProgressUpdate,
   CurriculumDetailProposalPayloadSchema,
   ExecutionSourceManifestSchema,
   VisualAdvisoryContextSchema,
@@ -321,6 +322,7 @@ function buildCurriculumVisualContext(
 }
 
 export interface CurriculumProposalOptions extends ProviderCallOptions {
+  onPreparationProgress?: (progress: CoursePreparationProgressUpdate) => void;
   preparationPolicyId?: typeof COURSE_PREPARATION_POLICY_ID;
   generationPolicy?: CurriculumGenerationPolicy;
 }
@@ -784,7 +786,7 @@ function executionRepairErrors(preflight: StudyPlanPreflight): string[] {
   if (preflight.canGenerate) return [];
   const blockerCodes = preflight.blockers.map((blocker) => blocker.code).join(', ');
   return [
-    `StudyPlan execution repair: ${preflight.executableLearningUnitCount} of ${preflight.totalLearningUnitCount} LearningUnits have a supported launch capability; blockers: ${blockerCodes}. Current launch implementations require an exact current source Concept binding or another supported capability.`,
+    `StudyPlan execution repair: ${preflight.executableLearningUnitCount} of ${preflight.totalLearningUnitCount} LearningUnits have a supported launch capability; blockers: ${blockerCodes}. Lesson launch requires a current source Concept, exact Curriculum source blocks, or an accepted advisory visual.`,
   ];
 }
 
@@ -1964,6 +1966,12 @@ export function createCurriculumService({
             capabilityRecoveryRequirements,
           });
         };
+        opts?.onPreparationProgress?.({
+          phase: 'course_map',
+          label: '组织章节与学习顺序',
+          completed: 0,
+          total: 1,
+        });
         const generationIdentity = {
           version: 'curriculum-stages-v2-teaching-priority',
           contractId: contract.id,
@@ -2049,8 +2057,26 @@ export function createCurriculumService({
           input: (typeof detailBatches)[number]['input'];
           payload: CurriculumDetailProposalPayload;
         }> = [];
+        const totalLearningUnits = detailBatches.reduce(
+          (count, batch) => count + batch.input.regions.length,
+          0,
+        );
         for (const [batchIndex, batch] of detailBatches.entries()) {
           assertGenerationSnapshotCurrent();
+          const currentTitles = batch.input.regions.slice(0, 2).map((region) => region.title);
+          opts?.onPreparationProgress?.({
+            phase: 'curriculum_details',
+            label:
+              `${currentTitles.join('、')}${batch.input.regions.length > 2 ? `等 ${batch.input.regions.length} 个学习单元` : ''}`.slice(
+                0,
+                500,
+              ),
+            completed: completedBatches.reduce(
+              (count, item) => count + item.payload.units.length,
+              0,
+            ),
+            total: totalLearningUnits,
+          });
           const completedObjectiveCount = completedBatches.reduce(
             (count, completed) =>
               count +
@@ -2142,6 +2168,15 @@ export function createCurriculumService({
               }),
           });
           completedBatches.push({ input: detailInput, payload: detailPayload });
+          opts?.onPreparationProgress?.({
+            phase: 'curriculum_details',
+            label: '学习目标已生成，正在核对资料关联',
+            completed: completedBatches.reduce(
+              (count, item) => count + item.payload.units.length,
+              0,
+            ),
+            total: totalLearningUnits,
+          });
         }
         const assembly = assembleCurriculumDetailBatches(
           courseMapResult.analysis.courseMap,
@@ -2190,6 +2225,12 @@ export function createCurriculumService({
           },
         );
       }
+      opts?.onPreparationProgress?.({
+        phase: 'validation',
+        label: '检查章节完整性与学习单元是否可用',
+        completed: 0,
+        total: 1,
+      });
       let materialized = validateExecutionRepairCandidate({
         repos,
         clock,

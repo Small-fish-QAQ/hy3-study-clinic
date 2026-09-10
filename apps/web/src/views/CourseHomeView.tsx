@@ -12,6 +12,7 @@ import { Banner, Loading } from '../components/ui.js';
 import { StudyPlanPanel } from './StudyPlanPanel.js';
 import { CurriculumFailureDiagnostics } from './CurriculumView.js';
 import { learnerPlanText } from './learnerLanguage.js';
+import { CoursePreparationStatus } from './CoursePreparationStatus.js';
 
 const SETUP_TEXT: Record<CourseExecutionOverview['setupStage'], string> = {
   contract_required: '选择课程资料、全局深度和可选重点',
@@ -38,45 +39,12 @@ const PREPARATION_TEXT: Record<CoursePreparation['state'], string> = {
   complete: '课程已经准备好',
 };
 
-const CHECKPOINT_TEXT: Record<keyof CoursePreparation['checkpoints'], string> = {
-  materials: '资料',
-  concepts: '核心内容',
-  courseStructure: '课程结构',
-  coursePlan: '课程方案',
-  assessmentReadiness: '正式检验依据',
-};
-const CHECKPOINT_COMPLETE_TEXT: Record<keyof CoursePreparation['checkpoints'], string> = {
-  materials: '资料已整理',
-  concepts: '核心内容已准备',
-  courseStructure: '课程结构已完成',
-  coursePlan: '课程方案已检查',
-  assessmentReadiness: '正式检验依据已检查',
-};
-
 const COURSE_DEPTH_TEXT: Record<string, string> = {
   pass_oriented: '基础理解',
   working_fluency: '熟练运用',
   high_performance: '高水平表现',
   deep_transfer: '深入迁移',
 };
-
-function checkpointLabel(
-  key: keyof CoursePreparation['checkpoints'],
-  state: CoursePreparation['checkpoints'][typeof key] | undefined,
-): string {
-  const subject = CHECKPOINT_TEXT[key];
-  switch (state ?? 'pending') {
-    case 'complete':
-      return CHECKPOINT_COMPLETE_TEXT[key];
-    case 'in_progress':
-      return `正在准备${subject}`;
-    case 'blocked':
-      return `${subject}需要检查`;
-    case 'pending':
-    default:
-      return `${subject}待准备`;
-  }
-}
 
 const SCOPE_ROLE_TEXT: Record<MaterialRole, string> = {
   course_material: '课程主资料',
@@ -107,6 +75,7 @@ export interface CourseHomeViewProps {
   overview: CourseExecutionOverview | null;
   preparation: CoursePreparation | null;
   preparationError: string | null;
+  preparationSyncError?: string | null;
   loading: boolean;
   error: string | null;
   busyAction: string | null;
@@ -148,6 +117,7 @@ export function CourseHomeView({
   overview,
   preparation,
   preparationError,
+  preparationSyncError,
   loading,
   error,
   busyAction,
@@ -218,6 +188,7 @@ export function CourseHomeView({
     overview.setupStage === 'plan_required' && planPreflight?.canGenerate === false;
   const preparationOwnsSetup =
     preparation !== null && !['not_started', 'complete'].includes(preparation.state);
+  const preparationBusy = busyAction === 'prepare-course' || preparation?.canCancel === true;
   const setupText = preparationOwnsSetup
     ? PREPARATION_TEXT[preparation.state]
     : contractScopeBlocked
@@ -377,7 +348,9 @@ export function CourseHomeView({
             <div>
               <span className="small muted">正式进度</span>
               <strong>
-                已完成 {progress.completedPlanItemCount} / {progress.planItemCount}
+                {progress.planItemCount === 0
+                  ? '尚未开始学习'
+                  : `已完成 ${progress.completedPlanItemCount} / ${progress.planItemCount}`}
                 {progress.startedPlanItemCount > 0
                   ? ` · 进行中 ${progress.startedPlanItemCount}`
                   : ''}
@@ -446,59 +419,42 @@ export function CourseHomeView({
         ) : null}
 
         {preparationOwnsSetup && preparation ? (
-          <section
-            className="course-preparation-status"
-            aria-label="课程准备状态"
-            role={busyAction === 'prepare-course' ? 'status' : undefined}
-          >
-            <div className="section-heading">
-              <p className="eyebrow">课程准备</p>
-              <h3>{PREPARATION_TEXT[preparation.state]}</h3>
-            </div>
-            <ol>
-              {(Object.keys(CHECKPOINT_TEXT) as Array<keyof CoursePreparation['checkpoints']>).map(
-                (key) => {
-                  const state = preparation.checkpoints[key] ?? 'pending';
-                  const mark =
-                    state === 'complete'
-                      ? '✓'
-                      : state === 'in_progress'
-                        ? '…'
-                        : state === 'blocked'
-                          ? '!'
-                          : '○';
-                  return (
-                    <li key={key} data-state={state}>
-                      <span aria-hidden="true">{mark}</span>
-                      <span>{checkpointLabel(key, state)}</span>
-                    </li>
-                  );
-                },
-              )}
-            </ol>
-            {preparation.blocker ? (
-              <p className="small muted">{preparation.blocker.message}</p>
-            ) : null}
+          <>
+            <CoursePreparationStatus
+              preparation={preparation}
+              title={PREPARATION_TEXT[preparation.state]}
+              busy={preparationBusy}
+              syncError={preparationSyncError}
+            />
             {preparationError && preparation.state === 'failed_recoverable' ? (
               <Banner kind="error">课程准备暂未完成，已有有效内容保持不变。</Banner>
             ) : null}
-          </section>
+          </>
         ) : null}
 
         {next ? (
-          <div className="next-action" aria-label="下一步">
+          <div className="next-action next-action-study" aria-label="下一步">
             <div>
-              <p className="eyebrow">下一步</p>
+              <p className="eyebrow">
+                <img src="/icons/tabler/minus.svg" alt="" aria-hidden="true" />
+                下一步
+              </p>
               <h3>{nextUnit?.title ?? learnerPlanText(next.item.reason)}</h3>
               {nextUnit ? (
                 <details className="next-action-reason">
-                  <summary>为什么从这里继续</summary>
+                  <summary>
+                    <img src="/icons/tabler/player-play.svg" alt="" aria-hidden="true" />
+                    为什么从这里继续
+                  </summary>
                   <p>{learnerPlanText(next.whyNext)}</p>
                 </details>
               ) : (
                 <p>{learnerPlanText(next.whyNext)}</p>
               )}
-              <p className="small muted">预计 {next.item.estimatedMinutes} 分钟</p>
+              <p className="next-action-duration">
+                <img src="/icons/tabler/clock.svg" alt="" aria-hidden="true" />
+                预计 {next.item.estimatedMinutes} 分钟
+              </p>
             </div>
             {next.item.launch.status === 'launchable' ? (
               <button
@@ -508,7 +464,7 @@ export function CourseHomeView({
                 onClick={() => (onOpenStudySession ? onOpenStudySession() : onLaunchNext(next))}
               >
                 {busyAction === 'launch-next' ? '正在重新验证…' : '继续学习'}
-                <span aria-hidden="true"> →</span>
+                <img src="/icons/tabler/arrow-right.svg" alt="" aria-hidden="true" />
               </button>
             ) : (
               <div className="course-continuation-blocked">
@@ -521,16 +477,27 @@ export function CourseHomeView({
             )}
           </div>
         ) : setupAction ? (
-          <div className="next-action setup-action" aria-label="下一步">
+          <div
+            className={`next-action setup-action${preparationBusy || busyAction === 'propose-curriculum' ? ' is-preparing' : ''}`}
+            aria-label="下一步"
+          >
             <div>
               <p className="eyebrow">下一步</p>
-              <h3>{preparationOwnsSetup && setupAction ? setupAction.label : setupText}</h3>
+              <h3>
+                {preparationBusy
+                  ? '正在为你准备课程'
+                  : preparationOwnsSetup && setupAction
+                    ? setupAction.label
+                    : setupText}
+              </h3>
               <p className="muted">
                 {preparationOwnsSetup && preparation
                   ? (preparation.blocker?.message ??
                     (preparation.state === 'course_plan_ready'
                       ? '课程结构和学习安排已经合并为一份课程方案。'
-                      : '系统正在继续完成课程准备。'))
+                      : preparationBusy
+                        ? '系统正在继续完成课程准备。'
+                        : '已完成的内容会保留，继续后将接着准备课程。'))
                   : contractScopeBlocked && overview.contractScopeReadiness
                     ? contractScopeChangeText(overview.contractScopeReadiness)
                     : planReadinessBlocked && planPreflight
@@ -543,19 +510,24 @@ export function CourseHomeView({
               </p>
             </div>
             {busyAction === 'prepare-course' ? (
-              <div className="stack curriculum-operation-status">
+              <div className="preparation-controls">
                 <span className="small muted">已完成的有效内容会立即保留。</span>
-                <button type="button" className="ghost" onClick={onCancelPreparation}>
+                <button type="button" className="primary" onClick={onCancelPreparation}>
                   停止
                 </button>
               </div>
+            ) : preparation?.canCancel ? (
+              <div className="preparation-controls" role="status">
+                <strong>正在接收准备进度</strong>
+                <span className="small muted">完成后将自动更新页面。</span>
+              </div>
             ) : busyAction === 'propose-curriculum' ? (
-              <div className="stack curriculum-operation-status" role="status">
+              <div className="preparation-controls" role="status">
                 <strong>正在准备课程资料并生成课程结构</strong>
                 <span className="small muted">
                   生成完成后会检查资料一致性；只有需要时才会尝试一次自动修复。
                 </span>
-                <button type="button" className="ghost" onClick={onCancelCurriculum}>
+                <button type="button" className="primary" onClick={onCancelCurriculum}>
                   停止
                 </button>
               </div>
@@ -567,6 +539,7 @@ export function CourseHomeView({
                 onClick={setupAction.onClick}
               >
                 {setupAction.busy ? '正在处理…' : setupAction.label}
+                <img src="/icons/tabler/arrow-right.svg" alt="" aria-hidden="true" />
               </button>
             )}
           </div>

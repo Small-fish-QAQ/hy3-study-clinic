@@ -7541,7 +7541,7 @@ button.danger {
   bottom: 0;
   z-index: 2;
   margin-top: var(--space-3);
-  padding: var(--space-3) 0;
+  padding: var(--space-3) var(--space-5);
   border-top: 1px solid var(--border-strong);
   background: color-mix(in srgb, var(--surface) 94%, transparent);
 }

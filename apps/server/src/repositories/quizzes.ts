@@ -247,6 +247,10 @@ export function createSubmissionsRepo(db: SqliteDb) {
            JOIN quizzes q ON q.id = gr.quiz_id
            LEFT JOIN materials m ON m.id = q.material_id
            WHERE COALESCE(q.workspace_id, m.workspace_id) = ?
+             AND NOT EXISTS (
+               SELECT 1 FROM assessment_progression_reconciliations apr
+               WHERE apr.grading_result_id = gr.id
+             )
            ORDER BY gr.created_at DESC, gr.id DESC
            LIMIT ?`,
         )

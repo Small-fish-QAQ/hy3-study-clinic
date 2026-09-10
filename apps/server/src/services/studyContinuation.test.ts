@@ -164,6 +164,22 @@ const pendingReadiness: CourseFormalReadiness = {
 };
 
 describe('Study continuation routing', () => {
+  it('keeps a scoped transfer reachable while unrelated objectives are pending, but respects its checkpoint prerequisite', () => {
+    const scoped = structuredClone(plan);
+    const item = scoped.items.find((item) => item.id === 'plan_synthesis')!;
+    item.synthesisMode = 'unit_transfer';
+    item.objectiveIds = ['objective_1'];
+    item.prerequisitePlanItemIds = [];
+    const synthesis = agenda.items.find((item) => item.id === 'agenda_synthesis')!;
+    expect(isSelectedStudyItemExecutable(synthesis, scoped, progress, pendingReadiness)).toBe(true);
+    expect(blockUnreadySynthesisItems(agenda, pendingReadiness, scoped).items[0]?.state).toBe(
+      'queued',
+    );
+    item.prerequisitePlanItemIds = ['unfinished-checkpoint'];
+    expect(isSelectedStudyItemExecutable(synthesis, scoped, progress, pendingReadiness)).toBe(
+      false,
+    );
+  });
   it('routes a queued pending synthesis gate to prerequisite-safe teaching without losing objectives', () => {
     const before = JSON.stringify({ agenda, plan, progress });
 

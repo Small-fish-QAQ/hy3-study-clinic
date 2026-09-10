@@ -1134,7 +1134,13 @@ export function createLessonExecutionService({
     }
     if (claimedState.preparationOperationId !== claim.operationId) {
       const context = route(workspaceId, sessionId);
-      return commands.complete(claim, () => projection(context, claimedState, null));
+      return commands.complete(claim, () =>
+        projection(
+          context,
+          claimedState,
+          claimedState.preparationStatus === 'ready' ? currentBrief(context) : null,
+        ),
+      );
     }
     try {
       const context = route(workspaceId, sessionId, false);

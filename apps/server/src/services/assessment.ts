@@ -47,6 +47,8 @@ export interface AssessmentCreation {
 }
 
 interface AssessmentGenerationPolicy {
+  learnerGeneratedTransfer?: boolean;
+  previousPrompts?: string[];
   requiredRepresentation: EvidenceRepresentation | null;
   requestedChallengeFamily: MasteryChallengeFamily | null;
   objectiveCatalogue?: AssessmentProposalInput['objectiveCatalogue'];
@@ -305,12 +307,13 @@ export function createAssessmentService({
       ? (['short_answer'] as QuestionType[])
       : TYPES_BY_MODE[request.mode];
     const questionCount =
-      request.mode === 'misconception_check'
+      generationPolicy.learnerGeneratedTransfer || request.mode === 'misconception_check'
         ? 1
         : Math.min(MAX_ASSESSMENT_QUESTIONS, Math.max(3, targetSummaries.length));
 
     const providerInput: AssessmentProposalInput = {
       workspaceName: workspace.name,
+      learnerGeneratedTransfer: generationPolicy.learnerGeneratedTransfer,
       mode: request.mode,
       targets: targetSummaries,
       blocks,
@@ -321,6 +324,7 @@ export function createAssessmentService({
       misconception: misconceptionTarget ? misconceptions.get(misconceptionTarget) : null,
       objectiveCatalogue: generationPolicy.objectiveCatalogue,
       teachingSurfaceCatalogue: generationPolicy.teachingSurfaceCatalogue,
+      previousPrompts: generationPolicy.previousPrompts,
     };
     const payload = await inferenceProvider.proposeAssessment(providerInput, {
       ...opts,

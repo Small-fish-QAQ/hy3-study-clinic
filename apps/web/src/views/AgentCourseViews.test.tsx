@@ -587,19 +587,19 @@ describe('CourseHomeView action and authority rendering', () => {
     const status = screen.getByLabelText('课程准备状态');
     expect(within(status).getByRole('heading', { name: '正在设计课程结构' })).toBeVisible();
     expect(screen.getAllByRole('heading', { name: '正在设计课程结构' })).toHaveLength(1);
-    expect(within(status).getByText('资料已整理').closest('li')).toHaveAttribute(
+    expect(within(status).getByText('整理资料').closest('li')).toHaveAttribute(
       'data-state',
       'complete',
     );
-    expect(within(status).getByText('核心内容已准备').closest('li')).toHaveAttribute(
+    expect(within(status).getByText('提取核心内容').closest('li')).toHaveAttribute(
       'data-state',
       'complete',
     );
-    expect(within(status).getByText('正在准备课程结构').closest('li')).toHaveAttribute(
+    expect(within(status).getByText('设计课程结构').closest('li')).toHaveAttribute(
       'data-state',
       'in_progress',
     );
-    expect(within(status).getByText('课程方案待准备').closest('li')).toHaveAttribute(
+    expect(within(status).getByText('安排学习路线').closest('li')).toHaveAttribute(
       'data-state',
       'pending',
     );
@@ -636,7 +636,7 @@ describe('CourseHomeView action and authority rendering', () => {
     render(<CourseHomeView {...props} />);
 
     const status = screen.getByLabelText('课程准备状态');
-    expect(within(status).getByText('课程结构需要检查').closest('li')).toHaveAttribute(
+    expect(within(status).getByText('设计课程结构').closest('li')).toHaveAttribute(
       'data-state',
       'blocked',
     );

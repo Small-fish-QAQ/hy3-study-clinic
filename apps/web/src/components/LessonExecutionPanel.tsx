@@ -33,6 +33,7 @@ export interface LessonExecutionPanelProps {
   directCheckpointItemId?: string | null;
   formalAssessmentVersionId?: string | null;
   reviewMode?: boolean;
+  transferMode?: boolean;
   onResumeStudySession?: () => void;
   onStartFormalAssessment?: () => void;
   onSessionVersionChange?: (projection: LessonExecutionProjection) => void;
@@ -881,6 +882,7 @@ export function LessonExecutionPanel({
   directCheckpointItemId = null,
   formalAssessmentVersionId = null,
   reviewMode = false,
+  transferMode = false,
   onResumeStudySession,
   onStartFormalAssessment,
   onSessionVersionChange,
@@ -1173,20 +1175,33 @@ export function LessonExecutionPanel({
         </section>
       );
     }
-    if (reviewMode && directCheckpointItemId && onStartFormalAssessment) {
+    if (directCheckpointItemId && onStartFormalAssessment) {
       return (
-        <section className="lesson-execution-panel formal-only" aria-label="到期复习">
+        <section
+          className="lesson-execution-panel formal-only"
+          aria-label={reviewMode ? '到期复习' : '正式理解检查'}
+        >
           <div className="lesson-empty-state">
-            <p className="eyebrow">到期复习</p>
-            <h3>先用一次独立回忆确认这项目标</h3>
-            <p>系统会准备一题有当前课程来源依据的正式简答题。</p>
+            <p className="eyebrow">{reviewMode ? '到期复习' : '正式检查'}</p>
+            <h3>
+              {reviewMode
+                ? '先用一次独立回忆确认这项目标'
+                : transferMode
+                  ? '把所学用于新情境'
+                  : '用一次独立回答检查所学内容'}
+            </h3>
+            <p>
+              {transferMode
+                ? '综合迁移需要你构造新情境，用原文解释判断，并比较关键条件变化后的结果。四项表现均通过后，才满足这项目标的深入迁移要求。'
+                : '开始时先核对当前课程的来源和评分依据，再准备正式简答题。'}
+            </p>
             <button
               type="button"
               className="primary"
               disabled={!active || busy}
               onClick={onStartFormalAssessment}
             >
-              开始到期复习
+              {reviewMode ? '开始到期复习' : transferMode ? '准备综合迁移检查' : '准备正式检查'}
             </button>
           </div>
         </section>
@@ -1360,7 +1375,7 @@ export function LessonExecutionPanel({
             </button>
           ) : (
             <p className="small muted">
-              当前目标还没有可用的正式检验入口。讲解完成不会自动生成正式证据；课程会保留这一限制，直到有可验证的来源依据和正式路线。
+              继续课程，查看下一项正式检查或学习安排。开始正式检查时，系统会核对当前课程的来源和评分依据。
             </p>
           )}
           {onRefreshSession && active ? (

@@ -5,6 +5,7 @@ import {
   CoursePreparationResponseSchema,
   CoursePreparationMachineActionSchema,
   CoursePreparationSchema,
+  CoursePreparationActivitySchema,
   RunCoursePreparationRequestSchema,
   fnv1a32,
   isPlannedFormalAgendaItemKind,
@@ -12,12 +13,14 @@ import {
   type CourseFormalReadiness,
   type CoursePreparation,
   type CoursePreparationMachineAction,
+  type CoursePreparationProgressUpdate,
   type Curriculum,
   type LearningContract,
   type RunCoursePreparationRequest,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import { verifyGrounding } from '../grounding/verify.js';
+import { computeSections } from '../ingestion/sections.js';
 import { ProviderError } from '../llm/errors.js';
 import type { ProviderCallOptions } from '../llm/provider.js';
 import type { Repositories } from '../repositories/index.js';
@@ -858,7 +861,7 @@ export function createCoursePreparationService({
     };
   }
 
-  function get(workspaceId: string): CoursePreparation {
+  function getSnapshot(workspaceId: string): CoursePreparation {
     const facts = projectFacts(workspaceId);
     const base = facts.projection;
     if (!base.machineAction) {
@@ -934,8 +937,24 @@ export function createCoursePreparationService({
         typeof result?.payload === 'object' && result.payload !== null ? result.payload : null;
       const code = payload && 'code' in payload ? ApiErrorCodeSchema.safeParse(payload.code) : null;
       const interrupted = latest.status === 'interrupted';
+      const repairableConceptGap =
+        isStructuralCurriculumFailure(base.machineAction, payload) &&
+        JSON.stringify(failurePayloadDetails(payload).details).includes(
+          'unlaunchable_unit_deferral_forbidden',
+        ) &&
+        facts.contract?.courseScope.materials.some((scope) => {
+          if (scope.disposition !== 'included') return false;
+          const blocks = repos.materials.getBlocks(scope.materialId);
+          const concepts = repos.materials.getConcepts(scope.materialId);
+          return computeSections(blocks).some(
+            (section) =>
+              !concepts.some((concept) => verifyGrounding(section.blocks, concept.grounding).ok),
+          );
+        });
       const structuralFailure =
-        !interrupted && isStructuralCurriculumFailure(base.machineAction, payload);
+        !interrupted &&
+        isStructuralCurriculumFailure(base.machineAction, payload) &&
+        !repairableConceptGap;
       if (structuralFailure) {
         return CoursePreparationSchema.parse({
           ...base,
@@ -968,7 +987,9 @@ export function createCoursePreparationService({
           code: interrupted ? 'preparation_interrupted' : 'preparation_failed',
           message: interrupted
             ? '课程准备被中断，已完成的有效内容仍然保留，可以安全继续。'
-            : '课程准备暂未完成，已有有效内容没有被覆盖，可以稍后重试。',
+            : repairableConceptGap
+              ? '部分学习单元的原文关联需要重新校验。重试后会从已保存的课程结构继续准备。'
+              : '课程准备暂未完成，已有有效内容没有被覆盖，可以稍后重试。',
         },
         failure: {
           code: code?.success ? code.data : null,
@@ -984,6 +1005,58 @@ export function createCoursePreparationService({
       operationKey: nextOperationKey,
       canCancel: false,
       failure: null,
+    });
+  }
+
+  function get(workspaceId: string): CoursePreparation {
+    const snapshot = getSnapshot(workspaceId);
+    const operation = repos.operations.listForWorkspace(workspaceId, OPERATION_TYPE, 1)[0];
+    const event = operation
+      ? repos.operations
+          .listEvents(operation.id)
+          .filter((item) => item.kind === 'preparation_progress')
+          .at(-1)
+      : undefined;
+    const activity = event
+      ? CoursePreparationActivitySchema.safeParse({
+          ...(event.payload as object),
+          updatedAt: event.createdAt,
+        })
+      : null;
+    const overview = courseOverview.get(workspaceId);
+    const contract = overview.pendingContract ?? overview.activeContract;
+    const preparedConceptCount = (contract?.courseScope.materials ?? [])
+      .filter((scope) => scope.disposition === 'included')
+      .reduce((count, scope) => {
+        const blocks = repos.materials.getBlocks(scope.materialId);
+        return (
+          count +
+          repos.materials
+            .getConcepts(scope.materialId)
+            .filter((concept) => verifyGrounding(blocks, concept.grounding).ok).length
+        );
+      }, 0);
+    const observed =
+      activity?.success && operation && (!contract || operation.createdAt >= contract.createdAt)
+        ? activity.data
+        : null;
+    if (
+      snapshot.canCancel &&
+      observed &&
+      ['concepts', 'concept_recovery'].includes(observed.phase)
+    ) {
+      snapshot.state = 'preparing_concepts';
+      snapshot.checkpoints = {
+        ...snapshot.checkpoints,
+        concepts: 'in_progress',
+        courseStructure: 'pending',
+      };
+    }
+    return CoursePreparationSchema.parse({
+      ...snapshot,
+      activity: observed,
+      operationStartedAt: observed ? (operation?.createdAt ?? null) : null,
+      preparedConceptCount,
     });
   }
 
@@ -1005,16 +1078,68 @@ export function createCoursePreparationService({
       action,
       facts.projection.revision,
     );
+    let recordedRevision = facts.projection.revision;
+    const recordPreparationRevision = () => {
+      const current = assertAuthorityCurrent(contract.workspaceId, expectedAuthorityFingerprint);
+      if (current.projection.revision !== recordedRevision && current.projection.machineAction) {
+        // Extraction persists each section. Associate the new revision even
+        // when cancellation happens before the next section or generation stage.
+        commands.appendEvent(claim, 'preparation_step_started', {
+          action: current.projection.machineAction,
+          revision: current.projection.revision,
+          transition,
+        });
+        recordedRevision = current.projection.revision;
+      }
+    };
+    const reportProgress = (progress: CoursePreparationProgressUpdate) => {
+      if (progress.phase === 'concepts' || progress.phase === 'concept_recovery') {
+        recordPreparationRevision();
+      }
+      if (opts?.signal?.aborted) throw ProviderError.cancelled();
+      commands.renew(claim, OPERATION_LEASE_MS);
+      commands.appendEvent(claim, 'preparation_progress', progress);
+    };
     switch (action) {
       case 'prepare_concepts': {
         const materialId = facts.missingConceptMaterialIds[0];
         if (!materialId) throw new Error('Course Preparation has no missing Material to analyze.');
         await analysis.analyze(materialId, opts, {
           beforePersist: () => commands.renew(claim, OPERATION_LEASE_MS),
+          onSectionProgress: ({ title, completed, total }) =>
+            reportProgress({ phase: 'concepts', label: title.slice(0, 500), completed, total }),
         });
         return;
       }
       case 'prepare_course_structure': {
+        // Sparse Concept extraction is legal: unit teaching also consumes exact
+        // current Curriculum source blocks. Do not re-extract every empty section
+        // before reusing an otherwise valid Map/Detail dependency.
+        // Legacy Concept-lesson routes still need the additive recovery pass.
+        if (!Object.hasOwn(contract, 'focusRequest')) {
+          for (const scope of contract.courseScope.materials) {
+            if (
+              scope.disposition !== 'included' ||
+              repos.materials.getBlocks(scope.materialId).length === 0
+            )
+              continue;
+            await analysis.analyze(scope.materialId, opts, {
+              recoverUncoveredSections: true,
+              beforePersist: () => {
+                assertAuthorityCurrent(contract.workspaceId, expectedAuthorityFingerprint);
+                commands.renew(claim, OPERATION_LEASE_MS);
+              },
+              onSectionProgress: ({ title, completed, total }) =>
+                reportProgress({
+                  phase: 'concept_recovery',
+                  label: title.slice(0, 500),
+                  completed,
+                  total,
+                }),
+            });
+          }
+        }
+        recordPreparationRevision();
         await curriculum.propose(
           {
             command,
@@ -1023,7 +1148,11 @@ export function createCoursePreparationService({
             predecessorCurriculumId: facts.overview.curriculumHistory.at(-1)?.id ?? null,
             expectedActiveCurriculumId: facts.overview.acceptedCurriculum?.id ?? null,
           },
-          { ...opts, preparationPolicyId: COURSE_PREPARATION_POLICY_ID },
+          {
+            ...opts,
+            preparationPolicyId: COURSE_PREPARATION_POLICY_ID,
+            onPreparationProgress: reportProgress,
+          },
         );
         return;
       }

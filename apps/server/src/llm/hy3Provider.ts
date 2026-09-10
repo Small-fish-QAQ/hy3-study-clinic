@@ -27,6 +27,7 @@ import {
   ObjectiveAuthoritySemanticRepairProposalSchema,
   ProposedPracticeSlotContentSchema,
   RubricGradeSchema,
+  TransferPerformanceSchema,
   TeachingLessonSlotContentSchema,
   TutorStepPayloadSchema,
   TutorReplyPayloadSchema,
@@ -831,8 +832,11 @@ export class Hy3Provider implements LlmProvider {
         input.rubricKeyPoints,
         input.quote,
         input.answerText,
+        input.transferTask,
       ),
-      RubricGradeSchema,
+      input.transferTask
+        ? RubricGradeSchema.extend({ transferPerformance: TransferPerformanceSchema })
+        : RubricGradeSchema,
       opts,
     );
   }

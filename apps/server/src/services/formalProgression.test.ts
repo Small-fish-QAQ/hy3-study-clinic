@@ -1727,7 +1727,7 @@ describe('formal progression service', () => {
         .filter((event) => event.reviewExecutionId === execution.id),
     ).toHaveLength(1);
 
-    const firstVerification = services.learnerAssessments.createVerification(repairId);
+    const firstVerification = await services.learnerAssessments.createVerification(repairId);
     expect(firstVerification.review?.phase).toBe('fresh_verification');
     const firstVerificationVersion = repos.formalAssessments.getVersion(
       firstVerification.assessmentVersionId,
@@ -1735,6 +1735,16 @@ describe('formal progression service', () => {
     await services.learnerAssessments.submit(firstVerification.attempt.id, {
       [firstVerificationVersion.items[0]!.id]: 'still unrelated',
     });
+    expect(services.learnerAssessments.getRepair(repairId).packet).toBeNull();
+    const earlierPacket = repos.repair.listPackets(repairId).at(-1)!;
+    const nextRepair = await services.learnerAssessments.startRepair(repairId);
+    expect(nextRepair.packet).not.toBeNull();
+    const nextPacket = repos.repair
+      .listPackets(repairId)
+      .find((packet) => packet.attemptOrdinal === 1)!;
+    expect(nextPacket).toBeDefined();
+    expect(nextRepair.packet?.explanation).toBe(nextPacket.explanation);
+    expect(nextPacket.interventionMode).not.toBe(earlierPacket.interventionMode);
     expect(
       repos.reviewSuccessor
         .listEvents(targetId)
@@ -1747,7 +1757,7 @@ describe('formal progression service', () => {
       'Reworked the explanation with the source premise.',
       'READY_FOR_VERIFICATION',
     );
-    const secondVerification = services.learnerAssessments.createVerification(repairId);
+    const secondVerification = await services.learnerAssessments.createVerification(repairId);
     await services.learnerAssessments.submit(firstVerification.attempt.id, {
       [firstVerificationVersion.items[0]!.id]: 'still unrelated',
     });
@@ -2067,6 +2077,7 @@ describe('formal progression service', () => {
       practice: undefined,
     } as unknown as Parameters<typeof lessonExecutionExposureFingerprints>[0];
     const lessonState = {
+      id: 'state_exposure',
       teachingBriefId: 'brief_exposure',
       presentedSegmentIndexes: [0],
       presentationCompletedAt: null,
@@ -2109,6 +2120,7 @@ describe('formal progression service', () => {
       },
     } as unknown as Parameters<typeof lessonExecutionExposureFingerprints>[0];
     const lessonState = {
+      id: 'state_practice_exposure',
       teachingBriefId: 'brief_practice_exposure',
       presentedSegmentIndexes: [0],
       presentationCompletedAt: T3,
@@ -2130,6 +2142,186 @@ describe('formal progression service', () => {
     expect(repos.formalAssessments.getExposure(attempt.id, version.items[0]!.id)).toMatchObject({
       seenBeforeAttempt: true,
     });
+  });
+
+  it.each([
+    ['guided', null, null, 'Guided decision', true],
+    ['hidden scaffold', null, null, 'Scaffold decision', false],
+    ['visible scaffold', 'wrong', null, 'Scaffold decision', true],
+    ['hidden transfer', 'wrong', null, 'Transfer decision', false],
+    ['visible transfer', 'right', null, 'Transfer decision', true],
+    ['scaffolded transfer', 'wrong', 'right', 'Transfer decision', true],
+  ] as const)(
+    'tracks %s worked-interaction exposure before Formal',
+    (_label, guided, scaffold, prompt, seen) => {
+      const brief = {
+        segments: [
+          {
+            index: 0,
+            informalCheck: null,
+            workedProcess: {
+              interaction: {
+                activity: { prompt: 'Guided decision', correctOptionId: 'right' },
+                scaffold: { prompt: 'Scaffold decision' },
+                transfer: { prompt: 'Transfer decision' },
+              },
+            },
+          },
+        ],
+      } as unknown as Parameters<typeof lessonExecutionExposureFingerprints>[0];
+      const state = {
+        id: 'state_worked_exposure',
+        teachingBriefId: 'worked_exposure',
+        presentedSegmentIndexes: [0],
+        informalInteractions: [
+          {
+            segmentIndex: 0,
+            workedInteraction: {
+              guidedResponse: guided,
+              scaffoldResponse: scaffold,
+              transferResponse: null,
+            },
+          },
+        ],
+        presentationCompletedAt: null,
+        practiceInteractions: [],
+        practiceCompletedAt: null,
+      } as unknown as ReturnType<Repositories['lessonExecution']['listForWorkspace']>[number];
+      vi.spyOn(repos.lessonExecution, 'listForWorkspace').mockReturnValue([state]);
+      vi.spyOn(repos.teachingBriefs, 'get').mockReturnValue(
+        brief as ReturnType<Repositories['teachingBriefs']['get']>,
+      );
+      const version = createExposureVersion('worked_reuse', prompt);
+      const attempt = services.formalAssessments.startAttempt(version.id, 'ws_1');
+      services.formalAssessments.recordAttemptExposure(attempt.id);
+      expect(
+        repos.formalAssessments.getExposure(attempt.id, version.items[0]!.id)?.seenBeforeAttempt,
+      ).toBe(seen);
+    },
+  );
+
+  it.each([
+    [null, [], 'Retest one', false],
+    [T3, [], 'Retest one', true],
+    [T3, [], 'Retest two', false],
+    [T3, [{ correct: false }], 'Retest two', false],
+    [T3, [{ correct: true }], 'Retest two', true],
+    [T3, [{ correct: true }, { correct: true }], 'Next practice', true],
+  ])(
+    'tracks only presented recovery questions (%s, %j, %s)',
+    (startedAt, responses, prompt, seen) => {
+      const brief = {
+        segments: [],
+        practice: {
+          items: [
+            { initial: { prompt: 'Failed practice' }, retry: { prompt: 'Legacy retry' } },
+            { initial: { prompt: 'Next practice' } },
+          ],
+        },
+      } as unknown as Parameters<typeof lessonExecutionExposureFingerprints>[0];
+      const state = {
+        id: 'state_recovery_exposure',
+        teachingBriefId: 'recovery_exposure',
+        presentedSegmentIndexes: [],
+        informalInteractions: [],
+        presentationCompletedAt: T3,
+        practiceCompletedAt: null,
+        practiceInteractions: [
+          {
+            itemIndex: 0,
+            surface: 'initial',
+            correct: false,
+            recovery: {
+              rounds: [
+                {
+                  startedAt,
+                  responses,
+                  content: {
+                    workedExample: { prompt: 'Repair example' },
+                    retest: [{ prompt: 'Retest one' }, { prompt: 'Retest two' }],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      } as unknown as ReturnType<Repositories['lessonExecution']['listForWorkspace']>[number];
+      vi.spyOn(repos.lessonExecution, 'listForWorkspace').mockReturnValue([state]);
+      vi.spyOn(repos.teachingBriefs, 'get').mockReturnValue(
+        brief as ReturnType<Repositories['teachingBriefs']['get']>,
+      );
+      const version = createExposureVersion('recovery_reuse', prompt as string);
+      const attempt = services.formalAssessments.startAttempt(version.id, 'ws_1');
+      services.formalAssessments.recordAttemptExposure(attempt.id);
+      expect(
+        repos.formalAssessments.getExposure(attempt.id, version.items[0]!.id)?.seenBeforeAttempt,
+      ).toBe(seen);
+    },
+  );
+
+  it('retains archived Retest exposure while withholding an unseen follow-up', async () => {
+    const content = await provider.generatePracticeRepair({
+      desiredDepth: 'working_fluency',
+      unitFocus: 'normal',
+      objective: {
+        objectiveTitle: 'Necessary conditions',
+        construct: 'explain',
+        capabilityTested: 'Check both conditions',
+      },
+      failedPrompt: 'Initial case',
+      selectedAnswer: 'Only one condition',
+      feedback: 'Both are required',
+      learnerNote: '',
+      teachingContext: [],
+      sourceExcerpts: [],
+      priorRounds: [],
+      priorResponses: [],
+      unseenPracticePrompts: [],
+      archivedRetestPrompts: [],
+    });
+    const state = {
+      id: 'archive_state',
+      teachingBriefId: 'archive_brief',
+      presentedSegmentIndexes: [],
+      informalInteractions: [],
+      presentationCompletedAt: T3,
+      practiceCompletedAt: T3,
+      practiceInteractions: [],
+    } as unknown as ReturnType<Repositories['lessonExecution']['listForWorkspace']>[number];
+    vi.spyOn(repos.lessonExecution, 'listForWorkspace').mockReturnValue([state]);
+    vi.spyOn(repos.teachingBriefs, 'get').mockReturnValue({ segments: [] } as unknown as ReturnType<
+      Repositories['teachingBriefs']['get']
+    >);
+    vi.spyOn(repos.lessonExecution, 'listEvents').mockReturnValue([
+      {
+        id: 'archived_event',
+        lessonExecutionStateId: state.id,
+        seq: 1,
+        commandId: 'archived',
+        kind: 'practice_repair_prepared',
+        createdAt: T3,
+        payload: {
+          archivedRound: {
+            content,
+            learnerNote: '',
+            logicalCallId: 'old_repair',
+            createdAt: T3,
+            startedAt: T3,
+            responses: [
+              { selectedOptionId: 'B', correct: false, feedback: 'Try again', respondedAt: T3 },
+            ],
+          },
+        },
+      },
+    ]);
+    for (const [index, item] of content.retest.entries()) {
+      const version = createExposureVersion(`archived_${index}`, item.prompt);
+      const attempt = services.formalAssessments.startAttempt(version.id, 'ws_1');
+      services.formalAssessments.recordAttemptExposure(attempt.id);
+      expect(
+        repos.formalAssessments.getExposure(attempt.id, version.items[0]!.id)?.seenBeforeAttempt,
+      ).toBe(index === 0);
+    }
   });
 
   it('bridges supported Assessment Evidence through the existing progression projection exactly once', () => {
@@ -2249,12 +2441,20 @@ describe('formal progression service', () => {
       lifecycleState: 'pending_initial_review',
       lastReviewEventId: null,
     });
+    // Reopening through the learner API must retain a retry, even though Formal
+    // progression already applied. A direct service retry alone hid this gap.
+    expect(services.learnerAssessments.get(input.version.id, 'ws_1')?.result).toMatchObject({
+      reviewSchedulingPending: true,
+    });
 
     db.exec('DROP TRIGGER inject_activation_failure');
     await services.learnerAssessments.submit(input.attempt.id, input.responses);
     expect(gradeCall).not.toHaveBeenCalled();
     expect(repos.formalAssessments.listGrades(input.attempt.id)).toHaveLength(1);
     expect(repos.reviewSuccessor.listEvents('review-target:ws_1:objective_1')).toHaveLength(1);
+    expect(services.learnerAssessments.get(input.version.id, 'ws_1')?.result).toMatchObject({
+      reviewSchedulingPending: false,
+    });
     expect(
       repos.reviewSuccessor
         .listBackfillAudits()
@@ -4051,6 +4251,13 @@ describe('formal progression service', () => {
       contracts.every((contract) => contract.admissibilityTier === 'tier_1_authorized_truth'),
     ).toBe(true);
 
+    const learnerVersion = repos.formalAssessments.getVersion(launched.formalAssessmentVersionId!)!;
+    expect(learnerVersion.items.map((item) => item.targetObjectiveId).sort()).toEqual([
+      'objective_1',
+      'objective_2',
+    ]);
+    expect(() => services.learnerAssessments.start(learnerVersion.id, 'ws_1')).not.toThrow();
+
     const storedQuiz = repos.quizzes.get(launched.quiz.id)!;
     const grading = await services.grading.grade(
       {
@@ -4071,46 +4278,22 @@ describe('formal progression service', () => {
     expect(reconciled.evidence.every((evidence) => evidence.stateCreditable)).toBe(true);
   });
 
-  it('keeps every FakeProvider item advisory when the Lesson was skipped', async () => {
+  it('refuses the Formal learner surface when the Lesson was skipped', async () => {
     db.prepare('DELETE FROM lesson_execution_states').run();
     const checkpointAgenda = enableFirstRouteItemAsFormalCheckpoint();
 
-    const launched = await services.courseActionLaunch.launch({
-      command: command('launch_fake_skipped_lesson_checkpoint', 'learner'),
-      agendaId: checkpointAgenda.id,
-      expectedAgendaVersion: checkpointAgenda.version,
-      agendaItemId: 'agenda_item_1',
-      expectedContractId: 'contract_1',
-      expectedStudyPlanId: 'plan_1',
-      expectedExecutionSourceManifestFingerprint: 'manifest-fp',
-    });
-
-    expect(launched.kind).toBe('assessment');
-    if (launched.kind !== 'assessment') throw new Error('Expected a formal assessment.');
-    const contracts = repos.formalProgression.listQuestionContractsForQuiz(launched.quiz.id);
-    expect(contracts).not.toHaveLength(0);
-    expect(contracts.every((contract) => contract.admissibilityTier === 'tier_3_advisory')).toBe(
-      true,
-    );
-    const storedQuiz = repos.quizzes.get(launched.quiz.id)!;
-    const grading = await services.grading.grade(
-      {
-        quizId: storedQuiz.id,
-        answers: storedQuiz.questions.map((question) => ({
-          questionId: question.id,
-          type: 'short_answer' as const,
-          text: 'Unsupported learner response.',
-        })),
-      },
-      {
-        stateCreditResolver: () =>
-          new Set(services.formalProgression.stateCreditingQuestionIdsForQuiz(storedQuiz.id) ?? []),
-      },
-    );
-    const reconciled = services.formalProgression.reconcileAfterGrading(grading.result.id)!;
-
-    expect(reconciled.evidence.every((evidence) => !evidence.stateCreditable)).toBe(true);
-    expect(reconciled.reconciliations.every((item) => item.status === 'rejected')).toBe(true);
+    await expect(
+      services.courseActionLaunch.launch({
+        command: command('launch_fake_skipped_lesson_checkpoint', 'learner'),
+        agendaId: checkpointAgenda.id,
+        expectedAgendaVersion: checkpointAgenda.version,
+        agendaItemId: 'agenda_item_1',
+        expectedContractId: 'contract_1',
+        expectedStudyPlanId: 'plan_1',
+        expectedExecutionSourceManifestFingerprint: 'manifest-fp',
+      }),
+    ).rejects.toThrow('评分依据未通过正式准入');
+    expect(repos.formalAssessments.listProjectionRecords('ws_1').versions).toEqual([]);
     expect(db.prepare('SELECT COUNT(*) AS n FROM mistakes').get()).toEqual({ n: 0 });
     expect(db.prepare('SELECT COUNT(*) AS n FROM mastery_states').get()).toEqual({ n: 0 });
     expect(db.prepare('SELECT COUNT(*) AS n FROM misconceptions').get()).toEqual({ n: 0 });
@@ -4118,7 +4301,7 @@ describe('formal progression service', () => {
     expect(db.prepare('SELECT COUNT(*) AS n FROM successor_review_events').get()).toEqual({ n: 0 });
   });
 
-  it('launches repair-needed work only while its targeted-repair prerequisite remains valid', async () => {
+  it('separates targeted-repair capability from Formal authority and rechecks its prerequisite', async () => {
     const plan = repos.studyPlans.get('plan_1')!;
     db.prepare('UPDATE study_plan_versions SET payload = ? WHERE id = ?').run(
       JSON.stringify({
@@ -4221,11 +4404,13 @@ describe('formal progression service', () => {
       expectedExecutionSourceManifestFingerprint: 'manifest-fp',
     };
 
-    const launched = await services.courseActionLaunch.launch({
-      command: command('launch_valid_targeted_repair', 'learner'),
-      ...request,
-    });
-    expect(launched).toMatchObject({ kind: 'assessment', assessmentKind: 'targeted_repair' });
+    await expect(
+      services.courseActionLaunch.launch({
+        command: command('launch_valid_targeted_repair', 'learner'),
+        ...request,
+      }),
+    ).rejects.toThrow('评分依据未通过正式准入');
+    expect(repos.formalAssessments.listProjectionRecords('ws_1').versions).toEqual([]);
 
     repos.graph.insertVersion({
       id: 'graph_repair_invalid',

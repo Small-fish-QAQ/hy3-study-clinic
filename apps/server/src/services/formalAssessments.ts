@@ -1,3 +1,4 @@
+import { transferPerformancePassed, TRANSFER_CRITERIA } from '@hy3-clinic/shared';
 import { createHash } from 'node:crypto';
 import {
   AssessmentAttemptSchema,
@@ -9,7 +10,9 @@ import {
   GradingResultSchema,
   GradeRecordSchema,
   ProgressionReconciliationRecordSchema,
+  PracticeRecoveryStateSchema,
   classifyFormalAssessmentItem,
+  isStateCreditingAdmissibility,
   type AssessmentAttempt,
   type AssessmentAuthorityMode,
   type AssessmentIntentSelection,
@@ -23,6 +26,7 @@ import {
   type ProgressionReconciliationRecord,
   type Quiz,
   type TeachingBrief,
+  type PracticeRecoveryState,
   decideFormalCredit,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
@@ -33,6 +37,7 @@ import { verifyGrounding } from '../grounding/verify.js';
 import { DEFAULT_CONFIGURATION } from '../review/fsrsAdapter.js';
 import type { FormalProgressionService } from './formalProgression.js';
 import type { ReviewSuccessorService } from './reviewSuccessor.js';
+import { practiceItemPassed } from './practiceRecovery.js';
 
 const POLICY_VERSION = FORMAL_EVIDENCE_POLICY_VERSION;
 
@@ -44,12 +49,29 @@ export function assessmentItemFingerprint(item: FormalAssessmentItem): string {
   return learnerVisibleItemFingerprint(item.prompt);
 }
 
+export function recoveryExposurePrompts(round: PracticeRecoveryState['rounds'][number]): string[] {
+  const prompts = [round.content.workedExample.prompt];
+  if (round.startedAt) {
+    // A failed first answer withholds the second Retest. A successful one
+    // presents it immediately, before its own response has been recorded.
+    const visibleCount =
+      round.responses.length + (round.responses.every((response) => response.correct) ? 1 : 0);
+    prompts.push(...round.content.retest.slice(0, visibleCount).map((question) => question.prompt));
+  }
+  return prompts;
+}
+
+function recoveryExposureFingerprints(round: PracticeRecoveryState['rounds'][number]): string[] {
+  return recoveryExposurePrompts(round).map(learnerVisibleItemFingerprint);
+}
+
 /** Exact learner-visible Lesson/Practice surfaces already proven presented by durable state. */
-export function lessonExecutionExposureFingerprints(
+export function lessonExecutionPresentedPrompts(
   brief: Pick<TeachingBrief, 'segments' | 'practice'>,
   state: Pick<
     LessonExecutionState,
     | 'presentedSegmentIndexes'
+    | 'informalInteractions'
     | 'presentationCompletedAt'
     | 'practiceInteractions'
     | 'practiceCompletedAt'
@@ -59,8 +81,24 @@ export function lessonExecutionExposureFingerprints(
   const presentedSegments = new Set(state.presentedSegmentIndexes);
   for (const segment of brief.segments) {
     if (presentedSegments.has(segment.index) && segment.informalCheck) {
-      fingerprints.add(learnerVisibleItemFingerprint(segment.informalCheck.prompt));
+      fingerprints.add(segment.informalCheck.prompt);
     }
+    const interaction = segment.workedProcess?.interaction;
+    if (!presentedSegments.has(segment.index) || !interaction) continue;
+    const progress = state.informalInteractions?.find(
+      (entry) => entry.segmentIndex === segment.index,
+    )?.workedInteraction;
+    fingerprints.add(interaction.activity.prompt);
+    if (
+      progress?.guidedResponse &&
+      progress.guidedResponse !== interaction.activity.correctOptionId
+    )
+      fingerprints.add(interaction.scaffold.prompt);
+    if (
+      progress?.guidedResponse === interaction.activity.correctOptionId ||
+      progress?.scaffoldResponse
+    )
+      fingerprints.add(interaction.transfer.prompt);
   }
   if (!brief.practice || !state.presentationCompletedAt) return [...fingerprints];
 
@@ -68,29 +106,33 @@ export function lessonExecutionExposureFingerprints(
     const item = brief.practice.items[interaction.itemIndex];
     const surface = item?.[interaction.surface];
     if (surface) {
-      fingerprints.add(learnerVisibleItemFingerprint(surface.prompt));
+      fingerprints.add(surface.prompt);
+    }
+    for (const round of interaction.recovery?.rounds ?? []) {
+      for (const prompt of recoveryExposurePrompts(round)) fingerprints.add(prompt);
     }
   }
 
   if (!state.practiceCompletedAt) {
-    const completed = (itemIndex: number) => {
-      const attempts = state.practiceInteractions.filter(
-        (interaction) => interaction.itemIndex === itemIndex,
-      );
-      return attempts.some((interaction) => interaction.correct) || attempts.length >= 2;
-    };
-    const unresolvedIndex = brief.practice.items.findIndex((_, index) => !completed(index));
-    const itemIndex = unresolvedIndex === -1 ? brief.practice.items.length - 1 : unresolvedIndex;
+    const itemIndex = brief.practice.items.findIndex(
+      (_, index) => !practiceItemPassed(state, index),
+    );
     const item = brief.practice.items[itemIndex];
     if (item) {
       const attempts = state.practiceInteractions.filter(
         (interaction) => interaction.itemIndex === itemIndex,
       );
-      const surface = attempts.length === 1 && !attempts[0]!.correct ? item.retry : item.initial;
-      fingerprints.add(learnerVisibleItemFingerprint(surface.prompt));
+      if (attempts.length === 0) fingerprints.add(item.initial.prompt);
     }
   }
   return [...fingerprints];
+}
+
+export function lessonExecutionExposureFingerprints(
+  brief: Parameters<typeof lessonExecutionPresentedPrompts>[0],
+  state: Parameters<typeof lessonExecutionPresentedPrompts>[1],
+): string[] {
+  return lessonExecutionPresentedPrompts(brief, state).map(learnerVisibleItemFingerprint);
 }
 
 export function createFormalAssessmentsService({
@@ -109,7 +151,38 @@ export function createFormalAssessmentsService({
     if (!version) throw notFound(`正式评估版本不存在:${id}`);
     return version;
   }
+  function hasAdmittedRouteItem(version: AssessmentVersion, item: FormalAssessmentItem): boolean {
+    const context = version.progressionContext;
+    if (!context) return true;
+    return repos.formalProgression
+      .listQuestionContractsForQuiz(context.quizId)
+      .some(
+        (contract) =>
+          contract.questionId === item.sourceQuestionId &&
+          contract.primaryObjectiveId === item.targetObjectiveId &&
+          contract.curriculumLearningUnitId === item.targetLearningUnitId &&
+          contract.contractVersionId === context.contractVersionId &&
+          contract.curriculumVersionId === context.curriculumVersionId &&
+          contract.studyPlanVersionId === context.studyPlanVersionId &&
+          contract.executionSourceManifestFingerprint ===
+            context.executionSourceManifestFingerprint &&
+          contract.sessionAgendaId === context.agendaId &&
+          contract.agendaItemId === context.agendaItemId &&
+          JSON.stringify(contract.transferTask) === JSON.stringify(item.transferTask) &&
+          isStateCreditingAdmissibility(contract.admissibilityTier),
+      );
+  }
   function validateItem(workspaceId: string, item: FormalAssessmentItem): FormalAssessmentItem {
+    if (
+      item.transferTask &&
+      Object.keys(TRANSFER_CRITERIA).some(
+        (key) =>
+          item.rubric?.filter(
+            (criterion) => criterion.transferCriterion === key && criterion.required,
+          ).length !== 1,
+      )
+    )
+      throw new AppError(ApiErrorCode.ValidationError, '综合迁移检查缺少完整的表现标准。');
     const materialIds = new Set<string>();
     for (const binding of item.sourceBindings) {
       const block = repos.materials.getBlock(binding.sourceBlockId);
@@ -267,6 +340,11 @@ export function createFormalAssessmentsService({
       );
     }
     const now = clock.now().toISOString();
+    if (
+      authorityMode === 'formal' &&
+      version.items.some((item) => !hasAdmittedRouteItem(version, item))
+    )
+      throw new AppError(ApiErrorCode.GroundingFailed, '评分依据未通过正式准入，请重新准备检查。');
     return repos.formalAssessments.insertAttempt(
       AssessmentAttemptSchema.parse({
         id: newId('assessment_attempt'),
@@ -332,6 +410,17 @@ export function createFormalAssessmentsService({
       if (!brief) continue;
       for (const fingerprint of lessonExecutionExposureFingerprints(brief, lessonState)) {
         knownSeenFingerprints.add(fingerprint);
+      }
+      // Recovery keeps only three rounds in the live Lesson state. Earlier
+      // presented questions remain in immutable events and still count as seen.
+      for (const event of repos.lessonExecution.listEvents(lessonState.id)) {
+        if (event.kind !== 'practice_repair_prepared' || !event.payload.archivedRound) continue;
+        const round = PracticeRecoveryStateSchema.shape.rounds.element.safeParse(
+          event.payload.archivedRound,
+        );
+        if (round.success)
+          for (const fingerprint of recoveryExposureFingerprints(round.data))
+            knownSeenFingerprints.add(fingerprint);
       }
     }
     const historicallyUncertainFingerprints = new Set<string>();
@@ -426,7 +515,11 @@ export function createFormalAssessmentsService({
       return (
         repos.formalAssessments
           .listVersions(definition.id)
-          .find((candidate) => candidate.status === 'accepted') ?? null
+          .find(
+            (candidate) =>
+              candidate.status === 'accepted' &&
+              candidate.items.every((item) => hasAdmittedRouteItem(candidate, item)),
+          ) ?? null
       );
     },
     createAcceptedFromQuiz(input: {
@@ -437,6 +530,7 @@ export function createFormalAssessmentsService({
       targetLearningUnitId: string;
       targetObjectiveId: string;
       representation: EvidenceRepresentation;
+      predecessorVersionId?: string;
       assessmentIntent?: AssessmentIntentSelection;
       progressionContext?: NonNullable<AssessmentVersion['progressionContext']>;
     }): AssessmentVersion {
@@ -449,12 +543,34 @@ export function createFormalAssessmentsService({
           '本次检查没有可接受的正式简答题，未创建正式评估。',
         );
       }
-      const definition = createDefinition({
-        workspaceId: input.workspaceId,
-        logicalKey: input.logicalKey,
-        title: input.title,
-      });
+      const predecessor = input.predecessorVersionId
+        ? getVersion(input.predecessorVersionId)
+        : undefined;
+      const existingDefinition = predecessor
+        ? repos.formalAssessments.getDefinition(predecessor.definitionId)
+        : undefined;
+      if (
+        predecessor &&
+        (predecessor.authorityMode !== 'formal' ||
+          existingDefinition?.workspaceId !== input.workspaceId ||
+          existingDefinition.logicalKey !== input.logicalKey)
+      ) {
+        throw new AppError(ApiErrorCode.VersionConflict, '复测必须属于原正式检查及当前课程。');
+      }
+      const definition =
+        existingDefinition ??
+        createDefinition({
+          workspaceId: input.workspaceId,
+          logicalKey: input.logicalKey,
+          title: input.title,
+        });
+      const routeContracts = input.progressionContext
+        ? repos.formalProgression.listQuestionContractsForQuiz(input.quiz.id)
+        : [];
       const items = questions.map((question, index): FormalAssessmentItem => {
+        const routeContract = routeContracts.find(
+          (contract) => contract.questionId === question.id,
+        );
         const grounding = [question.grounding, ...(question.supplementaryEvidence ?? [])];
         const sourceBindings = grounding.map((reference) => {
           const block = repos.materials.getBlock(reference.blockId);
@@ -476,17 +592,32 @@ export function createFormalAssessmentsService({
           id: newId('assessment_item'),
           sourceQuestionId: question.id,
           index,
-          targetLearningUnitId: input.targetLearningUnitId,
-          targetObjectiveId: input.targetObjectiveId,
-          representation: input.representation,
+          targetLearningUnitId:
+            routeContract?.curriculumLearningUnitId ?? input.targetLearningUnitId,
+          targetObjectiveId: routeContract?.primaryObjectiveId ?? input.targetObjectiveId,
+          representation: routeContract?.transferTask
+            ? routeContract.representation
+            : input.representation,
+          ...(routeContract?.transferTask ? { transferTask: routeContract.transferTask } : {}),
           questionType: 'short_answer',
           prompt: question.stem,
-          rubric: question.rubric!.keyPoints.map((criterion) => ({
-            id: newId('criterion'),
-            text: criterion.text,
-            required: criterion.required,
-            sourceBindingIds,
-          })),
+          rubric: [
+            ...question.rubric!.keyPoints.map((criterion) => ({
+              id: newId('criterion'),
+              text: criterion.text,
+              required: criterion.required,
+              sourceBindingIds,
+            })),
+            ...(routeContract?.transferTask
+              ? Object.entries(TRANSFER_CRITERIA).map(([key, text]) => ({
+                  id: newId('criterion'),
+                  text,
+                  required: true,
+                  sourceBindingIds,
+                  transferCriterion: key as keyof typeof TRANSFER_CRITERIA,
+                }))
+              : []),
+          ],
           sourceBindings,
           formalEligible: false,
           policyReason: 'MISSING_AUTHORITATIVE_SOURCE',
@@ -494,6 +625,7 @@ export function createFormalAssessmentsService({
       });
       const version = createVersion({
         definitionId: definition.id,
+        predecessorId: predecessor?.id,
         items,
         sourceRevisionIds: [
           ...new Set(
@@ -551,7 +683,15 @@ export function createFormalAssessmentsService({
         });
         const anyCoverage = result.some((criterion) => criterion.result !== 'not_met');
         const conclusion =
-          !item.formalEligible || !hasCurrentFormalSource(item) || result.length === 0
+          !item.formalEligible ||
+          !hasAdmittedRouteItem(version, item) ||
+          !hasCurrentFormalSource(item) ||
+          (item.transferTask &&
+            !transferPerformancePassed(
+              grade.judgment.transferResults?.find((result) => result.itemId === item.id)
+                ?.performance,
+            )) ||
+          result.length === 0
             ? 'unsupported'
             : credit.formallyDemonstrated
               ? 'supported'
@@ -673,6 +813,13 @@ export function createFormalAssessmentsService({
                     )
                     .map((criterion) => criterion.text),
                   needsReview: false,
+                  ...(item.transferTask
+                    ? {
+                        transferPerformance: grade.judgment.transferResults?.find(
+                          (result) => result.itemId === item.id,
+                        )?.performance,
+                      }
+                    : {}),
                 },
               ];
             });

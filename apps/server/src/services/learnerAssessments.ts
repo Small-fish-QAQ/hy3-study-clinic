@@ -1,3 +1,4 @@
+import { transferPerformancePassed } from '@hy3-clinic/shared';
 import {
   LearnerAssessmentExecutionSchema,
   LearnerRepairProjectionSchema,
@@ -10,15 +11,20 @@ import {
   type FormalAssessmentItem,
   type RubricGrade,
   decideFormalCredit,
+  ApiErrorCode,
 } from '@hy3-clinic/shared';
-import { notFound } from '../errors.js';
+import { AppError, notFound } from '../errors.js';
 import type { LlmProvider, ProviderCallOptions } from '../llm/provider.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
 import type { FormalAssessmentsService } from './formalAssessments.js';
 import type { RepairService } from './repair.js';
-import { resolveReviewTargetContext, type ReviewSuccessorService } from './reviewSuccessor.js';
+import {
+  initialReviewSchedulingPending,
+  resolveReviewTargetContext,
+  type ReviewSuccessorService,
+} from './reviewSuccessor.js';
 
 const DIAGNOSIS_LABELS: Record<string, string> = {
   INCOMPLETE_EXPRESSION: '主要思路对了，但还缺少一个关键部分。',
@@ -80,6 +86,7 @@ export function createLearnerAssessmentsService({
   formalAssessments,
   repair,
   reviewSuccessor,
+  prepareRepairVerification,
 }: {
   repos: Repositories;
   provider: LlmProvider;
@@ -87,12 +94,25 @@ export function createLearnerAssessmentsService({
   formalAssessments: FormalAssessmentsService;
   repair: RepairService;
   reviewSuccessor: ReviewSuccessorService;
+  prepareRepairVerification?: (
+    episodeId: string,
+    opts?: ProviderCallOptions,
+  ) => Promise<AssessmentVersion>;
 }) {
+  const pendingVerifications = new Map<string, Promise<LearnerAssessmentExecution>>();
   function demonstrated(version: AssessmentVersion, grade: GradeRecord): boolean {
     const eligible = version.items.filter((candidate) => candidate.formalEligible);
     return (
       eligible.length > 0 &&
       eligible.every((candidate) => {
+        if (
+          candidate.transferTask &&
+          !transferPerformancePassed(
+            grade.judgment.transferResults?.find((result) => result.itemId === candidate.id)
+              ?.performance,
+          )
+        )
+          return false;
         const rubric = candidate.rubric ?? [];
         const criterionIds = new Set(rubric.map((criterion) => criterion.id));
         return decideFormalCredit({
@@ -125,7 +145,9 @@ export function createLearnerAssessmentsService({
     return {
       itemId: item.id,
       prompt: item.prompt,
-      purpose: '检验你是否能在自己的表述中说明这个关键能力。',
+      purpose: item.transferTask
+        ? '通过新情境、原文依据和条件变化展示综合迁移能力，四项表现均需达到。'
+        : '检验你是否能在自己的表述中说明这个关键能力。',
       sourceReferences: sourceReferences(item),
     };
   }
@@ -161,8 +183,10 @@ export function createLearnerAssessmentsService({
         ? grade.judgment.score >= 1
           ? '你已经展示了这项关键能力。'
           : '你已经抓住主要思路，但还有一部分需要补完整。'
-        : (diagnostic && DIAGNOSIS_LABELS[diagnostic.category]) ||
-          '这次回答还没有展示出所需的关键能力。',
+        : version.items.some((item) => item.transferTask)
+          ? '综合迁移尚未通过。请查看各项标准，补充新情境、原文依据或条件变化后的解释。'
+          : (diagnostic && DIAGNOSIS_LABELS[diagnostic.category]) ||
+            '这次回答还没有展示出所需的关键能力。',
       minorNotice:
         grade.judgment.score >= 1 && diagnostic?.category === 'SURFACE_SLIP'
           ? '理解正确。顺带注意一个小笔误即可。'
@@ -174,7 +198,20 @@ export function createLearnerAssessmentsService({
         : evidence.some((record) => record.conclusion === 'partial')
           ? 'partial'
           : 'unavailable',
-      repairEpisodeId: repos.repair.findByTriggerGrade(grade.id)?.id ?? null,
+      progressionPending:
+        Boolean(version.progressionContext) &&
+        evidence.some(
+          (record) =>
+            record.conclusion === 'supported' &&
+            repos.formalAssessments.getReconciliationForEvidence(record.id)?.status !== 'applied',
+        ),
+      reviewSchedulingPending: initialReviewSchedulingPending(repos, version, evidence),
+      repairEpisodeId:
+        repos.repair.findByTriggerGrade(grade.id)?.id ??
+        repos.repair
+          .listByWorkspace(repos.formalAssessments.getAttempt(grade.attemptId)!.workspaceId)
+          .find((episode) => episode.verificationAttemptId === grade.attemptId)?.id ??
+        null,
     };
   }
 
@@ -264,19 +301,22 @@ export function createLearnerAssessmentsService({
     opts?: ProviderCallOptions,
   ): Promise<GradeRecord> {
     const criterionResults: GradeRecord['judgment']['criterionResults'] = [];
+    const transferResults: NonNullable<GradeRecord['judgment']['transferResults']> = [];
     let totalScore = 0;
     for (const item of assessmentVersion.items.filter((candidate) => candidate.formalEligible)) {
       const rubric = item.rubric ?? [];
+      const sourceRubric = rubric.filter((criterion) => !criterion.transferCriterion);
       const providerGrade = await provider.gradeShortAnswer(
         {
           stem: item.prompt,
-          expectedAnswer: rubric.map((criterion) => criterion.text).join('；'),
-          rubricKeyPoints: rubric.map((criterion) => ({
+          expectedAnswer: sourceRubric.map((criterion) => criterion.text).join('；'),
+          rubricKeyPoints: sourceRubric.map((criterion) => ({
             text: criterion.text,
             required: criterion.required,
           })),
           quote: item.sourceBindings[0]?.quote ?? '',
           answerText: attempt.responses[item.id] ?? '',
+          transferTask: item.transferTask,
         },
         {
           ...opts,
@@ -291,14 +331,27 @@ export function createLearnerAssessmentsService({
           },
         },
       );
-      const score = normalizedScore(rubric, providerGrade);
+      if (item.transferTask && providerGrade.transferPerformance)
+        transferResults.push({ itemId: item.id, performance: providerGrade.transferPerformance });
+      const transferPassed =
+        !item.transferTask || transferPerformancePassed(providerGrade.transferPerformance);
+      const score = transferPassed ? normalizedScore(sourceRubric, providerGrade) : 0;
       totalScore += score;
       const matched = new Set(providerGrade.matchedKeyPointIndexes);
       const partial = new Set(providerGrade.partialKeyPointIndexes ?? []);
-      rubric.forEach((criterion, index) => {
+      rubric.forEach((criterion) => {
+        const index = sourceRubric.findIndex((point) => point.id === criterion.id);
         criterionResults.push({
           criterionId: criterion.id,
-          result: matched.has(index) ? 'met' : partial.has(index) ? 'partial' : 'not_met',
+          result: criterion.transferCriterion
+            ? providerGrade.transferPerformance?.[criterion.transferCriterion] === true
+              ? 'met'
+              : 'not_met'
+            : matched.has(index)
+              ? 'met'
+              : partial.has(index)
+                ? 'partial'
+                : 'not_met',
         });
       });
     }
@@ -328,6 +381,7 @@ export function createLearnerAssessmentsService({
       judgment: {
         score,
         criterionResults,
+        ...(assessmentVersion.items.some((item) => item.transferTask) ? { transferResults } : {}),
         feedback: score >= 0.6 ? '回答已覆盖主要评分标准。' : '回答还需要补充关键评分标准。',
         ...(diagnostic ? { diagnostic } : {}),
       },
@@ -414,7 +468,16 @@ export function createLearnerAssessmentsService({
             candidate.assessmentVersionId === versionId && candidate.status !== 'cancelled',
         );
       if (!attempt) return null;
-      return projection(assessmentVersion, attempt);
+      const repair = repos.repair.findByTriggerGrade(
+        repos.formalAssessments.listGrades(attempt.id).find((grade) => grade.status === 'current')
+          ?.id ?? '',
+      );
+      const verification = repair?.verificationAttemptId
+        ? repos.formalAssessments.getAttempt(repair.verificationAttemptId)
+        : undefined;
+      return verification && verification.status !== 'cancelled'
+        ? projection(version(verification.assessmentVersionId), verification)
+        : projection(assessmentVersion, attempt);
     },
     async submit(attemptId: string, responses: Record<string, string>, opts?: ProviderCallOptions) {
       const attempt = repos.formalAssessments.getAttempt(attemptId);
@@ -468,7 +531,10 @@ export function createLearnerAssessmentsService({
     },
     getRepair(episodeId: string): LearnerRepairProjection {
       const detail = repair.inspect(episodeId);
-      const packet = detail.packets.at(-1) ?? null;
+      const packet =
+        detail.packets.find(
+          (candidate) => candidate.attemptOrdinal === detail.episode.attemptCount,
+        ) ?? null;
       const versionValue = repos.formalAssessments.getVersion(detail.episode.assessmentVersionId);
       const item = versionValue?.items.find((candidate) => candidate.id === detail.episode.itemId);
       const sourceReferences = item
@@ -526,35 +592,63 @@ export function createLearnerAssessmentsService({
       repair.resume(episodeId);
       return this.getRepair(episodeId);
     },
-    createVerification(episodeId: string) {
-      const detail = repair.inspect(episodeId);
-      const sourceVersion = version(detail.episode.assessmentVersionId);
-      const item = sourceVersion.items.find((candidate) => candidate.id === detail.episode.itemId);
-      if (!item) throw notFound('Repair 目标题目不存在。');
-      if (detail.episode.status === 'DEFERRED') repair.resume(episodeId);
-      if (repair.get(episodeId).status === 'ACTIVE') repair.markAwaitingVerification(episodeId);
-      const successorItem: FormalAssessmentItem = {
-        ...item,
-        id: newId('verification_item'),
-        index: 0,
-        prompt: `换个情境再确认一下：${item.prompt}`,
-      };
-      const successor = formalAssessments.createVersion({
-        definitionId: sourceVersion.definitionId,
-        predecessorId: sourceVersion.id,
-        items: [successorItem],
-        sourceRevisionIds: successorItem.sourceBindings.map(
-          (binding) => binding.materialRevisionId,
-        ),
-        progressionContext: sourceVersion.progressionContext,
-      });
-      const accepted = repos.formalAssessments.acceptVersion(
-        successor.id,
-        clock.now().toISOString(),
-      );
-      const attempt = formalAssessments.startAttempt(accepted.id, detail.episode.workspaceId);
-      repair.linkVerificationAttempt(episodeId, attempt.id);
-      return projection(accepted, attempt);
+    async createVerification(episodeId: string, opts?: ProviderCallOptions) {
+      const pending = pendingVerifications.get(episodeId);
+      if (pending) return pending;
+      const operation = (async () => {
+        const detail = repair.inspect(episodeId);
+        if (!['ACTIVE', 'AWAITING_VERIFICATION', 'DEFERRED'].includes(detail.episode.status))
+          throw new AppError(ApiErrorCode.ValidationError, '当前修复已结束，不能再次生成复测。');
+        const sourceVersion = version(detail.episode.assessmentVersionId);
+        const item = sourceVersion.items.find(
+          (candidate) => candidate.id === detail.episode.itemId,
+        );
+        if (!item) throw notFound('Repair 目标题目不存在。');
+        if (detail.episode.verificationAttemptId) {
+          const existing = repos.formalAssessments.getAttempt(detail.episode.verificationAttemptId);
+          if (existing?.status === 'started')
+            return projection(version(existing.assessmentVersionId), existing);
+        }
+        if (detail.episode.status === 'DEFERRED') repair.resume(episodeId);
+        if (repair.get(episodeId).status === 'ACTIVE') repair.markAwaitingVerification(episodeId);
+        if (prepareRepairVerification && sourceVersion.progressionContext) {
+          const accepted = await prepareRepairVerification(episodeId, opts);
+          return repos.transaction(() => {
+            const attempt = formalAssessments.startAttempt(accepted.id, detail.episode.workspaceId);
+            repair.linkVerificationAttempt(episodeId, attempt.id);
+            return projection(accepted, attempt);
+          });
+        }
+        const successorItem: FormalAssessmentItem = {
+          ...item,
+          id: newId('verification_item'),
+          index: 0,
+          prompt: `换个情境再确认一下：${item.prompt}`,
+        };
+        const successor = formalAssessments.createVersion({
+          definitionId: sourceVersion.definitionId,
+          predecessorId: sourceVersion.id,
+          items: [successorItem],
+          sourceRevisionIds: successorItem.sourceBindings.map(
+            (binding) => binding.materialRevisionId,
+          ),
+          progressionContext: sourceVersion.progressionContext,
+        });
+        const accepted = repos.formalAssessments.acceptVersion(
+          successor.id,
+          clock.now().toISOString(),
+        );
+        const attempt = formalAssessments.startAttempt(accepted.id, detail.episode.workspaceId);
+        repair.linkVerificationAttempt(episodeId, attempt.id);
+        return projection(accepted, attempt);
+      })();
+      pendingVerifications.set(episodeId, operation);
+      try {
+        return await operation;
+      } finally {
+        if (pendingVerifications.get(episodeId) === operation)
+          pendingVerifications.delete(episodeId);
+      }
     },
     async submitVerification(
       attemptId: string,

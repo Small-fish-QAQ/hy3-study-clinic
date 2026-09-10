@@ -268,13 +268,13 @@ export function AgentCourseShell({
         <div className="course-sidebar-brand-row">
           <div className="course-sidebar-brand" aria-label="Hy3 Study Clinic">
             <span className="course-brand-mark" aria-hidden="true">
-              <img src="/brand/understanding-light.png" width="34" height="34" alt="" />
+              <img src="/brand/mark-light.svg" width="34" height="34" alt="" />
             </span>
             <span className="course-brand-copy">
               <strong>
                 Study Clinic<span className="brand-period">.</span>
               </strong>
-              <small>由 Hy3 陪你学明白</small>
+              <small>循证而学，融会贯通</small>
             </span>
           </div>
           {narrow && mobileOpen ? (

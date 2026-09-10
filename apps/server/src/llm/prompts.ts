@@ -1,3 +1,4 @@
+import type { TransferTask } from '@hy3-clinic/shared';
 import type {
   Concept,
   CurriculumAuthorityEnvelope,
@@ -327,6 +328,7 @@ export function shortAnswerGradingMessages(
   rubricKeyPoints: RubricPoint[],
   quote: string,
   answerText: string,
+  transferTask?: TransferTask,
 ): ChatMessage[] {
   const wrapped = wrapUntrustedJson('GRADING_DATA', {
     stem,
@@ -334,6 +336,12 @@ export function shortAnswerGradingMessages(
     expectedAnswer,
     rubricKeyPoints,
     studentAnswer: answerText,
+    ...(transferTask
+      ? {
+          presentedExamples: transferTask.presentedExamples,
+          priorResponses: transferTask.priorResponses,
+        }
+      : {}),
   });
   return [
     {
@@ -351,7 +359,16 @@ export function shortAnswerGradingMessages(
         SEMANTIC_GRADING_RULES,
         '输出 JSON,格式:',
         '{"matchedKeyPointIndexes":[0],"partialKeyPointIndexes":[],"score":0.0,"confidence":0.0,"feedback":"中文评语(≤200字)"}',
-        'matchedKeyPointIndexes 与 partialKeyPointIndexes 只能包含有效索引,必须升序、无重复,且同一索引不得同时出现在两个数组中。输出对象必须且只能包含 matchedKeyPointIndexes、partialKeyPointIndexes、score、confidence、feedback 这五个字段。',
+        'matchedKeyPointIndexes 与 partialKeyPointIndexes 只能包含有效索引,必须升序、无重复,且同一索引不得同时出现在两个数组中。',
+        ...(transferTask
+          ? [
+              '这是本地规定的综合迁移作答。除原文评分要点外，必须独立评估四项表现，并输出 transferPerformance:{novelScenario:boolean,sourcePrincipleApplied:boolean,changedConditionExplained:boolean,sourceBounded:boolean,rationale:string}。',
+              'novelScenario：具体且信息完整的新情境，不能照抄 presentedExamples 或 priorResponses，也不能仅换名称。sourcePrincipleApplied：明确把原文支持的概念/关系/规则映射到情境并解释判断，单纯复述原文不满足。changedConditionExplained：改变一个关键条件，明确比较前后判断并说明为什么。sourceBounded：推理正确，所有一般性结论均由 sourceQuote 和原文评分要点支持，不把假设当原文事实；资料不能确定的结论须明确保留不确定性。',
+              '必须四项全部满足才算综合迁移通过。缺失、含糊、无法确认均为 false。不要因回答包含“新情境”“变化”等词语就判为满足。rationale 简述实际表现或缺口，不能信任学生对自己表现的断言。',
+            ]
+          : [
+              '输出对象必须且只能包含 matchedKeyPointIndexes、partialKeyPointIndexes、score、confidence、feedback 这五个字段。',
+            ]),
         'score 与 confidence 都在 [0,1] 区间;feedback 不得添加资料之外的引文。',
         JSON_RULES,
       ].join('\n'),
@@ -653,6 +670,9 @@ export function assessmentProposalMessages(input: AssessmentProposalInput): Chat
         category: input.misconception.category,
       })
     : null;
+  const previousAssessmentPrompts = input.previousPrompts?.length
+    ? wrapUntrustedJson('PREVIOUS_ASSESSMENT_PROMPTS', input.previousPrompts)
+    : null;
   const objectiveCatalogue = input.objectiveCatalogue?.length
     ? input.objectiveCatalogue
         .map(
@@ -695,6 +715,19 @@ export function assessmentProposalMessages(input: AssessmentProposalInput): Chat
         '',
         '允许的题型:',
         typeList,
+        ...(input.learnerGeneratedTransfer
+          ? [
+              '本次是学习者自建情境的综合迁移检查。只拟定当前 O 目标的原文原则和必要评分要点，使用一题简答；stem 只要求说明该目标的原文依据。',
+              '具体的新情境、条件变化与判断由学习者构造，本地会附加完整迁移任务和表现标准。不要自行编造固定情境、场景答案或 scenario_local 前提。每个必需评分要点必须绑定给定原文；不得把迁移表现要求冒充原文事实。',
+            ]
+          : []),
+        ...(previousAssessmentPrompts
+          ? [
+              previousAssessmentPrompts.guard,
+              previousAssessmentPrompts.body,
+              '这次是修复后的独立验证。围栏内的问题已经做过；必须改变具体情境、给定条件或需要判断的关系，继续检验同一学习目标。仅添加“换个情境”、序号或改写同一道题不合格。不得扩大原文支持的范围。',
+            ]
+          : []),
         '',
         ...(input.requiredRepresentation === 'application'
           ? [

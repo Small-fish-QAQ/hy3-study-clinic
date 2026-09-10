@@ -6,6 +6,7 @@ import { FakeProvider } from '../llm/fakeProvider.js';
 import { createRepositories } from '../repositories/index.js';
 import { fixedClock } from '../util/ids.js';
 import { createServices } from './index.js';
+import { teachThroughLesson } from '../testing/courseWorkflow.js';
 
 const NOW = '2026-01-01T00:00:00.000Z';
 const SOURCE = 'Working memory has limited capacity;';
@@ -235,7 +236,17 @@ describe('ordinary Fake learning execution core loop', () => {
       presentedSegmentIndexes: startedLesson.progress!.presentedSegmentIndexes,
     });
 
-    let launchAgenda = route.agenda;
+    const finishedLesson = await teachThroughLesson(
+      { services, repos },
+      workspace.id,
+      route.agenda.id,
+      teachingItem!.id,
+      'core-loop',
+    );
+    expect(finishedLesson.projection, JSON.stringify(finishedLesson.projection)).toMatchObject({
+      practice: { status: 'completed' },
+    });
+    let launchAgenda = repos.sessionAgendas.get(route.agenda.id)!;
     for (const invalidState of ['blocked', 'completed', 'cancelled'] as const) {
       const prior = launchAgenda;
       launchAgenda = repos.sessionAgendas.update(

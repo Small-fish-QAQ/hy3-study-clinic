@@ -4,6 +4,9 @@ import { FakeProvider } from '../llm/fakeProvider.js';
 import type { ConceptAnalysisInput, ProviderCallOptions } from '../llm/provider.js';
 import { ProviderError } from '../llm/errors.js';
 import { buildTestApp, type TestApp } from '../testing/testApp.js';
+import { createAnalysisService } from './analysis.js';
+import { fixedClock } from '../util/ids.js';
+import { T0 } from '../testing/fixtures.js';
 
 /**
  * Section-aware additive extraction (Phase 1):
@@ -43,6 +46,41 @@ async function importDoc(ctx: TestApp, content: string): Promise<string> {
 }
 
 describe('sectioned initial extraction', () => {
+  it('recovers only an ungrounded section and reports real saved progress without replacing peers', async () => {
+    const inputs: ConceptAnalysisInput[] = [];
+    class MissingSectionProvider extends FakeProvider {
+      override async analyzeConcepts(input: ConceptAnalysisInput, opts?: ProviderCallOptions) {
+        inputs.push(input);
+        if (inputs.length === 2) return { concepts: [] };
+        return super.analyzeConcepts(input, opts);
+      }
+    }
+    const provider = new MissingSectionProvider();
+    const ctx = buildTestApp({ provider });
+    const materialId = await importDoc(ctx, sectionedDoc(3));
+    const service = createAnalysisService({ repos: ctx.repos, provider, clock: fixedClock(T0) });
+    const initial = await service.analyze(materialId);
+    const before = structuredClone(initial.concepts);
+    const calls = inputs.length;
+    const updates: Array<{ title: string; completed: number; total: number }> = [];
+    const recovered = await service.analyze(materialId, undefined, {
+      recoverUncoveredSections: true,
+      onSectionProgress: (progress) => updates.push(progress),
+    });
+    expect(inputs).toHaveLength(calls + 1);
+    expect(inputs.at(-1)?.sectionTitle).toBe(inputs[1]?.sectionTitle);
+    expect(
+      recovered.concepts.filter((concept) => before.some((old) => old.id === concept.id)),
+    ).toEqual(before);
+    expect(recovered.concepts.length).toBeGreaterThan(before.length);
+    expect(updates.map(({ completed, total }) => [completed, total])).toEqual([
+      [0, 1],
+      [1, 1],
+    ]);
+    await service.analyze(materialId, undefined, { recoverUncoveredSections: true });
+    expect(inputs).toHaveLength(calls + 1);
+    await ctx.app.close();
+  });
   it('extracts across every section with per-call inputs bounded to that section', async () => {
     const seenInputs: ConceptAnalysisInput[] = [];
     class RecordingProvider extends FakeProvider {

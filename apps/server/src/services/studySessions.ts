@@ -233,12 +233,16 @@ export function createStudySessionService({
     const mustBlockSelectedSynthesis = Boolean(
       selectedAgendaItem?.kind === 'synthesis' &&
       selectedAgendaItem.state === 'queued' &&
+      !plan.items.some(
+        (item) =>
+          item.id === selectedAgendaItem.linkedPlanItemId && item.synthesisMode === 'unit_transfer',
+      ) &&
       formalReadiness.status !== 'ready',
     );
     if (mustBlockSelectedSynthesis || (continuation && continuation.id !== agenda.currentItemId)) {
       const previousItemId = agenda.currentItemId;
       const now = clock.now().toISOString();
-      const routedAgenda = blockUnreadySynthesisItems(agenda, formalReadiness);
+      const routedAgenda = blockUnreadySynthesisItems(agenda, formalReadiness, plan);
       const nextItemId = continuation?.id ?? selectedAgendaItem?.id ?? null;
       const reconciled = repos.transaction(() => {
         const nextAgenda = repos.sessionAgendas.update(

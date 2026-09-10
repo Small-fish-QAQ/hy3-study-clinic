@@ -11,6 +11,7 @@ import {
 import { openDatabase, type SqliteDb } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
 import { AppError } from '../errors.js';
+import { curriculumSourceBlockFingerprint } from '../grounding/sourceFingerprint.js';
 import { FakeProvider } from '../llm/fakeProvider.js';
 import type { ProviderCallOptions, StudyPlanProposalInput } from '../llm/provider.js';
 import { createRepositories, type Repositories } from '../repositories/index.js';
@@ -35,6 +36,7 @@ import {
 } from './studyPlansAgent.js';
 import {
   buildUnitLaunchProfiles,
+  resolveLaunchForPlanItem,
   validateStudyPlanScopeAccounting,
 } from './studyPlanValidation.js';
 import { createReviewSuccessorService } from './reviewSuccessor.js';
@@ -681,7 +683,7 @@ describe('StudyPlan proposal and accepted Course route', () => {
     expect(validateStudyPlanScopeAccounting(synthesisCurriculum, [item], [])).toEqual([]);
   });
 
-  it('reports source-only accepted Curriculum as blocked before provider work', () => {
+  it('reports legacy source-only accepted Curriculum as blocked before provider work', () => {
     const sourceOnly: Curriculum = {
       ...curriculum,
       nodes: curriculum.nodes.map((node) =>
@@ -713,6 +715,75 @@ describe('StudyPlan proposal and accepted Course route', () => {
       kind: 'none',
       learningUnitCount: 1,
     });
+  });
+
+  function sourceTeachingCurriculum(): Curriculum {
+    // Model the current unit-teaching Contract, preserving the legacy fixtures above.
+    db.prepare(
+      "UPDATE learning_contract_versions SET payload = json_set(payload, '$.focusRequest', NULL) WHERE id = ?",
+    ).run(contract.id);
+    const sourceOnly = structuredClone(curriculum);
+    const unit = sourceOnly.nodes.find((node) => node.learningUnit)!;
+    unit.learningUnit!.conceptIds = [];
+    const reference = unit.sourceReferences[0]!;
+    reference.sourceBlockRevisionFingerprint = curriculumSourceBlockFingerprint(
+      repos.materials.getBlock(reference.sourceBlockId!)!,
+      reference.materialRevisionId,
+    );
+    return sourceOnly;
+  }
+
+  it('launches current unit teaching from exact source blocks without inventing Concepts or assessment capabilities', () => {
+    const sourceOnly = sourceTeachingCurriculum();
+    const before = repos.materials.getConceptsByWorkspace('ws_1');
+    expect(buildUnitLaunchProfiles(repos, clock, 'ws_1', sourceOnly)).toEqual([
+      {
+        curriculumLearningUnitId: 'unit_1',
+        conceptIds: [],
+        allowedItemKinds: ['teach_unit'],
+        launchableAssessmentModes: [],
+      },
+    ]);
+    expect(
+      resolveLaunchForPlanItem(repos, clock, 'ws_1', sourceOnly, {
+        kind: 'teach_unit',
+        curriculumLearningUnitId: 'unit_1',
+        objectiveIds: ['objective_verified'],
+      }),
+    ).toMatchObject({
+      status: 'launchable',
+      capability: 'lesson',
+      resourceId: JSON.stringify({ learningUnitId: 'unit_1', conceptId: null }),
+    });
+    expect(preflightStudyPlan(repos, clock, contract, sourceOnly, 'Memory course')).toMatchObject({
+      canGenerate: true,
+      executableLearningUnitCount: 1,
+      nonExecutableLearningUnitCount: 0,
+    });
+    expect(repos.materials.getConceptsByWorkspace('ws_1')).toEqual(before);
+  });
+
+  it.each([
+    'missing_source',
+    'changed_source',
+    'foreign_course',
+    'stale_revision',
+    'outside_manifest',
+    'missing_concept',
+  ] as const)('rejects source-only teaching with %s', (invalid) => {
+    const sourceOnly = sourceTeachingCurriculum();
+    const unit = sourceOnly.nodes.find((node) => node.learningUnit)!;
+    const reference = unit.sourceReferences[0]!;
+    if (invalid === 'missing_source') unit.sourceReferences = [];
+    if (invalid === 'changed_source') reference.sourceBlockRevisionFingerprint = 'changed';
+    if (invalid === 'foreign_course') sourceOnly.workspaceId = 'another-course';
+    if (invalid === 'stale_revision') reference.materialRevisionId = 'retired-revision';
+    if (invalid === 'outside_manifest')
+      sourceOnly.executionSourceManifest.revisions[0]!.sourceBlockRevisionIds = [];
+    if (invalid === 'missing_concept') unit.learningUnit!.conceptIds = ['removed-concept'];
+    expect(
+      buildUnitLaunchProfiles(repos, clock, 'ws_1', sourceOnly)[0]!.allowedItemKinds,
+    ).not.toContain('teach_unit');
   });
 
   it('keeps due_review capability scoped to Concepts mapped to the LearningUnit', () => {

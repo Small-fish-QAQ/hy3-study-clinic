@@ -74,8 +74,13 @@ import {
 import { createMasteryRedTeamService, type MasteryRedTeamService } from './masteryRedTeam.js';
 import { createKnowledgeMapService, type KnowledgeMapService } from './knowledgeMap.js';
 import { createAdaptivePaceService, type AdaptivePaceService } from './adaptivePace.js';
+import {
+  createCourseLearningProgressService,
+  type CourseLearningProgressService,
+} from './courseLearningProgress.js';
 
 export interface Services {
+  courseLearningProgress: CourseLearningProgressService;
   materials: MaterialService;
   workspaces: WorkspaceService;
   analysis: AnalysisService;
@@ -259,6 +264,7 @@ export function createServices({
     formalAssessments,
     repair,
     reviewSuccessor,
+    prepareRepairVerification: courseActionLaunch.prepareRepairVerification,
   });
   const masteryRedTeam = createMasteryRedTeamService({
     repos,
@@ -279,6 +285,7 @@ export function createServices({
     lessonExecution,
   });
   return {
+    courseLearningProgress: createCourseLearningProgressService({ repos }),
     materials,
     workspaces,
     analysis,

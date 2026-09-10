@@ -1172,6 +1172,33 @@ afterEach(() => {
 });
 
 describe('Teaching Brief preparation', () => {
+  it('prepares a complete Lesson and Practice from exact unit sources without Concept bindings', async () => {
+    const harness = await createHarness();
+    const curriculum = harness.repos.curricula.get(harness.curriculumId)!;
+    const unit = curriculum.nodes.find((node) => node.id === harness.learningUnitId)!;
+    unit.learningUnit!.conceptIds = [];
+    harness.db
+      .prepare('UPDATE curriculum_versions SET payload = ? WHERE id = ?')
+      .run(JSON.stringify(curriculum), curriculum.id);
+    harness.db
+      .prepare(
+        "UPDATE learning_contract_versions SET payload = json_set(payload, '$.focusRequest', NULL) WHERE id = ?",
+      )
+      .run(curriculum.contractVersionId);
+    const route = startTeachingRoute(harness);
+    const result = await harness.services.teachingBriefPreparation.prepare(
+      preparationRequest(harness, route, 'source-only-unit-teaching'),
+    );
+    expect(result.status).toBe('prepared');
+    expect(result.brief.composition?.acceptedLessonCheckpointId).toBeTruthy();
+    expect(result.brief.practice).toBeTruthy();
+    expect(
+      harness.repos.curricula.get(curriculum.id)!.nodes.find((node) => node.id === unit.id)!
+        .learningUnit!.conceptIds,
+    ).toEqual([]);
+    expect(harness.provider.lessonContentCalls).toBeGreaterThan(0);
+  });
+
   it.each([false, true, 'rejected'] as const)(
     'assembles private joint authoring with stage recovery=%s and exact provenance',
     async (recover) => {

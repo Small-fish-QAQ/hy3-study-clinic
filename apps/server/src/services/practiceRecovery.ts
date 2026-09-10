@@ -13,7 +13,10 @@ import { AppError } from '../errors.js';
 import type { PracticeRepairInput, TeachingContentReviewInput } from '../llm/provider.js';
 import { lexicalChallengeOverlap } from './masteryRedTeamPolicy.js';
 
-export function practiceItemPassed(state: LessonExecutionState, itemIndex: number): boolean {
+export function practiceItemPassed(
+  state: Pick<LessonExecutionState, 'practiceInteractions'>,
+  itemIndex: number,
+): boolean {
   return state.practiceInteractions.some(
     (attempt) =>
       attempt.itemIndex === itemIndex &&

@@ -1,3 +1,4 @@
+import { transferPerformancePassed } from '@hy3-clinic/shared';
 import type {
   Answer,
   GradingResult,
@@ -89,10 +90,15 @@ export function createGradingService({
           rubricKeyPoints: points,
           quote: question.grounding.quote,
           answerText,
+          transferTask: question.transferTask,
         },
         opts,
       );
       // Deterministic scoring: only REQUIRED points enter the score. The
+      if (question.transferTask && !transferPerformancePassed(grade.transferPerformance)) {
+        grade.matchedKeyPointIndexes = [];
+        grade.partialKeyPointIndexes = [];
+      }
       // model judges semantic coverage per point; missing optional
       // enrichment can never reduce the score, and the model's holistic
       // score/confidence never set the awarded points directly.
@@ -129,6 +135,7 @@ export function createGradingService({
         enrichmentKeyPoints,
         confidence: grade.confidence,
         feedback: grade.feedback,
+        ...(grade.transferPerformance ? { transferPerformance: grade.transferPerformance } : {}),
         needsReview: grade.confidence < REVIEW_CONFIDENCE,
       };
     }

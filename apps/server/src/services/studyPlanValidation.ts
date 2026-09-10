@@ -20,6 +20,7 @@ import {
   type StudyPlanProposalPayload,
 } from '@hy3-clinic/shared';
 import { AppError } from '../errors.js';
+import { curriculumSourceBlockFingerprint } from '../grounding/sourceFingerprint.js';
 import type { Repositories } from '../repositories/index.js';
 import { searchRetrievalUnits, visualDerivationToRetrievalUnit } from '../retrieval/lexical.js';
 import type { Clock } from '../util/ids.js';
@@ -102,6 +103,52 @@ function learningUnits(
     ): node is CurriculumNode & { learningUnit: NonNullable<CurriculumNode['learningUnit']> } =>
       node.kind === 'learning_unit' && node.learningUnit !== null,
   );
+}
+
+/** The unit teaching pipeline accepts exact Curriculum source blocks without a Concept. */
+function hasCurrentTeachingSource(
+  repos: Repositories,
+  workspaceId: string,
+  curriculum: Curriculum,
+  unit: CurriculumNode,
+): boolean {
+  // An explicitly mapped Concept that disappeared is stale, not an invitation
+  // to silently change the accepted unit's grounding.
+  if (curriculum.workspaceId !== workspaceId || unit.learningUnit?.conceptIds.length !== 0)
+    return false;
+  // Only the current Course flow launches unit-scoped Teaching Briefs. Legacy
+  // plans still launch Concept lessons and retain their capability requirements.
+  const contract = repos.learningContracts.get(curriculum.contractVersionId);
+  if (!contract || contract.workspaceId !== workspaceId || !Object.hasOwn(contract, 'focusRequest'))
+    return false;
+  const references = unit.sourceReferences.filter((reference) => reference.sourceBlockId);
+  if (references.length === 0) return false;
+  const revisions = new Map(
+    curriculum.executionSourceManifest.revisions.map((revision) => [revision.materialId, revision]),
+  );
+  const materials = new Map(
+    repos.materials
+      .listRouteIdentitiesByWorkspace(workspaceId)
+      .map((material) => [material.id, material]),
+  );
+  return references.every((reference) => {
+    const revision = revisions.get(reference.materialId);
+    const material = materials.get(reference.materialId);
+    const block = repos.materials.getBlock(reference.sourceBlockId!);
+    return Boolean(
+      revision &&
+      material?.availability === 'active' &&
+      material.activeRevisionId === reference.materialRevisionId &&
+      revision.materialRevisionId === reference.materialRevisionId &&
+      revision.sourceBlockRevisionIds.includes(reference.sourceBlockId!) &&
+      block?.materialId === reference.materialId &&
+      block.materialRevisionId === reference.materialRevisionId &&
+      block.content.trim().length > 0 &&
+      (!block.contentOrigin || block.contentOrigin === 'extracted_original') &&
+      reference.sourceBlockRevisionFingerprint ===
+        curriculumSourceBlockFingerprint(block, reference.materialRevisionId),
+    );
+  });
 }
 
 interface UnitLaunchReadSnapshot {
@@ -250,7 +297,7 @@ export function resolveLaunchForPlanItem(
   clock: Clock,
   workspaceId: string,
   curriculum: Curriculum,
-  item: Pick<StudyPlanItem, 'kind' | 'curriculumLearningUnitId' | 'objectiveIds'>,
+  item: Pick<StudyPlanItem, 'kind' | 'curriculumLearningUnitId' | 'objectiveIds' | 'synthesisMode'>,
   snapshot?: UnitLaunchReadSnapshot,
 ): AgendaLaunchCapability {
   const unit = item.curriculumLearningUnitId
@@ -301,7 +348,9 @@ export function resolveLaunchForPlanItem(
           visualQuery,
           { limit: 1 },
         ).some((result) => result.kind === 'visual_derivation');
-      return conceptId || hasCurrentVisual
+      const hasSource =
+        unit && !conceptId && hasCurrentTeachingSource(repos, workspaceId, curriculum, unit);
+      return conceptId || hasCurrentVisual || hasSource
         ? {
             status: 'launchable',
             capability: 'lesson',
@@ -313,7 +362,7 @@ export function resolveLaunchForPlanItem(
             capability: 'lesson',
             resourceId: null,
             reason: visualManifestCurrent
-              ? 'This LearningUnit has no current source Concept or accepted advisory visual for lesson launch.'
+              ? 'This LearningUnit has no current source Concept, exact Curriculum source blocks, or accepted advisory visual for lesson launch.'
               : 'The accepted Course visual source manifest is stale; prepare a new Course route before lesson launch.',
           };
     }
@@ -368,6 +417,31 @@ export function resolveLaunchForPlanItem(
       );
     }
     case 'synthesis': {
+      if (item.synthesisMode === 'unit_transfer') {
+        if (
+          !unit ||
+          item.objectiveIds.length !== 1 ||
+          !unit.learningUnit.objectives.some(
+            (objective) =>
+              objective.id === item.objectiveIds[0] &&
+              objective.truthPremiseStatus === 'independently_verified',
+          )
+        )
+          return {
+            status: 'blocked',
+            capability: 'assessment',
+            resourceId: null,
+            reason: '综合迁移检查需要一个有独立原文依据的本单元目标。',
+          };
+        return assessmentCapability(
+          repos,
+          clock,
+          workspaceId,
+          'concept_practice',
+          conceptIds,
+          snapshot?.activity,
+        );
+      }
       const group = curriculum.synthesisGroups.find(
         (candidate) =>
           Boolean(item.curriculumLearningUnitId) &&
@@ -420,13 +494,16 @@ export function buildUnitLaunchProfiles(
   curriculum: Curriculum,
 ): UnitLaunchProfile[] {
   const snapshot = createUnitLaunchReadSnapshot(repos, workspaceId, curriculum);
+  const contract = repos.learningContracts.get(curriculum.contractVersionId);
+  const usesUnitTransfer =
+    contract?.desiredDepth === 'deep_transfer' && Object.hasOwn(contract, 'focusRequest');
   return learningUnits(curriculum).map((unit) => {
     const candidates: Array<{ kind: StudyPlanItemKind; mode?: AssessmentMode }> = [
       { kind: 'teach_unit' },
       { kind: 'formal_checkpoint', mode: 'concept_practice' },
       { kind: 'targeted_repair', mode: 'prerequisite_repair' },
       { kind: 'due_review', mode: 'review' },
-      { kind: 'synthesis', mode: 'cross_document' },
+      { kind: 'synthesis', mode: usesUnitTransfer ? 'concept_practice' : 'cross_document' },
     ];
     const allowedItemKinds: StudyPlanItemKind[] = [];
     const launchableAssessmentModes: AssessmentMode[] = [];
@@ -439,7 +516,16 @@ export function buildUnitLaunchProfiles(
         {
           kind: candidate.kind,
           curriculumLearningUnitId: unit.id,
-          objectiveIds: unit.learningUnit.objectives.map((objective) => objective.id),
+          objectiveIds:
+            candidate.kind === 'synthesis' && usesUnitTransfer
+              ? unit.learningUnit.objectives
+                  .filter((objective) => objective.truthPremiseStatus === 'independently_verified')
+                  .slice(0, 1)
+                  .map((objective) => objective.id)
+              : unit.learningUnit.objectives.map((objective) => objective.id),
+          ...(candidate.kind === 'synthesis' && usesUnitTransfer
+            ? { synthesisMode: 'unit_transfer' as const }
+            : {}),
         },
         snapshot,
       );
@@ -571,6 +657,15 @@ export function validateStudyPlanScopeAccounting(
   const deferred = new Set<string>();
 
   for (const item of items) {
+    if (
+      item.synthesisMode &&
+      (item.kind !== 'synthesis' ||
+        item.targetDepth !== 'deep_transfer' ||
+        item.objectiveIds.length !== 1)
+    )
+      errors.push(
+        `Unit transfer item ${item.id} must be a single-objective deep-transfer synthesis.`,
+      );
     const synthesisGroup = synthesisGroupForItem(curriculum, item);
     for (const prerequisiteId of item.prerequisitePlanItemIds) {
       const prerequisiteIndex = itemIndex.get(prerequisiteId);
@@ -655,7 +750,7 @@ function completionRequirements(
   curriculum: Curriculum,
   item: StudyPlanProposalPayload['items'][number],
 ) {
-  if (item.kind !== 'formal_checkpoint') return [];
+  if (item.kind !== 'formal_checkpoint' && item.synthesisMode !== 'unit_transfer') return [];
   const objectives = objectiveMap(curriculum);
   return item.objectiveIds.map((objectiveId) => {
     const objective = objectives.get(objectiveId)?.objective;
@@ -664,7 +759,7 @@ function completionRequirements(
       id: newId('completion_requirement'),
       objectiveIds: [objectiveId],
       description: blocking
-        ? `Record eligible formal evidence for ${objective?.title ?? objectiveId}.`
+        ? `${item.synthesisMode ? 'Earn source-grounded transfer performance' : 'Record eligible formal evidence'} for ${objective?.title ?? objectiveId}.`
         : `Use this result as advisory evidence for ${objective?.title ?? objectiveId}.`,
       blocking,
       admissibilityTier: blocking
@@ -788,6 +883,7 @@ export function validateAndMaterializeStudyPlanProposal(input: {
       index,
       phase: item.phase,
       kind: item.kind,
+      ...(item.synthesisMode ? { synthesisMode: item.synthesisMode } : {}),
       curriculumLearningUnitId: item.curriculumLearningUnitId,
       rationale: item.rationale,
       estimatedMinutes: item.estimatedMinutes,
@@ -795,7 +891,7 @@ export function validateAndMaterializeStudyPlanProposal(input: {
       objectiveIds: item.objectiveIds,
       prerequisitePlanItemIds: item.prerequisiteItemKeys.map((key) => itemIdByKey.get(key)!),
       completionPolicy:
-        item.kind === 'formal_checkpoint'
+        item.kind === 'formal_checkpoint' || item.synthesisMode === 'unit_transfer'
           ? { id: STUDY_PLAN_COMPLETION_POLICY_ID, version: STUDY_PLAN_COMPLETION_POLICY_VERSION }
           : null,
       completionRequirements: completionRequirements(curriculum, item),

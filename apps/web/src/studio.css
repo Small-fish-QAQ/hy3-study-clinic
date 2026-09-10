@@ -1,4 +1,12 @@
 /* Study Clinic's material and typographic finish. Shared presentation only. */
+@font-face {
+  font-family: 'Noto Serif SC';
+  src: url('/fonts/noto-serif-sc.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+}
+
 :root {
   --bg: #f4f2ea;
   --surface: #fffefb;
@@ -12,42 +20,58 @@
   --paper-shadow: 0 1px 2px rgb(34 57 43 / 3%), 0 8px 28px rgb(34 57 43 / 4%);
   --paper-light: url('/backgrounds/reading-light.webp');
   --paper-fiber: url('/backgrounds/cotton-fiber.webp');
-  --paper-motif: none;
+  --paper-corner-top-left: none;
+  --paper-corner-top-right: none;
+  --paper-corners-bottom: none;
+  --paper-corner-top-size: min(46%, 560px);
+  --paper-bottom-offset: -36px;
   --paper-position: center;
   --paper-veil: rgb(250 249 243 / 0%);
 }
 
-/* Logo-derived, tapering arcs belong to open overview surfaces. Lessons,
-   settings and the knowledge map keep the original clean paper; diagram
-   geometry must never be confused with a decorative trajectory. */
-.view-home,
-.view-materials,
-.view-progress,
-.view-curriculum {
-  --paper-motif: url('/backgrounds/understanding-arcs.webp');
+/* All destinations share the same corner artwork around their content.
+   Opaque lesson, form and map surfaces keep the interior clear for reading. */
+.course-workspace {
+  --paper-corner-top-left: url('/backgrounds/ivory-gold-top-left.webp');
+  --paper-corner-top-right: url('/backgrounds/ivory-gold-top-right.webp');
+  --paper-corners-bottom: url('/backgrounds/ivory-gold-bottom.webp');
 }
 
-/* One non-repeating motif behind the scrolling workspace, with its quiet
-   right-hand curves retained in portrait crops. Its scale follows the viewport,
-   never the document length. Opaque cards keep their clean reading surfaces.
-   The existing paper and solid fallback remain underneath. No overlay, motion,
-   extra DOM or pointer interception. */
+/* Small labels may scroll over a gold contour. Keep their ink legible across
+   every destination; the pine sidebar has its own foreground palette. */
+.course-workspace {
+  --text-muted: #465549;
+  --text-faint: #465549;
+  --muted: var(--text-muted);
+}
+.view-home .course-home-context > .eyebrow {
+  color: var(--pine);
+}
+
+/* The upper corners are independent; the lower pair shares one continuous
+   source band to avoid broken gold curves. Scrolling cannot stretch or tile
+   the artwork. Opaque cards protect reading surfaces. No overlay or motion. */
 .course-workspace {
   background-color: var(--bg);
   background-image:
-    linear-gradient(var(--paper-veil), var(--paper-veil)), var(--paper-motif), var(--paper-fiber),
+    linear-gradient(var(--paper-veil), var(--paper-veil)), var(--paper-corner-top-left),
+    var(--paper-corner-top-right), var(--paper-corners-bottom), var(--paper-fiber),
     var(--paper-light);
   background-position:
     center,
-    right center,
+    left top,
+    right top,
+    center bottom var(--paper-bottom-offset),
     left top,
     var(--paper-position);
   background-size:
     auto,
-    cover,
+    var(--paper-corner-top-size) auto,
+    var(--paper-corner-top-size) auto,
+    100% auto,
     384px 384px,
     cover;
-  background-repeat: no-repeat, no-repeat, repeat, no-repeat;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat, no-repeat;
 }
 
 /* Reading and utility views share the same material with a little less light
@@ -64,21 +88,19 @@
   .course-workspace {
     /* Keep the grazing light in view when cover crops the wide source. */
     --paper-position: 64% center;
+    --paper-corner-top-size: min(48%, 240px);
+    --paper-bottom-offset: -14px;
   }
 }
 
-/* Generated cotton-paper light stays behind the persistent navigation. */
+/* Reference artwork stays behind the live navigation. Keep its proportions
+   and a pine fallback while the decorative image loads. */
 .course-sidebar {
-  background:
-    linear-gradient(180deg, rgb(33 69 55 / 10%), rgb(24 55 44 / 5%) 65%, rgb(24 55 44 / 25%)),
-    url('/brand/pine-shadows.webp') center / cover no-repeat;
-  background-color: var(--pine);
+  background: #102f24 url('/brand/pine-botanical-sidebar.webp') center top / cover no-repeat;
   box-shadow: inset -1px 0 rgb(255 255 255 / 7%);
 }
 .course-sidebar.is-collapsed {
-  background-position:
-    center,
-    68% center;
+  background-position: right center;
 }
 .course-sidebar-brand-row {
   min-height: 100px;
@@ -135,6 +157,13 @@
 }
 .course-sidebar-footer {
   border-color: rgb(226 235 216 / 10%);
+}
+/* In short desktop windows, the book can reach the system controls. A quiet
+   backing preserves their contrast while the existing rail remains scrollable. */
+@media (min-width: 768px) and (max-height: 780px) {
+  .course-sidebar-footer {
+    background-color: rgb(16 47 36 / 88%);
+  }
 }
 .course-workspace-header {
   background: rgb(252 251 246 / 86%);
@@ -292,10 +321,137 @@
     0 8px 24px rgb(27 58 40 / 8%);
 }
 .next-action.setup-action {
-  background:
-    radial-gradient(ellipse at 94% 15%, rgb(166 188 137 / 12%), transparent 64%),
-    url('/brand/pine-bookcloth.webp') center / cover no-repeat;
-  background-color: var(--pine);
+  min-height: 176px;
+  align-items: center;
+  background: #103b2c url('/brand/pine-course-setup.webp') center / cover no-repeat;
+}
+.next-action.setup-action.is-preparing {
+  min-height: 196px;
+  background-image: url('/brand/pine-course-prepare.webp');
+  background-position: center bottom;
+}
+.setup-action .course-primary-cta {
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  justify-content: center;
+  gap: 20px;
+  min-width: 156px;
+  min-height: 48px;
+  border-radius: 10px;
+  background: #f5f1df;
+}
+.setup-action .course-primary-cta img {
+  width: 20px;
+  height: 20px;
+}
+.setup-action > div:first-child > p:last-child {
+  margin-bottom: 0;
+}
+.preparation-controls {
+  display: grid;
+  flex: 0 0 250px;
+  gap: 16px;
+  padding: 20px 22px;
+  border: 1px solid rgb(225 236 208 / 25%);
+  border-radius: 12px;
+  background: rgb(15 43 32 / 82%);
+  backdrop-filter: blur(8px);
+}
+.preparation-controls .muted {
+  color: #edf1e3;
+  line-height: 1.7;
+}
+.preparation-controls .primary {
+  min-height: 42px;
+  border-radius: 8px;
+  background: #f5f1df;
+  color: #213f31;
+}
+.course-preparation-status {
+  margin: 8px 0 20px;
+  padding: 22px 24px;
+  gap: 20px;
+  border: 1px solid #dbe3d3;
+  border-radius: 12px;
+  background: rgb(255 254 249 / 92%);
+}
+.preparation-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+}
+.preparation-heading h3 {
+  font-size: 17px;
+  line-height: 1.6;
+}
+.preparation-elapsed {
+  flex: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.course-preparation-status ol {
+  gap: 12px;
+}
+.course-preparation-status li {
+  align-items: flex-start;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 2px solid #e1e5dc;
+}
+.course-preparation-status li > .preparation-step-number {
+  width: 24px;
+  height: 24px;
+  font-size: 11px;
+  color: #53664f;
+}
+.course-preparation-status li strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 550;
+}
+.course-preparation-status li small {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+.course-preparation-status li[data-state='complete'] {
+  border-color: #a4b995;
+}
+.course-preparation-status li[data-state='in_progress'] {
+  border-color: #3b7255;
+}
+.course-preparation-status li[data-state='in_progress'] .preparation-step-number {
+  background: #285c48;
+  color: #fff;
+  box-shadow: 0 0 0 4px #e6efde;
+}
+.course-preparation-status li[data-state='blocked'],
+.course-preparation-status li[data-state='review'] {
+  border-color: #ba9e63;
+  color: #6f5527;
+}
+.preparation-observation {
+  display: grid;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--separator);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.preparation-observation p {
+  margin: 0;
+}
+.preparation-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  color: #365d43;
+  font-size: 12px;
 }
 .next-action h3 {
   font-size: 25px;
@@ -316,6 +472,134 @@
   width: fit-content;
   padding-block: 5px;
 }
+
+/* The supplied book-and-leaf artwork sits behind live, responsive controls. */
+.next-action-study {
+  --next-step-serif: 'Noto Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
+  container-type: inline-size;
+  min-height: 258px;
+  gap: 32px;
+  padding: 32px 3.8% 36px 5%;
+  border: 0;
+  border-radius: 16px;
+  background: #103b2c url('/brand/pine-next-step.webp') center / cover no-repeat;
+  box-shadow: 0 16px 34px rgb(27 48 33 / 12%);
+}
+.next-action-study .eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 9px;
+  color: #a3b999;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 1.2px;
+}
+.next-action-study .eyebrow img {
+  width: 14px;
+  height: 14px;
+}
+.next-action-study h3 {
+  margin: 0 0 16px;
+  color: #f8f5e9;
+  font-family: var(--next-step-serif);
+  font-size: clamp(27px, 3.7cqi, 38px);
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: -0.6px;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+.next-action-study .next-action-reason {
+  margin: 0 0 21px;
+  color: #b5c5ab;
+  font-family: var(--next-step-serif);
+  font-size: 20px;
+  line-height: 1.6;
+}
+.next-action-study .next-action-reason summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 32px;
+  padding: 0;
+  list-style: none;
+}
+.next-action-study .next-action-reason summary::-webkit-details-marker {
+  display: none;
+}
+.next-action-study .next-action-reason summary img {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  transition: transform var(--transition);
+}
+.next-action-study .next-action-reason[open] summary img {
+  transform: rotate(90deg);
+}
+.next-action-study .next-action-reason summary:hover {
+  color: #eef2e3;
+}
+.next-action-study .next-action-reason summary:focus-visible {
+  outline: 2px solid #dce8ca;
+  outline-offset: 5px;
+  border-radius: 2px;
+}
+.next-action-study .next-action-reason p {
+  max-width: 38rem;
+  font-family: var(--font-sans);
+  color: #d7e2d5;
+}
+.next-action-study p.next-action-duration {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  color: #b5c5ab;
+  font-family: var(--next-step-serif);
+  font-size: 20px;
+  line-height: 1.6;
+}
+.next-action-study .next-action-duration img {
+  flex: none;
+  width: 24px;
+  height: 24px;
+}
+.next-action-study .course-primary-cta {
+  align-items: center;
+  gap: 24px;
+  min-width: 176px;
+  min-height: 58px;
+  padding: 12px 23px;
+  border: 1px solid #e8e7d6;
+  border-radius: 13px;
+  background: #f7f4e7;
+  color: #1c3d32;
+  font-family: var(--next-step-serif);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.6;
+  box-shadow: 0 4px 14px rgb(10 28 18 / 8%);
+}
+.next-action-study .course-primary-cta img {
+  flex: none;
+  width: 23px;
+  height: 23px;
+}
+.next-action-study .course-primary-cta:hover:not(:disabled) {
+  background: #fffdf3;
+  border-color: #fffdf3;
+}
+.next-action-study .course-primary-cta:focus-visible {
+  outline: 2px solid #eef3dc;
+  outline-offset: 5px;
+}
+.next-action-study .course-continuation-blocked {
+  flex: 0 1 18rem;
+  min-width: 0;
+}
+
 .today-work {
   margin-top: 16px;
 }
@@ -452,16 +736,18 @@
   border-left-color: #d7dfd0;
   box-shadow: -6px 0 24px rgb(34 57 43 / 4%);
 }
-.study-tutor-secondary-header {
+.study-tutor-secondary .study-tutor-secondary-header {
+  align-items: center;
   background: linear-gradient(115deg, #f2f5eb, #fffefa);
   border-bottom-color: #dce4d4;
-  padding: 20px 22px;
+  padding: 12px 18px;
 }
 .study-tutor-secondary-header h3 {
   display: flex;
   align-items: center;
-  gap: 9px;
-  font-size: 22px;
+  gap: 7px;
+  font-size: 18px;
+  line-height: 1.35;
 }
 .study-tutor-secondary-header h3 img {
   flex: none;
@@ -469,12 +755,12 @@
 }
 .study-tutor-secondary-header > button {
   font-size: 12px;
-  min-height: 36px;
+  min-height: 32px;
 }
 .study-tutor-secondary-header .study-tutor-context {
-  font-size: 12px;
-  line-height: 1.8;
-  margin-top: 9px;
+  font-size: 11px;
+  line-height: 1.6;
+  margin-top: 4px !important;
 }
 .study-tutor-avatar {
   border: 0;
@@ -496,6 +782,7 @@
   border-bottom: 1px solid #e9ece1;
 }
 .study-tutor-secondary .study-exchange.learner {
+  padding: 8px 12px;
   border-radius: 11px 11px 3px 11px;
   background: #edf0e6;
   box-shadow: none;
@@ -1200,6 +1487,19 @@
   }
 }
 @media (max-width: 999px) {
+  .next-action.setup-action {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .setup-action .course-primary-cta {
+    align-self: stretch;
+  }
+  .preparation-controls {
+    flex-basis: auto;
+  }
+  .course-preparation-status ol {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .course-library-intro {
     min-height: 0;
     padding-right: 0;
@@ -1269,12 +1569,57 @@
   }
   .next-action.setup-action {
     background-image:
-      radial-gradient(ellipse at 94% 15%, rgb(166 188 137 / 12%), transparent 64%),
-      url('/brand/pine-bookcloth.webp');
-    background-position: center;
+      linear-gradient(180deg, rgb(16 49 36 / 55%), rgb(16 49 36 / 10%)),
+      url('/brand/pine-course-setup.webp');
+    background-position:
+      center,
+      72% center;
+    align-items: stretch;
+  }
+  .next-action.setup-action.is-preparing {
+    background-image:
+      linear-gradient(180deg, rgb(16 49 36 / 55%), rgb(16 49 36 / 10%)),
+      url('/brand/pine-course-prepare.webp');
+    background-position:
+      center,
+      62% bottom;
+  }
+  .course-preparation-status {
+    padding: 18px;
+  }
+  .preparation-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
   }
   .next-action h3 {
     font-size: 21px;
+  }
+  .next-action-study {
+    min-height: 0;
+    gap: 24px;
+    padding: 28px 24px;
+    background-image: url('/brand/pine-next-step.webp');
+    background-position: 28% center;
+  }
+  .next-action-study h3 {
+    font-size: clamp(24px, 7.8cqi, 30px);
+    line-height: 1.55;
+  }
+  .next-action-study .next-action-reason {
+    margin-bottom: 18px;
+    font-size: 17px;
+  }
+  .next-action-study p.next-action-duration {
+    font-size: 17px;
+  }
+  .next-action-study .course-primary-cta {
+    min-width: 0;
+    min-height: 54px;
+    align-self: stretch;
+  }
+  .next-action-study .course-continuation-blocked {
+    flex-basis: auto;
   }
   .important-exceptions {
     padding: 18px;
@@ -1308,11 +1653,8 @@
   .study-session-more > summary {
     min-height: 40px;
   }
-  .study-tutor-secondary-header {
-    padding: 17px 20px;
-  }
-  .study-tutor-secondary-header .study-tutor-context {
-    font-size: 12px;
+  .study-tutor-secondary .study-tutor-secondary-header {
+    padding: 12px 16px;
   }
   .study-tutor-secondary .study-quick-help button {
     min-height: 36px;

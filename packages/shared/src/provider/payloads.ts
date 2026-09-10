@@ -772,6 +772,7 @@ export type LocallyAssembledCurriculumProposal = CurriculumProposalPayload;
 /** One executable-route item proposed from an already accepted Curriculum. */
 export const ProposedStudyPlanItemSchema = z
   .object({
+    synthesisMode: z.literal('unit_transfer').optional(),
     /** Proposal-local identity; the server assigns the persisted plan-item id. */
     key: z.string().min(1).max(100),
     phase: z.string().min(1).max(200),

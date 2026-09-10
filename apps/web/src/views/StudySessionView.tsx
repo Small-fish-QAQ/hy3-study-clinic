@@ -958,13 +958,7 @@ export function StudySessionView({
     return (
       <div ref={studyFocusTargetRef} className="study-session" aria-label="学习" tabIndex={-1}>
         <section className="study-session-empty">
-          <img
-            className="studio-empty-mark"
-            src="/brand/understanding-pine.png"
-            alt=""
-            width="48"
-            height="48"
-          />
+          <img className="studio-empty-mark" src="/brand-mark.svg" alt="" width="48" height="48" />
           <p className="eyebrow">开始本次学习</p>
           <strong>{route ? '已接受的学习路线已经就绪' : '还没有可执行的学习路线'}</strong>
           <p className="muted">
@@ -998,7 +992,10 @@ export function StudySessionView({
   const formalKinds = new Set(['formal_checkpoint', 'synthesis', 'due_review', 'targeted_repair']);
   const formalAvailable = formalReadiness?.status === 'ready';
   const formalReadinessAllows = (item: (typeof detail.agenda.items)[number]) =>
-    !isPlannedFormalAgendaItemKind(item.kind) || formalAvailable;
+    ((item.kind === 'formal_checkpoint' || item.kind === 'synthesis') &&
+      item.id === currentAgendaItem?.id) ||
+    !isPlannedFormalAgendaItemKind(item.kind) ||
+    formalAvailable;
   const availableFormalItems = detail.agenda.items
     .filter(
       (item) =>
@@ -1201,6 +1198,7 @@ export function StudySessionView({
                 directCheckpointItemId={directCheckpointItem?.id ?? null}
                 formalAssessmentVersionId={formalAssessmentVersionId}
                 reviewMode={currentAgendaItem?.kind === 'due_review'}
+                transferMode={currentAgendaItem?.kind === 'synthesis'}
                 onResumeStudySession={() => void lifecycle('resume')}
                 onStartFormalAssessment={() =>
                   void mixedCommand('direct_checkpoint', directCheckpointItem?.id ?? null)
@@ -1221,7 +1219,7 @@ export function StudySessionView({
             <header className="study-tutor-secondary-header">
               <div>
                 <h3>
-                  <img src="/brand/understanding-pine.png" alt="" width="28" height="28" />
+                  <img src="/brand-mark.svg" alt="" width="22" height="22" />
                   Hy3 Tutor
                 </h3>
                 <p className="study-tutor-context" aria-label="当前讲解范围">
@@ -1290,15 +1288,16 @@ export function StudySessionView({
                         (exchange) =>
                           exchange.role === 'learner' && exchange.content === sendingContent,
                       ) ? (
-                        <p className="study-tutor-pending-question">
-                          <strong>你</strong>
-                          <br />
-                          {sendingContent}
-                        </p>
+                        <article
+                          className="study-exchange learner study-tutor-pending-question"
+                          aria-label="你，对话"
+                        >
+                          <div className="study-exchange-content">{sendingContent}</div>
+                        </article>
                       ) : null}
                       <div className="study-tutor-stream" role="status" aria-live="polite">
                         <span className="study-tutor-avatar" aria-hidden="true">
-                          <img src="/brand/understanding-pine.png" alt="" width="22" height="22" />
+                          <img src="/brand-mark.svg" alt="" width="22" height="22" />
                         </span>
                         <div>
                           <strong>Hy3 Tutor</strong>
@@ -1532,20 +1531,22 @@ function Exchange({
       className={`study-exchange ${exchange.role} ${exchange.channel}`}
       aria-label={`${label}，${channelLabel}`}
     >
-      <header className="study-exchange-header">
-        {exchange.role === 'tutor' ? (
-          <span className="study-tutor-avatar" aria-hidden="true">
-            <img src="/brand/understanding-pine.png" alt="" width="22" height="22" />
-          </span>
-        ) : null}
-        <strong>{label}</strong>
-        {exchange.channel === 'informal_check' ? (
-          <span className="study-channel-label informal">非正式 · 不计入进展</span>
-        ) : null}
-        {exchange.channel === 'operation_notice' ? (
-          <span className="study-channel-label">状态</span>
-        ) : null}
-      </header>
+      {exchange.role !== 'learner' || exchange.channel !== 'conversation' ? (
+        <header className="study-exchange-header">
+          {exchange.role === 'tutor' ? (
+            <span className="study-tutor-avatar" aria-hidden="true">
+              <img src="/brand-mark.svg" alt="" width="22" height="22" />
+            </span>
+          ) : null}
+          {exchange.role !== 'learner' ? <strong>{label}</strong> : null}
+          {exchange.channel === 'informal_check' ? (
+            <span className="study-channel-label informal">非正式 · 不计入进展</span>
+          ) : null}
+          {exchange.channel === 'operation_notice' ? (
+            <span className="study-channel-label">状态</span>
+          ) : null}
+        </header>
+      ) : null}
       {exchange.role === 'learner' && metadata?.studyContext ? (
         <div className="study-tutor-turn-context">
           <small>

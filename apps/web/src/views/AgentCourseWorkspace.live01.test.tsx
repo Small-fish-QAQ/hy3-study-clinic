@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
@@ -590,6 +590,139 @@ describe('LIVE-01 Learning Contract material-role recovery', () => {
 });
 
 describe('Course preparation orchestration', () => {
+  it.each(['failed_recoverable', 'course_plan_ready'] as const)(
+    'backs off unchanged progress and stops polling at %s even with a pending POST',
+    async (state) => {
+      vi.mocked(api.courseExecution).mockResolvedValue({ overview: planRequiredOverview() });
+      vi.spyOn(api, 'materialRoleHistory').mockResolvedValue(roleHistory(strandedProposal));
+      let current = preparation({
+        operationKey: 'prepare-course-ws-1',
+        state: 'failed_recoverable',
+        machineAction: 'prepare_course_structure',
+        learnerAction: 'resume_preparation',
+        canResume: true,
+        canCancel: false,
+        blocker: null,
+      });
+      vi.mocked(api.coursePreparation).mockImplementation(async () => ({ preparation: current }));
+      let finish!: (value: { preparation: CoursePreparation }) => void;
+      vi.spyOn(api, 'runCoursePreparation').mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          }),
+      );
+      const view = renderWorkspace();
+      const button = await screen.findByRole('button', { name: '重试课程准备' });
+      vi.useFakeTimers();
+      try {
+        fireEvent.click(button);
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(0);
+        });
+        // A poll can still see the previous failure before the retry POST starts.
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(1000);
+        });
+        expect(screen.getByRole('button', { name: '停止' })).toBeEnabled();
+        current = { ...current, state: 'preparing_course_structure', canCancel: true };
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(5000);
+        });
+        const before = vi.mocked(api.coursePreparation).mock.calls.length;
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(60000);
+        });
+        const polls = vi.mocked(api.coursePreparation).mock.calls.length - before;
+        expect(polls).toBeGreaterThan(0);
+        expect(polls).toBeLessThanOrEqual(7);
+        current = {
+          ...current,
+          state,
+          canCancel: false,
+          failure:
+            state === 'failed_recoverable'
+              ? {
+                  code: 'GROUNDING_FAILED',
+                  action: 'prepare_course_structure',
+                  occurredAt: AT,
+                  retryable: true,
+                }
+              : null,
+        };
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(30000);
+        });
+        const stopped = vi.mocked(api.coursePreparation).mock.calls.length;
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(60000);
+        });
+        expect(api.coursePreparation).toHaveBeenCalledTimes(stopped);
+        expect(api.runCoursePreparation).toHaveBeenCalledOnce();
+        if (state === 'failed_recoverable') {
+          const finishOldRequest = finish;
+          fireEvent.click(screen.getByRole('button', { name: '重试课程准备' }));
+          await act(async () => {
+            await vi.advanceTimersByTimeAsync(0);
+          });
+          expect(api.runCoursePreparation).toHaveBeenCalledTimes(2);
+          await act(async () => {
+            finishOldRequest({ preparation: current });
+          });
+          expect(screen.getByRole('button', { name: '停止' })).toBeEnabled();
+        }
+      } finally {
+        view.unmount();
+        await act(async () => {
+          finish({ preparation: current });
+        });
+        vi.useRealTimers();
+      }
+    },
+  );
+  it('polls saved progress while the run is pending and displays the later stage', async () => {
+    vi.mocked(api.courseExecution).mockResolvedValue({ overview: planRequiredOverview() });
+    vi.spyOn(api, 'materialRoleHistory').mockResolvedValue(roleHistory(strandedProposal));
+    let current = preparation({
+      operationKey: 'prepare-course-ws-1',
+      state: 'preparing_concepts',
+      machineAction: 'prepare_concepts',
+      learnerAction: 'resume_preparation',
+      canResume: true,
+      canCancel: false,
+      blocker: null,
+    });
+    vi.mocked(api.coursePreparation).mockImplementation(async () => ({ preparation: current }));
+    let finish: ((value: { preparation: CoursePreparation }) => void) | undefined;
+    vi.spyOn(api, 'runCoursePreparation').mockImplementation(
+      async () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const user = userEvent.setup();
+    const view = renderWorkspace();
+    await user.click(await screen.findByRole('button', { name: '继续准备课程' }));
+    current = {
+      ...current,
+      state: 'preparing_course_structure',
+      machineAction: 'prepare_course_structure',
+      canCancel: true,
+      preparedConceptCount: 12,
+      activity: {
+        phase: 'curriculum_details',
+        label: '检索与排序',
+        completed: 1,
+        total: 3,
+        updatedAt: AT,
+      },
+    };
+    expect(await screen.findByText('已完成 1 / 3 个学习单元', {}, { timeout: 3000 })).toBeVisible();
+    expect(screen.getByText('已保存 12 个有原文依据的概念')).toBeVisible();
+    expect(screen.getByRole('button', { name: '停止' })).toBeEnabled();
+    view.unmount();
+    finish?.({ preparation: current });
+  });
   it('starts preparation automatically after the learner confirms the Contract', async () => {
     const value = contractReviewOverview();
     vi.mocked(api.courseExecution).mockResolvedValue({ overview: value });
@@ -736,7 +869,9 @@ describe('Course preparation orchestration', () => {
       },
       blocker: null,
     });
-    vi.mocked(api.coursePreparation).mockResolvedValue({ preparation: running });
+    vi.mocked(api.coursePreparation)
+      .mockResolvedValue({ preparation: running })
+      .mockResolvedValueOnce({ preparation: { ...running, canCancel: false } });
     let runSignal: AbortSignal | undefined;
     let finishRun: ((value: { preparation: CoursePreparation }) => void) | undefined;
     vi.spyOn(api, 'runCoursePreparation').mockImplementation(
@@ -821,13 +956,14 @@ describe('Course preparation orchestration', () => {
         retryable: true,
       },
     });
-    let current = running;
+    let current = { ...running, canCancel: false };
     vi.mocked(api.coursePreparation).mockImplementation(async () => ({ preparation: current }));
     let runSignal: AbortSignal | undefined;
     vi.spyOn(api, 'runCoursePreparation').mockImplementation(
       async (_workspaceId, _input, signal) =>
         new Promise((_resolve, reject) => {
           runSignal = signal;
+          current = running;
           signal?.addEventListener(
             'abort',
             () => {
@@ -1154,7 +1290,7 @@ describe('canonical Course lifecycle in Settings', () => {
         machineAction: 'prepare_concepts',
         learnerAction: 'resume_preparation',
         canResume: true,
-        canCancel: true,
+        canCancel: false,
         checkpoints: {
           materials: 'complete',
           concepts: 'in_progress',

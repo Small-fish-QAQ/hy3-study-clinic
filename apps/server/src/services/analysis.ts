@@ -41,6 +41,9 @@ export interface AnalyzeOutcome {
 
 interface AnalyzeOptions {
   section?: string;
+  /** One additive pass over gaps, including after an interrupted/partially grounded initial run. */
+  recoverUncoveredSections?: boolean;
+  onSectionProgress?: (progress: { title: string; completed: number; total: number }) => void;
   beforePersist?: () => void;
 }
 
@@ -129,6 +132,11 @@ export function createAnalysisService({ repos, provider, clock }: AnalysisServic
       // Cancellation between sections: everything accepted so far stays
       // persisted (additive); the request itself reports cancelled.
       if (opts?.signal?.aborted) throw ProviderError.cancelled();
+      options?.onSectionProgress?.({
+        title: section.title,
+        completed: reports.length,
+        total: sections.length,
+      });
       if (total >= MAX_CONCEPTS_PER_DOCUMENT) {
         capReached = true;
         reports.push({
@@ -184,6 +192,11 @@ export function createAnalysisService({ repos, provider, clock }: AnalysisServic
         status: accepted.length > 0 ? 'extracted' : 'empty',
         conceptsAdded: accepted.length,
       });
+      options?.onSectionProgress?.({
+        title: section.title,
+        completed: reports.length,
+        total: sections.length,
+      });
     }
 
     return { sections: reports, conceptsAdded: added, conceptTotal: total, capReached };
@@ -238,15 +251,23 @@ export function createAnalysisService({ repos, provider, clock }: AnalysisServic
         return { concepts: repos.materials.getConcepts(materialId), extraction };
       }
 
-      if (existing.length > 0) return { concepts: existing, extraction: null };
+      if (existing.length > 0 && !options?.recoverUncoveredSections)
+        return { concepts: existing, extraction: null };
 
-      const sections = computeSections(blocks);
+      const outline = computeSections(blocks);
+      const sections = options?.recoverUncoveredSections
+        ? outline.filter(
+            (section) =>
+              !existing.some((concept) => verifyGrounding(section.blocks, concept.grounding).ok),
+          )
+        : outline;
+      if (sections.length === 0) return { concepts: existing, extraction: null };
       const extraction = await runSections(
         materialId,
         material.title,
         sections,
-        sections.length > 1,
-        [],
+        outline.length > 1,
+        existing,
         activeRevision.id,
         opts,
         options,

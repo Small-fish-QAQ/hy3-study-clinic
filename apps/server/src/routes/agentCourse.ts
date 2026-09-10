@@ -16,6 +16,7 @@ import {
   RecordPaceObservationRequestSchema,
   RejectCurriculumRequestSchema,
   RunCoursePreparationRequestSchema,
+  CourseExecutionCommandEnvelopeSchema,
   TransitionLearningContractRequestSchema,
   UpdateLearningContractDraftRequestSchema,
 } from '@hy3-clinic/shared';
@@ -69,6 +70,27 @@ export function registerAgentCourseRoutes(app: FastifyInstance, services: Servic
   app.get('/api/workspaces/:id/preparation', async (request) => {
     const { id } = WorkspaceParams.parse(request.params);
     return { preparation: services.coursePreparation.get(id) };
+  });
+  app.get('/api/workspaces/:id/learning-progress', async (request) => {
+    const { id } = z.object({ id: z.string().min(1) }).parse(request.params);
+    return services.courseLearningProgress.get(id);
+  });
+  app.post('/api/workspaces/:id/review/:targetId/launch', async (request, reply) => {
+    const { id, targetId } = z
+      .object({ id: z.string(), targetId: z.string() })
+      .parse(request.params);
+    const body = z
+      .object({
+        command: CourseExecutionCommandEnvelopeSchema,
+        expectedCourseExecutionVersion: z.number().int(),
+      })
+      .strict()
+      .parse(request.body);
+    assertWorkspace(body, id);
+    return services.courseActionLaunch.launchReview(
+      { ...body, targetId },
+      { signal: requestSignal(request, reply) },
+    );
   });
 
   app.post('/api/workspaces/:id/preparation/run', async (request, reply) => {

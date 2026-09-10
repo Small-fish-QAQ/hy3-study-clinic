@@ -13,11 +13,13 @@ export function FormalAssessmentPanel({
   versionId,
   reviewMode = false,
   onChanged,
+  onProgressChanged,
 }: {
   workspaceId: string;
   versionId: string;
   reviewMode?: boolean;
   onChanged?: () => void;
+  onProgressChanged?: () => void;
 }) {
   const [execution, setExecution] = useState<LearnerAssessmentExecution | null>(null);
   const [repair, setRepair] = useState<LearnerRepairProjection | null>(null);
@@ -27,33 +29,30 @@ export function FormalAssessmentPanel({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const epoch = useRef(0);
-  const controller = useRef<AbortController | null>(null);
-
-  async function load(signal?: AbortSignal) {
-    const current = ++epoch.current;
-    setLoading(true);
-    try {
-      const existing = await api.getFormalExecution(workspaceId, versionId, signal);
-      if (current !== epoch.current) return;
-      setExecution(existing);
-      if (existing?.result?.repairEpisodeId) {
-        setRepair(await api.getLearnerRepair(existing.result.repairEpisodeId, signal));
-      }
-    } catch (cause) {
-      if (current === epoch.current) setError(errorText(cause));
-    } finally {
-      if (current === epoch.current) setLoading(false);
-    }
-  }
-
-  // `load` intentionally captures the current panel identity; the effect is
-  // fenced by workspace/version and aborts the previous request on change.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    controller.current?.abort();
+    const current = ++epoch.current;
     const next = new AbortController();
-    controller.current = next;
-    void load(next.signal);
+    setLoading(true);
+    setError('');
+    setRepair(null);
+    setExecution(null);
+    setDrafts({});
+    void (async () => {
+      try {
+        const existing = await api.getFormalExecution(workspaceId, versionId, next.signal);
+        if (current !== epoch.current) return;
+        const existingRepair = existing?.result?.repairEpisodeId
+          ? await api.getLearnerRepair(existing.result.repairEpisodeId, next.signal)
+          : null;
+        if (current !== epoch.current) return;
+        setExecution(existing);
+        setRepair(existingRepair);
+      } catch (cause) {
+        if (current === epoch.current) setError(errorText(cause));
+      } finally {
+        if (current === epoch.current) setLoading(false);
+      }
+    })();
     return () => {
       epoch.current += 1;
       next.abort();
@@ -82,8 +81,12 @@ export function FormalAssessmentPanel({
         execution.attempt.status === 'submitted' ? execution.attempt.responses : drafts,
       );
       setExecution(next);
+      onProgressChanged?.();
       if (next.result?.repairEpisodeId) {
-        setRepair(await api.startLearnerRepair(next.result.repairEpisodeId));
+        const current = await api.getLearnerRepair(next.result.repairEpisodeId);
+        setRepair(current);
+        if (!current.resolved && !current.packet && ['OPEN', 'ACTIVE'].includes(current.status))
+          setRepair(await api.startLearnerRepair(current.episodeId));
       }
     } catch (cause) {
       setError(errorText(cause));
@@ -97,6 +100,7 @@ export function FormalAssessmentPanel({
     setBusy(true);
     try {
       setRepair(await api.learnerRepairAction(repair.episodeId, action));
+      onProgressChanged?.();
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -111,6 +115,7 @@ export function FormalAssessmentPanel({
     setError('');
     try {
       setRepair(await api.startLearnerRepair(episodeId));
+      onProgressChanged?.();
     } catch {
       setError('检查结果已保存，修复讲解暂时未准备好。请稍后重试。');
     } finally {
@@ -126,6 +131,7 @@ export function FormalAssessmentPanel({
     try {
       setRepair(await api.learnerRepairPractice(repair.episodeId, practice.trim(), outcome));
       setPractice('');
+      onProgressChanged?.();
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -140,6 +146,7 @@ export function FormalAssessmentPanel({
       setExecution(await api.createRepairVerification(repair.episodeId));
       setRepair(await api.getLearnerRepair(repair.episodeId));
       setDrafts({});
+      onProgressChanged?.();
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -193,7 +200,7 @@ export function FormalAssessmentPanel({
         <>
           {execution.items.map((item) => (
             <div className="formal-assessment-item" key={item.itemId}>
-              <h4>{item.prompt}</h4>
+              <h4 style={{ whiteSpace: 'pre-wrap' }}>{item.prompt}</h4>
               {item.sourceReferences.length > 0 ? (
                 <details>
                   <summary>查看课程来源</summary>
@@ -270,7 +277,7 @@ export function FormalAssessmentPanel({
               onVerify={verify}
             />
           ) : null}
-          {review?.schedulingRetryRequired ? (
+          {review?.schedulingRetryRequired || execution.result.reviewSchedulingPending ? (
             <div className="formal-scheduling-retry" role="alert">
               <strong>正式结果已保存，复习时间还需要重新同步。</strong>
               <p>重试只会补写复习安排，不会重新评分或覆盖已有证据。</p>
@@ -279,7 +286,18 @@ export function FormalAssessmentPanel({
               </button>
             </div>
           ) : null}
-          {(review?.resolved || repair?.resolved) && !review?.schedulingRetryRequired ? (
+          {execution.result.progressionPending ? (
+            <div role="alert">
+              <p>正式通过结果已保存，学习进展尚未同步。可以重试核对，无需重新作答或判分。</p>
+              <button type="button" disabled={busy} onClick={() => void submit()}>
+                重试同步正式进展
+              </button>
+            </div>
+          ) : null}
+          {(execution.result.demonstrated || review?.resolved || repair?.resolved) &&
+          !review?.schedulingRetryRequired &&
+          !execution.result.reviewSchedulingPending &&
+          !execution.result.progressionPending ? (
             <button type="button" className="primary" disabled={busy} onClick={onChanged}>
               继续下一项学习
             </button>
@@ -341,13 +359,15 @@ function RepairPanel({
         这个知识缺口已经通过新的检查验证。
       </p>
     );
+  if (repair.status === 'CANCELLED')
+    return <p role="status">已离开这次修复，原作答记录保留在历史中。</p>;
   if (repair.deeperSupportRecommended) {
     return (
       <section className="formal-repair-panel" role="status">
         <strong>这一块可能需要更系统的补充。</strong>
         <p>你可以先回到前置课程，之后再从这里继续。</p>
-        <button type="button" onClick={() => onAction('defer')}>
-          稍后继续
+        <button type="button" disabled={busy} onClick={() => onAction('resume')}>
+          继续补充学习
         </button>
       </section>
     );
@@ -407,7 +427,11 @@ function RepairPanel({
             </button>
           </div>
           <div className="formal-repair-actions">
-            <button type="button" disabled={busy} onClick={onVerify}>
+            <button
+              type="button"
+              disabled={busy || !['ACTIVE', 'AWAITING_VERIFICATION'].includes(repair.status)}
+              onClick={onVerify}
+            >
               换个情境再确认
             </button>
             <button type="button" disabled={busy} onClick={() => onAction('defer')}>

@@ -758,6 +758,19 @@ export class FakeProvider implements LlmProvider {
       score,
       confidence,
       feedback: buildFeedback(matched, partial, input.rubricKeyPoints),
+      ...(input.transferTask
+        ? {
+            transferPerformance: {
+              // Deterministic workflow markers only; FakeProvider makes no semantic-quality claim.
+              novelScenario:
+                answer.includes('新情境：') && !input.transferTask.priorResponses.includes(answer),
+              sourcePrincipleApplied: answer.includes('依据：') && matched.length > 0,
+              changedConditionExplained: answer.includes('条件变化：') && answer.includes('结果：'),
+              sourceBounded: matched.length === required.length,
+              rationale: 'FakeProvider 仅按显式作答结构验证流程。',
+            },
+          }
+        : {}),
     };
   }
 
@@ -1393,6 +1406,14 @@ export class FakeProvider implements LlmProvider {
       }
       if (type === 'short_answer' && input.requestedChallengeFamily === 'transfer') {
         question.stem = `在表面情境改变但仍满足资料条件时，如何应用「${target.concept.name}」？请说明依据。`;
+      }
+      if (type === 'short_answer' && input.previousPrompts?.length) {
+        const prompts = [
+          `同伴认为可以忽略「${target.concept.name}」中的限制。根据资料指出这一解释缺失的关键条件，并说明条件为什么必要。`,
+          `检查一份只列出「${target.concept.name}」名称的学习笔记：请补全资料明确说明的关键关系，使另一位学习者能够据此理解。`,
+          `有人把「${target.concept.name}」描述成不受任何条件约束。请依据原文纠正这个结论，给出完整的限制及理由。`,
+        ];
+        question.stem = prompts[(input.previousPrompts.length - 1) % prompts.length]!;
       }
       items.push({
         ...(formalObjectiveRef ? { objectiveRef: formalObjectiveRef } : {}),

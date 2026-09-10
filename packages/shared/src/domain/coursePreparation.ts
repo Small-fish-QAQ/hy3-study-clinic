@@ -134,6 +134,26 @@ export const CourseFormalReadinessSchema = z
   });
 export type CourseFormalReadiness = z.infer<typeof CourseFormalReadinessSchema>;
 
+/** Observed work only; counts are completed units/sections, never estimated percentages. */
+export const CoursePreparationActivitySchema = z
+  .object({
+    phase: z.enum([
+      'concepts',
+      'concept_recovery',
+      'course_map',
+      'curriculum_details',
+      'validation',
+    ]),
+    label: z.string().min(1).max(500),
+    completed: z.number().int().nonnegative(),
+    total: z.number().int().positive(),
+    updatedAt: z.string().datetime(),
+  })
+  .strict()
+  .refine((value) => value.completed <= value.total);
+export type CoursePreparationActivity = z.infer<typeof CoursePreparationActivitySchema>;
+export type CoursePreparationProgressUpdate = Omit<CoursePreparationActivity, 'updatedAt'>;
+
 /** Learner-safe, read-only projection over current Course authority and durable operations. */
 export const CoursePreparationSchema = z
   .object({
@@ -151,6 +171,9 @@ export const CoursePreparationSchema = z
     blocker: CoursePreparationBlockerSchema.nullable(),
     failure: CoursePreparationFailureSchema.nullable(),
     generatedAt: z.string().datetime(),
+    activity: CoursePreparationActivitySchema.nullable().optional(),
+    operationStartedAt: z.string().datetime().nullable().optional(),
+    preparedConceptCount: z.number().int().nonnegative().optional(),
   })
   .strict()
   .superRefine((preparation, ctx) => {

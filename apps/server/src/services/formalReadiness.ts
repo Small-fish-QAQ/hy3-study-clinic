@@ -75,9 +75,9 @@ export function assessCourseFormalReadiness(
     }
 
     // Once an accepted route exists, authority alone is insufficient: the
-    // objective must have an accepted formal-checkpoint route item and that
-    // item must remain launchable on the current Agenda. Question generation
-    // itself remains launch-time work, but the path cannot be absent.
+    // objective must have an accepted, launchable formal-checkpoint Plan item.
+    // Agendas are bounded windows: an earlier or later checkpoint need not be
+    // in the current window. Question generation remains launch-time work.
     if (!route?.studyPlan || !route.agenda) {
       readyObjectiveIds.push(objective.id);
       continue;
@@ -88,6 +88,24 @@ export function assessCourseFormalReadiness(
     if (!planItem) {
       blockedObjectiveIds.push(objective.id);
       continue;
+    }
+    const contract = repos.learningContracts.get(curriculum.contractVersionId);
+    if (contract?.desiredDepth === 'deep_transfer' && Object.hasOwn(contract, 'focusRequest')) {
+      const transferItem = route.studyPlan.items.find(
+        (item) =>
+          item.synthesisMode === 'unit_transfer' && item.objectiveIds.includes(objective.id),
+      );
+      const transferLaunch = repos.studyPlans
+        .listLaunchValidations(route.studyPlan.id)
+        .find((entry) => entry.planItemId === transferItem?.id);
+      if (
+        !transferItem ||
+        transferLaunch?.launch.status !== 'launchable' ||
+        transferLaunch.launch.capability !== 'assessment'
+      ) {
+        blockedObjectiveIds.push(objective.id);
+        continue;
+      }
     }
     const planLaunch = repos.studyPlans
       .listLaunchValidations(route.studyPlan.id)
@@ -103,7 +121,7 @@ export function assessCourseFormalReadiness(
     const agendaItem = route.agenda.items.find(
       (item) => item.linkedPlanItemId === planItem.id && item.kind === 'formal_checkpoint',
     );
-    if (!agendaItem || agendaItem.launch.status !== 'launchable') {
+    if (agendaItem && agendaItem.launch.status !== 'launchable') {
       blockedObjectiveIds.push(objective.id);
       continue;
     }

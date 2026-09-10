@@ -1,3 +1,4 @@
+import { TransferTaskSchema } from './transferAssessment.js';
 import { z } from 'zod';
 import {
   DifficultySchema,
@@ -130,6 +131,7 @@ export type FormalProposalMetadata = z.infer<typeof FormalProposalMetadataSchema
  */
 export const QuestionSchema = z
   .object({
+    transferTask: TransferTaskSchema.optional(),
     id: z.string().min(1),
     quizId: z.string().min(1),
     index: z.number().int().nonnegative(),

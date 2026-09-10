@@ -1,9 +1,14 @@
+import { unitTransferPrompt, TransferTaskSchema } from '@hy3-clinic/shared';
+import { PracticeRecoveryStateSchema } from '@hy3-clinic/shared';
+import { lessonExecutionPresentedPrompts, recoveryExposurePrompts } from './formalAssessments.js';
 import {
   ApiErrorCode,
   CourseActionLaunchResultSchema,
   CreateAssessmentRequestSchema,
   LaunchCourseActionRequestSchema,
+  isStateCreditingAdmissibility,
   type CourseActionLaunchResult,
+  type CourseExecutionCommandEnvelope,
   type Curriculum,
   type CurriculumNode,
   type CurriculumObjective,
@@ -21,6 +26,7 @@ import {
 } from '../llm/provider.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
+import { newId } from '../util/ids.js';
 import type { AssessmentService } from './assessment.js';
 import {
   qualifyingAssessmentIntentEvidence,
@@ -393,6 +399,7 @@ export function createCourseActionLaunchService({
   async function launch(
     input: LaunchCourseActionRequest,
     opts?: ProviderCallOptions,
+    verificationEpisodeId?: string,
   ): Promise<CourseActionLaunchResult> {
     let reviewExecutionId: string | null = null;
     const parsed = LaunchCourseActionRequestSchema.parse(input);
@@ -416,6 +423,7 @@ export function createCourseActionLaunchService({
           parsed.expectedExecutionSourceManifestFingerprint,
         studySessionId: parsed.studySessionId ?? null,
         confirmedCostPolicyIds: parsed.confirmedCostPolicyIds ?? [],
+        verificationEpisodeId: verificationEpisodeId ?? null,
       },
       {
         studySessionId: operationStudySessionId,
@@ -499,12 +507,32 @@ export function createCourseActionLaunchService({
           }),
         );
       }
+      if (item.kind === 'formal_checkpoint') {
+        const progress = new Map(
+          repos.studyPlans.listProgress(plan.id).map((entry) => [entry.planItemId, entry.state]),
+        );
+        if (!bound.planItem.prerequisitePlanItemIds.every((id) => progress.get(id) === 'completed'))
+          return commands.complete(claim, () =>
+            CourseActionLaunchResultSchema.parse({
+              kind: 'blocked',
+              agendaItemId: item.id,
+              reason: '请先完成这项检查对应的讲解与练习。',
+              stale: false,
+              recomposedAgenda: null,
+            }),
+          );
+      }
       const currentLaunch = resolveLaunchForPlanItem(
         repos,
         clock,
         parsed.command.workspaceId,
         curriculum,
-        bound.planItem,
+        // A failed Review has already consumed its due event. Its linked Repair
+        // generates another formal check of the same objective, without consuming
+        // a second scheduled Review.
+        verificationEpisodeId && bound.planItem.kind === 'due_review'
+          ? { ...bound.planItem, kind: 'formal_checkpoint' }
+          : bound.planItem,
       );
       if (
         currentLaunch.status !== 'launchable' ||
@@ -556,6 +584,30 @@ export function createCourseActionLaunchService({
       }
 
       if (currentLaunch.capability === 'assessment') {
+        const verificationEpisode = verificationEpisodeId
+          ? repos.repair.getEpisode(verificationEpisodeId)
+          : undefined;
+        const priorVersion = verificationEpisode
+          ? repos.formalAssessments.getVersion(verificationEpisode.assessmentVersionId)
+          : undefined;
+        if (
+          verificationEpisodeId &&
+          (!verificationEpisode ||
+            verificationEpisode.workspaceId !== parsed.command.workspaceId ||
+            !['ACTIVE', 'AWAITING_VERIFICATION'].includes(verificationEpisode.status) ||
+            priorVersion?.progressionContext?.agendaId !== agenda.id ||
+            priorVersion.progressionContext.agendaItemId !== item.id)
+        )
+          throw new AppError(
+            ApiErrorCode.VersionConflict,
+            'Repair verification no longer matches this active Course action.',
+          );
+        const previousPrompts = priorVersion
+          ? repos.formalAssessments
+              .listVersions(priorVersion.definitionId)
+              .flatMap((version) => version.items.map((item) => item.prompt))
+              .slice(-12)
+          : undefined;
         const request = CreateAssessmentRequestSchema.parse(
           JSON.parse(currentLaunch.resourceId ?? '{}') as unknown,
         );
@@ -570,7 +622,9 @@ export function createCourseActionLaunchService({
         const formalOnly =
           assessmentKind === 'formal_checkpoint' ||
           assessmentKind === 'targeted_repair' ||
-          assessmentKind === 'due_review';
+          assessmentKind === 'due_review' ||
+          assessmentKind === 'synthesis';
+        const unitTransfer = bound.planItem.synthesisMode === 'unit_transfer';
         const assertFormalContextCurrent = (): Curriculum => {
           const currentState = repos.courseExecution.get(parsed.command.workspaceId);
           const currentAgenda = repos.sessionAgendas.get(parsed.agendaId);
@@ -632,7 +686,9 @@ export function createCourseActionLaunchService({
             clock,
             parsed.command.workspaceId,
             currentCurriculum,
-            currentBound.planItem,
+            verificationEpisodeId && currentBound.planItem.kind === 'due_review'
+              ? { ...currentBound.planItem, kind: 'formal_checkpoint' }
+              : currentBound.planItem,
           );
           if (
             currentLaunch.status !== 'launchable' ||
@@ -677,6 +733,28 @@ export function createCourseActionLaunchService({
           providerOptions: opts,
         });
         const assessmentRequest = { ...request, ...(formalOnly ? { formalOnly: true } : {}) };
+        const existingCheckpoint = () => {
+          if (verificationEpisodeId || !formalOnly || assessmentKind === 'due_review') return null;
+          const accepted = formalAssessments.getAcceptedForAgenda(
+            parsed.command.workspaceId,
+            agenda.id,
+            item.id,
+          );
+          const quiz = accepted?.progressionContext?.quizId
+            ? repos.quizzes.get(accepted.progressionContext.quizId)
+            : undefined;
+          return accepted && quiz
+            ? CourseActionLaunchResultSchema.parse({
+                kind: 'assessment',
+                agendaItemId: item.id,
+                quiz: toPublicQuiz(quiz),
+                assessmentKind,
+                formalAssessmentVersionId: accepted.id,
+              })
+            : null;
+        };
+        const existing = existingCheckpoint();
+        if (existing) return commands.complete(claim, () => existing);
         const proposalCatalogue = buildFormalAssessmentProposalCatalogue({
           repos,
           workspaceId: parsed.command.workspaceId,
@@ -694,7 +772,7 @@ export function createCourseActionLaunchService({
           learningUnitId: bound.planItem.curriculumLearningUnitId,
           objectiveId: bound.planItem.objectiveIds[0],
         });
-        if (assessmentKind === 'due_review') {
+        if (assessmentKind === 'due_review' && !verificationEpisodeId) {
           const targetId = request.mode === 'review' ? request.conceptIds?.[0] : undefined;
           if (!targetId || request.conceptIds?.length !== 1) {
             throw new AppError(
@@ -768,10 +846,116 @@ export function createCourseActionLaunchService({
               requestedChallengeFamily: assessmentDiversity.selection.requestedChallengeFamily,
               objectiveCatalogue: proposalCatalogue?.objectiveCatalogue,
               teachingSurfaceCatalogue: proposalCatalogue?.teachingSurfaceCatalogue,
+              previousPrompts: unitTransfer ? undefined : previousPrompts,
+              learnerGeneratedTransfer: unitTransfer,
             }),
         });
+        if (previousPrompts && !unitTransfer) {
+          const normalize = (value: string) => value.replace(/[\s\p{P}\p{S}]/gu, '').toLowerCase();
+          if (
+            creation.quiz.questions.some((question) =>
+              previousPrompts.some((prompt) =>
+                normalize(question.stem).includes(normalize(prompt)),
+              ),
+            )
+          )
+            throw new AppError(
+              ApiErrorCode.GroundingFailed,
+              '验证题重复了已经见过的问题，请重新准备。',
+            );
+        }
+        if (unitTransfer) {
+          const objective = proposalCatalogue.objectiveCatalogue[0];
+          if (
+            !objective ||
+            creation.quiz.questions.some(
+              (question) => question.formalProposal?.objectiveRef !== objective.objectiveRef,
+            )
+          )
+            throw new AppError(
+              ApiErrorCode.GroundingFailed,
+              '综合迁移题未绑定当前目标，请重新准备。',
+            );
+          const priorResponses = repos.formalAssessments
+            .listAttemptsForWorkspace(parsed.command.workspaceId)
+            .filter((attempt) => attempt.status === 'submitted')
+            .flatMap((attempt) => {
+              const version = repos.formalAssessments.getVersion(attempt.assessmentVersionId);
+              return (
+                version?.items
+                  .filter(
+                    (item) =>
+                      item.transferTask &&
+                      item.targetObjectiveId === bound.planItem.objectiveIds[0],
+                  )
+                  .map((item) => attempt.responses[item.id] ?? '') ?? []
+              );
+            })
+            .slice(-100);
+          const task = TransferTaskSchema.parse({
+            version: 'unit-transfer-v1',
+            presentedExamples: [
+              ...proposalCatalogue.teachingSurfaceCatalogue.map((surface) => surface.text),
+              ...repos.lessonExecution
+                .listForWorkspace(parsed.command.workspaceId)
+                .filter(
+                  (state) =>
+                    state.studyPlanVersionId === plan.id &&
+                    state.learningUnitId === bound.planItem.curriculumLearningUnitId,
+                )
+                .flatMap((state) => {
+                  const brief = state.teachingBriefId
+                    ? repos.teachingBriefs.get(state.teachingBriefId)
+                    : undefined;
+                  return [
+                    ...(brief ? lessonExecutionPresentedPrompts(brief, state) : []),
+                    ...repos.lessonExecution.listEvents(state.id).flatMap((event) => {
+                      const archived =
+                        event.kind === 'practice_repair_prepared' && event.payload.archivedRound
+                          ? PracticeRecoveryStateSchema.shape.rounds.element.safeParse(
+                              event.payload.archivedRound,
+                            )
+                          : null;
+                      return archived?.success ? recoveryExposurePrompts(archived.data) : [];
+                    }),
+                  ];
+                }),
+              ...repos.repair
+                .listByWorkspace(parsed.command.workspaceId)
+                .filter(
+                  (episode) =>
+                    episode.targetLearningUnitId === bound.planItem.curriculumLearningUnitId,
+                )
+                .flatMap((episode) =>
+                  repos.repair.listPackets(episode.id).map((packet) => packet.practicePrompt),
+                ),
+            ].slice(-100),
+            priorResponses,
+          });
+          // The provider supplies only source-bound grading content. Local policy
+          // authors the learner's generative task and separately grades its performance.
+          creation.quiz.questions = creation.quiz.questions.slice(0, 1).map((question) => ({
+            ...question,
+            stem: unitTransferPrompt(objective.title, priorResponses.length),
+            transferTask: task,
+          }));
+          creation.blueprints = creation.blueprints.filter((blueprint) =>
+            creation.quiz.questions.some((question) => question.blueprintId === blueprint.id),
+          );
+        }
         return commands.complete(claim, () => {
           assertFormalContextCurrent();
+          if (verificationEpisode) {
+            const currentEpisode = repos.repair.getEpisode(verificationEpisode.id);
+            if (
+              currentEpisode?.status !== 'AWAITING_VERIFICATION' ||
+              currentEpisode.verificationAttemptId !== verificationEpisode.verificationAttemptId
+            )
+              throw new AppError(
+                ApiErrorCode.VersionConflict,
+                '修复状态已改变，请刷新后继续复测。',
+              );
+          }
           const currentState = repos.courseExecution.get(parsed.command.workspaceId);
           const currentAgenda = repos.sessionAgendas.get(parsed.agendaId);
           const currentPlan = repos.studyPlans.get(parsed.expectedStudyPlanId);
@@ -819,7 +1003,9 @@ export function createCourseActionLaunchService({
             clock,
             parsed.command.workspaceId,
             currentCurriculum,
-            finalBound.planItem,
+            verificationEpisodeId && finalBound.planItem.kind === 'due_review'
+              ? { ...finalBound.planItem, kind: 'formal_checkpoint' }
+              : finalBound.planItem,
           );
           if (
             finalLaunch.status !== 'launchable' ||
@@ -878,12 +1064,50 @@ export function createCourseActionLaunchService({
               });
             }
           }
+          const existing = existingCheckpoint();
+          if (existing) return existing;
           assessment.persist(creation);
+          const questionContracts = formalProgression.registerAssessmentContracts({
+            workspaceId: parsed.command.workspaceId,
+            quizId: creation.quiz.id,
+            studySessionId: parsed.studySessionId ?? null,
+            agendaId: currentAgenda.id,
+            agendaItemId: currentItem.id,
+            assessmentKind,
+            contractVersionId: currentPlan.contractVersionId,
+            curriculumVersionId: currentPlan.curriculumVersionId,
+            studyPlanVersionId: currentPlan.id,
+            executionSourceManifestFingerprint: currentPlan.executionSourceManifestFingerprint,
+            proposalCatalogue,
+          });
+          if (
+            formalOnly &&
+            creation.quiz.questions.some(
+              (question) =>
+                !questionContracts.some(
+                  (contract) =>
+                    contract.questionId === question.id &&
+                    isStateCreditingAdmissibility(contract.admissibilityTier),
+                ),
+            )
+          ) {
+            throw new AppError(
+              ApiErrorCode.GroundingFailed,
+              '评分依据未通过正式准入，请重新准备检查。已有学习记录不变。',
+              {
+                kind: 'formal_question_admission_failed',
+                limitations: questionContracts
+                  .filter((contract) => !isStateCreditingAdmissibility(contract.admissibilityTier))
+                  .flatMap((contract) => contract.limitations),
+              },
+            );
+          }
           let formalAssessmentVersionId: string | null = null;
           if (
             assessmentKind === 'formal_checkpoint' ||
             assessmentKind === 'targeted_repair' ||
-            assessmentKind === 'due_review'
+            assessmentKind === 'due_review' ||
+            assessmentKind === 'synthesis'
           ) {
             const targetLearningUnitId = item.learningUnitId;
             const targetObjectiveId = finalBound.planItem.objectiveIds[0];
@@ -904,6 +1128,9 @@ export function createCourseActionLaunchService({
                 targetLearningUnitId,
                 targetObjectiveId,
                 representation: assessmentDiversity.evidenceRepresentation,
+                predecessorVersionId: priorVersion
+                  ? repos.formalAssessments.listVersions(priorVersion.definitionId).at(-1)?.id
+                  : undefined,
                 assessmentIntent: assessmentDiversity.selection,
                 progressionContext: {
                   quizId: creation.quiz.id,
@@ -923,19 +1150,6 @@ export function createCourseActionLaunchService({
               }
             }
           }
-          formalProgression.registerAssessmentContracts({
-            workspaceId: parsed.command.workspaceId,
-            quizId: creation.quiz.id,
-            studySessionId: parsed.studySessionId ?? null,
-            agendaId: currentAgenda.id,
-            agendaItemId: currentItem.id,
-            assessmentKind,
-            contractVersionId: currentPlan.contractVersionId,
-            curriculumVersionId: currentPlan.curriculumVersionId,
-            studyPlanVersionId: currentPlan.id,
-            executionSourceManifestFingerprint: currentPlan.executionSourceManifestFingerprint,
-            proposalCatalogue,
-          });
           return CourseActionLaunchResultSchema.parse({
             kind: 'assessment',
             agendaItemId: currentItem.id,
@@ -962,7 +1176,87 @@ export function createCourseActionLaunchService({
     }
   }
 
-  return { launch };
+  async function launchReview(
+    input: {
+      command: CourseExecutionCommandEnvelope;
+      targetId: string;
+      expectedCourseExecutionVersion: number;
+    },
+    opts?: ProviderCallOptions,
+  ) {
+    const workspaceId = input.command.workspaceId;
+    const state = repos.courseExecution.get(workspaceId);
+    const target = repos.reviewSuccessor.getTarget(input.targetId);
+    if (!target || target.workspaceId !== workspaceId) throw notFound('Review target not found.');
+    if (state.version !== input.expectedCourseExecutionVersion)
+      throw new AppError(
+        ApiErrorCode.VersionConflict,
+        'Course route changed. Refresh before starting Review.',
+      );
+    const agenda = reviewSuccessor.reconcileDueAgenda(workspaceId);
+    const item = agenda?.items.find((item) => {
+      if (item.kind !== 'due_review' || !['queued', 'active'].includes(item.state)) return false;
+      try {
+        return CreateAssessmentRequestSchema.safeParse(
+          JSON.parse(item.launch.resourceId ?? '{}'),
+        ).data?.conceptIds?.includes(input.targetId);
+      } catch {
+        return false;
+      }
+    });
+    if (!agenda || !item || !state.activeContractId || !state.acceptedPlanId)
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        'This Review is not due or no longer belongs to the active Course route.',
+      );
+    return launch(
+      {
+        command: input.command,
+        agendaId: agenda.id,
+        expectedAgendaVersion: agenda.version,
+        agendaItemId: item.id,
+        expectedContractId: state.activeContractId,
+        expectedStudyPlanId: state.acceptedPlanId,
+        expectedExecutionSourceManifestFingerprint: agenda.executionSourceManifestFingerprint,
+      },
+      opts,
+    );
+  }
+  async function prepareRepairVerification(episodeId: string, opts?: ProviderCallOptions) {
+    const episode = repos.repair.getEpisode(episodeId);
+    const original = episode
+      ? repos.formalAssessments.getVersion(episode.assessmentVersionId)
+      : undefined;
+    const context = original?.progressionContext;
+    const agenda = context ? repos.sessionAgendas.get(context.agendaId) : undefined;
+    if (!episode || !context || !agenda) throw notFound('Repair has no formal Course route.');
+    const commandId = newId('repair_verification');
+    const result = await launch(
+      {
+        command: {
+          commandId,
+          idempotencyKey: commandId,
+          workspaceId: episode.workspaceId,
+          actor: 'learner',
+        },
+        agendaId: agenda.id,
+        expectedAgendaVersion: agenda.version,
+        agendaItemId: context.agendaItemId,
+        expectedContractId: context.contractVersionId,
+        expectedStudyPlanId: context.studyPlanVersionId,
+        expectedExecutionSourceManifestFingerprint: context.executionSourceManifestFingerprint,
+      },
+      opts,
+      episodeId,
+    );
+    if (result.kind !== 'assessment' || !result.formalAssessmentVersionId)
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        result.kind === 'blocked' ? result.reason : 'Fresh verification is unavailable.',
+      );
+    return formalAssessments.getVersion(result.formalAssessmentVersionId);
+  }
+  return { launch, launchReview, prepareRepairVerification };
 }
 
 export type CourseActionLaunchService = ReturnType<typeof createCourseActionLaunchService>;
