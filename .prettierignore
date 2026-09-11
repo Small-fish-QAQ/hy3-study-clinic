@@ -6,3 +6,5 @@ package-lock.json
 apps/web/dist
 data
 *.sqlite
+# Frozen evaluation inputs and captured outputs retain their audited bytes.
+eval/final-evaluation
