@@ -724,10 +724,17 @@ function selectCurriculumEvidenceOffersInternal(
     }
   });
 
+  // A short document can contain many obligations in a single paragraph. The
+  // current policy redistributes unused excerpt capacity while preserving the
+  // historical selectors for reproducible callers of those named policies.
+  const maxOffersPerBlock =
+    policy === 'allocated_source_v1'
+      ? CURRICULUM_PROVIDER_EVIDENCE_OFFER_BUDGET
+      : CURRICULUM_PROVIDER_OFFERS_PER_BLOCK;
   const selectOffers = (candidateBlockIds: readonly string[]): CurriculumEvidenceOffer[] => {
     const offers: CurriculumEvidenceOffer[] = [];
     let offerBudgetReached = false;
-    for (let pass = 0; pass < CURRICULUM_PROVIDER_OFFERS_PER_BLOCK; pass += 1) {
+    for (let pass = 0; pass < maxOffersPerBlock; pass += 1) {
       for (const blockId of candidateBlockIds) {
         const offer = offersByBlock.get(blockId)?.[pass];
         if (!offer) continue;
@@ -744,7 +751,7 @@ function selectCurriculumEvidenceOffersInternal(
   const baselineOffers = selectOffers(baselineCandidateBlockIds);
   const policyOffers = selectOffers(selectedCandidateBlockIds);
   const selected =
-    policy === CURRICULUM_EVIDENCE_BASELINE_POLICY
+    policy !== 'derived_section_reserve_v1'
       ? policyOffers
       : largestSerializedPrefix(
           policyOffers,
@@ -823,7 +830,7 @@ function selectCurriculumEvidenceOffersInternal(
       budgets: {
         maxBlocks: CURRICULUM_PROVIDER_EVIDENCE_BLOCK_BUDGET,
         maxOffers: CURRICULUM_PROVIDER_EVIDENCE_OFFER_BUDGET,
-        maxOffersPerBlock: CURRICULUM_PROVIDER_OFFERS_PER_BLOCK,
+        maxOffersPerBlock,
         minFallbackBlocks: CURRICULUM_PROVIDER_MIN_FALLBACK_BLOCKS,
         neighborRadius: CURRICULUM_PROVIDER_NEIGHBOR_RADIUS,
         maxExcerptChars: CURRICULUM_EVIDENCE_EXCERPT_MAX_CHARS,

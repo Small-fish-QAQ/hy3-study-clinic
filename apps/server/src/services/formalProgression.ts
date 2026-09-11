@@ -32,6 +32,7 @@ import {
   type StudyPlanItem,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
+import type { AssessmentProposalInput } from '../llm/provider.js';
 import type { Repositories } from '../repositories/index.js';
 import type { FormalProgressionRepo } from '../repositories/formalProgression.js';
 import type { SourceAuthorityBundle } from '../repositories/sourceAuthority.js';
@@ -92,6 +93,7 @@ function unitFor(curriculum: Curriculum, id: string) {
 
 export interface FormalAssessmentProposalCatalogue {
   objectiveCatalogue: Array<{ objectiveRef: string; title: string; description: string }>;
+  scoringAuthorityCatalogue: NonNullable<AssessmentProposalInput['scoringAuthorityCatalogue']>;
   teachingSurfaceCatalogue: Array<{
     teachingSurfaceRef: string;
     surfaceKind: PresentedTeachingSurface['surfaceKind'];
@@ -188,7 +190,46 @@ export function buildFormalAssessmentProposalCatalogue(input: {
       surfaceRecords.set(`T${surfaceIndex - 1}`, surface);
     }
   }
-  return { objectiveCatalogue, teachingSurfaceCatalogue, surfaceRecords };
+  const scoringAuthorityCatalogue = objectiveIds.map((id, index) => {
+    const objective = objectiveById.get(id);
+    const claims = new Map<
+      string,
+      FormalAssessmentProposalCatalogue['scoringAuthorityCatalogue'][number]['claims'][number]
+    >();
+    for (const authorityId of objective?.truthAuthorityRecordIds ?? []) {
+      if (!input.repos.sourceAuthority.isBlockingEligible(authorityId)) continue;
+      const bundle = input.repos.sourceAuthority.getBundle(authorityId);
+      if (!bundle) continue;
+      const kind = authorityPremiseKind(bundle);
+      if (!['expected_answer', 'rubric_point', 'representation_equivalence'].includes(kind ?? ''))
+        continue;
+      for (const claim of bundle.claims) {
+        if (objective?.authorityClaimIds && !objective.authorityClaimIds.includes(claim.id))
+          continue;
+        const key = JSON.stringify([claim.sourceBlockId, claim.claim]);
+        const entry = claims.get(key) ?? {
+          text: claim.claim,
+          sourceBlockId: claim.sourceBlockId,
+          premiseKinds: [],
+        };
+        for (const premiseKind of ['expected_answer', 'rubric_point'] as const) {
+          if (
+            (kind === premiseKind || kind === 'representation_equivalence') &&
+            !entry.premiseKinds.includes(premiseKind)
+          )
+            entry.premiseKinds.push(premiseKind);
+        }
+        claims.set(key, entry);
+      }
+    }
+    return { objectiveRef: `O${index + 1}`, claims: [...claims.values()] };
+  });
+  return {
+    objectiveCatalogue,
+    scoringAuthorityCatalogue,
+    teachingSurfaceCatalogue,
+    surfaceRecords,
+  };
 }
 
 function currentTaughtExposure(input: {

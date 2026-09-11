@@ -1,5 +1,14 @@
 import { inferRequestedTutorMove } from '../tutor/pedagogy.js';
 import {
+  FORMAL_PROPOSAL_DECLARATIONS,
+  validateFormalScoringProposal,
+} from './formalAssessmentProposal.js';
+import {
+  CurriculumCoverageReviewSchema,
+  curriculumCoverageMessages,
+  type CurriculumCoverageReviewInput,
+} from './curriculumCoverage.js';
+import {
   AlignmentProposalPayloadSchema,
   AssessmentProposalPayloadSchema,
   FormalAssessmentProposalPayloadSchema,
@@ -927,7 +936,14 @@ export class Hy3Provider implements LlmProvider {
       input.objectiveCatalogue?.length
         ? FormalAssessmentProposalPayloadSchema
         : AssessmentProposalPayloadSchema,
-      opts,
+      {
+        ...opts,
+        validateCandidate: (raw) => {
+          const result = validateFormalScoringProposal(raw, input);
+          return result.valid ? (opts?.validateCandidate?.(raw) ?? result) : result;
+        },
+      },
+      input.objectiveCatalogue?.length ? FORMAL_PROPOSAL_DECLARATIONS : undefined,
     );
   }
 
@@ -1272,6 +1288,16 @@ export class Hy3Provider implements LlmProvider {
         schemaName: 'curriculum-detail-proposal-v2-claim-scope',
         candidatePreprocessor: curriculumDetailCandidatePreprocessor(input),
       },
+    );
+  }
+
+  async reviewCurriculumCoverage(input: CurriculumCoverageReviewInput, opts?: ProviderCallOptions) {
+    return this.complete(
+      curriculumCoverageMessages(input),
+      CurriculumCoverageReviewSchema,
+      opts,
+      'Repair only malformed fields and exact region/evidence/index bindings. Preserve substantive coverage findings.',
+      { maxTokens: 16000, schemaName: 'curriculum-teaching-coverage-v2-constructs' },
     );
   }
 

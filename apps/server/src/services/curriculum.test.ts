@@ -16,6 +16,7 @@ import { FakeProvider } from '../llm/fakeProvider.js';
 import { Hy3Provider } from '../llm/hy3Provider.js';
 import { ProviderError } from '../llm/errors.js';
 import type { CurriculumProposalInput, ProviderCallOptions } from '../llm/provider.js';
+import type { CurriculumCoverageReviewInput } from '../llm/curriculumCoverage.js';
 import { createRepositories, type Repositories } from '../repositories/index.js';
 import { makeBlock, makeMaterial, makeWorkspace, T0 } from '../testing/fixtures.js';
 import { fixedClock, type Clock } from '../util/ids.js';
@@ -631,6 +632,109 @@ beforeEach(() => {
 });
 
 describe('Curriculum proposal and authority boundaries', () => {
+  function coverageProvider() {
+    const review = vi.fn(async (input: CurriculumCoverageReviewInput) => ({
+      regions: input.detail.regions.map((region) => ({
+        regionId: region.regionId,
+        obligations: [
+          {
+            capability: 'Retain the complete source rule',
+            construct: 'identify' as const,
+            evidence: [
+              { evidenceId: region.evidence[0]!.evidenceId, quote: region.evidence[0]!.text },
+            ],
+            objectiveIndexes: input.candidate.units
+              .find((unit) => unit.regionId === region.regionId)
+              ?.objectives[0]!.description.endsWith(' Complete rule retained.')
+              ? [0]
+              : [],
+          },
+        ],
+      })),
+    }));
+    const model = Object.assign(new FakeProvider(), { reviewCurriculumCoverage: review });
+    const map = vi.spyOn(model, 'proposeCourseMap');
+    const baseDetail = model.proposeCurriculumDetails.bind(model);
+    const detail = vi
+      .spyOn(model, 'proposeCurriculumDetails')
+      .mockImplementation(async (input, opts) => {
+        if (!input.coverageRepair) return baseDetail(input, opts);
+        const candidate = structuredClone(input.coverageRepair.original);
+        for (const unit of candidate.units)
+          unit.objectives[0]!.description += ' Complete rule retained.';
+        return candidate;
+      });
+    const service = () =>
+      createCurriculumService({
+        repos: createRepositories(db),
+        provider: model,
+        clock,
+        commands,
+        sourceAuthority: createSourceAuthorityService({
+          sourceAuthority: repos.sourceAuthority,
+          clock,
+        }),
+      });
+    return { model, map, detail, review, service };
+  }
+
+  it('repairs missing teaching coverage additively and resumes only the interrupted repair', async () => {
+    addGroundedConcept('coverage-concept');
+    const { model, map, detail, review, service } = coverageProvider();
+    const authority = vi.spyOn(model, 'evaluateObjectiveAuthoritySupport');
+    const generate = detail.getMockImplementation()!;
+    let interrupt = true;
+    detail.mockImplementation(async (input, opts) => {
+      if (input.coverageRepair && interrupt) {
+        interrupt = false;
+        throw ProviderError.network();
+      }
+      return generate(input, opts);
+    });
+    await expect(service().propose(proposalRequest('coverage-interrupted'))).rejects.toThrow();
+    expect(repos.curricula.list('ws_1')).toEqual([]);
+    const { curriculum: completed } = await service().propose(proposalRequest('coverage-resumed'));
+    expect(map).toHaveBeenCalledTimes(1);
+    expect(detail).toHaveBeenCalledTimes(3);
+    expect(review).toHaveBeenCalledTimes(3);
+    expect(authority).not.toHaveBeenCalled();
+    expect(completed.status).toBe('proposed');
+    const objective = completed.nodes.find((node) => node.learningUnit)!.learningUnit!
+      .objectives[0]!;
+    expect(objective.description).toContain('Complete rule retained.');
+    expect(objective.semanticSupport).toBeUndefined();
+    expect(repos.courseExecution.get('ws_1').activeCurriculumId).toBeNull();
+  });
+
+  it.each(['unresolved', 'narrowed', 'stale_source'] as const)(
+    'rejects %s coverage repair before persistence',
+    async (mode) => {
+      addGroundedConcept('coverage-rejection-concept');
+      const { detail, review, service } = coverageProvider();
+      if (mode === 'stale_source') {
+        const check = review.getMockImplementation()!;
+        review.mockImplementation(async (input) => {
+          const result = await check(input);
+          activateChangedSourceRevision('coverage-changed-revision');
+          return result;
+        });
+      } else {
+        const generate = detail.getMockImplementation()!;
+        detail.mockImplementation(async (input, opts) => {
+          if (!input.coverageRepair) return generate(input, opts);
+          const candidate = structuredClone(input.coverageRepair.original);
+          if (mode === 'narrowed')
+            candidate.units[0]!.objectives[0]!.description = 'A substituted capability.';
+          return candidate;
+        });
+      }
+      await expect(service().propose(proposalRequest(`coverage-${mode}`))).rejects.toThrow();
+      expect(detail).toHaveBeenCalledTimes(mode === 'stale_source' ? 0 : 2);
+      expect(repos.curricula.list('ws_1')).toEqual([]);
+      expect(repos.courseExecution.get('ws_1').activeCurriculumId).toBeNull();
+    },
+  );
+
   it('resumes a failed Detail dependency without regenerating its valid Course Map', async () => {
     addGroundedConcept('stage-concept');
     const model = new FakeProvider();
@@ -697,7 +801,7 @@ describe('Curriculum proposal and authority boundaries', () => {
     expect(
       curriculumGenerationPolicyForOutline(200, LEGACY_CURRICULUM_GENERATION_POLICY, true),
     ).toBe(LEGACY_CURRICULUM_GENERATION_POLICY);
-    expect(curriculumOperationLeaseMs(240_000)).toBe(242 * 60 * 1000);
+    expect(curriculumOperationLeaseMs(240_000)).toBe(1202 * 60 * 1000);
     expect(curriculumOperationLeaseMs(240_000, LEGACY_CURRICULUM_GENERATION_POLICY)).toBe(
       218 * 60 * 1000,
     );
@@ -1647,7 +1751,9 @@ describe('Curriculum proposal and authority boundaries', () => {
         }).contract;
       } else {
         const revisionId = 'revision_manifest_boundary';
-        const revisedQuote = `${QUOTE} Changed source revision ${revisionId}.`;
+        // The capability is unchanged; only its exact revision binding changes.
+        // Complete-sentence authority now offers QUOTE separately from the revision note.
+        const revisedQuote = QUOTE;
         activateChangedSourceRevision(revisionId);
         concept = addGroundedConcept(
           'concept_manifest_boundary',

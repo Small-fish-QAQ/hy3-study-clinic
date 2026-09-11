@@ -1,5 +1,9 @@
 import type { TransferTask } from '@hy3-clinic/shared';
 import type {
+  CurriculumCoverageReview,
+  CurriculumCoverageReviewInput,
+} from './curriculumCoverage.js';
+import type {
   AlignmentLanguage,
   AlignmentProposalPayload,
   AssessmentMode,
@@ -85,6 +89,7 @@ export interface PracticeRepairInput {
   failedPrompt: string;
   selectedAnswer: string;
   feedback: string;
+  failedCase?: { options: string[]; expectedAnswer: string; explanation: string };
   learnerNote: string;
   teachingContext: string[];
   sourceExcerpts: string[];
@@ -622,6 +627,15 @@ export interface AssessmentProposalInput {
   misconception: MisconceptionRecord | null;
   /** Formal-only proposal-scope aliases. Durable ids and fingerprints are intentionally absent. */
   objectiveCatalogue?: Array<{ objectiveRef: string; title: string; description: string }>;
+  /** Existing exact scoring premises; authoring hints only, revalidated at admission. */
+  scoringAuthorityCatalogue?: Array<{
+    objectiveRef: string;
+    claims: Array<{
+      text: string;
+      sourceBlockId: string;
+      premiseKinds: Array<'expected_answer' | 'rubric_point'>;
+    }>;
+  }>;
   teachingSurfaceCatalogue?: Array<{
     teachingSurfaceRef: string;
     surfaceKind:
@@ -810,6 +824,7 @@ export const LEARNER_CONTENT_LOCALE = 'zh-CN' as const;
 export type LearnerContentLocale = typeof LEARNER_CONTENT_LOCALE;
 
 export interface TeachingContentReviewInput {
+  computedItemIds?: string[];
   computedOutcomes?: boolean;
   stage: 'lesson' | 'practice';
   desiredDepth: DesiredDepth;
@@ -1196,6 +1211,8 @@ export interface CurriculumDetailRegionInput {
 
 /** One fixed-batch, operation-local detail request over server-owned Course Map regions. */
 export interface CurriculumDetailProposalInput {
+  coverageRepair?: { original: CurriculumDetailProposalPayload; review: CurriculumCoverageReview };
+  coverageRequirements?: CurriculumCoverageReview;
   workspaceName: string;
   contract: Pick<
     CurriculumContractContext,
@@ -1297,6 +1314,8 @@ export interface StudyPlanProposalInput {
  */
 export interface TeachingCapsuleGenerationInput {
   lesson: LessonSlotContentGenerationInput;
+  /** Full lesson slot bindings for reasoning already taught by earlier portions. */
+  practiceLessonSlots?: TeachingSkeleton['lessonSlots'];
   practiceSlots: TeachingSkeleton['practicePlan']['slots'];
   priorLesson: TeachingLessonSlotContent[];
   includeNarrative: boolean;
@@ -1424,6 +1443,10 @@ export interface LlmProvider extends VisualDescriptionProvider {
     input: CurriculumDetailProposalInput,
     opts?: ProviderCallOptions,
   ): Promise<CurriculumDetailProposalPayload>;
+  reviewCurriculumCoverage?(
+    input: CurriculumCoverageReviewInput,
+    opts?: ProviderCallOptions,
+  ): Promise<CurriculumCoverageReview>;
   /** Independently judge each objective against only its exact offered authority aliases. */
   evaluateObjectiveAuthoritySupport(
     input: ObjectiveAuthoritySemanticEvaluationInput,

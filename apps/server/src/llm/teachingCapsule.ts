@@ -177,6 +177,7 @@ export function teachingCapsuleMessages(input: TeachingCapsuleGenerationInput): 
         'FIRST choose the independent Practice cases, THEN teach the prerequisite mental model through DIFFERENT Lesson cases. Practice must make the learner derive a new result, not repeat a teacher-given conclusion. Do not teach the reserved Practice answers. Do not require unexplained external knowledge: add explicit assumptions to synthetic cases.',
         'At working_fluency, an assessed action must require combining facts, tracing a pending change, evaluating competing explanations, or identifying a boundary. It must leave an actual inference for the learner. Never state a user binding and then ask to infer that same binding; never calculate the result then ask the learner to repeat it. A changed operation label or noun does not create reasoning.',
         'Useful pattern: teach how several paths jointly affect an outcome; guided predicts a new update; transfer adds an explicit governing limit; Practice infers a hidden cause from intervention results. Use patterns suitable to THIS topic, not a mandatory template. At high_performance add interacting constraints and failure discrimination; deep_transfer adds unfamiliar justified design/tradeoff reasoning. Focus adds worthwhile reasoning angles at the SAME global depth, never depth+1.',
+        'At high_performance and deep_transfer, each central objective needs at least two distinct reasoning operations across its Lesson and initial Practice, including diagnose_cause or judge_tradeoff. At deep_transfer also include choose_design or judge_tradeoff. Read priorLesson when this portion continues an objective. Design any missing operation into the current tasks; changing only a label cannot satisfy the requirement.',
         'A known rule may be taught before a question. The question applies it to NEW data with a withheld consequence. An inverse diagnosis must leave the diagnosed variable unknown in the stem. A forward prediction must leave the outcome unknown. Competing options must answer the same question and be plausible under different evidence. Do not put author commentary such as "ignoring X" in a distractor.',
         'Example of sufficient case detail (adapt the reasoning structure, never copy an unrelated subject): "用户同时拥有审阅角色{read}和编辑角色{read,write}；权限按角色并集计算，变更立即生效，无直接授权。现在撤销编辑角色，同时给审阅角色增加export。完成变更后，哪些操作仍可执行？ A read和export / B 只有read / C read、write和export。" The learner must combine two updates; the stem never supplies the resulting set. A transfer could explicitly restrict the active session to an earlier permission snapshot, so inspecting current roles alone no longer suffices. Contrast this with the BAD task: "用户权限为read、export，能否export？"',
         'Example of reasoning from observations: "任务要求确认设备当前版本及与该版本对应的回滚办法。查询一返回版本v3；查询二的回滚说明明确只适用于v2。没有其他信息。现在最合理的是：A 用v2步骤直接完成 / B 查证v3回滚办法 / C 再查一次已确认的版本。" The learner compares evidence scope against a concrete completion criterion. Do NOT replace this with "日志缺Observation，缺了哪一步？" In a retry, change which evidence is missing or contradictory; do not merely rename the device. These examples illustrate inference, not mandatory topics or ready-made answers.',
@@ -257,6 +258,7 @@ export function validateTeachingCapsule(raw: unknown, input: TeachingCapsuleGene
         courseDesign: input.lesson.courseDesign,
         skeleton: {
           ...input.lesson.skeleton,
+          lessonSlots: input.practiceLessonSlots ?? input.lesson.skeleton.lessonSlots,
           practicePlan: {
             schemaVersion: 1,
             slots: input.practiceSlots,
@@ -270,9 +272,7 @@ export function validateTeachingCapsule(raw: unknown, input: TeachingCapsuleGene
     : undefined;
   const findings = [
     ...(lessonCheck.failureArtifact?.diagnostics ?? []),
-    ...(practiceCheck?.failureArtifact?.diagnostics ?? []).filter(
-      (f) => f.code !== 'reasoning_demand_below_depth',
-    ),
+    ...(practiceCheck?.failureArtifact?.diagnostics ?? []),
   ].filter(
     (f) =>
       (input.includeNarrative || f.code !== 'missing_lesson_narrative') &&
@@ -282,6 +282,20 @@ export function validateTeachingCapsule(raw: unknown, input: TeachingCapsuleGene
     valid: findings.length === 0,
     diagnostics: findings.map((f) => `${f.code}: ${f.message}`),
     diagnosticCodes: [...new Set(findings.map((f) => f.code))],
+    ...(findings.length > 0
+      ? {
+          failureArtifact: {
+            kind: 'teaching_capsule_rejection',
+            context: {
+              expectedItemIds: [
+                ...input.lesson.skeleton.lessonSlots.map((s) => s.slotId),
+                ...input.practiceSlots.map((s) => s.practiceSlotId),
+              ],
+            },
+            diagnostics: findings,
+          },
+        }
+      : {}),
   };
 }
 

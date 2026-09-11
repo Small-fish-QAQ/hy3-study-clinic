@@ -1,5 +1,6 @@
 import {
   ApiErrorCode,
+  MAX_RUBRIC_POINT_CHARS,
   ProposedGroundingSchema,
   SourceAuthorityPolicyBasisSchema,
   SourceAuthorityValidationActorSchema,
@@ -70,13 +71,15 @@ export interface SourceAuthorityServiceDeps {
   clock: Clock;
 }
 
-type VerbatimAssessmentPremiseKind = 'expected_answer' | 'rubric_point';
-
 function sentenceLikeSpans(content: string): string[] {
-  return content
-    .split(/(?<=[。！？!?；;])/u)
-    .map((span) => span.trim())
-    .filter((span) => span.length >= 4 && span.length <= 500);
+  // Keep complete source statements. Prefixes can drop the condition that makes
+  // an answer true, and splitting only Chinese punctuation loses English prose.
+  const sentences = [...new Intl.Segmenter('en', { granularity: 'sentence' }).segment(content)].map(
+    ({ segment }) => segment.trim(),
+  );
+  return [...new Set([content.trim(), ...sentences])].filter(
+    (span) => span.length >= 4 && span.length <= MAX_RUBRIC_POINT_CHARS,
+  );
 }
 
 /**
@@ -84,22 +87,10 @@ function sentenceLikeSpans(content: string): string[] {
  * These are occurrence claims only: no paraphrase or semantic entailment is
  * introduced by the local validator.
  */
-function verbatimClaimsForBlock(
-  block: SourceBlock,
-  premiseKind: VerbatimAssessmentPremiseKind,
-): string[] {
-  const spans = sentenceLikeSpans(block.content);
-  const candidates =
-    premiseKind === 'expected_answer'
-      ? [
-          ...spans.filter((span) => span.length <= 120),
-          spans.slice(0, 2).join('').slice(0, 200),
-          block.content.trim().slice(0, 120),
-        ]
-      : [...spans.slice(0, 3).map((span) => span.slice(0, 80))];
-  return [...new Set(candidates.map((claim) => claim.trim()))]
-    .filter((claim) => claim.length >= 4 && block.content.includes(claim))
-    .slice(0, 10);
+function verbatimClaimsForBlock(block: SourceBlock): string[] {
+  // Expected answers and rubric points must be able to bind the same exact
+  // proposition. Their former unequal prefix lengths prevented that pairing.
+  return sentenceLikeSpans(block.content).slice(0, 10);
 }
 
 /**
@@ -272,7 +263,7 @@ export function createSourceAuthorityService({
         // admitted until the material is reprocessed with modern lineage.
         if (block.contentOrigin && block.contentOrigin !== 'extracted_original') continue;
         for (const premiseKind of ['expected_answer', 'rubric_point'] as const) {
-          const logicalSourceId = `local-verbatim:${materialRevisionId}:${block.id}:${premiseKind}`;
+          const logicalSourceId = `local-verbatim-v2:${materialRevisionId}:${block.id}:${premiseKind}`;
           const existing = sourceAuthority.listHistory(logicalSourceId).at(-1);
           if (existing) {
             admitted.push(existing);
@@ -281,7 +272,7 @@ export function createSourceAuthorityService({
 
           const now = clock.now().toISOString();
           const claims: Array<Omit<SourceAuthorityClaim, 'authorityRecordId'>> = [];
-          for (const claim of verbatimClaimsForBlock(block, premiseKind)) {
+          for (const claim of verbatimClaimsForBlock(block)) {
             const verification = verifyGrounding(revision.blocks, {
               blockId: block.id,
               quote: claim,
@@ -310,7 +301,7 @@ export function createSourceAuthorityService({
               predecessorId: null,
               premiseScope: `verbatim-source:${block.id}`,
               policyBasis: {
-                policyVersion: 'local-verbatim-source-v1',
+                policyVersion: 'local-verbatim-source-v2',
                 premiseKind,
                 basis:
                   'Exact source occurrence only; model paraphrase and semantic entailment are not admitted.',

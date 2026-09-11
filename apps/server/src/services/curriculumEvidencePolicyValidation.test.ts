@@ -342,7 +342,7 @@ function fixture() {
 
 describe('representative multi-Material Curriculum evidence policy validation', () => {
   it('keeps priority evidence and fixed budgets while preventing derived-section starvation', () => {
-    expect(CURRICULUM_EVIDENCE_PRODUCTION_POLICY).toBe(CURRICULUM_EVIDENCE_SECTION_RESERVE_POLICY);
+    expect(CURRICULUM_EVIDENCE_PRODUCTION_POLICY).toBe('allocated_source_v1');
     const input = fixture();
     const selectorInput = {
       catalog: input.catalog,

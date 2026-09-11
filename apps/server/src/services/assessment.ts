@@ -52,6 +52,7 @@ interface AssessmentGenerationPolicy {
   requiredRepresentation: EvidenceRepresentation | null;
   requestedChallengeFamily: MasteryChallengeFamily | null;
   objectiveCatalogue?: AssessmentProposalInput['objectiveCatalogue'];
+  scoringAuthorityCatalogue?: AssessmentProposalInput['scoringAuthorityCatalogue'];
   teachingSurfaceCatalogue?: AssessmentProposalInput['teachingSurfaceCatalogue'];
 }
 
@@ -309,7 +310,9 @@ export function createAssessmentService({
     const questionCount =
       generationPolicy.learnerGeneratedTransfer || request.mode === 'misconception_check'
         ? 1
-        : Math.min(MAX_ASSESSMENT_QUESTIONS, Math.max(3, targetSummaries.length));
+        : generationPolicy.objectiveCatalogue?.length
+          ? Math.min(MAX_ASSESSMENT_QUESTIONS, generationPolicy.objectiveCatalogue.length)
+          : Math.min(MAX_ASSESSMENT_QUESTIONS, Math.max(3, targetSummaries.length));
 
     const providerInput: AssessmentProposalInput = {
       workspaceName: workspace.name,
@@ -323,6 +326,7 @@ export function createAssessmentService({
       requestedChallengeFamily: generationPolicy.requestedChallengeFamily,
       misconception: misconceptionTarget ? misconceptions.get(misconceptionTarget) : null,
       objectiveCatalogue: generationPolicy.objectiveCatalogue,
+      scoringAuthorityCatalogue: generationPolicy.scoringAuthorityCatalogue,
       teachingSurfaceCatalogue: generationPolicy.teachingSurfaceCatalogue,
       previousPrompts: generationPolicy.previousPrompts,
     };

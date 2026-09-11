@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { QuestionSchema, RubricSchema } from './quiz.js';
-import { ProposedQuestionSchema } from '../provider/payloads.js';
+import { MAX_RUBRIC_POINT_CHARS, QuestionSchema, RubricSchema } from './quiz.js';
+import { ProposedQuestionSchema, ProposedRubricPointSchema } from '../provider/payloads.js';
 import { AnswerSchema, classifyGradeStatus, RubricGradeSchema } from './grading.js';
 import { MasteryStateSchema } from './mistake.js';
 import { ApiErrorSchema } from './errors.js';
@@ -11,6 +11,18 @@ import {
   CurriculumNodeSchema,
 } from './curriculum.js';
 import { CourseFocusRequestSchema } from './learningContract.js';
+
+it('preserves a complete source-length rubric through provider and persistence schemas', () => {
+  const text = 'A'.repeat(MAX_RUBRIC_POINT_CHARS - 1) + '.';
+  const proposed = ProposedRubricPointSchema.parse({ text, required: true, sourceRefs: ['b1'] });
+  expect(RubricSchema.parse({ keyPoints: [proposed] }).keyPoints[0]!.text).toBe(text);
+  expect(ProposedRubricPointSchema.safeParse({ text: text + 'X', required: true }).success).toBe(
+    false,
+  );
+  expect(
+    RubricSchema.safeParse({ keyPoints: [{ text: text + 'X', required: true }] }).success,
+  ).toBe(false);
+});
 
 describe('depth-and-focus Course design schemas', () => {
   it('keeps focus narrow and validates bounded learner Skeleton edits', () => {

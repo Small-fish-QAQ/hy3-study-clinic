@@ -67,7 +67,9 @@ function pairedProcedureClaims(formalClaims: ExactAuthorityClaim[]): ExactAuthor
     const premiseKind = item.bundle.record.policyBasis.premiseKind;
     if (
       item.bundle.record.actor !== 'local_validator' ||
-      item.bundle.record.policyBasis.policyVersion !== 'local-verbatim-source-v1' ||
+      !['local-verbatim-source-v1', 'local-verbatim-source-v2'].includes(
+        item.bundle.record.policyBasis.policyVersion,
+      ) ||
       (premiseKind !== 'expected_answer' && premiseKind !== 'rubric_point') ||
       normalizedExactClaim(item.claim.claim) !== normalizedExactClaim(item.claim.quote) ||
       !isExplicitSourceProcedure(item.claim.claim)

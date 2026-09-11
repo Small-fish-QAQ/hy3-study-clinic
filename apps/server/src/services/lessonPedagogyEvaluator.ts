@@ -1760,6 +1760,9 @@ function workedProcessIssueCodes(
   ];
   const substantiveWorkedText = (value: string) =>
     /^\s*\{[\p{L}\p{N}_ ,.-]*\}\s*$/u.test(value) ||
+    // A labelled quantity or equation is an observable state too. This checks
+    // representation only; the independent teaching review checks correctness.
+    /[\p{L}\p{N})\]%‰]\s*(?:≈|=|≤|≥|<|>)\s*(?:[√−-]?\s*[\p{L}\p{N}(])/u.test(value) ||
     // A numeric result is observable content, not an empty prose label.
     /^\s*-?\d+(?:\.\d+)?(?:\s*[/+*×÷−-]\s*-?\d+(?:\.\d+)?)*(?:\s*%)?\s*$/u.test(value) ||
     (!FIELD_LABEL_ONLY.test(normalized(value)) &&

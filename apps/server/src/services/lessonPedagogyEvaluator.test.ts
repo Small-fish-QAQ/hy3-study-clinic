@@ -19,6 +19,8 @@ import {
   evaluatePracticeQuality,
 } from './lessonPedagogyEvaluator.js';
 import { planTeachingSkeleton } from './teachingSkeletonPlanner.js';
+import { capsuleInputs } from './teachingCapsules.js';
+import { validateTeachingCapsule } from '../llm/teachingCapsule.js';
 
 function input(): TeachingBriefGenerationInput {
   return {
@@ -946,6 +948,53 @@ function compositionalInputs(
 }
 
 describe('compositional Lesson and Practice evaluators', () => {
+  it('validates completed objective depth using reasoning in earlier authoring portions', () => {
+    const fixture = compositionalInputs('apply', 35, 'high_performance');
+    fixture.lessonInput.courseDesign = { desiredDepth: 'high_performance', unitFocus: 'normal' };
+    while (fixture.lessonInput.skeleton.lessonSlots.length <= 4) {
+      const slotId = `L${fixture.lessonInput.skeleton.lessonSlots.length + 1}`;
+      fixture.lessonInput.skeleton.lessonSlots.push({
+        ...fixture.lessonInput.skeleton.lessonSlots[0]!,
+        slotId,
+      });
+      fixture.lesson.slots.push({ ...fixture.lesson.slots[0]!, slotId });
+    }
+    for (const slot of fixture.lesson.slots) {
+      if (slot.informalCheck) slot.informalCheck.reasoningOperation = 'predict_outcome';
+      if (slot.workedProcess?.interaction) {
+        slot.workedProcess.interaction.activity.reasoningOperation = 'diagnose_cause';
+        slot.workedProcess.interaction.transfer.reasoningOperation = 'predict_outcome';
+      }
+    }
+    for (const item of fixture.practice.items) item.initial.reasoningOperation = 'predict_outcome';
+    const parts = capsuleInputs(fixture.lessonInput, fixture.lessonInput.skeleton);
+    const final = parts.at(-1)!;
+    expect(parts.length).toBeGreaterThan(1);
+    const ids = new Set(final.lesson.skeleton.lessonSlots.map((s) => s.slotId));
+    final.priorLesson = fixture.lesson.slots.filter((s) => !ids.has(s.slotId));
+    const candidate = {
+      lesson: { slots: fixture.lesson.slots.filter((s) => ids.has(s.slotId)) },
+      practice: fixture.practice,
+    };
+    expect(validateTeachingCapsule(candidate, final).diagnosticCodes).not.toContain(
+      'reasoning_demand_below_depth',
+    );
+    // Losing the old bindings recreates the bug; losing the old reasoning is a
+    // real deficiency and must still be rejected before checkpoint acceptance.
+    expect(
+      validateTeachingCapsule(candidate, {
+        ...final,
+        practiceLessonSlots: final.lesson.skeleton.lessonSlots,
+      }).diagnosticCodes,
+    ).toContain('reasoning_demand_below_depth');
+    for (const slot of final.priorLesson)
+      if (slot.workedProcess?.interaction)
+        slot.workedProcess.interaction.activity.reasoningOperation = 'predict_outcome';
+    expect(validateTeachingCapsule(candidate, final).diagnosticCodes).toContain(
+      'reasoning_demand_below_depth',
+    );
+  });
+
   it('accepts a numeric worked result without inventing prose and still rejects placeholders', () => {
     const fixture = compositionalInputs('apply');
     const worked = fixture.lesson.slots.find((slot) => slot.workedProcess)!.workedProcess!;
@@ -957,6 +1006,12 @@ describe('compositional Lesson and Practice evaluators', () => {
     expect(codes()).not.toContain('worked_process_missing_required_structure');
     worked.result = '{read}';
     expect(codes()).not.toContain('worked_process_missing_required_structure');
+    for (const result of ['v≈4.25 m/s', 'T = 273.15 K', 'r=√(9/4)', 'ρ≤1.2']) {
+      worked.result = result;
+      expect(codes()).not.toContain('worked_process_missing_required_structure');
+    }
+    worked.interaction!.scaffold.options[0]!.feedbackIfSelected = '对，28%<30%';
+    expect(codes()).not.toContain('worked_interaction_missing_required_structure');
     worked.result = 'placeholder';
     expect(codes()).toContain('worked_process_missing_required_structure');
     worked.result = '30/128';

@@ -1425,7 +1425,7 @@ export function createLessonExecutionService({
           learningUnitId: current.learningUnitId,
           assessmentId: null,
           operationType: 'prepare_practice_repair',
-          schemaFingerprint: 'practice-repair-v5',
+          schemaFingerprint: 'practice-repair-v6-complete-failed-case',
           policyFingerprint: null,
           sourceFingerprint: current.sourceContextFingerprint,
           logicalCallId,
@@ -1436,7 +1436,7 @@ export function createLessonExecutionService({
             itemIndex: index,
             round: ordinal,
             request,
-            version: 'practice-repair-v5',
+            version: 'practice-repair-v6-complete-failed-case',
           },
           assertCurrent,
           beforeGenerate: () =>

@@ -51,6 +51,8 @@ export function compileTeachingKernel(
                   and: ' 且 ',
                   or: ' 或 ',
                   eq: ' 等于 ',
+                  gt: ' > ',
+                  lt: ' < ',
                   gte: ' ≥ ',
                   lte: ' ≤ ',
                   add: ' + ',

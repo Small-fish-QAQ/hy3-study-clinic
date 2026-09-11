@@ -109,7 +109,22 @@ class VisualLearningProvider extends FakeProvider {
     opts?: ProviderCallOptions,
   ) {
     this.curriculumDetailInputs.push(input);
-    return super.proposeCurriculumDetails(input, opts);
+    // This fixture exercises text authority alongside an advisory image. Select
+    // the complete source statement, not Fake's truncated Concept preview.
+    return super.proposeCurriculumDetails(
+      {
+        ...input,
+        regions: input.regions.map((region) => ({
+          ...region,
+          evidence: [...region.evidence].sort(
+            (left, right) =>
+              Number(right.text === WATER_CYCLE_AUTHORITY) -
+              Number(left.text === WATER_CYCLE_AUTHORITY),
+          ),
+        })),
+      },
+      opts,
+    );
   }
 
   override async proposeStudyPlan(input: StudyPlanProposalInput, opts?: ProviderCallOptions) {

@@ -89,8 +89,9 @@ import {
 
 export const TEACHING_BRIEF_PROMPT_VERSION =
   'teaching-brief-v3-compositional-source-guided-interaction';
-export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v16-scoped-authoring';
-export const PRACTICE_CONTENT_PROMPT_VERSION = 'teaching-practice-content-v15-scoped-authoring';
+export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v18-source-faithful-models';
+export const PRACTICE_CONTENT_PROMPT_VERSION =
+  'teaching-practice-content-v17-source-faithful-models';
 /**
  * Retain the accepted R2 lease window. It is renewed before each bounded call;
  * this is a stale-worker fence, not a target preparation duration. Computed
@@ -1576,31 +1577,12 @@ export function createTeachingBriefPreparationService({
           });
         }
         let contentReview: LessonPedagogyEvaluation['contentReview'];
-        if (
-          provider.name === 'hy3' &&
-          !compositionalLessonInput.computedCases &&
-          inferenceProvider.reviewTeachingContent
-        ) {
-          // A mixed Unit can contain both executed cases and open authored text.
-          // Review only the latter; repeating calculated traces in a whole-Lesson
-          // review needlessly consumes its budget and conflates validation roles.
-          const reviewSlots = compositionalLessonInput.skeleton.lessonSlots.filter(
-            (slot) => !computedSlotIds.has(slot.slotId),
-          );
-          const reviewContext = {
-            ...compositionalLessonInput,
-            skeleton: {
-              ...compositionalLessonInput.skeleton,
-              lessonSlots: reviewSlots,
-              objectives: compositionalLessonInput.skeleton.objectives.filter((objective) =>
-                reviewSlots.some((slot) => slot.objectiveRefs.includes(objective.objectiveRef)),
-              ),
-            },
-          };
-          const reviewScope = (payload: LessonSlotContentProposalPayload) => ({
-            ...(computedSlotIds.size ? {} : { narrative: payload.narrative }),
-            slots: payload.slots.filter((slot) => !computedSlotIds.has(slot.slotId)),
-          });
+        if (provider.name === 'hy3' && inferenceProvider.reviewTeachingContent) {
+          // Executed arithmetic does not establish that the authored model is
+          // faithful to the source. Review every rule and explanation, while
+          // only asking the reviewer to solve actions not already computed.
+          const reviewContext = compositionalLessonInput;
+          const reviewScope = (payload: LessonSlotContentProposalPayload) => payload;
           const verified = await verifyPreparedTeaching(
             reviewContext,
             reviewScope(lessonPayload),
@@ -1726,6 +1708,7 @@ export function createTeachingBriefPreparationService({
                   ),
               );
             },
+            computedSlotIds,
           );
           lessonPayload = {
             ...lessonPayload,
@@ -1909,11 +1892,7 @@ export function createTeachingBriefPreparationService({
         });
       }
       let contentReview: PracticeQualityEvaluation['contentReview'];
-      if (
-        provider.name === 'hy3' &&
-        !compositionalPracticeInput.computedCases &&
-        inferenceProvider.reviewTeachingContent
-      ) {
+      if (provider.name === 'hy3' && inferenceProvider.reviewTeachingContent) {
         const verified = await verifyPreparedTeaching(
           compositionalPracticeInput,
           practicePayload,

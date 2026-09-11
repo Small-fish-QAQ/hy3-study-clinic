@@ -90,6 +90,25 @@ export function kernelFixture(): TeachingKernel {
   });
 }
 describe('executable teaching cases', () => {
+  it('preserves strict and inclusive numeric boundaries at and around equality', () => {
+    const comparisons = TeachingKernelSchema.shape.rules.parse(
+      ['lt', 'lte', 'gt', 'gte'].map((op) => ({
+        key: op,
+        label: op + ' comparison',
+        op,
+        args: ['value', 'limit'],
+      })),
+    );
+    for (const [value, expected] of [
+      [29, [true, true, false, false]],
+      [30, [false, true, false, true]],
+      [31, [false, false, true, true]],
+    ] as const) {
+      const result = evaluateKernel(comparisons, { value, limit: 30 });
+      expect(comparisons.map((rule) => result[rule.key])).toEqual(expected);
+    }
+    expect(() => evaluateKernel(comparisons, { value: '30', limit: 30 })).toThrow('numeric inputs');
+  });
   it('constructs complete teaching cases from a small mechanism and input ranges without model-authored puzzles', () => {
     const k = kernelFixture();
     const values: Record<string, (string | string[])[]> = {

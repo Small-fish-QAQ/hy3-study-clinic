@@ -17,6 +17,8 @@ const RuleSchema = z
       'or',
       'not',
       'eq',
+      'gt',
+      'lt',
       'gte',
       'lte',
       'add',
@@ -118,10 +120,19 @@ export function evaluateKernel(rules: KernelRule[], state: KernelState): KernelS
           JSON.stringify(Array.isArray(a[1]) ? [...new Set(a[1])].sort() : a[1]);
         break;
       case 'gte':
+      case 'gt':
+      case 'lt':
       case 'lte': {
         if (a.length !== 2) throw Error('comparison needs two inputs.');
         const n = numbers(a);
-        values[rule.key] = rule.op === 'gte' ? n[0]! >= n[1]! : n[0]! <= n[1]!;
+        values[rule.key] =
+          rule.op === 'gte'
+            ? n[0]! >= n[1]!
+            : rule.op === 'lte'
+              ? n[0]! <= n[1]!
+              : rule.op === 'gt'
+                ? n[0]! > n[1]!
+                : n[0]! < n[1]!;
         break;
       }
       case 'add':

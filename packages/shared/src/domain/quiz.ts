@@ -23,6 +23,9 @@ export const OptionSchema = z.object({
 });
 export type Option = z.infer<typeof OptionSchema>;
 
+/** Complete source premises must survive provider output and persisted rubrics unchanged. */
+export const MAX_RUBRIC_POINT_CHARS = 320;
+
 /**
  * One short-answer scoring criterion.
  *
@@ -33,7 +36,7 @@ export type Option = z.infer<typeof OptionSchema>;
  * absence never reduces the score.
  */
 export const RubricPointSchema = z.object({
-  text: z.string().min(1).max(300),
+  text: z.string().min(1).max(MAX_RUBRIC_POINT_CHARS),
   required: z.boolean(),
 });
 export type RubricPoint = z.infer<typeof RubricPointSchema>;

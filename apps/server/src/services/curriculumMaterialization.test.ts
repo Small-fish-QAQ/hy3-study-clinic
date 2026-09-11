@@ -320,6 +320,28 @@ function hangingFetch(): typeof fetch {
 }
 
 describe('bounded Curriculum detail materialization', () => {
+  it('retains allocated source excerpts omitted from the navigation sample', () => {
+    const input = planningInput();
+    const batches = planCurriculumDetailBatches(input);
+    for (const region of batches.flatMap((batch) => batch.input.regions)) {
+      const allocations = input.sourceAllocation.regions.filter((a) =>
+        region.sourceAllocationRegionIds.includes(a.id),
+      );
+      const eligible = input.evidenceCatalog.filter((offer) =>
+        allocations.some(
+          (a) =>
+            a.materialId === offer.materialId &&
+            a.materialRevisionId === offer.materialRevisionId &&
+            a.sourceBlockIds.includes(offer.blockId),
+        ),
+      );
+      expect(new Set(region.evidence.map((e) => e.evidenceId))).toEqual(
+        new Set(eligible.map((e) => e.id)),
+      );
+      expect(region.evidence.length).toBeGreaterThan(allocations.flatMap((a) => a.evidence).length);
+    }
+  });
+
   it('preserves exact Course Map region membership for every real LearningUnit', () => {
     const input = planningInput();
     const coverage = buildCourseMapDeterministicCoverage(

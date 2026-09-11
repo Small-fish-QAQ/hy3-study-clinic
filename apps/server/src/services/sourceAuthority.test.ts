@@ -280,6 +280,57 @@ describe('source truth/premise authority', () => {
     }
   });
 
+  it('pairs complete multilingual statements without dropping late conditions or decimal units', () => {
+    const statements = [
+      'The valve opens at 2.5 bar only when the safety latch is closed.',
+      'When the latch is open, the valve stays closed even if pressure is high.',
+      '手动检查必须先断电，再确认储压已释放。',
+    ];
+    const content = statements.join(' ');
+    db.prepare('UPDATE source_blocks SET content = ?, end_offset = ? WHERE id = ?').run(
+      content,
+      content.length,
+      BLOCK_ID,
+    );
+    const active = db
+      .prepare('SELECT active_revision_id FROM materials WHERE id = ?')
+      .get(MATERIAL_ID) as { active_revision_id: string };
+    const bundles = service.ensureVerbatimAssessmentAuthority(
+      'ws_1',
+      MATERIAL_ID,
+      active.active_revision_id,
+    );
+    const expected = bundles.find((b) => b.record.policyBasis.premiseKind === 'expected_answer')!;
+    const rubric = bundles.find((b) => b.record.policyBasis.premiseKind === 'rubric_point')!;
+    expect(new Set(expected.claims.map((c) => c.quote))).toEqual(
+      new Set(rubric.claims.map((c) => c.quote)),
+    );
+    for (const statement of statements)
+      expect(expected.claims.map((c) => c.quote)).toContain(statement);
+    for (const claim of expected.claims) {
+      expect([content, ...statements]).toContain(claim.quote);
+      expect(content.slice(claim.startOffset, claim.endOffset)).toBe(claim.quote);
+    }
+  });
+
+  it('does not turn an oversized conditional sentence into a truncated authority claim', () => {
+    const content =
+      'The valve remains closed ' +
+      'during the scheduled inspection '.repeat(15) +
+      'unless the latch is verified.';
+    db.prepare('UPDATE source_blocks SET content = ?, end_offset = ? WHERE id = ?').run(
+      content,
+      content.length,
+      BLOCK_ID,
+    );
+    const active = db
+      .prepare('SELECT active_revision_id FROM materials WHERE id = ?')
+      .get(MATERIAL_ID) as { active_revision_id: string };
+    expect(
+      service.ensureVerbatimAssessmentAuthority('ws_1', MATERIAL_ID, active.active_revision_id),
+    ).toEqual([]);
+  });
+
   it('never admits explicitly derived text as blocking source authority', () => {
     const active = db
       .prepare('SELECT active_revision_id FROM materials WHERE id = ?')

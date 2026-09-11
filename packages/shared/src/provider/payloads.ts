@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MAX_RUBRIC_POINT_CHARS } from '../domain/quiz.js';
 import { DifficultySchema, ImportanceSchema, QuestionTypeSchema } from '../domain/material.js';
 import { GraphRelationSchema } from '../domain/graph.js';
 import { PlanStrategySchema } from '../domain/plan.js';
@@ -77,7 +78,7 @@ export const ProposedOptionSchema = z.object({
 export const ProposedRubricPointSchema = z.preprocess(
   (point) => (typeof point === 'string' ? { text: point, required: true } : point),
   z.object({
-    text: z.string().min(1).max(200),
+    text: z.string().min(1).max(MAX_RUBRIC_POINT_CHARS),
     required: z.boolean(),
     sourceRefs: z.array(z.string().min(1)).max(10).optional(),
   }),

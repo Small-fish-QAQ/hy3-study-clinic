@@ -106,10 +106,11 @@ export async function verifyPreparedTeaching<
     round: number,
   ) => Promise<{ result: TeachingContentReview; logicalCallId: string }>,
   revise: (draft: T, findings: TeachingContentReview['findings']) => Promise<T>,
+  computedItemIds: ReadonlySet<string> = new Set(),
 ) {
   const receipts = [];
   for (let round = 0; round < 2; round += 1) {
-    const prepared = prepareTeachingReview(context, candidate);
+    const prepared = prepareTeachingReview(context, candidate, computedItemIds);
     const reviewed = await review(prepared, round);
     if (!prepared.validate(reviewed.result).valid)
       throw ProviderError.invalidOutput(
@@ -140,11 +141,13 @@ export async function verifyPreparedTeaching<
 export function prepareTeachingReview(
   context: LessonSlotContentGenerationInput | PracticeContentGenerationInput,
   candidate: LessonSlotContentProposalPayload | PracticeContentProposalPayload,
+  computedItemIds: ReadonlySet<string> = new Set(),
 ) {
   const answers = new Map<string, { itemId: string; answerId: string }>();
   const annotated = structuredClone(candidate);
   if ('slots' in annotated) {
     for (const slot of annotated.slots) {
+      if (computedItemIds.has(slot.slotId)) continue;
       const interaction = slot.workedProcess?.interaction;
       const actions = [
         ['guided', interaction?.activity],
@@ -173,6 +176,7 @@ export function prepareTeachingReview(
   const input: TeachingContentReviewInput = {
     stage: 'slots' in candidate ? 'lesson' : 'practice',
     computedOutcomes: context.computedCases,
+    ...(computedItemIds.size ? { computedItemIds: [...computedItemIds] } : {}),
     desiredDepth: context.courseDesign?.desiredDepth ?? 'pass_oriented',
     objectives: context.skeleton.objectives.map(({ title, description }) => ({
       title,

@@ -9,6 +9,7 @@ import { curriculumSourceBlockFingerprint } from './curriculumValidation.js';
 export const CURRICULUM_EVIDENCE_SELECTOR_POLICIES = [
   'b3_baseline_v1',
   'derived_section_reserve_v1',
+  'allocated_source_v1',
 ] as const;
 export type CurriculumEvidenceSelectorPolicy =
   (typeof CURRICULUM_EVIDENCE_SELECTOR_POLICIES)[number];
@@ -18,7 +19,7 @@ export const CURRICULUM_EVIDENCE_BASELINE_POLICY: CurriculumEvidenceSelectorPoli
 export const CURRICULUM_EVIDENCE_SECTION_RESERVE_POLICY: CurriculumEvidenceSelectorPolicy =
   'derived_section_reserve_v1';
 export const CURRICULUM_EVIDENCE_PRODUCTION_POLICY: CurriculumEvidenceSelectorPolicy =
-  CURRICULUM_EVIDENCE_SECTION_RESERVE_POLICY;
+  'allocated_source_v1';
 
 export type CurriculumEvidencePolicySelectionReason =
   | 'protected_baseline'

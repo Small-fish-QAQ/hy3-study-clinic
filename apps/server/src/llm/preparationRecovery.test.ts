@@ -306,6 +306,7 @@ describe('preparation failure taxonomy and localized alias merge', () => {
       expect(containsInternalTeachingAlias(value)).toBe(true);
     }
     expect(containsInternalTeachingAlias('ordinary learner prose')).toBe(false);
+    expect(containsInternalTeachingAlias('s2 = 6.25, l1 = 3, pr1 = 0.2')).toBe(false);
   });
 
   it('T5/T11/T13 merges only alias-bearing learner text and grants no refs, answers, or R1.3 changes', () => {

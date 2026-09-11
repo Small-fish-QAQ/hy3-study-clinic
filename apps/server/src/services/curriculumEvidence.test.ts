@@ -10,6 +10,7 @@ import type {
 import { verifyGrounding } from '../grounding/verify.js';
 import type { CurriculumEvidenceOffer } from '../llm/provider.js';
 import { searchSourceBlocks } from '../retrieval/lexical.js';
+import { createCourseMapFixture } from '../testing/courseMapFixtures.js';
 import {
   buildCurriculumEvidenceCatalog,
   buildCurriculumEvidenceSignalRankings,
@@ -366,6 +367,37 @@ describe('Curriculum evidence catalog', () => {
     expect(catalog.some((offer) => offer.quote === 'Working memory has a small capacity.')).toBe(
       false,
     );
+  });
+
+  it('uses spare production capacity for later excerpts in the same source block', () => {
+    const fixture = createCourseMapFixture();
+    const first = fixture.evidenceCatalog[0]!;
+    const extras = [4, 8, 12].map((offset) => ({
+      ...first,
+      id: `extra-${offset}`,
+      bindingId: `extra-${offset}`,
+      startOffset: first.startOffset + offset,
+      quote: first.quote.slice(offset),
+    }));
+    const selected = selectCurriculumEvidenceOffers({
+      catalog: [...fixture.evidenceCatalog, ...extras],
+      blocks: fixture.blocks,
+      predecessor: null,
+      concepts: fixture.concepts,
+      priorityGroundings: [],
+      contract: {
+        workspaceId: fixture.workspaceId,
+        intent: 'Understand the material',
+        targetOutcome: { description: 'Explain the material' },
+        courseScope: { includedTopics: [] },
+      } as unknown as LearningContract,
+      sourceMap: fixture.sourceMap,
+      policy: 'allocated_source_v1',
+    });
+    expect(selected.filter((offer) => offer.blockId === first.blockId).length).toBeGreaterThan(2);
+    for (const extra of extras)
+      expect(selected.map((offer) => offer.bindingId)).toContain(extra.bindingId);
+    expect(selected.length).toBeLessThanOrEqual(CURRICULUM_PROVIDER_EVIDENCE_OFFER_BUDGET);
   });
 
   it('keeps a large local catalog while bounding compact predecessor-aware provider offers', () => {

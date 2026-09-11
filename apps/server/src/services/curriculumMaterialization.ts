@@ -696,6 +696,26 @@ function buildDetailRegions(input: CurriculumDetailPlanningInput): CurriculumDet
       const evidenceByOfferedId = new Map(
         baseEvidence.map((offer) => [offer.evidenceId, offer] as const),
       );
+      // Course Map evidence is a small navigation sample, not the teaching
+      // source universe. Detail must see the allocated catalog, including the
+      // conditions and later paragraphs absent from that sample. Existing
+      // request/batch limits still fail closed before a provider call.
+      for (const offer of input.evidenceCatalog) {
+        const sourceAllocationRegionId = evidenceAllocationId(
+          offer,
+          allocationById,
+          region.sourceAllocationRegionIds,
+        );
+        if (!sourceAllocationRegionId || evidenceByOfferedId.has(offer.id)) continue;
+        evidenceByOfferedId.set(offer.id, {
+          evidenceId: offer.id,
+          sourceAllocationRegionId,
+          text: offer.quote,
+          ...(input.authorityEnvelopesByEvidenceId?.has(offer.id)
+            ? { authorityEnvelope: input.authorityEnvelopesByEvidenceId.get(offer.id) }
+            : {}),
+        });
+      }
       const capabilityRequirements: CurriculumCapabilityRecoveryRequirementInput[] = [];
       for (const capabilityRef of region.capabilityRequirementRefs ?? []) {
         const requirement = recoveryRequirementByRef.get(capabilityRef)!;

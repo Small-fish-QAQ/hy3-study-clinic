@@ -14,6 +14,11 @@ const input: PracticeRepairInput = {
   failedPrompt: 'The initial case has already been answered.',
   selectedAnswer: 'One satisfied condition always suffices.',
   feedback: 'The rule requires both conditions.',
+  failedCase: {
+    options: ['One satisfied condition always suffices.', 'Both required conditions must hold.'],
+    expectedAnswer: 'Both required conditions must hold.',
+    explanation: 'The original case requires a conjunction, with no additional hidden conditions.',
+  },
   learnerNote: 'I confused AND with OR.',
   teachingContext: ['The original worked example is already visible.'],
   sourceExcerpts: ['The procedure requires both conditions.'],
@@ -31,6 +36,8 @@ describe('Practice repair content boundaries', () => {
     expect(review.acceptedLesson).toMatchObject({
       selectedAnswer: input.selectedAnswer,
       learnerNote: input.learnerNote,
+      failedCase: input.failedCase,
+      failedChoiceFeedback: input.feedback,
     });
     const serialized = JSON.stringify(review);
     expect(serialized).not.toContain('correctOptionId');

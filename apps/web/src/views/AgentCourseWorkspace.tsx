@@ -1357,6 +1357,12 @@ export function AgentCourseWorkspace({
   }
 
   function changeView(next: AgentCourseView): void {
+    // Formal results stay visible until the learner leaves or continues. Read
+    // persisted progress when leaving Study so Home never reuses its old count.
+    if (view === 'session' && next !== 'session')
+      void refresh().catch((error: unknown) => {
+        setLoadError(error instanceof Error ? error.message : String(error));
+      });
     if (actionFailureOwner === 'contract-editor') {
       action.cancel();
       action.clearError();

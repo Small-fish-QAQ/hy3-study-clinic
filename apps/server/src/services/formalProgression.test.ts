@@ -1439,6 +1439,35 @@ function authoritativeState(targetId: string) {
 }
 
 describe('formal progression service', () => {
+  it('offers only the objective-bound scoring claims with their separate permissions', () => {
+    const catalog = formalCatalogue().scoringAuthorityCatalogue;
+    expect(catalog[0]).toEqual({
+      objectiveRef: 'O1',
+      claims: [
+        {
+          text: repos.materials.getBlock('blk_1')!.content,
+          sourceBlockId: 'blk_1',
+          premiseKinds: ['expected_answer', 'rubric_point'],
+        },
+      ],
+    });
+    const curriculum = repos.curricula.get('curriculum_1')!;
+    for (const node of curriculum.nodes) {
+      for (const objective of node.learningUnit?.objectives ?? [])
+        objective.authorityClaimIds = ['claim_1'];
+    }
+    const restricted = buildFormalAssessmentProposalCatalogue({
+      repos,
+      workspaceId: 'ws_1',
+      curriculum,
+      plan: repos.studyPlans.get('plan_1')!,
+      planItemId: 'plan_item_1',
+      learningUnitId: 'unit_1',
+    });
+    expect(restricted.scoringAuthorityCatalogue[0]!.claims[0]!.premiseKinds).toEqual([
+      'expected_answer',
+    ]);
+  });
   it('reconciles one exact due Review into Agenda and resumes one durable launch', async () => {
     const { targetId } = makeDueReview('launch');
     let agenda = repos.sessionAgendas.get('agenda_1')!;
@@ -4404,13 +4433,16 @@ describe('formal progression service', () => {
       expectedExecutionSourceManifestFingerprint: 'manifest-fp',
     };
 
-    await expect(
-      services.courseActionLaunch.launch({
-        command: command('launch_valid_targeted_repair', 'learner'),
-        ...request,
-      }),
-    ).rejects.toThrow('评分依据未通过正式准入');
-    expect(repos.formalAssessments.listProjectionRecords('ws_1').versions).toEqual([]);
+    const launched = await services.courseActionLaunch.launch({
+      command: command('launch_valid_targeted_repair', 'learner'),
+      ...request,
+    });
+    expect(launched.kind).toBe('assessment');
+    if (launched.kind !== 'assessment') throw new Error('Expected the scoped Formal question.');
+    // A one-objective checkpoint no longer adds an unscored prerequisite question.
+    expect(launched.quiz.questions).toHaveLength(1);
+    expect(launched.quiz.questions[0]!.conceptId).toBe('con_1');
+    expect(repos.formalAssessments.listProjectionRecords('ws_1').versions).toHaveLength(1);
 
     repos.graph.insertVersion({
       id: 'graph_repair_invalid',

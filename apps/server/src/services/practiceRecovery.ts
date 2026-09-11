@@ -125,6 +125,11 @@ export function practiceRepairInput(
     failedPrompt: surface.prompt,
     selectedAnswer: surface.options.find((option) => option.id === selected)!.text,
     feedback: surface.options.find((option) => option.id === selected)!.feedbackIfSelected,
+    failedCase: {
+      options: surface.options.map((option) => option.text),
+      expectedAnswer: surface.options.find((option) => option.id === surface.correctOptionId)!.text,
+      explanation: surface.explanation,
+    },
     learnerNote,
     teachingContext: brief.segments
       .filter((segment) => segment.objectiveIds.includes(item.objectiveId))
@@ -203,6 +208,8 @@ export function practiceRepairReview(
     acceptedLesson: {
       failedQuestion: input.failedPrompt,
       selectedAnswer: input.selectedAnswer,
+      failedCase: input.failedCase,
+      failedChoiceFeedback: input.feedback,
       learnerNote: input.learnerNote,
       priorTeaching: input.teachingContext,
       priorRounds: input.priorRounds.map((round) => ({

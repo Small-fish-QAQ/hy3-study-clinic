@@ -55,6 +55,7 @@ export function capsuleInputs(
           },
         },
         practiceSlots,
+        practiceLessonSlots: skeleton.lessonSlots,
         priorLesson: [],
         includeNarrative: inputs.length === 0,
       });

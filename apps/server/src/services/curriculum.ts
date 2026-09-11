@@ -38,6 +38,16 @@ import {
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import { ProviderError } from '../llm/errors.js';
+import {
+  CURRICULUM_COVERAGE_REGIONS_PER_REVIEW,
+  CurriculumCoverageReviewSchema,
+  curriculumCoverageGaps,
+  partitionCurriculumCoverageInput,
+  validateCurriculumCoverageReview,
+  validateCurriculumCoverageRepair,
+  type CurriculumCoverageReview,
+} from '../llm/curriculumCoverage.js';
+import { measureCurriculumDetailRequest } from '../llm/prompts.js';
 import { MAX_STRUCTURED_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL } from '../llm/provider.js';
 import type {
   CurriculumContractContext,
@@ -95,6 +105,8 @@ import { runRecoverableGenerationStage } from './generationStages.js';
 import {
   CurriculumDetailBatchPlanningError,
   MAX_DETAIL_BATCHES,
+  MAX_DETAIL_REGIONS_PER_BATCH,
+  MAX_DETAIL_REQUEST_BYTES,
   assertCurriculumCapabilityRecoveryDetailOutputFeasible,
   assembleCurriculumDetailBatches,
   buildCourseMapDeterministicCoverage,
@@ -198,7 +210,10 @@ export const CURRICULUM_MAX_OBJECTIVE_AUTHORITY_LOGICAL_CALLS =
   CURRICULUM_MAX_OBJECTIVE_AUTHORITY_EVALUATION_BATCHES * 2 +
   CURRICULUM_MAX_OBJECTIVE_AUTHORITY_REPAIR_CALLS;
 export const CURRICULUM_MAX_LOGICAL_PROVIDER_CALLS =
-  1 + MAX_DETAIL_BATCHES + CURRICULUM_MAX_OBJECTIVE_AUTHORITY_LOGICAL_CALLS;
+  1 +
+  MAX_DETAIL_BATCHES *
+    (2 + 3 * Math.ceil(MAX_DETAIL_REGIONS_PER_BATCH / CURRICULUM_COVERAGE_REGIONS_PER_REVIEW)) +
+  CURRICULUM_MAX_OBJECTIVE_AUTHORITY_LOGICAL_CALLS;
 export const CURRICULUM_MAX_PHYSICAL_PROVIDER_CALLS =
   CURRICULUM_MAX_LOGICAL_PROVIDER_CALLS * MAX_STRUCTURED_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL;
 export const CURRICULUM_OPERATION_LEASE_MS =
@@ -335,7 +350,9 @@ export function curriculumOperationLeaseMs(
     throw new AppError(ApiErrorCode.ValidationError, 'Curriculum provider timeout is invalid.');
   }
   const generationLogicalCalls =
-    generationPolicy === LEGACY_CURRICULUM_GENERATION_POLICY ? 1 : 1 + MAX_DETAIL_BATCHES;
+    generationPolicy === LEGACY_CURRICULUM_GENERATION_POLICY
+      ? 1
+      : CURRICULUM_MAX_LOGICAL_PROVIDER_CALLS - CURRICULUM_MAX_OBJECTIVE_AUTHORITY_LOGICAL_CALLS;
   const physicalCalls =
     (generationLogicalCalls + CURRICULUM_MAX_OBJECTIVE_AUTHORITY_LOGICAL_CALLS) *
     MAX_STRUCTURED_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL;
@@ -1973,7 +1990,7 @@ export function createCurriculumService({
           total: 1,
         });
         const generationIdentity = {
-          version: 'curriculum-stages-v2-teaching-priority',
+          version: 'curriculum-stages-v6-independent-constructs',
           contractId: contract.id,
           contractVersion: contract.version,
           predecessorCurriculumId: parsed.predecessorCurriculumId,
@@ -2113,14 +2130,91 @@ export function createCurriculumService({
               ['curriculum_detail_objective_authority_semantic_budget_exceeded'],
             );
           }
-          const detailInput = {
+          let detailInput = {
             ...batch.input,
             limits: {
               ...batch.input.limits,
               maxObjectivesTotal,
             },
           };
-          const detailPayload = await runRecoverableGenerationStage({
+          const coverageEnabled =
+            Boolean(inferenceProvider.reviewCurriculumCoverage) || provider.name === 'hy3';
+          if (coverageEnabled && !inferenceProvider.reviewCurriculumCoverage)
+            throw ProviderError.invalidOutput(
+              'Curriculum teaching coverage review is unavailable.',
+            );
+          const coverageStage = {
+            beforeGenerate: enforceCurrentCostPolicy,
+            owner: claim.owner,
+            assertCurrent: assertGenerationSnapshotCurrent,
+            repos,
+            clock,
+            provider,
+            providerModel: provider.model ?? providerModel ?? null,
+            operationId: claim.operationId,
+            fencingToken: claim.fencingToken,
+            workspaceId: parsed.command.workspaceId,
+            studySessionId: null,
+            learningUnitId: null,
+            assessmentId: null,
+            operationType: 'propose_curriculum' as const,
+            policyFingerprint: null,
+            sourceFingerprint: recoveryFencedSourceFingerprint(
+              `${sourceAllocation.fingerprint}:${detailInput.batchKey}`,
+            ),
+            providerOptions: opts,
+          };
+          const review = async (
+            candidate: CurriculumDetailProposalPayload,
+            requiredCoverage?: CurriculumCoverageReview,
+          ): Promise<CurriculumCoverageReview> => {
+            const regions: CurriculumCoverageReview['regions'] = [];
+            for (const input of partitionCurriculumCoverageInput({
+              detail: { ...detailInput, coverageRequirements: undefined },
+              candidate,
+              requiredCoverage,
+            })) {
+              opts?.onPreparationProgress?.({
+                phase: 'curriculum_details',
+                label: '检查学习目标的来源覆盖',
+                completed: batchIndex,
+                total: detailBatches.length,
+              });
+              const result = await runRecoverableGenerationStage({
+                ...coverageStage,
+                stageIdentity: { ...generationIdentity, input },
+                schemaFingerprint: 'curriculum-teaching-coverage-v2-constructs',
+                validateResult: (raw) => {
+                  if (!validateCurriculumCoverageReview(raw, input).valid)
+                    throw ProviderError.invalidOutput(
+                      'Curriculum coverage review lost exact bindings.',
+                    );
+                  return CurriculumCoverageReviewSchema.parse(raw);
+                },
+                invoke: (options) =>
+                  inferenceProvider.reviewCurriculumCoverage!(structuredClone(input), {
+                    ...options,
+                    timeoutMs: providerTimeoutMs,
+                    validateCandidate: (raw) => validateCurriculumCoverageReview(raw, input),
+                  }),
+              });
+              regions.push(...result.regions);
+            }
+            return { regions };
+          };
+          const coverageRequirements = coverageEnabled
+            ? await review({
+                courseMapId: detailInput.courseMapId,
+                sourceAllocationFingerprint: detailInput.sourceAllocationFingerprint,
+                units: [],
+              })
+            : undefined;
+          if (coverageRequirements) detailInput = { ...detailInput, coverageRequirements };
+          if (measureCurriculumDetailRequest(detailInput).messages.bytes > MAX_DETAIL_REQUEST_BYTES)
+            throw ProviderError.invalidOutput(
+              'Curriculum detail with coverage obligations exceeds its request budget.',
+            );
+          let detailPayload = await runRecoverableGenerationStage({
             beforeGenerate: enforceCurrentCostPolicy,
             owner: claim.owner,
             stageIdentity: { ...generationIdentity, input: detailInput },
@@ -2167,6 +2261,67 @@ export function createCurriculumService({
                 },
               }),
           });
+          if (coverageEnabled) {
+            let coverage = await review(detailPayload, coverageRequirements);
+            if (curriculumCoverageGaps(coverage).length > 0) {
+              const original = structuredClone(detailPayload);
+              const repairInput: typeof detailInput = {
+                ...detailInput,
+                coverageRepair: { original, review: coverage },
+              };
+              if (
+                measureCurriculumDetailRequest(repairInput).messages.bytes >
+                MAX_DETAIL_REQUEST_BYTES
+              )
+                throw ProviderError.invalidOutput(
+                  'Curriculum coverage repair exceeds the bounded detail request.',
+                );
+              const validateRepair = (raw: unknown) => {
+                const base = validateCurriculumDetailCandidate(raw, repairInput);
+                if (!base.valid) return base;
+                return validateCurriculumCoverageRepair(
+                  CurriculumDetailProposalPayloadSchema.parse(raw),
+                  original,
+                );
+              };
+              repairAttempted = true;
+              detailPayload = await runRecoverableGenerationStage({
+                ...coverageStage,
+                stageIdentity: { ...generationIdentity, input: repairInput },
+                schemaFingerprint: 'curriculum-detail-coverage-repair-v1',
+                validateResult: (raw) => {
+                  if (!validateRepair(raw).valid)
+                    throw ProviderError.invalidOutput(
+                      'Curriculum coverage repair changed a retained capability.',
+                    );
+                  return CurriculumDetailProposalPayloadSchema.parse(raw);
+                },
+                invoke: (options) =>
+                  inferenceProvider.proposeCurriculumDetails(structuredClone(repairInput), {
+                    ...options,
+                    timeoutMs: providerTimeoutMs,
+                    validateCandidate: validateRepair,
+                  }),
+              });
+              coverage = await review(detailPayload, coverageRequirements);
+            }
+            const gaps = curriculumCoverageGaps(coverage);
+            if (gaps.length > 0)
+              throw ProviderError.invalidOutput(
+                'Curriculum still omits important source-grounded teaching capabilities after bounded repair.',
+                'candidate',
+                'SEMANTIC_VALIDATION_FAILURE',
+                false,
+                {
+                  kind: 'curriculum_coverage_rejection',
+                  diagnostics: gaps.map((gap) => ({
+                    code: 'curriculum_coverage_missing',
+                    message: gap.capability,
+                    facts: { regionId: gap.regionId },
+                  })),
+                },
+              );
+          }
           completedBatches.push({ input: detailInput, payload: detailPayload });
           opts?.onPreparationProgress?.({
             phase: 'curriculum_details',

@@ -102,6 +102,24 @@ async function fixture(depth: DesiredDepth = 'working_fluency') {
 }
 
 describe('calibrated cognitive teaching contract', () => {
+  it('keeps computed model rules in mixed review and preserves their accuracy findings', async () => {
+    const f = await fixture();
+    f.process.ruleOrProcedure = 'Below 30 is represented here as value <= 30.';
+    const computed = new Set([f.worked.slotId]);
+    const prepared = prepareTeachingReview(f.lessonInput, f.lesson, computed);
+    expect(JSON.stringify(prepared.input)).toContain(f.process.ruleOrProcedure);
+    expect(prepared.input.computedItemIds).toEqual([f.worked.slotId]);
+    expect(prepared.input.actionIds.some((id) => id.startsWith(f.worked.slotId + '.'))).toBe(false);
+    expect(prepared.input.actionIds.length).toBeGreaterThan(0);
+    const finding = {
+      itemId: f.worked.slotId,
+      code: 'accuracy' as const,
+      problem: 'A strict bound became inclusive.',
+      repairInstruction: 'Use < instead of <=.',
+    };
+    expect(prepared.findings({ decisions: [], findings: [finding] })).toEqual([finding]);
+    expect(prepared.validate({ decisions: [], findings: [finding] }).valid).toBe(false);
+  });
   it('reviews visible content without author labels or answer keys and requires exact coverage', async () => {
     const f = await fixture();
     const prepared = prepareTeachingReview(f.lessonInput, f.lesson);

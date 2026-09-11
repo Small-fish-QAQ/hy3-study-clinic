@@ -9,7 +9,9 @@ import type {
   StructuredOutputFailureCategory,
 } from './provider.js';
 
-const INTERNAL_TEACHING_ALIAS = /\b(?:PR|O|S|L)[1-9][0-9]*\b/iu;
+// Wire aliases are case-sensitive. Ordinary mathematical symbols such as s2
+// must not become internal identifiers just because a regex ignores case.
+const INTERNAL_TEACHING_ALIAS = /\b(?:PR|O|S|L)[1-9][0-9]*\b/u;
 
 const MECHANICAL_EMPTY_ARRAY_FIELDS = new Set(['visualRefs', 'semanticRelations']);
 const MECHANICAL_NULLABLE_FIELDS = new Set([

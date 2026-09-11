@@ -574,7 +574,9 @@ export function StudySessionView({
 
   const refreshCurrentSession = useCallback(() => {
     if (!workspaceId || !currentSessionId) return;
-    void loadSession(workspaceId, currentSessionId, new AbortController().signal);
+    void loadSession(workspaceId, currentSessionId, new AbortController().signal).then(() => {
+      sessionChangedRef.current?.();
+    });
   }, [currentSessionId, loadSession, workspaceId]);
 
   const updateLessonProjection = useCallback((projection: LessonExecutionProjection) => {
