@@ -7,7 +7,13 @@ A Hy3-powered learning agent that turns your materials into a course, with guide
 [![CI](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml/badge.svg)](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-[▶ 观看 1 分 50 秒演示](docs/media/demo/Hy3-Study-Clinic-demo-2560x1440.mp4) · [截图导览](docs/DEMO.md) · [快速运行](#快速运行) · [评估方法与状态](docs/EVALUATION.md)
+[截图导览](docs/DEMO.md) · [快速运行](#快速运行) · [评估方法与状态](docs/EVALUATION.md)
+
+### ▶ 1 分 50 秒演示
+
+https://github.com/user-attachments/assets/ba1004fd-fec8-44cb-9fbf-0961fa6962f2
+
+[下载 MP4](docs/media/demo/Hy3-Study-Clinic-demo-2560x1440.mp4) · [字幕](docs/media/demo/Hy3-Study-Clinic-demo.zh-CN.srt)
 
 [![讲解与 Hy3 Tutor 并排呈现，围绕选中的访谈问题继续追问](docs/media/screenshots/07-contextual-tutor.webp)](docs/media/screenshots/07-contextual-tutor.webp)
 
@@ -82,7 +88,7 @@ npm run dev
 | ----------------------------------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | 自动化测试与 `eval:fake`                                          | 来源校验、状态转换、隔离、重复提交、失败恢复等规则是否按设计执行 | 可在当前代码上复现；不测量真实教学质量。                                                 |
 | [已公开的 Hy3 在线记录](docs/evidence/hy3-online-verification.md) | 真实 Hy3 是否完成过概念分析、评分、跨文档出题等操作              | **2026-07-31，提交 `46d34f2`，6/6 项操作通过**；小样本历史记录，不覆盖当前完整课程链路。 |
-| [StudyEval 协议](docs/EVALUATION.md)                              | 如何评价开放式教学输出，以及如何验证评估器本身                   | 最终新样本评估、人工标注与人工一致性结果尚未发布；不主张评估器已通过最终验证。           |
+| [StudyEval 方法与状态](docs/EVALUATION.md)                        | 如何评价开放式教学输出，以及如何验证评估器本身                   | 小型新样本检查未满足证据充分性要求；最终新样本评估、真实人工标注与人工一致性尚未完成。   |
 | [产品演示](docs/DEMO.md)                                          | 界面与学习过程实际是什么样                                       | 展示用途，不作为教学效果或总体成功率的实验。                                             |
 
 可复现检查与证据入口见 [验证说明](docs/VERIFICATION.md)。本项目尚无学习效果实验，不声称提升了成绩、记忆保持或长期掌握率。
