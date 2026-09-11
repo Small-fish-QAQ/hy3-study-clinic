@@ -1,384 +1,106 @@
 # Hy3 Study Clinic
 
+**把自己的资料，变成一门有讲解、有练习、有补救、能追溯学习证据的课程。**
+
+A Hy3-powered learning agent that turns your materials into a course, with guided study, targeted repair, and traceable assessment evidence.
+
 [![CI](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml/badge.svg)](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-**A Course-centred, source-grounded, evidence-gated, learner-governed learning-execution Agent built on Hy3.**
+[▶ 观看 1 分 50 秒演示](docs/media/demo/Hy3-Study-Clinic-demo-2560x1440.mp4) · [截图导览](docs/DEMO.md) · [快速运行](#快速运行) · [评估方法与状态](docs/EVALUATION.md)
 
-You give it your own course material, choose one global learning depth, and optionally
-name topics that deserve extra attention. Hy3 builds the Course Skeleton, teaches the
-lessons, writes the practice, grades your answers, diagnoses what went wrong, and
-proposes the repair. Deterministic local code decides what any of that is allowed to
-change about your learning record - and can always show you which piece of your own
-material a claim came from.
+[![讲解与 Hy3 Tutor 并排呈现，围绕选中的访谈问题继续追问](docs/media/screenshots/07-contextual-tutor.webp)](docs/media/screenshots/07-contextual-tutor.webp)
 
-> **个人 / 活动作品声明**
->
-> 本项目是个人为「腾讯犀牛鸟开源人才培养计划 · 混元大语言模型项目」实战任务开发的
-> **个人活动作品**，**不代表腾讯或 Hy3 官方发布**，与腾讯官方产品无关。
->
-> This is a personal project created for a Tencent Rhino-Bird open-source activity.
-> It is **not** an official Tencent or Hy3 release.
+_读到疑问处，就这段问 Tutor。真实 Hy3 课程画面；点击图片可放大。_
 
----
+## 为谁解决什么问题
 
-## 项目简介（中文）
+面向用课件、教材和技术文档自学的学生与开发者。读完一段解释之后，学习者还需要知道：接下来学什么、换个情境是否还会、答错后补哪一步，以及系统凭什么认为自己已经学会。
 
-**Hy3 Study Clinic** 是一个基于 Hy3 构建的**学习执行 Agent**。它面向的不是「再多一个能
-答题的聊天机器人」，而是一段**可持续数天到数周、可复核、可追溯**的真实学习过程。
+Study Clinic 将这些动作放进同一门持续保存的课程。**Hy3 负责理解资料、组织教学、命题、语义评分和诊断；本地规则负责校验出处、记录正式证据和推进学习状态。** 学习者可以暂停、继续、追问和调整允许的课程设置。
 
-学习者提供自己的课程资料（PDF / DOCX / PPTX / Markdown / HTML / 网页快照 / 源码），选择
-四档全局学习深度，并可选填写特别想深入的主题。资料定义课程学什么，全局深度定义整门课程的
-教学基线，可选重点决定在哪些资料内主题上投入额外教学资源。Hy3 据此提出课程骨架；学习者可
-重命名、在先修约束内调整顺序、修正重点标记，然后只接受一次。系统再派生版本化学习计划
-（StudyPlan），逐单元完成讲解、练习、正式测评、诊断与补救，并把「掌握」这件事绑定在
-**通过判据门控的正式证据**上，而不是绑定在一次对话或一次做对的题上。
+## 从资料到下一次学习
 
-单元讲解在内部仍保留细粒度段落与各自来源，但学习界面会把相邻内容组合成连续讲解；理解检查是
-主要停顿点。合适的推演案例会由教师先示范一个有意义的步骤，再让学习者判断下一步；系统按具体
-选择给出反馈，答错时最多展开一个小提示和一个仍需作答的脚手架问题，然后继续案例，并用条件变化
-后的第二次判断逐步减少支持。全部互动材料在 Lesson 准备时一次生成，点击后的执行与断点恢复由本地
-代码确定性完成，不会逐次调用 Hy3，也不产生正式证据或掌握度。当前学习界面与生成契约固定为
-`zh-CN` 简体中文，技术英文名词可按语境保留。非正式 Practice 只呈现题目、作答控件与学习者反馈，
-不展示供应商、规划器或评估器的内部理由。
+| 步骤              | 学习者看到的过程                                                                                                                   |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **1. 建课**       | 导入 PDF、DOCX、PPTX、Markdown、HTML、网页快照或源码文本；选择基础理解、熟练运用、高水平表现或深入迁移，可补充重点主题。           |
+| **2. 确认路线**   | 审阅 Hy3 提出的课程结构，调整名称、先修关系允许的顺序和重点；确认后生成学习计划。                                                  |
+| **3. 学习与追问** | 连续讲解串起概念和案例；在关键步骤作判断，需要时展开提示，或选中原文向旁边的 Tutor 提问。                                          |
+| **4. 练习与补救** | 独立作答。答错后查看针对这次错误的诊断、解释与例子，再做新问题检验理解。                                                           |
+| **5. 正式验证**   | 具备来源与评分依据的目标进入正式测评；本地规则根据评分要点、证据和版本条件决定是否记入进度。深入迁移课程还安排目标对应的迁移任务。 |
+| **6. 回到课程**   | 从课程主页继续下一项任务，在进度页回看正式证据、待补救内容和到期复习。知识地图辅助定位概念与关系。                                 |
 
-当前生成策略私下记录学习者需要完成的认知操作、决定性条件与待推断结论。正式目标的能力词汇
-约束断言依据，不限制非正式教学中的预测、诊断或设计判断。`working_fluency` 要求每个必需目标
-都有推理动作；重点单元在 Lesson 与 Practice 中覆盖不同角度。明确的答案提前复述和结构化重放
-会拒绝，近似措辞检查保留为警告；真实的信息差、迁移与教学质量仍需浏览器体验验收。
+讲解、Tutor 对话、提示和非正式练习都不授予正式学分。缺少正式评分依据的目标会保留为教学内容；选择更深的课程不会自动赋予它正式测评资格。一次通过也不等于长期掌握。
 
-其中，**Hy3 承担全部需要语义理解与生成的开放式工作**：概念抽取、课程结构提案、讲解生成、
-练习命题、简答语义评分、证据关系判断、错误诊断与补救提案。而**确定性本地代码保留全部权威**：
-逐字引用校验、ID 与版本校验、证据覆盖与绑定判定、评分算术、正式证据、进度推进、掌握状态与
-复习调度。
+| 对准这次错误，补上理解                                                                                                                                            | 学过的内容与正式证据分开记录                                                                                                                                                                |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [![针对把个人自述推广为全体需求的错误，解释缺失的判断步骤](docs/media/screenshots/11-repair-explanation.webp)](docs/media/screenshots/11-repair-explanation.webp) | [![课程进度显示已完成的讲解练习，同时明确正式通过证据仍为零](docs/media/screenshots/15-progress-without-false-mastery.webp)](docs/media/screenshots/15-progress-without-false-mastery.webp) |
 
-这类输出**不存在唯一标准答案** - 同一份资料可以有多种合理的课程切分、多种正确的讲法、多份
-可辩护的评分理由。因此本项目在应用之外，另外设计一套面向 Hy3 教育行为的
-**开放式质量评估体系**，并将在终稿前完成评估器实现与有效性实验。
+从课程资料、结构到新情境复测的更多画面，见[完整截图导览](docs/DEMO.md#截图导览)。
 
-- 竞赛方案（完整设计与评估协议）：**[docs/PROJECT_PROPOSAL.md](docs/PROJECT_PROPOSAL.md)**
-- 评估方法说明：**[docs/EVALUATION.md](docs/EVALUATION.md)**
+## 为什么需要 Hy3
 
----
+同一份资料可以有多种合理的课程划分、解释方式和补救路径；学生也不会总按参考答案的措辞作答。这些工作需要开放式语义理解。
 
-## Why this problem is hard
+| Hy3 的实际工作                        | 本地系统如何约束结果                                                     |
+| ------------------------------------- | ------------------------------------------------------------------------ |
+| 提取概念，提出课程单元和学习目标      | 校验资料版本、引用、目标范围、先修结构与可执行性，由学习者确认课程结构。 |
+| 编写讲解、推演案例、练习和 Tutor 回复 | 区分资料原文与补充教学；检查结构、来源、明显答案泄露与当前学习上下文。   |
+| 判断候选证据关系、简答评分要点        | 模型提供结构化判断，本地代码计算绑定关系、分数和正式证据资格。           |
+| 根据错误提出诊断与补救                | 绑定实际答错的题目和已展示内容，准备补救与复测；诊断仍是假设。           |
 
-A general chat model is already good at explaining one concept on demand. Sustained
-study is a different job, and it fails in specific ways:
+参赛配置的模型调用使用 **Hy3**。默认 Fake 模式便于无密钥体验流程；它的预设内容不能代表 Hy3 教学质量。可选视觉描述适配器不属于参赛调用链，按[运行指南](docs/SETUP.md)保持关闭。
 
-- **Route drift.** The longer the conversation, the further it drifts from the original
-  goal, scope, and pace.
-- **Material fact vs. model extension.** A model can helpfully add general knowledge -
-  and then present it as though your handout said it.
-- **Evidence mis-binding.** A conclusion can be correct while the citation attached to
-  it points at the wrong passage.
-- **False mastery.** You do well on the familiar phrasing, then fail the same idea in a
-  new representation or two weeks later.
-- **Unauditable state.** A transcript cannot answer "why does this system believe I have
-  learned this, and from which verified evidence?"
+## 产品的不同之处
 
-Study Clinic is built around the last question. Every consequential belief it holds
-about your learning is supposed to be traceable to something you can inspect.
+- **课程有持续状态。** 资料、已确认的结构、当前学习任务与学习记录相互关联，重开页面可以继续。
+- **出处可以核对。** 资料原文定位到具体版本与文本位置；模型补充解释单独标识。引用存在并不等于语义一定正确。
+- **错误触发后续教学。** 非正式练习中的错误进入解释、补救与复测，正式测评有独立的证据与补救流程。
+- **学习记录有依据。** 看完讲解、点过提示或表示“懂了”不会写入正式证据。评分与进度记录可以回看，模型不能自行宣布掌握。
 
-## What Hy3 does, and what it is never allowed to do
+## 快速运行
 
-Hy3 performs the open-ended semantic work - the parts with no unique correct answer:
-
-| Hy3 proposes | Concretely |
-| --- | --- |
-| Course structuring | concept extraction; depth- and optional-focus-aware Course Map, LearningUnit and objective proposals; derived StudyPlan and replan proposals |
-| Teaching | Teaching-Brief lesson slots; practice items (a separate call, made only after the lesson passes its gates); contextual Tutor explanations with saved source attribution |
-| Judgement | short-answer semantic grading and rubric-point coverage; blind source-dependency attestation; candidate-evidence relation classification; bounded compositional support groups |
-| Diagnosis | misconception hypotheses; targeted Repair proposals; adversarial mastery-challenge candidates |
-
-Deterministic local code owns everything consequential:
-
-| Local code owns | Concretely |
-| --- | --- |
-| Provenance | exact quotations, offsets, page/section/slide/DOM locations, immutable material revisions |
-| Structure | IDs, relation vocabulary, cycles, schema validation, version lineage, fingerprints |
-| Evidence | coverage, binding match, mis-binding detection, contradiction, and the final authority verdict |
-| Progression | objective answer keys, score arithmetic, criterion-gated Formal Evidence, progression reconciliation |
-| Learner state | mastery, mistake lifecycle, FSRS review scheduling, all persistence and permissions |
-
-**Two boundaries worth stating plainly, because they are the point of the design:**
-
-1. **Hy3 never issues the verdict.** For evidence support, Hy3 classifies candidate
-   relations and proposes minimal support groups. Local code computes coverage, binding
-   match, mis-binding, contradiction, and the pass/fail decision - and **re-derives and
-   compares that verdict at every later boundary**, so a model-supplied verdict could not
-   survive acceptance even if one were injected.
-2. **Hy3 cannot see which evidence is currently bound.** Provider input is byte-identical
-   across differing private bindings (proven by regression tests). The model therefore
-   cannot rationalise a selection it cannot observe - which is what makes "the conclusion
-   is right but bound to the wrong passage" a detectable condition rather than a
-   self-confirming one.
-
-## The loop in 30 seconds
-
-```text
-materials + global depth + optional focus
-                       |
-          immutable revisions + exact source blocks
-                       |
-          proposed Course Skeleton       (Hy3 proposes; local gates validate)
-                       |
-          learner review and acceptance  (rename / safe reorder / focus toggle, once)
-                       |
-          derived StudyPlan + Agenda     (validated locally; no second normal-path decision)
-                       |
-               SessionAgenda            (what to do now)
-                       |
-        Lesson  ->  Practice  ->  Tutor (teaching; non-credit)
-                       |
-              Formal Assessment         (the only path to credit)
-                       |
-        criterion-gated Formal Evidence -> progression reconciliation
-                       |
-            mastery  /  Repair  /  Review scheduling
-```
-
-Everything above the Formal Assessment line is teaching and carries **no credit**:
-conversation, informal checks, and "I get it" do not move your record. Everything below
-it is deterministic, versioned, and auditable.
-
-## Trust principles
-
-- **Source-grounded, not source-limited.** Your material decides what the course is
-  about and which specific facts belong to it. Hy3 may add general explanation, examples
-  and analogies - but anything asserted as *your material says so* must resolve to an
-  exact verified span.
-- **Objectives constrain; the pedagogical arc teaches.** Objectives remain mandatory,
-  but Hy3 is asked to organize the whole Lesson around a concrete anchor, a usable mental
-  model, genuine worked reasoning, causal explanation, boundaries, misconceptions,
-  transfer and a forward bridge—not to recite an objective-by-objective outline. The
-  internal Teaching Skeleton still owns obligations, identities and budgets.
-- **Worked examples can become worked interactions.** For a suitable planned worked process,
-  Hy3 prepares one intermediate learner decision, choice-specific misconception feedback,
-  one bounded hint/scaffold level, a debrief, and a changed-condition transfer. Local code
-  withholds the continuation until the relevant response, persists each phase for resume,
-  and never calls the provider on a normal learner click.
-- **Exact quotation proves location, not entailment.** Verifying that a quote occurs at a
-  claimed offset is not a proof of complete semantic entailment. The codebase, the UI and
-  these docs all keep that distinction.
-- **Conversation is not evidence.** Lessons, worked interactions, hints, scaffolds, practice,
-  Tutor turns and informal checks
-  are explicitly non-credit.
-- **A grade is not mastery, and scheduling is not mastery.** Mastery follows
-  criterion-gated Formal Evidence plus reconciliation; FSRS review state is tracked
-  separately and never presented as mastery.
-- **The Knowledge Map is a projection, not the product.** It explains and navigates the
-  Course authority chain; it does not own progress.
-- **Accepted versions are immutable.** Corrections happen by proposing a learner-accepted
-  successor, never by editing history.
-- **Teaching focus is not evidence authority.** A focused Unit receives an instructional
-  investment signal only; it cannot override global depth, prove source entailment, grant
-  Formal credit, or change mastery.
-- **Failed generation never overwrites valid data.** Schema, source, authority and route
-  violations fail closed.
-- **Learner-facing Course reads stay bounded.** Current launchability is evaluated from one
-  request-local snapshot, Curriculum history uses compact indexed metadata, and repeated immutable
-  Curriculum/Hierarchy values are sent once and expanded by the runtime-validated client contract.
-- **Lesson preparation recovers by failure class.** Local code first applies only
-  schema-proven representation defaults, then permits one bounded targeted repair. A
-  truncated response is discarded and regenerated from the same immutable slot inventory;
-  an alias-only failure can rewrite only the affected learner-text leaves. Source refs,
-  slot identities, accepted Lesson checkpoints, Formal authority and learner state stay
-  locally controlled. Preparing views poll serialized read-only projections, and a retry
-  refetches current authority before it can start work.
-
-## Implementation status
-
-Implemented and covered by the automated suite: multi-format ingestion with
-revision-owned provenance; concepts and the validated concept graph; the simplified
-Materials + Global Depth + Optional Focus creation flow; one explicit, versioned Course
-Skeleton review with bounded rename/safe-reorder/focus edits; derived StudyPlan and
-SessionAgenda with atomic accepted-route activation; historical Contract/Curriculum/Plan
-compatibility;
-durable StudySessions with pause/resume/stop and learner-controlled detours; Teaching
-Briefs whose teacher-led pedagogical arc and per-segment provenance separate verified
-course excerpts from labelled Hy3 teaching; failure-classified, bounded Lesson/Practice
-preparation recovery with accepted-Lesson preservation; gated practice generation; a lesson-aware
-Tutor embedded alongside Lesson, Practice and Repair; Formal Assessment with criterion-gated Evidence
-and progression reconciliation; mistakes, misconceptions and targeted Repair; FSRS-6 review scheduling;
-the blind candidate-relation / support-group semantic verifier with locally derived
-verdicts and deterministic mis-binding repair; and a developer-only adversarial
-mastery-challenge workflow.
-
-Not claimed: proof of learning-outcome improvement, OCR, calibrated cognitive
-diagnosis, or semantic entailment as a formal guarantee. See
-[docs/LIMITATIONS.md](docs/LIMITATIONS.md).
-
-## Competition evaluation framework
-
-Because the scenario has **no unique standard answer**, "did it pass the tests" cannot
-measure quality. This repository therefore carries a second deliverable: an evaluation
-framework for Hy3's educational behaviour, plus planned experiments testing whether that
-framework is itself reliable.
-
-Two layers are kept strictly separate:
-
-- **Layer A - runtime safeguards (implemented).** What the product refuses to do:
-  schema validation, exact-quote provenance, blind support-group verification, criterion
-  gating, version and stale fencing, budgets. This is *state safety*, not teaching
-  quality.
-- **Layer B - StudyEval (planned evaluator).** A planned offline harness that will score
-  **frozen real Hy3 outputs** across seven dimensions with written level anchors: source
-  fidelity; evidence-binding correctness; objective and scope fidelity; pedagogical
-  soundness and clarity; assessment defensibility; diagnostic specificity and repair
-  usefulness; and false-mastery resistance.
-
-The design deliberately reuses the product's own authority pattern: the semantic judge
-emits **atomic structured observations, never a score**, and local rules derive the
-level. Two of the seven dimensions use no model at all. Two baseline scorers
-(length-only and deterministic-only) will be reported alongside, so "the semantic layer
-adds signal beyond verbosity" is tested rather than asserted.
-
-Validity will be reported separately from product performance: discrimination (do good /
-medium / bad outputs rank correctly), consistency (agreement with human labels, and
-stability across repeated runs), and adversarial robustness (can padding, jargon
-stacking, fabricated citations, or familiar phrasing buy a high score).
-
-**Runtime model.** StudyEval will separate deterministic work from model work. Corpus
-validation, the deterministic dimensions, aggregation from frozen semantic observations,
-and the baseline scorers will run **offline with no credentials**. Semantic judging will
-use an **explicitly credentialed Hy3 path**; its observations will be frozen into the
-corpus, after which every later aggregation and repeat will be offline and reproducible.
-
-Method: **[docs/EVALUATION.md](docs/EVALUATION.md)** · Design and rationale:
-**[docs/PROJECT_PROPOSAL.md](docs/PROJECT_PROPOSAL.md)**
-
-> **Status at this commit.** `docs/EVALUATION.md` publishes the full method
-> specification - dimensions, level anchors, scorers, sample design and validation
-> protocols. The **executable harness, the case corpus, and the result tables are not
-> yet built**; they are scheduled for publication before final submission. Nothing in
-> this repository currently reports a StudyEval result, and no such result is claimed
-> here.
-
-## Quick start
-
-### Requirements
-
-- Node.js 20.9 or newer (`.nvmrc` selects the current Node 20 release; CI also verifies
-  Node 24)
-- npm
-- **No API key and no network access are required.** The application defaults to a
-  deterministic offline fake provider.
-
-### Run it
+推荐 **Node.js 24 + npm**。安装依赖需要网络；安装完成后，默认 Fake 模式的本地流程不需要 API 密钥。
 
 ```bash
+git clone https://github.com/Small-fish-QAQ/hy3-study-clinic.git
+cd hy3-study-clinic
 npm ci
 npm run build
-npm run dev          # API + web dev servers
+npm run dev
 ```
 
-Open the web app, create a Course, add material under `课程资料`, choose the global depth,
-optionally name a material topic to emphasize, review the proposed Course Skeleton once,
-and follow the Course Home next action. Use a disposable Course workspace or a backed-up database when
-intentionally testing interruption and restart behavior.
+打开 [http://localhost:5173](http://localhost:5173)，创建课程、添加课程资料，再跟随页面操作。当前学习界面与教学生成使用简体中文。
 
-### Provider modes
+要体验真实 Hy3，将 [`.env.example`](.env.example) 复制为 `.env`，配置 `LLM_PROVIDER=hy3`、`HY3_BASE_URL`、`HY3_API_KEY` 和 `HY3_MODEL`，并设置 `VISUAL_PROVIDER=disabled`。重启服务，在设置页核对实际生效的模型；已保存的设置优先于环境配置。
 
-| Mode | How | What it does |
-| --- | --- | --- |
-| **Fake** (default) | nothing to configure | Deterministic offline provider. Full workflows, no network, no credentials, no cost. This is the normal development and test runtime, not a degraded state. |
-| **Hy3** | copy `.env.example` to `.env`, set `LLM_PROVIDER=hy3` plus `HY3_BASE_URL`, `HY3_API_KEY`, `HY3_MODEL` | Real Hy3 over an OpenAI-compatible endpoint. Configure your own endpoint and credentials. |
+完整的 Windows / macOS / Linux 步骤、端口、数据位置、配置优先级与常见问题见 **[运行指南](docs/SETUP.md)**。
 
-Real Hy3 outputs are model-generated and may vary between runs; deterministic local
-validation and authority boundaries remain unchanged.
+## 评估与已验证的范围
 
-Credentials are read from environment variables or a git-ignored local config file. **No
-key is ever committed** - `.env` and `**/provider-config.json` are git-ignored, and the
-evidence publisher fails closed if a credential, token, or local path would be written to
-a tracked file.
+| 证据                                                              | 能回答什么                                                       | 当前边界                                                                                 |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| 自动化测试与 `eval:fake`                                          | 来源校验、状态转换、隔离、重复提交、失败恢复等规则是否按设计执行 | 可在当前代码上复现；不测量真实教学质量。                                                 |
+| [已公开的 Hy3 在线记录](docs/evidence/hy3-online-verification.md) | 真实 Hy3 是否完成过概念分析、评分、跨文档出题等操作              | **2026-07-31，提交 `46d34f2`，6/6 项操作通过**；小样本历史记录，不覆盖当前完整课程链路。 |
+| [StudyEval 协议](docs/EVALUATION.md)                              | 如何评价开放式教学输出，以及如何验证评估器本身                   | 最终新样本评估、人工标注与人工一致性结果尚未发布；不主张评估器已通过最终验证。           |
+| [产品演示](docs/DEMO.md)                                          | 界面与学习过程实际是什么样                                       | 展示用途，不作为教学效果或总体成功率的实验。                                             |
 
-**Model-capability paths.** For the competition configuration, the only enabled
-model-capability path is **Hy3**. The repository also retains an experimental optional
-visual-description adapter; it is **disabled by default**, is forced disabled in the
-competition configuration and in all evaluation runs, produces advisory-only output that
-can never enter Formal Evidence, grading, mastery or any authority, and is **not part of
-the submitted model-call chain**. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for
-its boundary.
+可复现检查与证据入口见 [验证说明](docs/VERIFICATION.md)。本项目尚无学习效果实验，不声称提升了成绩、记忆保持或长期掌握率。
 
-### Main commands
+## 当前限制
 
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Build shared code and run the API and web dev servers |
-| `npm run build` | Type-check and build every workspace |
-| `npm run lint` | ESLint plus the Prettier check |
-| `npm test` | Build shared code and run all workspace tests |
-| `npm run demo:offline` | Exercise the core flows in process with the fake provider |
-| `npm run demo:http` | Exercise the same flows over HTTP against a running server |
-| `npm run demo:graph` | Exercise document -> graph -> overlay -> plan -> remediation |
-| `npm run demo:adaptive` | Exercise alignment -> assessment -> Tutor -> learner state -> daily queue |
-| `npm run eval:fake` | Deterministic offline structural evaluation (no network) |
-| `npm run eval:hy3` | Optional real-provider evaluation; explicit credentials mandatory |
-| `npm run eval:evidence` | Publish sanitized evidence from a successful real-provider report |
+- PDF 需要文本层，没有 OCR；图表、公式和复杂版式的语义提取有限。
+- 模型可能解释错误、误判证据关系或评分要点；本地校验提高可追溯性，不能证明全部语义正确。
+- 正式测评受来源和构念支持范围约束，不能为所有计算、设计或评价目标提供可靠的正式判定。
+- 练习新颖性、提示质量和迁移深度仍需人工核验；长期掌握与复习调度不是经过校准的认知诊断。
+- 这是本地学习应用，未提供面向公共部署的多用户认证与租户隔离方案。
 
-Of the commands above, only `eval:hy3` contacts a real model. Tests and CI never call it.
-The future StudyEval commands specified in [docs/EVALUATION.md](docs/EVALUATION.md) are
-not implemented and are therefore not listed here.
+更多边界见 [LIMITATIONS.md](docs/LIMITATIONS.md)。
 
-## Verification
+## 文档与许可
 
-```bash
-npm run build && npm run lint && npm test && npm run eval:fake
-```
+[参赛说明](docs/PROJECT_PROPOSAL.md) · [演示与图集](docs/DEMO.md) · [运行指南](docs/SETUP.md) · [评估协议](docs/EVALUATION.md) · [验证说明](docs/VERIFICATION.md) · [架构](docs/ARCHITECTURE.md) · [文档索引](docs/README.md)
 
-`eval:fake` starts the real server in process against in-memory SQLite and asserts
-provenance retention, canonical alignment, blueprint scope isolation, Tutor budgets,
-misconception transitions, review scheduling, retrieval bounds, prompt-injection
-defences, state invariants, activity executability, grading state safety, course
-understanding against hand-authored labels, and lesson provenance.
+[Apache-2.0](LICENSE)。内置中文示例课程与评估 fixtures 为项目原创内容；字体与图标许可见[文档索引](docs/README.md)。
 
-Full command matrix and evidence rules: **[docs/VERIFICATION.md](docs/VERIFICATION.md)**.
-
-A sanitized real-provider record is at
-[docs/evidence/hy3-online-verification.md](docs/evidence/hy3-online-verification.md) -
-it names the exact evaluated commit, model, endpoint hostname and aggregate metrics, and
-states what it does and does not prove. **That record is historical:** it was generated
-from an earlier commit and predates the current Curriculum, Lesson and semantic-support
-layers, so it does not exercise them. It will be regenerated at a current commit before
-final submission.
-
-## Honest limitations
-
-- Exact-quote verification establishes **location**, not complete semantic entailment.
-- The objective-support evaluator is model-assisted and can be wrong; structured
-  observations, frozen authority, local construct rules and downstream revalidation make
-  it **auditable and fail-closed**, not a formal proof.
-- Mastery and review scheduling are transparent local heuristics, **not** calibrated
-  cognitive diagnoses. Misconceptions stay hypotheses until graded evidence moves them.
-- Lessons may teach beyond your uploaded text; those segments are explicitly labelled as
-  AI teaching, are never grading evidence, and their factual quality depends on the
-  configured model.
-- PDF import needs an embedded text layer - there is no OCR. Complex multi-column
-  layouts, rotated text and figure text are not reconstructed.
-- The fake evaluation validates structure and safety boundaries, **not** teaching
-  quality. Real-provider samples are small and model-dependent - indicative, not a
-  benchmark.
-- No learning-outcome study has been conducted. This project does not claim measured
-  educational effectiveness.
-
-Full register, including observed Hy3 failure modes:
-**[docs/LIMITATIONS.md](docs/LIMITATIONS.md)**
-
-## Documentation
-
-| Document | Responsibility |
-| --- | --- |
-| [docs/PROJECT_PROPOSAL.md](docs/PROJECT_PROPOSAL.md) | Competition proposal: scenario, Hy3's role, evaluation design and plan (Chinese) |
-| [docs/EVALUATION.md](docs/EVALUATION.md) | Evaluation method specification: dimensions, level anchors, scorers, sample design, validation protocols. Harness and results are planned, not yet published |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Current architecture, trust boundaries, provider contracts, data model |
-| [docs/VERIFICATION.md](docs/VERIFICATION.md) | How to reproduce every result claimed here |
-| [docs/LIMITATIONS.md](docs/LIMITATIONS.md) | Capability boundaries and known failure modes |
-| [docs/evidence/](docs/evidence/) | Sanitized real-provider records (currently one historical record) |
-| [docs/HISTORY.md](docs/HISTORY.md) | Project history. Historical context only - not current product truth |
-| [eval/README.md](eval/README.md) | Evaluation harnesses and their labels, scope and limits |
-
-## License
-
-[Apache-2.0](LICENSE). The built-in Chinese sample course and the evaluation fixtures are
-original repository content released under the same license.
+> **个人活动作品声明：** 本项目为参与「腾讯犀牛鸟开源人才培养计划 · 混元大语言模型项目」实战任务 1 开发的个人作品，不代表腾讯或 Hy3 官方发布。

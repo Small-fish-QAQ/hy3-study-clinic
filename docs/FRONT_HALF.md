@@ -7,18 +7,18 @@ acceptance, and evidence authority have separate responsibilities.
 
 ## Responsibilities
 
-| Stage | Responsibility | Durable boundary |
-| --- | --- | --- |
-| Materials | Immutable revisions, exact source spans, ingestion and concept grounding | Valid source revisions and concepts |
-| Course Source Map / Course Map | Account for material regions and organize the subject | Validated private generation dependency |
-| Curriculum Detail | Specify bounded Unit objectives inside offered regions | Validated private batch dependency |
-| Course Skeleton | Validate hierarchy, coverage, prerequisites and authority | Immutable proposed Curriculum; explicit learner acceptance |
-| Ordinary StudyPlan | Compile accepted Units, objectives, prerequisites and Depth | Locally validated plan derived from accepted Curriculum |
-| Teaching Skeleton | Set objective obligations, permitted evidence, activities and duration | Deterministic content identity |
-| Teaching representation | Choose faithful authored or computable representations where applicable | Private bounded planning result |
-| Lesson / Practice authoring | Prepare objective-scoped teaching and independent Practice together | Validated private portions, then immutable accepted Lesson |
-| Practice acceptance | Check coverage, novelty, cognitive demand and current authority | Immutable Teaching Brief |
-| Learner execution | Present prepared teaching, feedback, scaffold, transfer and Practice | Non-credit responses and exposure events |
+| Stage                          | Responsibility                                                           | Durable boundary                                           |
+| ------------------------------ | ------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| Materials                      | Immutable revisions, exact source spans, ingestion and concept grounding | Valid source revisions and concepts                        |
+| Course Source Map / Course Map | Account for material regions and organize the subject                    | Validated private generation dependency                    |
+| Curriculum Detail              | Specify bounded Unit objectives inside offered regions                   | Validated private batch dependency                         |
+| Course Skeleton                | Validate hierarchy, coverage, prerequisites and authority                | Immutable proposed Curriculum; explicit learner acceptance |
+| Ordinary StudyPlan             | Compile accepted Units, objectives, prerequisites and Depth              | Locally validated plan derived from accepted Curriculum    |
+| Teaching Skeleton              | Set objective obligations, permitted evidence, activities and duration   | Deterministic content identity                             |
+| Teaching representation        | Choose faithful authored or computable representations where applicable  | Private bounded planning result                            |
+| Lesson / Practice authoring    | Prepare objective-scoped teaching and independent Practice together      | Validated private portions, then immutable accepted Lesson |
+| Practice acceptance            | Check coverage, novelty, cognitive demand and current authority          | Immutable Teaching Brief                                   |
+| Learner execution              | Present prepared teaching, feedback, scaffold, transfer and Practice     | Non-credit responses and exposure events                   |
 
 The ordinary plan compiler is used only for simplified Course Preparation. It
 preserves every accepted objective, uses stable prerequisite ordering, requires
@@ -82,8 +82,10 @@ debriefs or future worked results. They solve actions from visible facts. Answer
 disagreement, evidence insufficiency, grounding, answer leakage and other concrete
 defects can reject content. Difficulty opinions, including `shallow_task`, remain
 diagnostic; deterministic cognitive contracts and real browser acceptance govern
-the teaching-quality claim. Mixed Units review authored Lesson portions
-without recomputing all computed feedback traces. Deterministic inventory,
+the teaching-quality claim. Review includes computed models' rules, assumptions
+and explanations for source fidelity; locally executed arithmetic alone is not
+proof that a model fits the source. Independent action solving is used where
+answers were not already computed locally. Deterministic inventory,
 provenance, cognitive coverage and checkpoint validation still govern assembly.
 The review prompt is limited to scoped factual correctness, missing causal rules,
 answerability and actual answer disclosure. It does not conduct repeated

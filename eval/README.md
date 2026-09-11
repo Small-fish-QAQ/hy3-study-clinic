@@ -2,9 +2,10 @@
 
 This directory currently contains the structural-safety evaluation (`eval:fake` and the
 optional `eval:hy3` adapter run). The separate competition open-ended evaluation,
-StudyEval, is specified in [docs/EVALUATION.md](../docs/EVALUATION.md); its executable
-harness, frozen corpus, and result tables are planned and are not implemented at this
-commit. No future StudyEval command is documented here as available.
+StudyEval, is described in [docs/EVALUATION.md](../docs/EVALUATION.md). A final
+validated evaluator, frozen corpus and result package are not published in this
+repository. These runners do not implement that protocol, and no final fresh
+benchmark or human-agreement result is claimed.
 
 The current runners provide reproducible evidence for the system's main structural
 guarantees: provenance, local validation, budgets, state machines, isolation, and
@@ -25,7 +26,8 @@ eval/
   export-evidence.mjs Publish sanitized aggregates from a successful real-provider report
 ```
 
-The fixture language is intentional test data and is not part of the documentation-language convention.
+The fixtures include Chinese and English test material independently of the current
+Simplified Chinese learning interface.
 
 ## Offline structural evaluation
 
@@ -33,6 +35,10 @@ The fixture language is intentional test data and is not part of the documentati
 npm run build
 npm run eval:fake
 ```
+
+Use `VISUAL_PROVIDER=disabled` if this variable is set in your terminal. The fake
+runner does not load the root `.env`; the real runner does. Both reject an enabled
+visual configuration.
 
 The runner starts the real server application in process with in-memory SQLite and executes the current structural checks:
 
@@ -56,9 +62,12 @@ Generated `eval-fake.json` and `eval-fake.md` remain under `eval/reports/` and a
 
 ## Real Hy3 evaluation (optional)
 
+Configure the root `.env` with your own `HY3_BASE_URL`, `HY3_API_KEY`, `HY3_MODEL`
+and `VISUAL_PROVIDER=disabled` as described in [Setup](../docs/SETUP.md), then run:
+
 ```bash
 npm run build
-HY3_BASE_URL=... HY3_API_KEY=... HY3_MODEL=... npm run eval:hy3
+npm run eval:hy3
 ```
 
 - Explicit real credentials are mandatory. Missing values cause a non-zero exit; the script has no FakeProvider fallback path.
@@ -119,6 +128,6 @@ Only whitelisted aggregate metrics are public. Per-sample `detail`, prompts, stu
 - The sample is deliberately small: four alignment labels and three grading answers. Real-provider rates are indicative, model/API-dependent, and not a benchmark.
 - `eval:fake` validates structure and safety boundaries, not teaching quality.
 - Exact quotation validation proves location, not complete semantic entailment.
-- The latest committed real-provider result is the sanitized [online-verification record](../docs/evidence/hy3-online-verification.md). It is historical: it predates the current Curriculum, Lesson, and semantic-support layers and does not exercise them. It identifies the exact evaluated commit, model, endpoint hostname, and aggregate metrics, and will be regenerated at a current commit before final submission. The raw report is gitignored and contains no value that reviewers need to reproduce with their own credentials.
+- The committed real-provider result is the sanitized [online-verification record](../docs/evidence/hy3-online-verification.md), dated 2026-07-31 at `46d34f2`. It predates the current Curriculum, Lesson, and semantic-support layers and does not exercise them. Its six completed operations are a historical small-sample result. The exact commit, model, endpoint hostname, counts and limits remain part of the record; a future refresh must identify its own scope and cannot substitute for final StudyEval validation.
 
 The broader test, CI, migration, and current-state evidence is documented in [Verification and Reviewer Evidence](../docs/VERIFICATION.md).

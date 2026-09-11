@@ -1,12 +1,38 @@
-# Verification and Reviewer Evidence
+# 验证与公开证据
 
-This document is the reproducibility companion to the [Hy3 Study Clinic README](../README.md).
-It keeps current commands, evidence boundaries, and the competition requirements visible without
-turning historical implementation logs into current claims.
+[返回首页](../README.md) · [运行指南](SETUP.md) · [评估协议](EVALUATION.md)
 
-## Standard verification
+## 证据对应哪个结论
 
-Use Node.js 20.9 or newer from the repository root:
+| 证据                                                                                                       | 范围                                                                       | 不支持的结论                                    |
+| ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ----------------------------------------------- |
+| 当前代码与自动化测试                                                                                       | 课程准备、非正式学习、正式证据、恢复、来源与数据规则的实现                 | 所有真实资料都能成功、模型始终正确。            |
+| `eval:fake`                                                                                                | 在真实服务端与内存数据库中检查结构和状态边界                               | Hy3 教学质量、学习效果。                        |
+| [历史 Hy3 在线记录](evidence/hy3-online-verification.md)及其 [JSON](evidence/hy3-online-verification.json) | 2026-07-31，`46d34f288d6c619d396ee5f39e12cb33249161da`，6/6 小样本操作完成 | 当前完整课程链路的可用率或正式 StudyEval 成绩。 |
+| [演示与截图](DEMO.md)                                                                                      | 所展示界面和学习过程                                                       | 新样本基准、人工一致性或学习增益。              |
+| [StudyEval 协议](EVALUATION.md)                                                                            | 待验证的教学质量维度与实验要求                                             | 评估器已经通过最终验证。                        |
+
+历史记录包含概念分析、对齐、语义评分、跨文档出题和 Tutor 首步，早于当前课程准备与教学层。保留原始生成日期、提交、计数和局限，不将旧指标改写为新版本结果。
+
+## 本次文档与媒体检查点
+
+2026-09-12（Asia/Shanghai），在 Windows / Node.js 24.14.1 上检查了本次提交候选；产品代码基线为 `325dfa1051c6efa8e5f5617955b34683d516c144`。此次只整理文档、示例配置和媒体，并为已有源码卫生检查声明 MP4 二进制类型。
+
+| 检查                                           | 结果                                                                                          |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `npm run build`                                | 通过；保留已有的大体积前端 chunk 提示。                                                       |
+| `npm run lint`                                 | 通过；保留已有的一项 React Hook 依赖警告。                                                    |
+| 公开证据、源码卫生、配置和 Provider 运行时测试 | 4 个测试文件、35 项通过；这是针对本次改动的检查范围。                                         |
+| `npm run eval:fake`                            | 50/50 项结构检查通过；没有真实模型请求。                                                      |
+| `npm run dev`                                  | 使用隔离的内存库与 Fake 保护配置启动成功；5173 页面、8787 API 及前端 API 代理均返回正常响应。 |
+| 文档与媒体                                     | 相对链接及锚点核验、Markdown 格式检查、媒体哈希核验与敏感路径扫描通过。                       |
+| 浏览器预览                                     | 本地 GFM/样式预览检查桌面与手机宽度，图集可展开、图片完整加载，MP4 可播放。                   |
+
+原始视频已完整解码检查，公开副本与最终视频哈希一致。上述结果支持仓库呈现与本地复现，不是最终新样本教学评估或人工一致性实验。
+
+## 本地标准检查
+
+推荐 Node.js 24，在仓库根目录执行：
 
 ```bash
 npm ci
@@ -14,140 +40,47 @@ npm run build
 npm run lint
 npm test
 npm run eval:fake
-npx prettier --check .
 git diff --check
 ```
 
-The root commands run the existing workspaces:
+`eval:fake` 要求 `VISUAL_PROVIDER` 未设置或为 `disabled`。若终端设置了其他值，PowerShell 先执行 `$env:VISUAL_PROVIDER = 'disabled'`，macOS / Linux 使用 `VISUAL_PROVIDER=disabled npm run eval:fake`。
 
-- `npm run build` builds shared and server TypeScript and the web TypeScript/Vite bundle.
-- `npm run lint` runs ESLint and the repository Prettier check.
-- `npm test` builds shared code and runs every shared, server, and web Vitest suite.
-- `npm run eval:fake` runs the real server in process with in-memory SQLite and the deterministic Fake provider.
-- `npx prettier --check .` is the direct formatting gate; `git diff --check` catches whitespace errors.
+构建覆盖 shared/server TypeScript 和 web TypeScript/Vite；lint 包含 ESLint 与仓库格式检查；测试覆盖各 workspace。`eval:fake` 使用 FakeProvider 和内存 SQLite，不需要密钥，也不会读取实际学习数据库。生成的报告留在被忽略的 `eval/reports/`。
 
-Migration, repository, route, integration, and frontend coverage is included in the workspace test
-suites; there is no second hidden verification command. Tests, CI, and Fake evaluation never call
-the real Hy3 API. The optional external connection test and `npm run eval:hy3` require explicit
-credentials and are never run implicitly.
-
-## Current-state verification
-
-Run the commands above against the checked-out revision. Do not copy historical test totals or
-latency figures into a current claim.
-
-`eval:fake` covers provenance retention; alignment validation and graph preservation;
-cross-document assessment scope; Tutor iteration budgets and zero-state-on-failure; misconception
-transitions; fixed-clock Review scheduling and its separation from mastery; retrieval bounds and
-workspace isolation; prompt-injection fencing; mastery bounds and foreign-key integrity; activity
-launchability; duplicate/stale grading safety; section-aware course-understanding fixtures;
-lesson provenance; and the lesson-aware Tutor policy profile.
-
-The focused suites below are useful when reviewing one boundary:
+仓库格式配置默认忽略 Markdown；文档修改可单独检查：
 
 ```bash
-npm run test -w @hy3-clinic/shared -- src/domain/objectiveAuthoritySemanticSupport.test.ts src/domain/courseMap.test.ts src/domain/providerConfig.test.ts
-npm run test -w @hy3-clinic/server -- src/services/curriculum.test.ts src/services/coursePreparation.test.ts src/services/teachingBriefPreparation.test.ts
-npm run test -w @hy3-clinic/shared -- src/domain/teachingSkeleton.test.ts src/domain/lessonExecution.test.ts src/domain/taughtExposure.test.ts
-npm run test -w @hy3-clinic/web -- src/components/LessonExecutionPanel.test.tsx
-npm run test -w @hy3-clinic/server -- src/services/formalProgression.test.ts src/services/visualPreparation.test.ts src/services/agentProviderRuntime.test.ts
-npm run test -w @hy3-clinic/server -- src/routes/workspaces.test.ts src/routes/flows.test.ts src/app.test.ts
-npm run test -w @hy3-clinic/web -- src/views/AgentCourseWorkspace.live01.test.tsx src/views/AgentCourseViews.test.tsx
-npm run test -w @hy3-clinic/web -- src/views/KnowledgeMapView.test.tsx src/views/StudySessionView.test.tsx
+npx prettier --check --ignore-path .gitignore README.md "docs/*.md" eval/README.md
 ```
 
-These suites cover the current Course-centred route: immutable MaterialRevision provenance,
-source/claim authority, learner-confirmed Contract, Curriculum and StudyPlan proposals, atomic
-route activation, flexible SessionAgenda, durable StudySession pause/resume/stop and detours,
-Teaching Brief provenance, non-credit Lesson/Practice/Tutor work, Formal Evidence and progression,
-mistakes and Repair, FSRS Review state, semantic-support validation and recovery, cancellation,
-idempotency, stale responses, and Course/document switching safety.
+[CI 配置](../.github/workflows/ci.yml)覆盖 Linux Node 20/24 与 Windows Node 24。首页徽章显示远端工作流状态；未推送的本地提交应以本地检查为准。
 
-## End-to-end smoke workflows
+生成的 `docs/evidence/` 文件由公开证据测试校验，保留生成器的原格式，不纳入上述文档排版命令。
 
-The in-process smoke is self-contained:
+## 有针对性的复核入口
+
+| 想核对的边界                     | 现有测试                                                                                                                                                                                                             |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 课程准备、来源分配与结构         | [coursePreparation.test.ts](../apps/server/src/services/coursePreparation.test.ts)、[curriculumMaterialization.test.ts](../apps/server/src/services/curriculumMaterialization.test.ts)                               |
+| 证据支持与构念资格               | [objectiveAuthoritySemanticSupport.test.ts](../apps/server/src/services/objectiveAuthoritySemanticSupport.test.ts)、[formalConstructAuthority.test.ts](../apps/server/src/services/formalConstructAuthority.test.ts) |
+| 正式证据与进度                   | [formalProgression.test.ts](../apps/server/src/services/formalProgression.test.ts)                                                                                                                                   |
+| 教学执行                         | [LessonExecutionPanel.test.tsx](../apps/web/src/components/LessonExecutionPanel.test.tsx)                                                                                                                            |
+| 配置与 Fake 隔离                 | [providerRuntime.test.ts](../apps/server/src/services/providerRuntime.test.ts)、[config.test.ts](../apps/server/src/config.test.ts)                                                                                  |
+| 公开证据未泄露敏感信息且渲染一致 | [publishedEvidence.test.ts](../apps/server/src/eval/publishedEvidence.test.ts)                                                                                                                                       |
+| 已跟踪源码卫生                   | [sourceHygiene.test.ts](../apps/server/src/sourceHygiene.test.ts)                                                                                                                                                    |
+
+例如运行公开证据与源码卫生检查：
 
 ```bash
-npm run build
-npm run demo:offline
+npm run test -w @hy3-clinic/server -- src/eval/publishedEvidence.test.ts src/sourceHygiene.test.ts
 ```
 
-For the HTTP smoke, start an isolated Fake server in one terminal:
+`npm run demo:offline` 是无需端口的核心 API 烟测。`demo:http`、`demo:graph`、`demo:adaptive` 需要正在运行的 Fake API，它们是较低层的历史流程检查，并不等于当前课程界面的端到端教学验收。运行前应使用[独立 Fake 配置](SETUP.md#确保体验过程使用-fake)。
 
-```bash
-AUTOMATION_EXPECT_PROVIDER=fake PROVIDER_CONFIG_PATH=./data/smoke-provider-config.json LLM_PROVIDER=fake VISUAL_PROVIDER=disabled npm run dev:server
-```
+## 真实请求与发布边界
 
-Then, from another terminal:
+`npm run eval:hy3` 需要显式 Hy3 凭证；它不在 CI 或测试中运行。它仍是小型接口评估，不是最终 StudyEval，也不是浏览器或人工验收。具体操作和分母见 [eval/README.md](../eval/README.md)。
 
-```bash
-npm run demo:http
-npm run demo:graph
-npm run demo:adaptive
-```
+`npm run eval:evidence` 会更新跟踪的公开证据，属于发布操作，不是只读校验。本次文档检查保留既有证据文件。新结果应在来源、样本、版本和适用范围都可核对后单独发布。
 
-The graph and adaptive scripts accept their documented `verify` arguments after a restart.
-These scripts are observational smoke checks; invariant claims belong to Vitest and `eval:fake`.
-The server-side provider-isolation tests prove that a Fake expectation and an enabled external
-visual transport cannot coexist in guarded automation.
-
-## Document and migration checks
-
-Rich-document tests cover text-layer PDF, DOCX, PPTX, standalone PNG/JPEG/WebP assets, static HTML
-snapshots, parser signatures, exact page/slide/heading provenance, immutable source revisions,
-OOXML/XML safety, bounded input, and malformed/unsupported files. OCR, browser-perfect archiving,
-semantic chart/equation interpretation, and spreadsheet support remain outside the current product.
-
-Migration tests apply the numbered migrations from scratch, re-run them idempotently, upgrade
-populated legacy databases conservatively, preserve source and learning history, re-enable foreign
-keys, and verify all-or-nothing rollback. They also cover telemetry ownership, Review cutover,
-visual derivation identity, formal progression, repair episodes, and StudySession recovery.
-
-## Published online evidence
-
-[docs/evidence/hy3-online-verification.md](evidence/hy3-online-verification.md) is a sanitized
-real-provider record. **It is historical:** it was generated from an earlier commit, predates the
-current Curriculum, Lesson, and semantic-support layers, and therefore does not exercise those
-layers. It will be regenerated at a current commit before final submission. The paired JSON remains
-byte-unchanged in this cleanup. The record’s generated metrics and “what this does not prove”
-section are not hand-edited.
-
-`eval:evidence` is a publication command for a deliberate credentialed run; it is not part of
-ordinary offline verification. The exporter fails closed on dirty provenance, missing/unknown
-operations, credential or local-path leakage, invalid schema, or non-Hy3 reports.
-
-## Competition evaluation
-
-The open-ended StudyEval harness, frozen corpus, and result tables are planned and not yet
-implemented. The method specification, written level anchors, sample design, anti-circularity
-controls, validity protocols, and runtime model are in [docs/EVALUATION.md](EVALUATION.md).
-When implemented, its semantic-judging path will require explicit Hy3 credentials, while the
-offline aggregation path will require none. Every such run sets `VISUAL_PROVIDER=disabled`.
-
-The existing `npm run eval:hy3` command is a separate adapter evaluation, not a product-level
-browser or human acceptance gate. It must be invoked explicitly with credentials and never runs
-in tests or CI.
-
-## Evidence-to-requirement matrix
-
-The matrix is keyed to the official Task 1 requirements. Cells marked PLANNED are deliberately
-not current claims.
-
-| Requirement | Current implementation / source | Reviewer evidence | Status |
-| --- | --- | --- | --- |
-| S1–S5 scenario, user value, personal/activity-work framing | README, Course routes, workspace/material services | README, `docs/ARCHITECTURE.md`, `routes/workspaces.ts`, `routes/agentCourse.ts` | Implemented |
-| A1–A3 substantive Hy3 semantic role | Hy3 provider contracts and Curriculum/Lesson/Assessment services | `apps/server/src/llm/hy3Provider.ts`, provider tests, historical online record (qualified above) | Implemented; current real-run refresh planned |
-| E1–E5 open-ended evaluation method | StudyEval specification | [docs/EVALUATION.md](EVALUATION.md) | Method published; executable harness/corpus/results PLANNED before final submission |
-| V1–V3 provenance, deterministic authority, and state auditability | Grounding, semantic-support, grading, progression, migrations | `apps/server/src/grounding`, `apps/server/src/services`, Vitest suites, `eval:fake` | Implemented |
-| X1 limitations and failure analysis | Capability-boundary register and observed Hy3 patterns | [docs/LIMITATIONS.md](LIMITATIONS.md), private observations summarized there without frequencies | Implemented as limitation register |
-| D1 competition model path | Hy3 is the only enabled model-capability path; visual adapter excluded | README provider boundary, ARCHITECTURE visual-provider paragraph, all evaluation runs require disabled visual provider | Implemented boundary |
-| D2 evaluation method specification | Layer A/Layer B separation, seven dimensions, anchors, scorer protocols | [docs/EVALUATION.md](EVALUATION.md) | Published; harness PLANNED |
-| D3 corpus and executable evaluator | Frozen cases, corpus hash, offline aggregation, credentialed semantic observation collection | No public corpus or result artifact yet | PLANNED for 8/31–9/5 |
-| D4 proposal and analysis report | Scenario, architecture, method, limitations, schedule | [docs/PROJECT_PROPOSAL.md](PROJECT_PROPOSAL.md) | Published |
-| D5 demonstration media | Current workflow demonstration | Obsolete media deleted; replacement recording is scheduled before final submission | PLANNED |
-
-## Historical phase verification
-
-Earlier implementation phases and their individual checks remain reproducible from Git history.
-This current document intentionally keeps only the commands and boundaries needed to reproduce the
-checked-out product; historical design and chronology are in [docs/HISTORY.md](HISTORY.md).
+最终新样本基准、人工标签与人工一致性尚未在此仓库发布。评估方法的有效性与学习效果不能从测试通过、演示成功或历史小样本结果中推断。

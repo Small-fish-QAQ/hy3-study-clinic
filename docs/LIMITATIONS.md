@@ -1,68 +1,42 @@
-# Hy3 Study Clinic — Limitations and known failure modes
+# 当前限制与失败模式
 
-This register is part of the product contract. It describes what the current
-repository does not guarantee, so reviewers can distinguish implemented safeguards
-from open research questions.
+[返回首页](../README.md) · [公开证据](VERIFICATION.md)
 
-## Ingestion and format limits
+## 资料与课程范围
 
-- PDF import requires an embedded text layer; there is no OCR. Complex multi-column layouts, rotated text, diagrams, PDF figures, and image text are not reconstructed. DOCX provenance has structural order and headings but no page numbers.
-- PPTX text follows stable OOXML drawing-layer order, not a guaranteed semantic reading order. Charts, SmartArt, equations, unknown shapes, and unsupported embedded objects are not semantically interpreted; supported original media can be retained with an explicit partial-extraction warning.
-- Embedded original images remain immutable source assets. Accepted provider-derived descriptions are available only through explicit advisory projections; they are not visual source truth. HTML/Web Snapshot ingestion is a static, no-JavaScript snapshot path: it captures one public HTTP(S) response, retains exact response bytes and URL/hash provenance, and keeps remote images as reference/alt/caption metadata rather than pretending they were archived.
-- The dedicated TokenHub visual path is bounded advisory generation, not perfect OCR, exact chart extraction, formal visual Evidence, multimodal mastery, or proof of pedagogical effectiveness. Provider-visible text and structural interpretation can vary by fixture; unknown image-token accounting and monetary cost are never inferred.
+- PDF 需要嵌入文本层，没有 OCR。多栏、旋转文字、图表、图片文字和公式可能无法正确恢复；DOCX 保留结构与标题定位，不提供页码。
+- PPTX 文本遵循稳定的 OOXML 顺序，不保证语义阅读顺序。图表、SmartArt、复杂公式和未知对象不作完整语义解释。
+- 网页导入保存一次公开 HTML 响应，不执行 JavaScript，不登录、不爬取关联页面；远程图片可保留引用信息，不代表已归档原图。
+- 检索、概念提取与课程生成有输入、输出及批次上限。章节被映射不代表所有知识都被理解；词法检索可能漏掉同义表述。
+- 重点主题映射可能失败；课程结构允许改名、先修约束内移动、重点切换和重新生成，不支持任意合并、删除或逐单元选择深度。
 
-## Graph, retrieval, and course-structure limits
+## 教学与模型判断
 
-- Curriculum has progressive disclosure rather than search/filter. Its conservative topic presentation retains every accepted LearningUnit identity and never fabricates mappings, a current unit, or progress state; malformed hierarchy recovery is display-only and does not repair stored Curriculum data.
-- Historical Curricula created before parser-fragment grouping may contain many source-only LearningUnits and remain accepted history. Their smaller learner-facing topic presentation has no planning authority. When those units lack a launchable capability, the supported repair is a separately proposed and learner-accepted successor Curriculum, not a capability backfill or Plan-only display projection.
-- If no current Concept has the exact selected evidence identity, the server will not synthesize one from a LearningUnit title or citation; the learner must first generate revision-grounded Concepts from the Course material, then request the successor.
-- 资料映射 reports structural mapping and anchor coverage, never semantic course coverage: a mapped section may still contain uncaptured ideas. Section budgets and the 40-concepts-per-document ceiling bound extraction depth.
-- Semantic alignment can be wrong and has no unmerge operation; source concepts and history remain intact underneath.
-- Tutor context, graph generation, assessments, remediation, history, and retrieval are deliberately bounded. Dense graph layouts can retain crossings, and lexical retrieval can miss synonyms.
-- Course Source Map hierarchy comes only from current parser heading paths and deterministic budgeting sections; it does not create parent summaries or semantic authority. The production reserve guarantees section opportunity under fixed global ceilings, not semantic relevance or complete coverage. The offline policy benchmark uses exact local catalog identities but does not contain raw SourceBlock text, so exact quotation verification remains at catalog construction/materialization. Its token figures are estimates, and the validation cases do not prove teaching quality or make rank-fusion weights universal.
-- The production Course Map and detail stages bound provider work and validate structure, evidence ownership, and assembly; they do not prove teaching quality or semantic entailment. The Course Map is operation-local and is never a second accepted course artifact. A Course Map whose details cannot fit within two fixed batches fails without dropping regions or replacing a valid predecessor. Sparse source regions with no executable current Concept can still fail the unchanged StudyPlan preflight; local code does not invent Concept authority to make them launchable.
-- Optional Course focus is a narrow semantic mapping performed inside Course Map generation. An unmappable or teaching-style request falls back to balanced `normal` Units; the system does not promise that every informal synonym will be mapped. Learner correction is intentionally limited to Unit rename, prerequisite-safe movement, focus toggle, and regeneration—merge, deletion, objective-graph editing, and per-Unit depth selection are not supported.
+- 模型可能产生事实错误、错误适用条件、计算或解释错误，误判候选证据和简答要点。结构校验、独立内容审阅与本地规则只能提供有界保护。
+- 引用的逐字匹配证明出处存在，不证明全部结论被支持。补充讲解与假设案例不是资料事实，也不能自行成为正式评分依据。
+- 引导案例的提示、脚手架、干扰项、变化条件与练习新颖性仍需人工审阅。词法重叠检查不能发现所有语义改写或无实质变化的迁移。
+- Tutor 使用有界的已展示教学与对话上下文，远处材料可能不在当前窗口内。保存后的回复保守地计为可能已见，断线时可能与实际阅读情况不同。
+- 某些教学模型可由本地代码执行，以获得内部一致的答案；执行正确不保证 Hy3 建模和选取的前提符合原资料。
 
-## Teaching and pedagogy limits
+## 正式验证、掌握与复习
 
-- Embedded Tutor uses a bounded window of presented teaching and conversation. Exact source snapshots support attribution, not proof of every generated explanation. Reply latency depends on the provider. Tutor exposure checks detect exact reuse and substantial lexical overlap, not every semantic paraphrase; a completed saved reply is conservatively treated as potentially seen after a disconnect. See [Tutor inside Study](TUTOR.md).
+- 目标必须有适当的来源、构念与评分依据才能进入正式验证。当前不能为所有计算、设计或评价能力提供可靠正式资格；学习深度或教学表现不会绕过这个限制。
+- 答对非正式练习或复测只完成相应教学任务，不是正式证据；正式测评通过也不等于长期掌握。
+- 语义评分依赖 Hy3 对必需标准与等价答案的判断，可能错授或错拒。不能从本地分数计算正确推断语义评分正确。
+- 掌握状态与 FSRS 复习调度是可检查的本地规则，不是经过校准的认知诊断。延迟、多样表现和迁移仍需实际学习证据。
+- 诊断为基于当前表现的假设。未进行学习效果实验，没有成绩提升、保持率或长期学习增益结论。
 
-- Lesson prose may teach beyond the uploaded text. Such content carries no source reference, is explicitly labeled Hy3 supplementary teaching, is never grading evidence, and its factual quality depends on the configured model. A source marker proves an exact excerpt exists at that location; it does not prove full semantic entailment.
-- The Lesson contract asks for a coherent teacher-led arc, central mental model, worked reasoning, causal explanation, boundaries and transfer, but deterministic structure tests cannot prove that a real learner experiences strong teaching. Final acceptance still requires human dogfood of real-provider output; no learning-effectiveness claim follows from prompt compliance.
-- A prepared worked interaction is intentionally bounded to one guided choice, one optional repair level (an informational hint plus an answerable scaffold), and one changed-condition transfer. It is not a generic tutor tree, does not semantically grade free text, and does not create a durable misconception diagnosis. The quality and completeness of generated distractors, feedback, hints, scaffolds, and debriefs still require real-provider human review.
-- Teaching Skeleton minute ranges are deterministic feasibility bounds, not observed learner time or proof of teaching effectiveness. Lexical relevance/compatibility findings are advisory diagnostics; schema, required obligations, source membership/resolution, route, identity, planning-language leakage, and obvious Practice-answer leakage still fail closed. The bounded Practice novelty checks catch substantial verbatim/direct repetition, not semantic paraphrases. An accepted Lesson checkpoint is reusable only for its exact Session/Agenda/Plan route, source context, skeleton, and prompt version.
-- Objective repair cannot silently broaden authority, lower a construct, or narrow away an original required capability. If the legitimate LearningUnit source envelope cannot support the objective, preparation stops instead of manufacturing Formal readiness.
+## 运行与历史数据
 
-## Assessment, mastery, and review limits
+- 长资料和多阶段准备可能较慢，且可能耗尽结构化输出或修复预算。被拒绝、截断或不完整输出不能作为成功内容保存；显式重试仍可能失败。
+- Provider 的接口兼容性、延迟与输出行为依赖实际服务。设置页的连通测试只能证明该次小请求，不能保证整个课程准备成功。
+- 已接受课程、教学与证据不会因新代码自动改写。旧版本可能不满足当前资格，需要显式创建后继课程结构或新课程；新验证不能追认旧记录。
+- 课程删除无回收站。SQLite 与本地文件需要自行备份；服务定位为本地使用，没有公共多租户认证和部署方案。
+- 可选视觉描述路径不属于参赛和评估配置。其结果只是辅助说明，不具备正式证据、评分或掌握权威。
+- 桌面与移动布局可用性不等于跨设备和完整无障碍认证；复杂图谱与较大的前端包仍有性能边界。
 
-- Exact-quote verification establishes location, not semantic entailment. The objective-support evaluator is model-assisted and can still be wrong; structured observations, frozen authority, local construct rules, capability-preservation checks, and downstream revalidation make it auditable and fail closed rather than a formal proof of entailment.
-- Mastery and review scheduling are transparent local heuristics, not calibrated cognitive diagnoses. Misconception records remain hypotheses until graded evidence changes their state.
-- The fake evaluation checks structure and safety boundaries, not teaching quality or real-provider structured-output behavior. The real evaluation uses small fixtures and depends on the configured model/API; Fake success is not actual-browser acceptance.
-- No learning-outcome study has been conducted. This project does not claim measured educational effectiveness.
+## 评估范围
 
-## Provider and structured-output limits
+自动化测试与 Fake 评估支持具体规则的工程结论。公开真实 Hy3 记录来自旧提交和小样本，不能代表当前完整课程的可用率。最终新样本评估、人工标注与人工一致性结果尚未发布，StudyEval 不被宣称已通过最终有效性验证。
 
-- Hy3 structured-output capabilities depend on the configured OpenAI-compatible serving backend. The adapter does not assume native `response_format` or JSON Schema support; constrained decoding would require an explicit verified endpoint capability and would remain an additional layer before local Zod and semantic validation.
-- Lesson/Practice recovery handles only deterministic representation equivalences, one bounded class-specific repair or clean regeneration, and the documented structural-repair-to-alias-only localized follow-up. It cannot reconstruct substantive teaching from truncated bytes, invent a missing explanation/evidence selection, or make a semantically invalid candidate valid. Recovery exhaustion still requires an explicit learner retry; full background polling/queue recovery is not implemented.
-- The optional visual adapter is disabled in the competition configuration and evaluation runs. It remains advisory-only and can never enter Formal Evidence, grading, mastery, mistakes, Review, Agenda completion, or Plan progression.
-- Settings local-service tests cover only local reachability. The separate external Hy3 test is explicit, minimal, timestamped, and may consume provider usage; a passing probe is not a guarantee for later large requests. Provider configuration edits are validated and activated by the server, while the browser receives only safe non-secret state.
-
-## Lifecycle and persistence limits
-
-- Historical Curricula without canonical objective semantic-support rows remain readable audit history but fail the new acceptance, StudyPlan, activation, and pre-Lesson gates until a valid immutable successor is created.
-- Material/document retirement is non-destructive to immutable revisions, source provenance, assessments, and longitudinal learning history, but there is no automatic unretire operation. Reprocessing stages and activates an immutable extraction revision while retaining earlier source artifacts and history; failed parsing leaves the prior active revision unchanged. Explicit workspace deletion is irreversible and has no recycle bin.
-
-## Known Hy3 failure modes observed in this project
-
-The project has recorded these qualitative patterns; frequency estimates are not yet
-available and no prevalence claim is made:
-
-- When evidence is sufficient, Hy3 can over-expand into general knowledge instead of keeping the explanation tightly scoped.
-- When candidate evidence is made of near-neighbor passages, relation classification can be unstable.
-- When several passages jointly support a proposition, Hy3 can prefer a single evidence group instead of the minimal joint support.
-- Construct depth can be misread, especially when a goal requires application or evaluation rather than identification or explanation.
-- Lesson output has repeatedly used JSON `null` for optional components, omitted mechanically empty arrays, or copied internal `O*`/`S*`/`L*`/`PR*` aliases into learner prose. Practice output has also been observed truncated, and whole-object repair has omitted an immutable Practice slot. The bounded preparation recovery policy normalizes only unambiguous representations, freezes slot inventories and valid peers, localizes alias text repair, and regenerates truncation from clean immutable input; all semantic, provenance, pedagogy, and authority gates remain hard.
-
-These failure modes motivate the blind candidate-relation/support-group verifier,
-construct-specific local gates, and the planned StudyEval adversarial and validity
-protocols. They are not claims of statistical frequency.
+以上为定性能力边界，不附没有数据支持的发生率。评价协议见 [EVALUATION.md](EVALUATION.md)，可运行检查见 [VERIFICATION.md](VERIFICATION.md)。

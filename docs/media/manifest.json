@@ -1,0 +1,142 @@
+{
+  "captureDate": "2026-09-11",
+  "productCommit": "325dfa1051c6efa8e5f5617955b34683d516c144",
+  "provider": "hy3",
+  "purpose": "Product presentation; not a benchmark or learning-outcome result",
+  "video": {
+    "durationSeconds": 109.9,
+    "width": 2560,
+    "height": 1440,
+    "fps": 30,
+    "videoCodec": "h264",
+    "audioCodec": "aac"
+  },
+  "assets": [
+    {
+      "file": "screenshots/01-learning-studio.webp",
+      "bytes": 190686,
+      "sha256": "fddabca7fe09bdda786121e480cd44d401479f3d545eed1a04615dc1de59ca78",
+      "width": 2560,
+      "height": 1440,
+      "sourceFile": "01-learning-studio.png",
+      "sourceSha256": "2d1a9d1f1d34a09b4d6f01c9c278a8f43ddfd5dc9d60960166136f6fc29d41c7",
+      "transformation": "WebP quality 92, full resolution; no crop or content edits"
+    },
+    {
+      "file": "screenshots/02-course-materials.webp",
+      "bytes": 160840,
+      "sha256": "243836e1add8031f183ed79b280b827dc2e7ac2b5a32adfc964fa9360b95ac8a",
+      "width": 2560,
+      "height": 1440,
+      "sourceFile": "02-course-materials.png",
+      "sourceSha256": "c17a54b4b4b3c40e906dd9fa26dabdf5f659b0a19867c0adfad0a76fe1b26566",
+      "transformation": "WebP quality 92, full resolution; no crop or content edits"
+    },
+    {
+      "file": "screenshots/03-course-structure.webp",
+      "bytes": 180580,
+      "sha256": "66c3e1e312377e655c2b31ffae5efd7488a27e8e68f9ea887038630f75855677",
+      "width": 2560,
+      "height": 1440,
+      "sourceFile": "03-course-structure.png",
+      "sourceSha256": "1787fd68be370cebfd08ff0cd07fd210eb77ac01c176aa94695ec0b8ce670583",
+      "transformation": "WebP quality 92, full resolution; no crop or content edits"
+    },
+    {
+      "file": "screenshots/04-structured-teaching.webp",
+      "bytes": 197700,
+      "sha256": "4b0f1e41a2fd5405d379be62f5a4d4473906687c5faac71ca64e021e5d491918",
+      "width": 2560,
+      "height": 1440,
+      "sourceFile": "04-structured-teaching.png",
+      "sourceSha256": "1eb8ff62420c702a19d4609edfef4a61de6cb294b7dde2c4b9c0ef7213dd9cc4",
+      "transformation": "WebP quality 92, full resolution; no crop or content edits"
+    },
+    {
+      "file": "screenshots/07-contextual-tutor.webp",
+      "bytes": 350646,
+      "sha256": "7485fd0929d36ebcdbf4d9278912071aac8e7374ee4b3cf2831646e058542ae8",
+      "width": 2560,
+      "height": 1440,
+      "sourceFile": "07-contextual-tutor.png",
+      "sourceSha256": "4e3d724f83eb5fbc5b283b22ab7fad0cebdd6a5e80013e4ed15f096e45c52d17",
+      "transformation": "WebP quality 92, full resolution; no crop or content edits"
+    },
+    {
+      "file": "screenshots/08-tutor-sources.webp",
+      "bytes": 355890,
+      "sha256": "4bd799652240bd8599ca473baf968d414534b88bf021be6603d6fcb17b5f327a",
+      "width": 2560,
+      "height": 1440,
+      "sourceFile": "08-tutor-sources.png",
+      "sourceSha256": "b8890e9a9eec8ededee51522709ffa13c6a823571298a31450923ab821cfcf7c",
+      "transformation": "WebP quality 92, full resolution; no crop or content edits"
+    },
+    {
+      "file": "screenshots/09-practice-evidence-judgment.webp",
+      "bytes": 227768,
+      "sha256": "5b90d668fbff878b112bf8373f1b239b97c798a31bfe92110d9c0b6d023d1be8",
+      "width": 2560,
+      "height": 1440,
+      "sourceFile": "09-practice-evidence-judgment.png",
+      "sourceSha256": "02db9e1c86a17cc6842ad4871d9bfd89f288d02f8f849e1db882a2b66bdf9fec",
+      "transformation": "WebP quality 92, full resolution; no crop or content edits"
+    },
+    {
+      "file": "screenshots/11-repair-explanation.webp",
+      "bytes": 234508,
+      "sha256": "7cdb925ac52211344656e5ff662b76a5a9fb1ebda2f503e35d3ace934aac2f5e",
+      "width": 2560,
+      "height": 1440,
+      "sourceFile": "11-repair-explanation.png",
+      "sourceSha256": "dece0b9c0c2c05d1cc229ea9d615310f06b4844054a3af7c247f113c46a8a02e",
+      "transformation": "WebP quality 92, full resolution; no crop or content edits"
+    },
+    {
+      "file": "screenshots/13-retest-new-scenario.webp",
+      "bytes": 200274,
+      "sha256": "dbfab45397ecd9ea0e9cd78b7d232573f7bc19ca16137afe9947ea9f78c7124a",
+      "width": 2560,
+      "height": 1440,
+      "sourceFile": "13-retest-new-scenario.png",
+      "sourceSha256": "45d6130195e09eba6986eeeae7b05ed543511eedc16825098600f5e24c25a52c",
+      "transformation": "WebP quality 92, full resolution; no crop or content edits"
+    },
+    {
+      "file": "screenshots/15-progress-without-false-mastery.webp",
+      "bytes": 187276,
+      "sha256": "97ae12b6ecb3f62318391aed8335fb5cc120a5d98e2994e12f1db55850e28246",
+      "width": 2560,
+      "height": 1440,
+      "sourceFile": "15-progress-without-false-mastery.png",
+      "sourceSha256": "5e3d5f425001582e2dbff4286799bcdf58d71d448a1e5d0c3305cbbaae16cbc2",
+      "transformation": "WebP quality 92, full resolution; no crop or content edits"
+    },
+    {
+      "file": "demo/Hy3-Study-Clinic-demo-2560x1440.mp4",
+      "bytes": 12579612,
+      "sha256": "2f3c3e0dab40a2e4605821e424c3d553cd2f280a85bb44cd3e42b90d816bfd7c",
+      "sourceFile": "Hy3-Study-Clinic-demo-2560x1440.mp4",
+      "sourceSha256": "2f3c3e0dab40a2e4605821e424c3d553cd2f280a85bb44cd3e42b90d816bfd7c",
+      "transformation": "Unmodified copy"
+    },
+    {
+      "file": "demo/Hy3-Study-Clinic-demo.zh-CN.srt",
+      "bytes": 1830,
+      "sha256": "8c8412315fc8983ee8214c0d9d2aa29d282b79f6a3d435901aaa2e075db57752",
+      "sourceFile": "Hy3-Study-Clinic-demo.zh-CN.srt",
+      "sourceSha256": "10dbd49c2449ec2f47b2462d9608cdb7291ed88cbd3e038db72afcdd2058722c",
+      "transformation": "UTF-8 text with LF line endings and one final newline; caption text and timing unchanged"
+    },
+    {
+      "file": "demo/demo-poster.webp",
+      "bytes": 46418,
+      "sha256": "bf25ebeb383153fe12bd113f2bb9fac80e1e1a40b75354593807b8cdb23a0f91",
+      "width": 1600,
+      "height": 900,
+      "sourceFile": "Hy3-Study-Clinic-demo-2560x1440.mp4",
+      "sourceSha256": "2f3c3e0dab40a2e4605821e424c3d553cd2f280a85bb44cd3e42b90d816bfd7c",
+      "transformation": "Frame at 1.5 seconds, resized to 1600 x 900, WebP quality 92; no content edits"
+    }
+  ]
+}
