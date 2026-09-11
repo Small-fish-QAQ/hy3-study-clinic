@@ -97,6 +97,8 @@ This is a local application with bounded context, retrieval, histories and gener
 
 [Hy3Provider](../apps/server/src/llm/hy3Provider.ts) uses a compatible HTTP API. [FakeProvider](../apps/server/src/llm/fakeProvider.ts) provides deterministic operations for local workflows and tests. Valid saved settings override environment-derived Provider settings; see [SETUP.md](SETUP.md).
 
+The workflow can be repeated offline without an API key. This does not promise byte-identical output: generated identifiers, content selection and ordering may vary between runs.
+
 An optional visual-description adapter is retained in code. Its outputs are advisory and cannot enter Formal Evidence, grading or mastery. The submitted language workflow and evaluation configuration keep `VISUAL_PROVIDER=disabled`; it is not a second submitted model path.
 
 Runtime safeguards and the existing structural runners are implementation evidence. The separate [StudyEval protocol](EVALUATION.md) describes quality judgments and evaluator validation still requiring final public evidence. Neither successful tests nor a positive model review establishes measured learning effectiveness.

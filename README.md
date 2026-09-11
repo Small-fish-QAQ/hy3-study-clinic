@@ -78,6 +78,8 @@ npm run dev
 
 打开 [http://localhost:5173](http://localhost:5173)，创建课程、添加课程资料，再跟随页面操作。当前学习界面与教学生成使用简体中文。
 
+离线模式可重复体验流程，但生成内容、标识和排序可能变化（outputs may vary between runs）。
+
 要体验真实 Hy3，将 [`.env.example`](.env.example) 复制为 `.env`，配置 `LLM_PROVIDER=hy3`、`HY3_BASE_URL`、`HY3_API_KEY` 和 `HY3_MODEL`，并设置 `VISUAL_PROVIDER=disabled`。重启服务，在设置页核对实际生效的模型；已保存的设置优先于环境配置。
 
 完整的 Windows / macOS / Linux 步骤、端口、数据位置、配置优先级与常见问题见 **[运行指南](docs/SETUP.md)**。
